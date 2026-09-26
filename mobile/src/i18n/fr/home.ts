@@ -31,7 +31,8 @@ export const homeFr = {
   },
   sector: {
     label: "SCORE IBP MOYEN DU SECTEUR",
-    score: ({ score }: { score: number }) => `${score} / 10`,
+    score: ({ score }: { score: number }) => `${score} / 50`,
+    mixedMethods: "méthodes v3.0 et v3.2 mêlées",
     meta: ({ count }: { count: number }) =>
       `${count} ${plural(count, "relevé")} ${plural(count, "analysé")} · rayon ~2,5 km`,
   },
