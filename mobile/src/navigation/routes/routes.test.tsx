@@ -613,6 +613,8 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
       </Providers>,
     )
     expect(props("factorDetail").factor).toBe("A")
+    // The help follows the survey's method version (01.8-13, D-09).
+    expect(props("factorDetail").methodVersion).toBe(IBP_METHOD_V3_2)
     expect(props("factorDetail").fields).toBe(
       (fixture.form.state.factorSections as Record<string, unknown>).A,
     )
