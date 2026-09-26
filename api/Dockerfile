@@ -5,9 +5,16 @@ WORKDIR /app
 # The root package.json only declares the workspaces and the shared
 # overrides (no runtime dependencies since 01.9-19). --workspace api installs
 # the API tree alone; the mobile workspace (Expo/React Native) never enters it.
+# The API depends on the shared workspace package @cortege/ibp-domain (phase
+# 01.8), linked by npm from packages/ibp-domain: its manifest is copied first.
 COPY package.json package-lock.json ./
 COPY api/package.json ./api/
+COPY packages/ibp-domain/package.json ./packages/ibp-domain/
 RUN npm ci --workspace api --ignore-scripts
+
+# The shared package is built here; only its dist reaches the runtime stage.
+COPY packages/ibp-domain ./packages/ibp-domain
+RUN npm --workspace @cortege/ibp-domain run build
 
 COPY api ./api
 RUN npm --workspace api run build
@@ -22,10 +29,14 @@ ENV NODE_ENV=production
 # The root package.json only declares the workspaces and the shared
 # overrides (no runtime dependencies since 01.9-19). --workspace api installs
 # the API tree alone; the mobile workspace (Expo/React Native) never enters it.
+# The package manifest lets npm create the node_modules/@cortege/ibp-domain
+# link; its built dist is copied from the builder (no TypeScript here).
 COPY package.json package-lock.json ./
 COPY api/package.json ./api/
+COPY packages/ibp-domain/package.json ./packages/ibp-domain/
 RUN npm ci --workspace api --omit=dev --ignore-scripts && npm cache clean --force
 
+COPY --from=builder /app/packages/ibp-domain/dist ./packages/ibp-domain/dist
 COPY --from=builder /app/api/dist ./api/dist
 COPY api/scripts ./api/scripts
 COPY api/migrations ./api/migrations
