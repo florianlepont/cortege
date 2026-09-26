@@ -282,7 +282,7 @@ Plans:
 - [x] 01.8-08-PLAN.md — Store method version and cas in the phone's JSON payloads (no SQLite migration), copy them on pull, no stamping of legacy drafts (wave 2)
 - [x] 01.8-06-PLAN.md — Make IbpRulesService a thin adapter over the package, type the API wire types from it, run the parity fixture through it (wave 3)
 - [x] 01.8-07-PLAN.md — Make mobile ibp-scoring.ts an adapter, take app types from the package, run the parity fixture, readiness texts for the cas (wave 3)
-- [ ] 01.8-09-PLAN.md — Migration 016 + DTO fields + effective-version validation, write normalisation, fixed-after-submit, MAT-VER-01 replay E2E (wave 4)
+- [x] 01.8-09-PLAN.md — Migration 016 + DTO fields + effective-version validation, write normalisation, fixed-after-submit, MAT-VER-01 replay E2E (wave 4)
 - [ ] 01.8-10-PLAN.md — Form hook, draft patcher and contexts for version/cas/flag/A cover; fr.ibpMethod catalogue and fixed v3.0 help (wave 4)
 - [x] 01.8-11-PLAN.md — Totals out of 50 with package bands on the badge, sector card and map; mixed-methods line; component tests (wave 4)
 - [ ] 01.8-12-PLAN.md — Method version on public map items and parcel statuses; API and data contracts; production probes (wave 5)
@@ -460,7 +460,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.5. Mobile sync engine reliability | 12/12 | Complete    | 2026-09-25 |
 | 1.6. Sync feed ordering and unified object storage | 9/9 | Complete    | 2026-09-25 |
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
-| 1.8. Shared IBP domain package and test completeness | 9/16 | In Progress|  |
+| 1.8. Shared IBP domain package and test completeness | 10/16 | In Progress|  |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
 | 2. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
 | 3. Genus Recognition for Factor A | 0/TBD | Not started | - |
