@@ -278,7 +278,7 @@ Plans:
 - [x] 01.8-02-PLAN.md — Test AuthGuard's RS256 path against a loopback JWKS: valid, expired, wrong audience, unknown kid, wrong issuer, HS256 confusion (wave 1)
 - [x] 01.8-03-PLAN.md — Split surveys-idempotency.e2e-spec.ts by feature with randomUUID ids; move direct G/H = 1 E2E fixtures to 2 (wave 1)
 - [x] 01.8-05-PLAN.md — Write ibp-validation-matrix-v2.md and the ADR-003 implementation addendum (MAT-B-01 change, ibp_cas + ibp_cas3_scale) (wave 1)
-- [ ] 01.8-04-PLAN.md — Implement the v3.0 (fixed) and v3.2 rules, dispatch, readiness, draft migration, bands and the parity fixture in the package (wave 2)
+- [x] 01.8-04-PLAN.md — Implement the v3.0 (fixed) and v3.2 rules, dispatch, readiness, draft migration, bands and the parity fixture in the package (wave 2)
 - [x] 01.8-08-PLAN.md — Store method version and cas in the phone's JSON payloads (no SQLite migration), copy them on pull, no stamping of legacy drafts (wave 2)
 - [ ] 01.8-06-PLAN.md — Make IbpRulesService a thin adapter over the package, type the API wire types from it, run the parity fixture through it (wave 3)
 - [ ] 01.8-07-PLAN.md — Make mobile ibp-scoring.ts an adapter, take app types from the package, run the parity fixture, readiness texts for the cas (wave 3)
@@ -460,7 +460,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.5. Mobile sync engine reliability | 12/12 | Complete    | 2026-09-25 |
 | 1.6. Sync feed ordering and unified object storage | 9/9 | Complete    | 2026-09-25 |
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
-| 1.8. Shared IBP domain package and test completeness | 5/16 | In Progress|  |
+| 1.8. Shared IBP domain package and test completeness | 6/16 | In Progress|  |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
 | 2. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
 | 3. Genus Recognition for Factor A | 0/TBD | Not started | - |
