@@ -58,6 +58,15 @@ app computes Fr v3.0 scores and the documentation says so: the citation files
 (`docs/references/README.md`, `docs/specs/ibp-form-spec.md`) state "implemented: v3.0, target:
 v3.2 (ADR-003)". Writing "the app implements v3.2" before 01.8 ships would be false.
 
+**Owner decisions (2026-09-26, after review of this ADR):**
+- The owner confirms the migration to IBP FR v3.2.
+- The app manages method versions: every survey is tagged with the method version it was
+  recorded under, and the observer can choose the version when creating a new survey. v3.2 is
+  the default; v3.0 stays available as an earlier version (for example, to re-survey a parcel
+  under the same method as its previous survey). The version cannot change once the survey is
+  submitted. This extends CH-6.
+- The total score is displayed out of 50, as in the methodology (CH-11, BUG-3).
+
 ### Why migrate
 
 D-06's rule applies: v3.2 changes scoring rules and the Factor A genus list, so the default is to
@@ -133,7 +142,7 @@ native-cover input would therefore return 422 on those replays and block device 
 ## Change list for phase 01.8
 
 Each change comes with the test that proves it. Row IDs (A-1, CD-1, …) refer to the comparison
-document. CH-11 needs an owner/design call; CH-12 is phase 2, not 01.8.
+document. CH-11 was decided by the owner (score out of 50); CH-12 is phase 2, not 01.8.
 
 | # | Change | Test that proves it |
 |---|---|---|
@@ -142,12 +151,12 @@ document. CH-11 needs an owner/design call; CH-12 is phase 2, not 01.8.
 | CH-3 | E score 1 = TGB/ha < 1 and (TGB + GB)/ha ≥ 1 (E-1) | tgb 1, gb 1, 2 ha → 1; MAT-E-01 unchanged |
 | CH-4 | Replace ACA/M + stage with a v3.2 cas input (CLS-1..CLS-4). The engine needs one derived fact: does the A/G scale use cas 3? True for cas 3; true for cas 2 in a cas-3 zone or on a lapiaz, dune, peat-bog or *J. thurifera* habitat (p. 4, p. 7); false otherwise. Recommended stored shape: macroclimatic cas (1, 3 or 4), a very-infertile flag (→ cas 2) and a special-habitat flag, from which the effective cas and the A/G scale derive | A count 2: cas 1 → 1, cas 3 → 2, cas 4 → 1, cas 2 in a cas-3 zone → 2; G 0.5 %: cas 3 → 2, cas 1 → 2; G 6 %: cas 3 → 5, cas 1 → 2 |
 | CH-5 | Allowed scores: G and H ∈ {0, 2, 5} (BUG-2). Before shipping, the owner counts production rows with G or H = 1 (query below) | `{G: 1}` → blocking `factor_invalid_score`; `{H: {class_score: 1}}` → blocking |
-| CH-6 | Method version `ibp_method_version` on every survey (DB, DTO, mobile payload, sync contract). A missing method version means v3.0. The engine dispatches by version; the v3.0 rules are kept to validate legacy replays | a submitted v3.0 survey replayed identically → `synced`, not 422; a v3.0 payload scores with v3.0 rules; a v3.2 payload with v3.2 rules (MAT-VER-01) |
+| CH-6 | Method version `ibp_method_version` on every survey (DB, DTO, mobile payload, sync contract). A missing method version means v3.0. The engine dispatches by version; the v3.0 rules are kept to validate legacy replays. Owner decision: the observer picks the version when creating a survey (default v3.2, v3.0 available); it is fixed once the survey is submitted, and the form, help texts and scoring follow the chosen version | a submitted v3.0 survey replayed identically → `synced`, not 422; a v3.0 payload scores with v3.0 rules; a v3.2 payload with v3.2 rules (MAT-VER-01) |
 | CH-7 | Draft migration (mobile SQLite `payload_json`, `sync_queue` payloads, server drafts): move B's cover to A; derive the cas from region/stage (mapping table below); leave ambiguous stages blank so submit readiness reports them missing | migration unit test on sample payloads; `evaluateSubmitReadinessFromDraft` reports the missing cas for `subalpin` |
 | CH-8 | Guidance text in `mobile/src/i18n/fr/labels.ts` (`factorHelp`, `factorInputHints`): the A cap and no cap on B; strata heights per cas (B-2, B-3); diameters per cas (CD-2, CD-3, E-2, E-3); the slow-growing species list (CD-4); dendromicrohabitat changes (F-1..F-3); the G exclusion (G-1); H grazing, orchard and 10 % rules (H-1, H-2); I « Mer ou océan » (I-1); J 12 types (J-1); cas selector labels instead of `regions` / `vegetationStages` | catalogue unit test or grep; the existing i18n tests still pass |
 | CH-9 | Contracts and filters: `api-contract-v1.md`, `data-contract-v1.md` (region enum), the public-map `region` filter semantics, `mobile/src/app/types.ts` `RegionVersion` / `VegetationStage` | API E2E for upsert, submit and the public-map filter |
 | CH-10 | `docs/technical/ibp-validation-matrix-v2.md`: revise MAT-B-01, MAT-A-01/02, MAT-G-01, MAT-SUBMIT-01/02; add MAT-A-03..05, MAT-C-02, MAT-E-02, MAT-G-02/03, MAT-H-02, MAT-VER-01; fix the Notes (G, H ∈ {0, 2, 5}). One parity fixture in `packages/ibp-domain` runs every case (01.8 criterion 2) | the parity fixture is green in the API and the mobile app |
-| CH-11 | Score display (BUG-3): the 0–50 total is shown as "/10" with colour thresholds 7 and 5; use /50, and the bands of the interpretation chart (GS-2) if wanted. **Needs an owner/design call** | component tests for `IbpScoreBadge` and `SectorScoreCard` |
+| CH-11 | Score display (BUG-3): the 0–50 total is shown as "/10" with colour thresholds 7 and 5; show the total out of 50 as in the methodology (owner decision, 2026-09-26), with the bands of the interpretation chart (GS-2) for colours | component tests for `IbpScoreBadge` and `SectorScoreCard` |
 | CH-12 | **Phase 2, not 01.8:** the Factor A genus list from v3.2 p. 3 and Table 1 (p. 10–11), keyed by cas: supplementary genera for cas 4 and cas 2; the coastal Juniperus species; Ficus excluded; Pistacia per the CNPF answer | phase 2's own tests |
 
 ## Region and stage to cas mapping

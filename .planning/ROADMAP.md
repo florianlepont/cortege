@@ -268,7 +268,7 @@ Plans:
   3. The API image builds with the package and `expo export` resolves it in CI.
   4. `AuthGuard`'s RS256 path is tested against a locally served JWKS: valid, expired, wrong audience and unknown `kid` tokens.
   5. `surveys-idempotency.e2e-spec.ts` is split by feature (submit, visibility, public map, attachments, parcel history) and uses `randomUUID()` instead of `Date.now()`.
-  6. The IBP rules in `packages/ibp-domain` implement IBP FR v3.2 per ADR-003 (CH-1..CH-11), with the v3.0 rules kept for surveys tagged v3.0 or carrying no method version; `docs/references/README.md` and `docs/specs/ibp-form-spec.md` then say the app implements v3.2.
+  6. The IBP rules in `packages/ibp-domain` implement IBP FR v3.2 per ADR-003 (CH-1..CH-11), with the v3.0 rules kept for surveys tagged v3.0 or carrying no method version; every survey carries its method version, the observer picks it when creating a survey (default v3.2, v3.0 available) and it is fixed after submit; the total score is shown out of 50; `docs/references/README.md` and `docs/specs/ibp-form-spec.md` then say the app implements v3.2.
 
 **Plans**: TBD
 
