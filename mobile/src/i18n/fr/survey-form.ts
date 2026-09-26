@@ -13,7 +13,7 @@ export const surveyFormFr = {
       "Donnez au relevé un nom clair avant de le placer sur le cadastre et de noter les observations de terrain.",
     parcelsTitle: "Placer le relevé sur la carte",
     parcelsBody:
-      "Sélectionnez l'emprise des parcelles, puis fixez la version régionale et le stade de végétation utilisés pour la notation.",
+      "Sélectionnez l'emprise des parcelles, puis fixez le contexte de notation : le cas IBP, ou la version régionale et le stade de végétation en v3.0.",
     factorsTitle: "Noter les facteurs IBP",
     factorsBody:
       "Ouvrez chaque facteur, saisissez les valeurs observées et suivez le total des scores retenus en direct.",
@@ -56,6 +56,12 @@ export const surveyFormFr = {
   },
   vegetation: {
     label: "Stade de végétation *",
+  },
+  // The v3.2 context (01.8-13); the cas labels, captions and the cas-3 switch come from fr.ibpMethod.
+  scoringContext: {
+    casSubtitle:
+      "Le cas IBP fixe les seuils de notation : choisissez-le avant d'ouvrir les facteurs.",
+    casMissing: "Cas à choisir",
   },
   parcels: {
     title: "Sélection des parcelles",
