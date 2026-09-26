@@ -1,6 +1,12 @@
 import { memo, useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import {
+  IBP_METHOD_V3_0,
+  IBP_METHOD_V3_2,
+  isIbpCas,
+  resolveMethodVersion,
+} from "@cortege/ibp-domain"
 import type { PublicMapItem } from "../../app/types"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
@@ -11,6 +17,22 @@ import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { panelStyles as styles } from "./styles"
 
 const t = fr.publicMap
+
+/** "IBP v3.0" or "IBP v3.2"; a survey without a version is v3.0 (D-02), an unknown one shows none. */
+export function surveyMethodLabel(item: PublicMapItem): string | null {
+  const version = resolveMethodVersion(item.ibp_method_version)
+  if (version === IBP_METHOD_V3_2) return t.method.v3_2
+  if (version === IBP_METHOD_V3_0) return t.method.v3_0
+  return null
+}
+
+/** Where the survey sits in the method: "Cas N" for a v3.2 survey with a cas, else its region. */
+export function surveyPlaceLabel(item: PublicMapItem): string {
+  if (resolveMethodVersion(item.ibp_method_version) === IBP_METHOD_V3_2 && isIbpCas(item.ibp_cas)) {
+    return t.cas(item.ibp_cas)
+  }
+  return item.region_code
+}
 
 export type SelectedSurveyCardProps = {
   item: PublicMapItem
@@ -57,6 +79,8 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
       .finally(() => setReportSending(false))
   }
 
+  const methodLabel = surveyMethodLabel(item)
+
   return (
     <AppCard variant="panelElevated" padding={14} style={[styles.card, { bottom }]}>
       <AppSectionHeader
@@ -72,8 +96,9 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
         }
         titleStyle={styles.title}
       />
+      {methodLabel ? <Text style={styles.meta}>{methodLabel}</Text> : null}
       <Text style={styles.meta}>
-        {t.selected.meta({ region: item.region_code, date: item.survey_date })}
+        {t.selected.meta({ region: surveyPlaceLabel(item), date: item.survey_date })}
       </Text>
 
       {isOwnSurvey ? (
