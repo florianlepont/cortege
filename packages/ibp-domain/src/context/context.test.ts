@@ -134,9 +134,7 @@ describe("allowed scores and scales", () => {
   })
 
   it("G flowering scales: standard and restricted", () => {
-    expect([0, 0.5, 1, 5, 5.1].map((p) => scoreFloweringPercent(p, false))).toEqual([
-      0, 2, 5, 5, 2,
-    ])
+    expect([0, 0.5, 1, 5, 5.1].map((p) => scoreFloweringPercent(p, false))).toEqual([0, 2, 5, 5, 2])
     expect([0, 0.5, 1, 60].map((p) => scoreFloweringPercent(p, true))).toEqual([0, 2, 5, 5])
   })
 })
