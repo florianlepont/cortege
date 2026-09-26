@@ -1,14 +1,10 @@
 import React from "react"
 import renderer, { act, ReactTestRenderer } from "react-test-renderer"
-import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, IbpCas } from "@cortege/ibp-domain"
 import { SurveyDetailResponse } from "../../app/types"
 import { fr } from "../../i18n"
 import { LocalDraftMeta } from "./useLocalDraftSummary"
-import {
-  resolveScoringContext,
-  ScoringContext,
-  ScoringContextEditor,
-} from "./ScoringContextEditor"
+import { resolveScoringContext, ScoringContext, ScoringContextEditor } from "./ScoringContextEditor"
 
 const originalConsoleError = console.error
 
@@ -150,7 +146,7 @@ const switches = (tree: ReactTestRenderer) => tree.root.findAllByType("Switch" a
 const statusLabels = (tree: ReactTestRenderer): string[] =>
   tree.root.findAllByType("AppStatusChip" as never).map((chip) => chip.props.label as string)
 
-const v32 = (cas: number | null, flag = false): ScoringContext => ({
+const v32 = (cas: IbpCas | null, flag = false): ScoringContext => ({
   ibp_method_version: IBP_METHOD_V3_2,
   ibp_cas: cas,
   ibp_cas3_scale: flag,

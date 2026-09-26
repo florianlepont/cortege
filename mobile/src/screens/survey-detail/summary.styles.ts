@@ -2,38 +2,6 @@ import { StyleSheet } from "react-native"
 import { brandColors, brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
 
 export const styles = StyleSheet.create({
-  detailMetadataCard: {
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: brandColors.divider,
-    backgroundColor: brandColors.panel,
-    padding: 18,
-    gap: 12,
-    ...brandShadow.card,
-  },
-  detailParcelsEditButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    borderColor: brandColors.divider,
-    backgroundColor: brandColors.panelMuted,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  summaryItem: {
-    color: brandColors.forest,
-    backgroundColor: brandColors.panelMuted,
-  },
-  summaryItemLabel: {
-    color: brandColors.forest,
-  },
   scoreHeroCard: {
     borderRadius: 24,
     backgroundColor: brandColors.successSoft,

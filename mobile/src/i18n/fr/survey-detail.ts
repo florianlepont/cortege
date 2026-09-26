@@ -68,10 +68,13 @@ export const surveyDetailFr = {
     deadline: (date: string) => `Échéance : ${date}`,
     nearDeadline: "Moins de 24 h avant l'expiration du relevé.",
     contextTitle: "Contexte et parcelles",
-    contextSubtitle: "Version régionale et stade de végétation utilisés pour le calcul.",
+    contextSubtitle: "Méthode IBP et contexte de station utilisés pour le calcul.",
     editParcels: "Modifier les parcelles",
     region: (label: string) => `Région : ${label}`,
     vegetation: (label: string) => `Végétation : ${label}`,
+    // Filled by plan 01.8-14: the method version on the detail (D-02, D-08).
+    unknownMethod: "Méthode IBP non reconnue",
+    casMissing: "Choisissez le cas IBP de la station : il est requis pour soumettre le relevé.",
   },
   factors: {
     title: "Score IBP",
