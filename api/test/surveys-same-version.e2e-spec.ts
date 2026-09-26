@@ -308,7 +308,7 @@ describe("Same sync_version content rule (e2e)", () => {
        WHERE sp.parcel_id = $1 AND s.deleted_at IS NULL AND s.status = 'submitted'`,
       [parcelId],
     )
-    const validFactors = { A: 1, B: 1, C: 1, D: 1, E: 1, F: 1, G: 1, H: 1, I: 2, J: 2 }
+    const validFactors = { A: 1, B: 1, C: 1, D: 1, E: 1, F: 1, G: 2, H: 2, I: 2, J: 2 }
     const payload = draftPayload(surveyId, {
       parcel_id: parcelId,
       observation_year: 2025,
