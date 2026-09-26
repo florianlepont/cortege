@@ -260,3 +260,45 @@ For migrating existing context values (CH-7). One row is an assumption: v3.2 nam
 - The citation files (`docs/references/README.md`, `docs/specs/ibp-form-spec.md`) flip to
   "implemented: v3.2" when 01.8 ships.
 - No code changed in phase 01.1: the API and the mobile app still compute Fr v3.0 scores.
+
+## Implementation notes (01.8)
+
+Added in phase 01.8 (2026-09-26). The accepted text above is unchanged; these notes record how
+01.8 implements it and where 01.8 departs from it. The rules are implemented in phase 01.8
+(`packages/ibp-domain`), and [`ibp-validation-matrix-v2.md`](ibp-validation-matrix-v2.md) lists
+the cases.
+
+1. **What "v3.0" means in the app (D-05).** The v3.0 rule set is the pre-01.8 rules with the two
+   bugs that are wrong under both versions fixed: the native-cover cap is on A, not B (BUG-1), and
+   G and H accept only 0, 2 or 5 (BUG-2). v3.0 stays a choice for new surveys, so it must not keep
+   a known transcription bug. Consequence: **MAT-B-01 under v3.0 now gives B = 5** (v1 said 2).
+   The Consequences line "the 17 v1 cases stay as the v3.0 baseline" is replaced by matrix v2,
+   which holds the fixed v3.0 cases (`@v3.0`) next to the v3.2 ones. Replays stay safe: server
+   validation rejects only blocking issues and never compares a recomputed score with the stored
+   one, and submitted replays never rewrite stored scores. The only newly blocked shapes are a
+   direct G = 1 or H = 1, which the form cannot produce.
+2. **Stored v3.2 context.** Instead of CH-4's three fields (macroclimatic cas, very-infertile flag,
+   special-habitat flag), a v3.2 survey stores `ibp_cas` (1 to 4) and one boolean
+   `ibp_cas3_scale`. The flag selects the cas-3 scale for A and G for cas 2 in a cas-3 zone and
+   for stands on lapiaz, dunes, peat bogs or dominated by *Juniperus thurifera* (v3.2 p. 3 "Cas 1,
+   4 et 2\*", p. 4 footnote \*, p. 7). The engine needs only that one derived fact, and the
+   observer ticks the cas as on the p. 20 sheet. The field is always named `ibp_cas`, never a bare
+   "cas", because CAS already means compare-and-swap in the code.
+3. **Drafts keep their version (D-08 supersedes "drafts are re-scored").** A draft keeps the
+   version it was created with; a draft with no version is v3.0. Drafts are not re-scored under
+   v3.2. The observer may switch an unsubmitted v3.0 draft to v3.2, which runs the CH-7 migration
+   (cover moved from B to A, cas pre-filled from the mapping table, left blank where ambiguous).
+   The version is fixed once the survey is submitted.
+4. **No SQLite migration.** On the phone, the method version and the cas live in the schemaless
+   JSON payloads (`payload_json` and the sync queue); nothing queries them, so the local schema
+   version does not change. The API adds migration 016: nullable `ibp_method_version`, `ibp_cas`
+   and `ibp_cas3_scale` columns on `surveys`, with CHECK constraints on known values; null means
+   v3.0. Version comparisons treat null and the v3.0 tag as equal.
+5. **Score readers.** The total is shown out of 50. CNPF charts bands only for the stand score
+   (/35) and the context score (/15) (p. 24), so the /50 total is coloured with an app band with
+   cut-offs at 10, 20, 30 and 40, derived from the stand axis percentages and marked for the
+   owner's review. The home sector average may mix v3.0 and v3.2 surveys (same /50 scale, same
+   aggregation); when it does, the card says so.
+6. **Production G/H = 1 count not run.** The owner confirmed that production holds only test
+   surveys (Open question 1, D-04), so the `g_h_score_1` query of CH-5 is not run; the owner may
+   delete any such test survey.
