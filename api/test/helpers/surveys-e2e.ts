@@ -7,7 +7,7 @@ import { DatabaseService } from "../../src/database/database.service"
 
 // Phase 01.8 D-12: shared setup for the survey E2E files split out of
 // surveys-idempotency.e2e-spec.ts. Ids, emails and coordinate seeds come from randomUUID(),
-// never from Date.now(), so two runs (or two tests in the same millisecond) cannot collide.
+// never from the clock, so two runs (or two tests in the same millisecond) cannot collide.
 // This file is not a spec: jest.config.js only matches *.e2e-spec.ts.
 
 export type E2eContext = { app: INestApplication; db: DatabaseService }
