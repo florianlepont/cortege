@@ -801,7 +801,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { native_genus_count: "abc" },
+        factorA: { ...saved.factorA, native_genus_count: "abc" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
@@ -813,7 +813,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { native_genus_count: "1.5" },
+        factorA: { ...saved.factorA, native_genus_count: "1.5" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
@@ -825,7 +825,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { native_genus_count: "-1" },
+        factorA: { ...saved.factorA, native_genus_count: "-1" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
@@ -849,7 +849,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { native_genus_count: "3" },
+        factorA: { ...saved.factorA, native_genus_count: "3" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
