@@ -1,13 +1,16 @@
 import {
   ArrayMaxSize,
   IsArray,
+  IsBoolean,
   IsEnum,
+  IsIn,
   IsNumber,
   IsObject,
   IsOptional,
   IsString,
   Matches,
 } from "class-validator"
+import { IBP_CAS_VALUES, IBP_METHOD_VERSIONS } from "@cortege/ibp-domain"
 import { SAFE_ID_PATTERN } from "../../common/safe-id"
 import { MAX_PARCEL_IDS, PARCEL_ID_PATTERN } from "./parcel-id.constants"
 
@@ -65,6 +68,20 @@ export class SurveyUpsertDto {
   @IsOptional()
   @IsString()
   vegetation_stage?: string
+
+  // Phase 01.8 (D-02, D-08 amended): the survey's IBP method. Absent or null means v3.0. Declared
+  // here so /v1/sync, which strips undeclared fields, keeps them (RESEARCH Pitfall 3).
+  @IsOptional()
+  @IsIn([...IBP_METHOD_VERSIONS])
+  ibp_method_version?: string | null
+
+  @IsOptional()
+  @IsIn([...IBP_CAS_VALUES])
+  ibp_cas?: number | null
+
+  @IsOptional()
+  @IsBoolean()
+  ibp_cas3_scale?: boolean | null
 
   @IsOptional()
   @IsObject()

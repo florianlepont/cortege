@@ -52,6 +52,10 @@ export type SurveyRow = {
   previous_survey_id: string | null
   region_version: string | null
   vegetation_stage: string | null
+  // Migration 016: a NULL method version means v3.0; ibp_cas and ibp_cas3_scale are v3.2 only.
+  ibp_method_version: string | null
+  ibp_cas: number | null
+  ibp_cas3_scale: boolean | null
   factors: JsonObject
   factor_results: Record<string, FactorCanonical>
   scores: JsonObject
