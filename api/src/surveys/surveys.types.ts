@@ -1,37 +1,33 @@
-export type SurveyUpsertBody = {
-  id?: string
-  sync_version?: number
-  site_name?: string
-  status?: "draft" | "submitted" | "synced" | "error" | "expired"
-  visibility?: "private" | "public"
-  parcel_id?: string
-  parcel_ids?: string[]
-  observation_year?: number
-  version_number?: number
-  previous_survey_id?: string
-  region_version?: "ACA" | "M"
-  vegetation_stage?: string
-  factors?: Record<string, unknown>
-  scores?: Record<string, unknown>
-  expires_at?: string
+import type {
+  FactorCanonical,
+  SurveyPatchPayload,
+  SurveyStatus,
+  SurveyUpsertPayload,
+  SurveyVisibility,
+  SyncChangeAttachment,
+  SyncChangeEvent,
+  SyncChangeSurvey,
+  SyncOperationResult,
+  SyncResultError,
+} from "@cortege/ibp-domain"
+
+// Wire types come from the shared contract (phase 01.8, D-06); the names stay so no importer
+// changes. Request validation stays in the class-validator DTOs. Row and DB-only types stay here.
+export type {
+  FactorCanonical,
+  SyncChangeAttachment,
+  SyncChangeEvent,
+  SyncChangeSurvey,
+  SyncOperationResult,
+  SyncResultError,
 }
 
-export type SurveyPatchBody = {
-  site_name?: string
-  visibility?: "private" | "public"
-  parcel_id?: string
-  parcel_ids?: string[]
-  observation_year?: number
-  version_number?: number
-  previous_survey_id?: string
-  region_version?: "ACA" | "M"
-  vegetation_stage?: string
-  factors?: Record<string, unknown>
-  scores?: Record<string, unknown>
-}
+export type SurveyUpsertBody = SurveyUpsertPayload
+
+export type SurveyPatchBody = SurveyPatchPayload
 
 export type SurveyVisibilityPatchBody = {
-  visibility?: "private" | "public"
+  visibility?: SurveyVisibility
 }
 
 export type CreateAttachmentBody = {
@@ -43,20 +39,12 @@ export type CreateAttachmentBody = {
 
 type JsonObject = Record<string, unknown>
 
-export type FactorCanonical = {
-  factor_id: string
-  observed_value_raw: unknown
-  selected_class: "S0" | "S1" | "S2" | "S5"
-  score_points: number
-  warnings: string[]
-}
-
 export type SurveyRow = {
   id: string
   user_id: string | null
   site_name: string
-  status: "draft" | "submitted" | "synced" | "error" | "expired"
-  visibility: "private" | "public"
+  status: SurveyStatus
+  visibility: SurveyVisibility
   parcel_id: string | null
   parcel_ids?: string[]
   observation_year: number | null
@@ -99,51 +87,9 @@ export type AttachmentRow = {
   deleted_at: string | null
 }
 
-export type SyncResultError = {
-  code: string
-  message: string
-  http_status?: number
-  details?: Record<string, unknown>
-}
-
-export type SyncOperationResult = {
-  client_ref: string | null
-  entity: string
-  action: string
-  status: "synced" | "retryable_error" | "fatal_error"
-  data?: Record<string, unknown>
-  error?: SyncResultError
-}
-
-export type SyncChangeEvent = SurveyEventRow
-
 // Internal row of the changes-feed query: the feed position travels as text (xid8 and bigint
 // can exceed Number.MAX_SAFE_INTEGER) and is stripped before the response.
 export type SyncChangeEventRow = SyncChangeEvent & { xid8: string; seq: string }
-
-export type SyncChangeSurvey = Pick<
-  SurveyRow,
-  | "id"
-  | "site_name"
-  | "status"
-  | "visibility"
-  | "parcel_id"
-  | "parcel_ids"
-  | "observation_year"
-  | "version_number"
-  | "previous_survey_id"
-  | "region_version"
-  | "vegetation_stage"
-  | "factors"
-  | "factor_results"
-  | "scores"
-  | "created_at"
-  | "updated_at"
-  | "submitted_at"
-  | "expires_at"
-  | "sync_version"
-  | "deleted_at"
->
 
 export type ParcelRow = {
   id: string
@@ -158,17 +104,3 @@ export type ParcelRow = {
   created_at: string
   updated_at: string
 }
-
-export type SyncChangeAttachment = Pick<
-  AttachmentRow,
-  | "id"
-  | "survey_id"
-  | "storage_key"
-  | "mime_type"
-  | "size_bytes"
-  | "captured_at"
-  | "metadata"
-  | "created_at"
-  | "uploaded_at"
-  | "deleted_at"
->
