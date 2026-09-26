@@ -29,3 +29,18 @@ export {
 
 export { IBP_MAX, bandTone, contextBand, standBand, totalBand } from "./bands"
 export type { ContextBand, ScoreTone, StandBand, TotalBand } from "./bands"
+
+export { computeRetainedScores, computeTotals, evaluateIbp } from "./evaluate"
+export type {
+  FactorRetainedScore,
+  IbpEvaluation,
+  IbpEvaluationInput,
+  IbpEvaluationMode,
+  IbpSurveyContext,
+  IbpValidationIssue,
+} from "./evaluate"
+
+export { evaluateSubmitReadiness } from "./readiness"
+export type { SubmitReadiness, SubmitReadinessField } from "./readiness"
+
+export { migrateDraftToV32 } from "./migrate"

@@ -1,6 +1,7 @@
 import { migrateDraftToV32 } from "./migrate"
 import { evaluateSubmitReadiness } from "./readiness"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "./method-version"
+import type { IbpEvaluationInput } from "./evaluate"
 
 const NOW = new Date("2026-09-26T12:00:00.000Z")
 const COMPLETE_DIRECT = { A: 5, B: 2, C: 1, D: 0, E: 2, F: 5, G: 2, H: 2, I: 5, J: 0 }
@@ -123,7 +124,10 @@ describe("migrateDraftToV32 (CH-7)", () => {
     ["M", "supra_mediterraneen", null],
     [undefined, undefined, null],
   ])("%p/%p → ibp_cas %p", (region, stage, cas) => {
-    const migrated = migrateDraftToV32({ region_version: region, vegetation_stage: stage })
+    const migrated = migrateDraftToV32<IbpEvaluationInput>({
+      region_version: region,
+      vegetation_stage: stage,
+    })
     expect(migrated.ibp_cas).toBe(cas)
     expect(migrated.ibp_method_version).toBe(IBP_METHOD_V3_2)
     expect(migrated.factors).toBeUndefined()
@@ -150,6 +154,10 @@ describe("migrateDraftToV32 (CH-7)", () => {
     expect(direct.factors).toEqual({ A: 2, B: {} })
     const noCover = migrateDraftToV32({ factors: { B: 5 } })
     expect(noCover.factors).toEqual({ B: 5 })
+    const bWithoutCover = migrateDraftToV32({
+      factors: { A: { count: 3 }, B: { strata_count: 4 } },
+    })
+    expect(bWithoutCover.factors).toEqual({ A: { count: 3 }, B: { strata_count: 4 } })
   })
 
   it("a created A with only the cover is incomplete, not blocking", () => {

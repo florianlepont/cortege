@@ -12,10 +12,18 @@ const ctx = (
 const V30_ACA = { region_version: "ACA", vegetation_stage: "collineen" }
 const V32_CAS1 = { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1 }
 
-const v30 = (key: FactorKey, raw: Record<string, unknown>, survey = V30_ACA, factors = {}) =>
-  scoreFactorV30(key, raw, ctx(survey, factors))
-const v32 = (key: FactorKey, raw: Record<string, unknown>, survey = V32_CAS1, factors = {}) =>
-  scoreFactorV32(key, raw, ctx(survey, factors))
+const v30 = (
+  key: FactorKey,
+  raw: Record<string, unknown>,
+  survey: IbpSurveyContext = V30_ACA,
+  factors = {},
+) => scoreFactorV30(key, raw, ctx(survey, factors))
+const v32 = (
+  key: FactorKey,
+  raw: Record<string, unknown>,
+  survey: IbpSurveyContext = V32_CAS1,
+  factors = {},
+) => scoreFactorV32(key, raw, ctx(survey, factors))
 
 describe("v3.0 rules (D-05: pre-01.8 rules with BUG-1 and BUG-2 fixed)", () => {
   it("A: standard and subalpine scales", () => {
@@ -121,7 +129,7 @@ describe("v3.0 rules (D-05: pre-01.8 rules with BUG-1 and BUG-2 fixed)", () => {
     const c = ctx(V30_ACA)
     expect(scoreFactorV30("F", { dmh_group_counts: [3, 1, -2] }, c)).toEqual({
       kind: "scored",
-      score: 1,
+      score: 2,
     })
     expect(c.issues.map((i) => i.code)).toEqual(["factor_f_group_capped"])
     expect(c.issues[0]).toMatchObject({ blocking: false, factor: "F" })

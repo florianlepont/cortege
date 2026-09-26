@@ -133,6 +133,12 @@ describe("evaluateIbp: v3.0 (fixed, D-05)", () => {
     expect(result.factor_results?.F.warnings).toHaveLength(1)
   })
 
+  it("consistency warnings need both factors scored (absent or incomplete is not 'very low')", () => {
+    expect(codes(evaluateIbp({ factors: { B: 5, F: 5 } }, "draft"))).toEqual([])
+    expect(codes(evaluateIbp({ factors: { A: 0, E: 0 } }, "draft"))).toEqual([])
+    expect(codes(evaluateIbp({ factors: { A: 0, B: 1, E: 0, F: 2 } }, "draft"))).toEqual([])
+  })
+
   it("submit: region, stage, expiry and missing factors", () => {
     const result = evaluateIbp({ factors: { A: 5 } }, "submit", NOW)
     expect(result.ok).toBe(false)
@@ -297,7 +303,7 @@ describe("evaluateIbp: v3.2", () => {
       "draft",
     )
     expect(result.factor_scores).toEqual({ F: 5 })
-    expect(new Set(codes(result))).toEqual(new Set(["factor_f_group_capped", "consistency_e_f"]))
+    expect(new Set(codes(result))).toEqual(new Set(["factor_f_group_capped"]))
   })
 })
 
