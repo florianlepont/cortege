@@ -1,7 +1,7 @@
 # Data Contract V1
 
 ## Status
-Accepted for V1 baseline (validated on 2026-03-08). V1.1 parcel/history extension proposed on 2026-03-10. Auth Session entity updated on 2026-04-06 to reflect Auth0 delegation. User entity updated with `auth0_sub`.
+Accepted for V1 baseline (validated on 2026-03-08). V1.1 parcel/history extension proposed on 2026-03-10. Auth Session entity updated on 2026-04-06 to reflect Auth0 delegation. User entity updated with `auth0_sub`. Survey entity updated on 2026-09-26 (phase 01.8, migration 016) with the per-survey IBP method version and the v3.2 cas.
 
 ## Purpose
 Define the shared data model between mobile app, backend API, and database for the V1 scope.
@@ -51,9 +51,9 @@ Required fields:
 - `visibility` (enum: `private` | `public`)
 - `observation_year` (integer)
 - `version_number` (integer, starts at 1 per parcel history context)
-- `region_version` (enum: `ACA` | `M`)
-- `vegetation_stage` (string enum, depends on `region_version`)
-- `factors` (jsonb) // IBP factor inputs A..J
+- `region_version` (enum: `ACA` | `M`) // v3.0 only (IBP Fr v3.0 regions); stored NULL for a v3.2 survey
+- `vegetation_stage` (string enum, depends on `region_version`) // v3.0 only; stored NULL for a v3.2 survey
+- `factors` (jsonb) // IBP factor inputs A..J (see "IBP method version and factor payloads" below)
 - `scores` (jsonb) // subscores + total
 - `created_at` (timestamp)
 - `updated_at` (timestamp)
@@ -69,6 +69,18 @@ Optional fields:
 - `last_sync_error_at` (timestamp, nullable)
 - `sync_blocked` (boolean/integer flag, nullable) // local conflict guard
 - `deleted_at` (timestamp, nullable) // soft delete
+- `ibp_method_version` (text, nullable) // phase 01.8, migration 016. `cnpf_ibp_fr_v3_0_2023-03-23` (IBP Fr v3.0) or `cnpf_ibp_fr_v3_2_2026-02-02` (IBP FR v3.2); NULL = v3.0
+- `ibp_cas` (smallint, nullable) // phase 01.8, migration 016. v3.2 station case 1-4; NULL for v3.0
+- `ibp_cas3_scale` (boolean, nullable) // phase 01.8, migration 016. v3.2 only: cas-3 scale for A and G (cas 2 in a cas-3 zone; lapiaz, dune, peat-bog or *Juniperus thurifera* stand); NULL for v3.0, and NULL equals false
+
+IBP method version and factor payloads (phase 01.8, ADR-003):
+- Migration 016 (`api/migrations/016_ibp_method_version.sql`) adds the three columns, nullable and with no default, so existing rows stay NULL (= v3.0) and nothing is backfilled. Constraints: `chk_surveys_ibp_method_version` (`ibp_method_version IS NULL OR ibp_method_version IN ('cnpf_ibp_fr_v3_0_2023-03-23', 'cnpf_ibp_fr_v3_2_2026-02-02')`) and `chk_surveys_ibp_cas` (`ibp_cas IS NULL OR ibp_cas IN (1, 2, 3, 4)`). The migration is additive: an API without these columns keeps serving.
+- NULL means v3.0. The tag is stored as sent: an untagged survey is never stamped, and an explicit v3.0 tag is stored as the tag but equals NULL in every comparison.
+- One station model per survey: a v3.0 survey stores `region_version` and `vegetation_stage` and has `ibp_cas`/`ibp_cas3_scale` NULL; a v3.2 survey stores `ibp_cas`/`ibp_cas3_scale` and has `region_version`/`vegetation_stage` NULL. The server applies this on every write.
+- The method version is chosen when the survey is created (v3.2 by default in the app, v3.0 available) and is fixed once the survey is submitted, together with `ibp_cas` and `ibp_cas3_scale`.
+- Factor A carries the native cover used by the cap "A at most 2 when the native cover is below 50 %": `native_cover_percent` (0-100) or `native_cover_below_50` (boolean), next to `native_genus_count`. It is required for v3.2 and optional for v3.0. Before phase 01.8 the cover was stored on B (`covered_autochthonous_percent` / `native_cover_percent`) and capped B (BUG-1); that legacy B cover is now read only for a v3.0 survey whose A records no cover, and B is scored from its strata count alone.
+- Allowed factor scores, both versions: A-F 0, 1, 2 or 5; G, H, I and J 0, 2 or 5 (G and H accepted 1 before phase 01.8, BUG-2).
+- Mobile: the three fields live in the schemaless `payload_json` of `local_surveys` and in the queue payload; there is no SQLite column and `SCHEMA_VERSION` stays 2.
 
 Local-only fields (mobile SQLite `local_surveys`, never sent to the server):
 - `payload_completion` (integer 0-100, `NOT NULL DEFAULT 0`) // completion of the stored payload, computed when `payload_json` is written (draft create, draft update, and pull insert/update) and backfilled from `payload_json` by SQLite migration 2 (`PRAGMA user_version` 2); an unparsable payload stores 0. The "submitted = 100" rule is status-based and is applied at read time (`CASE WHEN status = 'submitted' THEN 100 ELSE payload_completion END`), so listing surveys never parses a payload.
@@ -158,8 +170,13 @@ Required fields:
 - `survey_id` (uuid)
 - `display_location` (jsonb) // reduced precision (2 decimals in current API read model)
 - `survey_date` (date)
-- `region_code` (string)
+- `region_code` (string) // the survey's `region_version`, or `unknown` when it has none (every v3.2 survey)
 - `ibp_total` (integer)
+- `ibp_method_version` (string, nullable) // phase 01.8, always present; NULL = v3.0 (sent as null, never as the v3.0 tag)
+- `ibp_cas` (integer, nullable) // phase 01.8, always present; the v3.2 cas, NULL otherwise
+
+Rules:
+- The `region` filter of `/v1/public/map-items` matches `region_version` exactly, so it only matches v3.0 surveys (tagged or untagged); a v3.2 survey stores no region (CH-9).
 
 ### 9) Parcel (V1.1 Addendum)
 French cadastral parcel reference used for survey linkage and history.
@@ -196,6 +213,7 @@ Required fields:
 - `latest_submitted_survey_id` (uuid, nullable)
 - `latest_observation_year` (integer, nullable)
 - `latest_ibp_total` (integer, nullable)
+- `latest_ibp_method_version` (string, nullable) // phase 01.8: method tag of the same latest public submitted survey as `latest_ibp_total`; NULL = v3.0 or no survey
 
 ### 10.1) SurveyParcel Link (V1.2 Addendum)
 Association table enabling multi-parcel surveys.
@@ -246,12 +264,13 @@ Optional fields:
 - `visibility` default is `private`
 - at least one parcel is required for `submitted` surveys (`parcel_ids.length >= 1`)
 - `observation_year` and `version_number` are required for `submitted` surveys
-- `submitted` surveys are read-only for observation payload (`site_name`, parcel linkage, region/stage, factors, scores)
+- the station of the survey's method is required for `submitted` surveys: `region_version` and `vegetation_stage` for v3.0, `ibp_cas` (1-4) for v3.2 (`ibp_cas_required`)
+- `submitted` surveys are read-only for observation payload (`site_name`, parcel linkage, region/stage, `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, factors, scores)
 - `submitted` surveys may still change `visibility` (`private` <-> `public`)
 - Only `public` surveys are eligible for community surfaces
 - Switching `public -> private` must remove the survey from community surfaces
 - Deleted surveys must be excluded from user list and community surfaces
-- Server recomputes/validates scores before final accept
+- Server recomputes/validates scores before final accept, under the survey's method version (NULL = v3.0)
 - Server validates that all selected parcels exist
 - For a given parcel history context, `version_number` must be strictly increasing
 

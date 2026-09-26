@@ -200,6 +200,9 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
       survey_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       region_code: "ACA",
       ibp_total: 21,
+      // 01.8-12 (D-10): additive method fields; this seeded row is untagged (NULL = v3.0).
+      ibp_method_version: null,
+      ibp_cas: null,
     })
 
     // The other filters still apply next to the bbox.

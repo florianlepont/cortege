@@ -110,6 +110,22 @@ type MapItemRow = {
 const roundAverage = (value: number | null): number | null =>
   value === null ? null : Math.round(value * 1e9) / 1e9
 
+// 01.8-12 (D-10) added method-version columns to the select lists only. The legacy parity checks
+// below compare every pre-01.8 column and require the new ones to be present.
+const MAP_ITEM_METHOD_COLUMNS = ["ibp_method_version", "ibp_cas"]
+const PARCEL_STATUS_METHOD_COLUMNS = ["latest_ibp_method_version"]
+
+function withoutMethodColumns<T extends object>(rows: T[], columns: string[]): T[] {
+  return rows.map((row) => {
+    const copy = { ...row } as Record<string, unknown>
+    for (const column of columns) {
+      expect(copy).toHaveProperty(column)
+      delete copy[column]
+    }
+    return copy as T
+  })
+}
+
 // Rows that tie on submitted_at have no defined order in either query: order ties by id.
 function normaliseMapItems(rows: MapItemRow[]): MapItemRow[] {
   return rows
@@ -301,7 +317,9 @@ describe("public routes on 10 000 surveys: EXPLAIN and legacy parity (e2e)", () 
         const before = await client.query<MapItemRow>(legacy.text, legacy.values)
         const after = await client.query<MapItemRow>(current.text, current.values)
 
-        expect(normaliseMapItems(after.rows)).toEqual(normaliseMapItems(before.rows))
+        expect(
+          normaliseMapItems(withoutMethodColumns(after.rows, MAP_ITEM_METHOD_COLUMNS)),
+        ).toEqual(normaliseMapItems(before.rows))
         for (let index = 1; index < after.rows.length; index += 1) {
           expect(after.rows[index - 1].submitted_at >= after.rows[index].submitted_at).toBe(true)
         }
@@ -330,7 +348,9 @@ describe("public routes on 10 000 surveys: EXPLAIN and legacy parity (e2e)", () 
           const values = [year, bbox.minLng, bbox.maxLng, bbox.minLat, bbox.maxLat]
           const before = await client.query(legacySql, values)
           const after = await client.query(publicMapQueries.PUBLIC_PARCEL_STATUSES_BBOX_SQL, values)
-          expect(after.rows).toEqual(before.rows)
+          expect(withoutMethodColumns(after.rows, PARCEL_STATUS_METHOD_COLUMNS)).toEqual(
+            before.rows,
+          )
           if (bbox === explain.EXPLAIN_BBOX) {
             expect(after.rows.length).toBeGreaterThan(0)
             expect(after.rows.some((row) => row.study_status === "studied")).toBe(true)
@@ -353,7 +373,7 @@ describe("public routes on 10 000 surveys: EXPLAIN and legacy parity (e2e)", () 
         const before = await client.query(legacySql, [year])
         const after = await client.query(publicMapQueries.PUBLIC_PARCEL_STATUSES_SQL, [year])
         expect(after.rows).toHaveLength(1000)
-        expect(after.rows).toEqual(before.rows)
+        expect(withoutMethodColumns(after.rows, PARCEL_STATUS_METHOD_COLUMNS)).toEqual(before.rows)
       }
     },
     SLOW_TIMEOUT_MS,
@@ -374,7 +394,9 @@ describe("public routes on 10 000 surveys: EXPLAIN and legacy parity (e2e)", () 
         expect(after.rows.length).toBeGreaterThan(0)
         const sort = (rows: typeof after.rows) =>
           [...rows].sort((a, b) => sortKey(a).localeCompare(sortKey(b)))
-        expect(sort(after.rows)).toEqual(sort(before.rows))
+        expect(sort(withoutMethodColumns(after.rows, PARCEL_STATUS_METHOD_COLUMNS))).toEqual(
+          sort(before.rows),
+        )
       }
     },
     SLOW_TIMEOUT_MS,

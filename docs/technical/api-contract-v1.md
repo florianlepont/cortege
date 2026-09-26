@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted for V1 baseline (validated on 2026-03-08, non-exhaustive by design). V1.1 parcel/history extension proposed on 2026-03-10. Auth section updated on 2026-04-06 to reflect Auth0 delegation. `/me` endpoints updated to match implementation. `DELETE /me` added (US-A7).
+Accepted for V1 baseline (validated on 2026-03-08, non-exhaustive by design). V1.1 parcel/history extension proposed on 2026-03-10. Auth section updated on 2026-04-06 to reflect Auth0 delegation. `/me` endpoints updated to match implementation. `DELETE /me` added (US-A7). Phase 01.8 (2026-09-26) adds the per-survey IBP method version
+(`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`) to the survey bodies, the survey reads, the
+sync feed and the public map reads; every change is additive.
 
 Base path: `/v1`
 
@@ -255,6 +257,39 @@ V1.1 addendum fields:
 - `version_number`: integer (`>=1`) for parcel-level survey versioning.
 - `previous_survey_id`: optional link to previous survey version on same parcel.
 
+**IBP method version (phase 01.8, ADR-003):** every survey is scored and validated under one IBP
+method version, chosen when the survey is created. Three optional fields on `POST /surveys`,
+`PATCH /surveys/{id}` and `survey.upsert` payloads of `POST /sync`:
+
+| Field | Values | Meaning |
+|---|---|---|
+| `ibp_method_version` | `cnpf_ibp_fr_v3_0_2023-03-23`, `cnpf_ibp_fr_v3_2_2026-02-02`, `null` or absent | The CNPF IBP method: IBP Fr v3.0 or IBP FR v3.2. `null` or absent means v3.0 |
+| `ibp_cas` | integer `1`, `2`, `3` or `4`, or `null` | v3.2 only: the station case ("cas") of the v3.2 sheet |
+| `ibp_cas3_scale` | boolean, or `null` | v3.2 only: use the cas-3 scale for factors A and G (a cas-2 stand in a cas-3 zone, or a lapiaz, dune, peat-bog or *Juniperus thurifera* stand) |
+
+- **NULL means v3.0.** Every survey recorded before phase 01.8 has no version and stays v3.0; the
+  server never stamps a tag on an untagged survey. The tag is stored as sent: an explicit v3.0 tag
+  is stored as the tag, and is equivalent to `null` in every comparison.
+- **Station fields per method.** A v3.0 survey uses `region_version` (`ACA` or `M`) and
+  `vegetation_stage`; a v3.2 survey uses `ibp_cas` and `ibp_cas3_scale`. The server stores only
+  the chosen method's fields: for v3.2 it stores `region_version` and `vegetation_stage` as `NULL`
+  (even when the body sends them), and for v3.0 it stores `ibp_cas` and `ibp_cas3_scale` as
+  `NULL`.
+- **Effective version.** The version of a write is the body's `ibp_method_version`, else the
+  stored one. A body field that is `null` or absent counts as absent: it keeps the stored value.
+  An installed app that does not know these fields therefore keeps a v3.2 draft in v3.2. Switching
+  a v3.2 draft back to v3.0 needs the explicit v3.0 tag.
+- **Validation.** An unknown `ibp_method_version`, an `ibp_cas` outside 1-4 or a non-boolean
+  `ibp_cas3_scale` is a `400` validation error on the REST routes, and a per-operation
+  `fatal_error` `invalid_sync_operation` (`400`, `details.fields` naming the fields) on
+  `POST /sync`. See [IBP factor validation](#ibp-factor-validation-phase-018) for the scoring
+  rules and codes.
+- **Fixed after submit.** The three fields are read-only once the survey is submitted, like
+  `region_version` and `factors` (see below). They are compared after the storage rule above: the
+  explicit v3.0 tag equals `null`, the cas fields are compared only for a v3.2 survey,
+  `region_version`/`vegetation_stage` only for a v3.0 survey, and a missing `ibp_cas3_scale`
+  equals `false`.
+
 **`status` and `expires_at` (V1.2 hardening):** both fields are accepted for backward
 compatibility with installed apps but are always ignored by the server. A survey is always
 created with `status: "draft"`; status changes only through `POST /surveys/{id}/submit`
@@ -263,7 +298,8 @@ days) and is never moved by an upsert.
 
 **Submitted surveys are read-only by value (V1.2 hardening):** an upsert that changes the
 *value* of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
-`previous_survey_id`, `region_version`, `vegetation_stage` or `factors` on a survey whose
+`previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`,
+`ibp_cas` or `ibp_cas3_scale` (phase 01.8) on a survey whose
 status is `submitted` is rejected with `409 survey_submitted_read_only` and
 `details.fields` listing the changed field names. Resending identical values (including a
 resync of a pulled survey) is accepted and only refreshes `visibility`/`sync_version`;
@@ -272,7 +308,8 @@ resync of a pulled survey) is accepted and only refreshes `visibility`/`sync_ver
 **Same `sync_version` (phase 01.6):** an upsert that carries the `sync_version` the server
 already stored is compared by value with the stored survey on the same read-only fields
 (`site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
-`previous_survey_id`, `region_version`, `vegetation_stage`, `factors`) plus `visibility`;
+`previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, and since phase 01.8
+`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`) plus `visibility`;
 `scores`, `status` and `expires_at` are excluded. Identical values are an idempotent replay
 (`synced`, nothing written). When only `visibility` differs, it is applied last-writer-wins
 like `PATCH /surveys/{id}/visibility` (new `updated_at`, one `visibility_changed` event) and
@@ -375,8 +412,11 @@ Response `200`:
   "previous_survey_id": "2f3d8a59-7c53-4fdf-8df4-8e2325b6172b",
   "status": "draft",
   "visibility": "private",
-  "region_version": "ACA",
-  "vegetation_stage": "collineen",
+  "region_version": null,
+  "vegetation_stage": null,
+  "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02",
+  "ibp_cas": 2,
+  "ibp_cas3_scale": false,
   "factors": {},
   "factor_results": {},
   "scores": {
@@ -392,6 +432,10 @@ Response `200`:
   "sync_version": 3
 }
 ```
+
+The detail always carries `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale` (phase 01.8):
+`null` for a survey recorded before the method version existed (v3.0). The example is a v3.2
+survey, so its `region_version` and `vegetation_stage` are `null`.
 
 ### PATCH /surveys/{id}
 
@@ -432,6 +476,13 @@ Response `200`:
 For submitted surveys, patching non-publication fields must return `422`
 with a business error (example: `submitted_read_only_fields`).
 
+Phase 01.8: the body also accepts `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale` (same
+values and storage rule as `POST /surveys`). On a draft, a PATCH that changes the method version,
+the cas or the region re-scores the stored factors under the new method, even without `factors`
+in the body. On a submitted survey any of the three keys is rejected with
+`422 submitted_read_only_fields` listing it (PATCH keeps its key-presence rule; the value-based
+`409 survey_submitted_read_only` applies to `POST /surveys` and `POST /sync` replays).
+
 ### PATCH /surveys/{id}/visibility
 
 Toggle publication visibility for a survey (`private` <-> `public`).
@@ -470,6 +521,11 @@ Blocking checks include:
 - all required IBP factors complete and valid
 - survey not expired
 - parcel linkage complete and valid (`parcel_ids[]`, `observation_year`, `version_number`)
+- the station of the survey's method (phase 01.8): `region_version` and `vegetation_stage` for
+  v3.0, `ibp_cas` (1-4) for v3.2 (`ibp_cas_required`)
+
+The survey is scored under its stored method version; see
+[IBP factor validation](#ibp-factor-validation-phase-018).
 
 Response `200`:
 
@@ -493,6 +549,47 @@ If parcel linkage is missing/invalid, API returns `422` with error code `parcel_
 row lock; the loser of a race gets `409 parcel_version_conflict` with
 `details.parcel_id`/`details.expected_version_number` instead of a duplicate version or a
 `500`.
+
+### IBP factor validation (phase 01.8)
+
+The server scores and validates the factors A-J with the shared `@cortege/ibp-domain` package,
+under the survey's effective method version (the same rules run on the phone). Upserts and PATCH
+use draft mode; `POST /surveys/{id}/submit` uses submit mode. A blocking issue in draft mode is a
+`422` (`message: "IBP factor validation failed"`); in submit mode a `422`
+(`message: "Survey cannot be submitted"`). The `422` body lists the blocking messages in
+`errors` and the non-blocking ones in `warnings`; a successful write returns the non-blocking
+messages in `warnings`. The server never compares its recomputed scores with the client's
+`scores`, so a replayed survey is never rejected for a score difference.
+
+| Code | Blocking | When |
+|---|---|---|
+| `ibp_method_version_unsupported` | yes | The method version is not one of the two tags. The DTOs reject such a value first (`400`), so this code only guards stored or internal inputs |
+| `ibp_cas_required` | yes, submit only | A v3.2 survey without `ibp_cas` in 1-4. Message: `ibp_cas is required and must be 1, 2, 3 or 4` |
+| `region_version_required` | yes, submit only | A v3.0 survey without `region_version` `ACA` or `M` |
+| `vegetation_stage_required` | yes, submit only | A v3.0 survey without `vegetation_stage` |
+| `expires_at_required`, `survey_expired` | yes, submit only | Unchanged |
+| `factor_required` | yes, submit only | A factor is missing, or is still incomplete at submit |
+| `factor_incomplete` | no (draft) | A factor that cannot be scored yet: a v3.2 A or G without `ibp_cas`, a v3.2 A without its native cover, or an A (either version) that records its native cover but no genus count yet. The draft is saved and the factor is not scored |
+| `factor_invalid_raw` | yes | A factor object that no rule can read |
+| `factor_invalid_score` | yes | A direct score outside the factor's allowed set |
+| `factor_f_group_capped` | no | F by microhabitat groups: a group count above 2 was capped at 2 |
+| `consistency_a_b`, `consistency_e_f` | no | App heuristics (not CNPF rules) on two scored factors |
+
+Allowed scores, both versions: A-F `{0, 1, 2, 5}`; G, H, I and J `{0, 2, 5}`. Before phase 01.8
+the API accepted 1 for G and H; both CNPF versions allow only 0, 2 or 5 there (BUG-2), so a direct
+`G: 1` or `H: 1` is now `factor_invalid_score`.
+
+Native cover cap: the "score capped at 2 when the native cover is below 50 %" rule applies to
+**Factor A** (native genera), not to B (BUG-1). The cover is sent on A as `native_cover_percent`
+(0-100) or `native_cover_below_50` (boolean). For v3.2 it is required (A is incomplete without
+it); for v3.0 it is optional, and a v3.0 survey without it reads the cover that pre-01.8 apps sent
+on B (`B.covered_autochthonous_percent` / `B.native_cover_percent`). B is scored from its strata
+count only.
+
+Method differences (v3.2 against v3.0): C, D and E count the large and very large wood or trees
+together for the 0/1 classes; the A and G scales follow the cas (cas 3, or `ibp_cas3_scale`)
+instead of the v3.0 subalpine rule (`region_version = ACA` and `vegetation_stage = subalpin`). See
+`docs/technical/ibp-validation-matrix-v2.md` for the cases.
 
 ### DELETE /surveys/{id}
 
@@ -783,7 +880,8 @@ Rules:
 - For idempotency in sync path, deleting a missing attachment can still return `synced` with `missing=true`.
 - `parcel_ids` (on `survey.upsert` payloads, and on the REST `POST /surveys` / `PATCH /surveys/{id}` bodies) is bounded at `50` entries; each entry must match `^[0-9A-Z]{1,32}$` (case-insensitive) — the pattern accepts both synthetic cadastral IDs and the 14-character IGN `idu` values the server itself generates. A batch entry over the limit or containing a malformed ID is rejected the same way as any other invalid payload (`invalid_sync_operation`, `400`); on the REST routes it is a normal `400` validation error.
 - `status` and `expires_at` on a `survey.upsert` payload are accepted for compatibility with installed apps and always ignored: status changes only through `POST /surveys/{id}/submit`, and `expires_at` is computed server-side at creation (`created_at` + 7 days), never moved by an upsert (D-03).
-- An upsert on a `submitted` survey that changes the value of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`, `previous_survey_id`, `region_version`, `vegetation_stage` or `factors` returns `fatal_error` with `error.code: "survey_submitted_read_only"`, `error.http_status: 409` and `error.details.fields` listing the changed field names. Resending identical values (a pulled-survey replay) is `synced` and only refreshes `visibility`/`sync_version`; `scores` is excluded from the comparison since it is recomputed server-side (D-04, D-13).
+- `survey.upsert` payloads carry the method fields of `POST /surveys` (`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, phase 01.8) with the same values, storage rule and effective-version rule. They are declared on the payload DTO, so they are kept, not stripped; an invalid value fails that operation with `invalid_sync_operation` and `details.fields` naming the fields (for example `["ibp_method_version","ibp_cas"]`), and nothing is stored.
+- An upsert on a `submitted` survey that changes the value of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`, `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`, `ibp_cas` or `ibp_cas3_scale` returns `fatal_error` with `error.code: "survey_submitted_read_only"`, `error.http_status: 409` and `error.details.fields` listing the changed field names. Resending identical values (a pulled-survey replay) is `synced` and only refreshes `visibility`/`sync_version`; `scores` is excluded from the comparison since it is recomputed server-side (D-04, D-13). The method fields are compared as described under `POST /surveys`: an installed app that replays an untagged survey with the explicit v3.0 tag is an identical replay (`synced`), and the stored column stays `NULL`.
 - An upsert with the same `sync_version` the server already stored follows the same-version rule of `POST /surveys`: identical read-only fields and visibility are `synced`; a visibility-only difference is applied last-writer-wins like `survey.visibility_update` and answered `synced`; any read-only difference returns `fatal_error` with `error.code: "sync_version_conflict"`, `error.http_status: 409`, `error.message: "Same sync_version with different content"` and `server_sync_version`/`client_sync_version` in `error.details`. The client keeps its local data (Case B in `sync-conflict-resolution-v1.md`).
 - `survey_id`, the `survey.delete` payload `id`, the `survey.upsert` payload `id` and the `attachment.delete` payload `attachment_id` must match `^[A-Za-z0-9_-]{1,128}$`; otherwise that operation alone fails with `invalid_sync_operation` (`400`).
 - `attachment.create` results carry the same presigned `upload_url` as the REST route: it signs `Content-Length = size_bytes`, and confirming an object of another size answers `422 attachment_size_mismatch`.
@@ -804,6 +902,7 @@ Rules:
 - `cursor_out` is the cursor of the last returned event. With no new event it echoes the incoming cursor (or its `v2:` translation), and it is `null` when no cursor was sent.
 - A malformed cursor, or a `v2:` cursor with out-of-range values, gets `400 Invalid sync cursor`. A `v2:` cursor ahead of the server's current transaction id (after a database restore) restarts the feed from the beginning.
 - Surveys that never had an event are not re-sent on every poll any more; every survey has at least one event.
+- `surveys` items carry `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale` (phase 01.8; `null` for a survey without a version, which is v3.0). A client that rebuilds an upsert payload from a pulled survey must copy them, or it would show a pulled v3.2 survey as v3.0 (the server keeps such an untagged replay in v3.2, from the stored row).
 
 Response `200`:
 
@@ -828,6 +927,9 @@ Response `200`:
       "site_name": "Forest Plot 12",
       "status": "draft",
       "visibility": "private",
+      "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02",
+      "ibp_cas": 1,
+      "ibp_cas3_scale": false,
       "sync_version": 3,
       "updated_at": "2026-03-09T10:20:00.002+00",
       "deleted_at": null
@@ -941,7 +1043,10 @@ Inclusion rules in V1:
 Query + formatting rules in V1:
 
 - `from` and `to` expect `YYYY-MM-DD`; invalid values are ignored (not rejected).
-- `region` filters by exact `region_version` match.
+- `region` filters by exact `region_version` match. Since phase 01.8 (CH-9) a v3.2 survey
+  stores no `region_version` (it uses `ibp_cas`), so `region` only ever matches v3.0 surveys,
+  tagged or untagged; a v3.2 survey is never returned when `region` is set. There is no cas
+  filter.
 - `bbox` (optional, added in 01.9) is `minLng,minLat,maxLng,maxLat` in WGS84 degrees, for
   example `bbox=-5.2,41.3,9.6,51.1`. It keeps only the surveys with at least one linked parcel
   whose centroid lies inside the box (bounds included). It only narrows the public surveys:
@@ -956,6 +1061,12 @@ Query + formatting rules in V1:
 - Results are ordered by `submitted_at DESC` and capped to `500` items, with or without `bbox`.
 - `display_location` is rounded to 2 decimals.
 - Surveys missing parcel-centroid coordinates are excluded.
+- `region_code` is the survey's `region_version`, or `"unknown"` when it has none (every v3.2
+  survey).
+- `ibp_method_version` and `ibp_cas` (phase 01.8, additive) are always present: the survey's
+  method tag and v3.2 cas, each `null` when not stored. A `null` `ibp_method_version` means
+  v3.0; the server sends it as `null`, never as the v3.0 tag. Clients that do not know the fields
+  ignore them.
 
 Response `200`:
 
@@ -967,7 +1078,18 @@ Response `200`:
       "display_location": { "lat": 48.64, "lng": 1.83 },
       "survey_date": "2026-03-08",
       "region_code": "ACA",
-      "ibp_total": 28
+      "ibp_total": 28,
+      "ibp_method_version": null,
+      "ibp_cas": null
+    },
+    {
+      "survey_id": "8b1e7c1a-2f0d-4a57-9d4c-1f2e3a4b5c6d",
+      "display_location": { "lat": 45.12, "lng": 5.68 },
+      "survey_date": "2026-09-30",
+      "region_code": "unknown",
+      "ibp_total": 31,
+      "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02",
+      "ibp_cas": 2
     }
   ]
 }
@@ -982,6 +1104,10 @@ Rules:
 - Endpoint is enabled only from configured zoom threshold (for example `zoom >= 15`).
 - Output excludes personal data.
 - `study_status` is derived from submitted surveys history.
+- `latest_ibp_method_version` (phase 01.8, additive) is the method tag of the same latest public
+  submitted survey that gives `latest_ibp_total` and `latest_observation_year`; `null` when that
+  survey has no version (v3.0) or the parcel is `not_studied`. Readers that average totals over
+  several parcels should say when the versions differ (ADR-003).
 
 Response `200`:
 
@@ -993,6 +1119,7 @@ Response `200`:
       "study_status": "studied",
       "latest_observation_year": 2026,
       "latest_ibp_total": 28,
+      "latest_ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02",
       "geometry": { "type": "MultiPolygon", "coordinates": [] }
     }
   ]
@@ -1139,3 +1266,12 @@ Common business error codes (non-exhaustive):
 - `sync_version_conflict` (`409`) — an upsert carried an older `sync_version` than the stored one, or the same `sync_version` with different read-only content; `error.details` carries `survey_id`, `server_sync_version` and `client_sync_version`.
 - `attachment_size_mismatch` (`422`) — the uploaded attachment's size differs from the declared `size_bytes`; the object is deleted (or never written) and the attachment stays unconfirmed.
 - `invalid_operation` — a deterministic PostgreSQL data/constraint error (SQLSTATE class `22`/`23`) was raised while processing the request; the message is intentionally generic and carries no SQL detail.
+- `submitted_read_only_fields` (`422`) — a `PATCH /surveys/{id}` on a submitted survey named a read-only field (since phase 01.8 including `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale`).
+
+IBP validation codes (phase 01.8; the `422` body carries their messages in `errors` and
+`warnings`, see [IBP factor validation](#ibp-factor-validation-phase-018)):
+
+- `ibp_cas_required` (blocking at submit) — a v3.2 survey has no `ibp_cas` in 1-4.
+- `ibp_method_version_unsupported` (blocking) — the method version is not a known tag.
+- `factor_incomplete` (non-blocking, draft) — a factor cannot be scored yet; it becomes `factor_required` at submit.
+- `factor_required`, `factor_invalid_raw`, `factor_invalid_score`, `region_version_required`, `vegetation_stage_required`, `expires_at_required`, `survey_expired` (blocking) and `factor_f_group_capped`, `consistency_a_b`, `consistency_e_f` (non-blocking).
