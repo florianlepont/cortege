@@ -7,6 +7,24 @@ import { AddressInfo } from "net"
 import { AuthGuard } from "../src/auth/auth.guard"
 import { buildTestConfig } from "./config-helper"
 
+// test/ is a Jest root, so test/__mocks__/jwks-rsa.js replaces the package in
+// every spec. This one needs the real client (hoisted above the imports).
+jest.unmock("jwks-rsa")
+
+// jwks-rsa 4 converts each JWK with jose 6, which ships ESM only and cannot be
+// loaded by this CommonJS Jest setup. Only that conversion is replaced, with
+// the Node crypto equivalent; fetching, parsing, kid lookup, the cache and the
+// rate limiter are the real jwks-rsa code.
+jest.mock("jose", () => {
+  const nodeCrypto = jest.requireActual<typeof import("crypto")>("crypto")
+  return {
+    importJWK: async (jwk: import("crypto").JsonWebKeyInput["key"]) =>
+      nodeCrypto.createPublicKey({ key: jwk, format: "jwk" }),
+    exportSPKI: async (key: import("crypto").KeyObject) =>
+      key.export({ format: "pem", type: "spki" }),
+  }
+})
+
 /**
  * RS256 path of AuthGuard against a JWKS served on the loopback interface
  * (criterion 4, D-12). The real jwks-rsa client fetches, parses and looks up
@@ -212,6 +230,7 @@ describe("AuthGuard RS256 against a loopback JWKS", () => {
     const logged = await expectRejected(hs256WithPublicKey())
 
     expect(logged).toContain("JsonWebTokenError")
+    expect(logged).toContain("invalid algorithm")
   })
 
   it("rejects a token signed by another key under the served kid with 401", async () => {
