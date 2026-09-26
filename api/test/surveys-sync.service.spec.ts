@@ -14,7 +14,6 @@ const AUTH_USER = {
 
 function buildService() {
   const db = { query: jest.fn() }
-  const ibpRules = { validateDraft: jest.fn() }
   const surveysService = {
     upsertForUser: jest.fn().mockResolvedValue({
       id: "survey-1",
@@ -50,12 +49,11 @@ function buildService() {
 
   const service = new SurveysSyncService(
     db as never,
-    ibpRules as never,
     surveysService as never,
     attachmentsService as never,
   )
 
-  return { service, db, ibpRules, surveysService, attachmentsService }
+  return { service, db, surveysService, attachmentsService }
 }
 
 function validUpsertPayload(overrides: Record<string, unknown> = {}) {
@@ -76,6 +74,70 @@ function validUpsertPayload(overrides: Record<string, unknown> = {}) {
 describe("SurveysSyncService.syncBatch", () => {
   beforeEach(() => {
     jest.restoreAllMocks()
+  })
+
+  it("is built without IbpRulesService (the injection was dead, RESEARCH §2.2)", () => {
+    expect(SurveysSyncService.length).toBe(3)
+  })
+
+  it("keeps the three method fields on an upsert payload (declared on the DTO, Pitfall 3)", async () => {
+    const { service, surveysService } = buildService()
+
+    const result = await service.syncBatch(AUTH_USER as never, {
+      operations: [
+        {
+          client_ref: "op-1",
+          entity: "survey",
+          action: "upsert",
+          payload: validUpsertPayload({
+            region_version: undefined,
+            vegetation_stage: undefined,
+            ibp_method_version: "cnpf_ibp_fr_v3_2_2026-02-02",
+            ibp_cas: 2,
+            ibp_cas3_scale: true,
+            not_on_the_dto: "stripped",
+          }),
+        },
+      ],
+    })
+
+    expect(result.results[0].status).toBe("synced")
+    const forwarded = surveysService.upsertForUser.mock.calls[0][1] as Record<string, unknown>
+    expect(forwarded).toMatchObject({
+      ibp_method_version: "cnpf_ibp_fr_v3_2_2026-02-02",
+      ibp_cas: 2,
+      ibp_cas3_scale: true,
+    })
+    expect(forwarded).not.toHaveProperty("not_on_the_dto")
+  })
+
+  it("rejects unknown method values as invalid_sync_operation naming the fields", async () => {
+    const { service, surveysService } = buildService()
+
+    const result = await service.syncBatch(AUTH_USER as never, {
+      operations: [
+        {
+          client_ref: "op-1",
+          entity: "survey",
+          action: "upsert",
+          payload: validUpsertPayload({
+            ibp_method_version: "v9",
+            ibp_cas: 7,
+            ibp_cas3_scale: "y",
+          }),
+        },
+      ],
+    })
+
+    expect(result.results[0]).toMatchObject({
+      status: "fatal_error",
+      error: expect.objectContaining({
+        code: "invalid_sync_operation",
+        http_status: 400,
+        details: { fields: ["ibp_method_version", "ibp_cas", "ibp_cas3_scale"] },
+      }),
+    })
+    expect(surveysService.upsertForUser).not.toHaveBeenCalled()
   })
 
   it("validates each operation independently: one bad operation fails alone", async () => {
@@ -369,6 +431,22 @@ describe("SurveysSyncService.getSyncChanges", () => {
       ["actor_id", "created_at", "event_type", "id", "payload", "survey_id"].sort(),
     )
     expect(result.surveys).toEqual([{ id: "survey-1" }])
+  })
+
+  it("selects the method version, cas and cas-3 flag for every changed survey", async () => {
+    const { service, db } = buildService()
+    db.query
+      .mockResolvedValueOnce({ rows: [eventRow("e1", "900", "3")] })
+      .mockResolvedValueOnce({ rows: [{ id: "survey-1" }] })
+
+    await service.getSyncChanges(AUTH_USER as never, undefined, 10)
+
+    const surveysCall = db.query.mock.calls.find((c) => String(c[0]).includes("FROM surveys s"))
+    expect(surveysCall).toBeDefined()
+    const sql = String(surveysCall?.[0])
+    expect(sql).toContain("s.ibp_method_version")
+    expect(sql).toContain("s.ibp_cas,")
+    expect(sql).toContain("s.ibp_cas3_scale")
   })
 
   it("reports has_more and builds the cursor from the limit-th row when limit + 1 rows come back", async () => {

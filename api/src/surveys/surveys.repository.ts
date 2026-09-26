@@ -157,6 +157,10 @@ export type SurveyFastWriteInput = {
   previousSurveyId: string | null
   regionVersion: string | null
   vegetationStage: string | null
+  // Migration 016: the normalised method columns (resolveSurveyMethodColumns).
+  ibpMethodVersion: string | null
+  ibpCas: number | null
+  ibpCas3Scale: boolean | null
   factors: unknown
   factorResults: unknown
   scores: unknown
@@ -201,7 +205,7 @@ const FAST_PATH_ENSURED_PARCELS_SELECT_SQL = `INSERT INTO parcels (id, parcel_id
          FROM input_parcels ip`
 
 // Bound parameters of both fast-path statements. $23 is expires_at for a create and the xmin
-// CAS token for an update.
+// CAS token for an update; $24..$26 are the method columns of migration 016.
 export function fastWriteValues(input: SurveyFastWriteInput, casToken: string | null): unknown[] {
   const parcels = normalizeParcelIds(input.parcelIds)
     .sort()
@@ -230,6 +234,9 @@ export function fastWriteValues(input: SurveyFastWriteInput, casToken: string | 
     JSON.stringify(input.eventPayload),
     input.now,
     casToken === null ? input.expiresAt : casToken,
+    input.ibpMethodVersion,
+    input.ibpCas,
+    input.ibpCas3Scale,
   ]
 }
 
@@ -246,12 +253,14 @@ export const CREATE_SURVEY_ATOMIC_SQL = `WITH ${FAST_PATH_INPUT_PARCELS_SQL},
          INSERT INTO surveys (
            id, user_id, site_name, status, visibility, parcel_id, observation_year, version_number,
            previous_survey_id, region_version, vegetation_stage, factors, factor_results, scores,
-           location, created_at, updated_at, submitted_at, expires_at, sync_version
+           location, created_at, updated_at, submitted_at, expires_at, sync_version,
+           ibp_method_version, ibp_cas, ibp_cas3_scale
          ) VALUES (
            $1::text, $2::uuid, $3, 'draft', $4, $5::text, $6::int,
            ${FAST_PATH_VERSION_NUMBER_SQL},
            $8, $9, $10, $11::jsonb, $12::jsonb, $13::jsonb,
-           '{}'::jsonb, $22::timestamptz, $22::timestamptz, NULL, $23::timestamptz, $14::int
+           '{}'::jsonb, $22::timestamptz, $22::timestamptz, NULL, $23::timestamptz, $14::int,
+           $24::text, $25::smallint, $26::boolean
          )
          ON CONFLICT (id) DO NOTHING
          RETURNING id, updated_at::text AS updated_at
@@ -299,7 +308,10 @@ export const UPDATE_SURVEY_IF_UNCHANGED_SQL = `WITH u AS (
              scores = $13::jsonb,
              location = '{}'::jsonb,
              sync_version = $14::int,
-             updated_at = $22::timestamptz
+             updated_at = $22::timestamptz,
+             ibp_method_version = $24::text,
+             ibp_cas = $25::smallint,
+             ibp_cas3_scale = $26::boolean
          WHERE id = $1::text
            AND user_id = $2::uuid
            AND xmin = $23::xid
