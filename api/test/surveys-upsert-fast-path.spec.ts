@@ -85,7 +85,7 @@ describe("SurveysService upsert fast path", () => {
       {} as SurveyEventsService,
       {} as ParcelsService,
     )
-    return { service, db, repository }
+    return { service, db, repository, ibpRules }
   }
 
   const body = (overrides: Partial<SurveyUpsertBody> = {}): SurveyUpsertBody => ({
@@ -123,6 +123,24 @@ describe("SurveysService upsert fast path", () => {
         versionNumber: null,
         syncVersion: 1,
         eventPayload: { sync_version: 1, site_name: "Forest", warnings: ["w1"] },
+      })
+    })
+
+    it("scores the body through the adapter with one input object", async () => {
+      const { service, repository, ibpRules } = setup()
+      repository.readForUpsert.mockResolvedValue(null)
+      repository.createSurveyAtomic.mockResolvedValue({ id: "survey-1", updated_at: "t1" })
+      const factors = { A: 2 }
+
+      await service.upsertForUser(
+        user,
+        body({ factors, region_version: "ACA", vegetation_stage: "collineen" }),
+      )
+
+      expect(ibpRules.validateDraft).toHaveBeenCalledWith({
+        factors,
+        region_version: "ACA",
+        vegetation_stage: "collineen",
       })
     })
 

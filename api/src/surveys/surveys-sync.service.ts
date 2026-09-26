@@ -1,6 +1,7 @@
 import { BadRequestException, HttpException, Injectable, Logger } from "@nestjs/common"
 import { AuthenticatedUser } from "../auth/auth.types"
 import { DatabaseService } from "../database/database.service"
+import type { SyncChangesResponse } from "@cortege/ibp-domain"
 import { IbpRulesService } from "./ibp-rules.service"
 import { mapSyncError } from "./sync-error.utils"
 import {
@@ -195,14 +196,7 @@ export class SurveysSyncService {
     user: AuthenticatedUser,
     cursor?: string,
     limitRaw?: number,
-  ): Promise<{
-    cursor_in: string | null
-    cursor_out: string | null
-    has_more: boolean
-    events: SyncChangeEvent[]
-    surveys: SyncChangeSurvey[]
-    attachments: SyncChangeAttachment[]
-  }> {
+  ): Promise<Required<SyncChangesResponse>> {
     const limit = normalizeChangesLimit(limitRaw)
     const parsedCursor = parseSyncChangesCursor(cursor)
     const start = await this.resolveSyncChangesStart(user.id, parsedCursor)
