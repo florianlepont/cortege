@@ -175,7 +175,12 @@ For migrating existing context values (CH-7). One row is an assumption: v3.2 nam
 
 ## Open questions
 
-1. **Production impact numbers are pending.** Production data lives on the VPS and was not
+1. **Production impact numbers: not needed (owner, 2026-09-26).** Production holds only test
+   surveys made while building the app; no real field survey has been recorded yet, so no
+   recorded survey needs protecting. The query below is kept for reference only. The v3.0
+   rules and the version dispatch (CH-6) stay anyway, because the observer can still choose
+   v3.0 for a new survey.
+   Original note: production data lives on the VPS and was not
    reachable from phase 01.1. The owner runs the query below, read-only (it only SELECTs), on the
    production database; the numbers then complete the D-07 statement. The decision holds whatever
    the counts: they size the work, they do not change the treatment.
