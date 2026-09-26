@@ -30,7 +30,7 @@ in October rather than discovered in December.
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Species Recognition — Approach Decision** - Measure on-device ML on real devices and ratify a go/no-go in an ADR (completed 2026-09-26)
-- [ ] **Phase 1.1: Reconcile the IBP method version** (INSERTED) - Establish whether the app still implements the current CNPF method, and what changes if not
+- [x] **Phase 1.1: Reconcile the IBP method version** (INSERTED) - Establish whether the app still implements the current CNPF method, and what changes if not (completed 2026-09-26)
 - [x] **Phase 1.2: Stop field data loss and account exposure** (INSERTED) - Session errors never delete offline data; no account takeover or open debug surface (completed 2026-09-24)
 - [x] **Phase 1.3: CI and test safety net** (INSERTED) - Typecheck in CI, reproducible image, tests that run real SQL (completed 2026-09-24)
 - [x] **Phase 1.4: API sync integrity** (INSERTED) - Validated sync payloads, no submit bypass, transactional writes (completed 2026-09-24)
@@ -85,11 +85,14 @@ Plans:
 
 **Why this exists**: surfaced by the Phase 1 research (`01-RESEARCH.md`), which recovered the Factor A genus list from the current official CNPF PDF and found it was v3.2, three years newer than the v3.0 this repo cites. If the method moved, the app computes outdated scores — which matters more than any single feature in this milestone.
 
-**Plans**: TBD
+**Plans**: 4 plans (wave 1: 01–03 in parallel; wave 2: 04)
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 01.1 to break down)
+- [x] 01.1-01-PLAN.md — Factor-by-factor comparison doc (v3.0 as implemented vs FR v3.2) with API/mobile/matrix impact per difference
+- [x] 01.1-02-PLAN.md — ADR-003: migrate to v3.2 in phase 01.8, treatment of recorded surveys, version dispatch, CH-1..CH-12; phase-1 doc cross-refs and page fixes
+- [x] 01.1-03-PLAN.md — Citation files say "implemented v3.0, target v3.2 (ADR-003)"; validation matrix v3.2 impact and target cases
+- [x] 01.1-04-PLAN.md — Index the new docs, ROADMAP input line for 01.8, phase gate and 01.1-VALIDATION.md
 
 ### Phase 01.2: Stop field data loss and account exposure (INSERTED)
 
@@ -257,6 +260,7 @@ Plans:
 **Depends on**: Phase 01.3. Should follow Phase 01.1, so the extracted rules are the ratified method version.
 **Requirements**: REQ-AUD-ibp-domain, REQ-AUD-test-infra-rest
 **Source**: audit lot L17 and the remainder of L7, findings ARCH-1, T6, the untested RS256 path, the catch-all E2E suite
+**Input from Phase 01.1**: ADR-003 (`docs/technical/adr-003-ibp-method-version-v1.md`) adopts IBP FR v3.2; this phase implements its change list CH-1..CH-11 (CH-12 is phase 2), including the method-version dispatch (CH-6: a missing method version means v3.0, so identical replays of submitted v3.0 surveys stay valid) and `docs/technical/ibp-validation-matrix-v2.md` (CH-10).
 **Success Criteria** (what must be TRUE):
 
   1. A `packages/ibp-domain` workspace exports the factor keys, allowed sets, scoring and draft/submit validation as pure functions, plus the sync contract types; `IbpRulesService` and `mobile/src/app/ibp-scoring.ts` delegate to it and `mobile/src/app/types.ts` imports its contract types.
@@ -264,6 +268,7 @@ Plans:
   3. The API image builds with the package and `expo export` resolves it in CI.
   4. `AuthGuard`'s RS256 path is tested against a locally served JWKS: valid, expired, wrong audience and unknown `kid` tokens.
   5. `surveys-idempotency.e2e-spec.ts` is split by feature (submit, visibility, public map, attachments, parcel history) and uses `randomUUID()` instead of `Date.now()`.
+  6. The IBP rules in `packages/ibp-domain` implement IBP FR v3.2 per ADR-003 (CH-1..CH-11), with the v3.0 rules kept for surveys tagged v3.0 or carrying no method version; every survey carries its method version, the observer picks it when creating a survey (default v3.2, v3.0 available) and it is fixed after submit; the total score is shown out of 50; `docs/references/README.md` and `docs/specs/ibp-form-spec.md` then say the app implements v3.2.
 
 **Plans**: TBD
 
@@ -316,7 +321,7 @@ Plans:
 - [x] 01.9-28-PLAN.md — Rebuild the public map screen on the 01.9-23 data layer: viewport loading with debounce and no auto-refit loop (wave 7)
 - [x] 01.9-29-PLAN.md — Lock the phase's text, accessibility and structure rules: narrow status setters to the catalogue type, turn th (wave 8)
 - [x] 01.9-30-PLAN.md — Record this phase's facts in CLAUDE.md, in the same PR as the code (RESEARCH "two passes"; split out of the st (wave 7)
-- [ ] 01.9-31-PLAN.md — Prove the phase: run and record the full local gate and every measurement, record PR #158's CI evidence suppli (wave 9)
+- [x] 01.9-31-PLAN.md — Prove the phase: run and record the full local gate and every measurement, record PR #158's CI evidence suppli (wave 9)
 - [ ] 01.9-32-PLAN.md — Close phase 01.9 after phase 01.8: final documentation sweep, complete audit status links, and the French vali (wave 10)
 
 ### Phase 2: Factor A Genus List & Data-Contract Corrections
@@ -324,6 +329,7 @@ Plans:
 **Goal**: Factor A records the observed native genera as a list rather than a bare count, through contracts written down before any UI exists; surveys already recorded keep their scores; and the two stale spec sections that contradict shipped behaviour are corrected.
 **Depends on**: Phase 1, Phase 1.1 (the Factor A genus list must come from the ratified method version), Phase 1.8 (the Factor A rules, the CNPF genus list as an allowed set, and the sync contract types all belong in the `packages/ibp-domain` workspace that phase creates)
 **Requirements**: REQ-ML-contracts, REQ-DOC-form-spec
+**Input from Phase 01.1**: CH-12 in ADR-003 (`docs/technical/adr-003-ibp-method-version-v1.md`): the Factor A genus list comes from IBP FR v3.2 p. 3 and Table 1, keyed by cas (supplementary genera for cas 4 and 2, coastal-only Juniperus species, Ficus not counted, Pistacia per the CNPF answer).
 **Success Criteria** (what must be TRUE):
 
   1. `docs/technical/data-contract-v1.md` defines Factor A as a list of observed native genera drawn from the closed CNPF regional list, with the genus count derived from it, replacing the single `native_genus_count` number (ADR-002, D-15). There is no species entity: recognition is genus-level only (D-01), and neither the recognition photo (D-13) nor the ecologist's acceptance or correction of a suggestion (D-14) is stored.
@@ -428,7 +434,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Species Recognition — Approach Decision | 6/6 | Complete   | 2026-09-26 |
-| 1.1. Reconcile the IBP method version | 0/TBD | Not started | - |
+| 1.1. Reconcile the IBP method version | 4/4 | Complete    | 2026-09-26 |
 | 1.2. Stop field data loss and account exposure | 9/9 | Complete    | 2026-09-24 |
 | 1.3. CI and test safety net | 7/7 | Complete    | 2026-09-24 |
 | 1.4. API sync integrity | 6/6 | Complete    | 2026-09-24 |
@@ -436,7 +442,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.6. Sync feed ordering and unified object storage | 9/9 | Complete    | 2026-09-25 |
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
 | 1.8. Shared IBP domain package and test completeness | 0/TBD | Not started | - |
-| 1.9. Mobile state architecture, i18n, accessibility and hygiene | 30/32 | In Progress|  |
+| 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
 | 2. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
 | 3. Genus Recognition for Factor A | 0/TBD | Not started | - |
 | 4. Offline Map & Own-Survey Navigation | 0/TBD | Not started | - |

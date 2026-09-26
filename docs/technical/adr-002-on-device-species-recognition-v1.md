@@ -250,6 +250,8 @@ first surfaced by this phase's research and now confirmed first-hand by retrievi
 PDF (Section 9, gap 9). Phase 1.1 exists specifically to resolve which version the app follows; the
 genus list Phase 2 builds on must come from whichever version Phase 1.1 settles on, not silently
 from this spike's working choice of v3.2.
+Phase 1.1 settled it in ADR-003 (`adr-003-ibp-method-version-v1.md`): v3.2, implemented in phase
+01.8; Phase 2 builds the genus list from v3.2 (CH-12).
 
 **Phase 2's current ROADMAP wording is stale and should be corrected when Phase 2 is planned.** It
 still describes a "species entity" carrying a "confidence score." The decision this ADR records is
@@ -290,6 +292,8 @@ Following ADR-001's own section of the same name:
 - **The choice of which CNPF methodology version the app follows.** This spike's genus list is
   sourced from v3.2 because that is the currently published document; whether the app adopts v3.2
   or stays on v3.0 is Phase 1.1's decision (`REQ-QA-ibp-version`), not this ADR's.
+  Phase 1.1 decided it in ADR-003 (`adr-003-ibp-method-version-v1.md`): migrate to v3.2 in phase
+  01.8.
 
 ## Alternatives considered
 
@@ -313,7 +317,8 @@ Following ADR-001's own section of the same name:
 ## Hand-off to Phases 2 and 3
 
 **Phase 2 receives:** the 34-class genus list with its CNPF source and version (Section 2 — subject
-to correction once Phase 1.1 settles the v3.0/v3.2 question); the confirmed model and runtime
+to correction once Phase 1.1 settles the v3.0/v3.2 question; Phase 1.1 decided it in ADR-003,
+`adr-003-ibp-method-version-v1.md`: migrate to v3.2 in phase 01.8); the confirmed model and runtime
 (EfficientNet-B0 / `react-native-fast-tflite`); the calibrated confidence bands (Section 15) as data
 for the data contract to carry; and the D-15 Factor A data-model work — data contract, API, IBP
 scoring on both sides, mobile screen, migration — which must complete before Phase 3 can use any of
