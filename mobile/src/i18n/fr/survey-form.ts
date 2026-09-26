@@ -1,4 +1,6 @@
-// Filled by plan 01.9-13; no other plan edits this section.
+import { IBP_MAX } from "@cortege/ibp-domain"
+
+// Filled by plan 01.9-13; 01.8-13 added the method version texts and the totals out of 50.
 // Texts of the survey form wizard (screens/SurveyFormScreen.tsx and screens/survey-form/).
 // Factor titles and region/vegetation labels stay in app/constants.ts until 01.8.
 export const surveyFormFr = {
@@ -21,7 +23,7 @@ export const surveyFormFr = {
     noParcelYet: "Aucune parcelle",
     parcelCount: ({ count }: { count: number }) =>
       count > 1 ? `${count} parcelles` : `${count} parcelle`,
-    ibpTotal: ({ total }: { total: number }) => `IBP ${total}`,
+    ibpTotal: ({ total }: { total: number }) => `IBP ${total} / ${IBP_MAX.total}`,
     factorCount: ({ count }: { count: number }) => `${count}/10 facteurs`,
     steps: {
       identity: "Identité",
@@ -96,6 +98,7 @@ export const surveyFormFr = {
   },
   factors: {
     scoreLabel: "Total IBP en cours",
+    scoreTotal: ({ total }: { total: number }) => `${total} / ${IBP_MAX.total}`,
     scoreBreakdown: ({ stand, context }: { stand: number; context: number }) =>
       `Peuplement / gestion ${stand} · Contexte ${context}`,
     scoreableCount: ({ count }: { count: number }) => `${count}/10 facteurs actuellement notables`,

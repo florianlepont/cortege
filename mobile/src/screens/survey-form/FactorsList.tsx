@@ -119,7 +119,9 @@ export function FactorsList({
     <>
       <View style={factorStyles.scoreHeroCard}>
         <Text style={factorStyles.scoreHeroLabel}>{fr.surveyForm.factors.scoreLabel}</Text>
-        <Text style={factorStyles.scoreHeroValue}>{scoreTotals.ibp_total}</Text>
+        <Text style={factorStyles.scoreHeroValue}>
+          {fr.surveyForm.factors.scoreTotal({ total: scoreTotals.ibp_total })}
+        </Text>
         <Text style={factorStyles.scoreHeroMeta}>
           {fr.surveyForm.factors.scoreBreakdown({
             stand: scoreTotals.ibp_peuplement_gestion,
