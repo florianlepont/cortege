@@ -48,13 +48,16 @@ jobs:
               - '.prettierignore'
               - 'tsconfig*.json'
               - 'scripts/**'
+              - 'packages/**'
             image:
               - 'api/**'
               - 'package.json'
               - 'package-lock.json'
               - '.dockerignore'
+              - 'packages/**'
             native:
               - 'mobile/**'
+              - 'packages/**'
               - 'package.json'
               - 'package-lock.json'
               - '.github/workflows/ci.yml'
@@ -133,6 +136,11 @@ jobs:
       - name: Install dependencies
         if: steps.modules.outputs.cache-hit != 'true'
         run: npm ci
+
+      # The shared IBP package (phase 01.8) has no job of its own: its tests and coverage
+      # thresholds run here, before the API tests that consume it.
+      - name: Unit tests — ibp-domain package
+        run: npm --workspace @cortege/ibp-domain run test:coverage
 
       - name: Run unit tests with coverage
         run: npm run test:unit:coverage
@@ -604,6 +612,12 @@ jobs:
         run: |
           docker run --rm --entrypoint sh cortege:ci -c \
             'test ! -e node_modules/expo && test ! -e node_modules/react-native'
+
+      # The builder stage builds the shared package; only its dist reaches the runtime stage.
+      - name: Smoke test — ibp-domain package in image
+        run: |
+          docker run --rm --entrypoint sh cortege:ci -c \
+            'test -f packages/ibp-domain/dist/index.js && node -e "require(\"@cortege/ibp-domain\")"'
 
       - name: Smoke test — healthcheck configured
         run: |

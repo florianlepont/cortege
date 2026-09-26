@@ -29,6 +29,9 @@ module.exports = {
     // supercluster 9 is ESM-only; ts-jest runs CommonJS, so load its UMD build (hoisted to the
     // root node_modules by 01.9-19). Metro resolves the ESM entry in the app.
     '^supercluster$': '<rootDir>/../node_modules/supercluster/dist/supercluster.js',
+    // The shared package is read from source, like Metro does through its react-native field
+    // (phase 01.8), so the tests need no built dist.
+    '^@cortege/ibp-domain$': '<rootDir>/../packages/ibp-domain/src/index.ts',
   },
   globals: {
     __DEV__: true,

@@ -7,6 +7,10 @@ module.exports = {
   testPathIgnorePatterns: ['\\.e2e-spec\\.ts$'],
   moduleFileExtensions: ['ts', 'js', 'json'],
   setupFiles: ['<rootDir>/test/setup-env.js'],
+  // The shared package is read from source, so the tests need no built dist (phase 01.8).
+  moduleNameMapper: {
+    '^@cortege/ibp-domain$': '<rootDir>/../packages/ibp-domain/src/index.ts',
+  },
   collectCoverageFrom: [
     '<rootDir>/src/**/*.ts',
     '!<rootDir>/src/**/*.d.ts',
