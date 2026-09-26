@@ -1,6 +1,7 @@
 import { fr } from "../i18n"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import {
+  DEFAULT_SURVEY_FORM,
   FACTOR_INPUT_HINTS_BY_FACTOR,
   FACTOR_TITLES,
   HELP_BY_FACTOR,
@@ -440,6 +441,17 @@ describe("labels read from the catalogue (D-06)", () => {
     }
     expect(method.versions[IBP_METHOD_V3_2]).toBe("IBP v3.2 (2026)")
     expect(method.versions[IBP_METHOD_V3_0]).toBe("IBP v3.0 (ancienne méthode)")
+  })
+
+  test("the default form is v3.2 cas 1, with A's native cover and no cover on B (CH-1)", () => {
+    expect(DEFAULT_SURVEY_FORM.ibpMethodVersion).toBe(IBP_METHOD_V3_2)
+    expect(DEFAULT_SURVEY_FORM.ibpCas).toBe(1)
+    expect(DEFAULT_SURVEY_FORM.ibpCas3Scale).toBe(false)
+    expect(DEFAULT_SURVEY_FORM.factorA).toEqual({
+      native_genus_count: "",
+      native_cover_percent: "",
+    })
+    expect(DEFAULT_SURVEY_FORM.factorB).toEqual({ strata_count: "" })
   })
 
   test("survey status labels come from the catalogue", () => {
