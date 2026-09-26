@@ -1,3 +1,4 @@
+import { IbpCas } from "@cortege/ibp-domain"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollView } from "react-native"
 import { shouldShowDevTools } from "../app/dev-tools"
@@ -28,6 +29,7 @@ import { EventsTab } from "./survey-detail/EventsTab"
 import { FactorsSection } from "./survey-detail/FactorsSection"
 import { resolveHeroMetric, resolveHeroSubmitState } from "./survey-detail/hero-state"
 import { MediaSection } from "./survey-detail/MediaSection"
+import { resolveScoringContext, ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
 import { styles } from "./survey-detail/styles"
 import { SummaryTab } from "./survey-detail/SummaryTab"
 import {
@@ -59,6 +61,9 @@ type SurveyDetailScreenProps = {
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
   onUpdateRegionVersion: (surveyId: string, region: RegionVersion) => Promise<void> | void
   onUpdateVegetationStage: (surveyId: string, stage: VegetationStage) => Promise<void> | void
+  onUpdateIbpCas: (surveyId: string, ibpCas: IbpCas) => Promise<void> | void
+  onUpdateCas3Scale: (surveyId: string, value: boolean) => Promise<void> | void
+  onSwitchToV32: (surveyId: string) => Promise<void> | void
   onOpenParcels: (surveyId: string) => Promise<void> | void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
   onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
@@ -87,6 +92,9 @@ export function SurveyDetailScreen({
   onRenameSurvey,
   onUpdateRegionVersion,
   onUpdateVegetationStage,
+  onUpdateIbpCas,
+  onUpdateCas3Scale,
+  onSwitchToV32,
   onOpenParcels,
   onEnsureAttachmentPreviews,
   onSimulateMissingAttachmentFile,
@@ -167,6 +175,10 @@ export function SurveyDetailScreen({
       typeof detail?.vegetation_stage === "string" ? detail.vegetation_stage : fallback,
     )
   }, [localDraftMeta, activeRegion, detail?.vegetation_stage])
+  const scoringContext = useMemo(
+    () => resolveScoringContext(localDraftMeta, detail, !canEditSurvey),
+    [localDraftMeta, detail, canEditSurvey],
+  )
   const activeSiteName =
     (localDraftMeta?.site_name ?? detail?.site_name ?? selectedSurvey.site_name).trim() ||
     selectedSurvey.site_name
@@ -236,15 +248,24 @@ export function SurveyDetailScreen({
       {activeTab === "summary" ? (
         <SummaryTab
           survey={selectedSurvey}
-          canEditSurvey={canEditSurvey}
           remainingTime={remainingTime}
           submissionDeadline={submissionDeadline}
           isDraftNearDeadline={isDraftNearDeadline}
-          activeRegion={activeRegion}
-          activeVegetationStage={activeVegetationStage}
-          onOpenParcels={handleOpenParcels}
-          onUpdateRegionVersion={onUpdateRegionVersion}
-          onUpdateVegetationStage={onUpdateVegetationStage}
+          contextCard={
+            <ScoringContextEditor
+              surveyId={selectedSurvey.id}
+              canEditSurvey={canEditSurvey}
+              scoringContext={scoringContext}
+              activeRegion={activeRegion}
+              activeVegetationStage={activeVegetationStage}
+              onOpenParcels={handleOpenParcels}
+              onUpdateRegionVersion={onUpdateRegionVersion}
+              onUpdateVegetationStage={onUpdateVegetationStage}
+              onUpdateIbpCas={onUpdateIbpCas}
+              onUpdateCas3Scale={onUpdateCas3Scale}
+              onSwitchToV32={onSwitchToV32}
+            />
+          }
         >
           <FactorsSection
             scores={displayedScores}

@@ -1,13 +1,13 @@
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../../app/brand-tokens"
+import { brandColors, ibpScoreTokens } from "../../app/brand-tokens"
 import { FACTOR_TITLES } from "../../app/constants"
-import { formatPoints } from "../../app/formatters"
 import { FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { isFactorKey } from "../survey-screen-helpers"
+import { resolveSubScoreBands, SubScoreBand } from "./hero-state"
 import { styles as sharedStyles } from "./styles"
 import { styles } from "./summary.styles"
 import { DisplayedFactorResult, DisplayedScores, NOT_FILLED_CLASS } from "./useLocalDraftSummary"
@@ -26,6 +26,7 @@ const FACTOR_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 }
 
 const f = fr.surveyDetail.factors
+const metric = fr.surveyDetail.metric
 
 type FactorsSectionProps = {
   scores: DisplayedScores | null
@@ -53,26 +54,15 @@ export function FactorsSection({
           {useLocalDraftView ? <Text style={sharedStyles.rowMeta}>{f.localDraftHint}</Text> : null}
           <View style={styles.scoreHeroCard}>
             <Text style={styles.scoreHeroLabel}>{f.ibpTotal}</Text>
-            <Text style={styles.scoreHeroValue}>{formatPoints(scores.ibp_total)}</Text>
+            <Text style={styles.scoreHeroValue}>{metric.total(scores.ibp_total)}</Text>
             <Text style={styles.scoreHeroMeta}>
-              {fr.surveyDetail.metric.split({
-                standTotal: formatPoints(scores.ibp_peuplement_gestion),
-                contextTotal: formatPoints(scores.ibp_contexte),
+              {metric.split({
+                standTotal: scores.ibp_peuplement_gestion,
+                contextTotal: scores.ibp_contexte,
               })}
             </Text>
           </View>
-          <View style={styles.factorTotalsRow}>
-            <View style={styles.factorTotalPill}>
-              <Text style={styles.factorTotalText}>
-                {f.standTotal(formatPoints(scores.ibp_peuplement_gestion))}
-              </Text>
-            </View>
-            <View style={styles.factorTotalPill}>
-              <Text style={styles.factorTotalText}>
-                {f.contextTotal(formatPoints(scores.ibp_contexte))}
-              </Text>
-            </View>
-          </View>
+          <SubScorePills scores={scores} />
           <View style={styles.factorTilesGrid}>
             {factorEntries.map(([factorCode, factor]) => (
               <FactorTile
@@ -89,6 +79,45 @@ export function FactorsSection({
         <Text style={sharedStyles.rowMeta}>{f.notLoaded}</Text>
       )}
     </AppCard>
+  )
+}
+
+// The stand (/35) and context (/15) sub-scores, coloured and named by their CNPF band (D-03
+// amended). The /50 total above keeps plain text: its app band shows on the badge and home card.
+function SubScorePills({ scores }: { scores: DisplayedScores }) {
+  const subScoreBands = resolveSubScoreBands(scores.ibp_peuplement_gestion, scores.ibp_contexte)
+  return (
+    <View style={styles.factorTotalsRow}>
+      <SubScorePill
+        testID="factor-subscore-stand"
+        text={f.standTotal(scores.ibp_peuplement_gestion)}
+        band={subScoreBands.stand}
+      />
+      <SubScorePill
+        testID="factor-subscore-context"
+        text={f.contextTotal(scores.ibp_contexte)}
+        band={subScoreBands.context}
+      />
+    </View>
+  )
+}
+
+function SubScorePill({
+  testID,
+  text,
+  band,
+}: {
+  testID: string
+  text: string
+  band: SubScoreBand
+}) {
+  const colors = ibpScoreTokens.colors[band.tone]
+  return (
+    <View testID={testID} style={[styles.factorTotalPill, { backgroundColor: colors.background }]}>
+      <Text style={[styles.factorTotalText, { color: colors.text }]}>
+        {metric.withBand({ score: text, band: band.bandLabel })}
+      </Text>
+    </View>
   )
 }
 

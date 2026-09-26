@@ -1,4 +1,4 @@
-import { formatPoints } from "../../app/formatters"
+import { bandTone, contextBand, ScoreTone, standBand } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
 import { DisplayedScores } from "./useLocalDraftSummary"
@@ -16,9 +16,35 @@ export const resolveHeroSubmitState = (
   return "progress"
 }
 
-export type HeroMetric = { caption: string; value: string; meta: string }
+/** A sub-score's CNPF band (D-03 amended): its French name and its colour tone. */
+export type SubScoreBand = { bandLabel: string; tone: ScoreTone }
+
+/** A sub-score as the hero shows it: "P/G 21 / 35", with its band. */
+export type HeroSubScore = SubScoreBand & { text: string }
+
+export type HeroMetric = {
+  caption: string
+  value: string
+  meta: string
+  stand: HeroSubScore | null
+  context: HeroSubScore | null
+}
 
 const m = fr.surveyDetail.metric
+const bands = fr.surveyDetail.bands
+
+/** The CNPF bands of the stand (/35) and context (/15) sub-scores, from the shared package. */
+export const resolveSubScoreBands = (
+  standScore: number,
+  contextScore: number,
+): { stand: SubScoreBand; context: SubScoreBand } => {
+  const stand = standBand(standScore)
+  const context = contextBand(contextScore)
+  return {
+    stand: { bandLabel: bands.stand[stand], tone: bandTone(stand) },
+    context: { bandLabel: bands.context[context], tone: bandTone(context) },
+  }
+}
 
 export const resolveHeroMetric = (
   scores: DisplayedScores | null,
@@ -26,19 +52,24 @@ export const resolveHeroMetric = (
   completedFactorCount: number | null,
 ): HeroMetric => {
   if (scores) {
+    const subScoreBands = resolveSubScoreBands(scores.ibp_peuplement_gestion, scores.ibp_contexte)
     return {
       caption: useLocalDraftView ? m.localDraftScore : m.ibpTotal,
-      value: formatPoints(scores.ibp_total),
+      value: m.total(scores.ibp_total),
       meta: m.split({
-        standTotal: formatPoints(scores.ibp_peuplement_gestion),
-        contextTotal: formatPoints(scores.ibp_contexte),
+        standTotal: scores.ibp_peuplement_gestion,
+        contextTotal: scores.ibp_contexte,
       }),
+      stand: { ...subScoreBands.stand, text: m.standScore(scores.ibp_peuplement_gestion) },
+      context: { ...subScoreBands.context, text: m.contextScore(scores.ibp_contexte) },
     }
   }
   return {
     caption: m.factorsReady,
     value: completedFactorCount !== null ? m.factorsCount(completedFactorCount) : m.unknown,
     meta: completedFactorCount !== null ? m.requiredCompleted : m.readinessPending,
+    stand: null,
+    context: null,
   }
 }
 
