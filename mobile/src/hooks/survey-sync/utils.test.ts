@@ -132,6 +132,19 @@ describe("formatSubmitReadinessError", () => {
     expect(msg).toContain("parcel selection")
   })
 
+  test("names a missing ibp_cas", () => {
+    const msg = formatSubmitReadinessError("s1", makeReadiness({ missing_fields: ["ibp_cas"] }))
+    expect(msg).toContain("missing ibp_cas")
+  })
+
+  test("names an unsupported ibp_method_version", () => {
+    const msg = formatSubmitReadinessError(
+      "s1",
+      makeReadiness({ missing_fields: ["ibp_method_version"] }),
+    )
+    expect(msg).toContain("unsupported ibp_method_version")
+  })
+
   test("combines multiple missing fields with separator", () => {
     const msg = formatSubmitReadinessError(
       "s1",
