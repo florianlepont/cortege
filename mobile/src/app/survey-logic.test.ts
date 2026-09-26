@@ -1,5 +1,11 @@
 import { fr } from "../i18n"
-import { FACTOR_INPUT_HINTS_BY_FACTOR, FACTOR_TITLES, HELP_BY_FACTOR } from "./constants"
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import {
+  FACTOR_INPUT_HINTS_BY_FACTOR,
+  FACTOR_TITLES,
+  HELP_BY_FACTOR,
+  helpForMethod,
+} from "./constants"
 import {
   REGION_OPTIONS,
   VEGETATION_STAGE_OPTIONS_BY_REGION,
@@ -394,6 +400,46 @@ describe("labels read from the catalogue (D-06)", () => {
     }
     expect(FACTOR_TITLES.A).toBe("Essences autochtones")
     expect(FACTOR_TITLES.J).toBe("Milieux rocheux")
+  })
+
+  test("helpForMethod picks the v3.2 texts for v3.2 and the v3.0 texts otherwise (D-09, CH-8)", () => {
+    const v32 = helpForMethod(IBP_METHOD_V3_2)
+    for (const factor of FACTORS) {
+      expect(v32.help[factor]).toBe(fr.ibpMethod.factorHelp[factor])
+      expect(v32.hints[factor]).toEqual(fr.ibpMethod.factorInputHints[factor])
+      expect(v32.hints[factor].length).toBeGreaterThan(0)
+    }
+    expect(v32.help.A).toMatch(/plafonn/)
+    expect(v32.help.A).toMatch(/50 %/)
+
+    for (const version of [null, IBP_METHOD_V3_0] as const) {
+      const v30 = helpForMethod(version)
+      for (const factor of FACTORS) {
+        expect(v30.help[factor]).toBe(fr.labels.factorHelp[factor])
+        expect(v30.hints[factor]).toEqual(fr.labels.factorInputHints[factor])
+      }
+    }
+  })
+
+  test("the v3.0 help puts the cover cap on A, none on B, and G/H on 0, 2 or 5 (BUG-1, BUG-2)", () => {
+    const { factorHelp, factorInputHints } = fr.labels
+    const aText = [factorHelp.A, ...factorInputHints.A].join(" ")
+    const bText = [factorHelp.B, ...factorInputHints.B].join(" ")
+    expect(aText).toMatch(/plafonn/)
+    expect(bText).not.toMatch(/plafonn/)
+    expect(bText).not.toMatch(/covered_autochthonous_percent|couvert autochtone/i)
+    expect(factorInputHints.G.join(" ")).toMatch(/0, 2 ou 5/)
+    expect(factorInputHints.H.join(" ")).toMatch(/0 \(recent\), 2 \(partiel\) ou 5 \(ancien\)/)
+  })
+
+  test("the v3.2 catalogue has cas labels and captions for cas 1 to 4", () => {
+    const method = fr.ibpMethod
+    for (const cas of [1, 2, 3, 4] as const) {
+      expect(method.casLabels[cas]).toBe(`Cas ${cas}`)
+      expect(method.casCaptions[cas].length).toBeGreaterThan(0)
+    }
+    expect(method.versions[IBP_METHOD_V3_2]).toBe("IBP v3.2 (2026)")
+    expect(method.versions[IBP_METHOD_V3_0]).toBe("IBP v3.0 (ancienne méthode)")
   })
 
   test("survey status labels come from the catalogue", () => {
