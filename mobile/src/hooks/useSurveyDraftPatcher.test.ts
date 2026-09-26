@@ -14,8 +14,11 @@ jest.mock("../storage/surveys", () => ({
   updateLocalDraft: jest.fn(),
 }))
 
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
 import { getLocalSurveyDraft, updateLocalDraft } from "../storage/surveys"
+import type { SurveyQueuePayload } from "../storage/types"
+import { applyMethodFields } from "../storage/utils"
 import { useSurveyDraftPatcher } from "./useSurveyDraftPatcher"
 
 const mockGetLocalSurveyDraft = getLocalSurveyDraft as jest.Mock
@@ -228,6 +231,229 @@ describe("useSurveyDraftPatcher", () => {
       expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
         expect.objectContaining({ vegetation_stage: expect.any(String) }),
       )
+    })
+  })
+
+  // ─── Method version, cas and cas-3 flag (01.8-10) ─────────────────────────
+
+  describe("method fields (D-02, D-08)", () => {
+    // What storage would write (its 01.8-08 rule), from the stored row and the patch input.
+    const storedPayload = (row: Record<string, unknown>) => {
+      const input = mockUpdateLocalDraft.mock.calls[0][0] as Record<string, unknown>
+      return applyMethodFields(
+        {
+          ...(row as SurveyQueuePayload),
+          site_name: input.site_name as string,
+          parcel_ids: input.parcel_ids as string[],
+          factors: input.factors as Record<string, unknown>,
+        },
+        input,
+      )
+    }
+
+    const v32Row = (overrides: Record<string, unknown> = {}) => ({
+      id: TEST_SURVEY_ID,
+      site_name: "Bois",
+      ibp_method_version: IBP_METHOD_V3_2,
+      ibp_cas: 1,
+      ibp_cas3_scale: false,
+      parcel_ids: ["AB001"],
+      factors: { A: { native_genus_count: 3, native_cover_percent: 60 } },
+      ...overrides,
+    })
+
+    beforeEach(() => {
+      surveyList.surveys = [
+        { id: TEST_SURVEY_ID, status: "draft", visibility: "private", site_name: "Bois" },
+      ]
+    })
+
+    test("switching an ACA/collineen draft to v3.2 moves the cover and drops region/stage", async () => {
+      const row = makeDraftRow({
+        vegetation_stage: "collineen",
+        factors: {
+          A: { native_genus_count: 3 },
+          B: { strata_count: 4, covered_autochthonous_percent: 40 },
+        },
+      })
+      mockGetLocalSurveyDraft.mockResolvedValue(row)
+      const { handleSwitchSurveyToV32 } = useBuildHook()
+
+      await handleSwitchSurveyToV32(TEST_SURVEY_ID)
+
+      const input = mockUpdateLocalDraft.mock.calls[0][0]
+      expect(input).toMatchObject({
+        ibp_method_version: IBP_METHOD_V3_2,
+        ibp_cas: 1,
+        ibp_cas3_scale: false,
+      })
+      expect(input).not.toHaveProperty("region_version")
+      expect(input).not.toHaveProperty("vegetation_stage")
+      expect(input.factors).toEqual({
+        A: { native_genus_count: 3, native_cover_percent: 40 },
+        B: { strata_count: 4 },
+      })
+      const payload = storedPayload(row)
+      expect(payload.ibp_method_version).toBe(IBP_METHOD_V3_2)
+      expect(payload).not.toHaveProperty("region_version")
+      expect(payload).not.toHaveProperty("vegetation_stage")
+      expect(onStatusChange).toHaveBeenCalledWith(fr.status.editing.switchedToV32({ name: "Bois" }))
+    })
+
+    test("switching an ACA/subalpin draft leaves the cas for the observer to pick", async () => {
+      mockGetLocalSurveyDraft.mockResolvedValue(makeDraftRow({ vegetation_stage: "subalpin" }))
+      const { handleSwitchSurveyToV32 } = useBuildHook()
+
+      await handleSwitchSurveyToV32(TEST_SURVEY_ID)
+
+      expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
+        expect.objectContaining({ ibp_method_version: IBP_METHOD_V3_2, ibp_cas: null }),
+      )
+    })
+
+    test("switching a draft already on v3.2 writes nothing", async () => {
+      mockGetLocalSurveyDraft.mockResolvedValue(v32Row())
+      const { handleSwitchSurveyToV32 } = useBuildHook()
+
+      await handleSwitchSurveyToV32(TEST_SURVEY_ID)
+
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+      expect(onStatusChange).toHaveBeenCalledWith(
+        fr.status.editing.switchNotAllowed({ name: "Bois" }),
+      )
+    })
+
+    test("a submitted survey is never switched or patched", async () => {
+      surveyList.surveys = [
+        { id: TEST_SURVEY_ID, status: "submitted", visibility: "private", site_name: "Bois" },
+      ]
+      mockGetLocalSurveyDraft.mockResolvedValue(makeDraftRow())
+      const { handleSwitchSurveyToV32, handleUpdateSurveyIbpCas, handleUpdateSurveyCas3Scale } =
+        useBuildHook()
+
+      await handleSwitchSurveyToV32(TEST_SURVEY_ID)
+      await handleUpdateSurveyIbpCas(TEST_SURVEY_ID, 2)
+      await handleUpdateSurveyCas3Scale(TEST_SURVEY_ID, true)
+
+      expect(mockGetLocalSurveyDraft).not.toHaveBeenCalled()
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+      expect(onStatusChange).toHaveBeenCalledWith(fr.status.editing.readOnly({ name: "Bois" }))
+    })
+
+    test("renaming a v3.2 draft keeps its method fields and adds no region/stage", async () => {
+      const row = v32Row({ ibp_cas: 2, ibp_cas3_scale: true })
+      mockGetLocalSurveyDraft.mockResolvedValue(row)
+      const { handleRenameSurvey } = useBuildHook()
+
+      await handleRenameSurvey(TEST_SURVEY_ID, "Nouveau nom")
+
+      const input = mockUpdateLocalDraft.mock.calls[0][0]
+      expect(input).toMatchObject({
+        site_name: "Nouveau nom",
+        ibp_method_version: IBP_METHOD_V3_2,
+        ibp_cas: 2,
+        ibp_cas3_scale: true,
+      })
+      expect(input).not.toHaveProperty("region_version")
+      expect(input).not.toHaveProperty("vegetation_stage")
+      const payload = storedPayload(row)
+      expect(payload).not.toHaveProperty("region_version")
+      expect(payload).not.toHaveProperty("vegetation_stage")
+      expect(payload).toMatchObject({ ibp_cas: 2, ibp_cas3_scale: true })
+    })
+
+    test("renaming an untagged legacy draft keeps it untagged with its region/stage", async () => {
+      const row = makeDraftRow({ region_version: "M", vegetation_stage: "meso_mediterraneen" })
+      mockGetLocalSurveyDraft.mockResolvedValue(row)
+      const { handleRenameSurvey } = useBuildHook()
+
+      await handleRenameSurvey(TEST_SURVEY_ID, "Autre nom")
+
+      const input = mockUpdateLocalDraft.mock.calls[0][0]
+      expect(input).not.toHaveProperty("ibp_method_version")
+      expect(input).not.toHaveProperty("ibp_cas")
+      expect(input).toMatchObject({ region_version: "M", vegetation_stage: "meso_mediterraneen" })
+      const payload = storedPayload(row)
+      expect(payload).not.toHaveProperty("ibp_method_version")
+      expect(payload).toMatchObject({ region_version: "M", vegetation_stage: "meso_mediterraneen" })
+    })
+
+    test("handleUpdateSurveyIbpCas sets the cas of a v3.2 draft", async () => {
+      const row = v32Row()
+      mockGetLocalSurveyDraft.mockResolvedValue(row)
+      const { handleUpdateSurveyIbpCas } = useBuildHook()
+
+      await handleUpdateSurveyIbpCas(TEST_SURVEY_ID, 3)
+
+      expect(storedPayload(row)).toMatchObject({ ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 3 })
+      expect(storedPayload(row)).not.toHaveProperty("region_version")
+      expect(onStatusChange).toHaveBeenCalledWith(fr.status.editing.ibpCasUpdated({ name: "Bois" }))
+    })
+
+    test("handleUpdateSurveyIbpCas on a v3.0 draft writes nothing", async () => {
+      mockGetLocalSurveyDraft.mockResolvedValue(makeDraftRow())
+      const { handleUpdateSurveyIbpCas } = useBuildHook()
+
+      await handleUpdateSurveyIbpCas(TEST_SURVEY_ID, 3)
+
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+      expect(onStatusChange).toHaveBeenCalledWith(
+        fr.status.editing.switchNotAllowed({ name: "Bois" }),
+      )
+    })
+
+    test("handleUpdateSurveyCas3Scale sets the flag of a v3.2 draft only", async () => {
+      const row = v32Row()
+      mockGetLocalSurveyDraft.mockResolvedValue(row)
+      const { handleUpdateSurveyCas3Scale } = useBuildHook()
+
+      await handleUpdateSurveyCas3Scale(TEST_SURVEY_ID, true)
+
+      expect(storedPayload(row)).toMatchObject({ ibp_cas3_scale: true, ibp_cas: 1 })
+      expect(onStatusChange).toHaveBeenCalledWith(
+        fr.status.editing.cas3ScaleUpdated({ name: "Bois" }),
+      )
+
+      mockUpdateLocalDraft.mockClear()
+      mockGetLocalSurveyDraft.mockResolvedValue(
+        makeDraftRow({ ibp_method_version: IBP_METHOD_V3_0 }),
+      )
+      await handleUpdateSurveyCas3Scale(TEST_SURVEY_ID, true)
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+    })
+
+    test("the region and stage handlers write nothing on a v3.2 draft", async () => {
+      mockGetLocalSurveyDraft.mockResolvedValue(v32Row())
+      const { handleUpdateSurveyRegionVersion, handleUpdateSurveyVegetationStage } = useBuildHook()
+
+      await handleUpdateSurveyRegionVersion(TEST_SURVEY_ID, "M")
+      await handleUpdateSurveyVegetationStage(TEST_SURVEY_ID, "montagnard")
+
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+      expect(onStatusChange).toHaveBeenCalledWith(
+        fr.status.editing.switchNotAllowed({ name: "Bois" }),
+      )
+    })
+
+    test("a tagged v3.0 draft keeps its tag and region/stage when patched", async () => {
+      const row = makeDraftRow({
+        ibp_method_version: IBP_METHOD_V3_0,
+        region_version: "ACA",
+        vegetation_stage: "montagnard",
+      })
+      mockGetLocalSurveyDraft.mockResolvedValue(row)
+      const { handleUpdateSurveyVegetationStage } = useBuildHook()
+
+      await handleUpdateSurveyVegetationStage(TEST_SURVEY_ID, "planitiaire")
+
+      expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ibp_method_version: IBP_METHOD_V3_0,
+          region_version: "ACA",
+          vegetation_stage: "planitiaire",
+        }),
+      )
+      expect(mockUpdateLocalDraft.mock.calls[0][0]).not.toHaveProperty("ibp_cas")
     })
   })
 })
