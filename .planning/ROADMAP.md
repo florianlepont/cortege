@@ -30,7 +30,7 @@ in October rather than discovered in December.
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Species Recognition — Approach Decision** - Measure on-device ML on real devices and ratify a go/no-go in an ADR (completed 2026-09-26)
-- [ ] **Phase 1.1: Reconcile the IBP method version** (INSERTED) - Establish whether the app still implements the current CNPF method, and what changes if not
+- [x] **Phase 1.1: Reconcile the IBP method version** (INSERTED) - Establish whether the app still implements the current CNPF method, and what changes if not (completed 2026-09-26)
 - [x] **Phase 1.2: Stop field data loss and account exposure** (INSERTED) - Session errors never delete offline data; no account takeover or open debug surface (completed 2026-09-24)
 - [x] **Phase 1.3: CI and test safety net** (INSERTED) - Typecheck in CI, reproducible image, tests that run real SQL (completed 2026-09-24)
 - [x] **Phase 1.4: API sync integrity** (INSERTED) - Validated sync payloads, no submit bypass, transactional writes (completed 2026-09-24)
@@ -92,7 +92,7 @@ Plans:
 - [x] 01.1-01-PLAN.md — Factor-by-factor comparison doc (v3.0 as implemented vs FR v3.2) with API/mobile/matrix impact per difference
 - [x] 01.1-02-PLAN.md — ADR-003: migrate to v3.2 in phase 01.8, treatment of recorded surveys, version dispatch, CH-1..CH-12; phase-1 doc cross-refs and page fixes
 - [x] 01.1-03-PLAN.md — Citation files say "implemented v3.0, target v3.2 (ADR-003)"; validation matrix v3.2 impact and target cases
-- [ ] 01.1-04-PLAN.md — Index the new docs, ROADMAP input line for 01.8, phase gate and 01.1-VALIDATION.md
+- [x] 01.1-04-PLAN.md — Index the new docs, ROADMAP input line for 01.8, phase gate and 01.1-VALIDATION.md
 
 ### Phase 01.2: Stop field data loss and account exposure (INSERTED)
 
@@ -434,7 +434,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Species Recognition — Approach Decision | 6/6 | Complete   | 2026-09-26 |
-| 1.1. Reconcile the IBP method version | 3/4 | In Progress|  |
+| 1.1. Reconcile the IBP method version | 4/4 | Complete   | 2026-09-26 |
 | 1.2. Stop field data loss and account exposure | 9/9 | Complete    | 2026-09-24 |
 | 1.3. CI and test safety net | 7/7 | Complete    | 2026-09-24 |
 | 1.4. API sync integrity | 6/6 | Complete    | 2026-09-24 |
