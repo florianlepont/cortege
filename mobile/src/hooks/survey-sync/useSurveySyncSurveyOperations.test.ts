@@ -311,9 +311,8 @@ describe("useSurveySyncSurveyOperations", () => {
     })
 
     test("names the missing cas of a v3.2 draft, with the real readiness and no id", async () => {
-      const actual = jest.requireActual<typeof import("../../app/ibp-scoring")>(
-        "../../app/ibp-scoring",
-      )
+      const actual =
+        jest.requireActual<typeof import("../../app/ibp-scoring")>("../../app/ibp-scoring")
       mockEvaluateSubmitReadiness.mockImplementation(actual.evaluateSubmitReadinessFromDraft)
       mockGetSubmitBlockReason.mockReturnValue(null)
       const draft = {

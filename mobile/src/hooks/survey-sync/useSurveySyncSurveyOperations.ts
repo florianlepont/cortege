@@ -46,6 +46,12 @@ const describeReadiness = (name: string, readiness: SubmitReadiness) => {
   if (readiness.missing_fields.includes("vegetation_stage")) {
     parts.push(text.readiness.missingVegetationStage)
   }
+  if (readiness.missing_fields.includes("ibp_cas")) {
+    parts.push(text.readiness.missingCas)
+  }
+  if (readiness.missing_fields.includes("ibp_method_version")) {
+    parts.push(text.readiness.unsupportedMethod)
+  }
   if (readiness.missing_fields.includes("parcel_ids")) {
     parts.push(text.readiness.missingParcels)
   }
@@ -183,6 +189,9 @@ export function useSurveySyncSurveyOperations({
         }
 
         const readiness = evaluateSubmitReadinessFromDraft({
+          ibp_method_version: draft.ibp_method_version,
+          ibp_cas: draft.ibp_cas,
+          ibp_cas3_scale: draft.ibp_cas3_scale,
           region_version: draft.region_version,
           vegetation_stage: draft.vegetation_stage,
           factors: draft.factors,
