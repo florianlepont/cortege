@@ -266,3 +266,187 @@ decay stages (p. 7). These change what the observer counts, not the engine.
 Matrix: MAT-D-01 (BMg 4, BMm 0, 1 ha, D = 5) gives the same result under v3.2. The CD-1 sum rule
 does not affect it because BMg alone reaches the top class. The new case MAT-C-02 covers the sum
 rule for both factors, since the API and the mobile app score C and D with the same function.
+
+## Factor E — Very large living trees
+
+GB is a large living tree, TGB a very large living tree, both counted per hectare.
+
+| ID | v3.0 / app | v3.2 (page) | Severity | API impact | Mobile impact | Matrix impact |
+|----|------------|-------------|----------|------------|---------------|---------------|
+| E-1 | Score 0 when TGB/ha under 1 **and GB/ha under 1**; score 1 when TGB/ha under 1 **and GB/ha at 1 or more** (l. 290–291) | Score 0 when TGB under 1/ha and **(GB + TGB) under 1/ha**; score 1 when TGB under 1/ha and **(GB + TGB) at 1/ha or more** (p. 3); the survey instructions cap GB at 1/ha, or at 1 (GB + TGB)/ha on plots over 1 ha (p. 18) | **changes a score** | `scoreFactorE` l. 290–291 | l. 120–121; `labels.ts` l. 67 | MAT-E-01 unchanged; new case MAT-E-02 (TGB 1, GB 1, 2 ha: v3.0 gives 0, v3.2 gives 1) |
+| E-2 | ACA: TGB over 67.5 cm, GB 47.5–67.5 cm (subalpine used ACA); M: TGB over 57.5 cm, GB 37.5–57.5 cm | Cas 1: over 67.5 cm and 47.5–67.5 cm; **cas 3 and 4: over 57.5 cm and 37.5–57.5 cm** (p. 3) | changes a field | none | Help text; spec | none |
+| E-3 | Special cases: ACA TGB over 47.5 cm (spec; 2021 v3 sheet), M TGB over 37.5 cm (spec) | Cas 2 and slow-growing species: **TGB over 37.5 cm, GB 17.5–37.5 cm** (p. 3) | changes a field | none | Help text; spec | none |
+| E-4 | — | Diameter measured at 1.3 m on the upslope side; stems forking below 1.3 m count separately in forest, but an orchard tree counts once (p. 7) | changes a field (minor) | none | Help text | none |
+| E-5 | Scale at 1 and 5 trees per hectare | Same (p. 3) | none | none | none | none |
+
+## Factor F — Living trees bearing dendromicrohabitats
+
+The observer counts living trees carrying at least one dendromicrohabitat (dmh), by the 15 groups
+of the typology.
+
+| ID | v3.0 / app | v3.2 (page) | Severity | API impact | Mobile impact | Matrix impact |
+|----|------------|-------------|----------|------------|---------------|---------------|
+| F-1 | Group 12 (2021 v3 sheet): mosses, lichens, ivy or lianas over 20 % of the trunk, or mistletoe | Adds **ferns (more than 5 fronds)**; the 20 % threshold applies to at least one of the types (p. 3, p. 13) | changes a field | none | Help text | none |
+| F-2 | Group 15 (2021 v3 sheet): active sap flow over 20 cm | Sap **or resin flow, fresh or old**, over 20 cm (p. 4, p. 13) | changes a field | none | Help text | none |
+| F-3 | Group 6 (2021 v3 sheet): limb break at the trunk with a diameter over 20 cm or an area over 300 cm² | Limb break at the trunk with an area over 300 cm² only; a cut branch is group 6 when flush with the trunk and over 300 cm², group 7 when the stub is over 50 cm long, over 20 cm in diameter and fully dead (p. 3, p. 7) | changes a field (minor) | none | Help text | none |
+| F-4 | At most 2 trees/ha counted per group; the app does not cap the total | At most 2 trees/ha per group, total at most 8/ha on capped surveys (p. 18, p. 20); the 2021 v3 sheet also says 8 | none (8 or more already scores 5) | none | none | MAT-F-02 unchanged |
+| F-5 | Linear stands: at most **9** trees/km per group (spec §7; 2021 v3 sheet FAQ p. 3) | At most **7** trees/km per group (p. 6) | changes a field (linear stands only) | none (linear stands not implemented) | none | none |
+| F-6 | — | Orchards: one tree whatever its number of stems (p. 7) | changes a field (minor) | none | Help text | none |
+| F-7 | Thresholds under 2, 2 to under 3, 3 to under 8, 8 or more per ha; 15 groups | Same (p. 3) | none | none | none | none |
+
+## Factor G — Open flowering habitats
+
+| ID | v3.0 / app | v3.2 (page) | Severity | API impact | Mobile impact | Matrix impact |
+|----|------------|-------------|----------|------------|---------------|---------------|
+| G-1 | Open flowering habitats: gaps, edges counted at a standard 2 m width, sparse stands (spec) | Same three forms, but flowering vegetation in the **intermediate and high strata is excluded** (p. 4) | changes a field | none | Help text `labels.ts` l. 74–78 | none |
+| G-2 | The subalpine scale applies when the context is ACA and `subalpin` | The cas-3 scale applies (see CLS-2 and CLS-4) (p. 4, p. 7) | **changes a score** (through the context) | l. 349 | l. 169 | MAT-G-01 context becomes cas 1 (value 5 unchanged); new case MAT-G-02 |
+| G-3 | Linear stands: nothing specific | Linear stands: at least one flowering edge gives score 2, otherwise the percentage of the line is computed (p. 6) | changes a field (linear stands only) | none | none | none |
+| G-4 | 0 % gives 0; under 1 % or over 5 % gives 2; 1–5 % gives 5; subalpine: under 1 % gives 2, 1 % or more gives 5 | Identical (p. 4) | none | none | none | none |
+| G-5 | Allowed scores 0, 1, 2 or 5 (app bug, see BUG-2) | G is scored 0, 2 or 5 only (p. 4) | none between versions (app bug BUG-2) | `STANDARD_ALLOWED` l. 34 and l. 450–452 | l. 4 and l. 51–56 | Matrix note "A..H" allowed values; new case MAT-G-03 |
+
+## Factor H — Temporal continuity of forest cover
+
+| ID | v3.0 / app | v3.2 (page) | Severity | API impact | Mobile impact | Matrix impact |
+|----|------------|-------------|----------|------------|---------------|---------------|
+| H-1 | 0 recent, 2 partial or reforested after soil work over the whole surface, 5 ancient (État-major map, later documents and field clues) | Same classes (p. 4). Adds: an ancient forest that was **grazed** drops from 5 to 2 when its cover was heavily reduced for grazing or grazing pressure is strong; **orchards** (chestnut, carob, walnut, olive) always drop to 2 for grazing, and for planting or upkeep work over nearly the whole surface (p. 8–9) | changes a field (can change the class) | none | Help text `labels.ts` l. 79–83 | none |
+| H-2 | — | Tree cover had to be at least 10 % at the reference date to count as forest; otherwise the forest is recent (score 0) (p. 8) | changes a field | none | Help text | none |
+| H-3 | 2021 v3 sheet: the Cassini map or Napoleonic cadastre may be used to remove doubt | Not used in IBP (p. 8) | wording only | none | none | none |
+| H-4 | Allowed scores 0, 1, 2 or 5; `class_score` passed through unchecked (app bug, see BUG-2) | H is scored 0, 2 or 5 only (p. 4) | none between versions (app bug BUG-2) | l. 359–361 plus the allowed set | l. 177–179 (the form already blocks 1) | Matrix note; new case MAT-H-02 |
+
+## Factor I — Aquatic habitats
+
+| ID | v3.0 / app | v3.2 (page) | Severity | API impact | Mobile impact | Matrix impact |
+|----|------------|-------------|----------|------------|---------------|---------------|
+| I-1 | 10 types (2021 v3 sheet p. 8): spring or seep; rill, ditch or small canal under 1 m; small stream 1–8 m; river over 8 m; oxbow; lake; pond or lagoon; pool; peat bog; marsh | 11 types: adds the sea or ocean shore, « Mer ou océan » (p. 4, p. 15) | changes a field (a coastal stand can gain a type and so a score) | none | Help text `labels.ts` l. 84–88 | none |
+| I-2 | Temporary water counts if it persists beyond floods | Same; water-filled wheel ruts are explicitly excluded (p. 9) | changes a field (minor) | none | Help text | none |
+| I-3 | 0, 1, 2 or more types give 0, 2, 5 | Same (p. 4) | none | none | none | MAT-I-01 and MAT-I-02 unchanged |
+
+## Factor J — Rocky habitats
+
+| ID | v3.0 / app | v3.2 (page) | Severity | API impact | Mobile impact | Matrix impact |
+|----|------------|-------------|----------|------------|---------------|---------------|
+| J-1 | 9 types (2021 v3 sheet p. 8): cliff higher than the stand; rock slab; lapiaz or joint; cave; stable boulder heap; pebble bank; unstable scree; boulder chaos over 2 m; and one "rock lower than the stand" type that grouped large blocks, low rock walls and outcrops | **12 types** (p. 4, p. 16–17). The "lower rock" type is split into a low rock wall, « paroi rocheuse de hauteur inférieure à celle des arbres adultes », and large blocks or outcrops other than slabs and lapiaz, « gros blocs (> 20 cm) ou affleurements autres que dalle ou lapiaz ». Two types are new: a sparsely vegetated fine-sediment deposit (alluvium outside the minor bed, or dune) and a sparsely vegetated vertical bank or wall of loose material | changes a field (the type count, and so the score, can rise) | none | Help text `labels.ts` l. 89–93 | none |
+| J-2 | Cliff "higher than the stand" | Cliff higher « que les arbres adultes » (p. 4) | wording only | none | none | none |
+| J-3 | Cumulative area over 20 m²; rock in the minor riverbed excluded; 0, 1, 2 or more types give 0, 2, 5 | Same (p. 4, p. 9) | none | none | none | MAT-J-01 unchanged |
+
+## Global score and categories
+
+| ID | v3.0 / app | v3.2 (page) | Severity | API impact | Mobile impact | Matrix impact |
+|----|------------|-------------|----------|------------|---------------|---------------|
+| GS-1 | Stand and management score = A to G (max 35); context score = H, I, J (max 15); total max 50 | Same grouping (p. 3–4 headings, survey sheet p. 21) | none | none (l. 419–431) | none (l. 267–287) | MAT-SUBMIT-02 unchanged |
+| GS-2 | Interpretation chart (2021 v3 sheet p. 8): stand axis 0–35 in 5 bands with limits at 7, 14, 21 and 28 (low to high); context axis 0–15 in 3 bands with limits at 5 and 10 | Identical chart (p. 24–25) | none | none | The app implements no bands and shows the total as "/10" (BUG-3) | none |
+| GS-3 | Transect band 10–15 m on each side (2021 v3 sheet) | 10–20 m on each side; capped and uncapped surveys; computation for groups of plots (p. 18) | wording only | none | none | none |
+
+## Summary counts
+
+The 56 rows above (CLS-1 to CLS-6, A-1 to A-10, B-1 to B-4, CD-1 to CD-6, E-1 to E-5, F-1 to F-7,
+G-1 to G-5, H-1 to H-4, I-1 to I-3, J-1 to J-3, GS-1 to GS-3) fall into these groups:
+
+- **Engine-level score changes: 4** (7 rows).
+  1. The native-cover cap moves from B to A: A-1 and B-1.
+  2. The C and D score-1 rule uses BMm + BMg: CD-1.
+  3. The E score-1 rule uses GB + TGB: E-1.
+  4. The A and G scales are selected by cas: CLS-2, CLS-4 and G-2.
+- **Field-definition changes that can change a score through the input: 20 main rows**: CLS-1,
+  CLS-3, CLS-6, A-2, A-3, A-4, A-5, B-2, B-3, CD-2, CD-3, E-2, E-3, F-1, F-2, G-1, H-1, H-2,
+  I-1, J-1. **Plus 2 rows that matter for linear stands only**: F-5 and G-3.
+- **Minor field changes: 5**: CD-5, E-4, F-3, F-6, I-2.
+- **Wording only: 9**: CLS-5, A-6, A-7, A-8, CD-4, CD-6, H-3, J-2, GS-3.
+- **No change between versions: 11**: every count threshold (A-9, B-4, E-5, F-7, G-4, I-3,
+  J-3), the individual rule of A-10, the dmh cap F-4, the aggregation (GS-1) and the
+  interpretation chart (GS-2).
+- **No change between versions, but an app bug: 2**: G-5 and H-4 (BUG-2).
+
+Total: 7 + 22 + 5 + 9 + 11 + 2 = 56 rows.
+
+## App bugs that diverge from both versions
+
+These are not v3.0 to v3.2 differences: the app disagrees with both versions (or with its own
+spec). They are recorded here so that phase 01.8 handles them with the migration.
+
+| ID | Bug | Evidence | API impact | Mobile impact | Matrix impact | Recommendation |
+|----|-----|----------|------------|---------------|---------------|----------------|
+| BUG-1 | The native-cover cap (under 50 %) is applied to B instead of A | v3.2 p. 3 and p. 20 and the 2021 v3 sheet p. 7 all put it on A; the 2023 v3.0 text cannot be checked but sits between two versions that agree, so confidence is medium to high | `scoreFactorB` l. 242–262 (cap l. 257–259) loses the cap; `scoreFactorA` gains it; `api/test/ibp-rules.spec.ts` l. 41–45 changes | `scoreFactorB` l. 80–96, `labels.ts` l. 52, `useSurveyForm.ts` l. 152–158: the native-cover input moves from B to A | MAT-B-01 expected B becomes 5; new cases MAT-A-03 and MAT-A-04 | Record for 01.8 (ADR-003 change list). Not a small fix: it moves an input between factors in the form, the payload and both engines |
+| BUG-2 | G and H accept a score of 1 (a direct `{G:1}`, `{H:1}` or an H `class_score` of 1 passes); both versions allow only 0, 2 or 5 | `STANDARD_ALLOWED` covers A to H (API l. 34 and l. 450–452; mobile l. 4 and l. 51–56); `scoreFactorH` passes `class_score` through (API l. 360–361; mobile l. 178–179). The mobile form blocks H = 1 (`useSurveyForm.ts` l. 185 and l. 453) but the API accepts it | Tighten the allowed set for G and H. Caution: `prepareUpsert` re-validates every upsert (`surveys.service.ts` l. 222–233), so a stored G = 1 or H = 1 survey, reachable only by direct API calls, would be rejected (422) on replay of a submitted survey | Tighten the allowed set in `ibp-scoring.ts` | Matrix note "A..H" allowed values (0, 1, 2 or 5) must exclude 1 for G and H; new cases MAT-G-03 and MAT-H-02 | Record for 01.8, after a read-only production count of G = 1 and H = 1 rows. The matrix note may be corrected now since it is documentation |
+| BUG-3 | The nearby-parcel badge and the home "sector" card show the 0–50 `ibp_total` as "/10", coloured with thresholds 7 (high) and 5 (medium) | `mobile/src/ui/IbpScoreBadge.tsx` l. 10–15 and l. 30–34; `mobile/src/app/brand-tokens.ts` l. 149–157; `mobile/src/screens/home/SectorScoreCard.tsx` l. 11–34 (10 dots); `mobile/src/i18n/fr/components.ts` l. 46; `mobile/src/i18n/fr/home.ts` l. 34; the value is `scores->>'ibp_total'` (`api/src/surveys/public-map.queries.ts` l. 139 and l. 199) | none (the API returns the correct 0–50 total) | Presentation: use the /50 denominator (or /35 and /15) and the GS-2 bands in `IbpScoreBadge`, `SectorScoreCard` and `brand-tokens.ts` | none | Owner and design decision needed; not fixed in 01.1. Tracked as a change-list item and an open question in ADR-003 |
+| BUG-4 | `ibp_method_version` is required by the form spec (§3, §10.1, §10.3, §10.4) but no column, DTO field or mobile field exists | `api/migrations/001_init.sql` l. 14–35 has no such column; no DTO has it; the name appears only in the spec | Add the method-version field (column, DTO) as part of the migration | Send the method version in the survey payload | New case MAT-VER-01 | Superseded by the D-07 method-version need, delivered in 01.8; the spec should say it is not implemented yet |
+| BUG-5 | Spec §5 offers the ACA stage `montagnard_mediterraneen`; the mobile form does not offer it and normalises it to `montagnard` | `vegetation.ts` l. 16–21 and l. 39–41 | none (both map to ACA thresholds, l. 437–439) | none today | none | Harmless; moot under v3.2, where such stands are cas 1 (CLS-6) |
+| DRIFT-1 | The `factor_f_group_capped` warning exists only in the API | Known drift, ROADMAP phase 01.8 criterion 2 | Warning emitted at l. 296–329 | `ibp-scoring.ts` l. 126–149 emits no warning | MAT-F-02 expects the warning | Already planned in 01.8 |
+
+## Validation matrix under v3.2
+
+All 17 cases of [ibp-validation-matrix-v1.md](ibp-validation-matrix-v1.md) recomputed under v3.2.
+Only **MAT-B-01** changes value (B goes from 2 to 5 because the cap moves to A). **MAT-A-02**
+depends on the subalpine level. The other context-only rows need their region and stage rewritten
+as a cas.
+
+| Case | v3.0 context and input | v3.0 expected | v3.2 context | v3.2 expected | Changes? |
+|------|------------------------|---------------|--------------|---------------|----------|
+| MAT-A-01 | ACA, collineen; 2 genera | A = 1 | cas 1 (native cover of 50 % or more becomes an A input) | A = 1 | context only |
+| MAT-A-02 | ACA, subalpin; 2 genera | A = 2 | cas 3 (middle or upper subalpine) | A = 2; A = 1 if lower subalpine (cas 1) | context; value depends on the subalpine level |
+| MAT-B-01 | 5 strata, native cover 40 % | B = 2 (cap) | native cover moves to A | **B = 5** (and A capped at 2 if its raw score is above 2) | **value changes** |
+| MAT-C-01 | BMg 0, BMm 2, 1 ha | C = 1 | same | C = 1 (sum 2, at least 1) | no |
+| MAT-D-01 | BMg 4, BMm 0, 1 ha | D = 5 | same | D = 5 | no |
+| MAT-E-01 | TGB 0, GB 2, 1 ha | E = 1 | same | E = 1 (sum 2, at least 1) | no |
+| MAT-F-01 | 8 trees/ha | F = 5 | same | F = 5 | no |
+| MAT-F-02 | groups 3, 3, 3, 3 | F = 5 with warning | same | F = 5 with warning (2 per group, total 8) | no |
+| MAT-G-01 | ACA, collineen; 2 % | G = 5 | cas 1 | G = 5 | context only |
+| MAT-H-01 | class partial | H = 2 | same | H = 2 | no |
+| MAT-I-01 | 1 type | I = 2 | same | I = 2 | no |
+| MAT-I-02 | direct I = 1 | blocking | same | blocking | no |
+| MAT-J-01 | 2 types | J = 5 | same | J = 5 | no |
+| MAT-CONS-01 | A = 0, B = 2 | warning `consistency_a_b` | same (app heuristic, not CNPF) | warning | no |
+| MAT-CONS-02 | E = 0, F = 5 | warning `consistency_e_f` | same (app heuristic) | warning | no |
+| MAT-SUBMIT-01 | expired and incomplete | `survey_expired` plus missing factors | same | same, plus a missing-cas (and method-version) error if those fields become required | expected error list grows |
+| MAT-SUBMIT-02 | complete A to J (direct scores) | accepted, with totals | cas instead of region and stage | accepted, same totals | context only |
+
+The 17 cases do not exercise CD-1 or E-1: they all use a 1 ha surface, where the sum rule and the
+medium-wood-alone rule agree. **Proposed new v3.2 cases:**
+
+| Case | Input | v3.2 expected | Covers |
+|------|-------|---------------|--------|
+| MAT-A-03 | cas 1, 5 genera, native cover 40 % | A = 2 (cap) | A-1 |
+| MAT-A-04 | cas 1, 5 genera, native cover 50 % | A = 5 | A-1 (boundary) |
+| MAT-A-05 | cas 2 in a cas-3 zone or special habitat, 2 genera | A = 2 (cas-3 scale) | CLS-4 |
+| MAT-C-02 | BMg 1, BMm 1, 2 ha | C = 1 (v3.0 gave 0) | CD-1 |
+| MAT-E-02 | TGB 1, GB 1, 2 ha | E = 1 (v3.0 gave 0) | E-1 |
+| MAT-G-02 | cas 3, 0.5 %; then cas 3, 6 % | G = 2; G = 5 | G-2 |
+| MAT-G-03 | direct G = 1 | blocking | BUG-2, G-5 |
+| MAT-H-02 | direct H = 1, or `class_score` 1 | blocking | BUG-2, H-4 |
+| MAT-VER-01 | a payload tagged v3.0 | scored with v3.0 rules; a replay of a submitted v3.0 survey stays accepted | BUG-4, D-07 |
+
+These cases are specified in the matrix document as "v3.2 target" cases (plan 01.1-03) and
+implemented with the rules in phase 01.8.
+
+## Questions for CNPF and assumptions
+
+Inconsistencies in the v3.2 text, to raise with CNPF. Until answered, the conservative reading
+applies:
+
+- **Ficus** (A-6): *Ficus carica* is in Table 1 (p. 10–11) but Ficus is not in the genus list
+  (p. 3), and only listed genera count (p. 6). Reading: Ficus is not counted.
+- **Pistacia** (A-7): a supplementary genus (p. 3) whose native species appear only among the
+  uncounted shrubs of Table 2 (p. 11). Reading: the phase 2 genus picker decides.
+- **Linear C/D table** (CD-6): the per-km table for linear stands (p. 6) still uses BMm alone,
+  while the per-hectare rule uses BMm + BMg (p. 3). Reading: the per-hectare sum rule is
+  intended (A5); linear stands are not implemented in the app.
+
+Assumptions:
+
+- **A1**: the 2023-03-23 v3.0 text matches the 2021 v3 sheet on the points used as cross-checks;
+  if not, some "2021 v3 sheet" rows changed in 2023 already, but the app-vs-v3.2 result holds.
+- **A2**: the v3.0 Mediterranean sheet used strata of 5–15 m and over 15 m and had its own genus
+  additions; this only affects how the v3.0 column describes M.
+- **A3**: `montagnard_mediterraneen` maps to cas 1; the mobile form does not offer that stage.
+- **A4**: few surveys are recorded (internal field tests), so version tagging is enough; the
+  decision holds either way.
+- **A5**: the sum "(BMm + BMg) at 1/ha or more" (p. 3) is a deliberate rule change, confirmed by
+  p. 18 and p. 20; if CNPF meant BMm alone, CD-1 and E-1 become wording only.
+- **A6**: the survey-sheet footnote (cas-3 A and G scales) applies to the special habitats
+  whatever the cas, as p. 7 states; otherwise CLS-4 is narrower.
+
+## Change list
+
+The exact, testable change list that phase 01.8 implements (CH-1 to CH-12) lives in
+[ADR-003](adr-003-ibp-method-version-v1.md) and is not duplicated here. This document is the
+evidence for that list; its row IDs (CLS, A to J, GS, BUG and DRIFT) are the references to use.
