@@ -139,7 +139,7 @@ A3, see [Questions for CNPF and assumptions](#questions-for-cnpf-and-assumptions
 | ID | v3.0 / app | v3.2 (page) | Severity | API impact | Mobile impact | Matrix impact |
 |----|------------|-------------|----------|------------|---------------|---------------|
 | A-1 | No cap on A; the app applies the "native cover under 50 %" cap to **B** instead (app bug under v3.0 too, see BUG-1) | A is capped at 2 when all native species cover less than 50 % of the described stand: « Score plafonné à 2 » (p. 3, p. 20). The 2021 v3 sheet also puts the cap on A (sheet p. 7) | **changes a score** | `scoreFactorA` l. 220–240 gains the cap and a native-cover input; `scoreFactorB` l. 257–259 loses it | `scoreFactorA` l. 58–78 and `scoreFactorB` l. 91–93; `labels.ts` l. 44–48 and l. 52; form fields `constants.ts` l. 40–41 and `useSurveyForm.ts` l. 149–158; `LEGACY_DEFAULT_FACTOR_VALUES` in `storage/db.ts` l. 39–41 | MAT-B-01 changes (B 2 becomes 5); new A-cap cases MAT-A-03 and MAT-A-04 |
-| A-2 | App: no list, the observer types a count; 2021 v3 sheet (ACA): 25 genera plus the Quercus split | 28 genera plus the Quercus split, 29 countable taxa (p. 3); see the genus list below | changes a field | none (count only) | Help text `labels.ts` l. 45; phase 2 genus picker | none |
+| A-2 | App: no list, the observer types a count; 2021 v3 sheet (ACA): 26 genera plus the Quercus split | 28 genera plus the Quercus split, 29 countable taxa (p. 3); see the genus list below | changes a field | none (count only) | Help text `labels.ts` l. 45; phase 2 genus picker | none |
 | A-3 | 2021 v3 sheet: only *Juniperus thurifera* | Genus Juniperus, restricted by Table 1 to *J. thurifera* plus *J. macrocarpa* and *J. phoenicea*, the last two in the coastal zone only (p. 3, p. 10, footnote p. 11) | changes a field | none | Help text; genus picker | none |
 | A-4 | App and spec: "CNPF list for regional version", no list shipped; the v3.0 Mediterranean list could not be checked | Supplementary genera Ceratonia, Cercis, Olea, Phillyrea and Pistacia count in **cas 4 and cas 2** (p. 3); cas 2 includes very infertile temperate stations | changes a field | none (count only) | The genus picker must depend on the cas | none |
 | A-5 | 2021 v3 sheet: nativity judged from the natural range (forest flora, atlas) | Species-level Table 1 (p. 10–11): tree species only (normally over 7 m as adults in closed forest), native where the survey is made. Archaeophytes count within their ancient range. All poplar cultivars count as native. Shrub species of a listed genus do not count (Table 2, p. 11) | changes a field | none | Help text; genus picker | none |
@@ -158,7 +158,7 @@ documentation (`species-recognition-spike-measurements-v1.md` §2), and it is de
 **2021 v3 sheet list (ACA sheet p. 7, French names mapped to genera).** Sorbus, Arbutus, Alnus,
 Betula, Carpinus, Ostrya, Castanea, Quercus (deciduous), Quercus (evergreen), Picea, Acer,
 Fraxinus, Juniperus (*J. thurifera* only), Fagus, Taxus, Prunus, Larix, Celtis, Juglans, Ulmus,
-Populus, Pinus, Pyrus, Malus, Abies, Salix and Tilia: **25 genera plus the Quercus split, 27
+Populus, Pinus, Pyrus, Malus, Abies, Salix and Tilia: **26 genera plus the Quercus split, 27
 countable taxa**. The 2021 Mediterranean sheet was not available.
 
 **v3.2 list (p. 3, repeated on the survey sheet p. 20).**
