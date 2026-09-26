@@ -28,7 +28,7 @@ module.exports = {
     './src/debug/': { statements: 74, branches: 52, functions: 42, lines: 76 },
     './src/reports/': { statements: 64, branches: 52, functions: 35, lines: 62 },
     './src/storage/': { statements: 99, branches: 97, functions: 100, lines: 100 },
-    './src/surveys/': { statements: 83, branches: 68, functions: 83, lines: 83 },
+    './src/surveys/': { statements: 84, branches: 70, functions: 84, lines: 84 },
     './src/users/': { statements: 92, branches: 91, functions: 58, lines: 92 },
   },
 };

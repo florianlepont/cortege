@@ -33,7 +33,10 @@ import {
   normalizeParcelIds,
   normalizePreviousSurveyId,
   normalizeVersionNumber,
+  resolveSurveyMethodColumns,
   SameVersionContent,
+  sameSurveyMethodColumns,
+  SurveyMethodColumns,
 } from "./surveys-normalize.utils"
 
 type UpsertResult = {
@@ -49,6 +52,8 @@ type PreparedUpsert = {
   surveyId: string
   syncVersion: number
   siteName: string
+  // The station columns the write stores and the rules ran with (phase 01.8, RESEARCH §4.2).
+  columns: SurveyMethodColumns
   draftValidation: IbpValidationResult
   computedScores: NonNullable<IbpValidationResult["scores"]>
   now: Date
@@ -110,7 +115,7 @@ export class SurveysService {
    */
   async upsertForUser(user: AuthenticatedUser, body: SurveyUpsertBody): Promise<UpsertResult> {
     const prepared = this.prepareUpsert(body)
-    const { surveyId, syncVersion, draftValidation } = prepared
+    const { surveyId, syncVersion, draftValidation, columns } = prepared
 
     const current = await this.repository.readForUpsert(this.db, surveyId, user.id)
 
@@ -128,8 +133,11 @@ export class SurveysService {
         observationYear: version.observationYear,
         versionNumber: version.versionNumber,
         previousSurveyId: version.previousSurveyId,
-        regionVersion: body.region_version ?? null,
-        vegetationStage: body.vegetation_stage ?? null,
+        regionVersion: columns.region_version,
+        vegetationStage: columns.vegetation_stage,
+        ibpMethodVersion: columns.ibp_method_version,
+        ibpCas: columns.ibp_cas,
+        ibpCas3Scale: columns.ibp_cas3_scale,
         factors: body.factors ?? {},
         factorResults: draftValidation.factor_results ?? {},
         scores: prepared.computedScores,
@@ -151,6 +159,9 @@ export class SurveysService {
       throw olderSyncVersionConflict(surveyId, existing.sync_version, syncVersion)
     }
 
+    // Rule 4: a body without a method version follows the stored row's. Pure CPU, no statement.
+    const rowPrepared = this.prepareForRow(prepared, body, existing)
+
     if (syncVersion === existing.sync_version) {
       const content = classifySameVersionContent(body, existing, existingParcelIds)
       if (content === "visibility_only" && !existing.deleted_at && body.visibility) {
@@ -159,7 +170,7 @@ export class SurveysService {
       }
       // Identical, conflict, or visibility-only on a deleted row: nothing is written.
       return this.syncedResult(
-        prepared,
+        rowPrepared,
         existing.id,
         await this.resolveSameVersionUpsert(this.db, user.id, existing, body, syncVersion, content),
       )
@@ -178,27 +189,30 @@ export class SurveysService {
       {
         surveyId,
         userId: user.id,
-        siteName: prepared.siteName,
+        siteName: rowPrepared.siteName,
         visibility: body.visibility ?? existing.visibility,
         parcelId,
         parcelIds: selectedParcelIds,
         observationYear: version.observationYear,
         versionNumber: version.versionNumber,
         previousSurveyId: version.previousSurveyId,
-        regionVersion: body.region_version ?? existing.region_version,
-        vegetationStage: body.vegetation_stage ?? existing.vegetation_stage,
+        regionVersion: rowPrepared.columns.region_version,
+        vegetationStage: rowPrepared.columns.vegetation_stage,
+        ibpMethodVersion: rowPrepared.columns.ibp_method_version,
+        ibpCas: rowPrepared.columns.ibp_cas,
+        ibpCas3Scale: rowPrepared.columns.ibp_cas3_scale,
         factors: body.factors ?? existing.factors ?? {},
-        factorResults: draftValidation.factor_results ?? existing.factor_results ?? {},
-        scores: prepared.computedScores,
+        factorResults: rowPrepared.draftValidation.factor_results ?? existing.factor_results ?? {},
+        scores: rowPrepared.computedScores,
         syncVersion,
-        now: prepared.now.toISOString(),
-        expiresAt: prepared.expiresAt,
-        eventPayload: this.upsertEventPayload(prepared),
+        now: rowPrepared.now.toISOString(),
+        expiresAt: rowPrepared.expiresAt,
+        eventPayload: this.upsertEventPayload(rowPrepared),
       },
       casToken,
     )
     if (updated) {
-      return this.syncedResult(prepared, updated.id, updated.updated_at)
+      return this.syncedResult(rowPrepared, updated.id, updated.updated_at)
     }
     // 0 rows: the row changed since statement A (xmin), or was submitted, or another request
     // already stored this sync_version. The locked path decides on the fresh row.
@@ -219,11 +233,33 @@ export class SurveysService {
       throw new BadRequestException("site_name is required")
     }
 
-    const draftValidation = this.ibpRules.validateDraft({
-      factors: body.factors,
-      region_version: body.region_version,
-      vegetation_stage: body.vegetation_stage,
-    })
+    // Validated before any statement with the body alone; prepareForRow re-evaluates once the
+    // stored row is read when the row changes the method context (RESEARCH §4.2 rule 4).
+    const columns = resolveSurveyMethodColumns(body, null)
+    const draftValidation = this.validateUpsertDraft(body.factors, columns)
+
+    const now = new Date()
+    return {
+      surveyId: body.id,
+      syncVersion: body.sync_version,
+      siteName: body.site_name,
+      columns,
+      draftValidation,
+      computedScores: this.scoresOf(draftValidation),
+      now,
+      // D-03: expires_at is computed server-side at creation and never moved by an upsert; the
+      // client-sent value (kept on the DTO for compatibility) is never read here.
+      expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    }
+  }
+
+  // Draft validation of an upsert or PATCH body under its method context; a blocking issue is a
+  // 422 before anything is written.
+  private validateUpsertDraft(
+    factors: SurveyUpsertBody["factors"],
+    columns: SurveyMethodColumns,
+  ): IbpValidationResult {
+    const draftValidation = this.ibpRules.validateDraft({ factors, ...columns })
     if (!draftValidation.ok) {
       throw new UnprocessableEntityException({
         message: "IBP factor validation failed",
@@ -231,22 +267,34 @@ export class SurveysService {
         warnings: draftValidation.warnings,
       })
     }
+    return draftValidation
+  }
 
-    const now = new Date()
+  private scoresOf(validation: IbpValidationResult): PreparedUpsert["computedScores"] {
+    return validation.scores ?? { ibp_peuplement_gestion: 0, ibp_contexte: 0, ibp_total: 0 }
+  }
+
+  /**
+   * The prepared upsert for the stored row it will write (RESEARCH §4.2 rules 1, 2 and 4). The
+   * body was scored alone; when the row supplies a method version, cas, region or stage the body
+   * lacks, the body is scored again under the row's context, so an old app's untagged edit of a
+   * v3.2 draft is validated, scored and stored as v3.2. Pure CPU: no statement is added.
+   */
+  private prepareForRow(
+    prepared: PreparedUpsert,
+    body: SurveyUpsertBody,
+    existing: SurveyRow,
+  ): PreparedUpsert {
+    const columns = resolveSurveyMethodColumns(body, existing)
+    if (sameSurveyMethodColumns(columns, prepared.columns)) {
+      return prepared
+    }
+    const draftValidation = this.validateUpsertDraft(body.factors, columns)
     return {
-      surveyId: body.id,
-      syncVersion: body.sync_version,
-      siteName: body.site_name,
+      ...prepared,
+      columns,
       draftValidation,
-      computedScores: draftValidation.scores ?? {
-        ibp_peuplement_gestion: 0,
-        ibp_contexte: 0,
-        ibp_total: 0,
-      },
-      now,
-      // D-03: expires_at is computed server-side at creation and never moved by an upsert; the
-      // client-sent value (kept on the DTO for compatibility) is never read here.
-      expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      computedScores: this.scoresOf(draftValidation),
     }
   }
 
@@ -279,7 +327,8 @@ export class SurveysService {
     body: SurveyUpsertBody,
     prepared: PreparedUpsert,
   ): Promise<UpsertResult> {
-    const { surveyId, syncVersion, siteName, draftValidation, computedScores, now } = prepared
+    const { surveyId, syncVersion, siteName, draftValidation, computedScores, now, columns } =
+      prepared
 
     return this.db.transaction(async (db) => {
       let existing = await this.repository.findOwned(db, surveyId, user.id, {
@@ -303,10 +352,12 @@ export class SurveysService {
         const insertResult = await db.query<{ id: string; updated_at: string }>(
           `INSERT INTO surveys (
             id, user_id, site_name, status, visibility, parcel_id, observation_year, version_number, previous_survey_id, region_version, vegetation_stage,
-            factors, factor_results, scores, location, created_at, updated_at, submitted_at, expires_at, sync_version
+            factors, factor_results, scores, location, created_at, updated_at, submitted_at, expires_at, sync_version,
+            ibp_method_version, ibp_cas, ibp_cas3_scale
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-            $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19, $20
+            $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19, $20,
+            $21, $22, $23
           )
           ON CONFLICT (id) DO NOTHING
           RETURNING id, updated_at::text`,
@@ -322,8 +373,8 @@ export class SurveysService {
             observationYear,
             versionNumber,
             previousSurveyId,
-            body.region_version ?? null,
-            body.vegetation_stage ?? null,
+            columns.region_version,
+            columns.vegetation_stage,
             JSON.stringify(body.factors ?? {}),
             JSON.stringify(draftValidation.factor_results ?? {}),
             JSON.stringify(computedScores),
@@ -333,6 +384,9 @@ export class SurveysService {
             null,
             prepared.expiresAt,
             syncVersion,
+            columns.ibp_method_version,
+            columns.ibp_cas,
+            columns.ibp_cas3_scale,
           ],
         )
 
@@ -366,13 +420,16 @@ export class SurveysService {
         throw olderSyncVersionConflict(surveyId, existing.sync_version, syncVersion)
       }
 
+      // Rule 4 on the locked row: the stored method context applies to an untagged body.
+      const rowPrepared = this.prepareForRow(prepared, body, existing)
+
       if (syncVersion === existing.sync_version) {
         // D-04/D-16: same version is an idempotent replay only when the
         // content matches by value; a visibility-only difference is applied
         // last-writer-wins, any read-only difference is a 409.
         const content = classifySameVersionContent(body, existing, existingParcelIds)
         return this.syncedResult(
-          prepared,
+          rowPrepared,
           existing.id,
           await this.resolveSameVersionUpsert(db, user.id, existing, body, syncVersion, content),
         )
@@ -419,11 +476,11 @@ export class SurveysService {
           surveyId,
           user.id,
           "updated",
-          this.upsertEventPayload(prepared),
+          this.upsertEventPayload(rowPrepared),
         )
 
         return this.syncedResult(
-          prepared,
+          rowPrepared,
           restrictedUpdateResult.rows[0].id,
           restrictedUpdateResult.rows[0].updated_at,
         )
@@ -459,7 +516,10 @@ export class SurveysService {
              scores = $13::jsonb,
              location = $14::jsonb,
              sync_version = $15,
-             updated_at = $16
+             updated_at = $16,
+             ibp_method_version = $17,
+             ibp_cas = $18,
+             ibp_cas3_scale = $19
          WHERE id = $1 AND user_id = $2 AND sync_version < $15
          RETURNING id, updated_at::text`,
         [
@@ -471,14 +531,19 @@ export class SurveysService {
           observationYear,
           versionNumber,
           previousSurveyId,
-          body.region_version ?? existing.region_version,
-          body.vegetation_stage ?? existing.vegetation_stage,
+          rowPrepared.columns.region_version,
+          rowPrepared.columns.vegetation_stage,
           JSON.stringify(body.factors ?? existing.factors ?? {}),
-          JSON.stringify(draftValidation.factor_results ?? existing.factor_results ?? {}),
-          JSON.stringify(computedScores),
+          JSON.stringify(
+            rowPrepared.draftValidation.factor_results ?? existing.factor_results ?? {},
+          ),
+          JSON.stringify(rowPrepared.computedScores),
           JSON.stringify({}),
           syncVersion,
           now.toISOString(),
+          rowPrepared.columns.ibp_method_version,
+          rowPrepared.columns.ibp_cas,
+          rowPrepared.columns.ibp_cas3_scale,
         ],
       )
 
@@ -489,9 +554,19 @@ export class SurveysService {
 
       await this.repository.syncSurveyParcels(db, surveyId, selectedParcelIds)
 
-      await this.events.insert(db, surveyId, user.id, "updated", this.upsertEventPayload(prepared))
+      await this.events.insert(
+        db,
+        surveyId,
+        user.id,
+        "updated",
+        this.upsertEventPayload(rowPrepared),
+      )
 
-      return this.syncedResult(prepared, updateResult.rows[0].id, updateResult.rows[0].updated_at)
+      return this.syncedResult(
+        rowPrepared,
+        updateResult.rows[0].id,
+        updateResult.rows[0].updated_at,
+      )
     })
   }
 
@@ -539,7 +614,7 @@ export class SurveysService {
         await this.repository.getSurveyParcelIds(db, reRead.id),
       )
       return this.syncedResult(
-        prepared,
+        this.prepareForRow(prepared, body, reRead),
         reRead.id,
         await this.resolveSameVersionUpsert(db, user.id, reRead, body, syncVersion, content),
       )
@@ -647,19 +722,16 @@ export class SurveysService {
         })
       }
 
-      if (body.factors) {
-        const check = this.ibpRules.validateDraft({
-          factors: body.factors,
-          region_version: body.region_version ?? existing.region_version,
-          vegetation_stage: body.vegetation_stage ?? existing.vegetation_stage,
-        })
-        if (!check.ok) {
-          throw new UnprocessableEntityException({
-            message: "IBP factor validation failed",
-            errors: check.errors,
-            warnings: check.warnings,
-          })
-        }
+      // RESEARCH §4.2 rules 1-2: the final station columns, written explicitly (not COALESCE)
+      // so the normalisation can clear the other method's fields. A change of method context
+      // re-scores the stored factors even when the body carries none.
+      const columns = resolveSurveyMethodColumns(body, existing)
+      const methodChanged = !sameSurveyMethodColumns(
+        columns,
+        resolveSurveyMethodColumns({}, existing),
+      )
+      if (body.factors || methodChanged) {
+        const check = this.validateUpsertDraft(body.factors ?? existing.factors, columns)
         if (check.scores) {
           body.scores = check.scores
         }
@@ -713,8 +785,11 @@ export class SurveysService {
              observation_year = COALESCE($6, observation_year),
              version_number = COALESCE($7, version_number),
              previous_survey_id = COALESCE($8, previous_survey_id),
-             region_version = COALESCE($9, region_version),
-             vegetation_stage = COALESCE($10, vegetation_stage),
+             region_version = $9,
+             vegetation_stage = $10,
+             ibp_method_version = $15,
+             ibp_cas = $16,
+             ibp_cas3_scale = $17,
              factors = COALESCE($11::jsonb, factors),
              factor_results = COALESCE($12::jsonb, factor_results),
              scores = COALESCE($13::jsonb, scores),
@@ -731,8 +806,8 @@ export class SurveysService {
           observationYearForPatch,
           versionNumberForPatch,
           previousSurveyIdForPatch,
-          body.region_version ?? null,
-          body.vegetation_stage ?? null,
+          columns.region_version,
+          columns.vegetation_stage,
           body.factors ? JSON.stringify(body.factors) : null,
           (body as SurveyPatchBody & { factor_results?: SurveyRow["factor_results"] })
             .factor_results
@@ -743,6 +818,9 @@ export class SurveysService {
             : null,
           body.scores ? JSON.stringify(body.scores) : null,
           shouldUpdateParcels,
+          columns.ibp_method_version,
+          columns.ibp_cas,
+          columns.ibp_cas3_scale,
         ],
       )
 
@@ -897,6 +975,9 @@ export class SurveysService {
       | "previous_survey_id"
       | "region_version"
       | "vegetation_stage"
+      | "ibp_method_version"
+      | "ibp_cas"
+      | "ibp_cas3_scale"
       | "factors"
       | "factor_results"
       | "scores"
@@ -926,6 +1007,9 @@ export class SurveysService {
       previous_survey_id: survey.previous_survey_id,
       region_version: survey.region_version,
       vegetation_stage: survey.vegetation_stage,
+      ibp_method_version: survey.ibp_method_version,
+      ibp_cas: survey.ibp_cas,
+      ibp_cas3_scale: survey.ibp_cas3_scale,
       factors: survey.factors,
       factor_results: survey.factor_results,
       scores: survey.scores,
@@ -969,9 +1053,13 @@ export class SurveysService {
           columns: "full",
         })
 
+        // The stored row's method fields: submit scores under the survey's own version.
         const validation = this.ibpRules.validateSubmit({
           region_version: existing.region_version,
           vegetation_stage: existing.vegetation_stage,
+          ibp_method_version: existing.ibp_method_version,
+          ibp_cas: existing.ibp_cas,
+          ibp_cas3_scale: existing.ibp_cas3_scale,
           expires_at: existing.expires_at,
           factors: existing.factors,
         })

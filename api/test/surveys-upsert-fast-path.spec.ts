@@ -41,6 +41,9 @@ describe("SurveysService upsert fast path", () => {
       previous_survey_id: null,
       region_version: null,
       vegetation_stage: null,
+      ibp_method_version: null,
+      ibp_cas: null,
+      ibp_cas3_scale: null,
       factors: {},
       factor_results: {},
       scores: {},
@@ -141,6 +144,9 @@ describe("SurveysService upsert fast path", () => {
         factors,
         region_version: "ACA",
         vegetation_stage: "collineen",
+        ibp_method_version: null,
+        ibp_cas: null,
+        ibp_cas3_scale: null,
       })
     })
 
@@ -244,6 +250,129 @@ describe("SurveysService upsert fast path", () => {
     })
   })
 
+  describe("method version (phase 01.8, RESEARCH §4.2)", () => {
+    const V3_0 = "cnpf_ibp_fr_v3_0_2023-03-23"
+    const V3_2 = "cnpf_ibp_fr_v3_2_2026-02-02"
+    const writtenCreate = (repository: ReturnType<typeof setup>["repository"]) =>
+      repository.createSurveyAtomic.mock.calls[0][1] as SurveyFastWriteInput
+    const writtenUpdate = (repository: ReturnType<typeof setup>["repository"]) =>
+      repository.updateSurveyIfUnchanged.mock.calls[0][1] as SurveyFastWriteInput
+
+    it("writes a v3.2 body with its cas and without region or stage", async () => {
+      const { service, repository, ibpRules } = setup()
+      repository.readForUpsert.mockResolvedValue(null)
+      repository.createSurveyAtomic.mockResolvedValue({ id: "survey-1", updated_at: "t1" })
+
+      await service.upsertForUser(
+        user,
+        body({
+          ibp_method_version: V3_2,
+          ibp_cas: 2,
+          ibp_cas3_scale: true,
+          region_version: "ACA",
+          vegetation_stage: "subalpin",
+        }),
+      )
+
+      expect(writtenCreate(repository)).toMatchObject({
+        ibpMethodVersion: V3_2,
+        ibpCas: 2,
+        ibpCas3Scale: true,
+        regionVersion: null,
+        vegetationStage: null,
+      })
+      expect(ibpRules.validateDraft).toHaveBeenCalledWith(
+        expect.objectContaining({ ibp_method_version: V3_2, ibp_cas: 2, region_version: null }),
+      )
+    })
+
+    it("writes a v3.0 body without a cas", async () => {
+      const { service, repository } = setup()
+      repository.readForUpsert.mockResolvedValue(null)
+      repository.createSurveyAtomic.mockResolvedValue({ id: "survey-1", updated_at: "t1" })
+
+      await service.upsertForUser(
+        user,
+        body({
+          ibp_method_version: V3_0,
+          ibp_cas: 2,
+          ibp_cas3_scale: true,
+          region_version: "M",
+          vegetation_stage: "montagnard",
+        }),
+      )
+
+      expect(writtenCreate(repository)).toMatchObject({
+        ibpMethodVersion: V3_0,
+        ibpCas: null,
+        ibpCas3Scale: null,
+        regionVersion: "M",
+        vegetationStage: "montagnard",
+      })
+    })
+
+    it("validates and writes an untagged edit of a stored v3.2 draft as v3.2", async () => {
+      const { service, repository, ibpRules } = setup()
+      repository.readForUpsert.mockResolvedValue(
+        storedRow({ ibp_method_version: V3_2, ibp_cas: 4, ibp_cas3_scale: false }),
+      )
+      repository.updateSurveyIfUnchanged.mockResolvedValue({ id: "survey-1", updated_at: "t2" })
+
+      await service.upsertForUser(
+        user,
+        body({ sync_version: 2, region_version: "ACA", vegetation_stage: "collineen" }),
+      )
+
+      // Scored alone first (v3.0), then again under the row's v3.2 context before the write.
+      expect(ibpRules.validateDraft).toHaveBeenCalledTimes(2)
+      expect(ibpRules.validateDraft).toHaveBeenLastCalledWith({
+        factors: {},
+        ibp_method_version: V3_2,
+        ibp_cas: 4,
+        ibp_cas3_scale: false,
+        region_version: null,
+        vegetation_stage: null,
+      })
+      expect(writtenUpdate(repository)).toMatchObject({
+        ibpMethodVersion: V3_2,
+        ibpCas: 4,
+        ibpCas3Scale: false,
+        regionVersion: null,
+        vegetationStage: null,
+      })
+    })
+
+    it("keeps an untagged row untagged and scores it once", async () => {
+      const { service, repository, ibpRules } = setup()
+      repository.readForUpsert.mockResolvedValue(storedRow())
+      repository.updateSurveyIfUnchanged.mockResolvedValue({ id: "survey-1", updated_at: "t2" })
+
+      await service.upsertForUser(user, body({ sync_version: 2 }))
+
+      expect(ibpRules.validateDraft).toHaveBeenCalledTimes(1)
+      expect(writtenUpdate(repository)).toMatchObject({
+        ibpMethodVersion: null,
+        ibpCas: null,
+        ibpCas3Scale: null,
+      })
+    })
+
+    it("rejects a body the row's version makes invalid, before any write", async () => {
+      const { service, repository, ibpRules } = setup()
+      repository.readForUpsert.mockResolvedValue(
+        storedRow({ ibp_method_version: V3_2, ibp_cas: 1 }),
+      )
+      ibpRules.validateDraft
+        .mockReturnValueOnce({ ok: true, errors: [], warnings: [], scores: null })
+        .mockReturnValueOnce({ ok: false, errors: ["bad"], warnings: [], scores: null })
+
+      await expect(service.upsertForUser(user, body({ sync_version: 2 }))).rejects.toMatchObject({
+        status: 422,
+      })
+      expect(repository.updateSurveyIfUnchanged).not.toHaveBeenCalled()
+    })
+  })
+
   describe("same sync_version", () => {
     const same = () =>
       body({
@@ -311,6 +440,9 @@ describe("SurveysRepository fast-path statements", () => {
     previousSurveyId: null,
     regionVersion: null,
     vegetationStage: null,
+    ibpMethodVersion: "cnpf_ibp_fr_v3_2_2026-02-02",
+    ibpCas: 3,
+    ibpCas3Scale: false,
     factors: {},
     factorResults: {},
     scores: { ibp_total: 0 },
@@ -322,13 +454,26 @@ describe("SurveysRepository fast-path statements", () => {
 
   it("binds sorted, de-duplicated parcels and the create or CAS token as $23", () => {
     const create = fastWriteValues(input, null)
-    expect(create).toHaveLength(23)
+    expect(create).toHaveLength(26)
     expect(create[15]).toEqual(["01001A0001", "01001B0002"])
     expect(create[16]).toEqual(["01001", "01001"])
     expect(create[17]).toEqual(["AA", "BA"])
     expect(create[18]).toEqual(["0001", "0002"])
     expect(create[22]).toBe("2026-01-08T00:00:00.000Z")
     expect(fastWriteValues(input, "777")[22]).toBe("777")
+  })
+
+  it("binds the method columns as $24..$26 and writes them in both statements", () => {
+    expect(fastWriteValues(input, null).slice(23)).toEqual([
+      "cnpf_ibp_fr_v3_2_2026-02-02",
+      3,
+      false,
+    ])
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("ibp_method_version, ibp_cas, ibp_cas3_scale")
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("$24::text, $25::smallint, $26::boolean")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_method_version = $24::text")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas = $25::smallint")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas3_scale = $26::boolean")
   })
 
   it("gates parcel registration on the survey write and uses the shared event insert", () => {

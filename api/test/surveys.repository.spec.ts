@@ -71,6 +71,15 @@ describe("SurveysRepository", () => {
     })
   })
 
+  describe("method columns (migration 016)", () => {
+    it("readForUpsert reads s.*, so the method version, cas and flag reach the upsert", async () => {
+      const row = { id: "s1", ibp_method_version: "cnpf_ibp_fr_v3_2_2026-02-02", ibp_cas: 2 }
+      const db = buildDb([row])
+      await expect(repository.readForUpsert(db, "s1", "u1")).resolves.toBe(row)
+      expect(sqlOf(db)).toContain("SELECT s.*,")
+    })
+  })
+
   describe("findOwnedOrThrow", () => {
     it("throws NotFoundException('Survey not found') when there is no row", async () => {
       const error = await repository
