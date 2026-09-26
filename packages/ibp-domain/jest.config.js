@@ -19,6 +19,6 @@ module.exports = {
   coverageReporters: ["text", "text-summary", "json-summary", "lcov"],
   // The shared rules are pure functions: keep them almost fully covered (phase 01.8, D-07).
   coverageThreshold: {
-    global: { statements: 95, branches: 90, functions: 95, lines: 95 },
+    global: { statements: 100, branches: 100, functions: 100, lines: 100 },
   },
 }

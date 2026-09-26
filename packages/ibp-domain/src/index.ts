@@ -44,3 +44,8 @@ export { evaluateSubmitReadiness } from "./readiness"
 export type { SubmitReadiness, SubmitReadinessField } from "./readiness"
 
 export { migrateDraftToV32 } from "./migrate"
+
+// The parity fixture, exported from the main entry: the only path the API (node10), Metro and
+// both Jest mappers all resolve (RESEARCH §2.3).
+export { IBP_MIGRATION_CASES, IBP_PARITY_CASES, IBP_READINESS_CASES } from "./parity/cases"
+export type { IbpMigrationCase, IbpParityCase, IbpReadinessCase } from "./parity/cases"

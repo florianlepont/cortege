@@ -35,7 +35,9 @@ phase gate (01.8-16) cross-checks the ids of this document against the fixture.
 
 Case id format: `MAT-X-NN@v3.0`, `MAT-X-NN@v3.2`, or `MAT-X-NN@both` when one case runs under
 both versions. The v3.0 group applies to untagged payloads and to the v3.0 tag alike; the fixture
-encodes an untagged payload with `method: null`.
+encodes an untagged payload with `method: null`. When one matrix case runs several inputs (for
+example "cas 3; then cas 1", or a draft and a submit), the fixture holds one entry per input: its
+`matrixId` is the id in this document and its `id` adds a `#variant` suffix (`MAT-A-02@v3.2#cas-3`).
 
 ## Changes from v1
 
@@ -58,11 +60,13 @@ never compares a recomputed score with the stored one. The only newly blocked sh
 ## Reading the tables
 
 - **Mode**: `draft` or `submit`. Draft validation reports blocking issues only as errors; missing
-  or incomplete factors are not errors in draft.
+  or incomplete factors are not errors in draft. An incomplete factor (v3.2: A or G without the
+  cas, A without its cover) gives a non-blocking warning `factor_incomplete` in draft and a blocking
+  `factor_required` at submit.
 - **Expected**: per-factor score for the factors given. "not scored" means the factor is missing
   or incomplete (for example A without its cover under v3.2).
-- **Issues**: issue codes the case must emit, blocking (B) or non-blocking warning (W). Codes are
-  compared without order.
+- **Issues**: the issue codes the case emits, blocking (B) or non-blocking warning (W); "none"
+  means no issue at all. Codes are compared as a set, without order or repeats.
 - **Totals** are given only where all ten factors are present.
 
 ## v3.0 cases
@@ -122,7 +126,7 @@ need `ibp_cas`. The cas-3 scale for A and G applies when `ibp_cas=3` or `ibp_cas
 | MAT-B-01@v3.2 | draft | any | `B.strata_count=5` (no cover) | `B=5` | none |
 | MAT-C-01@v3.2 | draft | any | `C.bmg_count=0`, `C.bmm_count=2`, `C.surface_ha=1` | `C=1` | none |
 | MAT-C-02@v3.2 | draft | any | `C.bmg_count=1`, `C.bmm_count=1`, `C.surface_ha=2` | `C=1` ((BMg+BMm)/ha = 1) | none |
-| MAT-C-03@v3.2 | draft | any | `C.bmg_count=0`, BMm density 0.9/ha | `C=0` | none |
+| MAT-C-03@v3.2 | draft | any | `C.bmg_count=0`, `C.bmm_count=9`, `C.surface_ha=10` (BMm 0.9/ha) | `C=0` | none |
 | MAT-D-01@v3.2 | draft | any | `D.bmg_count=4`, `D.bmm_count=0`, `D.surface_ha=1` | `D=5` | none |
 | MAT-E-01@v3.2 | draft | any | `E.tgb_count=0`, `E.gb_count=2`, `E.surface_ha=1` | `E=1` | none |
 | MAT-E-02@v3.2 | draft | any | `E.tgb_count=1`, `E.gb_count=1`, `E.surface_ha=2` | `E=1` ((GB+TGB)/ha = 1) | none |
@@ -136,8 +140,8 @@ need `ibp_cas`. The cas-3 scale for A and G applies when `ibp_cas=3` or `ibp_cas
 | MAT-J-01@v3.2 | draft | any | `J.type_count=2` | `J=5` | none |
 | MAT-CONS-01@v3.2 | draft | any | direct `A=0`, `B=2` | `A=0`, `B=2` | W `consistency_a_b` |
 | MAT-CONS-02@v3.2 | draft | any | direct `E=0`, `F=5` | `E=0`, `F=5` | W `consistency_e_f` |
-| MAT-CAS-01@v3.2 | draft; then submit | no `ibp_cas` | A count and cover, G percent, other factors complete | draft: A and G not scored, `ok=true`; submit: A and G not scored | draft: none; submit: B `ibp_cas_required`, B `factor_required` (A, G) |
-| MAT-CAS-02@v3.2 | draft; then submit | cas 1 | `A.native_genus_count=5` without any cover | A not scored; draft `ok=true` | draft: none; submit: B `factor_required` (A) |
+| MAT-CAS-01@v3.2 | draft; then submit | no `ibp_cas` | A count and cover, G percent, other factors complete | draft: A and G not scored, `ok=true`; submit: A and G not scored | draft: W `factor_incomplete` (A, G); submit: B `ibp_cas_required`, B `factor_required` (A, G) |
+| MAT-CAS-02@v3.2 | draft; then submit | cas 1 | `A.native_genus_count=5` without any cover | A not scored; draft `ok=true` | draft: W `factor_incomplete` (A); submit (other factors complete): B `factor_required` (A) |
 | MAT-SUBMIT-01@v3.2 | submit | no `ibp_cas` | `expires_at` in the past; factors incomplete | not all scored | B `survey_expired`, B `ibp_cas_required`, B `factor_required` for each missing or incomplete factor |
 | MAT-SUBMIT-02@v3.2 | submit | cas 1, `expires_at` in the future | direct `A=5, B=2, C=1, D=0, E=2, F=5, G=2, H=2, I=5, J=0` | same scores; `ok=true` | none |
 
@@ -216,6 +220,8 @@ Unchanged between versions (GS-1):
     the legacy `B.covered_autochthonous_percent` or `B.native_cover_percent`. Unknown cover means
     no cap, as before.
   - v3.2: the cover is required; A without it is incomplete (MAT-CAS-02).
+  - Both versions: an `A.native_cover_percent` that is not a number from 0 to 100 is unreadable
+    (B `factor_invalid_raw`); an A object with a cover but no genus count is incomplete.
 - Cas-3 scale for A and G (v3.2): used when `ibp_cas=3` or `ibp_cas3_scale=true`. The flag covers
   cas 2 in a zone whose macroclimate matches cas 3, and stands on lapiaz, dunes, peat bogs or
   dominated by *Juniperus thurifera* (p. 3 "Cas 1, 4 et 2\*", p. 4 footnote \*, p. 7). A cas
@@ -225,5 +231,9 @@ Unchanged between versions (GS-1):
   1 to 5 % `-> 5`; G subalpine or cas 3: `0 -> 0`, under 1 % `-> 2`, 1 % or more `-> 5`.
 - C, D and E under v3.2 test the sum of the two diameter classes for score 1 (CD-1, E-1); under
   v3.0 the lower class alone.
+- Consistency warnings (`consistency_a_b`, `consistency_e_f`, app heuristics, both versions) compare
+  two scored factors: they fire only when both factors of the pair are scored. A factor that is
+  absent or incomplete is not "very low" (before 01.8 an absent factor counted as 0, so MAT-B-01 or
+  MAT-F-01 alone would have warned).
 - Canonical class mapping: `0 -> S0`, `1 -> S1`, `2 -> S2`, `5 -> S5`.
 - Status: implemented in phase 01.8 (`packages/ibp-domain`).
