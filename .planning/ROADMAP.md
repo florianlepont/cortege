@@ -287,7 +287,7 @@ Plans:
 - [ ] 01.8-11-PLAN.md — Totals out of 50 with package bands on the badge, sector card and map; mixed-methods line; component tests (wave 4)
 - [ ] 01.8-12-PLAN.md — Method version on public map items and parcel statuses; API and data contracts; production probes (wave 5)
 - [ ] 01.8-13-PLAN.md — Form screens: method version picker (v3.2 default), scoring context by version, A cover, per-version help, / 50 (wave 5)
-- [ ] 01.8-14-PLAN.md — Detail screens: version display, cas editor, switch to v3.2 for drafts, / 50 in hero and factors (wave 5)
+- [ ] 01.8-14-PLAN.md — Detail screens: version display, cas editor, switch to v3.2 for drafts, / 50 with band-coloured /35 and /15 sub-scores (wave 5)
 - [ ] 01.8-15-PLAN.md — Citation files and form spec say v3.2 implemented; architecture docs, docs index, native README and CLAUDE.md (wave 6)
 - [ ] 01.8-16-PLAN.md — Phase gate: local gate, CI evidence with native builds, merge and API deploy with probes, owner's 6-step iPhone check (wave 7)
 
