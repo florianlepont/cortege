@@ -111,11 +111,11 @@ third-party methodology PDFs.
 The 34-class label set was read directly from two places in the document, cross-checked against
 each other:
 
-- The Factor A field-sheet definition (p. 2, "Facteurs liés au peuplement et à la gestion
+- The Factor A field-sheet definition (p. 3, "Facteurs liés au peuplement et à la gestion
   forestière"), which gives the genus list used to compute the score directly — including a
   "essences supplémentaires cas 4 et 2" (Mediterranean-case supplementary genera) line.
 - Tableau 1, "Liste des essences autochtones sur au moins une partie de la France métropolitaine,
-  selon la définition IBP" (p. 9–10), which gives the Latin binomial and French vernacular name for
+  selon la définition IBP" (p. 10–11), which gives the Latin binomial and French vernacular name for
   every native species, organised by genus.
 - p. 6's methodology note, which states the mandatory rule for genus Quercus explicitly: species
   within a genus are never differentiated in IBP scoring _except_ Quercus, which is split into two
@@ -127,13 +127,13 @@ each other:
 of the document reported.
 
 **Note on Pistacia.** Pistacia is named in the field sheet's "essences supplémentaires cas 4 et 2"
-line (p. 2) as one of the 33 Factor A genera, but no Pistacia species appears in Tableau 1's
-species-level list (p. 9–10) — the document's own Tableau 2 (p. 11, shrub species _not_ counted in
+line (p. 3) as one of the 33 Factor A genera, but no Pistacia species appears in Tableau 1's
+species-level list (p. 10–11) — the document's own Tableau 2 (p. 11, shrub species _not_ counted in
 Factor A) lists Pistacia lentiscus and Pistacia terebinthus instead. This is a minor internal
 inconsistency in the source document itself (distinct from the v3.0/v3.2 drift below), not a
 transcription error here: Factor A's genus-counting rule (p. 6) says explicitly "On se limite aux
 genres listés dans la définition" (limited to the genera listed in the definition), and the
-definition on p. 2 includes Pistacia in the supplementary genus line. `Pistacia` is kept in the
+definition on p. 3 includes Pistacia in the supplementary genus line. `Pistacia` is kept in the
 34-class label set on that basis, flagged here so a later reader can re-check it against CNPF
 directly rather than silently resolving it.
 
@@ -145,19 +145,19 @@ directly rather than silently resolving it.
 | Arbutus              | Arbousier                           | —             | —                                                                                         |
 | Betula               | Bouleau                             | —             | —                                                                                         |
 | Carpinus             | Charme                              | —             | —                                                                                         |
-| Castanea             | Châtaignier                         | —             | Archeophyte, treated as native (p. 9)                                                     |
+| Castanea             | Châtaignier                         | —             | Archeophyte, treated as native (p. 10)                                                    |
 | Celtis               | Micocoulier                         | —             | —                                                                                         |
-| Cupressus            | Cyprès (de Provence)                | —             | Archeophyte, treated as native (p. 9)                                                     |
+| Cupressus            | Cyprès (de Provence)                | —             | Archeophyte, treated as native (p. 10)                                                    |
 | Fagus                | Hêtre (commun)                      | —             | —                                                                                         |
 | Fraxinus             | Frêne                               | —             | —                                                                                         |
-| Juglans              | Noyer (commun)                      | —             | Archeophyte, treated as native (p. 9)                                                     |
+| Juglans              | Noyer (commun)                      | —             | Archeophyte, treated as native (p. 10)                                                    |
 | Juniperus            | Genévrier                           | —             | J. macrocarpa / J. phoenicea counted coastal-zone only (Tableau 1 footnote)               |
 | Larix                | Mélèze (d'Europe)                   | —             | —                                                                                         |
 | Malus                | Pommier (sauvage)                   | —             | —                                                                                         |
 | Ostrya               | Charme-Houblon                      | —             | —                                                                                         |
-| Pinus                | Pin                                 | —             | P. pinea archeophyte, treated as native (p. 9)                                            |
+| Pinus                | Pin                                 | —             | P. pinea archeophyte, treated as native (p. 10)                                           |
 | Picea                | Épicéa (commun)                     | —             | —                                                                                         |
-| Populus              | Peuplier                            | —             | All Populus cultivars counted as native (p. 9, identification difficulty)                 |
+| Populus              | Peuplier                            | —             | All Populus cultivars counted as native (p. 10, identification difficulty)                |
 | Prunus               | Cerisier / Merisier                 | —             | Only arborescent Prunus species count (P. avium, P. padus); shrub Prunus excluded         |
 | Pyrus                | Poirier (sauvage)                   | —             | —                                                                                         |
 | Quercus_deciduae     | Chênes caducifoliés                 | Deciduous     | Q. cerris, Q. petraea, Q. pubescens, Q. pyrenaica, Q. robur (marcescent species included) |
@@ -182,6 +182,9 @@ Deciding which version the app follows, and correcting `docs/references/README.m
 `docs/specs/ibp-form-spec.md` if v3.2 is adopted, belongs to Phase 2, which owns the genus list as
 a real entity (D-15) — this phase only needs _a_ sourced, defensible genus list to measure against,
 and v3.2's 33/34-class table is that list.
+Resolved in phase 01.1 by ADR-003 ([`adr-003-ibp-method-version-v1.md`](adr-003-ibp-method-version-v1.md)),
+which adopts v3.2 with implementation in phase 01.8. The page numbers in this section are the
+printed page headers of the v3.2 PDF (corrected in phase 01.1).
 
 ---
 
@@ -1092,10 +1095,10 @@ caveat, not folded into gap 2.
 
 **8. A source-document inconsistency was found while transcribing the genus list (plan 01-02, not
 a spike-corpus gap but worth carrying forward).** See Section 2. The Factor A genus definition
-(IBP FR v3.2 p.2) names Pistacia as one of the 33 genera, but no Pistacia species appears in the
+(IBP FR v3.2 p. 3) names Pistacia as one of the 33 genera, but no Pistacia species appears in the
 same document's Table 1 (native species list) — its species are listed instead under Table 2
 (shrub species not counted in Factor A). `Pistacia` was kept in the 34-class label set per the
-genus-level definition on p.2, flagged for a later reader to re-check against CNPF directly.
+genus-level definition on p. 3, flagged for a later reader to re-check against CNPF directly.
 
 **9. First-hand confirmation of the v3.0/v3.2 methodology-version drift (plan 01-02, informational
 only — out of scope for this phase to resolve).** Retrieving the current IBP FR v3.2 PDF directly
@@ -1104,6 +1107,8 @@ published document is v3.2 while this repository's own reference documents cite 
 drift Phase 1.1 exists to resolve. Noted here for traceability since this plan is where the v3.2
 PDF was actually opened and read; no action taken on it beyond what Section 2 already records, per
 instruction that resolving the drift is out of scope for this plan.
+Resolved in phase 01.1 by ADR-003 (`adr-003-ibp-method-version-v1.md`): the app migrates to v3.2
+in phase 01.8.
 
 **10. No genus clears the D-02/D-04 top-3 95% bar on the lab figure (plan 01-04).** See Section 5.
 0 of 34 genera cleared it; the closest, Olea, missed by a single test image (33/35, 94.29%, versus
