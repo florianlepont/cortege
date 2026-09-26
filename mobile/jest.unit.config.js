@@ -51,9 +51,10 @@ module.exports = {
     // ternaries such as `n === 1 ? ... : ...` are not all exercised yet).
     './src/i18n/': { statements: 100, branches: 73, functions: 100, lines: 100 },
     './src/api/': { statements: 95, branches: 97, functions: 91, lines: 95 },
-    './src/app/': { statements: 86, branches: 73, functions: 93, lines: 91 },
+    // Raised in 01.8-07 after the IBP rules moved to @cortege/ibp-domain (adapter + parity tests).
+    './src/app/': { statements: 91, branches: 80, functions: 96, lines: 95 },
     './src/components/': { statements: 22, branches: 11, functions: 10, lines: 22 },
-    './src/hooks/': { statements: 90, branches: 78, functions: 94, lines: 90 },
+    './src/hooks/': { statements: 90, branches: 79, functions: 94, lines: 90 },
     './src/screens/': { statements: 46, branches: 33, functions: 40, lines: 46 },
     './src/storage/': { statements: 92, branches: 81, functions: 91, lines: 94 },
     './src/ui/': { statements: 44, branches: 29, functions: 31, lines: 46 },

@@ -1,3 +1,4 @@
+import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { useEffect, useState } from "react"
 import {
   computeIbpTotalsFromRetainedScores,
@@ -8,7 +9,7 @@ import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
 } from "../../app/constants"
-import { FactorKey, RegionVersion, VegetationStage } from "../../app/types"
+import { RegionVersion, VegetationStage } from "../../app/types"
 import { getLocalSurveyDraft, LocalSurvey } from "../../storage"
 
 export type DisplayedScores = {
@@ -34,7 +35,6 @@ export type LocalDraftSummary = {
   meta: LocalDraftMeta | null
 }
 
-export const FACTOR_ORDER: FactorKey[] = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 export const NOT_FILLED_CLASS = "Not filled"
 
 const EMPTY_SUMMARY: LocalDraftSummary = {
@@ -61,12 +61,18 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
           return
         }
 
+        const context = {
+          ibp_method_version: draft.ibp_method_version,
+          ibp_cas: draft.ibp_cas,
+          ibp_cas3_scale: draft.ibp_cas3_scale,
+          region_version: draft.region_version,
+          vegetation_stage: draft.vegetation_stage,
+        }
         const retained = computeRetainedScoresFromRawFactors(
           typeof draft.factors === "object" && draft.factors && !Array.isArray(draft.factors)
             ? draft.factors
             : {},
-          draft.region_version,
-          typeof draft.vegetation_stage === "string" ? draft.vegetation_stage : "",
+          context,
         )
 
         const totals = computeIbpTotalsFromRetainedScores(retained)
@@ -78,13 +84,12 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
             : defaultVegetationStageForRegion(regionVersion),
         )
         const readiness = evaluateSubmitReadinessFromDraft({
-          region_version: draft.region_version,
-          vegetation_stage: draft.vegetation_stage,
+          ...context,
           factors: draft.factors,
           parcel_ids: draft.parcel_ids,
           expires_at: draft.expires_at,
         })
-        const entries = FACTOR_ORDER.map<[string, DisplayedFactorResult]>((factorCode) => {
+        const entries = FACTOR_KEYS.map<[string, DisplayedFactorResult]>((factorCode) => {
           const score = retained[factorCode]
           return [
             factorCode,
