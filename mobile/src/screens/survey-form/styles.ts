@@ -62,6 +62,27 @@ export const formStyles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
+  casRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  casCaption: {
+    ...brandTypography.sectionBody,
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+    color: brandColors.textSecondary,
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  switchCopy: {
+    flex: 1,
+    gap: 2,
+  },
   actionRow: {
     flexDirection: "row",
     gap: 10,

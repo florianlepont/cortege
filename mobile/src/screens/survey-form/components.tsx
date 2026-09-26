@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { brandColors } from "../../app/brand-tokens"
 import { FactorKey } from "../../app/types"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
@@ -10,7 +11,7 @@ export type WizardStep = "identity" | "parcels" | "factors"
 
 export const WIZARD_STEPS: WizardStep[] = ["identity", "parcels", "factors"]
 
-export const FACTOR_ORDER: FactorKey[] = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+export const FACTOR_ORDER: FactorKey[] = [...FACTOR_KEYS]
 export const FACTOR_ICONS: Record<FactorKey, keyof typeof Ionicons.glyphMap> = {
   A: "leaf-outline",
   B: "layers-outline",

@@ -3,11 +3,13 @@ import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { MethodVersionPicker, type SurveyFormMethod } from "./MethodVersionPicker"
 import { formStyles } from "./styles"
 import { fr } from "../../i18n"
 
-// Step 1 of the wizard: the survey's site name.
+// Step 1 of the wizard: the survey's IBP method (D-02) and its site name.
 export function SiteSection({
+  method,
   siteName,
   setSiteName,
   siteNameError,
@@ -17,6 +19,7 @@ export function SiteSection({
   onBlur,
   onContinue,
 }: {
+  method: SurveyFormMethod
   siteName: string
   setSiteName: (value: string) => void
   siteNameError: string | null
@@ -33,6 +36,12 @@ export function SiteSection({
         onLayout(event.nativeEvent.layout)
       }}
     >
+      <MethodVersionPicker
+        version={method.version}
+        locked={method.locked}
+        onChange={method.setVersion}
+      />
+
       <AppCard variant="panelElevated" style={formStyles.panel}>
         <AppSectionHeader
           title={fr.surveyForm.site.title}

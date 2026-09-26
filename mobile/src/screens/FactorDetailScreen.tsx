@@ -2,7 +2,8 @@ import { useState } from "react"
 import { Pressable, StyleSheet, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandShadow, brandSpacing, brandTypography } from "../app/brand-tokens"
-import { FACTOR_INPUT_HINTS_BY_FACTOR, FACTOR_TITLES, HELP_BY_FACTOR } from "../app/constants"
+import type { IbpMethodVersion } from "@cortege/ibp-domain"
+import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
 import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
@@ -16,11 +17,19 @@ type FactorDetailScreenProps = {
   factor: FactorKey
   fields: FactorField[]
   retainedScore: FactorRetainedScore | null
+  /** The survey's IBP method; null is an untagged legacy draft (v3.0 help, D-09). */
+  methodVersion: IbpMethodVersion | null
 }
 
-export function FactorDetailScreen({ factor, fields, retainedScore }: FactorDetailScreenProps) {
+export function FactorDetailScreen({
+  factor,
+  fields,
+  retainedScore,
+  methodVersion,
+}: FactorDetailScreenProps) {
   const [captureHelpExpanded, setCaptureHelpExpanded] = useState(false)
-  const hints = FACTOR_INPUT_HINTS_BY_FACTOR[factor]
+  const helpTexts = helpForMethod(methodVersion)
+  const hints = helpTexts.hints[factor]
   const total = fields.length
   const filled = fields.filter((field) => field.value.trim().length > 0).length
 
@@ -37,7 +46,7 @@ export function FactorDetailScreen({ factor, fields, retainedScore }: FactorDeta
           </Text>
         </View>
         <Text style={detailStyles.heroTitle}>{FACTOR_TITLES[factor]}</Text>
-        <Text style={detailStyles.heroBody}>{HELP_BY_FACTOR[factor]}</Text>
+        <Text style={detailStyles.heroBody}>{helpTexts.help[factor]}</Text>
         <View style={detailStyles.heroScoreRow}>
           <View style={detailStyles.heroScoreCard}>
             <Text style={detailStyles.heroScoreLabel}>{t.retainedScore}</Text>

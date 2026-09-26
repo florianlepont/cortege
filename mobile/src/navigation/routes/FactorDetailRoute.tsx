@@ -18,6 +18,7 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         factor={factor}
         fields={state.factorSections[factor]}
         retainedScore={state.factorRetainedScores[factor]}
+        methodVersion={state.ibpMethodVersion}
       />
     </ScrollView>
   )

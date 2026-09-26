@@ -1,4 +1,6 @@
-// Filled by plan 01.9-13; no other plan edits this section.
+import { IBP_MAX } from "@cortege/ibp-domain"
+
+// Filled by plan 01.9-13; 01.8-13 added the method version texts and the totals out of 50.
 // Texts of the survey form wizard (screens/SurveyFormScreen.tsx and screens/survey-form/).
 // Factor titles and region/vegetation labels stay in app/constants.ts until 01.8.
 export const surveyFormFr = {
@@ -13,7 +15,7 @@ export const surveyFormFr = {
       "Donnez au relevé un nom clair avant de le placer sur le cadastre et de noter les observations de terrain.",
     parcelsTitle: "Placer le relevé sur la carte",
     parcelsBody:
-      "Sélectionnez l'emprise des parcelles, puis fixez la version régionale et le stade de végétation utilisés pour la notation.",
+      "Sélectionnez l'emprise des parcelles, puis fixez le contexte de notation : le cas IBP, ou la version régionale et le stade de végétation en v3.0.",
     factorsTitle: "Noter les facteurs IBP",
     factorsBody:
       "Ouvrez chaque facteur, saisissez les valeurs observées et suivez le total des scores retenus en direct.",
@@ -21,7 +23,7 @@ export const surveyFormFr = {
     noParcelYet: "Aucune parcelle",
     parcelCount: ({ count }: { count: number }) =>
       count > 1 ? `${count} parcelles` : `${count} parcelle`,
-    ibpTotal: ({ total }: { total: number }) => `IBP ${total}`,
+    ibpTotal: ({ total }: { total: number }) => `IBP ${total} / ${IBP_MAX.total}`,
     factorCount: ({ count }: { count: number }) => `${count}/10 facteurs`,
     steps: {
       identity: "Identité",
@@ -57,6 +59,12 @@ export const surveyFormFr = {
   vegetation: {
     label: "Stade de végétation *",
   },
+  // The v3.2 context (01.8-13); the cas labels, captions and the cas-3 switch come from fr.ibpMethod.
+  scoringContext: {
+    casSubtitle:
+      "Le cas IBP fixe les seuils de notation : choisissez-le avant d'ouvrir les facteurs.",
+    casMissing: "Cas à choisir",
+  },
   parcels: {
     title: "Sélection des parcelles",
     subtitle:
@@ -90,6 +98,7 @@ export const surveyFormFr = {
   },
   factors: {
     scoreLabel: "Total IBP en cours",
+    scoreTotal: ({ total }: { total: number }) => `${total} / ${IBP_MAX.total}`,
     scoreBreakdown: ({ stand, context }: { stand: number; context: number }) =>
       `Peuplement / gestion ${stand} · Contexte ${context}`,
     scoreableCount: ({ count }: { count: number }) => `${count}/10 facteurs actuellement notables`,
