@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native"
+import { bandTone, totalBand } from "@cortege/ibp-domain"
 import { brandTypography, ibpScoreTokens } from "../app/brand-tokens"
 import { fr } from "../i18n"
 
@@ -7,15 +8,14 @@ type IbpScoreBadgeProps = {
   size?: "sm" | "md"
 }
 
-function getScoreColors(score: number | null | undefined) {
+// Colours of an IBP total out of 50, from the package's total band (01.8 D-03 amended).
+export function getIbpScoreColors(score: number | null | undefined) {
   if (score == null) return ibpScoreTokens.colors.empty
-  if (score >= ibpScoreTokens.thresholds.high) return ibpScoreTokens.colors.high
-  if (score >= ibpScoreTokens.thresholds.mid) return ibpScoreTokens.colors.mid
-  return ibpScoreTokens.colors.low
+  return ibpScoreTokens.colors[bandTone(totalBand(score))]
 }
 
 export function IbpScoreBadge({ score, size = "md" }: IbpScoreBadgeProps) {
-  const colors = getScoreColors(score)
+  const colors = getIbpScoreColors(score)
   const isSm = size === "sm"
 
   return (

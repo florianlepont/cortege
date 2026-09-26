@@ -146,8 +146,9 @@ export const brandSemanticColors = {
   heroOrbOnDark: "rgba(137, 163, 58, 0.22)",
 } as const
 
+// IBP score colours keyed by the package's band tone (@cortege/ibp-domain bandTone): faible and
+// assez faible → low, moyenne → mid, assez forte and forte → high. No score cut-offs live here.
 export const ibpScoreTokens = {
-  thresholds: { high: 7, mid: 5 },
   colors: {
     high: { background: brandColors.moss, text: brandColors.white },
     mid: { background: brandColors.ochre, text: brandColors.white },

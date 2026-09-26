@@ -162,6 +162,7 @@ export const MapTopControls = memo(function MapTopControls({
               labelStyle={styles.inputLabel}
               inputStyle={styles.input}
             />
+            <Text style={[styles.filtersMeta, styles.filterFieldFull]}>{t.filters.regionHint}</Text>
             <AppButton
               label={loading ? t.filters.applying : t.filters.apply}
               leadingIcon="sparkles-outline"
