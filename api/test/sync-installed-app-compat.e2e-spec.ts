@@ -1,4 +1,5 @@
 import "dotenv/config"
+import { randomUUID } from "crypto"
 import { NestExpressApplication } from "@nestjs/platform-express"
 import { Test, TestingModule } from "@nestjs/testing"
 import request = require("supertest")
@@ -411,6 +412,137 @@ describe("Installed-app sync payload compatibility (e2e)", () => {
       )
       .expect(200)
     expect(draftBatch.body.results[0].status).toBe("synced")
+  })
+
+  // MAT-VER-01, API side (phase 01.8, CH-6, D-05 replay safety): a survey submitted before the
+  // method version existed has no ibp_method_version and scores computed by the pre-01.8 engine
+  // (B capped by the native cover, BUG-1). The installed app replays it exactly as it pulled it,
+  // with no method fields. The replay must stay `synced`, never 422, and must not rewrite the
+  // stored scores or factor_results, even though today's fixed v3.0 rules would score it
+  // differently.
+  it("MAT-VER-01: replays a submitted untagged survey identically and keeps its stored scores", async () => {
+    const accessToken = await login(`e2e-matver01-${randomUUID()}@ibp.local`)
+    const parcelId = await resolveParcel(accessToken, 45.3, 2.3)
+    const surveyId = `e2e-matver01-${randomUUID()}`
+    // Old app shapes: B carries the native cover, H the class score.
+    const oldAppFactors = {
+      A: { native_genus_count: 5 },
+      B: { strata_count: 5, covered_autochthonous_percent: 40 },
+      C: 1,
+      D: 1,
+      E: 1,
+      F: 1,
+      G: 2,
+      H: { class_score: 2 },
+      I: 2,
+      J: 2,
+    }
+
+    const created = await request(app.getHttpServer())
+      .post("/v1/sync")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send(
+        mobileOps([
+          {
+            client_ref: "1",
+            entity: "survey",
+            action: "upsert",
+            payload: {
+              id: surveyId,
+              sync_version: 1,
+              site_name: "Legacy Untagged Forest",
+              status: "draft",
+              visibility: "private",
+              parcel_ids: [parcelId],
+              region_version: "ACA",
+              vegetation_stage: "collineen",
+              factors: oldAppFactors,
+            },
+          },
+        ]),
+      )
+      .expect(200)
+    expect(created.body.results[0].status).toBe("synced")
+    await request(app.getHttpServer())
+      .post(`/v1/surveys/${surveyId}/submit`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(201)
+
+    // Stand in for a row the pre-01.8 API stored: its engine capped B at 2 (cover < 50 %) and
+    // left A uncapped, so its scores differ from today's fixed v3.0 result.
+    const legacyScores = { ibp_peuplement_gestion: 15, ibp_contexte: 6, ibp_total: 21 }
+    const legacyResults = {
+      B: {
+        factor_id: "factor_b",
+        observed_value_raw: oldAppFactors.B,
+        selected_class: "S2",
+        score_points: 2,
+        warnings: ["legacy cap"],
+      },
+    }
+    await db.query(
+      `UPDATE surveys SET scores = $2::jsonb, factor_results = $3::jsonb WHERE id = $1`,
+      [surveyId, JSON.stringify(legacyScores), JSON.stringify(legacyResults)],
+    )
+
+    const changes = await request(app.getHttpServer())
+      .get("/v1/sync/changes")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200)
+    const remote = (changes.body.surveys as Array<Record<string, unknown>>).find(
+      (survey) => survey.id === surveyId,
+    ) as Record<string, unknown>
+    expect(remote).toBeTruthy()
+    expect(remote.ibp_method_version).toBeNull()
+
+    // buildSurveyPayloadFromRemote of an installed (pre-01.8) app: no method fields.
+    const replay = (syncVersion: number) => ({
+      id: remote.id,
+      sync_version: syncVersion,
+      site_name: remote.site_name,
+      status: remote.status,
+      visibility: remote.visibility,
+      parcel_ids: remote.parcel_ids,
+      region_version: remote.region_version,
+      vegetation_stage: remote.vegetation_stage,
+      factors: remote.factors,
+      scores: remote.scores,
+      expires_at: remote.expires_at,
+    })
+
+    for (const syncVersion of [
+      remote.sync_version as number,
+      (remote.sync_version as number) + 1,
+    ]) {
+      const replayed = await request(app.getHttpServer())
+        .post("/v1/sync")
+        .set("Authorization", `Bearer ${accessToken}`)
+        .send(
+          mobileOps([
+            { client_ref: "2", entity: "survey", action: "upsert", payload: replay(syncVersion) },
+          ]),
+        )
+        .expect(200)
+      expect(replayed.body.results[0].status).toBe("synced")
+    }
+
+    const after = await db.query<{
+      status: string
+      scores: Record<string, unknown>
+      factor_results: Record<string, unknown>
+      ibp_method_version: string | null
+      factors: Record<string, unknown>
+    }>(
+      `SELECT status, scores, factor_results, ibp_method_version, factors FROM surveys WHERE id = $1`,
+      [surveyId],
+    )
+    expect(after.rows[0]).toEqual({
+      status: "submitted",
+      scores: legacyScores,
+      factor_results: legacyResults,
+      ibp_method_version: null,
+      factors: oldAppFactors,
+    })
   })
 
   // Installed apps persist the changes cursor verbatim (mobile/src/storage/sync.ts:1141-1152)
