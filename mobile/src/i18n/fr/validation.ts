@@ -10,6 +10,7 @@ export const validationFr = {
   fields: {
     siteName: "Nom du site",
     native_genus_count: "Nombre de genres autochtones",
+    native_cover_percent: "Couvert des essences autochtones (%)",
     strata_count: "Nombre de strates",
     covered_autochthonous_percent: "Couvert autochtone (%)",
     bmg_count: "Nombre de BMg",

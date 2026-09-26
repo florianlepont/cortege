@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react"
+import type { IbpCas } from "@cortege/ibp-domain"
 import type {
   RegionVersion,
   SurveyDetailResponse,
@@ -76,6 +77,11 @@ export type SurveyActions = {
   renameSurvey: (surveyId: string, nextSiteName: string) => Promise<void>
   updateRegionVersion: (surveyId: string, region: RegionVersion) => Promise<void>
   updateVegetationStage: (surveyId: string, stage: VegetationStage) => Promise<void>
+  /** v3.2 drafts only (01.8-10). */
+  updateIbpCas: (surveyId: string, cas: IbpCas) => Promise<void>
+  updateCas3Scale: (surveyId: string, value: boolean) => Promise<void>
+  /** Unsubmitted v3.0 or untagged drafts only (D-08). */
+  switchToV32: (surveyId: string) => Promise<void>
 }
 
 export type SurveysContextValue = {

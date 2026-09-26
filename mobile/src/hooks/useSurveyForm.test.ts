@@ -21,9 +21,12 @@ jest.mock("../app/constants", () => ({
     siteName: "",
     regionVersion: "ACA",
     vegetationStage: "collineen",
+    ibpMethodVersion: "cnpf_ibp_fr_v3_2_2026-02-02",
+    ibpCas: 1,
+    ibpCas3Scale: false,
     gpsLocation: { lat: "", lng: "", collected_at: "" },
-    factorA: { native_genus_count: "" },
-    factorB: { strata_count: "", covered_autochthonous_percent: "" },
+    factorA: { native_genus_count: "", native_cover_percent: "" },
+    factorB: { strata_count: "" },
     factorC: { bmg_count: "", bmm_count: "", surface_ha: "" },
     factorD: { bmg_count: "", bmm_count: "", surface_ha: "" },
     factorE: { tgb_count: "", gb_count: "", surface_ha: "" },
@@ -46,6 +49,7 @@ jest.mock("../app/number-utils", () => ({
 }))
 
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
 import { useSurveyForm } from "./useSurveyForm"
 
@@ -113,10 +117,17 @@ describe("useSurveyForm", () => {
       ])
     })
 
-    test("factorSections A has one field with required error when empty", async () => {
+    test("factorSections A has the count and the native cover, both required (CH-1)", async () => {
       const hook = await buildHook()
-      expect(hook.factorSections.A).toHaveLength(1)
+      expect(hook.factorSections.A).toHaveLength(2)
       expect(hook.factorSections.A[0].error).toBe(rules.required(fields.native_genus_count))
+      expect(hook.factorSections.A[1].label).toBe(fields.native_cover_percent)
+      expect(hook.factorSections.A[1].error).toBe(rules.required(fields.native_cover_percent))
+    })
+
+    test("factorSections B has the strata count only (no cover field)", async () => {
+      const hook = await buildHook()
+      expect(hook.factorSections.B.map((field) => field.label)).toEqual([fields.strata_count])
     })
 
     test("factorSections H uses oneOfError (shows required error when empty)", async () => {
@@ -132,8 +143,8 @@ describe("useSurveyForm", () => {
     test("draftInput has expected shape", async () => {
       const hook = await buildHook()
       expect(hook.draftInput).toHaveProperty("site_name")
-      expect(hook.draftInput).toHaveProperty("region_version")
-      expect(hook.draftInput).toHaveProperty("vegetation_stage")
+      expect(hook.draftInput).toHaveProperty("ibp_method_version")
+      expect(hook.draftInput).toHaveProperty("ibp_cas")
       expect(hook.draftInput).toHaveProperty("factors")
       expect(hook.draftInput).toHaveProperty("parcel_ids")
     })
@@ -164,7 +175,8 @@ describe("useSurveyForm", () => {
       expect(payload).toHaveProperty("H")
       expect(payload).toHaveProperty("I")
       expect(payload).toHaveProperty("J")
-      expect(payload.A).toEqual({ native_genus_count: 2 })
+      expect(payload.A).toEqual({ native_genus_count: 2, native_cover_percent: 2 })
+      expect(payload.B).toEqual({ strata_count: 2 })
       expect(payload.H).toEqual({ class_score: 2 })
     })
 
@@ -177,7 +189,7 @@ describe("useSurveyForm", () => {
       expect(payload).toHaveProperty("A")
     })
 
-    test("excludes factor B when one of its two fields is null", async () => {
+    test("excludes factor B when its strata count is null", async () => {
       mockParseFinite.mockReturnValue(null)
       const hook = await buildHook()
       expect(hook.draftInput.factors).not.toHaveProperty("B")
@@ -191,7 +203,7 @@ describe("useSurveyForm", () => {
       const hook = await buildHook()
       const result = hook.buildDraftInput()
       expect(result).toHaveProperty("site_name")
-      expect(result).toHaveProperty("region_version", "ACA")
+      expect(result).toHaveProperty("ibp_method_version", IBP_METHOD_V3_2)
       expect(result).toHaveProperty("parcel_ids")
     })
   })
@@ -315,6 +327,297 @@ describe("useSurveyForm", () => {
           }),
         ).not.toThrow()
       })
+    })
+  })
+
+  // ─── Method version, cas and cas-3 flag (01.8-10) ──────────────────────────
+
+  describe("method version and cas (D-02, D-08, CH-1)", () => {
+    const useRealRules = () => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    }
+
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const type = async (
+      result: FormResult,
+      factor: "A" | "B" | "G" | "H",
+      index: number,
+      value: string,
+    ) => {
+      await act(async () => {
+        result.current.factorSections[factor][index].onChange(value)
+      })
+    }
+
+    test("a fresh form is v3.2, cas 1, no cas-3 scale; draftInput has no region/stage", async () => {
+      const hook = await buildHook()
+      expect(hook.ibpMethodVersion).toBe(IBP_METHOD_V3_2)
+      expect(hook.ibpCas).toBe(1)
+      expect(hook.ibpCas3Scale).toBe(false)
+      expect(hook.draftInput).toMatchObject({
+        ibp_method_version: IBP_METHOD_V3_2,
+        ibp_cas: 1,
+        ibp_cas3_scale: false,
+      })
+      expect(hook.draftInput).not.toHaveProperty("region_version")
+      expect(hook.draftInput).not.toHaveProperty("vegetation_stage")
+    })
+
+    test("switching to v3.0 clears the cas and flag and restores region/stage defaults", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setIbpCas3Scale(true)
+        result.current.handleRegionChange("M")
+      })
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_0)
+      })
+      expect(result.current.ibpMethodVersion).toBe(IBP_METHOD_V3_0)
+      expect(result.current.ibpCas).toBeNull()
+      expect(result.current.ibpCas3Scale).toBe(false)
+      expect(result.current.regionVersion).toBe("ACA")
+      expect(result.current.vegetationStage).toBe("collineen")
+      expect(result.current.draftInput).toMatchObject({
+        ibp_method_version: IBP_METHOD_V3_0,
+        region_version: "ACA",
+        vegetation_stage: "collineen",
+      })
+      expect(result.current.draftInput).not.toHaveProperty("ibp_cas")
+      expect(result.current.draftInput).not.toHaveProperty("ibp_cas3_scale")
+    })
+
+    test("switching back to v3.2 pre-fills the cas from region and stage", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_0)
+      })
+      mockNormalizeVegetationStage.mockReturnValue("thermo_mediterraneen")
+      await act(async () => {
+        result.current.handleRegionChange("M")
+      })
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_2)
+      })
+      expect(result.current.ibpCas).toBe(4)
+      expect(result.current.draftInput).toMatchObject({
+        ibp_method_version: IBP_METHOD_V3_2,
+        ibp_cas: 4,
+      })
+      expect(result.current.draftInput).not.toHaveProperty("region_version")
+
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_0)
+      })
+      await act(async () => {
+        result.current.setVegetationStage("subalpin")
+      })
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_2)
+      })
+      expect(result.current.ibpCas).toBeNull()
+    })
+
+    test("choosing the version the form already has changes nothing", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setIbpCas(3)
+      })
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_2)
+      })
+      expect(result.current.ibpCas).toBe(3)
+    })
+
+    test("setIbpCas and setIbpCas3Scale reach the draft input and the scoring context", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setIbpCas(2)
+        result.current.setIbpCas3Scale(true)
+      })
+      expect(result.current.draftInput).toMatchObject({ ibp_cas: 2, ibp_cas3_scale: true })
+      const lastCall = mockComputeRetainedScores.mock.calls.at(-1)
+      expect(lastCall?.[1]).toMatchObject({
+        ibp_method_version: IBP_METHOD_V3_2,
+        ibp_cas: 2,
+        ibp_cas3_scale: true,
+      })
+    })
+
+    test("A with 5 genera and 40 % cover scores 2 under v3.2 cas 1 (cap on A)", async () => {
+      useRealRules()
+      const result = await renderForm()
+      await type(result, "A", 0, "5")
+      await type(result, "A", 1, "40")
+      expect(result.current.factorRetainedScores.A?.score).toBe(2)
+      expect(result.current.draftInput.factors).toEqual({
+        A: { native_genus_count: 5, native_cover_percent: 40 },
+      })
+    })
+
+    test("A without its cover is neither sent nor scored", async () => {
+      useRealRules()
+      const result = await renderForm()
+      await type(result, "A", 0, "5")
+      expect(result.current.draftInput.factors).not.toHaveProperty("A")
+      expect(result.current.factorRetainedScores.A).toBeNull()
+    })
+
+    test("A with a cover above 100 is not sent", async () => {
+      useRealRules()
+      const result = await renderForm()
+      await type(result, "A", 0, "5")
+      await type(result, "A", 1, "140")
+      expect(result.current.draftInput.factors).not.toHaveProperty("A")
+    })
+
+    test.each([
+      [3, "0.5", 2],
+      [1, "6", 2],
+      [3, "6", 5],
+    ] as const)("cas %i with G %s %% scores %i", async (cas, percent, expected) => {
+      useRealRules()
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setIbpCas(cas)
+      })
+      await type(result, "G", 0, percent)
+      expect(result.current.factorRetainedScores.G?.score).toBe(expected)
+    })
+
+    test("the cas-3 flag selects the cas-3 G scale under cas 2", async () => {
+      useRealRules()
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setIbpCas(2)
+        result.current.setIbpCas3Scale(true)
+      })
+      await type(result, "G", 0, "6")
+      expect(result.current.factorRetainedScores.G?.score).toBe(5)
+    })
+
+    test("B is sent as { strata_count } only", async () => {
+      useRealRules()
+      const result = await renderForm()
+      await type(result, "B", 0, "4")
+      expect(result.current.draftInput.factors).toEqual({ B: { strata_count: 4 } })
+    })
+
+    test("H accepts only 0, 2 or 5 (the package's allowed set)", async () => {
+      useRealRules()
+      const result = await renderForm()
+      await type(result, "H", 0, "1")
+      expect(result.current.draftInput.factors).not.toHaveProperty("H")
+      expect(result.current.factorSections.H[0].error).toBe(
+        rules.oneOf(fields.class_score, "0, 2, 5"),
+      )
+      await type(result, "H", 0, "5")
+      expect(result.current.draftInput.factors).toEqual({ H: { class_score: 5 } })
+    })
+
+    test("a legacy draft keeps no version and moves B's cover to A on the next save", async () => {
+      useRealRules()
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          site_name: "Ancien",
+          region_version: "ACA",
+          vegetation_stage: "collineen",
+          factors: {
+            A: { native_genus_count: 5 },
+            B: { strata_count: 3, covered_autochthonous_percent: 40 },
+          },
+        })
+      })
+      expect(result.current.ibpMethodVersion).toBeNull()
+      expect(result.current.ibpCas).toBeNull()
+      expect(result.current.factorSections.A[1].value).toBe("40")
+      const input = result.current.buildDraftInput()
+      expect(input).not.toHaveProperty("ibp_method_version")
+      expect(input).not.toHaveProperty("ibp_cas")
+      expect(input).toMatchObject({ region_version: "ACA", vegetation_stage: "collineen" })
+      expect(input.factors).toEqual({
+        A: { native_genus_count: 5, native_cover_percent: 40 },
+        B: { strata_count: 3 },
+      })
+      // v3.0 (null) caps A from the cover: 5 genera, 40 % → 2
+      expect(result.current.factorRetainedScores.A?.score).toBe(2)
+    })
+
+    test("a legacy draft's B native_cover_percent also moves to A", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({ factors: { B: { native_cover_percent: 70 } } })
+      })
+      expect(result.current.factorSections.A[1].value).toBe("70")
+    })
+
+    test("choosing v3.0 on a legacy draft does not stamp it", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({ region_version: "ACA", vegetation_stage: "collineen" })
+      })
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_0)
+      })
+      expect(result.current.ibpMethodVersion).toBeNull()
+      expect(result.current.draftInput).not.toHaveProperty("ibp_method_version")
+    })
+
+    test("switching a legacy draft to v3.2 tags it and pre-fills the cas", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({ region_version: "ACA", vegetation_stage: "collineen" })
+      })
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_2)
+      })
+      expect(result.current.draftInput).toMatchObject({
+        ibp_method_version: IBP_METHOD_V3_2,
+        ibp_cas: 1,
+      })
+    })
+
+    test("a v3.2 draft keeps its cas, flag and A cover", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          ibp_method_version: IBP_METHOD_V3_2,
+          ibp_cas: 3,
+          ibp_cas3_scale: true,
+          factors: { A: { native_genus_count: 2, native_cover_percent: 80 } },
+        })
+      })
+      expect(result.current.ibpMethodVersion).toBe(IBP_METHOD_V3_2)
+      expect(result.current.ibpCas).toBe(3)
+      expect(result.current.ibpCas3Scale).toBe(true)
+      expect(result.current.factorSections.A[1].value).toBe("80")
+    })
+
+    test("a draft with an unknown cas or version reads as none", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({ ibp_method_version: "v9", ibp_cas: 7 })
+      })
+      expect(result.current.ibpMethodVersion).toBeNull()
+      expect(result.current.ibpCas).toBeNull()
+    })
+
+    test("resetSurveyForm restores the v3.2 defaults", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_0)
+      })
+      await act(async () => {
+        result.current.resetSurveyForm()
+      })
+      expect(result.current.ibpMethodVersion).toBe(IBP_METHOD_V3_2)
+      expect(result.current.ibpCas).toBe(1)
+      expect(result.current.ibpCas3Scale).toBe(false)
     })
   })
 
@@ -498,7 +801,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { native_genus_count: "abc" },
+        factorA: { ...saved.factorA, native_genus_count: "abc" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
@@ -510,7 +813,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { native_genus_count: "1.5" },
+        factorA: { ...saved.factorA, native_genus_count: "1.5" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
@@ -522,7 +825,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { native_genus_count: "-1" },
+        factorA: { ...saved.factorA, native_genus_count: "-1" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
@@ -546,7 +849,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { native_genus_count: "3" },
+        factorA: { ...saved.factorA, native_genus_count: "3" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
