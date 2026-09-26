@@ -275,8 +275,7 @@ export function useSurveyForm() {
           I: { type_count: factorI.type_count },
           J: { type_count: factorJ.type_count },
         },
-        regionVersion,
-        vegetationStage,
+        { region_version: regionVersion, vegetation_stage: vegetationStage },
       ),
     [
       factorA,

@@ -1,13 +1,12 @@
+import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { FactorKey } from "../app/types"
 import { fr } from "../i18n"
 import { resolveAttachmentUri } from "../storage/attachment-files"
 import type { LocalAttachment } from "../storage/types"
 
-const FACTOR_ORDER: FactorKey[] = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
-const FACTOR_KEYS = new Set<FactorKey>(FACTOR_ORDER)
+const FACTOR_KEY_SET = new Set<string>(FACTOR_KEYS)
 
-export const isFactorKey = (value: string): value is FactorKey =>
-  FACTOR_KEYS.has(value as FactorKey)
+export const isFactorKey = (value: string): value is FactorKey => FACTOR_KEY_SET.has(value)
 
 export const asFiniteNumber = (value: unknown): number | null => {
   if (typeof value === "number" && Number.isFinite(value)) return value
