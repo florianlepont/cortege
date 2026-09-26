@@ -29,8 +29,8 @@ export const labelsFr = {
     J: "Milieux rocheux",
   },
   factorHelp: {
-    A: "Diversite des essences autochtones. Le releve compte les genres autochtones observes dans le peuplement, d'apres la definition IBP.",
-    B: "Structure verticale de la vegetation. On decrit le nombre de strates occupees (seuil 20% de recouvrement) et le couvert autochtone.",
+    A: "Diversité des essences autochtones. Le relevé compte les genres autochtones observés dans le peuplement, d'après la définition IBP. Score plafonné à 2 si le couvert des essences autochtones est inférieur à 50 %.",
+    B: "Structure verticale de la végétation. On compte le nombre de strates occupées (seuil de 20 % de recouvrement).",
     C: "Bois morts sur pied de grosse dimension. On calcule un score avec BMg/BMm ramenes a l'hectare sur la surface decrite.",
     D: "Bois morts au sol de grosse dimension. On calcule un score avec BMg/BMm ramenes a l'hectare sur la surface decrite.",
     E: "Tres gros bois vivants. Le score depend des TGB/GB par hectare sur la surface prospectee.",
@@ -43,13 +43,13 @@ export const labelsFr = {
   factorInputHints: {
     A: [
       "Compter les genres autochtones distincts (pas les especes), sur arbres vivants (> 50 cm) et arbres morts.",
-      "Saisir le nombre observe dans native_genus_count.",
-      "Seuils IBP: subalpin 0/1/2/3+ => S0/S1/S2/S5 ; autres etages 0-1/2/3-4/5+ => S0/S1/S2/S5.",
+      "Saisir le nombre de genres observés, puis le couvert des essences autochtones (0 à 100 %).",
+      "Seuils IBP : subalpin 0/1/2/3+ => S0/S1/S2/S5 ; autres étages 0-1/2/3-4/5+ => S0/S1/S2/S5 ; plafonné à S2 si couvert autochtone < 50 %.",
     ],
     B: [
       "Compter les strates couvrant au moins 20% de la surface decrite (1 ligneux peut compter dans plusieurs strates).",
-      "Renseigner strata_count puis covered_autochthonous_percent (0..100).",
-      "Seuils IBP: 1 strate=S0, 2=S1, 3-4=S2, 5=S5 ; score plafonne a S2 si couvert autochtone < 50%.",
+      "Saisir le nombre de strates ; le couvert des essences autochtones se saisit au facteur A.",
+      "Seuils IBP : 1 strate = S0, 2 = S1, 3-4 = S2, 5 = S5.",
     ],
     C: [
       "Compter les bois morts sur pied >= 1 m: BMg (grosse dimension) et BMm (dimension moyenne), puis la surface en ha.",
@@ -74,12 +74,12 @@ export const labelsFr = {
     G: [
       "Estimer la part de surface de milieux ouverts floriferes (trouees, lisiere, zones peu denses).",
       "Renseigner open_flowering_percent (0..100).",
-      "Seuils IBP (implementation actuelle): 0%=S0 ; hors subalpin: ]0,1[% ou >5%=S2, [1,5]%=S5 ; subalpin: ]0,1[%=S2, >=1%=S5.",
+      "Seuils IBP : 0 % = S0 ; hors subalpin : ]0,1[ % ou > 5 % = S2, [1,5] % = S5 ; subalpin : ]0,1[ % = S2, >= 1 % = S5. Score 0, 2 ou 5.",
     ],
     H: [
       "Qualifier la continuite boisee: recent / partiel / ancien (cartes et observations de terrain).",
       "Renseigner class_score avec 0 (recent), 2 (partiel) ou 5 (ancien).",
-      "Seules ces trois valeurs sont acceptees par la validation.",
+      "Seules les valeurs 0, 2 ou 5 sont acceptées.",
     ],
     I: [
       "Compter les types de milieux aquatiques differents (interieur ou bordure), naturels ou artificiels.",

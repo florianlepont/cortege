@@ -1,4 +1,5 @@
 import { Platform } from "react-native"
+import { IBP_METHOD_V3_2, type IbpMethodVersion } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
 import { FactorKey, RegionVersion, VegetationStage } from "./types"
 import {
@@ -20,6 +21,20 @@ export const FACTOR_TITLES: Record<FactorKey, string> = fr.labels.factorTitles
 
 export const FACTOR_INPUT_HINTS_BY_FACTOR: Record<FactorKey, readonly string[]> =
   fr.labels.factorInputHints
+
+export type FactorHelpTexts = {
+  help: Record<FactorKey, string>
+  hints: Record<FactorKey, readonly string[]>
+}
+
+/**
+ * The factor help and input hints of a survey's method version (D-09, CH-8): the v3.2 texts for
+ * v3.2, the v3.0 texts otherwise (null is an untagged legacy survey, so v3.0).
+ */
+export const helpForMethod = (version: IbpMethodVersion | null): FactorHelpTexts =>
+  version === IBP_METHOD_V3_2
+    ? { help: fr.ibpMethod.factorHelp, hints: fr.ibpMethod.factorInputHints }
+    : { help: fr.labels.factorHelp, hints: fr.labels.factorInputHints }
 
 export {
   REGION_OPTIONS,

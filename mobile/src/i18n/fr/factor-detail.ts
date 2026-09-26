@@ -17,6 +17,7 @@ export const factorDetailFr = {
   // Keyed by the factor field label the form passes in (see useSurveyForm).
   fieldLabels: {
     native_genus_count: "Nombre de genres autochtones",
+    native_cover_percent: "Couvert des essences autochtones (%)",
     strata_count: "Nombre de strates",
     covered_autochthonous_percent: "Couvert autochtone (%)",
     bmg_count: "Nombre de BMg",
