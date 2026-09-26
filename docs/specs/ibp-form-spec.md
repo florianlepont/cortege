@@ -22,13 +22,27 @@ Excluded:
 - Advanced ecological interpretation of scores.
 - Community moderation workflows (covered in epics).
 
+Method version status (2026-09-26):
+- Implemented: IBP Fr v3.0. The thresholds and rules in this spec are the v3.0 transcription the
+  API and mobile scoring engines implement today; the official v3.0 PDFs are no longer published
+  by CNPF (see §12).
+- Target: IBP FR v3.2 (02/02/2026), adopted by
+  [ADR-003](../technical/adr-003-ibp-method-version-v1.md). The scoring rules change in phase
+  01.8; until then this spec keeps its v3.0 rules so that it matches the code. The differences
+  are listed in
+  [`../technical/ibp-version-comparison-v3.0-v3.2.md`](../technical/ibp-version-comparison-v3.0-v3.2.md);
+  the known divergences are flagged below (§3, §5, §6 Factor B).
+
 ## 3) Metadata
 - Spec version: v1.0
 - Language: English
 - Owner: Etats-Sauvages
-- Last update: 2026-03-04
+- Last update: 2026-09-26
 - Target IBP version (required field): `ibp_method_version`
   - Recommended default value: `cnpf_ibp_fr_v3_0_2023-03-23`
+  - Not implemented yet (BUG-4): no database column, DTO field or mobile field carries it. ADR-003
+    needs it to tell v3.0 surveys from v3.2 ones; it is added by phase 01.8 or phase 2 (CH-6),
+    with a missing value meaning v3.0.
 
 ## 4) Global Form Rules
 - A survey is linked to one site/stand.
@@ -65,6 +79,11 @@ Compatibility rule:
 - If `region_version = ACA`, use ACA thresholds.
 - If `region_version = M`, use M thresholds.
 - Special case: `montagnard_mediterraneen` -> use ACA (CNPF rule).
+
+Note (v3.2 target): IBP FR v3.2 replaces this region/stage model with four "cas" (1-4) defined by
+growth constraints; for example only the middle and upper subalpine is cas 3 (CLS-1, CLS-2 in
+[`../technical/ibp-version-comparison-v3.0-v3.2.md`](../technical/ibp-version-comparison-v3.0-v3.2.md)).
+The app still uses `region_version` + `vegetation_stage` until phase 01.8.
 
 ## 6) IBP Factors (Detailed Model)
 
@@ -116,6 +135,9 @@ Compatibility rule:
   - `5`: 5 strata
 - Special rule:
   - score capped at `2` if native species cover is < 50% of described stand.
+  - Known divergence (BUG-1): both CNPF v3 editions (the 2021 v3 sheet and FR v3.2, p. 3) put this
+    native-cover cap on Factor A, not on B. The app applies it to B, as written here; phase 01.8
+    moves it to A (CH-1, see ADR-003).
 - UI validation:
   - blocking: at least 1 stratum selected.
   - blocking: `covered_autochthonous_percent` required to apply capping.
@@ -441,10 +463,14 @@ Compatibility rule:
 - same survey with different version -> verify version-specific thresholds / support.
 
 ## 12) Official References (Primary Source)
-- CNPF - IBP page (official documents): https://www.cnpf.fr/n/ibp/n:2006
-- IBP Fr v3.0 definition (updated 2023-03-23): https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/9a66d6016d0a99f576f35f53df4e73f3/ibp_def_fr_v3_0_230323_0.pdf
-- IBP Fr v3.0 survey sheets (updated 2023-03-23): https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/5cf710f876f8e4ddfd4007df318f71f5/ibp_rel_fr_v3_0_230323_0.pdf
-- IBP survey methods (updated 2022-10-10): https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/e5f7f1ea0f6f4f63a2ef41a58ecab8e0/ibp_methodes_de_releve_v221010_0.pdf
+- CNPF - IBP home page (current documents): https://www.cnpf.fr/ibp
+- IBP FR v3.2, target method (ADR-003), dated 2026-02-02, 28 pp., retrieved 2026-09-26, SHA-256 `f130b3d66522ec0f5692e87e361b628b4941ce9748d1ed5519a49734854bd001`: https://www.cnpf.fr/sites/socle/files/2026-04/IBP_FR_v3_2_260202.pdf
+- The links below are kept for the record; all are no longer online (HTTP 404, checked 2026-09-26) because CNPF no longer publishes v3.0:
+  - CNPF - former IBP page: https://www.cnpf.fr/n/ibp/n:2006
+  - IBP Fr v3.0 definition (updated 2023-03-23), implemented method: https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/9a66d6016d0a99f576f35f53df4e73f3/ibp_def_fr_v3_0_230323_0.pdf
+  - IBP Fr v3.0 survey sheets (updated 2023-03-23), implemented method: https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/5cf710f876f8e4ddfd4007df318f71f5/ibp_rel_fr_v3_0_230323_0.pdf
+  - IBP survey methods (updated 2022-10-10): https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/e5f7f1ea0f6f4f63a2ef41a58ecab8e0/ibp_methodes_de_releve_v221010_0.pdf (v3.2 now includes the survey instructions, p. 18-19)
 
 ## 13) Change Log
 - 2026-03-04: moved from template to full operational specification (factors, thresholds, scoring, validations, data contract, CNPF references).
+- 2026-09-26: phase 01.1: method version status (implemented v3.0, target v3.2 per ADR-003), dead v3.0 links marked, v3.2 reference added, known divergences flagged (BUG-1, BUG-4, region/stage vs cas).
