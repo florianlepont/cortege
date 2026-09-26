@@ -236,6 +236,7 @@ The IBP score is composed of **10 factors (A–J)**, each representing a biodive
 | J | Water/wetland types |
 
 Factor validation matrix: `docs/technical/ibp-validation-matrix-v1.md`
+Method version: the app implements IBP Fr v3.0; ADR-003 (`docs/technical/adr-003-ibp-method-version-v1.md`) adopts IBP FR v3.2, implemented in phase 01.8 (comparison: `docs/technical/ibp-version-comparison-v3.0-v3.2.md`).
 
 ---
 
@@ -374,6 +375,8 @@ docs/
 │   ├── publication-visibility-post-submit-v1.md
 │   ├── adr-001-technical-stack-and-engineering-principles-v1.md
 │   ├── adr-002-on-device-species-recognition-v1.md      # Species recognition go/no-go (Phase 1)
+│   ├── adr-003-ibp-method-version-v1.md                 # IBP method version: v3.0 implemented, v3.2 adopted (Phase 1.1)
+│   ├── ibp-version-comparison-v3.0-v3.2.md              # IBP Fr v3.0 vs FR v3.2, factor by factor
 │   └── species-recognition-spike-measurements-v1.md     # Spike evidence log for ADR-002
 ├── specs/
 │   ├── README.md                          # Specs index
