@@ -1,3 +1,5 @@
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
+import type { IbpMethodFields } from "@cortege/ibp-domain"
 import {
   SurveyQueuePayload,
   SurveyDeleteQueuePayload,
@@ -63,6 +65,64 @@ export const isLegacyDefaultFactorValue = (factorKey: string, rawValue: unknown)
   return expectedKeys.every((key) => typeof value[key] === "number" && value[key] === expected[key])
 }
 
+const isIbpCas = (value: unknown): boolean =>
+  typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 4
+
+/** The fields of a draft input that decide the method context of a payload. */
+export type MethodContextInput = IbpMethodFields & {
+  region_version?: string
+  vegetation_stage?: string
+}
+
+function setOrDelete<K extends keyof SurveyQueuePayload>(
+  payload: SurveyQueuePayload,
+  key: K,
+  value: SurveyQueuePayload[K] | undefined,
+): void {
+  if (value === undefined) {
+    delete payload[key]
+  } else {
+    payload[key] = value
+  }
+}
+
+/**
+ * Writes the method fields and the matching context of a draft input onto a copy of `base`
+ * (01.8, D-08 and D-10 amended). The single write rule for createLocalDraft and updateLocalDraft:
+ * - no `ibp_method_version` in the input (undefined): the base's method fields are kept as they
+ *   are, so a legacy draft is never stamped (T-01.8-21);
+ * - a given version is written as given: null stays null, never the v3.0 tag;
+ * - v3.2 (given or kept): the cas and flag are written when given, region and stage removed;
+ * - v3.0 (tag, null or missing): region and stage come from the input, cas and flag removed;
+ * - an unsupported version: region and stage come from the input, the cas is left untouched.
+ */
+export function applyMethodFields(
+  base: SurveyQueuePayload,
+  input: MethodContextInput,
+): SurveyQueuePayload {
+  const next: SurveyQueuePayload = { ...base }
+  if (input.ibp_method_version !== undefined) {
+    next.ibp_method_version = input.ibp_method_version
+  }
+
+  const resolved = resolveMethodVersion(next.ibp_method_version)
+  if (resolved === IBP_METHOD_V3_2) {
+    if (input.ibp_cas !== undefined) next.ibp_cas = input.ibp_cas
+    if (input.ibp_cas3_scale !== undefined) next.ibp_cas3_scale = input.ibp_cas3_scale
+    delete next.region_version
+    delete next.vegetation_stage
+    return next
+  }
+
+  setOrDelete(next, "region_version", input.region_version)
+  setOrDelete(next, "vegetation_stage", input.vegetation_stage)
+  if (resolved === IBP_METHOD_V3_0) {
+    delete next.ibp_cas
+    delete next.ibp_cas3_scale
+  }
+  return next
+}
+
 /**
  * Payload-only completion, an integer 0-100. Stored at write time in
  * local_surveys.payload_completion so listing surveys never parses a payload
@@ -76,9 +136,16 @@ export const computePayloadCompletion = (payload: SurveyQueuePayload | null): nu
   const total = 14
 
   if (typeof payload.site_name === "string" && payload.site_name.trim().length > 0) completed += 1
-  if (payload.region_version === "ACA" || payload.region_version === "M") completed += 1
-  if (typeof payload.vegetation_stage === "string" && payload.vegetation_stage.trim().length > 0)
+  if (resolveMethodVersion(payload.ibp_method_version) === IBP_METHOD_V3_2) {
+    // A v3.2 survey has no region or stage (D-08 amended): its version and cas take their two
+    // slots, so the total stays 14 and stored values stay valid without a backfill.
     completed += 1
+    if (isIbpCas(payload.ibp_cas)) completed += 1
+  } else {
+    if (payload.region_version === "ACA" || payload.region_version === "M") completed += 1
+    if (typeof payload.vegetation_stage === "string" && payload.vegetation_stage.trim().length > 0)
+      completed += 1
+  }
 
   const parcelIds = resolvePayloadParcelIds(payload)
   if (parcelIds.length > 0) completed += 1

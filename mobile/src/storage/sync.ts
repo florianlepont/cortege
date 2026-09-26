@@ -447,6 +447,11 @@ function buildSurveyPayloadFromRemote(survey: RemoteSurvey): SurveyQueuePayload 
     factors: survey.factors ?? {},
     scores: survey.scores ?? {},
     expires_at: survey.expires_at ?? undefined,
+    // Copied so a pulled v3.2 survey keeps its method (01.8 Pitfall 4); a null or missing value
+    // stays absent, so an untagged legacy row stays untagged.
+    ibp_method_version: survey.ibp_method_version ?? undefined,
+    ibp_cas: survey.ibp_cas ?? undefined,
+    ibp_cas3_scale: survey.ibp_cas3_scale ?? undefined,
   }
 }
 
