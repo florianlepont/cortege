@@ -78,7 +78,9 @@ jest.mock("../../hooks/usePublicMapExplorer", () => ({
   },
 }))
 
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr, type StatusMessage } from "../../i18n"
+import type { SurveyFormMethod } from "../../screens/survey-form/MethodVersionPicker"
 import { AccessTokenProvider, SessionProvider } from "../../state/session-context"
 import type { SessionContextValue } from "../../state/session-context"
 import { StatusProvider } from "../../state/status-context"
@@ -533,6 +535,22 @@ describe("SurveyFormRoute", () => {
     })
     expect(props("surveyForm").screen).toBe("create")
     expect(props("surveyForm")).not.toHaveProperty("status")
+
+    // The method state and setters travel in one prop (01.8-13); the form never holds a
+    // submitted survey, so the version stays open.
+    const method = props("surveyForm").method as SurveyFormMethod
+    expect(method).toMatchObject({
+      version: IBP_METHOD_V3_2,
+      cas: 1,
+      cas3Scale: false,
+      locked: false,
+    })
+    method.setVersion(IBP_METHOD_V3_0)
+    method.setCas(3)
+    method.setCas3Scale(true)
+    expect(fixture.form.actions.setIbpMethodVersion).toHaveBeenCalledWith(IBP_METHOD_V3_0)
+    expect(fixture.form.actions.setIbpCas).toHaveBeenCalledWith(3)
+    expect(fixture.form.actions.setIbpCas3Scale).toHaveBeenCalledWith(true)
 
     callback("surveyForm", "onOpenFactor")("C")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFactorDetail", { factor: "C" })
