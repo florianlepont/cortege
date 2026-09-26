@@ -2,7 +2,10 @@
 
 ## Status
 
-Reference document, phase 01.1 (reconcile the IBP method version).
+Reference document, phase 01.1 (reconcile the IBP method version). The changes listed here are
+implemented in phase 01.8 (`packages/ibp-domain`), per
+[ADR-003](adr-003-ibp-method-version-v1.md) and
+[`ibp-validation-matrix-v2.md`](ibp-validation-matrix-v2.md).
 
 ## Date
 
