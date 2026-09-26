@@ -434,7 +434,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Species Recognition — Approach Decision | 6/6 | Complete   | 2026-09-26 |
-| 1.1. Reconcile the IBP method version | 4/4 | Complete   | 2026-09-26 |
+| 1.1. Reconcile the IBP method version | 4/4 | Complete    | 2026-09-26 |
 | 1.2. Stop field data loss and account exposure | 9/9 | Complete    | 2026-09-24 |
 | 1.3. CI and test safety net | 7/7 | Complete    | 2026-09-24 |
 | 1.4. API sync integrity | 6/6 | Complete    | 2026-09-24 |
