@@ -73,7 +73,7 @@ const render = (
   act(() => {
     tree = renderer.create(
       <FactorsSection
-        scores={{ ibp_peuplement_gestion: 21, ibp_contexte: 10, ibp_total: 31 }}
+        scores={{ ibp_peuplement_gestion: 20, ibp_contexte: 10, ibp_total: 30 }}
         factorEntries={entries}
         useLocalDraftView={false}
         showLoadingHint={false}
@@ -95,12 +95,12 @@ const pill = (tree: ReactTestRenderer, testID: string): ReactTestInstance =>
 describe("FactorsSection totals (D-03 amended, D-11)", () => {
   test("the total reads out of 50 and the sub-scores out of 35 and 15", () => {
     const all = texts(render())
-    expect(all).toContain("31 / 50")
-    expect(all.some((text) => text.includes("P/G 21 / 35"))).toBe(true)
+    expect(all).toContain("30 / 50")
+    expect(all.some((text) => text.includes("P/G 20 / 35"))).toBe(true)
     expect(all.some((text) => text.includes("Contexte 10 / 15"))).toBe(true)
   })
 
-  test("stand 21 and context 10 show 'moyenne' and 'forte' in the mid and high tone colours", () => {
+  test("stand 20 and context 10 show 'moyenne' and 'forte' in the mid and high tone colours", () => {
     const tree = render()
     const stand = pill(tree, "factor-subscore-stand")
     const context = pill(tree, "factor-subscore-context")

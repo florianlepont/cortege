@@ -31,10 +31,15 @@ describe("resolveHeroMetric (D-03, D-11: totals out of 50)", () => {
     expect(resolveHeroMetric(scores(1, 1), true, null).caption).toBe(m.localDraftScore)
   })
 
-  test("stand 21 is moyenne (mid) and context 10 is forte (high)", () => {
-    const metric = resolveHeroMetric(scores(21, 10), false, null)
+  // The package cut-offs are lower-inclusive (7/14/21/28): 20 is moyenne, 21 already assez forte.
+  test("stand 20 is moyenne (mid), 21 assez forte (high); context 10 is forte (high)", () => {
+    const metric = resolveHeroMetric(scores(20, 10), false, null)
     expect(metric.stand).toMatchObject({ tone: "mid", bandLabel: "moyenne" })
     expect(metric.context).toMatchObject({ tone: "high", bandLabel: "forte" })
+    expect(resolveHeroMetric(scores(21, 10), false, null).stand).toMatchObject({
+      tone: "high",
+      bandLabel: "assez forte",
+    })
   })
 
   test("stand 6 is faible (low); context 4 is faible and 5 moyenne", () => {

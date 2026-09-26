@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Alert, Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../../app/brand-tokens"
+import { brandColors, ibpScoreTokens } from "../../app/brand-tokens"
 import { formatDateTime } from "../../app/formatters"
 import {
   formatSurveySyncDisplayLabel,
@@ -14,7 +14,7 @@ import { LocalSurvey } from "../../storage"
 import { AppButton } from "../../ui/AppButton"
 import { AppField } from "../../ui/AppField"
 import { AppStatusChip, AppStatusChipTone } from "../../ui/AppStatusChip"
-import { HeroMetric, HeroSubmitState, resolveHeroSubmitCopy } from "./hero-state"
+import { HeroMetric, HeroSubScore, HeroSubmitState, resolveHeroSubmitCopy } from "./hero-state"
 import { styles } from "./header.styles"
 
 type DetailHeaderProps = {
@@ -33,6 +33,22 @@ type DetailHeaderProps = {
 const h = fr.surveyDetail.header
 const a11y = fr.surveyDetail.a11y
 const alerts = fr.surveyDetail.alerts
+const metricText = fr.surveyDetail.metric
+
+// A sub-score of the hero metric card, coloured and named by its CNPF band (D-03 amended).
+function HeroSubScorePill({ subScore, testID }: { subScore: HeroSubScore; testID: string }) {
+  const colors = ibpScoreTokens.colors[subScore.tone]
+  return (
+    <View
+      testID={testID}
+      style={[styles.detailHeroSubScorePill, { backgroundColor: colors.background }]}
+    >
+      <Text style={[styles.detailHeroSubScoreText, { color: colors.text }]}>
+        {metricText.withBand({ score: subScore.text, band: subScore.bandLabel })}
+      </Text>
+    </View>
+  )
+}
 
 const resolveSyncTone = (
   syncDisplay: ReturnType<typeof resolveSurveySyncDisplay>,
@@ -190,7 +206,14 @@ export function DetailHeader({
             <View style={styles.detailHeroMetricCard}>
               <Text style={styles.detailHeroMetricLabel}>{metric.caption}</Text>
               <Text style={styles.detailHeroMetricValue}>{metric.value}</Text>
-              <Text style={styles.detailHeroMetricMeta}>{metric.meta}</Text>
+              {metric.stand && metric.context ? (
+                <View style={styles.detailHeroSubScores}>
+                  <HeroSubScorePill subScore={metric.stand} testID="hero-subscore-stand" />
+                  <HeroSubScorePill subScore={metric.context} testID="hero-subscore-context" />
+                </View>
+              ) : (
+                <Text style={styles.detailHeroMetricMeta}>{metric.meta}</Text>
+              )}
             </View>
           </View>
         )}

@@ -48,7 +48,7 @@ export const styles = StyleSheet.create({
   },
   detailHeroMetricCard: {
     minWidth: 116,
-    maxWidth: 144,
+    maxWidth: 168,
     borderRadius: 24,
     backgroundColor: "rgba(247, 246, 240, 0.12)",
     paddingHorizontal: 14,
@@ -68,6 +68,18 @@ export const styles = StyleSheet.create({
   detailHeroMetricMeta: {
     ...brandTypography.meta,
     color: "#D7E3C0",
+  },
+  detailHeroSubScores: {
+    gap: 4,
+  },
+  detailHeroSubScorePill: {
+    alignSelf: "flex-start",
+    borderRadius: brandRadius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  detailHeroSubScoreText: {
+    ...brandTypography.meta,
   },
   detailHeroCompactHeader: {
     flexDirection: "row",
