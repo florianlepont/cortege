@@ -9,6 +9,7 @@ import {
   resolveParcel,
   uniqueCoordSeed,
   uniqueId,
+  validDirectFactors,
 } from "./helpers/surveys-e2e"
 
 // Phase 01.8 D-12: split out of the former catch-all surveys-idempotency suite. This file covers
@@ -36,19 +37,6 @@ describe("Public map items (e2e)", () => {
     const submittedPrivateId = uniqueId("e2e-public-map-prv")
     const draftPublicId = uniqueId("e2e-public-map-draft")
     const seed = uniqueCoordSeed()
-
-    const validFactors = {
-      A: 1,
-      B: 1,
-      C: 1,
-      D: 1,
-      E: 1,
-      F: 1,
-      G: 1,
-      H: 1,
-      I: 2,
-      J: 2,
-    }
 
     const parcelPubId = await resolveParcel(
       app,
@@ -80,7 +68,7 @@ describe("Public map items (e2e)", () => {
         version_number: submittedPublicVersionNumber,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: validFactors,
+        factors: validDirectFactors,
         location: { source: "gps", lat: 48.9 + seed / 100000, lng: 2.1 + seed / 100000 },
       })
       .expect(201)
@@ -110,7 +98,7 @@ describe("Public map items (e2e)", () => {
         version_number: submittedPrivateVersionNumber,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: validFactors,
+        factors: validDirectFactors,
         location: { source: "gps", lat: 48.91 + seed / 100000, lng: 2.11 + seed / 100000 },
       })
       .expect(201)
@@ -131,7 +119,7 @@ describe("Public map items (e2e)", () => {
         visibility: "public",
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: validFactors,
+        factors: validDirectFactors,
         location: { source: "gps", lat: 48.649, lng: 1.827 },
       })
       .expect(201)
@@ -174,18 +162,6 @@ describe("Public map items (e2e)", () => {
     const baseLat = 43.6045 + (runSeed % 80000) / 10000000
     const baseLng = 1.444 + (runSeed % 80000) / 10000000
     const accessToken = await loginTestUser(app, "e2e-parcel-status")
-    const validFactors = {
-      A: 1,
-      B: 1,
-      C: 1,
-      D: 1,
-      E: 1,
-      F: 1,
-      G: 1,
-      H: 1,
-      I: 2,
-      J: 2,
-    }
     const surveyId = uniqueId("e2e-parcel-status")
 
     const parcelId = await resolveParcel(app, accessToken, baseLat, baseLng)
@@ -205,7 +181,7 @@ describe("Public map items (e2e)", () => {
         version_number: versionNumber,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: validFactors,
+        factors: validDirectFactors,
         location: { source: "gps", lat: baseLat, lng: baseLng },
       })
       .expect(201)

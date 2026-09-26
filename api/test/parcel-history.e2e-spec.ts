@@ -8,6 +8,7 @@ import {
   loginTestUser,
   uniqueCoordSeed,
   uniqueId,
+  validDirectFactors,
 } from "./helpers/surveys-e2e"
 
 // Phase 01.8 D-12: split out of the former catch-all surveys-idempotency suite. This file covers
@@ -34,18 +35,6 @@ describe("Parcel history (e2e)", () => {
     const baseLat = 48.703 + runSeed / 100000
     const baseLng = 2.191 + runSeed / 100000
     const accessToken = await loginTestUser(app, "e2e-parcel-history")
-    const validFactors = {
-      A: 1,
-      B: 1,
-      C: 1,
-      D: 1,
-      E: 1,
-      F: 1,
-      G: 1,
-      H: 1,
-      I: 2,
-      J: 2,
-    }
 
     const resolved = await request(app.getHttpServer())
       .get("/v1/parcels/resolve")
@@ -75,7 +64,7 @@ describe("Parcel history (e2e)", () => {
         version_number: surveyIdV1VersionNumber,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: validFactors,
+        factors: validDirectFactors,
         location: { source: "gps", lat: baseLat, lng: baseLng },
       })
       .expect(201)
@@ -102,7 +91,7 @@ describe("Parcel history (e2e)", () => {
         previous_survey_id: surveyIdV1,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: validFactors,
+        factors: validDirectFactors,
         location: { source: "gps", lat: baseLat + 0.0001, lng: baseLng + 0.0001 },
       })
       .expect(201)

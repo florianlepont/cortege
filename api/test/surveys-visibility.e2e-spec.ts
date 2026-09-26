@@ -9,6 +9,7 @@ import {
   resolveParcel,
   uniqueCoordSeed,
   uniqueId,
+  validDirectFactors,
 } from "./helpers/surveys-e2e"
 
 // Phase 01.8 D-12: split out of the former catch-all surveys-idempotency suite. This file covers
@@ -54,18 +55,7 @@ describe("Surveys visibility (e2e)", () => {
         version_number: versionNumber,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: {
-          A: 1,
-          B: 1,
-          C: 1,
-          D: 1,
-          E: 1,
-          F: 1,
-          G: 1,
-          H: 1,
-          I: 2,
-          J: 2,
-        },
+        factors: validDirectFactors,
         location: { source: "gps", lat, lng },
       })
       .expect(201)
@@ -122,18 +112,7 @@ describe("Surveys visibility (e2e)", () => {
         visibility: "private",
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: {
-          A: 1,
-          B: 1,
-          C: 1,
-          D: 1,
-          E: 1,
-          F: 1,
-          G: 1,
-          H: 1,
-          I: 2,
-          J: 2,
-        },
+        factors: validDirectFactors,
         location: { source: "gps", lat: 48.643, lng: 1.829 },
       })
       .expect(201)

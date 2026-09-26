@@ -9,6 +9,7 @@ import {
   resolveParcel,
   uniqueCoordSeed,
   uniqueId,
+  validDirectFactors,
 } from "./helpers/surveys-e2e"
 
 // Phase 01.8 D-12: split out of the former catch-all surveys-idempotency suite. This file covers
@@ -75,18 +76,7 @@ describe("Surveys submit (e2e)", () => {
         visibility: "private",
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: {
-          A: 1,
-          B: 1,
-          C: 1,
-          D: 1,
-          E: 1,
-          F: 1,
-          G: 1,
-          H: 1,
-          I: 2,
-          J: 2,
-        },
+        factors: validDirectFactors,
         location: {},
       })
       .expect(201)
@@ -117,18 +107,7 @@ describe("Surveys submit (e2e)", () => {
         region_version: "ACA",
         vegetation_stage: "collineen",
         expires_at: expiredAt,
-        factors: {
-          A: 1,
-          B: 1,
-          C: 1,
-          D: 1,
-          E: 1,
-          F: 1,
-          G: 1,
-          H: 2,
-          I: 2,
-          J: 2,
-        },
+        factors: validDirectFactors,
         location: { source: "gps", lat: 48.643, lng: 1.829 },
       })
       .expect(201)
@@ -177,18 +156,7 @@ describe("Surveys submit (e2e)", () => {
         version_number: versionNumber,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: {
-          A: 1,
-          B: 1,
-          C: 1,
-          D: 1,
-          E: 1,
-          F: 1,
-          G: 1,
-          H: 1,
-          I: 2,
-          J: 2,
-        },
+        factors: validDirectFactors,
         location: { source: "gps", lat, lng },
       })
       .expect(201)
@@ -200,9 +168,9 @@ describe("Surveys submit (e2e)", () => {
 
     expect(submit.body.status).toBe("submitted")
     expect(submit.body.scores).toEqual({
-      ibp_peuplement_gestion: 7,
-      ibp_contexte: 5,
-      ibp_total: 12,
+      ibp_peuplement_gestion: 8,
+      ibp_contexte: 6,
+      ibp_total: 14,
     })
   })
 
@@ -230,18 +198,7 @@ describe("Surveys submit (e2e)", () => {
         version_number: versionNumber,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        factors: {
-          A: 1,
-          B: 1,
-          C: 1,
-          D: 1,
-          E: 1,
-          F: 1,
-          G: 1,
-          H: 1,
-          I: 2,
-          J: 2,
-        },
+        factors: validDirectFactors,
         location: { source: "gps", lat, lng },
       })
       .expect(201)

@@ -25,8 +25,8 @@ describe("Installed-app sync payload compatibility (e2e)", () => {
     D: 1,
     E: 1,
     F: 1,
-    G: 1,
-    H: 1,
+    G: 2,
+    H: 2,
     I: 2,
     J: 2,
   }
