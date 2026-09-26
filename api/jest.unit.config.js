@@ -17,18 +17,18 @@ module.exports = {
   ],
   coverageDirectory: '<rootDir>/coverage/unit',
   coverageReporters: ['text', 'text-summary', 'json-summary', 'lcov'],
-  // Ratchet (phase 01.3, D-09; raised in phases 01.4, 01.5, 01.6, 01.7, 01.9 and 01.8): floor of values measured on 2026-09-26. Raise these when
+  // Ratchet (phase 01.3, D-09; raised in phases 01.4, 01.5, 01.6, 01.7, 01.9 and 01.8, last at the 01.8-16 gate): floor of values measured on 2026-09-26. Raise these when
   // coverage improves; never lower them. Regenerate with node scripts/coverage-by-directory.js api.
   coverageThreshold: {
     global: { statements: 70, branches: 66, functions: 50, lines: 66 },
-    './src/auth/': { statements: 87, branches: 78, functions: 82, lines: 89 },
+    './src/auth/': { statements: 88, branches: 78, functions: 83, lines: 89 },
     './src/common/': { statements: 88, branches: 90, functions: 60, lines: 88 },
     './src/config/': { statements: 96, branches: 94, functions: 96, lines: 96 },
     './src/database/': { statements: 90, branches: 100, functions: 62, lines: 89 },
     './src/debug/': { statements: 74, branches: 52, functions: 42, lines: 76 },
     './src/reports/': { statements: 64, branches: 52, functions: 35, lines: 62 },
     './src/storage/': { statements: 99, branches: 97, functions: 100, lines: 100 },
-    './src/surveys/': { statements: 84, branches: 70, functions: 84, lines: 84 },
+    './src/surveys/': { statements: 84, branches: 71, functions: 84, lines: 84 },
     './src/users/': { statements: 92, branches: 91, functions: 58, lines: 92 },
   },
 };
