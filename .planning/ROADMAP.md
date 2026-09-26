@@ -260,6 +260,7 @@ Plans:
 **Depends on**: Phase 01.3. Should follow Phase 01.1, so the extracted rules are the ratified method version.
 **Requirements**: REQ-AUD-ibp-domain, REQ-AUD-test-infra-rest
 **Source**: audit lot L17 and the remainder of L7, findings ARCH-1, T6, the untested RS256 path, the catch-all E2E suite
+**Input from Phase 01.1**: ADR-003 (`docs/technical/adr-003-ibp-method-version-v1.md`) adopts IBP FR v3.2; this phase implements its change list CH-1..CH-11 (CH-12 is phase 2), including the method-version dispatch (CH-6: a missing method version means v3.0, so identical replays of submitted v3.0 surveys stay valid) and `docs/technical/ibp-validation-matrix-v2.md` (CH-10).
 **Success Criteria** (what must be TRUE):
 
   1. A `packages/ibp-domain` workspace exports the factor keys, allowed sets, scoring and draft/submit validation as pure functions, plus the sync contract types; `IbpRulesService` and `mobile/src/app/ibp-scoring.ts` delegate to it and `mobile/src/app/types.ts` imports its contract types.
@@ -267,6 +268,7 @@ Plans:
   3. The API image builds with the package and `expo export` resolves it in CI.
   4. `AuthGuard`'s RS256 path is tested against a locally served JWKS: valid, expired, wrong audience and unknown `kid` tokens.
   5. `surveys-idempotency.e2e-spec.ts` is split by feature (submit, visibility, public map, attachments, parcel history) and uses `randomUUID()` instead of `Date.now()`.
+  6. The IBP rules in `packages/ibp-domain` implement IBP FR v3.2 per ADR-003 (CH-1..CH-11), with the v3.0 rules kept for surveys tagged v3.0 or carrying no method version; `docs/references/README.md` and `docs/specs/ibp-form-spec.md` then say the app implements v3.2.
 
 **Plans**: TBD
 
@@ -327,6 +329,7 @@ Plans:
 **Goal**: Factor A records the observed native genera as a list rather than a bare count, through contracts written down before any UI exists; surveys already recorded keep their scores; and the two stale spec sections that contradict shipped behaviour are corrected.
 **Depends on**: Phase 1, Phase 1.1 (the Factor A genus list must come from the ratified method version), Phase 1.8 (the Factor A rules, the CNPF genus list as an allowed set, and the sync contract types all belong in the `packages/ibp-domain` workspace that phase creates)
 **Requirements**: REQ-ML-contracts, REQ-DOC-form-spec
+**Input from Phase 01.1**: CH-12 in ADR-003 (`docs/technical/adr-003-ibp-method-version-v1.md`): the Factor A genus list comes from IBP FR v3.2 p. 3 and Table 1, keyed by cas (supplementary genera for cas 4 and 2, coastal-only Juniperus species, Ficus not counted, Pistacia per the CNPF answer).
 **Success Criteria** (what must be TRUE):
 
   1. `docs/technical/data-contract-v1.md` defines Factor A as a list of observed native genera drawn from the closed CNPF regional list, with the genus count derived from it, replacing the single `native_genus_count` number (ADR-002, D-15). There is no species entity: recognition is genus-level only (D-01), and neither the recognition photo (D-13) nor the ecologist's acceptance or correction of a suggestion (D-14) is stored.
