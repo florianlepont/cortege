@@ -35,6 +35,20 @@ export const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: brandSemanticColors.heroAccentTintOnDark,
   },
+  // DET-03/04: the "…" menu button (Renommer/Partager/Supprimer), its own row so it never
+  // overlaps the score card that sits at the top of both the compressed and expanded layouts.
+  detailHeroMenuRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  detailHeroMenuButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
+  },
   detailHeader: {
     flexDirection: "row",
     alignItems: "flex-start",

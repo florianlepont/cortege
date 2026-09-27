@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
 import { Alert, Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
@@ -29,6 +29,14 @@ type DetailHeaderProps = {
   attachmentCount: number
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
   onSubmitSurvey: (surveyId: string) => Promise<void>
+  /** DET-03/04: the header's "…" menu (Renommer/Partager/Supprimer) is owned by the screen. */
+  onOpenMenu: () => void
+}
+
+/** DET-03: exposes the rename form so the screen's "…" menu can trigger it (the tap-anywhere-on-
+ * the-title gesture it replaces had no visual indicator, per the audit finding). */
+export type DetailHeaderHandle = {
+  startRename: () => void
 }
 
 const h = fr.surveyDetail.header
@@ -59,20 +67,30 @@ const resolveSyncTone = (
   return "neutral"
 }
 
-export function DetailHeader({
-  survey,
-  activeSiteName,
-  canEditSurvey,
-  isHeroCompressed,
-  metric,
-  submitState,
-  remainingTime,
-  attachmentCount,
-  onRenameSurvey,
-  onSubmitSurvey,
-}: DetailHeaderProps) {
+export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(function DetailHeader(
+  {
+    survey,
+    activeSiteName,
+    canEditSurvey,
+    isHeroCompressed,
+    metric,
+    submitState,
+    remainingTime,
+    attachmentCount,
+    onRenameSurvey,
+    onSubmitSurvey,
+    onOpenMenu,
+  },
+  ref,
+) {
   const [isRenamingSite, setIsRenamingSite] = useState(false)
   const [siteNameInput, setSiteNameInput] = useState("")
+
+  useImperativeHandle(ref, () => ({
+    startRename: () => {
+      if (canEditSurvey) setIsRenamingSite(true)
+    },
+  }))
 
   useEffect(() => {
     setIsRenamingSite(false)
@@ -91,10 +109,6 @@ export function DetailHeader({
     void onRenameSurvey(survey.id, nextName)
     setIsRenamingSite(false)
   }
-  const startRename = (): void => {
-    if (!canEditSurvey) return
-    setIsRenamingSite(true)
-  }
 
   const workflowStatusLabel = formatSurveyWorkflowStatusLabel(resolveSurveyWorkflowStatus(survey))
   const syncDisplay = resolveSurveySyncDisplay(survey)
@@ -112,6 +126,18 @@ export function DetailHeader({
     <View style={styles.detailHeroStickyWrap}>
       <View style={[styles.detailHeroCard, compressed ? styles.detailHeroCardCompressed : null]}>
         <View style={styles.detailHeroAccentOrb} />
+        {!isRenamingSite ? (
+          <View style={styles.detailHeroMenuRow}>
+            <Pressable
+              style={styles.detailHeroMenuButton}
+              onPress={onOpenMenu}
+              accessibilityRole="button"
+              accessibilityLabel={a11y.openMenu(activeSiteName)}
+            >
+              <Ionicons name="ellipsis-horizontal" size={18} color={brandColors.white} />
+            </Pressable>
+          </View>
+        ) : null}
         {isRenamingSite ? (
           <View style={styles.detailRenameRow}>
             <AppField
@@ -146,20 +172,14 @@ export function DetailHeader({
           </View>
         ) : compressed ? (
           <View style={styles.detailHeroCompactHeader}>
-            <Pressable
-              style={styles.detailHeroCompactCopy}
-              onPress={startRename}
-              accessibilityRole="button"
-              accessibilityLabel={a11y.renameSurvey(activeSiteName)}
-              accessibilityState={{ disabled: !canEditSurvey }}
-            >
+            <View style={styles.detailHeroCompactCopy}>
               <Text numberOfLines={1} style={styles.detailHeroCompactTitle}>
                 {activeSiteName}
               </Text>
               <Text numberOfLines={1} style={styles.detailHeroCompactMeta}>
                 {compactHeroSummary}
               </Text>
-            </Pressable>
+            </View>
 
             <View style={styles.detailHeroCompactMetricPill}>
               <Text style={styles.detailHeroCompactMetricLabel}>{metric.caption}</Text>
@@ -168,13 +188,7 @@ export function DetailHeader({
           </View>
         ) : (
           <View style={styles.detailHeader}>
-            <Pressable
-              style={styles.detailHeroCopy}
-              onPress={startRename}
-              accessibilityRole="button"
-              accessibilityLabel={a11y.renameSurvey(activeSiteName)}
-              accessibilityState={{ disabled: !canEditSurvey }}
-            >
+            <View style={styles.detailHeroCopy}>
               <Text style={styles.detailHeroEyebrow}>{h.eyebrow}</Text>
               <Text style={styles.detailSurveyTitle}>{activeSiteName}</Text>
               <View style={styles.detailHeroStatusRow}>
@@ -197,7 +211,7 @@ export function DetailHeader({
                   labelStyle={styles.detailHeroStatusPillText}
                 />
               </View>
-            </Pressable>
+            </View>
 
             <View style={styles.detailHeroMetricCard}>
               <Text style={styles.detailHeroMetricLabel}>{metric.caption}</Text>
@@ -322,4 +336,4 @@ export function DetailHeader({
       </View>
     </View>
   )
-}
+})
