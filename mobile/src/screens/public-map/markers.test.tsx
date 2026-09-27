@@ -311,16 +311,19 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
         showFilters
         showParcelLayer={false}
         layerStatusLabel=""
-        fromDate=""
-        toDate=""
-        region=""
+        filters={{
+          period: "all",
+          onChangePeriod: jest.fn(),
+          region: "",
+          onChangeRegion: jest.fn(),
+          mineOnly: false,
+          onToggleMine: jest.fn(),
+          activeCount: 0,
+          onReset: jest.fn(),
+        }}
         onToggleFilters={jest.fn()}
         onToggleParcelLayer={jest.fn()}
         onRefresh={jest.fn()}
-        onApplyFilters={jest.fn()}
-        onChangeFromDate={jest.fn()}
-        onChangeToDate={jest.fn()}
-        onChangeRegion={jest.fn()}
       />,
     )
     expect(fr.publicMap.filters.regionHint).toBe("filtre les relevés v3.0 uniquement")

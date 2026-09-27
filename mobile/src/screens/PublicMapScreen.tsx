@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Alert, View } from "react-native"
 import type MapView from "react-native-maps"
 import type { LatLng, Region } from "react-native-maps"
@@ -14,10 +14,12 @@ import type { AreaDownloadEstimate } from "../map/tile-math"
 import type { OfflineAreaSummary } from "../storage/offline-map"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { ClusterListSheet } from "./public-map/ClusterListSheet"
+import type { ExplorerFilterBarProps, RegionKey } from "./public-map/ExplorerFilterBar"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
+import { computePeriodRange, type PeriodKey } from "./public-map/period-filter"
 import { SelectedSurveyCard } from "./public-map/SelectedSurveyCard"
 import { screenStyles } from "./public-map/styles"
 import { PARCEL_MIN_ZOOM, useMapViewport } from "./public-map/useMapViewport"
@@ -96,6 +98,10 @@ export function PublicMapScreen({
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
   const [locating, setLocating] = useState(false)
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null)
+  // MAP-02: period/region are chips applied immediately; "mes relevés" is a pure client-side
+  // filter over the already-loaded items (no API parameter for it).
+  const [period, setPeriod] = useState<PeriodKey>("all")
+  const [mineOnly, setMineOnly] = useState(false)
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
 
@@ -118,6 +124,60 @@ export function PublicMapScreen({
     () => new Map(parcelStatuses.map((status) => [status.parcel_id, status])),
     [parcelStatuses],
   )
+  const visibleItems = useMemo(
+    () => (mineOnly ? items.filter((item) => ownSurveyIdSet.has(item.survey_id)) : items),
+    [items, mineOnly, ownSurveyIdSet],
+  )
+  const regionFilter: RegionKey = region === "ACA" || region === "M" ? region : ""
+  const activeFilterCount =
+    (period !== "all" ? 1 : 0) + (regionFilter !== "" ? 1 : 0) + (mineOnly ? 1 : 0)
+
+  // MAP-02: filters apply immediately — no "Appliquer" button. A period/region chip updates the
+  // underlying date/region state; this effect re-fires the (unbounded, whole-dataset) load and
+  // re-arms the camera fit once that state actually changes, skipping the initial mount (already
+  // handled by the viewport's own bbox-driven first load).
+  const isFirstFilterApply = useRef(true)
+  useEffect(() => {
+    if (isFirstFilterApply.current) {
+      isFirstFilterApply.current = false
+      return
+    }
+    viewport.applyFilters()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromDate, toDate, region])
+
+  const handleChangePeriod = useCallback(
+    (nextPeriod: PeriodKey) => {
+      setPeriod(nextPeriod)
+      const range = computePeriodRange(nextPeriod)
+      onChangeFromDate(range.from)
+      onChangeToDate(range.to)
+    },
+    [onChangeFromDate, onChangeToDate],
+  )
+  const handleChangeRegion = useCallback(
+    (nextRegion: RegionKey) => onChangeRegion(nextRegion),
+    [onChangeRegion],
+  )
+  const handleToggleMine = useCallback(() => setMineOnly((current) => !current), [])
+  const handleResetFilters = useCallback(() => {
+    setPeriod("all")
+    setMineOnly(false)
+    onChangeFromDate("")
+    onChangeToDate("")
+    onChangeRegion("")
+  }, [onChangeFromDate, onChangeRegion, onChangeToDate])
+
+  const filterBarProps: ExplorerFilterBarProps = {
+    period,
+    onChangePeriod: handleChangePeriod,
+    region: regionFilter,
+    onChangeRegion: handleChangeRegion,
+    mineOnly,
+    onToggleMine: handleToggleMine,
+    activeCount: activeFilterCount,
+    onReset: handleResetFilters,
+  }
 
   const layerStatusLabel = !showParcelLayer
     ? t.layer.hidden
@@ -196,7 +256,7 @@ export function PublicMapScreen({
     <View style={screenStyles.container}>
       <MapCanvas
         mapRef={mapRef}
-        items={items}
+        items={visibleItems}
         region={viewport.region}
         selectedId={selectedItem?.survey_id ?? null}
         parcelStatuses={parcelStatuses}
@@ -214,21 +274,15 @@ export function PublicMapScreen({
 
       <MapTopControls
         top={insets.top + 40}
-        count={items.length}
+        count={visibleItems.length}
         loading={loading}
         showFilters={showFilters}
         showParcelLayer={showParcelLayer}
         layerStatusLabel={layerStatusLabel}
-        fromDate={fromDate}
-        toDate={toDate}
-        region={region}
+        filters={filterBarProps}
         onToggleFilters={toggleFilters}
         onToggleParcelLayer={toggleParcelLayer}
         onRefresh={viewport.reload}
-        onApplyFilters={viewport.applyFilters}
-        onChangeFromDate={onChangeFromDate}
-        onChangeToDate={onChangeToDate}
-        onChangeRegion={onChangeRegion}
         isOffline={isOffline}
         basemap={basemap}
         onChangeBasemap={onChangeBasemap}
@@ -237,7 +291,7 @@ export function PublicMapScreen({
 
       <MapBottomDock
         bottom={Math.max(12, dockBottom + 10)}
-        showEmpty={!loading && items.length === 0}
+        showEmpty={!loading && visibleItems.length === 0}
         locating={locating}
         onLocate={onLocate}
       />

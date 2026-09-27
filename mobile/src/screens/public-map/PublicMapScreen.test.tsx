@@ -403,18 +403,31 @@ describe("PublicMapScreen", () => {
   test("controls: filters, apply, refresh and the parcel layer label", () => {
     jest.useFakeTimers()
     try {
-      const props = makeProps()
+      let props = makeProps()
       mount(props)
       act(() => byLabel(fr.publicMap.a11y.showFilters).props.onPress())
       expect(
         byLabel(fr.publicMap.a11y.hideParcels).findByType("Text" as never).props.children,
       ).toBe(fr.publicMap.layer.zoomIn)
 
-      const apply = tree.root.find(
+      // MAP-02: a period chip reports the resolved range immediately (no "Appliquer" button).
+      const yearChip = tree.root.find(
         (node) =>
-          (node.type as unknown) === "AppButton" && node.props.label === fr.publicMap.filters.apply,
+          (node.type as unknown) === "Pressable" &&
+          node
+            .findAll((child) => (child.type as unknown) === "Text")
+            .some((text) => text.props.children === fr.publicMap.filters.period.year),
       )
-      act(() => apply.props.onPress())
+      act(() => yearChip.props.onPress())
+      expect(props.onChangeFromDate).toHaveBeenCalledTimes(1)
+      expect(props.onChangeToDate).toHaveBeenCalledTimes(1)
+
+      // The parent (usePublicMapExplorer) reflects the change back as new props: the screen
+      // re-applies immediately, with no separate "Appliquer" step.
+      const [nextFromDate] = (props.onChangeFromDate as jest.Mock).mock.calls[0] as [string]
+      const [nextToDate] = (props.onChangeToDate as jest.Mock).mock.calls[0] as [string]
+      props = { ...props, fromDate: nextFromDate, toDate: nextToDate }
+      update(props)
       expect(props.onLoad).toHaveBeenLastCalledWith({ force: true })
 
       act(() => byLabel(fr.publicMap.a11y.refresh).props.onPress())
@@ -446,8 +459,9 @@ describe("PublicMapScreen", () => {
       expect(
         tree.root.findAll((node) => (node.type as unknown) === "ActivityIndicator"),
       ).toHaveLength(1)
+      expect(texts()).toContain(fr.publicMap.filters.period.year)
       act(() => byLabel(fr.publicMap.a11y.hideFilters).props.onPress())
-      expect(tree.root.findAll((node) => (node.type as unknown) === "AppField")).toHaveLength(0)
+      expect(texts()).not.toContain(fr.publicMap.filters.period.year)
     } finally {
       jest.useRealTimers()
     }

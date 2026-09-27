@@ -124,6 +124,25 @@ export const controlStyles = StyleSheet.create({
     borderColor: brandColors.divider,
     backgroundColor: brandColors.disabledMuted,
   },
+  // MAP-02: the active-filter count, overlaid on the filters toggle button.
+  filterCountBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 3,
+    backgroundColor: brandColors.terracotta,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterCountBadgeText: {
+    ...brandTypography.meta,
+    fontSize: 12,
+    lineHeight: 14,
+    color: brandColors.white,
+  },
   filtersPanel: {
     backgroundColor: PANEL_BACKGROUND,
     gap: 12,
@@ -160,34 +179,6 @@ export const controlStyles = StyleSheet.create({
   layerTogglePillTextOn: {
     color: brandColors.white,
   },
-  filtersGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  filterFieldHalf: {
-    flexGrow: 1,
-    flexBasis: "48%",
-    gap: 5,
-  },
-  filterFieldFull: {
-    width: "100%",
-    gap: 5,
-  },
-  inputLabel: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  input: {
-    ...brandTypography.input,
-  },
-  refreshButton: {
-    width: "100%",
-  },
-  refreshButtonDisabled: {
-    backgroundColor: brandColors.disabledMuted,
-    borderColor: brandColors.disabledMuted,
-  },
   bottomDock: {
     position: "absolute",
     left: 12,
@@ -214,6 +205,38 @@ export const controlStyles = StyleSheet.create({
     borderRadius: 28,
     borderColor: brandColors.forest,
     backgroundColor: brandColors.forest,
+  },
+})
+
+// MAP-02: the chip-based filter bar (period / region / mes relevés), replacing the old free-text
+// fields + Apply button.
+export const filterBarStyles = StyleSheet.create({
+  container: {
+    gap: 8,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  summaryText: {
+    ...brandTypography.meta,
+    color: brandColors.textSecondary,
+  },
+  resetLink: {
+    ...brandTypography.meta,
+    color: brandColors.forest,
+    textDecorationLine: "underline",
+  },
+  row: {
+    flexDirection: "row",
+  },
+  chip: {
+    marginRight: 8,
+  },
+  hint: {
+    ...brandTypography.meta,
+    color: brandColors.textSecondary,
   },
 })
 
