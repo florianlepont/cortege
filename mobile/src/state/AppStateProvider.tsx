@@ -22,6 +22,7 @@ import {
   type SessionContextValue,
 } from "./session-context"
 import { StatusProvider, type StatusContextValue } from "./status-context"
+import { AutosaveStatusProvider } from "./autosave-status-context"
 import { NearbyParcelsProvider, type NearbyParcelsContextValue } from "./nearby-parcels-context"
 import { SurveyFormProvider, type SurveyFormContextValue } from "./survey-form-context"
 import {
@@ -326,6 +327,7 @@ function useAppController() {
     saveSurveyEdits: editing.handleSaveSurveyEdits,
     createDraft: editing.handleCreateDraft,
     captureGpsLocation: gpsCapture.handleCaptureGpsLocation,
+    markSubmitAttempted: surveyForm.markSubmitAttempted,
   })
 
   const {
@@ -402,12 +404,22 @@ function useAppController() {
     surveyActions,
     form,
     nearby,
+    autosaveStatus: editing.autosaveStatus,
   }
 }
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const { session, accessToken, status, syncActions, surveys, surveyActions, form, nearby } =
-    useAppController()
+  const {
+    session,
+    accessToken,
+    status,
+    syncActions,
+    surveys,
+    surveyActions,
+    form,
+    nearby,
+    autosaveStatus,
+  } = useAppController()
 
   return (
     <SessionProvider value={session}>
@@ -417,7 +429,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             <SurveysProvider value={surveys}>
               <SurveyActionsProvider value={surveyActions}>
                 <SurveyFormProvider value={form}>
-                  <NearbyParcelsProvider value={nearby}>{children}</NearbyParcelsProvider>
+                  <AutosaveStatusProvider value={autosaveStatus}>
+                    <NearbyParcelsProvider value={nearby}>{children}</NearbyParcelsProvider>
+                  </AutosaveStatusProvider>
                 </SurveyFormProvider>
               </SurveyActionsProvider>
             </SurveysProvider>

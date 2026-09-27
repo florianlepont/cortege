@@ -1,12 +1,12 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { FACTOR_TITLES } from "../../app/constants"
-import { FactorKey, FactorRetainedScore } from "../../app/types"
+import { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
 import { fr } from "../../i18n"
 import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { FACTOR_ORDER, StepButton } from "./components"
 import { buildHeroCopy } from "./FormHeader"
-import { FactorProgress, FactorsList } from "./FactorsList"
+import { computeFactorProgress, FactorProgress, FactorsList } from "./FactorsList"
 
 const originalConsoleError = console.error
 
@@ -57,6 +57,8 @@ jest.mock("../../ui/AppSectionHeader", () => {
 })
 
 jest.mock("../../ui/AppChoiceChip", () => ({ AppChoiceChip: () => null }))
+
+jest.mock("../../ui/FactorProgressRing", () => ({ FactorProgressRing: () => null }))
 
 type Node = renderer.ReactTestInstance
 
@@ -223,5 +225,35 @@ describe("StepButton", () => {
     )
     expect(button.props.accessibilityState).toEqual({ selected: false, disabled: true })
     expect(textOf(button)).toContain(fr.surveyForm.header.steps.hintNameRequired)
+  })
+})
+
+describe("computeFactorProgress (FLOW-02: untouched is neutral, not a warning)", () => {
+  const untouchedField = (error: string | null): FactorField => ({
+    label: "x",
+    value: "",
+    onChange: jest.fn(),
+    required: true,
+    error,
+    touched: false,
+    onTouch: jest.fn(),
+  })
+
+  const sections = (fields: FactorField[]): Record<FactorKey, FactorField[]> =>
+    FACTOR_ORDER.reduce(
+      (acc, factor) => ({ ...acc, [factor]: factor === "A" ? fields : [] }),
+      {} as Record<FactorKey, FactorField[]>,
+    )
+
+  test("an untouched, empty required field is neither complete nor invalid", () => {
+    const progress = computeFactorProgress(sections([untouchedField("Champ obligatoire")]))
+    expect(progress.A).toEqual({ complete: false, filled: 0, total: 1, invalid: 0 })
+  })
+
+  test("a touched field with an error counts as invalid", () => {
+    const progress = computeFactorProgress(
+      sections([{ ...untouchedField("Champ obligatoire"), touched: true }]),
+    )
+    expect(progress.A.invalid).toBe(1)
   })
 })

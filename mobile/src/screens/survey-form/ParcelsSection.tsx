@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import MapView, { Marker } from "react-native-maps"
@@ -7,6 +8,7 @@ import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
 import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { NearbyParcelsSheet } from "./NearbyParcelsSheet"
 import { parcelStyles } from "./parcels.styles"
 import { formStyles } from "./styles"
 import type { ParcelMapState } from "./useParcelMap"
@@ -25,6 +27,8 @@ export function ParcelsSection({
   onToggleParcelSelection: (parcelId: string) => void
   onOpenParcelFullscreen: () => void
 }) {
+  const [nearbySheetVisible, setNearbySheetVisible] = useState(false)
+
   return (
     <AppCard variant="panelElevated" style={formStyles.panel}>
       <View style={parcelStyles.parcelHeaderRow}>
@@ -70,10 +74,27 @@ export function ParcelsSection({
               {fr.surveyForm.parcels.fullScreen}
             </Text>
           </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={fr.nearbyParcelsSheet.trigger}
+            style={parcelStyles.mapOverlayButton}
+            onPress={() => setNearbySheetVisible(true)}
+            testID="open-nearby-parcels-sheet"
+          >
+            <Ionicons name="navigate-circle-outline" size={15} color={brandColors.white} />
+            <Text style={parcelStyles.mapOverlayButtonText}>{fr.nearbyParcelsSheet.trigger}</Text>
+          </Pressable>
         </View>
       </View>
 
       <Text style={parcelStyles.mapHelperText}>{map.helperText}</Text>
+
+      <NearbyParcelsSheet
+        visible={nearbySheetVisible}
+        onClose={() => setNearbySheetVisible(false)}
+        selectedParcelIds={selectedParcelIds}
+        onToggleParcelSelection={onToggleParcelSelection}
+      />
 
       {selectedParcelIds.length > 0 ? (
         <View style={parcelStyles.selectionSummaryRow}>

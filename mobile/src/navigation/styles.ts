@@ -9,14 +9,6 @@ export const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
   },
-  mainScroll: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    gap: 14,
-    paddingBottom: 20,
-  },
   accountScreenWrap: {
     flex: 1,
   },

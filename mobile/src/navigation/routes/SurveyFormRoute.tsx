@@ -3,6 +3,7 @@ import type { FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
 import { SurveyFormScreen } from "../../screens/SurveyFormScreen"
 import type { SurveyFormMethod } from "../../screens/survey-form/MethodVersionPicker"
+import { useAutosaveStatus } from "../../state/autosave-status-context"
 import { useSession } from "../../state/session-context"
 import { useSurveyFormState } from "../../state/survey-form-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -16,6 +17,7 @@ import type { SurveyFormRouteProps } from "../types"
 export const SurveyFormRoute = memo(function SurveyFormRoute({ navigation }: SurveyFormRouteProps) {
   const { state: session } = useSession()
   const { state, actions } = useSurveyFormState()
+  const autosaveStatus = useAutosaveStatus()
   const isEdit = state.formMode === "edit"
 
   useLayoutEffect(() => {
@@ -80,6 +82,8 @@ export const SurveyFormRoute = memo(function SurveyFormRoute({ navigation }: Sur
       onOpenParcelFullscreen={onOpenParcelFullscreen}
       onSaveSurveyEdits={onSaveSurveyEdits}
       onCreateDraft={onCreateDraft}
+      autosaveStatus={autosaveStatus}
+      onSubmitAttempt={actions.markSubmitAttempted}
     />
   )
 })

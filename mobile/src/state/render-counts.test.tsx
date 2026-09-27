@@ -771,7 +771,13 @@ const EXPECTED: Record<ScenarioName, Counts> = {
     home: 1,
     surveyList: 1,
     surveyDetail: 1,
-    surveyForm: 1,
+    // Phase 3, FLOW-07: the visible autosave indicator ("Enregistré · 14:32") needs its own
+    // narrow context (autosave-status-context.ts, same pattern as nearby-parcels-context.ts) so
+    // its two state transitions per debounce cycle (saving, then saved) don't re-render every
+    // screen that reads the shared survey-form context. Only surveyForm actually shows the
+    // indicator, so only it pays for those two extra renders — factorDetail and parcelSelection
+    // stay at 1, unaffected.
+    surveyForm: 3,
     factorDetail: 1,
     parcelSelection: 1,
     publicMap: 1,
