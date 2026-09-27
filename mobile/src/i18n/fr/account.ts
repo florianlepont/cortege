@@ -10,11 +10,12 @@ export const accountFr = {
     unsaved: "Non sauvegardé",
     saved: "Sauvegardé",
     firstName: "Prénom",
-    firstNamePlaceholder: "Florian",
+    // ACC-04: a generic example, not a real member's name.
+    firstNamePlaceholder: "ex. Marie",
     lastName: "Nom",
-    lastNamePlaceholder: "Lepont",
+    lastNamePlaceholder: "ex. Dupont",
     displayName: "Nom d'affichage",
-    displayNamePlaceholder: "ex. F. Lepont",
+    displayNamePlaceholder: "ex. M. Dupont",
     saving: "Enregistrement...",
     save: "Enregistrer le profil",
   },
@@ -29,6 +30,15 @@ export const accountFr = {
     action: "Réinitialiser",
   },
   logout: "Se déconnecter",
+  // ACC-03: the grouped iOS-style list (Profil, Connexion, Données, À propos, Se déconnecter).
+  sections: {
+    connection: "Connexion",
+    data: "Données",
+    dataRow: "Synchronisation et données",
+    about: "À propos",
+    version: "Version",
+    versionUnknown: "—",
+  },
   alerts: {
     photo: {
       title: "Photo de profil",

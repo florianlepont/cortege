@@ -2,6 +2,7 @@ import { memo } from "react"
 import { KeyboardAvoidingView, Platform } from "react-native"
 import { AccountScreen } from "../../screens/AccountScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
+import { useLatestCallback } from "../../state/useLatestCallback"
 import { styles } from "../styles"
 import type { AccountRouteProps } from "../types"
 
@@ -9,9 +10,13 @@ import type { AccountRouteProps } from "../types"
  * Account route (phase 01.9-18, D-01): reads the session and, as the only
  * route, the access token (for the avatar, T-01.9-31).
  */
-export const AccountRoute = memo(function AccountRoute(_props: AccountRouteProps) {
+export const AccountRoute = memo(function AccountRoute({ navigation }: AccountRouteProps) {
   const { state: session, actions } = useSession()
   const accessToken = useAccessToken()
+
+  const onOpenSyncAndData = useLatestCallback(() => {
+    navigation.navigate("settings")
+  })
 
   return (
     <KeyboardAvoidingView
@@ -30,6 +35,7 @@ export const AccountRoute = memo(function AccountRoute(_props: AccountRouteProps
         onPickProfilePictureFromLibrary={actions.handlePickProfilePictureFromLibrary}
         onTakeProfilePictureFromCamera={actions.handleTakeProfilePictureFromCamera}
         onRemoveProfilePicture={actions.handleRemoveProfilePicture}
+        onOpenSyncAndData={onOpenSyncAndData}
         onLogout={actions.handleLogout}
       />
     </KeyboardAvoidingView>

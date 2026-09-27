@@ -23,10 +23,6 @@ export const accountStyles = StyleSheet.create({
     gap: brandSpacing.md,
     paddingBottom: brandSpacing.xl,
   },
-  // ACC-10 : Logout en bas, style discret
-  logoutButton: {
-    marginTop: brandSpacing.xs,
-  },
 })
 
 export const identityStyles = StyleSheet.create({

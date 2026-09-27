@@ -444,13 +444,17 @@ describe("SettingsRoute", () => {
 describe("AccountRoute", () => {
   test("passes the access token, or an empty string without one", async () => {
     const fixture = makeFixture()
+    const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
-        <AccountRoute navigation={makeNavigation() as never} route={{} as never} />
+        <AccountRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
     expect(props("account").accessToken).toBe("token-1")
     expect(props("account").onLogout).toBe(fixture.session.actions.handleLogout)
+
+    callback("account", "onOpenSyncAndData")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("settings")
 
     await mount(
       <Providers fixture={{ ...fixture, accessToken: null }}>

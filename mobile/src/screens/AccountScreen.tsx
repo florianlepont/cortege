@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from "react"
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native"
+import Constants from "expo-constants"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
 import { AuthUser } from "../app/types"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { fr } from "../i18n"
-import { AccountSettingsRows, LogoutButton } from "./account/AccountSettingsRows"
+import { AppGroupedList } from "../ui/AppGroupedList"
+import type { AppGroupedListSection } from "../ui/AppGroupedList"
+import { useAccountConnectionRows, useLogoutRow } from "./account/AccountSettingsRows"
 import { IdentityCard } from "./account/IdentityCard"
 import { ProfileCard } from "./account/ProfileCard"
 import { accountStyles as styles } from "./account/styles"
@@ -29,9 +32,14 @@ type AccountScreenProps = {
   onPickProfilePictureFromLibrary: () => Promise<void>
   onTakeProfilePictureFromCamera: () => Promise<void>
   onRemoveProfilePicture: () => Promise<void>
+  /** ACC-03: the "Données" row opens Settings (sync actions, dev tools, delete account). */
+  onOpenSyncAndData: () => void
   onLogout: () => Promise<void>
 }
 
+// ACC-03: a grouped iOS-style list (Connexion, Données, À propos, then Se déconnecter in red)
+// instead of a mix of inline forms, standalone rows and pills. Identity and profile editing stay
+// their own cards above the list (rich, non-tabular content a grouped row doesn't fit well).
 export function AccountScreen({
   accessToken,
   currentUser,
@@ -44,6 +52,7 @@ export function AccountScreen({
   onPickProfilePictureFromLibrary,
   onTakeProfilePictureFromCamera,
   onRemoveProfilePicture,
+  onOpenSyncAndData,
   onLogout,
 }: AccountScreenProps) {
   const headerHeight = useHeaderHeight()
@@ -73,6 +82,15 @@ export function AccountScreen({
     currentUser?.display_name ||
     profile ||
     fr.account.fallbackName
+
+  const connectionRows = useAccountConnectionRows({
+    currentUser,
+    profileUpdating,
+    onChangeEmail,
+    onPasswordReset,
+  })
+  const logoutRow = useLogoutRow({ onLogout })
+
   // Keep header/tab bar clearance inside the scroll content so it scrolls away naturally.
   const topContentPadding = Platform.OS === "ios" ? headerHeight + brandSpacing.md : brandSpacing.md
   const bottomContentPadding = Math.max(tabBarHeight, insets.bottom) + brandSpacing.md
@@ -85,6 +103,40 @@ export function AccountScreen({
       </View>
     )
   }
+
+  const sections: AppGroupedListSection[] = [
+    {
+      key: "connection",
+      title: fr.account.sections.connection,
+      rows: connectionRows,
+    },
+    {
+      key: "data",
+      title: fr.account.sections.data,
+      rows: [
+        {
+          key: "sync",
+          label: fr.account.sections.dataRow,
+          onPress: onOpenSyncAndData,
+        },
+      ],
+    },
+    {
+      key: "about",
+      title: fr.account.sections.about,
+      rows: [
+        {
+          key: "version",
+          label: fr.account.sections.version,
+          value: Constants.expoConfig?.version ?? fr.account.sections.versionUnknown,
+        },
+      ],
+    },
+    {
+      key: "signout",
+      rows: [logoutRow],
+    },
+  ]
 
   return (
     // ACC-04 : ScrollView pour gérer le clavier et les petits écrans
@@ -136,16 +188,9 @@ export function AccountScreen({
             display_name: displayName,
           })
         }
-      >
-        <AccountSettingsRows
-          currentUser={currentUser}
-          profileUpdating={profileUpdating}
-          onChangeEmail={onChangeEmail}
-          onPasswordReset={onPasswordReset}
-        />
-      </ProfileCard>
+      />
 
-      <LogoutButton onLogout={onLogout} />
+      <AppGroupedList sections={sections} />
     </ScrollView>
   )
 }
