@@ -31,6 +31,24 @@ export function withTiming<T>(toValue: T): T {
   return toValue
 }
 
+export function withRepeat<T>(toValue: T): T {
+  return toValue
+}
+
+export function cancelAnimation(): void {}
+
+const easingIdentity = (value?: unknown): unknown => value
+export const Easing = {
+  ease: easingIdentity,
+  linear: easingIdentity,
+  in: (fn: unknown) => fn,
+  out: (fn: unknown) => fn,
+  inOut: (fn: unknown) => fn,
+  bezier: () => easingIdentity,
+  cubic: easingIdentity,
+  quad: easingIdentity,
+}
+
 type ScrollHandler = (event: { contentOffset: { x: number; y: number } }) => void
 type ScrollHandlers = ScrollHandler | { onScroll?: ScrollHandler }
 
