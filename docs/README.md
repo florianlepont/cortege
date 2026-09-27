@@ -13,6 +13,7 @@ The repository documentation is grouped under `docs/`:
 
 - `docs/design/`
   Design and brand-system documents.
+  The latest UX/UI audit (findings, motion system, roadmap) is [ux-ui-audit-2026-09.md](design/ux-ui-audit-2026-09.md).
 
 - `docs/references/`
   Links to third-party reference material (CNPF IBP methodology, brand charter).

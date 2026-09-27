@@ -415,7 +415,8 @@ docs/
 │   ├── epic-h-forest-insights-and-analytics.md  # Analytics & explore (V2)
 │   └── epic-i-workshops-training-ma-foret-vivante.md  # Training flows (V1)
 ├── design/
-│   └── charte-graphique-etats-sauvages-spec.md  # Brand & design system
+│   ├── charte-graphique-etats-sauvages-spec.md  # Brand & design system
+│   └── ux-ui-audit-2026-09.md             # UX/UI audit: findings, motion system, roadmap
 ├── references/                            # Links to CNPF IBP methodology (PDFs not redistributed)
 └── user-tests/                            # User testing reports
 ```
