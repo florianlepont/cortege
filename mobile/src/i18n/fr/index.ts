@@ -13,6 +13,7 @@ import { labelsFr } from "./labels"
 import { navigationFr } from "./navigation"
 import { nearbyParcelsSheetFr } from "./nearby-parcels-sheet"
 import { offlineMapFr } from "./offline-map"
+import { onboardingFr } from "./onboarding"
 import { ownerConflictFr } from "./owner-conflict"
 import { parcelHistoryFr } from "./parcel-history"
 import { parcelSelectionFr } from "./parcel-selection"
@@ -48,6 +49,7 @@ export const fr = {
   genusRecognition: genusRecognitionFr,
   parcelSelection: parcelSelectionFr,
   parcelHistory: parcelHistoryFr,
+  onboarding: onboardingFr,
   profileSetup: profileSetupFr,
   ownerConflict: ownerConflictFr,
   settings: settingsFr,

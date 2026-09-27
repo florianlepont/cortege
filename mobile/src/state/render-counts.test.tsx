@@ -654,6 +654,13 @@ jest.mock("../storage/local-owner", () => ({
   countUnsyncedLocalWork: jest.fn(async () => ({ surveys: 0, attachments: 0 })),
 }))
 
+// ONB-01: not this file's concern (render-count scenarios all run past first launch) — resolves
+// "already seen" so the onboarding overlay never mounts here.
+jest.mock("../storage/onboarding-preference", () => ({
+  loadOnboardingSeen: jest.fn(async () => true),
+  markOnboardingSeen: jest.fn(async () => undefined),
+}))
+
 // ─── API and native modules ──────────────────────────────────────────────────
 
 jest.mock(
