@@ -19,8 +19,12 @@ import {
 // /v1/public/parcels/status items gain `latest_ibp_method_version`, taken from the same latest
 // row as `latest_ibp_total`. NULL stays null on the wire (it means v3.0; the phone resolves it).
 // The `region` filter keeps matching `region_version` exactly, so it only matches v3.0 surveys:
-// a v3.2 survey stores no region. The privacy rules (public predicate, rounded location) are
-// unchanged. Named "method-version", never "*-cas*": CAS means compare-and-swap in this suite.
+// a v3.2 survey stores no region. Named "method-version", never "*-cas*": CAS means
+// compare-and-swap in this suite.
+//
+// Phase 2 (association-only sharing): both routes require an authenticated member and show every
+// submitted survey regardless of visibility, so "v32Private" (never patched to public) now shows
+// up exactly like the public ones; the rounded-location rule is otherwise unchanged.
 
 const V3_2 = "cnpf_ibp_fr_v3_2_2026-02-02"
 
@@ -111,6 +115,7 @@ describe("Public map method version (e2e)", () => {
   async function mapItems(query: Record<string, string> = {}): Promise<MapItem[]> {
     const response = await request(server())
       .get("/v1/public/map-items")
+      .set("Authorization", `Bearer ${accessToken}`)
       .query({ bbox, ...query })
       .expect(200)
     return response.body.items as MapItem[]
@@ -175,10 +180,10 @@ describe("Public map method version (e2e)", () => {
     expect(untagged).toHaveProperty("ibp_cas", null)
   })
 
-  it("keeps the privacy rules: a private v3.2 survey is absent, locations are rounded", async () => {
+  it("shows a never-published private survey to any member too, locations are rounded", async () => {
     const items = await mapItems()
 
-    expect(items.some((item) => item.survey_id === ids.v32Private)).toBe(false)
+    expect(items.some((item) => item.survey_id === ids.v32Private)).toBe(true)
     for (const item of items) {
       expect(Number(item.display_location.lat.toFixed(2))).toBe(item.display_location.lat)
       expect(Number(item.display_location.lng.toFixed(2))).toBe(item.display_location.lng)
@@ -214,9 +219,10 @@ describe("Public map method version (e2e)", () => {
     expect(stored.rows[0].region_version).toBeNull()
   })
 
-  it("parcel statuses carry latest_ibp_method_version from the latest public row", async () => {
+  it("parcel statuses carry latest_ibp_method_version from the latest submitted row", async () => {
     const response = await request(server())
       .get("/v1/public/parcels/status")
+      .set("Authorization", `Bearer ${accessToken}`)
       .query({ bbox, zoom: 16 })
       .expect(200)
     const items = response.body.items as ParcelStatus[]
@@ -235,12 +241,13 @@ describe("Public map method version (e2e)", () => {
       latest_ibp_method_version: null,
     })
     expect(byParcel(parcels.untaggedPublic)).toHaveProperty("latest_ibp_method_version", null)
-    // A parcel whose only survey is private is not studied, and exposes no version.
+    // A parcel whose only survey is private (never published) is studied too: association-only
+    // sharing shows every submitted survey to every member, regardless of visibility.
     expect(byParcel(parcels.v32Private)).toMatchObject({
-      study_status: "not_studied",
-      latest_submitted_survey_id: null,
-      latest_ibp_total: null,
-      latest_ibp_method_version: null,
+      study_status: "studied",
+      latest_submitted_survey_id: ids.v32Private,
+      latest_ibp_total: 14,
+      latest_ibp_method_version: V3_2,
     })
   })
 })
