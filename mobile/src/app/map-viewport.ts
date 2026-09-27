@@ -29,13 +29,24 @@ function formatBbox(minLng: number, minLat: number, maxLng: number, maxLat: numb
   return `${minLng.toFixed(6)},${minLat.toFixed(6)},${maxLng.toFixed(6)},${maxLat.toFixed(6)}`
 }
 
-export function computeRegionBbox(region: Region): string {
+export type RegionBounds = { minLat: number; minLng: number; maxLat: number; maxLng: number }
+
+/** The same clamped bounds computeRegionBbox encodes as a string, as plain numbers — for a
+ * caller (Phase 8's offline-area download) that needs the bounds themselves, never unparsable
+ * since they come straight from the region's own numbers, not a round trip through a string. */
+export function computeRegionBounds(region: Region): RegionBounds {
   const halfLat = region.latitudeDelta / 2
   const halfLng = region.longitudeDelta / 2
-  const minLat = Math.max(-90, region.latitude - halfLat)
-  const maxLat = Math.min(90, region.latitude + halfLat)
-  const minLng = Math.max(-180, region.longitude - halfLng)
-  const maxLng = Math.min(180, region.longitude + halfLng)
+  return {
+    minLat: Math.max(-90, region.latitude - halfLat),
+    maxLat: Math.min(90, region.latitude + halfLat),
+    minLng: Math.max(-180, region.longitude - halfLng),
+    maxLng: Math.min(180, region.longitude + halfLng),
+  }
+}
+
+export function computeRegionBbox(region: Region): string {
+  const { minLat, maxLat, minLng, maxLng } = computeRegionBounds(region)
   return formatBbox(minLng, minLat, maxLng, maxLat)
 }
 

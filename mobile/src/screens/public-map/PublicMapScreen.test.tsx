@@ -54,6 +54,7 @@ jest.mock("react-native-maps", () => {
     default: MapView,
     Marker: ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement("Marker", props, children),
+    UrlTile: (props: Record<string, unknown>) => ReactRef.createElement("UrlTile", props),
   }
 })
 
@@ -161,6 +162,19 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     onLoad: jest.fn(async () => undefined),
     onLoadParcels: jest.fn(async () => undefined),
     onViewportBboxChange: jest.fn(),
+    isOffline: false,
+    basemap: "map",
+    onChangeBasemap: jest.fn(),
+    offlineAreas: [],
+    downloadingAreaId: null,
+    estimateOfflineArea: jest.fn(() => ({
+      tileCountPerBasemap: 0,
+      totalTileCount: 0,
+      estimatedBytes: 0,
+      exceedsCap: false,
+    })),
+    onDownloadOfflineArea: jest.fn(async () => ({ ok: true as const, areaId: "area-1" })),
+    onDeleteOfflineArea: jest.fn(async () => undefined),
     ...overrides,
   }
 }

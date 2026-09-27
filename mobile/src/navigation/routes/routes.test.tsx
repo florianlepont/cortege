@@ -92,6 +92,28 @@ jest.mock("../../hooks/usePublicMapExplorer", () => ({
   },
 }))
 
+// PublicMapRoute's offline hooks (Phase 8) touch SQLite and network state, neither of which this
+// navigation-routing suite sets up; stubbed out like usePublicMapExplorer above.
+jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => false }))
+jest.mock("../../hooks/useBasemapPreference", () => ({
+  useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
+}))
+jest.mock("../../hooks/useOfflineAreas", () => ({
+  useOfflineAreas: () => ({
+    areas: [],
+    downloadingAreaId: null,
+    estimateForRegion: jest.fn(() => ({
+      tileCountPerBasemap: 0,
+      totalTileCount: 0,
+      estimatedBytes: 0,
+      exceedsCap: false,
+    })),
+    startDownload: jest.fn(async () => ({ ok: true as const, areaId: "area-1" })),
+    deleteArea: jest.fn(async () => undefined),
+    refresh: jest.fn(async () => undefined),
+  }),
+}))
+
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { AutosaveStatus } from "../../hooks/useEditingDraft"
 import { fr, type StatusMessage } from "../../i18n"

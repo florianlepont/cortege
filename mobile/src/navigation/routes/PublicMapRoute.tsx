@@ -1,6 +1,9 @@
 import { memo, useCallback, useContext, useEffect, useRef } from "react"
 import { View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useBasemapPreference } from "../../hooks/useBasemapPreference"
+import { useIsOffline } from "../../hooks/useIsOffline"
+import { useOfflineAreas } from "../../hooks/useOfflineAreas"
 import { usePublicMapExplorer } from "../../hooks/usePublicMapExplorer"
 import { PublicMapScreen } from "../../screens/PublicMapScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
@@ -30,9 +33,14 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
   const syncActions = useSyncActions()
   const reloadSignal = useContext(PublicMapReloadContext)
 
+  const isOffline = useIsOffline()
+  const { basemap, setBasemap } = useBasemapPreference()
+  const offlineAreas = useOfflineAreas(session.apiUrl, accessToken)
+
   const explorer = usePublicMapExplorer({
     apiUrl: session.apiUrl,
     accessToken,
+    isOffline,
     onStatusChange: syncActions.setStatus,
   })
 
@@ -73,6 +81,14 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
         onLoad={explorer.loadPublicMap}
         onLoadParcels={explorer.loadPublicParcels}
         onViewportBboxChange={handleViewportBboxChange}
+        isOffline={isOffline}
+        basemap={basemap}
+        onChangeBasemap={setBasemap}
+        offlineAreas={offlineAreas.areas}
+        downloadingAreaId={offlineAreas.downloadingAreaId}
+        estimateOfflineArea={offlineAreas.estimateForRegion}
+        onDownloadOfflineArea={offlineAreas.startDownload}
+        onDeleteOfflineArea={offlineAreas.deleteArea}
       />
     </View>
   )

@@ -2,10 +2,15 @@ import { useCallback, useRef, useState } from "react"
 import { fetchPublicMapItems, fetchPublicParcelStatuses } from "../api/ibp-api"
 import { PublicMapItem, PublicParcelStatusItem } from "../app/types"
 import { fr, logStatusDetail, type StatusMessage } from "../i18n"
+import { parseBbox } from "../map/tile-math"
+import { getCachedParcelsForBounds } from "../storage/offline-map"
 
 type UsePublicMapExplorerArgs = {
   apiUrl: string
   accessToken: string | null
+  /** REQ-D-offline-map (08-CONTEXT D-13): parcel statuses come from the offline cache instead of
+   * the network while offline, so there is nothing to time out or spin on. */
+  isOffline?: boolean
   onStatusChange: (message: StatusMessage) => void
 }
 
@@ -24,6 +29,7 @@ type LoadParcelsInput = {
 export function usePublicMapExplorer({
   apiUrl,
   accessToken,
+  isOffline = false,
   onStatusChange,
 }: UsePublicMapExplorerArgs) {
   const [items, setItems] = useState<PublicMapItem[]>([])
@@ -94,7 +100,7 @@ export function usePublicMapExplorer({
 
   const loadPublicParcels = useCallback(
     async (input: LoadParcelsInput): Promise<void> => {
-      if (!input.bbox || input.bbox.trim().length === 0 || !accessToken) {
+      if (!input.bbox || input.bbox.trim().length === 0) {
         return
       }
 
@@ -103,6 +109,21 @@ export function usePublicMapExplorer({
       setParcelsLoading(true)
 
       try {
+        if (isOffline) {
+          const bounds = parseBbox(input.bbox)
+          const nextItems = bounds
+            ? await getCachedParcelsForBounds<PublicParcelStatusItem>(bounds)
+            : []
+          if (requestRef.current === requestId) {
+            setParcelStatuses(nextItems)
+          }
+          return
+        }
+
+        if (!accessToken) {
+          return
+        }
+
         const payload = await fetchPublicParcelStatuses(apiUrl, accessToken, {
           bbox: input.bbox,
           zoom: input.zoom,
@@ -126,7 +147,7 @@ export function usePublicMapExplorer({
         }
       }
     },
-    [apiUrl, accessToken, onStatusChange],
+    [apiUrl, accessToken, isOffline, onStatusChange],
   )
 
   return {
