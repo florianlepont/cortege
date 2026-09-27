@@ -239,6 +239,11 @@ jest.mock("expo-network", () => ({
   NetworkStateType: { WIFI: "WIFI", NONE: "NONE", CELLULAR: "CELLULAR" },
 }))
 
+jest.mock("expo-splash-screen", () => ({
+  preventAutoHideAsync: jest.fn(async () => true),
+  hideAsync: jest.fn(async () => true),
+}))
+
 jest.mock("expo-secure-store", () => ({
   getItemAsync: jest.fn(async () => null),
   setItemAsync: jest.fn(async () => undefined),

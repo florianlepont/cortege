@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
+import * as SplashScreen from "expo-splash-screen"
 import { AppNavigation } from "./src/navigation/AppNavigation"
 import { brandColors } from "./src/app/brand-tokens"
 import { formatUnsyncedWorkSummary } from "./src/app/local-data-owner"
@@ -12,6 +13,11 @@ import { ProfileSetupScreen } from "./src/screens/ProfileSetupScreen"
 import { AppStateProvider } from "./src/state/AppStateProvider"
 import { useSession } from "./src/state/session-context"
 import { loadOnboardingSeen } from "./src/storage/onboarding-preference"
+
+// ONB-02: keeps the native splash (app.json's "expo-splash-screen" plugin config — same forest
+// background and logo mark as TypewriterSplash) on screen until the JS tree has committed its
+// first frame, so the OS never falls back to its own default white splash in between.
+void SplashScreen.preventAutoHideAsync()
 
 /**
  * App shell: the navigation tree plus the three session overlays. All state
@@ -109,6 +115,10 @@ function AppShell() {
 }
 
 export default function App() {
+  useEffect(() => {
+    void SplashScreen.hideAsync()
+  }, [])
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
