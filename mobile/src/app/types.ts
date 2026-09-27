@@ -19,6 +19,8 @@ export type AuthUser = {
 // IBP domain and wire types come from the shared package (phase 01.8, D-06): the app and the API
 // read the same definitions.
 export type {
+  CnpfFactorAGenusCode,
+  FactorAGenusInput,
   FactorCanonical,
   FactorClass,
   FactorKey,
