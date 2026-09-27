@@ -60,7 +60,6 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
       onSubmitSurvey={actions.submitSurvey}
       onRetrySurvey={actions.retrySurvey}
       onDiscardSurvey={actions.discardSurvey}
-      onToggleVisibility={actions.toggleVisibility}
       onOpenFactor={onOpenFactor}
       onRenameSurvey={actions.renameSurvey}
       onUpdateRegionVersion={actions.updateRegionVersion}

@@ -1,5 +1,7 @@
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import {
+  computeFactorDeltas,
+  computeIbpTotalDelta,
   computeIbpTotalsFromRetainedScores,
   computeRetainedScoresFromRawFactors,
   evaluateSubmitReadinessFromDraft,
@@ -177,5 +179,46 @@ describe("ibp-scoring", () => {
       missing_factors: [],
       missing_fields: [],
     })
+  })
+})
+
+describe("computeIbpTotalDelta and computeFactorDeltas (REQ-C-versioning)", () => {
+  test("computes total, stand and context deltas as plain arithmetic", () => {
+    const current = { ibp_peuplement_gestion: 20, ibp_contexte: 10, ibp_total: 30 }
+    const previous = { ibp_peuplement_gestion: 15, ibp_contexte: 12, ibp_total: 27 }
+    expect(computeIbpTotalDelta(current, previous)).toEqual({
+      total: 3,
+      standAndManagement: 5,
+      context: -2,
+    })
+  })
+
+  test("computes a per-factor delta only where both sides have a score", () => {
+    const current = {
+      A: {
+        factor_id: "A",
+        observed_value_raw: 5,
+        selected_class: "S5" as const,
+        score_points: 5,
+        warnings: [],
+      },
+      B: {
+        factor_id: "B",
+        observed_value_raw: 2,
+        selected_class: "S1" as const,
+        score_points: 2,
+        warnings: [],
+      },
+    }
+    const previous = {
+      A: {
+        factor_id: "A",
+        observed_value_raw: 3,
+        selected_class: "S2" as const,
+        score_points: 3,
+        warnings: [],
+      },
+    }
+    expect(computeFactorDeltas(current, previous)).toEqual({ A: 2 })
   })
 })
