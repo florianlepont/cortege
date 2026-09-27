@@ -3,11 +3,12 @@ import {
   type FactorOutcome,
   type FactorScorer,
   INVALID,
+  INVALID_GENUS,
   incomplete,
   readANativeCover,
   readDensityPair,
+  readFactorAGenusCount,
   readFloweringPercent,
-  readGenusCount,
   readLegacyBCover,
   scored,
   scoreFactorB,
@@ -45,15 +46,17 @@ function scoreDensityV30(
 const scoreFactorAV30: FactorScorer = (_key, raw, ctx) => {
   const cover = readANativeCover(raw)
   if (cover === "invalid") return INVALID
-  const count = readGenusCount(raw)
-  if (count === null) {
+  // v3.0 has no cas: the supplementary genera never count (D-15, genus.ts).
+  const genusResult = readFactorAGenusCount(raw, null)
+  if (genusResult.kind === "invalid") return INVALID_GENUS
+  if (genusResult.kind === "none") {
     return cover === null ? INVALID : incomplete("native_genus_count")
   }
 
   const restricted = usesSubalpineScale(ctx.survey.region_version, ctx.survey.vegetation_stage)
   const legacyCover = readLegacyBCover(ctx.factors.B)
   const coverBelow50 = cover ?? (legacyCover !== null && legacyCover < 50)
-  return scored(applyNativeCoverCap(scoreGenusCount(count, restricted), coverBelow50))
+  return scored(applyNativeCoverCap(scoreGenusCount(genusResult.count, restricted), coverBelow50))
 }
 
 export const scoreFactorV30: FactorScorer = (key, raw, ctx) => {

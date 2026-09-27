@@ -114,8 +114,13 @@ describe("migration 016: IBP method version columns (e2e)", () => {
   })
 
   it("was applied by the runner, which recorded it after 015", async () => {
+    // The scratch schema starts with 001-015 pre-recorded, so the runner applies every migration
+    // still unrecorded (016 and, since phase 5, 017) in file order: 016 lands right after 015,
+    // whichever migration is now last.
     const applied = await appliedMigrations()
-    expect(applied[applied.length - 1]).toBe(MIGRATION_016)
+    expect(applied.indexOf(MIGRATION_016)).toBe(
+      applied.indexOf("015_public_indexes_centroid_columns.sql") + 1,
+    )
     expect(applied).toContain("015_public_indexes_centroid_columns.sql")
     expect(logSpy).toHaveBeenCalledWith(`Applied migration: ${MIGRATION_016}`)
   })

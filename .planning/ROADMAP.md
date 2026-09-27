@@ -50,7 +50,7 @@ list is never ambiguous.
 - [ ] **Phase 2: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI; the UX audit's Lot 0 trust bugs (score scale, sync-status masking, decimal input, account-deletion copy) are folded in
 - [x] **Phase 3: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions (completed 2026-09-27)
 - [ ] **Phase 4: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls
-- [ ] **Phase 5: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec
+- [x] **Phase 5: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec (completed 2026-09-27)
 - [ ] **Phase 6: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
 - [ ] **Phase 7: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured
 - [ ] **Phase 8: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map
@@ -432,7 +432,11 @@ numeric, B is chips not slider, the CTA is not renamed to "Vérifier et soumettr
   5. The genus list survives a round-trip through `POST /surveys/sync`: an E2E test replays the same payload twice and nothing is duplicated.
   6. `docs/specs/ibp-form-spec.md` §4 states that a survey may reference one or many parcels (`parcel_ids[]`), and §10.1 lists the shipped status enum `draft | submitted | synced | error | expired` with `submitted_at` and `deleted_at` — no `deleted` value, no `published_at`.
 
-**Plans**: TBD
+**Plans**: 1/1 plans complete
+
+Plans:
+
+- [x] 05-01-PLAN.md — Genus list in `packages/ibp-domain` (genus code list, derived count, validation), migration 017, API/mobile E2E and contract docs, form-spec corrections
 
 ### Phase 6: Genus Recognition for Factor A
 
@@ -586,7 +590,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 2. Association-only sharing & scope trim | 0/TBD | Not started | - |
 | 3. Field-Entry Ergonomics (UX Lot 1) | 6/6 | Complete   | 2026-09-27 |
 | 4. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
-| 5. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
+| 5. Factor A Genus List & Data-Contract Corrections | 1/1 | Complete   | 2026-09-27 |
 | 6. Genus Recognition for Factor A | 0/TBD | Not started | - |
 | 7. Information Architecture (UX Lot 3) | 0/TBD | Not started | - |
 | 8. Offline Map & Own-Survey Navigation | 0/TBD | Not started | - |

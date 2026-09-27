@@ -17,6 +17,16 @@ export { IBP_CAS_VALUES, casFromRegionStage, isIbpCas, usesCas3Scale } from "./c
 export type { IbpCas } from "./context/cas"
 
 export {
+  allowedFactorAGenusCodes,
+  CNPF_FACTOR_A_GENUS_CODES,
+  CNPF_FACTOR_A_MAIN_GENERA,
+  CNPF_FACTOR_A_SUPPLEMENTARY_GENERA,
+  isCnpfFactorAGenusCode,
+  isSupplementaryFactorAGenus,
+} from "./genus"
+export type { CnpfFactorAGenusCode } from "./genus"
+
+export {
   ALLOWED_SCORES_BY_FACTOR,
   allowedScoresFor,
   isAllowedFactorScore,

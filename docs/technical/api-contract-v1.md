@@ -4,7 +4,9 @@
 
 Accepted for V1 baseline (validated on 2026-03-08, non-exhaustive by design). V1.1 parcel/history extension proposed on 2026-03-10. Auth section updated on 2026-04-06 to reflect Auth0 delegation. `/me` endpoints updated to match implementation. `DELETE /me` added (US-A7). Phase 01.8 (2026-09-26) adds the per-survey IBP method version
 (`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`) to the survey bodies, the survey reads, the
-sync feed and the public map reads; every change is additive.
+sync feed and the public map reads; every change is additive. Phase 5 (2026-09-27) replaces Factor
+A's bare `native_genus_count` with a genus list (`factors.A.genera`), validated against the CNPF
+regional list; no new endpoint (recognition is on-device, Phase 6).
 
 Base path: `/v1`
 
@@ -572,6 +574,7 @@ messages in `warnings`. The server never compares its recomputed scores with the
 | `factor_incomplete` | no (draft) | A factor that cannot be scored yet: a v3.2 A or G without `ibp_cas`, a v3.2 A without its native cover, or an A (either version) that records its native cover but no genus count yet. The draft is saved and the factor is not scored |
 | `factor_invalid_raw` | yes | A factor object that no rule can read |
 | `factor_invalid_score` | yes | A direct score outside the factor's allowed set |
+| `factor_a_genus_invalid` | yes | `factors.A.genera` (phase 5) has a non-array value, or an entry that is not one of the CNPF regional list's 34 classes. Message: `factor A genera must each be one of the CNPF regional list's classes` |
 | `factor_f_group_capped` | no | F by microhabitat groups: a group count above 2 was capped at 2 |
 | `consistency_a_b`, `consistency_e_f` | no | App heuristics (not CNPF rules) on two scored factors |
 
@@ -590,6 +593,39 @@ Method differences (v3.2 against v3.0): C, D and E count the large and very larg
 together for the 0/1 classes; the A and G scales follow the cas (cas 3, or `ibp_cas3_scale`)
 instead of the v3.0 subalpine rule (`region_version = ACA` and `vegetation_stage = subalpin`). See
 `docs/technical/ibp-validation-matrix-v2.md` for the cases.
+
+### Factor A genus list (phase 5, ADR-002 D-15, ADR-003 CH-12)
+
+Factor A carries its observed native genera as a list, `factors.A.genera` (`string[]`), instead of
+a bare count. The count Factor A scores from is derived from the list (its number of distinct
+valid codes); it is never sent as a separate field for a new survey. Each entry must be one of the
+34 classes of the closed CNPF regional list (see `@cortege/ibp-domain`'s `genus.ts` for the
+authoritative codes, e.g. `"Fagus"`, `"Quercus_deciduae"`, `"Quercus_sempervirens"`); an unlisted
+entry (for example `"Ficus"`, not on the list — A-6) or a non-array value is a blocking
+`factor_a_genus_invalid` (see the table above).
+
+- **Supplementary genera** (Ceratonia, Cercis, Olea, Phillyrea, Pistacia) count only when the
+  survey's `ibp_cas` is 2 or 4 (v3.2 p. 3). A structurally valid code that is not allowed at the
+  survey's cas (a supplementary genus outside cas 2/4, or any supplementary genus on a v3.0
+  survey, which has no cas) is **silently excluded** from the derived count — it is not an error,
+  exactly as if that genus had not been observed.
+- **No recognition endpoint.** There is no server route for genus recognition: inference runs
+  entirely on-device (Phase 6, ADR-002 D-06). The server only ever receives a confirmed genus code
+  inside `genera`, through the normal upsert/sync payload, indistinguishable from one the observer
+  typed by hand.
+- **No species-level data.** `genera` never carries a species; recognition and counting are
+  genus-level only (ADR-002 D-01). The recognition photograph and whether the observer accepted or
+  corrected a suggestion are never sent to the server (D-13, D-14).
+- **Legacy shape, still accepted:** `factors.A.native_genus_count` (integer) — surveys already
+  recorded this way keep their stored score unchanged; a survey whose A has no `genera` key falls
+  back to it. A new survey should use `genera`, not `native_genus_count`.
+- `POST /v1/sync` round-trips `genera` like any other factor field: an identical replay (same
+  `sync_version`, same payload) is `synced` and writes nothing new — no duplicate survey or event.
+
+Example, a v3.2 survey's Factor A:
+```json
+"A": { "genera": ["Fagus", "Quercus_deciduae", "Quercus_sempervirens"], "native_cover_percent": 60 }
+```
 
 ### DELETE /surveys/{id}
 
@@ -1274,4 +1310,4 @@ IBP validation codes (phase 01.8; the `422` body carries their messages in `erro
 - `ibp_cas_required` (blocking at submit) — a v3.2 survey has no `ibp_cas` in 1-4.
 - `ibp_method_version_unsupported` (blocking) — the method version is not a known tag.
 - `factor_incomplete` (non-blocking, draft) — a factor cannot be scored yet; it becomes `factor_required` at submit.
-- `factor_required`, `factor_invalid_raw`, `factor_invalid_score`, `region_version_required`, `vegetation_stage_required`, `expires_at_required`, `survey_expired` (blocking) and `factor_f_group_capped`, `consistency_a_b`, `consistency_e_f` (non-blocking).
+- `factor_required`, `factor_invalid_raw`, `factor_invalid_score`, `factor_a_genus_invalid`, `region_version_required`, `vegetation_stage_required`, `expires_at_required`, `survey_expired` (blocking) and `factor_f_group_capped`, `consistency_a_b`, `consistency_e_f` (non-blocking).

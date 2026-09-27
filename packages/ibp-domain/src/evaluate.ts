@@ -16,6 +16,7 @@ import {
   resolveMethodVersion,
 } from "./method-version"
 import {
+  INVALID,
   type FactorScorer,
   type IbpSurveyContext,
   type IbpValidationIssue,
@@ -195,10 +196,17 @@ export function evaluateIbp(
         ? ({ kind: "scored", score: direct } as const)
         : isRecord(value)
           ? scorer(key, value, ctx)
-          : ({ kind: "invalid" } as const)
+          : INVALID
 
     if (outcome.kind === "invalid") {
-      issues.push(issue("factor_invalid_raw", `factor ${key} has invalid raw input`, true, key))
+      issues.push(
+        issue(
+          outcome.code ?? "factor_invalid_raw",
+          outcome.message ?? `factor ${key} has invalid raw input`,
+          true,
+          key,
+        ),
+      )
       continue
     }
 

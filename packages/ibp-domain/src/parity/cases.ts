@@ -115,6 +115,38 @@ const V30_CASES: IbpParityCase[] = [
     expect: { ok: true, scores: { A: 2, B: 5 }, issueCodes: [] },
   },
   {
+    // Phase 5, D-15: the count is derived from a genus list instead of a bare number.
+    id: "MAT-A-09@v3.0",
+    matrixId: "MAT-A-09@v3.0",
+    method: null,
+    mode: "draft",
+    factors: {
+      A: {
+        genera: ["Fagus", "Quercus_deciduae", "Quercus_sempervirens"],
+        native_cover_percent: 60,
+      },
+    },
+    expect: { ok: true, scores: { A: 2 }, issueCodes: [] },
+  },
+  {
+    // v3.0 has no cas: the supplementary genera (Pistacia et al.) never count (D-15, genus.ts).
+    id: "MAT-A-10@v3.0",
+    matrixId: "MAT-A-10@v3.0",
+    method: null,
+    mode: "draft",
+    factors: { A: { genera: ["Fagus", "Pistacia"], native_cover_percent: 60 } },
+    expect: { ok: true, scores: { A: 0 }, issueCodes: [] },
+  },
+  {
+    // Ficus is not on the CNPF list (A-6): blocking, whichever version.
+    id: "MAT-A-11@v3.0",
+    matrixId: "MAT-A-11@v3.0",
+    method: null,
+    mode: "draft",
+    factors: { A: { genera: ["Ficus"], native_cover_percent: 60 } },
+    expect: { ok: false, scores: { A: null }, issueCodes: ["factor_a_genus_invalid"] },
+  },
+  {
     // v1 said B = 2 (the cap was on B); fixed by BUG-1.
     id: "MAT-B-01@v3.0",
     matrixId: "MAT-B-01@v3.0",
@@ -362,6 +394,37 @@ const V32_CASES: IbpParityCase[] = [
     id: "MAT-A-08@v3.2",
     factors: { A: { native_genus_count: 5, native_cover_below_50: true } },
     expect: { ok: true, scores: { A: 2 }, issueCodes: [] },
+  }),
+  v32({
+    // Phase 5, D-15: the count is derived from a genus list instead of a bare number.
+    id: "MAT-A-09@v3.2",
+    factors: {
+      A: {
+        genera: ["Fagus", "Quercus_deciduae", "Quercus_sempervirens"],
+        native_cover_percent: 60,
+      },
+    },
+    expect: { ok: true, scores: { A: 2 }, issueCodes: [] },
+  }),
+  v32({
+    // Supplementary genus (Pistacia): counted in cas 4, silently excluded in cas 1.
+    id: "MAT-A-10@v3.2#cas-4-counts",
+    matrixId: "MAT-A-10@v3.2",
+    context: { ibp_cas: 4 },
+    factors: { A: { genera: ["Fagus", "Pistacia"], native_cover_percent: 60 } },
+    expect: { ok: true, scores: { A: 1 }, issueCodes: [] },
+  }),
+  v32({
+    id: "MAT-A-10@v3.2#cas-1-excluded",
+    matrixId: "MAT-A-10@v3.2",
+    factors: { A: { genera: ["Fagus", "Pistacia"], native_cover_percent: 60 } },
+    expect: { ok: true, scores: { A: 0 }, issueCodes: [] },
+  }),
+  v32({
+    // Ficus is not on the CNPF list (A-6): blocking, whichever version.
+    id: "MAT-A-11@v3.2",
+    factors: { A: { genera: ["Ficus"], native_cover_percent: 60 } },
+    expect: { ok: false, scores: { A: null }, issueCodes: ["factor_a_genus_invalid"] },
   }),
   v32({
     id: "MAT-B-01@v3.2",
