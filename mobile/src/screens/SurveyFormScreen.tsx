@@ -187,8 +187,6 @@ export function SurveyFormScreen({
           formStyles.pageContent,
           { paddingBottom: wizard.scrollContentBottomPadding },
         ]}
-        scrollEnabled={wizard.scrollEnabled}
-        bounces={wizard.scrollEnabled}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
