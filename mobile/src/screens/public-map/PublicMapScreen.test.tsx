@@ -175,6 +175,7 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     })),
     onDownloadOfflineArea: jest.fn(async () => ({ ok: true as const, areaId: "area-1" })),
     onDeleteOfflineArea: jest.fn(async () => undefined),
+    onQueueParcelDownload: jest.fn(),
     ...overrides,
   }
 }
@@ -306,6 +307,54 @@ describe("PublicMapScreen", () => {
     expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
       0,
     )
+  })
+
+  test("tapping a studied parcel while offline shows the missing-parcel warning, never the network", async () => {
+    const onQueueParcelDownload = jest.fn()
+    const props = makeProps({
+      parcelStatuses: [parcelStatus("studied-1", "studied")],
+      isOffline: true,
+      onQueueParcelDownload,
+    })
+    mount(props)
+    const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelOverlayPolygons")
+
+    await act(async () => {
+      overlay.props.onParcelPress("studied-1")
+    })
+
+    expect(mockFetchParcelSurveyHistory).not.toHaveBeenCalled()
+    const notice = tree.root.findAll(
+      (node) =>
+        (node.type as unknown) === "AppNotice" &&
+        node.props.title === fr.offlineMap.parcelMissing.title,
+    )
+    expect(notice).toHaveLength(1)
+    expect(notice[0].props.message).toBe(fr.offlineMap.parcelMissing.message)
+
+    const downloadButton = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "AppButton" &&
+        node.props.label === fr.offlineMap.parcelMissing.downloadAction,
+    )
+    await act(async () => {
+      downloadButton.props.onPress()
+    })
+
+    expect(onQueueParcelDownload).toHaveBeenCalledWith("studied-1")
+    const noticeAfterQueue = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "AppNotice" &&
+        node.props.title === fr.offlineMap.parcelMissing.title,
+    )
+    expect(noticeAfterQueue.props.message).toBe(fr.offlineMap.parcelMissing.queued)
+    expect(
+      tree.root.findAll(
+        (node) =>
+          (node.type as unknown) === "AppButton" &&
+          node.props.label === fr.offlineMap.parcelMissing.downloadAction,
+      ),
+    ).toHaveLength(0)
   })
 
   test("a cluster that cannot split opens the list, and a row selects the survey", () => {

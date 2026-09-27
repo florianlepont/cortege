@@ -113,6 +113,13 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
     refresh: jest.fn(async () => undefined),
   }),
 }))
+jest.mock("../../hooks/useOfflinePendingParcelDrain", () => ({
+  useOfflinePendingParcelDrain: jest.fn(),
+}))
+const mockAddPendingParcelDownload = jest.fn()
+jest.mock("../../storage/offline-map", () => ({
+  addPendingParcelDownload: (...args: unknown[]) => mockAddPendingParcelDownload(...args),
+}))
 
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { AutosaveStatus } from "../../hooks/useEditingDraft"
@@ -787,5 +794,19 @@ describe("PublicMapRoute", () => {
     )
     expect(props("publicMap").loading).toBe(false)
     expect(mockExplorer.loadPublicMap).not.toHaveBeenCalled()
+  })
+
+  test("queuing a parcel download (REQ-D-offline-parcel-warning) writes to the offline queue", async () => {
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <PublicMapRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+
+    act(() => {
+      ;(props("publicMap").onQueueParcelDownload as (parcelId: string) => void)("parcel-1")
+    })
+
+    expect(mockAddPendingParcelDownload).toHaveBeenCalledWith("parcel-1")
   })
 })

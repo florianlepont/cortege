@@ -52,6 +52,7 @@ type PublicMapScreenProps = {
   estimateOfflineArea: (region: Region) => AreaDownloadEstimate
   onDownloadOfflineArea: (region: Region, name: string) => Promise<StartDownloadResult>
   onDeleteOfflineArea: (id: string) => Promise<void>
+  onQueueParcelDownload: (parcelId: string) => void
 }
 
 /**
@@ -84,6 +85,7 @@ export function PublicMapScreen({
   estimateOfflineArea,
   onDownloadOfflineArea,
   onDeleteOfflineArea,
+  onQueueParcelDownload,
 }: PublicMapScreenProps) {
   const mapRef = useRef<MapView | null>(null)
   const [showFilters, setShowFilters] = useState(false)
@@ -277,6 +279,8 @@ export function PublicMapScreen({
           parcelId={selectedParcelId}
           apiUrl={apiUrl}
           accessToken={accessToken}
+          isOffline={isOffline}
+          onQueueDownload={onQueueParcelDownload}
           bottom={Math.max(84, dockBottom + 62)}
           onClose={closeParcelHistory}
         />
