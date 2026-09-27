@@ -75,6 +75,7 @@ describe("French catalogue", () => {
         "ibpMethod",
         "labels",
         "navigation",
+        "nearbyParcelsSheet",
         "ownerConflict",
         "parcelSelection",
         "profileSetup",
