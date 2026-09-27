@@ -1,45 +1,36 @@
-# Genus classifier model assets — placeholder gate
+# Genus classifier model assets
 
-`genus_classifier.tflite` and `genus_classifier_manifest.json` in this directory are
-**placeholders**, not the real model.
+`genus_classifier.tflite` and `genus_classifier_manifest.json` in this directory are the real,
+promoted ADR-002 artifacts, not placeholders.
 
-## Why
+## Provenance
 
 Phase 6 (`.planning/phases/06-genus-recognition-factor-a/`) implements on-device tree-genus
-recognition per ADR-002 (`docs/technical/adr-002-on-device-species-recognition-v1.md`). ADR-002's
-promoted model — `genus_classifier.tflite`, EfficientNet-B0, float16, 8,238,676 bytes, MD5-verified
-2026-09-26 — and its labels/calibration source files are preserved outside the repository at
-`~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/` (deliberately: 42 MB of binaries
-would stay in git history forever). That path was not reachable from the container this phase was
-built in — confirmed absent, not just unchecked. Per this phase's own instructions, the model was
-not fabricated to fill the gap.
+recognition per ADR-002 (`docs/technical/adr-002-on-device-species-recognition-v1.md`). The
+promoted model — EfficientNet-B0, float16, 8,238,676 bytes, MD5 `87195ef82eb3dd2bb564821181f89883`
+— was copied in from `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/` (kept outside
+the repository deliberately: 42 MB of binaries would stay in git history forever).
 
-## What is here instead
+- `genus_classifier.tflite`: byte-for-byte copy of that folder's `genus_classifier.tflite`
+  (MD5-verified against it).
+- `genus_classifier_manifest.json`: `labels` is that folder's own `genus_labels.txt` order (the
+  model's actual output tensor order — note it is not alphabetical, e.g. `Pinus` before `Picea`),
+  cross-checked against `packages/ibp-domain/src/genus.ts`'s `CNPF_FACTOR_A_GENUS_CODES` (same 34
+  codes, same order). `inputSize` (224) matches `training_report.json`'s `image_size`.
+  `preprocessing: "raw_0_255"` was confirmed by loading the SavedModel
+  (`genus_classifier_keras/`) from that folder and inspecting its graph: the model embeds its own
+  `Rescaling` layer (scale `1/255`, offset `0`, i.e. `rescaling_1/Cast/x = 0.003921569`) followed
+  by a `Normalization` layer using the standard ImageNet constants
+  (`mean = [0.485, 0.456, 0.406]`, `variance ≈ [0.229, 0.224, 0.225]`) ahead of the backbone — so
+  the model expects raw `[0, 255]` pixels, not pre-divided `[0, 1]` floats.
+  `mobile/src/recognition/genusClassifierModel.ts`'s `preprocessPhoto()` was updated to match (no
+  `/255` division).
 
-- `genus_classifier.tflite`: a short text file, not a valid TFLite flatbuffer. Metro needs a real
-  file at this path to bundle the `.tflite` asset extension; at runtime,
-  `react-native-fast-tflite`'s `loadTensorflowModel` fails to parse it, which exercises the exact
-  "model load failed" path ADR-002 requires (D-08): a clear message, then a fallback to manual
-  genus entry. This is not a bug — it is the correct, currently-true state of a repository that
-  does not (yet) carry the real model.
-- `genus_classifier_manifest.json`: a placeholder manifest with `"placeholder": true`. Its
-  `labels` array is `packages/ibp-domain/src/genus.ts`'s `CNPF_FACTOR_A_GENUS_CODES` order (main
-  list then supplementary) — a reasonable default, but **not verified** against the real model's
-  output tensor order, since that would come from the artifact folder's own `labels` file, which
-  was equally unreachable. `inputSize` (224) and `preprocessing` (`rescale_0_1`) are standard
-  EfficientNet-B0 defaults, not confirmed against the real training/export report.
+## Still outstanding
 
-## Before this ships
-
-Whoever has access to `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/` must:
-
-1. Replace `genus_classifier.tflite` with the real, MD5-verified model file.
-2. Replace `genus_classifier_manifest.json`'s `labels` array with the real model's label order
-   (from that folder's own `labels` file), and set `"placeholder": false`.
-3. Confirm `inputSize` and `preprocessing` against the training/export report, updating both if
-   they differ from the EfficientNet-B0 defaults assumed here.
-4. Re-run `mobile/src/recognition/genusClassifierModel.test.ts` and, on a real device, confirm the
-   app suggests a genus instead of falling back to manual entry.
-5. Add the CC-BY-4.0 attribution for the GBIF-sourced training images that ADR-002 requires before
+1. Real-device validation: confirm on a physical device with real tree photos that the app
+   suggests a genus instead of falling back to manual entry. This must happen in the field, not in
+   this environment.
+2. Add the CC-BY-4.0 attribution for the GBIF-sourced training images that ADR-002 requires before
    the model ships to end users (see `mobile/src/screens/account/AccountSettingsRows.tsx`, the
    "Crédits" row, or wherever it lands).
