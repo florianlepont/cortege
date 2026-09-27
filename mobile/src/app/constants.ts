@@ -62,8 +62,9 @@ export const DEFAULT_SURVEY_FORM = {
     lng: "",
     collected_at: "",
   },
-  // The native cover belongs to A (CH-1, BUG-1); B keeps the strata count only.
-  factorA: { native_genus_count: "", native_cover_percent: "" },
+  // The native cover belongs to A (CH-1, BUG-1); B keeps the strata count only. `genera` is the
+  // comma-joined FactorGenusListInput value (Phase 5's genus-list data contract, Phase 6's UI).
+  factorA: { genera: "", native_cover_percent: "" },
   factorB: { strata_count: "" },
   factorC: { bmg_count: "", bmm_count: "", surface_ha: "" },
   factorD: { bmg_count: "", bmm_count: "", surface_ha: "" },

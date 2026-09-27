@@ -46,6 +46,12 @@ export function AccountSettingsRows({
     ])
   }
 
+  // ADR-002 CC-BY-4.0 obligation (Phase 6): credit the GBIF-sourced training images.
+  const handleShowCredits = (): void => {
+    const texts = fr.account.credits
+    Alert.alert(texts.alertTitle, texts.alertMessage)
+  }
+
   return (
     <>
       {emailEditing ? (
@@ -103,6 +109,12 @@ export function AccountSettingsRows({
         value={fr.account.password.action}
         accessibilityLabel={fr.account.a11y.resetPassword}
         onPress={handlePasswordReset}
+      />
+      <AppSettingsRow
+        label={fr.account.credits.label}
+        value={fr.account.credits.action}
+        accessibilityLabel={fr.account.a11y.credits}
+        onPress={handleShowCredits}
       />
     </>
   )

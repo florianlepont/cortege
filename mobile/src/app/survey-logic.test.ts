@@ -463,7 +463,7 @@ describe("labels read from the catalogue (D-06)", () => {
     expect(DEFAULT_SURVEY_FORM.ibpCas).toBe(1)
     expect(DEFAULT_SURVEY_FORM.ibpCas3Scale).toBe(false)
     expect(DEFAULT_SURVEY_FORM.factorA).toEqual({
-      native_genus_count: "",
+      genera: "",
       native_cover_percent: "",
     })
     expect(DEFAULT_SURVEY_FORM.factorB).toEqual({ strata_count: "" })
