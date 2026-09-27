@@ -193,3 +193,147 @@ that implied a manual step where autosave already runs.
 (`presentationStyle="pageSheet"` on iOS) offered as an alternative to tapping a polygon on the map,
 with 56pt checkable rows. Reuses the existing `useNearbyParcelsState()` context rather than a
 separate fetch.
+
+## 12) Visual Foundations & Motion (Phase 4, 2026-09-27)
+
+Phase 4 ("Visual Foundations & Motion", UX audit Lot 2) closes the gap between this spec and the
+shipped app: real typefaces, the full semantic color token set (with an ESLint rule enforcing it),
+`react-native-reanimated` 4 as the motion engine, a single pressable primitive, and a loading
+skeleton. Before any of this was written, a sketchboard (an interactive HTML mock, not shipped code)
+was iterated on live with the product owner — the typeface and the IBP badge's colors below are its
+direct output, not an implementer's unilateral call. Full rationale and the batch-by-batch build
+record: `.planning/phases/04-visual-foundations-motion/`.
+
+### 12.1 Typefaces actually loaded
+
+Neither of the charter's named faces can be embedded today: Mazzard H has no licence yet, and Avenir
+Next is Apple-proprietary — not redistributable, and absent on Android. **Sora** (title/body stand-in
+for Mazzard H) and **Jost** (meta stand-in for Futura, itself explicitly modeled on the same
+geometric-sans tradition) are OFL-licensed and load instead, embedded via an `expo-font` config
+plugin in `mobile/app.json` (`mobile/assets/fonts/*.ttf`, sourced from the `@expo-google-fonts`
+packages and then vendored directly — no runtime dependency on those packages). This is a temporary,
+reversible substitution: `brandFontFamilies` in `mobile/src/app/brand-tokens.ts` keeps the charter's
+real `preferred` name next to the `standIn` actually rendered, so swapping in Mazzard H later is a
+token-file change, not a design decision.
+
+`brandTypography` roles name a concrete embedded font file rather than a family + numeric
+`fontWeight` (static per-weight files risk Android re-synthesizing a different weight on top of the
+one already baked into the file):
+
+| Role | Embedded file |
+|------|---------------|
+| `heroTitle`, `sectionTitle` | `Sora_800ExtraBold` (Sora ships no 900 cut) |
+| `heroBody`, `sectionBody` | `Sora_500Medium` |
+| `label` | `Sora_800ExtraBold` |
+| `input` | `Sora_600SemiBold` |
+| `button` | `Sora_700Bold` |
+| `heroEyebrow`, `meta` | `Jost_600SemiBold` |
+
+`brandDefaultFontFamily` (`Jost_400Regular`) is the fallback for any `<Text>` that doesn't spread a
+`brandTypography` role. Since React Native's `Text` has no `defaultProps` to patch in this RN version
+(a plain function component, not a class), `mobile/src/ui/AppText.tsx` is the mechanism instead: it
+wraps RN's `Text` with the default font first in the style array (an explicit `fontFamily` from a
+`brandTypography` role still overrides it), and every other `Text` import from `"react-native"` across
+`mobile/src` is aliased to it (`import { AppText as Text } from ".../ui/AppText"`) — this is the one
+place in the codebase that concerns itself with a global `Text` default; it is not a precedent for
+wrapping other RN primitives the same way.
+
+### 12.2 Semantic color tokens
+
+125 hard-coded hex/`rgba` literals outside `brand-tokens.ts` (measured at 119 on this branch, after
+Phase 3) are gone. An ESLint rule (`mobile/.eslintrc.json`, `no-restricted-syntax` on `#hex` and
+`rgba(`/`rgb(` literals) rejects a new one anywhere under `mobile/src` except the tokens file itself.
+
+**Contrast fixes (DS-01/DS-02)** — white text directly on a saturated fill, and the raw
+ochre/terracotta hue directly on their own soft backgrounds, both measured below WCAG's 4.5:1:
+- `brandOnWarningSurface` (`#7A4A0A`) and `brandOnDangerSurface` (`#8A2F14`): darkened text tokens
+  for `warningSoft`/`errorSoft` backgrounds (~5:1+). `brandOnSuccessSurface` is `brandColors.forest`
+  (already AAA on `successSoft`/`sage`).
+- `ibpScoreTokens.colors`: every band now pairs a soft background with a darkened text token instead
+  of white on a saturated fill — `high` is forest-on-sage (5.03:1, was white-on-moss at 2.85:1),
+  `mid` and `low` follow the same pattern. The saturated hues stay in use elsewhere (the progress
+  ring, a filled pill) — this only changes where body text sits directly on the fill.
+- The same fix applies everywhere else the ochre/terracotta-on-soft pair appeared:
+  `brandComponentTokens.notice.{warningText,dangerText}`,
+  `brandComponentTokens.surveyList.{workflowWarningText,workflowDangerText,supportDangerText,badgeDangerText}`,
+  `brandFieldState.error.{text,icon}`.
+
+**New token groups**, added to `mobile/src/app/brand-tokens.ts`:
+- `brandColors` additions: `forestNight` (a near-black forest, deep backdrops), `disabledMuted`,
+  `disabledNeutral` (disabled-state fills the hex migration surfaced).
+- `brandSemanticColors` additions (the "glass over a dark hero" family, alongside the existing
+  `heroBodyOnDark`/`heroMetaOnDark`/`heroPanelBorderOnDark`/`heroPanelBackgroundOnDark`/
+  `heroOrbOnDark`): `heroTextMutedOnDark`, `heroSurfaceOnDark`, `heroSurfaceStrongOnDark`,
+  `heroBorderStrongOnDark`, `heroAccentTintOnDark` (a sage tint, distinct from the existing
+  moss-based `heroOrbOnDark`), `heroScrimOnDark` (near-black, for photo/map backdrops),
+  `haloOnDark`. Several distinct source opacities were deliberately consolidated onto one shared
+  value each rather than preserved as one-off magic numbers.
+- `brandOnDarkStatus`: success/warning/danger border+background pairs for status pills and cards
+  over the dark forest hero, plus a stronger `dangerScrimBackground`/`dangerScrimBorder` pair for a
+  destructive action button over the near-black media backdrop.
+- `brandTranslucentPanel`: floating-panel opacities over the map or a photo (`subtle`/`default`/
+  `strong`/`strongest`/`muted`) — a Liquid Glass placeholder with no blur yet (real blur is Phase 12,
+  DS-15).
+- `brandMediaBackdrop`: the dark solid backdrop behind full-screen media/map surfaces before content
+  loads.
+- `brandTintOnLight`: decorative tint overlays on a light (not dark-hero) surface —
+  `CreateSurveyCard`'s accent orb, border and badge.
+- `brandStatTileTint`: `StatTile`'s severity-tinted chip background/border, two opacity steps.
+- `brandMapTokens` additions: `publicMarkerSurvey`/`publicMarkerCurrentPosition`, the public map's
+  pin colors, tokenized as-is — their actual redesign to score-band markers with a legend is Phase
+  9's job (MAP-03), not this phase's.
+
+### 12.3 Motion (`brandMotion`, `react-native-reanimated` 4)
+
+`react-native-reanimated` 4 (New Architecture only) replaces the legacy `Animated` API's
+`useNativeDriver: false` pattern (JS-thread only, and the reason the collapsible headers couldn't
+animate `height` on the UI thread before). `brandMotion` in `brand-tokens.ts` stays plain data (no
+Reanimated import in the tokens file):
+
+- **Durations** (ms): `instant 100`, `fast 160`, `base 240`, `slow 360`, `emphasis 500`.
+- **Easings** (bezier control points, for `Easing.bezier(...)`): `standard [0.2, 0, 0, 1]`,
+  `decelerate [0, 0, 0, 1]`, `accelerate [0.3, 0, 1, 1]`.
+- **Springs** (for `withSpring(value, brandMotion.springs.x)`): `press { damping 18, stiffness 420,
+  mass 0.6 }`, `snappy { damping 20, stiffness 260 }`, `gentle { damping 22, stiffness 140 }` — the
+  audit's exact numbers, tried live in the sketchboard and kept unchanged.
+- **List stagger**: `staggerMs 40`, `staggerMax 8`.
+
+Migrated to Reanimated: the survey-form wizard header (`useWizardScroll.ts`/`FormHeader.tsx`) and the
+survey-list hero (`SurveyListScreen.tsx`/`ListHero.tsx`) — both now drive a `useSharedValue` scroll
+position through `useAnimatedScrollHandler`, with each `Animated.View`'s `useAnimatedStyle` computing
+its own `interpolate(scrollY.value, ..., Extrapolation.CLAMP)` rather than consuming a precomputed
+interpolation object (Reanimated's `interpolate` only reacts inside a worklet). `LayoutAnimation`
+(ignores "Reduce Motion") is gone from `AppCollapsibleSection` and `AccountSettingsRows`, replaced by
+`LinearTransition`/`FadeIn`/`FadeOut` with `.reduceMotion(ReduceMotion.System)`.
+
+`ui/feedback.ts` is the single place the app calls `expo-haptics`: `selection()`,
+`impact.{light,medium}()`, `notify.{success,warning,error}()`. None of these gate on
+`Platform.OS === "ios"` — `expo-haptics` already no-ops safely elsewhere, so the previous iOS-only
+helper (`survey-list/haptics.ts`, now deleted) was needlessly withholding feedback from Android.
+
+### 12.4 `AppPressable` — the single pressable primitive (DS-06)
+
+`mobile/src/ui/AppPressable.tsx` replaces the inconsistent pressed-opacity values (0.7, 0.4, 0.76…)
+spread across individual components:
+- **Spring scale** to `brandInteraction.pressedScale` (0.97) via `brandMotion.springs.press`, applied
+  to an inner `Animated.View` rather than the `Pressable` itself (Reanimated's
+  `createAnimatedComponent` can't consume the `style={(state) => ...}` callback form several existing
+  consumers rely on — wrapping instead of replacing keeps it working). Skipped entirely under
+  `useReducedMotion()`.
+- **Android ripple** (`android_ripple`), defaulting to `brandInteraction.rippleColor`
+  (`rgba(0, 0, 0, 0.08)`).
+- **A required `accessibilityLabel`** — not optional; TypeScript enforces it at every call site.
+
+Migrated: `AppButton` (previously had no pressed feedback at all), `DraftCard` and `ParcelNearbyCard`
+(neither had an accessibility label before this phase).
+
+### 12.5 Loading skeleton
+
+`ui/Skeleton.tsx` exports `Skeleton` (a single pulsing block) and `SkeletonRow` (a leading block plus
+two text lines, shaped like the card rows it stands in for). Pulses opacity 0.5 → 1 over 900ms;
+renders a fixed 0.75 opacity instead of pulsing under "Reduce Motion", and pauses/resumes via
+`AppState` while the app is backgrounded. Replaces the Accueil nearby-parcels loading state's static
+placeholder boxes (LIST-08). The same "respects Reduce Motion, pauses in the background" treatment
+was applied to the app's one other ambient decorative loop, the auth screen's background blobs
+(`auth-gate/HeroSection.tsx`) — left on the legacy `Animated` API since it already runs
+`useNativeDriver: true` and isn't one of DS-07's `useNativeDriver: false` cases.
