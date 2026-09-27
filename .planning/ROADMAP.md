@@ -378,9 +378,10 @@ Plans:
 **Goal**: Scoring a factor is a tap, not a typed number — a survey drops from ~80–90 interactions to ~35–45, with no keyboard for 80% of them.
 **Depends on**: Phase 1.9 (mobile state/i18n/component conventions this phase's new components follow). Must land before Phase 2, which redesigns Factor A's own input as a genus list and should build it on these same components rather than the old numeric fields.
 **Requirements**: none yet in `REQUIREMENTS.md` — this phase's own success criteria are its requirements, added here by the 2026-09-27 owner decision to bring the UX audit into MVP scope
-**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.1 (FLOW-01…FLOW-12) and §7 Lot 1
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.1 (FLOW-01…FLOW-12), §5 (tokens, the slice this phase needs) and §7 Lot 1
 **Success Criteria** (what must be TRUE):
 
+  0. This phase adds the minimal token slice its own components need — spacing on the 4-grid, semantic empty/error/complete colors, pressed/interaction states (§5) — as real entries in `brand-tokens.ts`, not one-off inline styles; it does not wait for Phase 1.12's full design-system pass, and does not redo this work when 1.12 lands. Every new pattern (`FactorInput`'s four variants, the pager, the fixed CTA bar, the progress gauge) is added to `docs/design/charte-graphique-etats-sauvages-spec.md` in the same PR that ships it, so the charter documents what the app actually does.
   1. A `FactorInput` component ships in four variants — counter (C/D/E), segmented control (H), checkable chips with a derived count (B/I/J), slider in 5% steps (B/G) — replacing every `keyboardType="numeric"` field in the ten factors.
   2. A factor's error state shows only after the field is left or submission is attempted, never on first open; empty, error and complete each have a distinct, non-alarming visual state.
   3. Factors are navigated through a horizontal pager (A→J) with a fixed footer pager control, instead of 20 round trips to the factor grid; a "next incomplete factor" shortcut exists.
@@ -394,7 +395,7 @@ Plans:
 ### Phase 1.12: Visual Foundations & Motion (INSERTED, UX audit Lot 2)
 
 **Goal**: The app looks like Etats Sauvages, not a generic SF Pro/Roboto build, and its motion runs on the UI thread instead of ad hoc JS timers.
-**Depends on**: Phase 1.11 (its new components are the first to carry the tokens and motion primitives this phase formalises)
+**Depends on**: Phase 1.11 (extends the token slice 1.11 already added — spacing, empty/error/complete colors, interaction states — rather than replacing it; this phase's own job is the parts 1.11 didn't need: fonts, the full hex-literal migration, the motion engine, and the components below)
 **Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision
 **Source**: `docs/design/ux-ui-audit-2026-09.md` §3.4 (DS-01…DS-16), §4 (motion system), §5 (tokens) and §7 Lot 2
 **Success Criteria** (what must be TRUE):
@@ -404,6 +405,7 @@ Plans:
   3. `react-native-reanimated` 4 and `expo-haptics` back a `brandMotion` token set (durations, easings, springs) and a semantic `ui/feedback.ts`; the legacy `Animated`/`LayoutAnimation` calls in the collapsible headers are migrated to `useAnimatedScrollHandler` on `translateY`/`opacity`.
   4. `AppPressable` is the single pressable primitive (spring scale, Android ripple, mandatory accessibility label) and replaces the inconsistent pressed-opacity values across `DraftCard`, `ParcelNearbyCard` and `AppButton`.
   5. A `Skeleton`/`SkeletonRow` pulse replaces static loading placeholders; every animation and decorative loop respects "Reduce Motion" and pauses in the background.
+  6. `docs/design/charte-graphique-etats-sauvages-spec.md` is updated with the typefaces actually loaded, the full semantic token list, the motion tokens (`brandMotion`) and `AppPressable`'s interaction spec — closing the gap the audit found between the written charter and the shipped app.
 
 **Plans**: TBD
 
