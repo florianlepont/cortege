@@ -119,8 +119,8 @@ const numberError = (
 ): FieldError => {
   if (value.trim().length === 0) return rules.required(label)
 
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed)) return rules.number(label)
+  const parsed = parseFiniteNumberInput(value)
+  if (parsed === null) return rules.number(label)
   if (options?.integer && !Number.isInteger(parsed)) return rules.integer(label)
   if (typeof options?.min === "number" && parsed < options.min) return rules.min(label, options.min)
   if (typeof options?.max === "number" && parsed > options.max) return rules.max(label, options.max)
@@ -130,8 +130,8 @@ const numberError = (
 const oneOfError = (value: string, label: string, allowed: readonly number[]): FieldError => {
   const base = numberError(value, label, { integer: true })
   if (base) return base
-  const parsed = Number(value)
-  if (!allowed.includes(parsed)) {
+  const parsed = parseFiniteNumberInput(value)
+  if (parsed === null || !allowed.includes(parsed)) {
     return rules.oneOf(label, allowed.join(", "))
   }
   return null

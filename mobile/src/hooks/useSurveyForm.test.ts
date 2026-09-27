@@ -796,6 +796,15 @@ describe("useSurveyForm", () => {
   // ─── numberError / oneOfError deeper branches ─────────────────────────────
 
   describe("numberError branches via factorSections (non-empty values)", () => {
+    // numberError now reuses the shared parseFiniteNumberInput (BUG-04 fix: both the payload
+    // builder and the displayed-error path agree on the same comma-accepting parse), so this
+    // block needs the real implementation instead of the default `null` stub.
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+    })
+
     test("non-finite value produces 'must be a number' error", async () => {
       const mockConstants = jest.requireMock("../app/constants")
       const saved = mockConstants.DEFAULT_SURVEY_FORM
@@ -854,6 +863,19 @@ describe("useSurveyForm", () => {
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
       expect(hook.factorSections.A[0].error).toBeNull()
+    })
+
+    // FLOW-03/BUG-04: a French decimal comma must not surface a "must be a number" error.
+    test("a decimal comma is accepted (factorG)", async () => {
+      const mockConstants = jest.requireMock("../app/constants")
+      const saved = mockConstants.DEFAULT_SURVEY_FORM
+      mockConstants.DEFAULT_SURVEY_FORM = {
+        ...saved,
+        factorG: { open_flowering_percent: "12,5" },
+      }
+      const hook = await buildHook()
+      mockConstants.DEFAULT_SURVEY_FORM = saved
+      expect(hook.factorSections.G[0].error).toBeNull()
     })
 
     test("oneOfError: valid value in [0,2,5] produces null error (factorH)", async () => {
