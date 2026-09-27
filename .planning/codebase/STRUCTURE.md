@@ -1,15 +1,16 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-09-22
+**Analysis Date:** 2026-09-22, updated 2026-09-27 (phase 01.9 closing sweep)
 
 ## Directory Layout
 
 ```
-cortege/ (npm workspaces monorepo)
+cortege/ (npm workspaces monorepo: mobile, api, packages/ibp-domain)
 ├── .claude/                    # Claude Code settings
 │   └── skills/                 # Project-specific GSD skills
 ├── .github/
-│   └── workflows/              # CI/CD (ci.yml: lint, test, build Docker)
+│   └── workflows/               # CI/CD: ci.yml (lint/format/typecheck, unit, E2E, native builds,
+│   │                             # Docker image, aggregate gate) and codeql.yml
 ├── .planning/
 │   ├── codebase/               # Generated architecture docs
 │   └── phases/                 # Planning outputs from GSD commands
@@ -22,35 +23,50 @@ cortege/ (npm workspaces monorepo)
 │   ├── technical/              # Architecture, data contracts, ADRs
 │   ├── specs/                  # Product specs, user stories, epics
 │   ├── design/                 # Brand and design system
+│   ├── audits/                 # Code audits and remediation tracking
 │   └── user-tests/             # User testing reports
 ├── infra/                      # Infrastructure as code
 │   ├── docker-compose.yml      # Local dev stack (PostgreSQL, MinIO, pgAdmin)
 │   └── vps/                    # VPS deployment (systemd, Caddy, pull-based updates)
 ├── scripts/                    # Root-level utilities
-├── mobile/                     # React Native / Expo package
+├── packages/
+│   └── ibp-domain/             # @cortege/ibp-domain: shared IBP rules workspace (phase 01.8)
+│       ├── src/                # Factor keys, evaluateIbp, bands, cas/region models, contract/ wire types, parity/
+│       ├── jest.config.js      # Coverage thresholds 100%
+│       ├── tsconfig.json
+│       └── package.json        # `main`/`react-native` point at src for Metro/Jest/tsc, `dist` for Node runtime
+├── mobile/                     # React Native / Expo package (no root App.tsx or tsconfig.json — removed phase 01.9)
 │   ├── src/                    # TypeScript source
-│   │   ├── App.tsx             # Root component (DB init, hook orchestration, navigation)
 │   │   ├── storage.ts          # Re-exports storage module
-│   │   ├── screens/            # Screen components (Home, SurveyForm, SurveyDetail, etc)
-│   │   ├── hooks/              # Custom hooks (useSurveySync and sub-hooks)
-│   │   │   └── survey-sync/    # Specialized sync hooks (network, profile, operations)
+│   │   ├── screens/            # Screen components, split into feature subfolders under 400 lines each
+│   │   │   ├── survey-list/, survey-detail/, survey-form/, public-map/  # container + presentational parts
+│   │   ├── state/               # NEW (phase 01.9): AppStateProvider (single assembler) and the five
+│   │   │                        # memoised contexts (session, status, sync actions, surveys, survey form)
+│   │   │                        # plus the narrow nearby-parcels context and useLatestCallback/useStableActions
+│   │   ├── hooks/               # Custom hooks (useSurveySync and its survey-sync/ sub-hooks; useSurveyForm,
+│   │   │   │                    # useSurveyList, useEditingDraft, useSurveyDraftPatcher, useGpsCapture,
+│   │   │   │                    # useLocalDataOwner, useNearbyParcels, useParcelStatuses, usePublicMapExplorer,
+│   │   │   │                    # useDebouncedValue)
+│   │   │   └── survey-sync/    # Sub-hooks composed by useSurveySync (network, profile, operations, attachment previews)
+│   │   ├── i18n/                # NEW (phase 01.9): typed French catalogue (`fr`), no i18n library
+│   │   ├── navigation/          # AuthenticatedAppNavigation split: types.ts, tabs/, stacks/, routes/
 │   │   ├── components/         # UI components (ParcelOverlay, DraftCard, etc)
 │   │   ├── ui/                 # Reusable UI elements (buttons, cards, chips, fields)
 │   │   ├── api/                # HTTP client and endpoint definitions
-│   │   ├── storage/            # SQLite schema, queries, types
-│   │   ├── app/                # Domain logic (IBP scoring, formatters, constants, types)
+│   │   ├── storage/             # SQLite schema (PRAGMA user_version migrations, now 2), queries, types
+│   │   ├── app/                 # Domain logic (ibp-scoring.ts as an @cortege/ibp-domain adapter, formatters,
+│   │   │                        # constants, types re-exported from the package)
 │   │   └── __mocks__/          # Jest mocks for tests
 │   ├── test/                   # Test fixtures and utilities
 │   ├── assets/                 # Images, fonts (committed)
 │   ├── plugins/                # Expo plugins for native configuration
-│   ├── App.tsx                 # Stub (re-export from src/)
+│   ├── App.tsx                 # Root component (mounts AppStateProvider, navigation, session overlays)
 │   ├── index.js                # Entry point
-│   ├── app.json                # Expo app config (icon, permissions, Auth0, etc)
-│   ├── app.json                # Expo app config
+│   ├── app.json                # Expo app config (icon, permissions in French, Auth0, etc)
 │   ├── metro.config.js         # Metro bundler config
 │   ├── jest.unit.config.js     # Jest config for unit tests
 │   ├── tsconfig.json           # TypeScript config
-│   ├── package.json            # Dependencies (Expo 54, React Native 0.81, Auth0, etc)
+│   ├── package.json            # Dependencies (Expo 57.0.24, React Native 0.86.3, Auth0, supercluster, etc)
 │   ├── README.md               # Mobile-specific setup
 │   └── README-native.md        # Native customization guide
 ├── api/                        # NestJS package
@@ -58,33 +74,36 @@ cortege/ (npm workspaces monorepo)
 │   │   ├── main.ts             # NestJS bootstrap (port, CORS, validation pipe)
 │   │   ├── app.module.ts       # Root module (module imports and setup)
 │   │   ├── app.controller.ts   # Health/info endpoints
-│   │   ├── auth/               # Authentication (JWT, Auth0, guards)
+│   │   ├── config/              # Validated typed config: env.schema.ts, app-config.ts, production-rules.ts
+│   │   ├── auth/                # Authentication (JWT, Auth0, guards)
 │   │   │   ├── auth.guard.ts   # JWT validation against Auth0 JWKS
 │   │   │   ├── auth.module.ts  # Auth module setup
 │   │   │   ├── auth.types.ts   # AuthenticatedUser type
 │   │   │   ├── auth0-management.service.ts # Auth0 API calls
 │   │   │   ├── current-user.decorator.ts   # @CurrentUser() injection
+│   │   │   ├── throttler.guard.ts           # Client-aware throttler guard
 │   │   │   └── admin.guard.ts  # Admin-only protection
-│   │   ├── users/              # User profile management
+│   │   ├── users/              # User profile management (no email.service.ts — removed phase 01.9)
 │   │   │   ├── users.service.ts       # CRUD, provisioning
 │   │   │   ├── users.controller.ts    # Endpoints
 │   │   │   ├── users.module.ts        # Module setup
-│   │   │   ├── email.service.ts       # Email notifications
 │   │   │   └── dtos/                  # Request/response DTOs
-│   │   ├── surveys/            # Survey CRUD and sync
+│   │   ├── surveys/            # Survey CRUD, sync, IBP validation, parcels, public map
 │   │   │   ├── surveys.service.ts            # CRUD, validation, parcel linkage
+│   │   │   ├── surveys.repository.ts        # Raw-SQL survey queries
 │   │   │   ├── surveys.controller.ts        # GET/POST/PATCH endpoints
 │   │   │   ├── surveys-sync.service.ts      # Batch sync processor
 │   │   │   ├── surveys-attachments.service.ts # Upload/download, S3
-│   │   │   ├── ibp-rules.service.ts         # Factor validation rules
+│   │   │   ├── survey-events.service.ts     # Survey event history
+│   │   │   ├── ibp-rules.service.ts         # Thin adapter over @cortege/ibp-domain
 │   │   │   ├── cadastre-provider.service.ts # Parcel data (IGN WFS or synthetic)
-│   │   │   ├── sync.controller.ts           # POST /surveys/sync handler
-│   │   │   ├── public.controller.ts         # Public map endpoints
-│   │   │   ├── parcels.controller.ts        # Parcel metadata endpoints
-│   │   │   ├── surveys.module.ts            # Module setup
+│   │   │   ├── parcels.service.ts, parcels.controller.ts   # Parcel metadata and status endpoints
+│   │   │   ├── public-map.service.ts, public.controller.ts # Public map endpoints (bbox-aware, phase 01.9)
+│   │   │   ├── sync.controller.ts           # POST /v1/sync and GET /v1/sync/changes
+│   │   │   ├── surveys.module.ts, surveys-data.module.ts   # Module setup
 │   │   │   ├── surveys.types.ts             # TypeScript types (SurveyRow, etc)
 │   │   │   ├── surveys-normalize.utils.ts   # Input validation/normalization
-│   │   │   ├── public-map.utils.ts          # Public map query logic
+│   │   │   ├── public-map.utils.ts, public-map.queries.ts  # Public map query logic
 │   │   │   ├── sync-error.utils.ts          # Sync error code mapping
 │   │   │   ├── dtos/                        # Request/response DTOs
 │   │   │   └── __mocks__/                   # Jest mocks
@@ -100,25 +119,30 @@ cortege/ (npm workspaces monorepo)
 │   │   │   ├── debug.controller.ts  # Reset endpoints
 │   │   │   ├── debug.service.ts
 │   │   │   └── debug.module.ts
-│   │   └── common/             # Shared utilities
-│   │       └── file.utils.ts
-│   ├── test/                   # E2E test specs
-│   │   ├── *.e2e-spec.ts       # Jest E2E tests (require running DB)
+│   │   └── common/             # Shared utilities (rate-limit config, file.utils.ts)
+│   ├── test/                   # Unit and E2E test specs
+│   │   ├── *.spec.ts           # Jest unit/integration specs (e.g. `auth.guard.rs256.spec.ts`)
+│   │   ├── *.e2e-spec.ts       # Jest E2E tests (require running DB), split per feature
+│   │   │                       # (surveys-submit, surveys-visibility, public-map-items, surveys-attachments,
+│   │   │                       # parcel-history, surveys-method-version, migration-016-ibp-method-version)
+│   │   ├── helpers/            # Shared E2E helpers (ids from randomUUID())
 │   │   └── __mocks__/          # Jest mocks
 │   ├── migrations/             # SQL migration files (ordered)
 │   │   ├── 001-initial-schema.sql
-│   │   ├── 002-add-reports.sql
-│   │   └── ...
+│   │   ├── ...
+│   │   └── 016_ibp_method_version.sql
 │   ├── scripts/                # Build/migration scripts
 │   │   └── migrate.js          # Run pending migrations
 │   ├── jest.config.js          # Jest config (E2E)
 │   ├── jest.unit.config.js     # Jest config (unit)
 │   ├── tsconfig.json           # TypeScript config
 │   ├── tsconfig.build.json     # TypeScript build config
-│   ├── package.json            # Dependencies (NestJS, pg, class-validator, etc)
+│   ├── package.json            # Dependencies (NestJS, pg, class-validator, @cortege/ibp-domain; no bcryptjs,
+│   │                            # no @nestjs/schedule, no mailer package — removed phase 01.9)
 │   ├── .env.example            # Env template
 │   └── README.md               # API-specific setup
-└── package.json                # Root workspace config
+└── package.json                # Root workspace config (workspaces only: mobile, api, packages/ibp-domain;
+                                 # overrides + one dev dependency; no runtime deps, no root App.tsx/tsconfig.json)
 ```
 
 ## Directory Purposes
@@ -129,7 +153,8 @@ cortege/ (npm workspaces monorepo)
 
 **`.github/workflows/`**
 - Purpose: CI/CD pipeline automation
-- Contains: `ci.yml` (lint, format check, typecheck, test, Docker build on push to main)
+- Contains: `ci.yml` (changes, check, unit-api, unit-mobile, e2e, e2e-minio, mobile-build, native-android,
+  native-ios, audit, image-check, ci-ok, build) and `codeql.yml` (CodeQL analysis)
 
 **`.planning/codebase/`**
 - Purpose: Generated architecture documentation (output of `/gsd-map-codebase`)
@@ -153,39 +178,52 @@ cortege/ (npm workspaces monorepo)
   - `vps/` — VPS deployment (systemd timer for pull-based updates, Caddy reverse proxy)
 
 **`mobile/src/screens/`**
-- Purpose: Screen components (UI pages)
+- Purpose: Screen components (UI pages), split into feature subfolders (container + presentational parts) so
+  no file under `screens/` exceeds 400 lines (phase 01.9, D-04)
 - Contains:
-  - `HomeScreen.tsx` — Survey list, sync status
-  - `SurveyFormScreen.tsx` — IBP factor data entry
-  - `SurveyDetailScreen.tsx` — Survey review and visibility controls
+  - `HomeScreen.tsx` — Survey list summary, sync status, nearby parcels
+  - `survey-form/` (`SurveyFormScreen.tsx` + parts) — IBP factor data entry
+  - `survey-detail/` (`SurveyDetailScreen.tsx` + parts) — Survey review and visibility controls
   - `SurveyParcelSelectionScreen.tsx` — Parcel picker with map
-  - `PublicMapScreen.tsx` — Public map explorer
+  - `public-map/` (`PublicMapScreen.tsx` + parts) — Public map explorer, bbox loading, clustering
   - `AuthGateScreen.tsx` — Login redirect
   - `ProfileSetupScreen.tsx` — First-time user setup
   - `AccountScreen.tsx` — User profile and account settings
-  - `SettingsScreen.tsx` — App preferences and debug tools
+  - `SettingsScreen.tsx` — App preferences and debug tools (only consumer of the status context)
   - `FactorDetailScreen.tsx` — Individual factor details
+
+**`mobile/src/state/`** (new, phase 01.9)
+- Purpose: The single state assembler and the memoised React contexts screens read
+- Contains:
+  - `AppStateProvider.tsx` — calls every stateful hook exactly once (`useAppController`), splits
+    the result into contexts
+  - `session-context.ts`, `status-context.ts`, `sync-actions-context.ts`, `surveys-context.ts`,
+    `survey-form-context.ts`, `nearby-parcels-context.ts` — one `createContext` + hook per slice
+  - `useLatestCallback.ts` — stable-identity action wrapper (`useLatestCallback`, `useStableActions`)
+
+**`mobile/src/i18n/`** (new, phase 01.9)
+- Purpose: The typed French text catalogue (`fr`), one module per screen or area; no i18n library
+- Status messages are `StatusMessage` values built only by catalogue functions
 
 **`mobile/src/hooks/`**
 - Purpose: Stateful logic (React hooks)
-- Primary orchestrator: `useSurveySync.ts` (composes all sub-hooks)
-- Composition:
-  - `survey-sync/useSurveySyncNetwork.ts` — Sync queue draining, retry backoff
+- `useSurveySync.ts` — sync/session orchestrator, calls `useAuth0Session` and `useLocalDataOwner`
+  directly, composed of the `survey-sync/` sub-hooks:
+  - `survey-sync/useSurveySyncNetwork.ts` — Sync queue draining, retry backoff (`POST /v1/sync`, `GET /v1/sync/changes`)
   - `survey-sync/useSurveySyncProfile.ts` — User profile sync
   - `survey-sync/useSurveySyncSurveyOperations.ts` — Survey CRUD
-  - `useSurveyForm.ts` — Active form state
-  - `useSurveyList.ts` — Cached survey list
-  - `useEditingDraft.ts` — Draft editing workflow
-  - `useSurveyDraftPatcher.ts` — Incremental patch accumulation
-  - `useAuth0Session.ts` — Auth state and token lifecycle
-  - `usePublicMapExplorer.ts` — Public map data fetching
-  - `useGpsCapture.ts` — Device location capture
-  - `useNearbyParcels.ts` — Nearby parcels query
+  - `survey-sync/useAttachmentPreviews.ts` — Attachment preview cache
+- Other hooks under `hooks/` (each called once by `AppStateProvider`, not nested in `useSurveySync`):
+  `useAuth0Session.ts`, `useLocalDataOwner.ts`, `useSurveyForm.ts`, `useSurveyList.ts`,
+  `useEditingDraft.ts`, `useSurveyDraftPatcher.ts`, `useGpsCapture.ts`, `useNearbyParcels.ts`
+- Hooks called directly by the screens that need them: `usePublicMapExplorer.ts` (public map),
+  `useParcelStatuses.ts` (parcel selection, home), `useDebouncedValue.ts` (map region debouncing)
 
 **`mobile/src/storage/`**
 - Purpose: Local SQLite persistence layer
 - Contains:
-  - `db.ts` — Schema (local_surveys, sync_queue, local_attachments, app_metadata)
+  - `db.ts` — Schema (`local_surveys` with `payload_completion`, `sync_queue`, `local_attachments`,
+    `local_meta`); `PRAGMA user_version` migrations, currently at 2
   - `surveys.ts` — Survey CRUD helpers
   - `sync.ts` — Sync queue management and sync operation
   - `types.ts` — TypeScript types (LocalSurvey, SyncQueueEntry, etc.)
@@ -222,25 +260,36 @@ cortege/ (npm workspaces monorepo)
   - `IgnCadastreTileOverlay.tsx` — Tile layer management
   - `cards/` — Survey/parcel card components
 
+**`api/src/config/`**
+- Purpose: Validated, typed configuration
+- Key files:
+  - `env.schema.ts` — `class-validator`-decorated env shape, `validateEnv`
+  - `app-config.ts` — typed config object (`ConfigModule.forRoot({ load: [appConfig] })`)
+  - `production-rules.ts` — startup refusal rules for production (`CORS_ORIGIN`, etc.)
+
 **`api/src/auth/`**
 - Purpose: Authentication and authorization
 - Key files:
   - `auth.guard.ts` — JWT validation against Auth0 JWKS
   - `auth0-management.service.ts` — Auth0 API calls (delete account, get /userinfo)
   - `current-user.decorator.ts` — @CurrentUser() injection
+  - `throttler.guard.ts` — client-aware throttler guard
 
 **`api/src/surveys/`**
-- Purpose: Survey CRUD and sync operations
+- Purpose: Survey CRUD, sync, IBP validation, parcel linkage, attachments, public map
 - Key files:
-  - `surveys.service.ts` — Core business logic (CRUD, validation, parcel linkage)
+  - `surveys.service.ts`, `surveys.repository.ts` — Core business logic and raw-SQL queries
   - `surveys-sync.service.ts` — Batch sync processor (handles mobile sync requests)
-  - `sync.controller.ts` — POST /v1/surveys/sync endpoint
-  - `ibp-rules.service.ts` — Factor scoring validation (server-side)
+  - `sync.controller.ts` — `POST /v1/sync` and `GET /v1/sync/changes`
+  - `ibp-rules.service.ts` — Thin adapter over `@cortege/ibp-domain` (server-side validation)
+  - `parcels.service.ts`/`parcels.controller.ts`, `cadastre-provider.service.ts` — Parcel linkage and lookup
+  - `public-map.service.ts`/`public.controller.ts` — Public map and parcel-status endpoints
+  - `survey-events.service.ts`, `surveys-attachments.service.ts` — Event history and attachment upload
   - `surveys.types.ts` — TypeScript types (SurveyRow, SyncBatchBody, etc.)
   - `dtos/` — Request/response DTOs (class-validator decorated)
 
 **`api/src/users/`**
-- Purpose: User profile management
+- Purpose: User profile management (no email service — the API sends no email, removed phase 01.9)
 - Key files:
   - `users.service.ts` — CRUD, auto-provisioning on first login
   - `users.controller.ts` — Profile endpoints
@@ -256,16 +305,21 @@ cortege/ (npm workspaces monorepo)
 - Run by: `npm run migrate:api` (api/scripts/migrate.js)
 
 **`api/test/`**
-- Purpose: E2E tests (require running database)
-- Files: `*.e2e-spec.ts` (Jest + Supertest)
-- Run by: `npm run test:e2e`
+- Purpose: unit/integration specs (`*.spec.ts`, run by `npm run test:unit`) and E2E tests that require a
+  running database (`*.e2e-spec.ts`, Jest + Supertest, run by `npm run test:e2e`)
+- `auth.guard.rs256.spec.ts` tests the RS256 path against a real loopback JWKS server
+- E2E is split by feature: `surveys-submit`, `surveys-visibility`, `public-map-items`,
+  `surveys-attachments`, `parcel-history`, `surveys-idempotency`, `surveys-method-version`,
+  `migration-016-ibp-method-version`, `public-map-bbox`, etc.
+- `helpers/surveys-e2e.ts` — shared E2E helpers (ids from `randomUUID()`)
 
 ## Key File Locations
 
 ### Entry Points
 
 **Mobile:**
-- `mobile/App.tsx` — Root component (DB init, hook orchestration, navigation)
+- `mobile/App.tsx` — Root component (mounts `AppStateProvider`, navigation, session overlays); no root-level
+  `App.tsx` exists any more (removed phase 01.9)
 - `mobile/index.js` — React Native entry point
 
 **API:**
@@ -281,7 +335,7 @@ cortege/ (npm workspaces monorepo)
 - `mobile/jest.unit.config.js` — Jest config (unit tests)
 
 **API:**
-- `api/.env` — Runtime env (database, Auth0, S3, SMTP)
+- `api/.env` — Runtime env (database, Auth0, S3; no SMTP)
 - `api/tsconfig.json` — TypeScript config (strict, decorators)
 - `api/jest.config.js` — Jest config (E2E tests)
 - `api/jest.unit.config.js` — Jest config (unit tests)
@@ -289,19 +343,25 @@ cortege/ (npm workspaces monorepo)
 **Root:**
 - `.eslintrc.json` — Linter config (both mobile and API)
 - `.prettierrc.json` — Formatter config (double quotes, 2 spaces, no semicolons)
+- No root `tsconfig.json` (removed phase 01.9)
 
 ### Core Logic
 
 **Mobile:**
-- `mobile/src/hooks/useSurveySync.ts` — Central state orchestrator
+- `mobile/src/state/AppStateProvider.tsx` — Single assembler, fills the five state contexts
+- `mobile/src/hooks/useSurveySync.ts` — Sync and session orchestrator
 - `mobile/src/storage/db.ts` — SQLite schema and initialization
 - `mobile/src/api/client.ts` — HTTP client wrapper
-- `mobile/src/app/ibp-scoring.ts` — IBP factor validation
+- `mobile/src/app/ibp-scoring.ts` — Mobile IBP adapter over `@cortege/ibp-domain`
+
+**Shared package:**
+- `packages/ibp-domain/src/index.ts` — Public entry, the only module api and mobile import
+- `packages/ibp-domain/src/evaluate.ts` — `evaluateIbp`: scoring and draft/submit validation
 
 **API:**
 - `api/src/surveys/surveys.service.ts` — Survey CRUD and validation
 - `api/src/surveys/surveys-sync.service.ts` — Batch sync processor
-- `api/src/surveys/ibp-rules.service.ts` — Server-side IBP validation
+- `api/src/surveys/ibp-rules.service.ts` — Server-side adapter over `@cortege/ibp-domain`
 - `api/src/auth/auth.guard.ts` — JWT validation
 - `api/src/database/database.service.ts` — DB connection pool
 
@@ -311,8 +371,11 @@ cortege/ (npm workspaces monorepo)
 - `mobile/src/**/*.test.ts(x)` — Co-located unit tests
 - `mobile/test/` — Test fixtures and utilities
 
+**Shared package:**
+- `packages/ibp-domain/src/**/*.test.ts` — coverage thresholds 100%
+
 **API:**
-- `api/test/` — E2E test specs (`*.e2e-spec.ts`)
+- `api/test/` — unit/integration specs (`*.spec.ts`) and E2E test specs (`*.e2e-spec.ts`)
 - `api/src/**/__mocks__/` — Jest mocks
 
 ## Naming Conventions
@@ -335,9 +398,10 @@ cortege/ (npm workspaces monorepo)
 - Export: Named exports
 
 **Test Files:**
-- Pattern: `*.test.ts(x)` (unit) or `*.e2e-spec.ts` (E2E)
+- Pattern: `*.test.ts(x)` (unit, co-located with source); in `api/test/`, `*.spec.ts` (unit/integration)
+  and `*.e2e-spec.ts` (E2E)
 - Location: Co-located with source or in `api/test/`
-- Example: `mobile/src/app/ibp-scoring.test.ts`, `api/test/surveys.e2e-spec.ts`
+- Example: `mobile/src/app/ibp-scoring.test.ts`, `api/test/auth.guard.spec.ts`, `api/test/surveys-submit.e2e-spec.ts`
 
 **DTOs (API):**
 - Pattern: `[Name].dto.ts` or `[Name]Body.ts`
@@ -440,4 +504,4 @@ cortege/ (npm workspaces monorepo)
 
 ---
 
-*Structure analysis: 2026-09-22*
+*Structure analysis: 2026-09-22, updated 2026-09-27*
