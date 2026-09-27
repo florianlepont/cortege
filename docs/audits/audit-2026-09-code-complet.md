@@ -266,7 +266,7 @@ Modules critiques à 0 % ou presque :
 
 <a id="m-h1"></a>**M-H1 🟠 Élevé — Courses dans la file de sync.**
 - **Drains concurrents.** `runSync` est protégé par `syncInProgressRef`, mais `handleDeleteAttachment` (`useSurveySyncSurveyOperations.ts:390`) et `updateSurveyVisibility` (`sync.ts:1106`) appellent `syncPending` directement, et `handlePullChanges` ignore le verrou. Deux drains simultanés peuvent envoyer deux fois la même opération : pièces jointes en double, ou 409 menant à tort à `sync_blocked`.
-- **Écrasement d'une édition récente.** L'autosave (900 ms) déclenche une sync. Si l'utilisateur modifie le relevé pendant l'aller-retour réseau, la réponse à l'ancienne ligne de file passe quand même le relevé en `sync_state='synced'` (`markSurveyQueueRowSynced`, `sync.ts:46-64`), alors qu'une nouvelle ligne est en attente. Comme la soumission se fie à `sync_state`, on peut soumettre la version antérieure.
+- **Écrasement d'une édition récente.** L'autosave (900 ms) déclenche une sync. Si l'utilisateur modifie le relevé pendant l'aller-retour réseau, la réponse à l'ancienne ligne de file passe quand même le relevé en `sync_state='synced'` (`markSurveyQueueRowSynced`, `sync.ts:46-64`), alors qu'une nouvelle ligne reste dans la file. Comme la soumission se fie à `sync_state`, on peut soumettre la version antérieure.
 - → Un *single-flight* au niveau du module dans `syncPending` et `pullRemoteChanges`. Ne marquer `synced` que s'il ne reste aucune autre ligne pour ce relevé, dans une transaction.
 
 <a id="m-h2"></a>**M-H2 🟠 Élevé — Photos fragiles et trop lourdes.**
@@ -282,7 +282,7 @@ Modules critiques à 0 % ou presque :
 - En France, la requête couvre un rectangle démesuré et ne renvoie rien au nord du 46° parallèle.
 
 <a id="m-h4"></a>**M-H4 🟠 Élevé — Lots de sync sans découpage.**
-- `syncPending` envoie **toutes** les lignes en attente dans un seul `POST /sync` (`sync.ts:650-656`, aucun `LIMIT`).
+- `syncPending` envoie **toutes** les lignes de la file dans un seul `POST /sync` (`sync.ts:650-656`, aucun `LIMIT`).
 - L'API rejette les lots de plus de 100 opérations (`surveys-sync.service.ts:41`).
 - Après une longue journée hors ligne, avec une opération par photo, le lot est rejeté en 400 à chaque tentative et finit bloqué.
 - → Envoyer des lots de 100 au plus.
@@ -434,20 +434,20 @@ jobs:
 
 ## 8. Statut
 
-Cette section relie chaque constat à la phase de remédiation qui le traite et à la ou les PR qui l'ont fusionné. Les PR ont été retrouvées dans l'historique Git : chaque fusion de `main` a été rattachée aux plans (`01.x-NN`) de ses commits, puis chaque constat à sa phase via la matrice de traçabilité du plan de remédiation (§6) et la ligne « Source » de chaque phase dans la feuille de route. La phase 01.2 commence à #125 : ses deux premiers plans (limite de débit, identité) ont été fusionnés dans #125 et #126. Les PR de vérification et de clôture de chaque phase (#130 à #133, #141 à #144, #146 à #149, #151 à #153, #155, #157) ne contiennent que de la documentation et ne sont pas répétées ci-dessous. Les constats des phases 01.8 et 01.9 sont « en attente » : le plan de clôture 01.9-32 complétera leurs liens.
+Cette section relie chaque constat à la phase de remédiation qui le traite et à la ou les PR qui l'ont fusionné. Les PR ont été retrouvées dans l'historique Git : chaque fusion de `main` a été rattachée aux plans (`01.x-NN`) de ses commits, puis chaque constat à sa phase via la matrice de traçabilité du plan de remédiation (§6) et la ligne « Source » de chaque phase dans la feuille de route. La phase 01.2 commence à #125 : ses deux premiers plans (limite de débit, identité) ont été fusionnés dans #125 et #126. Les PR de vérification et de clôture de chaque phase (#130 à #133, #141 à #144, #146 à #149, #151 à #153, #155, #157, #164, #165) ne contiennent que de la documentation ou des correctifs annexes trouvés pendant la vérification, et ne sont pas répétées ci-dessous. La phase 01.8 (paquet `ibp-domain`, complétude des tests) a été fusionnée dans #162. La phase 01.9 (état mobile, i18n, accessibilité, hygiène) a été fusionnée en deux temps : les vagues 0 à 4 dans #159, puis le plan de clôture 01.9-32 (sweep documentaire final, liens de ce tableau, messages de validation IBP), qui dépendait de la phase 01.8, dans la PR de clôture enregistrée dans `.planning/phases/01.9-mobile-state-i18n-a11y-and-hygiene/01.9-VALIDATION.md` (section « Closing plan (01.9-32) »).
 
 | Réf. | Constat (court) | Phase | PR |
 |---|---|---|---|
-| [ARCH-1](#arch-1) | Règles IBP et contrats dupliqués | 01.8 | en attente |
+| [ARCH-1](#arch-1) | Règles IBP et contrats dupliqués | 01.8 | [#162](https://github.com/florianlepont/cortege/pull/162) |
 | [ARCH-2](#arch-2) | `SurveysService` trop gros, S3 ×3, `process.env` épars | 01.6, 01.7 | [#154](https://github.com/florianlepont/cortege/pull/154), [#156](https://github.com/florianlepont/cortege/pull/156) |
 | [ARCH-3](#arch-3) | Transactions : API | 01.4 | [#145](https://github.com/florianlepont/cortege/pull/145) |
 | [ARCH-3](#arch-3) | Transactions : SQLite mobile | 01.5 | [#150](https://github.com/florianlepont/cortege/pull/150) |
-| [ARCH-4](#arch-4) | Couche d'état mobile en entonnoir de props | 01.9 | en attente |
+| [ARCH-4](#arch-4) | Couche d'état mobile en entonnoir de props | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
 | [ARCH-5](#arch-5) | Schéma SQLite non versionné, `op_type`, `fetch` direct | 01.5 | [#150](https://github.com/florianlepont/cortege/pull/150) |
 | [ARCH-6](#arch-6) | Ordre du flux `/sync/changes` et cas B | 01.6 | [#154](https://github.com/florianlepont/cortege/pull/154) |
 | [ARCH-7](#arch-7) | Hygiène : `REFRESH_TOKEN_SECRET`, tables `auth_sessions`, verrou de migration | 01.7 | [#156](https://github.com/florianlepont/cortege/pull/156) |
-| [ARCH-7](#arch-7) | Hygiène : `App.tsx` et dépendances racine, dépendances inutiles, bibliothèques d'onglets | 01.9 | en attente |
-| [ARCH-8](#arch-8) | `CLAUDE.md` obsolète | 01.9 | en attente |
+| [ARCH-7](#arch-7) | Hygiène : `App.tsx` et dépendances racine, dépendances inutiles, bibliothèques d'onglets | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
+| [ARCH-8](#arch-8) | `CLAUDE.md` obsolète | 01.9-32 | closing PR of plan 01.9-32 (see `01.9-VALIDATION.md`, "Closing plan (01.9-32)"; this sweep could only run after phase 01.8 merged in #162) |
 | [A-C1](#a-c1) | Limite de débit globale partagée | 01.2 | [#125](https://github.com/florianlepont/cortege/pull/125), [#129](https://github.com/florianlepont/cortege/pull/129) |
 | [A-H1](#a-h1) | Liaison de compte par e-mail non vérifié | 01.2 | [#126](https://github.com/florianlepont/cortege/pull/126), [#129](https://github.com/florianlepont/cortege/pull/129) |
 | [A-H2](#a-h2) | `/sync` non validé, contournement de la soumission | 01.4 | [#145](https://github.com/florianlepont/cortege/pull/145) |
@@ -481,9 +481,9 @@ Cette section relie chaque constat à la phase de remédiation qui le traite et 
 | §3.2 Moyen | IDs non uniques | 01.5 | [#150](https://github.com/florianlepont/cortege/pull/150) |
 | §3.2 Moyen | Pièces jointes distantes avec `local_uri=""` | 01.5 | [#150](https://github.com/florianlepont/cortege/pull/150) |
 | §3.2 Faible | Stubs d'authentification morts | 01.2 | [#128](https://github.com/florianlepont/cortege/pull/128) |
-| §3.2 Faible | `useNavigation() as any` | 01.9 | en attente |
-| §3.2 Faible | Textes FR/EN, messages techniques | 01.9 | en attente |
-| §3.2 Faible | Accessibilité des `Pressable` | 01.9 | en attente |
+| §3.2 Faible | `useNavigation() as any` | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
+| §3.2 Faible | Textes FR/EN, messages techniques | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
+| §3.2 Faible | Accessibilité des `Pressable` | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
 | §4 API | Sync séquentielle, nombre de requêtes | 01.7 | [#156](https://github.com/florianlepont/cortege/pull/156) |
 | §4 API | Index partiel des relevés publics | 01.7 | [#156](https://github.com/florianlepont/cortege/pull/156) |
 | §4 API | Bbox sur `centroid` JSON | 01.7 | [#156](https://github.com/florianlepont/cortege/pull/156) |
@@ -493,22 +493,22 @@ Cette section relie chaque constat à la phase de remédiation qui le traite et 
 | §4 API | Fallback de `/sync/changes` non borné | 01.6 | [#154](https://github.com/florianlepont/cortege/pull/154) |
 | §4 API | Listes sans `LIMIT` (`listForUser`, `getEvents`, `listReports`) | 01.7 | [#156](https://github.com/florianlepont/cortege/pull/156) |
 | §4 API | `SELECT *` pour les contrôles de propriété | 01.7 | [#156](https://github.com/florianlepont/cortege/pull/156) |
-| §4 Mobile | Re-rendus globaux (`useSurveySync`) | 01.9 | en attente |
-| §4 Mobile | Pas de `FlatList` | 01.9 | en attente |
+| §4 Mobile | Re-rendus globaux (`useSurveySync`) | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
+| §4 Mobile | Pas de `FlatList` | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
 | §4 Mobile | Images décodées en pleine résolution | 01.5 | [#150](https://github.com/florianlepont/cortege/pull/150) |
-| §4 Mobile | `listLocalSurveys` parse chaque payload | 01.9 | en attente |
+| §4 Mobile | `listLocalSurveys` parse chaque payload | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
 | §4 Mobile | Pas de transaction SQLite ni de WAL | 01.5 | [#150](https://github.com/florianlepont/cortege/pull/150) |
 | §4 Mobile | Index SQLite manquants | 01.5 | [#150](https://github.com/florianlepont/cortege/pull/150) |
-| §4 Mobile | Carte : bbox, clustering, marqueurs | 01.9 | en attente |
+| §4 Mobile | Carte : bbox, clustering, marqueurs | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
 | T1 (§5) | Pas de seuil de couverture | 01.3 | [#134](https://github.com/florianlepont/cortege/pull/134) |
 | T2 (§5) | Modules à risque non testés : session, sync, pièces jointes | 01.2, 01.3, 01.5 | [#127](https://github.com/florianlepont/cortege/pull/127), [#134](https://github.com/florianlepont/cortege/pull/134), [#150](https://github.com/florianlepont/cortege/pull/150) |
-| T2 (§5) | Chemin RS256 du garde non testé | 01.8 | en attente |
+| T2 (§5) | Chemin RS256 du garde non testé | 01.8 | [#162](https://github.com/florianlepont/cortege/pull/162) |
 | T3 (§5) | Mock SQLite qui n'exécute rien | 01.3 | [#134](https://github.com/florianlepont/cortege/pull/134) |
-| T3 (§5) | Tests de hooks qui espionnent React | 01.9 | en attente |
+| T3 (§5) | Tests de hooks qui espionnent React | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
 | T4 (§5) | `testMatch` sans `.tsx`, `moduleNameMapper` en double | 01.3 | [#134](https://github.com/florianlepont/cortege/pull/134) |
 | T5 (§5) | Base E2E jamais nettoyée | 01.3 | [#134](https://github.com/florianlepont/cortege/pull/134) |
-| T5 (§5) | Fichier E2E fourre-tout, `Date.now()` | 01.8 | en attente |
-| T6 (§5) | Pas de test de parité IBP | 01.8 | en attente |
+| T5 (§5) | Fichier E2E fourre-tout, `Date.now()` | 01.8 | [#162](https://github.com/florianlepont/cortege/pull/162) |
+| T6 (§5) | Pas de test de parité IBP | 01.8 | [#162](https://github.com/florianlepont/cortege/pull/162) |
 | [CI-1](#ci-1) | Typecheck absent de la CI | 01.3 | [#134](https://github.com/florianlepont/cortege/pull/134) |
 | [CI-2](#ci-2) | Image non reproductible, `:latest` publiable partout | 01.3 | [#134](https://github.com/florianlepont/cortege/pull/134) |
 | CI-3 | Pas de filtrage par chemin | 01.3 | [#134](https://github.com/florianlepont/cortege/pull/134) |

@@ -33,7 +33,7 @@ Other top-level directories:
 | Mobile navigation | React Navigation (native-stack + bottom-tabs); `react-native-bottom-tabs` for the native iOS tab bar |
 | Mobile local DB | Expo SQLite (`cortege-local.db`) |
 | Mobile secure store | Expo SecureStore (tokens) |
-| API framework | NestJS 11 (Node 20+) |
+| API framework | NestJS 11 (Node >= 22.5) |
 | API language | TypeScript 5.9 |
 | Database | PostgreSQL 16 (raw SQL via `pg`, no ORM) |
 | Auth | Auth0 — RS256 JWT validated against JWKS; native Auth0 SDK on mobile |
@@ -49,7 +49,7 @@ Other top-level directories:
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js >= 22.5 (root `package.json` `engines`)
 - npm 10+
 - Docker Desktop
 
@@ -132,7 +132,7 @@ npm run android               # Expo Android build
 - React components: `PascalCase` (files and exports)
 - Hooks: `camelCase` prefixed with `use` (e.g. `useSurveySync`)
 - Utilities / services: `camelCase`
-- Test files: co-located as `*.test.ts(x)` (unit) or in `api/test/` as `*.e2e-spec.ts` (E2E)
+- Test files: co-located as `*.test.ts(x)` (unit); API integration/unit specs live in `api/test/` as `*.spec.ts`, and API E2E specs as `*.e2e-spec.ts`
 - DTOs: suffix with `Dto` or `Body` (e.g. `SurveyUpsertBody`)
 
 ### TypeScript
@@ -149,15 +149,15 @@ npm run android               # Expo Android build
 
 The mobile app is designed to work without connectivity. All survey data is persisted locally in SQLite before being synced.
 
-**SQLite schema** (`mobile/src/storage/db.ts`):
-- `local_surveys` — survey drafts with sync state and payload
+**SQLite schema** (`mobile/src/storage/db.ts`, `PRAGMA user_version` migrations, currently at 2 — migration 2 adds `payload_completion`, precomputed at the four payload-write sites instead of parsed from JSON on every list read):
+- `local_surveys` — survey drafts with sync state, payload and the precomputed `payload_completion`
 - `sync_queue` — ordered queue of pending operations (upsert, delete, etc.)
 - `local_attachments` — photo metadata and upload state
-- `app_metadata` — key/value store for app-level state
+- `local_meta` — key/value store for app-level state
 
 **Sync flow**:
 1. User actions write to `local_surveys` and enqueue an operation in `sync_queue`
-2. `useSurveySyncNetwork` drains the queue by calling `POST /surveys/sync`
+2. `useSurveySyncNetwork` (`mobile/src/hooks/survey-sync/useSurveySyncNetwork.ts`) drains the queue by calling `POST /v1/sync`; `GET /v1/sync/changes` pulls remote changes by cursor
 3. Server returns results; client applies them and clears processed entries
 4. Retry backoff applies on failure (max `MAX_RETRY_COUNT = 8` retries)
 5. Operations that exceed the retry limit are marked `sync_blocked = 1`
@@ -171,17 +171,21 @@ The mobile app is designed to work without connectivity. All survey data is pers
   - survey form (`useSurveyFormState`)
   - A narrow nearby-parcels context (`useNearbyParcelsState`) is split out of the form context so keystrokes do not re-render Home
 - Never call `useSurveySync` anywhere else; read state through the context hooks. Action objects are stable (`useStableActions` / `useLatestCallback` in `mobile/src/state/useLatestCallback.ts`)
-- `useSurveySync` (`mobile/src/hooks/useSurveySync.ts`) — central orchestrator, composed of sub-hooks:
+- `useSurveySync` (`mobile/src/hooks/useSurveySync.ts`) — sync and session orchestrator, composed of sub-hooks under `mobile/src/hooks/survey-sync/`:
   - `useAuth0Session` — authentication state and token lifecycle
-  - `useSurveySyncNetwork` — network sync operations
+  - `useLocalDataOwner` — local-data-owner gate (single-device guarantee, 01.5 WR-08)
+  - `useAttachmentPreviews` — attachment preview cache
+  - `useSurveySyncNetwork` — network sync operations (`POST /v1/sync`, `GET /v1/sync/changes`)
   - `useSurveySyncProfile` — profile sync
-  - `useSurveySyncSurveyOperations` — survey CRUD
+  - `useSurveySyncSurveyOperations` — survey CRUD, submit/retry/discard, attachments
+- The other hooks called once each, directly by `AppStateProvider`'s `useAppController` (not nested inside `useSurveySync`):
   - `useSurveyForm` — active form state during creation/editing
-  - `useSurveyList` — local survey list cache
+  - `useSurveyList` — local survey list cache and filters
   - `useEditingDraft` — draft editing workflow
   - `useSurveyDraftPatcher` — incremental patch accumulation
-  - `usePublicMapExplorer` — public map data fetching
   - `useGpsCapture` — device location capture
+  - `useNearbyParcels` — home screen's nearby-parcel summary, published through the narrow `useNearbyParcelsState` context
+- Hooks called directly by the screens that need them (not part of the single assembler): `usePublicMapExplorer` (public map, viewport bbox loading), `useParcelStatuses` (parcel selection and home), `useDebouncedValue` (map region debouncing)
 
 **Navigation** (`mobile/src/navigation/`):
 - `AppNavigation.tsx` mounts the `NavigationContainer` and picks the native or JS tab tree; stacks live in `stacks/`, tab trees in `tabs/`
@@ -205,14 +209,15 @@ The mobile app is designed to work without connectivity. All survey data is pers
 
 | Module | Path | Responsibility |
 |--------|------|----------------|
-| `auth` | `api/src/auth/` | AuthGuard (JWT/JWKS), `@CurrentUser` decorator, Auth0 management calls |
+| `auth` | `api/src/auth/` | AuthGuard (JWT/JWKS), `@CurrentUser` decorator, Auth0 management calls, client-aware throttler guard |
+| `config` | `api/src/config/` | Validated typed configuration (`env.schema.ts`, `app-config.ts`), production rules, `check-config.ts` |
 | `users` | `api/src/users/` | Profile CRUD, profile picture upload, account deletion |
-| `surveys` | `api/src/surveys/` | Survey CRUD, sync endpoint, IBP validation, parcel linkage, attachments, public map |
+| `surveys` | `api/src/surveys/` | Survey CRUD (`surveys.service.ts`, `surveys.repository.ts`), sync endpoints (`sync.controller.ts` -> `surveys-sync.service.ts`), IBP validation adapter (`ibp-rules.service.ts`), parcel linkage (`parcels.service.ts`/`parcels.controller.ts`), the cadastre provider (`cadastre-provider.service.ts`), survey events (`survey-events.service.ts`), attachments (`surveys-attachments.service.ts`), and the public map/parcel-status endpoints (`public-map.service.ts`, `public.controller.ts`) |
 | `database` | `api/src/database/` | `DatabaseService` (pg Pool wrapper) |
 | `storage` | `api/src/storage/` | StorageService: single owner of object storage (S3/MinIO or local), key builder, size and MIME checks |
 | `reports` | `api/src/reports/` | Moderation/report endpoints |
-| `debug` | `api/src/debug/` | Dev-only data reset endpoints |
-| `common` | `api/src/common/` | Shared utilities and types |
+| `debug` | `api/src/debug/` | Dev-only data reset endpoints, gated by `DEBUG_DATA_RESET_ENABLED` and `isDebugSurfaceEnabled()` |
+| `common` | `api/src/common/` | Shared utilities and types (rate-limit config, etc.) |
 
 **Database access**: raw SQL via `pg` library through `DatabaseService`. No ORM. Migrations live in `api/migrations/` and run via `api/scripts/migrate.js`.
 
@@ -334,7 +339,9 @@ npm run format:check
 | `OBJECT_STORAGE_MODE` | `local` or `minio` |
 | `OBJECT_STORAGE_BUCKET/ENDPOINT/REGION/ACCESS_KEY/SECRET_KEY` | S3 config |
 | `ATTACHMENTS_UPLOAD_DIR` | Local upload dir (when mode = local) |
-| `CADASTRE_PROVIDER` | `synthetic` (offline) or `ign` (real IGN parcels) |
+| `CADASTRE_PROVIDER` | `synthetic` (offline) or `ign` (real IGN parcels); `CADASTRE_PROVIDER_ALLOW_FALLBACK`, `CADASTRE_PROVIDER_TIMEOUT_MS`, `CADASTRE_IGN_REVERSE_URL`, `CADASTRE_IGN_APICARTO_PARCEL_URL`, `CADASTRE_IGN_WFS_URL/TYPENAME/COUNT` configure the `ign` provider |
+| `DEBUG_DATA_RESET_ENABLED` | Gates `/v1/debug/reset-ibp-data` and `/v1/debug/reset-user-data` (dev-only) |
+| `TRUST_PROXY` | Express trust-proxy value (default `loopback,uniquelocal`); trusts Caddy's `X-Forwarded-For` for per-client rate limits without trusting public peers |
 | `CORS_ORIGIN` | Required in production: `none` (no browser origin) or a comma-separated origin list; startup refuses otherwise |
 
 The API sends no email: the SMTP settings and `EmailService` were removed (phase 01.9). Do not re-add them; `infra/vps/check-env.sh` reports leftover `SMTP_*` lines as obsolete.
@@ -355,15 +362,20 @@ The API sends no email: the SMTP settings and `EmailService` were removed (phase
 
 ### GitHub Actions
 
-**`ci.yml`** — runs on every push and PR to `main`:
-1. Lint (`npm run lint`)
-2. Format check (`npm run format:check`)
-3. Type check (`npm run typecheck`)
-4. Unit tests — the `ibp-domain` package (`npm --workspace @cortege/ibp-domain run test:coverage`, in the API unit job), then API and mobile
-5. E2E tests — API against a test PostgreSQL service (`npm run test:e2e`)
-6. Docker image build — when `api/**` or `packages/**` files changed; pushed only on `main`. Its smoke tests check the image runs as non-root, holds no mobile dependency, and loads the built `ibp-domain` package
-7. Native builds — `native-android` (unsigned `gradlew assembleRelease`) and `native-ios` (unsigned Release simulator `xcodebuild`, `macos-26`), each after `expo prebuild --clean`; they run when the `native` path filter matches (`mobile/**`, `packages/**`, `package.json`, `package-lock.json`, `ci.yml`) or on a manual `workflow_dispatch`. See `mobile/README-native.md`
-8. `CI OK` — aggregate gate; both native jobs are in its required set (success or skipped), and the Docker image build waits on it
+**`ci.yml`** — runs on every push and PR to `main`, plus manual `workflow_dispatch`. Jobs:
+1. `changes` — detects which paths changed, to gate the path-filtered jobs below
+2. `check` — lint (`npm run lint`), format check (`npm run format:check`), typecheck (`npm run typecheck`), `actionlint` over `.github/workflows/*.yml`
+3. `unit-api` — API unit tests, including the `ibp-domain` package (`npm --workspace @cortege/ibp-domain run test:coverage`)
+4. `unit-mobile` — mobile unit tests
+5. `e2e` and `e2e-minio` — API E2E against a test PostgreSQL service, in local-storage and MinIO-storage modes
+6. `mobile-build` — `expo-doctor`, `expo export` (bundle checks)
+7. `native-android` and `native-ios` — unsigned native builds (`gradlew assembleRelease` / Release-simulator `xcodebuild` on `macos-26`), each after `expo prebuild --clean`; path-filtered to `mobile/**`, `packages/**`, `package.json`, `package-lock.json`, `ci.yml`, or run on `workflow_dispatch`. See `mobile/README-native.md`
+8. `audit` — repository audit checks
+9. `image-check` — Docker image build when `api/**` or `packages/**` changed; its smoke tests check the image runs as non-root, holds no mobile dependency, and loads the built `ibp-domain` package
+10. `ci-ok` — aggregate gate; both native jobs are in its required set (success or skipped), and `image-check` waits on it
+11. `build` — pushes the image on `main` (see Deployment below)
+
+A separate `codeql.yml` workflow runs CodeQL analysis.
 
 **Deployment** — pull-based, no workflow:
 
@@ -417,6 +429,9 @@ docs/
 ├── design/
 │   ├── charte-graphique-etats-sauvages-spec.md  # Brand & design system
 │   └── ux-ui-audit-2026-09.md             # UX/UI audit: findings, motion system, roadmap
+├── audits/
+│   ├── audit-2026-09-code-complet.md      # Full code audit, findings linked to their closing PRs
+│   └── plan-remediation-2026-09.md        # Remediation plan tracking the audit lots (L1-L20)
 ├── references/                            # Links to CNPF IBP methodology (PDFs not redistributed)
 └── user-tests/                            # User testing reports
 ```
