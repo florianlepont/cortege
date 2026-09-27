@@ -4,6 +4,7 @@ import { commonFr } from "./common"
 import { componentsFr } from "./components"
 import { factorDetailFr } from "./factor-detail"
 import { factorInputFr } from "./factor-input"
+import { factorPagerFr } from "./factor-pager"
 import { homeFr } from "./home"
 import { ibpMethodFr } from "./ibp-method"
 import { labelsFr } from "./labels"
@@ -34,6 +35,7 @@ export const fr = {
   surveyForm: surveyFormFr,
   factorDetail: factorDetailFr,
   factorInput: factorInputFr,
+  factorPager: factorPagerFr,
   parcelSelection: parcelSelectionFr,
   profileSetup: profileSetupFr,
   ownerConflict: ownerConflictFr,

@@ -70,6 +70,7 @@ describe("French catalogue", () => {
         "components",
         "factorDetail",
         "factorInput",
+        "factorPager",
         "home",
         "ibpMethod",
         "labels",
