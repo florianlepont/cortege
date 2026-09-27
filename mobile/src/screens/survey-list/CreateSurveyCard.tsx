@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandRadius, brandTintOnLight, brandTypography } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
-import { triggerHaptic } from "./haptics"
+import { feedback } from "../../ui/feedback"
 
 type CreateSurveyCardProps = {
   firstSurvey: boolean
@@ -20,7 +20,7 @@ export function CreateSurveyCard({ firstSurvey, onOpenCreateSurvey }: CreateSurv
       accessibilityRole="button"
       accessibilityLabel={copy.a11y}
       onPress={() => {
-        triggerHaptic()
+        feedback.selection()
         onOpenCreateSurvey()
       }}
       style={({ pressed }) => [pressed && styles.createSurveyCardPressed]}

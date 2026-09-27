@@ -9,7 +9,7 @@ import type { LocalSurvey } from "../../storage"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { ContinueDraftCard } from "./ContinueDraftCard"
-import { triggerHaptic } from "./haptics"
+import { feedback } from "../../ui/feedback"
 import { styles as sharedStyles } from "./styles"
 
 type UiStatus = ReturnType<typeof resolveSurveyUiStatus>
@@ -131,7 +131,7 @@ export function AttentionSection({
               status: formatSurveyUiStatusLabel(uiStatus),
             })}
             onPress={() => {
-              triggerHaptic()
+              feedback.selection()
               onOpenSurvey(survey.id)
             }}
             style={({ pressed }) => [

@@ -385,11 +385,13 @@ export const brandFieldState = {
 } as const
 
 // Phase 3 (D-0 token slice, DS-06): shared pressed/disabled feedback for the new tap-first controls.
+// Phase 4 adds `rippleColor` for AppPressable's Android `android_ripple`.
 export const brandInteraction = {
   pressedScale: 0.97,
   pressedOpacity: 0.9,
   disabledOpacity: 0.4,
   hitTarget: { min: 44 },
+  rippleColor: "rgba(0, 0, 0, 0.08)",
 } as const
 
 // Phase 3 (D-0 token slice, FLOW-09): parcel map polygon colors, readable in direct sunlight.
@@ -408,4 +410,34 @@ export const brandMapTokens = {
   // (score-band markers with a legend) is Phase 9's job, not this phase's.
   publicMarkerSurvey: "#2a7a52",
   publicMarkerCurrentPosition: "#245f96",
+} as const
+
+// Phase 4 (DS-06..DS-09, audit §4): the motion system. Kept as plain data (durations in ms, easing
+// control points, spring configs) rather than importing `react-native-reanimated` here, so this
+// stays a framework-free token file like the rest of it — consumers pass these straight into
+// `withTiming`/`Easing.bezier`/`withSpring`, whose config shapes these objects already match.
+export const brandMotion = {
+  durations: {
+    instant: 100,
+    fast: 160,
+    base: 240,
+    slow: 360,
+    emphasis: 500,
+  },
+  // Bezier control points for `Easing.bezier(...)`.
+  easings: {
+    standard: [0.2, 0, 0, 1],
+    decelerate: [0, 0, 0, 1],
+    accelerate: [0.3, 0, 1, 1],
+  },
+  // Config objects for `withSpring(value, brandMotion.springs.press)`.
+  springs: {
+    press: { damping: 18, stiffness: 420, mass: 0.6 },
+    snappy: { damping: 20, stiffness: 260 },
+    gentle: { damping: 22, stiffness: 140 },
+  },
+  // List entrance stagger: 40ms per item, capped at 8 items so a long list doesn't take
+  // noticeably longer to finish animating in than a short one.
+  staggerMs: 40,
+  staggerMax: 8,
 } as const

@@ -12,8 +12,27 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactActual.createElement(name, props, children)
 
+  type PressableRenderProp<T> = T | ((state: { pressed: boolean }) => T)
+  const resolvePressableProp = <T,>(prop: PressableRenderProp<T> | undefined): T | undefined =>
+    typeof prop === "function"
+      ? (prop as (state: { pressed: boolean }) => T)({ pressed: false })
+      : prop
+
   return {
-    Pressable: mockComponent("Pressable"),
+    // AppPressable renders Pressable's `children`/`style` in their function-of-pressed-state form.
+    Pressable: ({
+      children,
+      style,
+      ...props
+    }: {
+      children?: PressableRenderProp<React.ReactNode>
+      style?: PressableRenderProp<unknown>
+    }) =>
+      ReactActual.createElement(
+        "Pressable",
+        { ...props, style: resolvePressableProp(style) },
+        resolvePressableProp(children),
+      ),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T): T => styles },

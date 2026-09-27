@@ -10,7 +10,7 @@ import {
 } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage"
-import { triggerHaptic } from "./haptics"
+import { feedback } from "../../ui/feedback"
 import { styles as sharedStyles } from "./styles"
 
 const t = fr.surveyList.continueDraft
@@ -27,7 +27,7 @@ export function ContinueDraftCard({ survey, onOpenSurvey }: ContinueDraftCardPro
       accessibilityRole="button"
       accessibilityLabel={t.a11y(survey.site_name)}
       onPress={() => {
-        triggerHaptic()
+        feedback.selection()
         onOpenSurvey(survey.id)
       }}
       style={({ pressed }) => [styles.draftRow, pressed && sharedStyles.rowPressed]}

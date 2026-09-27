@@ -8,7 +8,7 @@ import {
   brandStatTileTint,
   brandTypography,
 } from "../../app/brand-tokens"
-import { triggerHaptic } from "./haptics"
+import { feedback } from "../../ui/feedback"
 
 // P3-PERSON-05: severity prop for visual differentiation
 export type StatTileSeverity = "neutral" | "warning" | "danger"
@@ -45,7 +45,7 @@ export function StatTile({
   return (
     <Pressable
       onPress={() => {
-        triggerHaptic()
+        feedback.selection()
         onPress()
       }}
       style={({ pressed }) => [pressed && styles.statTilePressed]}

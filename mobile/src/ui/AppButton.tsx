@@ -1,11 +1,4 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  TextStyle,
-  ViewStyle,
-} from "react-native"
+import { ActivityIndicator, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -16,6 +9,7 @@ import {
   brandTypography,
 } from "../app/brand-tokens"
 import { fr } from "../i18n"
+import { AppPressable } from "./AppPressable"
 
 type AppButtonVariant = "primary" | "secondary" | "danger" | "dangerSoft"
 type AppButtonSize = "sm" | "md" | "lg"
@@ -60,8 +54,7 @@ export function AppButton({
   const isDisabled = disabled || loading
 
   return (
-    <Pressable
-      accessibilityRole="button"
+    <AppPressable
       accessibilityLabel={accessibilityLabel ?? label ?? fr.components.appButton.defaultLabel}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
@@ -103,7 +96,7 @@ export function AppButton({
           {label}
         </Text>
       ) : null}
-    </Pressable>
+    </AppPressable>
   )
 }
 

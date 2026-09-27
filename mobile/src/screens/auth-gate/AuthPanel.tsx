@@ -1,17 +1,17 @@
 import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import * as Haptics from "expo-haptics"
 import { LEGAL_PRIVACY_URL, LEGAL_TERMS_URL } from "../../app/auth0-config"
 import { brandSpacing } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
+import { feedback } from "../../ui/feedback"
 import { authStyles } from "./styles"
 
 const WEBSITE_URL = "https://etatssauvages.org"
 const texts = fr.authGate
 
 const openLink = (url: string): void => {
-  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+  feedback.impact.light()
   void Linking.openURL(url)
 }
 

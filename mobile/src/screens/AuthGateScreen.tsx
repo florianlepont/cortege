@@ -13,11 +13,11 @@ import {
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
-import * as Haptics from "expo-haptics"
 import { brandColors } from "../app/brand-tokens"
 import { fr } from "../i18n"
 import { AppField } from "../ui/AppField"
 import { TypewriterSplash } from "../components/TypewriterSplash"
+import { feedback } from "../ui/feedback"
 import { AuthPanel } from "./auth-gate/AuthPanel"
 import { HeroSection } from "./auth-gate/HeroSection"
 import {
@@ -103,16 +103,16 @@ export function AuthGateScreen({
   }, [heroAnim, logoAnim, martenAnim, panelAnim, reducedMotion])
 
   const handleLoginPress = async (): Promise<void> => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    feedback.impact.light()
     try {
       setSubmitting(true)
       setAuthError(null)
       const error = await onLogin()
       if (error) {
         setAuthError(error)
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+        feedback.notify.error()
       } else {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        feedback.notify.success()
       }
     } finally {
       setSubmitting(false)
@@ -120,16 +120,16 @@ export function AuthGateScreen({
   }
 
   const handleRegisterPress = async (): Promise<void> => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    feedback.impact.light()
     try {
       setSubmitting(true)
       setAuthError(null)
       const error = await onRegister()
       if (error) {
         setAuthError(error)
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+        feedback.notify.error()
       } else {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        feedback.notify.success()
       }
     } finally {
       setSubmitting(false)
@@ -137,7 +137,7 @@ export function AuthGateScreen({
   }
 
   const handleForgotPasswordPress = async (): Promise<void> => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    feedback.impact.light()
     await onForgotPassword()
   }
 
