@@ -45,7 +45,7 @@ list is never ambiguous.
 - [x] **Phase 1.5: Mobile sync engine reliability** (INSERTED) - Single-flight drain, bounded batches, durable photos (completed 2026-09-25)
 - [x] **Phase 1.6: Sync feed ordering and unified object storage** (INSERTED) - No skipped change between devices; one bounded storage service (completed 2026-09-25)
 - [x] **Phase 1.7: API configuration, service split and database tuning** (INSERTED) - Fail-fast config, split SurveysService, bounded and indexed queries (completed 2026-09-26)
-- [ ] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested
+- [x] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested (completed 2026-09-27)
 - [ ] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs
 - [ ] **Phase 2: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI; the UX audit's Lot 0 trust bugs (score scale, sync-status masking, decimal input, account-deletion copy) are folded in
 - [ ] **Phase 3: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions
@@ -303,7 +303,7 @@ Plans:
 - [x] 01.8-13-PLAN.md — Form screens: method version picker (v3.2 default), scoring context by version, A cover, per-version help, / 50 (wave 5)
 - [x] 01.8-14-PLAN.md — Detail screens: version display, cas editor, switch to v3.2 for drafts, / 50 with band-coloured /35 and /15 sub-scores (wave 5)
 - [x] 01.8-15-PLAN.md — Citation files and form spec say v3.2 implemented; architecture docs, docs index, native README and CLAUDE.md (wave 6)
-- [ ] 01.8-16-PLAN.md — Phase gate: local gate, CI evidence with native builds, merge and API deploy with probes, owner's 6-step iPhone check (wave 7)
+- [x] 01.8-16-PLAN.md — Phase gate: local gate, CI evidence with native builds, merge and API deploy with probes, owner's 6-step iPhone check (wave 7)
 
 ### Phase 01.9: Mobile state architecture, i18n, accessibility and hygiene (INSERTED)
 
@@ -576,7 +576,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.5. Mobile sync engine reliability | 12/12 | Complete    | 2026-09-25 |
 | 1.6. Sync feed ordering and unified object storage | 9/9 | Complete    | 2026-09-25 |
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
-| 1.8. Shared IBP domain package and test completeness | 15/16 | In Progress|  |
+| 1.8. Shared IBP domain package and test completeness | 16/16 | Complete    | 2026-09-27 |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
 | 2. Association-only sharing & scope trim | 0/TBD | Not started | - |
 | 3. Field-Entry Ergonomics (UX Lot 1) | 0/TBD | Not started | - |
