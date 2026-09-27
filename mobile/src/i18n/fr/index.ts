@@ -3,6 +3,7 @@ import { authGateFr } from "./auth-gate"
 import { commonFr } from "./common"
 import { componentsFr } from "./components"
 import { factorDetailFr } from "./factor-detail"
+import { factorInputFr } from "./factor-input"
 import { homeFr } from "./home"
 import { ibpMethodFr } from "./ibp-method"
 import { labelsFr } from "./labels"
@@ -32,6 +33,7 @@ export const fr = {
   surveyDetail: surveyDetailFr,
   surveyForm: surveyFormFr,
   factorDetail: factorDetailFr,
+  factorInput: factorInputFr,
   parcelSelection: parcelSelectionFr,
   profileSetup: profileSetupFr,
   ownerConflict: ownerConflictFr,
