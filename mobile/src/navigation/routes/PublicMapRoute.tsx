@@ -3,7 +3,7 @@ import { View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { usePublicMapExplorer } from "../../hooks/usePublicMapExplorer"
 import { PublicMapScreen } from "../../screens/PublicMapScreen"
-import { useSession } from "../../state/session-context"
+import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -25,12 +25,14 @@ import type { PublicMapRouteProps } from "../types"
 export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRouteProps) {
   const insets = useSafeAreaInsets()
   const { state: session } = useSession()
+  const accessToken = useAccessToken()
   const { state: surveys } = useSurveys()
   const syncActions = useSyncActions()
   const reloadSignal = useContext(PublicMapReloadContext)
 
   const explorer = usePublicMapExplorer({
     apiUrl: session.apiUrl,
+    accessToken,
     onStatusChange: syncActions.setStatus,
   })
 
@@ -55,6 +57,8 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
   return (
     <View style={[styles.tabScreenContainer, { marginTop: -insets.top }]}>
       <PublicMapScreen
+        apiUrl={session.apiUrl}
+        accessToken={accessToken}
         items={explorer.items}
         parcelStatuses={explorer.parcelStatuses}
         ownSurveyIds={surveys.ownSurveyIds}
@@ -68,7 +72,6 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
         onChangeRegion={explorer.setRegion}
         onLoad={explorer.loadPublicMap}
         onLoadParcels={explorer.loadPublicParcels}
-        onReportSurvey={syncActions.handleReportSurvey}
         onViewportBboxChange={handleViewportBboxChange}
       />
     </View>

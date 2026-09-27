@@ -90,12 +90,15 @@ export type SurveyUiStatus =
   | "submitted"
   | "expired"
 
+// BUG-03 (UX audit, Phase 2): a sync failure is checked before "submitted", so a survey the app
+// already marked submitted but then failed to sync never reads "Soumis" in green — the workflow
+// status and the sync status are two different axes, and a failure on either always wins.
 export const resolveSurveyUiStatus = (survey: LocalSurvey): SurveyUiStatus => {
-  if (survey.status === "submitted") return "submitted"
   if (survey.status === "expired") return "expired"
   if (survey.sync_state === "failed") {
     return survey.sync_blocked === 1 ? "sync_blocked" : "sync_error"
   }
+  if (survey.status === "submitted") return "submitted"
   if (survey.sync_state === "pending") return "sync_pending"
   return "draft"
 }

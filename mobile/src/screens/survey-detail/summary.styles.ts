@@ -164,6 +164,44 @@ export const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
+  historyPanel: {
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: brandColors.divider,
+    backgroundColor: brandColors.panel,
+    padding: 18,
+    gap: 10,
+    ...brandShadow.card,
+  },
+  historyRow: {
+    borderTopWidth: 1,
+    borderTopColor: brandColors.divider,
+    paddingTop: 8,
+    gap: 2,
+  },
+  historyRowTitle: {
+    ...brandTypography.label,
+    color: brandColors.forest,
+  },
+  historyRowMeta: {
+    ...brandTypography.meta,
+    color: brandColors.textSecondary,
+  },
+  historyDeltaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  historyDeltaPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: brandColors.panelMuted,
+  },
+  historyDeltaPillText: {
+    ...brandTypography.meta,
+    color: brandColors.forest,
+  },
   submittedReadonlyBanner: {
     borderRadius: 28,
     borderWidth: 1,

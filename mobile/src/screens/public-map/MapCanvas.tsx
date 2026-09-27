@@ -23,6 +23,7 @@ export type MapCanvasProps = {
   currentLocation: LatLng | null
   onRegionChangeComplete: (region: Region, details?: Details) => void
   onSelectSurvey: (id: string) => void
+  onSelectParcel: (parcelId: string) => void
   onZoomTo: (region: Region) => void
   onOpenClusterList: (items: PublicMapItem[]) => void
 }
@@ -43,6 +44,7 @@ export const MapCanvas = memo(function MapCanvas({
   currentLocation,
   onRegionChangeComplete,
   onSelectSurvey,
+  onSelectParcel,
   onZoomTo,
   onOpenClusterList,
 }: MapCanvasProps) {
@@ -78,7 +80,10 @@ export const MapCanvas = memo(function MapCanvas({
       onRegionChangeComplete={onRegionChangeComplete}
     >
       <IgnCadastreTileOverlay enabled={parcelLayerRenderable} zIndex={0} />
-      <ParcelOverlayPolygons items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS} />
+      <ParcelOverlayPolygons
+        items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS}
+        onParcelPress={onSelectParcel}
+      />
       {currentLocation ? (
         <Marker
           coordinate={currentLocation}

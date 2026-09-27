@@ -5,6 +5,7 @@ import { fr, logStatusDetail, type StatusMessage } from "../i18n"
 
 type UsePublicMapExplorerArgs = {
   apiUrl: string
+  accessToken: string | null
   onStatusChange: (message: StatusMessage) => void
 }
 
@@ -20,7 +21,11 @@ type LoadParcelsInput = {
   zoom: number
 }
 
-export function usePublicMapExplorer({ apiUrl, onStatusChange }: UsePublicMapExplorerArgs) {
+export function usePublicMapExplorer({
+  apiUrl,
+  accessToken,
+  onStatusChange,
+}: UsePublicMapExplorerArgs) {
   const [items, setItems] = useState<PublicMapItem[]>([])
   const [loading, setLoading] = useState(false)
   const [fromDate, setFromDate] = useState("")
@@ -48,13 +53,17 @@ export function usePublicMapExplorer({ apiUrl, onStatusChange }: UsePublicMapExp
         return
       }
 
+      if (!accessToken) {
+        return
+      }
+
       const requestId = itemsRequestRef.current + 1
       itemsRequestRef.current = requestId
       pendingItemsKeyRef.current = key
       setLoading(true)
 
       try {
-        const payload = await fetchPublicMapItems(apiUrl, {
+        const payload = await fetchPublicMapItems(apiUrl, accessToken, {
           from: fromDate,
           to: toDate,
           region,
@@ -80,12 +89,12 @@ export function usePublicMapExplorer({ apiUrl, onStatusChange }: UsePublicMapExp
         }
       }
     },
-    [apiUrl, fromDate, onStatusChange, region, toDate],
+    [apiUrl, accessToken, fromDate, onStatusChange, region, toDate],
   )
 
   const loadPublicParcels = useCallback(
     async (input: LoadParcelsInput): Promise<void> => {
-      if (!input.bbox || input.bbox.trim().length === 0) {
+      if (!input.bbox || input.bbox.trim().length === 0 || !accessToken) {
         return
       }
 
@@ -94,7 +103,7 @@ export function usePublicMapExplorer({ apiUrl, onStatusChange }: UsePublicMapExp
       setParcelsLoading(true)
 
       try {
-        const payload = await fetchPublicParcelStatuses(apiUrl, {
+        const payload = await fetchPublicParcelStatuses(apiUrl, accessToken, {
           bbox: input.bbox,
           zoom: input.zoom,
           year: new Date().getFullYear(),
@@ -117,7 +126,7 @@ export function usePublicMapExplorer({ apiUrl, onStatusChange }: UsePublicMapExp
         }
       }
     },
-    [apiUrl, onStatusChange],
+    [apiUrl, accessToken, onStatusChange],
   )
 
   return {

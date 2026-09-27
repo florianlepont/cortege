@@ -3,11 +3,12 @@ import {
   type FactorOutcome,
   type FactorScorer,
   INVALID,
+  INVALID_GENUS,
   incomplete,
   readANativeCover,
   readDensityPair,
+  readFactorAGenusCount,
   readFloweringPercent,
-  readGenusCount,
   scored,
   scoreFactorB,
   scoreFactorF,
@@ -41,13 +42,17 @@ function scoreDensityV32(
 const scoreFactorAV32: FactorScorer = (_key, raw, ctx) => {
   const cover = readANativeCover(raw)
   if (cover === "invalid") return INVALID
-  const count = readGenusCount(raw)
-  if (count === null) {
+  const cas = isIbpCas(ctx.survey.ibp_cas) ? ctx.survey.ibp_cas : null
+  const genusResult = readFactorAGenusCount(raw, cas)
+  if (genusResult.kind === "invalid") return INVALID_GENUS
+  if (genusResult.kind === "none") {
     return cover === null ? INVALID : incomplete("native_genus_count")
   }
-  if (!isIbpCas(ctx.survey.ibp_cas)) return incomplete("ibp_cas")
+  if (cas === null) return incomplete("ibp_cas")
   if (cover === null) return incomplete("native_cover")
-  return scored(applyNativeCoverCap(scoreGenusCount(count, usesCas3Scale(ctx.survey)), cover))
+  return scored(
+    applyNativeCoverCap(scoreGenusCount(genusResult.count, usesCas3Scale(ctx.survey)), cover),
+  )
 }
 
 export const scoreFactorV32: FactorScorer = (key, raw, ctx) => {

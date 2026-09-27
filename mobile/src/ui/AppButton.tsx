@@ -166,6 +166,8 @@ const styles = StyleSheet.create({
   labelSecondary: {
     color: brandComponentTokens.button.secondaryBorder,
   },
+  // DS-02: terracotta directly on errorSoft measured ~2.97:1 (WCAG fail); brandOnDangerSurface
+  // (Phase 4) supersedes Phase 2's interim textPrimary fix with the named token.
   labelDangerSoft: {
     color: brandOnDangerSurface,
   },

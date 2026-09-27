@@ -27,6 +27,7 @@ import { DetailHeader } from "./survey-detail/DetailHeader"
 import { DetailTabBar } from "./survey-detail/DetailTabBar"
 import { EventsTab } from "./survey-detail/EventsTab"
 import { FactorsSection } from "./survey-detail/FactorsSection"
+import { HistorySection } from "./survey-detail/HistorySection"
 import { resolveHeroMetric, resolveHeroSubmitState } from "./survey-detail/hero-state"
 import { MediaSection } from "./survey-detail/MediaSection"
 import { resolveScoringContext, ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
@@ -40,6 +41,7 @@ import {
 
 type SurveyDetailScreenProps = {
   apiUrl: string
+  accessToken: string | null
   selectedSurvey: LocalSurvey
   selectedSurveyAttachments: LocalAttachment[]
   surveyDetailTab: SurveyDetailTab
@@ -56,7 +58,6 @@ type SurveyDetailScreenProps = {
   onSubmitSurvey: (surveyId: string) => Promise<void>
   onRetrySurvey: (surveyId: string) => Promise<void>
   onDiscardSurvey: (surveyId: string) => Promise<void>
-  onToggleVisibility: (surveyId: string, visibility: "private" | "public") => Promise<void>
   onOpenFactor: (surveyId: string, factor: FactorKey) => Promise<void> | void
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
   onUpdateRegionVersion: (surveyId: string, region: RegionVersion) => Promise<void> | void
@@ -71,6 +72,7 @@ type SurveyDetailScreenProps = {
 
 export function SurveyDetailScreen({
   apiUrl,
+  accessToken,
   selectedSurvey,
   selectedSurveyAttachments,
   surveyDetailTab,
@@ -87,7 +89,6 @@ export function SurveyDetailScreen({
   onSubmitSurvey,
   onRetrySurvey,
   onDiscardSurvey,
-  onToggleVisibility,
   onOpenFactor,
   onRenameSurvey,
   onUpdateRegionVersion,
@@ -121,6 +122,7 @@ export function SurveyDetailScreen({
     [detail],
   )
   const localDraft = useLocalDraftSummary(selectedSurvey)
+  const historyParcelId = detail?.parcel_ids?.[0] ?? detail?.parcel_id ?? null
 
   const attachmentPreviewKey = selectedSurveyAttachments
     .map((attachment) => `${attachment.id}:${attachment.file_state}`)
@@ -231,6 +233,7 @@ export function SurveyDetailScreen({
 
       <MediaSection
         apiUrl={apiUrl}
+        accessToken={accessToken}
         survey={selectedSurvey}
         siteName={activeSiteName}
         attachments={selectedSurveyAttachments}
@@ -275,12 +278,19 @@ export function SurveyDetailScreen({
             canEditSurvey={canEditSurvey}
             onOpenFactor={(factor) => void onOpenFactor(selectedSurvey.id, factor)}
           />
+          <HistorySection
+            apiUrl={apiUrl}
+            accessToken={accessToken}
+            parcelId={historyParcelId}
+            currentSurveyId={selectedSurvey.id}
+            currentScores={detail?.scores ?? null}
+            currentFactorResults={detail?.factor_results ?? null}
+          />
           <DetailActions
             survey={selectedSurvey}
             onDeleteSurvey={onDeleteSurvey}
             onRetrySurvey={onRetrySurvey}
             onDiscardSurvey={onDiscardSurvey}
-            onToggleVisibility={onToggleVisibility}
           />
         </SummaryTab>
       ) : null}

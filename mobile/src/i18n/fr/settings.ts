@@ -4,7 +4,7 @@ export const settingsFr = {
     title: "Compte",
     subtitle: "Gestion de votre compte et de vos données.",
     deleteWarning:
-      "Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
+      "Cette action est irréversible. Votre identité (nom, e-mail, photo de profil) sera supprimée ; vos relevés déjà soumis seront anonymisés et conservés à des fins scientifiques.",
     deleteButton: "Supprimer mon compte",
   },
   sync: {
@@ -24,11 +24,6 @@ export const settingsFr = {
     resetUserData: "Vider la base utilisateur",
   },
   alerts: {
-    deleteAccount: {
-      title: "Supprimer mon compte",
-      message:
-        "Cette action est irréversible. Toutes vos données seront définitivement supprimées, y compris vos relevés et pièces jointes.",
-    },
     resetIbpData: {
       title: "Vider la base IBP",
       message: "Toutes les données IBP locales seront supprimées.",

@@ -4,7 +4,8 @@
 
 Accepted for phase 01.8 (2026-09-26). Supersedes
 [`ibp-validation-matrix-v1.md`](ibp-validation-matrix-v1.md), which is kept as the pre-01.8
-baseline. Produced for CH-10 of [ADR-003](adr-003-ibp-method-version-v1.md).
+baseline. Produced for CH-10 of [ADR-003](adr-003-ibp-method-version-v1.md). Extended in phase 5
+(2026-09-27) with the Factor A genus list (MAT-A-09..11, CH-12).
 
 ## Date
 
@@ -79,6 +80,9 @@ applies when `region_version=ACA` and `vegetation_stage=subalpin`.
 | MAT-A-01@v3.0 | draft | ACA, collineen | `A.native_genus_count=2` | `A=1` | none |
 | MAT-A-02@v3.0 | draft | ACA, subalpin | `A.native_genus_count=2` | `A=2` (subalpine scale) | none |
 | MAT-A-06@v3.0 | draft | ACA, collineen | `A.native_genus_count=5`; `B.strata_count=5`, `B.covered_autochthonous_percent=40` | `A=2` (cap on A, cover from B's legacy field), `B=5` | none |
+| MAT-A-09@v3.0 | draft | any | `A.genera=[Fagus, Quercus_deciduae, Quercus_sempervirens]`, `A.native_cover_percent=60` | `A=2` (count derived from the list: 3 distinct genera) | none |
+| MAT-A-10@v3.0 | draft | any | `A.genera=[Fagus, Pistacia]`, `A.native_cover_percent=60` | `A=0` (v3.0 has no cas: Pistacia, supplementary, never counts) | none |
+| MAT-A-11@v3.0 | draft | any | `A.genera=[Ficus]`, `A.native_cover_percent=60` | not scored | B `factor_a_genus_invalid` (Ficus is not on the CNPF list, A-6) |
 | MAT-B-01@v3.0 | draft | any | `B.strata_count=5`, `B.covered_autochthonous_percent=40` | `B=5` (no cap on B; v1 said 2) | none |
 | MAT-C-01@v3.0 | draft | any | `C.bmg_count=0`, `C.bmm_count=2`, `C.surface_ha=1` | `C=1` | none |
 | MAT-C-02@v3.0 | draft | any | `C.bmg_count=1`, `C.bmm_count=1`, `C.surface_ha=2` | `C=0` (BMm/ha alone is 0.5) | none |
@@ -123,6 +127,9 @@ need `ibp_cas`. The cas-3 scale for A and G applies when `ibp_cas=3` or `ibp_cas
 | MAT-A-05@v3.2 | draft | cas 2 with `ibp_cas3_scale=true`; then cas 2 alone | `A.native_genus_count=2`, `A.native_cover_percent=60` | with the flag: `A=2` (cas-3 scale); cas 2 alone: `A=1` | none |
 | MAT-A-07@v3.2 | draft | cas 1 | `A.native_genus_count=1`, `A.native_cover_percent=10` | `A=0` (the cap never raises a score) | none |
 | MAT-A-08@v3.2 | draft | cas 1 | `A.native_genus_count=5`, `A.native_cover_below_50=true` | `A=2` | none |
+| MAT-A-09@v3.2 | draft | cas 1 | `A.genera=[Fagus, Quercus_deciduae, Quercus_sempervirens]`, `A.native_cover_percent=60` | `A=2` (count derived from the list: 3 distinct genera) | none |
+| MAT-A-10@v3.2 | draft | cas 4; then cas 1 | `A.genera=[Fagus, Pistacia]`, `A.native_cover_percent=60` | cas 4: `A=1` (Pistacia counts, 2 genera); cas 1: `A=0` (Pistacia excluded, 1 genus) | none |
+| MAT-A-11@v3.2 | draft | cas 1 | `A.genera=[Ficus]`, `A.native_cover_percent=60` | not scored | B `factor_a_genus_invalid` (Ficus is not on the CNPF list, A-6) |
 | MAT-B-01@v3.2 | draft | any | `B.strata_count=5` (no cover) | `B=5` | none |
 | MAT-C-01@v3.2 | draft | any | `C.bmg_count=0`, `C.bmm_count=2`, `C.surface_ha=1` | `C=1` | none |
 | MAT-C-02@v3.2 | draft | any | `C.bmg_count=1`, `C.bmm_count=1`, `C.surface_ha=2` | `C=1` ((BMg+BMm)/ha = 1) | none |
@@ -190,7 +197,7 @@ Where each field-definition row of the comparison document lands in the app (D-0
 |---|---|
 | CLS-1, CLS-3, CLS-4 | New inputs: cas picker (1 to 4) and the cas-3 scale switch (`ibp_cas3_scale`) |
 | A-1 | New input: native cover on A (`A.native_cover_percent`) |
-| A-2, A-3, A-4, A-5, A-8 | Help text only; the genus list is phase 2 (CH-12) |
+| A-2, A-3, A-4, A-5, A-8 | Contract and package done in phase 5 (`A.genera`, CH-12; MAT-A-09..11 above); the mobile genus-entry UI and help text are phase 6 |
 | B-2, B-3 | Help text: strata heights per cas (cas 1: 1.5-7, 7-18, over 18 m; cas 2, 3 and 4: 1.5-5, 5-12, over 12 m) |
 | CD-2, CD-3, CD-4, CD-5, E-2, E-3, E-4 | Help text: diameter thresholds per cas and the slow-growing species list |
 | F-1, F-2, F-3, F-6 | Help text: dendromicrohabitat groups and orchards |

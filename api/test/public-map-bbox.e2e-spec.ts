@@ -9,14 +9,17 @@ import { configureApp } from "../src/app.setup"
 import { DatabaseService } from "../src/database/database.service"
 import { buildPublicMapItemsQuery, PUBLIC_MAP_ITEMS_LIMIT } from "../src/surveys/public-map.queries"
 import { PublicMapDbRow, PublicMapItem, toPublicMapItem } from "../src/surveys/public-map.utils"
+import { loginTestUser } from "./helpers/surveys-e2e"
 
 // 01.9 D-05: GET /v1/public/map-items takes an optional bbox=minLng,minLat,maxLng,maxLat and
-// keeps only the public surveys whose linked parcel centroid lies inside it. Without bbox the
+// keeps only the submitted surveys whose linked parcel centroid lies inside it. Without bbox the
 // answer is exactly the pre-01.9 one, so installed apps are unaffected. A malformed bbox gets
 // parseBbox's fixed 400 without echoing the input (T-01.9-14), an over-long one the
-// ValidationPipe's 400 (T-01.9-11), and a private survey inside the box never shows up
-// (T-01.9-13). The bbox predicate walks idx_parcels_centroid_lat_lng (migration 015, 01.7
-// D-13): EXPLAIN on 10 000 seeded surveys shows no seq scan (T-01.9-12).
+// ValidationPipe's 400 (T-01.9-11). The bbox predicate walks idx_parcels_centroid_lat_lng
+// (migration 015, 01.7 D-13): EXPLAIN on 10 000 seeded surveys shows no seq scan (T-01.9-12).
+//
+// Phase 2 (association-only sharing): the route requires an authenticated member, and a private
+// survey inside the box shows up exactly like a public one — visibility no longer gates this read.
 //
 // This spec is new on purpose: 01.8 splits surveys-idempotency.e2e-spec.ts, so the bbox cases
 // do not go there.
@@ -92,9 +95,12 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
     insidePrivate: `99BBXPRV${stamp}`,
   }
 
+  let accessToken: string
+
   const getItems = async (query: Record<string, string> = {}): Promise<PublicMapItem[]> => {
     const res = await request(app.getHttpServer())
       .get("/v1/public/map-items")
+      .set("Authorization", `Bearer ${accessToken}`)
       .query(query)
       .expect(200)
     return res.body.items as PublicMapItem[]
@@ -111,6 +117,7 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
     configureApp(app)
     db = moduleFixture.get(DatabaseService)
     await app.init()
+    accessToken = await loginTestUser(app, "e2e-bbox-reader")
 
     await db.query(`INSERT INTO users (id, email, auth0_sub) VALUES ($1, $2, $3)`, [
       userId,
@@ -177,16 +184,17 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
 
     expect(items).toEqual(expected)
     expect(items.length).toBeLessThanOrEqual(PUBLIC_MAP_ITEMS_LIMIT)
-    expect(ids(items)).toEqual(expect.arrayContaining([insidePublicId, outsidePublicId]))
-    expect(ids(items)).not.toContain(insidePrivateId)
+    expect(ids(items)).toEqual(
+      expect.arrayContaining([insidePublicId, outsidePublicId, insidePrivateId]),
+    )
   })
 
-  it("with bbox keeps the public survey inside, drops the one outside and the private one inside", async () => {
+  it("with bbox keeps both surveys inside (public and private alike) and drops the one outside", async () => {
     const items = await getItems({ bbox: BOX_PARAM })
 
     expect(ids(items)).toContain(insidePublicId)
     expect(ids(items)).not.toContain(outsidePublicId)
-    expect(ids(items)).not.toContain(insidePrivateId)
+    expect(ids(items)).toContain(insidePrivateId)
     for (const item of items) {
       // display_location is the rounded parcel centroid (2 decimals, privacy rule unchanged).
       expect(item.display_location.lng).toBeGreaterThanOrEqual(BOX.minLng - 0.005)
@@ -229,6 +237,7 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
     for (const [bbox, message] of cases) {
       const res = await request(app.getHttpServer())
         .get("/v1/public/map-items")
+        .set("Authorization", `Bearer ${accessToken}`)
         .query({ bbox })
         .expect(400)
       expect(res.body.message).toBe(message)
@@ -241,6 +250,7 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
     expect(bbox).toHaveLength(129)
     const res = await request(app.getHttpServer())
       .get("/v1/public/map-items")
+      .set("Authorization", `Bearer ${accessToken}`)
       .query({ bbox })
       .expect(400)
     expect(JSON.stringify(res.body)).not.toContain(bbox)
@@ -248,6 +258,7 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
     // 128 characters pass the DTO and reach parseBbox.
     await request(app.getHttpServer())
       .get("/v1/public/map-items")
+      .set("Authorization", `Bearer ${accessToken}`)
       .query({ bbox: `1,2,3,${"4".repeat(122)}` })
       .expect(200)
   })
@@ -346,7 +357,7 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
              FROM surveys s
              JOIN survey_parcels sp ON sp.survey_id = s.id
              JOIN parcels p ON p.parcel_id = sp.parcel_id
-             WHERE s.status = 'submitted' AND s.visibility = 'public' AND s.deleted_at IS NULL
+             WHERE s.status = 'submitted' AND s.deleted_at IS NULL
                AND s.submitted_at IS NOT NULL
                AND p.centroid_lng BETWEEN $1 AND $2
                AND p.centroid_lat BETWEEN $3 AND $4

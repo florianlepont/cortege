@@ -26,6 +26,7 @@ import { usePublicMapExplorer } from "./usePublicMapExplorer"
 
 const DEFAULT_PARAMS = {
   apiUrl: "http://localhost:3000",
+  accessToken: "access-token",
   onStatusChange: jest.fn(),
 }
 
@@ -112,6 +113,7 @@ describe("usePublicMapExplorer", () => {
 
       expect(mockFetchPublicMapItems).toHaveBeenCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ from: "", to: "", region: "" }),
       )
       expect(onStatusChange).toHaveBeenCalledWith(fr.status.map.loaded({ count: 2 }))
@@ -150,6 +152,12 @@ describe("usePublicMapExplorer", () => {
       const hook = await buildHook()
       await expect(hook.loadPublicMap()).resolves.toBeUndefined()
     })
+
+    test("does nothing without an access token (Phase 2: the route requires a member)", async () => {
+      const hook = await buildHook({ accessToken: null })
+      await hook.loadPublicMap()
+      expect(mockFetchPublicMapItems).not.toHaveBeenCalled()
+    })
   })
 
   // ─── loadPublicMap by viewport (D-05) ─────────────────────────────────────
@@ -163,6 +171,7 @@ describe("usePublicMapExplorer", () => {
 
       expect(mockFetchPublicMapItems).toHaveBeenCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ bbox: "1,43,2,44", from: "", to: "", region: "" }),
       )
     })
@@ -283,6 +292,7 @@ describe("usePublicMapExplorer", () => {
       expect(mockFetchPublicMapItems).toHaveBeenCalledTimes(3)
       expect(mockFetchPublicMapItems).toHaveBeenLastCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ bbox: "1,43,2,45", region: "ARA" }),
       )
     })
@@ -345,6 +355,7 @@ describe("usePublicMapExplorer", () => {
 
       expect(mockFetchPublicParcelStatuses).toHaveBeenCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ bbox: "0,0,1,1", zoom: 14 }),
       )
     })
@@ -367,6 +378,34 @@ describe("usePublicMapExplorer", () => {
       expect(onStatusChange).not.toHaveBeenCalledWith(
         expect.stringContaining("Parcel fetch failed"),
       )
+    })
+
+    test("only the latest of two overlapping parcel loads updates the state", async () => {
+      const first = deferred<{ items: unknown[] }>()
+      const second = deferred<{ items: unknown[] }>()
+      mockFetchPublicParcelStatuses
+        .mockReturnValueOnce(first.promise)
+        .mockReturnValueOnce(second.promise)
+      const { result } = await renderExplorer()
+
+      let firstLoad: Promise<void> = Promise.resolve()
+      let secondLoad: Promise<void> = Promise.resolve()
+      await act(async () => {
+        firstLoad = result.current.loadPublicParcels({ bbox: "0,0,1,1", zoom: 10 })
+        secondLoad = result.current.loadPublicParcels({ bbox: "2,2,3,3", zoom: 10 })
+      })
+
+      await act(async () => {
+        second.resolve({ items: [{ parcel_id: "new" }] })
+        await secondLoad
+      })
+      await act(async () => {
+        first.resolve({ items: [{ parcel_id: "old" }] })
+        await firstLoad
+      })
+
+      expect(result.current.parcelStatuses).toEqual([{ parcel_id: "new" }])
+      expect(result.current.parcelsLoading).toBe(false)
     })
 
     test("resolves successfully with valid bbox and zoom", async () => {

@@ -1,5 +1,7 @@
 import type { IbpMethodFields } from "../contract/survey"
 import type { FactorKey } from "../factors"
+import { allowedFactorAGenusCodes, isCnpfFactorAGenusCode } from "../genus"
+import type { IbpCas } from "../context/cas"
 import { asNumber, isRecord, pickNumber } from "../input"
 import { scoreStrataCount, scoreTreeDensity, scoreTypeCount } from "./scales"
 
@@ -28,12 +30,13 @@ export type IncompleteReason = "ibp_cas" | "native_cover" | "native_genus_count"
  * Result of one factor's scorer:
  * - scored: a number (checked against the allowed set by evaluateIbp);
  * - incomplete: readable but not scorable yet (non-blocking in draft, factor_required at submit);
- * - invalid: unreadable input (blocking factor_invalid_raw).
+ * - invalid: unreadable input (blocking `factor_invalid_raw`, or `code`/`message` for a more
+ *   specific blocking issue, e.g. `factor_a_genus_invalid`).
  */
 export type FactorOutcome =
   | { kind: "scored"; score: number }
   | { kind: "incomplete"; reason: IncompleteReason }
-  | { kind: "invalid" }
+  | { kind: "invalid"; code?: string; message?: string }
 
 export type RuleContext = {
   survey: IbpSurveyContext
@@ -56,6 +59,12 @@ export const incomplete = (reason: IncompleteReason): FactorOutcome => ({
   kind: "incomplete",
   reason,
 })
+/** A: an entry of `genera` is not one of the CNPF regional list's 34 classes (phase 5, D-15). */
+export const INVALID_GENUS: FactorOutcome = {
+  kind: "invalid",
+  code: "factor_a_genus_invalid",
+  message: "factor A genera must each be one of the CNPF regional list's classes",
+}
 
 export function issue(
   code: string,
@@ -66,8 +75,40 @@ export function issue(
   return { code, message, blocking, factor }
 }
 
-export function readGenusCount(raw: Record<string, unknown>): number | null {
-  return pickNumber(raw, ["native_genus_count", "autochthonous_genus_count", "count"])
+/** Outcome of reading Factor A's genus count, from a list or from the legacy bare count. */
+export type GenusCountOutcome =
+  | { kind: "count"; count: number }
+  | { kind: "none" }
+  | { kind: "invalid" }
+
+/**
+ * A's native-genus count (D-15, ADR-003 CH-12): read from `genera` (a list of CNPF genus codes,
+ * this phase onward) when given, else from the legacy bare count (`native_genus_count` /
+ * `autochthonous_genus_count` / `count`, kept for surveys already recorded that way — they cannot
+ * be decomposed into named genera and keep their score unchanged).
+ *
+ * `genera` entries are deduplicated; a structurally valid genus not allowed at this station's cas
+ * (a supplementary genus outside cas 2/4) is silently excluded from the count, exactly as a genus
+ * not observed at all. An entry that is not one of the 34 CNPF classes is "invalid" (blocking).
+ */
+export function readFactorAGenusCount(
+  raw: Record<string, unknown>,
+  cas: IbpCas | null,
+): GenusCountOutcome {
+  const genera = raw.genera
+  if (genera !== undefined) {
+    if (!Array.isArray(genera)) return { kind: "invalid" }
+    const allowed = new Set(allowedFactorAGenusCodes(cas))
+    const counted = new Set<string>()
+    for (const entry of genera) {
+      if (!isCnpfFactorAGenusCode(entry)) return { kind: "invalid" }
+      if (allowed.has(entry)) counted.add(entry)
+    }
+    return { kind: "count", count: counted.size }
+  }
+
+  const legacy = pickNumber(raw, ["native_genus_count", "autochthonous_genus_count", "count"])
+  return legacy === null ? { kind: "none" } : { kind: "count", count: legacy }
 }
 
 /** A key counts as given unless it is absent, null or "" (the same rule as for a whole factor). */

@@ -22,16 +22,35 @@ afterAll(() => {
 })
 
 jest.mock("react-native", () => {
+  const ReactRef = require("react") as typeof import("react")
   const mockComponent = (name: string) => {
-    const ReactRef = require("react") as typeof import("react")
     return ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   }
 
+  type PressableRenderProp<T> = T | ((state: { pressed: boolean }) => T)
+  const resolvePressableProp = <T>(prop: PressableRenderProp<T> | undefined): T | undefined =>
+    typeof prop === "function"
+      ? (prop as (state: { pressed: boolean }) => T)({ pressed: false })
+      : prop
+
   return {
     Text: mockComponent("Text"),
     TextInput: mockComponent("TextInput"),
-    Pressable: mockComponent("Pressable"),
+    // AppPressable renders Pressable's `children`/`style` in their function-of-pressed-state form.
+    Pressable: ({
+      children,
+      style,
+      ...props
+    }: {
+      children?: PressableRenderProp<React.ReactNode>
+      style?: PressableRenderProp<unknown>
+    }) =>
+      ReactRef.createElement(
+        "Pressable",
+        { ...props, style: resolvePressableProp(style) },
+        resolvePressableProp(children),
+      ),
     Image: mockComponent("Image"),
     KeyboardAvoidingView: mockComponent("KeyboardAvoidingView"),
     ScrollView: mockComponent("ScrollView"),

@@ -157,10 +157,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
   },
+  // DS-02 (UX audit, Phase 2): terracotta on the card background measured ~3.85-4.17:1 at 10pt,
+  // under the AA floor for normal text; textPrimary clears it. The icon above stays terracotta.
   syncWarningText: {
     fontSize: 10,
     fontWeight: "600",
-    color: brandColors.terracotta,
+    color: brandColors.textPrimary,
   },
   syncPending: {
     opacity: 0.6,

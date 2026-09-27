@@ -226,7 +226,6 @@ describe("useSurveySync", () => {
     mockUseSurveySyncNetwork.mockReturnValue({
       handleSync: jest.fn(),
       handlePullChanges: jest.fn(),
-      handleReportSurvey: jest.fn(),
       maybeAutoSync: jest.fn(),
     })
     mockUseSurveySyncSurveyOperations.mockReturnValue({
@@ -274,7 +273,6 @@ describe("useSurveySync", () => {
           "handleDebugResetUserData",
           "handleEnsureAttachmentPreviews",
           "handlePullChanges",
-          "handleReportSurvey",
           "handleSimulateMissingAttachmentFile",
           "handleSync",
           "setStatus",

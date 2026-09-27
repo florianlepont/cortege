@@ -14,7 +14,9 @@ export const brandColors = {
   panelMuted: "#E8E5D9",
   warningSoft: "#F7E6CA",
   inputFill: "#F2F0E8",
-  inputBorder: "#D6D1C3",
+  // DS-14 (UX audit, Phase 2): darkened from #D6D1C3 (1.34:1 on inputFill) to clear the WCAG
+  // 3:1 non-text contrast floor for a resting field border (3.6:1 on inputFill).
+  inputBorder: "#807D75",
   divider: "#D3D7C8",
   textPrimary: "#24311F",
   textSecondary: "#51604B",
@@ -352,7 +354,10 @@ export const brandComponentTokens = {
     dangerBorder: "#E4A595",
     title: brandColors.textPrimary,
     text: brandColors.textSecondary,
-    // Phase 4 (DS-02): same contrast fix as surveyList above.
+    // Phase 4 (DS-02): same contrast fix as surveyList above. Supersedes Phase 2's interim fix
+    // (plain textPrimary for both) with the named onWarningSurface/onDangerSurface tokens the
+    // ROADMAP criterion asks for — keeps the warm hue association instead of flattening every
+    // notice to the same neutral text color.
     warningText: brandOnWarningSurface,
     dangerText: brandOnDangerSurface,
     successText: brandColors.forest,

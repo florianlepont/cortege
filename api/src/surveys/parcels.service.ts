@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, UnprocessableEntityException } from "@nestjs/common"
 import { randomUUID } from "crypto"
-import { AuthenticatedUser } from "../auth/auth.types"
 import { DatabaseService, Queryable } from "../database/database.service"
 import { CadastreProviderService } from "./cadastre-provider.service"
 import { ParcelRow, SurveyRow } from "./surveys.types"
@@ -74,7 +73,6 @@ export class ParcelsService {
   }
 
   async getParcelSurveyHistory(
-    user: AuthenticatedUser,
     parcelIdRaw: string,
     limitRaw?: string,
   ): Promise<{
@@ -116,10 +114,9 @@ export class ParcelsService {
          AND s.deleted_at IS NULL
          AND s.status = 'submitted'
          AND s.submitted_at IS NOT NULL
-         AND (s.visibility = 'public' OR s.user_id = $2)
        ORDER BY s.observation_year ASC NULLS LAST, s.version_number ASC NULLS LAST, s.submitted_at ASC
-       LIMIT $3`,
-      [parcelId, user.id, limit],
+       LIMIT $2`,
+      [parcelId, limit],
     )
 
     return {
