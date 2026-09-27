@@ -9,7 +9,10 @@ on real devices, and a data/API contract extension, so a no-go costs days rather
 then completes the offline map the field actually needs, gives the surveyor a way to get a survey
 out of the app as a PDF, takes PostgreSQL out of PoC status and ratifies the hosting that has been
 running unofficially, and finishes by proving the whole thing in the field — which is the milestone's
-success metric, not its afterthought.
+success metric, not its afterthought. A September 2026 UX/UI audit, folded into this milestone by
+owner decision on 2026-09-27 (Phases 1.11–1.15), rebuilds field-entry ergonomics, the visual identity
+and information architecture before that field test happens, so it validates the interface the
+association will actually use.
 
 **Milestone framing:** internal-only, shared within the association. Every authenticated member sees
 every member's submitted surveys — there is no per-user private/public choice and no anonymous public
@@ -27,7 +30,7 @@ in October rather than discovered in December.
 **Phase Numbering:**
 
 - Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- Decimal phases (2.1, 2.2): Insertions made after the roadmap was first written (marked with INSERTED) — urgent fixes (1.2–1.9) or scope decisions made later in the milestone (1.10–1.15)
 
 Decimal phases appear between their surrounding integers in numeric order.
 
@@ -41,12 +44,17 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.7: API configuration, service split and database tuning** (INSERTED) - Fail-fast config, split SurveysService, bounded and indexed queries (completed 2026-09-26)
 - [ ] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested
 - [ ] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs
-- [ ] **Phase 1.10: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI
+- [ ] **Phase 1.10: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI; the UX audit's Lot 0 trust bugs (score scale, sync-status masking, decimal input, account-deletion copy) are folded in
+- [ ] **Phase 1.11: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions
+- [ ] **Phase 1.12: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls
 - [ ] **Phase 2: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec
 - [ ] **Phase 3: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
+- [ ] **Phase 1.13: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured
 - [ ] **Phase 4: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map
+- [ ] **Phase 1.14: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map
 - [ ] **Phase 5: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys
 - [ ] **Phase 6: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone
+- [ ] **Phase 1.15: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F
 - [ ] **Phase 7: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
 
 ## Phase Details
@@ -361,6 +369,41 @@ Plans:
   5. Survey detail shows previous submitted surveys on the same parcel and the IBP total/factor deltas against the latest previous version — wiring the existing `GET /parcels/:parcelId/surveys/history` endpoint into the UI (`REQ-B-survey-detail`, `REQ-C-versioning`).
   6. In the now member-only Explorer map, tapping a studied parcel opens its latest survey detail or history, matching the behaviour already working in the survey-creation map.
   7. `REQUIREMENTS.md` no longer marks `REQ-A-social-login`, `REQ-A-delete-account`, `REQ-B-survey-detail` or `REQ-C-versioning` as "Built" when they are not; `docs/specs/epic-a-access-and-security.md` retags US-A4 (social login) out of MVP to match the QA plan's own treatment of it, and `docs/specs/user-stories.md` §8 stops filing Epic E/F's moderation workflow and team-challenge stories under "V2" when they are next-milestone (deferred), not V2.
+  8. **UX audit Lot 0** (`docs/design/ux-ui-audit-2026-09.md` §2 and §3.4, owner decision 2026-09-27): re-verified first, since the audit predates the 01.8-11 fix and BUG-01/BUG-02 (score shown "/10") are already resolved. What remains is fixed here: `resolveSurveyUiStatus` stops letting a submitted-but-failed survey read "Soumis" in green (BUG-03); the numeric keyboard accepts a decimal comma (BUG-04); account-deletion copy says "anonymised", not "deleted", and the danger zone moves out of the first Settings section (BUG-05, folds into this phase's account-deletion UI); the iOS status bar uses `dark-content` on light screens (BUG-06); the Android Home tab gets its own icon, not Mes Relevés' (BUG-07); Home's pull-to-refresh reflects real state instead of a hardcoded `refreshing={false}` (BUG-08); and the badge/notice contrast failures below the WCAG floor (DS-01, DS-02, DS-14) are corrected.
+
+**Plans**: TBD
+
+### Phase 1.11: Field-Entry Ergonomics (INSERTED, UX audit Lot 1)
+
+**Goal**: Scoring a factor is a tap, not a typed number — a survey drops from ~80–90 interactions to ~35–45, with no keyboard for 80% of them.
+**Depends on**: Phase 1.9 (mobile state/i18n/component conventions this phase's new components follow). Must land before Phase 2, which redesigns Factor A's own input as a genus list and should build it on these same components rather than the old numeric fields.
+**Requirements**: none yet in `REQUIREMENTS.md` — this phase's own success criteria are its requirements, added here by the 2026-09-27 owner decision to bring the UX audit into MVP scope
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.1 (FLOW-01…FLOW-12) and §7 Lot 1
+**Success Criteria** (what must be TRUE):
+
+  1. A `FactorInput` component ships in four variants — counter (C/D/E), segmented control (H), checkable chips with a derived count (B/I/J), slider in 5% steps (B/G) — replacing every `keyboardType="numeric"` field in the ten factors.
+  2. A factor's error state shows only after the field is left or submission is attempted, never on first open; empty, error and complete each have a distinct, non-alarming visual state.
+  3. Factors are navigated through a horizontal pager (A→J) with a fixed footer pager control, instead of 20 round trips to the factor grid; a "next incomplete factor" shortcut exists.
+  4. A fixed bottom action bar carries the primary CTA; the 2×5 factor summary grid shows a progress ring per factor that morphs into a check mark, plus a segmented total gauge visible from the first screen, not only at the last step.
+  5. The decimal comma is accepted in every numeric entry point that remains; autosave is visible ("Enregistré · 14:32") instead of implied by a "Save draft" label that suggests a manual step.
+  6. The parcel map's selected/studied/free states use accessible, on-brand colors readable in direct sunlight, and parcel selection is also offered as a "Parcels near you" native sheet.
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 1.12: Visual Foundations & Motion (INSERTED, UX audit Lot 2)
+
+**Goal**: The app looks like Etats Sauvages, not a generic SF Pro/Roboto build, and its motion runs on the UI thread instead of ad hoc JS timers.
+**Depends on**: Phase 1.11 (its new components are the first to carry the tokens and motion primitives this phase formalises)
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.4 (DS-01…DS-16), §4 (motion system), §5 (tokens) and §7 Lot 2
+**Success Criteria** (what must be TRUE):
+
+  1. The charter's typefaces (Mazzard H, or Avenir Next as an explicit stand-in pending licence) load through an `expo-font` config plugin and are wired into `brandTypography`; no screen renders in the OS default face.
+  2. The 125 hard-coded hex/`rgba` colors outside `brand-tokens.ts` are gone, replaced by semantic tokens (`onWarningSurface`, `onDangerSurface`, `onDark.*`, `map.*`); an ESLint rule rejects a new hex literal or `rgba(` outside the tokens file.
+  3. `react-native-reanimated` 4 and `expo-haptics` back a `brandMotion` token set (durations, easings, springs) and a semantic `ui/feedback.ts`; the legacy `Animated`/`LayoutAnimation` calls in the collapsible headers are migrated to `useAnimatedScrollHandler` on `translateY`/`opacity`.
+  4. `AppPressable` is the single pressable primitive (spring scale, Android ripple, mandatory accessibility label) and replaces the inconsistent pressed-opacity values across `DraftCard`, `ParcelNearbyCard` and `AppButton`.
+  5. A `Skeleton`/`SkeletonRow` pulse replaces static loading placeholders; every animation and decorative loop respects "Reduce Motion" and pauses in the background.
 
 **Plans**: TBD
 
@@ -399,6 +442,23 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
+### Phase 1.13: Information Architecture (INSERTED, UX audit Lot 3)
+
+**Goal**: Home and Mes Relevés each do one job instead of duplicating each other, sync state is visible wherever it matters, and survey detail and Compte read as one coherent app.
+**Depends on**: Phase 1.12 (this phase's new components — `SyncStatusPill`, `SurveyProgressCard`, `IbpFactorBars`, `AppGroupedList` — are built on Lot 2's tokens and motion primitives)
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision. Note: SYNC-02 (a visible offline/queue indicator) restates the spirit of `REQ-D-offline-work` and `REQ-D-auto-sync`, which this milestone already built but never surfaced outside Settings.
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.2 (HOME-01…SYNC-03) and §7 Lot 3
+**Success Criteria** (what must be TRUE):
+
+  1. Home becomes a dashboard (resume action, alerts, progress); Mes Relevés becomes a pure list (title, search, filters, a "+" in the header); the duplicated draft cards merge into one `SurveyProgressCard`.
+  2. A `SyncStatusPill` (offline · N to send · syncing · up to date) is visible in the Home and Mes Relevés headers, not only in Settings; a blocked/conflicted survey never reads "Soumis" in green (this restates BUG-03, fixed in Phase 1.10 — this phase carries the pattern to every screen that shows survey status).
+  3. Survey detail shows one score with its denominator and a peuplement/contexte split (`IbpFactorBars`), instead of the same number repeated three times with no scale.
+  4. The survey list row shows a score or progress ring; deletion follows the iOS swipe convention (destructive on the right) with a confirmation and an accessible alternative.
+  5. Compte is a grouped iOS-style list (Profile, Connection, Data, About, then Sign out) instead of a mix of inline forms, rows and pills.
+
+**Plans**: TBD
+**UI hint**: yes
+
 ### Phase 4: Offline Map & Own-Survey Navigation
 
 **Goal**: The surveyor can find their way around a parcel and see the association's recorded work on the map, with no network at all.
@@ -411,6 +471,22 @@ Plans:
   3. The surveyor selects an area, sees its estimated download size and progress, and the downloaded area is still usable after force-quitting and relaunching the app; downloaded areas can be listed and deleted.
   4. In airplane mode the map shows an offline indicator, renders the downloaded basemap and cached parcels, follows GPS, and still allows zoom, pan and parcel selection.
   5. When a parcel is missing from the offline cache, the app says so plainly and offers a download action that runs once the network returns — no infinite spinner.
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 1.14: Onboarding & Explorer Polish (INSERTED, UX audit Lot 4)
+
+**Goal**: A first launch explains the app and asks for permissions with context, and the now member-only Explorer map behaves like a real map instead of a prototype.
+**Depends on**: Phase 4 (this phase's map-sheet and filter work happens on the offline-capable, member-authenticated map Phases 1.10 and 4 ship — building it earlier would mean redoing it once offline support lands)
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision. Sign-in-with-Apple (ONB-04) is explicitly **not** built here: US-A4 (social login) is deferred to the next milestone (Phase 1.10, criterion 7).
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.3 (ONB-01…MAP-05) and §7 Lot 4
+**Success Criteria** (what must be TRUE):
+
+  1. A three-screen carousel (ten factors · offline · member map) runs before login on first launch, followed by a permissions-priming screen for location and camera with a link to Settings on refusal; "already seen" is persisted.
+  2. The Expo splash and adaptive icon are configured natively, so no default Expo splash flashes before `TypewriterSplash`.
+  3. Explorer's floating panels become a tiered native sheet (2–3 detents) instead of absolutely-positioned cards; filters are immediate chips (period, region, "my surveys") instead of free-text fields and an "Apply" button, with an active-filter count and a reset action.
+  4. Map markers show the survey's score band (moss/ochre/terracotta) with a legend, instead of a single off-brand system pin color; the user's position uses the native `showsUserLocation` halo instead of a custom marker.
 
 **Plans**: TBD
 **UI hint**: yes
@@ -446,10 +522,24 @@ Plans:
 
 **Plans**: TBD
 
+### Phase 1.15: Interface Finishing (INSERTED, UX audit Lot 5)
+
+**Goal**: The remaining audit findings that don't block a field test — dark mode, fuller use of Liquid Glass, a real history view — are closed before the app is judged in the field.
+**Depends on**: Phase 1.13, Phase 1.14
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision. **Carve-out:** the audit's "Ma saison" gamification module (points, badges, next-reward teaser) is explicitly excluded — it is Epic F, deferred to the next milestone per this milestone's own scope decision, and stays out even though the rest of Lot 5 is pulled into MVP.
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.4 (DS-12, DS-15), §3.2 (DET-05) and §7 Lot 5 (minus the gamification item)
+**Success Criteria** (what must be TRUE):
+
+  1. `light`/`dark` themes exist on the same semantic tokens through `useBrandTheme()`, defaulting to `automatic`.
+  2. Floating map and card controls use `expo-blur` or `expo-glass-effect` instead of a flat `rgba` fill; parcel selection uses a `formSheet` with detents instead of a full-screen modal.
+  3. Survey-detail history renders as an icon timeline with pull-to-refresh and a loading skeleton, instead of plain text.
+
+**Plans**: TBD
+
 ### Phase 7: Field Validation
 
 **Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
-**Depends on**: Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 5, 6
+**Depends on**: Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 1.11–1.15 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 3, 4, 5, 6
 **Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
 **Success Criteria** (what must be TRUE):
 
@@ -464,9 +554,9 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 1.10 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 1.10 → 1.11 → 1.12 → 2 → 3 → 1.13 → 4 → 1.14 → 5 → 6 → 1.15 → 7
 
-Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 1.10 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 4, whose offline-map work builds on the map Phase 1.10 repoints. Phases 2–6 do not depend on 1.6–1.10 either, so they can interleave if the schedule requires it.
+Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 1.10 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 4, whose offline-map work builds on the map Phase 1.10 repoints. Phases 1.11–1.15 (the UX/UI audit, folded into MVP by owner decision 2026-09-27) are threaded between the phases they depend on for components (1.11 before Phase 2, so Factor A's genus-list UI reuses the new field components) or for a stable screen to redesign (1.13 after Phase 3, 1.14 after Phase 4, 1.15 last, right before Phase 7). Phases 2–6 do not depend on 1.6–1.10 either, so they can interleave if the schedule requires it.
 
 Phases 4, 5 and 6 declare no dependency on the species-recognition track and can be reordered ahead
 of it if Phase 1 returns a no-go, or run in parallel with it.
@@ -484,11 +574,16 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.8. Shared IBP domain package and test completeness | 15/16 | In Progress|  |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
 | 1.10. Association-only sharing & scope trim | 0/TBD | Not started | - |
+| 1.11. Field-Entry Ergonomics (UX Lot 1) | 0/TBD | Not started | - |
+| 1.12. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
 | 2. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
 | 3. Genus Recognition for Factor A | 0/TBD | Not started | - |
+| 1.13. Information Architecture (UX Lot 3) | 0/TBD | Not started | - |
 | 4. Offline Map & Own-Survey Navigation | 0/TBD | Not started | - |
+| 1.14. Onboarding & Explorer Polish (UX Lot 4) | 0/TBD | Not started | - |
 | 5. Survey Export & Ownership | 0/TBD | Not started | - |
 | 6. Durable Backend | 0/TBD | Not started | - |
+| 1.15. Interface Finishing (UX Lot 5) | 0/TBD | Not started | - |
 | 7. Field Validation | 0/TBD | Not started | - |
 
 ## Coverage
@@ -497,11 +592,16 @@ All 66 MVP requirements map to exactly one phase. 47 carry build work across Pha
 from the 2026-09 code audit, Phases 1.2–1.9); the other 19 are already built and are verified in Phase 7's field tests. Full mapping in
 `.planning/REQUIREMENTS.md` → Traceability.
 
+**UX/UI audit (Phases 1.11–1.15):** folded into MVP scope by owner decision 2026-09-27, on top of the
+66 requirements above. Not yet broken into individual `REQ-UX-*` IDs in `REQUIREMENTS.md` — tracked
+for now by direct reference to `docs/design/ux-ui-audit-2026-09.md`'s own finding IDs (FLOW-*, DS-*,
+HOME-*, LIST-*, DET-*, SYNC-*, ONB-*, NAV-*, MAP-*, ACC-*) inside each phase's success criteria.
+
 ## Deferred
 
 Recorded in `.planning/REQUIREMENTS.md`, not dropped:
 
-- **Next milestone (community / social):** `REQ-F-france-map`, `REQ-B-parcel-status-map`, `REQ-B-explore-analysis`, `REQ-C-privacy-choice`, and all of Epics E, F, G and I. Code already exists for several of them. **Prerequisite:** a back-office / CMS surface, which needs its own ADR, architecture block and contract before Epics E and G can be planned.
+- **Next milestone (community / social):** `REQ-F-france-map`, `REQ-B-parcel-status-map`, `REQ-B-explore-analysis`, `REQ-C-privacy-choice`, and all of Epics E, F, G and I — including the UX audit's "Ma saison" gamification module (§7 Lot 5), explicitly carved out of Phase 1.15 as Epic F. Code already exists for several of them. **Prerequisite:** a back-office / CMS surface, which needs its own ADR, architecture block and contract before Epics E and G can be planned.
 - **V2:** all of Epic H (regional overviews, parcel trends, factor distributions, analytics trust).
 
 ---
