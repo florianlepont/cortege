@@ -37,7 +37,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.5: Mobile sync engine reliability** (INSERTED) - Single-flight drain, bounded batches, durable photos (completed 2026-09-25)
 - [x] **Phase 1.6: Sync feed ordering and unified object storage** (INSERTED) - No skipped change between devices; one bounded storage service (completed 2026-09-25)
 - [x] **Phase 1.7: API configuration, service split and database tuning** (INSERTED) - Fail-fast config, split SurveysService, bounded and indexed queries (completed 2026-09-26)
-- [ ] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested
+- [x] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested (completed 2026-09-27)
 - [ ] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs
 - [ ] **Phase 2: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec
 - [ ] **Phase 3: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
@@ -289,7 +289,7 @@ Plans:
 - [x] 01.8-13-PLAN.md — Form screens: method version picker (v3.2 default), scoring context by version, A cover, per-version help, / 50 (wave 5)
 - [x] 01.8-14-PLAN.md — Detail screens: version display, cas editor, switch to v3.2 for drafts, / 50 with band-coloured /35 and /15 sub-scores (wave 5)
 - [x] 01.8-15-PLAN.md — Citation files and form spec say v3.2 implemented; architecture docs, docs index, native README and CLAUDE.md (wave 6)
-- [ ] 01.8-16-PLAN.md — Phase gate: local gate, CI evidence with native builds, merge and API deploy with probes, owner's 6-step iPhone check (wave 7)
+- [x] 01.8-16-PLAN.md — Phase gate: local gate, CI evidence with native builds, merge and API deploy with probes, owner's 6-step iPhone check (wave 7)
 
 ### Phase 01.9: Mobile state architecture, i18n, accessibility and hygiene (INSERTED)
 
@@ -460,7 +460,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.5. Mobile sync engine reliability | 12/12 | Complete    | 2026-09-25 |
 | 1.6. Sync feed ordering and unified object storage | 9/9 | Complete    | 2026-09-25 |
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
-| 1.8. Shared IBP domain package and test completeness | 15/16 | In Progress|  |
+| 1.8. Shared IBP domain package and test completeness | 16/16 | Complete    | 2026-09-27 |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
 | 2. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
 | 3. Genus Recognition for Factor A | 0/TBD | Not started | - |
