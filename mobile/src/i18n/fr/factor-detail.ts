@@ -16,7 +16,7 @@ export const factorDetailFr = {
   captureToggle: "Afficher ou masquer l'aide de saisie",
   // Keyed by the factor field label the form passes in (see useSurveyForm).
   fieldLabels: {
-    native_genus_count: "Nombre de genres autochtones",
+    genera: "Genres autochtones observés",
     native_cover_percent: "Couvert des essences autochtones (%)",
     strata_count: "Nombre de strates",
     covered_autochthonous_percent: "Couvert autochtone (%)",

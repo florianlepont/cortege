@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import {
-  Platform,
-  ListRenderItemInfo,
-  RefreshControl,
-  View,
-  useWindowDimensions,
-} from "react-native"
+import { Platform, ListRenderItemInfo, RefreshControl, View } from "react-native"
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
@@ -18,7 +12,6 @@ import {
   resolveAttachmentPreview,
   selectPreviewCandidates,
 } from "./survey-screen-helpers"
-import { pickAttentionSurveys, pickContinueDraft } from "./survey-list/AttentionSection"
 import { FilterBar } from "./survey-list/FilterBar"
 import { ListEmptyState } from "./survey-list/ListEmptyState"
 import { ListHero, useHeroGeometry } from "./survey-list/ListHero"
@@ -35,11 +28,14 @@ const STICKY_HEADER_INDICES = [0]
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+// HOME-01: Mes Relevés is a pure list — title, search, filters, a "+" in the header. The
+// dashboard concerns (resume action, alerts, progress) live on Home instead.
 export function SurveyListScreen({
   surveys,
   visibleSurveys,
   selectedSurveyId,
   attachmentsBySurvey,
+  surveyDetails,
   surveyQuery,
   setSurveyQuery,
   surveyFromDate,
@@ -66,18 +62,20 @@ export function SurveyListScreen({
   onOpenCreateSurvey,
   onOpenSurvey,
   onEnsureAttachmentPreviews,
+  isOnline,
+  isSyncing,
+  onOpenSyncStatus,
 }: SurveyListScreenProps) {
   const [refreshing, setRefreshing] = useState(false)
   const scrollY = useSharedValue(0)
-  const { height: viewportHeight, width: windowWidth } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
-  const heroGeometry = useHeroGeometry(viewportHeight, insets.top)
+  const heroGeometry = useHeroGeometry(insets.top)
   const trimmedQuery = surveyQuery.trim()
+  const hasQuery = trimmedQuery.length > 0
+  // The native iOS header (with its own search bar and "+" button) replaces this plain-title
+  // hero and its own SyncStatusPill (D-08); the JS/Android path keeps both here.
   const showHero = !useNativeSearchUI
-  // The create card and the "À faire" card stay on Mes Relevés; only an
-  // active native header search replaces them with the results (D-08).
-  const showFeatured = showHero || trimmedQuery.length === 0
   const showFiltersPanel = useNativeSearchUI || showInlineSearch
 
   // ── Computed stats ──────────────────────────────────────────────────────────
@@ -96,29 +94,6 @@ export function SurveyListScreen({
   }, [attachmentFilter, blockedFilter, sortMode, surveyFromDate, surveyToDate, syncFilter])
 
   const totalFilterCount = advancedFilterCount + (statusFilter !== "all" ? 1 : 0)
-
-  // ── Featured cards content ──────────────────────────────────────────────────
-
-  const continueDraftSurvey = useMemo(() => pickContinueDraft(surveys), [surveys])
-
-  const attentionSurveys = useMemo(
-    () => pickAttentionSurveys(surveys, continueDraftSurvey?.id),
-    [continueDraftSurvey?.id, surveys],
-  )
-
-  // ── Main list — deduplicated ────────────────────────────────────────────────
-
-  const excludedIds = useMemo(() => {
-    const ids = new Set<string>()
-    if (continueDraftSurvey) ids.add(continueDraftSurvey.id)
-    attentionSurveys.forEach((s) => ids.add(s.id))
-    return ids
-  }, [continueDraftSurvey, attentionSurveys])
-
-  const mainListSurveys = useMemo(
-    () => (showFeatured ? visibleSurveys.filter((s) => !excludedIds.has(s.id)) : visibleSurveys),
-    [showFeatured, visibleSurveys, excludedIds],
-  )
 
   // D-11: ask for the first photo of every visible survey so a pulled ("remote")
   // attachment downloads on demand instead of staying hidden in the list.
@@ -253,24 +228,13 @@ export function SurveyListScreen({
     ],
   )
 
-  // ── Leading list items: create card, "À faire" card, section header ────────
+  // ── Leading list items: a "Résultats" caption while searching ──────────────
 
-  const leadingItems = useLeadingItems({
-    showFeatured,
-    useNativeSearchUI,
-    surveyCount: surveys.length,
-    visibleCount: visibleSurveys.length,
-    mainListCount: mainListSurveys.length,
-    visibleSurveySummary,
-    attentionSurveys,
-    continueDraftSurvey,
-    onOpenCreateSurvey,
-    onOpenSurvey,
-  })
+  const leadingItems = useLeadingItems({ hasQuery, visibleSurveySummary })
 
   const listData = useMemo<SurveyListItem[]>(
-    () => [...leadingItems, ...mainListSurveys],
-    [leadingItems, mainListSurveys],
+    () => [...leadingItems, ...visibleSurveys],
+    [leadingItems, visibleSurveys],
   )
 
   // ── Rows ────────────────────────────────────────────────────────────────────
@@ -295,12 +259,13 @@ export function SurveyListScreen({
         <SurveyRow
           survey={item}
           preview={previewById[item.id] ?? null}
+          score={surveyDetails[item.id]?.scores?.ibp_total ?? null}
           selected={selectedSurveyId === item.id}
           onOpen={onOpenSurvey}
           onDelete={onDeleteSurvey}
         />
       ),
-    [onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId],
+    [onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId, surveyDetails],
   )
 
   // ── Footer: empty states and bottom spacing ─────────────────────────────────
@@ -326,17 +291,12 @@ export function SurveyListScreen({
         <ListHero
           scrollY={scrollY}
           geometry={heroGeometry}
-          cardWidth={windowWidth - 32 /* 16pt padding each side */}
-          stats={surveyStats}
-          surveyCount={surveys.length}
-          visibleCount={visibleSurveys.length}
-          totalFilterCount={totalFilterCount}
-          attentionCount={attentionSurveys.length}
-          continueDraftName={continueDraftSurvey?.site_name ?? null}
-          resetFilters={resetFilters}
-          setStatusFilter={setStatusFilter}
-          setSyncFilter={setSyncFilter}
-          setBlockedFilter={setBlockedFilter}
+          itemCountLabel={filtersSummaryLabel}
+          isOnline={isOnline}
+          isSyncing={isSyncing}
+          pendingCount={surveyStats.pending}
+          onOpenSyncStatus={onOpenSyncStatus}
+          onOpenCreateSurvey={onOpenCreateSurvey}
         />
       ) : null}
 

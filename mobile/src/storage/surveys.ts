@@ -321,6 +321,46 @@ export async function getLocalSurveyDraft(surveyId: string): Promise<SurveyQueue
   }
 }
 
+/**
+ * Best-effort cache of server-assigned fields the mobile app never writes itself
+ * (observation year, version number). Called whenever the canonical survey detail loads while
+ * online, so a later PDF export (phase 10, D-01) can read them with no API call, including after
+ * an app restart in airplane mode. Never touches payload_completion: neither field affects it.
+ */
+export async function cacheSurveyCanonicalFields(
+  surveyId: string,
+  fields: { observation_year?: number | null; version_number?: number | null },
+): Promise<void> {
+  await runInTransaction(async (tx) => {
+    const row = await tx.getFirstAsync<{ payload_json: string | null }>(
+      `SELECT payload_json FROM local_surveys WHERE id = ?`,
+      [surveyId],
+    )
+    if (!row) {
+      return
+    }
+
+    const parsedPayload = row.payload_json ? safeParseJson(row.payload_json) : null
+    const basePayload = isSurveyQueuePayload(parsedPayload) ? parsedPayload : null
+    if (!basePayload) {
+      return
+    }
+
+    const nextPayload: SurveyQueuePayload = { ...basePayload }
+    if (typeof fields.observation_year === "number") {
+      nextPayload.observation_year = fields.observation_year
+    }
+    if (typeof fields.version_number === "number") {
+      nextPayload.version_number = fields.version_number
+    }
+
+    await tx.runAsync(`UPDATE local_surveys SET payload_json = ? WHERE id = ?`, [
+      JSON.stringify(nextPayload),
+      surveyId,
+    ])
+  })
+}
+
 export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSurvey> {
   const now = new Date().toISOString()
 

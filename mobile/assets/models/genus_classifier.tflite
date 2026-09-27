@@ -1,0 +1,9 @@
+PLACEHOLDER-NOT-A-REAL-TFLITE-MODEL
+See README.md in this directory: the real, MD5-verified genus_classifier.tflite (EfficientNet-B0,
+float16, 8.24 MB, ADR-002) lives outside the repository at
+~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/ and was not reachable from the
+container this file was produced in. This file exists only so Metro can bundle a `.tflite` asset at
+this path; react-native-fast-tflite will fail to parse it as a model at runtime, which is the
+intended, tested "model load failed" path (ADR-002 D-08): the app shows a clear message and falls
+back to manual genus entry. Replace this file (and genus_classifier_manifest.json, whose "labels"
+order must match the real model's output tensor) with the real artifacts before release.

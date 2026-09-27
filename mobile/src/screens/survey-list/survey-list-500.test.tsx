@@ -77,9 +77,30 @@ jest.mock("react-native", () => {
     add: () => animatedValue(),
   }
 
+  type PressableRenderProp<T> = T | ((state: { pressed: boolean }) => T)
+  const resolvePressableProp = <T,>(prop: PressableRenderProp<T> | undefined): T | undefined =>
+    typeof prop === "function"
+      ? (prop as (state: { pressed: boolean }) => T)({ pressed: false })
+      : prop
+  // AppPressable renders Pressable's `children`/`style` in their function-of-pressed-state form.
+  const Pressable = ({
+    children,
+    style,
+    ...props
+  }: {
+    children?: PressableRenderProp<React.ReactNode>
+    style?: PressableRenderProp<unknown>
+  }) =>
+    ReactRef.createElement(
+      "Pressable",
+      { ...props, style: resolvePressableProp(style) },
+      resolvePressableProp(children),
+    )
+
   const known: Record<string, unknown> = {
     Animated,
     FlatList,
+    Pressable,
     Platform: {
       OS: "android",
       select: <T,>(options: { ios?: T; android?: T; default?: T }): T | undefined =>
@@ -113,8 +134,8 @@ jest.mock("react-native-gesture-handler/Swipeable", () => {
   const SwipeableProbe = ReactRef.forwardRef(function SwipeableProbe(
     {
       children,
-      renderLeftActions,
-    }: { children?: React.ReactNode; renderLeftActions?: () => React.ReactNode },
+      renderRightActions,
+    }: { children?: React.ReactNode; renderRightActions?: () => React.ReactNode },
     ref: React.Ref<{ close: () => void }>,
   ) {
     mockRowRenders.count += 1
@@ -126,7 +147,7 @@ jest.mock("react-native-gesture-handler/Swipeable", () => {
     return ReactRef.createElement(
       "Swipeable",
       null,
-      renderLeftActions ? renderLeftActions() : null,
+      renderRightActions ? renderRightActions() : null,
       children,
     )
   })
@@ -210,6 +231,10 @@ function baseProps(surveys: LocalSurvey[]): ScreenProps {
     onDeleteSurvey,
     onOpenCreateSurvey: noop,
     onOpenSurvey,
+    surveyDetails: {},
+    isOnline: true,
+    isSyncing: false,
+    onOpenSyncStatus: noop,
   }
 }
 
@@ -376,24 +401,17 @@ describe("SurveyListScreen under the native iOS header search (01.9-25, D-08)", 
   const rows = (tree: renderer.ReactTestRenderer) =>
     tree.root.findAllByType("Swipeable" as never).length
 
-  it("drops the hero but keeps the create and to-do cards while not searching", () => {
+  it("drops the hero and shows a pure list of rows while not searching (HOME-01)", () => {
     const tree = mount(nativeProps(""))
 
-    expect(tree.root.findAll((node) => node.props.children === "Votre carnet de terrain")).toEqual(
-      [],
-    )
-    expect(withTitle(tree, "À faire").length).toBeGreaterThan(0)
-    expect(withTitle(tree, "Mes relevés").length).toBeGreaterThan(0)
     expect(withTitle(tree, "Résultats")).toHaveLength(0)
-    // The draft sits in the "À faire" card, so the list shows the two others.
-    expect(rows(tree)).toBe(2)
+    expect(rows(tree)).toBe(surveys.length)
     expect(tree.root.findAll((node) => node.props.placeholder != null)).toHaveLength(0)
   })
 
-  it("shows only the results while a search is active", () => {
+  it("shows a 'Résultats' caption while a search is active", () => {
     const tree = mount(nativeProps("Site"))
 
-    expect(withTitle(tree, "À faire")).toHaveLength(0)
     expect(withTitle(tree, "Résultats").length).toBeGreaterThan(0)
     expect(rows(tree)).toBe(surveys.length)
   })

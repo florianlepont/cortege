@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
+import type { IbpMethodVersion } from "@cortege/ibp-domain"
 import {
   brandColors,
   brandSemanticColors,
@@ -9,15 +10,16 @@ import {
   brandSpacing,
   brandTypography,
 } from "../app/brand-tokens"
-import type { IbpMethodVersion } from "@cortege/ibp-domain"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
 import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
 import { AppStatusChip } from "../ui/AppStatusChip"
+import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
 import { FactorChipOption, FactorChipsInput } from "../ui/FactorChipsInput"
 import { FactorCounterInput } from "../ui/FactorCounterInput"
+import { FactorGenusListInput } from "../ui/FactorGenusListInput"
 import { FactorSegmentedOption, FactorSegmentedInput } from "../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../ui/FactorSliderInput"
 import { fr } from "../i18n"
@@ -25,19 +27,20 @@ import { fr } from "../i18n"
 const t = fr.factorDetail
 
 // FLOW-01: which FactorInput variant each factor's fields render as, in the fixed order
-// useSurveyForm's factorSections builds them. Factor A stays plain numeric fields (Phase 5 rebuilds
-// it as a genus list); F's trees_per_ha has no natural discrete variant and stays numeric too.
+// useSurveyForm's factorSections builds them. F's trees_per_ha has no natural discrete variant and
+// stays numeric.
 type FieldVariant =
   | { kind: "numeric" }
   | { kind: "counter" }
   | { kind: "segmented"; options: readonly FactorSegmentedOption[] }
   | { kind: "chips"; options: readonly FactorChipOption[]; countLabel: (count: number) => string }
+  | { kind: "genusList" }
   | { kind: "slider" }
 
 const CHIP_COUNT_LABEL = (count: number): string => fr.factorInput.chips.selectedCount({ count })
 
 const FIELD_VARIANTS: Record<FactorKey, readonly FieldVariant[]> = {
-  A: [{ kind: "numeric" }, { kind: "numeric" }],
+  A: [{ kind: "genusList" }, { kind: "numeric" }],
   B: [{ kind: "chips", options: fr.factorInput.strataOptions, countLabel: CHIP_COUNT_LABEL }],
   C: [{ kind: "counter" }, { kind: "counter" }, { kind: "numeric" }],
   D: [{ kind: "counter" }, { kind: "counter" }, { kind: "numeric" }],
@@ -70,6 +73,9 @@ export function FactorDetailScreen({
   const hints = helpTexts.hints[factor]
   const total = fields.length
   const filled = fields.filter((field) => field.value.trim().length > 0).length
+  // Phase 6 (ADR-002 D-11): the genus-list field is always A's first field (FIELD_VARIANTS.A[0]),
+  // so a confirmed suggestion can be merged straight into whatever the surveyor already picked.
+  const genusListField = factor === "A" ? fields[0] : null
 
   return (
     <View style={detailStyles.screen}>
@@ -115,6 +121,7 @@ export function FactorDetailScreen({
         <View style={detailStyles.fieldsList}>
           {fields.map((field, index) => renderFactorField(factor, field, index))}
         </View>
+        {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
       </AppCard>
 
       <AppCard variant="panelElevated" padding={18} style={detailStyles.panel}>
@@ -202,6 +209,18 @@ function renderFactorField(factor: FactorKey, field: FactorField, index: number)
           onTouch={field.onTouch}
           error={field.error}
           countLabel={variant.countLabel}
+        />
+      )
+    case "genusList":
+      return (
+        <FactorGenusListInput
+          key={key}
+          label={label}
+          value={field.value}
+          onChange={field.onChange}
+          touched={field.touched}
+          onTouch={field.onTouch}
+          error={field.error}
         />
       )
     case "slider":

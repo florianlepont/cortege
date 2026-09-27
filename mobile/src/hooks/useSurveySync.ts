@@ -11,7 +11,7 @@ import {
 } from "../api/ibp-api"
 import { fr, logStatusDetail } from "../i18n"
 import type { StatusMessage } from "../i18n"
-import { clearLocalIbpData } from "../storage/surveys"
+import { cacheSurveyCanonicalFields, clearLocalIbpData } from "../storage/surveys"
 import { countUnsyncedLocalWork } from "../storage/local-owner"
 import type { LocalSurvey } from "../storage/types"
 import { createInitialOperationStatus, updateOperationStatus } from "./operation-status"
@@ -270,21 +270,22 @@ export function useSurveySync({
     ])
   }, [performDeleteAccount])
 
-  const { handleSync, handlePullChanges, maybeAutoSync } = useSurveySyncNetwork({
-    apiUrl,
-    accessToken,
-    surveys,
-    clearSession,
-    withAuthRetry,
-    refreshLocalSurveys,
-    refreshLocalAttachments,
-    setStatus,
-    syncAllowed: localDataOwner.syncAllowed,
-    ensureSyncOwner: localDataOwner.ensureSyncOwner,
-    ownerStatus: localDataOwner.status,
-    recheckOwner: localDataOwner.recheck,
-    syncActivity,
-  })
+  const { handleSync, handlePullChanges, maybeAutoSync, isOnline, isSyncing } =
+    useSurveySyncNetwork({
+      apiUrl,
+      accessToken,
+      surveys,
+      clearSession,
+      withAuthRetry,
+      refreshLocalSurveys,
+      refreshLocalAttachments,
+      setStatus,
+      syncAllowed: localDataOwner.syncAllowed,
+      ensureSyncOwner: localDataOwner.ensureSyncOwner,
+      ownerStatus: localDataOwner.status,
+      recheckOwner: localDataOwner.recheck,
+      syncActivity,
+    })
 
   const { handleEnsureAttachmentPreviews, handleSimulateMissingAttachmentFile } =
     useAttachmentPreviews({
@@ -390,6 +391,17 @@ export function useSurveySync({
         const payload = await withAuthRetry((token) => loadSurveyDetail(apiUrl, token, surveyId))
 
         setSurveyDetails((previous) => ({ ...previous, [surveyId]: payload }))
+        // Best-effort: caching these fields for a later offline PDF export must never turn into a
+        // "detail load failed" outcome, so any failure (including a synchronous one) is swallowed
+        // through a microtask rather than risking the outer catch below.
+        void Promise.resolve()
+          .then(() =>
+            cacheSurveyCanonicalFields(surveyId, {
+              observation_year: payload.observation_year ?? null,
+              version_number: payload.version_number ?? null,
+            }),
+          )
+          .catch(() => {})
         if (detailAutoLoadCooldownUntilRef.current[surveyId]) {
           delete detailAutoLoadCooldownUntilRef.current[surveyId]
         }
@@ -624,6 +636,8 @@ export function useSurveySync({
       sessionActions,
       accessToken,
       status: statusText,
+      isOnline,
+      isSyncing,
       syncActions,
       surveyOperations,
       surveyDetailsState,
@@ -633,6 +647,8 @@ export function useSurveySync({
       sessionActions,
       accessToken,
       statusText,
+      isOnline,
+      isSyncing,
       syncActions,
       surveyOperations,
       surveyDetailsState,

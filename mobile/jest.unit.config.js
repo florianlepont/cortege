@@ -21,12 +21,15 @@ module.exports = {
     '^expo-sqlite$': '<rootDir>/test/expo-sqlite.mock.ts',
     '^expo-haptics$': '<rootDir>/test/expo-haptics.mock.ts',
     '^expo-crypto$': '<rootDir>/test/expo-crypto.mock.ts',
+    '^expo-network$': '<rootDir>/test/expo-network.mock.ts',
     '^expo-file-system/legacy$': '<rootDir>/test/expo-file-system-legacy.mock.ts',
     '^expo-image-manipulator$': '<rootDir>/test/expo-image-manipulator.mock.ts',
     '^expo-image$': '<rootDir>/test/expo-image.mock.ts',
     '^react-native-svg$': '<rootDir>/test/react-native-svg.mock.ts',
     '^react-native-reanimated$': '<rootDir>/test/react-native-reanimated.mock.ts',
     '\\.(png|jpg|jpeg|gif|webp)$': '<rootDir>/test/image.mock.ts',
+    // Metro resolves this to a numeric asset id (metro.config.js); the mock is the same shape.
+    '\\.tflite$': '<rootDir>/test/image.mock.ts',
     // supercluster 9 is ESM-only; ts-jest runs CommonJS, so load its UMD build (hoisted to the
     // root node_modules by 01.9-19). Metro resolves the ESM entry in the app.
     '^supercluster$': '<rootDir>/../node_modules/supercluster/dist/supercluster.js',

@@ -25,7 +25,7 @@ jest.mock("../app/constants", () => ({
     ibpCas: 1,
     ibpCas3Scale: false,
     gpsLocation: { lat: "", lng: "", collected_at: "" },
-    factorA: { native_genus_count: "", native_cover_percent: "" },
+    factorA: { genera: "", native_cover_percent: "" },
     factorB: { strata_count: "" },
     factorC: { bmg_count: "", bmm_count: "", surface_ha: "" },
     factorD: { bmg_count: "", bmm_count: "", surface_ha: "" },
@@ -117,10 +117,11 @@ describe("useSurveyForm", () => {
       ])
     })
 
-    test("factorSections A has the count and the native cover, both required (CH-1)", async () => {
+    test("factorSections A has the genus list (never errors) and the required native cover (CH-1)", async () => {
       const hook = await buildHook()
       expect(hook.factorSections.A).toHaveLength(2)
-      expect(hook.factorSections.A[0].error).toBe(rules.required(fields.native_genus_count))
+      expect(hook.factorSections.A[0].label).toBe(fields.genera)
+      expect(hook.factorSections.A[0].error).toBeNull()
       expect(hook.factorSections.A[1].label).toBe(fields.native_cover_percent)
       expect(hook.factorSections.A[1].error).toBe(rules.required(fields.native_cover_percent))
     })
@@ -175,7 +176,9 @@ describe("useSurveyForm", () => {
       expect(payload).toHaveProperty("H")
       expect(payload).toHaveProperty("I")
       expect(payload).toHaveProperty("J")
-      expect(payload.A).toEqual({ native_genus_count: 2, native_cover_percent: 2 })
+      // factorA.genera is still the default "" here (mockParseFinite only stubs number parsing);
+      // an explicitly empty genus list is a real, scoreable "zero genera observed" (D-04).
+      expect(payload.A).toEqual({ genera: [], native_cover_percent: 2 })
       expect(payload.B).toEqual({ strata_count: 2 })
       expect(payload.H).toEqual({ class_score: 2 })
     })
@@ -448,21 +451,26 @@ describe("useSurveyForm", () => {
       })
     })
 
+    const FIVE_GENERA = "Fagus,Acer,Betula,Carpinus,Castanea"
+
     test("A with 5 genera and 40 % cover scores 2 under v3.2 cas 1 (cap on A)", async () => {
       useRealRules()
       const result = await renderForm()
-      await type(result, "A", 0, "5")
+      await type(result, "A", 0, FIVE_GENERA)
       await type(result, "A", 1, "40")
       expect(result.current.factorRetainedScores.A?.score).toBe(2)
       expect(result.current.draftInput.factors).toEqual({
-        A: { native_genus_count: 5, native_cover_percent: 40 },
+        A: {
+          genera: ["Fagus", "Acer", "Betula", "Carpinus", "Castanea"],
+          native_cover_percent: 40,
+        },
       })
     })
 
     test("A without its cover is neither sent nor scored", async () => {
       useRealRules()
       const result = await renderForm()
-      await type(result, "A", 0, "5")
+      await type(result, "A", 0, FIVE_GENERA)
       expect(result.current.draftInput.factors).not.toHaveProperty("A")
       expect(result.current.factorRetainedScores.A).toBeNull()
     })
@@ -470,7 +478,7 @@ describe("useSurveyForm", () => {
     test("A with a cover above 100 is not sent", async () => {
       useRealRules()
       const result = await renderForm()
-      await type(result, "A", 0, "5")
+      await type(result, "A", 0, FIVE_GENERA)
       await type(result, "A", 1, "140")
       expect(result.current.draftInput.factors).not.toHaveProperty("A")
     })
@@ -519,7 +527,7 @@ describe("useSurveyForm", () => {
       expect(result.current.draftInput.factors).toEqual({ H: { class_score: 5 } })
     })
 
-    test("a legacy draft keeps no version and moves B's cover to A on the next save", async () => {
+    test("a legacy draft's bare genus count cannot be decomposed and reopens as an empty genus list", async () => {
       useRealRules()
       const result = await renderForm()
       await act(async () => {
@@ -535,17 +543,20 @@ describe("useSurveyForm", () => {
       })
       expect(result.current.ibpMethodVersion).toBeNull()
       expect(result.current.ibpCas).toBeNull()
+      expect(result.current.factorSections.A[0].value).toBe("")
       expect(result.current.factorSections.A[1].value).toBe("40")
       const input = result.current.buildDraftInput()
       expect(input).not.toHaveProperty("ibp_method_version")
       expect(input).not.toHaveProperty("ibp_cas")
       expect(input).toMatchObject({ region_version: "ACA", vegetation_stage: "collineen" })
+      // The bare count from before this phase cannot be decomposed into named genera (Phase 5's
+      // own rule for already-recorded surveys, extended here to a still-local draft) - saving again
+      // without re-picking genera sends an explicit, honest "zero genera observed" (D-04).
       expect(input.factors).toEqual({
-        A: { native_genus_count: 5, native_cover_percent: 40 },
+        A: { genera: [], native_cover_percent: 40 },
         B: { strata_count: 3 },
       })
-      // v3.0 (null) caps A from the cover: 5 genera, 40 % → 2
-      expect(result.current.factorRetainedScores.A?.score).toBe(2)
+      expect(result.current.factorRetainedScores.A?.score).toBe(0)
     })
 
     test("a legacy draft's B native_cover_percent also moves to A", async () => {
@@ -805,16 +816,18 @@ describe("useSurveyForm", () => {
       )
     })
 
+    // Factor A's own field no longer goes through numberError (it's a genus list, never
+    // validated this way) - these branches are exercised through factorC's bmg_count instead.
     test("non-finite value produces 'must be a number' error", async () => {
       const mockConstants = jest.requireMock("../app/constants")
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { ...saved.factorA, native_genus_count: "abc" },
+        factorC: { ...saved.factorC, bmg_count: "abc" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
-      expect(hook.factorSections.A[0].error).toBe(rules.number(fields.native_genus_count))
+      expect(hook.factorSections.C[0].error).toBe(rules.number(fields.bmg_count))
     })
 
     test("non-integer value produces 'must be an integer' error", async () => {
@@ -822,11 +835,11 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { ...saved.factorA, native_genus_count: "1.5" },
+        factorC: { ...saved.factorC, bmg_count: "1.5" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
-      expect(hook.factorSections.A[0].error).toBe(rules.integer(fields.native_genus_count))
+      expect(hook.factorSections.C[0].error).toBe(rules.integer(fields.bmg_count))
     })
 
     test("value below min produces '>= min' error", async () => {
@@ -834,11 +847,11 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { ...saved.factorA, native_genus_count: "-1" },
+        factorC: { ...saved.factorC, bmg_count: "-1" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
-      expect(hook.factorSections.A[0].error).toBe(rules.min(fields.native_genus_count, 0))
+      expect(hook.factorSections.C[0].error).toBe(rules.min(fields.bmg_count, 0))
     })
 
     test("value above max produces '<= max' error (factorG, max=100)", async () => {
@@ -853,16 +866,16 @@ describe("useSurveyForm", () => {
       expect(hook.factorSections.G[0].error).toBe(rules.max(fields.open_flowering_percent, 100))
     })
 
-    test("valid value produces null error for factorA", async () => {
+    test("valid value produces null error for factorC's bmg_count", async () => {
       const mockConstants = jest.requireMock("../app/constants")
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorA: { ...saved.factorA, native_genus_count: "3" },
+        factorC: { ...saved.factorC, bmg_count: "3" },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
-      expect(hook.factorSections.A[0].error).toBeNull()
+      expect(hook.factorSections.C[0].error).toBeNull()
     })
 
     // FLOW-03/BUG-04: a French decimal comma must not surface a "must be a number" error.

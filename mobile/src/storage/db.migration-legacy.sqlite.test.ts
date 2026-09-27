@@ -13,7 +13,7 @@ jest.mock("expo-sqlite", () => ({
   openDatabaseAsync: jest.fn(async () => mockDb),
 }))
 
-import { initLocalDb } from "./db"
+import { initLocalDb, SCHEMA_VERSION } from "./db"
 
 const NOW = "2026-02-01T00:00:00.000Z"
 
@@ -112,9 +112,9 @@ describe("db migration on the oldest schema shape", () => {
     expect(row?.local_uri).toBe("file:///legacy.jpg")
   })
 
-  test("PRAGMA user_version is 2", async () => {
+  test("PRAGMA user_version is SCHEMA_VERSION", async () => {
     const version = await mockDb.getFirstAsync<{ user_version: number }>(`PRAGMA user_version`)
-    expect(version?.user_version).toBe(2)
+    expect(version?.user_version).toBe(SCHEMA_VERSION)
   })
 
   test("every column added since the oldest schema now exists on every table", async () => {

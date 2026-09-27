@@ -1,4 +1,4 @@
-import { ReactNode, useRef } from "react"
+import { useRef } from "react"
 import { TextInput, View } from "react-native"
 import { brandComponentTokens } from "../../app/brand-tokens"
 import { AppButton } from "../../ui/AppButton"
@@ -19,8 +19,6 @@ type ProfileCardProps = {
   isProfileDirty: boolean
   profileUpdating: boolean
   onSave: () => void
-  // The e-mail and password rows, rendered between the fields and the save button.
-  children?: ReactNode
 }
 
 export function ProfileCard({
@@ -33,7 +31,6 @@ export function ProfileCard({
   isProfileDirty,
   profileUpdating,
   onSave,
-  children,
 }: ProfileCardProps) {
   // ACC-13 : refs pour le chaining de focus clavier
   const lastNameRef = useRef<TextInput>(null)
@@ -112,8 +109,6 @@ export function ProfileCard({
         inputStyle={styles.fieldInput}
         returnKeyType="done"
       />
-
-      {children}
 
       {/* ACC-I06 : bouton Enregistrer visible uniquement si des modifications sont en cours */}
       {isProfileDirty && (
