@@ -26,6 +26,11 @@ jest.mock("react-native", () => ({
   Pressable: "Pressable",
 }))
 
+// DS-13: JsRootTabs reads the safe-area bottom inset to size the JS tab bar.
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}))
+
 const mockConstants: { executionEnvironment: string; appOwnership: string | null } = {
   executionEnvironment: "bare",
   appOwnership: null,
@@ -146,6 +151,7 @@ import { AppNavigation } from "./AppNavigation"
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "./public-map-reload"
 import { fr } from "../i18n"
 import {
+  buildJsTabBarStyle,
   JS_TAB_BAR_STYLE,
   jsTabScreenOptions,
   nativeTabScreenOptions,
@@ -355,11 +361,33 @@ describe("tab options", () => {
   test("JS options render an Ionicons icon and the platform bar metrics", () => {
     const options = jsTabScreenOptions({ route: { name: "account" } })
     expect(options.tabBarLabel).toBe("Compte")
-    expect(options.tabBarStyle.height).toBe(68)
+    expect(options.tabBarStyle.height).toBe(buildJsTabBarStyle().height)
     const icon = options.tabBarIcon({ color: "red", size: 20 })
     expect(icon.props).toEqual(
       expect.objectContaining({ name: "person-outline", size: 20, color: "red" }),
     )
+  })
+
+  // DS-13: height/padding grow with the device's own safe-area bottom inset instead of guessing
+  // per platform, but never shrink below a usable minimum on a device that reports none.
+  test("buildJsTabBarStyle grows with the safe-area bottom inset, floored at a usable minimum", () => {
+    const noInset = buildJsTabBarStyle({ bottom: 0 })
+    const bigInset = buildJsTabBarStyle({ bottom: 34 })
+    expect(bigInset.paddingBottom).toBe(34)
+    expect(bigInset.height).toBeGreaterThan(noInset.height)
+    expect(buildJsTabBarStyle({ bottom: 2 }).paddingBottom).toBe(noInset.paddingBottom)
+  })
+
+  test("jsTabScreenOptions threads the insets argument into the bar style", () => {
+    const options = jsTabScreenOptions({ route: { name: "account" } }, { bottom: 40 })
+    expect(options.tabBarStyle).toEqual(buildJsTabBarStyle({ bottom: 40 }))
+  })
+
+  test("the JS tab navigator's own screenOptions reads the real safe-area inset", async () => {
+    await mount(<AppNavigation />)
+    const screenOptions = mockNavigators.jsTabs.at(-1)?.screenOptions as OptionsFn
+    const options = screenOptions({ route: { name: "account" } })
+    expect(options.tabBarStyle).toEqual(buildJsTabBarStyle({ bottom: 0 }))
   })
 
   test("the JS surveys tab hides the bar on parcel selection only", async () => {
@@ -368,7 +396,7 @@ describe("tab options", () => {
     expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual({
       display: "none",
     })
-    expect(options({ route: { focused: "surveyForm" } }).tabBarStyle).toBe(JS_TAB_BAR_STYLE)
+    expect(options({ route: { focused: "surveyForm" } }).tabBarStyle).toEqual(JS_TAB_BAR_STYLE)
     expect(options({ route: {} }).tabBarLabel).toBe(TAB_TITLES.surveys)
   })
 })

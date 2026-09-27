@@ -62,23 +62,42 @@ export const nativeTabScreenOptions = ({ route }: { route: { name: keyof RootTab
 
 // ─── JS tab screen options (Android, Expo Go fallback) ────────────────────────
 
+// DS-13: the bar's content area (icons + labels) is a fixed size; only the bottom padding — and
+// so the overall height — grows with the device's own home-indicator/gesture-bar inset, instead
+// of the two hard-coded per-platform guesses this replaces.
+const JS_TAB_BAR_CONTENT_HEIGHT = 50
+const JS_TAB_BAR_PADDING_TOP = Platform.select({ ios: 8, default: 6 })
+const JS_TAB_BAR_MIN_PADDING_BOTTOM = 10
+
+export type TabBarInsets = { bottom: number }
+
 /** The JS bar style; the surveys tab swaps it for `display: none` (tab-bar.ts). */
-export const JS_TAB_BAR_STYLE = {
-  backgroundColor: brandColors.panel,
-  borderTopColor: brandColors.divider,
-  borderTopWidth: 1,
-  height: Platform.select({ ios: 84, default: 68 }),
-  paddingBottom: Platform.select({ ios: 22, default: 10 }),
-  paddingTop: Platform.select({ ios: 8, default: 6 }),
+export function buildJsTabBarStyle(insets: TabBarInsets = { bottom: 0 }) {
+  const paddingBottom = Math.max(insets.bottom, JS_TAB_BAR_MIN_PADDING_BOTTOM)
+  return {
+    backgroundColor: brandColors.panel,
+    borderTopColor: brandColors.divider,
+    borderTopWidth: 1,
+    height: JS_TAB_BAR_CONTENT_HEIGHT + JS_TAB_BAR_PADDING_TOP + paddingBottom,
+    paddingBottom,
+    paddingTop: JS_TAB_BAR_PADDING_TOP,
+  }
 }
 
-export const jsTabScreenOptions = ({ route }: { route: { name: keyof RootTabParamList } }) => ({
+/** The style at a zero bottom inset — kept for callers with no safe-area context (tests, the
+ * non-surveys tabs, which take this default rather than a per-route insets prop). */
+export const JS_TAB_BAR_STYLE = buildJsTabBarStyle()
+
+export const jsTabScreenOptions = (
+  { route }: { route: { name: keyof RootTabParamList } },
+  insets: TabBarInsets = { bottom: 0 },
+) => ({
   headerShown: false,
   title: TAB_TITLES[route.name],
   tabBarLabel: TAB_TITLES[route.name],
   tabBarActiveTintColor: brandColors.forest,
   tabBarInactiveTintColor: brandColors.textSecondary,
-  tabBarStyle: JS_TAB_BAR_STYLE,
+  tabBarStyle: buildJsTabBarStyle(insets),
   tabBarLabelStyle: { fontSize: 12, fontWeight: "600" as const },
   tabBarIcon: ({ color, size }: { color: string; size: number }) => (
     <Ionicons name={JS_TAB_ICONS[route.name]} size={size} color={color} />
