@@ -15,6 +15,11 @@ export enum FileSystemUploadType {
   MULTIPART = 1,
 }
 
+export enum EncodingType {
+  UTF8 = "utf8",
+  Base64 = "base64",
+}
+
 export type MockFileInfo = {
   exists: true
   isDirectory: boolean
@@ -64,6 +69,7 @@ export const moveAsync = jest.fn()
 export const makeDirectoryAsync = jest.fn()
 export const deleteAsync = jest.fn()
 export const readDirectoryAsync = jest.fn()
+export const readAsStringAsync = jest.fn()
 export const downloadAsync = jest.fn()
 export const uploadAsync = jest.fn()
 export const createUploadTask = jest.fn()
@@ -149,6 +155,18 @@ function defaultReadDirectoryAsync(fileUri: string): Promise<string[]> {
   return Promise.resolve(names)
 }
 
+function defaultReadAsStringAsync(fileUri: string): Promise<string> {
+  const file = files.get(fileUri)
+  if (!file) {
+    return Promise.reject(
+      new Error(`__mockFs: readAsStringAsync target does not exist: ${fileUri}`),
+    )
+  }
+  // Content is never tracked for real (see the module header), only size - a fixed placeholder
+  // base64 string is enough for callers that decode it through a further mock (e.g. jpeg-js).
+  return Promise.resolve("bW9jay1maWxlLWNvbnRlbnQ=")
+}
+
 function defaultDownloadAsync(
   _uri: string,
   fileUri: string,
@@ -186,6 +204,7 @@ export function __resetMockFileSystem(): void {
   makeDirectoryAsync.mockReset().mockImplementation(defaultMakeDirectoryAsync)
   deleteAsync.mockReset().mockImplementation(defaultDeleteAsync)
   readDirectoryAsync.mockReset().mockImplementation(defaultReadDirectoryAsync)
+  readAsStringAsync.mockReset().mockImplementation(defaultReadAsStringAsync)
   downloadAsync.mockReset().mockImplementation(defaultDownloadAsync)
   uploadAsync.mockReset().mockImplementation(defaultUploadAsync)
   createUploadTask.mockReset().mockImplementation(defaultCreateUploadTask)

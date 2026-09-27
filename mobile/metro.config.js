@@ -2,6 +2,11 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
+// react-native-fast-tflite (Phase 6, ADR-002 D-07): lets Metro bundle a .tflite file as a binary
+// asset via a plain `import`, the same way it already bundles fonts and images - this is what
+// makes the model ship inside the app binary instead of a runtime download.
+config.resolver.assetExts.push('tflite');
+
 // This is an npm workspaces monorepo: react and react-native are hoisted to
 // the root node_modules and pinned there by root package.json's
 // dependencies + overrides. Expo's default config (getDefaultConfig above)

@@ -14,6 +14,7 @@ import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
 } from "../app/constants"
+import { parseGenusListValue, serializeGenusListValue } from "../app/factor-a-genus-list"
 import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { fr } from "../i18n"
@@ -226,10 +227,9 @@ export function useSurveyForm() {
   const buildFactorsPayload = useCallback((): Record<string, unknown> => {
     const payload: Record<string, unknown> = {}
 
-    const aCount = toFiniteNumberInRange(factorA.native_genus_count, { min: 0, integer: true })
     const aCover = toFiniteNumberInRange(factorA.native_cover_percent, { min: 0, max: 100 })
-    if (aCount !== null && aCover !== null)
-      payload.A = { native_genus_count: aCount, native_cover_percent: aCover }
+    if (aCover !== null)
+      payload.A = { genera: parseGenusListValue(factorA.genera), native_cover_percent: aCover }
 
     const bStrata = toFiniteNumberInRange(factorB.strata_count, { min: 0, integer: true })
     if (bStrata !== null) payload.B = { strata_count: bStrata }
@@ -297,8 +297,15 @@ export function useSurveyForm() {
     const factorJObj = asObject(factors.J)
     const parsedParcelIds = normalizeParcelIds(draft.parcel_ids)
 
+    // A legacy bare-count draft (created before this phase) has no `genera` key - it cannot be
+    // decomposed into named genera (Phase 5's own rule for already-recorded surveys applies the
+    // same way to a still-local draft), so it reopens with an empty genus list, not a re-derived
+    // count.
+    const storedGenera = Array.isArray(factorAObj.genera)
+      ? factorAObj.genera.filter((code): code is string => typeof code === "string")
+      : []
     setFactorA({
-      native_genus_count: toTextNum(factorAObj.native_genus_count),
+      genera: serializeGenusListValue(parseGenusListValue(storedGenera.join(","))),
       native_cover_percent: readNativeCover(factorAObj, factorBObj),
     })
     setFactorB({ strata_count: toTextNum(factorBObj.strata_count) })
@@ -387,15 +394,11 @@ export function useSurveyForm() {
     () => ({
       A: [
         {
-          label: fields.native_genus_count,
-          value: factorA.native_genus_count,
-          onChange: (value) => setFactorA((prev) => ({ ...prev, native_genus_count: value })),
-          required: true,
-          error: numberError(factorA.native_genus_count, fields.native_genus_count, {
-            min: 0,
-            integer: true,
-          }),
-          ...touchState("A", fields.native_genus_count),
+          label: fields.genera,
+          value: factorA.genera,
+          onChange: (value) => setFactorA((prev) => ({ ...prev, genera: value })),
+          error: null,
+          ...touchState("A", fields.genera),
         },
         {
           label: fields.native_cover_percent,
