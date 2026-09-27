@@ -52,7 +52,7 @@ list is never ambiguous.
 - [x] **Phase 4: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls (completed 2026-09-27)
 - [x] **Phase 5: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec (completed 2026-09-27)
 - [ ] **Phase 6: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
-- [ ] **Phase 7: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured
+- [x] **Phase 7: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured (completed 2026-09-27)
 - [x] **Phase 8: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; on-device airplane-mode/relaunch verification deferred to Phase 13, see phase detail)
 - [ ] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map
 - [x] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
@@ -492,7 +492,12 @@ Plans:
   4. The survey list row shows a score or progress ring; deletion follows the iOS swipe convention (destructive on the right) with a confirmation and an accessible alternative.
   5. Compte is a grouped iOS-style list (Profile, Connection, Data, About, then Sign out) instead of a mix of inline forms, rows and pills.
 
-**Plans**: TBD
+**Plans**: 6 batches, executed and closed directly (no separate orchestrator/executor split for
+this phase) — see `.planning/phases/07-information-architecture/07-CONTEXT.md` and its
+`07-0N-SUMMARY.md` files for what each batch shipped and its test evidence; `07-VALIDATION.md` maps
+each success criterion above to its batch. `origin/main` was merged before batch 5 (survey detail)
+and again before opening the PR, per the cross-phase coordination note with Phase 8/Phase 10 — no
+conflicts, no overlap with the score-display change.
 **UI hint**: yes
 
 ### Phase 8: Offline Map & Own-Survey Navigation
@@ -633,7 +638,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 4. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
 | 5. Factor A Genus List & Data-Contract Corrections | 1/1 | Complete   | 2026-09-27 |
 | 6. Genus Recognition for Factor A | 0/TBD | Not started | - |
-| 7. Information Architecture (UX Lot 3) | 0/TBD | Not started | - |
+| 7. Information Architecture (UX Lot 3) | 6/6 | Complete   | 2026-09-27 |
 | 8. Offline Map & Own-Survey Navigation | n/a | Complete (on-device airplane-mode check deferred to Phase 13) | 2026-09-27 |
 | 9. Onboarding & Explorer Polish (UX Lot 4) | 0/TBD | Not started | - |
 | 10. Survey Export & Ownership | 1/1 | Complete   | 2026-09-27 |
