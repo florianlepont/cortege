@@ -15,7 +15,8 @@
         "message": "Read configuration through ConfigService or src/config (phase 01.7 D-01)"
       }
     ],
-    "no-console": "error"
+    "no-console": "error",
+    "sql-no-unsafe-interpolation": "error"
   },
   "overrides": [
     {
