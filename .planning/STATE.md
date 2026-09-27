@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-06-PLAN.md -- ADR-002 Accepted, phase 1 closed (6/6 plans)
-last_updated: "2026-09-27T07:20:53.234Z"
+stopped_at: Completed 01.9-32-PLAN.md -- phase 01.9 closed after phase 01.8 (32/32 plans)
+last_updated: "2026-09-27T08:10:42.000Z"
 last_activity: 2026-09-27
 progress:
-  total_phases: 16
-  completed_phases: 9
+  total_phases: 22
+  completed_phases: 10
   total_plans: 115
-  completed_plans: 114
-  percent: 56
+  completed_plans: 115
+  percent: 45
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Two parallel tracks. **Audit-remediation track** — Phase 1.8 next, Phase 1.9 planned. **Species-recognition track** — Phase 1 closed 2026-09-26 (ADR-002 Accepted); Phase 1.1 (IBP method version) is next and must precede Phase 2, which builds the Factor A genus list.
+**Current focus:** The audit-remediation track (Phases 1.2–1.9) and the species-recognition track (Phase 1, Phase 1.1) are both complete as of 2026-09-27. Next up: Phase 2 (association-only sharing & scope trim, owner decision 2026-09-27), then the UX/UI audit phases (3, 4, 7, 9, 12) and the rest of the flat-numbered MVP roadmap through Phase 13. See `.planning/ROADMAP.md` for the current phase numbering — it superseded the `01.x` decimal scheme for everything after Phase 1.9.
 
 ## Current Position
 
-Phase: 01.9
+Phase: 2 (Association-only sharing & scope trim)
 Plan: Not started
-Status: Executing Phase 01.9
+Status: Phases 1 through 1.9 complete; Phase 2 not yet planned
 Last activity: 2026-09-27
 
-Progress: [█░░░░░░░░░] 13%
+Progress: [██░░░░░░░░] 10/22 phases complete
 
 ## Performance Metrics
 

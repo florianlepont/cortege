@@ -28,23 +28,26 @@ prefixes `ML` (species recognition groundwork), `INF` (infrastructure), `QA` (qu
 
 ### A — Access and Security
 
-All seven are Built and field-tested (`docs/user-tests/epic-a-access-and-security.md`, 28 cases).
-Two carry open defects, fixed in Phase 7.
+Five of six are Built and field-tested (`docs/user-tests/epic-a-access-and-security.md`, 28 cases);
+two of those five carry open defects, fixed in Phase 13. Account deletion is Partial: the API path
+is built and untested-by-necessity (no mobile entry point existed to test), fixed in Phase 2.
+Social login was found unbuilt on 2026-09-27 (no code anywhere in `mobile/src`, despite this
+document previously marking it "Built") and is moved to **Deferred — Next Milestone** below —
+`docs/specs/epic-a-access-and-security.md`'s own test plan already treats it that way.
 
 - [x] **REQ-A-login** — Contributor logs in with credentials; session survives app restarts. *(Built)*
 - [x] **REQ-A-logout** — Contributor logs out from the profile menu and returns to login. *(Built)*
 - [ ] **REQ-A-signup** — Contributor creates an account with email + password, with validation, verification and actionable errors. *(Built — `BUG-A3-4` open: duplicate email shows a generic Auth0 error)*
-- [x] **REQ-A-social-login** — Sign in with Apple and Sign in with Google, with account-linking on an existing email. *(Built — shipped without field-test coverage)*
 - [x] **REQ-A-profile** — Contributor views and edits first name, last name, display name and profile picture (camera or gallery). *(Built)*
 - [ ] **REQ-A-forgot-password** — Contributor requests a reset link, single-use and expiring after 24 h. *(Built — `BUG-A6-2` open: reset email lands in spam, an Auth0 tenant setting)*
-- [x] **REQ-A-delete-account** — Contributor deletes the account irreversibly; personal data erased, submitted surveys anonymised and retained. *(Built)*
+- [ ] **REQ-A-delete-account** — Contributor deletes the account irreversibly; personal data erased, submitted surveys anonymised and retained. *(Partial — API (`DELETE /me`) built and correct; no mobile entry point exists. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
 
 ### B — Survey Preparation
 
 - [x] **REQ-B-survey-list** — Contributor sees their surveys with parcel ids, name, last update, version, status and completion rate; filterable by status and date; visible offline. *(Built)*
-- [x] **REQ-B-survey-detail** — Contributor sees survey detail with submission deadline, completion rate, previous surveys on the same parcel, and IBP total + factor-level deltas against previous versions. *(Built)*
-- [ ] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone.** *(Partial)*
-- [ ] **REQ-B-own-surveys-map** — The map screen shows the contributor's **own** surveys instead of the public anonymized set. `PublicMapScreen` and its navigation are kept; only the data source changes. `GET /public/map-items` and `GET /public/parcels/status` stay in place, unused. *(New — no source doc; created by this milestone)*
+- [ ] **REQ-B-survey-detail** — Contributor sees survey detail with submission deadline, completion rate, previous surveys on the same parcel, and IBP total + factor-level deltas against previous versions. *(Partial — the parcel-history API (`GET /parcels/:parcelId/surveys/history`) exists but no mobile screen calls it. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
+- [ ] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone — every submitted survey is visible by default to every authenticated association member.** *(Partial)*
+- [ ] **REQ-B-own-surveys-map** — The map screen requires authentication and shows the surveys submitted by any association member — not an anonymous public set, and not only the contributor's own. `PublicMapScreen` and its navigation are kept; only the data source and the auth requirement change. `GET /public/map-items` and `GET /public/parcels/status` require authentication instead of staying open. *(New — redefined 2026-09-27 from "own surveys" to "members' surveys"; created by this milestone)*
 
 ### C — IBP Survey Data Entry
 
@@ -54,7 +57,7 @@ Two carry open defects, fixed in Phase 7.
 - [x] **REQ-C-parcel-linkage** — Contributor taps parcel polygons to select or deselect them; a survey references one or many parcels (`parcel_ids[]`); the map can centre on current location; submission is blocked when linkage is missing or invalid. *(Built)*
 - [x] **REQ-C-submit** — Submission is blocked until all ten factors are scoreable and parcel linkage metadata is present, blocked past 7 days, states the explicit reason when blocked, and transitions to `submitted` + read-only with automatic sync. *(Built)*
 - [x] **REQ-C-help** — Each complex field exposes on-demand pedagogical help that does not lose form progress. *(Built)*
-- [x] **REQ-C-versioning** — A survey carries an explicit version number and observation year; the app proposes the next version on an already-studied parcel and shows previous scores. *(Built — `api/migrations/008_parcels_and_versioning.sql`. Originally labelled V1; promoted to MVP because parcel history is in scope)*
+- [ ] **REQ-C-versioning** — A survey carries an explicit version number and observation year; the app proposes the next version on an already-studied parcel and shows previous scores. *(Partial — `version_number`/`observation_year` are recorded (`api/migrations/008_parcels_and_versioning.sql`), but no next-version suggestion or previous-scores UI exists. Corrected 2026-09-27, was wrongly marked "Built". Originally labelled V1; promoted to MVP because parcel history is in scope. Build in Phase 2)*
 - [ ] **REQ-C-species-recognition** — From the Factor A section, the contributor photographs a single subject and the app suggests the most likely tree **genus** with its alternatives, each carrying a per-genus calibrated plain-words confidence indicator; all 34 CNPF genera are suggested; the contributor confirms each suggestion and the accepted genus is saved in Factor A's genus list; recognition runs on-device with the model bundled in the app, and works in airplane mode. *(New — US-C9. Revised 2026-09-26 to match ADR-002. Gated behind `REQ-ML-adr` (satisfied) and `REQ-ML-contracts`)*
 - [ ] **REQ-C-pdf-export** — Contributor exports a survey as a PDF generated **on device** (expo-print) and delivers it through the OS share sheet (expo-sharing) to any installed target — Google Drive, Wimi, mail, AirDrop. Must work offline. No API endpoint, no direct Drive OAuth integration. *(New — no source doc; created by this milestone)*
 
@@ -73,7 +76,7 @@ Two carry open defects, fixed in Phase 7.
 Blocking prerequisites for `REQ-C-species-recognition`. Both exist because US-C9 is invisible to
 every binding contract (conflict-report warning 5).
 
-- [x] **REQ-ML-adr** — An accepted ADR records the on-device ML approach: inference runtime, model and licence, on-device model size, measured latency and accuracy on real iOS and Android devices, offline-vs-online behaviour, and an explicit go/no-go for US-C9 in this milestone with a stated fallback. *(New — satisfied 2026-09-26 by ADR-002 (Accepted), **with one accepted deviation**: no real Android device was measured, by user decision; see `01-VERIFICATION.md` override. The Android latency run and accuracy spot-check must close before Phase 3 ships.)*
+- [x] **REQ-ML-adr** — An accepted ADR records the on-device ML approach: inference runtime, model and licence, on-device model size, measured latency and accuracy on real iOS and Android devices, offline-vs-online behaviour, and an explicit go/no-go for US-C9 in this milestone with a stated fallback. *(New — satisfied 2026-09-26 by ADR-002 (Accepted), **with one accepted deviation**: no real Android device was measured, by user decision; see `01-VERIFICATION.md` override. The Android latency run and accuracy spot-check must close before Phase 6 ships.)*
 - [ ] **REQ-ML-contracts** — `docs/technical/data-contract-v1.md` redefines Factor A as a list of observed native genera from the CNPF regional list, with the count derived from it (ADR-002, D-15); `docs/technical/api-contract-v1.md` documents that shape in the survey payload under `/v1`; a migration implements it and preserves the scores of surveys already recorded as a bare count. The genus list round-trips through `POST /surveys/sync` idempotently. No species entity, no recognition endpoint, no stored suggestion outcome (D-01, D-06, D-14). *(New — revised 2026-09-26 to match ADR-002)*
 
 ### INF — Infrastructure
@@ -140,7 +143,7 @@ loss, no duplicates — or that expose accounts run first (Phases 1.2–1.5), th
 
 Carried from `.planning/intel/requirements.md`. These are rules that constrain the requirements
 above rather than deliverables in their own right, so they are not exclusively phase-mapped; they
-are verified within the phases that touch them and in the Phase 7 field tests.
+are verified within the phases that touch them and in the Phase 13 field tests.
 
 | Rule | Status this milestone |
 |------|----------------------|
@@ -151,7 +154,7 @@ are verified within the phases that touch them and in the Phase 7 field tests.
 | `REQ-X-submit-gate` — submission allowed only when required fields are complete and cadastral linkage is valid | Active |
 | `REQ-X-longitudinal` — surveys on a parcel are tracked by observation year and version, with historical comparison | Active |
 | `REQ-X-explore-parcel-first` — Explore is a parcel intelligence surface | Deferred with `REQ-B-explore-analysis` |
-| `REQ-X-visibility` — each submitted survey has `private`\|`public` | Deferred with `REQ-C-privacy-choice` |
+| `REQ-X-visibility` — each submitted survey has `private`\|`public` | **Overridden** — no private/public state this milestone; every submitted survey is visible by default to every authenticated association member. Restored with `REQ-C-privacy-choice` |
 | `REQ-X-pedagogy-on-demand` — pedagogical content on demand without interrupting entry | Active |
 | `REQ-X-draft-expiry` — a draft expires 7 days after creation | Active |
 | `REQ-X-public-anonymized` — public map data is anonymized | Deferred — no public surface this milestone |
@@ -162,7 +165,7 @@ are verified within the phases that touch them and in the Phase 7 field tests.
 
 ## Non-Functional Requirements
 
-Active for this milestone; verified in Phase 7 alongside the field tests.
+Active for this milestone; verified in Phase 13 alongside the field tests.
 
 | ID | Requirement |
 |----|-------------|
@@ -181,7 +184,8 @@ Recorded, not dropped. The code already exists for several of these.
 
 | Requirement | Note |
 |-------------|------|
-| `REQ-F-france-map` | Nationwide public map of `public` surveys — built, becomes unused when the map repoints to own surveys |
+| `REQ-A-social-login` | Sign in with Apple/Google — found unbuilt 2026-09-27 (no code anywhere in `mobile/src`, despite this document previously marking it "Built"); `docs/specs/epic-a-access-and-security.md`'s own test plan already treats it as out of this milestone |
+| `REQ-F-france-map` | Nationwide public map of `public` surveys, open to anyone unauthenticated — built, becomes unused when the map repoints to authenticated members' surveys (`REQ-B-own-surveys-map`, Phase 2) |
 | `REQ-B-parcel-status-map` | Public parcel `studied`/`not_studied` statuses |
 | `REQ-B-explore-analysis` | Explore as a parcel analysis surface |
 | `REQ-C-privacy-choice` | Private/public visibility before submission; also restores the toggle removed from `REQ-B-manage-published` |
@@ -248,57 +252,56 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-AUD-mobile-state | New | Phase 1.9 | Build |
 | REQ-AUD-i18n-a11y | New | Phase 1.9 | Build |
 | REQ-AUD-hygiene | New | Phase 1.9 | Build |
-| REQ-ML-contracts | New | Phase 2 | Build |
-| REQ-DOC-form-spec | New | Phase 2 | Build |
-| REQ-C-species-recognition | New | Phase 3 | Build |
-| REQ-B-own-surveys-map | New | Phase 4 | Build |
-| REQ-D-offline-map | New | Phase 4 | Build |
-| REQ-D-area-download | New | Phase 4 | Build |
-| REQ-D-offline-parcel-warning | New | Phase 4 | Build |
-| REQ-D-basemap-switch | New | Phase 4 | Build |
-| REQ-C-pdf-export | New | Phase 5 | Build |
-| REQ-B-manage-published | Partial | Phase 5 | Build |
-| REQ-INF-hosting-adr | New | Phase 6 | Build |
-| REQ-INF-backups | New | Phase 6 | Build |
-| REQ-INF-migrations | New | Phase 6 | Build |
-| REQ-INF-deadcode | New | Phase 6 | Build |
+| REQ-ML-contracts | New | Phase 5 | Build |
+| REQ-DOC-form-spec | New | Phase 5 | Build |
+| REQ-C-species-recognition | New | Phase 6 | Build |
+| REQ-B-own-surveys-map | New | Phase 2 | Build |
+| REQ-B-survey-detail | Partial | Phase 2 | Build |
+| REQ-C-versioning | Partial | Phase 2 | Build |
+| REQ-A-delete-account | Partial | Phase 2 | Build |
+| REQ-D-offline-map | New | Phase 8 | Build |
+| REQ-D-area-download | New | Phase 8 | Build |
+| REQ-D-offline-parcel-warning | New | Phase 8 | Build |
+| REQ-D-basemap-switch | New | Phase 8 | Build |
+| REQ-C-pdf-export | New | Phase 10 | Build |
+| REQ-B-manage-published | Partial | Phase 10 | Build |
+| REQ-INF-hosting-adr | New | Phase 11 | Build |
+| REQ-INF-backups | New | Phase 11 | Build |
+| REQ-INF-migrations | New | Phase 11 | Build |
+| REQ-INF-deadcode | New | Phase 11 | Build |
 | REQ-QA-ibp-version | New | Phase 1.1 | Build |
-| REQ-QA-sql-injection | New | Phase 6 | Build |
-| REQ-QA-indexes | New | Phase 6 | Build |
-| REQ-DOC-taxonomy | New | Phase 7 | Build |
-| REQ-DOC-epicd-ids | New | Phase 7 | Build |
-| REQ-QA-bug-a3-4 | New | Phase 7 | Build |
-| REQ-QA-bug-a6-2 | New | Phase 7 | Build |
-| REQ-QA-screen-tests | New | Phase 7 | Build |
-| REQ-FT-field-tests | New | Phase 7 | Build |
-| REQ-A-login | Built | Phase 7 | Verify |
-| REQ-A-logout | Built | Phase 7 | Verify |
-| REQ-A-signup | Built | Phase 7 | Verify (+ `BUG-A3-4` fix) |
-| REQ-A-social-login | Built | Phase 7 | Verify (never field-tested) |
-| REQ-A-profile | Built | Phase 7 | Verify |
-| REQ-A-forgot-password | Built | Phase 7 | Verify (+ `BUG-A6-2` fix) |
-| REQ-A-delete-account | Built | Phase 7 | Verify |
-| REQ-B-survey-list | Built | Phase 7 | Verify |
-| REQ-B-survey-detail | Built | Phase 7 | Verify |
-| REQ-C-guided-entry | Built | Phase 7 | Verify |
-| REQ-C-save-draft | Built | Phase 7 | Verify |
-| REQ-C-photos | Built | Phase 7 | Verify |
-| REQ-C-parcel-linkage | Built | Phase 7 | Verify |
-| REQ-C-submit | Built | Phase 7 | Verify |
-| REQ-C-help | Built | Phase 7 | Verify |
-| REQ-C-versioning | Built | Phase 7 | Verify |
-| REQ-D-offline-work | Built | Phase 7 | Verify |
-| REQ-D-auto-sync | Built | Phase 7 | Verify |
-| REQ-D-conflict-resolution | Built | Phase 7 | Verify |
+| REQ-QA-sql-injection | New | Phase 11 | Build |
+| REQ-QA-indexes | New | Phase 11 | Build |
+| REQ-DOC-taxonomy | New | Phase 13 | Build |
+| REQ-DOC-epicd-ids | New | Phase 13 | Build |
+| REQ-QA-bug-a3-4 | New | Phase 13 | Build |
+| REQ-QA-bug-a6-2 | New | Phase 13 | Build |
+| REQ-QA-screen-tests | New | Phase 13 | Build |
+| REQ-FT-field-tests | New | Phase 13 | Build |
+| REQ-A-login | Built | Phase 13 | Verify |
+| REQ-A-logout | Built | Phase 13 | Verify |
+| REQ-A-signup | Built | Phase 13 | Verify (+ `BUG-A3-4` fix) |
+| REQ-A-profile | Built | Phase 13 | Verify |
+| REQ-A-forgot-password | Built | Phase 13 | Verify (+ `BUG-A6-2` fix) |
+| REQ-B-survey-list | Built | Phase 13 | Verify |
+| REQ-C-guided-entry | Built | Phase 13 | Verify |
+| REQ-C-save-draft | Built | Phase 13 | Verify |
+| REQ-C-photos | Built | Phase 13 | Verify |
+| REQ-C-parcel-linkage | Built | Phase 13 | Verify |
+| REQ-C-submit | Built | Phase 13 | Verify |
+| REQ-C-help | Built | Phase 13 | Verify |
+| REQ-D-offline-work | Built | Phase 13 | Verify |
+| REQ-D-auto-sync | Built | Phase 13 | Verify |
+| REQ-D-conflict-resolution | Built | Phase 13 | Verify |
 
 **Coverage:**
 
-- MVP requirements: **66** total
-- Mapped to phases: **66** ✓
+- MVP requirements: **65** total (`REQ-A-social-login` moved to Deferred — Next Milestone 2026-09-27, found unbuilt)
+- Mapped to phases: **65** ✓
 - Unmapped: **0** ✓
-- Of which carry build work: **47** (19 are already built and are verified in Phase 7)
-- Deferred to next milestone: 19 · Deferred to V2: 4
+- Of which carry build work: **50** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 2, 2026-09-27); 15 are already built and are verified in Phase 13
+- Deferred to next milestone: 20 · Deferred to V2: 4
 
 ---
 *Requirements defined: 2026-09-22*
-*Last updated: 2026-09-23 — full code audit remediation inserted as Phases 1.2–1.9*
+*Last updated: 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*

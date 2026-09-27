@@ -9,25 +9,33 @@ on real devices, and a data/API contract extension, so a no-go costs days rather
 then completes the offline map the field actually needs, gives the surveyor a way to get a survey
 out of the app as a PDF, takes PostgreSQL out of PoC status and ratifies the hosting that has been
 running unofficially, and finishes by proving the whole thing in the field — which is the milestone's
-success metric, not its afterthought.
+success metric, not its afterthought. A September 2026 UX/UI audit, folded into this milestone by
+owner decision on 2026-09-27 (Phases 3, 4, 7, 9 and 12), rebuilds field-entry ergonomics, the visual
+identity and information architecture before that field test happens, so it validates the interface
+the association will actually use.
 
-**Milestone framing:** internal-only. The community and social dimension (public map, gamification,
-moderation, association section, donation) is deferred to the next milestone. See
-`.planning/REQUIREMENTS.md` for what is deferred and why.
+**Milestone framing:** internal-only, shared within the association. Every authenticated member sees
+every member's submitted surveys — there is no per-user private/public choice and no anonymous public
+surface. The wider community and social dimension (an anonymous public map, gamification, moderation,
+association section, donation) is deferred to the next milestone. See `.planning/REQUIREMENTS.md` for
+what is deferred and why, and Phase 2 for where this milestone's own scope was trimmed to match.
 
 **Schedule reality:** the published plan (May 2026) put MVP finalization at September 2026, field
 tests October–December 2026, store publication January 2027. Today is 2026-09-22 and species
-recognition is unbuilt and unresearched. Phases 1–3 front-load that unknown so the slip is measured
-in October rather than discovered in December.
+recognition is unbuilt and unresearched. Phases 1, 5 and 6 front-load that unknown so the slip is
+measured in October rather than discovered in December.
 
 ## Phases
 
 **Phase Numbering:**
 
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
-
-Decimal phases appear between their surrounding integers in numeric order.
+Phases execute in the plain numeric order they're listed in below — reading top to bottom is reading
+the execution order. Phase 1.1 through 1.9 are the exception, kept in their original `1.x` numbering
+because they are the 2026-09 code-audit sub-phases: mostly complete, with plan/summary files already
+committed under `.planning/phases/01.x-*/`, and renumbering them would rewrite history for no benefit.
+Every phase from 2 onward — including phases inserted after the roadmap was first written, marked
+`INSERTED` — is a plain integer, renumbered on 2026-09-27 specifically so a phase's position in this
+list is never ambiguous.
 
 - [x] **Phase 1: Species Recognition — Approach Decision** - Measure on-device ML on real devices and ratify a go/no-go in an ADR (completed 2026-09-26)
 - [x] **Phase 1.1: Reconcile the IBP method version** (INSERTED) - Establish whether the app still implements the current CNPF method, and what changes if not (completed 2026-09-26)
@@ -38,13 +46,19 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.6: Sync feed ordering and unified object storage** (INSERTED) - No skipped change between devices; one bounded storage service (completed 2026-09-25)
 - [x] **Phase 1.7: API configuration, service split and database tuning** (INSERTED) - Fail-fast config, split SurveysService, bounded and indexed queries (completed 2026-09-26)
 - [x] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested (completed 2026-09-27)
-- [ ] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs
-- [ ] **Phase 2: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec
-- [ ] **Phase 3: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
-- [ ] **Phase 4: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map
-- [ ] **Phase 5: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys
-- [ ] **Phase 6: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone
-- [ ] **Phase 7: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
+- [x] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs (completed 2026-09-27)
+- [ ] **Phase 2: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI; the UX audit's Lot 0 trust bugs (score scale, sync-status masking, decimal input, account-deletion copy) are folded in
+- [ ] **Phase 3: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions
+- [ ] **Phase 4: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls
+- [ ] **Phase 5: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec
+- [ ] **Phase 6: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
+- [ ] **Phase 7: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured
+- [ ] **Phase 8: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map
+- [ ] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map
+- [ ] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys
+- [ ] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone
+- [ ] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F
+- [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
 
 ## Phase Details
 
@@ -73,7 +87,7 @@ Plans:
 ### Phase 01.1: Reconcile the IBP method version — repo implements Fr v3.0, CNPF publishes FR v3.2 (INSERTED)
 
 **Goal**: Know whether the app still implements the current CNPF IBP method, and exactly what changes if it does not.
-**Depends on**: Nothing — independent of the species-recognition track. Must land before Phase 2, which writes the Factor A genus list.
+**Depends on**: Nothing — independent of the species-recognition track. Must land before Phase 5, which writes the Factor A genus list.
 **Requirements**: REQ-QA-ibp-version
 **Success Criteria** (what must be TRUE):
 
@@ -97,7 +111,7 @@ Plans:
 ### Phase 01.2: Stop field data loss and account exposure (INSERTED)
 
 **Goal**: Nothing an ecologist records offline can be destroyed by a session error, and no account or endpoint can be taken over or opened by configuration mistake.
-**Depends on**: Nothing — independent of the species-recognition track. Must land before Phase 7.
+**Depends on**: Nothing — independent of the species-recognition track. Must land before Phase 13.
 **Requirements**: REQ-AUD-session-data-loss, REQ-AUD-rate-limit, REQ-AUD-debug-surface, REQ-AUD-identity, REQ-AUD-mobile-quick-fixes
 **Source**: audit lots L1–L4 (`docs/audits/plan-remediation-2026-09.md`), findings M-C1, A-C1, A-H1, A-H4, A-M6, M-H3, M-H5 (`docs/audits/audit-2026-09-code-complet.md`)
 **Success Criteria** (what must be TRUE):
@@ -260,7 +274,7 @@ Plans:
 **Depends on**: Phase 01.3. Should follow Phase 01.1, so the extracted rules are the ratified method version.
 **Requirements**: REQ-AUD-ibp-domain, REQ-AUD-test-infra-rest
 **Source**: audit lot L17 and the remainder of L7, findings ARCH-1, T6, the untested RS256 path, the catch-all E2E suite
-**Input from Phase 01.1**: ADR-003 (`docs/technical/adr-003-ibp-method-version-v1.md`) adopts IBP FR v3.2; this phase implements its change list CH-1..CH-11 (CH-12 is phase 2), including the method-version dispatch (CH-6: a missing method version means v3.0, so identical replays of submitted v3.0 surveys stay valid) and `docs/technical/ibp-validation-matrix-v2.md` (CH-10).
+**Input from Phase 01.1**: ADR-003 (`docs/technical/adr-003-ibp-method-version-v1.md`) adopts IBP FR v3.2; this phase implements its change list CH-1..CH-11 (CH-12 is phase 5), including the method-version dispatch (CH-6: a missing method version means v3.0, so identical replays of submitted v3.0 surveys stay valid) and `docs/technical/ibp-validation-matrix-v2.md` (CH-10).
 **Success Criteria** (what must be TRUE):
 
   1. A `packages/ibp-domain` workspace exports the factor keys, allowed sets, scoring and draft/submit validation as pure functions, plus the sync contract types; `IbpRulesService` and `mobile/src/app/ibp-scoring.ts` delegate to it and `mobile/src/app/types.ts` imports its contract types.
@@ -341,9 +355,64 @@ Plans:
 - [x] 01.9-29-PLAN.md — Lock the phase's text, accessibility and structure rules: narrow status setters to the catalogue type, turn th (wave 8)
 - [x] 01.9-30-PLAN.md — Record this phase's facts in CLAUDE.md, in the same PR as the code (RESEARCH "two passes"; split out of the st (wave 7)
 - [x] 01.9-31-PLAN.md — Prove the phase: run and record the full local gate and every measurement, record PR #158's CI evidence suppli (wave 9)
-- [ ] 01.9-32-PLAN.md — Close phase 01.9 after phase 01.8: final documentation sweep, complete audit status links, and the French vali (wave 10)
+- [x] 01.9-32-PLAN.md — Close phase 01.9 after phase 01.8: final documentation sweep, complete audit status links, and the French vali (wave 10)
 
-### Phase 2: Factor A Genus List & Data-Contract Corrections
+### Phase 2: Association-only sharing & scope trim (INSERTED)
+
+**Goal**: The app matches its real audience — association members only, no anonymous public surface, no half-built moderation — and the survey-detail and account screens do what `REQUIREMENTS.md` already claims they do.
+**Depends on**: Phase 01.6 (StorageService/API boundary), Phase 01.9 (mobile state/i18n conventions). Independent of the species-recognition track. Should land before Phase 8, which builds offline capability on top of the map this phase repoints.
+**Requirements**: REQ-B-own-surveys-map (redefined), REQ-B-manage-published, REQ-X-visibility, REQ-A-delete-account (build), REQ-B-survey-detail (build), REQ-C-versioning (build), REQ-B-manage-published (US-B4 tap target)
+**Source**: Owner decision 2026-09-27, on top of a code-vs-code-audit review of Epics A–I (`.planning` session notes) that found three bricks already shipped past what `REQUIREMENTS.md` had decided, and three bricks `REQUIREMENTS.md` had already marked "Built" that have no working UI.
+**Success Criteria** (what must be TRUE):
+
+  1. `GET /public/map-items` and `GET /public/parcels/status` require authentication; the "Explorer" map shows surveys submitted by any association member (not an anonymous public set, and not only the contributor's own) — this **replaces** Phase 8's original "own surveys" framing in `REQ-B-own-surveys-map`.
+  2. The private/public visibility control is removed from survey detail; every submitted survey is visible by default to every authenticated member. `REQ-X-visibility` no longer applies as a per-survey choice this milestone.
+  3. The "report a survey" entry point is removed from the mobile app (button, panel, and the `POST /reports` call site). The `reports` module and its role-gated review endpoints stay in the API, untouched and still unreachable from any client, ready for the next milestone that gives it a moderation UI.
+  4. From the Compte screen, a contributor can delete their account — the existing API path (`DELETE /me`) gets a mobile entry point with a destructive confirmation.
+  5. Survey detail shows previous submitted surveys on the same parcel and the IBP total/factor deltas against the latest previous version — wiring the existing `GET /parcels/:parcelId/surveys/history` endpoint into the UI (`REQ-B-survey-detail`, `REQ-C-versioning`).
+  6. In the now member-only Explorer map, tapping a studied parcel opens its latest survey detail or history, matching the behaviour already working in the survey-creation map.
+  7. `REQUIREMENTS.md` no longer marks `REQ-A-social-login`, `REQ-A-delete-account`, `REQ-B-survey-detail` or `REQ-C-versioning` as "Built" when they are not; `docs/specs/epic-a-access-and-security.md` retags US-A4 (social login) out of MVP to match the QA plan's own treatment of it, and `docs/specs/user-stories.md` §8 stops filing Epic E/F's moderation workflow and team-challenge stories under "V2" when they are next-milestone (deferred), not V2.
+  8. **UX audit Lot 0** (`docs/design/ux-ui-audit-2026-09.md` §2 and §3.4, owner decision 2026-09-27): re-verified first, since the audit predates the 01.8-11 fix and BUG-01/BUG-02 (score shown "/10") are already resolved. What remains is fixed here: `resolveSurveyUiStatus` stops letting a submitted-but-failed survey read "Soumis" in green (BUG-03); the numeric keyboard accepts a decimal comma (BUG-04); account-deletion copy says "anonymised", not "deleted", and the danger zone moves out of the first Settings section (BUG-05, folds into this phase's account-deletion UI); the iOS status bar uses `dark-content` on light screens (BUG-06); the Android Home tab gets its own icon, not Mes Relevés' (BUG-07); Home's pull-to-refresh reflects real state instead of a hardcoded `refreshing={false}` (BUG-08); and the badge/notice contrast failures below the WCAG floor (DS-01, DS-02, DS-14) are corrected.
+
+**Plans**: TBD
+
+### Phase 3: Field-Entry Ergonomics (INSERTED, UX audit Lot 1)
+
+**Goal**: Scoring a factor is a tap, not a typed number — a survey drops from ~80–90 interactions to ~35–45, with no keyboard for 80% of them.
+**Depends on**: Phase 1.9 (mobile state/i18n/component conventions this phase's new components follow). Must land before Phase 5, which redesigns Factor A's own input as a genus list and should build it on these same components rather than the old numeric fields.
+**Requirements**: none yet in `REQUIREMENTS.md` — this phase's own success criteria are its requirements, added here by the 2026-09-27 owner decision to bring the UX audit into MVP scope
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.1 (FLOW-01…FLOW-12), §5 (tokens, the slice this phase needs) and §7 Lot 1
+**Success Criteria** (what must be TRUE):
+
+  0. This phase adds the minimal token slice its own components need — spacing on the 4-grid, semantic empty/error/complete colors, pressed/interaction states (§5) — as real entries in `brand-tokens.ts`, not one-off inline styles; it does not wait for Phase 4's full design-system pass, and does not redo this work when Phase 4 lands. Every new pattern (`FactorInput`'s four variants, the pager, the fixed CTA bar, the progress gauge) is added to `docs/design/charte-graphique-etats-sauvages-spec.md` in the same PR that ships it, so the charter documents what the app actually does.
+  1. A `FactorInput` component ships in four variants — counter (C/D/E), segmented control (H), checkable chips with a derived count (B/I/J), slider in 5% steps (B/G) — replacing every `keyboardType="numeric"` field in the ten factors.
+  2. A factor's error state shows only after the field is left or submission is attempted, never on first open; empty, error and complete each have a distinct, non-alarming visual state.
+  3. Factors are navigated through a horizontal pager (A→J) with a fixed footer pager control, instead of 20 round trips to the factor grid; a "next incomplete factor" shortcut exists.
+  4. A fixed bottom action bar carries the primary CTA; the 2×5 factor summary grid shows a progress ring per factor that morphs into a check mark, plus a segmented total gauge visible from the first screen, not only at the last step.
+  5. The decimal comma is accepted in every numeric entry point that remains; autosave is visible ("Enregistré · 14:32") instead of implied by a "Save draft" label that suggests a manual step.
+  6. The parcel map's selected/studied/free states use accessible, on-brand colors readable in direct sunlight, and parcel selection is also offered as a "Parcels near you" native sheet.
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 4: Visual Foundations & Motion (INSERTED, UX audit Lot 2)
+
+**Goal**: The app looks like Etats Sauvages, not a generic SF Pro/Roboto build, and its motion runs on the UI thread instead of ad hoc JS timers.
+**Depends on**: Phase 3 (extends the token slice Phase 3 already added — spacing, empty/error/complete colors, interaction states — rather than replacing it; this phase's own job is the parts Phase 3 didn't need: fonts, the full hex-literal migration, the motion engine, and the components below)
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.4 (DS-01…DS-16), §4 (motion system), §5 (tokens) and §7 Lot 2
+**Success Criteria** (what must be TRUE):
+
+  1. The charter's typefaces (Mazzard H, or Avenir Next as an explicit stand-in pending licence) load through an `expo-font` config plugin and are wired into `brandTypography`; no screen renders in the OS default face.
+  2. The 125 hard-coded hex/`rgba` colors outside `brand-tokens.ts` are gone, replaced by semantic tokens (`onWarningSurface`, `onDangerSurface`, `onDark.*`, `map.*`); an ESLint rule rejects a new hex literal or `rgba(` outside the tokens file.
+  3. `react-native-reanimated` 4 and `expo-haptics` back a `brandMotion` token set (durations, easings, springs) and a semantic `ui/feedback.ts`; the legacy `Animated`/`LayoutAnimation` calls in the collapsible headers are migrated to `useAnimatedScrollHandler` on `translateY`/`opacity`.
+  4. `AppPressable` is the single pressable primitive (spring scale, Android ripple, mandatory accessibility label) and replaces the inconsistent pressed-opacity values across `DraftCard`, `ParcelNearbyCard` and `AppButton`.
+  5. A `Skeleton`/`SkeletonRow` pulse replaces static loading placeholders; every animation and decorative loop respects "Reduce Motion" and pauses in the background.
+  6. `docs/design/charte-graphique-etats-sauvages-spec.md` is updated with the typefaces actually loaded, the full semantic token list, the motion tokens (`brandMotion`) and `AppPressable`'s interaction spec — closing the gap the audit found between the written charter and the shipped app.
+
+**Plans**: TBD
+
+### Phase 5: Factor A Genus List & Data-Contract Corrections
 
 **Goal**: Factor A records the observed native genera as a list rather than a bare count, through contracts written down before any UI exists; surveys already recorded keep their scores; and the two stale spec sections that contradict shipped behaviour are corrected.
 **Depends on**: Phase 1, Phase 1.1 (the Factor A genus list must come from the ratified method version), Phase 1.8 (the Factor A rules, the CNPF genus list as an allowed set, and the sync contract types all belong in the `packages/ibp-domain` workspace that phase creates)
@@ -360,17 +429,17 @@ Plans:
 
 **Plans**: TBD
 
-### Phase 3: Genus Recognition for Factor A
+### Phase 6: Genus Recognition for Factor A
 
 **Goal**: A surveyor fills Factor A faster by photographing a tree than by naming its genus from memory.
-**Depends on**: Phase 2
+**Depends on**: Phase 5
 **Requirements**: REQ-C-species-recognition
 **Inputs from Phase 1**: the promoted model `genus_classifier.tflite` (EfficientNet-B0, float16, 8.24 MB) and the per-genus confidence calibration table — both measured artefacts ADR-002 rests on. Both are preserved outside the repository at `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/` (model, labels, Keras source, training and export reports, calibration table and re-cut scale — 42 MB, MD5-verified against the originals on 2026-09-26). They are deliberately not committed: 42 MB of binaries would stay in git history forever. The calibrated thresholds are also versioned in `docs/technical/species-recognition-spike-measurements-v1.md` §15.2.
 **Success Criteria** (what must be TRUE):
 
   1. From the Factor A section, the surveyor photographs a single subject — one tree, a leaf or bark (D-10) — and sees the most likely genus first with its alternatives underneath (D-11), each carrying a plain-words confidence indicator (D-12).
   2. The indicator uses ADR-002's per-genus calibrated thresholds, so a given label means the same reliability whichever genus is shown; all 34 CNPF genera are suggested and none is withheld (D-04).
-  3. A suggestion never applies itself: the surveyor confirms it, and the accepted genus is added to Factor A's genus list (Phase 2), which is there again when the survey is reopened. The recognition photo is not kept (D-13).
+  3. A suggestion never applies itself: the surveyor confirms it, and the accepted genus is added to Factor A's genus list (Phase 5), which is there again when the survey is reopened. The recognition photo is not kept (D-13).
   4. Recognition works with the device in airplane mode: the model is bundled in the app binary (D-07, amended) and inference is on-device (D-06). If the model fails to load, the surveyor sees a clear message and falls back to manual entry (D-08).
   5. The genus list reaches the server through the normal sync flow and appears in the survey read back from the API.
   6. **Closes Phase 1's accepted Android deviation:** a real Android device run records median, p95 and worst total latency, online and in airplane mode, against the 3 s budget, plus an accuracy spot-check confirming the bundled `.tflite` behaves as on iOS. Recorded in the same format as the measurement document's Section 7. The feature does not ship until this is done.
@@ -378,14 +447,31 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 4: Offline Map & Own-Survey Navigation
+### Phase 7: Information Architecture (INSERTED, UX audit Lot 3)
 
-**Goal**: The surveyor can find their way around a parcel and see their own past work on the map, with no network at all.
-**Depends on**: Nothing (independent of the species-recognition track; sequenced after it)
-**Requirements**: REQ-B-own-surveys-map, REQ-D-offline-map, REQ-D-area-download, REQ-D-offline-parcel-warning, REQ-D-basemap-switch
+**Goal**: Home and Mes Relevés each do one job instead of duplicating each other, sync state is visible wherever it matters, and survey detail and Compte read as one coherent app.
+**Depends on**: Phase 4 (this phase's new components — `SyncStatusPill`, `SurveyProgressCard`, `IbpFactorBars`, `AppGroupedList` — are built on Lot 2's tokens and motion primitives)
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision. Note: SYNC-02 (a visible offline/queue indicator) restates the spirit of `REQ-D-offline-work` and `REQ-D-auto-sync`, which this milestone already built but never surfaced outside Settings.
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.2 (HOME-01…SYNC-03) and §7 Lot 3
 **Success Criteria** (what must be TRUE):
 
-  1. The map screen shows the surveyor's own surveys instead of the public anonymized set, with its navigation unchanged.
+  1. Home becomes a dashboard (resume action, alerts, progress); Mes Relevés becomes a pure list (title, search, filters, a "+" in the header); the duplicated draft cards merge into one `SurveyProgressCard`.
+  2. A `SyncStatusPill` (offline · N to send · syncing · up to date) is visible in the Home and Mes Relevés headers, not only in Settings; a blocked/conflicted survey never reads "Soumis" in green (this restates BUG-03, fixed in Phase 2 — this phase carries the pattern to every screen that shows survey status).
+  3. Survey detail shows one score with its denominator and a peuplement/contexte split (`IbpFactorBars`), instead of the same number repeated three times with no scale.
+  4. The survey list row shows a score or progress ring; deletion follows the iOS swipe convention (destructive on the right) with a confirmation and an accessible alternative.
+  5. Compte is a grouped iOS-style list (Profile, Connection, Data, About, then Sign out) instead of a mix of inline forms, rows and pills.
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 8: Offline Map & Own-Survey Navigation
+
+**Goal**: The surveyor can find their way around a parcel and see the association's recorded work on the map, with no network at all.
+**Depends on**: Phase 2 (the map this phase makes offline-capable is the member-authenticated one Phase 2 ships; the "own surveys" framing below is superseded — see that phase)
+**Requirements**: REQ-D-offline-map, REQ-D-area-download, REQ-D-offline-parcel-warning, REQ-D-basemap-switch
+**Success Criteria** (what must be TRUE):
+
+  1. ~~The map screen shows the surveyor's own surveys instead of the public anonymized set~~ — done in Phase 2, which repoints the map to all authenticated members' surveys instead. This phase builds offline capability on top of that map; navigation stays unchanged.
   2. The surveyor switches between a satellite and a map basemap, and the choice persists while navigating.
   3. The surveyor selects an area, sees its estimated download size and progress, and the downloaded area is still usable after force-quitting and relaunching the app; downloaded areas can be listed and deleted.
   4. In airplane mode the map shows an offline indicator, renders the downloaded basemap and cached parcels, follows GPS, and still allows zoom, pan and parcel selection.
@@ -394,7 +480,23 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 5: Survey Export & Ownership
+### Phase 9: Onboarding & Explorer Polish (INSERTED, UX audit Lot 4)
+
+**Goal**: A first launch explains the app and asks for permissions with context, and the now member-only Explorer map behaves like a real map instead of a prototype.
+**Depends on**: Phase 8 (this phase's map-sheet and filter work happens on the offline-capable, member-authenticated map Phases 2 and 8 ship — building it earlier would mean redoing it once offline support lands)
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision. Sign-in-with-Apple (ONB-04) is explicitly **not** built here: US-A4 (social login) is deferred to the next milestone (Phase 2, criterion 7).
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.3 (ONB-01…MAP-05) and §7 Lot 4
+**Success Criteria** (what must be TRUE):
+
+  1. A three-screen carousel (ten factors · offline · member map) runs before login on first launch, followed by a permissions-priming screen for location and camera with a link to Settings on refusal; "already seen" is persisted.
+  2. The Expo splash and adaptive icon are configured natively, so no default Expo splash flashes before `TypewriterSplash`.
+  3. Explorer's floating panels become a tiered native sheet (2–3 detents) instead of absolutely-positioned cards; filters are immediate chips (period, region, "my surveys") instead of free-text fields and an "Apply" button, with an active-filter count and a reset action.
+  4. Map markers show the survey's score band (moss/ochre/terracotta) with a legend, instead of a single off-brand system pin color; the user's position uses the native `showsUserLocation` halo instead of a custom marker.
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 10: Survey Export & Ownership
 
 **Goal**: The surveyor can get a survey out of the app and clean up their own surveys — with no network and no back-office.
 **Depends on**: Nothing (independent of Phases 1–4)
@@ -405,12 +507,12 @@ Plans:
   2. The export works in airplane mode: the PDF is produced and shared with no API call.
   3. The PDF contains the survey's identifying data (site, parcel ids, observation year, version, date), the ten factor scores and the IBP total.
   4. The surveyor deletes their own survey behind a confirmation step, and it disappears from their list.
-  5. No private/public visibility control is presented anywhere in the app.
+  5. ~~No private/public visibility control is presented anywhere in the app~~ — done in Phase 2.
 
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 6: Durable Backend
+### Phase 11: Durable Backend
 
 **Goal**: The production database can survive a failure, the hosting that is actually running is the hosting that is written down, and the API no longer carries dead or unsafe code.
 **Depends on**: Nothing (independent of Phases 1–5)
@@ -425,10 +527,24 @@ Plans:
 
 **Plans**: TBD
 
-### Phase 7: Field Validation
+### Phase 12: Interface Finishing (INSERTED, UX audit Lot 5)
+
+**Goal**: The remaining audit findings that don't block a field test — dark mode, fuller use of Liquid Glass, a real history view — are closed before the app is judged in the field.
+**Depends on**: Phase 7, Phase 9
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-27 owner decision. **Carve-out:** the audit's "Ma saison" gamification module (points, badges, next-reward teaser) is explicitly excluded — it is Epic F, deferred to the next milestone per this milestone's own scope decision, and stays out even though the rest of Lot 5 is pulled into MVP.
+**Source**: `docs/design/ux-ui-audit-2026-09.md` §3.4 (DS-12, DS-15), §3.2 (DET-05) and §7 Lot 5 (minus the gamification item)
+**Success Criteria** (what must be TRUE):
+
+  1. `light`/`dark` themes exist on the same semantic tokens through `useBrandTheme()`, defaulting to `automatic`.
+  2. Floating map and card controls use `expo-blur` or `expo-glass-effect` instead of a flat `rgba` fill; parcel selection uses a `formSheet` with detents instead of a full-screen modal.
+  3. Survey-detail history renders as an icon timeline with pull-to-refresh and a loading skeleton, instead of plain text.
+
+**Plans**: TBD
+
+### Phase 13: Field Validation
 
 **Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
-**Depends on**: Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 5, 6
+**Depends on**: Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
 **Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
 **Success Criteria** (what must be TRUE):
 
@@ -443,11 +559,11 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13
 
-Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phases 2–6 do not depend on 1.6–1.9 either, so they can interleave if the schedule requires it.
+Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 2 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 8, whose offline-map work builds on the map Phase 2 repoints. Phases 3, 4, 7, 9 and 12 (the UX/UI audit, folded into MVP by owner decision 2026-09-27) are threaded between the phases they depend on for components (Phase 3 before Phase 5, so Factor A's genus-list UI reuses the new field components) or for a stable screen to redesign (Phase 7 after Phase 6, Phase 9 after Phase 8, Phase 12 last, right before Phase 13). Phases 10–11 do not depend on Phases 1.6–1.9 or Phase 2 either, so they can interleave if the schedule requires it.
 
-Phases 4, 5 and 6 declare no dependency on the species-recognition track and can be reordered ahead
+Phases 8, 10 and 11 declare no dependency on the species-recognition track and can be reordered ahead
 of it if Phase 1 returns a no-go, or run in parallel with it.
 
 | Phase | Plans Complete | Status | Completed |
@@ -461,25 +577,36 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.6. Sync feed ordering and unified object storage | 9/9 | Complete    | 2026-09-25 |
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
 | 1.8. Shared IBP domain package and test completeness | 16/16 | Complete    | 2026-09-27 |
-| 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
-| 2. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
-| 3. Genus Recognition for Factor A | 0/TBD | Not started | - |
-| 4. Offline Map & Own-Survey Navigation | 0/TBD | Not started | - |
-| 5. Survey Export & Ownership | 0/TBD | Not started | - |
-| 6. Durable Backend | 0/TBD | Not started | - |
-| 7. Field Validation | 0/TBD | Not started | - |
+| 1.9. Mobile state architecture, i18n, accessibility and hygiene | 32/32 | Complete    | 2026-09-27 |
+| 2. Association-only sharing & scope trim | 0/TBD | Not started | - |
+| 3. Field-Entry Ergonomics (UX Lot 1) | 0/TBD | Not started | - |
+| 4. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
+| 5. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
+| 6. Genus Recognition for Factor A | 0/TBD | Not started | - |
+| 7. Information Architecture (UX Lot 3) | 0/TBD | Not started | - |
+| 8. Offline Map & Own-Survey Navigation | 0/TBD | Not started | - |
+| 9. Onboarding & Explorer Polish (UX Lot 4) | 0/TBD | Not started | - |
+| 10. Survey Export & Ownership | 0/TBD | Not started | - |
+| 11. Durable Backend | 0/TBD | Not started | - |
+| 12. Interface Finishing (UX Lot 5) | 0/TBD | Not started | - |
+| 13. Field Validation | 0/TBD | Not started | - |
 
 ## Coverage
 
-All 66 MVP requirements map to exactly one phase. 47 carry build work across Phases 1–7 (24 of them
-from the 2026-09 code audit, Phases 1.2–1.9); the other 19 are already built and are verified in Phase 7's field tests. Full mapping in
+All 66 MVP requirements map to exactly one phase. 47 carry build work across Phases 1–13 (24 of them
+from the 2026-09 code audit, Phases 1.2–1.9); the other 19 are already built and are verified in Phase 13's field tests. Full mapping in
 `.planning/REQUIREMENTS.md` → Traceability.
+
+**UX/UI audit (Phases 3, 4, 7, 9, 12):** folded into MVP scope by owner decision 2026-09-27, on top of the
+66 requirements above. Not yet broken into individual `REQ-UX-*` IDs in `REQUIREMENTS.md` — tracked
+for now by direct reference to `docs/design/ux-ui-audit-2026-09.md`'s own finding IDs (FLOW-*, DS-*,
+HOME-*, LIST-*, DET-*, SYNC-*, ONB-*, NAV-*, MAP-*, ACC-*) inside each phase's success criteria.
 
 ## Deferred
 
 Recorded in `.planning/REQUIREMENTS.md`, not dropped:
 
-- **Next milestone (community / social):** `REQ-F-france-map`, `REQ-B-parcel-status-map`, `REQ-B-explore-analysis`, `REQ-C-privacy-choice`, and all of Epics E, F, G and I. Code already exists for several of them. **Prerequisite:** a back-office / CMS surface, which needs its own ADR, architecture block and contract before Epics E and G can be planned.
+- **Next milestone (community / social):** `REQ-F-france-map`, `REQ-B-parcel-status-map`, `REQ-B-explore-analysis`, `REQ-C-privacy-choice`, and all of Epics E, F, G and I — including the UX audit's "Ma saison" gamification module (§7 Lot 5), explicitly carved out of Phase 12 as Epic F. Code already exists for several of them. **Prerequisite:** a back-office / CMS surface, which needs its own ADR, architecture block and contract before Epics E and G can be planned.
 - **V2:** all of Epic H (regional overviews, parcel trends, factor distributions, analytics trust).
 
 ---
