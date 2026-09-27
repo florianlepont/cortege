@@ -12,6 +12,7 @@ import { ibpMethodFr } from "./ibp-method"
 import { labelsFr } from "./labels"
 import { navigationFr } from "./navigation"
 import { nearbyParcelsSheetFr } from "./nearby-parcels-sheet"
+import { offlineMapFr } from "./offline-map"
 import { ownerConflictFr } from "./owner-conflict"
 import { parcelHistoryFr } from "./parcel-history"
 import { parcelSelectionFr } from "./parcel-selection"
@@ -20,6 +21,7 @@ import { publicMapFr } from "./public-map"
 import { settingsFr } from "./settings"
 import { statusFr } from "./status"
 import { surveyDetailFr } from "./survey-detail"
+import { surveyExportFr } from "./survey-export"
 import { surveyFormFr } from "./survey-form"
 import { surveyListFr } from "./survey-list"
 import { syncErrorsFr } from "./sync-errors"
@@ -37,6 +39,7 @@ export const fr = {
   components: componentsFr,
   surveyList: surveyListFr,
   surveyDetail: surveyDetailFr,
+  surveyExport: surveyExportFr,
   surveyForm: surveyFormFr,
   factorDetail: factorDetailFr,
   factorInput: factorInputFr,
@@ -53,6 +56,7 @@ export const fr = {
   authGate: authGateFr,
   account: accountFr,
   publicMap: publicMapFr,
+  offlineMap: offlineMapFr,
   validation: validationFr,
   status: statusFr,
 } as const

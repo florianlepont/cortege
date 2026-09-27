@@ -3,6 +3,7 @@ import {
   computeRegionZoom,
   areRegionsNearlyEqual,
   computeRegionBbox,
+  computeRegionBounds,
   buildBboxAroundPoint,
 } from "./map-viewport"
 
@@ -139,6 +140,30 @@ describe("computeRegionBbox", () => {
     const [minLng, , maxLng] = bbox.split(",").map(Number)
     expect(minLng).toBeGreaterThanOrEqual(-180)
     expect(maxLng).toBeLessThanOrEqual(180)
+  })
+})
+
+describe("computeRegionBounds", () => {
+  test("matches the numbers computeRegionBbox encodes", () => {
+    const region = { latitude: 48, longitude: 2, latitudeDelta: 0.1, longitudeDelta: 0.2 }
+    const bounds = computeRegionBounds(region)
+    const [minLng, minLat, maxLng, maxLat] = computeRegionBbox(region).split(",").map(Number)
+
+    expect(bounds.minLat).toBeCloseTo(minLat, 6)
+    expect(bounds.maxLat).toBeCloseTo(maxLat, 6)
+    expect(bounds.minLng).toBeCloseTo(minLng, 6)
+    expect(bounds.maxLng).toBeCloseTo(maxLng, 6)
+  })
+
+  test("clamps to the world extent", () => {
+    const bounds = computeRegionBounds({
+      latitude: 89.99,
+      longitude: 179.99,
+      latitudeDelta: 10,
+      longitudeDelta: 10,
+    })
+    expect(bounds.maxLat).toBeLessThanOrEqual(90)
+    expect(bounds.maxLng).toBeLessThanOrEqual(180)
   })
 })
 

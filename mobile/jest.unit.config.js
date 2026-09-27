@@ -21,6 +21,7 @@ module.exports = {
     '^expo-sqlite$': '<rootDir>/test/expo-sqlite.mock.ts',
     '^expo-haptics$': '<rootDir>/test/expo-haptics.mock.ts',
     '^expo-crypto$': '<rootDir>/test/expo-crypto.mock.ts',
+    '^expo-network$': '<rootDir>/test/expo-network.mock.ts',
     '^expo-file-system/legacy$': '<rootDir>/test/expo-file-system-legacy.mock.ts',
     '^expo-image-manipulator$': '<rootDir>/test/expo-image-manipulator.mock.ts',
     '^expo-image$': '<rootDir>/test/expo-image.mock.ts',

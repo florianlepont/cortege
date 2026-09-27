@@ -91,6 +91,10 @@ export type SurveyQueuePayload = IbpMethodFields & {
   status?: string
   visibility?: string
   parcel_ids?: string[]
+  // Server-assigned (phase 10, D-01): the mobile app never sets these when writing a draft, only
+  // caches whatever the server last reported, so a PDF export can read them with no API call.
+  observation_year?: number
+  version_number?: number
   region_version?: string
   vegetation_stage?: string
   factors?: Record<string, unknown>

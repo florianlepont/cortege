@@ -14,7 +14,9 @@ jest.mock("react-native", () => ({
 }))
 
 const mockClearLocalIbpData = jest.fn()
+const mockCacheSurveyCanonicalFields = jest.fn().mockResolvedValue(undefined)
 jest.mock("../storage/surveys", () => ({
+  cacheSurveyCanonicalFields: (...args: unknown[]) => mockCacheSurveyCanonicalFields(...args),
   clearLocalIbpData: (...args: unknown[]) => mockClearLocalIbpData(...args),
 }))
 
