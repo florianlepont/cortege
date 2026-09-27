@@ -611,7 +611,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 32/32 | Complete    | 2026-09-27 |
 | 2. Association-only sharing & scope trim | 5/5 | Complete (BUG-04 deferred) | 2026-09-27 |
 | 3. Field-Entry Ergonomics (UX Lot 1) | 6/6 | Complete   | 2026-09-27 |
-| 4. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
+| 4. Visual Foundations & Motion (UX Lot 2) | 5/5 | Complete   | 2026-09-27 |
 | 5. Factor A Genus List & Data-Contract Corrections | 1/1 | Complete   | 2026-09-27 |
 | 6. Genus Recognition for Factor A | 0/TBD | Not started | - |
 | 7. Information Architecture (UX Lot 3) | 0/TBD | Not started | - |
