@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import { Alert, Pressable, Text, View } from "react-native"
+import { Alert, Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, ibpScoreTokens } from "../../app/brand-tokens"
+import { brandColors, brandSemanticColors, ibpScoreTokens } from "../../app/brand-tokens"
 import { formatDateTime } from "../../app/formatters"
 import {
   formatSurveySyncDisplayLabel,
@@ -119,7 +120,7 @@ export function DetailHeader({
               onChangeText={setSiteNameInput}
               autoFocus
               placeholder={h.renamePlaceholder}
-              placeholderTextColor="#D7E3C0"
+              placeholderTextColor={brandSemanticColors.heroTextMutedOnDark}
               containerStyle={styles.detailRenameField}
               labelStyle={styles.detailRenameLabel}
               inputStyle={styles.detailRenameInput}
@@ -235,18 +236,30 @@ export function DetailHeader({
             {!compressed ? (
               <View style={styles.detailHeroProgressFooter}>
                 <View style={styles.heroMetaPill}>
-                  <Ionicons name="time-outline" size={13} color="#D7E3C0" />
+                  <Ionicons
+                    name="time-outline"
+                    size={13}
+                    color={brandSemanticColors.heroTextMutedOnDark}
+                  />
                   <Text style={styles.heroMetaText}>
                     {h.updatedAt(formatDateTime(survey.updated_at))}
                   </Text>
                 </View>
                 <View style={styles.heroMetaPill}>
-                  <Ionicons name="images-outline" size={13} color="#D7E3C0" />
+                  <Ionicons
+                    name="images-outline"
+                    size={13}
+                    color={brandSemanticColors.heroTextMutedOnDark}
+                  />
                   <Text style={styles.heroMetaText}>{h.photoCount(attachmentCount)}</Text>
                 </View>
                 {survey.status !== "submitted" ? (
                   <View style={styles.heroMetaPill}>
-                    <Ionicons name="hourglass-outline" size={13} color="#D7E3C0" />
+                    <Ionicons
+                      name="hourglass-outline"
+                      size={13}
+                      color={brandSemanticColors.heroTextMutedOnDark}
+                    />
                     <Text style={styles.heroMetaText}>{remainingTime}</Text>
                   </View>
                 ) : null}

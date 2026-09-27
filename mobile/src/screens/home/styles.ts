@@ -64,7 +64,7 @@ export const styles = StyleSheet.create({
     overflow: "hidden",
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
+        shadowColor: brandColors.black,
         shadowOpacity: 0.15,
         shadowRadius: 20,
         shadowOffset: { width: 0, height: 8 },
@@ -126,12 +126,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: PAGE_H,
     gap: 10,
   },
-  skeletonCard: {
-    height: 72,
-    borderRadius: brandRadius.card,
-    backgroundColor: brandColors.panelMuted,
-  },
-
   // Sector score card
   sectorCard: {
     backgroundColor: brandSemanticColors.surfaceSoft,

@@ -1,4 +1,5 @@
-import { Text, View } from "react-native"
+import { View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { brandColors } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { getIbpScoreColors } from "../../ui/IbpScoreBadge"

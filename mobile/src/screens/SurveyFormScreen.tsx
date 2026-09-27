@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
-import { Animated, View } from "react-native"
+import { View } from "react-native"
+import Animated from "react-native-reanimated"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../app/constants"
 import { computeIbpTotalsFromRetainedScores } from "../app/ibp-scoring"
 import {
@@ -24,7 +25,7 @@ import { ScoringContextSection, scoringContextPills } from "./survey-form/Scorin
 import { SiteSection } from "./survey-form/SiteSection"
 import { formStyles } from "./survey-form/styles"
 import { useParcelMap } from "./survey-form/useParcelMap"
-import { useWizardScroll } from "./survey-form/useWizardScroll"
+import { COLLAPSED_HERO_HEIGHT, useWizardScroll } from "./survey-form/useWizardScroll"
 import { fr } from "../i18n"
 export { toAddressLabel } from "./survey-screen-helpers"
 
@@ -193,7 +194,10 @@ export function SurveyFormScreen({
         activeStep={activeStep}
         heroCopy={heroCopy}
         heroTopOffset={wizard.heroTopOffset}
-        animation={wizard.animation}
+        scrollY={wizard.scrollY}
+        collapseDistance={wizard.collapseDistance}
+        expandedHeroHeight={wizard.expandedHeroHeight}
+        collapsedHeroHeight={COLLAPSED_HERO_HEIGHT}
       />
 
       <Animated.ScrollView
@@ -223,7 +227,7 @@ export function SurveyFormScreen({
           parcelsReady={parcelsReady}
           factorsReady={factorsReady}
           preserveRailSpace={wizard.preserveIdentityRailSpace}
-          animation={wizard.animation}
+          scrollY={wizard.scrollY}
           onOpenStep={handleOpenStep}
         />
 

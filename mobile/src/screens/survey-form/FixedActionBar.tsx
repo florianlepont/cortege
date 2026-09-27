@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { AppButton } from "../../ui/AppButton"

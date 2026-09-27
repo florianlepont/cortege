@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
-import { Pressable, RefreshControl, ScrollView, Text, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, View } from "react-native"
+import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors } from "../app/brand-tokens"
@@ -13,6 +14,7 @@ import { DraftCard } from "../components/cards/DraftCard"
 import { ParcelNearbyCard } from "../components/cards/ParcelNearbyCard"
 import { hasMixedMethodVersions, type NearbyParcelsState } from "../hooks/useNearbyParcels"
 import { fr } from "../i18n"
+import { SkeletonRow } from "../ui/Skeleton"
 import { SectorScoreCard } from "./home/SectorScoreCard"
 import { styles } from "./home/styles"
 
@@ -181,8 +183,8 @@ export function HomeScreen({
           <AppNotice tone="warning" icon="wifi-outline" message={fr.home.nearby.loadError} />
         ) : nearbyParcels.loading ? (
           <View style={styles.loadingRow}>
-            <View style={styles.skeletonCard} />
-            <View style={styles.skeletonCard} />
+            <SkeletonRow />
+            <SkeletonRow />
           </View>
         ) : nearbyParcels.parcels.length === 0 ? (
           <AppNotice tone="info" icon="leaf-outline" message={fr.home.nearby.empty} />

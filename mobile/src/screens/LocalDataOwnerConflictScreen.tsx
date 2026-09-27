@@ -1,4 +1,5 @@
-import { Image, ImageSourcePropType, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Image, ImageSourcePropType, ScrollView, StyleSheet, View } from "react-native"
+import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { AppButton } from "../ui/AppButton"

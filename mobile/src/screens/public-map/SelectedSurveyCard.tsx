@@ -1,5 +1,6 @@
 import { memo } from "react"
-import { Pressable, Text } from "react-native"
+import { Pressable } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   IBP_METHOD_V3_0,
@@ -8,6 +9,7 @@ import {
   resolveMethodVersion,
 } from "@cortege/ibp-domain"
 import type { PublicMapItem } from "../../app/types"
+import { brandColors } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
@@ -62,7 +64,7 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
             accessibilityRole="button"
             accessibilityLabel={t.a11y.closeSelection}
           >
-            <Ionicons name="close" size={18} color="#40654f" />
+            <Ionicons name="close" size={18} color={brandColors.forest} />
           </Pressable>
         }
         titleStyle={styles.title}

@@ -6,9 +6,9 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
 import { brandColors, brandFieldState, brandRadius, brandSpacing4 } from "../../app/brand-tokens"

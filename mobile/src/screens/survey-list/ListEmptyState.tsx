@@ -1,4 +1,5 @@
-import { Image, StyleSheet, Text } from "react-native"
+import { Image, StyleSheet } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandTypography } from "../../app/brand-tokens"
 import { AppButton } from "../../ui/AppButton"

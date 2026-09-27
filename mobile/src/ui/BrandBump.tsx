@@ -4,6 +4,7 @@
  *  min 40% width." Renders as an upward-arch SVG path.
  */
 import { Path, Svg } from "react-native-svg"
+import { brandColors } from "../app/brand-tokens"
 
 type BrandBumpProps = {
   width: number
@@ -16,7 +17,7 @@ type BrandBumpProps = {
 export function BrandBump({
   width,
   height = 20,
-  color = "#89A33A",
+  color = brandColors.moss,
   opacity = 0.18,
 }: BrandBumpProps) {
   // Bump occupies right 60% of the container, never centered — per charter

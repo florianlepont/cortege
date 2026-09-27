@@ -2,13 +2,13 @@ import { useState, type Ref } from "react"
 import {
   StyleProp,
   StyleSheet,
-  Text,
   TextInput,
   TextInputProps,
   TextStyle,
   View,
   ViewStyle,
 } from "react-native"
+import { AppText as Text } from "./AppText"
 import {
   brandColors,
   brandComponentTokens,

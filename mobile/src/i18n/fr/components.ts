@@ -9,10 +9,13 @@ export const componentsFr = {
     hoursAgo: ({ count }: { count: number }) => `il y a ${count}h`,
     yesterday: "Hier",
     daysAgo: ({ count }: { count: number }) => `il y a ${count}j`,
+    a11y: ({ name, rate }: { name: string; rate: number }) =>
+      `Brouillon ${name}, ${rate}% complété`,
   },
   parcelNearbyCard: {
     title: ({ name }: { name: string }) => `Parcelle ${name}`,
     surveyCount: ({ count }: { count: number }) => `${count} relevé${count > 1 ? "s" : ""}`,
+    a11y: ({ title, distance }: { title: string; distance: string }) => `${title}, à ${distance}`,
   },
   splash: {
     // Latin species names shown one after the other while the app loads.

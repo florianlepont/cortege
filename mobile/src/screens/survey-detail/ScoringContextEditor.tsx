@@ -7,7 +7,8 @@ import {
   isIbpCas,
   resolveMethodVersion,
 } from "@cortege/ibp-domain"
-import { Switch, Text, View } from "react-native"
+import { Switch, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { brandColors } from "../../app/brand-tokens"
 import { RegionVersion, SurveyDetailResponse, VegetationStage } from "../../app/types"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../../app/vegetation"

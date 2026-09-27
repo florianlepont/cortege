@@ -49,7 +49,7 @@ export const factorStyles = StyleSheet.create({
   },
   factorTileWarning: {
     borderColor: brandColors.terracotta,
-    backgroundColor: "#F9E5DF",
+    backgroundColor: brandColors.errorSoft,
   },
   factorTileTopRow: {
     flexDirection: "row",

@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { Pressable, Text, View } from "react-native"
+import { Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import MapView, { Marker } from "react-native-maps"
 import { brandColors } from "../../app/brand-tokens"

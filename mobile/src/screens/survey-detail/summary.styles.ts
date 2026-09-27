@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandColors, brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandComponentTokens,
+  brandRadius,
+  brandShadow,
+  brandTypography,
+} from "../../app/brand-tokens"
 
 export const styles = StyleSheet.create({
   scoreHeroCard: {
@@ -63,7 +69,7 @@ export const styles = StyleSheet.create({
     gap: 6,
   },
   factorTileCompleted: {
-    borderColor: "#B8CFA4",
+    borderColor: brandComponentTokens.notice.successBorder,
     backgroundColor: brandColors.successSoft,
   },
   factorTilePending: {
@@ -135,7 +141,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   factorTileStatusPillCompleted: {
-    backgroundColor: "#DCE7C4",
+    backgroundColor: brandColors.successSoft,
   },
   factorTileStatusPillPending: {
     backgroundColor: brandColors.panelMuted,
@@ -199,7 +205,7 @@ export const styles = StyleSheet.create({
   submittedReadonlyBanner: {
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: "#BBD09B",
+    borderColor: brandComponentTokens.notice.successBorder,
     backgroundColor: brandColors.panel,
     padding: 18,
     gap: 8,
@@ -213,8 +219,8 @@ export const styles = StyleSheet.create({
     gap: 6,
   },
   deadlineCardWarning: {
-    borderColor: "#E7C281",
-    backgroundColor: "#FDF2DF",
+    borderColor: brandComponentTokens.notice.warningBorder,
+    backgroundColor: brandColors.warningSoft,
   },
   deadlineLabel: {
     ...brandTypography.heroEyebrow,

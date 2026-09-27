@@ -6,16 +6,16 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import type { NearbyParcel } from "../../hooks/useNearbyParcels"
 import { fr } from "../../i18n"
 import { useNearbyParcelsState } from "../../state/nearby-parcels-context"
 import { AppNotice } from "../../ui/AppNotice"
-import { triggerHaptic } from "../survey-list/haptics"
+import { feedback } from "../../ui/feedback"
 
 const t = fr.nearbyParcelsSheet
 const ROW_HEIGHT = 56
@@ -43,7 +43,7 @@ export function NearbyParcelsSheet({
   }, [visible, load])
 
   const handleToggle = (parcelId: string): void => {
-    triggerHaptic()
+    feedback.selection()
     onToggleParcelSelection(parcelId)
   }
 

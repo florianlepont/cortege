@@ -1,14 +1,16 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
   brandComponentTokens,
   brandRadius,
+  brandSemanticColors,
   brandTypography,
 } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage"
-import { triggerHaptic } from "./haptics"
+import { feedback } from "../../ui/feedback"
 import { styles as sharedStyles } from "./styles"
 
 const t = fr.surveyList.continueDraft
@@ -25,7 +27,7 @@ export function ContinueDraftCard({ survey, onOpenSurvey }: ContinueDraftCardPro
       accessibilityRole="button"
       accessibilityLabel={t.a11y(survey.site_name)}
       onPress={() => {
-        triggerHaptic()
+        feedback.selection()
         onOpenSurvey(survey.id)
       }}
       style={({ pressed }) => [styles.draftRow, pressed && sharedStyles.rowPressed]}
@@ -70,7 +72,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.55)",
+    backgroundColor: brandSemanticColors.haloOnDark,
     flexShrink: 0,
   },
   draftContent: {

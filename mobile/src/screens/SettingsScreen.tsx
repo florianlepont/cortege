@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
+import { AppText as Text } from "../ui/AppText"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"

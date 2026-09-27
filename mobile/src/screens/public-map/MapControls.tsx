@@ -1,5 +1,6 @@
 import { memo } from "react"
-import { ActivityIndicator, Pressable, Text, View } from "react-native"
+import { ActivityIndicator, Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
 import { fr } from "../../i18n"

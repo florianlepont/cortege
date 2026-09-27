@@ -1,20 +1,15 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  TextStyle,
-  ViewStyle,
-} from "react-native"
+import { ActivityIndicator, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native"
+import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
   brandComponentTokens,
+  brandOnDangerSurface,
   brandRadius,
   brandTypography,
 } from "../app/brand-tokens"
 import { fr } from "../i18n"
+import { AppPressable } from "./AppPressable"
 
 type AppButtonVariant = "primary" | "secondary" | "danger" | "dangerSoft"
 type AppButtonSize = "sm" | "md" | "lg"
@@ -59,8 +54,7 @@ export function AppButton({
   const isDisabled = disabled || loading
 
   return (
-    <Pressable
-      accessibilityRole="button"
+    <AppPressable
       accessibilityLabel={accessibilityLabel ?? label ?? fr.components.appButton.defaultLabel}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
@@ -102,7 +96,7 @@ export function AppButton({
           {label}
         </Text>
       ) : null}
-    </Pressable>
+    </AppPressable>
   )
 }
 
@@ -156,7 +150,7 @@ const styles = StyleSheet.create({
   dangerSoft: {
     backgroundColor: brandColors.errorSoft,
     borderWidth: 1,
-    borderColor: "#E4A595",
+    borderColor: brandComponentTokens.notice.dangerBorder,
   },
   disabled: {
     opacity: 0.7,
@@ -172,8 +166,9 @@ const styles = StyleSheet.create({
   labelSecondary: {
     color: brandComponentTokens.button.secondaryBorder,
   },
-  // DS-02 (UX audit, Phase 2): terracotta on errorSoft measured ~2.97:1; textPrimary clears AA.
+  // DS-02: terracotta directly on errorSoft measured ~2.97:1 (WCAG fail); brandOnDangerSurface
+  // (Phase 4) supersedes Phase 2's interim textPrimary fix with the named token.
   labelDangerSoft: {
-    color: brandColors.textPrimary,
+    color: brandOnDangerSurface,
   },
 })

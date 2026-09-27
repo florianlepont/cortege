@@ -65,6 +65,10 @@ jest.mock("react-native", () => {
     AccessibilityInfo: {
       isReduceMotionEnabled: jest.fn(() => Promise.resolve(false)),
     },
+    AppState: {
+      currentState: "active",
+      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+    },
     Text: mockComponent("Text"),
     TextInput: mockComponent("TextInput"),
     Pressable: mockComponent("Pressable"),

@@ -1,4 +1,5 @@
-import { Switch, Text, View } from "react-native"
+import { Switch, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { IBP_CAS_VALUES, IBP_METHOD_V3_2, type IbpCas } from "@cortege/ibp-domain"
 import { brandColors } from "../../app/brand-tokens"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../../app/constants"

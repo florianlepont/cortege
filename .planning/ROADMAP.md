@@ -49,7 +49,7 @@ list is never ambiguous.
 - [x] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs (completed 2026-09-27)
 - [x] **Phase 2: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI; the UX audit's Lot 0 trust bugs (score scale, sync-status masking, account-deletion copy, tab icon, status bar, pull-to-refresh, contrast) are folded in (completed 2026-09-27; decimal input (BUG-04) deferred to Phase 3, see `02-VALIDATION.md`)
 - [x] **Phase 3: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions (completed 2026-09-27)
-- [ ] **Phase 4: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls
+- [x] **Phase 4: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls (completed 2026-09-27)
 - [x] **Phase 5: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec (completed 2026-09-27)
 - [ ] **Phase 6: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
 - [ ] **Phase 7: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured
@@ -425,7 +425,19 @@ numeric, B is chips not slider, the CTA is not renamed to "Vérifier et soumettr
   5. A `Skeleton`/`SkeletonRow` pulse replaces static loading placeholders; every animation and decorative loop respects "Reduce Motion" and pauses in the background.
   6. `docs/design/charte-graphique-etats-sauvages-spec.md` is updated with the typefaces actually loaded, the full semantic token list, the motion tokens (`brandMotion`) and `AppPressable`'s interaction spec — closing the gap the audit found between the written charter and the shipped app.
 
-**Plans**: TBD
+**Plans**: 5 batches, executed and closed directly (no separate orchestrator/executor split for this
+phase) — see `.planning/phases/04-visual-foundations-motion/04-CONTEXT.md` and its
+`04-0N-SUMMARY.md` files for what each batch shipped and its test evidence. A sketchboard (an
+interactive HTML mock, not shipped code) was iterated on live with the product owner before any code
+was written, since this phase is almost entirely visual; the three decisions that came out of that
+session (Sora+Jost over an alternative pairing, the IBP badge's forest-on-sage contrast fix, the
+press spring's numbers unchanged) are recorded in `04-CONTEXT.md` and carried through every batch.
+**UI hint**: yes
+**Status**: Complete (2026-09-27). All 6 success criteria met. No simulator/display in this cloud
+session, so batches were validated by the sketchboard (real Sora/Jost webfonts and the exact token
+colors, checked with the product owner before code) plus lint/typecheck/`test:unit`/format as
+correctness gates, not by eyeballing the running app — stated explicitly rather than claimed as
+verified-in-app, per `04-CONTEXT.md`.
 
 ### Phase 5: Factor A Genus List & Data-Contract Corrections
 

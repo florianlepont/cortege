@@ -1,4 +1,5 @@
-import { ActivityIndicator, ImageStyle, StyleProp, Text, View, ViewStyle } from "react-native"
+import { ActivityIndicator, ImageStyle, StyleProp, View, ViewStyle } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandTypography } from "../../app/brand-tokens"
