@@ -111,10 +111,14 @@ export const surveyDetailFr = {
   },
   actions: {
     title: "Actions",
-    subtitle: "Suppression et reprise de la synchronisation.",
+    subtitle: "Export, suppression et reprise de la synchronisation.",
     deleteSurvey: "Supprimer le relevé",
     retryNow: "Réessayer maintenant",
     discardLocalChange: "Annuler la modification locale",
+    exportPdf: "Exporter en PDF",
+    exportingPdf: "Génération du PDF…",
+    exportFailed: "L'export du PDF a échoué. Réessayez.",
+    exportShareUnavailable: "Aucune application de partage n'est disponible sur cet appareil.",
   },
   events: {
     title: "Historique du relevé",

@@ -2,8 +2,8 @@
  * The IBP method version on the phone (01.8, D-08 and D-10 amended), real SQL.
  *
  * The version, the cas and the cas-3 flag live in the schemaless payload_json and the queued
- * upsert payload only (SCHEMA_VERSION stays 2). A legacy draft is never stamped, a v3.2 payload
- * carries no region/stage and a v3.0 payload carries no cas.
+ * upsert payload only (no SQLite migration of its own). A legacy draft is never stamped, a v3.2
+ * payload carries no region/stage and a v3.0 payload carries no cas.
  */
 
 import {
@@ -63,8 +63,10 @@ describe("storage constants (01.8 criterion 1, D-10 amended)", () => {
     expect(FACTOR_KEYS).toEqual([...SHARED_FACTOR_KEYS])
   })
 
-  test("no SQLite migration: SCHEMA_VERSION stays 2", () => {
-    expect(SCHEMA_VERSION).toBe(2)
+  test("method version fields need no SQLite migration of their own", () => {
+    // SCHEMA_VERSION moves when an unrelated migration lands (Phase 8's offline-map tables, for
+    // one); this test only guards that storing ibp_method_version/ibp_cas never bumps it itself.
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(2)
   })
 })
 

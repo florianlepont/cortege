@@ -116,6 +116,35 @@ jest.mock("../../hooks/usePublicMapExplorer", () => ({
   },
 }))
 
+// PublicMapRoute's offline hooks (Phase 8) touch SQLite and network state, neither of which this
+// navigation-routing suite sets up; stubbed out like usePublicMapExplorer above.
+jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => false }))
+jest.mock("../../hooks/useBasemapPreference", () => ({
+  useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
+}))
+jest.mock("../../hooks/useOfflineAreas", () => ({
+  useOfflineAreas: () => ({
+    areas: [],
+    downloadingAreaId: null,
+    estimateForRegion: jest.fn(() => ({
+      tileCountPerBasemap: 0,
+      totalTileCount: 0,
+      estimatedBytes: 0,
+      exceedsCap: false,
+    })),
+    startDownload: jest.fn(async () => ({ ok: true as const, areaId: "area-1" })),
+    deleteArea: jest.fn(async () => undefined),
+    refresh: jest.fn(async () => undefined),
+  }),
+}))
+jest.mock("../../hooks/useOfflinePendingParcelDrain", () => ({
+  useOfflinePendingParcelDrain: jest.fn(),
+}))
+const mockAddPendingParcelDownload = jest.fn()
+jest.mock("../../storage/offline-map", () => ({
+  addPendingParcelDownload: (...args: unknown[]) => mockAddPendingParcelDownload(...args),
+}))
+
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { AutosaveStatus } from "../../hooks/useEditingDraft"
 import { fr, type StatusMessage } from "../../i18n"
@@ -825,5 +854,19 @@ describe("PublicMapRoute", () => {
     )
     expect(props("publicMap").loading).toBe(false)
     expect(mockExplorer.loadPublicMap).not.toHaveBeenCalled()
+  })
+
+  test("queuing a parcel download (REQ-D-offline-parcel-warning) writes to the offline queue", async () => {
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <PublicMapRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+
+    act(() => {
+      ;(props("publicMap").onQueueParcelDownload as (parcelId: string) => void)("parcel-1")
+    })
+
+    expect(mockAddPendingParcelDownload).toHaveBeenCalledWith("parcel-1")
   })
 })

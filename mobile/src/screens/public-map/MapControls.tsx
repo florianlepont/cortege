@@ -3,14 +3,17 @@ import { ActivityIndicator, Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
+import type { BasemapKey } from "../../map/basemaps"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { BasemapToggle, OfflineIndicatorBadge } from "./OfflineControls"
 import { controlStyles as styles } from "./styles"
 
 const t = fr.publicMap
+const offlineT = fr.offlineMap.areas
 
 export type MapTopControlsProps = {
   top: number
@@ -29,6 +32,11 @@ export type MapTopControlsProps = {
   onChangeFromDate: (value: string) => void
   onChangeToDate: (value: string) => void
   onChangeRegion: (value: string) => void
+  /** REQ-D-basemap-switch / REQ-D-offline-map (08-CONTEXT): omitted, the controls do not render. */
+  isOffline?: boolean
+  basemap?: BasemapKey
+  onChangeBasemap?: (basemap: BasemapKey) => void
+  onOpenOfflineAreas?: () => void
 }
 
 /** Explorer badge, survey count, filters toggle, refresh and the filters panel. */
@@ -49,6 +57,10 @@ export const MapTopControls = memo(function MapTopControls({
   onChangeFromDate,
   onChangeToDate,
   onChangeRegion,
+  isOffline = false,
+  basemap,
+  onChangeBasemap,
+  onOpenOfflineAreas,
 }: MapTopControlsProps) {
   return (
     <View pointerEvents="box-none" style={[styles.overlayShell, { top }]}>
@@ -61,9 +73,23 @@ export const MapTopControls = memo(function MapTopControls({
           <View style={styles.countBadge}>
             <Text style={styles.countBadgeText}>{t.count(count)}</Text>
           </View>
+          {isOffline ? <OfflineIndicatorBadge /> : null}
         </View>
 
         <View style={styles.topDockActions}>
+          {basemap && onChangeBasemap ? (
+            <BasemapToggle basemap={basemap} onChange={onChangeBasemap} />
+          ) : null}
+          {onOpenOfflineAreas ? (
+            <Pressable
+              style={styles.iconButton}
+              onPress={onOpenOfflineAreas}
+              accessibilityRole="button"
+              accessibilityLabel={offlineT.a11y.openSheet}
+            >
+              <Ionicons name="cloud-download-outline" size={18} color={brandColors.forest} />
+            </Pressable>
+          ) : null}
           <Pressable
             style={styles.iconButton}
             onPress={onToggleFilters}

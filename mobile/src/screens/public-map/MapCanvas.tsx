@@ -4,14 +4,18 @@ import type { PublicMapItem, PublicParcelStatusItem } from "../../app/types"
 import { IgnCadastreTileOverlay } from "../../components/IgnCadastreTileOverlay"
 import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
 import { fr } from "../../i18n"
+import type { BasemapKey } from "../../map/basemaps"
+import type { OfflineAreaSummary } from "../../storage/offline-map"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { ClusterMarker } from "./ClusterMarker"
+import { OfflineBasemapTile } from "./OfflineBasemapTile"
 import { markerColors, screenStyles } from "./styles"
 import { SurveyMarker } from "./SurveyMarker"
 import { useMapClusters } from "./useMapClusters"
 import { DEFAULT_MAP_REGION, regionForZoom } from "./useMapViewport"
 
 const NO_PARCELS: PublicParcelStatusItem[] = []
+const NO_OFFLINE_AREAS: OfflineAreaSummary[] = []
 
 export type MapCanvasProps = {
   mapRef: RefObject<MapView | null>
@@ -26,6 +30,10 @@ export type MapCanvasProps = {
   onSelectParcel: (parcelId: string) => void
   onZoomTo: (region: Region) => void
   onOpenClusterList: (items: PublicMapItem[]) => void
+  /** REQ-D-basemap-switch / REQ-D-offline-map (08-CONTEXT D-01/D-02). */
+  basemap?: BasemapKey
+  isOffline?: boolean
+  offlineAreas?: OfflineAreaSummary[]
 }
 
 /**
@@ -47,6 +55,9 @@ export const MapCanvas = memo(function MapCanvas({
   onSelectParcel,
   onZoomTo,
   onOpenClusterList,
+  basemap = "map",
+  isOffline = false,
+  offlineAreas = NO_OFFLINE_AREAS,
 }: MapCanvasProps) {
   const { clusters, resolveClusterPress } = useMapClusters({ items, region })
 
@@ -79,6 +90,14 @@ export const MapCanvas = memo(function MapCanvas({
       initialRegion={DEFAULT_MAP_REGION}
       onRegionChangeComplete={onRegionChangeComplete}
     >
+      <OfflineBasemapTile
+        basemap={basemap}
+        isOffline={isOffline}
+        areas={offlineAreas}
+        centerLat={region.latitude}
+        centerLng={region.longitude}
+        zIndex={-1}
+      />
       <IgnCadastreTileOverlay enabled={parcelLayerRenderable} zIndex={0} />
       <ParcelOverlayPolygons
         items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS}

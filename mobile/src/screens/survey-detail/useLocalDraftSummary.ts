@@ -29,6 +29,12 @@ export type LocalDraftMeta = {
   ibp_method_version: string | null
   ibp_cas: number | null
   ibp_cas3_scale: boolean
+  // Read straight from the local payload (phase 10, D-01): parcel_ids is set on device;
+  // observation_year/version_number are server-assigned and only present once cached back
+  // locally (cacheSurveyCanonicalFields), so a PDF export has an offline fallback either way.
+  parcel_ids: string[]
+  observation_year: number | null
+  version_number: number | null
 }
 
 export type LocalDraftSummary = {
@@ -125,6 +131,10 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
               typeof draft.ibp_method_version === "string" ? draft.ibp_method_version : null,
             ibp_cas: typeof draft.ibp_cas === "number" ? draft.ibp_cas : null,
             ibp_cas3_scale: draft.ibp_cas3_scale === true,
+            parcel_ids: Array.isArray(draft.parcel_ids) ? draft.parcel_ids : [],
+            observation_year:
+              typeof draft.observation_year === "number" ? draft.observation_year : null,
+            version_number: typeof draft.version_number === "number" ? draft.version_number : null,
           },
         })
       } catch (_error) {

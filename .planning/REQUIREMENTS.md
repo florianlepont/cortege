@@ -46,7 +46,7 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 
 - [x] **REQ-B-survey-list** — Contributor sees their surveys with parcel ids, name, last update, version, status and completion rate; filterable by status and date; visible offline. *(Built)*
 - [ ] **REQ-B-survey-detail** — Contributor sees survey detail with submission deadline, completion rate, previous surveys on the same parcel, and IBP total + factor-level deltas against previous versions. *(Partial — the parcel-history API (`GET /parcels/:parcelId/surveys/history`) exists but no mobile screen calls it. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
-- [ ] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone — every submitted survey is visible by default to every authenticated association member.** *(Partial)*
+- [x] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone — every submitted survey is visible by default to every authenticated association member.** *(Built — Phase 10 verified the delete/confirmation flow was already complete; corrected from "Partial", which described the Phase 2 visibility-toggle removal, not this flow)*
 - [ ] **REQ-B-own-surveys-map** — The map screen requires authentication and shows the surveys submitted by any association member — not an anonymous public set, and not only the contributor's own. `PublicMapScreen` and its navigation are kept; only the data source and the auth requirement change. `GET /public/map-items` and `GET /public/parcels/status` require authentication instead of staying open. *(New — redefined 2026-09-27 from "own surveys" to "members' surveys"; created by this milestone)*
 
 ### C — IBP Survey Data Entry
@@ -59,17 +59,17 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [x] **REQ-C-help** — Each complex field exposes on-demand pedagogical help that does not lose form progress. *(Built)*
 - [ ] **REQ-C-versioning** — A survey carries an explicit version number and observation year; the app proposes the next version on an already-studied parcel and shows previous scores. *(Partial — `version_number`/`observation_year` are recorded (`api/migrations/008_parcels_and_versioning.sql`), but no next-version suggestion or previous-scores UI exists. Corrected 2026-09-27, was wrongly marked "Built". Originally labelled V1; promoted to MVP because parcel history is in scope. Build in Phase 2)*
 - [ ] **REQ-C-species-recognition** — From the Factor A section, the contributor photographs a single subject and the app suggests the most likely tree **genus** with its alternatives, each carrying a per-genus calibrated plain-words confidence indicator; all 34 CNPF genera are suggested; the contributor confirms each suggestion and the accepted genus is saved in Factor A's genus list; recognition runs on-device with the model bundled in the app, and works in airplane mode. *(New — US-C9. Revised 2026-09-26 to match ADR-002. Gated behind `REQ-ML-adr` (satisfied) and `REQ-ML-contracts` (satisfied); build in Phase 6)*
-- [ ] **REQ-C-pdf-export** — Contributor exports a survey as a PDF generated **on device** (expo-print) and delivers it through the OS share sheet (expo-sharing) to any installed target — Google Drive, Wimi, mail, AirDrop. Must work offline. No API endpoint, no direct Drive OAuth integration. *(New — no source doc; created by this milestone)*
+- [x] **REQ-C-pdf-export** — Contributor exports a survey as a PDF generated **on device** (expo-print) and delivers it through the OS share sheet (expo-sharing) to any installed target — Google Drive, Wimi, mail, AirDrop. Must work offline. No API endpoint, no direct Drive OAuth integration. *(Built — Phase 10)*
 
 ### D — Offline and Synchronization
 
 - [x] **REQ-D-offline-work** — Contributor views loaded surveys and edits drafts offline; actions are queued; parcel linkage metadata and recent cadastral context are available offline. *(Built)*
 - [x] **REQ-D-auto-sync** — On reconnection, pending surveys are sent automatically with no manual trigger; status becomes `synced`, or `error` with an actionable message; downsync includes parcel history. *(Built)*
 - [x] **REQ-D-conflict-resolution** — A server-rejected parcel/version conflict is stored as a clear blocking error explaining expected vs local state; the contributor retries after correction or discards. *(Built)*
-- [ ] **REQ-D-offline-map** — A clear offline indicator is shown; the map renders a basemap and locally available parcels; GPS position displays and can be followed; zoom, pan and parcel selection work with no connectivity. *(New — verified absent: no offline handling in `mobile/src/screens/`)*
-- [ ] **REQ-D-area-download** — Contributor selects an area, sees estimated size and download progress, lists and deletes downloaded areas, and the area survives an app restart. *(New)*
-- [ ] **REQ-D-offline-parcel-warning** — When an expected parcel is not cached, a clear message explains it and a quick action starts the download once the network returns; no infinite spinners. *(New)*
-- [ ] **REQ-D-basemap-switch** — A basemap selector toggles at least "Satellite" and "Map"; the selection persists while navigating; the default is configurable. *(New — verified absent: no `mapType` or `provider` in `mobile/src/screens/`)*
+- [x] **REQ-D-offline-map** — A clear offline indicator is shown; the map renders a basemap and locally available parcels; GPS position displays and can be followed; zoom, pan and parcel selection work with no connectivity. *(New — Built, closed Phase 8: `OfflineIndicatorBadge`, `OfflineBasemapTile` switching to local tiles, `ParcelOverlayPolygons` fed from the offline parcel-status cache; GPS follow and zoom/pan/selection were already device-local and untouched. Not checked on a real device in airplane mode — see `08-CONTEXT.md`/ROADMAP Phase 8 status note.)*
+- [x] **REQ-D-area-download** — Contributor selects an area, sees estimated size and download progress, lists and deletes downloaded areas, and the area survives an app restart. *(New — Built, closed Phase 8: `OfflineAreasSheet` + `useOfflineAreas`, tiles and parcel cache persisted under the document directory and a new SQLite migration, so a relaunch reopens the same downloaded state. The actual force-quit/relaunch has not been run on a device in this cloud session.)*
+- [x] **REQ-D-offline-parcel-warning** — When an expected parcel is not cached, a clear message explains it and a quick action starts the download once the network returns; no infinite spinners. *(New — Built, closed Phase 8: `ParcelHistoryCard`'s offline state plus the `offline_pending_parcels` queue drained by `useOfflinePendingParcelDrain` on reconnect.)*
+- [x] **REQ-D-basemap-switch** — A basemap selector toggles at least "Satellite" and "Map"; the selection persists while navigating; the default is configurable. *(New — Built, closed Phase 8: `BasemapToggle` + `useBasemapPreference`, persisted to `local_meta`. "The default is configurable" is satisfied as a code-level constant (`DEFAULT_BASEMAP` in `storage/map-preference.ts`), not a user-facing settings toggle — no such settings surface exists elsewhere in the app either.)*
 
 ### ML — Species Recognition Groundwork
 
@@ -259,10 +259,10 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-B-survey-detail | Partial | Phase 2 | Build |
 | REQ-C-versioning | Partial | Phase 2 | Build |
 | REQ-A-delete-account | Partial | Phase 2 | Build |
-| REQ-D-offline-map | New | Phase 8 | Build |
-| REQ-D-area-download | New | Phase 8 | Build |
-| REQ-D-offline-parcel-warning | New | Phase 8 | Build |
-| REQ-D-basemap-switch | New | Phase 8 | Build |
+| REQ-D-offline-map | New | Phase 8 | Built |
+| REQ-D-area-download | New | Phase 8 | Built |
+| REQ-D-offline-parcel-warning | New | Phase 8 | Built |
+| REQ-D-basemap-switch | New | Phase 8 | Built |
 | REQ-C-pdf-export | New | Phase 10 | Build |
 | REQ-B-manage-published | Partial | Phase 10 | Build |
 | REQ-INF-hosting-adr | New | Phase 11 | Build |

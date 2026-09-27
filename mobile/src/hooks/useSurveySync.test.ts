@@ -9,6 +9,7 @@
  */
 
 const mockAlert = jest.fn()
+const mockCacheSurveyCanonicalFields = jest.fn()
 const mockClearLocalIbpData = jest.fn()
 const mockLoadSurveyDetail = jest.fn()
 const mockLoadSurveyEvents = jest.fn()
@@ -69,6 +70,7 @@ jest.mock("../api/ibp-api", () => ({
 }))
 
 jest.mock("../storage/surveys", () => ({
+  cacheSurveyCanonicalFields: (...args: unknown[]) => mockCacheSurveyCanonicalFields(...args),
   clearLocalIbpData: (...args: unknown[]) => mockClearLocalIbpData(...args),
 }))
 
@@ -211,6 +213,7 @@ describe("useSurveySync", () => {
     mockUseLocalDataOwner.mockReturnValue(mockLocalDataOwner)
     mockCountUnsyncedLocalWork.mockResolvedValue({ surveys: 0, attachments: 0 })
     mockDeleteMyAccount.mockResolvedValue(undefined)
+    mockCacheSurveyCanonicalFields.mockResolvedValue(undefined)
     mockClearLocalIbpData.mockResolvedValue(undefined)
     mockAuth0Session.clearSession.mockResolvedValue(undefined)
     mockAuth0Session.handleLogout.mockResolvedValue(undefined)
@@ -549,6 +552,37 @@ describe("useSurveySync", () => {
       expect(mockLoadSurveyDetail).toHaveBeenCalledWith("http://localhost:3000", "token-abc", "s1")
       expect(result.current.surveyDetailsState.surveyDetails).toEqual({ s1: detail })
       expect(result.current.surveyDetailsState.detailsLoadingSurveyId).toBeNull()
+    })
+
+    test("caches the canonical observation year and version locally for offline PDF export", async () => {
+      mockLoadSurveyDetail.mockResolvedValue({
+        id: "s1",
+        status: "submitted",
+        observation_year: 2026,
+        version_number: 2,
+      })
+
+      const { result } = await renderSync()
+      await act(async () => {
+        await result.current.surveyOperations.handleLoadCanonicalDetails("s1")
+      })
+
+      expect(mockCacheSurveyCanonicalFields).toHaveBeenCalledWith("s1", {
+        observation_year: 2026,
+        version_number: 2,
+      })
+    })
+
+    test("a caching failure never surfaces to the caller", async () => {
+      mockLoadSurveyDetail.mockResolvedValue({ id: "s1", status: "submitted" })
+      mockCacheSurveyCanonicalFields.mockRejectedValue(new Error("sqlite busy"))
+
+      const { result } = await renderSync()
+      await act(async () => {
+        await result.current.surveyOperations.handleLoadCanonicalDetails("s1")
+      })
+
+      expect(result.current.status).toBe(STATUS.detailLoaded)
     })
 
     test("silent mode skips status updates", async () => {

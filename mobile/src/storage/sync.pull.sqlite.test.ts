@@ -432,3 +432,53 @@ describe("pull keeps the IBP method fields (01.8 Pitfall 4, T-01.8-20)", () => {
     expect(payload).toMatchObject({ region_version: "ACA", vegetation_stage: "mature" })
   })
 })
+
+describe("pull keeps the server-assigned observation year and version (phase 10, D-01)", () => {
+  async function pulledPayload(id: string): Promise<Record<string, unknown>> {
+    const row = await getSurvey(id)
+    return JSON.parse(String(row?.payload_json)) as Record<string, unknown>
+  }
+
+  test("a remote survey with a year and version keeps both, for an offline PDF export later", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-versioned",
+            site_name: "Distante versionnée",
+            status: "submitted",
+            sync_version: 1,
+            observation_year: 2026,
+            version_number: 2,
+          },
+        ],
+      }),
+    )
+
+    await pullRemoteChanges("http://api", "token")
+
+    const payload = await pulledPayload("remote-versioned")
+    expect(payload).toMatchObject({ observation_year: 2026, version_number: 2 })
+  })
+
+  test("a remote survey with neither stays without them, rather than storing 0/null", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-unversioned",
+            site_name: "Distante",
+            status: "draft",
+            sync_version: 1,
+          },
+        ],
+      }),
+    )
+
+    await pullRemoteChanges("http://api", "token")
+
+    const payload = await pulledPayload("remote-unversioned")
+    expect(payload).not.toHaveProperty("observation_year")
+    expect(payload).not.toHaveProperty("version_number")
+  })
+})
