@@ -35,7 +35,7 @@ export type RecognitionOutcome =
  * output tensor to map onto a genus at all - anything else is a corrupt or mismatched bundle, and
  * must fail closed exactly like a load failure (ADR-002 D-08), not silently mis-map indices.
  */
-function validateManifest(raw: unknown): ClassifierManifest | null {
+export function validateManifest(raw: unknown): ClassifierManifest | null {
   if (!raw || typeof raw !== "object") return null
   const candidate = raw as { labels?: unknown; inputSize?: unknown }
   if (

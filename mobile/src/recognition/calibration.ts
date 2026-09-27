@@ -97,10 +97,16 @@ export function classifyConfidence(
   return "very-weak"
 }
 
-/** Every CNPF genus has a calibrated threshold — checked once so a future list edit cannot drift. */
-export function assertAllGenusThresholdsPresent(): void {
+/**
+ * Every CNPF genus has a calibrated threshold — checked once so a future list edit cannot drift.
+ * `thresholds` defaults to the real table; a test can pass a deliberately incomplete map to
+ * exercise the failure branch.
+ */
+export function assertAllGenusThresholdsPresent(
+  thresholds: Readonly<Partial<Record<CnpfFactorAGenusCode, number>>> = GENUS_STRONG_THRESHOLD,
+): void {
   for (const genus of CNPF_FACTOR_A_GENUS_CODES) {
-    if (typeof GENUS_STRONG_THRESHOLD[genus] !== "number") {
+    if (typeof thresholds[genus] !== "number") {
       throw new Error(`Missing calibrated "strong" threshold for genus ${genus}`)
     }
   }

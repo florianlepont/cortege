@@ -13,15 +13,48 @@ import {
   __resetGenusClassifierModelForTests,
   classifyGenusPhoto,
   rankGenusSuggestions,
+  validateManifest,
 } from "./genusClassifierModel"
 
 const GENUS_COUNT = CNPF_FACTOR_A_GENUS_CODES.length
+const VALID_LABELS = [...CNPF_FACTOR_A_GENUS_CODES]
 
 function fakeDecodedImage(inputSize: number): { data: Uint8Array; width: number; height: number } {
   const data = new Uint8Array(inputSize * inputSize * 4)
   data.fill(128)
   return { data, width: inputSize, height: inputSize }
 }
+
+describe("validateManifest", () => {
+  it("accepts a manifest with exactly the 34 CNPF codes and a positive inputSize", () => {
+    expect(validateManifest({ labels: VALID_LABELS, inputSize: 224 })).toEqual({
+      labels: VALID_LABELS,
+      inputSize: 224,
+    })
+  })
+
+  it("rejects a non-object manifest", () => {
+    expect(validateManifest(null)).toBeNull()
+    expect(validateManifest("not-an-object")).toBeNull()
+  })
+
+  it("rejects a labels array of the wrong length (a corrupt or mismatched bundle)", () => {
+    expect(validateManifest({ labels: VALID_LABELS.slice(0, 5), inputSize: 224 })).toBeNull()
+    expect(validateManifest({ labels: "not-an-array", inputSize: 224 })).toBeNull()
+  })
+
+  it("rejects a labels array containing a code outside the CNPF list", () => {
+    const withInvalidLabel = [...VALID_LABELS.slice(1), "Not_A_Genus"]
+    expect(validateManifest({ labels: withInvalidLabel, inputSize: 224 })).toBeNull()
+  })
+
+  it("rejects a non-positive or non-finite inputSize", () => {
+    expect(validateManifest({ labels: VALID_LABELS, inputSize: 0 })).toBeNull()
+    expect(validateManifest({ labels: VALID_LABELS, inputSize: -1 })).toBeNull()
+    expect(validateManifest({ labels: VALID_LABELS, inputSize: Infinity })).toBeNull()
+    expect(validateManifest({ labels: VALID_LABELS, inputSize: "224" })).toBeNull()
+  })
+})
 
 describe("rankGenusSuggestions", () => {
   it("suggests all 34 genera, most likely first, none withheld (D-04/D-11)", () => {
@@ -67,6 +100,17 @@ describe("classifyGenusPhoto", () => {
     expect(outcome).toEqual({ status: "unavailable", reason: "load_failed" })
   })
 
+  it("does not retry loading the model once it has already failed to load", async () => {
+    loadTensorflowModel.mockRejectedValue(new Error("invalid flatbuffer"))
+
+    const first = await classifyGenusPhoto("file:///mock/cache/photo-1.jpg")
+    const second = await classifyGenusPhoto("file:///mock/cache/photo-2.jpg")
+
+    expect(first).toEqual({ status: "unavailable", reason: "load_failed" })
+    expect(second).toEqual({ status: "unavailable", reason: "load_failed" })
+    expect(loadTensorflowModel).toHaveBeenCalledTimes(1)
+  })
+
   it("resolves 'ok' with 34 ranked suggestions once the model loads and runs", async () => {
     loadTensorflowModel.mockResolvedValue({
       run: jest
@@ -106,5 +150,20 @@ describe("classifyGenusPhoto", () => {
     await classifyGenusPhoto("file:///mock/cache/photo-2.jpg")
 
     expect(loadTensorflowModel).toHaveBeenCalledTimes(1)
+  })
+
+  it("resolves 'unavailable'/invalid_manifest for a corrupt or mismatched bundled manifest", async () => {
+    // A fresh module registry: the bundled manifest is a static import, so this is the only way
+    // to exercise a build where it and the real .tflite have drifted out of sync (D-08's "corrupt
+    // or mismatched bundle" case, distinct from a model that loads but the manifest disagrees with).
+    await jest.isolateModulesAsync(async () => {
+      jest.doMock("../../assets/models/genus_classifier_manifest.json", () => ({
+        labels: ["Not_A_Genus"],
+        inputSize: 224,
+      }))
+      const isolated = await import("./genusClassifierModel")
+      const outcome = await isolated.classifyGenusPhoto("file:///mock/cache/photo.jpg")
+      expect(outcome).toEqual({ status: "unavailable", reason: "invalid_manifest" })
+    })
   })
 })

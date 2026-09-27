@@ -18,6 +18,12 @@ describe("calibration", () => {
     expect(() => assertAllGenusThresholdsPresent()).not.toThrow()
   })
 
+  it("throws if a future genus-list edit leaves a genus without a calibrated threshold", () => {
+    expect(() => assertAllGenusThresholdsPresent({ Abies: 0.5 })).toThrow(
+      /Missing calibrated "strong" threshold for genus/,
+    )
+  })
+
   it("labels a score at or above a genus's own strong threshold as strong", () => {
     // Abies: strong at 0.8463 (measurement document §15.2).
     expect(classifyConfidence("Abies", 0.9)).toBe("strong")
