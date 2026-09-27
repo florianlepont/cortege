@@ -51,6 +51,16 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  // HOME-06: the avatar is a tappable button (to Compte) whether it shows a photo or the fallback.
+  avatarButton: {
+    borderRadius: brandRadius.pill,
+  },
+  avatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: brandRadius.pill,
+    backgroundColor: brandColors.panelMuted,
+  },
 
   // Notice
   notice: {

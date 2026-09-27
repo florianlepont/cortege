@@ -500,6 +500,21 @@ describe("HomeRoute", () => {
 
     callback("home", "onNavigateToExplorer")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("publicMap")
+
+    // HOME-06: the avatar navigates to Compte.
+    callback("home", "onNavigateToAccount")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("account", { screen: "accountHome" })
+  })
+
+  test("passes the access token and api url the avatar needs to build a signed photo url", async () => {
+    const fixture = makeFixture()
+    await mount(
+      <Providers fixture={fixture}>
+        <HomeRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("home").accessToken).toBe(fixture.accessToken)
+    expect(props("home").apiUrl).toBe(fixture.session.state.apiUrl)
   })
 })
 

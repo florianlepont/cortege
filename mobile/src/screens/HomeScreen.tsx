@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
+import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors } from "../app/brand-tokens"
+import { formatSyncErrorForUser } from "../app/formatters"
 import { resolveSurveyUiStatus } from "../app/survey-logic"
 import type { AuthUser } from "../app/types"
 import type { LocalSurvey } from "../storage/types"
@@ -14,6 +16,7 @@ import { AppSectionHeader } from "../ui/AppSectionHeader"
 import { ParcelNearbyCard } from "../components/cards/ParcelNearbyCard"
 import { hasMixedMethodVersions, type NearbyParcelsState } from "../hooks/useNearbyParcels"
 import { fr } from "../i18n"
+import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { SkeletonRow } from "../ui/Skeleton"
 import { SurveyProgressCard } from "../ui/SurveyProgressCard"
 import { SyncStatusPill } from "../ui/SyncStatusPill"
@@ -25,6 +28,8 @@ const RESUME_WINDOW_MS = 48 * 60 * 60 * 1000
 
 type HomeScreenProps = {
   currentUser: AuthUser | null
+  accessToken: string | null
+  apiUrl: string
   surveys: LocalSurvey[]
   surveyStats: SurveyStats
   isOnline: boolean
@@ -36,6 +41,7 @@ type HomeScreenProps = {
   onRetrySurvey: (surveyId: string) => Promise<void>
   onOpenSyncStatus: () => void
   onNavigateToExplorer: () => void
+  onNavigateToAccount: () => void
   onRefresh: () => Promise<void>
 }
 
@@ -75,6 +81,8 @@ export function pickAlertSurvey(surveys: LocalSurvey[]): LocalSurvey | null {
 
 export function HomeScreen({
   currentUser,
+  accessToken,
+  apiUrl,
   surveys,
   surveyStats,
   isOnline,
@@ -86,11 +94,18 @@ export function HomeScreen({
   onRetrySurvey,
   onOpenSyncStatus,
   onNavigateToExplorer,
+  onNavigateToAccount,
   onRefresh,
 }: HomeScreenProps) {
   const insets = useSafeAreaInsets()
   const [refreshing, setRefreshing] = useState(false)
   const firstName = getFirstName(currentUser)
+  // HOME-06: the avatar shows the profile photo (it used to render nothing once one existed) and
+  // is tappable to Compte.
+  const profilePictureUri = useMemo(
+    () => resolveProfilePictureUri(currentUser?.profile_picture_url, apiUrl),
+    [apiUrl, currentUser?.profile_picture_url],
+  )
 
   useEffect(() => {
     onLoadNearbyParcels()
@@ -100,6 +115,12 @@ export function HomeScreen({
   const isBlockedAlert = surveyStats.blocked > 0
   const alertSurvey = hasAlerts ? pickAlertSurvey(surveys) : null
   const resumeDraft = pickResumeDraft(surveys)
+  // LIST-07: threads last_sync_error_code through, like SurveyRow/DetailActions already do, so
+  // the same survey never shows two different error messages depending on which screen renders it.
+  const failedAlertMessage = alertSurvey
+    ? (formatSyncErrorForUser(alertSurvey.last_sync_error, alertSurvey.last_sync_error_code) ??
+      fr.home.alerts.failedMessage)
+    : fr.home.alerts.failedMessage
 
   // BUG-08 (UX audit, Phase 2): the pull-to-refresh gesture used to reflect no state at all.
   const handleRefresh = useCallback(async () => {
@@ -143,11 +164,28 @@ export function HomeScreen({
             pendingCount={surveyStats.pending}
             onPress={onOpenSyncStatus}
           />
-          {currentUser?.profile_picture_url ? null : (
-            <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={20} color={brandColors.textSecondary} />
-            </View>
-          )}
+          <Pressable
+            style={styles.avatarButton}
+            onPress={onNavigateToAccount}
+            accessibilityRole="button"
+            accessibilityLabel={fr.home.avatar}
+          >
+            {profilePictureUri ? (
+              <ExpoImage
+                source={{
+                  uri: profilePictureUri,
+                  headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+                }}
+                style={styles.avatarImage}
+                contentFit="cover"
+                accessible={false}
+              />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person" size={20} color={brandColors.textSecondary} />
+              </View>
+            )}
+          </Pressable>
         </View>
       </View>
 
@@ -161,7 +199,7 @@ export function HomeScreen({
               ? fr.home.alerts.blocked({ count: surveyStats.blocked })
               : fr.home.alerts.failed({ count: surveyStats.failed })
           }
-          message={isBlockedAlert ? fr.home.alerts.blockedMessage : fr.home.alerts.failedMessage}
+          message={isBlockedAlert ? fr.home.alerts.blockedMessage : failedAlertMessage}
           action={
             alertSurvey
               ? {
