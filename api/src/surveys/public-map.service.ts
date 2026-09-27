@@ -1,3 +1,4 @@
+import type { PublicParcelStatusItem as PublicParcelStatusItemContract } from "@cortege/ibp-domain"
 import { Injectable } from "@nestjs/common"
 import { DatabaseService } from "../database/database.service"
 import { CadastreProviderService, WfsParcelFeature } from "./cadastre-provider.service"
@@ -28,6 +29,8 @@ export type PublicParcelStatusItem = {
   latest_submitted_survey_id: string | null
   latest_observation_year: number | null
   latest_ibp_total: number | null
+  /** 01.8 D-10: method tag of the same latest survey as latest_ibp_total; null = v3.0 or none. */
+  latest_ibp_method_version: string | null
   geometry?: Record<string, unknown>
 }
 
@@ -37,6 +40,7 @@ type ParcelStatusDbRow = {
   latest_submitted_survey_id: string | null
   latest_observation_year: number | null
   latest_ibp_total: number | null
+  latest_ibp_method_version?: string | null
   geometry: Record<string, unknown>
   centroid: Record<string, unknown>
 }
@@ -48,6 +52,7 @@ type StudiedParcelDbRow = {
   latest_submitted_survey_id: string
   latest_observation_year: number | null
   latest_ibp_total: number | null
+  latest_ibp_method_version?: string | null
 }
 
 /** Below this map zoom the mobile shows no parcel, so the route answers without a query. */
@@ -136,8 +141,10 @@ export class PublicMapService {
           latest_submitted_survey_id: row.latest_submitted_survey_id,
           latest_observation_year: row.latest_observation_year,
           latest_ibp_total: row.latest_ibp_total,
+          latest_ibp_method_version: row.latest_ibp_method_version ?? null,
           geometry,
-        }
+          // The wire shape must stay assignable to the shared contract (01.8-01).
+        } satisfies PublicParcelStatusItemContract
       })
       .filter((item) => {
         if (seenParcelIds.has(item.parcel_id)) {
@@ -172,6 +179,7 @@ export class PublicMapService {
         latest_submitted_survey_id: string
         latest_observation_year: number | null
         latest_ibp_total: number | null
+        latest_ibp_method_version: string | null
       }
     >()
     for (const row of latestResult.rows) {
@@ -179,6 +187,7 @@ export class PublicMapService {
         latest_submitted_survey_id: row.latest_submitted_survey_id,
         latest_observation_year: row.latest_observation_year,
         latest_ibp_total: row.latest_ibp_total,
+        latest_ibp_method_version: row.latest_ibp_method_version ?? null,
       })
     }
 
@@ -192,8 +201,9 @@ export class PublicMapService {
         latest_submitted_survey_id: studied?.latest_submitted_survey_id ?? null,
         latest_observation_year: studied?.latest_observation_year ?? null,
         latest_ibp_total: studied?.latest_ibp_total ?? null,
+        latest_ibp_method_version: studied?.latest_ibp_method_version ?? null,
         geometry: feature.geometry,
-      }
+      } satisfies PublicParcelStatusItemContract
     })
   }
 }

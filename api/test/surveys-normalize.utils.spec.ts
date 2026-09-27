@@ -3,8 +3,11 @@ import {
   buildSyncChangesCursor,
   classifySameVersionContent,
   getChangedSubmittedReadOnlyFields,
+  getSubmittedReadOnlyFields,
   isStrictTimestamp,
   parseSyncChangesCursor,
+  resolveSurveyMethodColumns,
+  sameSurveyMethodColumns,
 } from "../src/surveys/surveys-normalize.utils"
 import { SurveyRow, SurveyUpsertBody } from "../src/surveys/surveys.types"
 
@@ -22,6 +25,9 @@ function makeRow(overrides: Partial<SurveyRow> = {}): SurveyRow {
     previous_survey_id: null,
     region_version: "ACA",
     vegetation_stage: "collineen",
+    ibp_method_version: null,
+    ibp_cas: null,
+    ibp_cas3_scale: null,
     factors: { A: 1, B: 2 },
     factor_results: {},
     scores: { ibp_total: 10 },
@@ -225,6 +231,187 @@ describe("getChangedSubmittedReadOnlyFields", () => {
         existing.parcel_ids ?? [],
       ),
     ).toEqual(["site_name", "observation_year", "factors"])
+  })
+})
+
+const V3_0 = "cnpf_ibp_fr_v3_0_2023-03-23"
+const V3_2 = "cnpf_ibp_fr_v3_2_2026-02-02"
+const V3_2_ROW: Partial<SurveyRow> = {
+  ibp_method_version: V3_2,
+  ibp_cas: 1,
+  ibp_cas3_scale: null,
+  region_version: null,
+  vegetation_stage: null,
+}
+
+describe("getChangedSubmittedReadOnlyFields: method fields (phase 01.8, Pattern 3)", () => {
+  const changed = (body: SurveyUpsertBody, overrides: Partial<SurveyRow> = {}) => {
+    const existing = makeRow(overrides)
+    return getChangedSubmittedReadOnlyFields(body, existing, existing.parcel_ids ?? [])
+  }
+
+  it("treats a stored NULL version and the explicit v3.0 tag as the same method", () => {
+    expect(changed({ ibp_method_version: V3_0 })).toEqual([])
+  })
+
+  it("reports a v3.0 row replayed as v3.2, and the cas it now carries", () => {
+    expect(changed({ ibp_method_version: V3_2 }, { ibp_method_version: V3_0 })).toEqual([
+      "ibp_method_version",
+    ])
+    expect(changed({ ibp_method_version: V3_2, ibp_cas: 1 })).toEqual([
+      "ibp_method_version",
+      "ibp_cas",
+    ])
+  })
+
+  it("reports a v3.2 row replayed with the v3.0 tag", () => {
+    expect(changed({ ibp_method_version: V3_0 }, V3_2_ROW)).toEqual(["ibp_method_version"])
+  })
+
+  it("reports a changed cas and cas-3 flag on a v3.2 row", () => {
+    expect(changed({ ibp_cas: 2 }, V3_2_ROW)).toEqual(["ibp_cas"])
+    expect(
+      changed({ ibp_method_version: V3_2, ibp_cas: 1, ibp_cas3_scale: true }, V3_2_ROW),
+    ).toEqual(["ibp_cas3_scale"])
+  })
+
+  it("does not report null or undefined method fields", () => {
+    expect(
+      changed({ ibp_method_version: null, ibp_cas: null, ibp_cas3_scale: null }, V3_2_ROW),
+    ).toEqual([])
+    expect(changed({ ibp_method_version: undefined, ibp_cas: undefined }, V3_2_ROW)).toEqual([])
+  })
+
+  it("treats a missing cas-3 flag as false", () => {
+    expect(changed({ ibp_cas3_scale: false }, V3_2_ROW)).toEqual([])
+  })
+
+  it("ignores the fields the other method never stores", () => {
+    // A cas sent for a v3.0 row, and a region sent for a v3.2 row, are cleared on write.
+    expect(changed({ ibp_cas: 3, ibp_cas3_scale: true })).toEqual([])
+    expect(changed({ region_version: "M", vegetation_stage: "montagnard" }, V3_2_ROW)).toEqual([])
+  })
+
+  it("still compares region and stage on a v3.0 row", () => {
+    expect(changed({ ibp_method_version: V3_0, region_version: "M" })).toEqual(["region_version"])
+  })
+})
+
+describe("getSubmittedReadOnlyFields (PATCH key presence)", () => {
+  it("lists the three method fields when present, even when null", () => {
+    expect(
+      getSubmittedReadOnlyFields({
+        visibility: "public",
+        ibp_method_version: null,
+        ibp_cas: 2,
+        ibp_cas3_scale: false,
+      }),
+    ).toEqual(["ibp_method_version", "ibp_cas", "ibp_cas3_scale"])
+  })
+})
+
+describe("resolveSurveyMethodColumns (RESEARCH §4.2 rules 1-2)", () => {
+  const legacyRow = makeRow()
+
+  it("stores no region or stage for a v3.2 body, and keeps its cas", () => {
+    expect(
+      resolveSurveyMethodColumns(
+        {
+          ibp_method_version: V3_2,
+          ibp_cas: 3,
+          ibp_cas3_scale: false,
+          region_version: "ACA",
+          vegetation_stage: "subalpin",
+        },
+        null,
+      ),
+    ).toEqual({
+      ibp_method_version: V3_2,
+      ibp_cas: 3,
+      ibp_cas3_scale: false,
+      region_version: null,
+      vegetation_stage: null,
+    })
+  })
+
+  it("stores no cas for a v3.0 body (tagged or untagged)", () => {
+    const expected = {
+      ibp_cas: null,
+      ibp_cas3_scale: null,
+      region_version: "M",
+      vegetation_stage: "montagnard",
+    }
+    expect(
+      resolveSurveyMethodColumns(
+        {
+          ibp_method_version: V3_0,
+          ibp_cas: 2,
+          ibp_cas3_scale: true,
+          region_version: "M",
+          vegetation_stage: "montagnard",
+        },
+        null,
+      ),
+    ).toEqual({ ibp_method_version: V3_0, ...expected })
+    expect(
+      resolveSurveyMethodColumns(
+        { ibp_cas: 2, region_version: "M", vegetation_stage: "montagnard" },
+        null,
+      ),
+    ).toEqual({ ibp_method_version: null, ...expected })
+  })
+
+  it("keeps a stored v3.2 draft v3.2 when the body has no version (old app edit)", () => {
+    expect(
+      resolveSurveyMethodColumns(
+        { region_version: "ACA", vegetation_stage: "collineen" },
+        makeRow({ ...V3_2_ROW, ibp_cas: 2, ibp_cas3_scale: true }),
+      ),
+    ).toEqual({
+      ibp_method_version: V3_2,
+      ibp_cas: 2,
+      ibp_cas3_scale: true,
+      region_version: null,
+      vegetation_stage: null,
+    })
+  })
+
+  it("never stamps an untagged row: its version stays NULL", () => {
+    expect(resolveSurveyMethodColumns({}, legacyRow)).toEqual({
+      ibp_method_version: null,
+      ibp_cas: null,
+      ibp_cas3_scale: null,
+      region_version: "ACA",
+      vegetation_stage: "collineen",
+    })
+  })
+
+  it("clears the region and stage when a v3.0 draft switches to v3.2", () => {
+    expect(
+      resolveSurveyMethodColumns({ ibp_method_version: V3_2, ibp_cas: 1 }, legacyRow),
+    ).toMatchObject({ ibp_method_version: V3_2, ibp_cas: 1, region_version: null })
+  })
+
+  it("clears the cas when a v3.2 draft switches back to v3.0", () => {
+    expect(
+      resolveSurveyMethodColumns(
+        { ibp_method_version: V3_0, region_version: "ACA", vegetation_stage: "collineen" },
+        makeRow(V3_2_ROW),
+      ),
+    ).toEqual({
+      ibp_method_version: V3_0,
+      ibp_cas: null,
+      ibp_cas3_scale: null,
+      region_version: "ACA",
+      vegetation_stage: "collineen",
+    })
+  })
+
+  it("compares column sets field by field", () => {
+    const columns = resolveSurveyMethodColumns({}, legacyRow)
+    expect(sameSurveyMethodColumns(columns, { ...columns })).toBe(true)
+    expect(sameSurveyMethodColumns(columns, { ...columns, ibp_cas: 1 })).toBe(false)
+    expect(sameSurveyMethodColumns(columns, { ...columns, vegetation_stage: null })).toBe(false)
   })
 })
 

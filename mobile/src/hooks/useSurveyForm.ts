@@ -1,5 +1,15 @@
 import { useCallback, useMemo, useState } from "react"
 import {
+  IBP_METHOD_V3_0,
+  IBP_METHOD_V3_2,
+  allowedScoresFor,
+  casFromRegionStage,
+  isIbpCas,
+  resolveMethodVersion,
+  type IbpCas,
+  type IbpMethodVersion,
+} from "@cortege/ibp-domain"
+import {
   DEFAULT_SURVEY_FORM,
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
@@ -60,6 +70,18 @@ const toFiniteNumberInRange = (
 }
 
 type GpsFormValue = typeof DEFAULT_SURVEY_FORM.gpsLocation
+
+/** The draft the form saves: storage's DraftInput, with the form's narrower method types. */
+export type SurveyFormDraftInput = {
+  site_name: string
+  ibp_method_version?: IbpMethodVersion
+  ibp_cas?: IbpCas | null
+  ibp_cas3_scale?: boolean
+  region_version?: RegionVersion
+  vegetation_stage?: VegetationStage
+  factors: Record<string, unknown>
+  parcel_ids: string[]
+}
 type FieldError = string | null
 
 type SurveyFormErrors = {
@@ -67,6 +89,23 @@ type SurveyFormErrors = {
 }
 
 const { fields, rules } = fr.validation
+
+// H is scored 0, 2 or 5 only (BUG-2): the allowed set comes from the package.
+const H_ALLOWED_SCORES: readonly number[] = allowedScoresFor("H")
+
+/** The stored tag of a draft, or null when it has none (legacy = v3.0) or an unknown one. */
+const readMethodVersion = (raw: unknown): IbpMethodVersion | null =>
+  raw === IBP_METHOD_V3_0 || raw === IBP_METHOD_V3_2 ? raw : null
+
+/** A's native cover: on A, else the legacy location on B (moves to A on the next save, CH-7). */
+const readNativeCover = (
+  factorA: Record<string, unknown>,
+  factorB: Record<string, unknown>,
+): string =>
+  toTextNum(
+    factorA.native_cover_percent,
+    toTextNum(factorB.covered_autochthonous_percent, toTextNum(factorB.native_cover_percent)),
+  )
 
 // Only the message texts come from the catalogue; which values are valid is
 // unchanged (the rules move to the shared domain package in 01.8).
@@ -88,7 +127,7 @@ const numberError = (
   return null
 }
 
-const oneOfError = (value: string, label: string, allowed: number[]): FieldError => {
+const oneOfError = (value: string, label: string, allowed: readonly number[]): FieldError => {
   const base = numberError(value, label, { integer: true })
   if (base) return base
   const parsed = Number(value)
@@ -109,6 +148,12 @@ export function useSurveyForm() {
   const [gpsLocation, setGpsLocation] = useState<GpsFormValue>(DEFAULT_SURVEY_FORM.gpsLocation)
   const [selectedParcelIds, setSelectedParcelIds] = useState<string[]>([])
 
+  const [ibpMethodVersion, setIbpMethodVersionState] = useState<IbpMethodVersion | null>(
+    DEFAULT_SURVEY_FORM.ibpMethodVersion,
+  )
+  const [ibpCas, setIbpCas] = useState<IbpCas | null>(DEFAULT_SURVEY_FORM.ibpCas)
+  const [ibpCas3Scale, setIbpCas3Scale] = useState<boolean>(DEFAULT_SURVEY_FORM.ibpCas3Scale)
+
   const [factorA, setFactorA] = useState(DEFAULT_SURVEY_FORM.factorA)
   const [factorB, setFactorB] = useState(DEFAULT_SURVEY_FORM.factorB)
   const [factorC, setFactorC] = useState(DEFAULT_SURVEY_FORM.factorC)
@@ -123,6 +168,27 @@ export function useSurveyForm() {
   const handleRegionChange = (nextRegion: RegionVersion): void => {
     setRegionVersion(nextRegion)
     setVegetationStage((current) => normalizeVegetationStageForRegion(nextRegion, current))
+  }
+
+  /**
+   * Picks the survey's method version (D-02). The form only ever holds a new survey or an
+   * unsubmitted draft (useEditingDraft refuses to open a submitted one), so the version is still
+   * free here. Choosing the version the survey already follows changes nothing: a legacy draft
+   * (null) stays untagged. Otherwise the other version's context fields are reset: v3.2 takes its
+   * cas from the region and stage where unambiguous (else null: the observer picks), v3.0 drops the
+   * cas and flag and restores the region/stage defaults.
+   */
+  const setIbpMethodVersion = (next: IbpMethodVersion): void => {
+    if (resolveMethodVersion(ibpMethodVersion) === next) return
+    setIbpMethodVersionState(next)
+    setIbpCas3Scale(false)
+    if (next === IBP_METHOD_V3_2) {
+      setIbpCas(casFromRegionStage(regionVersion, vegetationStage))
+    } else {
+      setIbpCas(null)
+    }
+    setRegionVersion(DEFAULT_SURVEY_FORM.regionVersion)
+    setVegetationStage(defaultVegetationStageForRegion(DEFAULT_SURVEY_FORM.regionVersion))
   }
 
   const applyGpsLocation = (location: GpsCaptureResult): void => {
@@ -146,16 +212,13 @@ export function useSurveyForm() {
   const buildFactorsPayload = useCallback((): Record<string, unknown> => {
     const payload: Record<string, unknown> = {}
 
-    const a = toFiniteNumberInRange(factorA.native_genus_count, { min: 0, integer: true })
-    if (a !== null) payload.A = { native_genus_count: a }
+    const aCount = toFiniteNumberInRange(factorA.native_genus_count, { min: 0, integer: true })
+    const aCover = toFiniteNumberInRange(factorA.native_cover_percent, { min: 0, max: 100 })
+    if (aCount !== null && aCover !== null)
+      payload.A = { native_genus_count: aCount, native_cover_percent: aCover }
 
     const bStrata = toFiniteNumberInRange(factorB.strata_count, { min: 0, integer: true })
-    const bCover = toFiniteNumberInRange(factorB.covered_autochthonous_percent, {
-      min: 0,
-      max: 100,
-    })
-    if (bStrata !== null && bCover !== null)
-      payload.B = { strata_count: bStrata, covered_autochthonous_percent: bCover }
+    if (bStrata !== null) payload.B = { strata_count: bStrata }
 
     const cBmg = toFiniteNumberInRange(factorC.bmg_count, { min: 0, integer: true })
     const cBmm = toFiniteNumberInRange(factorC.bmm_count, { min: 0, integer: true })
@@ -182,7 +245,7 @@ export function useSurveyForm() {
     if (g !== null) payload.G = { open_flowering_percent: g }
 
     const h = toFiniteNumberInRange(factorH.class_score, { integer: true })
-    if (h !== null && [0, 2, 5].includes(h)) payload.H = { class_score: h }
+    if (h !== null && H_ALLOWED_SCORES.includes(h)) payload.H = { class_score: h }
 
     const i = toFiniteNumberInRange(factorI.type_count, { min: 0, integer: true })
     if (i !== null) payload.I = { type_count: i }
@@ -201,6 +264,11 @@ export function useSurveyForm() {
     const nextRegion: RegionVersion = draft.region_version === "M" ? "M" : "ACA"
     setRegionVersion(nextRegion)
     setVegetationStage(normalizeVegetationStageForRegion(nextRegion, draft.vegetation_stage))
+    // The draft's raw version: null for an untagged legacy draft, which the form never stamps.
+    const nextVersion = readMethodVersion(draft.ibp_method_version)
+    setIbpMethodVersionState(nextVersion)
+    setIbpCas(nextVersion === IBP_METHOD_V3_2 && isIbpCas(draft.ibp_cas) ? draft.ibp_cas : null)
+    setIbpCas3Scale(nextVersion === IBP_METHOD_V3_2 && draft.ibp_cas3_scale === true)
 
     const factors = asObject(draft.factors)
     const factorAObj = asObject(factors.A)
@@ -215,11 +283,11 @@ export function useSurveyForm() {
     const factorJObj = asObject(factors.J)
     const parsedParcelIds = normalizeParcelIds(draft.parcel_ids)
 
-    setFactorA({ native_genus_count: toTextNum(factorAObj.native_genus_count) })
-    setFactorB({
-      strata_count: toTextNum(factorBObj.strata_count),
-      covered_autochthonous_percent: toTextNum(factorBObj.covered_autochthonous_percent),
+    setFactorA({
+      native_genus_count: toTextNum(factorAObj.native_genus_count),
+      native_cover_percent: readNativeCover(factorAObj, factorBObj),
     })
+    setFactorB({ strata_count: toTextNum(factorBObj.strata_count) })
     setFactorC({
       bmg_count: toTextNum(factorCObj.bmg_count),
       bmm_count: toTextNum(factorCObj.bmm_count),
@@ -245,53 +313,18 @@ export function useSurveyForm() {
     setSelectedParcelIds(parsedParcelIds)
   }
 
+  // The live preview scores exactly what the form would save, under the survey's method context
+  // (the package ignores the other version's fields).
   const factorRetainedScores = useMemo<Record<FactorKey, FactorRetainedScore | null>>(
     () =>
-      computeRetainedScoresFromRawFactors(
-        {
-          A: { native_genus_count: factorA.native_genus_count },
-          B: {
-            strata_count: factorB.strata_count,
-            covered_autochthonous_percent: factorB.covered_autochthonous_percent,
-          },
-          C: {
-            bmg_count: factorC.bmg_count,
-            bmm_count: factorC.bmm_count,
-            surface_ha: factorC.surface_ha,
-          },
-          D: {
-            bmg_count: factorD.bmg_count,
-            bmm_count: factorD.bmm_count,
-            surface_ha: factorD.surface_ha,
-          },
-          E: {
-            tgb_count: factorE.tgb_count,
-            gb_count: factorE.gb_count,
-            surface_ha: factorE.surface_ha,
-          },
-          F: { trees_per_ha: factorF.trees_per_ha },
-          G: { open_flowering_percent: factorG.open_flowering_percent },
-          H: { class_score: factorH.class_score },
-          I: { type_count: factorI.type_count },
-          J: { type_count: factorJ.type_count },
-        },
-        regionVersion,
-        vegetationStage,
-      ),
-    [
-      factorA,
-      factorB,
-      factorC,
-      factorD,
-      factorE,
-      factorF,
-      factorG,
-      factorH,
-      factorI,
-      factorJ,
-      regionVersion,
-      vegetationStage,
-    ],
+      computeRetainedScoresFromRawFactors(buildFactorsPayload(), {
+        ibp_method_version: ibpMethodVersion,
+        ibp_cas: ibpCas,
+        ibp_cas3_scale: ibpCas3Scale,
+        region_version: regionVersion,
+        vegetation_stage: vegetationStage,
+      }),
+    [buildFactorsPayload, ibpMethodVersion, ibpCas, ibpCas3Scale, regionVersion, vegetationStage],
   )
 
   const formErrors = useMemo<SurveyFormErrors>(
@@ -305,6 +338,9 @@ export function useSurveyForm() {
     setSiteName(DEFAULT_SURVEY_FORM.siteName)
     setRegionVersion(DEFAULT_SURVEY_FORM.regionVersion)
     setVegetationStage(defaultVegetationStageForRegion(DEFAULT_SURVEY_FORM.regionVersion))
+    setIbpMethodVersionState(DEFAULT_SURVEY_FORM.ibpMethodVersion)
+    setIbpCas(DEFAULT_SURVEY_FORM.ibpCas)
+    setIbpCas3Scale(DEFAULT_SURVEY_FORM.ibpCas3Scale)
     setGpsLocation(DEFAULT_SURVEY_FORM.gpsLocation)
     setSelectedParcelIds([])
     setFactorA(DEFAULT_SURVEY_FORM.factorA)
@@ -325,11 +361,21 @@ export function useSurveyForm() {
         {
           label: fields.native_genus_count,
           value: factorA.native_genus_count,
-          onChange: (value) => setFactorA({ native_genus_count: value }),
+          onChange: (value) => setFactorA((prev) => ({ ...prev, native_genus_count: value })),
           required: true,
           error: numberError(factorA.native_genus_count, fields.native_genus_count, {
             min: 0,
             integer: true,
+          }),
+        },
+        {
+          label: fields.native_cover_percent,
+          value: factorA.native_cover_percent,
+          onChange: (value) => setFactorA((prev) => ({ ...prev, native_cover_percent: value })),
+          required: true,
+          error: numberError(factorA.native_cover_percent, fields.native_cover_percent, {
+            min: 0,
+            max: 100,
           }),
         },
       ],
@@ -340,18 +386,6 @@ export function useSurveyForm() {
           onChange: (value) => setFactorB((prev) => ({ ...prev, strata_count: value })),
           required: true,
           error: numberError(factorB.strata_count, fields.strata_count, { min: 0, integer: true }),
-        },
-        {
-          label: fields.covered_autochthonous_percent,
-          value: factorB.covered_autochthonous_percent,
-          onChange: (value) =>
-            setFactorB((prev) => ({ ...prev, covered_autochthonous_percent: value })),
-          required: true,
-          error: numberError(
-            factorB.covered_autochthonous_percent,
-            fields.covered_autochthonous_percent,
-            { min: 0, max: 100 },
-          ),
         },
       ],
       C: [
@@ -450,7 +484,7 @@ export function useSurveyForm() {
           value: factorH.class_score,
           onChange: (value) => setFactorH({ class_score: value }),
           required: true,
-          error: oneOfError(factorH.class_score, fields.class_score, [0, 2, 5]),
+          error: oneOfError(factorH.class_score, fields.class_score, H_ALLOWED_SCORES),
         },
       ],
       I: [
@@ -475,16 +509,31 @@ export function useSurveyForm() {
     [factorA, factorB, factorC, factorD, factorE, factorF, factorG, factorH, factorI, factorJ],
   )
 
-  const draftInput = useMemo(
-    () => ({
+  // What the storage writes (01.8-08 rule): the version only when the form has one (a legacy draft
+  // edited without switching sends no key and stays untagged), the cas and flag for v3.2, and
+  // region/stage for v3.0. Key order matches useEditingDraft's signatures.
+  const draftInput = useMemo((): SurveyFormDraftInput => {
+    const methodContext =
+      resolveMethodVersion(ibpMethodVersion) === IBP_METHOD_V3_2
+        ? { ibp_cas: ibpCas, ibp_cas3_scale: ibpCas3Scale }
+        : { region_version: regionVersion, vegetation_stage: vegetationStage }
+    return {
       site_name: siteName.trim(),
-      region_version: regionVersion,
-      vegetation_stage: vegetationStage,
+      ...(ibpMethodVersion !== null ? { ibp_method_version: ibpMethodVersion } : {}),
+      ...methodContext,
       factors: buildFactorsPayload(),
       parcel_ids: selectedParcelIds,
-    }),
-    [siteName, regionVersion, vegetationStage, buildFactorsPayload, selectedParcelIds],
-  )
+    }
+  }, [
+    siteName,
+    ibpMethodVersion,
+    ibpCas,
+    ibpCas3Scale,
+    regionVersion,
+    vegetationStage,
+    buildFactorsPayload,
+    selectedParcelIds,
+  ])
 
   const buildDraftInput = useCallback(() => draftInput, [draftInput])
 
@@ -500,6 +549,12 @@ export function useSurveyForm() {
     toggleParcelSelection,
     applyGpsLocation,
     handleRegionChange,
+    ibpMethodVersion,
+    ibpCas,
+    ibpCas3Scale,
+    setIbpMethodVersion,
+    setIbpCas,
+    setIbpCas3Scale,
     factorSections,
     factorRetainedScores,
     formErrors,

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react"
+import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { createLocalDraft, getLocalSurveyDraft, updateLocalDraft } from "../storage/surveys"
 import { DEFAULT_SURVEY_FORM } from "../app/constants"
 import { fr, logStatusDetail, type StatusMessage } from "../i18n"
@@ -21,6 +22,38 @@ const text = fr.status.editing
 
 const surveyName = (survey: { site_name?: string | null } | null | undefined): string =>
   survey?.site_name?.trim() || fr.common.untitledSurvey
+
+/**
+ * The signature of a stored draft, in the form's draftInput key order, with its method fields as
+ * stored: the version only when the draft has one (a legacy draft stays untagged), the cas and flag
+ * for v3.2, region/stage for v3.0. A draft opened unchanged therefore does not autosave.
+ */
+const storedDraftSignature = (draft: {
+  site_name?: string | null
+  ibp_method_version?: string | null
+  ibp_cas?: number | null
+  ibp_cas3_scale?: boolean | null
+  region_version?: string | null
+  vegetation_stage?: string | null
+  parcel_ids?: unknown
+  factors?: unknown
+}): string => {
+  const hasVersion = draft.ibp_method_version !== undefined && draft.ibp_method_version !== null
+  const methodContext =
+    resolveMethodVersion(draft.ibp_method_version) === IBP_METHOD_V3_2
+      ? { ibp_cas: draft.ibp_cas ?? null, ibp_cas3_scale: draft.ibp_cas3_scale === true }
+      : {
+          region_version: draft.region_version ?? "ACA",
+          vegetation_stage: draft.vegetation_stage ?? "",
+        }
+  return JSON.stringify({
+    site_name: draft.site_name ?? "",
+    ...(hasVersion ? { ibp_method_version: draft.ibp_method_version } : {}),
+    ...methodContext,
+    factors: draft.factors ?? {},
+    parcel_ids: Array.isArray(draft.parcel_ids) ? draft.parcel_ids : [],
+  })
+}
 
 type PendingAutosaveRequest = {
   surveyId: string
@@ -145,12 +178,17 @@ export function useEditingDraft({
     }
     createDraftBootstrappingRef.current = true
 
+    // A new survey follows v3.2 with cas 1 and carries no region/stage (D-02, D-08). Same keys
+    // and order as the reset form's draftInput, so opening it does not trigger an autosave.
     const initialDraftInput = {
-      site_name: "",
-      region_version: DEFAULT_SURVEY_FORM.regionVersion,
-      vegetation_stage: DEFAULT_SURVEY_FORM.vegetationStage,
-      parcel_ids: [],
+      site_name: DEFAULT_SURVEY_FORM.siteName,
+      ...(DEFAULT_SURVEY_FORM.ibpMethodVersion !== null
+        ? { ibp_method_version: DEFAULT_SURVEY_FORM.ibpMethodVersion }
+        : {}),
+      ibp_cas: DEFAULT_SURVEY_FORM.ibpCas,
+      ibp_cas3_scale: DEFAULT_SURVEY_FORM.ibpCas3Scale,
       factors: {},
+      parcel_ids: [],
     }
 
     void (async () => {
@@ -221,13 +259,7 @@ export function useEditingDraft({
         onStatusChange(text.notFound())
         return false
       }
-      autosaveSignatureRef.current = JSON.stringify({
-        site_name: draft.site_name ?? "",
-        region_version: draft.region_version ?? "ACA",
-        vegetation_stage: draft.vegetation_stage ?? "",
-        parcel_ids: Array.isArray(draft.parcel_ids) ? draft.parcel_ids : [],
-        factors: draft.factors ?? {},
-      })
+      autosaveSignatureRef.current = storedDraftSignature(draft)
       surveyForm.applyDraftToForm(draft)
       setEditingSurveyId(surveyId)
       setFormMode("edit")

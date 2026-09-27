@@ -33,5 +33,13 @@ export const editingStatusFr = {
   regionUpdated: ({ name }: { name: string }) => statusText(`Région mise à jour pour « ${name} »`),
   vegetationStageUpdated: ({ name }: { name: string }) =>
     statusText(`Stade de végétation mis à jour pour « ${name} »`),
+  // IBP method of a draft (plan 01.8-10): cas, cas-3 scale and the switch to v3.2.
+  ibpCasUpdated: ({ name }: { name: string }) => statusText(`Cas IBP mis à jour pour « ${name} »`),
+  cas3ScaleUpdated: ({ name }: { name: string }) =>
+    statusText(`Échelle du cas 3 mise à jour pour « ${name} »`),
+  switchedToV32: ({ name }: { name: string }) =>
+    statusText(`« ${name} » suit maintenant IBP v3.2 : vérifiez le cas`),
+  switchNotAllowed: ({ name }: { name: string }) =>
+    statusText(`Ce changement ne s'applique pas à la méthode IBP de « ${name} »`),
   updateFailed: () => statusText(`Impossible d'enregistrer la modification. ${RETRY}`),
 } as const

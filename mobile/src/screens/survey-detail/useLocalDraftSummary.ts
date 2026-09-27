@@ -1,3 +1,4 @@
+import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { useEffect, useState } from "react"
 import {
   computeIbpTotalsFromRetainedScores,
@@ -8,7 +9,7 @@ import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
 } from "../../app/constants"
-import { FactorKey, RegionVersion, VegetationStage } from "../../app/types"
+import { RegionVersion, VegetationStage } from "../../app/types"
 import { getLocalSurveyDraft, LocalSurvey } from "../../storage"
 
 export type DisplayedScores = {
@@ -24,6 +25,10 @@ export type LocalDraftMeta = {
   site_name: string
   region_version: RegionVersion
   vegetation_stage: VegetationStage
+  // The draft's method fields as stored (01.8-14): null version = untagged legacy draft (v3.0).
+  ibp_method_version: string | null
+  ibp_cas: number | null
+  ibp_cas3_scale: boolean
 }
 
 export type LocalDraftSummary = {
@@ -34,7 +39,6 @@ export type LocalDraftSummary = {
   meta: LocalDraftMeta | null
 }
 
-export const FACTOR_ORDER: FactorKey[] = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 export const NOT_FILLED_CLASS = "Not filled"
 
 const EMPTY_SUMMARY: LocalDraftSummary = {
@@ -61,12 +65,18 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
           return
         }
 
+        const context = {
+          ibp_method_version: draft.ibp_method_version,
+          ibp_cas: draft.ibp_cas,
+          ibp_cas3_scale: draft.ibp_cas3_scale,
+          region_version: draft.region_version,
+          vegetation_stage: draft.vegetation_stage,
+        }
         const retained = computeRetainedScoresFromRawFactors(
           typeof draft.factors === "object" && draft.factors && !Array.isArray(draft.factors)
             ? draft.factors
             : {},
-          draft.region_version,
-          typeof draft.vegetation_stage === "string" ? draft.vegetation_stage : "",
+          context,
         )
 
         const totals = computeIbpTotalsFromRetainedScores(retained)
@@ -78,13 +88,12 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
             : defaultVegetationStageForRegion(regionVersion),
         )
         const readiness = evaluateSubmitReadinessFromDraft({
-          region_version: draft.region_version,
-          vegetation_stage: draft.vegetation_stage,
+          ...context,
           factors: draft.factors,
           parcel_ids: draft.parcel_ids,
           expires_at: draft.expires_at,
         })
-        const entries = FACTOR_ORDER.map<[string, DisplayedFactorResult]>((factorCode) => {
+        const entries = FACTOR_KEYS.map<[string, DisplayedFactorResult]>((factorCode) => {
           const score = retained[factorCode]
           return [
             factorCode,
@@ -112,6 +121,10 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
                 : survey.site_name,
             region_version: regionVersion,
             vegetation_stage: vegetationStage,
+            ibp_method_version:
+              typeof draft.ibp_method_version === "string" ? draft.ibp_method_version : null,
+            ibp_cas: typeof draft.ibp_cas === "number" ? draft.ibp_cas : null,
+            ibp_cas3_scale: draft.ibp_cas3_scale === true,
           },
         })
       } catch (_error) {

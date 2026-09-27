@@ -36,8 +36,12 @@
 //                   /health 200, /debug/test-token 404, /surveys without a token 401,
 //                   /public/map-items 200 with items (also with a mainland-France bbox, and 400
 //                   for a malformed bbox), no CORS headers for a foreign origin, and
-//                   the MinIO health URL 200. It never writes anything. Behind an HTTP proxy,
-//                   run it with NODE_USE_ENV_PROXY=1.
+//                   the MinIO health URL 200. Phase 01.8 (D-13): the first map item carries
+//                   the `ibp_method_version` key and /public/parcels/status on a mainland-France
+//                   bbox answers 200 with `latest_ibp_method_version` on its first item, which
+//                   proves migration 016 ran and the new image serves (an empty list is a WARN,
+//                   not a failure). It never writes anything (GET only, apart from the refused
+//                   test-token POST). Behind an HTTP proxy, run it with NODE_USE_ENV_PROXY=1.
 //
 // Configuration (environment):
 //   SIM_PORT          API port for the default base URL (default 3100)
@@ -87,6 +91,12 @@ const results = []
 const check = (name, ok, detail = "") => {
   results.push({ name, ok: !!ok })
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? "  — " + detail : ""}`)
+}
+// A check that could not run on the data at hand: printed, counted apart, never a failure.
+const warnings = []
+const warn = (name, detail = "") => {
+  warnings.push(name)
+  console.log(`WARN  ${name}${detail ? "  — " + detail : ""}`)
 }
 
 async function api(token, method, route, body, headers = {}, base = BASE) {
@@ -946,6 +956,37 @@ async function phaseProduction() {
     r.status === 200 && Array.isArray(r.json?.items),
     `${r.status}, ${Array.isArray(r.json?.items) ? r.json.items.length + " items" : "no items"}`,
   )
+  // 01.8 D-10/D-13: the new image adds the method version to the public reads (migration 016).
+  const mapItems = Array.isArray(r.json?.items) ? r.json.items : []
+  if (r.status === 200 && mapItems.length > 0) {
+    check(
+      "GET /public/map-items: the first item has the ibp_method_version key (01.8)",
+      Object.hasOwn(mapItems[0], "ibp_method_version") && Object.hasOwn(mapItems[0], "ibp_cas"),
+      `ibp_method_version=${JSON.stringify(mapItems[0].ibp_method_version)}`,
+    )
+  } else {
+    warn(
+      "GET /public/map-items: no public item to inspect for ibp_method_version",
+      String(r.status),
+    )
+  }
+  const franceBbox = encodeURIComponent("-5.2,41.3,9.6,51.1")
+  r = await api(null, "GET", `/public/parcels/status?bbox=${franceBbox}`)
+  const statuses = Array.isArray(r.json?.items) ? r.json.items : null
+  check(
+    "GET /public/parcels/status?bbox=<mainland France> 200 with an items array",
+    r.status === 200 && statuses !== null,
+    `${r.status}, ${statuses ? statuses.length + " items" : "no items"}`,
+  )
+  if (statuses && statuses.length > 0) {
+    check(
+      "GET /public/parcels/status: the first item has the latest_ibp_method_version key (01.8)",
+      Object.hasOwn(statuses[0], "latest_ibp_method_version"),
+      `latest_ibp_method_version=${JSON.stringify(statuses[0].latest_ibp_method_version)}`,
+    )
+  } else if (statuses) {
+    warn("GET /public/parcels/status: no parcel to inspect for latest_ibp_method_version")
+  }
   r = await api(null, "GET", "/public/map-items?bbox=not-a-bbox")
   check(
     "GET /public/map-items?bbox=not-a-bbox 400 without echo",
@@ -1000,5 +1041,8 @@ try {
 }
 
 const failed = results.filter((x) => !x.ok).length
-console.log(`\n${phase}: ${results.length - failed}/${results.length} checks passed`)
+console.log(
+  `\n${phase}: ${results.length - failed}/${results.length} checks passed` +
+    (warnings.length ? `, ${warnings.length} warning(s)` : ""),
+)
 process.exit(failed ? 1 : 0)

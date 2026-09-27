@@ -1,4 +1,10 @@
 import { BadRequestException } from "@nestjs/common"
+import {
+  IBP_METHOD_V3_2,
+  isSameMethodVersion,
+  resolveMethodVersion,
+  type IbpMethodFields,
+} from "@cortege/ibp-domain"
 import { SurveyPatchBody, SurveyRow, SurveyUpsertBody } from "./surveys.types"
 
 export function normalizeSurveyStatusFilter(status?: string): SurveyRow["status"] | null {
@@ -30,11 +36,77 @@ export function getSubmittedReadOnlyFields(body: SurveyPatchBody): string[] {
     "previous_survey_id",
     "region_version",
     "vegetation_stage",
+    "ibp_method_version",
+    "ibp_cas",
+    "ibp_cas3_scale",
     "factors",
     "scores",
   ]
 
   return readonlyFields.filter((field) => Object.prototype.hasOwnProperty.call(body, field))
+}
+
+/** The station columns a survey row stores (migration 016 plus the v3.0 region and stage). */
+export type SurveyMethodColumns = {
+  ibp_method_version: string | null
+  ibp_cas: number | null
+  ibp_cas3_scale: boolean | null
+  region_version: string | null
+  vegetation_stage: string | null
+}
+
+type SurveyMethodInput = IbpMethodFields & {
+  region_version?: string | null
+  vegetation_stage?: string | null
+}
+
+type StoredSurveyMethod = Pick<SurveyRow, keyof SurveyMethodColumns>
+
+function isV32(version: unknown): boolean {
+  return resolveMethodVersion(version) === IBP_METHOD_V3_2
+}
+
+/**
+ * The station columns a write stores, and the context the IBP rules run with (phase 01.8,
+ * RESEARCH §4.2 rules 1-2).
+ * - The effective method is the body's tag, else the stored row's tag; neither means v3.0. An
+ *   absent or null body field keeps the stored value, so an untagged edit of a v3.2 draft stays
+ *   v3.2 and an untagged row is never stamped (its tag stays NULL).
+ * - v3.2 stores no region/stage; v3.0 stores no cas and no cas-3 flag (D-08 amended). Computing
+ *   the final values here lets a write clear a field, which `body.x ?? existing.x` never can.
+ */
+export function resolveSurveyMethodColumns(
+  body: SurveyMethodInput,
+  existing: StoredSurveyMethod | null,
+): SurveyMethodColumns {
+  const version = body.ibp_method_version ?? existing?.ibp_method_version ?? null
+  if (isV32(version)) {
+    return {
+      ibp_method_version: version,
+      ibp_cas: body.ibp_cas ?? existing?.ibp_cas ?? null,
+      ibp_cas3_scale: body.ibp_cas3_scale ?? existing?.ibp_cas3_scale ?? null,
+      region_version: null,
+      vegetation_stage: null,
+    }
+  }
+  return {
+    ibp_method_version: version,
+    ibp_cas: null,
+    ibp_cas3_scale: null,
+    region_version: body.region_version ?? existing?.region_version ?? null,
+    vegetation_stage: body.vegetation_stage ?? existing?.vegetation_stage ?? null,
+  }
+}
+
+/** Two column sets that give the IBP rules the same context. */
+export function sameSurveyMethodColumns(a: SurveyMethodColumns, b: SurveyMethodColumns): boolean {
+  return (
+    a.ibp_method_version === b.ibp_method_version &&
+    a.ibp_cas === b.ibp_cas &&
+    a.ibp_cas3_scale === b.ibp_cas3_scale &&
+    a.region_version === b.region_version &&
+    a.vegetation_stage === b.vegetation_stage
+  )
 }
 
 function jsonDeepEqual(a: unknown, b: unknown): boolean {
@@ -91,6 +163,13 @@ function parcelIdSetEqual(a: string[], b: string[]): boolean {
  * value actually differs from what is stored. Absent/undefined/null fields
  * on `body` are treated as "unchanged" and never reported. `scores` is
  * excluded: it is recomputed server-side and must never block a resync.
+ *
+ * The method fields (phase 01.8) are compared after the write normalisation of
+ * resolveSurveyMethodColumns (Pattern 3): the method version through
+ * isSameMethodVersion, so the explicit v3.0 tag replayed for a NULL row is
+ * unchanged; the cas fields only under v3.2 and region/stage only under v3.0,
+ * because the other method's fields are never stored. A missing cas-3 flag
+ * equals false.
  */
 export function getChangedSubmittedReadOnlyFields(
   body: SurveyUpsertBody,
@@ -110,6 +189,7 @@ export function getChangedSubmittedReadOnlyFields(
   ]
 
   const changed: string[] = []
+  const effectiveV32 = isV32(body.ibp_method_version ?? existing.ibp_method_version)
 
   for (const field of readonlyFields) {
     if (!Object.prototype.hasOwnProperty.call(body, field)) {
@@ -165,13 +245,13 @@ export function getChangedSubmittedReadOnlyFields(
         break
       }
       case "region_version": {
-        if (bodyValue !== existing.region_version) {
+        if (!effectiveV32 && bodyValue !== existing.region_version) {
           changed.push(field)
         }
         break
       }
       case "vegetation_stage": {
-        if (bodyValue !== existing.vegetation_stage) {
+        if (!effectiveV32 && bodyValue !== existing.vegetation_stage) {
           changed.push(field)
         }
         break
@@ -184,6 +264,26 @@ export function getChangedSubmittedReadOnlyFields(
       }
       default:
         break
+    }
+  }
+
+  if (
+    body.ibp_method_version !== undefined &&
+    body.ibp_method_version !== null &&
+    !isSameMethodVersion(body.ibp_method_version, existing.ibp_method_version)
+  ) {
+    changed.push("ibp_method_version")
+  }
+  if (effectiveV32) {
+    if (body.ibp_cas !== undefined && body.ibp_cas !== null && body.ibp_cas !== existing.ibp_cas) {
+      changed.push("ibp_cas")
+    }
+    if (
+      body.ibp_cas3_scale !== undefined &&
+      body.ibp_cas3_scale !== null &&
+      body.ibp_cas3_scale !== (existing.ibp_cas3_scale ?? false)
+    ) {
+      changed.push("ibp_cas3_scale")
     }
   }
 

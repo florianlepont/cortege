@@ -4,6 +4,7 @@ import { commonFr } from "./common"
 import { componentsFr } from "./components"
 import { factorDetailFr } from "./factor-detail"
 import { homeFr } from "./home"
+import { ibpMethodFr } from "./ibp-method"
 import { labelsFr } from "./labels"
 import { navigationFr } from "./navigation"
 import { ownerConflictFr } from "./owner-conflict"
@@ -36,6 +37,7 @@ export const fr = {
   ownerConflict: ownerConflictFr,
   settings: settingsFr,
   labels: labelsFr,
+  ibpMethod: ibpMethodFr,
   authGate: authGateFr,
   account: accountFr,
   publicMap: publicMapFr,

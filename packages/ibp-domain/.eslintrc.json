@@ -1,0 +1,22 @@
+{
+  "extends": ["../../.eslintrc.json"],
+  "env": {
+    "node": false,
+    "es2021": true
+  },
+  "rules": {
+    "no-console": "error",
+    "no-restricted-globals": [
+      "error",
+      { "name": "process", "message": "The IBP domain package is pure: no process access" },
+      { "name": "window", "message": "The IBP domain package is pure: no DOM access" },
+      { "name": "document", "message": "The IBP domain package is pure: no DOM access" }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/**/*.test.ts"],
+      "env": { "jest": true }
+    }
+  ]
+}

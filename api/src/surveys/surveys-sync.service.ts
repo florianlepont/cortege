@@ -1,7 +1,7 @@
 import { BadRequestException, HttpException, Injectable, Logger } from "@nestjs/common"
 import { AuthenticatedUser } from "../auth/auth.types"
 import { DatabaseService } from "../database/database.service"
-import { IbpRulesService } from "./ibp-rules.service"
+import type { SyncChangesResponse } from "@cortege/ibp-domain"
 import { mapSyncError } from "./sync-error.utils"
 import {
   SyncChangeAttachment,
@@ -35,7 +35,6 @@ export class SurveysSyncService {
 
   constructor(
     private readonly db: DatabaseService,
-    private readonly ibpRules: IbpRulesService,
     private readonly surveysService: SurveysService,
     private readonly attachmentsService: SurveysAttachmentsService,
   ) {}
@@ -195,14 +194,7 @@ export class SurveysSyncService {
     user: AuthenticatedUser,
     cursor?: string,
     limitRaw?: number,
-  ): Promise<{
-    cursor_in: string | null
-    cursor_out: string | null
-    has_more: boolean
-    events: SyncChangeEvent[]
-    surveys: SyncChangeSurvey[]
-    attachments: SyncChangeAttachment[]
-  }> {
+  ): Promise<Required<SyncChangesResponse>> {
     const limit = normalizeChangesLimit(limitRaw)
     const parsedCursor = parseSyncChangesCursor(cursor)
     const start = await this.resolveSyncChangesStart(user.id, parsedCursor)
@@ -351,6 +343,9 @@ export class SurveysSyncService {
          s.previous_survey_id,
          s.region_version,
          s.vegetation_stage,
+         s.ibp_method_version,
+         s.ibp_cas,
+         s.ibp_cas3_scale,
          s.factors,
          s.factor_results,
          s.scores,

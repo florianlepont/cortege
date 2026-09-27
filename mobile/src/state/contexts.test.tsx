@@ -256,6 +256,7 @@ jest.mock("react-native-auth0", () => ({
 }))
 
 import { cleanup, renderHook } from "@testing-library/react-native/pure"
+import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import App from "../../App"
 import { fr } from "../i18n"
 import { AppStateProvider } from "./AppStateProvider"
@@ -437,6 +438,37 @@ describe("AppStateProvider", () => {
     // 01.9-18: the nearby parcels left the form value, so the home screen
     // does not re-render on a keystroke.
     expect(after.nearby).toBe(before.nearby)
+  })
+
+  test("the form value exposes the method version, cas and flag with their setters", () => {
+    const { form, surveys } = latest()
+    expect(form.state.ibpMethodVersion).toBe(IBP_METHOD_V3_2)
+    expect(form.state.ibpCas).toBe(1)
+    expect(form.state.ibpCas3Scale).toBe(false)
+    expect(form.actions.setIbpMethodVersion).toEqual(expect.any(Function))
+    expect(form.actions.setIbpCas).toEqual(expect.any(Function))
+    expect(form.actions.setIbpCas3Scale).toEqual(expect.any(Function))
+    expect(surveys.actions.updateIbpCas).toEqual(expect.any(Function))
+    expect(surveys.actions.updateCas3Scale).toEqual(expect.any(Function))
+    expect(surveys.actions.switchToV32).toEqual(expect.any(Function))
+  })
+
+  test("changing the cas in the form changes only the form value", async () => {
+    const before = latest()
+    await act(async () => {
+      before.form.actions.setIbpCas(3)
+    })
+    const after = latest()
+    expect(after.form.state.ibpCas).toBe(3)
+    expect(after.form).not.toBe(before.form)
+    expect(after.form.actions).toBe(before.form.actions)
+    expect(after.session).toBe(before.session)
+    expect(after.status).toBe(before.status)
+    expect(after.surveys).toBe(before.surveys)
+    expect(after.nearby).toBe(before.nearby)
+    await act(async () => {
+      after.form.actions.setIbpCas(1)
+    })
   })
 
   test("the sync-actions value never changed identity", () => {

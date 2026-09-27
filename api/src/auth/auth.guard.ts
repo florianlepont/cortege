@@ -76,12 +76,21 @@ export class AuthGuard implements CanActivate {
     this.jwksClients = jwksDomains.map(
       (domain) =>
         new JwksClient({
-          jwksUri: `https://${domain}/.well-known/jwks.json`,
+          jwksUri: this.jwksUriFor(domain),
           cache: true,
           cacheMaxAge: 10 * 60 * 1000,
           rateLimit: true,
         }),
     )
+  }
+
+  /**
+   * The Auth0 JWKS URI for a domain. It takes no configuration input and is
+   * protected only so the RS256 spec can point a subclass at a loopback JWKS.
+   * Called from the constructor, so overrides must not read instance fields.
+   */
+  protected jwksUriFor(domain: string): string {
+    return `https://${domain}/.well-known/jwks.json`
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

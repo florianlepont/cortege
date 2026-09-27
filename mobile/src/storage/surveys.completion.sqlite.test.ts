@@ -6,6 +6,7 @@
  * selecting or parsing payload_json, so a 500-survey list costs no JSON.parse.
  */
 
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { initLocalDb, getDb } from "./db"
 import { createLocalDraft, listLocalSurveys, updateLocalDraft } from "./surveys"
 import { pullRemoteChanges } from "./sync"
@@ -211,5 +212,72 @@ describe("listLocalSurveys reads completion from SQL (01.9 D-03)", () => {
     const sql = String(getAllSpy.mock.calls[0]?.[0])
     expect(sql).not.toContain("payload_json")
     expect(sql).toContain("payload_completion END AS completion_rate")
+  })
+})
+
+describe("completion for v3.2 surveys (01.8): version + cas replace region + stage", () => {
+  const v30: SurveyQueuePayload = {
+    site_name: "Parcelle",
+    region_version: "ACA",
+    vegetation_stage: "mature",
+    parcel_ids: ["ab1"],
+    factors: {},
+  }
+
+  test("a v3.2 payload with site, cas and parcels counts as a v3.0 one with site, region, stage and parcels", () => {
+    const v32: SurveyQueuePayload = {
+      site_name: "Parcelle",
+      parcel_ids: ["ab1"],
+      factors: {},
+      ibp_method_version: IBP_METHOD_V3_2,
+      ibp_cas: 1,
+      ibp_cas3_scale: false,
+    }
+    expect(computePayloadCompletion(v32)).toBe(computePayloadCompletion(v30))
+    // site, region/version, stage/cas, parcels: 4 of 14.
+    expect(computePayloadCompletion(v32)).toBe(29)
+  })
+
+  test("a v3.2 payload counts only the version when the cas is missing or out of range", () => {
+    const base: SurveyQueuePayload = {
+      site_name: "Parcelle",
+      parcel_ids: ["ab1"],
+      factors: {},
+      ibp_method_version: IBP_METHOD_V3_2,
+    }
+    expect(computePayloadCompletion(base)).toBe(21)
+    expect(computePayloadCompletion({ ...base, ibp_cas: 0 })).toBe(21)
+    expect(computePayloadCompletion({ ...base, ibp_cas: 5 })).toBe(21)
+    expect(computePayloadCompletion({ ...base, ibp_cas: 4 })).toBe(29)
+  })
+
+  test("a v3.2 payload ignores a stray region/stage; v3.0 is unchanged by a tag", () => {
+    const strayRegion: SurveyQueuePayload = {
+      ...v30,
+      ibp_method_version: IBP_METHOD_V3_2,
+      ibp_cas: 1,
+    }
+    expect(computePayloadCompletion(strayRegion)).toBe(29)
+    expect(computePayloadCompletion({ ...v30, ibp_method_version: IBP_METHOD_V3_0 })).toBe(
+      computePayloadCompletion(v30),
+    )
+    expect(computePayloadCompletion({ ...v30, ibp_method_version: null })).toBe(
+      computePayloadCompletion(v30),
+    )
+  })
+
+  test("createLocalDraft stores the v3.2 completion", async () => {
+    const survey = await createLocalDraft({
+      site_name: "Parcelle",
+      parcel_ids: ["ab1"],
+      factors: { A: { native_genus_count: 4 } },
+      ibp_method_version: IBP_METHOD_V3_2,
+      ibp_cas: 2,
+      ibp_cas3_scale: false,
+    })
+
+    // site, version, cas, parcel and factor A: 5 of 14, as the v3.0 draft above.
+    expect(await storedCompletion(survey.id)).toBe(36)
+    expect(survey.completion_rate).toBe(36)
   })
 })

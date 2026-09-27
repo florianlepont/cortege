@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react"
 import * as Location from "expo-location"
+import { resolveMethodVersion } from "@cortege/ibp-domain"
 import { fetchPublicParcelStatuses } from "../api/ibp-api"
 import { buildBboxAroundPoint } from "../app/map-viewport"
 import type { PublicParcelStatusItem } from "../app/types"
@@ -43,6 +44,25 @@ function getCentroid(item: PublicParcelStatusItem): { lat: number; lng: number }
     lng: 0,
   })
   return { lat: sum.lat / coords.length, lng: sum.lng / coords.length }
+}
+
+/**
+ * True when the scored parcels (those averaged by the sector card) follow more than one IBP method
+ * version. A parcel without a version is v3.0 (D-02); an unsupported value is ignored.
+ */
+export function hasMixedMethodVersions(
+  parcels: readonly Pick<
+    PublicParcelStatusItem,
+    "latest_ibp_total" | "latest_ibp_method_version"
+  >[],
+): boolean {
+  const versions = new Set<string>()
+  for (const parcel of parcels) {
+    if (parcel.latest_ibp_total == null) continue
+    const version = resolveMethodVersion(parcel.latest_ibp_method_version)
+    if (version !== null) versions.add(version)
+  }
+  return versions.size > 1
 }
 
 export function useNearbyParcels(apiUrl: string) {

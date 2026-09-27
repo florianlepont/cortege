@@ -47,7 +47,15 @@ export type PublicMapItemsFilters = {
  * 01.9 D-05: optional bbox, index idx_parcels_centroid_lat_lng. It is appended last (its four
  * parameters follow from/to/region) as an EXISTS on the survey's linked parcels, inside the
  * limit-first subquery, so a bbox only narrows the public surveys and the 500 cap still
- * applies. Without a bbox the text and values are exactly the pre-01.9 ones.
+ * applies. Without a bbox the values are exactly the pre-01.9 ones.
+ *
+ * 01.8 D-10 (RESEARCH §4.2 rule 6): both select lists also carry s.ibp_method_version and
+ * s.ibp_cas (migration 016, NULL = v3.0). Select list only: predicates, parameters and the
+ * limit are unchanged, so the plan is too.
+ *
+ * CH-9: the region filter matches region_version exactly. v3.2 surveys store no region, so
+ * `region` only ever matches v3.0 surveys (tagged or untagged); this is documented in the API
+ * contract.
  */
 export function buildPublicMapItemsQuery(filters: PublicMapItemsFilters = {}): {
   text: string
@@ -86,12 +94,14 @@ export function buildPublicMapItemsQuery(filters: PublicMapItemsFilters = {}): {
   const text = `SELECT
    s.id,
    s.region_version,
+   s.ibp_method_version,
+   s.ibp_cas,
    s.scores,
    s.submitted_at::text,
    agg.parcel_centroid_lat,
    agg.parcel_centroid_lng
  FROM (
-   SELECT s.id, s.region_version, s.scores, s.submitted_at
+   SELECT s.id, s.region_version, s.ibp_method_version, s.ibp_cas, s.scores, s.submitted_at
    FROM surveys s
    WHERE ${conditions.join("\n     AND ")}
    ORDER BY s.submitted_at DESC
@@ -115,12 +125,14 @@ export function buildPublicMapItemsQuery(filters: PublicMapItemsFilters = {}): {
  * The latest public submitted survey of parcel p, ranked as before 01.7 (year, then version,
  * then submission time). $1 is the optional observation year ceiling. Used by the LATERAL
  * joins below: one probe of idx_survey_parcels_parcel_id per parcel, instead of a
- * ROW_NUMBER() window over every public survey of the country.
+ * ROW_NUMBER() window over every public survey of the country. 01.8 D-10: the row also carries
+ * its ibp_method_version, so the version and the total always come from the same survey.
  */
 const LATEST_PUBLIC_SURVEY_OF_PARCEL = `SELECT
      s.id,
      s.observation_year,
-     s.scores
+     s.scores,
+     s.ibp_method_version
    FROM survey_parcels sp
    JOIN surveys s
      ON s.id = sp.survey_id
@@ -136,7 +148,8 @@ const PARCEL_STATUS_COLUMNS = `p.parcel_id,
    CASE WHEN lp.id IS NULL THEN 'not_studied' ELSE 'studied' END AS study_status,
    lp.id AS latest_submitted_survey_id,
    lp.observation_year AS latest_observation_year,
-   (lp.scores ->> 'ibp_total')::integer AS latest_ibp_total`
+   (lp.scores ->> 'ibp_total')::integer AS latest_ibp_total,
+   lp.ibp_method_version AS latest_ibp_method_version`
 
 /**
  * /public/parcels/status, database path with a bbox (D-13, RESEARCH Pattern 6).
@@ -196,7 +209,8 @@ export const PUBLIC_STUDIED_BY_COMMUNES_SQL = `SELECT
    p.number,
    lp.id::text AS latest_submitted_survey_id,
    lp.observation_year AS latest_observation_year,
-   (lp.scores ->> 'ibp_total')::integer AS latest_ibp_total
+   (lp.scores ->> 'ibp_total')::integer AS latest_ibp_total,
+   lp.ibp_method_version AS latest_ibp_method_version
  FROM parcels p
  JOIN LATERAL (
    ${LATEST_PUBLIC_SURVEY_OF_PARCEL}

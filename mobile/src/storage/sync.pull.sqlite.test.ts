@@ -5,6 +5,7 @@
  * on update, and 'unavailable' resets to 'remote' on a changed pull.
  */
 
+import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { initLocalDb, getDb } from "./db"
 import { pullRemoteChanges } from "./sync"
 
@@ -367,4 +368,67 @@ describe("pull attachment file_state", () => {
       expect(row?.file_state).toBe(fileState)
     },
   )
+})
+
+describe("pull keeps the IBP method fields (01.8 Pitfall 4, T-01.8-20)", () => {
+  async function pulledPayload(id: string): Promise<Record<string, unknown>> {
+    const row = await getSurvey(id)
+    return JSON.parse(String(row?.payload_json)) as Record<string, unknown>
+  }
+
+  test("a remote v3.2 survey keeps its version, cas and flag in payload_json", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-v32",
+            site_name: "Distante v3.2",
+            status: "synced",
+            sync_version: 3,
+            ibp_method_version: IBP_METHOD_V3_2,
+            ibp_cas: 2,
+            ibp_cas3_scale: true,
+          },
+        ],
+      }),
+    )
+
+    await pullRemoteChanges("http://api", "token")
+
+    const payload = await pulledPayload("remote-v32")
+    expect(payload).toMatchObject({
+      ibp_method_version: IBP_METHOD_V3_2,
+      ibp_cas: 2,
+      ibp_cas3_scale: true,
+    })
+    expect(payload).not.toHaveProperty("region_version")
+  })
+
+  test("an untagged remote survey stays untagged", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-legacy",
+            site_name: "Distante",
+            status: "synced",
+            sync_version: 1,
+            region_version: "ACA",
+            vegetation_stage: "mature",
+            ibp_method_version: null,
+            ibp_cas: null,
+            ibp_cas3_scale: null,
+          },
+        ],
+      }),
+    )
+
+    await pullRemoteChanges("http://api", "token")
+
+    const payload = await pulledPayload("remote-legacy")
+    expect(payload).not.toHaveProperty("ibp_method_version")
+    expect(payload).not.toHaveProperty("ibp_cas")
+    expect(payload).not.toHaveProperty("ibp_cas3_scale")
+    expect(payload).toMatchObject({ region_version: "ACA", vegetation_stage: "mature" })
+  })
 })

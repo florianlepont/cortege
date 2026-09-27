@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@bottom-tabs/react-navigation": "^1.4.0",
+    "@cortege/ibp-domain": "*",
     "@expo/vector-icons": "^15.0.2",
     "@react-navigation/bottom-tabs": "^7.19.2",
     "@react-navigation/elements": "^2.9.43",

@@ -1,7 +1,8 @@
-import { memo, useLayoutEffect } from "react"
+import { memo, useLayoutEffect, useMemo } from "react"
 import type { FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
 import { SurveyFormScreen } from "../../screens/SurveyFormScreen"
+import type { SurveyFormMethod } from "../../screens/survey-form/MethodVersionPicker"
 import { useSession } from "../../state/session-context"
 import { useSurveyFormState } from "../../state/survey-form-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -22,6 +23,21 @@ export const SurveyFormRoute = memo(function SurveyFormRoute({ navigation }: Sur
       title: isEdit ? fr.navigation.headers.editSurvey : fr.navigation.headers.newSurvey,
     })
   }, [isEdit, navigation])
+
+  // The form never holds a submitted survey (useEditingDraft refuses to open one), so the version
+  // stays open here; the picker, the draft patcher and the API still enforce the lock (D-02).
+  const method = useMemo<SurveyFormMethod>(
+    () => ({
+      version: state.ibpMethodVersion,
+      cas: state.ibpCas,
+      cas3Scale: state.ibpCas3Scale,
+      locked: false,
+      setVersion: actions.setIbpMethodVersion,
+      setCas: actions.setIbpCas,
+      setCas3Scale: actions.setIbpCas3Scale,
+    }),
+    [actions, state.ibpCas, state.ibpCas3Scale, state.ibpMethodVersion],
+  )
 
   const onOpenFactor = useLatestCallback((factor: FactorKey) => {
     navigation.navigate("surveyFactorDetail", { factor })
@@ -48,6 +64,7 @@ export const SurveyFormRoute = memo(function SurveyFormRoute({ navigation }: Sur
       editingSurveyId={state.editingSurveyId}
       siteName={state.siteName}
       setSiteName={actions.setSiteName}
+      method={method}
       regionVersion={state.regionVersion}
       vegetationStage={state.vegetationStage}
       setVegetationStage={actions.setVegetationStage}

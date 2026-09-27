@@ -7,7 +7,7 @@
 > flows, and the security baseline.
 
 ## Status
-Aligned with accepted V1 data/API contracts (updated on 2026-03-08). V1.1 parcel/history extension proposed on 2026-03-10. Auth0 delegation and account deletion flow added on 2026-04-06.
+Aligned with accepted V1 data/API contracts (updated on 2026-03-08). V1.1 parcel/history extension proposed on 2026-03-10. Auth0 delegation and account deletion flow added on 2026-04-06. Shared IBP domain package and per-survey method version added on 2026-09-26 (phase 01.8, block 8 and flow M).
 
 ## Objective
 Define a simple, scalable, and pragmatic architecture to deliver a reliable IBP MVP.
@@ -38,7 +38,7 @@ Define a simple, scalable, and pragmatic architecture to deliver a reliable IBP 
 - Auth0 Management API calls (email update, password reset trigger, account deletion)
 - User profile read/update/delete
 - Survey CRUD and business workflow enforcement
-- Server-side IBP validation and score verification
+- Server-side IBP validation and score verification, delegated to the shared IBP domain package (block 8)
 - Parcel linkage validation (`parcel_id`) and versioning checks (`observation_year`, `version_number`)
 - Final survey status transitions
 - Minimal audit trail recording
@@ -74,6 +74,37 @@ Define a simple, scalable, and pragmatic architecture to deliver a reliable IBP 
 - Build region/year/factor aggregates for Explore insights.
 - Provide trend-oriented payloads without exposing personal data.
 - Refresh with scheduled jobs or incremental updates from submitted surveys.
+
+### 8) Shared IBP Domain Package (phase 01.8)
+- `packages/ibp-domain` (`@cortege/ibp-domain`) is a third npm workspace: plain TypeScript, pure
+  functions, no runtime dependencies. It holds the IBP rules once for both sides:
+  - the factor keys and the allowed scores per factor;
+  - the method version tags (IBP Fr v3.0 and IBP FR v3.2) and `resolveMethodVersion`;
+  - scoring and draft/submit validation per version (`evaluateIbp`, `computeRetainedScores`,
+    `computeTotals`), submit readiness and the v3.0 → v3.2 draft migration;
+  - the v3.0 region/stage model and the v3.2 cas model (`ibp_cas`, `ibp_cas3_scale`);
+  - the interpretation bands (`standBand`, `contextBand`, `totalBand`, `bandTone`, `IBP_MAX`);
+  - the survey, sync and public-map wire types.
+- Hybrid resolution. `main` points to `dist` (built by `tsc`, `npm run build:domain`), `types` and
+  `react-native` point to `src`:
+  - Metro, both Jest configs (a `moduleNameMapper`) and `tsc` read `src`, so the app bundles the
+    package from source and needs no build step;
+  - Node at runtime reads `dist`: the API Docker image builds the package in its builder stage and
+    copies only its `dist`, and `npm run dev:api` builds it first.
+  - The package has no `prepare` script on purpose: it would run even under
+    `npm ci --ignore-scripts` and break the image's runtime stage. The api and mobile workspaces
+    depend on it with the version `"*"`.
+- Each side keeps a thin adapter and no rule code:
+  - API: `IbpRulesService` (`api/src/surveys/ibp-rules.service.ts`), whose `validateDraft` and
+    `validateSubmit` call `evaluateIbp`;
+  - mobile: `mobile/src/app/ibp-scoring.ts`, which adds only the app's own `parcel_ids`
+    readiness check.
+- Parity fixture. `IBP_PARITY_CASES` (`packages/ibp-domain/src/parity/cases.ts`) is the executable
+  form of [`ibp-validation-matrix-v2.md`](ibp-validation-matrix-v2.md): the same case ids, every
+  factor under both versions, plus the dispatch cases. The package runs it, and the API
+  (`api/test/ibp-parity.spec.ts`) and the app (`mobile/src/app/ibp-parity.test.ts`) run it again
+  through their adapters, which proves both delegate to the package. The readiness and migration
+  fixtures (`IBP_READINESS_CASES`, `IBP_MIGRATION_CASES`) run on the app side.
 
 ## Main Technical Flows
 
@@ -156,6 +187,30 @@ Define a simple, scalable, and pragmatic architecture to deliver a reliable IBP 
 5. Backend deletes personal data from DB (name, email, profile picture file and DB fields)
 6. Backend anonymises surveys (removes user reference, retains observation data)
 7. API returns `204`; mobile clears local state and redirects to login screen
+
+### M) IBP Method Version per Survey (phase 01.8)
+1. The observer picks the method when creating a survey: IBP FR v3.2 by default, IBP Fr v3.0
+   available. v3.2 surveys record `ibp_cas` (1-4) and `ibp_cas3_scale`; v3.0 surveys record
+   `region_version` and `vegetation_stage`.
+2. Storage:
+   - API: migration `016_ibp_method_version.sql` adds nullable `surveys.ibp_method_version`,
+     `ibp_cas` and `ibp_cas3_scale` columns, with CHECK constraints (the two known tags, cas 1-4)
+     and no backfill. The upsert, PATCH and `/sync` DTOs accept the three fields; detail and
+     `/sync/changes` return them.
+   - Phone: the three fields live in the schemaless survey `payload_json` and the queued upsert
+     payloads. There is no SQLite migration (`SCHEMA_VERSION` stays 2).
+3. Dispatch rule: a missing version (`null`) is v3.0. Every survey recorded before phase 01.8 is
+   untagged and is never stamped; the explicit v3.0 tag and `null` compare as the same method. An
+   unknown tag is rejected (`400`, or `invalid_sync_operation` on `/sync`).
+4. Each write is scored under the survey's effective version: the version sent, else the stored
+   one. The v3.2 write clears region/stage, the v3.0 write clears the cas fields.
+5. An unsubmitted v3.0 draft can be switched to v3.2 (`migrateDraftToV32`). After submit, the
+   version, cas and flag are read-only (`409 survey_submitted_read_only` on replays, `422` on
+   PATCH).
+6. Public reads: map items carry `ibp_method_version` and `ibp_cas`; parcel statuses carry
+   `latest_ibp_method_version`. The region filter matches v3.0 surveys only.
+7. Totals are shown out of 50. The stand (/35) and context (/15) sub-scores use the CNPF bands.
+   The /50 total bands (10/20/30/40) are an app convention under the owner's review.
 
 ## Security and Compliance Baseline (V1)
 - TLS for all API communication

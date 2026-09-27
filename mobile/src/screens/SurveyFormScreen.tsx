@@ -17,7 +17,8 @@ import { FormActions } from "./survey-form/FormActions"
 import { FormHeader, StepRail, buildHeroCopy, buildStepMeta } from "./survey-form/FormHeader"
 import { ParcelMapModal } from "./survey-form/ParcelMapModal"
 import { ParcelsSection } from "./survey-form/ParcelsSection"
-import { RegionVegetationSection } from "./survey-form/RegionVegetationSection"
+import type { SurveyFormMethod } from "./survey-form/MethodVersionPicker"
+import { ScoringContextSection, scoringContextPills } from "./survey-form/ScoringContextSection"
 import { SiteSection } from "./survey-form/SiteSection"
 import { formStyles } from "./survey-form/styles"
 import { useParcelMap } from "./survey-form/useParcelMap"
@@ -30,6 +31,8 @@ type SurveyFormScreenProps = {
   editingSurveyId: string | null
   siteName: string
   setSiteName: (value: string) => void
+  /** The IBP method, its v3.2 context and their setters (01.8-13). */
+  method: SurveyFormMethod
   regionVersion: RegionVersion
   vegetationStage: VegetationStage
   setVegetationStage: (value: VegetationStage) => void
@@ -57,6 +60,7 @@ export function SurveyFormScreen({
   editingSurveyId,
   siteName,
   setSiteName,
+  method,
   regionVersion,
   vegetationStage,
   setVegetationStage,
@@ -103,6 +107,16 @@ export function SurveyFormScreen({
       )?.label ?? vegetationStage,
     [regionVersion, vegetationStage],
   )
+  const contextPills = useMemo(
+    () =>
+      scoringContextPills({
+        version: method.version,
+        cas: method.cas,
+        regionLabel,
+        vegetationLabel,
+      }),
+    [method.cas, method.version, regionLabel, vegetationLabel],
+  )
 
   const identityReady = siteName.trim().length > 0
   const parcelsReady = selectedParcelIds.length > 0
@@ -124,19 +138,17 @@ export function SurveyFormScreen({
         siteName,
         selectedParcelCount,
         completedFactorCount,
-        regionLabel,
-        vegetationLabel,
+        contextPills,
         ibpTotal,
       }),
     [
       activeStep,
       completedFactorCount,
-      regionLabel,
+      contextPills,
       screen,
       ibpTotal,
       selectedParcelCount,
       siteName,
-      vegetationLabel,
     ],
   )
 
@@ -199,6 +211,7 @@ export function SurveyFormScreen({
 
         {activeStep === "identity" ? (
           <SiteSection
+            method={method}
             siteName={siteName}
             setSiteName={setSiteName}
             siteNameError={formErrors.siteName}
@@ -218,7 +231,8 @@ export function SurveyFormScreen({
               onToggleParcelSelection={onToggleParcelSelection}
               onOpenParcelFullscreen={onOpenParcelFullscreen}
             />
-            <RegionVegetationSection
+            <ScoringContextSection
+              method={method}
               regionVersion={regionVersion}
               vegetationStage={vegetationStage}
               onRegionChange={onRegionChange}

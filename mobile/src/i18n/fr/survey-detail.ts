@@ -1,4 +1,7 @@
-// Filled by plan 01.9-12; no other plan edits this section.
+import { IBP_MAX } from "@cortege/ibp-domain"
+
+// Filled by plan 01.9-12; no other plan edits this section. Plan 01.8-14 added the method
+// version texts, the totals out of 50 (built from IBP_MAX) and the CNPF band names.
 export const surveyDetailFr = {
   tabs: {
     summary: "Résumé",
@@ -26,8 +29,12 @@ export const surveyDetailFr = {
     factorsReady: "Facteurs remplis",
     factorsCount: (count: number) => `${count}/10`,
     unknown: "—",
-    split: ({ standTotal, contextTotal }: { standTotal: string; contextTotal: string }) =>
-      `P/G ${standTotal} · C ${contextTotal}`,
+    total: (points: number) => `${points} / ${IBP_MAX.total}`,
+    split: ({ standTotal, contextTotal }: { standTotal: number; contextTotal: number }) =>
+      `P/G ${standTotal} / ${IBP_MAX.stand} · C ${contextTotal} / ${IBP_MAX.context}`,
+    standScore: (points: number) => `P/G ${points} / ${IBP_MAX.stand}`,
+    contextScore: (points: number) => `C ${points} / ${IBP_MAX.context}`,
+    withBand: ({ score, band }: { score: string; band: string }) => `${score} · ${band}`,
     requiredCompleted: "Facteurs requis remplis",
     readinessPending: "Vérification en attente",
   },
@@ -68,10 +75,13 @@ export const surveyDetailFr = {
     deadline: (date: string) => `Échéance : ${date}`,
     nearDeadline: "Moins de 24 h avant l'expiration du relevé.",
     contextTitle: "Contexte et parcelles",
-    contextSubtitle: "Version régionale et stade de végétation utilisés pour le calcul.",
+    contextSubtitle: "Méthode IBP et contexte de station utilisés pour le calcul.",
     editParcels: "Modifier les parcelles",
     region: (label: string) => `Région : ${label}`,
     vegetation: (label: string) => `Végétation : ${label}`,
+    // Filled by plan 01.8-14: the method version on the detail (D-02, D-08).
+    unknownMethod: "Méthode IBP non reconnue",
+    casMissing: "Choisissez le cas IBP de la station : il est requis pour soumettre le relevé.",
   },
   factors: {
     title: "Score IBP",
@@ -79,12 +89,27 @@ export const surveyDetailFr = {
     loading: "Chargement des facteurs…",
     localDraftHint: "Score du brouillon local, d'après les dernières modifications.",
     ibpTotal: "IBP total",
-    standTotal: (points: string) => `P/G ${points}`,
-    contextTotal: (points: string) => `Contexte ${points}`,
+    standTotal: (points: number) => `P/G ${points} / ${IBP_MAX.stand}`,
+    contextTotal: (points: number) => `Contexte ${points} / ${IBP_MAX.context}`,
     factorFallback: (code: string) => `Facteur ${code}`,
     notFilled: "Non renseigné",
     hasWarning: "Avertissement",
     notLoaded: "Les facteurs ne sont pas encore chargés.",
+  },
+  // CNPF interpretation bands of the sub-scores (D-03 amended), keyed by the package's band ids.
+  bands: {
+    stand: {
+      faible: "faible",
+      assez_faible: "assez faible",
+      moyenne: "moyenne",
+      assez_forte: "assez forte",
+      forte: "forte",
+    },
+    context: {
+      faible: "faible",
+      moyenne: "moyenne",
+      forte: "forte",
+    },
   },
   actions: {
     title: "Actions",

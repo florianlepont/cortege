@@ -26,7 +26,8 @@ jest.mock("../api/ibp-api", () => ({
 }))
 
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
-import { useNearbyParcels } from "./useNearbyParcels"
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import { hasMixedMethodVersions, useNearbyParcels } from "./useNearbyParcels"
 
 const API_URL = "http://localhost:3000"
 
@@ -129,5 +130,38 @@ describe("useNearbyParcels", () => {
 
     expect(result.current.error).toBe(true)
     expect(result.current.loading).toBe(false)
+  })
+})
+
+describe("hasMixedMethodVersions (01.8 owner review: mixed methods in the sector average)", () => {
+  const parcel = (id: string, total: number | null, version?: string | null) => ({
+    parcel_id: id,
+    latest_ibp_total: total,
+    ...(version === undefined ? {} : { latest_ibp_method_version: version }),
+  })
+
+  test("no parcel or only untagged parcels (v3.0) is not mixed", () => {
+    expect(hasMixedMethodVersions([])).toBe(false)
+    expect(hasMixedMethodVersions([parcel("a", 12), parcel("b", 30, null)])).toBe(false)
+  })
+
+  test("an untagged parcel and a v3.2 parcel are mixed", () => {
+    expect(hasMixedMethodVersions([parcel("a", 12), parcel("b", 30, IBP_METHOD_V3_2)])).toBe(true)
+  })
+
+  test("an explicit v3.0 parcel and an untagged parcel are the same method", () => {
+    expect(hasMixedMethodVersions([parcel("a", 12, IBP_METHOD_V3_0), parcel("b", 30)])).toBe(false)
+  })
+
+  test("only scored parcels count: an unscored v3.2 parcel does not mix the average", () => {
+    expect(hasMixedMethodVersions([parcel("a", 12), parcel("b", null, IBP_METHOD_V3_2)])).toBe(
+      false,
+    )
+  })
+
+  test("all v3.2 is not mixed", () => {
+    expect(
+      hasMixedMethodVersions([parcel("a", 12, IBP_METHOD_V3_2), parcel("b", 3, IBP_METHOD_V3_2)]),
+    ).toBe(false)
   })
 })

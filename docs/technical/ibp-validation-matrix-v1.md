@@ -1,5 +1,7 @@
 # IBP Validation Matrix (V1)
 
+Superseded by [ibp-validation-matrix-v2.md](ibp-validation-matrix-v2.md) (phase 01.8); kept as the pre-01.8 baseline.
+
 ## Status
 Accepted for implementation baseline (2026-03-09)
 

@@ -37,6 +37,14 @@ For iOS, install the pods afterwards:
 cd ios && pod install
 ```
 
+### After pulling a new workspace
+
+The app imports the shared IBP package `@cortege/ibp-domain` (`packages/ibp-domain`), which npm
+links into `node_modules` as a workspace. After pulling a change that adds or moves a workspace,
+run `npm install` at the repository root before the native build, for example before
+`npx expo run:ios --device --configuration Release`. Otherwise Metro cannot resolve the package.
+Metro bundles the package from its TypeScript source, so it needs no build step.
+
 ## Changing something native
 
 Express it in `app.json`, or write a config plugin under `mobile/plugins/`.
@@ -71,8 +79,9 @@ projects on every relevant change (`.github/workflows/ci.yml`):
 No signing key, certificate or secret is used. The `EXPO_PUBLIC_*` variables are
 dummy values (`https://ci.invalid/...`); the resulting apps are never run.
 
-The jobs run when a pull request or a push to `main` touches `mobile/**`, the
-root `package.json` or `package-lock.json`, or `.github/workflows/ci.yml`.
+The jobs run when a pull request or a push to `main` touches `mobile/**`,
+`packages/**` (the shared IBP package), the root `package.json` or
+`package-lock.json`, or `.github/workflows/ci.yml`.
 They are part of **CI OK**, which accepts them as passed or skipped. To start
 them by hand, open Actions → CI → Run workflow and pick the branch.
 

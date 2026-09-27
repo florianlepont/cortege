@@ -15,6 +15,7 @@ import {
   AttachmentQueuePayload,
 } from "./types"
 import {
+  applyMethodFields,
   normalizeParcelIds,
   computeCompletionRate,
   computePayloadCompletion,
@@ -28,17 +29,19 @@ import {
 export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> {
   const id = randomUUID()
   const now = new Date().toISOString()
-  const payload = {
-    id,
-    sync_version: 1,
-    site_name: input.site_name,
-    status: "draft",
-    visibility: "private",
-    parcel_ids: normalizeParcelIds(input.parcel_ids),
-    region_version: input.region_version,
-    vegetation_stage: input.vegetation_stage,
-    factors: input.factors,
-  }
+  // The method fields are written only when the input has them: no stamping (01.8, D-10 amended).
+  const payload = applyMethodFields(
+    {
+      id,
+      sync_version: 1,
+      site_name: input.site_name,
+      status: "draft",
+      visibility: "private",
+      parcel_ids: normalizeParcelIds(input.parcel_ids),
+      factors: input.factors,
+    },
+    input,
+  )
 
   await runInTransaction(async (tx) => {
     await tx.runAsync(
@@ -358,21 +361,22 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
       1,
       Number(basePayload.sync_version ?? existing.sync_version ?? 0) + 1,
     )
-    const nextPayload: SurveyQueuePayload = {
-      ...basePayload,
-      id: input.survey_id,
-      sync_version: nextSyncVersion,
-      site_name: input.site_name,
-      status: "draft",
-      visibility:
-        input.visibility ??
-        (basePayload.visibility as "private" | "public" | undefined) ??
-        "private",
-      parcel_ids: normalizeParcelIds(input.parcel_ids),
-      region_version: input.region_version,
-      vegetation_stage: input.vegetation_stage,
-      factors: input.factors,
-    }
+    const nextPayload: SurveyQueuePayload = applyMethodFields(
+      {
+        ...basePayload,
+        id: input.survey_id,
+        sync_version: nextSyncVersion,
+        site_name: input.site_name,
+        status: "draft",
+        visibility:
+          input.visibility ??
+          (basePayload.visibility as "private" | "public" | undefined) ??
+          "private",
+        parcel_ids: normalizeParcelIds(input.parcel_ids),
+        factors: input.factors,
+      },
+      input,
+    )
 
     await deleteQueuedSurveyUpserts(tx, input.survey_id)
 

@@ -1,3 +1,13 @@
+import type {
+  IbpMethodFields,
+  SyncChangeAttachment,
+  SyncChangeSurvey,
+  SyncChangesResponse as SharedSyncChangesResponse,
+  SyncOperation,
+  SyncOperationResult,
+  SyncResultError,
+} from "@cortege/ibp-domain"
+
 export type LocalSurvey = {
   id: string
   site_name: string
@@ -71,7 +81,10 @@ export type AttachmentDeleteQueuePayload = {
   attachment_id: string
 }
 
-export type SurveyQueuePayload = {
+// Survey payload written to `local_surveys.payload_json` and to the queued upsert. The method
+// fields (01.8, D-10 amended) live only here: no SQLite column, SCHEMA_VERSION stays 2. A payload
+// without `ibp_method_version` is a legacy v3.0 draft and is never stamped.
+export type SurveyQueuePayload = IbpMethodFields & {
   id?: string
   sync_version?: number
   site_name?: string
@@ -103,26 +116,17 @@ export type UploadTargetResponse = {
   confirm_url?: string
 }
 
-export type SyncBatchOperation = {
+// Sync wire types come from the shared contract (01.8 criterion 1). Local narrowings:
+// - an outgoing operation always carries a client_ref and a payload on the phone;
+// - an error read from the server is read defensively, so code and message stay optional.
+export type SyncBatchOperation = SyncOperation & {
   client_ref: string
-  entity: "survey" | "attachment"
-  action: "upsert" | "create" | "delete" | "visibility_update"
-  survey_id?: string
   payload: Record<string, unknown>
 }
 
-export type SyncBatchError = {
-  code?: string
-  message?: string
-  http_status?: number
-}
+export type SyncBatchError = Partial<SyncResultError>
 
-export type SyncBatchResult = {
-  client_ref: string | null
-  entity: string
-  action: string
-  status: "synced" | "retryable_error" | "fatal_error"
-  data?: Record<string, unknown>
+export type SyncBatchResult = Omit<SyncOperationResult, "error"> & {
   error?: SyncBatchError
 }
 
@@ -130,53 +134,27 @@ export type SyncBatchResponse = {
   results?: SyncBatchResult[]
 }
 
-export type RemoteSurvey = {
-  id: string
+export type RemoteSurvey = SyncChangeSurvey
+
+export type RemoteAttachment = SyncChangeAttachment
+
+export type SyncChangesResponse = SharedSyncChangesResponse
+
+// A v3.2 draft has no region or stage (D-08 amended): both are optional. The method fields are
+// written only when the caller gives them (see applyMethodFields in utils.ts).
+export type DraftInput = IbpMethodFields & {
   site_name: string
-  status: string
-  visibility?: string
-  parcel_ids?: string[]
-  region_version?: string | null
-  vegetation_stage?: string | null
-  factors?: Record<string, unknown>
-  scores?: Record<string, unknown>
-  created_at?: string | null
-  expires_at?: string | null
-  sync_version: number
-  deleted_at?: string | null
-}
-
-export type RemoteAttachment = {
-  id: string
-  survey_id: string
-  storage_key: string
-  mime_type: string
-  size_bytes: number
-  uploaded_at?: string | null
-  deleted_at?: string | null
-}
-
-export type SyncChangesResponse = {
-  cursor_in: string | null
-  cursor_out: string | null
-  has_more: boolean
-  surveys?: RemoteSurvey[]
-  attachments?: RemoteAttachment[]
-}
-
-export type DraftInput = {
-  site_name: string
-  region_version: "ACA" | "M"
-  vegetation_stage: string
+  region_version?: "ACA" | "M"
+  vegetation_stage?: string
   parcel_ids: string[]
   factors: Record<string, unknown>
 }
 
-export type UpdateDraftInput = {
+export type UpdateDraftInput = IbpMethodFields & {
   survey_id: string
   site_name: string
-  region_version: "ACA" | "M"
-  vegetation_stage: string
+  region_version?: "ACA" | "M"
+  vegetation_stage?: string
   parcel_ids: string[]
   factors: Record<string, unknown>
   visibility?: "private" | "public"

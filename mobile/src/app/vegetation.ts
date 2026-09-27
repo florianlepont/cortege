@@ -1,44 +1,32 @@
+import {
+  DEFAULT_VEGETATION_STAGE_BY_REGION,
+  REGION_VERSIONS,
+  VEGETATION_STAGES_BY_REGION,
+} from "@cortege/ibp-domain"
 import { fr } from "../i18n"
 import { RegionVersion, VegetationStage } from "./types"
+
+// The v3.0 station context: the regions, stages, defaults and normaliser come from the shared
+// package (phase 01.8); this module only adds the French labels of the form's chips.
+export { normalizeVegetationStageForRegion } from "@cortege/ibp-domain"
 
 const regions = fr.labels.regions
 const stages = fr.labels.vegetationStages
 
-export const REGION_OPTIONS: Array<{ value: RegionVersion; label: string }> = [
-  { value: "ACA", label: regions.ACA },
-  { value: "M", label: regions.M },
-]
+export const REGION_OPTIONS: Array<{ value: RegionVersion; label: string }> = REGION_VERSIONS.map(
+  (region) => ({ value: region, label: regions[region] }),
+)
+
+const stageOptions = (region: RegionVersion): Array<{ value: VegetationStage; label: string }> =>
+  VEGETATION_STAGES_BY_REGION[region].map((stage) => ({ value: stage, label: stages[stage] }))
 
 export const VEGETATION_STAGE_OPTIONS_BY_REGION: Record<
   RegionVersion,
   Array<{ value: VegetationStage; label: string }>
 > = {
-  ACA: [
-    { value: "planitiaire", label: stages.planitiaire },
-    { value: "collineen", label: stages.collineen },
-    { value: "montagnard", label: stages.montagnard },
-    { value: "subalpin", label: stages.subalpin },
-  ],
-  M: [
-    { value: "thermo_mediterraneen", label: stages.thermo_mediterraneen },
-    { value: "meso_mediterraneen", label: stages.meso_mediterraneen },
-    { value: "supra_mediterraneen", label: stages.supra_mediterraneen },
-  ],
+  ACA: stageOptions("ACA"),
+  M: stageOptions("M"),
 }
 
 export const defaultVegetationStageForRegion = (region: RegionVersion): VegetationStage =>
-  VEGETATION_STAGE_OPTIONS_BY_REGION[region][0].value
-
-export const normalizeVegetationStageForRegion = (
-  region: RegionVersion,
-  stage: unknown,
-): VegetationStage => {
-  if (typeof stage !== "string") {
-    return defaultVegetationStageForRegion(region)
-  }
-  if (region === "ACA" && stage === "montagnard_mediterraneen") {
-    return "montagnard"
-  }
-  const match = VEGETATION_STAGE_OPTIONS_BY_REGION[region].find((option) => option.value === stage)
-  return match ? match.value : defaultVegetationStageForRegion(region)
-}
+  DEFAULT_VEGETATION_STAGE_BY_REGION[region]

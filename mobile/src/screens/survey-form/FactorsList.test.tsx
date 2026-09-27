@@ -3,7 +3,9 @@ import renderer, { act } from "react-test-renderer"
 import { FACTOR_TITLES } from "../../app/constants"
 import { FactorKey, FactorRetainedScore } from "../../app/types"
 import { fr } from "../../i18n"
+import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { FACTOR_ORDER, StepButton } from "./components"
+import { buildHeroCopy } from "./FormHeader"
 import { FactorProgress, FactorsList } from "./FactorsList"
 
 const originalConsoleError = console.error
@@ -161,6 +163,36 @@ describe("FactorsList", () => {
       expect(rendered).not.toContain(english)
     }
     expect(rendered).toContain(fr.surveyForm.factors.sectionTitle)
+  })
+})
+
+describe("totals out of 50 (D-03)", () => {
+  test("the live total reads '12 / 50' and the factor count stays out of 10", () => {
+    const tree = renderList()
+    const texts = tree.root
+      .findAllByType("Text" as unknown as React.ElementType)
+      .map((node) => textOf(node))
+    expect(texts).toContain("12 / 50")
+    expect(texts).toContain(fr.surveyForm.factors.scoreableCount({ count: 2 }))
+    expect(fr.surveyForm.factors.scoreableCount({ count: 2 })).toContain("2/10 facteurs")
+  })
+
+  test("the factors step pill reads 'IBP 12 / 50' next to the factor count", () => {
+    const hero = buildHeroCopy({
+      screen: "create",
+      activeStep: "factors",
+      siteName: "Site",
+      selectedParcelCount: 1,
+      completedFactorCount: 3,
+      contextPills: [],
+      ibpTotal: 12,
+    })
+    expect(hero.pills[0]).toBe("IBP 12 / 50")
+    expect(hero.pills[1]).toBe("3/10 facteurs")
+  })
+
+  test("the factor order is the package's factor keys", () => {
+    expect(FACTOR_ORDER).toEqual([...FACTOR_KEYS])
   })
 })
 

@@ -5,8 +5,13 @@
  */
 import React, { useState } from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import type { PublicMapItem } from "../../app/types"
 import { fr } from "../../i18n"
+import { ClusterListSheet } from "./ClusterListSheet"
 import { ClusterMarker } from "./ClusterMarker"
+import { MapTopControls } from "./MapControls"
+import { SelectedSurveyCard } from "./SelectedSurveyCard"
 import { SurveyMarker } from "./SurveyMarker"
 
 const mockMarkerRenders: { count: number } = { count: 0 }
@@ -18,9 +23,31 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
+    ActivityIndicator: mockComponent("ActivityIndicator"),
+    Pressable: mockComponent("Pressable"),
+    ScrollView: mockComponent("ScrollView"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T): T => styles, absoluteFill: {} },
+  }
+})
+
+jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+jest.mock("../../ui/AppButton", () => ({ AppButton: "AppButton" }))
+jest.mock("../../ui/AppCard", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    AppCard: ({ children }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("AppCard", null, children),
+  }
+})
+jest.mock("../../ui/AppField", () => ({ AppField: "AppField" }))
+jest.mock("../../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
+jest.mock("../../ui/AppSectionHeader", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    AppSectionHeader: ({ title, trailing }: { title: string; trailing?: React.ReactNode }) =>
+      ReactRef.createElement("AppSectionHeader", { title }, trailing),
   }
 })
 
@@ -185,6 +212,125 @@ describe("ClusterMarker", () => {
       )
     })
     expect(mockMarkerRenders.count).toBe(1)
+  })
+})
+
+function makeItem(overrides: Partial<PublicMapItem> = {}): PublicMapItem {
+  return {
+    survey_id: "s-9",
+    display_location: { lat: 45.76, lng: 4.84 },
+    survey_date: "2026-05-01",
+    region_code: "ARA",
+    ibp_total: 12,
+    ...overrides,
+  }
+}
+
+function texts(tree: ReactTestRenderer): string[] {
+  return tree.root
+    .findAll((node) => (node.type as unknown) === "Text")
+    .map((node) => String([node.props.children].flat().join("")))
+}
+
+function renderCard(item: PublicMapItem): ReactTestRenderer {
+  return mount(
+    <SelectedSurveyCard
+      item={item}
+      isOwnSurvey={false}
+      bottom={0}
+      onClose={jest.fn()}
+      onReportSurvey={jest.fn()}
+    />,
+  )
+}
+
+describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () => {
+  test("marker, cluster row and selected card titles read the total out of 50", () => {
+    expect(fr.publicMap.a11y.surveyMarker(12)).toContain("IBP 12/50")
+    expect(fr.publicMap.clusterList.row({ ibp: 12, date: "2026-05-01" })).toContain("IBP 12/50")
+    expect(fr.publicMap.selected.title(12)).toContain("IBP 12/50")
+    const marker = mount(
+      <SurveyMarker
+        id="s-1"
+        coordinate={COORDINATE}
+        ibpTotal={12}
+        selected={false}
+        onSelect={jest.fn()}
+      />,
+    )
+    expect(String(markerProps(marker).accessibilityLabel)).toContain("IBP 12/50")
+  })
+
+  test("a v3.2 survey with a cas shows the method and the cas instead of the region", () => {
+    const tree = renderCard(
+      makeItem({ ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 3, region_code: "unknown" }),
+    )
+    const header = tree.root.findByType("AppSectionHeader" as never)
+    expect(header.props.title).toBe("Relevé public · IBP 12/50")
+    const shown = texts(tree)
+    expect(shown).toContain("IBP v3.2")
+    expect(shown).toContain(fr.publicMap.selected.meta({ region: "Cas 3", date: "2026-05-01" }))
+    expect(shown.join(" ")).not.toContain("unknown")
+    expect(shown.join(" ")).not.toContain("s-9")
+  })
+
+  test("a survey without method fields reads as v3.0 with its region", () => {
+    const shown = texts(renderCard(makeItem()))
+    expect(shown).toContain("IBP v3.0")
+    expect(shown).toContain(fr.publicMap.selected.meta({ region: "ARA", date: "2026-05-01" }))
+    const tagged = texts(
+      renderCard(makeItem({ ibp_method_version: IBP_METHOD_V3_0, ibp_cas: null })),
+    )
+    expect(tagged).toContain("IBP v3.0")
+  })
+
+  test("the cluster list labels each row out of 50 with its cas or region", () => {
+    const items = [
+      makeItem({ survey_id: "s-1", ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 2 }),
+      makeItem({ survey_id: "s-2", ibp_total: 30 }),
+    ]
+    const tree = mount(
+      <ClusterListSheet items={items} bottom={0} onSelect={jest.fn()} onClose={jest.fn()} />,
+    )
+    const labels = tree.root
+      .findAll((node) => (node.type as unknown) === "Pressable")
+      .map((node) => String(node.props.accessibilityLabel))
+    expect(labels).toContain(
+      fr.publicMap.a11y.clusterListItem({ ibp: 12, date: "2026-05-01", region: "Cas 2" }),
+    )
+    expect(labels).toContain(
+      fr.publicMap.a11y.clusterListItem({ ibp: 30, date: "2026-05-01", region: "ARA" }),
+    )
+    expect(labels.filter((label) => label.includes("/50"))).toHaveLength(2)
+    expect(labels.join(" ")).not.toMatch(/s-[12]/)
+    const shown = texts(tree)
+    expect(shown).toContain("Cas 2")
+    expect(shown).toContain("ARA")
+  })
+
+  test("the region filter says it filters v3.0 surveys only", () => {
+    const tree = mount(
+      <MapTopControls
+        top={0}
+        count={3}
+        loading={false}
+        showFilters
+        showParcelLayer={false}
+        layerStatusLabel=""
+        fromDate=""
+        toDate=""
+        region=""
+        onToggleFilters={jest.fn()}
+        onToggleParcelLayer={jest.fn()}
+        onRefresh={jest.fn()}
+        onApplyFilters={jest.fn()}
+        onChangeFromDate={jest.fn()}
+        onChangeToDate={jest.fn()}
+        onChangeRegion={jest.fn()}
+      />,
+    )
+    expect(fr.publicMap.filters.regionHint).toBe("filtre les relevés v3.0 uniquement")
+    expect(texts(tree)).toContain(fr.publicMap.filters.regionHint)
   })
 })
 

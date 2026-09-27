@@ -1,3 +1,4 @@
+import { FACTOR_KEYS as SHARED_FACTOR_KEYS, type FactorKey } from "@cortege/ibp-domain"
 import * as SQLite from "expo-sqlite"
 import { runInTransaction, TxHandle } from "./transaction"
 import {
@@ -24,18 +25,9 @@ export const SYNC_BATCH_SIZE = 100
 // install from its current version up to this one, one migration at a time.
 export const SCHEMA_VERSION = 2
 
-export const FACTOR_KEYS: Array<"A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J"> = [
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "F",
-  "G",
-  "H",
-  "I",
-  "J",
-]
+// The factor keys come from the shared package (01.8 criterion 1); a mutable copy keeps the
+// array type every importer already uses.
+export const FACTOR_KEYS: FactorKey[] = [...SHARED_FACTOR_KEYS]
 export const LEGACY_DEFAULT_FACTOR_VALUES: Record<string, Record<string, number>> = {
   A: { native_genus_count: 2 },
   B: { strata_count: 2, covered_autochthonous_percent: 70 },

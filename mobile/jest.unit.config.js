@@ -29,11 +29,14 @@ module.exports = {
     // supercluster 9 is ESM-only; ts-jest runs CommonJS, so load its UMD build (hoisted to the
     // root node_modules by 01.9-19). Metro resolves the ESM entry in the app.
     '^supercluster$': '<rootDir>/../node_modules/supercluster/dist/supercluster.js',
+    // The shared package is read from source, like Metro does through its react-native field
+    // (phase 01.8), so the tests need no built dist.
+    '^@cortege/ibp-domain$': '<rootDir>/../packages/ibp-domain/src/index.ts',
   },
   globals: {
     __DEV__: true,
   },
-  // Ratchet (phase 01.3, D-09; raised in phases 01.5 and 01.9): floor of values measured on 2026-09-26. Raise these when
+  // Ratchet (phase 01.3, D-09; raised in phases 01.5, 01.9 and 01.8, last at the 01.8-16 gate): floor of values measured on 2026-09-26. Raise these when
   // coverage improves; never lower them. Regenerate with node scripts/coverage-by-directory.js mobile.
   coverageThreshold: {
     global: { statements: 100, lines: 100 },
@@ -46,13 +49,15 @@ module.exports = {
     './src/navigation/': { statements: 100, branches: 98, functions: 100, lines: 100 },
     // Branches measured after merging the wave-2 catalogue sections (plural and optional-name
     // ternaries such as `n === 1 ? ... : ...` are not all exercised yet).
-    './src/i18n/': { statements: 100, branches: 73, functions: 100, lines: 100 },
+    './src/i18n/': { statements: 100, branches: 76, functions: 100, lines: 100 },
     './src/api/': { statements: 95, branches: 97, functions: 91, lines: 95 },
-    './src/app/': { statements: 86, branches: 73, functions: 93, lines: 91 },
+    // Raised in 01.8-07 after the IBP rules moved to @cortege/ibp-domain (adapter + parity tests).
+    // Raised again in 01.8-10 (form method version, catalogue helper, draft patcher).
+    './src/app/': { statements: 91, branches: 80, functions: 97, lines: 95 },
     './src/components/': { statements: 22, branches: 11, functions: 10, lines: 22 },
-    './src/hooks/': { statements: 90, branches: 78, functions: 94, lines: 90 },
-    './src/screens/': { statements: 46, branches: 33, functions: 40, lines: 46 },
+    './src/hooks/': { statements: 90, branches: 80, functions: 95, lines: 91 },
+    './src/screens/': { statements: 56, branches: 45, functions: 49, lines: 55 },
     './src/storage/': { statements: 92, branches: 81, functions: 91, lines: 94 },
-    './src/ui/': { statements: 44, branches: 29, functions: 31, lines: 46 },
+    './src/ui/': { statements: 59, branches: 35, functions: 42, lines: 59 },
   },
 };

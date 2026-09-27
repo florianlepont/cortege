@@ -6,6 +6,7 @@ import type { PublicMapItem } from "../../app/types"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { surveyPlaceLabel } from "./SelectedSurveyCard"
 import { panelStyles as styles } from "./styles"
 
 const t = fr.publicMap
@@ -17,6 +18,7 @@ type ClusterRowProps = {
 
 const ClusterRow = memo(function ClusterRow({ item, onSelect }: ClusterRowProps) {
   const handlePress = useCallback(() => onSelect(item.survey_id), [item.survey_id, onSelect])
+  const place = surveyPlaceLabel(item)
   return (
     <Pressable
       style={styles.clusterRow}
@@ -25,13 +27,13 @@ const ClusterRow = memo(function ClusterRow({ item, onSelect }: ClusterRowProps)
       accessibilityLabel={t.a11y.clusterListItem({
         ibp: item.ibp_total,
         date: item.survey_date,
-        region: item.region_code,
+        region: place,
       })}
     >
       <Text style={styles.clusterRowText}>
         {t.clusterList.row({ ibp: item.ibp_total, date: item.survey_date })}
       </Text>
-      <Text style={styles.meta}>{item.region_code}</Text>
+      <Text style={styles.meta}>{place}</Text>
     </Pressable>
   )
 })

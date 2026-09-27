@@ -43,6 +43,6 @@ export const componentsFr = {
   },
   ibpScoreBadge: {
     noScore: "—",
-    denominator: "/10",
+    denominator: "/50",
   },
 } as const

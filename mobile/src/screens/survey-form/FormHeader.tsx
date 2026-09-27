@@ -19,8 +19,8 @@ type WizardSummary = {
   identityReady: boolean
   selectedParcelCount: number
   completedFactorCount: number
-  regionLabel: string
-  vegetationLabel: string
+  /** The scoring context pills: cas and version (v3.2) or region and stage (v3.0). */
+  contextPills: string[]
   ibpTotal: number
 }
 
@@ -56,8 +56,7 @@ export function buildHeroCopy({
   siteName,
   selectedParcelCount,
   completedFactorCount,
-  regionLabel,
-  vegetationLabel,
+  contextPills,
   ibpTotal,
 }: Omit<WizardSummary, "identityReady">): HeroCopy {
   if (activeStep === "identity") {
@@ -80,11 +79,7 @@ export function buildHeroCopy({
     return {
       title: fr.surveyForm.header.parcelsTitle,
       body: fr.surveyForm.header.parcelsBody,
-      pills: [
-        regionLabel,
-        vegetationLabel,
-        fr.surveyForm.header.parcelCount({ count: selectedParcelCount }),
-      ],
+      pills: [...contextPills, fr.surveyForm.header.parcelCount({ count: selectedParcelCount })],
     }
   }
 

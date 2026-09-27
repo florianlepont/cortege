@@ -270,7 +270,26 @@ Plans:
   5. `surveys-idempotency.e2e-spec.ts` is split by feature (submit, visibility, public map, attachments, parcel history) and uses `randomUUID()` instead of `Date.now()`.
   6. The IBP rules in `packages/ibp-domain` implement IBP FR v3.2 per ADR-003 (CH-1..CH-11), with the v3.0 rules kept for surveys tagged v3.0 or carrying no method version; every survey carries its method version, the observer picks it when creating a survey (default v3.2, v3.0 available) and it is fixed after submit; the total score is shown out of 50; `docs/references/README.md` and `docs/specs/ibp-form-spec.md` then say the app implements v3.2.
 
-**Plans**: TBD
+**Plans**: 16 plans
+
+Plans:
+
+- [x] 01.8-01-PLAN.md — Create the `packages/ibp-domain` workspace (seed: factor keys, method versions, wire types) and wire npm, Jest, Metro, the Dockerfile and CI (only plan touching package.json/lockfile) (wave 1)
+- [x] 01.8-02-PLAN.md — Test AuthGuard's RS256 path against a loopback JWKS: valid, expired, wrong audience, unknown kid, wrong issuer, HS256 confusion (wave 1)
+- [x] 01.8-03-PLAN.md — Split surveys-idempotency.e2e-spec.ts by feature with randomUUID ids; move direct G/H = 1 E2E fixtures to 2 (wave 1)
+- [x] 01.8-05-PLAN.md — Write ibp-validation-matrix-v2.md and the ADR-003 implementation addendum (MAT-B-01 change, ibp_cas + ibp_cas3_scale) (wave 1)
+- [x] 01.8-04-PLAN.md — Implement the v3.0 (fixed) and v3.2 rules, dispatch, readiness, draft migration, bands and the parity fixture in the package (wave 2)
+- [x] 01.8-08-PLAN.md — Store method version and cas in the phone's JSON payloads (no SQLite migration), copy them on pull, no stamping of legacy drafts (wave 2)
+- [x] 01.8-06-PLAN.md — Make IbpRulesService a thin adapter over the package, type the API wire types from it, run the parity fixture through it (wave 3)
+- [x] 01.8-07-PLAN.md — Make mobile ibp-scoring.ts an adapter, take app types from the package, run the parity fixture, readiness texts for the cas (wave 3)
+- [x] 01.8-09-PLAN.md — Migration 016 + DTO fields + effective-version validation, write normalisation, fixed-after-submit, MAT-VER-01 replay E2E (wave 4)
+- [x] 01.8-10-PLAN.md — Form hook, draft patcher and contexts for version/cas/flag/A cover; fr.ibpMethod catalogue and fixed v3.0 help (wave 4)
+- [x] 01.8-11-PLAN.md — Totals out of 50 with package bands on the badge, sector card and map; mixed-methods line; component tests (wave 4)
+- [x] 01.8-12-PLAN.md — Method version on public map items and parcel statuses; API and data contracts; production probes (wave 5)
+- [x] 01.8-13-PLAN.md — Form screens: method version picker (v3.2 default), scoring context by version, A cover, per-version help, / 50 (wave 5)
+- [x] 01.8-14-PLAN.md — Detail screens: version display, cas editor, switch to v3.2 for drafts, / 50 with band-coloured /35 and /15 sub-scores (wave 5)
+- [x] 01.8-15-PLAN.md — Citation files and form spec say v3.2 implemented; architecture docs, docs index, native README and CLAUDE.md (wave 6)
+- [ ] 01.8-16-PLAN.md — Phase gate: local gate, CI evidence with native builds, merge and API deploy with probes, owner's 6-step iPhone check (wave 7)
 
 ### Phase 01.9: Mobile state architecture, i18n, accessibility and hygiene (INSERTED)
 
@@ -441,7 +460,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.5. Mobile sync engine reliability | 12/12 | Complete    | 2026-09-25 |
 | 1.6. Sync feed ordering and unified object storage | 9/9 | Complete    | 2026-09-25 |
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
-| 1.8. Shared IBP domain package and test completeness | 0/TBD | Not started | - |
+| 1.8. Shared IBP domain package and test completeness | 15/16 | In Progress|  |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
 | 2. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
 | 3. Genus Recognition for Factor A | 0/TBD | Not started | - |

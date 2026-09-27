@@ -72,6 +72,8 @@ export const surveyOpsStatusFr = {
     missingRegion: "région non renseignée",
     missingVegetationStage: "étage de végétation non renseigné",
     missingParcels: "aucune parcelle sélectionnée",
+    missingCas: "cas IBP non renseigné",
+    unsupportedMethod: "version de méthode IBP non prise en charge",
   },
   submitCheckFailed: ({ name }: { name: string }) =>
     statusText(`Impossible de vérifier « ${name} » avant la soumission, réessayez`),

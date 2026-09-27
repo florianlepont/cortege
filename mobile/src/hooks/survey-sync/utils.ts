@@ -34,6 +34,12 @@ export const formatSubmitReadinessError = (
   if (readiness.missing_fields.includes("vegetation_stage")) {
     parts.push("missing vegetation stage")
   }
+  if (readiness.missing_fields.includes("ibp_cas")) {
+    parts.push("missing ibp_cas")
+  }
+  if (readiness.missing_fields.includes("ibp_method_version")) {
+    parts.push("unsupported ibp_method_version")
+  }
   if (readiness.missing_fields.includes("parcel_ids")) {
     parts.push("missing parcel selection")
   }

@@ -18,7 +18,8 @@ jest.mock("../storage/surveys", () => ({
   updateLocalDraft: jest.fn(),
 }))
 
-import { cleanup, renderHook } from "@testing-library/react-native/pure"
+import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
+import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
 import { createLocalDraft, getLocalSurveyDraft, updateLocalDraft } from "../storage"
 import { useEditingDraft } from "./useEditingDraft"
@@ -151,6 +152,22 @@ describe("useEditingDraft", () => {
       expect(surveyList.setSelectedSurveyId).toHaveBeenCalledWith("draft-new")
     })
 
+    test("creates the new draft with the v3.2 defaults and no region/stage (D-02, D-08)", async () => {
+      const { handleOpenCreateSurvey } = await buildHook()
+
+      handleOpenCreateSurvey()
+      await new Promise((resolve) => setImmediate(resolve))
+
+      expect(mockCreateLocalDraft).toHaveBeenCalledWith({
+        site_name: "",
+        ibp_method_version: IBP_METHOD_V3_2,
+        ibp_cas: 1,
+        ibp_cas3_scale: false,
+        factors: {},
+        parcel_ids: [],
+      })
+    })
+
     test("does not start a second draft if bootstrapping is already in progress", async () => {
       const { handleOpenCreateSurvey } = await buildHook()
 
@@ -270,6 +287,119 @@ describe("useEditingDraft", () => {
 
       expect(result).toBe(false)
       expect(onStatusChange).toHaveBeenCalledWith(fr.status.editing.editLoadFailed())
+    })
+  })
+
+  // ─── Method fields of an edited draft (01.8-10) ───────────────────────────
+
+  describe("edited drafts keep their stored method fields", () => {
+    async function openThenRender(draft: Record<string, unknown>, formInput: object) {
+      surveyList.surveys = [{ id: TEST_SURVEY_ID, status: "draft", visibility: "private" }]
+      mockGetLocalSurveyDraft.mockResolvedValue(draft)
+      surveyForm.draftInput = formInput as Record<string, unknown>
+      const params = (editingSurveyId: string | null) => ({
+        editingSurveyId,
+        setEditingSurveyId,
+        editingSurveyVisibility: "private" as const,
+        setFormMode,
+        surveyForm: surveyForm as never,
+        surveyList: surveyList as never,
+        onStatusChange,
+        onCloseSurveyDetail,
+      })
+      const hook = await renderHook(
+        (props: { id: string | null }) => useEditingDraft(params(props.id)),
+        {
+          initialProps: { id: null },
+        },
+      )
+      await hook.result.current.handleStartEditSurvey(TEST_SURVEY_ID)
+      await hook.rerender({ id: TEST_SURVEY_ID })
+      await act(async () => {
+        jest.advanceTimersByTime(1000)
+      })
+    }
+
+    beforeEach(() => {
+      jest.useFakeTimers()
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    test("a v3.2 draft opened unchanged is not re-saved (its cas and flag are in the signature)", async () => {
+      await openThenRender(
+        {
+          id: TEST_SURVEY_ID,
+          site_name: "Bois",
+          ibp_method_version: IBP_METHOD_V3_2,
+          ibp_cas: 3,
+          ibp_cas3_scale: true,
+          parcel_ids: ["P1"],
+          factors: { B: { strata_count: 2 } },
+        },
+        {
+          site_name: "Bois",
+          ibp_method_version: IBP_METHOD_V3_2,
+          ibp_cas: 3,
+          ibp_cas3_scale: true,
+          factors: { B: { strata_count: 2 } },
+          parcel_ids: ["P1"],
+        },
+      )
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+    })
+
+    test("a legacy draft opened unchanged stays untagged with its region/stage", async () => {
+      await openThenRender(
+        {
+          id: TEST_SURVEY_ID,
+          site_name: "Ancien",
+          region_version: "M",
+          vegetation_stage: "meso_mediterraneen",
+          parcel_ids: [],
+          factors: {},
+        },
+        {
+          site_name: "Ancien",
+          region_version: "M",
+          vegetation_stage: "meso_mediterraneen",
+          factors: {},
+          parcel_ids: [],
+        },
+      )
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+    })
+
+    test("a changed v3.2 draft is autosaved with the form's method fields", async () => {
+      const formInput = {
+        site_name: "Bois",
+        ibp_method_version: IBP_METHOD_V3_2,
+        ibp_cas: 2,
+        ibp_cas3_scale: false,
+        factors: {},
+        parcel_ids: [],
+      }
+      await openThenRender(
+        {
+          id: TEST_SURVEY_ID,
+          site_name: "Bois",
+          ibp_method_version: IBP_METHOD_V3_2,
+          ibp_cas: 1,
+          ibp_cas3_scale: false,
+          parcel_ids: [],
+          factors: {},
+        },
+        formInput,
+      )
+      expect(mockUpdateLocalDraft).toHaveBeenCalledWith({
+        survey_id: TEST_SURVEY_ID,
+        ...formInput,
+        visibility: "private",
+      })
+      const saved = mockUpdateLocalDraft.mock.calls[0][0]
+      expect(saved).not.toHaveProperty("region_version")
     })
   })
 

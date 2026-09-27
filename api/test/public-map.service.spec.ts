@@ -8,8 +8,11 @@ import {
   PUBLIC_STUDIED_BY_COMMUNES_SQL,
 } from "../src/surveys/public-map.queries"
 import { PublicMapService } from "../src/surveys/public-map.service"
+import { PublicMapDbRow, toPublicMapItem } from "../src/surveys/public-map.utils"
 
 type QueryResult = { rows: unknown[] }
+
+const V3_2 = "cnpf_ibp_fr_v3_2_2026-02-02"
 
 function buildDb(...results: QueryResult[]) {
   const query = jest.fn()
@@ -53,17 +56,21 @@ const feature = (overrides: Partial<WfsParcelFeature> = {}): WfsParcelFeature =>
 })
 
 // The /public/map-items SQL as it was before 01.9 D-05, copied from the builder's output before
-// the bbox was added: without a bbox the query must stay byte-identical.
+// the bbox was added: without a bbox the query must stay byte-identical. 01.8-12 (D-10) only
+// added s.ibp_method_version and s.ibp_cas to both select lists; predicates, parameters and the
+// limit are unchanged.
 const PRE_BBOX_MAP_ITEMS_SQL = [
   "SELECT",
   "   s.id,",
   "   s.region_version,",
+  "   s.ibp_method_version,",
+  "   s.ibp_cas,",
   "   s.scores,",
   "   s.submitted_at::text,",
   "   agg.parcel_centroid_lat,",
   "   agg.parcel_centroid_lng",
   " FROM (",
-  "   SELECT s.id, s.region_version, s.scores, s.submitted_at",
+  "   SELECT s.id, s.region_version, s.ibp_method_version, s.ibp_cas, s.scores, s.submitted_at",
   "   FROM surveys s",
   "   WHERE s.status = 'submitted' AND s.visibility = 'public' AND s.deleted_at IS NULL",
   "     AND s.submitted_at IS NOT NULL",
@@ -181,10 +188,31 @@ describe("public map queries (D-13)", () => {
     )
   })
 
+  it("parcel statuses: the method version comes from the same latest row as the total (D-10)", () => {
+    for (const text of [
+      PUBLIC_PARCEL_STATUSES_BBOX_SQL,
+      PUBLIC_PARCEL_STATUSES_SQL,
+      PUBLIC_STUDIED_BY_COMMUNES_SQL,
+    ]) {
+      const sql = flat(text)
+      expect(sql).toContain("SELECT s.id, s.observation_year, s.scores, s.ibp_method_version FROM")
+      expect(sql).toContain("(lp.scores ->> 'ibp_total')::integer AS latest_ibp_total")
+      expect(sql).toContain("lp.ibp_method_version AS latest_ibp_method_version")
+    }
+  })
+
+  it("map items: the region filter still matches region_version exactly (CH-9: v3.0 only)", () => {
+    const sql = flat(buildPublicMapItemsQuery({ region: "ACA" }).text)
+    expect(sql).toContain("s.region_version = $1")
+    expect(sql).not.toContain("ibp_cas =")
+    expect(sql).not.toContain("ibp_method_version =")
+  })
+
   it("parcel statuses without a bbox and the studied query share the latest-survey probe", () => {
     for (const text of [PUBLIC_PARCEL_STATUSES_SQL, PUBLIC_STUDIED_BY_COMMUNES_SQL]) {
       const sql = flat(text)
       expect(sql).toContain("LATERAL")
+      expect(sql).toContain("lp.ibp_method_version AS latest_ibp_method_version")
       expect(sql).toContain("WHERE sp.parcel_id = p.parcel_id")
       expect(sql).toContain(
         "($1::integer IS NULL OR s.observation_year IS NULL OR s.observation_year <= $1::integer)",
@@ -202,10 +230,22 @@ describe("PublicMapService", () => {
           {
             id: "s1",
             region_version: "ACA",
+            ibp_method_version: null,
+            ibp_cas: null,
             scores: { ibp_total: 31 },
             submitted_at: "2026-03-04 10:00:00+00",
             parcel_centroid_lat: 48.8566,
             parcel_centroid_lng: 2.3522,
+          },
+          {
+            id: "s3",
+            region_version: null,
+            ibp_method_version: V3_2,
+            ibp_cas: 2,
+            scores: { ibp_total: 40 },
+            submitted_at: "2026-03-03 11:00:00+00",
+            parcel_centroid_lat: 45.1234,
+            parcel_centroid_lng: 5.6789,
           },
           {
             id: "s2",
@@ -237,6 +277,17 @@ describe("PublicMapService", () => {
             survey_date: "2026-03-04",
             region_code: "ACA",
             ibp_total: 31,
+            ibp_method_version: null,
+            ibp_cas: null,
+          },
+          {
+            survey_id: "s3",
+            display_location: { lat: 45.12, lng: 5.68 },
+            survey_date: "2026-03-03",
+            region_code: "unknown",
+            ibp_total: 40,
+            ibp_method_version: V3_2,
+            ibp_cas: 2,
           },
         ],
       })
@@ -316,6 +367,7 @@ describe("PublicMapService", () => {
             latest_submitted_survey_id: "s1",
             latest_observation_year: 2025,
             latest_ibp_total: 30,
+            latest_ibp_method_version: V3_2,
             geometry: { type: "Polygon", coordinates: [[[2, 48]]] },
             centroid: { lat: 48.5, lng: 2.5 },
           },
@@ -373,7 +425,11 @@ describe("PublicMapService", () => {
         latest_submitted_survey_id: "s1",
         latest_observation_year: 2025,
         latest_ibp_total: 30,
+        latest_ibp_method_version: V3_2,
       })
+      // A row without the column (or an untagged latest survey) answers null, never the v3.0 tag.
+      expect(output.items[1].latest_ibp_method_version).toBeNull()
+      expect(output.items[2].latest_ibp_method_version).toBeNull()
     })
 
     it("uses the bbox query when IGN answers an empty list", async () => {
@@ -419,6 +475,7 @@ describe("PublicMapService", () => {
             latest_submitted_survey_id: "s9",
             latest_observation_year: 2024,
             latest_ibp_total: 12,
+            latest_ibp_method_version: V3_2,
           },
         ],
       })
@@ -441,6 +498,7 @@ describe("PublicMapService", () => {
           latest_submitted_survey_id: null,
           latest_observation_year: null,
           latest_ibp_total: null,
+          latest_ibp_method_version: null,
           geometry: features[0].geometry,
         },
         {
@@ -449,6 +507,7 @@ describe("PublicMapService", () => {
           latest_submitted_survey_id: "s9",
           latest_observation_year: 2024,
           latest_ibp_total: 12,
+          latest_ibp_method_version: V3_2,
           geometry: features[1].geometry,
         },
         {
@@ -457,9 +516,52 @@ describe("PublicMapService", () => {
           latest_submitted_survey_id: null,
           latest_observation_year: null,
           latest_ibp_total: null,
+          latest_ibp_method_version: null,
           geometry: features[2].geometry,
         },
       ])
     })
+  })
+})
+
+describe("toPublicMapItem (01.8-12, D-10)", () => {
+  const row = (overrides: Partial<PublicMapDbRow> = {}): PublicMapDbRow => ({
+    id: "s1",
+    region_version: "M",
+    scores: { ibp_total: 17 },
+    submitted_at: "2026-05-06 08:00:00+00",
+    parcel_centroid_lat: 44.444,
+    parcel_centroid_lng: 4.444,
+    ...overrides,
+  })
+
+  it("maps the method version and the cas of a v3.2 survey", () => {
+    expect(
+      toPublicMapItem(row({ region_version: null, ibp_method_version: V3_2, ibp_cas: 3 })),
+    ).toEqual({
+      survey_id: "s1",
+      display_location: { lat: 44.44, lng: 4.44 },
+      survey_date: "2026-05-06",
+      region_code: "unknown",
+      ibp_total: 17,
+      ibp_method_version: V3_2,
+      ibp_cas: 3,
+    })
+  })
+
+  it("keeps null for an untagged survey (the phone resolves null to v3.0)", () => {
+    const item = toPublicMapItem(row({ ibp_method_version: null, ibp_cas: null }))
+    expect(item).toMatchObject({ region_code: "M", ibp_method_version: null, ibp_cas: null })
+  })
+
+  it("answers null when the row has no version columns, so the keys are always present", () => {
+    const item = toPublicMapItem(row())
+    expect(item).toHaveProperty("ibp_method_version", null)
+    expect(item).toHaveProperty("ibp_cas", null)
+  })
+
+  it("keeps the privacy rules: no centroid, no item; the location is rounded to 2 decimals", () => {
+    expect(toPublicMapItem(row({ parcel_centroid_lat: null, ibp_method_version: V3_2 }))).toBe(null)
+    expect(toPublicMapItem(row())?.display_location).toEqual({ lat: 44.44, lng: 4.44 })
   })
 })

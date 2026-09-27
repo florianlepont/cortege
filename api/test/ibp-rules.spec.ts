@@ -1,124 +1,73 @@
+import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { IbpRulesService } from "../src/surveys/ibp-rules.service"
 
-const SCORE_CLASS = {
-  0: "S0",
-  1: "S1",
-  2: "S2",
-  5: "S5",
-} as const
-
+// The adapter's API-visible behaviour: the result shape the service and the 422 bodies rely on.
+// Per-factor scores are covered by the shared parity fixture (ibp-parity.spec.ts).
 describe("IbpRulesService (unit)", () => {
   const service = new IbpRulesService()
 
-  const draftDefaults = {
-    region: "ACA",
-    stage: "collineen",
-  } as const
+  const ACA_COLLINEEN = { region_version: "ACA", vegetation_stage: "collineen" } as const
+  const inOneHour = () => new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
-  const byFactorCases: Array<{
-    name: string
-    factor: "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J"
-    raw: unknown
-    expectedScore: 0 | 1 | 2 | 5
-    region?: "ACA" | "M"
-    stage?: string
-  }> = [
-    {
-      name: "A (collineen): native_genus_count=2 -> 1",
-      factor: "A",
-      raw: { native_genus_count: 2 },
-      expectedScore: 1,
-    },
-    {
-      name: "A (subalpin): native_genus_count=2 -> 2",
-      factor: "A",
-      raw: { native_genus_count: 2 },
-      expectedScore: 2,
-      region: "ACA",
-      stage: "subalpin",
-    },
-    {
-      name: "B: strata=5 and cover<50 gets capped to 2",
-      factor: "B",
-      raw: { strata_count: 5, covered_autochthonous_percent: 40 },
-      expectedScore: 2,
-    },
-    {
-      name: "C: bmg=0 bmm=2 surface=1 -> 1",
-      factor: "C",
-      raw: { bmg_count: 0, bmm_count: 2, surface_ha: 1 },
-      expectedScore: 1,
-    },
-    {
-      name: "D: bmg=4 bmm=0 surface=1 -> 5",
-      factor: "D",
-      raw: { bmg_count: 4, bmm_count: 0, surface_ha: 1 },
-      expectedScore: 5,
-    },
-    {
-      name: "E: tgb=0 gb=2 surface=1 -> 1",
-      factor: "E",
-      raw: { tgb_count: 0, gb_count: 2, surface_ha: 1 },
-      expectedScore: 1,
-    },
-    {
-      name: "F: trees_per_ha=8 -> 5",
-      factor: "F",
-      raw: { trees_per_ha: 8 },
-      expectedScore: 5,
-    },
-    {
-      name: "G: open_flowering_percent=2 -> 5",
-      factor: "G",
-      raw: { open_flowering_percent: 2 },
-      expectedScore: 5,
-    },
-    {
-      name: "H: class=partial -> 2",
-      factor: "H",
-      raw: { class: "partial" },
-      expectedScore: 2,
-    },
-    {
-      name: "I: type_count=1 -> 2",
-      factor: "I",
-      raw: { type_count: 1 },
-      expectedScore: 2,
-    },
-    {
-      name: "J: type_count=2 -> 5",
-      factor: "J",
-      raw: { type_count: 2 },
-      expectedScore: 5,
-    },
-  ]
+  // A-F = 1, G = H = 2 (BUG-2: G and H accept only 0, 2 or 5), I = 2, J = 5.
+  const completeDirect = { A: 1, B: 1, C: 1, D: 1, E: 1, F: 1, G: 2, H: 2, I: 2, J: 5 }
 
-  it.each(byFactorCases)("$name", ({ factor, raw, expectedScore, region, stage }) => {
-    const result = service.validateDraft(
-      { [factor]: raw },
-      region ?? draftDefaults.region,
-      stage ?? draftDefaults.stage,
-    )
+  it("fills canonical factor_results for every scored factor", () => {
+    const result = service.validateDraft({
+      ...ACA_COLLINEEN,
+      factors: {
+        C: { bmg_count: 0, bmm_count: 2, surface_ha: 1 },
+        H: { class: "partial" },
+        J: { type_count: 2 },
+      },
+    })
 
     expect(result.ok).toBe(true)
-    expect(result.factor_scores?.[factor]).toBe(expectedScore)
-    expect(result.factor_results?.[factor]).toMatchObject({
-      factor_id: `factor_${factor.toLowerCase()}`,
-      score_points: expectedScore,
-      selected_class: SCORE_CLASS[expectedScore],
+    expect(result.factor_scores).toEqual({ C: 1, H: 2, J: 5 })
+    expect(result.factor_results).toEqual({
+      C: {
+        factor_id: "factor_c",
+        observed_value_raw: { bmg_count: 0, bmm_count: 2, surface_ha: 1 },
+        selected_class: "S1",
+        score_points: 1,
+        warnings: [],
+      },
+      H: {
+        factor_id: "factor_h",
+        observed_value_raw: { class: "partial" },
+        selected_class: "S2",
+        score_points: 2,
+        warnings: [],
+      },
+      J: {
+        factor_id: "factor_j",
+        observed_value_raw: { type_count: 2 },
+        selected_class: "S5",
+        score_points: 5,
+        warnings: [],
+      },
     })
   })
 
-  it("returns warning when factor F dmh_group_counts are capped", () => {
-    const result = service.validateDraft(
-      {
-        F: {
-          dmh_group_counts: [3, 3, 3, 3],
-        },
+  it("applies the native-cover cap to A, not B (BUG-1 fixed, 01.8 D-05)", () => {
+    const result = service.validateDraft({
+      ...ACA_COLLINEEN,
+      factors: {
+        A: { native_genus_count: 5 },
+        B: { strata_count: 5, covered_autochthonous_percent: 40 },
       },
-      "ACA",
-      "collineen",
-    )
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.factor_scores).toEqual({ A: 2, B: 5 })
+    expect(result.method_version).toBe(IBP_METHOD_V3_0)
+  })
+
+  it("returns warning when factor F dmh_group_counts are capped", () => {
+    const result = service.validateDraft({
+      ...ACA_COLLINEEN,
+      factors: { F: { dmh_group_counts: [3, 3, 3, 3] } },
+    })
 
     expect(result.ok).toBe(true)
     expect(result.factor_scores?.F).toBe(5)
@@ -129,16 +78,10 @@ describe("IbpRulesService (unit)", () => {
   })
 
   it("returns non-blocking consistency warnings and propagates to canonical factors", () => {
-    const result = service.validateDraft(
-      {
-        A: 0,
-        B: 2,
-        E: 0,
-        F: 5,
-      },
-      "ACA",
-      "collineen",
-    )
+    const result = service.validateDraft({
+      ...ACA_COLLINEEN,
+      factors: { A: 0, B: 2, E: 0, F: 5 },
+    })
 
     expect(result.ok).toBe(true)
     expect(result.warnings.join(" | ")).toContain(
@@ -155,22 +98,38 @@ describe("IbpRulesService (unit)", () => {
   })
 
   it("rejects invalid direct score for factor I (must be 0,2,5)", () => {
-    const result = service.validateDraft(
-      {
-        I: 1,
-      },
-      "ACA",
-      "collineen",
-    )
+    const result = service.validateDraft({ ...ACA_COLLINEEN, factors: { I: 1 } })
 
     expect(result.ok).toBe(false)
     expect(result.errors.join(" | ")).toContain("factor I must resolve to one of [0,2,5]")
   })
 
+  it("rejects a direct G = 1 with a blocking factor_invalid_score (BUG-2)", () => {
+    const result = service.validateDraft({ factors: { G: 1 } })
+
+    expect(result.ok).toBe(false)
+    expect(result.issues).toContainEqual({
+      code: "factor_invalid_score",
+      message: "factor G must resolve to one of [0,2,5]",
+      blocking: true,
+      factor: "G",
+    })
+  })
+
+  it("scores an explicitly tagged v3.2 draft under v3.2", () => {
+    const result = service.validateDraft({
+      ibp_method_version: IBP_METHOD_V3_2,
+      ibp_cas: 1,
+      factors: { B: { strata_count: 5 } },
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.method_version).toBe(IBP_METHOD_V3_2)
+  })
+
   it("validateSubmit blocks expired surveys and missing required factors", () => {
     const result = service.validateSubmit({
-      region_version: "ACA",
-      vegetation_stage: "collineen",
+      ...ACA_COLLINEEN,
       expires_at: new Date(Date.now() - 60_000).toISOString(),
       factors: { A: 1 },
     })
@@ -182,29 +141,18 @@ describe("IbpRulesService (unit)", () => {
 
   it("validateSubmit succeeds with complete valid payload and computes aggregate scores", () => {
     const result = service.validateSubmit({
-      region_version: "ACA",
-      vegetation_stage: "collineen",
-      expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      factors: {
-        A: 1,
-        B: 1,
-        C: 1,
-        D: 1,
-        E: 1,
-        F: 1,
-        G: 1,
-        H: 2,
-        I: 2,
-        J: 5,
-      },
+      ...ACA_COLLINEEN,
+      expires_at: inOneHour(),
+      factors: completeDirect,
     })
 
     expect(result.ok).toBe(true)
     expect(result.errors).toHaveLength(0)
+    expect(result.method_version).toBe(IBP_METHOD_V3_0)
     expect(result.scores).toEqual({
-      ibp_peuplement_gestion: 7,
+      ibp_peuplement_gestion: 8,
       ibp_contexte: 9,
-      ibp_total: 16,
+      ibp_total: 17,
     })
   })
 
@@ -212,19 +160,8 @@ describe("IbpRulesService (unit)", () => {
     const result = service.validateSubmit({
       region_version: "ACA",
       vegetation_stage: "",
-      expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      factors: {
-        A: 1,
-        B: 1,
-        C: 1,
-        D: 1,
-        E: 1,
-        F: 1,
-        G: 1,
-        H: 2,
-        I: 2,
-        J: 5,
-      },
+      expires_at: inOneHour(),
+      factors: completeDirect,
     })
 
     expect(result.ok).toBe(false)
@@ -233,21 +170,9 @@ describe("IbpRulesService (unit)", () => {
 
   it("validateSubmit accepts payload without location metadata", () => {
     const result = service.validateSubmit({
-      region_version: "ACA",
-      vegetation_stage: "collineen",
-      expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      factors: {
-        A: 1,
-        B: 1,
-        C: 1,
-        D: 1,
-        E: 1,
-        F: 1,
-        G: 1,
-        H: 2,
-        I: 2,
-        J: 5,
-      },
+      ...ACA_COLLINEEN,
+      expires_at: inOneHour(),
+      factors: completeDirect,
     })
 
     expect(result.ok).toBe(true)

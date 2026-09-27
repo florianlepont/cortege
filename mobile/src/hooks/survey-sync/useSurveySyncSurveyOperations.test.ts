@@ -310,6 +310,94 @@ describe("useSurveySyncSurveyOperations", () => {
       )
     })
 
+    test("names the missing cas of a v3.2 draft, with the real readiness and no id", async () => {
+      const actual =
+        jest.requireActual<typeof import("../../app/ibp-scoring")>("../../app/ibp-scoring")
+      mockEvaluateSubmitReadiness.mockImplementation(actual.evaluateSubmitReadinessFromDraft)
+      mockGetSubmitBlockReason.mockReturnValue(null)
+      const draft = {
+        ibp_method_version: "cnpf_ibp_fr_v3_2_2026-02-02",
+        factors: {
+          A: { native_genus_count: 5, native_cover_percent: 80 },
+          B: { strata_count: 5 },
+          C: 1,
+          D: 1,
+          E: 2,
+          F: 2,
+          G: { open_flowering_percent: 2 },
+          H: 2,
+          I: 2,
+          J: 2,
+        },
+        parcel_ids: ["75056000AB0001"],
+        expires_at: "2999-01-01T00:00:00.000Z",
+      }
+      mockGetLocalSurveyDraft.mockResolvedValue(draft)
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+
+      expect(mockEvaluateSubmitReadiness).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ibp_method_version: draft.ibp_method_version,
+          ibp_cas: undefined,
+          ibp_cas3_scale: undefined,
+        }),
+      )
+      expect(setStatus).toHaveBeenCalledWith(
+        text.notReady({
+          name,
+          details: [
+            text.readiness.missingFactors({ factors: "A, G" }),
+            text.readiness.missingCas,
+          ].join(" ; "),
+        }),
+      )
+      const shown = JSON.stringify(setStatus.mock.calls)
+      expect(shown).toContain("cas IBP non renseigné")
+      expect(shown).not.toContain("survey-1")
+      expect(shown).not.toContain("ibp_cas")
+    })
+
+    test("passes the draft's cas to the readiness check", async () => {
+      mockGetSubmitBlockReason.mockReturnValue(null)
+      mockGetLocalSurveyDraft.mockResolvedValue({
+        ibp_method_version: "cnpf_ibp_fr_v3_2_2026-02-02",
+        ibp_cas: 3,
+        ibp_cas3_scale: false,
+        parcel_ids: [],
+      })
+      mockEvaluateSubmitReadiness.mockReturnValue({
+        ready: false,
+        expired: false,
+        missing_factors: [],
+        missing_fields: ["parcel_ids"],
+      })
+      const { handleSubmitSurvey } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockEvaluateSubmitReadiness).toHaveBeenCalledWith(
+        expect.objectContaining({ ibp_cas: 3, ibp_cas3_scale: false }),
+      )
+    })
+
+    test("names an unsupported method version", async () => {
+      mockGetSubmitBlockReason.mockReturnValue(null)
+      mockGetLocalSurveyDraft.mockResolvedValue({ ibp_method_version: "unknown", parcel_ids: [] })
+      mockEvaluateSubmitReadiness.mockReturnValue({
+        ready: false,
+        expired: false,
+        missing_factors: [],
+        missing_fields: ["ibp_method_version"],
+      })
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(setStatus).toHaveBeenCalledWith(
+        text.notReady({ name, details: text.readiness.unsupportedMethod }),
+      )
+      expect(JSON.stringify(setStatus.mock.calls)).toContain(
+        "version de méthode IBP non prise en charge",
+      )
+    })
+
     test("reports an expired draft and a draft with nothing named missing", async () => {
       mockGetSubmitBlockReason.mockReturnValue(null)
       mockGetLocalSurveyDraft.mockResolvedValue({ parcel_ids: [] })

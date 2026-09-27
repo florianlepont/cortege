@@ -11,7 +11,7 @@ import { AppNotice } from "../ui/AppNotice"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
 import { DraftCard } from "../components/cards/DraftCard"
 import { ParcelNearbyCard } from "../components/cards/ParcelNearbyCard"
-import type { NearbyParcelsState } from "../hooks/useNearbyParcels"
+import { hasMixedMethodVersions, type NearbyParcelsState } from "../hooks/useNearbyParcels"
 import { fr } from "../i18n"
 import { SectorScoreCard } from "./home/SectorScoreCard"
 import { styles } from "./home/styles"
@@ -189,6 +189,7 @@ export function HomeScreen({
                 analysedCount={
                   nearbyParcels.parcels.filter((p) => p.latest_ibp_total != null).length
                 }
+                mixedMethods={hasMixedMethodVersions(nearbyParcels.parcels)}
               />
             ) : null}
           </View>
