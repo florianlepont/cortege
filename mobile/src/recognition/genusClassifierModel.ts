@@ -13,8 +13,7 @@ import rawManifest from "../../assets/models/genus_classifier_manifest.json"
 // ADR-002 D-07/D-08 (bundled model, fail-closed on load failure): the model ships as a bundled
 // asset, loaded through Metro's `.tflite` asset support (metro.config.js), never downloaded or
 // fetched at runtime - this static import is what makes that a build-time, offline guarantee
-// rather than a network call. See mobile/assets/models/README.md: the file at this path is
-// currently a placeholder, so loading is expected to fail until the real artifact replaces it.
+// rather than a network call.
 import MODEL_ASSET from "../../assets/models/genus_classifier.tflite"
 
 type TensorflowModel = Awaited<ReturnType<typeof loadTensorflowModel>>
@@ -77,10 +76,10 @@ async function loadModel(): Promise<TensorflowModel | null> {
 }
 
 /**
- * Resizes and re-encodes the photo to the model's expected square input, decodes it to raw RGB
- * pixels and normalizes to [0, 1] - the manifest's `preprocessing`/`inputSize` document the exact
- * contract, currently a documented best guess pending the real model's export report (see
- * mobile/assets/models/README.md).
+ * Resizes and re-encodes the photo to the model's expected square input, then decodes it to raw
+ * RGB pixels in [0, 255] - the manifest's `preprocessing: "raw_0_255"` documents that the model
+ * itself embeds a Rescaling (1/255) and a Normalization (ImageNet mean/variance) layer ahead of
+ * the backbone (confirmed by inspecting the SavedModel graph), so no scaling happens here.
  */
 async function preprocessPhoto(uri: string, inputSize: number): Promise<Float32Array> {
   const resized = await ImageManipulator.manipulate(uri)
@@ -96,9 +95,9 @@ async function preprocessPhoto(uri: string, inputSize: number): Promise<Float32A
   const pixelCount = inputSize * inputSize
   const tensor = new Float32Array(pixelCount * 3)
   for (let pixel = 0; pixel < pixelCount; pixel++) {
-    tensor[pixel * 3] = decoded.data[pixel * 4] / 255
-    tensor[pixel * 3 + 1] = decoded.data[pixel * 4 + 1] / 255
-    tensor[pixel * 3 + 2] = decoded.data[pixel * 4 + 2] / 255
+    tensor[pixel * 3] = decoded.data[pixel * 4]
+    tensor[pixel * 3 + 1] = decoded.data[pixel * 4 + 1]
+    tensor[pixel * 3 + 2] = decoded.data[pixel * 4 + 2]
   }
   return tensor
 }
