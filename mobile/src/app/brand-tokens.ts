@@ -115,6 +115,19 @@ export const brandSpacing = {
   xl: 28,
 } as const
 
+// Phase 3 (D-0 token slice): a strict 4-grid, additive to `brandSpacing`. The aliases above stay in
+// place during the migration (audit §5.1) — new field-entry components use this grid instead.
+export const brandSpacing4 = {
+  xxs: 2,
+  xs: 4,
+  sm: 8,
+  smd: 12,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
+} as const
+
 export const brandShadow = {
   card: {
     shadowColor: "#000000",
@@ -257,4 +270,50 @@ export const brandComponentTokens = {
     dangerText: brandColors.textPrimary,
     successText: brandColors.forest,
   },
+} as const
+
+// Phase 3 (D-0 token slice, FLOW-02): the three states a field-entry control can be in. Empty is
+// neutral (never alarming before the user has done anything); error only renders once a caller
+// gates it on "touched or submission attempted"; complete is moss, never the same hue as error.
+export const brandFieldState = {
+  empty: {
+    border: brandColors.inputBorder,
+    background: brandColors.inputFill,
+    icon: brandColors.textSecondary,
+    text: brandColors.textPrimary,
+  },
+  error: {
+    border: brandColors.terracotta,
+    background: brandColors.errorSoft,
+    icon: brandColors.terracotta,
+    text: brandColors.terracotta,
+  },
+  complete: {
+    border: brandColors.moss,
+    background: brandColors.successSoft,
+    icon: brandColors.forest,
+    text: brandColors.forest,
+  },
+} as const
+
+// Phase 3 (D-0 token slice, DS-06): shared pressed/disabled feedback for the new tap-first controls.
+export const brandInteraction = {
+  pressedScale: 0.97,
+  pressedOpacity: 0.9,
+  disabledOpacity: 0.4,
+  hitTarget: { min: 44 },
+} as const
+
+// Phase 3 (D-0 token slice, FLOW-09): parcel map polygon colors, readable in direct sunlight.
+// Selected outranks studied; studied outranks the free/neutral default.
+export const brandMapTokens = {
+  parcelSelected: brandColors.terracotta,
+  parcelSelectedFill: "rgba(205, 88, 51, 0.30)",
+  parcelStudied: brandColors.moss,
+  parcelStudiedFill: "rgba(137, 163, 58, 0.22)",
+  parcelNeutral: brandColors.sage,
+  parcelNeutralFill: "rgba(176, 199, 142, 0.16)",
+  userLocation: brandColors.mauve,
+  strokeWidthSelected: 3,
+  strokeWidthDefault: 2,
 } as const

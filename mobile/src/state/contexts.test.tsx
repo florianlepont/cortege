@@ -271,6 +271,8 @@ import {
 } from "./surveys-context"
 import { useSurveyFormState, type SurveyFormContextValue } from "./survey-form-context"
 import { useNearbyParcelsState, type NearbyParcelsContextValue } from "./nearby-parcels-context"
+import { useAutosaveStatus } from "./autosave-status-context"
+import type { AutosaveStatus } from "../hooks/useEditingDraft"
 
 type Snapshot = {
   session: SessionContextValue
@@ -281,6 +283,7 @@ type Snapshot = {
   form: SurveyFormContextValue
   surveyActions: SurveyActions
   nearby: NearbyParcelsContextValue
+  autosaveStatus: AutosaveStatus
 }
 
 const snapshots: Snapshot[] = []
@@ -295,6 +298,7 @@ function Probe() {
     form: useSurveyFormState(),
     surveyActions: useSurveyActions(),
     nearby: useNearbyParcelsState(),
+    autosaveStatus: useAutosaveStatus(),
   })
   return null
 }
@@ -340,6 +344,7 @@ describe("context hooks outside AppStateProvider", () => {
     ["useSurveyFormState", useSurveyFormState],
     ["useSurveyActions", useSurveyActions],
     ["useNearbyParcelsState", useNearbyParcelsState],
+    ["useAutosaveStatus", useAutosaveStatus],
   ] as const)("%s throws a clear error", async (name, hook) => {
     await expect(renderHook(() => hook())).rejects.toThrow(
       `${name} must be used inside AppStateProvider`,
@@ -388,6 +393,7 @@ describe("AppStateProvider", () => {
     expect(snapshot.surveys.state.ownSurveyIds).toEqual(["s-01"])
     expect(snapshot.surveys.state.surveyStats.total).toBe(1)
     expect(snapshot.form.state.siteName).toBe("")
+    expect(snapshot.autosaveStatus).toEqual({ state: "idle", savedAt: null })
   })
 
   test("calls useSurveySync exactly once per provider render", async () => {
@@ -420,6 +426,7 @@ describe("AppStateProvider", () => {
     expect(after.surveys).toBe(before.surveys)
     expect(after.form).toBe(before.form)
     expect(after.nearby).toBe(before.nearby)
+    expect(after.autosaveStatus).toBe(before.autosaveStatus)
   })
 
   test("a form keystroke changes only the form value", async () => {
@@ -438,6 +445,8 @@ describe("AppStateProvider", () => {
     // 01.9-18: the nearby parcels left the form value, so the home screen
     // does not re-render on a keystroke.
     expect(after.nearby).toBe(before.nearby)
+    // Phase 3, FLOW-07: autosave status has its own narrow context too.
+    expect(after.autosaveStatus).toBe(before.autosaveStatus)
   })
 
   test("the form value exposes the method version, cas and flag with their setters", () => {

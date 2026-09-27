@@ -45,6 +45,7 @@ export type SurveyFormActions = {
   saveSurveyEdits: () => Promise<boolean>
   createDraft: () => Promise<boolean>
   captureGpsLocation: () => Promise<GpsCaptureResult | null>
+  markSubmitAttempted: SurveyForm["markSubmitAttempted"]
 }
 
 export type SurveyFormContextValue = {

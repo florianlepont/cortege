@@ -3,15 +3,16 @@ import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
 import { FACTOR_TITLES } from "../../app/constants"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
-import { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
+import { FactorField, FactorKey, FactorProgress, FactorRetainedScore } from "../../app/types"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { FactorProgressRing } from "../../ui/FactorProgressRing"
 import { FACTOR_ICONS, FACTOR_ORDER } from "./components"
 import { factorStyles } from "./factors.styles"
 import { formStyles } from "./styles"
 import { fr } from "../../i18n"
 
-export type FactorProgress = { complete: boolean; filled: number; total: number; invalid: number }
+export type { FactorProgress } from "../../app/types"
 
 export function computeFactorProgress(
   factorSections: Record<FactorKey, FactorField[]>,
@@ -21,7 +22,9 @@ export function computeFactorProgress(
       const fields = factorSections[factor]
       const total = fields.length
       const filled = fields.filter((field) => field.value.trim().length > 0).length
-      const invalid = fields.filter((field) => Boolean(field.error)).length
+      // FLOW-02: an untouched, never-opened factor is neutral, not a warning — only a field the
+      // user has actually left (or a submission attempt) counts toward the tile's invalid state.
+      const invalid = fields.filter((field) => field.touched && Boolean(field.error)).length
       acc[factor] = {
         complete: total > 0 && filled === total && invalid === 0,
         filled,
@@ -54,16 +57,6 @@ export function FactorTile({
     : progress.invalid > 0
       ? factorStyles.factorTileWarning
       : factorStyles.factorTilePending
-  const iconName = progress.complete
-    ? "checkmark-circle"
-    : progress.invalid > 0
-      ? "alert-circle"
-      : "ellipse-outline"
-  const iconColor = progress.complete
-    ? brandColors.forest
-    : progress.invalid > 0
-      ? brandColors.terracotta
-      : brandColors.textSecondary
 
   const stateText = retainedScore
     ? fr.surveyForm.factors.retainedScore({
@@ -90,7 +83,12 @@ export function FactorTile({
             <Ionicons name={factorIcon} size={16} color={brandColors.forest} />
           </View>
         </View>
-        <Ionicons name={iconName} size={16} color={iconColor} />
+        <FactorProgressRing
+          progress={progress.total > 0 ? progress.filled / progress.total : 0}
+          complete={progress.complete}
+          hasError={progress.invalid > 0}
+          size={20}
+        />
       </View>
       <Text numberOfLines={2} style={factorStyles.factorTileTitle}>
         {title}

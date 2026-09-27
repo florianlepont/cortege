@@ -11,7 +11,13 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 
-const mockPlatform = { OS: "android" as "android" | "ios" }
+const mockPlatform = {
+  OS: "android" as "android" | "ios",
+  select: <T,>(options: { android?: T; ios?: T; default?: T }): T | undefined =>
+    mockPlatform.OS === "android"
+      ? (options.android ?? options.default)
+      : (options.ios ?? options.default),
+}
 
 jest.mock("react-native", () => ({
   Platform: mockPlatform,
@@ -19,6 +25,8 @@ jest.mock("react-native", () => ({
   View: "View",
   ScrollView: "ScrollView",
   KeyboardAvoidingView: "KeyboardAvoidingView",
+  Pressable: "Pressable",
+  Text: "Text",
 }))
 
 jest.mock("react-native-safe-area-context", () => ({
@@ -85,8 +93,10 @@ jest.mock("../../hooks/usePublicMapExplorer", () => ({
 }))
 
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import type { AutosaveStatus } from "../../hooks/useEditingDraft"
 import { fr, type StatusMessage } from "../../i18n"
 import type { SurveyFormMethod } from "../../screens/survey-form/MethodVersionPicker"
+import { AutosaveStatusProvider } from "../../state/autosave-status-context"
 import { AccessTokenProvider, SessionProvider } from "../../state/session-context"
 import type { SessionContextValue } from "../../state/session-context"
 import { StatusProvider } from "../../state/status-context"
@@ -136,6 +146,7 @@ type Fixture = {
   surveys: SurveysContextValue
   form: SurveyFormContextValue
   nearby: NearbyParcelsContextValue
+  autosaveStatus: AutosaveStatus
 }
 
 const survey = {
@@ -222,8 +233,42 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
         ibpCas3Scale: false,
         gpsLocation: { lat: "", lng: "", collected_at: "" },
         selectedParcelIds: ["p-1"],
-        factorSections: { A: [{ key: "a1" }] },
-        factorRetainedScores: { A: null },
+        // FactorPager (phase 3) computes progress across every factor, so B-J need a valid
+        // (empty) array too, even though this suite only exercises factor A.
+        factorSections: {
+          A: [
+            {
+              key: "a1",
+              label: "a1",
+              value: "",
+              onChange: jest.fn(),
+              error: null,
+              touched: false,
+              onTouch: jest.fn(),
+            },
+          ],
+          B: [],
+          C: [],
+          D: [],
+          E: [],
+          F: [],
+          G: [],
+          H: [],
+          I: [],
+          J: [],
+        },
+        factorRetainedScores: {
+          A: null,
+          B: null,
+          C: null,
+          D: null,
+          E: null,
+          F: null,
+          G: null,
+          H: null,
+          I: null,
+          J: null,
+        },
         formErrors: { siteName: null },
         draftInput: {},
         formMode: "create",
@@ -241,6 +286,7 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
       },
       load: jest.fn(async () => undefined),
     },
+    autosaveStatus: { state: "idle", savedAt: null },
   }
 }
 
@@ -253,7 +299,9 @@ function Providers({ fixture, children }: { fixture: Fixture; children: React.Re
             <SurveysProvider value={fixture.surveys}>
               <SurveyActionsProvider value={fixture.surveys.actions}>
                 <SurveyFormProvider value={fixture.form}>
-                  <NearbyParcelsProvider value={fixture.nearby}>{children}</NearbyParcelsProvider>
+                  <AutosaveStatusProvider value={fixture.autosaveStatus}>
+                    <NearbyParcelsProvider value={fixture.nearby}>{children}</NearbyParcelsProvider>
+                  </AutosaveStatusProvider>
                 </SurveyFormProvider>
               </SurveyActionsProvider>
             </SurveysProvider>

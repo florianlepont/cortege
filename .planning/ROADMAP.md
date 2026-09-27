@@ -48,7 +48,7 @@ list is never ambiguous.
 - [x] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested (completed 2026-09-27)
 - [x] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs (completed 2026-09-27)
 - [x] **Phase 2: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI; the UX audit's Lot 0 trust bugs (score scale, sync-status masking, account-deletion copy, tab icon, status bar, pull-to-refresh, contrast) are folded in (completed 2026-09-27; decimal input (BUG-04) deferred to Phase 3, see `02-VALIDATION.md`)
-- [ ] **Phase 3: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions
+- [x] **Phase 3: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions (completed 2026-09-27)
 - [ ] **Phase 4: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls
 - [ ] **Phase 5: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec
 - [ ] **Phase 6: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
@@ -402,8 +402,13 @@ Plans:
   5. The decimal comma is accepted in every numeric entry point that remains; autosave is visible ("Enregistré · 14:32") instead of implied by a "Save draft" label that suggests a manual step.
   6. The parcel map's selected/studied/free states use accessible, on-brand colors readable in direct sunlight, and parcel selection is also offered as a "Parcels near you" native sheet.
 
-**Plans**: TBD
+**Plans**: 6 batches, executed and closed directly (no separate orchestrator/executor split for
+this phase) — see `.planning/phases/03-field-entry-ergonomics/03-CONTEXT.md` and its
+`03-0N-SUMMARY.md` files for what each batch shipped and its test evidence.
 **UI hint**: yes
+**Status**: Complete (2026-09-27). All 7 success criteria met; scope decisions (Factor A and F stay
+numeric, B is chips not slider, the CTA is not renamed to "Vérifier et soumettre") are recorded in
+`03-CONTEXT.md`.
 
 ### Phase 4: Visual Foundations & Motion (INSERTED, UX audit Lot 2)
 
@@ -589,7 +594,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.8. Shared IBP domain package and test completeness | 16/16 | Complete    | 2026-09-27 |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 32/32 | Complete    | 2026-09-27 |
 | 2. Association-only sharing & scope trim | 5/5 | Complete (BUG-04 deferred) | 2026-09-27 |
-| 3. Field-Entry Ergonomics (UX Lot 1) | 0/TBD | Not started | - |
+| 3. Field-Entry Ergonomics (UX Lot 1) | 6/6 | Complete   | 2026-09-27 |
 | 4. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
 | 5. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
 | 6. Genus Recognition for Factor A | 0/TBD | Not started | - |

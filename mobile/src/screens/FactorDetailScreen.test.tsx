@@ -67,12 +67,15 @@ type Node = renderer.ReactTestInstance
 const textOf = (node: Node): string =>
   node.children.map((child) => (typeof child === "string" ? child : textOf(child))).join("")
 
-const field = (label: string): FactorField => ({
+const field = (label: string, overrides: Partial<FactorField> = {}): FactorField => ({
   label,
   value: "",
   onChange: jest.fn(),
   required: true,
   error: null,
+  touched: false,
+  onTouch: jest.fn(),
+  ...overrides,
 })
 
 const renderDetail = (
@@ -93,7 +96,13 @@ const renderDetail = (
   })
   // Open the capture help so the input hints render.
   act(() => {
-    tree.root.findByType("Pressable" as unknown as React.ElementType).props.onPress()
+    tree.root
+      .findAll(
+        (node) =>
+          (node.type as unknown) === "Pressable" &&
+          node.props.accessibilityLabel === fr.factorDetail.captureToggle,
+      )[0]
+      .props.onPress()
   })
   const texts = tree.root
     .findAllByType("Text" as unknown as React.ElementType)
@@ -137,10 +146,47 @@ describe("FactorDetailScreen fields", () => {
     ])
   })
 
-  test("B renders the strata count only", () => {
+  test("B renders no AppField (chips variant, FLOW-01)", () => {
     const { inputs } = renderDetail("B", [field("strata_count")], IBP_METHOD_V3_2)
-    expect(inputs.map((input) => input.props.label)).toEqual([
-      fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.strata_count }),
-    ])
+    expect(inputs).toHaveLength(0)
+  })
+
+  test("B renders one chip per strata tier", () => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor="B"
+          fields={[field("strata_count")]}
+          retainedScore={null}
+          methodVersion={IBP_METHOD_V3_2}
+        />,
+      )
+    })
+    const chips = tree.root.findAll(
+      (node) =>
+        (node.type as unknown) === "Pressable" &&
+        node.props.accessibilityState &&
+        "selected" in node.props.accessibilityState,
+    )
+    expect(chips).toHaveLength(fr.factorInput.strataOptions.length)
+  })
+
+  test("C renders two counters and one numeric surface field", () => {
+    const { inputs } = renderDetail(
+      "C",
+      [field("bmg_count"), field("bmm_count"), field("surface_ha")],
+      IBP_METHOD_V3_2,
+    )
+    // Only the numeric surface_ha field renders as an AppField; the two counts are counters.
+    expect(inputs).toHaveLength(1)
+    expect(inputs[0].props.label).toBe(
+      fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.surface_ha }),
+    )
+  })
+
+  test("H renders no AppField (segmented variant, 0/2/5 only)", () => {
+    const { inputs } = renderDetail("H", [field("class_score")], IBP_METHOD_V3_2)
+    expect(inputs).toHaveLength(0)
   })
 })
