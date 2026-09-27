@@ -7,6 +7,7 @@ import React, { useState } from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { PublicMapItem } from "../../app/types"
+import { brandMapTokens } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { ClusterListSheet } from "./ClusterListSheet"
 import { ClusterMarker } from "./ClusterMarker"
@@ -177,6 +178,56 @@ describe("SurveyMarker", () => {
     expect(props.accessibilityLabel).toBe(fr.publicMap.a11y.surveyMarker(27))
     expect(String(props.accessibilityLabel)).not.toContain("s-42")
     expect(props.coordinate).toEqual(COORDINATE)
+  })
+
+  // MAP-03: the pastille is coloured by the IBP total's score band, not a single system pin color.
+  test.each([
+    [5, "low"],
+    [25, "mid"],
+    [45, "high"],
+  ] as const)("an IBP total of %i colours the pastille %s", (ibpTotal, tone) => {
+    const tree = mount(
+      <SurveyMarker
+        id="s-1"
+        coordinate={COORDINATE}
+        ibpTotal={ibpTotal}
+        selected={false}
+        onSelect={jest.fn()}
+      />,
+    )
+    const pastille = tree.root.findByType("View" as never)
+    const flatStyle = [pastille.props.style].flat(2)
+    expect(flatStyle).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ backgroundColor: brandMapTokens.scoreMarker[tone] }),
+      ]),
+    )
+  })
+
+  test("a selected marker's pastille carries the selected style", () => {
+    const tree = mount(
+      <SurveyMarker id="s-1" coordinate={COORDINATE} ibpTotal={30} selected onSelect={jest.fn()} />,
+    )
+    const pastille = tree.root.findByType("View" as never)
+    const flatStyle = [pastille.props.style].flat(2)
+    expect(flatStyle).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ borderColor: brandMapTokens.scoreMarkerSelectedBorder }),
+      ]),
+    )
+  })
+
+  test("tracksViewChanges is false", () => {
+    const tree = mount(
+      <SurveyMarker
+        id="s-1"
+        coordinate={COORDINATE}
+        ibpTotal={30}
+        selected={false}
+        onSelect={jest.fn()}
+      />,
+    )
+    expect(markerProps(tree).tracksViewChanges).toBe(false)
   })
 })
 

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef } from "react"
 import type { ReactNode } from "react"
+import { StyleSheet } from "react-native"
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet"
-import { sheetStyles as styles } from "./styles"
+import { brandColors, brandRadius } from "../../app/brand-tokens"
 
 // MAP-01: the tiered sheet (2 detents — half and nearly full) replacing the absolutely-positioned
 // AppCards for the selected survey, a cluster's list and a parcel's history. Closed (index -1, no
@@ -51,3 +52,23 @@ export function ExplorerSheet({ visible, onDismiss, children }: ExplorerSheetPro
     </BottomSheet>
   )
 }
+
+// MAP-01: the tiered sheet's own chrome (background, drag handle) — the content components it
+// hosts (SelectedSurveyCard, ClusterListSheet, ParcelHistoryCard) no longer draw their own
+// card/position.
+const styles = StyleSheet.create({
+  background: {
+    backgroundColor: brandColors.panel,
+    borderTopLeftRadius: brandRadius.panel,
+    borderTopRightRadius: brandRadius.panel,
+  },
+  handleIndicator: {
+    backgroundColor: brandColors.divider,
+    width: 44,
+  },
+  content: {
+    paddingHorizontal: 18,
+    paddingBottom: 24,
+    gap: 12,
+  },
+})

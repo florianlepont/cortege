@@ -10,7 +10,6 @@ export const publicMapFr = {
   count: (count: number) =>
     count === 0 ? "Aucun relevé" : `${count} ${plural(count, "relevé", "relevés")}`,
   empty: "Aucun relevé dans cette zone",
-  currentPosition: "Votre position",
   layer: {
     hidden: "Parcelles masquées",
     loading: "Chargement du cadastre",
@@ -57,6 +56,13 @@ export const publicMapFr = {
   cluster: {
     count: (count: number) => (count > 99 ? "99+" : String(count)),
   },
+  // MAP-03: the score-band pastille legend, collapsible.
+  legend: {
+    title: "Légende",
+    low: "Score faible",
+    mid: "Score moyen",
+    high: "Score élevé",
+  },
   alerts: {
     locationDisabled: {
       title: "Localisation désactivée",
@@ -80,6 +86,8 @@ export const publicMapFr = {
     closeSelection: "Fermer le relevé sélectionné",
     closeClusterList: "Fermer la liste des relevés",
     closeParcelHistory: "Fermer l'historique de la parcelle",
+    showLegend: "Afficher la légende des scores",
+    hideLegend: "Masquer la légende des scores",
     surveyMarker: (ibp: number) => `Relevé, IBP ${ibp}/50`,
     cluster: (count: number) => `Groupe de ${count} ${plural(count, "relevé", "relevés")}`,
     clusterListItem: ({ ibp, date, region }: { ibp: number; date: string; region: string }) =>

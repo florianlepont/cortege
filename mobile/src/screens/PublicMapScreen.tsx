@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Alert, View } from "react-native"
 import type MapView from "react-native-maps"
-import type { LatLng, Region } from "react-native-maps"
+import type { Region } from "react-native-maps"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
@@ -21,6 +21,7 @@ import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
 import { computePeriodRange, type PeriodKey } from "./public-map/period-filter"
+import { ScoreLegend } from "./public-map/ScoreLegend"
 import { SelectedSurveyCard } from "./public-map/SelectedSurveyCard"
 import { screenStyles } from "./public-map/styles"
 import { PARCEL_MIN_ZOOM, useMapViewport } from "./public-map/useMapViewport"
@@ -98,7 +99,6 @@ export function PublicMapScreen({
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null)
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
   const [locating, setLocating] = useState(false)
-  const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null)
   // MAP-02: period/region are chips applied immediately; "mes relevés" is a pure client-side
   // filter over the already-loaded items (no API parameter for it).
   const [period, setPeriod] = useState<PeriodKey>("all")
@@ -247,7 +247,6 @@ export function PublicMapScreen({
         accuracy: Location.Accuracy.Balanced,
       })
       const { latitude, longitude } = position.coords
-      setCurrentLocation({ latitude, longitude })
       moveTo({ latitude, longitude, latitudeDelta: LOCATE_SPAN, longitudeDelta: LOCATE_SPAN }, 450)
     } catch (_error) {
       Alert.alert(t.alerts.locationUnavailable.title, t.alerts.locationUnavailable.message)
@@ -289,7 +288,6 @@ export function PublicMapScreen({
         selectedId={selectedItem?.survey_id ?? null}
         parcelStatuses={parcelStatuses}
         parcelLayerRenderable={viewport.parcelLayerRenderable}
-        currentLocation={currentLocation}
         onRegionChangeComplete={viewport.onRegionChangeComplete}
         onSelectSurvey={handleSelectSurvey}
         onSelectParcel={handleSelectParcel}
@@ -323,6 +321,8 @@ export function PublicMapScreen({
         locating={locating}
         onLocate={onLocate}
       />
+
+      <ScoreLegend bottom={Math.max(84, dockBottom + 74)} />
 
       {showOfflineAreas ? (
         <OfflineAreasSheet

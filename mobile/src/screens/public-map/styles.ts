@@ -8,13 +8,6 @@ import {
   brandTypography,
 } from "../../app/brand-tokens"
 
-// Pin colours of the public map markers.
-export const markerColors = {
-  survey: brandMapTokens.publicMarkerSurvey,
-  selected: brandColors.terracotta,
-  currentPosition: brandMapTokens.publicMarkerCurrentPosition,
-} as const
-
 const PANEL_BACKGROUND = brandTranslucentPanel.default
 
 const roundButton = {
@@ -43,6 +36,31 @@ export const markerStyles = StyleSheet.create({
   clusterText: {
     ...brandTypography.label,
     color: brandColors.white,
+  },
+  // MAP-03: the score-band pastille that replaces the system pin color.
+  scorePastille: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: brandColors.white,
+    ...brandShadow.card,
+  },
+  scorePastille_low: {
+    backgroundColor: brandMapTokens.scoreMarker.low,
+  },
+  scorePastille_mid: {
+    backgroundColor: brandMapTokens.scoreMarker.mid,
+  },
+  scorePastille_high: {
+    backgroundColor: brandMapTokens.scoreMarker.high,
+  },
+  scorePastilleSelected: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 3,
+    borderColor: brandMapTokens.scoreMarkerSelectedBorder,
   },
 })
 
@@ -307,25 +325,6 @@ export const offlineIndicatorStyles = StyleSheet.create({
   },
   basemapOptionTextActive: {
     color: brandColors.white,
-  },
-})
-
-// MAP-01: the tiered sheet's own chrome (background, drag handle) — the content components below
-// (SelectedSurveyCard, ClusterListSheet, ParcelHistoryCard) no longer draw their own card/position.
-export const sheetStyles = StyleSheet.create({
-  background: {
-    backgroundColor: brandColors.panel,
-    borderTopLeftRadius: brandRadius.panel,
-    borderTopRightRadius: brandRadius.panel,
-  },
-  handleIndicator: {
-    backgroundColor: brandColors.divider,
-    width: 44,
-  },
-  content: {
-    paddingHorizontal: 18,
-    paddingBottom: 24,
-    gap: 12,
   },
 })
 

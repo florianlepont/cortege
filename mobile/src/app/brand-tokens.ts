@@ -469,10 +469,16 @@ export const brandMapTokens = {
   userLocation: brandColors.mauve,
   strokeWidthSelected: 3,
   strokeWidthDefault: 2,
-  // Phase 4 (DS-04): the public map's pin colors, tokenized as-is — MAP-03's actual redesign
-  // (score-band markers with a legend) is Phase 9's job, not this phase's.
-  publicMarkerSurvey: "#2a7a52",
-  publicMarkerCurrentPosition: "#245f96",
+  // Phase 9 (MAP-03): the public map's survey markers, by IBP total score band tone (bandTone
+  // applied to totalBand — the same 3-tone split IbpScoreBadge already reads its colors from,
+  // here as the saturated hue itself rather than a soft background). MAP-04: the device's own
+  // position is `showsUserLocation`'s native halo, not a marker — no token needed for it.
+  scoreMarker: {
+    low: brandColors.terracotta,
+    mid: brandColors.ochre,
+    high: brandColors.moss,
+  },
+  scoreMarkerSelectedBorder: brandColors.forest,
 } as const
 
 // Phase 4 (DS-06..DS-09, audit §4): the motion system. Kept as plain data (durations in ms, easing

@@ -438,6 +438,8 @@ describe("PublicMapScreen", () => {
 
       // Zoom in to parcel level: the cadastre loads after the debounce.
       const map = tree.root.find((node) => (node.type as unknown) === "MapView")
+      // MAP-04: the device's position is the native halo, not a custom marker.
+      expect(map.props.showsUserLocation).toBe(true)
       act(() =>
         map.props.onRegionChangeComplete(
           { latitude: 45.76, longitude: 4.84, latitudeDelta: 0.004, longitudeDelta: 0.004 },
@@ -494,14 +496,11 @@ describe("PublicMapScreen", () => {
       coords: { latitude: 45.1, longitude: 5.2 },
     })
     await press()
+    // MAP-04: the device's own position is the native showsUserLocation halo, not an app Marker.
     expect(mockAnimateToRegion).toHaveBeenLastCalledWith(
       { latitude: 45.1, longitude: 5.2, latitudeDelta: 0.012, longitudeDelta: 0.012 },
       450,
     )
-    const position = markers().find(
-      (node) => node.props.title === fr.publicMap.currentPosition,
-    ) as ReactTestInstance
-    expect(position.props.coordinate).toEqual({ latitude: 45.1, longitude: 5.2 })
   })
 
   test("a second locate press while locating is ignored", async () => {
