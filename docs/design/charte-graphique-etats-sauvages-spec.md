@@ -132,3 +132,64 @@ Create/maintain a single token file (`mobile/src/app/brand-tokens.ts`) containin
 - Any non-charter color must be explicitly approved (PR + rationale).
 - Any new component variant must reference existing design tokens.
 - This spec is authoritative for UI decisions until a newer charter version is published.
+
+## 11) Field-Entry Patterns (Phase 3, 2026-09-27)
+
+Phase 3 ("Field-Entry Ergonomics", UX audit Lot 1) shipped its own minimal token slice and a set of
+new field-entry components. Documented here so this spec matches what the app actually does; Phase 4
+("Visual Foundations & Motion") builds the rest of the design system on top of this slice rather than
+redoing it.
+
+### 11.1 Token slice (`mobile/src/app/brand-tokens.ts`)
+- `brandSpacing4`: a strict 4-grid (`xxs 2, xs 4, sm 8, smd 12, md 16, lg 24, xl 32, xxl 48`),
+  additive to the existing `brandSpacing` aliases (which stay in place during the migration).
+- `brandFieldState`: the three states any field-entry control renders — `empty` (neutral),
+  `error` (terracotta, only shown once a field is touched or submission is attempted), `complete`
+  (moss). Never encodes state by color alone: each state also has a distinct icon
+  (`checkmark-circle` / `alert-circle`) and text.
+- `brandInteraction`: `pressedScale 0.97`, `pressedOpacity 0.9`, `disabledOpacity 0.4`,
+  `hitTarget.min 44`.
+- `brandMapTokens`: parcel map polygon colors — `parcelSelected` (terracotta, 3px stroke),
+  `parcelStudied` (moss), `parcelNeutral` (sage, 2px stroke), plus their fill variants and
+  `userLocation`. Selected outranks studied outranks neutral.
+
+### 11.2 `FactorInput` (`mobile/src/ui/Factor{Counter,Segmented,Chips,Slider}Input.tsx`)
+Four variants, all sharing `FactorInputShell`'s tri-state border/icon/error rendering
+(`resolveFactorInputState(hasValue, showError)`, where `showError` is always the caller's own
+`touched && Boolean(error)` — no variant ever shows an error before the field has been left or
+submission attempted):
+- **Counter** (`FactorCounterInput`): 56pt −/+ targets with long-press acceleration; tapping the
+  number opens a comma-accepting text fallback for values a tap count would be tedious for.
+- **Segmented control** (`FactorSegmentedInput`): a single-select row of pills, generic
+  `options: {value,label}[]`.
+- **Chips** (`FactorChipsInput`): checkable chips (built on `AppChoiceChip`) with a count derived
+  from the selection, generic enough to be reused for a future genus-list input.
+- **Slider** (`FactorSliderInput`): a draggable/tappable track in configurable steps (5% for the
+  IBP factors that use it), plus explicit ±step buttons so the control works without fine gesture
+  control (gloves, direct sunlight).
+
+### 11.3 Factor pager (`mobile/src/screens/survey-form/FactorPager.tsx`)
+A horizontal pager (A→J) with a fixed footer control: prev/next chevrons, a position indicator,
+per-factor tone dots (tap to jump), and a "next incomplete factor" shortcut
+(`factor-pager.ts`'s `findNextIncompleteFactorIndex`). Replaces the previous per-factor stack
+screen, which required returning to the factor grid between every pair of factors.
+
+### 11.4 Fixed action bar (`mobile/src/screens/survey-form/FixedActionBar.tsx`)
+A bottom bar fixed outside the scrolling content (not a CTA at the end of a long scroll) carrying
+the step's primary CTA and, on the factors step, the visible autosave line ("Enregistré · 14:32",
+"Enregistrement…", or "Échec de l'enregistrement" in terracotta) — replacing a "Save draft" label
+that implied a manual step where autosave already runs.
+
+### 11.5 Progress ring and total gauge
+- `FactorProgressRing` (`mobile/src/ui/FactorProgressRing.tsx`): an SVG ring (`react-native-svg`)
+  that fills as a factor's fields are completed and morphs into a check mark once done. Used in the
+  2×5 factor summary grid.
+- `IbpTotalGauge` (`mobile/src/ui/IbpTotalGauge.tsx`): a 10-segment gauge (one bar per factor,
+  colored by that factor's state) plus the running score total, rendered on every wizard step (not
+  only the factors step), so the total is visible from the first screen.
+
+### 11.6 "Parcels near you" sheet
+`NearbyParcelsSheet` (`mobile/src/screens/survey-form/NearbyParcelsSheet.tsx`): a native `Modal`
+(`presentationStyle="pageSheet"` on iOS) offered as an alternative to tapping a polygon on the map,
+with 56pt checkable rows. Reuses the existing `useNearbyParcelsState()` context rather than a
+separate fetch.
