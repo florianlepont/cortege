@@ -1,5 +1,15 @@
 import { Platform, StyleSheet } from "react-native"
-import { brandColors, brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandComponentTokens,
+  brandMediaBackdrop,
+  brandOnDangerSurface,
+  brandRadius,
+  brandSemanticColors,
+  brandShadow,
+  brandTranslucentPanel,
+  brandTypography,
+} from "../../app/brand-tokens"
 
 export const parcelStyles = StyleSheet.create({
   parcelHeaderRow: {
@@ -40,8 +50,8 @@ export const parcelStyles = StyleSheet.create({
     gap: 6,
     borderRadius: brandRadius.pill,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.24)",
-    backgroundColor: "rgba(22, 47, 31, 0.76)",
+    borderColor: brandSemanticColors.heroBorderStrongOnDark,
+    backgroundColor: brandSemanticColors.heroScrimOnDark,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
@@ -74,7 +84,7 @@ export const parcelStyles = StyleSheet.create({
   },
   fullscreenMapScreen: {
     flex: 1,
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
   },
   fullscreenMap: {
     flex: 1,
@@ -94,7 +104,7 @@ export const parcelStyles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     borderColor: brandColors.divider,
-    backgroundColor: "rgba(247, 246, 240, 0.96)",
+    backgroundColor: brandTranslucentPanel.default,
     paddingHorizontal: 12,
     paddingVertical: Platform.select({ ios: 6, default: 10 }),
   },
@@ -110,8 +120,8 @@ export const parcelStyles = StyleSheet.create({
     gap: 8,
     borderRadius: brandRadius.pill,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.24)",
-    backgroundColor: "rgba(8, 13, 19, 0.72)",
+    borderColor: brandSemanticColors.heroBorderStrongOnDark,
+    backgroundColor: brandSemanticColors.heroScrimOnDark,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
@@ -128,7 +138,7 @@ export const parcelStyles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     borderWidth: 1,
-    borderColor: "#8EA97C",
+    borderColor: brandColors.sage,
     backgroundColor: brandColors.forest,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -146,7 +156,7 @@ export const parcelStyles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: brandColors.divider,
-    backgroundColor: "rgba(247, 246, 240, 0.97)",
+    backgroundColor: brandTranslucentPanel.strong,
     paddingHorizontal: 16,
     paddingVertical: 16,
     gap: 8,
@@ -174,14 +184,14 @@ export const parcelStyles = StyleSheet.create({
     gap: 8,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E7B8AA",
-    backgroundColor: "#F6E1DA",
+    borderColor: brandComponentTokens.notice.dangerBorder,
+    backgroundColor: brandColors.errorSoft,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   fullscreenMapWarningText: {
     flex: 1,
     ...brandTypography.meta,
-    color: brandColors.terracotta,
+    color: brandOnDangerSurface,
   },
 })

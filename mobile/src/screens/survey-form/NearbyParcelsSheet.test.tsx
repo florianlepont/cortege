@@ -54,7 +54,7 @@ jest.mock("react-native", () => {
   }
 })
 
-jest.mock("../survey-list/haptics", () => ({ triggerHaptic: jest.fn() }))
+jest.mock("../../ui/feedback", () => ({ feedback: { selection: jest.fn() } }))
 
 jest.mock("../../ui/AppNotice", () => {
   const ReactRef = require("react") as typeof import("react")

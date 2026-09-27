@@ -7,9 +7,9 @@ import {
   ImageSourcePropType,
   StatusBar,
   StyleSheet,
-  Text,
   View,
 } from "react-native"
+import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   brandColors,

@@ -1,14 +1,15 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   Animated,
+  AppState,
   Easing,
   Image,
   ImageSourcePropType,
   Pressable,
-  Text,
   View,
   useWindowDimensions,
 } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { brandSpacing } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { authStyles, PANEL_OVERLAP } from "./styles"
@@ -63,9 +64,20 @@ export function HeroSection({
   const blob1Anim = useRef(new Animated.Value(0)).current
   const blob2Anim = useRef(new Animated.Value(0)).current
   const blob3Anim = useRef(new Animated.Value(0)).current
+  // Audit §4: decorative loops stop when "Reduce Motion" is on and pause while backgrounded —
+  // this is the app's one ambient decorative loop still on the legacy Animated API (useNativeDriver:
+  // true already runs it off the JS thread, so it isn't part of the DS-07 Reanimated migration).
+  const [isForegrounded, setIsForegrounded] = useState(AppState.currentState === "active")
 
   useEffect(() => {
-    if (reducedMotion) return
+    const subscription = AppState.addEventListener("change", (state) => {
+      setIsForegrounded(state === "active")
+    })
+    return () => subscription.remove()
+  }, [])
+
+  useEffect(() => {
+    if (reducedMotion || !isForegrounded) return
 
     const animations: Animated.CompositeAnimation[] = []
     const timers: ReturnType<typeof setTimeout>[] = []
@@ -91,7 +103,7 @@ export function HeroSection({
       timers.forEach(clearTimeout)
       animations.forEach((a) => a.stop())
     }
-  }, [blob1Anim, blob2Anim, blob3Anim, reducedMotion])
+  }, [blob1Anim, blob2Anim, blob3Anim, reducedMotion, isForegrounded])
 
   const logoImage = logoSource ? (
     <Animated.Image

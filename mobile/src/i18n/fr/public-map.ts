@@ -8,10 +8,8 @@ const plural = (count: number, one: string, many: string) => (count > 1 ? many :
 export const publicMapFr = {
   badge: "Explorer",
   count: (count: number) =>
-    count === 0
-      ? "Aucun relevé public"
-      : `${count} ${plural(count, "relevé public", "relevés publics")}`,
-  empty: "Aucun relevé public dans cette zone",
+    count === 0 ? "Aucun relevé" : `${count} ${plural(count, "relevé", "relevés")}`,
+  empty: "Aucun relevé dans cette zone",
   currentPosition: "Votre position",
   layer: {
     hidden: "Parcelles masquées",
@@ -21,7 +19,7 @@ export const publicMapFr = {
   },
   filters: {
     title: "Filtres",
-    subtitle: "Affinez les relevés publiés sans quitter la carte.",
+    subtitle: "Affinez les relevés soumis sans quitter la carte.",
     from: "Du",
     to: "Au",
     region: "Région",
@@ -34,21 +32,16 @@ export const publicMapFr = {
     applying: "Actualisation…",
   },
   selected: {
-    title: (ibp: number) => `Relevé public · IBP ${ibp}/50`,
+    title: (ibp: number) => `Relevé · IBP ${ibp}/50`,
     meta: ({ region, date }: { region: string; date: string }) => `${region} · ${date}`,
-    ownSurvey: "Vous ne pouvez pas signaler votre propre relevé.",
-    report: "Signaler ce relevé",
-    reasonLabel: "Motif (obligatoire)",
-    reasonPlaceholder: "Expliquez pourquoi ce relevé semble suspect",
-    send: "Envoyer le signalement",
-    sending: "Envoi…",
+    ownSurvey: "C'est votre propre relevé.",
   },
   clusterList: {
     title: (count: number) => `${count} ${plural(count, "relevé", "relevés")} à cet endroit`,
-    subtitle: "Les positions publiques sont arrondies à environ 1 km.",
+    subtitle: "Les positions sont arrondies à environ 1 km.",
     row: ({ ibp, date }: { ibp: number; date: string }) => `IBP ${ibp}/50 · ${date}`,
   },
-  // Method version of a public survey (D-10) and its v3.2 cas, shown where v3.0 shows the region.
+  // Method version of a survey (D-10) and its v3.2 cas, shown where v3.0 shows the region.
   method: {
     v3_0: "IBP v3.0",
     v3_2: "IBP v3.2",
@@ -76,9 +69,10 @@ export const publicMapFr = {
     locate: "Centrer la carte sur ma position",
     closeSelection: "Fermer le relevé sélectionné",
     closeClusterList: "Fermer la liste des relevés",
-    surveyMarker: (ibp: number) => `Relevé public, IBP ${ibp}/50`,
+    closeParcelHistory: "Fermer l'historique de la parcelle",
+    surveyMarker: (ibp: number) => `Relevé, IBP ${ibp}/50`,
     cluster: (count: number) => `Groupe de ${count} ${plural(count, "relevé", "relevés")}`,
     clusterListItem: ({ ibp, date, region }: { ibp: number; date: string; region: string }) =>
-      `Relevé public, IBP ${ibp}/50, ${date}, ${region}`,
+      `Relevé, IBP ${ibp}/50, ${date}, ${region}`,
   },
 } as const

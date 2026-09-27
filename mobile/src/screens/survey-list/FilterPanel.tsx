@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { brandColors } from "../../app/brand-tokens"
 import type {
   SurveyAttachmentFilter,

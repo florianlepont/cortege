@@ -1,12 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
   brandRadius,
   brandSemanticColors,
+  brandStatTileTint,
   brandTypography,
 } from "../../app/brand-tokens"
-import { triggerHaptic } from "./haptics"
+import { feedback } from "../../ui/feedback"
 
 // P3-PERSON-05: severity prop for visual differentiation
 export type StatTileSeverity = "neutral" | "warning" | "danger"
@@ -29,21 +31,21 @@ export function StatTile({
 }: StatTileProps) {
   const chipBg =
     severity === "danger"
-      ? "rgba(205,88,51,0.20)"
+      ? brandStatTileTint.dangerSoft
       : severity === "warning"
-        ? "rgba(204,112,31,0.20)"
+        ? brandStatTileTint.warningSoft
         : brandSemanticColors.heroPanelBackgroundOnDark
   const chipBorder =
     severity === "danger"
-      ? "rgba(205,88,51,0.40)"
+      ? brandStatTileTint.dangerStrong
       : severity === "warning"
-        ? "rgba(204,112,31,0.40)"
+        ? brandStatTileTint.warningStrong
         : brandSemanticColors.heroPanelBorderOnDark
 
   return (
     <Pressable
       onPress={() => {
-        triggerHaptic()
+        feedback.selection()
         onPress()
       }}
       style={({ pressed }) => [pressed && styles.statTilePressed]}
@@ -55,7 +57,7 @@ export function StatTile({
           {value} {label}
         </Text>
         {/* P1-A11Y-01: subtle funnel affordance hinting the tile is interactive */}
-        <Ionicons name="funnel-outline" size={9} color="rgba(255,255,255,0.50)" />
+        <Ionicons name="funnel-outline" size={9} color={brandSemanticColors.haloOnDark} />
       </View>
     </Pressable>
   )

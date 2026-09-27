@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
@@ -9,6 +10,7 @@ import {
 } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
+import { AppPressable } from "../../ui/AppPressable"
 
 type DraftCardProps = {
   survey: LocalSurvey
@@ -43,7 +45,14 @@ export function DraftCard({ survey, onPress }: DraftCardProps) {
   const progressWidth = `${rate}%` as const
 
   return (
-    <Pressable style={styles.card} onPress={onPress} accessibilityRole="button">
+    <AppPressable
+      style={styles.card}
+      onPress={onPress}
+      accessibilityLabel={fr.components.draftCard.a11y({
+        name: survey.site_name || fr.common.untitledSurvey,
+        rate,
+      })}
+    >
       <View style={[styles.accent, { backgroundColor: accent }]} />
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={1}>
@@ -76,7 +85,7 @@ export function DraftCard({ survey, onPress }: DraftCardProps) {
           ) : null}
         </View>
       </View>
-    </Pressable>
+    </AppPressable>
   )
 }
 
@@ -148,10 +157,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
   },
+  // DS-02 (UX audit, Phase 2): terracotta on the card background measured ~3.85-4.17:1 at 10pt,
+  // under the AA floor for normal text; textPrimary clears it. The icon above stays terracotta.
   syncWarningText: {
     fontSize: 10,
     fontWeight: "600",
-    color: brandColors.terracotta,
+    color: brandColors.textPrimary,
   },
   syncPending: {
     opacity: 0.6,

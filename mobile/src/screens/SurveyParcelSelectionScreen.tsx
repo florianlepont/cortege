@@ -1,10 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+import { AppText as Text } from "../ui/AppText"
 import { useHeaderHeight } from "@react-navigation/elements"
 import MapView, { Marker, Region } from "react-native-maps"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
-import { brandColors, brandShadow, brandTypography } from "../app/brand-tokens"
+import {
+  brandColors,
+  brandMediaBackdrop,
+  brandShadow,
+  brandTranslucentPanel,
+  brandTypography,
+} from "../app/brand-tokens"
 import {
   DEFAULT_FRANCE_CENTER,
   areRegionsNearlyEqual,
@@ -24,6 +31,7 @@ const t = fr.parcelSelection
 
 type SurveyParcelSelectionScreenProps = {
   apiUrl: string
+  accessToken: string | null
   gpsLocation: {
     lat: string
     lng: string
@@ -38,6 +46,7 @@ type SurveyParcelSelectionScreenProps = {
 
 export function SurveyParcelSelectionScreen({
   apiUrl,
+  accessToken,
   gpsLocation,
   selectedParcelIds,
   onToggleParcelSelection,
@@ -68,6 +77,7 @@ export function SurveyParcelSelectionScreen({
   const mapZoom = useMemo(() => computeRegionZoom(mapRegion), [mapRegion])
   const { items: parcelStatuses, loading: parcelsLoading } = useParcelStatuses({
     apiUrl,
+    accessToken,
     region: mapRegion,
     enabled: true,
     year: new Date().getFullYear(),
@@ -214,11 +224,11 @@ export function SurveyParcelSelectionScreen({
 const screenStyles = StyleSheet.create({
   fullscreen: {
     flex: 1,
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
   },
   map: {
     flex: 1,
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
   },
   overlayLayer: {
     ...StyleSheet.absoluteFill,
@@ -233,11 +243,11 @@ const screenStyles = StyleSheet.create({
   },
   locateButton: {
     borderWidth: 1,
-    borderColor: "#8EA97C",
+    borderColor: brandColors.sage,
     ...brandShadow.card,
   },
   bottomSheet: {
-    backgroundColor: "rgba(247, 246, 240, 0.97)",
+    backgroundColor: brandTranslucentPanel.strong,
     gap: 8,
   },
   bottomTitle: {

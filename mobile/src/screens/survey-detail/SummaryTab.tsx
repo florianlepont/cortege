@@ -1,5 +1,6 @@
 import { ReactNode } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { formatDateTime } from "../../app/formatters"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"

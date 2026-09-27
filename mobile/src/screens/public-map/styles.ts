@@ -1,14 +1,21 @@
 import { StyleSheet } from "react-native"
-import { brandColors, brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandMapTokens,
+  brandRadius,
+  brandShadow,
+  brandTranslucentPanel,
+  brandTypography,
+} from "../../app/brand-tokens"
 
 // Pin colours of the public map markers.
 export const markerColors = {
-  survey: "#2a7a52",
+  survey: brandMapTokens.publicMarkerSurvey,
   selected: brandColors.terracotta,
-  currentPosition: "#245f96",
+  currentPosition: brandMapTokens.publicMarkerCurrentPosition,
 } as const
 
-const PANEL_BACKGROUND = "rgba(247, 246, 240, 0.96)"
+const PANEL_BACKGROUND = brandTranslucentPanel.default
 
 const roundButton = {
   width: 42,
@@ -81,7 +88,7 @@ export const controlStyles = StyleSheet.create({
     borderRadius: brandRadius.pill,
     borderWidth: 1,
     borderColor: brandColors.divider,
-    backgroundColor: "rgba(247, 246, 240, 0.94)",
+    backgroundColor: brandTranslucentPanel.subtle,
     paddingHorizontal: 12,
     paddingVertical: 10,
     ...brandShadow.card,
@@ -94,7 +101,7 @@ export const controlStyles = StyleSheet.create({
     borderRadius: brandRadius.pill,
     borderWidth: 1,
     borderColor: brandColors.divider,
-    backgroundColor: "rgba(232, 229, 217, 0.94)",
+    backgroundColor: brandTranslucentPanel.muted,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
@@ -105,7 +112,7 @@ export const controlStyles = StyleSheet.create({
   iconButton: {
     ...roundButton,
     borderColor: brandColors.divider,
-    backgroundColor: "rgba(247, 246, 240, 0.94)",
+    backgroundColor: brandTranslucentPanel.subtle,
   },
   iconButtonPrimary: {
     ...roundButton,
@@ -115,7 +122,7 @@ export const controlStyles = StyleSheet.create({
   iconButtonDisabled: {
     ...roundButton,
     borderColor: brandColors.divider,
-    backgroundColor: "#93A68A",
+    backgroundColor: brandColors.disabledMuted,
   },
   filtersPanel: {
     backgroundColor: PANEL_BACKGROUND,
@@ -178,8 +185,8 @@ export const controlStyles = StyleSheet.create({
     width: "100%",
   },
   refreshButtonDisabled: {
-    backgroundColor: "#8FA188",
-    borderColor: "#8FA188",
+    backgroundColor: brandColors.disabledMuted,
+    borderColor: brandColors.disabledMuted,
   },
   bottomDock: {
     position: "absolute",
@@ -215,7 +222,7 @@ export const panelStyles = StyleSheet.create({
     position: "absolute",
     left: 12,
     right: 12,
-    backgroundColor: "rgba(247, 246, 240, 0.98)",
+    backgroundColor: brandTranslucentPanel.strongest,
     gap: 10,
   },
   title: {
@@ -225,54 +232,6 @@ export const panelStyles = StyleSheet.create({
   meta: {
     ...brandTypography.meta,
     color: brandColors.textSecondary,
-  },
-  reportOpenButton: {
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E4B99A",
-    backgroundColor: "#F6E2D5",
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  reportOpenButtonText: {
-    ...brandTypography.meta,
-    color: brandColors.terracotta,
-  },
-  reportForm: {
-    gap: 10,
-  },
-  reportField: {
-    gap: 5,
-  },
-  reportInputLabel: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  reportInput: {
-    minHeight: 72,
-    textAlignVertical: "top",
-    ...brandTypography.sectionBody,
-  },
-  reportActionsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-  },
-  reportCancelButtonText: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  reportSubmitButtonDisabled: {
-    borderColor: "#A6ABA3",
-    backgroundColor: "#A6ABA3",
-  },
-  reportSubmitButtonText: {
-    ...brandTypography.meta,
-    color: brandColors.white,
   },
   clusterList: {
     maxHeight: 260,

@@ -1,9 +1,15 @@
-import { Animated, Text, View } from "react-native"
+import { View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
+import Animated, {
+  Extrapolation,
+  interpolate,
+  SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated"
 import { brandSpacing } from "../../app/brand-tokens"
 import { AppScreen } from "../../app/types"
 import { StepButton, WIZARD_STEPS, WizardStep } from "./components"
 import { headerStyles } from "./header.styles"
-import type { WizardAnimation } from "./useWizardScroll"
 import { fr } from "../../i18n"
 
 const HERO_CONTENT_TOP_INSET = 18
@@ -98,31 +104,64 @@ export function FormHeader({
   activeStep,
   heroCopy,
   heroTopOffset,
-  animation,
+  scrollY,
+  collapseDistance,
+  expandedHeroHeight,
+  collapsedHeroHeight,
 }: {
   activeStep: WizardStep
   heroCopy: HeroCopy
   heroTopOffset: number
-  animation: WizardAnimation
+  scrollY: SharedValue<number>
+  collapseDistance: number
+  expandedHeroHeight: number
+  collapsedHeroHeight: number
 }) {
   const activeStepIndex = WIZARD_STEPS.indexOf(activeStep)
   const compactSummary = heroCopy.pills.join(fr.surveyForm.header.pillSeparator)
+  const d = collapseDistance
+
+  const heroShellStyle = useAnimatedStyle(() => ({
+    top: heroTopOffset,
+    height: interpolate(
+      scrollY.value,
+      [0, d],
+      [expandedHeroHeight, collapsedHeroHeight],
+      Extrapolation.CLAMP,
+    ),
+  }))
+
+  const expandedLayerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, d * 0.36, d * 0.62], [1, 0.22, 0], Extrapolation.CLAMP),
+    transform: [
+      {
+        translateY: interpolate(scrollY.value, [0, d * 0.62], [0, -10], Extrapolation.CLAMP),
+      },
+    ],
+  }))
+
+  const compactLayerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [d * 0.42, d * 0.72, d], [0, 0.65, 1], Extrapolation.CLAMP),
+    transform: [
+      {
+        translateY: interpolate(scrollY.value, [d * 0.42, d], [8, 0], Extrapolation.CLAMP),
+      },
+    ],
+  }))
+
+  const compactProgressStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [d * 0.38, d * 0.68, d], [0, 0.55, 1], Extrapolation.CLAMP),
+  }))
 
   return (
-    <Animated.View
-      pointerEvents="none"
-      style={[headerStyles.heroShell, { top: heroTopOffset, height: animation.heroHeight }]}
-    >
+    <Animated.View pointerEvents="none" style={[headerStyles.heroShell, heroShellStyle]}>
       <View style={headerStyles.heroCard}>
         <View style={headerStyles.heroAccentOrb} />
         <Animated.View
           style={[
             headerStyles.heroExpandedLayer,
-            {
-              paddingTop: HERO_CONTENT_TOP_INSET,
-              opacity: animation.expandedOpacity,
-              transform: [{ translateY: animation.expandedTranslateY }],
-            },
+            { paddingTop: HERO_CONTENT_TOP_INSET },
+            expandedLayerStyle,
           ]}
         >
           <View style={headerStyles.heroExpandedHeader}>
@@ -145,24 +184,11 @@ export function FormHeader({
           </View>
         </Animated.View>
 
-        <Animated.View
-          style={[
-            headerStyles.heroCompactLayer,
-            {
-              opacity: animation.compactOpacity,
-              transform: [{ translateY: animation.compactTranslateY }],
-            },
-          ]}
-        >
+        <Animated.View style={[headerStyles.heroCompactLayer, compactLayerStyle]}>
           <Text numberOfLines={1} style={headerStyles.heroCompactSummary}>
             {compactSummary}
           </Text>
-          <Animated.View
-            style={[
-              headerStyles.compactProgressWrap,
-              { opacity: animation.compactProgressOpacity },
-            ]}
-          >
+          <Animated.View style={[headerStyles.compactProgressWrap, compactProgressStyle]}>
             <Text style={headerStyles.compactProgressCount}>
               {fr.surveyForm.header.compactProgress({
                 step: activeStepIndex + 1,
@@ -198,7 +224,7 @@ export function StepRail({
   parcelsReady,
   factorsReady,
   preserveRailSpace,
-  animation,
+  scrollY,
   onOpenStep,
 }: {
   activeStep: WizardStep
@@ -207,24 +233,25 @@ export function StepRail({
   parcelsReady: boolean
   factorsReady: boolean
   preserveRailSpace: boolean
-  animation: WizardAnimation
+  scrollY: SharedValue<number>
   onOpenStep: (step: WizardStep) => void
 }) {
+  const stepRailStyle = useAnimatedStyle(() => ({
+    height: preserveRailSpace
+      ? 114
+      : interpolate(scrollY.value, [0, 88], [114, 0], Extrapolation.CLAMP),
+    marginTop: -brandSpacing.xs,
+    opacity: interpolate(scrollY.value, [0, 36, 88], [1, 0.45, 0], Extrapolation.CLAMP),
+    transform: [
+      {
+        translateY: interpolate(scrollY.value, [0, 88], [0, -18], Extrapolation.CLAMP),
+      },
+      { scale: interpolate(scrollY.value, [0, 88], [1, 0.92], Extrapolation.CLAMP) },
+    ],
+  }))
+
   return (
-    <Animated.View
-      style={[
-        headerStyles.stepRailWrap,
-        {
-          height: preserveRailSpace ? 114 : animation.stepRailHeight,
-          marginTop: -brandSpacing.xs,
-          opacity: animation.stepRailOpacity,
-          transform: [
-            { translateY: animation.stepRailTranslateY },
-            { scale: animation.stepRailScale },
-          ],
-        },
-      ]}
-    >
+    <Animated.View style={[headerStyles.stepRailWrap, stepRailStyle]}>
       <View style={headerStyles.stepRailCard}>
         <View style={headerStyles.stepRow}>
           <StepButton

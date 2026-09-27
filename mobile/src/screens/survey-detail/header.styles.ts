@@ -1,5 +1,12 @@
 import { StyleSheet } from "react-native"
-import { brandColors, brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandOnDarkStatus,
+  brandRadius,
+  brandSemanticColors,
+  brandShadow,
+  brandTypography,
+} from "../../app/brand-tokens"
 
 export const styles = StyleSheet.create({
   detailHeroStickyWrap: {
@@ -26,7 +33,7 @@ export const styles = StyleSheet.create({
     width: 138,
     height: 138,
     borderRadius: 999,
-    backgroundColor: "rgba(176, 199, 142, 0.22)",
+    backgroundColor: brandSemanticColors.heroAccentTintOnDark,
   },
   detailHeader: {
     flexDirection: "row",
@@ -40,7 +47,7 @@ export const styles = StyleSheet.create({
   },
   detailHeroEyebrow: {
     ...brandTypography.heroEyebrow,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailSurveyTitle: {
     ...brandTypography.heroTitle,
@@ -50,14 +57,14 @@ export const styles = StyleSheet.create({
     minWidth: 116,
     maxWidth: 168,
     borderRadius: 24,
-    backgroundColor: "rgba(247, 246, 240, 0.12)",
+    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 4,
   },
   detailHeroMetricLabel: {
     ...brandTypography.heroEyebrow,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailHeroMetricValue: {
     fontSize: 28,
@@ -67,7 +74,7 @@ export const styles = StyleSheet.create({
   },
   detailHeroMetricMeta: {
     ...brandTypography.meta,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailHeroSubScores: {
     gap: 4,
@@ -99,12 +106,12 @@ export const styles = StyleSheet.create({
   },
   detailHeroCompactMeta: {
     ...brandTypography.meta,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailHeroCompactMetricPill: {
     minWidth: 92,
     borderRadius: brandRadius.card,
-    backgroundColor: "rgba(247, 246, 240, 0.12)",
+    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
     paddingHorizontal: 12,
     paddingVertical: 10,
     alignItems: "flex-end",
@@ -112,7 +119,7 @@ export const styles = StyleSheet.create({
   },
   detailHeroCompactMetricLabel: {
     ...brandTypography.meta,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailHeroCompactMetricValue: {
     ...brandTypography.label,
@@ -131,13 +138,13 @@ export const styles = StyleSheet.create({
     minWidth: 200,
   },
   detailRenameLabel: {
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailRenameInput: {
     minHeight: 46,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    backgroundColor: "rgba(255,255,255,0.12)",
+    borderColor: brandSemanticColors.heroSurfaceStrongOnDark,
+    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
     color: brandColors.white,
   },
   detailRenameSaveButton: {
@@ -153,8 +160,8 @@ export const styles = StyleSheet.create({
   detailRenameCancelButton: {
     borderRadius: brandRadius.pill,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.22)",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: brandSemanticColors.heroBorderStrongOnDark,
+    backgroundColor: brandSemanticColors.heroPanelBackgroundOnDark,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
@@ -175,16 +182,16 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
   },
   detailHeroStatusPillNeutral: {
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(247, 246, 240, 0.1)",
+    borderColor: brandSemanticColors.heroSurfaceOnDark,
+    backgroundColor: brandSemanticColors.heroPanelBackgroundOnDark,
   },
   detailHeroStatusPillSuccess: {
-    borderColor: "rgba(187,208,155,0.28)",
-    backgroundColor: "rgba(176,199,142,0.18)",
+    borderColor: brandOnDarkStatus.successBorder,
+    backgroundColor: brandOnDarkStatus.successBackground,
   },
   detailHeroStatusPillDanger: {
-    borderColor: "rgba(228,165,149,0.28)",
-    backgroundColor: "rgba(205,88,51,0.14)",
+    borderColor: brandOnDarkStatus.dangerBorder,
+    backgroundColor: brandOnDarkStatus.dangerBackground,
   },
   detailHeroStatusPillText: {
     ...brandTypography.meta,
@@ -195,18 +202,18 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderRadius: brandRadius.pill,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   heroMetaText: {
     ...brandTypography.meta,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailHeroProgressCard: {
     gap: 8,
     borderRadius: 22,
-    backgroundColor: "rgba(247, 246, 240, 0.1)",
+    backgroundColor: brandSemanticColors.heroPanelBackgroundOnDark,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -223,7 +230,7 @@ export const styles = StyleSheet.create({
   },
   detailHeroProgressLabel: {
     ...brandTypography.heroEyebrow,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailHeroProgressValue: {
     ...brandTypography.label,
@@ -233,7 +240,7 @@ export const styles = StyleSheet.create({
     height: 10,
     overflow: "hidden",
     borderRadius: brandRadius.pill,
-    backgroundColor: "rgba(255,255,255,0.14)",
+    backgroundColor: brandSemanticColors.heroPanelBorderOnDark,
   },
   detailHeroProgressFill: {
     height: "100%",
@@ -249,8 +256,8 @@ export const styles = StyleSheet.create({
     gap: 10,
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "rgba(247, 246, 240, 0.08)",
+    borderColor: brandSemanticColors.heroSurfaceOnDark,
+    backgroundColor: brandSemanticColors.heroPanelBackgroundOnDark,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -260,16 +267,16 @@ export const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   detailHeroSubmitCardReady: {
-    borderColor: "rgba(208, 226, 182, 0.34)",
-    backgroundColor: "rgba(176, 199, 142, 0.18)",
+    borderColor: brandOnDarkStatus.successBorderStrong,
+    backgroundColor: brandOnDarkStatus.successBackground,
   },
   detailHeroSubmitCardPendingSync: {
-    borderColor: "rgba(231, 194, 129, 0.34)",
-    backgroundColor: "rgba(204, 112, 31, 0.12)",
+    borderColor: brandOnDarkStatus.warningBorder,
+    backgroundColor: brandOnDarkStatus.warningBackground,
   },
   detailHeroSubmitCardBlocked: {
-    borderColor: "rgba(228, 165, 149, 0.34)",
-    backgroundColor: "rgba(205, 88, 51, 0.12)",
+    borderColor: brandOnDarkStatus.dangerBorderStrong,
+    backgroundColor: brandOnDarkStatus.dangerBackgroundStrong,
   },
   detailHeroSubmitHeader: {
     flexDirection: "row",
@@ -287,11 +294,11 @@ export const styles = StyleSheet.create({
   },
   detailHeroSubmitBody: {
     ...brandTypography.meta,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   detailHeroSubmitPill: {
     borderRadius: brandRadius.pill,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },

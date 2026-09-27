@@ -1,6 +1,6 @@
 import { memo } from "react"
 import { SurveyParcelSelectionScreen } from "../../screens/SurveyParcelSelectionScreen"
-import { useSession } from "../../state/session-context"
+import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveyFormState } from "../../state/survey-form-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { ParcelSelectionRouteProps } from "../types"
@@ -11,6 +11,7 @@ export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
   route,
 }: ParcelSelectionRouteProps) {
   const { state: session } = useSession()
+  const accessToken = useAccessToken()
   const { state, actions } = useSurveyFormState()
 
   const onSave = useLatestCallback(async () => {
@@ -21,6 +22,7 @@ export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
   return (
     <SurveyParcelSelectionScreen
       apiUrl={session.apiUrl}
+      accessToken={accessToken}
       gpsLocation={state.gpsLocation}
       selectedParcelIds={state.selectedParcelIds}
       onToggleParcelSelection={actions.toggleParcelSelection}

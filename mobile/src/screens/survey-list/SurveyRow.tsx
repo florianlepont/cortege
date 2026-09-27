@@ -1,5 +1,6 @@
 import { memo, useCallback, useRef } from "react"
-import { ActivityIndicator, Pressable, Text, View } from "react-native"
+import { ActivityIndicator, Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import Swipeable from "react-native-gesture-handler/Swipeable"
@@ -10,7 +11,7 @@ import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppStatusChip } from "../../ui/AppStatusChip"
 import type { AttachmentPreview } from "../survey-screen-helpers"
-import { triggerHaptic } from "./haptics"
+import { feedback } from "../../ui/feedback"
 import { rowStyles as styles } from "./row-styles"
 
 type SurveyRowTone = "neutral" | "success" | "warning" | "danger"
@@ -102,7 +103,7 @@ function SurveyRowComponent({ survey, preview, selected, onOpen, onDelete }: Sur
   }, [onDelete, surveyId])
 
   const handleOpen = useCallback(() => {
-    triggerHaptic()
+    feedback.selection()
     onOpen(surveyId)
   }, [onOpen, surveyId])
 

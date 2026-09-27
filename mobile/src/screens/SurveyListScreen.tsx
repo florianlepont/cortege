@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
-  Animated,
   Platform,
   ListRenderItemInfo,
   RefreshControl,
   View,
   useWindowDimensions,
 } from "react-native"
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
 import { computeSurveyStats } from "../app/survey-logic"
@@ -68,7 +68,7 @@ export function SurveyListScreen({
   onEnsureAttachmentPreviews,
 }: SurveyListScreenProps) {
   const [refreshing, setRefreshing] = useState(false)
-  const scrollY = useRef(new Animated.Value(0)).current
+  const scrollY = useSharedValue(0)
   const { height: viewportHeight, width: windowWidth } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
@@ -192,14 +192,9 @@ export function SurveyListScreen({
     [handleRefresh, onRefresh, refreshing],
   )
 
-  const handleScroll = useMemo(
-    () =>
-      Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-        // The hero animates its height, which the native driver does not support.
-        useNativeDriver: false,
-      }),
-    [scrollY],
-  )
+  const handleScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y
+  })
 
   // ── List header: the sticky filters bar (sticky index 0), memoised ─────────
 

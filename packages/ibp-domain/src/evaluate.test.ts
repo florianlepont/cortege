@@ -307,6 +307,81 @@ describe("evaluateIbp: v3.2", () => {
   })
 })
 
+describe("evaluateIbp: Factor A genus list (D-15, ADR-003 CH-12, phase 5)", () => {
+  it("v3.2: the count is derived from the genus list, deduplicated", () => {
+    const factors = {
+      A: {
+        genera: ["Fagus", "Quercus_deciduae", "Quercus_sempervirens", "Fagus"],
+        native_cover_percent: 60,
+      },
+    }
+    const result = evaluateIbp(
+      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, factors },
+      "draft",
+    )
+    expect(result.factor_scores).toEqual({ A: 2 })
+  })
+
+  it("v3.2: a supplementary genus counts in cas 4, is silently excluded in cas 1", () => {
+    const factors = { A: { genera: ["Fagus", "Pistacia"], native_cover_percent: 60 } }
+    expect(
+      evaluateIbp({ ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 4, factors }, "draft")
+        .factor_scores,
+    ).toEqual({ A: 1 })
+    const excluded = evaluateIbp(
+      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, factors },
+      "draft",
+    )
+    expect(excluded.factor_scores).toEqual({ A: 0 })
+    expect(excluded.issues).toEqual([])
+  })
+
+  it("v3.2: a genus not on the CNPF list is blocking, both draft and submit", () => {
+    const factors = { A: { genera: ["Fagus", "Ficus"], native_cover_percent: 60 } }
+    const draft = evaluateIbp({ ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, factors }, "draft")
+    expect(draft.ok).toBe(false)
+    expect(draft.issues).toEqual([
+      {
+        code: "factor_a_genus_invalid",
+        message: "factor A genera must each be one of the CNPF regional list's classes",
+        blocking: true,
+        factor: "A",
+      },
+    ])
+  })
+
+  it("v3.2: a non-array genera is blocking, same code as an unknown genus", () => {
+    const factors = { A: { genera: "Fagus", native_cover_percent: 60 } }
+    const result = evaluateIbp(
+      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, factors },
+      "draft",
+    )
+    expect(codes(result)).toEqual(["factor_a_genus_invalid"])
+  })
+
+  it("v3.0: the count is derived from the genus list; the main list only, no supplementary genera", () => {
+    const factors = { A: { genera: ["Fagus", "Pistacia"], native_cover_percent: 60 } }
+    const result = evaluateIbp({ factors }, "draft")
+    expect(result.factor_scores).toEqual({ A: 0 })
+    expect(result.issues).toEqual([])
+  })
+
+  it("v3.0: an unknown genus is blocking factor_a_genus_invalid", () => {
+    const factors = { A: { genera: ["Ficus"], native_cover_percent: 60 } }
+    const result = evaluateIbp({ factors }, "draft")
+    expect(codes(result)).toEqual(["factor_a_genus_invalid"])
+  })
+
+  it("the legacy bare count still scores, unchanged (surveys already recorded)", () => {
+    const factors = { A: { native_genus_count: 5, native_cover_percent: 60 } }
+    expect(evaluateIbp({ factors }, "draft").factor_scores).toEqual({ A: 5 })
+    expect(
+      evaluateIbp({ ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, factors }, "draft")
+        .factor_scores,
+    ).toEqual({ A: 5 })
+  })
+})
+
 describe("computeRetainedScores and computeTotals", () => {
   it("retains allowed scores per version and totals them", () => {
     const retained = computeRetainedScores(

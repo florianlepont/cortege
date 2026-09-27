@@ -2,6 +2,8 @@ import {
   computeRetainedScores,
   computeTotals,
   evaluateSubmitReadiness,
+  FACTOR_KEYS,
+  type FactorCanonical,
   type FactorKey,
   type FactorRetainedScore,
   type IbpEvaluationInput,
@@ -85,4 +87,35 @@ export const evaluateSubmitReadinessFromDraft = (
     ready: readiness.ready && missingFields.length === 0,
     missing_fields: missingFields,
   }
+}
+
+/** IBP total and subtotal deltas of `current` against `previous` (REQ-C-versioning). Arithmetic
+ * only, on scores the package already computed: no rule is re-implemented here. */
+export type IbpTotalDelta = {
+  total: number
+  standAndManagement: number
+  context: number
+}
+
+export const computeIbpTotalDelta = (current: IbpScores, previous: IbpScores): IbpTotalDelta => ({
+  total: current.ibp_total - previous.ibp_total,
+  standAndManagement: current.ibp_peuplement_gestion - previous.ibp_peuplement_gestion,
+  context: current.ibp_contexte - previous.ibp_contexte,
+})
+
+/** Per-factor point delta of `current` against `previous`; a factor missing from either side is
+ * omitted rather than guessed. */
+export const computeFactorDeltas = (
+  current: Record<string, FactorCanonical>,
+  previous: Record<string, FactorCanonical>,
+): Partial<Record<FactorKey, number>> => {
+  const deltas: Partial<Record<FactorKey, number>> = {}
+  for (const key of FACTOR_KEYS) {
+    const currentPoints = current[key]?.score_points
+    const previousPoints = previous[key]?.score_points
+    if (typeof currentPoints === "number" && typeof previousPoints === "number") {
+      deltas[key] = currentPoints - previousPoints
+    }
+  }
+  return deltas
 }

@@ -54,7 +54,7 @@ export const authStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#0E2210",
+    backgroundColor: brandColors.forestNight,
   },
   heroBlob1: {
     borderTopLeftRadius: 55,

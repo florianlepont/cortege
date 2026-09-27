@@ -1,4 +1,5 @@
-import { Text, View } from "react-native"
+import { View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { formatDateTime } from "../../app/formatters"
 import { SurveyEventItem } from "../../app/types"
 import { fr } from "../../i18n"

@@ -283,16 +283,17 @@ describe("ParcelsService", () => {
   })
 
   describe("getParcelSurveyHistory", () => {
-    it("requires a parcel id and passes the owner and limit", async () => {
-      await expect(
-        buildService().getParcelSurveyHistory({ id: "u1" } as never, "  "),
-      ).rejects.toBeInstanceOf(BadRequestException)
+    it("requires a parcel id and passes the limit", async () => {
+      await expect(buildService().getParcelSurveyHistory("  ")).rejects.toBeInstanceOf(
+        BadRequestException,
+      )
 
       const db = buildDb({ rows: [{ survey_id: "s1" }] })
-      await expect(
-        buildService(db).getParcelSurveyHistory({ id: "u1" } as never, "p1", "5"),
-      ).resolves.toEqual({ parcel_id: "P1", items: [{ survey_id: "s1" }] })
-      expect(db.query.mock.calls[0][1]).toEqual(["P1", "u1", 5])
+      await expect(buildService(db).getParcelSurveyHistory("p1", "5")).resolves.toEqual({
+        parcel_id: "P1",
+        items: [{ survey_id: "s1" }],
+      })
+      expect(db.query.mock.calls[0][1]).toEqual(["P1", 5])
     })
   })
 })

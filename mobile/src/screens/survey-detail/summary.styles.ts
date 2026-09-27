@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandColors, brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandComponentTokens,
+  brandRadius,
+  brandShadow,
+  brandTypography,
+} from "../../app/brand-tokens"
 
 export const styles = StyleSheet.create({
   scoreHeroCard: {
@@ -63,7 +69,7 @@ export const styles = StyleSheet.create({
     gap: 6,
   },
   factorTileCompleted: {
-    borderColor: "#B8CFA4",
+    borderColor: brandComponentTokens.notice.successBorder,
     backgroundColor: brandColors.successSoft,
   },
   factorTilePending: {
@@ -135,7 +141,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   factorTileStatusPillCompleted: {
-    backgroundColor: "#DCE7C4",
+    backgroundColor: brandColors.successSoft,
   },
   factorTileStatusPillPending: {
     backgroundColor: brandColors.panelMuted,
@@ -158,10 +164,48 @@ export const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
+  historyPanel: {
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: brandColors.divider,
+    backgroundColor: brandColors.panel,
+    padding: 18,
+    gap: 10,
+    ...brandShadow.card,
+  },
+  historyRow: {
+    borderTopWidth: 1,
+    borderTopColor: brandColors.divider,
+    paddingTop: 8,
+    gap: 2,
+  },
+  historyRowTitle: {
+    ...brandTypography.label,
+    color: brandColors.forest,
+  },
+  historyRowMeta: {
+    ...brandTypography.meta,
+    color: brandColors.textSecondary,
+  },
+  historyDeltaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  historyDeltaPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: brandColors.panelMuted,
+  },
+  historyDeltaPillText: {
+    ...brandTypography.meta,
+    color: brandColors.forest,
+  },
   submittedReadonlyBanner: {
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: "#BBD09B",
+    borderColor: brandComponentTokens.notice.successBorder,
     backgroundColor: brandColors.panel,
     padding: 18,
     gap: 8,
@@ -175,8 +219,8 @@ export const styles = StyleSheet.create({
     gap: 6,
   },
   deadlineCardWarning: {
-    borderColor: "#E7C281",
-    backgroundColor: "#FDF2DF",
+    borderColor: brandComponentTokens.notice.warningBorder,
+    backgroundColor: brandColors.warningSoft,
   },
   deadlineLabel: {
     ...brandTypography.heroEyebrow,

@@ -4,6 +4,7 @@
  * sage/forest on light backgrounds). Non-interactive, purely decorative.
  */
 import { G, Path, Svg } from "react-native-svg"
+import { brandColors } from "../app/brand-tokens"
 
 type BrandFernProps = {
   /** Overall size (viewBox is square). Default 120. */
@@ -14,7 +15,11 @@ type BrandFernProps = {
   opacity?: number
 }
 
-export function BrandFern({ size = 120, color = "#89A33A", opacity = 0.22 }: BrandFernProps) {
+export function BrandFern({
+  size = 120,
+  color = brandColors.moss,
+  opacity = 0.22,
+}: BrandFernProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 120 120" opacity={opacity}>
       <G fill={color}>

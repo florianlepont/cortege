@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
+import { AppText as Text } from "../ui/AppText"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
@@ -92,22 +93,15 @@ export function SettingsScreen({
     }
   }
 
-  const confirmDeleteAccount = () => {
-    Alert.alert(t.alerts.deleteAccount.title, t.alerts.deleteAccount.message, [
-      { text: actions.cancel, style: "cancel" },
-      {
-        text: actions.delete,
-        style: "destructive",
-        onPress: async () => {
-          setDeleteLoading(true)
-          try {
-            await onDeleteAccount()
-          } finally {
-            setDeleteLoading(false)
-          }
-        },
-      },
-    ])
+  // The confirmation itself lives in onDeleteAccount (sessionActions.handleDeleteAccount): a
+  // second dialog here would double-confirm with a different copy (BUG-05).
+  const confirmDeleteAccount = async () => {
+    setDeleteLoading(true)
+    try {
+      await onDeleteAccount()
+    } finally {
+      setDeleteLoading(false)
+    }
   }
 
   const confirmDebugResetIbpData = () => {
@@ -150,26 +144,7 @@ export function SettingsScreen({
         <AppNotice message={status} tone="info" icon="information-circle-outline" />
       ) : null}
 
-      {/* Zone 1 — Compte (production) */}
-      <AppCard variant="panelElevated" style={styles.section}>
-        <AppSectionHeader
-          title={t.account.title}
-          subtitle={t.account.subtitle}
-          titleStyle={styles.sectionTitle}
-        />
-        <AppNotice tone="danger" icon="warning-outline" message={t.account.deleteWarning} />
-        <AppButton
-          label={t.account.deleteButton}
-          variant="danger"
-          size="lg"
-          leadingIcon="trash-outline"
-          loading={deleteLoading}
-          disabled={deleteLoading}
-          onPress={confirmDeleteAccount}
-        />
-      </AppCard>
-
-      {/* Zone 2 — Synchronisation */}
+      {/* Zone 1 — Synchronisation */}
       <AppCard variant="panel" style={styles.section}>
         <AppSectionHeader
           title={t.sync.title}
@@ -208,7 +183,7 @@ export function SettingsScreen({
         />
       </AppCard>
 
-      {/* Zone 3 — Outils développeur (repliée par défaut) */}
+      {/* Zone 2 — Outils développeur (repliée par défaut) */}
       {shouldShowDevTools() ? (
         <AppCollapsibleSection title={t.devTools.title} badge={t.devTools.badge}>
           <AppField
@@ -232,6 +207,25 @@ export function SettingsScreen({
           />
         </AppCollapsibleSection>
       ) : null}
+
+      {/* Zone 3 — Compte (danger zone last, not first: BUG-05) */}
+      <AppCard variant="panelElevated" style={styles.section}>
+        <AppSectionHeader
+          title={t.account.title}
+          subtitle={t.account.subtitle}
+          titleStyle={styles.sectionTitle}
+        />
+        <AppNotice tone="danger" icon="warning-outline" message={t.account.deleteWarning} />
+        <AppButton
+          label={t.account.deleteButton}
+          variant="danger"
+          size="lg"
+          leadingIcon="trash-outline"
+          loading={deleteLoading}
+          disabled={deleteLoading}
+          onPress={() => void confirmDeleteAccount()}
+        />
+      </AppCard>
     </ScrollView>
   )
 }

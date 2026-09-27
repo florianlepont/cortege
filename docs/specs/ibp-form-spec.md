@@ -54,7 +54,10 @@ Method version status (phase 01.8, 2026-09-26):
 
 ## 4) Global Form Rules
 - A survey is linked to one site/stand.
-- A survey must be linked to one French cadastral parcel (`parcel_id`) before submission.
+- A survey may reference one or many French cadastral parcels (`parcel_ids[]`) and must be linked
+  to at least one before submission. `parcel_id` is kept as a nullable compatibility field (the
+  primary parcel, mirroring `parcel_ids[0]`), never the sole linkage (`REQ-X-parcel-required` is
+  overridden by multi-parcel support, `survey_parcels`).
 - For parcel follow-up, survey metadata includes `observation_year` and `version_number`.
 - A draft expires 7 days after creation.
 - After 7 days, status becomes `expired` and submission is rejected.
@@ -142,11 +145,19 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 ### Factor A - Native Tree Taxa
 - Ecological objective: characterize diversity of native tree taxa.
 - Field ID: `factor_a`
-- Input type: native genus count (`native_genus_count`) + native cover of the described stand
-  (`native_cover_percent`, 0-100). The genus list as data is phase 2 (CH-12).
-- Unit/scope: number of native genera in described stand.
+- Input type: a list of observed native genera (`genera`, drawn from the closed CNPF regional
+  list; phase 5, ADR-002 D-15, ADR-003 CH-12) + native cover of the described stand
+  (`native_cover_percent`, 0-100). The genus count Factor A scores from is derived from the list
+  (its number of distinct valid codes), never entered directly. Surveys recorded before this phase
+  keep their legacy bare `native_genus_count`, unchanged (see `data-contract-v1.md`). Recognition
+  and counting are genus-level only: there is no species entity anywhere in the model (D-01). The
+  genus-entry UI (manual picker and on-device photo recognition) is phase 6; this phase is the
+  contract only.
+- Unit/scope: number of distinct native genera observed in the described stand.
 - Determination:
-  - count native genera (from CNPF list for regional version).
+  - count native genera (from the closed CNPF regional list, 34 classes; `Quercus` is the one
+    genus the methodology splits into two countable classes, deciduous and evergreen).
+  - a supplementary genus (Ceratonia, Cercis, Olea, Phillyrea, Pistacia) counts only in cas 2 or 4.
   - include living trees (h > 50 cm) and dead trees.
 - Classes/scores, IBP FR v3.2:
   - cas 1, 2 and 4 (standard scale):
@@ -431,8 +442,9 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 ## 8) Validation Matrix (UI + Submission)
 
 ### 8.1 Blocking Validations by Factor
-- A: native genera count and native cover available; v3.2: `ibp_cas` set; v3.0: region_version +
-  stage set.
+- A: a genus list (`genera`, each entry on the closed CNPF list — an unlisted entry is blocking
+  `factor_a_genus_invalid`) or the legacy `native_genus_count`, plus native cover available; v3.2:
+  `ibp_cas` set; v3.0: region_version + stage set.
 - B: at least 1 stratum entered.
 - C/D/E: `surface_ha > 0`; non-negative counters.
 - F: coherent dmh-group data; computable total.
@@ -456,7 +468,8 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 ### 8.4 Post-Publication Action Validations
 - Visibility change action is allowed only for survey owner (or authorized moderator/admin role).
 - Deletion requires explicit user confirmation.
-- After deletion, payload status becomes `deleted` and survey is excluded from list/map/community feeds.
+- After deletion, `deleted_at` is set (soft delete; `status` is unchanged — there is no `deleted`
+  status value, see §10.1) and the survey is excluded from list/map/community feeds.
 
 ### 8.5 Inter-Factor Consistency (Non-Blocking)
 App heuristics, both versions. Since phase 01.8 each warning fires only when both factors of the
@@ -508,10 +521,11 @@ pair are scored: an absent or incomplete factor is not "very low".
 - `ibp_cas3_scale: boolean | null` (v3.2 only)
 - `region_version: "ACA" | "M"` (v3.0 only; required at submit)
 - `vegetation_stage: string` (v3.0 only; required at submit)
-- `status: "draft" | "expired" | "submitted" | "synced" | "error" | "deleted"`
+- `status: "draft" | "submitted" | "synced" | "error" | "expired"` (shipped enum; no `deleted`
+  value — a deleted survey is soft-deleted via `deleted_at`, its `status` unchanged)
 - `visibility: "private" | "public"` (required, default `private`)
-- `published_at?: datetime`
-- `deleted_at?: datetime`
+- `submitted_at?: datetime`
+- `deleted_at?: datetime` (soft delete; no `published_at` field exists)
 - `factors: array[10]` (required)
 
 ### 10.2 Factor Structure
@@ -525,17 +539,21 @@ pair are scored: an absent or incomplete factor is not "very low".
 ```json
 {
   "survey_id": "uuid",
+  "parcel_ids": ["parcel-uuid-1"],
   "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02",
   "ibp_cas": 1,
   "ibp_cas3_scale": false,
   "created_at": "2026-03-04T10:00:00Z",
   "status": "submitted",
   "visibility": "public",
-  "published_at": "2026-03-04T10:35:00Z",
+  "submitted_at": "2026-03-04T10:35:00Z",
   "factors": [
     {
       "factor_id": "factor_a",
-      "observed_value_raw": { "native_genus_count": 4, "native_cover_percent": 80 },
+      "observed_value_raw": {
+        "genera": ["Fagus", "Quercus_deciduae", "Acer", "Fraxinus"],
+        "native_cover_percent": 80
+      },
       "selected_class": "S2",
       "score_points": 2,
       "evidence": { "notes": "Taxon validated in field" }
@@ -583,7 +601,7 @@ pair are scored: an absent or incomplete factor is not "very low".
 
 7. Post-publication management:
 - switching `public` -> `private` removes survey from map/community surfaces.
-- deletion marks survey as `deleted` and removes it from user/community lists.
+- deletion sets `deleted_at` (soft delete, `status` unchanged) and removes the survey from user/community lists.
 
 8. Versioning:
 - same survey with different version -> verify version-specific thresholds / support (MAT-VER-01:
@@ -603,3 +621,4 @@ pair are scored: an absent or incomplete factor is not "very low".
 - 2026-03-04: moved from template to full operational specification (factors, thresholds, scoring, validations, data contract, CNPF references).
 - 2026-09-26: phase 01.1: method version status (implemented v3.0, target v3.2 per ADR-003), dead v3.0 links marked, v3.2 reference added, known divergences flagged (BUG-1, BUG-4, region/stage vs cas).
 - 2026-09-26: phase 01.8: implemented: v3.2 (v3.0 available per survey). Method version chosen per survey (`ibp_method_version`, BUG-4 closed), cas model (`ibp_cas`, `ibp_cas3_scale`), native cover and cap moved to Factor A (BUG-1), G/H allowed scores 0/2/5 (BUG-2), v3.2 C/D/E sum rule, totals shown out of 50 with the band convention, validation codes `ibp_method_version_unsupported`, `ibp_cas_required`, `factor_incomplete`.
+- 2026-09-27: phase 5 (`REQ-ML-contracts`, `REQ-DOC-form-spec`): Factor A carries a genus list (`genera`) instead of a bare count, with the count derived from it (§6, §10.1/§10.3); new validation code `factor_a_genus_invalid` (§8.1). §4 corrected to multi-parcel `parcel_ids[]` (conflict-report warning 1). §8.4/§10.1/§11 corrected to the shipped status enum (`draft | submitted | synced | error | expired`, `submitted_at`, `deleted_at`, no `deleted` value, no `published_at`; conflict-report warning 2). Contracts and migration only — the genus-entry UI is phase 6.

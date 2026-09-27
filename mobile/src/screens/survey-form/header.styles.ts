@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandColors, brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandRadius,
+  brandSemanticColors,
+  brandShadow,
+  brandTypography,
+} from "../../app/brand-tokens"
 
 export const headerStyles = StyleSheet.create({
   heroShell: {
@@ -26,7 +32,7 @@ export const headerStyles = StyleSheet.create({
     width: 126,
     height: 126,
     borderRadius: 999,
-    backgroundColor: "rgba(176, 199, 142, 0.22)",
+    backgroundColor: brandSemanticColors.heroAccentTintOnDark,
   },
   heroExpandedLayer: {
     ...StyleSheet.absoluteFill,
@@ -41,7 +47,7 @@ export const headerStyles = StyleSheet.create({
   },
   heroEyebrow: {
     ...brandTypography.heroEyebrow,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   heroTitleExpanded: {
     ...brandTypography.heroTitle,
@@ -53,7 +59,7 @@ export const headerStyles = StyleSheet.create({
     ...brandTypography.heroBody,
     fontSize: 13,
     lineHeight: 18,
-    color: "#E4ECD8",
+    color: brandSemanticColors.heroBodyOnDark,
     maxWidth: 300,
   },
   heroMetaRow: {
@@ -63,7 +69,7 @@ export const headerStyles = StyleSheet.create({
   },
   heroMetaPill: {
     borderRadius: brandRadius.pill,
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
@@ -81,7 +87,7 @@ export const headerStyles = StyleSheet.create({
   },
   heroCompactSummary: {
     ...brandTypography.meta,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   compactProgressWrap: {
     gap: 5,
@@ -90,7 +96,7 @@ export const headerStyles = StyleSheet.create({
     ...brandTypography.heroEyebrow,
     fontSize: 10,
     lineHeight: 12,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   compactProgressTrack: {
     flexDirection: "row",
@@ -100,13 +106,13 @@ export const headerStyles = StyleSheet.create({
     flex: 1,
     height: 6,
     borderRadius: 999,
-    backgroundColor: "rgba(255, 255, 255, 0.18)",
+    backgroundColor: brandSemanticColors.heroSurfaceStrongOnDark,
   },
   compactProgressSegmentActive: {
     backgroundColor: brandColors.white,
   },
   compactProgressSegmentComplete: {
-    backgroundColor: "#D7E3C0",
+    backgroundColor: brandSemanticColors.heroTextMutedOnDark,
   },
   stepRailWrap: {
     zIndex: 1,
@@ -159,7 +165,7 @@ export const headerStyles = StyleSheet.create({
     paddingVertical: 4,
   },
   stepIndexPillActive: {
-    backgroundColor: "rgba(255, 255, 255, 0.16)",
+    backgroundColor: brandSemanticColors.heroSurfaceStrongOnDark,
   },
   stepIndexText: {
     ...brandTypography.heroEyebrow,
@@ -182,7 +188,7 @@ export const headerStyles = StyleSheet.create({
     color: brandColors.textSecondary,
   },
   stepButtonMetaActive: {
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   stepButtonHint: {
     marginTop: "auto",

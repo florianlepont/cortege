@@ -15,6 +15,7 @@ import { fr } from "../../i18n"
 
 type UseParcelMapInput = {
   apiUrl: string
+  accessToken: string | null
   screen: AppScreen
   editingSurveyId: string | null
   gpsLocation: { lat: string; lng: string; collected_at: string }
@@ -34,6 +35,7 @@ const MANUAL_LOCATE_ERROR = fr.surveyForm.parcels.manualLocateError
 // reverse-geocoded address. Shared by the inline map and the full-screen modal.
 export function useParcelMap({
   apiUrl,
+  accessToken,
   screen,
   editingSurveyId,
   gpsLocation,
@@ -72,6 +74,7 @@ export function useParcelMap({
   const mapZoom = useMemo(() => computeRegionZoom(mapRegion), [mapRegion])
   const { items: parcelStatuses, loading: parcelsLoading } = useParcelStatuses({
     apiUrl,
+    accessToken,
     region: mapRegion,
     enabled: true,
     year: new Date().getFullYear(),

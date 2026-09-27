@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
@@ -8,6 +9,7 @@ import {
   brandTypography,
 } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
+import { AppPressable } from "../../ui/AppPressable"
 import { IbpScoreBadge } from "../../ui/IbpScoreBadge"
 import type { PublicParcelStatusItem } from "../../app/types"
 
@@ -36,7 +38,14 @@ export function ParcelNearbyCard({
   onPress,
 }: ParcelNearbyCardProps) {
   return (
-    <Pressable style={styles.card} onPress={onPress} accessibilityRole="button">
+    <AppPressable
+      style={styles.card}
+      onPress={onPress}
+      accessibilityLabel={fr.components.parcelNearbyCard.a11y({
+        title: formatParcelId(parcel.parcel_id),
+        distance: formatDistance(distanceKm),
+      })}
+    >
       <IbpScoreBadge score={parcel.latest_ibp_total} size="md" />
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={1}>
@@ -62,7 +71,7 @@ export function ParcelNearbyCard({
         </View>
       </View>
       <Ionicons name="chevron-forward" size={16} color={brandColors.textSecondary} />
-    </Pressable>
+    </AppPressable>
   )
 }
 

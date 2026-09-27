@@ -1,0 +1,43 @@
+# Phase 2: Association-only sharing & scope trim — Context
+
+**Gathered:** 2026-09-27
+**Status:** Ready for execution
+**Source:** `.planning/ROADMAP.md` "Phase 2" section (8 success criteria), `.planning/REQUIREMENTS.md` (REQ-B-own-surveys-map, REQ-B-manage-published, REQ-X-visibility, REQ-A-delete-account, REQ-B-survey-detail, REQ-C-versioning), `02-RESEARCH.md`.
+
+## Scope boundary
+
+In scope: `api/src/surveys/public.controller.ts`, `public-map.service.ts`, `public-map.queries.ts`, `parcels.service.ts`, a new migration; `api/src/users/` only to the extent of exposing the existing `DELETE /me` (no service changes expected); mobile Explorer map, survey detail (history/deltas + visibility-toggle removal), report-entry removal, Compte screen, and the UX-audit Lot 0 bugs listed below.
+
+**Out of scope, explicitly:** `mobile/src/screens/FactorDetailScreen.tsx` and any of its dedicated sub-components/hooks (Phase 3, running in parallel, owns field-entry ergonomics). `api/src/reports/*` stays untouched. `docs/technical/*`, `infra/`, migrations unrelated to this phase's own change (Phase 11, running in parallel, owns backend infra/migrations/docs — this phase adds exactly one migration for the public-surface predicate change and touches nothing else under `api/migrations/`).
+
+## Decisions
+
+- **D-01, visibility column stays.** The `surveys.visibility` column, its CHECK constraint, `PATCH /surveys/:id/visibility`, and the sync-payload plumbing all stay server-side, unused-but-present, because `REQUIREMENTS.md` marks `REQ-X-visibility` "Overridden — Restored with REQ-C-privacy-choice" next milestone. Only the *read-path filters* change (drop the `visibility = 'public'` predicate on the two public routes and on parcel history), the mobile UI control is removed, and its prop plumbing (`onToggleVisibility`) is deleted as dead client code.
+- **D-02, "association member" = "any authenticated user".** No membership entity exists or is introduced (confirmed zero code hits for "association" as a data concept). `AuthGuard` on `PublicController` is the entire access-control change; every authenticated user is implicitly a member, matching the roadmap's own framing.
+- **D-03, index migration.** `idx_surveys_public_submitted` (migration 015) must be dropped and recreated with the new predicate (`status = 'submitted' AND deleted_at IS NULL`, no `visibility`) in one new migration, `017_association_only_visibility.sql`, so the planner still uses a partial index instead of a full scan.
+- **D-04, parcel history.** Drop the `(s.visibility = 'public' OR s.user_id = $2)` clause in `parcels.service.ts` entirely (unconditional `status = 'submitted'` is now correct); the `$2` (`user_id`) bind parameter becomes unused there and is removed from that query.
+- **D-05, Explorer tap-through.** `PublicMapScreen`'s `handleSelectSurvey` gains navigation: tapping a studied parcel/marker opens the latest submitted survey's detail screen (which itself now shows history per D-07), matching the existing survey-creation map's tap behaviour. The floating `SelectedSurveyCard` either becomes a lightweight preview that navigates on a follow-up tap, or is replaced by direct navigation — Claude's discretion at execution time, whichever is the smaller, most consistent diff with the existing map screen's navigation pattern.
+- **D-06, auth on the map client.** `fetchPublicMapItems`/`fetchPublicParcelStatuses` gain a required `accessToken` parameter and send it like every other authenticated client call; `usePublicMapExplorer` and its callers thread the token through (same pattern as other network hooks under `mobile/src/hooks/survey-sync/`).
+- **D-07, survey-detail history & deltas.** New section in `SurveyDetailScreen` (own subcomponent file, e.g. `survey-detail/HistorySection.tsx`, to keep the 400-line screen budget from 01.9's D-04 intact) calls the new `fetchParcelSurveyHistory` client function and renders previous submitted surveys on the same parcel (observation year, version) plus IBP total and per-factor deltas against the latest previous version, computed via `@cortege/ibp-domain` types already used by `ibp-scoring.ts` (no new scoring logic — deltas are `current - previous` on values the package already types, per CLAUDE.md's "never re-implement a rule" rule; a delta is arithmetic, not a rule).
+- **D-08, BUG-04 deferred.** The decimal-comma numeric parsing bug lives in `mobile/src/hooks/useSurveyForm.ts` (`numberError`/`oneOfError`), the factor-entry form's core validation hook — squarely inside "FactorDetailScreen and friends", which the parallel Phase 3 session (Field-Entry Ergonomics) owns and is actively restructuring this same milestone. Editing it here risks a direct merge collision with work already in flight. **Decision: skip BUG-04 in this phase**, record it as a known remaining item in `02-VALIDATION.md`, and leave it for Phase 3 (whose own audit lot already covers field-entry ergonomics) or a fast-follow. All other Lot 0 bugs (BUG-03, BUG-05 through BUG-08, DS-01/02/14) are fixed here since none of them touch factor-entry files.
+- **D-09, account deletion UI.** Add a destructive "Supprimer mon compte" entry in `AccountScreen`/`AccountSettingsRows` as its own "danger zone" section placed **after** the other settings rows (fixes the BUG-05 placement half; the copy half says surveys are anonymised, not deleted, matching the API's actual behavior confirmed in research). Confirmation is a two-step `Alert.alert` (destructive style), calling the already-existing `deleteMyAccount()` client function, then routing to the logged-out state the same way logout does.
+- **D-10, report removal is deletion, not gating.** Per roadmap criterion 3 ("removed... entry point"), delete the report button/panel/state and its call chain outright (full list in `02-RESEARCH.md`) rather than hiding it behind a flag — there is no future date given for its return, and `reports.controller.ts`/`service.ts` stay reachable by direct API call for the eventual moderation UI, per the roadmap's own wording ("ready for the next milestone").
+- **D-11, docs corrections (criterion 7).** `docs/specs/epic-a-access-and-security.md`: retag US-A4 (social login) explicitly out of MVP scope (its own test plan already treats it that way per REQUIREMENTS.md; make the epic doc's scope marker match). `docs/specs/user-stories.md` §8: the moderation-workflow and team-challenge stories currently filed under "V2" move to a "Deferred — Next Milestone" heading (matching REQUIREMENTS.md's "Deferred — Next Milestone" vs "Deferred — V2" split) rather than the V2 section they're wrongly in today.
+
+## Wave plan
+
+1. **API — association-only reads** (`02-01`): migration + predicate change + `AuthGuard` on `PublicController` + parcel-history unconditional access. Covers criterion 1 (server half) and unblocks criterion 5's data source.
+2. **Mobile — Explorer map** (`02-02`): auth token on the two map client calls, tap-through navigation to survey detail. Covers criteria 1 (client half) and 6.
+3. **Mobile — survey detail: history/deltas + visibility removal** (`02-03`): new history section, remove the toggle. Covers criteria 2 and 5.
+4. **Mobile — remove report entry point** (`02-04`): covers criterion 3.
+5. **Mobile — account deletion entry point** (`02-05`): covers criterion 4 and the BUG-05 half not already covered by D-11.
+6. **Mobile — remaining UX Lot 0 bugs** (`02-06`): BUG-03, BUG-06, BUG-07, BUG-08, DS-01/02/14. Covers criterion 8 (minus BUG-04, see D-08).
+7. **Docs corrections** (`02-07`): epic-a retag, user-stories.md §8 fix, REQUIREMENTS.md status sync. Covers criterion 7.
+8. **Phase gate** (`02-08`): full test gate, `02-VALIDATION.md`, `.planning/ROADMAP.md` checkbox/progress update, push, draft PR (opened earlier if a coherent increment lands first — see below).
+
+Each wave runs `npm run lint && npm run typecheck && npm run test:unit && npm run format:check` before being considered done, and gets its own `02-0N-SUMMARY.md`. Given the size, a draft PR is opened once waves 1–3 (the core sharing-model change) are green, and pushed to incrementally afterward — matching how prior phases in this repo shipped across many plans to one PR.
+
+## Claude's discretion
+
+- Exact shape of the Explorer tap-through (D-05) and the history/deltas section's visual layout (D-07) — follow existing survey-detail and map screen conventions, no new UI library.
+- Whether the new migration also needs an `EXPLAIN`-style regression check like `01.7-explain-10k.txt` — only if trivial to reuse the existing `scripts/explain-public-routes.js` harness; not a blocker for this phase's success criteria.

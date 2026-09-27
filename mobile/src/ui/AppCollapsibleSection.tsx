@@ -1,7 +1,23 @@
 import { ReactNode, useState } from "react"
-import { LayoutAnimation, Pressable, StyleSheet, Text, View } from "react-native"
+import { Pressable, StyleSheet } from "react-native"
+import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated"
+import {
+  brandColors,
+  brandMotion,
+  brandRadius,
+  brandSpacing,
+  brandTypography,
+} from "../app/brand-tokens"
 import { fr } from "../i18n"
 import { AppStatusChip } from "./AppStatusChip"
 
@@ -19,14 +35,22 @@ export function AppCollapsibleSection({
   children,
 }: AppCollapsibleSectionProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
+  const chevronRotation = useSharedValue(defaultExpanded ? 180 : 0)
 
   const toggle = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    setExpanded((prev) => !prev)
+    setExpanded((prev) => {
+      const next = !prev
+      chevronRotation.value = withTiming(next ? 180 : 0, { duration: brandMotion.durations.base })
+      return next
+    })
   }
 
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronRotation.value}deg` }],
+  }))
+
   return (
-    <View style={styles.root}>
+    <Animated.View style={styles.root} layout={LinearTransition.reduceMotion(ReduceMotion.System)}>
       <Pressable
         style={({ pressed }) => [styles.header, pressed && styles.headerPressed]}
         onPress={toggle}
@@ -36,14 +60,20 @@ export function AppCollapsibleSection({
       >
         <Text style={styles.title}>{title}</Text>
         {badge ? <AppStatusChip label={badge} tone="neutral" /> : null}
-        <Ionicons
-          name={expanded ? "chevron-up" : "chevron-down"}
-          size={14}
-          color={brandColors.textSecondary}
-        />
+        <Animated.View style={chevronStyle}>
+          <Ionicons name="chevron-down" size={14} color={brandColors.textSecondary} />
+        </Animated.View>
       </Pressable>
-      {expanded ? <View style={styles.body}>{children}</View> : null}
-    </View>
+      {expanded ? (
+        <Animated.View
+          style={styles.body}
+          entering={FadeIn.duration(brandMotion.durations.base).reduceMotion(ReduceMotion.System)}
+          exiting={FadeOut.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)}
+        >
+          {children}
+        </Animated.View>
+      ) : null}
+    </Animated.View>
   )
 }
 

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+import { AppText as Text } from "./AppText"
 import { brandColors, brandFieldState, brandSpacing4 } from "../app/brand-tokens"
 import type { FactorKey, FactorProgress } from "../app/types"
 import { fr } from "../i18n"

@@ -77,6 +77,7 @@ describe("French catalogue", () => {
         "navigation",
         "nearbyParcelsSheet",
         "ownerConflict",
+        "parcelHistory",
         "parcelSelection",
         "profileSetup",
         "publicMap",

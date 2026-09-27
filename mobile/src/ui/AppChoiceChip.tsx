@@ -1,5 +1,11 @@
-import { Pressable, StyleProp, StyleSheet, Text, TextStyle, ViewStyle } from "react-native"
-import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
+import { Pressable, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native"
+import { AppText as Text } from "./AppText"
+import {
+  brandColors,
+  brandComponentTokens,
+  brandRadius,
+  brandTypography,
+} from "../app/brand-tokens"
 
 export type AppChoiceChipTone = "neutral" | "success" | "warning" | "danger"
 
@@ -65,7 +71,7 @@ const styles = StyleSheet.create({
   interactive: {
     borderColor: brandComponentTokens.choiceChip.interactiveBorder,
     backgroundColor: brandComponentTokens.choiceChip.interactiveBackground,
-    shadowColor: "#000000",
+    shadowColor: brandColors.black,
     shadowOpacity: 0.04,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },

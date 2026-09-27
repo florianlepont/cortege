@@ -1,4 +1,5 @@
-import { Pressable, Text, View } from "react-native"
+import { Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { brandColors } from "../../app/brand-tokens"

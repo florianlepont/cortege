@@ -22,3 +22,4 @@ export type {
   SyncResultError,
 } from "./sync"
 export type { PublicMapItem, PublicParcelStatusItem } from "./public-map"
+export type { FactorAGenusInput, FactorALegacyCountInput } from "./factor-a"

@@ -35,6 +35,20 @@
       ],
       "react-native-bottom-tabs",
       [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Sora_500Medium.ttf",
+            "./assets/fonts/Sora_600SemiBold.ttf",
+            "./assets/fonts/Sora_700Bold.ttf",
+            "./assets/fonts/Sora_800ExtraBold.ttf",
+            "./assets/fonts/Jost_400Regular.ttf",
+            "./assets/fonts/Jost_500Medium.ttf",
+            "./assets/fonts/Jost_600SemiBold.ttf"
+          ]
+        }
+      ],
+      [
         "react-native-auth0",
         {
           "domain": "cortege-auth.algernon.ovh"

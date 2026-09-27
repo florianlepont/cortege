@@ -1,4 +1,5 @@
-import { Text, View } from "react-native"
+import { View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { formatSyncErrorForUser } from "../../app/formatters"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
@@ -15,7 +16,6 @@ type DetailActionsProps = {
   onDeleteSurvey: (surveyId: string) => void
   onRetrySurvey: (surveyId: string) => Promise<void>
   onDiscardSurvey: (surveyId: string) => Promise<void>
-  onToggleVisibility: (surveyId: string, visibility: "private" | "public") => Promise<void>
 }
 
 export function DetailActions({
@@ -23,9 +23,7 @@ export function DetailActions({
   onDeleteSurvey,
   onRetrySurvey,
   onDiscardSurvey,
-  onToggleVisibility,
 }: DetailActionsProps) {
-  const isPublic = survey.visibility === "public"
   // The user-facing sync error text, keyed by code; the raw text and code stay in DebugTab.
   const syncErrorText = formatSyncErrorForUser(survey.last_sync_error, survey.last_sync_error_code)
 
@@ -34,12 +32,6 @@ export function DetailActions({
       <AppSectionHeader title={t.title} subtitle={t.subtitle} />
 
       <View style={styles.actionButtonsRow}>
-        <AppButton
-          label={isPublic ? t.setPrivate : t.setPublic}
-          leadingIcon={isPublic ? "lock-closed-outline" : "globe-outline"}
-          variant="secondary"
-          onPress={() => void onToggleVisibility(survey.id, isPublic ? "private" : "public")}
-        />
         <AppButton
           label={t.deleteSurvey}
           leadingIcon="trash-outline"

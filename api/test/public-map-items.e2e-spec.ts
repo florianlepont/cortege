@@ -14,6 +14,9 @@ import {
 
 // Phase 01.8 D-12: split out of the former catch-all surveys-idempotency suite. This file covers
 // /v1/public/map-items inclusion rules and /v1/public/parcels/status.
+//
+// Phase 2 (association-only sharing): both routes require an authenticated member and show every
+// submitted survey to every member, regardless of the (now unused for reads) visibility column.
 
 describe("Public map items (e2e)", () => {
   let app: INestApplication
@@ -31,8 +34,17 @@ describe("Public map items (e2e)", () => {
     }
   })
 
-  it("exposes submitted+public surveys on /v1/public/map-items and removes them after public -> private", async () => {
+  it("requires authentication on both public routes", async () => {
+    await request(app.getHttpServer()).get("/v1/public/map-items").expect(401)
+    await request(app.getHttpServer())
+      .get("/v1/public/parcels/status")
+      .query({ bbox: "1.0,43.0,2.0,44.0", zoom: 16 })
+      .expect(401)
+  })
+
+  it("exposes every submitted survey to any member regardless of visibility, never a draft", async () => {
     const accessToken = await loginTestUser(app, "e2e-public-map")
+    const otherMemberToken = await loginTestUser(app, "e2e-public-map-other")
     const submittedPublicId = uniqueId("e2e-public-map-pub")
     const submittedPrivateId = uniqueId("e2e-public-map-prv")
     const draftPublicId = uniqueId("e2e-public-map-draft")
@@ -124,44 +136,34 @@ describe("Public map items (e2e)", () => {
       })
       .expect(201)
 
-    const mapBeforeHide = await request(app.getHttpServer())
+    // A different member than the one who submitted the surveys: they still see both submitted
+    // ones, public or private (association-only sharing, not per-survey visibility).
+    const mapForOtherMember = await request(app.getHttpServer())
       .get("/v1/public/map-items")
+      .set("Authorization", `Bearer ${otherMemberToken}`)
       .query({ region: "ACA" })
       .expect(200)
 
-    const beforeItems = mapBeforeHide.body.items as Array<{
+    const items = mapForOtherMember.body.items as Array<{
       survey_id: string
       region_code: string
       ibp_total: number
     }>
-    expect(beforeItems.some((item) => item.survey_id === submittedPublicId)).toBe(true)
-    expect(beforeItems.some((item) => item.survey_id === submittedPrivateId)).toBe(false)
-    expect(beforeItems.some((item) => item.survey_id === draftPublicId)).toBe(false)
+    expect(items.some((item) => item.survey_id === submittedPublicId)).toBe(true)
+    expect(items.some((item) => item.survey_id === submittedPrivateId)).toBe(true)
+    expect(items.some((item) => item.survey_id === draftPublicId)).toBe(false)
 
-    const included = beforeItems.find((item) => item.survey_id === submittedPublicId)
+    const included = items.find((item) => item.survey_id === submittedPublicId)
     expect(included?.region_code).toBe("ACA")
     expect(typeof included?.ibp_total).toBe("number")
-
-    await request(app.getHttpServer())
-      .patch(`/v1/surveys/${submittedPublicId}/visibility`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ visibility: "private" })
-      .expect(200)
-
-    const mapAfterHide = await request(app.getHttpServer())
-      .get("/v1/public/map-items")
-      .query({ region: "ACA" })
-      .expect(200)
-
-    const afterItems = mapAfterHide.body.items as Array<{ survey_id: string }>
-    expect(afterItems.some((item) => item.survey_id === submittedPublicId)).toBe(false)
   })
 
-  it("exposes parcel study status on /v1/public/parcels/status", async () => {
+  it("exposes parcel study status on /v1/public/parcels/status to any member, private survey included", async () => {
     const runSeed = uniqueCoordSeed()
     const baseLat = 43.6045 + (runSeed % 80000) / 10000000
     const baseLng = 1.444 + (runSeed % 80000) / 10000000
     const accessToken = await loginTestUser(app, "e2e-parcel-status")
+    const otherMemberToken = await loginTestUser(app, "e2e-parcel-status-other")
     const surveyId = uniqueId("e2e-parcel-status")
 
     const parcelId = await resolveParcel(app, accessToken, baseLat, baseLng)
@@ -193,14 +195,11 @@ describe("Public map items (e2e)", () => {
       .set("Authorization", `Bearer ${accessToken}`)
       .expect(201)
 
-    await request(app.getHttpServer())
-      .patch(`/v1/surveys/${surveyId}/visibility`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ visibility: "public" })
-      .expect(200)
-
+    // Never patched to public: a different member still sees it as "studied" (association-only
+    // sharing has no per-survey visibility gate on this route).
     const statuses = await request(app.getHttpServer())
       .get("/v1/public/parcels/status")
+      .set("Authorization", `Bearer ${otherMemberToken}`)
       .query({ bbox: "1.0,43.0,2.0,44.0", zoom: 16, year: 2026 })
       .expect(200)
 
@@ -216,6 +215,7 @@ describe("Public map items (e2e)", () => {
 
     const lowZoom = await request(app.getHttpServer())
       .get("/v1/public/parcels/status")
+      .set("Authorization", `Bearer ${accessToken}`)
       .query({ bbox: "1.0,43.0,2.0,44.0", zoom: 14 })
       .expect(200)
     expect(lowZoom.body.items).toEqual([])

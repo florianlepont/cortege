@@ -1,5 +1,6 @@
 import { ReactNode } from "react"
-import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from "react-native"
+import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
+import { AppText as Text } from "./AppText"
 import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
 
 type AppSectionHeaderProps = {
