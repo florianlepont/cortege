@@ -28,16 +28,19 @@ prefixes `ML` (species recognition groundwork), `INF` (infrastructure), `QA` (qu
 
 ### A — Access and Security
 
-All seven are Built and field-tested (`docs/user-tests/epic-a-access-and-security.md`, 28 cases).
-Two carry open defects, fixed in Phase 7.
+Five of six are Built and field-tested (`docs/user-tests/epic-a-access-and-security.md`, 28 cases);
+two of those five carry open defects, fixed in Phase 7. Account deletion is Partial: the API path
+is built and untested-by-necessity (no mobile entry point existed to test), fixed in Phase 1.10.
+Social login was found unbuilt on 2026-09-27 (no code anywhere in `mobile/src`, despite this
+document previously marking it "Built") and is moved to **Deferred — Next Milestone** below —
+`docs/specs/epic-a-access-and-security.md`'s own test plan already treats it that way.
 
 - [x] **REQ-A-login** — Contributor logs in with credentials; session survives app restarts. *(Built)*
 - [x] **REQ-A-logout** — Contributor logs out from the profile menu and returns to login. *(Built)*
 - [ ] **REQ-A-signup** — Contributor creates an account with email + password, with validation, verification and actionable errors. *(Built — `BUG-A3-4` open: duplicate email shows a generic Auth0 error)*
-- [x] **REQ-A-social-login** — Sign in with Apple and Sign in with Google, with account-linking on an existing email. *(Built — shipped without field-test coverage)*
 - [x] **REQ-A-profile** — Contributor views and edits first name, last name, display name and profile picture (camera or gallery). *(Built)*
 - [ ] **REQ-A-forgot-password** — Contributor requests a reset link, single-use and expiring after 24 h. *(Built — `BUG-A6-2` open: reset email lands in spam, an Auth0 tenant setting)*
-- [x] **REQ-A-delete-account** — Contributor deletes the account irreversibly; personal data erased, submitted surveys anonymised and retained. *(Built)*
+- [ ] **REQ-A-delete-account** — Contributor deletes the account irreversibly; personal data erased, submitted surveys anonymised and retained. *(Partial — API (`DELETE /me`) built and correct; no mobile entry point exists. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 1.10)*
 
 ### B — Survey Preparation
 

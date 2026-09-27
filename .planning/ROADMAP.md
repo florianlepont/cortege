@@ -11,9 +11,11 @@ out of the app as a PDF, takes PostgreSQL out of PoC status and ratifies the hos
 running unofficially, and finishes by proving the whole thing in the field — which is the milestone's
 success metric, not its afterthought.
 
-**Milestone framing:** internal-only. The community and social dimension (public map, gamification,
-moderation, association section, donation) is deferred to the next milestone. See
-`.planning/REQUIREMENTS.md` for what is deferred and why.
+**Milestone framing:** internal-only, shared within the association. Every authenticated member sees
+every member's submitted surveys — there is no per-user private/public choice and no anonymous public
+surface. The wider community and social dimension (an anonymous public map, gamification, moderation,
+association section, donation) is deferred to the next milestone. See `.planning/REQUIREMENTS.md` for
+what is deferred and why, and Phase 1.10 for where this milestone's own scope was trimmed to match.
 
 **Schedule reality:** the published plan (May 2026) put MVP finalization at September 2026, field
 tests October–December 2026, store publication January 2027. Today is 2026-09-22 and species
@@ -39,6 +41,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1.7: API configuration, service split and database tuning** (INSERTED) - Fail-fast config, split SurveysService, bounded and indexed queries (completed 2026-09-26)
 - [ ] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested
 - [ ] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs
+- [ ] **Phase 1.10: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI
 - [ ] **Phase 2: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec
 - [ ] **Phase 3: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
 - [ ] **Phase 4: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map
@@ -343,6 +346,24 @@ Plans:
 - [x] 01.9-31-PLAN.md — Prove the phase: run and record the full local gate and every measurement, record PR #158's CI evidence suppli (wave 9)
 - [ ] 01.9-32-PLAN.md — Close phase 01.9 after phase 01.8: final documentation sweep, complete audit status links, and the French vali (wave 10)
 
+### Phase 1.10: Association-only sharing & scope trim (INSERTED)
+
+**Goal**: The app matches its real audience — association members only, no anonymous public surface, no half-built moderation — and the survey-detail and account screens do what `REQUIREMENTS.md` already claims they do.
+**Depends on**: Phase 01.6 (StorageService/API boundary), Phase 01.9 (mobile state/i18n conventions). Independent of the species-recognition track. Should land before Phase 4, which builds offline capability on top of the map this phase repoints.
+**Requirements**: REQ-B-own-surveys-map (redefined), REQ-B-manage-published, REQ-X-visibility, REQ-A-delete-account (build), REQ-B-survey-detail (build), REQ-C-versioning (build), REQ-B-manage-published (US-B4 tap target)
+**Source**: Owner decision 2026-09-27, on top of a code-vs-code-audit review of Epics A–I (`.planning` session notes) that found three bricks already shipped past what `REQUIREMENTS.md` had decided, and three bricks `REQUIREMENTS.md` had already marked "Built" that have no working UI.
+**Success Criteria** (what must be TRUE):
+
+  1. `GET /public/map-items` and `GET /public/parcels/status` require authentication; the "Explorer" map shows surveys submitted by any association member (not an anonymous public set, and not only the contributor's own) — this **replaces** Phase 4's original "own surveys" framing in `REQ-B-own-surveys-map`.
+  2. The private/public visibility control is removed from survey detail; every submitted survey is visible by default to every authenticated member. `REQ-X-visibility` no longer applies as a per-survey choice this milestone.
+  3. The "report a survey" entry point is removed from the mobile app (button, panel, and the `POST /reports` call site). The `reports` module and its role-gated review endpoints stay in the API, untouched and still unreachable from any client, ready for the next milestone that gives it a moderation UI.
+  4. From the Compte screen, a contributor can delete their account — the existing API path (`DELETE /me`) gets a mobile entry point with a destructive confirmation.
+  5. Survey detail shows previous submitted surveys on the same parcel and the IBP total/factor deltas against the latest previous version — wiring the existing `GET /parcels/:parcelId/surveys/history` endpoint into the UI (`REQ-B-survey-detail`, `REQ-C-versioning`).
+  6. In the now member-only Explorer map, tapping a studied parcel opens its latest survey detail or history, matching the behaviour already working in the survey-creation map.
+  7. `REQUIREMENTS.md` no longer marks `REQ-A-social-login`, `REQ-A-delete-account`, `REQ-B-survey-detail` or `REQ-C-versioning` as "Built" when they are not; `docs/specs/epic-a-access-and-security.md` retags US-A4 (social login) out of MVP to match the QA plan's own treatment of it, and `docs/specs/user-stories.md` §8 stops filing Epic E/F's moderation workflow and team-challenge stories under "V2" when they are next-milestone (deferred), not V2.
+
+**Plans**: TBD
+
 ### Phase 2: Factor A Genus List & Data-Contract Corrections
 
 **Goal**: Factor A records the observed native genera as a list rather than a bare count, through contracts written down before any UI exists; surveys already recorded keep their scores; and the two stale spec sections that contradict shipped behaviour are corrected.
@@ -380,12 +401,12 @@ Plans:
 
 ### Phase 4: Offline Map & Own-Survey Navigation
 
-**Goal**: The surveyor can find their way around a parcel and see their own past work on the map, with no network at all.
-**Depends on**: Nothing (independent of the species-recognition track; sequenced after it)
-**Requirements**: REQ-B-own-surveys-map, REQ-D-offline-map, REQ-D-area-download, REQ-D-offline-parcel-warning, REQ-D-basemap-switch
+**Goal**: The surveyor can find their way around a parcel and see the association's recorded work on the map, with no network at all.
+**Depends on**: Phase 1.10 (the map this phase makes offline-capable is the member-authenticated one Phase 1.10 ships; the "own surveys" framing below is superseded — see that phase)
+**Requirements**: REQ-D-offline-map, REQ-D-area-download, REQ-D-offline-parcel-warning, REQ-D-basemap-switch
 **Success Criteria** (what must be TRUE):
 
-  1. The map screen shows the surveyor's own surveys instead of the public anonymized set, with its navigation unchanged.
+  1. ~~The map screen shows the surveyor's own surveys instead of the public anonymized set~~ — done in Phase 1.10, which repoints the map to all authenticated members' surveys instead. This phase builds offline capability on top of that map; navigation stays unchanged.
   2. The surveyor switches between a satellite and a map basemap, and the choice persists while navigating.
   3. The surveyor selects an area, sees its estimated download size and progress, and the downloaded area is still usable after force-quitting and relaunching the app; downloaded areas can be listed and deleted.
   4. In airplane mode the map shows an offline indicator, renders the downloaded basemap and cached parcels, follows GPS, and still allows zoom, pan and parcel selection.
@@ -405,7 +426,7 @@ Plans:
   2. The export works in airplane mode: the PDF is produced and shared with no API call.
   3. The PDF contains the survey's identifying data (site, parcel ids, observation year, version, date), the ten factor scores and the IBP total.
   4. The surveyor deletes their own survey behind a confirmation step, and it disappears from their list.
-  5. No private/public visibility control is presented anywhere in the app.
+  5. ~~No private/public visibility control is presented anywhere in the app~~ — done in Phase 1.10.
 
 **Plans**: TBD
 **UI hint**: yes
@@ -443,9 +464,9 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7
+Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 1.10 → 2 → 3 → 4 → 5 → 6 → 7
 
-Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phases 2–6 do not depend on 1.6–1.9 either, so they can interleave if the schedule requires it.
+Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 1.10 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 4, whose offline-map work builds on the map Phase 1.10 repoints. Phases 2–6 do not depend on 1.6–1.10 either, so they can interleave if the schedule requires it.
 
 Phases 4, 5 and 6 declare no dependency on the species-recognition track and can be reordered ahead
 of it if Phase 1 returns a no-go, or run in parallel with it.
@@ -462,6 +483,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
 | 1.8. Shared IBP domain package and test completeness | 15/16 | In Progress|  |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 31/32 | In Progress|  |
+| 1.10. Association-only sharing & scope trim | 0/TBD | Not started | - |
 | 2. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |
 | 3. Genus Recognition for Factor A | 0/TBD | Not started | - |
 | 4. Offline Map & Own-Survey Navigation | 0/TBD | Not started | - |
