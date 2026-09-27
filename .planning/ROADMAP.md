@@ -55,7 +55,7 @@ list is never ambiguous.
 - [ ] **Phase 7: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured
 - [ ] **Phase 8: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map
 - [ ] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map
-- [ ] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys
+- [x] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
 - [ ] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone
 - [ ] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F
 - [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
@@ -534,13 +534,13 @@ Plans:
 **Requirements**: REQ-C-pdf-export, REQ-B-manage-published
 **Success Criteria** (what must be TRUE):
 
-  1. From a survey's detail, the surveyor generates a PDF on the device and sends it through the OS share sheet to any installed target — Google Drive, Wimi, mail, AirDrop.
-  2. The export works in airplane mode: the PDF is produced and shared with no API call.
-  3. The PDF contains the survey's identifying data (site, parcel ids, observation year, version, date), the ten factor scores and the IBP total.
-  4. The surveyor deletes their own survey behind a confirmation step, and it disappears from their list.
-  5. ~~No private/public visibility control is presented anywhere in the app~~ — done in Phase 2.
+  1. [x] From a survey's detail, the surveyor generates a PDF on the device and sends it through the OS share sheet to any installed target — Google Drive, Wimi, mail, AirDrop. (`DetailActions.tsx`'s "Exporter en PDF" button → `survey-pdf-export.ts`'s `exportAndShareSurveyPdf`)
+  2. [x] The export works in airplane mode: the PDF is produced and shared with no API call. (no `fetch`/`apiRequest` in `survey-pdf-export.ts`; `observation_year`/`version_number` cached locally via `cacheSurveyCanonicalFields` so they survive an offline restart — see `10-CONTEXT.md` D-01)
+  3. [x] The PDF contains the survey's identifying data (site, parcel ids, observation year, version, date), the ten factor scores and the IBP total. (`buildSurveyExportHtml`, unit-tested in `survey-pdf-export.test.ts`)
+  4. [x] The surveyor deletes their own survey behind a confirmation step, and it disappears from their list. (already built pre-Phase-10 — `confirmDeleteSurvey`'s `Alert.alert` + synchronous local delete; verified, not rebuilt)
+  5. [x] ~~No private/public visibility control is presented anywhere in the app~~ — done in Phase 2, re-verified in Phase 10.
 
-**Plans**: TBD
+**Plans**: `10-01` (single wave — PDF export module, action-bar wiring, offline-caching fix, delete/visibility verification)
 **UI hint**: yes
 
 ### Phase 11: Durable Backend
@@ -617,7 +617,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 7. Information Architecture (UX Lot 3) | 0/TBD | Not started | - |
 | 8. Offline Map & Own-Survey Navigation | 0/TBD | Not started | - |
 | 9. Onboarding & Explorer Polish (UX Lot 4) | 0/TBD | Not started | - |
-| 10. Survey Export & Ownership | 0/TBD | Not started | - |
+| 10. Survey Export & Ownership | 1/1 | Complete   | 2026-09-27 |
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
