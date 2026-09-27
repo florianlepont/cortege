@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandRadius, brandTypography } from "../../app/brand-tokens"
+import { brandColors, brandRadius, brandTintOnLight, brandTypography } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { triggerHaptic } from "./haptics"
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   createSurveyCard: {
     position: "relative",
     overflow: "hidden",
-    borderColor: "rgba(51, 78, 43, 0.18)",
+    borderColor: brandTintOnLight.forestBorder,
     backgroundColor: brandColors.panel,
     gap: 10,
   },
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     width: 112,
     height: 112,
     borderRadius: 999,
-    backgroundColor: "rgba(137,163,58,0.12)",
+    backgroundColor: brandTintOnLight.mossOrb,
   },
   createSurveyAccentRail: {
     position: "absolute",
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     gap: 6,
     alignSelf: "flex-start",
     borderRadius: brandRadius.pill,
-    backgroundColor: "rgba(176, 199, 142, 0.24)",
+    backgroundColor: brandTintOnLight.sageBadge,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },

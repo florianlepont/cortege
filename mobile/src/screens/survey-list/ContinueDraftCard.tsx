@@ -5,6 +5,7 @@ import {
   brandColors,
   brandComponentTokens,
   brandRadius,
+  brandSemanticColors,
   brandTypography,
 } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
@@ -71,7 +72,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.55)",
+    backgroundColor: brandSemanticColors.haloOnDark,
     flexShrink: 0,
   },
   draftContent: {

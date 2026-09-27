@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
   brandComponentTokens,
+  brandOnDangerSurface,
   brandRadius,
   brandTypography,
 } from "../app/brand-tokens"
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
   dangerSoft: {
     backgroundColor: brandColors.errorSoft,
     borderWidth: 1,
-    borderColor: "#E4A595",
+    borderColor: brandComponentTokens.notice.dangerBorder,
   },
   disabled: {
     opacity: 0.7,
@@ -173,6 +174,6 @@ const styles = StyleSheet.create({
     color: brandComponentTokens.button.secondaryBorder,
   },
   labelDangerSoft: {
-    color: brandColors.terracotta,
+    color: brandOnDangerSurface,
   },
 })

@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { Platform, View } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
-import { brandColors } from "../../app/brand-tokens"
+import { brandColors, brandMediaBackdrop } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
@@ -100,7 +100,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             options={{
               title: headers.parcels,
               headerLargeTitle: false,
-              headerStyle: { backgroundColor: "#132434" },
+              headerStyle: { backgroundColor: brandMediaBackdrop },
               headerShadowVisible: false,
               headerTintColor: brandColors.white,
               headerTitleStyle: {
@@ -108,7 +108,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                 fontSize: 18,
                 fontWeight: "800" as const,
               },
-              contentStyle: { backgroundColor: "#132434" },
+              contentStyle: { backgroundColor: brandMediaBackdrop },
             }}
             component={ParcelSelectionRoute}
           />

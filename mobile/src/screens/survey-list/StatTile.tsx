@@ -5,6 +5,7 @@ import {
   brandColors,
   brandRadius,
   brandSemanticColors,
+  brandStatTileTint,
   brandTypography,
 } from "../../app/brand-tokens"
 import { triggerHaptic } from "./haptics"
@@ -30,15 +31,15 @@ export function StatTile({
 }: StatTileProps) {
   const chipBg =
     severity === "danger"
-      ? "rgba(205,88,51,0.20)"
+      ? brandStatTileTint.dangerSoft
       : severity === "warning"
-        ? "rgba(204,112,31,0.20)"
+        ? brandStatTileTint.warningSoft
         : brandSemanticColors.heroPanelBackgroundOnDark
   const chipBorder =
     severity === "danger"
-      ? "rgba(205,88,51,0.40)"
+      ? brandStatTileTint.dangerStrong
       : severity === "warning"
-        ? "rgba(204,112,31,0.40)"
+        ? brandStatTileTint.warningStrong
         : brandSemanticColors.heroPanelBorderOnDark
 
   return (
@@ -56,7 +57,7 @@ export function StatTile({
           {value} {label}
         </Text>
         {/* P1-A11Y-01: subtle funnel affordance hinting the tile is interactive */}
-        <Ionicons name="funnel-outline" size={9} color="rgba(255,255,255,0.50)" />
+        <Ionicons name="funnel-outline" size={9} color={brandSemanticColors.haloOnDark} />
       </View>
     </Pressable>
   )

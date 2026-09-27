@@ -20,7 +20,18 @@ export const brandColors = {
   textSecondary: "#51604B",
   successSoft: "#E6ECCE",
   errorSoft: "#F3D3C8",
+  // Phase 4 (DS-04): additions surfaced by the hex-literal migration, not new brand hues.
+  forestNight: "#0E2210",
+  disabledMuted: "#8FA188",
+  disabledNeutral: "#A6ABA3",
 } as const
+
+// Phase 4 (DS-01/DS-02): darkened text for saturated-adjacent tokens (warningSoft, errorSoft, the
+// IBP "high" band) that failed WCAG as white-on-saturated or ochre/terracotta-on-soft. Contrast
+// verified against `warningSoft`/`errorSoft` at >= 4.5:1.
+export const brandOnWarningSurface = "#7A4A0A"
+export const brandOnDangerSurface = "#8A2F14"
+export const brandOnSuccessSurface = brandColors.forest
 
 // Phase 4 (DS-03): Mazzard H has no licence yet and Avenir Next is Apple-proprietary (not
 // redistributable, absent on Android), so neither can be embedded via `expo-font`. Sora and Jost —
@@ -169,15 +180,81 @@ export const brandSemanticColors = {
   heroPanelBorderOnDark: "rgba(255, 255, 255, 0.14)",
   heroPanelBackgroundOnDark: "rgba(255, 255, 255, 0.08)",
   heroOrbOnDark: "rgba(137, 163, 58, 0.22)",
+  // Phase 4 (DS-04): the rest of the "glass over a dark hero" family the hex-literal migration
+  // surfaced — same surface, a stronger step, a stronger border, a sage (not moss) accent tint, a
+  // muted text tone, a near-black scrim for photo/map backdrops, and a light-on-saturated halo.
+  // Several distinct source opacities (0.1/0.16 into surface tokens, 0.22/0.28/0.3 into
+  // borderStrong) were deliberately consolidated onto one value each rather than kept as one-off
+  // magic numbers — see `.planning/phases/04-visual-foundations-motion/04-CONTEXT.md`.
+  heroTextMutedOnDark: "#D7E3C0",
+  heroSurfaceOnDark: "rgba(255, 255, 255, 0.12)",
+  heroSurfaceStrongOnDark: "rgba(255, 255, 255, 0.18)",
+  heroBorderStrongOnDark: "rgba(255, 255, 255, 0.24)",
+  heroAccentTintOnDark: "rgba(176, 199, 142, 0.22)",
+  heroScrimOnDark: "rgba(8, 13, 19, 0.72)",
+  haloOnDark: "rgba(255, 255, 255, 0.50)",
+} as const
+
+// Phase 4 (DS-04): status tints for pills/cards over the dark forest hero (survey-detail header) —
+// distinct from the generic `heroSurface*OnDark` above because these carry semantic meaning
+// (ready/pending/blocked), not just a translucency level.
+export const brandOnDarkStatus = {
+  successBorder: "rgba(187, 208, 155, 0.28)",
+  successBorderStrong: "rgba(208, 226, 182, 0.34)",
+  successBackground: "rgba(176, 199, 142, 0.18)",
+  warningBorder: "rgba(231, 194, 129, 0.34)",
+  warningBackground: "rgba(204, 112, 31, 0.12)",
+  dangerBorder: "rgba(228, 165, 149, 0.28)",
+  dangerBorderStrong: "rgba(228, 165, 149, 0.34)",
+  dangerBackground: "rgba(205, 88, 51, 0.14)",
+  dangerBackgroundStrong: "rgba(205, 88, 51, 0.12)",
+  // A stronger, near-opaque danger pair for a destructive action button over the near-black media
+  // backdrop (`brandMediaBackdrop`), distinct from the lighter forest-hero pairs above.
+  dangerScrimBackground: "rgba(129, 31, 31, 0.84)",
+  dangerScrimBorder: "rgba(255, 210, 210, 0.42)",
+} as const
+
+// Phase 4 (DS-04): translucent panel surfaces floating over the map or a photo — a Liquid Glass
+// placeholder (no blur yet, see DS-15 / Phase 12) at a few opacity steps used across the public map
+// and parcel picker overlays.
+export const brandTranslucentPanel = {
+  subtle: "rgba(247, 246, 240, 0.94)",
+  default: "rgba(247, 246, 240, 0.96)",
+  strong: "rgba(247, 246, 240, 0.97)",
+  strongest: "rgba(247, 246, 240, 0.98)",
+  muted: "rgba(232, 229, 217, 0.94)",
+} as const
+
+// Phase 4 (DS-04): dark solid backdrop behind full-screen media/map surfaces before content loads.
+export const brandMediaBackdrop = "#132434"
+
+// Phase 4 (DS-04): decorative tint overlays on a light (not dark-hero) surface — CreateSurveyCard's
+// accent orb, border and badge.
+export const brandTintOnLight = {
+  forestBorder: "rgba(51, 78, 43, 0.18)",
+  mossOrb: "rgba(137, 163, 58, 0.12)",
+  sageBadge: "rgba(176, 199, 142, 0.24)",
+} as const
+
+// Phase 4 (DS-04): StatTile's severity-tinted chip background/border, at two opacity steps.
+export const brandStatTileTint = {
+  dangerSoft: "rgba(205, 88, 51, 0.20)",
+  dangerStrong: "rgba(205, 88, 51, 0.40)",
+  warningSoft: "rgba(204, 112, 31, 0.20)",
+  warningStrong: "rgba(204, 112, 31, 0.40)",
 } as const
 
 // IBP score colours keyed by the package's band tone (@cortege/ibp-domain bandTone): faible and
 // assez faible → low, moyenne → mid, assez forte and forte → high. No score cut-offs live here.
+// Phase 4 (DS-01): white-on-moss measured at 2.85:1 (WCAG fail); every band now pairs a soft
+// background with a darkened text token instead of white on a saturated fill (owner-approved
+// 2026-09-27, see 04-CONTEXT.md). The saturated hues stay in use elsewhere (progress ring, filled
+// pill) — this only changes where text sits directly on the fill.
 export const ibpScoreTokens = {
   colors: {
-    high: { background: brandColors.moss, text: brandColors.white },
-    mid: { background: brandColors.ochre, text: brandColors.white },
-    low: { background: brandColors.terracotta, text: brandColors.white },
+    high: { background: brandColors.sage, text: brandColors.forest },
+    mid: { background: brandColors.warningSoft, text: brandOnWarningSurface },
+    low: { background: brandColors.errorSoft, text: brandOnDangerSurface },
     empty: { background: brandColors.panelMuted, text: brandColors.textSecondary },
   },
 } as const
@@ -256,11 +333,13 @@ export const brandComponentTokens = {
     workflowDangerBackground: brandColors.errorSoft,
     workflowNeutralText: brandColors.forest,
     workflowSuccessText: brandColors.forest,
-    workflowWarningText: brandColors.ochre,
-    workflowDangerText: brandColors.terracotta,
+    // Phase 4 (DS-02): ochre/terracotta text directly on their soft backgrounds measured 2.90:1 and
+    // 2.97:1 (WCAG fail) — darkened tokens instead of the raw hue.
+    workflowWarningText: brandOnWarningSurface,
+    workflowDangerText: brandOnDangerSurface,
     progressTrack: brandColors.divider,
-    supportDangerText: brandColors.terracotta,
-    badgeDangerText: brandColors.terracotta,
+    supportDangerText: brandOnDangerSurface,
+    badgeDangerText: brandOnDangerSurface,
   },
   notice: {
     infoBackground: brandColors.panelMuted,
@@ -273,8 +352,9 @@ export const brandComponentTokens = {
     dangerBorder: "#E4A595",
     title: brandColors.textPrimary,
     text: brandColors.textSecondary,
-    warningText: brandColors.ochre,
-    dangerText: brandColors.terracotta,
+    // Phase 4 (DS-02): same contrast fix as surveyList above.
+    warningText: brandOnWarningSurface,
+    dangerText: brandOnDangerSurface,
     successText: brandColors.forest,
   },
 } as const
@@ -292,8 +372,9 @@ export const brandFieldState = {
   error: {
     border: brandColors.terracotta,
     background: brandColors.errorSoft,
-    icon: brandColors.terracotta,
-    text: brandColors.terracotta,
+    // Phase 4 (DS-02): terracotta text/icon directly on errorSoft measured 2.97:1 (WCAG fail).
+    icon: brandOnDangerSurface,
+    text: brandOnDangerSurface,
   },
   complete: {
     border: brandColors.moss,
@@ -323,4 +404,8 @@ export const brandMapTokens = {
   userLocation: brandColors.mauve,
   strokeWidthSelected: 3,
   strokeWidthDefault: 2,
+  // Phase 4 (DS-04): the public map's pin colors, tokenized as-is — MAP-03's actual redesign
+  // (score-band markers with a legend) is Phase 9's job, not this phase's.
+  publicMarkerSurvey: "#2a7a52",
+  publicMarkerCurrentPosition: "#245f96",
 } as const

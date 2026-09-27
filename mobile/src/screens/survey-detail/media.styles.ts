@@ -1,5 +1,13 @@
 import { StyleSheet } from "react-native"
-import { brandColors, brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandMediaBackdrop,
+  brandOnDarkStatus,
+  brandRadius,
+  brandSemanticColors,
+  brandShadow,
+  brandTypography,
+} from "../../app/brand-tokens"
 
 export const styles = StyleSheet.create({
   detailHeroShell: {
@@ -9,18 +17,18 @@ export const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: brandColors.divider,
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
     ...brandShadow.card,
   },
   detailHeroMain: {
     width: "100%",
     height: 320,
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
   },
   detailHeroMap: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
   },
   detailHeroPhotoCarousel: {
     width: "100%",
@@ -32,7 +40,7 @@ export const styles = StyleSheet.create({
   detailHeroPhotoImage: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
   },
   detailHeroOverlayBadge: {
     position: "absolute",
@@ -42,7 +50,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderRadius: brandRadius.pill,
-    backgroundColor: "rgba(8, 13, 19, 0.72)",
+    backgroundColor: brandSemanticColors.heroScrimOnDark,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
@@ -59,8 +67,8 @@ export const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-    backgroundColor: "#132434",
+    borderColor: brandSemanticColors.heroBorderStrongOnDark,
+    backgroundColor: brandMediaBackdrop,
   },
   detailHeroSwitchThumbImage: {
     width: "100%",
@@ -76,7 +84,7 @@ export const styles = StyleSheet.create({
     right: 6,
     bottom: 6,
     borderRadius: brandRadius.pill,
-    backgroundColor: "rgba(8, 13, 19, 0.72)",
+    backgroundColor: brandSemanticColors.heroScrimOnDark,
     paddingVertical: 4,
   },
   detailHeroSwitchThumbLabelText: {
@@ -97,11 +105,11 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.28)",
-    backgroundColor: "rgba(8, 13, 19, 0.72)",
+    borderColor: brandSemanticColors.heroBorderStrongOnDark,
+    backgroundColor: brandSemanticColors.heroScrimOnDark,
   },
   detailHeroActionButtonDanger: {
-    backgroundColor: "rgba(129, 31, 31, 0.84)",
-    borderColor: "rgba(255, 210, 210, 0.42)",
+    backgroundColor: brandOnDarkStatus.dangerScrimBackground,
+    borderColor: brandOnDarkStatus.dangerScrimBorder,
   },
 })

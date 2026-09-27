@@ -5,7 +5,13 @@ import { useHeaderHeight } from "@react-navigation/elements"
 import MapView, { Marker, Region } from "react-native-maps"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
-import { brandColors, brandShadow, brandTypography } from "../app/brand-tokens"
+import {
+  brandColors,
+  brandMediaBackdrop,
+  brandShadow,
+  brandTranslucentPanel,
+  brandTypography,
+} from "../app/brand-tokens"
 import {
   DEFAULT_FRANCE_CENTER,
   areRegionsNearlyEqual,
@@ -215,11 +221,11 @@ export function SurveyParcelSelectionScreen({
 const screenStyles = StyleSheet.create({
   fullscreen: {
     flex: 1,
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
   },
   map: {
     flex: 1,
-    backgroundColor: "#132434",
+    backgroundColor: brandMediaBackdrop,
   },
   overlayLayer: {
     ...StyleSheet.absoluteFill,
@@ -234,11 +240,11 @@ const screenStyles = StyleSheet.create({
   },
   locateButton: {
     borderWidth: 1,
-    borderColor: "#8EA97C",
+    borderColor: brandColors.sage,
     ...brandShadow.card,
   },
   bottomSheet: {
-    backgroundColor: "rgba(247, 246, 240, 0.97)",
+    backgroundColor: brandTranslucentPanel.strong,
     gap: 8,
   },
   bottomTitle: {

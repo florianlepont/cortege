@@ -9,6 +9,7 @@ import {
   resolveMethodVersion,
 } from "@cortege/ibp-domain"
 import type { PublicMapItem } from "../../app/types"
+import { brandColors } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
@@ -92,7 +93,7 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
             accessibilityRole="button"
             accessibilityLabel={t.a11y.closeSelection}
           >
-            <Ionicons name="close" size={18} color="#40654f" />
+            <Ionicons name="close" size={18} color={brandColors.forest} />
           </Pressable>
         }
         titleStyle={styles.title}

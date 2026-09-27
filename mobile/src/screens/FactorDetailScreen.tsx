@@ -2,7 +2,13 @@ import { useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandShadow, brandSpacing, brandTypography } from "../app/brand-tokens"
+import {
+  brandColors,
+  brandSemanticColors,
+  brandShadow,
+  brandSpacing,
+  brandTypography,
+} from "../app/brand-tokens"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
@@ -251,7 +257,7 @@ const detailStyles = StyleSheet.create({
     width: 110,
     height: 110,
     borderRadius: 999,
-    backgroundColor: "rgba(176, 199, 142, 0.22)",
+    backgroundColor: brandSemanticColors.heroAccentTintOnDark,
   },
   heroHeaderRow: {
     flexDirection: "row",
@@ -264,7 +270,7 @@ const detailStyles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.14)",
+    backgroundColor: brandSemanticColors.heroPanelBorderOnDark,
   },
   heroFactorBadgeText: {
     ...brandTypography.button,
@@ -272,7 +278,7 @@ const detailStyles = StyleSheet.create({
   },
   heroProgressText: {
     ...brandTypography.meta,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   heroTitle: {
     ...brandTypography.sectionTitle,
@@ -282,7 +288,7 @@ const detailStyles = StyleSheet.create({
   },
   heroBody: {
     ...brandTypography.sectionBody,
-    color: "#E4ECD8",
+    color: brandSemanticColors.heroBodyOnDark,
   },
   heroScoreRow: {
     marginTop: 2,
@@ -291,14 +297,14 @@ const detailStyles = StyleSheet.create({
   heroScoreCard: {
     alignSelf: "flex-start",
     borderRadius: 22,
-    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 2,
   },
   heroScoreLabel: {
     ...brandTypography.heroEyebrow,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   heroScoreValue: {
     fontSize: 32,
@@ -308,7 +314,7 @@ const detailStyles = StyleSheet.create({
   },
   heroScoreMeta: {
     ...brandTypography.meta,
-    color: "#D7E3C0",
+    color: brandSemanticColors.heroTextMutedOnDark,
   },
   panel: {
     gap: 12,
