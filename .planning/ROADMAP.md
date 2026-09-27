@@ -519,13 +519,13 @@ Plans:
 **Requirements**: REQ-INF-hosting-adr, REQ-INF-backups, REQ-INF-migrations, REQ-INF-deadcode, REQ-QA-sql-injection, REQ-QA-indexes
 **Success Criteria** (what must be TRUE):
 
-  1. An accepted ADR ratifies the current VPS stack — Docker + Caddy + GHCR + systemd timer + MinIO on `cortege.algernon.ovh` — as the hosting target, superseding the unratified alwaysdata + Cloudflare R2 note.
-  2. A scheduled PostgreSQL backup runs unattended, and a restore of one of those backups into a clean database has been performed and recorded at least once.
-  3. A fresh database and the production database reach the same schema version through one documented path, and a deliberately failed migration leaves the schema unchanged rather than half-applied.
-  4. `api/src/users/email.service.ts` and the vestigial `SMTP_*` variables are gone from the repo, from `api/.env.example` and from the deployment env.
-  5. A lint rule rejects interpolating values into SQL strings (account deletion already interpolates only constant subqueries and binds `$1`, verified 2026-09-23); `survey_events(actor_id)` is indexed and the redundant `idx_users_auth0_sub`, `idx_survey_parcels_survey_id` and `idx_surveys_parcel_id` are dropped — confirmed by `EXPLAIN` on account deletion and the survey list.
+  1. [x] An accepted ADR ratifies the current VPS stack — Docker + Caddy + GHCR + systemd timer + MinIO on `cortege.algernon.ovh` — as the hosting target, superseding the unratified alwaysdata + Cloudflare R2 note. (`docs/technical/adr-004-hosting-and-infrastructure-v1.md`)
+  2. [x] A scheduled PostgreSQL backup runs unattended, and a restore of one of those backups into a clean database has been performed and recorded at least once. (`infra/vps/backup-postgres.sh` + `restore-postgres.sh` + `cortege-backup.timer`; rehearsed locally, recorded in `.planning/phases/11-durable-backend/11-02-SUMMARY.md`)
+  3. [x] A fresh database and the production database reach the same schema version through one documented path, and a deliberately failed migration leaves the schema unchanged rather than half-applied. (`api/migrations/README.md`; verified locally, recorded in `11-03-SUMMARY.md`)
+  4. [x] `api/src/users/email.service.ts` and the vestigial `SMTP_*` variables are gone from the repo, from `api/.env.example` and from the deployment env. (already true since phase 01.9; verified, recorded in `11-05-dead-code-verification.md`)
+  5. [x] A lint rule rejects interpolating values into SQL strings (account deletion already interpolates only constant subqueries and binds `$1`, verified 2026-09-23); `survey_events(actor_id)` is indexed and the redundant `idx_users_auth0_sub`, `idx_survey_parcels_survey_id` and `idx_surveys_parcel_id` are dropped — confirmed by `EXPLAIN` on account deletion and the survey list. (`api/eslint-local-rules/sql-no-unsafe-interpolation.js`; index work already done by migration 015; `EXPLAIN` evidence in `.planning/phases/11-durable-backend/evidence/`)
 
-**Plans**: TBD
+**Plans**: 4 (`.planning/phases/11-durable-backend/11-01` through `11-04`, plus a dead-code verification note)
 
 ### Phase 12: Interface Finishing (INSERTED, UX audit Lot 5)
 
@@ -587,7 +587,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 8. Offline Map & Own-Survey Navigation | 0/TBD | Not started | - |
 | 9. Onboarding & Explorer Polish (UX Lot 4) | 0/TBD | Not started | - |
 | 10. Survey Export & Ownership | 0/TBD | Not started | - |
-| 11. Durable Backend | 0/TBD | Not started | - |
+| 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
 

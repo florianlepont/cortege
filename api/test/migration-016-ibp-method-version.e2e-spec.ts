@@ -44,11 +44,15 @@ describe("migration 016: IBP method version columns (e2e)", () => {
     const names = ["id", "user_id", "site_name", "status", ...Object.keys(columns)]
     const values = [id, userId, `site ${id}`, "draft", ...Object.values(columns)]
     const placeholders = values.map((_, index) => `$${index + 1}`)
+    // Column names cannot be bind parameters; `columns` is always a literal object passed by
+    // this spec's own test cases, never external input.
+    /* eslint-disable sql-no-unsafe-interpolation */
     return client.query(
       `INSERT INTO surveys (${names.join(", ")}, created_at, updated_at, expires_at, sync_version)
        VALUES (${placeholders.join(", ")}, NOW(), NOW(), NOW() + interval '7 days', 1)`,
       values,
     )
+    /* eslint-enable sql-no-unsafe-interpolation */
   }
 
   const appliedMigrations = async (): Promise<string[]> => {

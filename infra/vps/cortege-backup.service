@@ -1,0 +1,13 @@
+[Unit]
+Description=Back up the Cortege PostgreSQL database
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Environment=REPO_DIR=/home/ubuntu/cortege
+Environment=ENV_FILE=/home/ubuntu/cortege.env
+Environment=BACKUP_DIR=/home/ubuntu/backups/postgres
+ExecStart=/home/ubuntu/cortege/infra/vps/backup-postgres.sh

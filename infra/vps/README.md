@@ -69,6 +69,11 @@ docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.e
 sudo cp infra/vps/cortege-deploy.* /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now cortege-deploy.timer
+
+# Automatic daily database backups (see "Backups" below)
+sudo cp infra/vps/cortege-backup.* /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now cortege-backup.timer
 ```
 
 The API creates the MinIO bucket named in `OBJECT_STORAGE_BUCKET` on first use
@@ -105,7 +110,52 @@ docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.e
 sudo systemctl start cortege-deploy.timer
 ```
 
-## Restoring the database
+## Backups (Phase 11, REQ-INF-backups)
+
+`infra/vps/backup-postgres.sh` runs `pg_dump --format=custom` inside the running
+`postgres` container, writes a timestamped dump to `$BACKUP_DIR` (default
+`/home/ubuntu/backups/postgres`), refuses to keep a suspiciously small dump (a
+sign `pg_dump` failed partway or ran against an empty database), and prunes
+dumps older than `$RETENTION_DAYS` (default 14). It is meant to run unattended
+from `cortege-backup.timer`, once a day.
+
+```bash
+# Install alongside the deploy timer
+sudo cp infra/vps/cortege-backup.* /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now cortege-backup.timer
+
+# Run it once by hand to check it end to end
+sudo systemctl start cortege-backup.service
+journalctl -u cortege-backup.service -n 50
+ls -lh /home/ubuntu/backups/postgres/
+
+# When it next fires
+systemctl list-timers cortege-backup.timer
+```
+
+The dumps land on the same disk as the database they back up, which protects
+against a bad migration, a bad deploy, or `DELETE` without a `WHERE` clause, but
+not against a lost VPS or disk. Copying `$BACKUP_DIR` off the machine on the
+same schedule (the association's own backup target, or even the MinIO bucket
+this stack already runs) is a real gap this script does not close by itself —
+tracked as a follow-up, not implemented here.
+
+**Restore rehearsal**, safe to run at any time next to a live stack because it
+never touches the live database:
+
+```bash
+infra/vps/restore-postgres.sh /home/ubuntu/backups/postgres/cortege-postgres-<timestamp>.dump
+# creates and restores into a throwaway restore_check_<timestamp> database, then
+# prints its table and survey counts; drop it with the dropdb command it prints
+```
+
+Run this rehearsal after installing the timer, and again after any change to
+either script, so "the backup works" is never just an assumption. See
+`.planning/phases/11-durable-backend/` for the local rehearsal this phase ran
+(same scripts, against the dev Compose stack) and its recorded output.
+
+## Restoring the database (disaster recovery)
 
 The sync changes feed (`GET /v1/sync/changes`) orders events by the id of the
 transaction that wrote them (`survey_events.xid8`) and only serves events older
@@ -115,21 +165,27 @@ major PostgreSQL upgrade by dump), the new cluster's counter starts lower, the
 restored events look like they come from the future, and the feed would withhold
 all of them from every device.
 
-So after any logical restore, and before starting the API, run this once:
+So after any logical restore, and before starting the API, run this once. Unlike
+the rehearsal above, this replaces the live database, so it is a deliberate,
+supervised operation, never something a timer runs:
 
 ```bash
 # Keep the API stopped (and the deploy timer, which would restart it)
-sudo systemctl stop cortege-deploy.timer
+sudo systemctl stop cortege-deploy.timer cortege-backup.timer
 docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env stop api
 
-# ... restore the dump into the postgres service ...
+# Restore into the live database (drop and recreate it first, or use pg_restore
+# --clean; either way this replaces every row in it)
+docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
+  exec -T postgres pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists \
+  < /home/ubuntu/backups/postgres/cortege-postgres-<timestamp>.dump
 
 docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
   exec postgres sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
     -c "BEGIN; UPDATE survey_events SET xid8 = pg_current_xact_id(); COMMIT;"'
 
 docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env up -d api
-sudo systemctl start cortege-deploy.timer
+sudo systemctl start cortege-deploy.timer cortege-backup.timer
 ```
 
 Every event then carries the restore transaction's id and keeps its `seq` order.

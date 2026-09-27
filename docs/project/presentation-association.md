@@ -152,16 +152,18 @@ L'un des atouts du projet est son coût très contenu, notamment grâce aux prog
 
 | Poste | Montant/an | Détail |
 |-------|-----------|--------|
-| Hébergement serveur (alwaysdata) | ~72 € TTC | Plan Small : 1 Go RAM, 50 Go disque, Node.js + PostgreSQL inclus |
-| Stockage photos (Cloudflare R2) | 0 € | 10 Go gratuits/mois — suffisant pour les premiers milliers de relevés |
+| Hébergement serveur, base de données et stockage photos (VPS) | Coût partagé | Un VPS déjà utilisé pour d'autres projets de l'association héberge le serveur (Docker), la base PostgreSQL et le stockage des photos (MinIO, compatible S3) ; voir `infra/vps/README.md` |
 | Authentification (Auth0) | 0 € | Gratuit jusqu'à 7 500 utilisateurs actifs/mois ; 50 % de réduction pour les associations si dépassement |
 | Cadastre IGN | 0 € | API publique du gouvernement français |
 | Nom de domaine | ~10 € | Déjà existant |
 | Apple App Store (renouvellement) | **0 €** | Dispense reconduite chaque année |
 | Assistant IA (Claude Pro) | ~264 € TTC | Outil de développement utilisé pour accélérer la conception et l'écriture du code — $20/mois, pas de réduction association connue |
-| **Total annuel** | **~346 € TTC/an** | |
+| **Total annuel** | **~274 € TTC/an** | hors part du coût du VPS déjà partagé avec d'autres projets |
 
-> En cas de forte croissance (plusieurs centaines d'utilisateurs actifs simultanément), le plan d'hébergement pourrait passer à l'échelon supérieur (~230 €/an), soit un total d'environ **500 €/an**.
+> Le plan d'hébergement initialement envisagé (alwaysdata + Cloudflare R2) n'a jamais été mis en
+> place : le déploiement réel utilise le VPS déjà exploité par l'association, avec un registre
+> d'images gratuit (GitHub Container Registry) et des mises à jour automatiques. Ce choix est
+> ratifié dans `docs/technical/adr-004-hosting-and-infrastructure-v1.md`.
 
 ---
 
@@ -181,9 +183,9 @@ L'application est conçue dans le respect du Règlement Général sur la Protect
 ### Où sont hébergées les données ?
 
 Toutes les données sont hébergées **en Europe** :
-- Serveur et base de données : **alwaysdata, Paris (France)**
+- Serveur, base de données et photos des relevés : **VPS de l'association, en France** (Docker,
+  PostgreSQL, stockage objet compatible S3 auto-hébergé)
 - Authentification : **Auth0, région UE**
-- Photos des relevés : stockage objet avec option hébergement **Union Européenne**
 
 Aucune donnée n'est transmise à des tiers à des fins commerciales.
 
@@ -216,7 +218,7 @@ Toutes les données de relevé sont d'abord stockées **directement sur l'appare
 
 ### Le serveur
 
-Le serveur (appelé "API") tourne sur **Node.js** avec le framework **NestJS**, un standard robuste utilisé dans de nombreuses applications professionnelles. Il est hébergé chez **alwaysdata**, un hébergeur français basé à Paris. La base de données est **PostgreSQL**, une des solutions les plus fiables et les plus répandues au monde.
+Le serveur (appelé "API") tourne sur **Node.js** avec le framework **NestJS**, un standard robuste utilisé dans de nombreuses applications professionnelles. Il est hébergé sur le VPS de l'association, avec un serveur web **Caddy** en entrée et des mises à jour automatiques dès qu'une nouvelle version est publiée. La base de données est **PostgreSQL**, une des solutions les plus fiables et les plus répandues au monde, avec une sauvegarde automatique quotidienne.
 
 ### La sécurité des connexions
 
@@ -249,17 +251,17 @@ Parmi les fonctionnalités prévues pour la V1, nous avons besoin de savoir lesq
 
 ### 3. Validation du budget
 
-Confirmer l'enveloppe annuelle de fonctionnement (~346 €/an) et les frais de lancement (~23 €), afin de prévoir leur prise en charge par l'association.
+Confirmer l'enveloppe annuelle de fonctionnement (~274 €/an, hors part du VPS déjà partagé) et les frais de lancement (~23 €), afin de prévoir leur prise en charge par l'association.
 
 ### 4. Mise à disposition des accès outils
 
 Une fois le MVP finalisé (septembre 2026), nous aurons besoin que l'association fournisse ou ouvre les accès aux services d'hébergement et de distribution :
 
-- **alwaysdata** — compte d'hébergement pour déployer le serveur en production
+- **VPS et nom de domaine** — accès déjà en place, utilisés pour le déploiement du serveur en production (`cortege.algernon.ovh`)
 - **Apple Developer** — compte développeur pour publier sur l'App Store (la demande de dispense de frais sera faite au nom de l'association)
 - **Google Play Console** — compte pour publier sur Android
-- **Nom de domaine** — accès DNS pour pointer vers le serveur de production
 
 ---
 
 *Document préparé en mai 2026 — Projet IBP, Etats Sauvages*
+*Section hébergement mise à jour le 2026-09-27 pour refléter le déploiement réel (VPS + Docker + Caddy + MinIO), voir `docs/technical/adr-004-hosting-and-infrastructure-v1.md` : le plan alwaysdata + Cloudflare R2 décrit initialement n'a jamais été mis en œuvre.*

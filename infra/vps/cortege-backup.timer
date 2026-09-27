@@ -1,0 +1,13 @@
+[Unit]
+Description=Daily Cortege PostgreSQL backup
+
+[Timer]
+# Once a day, off the hour and outside the 5-minute deploy poll cadence, so a
+# backup and a deploy are unlikely to land in the same minute.
+OnCalendar=*-*-* 03:17:00
+RandomizedDelaySec=10min
+Persistent=true
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

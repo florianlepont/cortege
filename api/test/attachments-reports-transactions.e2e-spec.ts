@@ -72,10 +72,14 @@ describe("Attachments and reports transactions (e2e)", () => {
   }
 
   async function countRows(table: string, surveyId: string): Promise<number> {
+    // Postgres cannot bind a table name as a query parameter; `table` is always one of the
+    // hardcoded literals passed at each call site below, never external input.
+    /* eslint-disable sql-no-unsafe-interpolation */
     const result = await db.query<{ count: string }>(
       `SELECT COUNT(*) AS count FROM ${table} WHERE survey_id = $1`,
       [surveyId],
     )
+    /* eslint-enable sql-no-unsafe-interpolation */
     return parseInt(result.rows[0]?.count ?? "0", 10)
   }
 
