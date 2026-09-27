@@ -102,7 +102,7 @@ function useAppController() {
   })
   const setStatus = surveySync.syncActions.setStatus
 
-  const nearbyParcels = useNearbyParcels(apiUrl)
+  const nearbyParcels = useNearbyParcels(apiUrl, surveySync.accessToken)
 
   const surveyStats = useMemo((): SurveyStats => {
     const surveys = surveyList.surveys

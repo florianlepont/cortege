@@ -74,6 +74,7 @@ describe("French catalogue", () => {
         "labels",
         "navigation",
         "ownerConflict",
+        "parcelHistory",
         "parcelSelection",
         "profileSetup",
         "publicMap",

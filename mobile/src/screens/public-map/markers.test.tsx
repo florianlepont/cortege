@@ -234,13 +234,7 @@ function texts(tree: ReactTestRenderer): string[] {
 
 function renderCard(item: PublicMapItem): ReactTestRenderer {
   return mount(
-    <SelectedSurveyCard
-      item={item}
-      isOwnSurvey={false}
-      bottom={0}
-      onClose={jest.fn()}
-      onReportSurvey={jest.fn()}
-    />,
+    <SelectedSurveyCard item={item} isOwnSurvey={false} bottom={0} onClose={jest.fn()} />,
   )
 }
 
@@ -266,7 +260,7 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
       makeItem({ ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 3, region_code: "unknown" }),
     )
     const header = tree.root.findByType("AppSectionHeader" as never)
-    expect(header.props.title).toBe("Relevé public · IBP 12/50")
+    expect(header.props.title).toBe("Relevé · IBP 12/50")
     const shown = texts(tree)
     expect(shown).toContain("IBP v3.2")
     expect(shown).toContain(fr.publicMap.selected.meta({ region: "Cas 3", date: "2026-05-01" }))
@@ -336,9 +330,9 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
 
 describe("fr.publicMap", () => {
   test("uses singular and plural forms", () => {
-    expect(fr.publicMap.count(0)).toBe("Aucun relevé public")
-    expect(fr.publicMap.count(1)).toBe("1 relevé public")
-    expect(fr.publicMap.count(3)).toBe("3 relevés publics")
+    expect(fr.publicMap.count(0)).toBe("Aucun relevé")
+    expect(fr.publicMap.count(1)).toBe("1 relevé")
+    expect(fr.publicMap.count(3)).toBe("3 relevés")
     expect(fr.publicMap.a11y.cluster(1)).toBe("Groupe de 1 relevé")
     expect(fr.publicMap.clusterList.title(1)).toBe("1 relevé à cet endroit")
     expect(fr.publicMap.clusterList.title(4)).toBe("4 relevés à cet endroit")

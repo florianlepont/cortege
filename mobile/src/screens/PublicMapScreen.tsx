@@ -12,6 +12,7 @@ import { useLatestCallback } from "../state/useLatestCallback"
 import { ClusterListSheet } from "./public-map/ClusterListSheet"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
+import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
 import { SelectedSurveyCard } from "./public-map/SelectedSurveyCard"
 import { screenStyles } from "./public-map/styles"
 import { PARCEL_MIN_ZOOM, useMapViewport } from "./public-map/useMapViewport"
@@ -20,6 +21,8 @@ const t = fr.publicMap
 const LOCATE_SPAN = 0.012
 
 type PublicMapScreenProps = {
+  apiUrl: string
+  accessToken: string | null
   items: PublicMapItem[]
   parcelStatuses: PublicParcelStatusItem[]
   ownSurveyIds: string[]
@@ -33,7 +36,6 @@ type PublicMapScreenProps = {
   onChangeRegion: (value: string) => void
   onLoad: (options?: LoadPublicMapOptions) => Promise<void>
   onLoadParcels: (input: { bbox: string; zoom: number }) => Promise<void>
-  onReportSurvey: (surveyId: string, reason: string) => Promise<{ ok: boolean; message: string }>
   /** Told the bbox of each viewport load, so the Explorer tab reload can reuse it. */
   onViewportBboxChange?: (bbox: string) => void
 }
@@ -44,6 +46,8 @@ type PublicMapScreenProps = {
  * load or after a filter apply. The parts live in screens/public-map/.
  */
 export function PublicMapScreen({
+  apiUrl,
+  accessToken,
   items,
   parcelStatuses,
   ownSurveyIds,
@@ -57,13 +61,13 @@ export function PublicMapScreen({
   onChangeRegion,
   onLoad,
   onLoadParcels,
-  onReportSurvey,
   onViewportBboxChange,
 }: PublicMapScreenProps) {
   const mapRef = useRef<MapView | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [showParcelLayer, setShowParcelLayer] = useState(true)
   const [selectedItem, setSelectedItem] = useState<PublicMapItem | null>(null)
+  const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null)
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
   const [locating, setLocating] = useState(false)
   const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null)
@@ -85,6 +89,10 @@ export function PublicMapScreen({
 
   const ownSurveyIdSet = useMemo(() => new Set(ownSurveyIds), [ownSurveyIds])
   const itemsById = useMemo(() => new Map(items.map((item) => [item.survey_id, item])), [items])
+  const parcelStatusById = useMemo(
+    () => new Map(parcelStatuses.map((status) => [status.parcel_id, status])),
+    [parcelStatuses],
+  )
 
   const layerStatusLabel = !showParcelLayer
     ? t.layer.hidden
@@ -97,17 +105,28 @@ export function PublicMapScreen({
   const handleSelectSurvey = useLatestCallback((id: string) => {
     const item = itemsById.get(id) ?? clusterItems?.find((entry) => entry.survey_id === id)
     if (item) {
+      setSelectedParcelId(null)
       setSelectedItem(item)
       setClusterItems(null)
     }
   })
+  const handleSelectParcel = useLatestCallback((parcelId: string) => {
+    const status = parcelStatusById.get(parcelId)
+    if (status?.study_status === "studied") {
+      setSelectedItem(null)
+      setClusterItems(null)
+      setSelectedParcelId(parcelId)
+    }
+  })
   const handleOpenClusterList = useCallback((leaves: PublicMapItem[]) => {
     setSelectedItem(null)
+    setSelectedParcelId(null)
     setClusterItems(leaves)
   }, [])
   const { moveTo } = viewport
   const handleZoomTo = useCallback((target: Region) => moveTo(target, 450), [moveTo])
   const closeSelection = useCallback(() => setSelectedItem(null), [])
+  const closeParcelHistory = useCallback(() => setSelectedParcelId(null), [])
   const closeClusterList = useCallback(() => setClusterItems(null), [])
   const toggleFilters = useCallback(() => setShowFilters((current) => !current), [])
   const toggleParcelLayer = useCallback(() => setShowParcelLayer((current) => !current), [])
@@ -151,6 +170,7 @@ export function PublicMapScreen({
         currentLocation={currentLocation}
         onRegionChangeComplete={viewport.onRegionChangeComplete}
         onSelectSurvey={handleSelectSurvey}
+        onSelectParcel={handleSelectParcel}
         onZoomTo={handleZoomTo}
         onOpenClusterList={handleOpenClusterList}
       />
@@ -197,7 +217,17 @@ export function PublicMapScreen({
           isOwnSurvey={ownSurveyIdSet.has(selectedItem.survey_id)}
           bottom={Math.max(84, dockBottom + 62)}
           onClose={closeSelection}
-          onReportSurvey={onReportSurvey}
+        />
+      ) : null}
+
+      {selectedParcelId ? (
+        <ParcelHistoryCard
+          key={selectedParcelId}
+          parcelId={selectedParcelId}
+          apiUrl={apiUrl}
+          accessToken={accessToken}
+          bottom={Math.max(84, dockBottom + 62)}
+          onClose={closeParcelHistory}
         />
       ) : null}
     </View>

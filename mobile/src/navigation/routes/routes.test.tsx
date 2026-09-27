@@ -68,11 +68,17 @@ const mockExplorer = {
   loadPublicMap: jest.fn(async () => undefined),
   loadPublicParcels: jest.fn(async () => undefined),
 }
-const mockExplorerArgs: { apiUrl?: string; onStatusChange?: unknown } = {}
+const mockExplorerArgs: { apiUrl?: string; accessToken?: string | null; onStatusChange?: unknown } =
+  {}
 
 jest.mock("../../hooks/usePublicMapExplorer", () => ({
-  usePublicMapExplorer: (args: { apiUrl: string; onStatusChange: unknown }) => {
+  usePublicMapExplorer: (args: {
+    apiUrl: string
+    accessToken: string | null
+    onStatusChange: unknown
+  }) => {
     mockExplorerArgs.apiUrl = args.apiUrl
+    mockExplorerArgs.accessToken = args.accessToken
     mockExplorerArgs.onStatusChange = args.onStatusChange
     return mockExplorer
   },
@@ -677,9 +683,11 @@ describe("PublicMapRoute", () => {
       </PublicMapReloadContext.Provider>,
     )
     expect(mockExplorerArgs.apiUrl).toBe("http://api.test/v1")
+    expect(mockExplorerArgs.accessToken).toBe(fixture.accessToken)
     expect(mockExplorerArgs.onStatusChange).toBe(fixture.syncActions.setStatus)
+    expect(props("publicMap").apiUrl).toBe("http://api.test/v1")
+    expect(props("publicMap").accessToken).toBe(fixture.accessToken)
     expect(props("publicMap").ownSurveyIds).toEqual(["s-01"])
-    expect(props("publicMap").onReportSurvey).toBe(fixture.syncActions.handleReportSurvey)
     expect(mockExplorer.loadPublicMap).toHaveBeenCalledTimes(1)
     // The press that mounted the route is not forced: the screen's first viewport load serves it.
     expect(mockExplorer.loadPublicMap).toHaveBeenLastCalledWith({ bbox: undefined, force: false })

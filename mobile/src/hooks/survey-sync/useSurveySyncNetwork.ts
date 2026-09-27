@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef } from "react"
 import * as Network from "expo-network"
-import { createSurveyReport } from "../../api/ibp-api"
 import { hasPendingSyncWork, LocalSurvey, pullRemoteChanges, syncPending } from "../../storage"
 import { fr, logStatusDetail } from "../../i18n"
 import type { StatusMessage } from "../../i18n"
@@ -270,49 +269,6 @@ export function useSurveySyncNetwork({
     withAuthRetry,
   ])
 
-  const handleReportSurvey = useCallback(
-    async (surveyId: string, reason: string): Promise<{ ok: boolean; message: string }> => {
-      const surveyIdTrimmed = surveyId.trim()
-      const reasonTrimmed = reason.trim()
-      if (!surveyIdTrimmed) {
-        const message = text.reportSurveyMissing()
-        setStatus(message)
-        return { ok: false, message }
-      }
-      if (!reasonTrimmed) {
-        const message = text.reportReasonRequired()
-        setStatus(message)
-        return { ok: false, message }
-      }
-
-      try {
-        await withAuthRetry((token) =>
-          createSurveyReport(apiUrl, token, { survey_id: surveyIdTrimmed, reason: reasonTrimmed }),
-        )
-        const message = text.reportSent()
-        setStatus(message)
-        return { ok: true, message }
-      } catch (error) {
-        if (isAuthTemporarilyUnavailableError(error)) {
-          const message = text.reportRetryLater()
-          setStatus(message)
-          return { ok: false, message }
-        }
-        if (isAuthRequiredError(error)) {
-          await clearSession()
-          const message = text.reportLoginRequired()
-          setStatus(message)
-          return { ok: false, message }
-        }
-        logStatusDetail("sync.report", error)
-        const message = text.reportFailed()
-        setStatus(message)
-        return { ok: false, message }
-      }
-    },
-    [apiUrl, clearSession, setStatus, withAuthRetry],
-  )
-
   useEffect(() => {
     let mounted = true
 
@@ -385,7 +341,6 @@ export function useSurveySyncNetwork({
   return {
     handleSync,
     handlePullChanges,
-    handleReportSurvey,
     maybeAutoSync,
   }
 }

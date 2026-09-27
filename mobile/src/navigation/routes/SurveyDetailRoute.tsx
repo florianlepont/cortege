@@ -2,7 +2,7 @@ import { memo, useMemo } from "react"
 import { devOnlyHandler } from "../../app/dev-tools"
 import type { FactorKey } from "../../app/types"
 import { SurveyDetailScreen } from "../../screens/SurveyDetailScreen"
-import { useSession } from "../../state/session-context"
+import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -17,6 +17,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   navigation,
 }: SurveyDetailRouteProps) {
   const { state: session } = useSession()
+  const accessToken = useAccessToken()
   const { state, actions } = useSurveys()
   const syncActions = useSyncActions()
 
@@ -42,6 +43,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   return (
     <SurveyDetailScreen
       apiUrl={session.apiUrl}
+      accessToken={accessToken}
       selectedSurvey={state.selectedSurvey}
       selectedSurveyAttachments={state.selectedSurveyAttachments}
       surveyDetailTab={state.surveyDetailTab}

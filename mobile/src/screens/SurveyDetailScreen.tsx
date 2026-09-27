@@ -40,6 +40,7 @@ import {
 
 type SurveyDetailScreenProps = {
   apiUrl: string
+  accessToken: string | null
   selectedSurvey: LocalSurvey
   selectedSurveyAttachments: LocalAttachment[]
   surveyDetailTab: SurveyDetailTab
@@ -71,6 +72,7 @@ type SurveyDetailScreenProps = {
 
 export function SurveyDetailScreen({
   apiUrl,
+  accessToken,
   selectedSurvey,
   selectedSurveyAttachments,
   surveyDetailTab,
@@ -231,6 +233,7 @@ export function SurveyDetailScreen({
 
       <MediaSection
         apiUrl={apiUrl}
+        accessToken={accessToken}
         survey={selectedSurvey}
         siteName={activeSiteName}
         attachments={selectedSurveyAttachments}

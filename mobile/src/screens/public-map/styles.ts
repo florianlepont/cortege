@@ -226,54 +226,6 @@ export const panelStyles = StyleSheet.create({
     ...brandTypography.meta,
     color: brandColors.textSecondary,
   },
-  reportOpenButton: {
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E4B99A",
-    backgroundColor: "#F6E2D5",
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  reportOpenButtonText: {
-    ...brandTypography.meta,
-    color: brandColors.terracotta,
-  },
-  reportForm: {
-    gap: 10,
-  },
-  reportField: {
-    gap: 5,
-  },
-  reportInputLabel: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  reportInput: {
-    minHeight: 72,
-    textAlignVertical: "top",
-    ...brandTypography.sectionBody,
-  },
-  reportActionsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-  },
-  reportCancelButtonText: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  reportSubmitButtonDisabled: {
-    borderColor: "#A6ABA3",
-    backgroundColor: "#A6ABA3",
-  },
-  reportSubmitButtonText: {
-    ...brandTypography.meta,
-    color: brandColors.white,
-  },
   clusterList: {
     maxHeight: 260,
   },

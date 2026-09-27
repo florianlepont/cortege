@@ -35,10 +35,6 @@ jest.mock("../storage", () => ({
   pullRemoteChanges: (...args: unknown[]) => mockPullRemoteChanges(...args),
 }))
 
-jest.mock("../api/ibp-api", () => ({
-  createSurveyReport: jest.fn(),
-}))
-
 jest.mock("react-native-auth0", () => ({
   CredentialsManagerError: class MockCredentialsManagerError extends Error {},
   CredentialsManagerErrorCodes: {},

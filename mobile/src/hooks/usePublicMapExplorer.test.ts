@@ -26,6 +26,7 @@ import { usePublicMapExplorer } from "./usePublicMapExplorer"
 
 const DEFAULT_PARAMS = {
   apiUrl: "http://localhost:3000",
+  accessToken: "access-token",
   onStatusChange: jest.fn(),
 }
 
@@ -112,6 +113,7 @@ describe("usePublicMapExplorer", () => {
 
       expect(mockFetchPublicMapItems).toHaveBeenCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ from: "", to: "", region: "" }),
       )
       expect(onStatusChange).toHaveBeenCalledWith(fr.status.map.loaded({ count: 2 }))
@@ -163,6 +165,7 @@ describe("usePublicMapExplorer", () => {
 
       expect(mockFetchPublicMapItems).toHaveBeenCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ bbox: "1,43,2,44", from: "", to: "", region: "" }),
       )
     })
@@ -283,6 +286,7 @@ describe("usePublicMapExplorer", () => {
       expect(mockFetchPublicMapItems).toHaveBeenCalledTimes(3)
       expect(mockFetchPublicMapItems).toHaveBeenLastCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ bbox: "1,43,2,45", region: "ARA" }),
       )
     })
@@ -345,6 +349,7 @@ describe("usePublicMapExplorer", () => {
 
       expect(mockFetchPublicParcelStatuses).toHaveBeenCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ bbox: "0,0,1,1", zoom: 14 }),
       )
     })

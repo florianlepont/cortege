@@ -8,6 +8,7 @@ import { ibpMethodFr } from "./ibp-method"
 import { labelsFr } from "./labels"
 import { navigationFr } from "./navigation"
 import { ownerConflictFr } from "./owner-conflict"
+import { parcelHistoryFr } from "./parcel-history"
 import { parcelSelectionFr } from "./parcel-selection"
 import { profileSetupFr } from "./profile-setup"
 import { publicMapFr } from "./public-map"
@@ -33,6 +34,7 @@ export const fr = {
   surveyForm: surveyFormFr,
   factorDetail: factorDetailFr,
   parcelSelection: parcelSelectionFr,
+  parcelHistory: parcelHistoryFr,
   profileSetup: profileSetupFr,
   ownerConflict: ownerConflictFr,
   settings: settingsFr,
