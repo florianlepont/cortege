@@ -94,6 +94,13 @@ describe("HistorySection", () => {
     expect(mockFetchParcelSurveyHistory).not.toHaveBeenCalled()
   })
 
+  test("shows an error notice when the history fails to load", async () => {
+    mockFetchParcelSurveyHistory.mockRejectedValue(new Error("offline"))
+    await mount(BASE_PROPS)
+    const notice = tree.root.findByType("AppNotice" as never) as ReactTestInstance
+    expect(notice.props.message).toBe(fr.surveyDetail.versionHistory.loadFailed)
+  })
+
   test("shows a notice when this is the parcel's first submitted survey", async () => {
     mockFetchParcelSurveyHistory.mockResolvedValue({ parcel_id: "p1", items: [] })
     await mount(BASE_PROPS)
@@ -158,5 +165,22 @@ describe("HistorySection", () => {
     await mount(BASE_PROPS)
     const notice = tree.root.findByType("AppNotice" as never) as ReactTestInstance
     expect(notice.props.message).toBe(fr.surveyDetail.versionHistory.none)
+  })
+})
+
+describe("fr.parcelHistory.entry", () => {
+  test("joins year, version and the latest badge when all three are present", () => {
+    expect(fr.parcelHistory.entry({ year: 2025, version: 1, isLatest: true })).toBe(
+      "2025 · v1 · Dernier relevé",
+    )
+  })
+
+  test("omits a missing year or version instead of guessing", () => {
+    expect(fr.parcelHistory.entry({ year: null, version: 1, isLatest: false })).toBe("v1")
+    expect(fr.parcelHistory.entry({ year: 2025, version: null, isLatest: false })).toBe("2025")
+  })
+
+  test("falls back to a plain label when year, version and isLatest are all absent", () => {
+    expect(fr.parcelHistory.entry({ year: null, version: null, isLatest: false })).toBe("Relevé")
   })
 })

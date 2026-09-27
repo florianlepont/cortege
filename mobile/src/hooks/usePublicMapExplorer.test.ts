@@ -152,6 +152,12 @@ describe("usePublicMapExplorer", () => {
       const hook = await buildHook()
       await expect(hook.loadPublicMap()).resolves.toBeUndefined()
     })
+
+    test("does nothing without an access token (Phase 2: the route requires a member)", async () => {
+      const hook = await buildHook({ accessToken: null })
+      await hook.loadPublicMap()
+      expect(mockFetchPublicMapItems).not.toHaveBeenCalled()
+    })
   })
 
   // ─── loadPublicMap by viewport (D-05) ─────────────────────────────────────
@@ -372,6 +378,34 @@ describe("usePublicMapExplorer", () => {
       expect(onStatusChange).not.toHaveBeenCalledWith(
         expect.stringContaining("Parcel fetch failed"),
       )
+    })
+
+    test("only the latest of two overlapping parcel loads updates the state", async () => {
+      const first = deferred<{ items: unknown[] }>()
+      const second = deferred<{ items: unknown[] }>()
+      mockFetchPublicParcelStatuses
+        .mockReturnValueOnce(first.promise)
+        .mockReturnValueOnce(second.promise)
+      const { result } = await renderExplorer()
+
+      let firstLoad: Promise<void> = Promise.resolve()
+      let secondLoad: Promise<void> = Promise.resolve()
+      await act(async () => {
+        firstLoad = result.current.loadPublicParcels({ bbox: "0,0,1,1", zoom: 10 })
+        secondLoad = result.current.loadPublicParcels({ bbox: "2,2,3,3", zoom: 10 })
+      })
+
+      await act(async () => {
+        second.resolve({ items: [{ parcel_id: "new" }] })
+        await secondLoad
+      })
+      await act(async () => {
+        first.resolve({ items: [{ parcel_id: "old" }] })
+        await firstLoad
+      })
+
+      expect(result.current.parcelStatuses).toEqual([{ parcel_id: "new" }])
+      expect(result.current.parcelsLoading).toBe(false)
     })
 
     test("resolves successfully with valid bbox and zoom", async () => {
