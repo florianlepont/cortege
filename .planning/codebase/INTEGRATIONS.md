@@ -1,6 +1,6 @@
 # External Integrations
 
-**Analysis Date:** 2026-09-22
+**Analysis Date:** 2026-09-22, updated 2026-09-27 (phase 01.9 closing sweep)
 
 ## APIs & External Services
 
@@ -32,10 +32,10 @@
 - Database file: `cortege-local.db` (device-local, encrypted on iOS Keychain)
 - Schema: `mobile/src/storage/db.ts`
 - Tables:
-  - `local_surveys` — survey drafts with sync state and payload
+  - `local_surveys` — survey drafts with sync state, payload and the precomputed `payload_completion` (SQLite `PRAGMA user_version` migration 2)
   - `sync_queue` — pending operations for server sync
   - `local_attachments` — photo metadata and upload state
-  - `app_metadata` — key/value app-level settings
+  - `local_meta` — key/value app-level settings
 - Offline-first design: all changes written locally before network sync
 
 **File Storage:**
@@ -68,12 +68,9 @@
   - API: JWT validation via JWKS endpoint
 
 **Token Management:**
-- Access Token: Short-lived JWT for API requests
-  - Environment variables: `ACCESS_TOKEN_SECRET`, `ACCESS_TOKEN_EXPIRES_IN` (e.g., `15m`)
-- Refresh Token: Long-lived token for obtaining new access tokens
-  - Environment variables: `REFRESH_TOKEN_SECRET`, `REFRESH_TOKEN_EXPIRES_IN` (e.g., `7d`)
+- Auth0 issues and refreshes both the access token (RS256 JWT, validated against JWKS) and the refresh token; there is no homegrown token issuance (`ACCESS_TOKEN_SECRET`/`REFRESH_TOKEN_SECRET` do not exist in this codebase, removed with the Auth0 migration, phase 01.7)
 - Mobile secure storage: Tokens stored in `expo-secure-store` (encrypted)
-- API token validation: `api/src/auth/auth.guard.ts` verifies JWT signature and claims
+- API token validation: `api/src/auth/auth.guard.ts` verifies JWT signature and claims against the JWKS endpoint
 
 **Current User Injection:**
 - Decorator: `@CurrentUser()` in `api/src/auth/current-user.decorator.ts`
@@ -109,17 +106,11 @@
 - VPS deployment: Pull-based via systemd timer (polls registry every 5 minutes)
 
 **CI Pipeline:**
-- GitHub Actions (`.github/workflows/ci.yml`)
+- GitHub Actions (`.github/workflows/ci.yml`, plus a separate `codeql.yml`)
 - Triggers: Pushes to `main`, PRs to `main`, manual `workflow_dispatch`
-- Jobs:
-  1. Lint & Format (ESLint, Prettier)
-  2. Type check (TypeScript)
-  3. Unit tests — API (Jest)
-  4. Unit tests — Mobile (Jest)
-  5. E2E tests — API (Jest + PostgreSQL service)
-  6. Docker build & push (only when `api/**` changed or manual trigger)
+- Jobs: `changes` (path detection), `check` (lint, format, typecheck, actionlint), `unit-api` (includes `@cortege/ibp-domain` coverage), `unit-mobile`, `e2e` and `e2e-minio` (API E2E, local and MinIO storage modes), `mobile-build` (expo-doctor, expo export), `native-android` and `native-ios` (unsigned native builds, path-filtered or manual), `audit`, `image-check` (Docker build, smoke tests), `ci-ok` (aggregate gate), `build` (pushes the image on `main`)
 - Test PostgreSQL service: PostgreSQL 16 in-container with health checks
-- Node version: 22 (enforced via `actions/setup-node@v4`)
+- Node version: 22 (enforced via `actions/setup-node`)
 
 **Container Registry:**
 - GitHub Container Registry (GHCR)
@@ -130,23 +121,14 @@
 
 **React Native Maps:**
 - Package: `react-native-maps` 1.27.2
-- Implementation: Map display in survey site selection
+- Implementation: Map display in survey site selection and the public map (Explorer tab)
 - Providers: Google Maps (Android), Apple Maps (iOS)
 - Not explicitly configured for API keys in this codebase; assumes platform-provided keys via Xcode/AndroidManifest
+- Public map viewport loading (phase 01.9, D-05): `GET /v1/public/map-items` accepts an optional `bbox`; the mobile map debounces region changes (~400 ms, `useDebouncedValue`) and clusters markers on-device with `supercluster` (no native module)
 
-## Email Service (Optional)
+## Email
 
-**SMTP:**
-- Service: Nodemailer
-- Configuration:
-  - `SMTP_ENABLED` - Enable/disable email (default: false)
-  - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`
-  - `SMTP_SECURE` - TLS/SSL mode
-- Implementation: `api/src/users/email.service.ts`
-- Use cases:
-  - Email change confirmation (token-based)
-  - Optionally, password reset notifications
-- Disabled in test environment (`NODE_ENV=test`)
+The API sends no email. `EmailService`, the mailer package and its mail-relay env settings were removed in phase 01.9 (config schema, env examples, `infra/vps/check-env.sh`, which now reports any leftover mail-relay env lines as an obsolete INFO entry). Do not re-add them.
 
 ## Webhooks & Callbacks
 
@@ -171,7 +153,7 @@
 
 **CORS:**
 - Enabled via NestJS `enableCors()`
-- Origin: Configurable via `CORS_ORIGIN` environment variable (comma-separated list)
+- Origin: `CORS_ORIGIN` environment variable — `none` (no browser origin) or a comma-separated origin list; required in production, startup refuses otherwise
 - Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
 - Credentials: Allowed
 
@@ -204,9 +186,9 @@
 **Optional:**
 - Mobile: `EXPO_PUBLIC_API_TIMEOUT_MS` (default: 15000ms)
 - API: `OBJECT_STORAGE_MODE` (default: local)
-- API: `SMTP_ENABLED` (default: false)
-- API: `CORS_ORIGIN` (default: allow all)
+- API: `TRUST_PROXY` (default: `loopback,uniquelocal`), `DEBUG_DATA_RESET_ENABLED`, `PG_*` pool/timeout settings
+- API: `CORS_ORIGIN` (`none` or a comma-separated list; required in production)
 
 ---
 
-*Integration audit: 2026-09-22*
+*Integration audit: 2026-09-22, updated 2026-09-27*

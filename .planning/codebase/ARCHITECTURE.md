@@ -1,7 +1,7 @@
-<!-- refreshed: 2026-09-22 -->
+<!-- refreshed: 2026-09-22, updated 2026-09-27 (phase 01.9 closing sweep) -->
 # Architecture
 
-**Analysis Date:** 2026-09-22
+**Analysis Date:** 2026-09-22, updated 2026-09-27
 
 ## System Overview
 
@@ -21,16 +21,29 @@ Cortege is a distributed, offline-first system with two primary components: a Re
          │                  │                     │
          ▼                  ▼                     ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              State & Sync Orchestration Layer                │
-│   useSurveySync (central hook orchestrator)                  │
+│      State Assembler and Contexts (phase 01.9)                │
+│   AppStateProvider.useAppController — calls every stateful    │
+│   hook ONCE, publishes memoised slices through five contexts  │
+│   (session, status, sync actions, surveys, survey form) plus  │
+│   a narrow nearby-parcels context. `mobile/src/state/`         │
+│                                                              │
+│   Hooks it calls once each: useSurveySync, useSurveyForm,     │
+│   useSurveyList, useEditingDraft, useSurveyDraftPatcher,       │
+│   useGpsCapture, useNearbyParcels                              │
+└─────────────────────────────────────────┬─────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Sync & Session Orchestration Layer               │
+│   useSurveySync (sync/session hook orchestrator)              │
 │   `mobile/src/hooks/useSurveySync.ts`                        │
 │                                                              │
-│   Composed sub-hooks:                                        │
+│   Composed sub-hooks (`hooks/survey-sync/`):                  │
 │   - useSurveySyncNetwork (offline/online sync queue draining)│
 │   - useSurveySyncProfile (user profile sync)                 │
 │   - useSurveySyncSurveyOperations (survey CRUD)              │
-│   - useSurveyForm, useSurveyList (UI state)                  │
-│   - useAuth0Session (auth token lifecycle)                   │
+│   - useAttachmentPreviews (attachment preview cache)          │
+│   Called directly (not nested): useAuth0Session, useLocalDataOwner │
 └─────────────────────────────────────────┬─────────────────┘
          │                  │                     │
          ▼                  ▼                     ▼
@@ -38,21 +51,24 @@ Cortege is a distributed, offline-first system with two primary components: a Re
 │  HTTP Client     │  Local Storage   │   IBP Logic          │
 │  `mobile/src/    │  (SQLite)        │   (Scoring Rules)    │
 │   api/client.ts` │  `mobile/src/    │  `mobile/src/app/    │
-│                  │   storage/`      │   ibp-scoring.ts`    │
+│                  │   storage/`      │   ibp-scoring.ts`,   │
+│                  │                  │   adapter over       │
+│                  │                  │   `@cortege/ibp-domain` │
 └────────┬─────────┴────────┬─────────┴──────────┬───────────┘
          │                  │                     │
          ▼                  ▼                     ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Local SQLite DB                           │
-│  - local_surveys: draft/submitted survey data                │
+│  - local_surveys: draft/submitted survey data, precomputed   │
+│    `payload_completion`                                       │
 │  - sync_queue: pending operations with retry state           │
 │  - local_attachments: photo metadata and sync state          │
-│  - app_metadata: session and preference data                 │
-│  `mobile/src/storage/db.ts`                                  │
+│  - local_meta: session and preference data                   │
+│  `mobile/src/storage/db.ts` (PRAGMA user_version, now 2)      │
 └─────────────────────────────────────────────────────────────┘
          │
          │ (offline-capable)
-         │ POST /v1/surveys/sync
+         │ POST /v1/sync
          │ with pending operations
          │
          ▼
@@ -116,10 +132,12 @@ Cortege is a distributed, offline-first system with two primary components: a Re
 | **Mobile: IBP scoring** | Factor validation, score calculation client-side | `mobile/src/app/ibp-scoring.ts` |
 | **API: AppModule** | NestJS root module; bootstraps all child modules | `api/src/app.module.ts` |
 | **API: SurveysController** | HTTP handlers: POST/GET/PATCH surveys, attachments | `api/src/surveys/surveys.controller.ts` |
-| **API: SyncController** | POST /surveys/sync endpoint handler | `api/src/surveys/sync.controller.ts` |
+| **API: SyncController** | `POST /v1/sync` and `GET /v1/sync/changes` handlers | `api/src/surveys/sync.controller.ts` |
+| **API: ConfigModule** | Validated, typed configuration and production startup rules | `api/src/config/` |
+| **Shared: ibp-domain** | Factor keys, allowed scores, `evaluateIbp`, bands, sync/public wire types (no runtime deps) | `packages/ibp-domain/src/index.ts` |
 | **API: SurveysService** | Survey CRUD, parcel linkage, visibility, validation | `api/src/surveys/surveys.service.ts` |
 | **API: SurveysSyncService** | Batch sync operation processor (upsert/delete) | `api/src/surveys/surveys-sync.service.ts` |
-| **API: IbpRulesService** | Server-side IBP factor validation, score rules | `api/src/surveys/ibp-rules.service.ts` |
+| **API: IbpRulesService** | Thin adapter (`validateDraft`/`validateSubmit`) over `@cortege/ibp-domain`, no rule code of its own | `api/src/surveys/ibp-rules.service.ts` |
 | **API: AuthGuard** | JWT validation against Auth0 JWKS, caching | `api/src/auth/auth.guard.ts` |
 | **API: UsersService** | User profile CRUD, auto-provisioning on first login | `api/src/users/users.service.ts` |
 | **API: DatabaseService** | pg Pool wrapper for raw SQL queries | `api/src/database/database.service.ts` |
@@ -156,32 +174,53 @@ Cortege is a distributed, offline-first system with two primary components: a Re
 
 **Used by:** App.tsx (root navigation tree)
 
-### Mobile State & Orchestration Layer
+### Mobile State Layer (phase 01.9)
 
-**Purpose:** Centralize survey state, auth, sync, and profile management
+**Purpose:** One assembler calls every stateful hook exactly once and publishes memoised context slices
+
+**Location:** `mobile/src/state/`
+
+**Contains:**
+- `AppStateProvider.tsx` — `useAppController` calls `useSurveySync`, `useSurveyForm`, `useSurveyList`,
+  `useEditingDraft`, `useSurveyDraftPatcher`, `useGpsCapture` and `useNearbyParcels` exactly once, and
+  publishes their memoised slices through five contexts (session, status, sync actions, surveys, survey
+  form) plus a narrow nearby-parcels context
+- `useLatestCallback.ts` — `useLatestCallback`/`useStableActions`, stable-identity action wrappers
+
+**Depends on:** the hooks below
+
+**Used by:** `App.tsx`, every screen (through the context hooks, never by calling `useSurveySync` directly)
+
+### Mobile Sync & Orchestration Layer
+
+**Purpose:** Sync, auth session and survey CRUD orchestration
 
 **Location:** `mobile/src/hooks/`
 
 **Contains:**
-- `useSurveySync.ts` — Main orchestrator; composes smaller hooks
+- `useSurveySync.ts` — Sync/session orchestrator; composes the `survey-sync/` sub-hooks and calls
+  `useAuth0Session` and `useLocalDataOwner` directly
 - `survey-sync/useSurveySyncNetwork.ts` — Sync queue draining, online detection, pull changes
 - `survey-sync/useSurveySyncProfile.ts` — User profile sync
 - `survey-sync/useSurveySyncSurveyOperations.ts` — Survey CRUD operations
+- `survey-sync/useAttachmentPreviews.ts` — Attachment preview cache
+- `useAuth0Session.ts` — Auth state and token lifecycle
+- `useLocalDataOwner.ts` — Local-data-owner gate (single-device guarantee)
 - `useSurveyForm.ts` — Active form state during create/edit
 - `useSurveyList.ts` — Cached survey list
 - `useEditingDraft.ts` — Draft editing workflow
 - `useSurveyDraftPatcher.ts` — Incremental patch accumulation
-- `useAuth0Session.ts` — Auth state and token lifecycle
-- `usePublicMapExplorer.ts` — Public map data fetching
 - `useGpsCapture.ts` — Device location capture
 - `useNearbyParcels.ts` — Nearby parcels query
+- `usePublicMapExplorer.ts`, `useParcelStatuses.ts`, `useDebouncedValue.ts` — called directly by the
+  screens that need them (public map, parcel selection), not by the assembler
 
 **Depends on:**
 - HTTP client (mobile/src/api/client.ts)
 - Local storage queries (mobile/src/storage/)
 - Auth0 native SDK
 
-**Used by:** App.tsx, screens
+**Used by:** `AppStateProvider` (the assembler), screens that call the standalone hooks directly
 
 ### Mobile Data Access & Storage Layer
 
@@ -190,17 +229,18 @@ Cortege is a distributed, offline-first system with two primary components: a Re
 **Location:** `mobile/src/storage/`
 
 **Contains:**
-- `db.ts` — SQLite schema initialization (local_surveys, sync_queue, local_attachments, app_metadata)
+- `db.ts` — SQLite schema initialization (local_surveys, sync_queue, local_attachments, local_meta)
 - `surveys.ts` — Survey CRUD helpers
 - `sync.ts` — Sync queue management
 - `types.ts` — TypeScript types for storage
 - `utils.ts` — Utility functions
 
 **Schema:**
-- `local_surveys` — Survey drafts with sync state (pending/synced/failed/blocked)
+- `local_surveys` — Survey drafts with sync state (pending/synced/failed/blocked) and precomputed
+  `payload_completion` (written at the four payload-write sites; `PRAGMA user_version` migration 2)
 - `sync_queue` — Ordered queue of pending operations (upsert/delete) with retry count
 - `local_attachments` — Photo metadata and upload/sync state
-- `app_metadata` — Key-value for session and app-level state
+- `local_meta` — Key-value for session and app-level state
 
 **Depends on:** expo-sqlite
 
@@ -250,8 +290,8 @@ Cortege is a distributed, offline-first system with two primary components: a Re
 
 **Contains:**
 - `surveys/surveys.controller.ts` — Survey CRUD endpoints
-- `surveys/sync.controller.ts` — POST /surveys/sync (batch sync handler)
-- `surveys/public.controller.ts` — Public map endpoints
+- `surveys/sync.controller.ts` — `POST /v1/sync` (batch sync) and `GET /v1/sync/changes`
+- `surveys/public.controller.ts` — Public map endpoints (bbox-aware, phase 01.9)
 - `surveys/parcels.controller.ts` — Parcel metadata endpoints
 - `users/users.controller.ts` — User profile endpoints
 - `reports/reports.controller.ts` — Moderation/report endpoints
@@ -268,16 +308,19 @@ Cortege is a distributed, offline-first system with two primary components: a Re
 **Location:** `api/src/*/`
 
 **Contains:**
-- `surveys/surveys.service.ts` — Survey CRUD, validation, parcel linkage
+- `surveys/surveys.service.ts`, `surveys/surveys.repository.ts` — Survey CRUD, validation, parcel linkage
 - `surveys/surveys-sync.service.ts` — Batch sync operation processor
 - `surveys/surveys-attachments.service.ts` — Attachment upload/download, S3 integration
-- `surveys/ibp-rules.service.ts` — Factor scoring validation (server-side)
+- `surveys/survey-events.service.ts` — Survey event history
+- `surveys/ibp-rules.service.ts` — Thin adapter over `@cortege/ibp-domain` (server-side validation)
 - `surveys/cadastre-provider.service.ts` — Parcel data from IGN WFS or synthetic
-- `surveys/public-map.utils.ts` — Public map query/transform logic
-- `users/users.service.ts` — User provisioning and profile updates
-- `users/email.service.ts` — Email notifications
+- `surveys/parcels.service.ts` — Parcel lookup/status
+- `surveys/public-map.service.ts`, `public-map.utils.ts` — Public map query/transform logic
+- `users/users.service.ts` — User provisioning and profile updates (no email service — the API sends
+  no email; `EmailService` and the mailer dependency were removed in phase 01.9)
 - `reports/reports.service.ts` — Report/moderation logic
 - `auth/auth0-management.service.ts` — Auth0 API calls (delete account, etc.)
+- `config/app-config.ts`, `config/production-rules.ts` — Validated typed configuration
 
 **Depends on:** DatabaseService, IbpRulesService, HTTP clients (Auth0, IGN)
 
@@ -346,7 +389,7 @@ Cortege is a distributed, offline-first system with two primary components: a Re
 3. **Submit triggers upsertSurvey** (in `useSurveySyncSurveyOperations.ts`)
 4. **Data written to local_surveys + operation queued in sync_queue** (`mobile/src/storage/surveys.ts`, `sync.ts`)
 5. **useSurveySyncNetwork detects pending work** (`mobile/src/hooks/survey-sync/useSurveySyncNetwork.ts`)
-6. **If online, POST to /v1/surveys/sync** (batch operations)
+6. **If online, POST to /v1/sync** (batch operations)
 7. **SyncController receives batch, delegates to SurveysSyncService** (`api/src/surveys/sync.controller.ts`)
 8. **For each operation:**
    - SurveysSyncService calls SurveysService.upsertForUser
@@ -468,19 +511,20 @@ Cortege is a distributed, offline-first system with two primary components: a Re
 **Triggers:** App launch (OS startup or Expo dev reload)
 
 **Responsibilities:**
-1. Initialize local SQLite database (`initLocalDb()`)
-2. Load stored API URL from local preference
-3. Mount central useSurveySync hook (orchestrator)
-4. Compose hook results (auth, surveys, form, etc.)
-5. Route between AuthGateScreen → ProfileSetupScreen → AuthenticatedAppNavigation
-6. Inject AppContext with status and callbacks to navigation tree
+1. Mount `AppStateProvider` (`mobile/src/state/AppStateProvider.tsx`), the single assembler: it
+   initializes the local SQLite database (`initLocalDb()`), loads the stored API URL, and calls
+   `useSurveySync` exactly once, filling the five memoised contexts
+2. Route between AuthGateScreen → ProfileSetupScreen → AuthenticatedAppNavigation
+3. Mount the session overlays (auth, owner conflict, profile setup)
 
 **Flow:**
-- useEffect: Check if session is restoring (loading screen)
-- useEffect: Load stored API URL
+- `AppStateProvider` bootstraps the DB and the sync hooks, then renders the nested context providers
+- Screens read state through the context hooks (`useSession`, `useStatus`, `useSyncActions`,
+  `useSurveys`/`useSurveyActions`, `useSurveyFormState`, `useNearbyParcelsState`) — never by calling
+  `useSurveySync` directly
 - Render AuthGateScreen if not authenticated
 - Render ProfileSetupScreen if profile not yet set up
-- Render AuthenticatedAppNavigation (native-stack + bottom-tabs)
+- Render AuthenticatedAppNavigation (native-stack + bottom-tabs, native iOS tab bar in Release)
 
 ### API: main.ts
 

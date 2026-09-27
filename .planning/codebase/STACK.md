@@ -1,6 +1,6 @@
 # Technology Stack
 
-**Analysis Date:** 2026-09-22
+**Analysis Date:** 2026-09-22, updated 2026-09-27 (phase 01.9 closing sweep: `packages/ibp-domain`, hygiene removals, supercluster)
 
 ## Languages
 
@@ -16,12 +16,12 @@
 ## Runtime
 
 **Environment:**
-- Node.js 22 (Alpine) - API runtime and build toolchain
+- Node.js >= 22.5 (`package.json` `engines`), Alpine in the container image - API runtime and build toolchain
 - React Native 0.86.3 - Mobile app runtime
 - Expo 57.0.24 - React Native development platform and iOS/Android bridge
 
 **Package Manager:**
-- npm 10+ with workspaces
+- npm 10+ with workspaces (`mobile`, `api`, `packages/ibp-domain`; the root `package.json` holds only these three workspaces, `overrides` and one dev dependency, `react-test-renderer` — no runtime dependencies, no root `App.tsx`, no root `tsconfig.json`, phase 01.9)
 - Lockfile: `package-lock.json` (workspace root manages all dependencies)
 
 ## Frameworks
@@ -32,13 +32,18 @@
 - Helmet 8.1.0 - Security headers middleware
 - Throttler 6.5.0 - Rate limiting (10 requests/60s in production)
 
+**Shared:**
+- `@cortege/ibp-domain` (`packages/ibp-domain/`) - third npm workspace: pure TypeScript IBP rules (v3.0 + v3.2), bands and the sync/public wire types, no runtime dependencies. `IbpRulesService` (API) and `mobile/src/app/ibp-scoring.ts` (mobile) are thin adapters over it.
+
 **Mobile:**
 - React 19.2.3 - Component framework
 - React Native 0.86.3 - Native platform abstraction
 - React Navigation 7.x - Navigation stack
   - `@react-navigation/native-stack` - Native iOS/Android navigation
-  - `@react-navigation/bottom-tabs` - Tab bar navigation
+  - `@react-navigation/bottom-tabs` - Tab bar navigation (Android, and the iOS fallback outside Release)
+  - `react-native-bottom-tabs` + `@bottom-tabs/react-navigation` - Native iOS tab bar (always used in Release)
   - `@react-navigation/elements` - Navigation utilities
+- `supercluster` 9.1.0 - Marker clustering on the public map (JS only, no native module)
 
 **Testing:**
 - Jest 29.7.0 - Test runner and assertion framework
@@ -67,10 +72,11 @@
 **Infrastructure:**
 - @aws-sdk/client-s3 3.1004.0 - S3 object storage operations
 - @aws-sdk/s3-request-presigner 3.1004.0 - Presigned URL generation
-- nodemailer 9.1.1 - SMTP email delivery (optional)
-- bcryptjs 3.0.3 - Password hashing
 - dotenv 17.3.1 - Environment variable loading
 - reflect-metadata 0.2.2 - TypeScript decorator support
+- lru-cache 11.5.3 - In-process caching
+
+Phase 01.9 removed the mailer package and `@types` for it, plus `EmailService` (the API sends no email; the mail-relay env settings are gone), `bcryptjs` and `@nestjs/schedule` (zero imports). Do not re-add them.
 
 **Mobile UI/Navigation:**
 - react-native-maps 1.27.2 - Map component (Google Maps/Apple Maps)
@@ -81,6 +87,7 @@
 - @bottom-tabs/react-navigation 1.4.0 - React Navigation bottom tabs integration
 - @expo/vector-icons 15.0.2 - Icon library (Ionicons, MaterialCommunity, etc.)
 - react-native-svg 15.15.4 - SVG rendering
+- supercluster 9.1.0 - marker clustering on the public map
 
 **Mobile OS Features:**
 - expo-location 57.0.19 - GPS location services
@@ -97,26 +104,28 @@
 - eslint-plugin-react-hooks 4.6.2 - React Hooks lint rules
 - Prettier 3.8.1 - Code formatting
 - jimp 1.6.1 - Image processing (asset generation)
-- @expo/ngrok 4.1.0 - Local tunnel for testing on physical devices
+- @expo/ngrok 4.1.0 - Local tunnel for testing on physical devices (mobile `devDependencies` since phase 01.9; `expo start --tunnel` still finds it in dev installs)
 
 ## Configuration
 
 **Environment:**
-- `api/.env` - API backend secrets and configuration (PostgreSQL, Auth0, S3, SMTP)
+- `api/.env` - API backend secrets and configuration (PostgreSQL, Auth0, S3; no SMTP)
 - `mobile/.env` - Mobile app configuration (API URL, Auth0 endpoints)
 - `docker-compose.yml` - Local development services (PostgreSQL, MinIO)
 
 **Build:**
-- `tsconfig.json` - Root TypeScript configuration (extends `expo/tsconfig.base`)
+- No root `tsconfig.json` (removed phase 01.9; `api/` and `mobile/` each extend their own)
 - `api/tsconfig.json` - API TypeScript configuration (strict mode)
 - `api/tsconfig.build.json` - Production build exclusions
 - `mobile/tsconfig.json` - Mobile TypeScript configuration (strict mode enabled)
+- `packages/ibp-domain/tsconfig.json` - Shared package configuration (built to `dist` via `npm run build:domain`; Metro, Jest and `tsc` read its `src`, Node at runtime reads `dist`)
 - `.prettierrc.json` - Shared formatting: 2-space indent, 100-char line width, no semicolons
 - `.eslintrc.json` - Shared linting: unused vars error, no-explicit-any warning, no require imports
 - `mobile/app.json` - Expo configuration (iOS bundle ID, native plugins, permissions)
 - `mobile/jest.unit.config.js` - Mobile unit test configuration
 - `api/jest.config.js` - API E2E test configuration
 - `api/jest.unit.config.js` - API unit test configuration
+- `packages/ibp-domain/jest.config.js` - Shared package test configuration (coverage thresholds 100%)
 
 **Docker:**
 - `Dockerfile` - Multistage build: Node 22 Alpine builder → runtime image
@@ -127,17 +136,17 @@
 
 **Development:**
 - macOS, Linux, or Windows with Docker Desktop
-- Node.js 22+ (enforced in CI with `actions/setup-node@v4`)
+- Node.js >= 22.5 (`package.json` `engines`, enforced in CI with `actions/setup-node`)
 - npm 10+
 - Xcode (macOS) or Android Studio for native builds
-- Physical iOS device or Android device for testing native features
+- CI now also builds unsigned Android and iOS binaries (`native-android`, `native-ios` jobs) without a device
 
 **Production:**
 - Node.js 22 Alpine (containerized)
 - PostgreSQL 16
 - S3-compatible object storage (AWS S3 or MinIO)
-- SMTP server (optional, for email notifications)
 - Caddy reverse proxy (VPS deployment, see `infra/vps/`)
+- The API sends no email: SMTP settings and `EmailService` were removed (phase 01.9)
 
 **Deployment:**
 - GitHub Container Registry (`ghcr.io/florianlepont/cortege:latest`)
@@ -146,4 +155,4 @@
 
 ---
 
-*Stack analysis: 2026-09-22*
+*Stack analysis: 2026-09-22, updated 2026-09-27*
