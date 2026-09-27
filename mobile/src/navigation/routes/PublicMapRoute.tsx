@@ -1,8 +1,13 @@
 import { memo, useCallback, useContext, useEffect, useRef } from "react"
 import { View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useBasemapPreference } from "../../hooks/useBasemapPreference"
+import { useIsOffline } from "../../hooks/useIsOffline"
+import { useOfflineAreas } from "../../hooks/useOfflineAreas"
+import { useOfflinePendingParcelDrain } from "../../hooks/useOfflinePendingParcelDrain"
 import { usePublicMapExplorer } from "../../hooks/usePublicMapExplorer"
 import { PublicMapScreen } from "../../screens/PublicMapScreen"
+import { addPendingParcelDownload } from "../../storage/offline-map"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
@@ -30,9 +35,18 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
   const syncActions = useSyncActions()
   const reloadSignal = useContext(PublicMapReloadContext)
 
+  const isOffline = useIsOffline()
+  const { basemap, setBasemap } = useBasemapPreference()
+  const offlineAreas = useOfflineAreas(session.apiUrl, accessToken)
+  useOfflinePendingParcelDrain(session.apiUrl, accessToken, isOffline)
+  const handleQueueParcelDownload = useCallback((parcelId: string) => {
+    void addPendingParcelDownload(parcelId)
+  }, [])
+
   const explorer = usePublicMapExplorer({
     apiUrl: session.apiUrl,
     accessToken,
+    isOffline,
     onStatusChange: syncActions.setStatus,
   })
 
@@ -73,6 +87,15 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
         onLoad={explorer.loadPublicMap}
         onLoadParcels={explorer.loadPublicParcels}
         onViewportBboxChange={handleViewportBboxChange}
+        isOffline={isOffline}
+        basemap={basemap}
+        onChangeBasemap={setBasemap}
+        offlineAreas={offlineAreas.areas}
+        downloadingAreaId={offlineAreas.downloadingAreaId}
+        estimateOfflineArea={offlineAreas.estimateForRegion}
+        onDownloadOfflineArea={offlineAreas.startDownload}
+        onDeleteOfflineArea={offlineAreas.deleteArea}
+        onQueueParcelDownload={handleQueueParcelDownload}
       />
     </View>
   )

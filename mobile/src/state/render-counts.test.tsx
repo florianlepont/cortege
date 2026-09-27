@@ -556,6 +556,29 @@ jest.mock("../hooks/useLocalDataOwner", () => ({
   useLocalDataOwner: () => mockLocalDataOwner,
 }))
 
+// PublicMapRoute's offline hooks (Phase 8) touch SQLite and network state, out of scope for this
+// render-count harness (which asserts storage/db.getDb is never called); stubbed like the other
+// screen-owned hooks above.
+jest.mock("../hooks/useIsOffline", () => ({ useIsOffline: () => false }))
+jest.mock("../hooks/useBasemapPreference", () => ({
+  useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
+}))
+jest.mock("../hooks/useOfflineAreas", () => ({
+  useOfflineAreas: () => ({
+    areas: [],
+    downloadingAreaId: null,
+    estimateForRegion: jest.fn(() => ({
+      tileCountPerBasemap: 0,
+      totalTileCount: 0,
+      estimatedBytes: 0,
+      exceedsCap: false,
+    })),
+    startDownload: jest.fn(async () => ({ ok: true as const, areaId: "area-1" })),
+    deleteArea: jest.fn(async () => undefined),
+    refresh: jest.fn(async () => undefined),
+  }),
+}))
+
 // ─── Storage ─────────────────────────────────────────────────────────────────
 
 jest.mock("../storage/db", () => ({

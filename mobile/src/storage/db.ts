@@ -23,7 +23,7 @@ export const SYNC_BATCH_SIZE = 100
 // PRAGMA user_version target. Bump this and push a new entry onto MIGRATIONS
 // (below) whenever the schema changes; initLocalDb() migrates any existing
 // install from its current version up to this one, one migration at a time.
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 // The factor keys come from the shared package (01.8 criterion 1); a mutable copy keeps the
 // array type every importer already uses.
@@ -153,9 +153,52 @@ async function migration2(tx: TxHandle): Promise<void> {
   }
 }
 
+/**
+ * Migration 3 (version 2 -> 3). Additive only, Phase 8 (REQ-D-area-download,
+ * REQ-D-offline-parcel-warning): offline basemap-tile areas, their cached parcel
+ * statuses, and the small queue of parcels a surveyor asked to download once
+ * back online. See mobile/src/storage/offline-map.ts for the CRUD.
+ */
+async function migration3(tx: TxHandle): Promise<void> {
+  await tx.execAsync(`
+    CREATE TABLE IF NOT EXISTS offline_areas (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      min_lat REAL NOT NULL,
+      min_lng REAL NOT NULL,
+      max_lat REAL NOT NULL,
+      max_lng REAL NOT NULL,
+      min_zoom INTEGER NOT NULL,
+      max_zoom INTEGER NOT NULL,
+      status TEXT NOT NULL,
+      total_tiles INTEGER NOT NULL DEFAULT 0,
+      downloaded_tiles INTEGER NOT NULL DEFAULT 0,
+      failed_tiles INTEGER NOT NULL DEFAULT 0,
+      estimated_bytes INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS offline_area_parcels (
+      area_id TEXT NOT NULL,
+      parcel_id TEXT NOT NULL,
+      payload_json TEXT NOT NULL,
+      PRIMARY KEY (area_id, parcel_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_offline_area_parcels_parcel
+      ON offline_area_parcels(parcel_id);
+
+    CREATE TABLE IF NOT EXISTS offline_pending_parcels (
+      parcel_id TEXT PRIMARY KEY NOT NULL,
+      requested_at TEXT NOT NULL
+    );
+  `)
+}
+
 // Migration N lives at index N-1; MIGRATIONS[currentVersion] is the next one
 // to run on the way up to SCHEMA_VERSION.
-const MIGRATIONS: Array<(tx: TxHandle) => Promise<void>> = [migration1, migration2]
+const MIGRATIONS: Array<(tx: TxHandle) => Promise<void>> = [migration1, migration2, migration3]
 
 export async function initLocalDb(): Promise<void> {
   const db = await getDb()

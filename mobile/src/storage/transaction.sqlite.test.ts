@@ -5,7 +5,7 @@
  * strategy as src/storage.test.ts.
  */
 
-import { initLocalDb, getDb } from "./db"
+import { initLocalDb, getDb, SCHEMA_VERSION } from "./db"
 import { runInTransaction, TRANSACTION_WAIT_TIMEOUT_MS, TxHandle } from "./transaction"
 import { deriveQueueOpType } from "./utils"
 
@@ -248,11 +248,11 @@ describe("deriveQueueOpType", () => {
 // runner in db.ts. They are deliberately named outside the "runInTransaction"
 // and "deriveQueueOpType" filter Task 1's verification uses.
 describe("initLocalDb schema (Task 2)", () => {
-  test("sets user_version to 2 and adds op_type, file_state and the queue indexes", async () => {
+  test("sets user_version to SCHEMA_VERSION and adds op_type, file_state and the queue indexes", async () => {
     const db = await getDb()
 
     const versionRow = await db.getFirstAsync<{ user_version: number }>(`PRAGMA user_version`)
-    expect(versionRow?.user_version).toBe(2)
+    expect(versionRow?.user_version).toBe(SCHEMA_VERSION)
 
     const queueColumns = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(sync_queue)`)
     expect(queueColumns.some((column) => column.name === "op_type")).toBe(true)

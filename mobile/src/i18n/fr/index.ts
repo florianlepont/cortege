@@ -10,6 +10,7 @@ import { ibpMethodFr } from "./ibp-method"
 import { labelsFr } from "./labels"
 import { navigationFr } from "./navigation"
 import { nearbyParcelsSheetFr } from "./nearby-parcels-sheet"
+import { offlineMapFr } from "./offline-map"
 import { ownerConflictFr } from "./owner-conflict"
 import { parcelHistoryFr } from "./parcel-history"
 import { parcelSelectionFr } from "./parcel-selection"
@@ -51,6 +52,7 @@ export const fr = {
   authGate: authGateFr,
   account: accountFr,
   publicMap: publicMapFr,
+  offlineMap: offlineMapFr,
   validation: validationFr,
   status: statusFr,
 } as const

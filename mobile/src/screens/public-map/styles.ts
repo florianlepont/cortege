@@ -217,6 +217,76 @@ export const controlStyles = StyleSheet.create({
   },
 })
 
+export const offlineAreasStyles = StyleSheet.create({
+  nameField: {
+    gap: 5,
+  },
+  warning: {
+    ...brandTypography.meta,
+    color: brandColors.terracotta,
+  },
+  list: {
+    maxHeight: 220,
+  },
+  row: {
+    borderTopWidth: 1,
+    borderTopColor: brandColors.divider,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  rowInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  deleteButton: {
+    padding: 6,
+  },
+})
+
+export const offlineIndicatorStyles = StyleSheet.create({
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: brandRadius.pill,
+    borderWidth: 1,
+    borderColor: brandColors.terracotta,
+    backgroundColor: brandColors.errorSoft,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  badgeText: {
+    ...brandTypography.label,
+    color: brandColors.terracotta,
+  },
+  basemapToggle: {
+    flexDirection: "row",
+    borderRadius: brandRadius.pill,
+    borderWidth: 1,
+    borderColor: brandColors.divider,
+    backgroundColor: brandTranslucentPanel.subtle,
+    padding: 3,
+    ...brandShadow.card,
+  },
+  basemapOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: brandRadius.pill,
+  },
+  basemapOptionActive: {
+    backgroundColor: brandColors.forest,
+  },
+  basemapOptionText: {
+    ...brandTypography.meta,
+    color: brandColors.forest,
+  },
+  basemapOptionTextActive: {
+    color: brandColors.white,
+  },
+})
+
 export const panelStyles = StyleSheet.create({
   card: {
     position: "absolute",

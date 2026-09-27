@@ -20,6 +20,12 @@ const mockShouldShowDevTools = jest.fn(() => false)
 
 jest.mock("../app/dev-tools", () => ({ shouldShowDevTools: () => mockShouldShowDevTools() }))
 
+const mockGetCachedParcelsForBounds = jest.fn()
+
+jest.mock("../storage/offline-map", () => ({
+  getCachedParcelsForBounds: (...args: unknown[]) => mockGetCachedParcelsForBounds(...args),
+}))
+
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import { fr } from "../i18n"
 import { usePublicMapExplorer } from "./usePublicMapExplorer"
@@ -330,6 +336,14 @@ describe("usePublicMapExplorer", () => {
   // ─── loadPublicParcels ────────────────────────────────────────────────────
 
   describe("loadPublicParcels", () => {
+    test("returns early when online without an access token", async () => {
+      const hook = await buildHook({ accessToken: null })
+
+      await hook.loadPublicParcels({ bbox: "0,0,1,1", zoom: 10 })
+
+      expect(mockFetchPublicParcelStatuses).not.toHaveBeenCalled()
+    })
+
     test("returns early when bbox is empty", async () => {
       const hook = await buildHook()
 
@@ -413,6 +427,47 @@ describe("usePublicMapExplorer", () => {
       const hook = await buildHook()
 
       await expect(hook.loadPublicParcels({ bbox: "0,0,1,1", zoom: 10 })).resolves.toBeUndefined()
+    })
+  })
+
+  // ─── loadPublicParcels offline (REQ-D-offline-map, 08-CONTEXT D-13) ───────
+
+  describe("loadPublicParcels while offline", () => {
+    beforeEach(() => {
+      mockGetCachedParcelsForBounds.mockReset()
+    })
+
+    test("reads the offline cache instead of the network", async () => {
+      mockGetCachedParcelsForBounds.mockResolvedValue([{ parcel_id: "cached" }])
+      const hook = await buildHook({ isOffline: true })
+
+      await hook.loadPublicParcels({ bbox: "1.0,45.0,2.0,46.0", zoom: 14 })
+
+      expect(mockFetchPublicParcelStatuses).not.toHaveBeenCalled()
+      expect(mockGetCachedParcelsForBounds).toHaveBeenCalledWith({
+        minLng: 1.0,
+        minLat: 45.0,
+        maxLng: 2.0,
+        maxLat: 46.0,
+      })
+    })
+
+    test("works without an access token, since it never calls the network", async () => {
+      mockGetCachedParcelsForBounds.mockResolvedValue([])
+      const hook = await buildHook({ isOffline: true, accessToken: null })
+
+      await expect(
+        hook.loadPublicParcels({ bbox: "1.0,45.0,2.0,46.0", zoom: 14 }),
+      ).resolves.toBeUndefined()
+      expect(mockGetCachedParcelsForBounds).toHaveBeenCalled()
+    })
+
+    test("an unparsable bbox yields an empty list instead of throwing", async () => {
+      const hook = await buildHook({ isOffline: true })
+
+      await hook.loadPublicParcels({ bbox: "not-a-bbox", zoom: 14 })
+
+      expect(mockGetCachedParcelsForBounds).not.toHaveBeenCalled()
     })
   })
 })

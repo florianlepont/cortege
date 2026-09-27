@@ -1,21 +1,26 @@
-import { memo } from "react"
+import { memo, useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { computeIbpTotalDelta } from "../../app/ibp-scoring"
 import type { ParcelSurveyHistoryItem } from "../../app/types"
 import { useParcelSurveyHistory } from "../../hooks/useParcelSurveyHistory"
 import { fr } from "../../i18n"
+import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { panelStyles as styles } from "./styles"
 
 const t = fr.parcelHistory
+const missingT = fr.offlineMap.parcelMissing
 
 export type ParcelHistoryCardProps = {
   parcelId: string
   apiUrl: string
   accessToken: string | null
+  /** REQ-D-offline-parcel-warning (08-CONTEXT D-14). */
+  isOffline: boolean
+  onQueueDownload: (parcelId: string) => void
   bottom: number
   onClose: () => void
 }
@@ -53,10 +58,22 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
   parcelId,
   apiUrl,
   accessToken,
+  isOffline,
+  onQueueDownload,
   bottom,
   onClose,
 }: ParcelHistoryCardProps) {
-  const { items, loading, error } = useParcelSurveyHistory(apiUrl, accessToken, parcelId)
+  const { items, loading, error, offline } = useParcelSurveyHistory(
+    apiUrl,
+    accessToken,
+    parcelId,
+    isOffline,
+  )
+  const [queued, setQueued] = useState(false)
+  const handleQueueDownload = (): void => {
+    onQueueDownload(parcelId)
+    setQueued(true)
+  }
 
   return (
     <AppCard variant="panelElevated" padding={14} style={[styles.card, { bottom }]}>
@@ -75,10 +92,22 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
       />
       {loading ? <AppNotice tone="info" message={t.loading} /> : null}
       {!loading && error ? <AppNotice tone="danger" message={t.loadFailed} /> : null}
-      {!loading && !error && items.length === 0 ? (
+      {offline ? (
+        <View>
+          <AppNotice
+            tone="warning"
+            title={missingT.title}
+            message={queued ? missingT.queued : missingT.message}
+          />
+          {!queued ? (
+            <AppButton label={missingT.downloadAction} onPress={handleQueueDownload} />
+          ) : null}
+        </View>
+      ) : null}
+      {!loading && !error && !offline && items.length === 0 ? (
         <AppNotice tone="info" message={t.empty} />
       ) : null}
-      {!loading && !error
+      {!loading && !error && !offline
         ? items.map((item, index) => (
             <HistoryRow
               key={item.survey_id}

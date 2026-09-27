@@ -66,10 +66,10 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [x] **REQ-D-offline-work** — Contributor views loaded surveys and edits drafts offline; actions are queued; parcel linkage metadata and recent cadastral context are available offline. *(Built)*
 - [x] **REQ-D-auto-sync** — On reconnection, pending surveys are sent automatically with no manual trigger; status becomes `synced`, or `error` with an actionable message; downsync includes parcel history. *(Built)*
 - [x] **REQ-D-conflict-resolution** — A server-rejected parcel/version conflict is stored as a clear blocking error explaining expected vs local state; the contributor retries after correction or discards. *(Built)*
-- [ ] **REQ-D-offline-map** — A clear offline indicator is shown; the map renders a basemap and locally available parcels; GPS position displays and can be followed; zoom, pan and parcel selection work with no connectivity. *(New — verified absent: no offline handling in `mobile/src/screens/`)*
-- [ ] **REQ-D-area-download** — Contributor selects an area, sees estimated size and download progress, lists and deletes downloaded areas, and the area survives an app restart. *(New)*
-- [ ] **REQ-D-offline-parcel-warning** — When an expected parcel is not cached, a clear message explains it and a quick action starts the download once the network returns; no infinite spinners. *(New)*
-- [ ] **REQ-D-basemap-switch** — A basemap selector toggles at least "Satellite" and "Map"; the selection persists while navigating; the default is configurable. *(New — verified absent: no `mapType` or `provider` in `mobile/src/screens/`)*
+- [x] **REQ-D-offline-map** — A clear offline indicator is shown; the map renders a basemap and locally available parcels; GPS position displays and can be followed; zoom, pan and parcel selection work with no connectivity. *(New — Built, closed Phase 8: `OfflineIndicatorBadge`, `OfflineBasemapTile` switching to local tiles, `ParcelOverlayPolygons` fed from the offline parcel-status cache; GPS follow and zoom/pan/selection were already device-local and untouched. Not checked on a real device in airplane mode — see `08-CONTEXT.md`/ROADMAP Phase 8 status note.)*
+- [x] **REQ-D-area-download** — Contributor selects an area, sees estimated size and download progress, lists and deletes downloaded areas, and the area survives an app restart. *(New — Built, closed Phase 8: `OfflineAreasSheet` + `useOfflineAreas`, tiles and parcel cache persisted under the document directory and a new SQLite migration, so a relaunch reopens the same downloaded state. The actual force-quit/relaunch has not been run on a device in this cloud session.)*
+- [x] **REQ-D-offline-parcel-warning** — When an expected parcel is not cached, a clear message explains it and a quick action starts the download once the network returns; no infinite spinners. *(New — Built, closed Phase 8: `ParcelHistoryCard`'s offline state plus the `offline_pending_parcels` queue drained by `useOfflinePendingParcelDrain` on reconnect.)*
+- [x] **REQ-D-basemap-switch** — A basemap selector toggles at least "Satellite" and "Map"; the selection persists while navigating; the default is configurable. *(New — Built, closed Phase 8: `BasemapToggle` + `useBasemapPreference`, persisted to `local_meta`. "The default is configurable" is satisfied as a code-level constant (`DEFAULT_BASEMAP` in `storage/map-preference.ts`), not a user-facing settings toggle — no such settings surface exists elsewhere in the app either.)*
 
 ### ML — Species Recognition Groundwork
 
@@ -259,10 +259,10 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-B-survey-detail | Partial | Phase 2 | Build |
 | REQ-C-versioning | Partial | Phase 2 | Build |
 | REQ-A-delete-account | Partial | Phase 2 | Build |
-| REQ-D-offline-map | New | Phase 8 | Build |
-| REQ-D-area-download | New | Phase 8 | Build |
-| REQ-D-offline-parcel-warning | New | Phase 8 | Build |
-| REQ-D-basemap-switch | New | Phase 8 | Build |
+| REQ-D-offline-map | New | Phase 8 | Built |
+| REQ-D-area-download | New | Phase 8 | Built |
+| REQ-D-offline-parcel-warning | New | Phase 8 | Built |
+| REQ-D-basemap-switch | New | Phase 8 | Built |
 | REQ-C-pdf-export | New | Phase 10 | Build |
 | REQ-B-manage-published | Partial | Phase 10 | Build |
 | REQ-INF-hosting-adr | New | Phase 11 | Build |
