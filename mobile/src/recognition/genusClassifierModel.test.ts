@@ -90,9 +90,8 @@ describe("classifyGenusPhoto", () => {
   })
 
   it("resolves 'unavailable'/load_failed when the bundled model fails to load", async () => {
-    // The real repository state today: mobile/assets/models/genus_classifier.tflite is a
-    // documented placeholder, not a valid TFLite flatbuffer (see its README.md) - this is the
-    // actual fail-closed path ADR-002 D-08 requires, exercised for real rather than assumed.
+    // `loadTensorflowModel` is mocked module-wide, so this exercises the fail-closed path ADR-002
+    // D-08 requires (a corrupt or unparseable bundle) regardless of the real .tflite's contents.
     loadTensorflowModel.mockRejectedValue(new Error("invalid flatbuffer"))
 
     const outcome = await classifyGenusPhoto("file:///mock/cache/photo.jpg")
