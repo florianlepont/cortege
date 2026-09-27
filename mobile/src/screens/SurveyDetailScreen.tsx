@@ -2,6 +2,7 @@ import { IbpCas } from "@cortege/ibp-domain"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollView } from "react-native"
 import { shouldShowDevTools } from "../app/dev-tools"
+import type { SurveyExportData } from "../app/survey-pdf-export"
 import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
@@ -185,6 +186,36 @@ export function SurveyDetailScreen({
     (localDraftMeta?.site_name ?? detail?.site_name ?? selectedSurvey.site_name).trim() ||
     selectedSurvey.site_name
 
+  const exportData: SurveyExportData = useMemo(() => {
+    const detailParcelIds = detail?.parcel_ids?.length
+      ? detail.parcel_ids
+      : detail?.parcel_id
+        ? [detail.parcel_id]
+        : null
+    return {
+      siteName: activeSiteName,
+      parcelIds: detailParcelIds ?? localDraftMeta?.parcel_ids ?? [],
+      observationYear: detail?.observation_year ?? localDraftMeta?.observation_year ?? null,
+      versionNumber: detail?.version_number ?? localDraftMeta?.version_number ?? null,
+      methodVersion: detail?.ibp_method_version ?? localDraftMeta?.ibp_method_version ?? null,
+      dateIso: detail?.submitted_at ?? detailCreatedAt,
+      scores: displayedScores,
+      factorEntries: displayedFactorEntries,
+    }
+  }, [
+    activeSiteName,
+    detail?.parcel_ids,
+    detail?.parcel_id,
+    detail?.observation_year,
+    detail?.version_number,
+    detail?.ibp_method_version,
+    detail?.submitted_at,
+    detailCreatedAt,
+    localDraftMeta,
+    displayedScores,
+    displayedFactorEntries,
+  ])
+
   useEffect(() => {
     isHeroCompressedRef.current = false
     setIsHeroCompressed(false)
@@ -288,6 +319,7 @@ export function SurveyDetailScreen({
           />
           <DetailActions
             survey={selectedSurvey}
+            exportData={exportData}
             onDeleteSurvey={onDeleteSurvey}
             onRetrySurvey={onRetrySurvey}
             onDiscardSurvey={onDiscardSurvey}

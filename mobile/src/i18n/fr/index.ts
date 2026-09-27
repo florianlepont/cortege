@@ -18,6 +18,7 @@ import { publicMapFr } from "./public-map"
 import { settingsFr } from "./settings"
 import { statusFr } from "./status"
 import { surveyDetailFr } from "./survey-detail"
+import { surveyExportFr } from "./survey-export"
 import { surveyFormFr } from "./survey-form"
 import { surveyListFr } from "./survey-list"
 import { syncErrorsFr } from "./sync-errors"
@@ -35,6 +36,7 @@ export const fr = {
   components: componentsFr,
   surveyList: surveyListFr,
   surveyDetail: surveyDetailFr,
+  surveyExport: surveyExportFr,
   surveyForm: surveyFormFr,
   factorDetail: factorDetailFr,
   factorInput: factorInputFr,

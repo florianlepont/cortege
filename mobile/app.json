@@ -55,7 +55,8 @@
         }
       ],
       "./plugins/with-scene-delegate",
-      "expo-image"
+      "expo-image",
+      "expo-sharing"
     ],
     "ios": {
       "bundleIdentifier": "fr.etatssauvages.cortege",

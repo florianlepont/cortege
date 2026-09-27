@@ -296,6 +296,9 @@ describe("resolveScoringContext", () => {
     ibp_method_version: IBP_METHOD_V3_2,
     ibp_cas: 2,
     ibp_cas3_scale: true,
+    parcel_ids: [],
+    observation_year: null,
+    version_number: null,
     ...overrides,
   })
   const detail = (overrides: Partial<SurveyDetailResponse> = {}): SurveyDetailResponse =>

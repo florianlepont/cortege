@@ -84,6 +84,7 @@ describe("French catalogue", () => {
         "settings",
         "status",
         "surveyDetail",
+        "surveyExport",
         "surveyForm",
         "surveyList",
         "syncErrors",

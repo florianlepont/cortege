@@ -163,6 +163,7 @@ jest.mock("../storage/attachments", () => ({
 }))
 
 jest.mock("../storage/surveys", () => ({
+  cacheSurveyCanonicalFields: jest.fn().mockResolvedValue(undefined),
   listLocalSurveys: jest.fn(async () => [
     {
       id: "s-01",

@@ -442,6 +442,11 @@ function buildSurveyPayloadFromRemote(survey: RemoteSurvey): SurveyQueuePayload 
     status: survey.status ?? "draft",
     visibility: (survey.visibility as "private" | "public" | undefined) ?? "private",
     parcel_ids: normalizeParcelIds(survey.parcel_ids),
+    // Copied so a pulled survey keeps the server-assigned version/year for offline PDF export
+    // (phase 10, D-01); a missing value stays absent rather than becoming 0/null.
+    observation_year:
+      typeof survey.observation_year === "number" ? survey.observation_year : undefined,
+    version_number: typeof survey.version_number === "number" ? survey.version_number : undefined,
     region_version: survey.region_version ?? undefined,
     vegetation_stage: survey.vegetation_stage ?? undefined,
     factors: survey.factors ?? {},
