@@ -29,6 +29,15 @@ export const accountFr = {
     label: "Mot de passe",
     action: "Réinitialiser",
   },
+  // ADR-002's CC-BY-4.0 attribution obligation (Phase 6): the genus-recognition model's training
+  // images come from GBIF occurrence media, some CC-BY-licensed and requiring photographer credit.
+  credits: {
+    label: "Crédits photographiques",
+    action: "Voir",
+    alertTitle: "Crédits photographiques",
+    alertMessage:
+      "L'identification de genre par photo (section A) utilise un modèle entraîné sur des images de GBIF.org (Global Biodiversity Information Facility), publiées sous licence CC0 1.0 ou CC BY 4.0. Les images CC BY nécessitent de créditer leurs photographes ; voir gbif.org pour le mécanisme d'attribution complet.",
+  },
   logout: "Se déconnecter",
   // ACC-03: the grouped iOS-style list (Profil, Connexion, Données, À propos, Se déconnecter).
   sections: {
@@ -63,5 +72,6 @@ export const accountFr = {
     editPhotoHint: "Ouvre les options de photo",
     editEmail: "Modifier l'adresse email",
     resetPassword: "Réinitialiser le mot de passe",
+    credits: "Voir les crédits photographiques",
   },
 } as const

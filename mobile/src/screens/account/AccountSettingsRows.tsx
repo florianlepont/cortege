@@ -48,6 +48,12 @@ export function useAccountConnectionRows({
     ])
   }
 
+  // ADR-002 CC-BY-4.0 obligation (Phase 6): credit the GBIF-sourced training images.
+  const handleShowCredits = (): void => {
+    const texts = fr.account.credits
+    Alert.alert(texts.alertTitle, texts.alertMessage)
+  }
+
   const emailRow: AppGroupedListRow = emailEditing
     ? {
         key: "email",
@@ -111,7 +117,16 @@ export function useAccountConnectionRows({
     onPress: handlePasswordReset,
   }
 
-  return [emailRow, passwordRow]
+  // ADR-002 CC-BY-4.0 obligation (Phase 6): credit the GBIF-sourced training images.
+  const creditsRow: AppGroupedListRow = {
+    key: "credits",
+    label: fr.account.credits.label,
+    value: fr.account.credits.action,
+    accessibilityLabel: fr.account.a11y.credits,
+    onPress: handleShowCredits,
+  }
+
+  return [emailRow, passwordRow, creditsRow]
 }
 
 type UseLogoutRowInput = { onLogout: () => Promise<void> }

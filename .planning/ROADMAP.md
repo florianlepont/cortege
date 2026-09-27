@@ -51,7 +51,7 @@ list is never ambiguous.
 - [x] **Phase 3: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions (completed 2026-09-27)
 - [x] **Phase 4: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls (completed 2026-09-27)
 - [x] **Phase 5: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec (completed 2026-09-27)
-- [ ] **Phase 6: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it
+- [ ] **Phase 6: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it (UI/plumbing built; blocked on the real model artifact and an Android device run — see phase detail)
 - [x] **Phase 7: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured (completed 2026-09-27)
 - [x] **Phase 8: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; on-device airplane-mode/relaunch verification deferred to Phase 13, see phase detail)
 - [ ] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map
@@ -475,7 +475,25 @@ Plans:
   5. The genus list reaches the server through the normal sync flow and appears in the survey read back from the API.
   6. **Closes Phase 1's accepted Android deviation:** a real Android device run records median, p95 and worst total latency, online and in airplane mode, against the 3 s budget, plus an accuracy spot-check confirming the bundled `.tflite` behaves as on iOS. Recorded in the same format as the measurement document's Section 7. The feature does not ship until this is done.
 
-**Plans**: TBD
+**Plans**: 1/1 complete, **phase not closed — two open gates block criteria 1, 2, 4 and 6**
+
+- [x] 06-01-PLAN.md — Factor A genus-list UI (Phase 5 shipped only the data contract), the
+  photograph → classify → confirm entry point, per-genus calibrated confidence, bundled-model
+  plumbing, GBIF attribution row
+
+**Open gates, recorded rather than silently closed (`06-CONTEXT.md`, `06-01-SUMMARY.md`,
+`06-VALIDATION.md`):**
+- The real, MD5-verified `genus_classifier.tflite` and its labels file were not reachable from the
+  container this plan ran in (`~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/` does
+  not exist there). `mobile/assets/models/` ships an explicit, documented placeholder instead of a
+  fabricated model — see that directory's own `README.md` for the exact replacement steps. Criteria
+  1, 2 and 4 cannot be demonstrated on a real device until this is done.
+- Criterion 6's real Android device run was not performed — no Android device (or even an
+  emulator/SDK) was available in that container. Recorded as an open gate, matching Phase 1's own
+  accepted deviation, not skipped or fabricated.
+- **The feature does not ship until both gates close** (this phase's own success-criterion 6
+  wording, extended to the model-artifact gate it shares the same cause with).
+
 **UI hint**: yes
 
 ### Phase 7: Information Architecture (INSERTED, UX audit Lot 3)
@@ -637,7 +655,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 3. Field-Entry Ergonomics (UX Lot 1) | 6/6 | Complete   | 2026-09-27 |
 | 4. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
 | 5. Factor A Genus List & Data-Contract Corrections | 1/1 | Complete   | 2026-09-27 |
-| 6. Genus Recognition for Factor A | 0/TBD | Not started | - |
+| 6. Genus Recognition for Factor A | 1/1 | Blocked (real model artifact + Android device run — see phase detail) | - |
 | 7. Information Architecture (UX Lot 3) | 6/6 | Complete   | 2026-09-27 |
 | 8. Offline Map & Own-Survey Navigation | n/a | Complete (on-device airplane-mode check deferred to Phase 13) | 2026-09-27 |
 | 9. Onboarding & Explorer Polish (UX Lot 4) | 0/TBD | Not started | - |

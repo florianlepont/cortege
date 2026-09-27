@@ -5,6 +5,8 @@ import { componentsFr } from "./components"
 import { factorDetailFr } from "./factor-detail"
 import { factorInputFr } from "./factor-input"
 import { factorPagerFr } from "./factor-pager"
+import { genusFr } from "./genus"
+import { genusRecognitionFr } from "./genus-recognition"
 import { homeFr } from "./home"
 import { ibpMethodFr } from "./ibp-method"
 import { labelsFr } from "./labels"
@@ -42,6 +44,8 @@ export const fr = {
   factorDetail: factorDetailFr,
   factorInput: factorInputFr,
   factorPager: factorPagerFr,
+  genus: genusFr,
+  genusRecognition: genusRecognitionFr,
   parcelSelection: parcelSelectionFr,
   parcelHistory: parcelHistoryFr,
   profileSetup: profileSetupFr,

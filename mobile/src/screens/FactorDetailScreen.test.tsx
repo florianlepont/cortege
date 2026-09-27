@@ -62,6 +62,26 @@ jest.mock("../ui/AppField", () => {
   }
 })
 
+jest.mock("../ui/FactorGenusListInput", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    FactorGenusListInput: (props: { label: string }) =>
+      ReactRef.createElement("FactorGenusListInput", props),
+  }
+})
+
+// FactorAGenusRecognitionEntry pulls in the camera/model flow (Modal, ActivityIndicator,
+// expo-image-picker), none of which this file's minimal react-native mock provides - it is
+// Factor A's own entry point, not something FactorDetailScreen's own rendering behaviour needs to
+// exercise; its own test file covers it.
+jest.mock("./FactorAGenusRecognitionEntry", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    FactorAGenusRecognitionEntry: (props: { genusField: { label: string } }) =>
+      ReactRef.createElement("FactorAGenusRecognitionEntry", props),
+  }
+})
+
 type Node = renderer.ReactTestInstance
 
 const textOf = (node: Node): string =>
@@ -108,10 +128,12 @@ const renderDetail = (
     .findAllByType("Text" as unknown as React.ElementType)
     .map((node) => textOf(node))
   const inputs = tree.root.findAllByType("AppField" as unknown as React.ElementType)
-  return { texts, inputs }
+  return { tree, texts, inputs }
 }
 
-const A_FIELDS = [field("native_genus_count"), field("native_cover_percent")]
+// The genus-list field is never "required" (an explicit empty list is a valid observation,
+// mirroring useSurveyForm.ts's real factorSections.A[0]).
+const A_FIELDS = [field("genera", { required: false }), field("native_cover_percent")]
 
 describe("FactorDetailScreen help per method version", () => {
   test("v3.2 shows the v3.2 help and hints for A (with the cover cap)", () => {
@@ -138,12 +160,34 @@ describe("FactorDetailScreen help per method version", () => {
 })
 
 describe("FactorDetailScreen fields", () => {
-  test("A renders the genus count and the native cover fields it receives", () => {
-    const { inputs } = renderDetail("A", A_FIELDS, IBP_METHOD_V3_2)
+  test("A renders the genus list (not an AppField) and the native cover AppField", () => {
+    const { tree, inputs } = renderDetail("A", A_FIELDS, IBP_METHOD_V3_2)
     expect(inputs.map((input) => input.props.label)).toEqual([
-      fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.native_genus_count }),
       fr.factorDetail.requiredField({ label: fr.factorDetail.fieldLabels.native_cover_percent }),
     ])
+    const genusLists = tree.root.findAllByType(
+      "FactorGenusListInput" as unknown as React.ElementType,
+    )
+    expect(genusLists).toHaveLength(1)
+    expect(genusLists[0].props.label).toBe(fr.factorDetail.fieldLabels.genera)
+  })
+
+  test("A mounts the photo-recognition entry point, wired to the genus-list field", () => {
+    const { tree } = renderDetail("A", A_FIELDS, IBP_METHOD_V3_2)
+    const entries = tree.root.findAllByType(
+      "FactorAGenusRecognitionEntry" as unknown as React.ElementType,
+    )
+    expect(entries).toHaveLength(1)
+    // genusField is the raw fields[0] passed to FactorDetailScreen (fr.factorDetail.fieldLabels
+    // only applies inside renderFactorField's own humanizeFieldLabel, not to this raw prop).
+    expect(entries[0].props.genusField.label).toBe(A_FIELDS[0].label)
+  })
+
+  test("B mounts no photo-recognition entry point (Factor A only)", () => {
+    const { tree } = renderDetail("B", [field("strata_count")], IBP_METHOD_V3_2)
+    expect(
+      tree.root.findAllByType("FactorAGenusRecognitionEntry" as unknown as React.ElementType),
+    ).toHaveLength(0)
   })
 
   test("B renders no AppField (chips variant, FLOW-01)", () => {

@@ -71,6 +71,8 @@ describe("French catalogue", () => {
         "factorDetail",
         "factorInput",
         "factorPager",
+        "genus",
+        "genusRecognition",
         "home",
         "ibpMethod",
         "labels",

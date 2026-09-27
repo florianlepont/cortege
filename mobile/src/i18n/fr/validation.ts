@@ -17,7 +17,7 @@ export const validationFr = {
   // Label per form field key; also shown as the field label in the factor detail.
   fields: {
     siteName: "Nom du site",
-    native_genus_count: "Nombre de genres autochtones",
+    genera: "Genres autochtones observés",
     native_cover_percent: "Couvert des essences autochtones (%)",
     strata_count: "Nombre de strates",
     covered_autochthonous_percent: "Couvert autochtone (%)",
