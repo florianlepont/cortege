@@ -19,11 +19,11 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
 
   const onCreateSurvey = useLatestCallback(() => {
     actions.openCreateSurvey()
-    navigation.navigate("surveys", { screen: "surveyForm" })
+    navigation.navigate("surveys", { screen: "surveyForm", initial: false })
   })
   const onOpenSurvey = useLatestCallback((surveyId: string) => {
     actions.openSurvey(surveyId)
-    navigation.navigate("surveys", { screen: "surveyDetail" })
+    navigation.navigate("surveys", { screen: "surveyDetail", initial: false })
   })
   const onNavigateToExplorer = useLatestCallback(() => {
     navigation.navigate("publicMap")

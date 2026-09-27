@@ -156,7 +156,6 @@ export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: Wi
     heroTopOffset,
     topSpacerHeight,
     scrollContentBottomPadding,
-    scrollEnabled: activeStep !== "identity" || identityEditing,
     preserveIdentityRailSpace,
     openWizardStep,
     handleIdentityFocus,

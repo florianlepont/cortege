@@ -360,11 +360,17 @@ describe("HomeRoute", () => {
 
     callback("home", "onCreateSurvey")()
     expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveys", { screen: "surveyForm" })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveys", {
+      screen: "surveyForm",
+      initial: false,
+    })
 
     callback("home", "onOpenSurvey")("s-01")
     expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveys", { screen: "surveyDetail" })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveys", {
+      screen: "surveyDetail",
+      initial: false,
+    })
 
     callback("home", "onNavigateToExplorer")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("publicMap")
