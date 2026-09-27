@@ -233,9 +233,7 @@ function texts(tree: ReactTestRenderer): string[] {
 }
 
 function renderCard(item: PublicMapItem): ReactTestRenderer {
-  return mount(
-    <SelectedSurveyCard item={item} isOwnSurvey={false} bottom={0} onClose={jest.fn()} />,
-  )
+  return mount(<SelectedSurveyCard item={item} isOwnSurvey={false} onClose={jest.fn()} />)
 }
 
 describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () => {
@@ -283,9 +281,7 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
       makeItem({ survey_id: "s-1", ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 2 }),
       makeItem({ survey_id: "s-2", ibp_total: 30 }),
     ]
-    const tree = mount(
-      <ClusterListSheet items={items} bottom={0} onSelect={jest.fn()} onClose={jest.fn()} />,
-    )
+    const tree = mount(<ClusterListSheet items={items} onSelect={jest.fn()} onClose={jest.fn()} />)
     const labels = tree.root
       .findAll((node) => (node.type as unknown) === "Pressable")
       .map((node) => String(node.props.accessibilityLabel))

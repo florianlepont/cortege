@@ -1,5 +1,5 @@
 import { memo } from "react"
-import { Pressable } from "react-native"
+import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -11,7 +11,6 @@ import {
 import type { PublicMapItem } from "../../app/types"
 import { brandColors } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
-import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { panelStyles as styles } from "./styles"
@@ -37,25 +36,24 @@ export function surveyPlaceLabel(item: PublicMapItem): string {
 export type SelectedSurveyCardProps = {
   item: PublicMapItem
   isOwnSurvey: boolean
-  bottom: number
   onClose: () => void
 }
 
 /**
- * The selected survey marker's summary (member-only Explorer map, Phase 2). The report entry
- * point that used to live here was removed (ROADMAP Phase 2 criterion 3); `api/src/reports/`
- * stays in the API, untouched, for a future moderation UI.
+ * The selected survey marker's summary (member-only Explorer map, Phase 2), shown in the
+ * Explorer tiered sheet (MAP-01). The report entry point that used to live here was removed
+ * (ROADMAP Phase 2 criterion 3); `api/src/reports/` stays in the API, untouched, for a future
+ * moderation UI.
  */
 export const SelectedSurveyCard = memo(function SelectedSurveyCard({
   item,
   isOwnSurvey,
-  bottom,
   onClose,
 }: SelectedSurveyCardProps) {
   const methodLabel = surveyMethodLabel(item)
 
   return (
-    <AppCard variant="panelElevated" padding={14} style={[styles.card, { bottom }]}>
+    <View style={styles.card}>
       <AppSectionHeader
         title={t.selected.title(item.ibp_total)}
         trailing={
@@ -77,6 +75,6 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
       {isOwnSurvey ? (
         <AppNotice tone="info" icon="information-circle-outline" message={t.selected.ownSurvey} />
       ) : null}
-    </AppCard>
+    </View>
   )
 })

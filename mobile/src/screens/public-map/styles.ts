@@ -310,12 +310,27 @@ export const offlineIndicatorStyles = StyleSheet.create({
   },
 })
 
+// MAP-01: the tiered sheet's own chrome (background, drag handle) — the content components below
+// (SelectedSurveyCard, ClusterListSheet, ParcelHistoryCard) no longer draw their own card/position.
+export const sheetStyles = StyleSheet.create({
+  background: {
+    backgroundColor: brandColors.panel,
+    borderTopLeftRadius: brandRadius.panel,
+    borderTopRightRadius: brandRadius.panel,
+  },
+  handleIndicator: {
+    backgroundColor: brandColors.divider,
+    width: 44,
+  },
+  content: {
+    paddingHorizontal: 18,
+    paddingBottom: 24,
+    gap: 12,
+  },
+})
+
 export const panelStyles = StyleSheet.create({
   card: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    backgroundColor: brandTranslucentPanel.strongest,
     gap: 10,
   },
   title: {
@@ -325,9 +340,6 @@ export const panelStyles = StyleSheet.create({
   meta: {
     ...brandTypography.meta,
     color: brandColors.textSecondary,
-  },
-  clusterList: {
-    maxHeight: 260,
   },
   clusterRow: {
     borderTopWidth: 1,

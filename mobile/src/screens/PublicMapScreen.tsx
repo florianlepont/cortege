@@ -15,6 +15,7 @@ import type { OfflineAreaSummary } from "../storage/offline-map"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { ClusterListSheet } from "./public-map/ClusterListSheet"
 import type { ExplorerFilterBarProps, RegionKey } from "./public-map/ExplorerFilterBar"
+import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
@@ -210,9 +211,15 @@ export function PublicMapScreen({
   }, [])
   const { moveTo } = viewport
   const handleZoomTo = useCallback((target: Region) => moveTo(target, 450), [moveTo])
-  const closeSelection = useCallback(() => setSelectedItem(null), [])
-  const closeParcelHistory = useCallback(() => setSelectedParcelId(null), [])
-  const closeClusterList = useCallback(() => setClusterItems(null), [])
+  // MAP-01: the sheet reports a dismissal (drag-down or the content's own close button) without
+  // saying which panel was open — closing all three is safe since they're already mutually
+  // exclusive (selecting one clears the others, see handleSelectSurvey/handleSelectParcel/
+  // handleOpenClusterList above).
+  const closeSheet = useCallback(() => {
+    setSelectedItem(null)
+    setSelectedParcelId(null)
+    setClusterItems(null)
+  }, [])
   const toggleFilters = useCallback(() => setShowFilters((current) => !current), [])
   const toggleParcelLayer = useCallback(() => setShowParcelLayer((current) => !current), [])
   const toggleOfflineAreas = useCallback(() => setShowOfflineAreas((current) => !current), [])
@@ -251,6 +258,27 @@ export function PublicMapScreen({
   const onLocate = useCallback(() => void handleLocate(), [handleLocate])
 
   const dockBottom = Math.max(tabBarHeight, insets.bottom)
+
+  const sheetContent = selectedParcelId ? (
+    <ParcelHistoryCard
+      key={selectedParcelId}
+      parcelId={selectedParcelId}
+      apiUrl={apiUrl}
+      accessToken={accessToken}
+      isOffline={isOffline}
+      onQueueDownload={onQueueParcelDownload}
+      onClose={closeSheet}
+    />
+  ) : clusterItems ? (
+    <ClusterListSheet items={clusterItems} onSelect={handleSelectSurvey} onClose={closeSheet} />
+  ) : selectedItem ? (
+    <SelectedSurveyCard
+      key={selectedItem.survey_id}
+      item={selectedItem}
+      isOwnSurvey={ownSurveyIdSet.has(selectedItem.survey_id)}
+      onClose={closeSheet}
+    />
+  ) : null
 
   return (
     <View style={screenStyles.container}>
@@ -308,37 +336,11 @@ export function PublicMapScreen({
         />
       ) : null}
 
-      {clusterItems ? (
-        <ClusterListSheet
-          items={clusterItems}
-          bottom={Math.max(84, dockBottom + 62)}
-          onSelect={handleSelectSurvey}
-          onClose={closeClusterList}
-        />
-      ) : null}
-
-      {selectedItem ? (
-        <SelectedSurveyCard
-          key={selectedItem.survey_id}
-          item={selectedItem}
-          isOwnSurvey={ownSurveyIdSet.has(selectedItem.survey_id)}
-          bottom={Math.max(84, dockBottom + 62)}
-          onClose={closeSelection}
-        />
-      ) : null}
-
-      {selectedParcelId ? (
-        <ParcelHistoryCard
-          key={selectedParcelId}
-          parcelId={selectedParcelId}
-          apiUrl={apiUrl}
-          accessToken={accessToken}
-          isOffline={isOffline}
-          onQueueDownload={onQueueParcelDownload}
-          bottom={Math.max(84, dockBottom + 62)}
-          onClose={closeParcelHistory}
-        />
-      ) : null}
+      {/* MAP-01: one tiered sheet for whichever map-content panel is active, replacing the three
+        absolutely-positioned AppCards this screen used to stack independently. */}
+      <ExplorerSheet visible={sheetContent !== null} onDismiss={closeSheet}>
+        {sheetContent}
+      </ExplorerSheet>
     </View>
   )
 }
