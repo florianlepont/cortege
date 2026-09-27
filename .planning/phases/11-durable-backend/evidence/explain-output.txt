@@ -1,0 +1,200 @@
+BEGIN
+Output format is aligned.
+=== 1. Auth guard lookup: SELECT ... FROM users WHERE auth0_sub = $1 (relies on the UNIQUE constraint index, not the dropped idx_users_auth0_sub) ===
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Index Scan using users_auth0_sub_key on users  (cost=0.28..8.30 rows=1 width=102) (actual time=0.021..0.022 rows=1 loops=1)
+   Index Cond: (auth0_sub = 'auth0|explaintarget'::text)
+   Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=116
+ Planning Time: 0.432 ms
+ Execution Time: 0.064 ms
+(7 rows)
+
+=== 2a. Account deletion: UPDATE survey_events SET actor_id = NULL WHERE actor_id = $1 AND survey_id IN (retained subquery) (relies on idx_survey_events_actor_id) ===
+                                                                     QUERY PLAN                                                                     
+----------------------------------------------------------------------------------------------------------------------------------------------------
+ Update on survey_events  (cost=79.93..152.87 rows=0 width=0) (actual time=0.296..0.298 rows=0 loops=1)
+   Buffers: shared hit=86
+   ->  Hash Join  (cost=79.93..152.87 rows=1 width=28) (actual time=0.067..0.073 rows=5 loops=1)
+         Hash Cond: (survey_events.survey_id = surveys.id)
+         Buffers: shared hit=6
+         ->  Bitmap Heap Scan on survey_events  (cost=4.45..77.34 rows=21 width=18) (actual time=0.016..0.019 rows=20 loops=1)
+               Recheck Cond: (actor_id = '99999999-9999-9999-9999-999999999999'::uuid)
+               Heap Blocks: exact=1
+               Buffers: shared hit=3
+               ->  Bitmap Index Scan on idx_survey_events_actor_id  (cost=0.00..4.44 rows=21 width=0) (actual time=0.013..0.013 rows=20 loops=1)
+                     Index Cond: (actor_id = '99999999-9999-9999-9999-999999999999'::uuid)
+                     Buffers: shared hit=2
+         ->  Hash  (cost=75.35..75.35 rows=10 width=18) (actual time=0.035..0.035 rows=5 loops=1)
+               Buckets: 1024  Batches: 1  Memory Usage: 9kB
+               Buffers: shared hit=3
+               ->  Bitmap Heap Scan on surveys  (cost=4.44..75.35 rows=10 width=18) (actual time=0.022..0.025 rows=5 loops=1)
+                     Recheck Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+                     Filter: ((deleted_at IS NULL) AND ((status = ANY ('{submitted,synced}'::text[])) OR (submitted_at IS NOT NULL)))
+                     Rows Removed by Filter: 15
+                     Heap Blocks: exact=1
+                     Buffers: shared hit=3
+                     ->  Bitmap Index Scan on idx_surveys_user_status  (cost=0.00..4.44 rows=20 width=0) (actual time=0.015..0.015 rows=20 loops=1)
+                           Index Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+                           Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=352
+ Planning Time: 1.007 ms
+ Execution Time: 0.377 ms
+(28 rows)
+
+=== 2b. Account deletion: collect attachment storage keys for draft surveys ===
+                                                     QUERY PLAN                                                     
+--------------------------------------------------------------------------------------------------------------------
+ Hash Join  (cost=75.56..89.47 rows=1 width=32) (actual time=0.002..0.003 rows=0 loops=1)
+   Hash Cond: (a.survey_id = surveys.id)
+   ->  Seq Scan on attachments a  (cost=0.00..13.10 rows=310 width=64) (actual time=0.002..0.002 rows=0 loops=1)
+   ->  Hash  (cost=75.31..75.31 rows=20 width=12) (never executed)
+         ->  Bitmap Heap Scan on surveys  (cost=4.45..75.31 rows=20 width=12) (never executed)
+               Recheck Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+               ->  Bitmap Index Scan on idx_surveys_user_status  (cost=0.00..4.44 rows=20 width=0) (never executed)
+                     Index Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+ Planning:
+   Buffers: shared hit=77
+ Planning Time: 0.210 ms
+ Execution Time: 0.020 ms
+(12 rows)
+
+=== 2c-i. Account deletion: DELETE FROM attachments WHERE survey_id IN (draft subquery) ===
+                                                        QUERY PLAN                                                        
+--------------------------------------------------------------------------------------------------------------------------
+ Delete on attachments  (cost=75.56..89.47 rows=0 width=0) (actual time=0.002..0.002 rows=0 loops=1)
+   ->  Hash Join  (cost=75.56..89.47 rows=1 width=12) (actual time=0.001..0.001 rows=0 loops=1)
+         Hash Cond: (attachments.survey_id = surveys.id)
+         ->  Seq Scan on attachments  (cost=0.00..13.10 rows=310 width=38) (actual time=0.001..0.001 rows=0 loops=1)
+         ->  Hash  (cost=75.31..75.31 rows=20 width=18) (never executed)
+               ->  Bitmap Heap Scan on surveys  (cost=4.45..75.31 rows=20 width=18) (never executed)
+                     Recheck Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+                     ->  Bitmap Index Scan on idx_surveys_user_status  (cost=0.00..4.44 rows=20 width=0) (never executed)
+                           Index Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+ Planning:
+   Buffers: shared hit=4
+ Planning Time: 0.089 ms
+ Execution Time: 0.024 ms
+(13 rows)
+
+=== 2c-ii. Account deletion: DELETE FROM survey_events WHERE survey_id IN (draft subquery) ===
+                                                                      QUERY PLAN                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ Delete on survey_events  (cost=4.86..244.16 rows=0 width=0) (actual time=0.074..0.074 rows=0 loops=1)
+   Buffers: shared hit=109
+   ->  Nested Loop  (cost=4.86..244.16 rows=20 width=12) (actual time=0.015..0.057 rows=20 loops=1)
+         Buffers: shared hit=89
+         ->  Bitmap Heap Scan on surveys  (cost=4.45..75.31 rows=20 width=18) (actual time=0.008..0.010 rows=20 loops=1)
+               Recheck Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+               Heap Blocks: exact=1
+               Buffers: shared hit=3
+               ->  Bitmap Index Scan on idx_surveys_user_status  (cost=0.00..4.44 rows=20 width=0) (actual time=0.004..0.004 rows=20 loops=1)
+                     Index Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+                     Buffers: shared hit=2
+         ->  Index Scan using idx_survey_events_survey on survey_events  (cost=0.41..8.43 rows=1 width=18) (actual time=0.002..0.002 rows=1 loops=20)
+               Index Cond: (survey_id = surveys.id)
+               Buffers: shared hit=86
+ Planning:
+   Buffers: shared hit=17
+ Planning Time: 0.119 ms
+ Execution Time: 0.087 ms
+(18 rows)
+
+=== 2c-iii. Account deletion: DELETE FROM surveys WHERE user_id = $1 (relies on idx_surveys_user_updated / idx_surveys_user_status prefix, not a dropped index) ===
+                                                               QUERY PLAN                                                               
+----------------------------------------------------------------------------------------------------------------------------------------
+ Delete on surveys  (cost=4.45..75.31 rows=0 width=0) (actual time=0.039..0.039 rows=0 loops=1)
+   Buffers: shared hit=49
+   ->  Bitmap Heap Scan on surveys  (cost=4.45..75.31 rows=20 width=6) (actual time=0.005..0.007 rows=20 loops=1)
+         Recheck Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+         Heap Blocks: exact=1
+         Buffers: shared hit=3
+         ->  Bitmap Index Scan on idx_surveys_user_status  (cost=0.00..4.44 rows=20 width=0) (actual time=0.003..0.003 rows=20 loops=1)
+               Index Cond: (user_id = '99999999-9999-9999-9999-999999999999'::uuid)
+               Buffers: shared hit=2
+ Planning:
+   Buffers: shared hit=1
+ Planning Time: 0.031 ms
+ Trigger for constraint survey_events_survey_id_fkey: time=0.609 calls=20
+ Trigger for constraint attachments_survey_id_fkey: time=0.474 calls=20
+ Trigger for constraint reports_survey_id_fkey: time=0.490 calls=20
+ Trigger for constraint survey_parcels_survey_id_fkey: time=0.324 calls=20
+ Execution Time: 1.954 ms
+(17 rows)
+
+=== 2d. Account deletion: DELETE FROM users WHERE id = $1 (relies on the primary key) ===
+                                                       QUERY PLAN                                                       
+------------------------------------------------------------------------------------------------------------------------
+ Delete on users  (cost=0.28..8.30 rows=0 width=0) (actual time=0.080..0.081 rows=0 loops=1)
+   Buffers: shared hit=11
+   ->  Index Scan using users_pkey on users  (cost=0.28..8.30 rows=1 width=6) (actual time=0.017..0.018 rows=1 loops=1)
+         Index Cond: (id = '99999999-9999-9999-9999-999999999999'::uuid)
+         Buffers: shared hit=3
+ Planning Time: 0.038 ms
+ Trigger for constraint surveys_user_id_fkey: time=0.172 calls=1
+ Trigger for constraint reports_reporter_user_id_fkey: time=0.049 calls=1
+ Trigger for constraint reports_reviewed_by_fkey: time=0.038 calls=1
+ Execution Time: 0.363 ms
+(10 rows)
+
+=== 3. Survey list (GET /v1/surveys): SELECT ... FROM surveys WHERE user_id = $1 AND deleted_at IS NULL ORDER BY updated_at DESC, id DESC LIMIT (relies on idx_surveys_user_updated) ===
+                                                                 QUERY PLAN                                                                 
+--------------------------------------------------------------------------------------------------------------------------------------------
+ Limit  (cost=34.53..34.55 rows=8 width=98) (actual time=0.227..0.229 rows=8 loops=1)
+   Buffers: shared hit=17
+   InitPlan 1 (returns $0)
+     ->  Limit  (cost=0.26..0.29 rows=1 width=16) (actual time=0.004..0.005 rows=1 loops=1)
+           Buffers: shared hit=1
+           ->  Seq Scan on users  (cost=0.00..131.01 rows=5001 width=16) (actual time=0.002..0.004 rows=11 loops=1)
+                 Buffers: shared hit=1
+   ->  Sort  (cost=34.24..34.26 rows=8 width=98) (actual time=0.226..0.227 rows=8 loops=1)
+         Sort Key: surveys.updated_at DESC, surveys.id DESC
+         Sort Method: quicksort  Memory: 26kB
+         Buffers: shared hit=17
+         ->  Bitmap Heap Scan on surveys  (cost=4.35..34.12 rows=8 width=98) (actual time=0.153..0.201 rows=8 loops=1)
+               Recheck Cond: (user_id = $0)
+               Filter: (deleted_at IS NULL)
+               Heap Blocks: exact=8
+               Buffers: shared hit=11
+               ->  Bitmap Index Scan on idx_surveys_user_status  (cost=0.00..4.35 rows=8 width=0) (actual time=0.025..0.025 rows=8 loops=1)
+                     Index Cond: (user_id = $0)
+                     Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=38
+ Planning Time: 0.127 ms
+ Execution Time: 0.254 ms
+(23 rows)
+
+=== 4. Parcel-based survey lookup: WHERE parcel_id = ANY($1) (relies on idx_surveys_parcel_year_version prefix; idx_surveys_parcel_id was a pure duplicate prefix of it) ===
+                                                                QUERY PLAN                                                                 
+-------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on surveys  (cost=12.99..67.10 rows=15 width=31) (actual time=0.024..0.050 rows=15 loops=1)
+   Recheck Cond: (parcel_id = ANY ('{PARCEL-1,PARCEL-2,PARCEL-3}'::text[]))
+   Heap Blocks: exact=5
+   Buffers: shared hit=11
+   ->  Bitmap Index Scan on idx_surveys_parcel_year_version  (cost=0.00..12.98 rows=15 width=0) (actual time=0.021..0.021 rows=15 loops=1)
+         Index Cond: (parcel_id = ANY ('{PARCEL-1,PARCEL-2,PARCEL-3}'::text[]))
+         Buffers: shared hit=6
+ Planning:
+   Buffers: shared hit=1
+ Planning Time: 0.042 ms
+ Execution Time: 0.070 ms
+(11 rows)
+
+=== 5. survey_parcels lookup by survey_id: the dropped idx_survey_parcels_survey_id was a pure duplicate of the PK (survey_id, parcel_id) prefix ===
+                                                                QUERY PLAN                                                                
+------------------------------------------------------------------------------------------------------------------------------------------
+ Index Only Scan using survey_parcels_pkey on survey_parcels  (cost=0.41..4.43 rows=1 width=11) (actual time=0.009..0.009 rows=1 loops=1)
+   Index Cond: (survey_id = 'survey-1'::text)
+   Heap Fetches: 0
+   Buffers: shared hit=4
+ Planning:
+   Buffers: shared hit=3
+ Planning Time: 0.039 ms
+ Execution Time: 0.014 ms
+(8 rows)
+
+ROLLBACK

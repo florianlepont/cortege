@@ -52,6 +52,9 @@ export async function installEventInsertFailure(
   // stacking triggers.
   await db.query(`DROP TRIGGER IF EXISTS ${TRIGGER_NAME} ON survey_events`)
 
+  // DDL cannot bind parameters; whenClause is built above from assertSafeValue-checked,
+  // quote-escaped literals (T-01.4-05), not from unvalidated input.
+  /* eslint-disable sql-no-unsafe-interpolation */
   await db.query(
     `CREATE TRIGGER ${TRIGGER_NAME}
      BEFORE INSERT ON survey_events
@@ -59,6 +62,7 @@ export async function installEventInsertFailure(
      WHEN (${whenClause})
      EXECUTE FUNCTION ${FUNCTION_NAME}()`,
   )
+  /* eslint-enable sql-no-unsafe-interpolation */
 }
 
 export async function removeEventInsertFailures(db: Queryable): Promise<void> {
