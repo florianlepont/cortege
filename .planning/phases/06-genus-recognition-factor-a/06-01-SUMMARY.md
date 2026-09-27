@@ -35,8 +35,8 @@ key-files:
     - mobile/src/i18n/fr/genus.ts
     - mobile/src/i18n/fr/genus-recognition.ts
     - mobile/src/types/tflite-asset.d.ts
-    - mobile/assets/models/genus_classifier.tflite (placeholder)
-    - mobile/assets/models/genus_classifier_manifest.json (placeholder)
+    - mobile/assets/models/genus_classifier.tflite (placeholder at first close; replaced with the real artifact by PR #178, same day)
+    - mobile/assets/models/genus_classifier_manifest.json (placeholder at first close; replaced with the real artifact by PR #178, same day)
     - mobile/assets/models/README.md
   modified:
     - mobile/package.json
@@ -55,8 +55,8 @@ key-files:
     - .planning/ROADMAP.md
     - .planning/REQUIREMENTS.md
 decisions:
-  - "The real model/labels artifact is unreachable from this container (~/Projects does not exist here); shipped a documented placeholder instead of fabricating a model - see mobile/assets/models/README.md and 06-CONTEXT.md"
-  - "No real Android device was available either; criterion 6 (device latency/accuracy run) is an open gate, not skipped or invented"
+  - "The real model/labels artifact was unreachable from this container (~/Projects does not exist here); shipped a documented placeholder instead of fabricating a model - closed same day by PR #178, run from a machine with the real artifacts (see mobile/assets/models/README.md and 06-CONTEXT.md)"
+  - "No real Android device was available either; criterion 6 (device latency/accuracy run) and real-device photo accuracy are deferred to Phase 13's field validation by owner decision, not skipped or invented"
   - "Capture uses expo-image-picker's launchCameraAsync (already shipped, CI-proven) instead of adding react-native-vision-camera: the feature needs a single photo, not a live frame-processor pipeline, so only react-native-fast-tflite (the actual inference runtime) was added as new native surface"
   - "Confidence bands: per-genus 'strong' threshold (§15.2) with pooled medium/weak cuts (§15.4), clamped so all four bands nest correctly even for genera whose calibrated 'strong' sits below the pooled medium/weak cuts (Cercis, Tamarix)"
   - "Factor A's genus-list mobile UI did not exist before this phase (Phase 5 built only the contract) - built here as part of giving recognition somewhere to write its result"
@@ -77,25 +77,33 @@ confidence label (never a bare percentage), and a confirmed suggestion is merged
 surveyor already picked - never applied automatically. The recognition photo itself is never
 persisted or queued; only the confirmed genus code crosses back into the form.
 
-**Two things this phase could not close, and says so rather than declaring done:**
+**Two things this phase could not close at first pass, and said so rather than declaring done —
+one closed same day, one deferred:**
 
-1. **The real `.tflite` model and its labels file.** ADR-002's promoted artifact lives outside the
-   repository at `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/`, which does not
-   exist in this container. `mobile/assets/models/` ships an explicit, documented placeholder (a
-   short text file, not a valid TFLite flatbuffer, and a manifest marked `"placeholder": true`).
-   This is enough for Metro to bundle a `.tflite` asset and for the app to exercise the real
-   "model load failed -> clear message -> manual fallback" path (ADR-002 D-08) - which is the
-   correct, honest behaviour of a repository that does not yet carry the real model, not a bug.
-   Success criteria 1, 2 and 4 cannot be demonstrated on a real device until someone with access to
-   that path drops in the real files (see `mobile/assets/models/README.md`'s exact replacement
-   steps).
-2. **Criterion 6's real Android device run.** No Android device, emulator, or even `adb`/Android
-   SDK was available in this container. `expo prebuild -p android --clean` succeeds (confirmed),
-   but no further verification was possible here. This is the same gap ADR-002 already recorded for
-   Phase 1 (Android build succeeds, no device run performed) - Phase 6 does not close it either.
+1. **The real `.tflite` model and its labels file — closed by PR #178.** ADR-002's promoted
+   artifact lives outside the repository at
+   `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/`, which did not exist in this
+   container. `mobile/assets/models/` shipped an explicit, documented placeholder at first close (a
+   short text file, not a valid TFLite flatbuffer, and a manifest marked `"placeholder": true`) -
+   the correct, honest behaviour of a repository that did not yet carry the real model, not a bug.
+   Later the same day, PR #178 (run from a machine with that path present) replaced both files with
+   the real, MD5-verified artifact (8,238,676 bytes), corrected `genus_classifier_manifest.json`'s
+   `labels` order to the model's real output-tensor order (`genus_labels.txt` - not alphabetical,
+   `Pinus` before `Picea`), and confirmed the preprocessing this phase had only guessed at
+   (`"rescale_0_1"`) by loading the source `SavedModel` and reading its graph: it embeds its own
+   `Rescaling` (1/255) and `Normalization` (ImageNet mean/variance) layers, so the correct input is
+   raw `[0, 255]` pixels, not pre-divided floats - `preprocessPhoto()`'s division was removed.
+2. **Criterion 6's real Android device run - deferred to Phase 13.** No Android device, emulator,
+   or even `adb`/Android SDK was available in either container this phase ran in. `expo prebuild -p
+   android --clean` succeeds (confirmed twice), and CI's `native-android` job later built the real
+   native TFLite runtime successfully on both PRs (#176, #178) - but no on-device latency/accuracy
+   run was possible in this environment. This is the same gap ADR-002 already recorded for Phase 1
+   (Android build succeeds, no device run performed). By owner decision (2026-09-27), this - plus a
+   plain real-device accuracy check with actual tree photographs - is deferred to Phase 13's field
+   validation rather than blocking this phase further.
 
-**ROADMAP.md's phase 6 entry is left unchecked, and its progress-table status says so plainly** -
-per the roadmap's own instruction not to silently declare the phase complete.
+**ROADMAP.md's phase 6 entry is now checked, with its progress-table status naming the one
+deferred item plainly** - not silently declared complete, but not held open indefinitely either.
 
 ## Tasks
 
@@ -136,11 +144,12 @@ draft): reopening one now shows an empty genus list and, if resaved without re-p
 Only `react-native-fast-tflite` (+ its peer `react-native-nitro-modules`) is new native surface -
 no Expo config plugin was needed (GPU delegates were left off; CPU inference only). Capture reuses
 `expo-image-picker`, already shipped and CI-proven. `expo export --platform ios` was run in this
-session and successfully bundled `assets/models/genus_classifier.tflite` (764 B, the placeholder) as
-a Metro asset; `expo prebuild -p android --clean` also succeeded. Neither exercises the actual
-native TFLite runtime build (`native-android`/`native-ios` CI jobs do that, on their own runners
-with a real toolchain this container lacks) - that is left to CI's own verification once this PR is
-open, per this environment's standard PR-babysitting workflow.
+session and successfully bundled `assets/models/genus_classifier.tflite` (764 B, the placeholder at
+the time) as a Metro asset; `expo prebuild -p android --clean` also succeeded. Neither exercises the
+actual native TFLite runtime build - that was left to CI's own verification once each PR opened,
+per this environment's standard PR-babysitting workflow, and CI confirmed it: `native-android` and
+`native-ios` both built successfully on PR #176 (placeholder model) and PR #178 (real model,
+8,238,676 bytes).
 
 ## Verification
 
@@ -158,6 +167,9 @@ open, per this environment's standard PR-babysitting workflow.
   already-shipped `expo-image-picker` for capture instead of adding `react-native-vision-camera`,
   since the feature needs a single photo, not a live frame-processor pipeline. Recorded as a
   decision in `06-CONTEXT.md`, not a silent substitution.
-- **The real model binary and the Android device run** were both unreachable from this container -
-  recorded as open gates (above, and in `06-CONTEXT.md`/`06-VALIDATION.md`), not fabricated or
+- **The real model binary** was unreachable from this container - recorded as an open gate rather
+  than fabricated, then closed same day by PR #178 once run from a machine with access to the real
+  artifacts (see above, and `06-CONTEXT.md`/`06-VALIDATION.md`).
+- **The Android device run and real-device photo accuracy** were unreachable from either container
+  this phase ran in - deferred to Phase 13's field validation by owner decision, not fabricated or
   silently skipped.
