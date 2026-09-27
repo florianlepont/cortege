@@ -1,36 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import {
-  Animated,
-  Keyboard,
-  LayoutRectangle,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Platform,
-  ScrollView,
-  useWindowDimensions,
-} from "react-native"
+import { Keyboard, LayoutRectangle, Platform, useWindowDimensions } from "react-native"
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandSpacing } from "../../app/brand-tokens"
 import { useAppBottomTabBarHeight } from "../../app/useAppBottomTabBarHeight"
 import type { WizardStep } from "./components"
 
-const COLLAPSED_HERO_HEIGHT = 84
+export const COLLAPSED_HERO_HEIGHT = 84
 
-const clampInterpolation = (
-  value: Animated.Value,
-  inputRange: number[],
-  outputRange: number[],
-): Animated.AnimatedInterpolation<number> =>
-  value.interpolate({ inputRange, outputRange, extrapolate: "clamp" })
-
-// Scroll, keyboard and collapsing-hero behaviour of the survey wizard.
+// Scroll, keyboard and collapsing-hero behaviour of the survey wizard. The hero/step-rail
+// interpolations themselves live in FormHeader/StepRail's own `useAnimatedStyle` (DS-07): this hook
+// only owns the shared scroll position and the thresholds they interpolate against, so the actual
+// per-frame math runs on the UI thread instead of being precomputed here on every render.
 export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: WizardStep) => void) {
-  const scrollRef = useRef<ScrollView | null>(null)
-  const scrollOffsetRef = useRef(0)
+  const scrollRef = useRef<Animated.ScrollView | null>(null)
   const identityScrollBeforeFocusRef = useRef(0)
   const identitySectionLayoutRef = useRef({ y: 0, height: 0 })
-  const scrollY = useRef(new Animated.Value(0)).current
+  const scrollY = useSharedValue(0)
   const { height: viewportHeight } = useWindowDimensions()
   const tabBarHeight = useAppBottomTabBarHeight()
   const headerHeight = useHeaderHeight()
@@ -60,20 +47,6 @@ export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: Wi
     },
     [heroTopOffset, keyboardHeight, scrollWizardTo, viewportHeight],
   )
-
-  const d = collapseDistance
-  const animation = {
-    heroHeight: clampInterpolation(scrollY, [0, d], [expandedHeroHeight, COLLAPSED_HERO_HEIGHT]),
-    expandedOpacity: clampInterpolation(scrollY, [0, d * 0.36, d * 0.62], [1, 0.22, 0]),
-    expandedTranslateY: clampInterpolation(scrollY, [0, d * 0.62], [0, -10]),
-    compactOpacity: clampInterpolation(scrollY, [d * 0.42, d * 0.72, d], [0, 0.65, 1]),
-    compactTranslateY: clampInterpolation(scrollY, [d * 0.42, d], [8, 0]),
-    stepRailOpacity: clampInterpolation(scrollY, [0, 36, 88], [1, 0.45, 0]),
-    stepRailScale: clampInterpolation(scrollY, [0, 88], [1, 0.92]),
-    stepRailTranslateY: clampInterpolation(scrollY, [0, 88], [0, -18]),
-    stepRailHeight: clampInterpolation(scrollY, [0, 88], [114, 0]),
-    compactProgressOpacity: clampInterpolation(scrollY, [d * 0.38, d * 0.68, d], [0, 0.55, 1]),
-  }
 
   const identityEditing = isIdentityInputFocused || keyboardHeight > 0
   const preserveIdentityRailSpace = activeStep === "identity" && identityEditing
@@ -106,7 +79,7 @@ export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: Wi
     const baseOffset =
       activeStep === "identity" && (keyboardHeight > 0 || isIdentityInputFocused)
         ? identityScrollBeforeFocusRef.current
-        : scrollOffsetRef.current
+        : scrollY.value
     const targetOffset =
       nextStep === "identity" || (activeStep === "parcels" && nextStep === "factors")
         ? 0
@@ -116,7 +89,7 @@ export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: Wi
     Keyboard.dismiss()
     setActiveStep(nextStep)
     setTimeout(() => {
-      scrollY.setValue(targetOffset)
+      scrollY.value = targetOffset
       scrollWizardTo(targetOffset, false)
     }, 0)
   }
@@ -128,7 +101,7 @@ export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: Wi
   }, [activeStep, keyboardHeight, isIdentityInputFocused, scrollWizardTo])
 
   const handleIdentityFocus = (): void => {
-    identityScrollBeforeFocusRef.current = scrollOffsetRef.current
+    identityScrollBeforeFocusRef.current = scrollY.value
     setIsIdentityInputFocused(true)
     setTimeout(() => {
       scrollIdentitySectionAboveKeyboard()
@@ -143,16 +116,15 @@ export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: Wi
     identitySectionLayoutRef.current = layout
   }
 
-  const handleScroll = Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-    useNativeDriver: false,
-    listener: (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      scrollOffsetRef.current = event.nativeEvent.contentOffset.y
-    },
+  const handleScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y
   })
 
   return {
     scrollRef,
-    animation,
+    scrollY,
+    collapseDistance,
+    expandedHeroHeight,
     heroTopOffset,
     topSpacerHeight,
     scrollContentBottomPadding,
@@ -164,5 +136,3 @@ export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: Wi
     handleScroll,
   }
 }
-
-export type WizardAnimation = ReturnType<typeof useWizardScroll>["animation"]

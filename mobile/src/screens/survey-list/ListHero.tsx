@@ -1,7 +1,13 @@
 import { useCallback, useMemo, useState } from "react"
-import { Animated, Image, StyleSheet, View } from "react-native"
+import { Image, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import type { LayoutChangeEvent } from "react-native"
+import Animated, {
+  Extrapolation,
+  interpolate,
+  SharedValue,
+  useAnimatedStyle,
+} from "react-native-reanimated"
 import {
   brandColors,
   brandRadius,
@@ -67,7 +73,7 @@ export function useHeroGeometry(viewportHeight: number, safeTop: number): HeroGe
 }
 
 type ListHeroProps = {
-  scrollY: Animated.Value
+  scrollY: SharedValue<number>
   geometry: HeroGeometry
   cardWidth: number
   stats: ReturnType<typeof computeSurveyStats>
@@ -165,39 +171,56 @@ export function ListHero({
     [stats, resetFilters, setStatusFilter, setSyncFilter, setBlockedFilter],
   )
 
-  const heroHeight = scrollY.interpolate({
-    inputRange: [0, collapseDistance],
-    outputRange: [expandedHeroHeight, collapsedHeroHeight],
-    extrapolate: "clamp",
-  })
-  const expandedOpacity = scrollY.interpolate({
-    inputRange: [0, collapseDistance * 0.34, collapseDistance * 0.56],
-    outputRange: [1, 0.22, 0],
-    extrapolate: "clamp",
-  })
-  const expandedTranslateY = scrollY.interpolate({
-    inputRange: [0, collapseDistance * 0.56],
-    outputRange: [0, -8],
-    extrapolate: "clamp",
-  })
-  const compactOpacity = scrollY.interpolate({
-    inputRange: [collapseDistance * 0.28, collapseDistance * 0.56, collapseDistance],
-    outputRange: [0, 0.72, 1],
-    extrapolate: "clamp",
-  })
-  const compactTranslateY = scrollY.interpolate({
-    inputRange: [collapseDistance * 0.28, collapseDistance],
-    outputRange: [10, 0],
-    extrapolate: "clamp",
-  })
-  const heroShellHeight = Animated.add(heroHeight, heroTopInset)
+  const heroShellStyle = useAnimatedStyle(() => ({
+    height:
+      interpolate(
+        scrollY.value,
+        [0, collapseDistance],
+        [expandedHeroHeight, collapsedHeroHeight],
+        Extrapolation.CLAMP,
+      ) + heroTopInset,
+    paddingTop: heroTopInset,
+  }))
+  const expandedLayerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollY.value,
+      [0, collapseDistance * 0.34, collapseDistance * 0.56],
+      [1, 0.22, 0],
+      Extrapolation.CLAMP,
+    ),
+    transform: [
+      {
+        translateY: interpolate(
+          scrollY.value,
+          [0, collapseDistance * 0.56],
+          [0, -8],
+          Extrapolation.CLAMP,
+        ),
+      },
+    ],
+  }))
+  const compactLayerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollY.value,
+      [collapseDistance * 0.28, collapseDistance * 0.56, collapseDistance],
+      [0, 0.72, 1],
+      Extrapolation.CLAMP,
+    ),
+    transform: [
+      {
+        translateY: interpolate(
+          scrollY.value,
+          [collapseDistance * 0.28, collapseDistance],
+          [10, 0],
+          Extrapolation.CLAMP,
+        ),
+      },
+    ],
+  }))
 
   return (
     // Hero — box-none so stat tiles are tappable, scroll passes through
-    <Animated.View
-      pointerEvents="box-none"
-      style={[styles.heroShell, { height: heroShellHeight, paddingTop: heroTopInset }]}
-    >
+    <Animated.View pointerEvents="box-none" style={[styles.heroShell, heroShellStyle]}>
       <View pointerEvents="box-none" style={styles.heroCard}>
         {/* Decorative brand mark */}
         <View pointerEvents="none" style={styles.heroLogoWrap}>
@@ -212,10 +235,7 @@ export function ListHero({
         {/* Expanded layer */}
         <Animated.View
           pointerEvents="box-none"
-          style={[
-            styles.heroExpandedLayer,
-            { opacity: expandedOpacity, transform: [{ translateY: expandedTranslateY }] },
-          ]}
+          style={[styles.heroExpandedLayer, expandedLayerStyle]}
         >
           {/* Title area — non-interactive */}
           <View
@@ -243,13 +263,7 @@ export function ListHero({
         </Animated.View>
 
         {/* Compact layer */}
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.heroCompactLayer,
-            { opacity: compactOpacity, transform: [{ translateY: compactTranslateY }] },
-          ]}
-        >
+        <Animated.View pointerEvents="none" style={[styles.heroCompactLayer, compactLayerStyle]}>
           <Text numberOfLines={1} style={styles.heroTitleCompact}>
             {t.hero.title}
           </Text>

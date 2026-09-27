@@ -1,11 +1,16 @@
 import { useState } from "react"
-import { Alert, LayoutAnimation, View } from "react-native"
+import { Alert, View } from "react-native"
+import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated"
 import { AuthUser } from "../../app/types"
+import { brandMotion } from "../../app/brand-tokens"
 import { AppButton } from "../../ui/AppButton"
 import { AppField } from "../../ui/AppField"
 import { AppSettingsRow } from "../../ui/AppSettingsRow"
 import { fr } from "../../i18n"
 import { accountStyles, profileStyles as styles } from "./styles"
+
+const entering = FadeIn.duration(brandMotion.durations.base).reduceMotion(ReduceMotion.System)
+const exiting = FadeOut.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)
 
 // ACC-06 : validation email correcte
 export const isValidEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -28,7 +33,6 @@ export function AccountSettingsRows({
   const [newEmail, setNewEmail] = useState("")
 
   const closeEmailEditor = (): void => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setEmailEditing(false)
     setNewEmail("")
   }
@@ -45,7 +49,7 @@ export function AccountSettingsRows({
   return (
     <>
       {emailEditing ? (
-        <View style={styles.emailEditBlock}>
+        <Animated.View style={styles.emailEditBlock} entering={entering} exiting={exiting}>
           <AppField
             label={fr.account.email.newLabel}
             value={newEmail}
@@ -78,18 +82,19 @@ export function AccountSettingsRows({
               onPress={() => void onChangeEmail(newEmail).then(closeEmailEditor)}
             />
           </View>
-        </View>
+        </Animated.View>
       ) : (
-        <AppSettingsRow
-          label={fr.account.email.label}
-          value={currentUser.email ?? fr.account.email.empty}
-          accessibilityLabel={fr.account.a11y.editEmail}
-          onPress={() => {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-            setNewEmail(currentUser.email ?? "")
-            setEmailEditing(true)
-          }}
-        />
+        <Animated.View entering={entering} exiting={exiting}>
+          <AppSettingsRow
+            label={fr.account.email.label}
+            value={currentUser.email ?? fr.account.email.empty}
+            accessibilityLabel={fr.account.a11y.editEmail}
+            onPress={() => {
+              setNewEmail(currentUser.email ?? "")
+              setEmailEditing(true)
+            }}
+          />
+        </Animated.View>
       )}
 
       {/* ACC-I08 : value = action courte, pas une description longue */}
