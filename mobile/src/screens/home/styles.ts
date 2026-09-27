@@ -78,7 +78,7 @@ export const styles = StyleSheet.create({
     }),
   },
   heroEyebrow: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
     letterSpacing: 1.5,
     color: brandColors.moss,
@@ -155,7 +155,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   sectorLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.8,
     color: brandColors.forest,

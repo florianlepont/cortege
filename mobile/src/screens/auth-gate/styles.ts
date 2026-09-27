@@ -193,14 +193,14 @@ export const authStyles = StyleSheet.create({
   },
   legalText: {
     ...brandTypography.meta,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     color: brandColors.textSecondary,
     textAlign: "center",
     opacity: 0.9,
   },
   legalLink: {
-    fontSize: 11,
+    fontSize: 12,
     color: brandColors.forest,
     fontWeight: "600",
     textDecorationLine: "underline",
