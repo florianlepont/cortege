@@ -3,11 +3,9 @@ import type { ReactElement } from "react"
 import type { LocalSurvey } from "../../storage"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { fr } from "../../i18n"
-import { AttentionSection } from "./AttentionSection"
-import { CreateSurveyCard } from "./CreateSurveyCard"
 import { styles } from "./styles"
 
-// A non-survey item at the top of the list (create card, "À faire" card, section header).
+// A non-survey item at the top of the list (currently: the search-results header only).
 export type LeadingListItem = { kind: "leading"; key: string; element: ReactElement }
 export type SurveyListItem = LeadingListItem | LocalSurvey
 
@@ -19,87 +17,33 @@ export const keyExtractor = (item: SurveyListItem): string =>
   isLeadingListItem(item) ? `leading:${item.key}` : item.id
 
 type LeadingItemsInput = {
-  showFeatured: boolean
-  useNativeSearchUI: boolean
-  surveyCount: number
-  visibleCount: number
-  mainListCount: number
+  hasQuery: boolean
   visibleSurveySummary: string
-  attentionSurveys: LocalSurvey[]
-  continueDraftSurvey: LocalSurvey | null
-  onOpenCreateSurvey: () => void
-  onOpenSurvey: (surveyId: string) => void
 }
 
-// The create card, the "À faire" card and the section header scroll under the
-// sticky filters bar, so they are list items rather than part of the header.
-// Each element is memoised so renderItem returns the same element (D-03).
-export function useLeadingItems({
-  showFeatured,
-  useNativeSearchUI,
-  surveyCount,
-  visibleCount,
-  mainListCount,
-  visibleSurveySummary,
-  attentionSurveys,
-  continueDraftSurvey,
-  onOpenCreateSurvey,
-  onOpenSurvey,
-}: LeadingItemsInput): LeadingListItem[] {
-  const firstSurvey = surveyCount === 0
-
-  const createCardElement = useMemo(
-    () =>
-      showFeatured ? (
-        <CreateSurveyCard firstSurvey={firstSurvey} onOpenCreateSurvey={onOpenCreateSurvey} />
-      ) : null,
-    [firstSurvey, onOpenCreateSurvey, showFeatured],
-  )
-
-  const todoCardElement = useMemo(
-    () =>
-      showFeatured && (attentionSurveys.length > 0 || continueDraftSurvey) ? (
-        <AttentionSection
-          attentionSurveys={attentionSurveys}
-          continueDraftSurvey={continueDraftSurvey}
-          onOpenSurvey={onOpenSurvey}
-        />
-      ) : null,
-    [attentionSurveys, continueDraftSurvey, onOpenSurvey, showFeatured],
-  )
-
+// HOME-01/LIST: Mes Relevés is a pure list now — the create card and the "à faire" card moved
+// out (the create action is the header's "+", the dashboard concerns stayed on Home). The only
+// leading item left is a "Résultats" caption while a search is active.
+export function useLeadingItems({ hasQuery, visibleSurveySummary }: LeadingItemsInput) {
   const sectionHeaderElement = useMemo(
     () =>
-      mainListCount > 0 || (useNativeSearchUI && surveyCount > 0) ? (
+      hasQuery ? (
         <AppSectionHeader
-          title={showFeatured ? fr.surveyList.section.mine : fr.surveyList.section.results}
-          subtitle={
-            showFeatured && mainListCount < visibleCount
-              ? fr.surveyList.section.others(mainListCount)
-              : visibleSurveySummary
-          }
+          title={fr.surveyList.section.results}
+          subtitle={visibleSurveySummary}
           titleStyle={styles.homeSectionTitle}
           subtitleStyle={styles.homeSectionSubtitle}
           style={styles.listSectionHeader}
         />
       ) : null,
-    [
-      mainListCount,
-      showFeatured,
-      surveyCount,
-      useNativeSearchUI,
-      visibleSurveySummary,
-      visibleCount,
-    ],
+    [hasQuery, visibleSurveySummary],
   )
 
-  return useMemo(() => {
-    const items: LeadingListItem[] = []
-    if (createCardElement)
-      items.push({ kind: "leading", key: "create", element: createCardElement })
-    if (todoCardElement) items.push({ kind: "leading", key: "todo", element: todoCardElement })
-    if (sectionHeaderElement)
-      items.push({ kind: "leading", key: "section", element: sectionHeaderElement })
-    return items
-  }, [createCardElement, sectionHeaderElement, todoCardElement])
+  return useMemo<LeadingListItem[]>(
+    () =>
+      sectionHeaderElement
+        ? [{ kind: "leading", key: "section", element: sectionHeaderElement }]
+        : [],
+    [sectionHeaderElement],
+  )
 }

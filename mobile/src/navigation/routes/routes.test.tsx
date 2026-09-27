@@ -19,15 +19,39 @@ const mockPlatform = {
       : (options.ios ?? options.default),
 }
 
-jest.mock("react-native", () => ({
-  Platform: mockPlatform,
-  StyleSheet: { create: <T,>(value: T): T => value },
-  View: "View",
-  ScrollView: "ScrollView",
-  KeyboardAvoidingView: "KeyboardAvoidingView",
-  Pressable: "Pressable",
-  Text: "Text",
-}))
+jest.mock("react-native", () => {
+  const ReactRef = jest.requireActual("react") as typeof import("react")
+  type PressableRenderProp<T> = T | ((state: { pressed: boolean }) => T)
+  const resolvePressableProp = <T,>(prop: PressableRenderProp<T> | undefined): T | undefined =>
+    typeof prop === "function"
+      ? (prop as (state: { pressed: boolean }) => T)({ pressed: false })
+      : prop
+  // AppPressable renders Pressable's `children`/`style` in their function-of-pressed-state form.
+  const Pressable = ({
+    children,
+    style,
+    ...props
+  }: {
+    children?: PressableRenderProp<React.ReactNode>
+    style?: PressableRenderProp<unknown>
+  }) =>
+    ReactRef.createElement(
+      "Pressable",
+      { ...props, style: resolvePressableProp(style) },
+      resolvePressableProp(children),
+    )
+
+  return {
+    Platform: mockPlatform,
+    StyleSheet: { create: <T,>(value: T): T => value },
+    View: "View",
+    ScrollView: "ScrollView",
+    KeyboardAvoidingView: "KeyboardAvoidingView",
+    Pressable,
+    Text: "Text",
+    ActivityIndicator: "ActivityIndicator",
+  }
+})
 
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 20, bottom: 0, left: 0, right: 0 }),
@@ -129,6 +153,7 @@ import { AutosaveStatusProvider } from "../../state/autosave-status-context"
 import { AccessTokenProvider, SessionProvider } from "../../state/session-context"
 import type { SessionContextValue } from "../../state/session-context"
 import { StatusProvider } from "../../state/status-context"
+import { SyncStatusProvider } from "../../state/sync-status-context"
 import { SyncActionsProvider, type SyncActions } from "../../state/sync-actions-context"
 import {
   SurveyActionsProvider,
@@ -171,6 +196,8 @@ type Fixture = {
   session: SessionContextValue
   accessToken: string | null
   status: StatusMessage
+  isOnline: boolean
+  isSyncing: boolean
   syncActions: SyncActions
   surveys: SurveysContextValue
   form: SurveyFormContextValue
@@ -214,6 +241,8 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
     },
     accessToken: "token-1",
     status: fr.status.session.ready(),
+    isOnline: true,
+    isSyncing: false,
     syncActions: actionsProxy(),
     surveys: {
       state: {
@@ -324,17 +353,21 @@ function Providers({ fixture, children }: { fixture: Fixture; children: React.Re
     <SessionProvider value={fixture.session}>
       <AccessTokenProvider value={{ accessToken: fixture.accessToken }}>
         <StatusProvider value={{ status: fixture.status }}>
-          <SyncActionsProvider value={fixture.syncActions}>
-            <SurveysProvider value={fixture.surveys}>
-              <SurveyActionsProvider value={fixture.surveys.actions}>
-                <SurveyFormProvider value={fixture.form}>
-                  <AutosaveStatusProvider value={fixture.autosaveStatus}>
-                    <NearbyParcelsProvider value={fixture.nearby}>{children}</NearbyParcelsProvider>
-                  </AutosaveStatusProvider>
-                </SurveyFormProvider>
-              </SurveyActionsProvider>
-            </SurveysProvider>
-          </SyncActionsProvider>
+          <SyncStatusProvider value={{ isOnline: fixture.isOnline, isSyncing: fixture.isSyncing }}>
+            <SyncActionsProvider value={fixture.syncActions}>
+              <SurveysProvider value={fixture.surveys}>
+                <SurveyActionsProvider value={fixture.surveys.actions}>
+                  <SurveyFormProvider value={fixture.form}>
+                    <AutosaveStatusProvider value={fixture.autosaveStatus}>
+                      <NearbyParcelsProvider value={fixture.nearby}>
+                        {children}
+                      </NearbyParcelsProvider>
+                    </AutosaveStatusProvider>
+                  </SurveyFormProvider>
+                </SurveyActionsProvider>
+              </SurveysProvider>
+            </SyncActionsProvider>
+          </SyncStatusProvider>
         </StatusProvider>
       </AccessTokenProvider>
     </SessionProvider>
@@ -411,13 +444,17 @@ describe("SettingsRoute", () => {
 describe("AccountRoute", () => {
   test("passes the access token, or an empty string without one", async () => {
     const fixture = makeFixture()
+    const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
-        <AccountRoute navigation={makeNavigation() as never} route={{} as never} />
+        <AccountRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
     expect(props("account").accessToken).toBe("token-1")
     expect(props("account").onLogout).toBe(fixture.session.actions.handleLogout)
+
+    callback("account", "onOpenSyncAndData")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("settings")
 
     await mount(
       <Providers fixture={{ ...fixture, accessToken: null }}>
@@ -440,6 +477,12 @@ describe("HomeRoute", () => {
     expect(props("home").nearbyParcels).toBe(fixture.nearby.state)
     expect(props("home").onLoadNearbyParcels).toBe(fixture.nearby.load)
     expect(props("home").surveys).toBe(fixture.surveys.state.surveys)
+    expect(props("home").isOnline).toBe(fixture.isOnline)
+    expect(props("home").isSyncing).toBe(fixture.isSyncing)
+    expect(props("home").onRetrySurvey).toBe(fixture.surveys.actions.retrySurvey)
+
+    callback("home", "onOpenSyncStatus")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("account", { screen: "settings" })
 
     callback("home", "onCreateSurvey")()
     expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
@@ -473,6 +516,9 @@ describe("SurveyListRoute", () => {
     expect(list.visibleSurveys).toBe(fixture.surveys.state.visibleSurveys)
     expect(list.showInlineSearch).toBe(true)
     expect(list.useNativeSearchUI).toBe(false)
+    expect(list.surveyDetails).toBe(fixture.surveys.state.surveyDetails)
+    expect(list.isOnline).toBe(fixture.isOnline)
+    expect(list.isSyncing).toBe(fixture.isSyncing)
     expect(navigation.setOptions).not.toHaveBeenCalled()
 
     callback("surveyList", "onOpenCreateSurvey")()
@@ -482,6 +528,9 @@ describe("SurveyListRoute", () => {
     callback("surveyList", "onOpenSurvey")("s-01")
     expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyDetail")
+
+    callback("surveyList", "onOpenSyncStatus")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("account", { screen: "settings" })
   })
 
   test("with the native tab bar outside iOS it keeps the inline search", async () => {
@@ -524,13 +573,28 @@ describe("SurveyListRoute", () => {
     expect(props("surveyList").visibleSurveys).toBe(fixture.surveys.state.visibleSurveys)
     expect(navigation.setOptions).toHaveBeenCalledTimes(1)
 
-    const options = navigation.setOptions.mock.calls[0][0].headerSearchBarOptions
+    const setOptionsCall = navigation.setOptions.mock.calls[0][0]
+    const options = setOptionsCall.headerSearchBarOptions
     expect(options.placeholder).toBe(fr.navigation.search.placeholder)
     expect(options.placement).toBe("automatic")
     options.onChangeText({ nativeEvent: { text: "chêne" } })
     expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenLastCalledWith("chêne")
     options.onCancelButtonPress()
     expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenLastCalledWith("")
+
+    // SYNC-02/HOME-01: the native header also carries the sync pill and the "+" create button.
+    let headerRightTree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      headerRightTree = renderer.create(setOptionsCall.headerRight())
+    })
+    const createButton = headerRightTree!.root.findByProps({
+      accessibilityLabel: fr.surveyList.a11y.createSurvey,
+    })
+    act(() => {
+      createButton.props.onPress()
+    })
+    expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
+    act(() => headerRightTree!.unmount())
 
     const bar = { setText: jest.fn(), clearText: jest.fn() }
     options.ref.current = bar

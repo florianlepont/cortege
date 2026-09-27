@@ -270,21 +270,22 @@ export function useSurveySync({
     ])
   }, [performDeleteAccount])
 
-  const { handleSync, handlePullChanges, maybeAutoSync } = useSurveySyncNetwork({
-    apiUrl,
-    accessToken,
-    surveys,
-    clearSession,
-    withAuthRetry,
-    refreshLocalSurveys,
-    refreshLocalAttachments,
-    setStatus,
-    syncAllowed: localDataOwner.syncAllowed,
-    ensureSyncOwner: localDataOwner.ensureSyncOwner,
-    ownerStatus: localDataOwner.status,
-    recheckOwner: localDataOwner.recheck,
-    syncActivity,
-  })
+  const { handleSync, handlePullChanges, maybeAutoSync, isOnline, isSyncing } =
+    useSurveySyncNetwork({
+      apiUrl,
+      accessToken,
+      surveys,
+      clearSession,
+      withAuthRetry,
+      refreshLocalSurveys,
+      refreshLocalAttachments,
+      setStatus,
+      syncAllowed: localDataOwner.syncAllowed,
+      ensureSyncOwner: localDataOwner.ensureSyncOwner,
+      ownerStatus: localDataOwner.status,
+      recheckOwner: localDataOwner.recheck,
+      syncActivity,
+    })
 
   const { handleEnsureAttachmentPreviews, handleSimulateMissingAttachmentFile } =
     useAttachmentPreviews({
@@ -635,6 +636,8 @@ export function useSurveySync({
       sessionActions,
       accessToken,
       status: statusText,
+      isOnline,
+      isSyncing,
       syncActions,
       surveyOperations,
       surveyDetailsState,
@@ -644,6 +647,8 @@ export function useSurveySync({
       sessionActions,
       accessToken,
       statusText,
+      isOnline,
+      isSyncing,
       syncActions,
       surveyOperations,
       surveyDetailsState,

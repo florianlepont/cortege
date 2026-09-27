@@ -1,175 +1,78 @@
-import { useCallback, useMemo, useState } from "react"
-import { Image, StyleSheet, View } from "react-native"
+import { useCallback, useState } from "react"
+import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import type { LayoutChangeEvent } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
 import Animated, {
   Extrapolation,
   interpolate,
   SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated"
-import {
-  brandColors,
-  brandRadius,
-  brandSemanticColors,
-  brandShadow,
-  brandSpacing,
-  brandTypography,
-} from "../../app/brand-tokens"
-import type { computeSurveyStats } from "../../app/survey-logic"
-import type { SurveyBlockedFilter, SurveyStatusFilter, SurveySyncFilter } from "../../app/types"
+import { brandColors, brandRadius, brandSpacing, brandTypography } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
-import { BrandBump } from "../../ui/BrandBump"
-import { StatTile } from "./StatTile"
-import type { StatTileProps } from "./StatTile"
+import { AppPressable } from "../../ui/AppPressable"
+import { SyncStatusPill } from "../../ui/SyncStatusPill"
 
 const t = fr.surveyList
 
-// P3-LAYOUT-01: reserve enough room so the round logo never collides with copy
-const HERO_ORNAMENT_EXCLUSION = 92
-const HERO_EXPANDED_PADDING_TOP = 16
-const HERO_EXPANDED_PADDING_BOTTOM = 14
-const HERO_EXPANDED_CONTENT_GAP = 14
-const COLLAPSED_HERO_HEIGHT = 88
+// HOME-01: a plain large title that collapses on scroll, not a themed dashboard hero — the
+// forest-coloured card, stat tiles and dynamic "attention" copy moved to (or stayed on) Home.
+const HERO_EXPANDED_PADDING_TOP = 6
+const HERO_EXPANDED_PADDING_BOTTOM = 10
+const COLLAPSED_HERO_HEIGHT = 52
 
 export type HeroGeometry = {
   expandedHeroHeight: number
   collapsedHeroHeight: number
   heroTopInset: number
   onHeaderLayout: (event: LayoutChangeEvent) => void
-  onStatsLayout: (event: LayoutChangeEvent) => void
 }
 
-// P1-GLANCE-01: reduced hero height. The screen reads the geometry too: the
-// list content starts under the expanded hero.
-export function useHeroGeometry(viewportHeight: number, safeTop: number): HeroGeometry {
+export function useHeroGeometry(safeTop: number): HeroGeometry {
   const [headerHeight, setHeaderHeight] = useState(0)
-  const [statsRowHeight, setStatsRowHeight] = useState(0)
 
   const onHeaderLayout = useCallback((event: LayoutChangeEvent) => {
     setHeaderHeight(Math.ceil(event.nativeEvent.layout.height))
   }, [])
-  const onStatsLayout = useCallback((event: LayoutChangeEvent) => {
-    setStatsRowHeight(Math.ceil(event.nativeEvent.layout.height))
-  }, [])
 
-  const baseExpandedHeroHeight = Math.max(190, Math.min(215, Math.round(viewportHeight * 0.22)))
+  const baseExpandedHeroHeight = 76
   const measuredExpandedHeroHeight =
-    headerHeight > 0 && statsRowHeight > 0
-      ? HERO_EXPANDED_PADDING_TOP +
-        headerHeight +
-        HERO_EXPANDED_CONTENT_GAP +
-        statsRowHeight +
-        HERO_EXPANDED_PADDING_BOTTOM
-      : 0
+    headerHeight > 0 ? HERO_EXPANDED_PADDING_TOP + headerHeight + HERO_EXPANDED_PADDING_BOTTOM : 0
 
   return {
     expandedHeroHeight: Math.max(baseExpandedHeroHeight, measuredExpandedHeroHeight),
     collapsedHeroHeight: COLLAPSED_HERO_HEIGHT,
     heroTopInset: safeTop + brandSpacing.xs,
     onHeaderLayout,
-    onStatsLayout,
   }
 }
 
 type ListHeroProps = {
   scrollY: SharedValue<number>
   geometry: HeroGeometry
-  cardWidth: number
-  stats: ReturnType<typeof computeSurveyStats>
-  surveyCount: number
-  visibleCount: number
-  totalFilterCount: number
-  attentionCount: number
-  continueDraftName: string | null
-  resetFilters: () => void
-  setStatusFilter: (value: SurveyStatusFilter) => void
-  setSyncFilter: (value: SurveySyncFilter) => void
-  setBlockedFilter: (value: SurveyBlockedFilter) => void
+  itemCountLabel: string
+  isOnline: boolean
+  isSyncing: boolean
+  pendingCount: number
+  onOpenSyncStatus: () => void
+  onOpenCreateSurvey: () => void
 }
 
+// SYNC-02 + LIST: the sync pill and the "+" create action live in this header (not only in
+// Settings, not as an in-list create card) — Mes Relevés is otherwise a pure list.
 export function ListHero({
   scrollY,
   geometry,
-  cardWidth,
-  stats,
-  surveyCount,
-  visibleCount,
-  totalFilterCount,
-  attentionCount,
-  continueDraftName,
-  resetFilters,
-  setStatusFilter,
-  setSyncFilter,
-  setBlockedFilter,
+  itemCountLabel,
+  isOnline,
+  isSyncing,
+  pendingCount,
+  onOpenSyncStatus,
+  onOpenCreateSurvey,
 }: ListHeroProps) {
   const { expandedHeroHeight, collapsedHeroHeight, heroTopInset } = geometry
   const collapseDistance = expandedHeroHeight - collapsedHeroHeight
-
-  const compactSummary = useMemo(() => {
-    if (totalFilterCount > 0) {
-      return t.hero.compactFiltered({
-        visible: visibleCount,
-        total: surveyCount,
-        filters: totalFilterCount,
-      })
-    }
-    return t.hero.compactSummary({ total: stats.total, draft: stats.draft, pending: stats.pending })
-  }, [totalFilterCount, visibleCount, surveyCount, stats.total, stats.draft, stats.pending])
-
-  // P2-GLANCE-03: dynamic hero body
-  const heroBodyText = useMemo(() => {
-    const body = t.hero.body
-    if (surveyCount === 0) return body.empty
-    if (stats.blocked > 0) return body.blocked(stats.blocked)
-    if (attentionCount > 0) return body.attention(attentionCount)
-    if (continueDraftName) return body.draftWaiting(continueDraftName)
-    if (stats.submitted > 0 && stats.draft === 0) return body.upToDate
-    return body.fallback
-  }, [surveyCount, stats, attentionCount, continueDraftName])
-
-  // P3-PERSON-05: hero stat tiles with severity
-  const heroStats = useMemo<StatTileProps[]>(
-    () => [
-      {
-        label: t.stats.total,
-        value: String(stats.total),
-        severity: "neutral",
-        onPress: resetFilters,
-        accessibilityLabel: t.stats.a11y.total(stats.total),
-      },
-      {
-        label: t.stats.draft,
-        value: String(stats.draft),
-        severity: "neutral",
-        onPress: () => setStatusFilter("draft"),
-        accessibilityLabel: t.stats.a11y.draft(stats.draft),
-      },
-      {
-        label: t.stats.pending,
-        value: String(stats.pending),
-        severity: stats.pending > 0 ? "warning" : "neutral",
-        onPress: () => setSyncFilter("pending"),
-        accessibilityLabel: t.stats.a11y.pending(stats.pending),
-      },
-      stats.blocked > 0
-        ? {
-            label: t.stats.blocked,
-            value: String(stats.blocked),
-            severity: "danger",
-            onPress: () => setBlockedFilter("blocked"),
-            accessibilityLabel: t.stats.a11y.blocked(stats.blocked),
-          }
-        : {
-            label: t.stats.submitted,
-            value: String(stats.submitted),
-            severity: "neutral",
-            onPress: () => setStatusFilter("submitted"),
-            accessibilityLabel: t.stats.a11y.submitted(stats.submitted),
-          },
-    ],
-    [stats, resetFilters, setStatusFilter, setSyncFilter, setBlockedFilter],
-  )
 
   const heroShellStyle = useAnimatedStyle(() => ({
     height:
@@ -182,99 +85,48 @@ export function ListHero({
     paddingTop: heroTopInset,
   }))
   const expandedLayerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      scrollY.value,
-      [0, collapseDistance * 0.34, collapseDistance * 0.56],
-      [1, 0.22, 0],
-      Extrapolation.CLAMP,
-    ),
-    transform: [
-      {
-        translateY: interpolate(
-          scrollY.value,
-          [0, collapseDistance * 0.56],
-          [0, -8],
-          Extrapolation.CLAMP,
-        ),
-      },
-    ],
+    opacity: interpolate(scrollY.value, [0, collapseDistance * 0.6], [1, 0], Extrapolation.CLAMP),
   }))
   const compactLayerStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
       scrollY.value,
-      [collapseDistance * 0.28, collapseDistance * 0.56, collapseDistance],
-      [0, 0.72, 1],
+      [collapseDistance * 0.4, collapseDistance],
+      [0, 1],
       Extrapolation.CLAMP,
     ),
-    transform: [
-      {
-        translateY: interpolate(
-          scrollY.value,
-          [collapseDistance * 0.28, collapseDistance],
-          [10, 0],
-          Extrapolation.CLAMP,
-        ),
-      },
-    ],
   }))
 
   return (
-    // Hero — box-none so stat tiles are tappable, scroll passes through
     <Animated.View pointerEvents="box-none" style={[styles.heroShell, heroShellStyle]}>
-      <View pointerEvents="box-none" style={styles.heroCard}>
-        {/* Decorative brand mark */}
-        <View pointerEvents="none" style={styles.heroLogoWrap}>
-          <Image
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            source={require("../../../assets/logo-app.png")}
-            style={styles.heroLogoOrnament}
-            resizeMode="contain"
-          />
+      <View pointerEvents="box-none" style={styles.heroRow}>
+        <View style={styles.titleBlock} onLayout={geometry.onHeaderLayout}>
+          <Animated.View style={expandedLayerStyle}>
+            <Text style={styles.titleExpanded}>{t.hero.title}</Text>
+            <Text numberOfLines={1} style={styles.subtitle}>
+              {itemCountLabel}
+            </Text>
+          </Animated.View>
+          <Animated.View pointerEvents="none" style={[styles.compactLayer, compactLayerStyle]}>
+            <Text numberOfLines={1} style={styles.titleCompact}>
+              {t.hero.title}
+            </Text>
+          </Animated.View>
         </View>
 
-        {/* Expanded layer */}
-        <Animated.View
-          pointerEvents="box-none"
-          style={[styles.heroExpandedLayer, expandedLayerStyle]}
-        >
-          {/* Title area — non-interactive */}
-          <View
-            pointerEvents="none"
-            style={styles.heroExpandedHeader}
-            onLayout={geometry.onHeaderLayout}
+        <View style={styles.trailing}>
+          <SyncStatusPill
+            isOnline={isOnline}
+            isSyncing={isSyncing}
+            pendingCount={pendingCount}
+            onPress={onOpenSyncStatus}
+          />
+          <AppPressable
+            accessibilityLabel={t.a11y.createSurvey}
+            onPress={onOpenCreateSurvey}
+            style={styles.createButton}
           >
-            {/* P2-PERSON-02: Contextual eyebrow */}
-            <Text style={styles.heroEyebrow}>{t.hero.eyebrow}</Text>
-            <Text style={styles.heroTitleExpanded}>{t.hero.title}</Text>
-            {/* P2-GLANCE-03: Dynamic body */}
-            <Text style={styles.heroBody}>{heroBodyText}</Text>
-          </View>
-
-          {/* P1-GLANCE-01: Single horizontal row of 4 stat tiles */}
-          <View
-            pointerEvents="box-none"
-            style={styles.heroStatsRow}
-            onLayout={geometry.onStatsLayout}
-          >
-            {heroStats.map((stat) => (
-              <StatTile key={stat.label} {...stat} />
-            ))}
-          </View>
-        </Animated.View>
-
-        {/* Compact layer */}
-        <Animated.View pointerEvents="none" style={[styles.heroCompactLayer, compactLayerStyle]}>
-          <Text numberOfLines={1} style={styles.heroTitleCompact}>
-            {t.hero.title}
-          </Text>
-          <Text numberOfLines={1} style={styles.heroCompactSummary}>
-            {compactSummary}
-          </Text>
-        </Animated.View>
-
-        {/* P1-PERSON-01: BrandBump at the bottom of the hero card */}
-        <View pointerEvents="none">
-          <BrandBump width={cardWidth} height={22} color={brandColors.moss} opacity={0.16} />
+            <Ionicons name="add" size={22} color={brandColors.white} />
+          </AppPressable>
         </View>
       </View>
     </Animated.View>
@@ -289,74 +141,52 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 2,
     paddingHorizontal: 16,
+    backgroundColor: brandColors.canvas,
   },
-  heroCard: {
+  heroRow: {
     flex: 1,
-    position: "relative",
-    overflow: "hidden",
-    borderRadius: brandRadius.hero,
-    backgroundColor: brandColors.forest,
-    ...brandShadow.card,
-  },
-  // Decorative round logo, lightly faded into the hero background.
-  heroLogoWrap: {
-    position: "absolute",
-    top: -12,
-    right: -14,
-  },
-  heroExpandedLayer: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: "flex-start",
-    paddingTop: HERO_EXPANDED_PADDING_TOP,
-    paddingBottom: HERO_EXPANDED_PADDING_BOTTOM,
-    paddingHorizontal: 20,
-    gap: HERO_EXPANDED_CONTENT_GAP,
-  },
-  heroExpandedHeader: {
-    gap: 6,
-    // P3-LAYOUT-01: uses named constant so fern/text exclusion stays in sync
-    paddingRight: HERO_ORNAMENT_EXCLUSION,
-  },
-  heroEyebrow: {
-    ...brandTypography.heroEyebrow,
-    color: brandSemanticColors.heroMetaOnDark,
-  },
-  heroTitleExpanded: {
-    ...brandTypography.heroTitle,
-    color: brandColors.white,
-  },
-  heroBody: {
-    ...brandTypography.heroBody,
-    color: brandSemanticColors.heroBodyOnDark,
-  },
-  // P1-GLANCE-01: single horizontal row (replaces 2×2 grid)
-  heroStatsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 7,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: brandSpacing.sm,
   },
-  heroCompactLayer: {
+  titleBlock: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  titleExpanded: {
+    ...brandTypography.sectionTitle,
+    fontSize: 30,
+    lineHeight: 34,
+    color: brandColors.forest,
+  },
+  subtitle: {
+    ...brandTypography.meta,
+    color: brandColors.textSecondary,
+    marginTop: 2,
+  },
+  compactLayer: {
     ...StyleSheet.absoluteFill,
     justifyContent: "center",
-    paddingHorizontal: 20,
-    paddingRight: 96,
-    gap: 6,
   },
-  heroLogoOrnament: {
-    width: 136,
-    height: 136,
-    opacity: 0.16,
+  titleCompact: {
+    ...brandTypography.sectionTitle,
+    fontSize: 20,
+    lineHeight: 24,
+    color: brandColors.forest,
   },
-  heroTitleCompact: {
-    ...brandTypography.heroTitle,
-    fontSize: 24,
-    lineHeight: 28,
-    color: brandColors.white,
+  trailing: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: brandSpacing.sm,
+    flexShrink: 0,
   },
-  heroCompactSummary: {
-    ...brandTypography.meta,
-    fontSize: 13,
-    lineHeight: 18,
-    color: brandSemanticColors.heroMetaOnDark,
+  createButton: {
+    width: 36,
+    height: 36,
+    borderRadius: brandRadius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: brandColors.forest,
   },
 })

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import * as Network from "expo-network"
 import { hasPendingSyncWork, LocalSurvey, pullRemoteChanges, syncPending } from "../../storage"
 import { fr, logStatusDetail } from "../../i18n"
@@ -59,6 +59,13 @@ export function useSurveySyncNetwork({
   const ownerStatusRef = useRef<LocalDataOwnerStatus>(ownerStatus)
   ownerStatusRef.current = ownerStatus
 
+  // SYNC-02: reactive mirrors of the connectivity probe and the in-flight push/pull count, read by
+  // SyncStatusPill. Optimistic defaults (online, not syncing) avoid a false "offline" flash before
+  // the first network probe resolves; `lastOnlineStateRef` above stays the source of truth for the
+  // auto-sync gating logic, which already treats "not confirmed online" as not online.
+  const [isOnline, setIsOnline] = useState(true)
+  const [activeSyncCount, setActiveSyncCount] = useState(0)
+
   // A manual sync or a new token retries a failed owner check (WR-07).
   const retryFailedOwnerCheck = useCallback((): void => {
     if (ownerStatusRef.current === "error") {
@@ -84,6 +91,7 @@ export function useSurveySyncNetwork({
       }
 
       syncInProgressRef.current = true
+      setActiveSyncCount((count) => count + 1)
       try {
         setStatus(mode === "manual" ? text.inProgress() : text.autoInProgress())
         const result = await withAuthRetry(async (token, tokenSub) => {
@@ -123,6 +131,7 @@ export function useSurveySyncNetwork({
         setStatus(text.failed())
       } finally {
         syncInProgressRef.current = false
+        setActiveSyncCount((count) => count - 1)
       }
     },
     [
@@ -172,6 +181,7 @@ export function useSurveySyncNetwork({
       }
 
       pullInProgressRef.current = true
+      setActiveSyncCount((count) => count + 1)
       try {
         const result = await withAuthRetry(async (token, tokenSub) => {
           await assertSyncOwner(ensureSyncOwner, tokenSub)
@@ -199,6 +209,7 @@ export function useSurveySyncNetwork({
         }
       } finally {
         pullInProgressRef.current = false
+        setActiveSyncCount((count) => count - 1)
       }
     },
     [
@@ -226,6 +237,7 @@ export function useSurveySyncNetwork({
       setStatus(ownerGateMessage(ownerStatusRef.current))
       return
     }
+    setActiveSyncCount((count) => count + 1)
     try {
       setStatus(text.pulling())
       const result = await withAuthRetry(async (token, tokenSub) => {
@@ -255,6 +267,8 @@ export function useSurveySyncNetwork({
       }
       logStatusDetail("sync.pull", error)
       setStatus(text.pullFailed())
+    } finally {
+      setActiveSyncCount((count) => count - 1)
     }
   }, [
     apiUrl,
@@ -276,6 +290,7 @@ export function useSurveySyncNetwork({
       const online = isOnlineNetworkState(state)
       const wasOnline = lastOnlineStateRef.current
       lastOnlineStateRef.current = online
+      setIsOnline(online)
 
       if (online && wasOnline === false) {
         void maybeAutoSync("reconnected")
@@ -342,5 +357,7 @@ export function useSurveySyncNetwork({
     handleSync,
     handlePullChanges,
     maybeAutoSync,
+    isOnline,
+    isSyncing: activeSyncCount > 0,
   }
 }

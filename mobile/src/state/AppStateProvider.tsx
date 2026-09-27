@@ -32,6 +32,7 @@ import {
   type SurveysContextValue,
 } from "./surveys-context"
 import { SyncActionsProvider } from "./sync-actions-context"
+import { SyncStatusProvider, type SyncStatusContextValue } from "./sync-status-context"
 import { useLatestCallback, useStableActions } from "./useLatestCallback"
 
 /**
@@ -194,6 +195,13 @@ function useAppController() {
 
   const statusText = surveySync.status
   const status = useMemo<StatusContextValue>(() => ({ status: statusText }), [statusText])
+
+  // SYNC-02: a separate, narrower context from `status` above — see sync-status-context.ts.
+  const { isOnline, isSyncing } = surveySync
+  const syncStatus = useMemo<SyncStatusContextValue>(
+    () => ({ isOnline, isSyncing }),
+    [isOnline, isSyncing],
+  )
 
   const syncActions = useStableActions({
     ...surveySync.syncActions,
@@ -399,6 +407,7 @@ function useAppController() {
     session,
     accessToken,
     status,
+    syncStatus,
     syncActions,
     surveys: surveysValue,
     surveyActions,
@@ -413,6 +422,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     session,
     accessToken,
     status,
+    syncStatus,
     syncActions,
     surveys,
     surveyActions,
@@ -425,17 +435,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     <SessionProvider value={session}>
       <AccessTokenProvider value={accessToken}>
         <StatusProvider value={status}>
-          <SyncActionsProvider value={syncActions}>
-            <SurveysProvider value={surveys}>
-              <SurveyActionsProvider value={surveyActions}>
-                <SurveyFormProvider value={form}>
-                  <AutosaveStatusProvider value={autosaveStatus}>
-                    <NearbyParcelsProvider value={nearby}>{children}</NearbyParcelsProvider>
-                  </AutosaveStatusProvider>
-                </SurveyFormProvider>
-              </SurveyActionsProvider>
-            </SurveysProvider>
-          </SyncActionsProvider>
+          <SyncStatusProvider value={syncStatus}>
+            <SyncActionsProvider value={syncActions}>
+              <SurveysProvider value={surveys}>
+                <SurveyActionsProvider value={surveyActions}>
+                  <SurveyFormProvider value={form}>
+                    <AutosaveStatusProvider value={autosaveStatus}>
+                      <NearbyParcelsProvider value={nearby}>{children}</NearbyParcelsProvider>
+                    </AutosaveStatusProvider>
+                  </SurveyFormProvider>
+                </SurveyActionsProvider>
+              </SurveysProvider>
+            </SyncActionsProvider>
+          </SyncStatusProvider>
         </StatusProvider>
       </AccessTokenProvider>
     </SessionProvider>

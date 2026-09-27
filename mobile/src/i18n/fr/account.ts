@@ -10,11 +10,12 @@ export const accountFr = {
     unsaved: "Non sauvegardé",
     saved: "Sauvegardé",
     firstName: "Prénom",
-    firstNamePlaceholder: "Florian",
+    // ACC-04: a generic example, not a real member's name.
+    firstNamePlaceholder: "ex. Marie",
     lastName: "Nom",
-    lastNamePlaceholder: "Lepont",
+    lastNamePlaceholder: "ex. Dupont",
     displayName: "Nom d'affichage",
-    displayNamePlaceholder: "ex. F. Lepont",
+    displayNamePlaceholder: "ex. M. Dupont",
     saving: "Enregistrement...",
     save: "Enregistrer le profil",
   },
@@ -38,6 +39,15 @@ export const accountFr = {
       "L'identification de genre par photo (section A) utilise un modèle entraîné sur des images de GBIF.org (Global Biodiversity Information Facility), publiées sous licence CC0 1.0 ou CC BY 4.0. Les images CC BY nécessitent de créditer leurs photographes ; voir gbif.org pour le mécanisme d'attribution complet.",
   },
   logout: "Se déconnecter",
+  // ACC-03: the grouped iOS-style list (Profil, Connexion, Données, À propos, Se déconnecter).
+  sections: {
+    connection: "Connexion",
+    data: "Données",
+    dataRow: "Synchronisation et données",
+    about: "À propos",
+    version: "Version",
+    versionUnknown: "—",
+  },
   alerts: {
     photo: {
       title: "Photo de profil",

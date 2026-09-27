@@ -2,33 +2,11 @@ import { StyleSheet } from "react-native"
 import {
   brandColors,
   brandComponentTokens,
-  brandRadius,
   brandShadow,
   brandTypography,
 } from "../../app/brand-tokens"
 
 export const styles = StyleSheet.create({
-  scoreHeroCard: {
-    borderRadius: 24,
-    backgroundColor: brandColors.successSoft,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 4,
-  },
-  scoreHeroLabel: {
-    ...brandTypography.heroEyebrow,
-    color: brandColors.textSecondary,
-  },
-  scoreHeroValue: {
-    fontSize: 32,
-    lineHeight: 36,
-    fontWeight: "900",
-    color: brandColors.forest,
-  },
-  scoreHeroMeta: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
   factorTilesCard: {
     borderRadius: 28,
     borderWidth: 1,
@@ -37,21 +15,6 @@ export const styles = StyleSheet.create({
     padding: 18,
     gap: 12,
     ...brandShadow.card,
-  },
-  factorTotalsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  factorTotalPill: {
-    borderRadius: brandRadius.pill,
-    backgroundColor: brandColors.panelMuted,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  factorTotalText: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
   },
   factorTilesGrid: {
     flexDirection: "row",

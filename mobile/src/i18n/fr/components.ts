@@ -2,13 +2,15 @@
 // Texts of the shared cards, the splash screen and the ui/ primitives.
 export const componentsFr = {
   separator: "·",
-  draftCard: {
+  // Phase 7 (HOME-01/HOME-02): replaces DraftCard and ContinueDraftCard, merged into one card.
+  surveyProgressCard: {
     progressLabel: "AVANCEMENT",
     factorCount: ({ count }: { count: number }) => `${count}/10`,
     syncBlocked: "Sync bloquée",
     hoursAgo: ({ count }: { count: number }) => `il y a ${count}h`,
     yesterday: "Hier",
     daysAgo: ({ count }: { count: number }) => `il y a ${count}j`,
+    resumeLabel: "Reprendre",
     a11y: ({ name, rate }: { name: string; rate: number }) =>
       `Brouillon ${name}, ${rate}% complété`,
   },
@@ -47,5 +49,20 @@ export const componentsFr = {
   ibpScoreBadge: {
     noScore: "—",
     denominator: "/50",
+  },
+  // Phase 7 (DET-01): horizontal bars replacing the 10-axis radar.
+  ibpFactorBars: {
+    standGroup: "Peuplement et gestion",
+    contextGroup: "Contexte",
+    points: ({ points }: { points: number }) => `${points}/5`,
+    notFilled: "—",
+  },
+  // Phase 7 (SYNC-02): the 4-state pill visible in the Home and Mes Relevés headers.
+  syncStatusPill: {
+    offline: "Hors ligne",
+    toSend: ({ count }: { count: number }) => `${count} à envoyer`,
+    syncing: "Synchronisation…",
+    upToDate: "À jour",
+    a11yHint: "Touchez pour voir le détail de la synchronisation",
   },
 } as const

@@ -1,10 +1,11 @@
 /**
- * Tests for HomeScreen (BUG-08, UX audit Phase 2): pull-to-refresh reflects the real state of the
- * in-flight refresh instead of a hardcoded refreshing={false}.
+ * Tests for HomeScreen (BUG-08, UX audit Phase 2 + Phase 7 dashboard).
  */
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
-import { HomeScreen } from "./HomeScreen"
+import { HomeScreen, pickAlertSurvey, pickResumeDraft } from "./HomeScreen"
+import { fr } from "../i18n"
+import type { LocalSurvey } from "../storage/types"
 
 const originalConsoleError = console.error
 
@@ -44,18 +45,40 @@ jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
 jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
-jest.mock("../components/cards/DraftCard", () => ({ DraftCard: "DraftCard" }))
+jest.mock("../ui/SyncStatusPill", () => ({ SyncStatusPill: "SyncStatusPill" }))
+jest.mock("../ui/SurveyProgressCard", () => ({ SurveyProgressCard: "SurveyProgressCard" }))
 jest.mock("../components/cards/ParcelNearbyCard", () => ({ ParcelNearbyCard: "ParcelNearbyCard" }))
 jest.mock("./home/SectorScoreCard", () => ({ SectorScoreCard: "SectorScoreCard" }))
 jest.mock("../hooks/useNearbyParcels", () => ({ hasMixedMethodVersions: () => false }))
 
 let tree: ReactTestRenderer
 
+function makeSurvey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
+  return {
+    id: "survey-1",
+    site_name: "Parcelle A",
+    status: "draft",
+    visibility: "private",
+    sync_version: 1,
+    sync_state: "synced",
+    last_sync_error: null,
+    last_sync_error_code: null,
+    last_sync_error_at: null,
+    sync_blocked: 0,
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: new Date().toISOString(),
+    completion_rate: 40,
+    ...overrides,
+  }
+}
+
 function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> = {}) {
   return {
     currentUser: null,
     surveys: [],
     surveyStats: { total: 0, draft: 0, submitted: 0, pending: 0, synced: 0, failed: 0, blocked: 0 },
+    isOnline: true,
+    isSyncing: false,
     nearbyParcels: {
       parcels: [],
       sectorAvgScore: null,
@@ -66,6 +89,8 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     onLoadNearbyParcels: jest.fn(),
     onCreateSurvey: jest.fn(),
     onOpenSurvey: jest.fn(),
+    onRetrySurvey: jest.fn(async () => undefined),
+    onOpenSyncStatus: jest.fn(),
     onNavigateToExplorer: jest.fn(),
     onRefresh: jest.fn(async () => undefined),
     ...overrides,
@@ -112,5 +137,162 @@ describe("HomeScreen", () => {
       await Promise.resolve()
     })
     expect(control().props.refreshing).toBe(false)
+  })
+
+  test("passes the sync pill its connectivity, activity and pending count (SYNC-02)", () => {
+    const onOpenSyncStatus = jest.fn()
+    mount(
+      makeProps({
+        isOnline: false,
+        isSyncing: true,
+        surveyStats: {
+          total: 1,
+          draft: 1,
+          submitted: 0,
+          pending: 3,
+          synced: 0,
+          failed: 0,
+          blocked: 0,
+        },
+        onOpenSyncStatus,
+      }),
+    )
+    const pill = tree.root.findByType("SyncStatusPill" as never)
+    expect(pill.props.isOnline).toBe(false)
+    expect(pill.props.isSyncing).toBe(true)
+    expect(pill.props.pendingCount).toBe(3)
+
+    act(() => {
+      pill.props.onPress()
+    })
+    expect(onOpenSyncStatus).toHaveBeenCalledTimes(1)
+  })
+
+  describe("HOME-02: the hero becomes a resume action", () => {
+    test("no draft: the default 'new survey' hero shows, no progress card", () => {
+      mount(makeProps({ surveys: [] }))
+      const texts = tree.root
+        .findAll((node) => (node.type as unknown) === "Text")
+        .map((node) => String([node.props.children].flat().join("")))
+      expect(texts).toContain(fr.home.hero.title)
+      expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
+    })
+
+    test("a draft updated within 48h becomes the resume hero, with a progress card", () => {
+      const draft = makeSurvey({ updated_at: new Date().toISOString() })
+      mount(makeProps({ surveys: [draft] }))
+      const texts = tree.root
+        .findAll((node) => (node.type as unknown) === "Text")
+        .map((node) => String([node.props.children].flat().join("")))
+      expect(texts).toContain(fr.home.hero.resumeTitle({ name: "Parcelle A" }))
+
+      const buttonLabels = tree.root
+        .findAllByType("AppButton" as never)
+        .map((node) => node.props.label)
+      expect(buttonLabels).toContain(fr.home.hero.resumeButton)
+      expect(buttonLabels).toContain(fr.home.hero.newSurveyButton)
+
+      const progressCard = tree.root.findByType("SurveyProgressCard" as never)
+      expect(progressCard.props.survey).toBe(draft)
+
+      const onOpenSurvey = jest.fn()
+      act(() => tree.unmount())
+      mount(makeProps({ surveys: [draft], onOpenSurvey }))
+      act(() => {
+        tree.root.findByType("SurveyProgressCard" as never).props.onPress()
+      })
+      expect(onOpenSurvey).toHaveBeenCalledWith("survey-1")
+    })
+
+    test("a draft older than 48h does not trigger the resume hero", () => {
+      const staleDraft = makeSurvey({
+        updated_at: new Date(Date.now() - 49 * 3600000).toISOString(),
+      })
+      mount(makeProps({ surveys: [staleDraft] }))
+      const texts = tree.root
+        .findAll((node) => (node.type as unknown) === "Text")
+        .map((node) => String([node.props.children].flat().join("")))
+      expect(texts).toContain(fr.home.hero.title)
+      expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
+    })
+
+    test("a submitted survey is never picked as the resume draft", () => {
+      const submitted = makeSurvey({ status: "submitted" })
+      expect(pickResumeDraft([submitted])).toBeNull()
+    })
+  })
+
+  describe("SYNC-03: actionable alerts, distinct conflict vs error copy", () => {
+    test("a blocked survey shows the conflict message with a 'Voir' action", () => {
+      const blocked = makeSurvey({ id: "blocked-1", sync_state: "failed", sync_blocked: 1 })
+      const onOpenSurvey = jest.fn()
+      mount(
+        makeProps({
+          surveys: [blocked],
+          surveyStats: {
+            total: 1,
+            draft: 0,
+            submitted: 0,
+            pending: 0,
+            synced: 0,
+            failed: 1,
+            blocked: 1,
+          },
+          onOpenSurvey,
+        }),
+      )
+      const notice = tree.root.findAllByType("AppNotice" as never)[0]
+      expect(notice.props.message).toBe(fr.home.alerts.blockedMessage)
+      expect(notice.props.action.label).toBe(fr.home.alerts.actionView)
+
+      act(() => notice.props.action.onPress())
+      expect(onOpenSurvey).toHaveBeenCalledWith("blocked-1")
+    })
+
+    test("a failed (not blocked) survey shows the connection message with a 'Réessayer' action", () => {
+      const failed = makeSurvey({ id: "failed-1", sync_state: "failed", sync_blocked: 0 })
+      const onRetrySurvey = jest.fn(async () => undefined)
+      mount(
+        makeProps({
+          surveys: [failed],
+          surveyStats: {
+            total: 1,
+            draft: 0,
+            submitted: 0,
+            pending: 0,
+            synced: 0,
+            failed: 1,
+            blocked: 0,
+          },
+          onRetrySurvey,
+        }),
+      )
+      const notice = tree.root.findAllByType("AppNotice" as never)[0]
+      expect(notice.props.message).toBe(fr.home.alerts.failedMessage)
+      expect(notice.props.action.label).toBe(fr.home.alerts.actionRetry)
+
+      act(() => notice.props.action.onPress())
+      expect(onRetrySurvey).toHaveBeenCalledWith("failed-1")
+    })
+
+    test("no alerts: no AppNotice carries a sync action", () => {
+      mount(makeProps({ surveys: [] }))
+      const actionable = tree.root
+        .findAllByType("AppNotice" as never)
+        .filter((node) => node.props.action)
+      expect(actionable).toHaveLength(0)
+    })
+  })
+})
+
+describe("pickAlertSurvey", () => {
+  test("a blocked survey outranks a plain sync error", () => {
+    const error = makeSurvey({ id: "err", sync_state: "failed", sync_blocked: 0 })
+    const blocked = makeSurvey({ id: "blocked", sync_state: "failed", sync_blocked: 1 })
+    expect(pickAlertSurvey([error, blocked])?.id).toBe("blocked")
+  })
+
+  test("no problem surveys returns null", () => {
+    expect(pickAlertSurvey([makeSurvey()])).toBeNull()
   })
 })

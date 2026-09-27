@@ -63,6 +63,12 @@ export const rowStyles = StyleSheet.create({
   surveyCardAccentNeutral: {
     backgroundColor: "transparent",
   },
+  // LIST-01: the score badge / progress ring column, always shown.
+  surveyCardIndicator: {
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   // P2-COMPACT-01: reduced thumbnail size
   surveyCardMedia: {
     width: 56,

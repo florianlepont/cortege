@@ -38,9 +38,6 @@ export const styles = StyleSheet.create({
   },
 
   // ── Shared interaction ────────────────────────────────────────────────────
-  rowPressed: {
-    opacity: 0.88,
-  },
   resetButton: {
     alignSelf: "flex-start",
   },

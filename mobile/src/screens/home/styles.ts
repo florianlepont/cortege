@@ -38,6 +38,11 @@ export const styles = StyleSheet.create({
     marginTop: 2,
     textTransform: "capitalize",
   },
+  headerTrailing: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: brandSpacing.sm,
+  },
   avatarPlaceholder: {
     width: 44,
     height: 44,
@@ -97,6 +102,15 @@ export const styles = StyleSheet.create({
   heroButtonLabel: {
     color: brandColors.canvas,
   },
+  // HOME-02: secondary "Nouveau relevé" action once the primary CTA becomes "Reprendre".
+  heroSecondaryButton: {
+    marginTop: 4,
+    borderColor: brandSemanticColors.heroPanelBorderOnDark,
+    backgroundColor: "transparent",
+  },
+  heroSecondaryButtonLabel: {
+    color: brandColors.canvas,
+  },
 
   // Sections
   section: {
@@ -111,10 +125,9 @@ export const styles = StyleSheet.create({
     color: brandColors.moss,
   },
 
-  // Drafts
-  draftsScroll: {
+  // HOME-01/HOME-02: the merged SurveyProgressCard, shown under the resume hero.
+  resumeCardWrap: {
     paddingHorizontal: PAGE_H,
-    gap: 12,
   },
 
   // Parcels

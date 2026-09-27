@@ -264,6 +264,7 @@ import { AppStateProvider } from "./AppStateProvider"
 import { useAccessToken, useSession, type SessionContextValue } from "./session-context"
 import { useStatus, type StatusContextValue } from "./status-context"
 import { useSyncActions, type SyncActions } from "./sync-actions-context"
+import { useSyncStatus, type SyncStatusContextValue } from "./sync-status-context"
 import {
   useSurveyActions,
   useSurveys,
@@ -279,6 +280,7 @@ type Snapshot = {
   session: SessionContextValue
   accessToken: string | null
   status: StatusContextValue
+  syncStatus: SyncStatusContextValue
   syncActions: SyncActions
   surveys: SurveysContextValue
   form: SurveyFormContextValue
@@ -294,6 +296,7 @@ function Probe() {
     session: useSession(),
     accessToken: useAccessToken(),
     status: useStatus(),
+    syncStatus: useSyncStatus(),
     syncActions: useSyncActions(),
     surveys: useSurveys(),
     form: useSurveyFormState(),
@@ -340,6 +343,7 @@ describe("context hooks outside AppStateProvider", () => {
     ["useSession", useSession],
     ["useAccessToken", useAccessToken],
     ["useStatus", useStatus],
+    ["useSyncStatus", useSyncStatus],
     ["useSyncActions", useSyncActions],
     ["useSurveys", useSurveys],
     ["useSurveyFormState", useSurveyFormState],

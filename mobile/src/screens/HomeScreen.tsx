@@ -4,28 +4,37 @@ import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors } from "../app/brand-tokens"
+import { resolveSurveyUiStatus } from "../app/survey-logic"
 import type { AuthUser } from "../app/types"
 import type { LocalSurvey } from "../storage/types"
 import type { SurveyStats } from "../app/types"
 import { AppButton } from "../ui/AppButton"
 import { AppNotice } from "../ui/AppNotice"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
-import { DraftCard } from "../components/cards/DraftCard"
 import { ParcelNearbyCard } from "../components/cards/ParcelNearbyCard"
 import { hasMixedMethodVersions, type NearbyParcelsState } from "../hooks/useNearbyParcels"
 import { fr } from "../i18n"
 import { SkeletonRow } from "../ui/Skeleton"
+import { SurveyProgressCard } from "../ui/SurveyProgressCard"
+import { SyncStatusPill } from "../ui/SyncStatusPill"
 import { SectorScoreCard } from "./home/SectorScoreCard"
 import { styles } from "./home/styles"
+
+// HOME-02: the hero becomes a "resume" action for a draft touched within the last 48h.
+const RESUME_WINDOW_MS = 48 * 60 * 60 * 1000
 
 type HomeScreenProps = {
   currentUser: AuthUser | null
   surveys: LocalSurvey[]
   surveyStats: SurveyStats
+  isOnline: boolean
+  isSyncing: boolean
   nearbyParcels: NearbyParcelsState
   onLoadNearbyParcels: () => void
   onCreateSurvey: () => void
   onOpenSurvey: (surveyId: string) => void
+  onRetrySurvey: (surveyId: string) => Promise<void>
+  onOpenSyncStatus: () => void
   onNavigateToExplorer: () => void
   onRefresh: () => Promise<void>
 }
@@ -43,30 +52,54 @@ function formatTodayDate(): string {
   }).format(new Date())
 }
 
+/** The most recently updated draft, if it was touched within the resume window (HOME-02). */
+export function pickResumeDraft(surveys: LocalSurvey[]): LocalSurvey | null {
+  const candidates = surveys
+    .filter((survey) => survey.status !== "submitted" && survey.status !== "expired")
+    .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))
+  const mostRecent = candidates[0]
+  if (!mostRecent) return null
+  const updatedAt = Date.parse(mostRecent.updated_at)
+  if (!Number.isFinite(updatedAt)) return null
+  return Date.now() - updatedAt <= RESUME_WINDOW_MS ? mostRecent : null
+}
+
+/** The worst survey needing attention: a conflict (blocked) outranks a plain sync error. */
+export function pickAlertSurvey(surveys: LocalSurvey[]): LocalSurvey | null {
+  return (
+    surveys.find((survey) => resolveSurveyUiStatus(survey) === "sync_blocked") ??
+    surveys.find((survey) => resolveSurveyUiStatus(survey) === "sync_error") ??
+    null
+  )
+}
+
 export function HomeScreen({
   currentUser,
   surveys,
   surveyStats,
+  isOnline,
+  isSyncing,
   nearbyParcels,
   onLoadNearbyParcels,
   onCreateSurvey,
   onOpenSurvey,
+  onRetrySurvey,
+  onOpenSyncStatus,
   onNavigateToExplorer,
   onRefresh,
 }: HomeScreenProps) {
   const insets = useSafeAreaInsets()
   const [refreshing, setRefreshing] = useState(false)
   const firstName = getFirstName(currentUser)
-  const drafts = surveys
-    .filter((s) => s.status === "draft")
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 3)
 
   useEffect(() => {
     onLoadNearbyParcels()
   }, [onLoadNearbyParcels])
 
   const hasAlerts = surveyStats.blocked > 0 || surveyStats.failed > 0
+  const isBlockedAlert = surveyStats.blocked > 0
+  const alertSurvey = hasAlerts ? pickAlertSurvey(surveys) : null
+  const resumeDraft = pickResumeDraft(surveys)
 
   // BUG-08 (UX audit, Phase 2): the pull-to-refresh gesture used to reflect no state at all.
   const handleRefresh = useCallback(async () => {
@@ -102,61 +135,96 @@ export function HomeScreen({
           </Text>
           <Text style={styles.greetingDate}>{formatTodayDate()}</Text>
         </View>
-        {currentUser?.profile_picture_url ? null : (
-          <View style={styles.avatarPlaceholder}>
-            <Ionicons name="person" size={20} color={brandColors.textSecondary} />
-          </View>
-        )}
+        <View style={styles.headerTrailing}>
+          {/* SYNC-02: visible on the dashboard, not only in Settings. */}
+          <SyncStatusPill
+            isOnline={isOnline}
+            isSyncing={isSyncing}
+            pendingCount={surveyStats.pending}
+            onPress={onOpenSyncStatus}
+          />
+          {currentUser?.profile_picture_url ? null : (
+            <View style={styles.avatarPlaceholder}>
+              <Ionicons name="person" size={20} color={brandColors.textSecondary} />
+            </View>
+          )}
+        </View>
       </View>
 
       {/* ── Alertes ───────────────────────────────── */}
       {hasAlerts ? (
         <AppNotice
-          tone={surveyStats.blocked > 0 ? "danger" : "warning"}
-          icon={surveyStats.blocked > 0 ? "warning-outline" : "cloud-upload-outline"}
+          tone={isBlockedAlert ? "danger" : "warning"}
+          icon={isBlockedAlert ? "warning-outline" : "cloud-upload-outline"}
           title={
-            surveyStats.blocked > 0
+            isBlockedAlert
               ? fr.home.alerts.blocked({ count: surveyStats.blocked })
               : fr.home.alerts.failed({ count: surveyStats.failed })
           }
-          message={fr.home.alerts.message}
+          message={isBlockedAlert ? fr.home.alerts.blockedMessage : fr.home.alerts.failedMessage}
+          action={
+            alertSurvey
+              ? {
+                  label: isBlockedAlert ? fr.home.alerts.actionView : fr.home.alerts.actionRetry,
+                  onPress: () => {
+                    if (isBlockedAlert) {
+                      onOpenSurvey(alertSurvey.id)
+                    } else {
+                      void onRetrySurvey(alertSurvey.id)
+                    }
+                  },
+                }
+              : undefined
+          }
           style={styles.notice}
         />
       ) : null}
 
-      {/* ── Hero CTA ──────────────────────────────── */}
+      {/* ── Hero CTA (HOME-02: resume a recent draft, or start a new one) ──── */}
       <View style={styles.heroCta}>
-        <Text style={styles.heroEyebrow}>{fr.home.hero.eyebrow}</Text>
-        <Text style={styles.heroTitle}>{fr.home.hero.title}</Text>
-        <Text style={styles.heroBody}>{fr.home.hero.body}</Text>
+        <Text style={styles.heroEyebrow}>
+          {resumeDraft ? fr.home.hero.resumeEyebrow : fr.home.hero.eyebrow}
+        </Text>
+        <Text style={styles.heroTitle}>
+          {resumeDraft
+            ? fr.home.hero.resumeTitle({
+                name: resumeDraft.site_name || fr.common.untitledSurvey,
+              })
+            : fr.home.hero.title}
+        </Text>
+        <Text style={styles.heroBody}>
+          {resumeDraft
+            ? fr.home.hero.resumeBody({
+                completed: Math.round(Math.max(0, Math.min(100, resumeDraft.completion_rate)) / 10),
+              })
+            : fr.home.hero.body}
+        </Text>
         <AppButton
-          label={fr.home.hero.button}
-          leadingIcon="add"
+          label={resumeDraft ? fr.home.hero.resumeButton : fr.home.hero.button}
+          leadingIcon={resumeDraft ? "play-outline" : "add"}
           size="lg"
           variant="primary"
-          onPress={onCreateSurvey}
+          onPress={resumeDraft ? () => onOpenSurvey(resumeDraft.id) : onCreateSurvey}
           style={styles.heroButton}
           labelStyle={styles.heroButtonLabel}
         />
+        {resumeDraft ? (
+          <AppButton
+            label={fr.home.hero.newSurveyButton}
+            leadingIcon="add"
+            size="md"
+            variant="secondary"
+            onPress={onCreateSurvey}
+            style={styles.heroSecondaryButton}
+            labelStyle={styles.heroSecondaryButtonLabel}
+          />
+        ) : null}
       </View>
 
-      {/* ── Brouillons ────────────────────────────── */}
-      {drafts.length > 0 ? (
-        <View style={styles.section}>
-          <AppSectionHeader
-            title={fr.home.drafts.title}
-            subtitle={fr.home.drafts.subtitle({ count: drafts.length })}
-            style={styles.sectionHeader}
-          />
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.draftsScroll}
-          >
-            {drafts.map((survey) => (
-              <DraftCard key={survey.id} survey={survey} onPress={() => onOpenSurvey(survey.id)} />
-            ))}
-          </ScrollView>
+      {/* ── Progression du brouillon repris ─────────── */}
+      {resumeDraft ? (
+        <View style={[styles.section, styles.resumeCardWrap]}>
+          <SurveyProgressCard survey={resumeDraft} onPress={() => onOpenSurvey(resumeDraft.id)} />
         </View>
       ) : null}
 

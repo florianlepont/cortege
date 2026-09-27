@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native"
-import { AppText as Text } from "../../ui/AppText"
+import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
@@ -7,15 +7,17 @@ import {
   brandRadius,
   brandShadow,
   brandTypography,
-} from "../../app/brand-tokens"
-import { fr } from "../../i18n"
-import type { LocalSurvey } from "../../storage/types"
-import { AppPressable } from "../../ui/AppPressable"
+} from "../app/brand-tokens"
+import { fr } from "../i18n"
+import type { LocalSurvey } from "../storage/types"
+import { AppPressable } from "./AppPressable"
 
-type DraftCardProps = {
+type SurveyProgressCardProps = {
   survey: LocalSurvey
   onPress: () => void
 }
+
+const t = fr.components.surveyProgressCard
 
 // completion_rate is an integer percentage, 0-100 (01.9 D-03).
 function clampRate(rate: number): number {
@@ -32,13 +34,17 @@ function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const hours = Math.floor(diff / 3600000)
   if (hours < 1) return fr.common.justNow
-  if (hours < 24) return fr.components.draftCard.hoursAgo({ count: hours })
+  if (hours < 24) return t.hoursAgo({ count: hours })
   const days = Math.floor(hours / 24)
-  if (days === 1) return fr.components.draftCard.yesterday
-  return fr.components.draftCard.daysAgo({ count: days })
+  if (days === 1) return t.yesterday
+  return t.daysAgo({ count: days })
 }
 
-export function DraftCard({ survey, onPress }: DraftCardProps) {
+/**
+ * The single card for a survey draft's progress (HOME-01/HOME-02): merges the former DraftCard
+ * (Home's carousel) and ContinueDraftCard (Mes Relevés' "à faire" row) into one component.
+ */
+export function SurveyProgressCard({ survey, onPress }: SurveyProgressCardProps) {
   const rate = clampRate(survey.completion_rate)
   const accent = getAccentColor(survey, rate)
   const completedFactors = Math.round(rate / 10)
@@ -48,7 +54,7 @@ export function DraftCard({ survey, onPress }: DraftCardProps) {
     <AppPressable
       style={styles.card}
       onPress={onPress}
-      accessibilityLabel={fr.components.draftCard.a11y({
+      accessibilityLabel={t.a11y({
         name: survey.site_name || fr.common.untitledSurvey,
         rate,
       })}
@@ -60,13 +66,14 @@ export function DraftCard({ survey, onPress }: DraftCardProps) {
         </Text>
 
         <View style={styles.progressRow}>
-          <Text style={styles.progressLabel}>{fr.components.draftCard.progressLabel}</Text>
-          <Text style={styles.progressCount}>
-            {fr.components.draftCard.factorCount({ count: completedFactors })}
-          </Text>
+          <Text style={styles.progressLabel}>{t.progressLabel}</Text>
+          <Text style={styles.progressCount}>{t.factorCount({ count: completedFactors })}</Text>
         </View>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: progressWidth, backgroundColor: accent }]} />
+          <View
+            testID="survey-progress-fill"
+            style={[styles.progressFill, { width: progressWidth, backgroundColor: accent }]}
+          />
         </View>
 
         <View style={styles.divider} />
@@ -76,7 +83,7 @@ export function DraftCard({ survey, onPress }: DraftCardProps) {
           {survey.sync_blocked ? (
             <View style={styles.syncWarning}>
               <Ionicons name="warning-outline" size={12} color={brandColors.terracotta} />
-              <Text style={styles.syncWarningText}>{fr.components.draftCard.syncBlocked}</Text>
+              <Text style={styles.syncWarningText}>{t.syncBlocked}</Text>
             </View>
           ) : survey.sync_state === "pending" ? (
             <View style={styles.syncPending}>
@@ -91,7 +98,7 @@ export function DraftCard({ survey, onPress }: DraftCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 220,
+    width: "100%",
     backgroundColor: brandColors.panel,
     borderRadius: 20,
     borderWidth: 1,
