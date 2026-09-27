@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
-import { Text, View } from "react-native"
+import { View } from "react-native"
+import { AppText as Text } from "./AppText"
 import { brandFieldState } from "../app/brand-tokens"
 import { FactorCounterInput } from "./FactorCounterInput"
 

@@ -7,10 +7,10 @@ import {
   Modal,
   Pressable,
   StatusBar,
-  Text,
   View,
   useWindowDimensions,
 } from "react-native"
+import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import * as Haptics from "expo-haptics"

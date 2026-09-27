@@ -1,5 +1,6 @@
 import { useMemo } from "react"
-import { ActionSheetIOS, Alert, Image, Platform, Pressable, Text, View } from "react-native"
+import { ActionSheetIOS, Alert, Image, Platform, Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandComponentTokens } from "../../app/brand-tokens"
 import { AuthUser } from "../../app/types"

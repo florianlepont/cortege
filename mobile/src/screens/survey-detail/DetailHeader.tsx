@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
-import { Alert, Pressable, Text, View } from "react-native"
+import { Alert, Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, ibpScoreTokens } from "../../app/brand-tokens"
 import { formatDateTime } from "../../app/formatters"

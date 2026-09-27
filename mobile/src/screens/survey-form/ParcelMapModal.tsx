@@ -1,4 +1,5 @@
-import { Button, Modal, Platform, Pressable, Text, View } from "react-native"
+import { Button, Modal, Platform, Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import MapView, { Marker } from "react-native-maps"
 import { useSafeAreaInsets } from "react-native-safe-area-context"

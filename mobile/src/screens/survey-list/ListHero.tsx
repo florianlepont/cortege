@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
-import { Animated, Image, StyleSheet, Text, View } from "react-native"
+import { Animated, Image, StyleSheet, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import type { LayoutChangeEvent } from "react-native"
 import {
   brandColors,

@@ -1,4 +1,5 @@
-import { Text, View } from "react-native"
+import { View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import {
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+import { AppText as Text } from "../ui/AppText"
 import { useHeaderHeight } from "@react-navigation/elements"
 import MapView, { Marker, Region } from "react-native-maps"
 import { useSafeAreaInsets } from "react-native-safe-area-context"

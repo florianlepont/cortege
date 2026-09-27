@@ -1,5 +1,6 @@
 import { memo, useCallback } from "react"
-import { Text, View } from "react-native"
+import { View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Marker, type LatLng } from "react-native-maps"
 import { fr } from "../../i18n"
 import { markerStyles } from "./styles"

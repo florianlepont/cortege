@@ -6,9 +6,9 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import type { NearbyParcel } from "../../hooks/useNearbyParcels"

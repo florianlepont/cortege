@@ -5,10 +5,10 @@ import {
   Image,
   ImageSourcePropType,
   Pressable,
-  Text,
   View,
   useWindowDimensions,
 } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { brandSpacing } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { authStyles, PANEL_OVERLAP } from "./styles"

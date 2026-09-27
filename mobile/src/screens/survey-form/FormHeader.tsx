@@ -1,4 +1,5 @@
-import { Animated, Text, View } from "react-native"
+import { Animated, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { brandSpacing } from "../../app/brand-tokens"
 import { AppScreen } from "../../app/types"
 import { StepButton, WIZARD_STEPS, WizardStep } from "./components"

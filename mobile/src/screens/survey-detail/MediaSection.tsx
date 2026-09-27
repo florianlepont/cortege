@@ -5,10 +5,10 @@ import {
   NativeSyntheticEvent,
   Pressable,
   ScrollView,
-  Text,
   View,
   useWindowDimensions,
 } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import MapView, { Marker, Region } from "react-native-maps"
 import { brandColors, brandSpacing } from "../../app/brand-tokens"

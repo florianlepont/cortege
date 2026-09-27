@@ -1,5 +1,6 @@
 import { memo, useCallback, useRef } from "react"
-import { ActivityIndicator, Pressable, Text, View } from "react-native"
+import { ActivityIndicator, Pressable, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import Swipeable from "react-native-gesture-handler/Swipeable"

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+import { AppText as Text } from "./AppText"
 import { bandTone, totalBand } from "@cortege/ibp-domain"
 import { brandTypography, ibpScoreTokens } from "../app/brand-tokens"
 import { fr } from "../i18n"

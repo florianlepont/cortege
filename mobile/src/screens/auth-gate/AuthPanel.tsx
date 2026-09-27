@@ -1,12 +1,5 @@
-import {
-  KeyboardAvoidingView,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native"
+import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import * as Haptics from "expo-haptics"
 import { LEGAL_PRIVACY_URL, LEGAL_TERMS_URL } from "../../app/auth0-config"
 import { brandSpacing } from "../../app/brand-tokens"

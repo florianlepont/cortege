@@ -22,79 +22,91 @@ export const brandColors = {
   errorSoft: "#F3D3C8",
 } as const
 
-// The official charter typography is documented here even though the custom
-// font files are not loaded in the app yet. Runtime styles still rely on
-// system fonts until the assets are added and wired through Expo.
+// Phase 4 (DS-03): Mazzard H has no licence yet and Avenir Next is Apple-proprietary (not
+// redistributable, absent on Android), so neither can be embedded via `expo-font`. Sora and Jost —
+// both OFL-licensed — are the stand-ins actually loaded (`mobile/assets/fonts/`, wired through the
+// `expo-font` config plugin in `app.json`), chosen and approved by the product owner over a sketched
+// alternative (2026-09-27, `.planning/phases/04-visual-foundations-motion/04-CONTEXT.md`). `preferred`
+// stays the charter's real target name; `standIn` is the embedded family actually rendered today —
+// swap it out the day Mazzard H ships without touching `brandTypography`'s role mapping.
 export const brandFontFamilies = {
   title: {
     preferred: "Mazzard H",
-    fallback: "Avenir Next / system-ui",
+    standIn: "Sora",
   },
   body: {
     preferred: "Mazzard H",
-    fallback: "Avenir Next / system-ui",
+    standIn: "Sora",
   },
   meta: {
     preferred: "Futura",
-    fallback: "Avenir Next / system-ui",
+    standIn: "Jost",
   },
   accent: {
     preferred: "HeadTurn Smooth",
     fallback: "Mazzard H Bold",
+    standIn: "Sora",
   },
 } as const
 
-// These typography tokens keep the intended hierarchy while relying on
-// the current platform font stack.
+// Typography tokens with the embedded stand-in fonts wired in. Each role names a concrete weighted
+// font file (e.g. `Sora_800ExtraBold`) rather than a family + numeric `fontWeight`: these are static
+// per-weight font files, and pairing a specific file with a numeric `fontWeight` risks Android
+// synthesizing a different weight on top of it. Sora ships no 900 cut, so the two roles that want a
+// 900 weight (`heroTitle`, `sectionTitle`) use its heaviest, `Sora_800ExtraBold`.
 export const brandTypography = {
   heroEyebrow: {
     fontSize: 12,
     lineHeight: 14,
-    fontWeight: "800" as const,
+    fontFamily: "Jost_600SemiBold",
     letterSpacing: 1.2,
   },
   heroTitle: {
     fontSize: 34,
     lineHeight: 38,
-    fontWeight: "900" as const,
+    fontFamily: "Sora_800ExtraBold",
   },
   heroBody: {
     fontSize: 15,
     lineHeight: 21,
-    fontWeight: "500" as const,
+    fontFamily: "Sora_500Medium",
   },
   sectionTitle: {
     fontSize: 28,
     lineHeight: 31,
-    fontWeight: "900" as const,
+    fontFamily: "Sora_800ExtraBold",
   },
   sectionBody: {
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: "500" as const,
+    fontFamily: "Sora_500Medium",
   },
   label: {
     fontSize: 13,
     lineHeight: 16,
-    fontWeight: "800" as const,
+    fontFamily: "Sora_800ExtraBold",
     letterSpacing: 0.2,
   },
   input: {
     fontSize: 16,
     lineHeight: 20,
-    fontWeight: "600" as const,
+    fontFamily: "Sora_600SemiBold",
   },
   button: {
     fontSize: 16,
     lineHeight: 20,
-    fontWeight: "800" as const,
+    fontFamily: "Sora_700Bold",
   },
   meta: {
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: "600" as const,
+    fontFamily: "Jost_600SemiBold",
   },
 } as const
+
+// The default `<Text>` face for anything that does not spread a `brandTypography` role above —
+// applied once via `Text.defaultProps` in `App.tsx` so no screen is left in the OS default face.
+export const brandDefaultFontFamily = "Jost_400Regular"
 
 export const brandRadius = {
   hero: 34,

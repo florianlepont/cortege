@@ -3,10 +3,10 @@ import {
   Pressable,
   StyleProp,
   StyleSheet,
-  Text,
   TextStyle,
   ViewStyle,
 } from "react-native"
+import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,

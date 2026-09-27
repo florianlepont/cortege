@@ -1,5 +1,6 @@
 import { ReactNode, useState } from "react"
-import { LayoutAnimation, Pressable, StyleSheet, Text, View } from "react-native"
+import { LayoutAnimation, Pressable, StyleSheet, View } from "react-native"
+import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { fr } from "../i18n"

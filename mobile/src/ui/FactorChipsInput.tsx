@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { StyleSheet, Text, View } from "react-native"
+import { StyleSheet, View } from "react-native"
+import { AppText as Text } from "./AppText"
 import { brandColors, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { AppChoiceChip } from "./AppChoiceChip"

@@ -1,5 +1,6 @@
 import { memo, useCallback } from "react"
-import { Pressable, ScrollView, Text } from "react-native"
+import { Pressable, ScrollView } from "react-native"
+import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
 import type { PublicMapItem } from "../../app/types"
