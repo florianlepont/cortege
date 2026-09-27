@@ -34,8 +34,8 @@ const fullData: SurveyExportData = {
   dateIso: "2026-09-26T10:00:00.000Z",
   scores: { ibp_total: 18, ibp_peuplement_gestion: 6, ibp_contexte: 12 },
   factorEntries: [
-    ["A", { selected_class: "S2", warnings: [] }],
-    ["B", { selected_class: NOT_FILLED_CLASS, warnings: [] }],
+    ["A", { selected_class: "S2", warnings: [], score_points: 2 }],
+    ["B", { selected_class: NOT_FILLED_CLASS, warnings: [], score_points: null }],
   ],
 }
 

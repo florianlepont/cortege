@@ -1,6 +1,5 @@
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
-import { ibpScoreTokens } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { FactorsSection } from "./FactorsSection"
 import { DisplayedFactorResult, NOT_FILLED_CLASS } from "./useLocalDraftSummary"
@@ -51,19 +50,13 @@ jest.mock("../../ui/AppSectionHeader", () => {
 })
 
 const f = fr.surveyDetail.factors
-
-type FlatStyle = { backgroundColor?: string; color?: string }
-
-const flattenStyle = (style: unknown): FlatStyle =>
-  Array.isArray(style)
-    ? (Object.assign({}, ...style.map(flattenStyle)) as FlatStyle)
-    : ((style ?? {}) as FlatStyle)
+const barsText = fr.components.ibpFactorBars
 
 const textOf = (node: ReactTestInstance): string => [node.props.children].flat().join("")
 
 const entries: Array<[string, DisplayedFactorResult]> = [
-  ["A", { selected_class: "S2", warnings: [] }],
-  ["B", { selected_class: NOT_FILLED_CLASS, warnings: ["x"] }],
+  ["A", { selected_class: "S2", warnings: [], score_points: 2 }],
+  ["B", { selected_class: NOT_FILLED_CLASS, warnings: ["x"], score_points: null }],
 ]
 
 const render = (
@@ -89,41 +82,14 @@ const render = (
 const texts = (tree: ReactTestRenderer): string[] =>
   tree.root.findAll((node) => (node.type as unknown) === "Text").map(textOf)
 
-const pill = (tree: ReactTestRenderer, testID: string): ReactTestInstance =>
-  tree.root.find((node) => (node.type as unknown) === "View" && node.props.testID === testID)
-
-describe("FactorsSection totals (D-03 amended, D-11)", () => {
-  test("the total reads out of 50 and the sub-scores out of 35 and 15", () => {
-    const all = texts(render())
-    expect(all).toContain("30 / 50")
-    expect(all.some((text) => text.includes("P/G 20 / 35"))).toBe(true)
-    expect(all.some((text) => text.includes("Contexte 10 / 15"))).toBe(true)
-  })
-
-  test("stand 20 and context 10 show 'moyenne' and 'forte' in the mid and high tone colours", () => {
+describe("FactorsSection (DET-01): the total lives once, in the header — this shows the bars", () => {
+  test("renders an IbpFactorBars row per factor, fed from factorEntries' score_points", () => {
     const tree = render()
-    const stand = pill(tree, "factor-subscore-stand")
-    const context = pill(tree, "factor-subscore-context")
-    expect(flattenStyle(stand.props.style).backgroundColor).toBe(
-      ibpScoreTokens.colors.mid.background,
-    )
-    expect(flattenStyle(context.props.style).backgroundColor).toBe(
-      ibpScoreTokens.colors.high.background,
-    )
-    const standText = stand.findByType("Text" as never)
-    expect(textOf(standText)).toContain("moyenne")
-    expect(flattenStyle(standText.props.style).color).toBe(ibpScoreTokens.colors.mid.text)
-    expect(textOf(context.findByType("Text" as never))).toContain("forte")
-  })
-
-  test("a low stand score uses the low tone", () => {
-    const tree = render({ scores: { ibp_peuplement_gestion: 6, ibp_contexte: 2, ibp_total: 8 } })
-    expect(flattenStyle(pill(tree, "factor-subscore-stand").props.style).backgroundColor).toBe(
-      ibpScoreTokens.colors.low.background,
-    )
-    expect(textOf(pill(tree, "factor-subscore-stand").findByType("Text" as never))).toContain(
-      "faible",
-    )
+    expect(tree.root.findByProps({ testID: "ibp-factor-bar-A" })).toBeTruthy()
+    expect(texts(tree)).toContain(barsText.points({ points: 2 }))
+    expect(texts(tree)).toContain(barsText.notFilled)
+    // No total or sub-score repeated here (DetailHeader's hero owns that display).
+    expect(texts(tree)).not.toContain("30 / 50")
   })
 
   test("the local draft hint and the loading hint", () => {

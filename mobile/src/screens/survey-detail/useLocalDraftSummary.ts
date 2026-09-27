@@ -20,6 +20,8 @@ export type DisplayedScores = {
 export type DisplayedFactorResult = {
   selected_class: string
   warnings: string[]
+  // DET-01: the factor's retained points (0-5), fed to IbpFactorBars; null when not filled.
+  score_points: number | null
 }
 export type LocalDraftMeta = {
   site_name: string
@@ -106,6 +108,7 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
             {
               selected_class: score?.selected_class ?? NOT_FILLED_CLASS,
               warnings: [],
+              score_points: score?.score ?? null,
             },
           ]
         })
