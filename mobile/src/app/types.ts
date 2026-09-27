@@ -75,6 +75,9 @@ export type FactorField = {
   onChange: (value: string) => void
   required?: boolean
   error?: string | null
+  /** FLOW-02: whether the field was left once or submission was attempted — gates error display. */
+  touched: boolean
+  onTouch: () => void
 }
 
 export type SurveyListFilters = {

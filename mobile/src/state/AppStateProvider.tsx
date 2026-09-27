@@ -326,6 +326,7 @@ function useAppController() {
     saveSurveyEdits: editing.handleSaveSurveyEdits,
     createDraft: editing.handleCreateDraft,
     captureGpsLocation: gpsCapture.handleCaptureGpsLocation,
+    markSubmitAttempted: surveyForm.markSubmitAttempted,
   })
 
   const {

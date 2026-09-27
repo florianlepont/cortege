@@ -154,6 +154,20 @@ export function useSurveyForm() {
   const [ibpCas, setIbpCas] = useState<IbpCas | null>(DEFAULT_SURVEY_FORM.ibpCas)
   const [ibpCas3Scale, setIbpCas3Scale] = useState<boolean>(DEFAULT_SURVEY_FORM.ibpCas3Scale)
 
+  // FLOW-02: a field's error only shows once it has been touched (left once) or submission was
+  // attempted. Keyed by "factor:label" (both stable across a factor's fixed field list).
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set())
+  const [submitAttempted, setSubmitAttempted] = useState(false)
+
+  const markFieldTouched = useCallback((factor: FactorKey, label: string): void => {
+    const key = `${factor}:${label}`
+    setTouchedFields((current) => (current.has(key) ? current : new Set(current).add(key)))
+  }, [])
+
+  const markSubmitAttempted = useCallback((): void => {
+    setSubmitAttempted(true)
+  }, [])
+
   const [factorA, setFactorA] = useState(DEFAULT_SURVEY_FORM.factorA)
   const [factorB, setFactorB] = useState(DEFAULT_SURVEY_FORM.factorB)
   const [factorC, setFactorC] = useState(DEFAULT_SURVEY_FORM.factorC)
@@ -311,6 +325,8 @@ export function useSurveyForm() {
 
     setGpsLocation(DEFAULT_SURVEY_FORM.gpsLocation)
     setSelectedParcelIds(parsedParcelIds)
+    setTouchedFields(new Set())
+    setSubmitAttempted(false)
   }
 
   // The live preview scores exactly what the form would save, under the survey's method context
@@ -343,6 +359,8 @@ export function useSurveyForm() {
     setIbpCas3Scale(DEFAULT_SURVEY_FORM.ibpCas3Scale)
     setGpsLocation(DEFAULT_SURVEY_FORM.gpsLocation)
     setSelectedParcelIds([])
+    setTouchedFields(new Set())
+    setSubmitAttempted(false)
     setFactorA(DEFAULT_SURVEY_FORM.factorA)
     setFactorB(DEFAULT_SURVEY_FORM.factorB)
     setFactorC(DEFAULT_SURVEY_FORM.factorC)
@@ -354,6 +372,16 @@ export function useSurveyForm() {
     setFactorI(DEFAULT_SURVEY_FORM.factorI)
     setFactorJ(DEFAULT_SURVEY_FORM.factorJ)
   }
+
+  // FLOW-02: touched state per field, keyed by "factor:label"; submission-attempted forces every
+  // field to show its error regardless of touch.
+  const touchState = useCallback(
+    (factor: FactorKey, label: string): { touched: boolean; onTouch: () => void } => ({
+      touched: submitAttempted || touchedFields.has(`${factor}:${label}`),
+      onTouch: () => markFieldTouched(factor, label),
+    }),
+    [markFieldTouched, submitAttempted, touchedFields],
+  )
 
   const factorSections = useMemo<Record<FactorKey, FactorField[]>>(
     () => ({
@@ -367,6 +395,7 @@ export function useSurveyForm() {
             min: 0,
             integer: true,
           }),
+          ...touchState("A", fields.native_genus_count),
         },
         {
           label: fields.native_cover_percent,
@@ -377,6 +406,7 @@ export function useSurveyForm() {
             min: 0,
             max: 100,
           }),
+          ...touchState("A", fields.native_cover_percent),
         },
       ],
       B: [
@@ -386,6 +416,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorB((prev) => ({ ...prev, strata_count: value })),
           required: true,
           error: numberError(factorB.strata_count, fields.strata_count, { min: 0, integer: true }),
+          ...touchState("B", fields.strata_count),
         },
       ],
       C: [
@@ -395,6 +426,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorC((prev) => ({ ...prev, bmg_count: value })),
           required: true,
           error: numberError(factorC.bmg_count, fields.bmg_count, { min: 0, integer: true }),
+          ...touchState("C", fields.bmg_count),
         },
         {
           label: fields.bmm_count,
@@ -402,6 +434,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorC((prev) => ({ ...prev, bmm_count: value })),
           required: true,
           error: numberError(factorC.bmm_count, fields.bmm_count, { min: 0, integer: true }),
+          ...touchState("C", fields.bmm_count),
         },
         {
           label: fields.surface_ha,
@@ -409,6 +442,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorC((prev) => ({ ...prev, surface_ha: value })),
           required: true,
           error: numberError(factorC.surface_ha, fields.surface_ha, { min: 0.000001 }),
+          ...touchState("C", fields.surface_ha),
         },
       ],
       D: [
@@ -418,6 +452,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorD((prev) => ({ ...prev, bmg_count: value })),
           required: true,
           error: numberError(factorD.bmg_count, fields.bmg_count, { min: 0, integer: true }),
+          ...touchState("D", fields.bmg_count),
         },
         {
           label: fields.bmm_count,
@@ -425,6 +460,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorD((prev) => ({ ...prev, bmm_count: value })),
           required: true,
           error: numberError(factorD.bmm_count, fields.bmm_count, { min: 0, integer: true }),
+          ...touchState("D", fields.bmm_count),
         },
         {
           label: fields.surface_ha,
@@ -432,6 +468,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorD((prev) => ({ ...prev, surface_ha: value })),
           required: true,
           error: numberError(factorD.surface_ha, fields.surface_ha, { min: 0.000001 }),
+          ...touchState("D", fields.surface_ha),
         },
       ],
       E: [
@@ -441,6 +478,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorE((prev) => ({ ...prev, tgb_count: value })),
           required: true,
           error: numberError(factorE.tgb_count, fields.tgb_count, { min: 0, integer: true }),
+          ...touchState("E", fields.tgb_count),
         },
         {
           label: fields.gb_count,
@@ -448,6 +486,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorE((prev) => ({ ...prev, gb_count: value })),
           required: true,
           error: numberError(factorE.gb_count, fields.gb_count, { min: 0, integer: true }),
+          ...touchState("E", fields.gb_count),
         },
         {
           label: fields.surface_ha,
@@ -455,6 +494,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorE((prev) => ({ ...prev, surface_ha: value })),
           required: true,
           error: numberError(factorE.surface_ha, fields.surface_ha, { min: 0.000001 }),
+          ...touchState("E", fields.surface_ha),
         },
       ],
       F: [
@@ -464,6 +504,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorF({ trees_per_ha: value }),
           required: true,
           error: numberError(factorF.trees_per_ha, fields.trees_per_ha, { min: 0 }),
+          ...touchState("F", fields.trees_per_ha),
         },
       ],
       G: [
@@ -476,6 +517,7 @@ export function useSurveyForm() {
             min: 0,
             max: 100,
           }),
+          ...touchState("G", fields.open_flowering_percent),
         },
       ],
       H: [
@@ -485,6 +527,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorH({ class_score: value }),
           required: true,
           error: oneOfError(factorH.class_score, fields.class_score, H_ALLOWED_SCORES),
+          ...touchState("H", fields.class_score),
         },
       ],
       I: [
@@ -494,6 +537,7 @@ export function useSurveyForm() {
           onChange: (value) => setFactorI({ type_count: value }),
           required: true,
           error: numberError(factorI.type_count, fields.type_count, { min: 0, integer: true }),
+          ...touchState("I", fields.type_count),
         },
       ],
       J: [
@@ -503,10 +547,23 @@ export function useSurveyForm() {
           onChange: (value) => setFactorJ({ type_count: value }),
           required: true,
           error: numberError(factorJ.type_count, fields.type_count, { min: 0, integer: true }),
+          ...touchState("J", fields.type_count),
         },
       ],
     }),
-    [factorA, factorB, factorC, factorD, factorE, factorF, factorG, factorH, factorI, factorJ],
+    [
+      factorA,
+      factorB,
+      factorC,
+      factorD,
+      factorE,
+      factorF,
+      factorG,
+      factorH,
+      factorI,
+      factorJ,
+      touchState,
+    ],
   )
 
   // What the storage writes (01.8-08 rule): the version only when the form has one (a legacy draft
@@ -562,5 +619,6 @@ export function useSurveyForm() {
     applyDraftToForm,
     resetSurveyForm,
     buildDraftInput,
+    markSubmitAttempted,
   }
 }

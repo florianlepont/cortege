@@ -21,7 +21,9 @@ export function computeFactorProgress(
       const fields = factorSections[factor]
       const total = fields.length
       const filled = fields.filter((field) => field.value.trim().length > 0).length
-      const invalid = fields.filter((field) => Boolean(field.error)).length
+      // FLOW-02: an untouched, never-opened factor is neutral, not a warning — only a field the
+      // user has actually left (or a submission attempt) counts toward the tile's invalid state.
+      const invalid = fields.filter((field) => field.touched && Boolean(field.error)).length
       acc[factor] = {
         complete: total > 0 && filled === total && invalid === 0,
         filled,
