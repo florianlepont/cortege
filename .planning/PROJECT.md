@@ -34,7 +34,7 @@ Shipped and field-tested (28 manual cases, `docs/user-tests/epic-a-access-and-se
 
 ### Built but not yet field-tested
 
-Working in the codebase; their field-test evidence is the deliverable of Phase 7:
+Working in the codebase; their field-test evidence is the deliverable of Phase 13:
 
 - ✓ Survey list and survey detail with parcel history — Epic B
 - ✓ Guided ten-factor entry, draft saving, photos, parcel linkage, submission, on-demand help, versioning — Epic C
@@ -147,7 +147,7 @@ any of them requires a superseding ADR, not a phase decision.
 </decisions>
 
 **Consequence for this milestone:** DEC-013 and DEC-014 leave hosting undecided at ADR level, which
-is why ratifying the current VPS is in scope (Phase 6). DEC-005 is why `BUG-A6-2` is an Auth0 tenant
+is why ratifying the current VPS is in scope (Phase 11). DEC-005 is why `BUG-A6-2` is an Auth0 tenant
 setting and why `EmailService` is dead code. DEC-006 and DEC-008 are what the field tests prove.
 
 ## Key Decisions
