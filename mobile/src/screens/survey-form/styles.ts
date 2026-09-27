@@ -83,25 +83,6 @@ export const formStyles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-  actionRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  secondaryButton: {
-    minWidth: 104,
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    borderColor: brandColors.inputBorder,
-    backgroundColor: brandColors.panel,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  secondaryButtonText: {
-    ...brandTypography.button,
-    color: brandColors.forest,
-  },
   primaryButton: {
     borderRadius: brandRadius.pill,
     backgroundColor: brandColors.forest,
@@ -109,16 +90,6 @@ export const formStyles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 18,
     paddingVertical: 13,
-    ...brandShadow.card,
-  },
-  primaryButtonWide: {
-    flex: 1,
-    borderRadius: brandRadius.pill,
-    backgroundColor: brandColors.forest,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 15,
     ...brandShadow.card,
   },
 })

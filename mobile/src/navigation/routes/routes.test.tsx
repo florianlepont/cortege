@@ -87,8 +87,10 @@ jest.mock("../../hooks/usePublicMapExplorer", () => ({
 }))
 
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
+import type { AutosaveStatus } from "../../hooks/useEditingDraft"
 import { fr, type StatusMessage } from "../../i18n"
 import type { SurveyFormMethod } from "../../screens/survey-form/MethodVersionPicker"
+import { AutosaveStatusProvider } from "../../state/autosave-status-context"
 import { AccessTokenProvider, SessionProvider } from "../../state/session-context"
 import type { SessionContextValue } from "../../state/session-context"
 import { StatusProvider } from "../../state/status-context"
@@ -138,6 +140,7 @@ type Fixture = {
   surveys: SurveysContextValue
   form: SurveyFormContextValue
   nearby: NearbyParcelsContextValue
+  autosaveStatus: AutosaveStatus
 }
 
 const survey = {
@@ -277,6 +280,7 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
       },
       load: jest.fn(async () => undefined),
     },
+    autosaveStatus: { state: "idle", savedAt: null },
   }
 }
 
@@ -289,7 +293,9 @@ function Providers({ fixture, children }: { fixture: Fixture; children: React.Re
             <SurveysProvider value={fixture.surveys}>
               <SurveyActionsProvider value={fixture.surveys.actions}>
                 <SurveyFormProvider value={fixture.form}>
-                  <NearbyParcelsProvider value={fixture.nearby}>{children}</NearbyParcelsProvider>
+                  <AutosaveStatusProvider value={fixture.autosaveStatus}>
+                    <NearbyParcelsProvider value={fixture.nearby}>{children}</NearbyParcelsProvider>
+                  </AutosaveStatusProvider>
                 </SurveyFormProvider>
               </SurveyActionsProvider>
             </SurveysProvider>

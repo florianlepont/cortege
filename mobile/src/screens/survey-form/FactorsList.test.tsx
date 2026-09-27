@@ -58,6 +58,8 @@ jest.mock("../../ui/AppSectionHeader", () => {
 
 jest.mock("../../ui/AppChoiceChip", () => ({ AppChoiceChip: () => null }))
 
+jest.mock("../../ui/FactorProgressRing", () => ({ FactorProgressRing: () => null }))
+
 type Node = renderer.ReactTestInstance
 
 const progressFor = (overrides: Partial<FactorProgress> = {}): FactorProgress => ({

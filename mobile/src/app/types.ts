@@ -69,6 +69,9 @@ export type SurveyBlockedFilter = "all" | "blocked" | "unblocked"
 export type SurveyAttachmentFilter = "all" | "with" | "without"
 export type SurveySort = "updated_desc" | "updated_asc" | "site_asc"
 export type AppScreen = "list" | "create" | "edit" | "public_map" | "profile"
+/** Per-factor completion, computed by screens/survey-form/FactorsList.tsx's computeFactorProgress. */
+export type FactorProgress = { complete: boolean; filled: number; total: number; invalid: number }
+
 export type FactorField = {
   label: string
   value: string
