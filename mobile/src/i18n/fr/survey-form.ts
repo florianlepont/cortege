@@ -115,8 +115,16 @@ export const surveyFormFr = {
   actions: {
     back: "Retour",
     continueToFactors: "Continuer vers les facteurs",
-    saveChanges: "Enregistrer les modifications",
-    saveDraft: "Enregistrer le brouillon",
+    // FLOW-07: renamed from "Enregistrer..." — autosave already handles saving; this button
+    // finishes the entry session, it doesn't perform the one save that would otherwise be lost.
+    finishEdits: "Terminer les modifications",
+    finishEntry: "Terminer la saisie",
+  },
+  autosave: {
+    saved: ({ time }: { time: string }) => `Enregistré · ${time}`,
+    saving: "Enregistrement…",
+    failed: "Échec de l'enregistrement",
+    idle: "Brouillon à jour",
   },
   a11y: {
     stepButton: ({ index, label, meta }: { index: string; label: string; meta: string }) =>

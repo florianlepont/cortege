@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { LatLng, Polygon } from "react-native-maps"
+import { brandMapTokens } from "../app/brand-tokens"
 import { PublicParcelStatusItem } from "../app/types"
 
 type RenderableParcelPolygon = {
@@ -128,13 +129,24 @@ export function ParcelOverlayPolygons({
             key={polygon.key}
             coordinates={polygon.outer}
             holes={polygon.holes.length > 0 ? polygon.holes : undefined}
-            strokeColor={selected ? "#1d5fa2" : studied ? "#2f7d56" : "#6f8d74"}
+            // FLOW-09: on-brand, sunlight-readable colors — selected outranks studied, studied
+            // outranks the free/neutral default (mobile/src/app/brand-tokens.ts brandMapTokens).
+            strokeColor={
+              selected
+                ? brandMapTokens.parcelSelected
+                : studied
+                  ? brandMapTokens.parcelStudied
+                  : brandMapTokens.parcelNeutral
+            }
+            strokeWidth={
+              selected ? brandMapTokens.strokeWidthSelected : brandMapTokens.strokeWidthDefault
+            }
             fillColor={
               selected
-                ? "rgba(29, 95, 162, 0.34)"
+                ? brandMapTokens.parcelSelectedFill
                 : studied
-                  ? "rgba(54, 129, 86, 0.18)"
-                  : "rgba(118, 132, 120, 0.12)"
+                  ? brandMapTokens.parcelStudiedFill
+                  : brandMapTokens.parcelNeutralFill
             }
             tappable={typeof onParcelPress === "function"}
             onPress={onParcelPress ? () => onParcelPress(polygon.parcelId) : undefined}

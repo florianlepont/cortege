@@ -9,9 +9,40 @@ import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
 import { AppStatusChip } from "../ui/AppStatusChip"
+import { FactorChipOption, FactorChipsInput } from "../ui/FactorChipsInput"
+import { FactorCounterInput } from "../ui/FactorCounterInput"
+import { FactorSegmentedOption, FactorSegmentedInput } from "../ui/FactorSegmentedInput"
+import { FactorSliderInput } from "../ui/FactorSliderInput"
 import { fr } from "../i18n"
 
 const t = fr.factorDetail
+
+// FLOW-01: which FactorInput variant each factor's fields render as, in the fixed order
+// useSurveyForm's factorSections builds them. Factor A stays plain numeric fields (Phase 5 rebuilds
+// it as a genus list); F's trees_per_ha has no natural discrete variant and stays numeric too.
+type FieldVariant =
+  | { kind: "numeric" }
+  | { kind: "counter" }
+  | { kind: "segmented"; options: readonly FactorSegmentedOption[] }
+  | { kind: "chips"; options: readonly FactorChipOption[]; countLabel: (count: number) => string }
+  | { kind: "slider" }
+
+const CHIP_COUNT_LABEL = (count: number): string => fr.factorInput.chips.selectedCount({ count })
+
+const FIELD_VARIANTS: Record<FactorKey, readonly FieldVariant[]> = {
+  A: [{ kind: "numeric" }, { kind: "numeric" }],
+  B: [{ kind: "chips", options: fr.factorInput.strataOptions, countLabel: CHIP_COUNT_LABEL }],
+  C: [{ kind: "counter" }, { kind: "counter" }, { kind: "numeric" }],
+  D: [{ kind: "counter" }, { kind: "counter" }, { kind: "numeric" }],
+  E: [{ kind: "counter" }, { kind: "counter" }, { kind: "numeric" }],
+  F: [{ kind: "numeric" }],
+  G: [{ kind: "slider" }],
+  H: [{ kind: "segmented", options: fr.factorInput.continuityOptions }],
+  I: [
+    { kind: "chips", options: fr.factorInput.aquaticHabitatOptions, countLabel: CHIP_COUNT_LABEL },
+  ],
+  J: [{ kind: "chips", options: fr.factorInput.rockyHabitatOptions, countLabel: CHIP_COUNT_LABEL }],
+}
 
 type FactorDetailScreenProps = {
   factor: FactorKey
@@ -75,24 +106,7 @@ export function FactorDetailScreen({
           subtitleStyle={detailStyles.panelBody}
         />
         <View style={detailStyles.fieldsList}>
-          {fields.map((field) => (
-            <AppField
-              key={`${factor}-${field.label}`}
-              label={
-                field.required
-                  ? t.requiredField({ label: humanizeFieldLabel(field.label) })
-                  : humanizeFieldLabel(field.label)
-              }
-              value={field.value}
-              onChangeText={field.onChange}
-              keyboardType="numeric"
-              placeholder={t.numericPlaceholder}
-              error={field.error}
-              containerStyle={detailStyles.fieldBlock}
-              labelStyle={detailStyles.fieldLabel}
-              inputStyle={detailStyles.input}
-            />
-          ))}
+          {fields.map((field, index) => renderFactorField(factor, field, index))}
         </View>
       </AppCard>
 
@@ -134,6 +148,85 @@ function humanizeFieldLabel(label: string): string {
   return Object.prototype.hasOwnProperty.call(labels, label)
     ? labels[label]
     : label.replace(/_/g, " ")
+}
+
+function renderFactorField(factor: FactorKey, field: FactorField, index: number) {
+  const variant = FIELD_VARIANTS[factor][index] ?? { kind: "numeric" as const }
+  const label = field.required
+    ? t.requiredField({ label: humanizeFieldLabel(field.label) })
+    : humanizeFieldLabel(field.label)
+  const key = `${factor}-${field.label}`
+
+  switch (variant.kind) {
+    case "counter":
+      return (
+        <FactorCounterInput
+          key={key}
+          label={label}
+          value={field.value}
+          onChange={field.onChange}
+          touched={field.touched}
+          onTouch={field.onTouch}
+          error={field.error}
+        />
+      )
+    case "segmented":
+      return (
+        <FactorSegmentedInput
+          key={key}
+          label={label}
+          value={field.value}
+          onChange={field.onChange}
+          options={variant.options}
+          touched={field.touched}
+          onTouch={field.onTouch}
+          error={field.error}
+        />
+      )
+    case "chips":
+      return (
+        <FactorChipsInput
+          key={key}
+          label={label}
+          value={field.value}
+          onChange={field.onChange}
+          options={variant.options}
+          touched={field.touched}
+          onTouch={field.onTouch}
+          error={field.error}
+          countLabel={variant.countLabel}
+        />
+      )
+    case "slider":
+      return (
+        <FactorSliderInput
+          key={key}
+          label={label}
+          value={field.value}
+          onChange={field.onChange}
+          touched={field.touched}
+          onTouch={field.onTouch}
+          error={field.error}
+        />
+      )
+    case "numeric":
+    default:
+      return (
+        <AppField
+          key={key}
+          label={label}
+          value={field.value}
+          onChangeText={field.onChange}
+          onBlur={field.onTouch}
+          keyboardType="numeric"
+          placeholder={t.numericPlaceholder}
+          error={field.touched ? field.error : null}
+          containerStyle={detailStyles.fieldBlock}
+          labelStyle={detailStyles.fieldLabel}
+          inputStyle={detailStyles.input}
+        />
+      )
+  }
 }
 
 const detailStyles = StyleSheet.create({

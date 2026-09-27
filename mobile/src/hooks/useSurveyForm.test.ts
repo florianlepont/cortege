@@ -796,6 +796,15 @@ describe("useSurveyForm", () => {
   // ─── numberError / oneOfError deeper branches ─────────────────────────────
 
   describe("numberError branches via factorSections (non-empty values)", () => {
+    // numberError now reuses the shared parseFiniteNumberInput (BUG-04 fix: both the payload
+    // builder and the displayed-error path agree on the same comma-accepting parse), so this
+    // block needs the real implementation instead of the default `null` stub.
+    beforeEach(() => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+    })
+
     test("non-finite value produces 'must be a number' error", async () => {
       const mockConstants = jest.requireMock("../app/constants")
       const saved = mockConstants.DEFAULT_SURVEY_FORM
@@ -856,6 +865,19 @@ describe("useSurveyForm", () => {
       expect(hook.factorSections.A[0].error).toBeNull()
     })
 
+    // FLOW-03/BUG-04: a French decimal comma must not surface a "must be a number" error.
+    test("a decimal comma is accepted (factorG)", async () => {
+      const mockConstants = jest.requireMock("../app/constants")
+      const saved = mockConstants.DEFAULT_SURVEY_FORM
+      mockConstants.DEFAULT_SURVEY_FORM = {
+        ...saved,
+        factorG: { open_flowering_percent: "12,5" },
+      }
+      const hook = await buildHook()
+      mockConstants.DEFAULT_SURVEY_FORM = saved
+      expect(hook.factorSections.G[0].error).toBeNull()
+    })
+
     test("oneOfError: valid value in [0,2,5] produces null error (factorH)", async () => {
       const mockConstants = jest.requireMock("../app/constants")
       const saved = mockConstants.DEFAULT_SURVEY_FORM
@@ -887,6 +909,45 @@ describe("useSurveyForm", () => {
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
       expect(hook.formErrors.siteName).toBeNull()
+    })
+  })
+
+  // ─── FLOW-02: a field's error shows only once touched or submission attempted ──
+  describe("touched-state tracking (FLOW-02)", () => {
+    test("a field starts untouched", async () => {
+      const { result } = await renderHook(() => useSurveyForm())
+      expect(result.current.factorSections.A[0].touched).toBe(false)
+    })
+
+    test("calling a field's onTouch marks only that field touched", async () => {
+      const { result } = await renderHook(() => useSurveyForm())
+      await act(async () => {
+        result.current.factorSections.A[0].onTouch()
+      })
+      expect(result.current.factorSections.A[0].touched).toBe(true)
+      expect(result.current.factorSections.A[1].touched).toBe(false)
+      expect(result.current.factorSections.B[0].touched).toBe(false)
+    })
+
+    test("markSubmitAttempted marks every field touched", async () => {
+      const { result } = await renderHook(() => useSurveyForm())
+      await act(async () => {
+        result.current.markSubmitAttempted()
+      })
+      expect(result.current.factorSections.A[0].touched).toBe(true)
+      expect(result.current.factorSections.J[0].touched).toBe(true)
+    })
+
+    test("resetSurveyForm clears touched state", async () => {
+      const { result } = await renderHook(() => useSurveyForm())
+      await act(async () => {
+        result.current.factorSections.A[0].onTouch()
+      })
+      expect(result.current.factorSections.A[0].touched).toBe(true)
+      await act(async () => {
+        result.current.resetSurveyForm()
+      })
+      expect(result.current.factorSections.A[0].touched).toBe(false)
     })
   })
 })

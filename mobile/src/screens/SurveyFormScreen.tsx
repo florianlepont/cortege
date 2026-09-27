@@ -11,9 +11,11 @@ import {
   RegionVersion,
   VegetationStage,
 } from "../app/types"
+import type { AutosaveStatus } from "../hooks/useEditingDraft"
+import { IbpTotalGauge } from "../ui/IbpTotalGauge"
 import { FACTOR_ORDER, WizardStep } from "./survey-form/components"
 import { FactorsList, computeFactorProgress } from "./survey-form/FactorsList"
-import { FormActions } from "./survey-form/FormActions"
+import { FixedActionBar } from "./survey-form/FixedActionBar"
 import { FormHeader, StepRail, buildHeroCopy, buildStepMeta } from "./survey-form/FormHeader"
 import { ParcelMapModal } from "./survey-form/ParcelMapModal"
 import { ParcelsSection } from "./survey-form/ParcelsSection"
@@ -25,6 +27,10 @@ import { useParcelMap } from "./survey-form/useParcelMap"
 import { useWizardScroll } from "./survey-form/useWizardScroll"
 import { fr } from "../i18n"
 export { toAddressLabel } from "./survey-screen-helpers"
+
+// FLOW-05: the scroll content needs enough bottom padding to clear the fixed action bar (autosave
+// text + back/primary row + its own safe-area padding) now that the CTA no longer scrolls with it.
+const ACTION_BAR_CLEARANCE = 140
 type SurveyFormScreenProps = {
   apiUrl: string
   screen: AppScreen
@@ -52,6 +58,10 @@ type SurveyFormScreenProps = {
   onOpenParcelFullscreen: () => void
   onSaveSurveyEdits: () => Promise<void>
   onCreateDraft: () => Promise<void>
+  /** FLOW-07: the visible autosave indicator's state. */
+  autosaveStatus: AutosaveStatus
+  /** FLOW-02: forces every factor's error to show, called before the final CTA persists. */
+  onSubmitAttempt: () => void
 }
 
 export function SurveyFormScreen({
@@ -76,6 +86,8 @@ export function SurveyFormScreen({
   onOpenParcelFullscreen,
   onSaveSurveyEdits,
   onCreateDraft,
+  autosaveStatus,
+  onSubmitAttempt,
 }: SurveyFormScreenProps) {
   const [activeStep, setActiveStep] = useState<WizardStep>("identity")
   const map = useParcelMap({
@@ -122,7 +134,7 @@ export function SurveyFormScreen({
   const parcelsReady = selectedParcelIds.length > 0
   const factorsReady = completedFactorCount === FACTOR_ORDER.length
   const persistLabel =
-    screen === "edit" ? fr.surveyForm.actions.saveChanges : fr.surveyForm.actions.saveDraft
+    screen === "edit" ? fr.surveyForm.actions.finishEdits : fr.surveyForm.actions.finishEntry
 
   const selectedParcelCount = selectedParcelIds.length
   const ibpTotal = scoreTotals.ibp_total
@@ -157,6 +169,7 @@ export function SurveyFormScreen({
   }, [screen, editingSurveyId])
 
   const handlePersistSurvey = (): void => {
+    onSubmitAttempt()
     if (screen === "edit") {
       void onSaveSurveyEdits()
       return
@@ -185,7 +198,11 @@ export function SurveyFormScreen({
         style={formStyles.pageScroll}
         contentContainerStyle={[
           formStyles.pageContent,
-          { paddingBottom: wizard.scrollContentBottomPadding },
+          {
+            paddingBottom:
+              wizard.scrollContentBottomPadding +
+              (activeStep === "identity" ? 0 : ACTION_BAR_CLEARANCE),
+          },
         ]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -206,6 +223,10 @@ export function SurveyFormScreen({
           animation={wizard.animation}
           onOpenStep={handleOpenStep}
         />
+
+        {/* FLOW-06: the segmented total gauge is visible from the first wizard step, not only
+         * once the factors step is reached. */}
+        <IbpTotalGauge order={FACTOR_ORDER} factorProgress={factorProgress} total={ibpTotal} />
 
         {activeStep === "identity" ? (
           <SiteSection
@@ -236,11 +257,6 @@ export function SurveyFormScreen({
               onRegionChange={onRegionChange}
               setVegetationStage={setVegetationStage}
             />
-            <FormActions
-              primaryLabel={fr.surveyForm.actions.continueToFactors}
-              onBack={() => setActiveStep("identity")}
-              onPrimary={() => setActiveStep("factors")}
-            />
             <ParcelMapModal
               map={map}
               siteName={siteName}
@@ -251,21 +267,31 @@ export function SurveyFormScreen({
         ) : null}
 
         {activeStep === "factors" ? (
-          <>
-            <FactorsList
-              factorProgress={factorProgress}
-              factorRetainedScores={factorRetainedScores}
-              scoreTotals={scoreTotals}
-              onOpenFactor={onOpenFactor}
-            />
-            <FormActions
-              primaryLabel={persistLabel}
-              onBack={() => setActiveStep("parcels")}
-              onPrimary={handlePersistSurvey}
-            />
-          </>
+          <FactorsList
+            factorProgress={factorProgress}
+            factorRetainedScores={factorRetainedScores}
+            scoreTotals={scoreTotals}
+            onOpenFactor={onOpenFactor}
+          />
         ) : null}
       </Animated.ScrollView>
+
+      {/* FLOW-05: a fixed bottom action bar instead of a CTA at the end of a long scroll. */}
+      {activeStep === "parcels" ? (
+        <FixedActionBar
+          primaryLabel={fr.surveyForm.actions.continueToFactors}
+          onBack={() => setActiveStep("identity")}
+          onPrimary={() => setActiveStep("factors")}
+        />
+      ) : null}
+      {activeStep === "factors" ? (
+        <FixedActionBar
+          primaryLabel={persistLabel}
+          onBack={() => setActiveStep("parcels")}
+          onPrimary={handlePersistSurvey}
+          autosaveStatus={autosaveStatus}
+        />
+      ) : null}
     </View>
   )
 }

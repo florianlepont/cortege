@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { createLocalDraft, getLocalSurveyDraft, updateLocalDraft } from "../storage/surveys"
 import { DEFAULT_SURVEY_FORM } from "../app/constants"
@@ -19,6 +19,14 @@ type UseEditingDraftParams = {
 }
 
 const text = fr.status.editing
+
+/** FLOW-07: the visible autosave indicator's state. */
+export type AutosaveStatus = {
+  state: "idle" | "saving" | "saved" | "error"
+  savedAt: string | null
+}
+
+const IDLE_AUTOSAVE_STATUS: AutosaveStatus = { state: "idle", savedAt: null }
 
 const surveyName = (survey: { site_name?: string | null } | null | undefined): string =>
   survey?.site_name?.trim() || fr.common.untitledSurvey
@@ -72,6 +80,7 @@ export function useEditingDraft({
   onStatusChange,
   onCloseSurveyDetail,
 }: UseEditingDraftParams) {
+  const [autosaveStatus, setAutosaveStatus] = useState<AutosaveStatus>(IDLE_AUTOSAVE_STATUS)
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autosaveInFlightRef = useRef(false)
   const autosaveSignatureRef = useRef("")
@@ -97,6 +106,7 @@ export function useEditingDraft({
       return
     }
     autosaveInFlightRef.current = true
+    setAutosaveStatus((current) => ({ ...current, state: "saving" }))
 
     try {
       await updateLocalDraft({
@@ -106,9 +116,11 @@ export function useEditingDraft({
       })
       await refreshLocalSurveys()
       autosaveSignatureRef.current = request.signature
+      setAutosaveStatus({ state: "saved", savedAt: new Date().toISOString() })
     } catch (error) {
       logStatusDetail("editing.autosave", error)
       onStatusChange(text.autosaveFailed())
+      setAutosaveStatus((current) => ({ ...current, state: "error" }))
     } finally {
       autosaveInFlightRef.current = false
       const pending = pendingAutosaveRef.current
@@ -167,6 +179,7 @@ export function useEditingDraft({
     }
     pendingAutosaveRef.current = null
     autosaveSignatureRef.current = ""
+    setAutosaveStatus(IDLE_AUTOSAVE_STATUS)
     setEditingSurveyId(null)
     setFormMode("create")
     onCloseSurveyDetail()
@@ -261,6 +274,7 @@ export function useEditingDraft({
       }
       autosaveSignatureRef.current = storedDraftSignature(draft)
       surveyForm.applyDraftToForm(draft)
+      setAutosaveStatus(IDLE_AUTOSAVE_STATUS)
       setEditingSurveyId(surveyId)
       setFormMode("edit")
       setSelectedSurveyId(surveyId)
@@ -308,5 +322,6 @@ export function useEditingDraft({
     handleCreateDraft,
     handleStartEditSurvey,
     handleSaveSurveyEdits,
+    autosaveStatus,
   }
 }

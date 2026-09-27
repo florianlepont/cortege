@@ -258,8 +258,7 @@ describe("useEditingDraft autosave reschedule", () => {
       await jest.advanceTimersByTimeAsync(900)
     })
     expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
-
-    void result
+    expect(result.current.autosaveStatus.state).toBe("error")
 
     mockUpdateLocalDraft.mockResolvedValueOnce({})
     await rerender(buildProps("B"))
@@ -273,5 +272,70 @@ describe("useEditingDraft autosave reschedule", () => {
       expect.objectContaining({ site_name: "B" }),
     )
     expect(initialProps.onStatusChange).toHaveBeenCalledWith(fr.status.editing.autosaveFailed())
+    expect(result.current.autosaveStatus.state).toBe("saved")
+  })
+})
+
+// FLOW-07: the visible autosave indicator's state, exposed for a "Enregistré · 14:32" UI.
+describe("useEditingDraft autosaveStatus (FLOW-07)", () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    mockCreateLocalDraft.mockReset()
+    mockGetLocalSurveyDraft.mockReset()
+    mockUpdateLocalDraft.mockReset()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  test("starts idle, then saving, then saved with a timestamp once autosave completes", async () => {
+    const deferred = createDeferred<Record<string, unknown>>()
+    mockUpdateLocalDraft.mockReturnValueOnce(deferred.promise)
+
+    const initialProps = buildProps("A")
+    const { result } = await renderHook(
+      (props: Parameters<typeof useEditingDraft>[0]) => useEditingDraft(props),
+      { initialProps },
+    )
+
+    expect(result.current.autosaveStatus).toEqual({ state: "idle", savedAt: null })
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(900)
+    })
+    expect(result.current.autosaveStatus.state).toBe("saving")
+    expect(result.current.autosaveStatus.savedAt).toBeNull()
+
+    await act(async () => {
+      deferred.resolve({})
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(result.current.autosaveStatus.state).toBe("saved")
+    expect(typeof result.current.autosaveStatus.savedAt).toBe("string")
+  })
+
+  test("handleOpenCreateSurvey resets autosaveStatus to idle", async () => {
+    mockUpdateLocalDraft.mockResolvedValue({})
+    mockCreateLocalDraft.mockResolvedValue({ id: "new-1" })
+
+    const initialProps = buildProps("A")
+    const { result } = await renderHook(
+      (props: Parameters<typeof useEditingDraft>[0]) => useEditingDraft(props),
+      { initialProps },
+    )
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(900)
+    })
+    expect(result.current.autosaveStatus.state).toBe("saved")
+
+    await act(async () => {
+      result.current.handleOpenCreateSurvey()
+    })
+    expect(result.current.autosaveStatus).toEqual({ state: "idle", savedAt: null })
   })
 })
