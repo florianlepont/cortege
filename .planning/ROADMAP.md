@@ -56,7 +56,7 @@ list is never ambiguous.
 - [ ] **Phase 8: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map
 - [ ] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map
 - [ ] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys
-- [ ] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone
+- [x] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone (completed 2026-09-27)
 - [ ] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F
 - [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
 
