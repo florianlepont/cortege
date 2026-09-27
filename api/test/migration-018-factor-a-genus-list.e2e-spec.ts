@@ -4,13 +4,14 @@ import { readdirSync, readFileSync } from "fs"
 import { join } from "path"
 import { Client, ClientConfig } from "pg"
 
-// Migration 017 (phase 5, ADR-002 D-15, ADR-003 CH-12): the Factor A genus list lives in the
+// Migration 018 (phase 5, ADR-002 D-15, ADR-003 CH-12): the Factor A genus list lives in the
 // existing `factors` JSONB column, so this migration adds no columns — only a cheap structural
 // CHECK (when `factors -> 'A' -> 'genera'` is present, it must be a JSON array). Surveys already
 // recorded as a bare `native_genus_count`, or a direct numeric A, are untouched: no backfill, no
 // reinterpretation, their score stays exactly as stored. globalSetup migrates an empty schema, so
-// this spec builds the pre-017 shape in a scratch schema, seeds rows shaped like already-recorded
-// surveys, then lets the real runner (scripts/migrate.js) apply 017 only.
+// this spec builds the pre-018 shape in a scratch schema, seeds rows shaped like already-recorded
+// surveys, then lets the real runner (scripts/migrate.js) apply 018 only. Numbered 018, not 017
+// (Phase 2's `017_association_only_visibility.sql` claimed that number first).
 type MigrateModule = { runMigrations: (config: ClientConfig) => Promise<void> }
 type E2eEnvModule = {
   resolveDbConfig: (env: NodeJS.ProcessEnv) => ClientConfig & { database: string }
@@ -19,9 +20,9 @@ type E2eEnvModule = {
 const { runMigrations } = jest.requireActual<MigrateModule>("../scripts/migrate")
 const { resolveDbConfig } = jest.requireActual<E2eEnvModule>("./e2e-env")
 
-const SCRATCH_SCHEMA = "mig017_scratch"
+const SCRATCH_SCHEMA = "mig018_scratch"
 const MIGRATIONS_DIR = join(__dirname, "..", "migrations")
-const MIGRATION_017 = "017_factor_a_genus_list.sql"
+const MIGRATION_018 = "018_factor_a_genus_list.sql"
 
 const readMigration = (file: string): string => readFileSync(join(MIGRATIONS_DIR, file), "utf8")
 
@@ -30,7 +31,7 @@ const scratchRunnerConfig = (): ClientConfig => ({
   options: `-c search_path=${SCRATCH_SCHEMA}`,
 })
 
-describe("migration 017: Factor A genus list shape guard (e2e)", () => {
+describe("migration 018: Factor A genus list shape guard (e2e)", () => {
   let client: Client
   const userId = randomUUID()
   const legacyCountSurveyId = randomUUID()
@@ -69,10 +70,10 @@ describe("migration 017: Factor A genus list shape guard (e2e)", () => {
     `)
 
     const preMigrations = readdirSync(MIGRATIONS_DIR)
-      .filter((file) => file.endsWith(".sql") && file < MIGRATION_017)
+      .filter((file) => file.endsWith(".sql") && file < MIGRATION_018)
       .sort()
     expect(preMigrations[0]).toBe("001_init.sql")
-    expect(preMigrations[preMigrations.length - 1]).toBe("016_ibp_method_version.sql")
+    expect(preMigrations[preMigrations.length - 1]).toBe("017_association_only_visibility.sql")
     for (const file of preMigrations) {
       await client.query("BEGIN")
       await client.query(readMigration(file))
@@ -82,7 +83,7 @@ describe("migration 017: Factor A genus list shape guard (e2e)", () => {
 
     await client.query(`INSERT INTO users (id, email) VALUES ($1, $2)`, [
       userId,
-      `mig017-${userId}@example.test`,
+      `mig018-${userId}@example.test`,
     ])
     // Shaped like surveys already recorded before this phase: a bare count and a direct score.
     await insertSurvey(legacyCountSurveyId, { A: { native_genus_count: 3 } })
@@ -91,7 +92,7 @@ describe("migration 017: Factor A genus list shape guard (e2e)", () => {
 
     const started = Date.now()
     await runMigrations(scratchRunnerConfig())
-    console.warn(`Migration 017 on seeded scratch schema took ${Date.now() - started} ms`)
+    console.warn(`Migration 018 on seeded scratch schema took ${Date.now() - started} ms`)
   })
 
   afterAll(async () => {
@@ -103,11 +104,11 @@ describe("migration 017: Factor A genus list shape guard (e2e)", () => {
     }
   })
 
-  it("was applied by the runner, which recorded it after 016", async () => {
+  it("was applied by the runner, which recorded it after 017", async () => {
     const applied = await appliedMigrations()
-    expect(applied[applied.length - 1]).toBe(MIGRATION_017)
-    expect(applied).toContain("016_ibp_method_version.sql")
-    expect(logSpy).toHaveBeenCalledWith(`Applied migration: ${MIGRATION_017}`)
+    expect(applied[applied.length - 1]).toBe(MIGRATION_018)
+    expect(applied).toContain("017_association_only_visibility.sql")
+    expect(logSpy).toHaveBeenCalledWith(`Applied migration: ${MIGRATION_018}`)
   })
 
   it("adds no column: the genus list lives in the existing factors JSONB", async () => {
@@ -172,13 +173,13 @@ describe("migration 017: Factor A genus list shape guard (e2e)", () => {
     logSpy.mockClear()
     await expect(runMigrations(scratchRunnerConfig())).resolves.toBeUndefined()
     expect(await appliedMigrations()).toEqual(before)
-    expect(logSpy).not.toHaveBeenCalledWith(`Applied migration: ${MIGRATION_017}`)
+    expect(logSpy).not.toHaveBeenCalledWith(`Applied migration: ${MIGRATION_018}`)
     expect(logSpy).toHaveBeenCalledWith("Migrations are up to date.")
   })
 
   it("can be executed a second time inside BEGIN/COMMIT", async () => {
     await client.query("BEGIN")
-    await client.query(readMigration(MIGRATION_017))
+    await client.query(readMigration(MIGRATION_018))
     await client.query("COMMIT")
     const result = await client.query<{ count: string }>(
       `SELECT count(*)::text AS count

@@ -172,7 +172,8 @@ const styles = StyleSheet.create({
   labelSecondary: {
     color: brandComponentTokens.button.secondaryBorder,
   },
+  // DS-02 (UX audit, Phase 2): terracotta on errorSoft measured ~2.97:1; textPrimary clears AA.
   labelDangerSoft: {
-    color: brandColors.terracotta,
+    color: brandColors.textPrimary,
   },
 })

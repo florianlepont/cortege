@@ -39,8 +39,17 @@ The app is a public-interest project led by the association Etats-Sauvages and i
 - Association visibility surfaces in-app (mission, impact, actions).
 - Donation call-to-action in key user journey moments.
 
-## 8) V2 Backlog (Out of MVP Scope)
+## 8) Backlog (Out of MVP Scope)
+
+Corrected 2026-09-27 (`.planning/REQUIREMENTS.md`): the community/moderation workflow and team
+challenges are the next milestone after this one (Epic E and Epic F are both labelled **V1** in
+their own epic documents), not V2 — they were previously filed under "V2 Backlog" here by mistake.
+
+### Deferred to the next milestone (V1)
 - Community moderation workflow with approval/rejection for flagged surveys.
+- Team challenges (city/association/organization competitions).
+
+### V2 Backlog
 - Push notifications (new badges, ranking updates, moderation feedback).
 - PDF/Excel export.
 - KPI dashboards (average time, error rate, sync success rate).
@@ -48,7 +57,6 @@ The app is a public-interest project led by the association Etats-Sauvages and i
 - Multi-language support.
 - In-app documentation section (learning hub) to explore IBP methodology outside survey flow.
 - Advanced donation features (recurring donation, campaign-specific donation, donation impact dashboard).
-- Team challenges (city/association/organization competitions).
 - Seasonal events and limited-time missions.
 - Social sharing of milestones (optional).
 

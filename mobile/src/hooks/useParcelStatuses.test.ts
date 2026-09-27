@@ -33,6 +33,7 @@ type Props = Parameters<typeof useParcelStatuses>[0]
 function buildProps(overrides: Partial<Props> = {}): Props {
   return {
     apiUrl: "http://localhost:3000",
+    accessToken: "access-token",
     region: MOCK_REGION as never,
     ...overrides,
   }
@@ -110,6 +111,12 @@ describe("useParcelStatuses", () => {
       expect(mockFetchPublicParcelStatuses).not.toHaveBeenCalled()
     })
 
+    test("effect does not schedule a fetch without an access token (Phase 2)", async () => {
+      await renderStatuses({ accessToken: null })
+      await advance(1000)
+      expect(mockFetchPublicParcelStatuses).not.toHaveBeenCalled()
+    })
+
     test("effect clears items and loading when the hook becomes disabled", async () => {
       mockFetchPublicParcelStatuses.mockResolvedValue({ items: [{ id: "p1" }] })
       const { result, rerender } = await renderStatuses()
@@ -139,6 +146,7 @@ describe("useParcelStatuses", () => {
 
       expect(mockFetchPublicParcelStatuses).toHaveBeenCalledWith(
         "http://localhost:3000",
+        "access-token",
         expect.objectContaining({ bbox: "0,0,1,1", zoom: 14 }),
       )
     })
@@ -158,6 +166,7 @@ describe("useParcelStatuses", () => {
       await advance(400)
 
       expect(mockFetchPublicParcelStatuses).toHaveBeenCalledWith(
+        expect.anything(),
         expect.anything(),
         expect.objectContaining({ year: 2023 }),
       )

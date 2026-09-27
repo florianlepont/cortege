@@ -1,14 +1,12 @@
-// SQL of the two public map routes (D-13), shared by PublicMapService, the EXPLAIN script
+// SQL of the two "public" map routes (D-13), shared by PublicMapService, the EXPLAIN script
 // (scripts/explain-public-routes.js, through the compiled dist copy) and the EXPLAIN spec.
 //
-// Both routes are unauthenticated, so every query keeps the public predicate
-// status = 'submitted' AND visibility = 'public' AND deleted_at IS NULL (T-01.7-42).
-
-/**
- * The predicate of idx_surveys_public_submitted (migration 015), spelled the way the index
- * spells it: the planner only matches a partial index when the query implies its predicate.
- */
-const PUBLIC_SURVEY_PREDICATE = `s.status = 'submitted' AND s.visibility = 'public' AND s.deleted_at IS NULL`
+// Phase 2 (association-only sharing): both routes require an authenticated member (AuthGuard on
+// PublicController) and show every submitted survey to every member, not just ones marked
+// visibility = 'public'. The predicate below dropped the visibility check accordingly; the
+// `visibility` column itself stays (REQ-X-visibility is restored with a future privacy-choice
+// milestone), it's just no longer read here.
+const PUBLIC_SURVEY_PREDICATE = `s.status = 'submitted' AND s.deleted_at IS NULL`
 
 /** Rows per /public/map-items answer, unchanged since before 01.7. */
 export const PUBLIC_MAP_ITEMS_LIMIT = 500

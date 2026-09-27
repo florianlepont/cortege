@@ -68,7 +68,7 @@ Acceptance criteria
 
 ### US-A4 - Extended login 
 
-**Release:** MVP
+**Release:** V1 — deferred out of MVP scope 2026-09-27 (found unbuilt in the codebase; `docs/user-tests/epic-a-access-and-security.md` already excludes it from the MVP test plan on this basis; see `.planning/REQUIREMENTS.md`, "Deferred — Next Milestone")
 
 A contributor can sign in using third-party providers (Apple, Google, etc.) in addition to username/password, with clear UX for first-time account linking, errors, and session persistence.
 

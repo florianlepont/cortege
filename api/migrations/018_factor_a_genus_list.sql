@@ -1,4 +1,4 @@
--- Migration 017: Factor A genus list (phase 5, ADR-002 D-15, ADR-003 CH-12).
+-- Migration 018: Factor A genus list (phase 5, ADR-002 D-15, ADR-003 CH-12).
 -- Factor A moves from a bare `native_genus_count` number to a list of observed native genera,
 -- drawn from the closed CNPF regional list (packages/ibp-domain genus.ts), with the count
 -- derived from it. The list lives inside the existing `factors` JSONB column

@@ -24,6 +24,7 @@ const t = fr.parcelSelection
 
 type SurveyParcelSelectionScreenProps = {
   apiUrl: string
+  accessToken: string | null
   gpsLocation: {
     lat: string
     lng: string
@@ -38,6 +39,7 @@ type SurveyParcelSelectionScreenProps = {
 
 export function SurveyParcelSelectionScreen({
   apiUrl,
+  accessToken,
   gpsLocation,
   selectedParcelIds,
   onToggleParcelSelection,
@@ -68,6 +70,7 @@ export function SurveyParcelSelectionScreen({
   const mapZoom = useMemo(() => computeRegionZoom(mapRegion), [mapRegion])
   const { items: parcelStatuses, loading: parcelsLoading } = useParcelStatuses({
     apiUrl,
+    accessToken,
     region: mapRegion,
     enabled: true,
     year: new Date().getFullYear(),

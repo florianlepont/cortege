@@ -38,6 +38,7 @@ const DEFAULT_FRANCE_REGION: Region = {
 
 type MediaSectionProps = {
   apiUrl: string
+  accessToken: string | null
   survey: LocalSurvey
   siteName: string
   attachments: LocalAttachment[]
@@ -56,6 +57,7 @@ type MediaSectionProps = {
 // carousel, the map/photo switch thumb and the add/delete photo buttons.
 export function MediaSection({
   apiUrl,
+  accessToken,
   survey,
   siteName,
   attachments,
@@ -86,6 +88,7 @@ export function MediaSection({
   const mapPreviewZoom = useMemo(() => computeRegionZoom(mapPreviewRegion), [mapPreviewRegion])
   const { items: parcelStatuses } = useParcelStatuses({
     apiUrl,
+    accessToken,
     region: mapPreviewRegion,
     enabled: hasMapPreview,
     year: new Date().getFullYear(),

@@ -8,7 +8,7 @@ provides:
   - "Factor A genus list (`factors.A.genera`) in packages/ibp-domain, scored under both method versions"
   - "genus.ts: the closed CNPF regional list (34 classes), cas-gated allowed sets"
   - "FactorAGenusInput / FactorALegacyCountInput sync contract types"
-  - "Migration 017 (chk_surveys_factor_a_genera_is_array)"
+  - "Migration 018 (chk_surveys_factor_a_genera_is_array)"
   - "E2E proof of the /v1/sync round-trip and the migration on existing data"
   - "data-contract-v1.md / api-contract-v1.md / ibp-validation-matrix-v2.md updated; ibp-form-spec.md §4/§10.1 corrected"
 affects: [06-genus-recognition-for-factor-a]
@@ -22,8 +22,8 @@ key-files:
     - packages/ibp-domain/src/genus.ts
     - packages/ibp-domain/src/genus.test.ts
     - packages/ibp-domain/src/contract/factor-a.ts
-    - api/migrations/017_factor_a_genus_list.sql
-    - api/test/migration-017-factor-a-genus-list.e2e-spec.ts
+    - api/migrations/018_factor_a_genus_list.sql
+    - api/test/migration-018-factor-a-genus-list.e2e-spec.ts
     - api/test/surveys-factor-a-genus-list.e2e-spec.ts
   modified:
     - packages/ibp-domain/src/contract/index.ts
@@ -45,7 +45,7 @@ key-files:
 decisions:
   - "Ficus excluded entirely (not a valid code); Juniperus in the main list unconditionally, no coastal gate (D-01: genus-level only, cannot distinguish which of the 3 species); Pistacia counted as a supplementary genus per p.3 (\"the CNPF answer\" resolving the Table 2 ambiguity) — all recorded in 05-CONTEXT.md decisions"
   - "IbpRulesService and mobile/src/app/ibp-scoring.ts needed zero changes: both were already thin pass-through adapters (phase 01.8), so the new capability flows through them with no re-implementation"
-  - "Migration 017 adds no column: the genus list lives in the existing factors JSONB, verified with psql that jsonb -> 'genera' on a scalar or a bare-count object returns NULL, never an error, before writing the CHECK constraint"
+  - "Migration 018 adds no column: the genus list lives in the existing factors JSONB, verified with psql that jsonb -> 'genera' on a scalar or a bare-count object returns NULL, never an error, before writing the CHECK constraint"
   - "The sync-path error surface (POST /v1/sync always maps a blocking IBP issue to a generic http_422, never a specific code) is pre-existing, unchanged architecture — the E2E spec tests the specific factor_a_genus_invalid code and message through the direct POST /surveys endpoint instead, matching the existing convention in surveys-submit.e2e-spec.ts"
 metrics:
   duration: "~2.5h"
@@ -61,7 +61,7 @@ the closed 34-class CNPF regional list, with the score-relevant count derived fr
 already recorded as a bare `native_genus_count` keep scoring exactly as before — nothing is
 recomputed or decomposed. The rule lives once, in `packages/ibp-domain`; the API and mobile
 adapters needed no change at all, since both were already pass-through wrappers from phase 01.8.
-Migration 017 adds one structural CHECK constraint and no column. `docs/technical/data-contract-v1.md`,
+Migration 018 adds one structural CHECK constraint and no column. `docs/technical/data-contract-v1.md`,
 `api-contract-v1.md` and `ibp-validation-matrix-v2.md` document the new shape; `ibp-form-spec.md`
 §4 and §10.1 (and the other stale `deleted`-status mentions found alongside them) are corrected.
 
@@ -71,7 +71,7 @@ Migration 017 adds one structural CHECK constraint and no column. `docs/technica
 |---|---|---|
 | 1 | Genus list, allowed sets, contract type | genus.ts, genus.test.ts, contract/factor-a.ts, barrels |
 | 2 | Derive Factor A's count, both rule versions | rules/common.ts, v3-0.ts, v3-2.ts, evaluate.ts, parity/cases.ts |
-| 3 | Migration 017, E2E round-trip proof | 017_factor_a_genus_list.sql, 2 new E2E specs, migration-016 fix |
+| 3 | Migration 018, E2E round-trip proof | 018_factor_a_genus_list.sql, 2 new E2E specs, migration-016 fix |
 | 4 | Contracts, form-spec corrections, roadmap | data-contract-v1.md, api-contract-v1.md, matrix v2, ibp-form-spec.md, types.ts, ROADMAP/REQUIREMENTS |
 
 ## Genus list: codes and CH-12 decisions
@@ -111,7 +111,7 @@ mirrored into `ibp-validation-matrix-v2.md`. The API and mobile `ibp-parity` sui
 new case automatically — no code change needed in `IbpRulesService` or `ibp-scoring.ts`, confirming
 both are the pass-through adapters phase 01.8 built them to be.
 
-## Migration 017
+## Migration 018
 
 No column: the genus list lives inside the existing `factors` JSONB, exactly like the bare count
 did before it. Verified directly with `psql` before trusting any test: `'5'::jsonb -> 'genera'`
@@ -124,7 +124,7 @@ rejected with `23514`) before writing the E2E spec that automates the same proof
 
 `migration-016-ibp-method-version.e2e-spec.ts`'s "recorded it after 015" assertion assumed 016 was
 the last migration file; fixed to compare indices instead of the last array element, since it now
-runs against a scratch schema where the real runner also applies 017.
+runs against a scratch schema where the real runner also applies 018.
 
 ## Sync round-trip (criterion 5)
 
@@ -144,7 +144,7 @@ still scores unchanged through the same endpoint.
   no adapter change.
 - `npm --workspace mobile run test:unit -- ibp-parity`: 84 tests green, same.
 - `npm run test:e2e` (local mode): 35 suites, 221 passed, 3 skipped (MinIO-only cases) — full
-  suite, including both new migration-017 and factor-a-genus-list specs and the fixed migration-016
+  suite, including both new migration-018 and factor-a-genus-list specs and the fixed migration-016
   spec.
 - Migration verified twice: via `npm run migrate:api` on a fresh empty database, and by hand
   against a seeded "existing data" database (see above).

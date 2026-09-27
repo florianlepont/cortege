@@ -30,8 +30,9 @@ const IOS_TAB_ICONS = {
   },
 } as const
 
+// BUG-07 (UX audit, Phase 2): Accueil had Mes Relevés' icon on Android's native tab bar.
 const ANDROID_TAB_ICONS = {
-  home: require("../../assets/tabs/surveys.png"),
+  home: require("../../assets/tabs/home.png"),
   surveys: require("../../assets/tabs/surveys.png"),
   publicMap: require("../../assets/tabs/public-map.png"),
   account: require("../../assets/tabs/account.png"),

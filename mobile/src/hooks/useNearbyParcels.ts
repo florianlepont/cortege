@@ -65,7 +65,7 @@ export function hasMixedMethodVersions(
   return versions.size > 1
 }
 
-export function useNearbyParcels(apiUrl: string) {
+export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
   const [state, setState] = useState<NearbyParcelsState>({
     parcels: [],
     sectorAvgScore: null,
@@ -75,6 +75,9 @@ export function useNearbyParcels(apiUrl: string) {
   })
 
   const load = useCallback(async () => {
+    if (!accessToken) {
+      return
+    }
     setState((s) => ({ ...s, loading: true, error: false }))
 
     try {
@@ -93,7 +96,7 @@ export function useNearbyParcels(apiUrl: string) {
       const { latitude: lat, longitude: lng } = position.coords
       const bbox = buildBboxAroundPoint({ lat, lng }, RADIUS_DEG)
 
-      const { items } = await fetchPublicParcelStatuses(apiUrl, { bbox, zoom: ZOOM })
+      const { items } = await fetchPublicParcelStatuses(apiUrl, accessToken, { bbox, zoom: ZOOM })
 
       const withDistance: NearbyParcel[] = items
         .map((item) => {
@@ -122,7 +125,7 @@ export function useNearbyParcels(apiUrl: string) {
     } catch {
       setState((s) => ({ ...s, loading: false, error: true }))
     }
-  }, [apiUrl])
+  }, [apiUrl, accessToken])
 
   return { ...state, load }
 }

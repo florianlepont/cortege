@@ -1,5 +1,6 @@
 import {
   AuthUser,
+  ParcelSurveyHistoryResponse,
   PublicMapItem,
   PublicParcelStatusItem,
   SurveyDetailResponse,
@@ -32,11 +33,6 @@ type ResetUserDataResponse = {
   attachments_deleted?: number
   events_deleted?: number
   message?: string
-}
-
-type CreateReportResponse = {
-  id: string
-  status: "open" | "reviewed"
 }
 
 export async function getMyProfile(apiUrl: string, accessToken: string): Promise<AuthUser> {
@@ -173,6 +169,7 @@ export async function resetUserData(
 
 export async function fetchPublicMapItems(
   apiUrl: string,
+  accessToken: string,
   input?: { from?: string; to?: string; region?: string; bbox?: string },
 ): Promise<{ items: PublicMapItem[] }> {
   const queryParts: string[] = []
@@ -188,11 +185,13 @@ export async function fetchPublicMapItems(
     baseUrl: apiUrl,
     path: `/public/map-items${suffix}`,
     method: "GET",
+    token: accessToken,
   })
 }
 
 export async function fetchPublicParcelStatuses(
   apiUrl: string,
+  accessToken: string,
   input: { bbox: string; zoom: number; year?: number },
 ): Promise<{ items: PublicParcelStatusItem[] }> {
   const queryParts = [
@@ -207,6 +206,23 @@ export async function fetchPublicParcelStatuses(
     baseUrl: apiUrl,
     path: `/public/parcels/status?${queryParts.join("&")}`,
     method: "GET",
+    token: accessToken,
+  })
+}
+
+/** Previous submitted surveys of a parcel, oldest first (REQ-B-survey-detail, REQ-C-versioning). */
+export async function fetchParcelSurveyHistory(
+  apiUrl: string,
+  accessToken: string,
+  parcelId: string,
+  limit?: number,
+): Promise<ParcelSurveyHistoryResponse> {
+  const suffix = typeof limit === "number" ? `?limit=${encodeURIComponent(String(limit))}` : ""
+  return apiRequest<ParcelSurveyHistoryResponse>({
+    baseUrl: apiUrl,
+    path: `/parcels/${encodeURIComponent(parcelId)}/surveys/history${suffix}`,
+    method: "GET",
+    token: accessToken,
   })
 }
 
@@ -227,20 +243,6 @@ export async function getAttachmentDownloadUrl(
     path: `/surveys/${encodeURIComponent(surveyId)}/attachments/${encodeURIComponent(attachmentId)}/download-url`,
     method: "GET",
     token: accessToken,
-  })
-}
-
-export async function createSurveyReport(
-  apiUrl: string,
-  accessToken: string,
-  input: { survey_id: string; reason: string },
-): Promise<CreateReportResponse> {
-  return apiRequest<CreateReportResponse>({
-    baseUrl: apiUrl,
-    path: "/reports",
-    method: "POST",
-    token: accessToken,
-    json: input,
   })
 }
 

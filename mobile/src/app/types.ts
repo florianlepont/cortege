@@ -1,4 +1,6 @@
 import type {
+  FactorCanonical,
+  IbpScores,
   PublicMapItem as DomainPublicMapItem,
   PublicParcelStatusItem as DomainPublicParcelStatusItem,
   SurveyDetail,
@@ -44,6 +46,21 @@ export type SurveyEventItem = {
 
 export type SurveyEventsResponse = {
   items?: SurveyEventItem[]
+}
+
+/** One past submitted survey of a parcel, as `GET /parcels/:parcelId/surveys/history` returns it. */
+export type ParcelSurveyHistoryItem = {
+  survey_id: string
+  observation_year: number | null
+  version_number: number | null
+  scores: IbpScores
+  factor_results: Record<string, FactorCanonical>
+  submitted_at: string
+}
+
+export type ParcelSurveyHistoryResponse = {
+  parcel_id: string
+  items: ParcelSurveyHistoryItem[]
 }
 
 export type PublicMapItem = DomainPublicMapItem

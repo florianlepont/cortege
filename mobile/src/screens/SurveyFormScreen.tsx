@@ -33,6 +33,7 @@ export { toAddressLabel } from "./survey-screen-helpers"
 const ACTION_BAR_CLEARANCE = 140
 type SurveyFormScreenProps = {
   apiUrl: string
+  accessToken: string | null
   screen: AppScreen
   editingSurveyId: string | null
   siteName: string
@@ -66,6 +67,7 @@ type SurveyFormScreenProps = {
 
 export function SurveyFormScreen({
   apiUrl,
+  accessToken,
   screen,
   editingSurveyId,
   siteName,
@@ -92,6 +94,7 @@ export function SurveyFormScreen({
   const [activeStep, setActiveStep] = useState<WizardStep>("identity")
   const map = useParcelMap({
     apiUrl,
+    accessToken,
     screen,
     editingSurveyId,
     gpsLocation,

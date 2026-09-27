@@ -80,7 +80,7 @@ counted only in cas 2 and cas 4 (v3.2 p. 3). Codes and allowed-set logic live in
   simply never has a cas, so it never counts the supplementary genera.
 
 ### Migration shape (Claude, autonomous)
-Migration 017 adds **no column**: the genus list lives inside the existing `factors` JSONB, exactly
+Migration 018 adds **no column**: the genus list lives inside the existing `factors` JSONB, exactly
 like the bare count did before it (JSONB is schemaless; genus-code whitelist validation stays in
 the application layer, same split as `native_genus_count`, which the database never validated
 either). The one thing it adds is a structural CHECK constraint,
