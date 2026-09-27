@@ -1,9 +1,9 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
-import { DraftCard } from "./DraftCard"
-import { brandColors } from "../../app/brand-tokens"
-import { fr } from "../../i18n"
-import type { LocalSurvey } from "../../storage/types"
+import { SurveyProgressCard } from "./SurveyProgressCard"
+import { brandColors } from "../app/brand-tokens"
+import { fr } from "../i18n"
+import type { LocalSurvey } from "../storage/types"
 
 jest.mock("react-native", () => {
   const ReactActual = jest.requireActual<typeof import("react")>("react")
@@ -90,27 +90,26 @@ function flattenStyle(style: unknown): FlatStyle {
 
 function render(completionRate: number, overrides: Partial<LocalSurvey> = {}) {
   let tree: renderer.ReactTestRenderer | undefined
+  const onPress = jest.fn()
   act(() => {
     tree = renderer.create(
-      <DraftCard survey={makeSurvey(completionRate, overrides)} onPress={jest.fn()} />,
+      <SurveyProgressCard survey={makeSurvey(completionRate, overrides)} onPress={onPress} />,
     )
   })
   const root = tree!.root
-  const fill = root
-    .findAll((node: ReactTestInstance) => (node.type as unknown) === "View")
-    .map((node) => flattenStyle(node.props.style))
-    .find((style) => typeof style.width === "string")
+  const fill = flattenStyle(root.findByProps({ testID: "survey-progress-fill" }).props.style)
   const texts = root
     .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
     .map((node) => String([node.props.children].flat().join("")))
-  return { fill, texts }
+  const pressable = root.findByType("Pressable" as never)
+  return { fill, texts, onPress, pressable }
 }
 
-describe("DraftCard treats completion_rate as 0-100 (01.9 D-03)", () => {
+describe("SurveyProgressCard treats completion_rate as 0-100 (01.9 D-03)", () => {
   test("40 renders a 40% bar, 4/10 factors and the in-progress colour", () => {
     const { fill, texts } = render(40)
     expect(fill?.width).toBe("40%")
-    expect(texts).toContain(fr.components.draftCard.factorCount({ count: 4 }))
+    expect(texts).toContain(fr.components.surveyProgressCard.factorCount({ count: 4 }))
     expect(fill?.backgroundColor).toBe(brandColors.ochre)
     expect(fill?.backgroundColor).not.toBe(brandColors.moss)
   })
@@ -118,14 +117,14 @@ describe("DraftCard treats completion_rate as 0-100 (01.9 D-03)", () => {
   test("100 renders a 100% bar, 10/10 factors and the moss colour", () => {
     const { fill, texts } = render(100)
     expect(fill?.width).toBe("100%")
-    expect(texts).toContain(fr.components.draftCard.factorCount({ count: 10 }))
+    expect(texts).toContain(fr.components.surveyProgressCard.factorCount({ count: 10 }))
     expect(fill?.backgroundColor).toBe(brandColors.moss)
   })
 
   test("0 renders a 0% bar and 0/10 factors", () => {
     const { fill, texts } = render(0)
     expect(fill?.width).toBe("0%")
-    expect(texts).toContain(fr.components.draftCard.factorCount({ count: 0 }))
+    expect(texts).toContain(fr.components.surveyProgressCard.factorCount({ count: 0 }))
     expect(fill?.backgroundColor).toBe(brandColors.ochre)
   })
 
@@ -135,10 +134,10 @@ describe("DraftCard treats completion_rate as 0-100 (01.9 D-03)", () => {
   })
 })
 
-describe("DraftCard reads its text from the catalogue (01.9 D-06)", () => {
+describe("SurveyProgressCard reads its text from the catalogue (01.9 D-06)", () => {
   test("renders the progress label, the site name and the just-now time", () => {
     const { texts } = render(40)
-    expect(texts).toContain(fr.components.draftCard.progressLabel)
+    expect(texts).toContain(fr.components.surveyProgressCard.progressLabel)
     expect(texts).toContain("Parcelle A")
     expect(texts).toContain(fr.common.justNow)
   })
@@ -149,7 +148,7 @@ describe("DraftCard reads its text from the catalogue (01.9 D-06)", () => {
 
   test("shows the blocked sync text when the survey is blocked", () => {
     const { texts } = render(40, { sync_blocked: 1 })
-    expect(texts).toContain(fr.components.draftCard.syncBlocked)
+    expect(texts).toContain(fr.components.surveyProgressCard.syncBlocked)
   })
 
   test("formats older updates in hours, yesterday and days", () => {
@@ -157,11 +156,23 @@ describe("DraftCard reads its text from the catalogue (01.9 D-06)", () => {
     const yesterday = new Date(Date.now() - 30 * 3600000).toISOString()
     const daysAgo = new Date(Date.now() - 5 * 24 * 3600000).toISOString()
     expect(render(40, { updated_at: hoursAgo }).texts).toContain(
-      fr.components.draftCard.hoursAgo({ count: 3 }),
+      fr.components.surveyProgressCard.hoursAgo({ count: 3 }),
     )
-    expect(render(40, { updated_at: yesterday }).texts).toContain(fr.components.draftCard.yesterday)
+    expect(render(40, { updated_at: yesterday }).texts).toContain(
+      fr.components.surveyProgressCard.yesterday,
+    )
     expect(render(40, { updated_at: daysAgo }).texts).toContain(
-      fr.components.draftCard.daysAgo({ count: 5 }),
+      fr.components.surveyProgressCard.daysAgo({ count: 5 }),
     )
+  })
+})
+
+describe("SurveyProgressCard calls onPress", () => {
+  test("tapping the card calls onPress", () => {
+    const { pressable, onPress } = render(40)
+    act(() => {
+      pressable.props.onPress()
+    })
+    expect(onPress).toHaveBeenCalledTimes(1)
   })
 })

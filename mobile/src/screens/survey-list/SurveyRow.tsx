@@ -10,6 +10,8 @@ import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/surv
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppStatusChip } from "../../ui/AppStatusChip"
+import { FactorProgressRing } from "../../ui/FactorProgressRing"
+import { IbpScoreBadge } from "../../ui/IbpScoreBadge"
 import type { AttachmentPreview } from "../survey-screen-helpers"
 import { feedback } from "../../ui/feedback"
 import { rowStyles as styles } from "./row-styles"
@@ -22,6 +24,8 @@ export type SurveyRowPreview = AttachmentPreview & { attachmentId: string }
 export type SurveyRowProps = {
   survey: LocalSurvey
   preview: SurveyRowPreview | null
+  /** LIST-01: the submitted survey's IBP total, once known — null shows a plain "submitted" ring. */
+  score: number | null
   selected: boolean
   onOpen: (surveyId: string) => void
   onDelete: (surveyId: string) => void
@@ -83,12 +87,52 @@ function RowPreview({ preview }: { preview: SurveyRowPreview }) {
   )
 }
 
+// LIST-01: a score badge for a submitted survey with a known total, a plain completion ring
+// otherwise (submitted-but-unscored, or a draft in progress).
+function RowIndicator({
+  isSubmitted,
+  score,
+  completionRate,
+}: {
+  isSubmitted: boolean
+  score: number | null
+  completionRate: number
+}) {
+  if (isSubmitted) {
+    if (score != null) {
+      return (
+        <View style={styles.surveyCardIndicator}>
+          <IbpScoreBadge score={score} size="sm" />
+        </View>
+      )
+    }
+    return (
+      <View style={styles.surveyCardIndicator}>
+        <FactorProgressRing progress={1} complete size={32} />
+      </View>
+    )
+  }
+  const clamped = Math.max(0, Math.min(100, completionRate))
+  return (
+    <View style={styles.surveyCardIndicator}>
+      <FactorProgressRing progress={clamped / 100} complete={false} size={32} />
+    </View>
+  )
+}
+
 /**
  * One survey list row (01.9-22, D-03). Memoised: it re-renders only when its own
  * survey object, preview, selection or callbacks change. Callbacks take the
  * survey id, so the list passes the same two functions to every row.
  */
-function SurveyRowComponent({ survey, preview, selected, onOpen, onDelete }: SurveyRowProps) {
+function SurveyRowComponent({
+  survey,
+  preview,
+  score,
+  selected,
+  onOpen,
+  onDelete,
+}: SurveyRowProps) {
   const swipeableRef = useRef<Swipeable>(null)
   const surveyId = survey.id
   const uiStatus = resolveSurveyUiStatus(survey)
@@ -96,6 +140,7 @@ function SurveyRowComponent({ survey, preview, selected, onOpen, onDelete }: Sur
   const rowTone = resolveSurveyRowTone(uiStatus)
   const updatedAt = formatShortDateTime(survey.updated_at)
   const supportText = formatSyncErrorForUser(survey.last_sync_error, survey.last_sync_error_code)
+  const deleteLabel = t.a11y.deleteSurvey(survey.site_name)
 
   const handleDelete = useCallback(() => {
     swipeableRef.current?.close()
@@ -107,11 +152,12 @@ function SurveyRowComponent({ survey, preview, selected, onOpen, onDelete }: Sur
     onOpen(surveyId)
   }, [onOpen, surveyId])
 
-  const renderLeftActions = useCallback(
+  // LIST-02: destructive action on the right (iOS convention), revealed by swiping left.
+  const renderRightActions = useCallback(
     () => (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t.a11y.deleteSurvey(survey.site_name)}
+        accessibilityLabel={deleteLabel}
         onPress={handleDelete}
         style={({ pressed }) => [
           styles.surveyDeleteAction,
@@ -122,17 +168,28 @@ function SurveyRowComponent({ survey, preview, selected, onOpen, onDelete }: Sur
         <Text style={styles.surveyDeleteActionText}>{t.row.deleteAction}</Text>
       </Pressable>
     ),
-    [handleDelete, survey.site_name],
+    [deleteLabel, handleDelete],
+  )
+
+  // LIST-02: an accessibility action mirrors the swipe gesture, so a screen-reader user does not
+  // need to perform it to delete a survey.
+  const accessibilityActions = [{ name: "delete", label: t.row.deleteAction }]
+  const handleAccessibilityAction = useCallback(
+    (event: { nativeEvent: { actionName: string } }) => {
+      if (event.nativeEvent.actionName === "delete") {
+        handleDelete()
+      }
+    },
+    [handleDelete],
   )
 
   return (
     <Swipeable
       ref={swipeableRef}
-      renderLeftActions={renderLeftActions}
+      renderRightActions={renderRightActions}
       overshootLeft={false}
       overshootRight={false}
-      leftThreshold={56}
-      dragOffsetFromLeftEdge={22}
+      rightThreshold={56}
       containerStyle={styles.surveySwipeable}
     >
       <Pressable
@@ -143,6 +200,8 @@ function SurveyRowComponent({ survey, preview, selected, onOpen, onDelete }: Sur
           status: uiStatusLabel,
           updatedAt,
         })}
+        accessibilityActions={accessibilityActions}
+        onAccessibilityAction={handleAccessibilityAction}
         style={({ pressed }) => [
           styles.surveyCard,
           selected ? styles.surveyCardSelected : null,
@@ -152,6 +211,12 @@ function SurveyRowComponent({ survey, preview, selected, onOpen, onDelete }: Sur
       >
         {/* Accent bar — transparent for neutral (N-06) */}
         <View style={[styles.surveyCardAccent, ACCENT_STYLE_BY_TONE[rowTone]]} />
+
+        <RowIndicator
+          isSubmitted={survey.status === "submitted"}
+          score={score}
+          completionRate={survey.completion_rate}
+        />
 
         {/* P2-COMPACT-01: thumbnail only when photo exists */}
         {preview ? <RowPreview preview={preview} /> : null}
@@ -197,6 +262,7 @@ export const SurveyRow = memo(
   SurveyRowComponent,
   (previous, next) =>
     previous.survey === next.survey &&
+    previous.score === next.score &&
     previous.selected === next.selected &&
     previous.onOpen === next.onOpen &&
     previous.onDelete === next.onDelete &&

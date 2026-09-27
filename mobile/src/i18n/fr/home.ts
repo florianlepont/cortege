@@ -7,19 +7,26 @@ export const homeFr = {
   alerts: {
     blocked: ({ count }: { count: number }) =>
       `${count} ${plural(count, "relevé")} ${plural(count, "bloqué")}`,
+    // SYNC-03: a blocked survey is a conflict, not a connection problem — distinct copy and action
+    // from a plain sync error, and an actionable "Voir" instead of a dead-end notice.
+    blockedMessage: "Synchronisation en conflit : ouvrez le relevé pour le résoudre.",
     failed: ({ count }: { count: number }) =>
       `${count} ${plural(count, "relevé")} en erreur de sync`,
-    message: "Vérifiez votre connexion pour relancer la synchronisation.",
+    failedMessage: "Vérifiez votre connexion pour relancer la synchronisation.",
+    actionView: "Voir",
+    actionRetry: "Réessayer",
   },
   hero: {
     eyebrow: "COMMENCER",
     title: "Nouveau relevé IBP",
     body: "Localisez une parcelle et démarrez l'inventaire.",
     button: "Démarrer un relevé",
-  },
-  drafts: {
-    title: "Brouillons",
-    subtitle: ({ count }: { count: number }) => `${count} ${plural(count, "relevé")} en cours`,
+    // HOME-02: the hero becomes a resume action when a draft was touched in the last 48h.
+    resumeEyebrow: "REPRENDRE",
+    resumeTitle: ({ name }: { name: string }) => `Reprendre ${name}`,
+    resumeBody: ({ completed }: { completed: number }) => `${completed}/10 facteurs remplis.`,
+    resumeButton: "Reprendre",
+    newSurveyButton: "Nouveau relevé",
   },
   nearby: {
     title: "Autour de vous",

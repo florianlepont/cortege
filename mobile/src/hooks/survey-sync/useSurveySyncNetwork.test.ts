@@ -201,6 +201,185 @@ describe("useSurveySyncNetwork", () => {
       await maybeAutoSync("startup")
       expect(withAuthRetry).not.toHaveBeenCalled()
     })
+
+    test("pulls server changes on startup when online with no pending local work", async () => {
+      mockGetNetworkStateAsync.mockResolvedValue({ isConnected: true, isInternetReachable: true })
+      mockHasPendingSyncWork.mockResolvedValue(false)
+      mockPullRemoteChanges.mockResolvedValue({ surveys: 2, attachments: 1, pages: 1 })
+      const setStatus = jest.fn()
+      const refreshLocalSurveys = jest.fn().mockResolvedValue(undefined)
+      const refreshLocalAttachments = jest.fn().mockResolvedValue(undefined)
+
+      await renderHook(() =>
+        useSurveySyncNetwork({
+          apiUrl: "http://localhost:3000",
+          accessToken: "access-token",
+          surveys: [],
+          clearSession: jest.fn(),
+          withAuthRetry: jest.fn((fn: (token: string, tokenSub: string | null) => unknown) =>
+            fn("token", "auth0|owner"),
+          ),
+          refreshLocalSurveys,
+          refreshLocalAttachments,
+          setStatus,
+          syncAllowed: true,
+          ensureSyncOwner: jest.fn().mockResolvedValue(true),
+          ownerStatus: "ok",
+          recheckOwner: jest.fn(),
+          syncActivity: createSyncActivity(),
+        } as never),
+      )
+
+      for (let i = 0; i < 10; i += 1) {
+        await act(async () => {
+          await Promise.resolve()
+        })
+      }
+
+      expect(setStatus).toHaveBeenCalledWith(text.pulled({ surveyCount: 2, attachmentCount: 1 }))
+      expect(refreshLocalSurveys).toHaveBeenCalled()
+      expect(refreshLocalAttachments).toHaveBeenCalled()
+    })
+  })
+
+  // ─── SYNC-02: the reactive booleans SyncStatusPill reads ──────────────────
+
+  describe("isOnline", () => {
+    test("defaults to true before the network probe resolves", async () => {
+      const { result } = await renderHook(() =>
+        useSurveySyncNetwork({
+          apiUrl: "http://localhost:3000",
+          accessToken: "access-token",
+          surveys: [],
+          clearSession: jest.fn(),
+          withAuthRetry: jest.fn(),
+          refreshLocalSurveys: jest.fn(),
+          refreshLocalAttachments: jest.fn(),
+          setStatus: jest.fn(),
+          syncAllowed: true,
+          ensureSyncOwner: jest.fn(),
+          ownerStatus: "ok",
+          recheckOwner: jest.fn(),
+          syncActivity: createSyncActivity(),
+        } as never),
+      )
+      expect(result.current.isOnline).toBe(true)
+    })
+
+    test("turns false once the network probe reports offline", async () => {
+      mockGetNetworkStateAsync.mockResolvedValue({ isConnected: false, isInternetReachable: true })
+      const { result } = await renderHook(() =>
+        useSurveySyncNetwork({
+          apiUrl: "http://localhost:3000",
+          accessToken: "access-token",
+          surveys: [],
+          clearSession: jest.fn(),
+          withAuthRetry: jest.fn(),
+          refreshLocalSurveys: jest.fn(),
+          refreshLocalAttachments: jest.fn(),
+          setStatus: jest.fn(),
+          syncAllowed: true,
+          ensureSyncOwner: jest.fn(),
+          ownerStatus: "ok",
+          recheckOwner: jest.fn(),
+          syncActivity: createSyncActivity(),
+        } as never),
+      )
+      await act(async () => {
+        await Promise.resolve()
+      })
+      expect(result.current.isOnline).toBe(false)
+    })
+  })
+
+  describe("isSyncing", () => {
+    test("is true while handleSync runs and false again once it settles", async () => {
+      let resolveSyncPending!: (value: unknown) => void
+      mockSyncPending.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveSyncPending = resolve
+          }),
+      )
+      const { result } = await renderHook(() =>
+        useSurveySyncNetwork({
+          apiUrl: "http://localhost:3000",
+          accessToken: "access-token",
+          surveys: [],
+          clearSession: jest.fn(),
+          withAuthRetry: jest.fn((fn: (token: string, tokenSub: string | null) => unknown) =>
+            fn("token", "auth0|owner"),
+          ),
+          refreshLocalSurveys: jest.fn().mockResolvedValue(undefined),
+          refreshLocalAttachments: jest.fn().mockResolvedValue(undefined),
+          setStatus: jest.fn(),
+          syncAllowed: true,
+          ensureSyncOwner: jest.fn().mockResolvedValue(true),
+          ownerStatus: "ok",
+          recheckOwner: jest.fn(),
+          syncActivity: createSyncActivity(),
+        } as never),
+      )
+
+      expect(result.current.isSyncing).toBe(false)
+
+      let syncPromise!: Promise<void>
+      await act(async () => {
+        syncPromise = result.current.handleSync()
+        await Promise.resolve()
+      })
+      expect(result.current.isSyncing).toBe(true)
+
+      await act(async () => {
+        resolveSyncPending({ synced: 1, failed: 0, pulled_surveys: 0, pulled_attachments: 0 })
+        await syncPromise
+      })
+      expect(result.current.isSyncing).toBe(false)
+    })
+
+    test("is true while handlePullChanges runs and false again once it settles", async () => {
+      let resolvePull!: (value: unknown) => void
+      mockPullRemoteChanges.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolvePull = resolve
+          }),
+      )
+      const { result } = await renderHook(() =>
+        useSurveySyncNetwork({
+          apiUrl: "http://localhost:3000",
+          accessToken: "access-token",
+          surveys: [],
+          clearSession: jest.fn(),
+          withAuthRetry: jest.fn((fn: (token: string, tokenSub: string | null) => unknown) =>
+            fn("token", "auth0|owner"),
+          ),
+          refreshLocalSurveys: jest.fn().mockResolvedValue(undefined),
+          refreshLocalAttachments: jest.fn().mockResolvedValue(undefined),
+          setStatus: jest.fn(),
+          syncAllowed: true,
+          ensureSyncOwner: jest.fn().mockResolvedValue(true),
+          ownerStatus: "ok",
+          recheckOwner: jest.fn(),
+          syncActivity: createSyncActivity(),
+        } as never),
+      )
+
+      expect(result.current.isSyncing).toBe(false)
+
+      let pullPromise!: Promise<void>
+      await act(async () => {
+        pullPromise = result.current.handlePullChanges()
+        await Promise.resolve()
+      })
+      expect(result.current.isSyncing).toBe(true)
+
+      await act(async () => {
+        resolvePull({ surveys: 1, attachments: 0, pages: 1 })
+        await pullPromise
+      })
+      expect(result.current.isSyncing).toBe(false)
+    })
   })
 
   // ─── D-04 owner gate (syncAllowed) ────────────────────────────────────────

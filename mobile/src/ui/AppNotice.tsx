@@ -1,16 +1,24 @@
 import { ReactNode } from "react"
-import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
+import { Pressable, StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandComponentTokens, brandTypography } from "../app/brand-tokens"
 
 type AppNoticeTone = "info" | "success" | "warning" | "danger"
 
+export type AppNoticeAction = {
+  label: string
+  onPress: () => void
+  accessibilityLabel?: string
+}
+
 type AppNoticeProps = {
   message: ReactNode
   title?: string
   tone?: AppNoticeTone
   icon?: keyof typeof Ionicons.glyphMap
+  /** SYNC-03: an actionable notice ("Voir", "Réessayer") instead of a dead end. */
+  action?: AppNoticeAction
   style?: StyleProp<ViewStyle>
   titleStyle?: StyleProp<TextStyle>
   messageStyle?: StyleProp<TextStyle>
@@ -21,6 +29,7 @@ export function AppNotice({
   title,
   tone = "info",
   icon,
+  action,
   style,
   titleStyle,
   messageStyle,
@@ -41,6 +50,17 @@ export function AppNotice({
         {title ? <Text style={[styles.title, titleStyle]}>{title}</Text> : null}
         <Text style={[styles.message, textTone, messageStyle]}>{message}</Text>
       </View>
+      {action ? (
+        <Pressable
+          onPress={action.onPress}
+          accessibilityRole="button"
+          accessibilityLabel={action.accessibilityLabel ?? action.label}
+          hitSlop={8}
+          style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+        >
+          <Text style={[styles.actionText, textTone]}>{action.label}</Text>
+        </Pressable>
+      ) : null}
     </View>
   )
 }
@@ -95,5 +115,19 @@ const styles = StyleSheet.create({
   },
   messageDanger: {
     color: brandComponentTokens.notice.dangerText,
+  },
+  action: {
+    alignSelf: "center",
+    minHeight: 32,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+  },
+  actionPressed: {
+    opacity: 0.7,
+  },
+  actionText: {
+    ...brandTypography.label,
+    color: brandComponentTokens.notice.title,
+    textDecorationLine: "underline",
   },
 })

@@ -1,6 +1,7 @@
 import type {
   SurveyAttachmentFilter,
   SurveyBlockedFilter,
+  SurveyDetailResponse,
   SurveySort,
   SurveyStatusFilter,
   SurveySyncFilter,
@@ -13,6 +14,8 @@ export type SurveyListScreenProps = {
   visibleSurveys: LocalSurvey[]
   selectedSurveyId: string | null
   attachmentsBySurvey: Record<string, LocalAttachment[]>
+  /** LIST-01: the submitted surveys' canonical scores, keyed by survey id, when already loaded. */
+  surveyDetails: Record<string, SurveyDetailResponse>
   surveyQuery: string
   setSurveyQuery: (value: string) => void
   surveyFromDate: string
@@ -44,4 +47,8 @@ export type SurveyListScreenProps = {
   onOpenCreateSurvey: () => void
   onOpenSurvey: (surveyId: string) => void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
+  /** SYNC-02: the sync pill in the list header (JS/Android path; iOS uses the native header). */
+  isOnline: boolean
+  isSyncing: boolean
+  onOpenSyncStatus: () => void
 }

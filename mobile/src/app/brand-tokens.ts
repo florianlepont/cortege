@@ -230,22 +230,6 @@ export const brandTranslucentPanel = {
 // Phase 4 (DS-04): dark solid backdrop behind full-screen media/map surfaces before content loads.
 export const brandMediaBackdrop = "#132434"
 
-// Phase 4 (DS-04): decorative tint overlays on a light (not dark-hero) surface — CreateSurveyCard's
-// accent orb, border and badge.
-export const brandTintOnLight = {
-  forestBorder: "rgba(51, 78, 43, 0.18)",
-  mossOrb: "rgba(137, 163, 58, 0.12)",
-  sageBadge: "rgba(176, 199, 142, 0.24)",
-} as const
-
-// Phase 4 (DS-04): StatTile's severity-tinted chip background/border, at two opacity steps.
-export const brandStatTileTint = {
-  dangerSoft: "rgba(205, 88, 51, 0.20)",
-  dangerStrong: "rgba(205, 88, 51, 0.40)",
-  warningSoft: "rgba(204, 112, 31, 0.20)",
-  warningStrong: "rgba(204, 112, 31, 0.40)",
-} as const
-
 // IBP score colours keyed by the package's band tone (@cortege/ibp-domain bandTone): faible and
 // assez faible → low, moyenne → mid, assez forte and forte → high. No score cut-offs live here.
 // Phase 4 (DS-01): white-on-moss measured at 2.85:1 (WCAG fail); every band now pairs a soft

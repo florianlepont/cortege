@@ -20,51 +20,13 @@ export const surveyListFr = {
       status: string
       updatedAt: string
     }) => `${name}, ${status}, mis à jour ${updatedAt}`,
+    // HOME-01/LIST: the "+" in the header — Mes Relevés is a pure list now, the create
+    // call-to-action moved out of the list body (see the deleted createCard section).
+    createSurvey: "Créer un nouveau relevé",
   },
+  // HOME-01: a plain large title, not a themed dashboard hero — see ListHero.tsx.
   hero: {
-    eyebrow: "ACCUEIL",
-    title: "Votre carnet de terrain",
-    body: {
-      empty: "Commencez votre premier relevé IBP.",
-      blocked: (count: number) =>
-        `${count} ${plural(count, "relevé")} nécessite${count > 1 ? "nt" : ""} votre attention.`,
-      attention: (count: number) => `${count} ${plural(count, "relevé")} à examiner.`,
-      draftWaiting: (name: string) => `${name} vous attend.`,
-      upToDate: "Tous vos relevés sont à jour.",
-      fallback: "Retrouvez vos relevés et reprenez où vous vous êtes arrêté.",
-    },
-    compactFiltered: ({
-      visible,
-      total,
-      filters,
-    }: {
-      visible: number
-      total: number
-      filters: number
-    }) => `${visible} sur ${total} affichés • ${activeFilters(filters)}`,
-    compactSummary: ({
-      total,
-      draft,
-      pending,
-    }: {
-      total: number
-      draft: number
-      pending: number
-    }) => `${total} relevés • ${draft} brouillons • ${pending} en attente`,
-  },
-  stats: {
-    total: "relevés",
-    draft: "brouillons",
-    pending: "en attente",
-    blocked: "bloqués",
-    submitted: "soumis",
-    a11y: {
-      total: (count: number) => `${count} relevés au total — appuyer pour tout afficher`,
-      draft: (count: number) => `${count} brouillons — appuyer pour filtrer`,
-      pending: (count: number) => `${count} en attente de sync — appuyer pour filtrer`,
-      blocked: (count: number) => `${count} relevés bloqués — appuyer pour filtrer`,
-      submitted: (count: number) => `${count} relevés soumis — appuyer pour filtrer`,
-    },
+    title: "Mes relevés",
   },
   summary: {
     noLocalSurvey: "Aucun relevé local",
@@ -112,41 +74,8 @@ export const surveyListFr = {
       },
     },
   },
-  createCard: {
-    first: {
-      badge: "Premier relevé",
-      title: "Créez votre premier relevé",
-      body: "Commencez votre carnet de terrain IBP en quelques étapes.",
-      action: "Commencer",
-      a11y: "Créer votre premier relevé",
-    },
-    next: {
-      badge: "Nouveau relevé",
-      title: "Créer un nouveau relevé",
-      body: "Ajoutez un relevé IBP à votre carnet de terrain.",
-      action: "Créer",
-      a11y: "Créer un nouveau relevé",
-    },
-  },
-  attention: {
-    title: "À faire",
-    problemsAndDraft: (count: number) =>
-      `${count} ${plural(count, "problème")} · brouillon en cours`,
-    toReview: (count: number) => `${count} ${plural(count, "relevé")} à examiner`,
-    draftOnly: "Brouillon en cours",
-    rowA11y: ({ name, status }: { name: string; status: string }) => `${name}, ${status}`,
-    updated: (date: string) => `Mis à jour ${date}`,
-    more: (count: number) =>
-      `+${count} ${plural(count, "autre")} ${plural(count, "relevé")} à examiner`,
-  },
-  continueDraft: {
-    a11y: (name: string) => `Continuer le brouillon : ${name}`,
-    completion: (rate: number) => `${rate}% complété`,
-  },
   section: {
-    mine: "Mes relevés",
     results: "Résultats",
-    others: (count: number) => `${count} ${plural(count, "autre")} ${plural(count, "relevé")}`,
   },
   empty: {
     none: {
