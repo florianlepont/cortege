@@ -195,11 +195,6 @@ export function DetailHeader({
                   ]}
                   labelStyle={styles.detailHeroStatusPillText}
                 />
-                <AppStatusChip
-                  label={survey.visibility === "public" ? h.visibilityPublic : h.visibilityPrivate}
-                  style={[styles.detailHeroStatusPill, styles.detailHeroStatusPillNeutral]}
-                  labelStyle={styles.detailHeroStatusPillText}
-                />
               </View>
             </Pressable>
 

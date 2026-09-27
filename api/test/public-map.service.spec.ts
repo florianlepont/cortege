@@ -72,7 +72,7 @@ const PRE_BBOX_MAP_ITEMS_SQL = [
   " FROM (",
   "   SELECT s.id, s.region_version, s.ibp_method_version, s.ibp_cas, s.scores, s.submitted_at",
   "   FROM surveys s",
-  "   WHERE s.status = 'submitted' AND s.visibility = 'public' AND s.deleted_at IS NULL",
+  "   WHERE s.status = 'submitted' AND s.deleted_at IS NULL",
   "     AND s.submitted_at IS NOT NULL",
   "%FILTERS%   ORDER BY s.submitted_at DESC",
   "   LIMIT 500",
@@ -99,7 +99,7 @@ describe("public map queries (D-13)", () => {
 
     expect(values).toEqual([])
     expect(sql).toContain(
-      "WHERE s.status = 'submitted' AND s.visibility = 'public' AND s.deleted_at IS NULL AND s.submitted_at IS NOT NULL",
+      "WHERE s.status = 'submitted' AND s.deleted_at IS NULL AND s.submitted_at IS NOT NULL",
     )
     expect(sql.indexOf("LIMIT 500")).toBeGreaterThan(-1)
     expect(sql.indexOf("LIMIT 500")).toBeLessThan(sql.indexOf("LATERAL"))
@@ -163,7 +163,7 @@ describe("public map queries (D-13)", () => {
     )
     expect(sql.indexOf("EXISTS")).toBeLessThan(sql.indexOf("LIMIT 500"))
     expect(sql).toContain(
-      "WHERE s.status = 'submitted' AND s.visibility = 'public' AND s.deleted_at IS NULL AND s.submitted_at IS NOT NULL",
+      "WHERE s.status = 'submitted' AND s.deleted_at IS NULL AND s.submitted_at IS NOT NULL",
     )
 
     const alone = buildPublicMapItemsQuery({ bbox })
@@ -183,9 +183,7 @@ describe("public map queries (D-13)", () => {
     expect(sql).toContain(
       "ORDER BY s.observation_year DESC NULLS LAST, s.version_number DESC NULLS LAST, s.submitted_at DESC NULLS LAST LIMIT 1",
     )
-    expect(sql).toContain(
-      "s.status = 'submitted' AND s.visibility = 'public' AND s.deleted_at IS NULL",
-    )
+    expect(sql).toContain("s.status = 'submitted' AND s.deleted_at IS NULL")
   })
 
   it("parcel statuses: the method version comes from the same latest row as the total (D-10)", () => {

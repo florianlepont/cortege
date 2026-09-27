@@ -15,7 +15,6 @@ export type SyncActions = {
   setStatus: (message: StatusMessage) => void
   handleSync: NetworkOperations["handleSync"]
   handlePullChanges: NetworkOperations["handlePullChanges"]
-  handleReportSurvey: NetworkOperations["handleReportSurvey"]
   handleDebugResetIbpData: () => Promise<void>
   handleDebugResetUserData: () => Promise<void>
   handleEnsureAttachmentPreviews: AttachmentPreviews["handleEnsureAttachmentPreviews"]

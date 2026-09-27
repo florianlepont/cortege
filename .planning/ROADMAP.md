@@ -47,7 +47,7 @@ list is never ambiguous.
 - [x] **Phase 1.7: API configuration, service split and database tuning** (INSERTED) - Fail-fast config, split SurveysService, bounded and indexed queries (completed 2026-09-26)
 - [x] **Phase 1.8: Shared IBP domain package and test completeness** (INSERTED) - IBP rules defined once; RS256 path tested (completed 2026-09-27)
 - [x] **Phase 1.9: Mobile state architecture, i18n, accessibility and hygiene** (INSERTED) - Targeted re-renders, French catalogue, accessible controls, accurate docs (completed 2026-09-27)
-- [ ] **Phase 2: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI; the UX audit's Lot 0 trust bugs (score scale, sync-status masking, decimal input, account-deletion copy) are folded in
+- [x] **Phase 2: Association-only sharing & scope trim** (INSERTED) - Authenticated members see each other's surveys instead of an anonymous public map; the private/public toggle and the report feature are removed for this release; survey-history comparison and account deletion get their missing UI; the UX audit's Lot 0 trust bugs (score scale, sync-status masking, account-deletion copy, tab icon, status bar, pull-to-refresh, contrast) are folded in (completed 2026-09-27; decimal input (BUG-04) deferred to Phase 3, see `02-VALIDATION.md`)
 - [x] **Phase 3: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions (completed 2026-09-27)
 - [ ] **Phase 4: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls
 - [ ] **Phase 5: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec
@@ -374,7 +374,17 @@ Plans:
   7. `REQUIREMENTS.md` no longer marks `REQ-A-social-login`, `REQ-A-delete-account`, `REQ-B-survey-detail` or `REQ-C-versioning` as "Built" when they are not; `docs/specs/epic-a-access-and-security.md` retags US-A4 (social login) out of MVP to match the QA plan's own treatment of it, and `docs/specs/user-stories.md` §8 stops filing Epic E/F's moderation workflow and team-challenge stories under "V2" when they are next-milestone (deferred), not V2.
   8. **UX audit Lot 0** (`docs/design/ux-ui-audit-2026-09.md` §2 and §3.4, owner decision 2026-09-27): re-verified first, since the audit predates the 01.8-11 fix and BUG-01/BUG-02 (score shown "/10") are already resolved. What remains is fixed here: `resolveSurveyUiStatus` stops letting a submitted-but-failed survey read "Soumis" in green (BUG-03); the numeric keyboard accepts a decimal comma (BUG-04); account-deletion copy says "anonymised", not "deleted", and the danger zone moves out of the first Settings section (BUG-05, folds into this phase's account-deletion UI); the iOS status bar uses `dark-content` on light screens (BUG-06); the Android Home tab gets its own icon, not Mes Relevés' (BUG-07); Home's pull-to-refresh reflects real state instead of a hardcoded `refreshing={false}` (BUG-08); and the badge/notice contrast failures below the WCAG floor (DS-01, DS-02, DS-14) are corrected.
 
-**Plans**: TBD
+**Status note** (2026-09-27, see `02-VALIDATION.md` for full detail): all 8 criteria satisfied except two scoped deviations, both deliberate and recorded rather than silently dropped. Criterion 6 is satisfied by opening the parcel's **history** on tap, not a full "survey detail" view — another member's survey has no local copy, and loosening the owner-scoped `GET /surveys/:id` is a bigger API-surface change than this phase's stated boundary (`api/src/surveys/`, `api/src/users/`) should absorb without a separate decision. Criterion 8's BUG-04 (decimal-comma numeric input) is deferred: it lives in `mobile/src/hooks/useSurveyForm.ts`, inside Phase 3's active factor-entry work running in parallel this same milestone; fixing it here risked a direct merge collision. Every other item, including BUG-01/BUG-02 re-verification, is done.
+
+**Plans**:
+
+- [x] 02-01-PLAN.md — API: `AuthGuard` on `PublicController`, drop the `visibility` predicate on the two public routes and parcel history, migration 017 (wave 1)
+- [x] 02-02-PLAN.md — Mobile: access token on the Explorer map and every parcel-status caller; tap a studied parcel to see its history; remove the report entry point (waves 2 + 4, merged)
+- [x] 02-03-PLAN.md — Mobile: survey detail shows previous submitted surveys on the parcel and IBP total/factor deltas; visibility toggle removed (wave 3)
+- [x] 02-04-PLAN.md — Mobile: account-deletion single confirmation with correct copy, danger zone last; UX audit Lot 0 (BUG-03, BUG-05..08, DS-01/02/14) (waves 5 + 6, merged)
+- [x] 02-05-PLAN.md — Docs: US-A4 retagged out of MVP; `user-stories.md` §8 moderation/team-challenge filing corrected (wave 7)
+
+(Executed as 5 plans with their own `02-0N-SUMMARY.md`, not the granular per-task `PLAN.md` structure earlier phases used; see `02-CONTEXT.md`/`02-RESEARCH.md` for the equivalent planning record and `02-VALIDATION.md` for the phase-gate rollup.)
 
 ### Phase 3: Field-Entry Ergonomics (INSERTED, UX audit Lot 1)
 
@@ -583,7 +593,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.7. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
 | 1.8. Shared IBP domain package and test completeness | 16/16 | Complete    | 2026-09-27 |
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 32/32 | Complete    | 2026-09-27 |
-| 2. Association-only sharing & scope trim | 0/TBD | Not started | - |
+| 2. Association-only sharing & scope trim | 5/5 | Complete (BUG-04 deferred) | 2026-09-27 |
 | 3. Field-Entry Ergonomics (UX Lot 1) | 6/6 | Complete   | 2026-09-27 |
 | 4. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
 | 5. Factor A Genus List & Data-Contract Corrections | 0/TBD | Not started | - |

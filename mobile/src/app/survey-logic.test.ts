@@ -255,6 +255,21 @@ describe("filterAndSortSurveys", () => {
     )
   })
 
+  test("BUG-03: a submitted-but-failed-to-sync survey never reads submitted", () => {
+    expect(resolveSurveyUiStatus(makeSurvey({ status: "submitted", sync_state: "failed" }))).toBe(
+      "sync_error",
+    )
+    expect(
+      resolveSurveyUiStatus(
+        makeSurvey({ status: "submitted", sync_state: "failed", sync_blocked: 1 }),
+      ),
+    ).toBe("sync_blocked")
+    // expired still wins over a failed sync: it is a terminal, unrelated state.
+    expect(resolveSurveyUiStatus(makeSurvey({ status: "expired", sync_state: "failed" }))).toBe(
+      "expired",
+    )
+  })
+
   test("formats UI state labels", () => {
     expect(formatSurveyUiStatusLabel("submitted")).toBe("Soumis")
     expect(formatSurveyUiStatusLabel("expired")).toBe("Expiré")

@@ -30,6 +30,7 @@ import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { hasMixedMethodVersions, useNearbyParcels } from "./useNearbyParcels"
 
 const API_URL = "http://localhost:3000"
+const ACCESS_TOKEN = "access-token"
 
 afterEach(async () => {
   await cleanup()
@@ -45,12 +46,12 @@ describe("useNearbyParcels", () => {
     mockGetForegroundPermissionsAsync.mockResolvedValue({ granted: true })
     mockGetCurrentPositionAsync.mockResolvedValue({ coords: { latitude: 46, longitude: 2 } })
 
-    const { result } = await renderHook(() => useNearbyParcels(API_URL))
+    const { result } = await renderHook(() => useNearbyParcels(API_URL, ACCESS_TOKEN))
     await act(async () => {
       await result.current.load()
     })
 
-    expect(mockFetchPublicParcelStatuses).toHaveBeenCalledWith(API_URL, {
+    expect(mockFetchPublicParcelStatuses).toHaveBeenCalledWith(API_URL, ACCESS_TOKEN, {
       bbox: "1.975000,45.975000,2.025000,46.025000",
       zoom: 15,
     })
@@ -59,11 +60,21 @@ describe("useNearbyParcels", () => {
     expect(result.current.sectorAvgScore).toBeNull()
   })
 
+  test("load does nothing without an access token (Phase 2: the route requires a member)", async () => {
+    const { result } = await renderHook(() => useNearbyParcels(API_URL, null))
+    await act(async () => {
+      await result.current.load()
+    })
+
+    expect(mockFetchPublicParcelStatuses).not.toHaveBeenCalled()
+    expect(result.current.loading).toBe(false)
+  })
+
   test("load does not call fetchPublicParcelStatuses when permission is denied twice", async () => {
     mockGetForegroundPermissionsAsync.mockResolvedValue({ granted: false })
     mockRequestForegroundPermissionsAsync.mockResolvedValue({ granted: false })
 
-    const { result } = await renderHook(() => useNearbyParcels(API_URL))
+    const { result } = await renderHook(() => useNearbyParcels(API_URL, ACCESS_TOKEN))
     await act(async () => {
       await result.current.load()
     })
@@ -101,7 +112,7 @@ describe("useNearbyParcels", () => {
       ],
     })
 
-    const { result } = await renderHook(() => useNearbyParcels(API_URL))
+    const { result } = await renderHook(() => useNearbyParcels(API_URL, ACCESS_TOKEN))
     await act(async () => {
       await result.current.load()
     })
@@ -123,7 +134,7 @@ describe("useNearbyParcels", () => {
     mockGetCurrentPositionAsync.mockResolvedValue({ coords: { latitude: 46, longitude: 2 } })
     mockFetchPublicParcelStatuses.mockRejectedValue(new Error("offline"))
 
-    const { result } = await renderHook(() => useNearbyParcels(API_URL))
+    const { result } = await renderHook(() => useNearbyParcels(API_URL, ACCESS_TOKEN))
     await act(async () => {
       await result.current.load()
     })

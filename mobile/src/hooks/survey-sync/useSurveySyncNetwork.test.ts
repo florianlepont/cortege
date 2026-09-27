@@ -11,17 +11,12 @@
 const mockSyncPending = jest.fn()
 const mockHasPendingSyncWork = jest.fn()
 const mockPullRemoteChanges = jest.fn()
-const mockCreateSurveyReport = jest.fn()
 const mockGetNetworkStateAsync = jest.fn()
 
 jest.mock("../../storage", () => ({
   syncPending: mockSyncPending,
   hasPendingSyncWork: mockHasPendingSyncWork,
   pullRemoteChanges: mockPullRemoteChanges,
-}))
-
-jest.mock("../../api/ibp-api", () => ({
-  createSurveyReport: mockCreateSurveyReport,
 }))
 
 // auth-errors.ts imports react-native-auth0 for CredentialsManagerError; mock it
@@ -199,80 +194,6 @@ describe("useSurveySyncNetwork", () => {
     })
   })
 
-  describe("handleReportSurvey", () => {
-    test("returns error and sets status when surveyId is empty", async () => {
-      const { handleReportSurvey, setStatus } = await buildHook()
-
-      const result = await handleReportSurvey("", "spam")
-
-      expect(result.ok).toBe(false)
-      expect(setStatus).toHaveBeenCalledWith(text.reportSurveyMissing())
-    })
-
-    test("returns error when reason is empty", async () => {
-      const { handleReportSurvey, setStatus } = await buildHook()
-
-      const result = await handleReportSurvey("survey-1", "")
-
-      expect(result.ok).toBe(false)
-      expect(setStatus).toHaveBeenCalledWith(text.reportReasonRequired())
-    })
-
-    test("returns ok:true and sets status on successful report", async () => {
-      mockCreateSurveyReport.mockResolvedValue({})
-      const { handleReportSurvey, setStatus } = await buildHook()
-
-      const result = await handleReportSurvey("survey-1", "This is spam content")
-
-      expect(result.ok).toBe(true)
-      expect(result.message).toBe(text.reportSent())
-      expect(setStatus).toHaveBeenCalledWith(text.reportSent())
-    })
-
-    test("calls clearSession and returns ok:false on AUTH_REQUIRED", async () => {
-      const { handleReportSurvey, clearSession } = await buildHook({
-        withAuthRetry: jest.fn().mockRejectedValue(new Error("AUTH_REQUIRED")),
-      })
-
-      const result = await handleReportSurvey("survey-1", "spam reason")
-
-      expect(clearSession).toHaveBeenCalled()
-      expect(result.ok).toBe(false)
-    })
-
-    test("AUTH_TEMPORARILY_UNAVAILABLE keeps the session and returns ok:false", async () => {
-      const { handleReportSurvey, clearSession } = await buildHook({
-        withAuthRetry: jest.fn().mockRejectedValue(new Error("AUTH_TEMPORARILY_UNAVAILABLE")),
-      })
-
-      const result = await handleReportSurvey("survey-1", "spam reason")
-
-      expect(clearSession).not.toHaveBeenCalled()
-      expect(result.ok).toBe(false)
-      expect(result.message).toBe(text.reportRetryLater())
-    })
-
-    test("returns ok:false and sets error status on generic failure", async () => {
-      const { handleReportSurvey, setStatus } = await buildHook({
-        withAuthRetry: jest.fn().mockRejectedValue(new Error("Report failed")),
-      })
-
-      const result = await handleReportSurvey("survey-1", "some reason")
-
-      expect(result.ok).toBe(false)
-      expect(setStatus).toHaveBeenCalledWith(text.reportFailed())
-    })
-
-    test("trims surveyId and reason before sending", async () => {
-      mockCreateSurveyReport.mockResolvedValue({})
-      const { handleReportSurvey } = await buildHook()
-
-      const result = await handleReportSurvey("  survey-1  ", "  spam  ")
-
-      expect(result.ok).toBe(true)
-    })
-  })
-
   describe("maybeAutoSync", () => {
     test("does nothing when lastOnlineState is not true", async () => {
       const { maybeAutoSync, withAuthRetry } = await buildHook()
@@ -350,19 +271,6 @@ describe("useSurveySyncNetwork", () => {
 
       expect(recheckOwner).not.toHaveBeenCalled()
       expect(setStatus).toHaveBeenCalledWith(ownerText.checkPending())
-    })
-
-    test("handleReportSurvey is not gated by syncAllowed", async () => {
-      mockCreateSurveyReport.mockResolvedValue({})
-      const { handleReportSurvey } = await buildHook({
-        syncAllowed: false,
-        ownerStatus: "conflict",
-      })
-
-      const result = await handleReportSurvey("survey-1", "reason text")
-
-      expect(result.ok).toBe(true)
-      expect(mockCreateSurveyReport).toHaveBeenCalled()
     })
 
     test("handleSync re-checks the owner with the token's sub right before syncPending (CR-01)", async () => {

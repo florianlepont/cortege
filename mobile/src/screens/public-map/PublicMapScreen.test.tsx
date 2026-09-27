@@ -1,15 +1,20 @@
 /**
- * The split public map screen (01.9-28, D-05, D-06, D-07): viewport loading,
- * first-load fit, clusters (zoom or list), selection and report card, locate,
- * controls, and a role and catalogue label on every Pressable.
+ * The split public map screen (01.9-28, D-05, D-06, D-07; Phase 2 member-only sharing): viewport
+ * loading, first-load fit, clusters (zoom or list), survey selection, tapping a studied parcel to
+ * see its history, locate, controls, and a role and catalogue label on every Pressable.
  */
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { computeRegionBbox } from "../../app/map-viewport"
-import type { PublicMapItem } from "../../app/types"
+import type { PublicMapItem, PublicParcelStatusItem } from "../../app/types"
 import { fr } from "../../i18n"
 import { PublicMapScreen } from "../PublicMapScreen"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
+
+const mockFetchParcelSurveyHistory = jest.fn()
+jest.mock("../../api/ibp-api", () => ({
+  fetchParcelSurveyHistory: (...args: unknown[]) => mockFetchParcelSurveyHistory(...args),
+}))
 
 const mockAnimateToRegion = jest.fn()
 const mockAlert = jest.fn()
@@ -125,8 +130,23 @@ function item(id: string, lat: number, lng: number, ibp = 30): PublicMapItem {
 
 type ScreenProps = React.ComponentProps<typeof PublicMapScreen>
 
+function parcelStatus(
+  parcelId: string,
+  studyStatus: PublicParcelStatusItem["study_status"],
+): PublicParcelStatusItem {
+  return {
+    parcel_id: parcelId,
+    study_status: studyStatus,
+    latest_submitted_survey_id: null,
+    latest_observation_year: null,
+    latest_ibp_total: null,
+  }
+}
+
 function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
   return {
+    apiUrl: "http://localhost:3000",
+    accessToken: "access-token",
     items: [],
     parcelStatuses: [],
     ownSurveyIds: [],
@@ -140,7 +160,6 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     onChangeRegion: jest.fn(),
     onLoad: jest.fn(async () => undefined),
     onLoadParcels: jest.fn(async () => undefined),
-    onReportSurvey: jest.fn(async () => ({ ok: true, message: "Signalement envoyé" })),
     onViewportBboxChange: jest.fn(),
     ...overrides,
   }
@@ -181,6 +200,8 @@ beforeEach(() => {
   mockAlert.mockClear()
   mockLocation.requestForegroundPermissionsAsync.mockReset()
   mockLocation.getCurrentPositionAsync.mockReset()
+  mockFetchParcelSurveyHistory.mockReset()
+  mockFetchParcelSurveyHistory.mockResolvedValue({ parcel_id: "p1", items: [] })
 })
 
 afterEach(() => {
@@ -221,33 +242,56 @@ describe("PublicMapScreen", () => {
     )
   })
 
-  test("the report form sends the reason and shows the result; own surveys cannot be reported", async () => {
-    const props = makeProps({ items: [item("s-1", 45.7, 4.8), item("mine", 48.8, 2.3, 12)] })
+  test("selecting an own survey shows a notice instead of a report entry point (Phase 2: removed)", () => {
+    const props = makeProps({ items: [item("mine", 48.8, 2.3, 12)] })
     props.ownSurveyIds = ["mine"]
     mount(props)
-    const select = (ibp: number) =>
-      act(() =>
-        markers()
-          .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(ibp))
-          ?.props.onPress(),
-      )
-    const button = (label: string) =>
-      tree.root.find((node) => (node.type as unknown) === "AppButton" && node.props.label === label)
-
-    select(12)
+    act(() =>
+      markers()
+        .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(12))
+        ?.props.onPress(),
+    )
     expect(tree.root.findAll((node) => (node.type as unknown) === "AppNotice")).toHaveLength(1)
+    expect(
+      tree.root.findAll(
+        (node) =>
+          (node.type as unknown) === "AppButton" && node.props.label === "Signaler ce relevé",
+      ),
+    ).toHaveLength(0)
+  })
 
-    select(30)
-    act(() => button(fr.publicMap.selected.report).props.onPress())
-    act(() => button(fr.common.actions.cancel).props.onPress())
-    act(() => button(fr.publicMap.selected.report).props.onPress())
-    const field = tree.root.find((node) => (node.type as unknown) === "AppField")
-    act(() => field.props.onChangeText("Coordonnées incohérentes"))
-    await act(async () => {
-      button(fr.publicMap.selected.send).props.onPress()
+  test("tapping a studied parcel opens its history; a not-studied parcel does nothing", async () => {
+    const props = makeProps({
+      parcelStatuses: [
+        parcelStatus("studied-1", "studied"),
+        parcelStatus("empty-1", "not_studied"),
+      ],
     })
-    expect(props.onReportSurvey).toHaveBeenCalledWith("s-1", "Coordonnées incohérentes")
-    expect(texts()).toContain("Signalement envoyé")
+    mount(props)
+    const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelOverlayPolygons")
+
+    await act(async () => {
+      overlay.props.onParcelPress("empty-1")
+    })
+    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
+      0,
+    )
+
+    await act(async () => {
+      overlay.props.onParcelPress("studied-1")
+    })
+    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
+    expect(header.props.title).toBe(fr.parcelHistory.title)
+    expect(mockFetchParcelSurveyHistory).toHaveBeenCalledWith(
+      "http://localhost:3000",
+      "access-token",
+      "studied-1",
+    )
+
+    act(() => byLabel(fr.publicMap.a11y.closeParcelHistory).props.onPress())
+    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
+      0,
+    )
   })
 
   test("a cluster that cannot split opens the list, and a row selects the survey", () => {

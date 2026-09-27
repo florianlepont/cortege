@@ -12,8 +12,6 @@ export const surveyDetailFr = {
     eyebrow: "Détail du relevé",
     renameLabel: "Nom du relevé",
     renamePlaceholder: "Nom du relevé",
-    visibilityPublic: "Public",
-    visibilityPrivate: "Privé",
     compactSummary: ({ workflow, sync }: { workflow: string; sync: string }) =>
       `${workflow} · ${sync}`,
     completionRate: "Avancement",
@@ -113,9 +111,7 @@ export const surveyDetailFr = {
   },
   actions: {
     title: "Actions",
-    subtitle: "Visibilité, suppression et reprise de la synchronisation.",
-    setPrivate: "Rendre privé",
-    setPublic: "Rendre public",
+    subtitle: "Suppression et reprise de la synchronisation.",
     deleteSurvey: "Supprimer le relevé",
     retryNow: "Réessayer maintenant",
     discardLocalChange: "Annuler la modification locale",
@@ -188,5 +184,17 @@ export const surveyDetailFr = {
       `Supprimer la photo ${position} sur ${total}`,
     openFactor: ({ title, value }: { title: string; value: string }) =>
       `Ouvrir le facteur ${title}, ${value}`,
+  },
+  // Previous submitted surveys on the same parcel, and the deltas of this survey against the
+  // latest one (REQ-B-survey-detail, REQ-C-versioning). Row/delta formatting is shared with the
+  // Explorer map's parcel-history panel via fr.parcelHistory.
+  versionHistory: {
+    title: "Versions précédentes",
+    subtitle: "Relevés déjà soumis sur cette même parcelle.",
+    loading: "Chargement des versions précédentes…",
+    loadFailed: "Impossible de charger les versions précédentes.",
+    none: "Premier relevé soumis sur cette parcelle.",
+    sinceLatest: "Évolution depuis la version précédente",
+    factorDelta: (factor: string, value: string) => `${factor} ${value}`,
   },
 } as const

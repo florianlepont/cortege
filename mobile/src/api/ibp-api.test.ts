@@ -5,9 +5,9 @@ jest.mock("./client", () => ({
 }))
 
 import {
-  createSurveyReport,
   deleteMyAccount,
   deleteMyProfilePicture,
+  fetchParcelSurveyHistory,
   fetchPublicMapItems,
   fetchPublicParcelStatuses,
   getAttachmentDownloadUrl,
@@ -41,10 +41,6 @@ describe("ibp-api", () => {
     await deleteMyAccount("https://api.example.com", "access-token")
     await resetIbpData("https://api.example.com", "access-token")
     await resetUserData("https://api.example.com", "access-token")
-    await createSurveyReport("https://api.example.com", "access-token", {
-      survey_id: "survey-1",
-      reason: "Needs moderation",
-    })
 
     expect(mockApiRequest.mock.calls).toEqual([
       [
@@ -114,18 +110,6 @@ describe("ibp-api", () => {
           json: {},
         },
       ],
-      [
-        {
-          baseUrl: "https://api.example.com",
-          path: "/reports",
-          method: "POST",
-          token: "access-token",
-          json: {
-            survey_id: "survey-1",
-            reason: "Needs moderation",
-          },
-        },
-      ],
     ])
   })
 
@@ -168,19 +152,19 @@ describe("ibp-api", () => {
     ])
   })
 
-  it("builds public map and parcel status queries", async () => {
-    await fetchPublicMapItems("https://api.example.com", {
+  it("builds public map and parcel status queries, authenticated (Phase 2)", async () => {
+    await fetchPublicMapItems("https://api.example.com", "access-token", {
       from: "2026-01-01",
       to: "2026-12-31",
       region: "aca",
     })
-    await fetchPublicMapItems("https://api.example.com")
-    await fetchPublicParcelStatuses("https://api.example.com", {
+    await fetchPublicMapItems("https://api.example.com", "access-token")
+    await fetchPublicParcelStatuses("https://api.example.com", "access-token", {
       bbox: "1.0,43.0,2.0,44.0",
       zoom: 15.7,
       year: 2026.9,
     })
-    await fetchPublicParcelStatuses("https://api.example.com", {
+    await fetchPublicParcelStatuses("https://api.example.com", "access-token", {
       bbox: "1.0,43.0,2.0,44.0",
       zoom: 16,
     })
@@ -191,6 +175,7 @@ describe("ibp-api", () => {
           baseUrl: "https://api.example.com",
           path: "/public/map-items?from=2026-01-01&to=2026-12-31&region=ACA",
           method: "GET",
+          token: "access-token",
         },
       ],
       [
@@ -198,6 +183,7 @@ describe("ibp-api", () => {
           baseUrl: "https://api.example.com",
           path: "/public/map-items",
           method: "GET",
+          token: "access-token",
         },
       ],
       [
@@ -205,6 +191,7 @@ describe("ibp-api", () => {
           baseUrl: "https://api.example.com",
           path: "/public/parcels/status?bbox=1.0%2C43.0%2C2.0%2C44.0&zoom=16&year=2026",
           method: "GET",
+          token: "access-token",
         },
       ],
       [
@@ -212,20 +199,48 @@ describe("ibp-api", () => {
           baseUrl: "https://api.example.com",
           path: "/public/parcels/status?bbox=1.0%2C43.0%2C2.0%2C44.0&zoom=16",
           method: "GET",
+          token: "access-token",
         },
       ],
     ])
   })
 
   it("adds the bbox to the public map query only when it is given", async () => {
-    await fetchPublicMapItems("https://api.example.com", { bbox: "1,2,3,4" })
-    await fetchPublicMapItems("https://api.example.com", { bbox: "1,2,3,4", region: "ara" })
-    await fetchPublicMapItems("https://api.example.com", { bbox: "   " })
+    await fetchPublicMapItems("https://api.example.com", "access-token", { bbox: "1,2,3,4" })
+    await fetchPublicMapItems("https://api.example.com", "access-token", {
+      bbox: "1,2,3,4",
+      region: "ara",
+    })
+    await fetchPublicMapItems("https://api.example.com", "access-token", { bbox: "   " })
 
     expect(mockApiRequest.mock.calls.map(([request]) => request.path)).toEqual([
       "/public/map-items?bbox=1%2C2%2C3%2C4",
       "/public/map-items?region=ARA&bbox=1%2C2%2C3%2C4",
       "/public/map-items",
+    ])
+  })
+
+  it("builds the parcel survey-history request, with and without a limit", async () => {
+    await fetchParcelSurveyHistory("https://api.example.com", "access-token", "75056000AB0001")
+    await fetchParcelSurveyHistory("https://api.example.com", "access-token", "75056000AB0001", 10)
+
+    expect(mockApiRequest.mock.calls).toEqual([
+      [
+        {
+          baseUrl: "https://api.example.com",
+          path: "/parcels/75056000AB0001/surveys/history",
+          method: "GET",
+          token: "access-token",
+        },
+      ],
+      [
+        {
+          baseUrl: "https://api.example.com",
+          path: "/parcels/75056000AB0001/surveys/history?limit=10",
+          method: "GET",
+          token: "access-token",
+        },
+      ],
     ])
   })
 })

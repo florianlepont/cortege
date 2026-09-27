@@ -14,7 +14,9 @@ export const brandColors = {
   panelMuted: "#E8E5D9",
   warningSoft: "#F7E6CA",
   inputFill: "#F2F0E8",
-  inputBorder: "#D6D1C3",
+  // DS-14 (UX audit, Phase 2): darkened from #D6D1C3 (1.34:1 on inputFill) to clear the WCAG
+  // 3:1 non-text contrast floor for a resting field border (3.6:1 on inputFill).
+  inputBorder: "#807D75",
   divider: "#D3D7C8",
   textPrimary: "#24311F",
   textSecondary: "#51604B",
@@ -163,7 +165,8 @@ export const brandSemanticColors = {
 // assez faible → low, moyenne → mid, assez forte and forte → high. No score cut-offs live here.
 export const ibpScoreTokens = {
   colors: {
-    high: { background: brandColors.moss, text: brandColors.white },
+    // DS-01 (UX audit, Phase 2): white on moss measured 2.85:1; forest on sage measures 5.03:1.
+    high: { background: brandColors.sage, text: brandColors.forest },
     mid: { background: brandColors.ochre, text: brandColors.white },
     low: { background: brandColors.terracotta, text: brandColors.white },
     empty: { background: brandColors.panelMuted, text: brandColors.textSecondary },
@@ -261,8 +264,10 @@ export const brandComponentTokens = {
     dangerBorder: "#E4A595",
     title: brandColors.textPrimary,
     text: brandColors.textSecondary,
-    warningText: brandColors.ochre,
-    dangerText: brandColors.terracotta,
+    // DS-02 (UX audit, Phase 2): ochre/terracotta on their soft backgrounds measured ~2.9:1;
+    // textPrimary clears AA at 9-11:1. The soft background and border keep the tone's color.
+    warningText: brandColors.textPrimary,
+    dangerText: brandColors.textPrimary,
     successText: brandColors.forest,
   },
 } as const

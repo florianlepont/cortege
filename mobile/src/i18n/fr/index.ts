@@ -11,6 +11,7 @@ import { labelsFr } from "./labels"
 import { navigationFr } from "./navigation"
 import { nearbyParcelsSheetFr } from "./nearby-parcels-sheet"
 import { ownerConflictFr } from "./owner-conflict"
+import { parcelHistoryFr } from "./parcel-history"
 import { parcelSelectionFr } from "./parcel-selection"
 import { profileSetupFr } from "./profile-setup"
 import { publicMapFr } from "./public-map"
@@ -39,6 +40,7 @@ export const fr = {
   factorInput: factorInputFr,
   factorPager: factorPagerFr,
   parcelSelection: parcelSelectionFr,
+  parcelHistory: parcelHistoryFr,
   profileSetup: profileSetupFr,
   ownerConflict: ownerConflictFr,
   settings: settingsFr,

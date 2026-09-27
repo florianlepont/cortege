@@ -6,6 +6,7 @@ import { PublicParcelStatusItem } from "../app/types"
 
 type UseParcelStatusesInput = {
   apiUrl: string
+  accessToken: string | null
   region: Region
   enabled?: boolean
   debounceMs?: number
@@ -14,6 +15,7 @@ type UseParcelStatusesInput = {
 
 export function useParcelStatuses({
   apiUrl,
+  accessToken,
   region,
   enabled = true,
   debounceMs = 400,
@@ -26,7 +28,7 @@ export function useParcelStatuses({
   const zoom = useMemo(() => computeRegionZoom(region), [region])
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || !accessToken) {
       setItems([])
       setLoading(false)
       return
@@ -37,7 +39,7 @@ export function useParcelStatuses({
       requestRef.current = requestId
       setLoading(true)
 
-      void fetchPublicParcelStatuses(apiUrl, {
+      void fetchPublicParcelStatuses(apiUrl, accessToken, {
         bbox,
         zoom,
         year,
@@ -64,7 +66,7 @@ export function useParcelStatuses({
     return () => {
       clearTimeout(timer)
     }
-  }, [apiUrl, bbox, debounceMs, enabled, year, zoom])
+  }, [apiUrl, accessToken, bbox, debounceMs, enabled, year, zoom])
 
   return {
     items,

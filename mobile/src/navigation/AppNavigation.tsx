@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Platform, StatusBar } from "react-native"
+import { StatusBar } from "react-native"
 import { NavigationContainer } from "@react-navigation/native"
 import { getNativeTabsAvailability, type NativeTabsAvailability } from "./native-tabs-availability"
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "./public-map-reload"
@@ -43,7 +43,9 @@ function AppTabs({
 
   return (
     <>
-      <StatusBar barStyle={Platform.OS === "android" ? "dark-content" : "light-content"} />
+      {/* BUG-06 (UX audit, Phase 2): every tab screen has a light canvas/map background, so the
+          status bar reads dark on both platforms — light-content was unreadable on iOS. */}
+      <StatusBar barStyle="dark-content" />
       {availability.native ? <NativeRootTabs tabBarHidden={tabBarHidden} /> : <JsRootTabs />}
     </>
   )

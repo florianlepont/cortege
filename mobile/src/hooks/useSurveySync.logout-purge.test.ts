@@ -37,7 +37,6 @@ jest.mock("../storage", () => ({
 }))
 
 jest.mock("../api/ibp-api", () => ({
-  createSurveyReport: jest.fn(),
   deleteMyAccount: jest.fn(),
   loadSurveyDetail: jest.fn(),
   loadSurveyEvents: jest.fn(),

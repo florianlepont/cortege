@@ -11,11 +11,21 @@ import { buildEventListQuery } from "../src/surveys/survey-events.service"
 import { buildReportListQuery } from "../src/reports/reports.service"
 
 // D-13 / D-15: on 10 000 seeded surveys the public queries never scan surveys, parcels or
-// survey_parcels sequentially, and they return the same rows as the pre-01.7 queries.
+// survey_parcels sequentially, and they return the same rows as the pre-01.7 queries, modulo the
+// visibility predicate Phase 2 (association-only sharing) dropped from those routes: the "legacy"
+// references below are the pre-01.7 queries with `visibility = 'public'` stripped, so the parity
+// checks still prove the 01.7 LATERAL rewrite changed nothing else about the result set.
 // Everything runs in one transaction that is rolled back (RESEARCH Pitfall 11), so the 2 000
 // seeded public surveys never reach the other specs' LIMIT 500 assertions.
 // D-11 / D-15: the three paginated lists (first page and a middle page) are index-driven on
 // the same seed, plus 30 000 survey events and 20 000 reports.
+
+// Phase 2: the API routes no longer filter on visibility, so the "same rows as legacy" checks
+// below compare against the pre-01.7 query with that one predicate removed, not the literal
+// pre-01.7 behaviour (which scripts/explain-public-routes.js still keeps verbatim for its own
+// performance-history report).
+const dropVisibilityPredicate = (sql: string): string =>
+  sql.replace(/\s*AND\s+s\.visibility = 'public'/, "")
 
 // The API's query builders, as the script loads them from dist.
 const apiQueries = {
@@ -74,8 +84,8 @@ function walk(node: PlanNode, visit: (node: PlanNode) => void): void {
 }
 
 // The plan-09 study-status query (window over the features' communes), kept as the reference
-// for its LATERAL rewrite.
-const PLAN_09_STUDIED_BY_COMMUNES_SQL = `WITH latest_public AS (
+// for its LATERAL rewrite. Phase 2 dropped the visibility predicate (dropVisibilityPredicate).
+const PLAN_09_STUDIED_BY_COMMUNES_SQL = dropVisibilityPredicate(`WITH latest_public AS (
    SELECT p.commune_code, p.section, p.number, s.id, s.observation_year, s.scores,
      ROW_NUMBER() OVER (
        PARTITION BY sp.parcel_id
@@ -94,7 +104,7 @@ const PLAN_09_STUDIED_BY_COMMUNES_SQL = `WITH latest_public AS (
    lp.observation_year AS latest_observation_year,
    (lp.scores ->> 'ibp_total')::integer AS latest_ibp_total
  FROM latest_public lp
- WHERE lp.rank_in_parcel = 1`
+ WHERE lp.rank_in_parcel = 1`)
 
 type MapItemRow = {
   id: string
@@ -314,7 +324,10 @@ describe("public routes on 10 000 surveys: EXPLAIN and legacy parity (e2e)", () 
         const current = publicMapQueries.buildPublicMapItemsQuery(filters)
         expect(current.values).toEqual(legacy.values)
 
-        const before = await client.query<MapItemRow>(legacy.text, legacy.values)
+        const before = await client.query<MapItemRow>(
+          dropVisibilityPredicate(legacy.text),
+          legacy.values,
+        )
         const after = await client.query<MapItemRow>(current.text, current.values)
 
         expect(
@@ -342,7 +355,7 @@ describe("public routes on 10 000 surveys: EXPLAIN and legacy parity (e2e)", () 
         // Nothing seeded there.
         { minLng: 100, maxLng: 101, minLat: -10, maxLat: -9 },
       ]
-      const legacySql = explain.buildLegacyParcelStatusesSql(true)
+      const legacySql = dropVisibilityPredicate(explain.buildLegacyParcelStatusesSql(true))
       for (const bbox of bboxes) {
         for (const year of [null, 2022]) {
           const values = [year, bbox.minLng, bbox.maxLng, bbox.minLat, bbox.maxLat]
@@ -368,7 +381,7 @@ describe("public routes on 10 000 surveys: EXPLAIN and legacy parity (e2e)", () 
   it(
     "parcel statuses without a bbox: same rows as the pre-01.7 query",
     async () => {
-      const legacySql = explain.buildLegacyParcelStatusesSql(false)
+      const legacySql = dropVisibilityPredicate(explain.buildLegacyParcelStatusesSql(false))
       for (const year of [null, 2023]) {
         const before = await client.query(legacySql, [year])
         const after = await client.query(publicMapQueries.PUBLIC_PARCEL_STATUSES_SQL, [year])
