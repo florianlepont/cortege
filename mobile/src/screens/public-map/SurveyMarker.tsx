@@ -1,7 +1,9 @@
 import { memo, useCallback } from "react"
+import { View } from "react-native"
 import { Marker, type LatLng } from "react-native-maps"
+import { bandTone, totalBand } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
-import { markerColors } from "./styles"
+import { markerStyles } from "./styles"
 
 export type SurveyMarkerProps = {
   id: string
@@ -13,14 +15,27 @@ export type SurveyMarkerProps = {
 
 function SurveyMarkerBase({ id, coordinate, ibpTotal, selected, onSelect }: SurveyMarkerProps) {
   const handlePress = useCallback(() => onSelect(id), [id, onSelect])
+  const tone = bandTone(totalBand(ibpTotal))
+
   return (
     <Marker
       coordinate={coordinate}
       onPress={handlePress}
-      pinColor={selected ? markerColors.selected : markerColors.survey}
+      // MAP-03: the pastille never changes once drawn for a given (tone, selected) pair — the
+      // parent key already includes `selected` (MapCanvas), so a selection change remounts this
+      // marker with a fresh snapshot instead of re-tracking the view every frame.
+      tracksViewChanges={false}
       accessibilityLabel={fr.publicMap.a11y.surveyMarker(ibpTotal)}
       zIndex={selected ? 3 : 2}
-    />
+    >
+      <View
+        style={[
+          markerStyles.scorePastille,
+          markerStyles[`scorePastille_${tone}`],
+          selected ? markerStyles.scorePastilleSelected : null,
+        ]}
+      />
+    </Marker>
   )
 }
 
@@ -36,5 +51,6 @@ function sameMarkerProps(prev: SurveyMarkerProps, next: SurveyMarkerProps): bool
   )
 }
 
-/** One public survey on the map (D-05): memoised, and the press reports the id. */
+/** One public survey on the map (D-05), coloured by its IBP total's score band (MAP-03): memoised,
+ * and the press reports the id. */
 export const SurveyMarker = memo(SurveyMarkerBase, sameMarkerProps)

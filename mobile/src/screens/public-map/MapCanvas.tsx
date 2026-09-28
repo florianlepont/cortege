@@ -1,15 +1,14 @@
 import { memo, useMemo, type RefObject } from "react"
-import MapView, { Marker, type Details, type LatLng, type Region } from "react-native-maps"
+import MapView, { type Details, type LatLng, type Region } from "react-native-maps"
 import type { PublicMapItem, PublicParcelStatusItem } from "../../app/types"
 import { IgnCadastreTileOverlay } from "../../components/IgnCadastreTileOverlay"
 import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
-import { fr } from "../../i18n"
 import type { BasemapKey } from "../../map/basemaps"
 import type { OfflineAreaSummary } from "../../storage/offline-map"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { ClusterMarker } from "./ClusterMarker"
 import { OfflineBasemapTile } from "./OfflineBasemapTile"
-import { markerColors, screenStyles } from "./styles"
+import { screenStyles } from "./styles"
 import { SurveyMarker } from "./SurveyMarker"
 import { useMapClusters } from "./useMapClusters"
 import { DEFAULT_MAP_REGION, regionForZoom } from "./useMapViewport"
@@ -24,7 +23,6 @@ export type MapCanvasProps = {
   selectedId: string | null
   parcelStatuses: PublicParcelStatusItem[]
   parcelLayerRenderable: boolean
-  currentLocation: LatLng | null
   onRegionChangeComplete: (region: Region, details?: Details) => void
   onSelectSurvey: (id: string) => void
   onSelectParcel: (parcelId: string) => void
@@ -49,7 +47,6 @@ export const MapCanvas = memo(function MapCanvas({
   selectedId,
   parcelStatuses,
   parcelLayerRenderable,
-  currentLocation,
   onRegionChangeComplete,
   onSelectSurvey,
   onSelectParcel,
@@ -89,6 +86,10 @@ export const MapCanvas = memo(function MapCanvas({
       style={screenStyles.map}
       initialRegion={DEFAULT_MAP_REGION}
       onRegionChangeComplete={onRegionChangeComplete}
+      // MAP-04: the device's own position is the native halo (accuracy ring included), not a
+      // custom Marker maintained by the app.
+      showsUserLocation
+      showsMyLocationButton={false}
     >
       <OfflineBasemapTile
         basemap={basemap}
@@ -103,35 +104,33 @@ export const MapCanvas = memo(function MapCanvas({
         items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS}
         onParcelPress={onSelectParcel}
       />
-      {currentLocation ? (
-        <Marker
-          coordinate={currentLocation}
-          pinColor={markerColors.currentPosition}
-          title={fr.publicMap.currentPosition}
-          zIndex={3}
-        />
-      ) : null}
-      {clusters.map((entry) =>
-        entry.kind === "cluster" ? (
-          <ClusterMarker
-            // The count is part of the key: the custom view is not redrawn (tracksViewChanges false).
-            key={`${entry.key}-${entry.count}`}
-            clusterId={entry.clusterId}
-            coordinate={{ latitude: entry.latitude, longitude: entry.longitude }}
-            count={entry.count}
-            onPress={handleClusterPress}
-          />
-        ) : (
+      {clusters.map((entry) => {
+        if (entry.kind === "cluster") {
+          return (
+            <ClusterMarker
+              // The count is part of the key: the custom view is not redrawn (tracksViewChanges false).
+              key={`${entry.key}-${entry.count}`}
+              clusterId={entry.clusterId}
+              coordinate={{ latitude: entry.latitude, longitude: entry.longitude }}
+              count={entry.count}
+              onPress={handleClusterPress}
+            />
+          )
+        }
+        const selected = entry.item.survey_id === selectedId
+        return (
           <SurveyMarker
-            key={entry.key}
+            // `selected` is part of the key too (tracksViewChanges false, MAP-03): a selection
+            // change remounts the marker instead of re-tracking its view every frame.
+            key={`${entry.key}-${selected}`}
             id={entry.item.survey_id}
             coordinate={{ latitude: entry.latitude, longitude: entry.longitude }}
             ibpTotal={entry.item.ibp_total}
-            selected={entry.item.survey_id === selectedId}
+            selected={selected}
             onSelect={onSelectSurvey}
           />
-        ),
-      )}
+        )
+      })}
     </MapView>
   )
 })

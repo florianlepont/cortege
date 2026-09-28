@@ -54,7 +54,7 @@ list is never ambiguous.
 - [x] **Phase 6: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it (completed 2026-09-27; Android device run + real-device photo test deferred to Phase 13, see phase detail)
 - [x] **Phase 7: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured (completed 2026-09-27)
 - [x] **Phase 8: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; on-device airplane-mode/relaunch verification deferred to Phase 13, see phase detail)
-- [ ] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map
+- [x] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map (completed 2026-09-27)
 - [x] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
 - [ ] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone
 - [ ] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F
@@ -568,7 +568,11 @@ mode walkthrough) is the one item Phase 13's field validation should confirm.
   3. Explorer's floating panels become a tiered native sheet (2–3 detents) instead of absolutely-positioned cards; filters are immediate chips (period, region, "my surveys") instead of free-text fields and an "Apply" button, with an active-filter count and a reset action.
   4. Map markers show the survey's score band (moss/ochre/terracotta) with a legend, instead of a single off-brand system pin color; the user's position uses the native `showsUserLocation` halo instead of a custom marker.
 
-**Plans**: TBD
+**Plans**: 7 batches, executed and closed directly (no separate orchestrator/executor split for
+this phase) — see `.planning/phases/09-onboarding-explorer-polish/09-CONTEXT.md` and its
+`09-0N-SUMMARY.md` files for what each batch shipped and its test evidence; `09-VALIDATION.md` maps
+each success criterion above (plus the task's criterion 5 remediation sweep: DS-05, DS-10, DS-11,
+DS-13, DET-03/04, HOME-06, LIST-07, ACC-02) to its batch.
 **UI hint**: yes
 
 ### Phase 10: Survey Export & Ownership
@@ -660,7 +664,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 6. Genus Recognition for Factor A | 1/1 | Complete (Android device run + real-device photo test deferred to Phase 13) | 2026-09-27 |
 | 7. Information Architecture (UX Lot 3) | 6/6 | Complete   | 2026-09-27 |
 | 8. Offline Map & Own-Survey Navigation | n/a | Complete (on-device airplane-mode check deferred to Phase 13) | 2026-09-27 |
-| 9. Onboarding & Explorer Polish (UX Lot 4) | 0/TBD | Not started | - |
+| 9. Onboarding & Explorer Polish (UX Lot 4) | n/a | Complete    | 2026-09-27 |
 | 10. Survey Export & Ownership | 1/1 | Complete   | 2026-09-27 |
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 0/TBD | Not started | - |

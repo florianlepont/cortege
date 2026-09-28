@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   progressLabel: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "800",
     letterSpacing: 0.5,
     color: brandColors.textSecondary,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   // DS-02 (UX audit, Phase 2): terracotta on the card background measured ~3.85-4.17:1 at 10pt,
   // under the AA floor for normal text; textPrimary clears it. The icon above stays terracotta.
   syncWarningText: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "600",
     color: brandColors.textPrimary,
   },

@@ -8,6 +8,15 @@ export const surveyDetailFr = {
     events: "Historique",
     debug: "Débogage",
   },
+  // DET-03/04: the native "…" menu replacing the tap-to-rename gesture and the equal-weight
+  // delete/export button row. "Visibilité" is deliberately absent — Phase 2 removed the
+  // private/public control from the app entirely (see 09-CONTEXT.md's scope decision).
+  menu: {
+    rename: "Renommer",
+    share: "Partager",
+    delete: "Supprimer",
+    cancel: "Annuler",
+  },
   header: {
     eyebrow: "Détail du relevé",
     renameLabel: "Nom du relevé",
@@ -106,14 +115,11 @@ export const surveyDetailFr = {
       forte: "forte",
     },
   },
+  // DET-04: the sync-error notice's own integrated action (no separate equal-weight button row);
+  // export/delete moved into the header's "…" menu (fr.surveyDetail.menu).
   actions: {
-    title: "Actions",
-    subtitle: "Export, suppression et reprise de la synchronisation.",
-    deleteSurvey: "Supprimer le relevé",
     retryNow: "Réessayer maintenant",
     discardLocalChange: "Annuler la modification locale",
-    exportPdf: "Exporter en PDF",
-    exportingPdf: "Génération du PDF…",
     exportFailed: "L'export du PDF a échoué. Réessayez.",
     exportShareUnavailable: "Aucune application de partage n'est disponible sur cet appareil.",
   },
@@ -174,7 +180,9 @@ export const surveyDetailFr = {
     invalidNameMessage: "Le nom du relevé ne peut pas être vide.",
   },
   a11y: {
-    renameSurvey: (name: string) => `Renommer le relevé ${name}`,
+    // DET-03: the "…" menu button, replacing the tap-anywhere-on-the-title gesture (no visual
+    // indicator, per the audit finding) with a discoverable, native menu affordance.
+    openMenu: (name: string) => `Actions du relevé ${name}`,
     submitSurvey: (name: string) => `Soumettre le relevé ${name}`,
     editParcels: (name: string) => `Modifier les parcelles du relevé ${name}`,
     mapPreview: (name: string) => `Carte du relevé ${name}`,

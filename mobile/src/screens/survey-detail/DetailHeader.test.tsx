@@ -1,8 +1,9 @@
-import React from "react"
+import React, { createRef } from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
 import { ibpScoreTokens } from "../../app/brand-tokens"
+import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
-import { DetailHeader } from "./DetailHeader"
+import { DetailHeader, DetailHeaderHandle } from "./DetailHeader"
 import { HeroMetric, resolveHeroMetric } from "./hero-state"
 
 const originalConsoleError = console.error
@@ -60,11 +61,16 @@ const survey = {
   updated_at: "2026-09-26T10:00:00.000Z",
 } as unknown as LocalSurvey
 
-const render = (metric: HeroMetric): ReactTestRenderer => {
+const render = (
+  metric: HeroMetric,
+  overrides: Partial<React.ComponentProps<typeof DetailHeader>> = {},
+  ref?: React.Ref<DetailHeaderHandle>,
+): ReactTestRenderer => {
   let tree: ReactTestRenderer | undefined
   act(() => {
     tree = renderer.create(
       <DetailHeader
+        ref={ref}
         survey={survey}
         activeSiteName="Bois"
         canEditSurvey
@@ -75,6 +81,8 @@ const render = (metric: HeroMetric): ReactTestRenderer => {
         attachmentCount={0}
         onRenameSurvey={jest.fn()}
         onSubmitSurvey={jest.fn()}
+        onOpenMenu={jest.fn()}
+        {...overrides}
       />,
     )
   })
@@ -109,5 +117,44 @@ describe("DetailHeader hero metric (D-03 amended)", () => {
     expect(findPill(tree, "hero-subscore-stand")).toHaveLength(0)
     const texts = tree.root.findAll((node) => (node.type as unknown) === "Text").map(textOf)
     expect(texts).toContain(metric.meta)
+  })
+})
+
+describe("DetailHeader menu (DET-03/04)", () => {
+  test("the '…' button calls onOpenMenu with the accessible name of the survey", () => {
+    const onOpenMenu = jest.fn()
+    const metric = resolveHeroMetric(null, false, 4)
+    const tree = render(metric, { onOpenMenu })
+
+    const menuButton = tree.root.findAll(
+      (node) =>
+        (node.type as unknown) === "Pressable" &&
+        node.props.accessibilityLabel === fr.surveyDetail.a11y.openMenu("Bois"),
+    )[0]
+    menuButton.props.onPress()
+    expect(onOpenMenu).toHaveBeenCalledTimes(1)
+  })
+
+  test("the ref's startRename() switches into the rename form when the survey is editable", () => {
+    const ref = createRef<DetailHeaderHandle>()
+    const metric = resolveHeroMetric(null, false, 4)
+    const tree = render(metric, { canEditSurvey: true }, ref)
+
+    expect(tree.root.findAllByType("AppField" as never)).toHaveLength(0)
+    act(() => {
+      ref.current?.startRename()
+    })
+    expect(tree.root.findAllByType("AppField" as never)).toHaveLength(1)
+  })
+
+  test("the ref's startRename() is a no-op when the survey isn't editable", () => {
+    const ref = createRef<DetailHeaderHandle>()
+    const metric = resolveHeroMetric(null, false, 4)
+    const tree = render(metric, { canEditSurvey: false }, ref)
+
+    act(() => {
+      ref.current?.startRename()
+    })
+    expect(tree.root.findAllByType("AppField" as never)).toHaveLength(0)
   })
 })

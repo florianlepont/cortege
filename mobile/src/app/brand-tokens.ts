@@ -121,6 +121,42 @@ export const brandTypography = {
 // applied once via `Text.defaultProps` in `App.tsx` so no screen is left in the OS default face.
 export const brandDefaultFontFamily = "Jost_400Regular"
 
+// Phase 9 (DS-05, audit §5): an iOS-style typographic scale with a 12pt floor — every role here is
+// >= 12, unlike several of the 10-11pt literals it replaces at individual call sites. Additive next
+// to `brandTypography` (named by content role, e.g. `heroTitle`) rather than a replacement for it:
+// `brandTypeScale` is named by size step, for new call sites that want "a caption" or "a footnote"
+// without picking a hero/section/label role that doesn't fit.
+export const brandTypeScale = {
+  display: { fontSize: 34, lineHeight: 41 },
+  title1: { fontSize: 28, lineHeight: 34 },
+  title2: { fontSize: 22, lineHeight: 28 },
+  title3: { fontSize: 20, lineHeight: 25 },
+  headline: { fontSize: 17, lineHeight: 22 },
+  body: { fontSize: 17, lineHeight: 22 },
+  callout: { fontSize: 16, lineHeight: 21 },
+  subhead: { fontSize: 15, lineHeight: 20 },
+  footnote: { fontSize: 13, lineHeight: 18 },
+  caption: { fontSize: 12, lineHeight: 16 },
+} as const
+
+// Phase 9 (DS-05): per-role caps for RN's `maxFontSizeMultiplier` `Text` prop, tested against AX3
+// (~3.1x the base size) so a capped role still grows meaningfully under Larger Accessibility Sizes
+// without breaking a fixed-width badge or a single-line title. Not merged into `brandTypography`/
+// `brandTypeScale`'s objects: those are spread into `StyleSheet.create` style objects throughout the
+// app, and `maxFontSizeMultiplier` is a `Text` prop, not a style property — merging it in would inject
+// an invalid style key everywhere a role is spread. `AppText` applies `default` automatically; a
+// caller passes a tighter role explicitly (e.g. a badge or a pill) via the `maxFontSizeMultiplier` prop.
+export const brandFontScaleCaps = {
+  default: 2,
+  display: 1.35,
+  title: 1.5,
+  body: 1.8,
+  label: 1.6,
+  meta: 1.6,
+  button: 1.4,
+  input: 1.6,
+} as const
+
 export const brandRadius = {
   hero: 34,
   panel: 30,
@@ -128,6 +164,10 @@ export const brandRadius = {
   field: 18,
   avatar: 20,
   pill: 999,
+  // Phase 9 (DS-10): the IBP score badge's corner radius, previously two magic numbers
+  // (`IbpScoreBadge.tsx`'s `badgeMd`/`badgeSm`) duplicated wherever a badge shape was needed.
+  badge: 16,
+  badgeSm: 12,
 } as const
 
 export const brandSpacing = {
@@ -158,6 +198,40 @@ export const brandShadow = {
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 3,
+  },
+} as const
+
+// Phase 9 (DS-10, audit §5 elevation): a 4-step shadow scale (iOS shadow props + Android
+// `elevation`) — `brandShadow.card` above is kept as the one already-tokenised alias in wide use
+// (equivalent to `level2`) rather than migrated, per the token file's own gradual-migration pattern.
+export const brandElevation = {
+  level0: {
+    shadowColor: "#000000",
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+  },
+  level1: {
+    shadowColor: "#000000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  level2: {
+    shadowColor: "#000000",
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+  },
+  level3: {
+    shadowColor: "#000000",
+    shadowOpacity: 0.14,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 6,
   },
 } as const
 
@@ -395,10 +469,16 @@ export const brandMapTokens = {
   userLocation: brandColors.mauve,
   strokeWidthSelected: 3,
   strokeWidthDefault: 2,
-  // Phase 4 (DS-04): the public map's pin colors, tokenized as-is — MAP-03's actual redesign
-  // (score-band markers with a legend) is Phase 9's job, not this phase's.
-  publicMarkerSurvey: "#2a7a52",
-  publicMarkerCurrentPosition: "#245f96",
+  // Phase 9 (MAP-03): the public map's survey markers, by IBP total score band tone (bandTone
+  // applied to totalBand — the same 3-tone split IbpScoreBadge already reads its colors from,
+  // here as the saturated hue itself rather than a soft background). MAP-04: the device's own
+  // position is `showsUserLocation`'s native halo, not a marker — no token needed for it.
+  scoreMarker: {
+    low: brandColors.terracotta,
+    mid: brandColors.ochre,
+    high: brandColors.moss,
+  },
+  scoreMarkerSelectedBorder: brandColors.forest,
 } as const
 
 // Phase 4 (DS-06..DS-09, audit §4): the motion system. Kept as plain data (durations in ms, easing

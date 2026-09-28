@@ -26,6 +26,11 @@ jest.mock("react-native", () => ({
   Pressable: "Pressable",
 }))
 
+// DS-13: JsRootTabs reads the safe-area bottom inset to size the JS tab bar.
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}))
+
 const mockConstants: { executionEnvironment: string; appOwnership: string | null } = {
   executionEnvironment: "bare",
   appOwnership: null,

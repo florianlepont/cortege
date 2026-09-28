@@ -3,6 +3,7 @@
  */
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
+import { Image as ExpoImage } from "expo-image"
 import { HomeScreen, pickAlertSurvey, pickResumeDraft } from "./HomeScreen"
 import { fr } from "../i18n"
 import type { LocalSurvey } from "../storage/types"
@@ -75,6 +76,8 @@ function makeSurvey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
 function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> = {}) {
   return {
     currentUser: null,
+    accessToken: "token-abc",
+    apiUrl: "http://localhost:3000",
     surveys: [],
     surveyStats: { total: 0, draft: 0, submitted: 0, pending: 0, synced: 0, failed: 0, blocked: 0 },
     isOnline: true,
@@ -92,6 +95,7 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     onRetrySurvey: jest.fn(async () => undefined),
     onOpenSyncStatus: jest.fn(),
     onNavigateToExplorer: jest.fn(),
+    onNavigateToAccount: jest.fn(),
     onRefresh: jest.fn(async () => undefined),
     ...overrides,
   }
@@ -281,6 +285,76 @@ describe("HomeScreen", () => {
         .findAllByType("AppNotice" as never)
         .filter((node) => node.props.action)
       expect(actionable).toHaveLength(0)
+    })
+
+    // LIST-07: a specific last_sync_error_code shows the same code-specific message SurveyRow and
+    // DetailActions already show, instead of Home's own generic "check your connection" text — the
+    // same survey no longer shows two different error messages depending on which screen renders it.
+    test("a failed survey with a specific error code shows that code's message, not the generic one", () => {
+      const failed = makeSurvey({
+        id: "failed-1",
+        sync_state: "failed",
+        sync_blocked: 0,
+        last_sync_error: "409 Conflict",
+        last_sync_error_code: "sync_version_conflict",
+      })
+      mount(
+        makeProps({
+          surveys: [failed],
+          surveyStats: {
+            total: 1,
+            draft: 0,
+            submitted: 0,
+            pending: 0,
+            synced: 0,
+            failed: 1,
+            blocked: 0,
+          },
+        }),
+      )
+      const notice = tree.root.findAllByType("AppNotice" as never)[0]
+      expect(notice.props.message).toBe(fr.syncErrors.byCode.sync_version_conflict)
+      expect(notice.props.message).not.toBe(fr.home.alerts.failedMessage)
+    })
+  })
+
+  describe("avatar (HOME-06)", () => {
+    test("shows the placeholder icon when there is no profile photo", () => {
+      mount(makeProps())
+      expect(tree.root.findAllByType(ExpoImage)).toHaveLength(0)
+      const button = tree.root.findByProps({ accessibilityLabel: fr.home.avatar })
+      expect(button.props.accessibilityRole).toBe("button")
+    })
+
+    test("shows the profile photo via expo-image, signed with the access token, once one exists", () => {
+      mount(
+        makeProps({
+          currentUser: {
+            id: "u1",
+            email: "a@example.fr",
+            display_name: "A B",
+            role: "member",
+            first_name: "A",
+            last_name: "B",
+            profile_picture_url: "/uploads/avatar.jpg",
+          },
+          accessToken: "token-xyz",
+          apiUrl: "http://localhost:3000",
+        }),
+      )
+      const image = tree.root.findByType(ExpoImage)
+      expect(image.props.source).toEqual({
+        uri: "http://localhost:3000/uploads/avatar.jpg",
+        headers: { Authorization: "Bearer token-xyz" },
+      })
+    })
+
+    test("tapping the avatar navigates to Compte", () => {
+      const onNavigateToAccount = jest.fn()
+      mount(makeProps({ onNavigateToAccount }))
+      const button = tree.root.findByProps({ accessibilityLabel: fr.home.avatar })
+      act(() => button.props.onPress())
+      expect(onNavigateToAccount).toHaveBeenCalledTimes(1)
     })
   })
 })

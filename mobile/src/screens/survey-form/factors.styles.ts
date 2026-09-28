@@ -72,7 +72,7 @@ export const factorStyles = StyleSheet.create({
   },
   factorBadgeText: {
     ...brandTypography.label,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 12,
     color: brandColors.white,
   },
@@ -86,19 +86,19 @@ export const factorStyles = StyleSheet.create({
   },
   factorTileTitle: {
     ...brandTypography.label,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 13,
     color: brandColors.textPrimary,
   },
   factorTileMeta: {
     ...brandTypography.meta,
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 12,
     color: brandColors.textSecondary,
   },
   factorTileState: {
     ...brandTypography.meta,
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 12,
     color: brandColors.forest,
   },

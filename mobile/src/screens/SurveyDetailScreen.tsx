@@ -1,8 +1,8 @@
 import { IbpCas } from "@cortege/ibp-domain"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { NativeScrollEvent, NativeSyntheticEvent, ScrollView } from "react-native"
+import { Alert, NativeScrollEvent, NativeSyntheticEvent, ScrollView } from "react-native"
 import { shouldShowDevTools } from "../app/dev-tools"
-import type { SurveyExportData } from "../app/survey-pdf-export"
+import { exportAndShareSurveyPdf, type SurveyExportData } from "../app/survey-pdf-export"
 import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
@@ -20,11 +20,13 @@ import {
   SurveyEventItem,
   VegetationStage,
 } from "../app/types"
+import { fr, logStatusDetail } from "../i18n"
 import { LocalAttachment, LocalSurvey } from "../storage"
+import { AppActionSheet } from "../ui/AppActionSheet"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
-import { DetailHeader } from "./survey-detail/DetailHeader"
+import { DetailHeader, type DetailHeaderHandle } from "./survey-detail/DetailHeader"
 import { DetailTabBar } from "./survey-detail/DetailTabBar"
 import { EventsTab } from "./survey-detail/EventsTab"
 import { FactorsSection } from "./survey-detail/FactorsSection"
@@ -216,6 +218,35 @@ export function SurveyDetailScreen({
     displayedFactorEntries,
   ])
 
+  // DET-03/04: the header's "…" menu (Renommer/Partager/Supprimer). Renommer is delegated to
+  // DetailHeader's own rename form via a ref, since that form's state already lives there.
+  const detailHeaderRef = useRef<DetailHeaderHandle>(null)
+  const [menuVisible, setMenuVisible] = useState(false)
+  const menuText = fr.surveyDetail.menu
+  const actionsText = fr.surveyDetail.actions
+
+  const handleSharePdf = async (): Promise<void> => {
+    try {
+      const { shared } = await exportAndShareSurveyPdf(exportData)
+      if (!shared) {
+        Alert.alert(menuText.share, actionsText.exportShareUnavailable)
+      }
+    } catch (error) {
+      logStatusDetail("surveyDetail.exportPdf", error)
+      Alert.alert(menuText.share, actionsText.exportFailed)
+    }
+  }
+
+  const menuOptions = [
+    { label: menuText.rename, onPress: () => detailHeaderRef.current?.startRename() },
+    { label: menuText.share, onPress: () => void handleSharePdf() },
+    {
+      label: menuText.delete,
+      destructive: true,
+      onPress: () => onDeleteSurvey(selectedSurvey.id),
+    },
+  ]
+
   useEffect(() => {
     isHeroCompressedRef.current = false
     setIsHeroCompressed(false)
@@ -246,6 +277,7 @@ export function SurveyDetailScreen({
       stickyHeaderIndices={[0]}
     >
       <DetailHeader
+        ref={detailHeaderRef}
         survey={selectedSurvey}
         activeSiteName={activeSiteName}
         canEditSurvey={canEditSurvey}
@@ -260,6 +292,7 @@ export function SurveyDetailScreen({
         attachmentCount={selectedSurveyAttachments.length}
         onRenameSurvey={onRenameSurvey}
         onSubmitSurvey={onSubmitSurvey}
+        onOpenMenu={() => setMenuVisible(true)}
       />
 
       <MediaSection
@@ -319,8 +352,6 @@ export function SurveyDetailScreen({
           />
           <DetailActions
             survey={selectedSurvey}
-            exportData={exportData}
-            onDeleteSurvey={onDeleteSurvey}
             onRetrySurvey={onRetrySurvey}
             onDiscardSurvey={onDiscardSurvey}
           />
@@ -348,6 +379,14 @@ export function SurveyDetailScreen({
           onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
         />
       ) : null}
+
+      <AppActionSheet
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        title={activeSiteName}
+        options={menuOptions}
+        cancelLabel={menuText.cancel}
+      />
     </ScrollView>
   )
 }

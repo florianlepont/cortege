@@ -10,26 +10,32 @@ export const publicMapFr = {
   count: (count: number) =>
     count === 0 ? "Aucun relevé" : `${count} ${plural(count, "relevé", "relevés")}`,
   empty: "Aucun relevé dans cette zone",
-  currentPosition: "Votre position",
   layer: {
     hidden: "Parcelles masquées",
     loading: "Chargement du cadastre",
     active: "Cadastre actif",
     zoomIn: "Zoomez pour voir les parcelles",
   },
+  // MAP-02: chips applied immediately (no free-text fields, no "Appliquer" button).
   filters: {
     title: "Filtres",
-    subtitle: "Affinez les relevés soumis sans quitter la carte.",
-    from: "Du",
-    to: "Au",
-    region: "Région",
-    fromPlaceholder: "2026-03-01",
-    toPlaceholder: "2026-03-31",
-    regionPlaceholder: "ACA",
+    subtitle: "Appliqués immédiatement, sans quitter la carte.",
+    period: {
+      all: "Toutes périodes",
+      month: "Ce mois-ci",
+      quarter: "3 derniers mois",
+      year: "Cette année",
+    },
+    region: {
+      all: "Toutes régions",
+      ACA: "ACA",
+      M: "Méditerranée",
+    },
     // The API matches the v3.0 region code exactly; v3.2 surveys carry a cas, not a region.
     regionHint: "filtre les relevés v3.0 uniquement",
-    apply: "Appliquer les filtres",
-    applying: "Actualisation…",
+    mine: "Mes relevés",
+    reset: "Réinitialiser",
+    activeCount: (count: number) => (count > 1 ? `${count} filtres` : `${count} filtre`),
   },
   selected: {
     title: (ibp: number) => `Relevé · IBP ${ibp}/50`,
@@ -50,6 +56,13 @@ export const publicMapFr = {
   cluster: {
     count: (count: number) => (count > 99 ? "99+" : String(count)),
   },
+  // MAP-03: the score-band pastille legend, collapsible.
+  legend: {
+    title: "Légende",
+    low: "Score faible",
+    mid: "Score moyen",
+    high: "Score élevé",
+  },
   alerts: {
     locationDisabled: {
       title: "Localisation désactivée",
@@ -63,6 +76,9 @@ export const publicMapFr = {
   a11y: {
     showFilters: "Afficher les filtres",
     hideFilters: "Masquer les filtres",
+    activeFilterCount: (count: number) =>
+      count > 1 ? `${count} filtres actifs` : `${count} filtre actif`,
+    resetFilters: "Réinitialiser les filtres",
     refresh: "Actualiser la carte",
     showParcels: "Afficher les parcelles",
     hideParcels: "Masquer les parcelles",
@@ -70,6 +86,8 @@ export const publicMapFr = {
     closeSelection: "Fermer le relevé sélectionné",
     closeClusterList: "Fermer la liste des relevés",
     closeParcelHistory: "Fermer l'historique de la parcelle",
+    showLegend: "Afficher la légende des scores",
+    hideLegend: "Masquer la légende des scores",
     surveyMarker: (ibp: number) => `Relevé, IBP ${ibp}/50`,
     cluster: (count: number) => `Groupe de ${count} ${plural(count, "relevé", "relevés")}`,
     clusterListItem: ({ ibp, date, region }: { ibp: number; date: string; region: string }) =>

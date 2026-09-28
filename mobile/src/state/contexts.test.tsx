@@ -52,6 +52,9 @@ jest.mock("../screens/AuthGateScreen", () => ({ AuthGateScreen: mockOverlayProbe
 jest.mock("../screens/ProfileSetupScreen", () => ({
   ProfileSetupScreen: mockOverlayProbe("profileSetup"),
 }))
+jest.mock("../screens/onboarding/OnboardingFlow", () => ({
+  OnboardingFlow: mockOverlayProbe("onboarding"),
+}))
 jest.mock("../screens/LocalDataOwnerConflictScreen", () => ({
   LocalDataOwnerConflictScreen: mockOverlayProbe("ownerConflict"),
 }))
@@ -200,6 +203,14 @@ jest.mock("../storage/local-owner", () => ({
   countUnsyncedLocalWork: jest.fn(async () => ({ surveys: 0, attachments: 0 })),
 }))
 
+// ONB-01: defaults to "already seen" so the onboarding overlay stays out of every other App
+// shell scenario in this file; the dedicated onboarding tests below override it per-call.
+const mockLoadOnboardingSeen = jest.fn(async () => true)
+jest.mock("../storage/onboarding-preference", () => ({
+  loadOnboardingSeen: () => mockLoadOnboardingSeen(),
+  markOnboardingSeen: jest.fn(async () => undefined),
+}))
+
 jest.mock(
   "../api/ibp-api",
   () =>
@@ -226,6 +237,11 @@ jest.mock("expo-network", () => ({
   getNetworkStateAsync: jest.fn(() => new Promise(() => undefined)),
   addNetworkStateListener: jest.fn(() => ({ remove: jest.fn() })),
   NetworkStateType: { WIFI: "WIFI", NONE: "NONE", CELLULAR: "CELLULAR" },
+}))
+
+jest.mock("expo-splash-screen", () => ({
+  preventAutoHideAsync: jest.fn(async () => true),
+  hideAsync: jest.fn(async () => true),
 }))
 
 jest.mock("expo-secure-store", () => ({
@@ -581,6 +597,8 @@ describe("App shell overlays", () => {
     mockSession.isAuthenticated = true
     mockSession.currentUser = savedUser
     mockLocalDataOwner.status = "ok"
+    mockLoadOnboardingSeen.mockReset()
+    mockLoadOnboardingSeen.mockImplementation(async () => true)
     for (const key of Object.keys(mockOverlayProps)) delete mockOverlayProps[key]
   })
 
@@ -666,6 +684,31 @@ describe("App shell overlays", () => {
       ;(props.onSkip as () => void)()
     })
     expect(mockOverlayProps.profileSetup).toBeUndefined()
+    await unmount(tree)
+  })
+
+  // ONB-01: the carousel + permissions flow shows once, on a genuine first launch, and never
+  // flashes for a returning user (loadOnboardingSeen resolving true is this describe's default).
+  test("shows no onboarding overlay once the flag resolves seen", async () => {
+    const tree = await mountApp()
+    expect(mockOverlayProps.onboarding).toBeUndefined()
+    expect(mockOverlayProps.authGate).toBeUndefined()
+    await unmount(tree)
+  })
+
+  test("shows the onboarding overlay on first launch, on top of the auth gate, until it's done", async () => {
+    mockLoadOnboardingSeen.mockImplementation(async () => false)
+    mockSession.isAuthenticated = false
+    const tree = await mountApp()
+    expect(mockOverlayProps.authGate).toBeDefined()
+    const props = mockOverlayProps.onboarding
+    expect(props).toBeDefined()
+
+    delete mockOverlayProps.onboarding
+    await act(async () => {
+      ;(props.onDone as () => void)()
+    })
+    expect(mockOverlayProps.onboarding).toBeUndefined()
     await unmount(tree)
   })
 })

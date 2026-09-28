@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@bottom-tabs/react-navigation": "^1.4.0",
+    "@gorhom/bottom-sheet": "^5.2.14",
     "@cortege/ibp-domain": "*",
     "@expo/vector-icons": "^15.0.2",
     "@react-navigation/bottom-tabs": "^7.19.2",
@@ -41,6 +42,7 @@
     "expo-print": "~57.0.2",
     "expo-secure-store": "~57.0.4",
     "expo-sharing": "~57.0.22",
+    "expo-splash-screen": "~57.0.9",
     "expo-sqlite": "~57.0.3",
     "jpeg-js": "^0.4.4",
     "react": "19.2.3",
