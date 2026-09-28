@@ -56,7 +56,7 @@ list is never ambiguous.
 - [x] **Phase 8: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; on-device airplane-mode/relaunch verification deferred to Phase 13, see phase detail)
 - [x] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map (completed 2026-09-27)
 - [x] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
-- [ ] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone
+- [x] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone (completed 2026-09-27)
 - [x] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F (completed 2026-09-28)
 - [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
 
@@ -635,6 +635,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
   3. Signing up with an already-registered email shows a specific message inviting the user to log in (`BUG-A3-4`), and password-reset deliverability is closed as an Auth0 tenant configuration item with the change recorded (`BUG-A6-2`).
   4. The survey list, survey detail, survey form and map screens have tests covering their sync-status, filter and error states, so the flows the field tests exercise are protected against regression.
   5. Every field-test case cites a unique story ID: the six Epic D stories have six distinct IDs, and `docs/specs/user-stories.md` §4 uses the MVP / V1 / V2 taxonomy.
+  6. Each field observer's feedback is collected in one feedback grid (`docs/user-tests/field-feedback.md`): bugs, interface friction (slow entry, unclear screens, anything that gets in the way on a parcel) and suggestions, each with an ID, the screen concerned and the observer. At the end of the phase every entry is triaged as *release blocker*, *next milestone* or *rejected* (with a reason); the release blockers are fixed, in a short follow-up phase if needed, before the milestone closes.
 
 **Plans**: TBD
 
@@ -662,7 +663,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 1.9. Mobile state architecture, i18n, accessibility and hygiene | 32/32 | Complete    | 2026-09-27 |
 | 2. Association-only sharing & scope trim | 5/5 | Complete (BUG-04 deferred) | 2026-09-27 |
 | 3. Field-Entry Ergonomics (UX Lot 1) | 6/6 | Complete   | 2026-09-27 |
-| 4. Visual Foundations & Motion (UX Lot 2) | 0/TBD | Not started | - |
+| 4. Visual Foundations & Motion (UX Lot 2) | 5/5 | Complete   | 2026-09-27 |
 | 5. Factor A Genus List & Data-Contract Corrections | 1/1 | Complete   | 2026-09-27 |
 | 6. Genus Recognition for Factor A | 1/1 | Complete (Android device run + real-device photo test deferred to Phase 13) | 2026-09-27 |
 | 7. Information Architecture (UX Lot 3) | 6/6 | Complete   | 2026-09-27 |
