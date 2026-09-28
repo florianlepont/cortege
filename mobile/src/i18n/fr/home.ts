@@ -9,9 +9,10 @@ export const homeFr = {
   alerts: {
     blocked: ({ count }: { count: number }) =>
       `${count} ${plural(count, "relevé")} ${plural(count, "bloqué")}`,
-    // SYNC-03: a blocked survey is a conflict, not a connection problem — distinct copy and action
-    // from a plain sync error, and an actionable "Voir" instead of a dead-end notice.
-    blockedMessage: "Synchronisation en conflit : ouvrez le relevé pour le résoudre.",
+    // SYNC-03: a blocked survey is not a connection problem, so it gets its own copy and an
+    // actionable "Voir". OA-18: a block is not always a conflict, so the copy names no cause; the
+    // list and the survey show the actual reason.
+    blockedMessage: "Synchronisation bloquée : ouvrez le relevé pour voir pourquoi.",
     failed: ({ count }: { count: number }) =>
       `${count} ${plural(count, "relevé")} en erreur de sync`,
     failedMessage: "Vérifiez votre connexion pour relancer la synchronisation.",

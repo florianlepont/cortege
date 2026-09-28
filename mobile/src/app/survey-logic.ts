@@ -213,11 +213,6 @@ export const getSubmitBlockReason = (
   const target = surveys.find((survey) => survey.id === surveyId)
   if (!target) return "not_found"
 
-  const otherBlockedSurvey = surveys.find(
-    (survey) => survey.id !== surveyId && survey.sync_blocked === 1,
-  )
-  if (otherBlockedSurvey) return "global_blocked"
-
   if (target.status === "submitted") return "already_submitted"
   if (target.sync_state !== "synced") return "not_synced"
   if (target.sync_blocked === 1) return "survey_blocked"

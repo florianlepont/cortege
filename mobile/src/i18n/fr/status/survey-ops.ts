@@ -48,10 +48,6 @@ export const surveyOpsStatusFr = {
 
   // Submit
   notFound: () => statusText("Relevé introuvable sur cet appareil"),
-  conflictUnresolved: ({ name }: { name: string }) =>
-    statusText(
-      `Conflit de synchronisation non résolu sur « ${name} ». Réessayez ou annulez la modification locale d'abord.`,
-    ),
   alreadySubmitted: ({ name }: { name: string }) => statusText(`« ${name} » est déjà soumis`),
   notSynced: ({ name }: { name: string }) =>
     statusText(`« ${name} » doit être synchronisé avant d'être soumis`),

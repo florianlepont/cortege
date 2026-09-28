@@ -122,15 +122,6 @@ describe("useSurveySyncSurveyOperations", () => {
       expect(setStatus).toHaveBeenCalledWith(text.notFound())
     })
 
-    test("sets status when global sync conflict", async () => {
-      mockGetSubmitBlockReason.mockReturnValue("global_blocked")
-      const { handleSubmitSurvey, setStatus } = await buildHook({
-        surveys: [{ id: "survey-1", sync_blocked: 1 }],
-      })
-      await handleSubmitSurvey("survey-1")
-      expect(setStatus).toHaveBeenCalledWith(text.conflictUnresolved({ name }))
-    })
-
     test("sets status when already submitted", async () => {
       mockGetSubmitBlockReason.mockReturnValue("already_submitted")
       const { handleSubmitSurvey, setStatus } = await buildHook()

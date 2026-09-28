@@ -329,12 +329,12 @@ describe("getSubmitBlockReason", () => {
     expect(getSubmitBlockReason("ok", surveys)).toBeNull()
   })
 
-  test("returns global_blocked when another survey is blocked", () => {
+  test("OA-18: another blocked survey does not block this one", () => {
     const surveys: LocalSurvey[] = [
       makeSurvey({ id: "target", sync_state: "synced", status: "draft" }),
       makeSurvey({ id: "other", sync_blocked: 1, sync_state: "failed" }),
     ]
-    expect(getSubmitBlockReason("target", surveys)).toBe("global_blocked")
+    expect(getSubmitBlockReason("target", surveys)).toBeNull()
   })
 
   test("returns survey_blocked when target itself is blocked", () => {
