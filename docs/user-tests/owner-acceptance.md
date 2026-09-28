@@ -112,6 +112,12 @@ offline download to third-party apps. Options to choose from before the fix batc
    style, native offline packs. Larger change (replaces the map library).
 3. Keep the current mix and fix the overlay (not recommended: the mix is what causes OA-61).
 
+**Owner decision (2026-09-28): option 2**, MapLibre with IGN tiles (Géoplateforme: Plan IGN vector
+tiles for the map, orthophotos for satellite, the same provider as the cadastre overlay), with a dark
+style and native offline packs. It replaces `react-native-maps` in Explorer, parcel selection and
+the survey detail map; plan it as its own batch, after checking the IGN terms of use for offline
+storage.
+
 ---
 
 ## Fix batches
