@@ -162,7 +162,7 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 30,
       lineHeight: 34,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     subtitle: {
       ...brandTypography.meta,
@@ -177,7 +177,7 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 20,
       lineHeight: 24,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     trailing: {
       flexDirection: "row",

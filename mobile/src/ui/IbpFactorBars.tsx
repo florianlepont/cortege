@@ -119,7 +119,7 @@ function createStyles(theme: BrandTheme) {
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 0.3,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       textTransform: "uppercase",
     },
     row: {
@@ -145,7 +145,7 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       fontSize: 12,
       fontWeight: "800",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     factorTitle: {
       flex: 1,

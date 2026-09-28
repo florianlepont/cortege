@@ -96,7 +96,7 @@ export function createDetailStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 22,
       lineHeight: 25,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     panelBody: {
       ...brandTypography.sectionBody,

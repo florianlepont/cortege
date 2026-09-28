@@ -12,7 +12,7 @@ export function createRowStyles(theme: BrandTheme) {
       borderRadius: brandRadius.card,
       borderWidth: 1,
       borderColor: theme.colors.divider,
-      backgroundColor: theme.colors.white,
+      backgroundColor: theme.semanticColors.surfaceElevated,
       padding: 10, // P2-COMPACT-01: 12 → 10
       ...brandShadow.card,
     },
@@ -22,6 +22,8 @@ export function createRowStyles(theme: BrandTheme) {
     surveyDeleteAction: {
       width: 124,
       alignSelf: "stretch",
+      // OA-57: a gap between the card and the delete button.
+      marginLeft: 8,
       marginRight: 8,
       borderRadius: brandRadius.card,
       backgroundColor: theme.colors.terracotta,

@@ -1,6 +1,5 @@
 import { StyleSheet } from "react-native"
 import {
-  brandColors,
   brandOnDarkColors,
   brandRadius,
   brandSpacing,
@@ -66,7 +65,7 @@ export function createIdentityStyles(theme: BrandTheme) {
       fontSize: 26,
       lineHeight: 30,
       fontWeight: "900",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     // ACC-C01 : badge caméra agrandi à 28pt pour une meilleure cible tactile visuelle
     avatarEditBadge: {
@@ -130,9 +129,10 @@ export const profileStyles = StyleSheet.create({
   fieldGroup: {
     gap: 4,
   },
+  // The label colour comes from AppField's themed label style (OA-82: a static forest vanished in
+  // dark mode).
   fieldLabel: {
     ...brandTypography.label,
-    color: brandColors.forest,
   },
   fieldInput: {
     paddingHorizontal: 14,

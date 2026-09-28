@@ -39,11 +39,11 @@ export function createContextEditorStyles(theme: BrandTheme) {
       gap: 8,
     },
     summaryItem: {
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       backgroundColor: theme.colors.panelMuted,
     },
     summaryItemLabel: {
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     hint: {
       ...brandTypography.meta,

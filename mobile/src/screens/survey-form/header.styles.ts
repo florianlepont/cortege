@@ -173,7 +173,7 @@ export function createHeaderStyles(theme: BrandTheme) {
       ...brandTypography.heroEyebrow,
       fontSize: 12,
       lineHeight: 12,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     stepIndexTextActive: {
       color: brandColors.white,
@@ -195,7 +195,7 @@ export function createHeaderStyles(theme: BrandTheme) {
     stepButtonHint: {
       marginTop: "auto",
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     stepButtonHintActive: {
       color: brandColors.white,

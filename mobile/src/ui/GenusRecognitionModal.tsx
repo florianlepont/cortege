@@ -184,7 +184,7 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: theme.colors.white,
+      backgroundColor: theme.semanticColors.backgroundCanvas,
     },
     header: {
       flexDirection: "row",
@@ -196,7 +196,7 @@ function createStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.sectionTitle,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     content: {
       padding: brandSpacing.md,
@@ -217,7 +217,7 @@ function createStyles(theme: BrandTheme) {
     sectionTitle: {
       ...brandTypography.sectionTitle,
       fontSize: 18,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     resultCard: {
       borderRadius: brandRadius.field,

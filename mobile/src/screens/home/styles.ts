@@ -30,7 +30,7 @@ export function createStyles(theme: BrandTheme) {
     greetingTitle: {
       fontSize: 28,
       fontWeight: "800",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       lineHeight: 32,
     },
     greetingDate: {
@@ -169,14 +169,14 @@ export function createStyles(theme: BrandTheme) {
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 0.8,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       textTransform: "uppercase",
       flex: 1,
     },
     sectorScore: {
       fontSize: 22,
       fontWeight: "900",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     scoreDotsRow: {
       flexDirection: "row",

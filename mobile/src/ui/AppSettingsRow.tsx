@@ -80,7 +80,7 @@ function createStyles(theme: BrandTheme) {
     },
     label: {
       ...brandTypography.label,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     value: {
       ...brandTypography.sectionBody,

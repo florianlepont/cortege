@@ -145,7 +145,9 @@ function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): Bran
     surfaceSoft: colors.surfaceSoft,
     textPrimary: colors.textPrimary,
     textSecondary: colors.textSecondary,
-    textStrong: colors.forest,
+    // OA-83: `forest` is theme-invariant, so forest text vanished on the dark canvas. Strong text
+    // (titles, labels, links) takes the light sage on dark.
+    textStrong: scheme === "dark" ? brandColors.sage : colors.forest,
     ctaPrimary: colors.forest,
     ctaAccent: colors.moss,
     ctaSecondaryOutline: colors.forest,

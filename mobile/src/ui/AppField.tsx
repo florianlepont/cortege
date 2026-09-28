@@ -93,7 +93,7 @@ function createStyles(theme: BrandTheme) {
     },
     inputFocused: {
       borderColor: theme.colors.forest,
-      backgroundColor: theme.colors.white,
+      backgroundColor: theme.semanticColors.surfaceElevated,
       shadowColor: theme.colors.forest,
       shadowOpacity: 0.08,
       shadowRadius: 10,

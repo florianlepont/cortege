@@ -20,7 +20,7 @@ export function createFactorStyles(theme: BrandTheme) {
       fontSize: 52,
       lineHeight: 56,
       fontWeight: "900",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     scoreHeroMeta: {
       ...brandTypography.sectionBody,
@@ -102,7 +102,7 @@ export function createFactorStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       fontSize: 12,
       lineHeight: 12,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
   })
 }

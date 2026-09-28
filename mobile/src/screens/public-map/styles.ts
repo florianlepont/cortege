@@ -122,7 +122,7 @@ export function createControlStyles(theme: BrandTheme) {
     },
     exploreBadgeText: {
       ...brandTypography.label,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     countBadge: {
       borderRadius: brandRadius.pill,
@@ -174,7 +174,7 @@ export function createControlStyles(theme: BrandTheme) {
     },
     filtersTitle: {
       ...brandTypography.label,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     filtersMeta: {
       ...brandTypography.meta,
@@ -199,7 +199,7 @@ export function createControlStyles(theme: BrandTheme) {
     },
     layerTogglePillText: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     layerTogglePillTextOn: {
       color: brandColors.white,
@@ -252,7 +252,7 @@ export function createFilterBarStyles(theme: BrandTheme) {
     },
     resetLink: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
       textDecorationLine: "underline",
     },
     row: {
@@ -332,7 +332,7 @@ export function createOfflineIndicatorStyles(theme: BrandTheme) {
     },
     basemapOptionText: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     basemapOptionTextActive: {
       color: brandColors.white,
@@ -347,7 +347,7 @@ export function createPanelStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.label,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     meta: {
       ...brandTypography.meta,

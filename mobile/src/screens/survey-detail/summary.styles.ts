@@ -34,7 +34,7 @@ export function createSummaryStyles(theme: BrandTheme) {
     },
     factorTilePending: {
       borderColor: theme.colors.divider,
-      backgroundColor: theme.colors.white,
+      backgroundColor: theme.semanticColors.surfaceElevated,
     },
     factorTileEditable: {
       borderColor: theme.colors.divider,
@@ -88,7 +88,7 @@ export function createSummaryStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
     },
     factorTileClassCompleted: {
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     factorTileClassPending: {
       color: theme.colors.textSecondary,
@@ -144,7 +144,7 @@ export function createSummaryStyles(theme: BrandTheme) {
     },
     historyRowTitle: {
       ...brandTypography.label,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     historyRowMeta: {
       ...brandTypography.meta,
@@ -163,7 +163,7 @@ export function createSummaryStyles(theme: BrandTheme) {
     },
     historyDeltaPillText: {
       ...brandTypography.meta,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     submittedReadonlyBanner: {
       borderRadius: 28,
@@ -193,7 +193,7 @@ export function createSummaryStyles(theme: BrandTheme) {
       fontSize: 22,
       lineHeight: 26,
       fontWeight: "900",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     deadlineValueWarning: {
       color: theme.colors.ochre,

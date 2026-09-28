@@ -119,7 +119,7 @@ function createStyles(theme: BrandTheme) {
     },
     heroTitle: {
       ...brandTypography.sectionTitle,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     heroSubtitle: {
       ...brandTypography.sectionBody,

@@ -161,7 +161,7 @@ function createStyles(theme: BrandTheme) {
     },
     slideTitle: {
       ...brandTypography.sectionTitle,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     slideBody: {
       ...brandTypography.heroBody,

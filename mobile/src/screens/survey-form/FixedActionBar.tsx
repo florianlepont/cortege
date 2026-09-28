@@ -106,7 +106,7 @@ function createStyles(theme: BrandTheme) {
     secondaryButtonText: {
       fontSize: 15,
       fontWeight: "700",
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     primaryButton: {
       flex: 1,

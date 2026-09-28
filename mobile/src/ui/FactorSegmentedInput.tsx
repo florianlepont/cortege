@@ -92,7 +92,7 @@ function createStyles(theme: BrandTheme) {
     },
     segmentText: {
       ...brandTypography.meta,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       textAlign: "center",
     },
     segmentTextActive: {

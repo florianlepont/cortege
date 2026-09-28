@@ -34,7 +34,7 @@ export function createParcelStyles(theme: BrandTheme) {
     },
     selectionCountPillText: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     mapFrame: {
       position: "relative",
@@ -85,7 +85,7 @@ export function createParcelStyles(theme: BrandTheme) {
     },
     selectionPillText: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     fullscreenMapScreen: {
       flex: 1,
@@ -167,7 +167,7 @@ export function createParcelStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 20,
       lineHeight: 24,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     fullscreenMapBottomMeta: {
       ...brandTypography.sectionBody,

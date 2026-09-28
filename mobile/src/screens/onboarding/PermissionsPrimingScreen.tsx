@@ -148,7 +148,7 @@ function createStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.sectionTitle,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     body: {
       ...brandTypography.sectionBody,
@@ -179,7 +179,7 @@ function createStyles(theme: BrandTheme) {
     },
     rowTitle: {
       ...brandTypography.input,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     rowBody: {
       ...brandTypography.sectionBody,
@@ -193,7 +193,7 @@ function createStyles(theme: BrandTheme) {
     },
     rowStatusGranted: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     rowStatusDenied: {
       ...brandTypography.meta,
@@ -201,7 +201,7 @@ function createStyles(theme: BrandTheme) {
     },
     settingsLink: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
       textDecorationLine: "underline",
     },
     footer: {

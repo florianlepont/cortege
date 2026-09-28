@@ -68,7 +68,7 @@ function createStyles(theme: BrandTheme) {
     },
     emptyStateTitle: {
       ...brandTypography.input,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     emptyStateBody: {
       ...brandTypography.sectionBody,
