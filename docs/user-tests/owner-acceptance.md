@@ -17,7 +17,7 @@ An entry is closed only when the owner confirms the fix on the phone.
 
 | Date | Phone / OS | Build | Theme | Flows covered |
 |------|------------|-------|-------|---------------|
-| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft. Step 5: Mes Relevés. Step 6: Explorer (after a reinstall with a renewed signing profile) |
+| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft. Step 5: Mes Relevés. Step 6: Explorer (after a reinstall with a renewed signing profile). Step 8: Compte |
 
 Flows to cover (success criterion 1): sign-in, Home, a survey from creation to submission,
 Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
@@ -96,6 +96,11 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-66 | Explorer, offline areas | The offline-download panel opens too high. Owner question: doesn't Apple's map library, or another one such as OSM, already offer offline maps? | Display bug | 🟡 | 🔲 Open | | Answered in the chat of 2026-09-28; see the basemap decision below the table |
 | OA-67 | Explorer | The filters are of no use on this view. | UX friction | 🟡 | 🔲 Open | | Remove, or move to the search page (OA-52) |
 | OA-68 | Whole app | Overall the interface looks dated rather than modern, with little use of native Liquid Glass. | UX friction | 🔴 | 🔲 Open | | Cross-cutting design direction for the redesign mock-ups (OA-25, OA-46, OA-52, OA-56) |
+| OA-69 | Compte | The header is still not consistent with the other tabs (centred title with a settings button). | UX friction | 🟡 | 🔲 Open | | Goes with OA-21 |
+| OA-70 | Compte | The page could be more modern and friendlier; today it looks like a web page. | UX friction | 🟡 | 🔲 Open | | With OA-13 the Compte tab goes, so the page opens from the avatar; redesign with OA-68 |
+| OA-71 | Compte | The "Contributeur" label is of no use while there is no moderation. | UX friction | 🟡 | 🔲 Open | | |
+| OA-72 | Compte, profile | The "Sauvegardé" label adds little. Show a save state only when there are unsaved changes, and make saving behave the same way across the whole app. | UX friction | 🟡 | 🔲 Open | | Cross-cutting: one save pattern for profile, survey form, rename |
+| OA-73 | Compte, email | Changing the email fails with a generic error ("Impossible de changer l'adresse e-mail…"), which hides the real cause. | Functional bug | 🔴 | 🔲 Open | | The API asks Auth0 to change the email (`auth0-management.service.ts`); Auth0 refuses this for accounts signed in with Apple or Google, and any other Auth0 refusal becomes a 500. Owner to say how they signed in |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
