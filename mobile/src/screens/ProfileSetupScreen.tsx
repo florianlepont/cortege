@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   Image,
   ImageSourcePropType,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -52,6 +53,13 @@ export function ProfileSetupScreen({
     })
   }
 
+  // OA-10: scrolling on focus ran before the keyboard had risen, so it covered "Nom" and the
+  // buttons. Scroll once the keyboard is actually shown.
+  useEffect(() => {
+    const subscription = Keyboard.addListener("keyboardDidShow", scrollToActions)
+    return () => subscription.remove()
+  }, [])
+
   return (
     <KeyboardAvoidingView
       style={styles.screen}
@@ -63,8 +71,14 @@ export function ProfileSetupScreen({
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: Math.max(insets.bottom, brandSpacing.xl) },
+          // OA-06: clear the Dynamic Island, which the top card slid under.
+          {
+            paddingTop: insets.top + brandSpacing.lg,
+            paddingBottom: Math.max(insets.bottom, brandSpacing.xl),
+          },
         ]}
+        // OA-06: no bounce when everything fits on the screen.
+        alwaysBounceVertical={false}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
@@ -158,8 +172,9 @@ function createStyles(theme: BrandTheme) {
     },
     content: {
       flexGrow: 1,
+      // OA-06: centred instead of packed at the top with the bottom half empty.
+      justifyContent: "center",
       paddingHorizontal: brandSpacing.lg,
-      paddingTop: brandSpacing.lg,
       gap: brandSpacing.lg,
     },
     heroWrap: {
