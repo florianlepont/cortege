@@ -52,7 +52,7 @@ function createStyles(theme: BrandTheme) {
       ...brandShadow.card,
     },
     surface: {
-      backgroundColor: theme.colors.white,
+      backgroundColor: theme.semanticColors.surfaceElevated,
       borderWidth: 1,
       borderColor: theme.componentColors.card.surfaceBorder,
       ...brandShadow.card,

@@ -108,12 +108,11 @@ function createStyles(theme: BrandTheme) {
       borderRadius: brandRadius.pill,
       borderWidth: 1,
       paddingHorizontal: 10,
-      paddingVertical: 6,
-      minHeight: 30,
+      paddingVertical: 4,
+      minHeight: 28,
     },
     label: {
       ...brandTypography.meta,
-      fontSize: 12,
       color: theme.componentColors.statusChip.textColor,
     },
     offlineSurface: {
