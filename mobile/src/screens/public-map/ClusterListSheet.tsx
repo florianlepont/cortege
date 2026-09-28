@@ -1,11 +1,10 @@
 import { memo, useCallback } from "react"
-import { Pressable, ScrollView } from "react-native"
+import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
 import type { PublicMapItem } from "../../app/types"
 import { fr } from "../../i18n"
-import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { surveyPlaceLabel } from "./SelectedSurveyCard"
 import { panelStyles as styles } from "./styles"
@@ -41,23 +40,22 @@ const ClusterRow = memo(function ClusterRow({ item, onSelect }: ClusterRowProps)
 
 export type ClusterListSheetProps = {
   items: PublicMapItem[]
-  bottom: number
   onSelect: (id: string) => void
   onClose: () => void
 }
 
 /**
- * The surveys of a cluster that zooming cannot split (Pitfall 7): public
- * locations are rounded to about 1 km, so several surveys can share one point.
+ * The surveys of a cluster that zooming cannot split (Pitfall 7): public locations are rounded to
+ * about 1 km, so several surveys can share one point. Shown in the Explorer tiered sheet (MAP-01),
+ * whose own BottomSheetScrollView provides the scrolling.
  */
 export const ClusterListSheet = memo(function ClusterListSheet({
   items,
-  bottom,
   onSelect,
   onClose,
 }: ClusterListSheetProps) {
   return (
-    <AppCard variant="panelElevated" padding={14} style={[styles.card, { bottom }]}>
+    <View style={styles.card}>
       <AppSectionHeader
         title={t.clusterList.title(items.length)}
         subtitle={t.clusterList.subtitle}
@@ -73,11 +71,9 @@ export const ClusterListSheet = memo(function ClusterListSheet({
           </Pressable>
         }
       />
-      <ScrollView style={styles.clusterList}>
-        {items.map((item) => (
-          <ClusterRow key={item.survey_id} item={item} onSelect={onSelect} />
-        ))}
-      </ScrollView>
-    </AppCard>
+      {items.map((item) => (
+        <ClusterRow key={item.survey_id} item={item} onSelect={onSelect} />
+      ))}
+    </View>
   )
 })

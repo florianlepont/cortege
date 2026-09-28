@@ -113,13 +113,13 @@ export const rowStyles = StyleSheet.create({
   },
   surveyCardMeta: {
     ...brandTypography.meta,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 14,
     color: brandColors.textSecondary,
   },
   surveyCardSupport: {
     ...brandTypography.meta,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 14,
     color: brandComponentTokens.surveyList.supportDangerText,
   },

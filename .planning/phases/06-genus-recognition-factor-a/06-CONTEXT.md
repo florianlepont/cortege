@@ -1,7 +1,10 @@
 # Phase 6: Genus Recognition for Factor A - Context
 
 **Gathered:** 2026-09-27
-**Status:** Executed autonomously; two open gates block full completion (see Deferred)
+**Status:** Closed 2026-09-27. Executed autonomously; the model-artifact gate was closed by a
+follow-up PR (#178, same day) once run on a machine with access to the real artifacts. The
+remaining gap (a real Android device run) is deferred to Phase 13's field validation by owner
+decision, not blocking this phase further (see Deferred).
 **Source:** ROADMAP phase 6 (success criteria 1-6), REQUIREMENTS `REQ-C-species-recognition`,
 ADR-002 (`docs/technical/adr-002-on-device-species-recognition-v1.md`), the measurement document's
 §15 (calibration). Run autonomously, following the phase 5/3 pattern; decisions below were taken
@@ -48,9 +51,19 @@ filesystem). Per this phase's own instructions, **the model was not fabricated**
 documented placeholders (see `mobile/assets/models/README.md`) — a short text file and a manifest
 with `"placeholder": true`, sufficient for Metro to bundle a `.tflite` asset and for
 `react-native-fast-tflite` to exercise the real "model failed to load" path (ADR-002 D-08), but not
-a working classifier. **This blocks success criteria 1, 2 and 4 from being demonstrably true on a
-real device** until someone with access to that path replaces both files. Criterion 6's Android
-accuracy spot-check is blocked by the same gap, on top of its own device gap below.
+a working classifier. **This blocked success criteria 1, 2 and 4 from being demonstrably true on a
+real device** until someone with access to that path replaced both files.
+
+**Resolved same day, PR #178.** Run from a machine with `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/`
+present: the real `genus_classifier.tflite` (8,238,676 bytes, MD5 `87195ef82eb3dd2bb564821181f89883`)
+replaced the placeholder; `genus_classifier_manifest.json`'s `labels` were corrected to that
+folder's own `genus_labels.txt` order (not alphabetical — `Pinus` before `Picea`); and the
+preprocessing question this phase's manifest had flagged as an unverified guess was resolved by
+loading the source `SavedModel` and reading its graph directly, rather than assumed: it embeds its
+own `Rescaling` (scale `1/255`) and `Normalization` (ImageNet mean/variance) layers ahead of the
+EfficientNet-B0 backbone, so the correct input is raw `[0, 255]` pixels — `preprocessPhoto()`'s
+`/255` division was removed to match. Criterion 6's Android accuracy spot-check no longer shares
+this gap; only the device-run half remains (below).
 
 ### No real Android device is available either (Claude, autonomous - matches Phase 1's own gap)
 This container has no `adb`, no Android SDK, and (confirmed via `expo prebuild -p android --clean`
@@ -127,16 +140,18 @@ screen), opening an alert with the attribution text — no dedicated About scree
 </canonical_refs>
 
 <deferred>
-## Deferred / Open Gates (do not silently mark done)
+## Deferred to Phase 13 (owner decision, 2026-09-27)
 
-- **The real model artifact.** `mobile/assets/models/genus_classifier.tflite` and
-  `genus_classifier_manifest.json` are placeholders (see that directory's own `README.md`).
-  Whoever has access to `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/` must replace
-  both, confirm `inputSize`/`preprocessing` against the real export report, and re-verify on a real
-  device before this feature can be considered shipped.
-- **Criterion 6, the Android device run.** No real Android device was available in this
-  container. The latency/accuracy measurement Phase 1 deferred and this phase's own ROADMAP
-  wording says blocks shipping is still open.
+- **The real model artifact — closed.** Was an open gate; resolved same day by PR #178 (see
+  above). No longer deferred.
+- **Criterion 6, the Android device run**, and **real-device recognition accuracy against actual
+  tree photographs** (not just the lab/GBIF figures ADR-002 already caps): no real Android device
+  was available in either container this phase ran in, and no on-device photo test was performed
+  in either. The owner explicitly deferred both to Phase 13's field validation rather than holding
+  this phase open indefinitely. Phase 13 should record median/p95/worst latency (online and
+  airplane mode) against the 3 s budget, an accuracy spot-check confirming the bundled `.tflite`
+  behaves as expected on Android, in the measurement document's §7 format, and a plain accuracy
+  spot-check with real tree photographs on iOS and Android.
 - Field-guidance help text for the Juniperus/Table 2 look-alike exclusions (still Phase 5's
   deferred item; not addressed here either — out of this phase's scope).
 </deferred>

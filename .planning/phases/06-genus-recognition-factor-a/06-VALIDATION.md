@@ -1,10 +1,11 @@
 ---
 phase: 06
 slug: genus-recognition-factor-a
-status: partial — two open gates (model artifact, Android device)
+status: complete — Android device run + real-device photo test deferred to Phase 13 (owner decision)
 nyquist_compliant: true
 wave_0_complete: true
 created: 2026-09-27
+closed: 2026-09-27
 ---
 
 # Phase 6 — Validation Strategy
@@ -40,12 +41,12 @@ created: 2026-09-27
 
 | Criterion | Behavior | Test Type | Automated Command | Status |
 |---|---|---|---|---|
-| 1. Photograph one subject, most-likely-first + alternatives, plain-words confidence | `GenusRecognitionModal` renders ranked results with `confidenceLine` text | unit | `GenusRecognitionModal.test.tsx` | ⚠️ plumbing green; **real device confirmation blocked by the placeholder model** |
-| 2. Per-genus calibrated indicator, all 34 genera suggested, none withheld | `calibration.ts`, `rankGenusSuggestions` | unit | `calibration.test.ts`, `genusClassifierModel.test.ts` | ✅ green (calibration math); ⚠️ **real-model accuracy unverified** |
+| 1. Photograph one subject, most-likely-first + alternatives, plain-words confidence | `GenusRecognitionModal` renders ranked results with `confidenceLine` text | unit | `GenusRecognitionModal.test.tsx` | ✅ plumbing green; real model in place since PR #178 (labels order + preprocessing confirmed from the source model) — **on-device photo confirmation deferred to Phase 13** |
+| 2. Per-genus calibrated indicator, all 34 genera suggested, none withheld | `calibration.ts`, `rankGenusSuggestions` | unit | `calibration.test.ts`, `genusClassifierModel.test.ts` | ✅ green (calibration math and real-model wiring); **field accuracy deferred to Phase 13** (same lab-vs-field cap ADR-002 already names) |
 | 3. Suggestion never applies itself; confirmed genus persists in Factor A's list; photo not kept | `GenusRecognitionModal` confirm flow, `addGenusToListValue`, no attachment/photo storage call anywhere in the recognition path | unit | `GenusRecognitionModal.test.tsx` ("only calls onConfirmGenus once... confirms"), `factor-a-genus-list.test.ts` | ✅ green |
-| 4. Airplane mode works (bundled model, on-device); load failure shows a clear message and falls back | Metro `.tflite` asset bundling (`expo export` proof), `classifyGenusPhoto`'s catch-all `unavailable` outcome, no network call anywhere in `genusClassifierModel.ts` | unit + build smoke | `genusClassifierModel.test.ts` (`load_failed`/`inference_failed` cases); `npx expo export --platform ios` | ⚠️ plumbing proven; **the real load-failure path is the CURRENT state** (placeholder model), not yet re-tested against the real artifact |
+| 4. Airplane mode works (bundled model, on-device); load failure shows a clear message and falls back | Metro `.tflite` asset bundling (`expo export` proof), `classifyGenusPhoto`'s catch-all `unavailable` outcome, no network call anywhere in `genusClassifierModel.ts` | unit + build smoke | `genusClassifierModel.test.ts` (`load_failed`/`inference_failed` cases); `npx expo export --platform ios` | ✅ plumbing proven with the real bundled model (PR #178); **on-device airplane-mode confirmation deferred to Phase 13** |
 | 5. Genus list reaches the server through `/v1/sync` and reads back | Phase 5's own E2E proof (`surveys-factor-a-genus-list.e2e-spec.ts`); this phase adds no API code | inherited | `npm --workspace api run test:e2e -- surveys-factor-a-genus-list` (unchanged from Phase 5) | ✅ green (unchanged) |
-| 6. Real Android device run, latency + accuracy, matching measurement doc §7 format | Not performed | manual (device) | none — no device available | ❌ **open gate, explicitly not done** |
+| 6. Real Android device run, latency + accuracy, matching measurement doc §7 format | Not performed | manual (device) | none — no device available | 🔜 **deferred to Phase 13's field validation (owner decision 2026-09-27), not skipped or fabricated** |
 
 ---
 
@@ -66,20 +67,20 @@ created: 2026-09-27
 - [x] `mobile/src/recognition/genusClassifierModel.ts` + `.test.ts` — criteria 1, 4
 - [x] `mobile/src/ui/FactorGenusListInput.tsx` + `.test.tsx` — criterion 3 (the list itself)
 - [x] `mobile/src/ui/GenusRecognitionModal.tsx` + `.test.tsx` — criteria 1, 3, 4
-- [x] `mobile/assets/models/genus_classifier.tflite` + manifest + `README.md` — criterion 4 (bundling), **placeholder, not the real artifact**
+- [x] `mobile/assets/models/genus_classifier.tflite` + manifest + `README.md` — criterion 4 (bundling); **real artifact since PR #178** (was a placeholder at first close of this wave)
 
 ---
 
 ## Manual-Only Verifications
 
-- **Real-device recognition accuracy and confidence-label honesty (criteria 1, 2).** Cannot be
-  performed until the real model replaces the placeholder (see `mobile/assets/models/README.md`).
-- **Criterion 6, the Android latency/accuracy run.** No device available in this container. Open
-  gate, not performed, not fabricated.
+- **Real-device recognition accuracy and confidence-label honesty (criteria 1, 2).** The real model
+  is in place (PR #178); on-device confirmation with real tree photographs is **deferred to
+  Phase 13's field validation** by owner decision, not performed here.
+- **Criterion 6, the Android latency/accuracy run.** No device available in either container this
+  phase ran in. **Deferred to Phase 13**, not skipped or fabricated.
 - **CI's `native-android`/`native-ios` jobs**, which build the real native TFLite runtime on a real
-  toolchain this container lacks. This session ran the two checks it could (`expo export`,
-  `expo prebuild -p android --clean`); the PR is expected to surface any further native-build
-  failure through those CI jobs, to be triaged from their own output.
+  toolchain this container lacks. Both PRs (#176, #178) exercised these CI jobs on GitHub Actions'
+  own runners, which have the real toolchain — both passed (Android and iOS native builds green).
 
 ---
 
@@ -98,7 +99,11 @@ changed this phase).
 | 6 | `cd mobile && npx expo export --platform ios` | bundled cleanly; `assets/models/genus_classifier.tflite` (764 B placeholder) listed as a Metro asset |
 | 7 | `cd mobile && npx expo prebuild -p android --clean` | succeeded, no config-plugin errors |
 
-Nothing was left red. Two things were left explicitly **open**, not red-and-ignored: the real model
-artifact (placeholder shipped instead, per this phase's own instructions) and the Android device
-run (criterion 6, no device available). Both are recorded in `06-CONTEXT.md`, `06-01-SUMMARY.md`,
-`ROADMAP.md`'s phase 6 entry, and the PR description — the phase is not marked "Complete".
+Nothing was left red. The real model artifact, initially shipped as a placeholder per this phase's
+own instructions, was closed the same day by a follow-up PR (#178) run from a machine with access
+to `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/`: real `.tflite` (MD5-verified),
+real label order, and preprocessing confirmed by inspecting the source `SavedModel` graph rather
+than assumed. The one remaining item — a real Android device run (criterion 6) plus real-device
+photo accuracy — is explicitly **deferred to Phase 13's field validation** by owner decision
+(2026-09-27), recorded in `06-CONTEXT.md`, `06-01-SUMMARY.md` and `ROADMAP.md`'s phase 6 entry. The
+phase is marked **Complete** on that basis.

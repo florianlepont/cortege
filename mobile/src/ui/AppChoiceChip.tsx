@@ -14,6 +14,7 @@ type AppChoiceChipProps = {
   active?: boolean
   tone?: AppChoiceChipTone
   onPress?: () => void
+  accessibilityLabel?: string
   style?: StyleProp<ViewStyle>
   labelStyle?: StyleProp<TextStyle>
 }
@@ -23,6 +24,7 @@ export function AppChoiceChip({
   active = false,
   tone = "neutral",
   onPress,
+  accessibilityLabel,
   style,
   labelStyle,
 }: AppChoiceChipProps) {
@@ -31,6 +33,7 @@ export function AppChoiceChip({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !isInteractive, selected: active }}
       disabled={!isInteractive}
       onPress={onPress}

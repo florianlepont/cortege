@@ -122,10 +122,13 @@ export const styles = StyleSheet.create({
     gap: 12,
     ...brandShadow.card,
   },
-  actionButtonsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+  // DET-04: a lesser-weight link, not an equal-weight button next to "Réessayer" (now the sync
+  // notice's own integrated action).
+  discardLink: {
+    ...brandTypography.meta,
+    color: brandColors.textSecondary,
+    textDecorationLine: "underline",
+    alignSelf: "flex-start",
   },
   historyPanel: {
     borderRadius: 28,

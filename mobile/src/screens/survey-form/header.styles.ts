@@ -94,7 +94,7 @@ export const headerStyles = StyleSheet.create({
   },
   compactProgressCount: {
     ...brandTypography.heroEyebrow,
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 12,
     color: brandSemanticColors.heroTextMutedOnDark,
   },
@@ -169,7 +169,7 @@ export const headerStyles = StyleSheet.create({
   },
   stepIndexText: {
     ...brandTypography.heroEyebrow,
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 12,
     color: brandColors.forest,
   },

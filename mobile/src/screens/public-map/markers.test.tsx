@@ -7,6 +7,7 @@ import React, { useState } from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { PublicMapItem } from "../../app/types"
+import { brandMapTokens } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { ClusterListSheet } from "./ClusterListSheet"
 import { ClusterMarker } from "./ClusterMarker"
@@ -178,6 +179,56 @@ describe("SurveyMarker", () => {
     expect(String(props.accessibilityLabel)).not.toContain("s-42")
     expect(props.coordinate).toEqual(COORDINATE)
   })
+
+  // MAP-03: the pastille is coloured by the IBP total's score band, not a single system pin color.
+  test.each([
+    [5, "low"],
+    [25, "mid"],
+    [45, "high"],
+  ] as const)("an IBP total of %i colours the pastille %s", (ibpTotal, tone) => {
+    const tree = mount(
+      <SurveyMarker
+        id="s-1"
+        coordinate={COORDINATE}
+        ibpTotal={ibpTotal}
+        selected={false}
+        onSelect={jest.fn()}
+      />,
+    )
+    const pastille = tree.root.findByType("View" as never)
+    const flatStyle = [pastille.props.style].flat(2)
+    expect(flatStyle).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ backgroundColor: brandMapTokens.scoreMarker[tone] }),
+      ]),
+    )
+  })
+
+  test("a selected marker's pastille carries the selected style", () => {
+    const tree = mount(
+      <SurveyMarker id="s-1" coordinate={COORDINATE} ibpTotal={30} selected onSelect={jest.fn()} />,
+    )
+    const pastille = tree.root.findByType("View" as never)
+    const flatStyle = [pastille.props.style].flat(2)
+    expect(flatStyle).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ borderColor: brandMapTokens.scoreMarkerSelectedBorder }),
+      ]),
+    )
+  })
+
+  test("tracksViewChanges is false", () => {
+    const tree = mount(
+      <SurveyMarker
+        id="s-1"
+        coordinate={COORDINATE}
+        ibpTotal={30}
+        selected={false}
+        onSelect={jest.fn()}
+      />,
+    )
+    expect(markerProps(tree).tracksViewChanges).toBe(false)
+  })
 })
 
 describe("ClusterMarker", () => {
@@ -233,9 +284,7 @@ function texts(tree: ReactTestRenderer): string[] {
 }
 
 function renderCard(item: PublicMapItem): ReactTestRenderer {
-  return mount(
-    <SelectedSurveyCard item={item} isOwnSurvey={false} bottom={0} onClose={jest.fn()} />,
-  )
+  return mount(<SelectedSurveyCard item={item} isOwnSurvey={false} onClose={jest.fn()} />)
 }
 
 describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () => {
@@ -283,9 +332,7 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
       makeItem({ survey_id: "s-1", ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 2 }),
       makeItem({ survey_id: "s-2", ibp_total: 30 }),
     ]
-    const tree = mount(
-      <ClusterListSheet items={items} bottom={0} onSelect={jest.fn()} onClose={jest.fn()} />,
-    )
+    const tree = mount(<ClusterListSheet items={items} onSelect={jest.fn()} onClose={jest.fn()} />)
     const labels = tree.root
       .findAll((node) => (node.type as unknown) === "Pressable")
       .map((node) => String(node.props.accessibilityLabel))
@@ -311,16 +358,19 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
         showFilters
         showParcelLayer={false}
         layerStatusLabel=""
-        fromDate=""
-        toDate=""
-        region=""
+        filters={{
+          period: "all",
+          onChangePeriod: jest.fn(),
+          region: "",
+          onChangeRegion: jest.fn(),
+          mineOnly: false,
+          onToggleMine: jest.fn(),
+          activeCount: 0,
+          onReset: jest.fn(),
+        }}
         onToggleFilters={jest.fn()}
         onToggleParcelLayer={jest.fn()}
         onRefresh={jest.fn()}
-        onApplyFilters={jest.fn()}
-        onChangeFromDate={jest.fn()}
-        onChangeToDate={jest.fn()}
-        onChangeRegion={jest.fn()}
       />,
     )
     expect(fr.publicMap.filters.regionHint).toBe("filtre les relevés v3.0 uniquement")

@@ -5,10 +5,9 @@ import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
 import type { BasemapKey } from "../../map/basemaps"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
-import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { ExplorerFilterBar, type ExplorerFilterBarProps } from "./ExplorerFilterBar"
 import { BasemapToggle, OfflineIndicatorBadge } from "./OfflineControls"
 import { controlStyles as styles } from "./styles"
 
@@ -22,16 +21,10 @@ export type MapTopControlsProps = {
   showFilters: boolean
   showParcelLayer: boolean
   layerStatusLabel: string
-  fromDate: string
-  toDate: string
-  region: string
+  filters: ExplorerFilterBarProps
   onToggleFilters: () => void
   onToggleParcelLayer: () => void
   onRefresh: () => void
-  onApplyFilters: () => void
-  onChangeFromDate: (value: string) => void
-  onChangeToDate: (value: string) => void
-  onChangeRegion: (value: string) => void
   /** REQ-D-basemap-switch / REQ-D-offline-map (08-CONTEXT): omitted, the controls do not render. */
   isOffline?: boolean
   basemap?: BasemapKey
@@ -47,16 +40,10 @@ export const MapTopControls = memo(function MapTopControls({
   showFilters,
   showParcelLayer,
   layerStatusLabel,
-  fromDate,
-  toDate,
-  region,
+  filters,
   onToggleFilters,
   onToggleParcelLayer,
   onRefresh,
-  onApplyFilters,
-  onChangeFromDate,
-  onChangeToDate,
-  onChangeRegion,
   isOffline = false,
   basemap,
   onChangeBasemap,
@@ -96,12 +83,20 @@ export const MapTopControls = memo(function MapTopControls({
             accessibilityRole="button"
             accessibilityLabel={showFilters ? t.a11y.hideFilters : t.a11y.showFilters}
             accessibilityState={{ expanded: showFilters }}
+            accessibilityHint={
+              filters.activeCount > 0 ? t.a11y.activeFilterCount(filters.activeCount) : undefined
+            }
           >
             <Ionicons
               name={showFilters ? "close-outline" : "options-outline"}
               size={18}
               color={brandColors.forest}
             />
+            {filters.activeCount > 0 ? (
+              <View style={styles.filterCountBadge}>
+                <Text style={styles.filterCountBadgeText}>{filters.activeCount}</Text>
+              </View>
+            ) : null}
           </Pressable>
           <Pressable
             style={loading ? styles.iconButtonDisabled : styles.iconButtonPrimary}
@@ -155,49 +150,7 @@ export const MapTopControls = memo(function MapTopControls({
             }
           />
 
-          <View style={styles.filtersGrid}>
-            <AppField
-              label={t.filters.from}
-              value={fromDate}
-              onChangeText={onChangeFromDate}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder={t.filters.fromPlaceholder}
-              containerStyle={styles.filterFieldHalf}
-              labelStyle={styles.inputLabel}
-              inputStyle={styles.input}
-            />
-            <AppField
-              label={t.filters.to}
-              value={toDate}
-              onChangeText={onChangeToDate}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder={t.filters.toPlaceholder}
-              containerStyle={styles.filterFieldHalf}
-              labelStyle={styles.inputLabel}
-              inputStyle={styles.input}
-            />
-            <AppField
-              label={t.filters.region}
-              value={region}
-              onChangeText={onChangeRegion}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              placeholder={t.filters.regionPlaceholder}
-              containerStyle={styles.filterFieldFull}
-              labelStyle={styles.inputLabel}
-              inputStyle={styles.input}
-            />
-            <Text style={[styles.filtersMeta, styles.filterFieldFull]}>{t.filters.regionHint}</Text>
-            <AppButton
-              label={loading ? t.filters.applying : t.filters.apply}
-              leadingIcon="sparkles-outline"
-              onPress={onApplyFilters}
-              disabled={loading}
-              style={[styles.refreshButton, loading ? styles.refreshButtonDisabled : null]}
-            />
-          </View>
+          <ExplorerFilterBar {...filters} />
         </AppCard>
       ) : null}
     </View>

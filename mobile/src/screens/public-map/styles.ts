@@ -8,13 +8,6 @@ import {
   brandTypography,
 } from "../../app/brand-tokens"
 
-// Pin colours of the public map markers.
-export const markerColors = {
-  survey: brandMapTokens.publicMarkerSurvey,
-  selected: brandColors.terracotta,
-  currentPosition: brandMapTokens.publicMarkerCurrentPosition,
-} as const
-
 const PANEL_BACKGROUND = brandTranslucentPanel.default
 
 const roundButton = {
@@ -43,6 +36,31 @@ export const markerStyles = StyleSheet.create({
   clusterText: {
     ...brandTypography.label,
     color: brandColors.white,
+  },
+  // MAP-03: the score-band pastille that replaces the system pin color.
+  scorePastille: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: brandColors.white,
+    ...brandShadow.card,
+  },
+  scorePastille_low: {
+    backgroundColor: brandMapTokens.scoreMarker.low,
+  },
+  scorePastille_mid: {
+    backgroundColor: brandMapTokens.scoreMarker.mid,
+  },
+  scorePastille_high: {
+    backgroundColor: brandMapTokens.scoreMarker.high,
+  },
+  scorePastilleSelected: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 3,
+    borderColor: brandMapTokens.scoreMarkerSelectedBorder,
   },
 })
 
@@ -124,6 +142,25 @@ export const controlStyles = StyleSheet.create({
     borderColor: brandColors.divider,
     backgroundColor: brandColors.disabledMuted,
   },
+  // MAP-02: the active-filter count, overlaid on the filters toggle button.
+  filterCountBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 3,
+    backgroundColor: brandColors.terracotta,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterCountBadgeText: {
+    ...brandTypography.meta,
+    fontSize: 12,
+    lineHeight: 14,
+    color: brandColors.white,
+  },
   filtersPanel: {
     backgroundColor: PANEL_BACKGROUND,
     gap: 12,
@@ -160,34 +197,6 @@ export const controlStyles = StyleSheet.create({
   layerTogglePillTextOn: {
     color: brandColors.white,
   },
-  filtersGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  filterFieldHalf: {
-    flexGrow: 1,
-    flexBasis: "48%",
-    gap: 5,
-  },
-  filterFieldFull: {
-    width: "100%",
-    gap: 5,
-  },
-  inputLabel: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  input: {
-    ...brandTypography.input,
-  },
-  refreshButton: {
-    width: "100%",
-  },
-  refreshButtonDisabled: {
-    backgroundColor: brandColors.disabledMuted,
-    borderColor: brandColors.disabledMuted,
-  },
   bottomDock: {
     position: "absolute",
     left: 12,
@@ -214,6 +223,38 @@ export const controlStyles = StyleSheet.create({
     borderRadius: 28,
     borderColor: brandColors.forest,
     backgroundColor: brandColors.forest,
+  },
+})
+
+// MAP-02: the chip-based filter bar (period / region / mes relevés), replacing the old free-text
+// fields + Apply button.
+export const filterBarStyles = StyleSheet.create({
+  container: {
+    gap: 8,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  summaryText: {
+    ...brandTypography.meta,
+    color: brandColors.textSecondary,
+  },
+  resetLink: {
+    ...brandTypography.meta,
+    color: brandColors.forest,
+    textDecorationLine: "underline",
+  },
+  row: {
+    flexDirection: "row",
+  },
+  chip: {
+    marginRight: 8,
+  },
+  hint: {
+    ...brandTypography.meta,
+    color: brandColors.textSecondary,
   },
 })
 
@@ -289,10 +330,6 @@ export const offlineIndicatorStyles = StyleSheet.create({
 
 export const panelStyles = StyleSheet.create({
   card: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    backgroundColor: brandTranslucentPanel.strongest,
     gap: 10,
   },
   title: {
@@ -302,9 +339,6 @@ export const panelStyles = StyleSheet.create({
   meta: {
     ...brandTypography.meta,
     color: brandColors.textSecondary,
-  },
-  clusterList: {
-    maxHeight: 260,
   },
   clusterRow: {
     borderTopWidth: 1,

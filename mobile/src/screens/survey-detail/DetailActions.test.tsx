@@ -1,9 +1,7 @@
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
-import { Alert } from "react-native"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
-import { SurveyExportData } from "../../app/survey-pdf-export"
 import { DetailActions } from "./DetailActions"
 
 const originalConsoleError = console.error
@@ -28,29 +26,13 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
-    Alert: { alert: jest.fn() },
     Pressable: mockComponent("Pressable"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T): T => styles },
-    Platform: { OS: "ios", select: <T,>(options: { ios?: T; default?: T }) => options.ios },
   }
 })
 
-jest.mock("../../ui/AppButton", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    AppButton: ({
-      label,
-      onPress,
-      loading,
-    }: {
-      label: string
-      onPress: () => void
-      loading?: boolean
-    }) => ReactRef.createElement("AppButton", { label, onPress, loading }),
-  }
-})
 jest.mock("../../ui/AppCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -58,17 +40,18 @@ jest.mock("../../ui/AppCard", () => {
       ReactRef.createElement("AppCard", null, children),
   }
 })
-jest.mock("../../ui/AppSectionHeader", () => {
+jest.mock("../../ui/AppNotice", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
-    AppSectionHeader: () => ReactRef.createElement("AppSectionHeader", null),
+    AppNotice: ({
+      message,
+      action,
+    }: {
+      message: string
+      action?: { label: string; onPress: () => void }
+    }) => ReactRef.createElement("AppNotice", { message, action }),
   }
 })
-
-const mockExportAndShareSurveyPdf = jest.fn()
-jest.mock("../../app/survey-pdf-export", () => ({
-  exportAndShareSurveyPdf: (...args: unknown[]) => mockExportAndShareSurveyPdf(...args),
-}))
 
 const t = fr.surveyDetail.actions
 
@@ -85,103 +68,69 @@ const survey = {
   updated_at: "2026-09-26T10:00:00.000Z",
 } as unknown as LocalSurvey
 
-const exportData: SurveyExportData = {
-  siteName: "Bois",
-  parcelIds: ["12345000AB0123"],
-  observationYear: 2026,
-  versionNumber: 1,
-  methodVersion: "3.2",
-  dateIso: "2026-09-26T10:00:00.000Z",
-  scores: { ibp_total: 18, ibp_peuplement_gestion: 6, ibp_contexte: 12 },
-  factorEntries: [],
-}
-
-const render = (surveyOverrides: Partial<LocalSurvey> = {}): ReactTestRenderer => {
+const render = (
+  surveyOverrides: Partial<LocalSurvey> = {},
+  onRetrySurvey = jest.fn(),
+  onDiscardSurvey = jest.fn(),
+): ReactTestRenderer => {
   let tree: ReactTestRenderer | undefined
   act(() => {
     tree = renderer.create(
       <DetailActions
         survey={{ ...survey, ...surveyOverrides } as LocalSurvey}
-        exportData={exportData}
-        onDeleteSurvey={jest.fn()}
-        onRetrySurvey={jest.fn()}
-        onDiscardSurvey={jest.fn()}
+        onRetrySurvey={onRetrySurvey}
+        onDiscardSurvey={onDiscardSurvey}
       />,
     )
   })
   return tree as ReactTestRenderer
 }
 
-const findButton = (tree: ReactTestRenderer, label: string): ReactTestInstance =>
+const findNotice = (tree: ReactTestRenderer): ReactTestInstance | undefined =>
+  tree.root.findAllByType("AppNotice" as never)[0]
+
+const findDiscardLink = (tree: ReactTestRenderer): ReactTestInstance | undefined =>
   tree.root.findAll(
-    (node) => (node.type as unknown) === "AppButton" && node.props.label === label,
+    (node) => (node.type as unknown) === "Text" && node.props.children === t.discardLocalChange,
   )[0]
 
-beforeEach(() => {
-  mockExportAndShareSurveyPdf.mockReset()
-  ;(Alert.alert as jest.Mock).mockReset()
-})
-
 describe("DetailActions", () => {
-  test("delete button calls onDeleteSurvey with the survey id", () => {
-    const onDeleteSurvey = jest.fn()
-    let tree: ReactTestRenderer | undefined
-    act(() => {
-      tree = renderer.create(
-        <DetailActions
-          survey={survey}
-          exportData={exportData}
-          onDeleteSurvey={onDeleteSurvey}
-          onRetrySurvey={jest.fn()}
-          onDiscardSurvey={jest.fn()}
-        />,
-      )
-    })
-    findButton(tree as ReactTestRenderer, t.deleteSurvey).props.onPress()
-    expect(onDeleteSurvey).toHaveBeenCalledWith(survey.id)
+  test("renders nothing when there is no sync error to report", () => {
+    const tree = render({ last_sync_error: null, last_sync_error_code: null })
+    expect(tree.toJSON()).toBeNull()
   })
 
-  test("retry and discard only show up when sync_state is failed", () => {
-    const idle = render()
-    expect(findButton(idle, t.retryNow)).toBeUndefined()
-
-    const failed = render({ sync_state: "failed" })
-    expect(findButton(failed, t.retryNow)).toBeDefined()
-    expect(findButton(failed, t.discardLocalChange)).toBeDefined()
+  test("shows the sync error notice without a retry action or discard link when not failed", () => {
+    const tree = render({
+      sync_state: "synced",
+      last_sync_error: "HTTP 500 Internal Server Error",
+      last_sync_error_code: null,
+    })
+    const notice = findNotice(tree) as ReactTestInstance
+    expect(notice.props.action).toBeUndefined()
+    expect(findDiscardLink(tree)).toBeUndefined()
   })
 
-  test("export button shares the generated PDF and shows the idle label again", async () => {
-    mockExportAndShareSurveyPdf.mockResolvedValue({ shared: true })
-    const tree = render()
+  test("shows a retry action integrated into the notice and a discard link when sync_state is failed", () => {
+    const onRetrySurvey = jest.fn()
+    const onDiscardSurvey = jest.fn()
+    const tree = render(
+      {
+        sync_state: "failed",
+        last_sync_error: "HTTP 500 Internal Server Error",
+        last_sync_error_code: null,
+      },
+      onRetrySurvey,
+      onDiscardSurvey,
+    )
 
-    await act(async () => {
-      findButton(tree, t.exportPdf).props.onPress()
-    })
+    const notice = findNotice(tree) as ReactTestInstance
+    expect(notice.props.action.label).toBe(t.retryNow)
+    notice.props.action.onPress()
+    expect(onRetrySurvey).toHaveBeenCalledWith(survey.id)
 
-    expect(mockExportAndShareSurveyPdf).toHaveBeenCalledWith(exportData)
-    expect(Alert.alert).not.toHaveBeenCalled()
-    expect(findButton(tree, t.exportPdf)).toBeDefined()
-  })
-
-  test("export button warns when no share target is available", async () => {
-    mockExportAndShareSurveyPdf.mockResolvedValue({ shared: false })
-    const tree = render()
-
-    await act(async () => {
-      findButton(tree, t.exportPdf).props.onPress()
-    })
-
-    expect(Alert.alert).toHaveBeenCalledWith(t.exportPdf, t.exportShareUnavailable)
-  })
-
-  test("export button warns when PDF generation fails", async () => {
-    mockExportAndShareSurveyPdf.mockRejectedValue(new Error("print failed"))
-    const tree = render()
-
-    await act(async () => {
-      findButton(tree, t.exportPdf).props.onPress()
-    })
-
-    expect(Alert.alert).toHaveBeenCalledWith(t.exportPdf, t.exportFailed)
+    const discardLink = findDiscardLink(tree) as ReactTestInstance
+    discardLink.props.onPress()
+    expect(onDiscardSurvey).toHaveBeenCalledWith(survey.id)
   })
 })

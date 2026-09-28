@@ -1,8 +1,8 @@
 {
-  "placeholder": true,
-  "note": "PLACEHOLDER MANIFEST - see README.md in this directory. Replace this file and genus_classifier.tflite with the real MD5-verified artifacts from ~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/ before release. inputSize/preprocessing below are documented best guesses (standard EfficientNet-B0 defaults), NOT confirmed against the real export report.",
+  "placeholder": false,
+  "note": "Real artifact (ADR-002, iteration 4): genus_classifier.tflite, EfficientNet-B0, float16, 8,238,676 bytes, MD5 87195ef82eb3dd2bb564821181f89883, sourced from ~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/. labels order is that folder's own genus_labels.txt (the model's output tensor order), not alphabetical - note Pinus before Picea. preprocessing was confirmed by inspecting the SavedModel graph in genus_classifier_keras/: it embeds its own Rescaling (scale 1/255, offset 0) and Normalization (ImageNet mean/variance) layers ahead of the backbone, so the model expects raw 0-255 pixels, not pre-divided [0,1] floats.",
   "inputSize": 224,
-  "preprocessing": "rescale_0_1",
+  "preprocessing": "raw_0_255",
   "labels": [
     "Abies",
     "Acer",
@@ -20,8 +20,8 @@
     "Larix",
     "Malus",
     "Ostrya",
-    "Picea",
     "Pinus",
+    "Picea",
     "Populus",
     "Prunus",
     "Pyrus",

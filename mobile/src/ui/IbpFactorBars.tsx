@@ -113,14 +113,14 @@ const styles = StyleSheet.create({
   },
   factorBadgeText: {
     ...brandTypography.meta,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
     color: brandColors.forest,
   },
   factorTitle: {
     flex: 1,
     ...brandTypography.meta,
-    fontSize: 11,
+    fontSize: 12,
     color: brandColors.textSecondary,
   },
   track: {
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   },
   pointsText: {
     ...brandTypography.meta,
-    fontSize: 11,
+    fontSize: 12,
     width: 28,
     textAlign: "right",
     color: brandColors.textSecondary,

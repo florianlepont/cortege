@@ -1,7 +1,7 @@
 import { memo } from "react"
 import { HomeScreen } from "../../screens/HomeScreen"
 import { useNearbyParcelsState } from "../../state/nearby-parcels-context"
-import { useSession } from "../../state/session-context"
+import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useSyncStatus } from "../../state/sync-status-context"
@@ -15,6 +15,7 @@ import type { HomeRouteProps } from "../types"
  */
 export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps) {
   const { state: session } = useSession()
+  const accessToken = useAccessToken()
   const { state: surveys, actions } = useSurveys()
   const nearbyParcels = useNearbyParcelsState()
   const syncActions = useSyncActions()
@@ -34,10 +35,16 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
   const onOpenSyncStatus = useLatestCallback(() => {
     navigation.navigate("account", { screen: "settings" })
   })
+  // HOME-06: the avatar navigates to Compte.
+  const onNavigateToAccount = useLatestCallback(() => {
+    navigation.navigate("account", { screen: "accountHome" })
+  })
 
   return (
     <HomeScreen
       currentUser={session.currentUser}
+      accessToken={accessToken}
+      apiUrl={session.apiUrl}
       surveys={surveys.surveys}
       surveyStats={surveys.surveyStats}
       isOnline={isOnline}
@@ -49,6 +56,7 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
       onRetrySurvey={actions.retrySurvey}
       onOpenSyncStatus={onOpenSyncStatus}
       onNavigateToExplorer={onNavigateToExplorer}
+      onNavigateToAccount={onNavigateToAccount}
       onRefresh={syncActions.handlePullChanges}
     />
   )

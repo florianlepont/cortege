@@ -6,7 +6,6 @@ import type { ParcelSurveyHistoryItem } from "../../app/types"
 import { useParcelSurveyHistory } from "../../hooks/useParcelSurveyHistory"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
-import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { panelStyles as styles } from "./styles"
@@ -21,7 +20,6 @@ export type ParcelHistoryCardProps = {
   /** REQ-D-offline-parcel-warning (08-CONTEXT D-14). */
   isOffline: boolean
   onQueueDownload: (parcelId: string) => void
-  bottom: number
   onClose: () => void
 }
 
@@ -52,7 +50,7 @@ function HistoryRow({
  * ROADMAP Phase 2 criterion 6): opened from the Explorer map when a studied parcel polygon is
  * tapped, since the map does not carry a local copy of another member's survey to open its full
  * detail. Oldest entries first, as the API returns them, with each entry's IBP total delta
- * against the previous one.
+ * against the previous one. Shown in the Explorer tiered sheet (MAP-01).
  */
 export const ParcelHistoryCard = memo(function ParcelHistoryCard({
   parcelId,
@@ -60,7 +58,6 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
   accessToken,
   isOffline,
   onQueueDownload,
-  bottom,
   onClose,
 }: ParcelHistoryCardProps) {
   const { items, loading, error, offline } = useParcelSurveyHistory(
@@ -76,7 +73,7 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
   }
 
   return (
-    <AppCard variant="panelElevated" padding={14} style={[styles.card, { bottom }]}>
+    <View style={styles.card}>
       <AppSectionHeader
         title={t.title}
         trailing={
@@ -117,6 +114,6 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
             />
           ))
         : null}
-    </AppCard>
+    </View>
   )
 })

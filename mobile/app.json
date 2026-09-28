@@ -56,7 +56,16 @@
       ],
       "./plugins/with-scene-delegate",
       "expo-image",
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#334E2B",
+          "image": "./assets/logo-app.png",
+          "imageWidth": 160,
+          "resizeMode": "contain"
+        }
+      ]
     ],
     "ios": {
       "bundleIdentifier": "fr.etatssauvages.cortege",
@@ -80,7 +89,11 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "fr.etatssauvages.cortege"
+      "package": "fr.etatssauvages.cortege",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo-app.png",
+        "backgroundColor": "#FFFFFF"
+      }
     }
   }
 }
