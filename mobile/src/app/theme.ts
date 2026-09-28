@@ -69,24 +69,24 @@ const lightNeutrals: BrandDynamicNeutrals = {
   errorSoft: "#F3D3C8",
 }
 
-// DS-12: a forest-based dark palette, per the audit's own note that `forest` and the existing
-// `heroTextMutedOnDark` (#D7E3C0) already give this app a dark base — canvas reuses
-// `brandColors.forestNight`, text reuses that same warm off-white/sage family the hero panels use.
-// Every pair below was checked against WCAG 2.1 (script in `12-CONTEXT.md`): text pairs are all
-// >= 7:1 (AA needs 4.5:1), inputBorder/inputFill is 3.56:1 (DS-14's >= 3:1 non-text floor).
+// OA-80 (owner acceptance, 2026-09-29): the forest-based dark palette was "far too much green".
+// Surfaces are now a near-black canvas (as iOS dark mode) and near-neutral greys a step lighter
+// for cards, with a faint green cast; green is kept for accents (primary
+// buttons, selection, scores). Text pairs stay >= 7:1 on canvas and panel, inputBorder/inputFill
+// >= 3:1.
 const darkNeutrals: BrandDynamicNeutrals = {
-  canvas: brandColors.forestNight,
-  panel: "#1B2E17",
-  surfaceSoft: "#16260F",
-  panelMuted: "#24391D",
-  warningSoft: "#3A2C12",
-  inputFill: "#1E2E18",
-  inputBorder: "#6E8562",
-  divider: "#33472B",
-  textPrimary: "#E8ECD9",
-  textSecondary: "#AEC091",
-  successSoft: "#243219",
-  errorSoft: "#3B2018",
+  canvas: "#070807",
+  panel: "#141615",
+  surfaceSoft: "#101211",
+  panelMuted: "#202321",
+  warningSoft: "#3A2E17",
+  inputFill: "#171918",
+  inputBorder: "#6B716C",
+  divider: "#2A2E2B",
+  textPrimary: "#ECEEE9",
+  textSecondary: "#AAB0A8",
+  successSoft: "#1F2A1C",
+  errorSoft: "#3A221C",
 }
 
 export type BrandColors = typeof brandColors & BrandDynamicNeutrals
@@ -141,7 +141,7 @@ function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): Bran
     surfaceBase: colors.panel,
     // Phase 12: was a flat `brandColors.white` — a raised card now needs its own dark tone since
     // `white` itself stays theme-invariant (still used elsewhere as pure white-on-color).
-    surfaceElevated: scheme === "dark" ? "#243B1C" : brandColors.white,
+    surfaceElevated: scheme === "dark" ? "#1B1E1C" : brandColors.white,
     surfaceSoft: colors.surfaceSoft,
     textPrimary: colors.textPrimary,
     textSecondary: colors.textSecondary,
@@ -150,7 +150,7 @@ function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): Bran
     textStrong: scheme === "dark" ? brandColors.sage : colors.forest,
     ctaPrimary: colors.forest,
     ctaAccent: colors.moss,
-    ctaSecondaryOutline: colors.forest,
+    ctaSecondaryOutline: scheme === "dark" ? brandColors.sage : colors.forest,
     ctaDanger: colors.terracotta,
     successSurface: colors.successSoft,
     errorSurface: colors.errorSoft,
@@ -270,7 +270,7 @@ function makeComponentColors(
       warningBackground: colors.warningSoft,
       dangerBorder: "#E4A595",
       dangerBackground: colors.errorSoft,
-      textColor: colors.forest,
+      textColor: semanticColors.textStrong,
       onDarkBorder: "rgba(255, 255, 255, 0.25)",
       onDarkBackground: "rgba(255, 255, 255, 0.15)",
       onDarkTextColor: "rgba(255, 255, 255, 0.90)",
@@ -278,11 +278,11 @@ function makeComponentColors(
     choiceChip: {
       border: colors.inputBorder,
       background: colors.panelMuted,
-      interactiveBorder: colors.forest,
+      interactiveBorder: semanticColors.textStrong,
       interactiveBackground: semanticColors.surfaceElevated,
       activeBorder: colors.forest,
       activeBackground: colors.forest,
-      text: colors.forest,
+      text: semanticColors.textStrong,
       activeText: brandColors.white,
       staticText: colors.textSecondary,
       successBackground: colors.successSoft,
@@ -294,14 +294,14 @@ function makeComponentColors(
       cardAccentSuccess: colors.sage,
       cardAccentWarning: colors.ochre,
       cardAccentDanger: colors.terracotta,
-      cardSelectedBorder: colors.forest,
+      cardSelectedBorder: semanticColors.textStrong,
       cardSelectedBackground: colors.panel,
       workflowNeutralBackground: colors.panelMuted,
       workflowSuccessBackground: colors.successSoft,
       workflowWarningBackground: colors.warningSoft,
       workflowDangerBackground: colors.errorSoft,
-      workflowNeutralText: colors.forest,
-      workflowSuccessText: colors.forest,
+      workflowNeutralText: semanticColors.textStrong,
+      workflowSuccessText: semanticColors.textStrong,
       workflowWarningText: onSurface.warning,
       workflowDangerText: onSurface.danger,
       progressTrack: colors.divider,
@@ -321,7 +321,7 @@ function makeComponentColors(
       text: colors.textSecondary,
       warningText: onSurface.warning,
       dangerText: onSurface.danger,
-      successText: colors.forest,
+      successText: semanticColors.textStrong,
     },
   }
 }
