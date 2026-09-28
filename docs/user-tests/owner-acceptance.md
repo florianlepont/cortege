@@ -17,7 +17,7 @@ An entry is closed only when the owner confirms the fix on the phone.
 
 | Date | Phone / OS | Build | Theme | Flows covered |
 |------|------------|-------|-------|---------------|
-| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup |
+| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil |
 
 Flows to cover (success criterion 1): sign-in, Home, a survey from creation to submission,
 Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
@@ -38,6 +38,15 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-08 | Account creation, after profile setup | No welcome step ("Bienvenue Florian !") after the profile is saved. | Suggestion | 🟡 | 🔲 Open | | |
 | OA-09 | Survey form, factor titles | Found while checking OA-02: the factor titles have lost their accents: "Tres gros bois vivants", "Milieux ouverts floriferes", "Continuite boisee" (`mobile/src/i18n/fr/labels.ts`). | Display bug | 🔴 | 🔲 Open | | Found by Claude, not by the owner |
 | OA-10 | Account creation, profile setup | With the keyboard open on "Prénom", the keyboard covers the "Nom" field and both buttons. | Display bug | 🔴 | 🔲 Open | | Seen in the owner's screen recording; check whether the view scrolls the field back into view |
+| OA-11 | Accueil | Pull to refresh shows no iOS spinner and the screen travels far down before releasing. | Display bug | 🟡 | 🔲 Open | | Owner recording 2026-09-28 19:29. Likely cause: the spinner sits under the status bar, since the top safe area is padding inside the scroll content |
+| OA-12 | Accueil | It is unclear what pull to refresh reloads. Today it only fetches changes from the server (`handlePullChanges`): other members' surveys, another device. It does not send local work. | UX friction | 🟡 | 🔲 Open | | Needs an owner decision: remove it, or make it a full sync |
+| OA-13 | Accueil / tab bar | The Compte avatar in the header duplicates the Compte tab. | UX friction | 🟡 | 🔲 Open | | Needs an owner decision: remove the tab or the avatar |
+| OA-14 | Accueil | "Bonjour, …" is not aligned with the sync pill and the avatar on its right (they are centred on the title + date block). | Display bug | 🟡 | 🔲 Open | | |
+| OA-15 | Accueil | The date under the greeting adds nothing; it is also capitalised the English way ("Lundi 28 Septembre", French is "lundi 28 septembre"). | UX friction | 🟡 | 🔲 Open | | Needs an owner decision: remove or keep. Capitalisation noted by Claude |
+| OA-16 | Accueil | Behaviour with a long first name. The greeting block cannot shrink, so a long name would push the pill and the avatar off screen. | Display bug | 🟡 | 🔲 Open | | Owner question; risk confirmed by reading the code, to check on the phone |
+| OA-17 | Accueil | One single draft shows as three tiles: the blocked-sync alert, the "Reprendre" card and the recent-survey card. The title also reads "Reprendre Relevé sans titre". | UX friction | 🔴 | 🔲 Open | | First screen, confusing |
+| OA-18 | Accueil, survey detail | A draft created a moment ago (1/10 factors) is "Sync bloquée", and nothing explains why, not even the survey detail. Home calls every blocked sync a "conflit", and the pill says "À jour" at the same time. | Functional bug | 🔴 | 🔲 Open | | Core value: the survey never reaches the server. Root cause to find first |
+| OA-19 | Accueil | The "Aucune parcelle relevée dans un rayon de 2,5 km." card is wider than the other cards. | Display bug | 🟡 | 🔲 Open | | Visible in the recording: it runs to the screen edges |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
