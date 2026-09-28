@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Pressable, StyleSheet, TextInput, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandRadius, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandTypography } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { FilterPanel } from "./FilterPanel"
@@ -32,6 +33,8 @@ export function FilterBar({
   setSurveyQuery,
   ...filters
 }: FilterBarProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const hasQuery = surveyQuery.trim().length > 0
 
@@ -48,7 +51,7 @@ export function FilterBar({
         <View style={styles.filtersHeaderRow}>
           <View style={styles.filtersHeadingBlock}>
             <View style={styles.filtersCompactTitleRow}>
-              <Ionicons name="funnel-outline" size={14} color={brandColors.forest} />
+              <Ionicons name="funnel-outline" size={14} color={theme.colors.forest} />
               <Text style={styles.filtersCompactTitle}>{t.title}</Text>
             </View>
             <Text numberOfLines={1} style={styles.filtersCompactMeta}>
@@ -66,7 +69,7 @@ export function FilterBar({
             <Ionicons
               name={advancedOpen ? "close" : "funnel-outline"}
               size={16}
-              color={brandColors.forest}
+              color={theme.colors.forest}
             />
             <Text style={styles.advancedToggleText}>
               {advancedOpen
@@ -82,12 +85,12 @@ export function FilterBar({
         {showInlineSearch ? (
           <View style={styles.searchRow}>
             <View style={styles.searchField}>
-              <Ionicons name="search-outline" size={18} color={brandColors.textSecondary} />
+              <Ionicons name="search-outline" size={18} color={theme.colors.textSecondary} />
               <TextInput
                 value={surveyQuery}
                 onChangeText={setSurveyQuery}
                 placeholder={t.search.placeholder}
-                placeholderTextColor={brandColors.textSecondary}
+                placeholderTextColor={theme.colors.textSecondary}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="search"
@@ -102,7 +105,7 @@ export function FilterBar({
                   onPress={() => setSurveyQuery("")}
                   style={styles.searchClearButton}
                 >
-                  <Ionicons name="close-circle" size={18} color={brandColors.textSecondary} />
+                  <Ionicons name="close-circle" size={18} color={theme.colors.textSecondary} />
                 </Pressable>
               ) : null}
             </View>
@@ -115,89 +118,91 @@ export function FilterBar({
   )
 }
 
-const styles = StyleSheet.create({
-  filtersStickyHost: {
-    backgroundColor: brandColors.canvas,
-    zIndex: 1,
-    paddingBottom: 10,
-  },
-  filtersStickyHostNativeSearch: {
-    paddingTop: 4,
-  },
-  filtersCard: {
-    gap: 10,
-  },
-  filtersHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-  },
-  filtersHeadingBlock: {
-    flex: 1,
-    gap: 4,
-  },
-  filtersCompactTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  filtersCompactTitle: {
-    ...brandTypography.meta,
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-    color: brandColors.forest,
-    textTransform: "uppercase",
-  },
-  filtersCompactMeta: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  advancedToggle: {
-    minHeight: 44,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    borderColor: brandColors.divider,
-    backgroundColor: brandColors.panelMuted,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  advancedToggleText: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  searchRow: {
-    paddingBottom: 2,
-  },
-  searchField: {
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: brandRadius.field,
-    borderWidth: 1,
-    borderColor: brandColors.inputBorder,
-    backgroundColor: brandColors.inputFill,
-    paddingHorizontal: 14,
-  },
-  searchInput: {
-    flex: 1,
-    minHeight: 44,
-    paddingVertical: 0,
-    color: brandColors.textPrimary,
-    ...brandTypography.input,
-    fontSize: 15,
-    lineHeight: 18,
-  },
-  searchClearButton: {
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    filtersStickyHost: {
+      backgroundColor: theme.colors.canvas,
+      zIndex: 1,
+      paddingBottom: 10,
+    },
+    filtersStickyHostNativeSearch: {
+      paddingTop: 4,
+    },
+    filtersCard: {
+      gap: 10,
+    },
+    filtersHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
+    },
+    filtersHeadingBlock: {
+      flex: 1,
+      gap: 4,
+    },
+    filtersCompactTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    filtersCompactTitle: {
+      ...brandTypography.meta,
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+      color: theme.colors.forest,
+      textTransform: "uppercase",
+    },
+    filtersCompactMeta: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    advancedToggle: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      backgroundColor: theme.colors.panelMuted,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    advancedToggleText: {
+      ...brandTypography.meta,
+      color: theme.colors.forest,
+    },
+    searchRow: {
+      paddingBottom: 2,
+    },
+    searchField: {
+      minHeight: 48,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      borderRadius: brandRadius.field,
+      borderWidth: 1,
+      borderColor: theme.colors.inputBorder,
+      backgroundColor: theme.colors.inputFill,
+      paddingHorizontal: 14,
+    },
+    searchInput: {
+      flex: 1,
+      minHeight: 44,
+      paddingVertical: 0,
+      color: theme.colors.textPrimary,
+      ...brandTypography.input,
+      fontSize: 15,
+      lineHeight: 18,
+    },
+    searchClearButton: {
+      minWidth: 44,
+      minHeight: 44,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  })
+}

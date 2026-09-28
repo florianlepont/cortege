@@ -2,16 +2,16 @@ import { useMemo } from "react"
 import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../../app/brand-tokens"
 import { FACTOR_TITLES } from "../../app/constants"
 import { FactorKey } from "../../app/types"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { IbpFactorBars, IbpFactorBarsEntries } from "../../ui/IbpFactorBars"
 import { isFactorKey } from "../survey-screen-helpers"
-import { styles as sharedStyles } from "./styles"
-import { styles } from "./summary.styles"
+import { createDetailStyles } from "./styles"
+import { createSummaryStyles } from "./summary.styles"
 import { DisplayedFactorResult, DisplayedScores, NOT_FILLED_CLASS } from "./useLocalDraftSummary"
 
 const FACTOR_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -48,6 +48,9 @@ export function FactorsSection({
   canEditSurvey,
   onOpenFactor,
 }: FactorsSectionProps) {
+  const theme = useBrandTheme()
+  const sharedStyles = useMemo(() => createDetailStyles(theme), [theme])
+  const styles = useMemo(() => createSummaryStyles(theme), [theme])
   const barEntries = useMemo<IbpFactorBarsEntries>(() => {
     const entries: IbpFactorBarsEntries = {}
     for (const [factorCode, factor] of factorEntries) {
@@ -74,6 +77,8 @@ export function FactorsSection({
                 factor={factor}
                 canEditSurvey={canEditSurvey}
                 onOpenFactor={onOpenFactor}
+                theme={theme}
+                styles={styles}
               />
             ))}
           </View>
@@ -90,17 +95,21 @@ function FactorTile({
   factor,
   canEditSurvey,
   onOpenFactor,
+  theme,
+  styles,
 }: {
   factorCode: string
   factor: DisplayedFactorResult
   canEditSurvey: boolean
   onOpenFactor: (factor: FactorKey) => void
+  theme: BrandTheme
+  styles: ReturnType<typeof createSummaryStyles>
 }) {
   const factorCompleted = factor.selected_class !== NOT_FILLED_CLASS
   const canOpen = canEditSurvey && isFactorKey(factorCode)
   const title = isFactorKey(factorCode) ? FACTOR_TITLES[factorCode] : f.factorFallback(factorCode)
   const classLabel = factorCompleted ? factor.selected_class : f.notFilled
-  const statusColor = factorCompleted ? brandColors.forest : brandColors.textSecondary
+  const statusColor = factorCompleted ? theme.colors.forest : theme.colors.textSecondary
 
   return (
     <Pressable

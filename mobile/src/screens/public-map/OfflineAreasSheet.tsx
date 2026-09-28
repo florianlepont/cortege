@@ -1,8 +1,9 @@
-import { memo, useState } from "react"
+import { memo, useMemo, useState } from "react"
 import { Pressable, ScrollView, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import type { AreaDownloadEstimate } from "../../map/tile-math"
 import type { OfflineAreaStatus, OfflineAreaSummary } from "../../storage/offline-map"
 import { fr } from "../../i18n"
@@ -11,7 +12,7 @@ import { AppCard } from "../../ui/AppCard"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppStatusChip, type AppStatusChipTone } from "../../ui/AppStatusChip"
-import { offlineAreasStyles as areaStyles, panelStyles as styles } from "./styles"
+import { createOfflineAreasStyles, createPanelStyles } from "./styles"
 
 const t = fr.offlineMap.areas
 
@@ -42,6 +43,9 @@ type AreaRowProps = {
 }
 
 const AreaRow = memo(function AreaRow({ area, downloading, onDelete }: AreaRowProps) {
+  const theme = useBrandTheme()
+  const areaStyles = useMemo(() => createOfflineAreasStyles(theme), [theme])
+  const styles = useMemo(() => createPanelStyles(theme), [theme])
   const handleDelete = (): void => onDelete(area.id)
   return (
     <View style={areaStyles.row}>
@@ -92,12 +96,15 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
   onDelete,
   onClose,
 }: OfflineAreasSheetProps) {
+  const theme = useBrandTheme()
+  const areaStyles = useMemo(() => createOfflineAreasStyles(theme), [theme])
+  const styles = useMemo(() => createPanelStyles(theme), [theme])
   const [name, setName] = useState(defaultAreaName)
   const downloading = downloadingAreaId !== null
   const handleDownload = (): void => onDownload(name.trim() || defaultAreaName())
 
   return (
-    <AppCard variant="panelElevated" padding={14} style={[styles.card, { bottom }]}>
+    <AppCard glass padding={14} style={[styles.card, { bottom }]}>
       <AppSectionHeader
         title={t.title}
         subtitle={t.subtitle}

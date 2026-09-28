@@ -1,4 +1,4 @@
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
@@ -10,10 +10,11 @@ import {
 } from "@cortege/ibp-domain"
 import type { PublicMapItem } from "../../app/types"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { panelStyles as styles } from "./styles"
+import { createPanelStyles } from "./styles"
 
 const t = fr.publicMap
 
@@ -50,6 +51,8 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
   isOwnSurvey,
   onClose,
 }: SelectedSurveyCardProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createPanelStyles(theme), [theme])
   const methodLabel = surveyMethodLabel(item)
 
   return (

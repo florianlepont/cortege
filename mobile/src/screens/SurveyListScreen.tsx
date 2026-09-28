@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Platform, ListRenderItemInfo, RefreshControl, View } from "react-native"
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandColors, brandSpacing } from "../app/brand-tokens"
+import { brandSpacing } from "../app/brand-tokens"
+import { useBrandTheme } from "../app/theme"
 import { computeSurveyStats } from "../app/survey-logic"
 import { fr } from "../i18n"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
@@ -19,7 +20,7 @@ import { isLeadingListItem, keyExtractor, useLeadingItems } from "./survey-list/
 import type { SurveyListItem } from "./survey-list/leading-items"
 import { SurveyRow } from "./survey-list/SurveyRow"
 import type { SurveyRowPreview } from "./survey-list/SurveyRow"
-import { PAGE_CONTENT_GAP, styles } from "./survey-list/styles"
+import { createListStyles, PAGE_CONTENT_GAP } from "./survey-list/styles"
 import type { SurveyListScreenProps } from "./survey-list/types"
 
 // D-03: rows mounted on the first render and per batch; the leading items come on top.
@@ -66,6 +67,8 @@ export function SurveyListScreen({
   isSyncing,
   onOpenSyncStatus,
 }: SurveyListScreenProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createListStyles(theme), [theme])
   const [refreshing, setRefreshing] = useState(false)
   const scrollY = useSharedValue(0)
   const insets = useSafeAreaInsets()
@@ -161,10 +164,10 @@ export function SurveyListScreen({
         <RefreshControl
           refreshing={refreshing}
           onRefresh={() => void handleRefresh()}
-          tintColor={brandColors.forest}
+          tintColor={theme.colors.forest}
         />
       ) : undefined,
-    [handleRefresh, onRefresh, refreshing],
+    [handleRefresh, onRefresh, refreshing, theme],
   )
 
   const handleScroll = useAnimatedScrollHandler((event) => {

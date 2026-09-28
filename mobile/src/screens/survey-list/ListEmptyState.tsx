@@ -1,11 +1,13 @@
+import { useMemo } from "react"
 import { Image, StyleSheet } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandTypography } from "../../app/brand-tokens"
+import { brandTypography } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { AppButton } from "../../ui/AppButton"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
-import { styles as sharedStyles } from "./styles"
+import { createListStyles } from "./styles"
 
 const t = fr.surveyList
 
@@ -16,6 +18,10 @@ type ListEmptyStateProps = {
 }
 
 export function ListEmptyState({ noSurveys, resetFilters }: ListEmptyStateProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  const listStyles = useMemo(() => createListStyles(theme), [theme])
+
   if (noSurveys) {
     // P2-PERSON-04: marten illustration + warm copy
     return (
@@ -34,7 +40,7 @@ export function ListEmptyState({ noSurveys, resetFilters }: ListEmptyStateProps)
 
   return (
     <AppCard variant="panelElevated" padding={22} style={styles.emptyState}>
-      <Ionicons name="funnel-outline" size={28} color={brandColors.forest} />
+      <Ionicons name="funnel-outline" size={28} color={theme.colors.forest} />
       <Text style={styles.emptyStateTitle}>{t.empty.filtered.title}</Text>
       <Text style={styles.emptyStateBody}>{t.empty.filtered.body}</Text>
       <AppButton
@@ -42,30 +48,32 @@ export function ListEmptyState({ noSurveys, resetFilters }: ListEmptyStateProps)
         variant="secondary"
         size="sm"
         onPress={resetFilters}
-        style={sharedStyles.resetButton}
+        style={listStyles.resetButton}
       />
     </AppCard>
   )
 }
 
-const styles = StyleSheet.create({
-  emptyState: {
-    alignItems: "center",
-    gap: 10,
-  },
-  // P2-PERSON-04: marten illustration
-  emptyStateMarten: {
-    width: 110,
-    height: 110,
-    marginBottom: 4,
-  },
-  emptyStateTitle: {
-    ...brandTypography.input,
-    color: brandColors.forest,
-  },
-  emptyStateBody: {
-    ...brandTypography.sectionBody,
-    textAlign: "center",
-    color: brandColors.textSecondary,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    emptyState: {
+      alignItems: "center",
+      gap: 10,
+    },
+    // P2-PERSON-04: marten illustration
+    emptyStateMarten: {
+      width: 110,
+      height: 110,
+      marginBottom: 4,
+    },
+    emptyStateTitle: {
+      ...brandTypography.input,
+      color: theme.colors.forest,
+    },
+    emptyStateBody: {
+      ...brandTypography.sectionBody,
+      textAlign: "center",
+      color: theme.colors.textSecondary,
+    },
+  })
+}

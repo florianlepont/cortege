@@ -2,7 +2,7 @@
   "expo": {
     "name": "Cortege",
     "slug": "cortege",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/logo-app.png",

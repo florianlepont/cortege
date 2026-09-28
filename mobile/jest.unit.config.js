@@ -25,6 +25,7 @@ module.exports = {
     '^expo-file-system/legacy$': '<rootDir>/test/expo-file-system-legacy.mock.ts',
     '^expo-image-manipulator$': '<rootDir>/test/expo-image-manipulator.mock.ts',
     '^expo-image$': '<rootDir>/test/expo-image.mock.ts',
+    '^expo-blur$': '<rootDir>/test/expo-blur.mock.ts',
     '^react-native-svg$': '<rootDir>/test/react-native-svg.mock.ts',
     '^react-native-reanimated$': '<rootDir>/test/react-native-reanimated.mock.ts',
     '^@gorhom/bottom-sheet$': '<rootDir>/test/gorhom-bottom-sheet.mock.ts',

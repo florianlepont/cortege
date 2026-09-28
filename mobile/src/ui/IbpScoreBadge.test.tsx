@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
 import { IbpScoreBadge } from "./IbpScoreBadge"
-import { ibpScoreTokens } from "../app/brand-tokens"
+import { useBrandTheme, type BrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 
 jest.mock("react-native", () => {
@@ -48,6 +48,21 @@ function flattenStyle(style: unknown): FlatStyle {
   return (style ?? {}) as FlatStyle
 }
 
+// No `BrandThemeProvider` is mounted in this test (same as the rest of the suite, which renders
+// `IbpScoreBadge` in isolation), so `useBrandTheme()` resolves to its light-theme default — capture
+// that same value here instead of duplicating its band colours as literals.
+function captureTheme(): BrandTheme {
+  let captured: BrandTheme | undefined
+  function Capture() {
+    captured = useBrandTheme()
+    return null
+  }
+  act(() => {
+    renderer.create(<Capture />)
+  })
+  return captured as BrandTheme
+}
+
 function render(score: number | null | undefined) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
@@ -65,32 +80,37 @@ function render(score: number | null | undefined) {
 
 describe("IbpScoreBadge shows the total out of 50 in the package band colour (01.8 D-03, CH-11)", () => {
   test("42 reads 42 /50 in the high colour", () => {
+    const theme = captureTheme()
     const { background, textColor, texts } = render(42)
     expect(texts).toEqual(["42", "/50"])
     expect(fr.components.ibpScoreBadge.denominator).toBe("/50")
-    expect(background).toBe(ibpScoreTokens.colors.high.background)
-    expect(textColor).toBe(ibpScoreTokens.colors.high.text)
+    expect(background).toBe(theme.ibpScoreColors.high.background)
+    expect(textColor).toBe(theme.ibpScoreColors.high.text)
   })
 
   test("25 (moyenne) is mid and 5 (faible) is low", () => {
-    expect(render(25).background).toBe(ibpScoreTokens.colors.mid.background)
-    expect(render(5).background).toBe(ibpScoreTokens.colors.low.background)
+    const theme = captureTheme()
+    expect(render(25).background).toBe(theme.ibpScoreColors.mid.background)
+    expect(render(5).background).toBe(theme.ibpScoreColors.low.background)
   })
 
   test("the old /10 thresholds no longer colour a score: 7 and 15 are low", () => {
-    expect(render(7).background).toBe(ibpScoreTokens.colors.low.background)
-    expect(render(15).background).toBe(ibpScoreTokens.colors.low.background)
+    const theme = captureTheme()
+    expect(render(7).background).toBe(theme.ibpScoreColors.low.background)
+    expect(render(15).background).toBe(theme.ibpScoreColors.low.background)
   })
 
   test("a band boundary falls in the higher band: 20 is mid, 30 is high", () => {
-    expect(render(20).background).toBe(ibpScoreTokens.colors.mid.background)
-    expect(render(30).background).toBe(ibpScoreTokens.colors.high.background)
+    const theme = captureTheme()
+    expect(render(20).background).toBe(theme.ibpScoreColors.mid.background)
+    expect(render(30).background).toBe(theme.ibpScoreColors.high.background)
   })
 
   test("no score shows the empty colour and the dash", () => {
+    const theme = captureTheme()
     const { background, texts } = render(null)
-    expect(background).toBe(ibpScoreTokens.colors.empty.background)
+    expect(background).toBe(theme.ibpScoreColors.empty.background)
     expect(texts[0]).toBe(fr.components.ibpScoreBadge.noScore)
-    expect(render(undefined).background).toBe(ibpScoreTokens.colors.empty.background)
+    expect(render(undefined).background).toBe(theme.ibpScoreColors.empty.background)
   })
 })

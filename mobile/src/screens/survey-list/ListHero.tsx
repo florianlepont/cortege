@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import type { LayoutChangeEvent } from "react-native"
@@ -9,7 +9,8 @@ import Animated, {
   SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated"
-import { brandColors, brandRadius, brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppPressable } from "../../ui/AppPressable"
 import { SyncStatusPill } from "../../ui/SyncStatusPill"
@@ -71,6 +72,8 @@ export function ListHero({
   onOpenSyncStatus,
   onOpenCreateSurvey,
 }: ListHeroProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const { expandedHeroHeight, collapsedHeroHeight, heroTopInset } = geometry
   const collapseDistance = expandedHeroHeight - collapsedHeroHeight
 
@@ -125,7 +128,7 @@ export function ListHero({
             onPress={onOpenCreateSurvey}
             style={styles.createButton}
           >
-            <Ionicons name="add" size={22} color={brandColors.white} />
+            <Ionicons name="add" size={22} color={theme.colors.white} />
           </AppPressable>
         </View>
       </View>
@@ -133,60 +136,62 @@ export function ListHero({
   )
 }
 
-const styles = StyleSheet.create({
-  heroShell: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 2,
-    paddingHorizontal: 16,
-    backgroundColor: brandColors.canvas,
-  },
-  heroRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: brandSpacing.sm,
-  },
-  titleBlock: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  titleExpanded: {
-    ...brandTypography.sectionTitle,
-    fontSize: 30,
-    lineHeight: 34,
-    color: brandColors.forest,
-  },
-  subtitle: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-    marginTop: 2,
-  },
-  compactLayer: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: "center",
-  },
-  titleCompact: {
-    ...brandTypography.sectionTitle,
-    fontSize: 20,
-    lineHeight: 24,
-    color: brandColors.forest,
-  },
-  trailing: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: brandSpacing.sm,
-    flexShrink: 0,
-  },
-  createButton: {
-    width: 36,
-    height: 36,
-    borderRadius: brandRadius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: brandColors.forest,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    heroShell: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 2,
+      paddingHorizontal: 16,
+      backgroundColor: theme.colors.canvas,
+    },
+    heroRow: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: brandSpacing.sm,
+    },
+    titleBlock: {
+      flex: 1,
+      justifyContent: "center",
+    },
+    titleExpanded: {
+      ...brandTypography.sectionTitle,
+      fontSize: 30,
+      lineHeight: 34,
+      color: theme.colors.forest,
+    },
+    subtitle: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+      marginTop: 2,
+    },
+    compactLayer: {
+      ...StyleSheet.absoluteFill,
+      justifyContent: "center",
+    },
+    titleCompact: {
+      ...brandTypography.sectionTitle,
+      fontSize: 20,
+      lineHeight: 24,
+      color: theme.colors.forest,
+    },
+    trailing: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing.sm,
+      flexShrink: 0,
+    },
+    createButton: {
+      width: 36,
+      height: 36,
+      borderRadius: brandRadius.pill,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.forest,
+    },
+  })
+}

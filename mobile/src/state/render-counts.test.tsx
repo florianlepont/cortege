@@ -337,6 +337,8 @@ jest.mock("@react-navigation/native", () => {
     useFocusEffect: () => undefined,
     useIsFocused: () => true,
     createNavigationContainerRef: () => ({ current: null, isReady: () => false }),
+    DefaultTheme: { dark: false, colors: {} },
+    DarkTheme: { dark: true, colors: {} },
   }
 })
 

@@ -1,14 +1,9 @@
-import type { ReactNode } from "react"
+import { useMemo, type ReactNode } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import {
-  brandColors,
-  brandFieldState,
-  brandRadius,
-  brandSpacing4,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 /**
  * The three states every FactorInput variant can render (FLOW-02): empty is neutral (never
@@ -41,7 +36,9 @@ export function FactorInputShell({
   children,
   testID,
 }: FactorInputShellProps) {
-  const tone = brandFieldState[state]
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  const tone = theme.fieldState[state]
 
   return (
     <View
@@ -64,29 +61,31 @@ export function FactorInputShell({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    borderWidth: 1.5,
-    borderRadius: brandRadius.field,
-    padding: brandSpacing4.md,
-    gap: brandSpacing4.sm,
-  },
-  labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: brandSpacing4.sm,
-  },
-  label: {
-    ...brandTypography.label,
-    flexShrink: 1,
-  },
-  helperText: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  errorText: {
-    ...brandTypography.meta,
-    fontWeight: "700",
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    container: {
+      borderWidth: 1.5,
+      borderRadius: brandRadius.field,
+      padding: brandSpacing4.md,
+      gap: brandSpacing4.sm,
+    },
+    labelRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: brandSpacing4.sm,
+    },
+    label: {
+      ...brandTypography.label,
+      flexShrink: 1,
+    },
+    helperText: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    errorText: {
+      ...brandTypography.meta,
+      fontWeight: "700",
+    },
+  })
+}

@@ -11,9 +11,10 @@ import {
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import MapView, { Marker, Region } from "react-native-maps"
-import { brandColors, brandSpacing } from "../../app/brand-tokens"
+import { brandSpacing } from "../../app/brand-tokens"
 import { computeRegionZoom } from "../../app/map-viewport"
 import { SurveyDetailResponse } from "../../app/types"
+import { useBrandTheme } from "../../app/theme"
 import { IgnCadastreTileOverlay } from "../../components/IgnCadastreTileOverlay"
 import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
 import { useParcelStatuses } from "../../hooks/useParcelStatuses"
@@ -21,7 +22,7 @@ import { fr } from "../../i18n"
 import { LocalAttachment, LocalSurvey } from "../../storage"
 import { isPhotoAttachment, resolveDisplayCoordinates } from "../survey-screen-helpers"
 import { AttachmentPhotoPreview } from "./AttachmentPhotoPreview"
-import { styles } from "./media.styles"
+import { createMediaStyles } from "./media.styles"
 
 type HeroMode = "map" | "photo"
 
@@ -69,6 +70,8 @@ export function MediaSection({
   onPickPhoto,
   onDeleteAttachment,
 }: MediaSectionProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createMediaStyles(theme), [theme])
   const { width: viewportWidth } = useWindowDimensions()
   const mediaSlideWidth = Math.max(viewportWidth - brandSpacing.md * 2, 0)
   const gpsCoordinates = useMemo(
@@ -212,7 +215,7 @@ export function MediaSection({
             ))}
           </ScrollView>
           <View style={styles.detailHeroOverlayBadge}>
-            <Ionicons name="images-outline" size={13} color={brandColors.white} />
+            <Ionicons name="images-outline" size={13} color={theme.colors.white} />
             <Text style={styles.detailHeroOverlayBadgeText}>
               {media.photosPage({ current: mediaPageIndex + 1, total: photoSlides.length })}
             </Text>
@@ -242,7 +245,7 @@ export function MediaSection({
             {marker}
           </MapView>
           <View style={styles.detailHeroOverlayBadge}>
-            <Ionicons name="map-outline" size={13} color={brandColors.white} />
+            <Ionicons name="map-outline" size={13} color={theme.colors.white} />
             <Text style={styles.detailHeroOverlayBadgeText}>
               {canEditSurvey ? media.tapMapToEdit : media.mapPreview}
             </Text>
@@ -293,7 +296,7 @@ export function MediaSection({
             accessibilityRole="button"
             accessibilityLabel={a11y.addPhoto}
           >
-            <Ionicons name="camera-outline" size={16} color={brandColors.white} />
+            <Ionicons name="camera-outline" size={16} color={theme.colors.white} />
           </Pressable>
           {heroMode === "photo" && currentPhotoAttachment ? (
             <Pressable
@@ -305,7 +308,7 @@ export function MediaSection({
                 total: photoSlides.length,
               })}
             >
-              <Ionicons name="trash-outline" size={16} color={brandColors.white} />
+              <Ionicons name="trash-outline" size={16} color={theme.colors.white} />
             </Pressable>
           ) : null}
         </View>

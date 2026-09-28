@@ -1,16 +1,18 @@
+import { useMemo } from "react"
 import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
 import { FACTOR_TITLES } from "../../app/constants"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
+import { useBrandTheme } from "../../app/theme"
 import { FactorField, FactorKey, FactorProgress, FactorRetainedScore } from "../../app/types"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { FactorProgressRing } from "../../ui/FactorProgressRing"
 import { FACTOR_ICONS, FACTOR_ORDER } from "./components"
-import { factorStyles } from "./factors.styles"
-import { formStyles } from "./styles"
+import { createFactorStyles } from "./factors.styles"
+import { createFormStyles } from "./styles"
 import { fr } from "../../i18n"
 
 export type { FactorProgress } from "../../app/types"
@@ -53,6 +55,8 @@ export function FactorTile({
   retainedScore: FactorRetainedScore | null
   onPress: () => void
 }) {
+  const theme = useBrandTheme()
+  const factorStyles = useMemo(() => createFactorStyles(theme), [theme])
   const toneStyle = progress.complete
     ? factorStyles.factorTileComplete
     : progress.invalid > 0
@@ -114,6 +118,9 @@ export function FactorsList({
   scoreTotals: ReturnType<typeof computeIbpTotalsFromRetainedScores>
   onOpenFactor: (factor: FactorKey) => void
 }) {
+  const theme = useBrandTheme()
+  const factorStyles = useMemo(() => createFactorStyles(theme), [theme])
+  const formStyles = useMemo(() => createFormStyles(theme), [theme])
   return (
     <>
       <View style={factorStyles.scoreHeroCard}>

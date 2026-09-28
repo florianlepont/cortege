@@ -92,6 +92,20 @@ jest.mock("../ui/AppButton", () => {
       ReactRef.createElement("AppButton", { label, onPress }),
   }
 })
+jest.mock("../ui/AppChoiceChip", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    AppChoiceChip: ({
+      label,
+      active,
+      onPress,
+    }: {
+      label: string
+      active?: boolean
+      onPress?: () => void
+    }) => ReactRef.createElement("AppChoiceChip", { label, active, onPress }),
+  }
+})
 
 let tree: ReactTestRenderer
 

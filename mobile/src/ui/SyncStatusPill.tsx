@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { ActivityIndicator, StyleProp, StyleSheet, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppPressable } from "./AppPressable"
 import { feedback } from "./feedback"
@@ -18,8 +19,6 @@ export type SyncStatusPillProps = {
 }
 
 const t = fr.components.syncStatusPill
-// Same text colour for every tone (AppStatusChip's convention): only the surface changes.
-const ICON_COLOR = brandComponentTokens.statusChip.textColor
 
 /**
  * SYNC-02: offline · N à envoyer · en cours · à jour, visible in the Home and Mes Relevés headers
@@ -64,6 +63,10 @@ export function SyncStatusPill({
   onPress,
   style,
 }: SyncStatusPillProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  // Same text colour for every tone (AppStatusChip's convention): only the surface changes.
+  const iconColor = theme.componentColors.statusChip.textColor
   const state = resolveSyncStatusPillState({ isOnline, isSyncing, pendingCount })
   const previousStateRef = useRef(state)
 
@@ -87,45 +90,47 @@ export function SyncStatusPill({
       style={[styles.base, styles[SURFACE_STYLE_BY_STATE[state]], style]}
     >
       {state === "syncing" ? (
-        <ActivityIndicator size="small" color={ICON_COLOR} />
+        <ActivityIndicator size="small" color={iconColor} />
       ) : (
-        <Ionicons name={ICON_BY_STATE[state]} size={14} color={ICON_COLOR} />
+        <Ionicons name={ICON_BY_STATE[state]} size={14} color={iconColor} />
       )}
       <Text style={styles.label}>{label}</Text>
     </AppPressable>
   )
 }
 
-const styles = StyleSheet.create({
-  base: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    minHeight: 30,
-  },
-  label: {
-    ...brandTypography.meta,
-    fontSize: 12,
-    color: ICON_COLOR,
-  },
-  offlineSurface: {
-    borderColor: brandComponentTokens.statusChip.warningBorder,
-    backgroundColor: brandComponentTokens.statusChip.warningBackground,
-  },
-  toSendSurface: {
-    borderColor: brandComponentTokens.statusChip.warningBorder,
-    backgroundColor: brandComponentTokens.statusChip.warningBackground,
-  },
-  syncingSurface: {
-    borderColor: brandComponentTokens.statusChip.neutralBorder,
-    backgroundColor: brandComponentTokens.statusChip.neutralBackground,
-  },
-  upToDateSurface: {
-    borderColor: brandComponentTokens.statusChip.successBorder,
-    backgroundColor: brandComponentTokens.statusChip.successBackground,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    base: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      minHeight: 30,
+    },
+    label: {
+      ...brandTypography.meta,
+      fontSize: 12,
+      color: theme.componentColors.statusChip.textColor,
+    },
+    offlineSurface: {
+      borderColor: theme.componentColors.statusChip.warningBorder,
+      backgroundColor: theme.componentColors.statusChip.warningBackground,
+    },
+    toSendSurface: {
+      borderColor: theme.componentColors.statusChip.warningBorder,
+      backgroundColor: theme.componentColors.statusChip.warningBackground,
+    },
+    syncingSurface: {
+      borderColor: theme.componentColors.statusChip.neutralBorder,
+      backgroundColor: theme.componentColors.statusChip.neutralBackground,
+    },
+    upToDateSurface: {
+      borderColor: theme.componentColors.statusChip.successBorder,
+      backgroundColor: theme.componentColors.statusChip.successBackground,
+    },
+  })
+}

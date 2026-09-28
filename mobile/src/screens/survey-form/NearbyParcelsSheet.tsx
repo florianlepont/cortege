@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import {
   ActivityIndicator,
   FlatList,
@@ -11,6 +11,7 @@ import {
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { NearbyParcel } from "../../hooks/useNearbyParcels"
 import { fr } from "../../i18n"
 import { useNearbyParcelsState } from "../../state/nearby-parcels-context"
@@ -37,6 +38,8 @@ export function NearbyParcelsSheet({
   onToggleParcelSelection,
 }: NearbyParcelsSheetProps) {
   const { state, load } = useNearbyParcelsState()
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
 
   useEffect(() => {
     if (visible) void load()
@@ -62,7 +65,7 @@ export function NearbyParcelsSheet({
         <Ionicons
           name={checked ? "checkbox" : "square-outline"}
           size={22}
-          color={checked ? brandColors.forest : brandColors.textSecondary}
+          color={checked ? brandColors.forest : theme.colors.textSecondary}
         />
         <View style={styles.rowCopy}>
           <Text style={styles.rowTitle}>{t.parcelLabel({ id: item.parcel_id })}</Text>
@@ -121,69 +124,71 @@ export function NearbyParcelsSheet({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: brandColors.panel,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    padding: brandSpacing4.md,
-    gap: brandSpacing4.sm,
-  },
-  headerCopy: {
-    flex: 1,
-    gap: brandSpacing4.xxs,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: brandColors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: brandColors.textSecondary,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: brandRadius.field,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: brandColors.panelMuted,
-  },
-  loadingWrap: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: brandSpacing4.sm,
-  },
-  loadingText: {
-    fontSize: 14,
-    color: brandColors.textSecondary,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: ROW_HEIGHT,
-    paddingHorizontal: brandSpacing4.md,
-    gap: brandSpacing4.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: brandColors.divider,
-  },
-  rowCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  rowTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: brandColors.textPrimary,
-  },
-  rowMeta: {
-    fontSize: 12,
-    color: brandColors.textSecondary,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.panel,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      padding: brandSpacing4.md,
+      gap: brandSpacing4.sm,
+    },
+    headerCopy: {
+      flex: 1,
+      gap: brandSpacing4.xxs,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: "800",
+      color: theme.colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: 13,
+      color: theme.colors.textSecondary,
+    },
+    closeButton: {
+      width: 36,
+      height: 36,
+      borderRadius: brandRadius.field,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.panelMuted,
+    },
+    loadingWrap: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: brandSpacing4.sm,
+    },
+    loadingText: {
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      minHeight: ROW_HEIGHT,
+      paddingHorizontal: brandSpacing4.md,
+      gap: brandSpacing4.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.divider,
+    },
+    rowCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    rowTitle: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: theme.colors.textPrimary,
+    },
+    rowMeta: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+  })
+}

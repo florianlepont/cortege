@@ -1,11 +1,13 @@
+import { useMemo } from "react"
 import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { FactorKey } from "../../app/types"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
-import { headerStyles } from "./header.styles"
+import { createHeaderStyles } from "./header.styles"
 import { fr } from "../../i18n"
 
 export type WizardStep = "identity" | "parcels" | "factors"
@@ -43,6 +45,8 @@ export function StepButton({
   disabled?: boolean
   onPress: () => void
 }) {
+  const theme = useBrandTheme()
+  const headerStyles = useMemo(() => createHeaderStyles(theme), [theme])
   return (
     <Pressable
       accessibilityRole="button"
@@ -73,7 +77,7 @@ export function StepButton({
           }
           size={18}
           color={
-            active ? brandColors.white : complete ? brandColors.forest : brandColors.textSecondary
+            active ? brandColors.white : complete ? brandColors.forest : theme.colors.textSecondary
           }
         />
       </View>

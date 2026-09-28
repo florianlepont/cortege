@@ -1,10 +1,11 @@
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import { ScrollView, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { PERIOD_KEYS, type PeriodKey } from "./period-filter"
-import { filterBarStyles as styles } from "./styles"
+import { createFilterBarStyles } from "./styles"
 
 const t = fr.publicMap
 export const REGION_KEYS = ["", "ACA", "M"] as const
@@ -43,6 +44,8 @@ export const ExplorerFilterBar = memo(function ExplorerFilterBar({
   activeCount,
   onReset,
 }: ExplorerFilterBarProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createFilterBarStyles(theme), [theme])
   return (
     <View style={styles.container}>
       {activeCount > 0 ? (

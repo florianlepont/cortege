@@ -57,7 +57,7 @@ list is never ambiguous.
 - [x] **Phase 9: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map (completed 2026-09-27)
 - [x] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
 - [x] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone (completed 2026-09-27)
-- [ ] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F
+- [x] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F (completed 2026-09-28)
 - [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
 
 ## Phase Details
@@ -615,11 +615,14 @@ DS-13, DET-03/04, HOME-06, LIST-07, ACC-02) to its batch.
 **Source**: `docs/design/ux-ui-audit-2026-09.md` §3.4 (DS-12, DS-15), §3.2 (DET-05) and §7 Lot 5 (minus the gamification item)
 **Success Criteria** (what must be TRUE):
 
-  1. `light`/`dark` themes exist on the same semantic tokens through `useBrandTheme()`, defaulting to `automatic`.
-  2. Floating map and card controls use `expo-blur` or `expo-glass-effect` instead of a flat `rgba` fill; parcel selection uses a `formSheet` with detents instead of a full-screen modal.
-  3. Survey-detail history renders as an icon timeline with pull-to-refresh and a loading skeleton, instead of plain text.
+  1. [x] `light`/`dark` themes exist on the same semantic tokens through `useBrandTheme()`, defaulting to `automatic`. (`mobile/src/app/theme.ts`, persisted via `storage/theme-preference.ts`, picked in Settings' new "Apparence" section; every screen/component converted, see `12-01` through `12-04` and `12-06`/`12-07` summaries)
+  2. [x] Floating map and card controls use `expo-blur` or `expo-glass-effect` instead of a flat `rgba` fill; parcel selection uses a `formSheet` with detents instead of a full-screen modal. (new `ui/GlassSurface.tsx` + `AppCard`'s `glass` prop, applied across `public-map/` and the parcel map's floating controls — `12-05`/`12-06`; `SurveysStack.tsx`'s `surveyParcels` route presents as `formSheet` with two detents)
+  3. [x] Survey-detail history renders as an icon timeline with pull-to-refresh and a loading skeleton, instead of plain text. (`EventsTab.tsx` rewrite + new `event-icons.ts`, `SkeletonRow`, `SurveyDetailScreen.tsx`'s `RefreshControl` — `12-07`)
 
-**Plans**: TBD
+**Plans**: 7 batches, executed and closed directly (no separate orchestrator/executor split) — see
+`.planning/phases/12-interface-finishing/12-CONTEXT.md` and its `12-0N-SUMMARY.md` files for what
+each batch shipped; `12-VALIDATION.md` maps each success criterion above to its batch.
+**UI hint**: yes
 
 ### Phase 13: Field Validation
 
@@ -668,7 +671,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 9. Onboarding & Explorer Polish (UX Lot 4) | n/a | Complete    | 2026-09-27 |
 | 10. Survey Export & Ownership | 1/1 | Complete   | 2026-09-27 |
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
-| 12. Interface Finishing (UX Lot 5) | 0/TBD | Not started | - |
+| 12. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 13. Field Validation | 0/TBD | Not started | - |
 
 ## Coverage

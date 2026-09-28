@@ -6,12 +6,13 @@ import {
 } from "@react-navigation/native-stack"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AccountRoute } from "../routes/AccountRoute"
 import { SettingsRoute } from "../routes/SettingsRoute"
 import { styles } from "../styles"
 import type { AccountStackParamList } from "../types"
-import { baseStackScreenOptions } from "./stack-options"
+import { createBaseStackScreenOptions } from "./stack-options"
 
 const AccountStack = createNativeStackNavigator<AccountStackParamList>()
 
@@ -54,11 +55,12 @@ function accountHomeOptions({
 }
 
 export function AccountTabNavigator() {
+  const theme = useBrandTheme()
   return (
     <View style={styles.tabScreenContainer}>
       <AccountStack.Navigator
         screenOptions={{
-          ...baseStackScreenOptions,
+          ...createBaseStackScreenOptions(theme),
           headerLargeTitle: false,
         }}
       >

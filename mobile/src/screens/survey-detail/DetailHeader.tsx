@@ -1,8 +1,8 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react"
 import { Alert, Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandSemanticColors, ibpScoreTokens } from "../../app/brand-tokens"
+import { brandOnDarkColors } from "../../app/brand-tokens"
 import { formatDateTime } from "../../app/formatters"
 import {
   formatSurveySyncDisplayLabel,
@@ -10,13 +10,14 @@ import {
   resolveSurveySyncDisplay,
   resolveSurveyWorkflowStatus,
 } from "../../app/survey-logic"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
 import { AppButton } from "../../ui/AppButton"
 import { AppField } from "../../ui/AppField"
 import { AppStatusChip, AppStatusChipTone } from "../../ui/AppStatusChip"
 import { HeroMetric, HeroSubScore, HeroSubmitState, resolveHeroSubmitCopy } from "./hero-state"
-import { styles } from "./header.styles"
+import { createHeaderStyles } from "./header.styles"
 
 type DetailHeaderProps = {
   survey: LocalSurvey
@@ -45,8 +46,18 @@ const alerts = fr.surveyDetail.alerts
 const metricText = fr.surveyDetail.metric
 
 // A sub-score of the hero metric card, coloured and named by its CNPF band (D-03 amended).
-function HeroSubScorePill({ subScore, testID }: { subScore: HeroSubScore; testID: string }) {
-  const colors = ibpScoreTokens.colors[subScore.tone]
+function HeroSubScorePill({
+  subScore,
+  testID,
+  theme,
+  styles,
+}: {
+  subScore: HeroSubScore
+  testID: string
+  theme: BrandTheme
+  styles: ReturnType<typeof createHeaderStyles>
+}) {
+  const colors = theme.ibpScoreColors[subScore.tone]
   return (
     <View
       testID={testID}
@@ -83,6 +94,8 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
   },
   ref,
 ) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createHeaderStyles(theme), [theme])
   const [isRenamingSite, setIsRenamingSite] = useState(false)
   const [siteNameInput, setSiteNameInput] = useState("")
 
@@ -134,7 +147,7 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
               accessibilityRole="button"
               accessibilityLabel={a11y.openMenu(activeSiteName)}
             >
-              <Ionicons name="ellipsis-horizontal" size={18} color={brandColors.white} />
+              <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.white} />
             </Pressable>
           </View>
         ) : null}
@@ -146,7 +159,7 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
               onChangeText={setSiteNameInput}
               autoFocus
               placeholder={h.renamePlaceholder}
-              placeholderTextColor={brandSemanticColors.heroTextMutedOnDark}
+              placeholderTextColor={brandOnDarkColors.heroTextMutedOnDark}
               containerStyle={styles.detailRenameField}
               labelStyle={styles.detailRenameLabel}
               inputStyle={styles.detailRenameInput}
@@ -218,8 +231,18 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
               <Text style={styles.detailHeroMetricValue}>{metric.value}</Text>
               {metric.stand && metric.context ? (
                 <View style={styles.detailHeroSubScores}>
-                  <HeroSubScorePill subScore={metric.stand} testID="hero-subscore-stand" />
-                  <HeroSubScorePill subScore={metric.context} testID="hero-subscore-context" />
+                  <HeroSubScorePill
+                    subScore={metric.stand}
+                    testID="hero-subscore-stand"
+                    theme={theme}
+                    styles={styles}
+                  />
+                  <HeroSubScorePill
+                    subScore={metric.context}
+                    testID="hero-subscore-context"
+                    theme={theme}
+                    styles={styles}
+                  />
                 </View>
               ) : (
                 <Text style={styles.detailHeroMetricMeta}>{metric.meta}</Text>
@@ -253,7 +276,7 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
                   <Ionicons
                     name="time-outline"
                     size={13}
-                    color={brandSemanticColors.heroTextMutedOnDark}
+                    color={brandOnDarkColors.heroTextMutedOnDark}
                   />
                   <Text style={styles.heroMetaText}>
                     {h.updatedAt(formatDateTime(survey.updated_at))}
@@ -263,7 +286,7 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
                   <Ionicons
                     name="images-outline"
                     size={13}
-                    color={brandSemanticColors.heroTextMutedOnDark}
+                    color={brandOnDarkColors.heroTextMutedOnDark}
                   />
                   <Text style={styles.heroMetaText}>{h.photoCount(attachmentCount)}</Text>
                 </View>
@@ -272,7 +295,7 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
                     <Ionicons
                       name="hourglass-outline"
                       size={13}
-                      color={brandSemanticColors.heroTextMutedOnDark}
+                      color={brandOnDarkColors.heroTextMutedOnDark}
                     />
                     <Text style={styles.heroMetaText}>{remainingTime}</Text>
                   </View>
@@ -290,7 +313,7 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
               accessibilityRole="button"
               accessibilityLabel={a11y.submitSurvey(activeSiteName)}
             >
-              <Ionicons name="paper-plane-outline" size={15} color={brandColors.forest} />
+              <Ionicons name="paper-plane-outline" size={15} color={theme.colors.forest} />
               <Text style={styles.detailHeroSubmitButtonText}>{h.submitSurvey}</Text>
             </Pressable>
           ) : (
@@ -321,7 +344,7 @@ export const DetailHeader = forwardRef<DetailHeaderHandle, DetailHeaderProps>(fu
                     accessibilityRole="button"
                     accessibilityLabel={a11y.submitSurvey(activeSiteName)}
                   >
-                    <Ionicons name="paper-plane-outline" size={15} color={brandColors.forest} />
+                    <Ionicons name="paper-plane-outline" size={15} color={theme.colors.forest} />
                     <Text style={styles.detailHeroSubmitButtonText}>{h.submit}</Text>
                   </Pressable>
                 ) : (

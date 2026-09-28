@@ -1,15 +1,17 @@
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import { ActivityIndicator, Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import type { BasemapKey } from "../../map/basemaps"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { GlassSurface } from "../../ui/GlassSurface"
 import { ExplorerFilterBar, type ExplorerFilterBarProps } from "./ExplorerFilterBar"
 import { BasemapToggle, OfflineIndicatorBadge } from "./OfflineControls"
-import { controlStyles as styles } from "./styles"
+import { createControlStyles } from "./styles"
 
 const t = fr.publicMap
 const offlineT = fr.offlineMap.areas
@@ -49,17 +51,19 @@ export const MapTopControls = memo(function MapTopControls({
   onChangeBasemap,
   onOpenOfflineAreas,
 }: MapTopControlsProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createControlStyles(theme), [theme])
   return (
     <View pointerEvents="box-none" style={[styles.overlayShell, { top }]}>
       <View style={styles.topDock}>
         <View style={styles.topDockLeft}>
-          <View style={styles.exploreBadge}>
+          <GlassSurface tone="auto" style={styles.exploreBadge}>
             <Ionicons name="globe-outline" size={15} color={brandColors.forest} />
             <Text style={styles.exploreBadgeText}>{t.badge}</Text>
-          </View>
-          <View style={styles.countBadge}>
+          </GlassSurface>
+          <GlassSurface tone="auto" style={styles.countBadge}>
             <Text style={styles.countBadgeText}>{t.count(count)}</Text>
-          </View>
+          </GlassSurface>
           {isOffline ? <OfflineIndicatorBadge /> : null}
         </View>
 
@@ -69,16 +73,16 @@ export const MapTopControls = memo(function MapTopControls({
           ) : null}
           {onOpenOfflineAreas ? (
             <Pressable
-              style={styles.iconButton}
               onPress={onOpenOfflineAreas}
               accessibilityRole="button"
               accessibilityLabel={offlineT.a11y.openSheet}
             >
-              <Ionicons name="cloud-download-outline" size={18} color={brandColors.forest} />
+              <GlassSurface tone="auto" style={styles.iconButton}>
+                <Ionicons name="cloud-download-outline" size={18} color={brandColors.forest} />
+              </GlassSurface>
             </Pressable>
           ) : null}
           <Pressable
-            style={styles.iconButton}
             onPress={onToggleFilters}
             accessibilityRole="button"
             accessibilityLabel={showFilters ? t.a11y.hideFilters : t.a11y.showFilters}
@@ -87,16 +91,18 @@ export const MapTopControls = memo(function MapTopControls({
               filters.activeCount > 0 ? t.a11y.activeFilterCount(filters.activeCount) : undefined
             }
           >
-            <Ionicons
-              name={showFilters ? "close-outline" : "options-outline"}
-              size={18}
-              color={brandColors.forest}
-            />
-            {filters.activeCount > 0 ? (
-              <View style={styles.filterCountBadge}>
-                <Text style={styles.filterCountBadgeText}>{filters.activeCount}</Text>
-              </View>
-            ) : null}
+            <GlassSurface tone="auto" style={styles.iconButton}>
+              <Ionicons
+                name={showFilters ? "close-outline" : "options-outline"}
+                size={18}
+                color={brandColors.forest}
+              />
+              {filters.activeCount > 0 ? (
+                <View style={styles.filterCountBadge}>
+                  <Text style={styles.filterCountBadgeText}>{filters.activeCount}</Text>
+                </View>
+              ) : null}
+            </GlassSurface>
           </Pressable>
           <Pressable
             style={loading ? styles.iconButtonDisabled : styles.iconButtonPrimary}
@@ -116,7 +122,7 @@ export const MapTopControls = memo(function MapTopControls({
       </View>
 
       {showFilters ? (
-        <AppCard variant="panelElevated" padding={14} style={styles.filtersPanel}>
+        <AppCard glass padding={14} style={styles.filtersPanel}>
           <AppSectionHeader
             title={t.filters.title}
             subtitle={t.filters.subtitle}
@@ -171,10 +177,12 @@ export const MapBottomDock = memo(function MapBottomDock({
   locating,
   onLocate,
 }: MapBottomDockProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createControlStyles(theme), [theme])
   return (
     <View style={[styles.bottomDock, { bottom }]}>
       {showEmpty ? (
-        <AppCard variant="panelElevated" padding={14} style={styles.emptyDockBubble}>
+        <AppCard glass padding={14} style={styles.emptyDockBubble}>
           <Text style={styles.emptyDockText}>{t.empty}</Text>
         </AppCard>
       ) : (

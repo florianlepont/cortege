@@ -2,6 +2,7 @@ import { useContext } from "react"
 import { Platform } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../app/brand-tokens"
+import { BrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { useSession, type SessionActions } from "../state/session-context"
 import { useSurveyActions } from "../state/surveys-context"
@@ -71,12 +72,13 @@ const JS_TAB_BAR_MIN_PADDING_BOTTOM = 10
 
 export type TabBarInsets = { bottom: number }
 
-/** The JS bar style; the surveys tab swaps it for `display: none` (tab-bar.ts). */
-export function buildJsTabBarStyle(insets: TabBarInsets = { bottom: 0 }) {
+/** The JS bar style; the surveys tab swaps it for `display: none` (tab-bar.ts). Call with the
+ * caller's `useBrandTheme()` value. */
+export function buildJsTabBarStyle(theme: BrandTheme, insets: TabBarInsets = { bottom: 0 }) {
   const paddingBottom = Math.max(insets.bottom, JS_TAB_BAR_MIN_PADDING_BOTTOM)
   return {
-    backgroundColor: brandColors.panel,
-    borderTopColor: brandColors.divider,
+    backgroundColor: theme.colors.panel,
+    borderTopColor: theme.colors.divider,
     borderTopWidth: 1,
     height: JS_TAB_BAR_CONTENT_HEIGHT + JS_TAB_BAR_PADDING_TOP + paddingBottom,
     paddingBottom,
@@ -84,25 +86,24 @@ export function buildJsTabBarStyle(insets: TabBarInsets = { bottom: 0 }) {
   }
 }
 
-/** The style at a zero bottom inset — kept for callers with no safe-area context (tests, the
- * non-surveys tabs, which take this default rather than a per-route insets prop). */
-export const JS_TAB_BAR_STYLE = buildJsTabBarStyle()
-
-export const jsTabScreenOptions = (
+export function jsTabScreenOptions(
+  theme: BrandTheme,
   { route }: { route: { name: keyof RootTabParamList } },
   insets: TabBarInsets = { bottom: 0 },
-) => ({
-  headerShown: false,
-  title: TAB_TITLES[route.name],
-  tabBarLabel: TAB_TITLES[route.name],
-  tabBarActiveTintColor: brandColors.forest,
-  tabBarInactiveTintColor: brandColors.textSecondary,
-  tabBarStyle: buildJsTabBarStyle(insets),
-  tabBarLabelStyle: { fontSize: 12, fontWeight: "600" as const },
-  tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-    <Ionicons name={JS_TAB_ICONS[route.name]} size={size} color={color} />
-  ),
-})
+) {
+  return {
+    headerShown: false,
+    title: TAB_TITLES[route.name],
+    tabBarLabel: TAB_TITLES[route.name],
+    tabBarActiveTintColor: theme.colors.forest,
+    tabBarInactiveTintColor: theme.colors.textSecondary,
+    tabBarStyle: buildJsTabBarStyle(theme, insets),
+    tabBarLabelStyle: { fontSize: 12, fontWeight: "600" as const },
+    tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+      <Ionicons name={JS_TAB_ICONS[route.name]} size={size} color={color} />
+    ),
+  }
+}
 
 // ─── Shared tab listeners ─────────────────────────────────────────────────────
 

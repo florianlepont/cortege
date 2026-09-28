@@ -1,9 +1,10 @@
+import { useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { getIbpScoreColors } from "../../ui/IbpScoreBadge"
-import { styles } from "./styles"
+import { createStyles } from "./styles"
 
 type SectorScoreCardProps = {
   score: number
@@ -21,7 +22,9 @@ export function SectorScoreCard({
   analysedCount,
   mixedMethods = false,
 }: SectorScoreCardProps) {
-  const dotColor = getIbpScoreColors(score).background
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  const dotColor = getIbpScoreColors(score, theme).background
   const filledCount = Math.round(score / POINTS_PER_DOT)
 
   return (
@@ -37,7 +40,7 @@ export function SectorScoreCard({
             testID="sector-score-dot"
             style={[
               styles.scoreDot,
-              { backgroundColor: i < filledCount ? dotColor : brandColors.divider },
+              { backgroundColor: i < filledCount ? dotColor : theme.colors.divider },
             ]}
           />
         ))}

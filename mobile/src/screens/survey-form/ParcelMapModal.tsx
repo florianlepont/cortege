@@ -1,12 +1,15 @@
+import { useMemo } from "react"
 import { Button, Modal, Platform, Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import MapView, { Marker } from "react-native-maps"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { IgnCadastreTileOverlay } from "../../components/IgnCadastreTileOverlay"
 import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
-import { parcelStyles } from "./parcels.styles"
+import { GlassSurface } from "../../ui/GlassSurface"
+import { createParcelStyles } from "./parcels.styles"
 import type { ParcelMapState } from "./useParcelMap"
 import { fr } from "../../i18n"
 
@@ -23,6 +26,8 @@ export function ParcelMapModal({
   onToggleParcelSelection: (parcelId: string) => void
 }) {
   const insets = useSafeAreaInsets()
+  const theme = useBrandTheme()
+  const parcelStyles = useMemo(() => createParcelStyles(theme), [theme])
   const hasParcelSelection = selectedParcelIds.length > 0
   const fullscreenParcelSelectionTitle = hasParcelSelection
     ? fr.surveyForm.parcels.selectionTitle({ count: selectedParcelIds.length })
@@ -62,7 +67,7 @@ export function ParcelMapModal({
             },
           ]}
         >
-          <View style={parcelStyles.fullscreenMapTopBar}>
+          <GlassSurface tone="auto" style={parcelStyles.fullscreenMapTopBar}>
             {Platform.OS === "ios" ? (
               <>
                 <Button
@@ -84,27 +89,29 @@ export function ParcelMapModal({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={fr.surveyForm.a11y.closeFullscreenMap}
-                  style={parcelStyles.fullscreenMapCloseButton}
                   onPress={map.closeFullscreenMap}
                 >
-                  <Ionicons name="arrow-back" size={18} color={brandColors.white} />
-                  <Text style={parcelStyles.fullscreenMapCloseText}>
-                    {fr.surveyForm.parcels.back}
-                  </Text>
+                  <GlassSurface tone="dark" style={parcelStyles.fullscreenMapCloseButton}>
+                    <Ionicons name="arrow-back" size={18} color={brandColors.white} />
+                    <Text style={parcelStyles.fullscreenMapCloseText}>
+                      {fr.surveyForm.parcels.back}
+                    </Text>
+                  </GlassSurface>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={fr.surveyForm.a11y.doneFullscreenMap}
-                  style={parcelStyles.fullscreenMapCloseButton}
                   onPress={map.closeFullscreenMap}
                 >
-                  <Text style={parcelStyles.fullscreenMapCloseText}>
-                    {fr.surveyForm.parcels.done}
-                  </Text>
+                  <GlassSurface tone="dark" style={parcelStyles.fullscreenMapCloseButton}>
+                    <Text style={parcelStyles.fullscreenMapCloseText}>
+                      {fr.surveyForm.parcels.done}
+                    </Text>
+                  </GlassSurface>
                 </Pressable>
               </>
             )}
-          </View>
+          </GlassSurface>
 
           <View style={parcelStyles.fullscreenMapBottomArea}>
             <View style={parcelStyles.fullscreenMapFloatingActions}>
@@ -126,7 +133,7 @@ export function ParcelMapModal({
               </Pressable>
             </View>
 
-            <View style={parcelStyles.fullscreenMapBottomSheet}>
+            <GlassSurface tone="auto" style={parcelStyles.fullscreenMapBottomSheet}>
               <Text style={parcelStyles.fullscreenMapBottomTitle}>
                 {fullscreenParcelSelectionTitle}
               </Text>
@@ -142,7 +149,7 @@ export function ParcelMapModal({
               <Text style={parcelStyles.fullscreenMapBottomHint}>
                 {fr.surveyForm.parcels.fullscreenHint}
               </Text>
-            </View>
+            </GlassSurface>
           </View>
         </View>
       </View>

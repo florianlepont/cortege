@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import Animated, {
@@ -7,9 +8,10 @@ import Animated, {
   useAnimatedStyle,
 } from "react-native-reanimated"
 import { brandSpacing } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { AppScreen } from "../../app/types"
 import { StepButton, WIZARD_STEPS, WizardStep } from "./components"
-import { headerStyles } from "./header.styles"
+import { createHeaderStyles } from "./header.styles"
 import { fr } from "../../i18n"
 
 const HERO_CONTENT_TOP_INSET = 18
@@ -117,6 +119,8 @@ export function FormHeader({
   expandedHeroHeight: number
   collapsedHeroHeight: number
 }) {
+  const theme = useBrandTheme()
+  const headerStyles = useMemo(() => createHeaderStyles(theme), [theme])
   const activeStepIndex = WIZARD_STEPS.indexOf(activeStep)
   const compactSummary = heroCopy.pills.join(fr.surveyForm.header.pillSeparator)
   const d = collapseDistance
@@ -236,6 +240,8 @@ export function StepRail({
   scrollY: SharedValue<number>
   onOpenStep: (step: WizardStep) => void
 }) {
+  const theme = useBrandTheme()
+  const headerStyles = useMemo(() => createHeaderStyles(theme), [theme])
   const stepRailStyle = useAnimatedStyle(() => ({
     height: preserveRailSpace
       ? 114

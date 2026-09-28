@@ -1,14 +1,9 @@
-import { Fragment, ReactNode } from "react"
+import { Fragment, ReactNode, useMemo } from "react"
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import {
-  brandColors,
-  brandComponentTokens,
-  brandRadius,
-  brandSpacing,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppGroupedListNavRow = {
   key: string
@@ -51,6 +46,9 @@ function isCustomRow(row: AppGroupedListRow): row is AppGroupedListCustomRow {
  * inline forms, standalone rows and pills with one consistent structure.
  */
 export function AppGroupedList({ sections }: AppGroupedListProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+
   return (
     <View style={styles.list}>
       {sections.map((section) => (
@@ -63,7 +61,7 @@ export function AppGroupedList({ sections }: AppGroupedListProps) {
                 {isCustomRow(row) ? (
                   <View style={styles.customRow}>{row.content}</View>
                 ) : (
-                  <NavRow row={row} />
+                  <NavRow row={row} theme={theme} styles={styles} />
                 )}
               </Fragment>
             ))}
@@ -75,7 +73,17 @@ export function AppGroupedList({ sections }: AppGroupedListProps) {
   )
 }
 
-function NavRow({ row }: { row: AppGroupedListNavRow }) {
+type GroupedListStyles = ReturnType<typeof createStyles>
+
+function NavRow({
+  row,
+  theme,
+  styles,
+}: {
+  row: AppGroupedListNavRow
+  theme: BrandTheme
+  styles: GroupedListStyles
+}) {
   const isInteractive = Boolean(row.onPress) && !row.disabled && !row.loading
   const labelStyle = [
     styles.label,
@@ -107,9 +115,9 @@ function NavRow({ row }: { row: AppGroupedListNavRow }) {
             </Text>
           ) : null}
           {row.loading ? (
-            <ActivityIndicator size="small" color={brandColors.textSecondary} />
+            <ActivityIndicator size="small" color={theme.colors.textSecondary} />
           ) : row.onPress ? (
-            <Ionicons name="chevron-forward" size={16} color={brandColors.textSecondary} />
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
           ) : null}
         </View>
       ) : null}
@@ -119,79 +127,81 @@ function NavRow({ row }: { row: AppGroupedListNavRow }) {
 
 const ROW_MIN_HEIGHT = 48
 
-const styles = StyleSheet.create({
-  list: {
-    gap: brandSpacing.md,
-  },
-  section: {
-    gap: brandSpacing.xs,
-  },
-  sectionTitle: {
-    ...brandTypography.meta,
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.3,
-    color: brandColors.textSecondary,
-    textTransform: "uppercase",
-    paddingHorizontal: brandSpacing.xs,
-  },
-  sectionFooter: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-    paddingHorizontal: brandSpacing.xs,
-  },
-  sectionBody: {
-    borderRadius: brandRadius.card,
-    borderWidth: 1,
-    borderColor: brandComponentTokens.card.panelBorder,
-    backgroundColor: brandColors.white,
-    overflow: "hidden",
-  },
-  divider: {
-    height: 1,
-    marginLeft: brandSpacing.md,
-    backgroundColor: brandColors.divider,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: brandSpacing.sm,
-    minHeight: ROW_MIN_HEIGHT,
-    paddingHorizontal: brandSpacing.md,
-    paddingVertical: brandSpacing.sm,
-  },
-  rowCentered: {
-    justifyContent: "center",
-  },
-  rowPressed: {
-    backgroundColor: brandColors.surfaceSoft,
-  },
-  customRow: {
-    paddingHorizontal: brandSpacing.md,
-    paddingVertical: brandSpacing.sm,
-  },
-  label: {
-    ...brandTypography.input,
-    fontSize: 16,
-    color: brandColors.textPrimary,
-  },
-  labelDestructive: {
-    color: brandColors.terracotta,
-  },
-  labelCentered: {
-    textAlign: "center",
-    flex: 1,
-  },
-  rowTrailing: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: brandSpacing.xs,
-    flexShrink: 1,
-  },
-  value: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-    flexShrink: 1,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    list: {
+      gap: brandSpacing.md,
+    },
+    section: {
+      gap: brandSpacing.xs,
+    },
+    sectionTitle: {
+      ...brandTypography.meta,
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+      color: theme.colors.textSecondary,
+      textTransform: "uppercase",
+      paddingHorizontal: brandSpacing.xs,
+    },
+    sectionFooter: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+      paddingHorizontal: brandSpacing.xs,
+    },
+    sectionBody: {
+      borderRadius: brandRadius.card,
+      borderWidth: 1,
+      borderColor: theme.componentColors.card.panelBorder,
+      backgroundColor: theme.colors.white,
+      overflow: "hidden",
+    },
+    divider: {
+      height: 1,
+      marginLeft: brandSpacing.md,
+      backgroundColor: theme.colors.divider,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: brandSpacing.sm,
+      minHeight: ROW_MIN_HEIGHT,
+      paddingHorizontal: brandSpacing.md,
+      paddingVertical: brandSpacing.sm,
+    },
+    rowCentered: {
+      justifyContent: "center",
+    },
+    rowPressed: {
+      backgroundColor: theme.colors.surfaceSoft,
+    },
+    customRow: {
+      paddingHorizontal: brandSpacing.md,
+      paddingVertical: brandSpacing.sm,
+    },
+    label: {
+      ...brandTypography.input,
+      fontSize: 16,
+      color: theme.colors.textPrimary,
+    },
+    labelDestructive: {
+      color: theme.colors.terracotta,
+    },
+    labelCentered: {
+      textAlign: "center",
+      flex: 1,
+    },
+    rowTrailing: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing.xs,
+      flexShrink: 1,
+    },
+    value: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
+      flexShrink: 1,
+    },
+  })
+}

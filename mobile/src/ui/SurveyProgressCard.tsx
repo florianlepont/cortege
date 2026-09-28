@@ -1,13 +1,9 @@
+import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import {
-  brandColors,
-  brandComponentTokens,
-  brandRadius,
-  brandShadow,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandColors, brandRadius, brandShadow, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import type { LocalSurvey } from "../storage/types"
 import { AppPressable } from "./AppPressable"
@@ -45,6 +41,8 @@ function formatRelativeTime(dateStr: string): string {
  * (Home's carousel) and ContinueDraftCard (Mes Relevés' "à faire" row) into one component.
  */
 export function SurveyProgressCard({ survey, onPress }: SurveyProgressCardProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const rate = clampRate(survey.completion_rate)
   const accent = getAccentColor(survey, rate)
   const completedFactors = Math.round(rate / 10)
@@ -87,7 +85,7 @@ export function SurveyProgressCard({ survey, onPress }: SurveyProgressCardProps)
             </View>
           ) : survey.sync_state === "pending" ? (
             <View style={styles.syncPending}>
-              <Ionicons name="cloud-upload-outline" size={12} color={brandColors.textSecondary} />
+              <Ionicons name="cloud-upload-outline" size={12} color={theme.colors.textSecondary} />
             </View>
           ) : null}
         </View>
@@ -96,82 +94,84 @@ export function SurveyProgressCard({ survey, onPress }: SurveyProgressCardProps)
   )
 }
 
-const styles = StyleSheet.create({
-  card: {
-    width: "100%",
-    backgroundColor: brandColors.panel,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: brandComponentTokens.card.panelBorder,
-    flexDirection: "row",
-    overflow: "hidden",
-    ...brandShadow.card,
-  },
-  accent: {
-    width: 4,
-  },
-  content: {
-    flex: 1,
-    padding: 14,
-    gap: 6,
-  },
-  title: {
-    ...brandTypography.input,
-    color: brandColors.textPrimary,
-  },
-  progressRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 4,
-  },
-  progressLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-    color: brandColors.textSecondary,
-  },
-  progressCount: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  progressTrack: {
-    height: 4,
-    backgroundColor: brandColors.divider,
-    borderRadius: brandRadius.pill,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: 4,
-    borderRadius: brandRadius.pill,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: brandColors.divider,
-    marginVertical: 2,
-  },
-  meta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  metaText: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  syncWarning: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  // DS-02 (UX audit, Phase 2): terracotta on the card background measured ~3.85-4.17:1 at 10pt,
-  // under the AA floor for normal text; textPrimary clears it. The icon above stays terracotta.
-  syncWarningText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: brandColors.textPrimary,
-  },
-  syncPending: {
-    opacity: 0.6,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    card: {
+      width: "100%",
+      backgroundColor: theme.colors.panel,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: theme.componentColors.card.panelBorder,
+      flexDirection: "row",
+      overflow: "hidden",
+      ...brandShadow.card,
+    },
+    accent: {
+      width: 4,
+    },
+    content: {
+      flex: 1,
+      padding: 14,
+      gap: 6,
+    },
+    title: {
+      ...brandTypography.input,
+      color: theme.colors.textPrimary,
+    },
+    progressRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 4,
+    },
+    progressLabel: {
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 0.5,
+      color: theme.colors.textSecondary,
+    },
+    progressCount: {
+      ...brandTypography.meta,
+      color: theme.colors.forest,
+    },
+    progressTrack: {
+      height: 4,
+      backgroundColor: theme.colors.divider,
+      borderRadius: brandRadius.pill,
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: 4,
+      borderRadius: brandRadius.pill,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: theme.colors.divider,
+      marginVertical: 2,
+    },
+    meta: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    metaText: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    syncWarning: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 3,
+    },
+    // DS-02 (UX audit, Phase 2): terracotta on the card background measured ~3.85-4.17:1 at 10pt,
+    // under the AA floor for normal text; textPrimary clears it. The icon above stays terracotta.
+    syncWarningText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: theme.colors.textPrimary,
+    },
+    syncPending: {
+      opacity: 0.6,
+    },
+  })
+}

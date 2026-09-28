@@ -2,7 +2,8 @@ import { ActivityIndicator, ImageStyle, StyleProp, View, ViewStyle } from "react
 import { AppText as Text } from "../../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandTypography } from "../../app/brand-tokens"
+import { brandTypography } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { LocalAttachment } from "../../storage"
 import { AttachmentPreview, resolveAttachmentPreview } from "../survey-screen-helpers"
 
@@ -20,6 +21,7 @@ export function AttachmentPhotoPreview({
   imageStyle: StyleProp<ImageStyle>
   placeholderStyle: StyleProp<ViewStyle>
 }) {
+  const theme = useBrandTheme()
   const preview: AttachmentPreview = resolveAttachmentPreview(attachment)
 
   if (preview.kind === "image") {
@@ -37,15 +39,15 @@ export function AttachmentPhotoPreview({
   return (
     <View style={[placeholderStyle, { alignItems: "center", justifyContent: "center", gap: 6 }]}>
       {preview.kind === "loading" ? (
-        <ActivityIndicator size="small" color={brandColors.forest} />
+        <ActivityIndicator size="small" color={theme.colors.forest} />
       ) : (
         <Ionicons
           name={preview.kind === "unavailable" ? "image-outline" : "alert-circle-outline"}
           size={20}
-          color={brandColors.textSecondary}
+          color={theme.colors.textSecondary}
         />
       )}
-      <Text style={{ ...brandTypography.meta, color: brandColors.textSecondary }}>
+      <Text style={{ ...brandTypography.meta, color: theme.colors.textSecondary }}>
         {preview.message}
       </Text>
     </View>

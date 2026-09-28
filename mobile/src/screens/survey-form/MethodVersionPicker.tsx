@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import {
@@ -7,10 +8,11 @@ import {
   type IbpCas,
   type IbpMethodVersion,
 } from "@cortege/ibp-domain"
+import { useBrandTheme } from "../../app/theme"
 import { AppCard } from "../../ui/AppCard"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { formStyles } from "./styles"
+import { createFormStyles } from "./styles"
 import { fr } from "../../i18n"
 
 /**
@@ -42,6 +44,8 @@ export function MethodVersionPicker({
   onChange: (next: IbpMethodVersion) => void
 }) {
   const resolved = resolveMethodVersion(version)
+  const theme = useBrandTheme()
+  const formStyles = useMemo(() => createFormStyles(theme), [theme])
 
   return (
     <AppCard variant="panelElevated" style={formStyles.panel}>

@@ -1,12 +1,8 @@
+import { useMemo } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
-import {
-  brandColors,
-  brandComponentTokens,
-  brandRadius,
-  brandSpacing4,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
 
 export type FactorSegmentedOption = { value: string; label: string }
@@ -33,6 +29,8 @@ export function FactorSegmentedInput({
   error,
   testID,
 }: FactorSegmentedInputProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const hasValue = value.trim().length > 0
   const showError = touched && Boolean(error)
   const state = resolveFactorInputState(hasValue, showError)
@@ -71,32 +69,34 @@ export function FactorSegmentedInput({
   )
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    gap: brandSpacing4.xs,
-  },
-  segment: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: brandRadius.field,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: brandSpacing4.sm,
-    backgroundColor: brandComponentTokens.choiceChip.background,
-    borderWidth: 1,
-    borderColor: brandComponentTokens.choiceChip.border,
-  },
-  segmentActive: {
-    backgroundColor: brandComponentTokens.choiceChip.activeBackground,
-    borderColor: brandComponentTokens.choiceChip.activeBorder,
-  },
-  segmentText: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-    textAlign: "center",
-  },
-  segmentTextActive: {
-    color: brandComponentTokens.choiceChip.activeText,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      gap: brandSpacing4.xs,
+    },
+    segment: {
+      flex: 1,
+      minHeight: 44,
+      borderRadius: brandRadius.field,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: brandSpacing4.sm,
+      backgroundColor: theme.componentColors.choiceChip.background,
+      borderWidth: 1,
+      borderColor: theme.componentColors.choiceChip.border,
+    },
+    segmentActive: {
+      backgroundColor: theme.componentColors.choiceChip.activeBackground,
+      borderColor: theme.componentColors.choiceChip.activeBorder,
+    },
+    segmentText: {
+      ...brandTypography.meta,
+      color: theme.colors.forest,
+      textAlign: "center",
+    },
+    segmentTextActive: {
+      color: theme.componentColors.choiceChip.activeText,
+    },
+  })
+}
