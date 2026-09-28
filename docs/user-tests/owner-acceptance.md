@@ -75,6 +75,9 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-45 | Survey detail, score | The IBP score appears twice, as a list and as tiles. Choose one. | UX friction | 🟡 | 🔲 Open | | |
 | OA-46 | Survey detail, layout | Owner proposal: one summary page (key information, a few photos, the map), then buttons that open sub-pages: "Contexte et parcelles", "Score IBP". Less to scroll. | Suggestion | 🔴 | 🔲 Open | | Redesign: mock-up first. Absorbs OA-42 to OA-45 |
 | OA-47 | Survey detail, map | The map shows half of France instead of zooming on the survey's parcels. | Display bug | 🟡 | 🔲 Open | | Found by Claude on the owner's screenshot and recording |
+| OA-48 | Survey detail | Sharing (PDF export) should be much more prominent than an entry in the "…" menu. | UX friction | 🟡 | 🔲 Open | | Goes with the OA-46 redesign |
+| OA-49 | Survey detail, "…" menu | The "…" menu opens a custom sheet (`AppActionSheet`) instead of the native iOS menu. | UX friction | 🟡 | 🔲 Open | | Confirmed in `SurveyDetailScreen.tsx` |
+| OA-50 | Survey detail, rename | Renaming should be integrated elsewhere, e.g. a small pencil next to the survey's name, not an entry in the "…" menu. | UX friction | 🟡 | 🔲 Open | | Goes with the OA-46 redesign |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
