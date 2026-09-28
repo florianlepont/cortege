@@ -86,7 +86,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-56 | Mes Relevés | Overall the page does not look modern or elegant; it needs to be reworked. | UX friction | 🔴 | 🔲 Open | | Redesign, mock-up first. Absorbs OA-51, OA-53 to OA-55 |
 | OA-57 | Mes Relevés, swipe to delete | A small margin is missing between the "Supprimer" button and the card. | Display bug | 🟡 | 🔲 Open | | Screenshot 20:18 |
 | OA-58 | Mes Relevés | Unnamed drafts show as rows with no title at all. | Display bug | 🟡 | 🔲 Open | | Found by Claude; goes with OA-18 |
-| OA-59 | Survey detail, map | Owner idea: a button to see the survey on the map, or tapping the map opens the Explorer tab on it. Parcel editing then moves to a dedicated screen. | Suggestion | 🟡 | 🔲 Open | | Claude's view in the chat of 2026-09-28: agree, with one caveat (Explorer only shows submitted surveys today, so a draft would need to appear there too) |
+| OA-59 | Survey detail, map | Owner idea: a button to see the survey on the map, or tapping the map opens the Explorer tab on it. Parcel editing then moves to a dedicated screen. | Suggestion | 🟡 | 🔲 Open | | Claude agreed (chat 2026-09-28). Owner decision: Explorer also shows the user's own drafts (to that user only, other members still see submitted surveys only), so the button works for drafts too |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
