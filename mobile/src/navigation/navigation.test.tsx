@@ -403,12 +403,12 @@ describe("tab options", () => {
     expect(options.tabBarStyle).toEqual(buildJsTabBarStyle(defaultTheme, { bottom: 0 }))
   })
 
-  test("the JS surveys tab hides the bar on parcel selection only", async () => {
+  test("OA-28: the JS surveys tab keeps the bar on parcel selection too", async () => {
     await mount(<AppNavigation />)
     const options = mockScreens.surveys.options as OptionsFn
-    expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual({
-      display: "none",
-    })
+    expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual(
+      buildJsTabBarStyle(defaultTheme),
+    )
     expect(options({ route: { focused: "surveyForm" } }).tabBarStyle).toEqual(
       buildJsTabBarStyle(defaultTheme),
     )

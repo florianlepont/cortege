@@ -20,6 +20,7 @@ import { FactorDetailScreen } from "../FactorDetailScreen"
 import { FACTOR_ORDER } from "./components"
 import { computeFactorProgress } from "./FactorsList"
 import { findNextIncompleteFactorIndex } from "./factor-pager"
+import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 
 const t = fr.factorPager
 
@@ -42,6 +43,7 @@ export function FactorPager({
   methodVersion,
 }: FactorPagerProps) {
   const theme = useBrandTheme()
+  const tabBarClearance = useTabBarClearance()
   const styles = useMemo(() => createStyles(theme), [theme])
   const scrollRef = useRef<ScrollView | null>(null)
   const [pageWidth, setPageWidth] = useState(0)
@@ -110,7 +112,7 @@ export function FactorPager({
         ))}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: tabBarClearance + brandSpacing4.sm }]}>
         <View style={styles.dotsRow}>
           {FACTOR_ORDER.map((factor, index) => {
             const factorProgress = progress[factor]

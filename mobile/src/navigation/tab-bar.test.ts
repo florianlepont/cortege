@@ -1,16 +1,16 @@
 import { getFocusedLeafRouteName, shouldHideTabBar } from "./tab-bar"
 
-describe("shouldHideTabBar (D-13)", () => {
-  test("hides the tab bar on parcel selection", () => {
-    expect(shouldHideTabBar("surveyParcels")).toBe(true)
+describe("shouldHideTabBar (D-13, OA-28: the bar stays on every screen)", () => {
+  test.each([
+    "surveyParcels",
+    "surveysHome",
+    "surveyDetail",
+    "surveyForm",
+    "surveyFactorDetail",
+    "homeRoot",
+  ])("keeps the tab bar on %s", (routeName) => {
+    expect(shouldHideTabBar(routeName)).toBe(false)
   })
-
-  test.each(["surveysHome", "surveyDetail", "surveyForm", "surveyFactorDetail", "homeRoot"])(
-    "keeps the tab bar on %s",
-    (routeName) => {
-      expect(shouldHideTabBar(routeName)).toBe(false)
-    },
-  )
 
   test("keeps the tab bar when no route is focused yet", () => {
     expect(shouldHideTabBar(undefined)).toBe(false)

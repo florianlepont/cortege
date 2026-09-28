@@ -177,15 +177,15 @@ describe("the four root tabs (D-08)", () => {
   })
 })
 
-describe("the tab bar is hidden on parcel selection in both trees (D-13)", () => {
-  test("native tree: tabBarHidden follows the focused leaf route", async () => {
+describe("OA-28: the tab bar stays visible on parcel selection in both trees", () => {
+  test("native tree: tabBarHidden stays false on every route", async () => {
     await mount()
     expect(mockNativeNavigatorProps.at(-1)?.tabBarHidden).toBe(false)
 
     await act(async () => {
       mockContainer.onStateChange?.(surveysState("surveyParcels"))
     })
-    expect(mockNativeNavigatorProps.at(-1)?.tabBarHidden).toBe(true)
+    expect(mockNativeNavigatorProps.at(-1)?.tabBarHidden).toBe(false)
 
     await act(async () => {
       mockContainer.onStateChange?.({
@@ -214,14 +214,14 @@ describe("the tab bar is hidden on parcel selection in both trees (D-13)", () =>
     expect(mockNativeNavigatorProps).toHaveLength(renders)
   })
 
-  test("JS tree: the surveys tab bar is display none on parcel selection only", async () => {
+  test("JS tree: the surveys tab bar stays on parcel selection", async () => {
     mockPlatform.OS = "android"
     await mount()
     expect(mockContainer.onStateChange).toBeUndefined()
     const options = mockJsSurveysOptions.at(-1) as OptionsFn
-    expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual({
-      display: "none",
-    })
+    expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual(
+      buildJsTabBarStyle(defaultTheme),
+    )
     expect(options({ route: { focused: "surveysHome" } }).tabBarStyle).toEqual(
       buildJsTabBarStyle(defaultTheme),
     )
