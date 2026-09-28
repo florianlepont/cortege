@@ -17,7 +17,7 @@ An entry is closed only when the owner confirms the fix on the phone.
 
 | Date | Phone / OS | Build | Theme | Flows covered |
 |------|------------|-------|-------|---------------|
-| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft |
+| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft. Step 5: Mes Relevés |
 
 Flows to cover (success criterion 1): sign-in, Home, a survey from creation to submission,
 Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
@@ -45,7 +45,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-15 | Accueil | The date under the greeting adds nothing; it is also capitalised the English way ("Lundi 28 Septembre", French is "lundi 28 septembre"). | UX friction | 🟡 | 🔲 Open | | Owner decision: remove the date |
 | OA-16 | Accueil | Behaviour with a long first name. The greeting block cannot shrink, so a long name would push the pill and the avatar off screen. | Display bug | 🟡 | 🔲 Open | | Owner question; risk confirmed by reading the code, to check on the phone |
 | OA-17 | Accueil | One single draft shows as three tiles: the blocked-sync alert, the "Reprendre" card and the recent-survey card. The title also reads "Reprendre Relevé sans titre". | UX friction | 🔴 | 🔲 Open | | First screen, confusing |
-| OA-18 | Accueil, survey detail | A draft created a moment ago (1/10 factors) is "Sync bloquée", and nothing explains why, not even the survey detail. Home calls every blocked sync a "conflit", and the pill says "À jour" at the same time. | Functional bug | 🔴 | 🔲 Open | | Core value: the survey never reaches the server. Root cause to find first |
+| OA-18 | Accueil, survey detail | A draft created a moment ago (1/10 factors) is "Sync bloquée", and nothing explains why, not even the survey detail. Home calls every blocked sync a "conflit", and the pill says "À jour" at the same time. | Functional bug | 🔴 | 🔲 Open | | Core value: the survey never reaches the server. Root cause found (Mes Relevés, 20:18): the list shows "Le nom du site est manquant". The form saves a local draft before the site is named, the API refuses a draft without `site_name` (400, `surveys.service.ts`), the app treats that as fatal and blocks the draft. And one blocked draft blocks every other survey's submission (`getSubmitBlockReason` returns `global_blocked`) |
 | OA-19 | Accueil | The "Aucune parcelle relevée dans un rayon de 2,5 km." card is wider than the other cards. | Display bug | 🟡 | 🔲 Open | | Visible in the recording: it runs to the screen edges |
 | OA-20 | Survey form, all steps; factor screens; survey detail | The hero card is cut by the header. | Display bug | 🔴 | 🔲 Open | | Visible on every form screenshot, and on each factor screen |
 | OA-21 | Whole app | The header is not consistent from one screen to the next. | UX friction | 🟡 | 🔲 Open | | |
@@ -65,7 +65,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-35 | Survey form | Text defects: "Etape 2/3" (missing accent), "Dendromicroh abitats" broken mid-word, "Milieux ouverts florif…" truncated. | Display bug | 🟡 | 🔲 Open | | Found by Claude on the owner's screenshots; see also OA-09 |
 | OA-36 | Survey form, Méthode IBP card | With v3.2 selected, the card shows the v3.0 description ("pour refaire un relevé avec la même méthode…"). | UX friction | 🟡 | 🔲 Open | | Found by Claude; check whether it is the hint of the other option |
 | OA-37 | Survey detail, hero | The "Brouillon" and "Local" chips are not easy to understand. A callout in words ("Brouillon, pas encore synchronisé") would say where the survey stands. | UX friction | 🟡 | 🔲 Open | | |
-| OA-38 | Survey detail, hero | "Local" shows although the phone is online. A draft is meant to reach the server too; "Local" should only show when there has been no connection. | Functional bug | 🔴 | 🔲 Open | | Likely the same root cause as OA-18: drafts do not reach the server |
+| OA-38 | Survey detail, hero | "Local" shows although the phone is online. A draft is meant to reach the server too; "Local" should only show when there has been no connection. | Functional bug | 🔴 | 🔲 Open | | Likely the same root cause as OA-18; check whether the blocked unnamed drafts also hold back this one's sync |
 | OA-39 | Survey detail, hero | The "P/G 5 / 35 · faible" and "C 0 / 15 · faible" labels under the score add little. Show the score detail when the score is tapped instead. | UX friction | 🟡 | 🔲 Open | | |
 | OA-40 | Survey detail | The "Soumission verrouillée / Verrouillé" card makes no sense now that there is no moderation. There is no lock: a survey simply leaves draft once the 10 factors and all its information are complete, and can then be saved as finished. | UX friction | 🔴 | 🔲 Open | | Owner decision on the concept; the wording "terminé" vs "soumis" to settle in the mock-up |
 | OA-41 | Survey detail | The submission deadline ("6j 23h restant", "Délai de soumission", "Échéance 05/10/2026") must go: without moderation it has no purpose. Out of MVP scope for now. | Functional bug | 🔴 | 🔲 Open | | Owner scope decision. Touches the API too (`expires_at`, the `expired` status): record it in the roadmap before building |
@@ -78,6 +78,15 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-48 | Survey detail | Sharing (PDF export) should be much more prominent than an entry in the "…" menu. | UX friction | 🟡 | 🔲 Open | | Goes with the OA-46 redesign |
 | OA-49 | Survey detail, "…" menu | The "…" menu opens a custom sheet (`AppActionSheet`) instead of the native iOS menu. | UX friction | 🟡 | 🔲 Open | | Confirmed in `SurveyDetailScreen.tsx` |
 | OA-50 | Survey detail, rename | Renaming should be integrated elsewhere, e.g. a small pencil next to the survey's name, not an entry in the "…" menu. | UX friction | 🟡 | 🔲 Open | | Goes with the OA-46 redesign |
+| OA-51 | Mes Relevés, header | The "À jour" pill is grouped with the "+" button. It makes no sense there and is of no use. | UX friction | 🟡 | 🔲 Open | | |
+| OA-52 | Mes Relevés, search | Owner proposal: search integrated like Apple Music. The tab bar holds Accueil, Mes Relevés, Explorer, and a separate search button sits on its right. Tapping it opens a search page over my surveys or the community's, and filters are chosen there. | Suggestion | 🔴 | 🔲 Open | | Redesign, mock-up first. iOS 26 native tabs support a separate search tab; Android (JS tabs) needs its own answer |
+| OA-53 | Mes Relevés | What sets this page apart from a search page is missing: one or two intro stats (total surveys, and so on). | Suggestion | 🟡 | 🔲 Open | | |
+| OA-54 | Mes Relevés, filters | The filter panel is not attractive: too many filters, drawn too large, drowning the user in what can be filtered. | UX friction | 🟡 | 🔲 Open | | Moves to the search page with OA-52 |
+| OA-55 | Mes Relevés | Idea to discuss: organise the page in categories, e.g. favourites, most recent. | Suggestion | 🟡 | 🔲 Open | | To discuss; favourites would be a new capability |
+| OA-56 | Mes Relevés | Overall the page does not look modern or elegant; it needs to be reworked. | UX friction | 🔴 | 🔲 Open | | Redesign, mock-up first. Absorbs OA-51, OA-53 to OA-55 |
+| OA-57 | Mes Relevés, swipe to delete | A small margin is missing between the "Supprimer" button and the card. | Display bug | 🟡 | 🔲 Open | | Screenshot 20:18 |
+| OA-58 | Mes Relevés | Unnamed drafts show as rows with no title at all. | Display bug | 🟡 | 🔲 Open | | Found by Claude; goes with OA-18 |
+| OA-59 | Survey detail, map | Owner idea: a button to see the survey on the map, or tapping the map opens the Explorer tab on it. Parcel editing then moves to a dedicated screen. | Suggestion | 🟡 | 🔲 Open | | Claude's view in the chat of 2026-09-28: agree, with one caveat (Explorer only shows submitted surveys today, so a draft would need to appear there too) |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
