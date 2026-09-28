@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01.9-32-PLAN.md -- phase 01.9 closed after phase 01.8 (32/32 plans)
-last_updated: "2026-09-27T08:10:42.000Z"
-last_activity: 2026-09-27
+stopped_at: Phase 12 closed (7/7 batches) -- Phases 1 through 12 complete; Phase 13 not yet planned
+last_updated: "2026-09-28T17:30:00.000Z"
+last_activity: 2026-09-28
 progress:
   total_phases: 22
-  completed_phases: 10
-  total_plans: 115
-  completed_plans: 115
-  percent: 45
+  completed_phases: 21
+  total_plans: 159
+  completed_plans: 159
+  percent: 95
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** The audit-remediation track (Phases 1.2–1.9) and the species-recognition track (Phase 1, Phase 1.1) are both complete as of 2026-09-27. Next up: Phase 2 (association-only sharing & scope trim, owner decision 2026-09-27), then the UX/UI audit phases (3, 4, 7, 9, 12) and the rest of the flat-numbered MVP roadmap through Phase 13. See `.planning/ROADMAP.md` for the current phase numbering — it superseded the `01.x` decimal scheme for everything after Phase 1.9.
+**Current focus:** Phases 1 through 12 are complete as of 2026-09-28 (audit remediation 1.2–1.9, species recognition 1 and 1.1, and the flat-numbered MVP phases 2–12, including the five UX/UI audit lots 3, 4, 7, 9 and 12). Only Phase 13 (Field Validation) remains, not yet planned. It also carries the on-device checks deferred from Phase 6 (Android device run, real-device photo test) and Phase 8 (airplane-mode/relaunch). See `.planning/ROADMAP.md`.
 
 ## Current Position
 
-Phase: 2 (Association-only sharing & scope trim)
+Phase: 13 (Field Validation)
 Plan: Not started
-Status: Phases 1 through 1.9 complete; Phase 2 not yet planned
-Last activity: 2026-09-27
+Status: Phases 1 through 12 complete; Phase 13 not yet planned
+Last activity: 2026-09-28 (Phase 12 Interface Finishing merged, PR #186)
 
-Progress: [██░░░░░░░░] 10/22 phases complete
+Progress: [█████████░] 21/22 phases complete
 
 ## Performance Metrics
 
@@ -152,6 +152,7 @@ Decisions table. Decisions affecting current work:
 - Phase 01.1 inserted after Phase 1: Reconcile the IBP method version — repo implements Fr v3.0, CNPF publishes FR v3.2 (URGENT)
 - Phases 01.2–01.5 inserted after Phase 1 from the 2026-09 code audit (URGENT): stop field data loss and account exposure; CI and test safety net; API sync integrity; mobile sync engine reliability. Phase 7 now depends on 1.2, 1.4 and 1.5.
 - Phases 01.6–01.9 inserted after Phase 1 to close the rest of the 2026-09 code audit (lots L10, L13–L20 and the remainders of L7, L16, L20): sync feed and object storage; API configuration, service split and database tuning; shared IBP domain package and test completeness; mobile state architecture, i18n, accessibility and hygiene
+- After Phase 1.9 the roadmap moved to flat numbering (Phases 2–13). Phase 2 (association-only sharing) and the UX/UI audit lots (Phases 3, 4, 7, 9, 12) were inserted by owner decision on 2026-09-27; Phase 13 (Field Validation) now depends on all of them
 
 ## Deferred Items
 
@@ -164,6 +165,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-09-26T12:54:55.117Z
-Stopped at: Completed 01-06-PLAN.md -- ADR-002 Accepted, phase 1 closed (6/6 plans)
+Last session: 2026-09-28
+Stopped at: Phase 12 closed; STATE.md and ROADMAP.md brought in line with the merged phases (Phase 4 and Phase 11 status fixed)
 Resume file: None
