@@ -9,7 +9,7 @@ export const authGateFr = {
   },
   panel: {
     title: "Bienvenue",
-    subtitle: "Connectez-vous ou créez un compte.\nVos relevés restent disponibles hors-ligne.",
+    subtitle: "Connectez-vous ou créez un compte.\nVos relevés restent disponibles hors ligne.",
     login: "Se connecter",
     loginInProgress: "Connexion en cours…",
     register: "Créer un compte",
