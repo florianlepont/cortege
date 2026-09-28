@@ -5,13 +5,8 @@ import { useHeaderHeight } from "@react-navigation/elements"
 import MapView, { Marker, Region } from "react-native-maps"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
-import {
-  brandColors,
-  brandMediaBackdrop,
-  brandShadow,
-  brandTranslucentPanel,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandColors, brandMediaBackdrop, brandShadow, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import {
   DEFAULT_FRANCE_CENTER,
   areRegionsNearlyEqual,
@@ -54,6 +49,8 @@ export function SurveyParcelSelectionScreen({
   onSave,
   hideDoneAction = false,
 }: SurveyParcelSelectionScreenProps) {
+  const theme = useBrandTheme()
+  const screenStyles = useMemo(() => createScreenStyles(theme), [theme])
   const mapRef = useRef<MapView | null>(null)
   const mapReadyRef = useRef(false)
   const pendingRegionRef = useRef<Region | null>(null)
@@ -189,7 +186,7 @@ export function SurveyParcelSelectionScreen({
             />
           </View>
 
-          <AppCard variant="panelElevated" style={screenStyles.bottomSheet}>
+          <AppCard glass style={screenStyles.bottomSheet}>
             <Text style={screenStyles.bottomTitle}>
               {hasParcelSelection ? parcelSelectionLabel : t.noSelection}
             </Text>
@@ -221,53 +218,56 @@ export function SurveyParcelSelectionScreen({
   )
 }
 
-const screenStyles = StyleSheet.create({
-  fullscreen: {
-    flex: 1,
-    backgroundColor: brandMediaBackdrop,
-  },
-  map: {
-    flex: 1,
-    backgroundColor: brandMediaBackdrop,
-  },
-  overlayLayer: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-  },
-  bottomArea: {
-    gap: 12,
-  },
-  floatingActions: {
-    alignSelf: "flex-end",
-  },
-  locateButton: {
-    borderWidth: 1,
-    borderColor: brandColors.sage,
-    ...brandShadow.card,
-  },
-  bottomSheet: {
-    backgroundColor: brandTranslucentPanel.strong,
-    gap: 8,
-  },
-  bottomTitle: {
-    ...brandTypography.sectionTitle,
-    fontSize: 20,
-    lineHeight: 24,
-    color: brandColors.forest,
-  },
-  bottomMeta: {
-    ...brandTypography.sectionBody,
-    fontSize: 13,
-    lineHeight: 18,
-    color: brandColors.textSecondary,
-  },
-  bottomHint: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  doneButton: {
-    marginTop: 4,
-    ...brandShadow.card,
-  },
-})
+function createScreenStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    fullscreen: {
+      flex: 1,
+      backgroundColor: brandMediaBackdrop,
+    },
+    map: {
+      flex: 1,
+      backgroundColor: brandMediaBackdrop,
+    },
+    overlayLayer: {
+      ...StyleSheet.absoluteFill,
+      justifyContent: "flex-end",
+      paddingHorizontal: 16,
+    },
+    bottomArea: {
+      gap: 12,
+    },
+    floatingActions: {
+      alignSelf: "flex-end",
+    },
+    locateButton: {
+      borderWidth: 1,
+      borderColor: brandColors.sage,
+      ...brandShadow.card,
+    },
+    // DS-15 (Phase 12): a real blurred glass panel (`AppCard glass`) instead of a flat
+    // `brandTranslucentPanel` fill.
+    bottomSheet: {
+      gap: 8,
+    },
+    bottomTitle: {
+      ...brandTypography.sectionTitle,
+      fontSize: 20,
+      lineHeight: 24,
+      color: theme.colors.textPrimary,
+    },
+    bottomMeta: {
+      ...brandTypography.sectionBody,
+      fontSize: 13,
+      lineHeight: 18,
+      color: theme.colors.textSecondary,
+    },
+    bottomHint: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    doneButton: {
+      marginTop: 4,
+      ...brandShadow.card,
+    },
+  })
+}

@@ -76,6 +76,12 @@ jest.mock("../../ui/AppSectionHeader", () => {
     }) => ReactRef.createElement("AppSectionHeader", { title, subtitle }, trailing),
   }
 })
+jest.mock("../../ui/Skeleton", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    SkeletonRow: () => ReactRef.createElement("SkeletonRow"),
+  }
+})
 
 jest.mock("../../app/dev-tools", () => ({
   shouldShowDevTools: jest.fn(() => false),
@@ -160,11 +166,11 @@ describe("EventsTab", () => {
     expect(text).not.toContain('\\"survey_id\\"')
   })
 
-  test("shows the empty text and the loading text from the catalogue", () => {
+  test("shows the empty text once loaded, and a loading skeleton (not the empty text) while loading", () => {
     const empty = render(<EventsTab events={[]} isLoading={false} onReload={jest.fn()} />)
     expect(allText(empty)).toContain(fr.surveyDetail.events.empty)
     const loading = render(<EventsTab events={[]} isLoading onReload={jest.fn()} />)
-    expect(allText(loading)).toContain(fr.surveyDetail.events.loading)
+    expect(loading.root.findAllByType("SkeletonRow" as never).length).toBeGreaterThan(0)
     expect(allText(loading)).not.toContain(fr.surveyDetail.events.empty)
   })
 })

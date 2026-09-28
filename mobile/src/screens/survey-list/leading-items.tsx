@@ -2,8 +2,9 @@ import { useMemo } from "react"
 import type { ReactElement } from "react"
 import type { LocalSurvey } from "../../storage"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import { styles } from "./styles"
+import { createListStyles } from "./styles"
 
 // A non-survey item at the top of the list (currently: the search-results header only).
 export type LeadingListItem = { kind: "leading"; key: string; element: ReactElement }
@@ -25,6 +26,8 @@ type LeadingItemsInput = {
 // out (the create action is the header's "+", the dashboard concerns stayed on Home). The only
 // leading item left is a "Résultats" caption while a search is active.
 export function useLeadingItems({ hasQuery, visibleSurveySummary }: LeadingItemsInput) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createListStyles(theme), [theme])
   const sectionHeaderElement = useMemo(
     () =>
       hasQuery ? (
@@ -36,7 +39,7 @@ export function useLeadingItems({ hasQuery, visibleSurveySummary }: LeadingItems
           style={styles.listSectionHeader}
         />
       ) : null,
-    [hasQuery, visibleSurveySummary],
+    [hasQuery, styles, visibleSurveySummary],
   )
 
   return useMemo<LeadingListItem[]>(

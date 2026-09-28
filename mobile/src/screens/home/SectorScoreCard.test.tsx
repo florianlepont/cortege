@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
 import { SectorScoreCard } from "./SectorScoreCard"
-import { brandColors, ibpScoreTokens } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 
 jest.mock("react-native", () => {
@@ -25,6 +25,15 @@ jest.mock("react-native", () => {
 
 const originalConsoleError = console.error
 
+// No `BrandThemeProvider` is rendered anywhere in this file, so `useBrandTheme()` resolves to its
+// context default (the light theme) — this probe just reads that same default the component uses.
+let theme: BrandTheme
+
+function ThemeProbe() {
+  theme = useBrandTheme()
+  return null
+}
+
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
   jest.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
@@ -32,6 +41,9 @@ beforeAll(() => {
       return
     }
     originalConsoleError(...(args as Parameters<typeof console.error>))
+  })
+  act(() => {
+    renderer.create(<ThemeProbe />)
   })
 })
 
@@ -73,16 +85,16 @@ describe("SectorScoreCard shows the sector average out of 50 (01.8 D-03, CH-11)"
     const { dots, texts } = render(23.4)
     expect(texts).toContain("23.4 / 50")
     expect(dots).toHaveLength(10)
-    expect(dots.filter((c) => c === ibpScoreTokens.colors.mid.background)).toHaveLength(5)
-    expect(dots.filter((c) => c === brandColors.divider)).toHaveLength(5)
+    expect(dots.filter((c) => c === theme.ibpScoreColors.mid.background)).toHaveLength(5)
+    expect(dots.filter((c) => c === theme.colors.divider)).toHaveLength(5)
   })
 
   test("each dot is worth 5 points and the colour follows the band", () => {
     const high = render(42).dots
-    expect(high.filter((c) => c === ibpScoreTokens.colors.high.background)).toHaveLength(8)
+    expect(high.filter((c) => c === theme.ibpScoreColors.high.background)).toHaveLength(8)
     const low = render(7).dots
-    expect(low.filter((c) => c === ibpScoreTokens.colors.low.background)).toHaveLength(1)
-    expect(render(50).dots.every((c) => c === ibpScoreTokens.colors.high.background)).toBe(true)
+    expect(low.filter((c) => c === theme.ibpScoreColors.low.background)).toHaveLength(1)
+    expect(render(50).dots.every((c) => c === theme.ibpScoreColors.high.background)).toBe(true)
   })
 
   test("shows the mixed-methods line only when asked", () => {

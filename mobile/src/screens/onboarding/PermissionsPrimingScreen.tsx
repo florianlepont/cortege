@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Linking, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import * as ImagePicker from "expo-image-picker"
@@ -6,6 +6,7 @@ import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
@@ -36,6 +37,8 @@ function PermissionRow({
   status,
   onRequest,
 }: PermissionRowProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   return (
     <AppCard variant="panelElevated" padding={16} style={styles.row}>
       <View style={styles.rowHeader}>
@@ -79,6 +82,8 @@ type PermissionsPrimingScreenProps = {
 /** ONB-01: requests location and camera with context, and links to Settings on refusal. */
 export function PermissionsPrimingScreen({ onDone }: PermissionsPrimingScreenProps) {
   const insets = useSafeAreaInsets()
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const [locationStatus, setLocationStatus] = useState<PermissionState>("idle")
   const [cameraStatus, setCameraStatus] = useState<PermissionState>("idle")
 
@@ -130,79 +135,81 @@ export function PermissionsPrimingScreen({ onDone }: PermissionsPrimingScreenPro
   )
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: brandColors.canvas,
-    justifyContent: "space-between",
-  },
-  header: {
-    paddingHorizontal: brandSpacing.xl,
-    gap: brandSpacing.sm,
-  },
-  title: {
-    ...brandTypography.sectionTitle,
-    color: brandColors.forest,
-  },
-  body: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
-  rows: {
-    paddingHorizontal: brandSpacing.lg,
-    gap: brandSpacing.sm,
-  },
-  row: {
-    gap: brandSpacing.sm,
-  },
-  rowHeader: {
-    flexDirection: "row",
-    gap: brandSpacing.sm,
-  },
-  rowIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: brandColors.successSoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  rowTitle: {
-    ...brandTypography.input,
-    color: brandColors.forest,
-  },
-  rowBody: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
-  rowStatus: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexWrap: "wrap",
-  },
-  rowStatusGranted: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  rowStatusDenied: {
-    ...brandTypography.meta,
-    color: brandColors.terracotta,
-  },
-  settingsLink: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-    textDecorationLine: "underline",
-  },
-  footer: {
-    paddingHorizontal: brandSpacing.lg,
-    paddingTop: brandSpacing.md,
-  },
-  continueButton: {
-    width: "100%",
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.canvas,
+      justifyContent: "space-between",
+    },
+    header: {
+      paddingHorizontal: brandSpacing.xl,
+      gap: brandSpacing.sm,
+    },
+    title: {
+      ...brandTypography.sectionTitle,
+      color: brandColors.forest,
+    },
+    body: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
+    },
+    rows: {
+      paddingHorizontal: brandSpacing.lg,
+      gap: brandSpacing.sm,
+    },
+    row: {
+      gap: brandSpacing.sm,
+    },
+    rowHeader: {
+      flexDirection: "row",
+      gap: brandSpacing.sm,
+    },
+    rowIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.colors.successSoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rowCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    rowTitle: {
+      ...brandTypography.input,
+      color: brandColors.forest,
+    },
+    rowBody: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
+    },
+    rowStatus: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      flexWrap: "wrap",
+    },
+    rowStatusGranted: {
+      ...brandTypography.meta,
+      color: brandColors.forest,
+    },
+    rowStatusDenied: {
+      ...brandTypography.meta,
+      color: brandColors.terracotta,
+    },
+    settingsLink: {
+      ...brandTypography.meta,
+      color: brandColors.forest,
+      textDecorationLine: "underline",
+    },
+    footer: {
+      paddingHorizontal: brandSpacing.lg,
+      paddingTop: brandSpacing.md,
+    },
+    continueButton: {
+      width: "100%",
+    },
+  })
+}

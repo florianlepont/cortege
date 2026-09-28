@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   AccessibilityInfo,
   Animated,
@@ -13,7 +13,7 @@ import {
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../app/brand-tokens"
+import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppField } from "../ui/AppField"
 import { TypewriterSplash } from "../components/TypewriterSplash"
@@ -21,8 +21,8 @@ import { feedback } from "../ui/feedback"
 import { AuthPanel } from "./auth-gate/AuthPanel"
 import { HeroSection } from "./auth-gate/HeroSection"
 import {
-  authStyles,
-  devModalStyles,
+  createAuthStyles,
+  createDevModalStyles,
   HERO_MIN_HEIGHT_PX,
   HERO_MIN_HEIGHT_RATIO,
 } from "./auth-gate/styles"
@@ -48,6 +48,9 @@ export function AuthGateScreen({
   logoSource,
   heroMartenSource,
 }: AuthGateScreenProps) {
+  const theme = useBrandTheme()
+  const authStyles = useMemo(() => createAuthStyles(theme), [theme])
+  const devModalStyles = useMemo(() => createDevModalStyles(theme), [theme])
   const { height } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const [submitting, setSubmitting] = useState(false)
@@ -207,7 +210,7 @@ export function AuthGateScreen({
                 accessibilityRole="button"
                 accessibilityLabel={fr.common.actions.close}
               >
-                <Ionicons name="close-circle" size={26} color={brandColors.textSecondary} />
+                <Ionicons name="close-circle" size={26} color={theme.colors.textSecondary} />
               </Pressable>
             </View>
             <AppField

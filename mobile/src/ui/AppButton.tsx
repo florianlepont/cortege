@@ -1,13 +1,14 @@
+import { useMemo } from "react"
 import { ActivityIndicator, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
   brandComponentTokens,
-  brandOnDangerSurface,
   brandRadius,
   brandTypography,
 } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppPressable } from "./AppPressable"
 
@@ -43,10 +44,12 @@ export function AppButton({
   style,
   labelStyle,
 }: AppButtonProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const hasLabel = Boolean(label?.trim().length)
   const iconColor =
     variant === "secondary"
-      ? brandComponentTokens.button.secondaryBorder
+      ? theme.componentColors.button.secondaryBorder
       : variant === "dangerSoft"
         ? brandColors.terracotta
         : brandColors.white
@@ -100,75 +103,77 @@ export function AppButton({
   )
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: brandRadius.pill,
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconOnlyBase: {
-    paddingHorizontal: 0,
-    borderRadius: brandRadius.pill,
-  },
-  iconOnlySm: {
-    width: brandComponentTokens.button.iconOnlySizeSmall,
-    height: brandComponentTokens.button.iconOnlySizeSmall,
-  },
-  iconOnlyMd: {
-    width: brandComponentTokens.button.iconOnlySize,
-    height: brandComponentTokens.button.iconOnlySize,
-  },
-  iconOnlyLg: {
-    width: brandComponentTokens.button.iconOnlySizeLarge,
-    height: brandComponentTokens.button.iconOnlySizeLarge,
-  },
-  sm: {
-    minHeight: brandComponentTokens.button.minHeightSmall,
-    paddingHorizontal: brandComponentTokens.button.horizontalPaddingSmall,
-  },
-  md: {
-    minHeight: brandComponentTokens.button.minHeight,
-    paddingHorizontal: brandComponentTokens.button.horizontalPadding,
-  },
-  lg: {
-    minHeight: brandComponentTokens.button.minHeightLarge,
-    paddingHorizontal: brandComponentTokens.button.horizontalPaddingLarge,
-  },
-  primary: {
-    backgroundColor: brandComponentTokens.button.primaryBackground,
-  },
-  secondary: {
-    backgroundColor: brandComponentTokens.button.secondaryBackground,
-    borderWidth: 1,
-    borderColor: brandComponentTokens.button.secondaryBorder,
-  },
-  danger: {
-    backgroundColor: brandComponentTokens.button.dangerBackground,
-  },
-  dangerSoft: {
-    backgroundColor: brandColors.errorSoft,
-    borderWidth: 1,
-    borderColor: brandComponentTokens.notice.dangerBorder,
-  },
-  disabled: {
-    opacity: 0.7,
-  },
-  label: {
-    ...brandTypography.button,
-    color: brandColors.white,
-    textAlign: "center",
-  },
-  labelSmall: {
-    ...brandTypography.meta,
-  },
-  labelSecondary: {
-    color: brandComponentTokens.button.secondaryBorder,
-  },
-  // DS-02: terracotta directly on errorSoft measured ~2.97:1 (WCAG fail); brandOnDangerSurface
-  // (Phase 4) supersedes Phase 2's interim textPrimary fix with the named token.
-  labelDangerSoft: {
-    color: brandOnDangerSurface,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    base: {
+      borderRadius: brandRadius.pill,
+      flexDirection: "row",
+      gap: 8,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    iconOnlyBase: {
+      paddingHorizontal: 0,
+      borderRadius: brandRadius.pill,
+    },
+    iconOnlySm: {
+      width: brandComponentTokens.button.iconOnlySizeSmall,
+      height: brandComponentTokens.button.iconOnlySizeSmall,
+    },
+    iconOnlyMd: {
+      width: brandComponentTokens.button.iconOnlySize,
+      height: brandComponentTokens.button.iconOnlySize,
+    },
+    iconOnlyLg: {
+      width: brandComponentTokens.button.iconOnlySizeLarge,
+      height: brandComponentTokens.button.iconOnlySizeLarge,
+    },
+    sm: {
+      minHeight: brandComponentTokens.button.minHeightSmall,
+      paddingHorizontal: brandComponentTokens.button.horizontalPaddingSmall,
+    },
+    md: {
+      minHeight: brandComponentTokens.button.minHeight,
+      paddingHorizontal: brandComponentTokens.button.horizontalPadding,
+    },
+    lg: {
+      minHeight: brandComponentTokens.button.minHeightLarge,
+      paddingHorizontal: brandComponentTokens.button.horizontalPaddingLarge,
+    },
+    primary: {
+      backgroundColor: theme.componentColors.button.primaryBackground,
+    },
+    secondary: {
+      backgroundColor: theme.componentColors.button.secondaryBackground,
+      borderWidth: 1,
+      borderColor: theme.componentColors.button.secondaryBorder,
+    },
+    danger: {
+      backgroundColor: theme.componentColors.button.dangerBackground,
+    },
+    dangerSoft: {
+      backgroundColor: theme.colors.errorSoft,
+      borderWidth: 1,
+      borderColor: theme.componentColors.notice.dangerBorder,
+    },
+    disabled: {
+      opacity: 0.7,
+    },
+    label: {
+      ...brandTypography.button,
+      color: brandColors.white,
+      textAlign: "center",
+    },
+    labelSmall: {
+      ...brandTypography.meta,
+    },
+    labelSecondary: {
+      color: theme.componentColors.button.secondaryBorder,
+    },
+    // DS-02: terracotta directly on errorSoft measured ~2.97:1 (WCAG fail); onSurface.danger
+    // (Phase 4/12) supersedes Phase 2's interim textPrimary fix with the named token.
+    labelDangerSoft: {
+      color: theme.onSurface.danger,
+    },
+  })
+}

@@ -9,7 +9,8 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated"
-import { brandColors, brandRadius, brandSpacing4 } from "../app/brand-tokens"
+import { brandRadius, brandSpacing4 } from "../app/brand-tokens"
+import { useBrandTheme } from "../app/theme"
 
 const PULSE_DURATION_MS = 900
 const REDUCED_MOTION_OPACITY = 0.75
@@ -32,6 +33,7 @@ export function Skeleton({
   borderRadius = brandRadius.field,
   style,
 }: SkeletonProps) {
+  const theme = useBrandTheme()
   const reducedMotion = useReducedMotion()
   const opacity = useSharedValue(reducedMotion ? REDUCED_MOTION_OPACITY : 0.5)
 
@@ -69,7 +71,7 @@ export function Skeleton({
   return (
     <Animated.View
       style={[
-        { width, height, borderRadius, backgroundColor: brandColors.panelMuted },
+        { width, height, borderRadius, backgroundColor: theme.colors.panelMuted },
         style,
         animatedStyle,
       ]}

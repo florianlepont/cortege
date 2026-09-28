@@ -1,10 +1,10 @@
-import { memo, useCallback, useRef } from "react"
+import { memo, useCallback, useMemo, useRef } from "react"
 import { ActivityIndicator, Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import Swipeable from "react-native-gesture-handler/Swipeable"
-import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { formatShortDateTime, formatSyncErrorForUser } from "../../app/formatters"
 import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/survey-logic"
 import { fr } from "../../i18n"
@@ -14,7 +14,9 @@ import { FactorProgressRing } from "../../ui/FactorProgressRing"
 import { IbpScoreBadge } from "../../ui/IbpScoreBadge"
 import type { AttachmentPreview } from "../survey-screen-helpers"
 import { feedback } from "../../ui/feedback"
-import { rowStyles as styles } from "./row-styles"
+import { createRowStyles } from "./row-styles"
+
+type RowStyles = ReturnType<typeof createRowStyles>
 
 type SurveyRowTone = "neutral" | "success" | "warning" | "danger"
 
@@ -41,12 +43,14 @@ function resolveSurveyRowTone(uiStatus: ReturnType<typeof resolveSurveyUiStatus>
   return "neutral"
 }
 
-const ACCENT_STYLE_BY_TONE = {
-  success: styles.surveyCardAccentSuccess,
-  warning: styles.surveyCardAccentWarning,
-  danger: styles.surveyCardAccentDanger,
-  neutral: styles.surveyCardAccentNeutral,
-} as const
+function accentStyleByTone(styles: RowStyles) {
+  return {
+    success: styles.surveyCardAccentSuccess,
+    warning: styles.surveyCardAccentWarning,
+    danger: styles.surveyCardAccentDanger,
+    neutral: styles.surveyCardAccentNeutral,
+  } as const
+}
 
 function previewEqual(left: SurveyRowPreview | null, right: SurveyRowPreview | null): boolean {
   if (left === right) return true
@@ -56,7 +60,15 @@ function previewEqual(left: SurveyRowPreview | null, right: SurveyRowPreview | n
   return true
 }
 
-function RowPreview({ preview }: { preview: SurveyRowPreview }) {
+function RowPreview({
+  preview,
+  theme,
+  styles,
+}: {
+  preview: SurveyRowPreview
+  theme: ReturnType<typeof useBrandTheme>
+  styles: RowStyles
+}) {
   if (preview.kind === "image") {
     return (
       <View style={styles.surveyCardMedia}>
@@ -74,12 +86,12 @@ function RowPreview({ preview }: { preview: SurveyRowPreview }) {
     <View style={styles.surveyCardMedia}>
       <View style={[styles.surveyCardPreview, styles.surveyCardPreviewPlaceholder]}>
         {preview.kind === "loading" ? (
-          <ActivityIndicator size="small" color={brandColors.textSecondary} />
+          <ActivityIndicator size="small" color={theme.colors.textSecondary} />
         ) : (
           <Ionicons
             name={preview.kind === "missing" ? "warning-outline" : "image-outline"}
             size={18}
-            color={brandColors.textSecondary}
+            color={theme.colors.textSecondary}
           />
         )}
       </View>
@@ -93,10 +105,12 @@ function RowIndicator({
   isSubmitted,
   score,
   completionRate,
+  styles,
 }: {
   isSubmitted: boolean
   score: number | null
   completionRate: number
+  styles: RowStyles
 }) {
   if (isSubmitted) {
     if (score != null) {
@@ -133,6 +147,9 @@ function SurveyRowComponent({
   onOpen,
   onDelete,
 }: SurveyRowProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createRowStyles(theme), [theme])
+  const accentStyles = useMemo(() => accentStyleByTone(styles), [styles])
   const swipeableRef = useRef<Swipeable>(null)
   const surveyId = survey.id
   const uiStatus = resolveSurveyUiStatus(survey)
@@ -164,11 +181,11 @@ function SurveyRowComponent({
           pressed && styles.surveyDeleteActionPressed,
         ]}
       >
-        <Ionicons name="trash-outline" size={18} color={brandColors.white} />
+        <Ionicons name="trash-outline" size={18} color={theme.colors.white} />
         <Text style={styles.surveyDeleteActionText}>{t.row.deleteAction}</Text>
       </Pressable>
     ),
-    [deleteLabel, handleDelete],
+    [deleteLabel, handleDelete, styles, theme],
   )
 
   // LIST-02: an accessibility action mirrors the swipe gesture, so a screen-reader user does not
@@ -210,16 +227,17 @@ function SurveyRowComponent({
         onPress={handleOpen}
       >
         {/* Accent bar — transparent for neutral (N-06) */}
-        <View style={[styles.surveyCardAccent, ACCENT_STYLE_BY_TONE[rowTone]]} />
+        <View style={[styles.surveyCardAccent, accentStyles[rowTone]]} />
 
         <RowIndicator
           isSubmitted={survey.status === "submitted"}
           score={score}
           completionRate={survey.completion_rate}
+          styles={styles}
         />
 
         {/* P2-COMPACT-01: thumbnail only when photo exists */}
-        {preview ? <RowPreview preview={preview} /> : null}
+        {preview ? <RowPreview preview={preview} theme={theme} styles={styles} /> : null}
 
         <View style={styles.surveyCardContent}>
           <View style={styles.surveyCardHeader}>
@@ -230,7 +248,7 @@ function SurveyRowComponent({
               <Ionicons
                 name="checkmark-circle"
                 size={18}
-                color={brandColors.forest}
+                color={theme.colors.forest}
                 style={styles.surveyCardSelectedIcon}
               />
             ) : null}

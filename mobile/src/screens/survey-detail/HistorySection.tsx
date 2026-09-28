@@ -1,13 +1,15 @@
+import { useMemo } from "react"
 import { Text, View } from "react-native"
 import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { computeFactorDeltas, computeIbpTotalDelta } from "../../app/ibp-scoring"
 import type { FactorCanonical, IbpScores, ParcelSurveyHistoryItem } from "../../app/types"
+import { useBrandTheme } from "../../app/theme"
 import { useParcelSurveyHistory } from "../../hooks/useParcelSurveyHistory"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { styles } from "./summary.styles"
+import { createSummaryStyles } from "./summary.styles"
 
 const t = fr.surveyDetail.versionHistory
 const ph = fr.parcelHistory
@@ -21,7 +23,13 @@ type HistorySectionProps = {
   currentFactorResults: Record<string, FactorCanonical> | null
 }
 
-function HistoryRow({ item }: { item: ParcelSurveyHistoryItem }) {
+function HistoryRow({
+  item,
+  styles,
+}: {
+  item: ParcelSurveyHistoryItem
+  styles: ReturnType<typeof createSummaryStyles>
+}) {
   return (
     <View style={styles.historyRow}>
       <Text style={styles.historyRowTitle}>
@@ -46,6 +54,8 @@ export function HistorySection({
   currentScores,
   currentFactorResults,
 }: HistorySectionProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createSummaryStyles(theme), [theme])
   const { items, loading, error } = useParcelSurveyHistory(apiUrl, accessToken, parcelId)
 
   if (!parcelId) {
@@ -111,7 +121,9 @@ export function HistorySection({
       ) : null}
 
       {!loading && !error && previousItems.length > 0
-        ? previousItems.map((item) => <HistoryRow key={item.survey_id} item={item} />)
+        ? previousItems.map((item) => (
+            <HistoryRow key={item.survey_id} item={item} styles={styles} />
+          ))
         : null}
     </AppCard>
   )

@@ -1,13 +1,14 @@
-import { ReactNode } from "react"
+import { ReactNode, useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { formatDateTime } from "../../app/formatters"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
 import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
-import { styles as sharedStyles } from "./styles"
-import { styles } from "./summary.styles"
+import { createDetailStyles } from "./styles"
+import { createSummaryStyles } from "./summary.styles"
 
 const t = fr.surveyDetail.summary
 
@@ -30,6 +31,9 @@ export function SummaryTab({
   contextCard,
   children,
 }: SummaryTabProps) {
+  const theme = useBrandTheme()
+  const sharedStyles = useMemo(() => createDetailStyles(theme), [theme])
+  const styles = useMemo(() => createSummaryStyles(theme), [theme])
   return (
     <View style={sharedStyles.detailSection}>
       {survey.status === "submitted" ? (

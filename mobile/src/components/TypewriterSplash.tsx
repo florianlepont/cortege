@@ -11,12 +11,7 @@ import {
 } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import {
-  brandColors,
-  brandSemanticColors,
-  brandSpacing,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandColors, brandOnDarkColors, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { fr } from "../i18n"
 
 const SPECIES_NAMES = fr.components.splash.species
@@ -158,21 +153,21 @@ const styles = StyleSheet.create({
   twGenus: {
     fontSize: 18,
     fontWeight: "500",
-    color: brandSemanticColors.heroBodyOnDark,
+    color: brandOnDarkColors.heroBodyOnDark,
     letterSpacing: 2,
   },
   twEpithet: {
     fontSize: 16,
     fontStyle: "italic",
     fontWeight: "300",
-    color: brandSemanticColors.heroBodyOnDark,
+    color: brandOnDarkColors.heroBodyOnDark,
     opacity: 0.75,
     letterSpacing: 1.5,
   },
   twCursor: {
     fontSize: 18,
     fontWeight: "200",
-    color: brandSemanticColors.heroBodyOnDark,
+    color: brandOnDarkColors.heroBodyOnDark,
     opacity: 0.9,
     marginLeft: 1,
   },
@@ -182,7 +177,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     ...brandTypography.meta,
-    color: brandSemanticColors.heroBodyOnDark,
+    color: brandOnDarkColors.heroBodyOnDark,
     opacity: 0.75,
   },
 })

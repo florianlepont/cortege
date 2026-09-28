@@ -4,6 +4,7 @@ import Constants from "expo-constants"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
+import { useBrandTheme } from "../app/theme"
 import { AuthUser } from "../app/types"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { fr } from "../i18n"
@@ -12,7 +13,7 @@ import type { AppGroupedListSection } from "../ui/AppGroupedList"
 import { useAccountConnectionRows, useLogoutRow } from "./account/AccountSettingsRows"
 import { IdentityCard } from "./account/IdentityCard"
 import { ProfileCard } from "./account/ProfileCard"
-import { accountStyles as styles } from "./account/styles"
+import { createAccountStyles } from "./account/styles"
 
 type UpdateProfileInput = {
   first_name: string
@@ -55,6 +56,8 @@ export function AccountScreen({
   onOpenSyncAndData,
   onLogout,
 }: AccountScreenProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createAccountStyles(theme), [theme])
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)

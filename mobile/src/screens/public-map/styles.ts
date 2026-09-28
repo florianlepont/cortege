@@ -4,11 +4,9 @@ import {
   brandMapTokens,
   brandRadius,
   brandShadow,
-  brandTranslucentPanel,
   brandTypography,
 } from "../../app/brand-tokens"
-
-const PANEL_BACKGROUND = brandTranslucentPanel.default
+import { BrandTheme } from "../../app/theme"
 
 const roundButton = {
   width: 42,
@@ -17,9 +15,10 @@ const roundButton = {
   borderWidth: 1,
   alignItems: "center",
   justifyContent: "center",
-  ...brandShadow.card,
 } as const
 
+// Theme-invariant: every color here is a static brand hue, not a neutral that inverts with the
+// theme, so this stays a plain export (no `useBrandTheme()` needed at its call sites).
 export const markerStyles = StyleSheet.create({
   clusterBubble: {
     minWidth: 38,
@@ -64,293 +63,308 @@ export const markerStyles = StyleSheet.create({
   },
 })
 
+// Theme-invariant: the map fill itself has no color (it's the native MapView underneath).
 export const screenStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: brandColors.canvas,
-  },
   map: {
     ...StyleSheet.absoluteFill,
   },
 })
 
-export const controlStyles = StyleSheet.create({
-  overlayShell: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    gap: 10,
-  },
-  topDock: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  topDockLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-    flex: 1,
-  },
-  topDockActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  exploreBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    borderColor: brandColors.divider,
-    backgroundColor: brandTranslucentPanel.subtle,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    ...brandShadow.card,
-  },
-  exploreBadgeText: {
-    ...brandTypography.label,
-    color: brandColors.forest,
-  },
-  countBadge: {
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    borderColor: brandColors.divider,
-    backgroundColor: brandTranslucentPanel.muted,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  countBadgeText: {
-    ...brandTypography.meta,
-    color: brandColors.textPrimary,
-  },
-  iconButton: {
-    ...roundButton,
-    borderColor: brandColors.divider,
-    backgroundColor: brandTranslucentPanel.subtle,
-  },
-  iconButtonPrimary: {
-    ...roundButton,
-    borderColor: brandColors.forest,
-    backgroundColor: brandColors.forest,
-  },
-  iconButtonDisabled: {
-    ...roundButton,
-    borderColor: brandColors.divider,
-    backgroundColor: brandColors.disabledMuted,
-  },
-  // MAP-02: the active-filter count, overlaid on the filters toggle button.
-  filterCountBadge: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 3,
-    backgroundColor: brandColors.terracotta,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  filterCountBadgeText: {
-    ...brandTypography.meta,
-    fontSize: 12,
-    lineHeight: 14,
-    color: brandColors.white,
-  },
-  filtersPanel: {
-    backgroundColor: PANEL_BACKGROUND,
-    gap: 12,
-  },
-  filtersTitle: {
-    ...brandTypography.label,
-    color: brandColors.forest,
-  },
-  filtersMeta: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  layerTogglePill: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  layerTogglePillOn: {
-    borderColor: brandColors.forest,
-    backgroundColor: brandColors.forest,
-  },
-  layerTogglePillOff: {
-    borderColor: brandColors.divider,
-    backgroundColor: brandColors.panelMuted,
-  },
-  layerTogglePillText: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  layerTogglePillTextOn: {
-    color: brandColors.white,
-  },
-  bottomDock: {
-    position: "absolute",
-    left: 12,
-    right: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-  },
-  emptyDockBubble: {
-    flex: 1,
-    backgroundColor: PANEL_BACKGROUND,
-  },
-  emptyDockText: {
-    ...brandTypography.meta,
-    fontSize: 15,
-    lineHeight: 18,
-    color: brandColors.textPrimary,
-  },
-  locateButton: {
-    ...roundButton,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderColor: brandColors.forest,
-    backgroundColor: brandColors.forest,
-  },
-})
+export function createScreenContainerStyle(theme: BrandTheme) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.canvas,
+    },
+  })
+}
+
+// DS-15 (Phase 12): `iconButton`/`iconButtonDisabled`/`filtersPanel`/`emptyDockBubble`/
+// `basemapToggle` used to carry a flat `brandTranslucentPanel`/`PANEL_BACKGROUND` fill — they now
+// carry NO `backgroundColor`, wrapped in a `<GlassSurface>` (or `<AppCard glass>`) at the call site
+// (`MapControls.tsx`, `OfflineControls.tsx`) instead. `iconButtonPrimary`/`locateButton`/
+// `layerTogglePillOn` stay solid brand-colored CTAs, not glass.
+export function createControlStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    overlayShell: {
+      position: "absolute",
+      left: 12,
+      right: 12,
+      gap: 10,
+    },
+    topDock: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    topDockLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 8,
+      flex: 1,
+    },
+    topDockActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    exploreBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    exploreBadgeText: {
+      ...brandTypography.label,
+      color: brandColors.forest,
+    },
+    countBadge: {
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    countBadgeText: {
+      ...brandTypography.meta,
+      color: theme.colors.textPrimary,
+    },
+    iconButton: {
+      ...roundButton,
+      borderColor: theme.colors.divider,
+    },
+    iconButtonPrimary: {
+      ...roundButton,
+      borderColor: brandColors.forest,
+      backgroundColor: brandColors.forest,
+      ...brandShadow.card,
+    },
+    iconButtonDisabled: {
+      ...roundButton,
+      borderColor: theme.colors.divider,
+      backgroundColor: theme.colors.disabledMuted,
+    },
+    // MAP-02: the active-filter count, overlaid on the filters toggle button.
+    filterCountBadge: {
+      position: "absolute",
+      top: -4,
+      right: -4,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      paddingHorizontal: 3,
+      backgroundColor: brandColors.terracotta,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    filterCountBadgeText: {
+      ...brandTypography.meta,
+      fontSize: 12,
+      lineHeight: 14,
+      color: brandColors.white,
+    },
+    filtersPanel: {
+      gap: 12,
+    },
+    filtersTitle: {
+      ...brandTypography.label,
+      color: brandColors.forest,
+    },
+    filtersMeta: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    layerTogglePill: {
+      borderRadius: 999,
+      borderWidth: 1,
+      paddingHorizontal: 12,
+      paddingVertical: 9,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    layerTogglePillOn: {
+      borderColor: brandColors.forest,
+      backgroundColor: brandColors.forest,
+    },
+    layerTogglePillOff: {
+      borderColor: theme.colors.divider,
+      backgroundColor: theme.colors.panelMuted,
+    },
+    layerTogglePillText: {
+      ...brandTypography.meta,
+      color: brandColors.forest,
+    },
+    layerTogglePillTextOn: {
+      color: brandColors.white,
+    },
+    bottomDock: {
+      position: "absolute",
+      left: 12,
+      right: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 10,
+    },
+    emptyDockBubble: {
+      flex: 1,
+    },
+    emptyDockText: {
+      ...brandTypography.meta,
+      fontSize: 15,
+      lineHeight: 18,
+      color: theme.colors.textPrimary,
+    },
+    locateButton: {
+      ...roundButton,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      borderColor: brandColors.forest,
+      backgroundColor: brandColors.forest,
+      ...brandShadow.card,
+    },
+  })
+}
 
 // MAP-02: the chip-based filter bar (period / region / mes relevés), replacing the old free-text
 // fields + Apply button.
-export const filterBarStyles = StyleSheet.create({
-  container: {
-    gap: 8,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  summaryText: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  resetLink: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-    textDecorationLine: "underline",
-  },
-  row: {
-    flexDirection: "row",
-  },
-  chip: {
-    marginRight: 8,
-  },
-  hint: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-})
+export function createFilterBarStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    container: {
+      gap: 8,
+    },
+    summaryRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    summaryText: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    resetLink: {
+      ...brandTypography.meta,
+      color: brandColors.forest,
+      textDecorationLine: "underline",
+    },
+    row: {
+      flexDirection: "row",
+    },
+    chip: {
+      marginRight: 8,
+    },
+    hint: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+  })
+}
 
-export const offlineAreasStyles = StyleSheet.create({
-  nameField: {
-    gap: 5,
-  },
-  warning: {
-    ...brandTypography.meta,
-    color: brandColors.terracotta,
-  },
-  list: {
-    maxHeight: 220,
-  },
-  row: {
-    borderTopWidth: 1,
-    borderTopColor: brandColors.divider,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  rowInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  deleteButton: {
-    padding: 6,
-  },
-})
+export function createOfflineAreasStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    nameField: {
+      gap: 5,
+    },
+    warning: {
+      ...brandTypography.meta,
+      color: brandColors.terracotta,
+    },
+    list: {
+      maxHeight: 220,
+    },
+    row: {
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+      paddingVertical: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    rowInfo: {
+      flex: 1,
+      gap: 2,
+    },
+    deleteButton: {
+      padding: 6,
+    },
+  })
+}
 
-export const offlineIndicatorStyles = StyleSheet.create({
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    borderColor: brandColors.terracotta,
-    backgroundColor: brandColors.errorSoft,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  badgeText: {
-    ...brandTypography.label,
-    color: brandColors.terracotta,
-  },
-  basemapToggle: {
-    flexDirection: "row",
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    borderColor: brandColors.divider,
-    backgroundColor: brandTranslucentPanel.subtle,
-    padding: 3,
-    ...brandShadow.card,
-  },
-  basemapOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: brandRadius.pill,
-  },
-  basemapOptionActive: {
-    backgroundColor: brandColors.forest,
-  },
-  basemapOptionText: {
-    ...brandTypography.meta,
-    color: brandColors.forest,
-  },
-  basemapOptionTextActive: {
-    color: brandColors.white,
-  },
-})
+export function createOfflineIndicatorStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      borderColor: brandColors.terracotta,
+      backgroundColor: theme.colors.errorSoft,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    badgeText: {
+      ...brandTypography.label,
+      color: brandColors.terracotta,
+    },
+    basemapToggle: {
+      flexDirection: "row",
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      padding: 3,
+    },
+    basemapOption: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: brandRadius.pill,
+    },
+    basemapOptionActive: {
+      backgroundColor: brandColors.forest,
+    },
+    basemapOptionText: {
+      ...brandTypography.meta,
+      color: brandColors.forest,
+    },
+    basemapOptionTextActive: {
+      color: brandColors.white,
+    },
+  })
+}
 
-export const panelStyles = StyleSheet.create({
-  card: {
-    gap: 10,
-  },
-  title: {
-    ...brandTypography.label,
-    color: brandColors.forest,
-  },
-  meta: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  clusterRow: {
-    borderTopWidth: 1,
-    borderTopColor: brandColors.divider,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  clusterRowText: {
-    ...brandTypography.meta,
-    color: brandColors.textPrimary,
-  },
-})
+export function createPanelStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    card: {
+      gap: 10,
+    },
+    title: {
+      ...brandTypography.label,
+      color: brandColors.forest,
+    },
+    meta: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    clusterRow: {
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+      paddingVertical: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    clusterRowText: {
+      ...brandTypography.meta,
+      color: theme.colors.textPrimary,
+    },
+  })
+}

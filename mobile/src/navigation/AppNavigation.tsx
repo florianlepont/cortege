@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { StatusBar } from "react-native"
 import { NavigationContainer } from "@react-navigation/native"
+import { useBrandTheme } from "../app/theme"
+import { buildNavigationTheme, statusBarStyleForScheme } from "./navigation-theme"
 import { getNativeTabsAvailability, type NativeTabsAvailability } from "./native-tabs-availability"
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "./public-map-reload"
 import { getFocusedLeafRouteName, shouldHideTabBar, type NavigationStateLike } from "./tab-bar"
@@ -31,6 +33,8 @@ function AppTabs({
   availability: NativeTabsAvailability
   tabBarHidden: boolean
 }) {
+  const { scheme } = useBrandTheme()
+
   useEffect(() => {
     if (!availability.native) {
       console.warn(`[tabs] native=false reason=${availability.reason}`)
@@ -43,15 +47,17 @@ function AppTabs({
 
   return (
     <>
-      {/* BUG-06 (UX audit, Phase 2): every tab screen has a light canvas/map background, so the
-          status bar reads dark on both platforms — light-content was unreadable on iOS. */}
-      <StatusBar barStyle="dark-content" />
+      {/* BUG-06 (UX audit, Phase 2) + DS-12 (Phase 12): every tab screen has a canvas/map
+          background matching the active theme, so the status bar always reads against it —
+          dark-content on light canvas, light-content on the dark theme's near-black canvas. */}
+      <StatusBar barStyle={statusBarStyleForScheme(scheme)} />
       {availability.native ? <NativeRootTabs tabBarHidden={tabBarHidden} /> : <JsRootTabs />}
     </>
   )
 }
 
 export function AppNavigation() {
+  const { scheme, semanticColors } = useBrandTheme()
   const [publicMapReload] = useState(createPublicMapReloadSignal)
   // Decided once per mount: the inputs are fixed for the lifetime of the bundle.
   const [availability] = useState(() => getNativeTabsAvailability())
@@ -64,9 +70,20 @@ export function AppNavigation() {
     setTabBarHidden(shouldHideTabBar(getFocusedLeafRouteName(state)))
   }, [])
 
+  // DS-12: the container theme colors the brief flash a screen transition can show before a
+  // screen's own themed background paints, and native-stack's default header/border colors on any
+  // screen that does not set its own headerStyle.
+  const navigationTheme = useMemo(
+    () => buildNavigationTheme(scheme, semanticColors),
+    [scheme, semanticColors],
+  )
+
   return (
     <PublicMapReloadContext.Provider value={publicMapReload}>
-      <NavigationContainer onStateChange={availability.native ? onStateChange : undefined}>
+      <NavigationContainer
+        theme={navigationTheme}
+        onStateChange={availability.native ? onStateChange : undefined}
+      >
         <AppTabs availability={availability} tabBarHidden={tabBarHidden} />
       </NavigationContainer>
     </PublicMapReloadContext.Provider>

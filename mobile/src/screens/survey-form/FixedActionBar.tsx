@@ -1,7 +1,9 @@
+import { useMemo } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { AppButton } from "../../ui/AppButton"
 import { fr } from "../../i18n"
 import type { AutosaveStatus } from "../../hooks/useEditingDraft"
@@ -38,6 +40,8 @@ export function FixedActionBar({
   autosaveStatus,
 }: FixedActionBarProps) {
   const insets = useSafeAreaInsets()
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const autosave = autosaveStatus ? autosaveText(autosaveStatus) : null
 
   return (
@@ -67,44 +71,46 @@ export function FixedActionBar({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    borderTopWidth: 1,
-    borderTopColor: brandColors.divider,
-    backgroundColor: brandColors.panel,
-    paddingHorizontal: brandSpacing4.md,
-    paddingTop: brandSpacing4.sm,
-    gap: brandSpacing4.xs,
-  },
-  autosaveText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: brandColors.textSecondary,
-    textAlign: "center",
-  },
-  autosaveTextDanger: {
-    color: brandColors.terracotta,
-  },
-  row: {
-    flexDirection: "row",
-    gap: brandSpacing4.sm,
-  },
-  secondaryButton: {
-    minHeight: 56,
-    paddingHorizontal: brandSpacing4.lg,
-    borderRadius: brandRadius.field,
-    borderWidth: 1,
-    borderColor: brandColors.divider,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: brandColors.forest,
-  },
-  primaryButton: {
-    flex: 1,
-    minHeight: 56,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    container: {
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+      backgroundColor: theme.colors.panel,
+      paddingHorizontal: brandSpacing4.md,
+      paddingTop: brandSpacing4.sm,
+      gap: brandSpacing4.xs,
+    },
+    autosaveText: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+    },
+    autosaveTextDanger: {
+      color: brandColors.terracotta,
+    },
+    row: {
+      flexDirection: "row",
+      gap: brandSpacing4.sm,
+    },
+    secondaryButton: {
+      minHeight: 56,
+      paddingHorizontal: brandSpacing4.lg,
+      borderRadius: brandRadius.field,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    secondaryButtonText: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: brandColors.forest,
+    },
+    primaryButton: {
+      flex: 1,
+      minHeight: 56,
+    },
+  })
+}

@@ -4,7 +4,7 @@ import { AppText as Text } from "../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandColors } from "../app/brand-tokens"
+import { useBrandTheme } from "../app/theme"
 import { formatSyncErrorForUser } from "../app/formatters"
 import { resolveSurveyUiStatus } from "../app/survey-logic"
 import type { AuthUser } from "../app/types"
@@ -21,7 +21,7 @@ import { SkeletonRow } from "../ui/Skeleton"
 import { SurveyProgressCard } from "../ui/SurveyProgressCard"
 import { SyncStatusPill } from "../ui/SyncStatusPill"
 import { SectorScoreCard } from "./home/SectorScoreCard"
-import { styles } from "./home/styles"
+import { createStyles } from "./home/styles"
 
 // HOME-02: the hero becomes a "resume" action for a draft touched within the last 48h.
 const RESUME_WINDOW_MS = 48 * 60 * 60 * 1000
@@ -97,6 +97,8 @@ export function HomeScreen({
   onNavigateToAccount,
   onRefresh,
 }: HomeScreenProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const insets = useSafeAreaInsets()
   const [refreshing, setRefreshing] = useState(false)
   const firstName = getFirstName(currentUser)
@@ -144,7 +146,7 @@ export function HomeScreen({
         <RefreshControl
           refreshing={refreshing}
           onRefresh={() => void handleRefresh()}
-          tintColor={brandColors.moss}
+          tintColor={theme.colors.moss}
         />
       }
     >
@@ -182,7 +184,7 @@ export function HomeScreen({
               />
             ) : (
               <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={20} color={brandColors.textSecondary} />
+                <Ionicons name="person" size={20} color={theme.colors.textSecondary} />
               </View>
             )}
           </Pressable>

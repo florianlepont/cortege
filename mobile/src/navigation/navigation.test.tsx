@@ -72,12 +72,23 @@ function mockCreateFakeNavigator(kind: string) {
   return { Navigator, Screen }
 }
 
+const mockNavigationThemeColors = {
+  primary: "#000",
+  background: "#fff",
+  card: "#fff",
+  text: "#000",
+  border: "#000",
+  notification: "#000",
+}
+
 jest.mock("@react-navigation/native", () => {
   const ReactRef = jest.requireActual("react") as typeof import("react")
   return {
     NavigationContainer: ({ children }: { children?: React.ReactNode }) =>
       ReactRef.createElement(ReactRef.Fragment, null, children),
     getFocusedRouteNameFromRoute: (route: { focused?: string }) => route.focused,
+    DefaultTheme: { dark: false, colors: mockNavigationThemeColors },
+    DarkTheme: { dark: true, colors: mockNavigationThemeColors },
   }
 })
 jest.mock("@react-navigation/native-stack", () => ({
@@ -149,10 +160,10 @@ jest.mock("../state/surveys-context", () => ({ useSurveyActions: () => mockSurve
 
 import { AppNavigation } from "./AppNavigation"
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "./public-map-reload"
+import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
 import {
   buildJsTabBarStyle,
-  JS_TAB_BAR_STYLE,
   jsTabScreenOptions,
   nativeTabScreenOptions,
   TAB_TITLES,
@@ -359,9 +370,9 @@ describe("tab options", () => {
   })
 
   test("JS options render an Ionicons icon and the platform bar metrics", () => {
-    const options = jsTabScreenOptions({ route: { name: "account" } })
+    const options = jsTabScreenOptions(defaultTheme, { route: { name: "account" } })
     expect(options.tabBarLabel).toBe("Compte")
-    expect(options.tabBarStyle.height).toBe(buildJsTabBarStyle().height)
+    expect(options.tabBarStyle.height).toBe(buildJsTabBarStyle(defaultTheme).height)
     const icon = options.tabBarIcon({ color: "red", size: 20 })
     expect(icon.props).toEqual(
       expect.objectContaining({ name: "person-outline", size: 20, color: "red" }),
@@ -371,23 +382,25 @@ describe("tab options", () => {
   // DS-13: height/padding grow with the device's own safe-area bottom inset instead of guessing
   // per platform, but never shrink below a usable minimum on a device that reports none.
   test("buildJsTabBarStyle grows with the safe-area bottom inset, floored at a usable minimum", () => {
-    const noInset = buildJsTabBarStyle({ bottom: 0 })
-    const bigInset = buildJsTabBarStyle({ bottom: 34 })
+    const noInset = buildJsTabBarStyle(defaultTheme, { bottom: 0 })
+    const bigInset = buildJsTabBarStyle(defaultTheme, { bottom: 34 })
     expect(bigInset.paddingBottom).toBe(34)
     expect(bigInset.height).toBeGreaterThan(noInset.height)
-    expect(buildJsTabBarStyle({ bottom: 2 }).paddingBottom).toBe(noInset.paddingBottom)
+    expect(buildJsTabBarStyle(defaultTheme, { bottom: 2 }).paddingBottom).toBe(
+      noInset.paddingBottom,
+    )
   })
 
   test("jsTabScreenOptions threads the insets argument into the bar style", () => {
-    const options = jsTabScreenOptions({ route: { name: "account" } }, { bottom: 40 })
-    expect(options.tabBarStyle).toEqual(buildJsTabBarStyle({ bottom: 40 }))
+    const options = jsTabScreenOptions(defaultTheme, { route: { name: "account" } }, { bottom: 40 })
+    expect(options.tabBarStyle).toEqual(buildJsTabBarStyle(defaultTheme, { bottom: 40 }))
   })
 
   test("the JS tab navigator's own screenOptions reads the real safe-area inset", async () => {
     await mount(<AppNavigation />)
     const screenOptions = mockNavigators.jsTabs.at(-1)?.screenOptions as OptionsFn
     const options = screenOptions({ route: { name: "account" } })
-    expect(options.tabBarStyle).toEqual(buildJsTabBarStyle({ bottom: 0 }))
+    expect(options.tabBarStyle).toEqual(buildJsTabBarStyle(defaultTheme, { bottom: 0 }))
   })
 
   test("the JS surveys tab hides the bar on parcel selection only", async () => {
@@ -396,7 +409,9 @@ describe("tab options", () => {
     expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual({
       display: "none",
     })
-    expect(options({ route: { focused: "surveyForm" } }).tabBarStyle).toEqual(JS_TAB_BAR_STYLE)
+    expect(options({ route: { focused: "surveyForm" } }).tabBarStyle).toEqual(
+      buildJsTabBarStyle(defaultTheme),
+    )
     expect(options({ route: {} }).tabBarLabel).toBe(TAB_TITLES.surveys)
   })
 })
@@ -452,10 +467,11 @@ describe("stack options and listeners", () => {
     for (const os of ["ios", "android"] as const) {
       mockPlatform.OS = os
       jest.isolateModules(() => {
-        const { baseStackScreenOptions } = jest.requireActual("./stacks/stack-options") as {
-          baseStackScreenOptions: Options
+        const { createBaseStackScreenOptions } = jest.requireActual("./stacks/stack-options") as {
+          createBaseStackScreenOptions: (theme: unknown) => Options
         }
-        expect("headerTransparent" in baseStackScreenOptions).toBe(os === "ios")
+        const options = createBaseStackScreenOptions(defaultTheme)
+        expect("headerTransparent" in options).toBe(os === "ios")
       })
     }
   })

@@ -1,6 +1,8 @@
+import { useMemo } from "react"
 import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 export type AppStatusChipTone = "neutral" | "success" | "warning" | "danger" | "onDark"
 
@@ -12,6 +14,9 @@ type AppStatusChipProps = {
 }
 
 export function AppStatusChip({ label, tone = "neutral", style, labelStyle }: AppStatusChipProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+
   return (
     <View style={[styles.base, styles[tone], style]}>
       <Text style={[styles.label, tone === "onDark" && styles.labelOnDark, labelStyle]}>
@@ -21,38 +26,40 @@ export function AppStatusChip({ label, tone = "neutral", style, labelStyle }: Ap
   )
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-  },
-  neutral: {
-    borderColor: brandComponentTokens.statusChip.neutralBorder,
-    backgroundColor: brandComponentTokens.statusChip.neutralBackground,
-  },
-  success: {
-    borderColor: brandComponentTokens.statusChip.successBorder,
-    backgroundColor: brandComponentTokens.statusChip.successBackground,
-  },
-  warning: {
-    borderColor: brandComponentTokens.statusChip.warningBorder,
-    backgroundColor: brandComponentTokens.statusChip.warningBackground,
-  },
-  danger: {
-    borderColor: brandComponentTokens.statusChip.dangerBorder,
-    backgroundColor: brandComponentTokens.statusChip.dangerBackground,
-  },
-  onDark: {
-    borderColor: brandComponentTokens.statusChip.onDarkBorder,
-    backgroundColor: brandComponentTokens.statusChip.onDarkBackground,
-  },
-  label: {
-    ...brandTypography.meta,
-    color: brandComponentTokens.statusChip.textColor,
-  },
-  labelOnDark: {
-    color: brandComponentTokens.statusChip.onDarkTextColor,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    base: {
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+    },
+    neutral: {
+      borderColor: theme.componentColors.statusChip.neutralBorder,
+      backgroundColor: theme.componentColors.statusChip.neutralBackground,
+    },
+    success: {
+      borderColor: theme.componentColors.statusChip.successBorder,
+      backgroundColor: theme.componentColors.statusChip.successBackground,
+    },
+    warning: {
+      borderColor: theme.componentColors.statusChip.warningBorder,
+      backgroundColor: theme.componentColors.statusChip.warningBackground,
+    },
+    danger: {
+      borderColor: theme.componentColors.statusChip.dangerBorder,
+      backgroundColor: theme.componentColors.statusChip.dangerBackground,
+    },
+    onDark: {
+      borderColor: theme.componentColors.statusChip.onDarkBorder,
+      backgroundColor: theme.componentColors.statusChip.onDarkBackground,
+    },
+    label: {
+      ...brandTypography.meta,
+      color: theme.componentColors.statusChip.textColor,
+    },
+    labelOnDark: {
+      color: theme.componentColors.statusChip.onDarkTextColor,
+    },
+  })
+}

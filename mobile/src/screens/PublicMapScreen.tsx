@@ -5,6 +5,7 @@ import type { Region } from "react-native-maps"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
+import { useBrandTheme } from "../app/theme"
 import type { PublicMapItem, PublicParcelStatusItem } from "../app/types"
 import type { LoadPublicMapOptions } from "../hooks/usePublicMapExplorer"
 import type { StartDownloadResult } from "../hooks/useOfflineAreas"
@@ -23,7 +24,7 @@ import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
 import { computePeriodRange, type PeriodKey } from "./public-map/period-filter"
 import { ScoreLegend } from "./public-map/ScoreLegend"
 import { SelectedSurveyCard } from "./public-map/SelectedSurveyCard"
-import { screenStyles } from "./public-map/styles"
+import { createScreenContainerStyle } from "./public-map/styles"
 import { PARCEL_MIN_ZOOM, useMapViewport } from "./public-map/useMapViewport"
 
 const t = fr.publicMap
@@ -91,6 +92,8 @@ export function PublicMapScreen({
   onDeleteOfflineArea,
   onQueueParcelDownload,
 }: PublicMapScreenProps) {
+  const theme = useBrandTheme()
+  const screenStyles = useMemo(() => createScreenContainerStyle(theme), [theme])
   const mapRef = useRef<MapView | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [showParcelLayer, setShowParcelLayer] = useState(true)

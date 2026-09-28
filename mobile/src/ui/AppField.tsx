@@ -1,4 +1,4 @@
-import { useState, type Ref } from "react"
+import { useMemo, useState, type Ref } from "react"
 import {
   StyleProp,
   StyleSheet,
@@ -9,12 +9,8 @@ import {
   ViewStyle,
 } from "react-native"
 import { AppText as Text } from "./AppText"
-import {
-  brandColors,
-  brandComponentTokens,
-  brandRadius,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppFieldProps = {
   label: string
@@ -34,11 +30,13 @@ export function AppField({
   labelStyle,
   inputStyle,
   testID,
-  placeholderTextColor = brandColors.textSecondary,
+  placeholderTextColor,
   onFocus,
   onBlur,
   ...inputProps
 }: AppFieldProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const [focused, setFocused] = useState(false)
 
   return (
@@ -52,7 +50,7 @@ export function AppField({
           error ? styles.inputError : null,
           inputStyle,
         ]}
-        placeholderTextColor={placeholderTextColor}
+        placeholderTextColor={placeholderTextColor ?? theme.colors.textSecondary}
         testID={testID}
         onFocus={(event) => {
           setFocused(true)
@@ -69,43 +67,45 @@ export function AppField({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: brandComponentTokens.field.gap,
-  },
-  label: {
-    ...brandTypography.label,
-    color: brandColors.textPrimary,
-    marginTop: 2,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: brandComponentTokens.field.border,
-    borderRadius: brandRadius.field,
-    paddingHorizontal: brandComponentTokens.field.horizontalPadding,
-    minHeight: brandComponentTokens.field.minHeight,
-    paddingVertical: brandComponentTokens.field.verticalPadding,
-    backgroundColor: brandComponentTokens.field.background,
-    color: brandColors.textPrimary,
-    ...brandTypography.input,
-    fontSize: 15,
-    lineHeight: 18,
-    fontWeight: "500",
-  },
-  inputFocused: {
-    borderColor: brandColors.forest,
-    backgroundColor: brandColors.white,
-    shadowColor: brandColors.forest,
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
-  },
-  inputError: {
-    borderColor: brandComponentTokens.field.borderError,
-  },
-  error: {
-    ...brandTypography.meta,
-    color: brandComponentTokens.field.borderError,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    container: {
+      gap: brandComponentTokens.field.gap,
+    },
+    label: {
+      ...brandTypography.label,
+      color: theme.colors.textPrimary,
+      marginTop: 2,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.componentColors.field.border,
+      borderRadius: brandRadius.field,
+      paddingHorizontal: brandComponentTokens.field.horizontalPadding,
+      minHeight: brandComponentTokens.field.minHeight,
+      paddingVertical: brandComponentTokens.field.verticalPadding,
+      backgroundColor: theme.componentColors.field.background,
+      color: theme.colors.textPrimary,
+      ...brandTypography.input,
+      fontSize: 15,
+      lineHeight: 18,
+      fontWeight: "500",
+    },
+    inputFocused: {
+      borderColor: theme.colors.forest,
+      backgroundColor: theme.colors.white,
+      shadowColor: theme.colors.forest,
+      shadowOpacity: 0.08,
+      shadowRadius: 10,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 1,
+    },
+    inputError: {
+      borderColor: theme.componentColors.field.borderError,
+    },
+    error: {
+      ...brandTypography.meta,
+      color: theme.componentColors.field.borderError,
+    },
+  })
+}

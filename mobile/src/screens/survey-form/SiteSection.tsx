@@ -1,10 +1,12 @@
+import { useMemo } from "react"
 import { LayoutRectangle, View } from "react-native"
+import { useBrandTheme } from "../../app/theme"
 import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { MethodVersionPicker, type SurveyFormMethod } from "./MethodVersionPicker"
-import { formStyles } from "./styles"
+import { createFormStyles } from "./styles"
 import { fr } from "../../i18n"
 
 // Step 1 of the wizard: the survey's IBP method (D-02) and its site name.
@@ -29,6 +31,8 @@ export function SiteSection({
   onBlur: () => void
   onContinue: () => void
 }) {
+  const theme = useBrandTheme()
+  const formStyles = useMemo(() => createFormStyles(theme), [theme])
   return (
     <View
       style={formStyles.identityStepContent}

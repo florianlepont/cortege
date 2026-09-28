@@ -1,7 +1,9 @@
+import { useMemo } from "react"
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
@@ -29,6 +31,8 @@ export function LocalDataOwnerConflictScreen({
   onDiscard,
   logoSource,
 }: LocalDataOwnerConflictScreenProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const insets = useSafeAreaInsets()
 
   const bodyText = t.body({ summary: foreignWorkSummary, email: foreignOwnerEmail })
@@ -71,64 +75,66 @@ export function LocalDataOwnerConflictScreen({
   )
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: brandColors.canvas,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: brandSpacing.lg,
-    paddingTop: brandSpacing.lg,
-    gap: brandSpacing.lg,
-  },
-  heroWrap: {
-    position: "relative",
-  },
-  heroAccent: {
-    position: "absolute",
-    top: 16,
-    right: 14,
-    width: 120,
-    height: 120,
-    borderRadius: 999,
-    backgroundColor: brandColors.terracotta,
-    opacity: 0.22,
-  },
-  heroCard: {
-    gap: brandSpacing.sm,
-    padding: brandSpacing.lg,
-  },
-  heroLogo: {
-    width: 132,
-    height: 42,
-    marginLeft: -18,
-  },
-  heroEyebrow: {
-    ...brandTypography.heroEyebrow,
-    color: brandColors.moss,
-    letterSpacing: 1.6,
-  },
-  heroTitle: {
-    ...brandTypography.sectionTitle,
-    color: brandColors.forest,
-  },
-  heroSubtitle: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
-  bodyCard: {
-    gap: brandSpacing.md,
-  },
-  bodyText: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textPrimary,
-  },
-  actions: {
-    gap: 10,
-    marginTop: 4,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.canvas,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      flexGrow: 1,
+      paddingHorizontal: brandSpacing.lg,
+      paddingTop: brandSpacing.lg,
+      gap: brandSpacing.lg,
+    },
+    heroWrap: {
+      position: "relative",
+    },
+    heroAccent: {
+      position: "absolute",
+      top: 16,
+      right: 14,
+      width: 120,
+      height: 120,
+      borderRadius: 999,
+      backgroundColor: brandColors.terracotta,
+      opacity: 0.22,
+    },
+    heroCard: {
+      gap: brandSpacing.sm,
+      padding: brandSpacing.lg,
+    },
+    heroLogo: {
+      width: 132,
+      height: 42,
+      marginLeft: -18,
+    },
+    heroEyebrow: {
+      ...brandTypography.heroEyebrow,
+      color: brandColors.moss,
+      letterSpacing: 1.6,
+    },
+    heroTitle: {
+      ...brandTypography.sectionTitle,
+      color: brandColors.forest,
+    },
+    heroSubtitle: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
+    },
+    bodyCard: {
+      gap: brandSpacing.md,
+    },
+    bodyText: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textPrimary,
+    },
+    actions: {
+      gap: 10,
+      marginTop: 4,
+    },
+  })
+}

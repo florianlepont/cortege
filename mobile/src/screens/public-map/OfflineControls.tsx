@@ -1,16 +1,20 @@
-import { memo } from "react"
+import { memo, useMemo } from "react"
 import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { BASEMAP_KEYS, type BasemapKey } from "../../map/basemaps"
 import { fr } from "../../i18n"
-import { offlineIndicatorStyles as styles } from "./styles"
+import { GlassSurface } from "../../ui/GlassSurface"
+import { createOfflineIndicatorStyles } from "./styles"
 
 const t = fr.offlineMap
 
 /** REQ-D-offline-map: a plain, always-visible indicator when the device has no connectivity. */
 export const OfflineIndicatorBadge = memo(function OfflineIndicatorBadge() {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createOfflineIndicatorStyles(theme), [theme])
   return (
     <View style={styles.badge}>
       <Ionicons name="cloud-offline-outline" size={15} color={brandColors.terracotta} />
@@ -34,8 +38,10 @@ export const BasemapToggle = memo(function BasemapToggle({
   basemap,
   onChange,
 }: BasemapToggleProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createOfflineIndicatorStyles(theme), [theme])
   return (
-    <View style={styles.basemapToggle}>
+    <GlassSurface tone="auto" style={styles.basemapToggle}>
       {BASEMAP_KEYS.map((key) => {
         const active = key === basemap
         const handlePress = (): void => onChange(key)
@@ -56,6 +62,6 @@ export const BasemapToggle = memo(function BasemapToggle({
           </Pressable>
         )
       })}
-    </View>
+    </GlassSurface>
   )
 })

@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandColors, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { parseFiniteNumberInput } from "../app/number-utils"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { AppChoiceChip } from "./AppChoiceChip"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
 
@@ -40,6 +41,8 @@ export function FactorChipsInput({
   countLabel,
   testID,
 }: FactorChipsInputProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const [selected, setSelected] = useState<Set<string>>(() => {
     const initialCount = Math.max(
       0,
@@ -83,14 +86,16 @@ export function FactorChipsInput({
   )
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: brandSpacing4.xs,
-  },
-  countText: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: brandSpacing4.xs,
+    },
+    countText: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+  })
+}

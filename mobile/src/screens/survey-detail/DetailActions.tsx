@@ -1,10 +1,12 @@
+import { useMemo } from "react"
 import { AppText as Text } from "../../ui/AppText"
 import { formatSyncErrorForUser } from "../../app/formatters"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
 import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
-import { styles } from "./summary.styles"
+import { createSummaryStyles } from "./summary.styles"
 
 const t = fr.surveyDetail.actions
 
@@ -20,6 +22,8 @@ type DetailActionsProps = {
  * menu (DetailHeader, DET-03) — this renders nothing when there's no sync problem to report.
  */
 export function DetailActions({ survey, onRetrySurvey, onDiscardSurvey }: DetailActionsProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createSummaryStyles(theme), [theme])
   const syncErrorText = formatSyncErrorForUser(survey.last_sync_error, survey.last_sync_error_code)
   if (!syncErrorText) {
     return null

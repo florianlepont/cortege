@@ -1,15 +1,10 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Pressable, StyleSheet, TextInput, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import {
-  brandColors,
-  brandInteraction,
-  brandRadius,
-  brandSpacing4,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandInteraction, brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { parseFiniteNumberInput } from "../app/number-utils"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
 
@@ -47,6 +42,8 @@ export function FactorCounterInput({
   step = 1,
   testID,
 }: FactorCounterInputProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const [editing, setEditing] = useState(false)
   const [draftText, setDraftText] = useState(value)
   const currentRef = useRef<number>(parseFiniteNumberInput(value) ?? min)
@@ -124,7 +121,7 @@ export function FactorCounterInput({
           style={styles.button}
           testID={testID ? `${testID}-decrease` : undefined}
         >
-          <Ionicons name="remove" size={22} color={brandColors.forest} />
+          <Ionicons name="remove" size={22} color={theme.colors.forest} />
         </Pressable>
 
         {editing ? (
@@ -159,48 +156,50 @@ export function FactorCounterInput({
           style={styles.button}
           testID={testID ? `${testID}-increase` : undefined}
         >
-          <Ionicons name="add" size={22} color={brandColors.forest} />
+          <Ionicons name="add" size={22} color={theme.colors.forest} />
         </Pressable>
       </View>
     </FactorInputShell>
   )
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: brandSpacing4.sm,
-  },
-  button: {
-    width: BUTTON_SIZE,
-    height: BUTTON_SIZE,
-    borderRadius: brandRadius.field,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: brandColors.panelMuted,
-  },
-  valueWrap: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: BUTTON_SIZE,
-  },
-  value: {
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: "800",
-    color: brandColors.textPrimary,
-  },
-  input: {
-    ...brandTypography.input,
-    flex: 1,
-    textAlign: "center",
-    fontSize: 30,
-    lineHeight: 34,
-    fontWeight: "800",
-    color: brandColors.textPrimary,
-    minHeight: BUTTON_SIZE,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: brandSpacing4.sm,
+    },
+    button: {
+      width: BUTTON_SIZE,
+      height: BUTTON_SIZE,
+      borderRadius: brandRadius.field,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.panelMuted,
+    },
+    valueWrap: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: BUTTON_SIZE,
+    },
+    value: {
+      fontSize: 30,
+      lineHeight: 34,
+      fontWeight: "800",
+      color: theme.colors.textPrimary,
+    },
+    input: {
+      ...brandTypography.input,
+      flex: 1,
+      textAlign: "center",
+      fontSize: 30,
+      lineHeight: 34,
+      fontWeight: "800",
+      color: theme.colors.textPrimary,
+      minHeight: BUTTON_SIZE,
+    },
+  })
+}

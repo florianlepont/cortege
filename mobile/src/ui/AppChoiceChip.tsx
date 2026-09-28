@@ -1,11 +1,8 @@
+import { useMemo } from "react"
 import { Pressable, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
-import {
-  brandColors,
-  brandComponentTokens,
-  brandRadius,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 export type AppChoiceChipTone = "neutral" | "success" | "warning" | "danger"
 
@@ -28,6 +25,8 @@ export function AppChoiceChip({
   style,
   labelStyle,
 }: AppChoiceChipProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const isInteractive = typeof onPress === "function"
 
   return (
@@ -59,52 +58,54 @@ export function AppChoiceChip({
   )
 }
 
-const styles = StyleSheet.create({
-  base: {
-    minHeight: brandComponentTokens.choiceChip.minHeight,
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
-    borderColor: brandComponentTokens.choiceChip.border,
-    backgroundColor: brandComponentTokens.choiceChip.background,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  interactive: {
-    borderColor: brandComponentTokens.choiceChip.interactiveBorder,
-    backgroundColor: brandComponentTokens.choiceChip.interactiveBackground,
-    shadowColor: brandColors.black,
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
-  },
-  neutral: {},
-  success: {
-    backgroundColor: brandComponentTokens.choiceChip.successBackground,
-  },
-  warning: {
-    backgroundColor: brandComponentTokens.choiceChip.warningBackground,
-  },
-  danger: {
-    backgroundColor: brandComponentTokens.choiceChip.dangerBackground,
-  },
-  active: {
-    borderColor: brandComponentTokens.choiceChip.activeBorder,
-    backgroundColor: brandComponentTokens.choiceChip.activeBackground,
-  },
-  static: {
-    opacity: 0.76,
-  },
-  label: {
-    ...brandTypography.meta,
-    color: brandComponentTokens.choiceChip.text,
-  },
-  labelStatic: {
-    color: brandComponentTokens.choiceChip.staticText,
-  },
-  labelActive: {
-    color: brandComponentTokens.choiceChip.activeText,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    base: {
+      minHeight: brandComponentTokens.choiceChip.minHeight,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      borderColor: theme.componentColors.choiceChip.border,
+      backgroundColor: theme.componentColors.choiceChip.background,
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    interactive: {
+      borderColor: theme.componentColors.choiceChip.interactiveBorder,
+      backgroundColor: theme.componentColors.choiceChip.interactiveBackground,
+      shadowColor: theme.colors.black,
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 1,
+    },
+    neutral: {},
+    success: {
+      backgroundColor: theme.componentColors.choiceChip.successBackground,
+    },
+    warning: {
+      backgroundColor: theme.componentColors.choiceChip.warningBackground,
+    },
+    danger: {
+      backgroundColor: theme.componentColors.choiceChip.dangerBackground,
+    },
+    active: {
+      borderColor: theme.componentColors.choiceChip.activeBorder,
+      backgroundColor: theme.componentColors.choiceChip.activeBackground,
+    },
+    static: {
+      opacity: 0.76,
+    },
+    label: {
+      ...brandTypography.meta,
+      color: theme.componentColors.choiceChip.text,
+    },
+    labelStatic: {
+      color: theme.componentColors.choiceChip.staticText,
+    },
+    labelActive: {
+      color: theme.componentColors.choiceChip.activeText,
+    },
+  })
+}

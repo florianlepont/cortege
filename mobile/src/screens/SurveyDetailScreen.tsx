@@ -1,7 +1,13 @@
-import { IbpCas } from "@cortege/ibp-domain"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Alert, NativeScrollEvent, NativeSyntheticEvent, ScrollView } from "react-native"
+import {
+  Alert,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  RefreshControl,
+  ScrollView,
+} from "react-native"
 import { shouldShowDevTools } from "../app/dev-tools"
+import { useBrandTheme } from "../app/theme"
 import { exportAndShareSurveyPdf, type SurveyExportData } from "../app/survey-pdf-export"
 import {
   defaultVegetationStageForRegion,
@@ -12,16 +18,8 @@ import {
   isLessThan24HoursRemaining,
   resolveSubmissionDeadline,
 } from "../app/formatters"
-import {
-  FactorKey,
-  RegionVersion,
-  SurveyDetailResponse,
-  SurveyDetailTab,
-  SurveyEventItem,
-  VegetationStage,
-} from "../app/types"
+import { RegionVersion, SurveyDetailTab, VegetationStage } from "../app/types"
 import { fr, logStatusDetail } from "../i18n"
-import { LocalAttachment, LocalSurvey } from "../storage"
 import { AppActionSheet } from "../ui/AppActionSheet"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { DebugTab } from "./survey-detail/DebugTab"
@@ -34,44 +32,14 @@ import { HistorySection } from "./survey-detail/HistorySection"
 import { resolveHeroMetric, resolveHeroSubmitState } from "./survey-detail/hero-state"
 import { MediaSection } from "./survey-detail/MediaSection"
 import { resolveScoringContext, ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
-import { styles } from "./survey-detail/styles"
+import { type SurveyDetailScreenProps } from "./survey-detail/screen-props"
+import { createDetailStyles } from "./survey-detail/styles"
 import { SummaryTab } from "./survey-detail/SummaryTab"
 import {
   DisplayedFactorResult,
   DisplayedScores,
   useLocalDraftSummary,
 } from "./survey-detail/useLocalDraftSummary"
-
-type SurveyDetailScreenProps = {
-  apiUrl: string
-  accessToken: string | null
-  selectedSurvey: LocalSurvey
-  selectedSurveyAttachments: LocalAttachment[]
-  surveyDetailTab: SurveyDetailTab
-  setSurveyDetailTab: (tab: SurveyDetailTab) => void
-  surveyDetails: Record<string, SurveyDetailResponse>
-  detailsLoadingSurveyId: string | null
-  surveyEvents: Record<string, SurveyEventItem[]>
-  eventsLoadingSurveyId: string | null
-  onLoadSurveyEvents: (surveyId: string) => Promise<void>
-  onTakePhoto: (surveyId: string) => Promise<void> | void
-  onPickPhoto: (surveyId: string) => Promise<void> | void
-  onDeleteAttachment: (surveyId: string, localAttachmentId: string) => Promise<void> | void
-  onDeleteSurvey: (surveyId: string) => void
-  onSubmitSurvey: (surveyId: string) => Promise<void>
-  onRetrySurvey: (surveyId: string) => Promise<void>
-  onDiscardSurvey: (surveyId: string) => Promise<void>
-  onOpenFactor: (surveyId: string, factor: FactorKey) => Promise<void> | void
-  onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
-  onUpdateRegionVersion: (surveyId: string, region: RegionVersion) => Promise<void> | void
-  onUpdateVegetationStage: (surveyId: string, stage: VegetationStage) => Promise<void> | void
-  onUpdateIbpCas: (surveyId: string, ibpCas: IbpCas) => Promise<void> | void
-  onUpdateCas3Scale: (surveyId: string, value: boolean) => Promise<void> | void
-  onSwitchToV32: (surveyId: string) => Promise<void> | void
-  onOpenParcels: (surveyId: string) => Promise<void> | void
-  onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
-  onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
-}
 
 export function SurveyDetailScreen({
   apiUrl,
@@ -103,6 +71,8 @@ export function SurveyDetailScreen({
   onEnsureAttachmentPreviews,
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createDetailStyles(theme), [theme])
   const isHeroCompressedRef = useRef(false)
   const [isHeroCompressed, setIsHeroCompressed] = useState(false)
   const detail = surveyDetails[selectedSurvey.id]
@@ -268,6 +238,9 @@ export function SurveyDetailScreen({
     setIsHeroCompressed(nextCompressed)
   }
 
+  const isEventsTabActive = activeTab === "events"
+  const isEventsRefreshing = isEventsTabActive && eventsLoadingSurveyId === selectedSurvey.id
+
   return (
     <ScrollView
       style={styles.mainScroll}
@@ -275,6 +248,17 @@ export function SurveyDetailScreen({
       onScroll={handleDetailScroll}
       scrollEventThrottle={16}
       stickyHeaderIndices={[0]}
+      // DET-05: pull-to-refresh reloads the history timeline only while it's the active tab — the
+      // summary/debug tabs keep this ScrollView's plain bounce, no refresh affordance of their own.
+      refreshControl={
+        isEventsTabActive ? (
+          <RefreshControl
+            refreshing={isEventsRefreshing}
+            onRefresh={() => void onLoadSurveyEvents(selectedSurvey.id)}
+            tintColor={theme.colors.forest}
+          />
+        ) : undefined
+      }
     >
       <DetailHeader
         ref={detailHeaderRef}

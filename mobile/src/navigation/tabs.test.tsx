@@ -84,6 +84,8 @@ jest.mock("@react-navigation/native", () => {
       return ReactRef.createElement(ReactRef.Fragment, null, children)
     },
     getFocusedRouteNameFromRoute: (route: { focused?: string }) => route.focused,
+    DefaultTheme: { dark: false, colors: {} },
+    DarkTheme: { dark: true, colors: {} },
   }
 })
 jest.mock("@react-navigation/bottom-tabs", () => ({
@@ -109,7 +111,8 @@ jest.mock("./stacks/PublicMapStack", () => ({ PublicMapTabNavigator: () => null 
 jest.mock("./stacks/AccountStack", () => ({ AccountTabNavigator: () => null }))
 
 import { AppNavigation } from "./AppNavigation"
-import { JS_TAB_BAR_STYLE } from "./tab-config"
+import { defaultTheme } from "../app/theme"
+import { buildJsTabBarStyle } from "./tab-config"
 
 const FOUR_TABS = ["home", "surveys", "publicMap", "account"]
 
@@ -219,7 +222,9 @@ describe("the tab bar is hidden on parcel selection in both trees (D-13)", () =>
     expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual({
       display: "none",
     })
-    expect(options({ route: { focused: "surveysHome" } }).tabBarStyle).toEqual(JS_TAB_BAR_STYLE)
-    expect(options({ route: {} }).tabBarStyle).toEqual(JS_TAB_BAR_STYLE)
+    expect(options({ route: { focused: "surveysHome" } }).tabBarStyle).toEqual(
+      buildJsTabBarStyle(defaultTheme),
+    )
+    expect(options({ route: {} }).tabBarStyle).toEqual(buildJsTabBarStyle(defaultTheme))
   })
 })

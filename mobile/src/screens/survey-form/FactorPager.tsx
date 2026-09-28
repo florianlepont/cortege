@@ -11,7 +11,8 @@ import {
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
-import { brandColors, brandFieldState, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { brandColors, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { FACTOR_TITLES } from "../../app/constants"
 import type { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
 import { fr } from "../../i18n"
@@ -40,6 +41,8 @@ export function FactorPager({
   factorRetainedScores,
   methodVersion,
 }: FactorPagerProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const scrollRef = useRef<ScrollView | null>(null)
   const [pageWidth, setPageWidth] = useState(0)
   const hasScrolledToInitial = useRef(false)
@@ -116,7 +119,7 @@ export function FactorPager({
               : factorProgress.invalid > 0
                 ? "error"
                 : "empty"
-            const tone = brandFieldState[state]
+            const tone = theme.fieldState[state]
             return (
               <Pressable
                 key={factor}
@@ -151,7 +154,7 @@ export function FactorPager({
             <Ionicons
               name="chevron-back"
               size={22}
-              color={activeIndex === 0 ? brandColors.textSecondary : brandColors.forest}
+              color={activeIndex === 0 ? theme.colors.textSecondary : brandColors.forest}
             />
           </Pressable>
 
@@ -170,7 +173,7 @@ export function FactorPager({
             <Ionicons
               name="chevron-forward"
               size={22}
-              color={activeIndex === lastIndex ? brandColors.textSecondary : brandColors.forest}
+              color={activeIndex === lastIndex ? theme.colors.textSecondary : brandColors.forest}
             />
           </Pressable>
         </View>
@@ -191,7 +194,7 @@ export function FactorPager({
           <Ionicons
             name="arrow-forward-circle-outline"
             size={18}
-            color={hasNextIncomplete ? brandColors.white : brandColors.textSecondary}
+            color={hasNextIncomplete ? brandColors.white : theme.colors.textSecondary}
           />
           <Text
             style={[
@@ -207,85 +210,87 @@ export function FactorPager({
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  pages: {
-    flex: 1,
-  },
-  pageContent: {
-    padding: brandSpacing4.md,
-  },
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: brandColors.divider,
-    backgroundColor: brandColors.panel,
-    paddingHorizontal: brandSpacing4.md,
-    paddingTop: brandSpacing4.sm,
-    paddingBottom: brandSpacing4.md,
-    gap: brandSpacing4.sm,
-  },
-  dotsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: brandSpacing4.xs,
-  },
-  dotHit: {
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  dotActive: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  controlsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  chevron: {
-    width: 44,
-    height: 44,
-    borderRadius: brandRadius.field,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: brandColors.panelMuted,
-  },
-  chevronDisabled: {
-    opacity: 0.5,
-  },
-  positionText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: brandColors.textPrimary,
-  },
-  nextIncompleteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: brandSpacing4.xs,
-    minHeight: 44,
-    borderRadius: brandRadius.field,
-    backgroundColor: brandColors.forest,
-  },
-  nextIncompleteButtonDisabled: {
-    backgroundColor: brandColors.panelMuted,
-  },
-  nextIncompleteText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: brandColors.white,
-  },
-  nextIncompleteTextDisabled: {
-    color: brandColors.textSecondary,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    pages: {
+      flex: 1,
+    },
+    pageContent: {
+      padding: brandSpacing4.md,
+    },
+    footer: {
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+      backgroundColor: theme.colors.panel,
+      paddingHorizontal: brandSpacing4.md,
+      paddingTop: brandSpacing4.sm,
+      paddingBottom: brandSpacing4.md,
+      gap: brandSpacing4.sm,
+    },
+    dotsRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: brandSpacing4.xs,
+    },
+    dotHit: {
+      width: 24,
+      height: 24,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    dotActive: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+    },
+    controlsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    chevron: {
+      width: 44,
+      height: 44,
+      borderRadius: brandRadius.field,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.panelMuted,
+    },
+    chevronDisabled: {
+      opacity: 0.5,
+    },
+    positionText: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: theme.colors.textPrimary,
+    },
+    nextIncompleteButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: brandSpacing4.xs,
+      minHeight: 44,
+      borderRadius: brandRadius.field,
+      backgroundColor: brandColors.forest,
+    },
+    nextIncompleteButtonDisabled: {
+      backgroundColor: theme.colors.panelMuted,
+    },
+    nextIncompleteText: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: brandColors.white,
+    },
+    nextIncompleteTextDisabled: {
+      color: theme.colors.textSecondary,
+    },
+  })
+}

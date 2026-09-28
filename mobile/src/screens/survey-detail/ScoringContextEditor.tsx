@@ -7,10 +7,11 @@ import {
   isIbpCas,
   resolveMethodVersion,
 } from "@cortege/ibp-domain"
+import { useMemo } from "react"
 import { Switch, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { brandColors } from "../../app/brand-tokens"
 import { RegionVersion, SurveyDetailResponse, VegetationStage } from "../../app/types"
+import { useBrandTheme } from "../../app/theme"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../../app/vegetation"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
@@ -18,8 +19,8 @@ import { AppCard } from "../../ui/AppCard"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppStatusChip } from "../../ui/AppStatusChip"
-import { styles } from "./context-editor.styles"
-import { styles as sharedStyles } from "./styles"
+import { createContextEditorStyles } from "./context-editor.styles"
+import { createDetailStyles } from "./styles"
 import { LocalDraftMeta } from "./useLocalDraftSummary"
 
 const t = fr.surveyDetail.summary
@@ -97,6 +98,9 @@ export function ScoringContextEditor({
   onUpdateCas3Scale,
   onSwitchToV32,
 }: ScoringContextEditorProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createContextEditorStyles(theme), [theme])
+  const sharedStyles = useMemo(() => createDetailStyles(theme), [theme])
   const resolved = resolveMethodVersion(scoringContext.ibp_method_version)
   const { ibp_cas: ibpCas, ibp_cas3_scale: ibpCas3Scale } = scoringContext
   const activeRegionLabel =
@@ -235,7 +239,7 @@ export function ScoringContextEditor({
               onValueChange={(value) => {
                 void onUpdateCas3Scale(surveyId, value)
               }}
-              trackColor={{ false: brandColors.divider, true: brandColors.moss }}
+              trackColor={{ false: theme.colors.divider, true: theme.colors.moss }}
               accessibilityRole="switch"
               accessibilityLabel={m.cas3ScaleLabel}
               accessibilityHint={m.cas3ScaleHint}

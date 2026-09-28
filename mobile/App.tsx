@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
 import { AppNavigation } from "./src/navigation/AppNavigation"
-import { brandColors } from "./src/app/brand-tokens"
+import { BrandThemeProvider, useBrandTheme } from "./src/app/theme"
 import { formatUnsyncedWorkSummary } from "./src/app/local-data-owner"
 import { OnboardingFlow } from "./src/screens/onboarding/OnboardingFlow"
 import { AuthGateScreen } from "./src/screens/AuthGateScreen"
@@ -26,6 +26,11 @@ void SplashScreen.preventAutoHideAsync()
  */
 function AppShell() {
   const { state: session, actions } = useSession()
+  const theme = useBrandTheme()
+  const containerStyle = useMemo(
+    () => [styles.container, { backgroundColor: theme.semanticColors.backgroundCanvas }],
+    [theme],
+  )
   const [profileSetupSkipped, setProfileSetupSkipped] = useState(false)
   // ONB-01: optimistically assume the carousel + permissions flow was already seen, so a
   // returning user never sees it flash on screen; the local_meta read (best-effort, see
@@ -55,8 +60,8 @@ function AppShell() {
     session.isAuthenticated && needsProfileSetup && !showOwnerConflictOverlay
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.container} edges={["left", "right"]}>
+    <View style={containerStyle}>
+      <SafeAreaView style={containerStyle} edges={["left", "right"]}>
         <View style={styles.appLayout}>
           <AppNavigation />
         </View>
@@ -122,9 +127,11 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AppStateProvider>
-          <AppShell />
-        </AppStateProvider>
+        <BrandThemeProvider>
+          <AppStateProvider>
+            <AppShell />
+          </AppStateProvider>
+        </BrandThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   )
@@ -133,7 +140,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: brandColors.canvas,
   },
   appLayout: {
     flex: 1,
