@@ -58,6 +58,7 @@ list is never ambiguous.
 - [x] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
 - [x] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone (completed 2026-09-27)
 - [x] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F (completed 2026-09-28)
+- [ ] **Phase 12.1: Owner acceptance testing** (INSERTED) - The owner tests the app on their own phone; display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready for the association's field tests
 - [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
 
 ## Phase Details
@@ -623,10 +624,26 @@ DS-13, DET-03/04, HOME-06, LIST-07, ACC-02) to its batch.
 each batch shipped; `12-VALIDATION.md` maps each success criterion above to its batch.
 **UI hint**: yes
 
+### Phase 12.1: Owner acceptance testing (INSERTED)
+
+**Goal**: The app is good enough to put in front of the association's observers: the owner has used it on their own phone, every display bug and UX friction they found is logged and triaged, and the blockers are fixed.
+**Depends on**: Phase 12
+**Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-28 owner decision
+**Source**: owner decision 2026-09-28. Testing the app on their own phone, the owner still finds many ergonomics problems and display bugs, and judged Phase 13's field tests with the association premature until those are dealt with.
+**Success Criteria** (what must be TRUE):
+
+  1. The owner has used the app on their own phone across the main flows (sign-in, Home, a survey from creation to submission, Mes Relevés, survey detail, Explorer, Compte), in light and dark mode.
+  2. Every display bug and UX friction the owner finds is logged in one grid (`docs/user-tests/owner-acceptance.md`) with an ID, the screen concerned, a description (and a screenshot where useful), and triaged as *blocker before field tests*, *fix later* or *rejected* (with a reason).
+  3. Fixes land in batches; after each batch the owner re-tests the entries it closes, and an entry is closed only when the owner confirms it on the phone.
+  4. The owner explicitly records that the app is ready to open field tests to the association, with no open *blocker before field tests* entry left.
+
+**Plans**: TBD. The phase is an iterative loop (owner test → triage → fix batch → re-test), not a fixed plan list.
+**UI hint**: yes
+
 ### Phase 13: Field Validation
 
 **Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
-**Depends on**: Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
+**Depends on**: Phase 12.1 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
 **Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
 **Success Criteria** (what must be TRUE):
 
@@ -642,7 +659,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13
+Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 12.1 → 13
 
 Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 2 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 8, whose offline-map work builds on the map Phase 2 repoints. Phases 3, 4, 7, 9 and 12 (the UX/UI audit, folded into MVP by owner decision 2026-09-27) are threaded between the phases they depend on for components (Phase 3 before Phase 5, so Factor A's genus-list UI reuses the new field components) or for a stable screen to redesign (Phase 7 after Phase 6, Phase 9 after Phase 8, Phase 12 last, right before Phase 13). Phases 10–11 do not depend on Phases 1.6–1.9 or Phase 2 either, so they can interleave if the schedule requires it.
 
@@ -672,6 +689,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 10. Survey Export & Ownership | 1/1 | Complete   | 2026-09-27 |
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
+| 12.1. Owner acceptance testing | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
 
 ## Coverage
