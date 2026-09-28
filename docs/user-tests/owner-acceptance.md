@@ -17,7 +17,7 @@ An entry is closed only when the owner confirms the fix on the phone.
 
 | Date | Phone / OS | Build | Theme | Flows covered |
 |------|------------|-------|-------|---------------|
-| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft. Step 5: Mes Relevés |
+| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft. Step 5: Mes Relevés. Step 6: Explorer (after a reinstall with a renewed signing profile) |
 
 Flows to cover (success criterion 1): sign-in, Home, a survey from creation to submission,
 Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
@@ -87,8 +87,30 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-57 | Mes Relevés, swipe to delete | A small margin is missing between the "Supprimer" button and the card. | Display bug | 🟡 | 🔲 Open | | Screenshot 20:18 |
 | OA-58 | Mes Relevés | Unnamed drafts show as rows with no title at all. | Display bug | 🟡 | 🔲 Open | | Found by Claude; goes with OA-18 |
 | OA-59 | Survey detail, map | Owner idea: a button to see the survey on the map, or tapping the map opens the Explorer tab on it. Parcel editing then moves to a dedicated screen. | Suggestion | 🟡 | 🔲 Open | | Claude agreed (chat 2026-09-28). Owner decision: Explorer also shows the user's own drafts (to that user only, other members still see submitted surveys only), so the button works for drafts too |
+| OA-60 | Explorer | While panning and zooming, the iPhone's hang detector reports freezes of 0.5 to 3 s ("Cortege 1081 ms", "3073 ms"). | Functional bug | 🔴 | 🔲 Open | | Owner recordings 2026-09-28 23:40 and 23:44 |
+| OA-61 | Explorer | Two map providers show on top of each other when zooming: the IGN raster tiles (`UrlTile`, `data.geopf.fr`) are drawn over the Apple map, load in patches, flicker and disappear. In dark mode the light IGN tiles clash with the dark Apple map. | Display bug | 🔴 | 🔲 Open | | Owner was right; seen in the 23:44 recording. See the basemap decision below the table |
+| OA-62 | Explorer | The Plan / Satellite switch does not work: with Satellite selected only the Apple map shows, the IGN orthophoto never appears. | Functional bug | 🔴 | 🔲 Open | | Compare the 23:40 (Satellite) and 23:44 (Plan) recordings |
+| OA-63 | Explorer | Far too many buttons; the "Explorer" chip is of no use. | UX friction | 🟡 | 🔲 Open | | |
+| OA-64 | Explorer | "Aucun relevé dans cette zone" shows twice (top-left chip and bottom bar). | Display bug | 🟡 | 🔲 Open | | |
+| OA-65 | Explorer | The refresh button is of no use. | UX friction | 🟡 | 🔲 Open | | |
+| OA-66 | Explorer, offline areas | The offline-download panel opens too high. Owner question: doesn't Apple's map library, or another one such as OSM, already offer offline maps? | Display bug | 🟡 | 🔲 Open | | Answered in the chat of 2026-09-28; see the basemap decision below the table |
+| OA-67 | Explorer | The filters are of no use on this view. | UX friction | 🟡 | 🔲 Open | | Remove, or move to the search page (OA-52) |
+| OA-68 | Whole app | Overall the interface looks dated rather than modern, with little use of native Liquid Glass. | UX friction | 🔴 | 🔲 Open | | Cross-cutting design direction for the redesign mock-ups (OA-25, OA-46, OA-52, OA-56) |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
+
+
+### Open decision: basemap and offline maps (OA-61, OA-62, OA-66)
+
+Today Explorer is an Apple map (`react-native-maps`) with IGN raster tiles (Plan IGN, orthophoto)
+drawn on top, and offline areas are IGN tiles downloaded by the app. Apple's MapKit gives no
+offline download to third-party apps. Options to choose from before the fix batch:
+
+1. Apple map only (standard and satellite are native and work well), cadastre overlay kept; offline
+   areas dropped or limited to the cadastre.
+2. MapLibre with IGN or OpenStreetMap vector tiles instead of the Apple map: one provider, a real dark
+   style, native offline packs. Larger change (replaces the map library).
+3. Keep the current mix and fix the overlay (not recommended: the mix is what causes OA-61).
 
 ---
 
