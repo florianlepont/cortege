@@ -17,7 +17,7 @@ An entry is closed only when the owner confirms the fix on the phone.
 
 | Date | Phone / OS | Build | Theme | Flows covered |
 |------|------------|-------|-------|---------------|
-| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28 |
+| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft |
 
 Flows to cover (success criterion 1): sign-in, Home, a survey from creation to submission,
 Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
@@ -47,7 +47,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-17 | Accueil | One single draft shows as three tiles: the blocked-sync alert, the "Reprendre" card and the recent-survey card. The title also reads "Reprendre Relevé sans titre". | UX friction | 🔴 | 🔲 Open | | First screen, confusing |
 | OA-18 | Accueil, survey detail | A draft created a moment ago (1/10 factors) is "Sync bloquée", and nothing explains why, not even the survey detail. Home calls every blocked sync a "conflit", and the pill says "À jour" at the same time. | Functional bug | 🔴 | 🔲 Open | | Core value: the survey never reaches the server. Root cause to find first |
 | OA-19 | Accueil | The "Aucune parcelle relevée dans un rayon de 2,5 km." card is wider than the other cards. | Display bug | 🟡 | 🔲 Open | | Visible in the recording: it runs to the screen edges |
-| OA-20 | Survey form, all steps; factor screens | The hero card is cut by the header. | Display bug | 🔴 | 🔲 Open | | Visible on every form screenshot, and on each factor screen |
+| OA-20 | Survey form, all steps; factor screens; survey detail | The hero card is cut by the header. | Display bug | 🔴 | 🔲 Open | | Visible on every form screenshot, and on each factor screen |
 | OA-21 | Whole app | The header is not consistent from one screen to the next. | UX friction | 🟡 | 🔲 Open | | |
 | OA-22 | Survey form, hero | The "Nom requis" and "Aucune parcelle" chips: their purpose is not understandable. | UX friction | 🟡 | 🔲 Open | | |
 | OA-23 | Survey form, hero | The hero does not collapse cleanly on scroll: the chips' text is left drawn over the body text. | Display bug | 🟡 | 🔲 Open | | Screenshot 19:46 |
@@ -64,6 +64,17 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-34 | Survey form and factor screens, dark mode | Several texts are nearly invisible in dark mode: section titles ("Contexte de notation", "Observations"), unselected "Cas" chips, genus chips, "En attente". | Display bug | 🔴 | 🔲 Open | | Found by Claude on the owner's screenshots |
 | OA-35 | Survey form | Text defects: "Etape 2/3" (missing accent), "Dendromicroh abitats" broken mid-word, "Milieux ouverts florif…" truncated. | Display bug | 🟡 | 🔲 Open | | Found by Claude on the owner's screenshots; see also OA-09 |
 | OA-36 | Survey form, Méthode IBP card | With v3.2 selected, the card shows the v3.0 description ("pour refaire un relevé avec la même méthode…"). | UX friction | 🟡 | 🔲 Open | | Found by Claude; check whether it is the hint of the other option |
+| OA-37 | Survey detail, hero | The "Brouillon" and "Local" chips are not easy to understand. A callout in words ("Brouillon, pas encore synchronisé") would say where the survey stands. | UX friction | 🟡 | 🔲 Open | | |
+| OA-38 | Survey detail, hero | "Local" shows although the phone is online. A draft is meant to reach the server too; "Local" should only show when there has been no connection. | Functional bug | 🔴 | 🔲 Open | | Likely the same root cause as OA-18: drafts do not reach the server |
+| OA-39 | Survey detail, hero | The "P/G 5 / 35 · faible" and "C 0 / 15 · faible" labels under the score add little. Show the score detail when the score is tapped instead. | UX friction | 🟡 | 🔲 Open | | |
+| OA-40 | Survey detail | The "Soumission verrouillée / Verrouillé" card makes no sense now that there is no moderation. There is no lock: a survey simply leaves draft once the 10 factors and all its information are complete, and can then be saved as finished. | UX friction | 🔴 | 🔲 Open | | Owner decision on the concept; the wording "terminé" vs "soumis" to settle in the mock-up |
+| OA-41 | Survey detail | The submission deadline ("6j 23h restant", "Délai de soumission", "Échéance 05/10/2026") must go: without moderation it has no purpose. Out of MVP scope for now. | Functional bug | 🔴 | 🔲 Open | | Owner scope decision. Touches the API too (`expires_at`, the `expired` status): record it in the roadmap before building |
+| OA-42 | Survey detail | Scroll bug: when the hero collapses the page jumps, the map slides under the hero and the page snaps back towards the top. | Display bug | 🟡 | 🔲 Open | | Owner recording 2026-09-28 20:07 |
+| OA-43 | Survey detail, layout | Information is not at the right level: the map is squeezed at the bottom on opening, and photos and photo management are hidden behind a small camera button on the map. | UX friction | 🔴 | 🔲 Open | | Photos are part of the survey and must be visible |
+| OA-44 | Survey detail, map | The "Modifier les parcelles" button sits after the map; editing the parcels from the map itself would be more logical. | UX friction | 🟡 | 🔲 Open | | |
+| OA-45 | Survey detail, score | The IBP score appears twice, as a list and as tiles. Choose one. | UX friction | 🟡 | 🔲 Open | | |
+| OA-46 | Survey detail, layout | Owner proposal: one summary page (key information, a few photos, the map), then buttons that open sub-pages: "Contexte et parcelles", "Score IBP". Less to scroll. | Suggestion | 🔴 | 🔲 Open | | Redesign: mock-up first. Absorbs OA-42 to OA-45 |
+| OA-47 | Survey detail, map | The map shows half of France instead of zooming on the survey's parcels. | Display bug | 🟡 | 🔲 Open | | Found by Claude on the owner's screenshot and recording |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
