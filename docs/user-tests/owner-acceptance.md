@@ -17,7 +17,7 @@ An entry is closed only when the owner confirms the fix on the phone.
 
 | Date | Phone / OS | Build | Theme | Flows covered |
 |------|------------|-------|-------|---------------|
-| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft. Step 5: Mes Relevés. Step 6: Explorer (after a reinstall with a renewed signing profile). Step 8: Compte |
+| 2026-09-28 | iPhone, iOS 27.0 | Release, `main` at 8f931c1 (includes PR #188) | Light | Step 1: carousel, sign-in, account creation and profile setup. Step 2: Accueil. Step 3 (survey form) up to factor A, in light and dark mode; stopped by OA-28. Step 4: survey detail of a draft. Step 5: Mes Relevés. Step 6: Explorer (after a reinstall with a renewed signing profile). Step 8: Compte and Paramètres. First pass complete |
 
 Flows to cover (success criterion 1): sign-in, Home, a survey from creation to submission,
 Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
@@ -101,8 +101,11 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-71 | Compte | The "Contributeur" label is of no use while there is no moderation. | UX friction | 🟡 | 🔲 Open | | |
 | OA-72 | Compte, profile | The "Sauvegardé" label adds little. Show a save state only when there are unsaved changes, and make saving behave the same way across the whole app. | UX friction | 🟡 | 🔲 Open | | Cross-cutting: one save pattern for profile, survey form, rename |
 | OA-74 | Compte | "Crédits photographiques" sits under "Connexion", where it makes no sense; it belongs under "À propos". | UX friction | 🟡 | 🔲 Open | | |
-| OA-75 | Compte | "Synchronisation et données" and "À propos" (with the version number) have nothing to do in Compte; they belong in Paramètres only. Compte keeps the profile, sign-in details and sign-out. | UX friction | 🟡 | 🔲 Open | | Owner decision on the split between Compte and Paramètres |
-| OA-76 | Compte, profile picture | After picking a photo for the profile picture, nothing loads and the photo never shows. | Functional bug | 🔴 | 🔲 Open | | Check the upload (`/me/profile-picture`, StorageService on the VPS) and the display (bytes served by the API with the bearer token), in the API log |
+| OA-75 | Compte | "Synchronisation et données" and "À propos" (with the version number) have nothing to do in Compte; they belong in Paramètres only. Compte keeps the profile, sign-in details and sign-out. | UX friction | 🟡 | 🔲 Open | | Owner decision on the split between Compte and Paramètres; see OA-78 for the sync section |
+| OA-76 | Compte, profile picture | After picking a photo for the profile picture, nothing loads and the photo never shows. | Functional bug | 🔴 | 🔲 Open | | The upload fails: Paramètres shows "Impossible d'envoyer la photo de profil, réessayez". Check `/me/profile-picture` and StorageService on the VPS in the API log |
+| OA-77 | Paramètres | The profile-picture error ("Impossible d'envoyer la photo de profil, réessayez") shows up in Paramètres, where it has no place. Status messages must appear where the action happened. | UX friction | 🟡 | 🔲 Open | | Confirms OA-76 |
+| OA-78 | Paramètres | The whole synchronisation section ("Synchroniser maintenant", "Récupérer les changements serveur", "Rafraîchir la liste locale", "Rafraîchir les pièces jointes") was for debugging and is no longer needed: remove it. | UX friction | 🟡 | 🔲 Open | | Owner decision. Sync stays automatic, with the status pill and pull to refresh (OA-12) |
+| OA-79 | Paramètres | The page could be more elegant and modern. | UX friction | 🟡 | 🔲 Open | | Redesign with OA-68 and OA-70 |
 | OA-73 | Compte, email | Changing the email fails with a generic error ("Impossible de changer l'adresse e-mail…"), which hides the real cause. | Functional bug | 🔴 | 🔲 Open | | The API asks Auth0 to change the email (`auth0-management.service.ts`); Auth0 refuses this for Apple or Google accounts, but the owner uses email and password, so it is a real bug. Any Auth0 refusal becomes a 500 with the detail lost: read the API log for the Auth0 message (candidates: a missing `update:users` scope on the management client, or a field Auth0 requires for database connections) |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
