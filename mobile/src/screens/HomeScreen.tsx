@@ -139,7 +139,7 @@ export function HomeScreen({
       style={styles.scroll}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 100 },
+        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 80 },
       ]}
       showsVerticalScrollIndicator={false}
       refreshControl={

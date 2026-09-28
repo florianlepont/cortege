@@ -66,9 +66,9 @@ export const nativeTabScreenOptions = ({ route }: { route: { name: keyof RootTab
 // DS-13: the bar's content area (icons + labels) is a fixed size; only the bottom padding — and
 // so the overall height — grows with the device's own home-indicator/gesture-bar inset, instead
 // of the two hard-coded per-platform guesses this replaces.
-const JS_TAB_BAR_CONTENT_HEIGHT = 50
-const JS_TAB_BAR_PADDING_TOP = Platform.select({ ios: 8, default: 6 })
-const JS_TAB_BAR_MIN_PADDING_BOTTOM = 10
+const JS_TAB_BAR_CONTENT_HEIGHT = 56
+const JS_TAB_BAR_PADDING_TOP = 8
+const JS_TAB_BAR_MIN_PADDING_BOTTOM = 16
 
 export type TabBarInsets = { bottom: number }
 

@@ -53,11 +53,16 @@ function AppShell() {
     !session.currentUser.first_name &&
     !session.currentUser.last_name
 
-  const showAuthOverlay = !session.isAuthenticated
   const showOwnerConflictOverlay =
     session.isAuthenticated && session.localDataOwnerStatus === "conflict"
   const showProfileSetupOverlay =
     session.isAuthenticated && needsProfileSetup && !showOwnerConflictOverlay
+
+  const showAuthOverlay =
+    !session.isAuthenticated &&
+    !showOwnerConflictOverlay &&
+    !showProfileSetupOverlay &&
+    !showOnboarding
 
   return (
     <View style={containerStyle}>

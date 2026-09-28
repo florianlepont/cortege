@@ -51,7 +51,7 @@ export function AppButton({
     variant === "secondary"
       ? theme.componentColors.button.secondaryBorder
       : variant === "dangerSoft"
-        ? brandColors.terracotta
+        ? theme.onSurface.danger
         : brandColors.white
   const iconSize = size === "lg" ? 18 : size === "sm" ? 15 : 16
   const isDisabled = disabled || loading
