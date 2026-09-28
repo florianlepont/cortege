@@ -77,7 +77,7 @@ export const surveyOpsStatusFr = {
     statusText(`Soumission de « ${name} » reportée : ${OWNER_PENDING}`),
   submitted: ({ name }: { name: string }) => statusText(`« ${name} » a été soumis`),
   submitRejected: ({ name }: { name: string }) =>
-    statusText(`Soumission de « ${name} » refusée — ouvrez le relevé pour corriger`),
+    statusText(`Soumission de « ${name} » refusée : ouvrez le relevé pour corriger`),
   submitLoginRequired: () => statusText("Connectez-vous pour soumettre le relevé"),
   submitFailed: ({ name }: { name: string }) =>
     statusText(`Soumission de « ${name} » impossible, réessayez plus tard`),

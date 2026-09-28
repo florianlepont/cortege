@@ -44,7 +44,7 @@ export const componentsFr = {
   },
   collapsibleSection: {
     toggleLabel: ({ title, expanded }: { title: string; expanded: boolean }) =>
-      `${title} — ${expanded ? "réduire" : "développer"}`,
+      `${title}, ${expanded ? "réduire" : "développer"}`,
   },
   ibpScoreBadge: {
     noScore: "—",

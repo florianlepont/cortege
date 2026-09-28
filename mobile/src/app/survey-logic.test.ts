@@ -445,7 +445,7 @@ describe("labels read from the catalogue (D-06)", () => {
     expect(bText).not.toMatch(/plafonn/)
     expect(bText).not.toMatch(/covered_autochthonous_percent|couvert autochtone/i)
     expect(factorInputHints.G.join(" ")).toMatch(/0, 2 ou 5/)
-    expect(factorInputHints.H.join(" ")).toMatch(/0 \(recent\), 2 \(partiel\) ou 5 \(ancien\)/)
+    expect(factorInputHints.H.join(" ")).toMatch(/0 \(récent\), 2 \(partiel\) ou 5 \(ancien\)/)
   })
 
   test("the v3.2 catalogue has cas labels and captions for cas 1 to 4", () => {

@@ -10,12 +10,12 @@ export const onboardingFr = {
       {
         eyebrow: "10 FACTEURS",
         title: "Évaluez la biodiversité d'une parcelle",
-        body: "L'Indice de Biodiversité Potentielle note dix facteurs de terrain — essences, bois mort, vieux arbres, connectivité — pour donner une note claire sur 50.",
+        body: "L'Indice de Biodiversité Potentielle note dix facteurs observés sur le terrain, comme les essences autochtones, le bois mort, les très gros arbres vivants ou les milieux aquatiques, pour donner une note claire sur 50.",
       },
       {
         eyebrow: "HORS LIGNE",
         title: "Travaillez sans réseau",
-        body: "Vos relevés sont enregistrés sur l'appareil et se synchronisent dès que le réseau revient. Rien n'est perdu en forêt.",
+        body: "Vos relevés sont enregistrés sur l'appareil et se synchronisent dès que le réseau revient.\nRien n'est perdu en forêt.",
       },
       {
         eyebrow: "CARTE MEMBRES",

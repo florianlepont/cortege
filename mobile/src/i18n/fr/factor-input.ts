@@ -19,7 +19,7 @@ export const factorInputFr = {
     valueLabel: ({ label, percent }: { label: string; percent: number }) =>
       `${label} : ${percent} %`,
     fieldLabel: ({ label, percent }: { label: string; percent: number }) =>
-      `${label} — ${percent} %`,
+      `${label} : ${percent} %`,
   },
   // FLOW-01: factor B (5 strata tiers, chip-derived count). Height thresholds vary by cas/version
   // and are already shown in FactorDetailScreen's "Que relever" hints panel, so the tier names
