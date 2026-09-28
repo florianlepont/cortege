@@ -28,7 +28,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 
 | ID | Screen | Description | Type | Triage | Status | Fix (PR) | Notes |
 |----|--------|-------------|------|--------|--------|----------|-------|
-| OA-01 | Onboarding carousel | The green bump under each slide's text (`BrandBump`) adds nothing. If a graphic is wanted, use the marten illustration (`mobile/assets/auth/marten.png`) instead. | Display bug | 🟡 | 🔲 Open | | Owner confirmed: replace with the marten |
+| OA-01 | Onboarding carousel | The green bump under each slide's text (`BrandBump`) adds nothing. If a graphic is wanted, use the marten illustration (`mobile/assets/auth/marten.png`) instead. | Display bug | 🟡 | 🔲 Open | | Owner confirmed: replace with the marten, but not in the bump's place: give it its own well-composed spot on the slide (show the owner options before the fix) |
 | OA-02 | Onboarding carousel, slide 1 | The body lists factors that are not the IBP factors ("essences, bois mort, vieux arbres, connectivité"; connectivity is not a factor). Name real ones, e.g. native species, standing and fallen dead wood, very large living trees, microhabitats. | Functional bug | 🔴 | 🔲 Open | | Wrong content about the method, in front of ecologists |
 | OA-03 | All screens | Do not use the dash "—" in UI texts. About 40 French catalogue strings contain one (`mobile/src/i18n/fr/`), including slide 1. | Display bug | 🟡 | 🔲 Open | | Owner writing rule, applies to every new text |
 | OA-04 | Onboarding carousel, slide 2 | "Rien n'est perdu en forêt." needs a line break before it. | Display bug | 🟡 | 🔲 Open | | |
