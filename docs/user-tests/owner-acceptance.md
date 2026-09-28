@@ -100,7 +100,9 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-70 | Compte | The page could be more modern and friendlier; today it looks like a web page. | UX friction | 🟡 | 🔲 Open | | With OA-13 the Compte tab goes, so the page opens from the avatar; redesign with OA-68 |
 | OA-71 | Compte | The "Contributeur" label is of no use while there is no moderation. | UX friction | 🟡 | 🔲 Open | | |
 | OA-72 | Compte, profile | The "Sauvegardé" label adds little. Show a save state only when there are unsaved changes, and make saving behave the same way across the whole app. | UX friction | 🟡 | 🔲 Open | | Cross-cutting: one save pattern for profile, survey form, rename |
-| OA-73 | Compte, email | Changing the email fails with a generic error ("Impossible de changer l'adresse e-mail…"), which hides the real cause. | Functional bug | 🔴 | 🔲 Open | | The API asks Auth0 to change the email (`auth0-management.service.ts`); Auth0 refuses this for accounts signed in with Apple or Google, and any other Auth0 refusal becomes a 500. Owner to say how they signed in |
+| OA-74 | Compte | "Crédits photographiques" sits under "Connexion", where it makes no sense; it belongs under "À propos". | UX friction | 🟡 | 🔲 Open | | |
+| OA-75 | Compte | "Synchronisation et données" and "À propos" (with the version number) have nothing to do in Compte; they belong in Paramètres only. Compte keeps the profile, sign-in details and sign-out. | UX friction | 🟡 | 🔲 Open | | Owner decision on the split between Compte and Paramètres |
+| OA-73 | Compte, email | Changing the email fails with a generic error ("Impossible de changer l'adresse e-mail…"), which hides the real cause. | Functional bug | 🔴 | 🔲 Open | | The API asks Auth0 to change the email (`auth0-management.service.ts`); Auth0 refuses this for Apple or Google accounts, but the owner uses email and password, so it is a real bug. Any Auth0 refusal becomes a 500 with the detail lost: read the API log for the Auth0 message (candidates: a missing `update:users` scope on the management client, or a field Auth0 requires for database connections) |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
