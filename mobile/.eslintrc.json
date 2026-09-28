@@ -24,6 +24,7 @@
       "excludedFiles": [
         "src/i18n/**",
         "src/app/brand-tokens.ts",
+        "src/app/theme.ts",
         "src/**/*.test.ts",
         "src/**/*.test.tsx"
       ],

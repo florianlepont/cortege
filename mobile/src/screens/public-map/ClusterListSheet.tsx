@@ -1,13 +1,14 @@
-import { memo, useCallback } from "react"
+import { memo, useCallback, useMemo } from "react"
 import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import type { PublicMapItem } from "../../app/types"
 import { fr } from "../../i18n"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { surveyPlaceLabel } from "./SelectedSurveyCard"
-import { panelStyles as styles } from "./styles"
+import { createPanelStyles } from "./styles"
 
 const t = fr.publicMap
 
@@ -17,6 +18,8 @@ type ClusterRowProps = {
 }
 
 const ClusterRow = memo(function ClusterRow({ item, onSelect }: ClusterRowProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createPanelStyles(theme), [theme])
   const handlePress = useCallback(() => onSelect(item.survey_id), [item.survey_id, onSelect])
   const place = surveyPlaceLabel(item)
   return (
@@ -54,6 +57,8 @@ export const ClusterListSheet = memo(function ClusterListSheet({
   onSelect,
   onClose,
 }: ClusterListSheetProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createPanelStyles(theme), [theme])
   return (
     <View style={styles.card}>
       <AppSectionHeader

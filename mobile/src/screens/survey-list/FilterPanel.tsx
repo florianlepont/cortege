@@ -1,6 +1,7 @@
+import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { brandColors } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type {
   SurveyAttachmentFilter,
   SurveyBlockedFilter,
@@ -20,7 +21,7 @@ import {
   SYNC_OPTIONS,
 } from "./filter-options"
 import type { FilterOption } from "./filter-options"
-import { styles as sharedStyles } from "./styles"
+import { createListStyles } from "./styles"
 
 const t = fr.surveyList.filters
 
@@ -47,11 +48,13 @@ function FilterSection<T extends string>({
   options,
   value,
   onChange,
+  styles,
 }: {
   label: string
   options: ReadonlyArray<FilterOption<T>>
   value: T
   onChange: (next: T) => void
+  styles: ReturnType<typeof createStyles>
 }) {
   return (
     <View style={styles.filterSection}>
@@ -75,6 +78,10 @@ type FilterPanelProps = SurveyListFilters & { advancedOpen: boolean }
 // Status chips (shown when a status is picked or the panel is open) and the
 // advanced panel: dates, sync, blocked, attachments, sort, reset.
 export function FilterPanel({ advancedOpen, ...filters }: FilterPanelProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  const listStyles = useMemo(() => createListStyles(theme), [theme])
+
   return (
     <>
       {/* P2-COMPACT-02: Status chips only when active filter or advanced panel open */}
@@ -84,6 +91,7 @@ export function FilterPanel({ advancedOpen, ...filters }: FilterPanelProps) {
           options={STATUS_OPTIONS}
           value={filters.statusFilter}
           onChange={filters.setStatusFilter}
+          styles={styles}
         />
       ) : null}
 
@@ -119,24 +127,28 @@ export function FilterPanel({ advancedOpen, ...filters }: FilterPanelProps) {
             options={SYNC_OPTIONS}
             value={filters.syncFilter}
             onChange={filters.setSyncFilter}
+            styles={styles}
           />
           <FilterSection
             label={t.sections.blocked}
             options={BLOCKED_OPTIONS}
             value={filters.blockedFilter}
             onChange={filters.setBlockedFilter}
+            styles={styles}
           />
           <FilterSection
             label={t.sections.attachments}
             options={ATTACHMENT_OPTIONS}
             value={filters.attachmentFilter}
             onChange={filters.setAttachmentFilter}
+            styles={styles}
           />
           <FilterSection
             label={t.sections.sort}
             options={SORT_OPTIONS}
             value={filters.sortMode}
             onChange={filters.setSortMode}
+            styles={styles}
           />
 
           <AppButton
@@ -144,7 +156,7 @@ export function FilterPanel({ advancedOpen, ...filters }: FilterPanelProps) {
             variant="secondary"
             size="sm"
             onPress={filters.resetFilters}
-            style={sharedStyles.resetButton}
+            style={listStyles.resetButton}
           />
         </View>
       ) : null}
@@ -152,42 +164,44 @@ export function FilterPanel({ advancedOpen, ...filters }: FilterPanelProps) {
   )
 }
 
-const styles = StyleSheet.create({
-  filterSection: {
-    gap: 6,
-  },
-  filterSectionLabel: {
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: "800",
-    letterSpacing: 0.2,
-    color: brandColors.forest,
-    textTransform: "uppercase",
-  },
-  filterChipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    paddingRight: 8,
-  },
-  advancedPanel: {
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: brandColors.divider,
-    paddingTop: 10,
-  },
-  dateInputsRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  dateInputBlock: {
-    flex: 1,
-    gap: 4,
-  },
-  compactInput: {
-    minHeight: 40,
-    fontSize: 15,
-    lineHeight: 18,
-    fontWeight: "600",
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    filterSection: {
+      gap: 6,
+    },
+    filterSectionLabel: {
+      fontSize: 12,
+      lineHeight: 14,
+      fontWeight: "800",
+      letterSpacing: 0.2,
+      color: theme.colors.forest,
+      textTransform: "uppercase",
+    },
+    filterChipRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      paddingRight: 8,
+    },
+    advancedPanel: {
+      gap: 12,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+      paddingTop: 10,
+    },
+    dateInputsRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    dateInputBlock: {
+      flex: 1,
+      gap: 4,
+    },
+    compactInput: {
+      minHeight: 40,
+      fontSize: 15,
+      lineHeight: 18,
+      fontWeight: "600",
+    },
+  })
+}

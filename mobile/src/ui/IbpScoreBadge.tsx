@@ -1,7 +1,8 @@
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { bandTone, totalBand } from "@cortege/ibp-domain"
-import { brandTypography, ibpScoreTokens } from "../app/brand-tokens"
+import { brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 
 type IbpScoreBadgeProps = {
@@ -10,13 +11,16 @@ type IbpScoreBadgeProps = {
 }
 
 // Colours of an IBP total out of 50, from the package's total band (01.8 D-03 amended).
-export function getIbpScoreColors(score: number | null | undefined) {
-  if (score == null) return ibpScoreTokens.colors.empty
-  return ibpScoreTokens.colors[bandTone(totalBand(score))]
+// Phase 12 (DS-12): the tones themselves now invert with the app theme, so this takes the resolved
+// theme instead of reading a static token.
+export function getIbpScoreColors(score: number | null | undefined, theme: BrandTheme) {
+  if (score == null) return theme.ibpScoreColors.empty
+  return theme.ibpScoreColors[bandTone(totalBand(score))]
 }
 
 export function IbpScoreBadge({ score, size = "md" }: IbpScoreBadgeProps) {
-  const colors = getIbpScoreColors(score)
+  const theme = useBrandTheme()
+  const colors = getIbpScoreColors(score, theme)
   const isSm = size === "sm"
 
   return (

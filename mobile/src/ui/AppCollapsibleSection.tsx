@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react"
+import { ReactNode, useMemo, useState } from "react"
 import { Pressable, StyleSheet } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
@@ -11,13 +11,8 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated"
-import {
-  brandColors,
-  brandMotion,
-  brandRadius,
-  brandSpacing,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandMotion, brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppStatusChip } from "./AppStatusChip"
 
@@ -34,6 +29,8 @@ export function AppCollapsibleSection({
   defaultExpanded = false,
   children,
 }: AppCollapsibleSectionProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const [expanded, setExpanded] = useState(defaultExpanded)
   const chevronRotation = useSharedValue(defaultExpanded ? 180 : 0)
 
@@ -61,7 +58,7 @@ export function AppCollapsibleSection({
         <Text style={styles.title}>{title}</Text>
         {badge ? <AppStatusChip label={badge} tone="neutral" /> : null}
         <Animated.View style={chevronStyle}>
-          <Ionicons name="chevron-down" size={14} color={brandColors.textSecondary} />
+          <Ionicons name="chevron-down" size={14} color={theme.colors.textSecondary} />
         </Animated.View>
       </Pressable>
       {expanded ? (
@@ -77,34 +74,36 @@ export function AppCollapsibleSection({
   )
 }
 
-const styles = StyleSheet.create({
-  root: {
-    borderRadius: brandRadius.card,
-    borderWidth: 1,
-    borderColor: brandColors.divider,
-    overflow: "hidden",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: brandSpacing.xs,
-    paddingHorizontal: brandSpacing.md,
-    paddingVertical: brandSpacing.sm + 2,
-  },
-  headerPressed: {
-    opacity: 0.6,
-  },
-  title: {
-    flex: 1,
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-  },
-  body: {
-    padding: brandSpacing.md,
-    gap: brandSpacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: brandColors.divider,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    root: {
+      borderRadius: brandRadius.card,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      overflow: "hidden",
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing.xs,
+      paddingHorizontal: brandSpacing.md,
+      paddingVertical: brandSpacing.sm + 2,
+    },
+    headerPressed: {
+      opacity: 0.6,
+    },
+    title: {
+      flex: 1,
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+    },
+    body: {
+      padding: brandSpacing.md,
+      gap: brandSpacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+    },
+  })
+}

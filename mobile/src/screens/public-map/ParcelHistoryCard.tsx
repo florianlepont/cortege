@@ -1,14 +1,15 @@
-import { memo, useState } from "react"
+import { memo, useMemo, useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { computeIbpTotalDelta } from "../../app/ibp-scoring"
+import { useBrandTheme } from "../../app/theme"
 import type { ParcelSurveyHistoryItem } from "../../app/types"
 import { useParcelSurveyHistory } from "../../hooks/useParcelSurveyHistory"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { panelStyles as styles } from "./styles"
+import { createPanelStyles } from "./styles"
 
 const t = fr.parcelHistory
 const missingT = fr.offlineMap.parcelMissing
@@ -32,6 +33,8 @@ function HistoryRow({
   previous: ParcelSurveyHistoryItem | null
   isLatest: boolean
 }) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createPanelStyles(theme), [theme])
   const delta = previous ? computeIbpTotalDelta(item.scores, previous.scores) : null
 
   return (
@@ -60,6 +63,8 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
   onQueueDownload,
   onClose,
 }: ParcelHistoryCardProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createPanelStyles(theme), [theme])
   const { items, loading, error, offline } = useParcelSurveyHistory(
     apiUrl,
     accessToken,

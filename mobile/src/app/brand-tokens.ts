@@ -1,3 +1,11 @@
+// Phase 12 (DS-12): theme-invariant hues — the Etats Sauvages brand palette itself, plus a
+// handful of neutrals that stay fixed because their handful of call sites are already pinned to a
+// permanently-dark surface (forestNight, disabledMuted/disabledNeutral on the map's translucent
+// panels) or always want pure white/black regardless of theme (an icon on a filled forest/moss
+// button, a shadow color). Every neutral that actually needs to invert between light and dark
+// (canvas, panel, text, field, status-soft colors, and everything derived from them) moved to
+// `lightPalette`/`darkPalette` in `theme.ts`, resolved through `useBrandTheme()` — see
+// `.planning/phases/12-interface-finishing/12-CONTEXT.md` for the full static/dynamic split.
 export const brandColors = {
   terracotta: "#CD5833",
   moss: "#89A33A",
@@ -8,32 +16,11 @@ export const brandColors = {
   salmon: "#DA8D77",
   black: "#000000",
   white: "#FFFFFF",
-  canvas: "#EEF1E8",
-  panel: "#F7F6F0",
-  surfaceSoft: "#F0EEE4",
-  panelMuted: "#E8E5D9",
-  warningSoft: "#F7E6CA",
-  inputFill: "#F2F0E8",
-  // DS-14 (UX audit, Phase 2): darkened from #D6D1C3 (1.34:1 on inputFill) to clear the WCAG
-  // 3:1 non-text contrast floor for a resting field border (3.6:1 on inputFill).
-  inputBorder: "#807D75",
-  divider: "#D3D7C8",
-  textPrimary: "#24311F",
-  textSecondary: "#51604B",
-  successSoft: "#E6ECCE",
-  errorSoft: "#F3D3C8",
   // Phase 4 (DS-04): additions surfaced by the hex-literal migration, not new brand hues.
   forestNight: "#0E2210",
   disabledMuted: "#8FA188",
   disabledNeutral: "#A6ABA3",
 } as const
-
-// Phase 4 (DS-01/DS-02): darkened text for saturated-adjacent tokens (warningSoft, errorSoft, the
-// IBP "high" band) that failed WCAG as white-on-saturated or ochre/terracotta-on-soft. Contrast
-// verified against `warningSoft`/`errorSoft` at >= 4.5:1.
-export const brandOnWarningSurface = "#7A4A0A"
-export const brandOnDangerSurface = "#8A2F14"
-export const brandOnSuccessSurface = brandColors.forest
 
 // Phase 4 (DS-03): Mazzard H has no licence yet and Avenir Next is Apple-proprietary (not
 // redistributable, absent on Android), so neither can be embedded via `expo-font`. Sora and Jost —
@@ -235,21 +222,15 @@ export const brandElevation = {
   },
 } as const
 
-export const brandSemanticColors = {
-  backgroundCanvas: brandColors.canvas,
-  surfaceBase: brandColors.panel,
-  surfaceElevated: brandColors.white,
-  surfaceSoft: brandColors.surfaceSoft,
-  textPrimary: brandColors.textPrimary,
-  textSecondary: brandColors.textSecondary,
-  textStrong: brandColors.forest,
-  ctaPrimary: brandColors.forest,
-  ctaAccent: brandColors.moss,
-  ctaSecondaryOutline: brandColors.forest,
-  ctaDanger: brandColors.terracotta,
-  successSurface: brandColors.successSoft,
-  errorSurface: brandColors.errorSoft,
-  warningSurface: brandColors.warningSoft,
+// Phase 12 (DS-12): `brandSemanticColors` (backgroundCanvas, surfaceBase, surfaceElevated,
+// surfaceSoft, textPrimary/Secondary/Strong, ctaPrimary/Accent/SecondaryOutline/Danger,
+// successSurface, errorSurface, warningSurface) moved wholesale to `makeSemanticColors()` in
+// `theme.ts`, resolved through `useBrandTheme().semanticColors` — even its theme-invariant fields
+// (the `cta*` aliases are plain brand hues), so every call site reads one source instead of
+// picking between a static and a themed one per field. Only the hero-on-dark family stays here: a
+// fixed glass-over-a-permanently-dark-forest-hero treatment, not a function of the app's own
+// light/dark theme.
+export const brandOnDarkColors = {
   // Warm off-white for body text on dark (forest) backgrounds — reduces glare vs pure white
   heroBodyOnDark: "#E8ECD9",
   heroMetaOnDark: "#D9E3C6",
@@ -304,21 +285,12 @@ export const brandTranslucentPanel = {
 // Phase 4 (DS-04): dark solid backdrop behind full-screen media/map surfaces before content loads.
 export const brandMediaBackdrop = "#132434"
 
-// IBP score colours keyed by the package's band tone (@cortege/ibp-domain bandTone): faible and
-// assez faible → low, moyenne → mid, assez forte and forte → high. No score cut-offs live here.
-// Phase 4 (DS-01): white-on-moss measured at 2.85:1 (WCAG fail); every band now pairs a soft
-// background with a darkened text token instead of white on a saturated fill (owner-approved
-// 2026-09-27, see 04-CONTEXT.md). The saturated hues stay in use elsewhere (progress ring, filled
-// pill) — this only changes where text sits directly on the fill.
-export const ibpScoreTokens = {
-  colors: {
-    high: { background: brandColors.sage, text: brandColors.forest },
-    mid: { background: brandColors.warningSoft, text: brandOnWarningSurface },
-    low: { background: brandColors.errorSoft, text: brandOnDangerSurface },
-    empty: { background: brandColors.panelMuted, text: brandColors.textSecondary },
-  },
-} as const
-
+// Phase 12 (DS-12): IBP score colours (`ibpScoreTokens`), the field-entry state triad
+// (`brandFieldState`) and every color field previously nested inside `brandComponentTokens`
+// (button/card/field backgrounds and borders, and all of statusChip/choiceChip/surveyList/notice)
+// moved to `theme.ts`'s `makeComponentColors()`/`makeFieldState()`/`makeIbpScoreColors()`, resolved
+// through `useBrandTheme()`. Only the size/spacing fields — never a function of light vs dark —
+// stay here, unchanged, as plain dimensions a style can still import statically.
 export const brandComponentTokens = {
   button: {
     minHeight: 44,
@@ -330,120 +302,19 @@ export const brandComponentTokens = {
     iconOnlySizeSmall: 34,
     iconOnlySize: 40,
     iconOnlySizeLarge: 46,
-    primaryBackground: brandSemanticColors.ctaPrimary,
-    secondaryBackground: brandSemanticColors.surfaceElevated,
-    secondaryBorder: brandSemanticColors.ctaSecondaryOutline,
-    dangerBackground: brandSemanticColors.ctaDanger,
   },
   card: {
     defaultPadding: brandSpacing.md,
     compactPadding: 12,
-    surfaceBorder: brandColors.panelMuted,
-    softSurface: brandSemanticColors.surfaceSoft,
-    panelBorder: brandColors.divider,
   },
   field: {
     minHeight: 48,
     horizontalPadding: brandSpacing.md,
     verticalPadding: 10,
     gap: brandSpacing.sm - 2,
-    background: brandColors.inputFill,
-    border: brandColors.inputBorder,
-    borderError: brandColors.terracotta,
-  },
-  statusChip: {
-    neutralBorder: brandColors.divider,
-    neutralBackground: brandColors.panelMuted,
-    successBorder: "#BBD09B",
-    successBackground: brandColors.successSoft,
-    warningBorder: "#E7C281",
-    warningBackground: brandColors.warningSoft,
-    dangerBorder: "#E4A595",
-    dangerBackground: brandColors.errorSoft,
-    textColor: brandColors.forest,
-    onDarkBorder: "rgba(255, 255, 255, 0.25)",
-    onDarkBackground: "rgba(255, 255, 255, 0.15)",
-    onDarkTextColor: "rgba(255, 255, 255, 0.90)",
   },
   choiceChip: {
     minHeight: 44,
-    border: brandColors.inputBorder,
-    background: brandColors.panelMuted,
-    interactiveBorder: brandColors.forest,
-    interactiveBackground: brandColors.white,
-    activeBorder: brandColors.forest,
-    activeBackground: brandColors.forest,
-    text: brandColors.forest,
-    activeText: brandColors.white,
-    staticText: brandColors.textSecondary,
-    successBackground: brandColors.successSoft,
-    warningBackground: brandColors.warningSoft,
-    dangerBackground: brandColors.errorSoft,
-  },
-  surveyList: {
-    cardAccentNeutral: brandColors.divider,
-    cardAccentSuccess: brandColors.sage,
-    cardAccentWarning: brandColors.ochre,
-    cardAccentDanger: brandColors.terracotta,
-    cardSelectedBorder: brandColors.forest,
-    cardSelectedBackground: brandColors.panel,
-    workflowNeutralBackground: brandColors.panelMuted,
-    workflowSuccessBackground: brandColors.successSoft,
-    workflowWarningBackground: brandColors.warningSoft,
-    workflowDangerBackground: brandColors.errorSoft,
-    workflowNeutralText: brandColors.forest,
-    workflowSuccessText: brandColors.forest,
-    // Phase 4 (DS-02): ochre/terracotta text directly on their soft backgrounds measured 2.90:1 and
-    // 2.97:1 (WCAG fail) — darkened tokens instead of the raw hue.
-    workflowWarningText: brandOnWarningSurface,
-    workflowDangerText: brandOnDangerSurface,
-    progressTrack: brandColors.divider,
-    supportDangerText: brandOnDangerSurface,
-    badgeDangerText: brandOnDangerSurface,
-  },
-  notice: {
-    infoBackground: brandColors.panelMuted,
-    infoBorder: brandColors.divider,
-    successBackground: brandColors.successSoft,
-    successBorder: "#BBD09B",
-    warningBackground: brandColors.warningSoft,
-    warningBorder: "#E7C281",
-    dangerBackground: brandColors.errorSoft,
-    dangerBorder: "#E4A595",
-    title: brandColors.textPrimary,
-    text: brandColors.textSecondary,
-    // Phase 4 (DS-02): same contrast fix as surveyList above. Supersedes Phase 2's interim fix
-    // (plain textPrimary for both) with the named onWarningSurface/onDangerSurface tokens the
-    // ROADMAP criterion asks for — keeps the warm hue association instead of flattening every
-    // notice to the same neutral text color.
-    warningText: brandOnWarningSurface,
-    dangerText: brandOnDangerSurface,
-    successText: brandColors.forest,
-  },
-} as const
-
-// Phase 3 (D-0 token slice, FLOW-02): the three states a field-entry control can be in. Empty is
-// neutral (never alarming before the user has done anything); error only renders once a caller
-// gates it on "touched or submission attempted"; complete is moss, never the same hue as error.
-export const brandFieldState = {
-  empty: {
-    border: brandColors.inputBorder,
-    background: brandColors.inputFill,
-    icon: brandColors.textSecondary,
-    text: brandColors.textPrimary,
-  },
-  error: {
-    border: brandColors.terracotta,
-    background: brandColors.errorSoft,
-    // Phase 4 (DS-02): terracotta text/icon directly on errorSoft measured 2.97:1 (WCAG fail).
-    icon: brandOnDangerSurface,
-    text: brandOnDangerSurface,
-  },
-  complete: {
-    border: brandColors.moss,
-    background: brandColors.successSoft,
-    icon: brandColors.forest,
-    text: brandColors.forest,
   },
 } as const
 

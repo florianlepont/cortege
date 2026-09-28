@@ -1,7 +1,9 @@
+import { useMemo } from "react"
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppSettingsRowProps = {
   label: string
@@ -20,6 +22,9 @@ export function AppSettingsRow({
   loading = false,
   disabled = false,
 }: AppSettingsRowProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -32,7 +37,7 @@ export function AppSettingsRow({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      android_ripple={{ color: brandColors.panelMuted }}
+      android_ripple={{ color: theme.colors.panelMuted }}
     >
       <View style={styles.content}>
         <Text style={styles.label}>{label}</Text>
@@ -43,41 +48,43 @@ export function AppSettingsRow({
         ) : null}
       </View>
       {loading ? (
-        <ActivityIndicator size="small" color={brandColors.textSecondary} />
+        <ActivityIndicator size="small" color={theme.colors.textSecondary} />
       ) : (
-        <Ionicons name="chevron-forward" size={16} color={brandColors.textSecondary} />
+        <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
       )}
     </Pressable>
   )
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 48,
-    backgroundColor: brandColors.inputFill,
-    borderRadius: brandRadius.field - 6,
-    paddingHorizontal: brandSpacing.md - 2,
-    paddingVertical: brandSpacing.sm,
-    gap: brandSpacing.xs + 2,
-  },
-  rowPressed: {
-    opacity: 0.7,
-  },
-  rowDisabled: {
-    opacity: 0.4,
-  },
-  content: {
-    flex: 1,
-    gap: 1,
-  },
-  label: {
-    ...brandTypography.label,
-    color: brandColors.forest,
-  },
-  value: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      minHeight: 48,
+      backgroundColor: theme.colors.inputFill,
+      borderRadius: brandRadius.field - 6,
+      paddingHorizontal: brandSpacing.md - 2,
+      paddingVertical: brandSpacing.sm,
+      gap: brandSpacing.xs + 2,
+    },
+    rowPressed: {
+      opacity: 0.7,
+    },
+    rowDisabled: {
+      opacity: 0.4,
+    },
+    content: {
+      flex: 1,
+      gap: 1,
+    },
+    label: {
+      ...brandTypography.label,
+      color: theme.colors.forest,
+    },
+    value: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
+    },
+  })
+}

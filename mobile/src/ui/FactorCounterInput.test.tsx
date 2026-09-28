@@ -2,7 +2,7 @@ import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { View } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandFieldState } from "../app/brand-tokens"
+import { brandColors } from "../app/brand-tokens"
 import { FactorCounterInput } from "./FactorCounterInput"
 
 const originalConsoleError = console.error
@@ -133,6 +133,8 @@ describe("FactorCounterInput (FLOW-01 counter variant, FLOW-02 error timing)", (
     const style = Array.isArray(shell.props.style)
       ? Object.assign({}, ...shell.props.style)
       : shell.props.style
-    expect(style.borderColor).toBe(brandFieldState.error.border)
+    // FactorInputShell's error border is `colors.terracotta`, a theme-invariant hue (same in
+    // light and dark), so this stays a direct comparison against the static token.
+    expect(style.borderColor).toBe(brandColors.terracotta)
   })
 })

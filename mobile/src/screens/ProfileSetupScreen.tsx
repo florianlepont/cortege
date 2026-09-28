@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import {
   Image,
   ImageSourcePropType,
@@ -12,6 +12,7 @@ import {
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
@@ -33,6 +34,8 @@ export function ProfileSetupScreen({
   onSave,
   onSkip,
 }: ProfileSetupScreenProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const insets = useSafeAreaInsets()
   const scrollRef = useRef<ScrollView | null>(null)
   const lastNameInputRef = useRef<TextInput | null>(null)
@@ -144,71 +147,73 @@ export function ProfileSetupScreen({
   )
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: brandColors.canvas,
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: brandSpacing.lg,
-    paddingTop: brandSpacing.lg,
-    gap: brandSpacing.lg,
-  },
-  heroWrap: {
-    position: "relative",
-  },
-  heroAccent: {
-    position: "absolute",
-    top: 16,
-    right: 14,
-    width: 120,
-    height: 120,
-    borderRadius: 999,
-    backgroundColor: brandColors.sage,
-    opacity: 0.28,
-  },
-  heroCard: {
-    gap: brandSpacing.sm,
-    padding: brandSpacing.lg,
-  },
-  heroLogo: {
-    width: 132,
-    height: 42,
-    marginLeft: -18,
-  },
-  heroEyebrow: {
-    ...brandTypography.heroEyebrow,
-    color: brandColors.moss,
-    letterSpacing: 1.6,
-  },
-  heroTitle: {
-    ...brandTypography.sectionTitle,
-    color: brandColors.forest,
-  },
-  heroSubtitle: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
-  formCard: {
-    gap: brandSpacing.md,
-  },
-  sectionTitle: {
-    ...brandTypography.sectionTitle,
-    color: brandColors.textPrimary,
-  },
-  sectionSubtitle: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
-  fields: {
-    gap: 12,
-  },
-  actions: {
-    gap: 10,
-    marginTop: 4,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.canvas,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      flexGrow: 1,
+      paddingHorizontal: brandSpacing.lg,
+      paddingTop: brandSpacing.lg,
+      gap: brandSpacing.lg,
+    },
+    heroWrap: {
+      position: "relative",
+    },
+    heroAccent: {
+      position: "absolute",
+      top: 16,
+      right: 14,
+      width: 120,
+      height: 120,
+      borderRadius: 999,
+      backgroundColor: brandColors.sage,
+      opacity: 0.28,
+    },
+    heroCard: {
+      gap: brandSpacing.sm,
+      padding: brandSpacing.lg,
+    },
+    heroLogo: {
+      width: 132,
+      height: 42,
+      marginLeft: -18,
+    },
+    heroEyebrow: {
+      ...brandTypography.heroEyebrow,
+      color: brandColors.moss,
+      letterSpacing: 1.6,
+    },
+    heroTitle: {
+      ...brandTypography.sectionTitle,
+      color: brandColors.forest,
+    },
+    heroSubtitle: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
+    },
+    formCard: {
+      gap: brandSpacing.md,
+    },
+    sectionTitle: {
+      ...brandTypography.sectionTitle,
+      color: theme.colors.textPrimary,
+    },
+    sectionSubtitle: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
+    },
+    fields: {
+      gap: 12,
+    },
+    actions: {
+      gap: 10,
+      marginTop: 4,
+    },
+  })
+}

@@ -1,7 +1,8 @@
-import { ReactNode } from "react"
+import { ReactNode, useMemo } from "react"
 import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { brandSpacing, brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppSectionHeaderProps = {
   title: string
@@ -22,6 +23,9 @@ export function AppSectionHeader({
   titleStyle,
   subtitleStyle,
 }: AppSectionHeaderProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+
   return (
     <View style={[styles.header, style]}>
       <View style={[styles.copy, copyStyle]}>
@@ -33,23 +37,25 @@ export function AppSectionHeader({
   )
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: brandSpacing.md - 4,
-  },
-  copy: {
-    flex: 1,
-    gap: 4,
-  },
-  title: {
-    ...brandTypography.sectionTitle,
-    color: brandColors.forest,
-  },
-  subtitle: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: brandSpacing.md - 4,
+    },
+    copy: {
+      flex: 1,
+      gap: 4,
+    },
+    title: {
+      ...brandTypography.sectionTitle,
+      color: theme.colors.forest,
+    },
+    subtitle: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
+    },
+  })
+}

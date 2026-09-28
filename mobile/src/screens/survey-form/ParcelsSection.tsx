@@ -1,17 +1,19 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import MapView, { Marker } from "react-native-maps"
 import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { IgnCadastreTileOverlay } from "../../components/IgnCadastreTileOverlay"
 import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
 import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { GlassSurface } from "../../ui/GlassSurface"
 import { NearbyParcelsSheet } from "./NearbyParcelsSheet"
-import { parcelStyles } from "./parcels.styles"
-import { formStyles } from "./styles"
+import { createParcelStyles } from "./parcels.styles"
+import { createFormStyles } from "./styles"
 import type { ParcelMapState } from "./useParcelMap"
 import { fr } from "../../i18n"
 
@@ -29,6 +31,9 @@ export function ParcelsSection({
   onOpenParcelFullscreen: () => void
 }) {
   const [nearbySheetVisible, setNearbySheetVisible] = useState(false)
+  const theme = useBrandTheme()
+  const parcelStyles = useMemo(() => createParcelStyles(theme), [theme])
+  const formStyles = useMemo(() => createFormStyles(theme), [theme])
 
   return (
     <AppCard variant="panelElevated" style={formStyles.panel}>
@@ -67,23 +72,25 @@ export function ParcelsSection({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={fr.surveyForm.a11y.openFullscreenMap}
-            style={parcelStyles.mapOverlayButton}
             onPress={onOpenParcelFullscreen}
           >
-            <Ionicons name="expand-outline" size={15} color={brandColors.white} />
-            <Text style={parcelStyles.mapOverlayButtonText}>
-              {fr.surveyForm.parcels.fullScreen}
-            </Text>
+            <GlassSurface tone="dark" style={parcelStyles.mapOverlayButton}>
+              <Ionicons name="expand-outline" size={15} color={brandColors.white} />
+              <Text style={parcelStyles.mapOverlayButtonText}>
+                {fr.surveyForm.parcels.fullScreen}
+              </Text>
+            </GlassSurface>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={fr.nearbyParcelsSheet.trigger}
-            style={parcelStyles.mapOverlayButton}
             onPress={() => setNearbySheetVisible(true)}
             testID="open-nearby-parcels-sheet"
           >
-            <Ionicons name="navigate-circle-outline" size={15} color={brandColors.white} />
-            <Text style={parcelStyles.mapOverlayButtonText}>{fr.nearbyParcelsSheet.trigger}</Text>
+            <GlassSurface tone="dark" style={parcelStyles.mapOverlayButton}>
+              <Ionicons name="navigate-circle-outline" size={15} color={brandColors.white} />
+              <Text style={parcelStyles.mapOverlayButtonText}>{fr.nearbyParcelsSheet.trigger}</Text>
+            </GlassSurface>
           </Pressable>
         </View>
       </View>

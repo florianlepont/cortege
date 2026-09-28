@@ -1,11 +1,13 @@
+import { useMemo } from "react"
 import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { LEGAL_PRIVACY_URL, LEGAL_TERMS_URL } from "../../app/auth0-config"
 import { brandSpacing } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { feedback } from "../../ui/feedback"
-import { authStyles } from "./styles"
+import { createAuthStyles } from "./styles"
 
 const WEBSITE_URL = "https://etatssauvages.org"
 const texts = fr.authGate
@@ -34,6 +36,8 @@ export function AuthPanel({
   onRegisterPress,
   onForgotPasswordPress,
 }: AuthPanelProps) {
+  const theme = useBrandTheme()
+  const authStyles = useMemo(() => createAuthStyles(theme), [theme])
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}

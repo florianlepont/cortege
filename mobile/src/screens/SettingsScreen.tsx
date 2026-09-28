@@ -1,13 +1,15 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { brandSpacing, brandTypography } from "../app/brand-tokens"
 import { shouldShowDevTools } from "../app/dev-tools"
+import { BrandTheme, BrandThemeMode, useBrandTheme } from "../app/theme"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
+import { AppChoiceChip } from "../ui/AppChoiceChip"
 import { AppCollapsibleSection } from "../ui/AppCollapsibleSection"
 import { AppField } from "../ui/AppField"
 import { AppNotice } from "../ui/AppNotice"
@@ -17,6 +19,12 @@ import { fr } from "../i18n"
 
 const t = fr.settings
 const actions = fr.common.actions
+
+const THEME_MODE_CHOICES: Array<{ mode: BrandThemeMode; label: string }> = [
+  { mode: "automatic", label: t.appearance.automatic },
+  { mode: "light", label: t.appearance.light },
+  { mode: "dark", label: t.appearance.dark },
+]
 
 type SettingsScreenProps = {
   apiUrl: string
@@ -43,6 +51,8 @@ export function SettingsScreen({
   onDebugResetUserData,
   status,
 }: SettingsScreenProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
@@ -144,6 +154,26 @@ export function SettingsScreen({
         <AppNotice message={status} tone="info" icon="information-circle-outline" />
       ) : null}
 
+      {/* Zone 0 — Apparence (DS-12) */}
+      <AppCard variant="panel" style={styles.section}>
+        <AppSectionHeader
+          title={t.appearance.title}
+          subtitle={t.appearance.subtitle}
+          titleStyle={styles.sectionTitle}
+        />
+        <View style={styles.appearanceRow}>
+          {THEME_MODE_CHOICES.map(({ mode, label }) => (
+            <AppChoiceChip
+              key={mode}
+              label={label}
+              active={theme.mode === mode}
+              onPress={() => theme.setMode(mode)}
+              style={styles.appearanceChip}
+            />
+          ))}
+        </View>
+      </AppCard>
+
       {/* Zone 1 — Synchronisation */}
       <AppCard variant="panel" style={styles.section}>
         <AppSectionHeader
@@ -230,36 +260,46 @@ export function SettingsScreen({
   )
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: brandColors.canvas,
-  },
-  content: {
-    gap: brandSpacing.md,
-  },
-  section: {
-    gap: brandSpacing.sm,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    lineHeight: 20,
-  },
-  advancedDivider: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: brandSpacing.sm,
-    marginVertical: brandSpacing.xs - 2,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: brandColors.divider,
-  },
-  dividerLabel: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-    letterSpacing: 0.4,
-    textTransform: "uppercase",
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.canvas,
+    },
+    content: {
+      gap: brandSpacing.md,
+    },
+    section: {
+      gap: brandSpacing.sm,
+    },
+    sectionTitle: {
+      fontSize: 17,
+      lineHeight: 20,
+    },
+    appearanceRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: brandSpacing.xs,
+    },
+    appearanceChip: {
+      flexGrow: 1,
+    },
+    advancedDivider: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing.sm,
+      marginVertical: brandSpacing.xs - 2,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: theme.colors.divider,
+    },
+    dividerLabel: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+      letterSpacing: 0.4,
+      textTransform: "uppercase",
+    },
+  })
+}

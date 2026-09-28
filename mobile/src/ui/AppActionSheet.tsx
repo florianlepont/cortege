@@ -1,14 +1,15 @@
+import { useMemo } from "react"
 import { Modal, Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
-  brandColors,
   brandFontScaleCaps,
   brandRadius,
   brandShadow,
   brandSpacing,
   brandTypography,
 } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 export type AppActionSheetOption = {
   label: string
@@ -38,6 +39,8 @@ export function AppActionSheet({
   cancelLabel,
 }: AppActionSheetProps) {
   const insets = useSafeAreaInsets()
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -78,50 +81,52 @@ export function AppActionSheet({
   )
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(15, 22, 12, 0.4)",
-  },
-  sheet: {
-    backgroundColor: brandColors.panel,
-    borderTopLeftRadius: brandRadius.panel,
-    borderTopRightRadius: brandRadius.panel,
-    paddingHorizontal: brandSpacing.lg,
-    paddingTop: brandSpacing.md,
-    gap: 2,
-    ...brandShadow.card,
-  },
-  title: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-    textAlign: "center",
-    paddingBottom: brandSpacing.sm,
-  },
-  row: {
-    minHeight: 50,
-    justifyContent: "center",
-    borderTopWidth: 1,
-    borderTopColor: brandColors.divider,
-  },
-  rowLabel: {
-    ...brandTypography.input,
-    color: brandColors.forest,
-    textAlign: "center",
-  },
-  rowLabelDestructive: {
-    color: brandColors.terracotta,
-  },
-  cancelRow: {
-    minHeight: 50,
-    justifyContent: "center",
-    marginTop: brandSpacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: brandColors.divider,
-  },
-  cancelLabel: {
-    ...brandTypography.input,
-    color: brandColors.textSecondary,
-    textAlign: "center",
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    backdrop: {
+      flex: 1,
+      backgroundColor: "rgba(15, 22, 12, 0.4)",
+    },
+    sheet: {
+      backgroundColor: theme.colors.panel,
+      borderTopLeftRadius: brandRadius.panel,
+      borderTopRightRadius: brandRadius.panel,
+      paddingHorizontal: brandSpacing.lg,
+      paddingTop: brandSpacing.md,
+      gap: 2,
+      ...brandShadow.card,
+    },
+    title: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+      paddingBottom: brandSpacing.sm,
+    },
+    row: {
+      minHeight: 50,
+      justifyContent: "center",
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+    },
+    rowLabel: {
+      ...brandTypography.input,
+      color: theme.colors.forest,
+      textAlign: "center",
+    },
+    rowLabelDestructive: {
+      color: theme.colors.terracotta,
+    },
+    cancelRow: {
+      minHeight: 50,
+      justifyContent: "center",
+      marginTop: brandSpacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.divider,
+    },
+    cancelLabel: {
+      ...brandTypography.input,
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+    },
+  })
+}

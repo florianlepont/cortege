@@ -1,5 +1,13 @@
 // Filled by plan 01.9-17; no other plan edits this section.
 export const settingsFr = {
+  // DS-12 (UX audit, Phase 12): the theme picker.
+  appearance: {
+    title: "Apparence",
+    subtitle: "Thème clair, sombre ou automatique.",
+    automatic: "Automatique",
+    light: "Clair",
+    dark: "Sombre",
+  },
   account: {
     title: "Compte",
     subtitle: "Gestion de votre compte et de vos données.",

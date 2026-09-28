@@ -3,11 +3,12 @@ import { ActionSheetIOS, Alert, Image, Platform, Pressable, View } from "react-n
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors, brandComponentTokens } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { AuthUser } from "../../app/types"
 import { AppCard } from "../../ui/AppCard"
 import { AppStatusChip } from "../../ui/AppStatusChip"
 import { fr } from "../../i18n"
-import { identityStyles as styles } from "./styles"
+import { createIdentityStyles } from "./styles"
 
 export type IdentityCardProps = {
   // The only reader of the access token on the account screen: it signs the
@@ -58,6 +59,8 @@ export function IdentityCard({
   onTakeProfilePictureFromCamera,
   onRemoveProfilePicture,
 }: IdentityCardProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createIdentityStyles(theme), [theme])
   const profilePictureUri = useMemo(
     () => resolveProfilePictureUri(currentUser.profile_picture_url, apiUrl),
     [apiUrl, currentUser.profile_picture_url],

@@ -1,14 +1,16 @@
+import { useMemo } from "react"
 import { Switch, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { IBP_CAS_VALUES, IBP_METHOD_V3_2, type IbpCas } from "@cortege/ibp-domain"
 import { brandColors } from "../../app/brand-tokens"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../../app/constants"
+import { useBrandTheme } from "../../app/theme"
 import { RegionVersion, VegetationStage } from "../../app/types"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { WizardChip } from "./components"
 import type { SurveyFormMethod } from "./MethodVersionPicker"
-import { formStyles } from "./styles"
+import { createFormStyles } from "./styles"
 import { fr } from "../../i18n"
 
 /**
@@ -36,7 +38,13 @@ export function scoringContextPills({
 }
 
 // v3.2: the cas (1-4) and the flag that applies the cas-3 scale to A and G.
-function CasFields({ method }: { method: SurveyFormMethod }) {
+function CasFields({
+  method,
+  formStyles,
+}: {
+  method: SurveyFormMethod
+  formStyles: ReturnType<typeof createFormStyles>
+}) {
   return (
     <>
       <Text style={formStyles.label}>{fr.ibpMethod.casTitle}</Text>
@@ -78,11 +86,13 @@ function RegionStageFields({
   vegetationStage,
   onRegionChange,
   setVegetationStage,
+  formStyles,
 }: {
   regionVersion: RegionVersion
   vegetationStage: VegetationStage
   onRegionChange: (nextRegion: RegionVersion) => void
   setVegetationStage: (value: VegetationStage) => void
+  formStyles: ReturnType<typeof createFormStyles>
 }) {
   return (
     <>
@@ -128,6 +138,8 @@ export function ScoringContextSection({
   setVegetationStage: (value: VegetationStage) => void
 }) {
   const isV32 = method.version === IBP_METHOD_V3_2
+  const theme = useBrandTheme()
+  const formStyles = useMemo(() => createFormStyles(theme), [theme])
 
   return (
     <AppCard variant="panelElevated" style={formStyles.panel}>
@@ -138,13 +150,14 @@ export function ScoringContextSection({
         subtitleStyle={formStyles.panelBody}
       />
       {isV32 ? (
-        <CasFields method={method} />
+        <CasFields method={method} formStyles={formStyles} />
       ) : (
         <RegionStageFields
           regionVersion={regionVersion}
           vegetationStage={vegetationStage}
           onRegionChange={onRegionChange}
           setVegetationStage={setVegetationStage}
+          formStyles={formStyles}
         />
       )}
     </AppCard>

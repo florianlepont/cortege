@@ -1,8 +1,13 @@
-import { useCallback, useEffect, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
-import { StyleSheet } from "react-native"
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet"
-import { brandColors, brandRadius } from "../../app/brand-tokens"
+import { StyleSheet, View } from "react-native"
+import BottomSheet, {
+  BottomSheetScrollView,
+  type BottomSheetBackgroundProps,
+} from "@gorhom/bottom-sheet"
+import { BlurView } from "expo-blur"
+import { brandRadius } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 
 // MAP-01: the tiered sheet (2 detents — half and nearly full) replacing the absolutely-positioned
 // AppCards for the selected survey, a cluster's list and a parcel's history. Closed (index -1, no
@@ -16,8 +21,26 @@ export type ExplorerSheetProps = {
   children: ReactNode
 }
 
+// DS-15 (UX audit, Phase 12): the sheet's own background, blurred instead of a flat panel fill —
+// `expo-blur` (already installed), tinted to the app's own light/dark theme rather than the OS
+// scheme, so it always matches a manual theme override too.
+function SheetBackground({ style, pointerEvents }: BottomSheetBackgroundProps) {
+  const { scheme } = useBrandTheme()
+  return (
+    <View pointerEvents={pointerEvents} style={[style, backgroundShape]}>
+      <BlurView
+        style={StyleSheet.absoluteFill}
+        intensity={50}
+        tint={scheme === "dark" ? "dark" : "light"}
+      />
+    </View>
+  )
+}
+
 export function ExplorerSheet({ visible, onDismiss, children }: ExplorerSheetProps) {
   const sheetRef = useRef<BottomSheet>(null)
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
 
   useEffect(() => {
     if (visible) {
@@ -43,7 +66,7 @@ export function ExplorerSheet({ visible, onDismiss, children }: ExplorerSheetPro
       snapPoints={SNAP_POINTS}
       enablePanDownToClose
       onChange={handleChange}
-      backgroundStyle={styles.background}
+      backgroundComponent={SheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
     >
       <BottomSheetScrollView contentContainerStyle={styles.content}>
@@ -53,22 +76,29 @@ export function ExplorerSheet({ visible, onDismiss, children }: ExplorerSheetPro
   )
 }
 
-// MAP-01: the tiered sheet's own chrome (background, drag handle) — the content components it
-// hosts (SelectedSurveyCard, ClusterListSheet, ParcelHistoryCard) no longer draw their own
-// card/position.
-const styles = StyleSheet.create({
-  background: {
-    backgroundColor: brandColors.panel,
+// The background's shape (radius, clipping) is static and shared with `SheetBackground`, which
+// renders outside any per-render `createStyles(theme)` call — its fill is the blur, not a color.
+const backgroundShape = StyleSheet.create({
+  shape: {
+    overflow: "hidden" as const,
     borderTopLeftRadius: brandRadius.panel,
     borderTopRightRadius: brandRadius.panel,
   },
-  handleIndicator: {
-    backgroundColor: brandColors.divider,
-    width: 44,
-  },
-  content: {
-    paddingHorizontal: 18,
-    paddingBottom: 24,
-    gap: 12,
-  },
-})
+}).shape
+
+// MAP-01: the tiered sheet's own chrome (drag handle, content padding) — the content components it
+// hosts (SelectedSurveyCard, ClusterListSheet, ParcelHistoryCard) no longer draw their own
+// card/position.
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    handleIndicator: {
+      backgroundColor: theme.colors.divider,
+      width: 44,
+    },
+    content: {
+      paddingHorizontal: 18,
+      paddingBottom: 24,
+      gap: 12,
+    },
+  })
+}

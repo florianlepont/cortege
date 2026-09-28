@@ -1,7 +1,7 @@
 import { View } from "react-native"
 import { Circle, Svg } from "react-native-svg"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandFieldState } from "../app/brand-tokens"
+import { useBrandTheme } from "../app/theme"
 
 const STROKE_WIDTH = 3
 
@@ -22,8 +22,9 @@ export function FactorProgressRing({
   size = 28,
   testID,
 }: FactorProgressRingProps) {
-  const tone = complete ? brandFieldState.complete : hasError ? brandFieldState.error : null
-  const ringColor = tone ? tone.icon : brandColors.divider
+  const theme = useBrandTheme()
+  const tone = complete ? theme.fieldState.complete : hasError ? theme.fieldState.error : null
+  const ringColor = tone ? tone.icon : theme.colors.divider
 
   if (complete) {
     return (
@@ -44,7 +45,7 @@ export function FactorProgressRing({
         cx={size / 2}
         cy={size / 2}
         r={radius}
-        stroke={brandColors.panelMuted}
+        stroke={theme.colors.panelMuted}
         strokeWidth={STROKE_WIDTH}
         fill="none"
       />

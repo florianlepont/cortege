@@ -1,14 +1,9 @@
-import { useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { GestureResponderEvent, LayoutChangeEvent, Pressable, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import {
-  brandColors,
-  brandComponentTokens,
-  brandInteraction,
-  brandRadius,
-  brandSpacing4,
-} from "../app/brand-tokens"
+import { brandInteraction, brandRadius, brandSpacing4 } from "../app/brand-tokens"
 import { parseFiniteNumberInput } from "../app/number-utils"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
 
@@ -45,6 +40,8 @@ export function FactorSliderInput({
   step = 5,
   testID,
 }: FactorSliderInputProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const [trackWidth, setTrackWidth] = useState(0)
   const trackWidthRef = useRef(0)
 
@@ -88,7 +85,7 @@ export function FactorSliderInput({
           style={styles.stepButton}
           testID={testID ? `${testID}-decrease` : undefined}
         >
-          <Ionicons name="remove" size={18} color={brandColors.forest} />
+          <Ionicons name="remove" size={18} color={theme.colors.forest} />
         </Pressable>
 
         <View
@@ -128,48 +125,50 @@ export function FactorSliderInput({
           style={styles.stepButton}
           testID={testID ? `${testID}-increase` : undefined}
         >
-          <Ionicons name="add" size={18} color={brandColors.forest} />
+          <Ionicons name="add" size={18} color={theme.colors.forest} />
         </Pressable>
       </View>
     </FactorInputShell>
   )
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: brandSpacing4.sm,
-  },
-  stepButton: {
-    width: 44,
-    height: 44,
-    borderRadius: brandRadius.field,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: brandColors.panelMuted,
-  },
-  track: {
-    flex: 1,
-    height: 44,
-    justifyContent: "center",
-  },
-  trackFill: {
-    height: TRACK_HEIGHT,
-    borderRadius: TRACK_HEIGHT / 2,
-    backgroundColor: brandComponentTokens.choiceChip.background,
-    overflow: "hidden",
-  },
-  fill: {
-    height: TRACK_HEIGHT,
-    backgroundColor: brandColors.moss,
-  },
-  thumb: {
-    position: "absolute",
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
-    backgroundColor: brandColors.forest,
-    top: 22 - THUMB_SIZE / 2,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+    },
+    stepButton: {
+      width: 44,
+      height: 44,
+      borderRadius: brandRadius.field,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.panelMuted,
+    },
+    track: {
+      flex: 1,
+      height: 44,
+      justifyContent: "center",
+    },
+    trackFill: {
+      height: TRACK_HEIGHT,
+      borderRadius: TRACK_HEIGHT / 2,
+      backgroundColor: theme.componentColors.choiceChip.background,
+      overflow: "hidden",
+    },
+    fill: {
+      height: TRACK_HEIGHT,
+      backgroundColor: theme.colors.moss,
+    },
+    thumb: {
+      position: "absolute",
+      width: THUMB_SIZE,
+      height: THUMB_SIZE,
+      borderRadius: THUMB_SIZE / 2,
+      backgroundColor: theme.colors.forest,
+      top: 22 - THUMB_SIZE / 2,
+    },
+  })
+}

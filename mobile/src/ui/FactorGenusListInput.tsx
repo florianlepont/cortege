@@ -1,8 +1,10 @@
+import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { CNPF_FACTOR_A_GENUS_CODES, type CnpfFactorAGenusCode } from "@cortege/ibp-domain"
 import { AppText as Text } from "./AppText"
-import { brandColors, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { parseGenusListValue, toggleGenusInListValue } from "../app/factor-a-genus-list"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppChoiceChip } from "./AppChoiceChip"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
@@ -33,6 +35,8 @@ export function FactorGenusListInput({
   error,
   testID,
 }: FactorGenusListInputProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const selected = new Set(parseGenusListValue(value))
   const hasValue = selected.size > 0
   const showError = touched && Boolean(error)
@@ -67,14 +71,16 @@ export function FactorGenusListInput({
   )
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: brandSpacing4.xs,
-  },
-  countText: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: brandSpacing4.xs,
+    },
+    countText: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+  })
+}

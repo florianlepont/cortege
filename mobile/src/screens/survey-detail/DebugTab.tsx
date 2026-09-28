@@ -1,16 +1,18 @@
+import { useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { shouldShowDevTools } from "../../app/dev-tools"
 import { formatDateTime, formatEventPayload } from "../../app/formatters"
 import { SurveyEventItem } from "../../app/types"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { LocalAttachment, LocalSurvey } from "../../storage"
 import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AttachmentPhotoPreview } from "./AttachmentPhotoPreview"
-import { styles as sharedStyles } from "./styles"
-import { styles } from "./tabs.styles"
+import { createDetailStyles } from "./styles"
+import { createTabsStyles } from "./tabs.styles"
 
 type DebugTabProps = {
   survey: LocalSurvey
@@ -27,7 +29,13 @@ const t = fr.surveyDetail.debug
 // Technical field name and value pairs; names stay as in the data model.
 type Field = [name: string, value: string | number | null]
 
-function FieldRows({ fields }: { fields: Field[] }) {
+function FieldRows({
+  fields,
+  sharedStyles,
+}: {
+  fields: Field[]
+  sharedStyles: ReturnType<typeof createDetailStyles>
+}) {
   return (
     <>
       {fields.map(([name, value]) => (
@@ -50,6 +58,10 @@ export function DebugTab({
   publishableOnPublicMap,
   onSimulateMissingAttachmentFile,
 }: DebugTabProps) {
+  const theme = useBrandTheme()
+  const sharedStyles = useMemo(() => createDetailStyles(theme), [theme])
+  const styles = useMemo(() => createTabsStyles(theme), [theme])
+
   if (!shouldShowDevTools()) return null
 
   const surveyFields: Field[] = [
@@ -70,7 +82,7 @@ export function DebugTab({
     <View style={sharedStyles.detailSection}>
       <AppCard variant="panelElevated" padding={18} style={styles.debugCard}>
         <AppSectionHeader title={t.snapshotTitle} subtitle={t.snapshotSubtitle} />
-        <FieldRows fields={surveyFields} />
+        <FieldRows fields={surveyFields} sharedStyles={sharedStyles} />
         {survey.last_sync_error ? null : <Text style={sharedStyles.rowMeta}>{t.noSyncError}</Text>}
       </AppCard>
 
@@ -114,6 +126,7 @@ export function DebugTab({
               ) : null}
               <Text style={sharedStyles.rowMeta}>{t.attachmentIndex(index + 1)}</Text>
               <FieldRows
+                sharedStyles={sharedStyles}
                 fields={[
                   ["id", attachment.id],
                   ["survey_id", attachment.survey_id],

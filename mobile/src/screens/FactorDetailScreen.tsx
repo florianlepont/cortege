@@ -1,21 +1,17 @@
-import { useState } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { useMemo, useState } from "react"
+import { Pressable, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
-import {
-  brandColors,
-  brandSemanticColors,
-  brandShadow,
-  brandSpacing,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandColors } from "../app/brand-tokens"
+import { useBrandTheme } from "../app/theme"
 import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
 import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
 import { AppStatusChip } from "../ui/AppStatusChip"
+import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
 import { FactorChipOption, FactorChipsInput } from "../ui/FactorChipsInput"
 import { FactorCounterInput } from "../ui/FactorCounterInput"
@@ -68,6 +64,8 @@ export function FactorDetailScreen({
   retainedScore,
   methodVersion,
 }: FactorDetailScreenProps) {
+  const theme = useBrandTheme()
+  const detailStyles = useMemo(() => createDetailStyles(theme), [theme])
   const [captureHelpExpanded, setCaptureHelpExpanded] = useState(false)
   const helpTexts = helpForMethod(methodVersion)
   const hints = helpTexts.hints[factor]
@@ -119,7 +117,7 @@ export function FactorDetailScreen({
           subtitleStyle={detailStyles.panelBody}
         />
         <View style={detailStyles.fieldsList}>
-          {fields.map((field, index) => renderFactorField(factor, field, index))}
+          {fields.map((field, index) => renderFactorField(factor, field, index, detailStyles))}
         </View>
         {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
       </AppCard>
@@ -164,7 +162,12 @@ function humanizeFieldLabel(label: string): string {
     : label.replace(/_/g, " ")
 }
 
-function renderFactorField(factor: FactorKey, field: FactorField, index: number) {
+function renderFactorField(
+  factor: FactorKey,
+  field: FactorField,
+  index: number,
+  detailStyles: ReturnType<typeof createDetailStyles>,
+) {
   const variant = FIELD_VARIANTS[factor][index] ?? { kind: "numeric" as const }
   const label = field.required
     ? t.requiredField({ label: humanizeFieldLabel(field.label) })
@@ -254,145 +257,3 @@ function renderFactorField(factor: FactorKey, field: FactorField, index: number)
       )
   }
 }
-
-const detailStyles = StyleSheet.create({
-  screen: {
-    gap: brandSpacing.md,
-  },
-  heroCard: {
-    overflow: "hidden",
-    borderRadius: 32,
-    backgroundColor: brandColors.forest,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 18,
-    gap: 10,
-    ...brandShadow.card,
-  },
-  heroAccentOrb: {
-    position: "absolute",
-    top: -22,
-    right: -14,
-    width: 110,
-    height: 110,
-    borderRadius: 999,
-    backgroundColor: brandSemanticColors.heroAccentTintOnDark,
-  },
-  heroHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  heroFactorBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: brandSemanticColors.heroPanelBorderOnDark,
-  },
-  heroFactorBadgeText: {
-    ...brandTypography.button,
-    color: brandColors.white,
-  },
-  heroProgressText: {
-    ...brandTypography.meta,
-    color: brandSemanticColors.heroTextMutedOnDark,
-  },
-  heroTitle: {
-    ...brandTypography.sectionTitle,
-    fontSize: 26,
-    lineHeight: 30,
-    color: brandColors.white,
-  },
-  heroBody: {
-    ...brandTypography.sectionBody,
-    color: brandSemanticColors.heroBodyOnDark,
-  },
-  heroScoreRow: {
-    marginTop: 2,
-    gap: 6,
-  },
-  heroScoreCard: {
-    alignSelf: "flex-start",
-    borderRadius: 22,
-    backgroundColor: brandSemanticColors.heroSurfaceOnDark,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 2,
-  },
-  heroScoreLabel: {
-    ...brandTypography.heroEyebrow,
-    color: brandSemanticColors.heroTextMutedOnDark,
-  },
-  heroScoreValue: {
-    fontSize: 32,
-    lineHeight: 36,
-    fontWeight: "900",
-    color: brandColors.white,
-  },
-  heroScoreMeta: {
-    ...brandTypography.meta,
-    color: brandSemanticColors.heroTextMutedOnDark,
-  },
-  panel: {
-    gap: 12,
-  },
-  panelTitle: {
-    ...brandTypography.sectionTitle,
-    fontSize: 22,
-    lineHeight: 25,
-    color: brandColors.forest,
-  },
-  panelBody: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textSecondary,
-  },
-  panelToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  panelToggleCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  panelToggleMeta: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-  hintsList: {
-    gap: 10,
-  },
-  hintRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  hintDot: {
-    width: 8,
-    height: 8,
-    marginTop: 7,
-    borderRadius: 4,
-    backgroundColor: brandColors.moss,
-  },
-  hintText: {
-    flex: 1,
-    ...brandTypography.sectionBody,
-    color: brandColors.textPrimary,
-  },
-  fieldsList: {
-    gap: 12,
-  },
-  fieldBlock: {
-    gap: 6,
-  },
-  fieldLabel: {
-    ...brandTypography.label,
-    color: brandColors.textPrimary,
-  },
-  input: {
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-})

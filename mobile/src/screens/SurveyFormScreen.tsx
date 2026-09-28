@@ -3,6 +3,7 @@ import { View } from "react-native"
 import Animated from "react-native-reanimated"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../app/constants"
 import { computeIbpTotalsFromRetainedScores } from "../app/ibp-scoring"
+import { useBrandTheme } from "../app/theme"
 import {
   AppScreen,
   FactorField,
@@ -23,7 +24,7 @@ import { ParcelsSection } from "./survey-form/ParcelsSection"
 import type { SurveyFormMethod } from "./survey-form/MethodVersionPicker"
 import { ScoringContextSection, scoringContextPills } from "./survey-form/ScoringContextSection"
 import { SiteSection } from "./survey-form/SiteSection"
-import { formStyles } from "./survey-form/styles"
+import { createFormStyles } from "./survey-form/styles"
 import { useParcelMap } from "./survey-form/useParcelMap"
 import { COLLAPSED_HERO_HEIGHT, useWizardScroll } from "./survey-form/useWizardScroll"
 import { fr } from "../i18n"
@@ -93,6 +94,8 @@ export function SurveyFormScreen({
   onSubmitAttempt,
 }: SurveyFormScreenProps) {
   const [activeStep, setActiveStep] = useState<WizardStep>("identity")
+  const theme = useBrandTheme()
+  const formStyles = useMemo(() => createFormStyles(theme), [theme])
   const map = useParcelMap({
     apiUrl,
     accessToken,

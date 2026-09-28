@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   Animated,
   AppState,
@@ -11,8 +11,9 @@ import {
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { brandSpacing } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import { authStyles, PANEL_OVERLAP } from "./styles"
+import { createAuthStyles, PANEL_OVERLAP } from "./styles"
 
 const BLOB_CYCLE_MS = 10000
 const BLOB_STAGGER_MS = BLOB_CYCLE_MS / 3
@@ -58,6 +59,8 @@ export function HeroSection({
   onLogoPress,
   reducedMotion,
 }: HeroSectionProps) {
+  const theme = useBrandTheme()
+  const authStyles = useMemo(() => createAuthStyles(theme), [theme])
   const { width: screenWidth } = useWindowDimensions()
   const heroContentMaxWidth = Math.min(screenWidth - brandSpacing.lg * 2, 270)
 

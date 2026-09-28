@@ -2,6 +2,7 @@ import { useMemo } from "react"
 import { Platform, View } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { brandColors, brandMediaBackdrop } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
@@ -11,7 +12,7 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import { baseStackScreenOptions } from "./stack-options"
+import { createBaseStackScreenOptions } from "./stack-options"
 import { SurveysStackConfigContext, type SurveysStackConfig } from "./surveys-stack-config"
 
 const SurveysStack = createNativeStackNavigator<SurveysStackParamList>()
@@ -26,6 +27,7 @@ type SurveysTabNavigatorProps = { useNativeNav?: boolean }
  */
 export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigatorProps) {
   const surveyActions = useSurveyActions()
+  const theme = useBrandTheme()
   const nativeSearchEnabled = useNativeNav && Platform.OS === "ios"
   const config = useMemo<SurveysStackConfig>(() => ({ useNativeNav }), [useNativeNav])
 
@@ -34,7 +36,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
       <View style={styles.tabScreenContainer}>
         <SurveysStack.Navigator
           screenOptions={{
-            ...baseStackScreenOptions,
+            ...createBaseStackScreenOptions(theme),
             headerLargeTitle: false,
             ...(useNativeNav
               ? {}
@@ -44,11 +46,11 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                   headerTitleStyle: {
                     fontSize: 30,
                     fontWeight: "900" as const,
-                    color: brandColors.forest,
+                    color: theme.colors.forest,
                   },
-                  headerStyle: { backgroundColor: brandColors.canvas },
+                  headerStyle: { backgroundColor: theme.colors.canvas },
                   headerShadowVisible: false,
-                  headerTintColor: brandColors.forest,
+                  headerTintColor: theme.colors.forest,
                 }),
           }}
         >
@@ -109,6 +111,15 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                 fontWeight: "800" as const,
               },
               contentStyle: { backgroundColor: brandMediaBackdrop },
+              // DS-15 (UX audit, Phase 12): a formSheet with detents replaces the previous
+              // full-screen push for parcel selection — a partial sheet keeps the map visible
+              // behind it, expandable to nearly full height for closer parcel picking.
+              presentation: "formSheet",
+              sheetAllowedDetents: [0.62, 0.94],
+              sheetInitialDetentIndex: 1,
+              sheetGrabberVisible: true,
+              sheetCornerRadius: 24,
+              sheetExpandsWhenScrolledToEdge: true,
             }}
             component={ParcelSelectionRoute}
           />

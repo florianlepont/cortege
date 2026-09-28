@@ -1,6 +1,7 @@
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useBrandTheme } from "../../app/theme"
 import { AccountTabNavigator } from "../stacks/AccountStack"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
@@ -29,9 +30,10 @@ const JsTab = createBottomTabNavigator<RootTabParamList>()
 export function JsRootTabs() {
   const deps = useTabListenerDeps()
   const insets = useSafeAreaInsets()
+  const theme = useBrandTheme()
 
   return (
-    <JsTab.Navigator screenOptions={(props) => jsTabScreenOptions(props, insets)}>
+    <JsTab.Navigator screenOptions={(props) => jsTabScreenOptions(theme, props, insets)}>
       <JsTab.Screen name="home" options={{ headerShown: false }} component={HomeTabNavigator} />
       <JsTab.Screen
         name="surveys"
@@ -40,7 +42,7 @@ export function JsRootTabs() {
           headerShown: false,
           tabBarStyle: shouldHideTabBar(getFocusedRouteNameFromRoute(route))
             ? { display: "none" as const }
-            : buildJsTabBarStyle(insets),
+            : buildJsTabBarStyle(theme, insets),
         })}
         listeners={makeSurveysTabListeners(deps)}
         component={SurveysTabNavigator}

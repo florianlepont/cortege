@@ -1,18 +1,13 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import { Ionicons } from "@expo/vector-icons"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
-import {
-  brandColors,
-  brandRadius,
-  brandSpacing,
-  brandSpacing4,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { confidenceLine } from "../app/genus-recognition-text"
 import type { GenusSuggestion } from "../recognition/calibration"
 import { classifyGenusPhoto } from "../recognition/genusClassifierModel"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppButton } from "./AppButton"
 import { AppCard } from "./AppCard"
@@ -47,6 +42,8 @@ export function GenusRecognitionModal({
   onClose,
   onConfirmGenus,
 }: GenusRecognitionModalProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const [step, setStep] = useState<Step>({ kind: "idle" })
 
   const handleClose = (): void => {
@@ -100,7 +97,7 @@ export function GenusRecognitionModal({
             accessibilityLabel={t.close}
             testID="genus-recognition-close"
           >
-            <Ionicons name="close" size={24} color={brandColors.textPrimary} />
+            <Ionicons name="close" size={24} color={theme.colors.textPrimary} />
           </Pressable>
         </View>
 
@@ -118,7 +115,7 @@ export function GenusRecognitionModal({
 
           {step.kind === "classifying" ? (
             <View style={styles.centered}>
-              <ActivityIndicator size="large" color={brandColors.forest} />
+              <ActivityIndicator size="large" color={theme.colors.forest} />
               <Text style={styles.bodyText}>{t.classifying}</Text>
             </View>
           ) : null}
@@ -183,68 +180,70 @@ export function GenusRecognitionModal({
   )
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: brandColors.white,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: brandSpacing.md,
-    paddingTop: brandSpacing.md,
-    paddingBottom: brandSpacing4.sm,
-  },
-  title: {
-    ...brandTypography.sectionTitle,
-    color: brandColors.forest,
-  },
-  content: {
-    padding: brandSpacing.md,
-    gap: brandSpacing4.md,
-  },
-  block: {
-    gap: brandSpacing4.md,
-  },
-  centered: {
-    alignItems: "center",
-    gap: brandSpacing4.md,
-    paddingVertical: brandSpacing.lg,
-  },
-  bodyText: {
-    ...brandTypography.sectionBody,
-    color: brandColors.textPrimary,
-  },
-  sectionTitle: {
-    ...brandTypography.sectionTitle,
-    fontSize: 18,
-    color: brandColors.forest,
-  },
-  resultCard: {
-    borderRadius: brandRadius.field,
-  },
-  resultRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: brandSpacing4.md,
-  },
-  resultCopy: {
-    flex: 1,
-    gap: 2,
-  },
-  mostLikelyBadge: {
-    ...brandTypography.meta,
-    fontWeight: "700",
-    color: brandColors.moss,
-  },
-  resultGenus: {
-    ...brandTypography.sectionBody,
-    fontWeight: "700",
-    color: brandColors.textPrimary,
-  },
-  resultConfidence: {
-    ...brandTypography.meta,
-    color: brandColors.textSecondary,
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.white,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: brandSpacing.md,
+      paddingTop: brandSpacing.md,
+      paddingBottom: brandSpacing4.sm,
+    },
+    title: {
+      ...brandTypography.sectionTitle,
+      color: theme.colors.forest,
+    },
+    content: {
+      padding: brandSpacing.md,
+      gap: brandSpacing4.md,
+    },
+    block: {
+      gap: brandSpacing4.md,
+    },
+    centered: {
+      alignItems: "center",
+      gap: brandSpacing4.md,
+      paddingVertical: brandSpacing.lg,
+    },
+    bodyText: {
+      ...brandTypography.sectionBody,
+      color: theme.colors.textPrimary,
+    },
+    sectionTitle: {
+      ...brandTypography.sectionTitle,
+      fontSize: 18,
+      color: theme.colors.forest,
+    },
+    resultCard: {
+      borderRadius: brandRadius.field,
+    },
+    resultRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.md,
+    },
+    resultCopy: {
+      flex: 1,
+      gap: 2,
+    },
+    mostLikelyBadge: {
+      ...brandTypography.meta,
+      fontWeight: "700",
+      color: theme.colors.moss,
+    },
+    resultGenus: {
+      ...brandTypography.sectionBody,
+      fontWeight: "700",
+      color: theme.colors.textPrimary,
+    },
+    resultConfidence: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+  })
+}

@@ -1,9 +1,11 @@
+import { useMemo } from "react"
 import { View } from "react-native"
 import { shouldShowDevTools } from "../../app/dev-tools"
 import { SurveyDetailTab } from "../../app/types"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
-import { styles } from "./styles"
+import { createDetailStyles } from "./styles"
 
 type DetailTabBarProps = {
   activeTab: SurveyDetailTab
@@ -13,6 +15,8 @@ type DetailTabBarProps = {
 const t = fr.surveyDetail.tabs
 
 export function DetailTabBar({ activeTab, onSelectTab }: DetailTabBarProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createDetailStyles(theme), [theme])
   return (
     <View style={styles.filterChipsRow}>
       <AppChoiceChip

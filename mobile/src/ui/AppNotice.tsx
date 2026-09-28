@@ -1,8 +1,9 @@
-import { ReactNode } from "react"
+import { ReactNode, useMemo } from "react"
 import { Pressable, StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandComponentTokens, brandTypography } from "../app/brand-tokens"
+import { brandTypography } from "../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppNoticeTone = "info" | "success" | "warning" | "danger"
 
@@ -34,6 +35,8 @@ export function AppNotice({
   titleStyle,
   messageStyle,
 }: AppNoticeProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const textTone =
     tone === "danger"
       ? styles.messageDanger
@@ -65,69 +68,71 @@ export function AppNotice({
   )
 }
 
-const styles = StyleSheet.create({
-  base: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  info: {
-    borderColor: brandComponentTokens.notice.infoBorder,
-    backgroundColor: brandComponentTokens.notice.infoBackground,
-  },
-  success: {
-    borderColor: brandComponentTokens.notice.successBorder,
-    backgroundColor: brandComponentTokens.notice.successBackground,
-  },
-  warning: {
-    borderColor: brandComponentTokens.notice.warningBorder,
-    backgroundColor: brandComponentTokens.notice.warningBackground,
-  },
-  danger: {
-    borderColor: brandComponentTokens.notice.dangerBorder,
-    backgroundColor: brandComponentTokens.notice.dangerBackground,
-  },
-  icon: {
-    marginTop: 1,
-    color: brandComponentTokens.notice.text,
-  },
-  copy: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    ...brandTypography.label,
-    color: brandComponentTokens.notice.title,
-  },
-  message: {
-    ...brandTypography.sectionBody,
-    color: brandComponentTokens.notice.text,
-  },
-  messageSuccess: {
-    color: brandComponentTokens.notice.successText,
-  },
-  messageWarning: {
-    color: brandComponentTokens.notice.warningText,
-  },
-  messageDanger: {
-    color: brandComponentTokens.notice.dangerText,
-  },
-  action: {
-    alignSelf: "center",
-    minHeight: 32,
-    justifyContent: "center",
-    paddingHorizontal: 10,
-  },
-  actionPressed: {
-    opacity: 0.7,
-  },
-  actionText: {
-    ...brandTypography.label,
-    color: brandComponentTokens.notice.title,
-    textDecorationLine: "underline",
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    base: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 8,
+      borderRadius: 16,
+      borderWidth: 1,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+    },
+    info: {
+      borderColor: theme.componentColors.notice.infoBorder,
+      backgroundColor: theme.componentColors.notice.infoBackground,
+    },
+    success: {
+      borderColor: theme.componentColors.notice.successBorder,
+      backgroundColor: theme.componentColors.notice.successBackground,
+    },
+    warning: {
+      borderColor: theme.componentColors.notice.warningBorder,
+      backgroundColor: theme.componentColors.notice.warningBackground,
+    },
+    danger: {
+      borderColor: theme.componentColors.notice.dangerBorder,
+      backgroundColor: theme.componentColors.notice.dangerBackground,
+    },
+    icon: {
+      marginTop: 1,
+      color: theme.componentColors.notice.text,
+    },
+    copy: {
+      flex: 1,
+      gap: 2,
+    },
+    title: {
+      ...brandTypography.label,
+      color: theme.componentColors.notice.title,
+    },
+    message: {
+      ...brandTypography.sectionBody,
+      color: theme.componentColors.notice.text,
+    },
+    messageSuccess: {
+      color: theme.componentColors.notice.successText,
+    },
+    messageWarning: {
+      color: theme.componentColors.notice.warningText,
+    },
+    messageDanger: {
+      color: theme.componentColors.notice.dangerText,
+    },
+    action: {
+      alignSelf: "center",
+      minHeight: 32,
+      justifyContent: "center",
+      paddingHorizontal: 10,
+    },
+    actionPressed: {
+      opacity: 0.7,
+    },
+    actionText: {
+      ...brandTypography.label,
+      color: theme.componentColors.notice.title,
+      textDecorationLine: "underline",
+    },
+  })
+}

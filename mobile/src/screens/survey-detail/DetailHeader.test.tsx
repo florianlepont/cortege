@@ -1,6 +1,6 @@
 import React, { createRef } from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
-import { ibpScoreTokens } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
 import { DetailHeader, DetailHeaderHandle } from "./DetailHeader"
@@ -102,11 +102,11 @@ describe("DetailHeader hero metric (D-03 amended)", () => {
     const [stand] = findPill(tree, "hero-subscore-stand")
     const [context] = findPill(tree, "hero-subscore-context")
     expect(flattenStyle(stand.props.style).backgroundColor).toBe(
-      ibpScoreTokens.colors.low.background,
+      defaultTheme.ibpScoreColors.low.background,
     )
     expect(textOf(stand.findByType("Text" as never))).toBe("P/G 6 / 35 · faible")
     expect(flattenStyle(context.props.style).backgroundColor).toBe(
-      ibpScoreTokens.colors.high.background,
+      defaultTheme.ibpScoreColors.high.background,
     )
     expect(textOf(context.findByType("Text" as never))).toBe("C 12 / 15 · forte")
   })

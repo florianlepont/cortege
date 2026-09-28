@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -15,6 +15,7 @@ import {
   brandSpacing,
   brandTypography,
 } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { BrandBump } from "../../ui/BrandBump"
@@ -36,6 +37,8 @@ type OnboardingCarouselScreenProps = {
 export function OnboardingCarouselScreen({ onSkip, onFinish }: OnboardingCarouselScreenProps) {
   const { width } = useWindowDimensions()
   const insets = useSafeAreaInsets()
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
   const scrollRef = useRef<ScrollView | null>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const slides = t.slides
@@ -121,53 +124,55 @@ export function OnboardingCarouselScreen({ onSkip, onFinish }: OnboardingCarouse
   )
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: brandColors.canvas,
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: brandSpacing.lg,
-    paddingTop: brandSpacing.md,
-  },
-  dots: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: brandColors.divider,
-  },
-  dotActive: {
-    backgroundColor: brandColors.forest,
-    width: 18,
-  },
-  slide: {
-    paddingHorizontal: brandSpacing.xl,
-    paddingTop: brandSpacing.xl,
-    justifyContent: "center",
-  },
-  slideHero: {
-    gap: brandSpacing.md,
-  },
-  slideTitle: {
-    ...brandTypography.sectionTitle,
-    color: brandColors.forest,
-  },
-  slideBody: {
-    ...brandTypography.heroBody,
-    color: brandColors.textSecondary,
-  },
-  bottomBar: {
-    paddingHorizontal: brandSpacing.lg,
-    paddingTop: brandSpacing.md,
-  },
-  primaryButton: {
-    width: "100%",
-  },
-})
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.canvas,
+    },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: brandSpacing.lg,
+      paddingTop: brandSpacing.md,
+    },
+    dots: {
+      flexDirection: "row",
+      gap: 6,
+    },
+    dot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: theme.colors.divider,
+    },
+    dotActive: {
+      backgroundColor: brandColors.forest,
+      width: 18,
+    },
+    slide: {
+      paddingHorizontal: brandSpacing.xl,
+      paddingTop: brandSpacing.xl,
+      justifyContent: "center",
+    },
+    slideHero: {
+      gap: brandSpacing.md,
+    },
+    slideTitle: {
+      ...brandTypography.sectionTitle,
+      color: brandColors.forest,
+    },
+    slideBody: {
+      ...brandTypography.heroBody,
+      color: theme.colors.textSecondary,
+    },
+    bottomBar: {
+      paddingHorizontal: brandSpacing.lg,
+      paddingTop: brandSpacing.md,
+    },
+    primaryButton: {
+      width: "100%",
+    },
+  })
+}
