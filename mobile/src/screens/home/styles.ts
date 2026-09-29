@@ -33,11 +33,13 @@ export function createStyles(theme: BrandTheme) {
       color: theme.semanticColors.textStrong,
       lineHeight: 32,
     },
-    greetingDate: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
-      marginTop: 2,
-      textTransform: "capitalize",
+    greetingText: {
+      flex: 1,
+      flexShrink: 1,
+      marginRight: brandSpacing.sm,
+    },
+    pageInset: {
+      marginHorizontal: PAGE_H,
     },
     headerTrailing: {
       flexDirection: "row",

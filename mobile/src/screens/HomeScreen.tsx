@@ -50,14 +50,6 @@ function getFirstName(user: AuthUser | null): string {
   return user.first_name?.trim() || user.display_name?.split(" ")[0] || ""
 }
 
-function formatTodayDate(): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date())
-}
-
 /** The most recently updated draft, if it was touched within the resume window (HOME-02). */
 export function pickResumeDraft(surveys: LocalSurvey[]): LocalSurvey | null {
   const candidates = surveys
@@ -135,191 +127,216 @@ export function HomeScreen({
   }, [onRefresh])
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 80 },
-      ]}
-      showsVerticalScrollIndicator={false}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={() => void handleRefresh()}
-          tintColor={theme.colors.moss}
-        />
-      }
-    >
-      {/* ── Greeting ──────────────────────────────── */}
-      <View style={styles.greeting}>
-        <View>
-          <Text style={styles.greetingTitle}>
-            {firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
-          </Text>
-          <Text style={styles.greetingDate}>{formatTodayDate()}</Text>
-        </View>
-        <View style={styles.headerTrailing}>
-          {/* SYNC-02: visible on the dashboard, not only in Settings. */}
-          <SyncStatusPill
-            isOnline={isOnline}
-            isSyncing={isSyncing}
-            pendingCount={surveyStats.pending}
-            onPress={onOpenSyncStatus}
+    // OA-11: the scroll view starts below the status bar, so the pull-to-refresh spinner shows
+    // instead of hiding under it. OA-12: a short text under the spinner says what it fetches.
+    <View style={[styles.scroll, { paddingTop: insets.top }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: 20, paddingBottom: insets.bottom + 80 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void handleRefresh()}
+            tintColor={theme.semanticColors.accent}
+            title={fr.home.refreshTitle}
+            titleColor={theme.colors.textSecondary}
           />
-          <Pressable
-            style={styles.avatarButton}
-            onPress={onNavigateToAccount}
-            accessibilityRole="button"
-            accessibilityLabel={fr.home.avatar}
-          >
-            {profilePictureUri ? (
-              <ExpoImage
-                source={{
-                  uri: profilePictureUri,
-                  headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-                }}
-                style={styles.avatarImage}
-                contentFit="cover"
-                accessible={false}
-              />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Ionicons name="person" size={20} color={theme.colors.textSecondary} />
-              </View>
-            )}
-          </Pressable>
+        }
+      >
+        {/* ── Greeting ──────────────────────────────── */}
+        <View style={styles.greeting}>
+          {/* OA-15: no date (owner decision). OA-16: a long first name shrinks, then ellipsises,
+            instead of pushing the pill and the avatar off screen. */}
+          <View style={styles.greetingText}>
+            <Text
+              style={styles.greetingTitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              {firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
+            </Text>
+          </View>
+          <View style={styles.headerTrailing}>
+            {/* SYNC-02: visible on the dashboard, not only in Settings. */}
+            <SyncStatusPill
+              isOnline={isOnline}
+              isSyncing={isSyncing}
+              pendingCount={surveyStats.pending}
+              onPress={onOpenSyncStatus}
+            />
+            <Pressable
+              style={styles.avatarButton}
+              onPress={onNavigateToAccount}
+              accessibilityRole="button"
+              accessibilityLabel={fr.home.avatar}
+            >
+              {profilePictureUri ? (
+                <ExpoImage
+                  source={{
+                    uri: profilePictureUri,
+                    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+                  }}
+                  style={styles.avatarImage}
+                  contentFit="cover"
+                  accessible={false}
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person" size={20} color={theme.colors.textSecondary} />
+                </View>
+              )}
+            </Pressable>
+          </View>
         </View>
-      </View>
 
-      {/* ── Alertes ───────────────────────────────── */}
-      {hasAlerts ? (
-        <AppNotice
-          tone={isBlockedAlert ? "danger" : "warning"}
-          icon={isBlockedAlert ? "warning-outline" : "cloud-upload-outline"}
-          title={
-            isBlockedAlert
-              ? fr.home.alerts.blocked({ count: surveyStats.blocked })
-              : fr.home.alerts.failed({ count: surveyStats.failed })
-          }
-          message={isBlockedAlert ? fr.home.alerts.blockedMessage : failedAlertMessage}
-          action={
-            alertSurvey
-              ? {
-                  label: isBlockedAlert ? fr.home.alerts.actionView : fr.home.alerts.actionRetry,
-                  onPress: () => {
-                    if (isBlockedAlert) {
-                      onOpenSurvey(alertSurvey.id)
-                    } else {
-                      void onRetrySurvey(alertSurvey.id)
-                    }
-                  },
-                }
-              : undefined
-          }
-          style={styles.notice}
-        />
-      ) : null}
-
-      {/* ── Hero CTA (HOME-02: resume a recent draft, or start a new one) ──── */}
-      <View style={styles.heroCta}>
-        <Text style={styles.heroEyebrow}>
-          {resumeDraft ? fr.home.hero.resumeEyebrow : fr.home.hero.eyebrow}
-        </Text>
-        <Text style={styles.heroTitle}>
-          {resumeDraft
-            ? fr.home.hero.resumeTitle({
-                name: resumeDraft.site_name || fr.common.untitledSurvey,
-              })
-            : fr.home.hero.title}
-        </Text>
-        <Text style={styles.heroBody}>
-          {resumeDraft
-            ? fr.home.hero.resumeBody({
-                completed: Math.round(Math.max(0, Math.min(100, resumeDraft.completion_rate)) / 10),
-              })
-            : fr.home.hero.body}
-        </Text>
-        <AppButton
-          label={resumeDraft ? fr.home.hero.resumeButton : fr.home.hero.button}
-          leadingIcon={resumeDraft ? "play-outline" : "add"}
-          size="lg"
-          variant="primary"
-          onPress={resumeDraft ? () => onOpenSurvey(resumeDraft.id) : onCreateSurvey}
-          style={styles.heroButton}
-          labelStyle={styles.heroButtonLabel}
-        />
-        {resumeDraft ? (
-          <AppButton
-            label={fr.home.hero.newSurveyButton}
-            leadingIcon="add"
-            size="md"
-            variant="secondary"
-            onPress={onCreateSurvey}
-            style={styles.heroSecondaryButton}
-            labelStyle={styles.heroSecondaryButtonLabel}
+        {/* ── Alertes ───────────────────────────────── */}
+        {hasAlerts ? (
+          <AppNotice
+            tone={isBlockedAlert ? "danger" : "warning"}
+            icon={isBlockedAlert ? "warning-outline" : "cloud-upload-outline"}
+            title={
+              isBlockedAlert
+                ? fr.home.alerts.blocked({ count: surveyStats.blocked })
+                : fr.home.alerts.failed({ count: surveyStats.failed })
+            }
+            message={isBlockedAlert ? fr.home.alerts.blockedMessage : failedAlertMessage}
+            action={
+              alertSurvey
+                ? {
+                    label: isBlockedAlert ? fr.home.alerts.actionView : fr.home.alerts.actionRetry,
+                    onPress: () => {
+                      if (isBlockedAlert) {
+                        onOpenSurvey(alertSurvey.id)
+                      } else {
+                        void onRetrySurvey(alertSurvey.id)
+                      }
+                    },
+                  }
+                : undefined
+            }
+            style={styles.notice}
           />
         ) : null}
-      </View>
 
-      {/* ── Progression du brouillon repris ─────────── */}
-      {resumeDraft ? (
-        <View style={[styles.section, styles.resumeCardWrap]}>
-          <SurveyProgressCard survey={resumeDraft} onPress={() => onOpenSurvey(resumeDraft.id)} />
+        {/* ── Hero CTA (HOME-02: resume a recent draft, or start a new one) ──── */}
+        <View style={styles.heroCta}>
+          <Text style={styles.heroEyebrow}>
+            {resumeDraft ? fr.home.hero.resumeEyebrow : fr.home.hero.eyebrow}
+          </Text>
+          <Text style={styles.heroTitle}>
+            {resumeDraft
+              ? fr.home.hero.resumeTitle({
+                  name: resumeDraft.site_name || fr.common.untitledSurvey,
+                })
+              : fr.home.hero.title}
+          </Text>
+          <Text style={styles.heroBody}>
+            {resumeDraft
+              ? fr.home.hero.resumeBody({
+                  completed: Math.round(
+                    Math.max(0, Math.min(100, resumeDraft.completion_rate)) / 10,
+                  ),
+                })
+              : fr.home.hero.body}
+          </Text>
+          <AppButton
+            label={resumeDraft ? fr.home.hero.resumeButton : fr.home.hero.button}
+            leadingIcon={resumeDraft ? "play-outline" : "add"}
+            size="lg"
+            variant="primary"
+            onPress={resumeDraft ? () => onOpenSurvey(resumeDraft.id) : onCreateSurvey}
+            style={styles.heroButton}
+            labelStyle={styles.heroButtonLabel}
+          />
+          {resumeDraft ? (
+            <AppButton
+              label={fr.home.hero.newSurveyButton}
+              leadingIcon="add"
+              size="md"
+              variant="secondary"
+              onPress={onCreateSurvey}
+              style={styles.heroSecondaryButton}
+              labelStyle={styles.heroSecondaryButtonLabel}
+            />
+          ) : null}
         </View>
-      ) : null}
 
-      {/* ── Parcelles proches ─────────────────────── */}
-      <View style={styles.section}>
-        <AppSectionHeader
-          title={fr.home.nearby.title}
-          trailing={
-            <Pressable
-              onPress={onNavigateToExplorer}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={fr.home.nearby.seeMapLabel}
-            >
-              <Text style={styles.trailingLink}>{fr.home.nearby.seeMap}</Text>
-            </Pressable>
-          }
-          style={styles.sectionHeader}
-        />
-
-        {nearbyParcels.locationDenied ? (
-          <AppNotice tone="info" icon="location-outline" message={fr.home.nearby.locationDenied} />
-        ) : nearbyParcels.error ? (
-          <AppNotice tone="warning" icon="wifi-outline" message={fr.home.nearby.loadError} />
-        ) : nearbyParcels.loading ? (
-          <View style={styles.loadingRow}>
-            <SkeletonRow />
-            <SkeletonRow />
+        {/* ── Progression du brouillon repris ─────────── */}
+        {resumeDraft ? (
+          <View style={[styles.section, styles.resumeCardWrap]}>
+            <SurveyProgressCard survey={resumeDraft} onPress={() => onOpenSurvey(resumeDraft.id)} />
           </View>
-        ) : nearbyParcels.parcels.length === 0 ? (
-          <AppNotice tone="info" icon="leaf-outline" message={fr.home.nearby.empty} />
-        ) : (
-          <View style={styles.parcelsList}>
-            {nearbyParcels.parcels.map((parcel) => (
-              <ParcelNearbyCard
-                key={parcel.parcel_id}
-                parcel={parcel}
-                distanceKm={parcel.distanceKm}
-                surveyCount={parcel.surveyCount}
+        ) : null}
+
+        {/* ── Parcelles proches ─────────────────────── */}
+        <View style={styles.section}>
+          <AppSectionHeader
+            title={fr.home.nearby.title}
+            trailing={
+              <Pressable
                 onPress={onNavigateToExplorer}
-              />
-            ))}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={fr.home.nearby.seeMapLabel}
+              >
+                <Text style={styles.trailingLink}>{fr.home.nearby.seeMap}</Text>
+              </Pressable>
+            }
+            style={styles.sectionHeader}
+          />
 
-            {nearbyParcels.sectorAvgScore != null ? (
-              <SectorScoreCard
-                score={nearbyParcels.sectorAvgScore}
-                analysedCount={
-                  nearbyParcels.parcels.filter((p) => p.latest_ibp_total != null).length
-                }
-                mixedMethods={hasMixedMethodVersions(nearbyParcels.parcels)}
+          {nearbyParcels.locationDenied ? (
+            <View style={styles.pageInset}>
+              <AppNotice
+                tone="info"
+                icon="location-outline"
+                message={fr.home.nearby.locationDenied}
               />
-            ) : null}
-          </View>
-        )}
-      </View>
-    </ScrollView>
+            </View>
+          ) : nearbyParcels.error ? (
+            <View style={styles.pageInset}>
+              <AppNotice tone="warning" icon="wifi-outline" message={fr.home.nearby.loadError} />
+            </View>
+          ) : nearbyParcels.loading ? (
+            <View style={styles.loadingRow}>
+              <SkeletonRow />
+              <SkeletonRow />
+            </View>
+          ) : nearbyParcels.parcels.length === 0 ? (
+            // OA-19: the notices ran to the screen edges; they take the page margins like the cards.
+            <View style={styles.pageInset}>
+              <AppNotice tone="info" icon="leaf-outline" message={fr.home.nearby.empty} />
+            </View>
+          ) : (
+            <View style={styles.parcelsList}>
+              {nearbyParcels.parcels.map((parcel) => (
+                <ParcelNearbyCard
+                  key={parcel.parcel_id}
+                  parcel={parcel}
+                  distanceKm={parcel.distanceKm}
+                  surveyCount={parcel.surveyCount}
+                  onPress={onNavigateToExplorer}
+                />
+              ))}
+
+              {nearbyParcels.sectorAvgScore != null ? (
+                <SectorScoreCard
+                  score={nearbyParcels.sectorAvgScore}
+                  analysedCount={
+                    nearbyParcels.parcels.filter((p) => p.latest_ibp_total != null).length
+                  }
+                  mixedMethods={hasMixedMethodVersions(nearbyParcels.parcels)}
+                />
+              ) : null}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   )
 }

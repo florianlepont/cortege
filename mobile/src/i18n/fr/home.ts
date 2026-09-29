@@ -3,6 +3,8 @@ const plural = (count: number, word: string): string => (count > 1 ? `${word}s` 
 
 export const homeFr = {
   greeting: "Bonjour",
+  // OA-12: shown under the pull-to-refresh spinner.
+  refreshTitle: "Récupération des nouveaux relevés du serveur",
   greetingWithName: ({ name }: { name: string }) => `Bonjour, ${name}`,
   // HOME-06: the avatar (photo or placeholder) is tappable, navigating to Compte.
   avatar: "Ouvrir Compte",
