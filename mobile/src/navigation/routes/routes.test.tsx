@@ -19,6 +19,7 @@ const mockPlatform = {
       : (options.ios ?? options.default),
 }
 
+jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
 jest.mock("react-native", () => {
   const ReactRef = jest.requireActual("react") as typeof import("react")
   type PressableRenderProp<T> = T | ((state: { pressed: boolean }) => T)

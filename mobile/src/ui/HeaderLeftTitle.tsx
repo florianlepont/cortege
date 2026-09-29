@@ -21,5 +21,5 @@ export function HeaderLeftTitle({ title }: { title: string }) {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 24, fontWeight: "800" },
+  title: { fontSize: 28, fontWeight: "800" },
 })

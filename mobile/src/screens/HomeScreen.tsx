@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useHeaderHeight } from "@react-navigation/elements"
 import { Pressable, RefreshControl, ScrollView, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
@@ -93,6 +94,8 @@ export function HomeScreen({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const insets = useSafeAreaInsets()
+  // OA-85: iOS 26 lays the screen out under the native header, so the content reserves its height.
+  const headerHeight = useHeaderHeight()
   const [refreshing, setRefreshing] = useState(false)
   const firstName = getFirstName(currentUser)
   // HOME-06: the avatar shows the profile photo (it used to render nothing once one existed) and
@@ -135,12 +138,12 @@ export function HomeScreen({
   return (
     // OA-11: the scroll view starts below the status bar, so the pull-to-refresh spinner shows
     // instead of hiding under it. OA-12: a short text under the spinner says what it fetches.
-    <View style={[styles.scroll, { paddingTop: nativeHeader ? 0 : insets.top }]}>
+    <View style={[styles.scroll, { paddingTop: nativeHeader ? headerHeight : insets.top }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: nativeHeader ? 8 : 20, paddingBottom: insets.bottom + 80 },
+          { paddingTop: nativeHeader ? 16 : 20, paddingBottom: insets.bottom + 80 },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
