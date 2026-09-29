@@ -469,6 +469,46 @@ describe("AccountRoute", () => {
   })
 })
 
+describe("AccountRoute focus refresh (OA-13)", () => {
+  function focusNavigation() {
+    const listeners: Record<string, () => void> = {}
+    const remove = jest.fn()
+    const navigation = {
+      ...makeNavigation(),
+      addListener: jest.fn((event: string, handler: () => void) => {
+        listeners[event] = handler
+        return remove
+      }),
+    }
+    return { navigation, listeners, remove }
+  }
+
+  test("focusing the screen reloads the profile when signed in", async () => {
+    const fixture = makeFixture()
+    const { navigation, listeners } = focusNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <AccountRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    listeners.focus()
+    expect(fixture.session.actions.handleLoadMyProfile).toHaveBeenCalledWith({ silent: true })
+  })
+
+  test("focusing the screen does nothing when signed out", async () => {
+    const fixture = makeFixture()
+    fixture.session.state.isAuthenticated = false
+    const { navigation, listeners } = focusNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <AccountRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    listeners.focus()
+    expect(fixture.session.actions.handleLoadMyProfile).not.toHaveBeenCalled()
+  })
+})
+
 describe("HomeRoute", () => {
   test("opens the form, a survey and the explorer through the tab navigator", async () => {
     const fixture = makeFixture()

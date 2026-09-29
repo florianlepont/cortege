@@ -1,15 +1,21 @@
-import { BadRequestException, InternalServerErrorException, Logger } from "@nestjs/common"
+import {
+  BadRequestException,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common"
 import { HttpAdapterHost } from "@nestjs/core"
 import { HttpErrorLoggingFilter } from "../src/common/http-error-logging.filter"
 
-function host(url: string) {
+function host(url: string | undefined, type = "http", method: string | null = "PATCH") {
   const response = { status: jest.fn().mockReturnThis(), json: jest.fn() }
   return {
-    getType: () => "http",
+    getType: () => type,
     getArgByIndex: () => undefined,
     getArgs: () => [],
     switchToHttp: () => ({
-      getRequest: () => ({ method: "PATCH", url }),
+      getRequest: () => ({ method: method ?? undefined, url }),
       getResponse: () => response,
     }),
   } as never
@@ -40,5 +46,26 @@ describe("HttpErrorLoggingFilter", () => {
   it("logs a 400 as a warning", () => {
     filter.catch(new BadRequestException("file is required"), host("/v1/me/profile-picture"))
     expect(warn).toHaveBeenCalledWith("PATCH /v1/me/profile-picture -> 400: file is required")
+  })
+
+  it("does not log 401 and 404, which are routine", () => {
+    filter.catch(new UnauthorizedException(), host("/v1/me"))
+    filter.catch(new NotFoundException(), host("/v1/nope"))
+    expect(warn).not.toHaveBeenCalled()
+    expect(error).not.toHaveBeenCalled()
+  })
+
+  it("logs placeholders when the request has no method or url", () => {
+    filter.catch(new BadRequestException("bad"), host(undefined, "http", null))
+    expect(warn).toHaveBeenCalledWith("? ? -> 400: bad")
+  })
+
+  it("adds no line of its own outside http contexts or for non-HttpException errors", () => {
+    filter.catch(new BadRequestException("bad"), host("/x", "rpc"))
+    filter.catch(new Error("boom"), host("/x"))
+    expect(warn).not.toHaveBeenCalled()
+    // Nest's own base filter still logs the unexpected Error itself; nothing from ours.
+    expect(error).toHaveBeenCalledTimes(1)
+    expect(error.mock.calls[0][0]).toBeInstanceOf(Error)
   })
 })

@@ -12,7 +12,7 @@ export class HttpErrorLoggingFilter extends BaseExceptionFilter {
     if (exception instanceof HttpException && host.getType() === "http") {
       const request = host.switchToHttp().getRequest<{ method?: string; url?: string }>()
       const status = exception.getStatus()
-      const path = (request.url ?? "").split("?")[0]
+      const path = (request.url ?? "").split("?")[0] || "?"
       const line = `${request.method ?? "?"} ${path} -> ${status}: ${exception.message}`
       if (status >= 500) this.logger.error(line)
       else if (status !== 401 && status !== 404) this.logger.warn(line)
