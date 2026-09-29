@@ -5,7 +5,8 @@ import { HomeScreen } from "../../screens/HomeScreen"
 import { getFirstName } from "../../screens/home/first-name"
 import { ProfileHeaderButton } from "../../screens/home/ProfileHeaderButton"
 import { resolveProfilePictureUri } from "../../screens/account/IdentityCard"
-import { HeaderLeftTitle } from "../../ui/HeaderLeftTitle"
+import { useBrandTheme } from "../../app/theme"
+import { iconHeaderButton, titleHeaderItems } from "../header-items"
 import { useNearbyParcelsState } from "../../state/nearby-parcels-context"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
@@ -54,26 +55,40 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
     session.currentUser?.profile_picture_url,
     session.apiUrl,
   )
+  const theme = useBrandTheme()
   useLayoutEffect(() => {
     if (!nativeHeader) return
     navigation.setOptions({
       headerShown: true,
       title: "",
       headerShadowVisible: false,
-      headerLeft: () => (
-        <HeaderLeftTitle
-          title={firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
-        />
-      ),
-      headerRight: () => (
-        <ProfileHeaderButton
-          pictureUri={pictureUri}
-          accessToken={accessToken}
-          onPress={onNavigateToAccount}
-        />
-      ),
+      // The header takes the app's canvas colour, or a band of another colour shows above it.
+      headerStyle: { backgroundColor: theme.colors.canvas },
+      unstable_headerLeftItems: () =>
+        titleHeaderItems(
+          firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting,
+        ),
+      unstable_headerRightItems: () => [
+        pictureUri
+          ? {
+              type: "custom" as const,
+              element: (
+                <ProfileHeaderButton
+                  pictureUri={pictureUri}
+                  accessToken={accessToken}
+                  onPress={onNavigateToAccount}
+                />
+              ),
+            }
+          : iconHeaderButton({
+              label: fr.home.avatar,
+              sfSymbol: "person.crop.circle",
+              tintColor: theme.semanticColors.accent,
+              onPress: onNavigateToAccount,
+            }),
+      ],
     })
-  }, [nativeHeader, navigation, firstName, pictureUri, accessToken, onNavigateToAccount])
+  }, [nativeHeader, navigation, firstName, pictureUri, accessToken, onNavigateToAccount, theme])
 
   return (
     <HomeScreen

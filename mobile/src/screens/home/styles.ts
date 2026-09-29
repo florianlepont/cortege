@@ -42,7 +42,7 @@ export function createStyles(theme: BrandTheme) {
     nativeHeaderSync: {
       flexDirection: "row",
       paddingHorizontal: PAGE_H,
-      marginBottom: 12,
+      marginBottom: 16,
     },
     pageInset: {
       marginHorizontal: PAGE_H,

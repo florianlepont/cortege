@@ -1,42 +1,45 @@
 import { Image as ExpoImage } from "expo-image"
-import { Ionicons } from "@expo/vector-icons"
-import { StyleSheet } from "react-native"
-import { useBrandTheme } from "../../app/theme"
+import { Pressable, StyleSheet } from "react-native"
+import { brandRadius } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
-import { HeaderCircleButton, HEADER_BUTTON_SIZE } from "../../ui/HeaderCircleButton"
+
+const AVATAR_SIZE = 32
 
 type ProfileHeaderButtonProps = {
-  pictureUri: string | null
+  pictureUri: string
   accessToken: string | null
   onPress: () => void
 }
 
-/** OA-85: the profile button of the Accueil header, a glass circle like Mes Relevés' "+". */
+/**
+ * OA-85: the profile photo as a native header item. iOS 26 puts the glass around it, so it is a
+ * bare round photo; without a photo the header uses a plain icon button instead.
+ */
 export function ProfileHeaderButton({
   pictureUri,
   accessToken,
   onPress,
 }: ProfileHeaderButtonProps) {
-  const theme = useBrandTheme()
   return (
-    <HeaderCircleButton label={fr.home.avatar} onPress={onPress}>
-      {pictureUri ? (
-        <ExpoImage
-          source={{
-            uri: pictureUri,
-            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-          }}
-          style={styles.image}
-          contentFit="cover"
-          accessible={false}
-        />
-      ) : (
-        <Ionicons name="person" size={20} color={theme.semanticColors.accent} />
-      )}
-    </HeaderCircleButton>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={fr.home.avatar}
+      hitSlop={6}
+      onPress={onPress}
+    >
+      <ExpoImage
+        source={{
+          uri: pictureUri,
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+        }}
+        style={styles.image}
+        contentFit="cover"
+        accessible={false}
+      />
+    </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
-  image: { width: HEADER_BUTTON_SIZE, height: HEADER_BUTTON_SIZE },
+  image: { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: brandRadius.pill },
 })

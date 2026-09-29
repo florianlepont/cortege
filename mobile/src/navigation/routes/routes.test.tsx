@@ -542,22 +542,46 @@ describe("HomeRoute native header (OA-85)", () => {
     expect(options.headerShown).toBe(true)
     expect(options.title).toBe("")
 
-    let left: renderer.ReactTestRenderer | undefined
-    let right: renderer.ReactTestRenderer | undefined
+    const [titleItem] = options.unstable_headerLeftItems()
+    expect(titleItem.type).toBe("custom")
+    expect(titleItem.hidesSharedBackground).toBe(true)
+    const [profileItem] = options.unstable_headerRightItems()
+    expect(profileItem.type).toBe("button")
+    expect(profileItem.label).toBe(fr.home.avatar)
+    profileItem.onPress()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("accountHome")
+  })
+
+  test("with a profile photo the right item is the bare photo, which opens Compte", async () => {
+    mockNativeTabs.value = true
+    const fixture = makeFixture()
+    fixture.session.state.currentUser = {
+      id: "u1",
+      email: "marie@test.fr",
+      role: "contributor",
+      first_name: "Marie",
+      last_name: "Lepont",
+      display_name: "Marie Lepont",
+      profile_picture_url: "/me/profile-picture?v=1",
+    } as never
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <HomeRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    const options = navigation.setOptions.mock.calls.at(-1)[0]
+    const [profileItem] = options.unstable_headerRightItems()
+    expect(profileItem.type).toBe("custom")
+    let photo: renderer.ReactTestRenderer | undefined
     act(() => {
-      left = renderer.create(options.headerLeft())
-      right = renderer.create(options.headerRight())
+      photo = renderer.create(profileItem.element)
     })
-    const texts = left!.root.findAll((node) => (node.type as unknown) === "Text")
-    expect(texts.length).toBeGreaterThan(0)
     act(() => {
-      right!.root.findByProps({ accessibilityLabel: fr.home.avatar }).props.onPress()
+      photo!.root.findByProps({ accessibilityLabel: fr.home.avatar }).props.onPress()
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("accountHome")
-    act(() => {
-      left!.unmount()
-      right!.unmount()
-    })
+    act(() => photo!.unmount())
   })
 })
 
@@ -587,7 +611,7 @@ describe("HomeRoute native header greeting (OA-85)", () => {
     const options = navigation.setOptions.mock.calls.at(-1)[0]
     let left: renderer.ReactTestRenderer | undefined
     act(() => {
-      left = renderer.create(options.headerLeft())
+      left = renderer.create(options.unstable_headerLeftItems()[0].element)
     })
     const text = left!.root
       .findAll((node) => (node.type as unknown) === "Text")
@@ -725,29 +749,23 @@ describe("SurveyListRoute", () => {
     expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenLastCalledWith("")
 
     // OA-85: the title sits left, on the same row as the "+" create button.
-    let headerLeftTree: renderer.ReactTestRenderer | undefined
-    act(() => {
-      headerLeftTree = renderer.create(setOptionsCall.headerLeft())
-    })
     expect(setOptionsCall.headerTitle).toBe("")
+    const [titleItem] = setOptionsCall.unstable_headerLeftItems()
+    expect(titleItem.hidesSharedBackground).toBe(true)
+    let titleTree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      titleTree = renderer.create(titleItem.element)
+    })
     expect(
-      headerLeftTree!.root.findAll((node) => (node.type as unknown) === "Text").length,
+      titleTree!.root.findAll((node) => (node.type as unknown) === "Text").length,
     ).toBeGreaterThan(0)
-    act(() => headerLeftTree!.unmount())
+    act(() => titleTree!.unmount())
 
     // SYNC-02/HOME-01: the native header also carries the "+" create button.
-    let headerRightTree: renderer.ReactTestRenderer | undefined
-    act(() => {
-      headerRightTree = renderer.create(setOptionsCall.headerRight())
-    })
-    const createButton = headerRightTree!.root.findByProps({
-      accessibilityLabel: fr.surveyList.a11y.createSurvey,
-    })
-    act(() => {
-      createButton.props.onPress()
-    })
+    const [createButton] = setOptionsCall.unstable_headerRightItems()
+    expect(createButton.label).toBe(fr.surveyList.a11y.createSurvey)
+    createButton.onPress()
     expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
-    act(() => headerRightTree!.unmount())
 
     const bar = { setText: jest.fn(), clearText: jest.fn() }
     options.ref.current = bar
