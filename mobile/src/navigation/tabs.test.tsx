@@ -52,6 +52,7 @@ type ScreenProps = {
 
 const mockTabScreens: Record<string, string[]> = {}
 const mockNativeNavigatorProps: Record<string, unknown>[] = []
+const mockJsNavigatorProps: Record<string, unknown>[] = []
 const mockJsSurveysOptions: unknown[] = []
 const mockContainer: { onStateChange?: (state: unknown) => void } = {}
 const mockNavRef = { current: null, ready: false, resetRoot: jest.fn() }
@@ -63,6 +64,7 @@ function mockCreateTabs(kind: "native" | "js") {
   const Navigator = ({ children, ...props }: { children?: React.ReactNode }) => {
     mockTabScreens[kind] = []
     if (kind === "native") mockNativeNavigatorProps.push(props)
+    else mockJsNavigatorProps.push(props)
     return ReactRef.createElement(ReactRef.Fragment, null, children)
   }
   const Screen = (props: ScreenProps) => {
@@ -131,6 +133,7 @@ jest.mock("./stacks/SurveysStack", () => ({ SurveysTabNavigator: () => null }))
 jest.mock("./stacks/PublicMapStack", () => ({ PublicMapTabNavigator: () => null }))
 jest.mock("./stacks/AccountStack", () => ({ AccountTabNavigator: () => null }))
 
+import { selectionAsync } from "expo-haptics"
 import { AppNavigation, useResetToHomeOnSignOut } from "./AppNavigation"
 import { defaultTheme } from "../app/theme"
 import { buildJsTabBarStyle, jsTabScreenOptions } from "./tab-config"
@@ -159,6 +162,7 @@ beforeEach(() => {
   mockPlatform.OS = "ios"
   for (const key of Object.keys(mockTabScreens)) delete mockTabScreens[key]
   mockNativeNavigatorProps.length = 0
+  mockJsNavigatorProps.length = 0
   mockJsSurveysOptions.length = 0
   delete mockContainer.onStateChange
   mockNavRef.ready = false
@@ -315,5 +319,20 @@ describe("dark mode tab tint and the shared hide rule", () => {
       { route: { name: "home" } },
     )
     expect(dark.tabBarActiveTintColor).toBe(defaultTheme.semanticColors.accent)
+  })
+})
+
+describe("tab press haptics", () => {
+  test("pressing a tab ticks in the native tree and in the JS tree", async () => {
+    ;(selectionAsync as jest.Mock).mockClear()
+
+    await mount()
+    ;(mockNativeNavigatorProps.at(-1)?.screenListeners as { tabPress: () => void }).tabPress()
+    expect(selectionAsync).toHaveBeenCalledTimes(1)
+
+    mockPlatform.OS = "android"
+    await mount()
+    ;(mockJsNavigatorProps.at(-1)?.screenListeners as { tabPress: () => void }).tabPress()
+    expect(selectionAsync).toHaveBeenCalledTimes(2)
   })
 })

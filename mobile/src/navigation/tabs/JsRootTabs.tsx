@@ -13,6 +13,7 @@ import {
   makePublicMapTabListeners,
   makeSurveysTabListeners,
   useTabListenerDeps,
+  tabPressHaptics,
 } from "../tab-config"
 import type { RootTabParamList } from "../types"
 
@@ -31,7 +32,10 @@ export function JsRootTabs() {
   const theme = useBrandTheme()
 
   return (
-    <JsTab.Navigator screenOptions={(props) => jsTabScreenOptions(theme, props, insets)}>
+    <JsTab.Navigator
+      screenOptions={(props) => jsTabScreenOptions(theme, props, insets)}
+      screenListeners={tabPressHaptics}
+    >
       <JsTab.Screen name="home" options={{ headerShown: false }} component={HomeTabNavigator} />
       <JsTab.Screen
         name="surveys"

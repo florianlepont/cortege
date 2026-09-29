@@ -11,6 +11,7 @@ import {
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppPressable } from "./AppPressable"
+import { feedback } from "./feedback"
 
 type AppButtonVariant = "primary" | "secondary" | "danger" | "dangerSoft"
 type AppButtonSize = "sm" | "md" | "lg"
@@ -63,7 +64,11 @@ export function AppButton({
       accessibilityLabel={accessibilityLabel ?? label ?? fr.components.appButton.defaultLabel}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
-      onPress={onPress}
+      onPress={() => {
+        // A light tap on every button press (owner: the taps were felt on Reprendre and Nouveau relevé).
+        feedback.impact.light()
+        onPress()
+      }}
       style={[
         styles.base,
         iconOnly ? styles.iconOnlyBase : styles[size],
