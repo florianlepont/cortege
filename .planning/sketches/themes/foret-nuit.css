@@ -1,0 +1,22 @@
+/* B. Forêt de nuit : noir teinté de vert profond, liserés verts fins, un vert vif pour l'action. */
+:root {
+  --bg: #0A110E;
+  --surface: #111A16;
+  --surface-2: #16211C;
+  --border: rgba(167, 201, 87, 0.12);
+  --text: #E9EEE4;
+  --text-2: #93A597;
+  --text-3: #5E6F63;
+  --accent: #A7C957;
+  --accent-ink: #0A110E;
+  --accent-soft: rgba(167, 201, 87, 0.14);
+  --hero: #14231B;
+  --hero-border: rgba(167, 201, 87, 0.24);
+  --hero-text: #E9EEE4;
+  --hero-eyebrow: #A7C957;
+  --warn: #E0B04A;
+  --danger: #E08468;
+  --glass: rgba(17, 26, 22, 0.72);
+  --glass-border: rgba(167, 201, 87, 0.14);
+  --radius: 18px;
+}

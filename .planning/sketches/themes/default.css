@@ -1,0 +1,22 @@
+/* A. Graphite, façon Linear : noir profond, liserés fins, gris doux, un seul vert. */
+:root {
+  --bg: #08090A;
+  --surface: #111214;
+  --surface-2: #17181B;
+  --border: #212226;
+  --text: #F2F3F1;
+  --text-2: #9A9FA6;
+  --text-3: #62666D;
+  --accent: #9BC26A;
+  --accent-ink: #0C1208;
+  --accent-soft: rgba(155, 194, 106, 0.12);
+  --hero: #111214;
+  --hero-border: #26282C;
+  --hero-text: #F2F3F1;
+  --hero-eyebrow: #9BC26A;
+  --warn: #E0A13A;
+  --danger: #E5745B;
+  --glass: rgba(24, 25, 28, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --radius: 14px;
+}

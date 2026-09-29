@@ -1,0 +1,22 @@
+/* C. Sous-bois chaud : charbon chaud, texte crème, sauge et touche ocre, plus éditorial. */
+:root {
+  --bg: #121110;
+  --surface: #1C1A17;
+  --surface-2: #23201C;
+  --border: #2D2A25;
+  --text: #F3EEE4;
+  --text-2: #B0A797;
+  --text-3: #756D60;
+  --accent: #B8CC8F;
+  --accent-ink: #1C2416;
+  --accent-soft: rgba(184, 204, 143, 0.13);
+  --hero: #1F2A1A;
+  --hero-border: rgba(217, 164, 65, 0.22);
+  --hero-text: #F3EEE4;
+  --hero-eyebrow: #D9A441;
+  --warn: #D9A441;
+  --danger: #D98463;
+  --glass: rgba(28, 26, 23, 0.72);
+  --glass-border: rgba(243, 238, 228, 0.08);
+  --radius: 20px;
+}
