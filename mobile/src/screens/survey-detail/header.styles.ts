@@ -37,7 +37,12 @@ export function createHeaderStyles(theme: BrandTheme) {
       width: 138,
       height: 138,
       borderRadius: 999,
-      backgroundColor: brandOnDarkColors.heroAccentTintOnDark,
+      // Sketch 001 A: the decorative orb stays on the forest hero in light mode; on the dark
+      // bordered hero it is a faint neutral disc.
+      backgroundColor:
+        theme.scheme === "dark"
+          ? "rgba(255, 255, 255, 0.03)"
+          : brandOnDarkColors.heroAccentTintOnDark,
     },
     // DET-03/04: the "…" menu button (Renommer/Partager/Supprimer), its own row so it never
     // overlaps the score card that sits at the top of both the compressed and expanded layouts.
