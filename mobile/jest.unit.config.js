@@ -1,43 +1,44 @@
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
-  testMatch: ['**/*.test.ts', '**/*.test.tsx'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
+  preset: "ts-jest",
+  testEnvironment: "node",
+  roots: ["<rootDir>/src"],
+  testMatch: ["**/*.test.ts", "**/*.test.tsx"],
+  moduleFileExtensions: ["ts", "tsx", "js", "json"],
   collectCoverageFrom: [
-    '<rootDir>/App.tsx',
-    '<rootDir>/src/**/*.{ts,tsx}',
-    '!<rootDir>/src/**/*.d.ts',
-    '!<rootDir>/src/**/*.test.ts',
-    '!<rootDir>/src/**/*.test.tsx',
+    "<rootDir>/App.tsx",
+    "<rootDir>/src/**/*.{ts,tsx}",
+    "!<rootDir>/src/**/*.d.ts",
+    "!<rootDir>/src/**/*.test.ts",
+    "!<rootDir>/src/**/*.test.tsx",
   ],
-  coverageDirectory: '<rootDir>/coverage/unit',
-  coverageReporters: ['text', 'text-summary', 'json-summary', 'lcov'],
+  coverageDirectory: "<rootDir>/coverage/unit",
+  coverageReporters: ["text", "text-summary", "json-summary", "lcov"],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.jest.json' }]
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.jest.json" }],
   },
   moduleNameMapper: {
-    '^@expo/vector-icons$': '<rootDir>/test/vector-icons.mock.ts',
-    '^expo-sqlite$': '<rootDir>/test/expo-sqlite.mock.ts',
-    '^expo-haptics$': '<rootDir>/test/expo-haptics.mock.ts',
-    '^expo-crypto$': '<rootDir>/test/expo-crypto.mock.ts',
-    '^expo-network$': '<rootDir>/test/expo-network.mock.ts',
-    '^expo-file-system/legacy$': '<rootDir>/test/expo-file-system-legacy.mock.ts',
-    '^expo-image-manipulator$': '<rootDir>/test/expo-image-manipulator.mock.ts',
-    '^expo-image$': '<rootDir>/test/expo-image.mock.ts',
-    '^expo-blur$': '<rootDir>/test/expo-blur.mock.ts',
-    '^react-native-svg$': '<rootDir>/test/react-native-svg.mock.ts',
-    '^react-native-reanimated$': '<rootDir>/test/react-native-reanimated.mock.ts',
-    '^@gorhom/bottom-sheet$': '<rootDir>/test/gorhom-bottom-sheet.mock.ts',
-    '\\.(png|jpg|jpeg|gif|webp)$': '<rootDir>/test/image.mock.ts',
+    "^@expo/vector-icons$": "<rootDir>/test/vector-icons.mock.ts",
+    "^expo-sqlite$": "<rootDir>/test/expo-sqlite.mock.ts",
+    "^expo-haptics$": "<rootDir>/test/expo-haptics.mock.ts",
+    "^expo-crypto$": "<rootDir>/test/expo-crypto.mock.ts",
+    "^expo-network$": "<rootDir>/test/expo-network.mock.ts",
+    "^expo-file-system/legacy$": "<rootDir>/test/expo-file-system-legacy.mock.ts",
+    "^expo-image-manipulator$": "<rootDir>/test/expo-image-manipulator.mock.ts",
+    "^expo-image$": "<rootDir>/test/expo-image.mock.ts",
+    "^expo-blur$": "<rootDir>/test/expo-blur.mock.ts",
+    "^react-native-svg$": "<rootDir>/test/react-native-svg.mock.ts",
+    "^react-native-reanimated$": "<rootDir>/test/react-native-reanimated.mock.ts",
+    "^@maplibre/maplibre-react-native$": "<rootDir>/test/maplibre.mock.ts",
+    "^@gorhom/bottom-sheet$": "<rootDir>/test/gorhom-bottom-sheet.mock.ts",
+    "\\.(png|jpg|jpeg|gif|webp)$": "<rootDir>/test/image.mock.ts",
     // Metro resolves this to a numeric asset id (metro.config.js); the mock is the same shape.
-    '\\.tflite$': '<rootDir>/test/image.mock.ts',
+    "\\.tflite$": "<rootDir>/test/image.mock.ts",
     // supercluster 9 is ESM-only; ts-jest runs CommonJS, so load its UMD build (hoisted to the
     // root node_modules by 01.9-19). Metro resolves the ESM entry in the app.
-    '^supercluster$': '<rootDir>/../node_modules/supercluster/dist/supercluster.js',
+    "^supercluster$": "<rootDir>/../node_modules/supercluster/dist/supercluster.js",
     // The shared package is read from source, like Metro does through its react-native field
     // (phase 01.8), so the tests need no built dist.
-    '^@cortege/ibp-domain$': '<rootDir>/../packages/ibp-domain/src/index.ts',
+    "^@cortege/ibp-domain$": "<rootDir>/../packages/ibp-domain/src/index.ts",
   },
   globals: {
     __DEV__: true,
@@ -48,22 +49,22 @@ module.exports = {
     global: { statements: 100, lines: 100 },
     // Mounted by src/state/render-counts.test.tsx (phase 01.9-01). Raised in 01.9-09 and confirmed
     // at the 01.9-31 gate: App.tsx is a thin shell, fully rendered by src/state/contexts.test.tsx.
-    './App.tsx': { statements: 100, branches: 100, functions: 100, lines: 100 },
+    "./App.tsx": { statements: 100, branches: 100, functions: 100, lines: 100 },
     // Contexts and assembler (01.9-09) and the French catalogue (01.9-05), at the measured floor (C-8).
-    './src/state/': { statements: 96, branches: 75, functions: 90, lines: 97 },
+    "./src/state/": { statements: 96, branches: 75, functions: 90, lines: 97 },
     // Route components and navigation helpers (01.9-18), at the measured floor (C-8).
-    './src/navigation/': { statements: 100, branches: 98, functions: 100, lines: 100 },
+    "./src/navigation/": { statements: 100, branches: 98, functions: 100, lines: 100 },
     // Branches measured after merging the wave-2 catalogue sections (plural and optional-name
     // ternaries such as `n === 1 ? ... : ...` are not all exercised yet).
-    './src/i18n/': { statements: 100, branches: 76, functions: 100, lines: 100 },
-    './src/api/': { statements: 95, branches: 97, functions: 91, lines: 95 },
+    "./src/i18n/": { statements: 100, branches: 76, functions: 100, lines: 100 },
+    "./src/api/": { statements: 95, branches: 97, functions: 91, lines: 95 },
     // Raised in 01.8-07 after the IBP rules moved to @cortege/ibp-domain (adapter + parity tests).
     // Raised again in 01.8-10 (form method version, catalogue helper, draft patcher).
-    './src/app/': { statements: 91, branches: 80, functions: 97, lines: 95 },
-    './src/components/': { statements: 22, branches: 11, functions: 10, lines: 22 },
-    './src/hooks/': { statements: 90, branches: 80, functions: 95, lines: 91 },
-    './src/screens/': { statements: 56, branches: 45, functions: 49, lines: 55 },
-    './src/storage/': { statements: 92, branches: 81, functions: 91, lines: 94 },
-    './src/ui/': { statements: 59, branches: 35, functions: 42, lines: 59 },
+    "./src/app/": { statements: 91, branches: 80, functions: 97, lines: 95 },
+    "./src/components/": { statements: 22, branches: 11, functions: 10, lines: 22 },
+    "./src/hooks/": { statements: 90, branches: 80, functions: 95, lines: 91 },
+    "./src/screens/": { statements: 56, branches: 45, functions: 49, lines: 55 },
+    "./src/storage/": { statements: 92, branches: 81, functions: 91, lines: 94 },
+    "./src/ui/": { statements: 59, branches: 35, functions: 42, lines: 59 },
   },
-};
+}

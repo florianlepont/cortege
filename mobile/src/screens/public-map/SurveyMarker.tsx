@@ -1,13 +1,14 @@
 import { memo, useCallback } from "react"
 import { View } from "react-native"
-import { Marker, type LatLng } from "react-native-maps"
+import { ViewAnnotation } from "@maplibre/maplibre-react-native"
+import type { MapCoordinate } from "../../app/map-viewport"
 import { bandTone, totalBand } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
 import { markerStyles } from "./styles"
 
 export type SurveyMarkerProps = {
   id: string
-  coordinate: LatLng
+  coordinate: MapCoordinate
   ibpTotal: number
   selected: boolean
   onSelect: (id: string) => void
@@ -18,24 +19,24 @@ function SurveyMarkerBase({ id, coordinate, ibpTotal, selected, onSelect }: Surv
   const tone = bandTone(totalBand(ibpTotal))
 
   return (
-    <Marker
-      coordinate={coordinate}
+    <ViewAnnotation
+      id={`survey-${id}`}
+      lngLat={[coordinate.longitude, coordinate.latitude]}
+      anchor="center"
+      selected={selected}
       onPress={handlePress}
-      // MAP-03: the pastille never changes once drawn for a given (tone, selected) pair — the
-      // parent key already includes `selected` (MapCanvas), so a selection change remounts this
-      // marker with a fresh snapshot instead of re-tracking the view every frame.
-      tracksViewChanges={false}
-      accessibilityLabel={fr.publicMap.a11y.surveyMarker(ibpTotal)}
-      zIndex={selected ? 3 : 2}
     >
       <View
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={fr.publicMap.a11y.surveyMarker(ibpTotal)}
         style={[
           markerStyles.scorePastille,
           markerStyles[`scorePastille_${tone}`],
           selected ? markerStyles.scorePastilleSelected : null,
         ]}
       />
-    </Marker>
+    </ViewAnnotation>
   )
 }
 

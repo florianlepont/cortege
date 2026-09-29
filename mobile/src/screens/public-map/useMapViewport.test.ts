@@ -6,8 +6,7 @@
 jest.mock("react-native", () => ({}))
 
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
-import type { Region } from "react-native-maps"
-import { computeRegionBbox } from "../../app/map-viewport"
+import { computeRegionBbox, type MapRegion as Region } from "../../app/map-viewport"
 import type { PublicMapItem } from "../../app/types"
 import {
   DEFAULT_MAP_REGION,
@@ -77,7 +76,7 @@ async function moveTo(
   isGesture?: boolean,
 ) {
   await act(async () => {
-    result.current.onRegionChangeComplete(region, { isGesture })
+    result.current.onRegionChangeComplete(region, { isGesture: isGesture === true })
   })
 }
 

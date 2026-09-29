@@ -52,12 +52,12 @@ jest.mock("../../ui/AppSectionHeader", () => {
   }
 })
 
-jest.mock("react-native-maps", () => {
+jest.mock("@maplibre/maplibre-react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
-    Marker: ({ children, ...props }: { children?: React.ReactNode }) => {
+    ViewAnnotation: ({ children, ...props }: { children?: React.ReactNode }) => {
       mockMarkerRenders.count += 1
-      return ReactRef.createElement("Marker", props, children)
+      return ReactRef.createElement("ViewAnnotation", props, children)
     },
   }
 })
@@ -92,7 +92,12 @@ function mount(element: React.ReactElement): ReactTestRenderer {
 }
 
 function markerProps(tree: ReactTestRenderer) {
-  return tree.root.findByType("Marker" as never).props as Record<string, unknown>
+  return tree.root.findByType("ViewAnnotation" as never).props as Record<string, unknown>
+}
+
+// The label is on the drawn pastille or bubble inside the annotation, where a screen reader lands.
+function markerLabel(tree: ReactTestRenderer): string {
+  return String(tree.root.findByType("View" as never).props.accessibilityLabel)
 }
 
 describe("SurveyMarker", () => {
@@ -158,7 +163,7 @@ describe("SurveyMarker", () => {
       )
     })
     expect(mockMarkerRenders.count).toBe(3)
-    expect(markerProps(tree).zIndex).toBe(3)
+    expect(markerProps(tree).selected).toBe(true)
   })
 
   test("passes its id to onSelect and labels itself with the score, not the id", () => {
@@ -175,9 +180,10 @@ describe("SurveyMarker", () => {
     const props = markerProps(tree)
     ;(props.onPress as () => void)()
     expect(onSelect).toHaveBeenCalledWith("s-42")
-    expect(props.accessibilityLabel).toBe(fr.publicMap.a11y.surveyMarker(27))
-    expect(String(props.accessibilityLabel)).not.toContain("s-42")
-    expect(props.coordinate).toEqual(COORDINATE)
+    expect(markerLabel(tree)).toBe(fr.publicMap.a11y.surveyMarker(27))
+    expect(markerLabel(tree)).not.toContain("s-42")
+    // MapLibre positions by [longitude, latitude].
+    expect(props.lngLat).toEqual([COORDINATE.longitude, COORDINATE.latitude])
   })
 
   // MAP-03: the pastille is coloured by the IBP total's score band, not a single system pin color.
@@ -216,31 +222,17 @@ describe("SurveyMarker", () => {
       ]),
     )
   })
-
-  test("tracksViewChanges is false", () => {
-    const tree = mount(
-      <SurveyMarker
-        id="s-1"
-        coordinate={COORDINATE}
-        ibpTotal={30}
-        selected={false}
-        onSelect={jest.fn()}
-      />,
-    )
-    expect(markerProps(tree).tracksViewChanges).toBe(false)
-  })
 })
 
 describe("ClusterMarker", () => {
-  test("renders tracksViewChanges false, a count label and its count", () => {
+  test("renders a count label and its count", () => {
     const onPress = jest.fn()
     const tree = mount(
       <ClusterMarker clusterId={7} coordinate={COORDINATE} count={12} onPress={onPress} />,
     )
     const props = markerProps(tree)
-    expect(props.tracksViewChanges).toBe(false)
-    expect(props.accessibilityLabel).toBe(fr.publicMap.a11y.cluster(12))
-    expect(props.accessibilityLabel).toBe("Groupe de 12 relevés")
+    expect(markerLabel(tree)).toBe(fr.publicMap.a11y.cluster(12))
+    expect(markerLabel(tree)).toBe("Groupe de 12 relevés")
     expect(tree.root.findByType("Text" as never).props.children).toBe("12")
     ;(props.onPress as () => void)()
     expect(onPress).toHaveBeenCalledWith(7)
@@ -301,7 +293,7 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
         onSelect={jest.fn()}
       />,
     )
-    expect(String(markerProps(marker).accessibilityLabel)).toContain("IBP 12/50")
+    expect(markerLabel(marker)).toContain("IBP 12/50")
   })
 
   test("a v3.2 survey with a cas shows the method and the cas instead of the region", () => {

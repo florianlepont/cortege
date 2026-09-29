@@ -40,21 +40,38 @@ jest.mock("react-native", () => {
   }
 })
 
-jest.mock("react-native-maps", () => {
+jest.mock("@maplibre/maplibre-react-native", () => {
   const ReactRef = require("react") as typeof import("react")
-  const MapView = ReactRef.forwardRef(function MapView(
-    { children, ...props }: { children?: React.ReactNode },
+  const { boundsToRegion } = jest.requireActual("../../map/maplibre/regions") as {
+    boundsToRegion: (bounds: number[]) => unknown
+  }
+  const Camera = ReactRef.forwardRef(function Camera(
+    props: Record<string, unknown>,
     ref: React.Ref<unknown>,
   ) {
-    ReactRef.useImperativeHandle(ref, () => ({ animateToRegion: mockAnimateToRegion }))
-    return ReactRef.createElement("MapView", props, children)
+    ReactRef.useImperativeHandle(ref, () => ({
+      fitBounds: (bounds: number[], options: { duration: number }) =>
+        mockAnimateToRegion(boundsToRegion(bounds), options.duration),
+    }))
+    return ReactRef.createElement("Camera", props)
   })
   return {
-    __esModule: true,
-    default: MapView,
-    Marker: ({ children, ...props }: { children?: React.ReactNode }) =>
-      ReactRef.createElement("Marker", props, children),
-    UrlTile: (props: Record<string, unknown>) => ReactRef.createElement("UrlTile", props),
+    Map: ({ children, ...props }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("MapLibreMap", props, children),
+    Camera,
+    UserLocation: (props: Record<string, unknown>) => ReactRef.createElement("UserLocation", props),
+    // The label lives on the drawn child; the host copies it up so tests can find a marker by it.
+    ViewAnnotation: ({
+      children,
+      ...props
+    }: {
+      children?: React.ReactElement<{ accessibilityLabel?: string }>
+    }) =>
+      ReactRef.createElement(
+        "Marker",
+        { ...props, accessibilityLabel: children?.props.accessibilityLabel },
+        children,
+      ),
   }
 })
 
@@ -68,11 +85,9 @@ jest.mock("react-native-safe-area-context", () => ({
 }))
 jest.mock("../../app/useAppBottomTabBarHeight", () => ({ useAppBottomTabBarHeight: () => 50 }))
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
-jest.mock("../../components/IgnCadastreTileOverlay", () => ({
-  IgnCadastreTileOverlay: "IgnCadastreTileOverlay",
-}))
-jest.mock("../../components/ParcelOverlayPolygons", () => ({
-  ParcelOverlayPolygons: "ParcelOverlayPolygons",
+jest.mock("../../map/maplibre/CadastreLayer", () => ({ CadastreLayer: "CadastreLayer" }))
+jest.mock("../../map/maplibre/ParcelPolygonsLayer", () => ({
+  ParcelPolygonsLayer: "ParcelPolygonsLayer",
 }))
 jest.mock("../../ui/AppButton", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -165,16 +180,6 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     isOffline: false,
     basemap: "map",
     onChangeBasemap: jest.fn(),
-    offlineAreas: [],
-    downloadingAreaId: null,
-    estimateOfflineArea: jest.fn(() => ({
-      tileCountPerBasemap: 0,
-      totalTileCount: 0,
-      estimatedBytes: 0,
-      exceedsCap: false,
-    })),
-    onDownloadOfflineArea: jest.fn(async () => ({ ok: true as const, areaId: "area-1" })),
-    onDeleteOfflineArea: jest.fn(async () => undefined),
     onQueueParcelDownload: jest.fn(),
     ...overrides,
   }
@@ -249,7 +254,12 @@ describe("PublicMapScreen", () => {
 
     const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
     expect(header.props.title).toBe(fr.publicMap.selected.title(27))
-    expect(JSON.stringify(tree.toJSON())).not.toContain("secret-id")
+    // The annotation's technical `id` is not user-facing: what a user reads or hears never has it.
+    const visible = tree.root
+      .findAll((node) => typeof node.type === "string")
+      .flatMap((node) => [node.props.accessibilityLabel, node.props.children].flat(2))
+      .filter((value): value is string => typeof value === "string")
+    expect(visible.join(" ")).not.toContain("secret-id")
 
     act(() => byLabel(fr.publicMap.a11y.closeSelection).props.onPress())
     expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
@@ -283,7 +293,7 @@ describe("PublicMapScreen", () => {
       ],
     })
     mount(props)
-    const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelOverlayPolygons")
+    const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer")
 
     await act(async () => {
       overlay.props.onParcelPress("empty-1")
@@ -317,7 +327,7 @@ describe("PublicMapScreen", () => {
       onQueueParcelDownload,
     })
     mount(props)
-    const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelOverlayPolygons")
+    const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer")
 
     await act(async () => {
       overlay.props.onParcelPress("studied-1")
@@ -437,14 +447,17 @@ describe("PublicMapScreen", () => {
       })
 
       // Zoom in to parcel level: the cadastre loads after the debounce.
-      const map = tree.root.find((node) => (node.type as unknown) === "MapView")
+      const map = tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
       // MAP-04: the device's position is the native halo, not a custom marker.
-      expect(map.props.showsUserLocation).toBe(true)
+      expect(tree.root.findAll((node) => (node.type as unknown) === "UserLocation")).toHaveLength(1)
       act(() =>
-        map.props.onRegionChangeComplete(
-          { latitude: 45.76, longitude: 4.84, latitudeDelta: 0.004, longitudeDelta: 0.004 },
-          { isGesture: true },
-        ),
+        map.props.onRegionDidChange({
+          nativeEvent: {
+            center: [4.84, 45.76],
+            bounds: [4.838, 45.758, 4.842, 45.762],
+            userInteraction: true,
+          },
+        }),
       )
       act(() => {
         jest.advanceTimersByTime(VIEWPORT_DEBOUNCE_MS)
@@ -497,10 +510,16 @@ describe("PublicMapScreen", () => {
     })
     await press()
     // MAP-04: the device's own position is the native showsUserLocation halo, not an app Marker.
-    expect(mockAnimateToRegion).toHaveBeenLastCalledWith(
-      { latitude: 45.1, longitude: 5.2, latitudeDelta: 0.012, longitudeDelta: 0.012 },
-      450,
-    )
+    // The camera takes bounds, so the region comes back with a float rounding error.
+    const [region, duration] = mockAnimateToRegion.mock.calls.at(-1) as [
+      { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number },
+      number,
+    ]
+    expect(region.latitude).toBeCloseTo(45.1, 6)
+    expect(region.longitude).toBeCloseTo(5.2, 6)
+    expect(region.latitudeDelta).toBeCloseTo(0.012, 6)
+    expect(region.longitudeDelta).toBeCloseTo(0.012, 6)
+    expect(duration).toBe(450)
   })
 
   test("a second locate press while locating is ignored", async () => {
