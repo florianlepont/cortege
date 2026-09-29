@@ -5,6 +5,7 @@ import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useBrandTheme } from "../app/theme"
+import { getFirstName } from "./home/first-name"
 import { formatSyncErrorForUser } from "../app/formatters"
 import { resolveSurveyUiStatus } from "../app/survey-logic"
 import type { AuthUser } from "../app/types"
@@ -29,6 +30,8 @@ const MIN_REFRESH_MS = 800
 const RESUME_WINDOW_MS = 48 * 60 * 60 * 1000
 
 type HomeScreenProps = {
+  /** OA-85: the native iOS header carries the greeting and the profile button. */
+  nativeHeader?: boolean
   currentUser: AuthUser | null
   accessToken: string | null
   apiUrl: string
@@ -45,11 +48,6 @@ type HomeScreenProps = {
   onNavigateToExplorer: () => void
   onNavigateToAccount: () => void
   onRefresh: () => Promise<void>
-}
-
-function getFirstName(user: AuthUser | null): string {
-  if (!user) return ""
-  return user.first_name?.trim() || user.display_name?.split(" ")[0] || ""
 }
 
 /** The most recently updated draft, if it was touched within the resume window (HOME-02). */
@@ -74,6 +72,7 @@ export function pickAlertSurvey(surveys: LocalSurvey[]): LocalSurvey | null {
 }
 
 export function HomeScreen({
+  nativeHeader = false,
   currentUser,
   accessToken,
   apiUrl,
@@ -136,7 +135,7 @@ export function HomeScreen({
   return (
     // OA-11: the scroll view starts below the status bar, so the pull-to-refresh spinner shows
     // instead of hiding under it. OA-12: a short text under the spinner says what it fetches.
-    <View style={[styles.scroll, { paddingTop: insets.top }]}>
+    <View style={[styles.scroll, { paddingTop: nativeHeader ? 0 : insets.top }]}>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
@@ -154,52 +153,64 @@ export function HomeScreen({
           />
         }
       >
-        {/* ── Greeting ──────────────────────────────── */}
-        <View style={styles.greeting}>
-          {/* OA-15: no date (owner decision). OA-16: a long first name shrinks, then ellipsises,
-            instead of pushing the pill and the avatar off screen. */}
-          <View style={styles.greetingText}>
-            <Text
-              style={styles.greetingTitle}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.75}
-            >
-              {firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
-            </Text>
-          </View>
-          <View style={styles.headerTrailing}>
-            {/* SYNC-02: visible on the dashboard, not only in Settings. */}
+        {nativeHeader ? (
+          // OA-85, OA-88: the header holds the greeting and the profile button; the sync state is
+          // a labelled pill on its own row under it.
+          <View style={styles.nativeHeaderSync}>
             <SyncStatusPill
               isOnline={isOnline}
               isSyncing={isSyncing}
               pendingCount={surveyStats.pending}
               onPress={onOpenSyncStatus}
             />
-            <Pressable
-              style={styles.avatarButton}
-              onPress={onNavigateToAccount}
-              accessibilityRole="button"
-              accessibilityLabel={fr.home.avatar}
-            >
-              {profilePictureUri ? (
-                <ExpoImage
-                  source={{
-                    uri: profilePictureUri,
-                    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-                  }}
-                  style={styles.avatarImage}
-                  contentFit="cover"
-                  accessible={false}
-                />
-              ) : (
-                <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="person" size={20} color={theme.colors.textSecondary} />
-                </View>
-              )}
-            </Pressable>
           </View>
-        </View>
+        ) : (
+          <View style={styles.greeting}>
+            {/* OA-15: no date (owner decision). OA-16: a long first name shrinks, then ellipsises,
+              instead of pushing the pill and the avatar off screen. */}
+            <View style={styles.greetingText}>
+              <Text
+                style={styles.greetingTitle}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.75}
+              >
+                {firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
+              </Text>
+            </View>
+            <View style={styles.headerTrailing}>
+              {/* SYNC-02: visible on the dashboard, not only in Settings. */}
+              <SyncStatusPill
+                isOnline={isOnline}
+                isSyncing={isSyncing}
+                pendingCount={surveyStats.pending}
+                onPress={onOpenSyncStatus}
+              />
+              <Pressable
+                style={styles.avatarButton}
+                onPress={onNavigateToAccount}
+                accessibilityRole="button"
+                accessibilityLabel={fr.home.avatar}
+              >
+                {profilePictureUri ? (
+                  <ExpoImage
+                    source={{
+                      uri: profilePictureUri,
+                      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+                    }}
+                    style={styles.avatarImage}
+                    contentFit="cover"
+                    accessible={false}
+                  />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Ionicons name="person" size={20} color={theme.colors.textSecondary} />
+                  </View>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {/* ── Alertes ───────────────────────────────── */}
         {hasAlerts ? (

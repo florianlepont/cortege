@@ -39,6 +39,11 @@ export function createStyles(theme: BrandTheme) {
       flexShrink: 1,
       marginRight: brandSpacing.sm,
     },
+    nativeHeaderSync: {
+      flexDirection: "row",
+      paddingHorizontal: PAGE_H,
+      marginBottom: 12,
+    },
     pageInset: {
       marginHorizontal: PAGE_H,
     },

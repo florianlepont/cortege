@@ -1,5 +1,11 @@
-import { memo } from "react"
+import { memo, useLayoutEffect, useMemo } from "react"
+import { fr } from "../../i18n"
+import { getNativeTabsAvailability } from "../native-tabs-availability"
 import { HomeScreen } from "../../screens/HomeScreen"
+import { getFirstName } from "../../screens/home/first-name"
+import { ProfileHeaderButton } from "../../screens/home/ProfileHeaderButton"
+import { resolveProfilePictureUri } from "../../screens/account/IdentityCard"
+import { HeaderLeftTitle } from "../../ui/HeaderLeftTitle"
 import { useNearbyParcelsState } from "../../state/nearby-parcels-context"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
@@ -40,8 +46,38 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
     navigation.navigate("accountHome")
   })
 
+  // OA-85: on the native iOS tab tree the greeting and the profile button live in the native
+  // header, on the same row as Mes Relevés' title and "+". Elsewhere HomeScreen draws its own.
+  const nativeHeader = useMemo(() => getNativeTabsAvailability().native, [])
+  const firstName = getFirstName(session.currentUser)
+  const pictureUri = resolveProfilePictureUri(
+    session.currentUser?.profile_picture_url,
+    session.apiUrl,
+  )
+  useLayoutEffect(() => {
+    if (!nativeHeader) return
+    navigation.setOptions({
+      headerShown: true,
+      title: "",
+      headerShadowVisible: false,
+      headerLeft: () => (
+        <HeaderLeftTitle
+          title={firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
+        />
+      ),
+      headerRight: () => (
+        <ProfileHeaderButton
+          pictureUri={pictureUri}
+          accessToken={accessToken}
+          onPress={onNavigateToAccount}
+        />
+      ),
+    })
+  }, [nativeHeader, navigation, firstName, pictureUri, accessToken, onNavigateToAccount])
+
   return (
     <HomeScreen
+      nativeHeader={nativeHeader}
       currentUser={session.currentUser}
       accessToken={accessToken}
       apiUrl={session.apiUrl}

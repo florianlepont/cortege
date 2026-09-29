@@ -60,7 +60,8 @@ export const componentsFr = {
   // Phase 7 (SYNC-02): the 4-state pill visible in the Home and Mes Relevés headers.
   syncStatusPill: {
     offline: "Hors ligne",
-    toSend: ({ count }: { count: number }) => `${count} à envoyer`,
+    toSend: ({ count }: { count: number }) =>
+      count > 1 ? `${count} relevés à envoyer` : "1 relevé à envoyer",
     syncing: "Synchronisation…",
     upToDate: "À jour",
     a11yHint: "Touchez pour voir le détail de la synchronisation",

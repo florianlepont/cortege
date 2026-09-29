@@ -122,6 +122,10 @@ jest.mock("../../hooks/usePublicMapExplorer", () => ({
 
 // PublicMapRoute's offline hooks (Phase 8) touch SQLite and network state, neither of which this
 // navigation-routing suite sets up; stubbed out like usePublicMapExplorer above.
+const mockNativeTabs = { value: false }
+jest.mock("../native-tabs-availability", () => ({
+  getNativeTabsAvailability: () => ({ native: mockNativeTabs.value }),
+}))
 jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => false }))
 jest.mock("../../hooks/useBasemapPreference", () => ({
   useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
@@ -509,6 +513,90 @@ describe("AccountRoute focus refresh (OA-13)", () => {
   })
 })
 
+describe("HomeRoute native header (OA-85)", () => {
+  afterEach(() => {
+    mockNativeTabs.value = false
+  })
+
+  test("outside the native tab tree the screen draws its own header", async () => {
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <HomeRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("home").nativeHeader).toBe(false)
+    expect(navigation.setOptions).not.toHaveBeenCalled()
+  })
+
+  test("in the native tab tree the header carries the greeting and the profile button", async () => {
+    mockNativeTabs.value = true
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <HomeRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("home").nativeHeader).toBe(true)
+    const options = navigation.setOptions.mock.calls.at(-1)[0]
+    expect(options.headerShown).toBe(true)
+    expect(options.title).toBe("")
+
+    let left: renderer.ReactTestRenderer | undefined
+    let right: renderer.ReactTestRenderer | undefined
+    act(() => {
+      left = renderer.create(options.headerLeft())
+      right = renderer.create(options.headerRight())
+    })
+    const texts = left!.root.findAll((node) => (node.type as unknown) === "Text")
+    expect(texts.length).toBeGreaterThan(0)
+    act(() => {
+      right!.root.findByProps({ accessibilityLabel: fr.home.avatar }).props.onPress()
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("accountHome")
+    act(() => {
+      left!.unmount()
+      right!.unmount()
+    })
+  })
+})
+
+describe("HomeRoute native header greeting (OA-85)", () => {
+  afterEach(() => {
+    mockNativeTabs.value = false
+  })
+
+  test("the header title greets the user by first name", async () => {
+    mockNativeTabs.value = true
+    const fixture = makeFixture()
+    fixture.session.state.currentUser = {
+      id: "u1",
+      email: "marie@test.fr",
+      role: "contributor",
+      first_name: "Marie",
+      last_name: "Lepont",
+      display_name: "Marie Lepont",
+      profile_picture_url: "/me/profile-picture?v=1",
+    } as never
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <HomeRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    const options = navigation.setOptions.mock.calls.at(-1)[0]
+    let left: renderer.ReactTestRenderer | undefined
+    act(() => {
+      left = renderer.create(options.headerLeft())
+    })
+    const text = left!.root
+      .findAll((node) => (node.type as unknown) === "Text")
+      .map((node) => String([node.props.children].flat().join("")))
+    expect(text).toContain(fr.home.greetingWithName({ name: "Marie" }))
+    act(() => left!.unmount())
+  })
+})
+
 describe("HomeRoute", () => {
   test("opens the form, a survey and the explorer through the tab navigator", async () => {
     const fixture = makeFixture()
@@ -636,7 +724,18 @@ describe("SurveyListRoute", () => {
     options.onCancelButtonPress()
     expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenLastCalledWith("")
 
-    // SYNC-02/HOME-01: the native header also carries the sync pill and the "+" create button.
+    // OA-85: the title sits left, on the same row as the "+" create button.
+    let headerLeftTree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      headerLeftTree = renderer.create(setOptionsCall.headerLeft())
+    })
+    expect(setOptionsCall.headerTitle).toBe("")
+    expect(
+      headerLeftTree!.root.findAll((node) => (node.type as unknown) === "Text").length,
+    ).toBeGreaterThan(0)
+    act(() => headerLeftTree!.unmount())
+
+    // SYNC-02/HOME-01: the native header also carries the "+" create button.
     let headerRightTree: renderer.ReactTestRenderer | undefined
     act(() => {
       headerRightTree = renderer.create(setOptionsCall.headerRight())

@@ -1,10 +1,12 @@
 import { memo, useEffect, useLayoutEffect, useRef } from "react"
-import { Platform, Pressable, View } from "react-native"
+import { Platform } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { SearchBarCommands } from "react-native-screens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { SurveyListScreen } from "../../screens/SurveyListScreen"
+import { HeaderCircleButton } from "../../ui/HeaderCircleButton"
+import { HeaderLeftTitle } from "../../ui/HeaderLeftTitle"
 import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -62,19 +64,14 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
           actions.setSurveyQuery("")
         },
       },
+      // OA-85: the title sits left and the "+" right, on one row shared with Accueil.
+      headerTitle: "",
+      headerLeft: () => <HeaderLeftTitle title={fr.navigation.headers.surveys} />,
+      // OA-85: the same glass circle as Accueil's profile button, so both sit at the same place.
       headerRight: () => (
-        // OA-51: the sync pill does not belong next to "+" (owner decision); it stays on Accueil.
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={fr.surveyList.a11y.createSurvey}
-            hitSlop={8}
-            onPress={onOpenCreateSurvey}
-            style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}
-          >
-            <Ionicons name="add-circle" size={26} color={theme.semanticColors.accent} />
-          </Pressable>
-        </View>
+        <HeaderCircleButton label={fr.surveyList.a11y.createSurvey} onPress={onOpenCreateSurvey}>
+          <Ionicons name="add" size={24} color={theme.semanticColors.accent} />
+        </HeaderCircleButton>
       ),
     })
   }, [actions, nativeSearchEnabled, navigation, onOpenCreateSurvey, theme])
