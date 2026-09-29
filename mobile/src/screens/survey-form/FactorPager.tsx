@@ -289,7 +289,7 @@ function createStyles(theme: BrandTheme) {
     nextIncompleteText: {
       fontSize: 14,
       fontWeight: "700",
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     nextIncompleteTextDisabled: {
       color: theme.colors.textSecondary,

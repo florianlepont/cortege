@@ -49,10 +49,12 @@ export function AppButton({
   const hasLabel = Boolean(label?.trim().length)
   const iconColor =
     variant === "secondary"
-      ? theme.componentColors.button.secondaryBorder
+      ? theme.componentColors.button.secondaryLabel
       : variant === "dangerSoft"
         ? theme.onSurface.danger
-        : brandColors.white
+        : variant === "primary"
+          ? theme.semanticColors.onCtaPrimary
+          : brandColors.white
   const iconSize = size === "lg" ? 18 : size === "sm" ? 15 : 16
   const isDisabled = disabled || loading
 
@@ -92,7 +94,9 @@ export function AppButton({
               ? styles.labelSecondary
               : variant === "dangerSoft"
                 ? styles.labelDangerSoft
-                : null,
+                : variant === "primary"
+                  ? styles.labelPrimary
+                  : null,
             labelStyle,
           ]}
         >
@@ -143,6 +147,9 @@ function createStyles(theme: BrandTheme) {
     primary: {
       backgroundColor: theme.componentColors.button.primaryBackground,
     },
+    labelPrimary: {
+      color: theme.semanticColors.onCtaPrimary,
+    },
     secondary: {
       backgroundColor: theme.componentColors.button.secondaryBackground,
       borderWidth: 1,
@@ -168,7 +175,7 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.meta,
     },
     labelSecondary: {
-      color: theme.componentColors.button.secondaryBorder,
+      color: theme.componentColors.button.secondaryLabel,
     },
     // DS-02: terracotta directly on errorSoft measured ~2.97:1 (WCAG fail); onSurface.danger
     // (Phase 4/12) supersedes Phase 2's interim textPrimary fix with the named token.

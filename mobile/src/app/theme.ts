@@ -128,6 +128,8 @@ export type BrandSemanticColors = {
   textStrong: string
   heroSurface: string
   heroBorder: string
+  onCtaPrimary: string
+  accent: string
   ctaPrimary: string
   ctaAccent: string
   ctaSecondaryOutline: string
@@ -154,9 +156,13 @@ function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): Bran
     // heroes become a bordered surface, and the primary action a mid green that keeps white text.
     heroSurface: scheme === "dark" ? colors.panel : colors.forest,
     heroBorder: scheme === "dark" ? "#26282C" : colors.forest,
-    ctaPrimary: scheme === "dark" ? "#4A7535" : colors.forest,
+    // Sketch 001 A: the primary action is the light green with dark ink.
+    ctaPrimary: scheme === "dark" ? "#9BC26A" : colors.forest,
+    onCtaPrimary: scheme === "dark" ? "#0C1208" : brandColors.white,
+    // Eyebrows, progress, selection: moss in light, the sketch's light green in dark.
+    accent: scheme === "dark" ? "#9BC26A" : colors.moss,
     ctaAccent: colors.moss,
-    ctaSecondaryOutline: scheme === "dark" ? "#C9CCC8" : colors.forest,
+    ctaSecondaryOutline: scheme === "dark" ? "#2C2E33" : colors.forest,
     ctaDanger: colors.terracotta,
     successSurface: colors.successSoft,
     errorSurface: colors.errorSoft,
@@ -169,6 +175,7 @@ export type BrandComponentColors = {
     primaryBackground: string
     secondaryBackground: string
     secondaryBorder: string
+    secondaryLabel: string
     dangerBackground: string
   }
   card: {
@@ -255,6 +262,8 @@ function makeComponentColors(
       primaryBackground: semanticColors.ctaPrimary,
       secondaryBackground: semanticColors.surfaceElevated,
       secondaryBorder: semanticColors.ctaSecondaryOutline,
+      // Sketch 001 A: a ghost button with a faint border and light text in dark mode.
+      secondaryLabel: semanticColors.textStrong,
       dangerBackground: semanticColors.ctaDanger,
     },
     card: {
@@ -306,8 +315,8 @@ function makeComponentColors(
       workflowSuccessBackground: colors.successSoft,
       workflowWarningBackground: colors.warningSoft,
       workflowDangerBackground: colors.errorSoft,
-      workflowNeutralText: semanticColors.textStrong,
-      workflowSuccessText: semanticColors.textStrong,
+      workflowNeutralText: colors.textSecondary,
+      workflowSuccessText: semanticColors.accent,
       workflowWarningText: onSurface.warning,
       workflowDangerText: onSurface.danger,
       progressTrack: colors.divider,

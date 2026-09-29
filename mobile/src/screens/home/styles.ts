@@ -95,7 +95,7 @@ export function createStyles(theme: BrandTheme) {
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 1.5,
-      color: theme.colors.moss,
+      color: theme.semanticColors.accent,
       textTransform: "uppercase",
     },
     heroTitle: {
@@ -112,11 +112,11 @@ export function createStyles(theme: BrandTheme) {
       marginBottom: 4,
     },
     heroButton: {
-      backgroundColor: theme.colors.moss,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       marginTop: 4,
     },
     heroButtonLabel: {
-      color: theme.colors.forestNight,
+      color: theme.semanticColors.onCtaPrimary,
     },
     // HOME-02: secondary "Nouveau relevé" action once the primary CTA becomes "Reprendre".
     heroSecondaryButton: {
@@ -138,7 +138,7 @@ export function createStyles(theme: BrandTheme) {
     },
     trailingLink: {
       ...brandTypography.label,
-      color: theme.colors.moss,
+      color: theme.semanticColors.accent,
     },
 
     // HOME-01/HOME-02: the merged SurveyProgressCard, shown under the resume hero.

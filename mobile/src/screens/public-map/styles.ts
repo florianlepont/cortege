@@ -202,7 +202,7 @@ export function createControlStyles(theme: BrandTheme) {
       color: theme.semanticColors.textStrong,
     },
     layerTogglePillTextOn: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     bottomDock: {
       position: "absolute",
@@ -335,7 +335,7 @@ export function createOfflineIndicatorStyles(theme: BrandTheme) {
       color: theme.semanticColors.textStrong,
     },
     basemapOptionTextActive: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
   })
 }

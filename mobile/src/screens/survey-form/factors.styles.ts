@@ -77,7 +77,7 @@ export function createFactorStyles(theme: BrandTheme) {
       fontSize: 12,
       // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
       lineHeight: 16,
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     factorIconWrap: {
       width: 24,

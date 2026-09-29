@@ -150,7 +150,7 @@ export function createParcelStyles(theme: BrandTheme) {
     },
     fullscreenMapActionButtonText: {
       ...brandTypography.meta,
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     fullscreenMapBottomArea: {
       gap: 12,

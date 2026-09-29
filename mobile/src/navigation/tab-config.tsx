@@ -89,7 +89,9 @@ export function jsTabScreenOptions(
     headerShown: false,
     title: TAB_TITLES[route.name],
     tabBarLabel: TAB_TITLES[route.name],
-    tabBarActiveTintColor: theme.colors.forest,
+    // Sketch 001 A: the active tab takes the accent (light green) in dark mode.
+    tabBarActiveTintColor:
+      theme.scheme === "dark" ? theme.semanticColors.accent : theme.colors.forest,
     tabBarInactiveTintColor: theme.colors.textSecondary,
     tabBarStyle: buildJsTabBarStyle(theme, insets),
     tabBarLabelStyle: { fontSize: 12, fontWeight: "600" as const },

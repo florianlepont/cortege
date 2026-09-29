@@ -181,14 +181,14 @@ export function createHeaderStyles(theme: BrandTheme) {
       color: theme.semanticColors.textStrong,
     },
     stepIndexTextActive: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     stepButtonTitle: {
       ...brandTypography.label,
       color: theme.colors.textPrimary,
     },
     stepButtonTitleActive: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     stepButtonMeta: {
       ...brandTypography.meta,
@@ -203,7 +203,7 @@ export function createHeaderStyles(theme: BrandTheme) {
       color: theme.semanticColors.textStrong,
     },
     stepButtonHintActive: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
   })
 }

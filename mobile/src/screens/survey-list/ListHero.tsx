@@ -128,7 +128,7 @@ export function ListHero({
             onPress={onOpenCreateSurvey}
             style={styles.createButton}
           >
-            <Ionicons name="add" size={22} color={theme.colors.white} />
+            <Ionicons name="add" size={22} color={theme.semanticColors.onCtaPrimary} />
           </AppPressable>
         </View>
       </View>

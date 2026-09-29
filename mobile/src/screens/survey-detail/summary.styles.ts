@@ -61,7 +61,7 @@ export function createSummaryStyles(theme: BrandTheme) {
       ...brandTypography.label,
       fontSize: 12,
       lineHeight: 14,
-      color: theme.colors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     factorTileIconWrap: {
       width: 28,

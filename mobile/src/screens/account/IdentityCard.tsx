@@ -157,7 +157,7 @@ export function IdentityCard({
           )}
           {/* ACC-C01 : Badge caméra agrandi à 28pt, centrage icône garanti */}
           <View style={styles.avatarEditBadge}>
-            <Ionicons name="camera" size={13} color={brandColors.white} />
+            <Ionicons name="camera" size={13} color={theme.semanticColors.onCtaPrimary} />
           </View>
         </Pressable>
 

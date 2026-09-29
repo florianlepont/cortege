@@ -1,4 +1,5 @@
-import { useRef, type ElementType } from "react"
+import { useCallback, useRef, type ElementType } from "react"
+import { useBrandTheme } from "../../app/theme"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
 import { SurveysTabNavigator } from "../stacks/SurveysStack"
@@ -46,6 +47,16 @@ type NativeRootTabsProps = {
  */
 export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
   const deps = useTabListenerDeps()
+  const theme = useBrandTheme()
+  // Sketch 001 A: the active tab takes the accent (light green) in dark mode.
+  const activeTint = theme.scheme === "dark" ? theme.semanticColors.accent : theme.colors.forest
+  const screenOptions = useCallback(
+    (props: Parameters<typeof nativeTabScreenOptions>[0]) => ({
+      ...nativeTabScreenOptions(props),
+      tabBarActiveTintColor: activeTint,
+    }),
+    [activeTint],
+  )
   const nativeTabRef = useRef<TabNavigatorLike | null>(null)
 
   if (nativeTabRef.current == null) {
@@ -56,7 +67,7 @@ export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
 
   return (
     <NativeTab.Navigator
-      screenOptions={nativeTabScreenOptions}
+      screenOptions={screenOptions}
       minimizeBehavior="automatic"
       tabBarHidden={tabBarHidden}
     >
