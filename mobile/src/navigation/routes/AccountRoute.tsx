@@ -5,6 +5,7 @@ import { useAccessToken, useSession } from "../../state/session-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { styles } from "../styles"
 import type { AccountRouteProps } from "../types"
+import { PictureStatusAlert } from "./PictureStatusAlert"
 
 /**
  * Account route (phase 01.9-18, D-01): reads the session and, as the only
@@ -35,6 +36,7 @@ export const AccountRoute = memo(function AccountRoute({ navigation }: AccountRo
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.accountScreenWrap}
     >
+      <PictureStatusAlert />
       <AccountScreen
         accessToken={accessToken ?? ""}
         currentUser={session.currentUser}
