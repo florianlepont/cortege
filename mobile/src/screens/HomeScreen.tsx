@@ -18,7 +18,6 @@ import { hasMixedMethodVersions, type NearbyParcelsState } from "../hooks/useNea
 import { fr } from "../i18n"
 import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { SkeletonRow } from "../ui/Skeleton"
-import { SurveyProgressCard } from "../ui/SurveyProgressCard"
 import { SyncStatusPill } from "../ui/SyncStatusPill"
 import { SectorScoreCard } from "./home/SectorScoreCard"
 import { createStyles } from "./home/styles"
@@ -230,9 +229,9 @@ export function HomeScreen({
           </Text>
           <Text style={styles.heroTitle}>
             {resumeDraft
-              ? fr.home.hero.resumeTitle({
-                  name: resumeDraft.site_name || fr.common.untitledSurvey,
-                })
+              ? resumeDraft.site_name
+                ? fr.home.hero.resumeTitle({ name: resumeDraft.site_name })
+                : fr.home.hero.resumeTitleUnnamed
               : fr.home.hero.title}
           </Text>
           <Text style={styles.heroBody}>
@@ -265,13 +264,6 @@ export function HomeScreen({
             />
           ) : null}
         </View>
-
-        {/* ── Progression du brouillon repris ─────────── */}
-        {resumeDraft ? (
-          <View style={[styles.section, styles.resumeCardWrap]}>
-            <SurveyProgressCard survey={resumeDraft} onPress={() => onOpenSurvey(resumeDraft.id)} />
-          </View>
-        ) : null}
 
         {/* ── Parcelles proches ─────────────────────── */}
         <View style={styles.section}>

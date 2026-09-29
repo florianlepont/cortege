@@ -60,3 +60,8 @@ export function buildBboxAroundPoint(
   const maxLng = Math.min(180, center.lng + radiusDeg)
   return formatBbox(minLng, minLat, maxLng, maxLat)
 }
+
+/** Parses a stored GPS coordinate; an empty string is "no position", not 0 (the Gulf of Guinea). */
+export function parseGpsCoordinate(value: string): number {
+  return value.trim() === "" ? Number.NaN : Number(value)
+}

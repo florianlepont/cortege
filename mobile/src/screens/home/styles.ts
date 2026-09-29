@@ -143,11 +143,6 @@ export function createStyles(theme: BrandTheme) {
       color: theme.semanticColors.accent,
     },
 
-    // HOME-01/HOME-02: the merged SurveyProgressCard, shown under the resume hero.
-    resumeCardWrap: {
-      paddingHorizontal: PAGE_H,
-    },
-
     // Parcels
     parcelsList: {
       paddingHorizontal: PAGE_H,
