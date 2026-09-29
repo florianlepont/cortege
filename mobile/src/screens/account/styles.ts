@@ -89,8 +89,8 @@ export function createIdentityStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 18,
       lineHeight: 22,
-      // ACC-14 : texte clair sur fond hero forest
-      color: theme.colors.canvas,
+      // ACC-14 : texte clair sur fond hero forest (OA-82 : fixe, le hero reste forest en sombre)
+      color: brandOnDarkColors.heroBodyOnDark,
     },
     identityMeta: {
       ...brandTypography.meta,

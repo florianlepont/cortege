@@ -98,7 +98,9 @@ export function createStyles(theme: BrandTheme) {
     heroTitle: {
       fontSize: 26,
       fontWeight: "900",
-      color: theme.colors.canvas,
+      // OA-83: canvas was light text on the forest hero in light mode only; the hero stays forest in
+      // both themes, so its text is a fixed light tone.
+      color: brandOnDarkColors.heroBodyOnDark,
       lineHeight: 30,
     },
     heroBody: {
@@ -111,7 +113,7 @@ export function createStyles(theme: BrandTheme) {
       marginTop: 4,
     },
     heroButtonLabel: {
-      color: theme.colors.canvas,
+      color: theme.colors.forestNight,
     },
     // HOME-02: secondary "Nouveau relevé" action once the primary CTA becomes "Reprendre".
     heroSecondaryButton: {
@@ -120,7 +122,7 @@ export function createStyles(theme: BrandTheme) {
       backgroundColor: "transparent",
     },
     heroSecondaryButtonLabel: {
-      color: theme.colors.canvas,
+      color: brandOnDarkColors.heroBodyOnDark,
     },
 
     // Sections
