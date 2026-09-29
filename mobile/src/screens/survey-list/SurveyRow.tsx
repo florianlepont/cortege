@@ -242,7 +242,8 @@ function SurveyRowComponent({
         <View style={styles.surveyCardContent}>
           <View style={styles.surveyCardHeader}>
             <Text numberOfLines={2} style={styles.surveyCardTitle}>
-              {survey.site_name}
+              {/* OA-58: an unnamed draft no longer shows as a blank row. */}
+              {survey.site_name?.trim() || fr.common.untitledSurvey}
             </Text>
             {selected ? (
               <Ionicons

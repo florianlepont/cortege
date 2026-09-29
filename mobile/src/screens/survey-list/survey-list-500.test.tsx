@@ -232,9 +232,6 @@ function baseProps(surveys: LocalSurvey[]): ScreenProps {
     onOpenCreateSurvey: noop,
     onOpenSurvey,
     surveyDetails: {},
-    isOnline: true,
-    isSyncing: false,
-    onOpenSyncStatus: noop,
   }
 }
 

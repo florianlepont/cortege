@@ -536,8 +536,6 @@ describe("SurveyListRoute", () => {
     expect(list.showInlineSearch).toBe(true)
     expect(list.useNativeSearchUI).toBe(false)
     expect(list.surveyDetails).toBe(fixture.surveys.state.surveyDetails)
-    expect(list.isOnline).toBe(fixture.isOnline)
-    expect(list.isSyncing).toBe(fixture.isSyncing)
     expect(navigation.setOptions).not.toHaveBeenCalled()
 
     callback("surveyList", "onOpenCreateSurvey")()
@@ -547,9 +545,6 @@ describe("SurveyListRoute", () => {
     callback("surveyList", "onOpenSurvey")("s-01")
     expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyDetail")
-
-    callback("surveyList", "onOpenSyncStatus")()
-    expect(navigation.navigate).toHaveBeenLastCalledWith("settings")
   })
 
   test("with the native tab bar outside iOS it keeps the inline search", async () => {
