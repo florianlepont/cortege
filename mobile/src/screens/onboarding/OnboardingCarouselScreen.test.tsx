@@ -92,13 +92,12 @@ describe("OnboardingCarouselScreen (ONB-01: 3-screen carousel)", () => {
     }
   })
 
-  test("each slide carries the marten, hidden from a screen reader (OA-01)", () => {
+  test("one marten belongs to the screen, not to a slide, and is only decoration (OA-01)", () => {
     const tree = render()
     const martens = tree.root.findAllByType("Image" as never)
-    expect(martens).toHaveLength(t.slides.length)
-    for (const marten of martens) {
-      expect(marten.props.accessible).toBe(false)
-    }
+    expect(martens).toHaveLength(1)
+    expect(martens[0].props.accessible).toBe(false)
+    expect(tree.root.findByProps({ testID: "onboarding-marten" }).props.pointerEvents).toBe("none")
   })
 
   test("the skip button calls onSkip", () => {

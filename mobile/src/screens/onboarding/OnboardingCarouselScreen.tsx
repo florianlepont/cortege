@@ -107,17 +107,21 @@ export function OnboardingCarouselScreen({ onSkip, onFinish }: OnboardingCarouse
                 {slide.body}
               </Text>
             </View>
-            {/* OA-01: the marten, the app's emblem, peeks up from the bottom edge (it replaces the
-              plain green bump); it is decoration for a screen reader. */}
-            <Image
-              source={require("../../../assets/animals/MARTE.png")}
-              style={styles.slideMarten}
-              resizeMode="contain"
-              accessible={false}
-            />
           </View>
         ))}
       </ScrollView>
+
+      {/* OA-01: the marten, the app's emblem, looks in from the left edge, tilted. It belongs to the
+        screen, not to a slide, so it stays put while the slides swipe past. Decoration only, and it
+        takes no touch. */}
+      <View pointerEvents="none" style={styles.marten} testID="onboarding-marten">
+        <Image
+          source={require("../../../assets/animals/MARTE.png")}
+          style={styles.martenImage}
+          resizeMode="contain"
+          accessible={false}
+        />
+      </View>
 
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, brandSpacing.lg) }]}>
         <AppButton
@@ -162,15 +166,6 @@ function createStyles(theme: BrandTheme) {
       paddingHorizontal: brandSpacing.xl,
       paddingTop: brandSpacing.xl,
       justifyContent: "center",
-      overflow: "hidden",
-    },
-    // 967 x 2289 source: the head, the collar and the shoulders show, the body runs off the edge.
-    slideMarten: {
-      position: "absolute",
-      right: brandSpacing.lg,
-      bottom: -150,
-      width: 130,
-      height: 308,
     },
     slideHero: {
       gap: brandSpacing.md,
@@ -182,6 +177,20 @@ function createStyles(theme: BrandTheme) {
     slideBody: {
       ...brandTypography.heroBody,
       color: theme.colors.textSecondary,
+    },
+    // 967 x 2289 source: tilted so it leans in from the left edge, the body off screen and the
+    // lower part hidden behind the button.
+    marten: {
+      position: "absolute",
+      left: -46,
+      bottom: 96,
+      width: 118,
+      height: 279,
+      transform: [{ rotate: "38deg" }],
+    },
+    martenImage: {
+      width: "100%",
+      height: "100%",
     },
     bottomBar: {
       paddingHorizontal: brandSpacing.lg,
