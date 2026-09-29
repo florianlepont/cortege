@@ -1,5 +1,6 @@
 import { Platform, StyleSheet } from "react-native"
 import {
+  brandColors,
   brandOnDarkColors,
   brandRadius,
   brandSpacing,
@@ -113,12 +114,15 @@ export function createStyles(theme: BrandTheme) {
       color: brandOnDarkColors.heroBodyOnDark,
       marginBottom: 4,
     },
+    // OA-84: in light mode the hero and ctaPrimary are both forest, which hid the button; the
+    // primary action is a light button on the forest hero (dark mode keeps its lime accent).
     heroButton: {
-      backgroundColor: theme.semanticColors.ctaPrimary,
+      backgroundColor:
+        theme.scheme === "dark" ? theme.semanticColors.ctaPrimary : brandColors.white,
       marginTop: 4,
     },
     heroButtonLabel: {
-      color: theme.semanticColors.onCtaPrimary,
+      color: theme.scheme === "dark" ? theme.semanticColors.onCtaPrimary : brandColors.forest,
     },
     // HOME-02: secondary "Nouveau relevé" action once the primary CTA becomes "Reprendre".
     heroSecondaryButton: {
