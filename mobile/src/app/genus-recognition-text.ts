@@ -8,5 +8,5 @@ import { fr } from "../i18n"
 // of exercising a lookup keyed by an argument the test can't supply a valid enum value for.
 export function confidenceLine(label: ConfidenceLabel): string {
   const t = fr.genusRecognition
-  return `${t.confidence[label]} — ${t.confidenceHint[label]}`
+  return `${t.confidence[label]}. ${t.confidenceHint[label]}`
 }

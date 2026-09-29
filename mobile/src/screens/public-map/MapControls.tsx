@@ -113,9 +113,9 @@ export const MapTopControls = memo(function MapTopControls({
             accessibilityState={{ disabled: loading, busy: loading }}
           >
             {loading ? (
-              <ActivityIndicator size="small" color={brandColors.white} />
+              <ActivityIndicator size="small" color={theme.semanticColors.onCtaPrimary} />
             ) : (
-              <Ionicons name="refresh" size={18} color={brandColors.white} />
+              <Ionicons name="refresh" size={18} color={theme.semanticColors.onCtaPrimary} />
             )}
           </Pressable>
         </View>
@@ -198,9 +198,9 @@ export const MapBottomDock = memo(function MapBottomDock({
         accessibilityState={{ disabled: locating, busy: locating }}
       >
         {locating ? (
-          <ActivityIndicator size="small" color={brandColors.white} />
+          <ActivityIndicator size="small" color={theme.semanticColors.onCtaPrimary} />
         ) : (
-          <Ionicons name="locate" size={20} color={brandColors.white} />
+          <Ionicons name="locate" size={20} color={theme.semanticColors.onCtaPrimary} />
         )}
       </Pressable>
     </View>

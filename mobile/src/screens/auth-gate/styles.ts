@@ -183,7 +183,7 @@ export function createAuthStyles(theme: BrandTheme) {
       ...brandTypography.button,
       fontSize: 13,
       lineHeight: 17,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
       fontWeight: "600",
       textDecorationLine: "underline",
     },
@@ -203,7 +203,7 @@ export function createAuthStyles(theme: BrandTheme) {
     },
     legalLink: {
       fontSize: 12,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
       fontWeight: "600",
       textDecorationLine: "underline",
     },

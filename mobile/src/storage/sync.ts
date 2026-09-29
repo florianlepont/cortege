@@ -798,6 +798,61 @@ async function queueSurveyVisibilityChange(
  * `pullRemoteChanges` export (calling the guarded export here would deadlock
  * on the flight this function itself is running under).
  */
+// OA-18: the API refuses a survey without a site name ("site_name is required"), and the form
+// saves a draft before the observer has named it. Such a refusal used to block the draft for good.
+const SITE_NAME_REQUIRED_PATTERN = /site_name.*required|required.*site_name/i
+
+/**
+ * OA-18: unblocks the drafts an earlier drain blocked only because they had no site name. They go
+ * back to 'draft' and 'pending'; a draft that has been named since is queued again with its
+ * current payload (the blocking failure deleted its queue row).
+ */
+async function recoverSiteNameBlockedDrafts(db: DbExecutor, nowIso: string): Promise<void> {
+  const blocked = await db.getAllAsync<{
+    id: string
+    site_name: string | null
+    payload_json: string
+    last_sync_error: string | null
+  }>(
+    `SELECT id, site_name, payload_json, last_sync_error
+     FROM local_surveys
+     WHERE sync_blocked = 1 AND status IN ('draft', 'error')`,
+  )
+
+  for (const survey of blocked) {
+    if (!SITE_NAME_REQUIRED_PATTERN.test(survey.last_sync_error ?? "")) continue
+
+    await runInTransaction(async (tx) => {
+      await tx.runAsync(
+        `UPDATE local_surveys
+         SET status = 'draft',
+             sync_state = 'pending',
+             last_sync_error = NULL,
+             last_sync_error_code = NULL,
+             last_sync_error_at = NULL,
+             sync_blocked = 0,
+             updated_at = ?
+         WHERE id = ?`,
+        [nowIso, survey.id],
+      )
+
+      const isNamed = (survey.site_name ?? "").trim().length > 0
+      const pendingUpsert = await tx.getFirstAsync<{ id: number }>(
+        `SELECT id FROM sync_queue
+         WHERE survey_id = ? AND op_type = 'survey_upsert' AND status IN ('pending', 'failed')`,
+        [survey.id],
+      )
+      if (isNamed && !pendingUpsert) {
+        await tx.runAsync(
+          `INSERT INTO sync_queue (survey_id, op_type, payload, status, retry_count, next_retry_at, created_at, updated_at)
+           VALUES (?, 'survey_upsert', ?, 'pending', 0, NULL, ?, ?)`,
+          [survey.id, survey.payload_json, nowIso, nowIso],
+        )
+      }
+    })
+  }
+}
+
 async function drainQueue(
   apiUrl: string,
   accessToken: string,
@@ -805,13 +860,33 @@ async function drainQueue(
   const db = await getDb()
   const nowIso = new Date().toISOString()
 
-  const queueRows = await db.getAllAsync<QueueRow>(
-    `SELECT id, survey_id, payload, status, retry_count, next_retry_at, op_type
-     FROM sync_queue
-     WHERE status IN ('pending', 'failed')
-       AND (next_retry_at IS NULL OR next_retry_at <= ?)
-     ORDER BY id ASC`,
-    [nowIso],
+  await recoverSiteNameBlockedDrafts(db, nowIso)
+
+  // OA-18: a draft stays on the phone until it has a site name. Its upsert and photo rows are
+  // left pending, untouched, and go out on the first drain after it is named.
+  const unnamedSurveyIds = new Set(
+    (
+      await db.getAllAsync<{ id: string }>(
+        `SELECT id FROM local_surveys WHERE TRIM(COALESCE(site_name, '')) = ''`,
+      )
+    ).map((survey) => survey.id),
+  )
+
+  const queueRows = (
+    await db.getAllAsync<QueueRow>(
+      `SELECT id, survey_id, payload, status, retry_count, next_retry_at, op_type
+       FROM sync_queue
+       WHERE status IN ('pending', 'failed')
+         AND (next_retry_at IS NULL OR next_retry_at <= ?)
+       ORDER BY id ASC`,
+      [nowIso],
+    )
+  ).filter(
+    (row) =>
+      !(
+        unnamedSurveyIds.has(row.survey_id) &&
+        (row.op_type === "survey_upsert" || row.op_type === "attachment_upload")
+      ),
   )
 
   let synced = 0
@@ -934,6 +1009,16 @@ async function drainQueue(
       errorCode: "invalid_local_payload",
     })
   }
+
+  // OA-18: survey upserts go first. A photo taken before its draft was named is queued before the
+  // draft's upsert (each edit re-queues the upsert at the end), and the server would refuse a
+  // photo for a survey it does not know yet. Array.prototype.sort is stable, so queue order holds
+  // within each group.
+  operations.sort(
+    (a, b) =>
+      Number(!(a.entity === "survey" && a.action === "upsert")) -
+      Number(!(b.entity === "survey" && b.action === "upsert")),
+  )
 
   // D-04: send at most SYNC_BATCH_SIZE operations per POST /sync, in queue
   // order. A batch-level failure (not auth) marks that chunk's rows and

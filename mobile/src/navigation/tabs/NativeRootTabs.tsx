@@ -1,10 +1,9 @@
-import { useRef, type ElementType } from "react"
-import { AccountTabNavigator } from "../stacks/AccountStack"
+import { useCallback, useRef, type ElementType } from "react"
+import { useBrandTheme } from "../../app/theme"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
 import { SurveysTabNavigator } from "../stacks/SurveysStack"
 import {
-  makeAccountTabListeners,
   makePublicMapTabListeners,
   makeSurveysTabListeners,
   nativeTabScreenOptions,
@@ -42,11 +41,22 @@ type NativeRootTabsProps = {
 }
 
 /**
- * The native (iOS) tab bar from react-native-bottom-tabs: four tabs. Search
+ * The native (iOS) tab bar from react-native-bottom-tabs: three tabs (OA-13: Compte opens from
+ * the avatar). Search
  * is the native header search bar of Mes Relevés, not a tab (D-08).
  */
 export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
   const deps = useTabListenerDeps()
+  const theme = useBrandTheme()
+  // Sketch 001 A: the active tab takes the accent (light green) in dark mode.
+  const activeTint = theme.scheme === "dark" ? theme.semanticColors.accent : theme.colors.forest
+  const screenOptions = useCallback(
+    (props: Parameters<typeof nativeTabScreenOptions>[0]) => ({
+      ...nativeTabScreenOptions(props),
+      tabBarActiveTintColor: activeTint,
+    }),
+    [activeTint],
+  )
   const nativeTabRef = useRef<TabNavigatorLike | null>(null)
 
   if (nativeTabRef.current == null) {
@@ -57,7 +67,7 @@ export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
 
   return (
     <NativeTab.Navigator
-      screenOptions={nativeTabScreenOptions}
+      screenOptions={screenOptions}
       minimizeBehavior="automatic"
       tabBarHidden={tabBarHidden}
     >
@@ -71,11 +81,6 @@ export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
         name="publicMap"
         listeners={makePublicMapTabListeners(deps)}
         component={PublicMapTabNavigator}
-      />
-      <NativeTab.Screen
-        name="account"
-        listeners={makeAccountTabListeners(deps)}
-        component={AccountTabNavigator}
       />
     </NativeTab.Navigator>
   )

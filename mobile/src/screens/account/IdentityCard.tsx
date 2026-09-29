@@ -2,7 +2,7 @@ import { useMemo } from "react"
 import { ActionSheetIOS, Alert, Image, Platform, Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandComponentTokens } from "../../app/brand-tokens"
+import { brandComponentTokens } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { AuthUser } from "../../app/types"
 import { AppCard } from "../../ui/AppCard"
@@ -157,7 +157,7 @@ export function IdentityCard({
           )}
           {/* ACC-C01 : Badge caméra agrandi à 28pt, centrage icône garanti */}
           <View style={styles.avatarEditBadge}>
-            <Ionicons name="camera" size={13} color={brandColors.white} />
+            <Ionicons name="camera" size={13} color={theme.semanticColors.onCtaPrimary} />
           </View>
         </Pressable>
 

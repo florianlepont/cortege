@@ -148,7 +148,7 @@ function createStyles(theme: BrandTheme) {
       backgroundColor: theme.colors.divider,
     },
     dotActive: {
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       width: 18,
     },
     slide: {
@@ -161,7 +161,7 @@ function createStyles(theme: BrandTheme) {
     },
     slideTitle: {
       ...brandTypography.sectionTitle,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     slideBody: {
       ...brandTypography.heroBody,

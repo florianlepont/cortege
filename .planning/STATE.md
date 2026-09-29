@@ -2,16 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
+current_phase: 12.1
+current_phase_name: Owner acceptance testing
 status: executing
-stopped_at: Phase 12 closed (7/7 batches) -- Phases 1 through 12 complete; Phase 13 not yet planned
-last_updated: "2026-09-28T17:30:00.000Z"
+stopped_at: Phase 12.1 (Owner acceptance testing) inserted before Phase 13; Phase 13 discussion postponed
+last_updated: "2026-09-28T16:14:38.133Z"
 last_activity: 2026-09-28
 progress:
-  total_phases: 22
+  total_phases: 23
   completed_phases: 21
   total_plans: 159
   completed_plans: 159
-  percent: 95
+  percent: 91
 ---
 
 # Project State
@@ -21,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phases 1 through 12 are complete as of 2026-09-28 (audit remediation 1.2–1.9, species recognition 1 and 1.1, and the flat-numbered MVP phases 2–12, including the five UX/UI audit lots 3, 4, 7, 9 and 12). Only Phase 13 (Field Validation) remains, not yet planned. It also carries the on-device checks deferred from Phase 6 (Android device run, real-device photo test) and Phase 8 (airplane-mode/relaunch). See `.planning/ROADMAP.md`.
+**Current focus:** Phases 1 through 12 are complete as of 2026-09-28. Next is Phase 12.1 (Owner acceptance testing, inserted 2026-09-28): the owner tests the app on their own phone, display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready. Phase 13 (Field Validation) follows and still carries the device checks deferred from Phases 6 and 8; its discussion was postponed until 12.1 closes. See `.planning/ROADMAP.md`.
 
 ## Current Position
 
-Phase: 13 (Field Validation)
+Phase: 12.1 (Owner acceptance testing)
 Plan: Not started
-Status: Phases 1 through 12 complete; Phase 13 not yet planned
-Last activity: 2026-09-28 (Phase 12 Interface Finishing merged, PR #186)
+Status: Phases 1 through 12 complete; Phase 12.1 inserted before Phase 13, not yet planned
+Last activity: 2026-09-28 (Phase 12.1 inserted by owner decision; Phase 13 discussion postponed until 12.1 closes)
 
-Progress: [█████████░] 21/22 phases complete
+Progress: [█████████░] 21/23 phases complete
 
 ## Performance Metrics
 
@@ -153,6 +155,7 @@ Decisions table. Decisions affecting current work:
 - Phases 01.2–01.5 inserted after Phase 1 from the 2026-09 code audit (URGENT): stop field data loss and account exposure; CI and test safety net; API sync integrity; mobile sync engine reliability. Phase 7 now depends on 1.2, 1.4 and 1.5.
 - Phases 01.6–01.9 inserted after Phase 1 to close the rest of the 2026-09 code audit (lots L10, L13–L20 and the remainders of L7, L16, L20): sync feed and object storage; API configuration, service split and database tuning; shared IBP domain package and test completeness; mobile state architecture, i18n, accessibility and hygiene
 - After Phase 1.9 the roadmap moved to flat numbering (Phases 2–13). Phase 2 (association-only sharing) and the UX/UI audit lots (Phases 3, 4, 7, 9, 12) were inserted by owner decision on 2026-09-27; Phase 13 (Field Validation) now depends on all of them
+- Phase 12.1 inserted after Phase 12: Owner acceptance testing: the owner still finds many display bugs and UX friction on their own phone and judged Phase 13 field tests with the association premature (owner decision 2026-09-28) (URGENT)
 
 ## Deferred Items
 
@@ -166,5 +169,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-09-28
-Stopped at: Phase 12 closed; STATE.md and ROADMAP.md brought in line with the merged phases (Phase 4 and Phase 11 status fixed)
+Stopped at: Phase 12.1 inserted; next step /gsd-discuss-phase 12.1 or /gsd-plan-phase 12.1
 Resume file: None

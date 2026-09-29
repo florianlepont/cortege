@@ -54,7 +54,7 @@ function factorRow(factorCode: string, entry: DisplayedFactorResult | undefined)
   const title = FACTOR_TITLES[factorCode as keyof typeof FACTOR_TITLES] ?? factorCode
   const classLabel =
     entry && entry.selected_class !== NOT_FILLED_CLASS ? entry.selected_class : t.scores.notFilled
-  return `<tr><td>${escapeHtml(factorCode)} — ${escapeHtml(title)}</td><td>${escapeHtml(classLabel)}</td></tr>`
+  return `<tr><td>${escapeHtml(factorCode)} : ${escapeHtml(title)}</td><td>${escapeHtml(classLabel)}</td></tr>`
 }
 
 /** Pure HTML builder, unit-tested on its own — the only part expo-print renders to PDF. */

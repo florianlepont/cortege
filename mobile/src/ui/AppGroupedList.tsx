@@ -153,7 +153,7 @@ function createStyles(theme: BrandTheme) {
       borderRadius: brandRadius.card,
       borderWidth: 1,
       borderColor: theme.componentColors.card.panelBorder,
-      backgroundColor: theme.colors.white,
+      backgroundColor: theme.semanticColors.surfaceElevated,
       overflow: "hidden",
     },
     divider: {

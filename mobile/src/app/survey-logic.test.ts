@@ -298,8 +298,9 @@ describe("filterAndSortSurveys", () => {
     expect(
       resolveSurveySyncDisplay(makeSurvey({ status: "submitted", sync_state: "synced" })),
     ).toBe("sync")
+    // OA-38: a draft on the server is synced, not local.
     expect(resolveSurveySyncDisplay(makeSurvey({ status: "draft", sync_state: "synced" }))).toBe(
-      "local",
+      "sync",
     )
     expect(resolveSurveySyncDisplay(makeSurvey({ status: "draft", sync_state: "pending" }))).toBe(
       "local",
@@ -329,12 +330,12 @@ describe("getSubmitBlockReason", () => {
     expect(getSubmitBlockReason("ok", surveys)).toBeNull()
   })
 
-  test("returns global_blocked when another survey is blocked", () => {
+  test("OA-18: another blocked survey does not block this one", () => {
     const surveys: LocalSurvey[] = [
       makeSurvey({ id: "target", sync_state: "synced", status: "draft" }),
       makeSurvey({ id: "other", sync_blocked: 1, sync_state: "failed" }),
     ]
-    expect(getSubmitBlockReason("target", surveys)).toBe("global_blocked")
+    expect(getSubmitBlockReason("target", surveys)).toBeNull()
   })
 
   test("returns survey_blocked when target itself is blocked", () => {
@@ -445,7 +446,7 @@ describe("labels read from the catalogue (D-06)", () => {
     expect(bText).not.toMatch(/plafonn/)
     expect(bText).not.toMatch(/covered_autochthonous_percent|couvert autochtone/i)
     expect(factorInputHints.G.join(" ")).toMatch(/0, 2 ou 5/)
-    expect(factorInputHints.H.join(" ")).toMatch(/0 \(recent\), 2 \(partiel\) ou 5 \(ancien\)/)
+    expect(factorInputHints.H.join(" ")).toMatch(/0 \(récent\), 2 \(partiel\) ou 5 \(ancien\)/)
   })
 
   test("the v3.2 catalogue has cas labels and captions for cas 1 to 4", () => {

@@ -163,11 +163,6 @@ export function useSurveySyncSurveyOperations({
         setStatus(text.notFound())
         return
       }
-      if (blockReason === "global_blocked") {
-        const blocked = surveys.find((survey) => survey.sync_blocked === 1)
-        setStatus(text.conflictUnresolved({ name: blocked ? surveyName(blocked) : name }))
-        return
-      }
       if (blockReason === "already_submitted") {
         setStatus(text.alreadySubmitted({ name }))
         return

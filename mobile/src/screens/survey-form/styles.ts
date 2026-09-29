@@ -37,7 +37,7 @@ export function createFormStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 19,
       lineHeight: 22,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     panelBody: {
       ...brandTypography.sectionBody,
@@ -87,7 +87,7 @@ export function createFormStyles(theme: BrandTheme) {
     },
     primaryButton: {
       borderRadius: brandRadius.pill,
-      backgroundColor: theme.colors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 18,

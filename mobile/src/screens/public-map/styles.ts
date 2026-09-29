@@ -122,7 +122,7 @@ export function createControlStyles(theme: BrandTheme) {
     },
     exploreBadgeText: {
       ...brandTypography.label,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     countBadge: {
       borderRadius: brandRadius.pill,
@@ -142,7 +142,7 @@ export function createControlStyles(theme: BrandTheme) {
     iconButtonPrimary: {
       ...roundButton,
       borderColor: brandColors.forest,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       ...brandShadow.card,
     },
     iconButtonDisabled: {
@@ -174,7 +174,7 @@ export function createControlStyles(theme: BrandTheme) {
     },
     filtersTitle: {
       ...brandTypography.label,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     filtersMeta: {
       ...brandTypography.meta,
@@ -191,7 +191,7 @@ export function createControlStyles(theme: BrandTheme) {
     },
     layerTogglePillOn: {
       borderColor: brandColors.forest,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     layerTogglePillOff: {
       borderColor: theme.colors.divider,
@@ -199,10 +199,10 @@ export function createControlStyles(theme: BrandTheme) {
     },
     layerTogglePillText: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     layerTogglePillTextOn: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     bottomDock: {
       position: "absolute",
@@ -228,7 +228,7 @@ export function createControlStyles(theme: BrandTheme) {
       height: 56,
       borderRadius: 28,
       borderColor: brandColors.forest,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       ...brandShadow.card,
     },
   })
@@ -252,7 +252,7 @@ export function createFilterBarStyles(theme: BrandTheme) {
     },
     resetLink: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
       textDecorationLine: "underline",
     },
     row: {
@@ -328,14 +328,14 @@ export function createOfflineIndicatorStyles(theme: BrandTheme) {
       borderRadius: brandRadius.pill,
     },
     basemapOptionActive: {
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     basemapOptionText: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     basemapOptionTextActive: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
   })
 }
@@ -347,7 +347,7 @@ export function createPanelStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.label,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     meta: {
       ...brandTypography.meta,

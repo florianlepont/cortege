@@ -5,7 +5,7 @@ import { IBP_MAX } from "@cortege/ibp-domain"
 // rather than reusing survey-detail's (whose strings are written for on-screen labels/subtitles).
 
 export const surveyExportFr = {
-  documentTitle: (siteName: string) => `Relevé IBP — ${siteName}`,
+  documentTitle: (siteName: string) => `Relevé IBP : ${siteName}`,
   identity: {
     site: "Site",
     parcels: "Parcelle(s) cadastrale(s)",

@@ -48,10 +48,6 @@ export const surveyOpsStatusFr = {
 
   // Submit
   notFound: () => statusText("Relevé introuvable sur cet appareil"),
-  conflictUnresolved: ({ name }: { name: string }) =>
-    statusText(
-      `Conflit de synchronisation non résolu sur « ${name} ». Réessayez ou annulez la modification locale d'abord.`,
-    ),
   alreadySubmitted: ({ name }: { name: string }) => statusText(`« ${name} » est déjà soumis`),
   notSynced: ({ name }: { name: string }) =>
     statusText(`« ${name} » doit être synchronisé avant d'être soumis`),
@@ -81,7 +77,7 @@ export const surveyOpsStatusFr = {
     statusText(`Soumission de « ${name} » reportée : ${OWNER_PENDING}`),
   submitted: ({ name }: { name: string }) => statusText(`« ${name} » a été soumis`),
   submitRejected: ({ name }: { name: string }) =>
-    statusText(`Soumission de « ${name} » refusée — ouvrez le relevé pour corriger`),
+    statusText(`Soumission de « ${name} » refusée : ouvrez le relevé pour corriger`),
   submitLoginRequired: () => statusText("Connectez-vous pour soumettre le relevé"),
   submitFailed: ({ name }: { name: string }) =>
     statusText(`Soumission de « ${name} » impossible, réessayez plus tard`),

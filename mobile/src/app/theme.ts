@@ -69,24 +69,24 @@ const lightNeutrals: BrandDynamicNeutrals = {
   errorSoft: "#F3D3C8",
 }
 
-// DS-12: a forest-based dark palette, per the audit's own note that `forest` and the existing
-// `heroTextMutedOnDark` (#D7E3C0) already give this app a dark base — canvas reuses
-// `brandColors.forestNight`, text reuses that same warm off-white/sage family the hero panels use.
-// Every pair below was checked against WCAG 2.1 (script in `12-CONTEXT.md`): text pairs are all
-// >= 7:1 (AA needs 4.5:1), inputBorder/inputFill is 3.56:1 (DS-14's >= 3:1 non-text floor).
+// OA-80 (owner acceptance, 2026-09-29): the forest-based dark palette was "far too much green".
+// The owner chose direction A "Graphite" in sketch 001 (`.planning/sketches/001-dark-palette/`):
+// a near-black canvas as Linear, cards one step lighter with thin borders, soft greys, and green
+// kept for the primary action. Text pairs are >= 7:1 on canvas and panel, inputBorder/inputFill
+// >= 3:1.
 const darkNeutrals: BrandDynamicNeutrals = {
-  canvas: brandColors.forestNight,
-  panel: "#1B2E17",
-  surfaceSoft: "#16260F",
-  panelMuted: "#24391D",
-  warningSoft: "#3A2C12",
-  inputFill: "#1E2E18",
-  inputBorder: "#6E8562",
-  divider: "#33472B",
-  textPrimary: "#E8ECD9",
-  textSecondary: "#AEC091",
-  successSoft: "#243219",
-  errorSoft: "#3B2018",
+  canvas: "#08090A",
+  panel: "#111214",
+  surfaceSoft: "#0D0E10",
+  panelMuted: "#17181B",
+  warningSoft: "#2A2112",
+  inputFill: "#111214",
+  inputBorder: "#686D74",
+  divider: "#212226",
+  textPrimary: "#F2F3F1",
+  textSecondary: "#9A9FA6",
+  successSoft: "#16200F",
+  errorSoft: "#2B1714",
 }
 
 export type BrandColors = typeof brandColors & BrandDynamicNeutrals
@@ -126,6 +126,10 @@ export type BrandSemanticColors = {
   textPrimary: string
   textSecondary: string
   textStrong: string
+  heroSurface: string
+  heroBorder: string
+  onCtaPrimary: string
+  accent: string
   ctaPrimary: string
   ctaAccent: string
   ctaSecondaryOutline: string
@@ -141,14 +145,24 @@ function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): Bran
     surfaceBase: colors.panel,
     // Phase 12: was a flat `brandColors.white` — a raised card now needs its own dark tone since
     // `white` itself stays theme-invariant (still used elsewhere as pure white-on-color).
-    surfaceElevated: scheme === "dark" ? "#243B1C" : brandColors.white,
+    surfaceElevated: scheme === "dark" ? "#111214" : brandColors.white,
     surfaceSoft: colors.surfaceSoft,
     textPrimary: colors.textPrimary,
     textSecondary: colors.textSecondary,
-    textStrong: colors.forest,
-    ctaPrimary: colors.forest,
+    // OA-83: `forest` is theme-invariant, so forest text vanished on the dark canvas. Strong text
+    // (titles, labels, links) takes the light sage on dark.
+    textStrong: scheme === "dark" ? colors.textPrimary : colors.forest,
+    // OA-80 (sketch 001, direction A "Graphite" chosen by the owner): in dark mode the forest
+    // heroes become a bordered surface, and the primary action a mid green that keeps white text.
+    heroSurface: scheme === "dark" ? colors.panel : colors.forest,
+    heroBorder: scheme === "dark" ? "#26282C" : colors.forest,
+    // Sketch 001 A: the primary action is the light green with dark ink.
+    ctaPrimary: scheme === "dark" ? "#9BC26A" : colors.forest,
+    onCtaPrimary: scheme === "dark" ? "#0C1208" : brandColors.white,
+    // Eyebrows, progress, selection: moss in light, the sketch's light green in dark.
+    accent: scheme === "dark" ? "#9BC26A" : colors.moss,
     ctaAccent: colors.moss,
-    ctaSecondaryOutline: colors.forest,
+    ctaSecondaryOutline: scheme === "dark" ? "#2C2E33" : colors.forest,
     ctaDanger: colors.terracotta,
     successSurface: colors.successSoft,
     errorSurface: colors.errorSoft,
@@ -161,6 +175,7 @@ export type BrandComponentColors = {
     primaryBackground: string
     secondaryBackground: string
     secondaryBorder: string
+    secondaryLabel: string
     dangerBackground: string
   }
   card: {
@@ -247,6 +262,8 @@ function makeComponentColors(
       primaryBackground: semanticColors.ctaPrimary,
       secondaryBackground: semanticColors.surfaceElevated,
       secondaryBorder: semanticColors.ctaSecondaryOutline,
+      // Sketch 001 A: a ghost button with a faint border and light text in dark mode.
+      secondaryLabel: semanticColors.textStrong,
       dangerBackground: semanticColors.ctaDanger,
     },
     card: {
@@ -268,7 +285,7 @@ function makeComponentColors(
       warningBackground: colors.warningSoft,
       dangerBorder: "#E4A595",
       dangerBackground: colors.errorSoft,
-      textColor: colors.forest,
+      textColor: semanticColors.textStrong,
       onDarkBorder: "rgba(255, 255, 255, 0.25)",
       onDarkBackground: "rgba(255, 255, 255, 0.15)",
       onDarkTextColor: "rgba(255, 255, 255, 0.90)",
@@ -276,11 +293,11 @@ function makeComponentColors(
     choiceChip: {
       border: colors.inputBorder,
       background: colors.panelMuted,
-      interactiveBorder: colors.forest,
+      interactiveBorder: semanticColors.textStrong,
       interactiveBackground: semanticColors.surfaceElevated,
       activeBorder: colors.forest,
       activeBackground: colors.forest,
-      text: colors.forest,
+      text: semanticColors.textStrong,
       activeText: brandColors.white,
       staticText: colors.textSecondary,
       successBackground: colors.successSoft,
@@ -292,14 +309,14 @@ function makeComponentColors(
       cardAccentSuccess: colors.sage,
       cardAccentWarning: colors.ochre,
       cardAccentDanger: colors.terracotta,
-      cardSelectedBorder: colors.forest,
+      cardSelectedBorder: semanticColors.textStrong,
       cardSelectedBackground: colors.panel,
       workflowNeutralBackground: colors.panelMuted,
       workflowSuccessBackground: colors.successSoft,
       workflowWarningBackground: colors.warningSoft,
       workflowDangerBackground: colors.errorSoft,
-      workflowNeutralText: colors.forest,
-      workflowSuccessText: colors.forest,
+      workflowNeutralText: colors.textSecondary,
+      workflowSuccessText: semanticColors.accent,
       workflowWarningText: onSurface.warning,
       workflowDangerText: onSurface.danger,
       progressTrack: colors.divider,
@@ -319,7 +336,7 @@ function makeComponentColors(
       text: colors.textSecondary,
       warningText: onSurface.warning,
       dangerText: onSurface.danger,
-      successText: colors.forest,
+      successText: semanticColors.textStrong,
     },
   }
 }

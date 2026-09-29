@@ -20,7 +20,7 @@ export function createFactorStyles(theme: BrandTheme) {
       fontSize: 52,
       lineHeight: 56,
       fontWeight: "900",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     scoreHeroMeta: {
       ...brandTypography.sectionBody,
@@ -70,13 +70,14 @@ export function createFactorStyles(theme: BrandTheme) {
       borderRadius: 12,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     factorBadgeText: {
       ...brandTypography.label,
       fontSize: 12,
-      lineHeight: 12,
-      color: brandColors.white,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
+      color: theme.semanticColors.onCtaPrimary,
     },
     factorIconWrap: {
       width: 24,
@@ -95,14 +96,16 @@ export function createFactorStyles(theme: BrandTheme) {
     factorTileMeta: {
       ...brandTypography.meta,
       fontSize: 12,
-      lineHeight: 12,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
       color: theme.colors.textSecondary,
     },
     factorTileState: {
       ...brandTypography.meta,
       fontSize: 12,
-      lineHeight: 12,
-      color: theme.colors.forest,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
+      color: theme.semanticColors.textStrong,
     },
   })
 }

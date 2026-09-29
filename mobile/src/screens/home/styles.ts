@@ -30,14 +30,16 @@ export function createStyles(theme: BrandTheme) {
     greetingTitle: {
       fontSize: 28,
       fontWeight: "800",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       lineHeight: 32,
     },
-    greetingDate: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
-      marginTop: 2,
-      textTransform: "capitalize",
+    greetingText: {
+      flex: 1,
+      flexShrink: 1,
+      marginRight: brandSpacing.sm,
+    },
+    pageInset: {
+      marginHorizontal: PAGE_H,
     },
     headerTrailing: {
       flexDirection: "row",
@@ -72,7 +74,10 @@ export function createStyles(theme: BrandTheme) {
     // Hero CTA
     heroCta: {
       marginHorizontal: PAGE_H,
-      backgroundColor: theme.colors.forest,
+      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
       borderRadius: brandRadius.card,
       padding: 24,
       paddingBottom: 28,
@@ -92,13 +97,15 @@ export function createStyles(theme: BrandTheme) {
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 1.5,
-      color: theme.colors.moss,
+      color: theme.semanticColors.accent,
       textTransform: "uppercase",
     },
     heroTitle: {
       fontSize: 26,
       fontWeight: "900",
-      color: theme.colors.canvas,
+      // OA-83: canvas was light text on the forest hero in light mode only; the hero stays forest in
+      // both themes, so its text is a fixed light tone.
+      color: brandOnDarkColors.heroBodyOnDark,
       lineHeight: 30,
     },
     heroBody: {
@@ -107,11 +114,11 @@ export function createStyles(theme: BrandTheme) {
       marginBottom: 4,
     },
     heroButton: {
-      backgroundColor: theme.colors.moss,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       marginTop: 4,
     },
     heroButtonLabel: {
-      color: theme.colors.canvas,
+      color: theme.semanticColors.onCtaPrimary,
     },
     // HOME-02: secondary "Nouveau relevé" action once the primary CTA becomes "Reprendre".
     heroSecondaryButton: {
@@ -120,7 +127,7 @@ export function createStyles(theme: BrandTheme) {
       backgroundColor: "transparent",
     },
     heroSecondaryButtonLabel: {
-      color: theme.colors.canvas,
+      color: brandOnDarkColors.heroBodyOnDark,
     },
 
     // Sections
@@ -133,12 +140,7 @@ export function createStyles(theme: BrandTheme) {
     },
     trailingLink: {
       ...brandTypography.label,
-      color: theme.colors.moss,
-    },
-
-    // HOME-01/HOME-02: the merged SurveyProgressCard, shown under the resume hero.
-    resumeCardWrap: {
-      paddingHorizontal: PAGE_H,
+      color: theme.semanticColors.accent,
     },
 
     // Parcels
@@ -169,14 +171,14 @@ export function createStyles(theme: BrandTheme) {
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 0.8,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       textTransform: "uppercase",
       flex: 1,
     },
     sectorScore: {
       fontSize: 22,
       fontWeight: "900",
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     scoreDotsRow: {
       flexDirection: "row",

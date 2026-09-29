@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { brandColors, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { AppButton } from "../../ui/AppButton"
@@ -39,13 +39,13 @@ export function FixedActionBar({
   onPrimary,
   autosaveStatus,
 }: FixedActionBarProps) {
-  const insets = useSafeAreaInsets()
+  const tabBarClearance = useTabBarClearance()
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const autosave = autosaveStatus ? autosaveText(autosaveStatus) : null
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, brandSpacing4.sm) }]}>
+    <View style={[styles.container, { paddingBottom: tabBarClearance + brandSpacing4.sm }]}>
       {autosave ? (
         <Text
           style={[
@@ -106,7 +106,7 @@ function createStyles(theme: BrandTheme) {
     secondaryButtonText: {
       fontSize: 15,
       fontWeight: "700",
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     primaryButton: {
       flex: 1,

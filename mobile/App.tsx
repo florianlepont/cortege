@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
-import { AppNavigation } from "./src/navigation/AppNavigation"
+import { AppNavigation, useResetToHomeOnSignOut } from "./src/navigation/AppNavigation"
 import { BrandThemeProvider, useBrandTheme } from "./src/app/theme"
 import { formatUnsyncedWorkSummary } from "./src/app/local-data-owner"
 import { OnboardingFlow } from "./src/screens/onboarding/OnboardingFlow"
@@ -26,6 +26,7 @@ void SplashScreen.preventAutoHideAsync()
  */
 function AppShell() {
   const { state: session, actions } = useSession()
+  useResetToHomeOnSignOut(session.isAuthenticated)
   const theme = useBrandTheme()
   const containerStyle = useMemo(
     () => [styles.container, { backgroundColor: theme.semanticColors.backgroundCanvas }],

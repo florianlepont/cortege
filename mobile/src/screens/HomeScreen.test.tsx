@@ -47,7 +47,6 @@ jest.mock("../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
 jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
 jest.mock("../ui/SyncStatusPill", () => ({ SyncStatusPill: "SyncStatusPill" }))
-jest.mock("../ui/SurveyProgressCard", () => ({ SurveyProgressCard: "SurveyProgressCard" }))
 jest.mock("../components/cards/ParcelNearbyCard", () => ({ ParcelNearbyCard: "ParcelNearbyCard" }))
 jest.mock("./home/SectorScoreCard", () => ({ SectorScoreCard: "SectorScoreCard" }))
 jest.mock("../hooks/useNearbyParcels", () => ({ hasMixedMethodVersions: () => false }))
@@ -179,10 +178,9 @@ describe("HomeScreen", () => {
         .findAll((node) => (node.type as unknown) === "Text")
         .map((node) => String([node.props.children].flat().join("")))
       expect(texts).toContain(fr.home.hero.title)
-      expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
     })
 
-    test("a draft updated within 48h becomes the resume hero, with a progress card", () => {
+    test("a draft updated within 48h becomes the resume hero, and no separate progress card (OA-17)", () => {
       const draft = makeSurvey({ updated_at: new Date().toISOString() })
       mount(makeProps({ surveys: [draft] }))
       const texts = tree.root
@@ -196,16 +194,30 @@ describe("HomeScreen", () => {
       expect(buttonLabels).toContain(fr.home.hero.resumeButton)
       expect(buttonLabels).toContain(fr.home.hero.newSurveyButton)
 
-      const progressCard = tree.root.findByType("SurveyProgressCard" as never)
-      expect(progressCard.props.survey).toBe(draft)
+      expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
 
       const onOpenSurvey = jest.fn()
       act(() => tree.unmount())
       mount(makeProps({ surveys: [draft], onOpenSurvey }))
+      const resumeButton = tree.root
+        .findAllByType("AppButton" as never)
+        .find((node) => node.props.label === fr.home.hero.resumeButton)
       act(() => {
-        tree.root.findByType("SurveyProgressCard" as never).props.onPress()
+        resumeButton?.props.onPress()
       })
       expect(onOpenSurvey).toHaveBeenCalledWith("survey-1")
+    })
+
+    test("an unnamed draft reads 'Reprendre votre relevé' (OA-17)", () => {
+      mount(
+        makeProps({
+          surveys: [makeSurvey({ site_name: "", updated_at: new Date().toISOString() })],
+        }),
+      )
+      const texts = tree.root
+        .findAll((node) => (node.type as unknown) === "Text")
+        .map((node) => String([node.props.children].flat().join("")))
+      expect(texts).toContain(fr.home.hero.resumeTitleUnnamed)
     })
 
     test("a draft older than 48h does not trigger the resume hero", () => {
@@ -217,7 +229,6 @@ describe("HomeScreen", () => {
         .findAll((node) => (node.type as unknown) === "Text")
         .map((node) => String([node.props.children].flat().join("")))
       expect(texts).toContain(fr.home.hero.title)
-      expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
     })
 
     test("a submitted survey is never picked as the resume draft", () => {

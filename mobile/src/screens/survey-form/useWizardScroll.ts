@@ -29,7 +29,13 @@ export function useWizardScroll(activeStep: WizardStep, setActiveStep: (step: Wi
     scrollRef.current?.scrollTo?.({ y, animated })
   }, [])
 
-  const heroTopOffset = Math.max(headerHeight - insets.top, 0) + 42
+  // OA-20: on iOS the header is transparent and the screen starts at y = 0, so the hero sits below
+  // the full header height; the old "header minus the status bar, plus 42" offset left it 20 pt
+  // under the header. Android keeps its offset (its header is opaque and the screen starts below).
+  const heroTopOffset =
+    Platform.OS === "ios"
+      ? headerHeight + brandSpacing.sm
+      : Math.max(headerHeight - insets.top, 0) + 42
   const expandedHeroHeight = Math.max(248, Math.min(292, Math.round(viewportHeight * 0.27)))
   const collapseDistance = expandedHeroHeight - COLLAPSED_HERO_HEIGHT
   const topSpacerHeight = heroTopOffset + expandedHeroHeight + brandSpacing.xs

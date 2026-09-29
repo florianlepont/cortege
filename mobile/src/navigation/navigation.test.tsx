@@ -87,6 +87,8 @@ jest.mock("@react-navigation/native", () => {
     NavigationContainer: ({ children }: { children?: React.ReactNode }) =>
       ReactRef.createElement(ReactRef.Fragment, null, children),
     getFocusedRouteNameFromRoute: (route: { focused?: string }) => route.focused,
+    createNavigationContainerRef: () => ({ current: null, isReady: () => false }),
+    useFocusEffect: () => undefined,
     DefaultTheme: { dark: false, colors: mockNavigationThemeColors },
     DarkTheme: { dark: true, colors: mockNavigationThemeColors },
   }
@@ -223,8 +225,10 @@ describe("AppNavigation tree choice", () => {
     expect(mockNavigators.jsTabs).toHaveLength(1)
     expect(mockNavigators.nativeTabs).toBeUndefined()
     expect(Object.keys(mockScreens)).toEqual(
-      expect.arrayContaining(["home", "surveys", "publicMap", "account"]),
+      expect.arrayContaining(["home", "surveys", "publicMap", "accountHome", "settings"]),
     )
+    // OA-13: Compte is pushed onto a tab's stack, not a tab of its own.
+    expect(mockScreens.account).toBeUndefined()
     expect(mockScreens.search).toBeUndefined()
     expect(warn).toHaveBeenCalledTimes(1)
     expect(mockListConfigs).toEqual([{ useNativeNav: false }])
@@ -329,30 +333,13 @@ describe("tab listeners", () => {
     expect(reload).toHaveBeenCalledTimes(1)
   })
 
-  test("Compte closes the detail selection and loads the profile silently when signed in", async () => {
-    await mount(<AppNavigation />)
-    press("account")
-    expect(mockSurveyActions.closeSurveyDetailSelection).toHaveBeenCalledTimes(1)
-    expect(mockSession.actions.handleLoadMyProfile).toHaveBeenCalledWith({ silent: true })
-  })
-
-  test("Compte only closes the detail selection when signed out", async () => {
-    mockSession.state.isAuthenticated = false
-    await mount(<AppNavigation />)
-    press("account")
-    expect(mockSurveyActions.closeSurveyDetailSelection).toHaveBeenCalledTimes(1)
-    expect(mockSession.actions.handleLoadMyProfile).not.toHaveBeenCalled()
-  })
-
   test("the native tree wires the same listeners", async () => {
     mockPlatform.OS = "ios"
     await mount(<AppNavigation />)
     press("surveys")
     press("publicMap")
-    press("account")
     expect(mockSyncActions.handlePullChanges).toHaveBeenCalledTimes(1)
-    expect(mockSurveyActions.closeSurveyDetailSelection).toHaveBeenCalledTimes(2)
-    expect(mockSession.actions.handleLoadMyProfile).toHaveBeenCalledTimes(1)
+    expect(mockSurveyActions.closeSurveyDetailSelection).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -370,12 +357,12 @@ describe("tab options", () => {
   })
 
   test("JS options render an Ionicons icon and the platform bar metrics", () => {
-    const options = jsTabScreenOptions(defaultTheme, { route: { name: "account" } })
-    expect(options.tabBarLabel).toBe("Compte")
+    const options = jsTabScreenOptions(defaultTheme, { route: { name: "publicMap" } })
+    expect(options.tabBarLabel).toBe("Explorer")
     expect(options.tabBarStyle.height).toBe(buildJsTabBarStyle(defaultTheme).height)
     const icon = options.tabBarIcon({ color: "red", size: 20 })
     expect(icon.props).toEqual(
-      expect.objectContaining({ name: "person-outline", size: 20, color: "red" }),
+      expect.objectContaining({ name: "map-outline", size: 20, color: "red" }),
     )
   })
 
@@ -392,23 +379,27 @@ describe("tab options", () => {
   })
 
   test("jsTabScreenOptions threads the insets argument into the bar style", () => {
-    const options = jsTabScreenOptions(defaultTheme, { route: { name: "account" } }, { bottom: 40 })
+    const options = jsTabScreenOptions(
+      defaultTheme,
+      { route: { name: "publicMap" } },
+      { bottom: 40 },
+    )
     expect(options.tabBarStyle).toEqual(buildJsTabBarStyle(defaultTheme, { bottom: 40 }))
   })
 
   test("the JS tab navigator's own screenOptions reads the real safe-area inset", async () => {
     await mount(<AppNavigation />)
     const screenOptions = mockNavigators.jsTabs.at(-1)?.screenOptions as OptionsFn
-    const options = screenOptions({ route: { name: "account" } })
+    const options = screenOptions({ route: { name: "publicMap" } })
     expect(options.tabBarStyle).toEqual(buildJsTabBarStyle(defaultTheme, { bottom: 0 }))
   })
 
-  test("the JS surveys tab hides the bar on parcel selection only", async () => {
+  test("OA-28: the JS surveys tab keeps the bar on parcel selection too", async () => {
     await mount(<AppNavigation />)
     const options = mockScreens.surveys.options as OptionsFn
-    expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual({
-      display: "none",
-    })
+    expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual(
+      buildJsTabBarStyle(defaultTheme),
+    )
     expect(options({ route: { focused: "surveyForm" } }).tabBarStyle).toEqual(
       buildJsTabBarStyle(defaultTheme),
     )

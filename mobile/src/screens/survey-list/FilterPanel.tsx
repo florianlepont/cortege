@@ -174,7 +174,7 @@ function createStyles(theme: BrandTheme) {
       lineHeight: 14,
       fontWeight: "800",
       letterSpacing: 0.2,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       textTransform: "uppercase",
     },
     filterChipRow: {

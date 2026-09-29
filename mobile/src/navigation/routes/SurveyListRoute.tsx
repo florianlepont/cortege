@@ -2,14 +2,12 @@ import { memo, useEffect, useLayoutEffect, useRef } from "react"
 import { Platform, Pressable, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { SearchBarCommands } from "react-native-screens"
-import { brandColors } from "../../app/brand-tokens"
+import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { SurveyListScreen } from "../../screens/SurveyListScreen"
 import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
-import { useSyncStatus } from "../../state/sync-status-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
-import { SyncStatusPill } from "../../ui/SyncStatusPill"
 import { useSurveysStackConfig } from "../stacks/surveys-stack-config"
 import type { SurveyListRouteProps } from "../types"
 
@@ -32,7 +30,7 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
   const { useNativeNav } = useSurveysStackConfig()
   const { state, actions } = useSurveys()
   const syncActions = useSyncActions()
-  const { isOnline, isSyncing } = useSyncStatus()
+  const theme = useBrandTheme()
 
   const nativeSearchEnabled = useNativeNav && Platform.OS === "ios"
   const searchBarRef = useRef<SearchBarCommands>(null!)
@@ -45,9 +43,6 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
     actions.openSurvey(surveyId)
     navigation.navigate("surveyDetail")
   })
-  const onOpenSyncStatus = useLatestCallback(() => {
-    navigation.navigate("account", { screen: "settings" })
-  })
 
   useLayoutEffect(() => {
     if (!nativeSearchEnabled) return
@@ -59,7 +54,7 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
         hideWhenScrolling: false,
         obscureBackground: false,
         autoCapitalize: "none",
-        tintColor: brandColors.forest,
+        tintColor: theme.semanticColors.accent,
         onChangeText: (event) => {
           actions.setSurveyQuery(event.nativeEvent.text)
         },
@@ -68,13 +63,8 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
         },
       },
       headerRight: () => (
+        // OA-51: the sync pill does not belong next to "+" (owner decision); it stays on Accueil.
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <SyncStatusPill
-            isOnline={isOnline}
-            isSyncing={isSyncing}
-            pendingCount={state.surveyStats.pending}
-            onPress={onOpenSyncStatus}
-          />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={fr.surveyList.a11y.createSurvey}
@@ -82,21 +72,12 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
             onPress={onOpenCreateSurvey}
             style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}
           >
-            <Ionicons name="add-circle" size={26} color={brandColors.forest} />
+            <Ionicons name="add-circle" size={26} color={theme.semanticColors.accent} />
           </Pressable>
         </View>
       ),
     })
-  }, [
-    actions,
-    isOnline,
-    isSyncing,
-    nativeSearchEnabled,
-    navigation,
-    onOpenCreateSurvey,
-    onOpenSyncStatus,
-    state.surveyStats.pending,
-  ])
+  }, [actions, nativeSearchEnabled, navigation, onOpenCreateSurvey, theme])
 
   useEffect(() => {
     if (!nativeSearchEnabled) return
@@ -141,9 +122,6 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
       onOpenCreateSurvey={onOpenCreateSurvey}
       onOpenSurvey={onOpenSurvey}
       onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
-      isOnline={isOnline}
-      isSyncing={isSyncing}
-      onOpenSyncStatus={onOpenSyncStatus}
     />
   )
 })

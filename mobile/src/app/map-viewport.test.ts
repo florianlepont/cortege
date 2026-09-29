@@ -1,4 +1,5 @@
 import {
+  parseGpsCoordinate,
   buildFocusedMapRegion,
   computeRegionZoom,
   areRegionsNearlyEqual,
@@ -185,5 +186,17 @@ describe("buildBboxAroundPoint", () => {
     const [minLng, minLat] = bbox.split(",").map(Number)
     expect(minLng).toBe(-180)
     expect(minLat).toBe(-90)
+  })
+})
+
+describe("parseGpsCoordinate (OA-27)", () => {
+  test("an empty or blank string is not a position", () => {
+    expect(Number.isFinite(parseGpsCoordinate(""))).toBe(false)
+    expect(Number.isFinite(parseGpsCoordinate("  "))).toBe(false)
+  })
+
+  test("a numeric string parses, zero included", () => {
+    expect(parseGpsCoordinate("48.85")).toBe(48.85)
+    expect(parseGpsCoordinate("0")).toBe(0)
   })
 })

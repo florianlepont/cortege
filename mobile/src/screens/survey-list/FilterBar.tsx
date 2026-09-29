@@ -151,7 +151,7 @@ function createStyles(theme: BrandTheme) {
       fontSize: 12,
       fontWeight: "800",
       letterSpacing: 0.3,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       textTransform: "uppercase",
     },
     filtersCompactMeta: {
@@ -173,7 +173,7 @@ function createStyles(theme: BrandTheme) {
     },
     advancedToggleText: {
       ...brandTypography.meta,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     searchRow: {
       paddingBottom: 2,

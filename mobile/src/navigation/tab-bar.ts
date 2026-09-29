@@ -5,7 +5,9 @@
  * `tabBarHidden`, applies it to the focused leaf route tracked by
  * AppNavigation.
  */
-const ROUTES_WITHOUT_TAB_BAR: ReadonlySet<string> = new Set(["surveyParcels"])
+// OA-28 (owner rule, 2026-09-28): the tab bar stays visible on every screen, parcel selection
+// included; screens lay their bottom controls out above it (`useTabBarClearance`).
+const ROUTES_WITHOUT_TAB_BAR: ReadonlySet<string> = new Set<string>()
 
 export function shouldHideTabBar(focusedRouteName: string | undefined): boolean {
   return focusedRouteName !== undefined && ROUTES_WITHOUT_TAB_BAR.has(focusedRouteName)

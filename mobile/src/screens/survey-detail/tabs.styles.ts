@@ -21,7 +21,7 @@ export function createTabsStyles(theme: BrandTheme) {
     },
     eventTitle: {
       ...brandTypography.label,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     eventPayload: {
       ...brandTypography.sectionBody,

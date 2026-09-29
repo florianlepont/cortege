@@ -34,7 +34,7 @@ export function createParcelStyles(theme: BrandTheme) {
     },
     selectionCountPillText: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     mapFrame: {
       position: "relative",
@@ -85,7 +85,7 @@ export function createParcelStyles(theme: BrandTheme) {
     },
     selectionPillText: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     fullscreenMapScreen: {
       flex: 1,
@@ -142,7 +142,7 @@ export function createParcelStyles(theme: BrandTheme) {
       gap: 8,
       borderWidth: 1,
       borderColor: brandColors.sage,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       paddingHorizontal: 14,
       paddingVertical: 12,
       borderRadius: brandRadius.pill,
@@ -150,7 +150,7 @@ export function createParcelStyles(theme: BrandTheme) {
     },
     fullscreenMapActionButtonText: {
       ...brandTypography.meta,
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     fullscreenMapBottomArea: {
       gap: 12,
@@ -167,7 +167,7 @@ export function createParcelStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 20,
       lineHeight: 24,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     fullscreenMapBottomMeta: {
       ...brandTypography.sectionBody,

@@ -3,6 +3,12 @@ import renderer, { act } from "react-test-renderer"
 import { fr } from "../../i18n"
 import { FixedActionBar } from "./FixedActionBar"
 
+// OA-28: the bar clears the tab bar; the tab-bar packages are not loaded in unit tests.
+jest.mock("../../app/useAppBottomTabBarHeight", () => ({
+  useTabBarClearance: () => 68,
+  useAppBottomTabBarHeight: () => 68,
+}))
+
 const originalConsoleError = console.error
 
 beforeAll(() => {

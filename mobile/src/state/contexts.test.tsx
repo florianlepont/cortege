@@ -61,6 +61,7 @@ jest.mock("../screens/LocalDataOwnerConflictScreen", () => ({
 }))
 jest.mock("../navigation/AppNavigation", () => ({
   AppNavigation: () => null,
+  useResetToHomeOnSignOut: () => undefined,
 }))
 
 jest.mock("react-native-gesture-handler", () => {

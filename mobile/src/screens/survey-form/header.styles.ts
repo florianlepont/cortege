@@ -24,7 +24,10 @@ export function createHeaderStyles(theme: BrandTheme) {
       position: "relative",
       overflow: "hidden",
       borderRadius: 34,
-      backgroundColor: brandColors.forest,
+      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
       ...brandShadow.card,
     },
     heroAccentOrb: {
@@ -34,7 +37,12 @@ export function createHeaderStyles(theme: BrandTheme) {
       width: 126,
       height: 126,
       borderRadius: 999,
-      backgroundColor: brandOnDarkColors.heroAccentTintOnDark,
+      // Sketch 001 A: the decorative orb stays on the forest hero in light mode; on the dark
+      // bordered hero it is a faint neutral disc.
+      backgroundColor:
+        theme.scheme === "dark"
+          ? brandOnDarkColors.heroOrbFaintOnDark
+          : brandOnDarkColors.heroAccentTintOnDark,
     },
     heroExpandedLayer: {
       ...StyleSheet.absoluteFill,
@@ -97,7 +105,8 @@ export function createHeaderStyles(theme: BrandTheme) {
     compactProgressCount: {
       ...brandTypography.heroEyebrow,
       fontSize: 12,
-      lineHeight: 12,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
       color: brandOnDarkColors.heroTextMutedOnDark,
     },
     compactProgressTrack: {
@@ -146,7 +155,7 @@ export function createHeaderStyles(theme: BrandTheme) {
     },
     stepButtonActive: {
       borderColor: brandColors.forest,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     stepButtonComplete: {
       borderColor: brandColors.moss,
@@ -172,18 +181,19 @@ export function createHeaderStyles(theme: BrandTheme) {
     stepIndexText: {
       ...brandTypography.heroEyebrow,
       fontSize: 12,
-      lineHeight: 12,
-      color: brandColors.forest,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
+      color: theme.semanticColors.textStrong,
     },
     stepIndexTextActive: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     stepButtonTitle: {
       ...brandTypography.label,
       color: theme.colors.textPrimary,
     },
     stepButtonTitleActive: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
     stepButtonMeta: {
       ...brandTypography.meta,
@@ -195,10 +205,10 @@ export function createHeaderStyles(theme: BrandTheme) {
     stepButtonHint: {
       marginTop: "auto",
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     stepButtonHintActive: {
-      color: brandColors.white,
+      color: theme.semanticColors.onCtaPrimary,
     },
   })
 }

@@ -237,6 +237,8 @@ export const brandOnDarkColors = {
   heroPanelBorderOnDark: "rgba(255, 255, 255, 0.14)",
   heroPanelBackgroundOnDark: "rgba(255, 255, 255, 0.08)",
   heroOrbOnDark: "rgba(137, 163, 58, 0.22)",
+  // Sketch 001 A (OA-80): the decorative hero orb on the dark theme's bordered hero.
+  heroOrbFaintOnDark: "rgba(255, 255, 255, 0.03)",
   // Phase 4 (DS-04): the rest of the "glass over a dark hero" family the hex-literal migration
   // surfaced — same surface, a stronger step, a stronger border, a sage (not moss) accent tint, a
   // muted text tone, a near-black scrim for photo/map backdrops, and a light-on-saturated halo.

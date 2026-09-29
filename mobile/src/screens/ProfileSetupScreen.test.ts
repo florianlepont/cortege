@@ -53,6 +53,7 @@ jest.mock("react-native", () => {
       ),
     Image: mockComponent("Image"),
     KeyboardAvoidingView: mockComponent("KeyboardAvoidingView"),
+    Keyboard: { addListener: () => ({ remove: () => undefined }) },
     ScrollView: mockComponent("ScrollView"),
     View: mockComponent("View"),
     Platform: {

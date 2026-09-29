@@ -4,7 +4,6 @@ import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandSpacing } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
-import { computeSurveyStats } from "../app/survey-logic"
 import { fr } from "../i18n"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import type { LocalAttachment } from "../storage"
@@ -63,9 +62,6 @@ export function SurveyListScreen({
   onOpenCreateSurvey,
   onOpenSurvey,
   onEnsureAttachmentPreviews,
-  isOnline,
-  isSyncing,
-  onOpenSyncStatus,
 }: SurveyListScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createListStyles(theme), [theme])
@@ -82,8 +78,6 @@ export function SurveyListScreen({
   const showFiltersPanel = useNativeSearchUI || showInlineSearch
 
   // ── Computed stats ──────────────────────────────────────────────────────────
-
-  const surveyStats = useMemo(() => computeSurveyStats(surveys), [surveys])
 
   const advancedFilterCount = useMemo(() => {
     let count = 0
@@ -295,10 +289,6 @@ export function SurveyListScreen({
           scrollY={scrollY}
           geometry={heroGeometry}
           itemCountLabel={filtersSummaryLabel}
-          isOnline={isOnline}
-          isSyncing={isSyncing}
-          pendingCount={surveyStats.pending}
-          onOpenSyncStatus={onOpenSyncStatus}
           onOpenCreateSurvey={onOpenCreateSurvey}
         />
       ) : null}

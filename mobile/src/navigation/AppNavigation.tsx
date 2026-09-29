@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { StatusBar } from "react-native"
-import { NavigationContainer } from "@react-navigation/native"
+import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native"
 import { useBrandTheme } from "../app/theme"
 import { buildNavigationTheme, statusBarStyleForScheme } from "./navigation-theme"
 import { getNativeTabsAvailability, type NativeTabsAvailability } from "./native-tabs-availability"
@@ -56,6 +56,23 @@ function AppTabs({
   )
 }
 
+const navigationRef = createNavigationContainerRef<ReactNavigation.RootParamList>()
+
+/**
+ * OA-07: sign-out happens from Compte, and the tabs stayed where they were, so the next sign-in
+ * (and a new account's profile setup) landed on Compte. Called by the app shell, which owns the
+ * session: every session end resets the tree to Accueil.
+ */
+export function useResetToHomeOnSignOut(isAuthenticated: boolean): void {
+  const wasAuthenticated = useRef(isAuthenticated)
+  useEffect(() => {
+    if (wasAuthenticated.current && !isAuthenticated && navigationRef.isReady()) {
+      navigationRef.resetRoot({ index: 0, routes: [{ name: "home" }] })
+    }
+    wasAuthenticated.current = isAuthenticated
+  }, [isAuthenticated])
+}
+
 export function AppNavigation() {
   const { scheme, semanticColors } = useBrandTheme()
   const [publicMapReload] = useState(createPublicMapReloadSignal)
@@ -81,6 +98,7 @@ export function AppNavigation() {
   return (
     <PublicMapReloadContext.Provider value={publicMapReload}>
       <NavigationContainer
+        ref={navigationRef}
         theme={navigationTheme}
         onStateChange={availability.native ? onStateChange : undefined}
       >

@@ -51,7 +51,7 @@ function createStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.sectionTitle,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     subtitle: {
       ...brandTypography.sectionBody,

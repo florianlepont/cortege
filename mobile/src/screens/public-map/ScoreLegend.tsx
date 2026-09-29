@@ -78,7 +78,7 @@ function createStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.label,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     row: {
       flexDirection: "row",

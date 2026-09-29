@@ -1,80 +1,50 @@
-import { Pressable, View } from "react-native"
-import {
-  createNativeStackNavigator,
-  type NativeStackNavigationOptions,
-  type NativeStackScreenProps,
-} from "@react-navigation/native-stack"
+import { Pressable } from "react-native"
+import type { NativeStackNavigationOptions } from "@react-navigation/native-stack"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../../app/brand-tokens"
-import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AccountRoute } from "../routes/AccountRoute"
 import { SettingsRoute } from "../routes/SettingsRoute"
-import { styles } from "../styles"
-import type { AccountStackParamList } from "../types"
-import { createBaseStackScreenOptions } from "./stack-options"
 
-const AccountStack = createNativeStackNavigator<AccountStackParamList>()
+/**
+ * OA-13 (owner decision, 2026-09-28): Compte is no longer a tab. The avatar pushes these two
+ * screens onto the current tab's stack; each tab stack registers them with `ACCOUNT_SCREENS`.
+ */
 
-function HeaderIconButton({
-  icon,
-  accessibilityLabel,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap
-  accessibilityLabel: string
-  onPress: () => void
-}) {
+function SettingsHeaderButton({ onPress, color }: { onPress: () => void; color: string }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={fr.navigation.a11y.openSettings}
       hitSlop={8}
       onPress={onPress}
       style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}
     >
-      <Ionicons name={icon} size={22} color={brandColors.forest} />
+      <Ionicons name="settings-outline" size={22} color={color} />
     </Pressable>
   )
 }
 
-function accountHomeOptions({
-  navigation,
-}: NativeStackScreenProps<AccountStackParamList, "accountHome">): NativeStackNavigationOptions {
-  return {
+type AccountHomeOptionsArgs = { navigation: { navigate: (name: "settings") => void } }
+
+/** Header options for Compte; `tint` is the theme's strong text colour. */
+export function makeAccountHomeOptions(tint: string) {
+  return ({ navigation }: AccountHomeOptionsArgs): NativeStackNavigationOptions => ({
     title: fr.navigation.headers.account,
+    headerShown: true,
     headerLargeTitle: false,
     headerRight: () => (
-      <HeaderIconButton
-        icon="settings-outline"
-        accessibilityLabel={fr.navigation.a11y.openSettings}
-        onPress={() => navigation.navigate("settings")}
-      />
+      <SettingsHeaderButton color={tint} onPress={() => navigation.navigate("settings")} />
     ),
-  }
+  })
 }
 
-export function AccountTabNavigator() {
-  const theme = useBrandTheme()
-  return (
-    <View style={styles.tabScreenContainer}>
-      <AccountStack.Navigator
-        screenOptions={{
-          ...createBaseStackScreenOptions(theme),
-          headerLargeTitle: false,
-        }}
-      >
-        <AccountStack.Screen
-          name="accountHome"
-          options={accountHomeOptions}
-          component={AccountRoute}
-        />
-        <AccountStack.Screen
-          name="settings"
-          options={{ title: fr.navigation.headers.settings }}
-          component={SettingsRoute}
-        />
-      </AccountStack.Navigator>
-    </View>
-  )
+export const settingsScreenOptions: NativeStackNavigationOptions = {
+  title: fr.navigation.headers.settings,
+  headerShown: true,
+  headerLargeTitle: false,
 }
+
+export const ACCOUNT_SCREENS = {
+  accountHome: AccountRoute,
+  settings: SettingsRoute,
+} as const

@@ -5,6 +5,7 @@ import {
   DEFAULT_FRANCE_CENTER,
   areRegionsNearlyEqual,
   buildFocusedMapRegion,
+  parseGpsCoordinate,
   computeRegionZoom,
 } from "../../app/map-viewport"
 import { AppScreen, GpsCaptureResult } from "../../app/types"
@@ -58,8 +59,8 @@ export function useParcelMap({
   const [resolvedGpsAddress, setResolvedGpsAddress] = useState("")
   const [isResolvingGpsAddress, setIsResolvingGpsAddress] = useState(false)
 
-  const parsedLat = Number(gpsLocation.lat)
-  const parsedLng = Number(gpsLocation.lng)
+  const parsedLat = parseGpsCoordinate(gpsLocation.lat)
+  const parsedLng = parseGpsCoordinate(gpsLocation.lng)
   const hasGpsCoordinates = Number.isFinite(parsedLat) && Number.isFinite(parsedLng)
   const mapCenter = hasGpsCoordinates ? { lat: parsedLat, lng: parsedLng } : DEFAULT_FRANCE_CENTER
   const computedMapRegion: Region = hasGpsCoordinates

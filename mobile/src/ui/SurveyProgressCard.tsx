@@ -132,7 +132,7 @@ function createStyles(theme: BrandTheme) {
     },
     progressCount: {
       ...brandTypography.meta,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     progressTrack: {
       height: 4,

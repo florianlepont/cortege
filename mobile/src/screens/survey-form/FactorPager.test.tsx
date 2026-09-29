@@ -4,6 +4,12 @@ import type { FactorField, FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
 import { FactorPager } from "./FactorPager"
 
+// OA-28: the bar clears the tab bar; the tab-bar packages are not loaded in unit tests.
+jest.mock("../../app/useAppBottomTabBarHeight", () => ({
+  useTabBarClearance: () => 68,
+  useAppBottomTabBarHeight: () => 68,
+}))
+
 const originalConsoleError = console.error
 
 beforeAll(() => {

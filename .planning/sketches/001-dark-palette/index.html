@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sketch 001 · Mode sombre</title>
+<style id="themes">
+/* A. Graphite, façon Linear : noir profond, liserés fins, gris doux, un seul vert. */
+body.t-graphite {
+  --bg: #08090A;
+  --surface: #111214;
+  --surface-2: #17181B;
+  --border: #212226;
+  --text: #F2F3F1;
+  --text-2: #9A9FA6;
+  --text-3: #62666D;
+  --accent: #9BC26A;
+  --accent-ink: #0C1208;
+  --accent-soft: rgba(155, 194, 106, 0.12);
+  --hero: #111214;
+  --hero-border: #26282C;
+  --hero-text: #F2F3F1;
+  --hero-eyebrow: #9BC26A;
+  --warn: #E0A13A;
+  --danger: #E5745B;
+  --glass: rgba(24, 25, 28, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --radius: 14px;
+}
+
+/* B. Forêt de nuit : noir teinté de vert profond, liserés verts fins, un vert vif pour l'action. */
+body.t-foret-nuit {
+  --bg: #0A110E;
+  --surface: #111A16;
+  --surface-2: #16211C;
+  --border: rgba(167, 201, 87, 0.12);
+  --text: #E9EEE4;
+  --text-2: #93A597;
+  --text-3: #5E6F63;
+  --accent: #A7C957;
+  --accent-ink: #0A110E;
+  --accent-soft: rgba(167, 201, 87, 0.14);
+  --hero: #14231B;
+  --hero-border: rgba(167, 201, 87, 0.24);
+  --hero-text: #E9EEE4;
+  --hero-eyebrow: #A7C957;
+  --warn: #E0B04A;
+  --danger: #E08468;
+  --glass: rgba(17, 26, 22, 0.72);
+  --glass-border: rgba(167, 201, 87, 0.14);
+  --radius: 18px;
+}
+
+/* C. Sous-bois chaud : charbon chaud, texte crème, sauge et touche ocre, plus éditorial. */
+body.t-sous-bois {
+  --bg: #121110;
+  --surface: #1C1A17;
+  --surface-2: #23201C;
+  --border: #2D2A25;
+  --text: #F3EEE4;
+  --text-2: #B0A797;
+  --text-3: #756D60;
+  --accent: #B8CC8F;
+  --accent-ink: #1C2416;
+  --accent-soft: rgba(184, 204, 143, 0.13);
+  --hero: #1F2A1A;
+  --hero-border: rgba(217, 164, 65, 0.22);
+  --hero-text: #F3EEE4;
+  --hero-eyebrow: #D9A441;
+  --warn: #D9A441;
+  --danger: #D98463;
+  --glass: rgba(28, 26, 23, 0.72);
+  --glass-border: rgba(243, 238, 228, 0.08);
+  --radius: 20px;
+}
+
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #2a2a2a; font-family: "Jost", system-ui, sans-serif; color: #eee; padding-top: 64px; }
+  #variant-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 10; display: flex; gap: 8px; align-items: center;
+    padding: 12px 16px; background: #1b1b1b; border-bottom: 1px solid #333; font-family: system-ui; }
+  #variant-nav button { background: #2c2c2c; color: #ddd; border: 1px solid #444; border-radius: 999px; padding: 8px 14px; cursor: pointer; font-size: 14px; }
+  #variant-nav button.active { background: #eee; color: #111; border-color: #eee; }
+  #variant-nav .desc { margin-left: 12px; color: #aaa; font-size: 13px; }
+  .stage { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; padding: 28px 16px 60px; }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .col > .cap { font-family: system-ui; font-size: 13px; color: #bbb; }
+
+  /* Phone */
+  .phone { width: 320px; height: 680px; border-radius: 44px; background: var(--bg); position: relative; overflow: hidden;
+    border: 8px solid #000; box-shadow: 0 20px 60px rgba(0,0,0,.5); color: var(--text); transition: background .25s; }
+  .status { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 26px; font-size: 13px; font-weight: 600; }
+  .island { width: 96px; height: 28px; background: #000; border-radius: 20px; }
+  .screen { position: absolute; top: 44px; left: 0; right: 0; bottom: 0; overflow-y: auto; padding: 8px 16px 110px; scrollbar-width: none; }
+  .screen::-webkit-scrollbar { display: none; }
+  h1, h2, h3, .t { font-family: "Sora", system-ui, sans-serif; margin: 0; }
+  .muted { color: var(--text-2); }
+  .faint { color: var(--text-3); }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .between { justify-content: space-between; }
+
+  .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border);
+    display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--text-2); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; transition: all .15s; }
+  .card:hover { border-color: var(--accent-soft); }
+  .hero { background: var(--hero); border: 1px solid var(--hero-border); border-radius: calc(var(--radius) + 4px); padding: 16px; }
+  .eyebrow { font-size: 11px; letter-spacing: .12em; font-weight: 600; color: var(--hero-eyebrow); }
+  .btn { border: 0; border-radius: 999px; padding: 11px 14px; font-family: "Jost"; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; transition: all .15s; }
+  .btn:active { transform: scale(.98); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .bar { height: 5px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
+  .pill { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); white-space: nowrap; }
+  .pill.ok { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .pill.warn { color: var(--warn); }
+  .score { font-family: "Sora"; font-weight: 700; }
+  .sec { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin: 20px 2px 8px; font-weight: 600; }
+  .list .item { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-bottom: 1px solid var(--border); }
+  .list .item:last-child { border-bottom: 0; }
+  .ring { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; font-family: "Sora";
+    background: conic-gradient(var(--accent) calc(var(--p) * 1%), var(--surface-2) 0); position: relative; flex: none; }
+  .ring::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--surface); }
+  .ring span { position: relative; z-index: 1; }
+  .stat { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+  .stat b { font-family: "Sora"; font-size: 22px; display: block; }
+  .search { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 9px 12px; color: var(--text-3); font-size: 14px; }
+
+  /* Factor input */
+  .stepper { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .stepper:last-child { border-bottom: 0; }
+  .stepper .ctl { display: flex; align-items: center; gap: 10px; }
+  .stepper button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font-size: 18px; cursor: pointer; }
+  .stepper button:hover { border-color: var(--accent); }
+  .stepper output { min-width: 28px; text-align: center; font-family: "Sora"; font-weight: 600; font-size: 17px; }
+  .dots { display: flex; gap: 6px; justify-content: center; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--surface-2); }
+  .dots i.done { background: var(--accent); opacity: .5; }
+  .dots i.cur { background: var(--accent); width: 18px; border-radius: 4px; }
+  .photo-btn { display: flex; align-items: center; gap: 10px; background: var(--accent-soft); color: var(--accent); border-radius: 12px; padding: 10px 12px; font-weight: 600; font-size: 14px; cursor: pointer; }
+
+  /* Detail */
+  .photos { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; height: 150px; }
+  .photos div { border-radius: 12px; background-size: cover; background-position: center; }
+  .map { height: 110px; border-radius: var(--radius); border: 1px solid var(--border); position: relative; overflow: hidden;
+    background: repeating-linear-gradient(35deg, var(--surface) 0 14px, var(--surface-2) 14px 15px); }
+  .map .parcel { position: absolute; left: 38%; top: 28%; width: 34%; height: 44%; border: 2px solid var(--accent); background: var(--accent-soft); border-radius: 4px; transform: rotate(-8deg); }
+  .link-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 2px; border-bottom: 1px solid var(--border); font-size: 15px; }
+  .link-row:last-child { border-bottom: 0; }
+  .callout { display: flex; gap: 8px; align-items: center; font-size: 13px; padding: 9px 12px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); }
+
+  /* Liquid Glass tab bar */
+  .tabbar { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px;
+    background: var(--glass); border: 1px solid var(--glass-border); border-radius: 999px; backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); }
+  .tabbar button { background: transparent; border: 0; color: var(--text-2); font-family: "Jost"; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 16px; border-radius: 999px; cursor: pointer; }
+  .tabbar button.on { background: var(--accent-soft); color: var(--accent); }
+  .tabbar svg { width: 20px; height: 20px; }
+  .fixed-actions { position: absolute; left: 0; right: 0; bottom: 92px; padding: 10px 16px; display: flex; gap: 8px; background: linear-gradient(transparent, var(--bg) 30%); }
+
+  #sketch-tools { position: fixed; bottom: 12px; right: 12px; z-index: 20; font-family: system-ui; font-size: 12px; background: rgba(0,0,0,.75); color: #fff; padding: 8px 12px; border-radius: 8px; opacity: .5; }
+  #sketch-tools:hover { opacity: 1; }
+</style>
+</head>
+<body class="t-graphite">
+<div id="variant-nav">
+  <button class="variant-tab active" data-theme="graphite" data-desc="Noir profond façon Linear, liserés très fins, gris doux, un seul vert en accent.">A : Graphite ★ Choisi</button>
+  <button class="variant-tab" data-theme="foret-nuit" data-desc="Noir teinté de vert profond, liserés verts fins, un vert vif réservé à l'action.">B : Forêt de nuit</button>
+  <button class="variant-tab" data-theme="sous-bois" data-desc="Charbon chaud, texte crème, vert sauge et touche d'ocre, plus éditorial.">C : Sous-bois chaud</button>
+  <span class="desc" id="desc">Noir profond façon Linear, liserés très fins, gris doux, un seul vert en accent.</span>
+</div>
+
+<div class="stage">
+
+  <!-- 1. Accueil -->
+  <div class="col"><div class="phone">
+    <div class="status"><span>9:41</span><span class="island"></span><span>100 %</span></div>
+    <div class="screen">
+      <div class="row between" style="margin:10px 0 18px">
+        <h1 style="font-size:26px">Bonjour, Florian</h1>
+        <div class="avatar">FL</div>
+      </div>
+      <div class="hero">
+        <div class="eyebrow">REPRENDRE</div>
+        <h2 style="font-size:20px;margin:6px 0 4px;color:var(--hero-text)">Bois du Nord</h2>
+        <div class="muted" style="font-size:14px;margin-bottom:10px">4 facteurs sur 10 · il y a 2 h</div>
+        <div class="bar" style="margin-bottom:14px"><i style="width:40%"></i></div>
+        <button class="btn primary" onclick="toast(this,'Reprise du relevé')">Reprendre</button>
+        <button class="btn ghost" style="margin-top:8px">Nouveau relevé</button>
+      </div>
+      <div class="sec">Autour de vous</div>
+      <div class="card list" style="padding:4px 12px">
+        <div class="item"><div class="ring" style="--p:62"><span>31</span></div><div style="flex:1"><div>Forêt de Sénart</div><div class="faint" style="font-size:12px">1,2 km · juin 2026</div></div></div>
+        <div class="item"><div class="ring" style="--p:44"><span>22</span></div><div style="flex:1"><div>Bois de la Grange</div><div class="faint" style="font-size:12px">2,1 km · mai 2026</div></div></div>
+      </div>
+    </div>
+    <nav class="tabbar"></nav>
+  </div><div class="cap">Accueil</div></div>
+
+  <!-- 2. Mes Relevés -->
+  <div class="col"><div class="phone">
+    <div class="status"><span>9:41</span><span class="island"></span><span>100 %</span></div>
+    <div class="screen">
+      <div class="row between" style="margin:10px 0 14px">
+        <h1 style="font-size:26px">Mes Relevés</h1>
+        <div class="avatar">FL</div>
+      </div>
+      <div class="row" style="gap:8px;margin-bottom:14px">
+        <div class="stat"><b>7</b><span class="muted" style="font-size:13px">relevés</span></div>
+        <div class="stat"><b>3</b><span class="muted" style="font-size:13px">terminés</span></div>
+        <div class="stat"><b style="color:var(--accent)">27</b><span class="muted" style="font-size:13px">IBP moyen</span></div>
+      </div>
+      <div class="sec" style="margin-top:6px">En cours</div>
+      <div class="card list" style="padding:4px 12px">
+        <div class="item"><div class="ring" style="--p:40"><span>4</span></div><div style="flex:1"><div>Bois du Nord</div><div class="faint" style="font-size:12px">Aujourd'hui</div></div><span class="pill">Brouillon</span></div>
+        <div class="item"><div class="ring" style="--p:10"><span>1</span></div><div style="flex:1"><div>Chênaie du Val</div><div class="faint" style="font-size:12px">Hier</div></div><span class="pill warn">À envoyer</span></div>
+      </div>
+      <div class="sec">Terminés</div>
+      <div class="card list" style="padding:4px 12px">
+        <div class="item"><div class="ring" style="--p:62"><span>31</span></div><div style="flex:1"><div>Forêt de Sénart</div><div class="faint" style="font-size:12px">12 juin</div></div><span class="pill ok">Terminé</span></div>
+        <div class="item"><div class="ring" style="--p:44"><span>22</span></div><div style="flex:1"><div>Bois de la Grange</div><div class="faint" style="font-size:12px">3 mai</div></div><span class="pill ok">Terminé</span></div>
+        <div class="item"><div class="ring" style="--p:56"><span>28</span></div><div style="flex:1"><div>Parc du Morbras</div><div class="faint" style="font-size:12px">20 avril</div></div><span class="pill ok">Terminé</span></div>
+      </div>
+    </div>
+    <nav class="tabbar" data-on="1"></nav>
+  </div><div class="cap">Mes Relevés (recherche dans la barre)</div></div>
+
+  <!-- 3. Facteur -->
+  <div class="col"><div class="phone">
+    <div class="status"><span>9:41</span><span class="island"></span><span>100 %</span></div>
+    <div class="screen">
+      <div class="row between" style="margin:6px 0 12px">
+        <span class="muted" style="font-size:14px">‹ Bois du Nord</span>
+        <span class="pill ok">E · 2 / 5</span>
+      </div>
+      <div class="eyebrow" style="color:var(--text-3)">FACTEUR E</div>
+      <h2 style="font-size:22px;margin:4px 0 14px">Très gros bois vivants</h2>
+      <div class="card" style="padding:4px 14px">
+        <div class="stepper"><div><div>Très gros bois</div><div class="faint" style="font-size:12px">diamètre ≥ 67,5 cm</div></div><div class="ctl"><button data-step="-1">−</button><output>2</output><button data-step="1">+</button></div></div>
+        <div class="stepper"><div><div>Gros bois</div><div class="faint" style="font-size:12px">37,5 à 67,5 cm</div></div><div class="ctl"><button data-step="-1">−</button><output>6</output><button data-step="1">+</button></div></div>
+        <div class="stepper"><div><div>Surface</div><div class="faint" style="font-size:12px">hectares</div></div><div class="ctl"><button data-step="-0.5">−</button><output>1.5</output><button data-step="0.5">+</button></div></div>
+      </div>
+      <div class="photo-btn" style="margin-top:12px" onclick="toast(this,'Appareil photo')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Ajouter une photo</div>
+      <div class="dots" style="margin-top:18px"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="fixed-actions"><button class="btn ghost" style="flex:1">Précédent</button><button class="btn primary" style="flex:1.4">Suivant</button></div>
+    <nav class="tabbar" data-on="1"></nav>
+  </div><div class="cap">Saisie d'un facteur (boutons au-dessus de la barre)</div></div>
+
+  <!-- 4. Détail -->
+  <div class="col"><div class="phone">
+    <div class="status"><span>9:41</span><span class="island"></span><span>100 %</span></div>
+    <div class="screen">
+      <div class="row between" style="margin:6px 0 10px">
+        <span class="muted" style="font-size:14px">‹ Mes Relevés</span>
+        <span class="muted" style="font-size:18px">⋯</span>
+      </div>
+      <div class="row" style="gap:8px"><h2 style="font-size:22px">Forêt de Sénart</h2><span class="faint" style="font-size:15px">✎</span></div>
+      <div class="callout" style="margin:10px 0 14px">✓ Terminé et synchronisé · 12 juin 2026</div>
+      <div class="card row between" style="margin-bottom:12px;cursor:pointer" onclick="toast(this,'Détail du score')">
+        <div><div class="faint" style="font-size:12px">Score IBP</div><div class="score" style="font-size:34px">31<span class="faint" style="font-size:16px"> / 50</span></div></div>
+        <span class="muted">Détail ›</span>
+      </div>
+      <div class="photos"><div style="background-image:url('https://images.unsplash.com/photo-1448375240586-882707db888b?w=400');"></div><div style="background-image:url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?w=300');"></div><div style="background-image:url('https://images.unsplash.com/photo-1511497584788-876760111969?w=300');"></div></div>
+      <button class="btn primary" style="margin:12px 0" onclick="toast(this,'PDF prêt à partager')">Partager en PDF</button>
+      <div class="map" onclick="toast(this,'Ouvre Explorer')"><div class="parcel"></div></div>
+      <div class="card" style="padding:0 14px;margin-top:12px">
+        <div class="link-row"><span>Contexte et parcelles</span><span class="faint">›</span></div>
+        <div class="link-row"><span>Score IBP par facteur</span><span class="faint">›</span></div>
+        <div class="link-row"><span>Historique</span><span class="faint">›</span></div>
+      </div>
+    </div>
+    <nav class="tabbar" data-on="1"></nav>
+  </div><div class="cap">Détail en résumé</div></div>
+
+</div>
+
+<div id="sketch-tools">Sketch 001 · OA-80 · survolez les boutons</div>
+
+<script>
+  const icons = {
+    Accueil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z"/></svg>',
+    'Relevés': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 9h6M9 13h6M9 17h4"/></svg>',
+    Explorer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4l6 2 6-2v16l-6 2-6-2-6 2V6z"/><path d="M9 4v16M15 6v16"/></svg>',
+  };
+  document.querySelectorAll('.tabbar').forEach((bar) => {
+    const on = Number(bar.dataset.on || 0);
+    Object.keys(icons).forEach((name, i) => {
+      const b = document.createElement('button');
+      b.innerHTML = icons[name] + name;
+      if (i === on) b.classList.add('on');
+      b.onclick = () => { bar.querySelectorAll('button').forEach((x) => x.classList.remove('on')); b.classList.add('on'); };
+      bar.appendChild(b);
+    });
+  });
+  document.querySelectorAll('.variant-tab').forEach((tab) => {
+    tab.onclick = () => {
+      document.body.className = 't-' + tab.dataset.theme;
+      document.querySelectorAll('.variant-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('desc').textContent = tab.dataset.desc;
+    };
+  });
+  document.querySelectorAll('.stepper button').forEach((b) => {
+    b.onclick = () => {
+      const out = b.parentElement.querySelector('output');
+      const v = Math.max(0, Math.round((parseFloat(out.value || out.textContent) + parseFloat(b.dataset.step)) * 10) / 10);
+      out.textContent = String(v);
+    };
+  });
+  function toast(el, msg) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:absolute;left:50%;top:60px;transform:translateX(-50%);background:var(--surface-2);color:var(--text);border:1px solid var(--border);padding:8px 14px;border-radius:999px;font-size:13px;z-index:5;';
+    el.closest('.phone').appendChild(t);
+    setTimeout(() => t.remove(), 1200);
+  }
+</script>
+</body>
+</html>

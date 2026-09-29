@@ -134,7 +134,9 @@ export const resolveSurveySyncDisplay = (survey: LocalSurvey): SurveySyncDisplay
   if (survey.sync_state === "failed") {
     return survey.sync_blocked === 1 ? "sync_blocked" : "sync_error"
   }
-  if (survey.status === "submitted" && survey.sync_state === "synced") {
+  // OA-38: a draft reaches the server too, so a synced draft is "synced", not "local". "Local"
+  // now only means work still waiting to go out.
+  if (survey.sync_state === "synced") {
     return "sync"
   }
   return "local"
@@ -212,11 +214,6 @@ export const getSubmitBlockReason = (
 ): SubmitBlockReason => {
   const target = surveys.find((survey) => survey.id === surveyId)
   if (!target) return "not_found"
-
-  const otherBlockedSurvey = surveys.find(
-    (survey) => survey.id !== surveyId && survey.sync_blocked === 1,
-  )
-  if (otherBlockedSurvey) return "global_blocked"
 
   if (target.status === "submitted") return "already_submitted"
   if (target.sync_state !== "synced") return "not_synced"

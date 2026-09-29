@@ -1,4 +1,4 @@
-import { memo } from "react"
+import { memo, useEffect } from "react"
 import { KeyboardAvoidingView, Platform } from "react-native"
 import { AccountScreen } from "../../screens/AccountScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
@@ -13,6 +13,18 @@ import type { AccountRouteProps } from "../types"
 export const AccountRoute = memo(function AccountRoute({ navigation }: AccountRouteProps) {
   const { state: session, actions } = useSession()
   const accessToken = useAccessToken()
+
+  const { isAuthenticated } = session
+  const { handleLoadMyProfile } = actions
+  // OA-13: the Compte tab's press listener refreshed the profile; with the tab gone, opening the
+  // screen does it.
+  useEffect(
+    () =>
+      navigation.addListener?.("focus", () => {
+        if (isAuthenticated) void handleLoadMyProfile({ silent: true })
+      }),
+    [navigation, isAuthenticated, handleLoadMyProfile],
+  )
 
   const onOpenSyncAndData = useLatestCallback(() => {
     navigation.navigate("settings")

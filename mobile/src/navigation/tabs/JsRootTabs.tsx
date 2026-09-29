@@ -2,7 +2,6 @@ import { getFocusedRouteNameFromRoute } from "@react-navigation/native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useBrandTheme } from "../../app/theme"
-import { AccountTabNavigator } from "../stacks/AccountStack"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
 import { SurveysTabNavigator } from "../stacks/SurveysStack"
@@ -11,7 +10,6 @@ import {
   TAB_TITLES,
   buildJsTabBarStyle,
   jsTabScreenOptions,
-  makeAccountTabListeners,
   makePublicMapTabListeners,
   makeSurveysTabListeners,
   useTabListenerDeps,
@@ -22,7 +20,7 @@ const JsTab = createBottomTabNavigator<RootTabParamList>()
 
 /**
  * The JS tab bar from @react-navigation/bottom-tabs (Android, Expo Go
- * fallback). Four tabs; the bar is hidden on parcel selection through the rule
+ * fallback). Three tabs (OA-13); the bar is hidden on parcel selection through the rule
  * shared with the native tree (D-08, D-13). DS-13: the bar's height/padding are
  * derived from the device's own safe-area bottom inset, read here (the one
  * place in the JS tab tree that's an actual component) and passed down.
@@ -52,12 +50,6 @@ export function JsRootTabs() {
         options={{ headerShown: false }}
         listeners={makePublicMapTabListeners(deps)}
         component={PublicMapTabNavigator}
-      />
-      <JsTab.Screen
-        name="account"
-        options={{ headerShown: false }}
-        listeners={makeAccountTabListeners(deps)}
-        component={AccountTabNavigator}
       />
     </JsTab.Navigator>
   )

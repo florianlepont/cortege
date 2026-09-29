@@ -54,6 +54,9 @@ const mockTabScreens: Record<string, string[]> = {}
 const mockNativeNavigatorProps: Record<string, unknown>[] = []
 const mockJsSurveysOptions: unknown[] = []
 const mockContainer: { onStateChange?: (state: unknown) => void } = {}
+const mockNavRef = { current: null, ready: false, resetRoot: jest.fn() }
+const mockScheme = { value: "light" as "light" | "dark" }
+const mockHideRule = { value: false }
 
 function mockCreateTabs(kind: "native" | "js") {
   const ReactRef = jest.requireActual("react") as typeof import("react")
@@ -73,6 +76,12 @@ function mockCreateTabs(kind: "native" | "js") {
 jest.mock("@react-navigation/native", () => {
   const ReactRef = jest.requireActual("react") as typeof import("react")
   return {
+    createNavigationContainerRef: () => ({
+      current: null,
+      isReady: () => mockNavRef.ready,
+      resetRoot: mockNavRef.resetRoot,
+    }),
+    useFocusEffect: () => undefined,
     NavigationContainer: ({
       children,
       onStateChange,
@@ -95,6 +104,18 @@ jest.mock("@bottom-tabs/react-navigation", () => ({
   createNativeBottomTabNavigator: () => mockCreateTabs("native"),
 }))
 
+jest.mock("../app/theme", () => {
+  const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
+  return { ...actual, useBrandTheme: () => ({ ...actual.defaultTheme, scheme: mockScheme.value }) }
+})
+jest.mock("./tab-bar", () => {
+  const actual = jest.requireActual("./tab-bar") as typeof import("./tab-bar")
+  return {
+    ...actual,
+    shouldHideTabBar: (name?: string) => mockHideRule.value || actual.shouldHideTabBar(name),
+  }
+})
+
 jest.mock("./tab-config", () => {
   const actual = jest.requireActual("./tab-config") as Record<string, unknown>
   return {
@@ -110,11 +131,12 @@ jest.mock("./stacks/SurveysStack", () => ({ SurveysTabNavigator: () => null }))
 jest.mock("./stacks/PublicMapStack", () => ({ PublicMapTabNavigator: () => null }))
 jest.mock("./stacks/AccountStack", () => ({ AccountTabNavigator: () => null }))
 
-import { AppNavigation } from "./AppNavigation"
+import { AppNavigation, useResetToHomeOnSignOut } from "./AppNavigation"
 import { defaultTheme } from "../app/theme"
-import { buildJsTabBarStyle } from "./tab-config"
+import { buildJsTabBarStyle, jsTabScreenOptions } from "./tab-config"
 
-const FOUR_TABS = ["home", "surveys", "publicMap", "account"]
+// OA-13: Compte is no longer a tab.
+const THREE_TABS = ["home", "surveys", "publicMap"]
 
 type Options = Record<string, unknown>
 type OptionsFn = (args: Record<string, unknown>) => Options
@@ -139,6 +161,10 @@ beforeEach(() => {
   mockNativeNavigatorProps.length = 0
   mockJsSurveysOptions.length = 0
   delete mockContainer.onStateChange
+  mockNavRef.ready = false
+  mockNavRef.resetRoot.mockClear()
+  mockScheme.value = "light"
+  mockHideRule.value = false
 })
 
 async function mount() {
@@ -162,30 +188,30 @@ function surveysState(leaf: string) {
   }
 }
 
-describe("the four root tabs (D-08)", () => {
-  test("the native tree registers exactly the four tabs", async () => {
+describe("the three root tabs (D-08, OA-13)", () => {
+  test("the native tree registers exactly the three tabs", async () => {
     await mount()
-    expect(mockTabScreens.native).toEqual(FOUR_TABS)
+    expect(mockTabScreens.native).toEqual(THREE_TABS)
     expect(mockTabScreens.js).toBeUndefined()
   })
 
-  test("the JS tree registers exactly the four tabs", async () => {
+  test("the JS tree registers exactly the three tabs", async () => {
     mockPlatform.OS = "android"
     await mount()
-    expect(mockTabScreens.js).toEqual(FOUR_TABS)
+    expect(mockTabScreens.js).toEqual(THREE_TABS)
     expect(mockTabScreens.native).toBeUndefined()
   })
 })
 
-describe("the tab bar is hidden on parcel selection in both trees (D-13)", () => {
-  test("native tree: tabBarHidden follows the focused leaf route", async () => {
+describe("OA-28: the tab bar stays visible on parcel selection in both trees", () => {
+  test("native tree: tabBarHidden stays false on every route", async () => {
     await mount()
     expect(mockNativeNavigatorProps.at(-1)?.tabBarHidden).toBe(false)
 
     await act(async () => {
       mockContainer.onStateChange?.(surveysState("surveyParcels"))
     })
-    expect(mockNativeNavigatorProps.at(-1)?.tabBarHidden).toBe(true)
+    expect(mockNativeNavigatorProps.at(-1)?.tabBarHidden).toBe(false)
 
     await act(async () => {
       mockContainer.onStateChange?.({
@@ -214,17 +240,80 @@ describe("the tab bar is hidden on parcel selection in both trees (D-13)", () =>
     expect(mockNativeNavigatorProps).toHaveLength(renders)
   })
 
-  test("JS tree: the surveys tab bar is display none on parcel selection only", async () => {
+  test("JS tree: the surveys tab bar stays on parcel selection", async () => {
     mockPlatform.OS = "android"
     await mount()
     expect(mockContainer.onStateChange).toBeUndefined()
     const options = mockJsSurveysOptions.at(-1) as OptionsFn
-    expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual({
-      display: "none",
-    })
+    expect(options({ route: { focused: "surveyParcels" } }).tabBarStyle).toEqual(
+      buildJsTabBarStyle(defaultTheme),
+    )
     expect(options({ route: { focused: "surveysHome" } }).tabBarStyle).toEqual(
       buildJsTabBarStyle(defaultTheme),
     )
     expect(options({ route: {} }).tabBarStyle).toEqual(buildJsTabBarStyle(defaultTheme))
+  })
+})
+
+describe("OA-07: a session end resets the tabs to Accueil", () => {
+  function Probe({ isAuthenticated }: { isAuthenticated: boolean }) {
+    useResetToHomeOnSignOut(isAuthenticated)
+    return null
+  }
+
+  test("signing out resets the root to home; staying signed in does not", async () => {
+    mockNavRef.ready = true
+    let tree!: renderer.ReactTestRenderer
+    await act(async () => {
+      tree = renderer.create(<Probe isAuthenticated />)
+    })
+    expect(mockNavRef.resetRoot).not.toHaveBeenCalled()
+    await act(async () => {
+      tree.update(<Probe isAuthenticated={false} />)
+    })
+    expect(mockNavRef.resetRoot).toHaveBeenCalledWith({ index: 0, routes: [{ name: "home" }] })
+  })
+
+  test("nothing is reset while the navigation container is not ready", async () => {
+    let tree!: renderer.ReactTestRenderer
+    await act(async () => {
+      tree = renderer.create(<Probe isAuthenticated />)
+    })
+    await act(async () => {
+      tree.update(<Probe isAuthenticated={false} />)
+    })
+    expect(mockNavRef.resetRoot).not.toHaveBeenCalled()
+  })
+})
+
+describe("dark mode tab tint and the shared hide rule", () => {
+  test("native tree: the active tint is the accent in dark mode, forest in light", async () => {
+    await mount()
+    const light = (mockNativeNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
+      route: { name: "home" },
+    })
+    mockScheme.value = "dark"
+    await mount()
+    const dark = (mockNativeNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
+      route: { name: "home" },
+    })
+    expect(light.tabBarActiveTintColor).toBe(defaultTheme.colors.forest)
+    expect(dark.tabBarActiveTintColor).toBe(defaultTheme.semanticColors.accent)
+  })
+
+  test("JS tree: a route the rule hides gets a hidden tab bar", async () => {
+    mockPlatform.OS = "android"
+    mockHideRule.value = true
+    await mount()
+    const options = mockJsSurveysOptions.at(-1) as OptionsFn
+    expect(options({ route: { focused: "anything" } }).tabBarStyle).toEqual({ display: "none" })
+  })
+
+  test("JS tab screen options take the accent tint in dark mode", () => {
+    const dark = jsTabScreenOptions(
+      { ...defaultTheme, scheme: "dark" },
+      { route: { name: "home" } },
+    )
+    expect(dark.tabBarActiveTintColor).toBe(defaultTheme.semanticColors.accent)
   })
 })

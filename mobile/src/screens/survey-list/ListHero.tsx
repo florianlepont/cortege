@@ -13,7 +13,6 @@ import { brandRadius, brandSpacing, brandTypography } from "../../app/brand-toke
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppPressable } from "../../ui/AppPressable"
-import { SyncStatusPill } from "../../ui/SyncStatusPill"
 
 const t = fr.surveyList
 
@@ -53,25 +52,13 @@ type ListHeroProps = {
   scrollY: SharedValue<number>
   geometry: HeroGeometry
   itemCountLabel: string
-  isOnline: boolean
-  isSyncing: boolean
-  pendingCount: number
-  onOpenSyncStatus: () => void
   onOpenCreateSurvey: () => void
 }
 
-// SYNC-02 + LIST: the sync pill and the "+" create action live in this header (not only in
+// LIST: the "+" create action lives in this header (OA-51: the sync pill moved out, it stays on
+// Accueil) (not only in
 // Settings, not as an in-list create card) — Mes Relevés is otherwise a pure list.
-export function ListHero({
-  scrollY,
-  geometry,
-  itemCountLabel,
-  isOnline,
-  isSyncing,
-  pendingCount,
-  onOpenSyncStatus,
-  onOpenCreateSurvey,
-}: ListHeroProps) {
+export function ListHero({ scrollY, geometry, itemCountLabel, onOpenCreateSurvey }: ListHeroProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const { expandedHeroHeight, collapsedHeroHeight, heroTopInset } = geometry
@@ -117,18 +104,13 @@ export function ListHero({
         </View>
 
         <View style={styles.trailing}>
-          <SyncStatusPill
-            isOnline={isOnline}
-            isSyncing={isSyncing}
-            pendingCount={pendingCount}
-            onPress={onOpenSyncStatus}
-          />
+          {/* OA-51: no sync pill next to "+" (owner decision); it stays on Accueil. */}
           <AppPressable
             accessibilityLabel={t.a11y.createSurvey}
             onPress={onOpenCreateSurvey}
             style={styles.createButton}
           >
-            <Ionicons name="add" size={22} color={theme.colors.white} />
+            <Ionicons name="add" size={22} color={theme.semanticColors.onCtaPrimary} />
           </AppPressable>
         </View>
       </View>
@@ -162,7 +144,7 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 30,
       lineHeight: 34,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     subtitle: {
       ...brandTypography.meta,
@@ -177,7 +159,7 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 20,
       lineHeight: 24,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
     },
     trailing: {
       flexDirection: "row",
@@ -191,7 +173,7 @@ function createStyles(theme: BrandTheme) {
       borderRadius: brandRadius.pill,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.colors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
   })
 }

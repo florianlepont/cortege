@@ -25,10 +25,6 @@ const IOS_TAB_ICONS = {
     focused: { sfSymbol: "map.fill" },
     unfocused: { sfSymbol: "map" },
   },
-  account: {
-    focused: { sfSymbol: "person.crop.circle.fill" },
-    unfocused: { sfSymbol: "person.crop.circle" },
-  },
 } as const
 
 // BUG-07 (UX audit, Phase 2): Accueil had Mes Relevés' icon on Android's native tab bar.
@@ -36,7 +32,6 @@ const ANDROID_TAB_ICONS = {
   home: require("../../assets/tabs/home.png"),
   surveys: require("../../assets/tabs/surveys.png"),
   publicMap: require("../../assets/tabs/public-map.png"),
-  account: require("../../assets/tabs/account.png"),
 } as const
 
 export const TAB_TITLES: Record<keyof RootTabParamList, string> = fr.navigation.tabs
@@ -45,7 +40,6 @@ const JS_TAB_ICONS: Record<keyof RootTabParamList, keyof typeof Ionicons.glyphMa
   home: "home-outline",
   surveys: "list-outline",
   publicMap: "map-outline",
-  account: "person-outline",
 }
 
 // ─── Native tab screen options ────────────────────────────────────────────────
@@ -95,7 +89,9 @@ export function jsTabScreenOptions(
     headerShown: false,
     title: TAB_TITLES[route.name],
     tabBarLabel: TAB_TITLES[route.name],
-    tabBarActiveTintColor: theme.colors.forest,
+    // Sketch 001 A: the active tab takes the accent (light green) in dark mode.
+    tabBarActiveTintColor:
+      theme.scheme === "dark" ? theme.semanticColors.accent : theme.colors.forest,
     tabBarInactiveTintColor: theme.colors.textSecondary,
     tabBarStyle: buildJsTabBarStyle(theme, insets),
     tabBarLabelStyle: { fontSize: 12, fontWeight: "600" as const },
@@ -134,21 +130,6 @@ export function makePublicMapTabListeners({
       closeSurveyDetailSelection()
       // The map route reloads the public map (pending until it mounts).
       publicMapReload.request()
-    },
-  }
-}
-
-export function makeAccountTabListeners({
-  isAuthenticated,
-  handleLoadMyProfile,
-  closeSurveyDetailSelection,
-}: TabListenerDeps) {
-  return {
-    tabPress: () => {
-      closeSurveyDetailSelection()
-      if (isAuthenticated) {
-        void handleLoadMyProfile({ silent: true })
-      }
     },
   }
 }

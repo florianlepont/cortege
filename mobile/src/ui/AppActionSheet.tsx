@@ -110,7 +110,7 @@ function createStyles(theme: BrandTheme) {
     },
     rowLabel: {
       ...brandTypography.input,
-      color: theme.colors.forest,
+      color: theme.semanticColors.textStrong,
       textAlign: "center",
     },
     rowLabelDestructive: {

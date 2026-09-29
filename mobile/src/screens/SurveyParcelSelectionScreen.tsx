@@ -11,6 +11,7 @@ import {
   DEFAULT_FRANCE_CENTER,
   areRegionsNearlyEqual,
   buildFocusedMapRegion,
+  parseGpsCoordinate,
   computeRegionZoom,
 } from "../app/map-viewport"
 import { GpsCaptureResult } from "../app/types"
@@ -58,8 +59,8 @@ export function SurveyParcelSelectionScreen({
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
   const [saving, setSaving] = useState(false)
-  const parsedLat = Number(gpsLocation.lat)
-  const parsedLng = Number(gpsLocation.lng)
+  const parsedLat = parseGpsCoordinate(gpsLocation.lat)
+  const parsedLng = parseGpsCoordinate(gpsLocation.lng)
   const hasGpsCoordinates = Number.isFinite(parsedLat) && Number.isFinite(parsedLng)
   const mapCenter = hasGpsCoordinates ? { lat: parsedLat, lng: parsedLng } : DEFAULT_FRANCE_CENTER
   const initialRegion: Region = hasGpsCoordinates

@@ -16,7 +16,10 @@ export function createDetailStyles(theme: BrandTheme) {
     heroCard: {
       overflow: "hidden",
       borderRadius: 32,
-      backgroundColor: brandColors.forest,
+      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: 18,
@@ -30,7 +33,12 @@ export function createDetailStyles(theme: BrandTheme) {
       width: 110,
       height: 110,
       borderRadius: 999,
-      backgroundColor: brandOnDarkColors.heroAccentTintOnDark,
+      // Sketch 001 A: the decorative orb stays on the forest hero in light mode; on the dark
+      // bordered hero it is a faint neutral disc.
+      backgroundColor:
+        theme.scheme === "dark"
+          ? brandOnDarkColors.heroOrbFaintOnDark
+          : brandOnDarkColors.heroAccentTintOnDark,
     },
     heroHeaderRow: {
       flexDirection: "row",
@@ -96,7 +104,7 @@ export function createDetailStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 22,
       lineHeight: 25,
-      color: brandColors.forest,
+      color: theme.semanticColors.textStrong,
     },
     panelBody: {
       ...brandTypography.sectionBody,
