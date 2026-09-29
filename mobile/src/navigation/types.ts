@@ -8,16 +8,20 @@ import type { FactorKey } from "../app/types"
  * (phase 01.9-24, D-04), so `useNavigation()` and `navigation.navigate(...)`
  * are checked against the root tabs without a cast.
  */
-export type HomeStackParamList = {
-  homeRoot: undefined
-}
-
+/**
+ * OA-13 (owner decision, 2026-09-28): Compte is no longer a tab. Its two screens are pushed onto
+ * whichever tab's stack the avatar was tapped in, so every tab stack carries them.
+ */
 export type AccountStackParamList = {
   accountHome: undefined
   settings: undefined
 }
 
-export type SurveysStackParamList = {
+export type HomeStackParamList = AccountStackParamList & {
+  homeRoot: undefined
+}
+
+export type SurveysStackParamList = AccountStackParamList & {
   surveysHome: undefined
   surveyDetail: undefined
   surveyForm: undefined
@@ -25,7 +29,7 @@ export type SurveysStackParamList = {
   surveyParcels: { surveyId: string; mode: "wizard" | "edit" }
 }
 
-export type PublicMapStackParamList = {
+export type PublicMapStackParamList = AccountStackParamList & {
   publicMapHome: undefined
 }
 
@@ -33,7 +37,6 @@ export type RootTabParamList = {
   home: NavigatorScreenParams<HomeStackParamList> | undefined
   surveys: NavigatorScreenParams<SurveysStackParamList> | undefined
   publicMap: NavigatorScreenParams<PublicMapStackParamList> | undefined
-  account: NavigatorScreenParams<AccountStackParamList> | undefined
 }
 
 declare global {

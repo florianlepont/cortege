@@ -73,6 +73,8 @@ function mockCreateTabs(kind: "native" | "js") {
 jest.mock("@react-navigation/native", () => {
   const ReactRef = jest.requireActual("react") as typeof import("react")
   return {
+    createNavigationContainerRef: () => ({ current: null, isReady: () => false }),
+    useFocusEffect: () => undefined,
     NavigationContainer: ({
       children,
       onStateChange,
@@ -114,7 +116,8 @@ import { AppNavigation } from "./AppNavigation"
 import { defaultTheme } from "../app/theme"
 import { buildJsTabBarStyle } from "./tab-config"
 
-const FOUR_TABS = ["home", "surveys", "publicMap", "account"]
+// OA-13: Compte is no longer a tab.
+const THREE_TABS = ["home", "surveys", "publicMap"]
 
 type Options = Record<string, unknown>
 type OptionsFn = (args: Record<string, unknown>) => Options
@@ -162,17 +165,17 @@ function surveysState(leaf: string) {
   }
 }
 
-describe("the four root tabs (D-08)", () => {
-  test("the native tree registers exactly the four tabs", async () => {
+describe("the three root tabs (D-08, OA-13)", () => {
+  test("the native tree registers exactly the three tabs", async () => {
     await mount()
-    expect(mockTabScreens.native).toEqual(FOUR_TABS)
+    expect(mockTabScreens.native).toEqual(THREE_TABS)
     expect(mockTabScreens.js).toBeUndefined()
   })
 
-  test("the JS tree registers exactly the four tabs", async () => {
+  test("the JS tree registers exactly the three tabs", async () => {
     mockPlatform.OS = "android"
     await mount()
-    expect(mockTabScreens.js).toEqual(FOUR_TABS)
+    expect(mockTabScreens.js).toEqual(THREE_TABS)
     expect(mockTabScreens.native).toBeUndefined()
   })
 })

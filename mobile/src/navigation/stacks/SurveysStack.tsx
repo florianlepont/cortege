@@ -13,6 +13,7 @@ import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
 import { createBaseStackScreenOptions } from "./stack-options"
+import { ACCOUNT_SCREENS, makeAccountHomeOptions, settingsScreenOptions } from "./AccountStack"
 import { SurveysStackConfigContext, type SurveysStackConfig } from "./surveys-stack-config"
 
 const SurveysStack = createNativeStackNavigator<SurveysStackParamList>()
@@ -122,6 +123,16 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               sheetExpandsWhenScrolledToEdge: true,
             }}
             component={ParcelSelectionRoute}
+          />
+          <SurveysStack.Screen
+            name="accountHome"
+            options={makeAccountHomeOptions(theme.semanticColors.textStrong)}
+            component={ACCOUNT_SCREENS.accountHome}
+          />
+          <SurveysStack.Screen
+            name="settings"
+            options={settingsScreenOptions}
+            component={ACCOUNT_SCREENS.settings}
           />
         </SurveysStack.Navigator>
       </View>

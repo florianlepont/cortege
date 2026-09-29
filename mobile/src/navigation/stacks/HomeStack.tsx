@@ -5,6 +5,7 @@ import { HomeRoute } from "../routes/HomeRoute"
 import { styles } from "../styles"
 import type { HomeStackParamList } from "../types"
 import { createBaseStackScreenOptions } from "./stack-options"
+import { ACCOUNT_SCREENS, makeAccountHomeOptions, settingsScreenOptions } from "./AccountStack"
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>()
 
@@ -16,6 +17,16 @@ export function HomeTabNavigator() {
         screenOptions={{ ...createBaseStackScreenOptions(theme), headerShown: false }}
       >
         <HomeStack.Screen name="homeRoot" component={HomeRoute} />
+        <HomeStack.Screen
+          name="accountHome"
+          options={makeAccountHomeOptions(theme.semanticColors.textStrong)}
+          component={ACCOUNT_SCREENS.accountHome}
+        />
+        <HomeStack.Screen
+          name="settings"
+          options={settingsScreenOptions}
+          component={ACCOUNT_SCREENS.settings}
+        />
       </HomeStack.Navigator>
     </View>
   )

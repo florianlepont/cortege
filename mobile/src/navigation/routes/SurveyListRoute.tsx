@@ -46,7 +46,7 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
     navigation.navigate("surveyDetail")
   })
   const onOpenSyncStatus = useLatestCallback(() => {
-    navigation.navigate("account", { screen: "settings" })
+    navigation.navigate("settings")
   })
 
   useLayoutEffect(() => {

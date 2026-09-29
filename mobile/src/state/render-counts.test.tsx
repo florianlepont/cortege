@@ -777,8 +777,9 @@ const EXPECTED: Record<ScenarioName, Counts> = {
     factorDetail: 1,
     parcelSelection: 1,
     publicMap: 2,
-    account: 1,
-    settings: 1,
+    // OA-13: the fake stacks mount every screen, and Compte is in all three tab stacks.
+    account: 3,
+    settings: 3,
     rows: 10,
   },
   statusUpdate: {
@@ -790,7 +791,7 @@ const EXPECTED: Record<ScenarioName, Counts> = {
     parcelSelection: 0,
     publicMap: 0,
     account: 0,
-    settings: 1,
+    settings: 3,
     rows: 0,
   },
   formKeystroke: {

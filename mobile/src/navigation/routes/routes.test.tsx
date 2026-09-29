@@ -66,6 +66,10 @@ function mockScreen(name: string) {
   }
 }
 
+jest.mock("../../app/useAppBottomTabBarHeight", () => ({
+  useTabBarClearance: () => 68,
+  useAppBottomTabBarHeight: () => 68,
+}))
 jest.mock("../../screens/HomeScreen", () => ({ HomeScreen: mockScreen("home") }))
 jest.mock("../../screens/SurveyListScreen", () => ({
   SurveyListScreen: mockScreen("surveyList"),
@@ -482,7 +486,7 @@ describe("HomeRoute", () => {
     expect(props("home").onRetrySurvey).toBe(fixture.surveys.actions.retrySurvey)
 
     callback("home", "onOpenSyncStatus")()
-    expect(navigation.navigate).toHaveBeenLastCalledWith("account", { screen: "settings" })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("settings")
 
     callback("home", "onCreateSurvey")()
     expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
@@ -503,7 +507,7 @@ describe("HomeRoute", () => {
 
     // HOME-06: the avatar navigates to Compte.
     callback("home", "onNavigateToAccount")()
-    expect(navigation.navigate).toHaveBeenLastCalledWith("account", { screen: "accountHome" })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("accountHome")
   })
 
   test("passes the access token and api url the avatar needs to build a signed photo url", async () => {
@@ -545,7 +549,7 @@ describe("SurveyListRoute", () => {
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyDetail")
 
     callback("surveyList", "onOpenSyncStatus")()
-    expect(navigation.navigate).toHaveBeenLastCalledWith("account", { screen: "settings" })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("settings")
   })
 
   test("with the native tab bar outside iOS it keeps the inline search", async () => {

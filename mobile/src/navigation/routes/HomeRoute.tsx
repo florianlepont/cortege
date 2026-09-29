@@ -33,11 +33,11 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
     navigation.navigate("publicMap")
   })
   const onOpenSyncStatus = useLatestCallback(() => {
-    navigation.navigate("account", { screen: "settings" })
+    navigation.navigate("settings")
   })
   // HOME-06: the avatar navigates to Compte.
   const onNavigateToAccount = useLatestCallback(() => {
-    navigation.navigate("account", { screen: "accountHome" })
+    navigation.navigate("accountHome")
   })
 
   return (
