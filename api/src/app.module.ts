@@ -1,10 +1,11 @@
 import { Module } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
-import { APP_GUARD } from "@nestjs/core"
+import { APP_FILTER, APP_GUARD } from "@nestjs/core"
 import { ThrottlerModule } from "@nestjs/throttler"
 import { AppController } from "./app.controller"
 import { AuthModule } from "./auth/auth.module"
 import { ClientAwareThrottlerGuard } from "./auth/throttler.guard"
+import { HttpErrorLoggingFilter } from "./common/http-error-logging.filter"
 import { buildThrottlerOptions } from "./common/rate-limit.config"
 import { appConfig } from "./config/app-config"
 import { validateEnv } from "./config/env.schema"
@@ -47,6 +48,9 @@ configModule.catch(() => undefined)
     ...(isDebugSurfaceEnabled() ? [DebugModule] : []),
   ],
   controllers: [AppController],
-  providers: [{ provide: APP_GUARD, useClass: ClientAwareThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ClientAwareThrottlerGuard },
+    { provide: APP_FILTER, useClass: HttpErrorLoggingFilter },
+  ],
 })
 export class AppModule {}
