@@ -111,6 +111,9 @@ afterEach(() => {
 })
 
 describe("HomeScreen", () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => jest.useRealTimers())
+
   test("refreshing reflects the in-flight state of onRefresh, not a hardcoded false", async () => {
     let resolveRefresh: () => void = () => undefined
     const onRefresh = jest.fn(
@@ -137,6 +140,13 @@ describe("HomeScreen", () => {
 
     await act(async () => {
       resolveRefresh()
+      await Promise.resolve()
+    })
+    // OA-89: an instant answer does not close the banner before the minimum display time.
+    expect(control().props.refreshing).toBe(true)
+
+    await act(async () => {
+      jest.advanceTimersByTime(800)
       await Promise.resolve()
     })
     expect(control().props.refreshing).toBe(false)

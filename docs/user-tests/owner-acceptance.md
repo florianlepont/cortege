@@ -116,6 +116,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-86 | Mes Relevés, header | The "+" button is not aligned with the header actions of the other views. | Display bug | 🔴 | 🔲 Open | | Same header pattern as OA-85 |
 | OA-87 | Compte, profile picture | Choosing "Choisir depuis la galerie": the gallery takes a long time to open. | UX friction | 🟡 | 🔲 Open | | Candidates: `allowsEditing`, HEIC transcoding by the picker |
 | OA-88 | Accueil, header | The "1 à envoyer" badge next to the name is unclear and badly placed. It later turned into "À jour" once synced. | UX friction | 🟡 | 🔲 Open | | Rework with OA-85: one header, a clear place for the sync state |
+| OA-89 | Accueil, pull to refresh | The iOS refresh banner should stay open a moment while the update runs, then close. It closed at once, so for a few milliseconds it overlapped "Bonjour, Marie". | Display bug | 🔴 | 🔁 Fixed, awaiting owner check | | With nothing to pull the request answered in a few ms; the banner now stays open at least 0.8 s |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 

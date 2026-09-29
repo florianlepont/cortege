@@ -22,6 +22,9 @@ import { SyncStatusPill } from "../ui/SyncStatusPill"
 import { SectorScoreCard } from "./home/SectorScoreCard"
 import { createStyles } from "./home/styles"
 
+/** OA-89: the least time the pull-to-refresh banner stays open. */
+const MIN_REFRESH_MS = 800
+
 // HOME-02: the hero becomes a "resume" action for a draft touched within the last 48h.
 const RESUME_WINDOW_MS = 48 * 60 * 60 * 1000
 
@@ -119,7 +122,12 @@ export function HomeScreen({
   const handleRefresh = useCallback(async () => {
     setRefreshing(true)
     try {
-      await onRefresh()
+      // OA-89: with nothing to pull the request answers in a few ms and the iOS banner snapped
+      // shut while the view was still moving, over the greeting. It stays open long enough to read.
+      await Promise.all([
+        onRefresh(),
+        new Promise((resolve) => setTimeout(resolve, MIN_REFRESH_MS)),
+      ])
     } finally {
       setRefreshing(false)
     }
