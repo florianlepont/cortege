@@ -178,15 +178,16 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.heroBody,
       color: theme.colors.textSecondary,
     },
-    // 967 x 2289 source: tilted so it leans in from the left edge, the body off screen and the
-    // lower part hidden behind the button.
+    // 967 x 2289 source, tilted 50 degrees about its centre: the head lands near (100, 640) on an
+    // 852 pt tall phone, in the free band between the text (which ends near 550) and the button
+    // (which starts near 767), and the body runs off the left edge.
     marten: {
       position: "absolute",
-      left: -46,
-      bottom: 96,
-      width: 118,
-      height: 279,
-      transform: [{ rotate: "38deg" }],
+      left: -23,
+      bottom: 36,
+      width: 96,
+      height: 227,
+      transform: [{ rotate: "50deg" }],
     },
     martenImage: {
       width: "100%",
