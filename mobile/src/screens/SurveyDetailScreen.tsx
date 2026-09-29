@@ -3,9 +3,11 @@ import {
   Alert,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   RefreshControl,
   ScrollView,
 } from "react-native"
+import { useHeaderHeight } from "@react-navigation/elements"
 import { shouldShowDevTools } from "../app/dev-tools"
 import { useBrandTheme } from "../app/theme"
 import { exportAndShareSurveyPdf, type SurveyExportData } from "../app/survey-pdf-export"
@@ -72,6 +74,9 @@ export function SurveyDetailScreen({
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
   const theme = useBrandTheme()
+  // OA-20: the iOS header is transparent, and the sticky hero stuck under it. The scroll view
+  // starts below the header instead.
+  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createDetailStyles(theme), [theme])
   const isHeroCompressedRef = useRef(false)
   const [isHeroCompressed, setIsHeroCompressed] = useState(false)
@@ -243,7 +248,7 @@ export function SurveyDetailScreen({
 
   return (
     <ScrollView
-      style={styles.mainScroll}
+      style={[styles.mainScroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
       contentContainerStyle={styles.detailScreenContent}
       onScroll={handleDetailScroll}
       scrollEventThrottle={16}
