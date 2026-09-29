@@ -728,19 +728,6 @@ jest.mock("react-native-auth0", () => ({
   CredentialsManagerErrorCodes: {},
 }))
 
-jest.mock("react-native-maps", () => {
-  const ReactRef = jest.requireActual("react") as typeof import("react")
-  const stub = (name: string) => () => ReactRef.createElement(name)
-  return {
-    __esModule: true,
-    default: stub("MapView"),
-    Marker: stub("Marker"),
-    Polygon: stub("Polygon"),
-    Callout: stub("Callout"),
-    PROVIDER_GOOGLE: "google",
-  }
-})
-
 import App from "../../App"
 
 // ─── Harness ─────────────────────────────────────────────────────────────────

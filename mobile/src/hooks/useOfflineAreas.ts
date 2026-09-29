@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { randomUUID } from "expo-crypto"
-import type { Region } from "react-native-maps"
+import type { MapRegion as Region } from "../app/map-viewport"
 import { fetchPublicParcelStatuses } from "../api/ibp-api"
 import { computeRegionBbox, computeRegionBounds } from "../app/map-viewport"
 import { buildDownloadJobs, downloadAreaTiles } from "../map/offline-download"

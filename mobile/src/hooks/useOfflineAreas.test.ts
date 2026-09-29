@@ -35,7 +35,7 @@ jest.mock("../api/ibp-api", () => ({
 }))
 
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react-native/pure"
-import type { Region } from "react-native-maps"
+import type { MapRegion as Region } from "../app/map-viewport"
 import { useOfflineAreas } from "./useOfflineAreas"
 
 const REGION: Region = { latitude: 46.0, longitude: 1.0, latitudeDelta: 0.02, longitudeDelta: 0.02 }

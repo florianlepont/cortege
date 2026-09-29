@@ -61,7 +61,9 @@ module.exports = {
     // Raised in 01.8-07 after the IBP rules moved to @cortege/ibp-domain (adapter + parity tests).
     // Raised again in 01.8-10 (form method version, catalogue helper, draft patcher).
     "./src/app/": { statements: 91, branches: 80, functions: 97, lines: 95 },
-    "./src/components/": { statements: 22, branches: 11, functions: 10, lines: 22 },
+    // Lowered when ParcelOverlayPolygons (the one tested component) went with react-native-maps:
+    // TypewriterSplash and the cards are the rest, still untested.
+    "./src/components/": { statements: 15, branches: 0, functions: 0, lines: 17 },
     "./src/hooks/": { statements: 90, branches: 80, functions: 95, lines: 91 },
     "./src/screens/": { statements: 56, branches: 45, functions: 49, lines: 55 },
     "./src/storage/": { statements: 92, branches: 81, functions: 91, lines: 94 },

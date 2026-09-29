@@ -10,13 +10,11 @@ import {
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import MapView, { Marker, Region } from "react-native-maps"
 import { brandSpacing } from "../../app/brand-tokens"
-import { computeRegionZoom } from "../../app/map-viewport"
-import { SurveyDetailResponse } from "../../app/types"
+import { computeRegionZoom, type MapRegion as Region } from "../../app/map-viewport"
+import type { PublicParcelStatusItem, SurveyDetailResponse } from "../../app/types"
 import { useBrandTheme } from "../../app/theme"
-import { IgnCadastreTileOverlay } from "../../components/IgnCadastreTileOverlay"
-import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
+import { ParcelMap } from "../../map/maplibre/ParcelMap"
 import { useParcelStatuses } from "../../hooks/useParcelStatuses"
 import { fr } from "../../i18n"
 import { LocalAttachment, LocalSurvey } from "../../storage"
@@ -29,6 +27,8 @@ type HeroMode = "map" | "photo"
 const media = fr.surveyDetail.media
 const alerts = fr.surveyDetail.alerts
 const a11y = fr.surveyDetail.a11y
+
+const NO_PARCELS: PublicParcelStatusItem[] = []
 
 const DEFAULT_FRANCE_REGION: Region = {
   latitude: 46.603354,
@@ -183,9 +183,9 @@ export function MediaSection({
   const currentPhotoAttachment = hasPhotoSlides
     ? (photoSlides[currentPhotoPosition - 1]?.attachment ?? null)
     : null
-  const marker = gpsCoordinates ? (
-    <Marker coordinate={{ latitude: gpsCoordinates.lat, longitude: gpsCoordinates.lng }} />
-  ) : null
+  const marker = gpsCoordinates
+    ? { latitude: gpsCoordinates.lat, longitude: gpsCoordinates.lng }
+    : null
 
   return (
     <View style={styles.detailHeroShell}>
@@ -232,18 +232,14 @@ export function MediaSection({
           }
           accessibilityState={{ disabled: !canEditSurvey }}
         >
-          <MapView
+          <ParcelMap
             style={styles.detailHeroMap}
             initialRegion={mapPreviewRegion}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-          >
-            <IgnCadastreTileOverlay enabled={mapPreviewZoom >= 15} zIndex={0} />
-            <ParcelOverlayPolygons items={parcelStatuses} />
-            {marker}
-          </MapView>
+            cadastreEnabled={mapPreviewZoom >= 15}
+            parcels={parcelStatuses}
+            marker={marker}
+            interactive={false}
+          />
           <View style={styles.detailHeroOverlayBadge}>
             <Ionicons name="map-outline" size={13} color={theme.colors.white} />
             <Text style={styles.detailHeroOverlayBadgeText}>
@@ -269,16 +265,14 @@ export function MediaSection({
               />
             ) : null
           ) : (
-            <MapView
+            <ParcelMap
               style={styles.detailHeroSwitchThumbMap}
               initialRegion={mapPreviewRegion}
-              scrollEnabled={false}
-              zoomEnabled={false}
-              rotateEnabled={false}
-              pitchEnabled={false}
-            >
-              {marker}
-            </MapView>
+              cadastreEnabled={false}
+              parcels={NO_PARCELS}
+              marker={marker}
+              interactive={false}
+            />
           )}
           <View style={styles.detailHeroSwitchThumbLabel}>
             <Text style={styles.detailHeroSwitchThumbLabelText}>

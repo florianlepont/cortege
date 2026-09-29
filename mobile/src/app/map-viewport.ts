@@ -1,7 +1,6 @@
 /**
- * The map viewport the app reasons in: a centre and the span shown. It has the shape of the old
- * react-native-maps `Region`, kept as the app's own type so the hooks did not change with the map
- * library (MapLibre reports bounds, converted in `map/maplibre/regions.ts`).
+ * The map viewport the app reasons in: a centre and the span shown (MapLibre reports bounds,
+ * converted in `map/maplibre/regions.ts`).
  */
 export type MapRegion = {
   latitude: number
