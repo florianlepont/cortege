@@ -97,7 +97,8 @@ export function createHeaderStyles(theme: BrandTheme) {
     compactProgressCount: {
       ...brandTypography.heroEyebrow,
       fontSize: 12,
-      lineHeight: 12,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
       color: brandOnDarkColors.heroTextMutedOnDark,
     },
     compactProgressTrack: {
@@ -172,7 +173,8 @@ export function createHeaderStyles(theme: BrandTheme) {
     stepIndexText: {
       ...brandTypography.heroEyebrow,
       fontSize: 12,
-      lineHeight: 12,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
       color: theme.semanticColors.textStrong,
     },
     stepIndexTextActive: {

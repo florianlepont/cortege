@@ -75,7 +75,8 @@ export function createFactorStyles(theme: BrandTheme) {
     factorBadgeText: {
       ...brandTypography.label,
       fontSize: 12,
-      lineHeight: 12,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
       color: brandColors.white,
     },
     factorIconWrap: {
@@ -95,13 +96,15 @@ export function createFactorStyles(theme: BrandTheme) {
     factorTileMeta: {
       ...brandTypography.meta,
       fontSize: 12,
-      lineHeight: 12,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
       color: theme.colors.textSecondary,
     },
     factorTileState: {
       ...brandTypography.meta,
       fontSize: 12,
-      lineHeight: 12,
+      // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
+      lineHeight: 16,
       color: theme.semanticColors.textStrong,
     },
   })
