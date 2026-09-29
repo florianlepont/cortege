@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
@@ -10,6 +10,7 @@ import { OnboardingFlow } from "./src/screens/onboarding/OnboardingFlow"
 import { AuthGateScreen } from "./src/screens/AuthGateScreen"
 import { LocalDataOwnerConflictScreen } from "./src/screens/LocalDataOwnerConflictScreen"
 import { ProfileSetupScreen } from "./src/screens/ProfileSetupScreen"
+import { WelcomeScreen } from "./src/screens/WelcomeScreen"
 import { AppStateProvider } from "./src/state/AppStateProvider"
 import { useSession } from "./src/state/session-context"
 import { loadOnboardingSeen } from "./src/storage/onboarding-preference"
@@ -53,6 +54,21 @@ function AppShell() {
     session.currentUser != null &&
     !session.currentUser.first_name &&
     !session.currentUser.last_name
+
+  // OA-08: the welcome, once, when the profile has just been completed (not skipped, not signed out).
+  const [welcomeName, setWelcomeName] = useState<string | null>(null)
+  const previousNeedsProfileSetup = useRef(needsProfileSetup)
+  useEffect(() => {
+    if (
+      previousNeedsProfileSetup.current &&
+      !needsProfileSetup &&
+      !profileSetupSkipped &&
+      session.isAuthenticated
+    ) {
+      setWelcomeName(session.currentUser?.first_name?.trim() ?? "")
+    }
+    previousNeedsProfileSetup.current = needsProfileSetup
+  }, [needsProfileSetup, profileSetupSkipped, session.currentUser, session.isAuthenticated])
 
   const showOwnerConflictOverlay =
     session.isAuthenticated && session.localDataOwnerStatus === "conflict"
@@ -114,6 +130,11 @@ function AppShell() {
             }}
             onSkip={() => setProfileSetupSkipped(true)}
           />
+        </View>
+      )}
+      {welcomeName !== null && session.isAuthenticated && (
+        <View style={styles.overlay}>
+          <WelcomeScreen name={welcomeName} onContinue={() => setWelcomeName(null)} />
         </View>
       )}
       {showOnboarding && (

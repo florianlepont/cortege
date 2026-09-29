@@ -36,6 +36,7 @@ jest.mock("react-native", () => {
   return {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
+    Image: mockComponent("Image"),
     Pressable: ({
       children,
       style,
@@ -88,6 +89,15 @@ describe("OnboardingCarouselScreen (ONB-01: 3-screen carousel)", () => {
           accessibilityLabel: t.progressLabel({ index: index + 1, count: t.slides.length }),
         }),
       ).toBeTruthy()
+    }
+  })
+
+  test("each slide carries the marten, hidden from a screen reader (OA-01)", () => {
+    const tree = render()
+    const martens = tree.root.findAllByType("Image" as never)
+    expect(martens).toHaveLength(t.slides.length)
+    for (const marten of martens) {
+      expect(marten.props.accessible).toBe(false)
     }
   })
 

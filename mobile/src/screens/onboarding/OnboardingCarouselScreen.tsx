@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react"
 import {
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -18,7 +19,6 @@ import {
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
-import { BrandBump } from "../../ui/BrandBump"
 import { BrandHighlight } from "../../ui/BrandHighlight"
 
 const t = fr.onboarding.carousel
@@ -106,8 +106,15 @@ export function OnboardingCarouselScreen({ onSkip, onFinish }: OnboardingCarouse
               <Text style={styles.slideBody} maxFontSizeMultiplier={brandFontScaleCaps.body}>
                 {slide.body}
               </Text>
-              <BrandBump width={Math.min(width - brandSpacing.xl * 2, 260)} height={22} />
             </View>
+            {/* OA-01: the marten, the app's emblem, peeks up from the bottom edge (it replaces the
+              plain green bump); it is decoration for a screen reader. */}
+            <Image
+              source={require("../../../assets/animals/MARTE.png")}
+              style={styles.slideMarten}
+              resizeMode="contain"
+              accessible={false}
+            />
           </View>
         ))}
       </ScrollView>
@@ -155,6 +162,15 @@ function createStyles(theme: BrandTheme) {
       paddingHorizontal: brandSpacing.xl,
       paddingTop: brandSpacing.xl,
       justifyContent: "center",
+      overflow: "hidden",
+    },
+    // 967 x 2289 source: the head, the collar and the shoulders show, the body runs off the edge.
+    slideMarten: {
+      position: "absolute",
+      right: brandSpacing.lg,
+      bottom: -150,
+      width: 130,
+      height: 308,
     },
     slideHero: {
       gap: brandSpacing.md,
