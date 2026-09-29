@@ -53,6 +53,7 @@ jest.mock("../screens/AuthGateScreen", () => ({ AuthGateScreen: mockOverlayProbe
 jest.mock("../screens/ProfileSetupScreen", () => ({
   ProfileSetupScreen: mockOverlayProbe("profileSetup"),
 }))
+jest.mock("../screens/WelcomeScreen", () => ({ WelcomeScreen: mockOverlayProbe("welcome") }))
 jest.mock("../screens/onboarding/OnboardingFlow", () => ({
   OnboardingFlow: mockOverlayProbe("onboarding"),
 }))
@@ -686,6 +687,92 @@ describe("App shell overlays", () => {
       ;(props.onSkip as () => void)()
     })
     expect(mockOverlayProps.profileSetup).toBeUndefined()
+    await unmount(tree)
+  })
+
+  // OA-08: the welcome appears once when the profile has just been completed, and only then.
+  test("shows the welcome once the profile is completed, and hides it on continue", async () => {
+    mockSession.currentUser = { ...savedUser, first_name: "", last_name: "" }
+    const tree = await mountApp()
+    expect(mockOverlayProps.profileSetup).toBeDefined()
+    expect(mockOverlayProps.welcome).toBeUndefined()
+
+    mockSession.currentUser = { ...savedUser, first_name: " Ada ", last_name: "Lovelace" }
+    await act(async () => {
+      tree.update(<App />)
+    })
+    expect(mockOverlayProps.welcome).toMatchObject({ name: "Ada" })
+
+    delete mockOverlayProps.welcome
+    await act(async () => {
+      tree.update(<App />)
+    })
+    // Still shown: the welcome screen re-rendered, it was not dismissed by the update.
+    expect(mockOverlayProps.welcome).toBeDefined()
+    await act(async () => {
+      ;(mockOverlayProps.welcome.onContinue as () => void)()
+    })
+    delete mockOverlayProps.welcome
+    await act(async () => {
+      tree.update(<App />)
+    })
+    expect(mockOverlayProps.welcome).toBeUndefined()
+    await unmount(tree)
+  })
+
+  test("a profile with no first name still gets a welcome, without a name", async () => {
+    mockSession.currentUser = { ...savedUser, first_name: "", last_name: "" }
+    const tree = await mountApp()
+    mockSession.currentUser = { ...savedUser, first_name: "", last_name: "Lovelace" }
+    await act(async () => {
+      tree.update(<App />)
+    })
+    expect(mockOverlayProps.welcome).toMatchObject({ name: "" })
+    await unmount(tree)
+  })
+
+  test("a profile whose first name is missing altogether gets the nameless welcome", async () => {
+    mockSession.currentUser = { ...savedUser, first_name: "", last_name: "" }
+    const tree = await mountApp()
+    mockSession.currentUser = { ...savedUser, first_name: undefined as never, last_name: "L" }
+    await act(async () => {
+      tree.update(<App />)
+    })
+    expect(mockOverlayProps.welcome).toMatchObject({ name: "" })
+    await unmount(tree)
+  })
+
+  test("a user record that disappears while signed in still leaves a nameless welcome", async () => {
+    mockSession.currentUser = { ...savedUser, first_name: "", last_name: "" }
+    const tree = await mountApp()
+    mockSession.currentUser = null as never
+    await act(async () => {
+      tree.update(<App />)
+    })
+    expect(mockOverlayProps.welcome).toMatchObject({ name: "" })
+    await unmount(tree)
+  })
+
+  test("skipping the profile setup shows no welcome", async () => {
+    mockSession.currentUser = { ...savedUser, first_name: "", last_name: "" }
+    const tree = await mountApp()
+    const props = mockOverlayProps.profileSetup
+    await act(async () => {
+      ;(props.onSkip as () => void)()
+    })
+    expect(mockOverlayProps.welcome).toBeUndefined()
+    await unmount(tree)
+  })
+
+  test("signing out during the profile setup shows no welcome", async () => {
+    mockSession.currentUser = { ...savedUser, first_name: "", last_name: "" }
+    const tree = await mountApp()
+    mockSession.isAuthenticated = false
+    mockSession.currentUser = null as never
+    await act(async () => {
+      tree.update(<App />)
+    })
+    expect(mockOverlayProps.welcome).toBeUndefined()
     await unmount(tree)
   })
 

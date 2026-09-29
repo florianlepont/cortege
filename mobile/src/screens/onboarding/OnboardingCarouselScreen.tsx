@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react"
 import {
+  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -18,7 +19,6 @@ import {
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
-import { BrandBump } from "../../ui/BrandBump"
 import { BrandHighlight } from "../../ui/BrandHighlight"
 
 const t = fr.onboarding.carousel
@@ -106,11 +106,22 @@ export function OnboardingCarouselScreen({ onSkip, onFinish }: OnboardingCarouse
               <Text style={styles.slideBody} maxFontSizeMultiplier={brandFontScaleCaps.body}>
                 {slide.body}
               </Text>
-              <BrandBump width={Math.min(width - brandSpacing.xl * 2, 260)} height={22} />
             </View>
           </View>
         ))}
       </ScrollView>
+
+      {/* OA-01: the marten, the app's emblem, looks in from the left edge, tilted. It belongs to the
+        screen, not to a slide, so it stays put while the slides swipe past. Decoration only, and it
+        takes no touch. */}
+      <View pointerEvents="none" style={styles.marten} testID="onboarding-marten">
+        <Image
+          source={require("../../../assets/animals/MARTE.png")}
+          style={styles.martenImage}
+          resizeMode="contain"
+          accessible={false}
+        />
+      </View>
 
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, brandSpacing.lg) }]}>
         <AppButton
@@ -166,6 +177,21 @@ function createStyles(theme: BrandTheme) {
     slideBody: {
       ...brandTypography.heroBody,
       color: theme.colors.textSecondary,
+    },
+    // 967 x 2289 source, tilted 50 degrees about its centre: the head lands near (100, 640) on an
+    // 852 pt tall phone, in the free band between the text (which ends near 550) and the button
+    // (which starts near 767), and the body runs off the left edge.
+    marten: {
+      position: "absolute",
+      left: -23,
+      bottom: 36,
+      width: 96,
+      height: 227,
+      transform: [{ rotate: "50deg" }],
+    },
+    martenImage: {
+      width: "100%",
+      height: "100%",
     },
     bottomBar: {
       paddingHorizontal: brandSpacing.lg,

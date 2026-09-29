@@ -93,6 +93,7 @@ describe("French catalogue", () => {
         "surveyList",
         "syncErrors",
         "validation",
+        "welcome",
       ].sort(),
     )
     expect(Object.keys(fr.status).sort()).toEqual(

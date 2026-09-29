@@ -27,6 +27,7 @@ import { surveyFormFr } from "./survey-form"
 import { surveyListFr } from "./survey-list"
 import { syncErrorsFr } from "./sync-errors"
 import { validationFr } from "./validation"
+import { welcomeFr } from "./welcome"
 
 // The French catalogue (D-06): one section per file, so each plan fills its own
 // section without editing a shared one. No i18n library: property access is
@@ -51,6 +52,7 @@ export const fr = {
   parcelHistory: parcelHistoryFr,
   onboarding: onboardingFr,
   profileSetup: profileSetupFr,
+  welcome: welcomeFr,
   ownerConflict: ownerConflictFr,
   settings: settingsFr,
   labels: labelsFr,
