@@ -191,7 +191,7 @@ function createStyles(theme: BrandTheme) {
       borderRadius: brandRadius.pill,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.colors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
   })
 }

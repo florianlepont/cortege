@@ -142,7 +142,7 @@ export function createParcelStyles(theme: BrandTheme) {
       gap: 8,
       borderWidth: 1,
       borderColor: brandColors.sage,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       paddingHorizontal: 14,
       paddingVertical: 12,
       borderRadius: brandRadius.pill,

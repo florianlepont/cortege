@@ -16,7 +16,10 @@ export function createDetailStyles(theme: BrandTheme) {
     heroCard: {
       overflow: "hidden",
       borderRadius: 32,
-      backgroundColor: brandColors.forest,
+      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
       paddingHorizontal: 20,
       paddingTop: 20,
       paddingBottom: 18,

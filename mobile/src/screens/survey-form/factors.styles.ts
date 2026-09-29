@@ -70,7 +70,7 @@ export function createFactorStyles(theme: BrandTheme) {
       borderRadius: 12,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     factorBadgeText: {
       ...brandTypography.label,

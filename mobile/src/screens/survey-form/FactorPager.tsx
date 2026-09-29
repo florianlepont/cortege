@@ -281,7 +281,7 @@ function createStyles(theme: BrandTheme) {
       gap: brandSpacing4.xs,
       minHeight: 44,
       borderRadius: brandRadius.field,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     nextIncompleteButtonDisabled: {
       backgroundColor: theme.colors.panelMuted,

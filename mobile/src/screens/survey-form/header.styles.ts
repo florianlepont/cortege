@@ -24,7 +24,10 @@ export function createHeaderStyles(theme: BrandTheme) {
       position: "relative",
       overflow: "hidden",
       borderRadius: 34,
-      backgroundColor: brandColors.forest,
+      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
       ...brandShadow.card,
     },
     heroAccentOrb: {
@@ -147,7 +150,7 @@ export function createHeaderStyles(theme: BrandTheme) {
     },
     stepButtonActive: {
       borderColor: brandColors.forest,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     stepButtonComplete: {
       borderColor: brandColors.moss,

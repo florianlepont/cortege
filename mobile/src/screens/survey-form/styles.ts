@@ -87,7 +87,7 @@ export function createFormStyles(theme: BrandTheme) {
     },
     primaryButton: {
       borderRadius: brandRadius.pill,
-      backgroundColor: theme.colors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: 18,

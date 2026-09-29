@@ -70,23 +70,23 @@ const lightNeutrals: BrandDynamicNeutrals = {
 }
 
 // OA-80 (owner acceptance, 2026-09-29): the forest-based dark palette was "far too much green".
-// Surfaces are now a near-black canvas (as iOS dark mode) and near-neutral greys a step lighter
-// for cards, with a faint green cast; green is kept for accents (primary
-// buttons, selection, scores). Text pairs stay >= 7:1 on canvas and panel, inputBorder/inputFill
+// The owner chose direction A "Graphite" in sketch 001 (`.planning/sketches/001-dark-palette/`):
+// a near-black canvas as Linear, cards one step lighter with thin borders, soft greys, and green
+// kept for the primary action. Text pairs are >= 7:1 on canvas and panel, inputBorder/inputFill
 // >= 3:1.
 const darkNeutrals: BrandDynamicNeutrals = {
-  canvas: "#070807",
-  panel: "#141615",
-  surfaceSoft: "#101211",
-  panelMuted: "#202321",
-  warningSoft: "#3A2E17",
-  inputFill: "#171918",
-  inputBorder: "#6B716C",
-  divider: "#2A2E2B",
-  textPrimary: "#ECEEE9",
-  textSecondary: "#AAB0A8",
-  successSoft: "#1F2A1C",
-  errorSoft: "#3A221C",
+  canvas: "#08090A",
+  panel: "#111214",
+  surfaceSoft: "#0D0E10",
+  panelMuted: "#17181B",
+  warningSoft: "#2A2112",
+  inputFill: "#111214",
+  inputBorder: "#686D74",
+  divider: "#212226",
+  textPrimary: "#F2F3F1",
+  textSecondary: "#9A9FA6",
+  successSoft: "#16200F",
+  errorSoft: "#2B1714",
 }
 
 export type BrandColors = typeof brandColors & BrandDynamicNeutrals
@@ -126,6 +126,8 @@ export type BrandSemanticColors = {
   textPrimary: string
   textSecondary: string
   textStrong: string
+  heroSurface: string
+  heroBorder: string
   ctaPrimary: string
   ctaAccent: string
   ctaSecondaryOutline: string
@@ -141,16 +143,20 @@ function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): Bran
     surfaceBase: colors.panel,
     // Phase 12: was a flat `brandColors.white` — a raised card now needs its own dark tone since
     // `white` itself stays theme-invariant (still used elsewhere as pure white-on-color).
-    surfaceElevated: scheme === "dark" ? "#1B1E1C" : brandColors.white,
+    surfaceElevated: scheme === "dark" ? "#111214" : brandColors.white,
     surfaceSoft: colors.surfaceSoft,
     textPrimary: colors.textPrimary,
     textSecondary: colors.textSecondary,
     // OA-83: `forest` is theme-invariant, so forest text vanished on the dark canvas. Strong text
     // (titles, labels, links) takes the light sage on dark.
-    textStrong: scheme === "dark" ? brandColors.sage : colors.forest,
-    ctaPrimary: colors.forest,
+    textStrong: scheme === "dark" ? colors.textPrimary : colors.forest,
+    // OA-80 (sketch 001, direction A "Graphite" chosen by the owner): in dark mode the forest
+    // heroes become a bordered surface, and the primary action a mid green that keeps white text.
+    heroSurface: scheme === "dark" ? colors.panel : colors.forest,
+    heroBorder: scheme === "dark" ? "#26282C" : colors.forest,
+    ctaPrimary: scheme === "dark" ? "#4A7535" : colors.forest,
     ctaAccent: colors.moss,
-    ctaSecondaryOutline: scheme === "dark" ? brandColors.sage : colors.forest,
+    ctaSecondaryOutline: scheme === "dark" ? "#C9CCC8" : colors.forest,
     ctaDanger: colors.terracotta,
     successSurface: colors.successSoft,
     errorSurface: colors.errorSoft,

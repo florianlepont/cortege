@@ -2,7 +2,7 @@
 sketch: 001
 name: dark-palette
 question: "Which dark palette makes Cortege look good, not just readable?"
-winner: null
+winner: "A"
 tags: [dark-mode, palette, OA-80]
 ---
 

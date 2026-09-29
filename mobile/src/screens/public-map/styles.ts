@@ -142,7 +142,7 @@ export function createControlStyles(theme: BrandTheme) {
     iconButtonPrimary: {
       ...roundButton,
       borderColor: brandColors.forest,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       ...brandShadow.card,
     },
     iconButtonDisabled: {
@@ -191,7 +191,7 @@ export function createControlStyles(theme: BrandTheme) {
     },
     layerTogglePillOn: {
       borderColor: brandColors.forest,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     layerTogglePillOff: {
       borderColor: theme.colors.divider,
@@ -228,7 +228,7 @@ export function createControlStyles(theme: BrandTheme) {
       height: 56,
       borderRadius: 28,
       borderColor: brandColors.forest,
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       ...brandShadow.card,
     },
   })
@@ -328,7 +328,7 @@ export function createOfflineIndicatorStyles(theme: BrandTheme) {
       borderRadius: brandRadius.pill,
     },
     basemapOptionActive: {
-      backgroundColor: brandColors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     basemapOptionText: {
       ...brandTypography.meta,

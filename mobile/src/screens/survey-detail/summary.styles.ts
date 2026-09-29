@@ -55,7 +55,7 @@ export function createSummaryStyles(theme: BrandTheme) {
       borderRadius: 14,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.colors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
     },
     factorBadgeText: {
       ...brandTypography.label,

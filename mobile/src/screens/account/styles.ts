@@ -75,7 +75,7 @@ export function createIdentityStyles(theme: BrandTheme) {
       width: 28,
       height: 28,
       borderRadius: 14,
-      backgroundColor: theme.colors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       borderWidth: 2,
       borderColor: theme.colors.canvas,
       alignItems: "center",

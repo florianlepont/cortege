@@ -167,7 +167,7 @@ function createStyles(theme: BrandTheme) {
       width: THUMB_SIZE,
       height: THUMB_SIZE,
       borderRadius: THUMB_SIZE / 2,
-      backgroundColor: theme.colors.forest,
+      backgroundColor: theme.semanticColors.ctaPrimary,
       top: 22 - THUMB_SIZE / 2,
     },
   })

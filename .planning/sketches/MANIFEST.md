@@ -12,4 +12,4 @@ used sparingly for action. The owner points to Linear as the reference and rejec
 
 | # | Name | Design Question | Winner | Tags |
 |---|------|----------------|--------|------|
-| 001 | dark-palette | Which dark palette makes Cortege look good, not just readable? | — | dark-mode, palette, OA-80 |
+| 001 | dark-palette | Which dark palette makes Cortege look good, not just readable? | A (Graphite) | dark-mode, palette, OA-80 |

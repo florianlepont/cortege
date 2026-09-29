@@ -64,7 +64,10 @@ function createStyles(theme: BrandTheme) {
     },
     // Dark premium surface — for identity/hero cards on dark brand background
     hero: {
-      backgroundColor: theme.colors.forest,
+      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
       ...brandShadow.card,
     },
     glassBorder: {

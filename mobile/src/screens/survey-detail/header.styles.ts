@@ -17,7 +17,10 @@ export function createHeaderStyles(theme: BrandTheme) {
       position: "relative",
       overflow: "hidden",
       borderRadius: 34,
-      backgroundColor: theme.colors.forest,
+      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
       padding: 20,
       gap: 12,
       ...brandShadow.card,

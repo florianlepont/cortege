@@ -72,7 +72,10 @@ export function createStyles(theme: BrandTheme) {
     // Hero CTA
     heroCta: {
       marginHorizontal: PAGE_H,
-      backgroundColor: theme.colors.forest,
+      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
       borderRadius: brandRadius.card,
       padding: 24,
       paddingBottom: 28,
