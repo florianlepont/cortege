@@ -23,6 +23,7 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
+jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent =
