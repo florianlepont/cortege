@@ -41,7 +41,7 @@ export function createHeaderStyles(theme: BrandTheme) {
       // bordered hero it is a faint neutral disc.
       backgroundColor:
         theme.scheme === "dark"
-          ? "rgba(255, 255, 255, 0.03)"
+          ? brandOnDarkColors.heroOrbFaintOnDark
           : brandOnDarkColors.heroAccentTintOnDark,
     },
     // DET-03/04: the "…" menu button (Renommer/Partager/Supprimer), its own row so it never

@@ -37,7 +37,7 @@ export function createDetailStyles(theme: BrandTheme) {
       // bordered hero it is a faint neutral disc.
       backgroundColor:
         theme.scheme === "dark"
-          ? "rgba(255, 255, 255, 0.03)"
+          ? brandOnDarkColors.heroOrbFaintOnDark
           : brandOnDarkColors.heroAccentTintOnDark,
     },
     heroHeaderRow: {
