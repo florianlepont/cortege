@@ -32,12 +32,6 @@ type UseSurveySyncProfileParams = {
 
 const text = fr.status.profile
 
-type ReactNativeFormFile = Blob & {
-  uri: string
-  type: string
-  name: string
-}
-
 export function useSurveySyncProfile({
   apiUrl,
   currentUser,
@@ -89,19 +83,13 @@ export function useSurveySyncProfile({
   const uploadProfilePictureFromAsset = useCallback(
     async (asset: ImagePicker.ImagePickerAsset): Promise<void> => {
       const mimeType = asset.mimeType ?? guessMimeType(asset.uri)
-      const payload = new FormData()
-      const file: ReactNativeFormFile = {
-        uri: asset.uri,
-        type: mimeType,
-        name: asset.fileName ?? `profile-${Date.now()}`,
-      } as unknown as ReactNativeFormFile
-      payload.append("file", file)
+      const file = { uri: asset.uri, mimeType }
 
       try {
         setProfileUpdating(true)
         setStatus(text.pictureUploading())
         const uploadResponse = await withAuthRetry(async (token) => {
-          const body = await uploadMyProfilePicture(apiUrl, token, payload)
+          const body = await uploadMyProfilePicture(apiUrl, token, file)
           if (!body.profile_picture_url) {
             throw new Error(body.message ?? "Profile picture URL missing after upload")
           }

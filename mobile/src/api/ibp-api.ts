@@ -6,7 +6,8 @@ import {
   SurveyDetailResponse,
   SurveyEventsResponse,
 } from "../app/types"
-import { apiRequest } from "./client"
+import * as FileSystem from "expo-file-system/legacy"
+import { ApiError, apiRequest } from "./client"
 
 type PatchProfilePayload = {
   first_name: string
@@ -81,18 +82,67 @@ export async function requestPasswordReset(apiUrl: string, accessToken: string):
   })
 }
 
+const PROFILE_PICTURE_UPLOAD_TIMEOUT_MS = 60_000
+
+/**
+ * OA-76: the global `fetch` of this Expo version cannot send the React Native `{ uri, type, name }`
+ * FormData part ("Unsupported FormDataPart implementation"), so the photo goes through the native
+ * upload task, as the survey attachments already do. It streams the file from disk as a multipart
+ * PUT with the field name the API expects.
+ */
 export async function uploadMyProfilePicture(
   apiUrl: string,
   accessToken: string,
-  filePayload: FormData,
+  file: { uri: string; mimeType: string },
 ): Promise<ProfilePictureUploadResponse> {
-  return apiRequest<ProfilePictureUploadResponse>({
-    baseUrl: apiUrl,
-    path: "/me/profile-picture",
-    method: "PUT",
-    token: accessToken,
-    body: filePayload,
-  })
+  const task = FileSystem.createUploadTask(
+    `${apiUrl.replace(/\/+$/, "")}/me/profile-picture`,
+    file.uri,
+    {
+      httpMethod: "PUT",
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      fieldName: "file",
+      mimeType: file.mimeType,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  )
+
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let result: { status: number; body: string } | null | undefined
+  try {
+    result = await Promise.race([
+      task.uploadAsync(),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => {
+          void task.cancelAsync()
+          reject(new ApiError(408, "Request timeout", null))
+        }, PROFILE_PICTURE_UPLOAD_TIMEOUT_MS)
+      }),
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+
+  if (!result) {
+    throw new ApiError(408, "Request timeout", null)
+  }
+
+  let body: unknown = null
+  try {
+    body = result.body ? (JSON.parse(result.body) as unknown) : null
+  } catch {
+    body = result.body
+  }
+  if (result.status < 200 || result.status >= 300) {
+    const message =
+      body &&
+      typeof body === "object" &&
+      typeof (body as { message?: unknown }).message === "string"
+        ? (body as { message: string }).message
+        : `HTTP ${result.status}`
+    throw new ApiError(result.status, message, body)
+  }
+  return (body ?? {}) as ProfilePictureUploadResponse
 }
 
 export async function deleteMyProfilePicture(apiUrl: string, accessToken: string): Promise<void> {

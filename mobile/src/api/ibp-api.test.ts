@@ -1,9 +1,12 @@
 const mockApiRequest = jest.fn()
 
 jest.mock("./client", () => ({
+  ...jest.requireActual("./client"),
   apiRequest: mockApiRequest,
 }))
 
+import * as FileSystem from "expo-file-system/legacy"
+import { ApiError } from "./client"
 import {
   deleteMyAccount,
   deleteMyProfilePicture,
@@ -27,8 +30,6 @@ describe("ibp-api", () => {
   })
 
   it("builds authenticated profile and debug requests", async () => {
-    const formData = new FormData()
-
     await getMyProfile("https://api.example.com", "access-token")
     await patchMyProfile("https://api.example.com", "access-token", {
       first_name: "Flo",
@@ -36,7 +37,6 @@ describe("ibp-api", () => {
       display_name: "Algernon",
       profile_picture_url: null,
     })
-    await uploadMyProfilePicture("https://api.example.com", "access-token", formData)
     await deleteMyProfilePicture("https://api.example.com", "access-token")
     await deleteMyAccount("https://api.example.com", "access-token")
     await resetIbpData("https://api.example.com", "access-token")
@@ -63,15 +63,6 @@ describe("ibp-api", () => {
             display_name: "Algernon",
             profile_picture_url: null,
           },
-        },
-      ],
-      [
-        {
-          baseUrl: "https://api.example.com",
-          path: "/me/profile-picture",
-          method: "PUT",
-          token: "access-token",
-          body: formData,
         },
       ],
       [
@@ -242,5 +233,81 @@ describe("ibp-api", () => {
         },
       ],
     ])
+  })
+
+  describe("uploadMyProfilePicture (OA-76)", () => {
+    const file = { uri: "file:///cache/photo.png", mimeType: "image/png" }
+    const upload = (result: unknown) => {
+      const task = {
+        uploadAsync: jest.fn(() => Promise.resolve(result)),
+        cancelAsync: jest.fn(),
+      }
+      ;(FileSystem.createUploadTask as jest.Mock).mockReturnValueOnce(task)
+      return task
+    }
+
+    it("sends a multipart PUT with the token and returns the parsed body", async () => {
+      upload({
+        status: 200,
+        body: JSON.stringify({ profile_picture_url: "/me/profile-picture?v=1" }),
+      })
+      const body = await uploadMyProfilePicture("https://api.example.com/", "access-token", file)
+      expect(body).toEqual({ profile_picture_url: "/me/profile-picture?v=1" })
+      expect(FileSystem.createUploadTask).toHaveBeenCalledWith(
+        "https://api.example.com/me/profile-picture",
+        file.uri,
+        expect.objectContaining({
+          httpMethod: "PUT",
+          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+          fieldName: "file",
+          mimeType: "image/png",
+          headers: { Authorization: "Bearer access-token" },
+        }),
+      )
+    })
+
+    it("returns an empty object for an empty success body", async () => {
+      upload({ status: 200, body: "" })
+      expect(await uploadMyProfilePicture("https://api.example.com", "t", file)).toEqual({})
+    })
+
+    it("throws an ApiError carrying the server message on a refusal", async () => {
+      upload({ status: 400, body: JSON.stringify({ message: "Unsupported profile picture type" }) })
+      await expect(
+        uploadMyProfilePicture("https://api.example.com", "t", file),
+      ).rejects.toMatchObject({ status: 400, message: "Unsupported profile picture type" })
+    })
+
+    it("falls back to the HTTP status when the refusal body is not a message", async () => {
+      upload({ status: 502, body: "<html>bad gateway</html>" })
+      await expect(
+        uploadMyProfilePicture("https://api.example.com", "t", file),
+      ).rejects.toMatchObject({ status: 502, message: "HTTP 502" })
+    })
+
+    it("throws a 408 ApiError when the task resolves with nothing", async () => {
+      upload(null)
+      await expect(
+        uploadMyProfilePicture("https://api.example.com", "t", file),
+      ).rejects.toBeInstanceOf(ApiError)
+    })
+
+    it("cancels the task and throws a 408 after the upload timeout", async () => {
+      jest.useFakeTimers()
+      try {
+        const task = {
+          uploadAsync: jest.fn(() => new Promise(() => undefined)),
+          cancelAsync: jest.fn(),
+        }
+        ;(FileSystem.createUploadTask as jest.Mock).mockReturnValueOnce(task)
+        const pending = uploadMyProfilePicture("https://api.example.com", "t", file)
+        const assertion = expect(pending).rejects.toMatchObject({ status: 408 })
+        await jest.advanceTimersByTimeAsync(60_000)
+        await assertion
+        expect(task.cancelAsync).toHaveBeenCalled()
+      } finally {
+        jest.useRealTimers()
+      }
+    })
   })
 })
