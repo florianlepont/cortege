@@ -436,7 +436,6 @@ describe("stack options and listeners", () => {
         title: fr.navigation.headers.surveys,
         headerShown: true,
         headerTransparent: false,
-        headerBlurEffect: "systemMaterial",
       }),
     )
   })

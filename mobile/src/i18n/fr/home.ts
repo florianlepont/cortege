@@ -28,8 +28,9 @@ export const homeFr = {
     button: "Démarrer un relevé",
     // HOME-02: the hero becomes a resume action when a draft was touched in the last 48h.
     resumeEyebrow: "REPRENDRE",
-    resumeTitle: ({ name }: { name: string }) => `Reprendre ${name}`,
-    resumeTitleUnnamed: "Reprendre votre relevé",
+    // OA-84: the eyebrow and the button already say "Reprendre"; the title is the survey.
+    resumeTitle: ({ name }: { name: string }) => name,
+    resumeTitleUnnamed: "Votre relevé en cours",
     resumeBody: ({ completed }: { completed: number }) => `${completed}/10 facteurs remplis.`,
     resumeButton: "Reprendre",
     newSurveyButton: "Nouveau relevé",

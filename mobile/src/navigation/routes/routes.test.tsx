@@ -122,6 +122,10 @@ jest.mock("../../hooks/usePublicMapExplorer", () => ({
 
 // PublicMapRoute's offline hooks (Phase 8) touch SQLite and network state, neither of which this
 // navigation-routing suite sets up; stubbed out like usePublicMapExplorer above.
+const mockNativeTabs = { value: false }
+jest.mock("../native-tabs-availability", () => ({
+  getNativeTabsAvailability: () => ({ native: mockNativeTabs.value }),
+}))
 jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => false }))
 jest.mock("../../hooks/useBasemapPreference", () => ({
   useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
@@ -509,6 +513,114 @@ describe("AccountRoute focus refresh (OA-13)", () => {
   })
 })
 
+describe("HomeRoute native header (OA-85)", () => {
+  afterEach(() => {
+    mockNativeTabs.value = false
+  })
+
+  test("outside the native tab tree the screen draws its own header", async () => {
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <HomeRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("home").nativeHeader).toBe(false)
+    expect(navigation.setOptions).not.toHaveBeenCalled()
+  })
+
+  test("in the native tab tree the header carries the greeting and the profile button", async () => {
+    mockNativeTabs.value = true
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <HomeRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("home").nativeHeader).toBe(true)
+    const options = navigation.setOptions.mock.calls.at(-1)[0]
+    expect(options.headerShown).toBe(true)
+    expect(options.title).toBe("")
+
+    const [titleItem] = options.unstable_headerLeftItems()
+    expect(titleItem.type).toBe("custom")
+    expect(titleItem.hidesSharedBackground).toBe(true)
+    const [profileItem] = options.unstable_headerRightItems()
+    expect(profileItem.type).toBe("button")
+    expect(profileItem.label).toBe(fr.home.avatar)
+    profileItem.onPress()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("accountHome")
+  })
+
+  test("with a profile photo the right item is the bare photo, which opens Compte", async () => {
+    mockNativeTabs.value = true
+    const fixture = makeFixture()
+    fixture.session.state.currentUser = {
+      id: "u1",
+      email: "marie@test.fr",
+      role: "contributor",
+      first_name: "Marie",
+      last_name: "Lepont",
+      display_name: "Marie Lepont",
+      profile_picture_url: "/me/profile-picture?v=1",
+    } as never
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <HomeRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    const options = navigation.setOptions.mock.calls.at(-1)[0]
+    const [profileItem] = options.unstable_headerRightItems()
+    expect(profileItem.type).toBe("custom")
+    let photo: renderer.ReactTestRenderer | undefined
+    act(() => {
+      photo = renderer.create(profileItem.element)
+    })
+    act(() => {
+      photo!.root.findByProps({ accessibilityLabel: fr.home.avatar }).props.onPress()
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("accountHome")
+    act(() => photo!.unmount())
+  })
+})
+
+describe("HomeRoute native header greeting (OA-85)", () => {
+  afterEach(() => {
+    mockNativeTabs.value = false
+  })
+
+  test("the header title greets the user by first name", async () => {
+    mockNativeTabs.value = true
+    const fixture = makeFixture()
+    fixture.session.state.currentUser = {
+      id: "u1",
+      email: "marie@test.fr",
+      role: "contributor",
+      first_name: "Marie",
+      last_name: "Lepont",
+      display_name: "Marie Lepont",
+      profile_picture_url: "/me/profile-picture?v=1",
+    } as never
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <HomeRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    const options = navigation.setOptions.mock.calls.at(-1)[0]
+    let left: renderer.ReactTestRenderer | undefined
+    act(() => {
+      left = renderer.create(options.unstable_headerLeftItems()[0].element)
+    })
+    const text = left!.root
+      .findAll((node) => (node.type as unknown) === "Text")
+      .map((node) => String([node.props.children].flat().join("")))
+    expect(text).toContain(fr.home.greetingWithName({ name: "Marie" }))
+    act(() => left!.unmount())
+  })
+})
+
 describe("HomeRoute", () => {
   test("opens the form, a survey and the explorer through the tab navigator", async () => {
     const fixture = makeFixture()
@@ -636,19 +748,24 @@ describe("SurveyListRoute", () => {
     options.onCancelButtonPress()
     expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenLastCalledWith("")
 
-    // SYNC-02/HOME-01: the native header also carries the sync pill and the "+" create button.
-    let headerRightTree: renderer.ReactTestRenderer | undefined
+    // OA-85: the title sits left, on the same row as the "+" create button.
+    expect(setOptionsCall.headerTitle).toBe("")
+    const [titleItem] = setOptionsCall.unstable_headerLeftItems()
+    expect(titleItem.hidesSharedBackground).toBe(true)
+    let titleTree: renderer.ReactTestRenderer | undefined
     act(() => {
-      headerRightTree = renderer.create(setOptionsCall.headerRight())
+      titleTree = renderer.create(titleItem.element)
     })
-    const createButton = headerRightTree!.root.findByProps({
-      accessibilityLabel: fr.surveyList.a11y.createSurvey,
-    })
-    act(() => {
-      createButton.props.onPress()
-    })
+    expect(
+      titleTree!.root.findAll((node) => (node.type as unknown) === "Text").length,
+    ).toBeGreaterThan(0)
+    act(() => titleTree!.unmount())
+
+    // SYNC-02/HOME-01: the native header also carries the "+" create button.
+    const [createButton] = setOptionsCall.unstable_headerRightItems()
+    expect(createButton.label).toBe(fr.surveyList.a11y.createSurvey)
+    createButton.onPress()
     expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
-    act(() => headerRightTree!.unmount())
 
     const bar = { setText: jest.fn(), clearText: jest.fn() }
     options.ref.current = bar

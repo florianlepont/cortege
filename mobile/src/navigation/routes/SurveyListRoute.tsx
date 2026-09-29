@@ -1,10 +1,10 @@
 import { memo, useEffect, useLayoutEffect, useRef } from "react"
-import { Platform, Pressable, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import { Platform } from "react-native"
 import type { SearchBarCommands } from "react-native-screens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { SurveyListScreen } from "../../screens/SurveyListScreen"
+import { iconHeaderButton, titleHeaderItems } from "../header-items"
 import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -62,20 +62,18 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
           actions.setSurveyQuery("")
         },
       },
-      headerRight: () => (
-        // OA-51: the sync pill does not belong next to "+" (owner decision); it stays on Accueil.
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={fr.surveyList.a11y.createSurvey}
-            hitSlop={8}
-            onPress={onOpenCreateSurvey}
-            style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}
-          >
-            <Ionicons name="add-circle" size={26} color={theme.semanticColors.accent} />
-          </Pressable>
-        </View>
-      ),
+      // OA-85: the title sits left and the "+" right, on one row shared with Accueil.
+      headerTitle: "",
+      headerStyle: { backgroundColor: theme.colors.canvas },
+      unstable_headerLeftItems: () => titleHeaderItems(fr.navigation.headers.surveys),
+      unstable_headerRightItems: () => [
+        iconHeaderButton({
+          label: fr.surveyList.a11y.createSurvey,
+          sfSymbol: "plus",
+          tintColor: theme.semanticColors.accent,
+          onPress: onOpenCreateSurvey,
+        }),
+      ],
     })
   }, [actions, nativeSearchEnabled, navigation, onOpenCreateSurvey, theme])
 

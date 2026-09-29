@@ -62,7 +62,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               headerShown: nativeSearchEnabled,
               headerLargeTitle: false,
               headerTransparent: nativeSearchEnabled ? false : undefined,
-              headerBlurEffect: nativeSearchEnabled ? "systemMaterial" : undefined,
               headerShadowVisible: false,
               // headerSearchBarOptions are set by SurveyListRoute (it owns the query).
             }}
