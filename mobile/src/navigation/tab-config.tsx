@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../app/brand-tokens"
 import { BrandTheme } from "../app/theme"
 import { fr } from "../i18n"
+import { feedback } from "../ui/feedback"
 import { useSession, type SessionActions } from "../state/session-context"
 import { useSurveyActions } from "../state/surveys-context"
 import { useSyncActions } from "../state/sync-actions-context"
@@ -150,4 +151,9 @@ export function useTabListenerDeps(): TabListenerDeps {
     closeSurveyDetailSelection: surveyActions.closeSurveyDetailSelection,
     publicMapReload,
   }
+}
+
+/** A selection tick when a tab is pressed, in both the native and the JS tab trees. */
+export const tabPressHaptics = {
+  tabPress: () => feedback.selection(),
 }

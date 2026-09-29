@@ -8,6 +8,7 @@ import {
   makeSurveysTabListeners,
   nativeTabScreenOptions,
   useTabListenerDeps,
+  tabPressHaptics,
 } from "../tab-config"
 import type { RootTabParamList } from "../types"
 
@@ -68,6 +69,7 @@ export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
   return (
     <NativeTab.Navigator
       screenOptions={screenOptions}
+      screenListeners={tabPressHaptics}
       minimizeBehavior="automatic"
       tabBarHidden={tabBarHidden}
     >
