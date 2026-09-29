@@ -298,8 +298,9 @@ describe("filterAndSortSurveys", () => {
     expect(
       resolveSurveySyncDisplay(makeSurvey({ status: "submitted", sync_state: "synced" })),
     ).toBe("sync")
+    // OA-38: a draft on the server is synced, not local.
     expect(resolveSurveySyncDisplay(makeSurvey({ status: "draft", sync_state: "synced" }))).toBe(
-      "local",
+      "sync",
     )
     expect(resolveSurveySyncDisplay(makeSurvey({ status: "draft", sync_state: "pending" }))).toBe(
       "local",
