@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useHeaderHeight } from "@react-navigation/elements"
-import MapView, { Marker, Region } from "react-native-maps"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { brandColors, brandMediaBackdrop, brandShadow, brandTypography } from "../app/brand-tokens"
@@ -13,11 +12,11 @@ import {
   buildFocusedMapRegion,
   parseGpsCoordinate,
   computeRegionZoom,
+  type MapRegion as Region,
 } from "../app/map-viewport"
 import { GpsCaptureResult } from "../app/types"
-import { IgnCadastreTileOverlay } from "../components/IgnCadastreTileOverlay"
-import { ParcelOverlayPolygons } from "../components/ParcelOverlayPolygons"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
+import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
 import { AppNotice } from "../ui/AppNotice"
@@ -52,9 +51,7 @@ export function SurveyParcelSelectionScreen({
 }: SurveyParcelSelectionScreenProps) {
   const theme = useBrandTheme()
   const screenStyles = useMemo(() => createScreenStyles(theme), [theme])
-  const mapRef = useRef<MapView | null>(null)
-  const mapReadyRef = useRef(false)
-  const pendingRegionRef = useRef<Region | null>(null)
+  const mapRef = useRef<ParcelMapHandle | null>(null)
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
@@ -81,23 +78,9 @@ export function SurveyParcelSelectionScreen({
     year: new Date().getFullYear(),
   })
 
+  // ParcelMap holds a move until its map has loaded.
   const syncMapRegion = (nextRegion: Region, duration = 420): void => {
-    if (!mapReadyRef.current || !mapRef.current) {
-      pendingRegionRef.current = nextRegion
-      return
-    }
-
-    pendingRegionRef.current = null
-    mapRef.current.animateToRegion(nextRegion, duration)
-  }
-
-  const handleMapReady = (): void => {
-    mapReadyRef.current = true
-    const nextRegion = pendingRegionRef.current ?? mapRegion
-    pendingRegionRef.current = null
-    requestAnimationFrame(() => {
-      mapRef.current?.animateToRegion(nextRegion, 0)
-    })
+    mapRef.current?.animateToRegion(nextRegion, duration)
   }
 
   useEffect(() => {
@@ -131,30 +114,17 @@ export function SurveyParcelSelectionScreen({
         },
       ]}
     >
-      <MapView
-        ref={(instance) => {
-          mapRef.current = instance
-          if (!instance) {
-            mapReadyRef.current = false
-            return
-          }
-          mapReadyRef.current = false
-        }}
+      <ParcelMap
+        ref={mapRef}
         style={screenStyles.map}
         initialRegion={mapRegion}
-        onMapReady={handleMapReady}
-        onRegionChangeComplete={handleMapRegionChange}
-      >
-        <IgnCadastreTileOverlay enabled={mapZoom >= 15} zIndex={0} />
-        <ParcelOverlayPolygons
-          items={parcelStatuses}
-          selectedParcelIds={selectedParcelIds}
-          onParcelPress={onToggleParcelSelection}
-        />
-        {hasGpsCoordinates ? (
-          <Marker coordinate={{ latitude: parsedLat, longitude: parsedLng }} />
-        ) : null}
-      </MapView>
+        cadastreEnabled={mapZoom >= 15}
+        parcels={parcelStatuses}
+        selectedParcelIds={selectedParcelIds}
+        onParcelPress={onToggleParcelSelection}
+        marker={hasGpsCoordinates ? { latitude: parsedLat, longitude: parsedLng } : null}
+        onRegionChange={handleMapRegionChange}
+      />
 
       <View
         pointerEvents="box-none"

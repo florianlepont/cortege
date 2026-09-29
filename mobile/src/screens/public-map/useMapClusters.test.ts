@@ -20,7 +20,7 @@ jest.mock("supercluster", () => {
 })
 
 import { cleanup, renderHook } from "@testing-library/react-native/pure"
-import type { Region } from "react-native-maps"
+import type { MapRegion as Region } from "../../app/map-viewport"
 import type { PublicMapItem } from "../../app/types"
 import {
   CLUSTER_MAX_ZOOM,

@@ -1,13 +1,14 @@
 import { memo, useCallback } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { Marker, type LatLng } from "react-native-maps"
+import { ViewAnnotation } from "@maplibre/maplibre-react-native"
+import type { MapCoordinate } from "../../app/map-viewport"
 import { fr } from "../../i18n"
 import { markerStyles } from "./styles"
 
 export type ClusterMarkerProps = {
   clusterId: number
-  coordinate: LatLng
+  coordinate: MapCoordinate
   count: number
   onPress: (clusterId: number) => void
 }
@@ -15,18 +16,21 @@ export type ClusterMarkerProps = {
 function ClusterMarkerBase({ clusterId, coordinate, count, onPress }: ClusterMarkerProps) {
   const handlePress = useCallback(() => onPress(clusterId), [clusterId, onPress])
   return (
-    <Marker
-      coordinate={coordinate}
+    <ViewAnnotation
+      id={`cluster-${clusterId}`}
+      lngLat={[coordinate.longitude, coordinate.latitude]}
+      anchor="center"
       onPress={handlePress}
-      // The bubble never changes once drawn: no per-frame snapshot of the custom view.
-      tracksViewChanges={false}
-      accessibilityLabel={fr.publicMap.a11y.cluster(count)}
-      zIndex={2}
     >
-      <View style={markerStyles.clusterBubble}>
+      <View
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={fr.publicMap.a11y.cluster(count)}
+        style={markerStyles.clusterBubble}
+      >
         <Text style={markerStyles.clusterText}>{fr.publicMap.cluster.count(count)}</Text>
       </View>
-    </Marker>
+    </ViewAnnotation>
   )
 }
 

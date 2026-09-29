@@ -21,8 +21,6 @@ jest.mock("../app/map-viewport", () => ({
   computeRegionZoom: (...args: unknown[]) => mockComputeRegionZoom(...args),
 }))
 
-jest.mock("react-native-maps", () => ({}))
-
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import { useParcelStatuses } from "./useParcelStatuses"
 

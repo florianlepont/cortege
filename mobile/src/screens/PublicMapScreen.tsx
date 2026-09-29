@@ -1,25 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Alert, View } from "react-native"
-import type MapView from "react-native-maps"
-import type { Region } from "react-native-maps"
+import type { CameraRef } from "@maplibre/maplibre-react-native"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import type { MapRegion } from "../app/map-viewport"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { useBrandTheme } from "../app/theme"
 import type { PublicMapItem, PublicParcelStatusItem } from "../app/types"
 import type { LoadPublicMapOptions } from "../hooks/usePublicMapExplorer"
-import type { StartDownloadResult } from "../hooks/useOfflineAreas"
 import { fr } from "../i18n"
 import type { BasemapKey } from "../map/basemaps"
-import type { AreaDownloadEstimate } from "../map/tile-math"
-import type { OfflineAreaSummary } from "../storage/offline-map"
+import { boundsFromRegion } from "../map/maplibre/regions"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { ClusterListSheet } from "./public-map/ClusterListSheet"
 import type { ExplorerFilterBarProps, RegionKey } from "./public-map/ExplorerFilterBar"
 import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
-import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
 import { computePeriodRange, type PeriodKey } from "./public-map/period-filter"
 import { ScoreLegend } from "./public-map/ScoreLegend"
@@ -48,15 +45,10 @@ type PublicMapScreenProps = {
   onLoadParcels: (input: { bbox: string; zoom: number }) => Promise<void>
   /** Told the bbox of each viewport load, so the Explorer tab reload can reuse it. */
   onViewportBboxChange?: (bbox: string) => void
-  /** REQ-D-offline-map / REQ-D-basemap-switch / REQ-D-area-download (08-CONTEXT). */
+  /** REQ-D-offline-map / REQ-D-basemap-switch (08-CONTEXT). Area downloads are suspended (Explorer on MapLibre). */
   isOffline: boolean
   basemap: BasemapKey
   onChangeBasemap: (basemap: BasemapKey) => void
-  offlineAreas: OfflineAreaSummary[]
-  downloadingAreaId: string | null
-  estimateOfflineArea: (region: Region) => AreaDownloadEstimate
-  onDownloadOfflineArea: (region: Region, name: string) => Promise<StartDownloadResult>
-  onDeleteOfflineArea: (id: string) => Promise<void>
   onQueueParcelDownload: (parcelId: string) => void
 }
 
@@ -85,19 +77,13 @@ export function PublicMapScreen({
   isOffline,
   basemap,
   onChangeBasemap,
-  offlineAreas,
-  downloadingAreaId,
-  estimateOfflineArea,
-  onDownloadOfflineArea,
-  onDeleteOfflineArea,
   onQueueParcelDownload,
 }: PublicMapScreenProps) {
   const theme = useBrandTheme()
   const screenStyles = useMemo(() => createScreenContainerStyle(theme), [theme])
-  const mapRef = useRef<MapView | null>(null)
+  const cameraRef = useRef<CameraRef | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [showParcelLayer, setShowParcelLayer] = useState(true)
-  const [showOfflineAreas, setShowOfflineAreas] = useState(false)
   const [selectedItem, setSelectedItem] = useState<PublicMapItem | null>(null)
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null)
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
@@ -109,8 +95,8 @@ export function PublicMapScreen({
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
 
-  const animateToRegion = useCallback((target: Region, durationMs: number) => {
-    mapRef.current?.animateToRegion(target, durationMs)
+  const animateToRegion = useCallback((target: MapRegion, durationMs: number) => {
+    cameraRef.current?.fitBounds(boundsFromRegion(target), { duration: durationMs })
   }, [])
 
   const viewport = useMapViewport({
@@ -213,7 +199,7 @@ export function PublicMapScreen({
     setClusterItems(leaves)
   }, [])
   const { moveTo } = viewport
-  const handleZoomTo = useCallback((target: Region) => moveTo(target, 450), [moveTo])
+  const handleZoomTo = useCallback((target: MapRegion) => moveTo(target, 450), [moveTo])
   // MAP-01: the sheet reports a dismissal (drag-down or the content's own close button) without
   // saying which panel was open — closing all three is safe since they're already mutually
   // exclusive (selecting one clears the others, see handleSelectSurvey/handleSelectParcel/
@@ -225,15 +211,6 @@ export function PublicMapScreen({
   }, [])
   const toggleFilters = useCallback(() => setShowFilters((current) => !current), [])
   const toggleParcelLayer = useCallback(() => setShowParcelLayer((current) => !current), [])
-  const toggleOfflineAreas = useCallback(() => setShowOfflineAreas((current) => !current), [])
-  const closeOfflineAreas = useCallback(() => setShowOfflineAreas(false), [])
-  const offlineAreaEstimate = useMemo(
-    () => estimateOfflineArea(viewport.region),
-    [estimateOfflineArea, viewport.region],
-  )
-  const handleDownloadOfflineArea = useLatestCallback((name: string) => {
-    void onDownloadOfflineArea(viewport.region, name)
-  })
 
   const handleLocate = useLatestCallback(async (): Promise<void> => {
     if (locating) {
@@ -285,7 +262,7 @@ export function PublicMapScreen({
   return (
     <View style={screenStyles.container}>
       <MapCanvas
-        mapRef={mapRef}
+        cameraRef={cameraRef}
         items={visibleItems}
         region={viewport.region}
         selectedId={selectedItem?.survey_id ?? null}
@@ -297,8 +274,6 @@ export function PublicMapScreen({
         onZoomTo={handleZoomTo}
         onOpenClusterList={handleOpenClusterList}
         basemap={basemap}
-        isOffline={isOffline}
-        offlineAreas={offlineAreas}
       />
 
       <MapTopControls
@@ -315,7 +290,6 @@ export function PublicMapScreen({
         isOffline={isOffline}
         basemap={basemap}
         onChangeBasemap={onChangeBasemap}
-        onOpenOfflineAreas={toggleOfflineAreas}
       />
 
       <MapBottomDock
@@ -326,18 +300,6 @@ export function PublicMapScreen({
       />
 
       <ScoreLegend bottom={Math.max(84, dockBottom + 74)} />
-
-      {showOfflineAreas ? (
-        <OfflineAreasSheet
-          bottom={Math.max(84, dockBottom + 62)}
-          areas={offlineAreas}
-          downloadingAreaId={downloadingAreaId}
-          estimate={offlineAreaEstimate}
-          onDownload={handleDownloadOfflineArea}
-          onDelete={onDeleteOfflineArea}
-          onClose={closeOfflineAreas}
-        />
-      ) : null}
 
       {/* MAP-01: one tiered sheet for whichever map-content panel is active, replacing the three
         absolutely-positioned AppCards this screen used to stack independently. */}

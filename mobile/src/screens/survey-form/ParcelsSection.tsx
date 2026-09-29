@@ -2,11 +2,9 @@ import { useMemo, useState } from "react"
 import { Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import MapView, { Marker } from "react-native-maps"
 import { brandColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
-import { IgnCadastreTileOverlay } from "../../components/IgnCadastreTileOverlay"
-import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
+import { ParcelMap } from "../../map/maplibre/ParcelMap"
 import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
@@ -53,21 +51,17 @@ export function ParcelsSection({
       </View>
 
       <View style={parcelStyles.mapFrame}>
-        <MapView
+        <ParcelMap
           ref={map.setInlineMapInstance}
           style={parcelStyles.map}
           initialRegion={map.mapRegion}
-          onMapReady={map.handleInlineMapReady}
-          onRegionChangeComplete={map.handleMapRegionChange}
-        >
-          <IgnCadastreTileOverlay enabled={map.mapZoom >= 15} zIndex={0} />
-          <ParcelOverlayPolygons
-            items={map.parcelStatuses}
-            selectedParcelIds={selectedParcelIds}
-            onParcelPress={onToggleParcelSelection}
-          />
-          {map.gpsMarker ? <Marker coordinate={map.gpsMarker} /> : null}
-        </MapView>
+          cadastreEnabled={map.mapZoom >= 15}
+          parcels={map.parcelStatuses}
+          selectedParcelIds={selectedParcelIds}
+          onParcelPress={onToggleParcelSelection}
+          marker={map.gpsMarker}
+          onRegionChange={map.handleMapRegionChange}
+        />
         <View pointerEvents="box-none" style={parcelStyles.mapOverlayActions}>
           <Pressable
             accessibilityRole="button"

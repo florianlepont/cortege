@@ -1,37 +1,42 @@
 import { memo, useMemo, type RefObject } from "react"
-import MapView, { type Details, type LatLng, type Region } from "react-native-maps"
+import {
+  Camera,
+  Map as MapLibreMap,
+  UserLocation,
+  type CameraRef,
+  type ViewStateChangeEvent,
+} from "@maplibre/maplibre-react-native"
+import type { NativeSyntheticEvent } from "react-native"
+import type { MapCoordinate, MapRegion } from "../../app/map-viewport"
 import type { PublicMapItem, PublicParcelStatusItem } from "../../app/types"
-import { IgnCadastreTileOverlay } from "../../components/IgnCadastreTileOverlay"
-import { ParcelOverlayPolygons } from "../../components/ParcelOverlayPolygons"
 import type { BasemapKey } from "../../map/basemaps"
-import type { OfflineAreaSummary } from "../../storage/offline-map"
+import { CadastreLayer } from "../../map/maplibre/CadastreLayer"
+import { ParcelPolygonsLayer } from "../../map/maplibre/ParcelPolygonsLayer"
+import { boundsFromRegion, regionFromViewChange } from "../../map/maplibre/regions"
+import { mapStyleFor } from "../../map/maplibre/styles"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { ClusterMarker } from "./ClusterMarker"
-import { OfflineBasemapTile } from "./OfflineBasemapTile"
 import { screenStyles } from "./styles"
 import { SurveyMarker } from "./SurveyMarker"
 import { useMapClusters } from "./useMapClusters"
 import { DEFAULT_MAP_REGION, regionForZoom } from "./useMapViewport"
 
 const NO_PARCELS: PublicParcelStatusItem[] = []
-const NO_OFFLINE_AREAS: OfflineAreaSummary[] = []
 
 export type MapCanvasProps = {
-  mapRef: RefObject<MapView | null>
+  cameraRef: RefObject<CameraRef | null>
   items: PublicMapItem[]
-  region: Region
+  region: MapRegion
   selectedId: string | null
   parcelStatuses: PublicParcelStatusItem[]
   parcelLayerRenderable: boolean
-  onRegionChangeComplete: (region: Region, details?: Details) => void
+  onRegionChangeComplete: (region: MapRegion, details?: { isGesture: boolean }) => void
   onSelectSurvey: (id: string) => void
   onSelectParcel: (parcelId: string) => void
-  onZoomTo: (region: Region) => void
+  onZoomTo: (region: MapRegion) => void
   onOpenClusterList: (items: PublicMapItem[]) => void
-  /** REQ-D-basemap-switch / REQ-D-offline-map (08-CONTEXT D-01/D-02). */
+  /** REQ-D-basemap-switch (08-CONTEXT D-01). */
   basemap?: BasemapKey
-  isOffline?: boolean
-  offlineAreas?: OfflineAreaSummary[]
 }
 
 /**
@@ -41,7 +46,7 @@ export type MapCanvasProps = {
  * cannot split (Pitfall 7).
  */
 export const MapCanvas = memo(function MapCanvas({
-  mapRef,
+  cameraRef,
   items,
   region,
   selectedId,
@@ -53,13 +58,11 @@ export const MapCanvas = memo(function MapCanvas({
   onZoomTo,
   onOpenClusterList,
   basemap = "map",
-  isOffline = false,
-  offlineAreas = NO_OFFLINE_AREAS,
 }: MapCanvasProps) {
   const { clusters, resolveClusterPress } = useMapClusters({ items, region })
 
   const clusterCenters = useMemo(() => {
-    const centers = new Map<number, LatLng>()
+    const centers = new Map<number, MapCoordinate>()
     for (const entry of clusters) {
       if (entry.kind === "cluster") {
         centers.set(entry.clusterId, { latitude: entry.latitude, longitude: entry.longitude })
@@ -80,27 +83,26 @@ export const MapCanvas = memo(function MapCanvas({
     }
   })
 
+  const handleRegionDidChange = useLatestCallback(
+    (event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+      const { center, bounds, userInteraction } = event.nativeEvent
+      onRegionChangeComplete(regionFromViewChange({ center, bounds }), {
+        isGesture: userInteraction,
+      })
+    },
+  )
+
   return (
-    <MapView
-      ref={mapRef}
+    <MapLibreMap
       style={screenStyles.map}
-      initialRegion={DEFAULT_MAP_REGION}
-      onRegionChangeComplete={onRegionChangeComplete}
-      // MAP-04: the device's own position is the native halo (accuracy ring included), not a
-      // custom Marker maintained by the app.
-      showsUserLocation
-      showsMyLocationButton={false}
+      mapStyle={mapStyleFor(basemap)}
+      onRegionDidChange={handleRegionDidChange}
     >
-      <OfflineBasemapTile
-        basemap={basemap}
-        isOffline={isOffline}
-        areas={offlineAreas}
-        centerLat={region.latitude}
-        centerLng={region.longitude}
-        zIndex={-1}
-      />
-      <IgnCadastreTileOverlay enabled={parcelLayerRenderable} zIndex={0} />
-      <ParcelOverlayPolygons
+      <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(DEFAULT_MAP_REGION) }} />
+      {/* MAP-04: the device's own position is the native halo, not a marker kept by the app. */}
+      <UserLocation />
+      <CadastreLayer enabled={parcelLayerRenderable} />
+      <ParcelPolygonsLayer
         items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS}
         onParcelPress={onSelectParcel}
       />
@@ -131,6 +133,6 @@ export const MapCanvas = memo(function MapCanvas({
           />
         )
       })}
-    </MapView>
+    </MapLibreMap>
   )
 })

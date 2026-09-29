@@ -1,4 +1,17 @@
-import { Region } from "react-native-maps"
+/**
+ * The map viewport the app reasons in: a centre and the span shown (MapLibre reports bounds,
+ * converted in `map/maplibre/regions.ts`).
+ */
+export type MapRegion = {
+  latitude: number
+  longitude: number
+  latitudeDelta: number
+  longitudeDelta: number
+}
+type Region = MapRegion
+
+/** A point on the map, as the markers take it. */
+export type MapCoordinate = { latitude: number; longitude: number }
 
 export const DEFAULT_FRANCE_CENTER = { lat: 46.603354, lng: 1.888334 }
 

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react"
-import type { Region } from "react-native-maps"
+import type { MapRegion as Region } from "../../app/map-viewport"
 import Supercluster from "supercluster"
 import type { PointFeature } from "supercluster"
 import { computeRegionZoom } from "../../app/map-viewport"

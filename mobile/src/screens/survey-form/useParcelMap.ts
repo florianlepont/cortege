@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import MapView, { Region } from "react-native-maps"
 import * as Location from "expo-location"
 import {
   DEFAULT_FRANCE_CENTER,
@@ -7,9 +6,11 @@ import {
   buildFocusedMapRegion,
   parseGpsCoordinate,
   computeRegionZoom,
+  type MapRegion as Region,
 } from "../../app/map-viewport"
 import { AppScreen, GpsCaptureResult } from "../../app/types"
 import { useParcelStatuses } from "../../hooks/useParcelStatuses"
+import type { ParcelMapHandle } from "../../map/maplibre/ParcelMap"
 import { toAddressLabel } from "../survey-screen-helpers"
 import type { WizardStep } from "./components"
 import { fr } from "../../i18n"
@@ -23,10 +24,6 @@ type UseParcelMapInput = {
   activeStep: WizardStep
   onCaptureGpsLocation: () => Promise<GpsCaptureResult | null>
 }
-
-type MapRef = { current: MapView | null }
-type FlagRef = { current: boolean }
-type RegionRef = { current: Region | null }
 
 const ADDRESS_UNAVAILABLE = fr.surveyForm.parcels.addressUnavailable
 const AUTO_LOCATE_ERROR = fr.surveyForm.parcels.autoLocateError
@@ -43,12 +40,8 @@ export function useParcelMap({
   activeStep,
   onCaptureGpsLocation,
 }: UseParcelMapInput) {
-  const inlineMapRef = useRef<MapView | null>(null)
-  const fullscreenMapRef = useRef<MapView | null>(null)
-  const inlineMapReadyRef = useRef(false)
-  const fullscreenMapReadyRef = useRef(false)
-  const pendingInlineRegionRef = useRef<Region | null>(null)
-  const pendingFullscreenRegionRef = useRef<Region | null>(null)
+  const inlineMapRef = useRef<ParcelMapHandle | null>(null)
+  const fullscreenMapRef = useRef<ParcelMapHandle | null>(null)
   const onCaptureGpsLocationRef = useRef(onCaptureGpsLocation)
   const parcelLocateRequestIdRef = useRef(0)
   const lastResolvedCoordinateKeyRef = useRef("")
@@ -85,44 +78,11 @@ export function useParcelMap({
     onCaptureGpsLocationRef.current = onCaptureGpsLocation
   }, [onCaptureGpsLocation])
 
-  const animateParcelMapRegion = useCallback(
-    (
-      mapRef: MapRef,
-      mapReadyRef: FlagRef,
-      pendingRegionRef: RegionRef,
-      nextRegion: Region,
-      duration = 420,
-    ): void => {
-      if (!mapReadyRef.current || !mapRef.current) {
-        pendingRegionRef.current = nextRegion
-        return
-      }
-
-      pendingRegionRef.current = null
-      mapRef.current.animateToRegion(nextRegion, duration)
-    },
-    [],
-  )
-
-  const syncParcelMapsToRegion = useCallback(
-    (nextRegion: Region, duration = 420): void => {
-      animateParcelMapRegion(
-        inlineMapRef,
-        inlineMapReadyRef,
-        pendingInlineRegionRef,
-        nextRegion,
-        duration,
-      )
-      animateParcelMapRegion(
-        fullscreenMapRef,
-        fullscreenMapReadyRef,
-        pendingFullscreenRegionRef,
-        nextRegion,
-        duration,
-      )
-    },
-    [animateParcelMapRegion],
-  )
+  // ParcelMap holds a move until its map has loaded, so both maps are simply told where to go.
+  const syncParcelMapsToRegion = useCallback((nextRegion: Region, duration = 420): void => {
+    inlineMapRef.current?.animateToRegion(nextRegion, duration)
+    fullscreenMapRef.current?.animateToRegion(nextRegion, duration)
+  }, [])
 
   const centerParcelMapsOnLocation = useCallback(
     (location: GpsCaptureResult): void => {
@@ -133,32 +93,12 @@ export function useParcelMap({
     [syncParcelMapsToRegion],
   )
 
-  const handleInlineMapReady = (): void => {
-    inlineMapReadyRef.current = true
-    const nextRegion = pendingInlineRegionRef.current ?? mapRegion
-    pendingInlineRegionRef.current = null
-    requestAnimationFrame(() => {
-      inlineMapRef.current?.animateToRegion(nextRegion, 0)
-    })
-  }
-
-  const handleFullscreenMapReady = (): void => {
-    fullscreenMapReadyRef.current = true
-    const nextRegion = pendingFullscreenRegionRef.current ?? mapRegion
-    pendingFullscreenRegionRef.current = null
-    requestAnimationFrame(() => {
-      fullscreenMapRef.current?.animateToRegion(nextRegion, 0)
-    })
-  }
-
-  const setInlineMapInstance = (instance: MapView | null): void => {
+  const setInlineMapInstance = (instance: ParcelMapHandle | null): void => {
     inlineMapRef.current = instance
-    inlineMapReadyRef.current = false
   }
 
-  const setFullscreenMapInstance = (instance: MapView | null): void => {
+  const setFullscreenMapInstance = (instance: ParcelMapHandle | null): void => {
     fullscreenMapRef.current = instance
-    fullscreenMapReadyRef.current = false
   }
 
   useEffect(() => {
@@ -343,8 +283,6 @@ export function useParcelMap({
     isResolvingGpsAddress,
     setInlineMapInstance,
     setFullscreenMapInstance,
-    handleInlineMapReady,
-    handleFullscreenMapReady,
     handleMapRegionChange,
     handleLocateParcelsMap,
   }

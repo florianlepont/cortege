@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import type { Details, Region } from "react-native-maps"
+import type { MapRegion as Region } from "../../app/map-viewport"
 import { areRegionsNearlyEqual, computeRegionBbox, computeRegionZoom } from "../../app/map-viewport"
 import type { PublicMapItem } from "../../app/types"
 import { useDebouncedValue } from "../../hooks/useDebouncedValue"
@@ -114,7 +114,7 @@ export function useMapViewport({
   const viewportZoom = useMemo(() => computeRegionZoom(debouncedRegion), [debouncedRegion])
   const parcelsWanted = showParcelLayer && viewportZoom >= PARCEL_MIN_ZOOM
 
-  const onRegionChangeComplete = useCallback((next: Region, details?: Details) => {
+  const onRegionChangeComplete = useCallback((next: Region, details?: { isGesture: boolean }) => {
     if (details?.isGesture === true) {
       // The user took the camera: a late first load must not pull it away.
       fitRef.current.armed = false

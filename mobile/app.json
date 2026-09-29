@@ -65,7 +65,8 @@
           "imageWidth": 160,
           "resizeMode": "contain"
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "ios": {
       "bundleIdentifier": "fr.etatssauvages.cortege",

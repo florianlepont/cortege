@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Region } from "react-native-maps"
+import type { MapRegion as Region } from "../app/map-viewport"
 import { fetchPublicParcelStatuses } from "../api/ibp-api"
 import { computeRegionBbox, computeRegionZoom } from "../app/map-viewport"
 import { PublicParcelStatusItem } from "../app/types"

@@ -3,7 +3,6 @@ import { View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useBasemapPreference } from "../../hooks/useBasemapPreference"
 import { useIsOffline } from "../../hooks/useIsOffline"
-import { useOfflineAreas } from "../../hooks/useOfflineAreas"
 import { useOfflinePendingParcelDrain } from "../../hooks/useOfflinePendingParcelDrain"
 import { usePublicMapExplorer } from "../../hooks/usePublicMapExplorer"
 import { PublicMapScreen } from "../../screens/PublicMapScreen"
@@ -37,7 +36,6 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
 
   const isOffline = useIsOffline()
   const { basemap, setBasemap } = useBasemapPreference()
-  const offlineAreas = useOfflineAreas(session.apiUrl, accessToken)
   useOfflinePendingParcelDrain(session.apiUrl, accessToken, isOffline)
   const handleQueueParcelDownload = useCallback((parcelId: string) => {
     void addPendingParcelDownload(parcelId)
@@ -90,11 +88,6 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
         isOffline={isOffline}
         basemap={basemap}
         onChangeBasemap={setBasemap}
-        offlineAreas={offlineAreas.areas}
-        downloadingAreaId={offlineAreas.downloadingAreaId}
-        estimateOfflineArea={offlineAreas.estimateForRegion}
-        onDownloadOfflineArea={offlineAreas.startDownload}
-        onDeleteOfflineArea={offlineAreas.deleteArea}
         onQueueParcelDownload={handleQueueParcelDownload}
       />
     </View>
