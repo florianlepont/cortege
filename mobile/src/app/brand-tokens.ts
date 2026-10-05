@@ -287,6 +287,14 @@ export const brandTranslucentPanel = {
 // Phase 4 (DS-04): dark solid backdrop behind full-screen media/map surfaces before content loads.
 export const brandMediaBackdrop = "#132434"
 
+/** The live camera screen (genus recognition): controls and hints drawn over the preview. */
+export const brandCameraTokens = {
+  controlBackground: "rgba(15, 22, 12, 0.55)",
+  hintBackground: "rgba(15, 22, 12, 0.62)",
+  shutterRing: "rgba(255, 255, 255, 0.18)",
+  guide: "#FFFFFF",
+} as const
+
 // Phase 12 (DS-12): IBP score colours (`ibpScoreTokens`), the field-entry state triad
 // (`brandFieldState`) and every color field previously nested inside `brandComponentTokens`
 // (button/card/field backgrounds and borders, and all of statusChip/choiceChip/surveyList/notice)

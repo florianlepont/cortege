@@ -1,5 +1,6 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { fr } from "../i18n"
 import { GenusRecognitionModal } from "./GenusRecognitionModal"
 
 const originalConsoleError = console.error
@@ -65,10 +66,21 @@ jest.mock("./AppText", () => {
 })
 
 const requestCameraPermissionsAsync = jest.fn()
-const launchCameraAsync = jest.fn()
-jest.mock("expo-image-picker", () => ({
-  requestCameraPermissionsAsync: () => requestCameraPermissionsAsync(),
-  launchCameraAsync: (...args: unknown[]) => launchCameraAsync(...args),
+jest.mock("expo-camera", () => ({
+  Camera: { requestCameraPermissionsAsync: () => requestCameraPermissionsAsync() },
+}))
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 20, bottom: 0, left: 0, right: 0 }),
+}))
+
+// The live camera has its own test; here it is a stand-in that hands its callbacks to the test.
+type CameraProps = { onCapture: (uri: string) => void; onClose: () => void; onError: () => void }
+const cameraProps: { current: CameraProps | null } = { current: null }
+jest.mock("./GenusCameraView", () => ({
+  GenusCameraView: (props: CameraProps) => {
+    cameraProps.current = props
+    return null
+  },
 }))
 
 const classifyGenusPhoto = jest.fn()
@@ -86,87 +98,90 @@ async function flushMicrotasks(): Promise<void> {
   })
 }
 
+const t = fr.genusRecognition
+
+function mountModal(overrides: Partial<React.ComponentProps<typeof GenusRecognitionModal>> = {}) {
+  let tree!: renderer.ReactTestRenderer
+  act(() => {
+    tree = renderer.create(
+      <GenusRecognitionModal
+        visible
+        onClose={jest.fn()}
+        onConfirmGenus={jest.fn()}
+        {...overrides}
+      />,
+    )
+  })
+  return tree
+}
+
 describe("GenusRecognitionModal", () => {
   beforeEach(() => {
     requestCameraPermissionsAsync.mockReset()
-    launchCameraAsync.mockReset()
     classifyGenusPhoto.mockReset()
+    cameraProps.current = null
   })
 
   it("shows the manual-fallback message when camera permission is refused", async () => {
     requestCameraPermissionsAsync.mockResolvedValue({ granted: false })
-    const onClose = jest.fn()
-    let tree: renderer.ReactTestRenderer
-    act(() => {
-      tree = renderer.create(
-        <GenusRecognitionModal visible onClose={onClose} onConfirmGenus={jest.fn()} />,
-      )
-    })
+    const tree = mountModal()
 
     // OA-33: the camera opens as soon as the sheet does.
     await flushMicrotasks()
 
-    expect(findByTestID(tree!, "genus-recognition-fallback")).toBeDefined()
-    expect(launchCameraAsync).not.toHaveBeenCalled()
+    expect(findByTestID(tree, "genus-recognition-fallback")).toBeDefined()
+    expect(cameraProps.current).toBeNull()
   })
 
-  it("opens the camera straight away and closes the sheet when that first capture is cancelled", async () => {
+  it("opens the live camera straight away and closes the sheet when it is closed", async () => {
     requestCameraPermissionsAsync.mockResolvedValue({ granted: true })
-    launchCameraAsync.mockResolvedValue({ canceled: true, assets: [] })
     const onClose = jest.fn()
-    act(() => {
-      renderer.create(
-        <GenusRecognitionModal visible onClose={onClose} onConfirmGenus={jest.fn()} />,
-      )
-    })
+    mountModal({ onClose })
 
     await flushMicrotasks()
 
-    expect(launchCameraAsync).toHaveBeenCalledTimes(1)
+    expect(cameraProps.current).not.toBeNull()
+    act(() => cameraProps.current!.onClose())
     expect(onClose).toHaveBeenCalledTimes(1)
     expect(classifyGenusPhoto).not.toHaveBeenCalled()
   })
 
   it("does not open the camera while the sheet is hidden", async () => {
-    act(() => {
-      renderer.create(
-        <GenusRecognitionModal visible={false} onClose={jest.fn()} onConfirmGenus={jest.fn()} />,
-      )
-    })
+    mountModal({ visible: false })
 
     await flushMicrotasks()
 
     expect(requestCameraPermissionsAsync).not.toHaveBeenCalled()
   })
 
-  it("shows the unavailable message and never applies a suggestion when the model can't classify", async () => {
+  it("says the photo failed when the camera cannot take it", async () => {
     requestCameraPermissionsAsync.mockResolvedValue({ granted: true })
-    launchCameraAsync.mockResolvedValue({
-      canceled: false,
-      assets: [{ uri: "file:///mock/photo.jpg" }],
-    })
-    classifyGenusPhoto.mockResolvedValue({ status: "unavailable", reason: "load_failed" })
-    const onConfirmGenus = jest.fn()
-    let tree: renderer.ReactTestRenderer
-    act(() => {
-      tree = renderer.create(
-        <GenusRecognitionModal visible onClose={jest.fn()} onConfirmGenus={onConfirmGenus} />,
-      )
-    })
-
-    // OA-33: the camera opens as soon as the sheet does.
+    const tree = mountModal()
     await flushMicrotasks()
 
-    expect(findByTestID(tree!, "genus-recognition-fallback")).toBeDefined()
+    act(() => cameraProps.current!.onError())
+
+    expect(findByTestID(tree, "genus-recognition-fallback")).toBeDefined()
+    expect(tree.root.findAll((n) => n.props.children === t.captureFailed).length).toBeGreaterThan(0)
+  })
+
+  it("shows the unavailable message and never applies a suggestion when the model can't classify", async () => {
+    requestCameraPermissionsAsync.mockResolvedValue({ granted: true })
+    classifyGenusPhoto.mockResolvedValue({ status: "unavailable", reason: "load_failed" })
+    const onConfirmGenus = jest.fn()
+    const tree = mountModal({ onConfirmGenus })
+    await flushMicrotasks()
+
+    await act(async () => cameraProps.current!.onCapture("file:///mock/photo.jpg"))
+    await flushMicrotasks()
+
+    expect(classifyGenusPhoto).toHaveBeenCalledWith("file:///mock/photo.jpg")
+    expect(findByTestID(tree, "genus-recognition-fallback")).toBeDefined()
     expect(onConfirmGenus).not.toHaveBeenCalled()
   })
 
   it("shows ranked results and only calls onConfirmGenus once the surveyor confirms one", async () => {
     requestCameraPermissionsAsync.mockResolvedValue({ granted: true })
-    launchCameraAsync.mockResolvedValue({
-      canceled: false,
-      assets: [{ uri: "file:///mock/photo.jpg" }],
-    })
     classifyGenusPhoto.mockResolvedValue({
       status: "ok",
       suggestions: [
@@ -176,24 +191,62 @@ describe("GenusRecognitionModal", () => {
     })
     const onConfirmGenus = jest.fn()
     const onClose = jest.fn()
-    let tree: renderer.ReactTestRenderer
-    act(() => {
-      tree = renderer.create(
-        <GenusRecognitionModal visible onClose={onClose} onConfirmGenus={onConfirmGenus} />,
-      )
-    })
-
-    // OA-33: the camera opens as soon as the sheet does.
+    const tree = mountModal({ onClose, onConfirmGenus })
+    await flushMicrotasks()
+    await act(async () => cameraProps.current!.onCapture("file:///mock/photo.jpg"))
     await flushMicrotasks()
 
     // A suggestion never applies itself (D-11) until this confirm button is pressed.
     expect(onConfirmGenus).not.toHaveBeenCalled()
 
     act(() => {
-      findByTestID(tree!, "genus-recognition-confirm-Fagus").props.onPress()
+      findByTestID(tree, "genus-recognition-confirm-Fagus").props.onPress()
     })
 
     expect(onConfirmGenus).toHaveBeenCalledWith("Fagus")
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it("a retake opens the camera again, and closing it returns to the results", async () => {
+    requestCameraPermissionsAsync.mockResolvedValue({ granted: true })
+    classifyGenusPhoto.mockResolvedValue({
+      status: "ok",
+      suggestions: [{ genus: "Fagus", confidence: 0.9, label: "strong" }],
+    })
+    const onClose = jest.fn()
+    const tree = mountModal({ onClose })
+    await flushMicrotasks()
+    await act(async () => cameraProps.current!.onCapture("file:///mock/photo.jpg"))
+    await flushMicrotasks()
+
+    const retake = tree.root.findAll(
+      (n) => (n.type as unknown) === "AppButton" && n.props.label === t.tryAnotherPhoto,
+    )[0]
+    await act(async () => retake.props.onPress())
+    await flushMicrotasks()
+    act(() => cameraProps.current!.onClose())
+
+    expect(onClose).not.toHaveBeenCalled()
+    expect(findByTestID(tree, "genus-recognition-confirm-Fagus")).toBeDefined()
+  })
+
+  it("the unavailable screen offers a retake, and the close button closes the sheet", async () => {
+    requestCameraPermissionsAsync.mockResolvedValueOnce({ granted: false })
+    const onClose = jest.fn()
+    const tree = mountModal({ onClose })
+    await flushMicrotasks()
+
+    requestCameraPermissionsAsync.mockResolvedValue({ granted: true })
+    const retake = tree.root.findAll(
+      (n) => (n.type as unknown) === "AppButton" && n.props.label === t.retakePhoto,
+    )[0]
+    await act(async () => retake.props.onPress())
+    await flushMicrotasks()
+    expect(cameraProps.current).not.toBeNull()
+
+    act(() => cameraProps.current!.onClose())
+    // Back on the unavailable screen it came from; its close button closes the sheet.
+    act(() => findByTestID(tree, "genus-recognition-close").props.onPress())
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })
