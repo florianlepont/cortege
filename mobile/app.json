@@ -19,6 +19,14 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Cortege utilise l'appareil photo pour photographier la parcelle pendant le relevé.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Cortege utilise votre position GPS pour centrer la carte, choisir la parcelle et situer le relevé.",
