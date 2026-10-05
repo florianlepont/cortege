@@ -841,6 +841,26 @@ describe("SurveyDetailRoute", () => {
       callback("surveyDetail", "onOpenHistory")()
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyHistory")
+
+    await act(async () => {
+      await callback("surveyDetail", "onOpenFactor")("s-01", "C")
+    })
+    expect(fixture.surveys.actions.startEditSurvey).toHaveBeenCalledWith("s-01")
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFactorDetail", { factor: "C" })
+  })
+
+  test("the next-factor button stays on the page when the survey cannot be loaded", async () => {
+    const base = withSelection(makeFixture({ startEdit: false }))
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={base}>
+        <SurveyDetailRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("surveyDetail", "onOpenFactor")("s-01", "C")
+    })
+    expect(navigation.navigate).not.toHaveBeenCalled()
   })
 })
 

@@ -1,4 +1,5 @@
 import { bandTone, contextBand, ScoreTone, standBand } from "@cortege/ibp-domain"
+import type { FactorKey } from "../../app/types"
 import { resolveSurveySyncDisplay } from "../../app/survey-logic"
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
@@ -25,19 +26,22 @@ export const resolveStatusLine = (survey: LocalSurvey, isComplete: boolean | nul
 }
 
 /**
- * The single button at the bottom (OA-40). `hidden` once the survey is finished; `disabled` says
+ * The single button at the bottom (OA-40). `hidden` once the survey is finished; `next` opens the
+ * first factor still to fill ("Commencer" with none filled, then "Continuer"); `disabled` says
  * what is missing; `ready` finishes the survey.
  */
 export type FinishCta =
   | { kind: "hidden" }
   | { kind: "ready"; label: string }
+  | { kind: "next"; label: string; factor: FactorKey }
   | { kind: "disabled"; label: string }
 
 export const resolveFinishCta = (
   survey: LocalSurvey,
   canFinishNow: boolean,
   isComplete: boolean | null,
-  missingFactorCount: number | null,
+  filledFactorCount: number | null,
+  nextFactor: FactorKey | null,
 ): FinishCta => {
   if (survey.status === "submitted") return { kind: "hidden" }
   if (canFinishNow) return { kind: "ready", label: c.finish }
@@ -47,10 +51,13 @@ export const resolveFinishCta = (
       label: survey.sync_blocked === 1 ? c.blocked : c.pendingSync,
     }
   }
-  if (missingFactorCount !== null && missingFactorCount > 0) {
-    return { kind: "disabled", label: c.remaining(missingFactorCount) }
+  if (filledFactorCount === null) return { kind: "disabled", label: c.remainingUnknown }
+  if (nextFactor === null) return { kind: "disabled", label: c.contextMissing }
+  return {
+    kind: "next",
+    label: filledFactorCount === 0 ? c.start : c.continue,
+    factor: nextFactor,
   }
-  return { kind: "disabled", label: c.remainingUnknown }
 }
 
 /** A sub-score's CNPF band: its French name and its colour tone. */
