@@ -107,9 +107,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           <SurveysStack.Screen
             name="surveyForm"
             options={{
-              // SurveyFormRoute sets the create/edit title.
-              title: headers.newSurvey,
-              headerLargeTitle: false,
+              // The wizard draws its own top bar (step counter and progress).
+              headerShown: false,
             }}
             component={SurveyFormRoute}
           />
@@ -123,8 +122,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           />
           <SurveysStack.Screen
             name="surveyParcels"
-            options={{
-              title: headers.parcels,
+            options={({ route }) => ({
+              title: route.params.mode === "wizard" ? headers.parcelsWizard : headers.parcels,
               headerLargeTitle: false,
               headerStyle: { backgroundColor: brandMediaBackdrop },
               headerShadowVisible: false,
@@ -135,16 +134,20 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                 fontWeight: "800" as const,
               },
               contentStyle: { backgroundColor: brandMediaBackdrop },
-              // DS-15 (UX audit, Phase 12): a formSheet with detents replaces the previous
-              // full-screen push for parcel selection — a partial sheet keeps the map visible
-              // behind it, expandable to nearly full height for closer parcel picking.
-              presentation: "formSheet",
-              sheetAllowedDetents: [0.62, 0.94],
-              sheetInitialDetentIndex: 1,
-              sheetGrabberVisible: true,
-              sheetCornerRadius: 24,
-              sheetExpandsWhenScrolledToEdge: true,
-            }}
+              // New survey (step 4 of 4): a full-screen push, like the other steps. Editing a
+              // survey's parcels keeps the DS-15 (UX audit, Phase 12) formSheet with detents, a
+              // partial sheet that keeps the map visible, expandable to nearly full height.
+              ...(route.params.mode === "wizard"
+                ? { presentation: "card" as const }
+                : {
+                    presentation: "formSheet" as const,
+                    sheetAllowedDetents: [0.62, 0.94],
+                    sheetInitialDetentIndex: 1,
+                    sheetGrabberVisible: true,
+                    sheetCornerRadius: 24,
+                    sheetExpandsWhenScrolledToEdge: true,
+                  }),
+            })}
             component={ParcelSelectionRoute}
           />
           <SurveysStack.Screen

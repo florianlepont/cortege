@@ -12,4 +12,5 @@ export const parcelSelectionFr = {
   tapHint: "Touchez les parcelles pour les ajouter ou les retirer de ce relevé.",
   saving: "Enregistrement…",
   done: "Terminé",
+  continue: "Continuer",
 } as const

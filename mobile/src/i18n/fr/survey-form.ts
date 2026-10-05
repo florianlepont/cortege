@@ -4,6 +4,39 @@ import { IBP_MAX } from "@cortege/ibp-domain"
 // Texts of the survey form wizard (screens/SurveyFormScreen.tsx and screens/survey-form/).
 // Factor titles and region/vegetation labels stay in app/constants.ts until 01.8.
 export const surveyFormFr = {
+  // OA-25: one question per screen, like the onboarding carousel. Four steps: name, method, cas (or
+  // region and vegetation stage in v3.0), parcels (the full-screen map, its own screen).
+  wizard: {
+    optionA11y: ({ label, caption }: { label: string; caption: string }) => `${label}. ${caption}`,
+    stepLabel: ({ step, total }: { step: number; total: number }) => `Étape ${step} sur ${total}`,
+    close: "Fermer",
+    back: "Retour",
+    continue: "Continuer",
+    name: {
+      title: "Comment s'appelle ce site ?",
+      body: "Ce nom restera lisible dans votre liste de relevés, le suivi de synchronisation et les fiches parcelles.",
+      label: "Nom du site",
+      placeholder: "Ex : Forêt de Rambouillet",
+      example: "Par exemple : Forêt de Rambouillet",
+    },
+    method: {
+      title: "Quelle méthode IBP ?",
+      body: "La méthode fixe les règles de notation. Elle ne change plus une fois le relevé terminé.",
+      recommended: "Recommandée",
+      v32Hint: "La méthode actuelle. Choisissez-la pour tout nouveau relevé.",
+      v30Hint: "Pour refaire un relevé avec la même méthode qu'un relevé précédent.",
+    },
+    cas: {
+      title: "Quel cas pour cette station ?",
+      body: "Le cas décrit les contraintes de croissance. Il fixe les seuils de notation.",
+    },
+    region: {
+      title: "Quelle région et quel stade ?",
+      body: "La version régionale et le stade de végétation fixent les seuils de notation IBP.",
+    },
+    parcelsTitle: ({ step, total }: { step: number; total: number }) =>
+      `Étape ${step} sur ${total}`,
+  },
   header: {
     eyebrow: ({ step, total }: { step: number; total: number }) =>
       `Assistant de relevé · Étape ${step} sur ${total}`,
