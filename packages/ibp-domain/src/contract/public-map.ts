@@ -39,3 +39,48 @@ export type CommunitySurveyItem = {
   ibp_total: number
   ibp_method_version?: string | null
 }
+
+/** One survey of the same parcel(s) in a community survey's history, the survey itself included. */
+export type CommunitySurveyHistoryItem = {
+  survey_id: string
+  site_name: string
+  author_name: string | null
+  observation_year: number | null
+  version_number: number | null
+  ibp_total: number
+  submitted_at: string
+  /** True for the survey the page is about. */
+  is_current: boolean
+}
+
+/**
+ * A finished survey of any member (`GET /public/community-surveys/:id`), read-only. The location
+ * is rounded to 2 decimals like the public map, and the parcels are only counted: their
+ * cadastral references would give the exact place away.
+ */
+export type CommunitySurveyDetail = {
+  survey_id: string
+  site_name: string
+  author_name: string | null
+  submitted_at: string
+  observation_year: number | null
+  version_number: number | null
+  region_version: string | null
+  vegetation_stage: string | null
+  ibp_method_version: string | null
+  ibp_cas: number | null
+  ibp_cas3_scale: boolean
+  scores: Record<string, unknown>
+  factor_results: Record<string, unknown>
+  parcel_count: number
+  display_location: { lat: number; lng: number } | null
+  history: CommunitySurveyHistoryItem[]
+}
+
+/** A file of a community survey (`GET /public/community-surveys/:id/attachments`). */
+export type CommunitySurveyAttachment = {
+  id: string
+  mime_type: string | null
+  size_bytes: number | null
+  created_at: string
+}

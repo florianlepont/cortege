@@ -6,7 +6,7 @@
 // visibility = 'public'. The predicate below dropped the visibility check accordingly; the
 // `visibility` column itself stays (REQ-X-visibility is restored with a future privacy-choice
 // milestone), it's just no longer read here.
-const PUBLIC_SURVEY_PREDICATE = `s.status = 'submitted' AND s.deleted_at IS NULL`
+export const PUBLIC_SURVEY_PREDICATE = `s.status = 'submitted' AND s.deleted_at IS NULL`
 
 /** Rows per /public/map-items answer, unchanged since before 01.7. */
 export const PUBLIC_MAP_ITEMS_LIMIT = 500
@@ -214,6 +214,9 @@ export const PUBLIC_STUDIED_BY_COMMUNES_SQL = `SELECT
    ${LATEST_PUBLIC_SURVEY_OF_PARCEL}
  ) lp ON true
  WHERE p.commune_code = ANY($2::text[])`
+
+/** Surveys of the same parcels listed in a community survey's history. */
+export const COMMUNITY_HISTORY_LIMIT = 20
 
 /** Rows per /public/community-surveys answer when `limit` is not given. */
 export const COMMUNITY_SURVEYS_DEFAULT_LIMIT = 30
