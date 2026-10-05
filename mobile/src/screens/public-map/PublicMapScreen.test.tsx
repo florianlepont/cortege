@@ -167,13 +167,6 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     parcelStatuses: [],
     ownSurveyIds: [],
     loading: false,
-    parcelsLoading: false,
-    fromDate: "",
-    toDate: "",
-    region: "",
-    onChangeFromDate: jest.fn(),
-    onChangeToDate: jest.fn(),
-    onChangeRegion: jest.fn(),
     onLoad: jest.fn(async () => undefined),
     onLoadParcels: jest.fn(async () => undefined),
     onViewportBboxChange: jest.fn(),
@@ -467,41 +460,18 @@ describe("PublicMapScreen", () => {
     expect(target.longitudeDelta).toBeLessThan(DEFAULT_MAP_REGION.longitudeDelta)
   })
 
-  test("controls: filters, apply, refresh and the parcel layer label", () => {
+  test("controls: one tap switches the basemap, the parcels load once zoomed in, no filters", () => {
     jest.useFakeTimers()
     try {
-      let props = makeProps()
+      const props = makeProps({ items: [item("a", 45.76, 4.84)] })
       mount(props)
-      act(() => byLabel(fr.publicMap.a11y.showFilters).props.onPress())
-      expect(
-        byLabel(fr.publicMap.a11y.hideParcels).findByType("Text" as never).props.children,
-      ).toBe(fr.publicMap.layer.zoomIn)
-
-      // MAP-02: a period chip reports the resolved range immediately (no "Appliquer" button).
-      const yearChip = tree.root.find(
-        (node) =>
-          (node.type as unknown) === "Pressable" &&
-          node
-            .findAll((child) => (child.type as unknown) === "Text")
-            .some((text) => text.props.children === fr.publicMap.filters.period.year),
+      act(() =>
+        byLabel(
+          fr.offlineMap.basemap.a11y.switchTo(fr.offlineMap.basemap.satellite),
+        ).props.onPress(),
       )
-      act(() => yearChip.props.onPress())
-      expect(props.onChangeFromDate).toHaveBeenCalledTimes(1)
-      expect(props.onChangeToDate).toHaveBeenCalledTimes(1)
-
-      // The parent (usePublicMapExplorer) reflects the change back as new props: the screen
-      // re-applies immediately, with no separate "Appliquer" step.
-      const [nextFromDate] = (props.onChangeFromDate as jest.Mock).mock.calls[0] as [string]
-      const [nextToDate] = (props.onChangeToDate as jest.Mock).mock.calls[0] as [string]
-      props = { ...props, fromDate: nextFromDate, toDate: nextToDate }
-      update(props)
-      expect(props.onLoad).toHaveBeenLastCalledWith({ force: true })
-
-      act(() => byLabel(fr.publicMap.a11y.refresh).props.onPress())
-      expect(props.onLoad).toHaveBeenLastCalledWith({
-        bbox: computeRegionBbox(DEFAULT_MAP_REGION),
-        force: true,
-      })
+      expect(props.onChangeBasemap).toHaveBeenCalledWith("satellite")
+      expect(texts()).toContain(fr.publicMap.count(1))
 
       // Zoom in to parcel level: the cadastre loads after the debounce.
       const map = tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
@@ -520,20 +490,6 @@ describe("PublicMapScreen", () => {
         jest.advanceTimersByTime(VIEWPORT_DEBOUNCE_MS)
       })
       expect(props.onLoadParcels).toHaveBeenCalledTimes(1)
-      update({ ...props, parcelsLoading: true })
-      expect(texts()).toContain(fr.publicMap.layer.loading)
-      update({ ...props, parcelsLoading: false })
-      expect(texts()).toContain(fr.publicMap.layer.active)
-
-      act(() => byLabel(fr.publicMap.a11y.hideParcels).props.onPress())
-      expect(texts()).toContain(fr.publicMap.layer.hidden)
-      update({ ...props, loading: true })
-      expect(
-        tree.root.findAll((node) => (node.type as unknown) === "ActivityIndicator"),
-      ).toHaveLength(1)
-      expect(texts()).toContain(fr.publicMap.filters.period.year)
-      act(() => byLabel(fr.publicMap.a11y.hideFilters).props.onPress())
-      expect(texts()).not.toContain(fr.publicMap.filters.period.year)
     } finally {
       jest.useRealTimers()
     }
@@ -601,7 +557,6 @@ describe("PublicMapScreen", () => {
 
   test("every Pressable has a role and a catalogue label (D-07)", () => {
     mount(makeProps({ items: [item("a", 45.76, 4.84), item("b", 45.76, 4.84)] }))
-    act(() => byLabel(fr.publicMap.a11y.showFilters).props.onPress())
     const cluster = markers().find(
       (node) => node.props.accessibilityLabel === fr.publicMap.a11y.cluster(2),
     ) as ReactTestInstance

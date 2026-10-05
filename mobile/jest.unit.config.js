@@ -26,6 +26,7 @@ module.exports = {
     "^expo-image-manipulator$": "<rootDir>/test/expo-image-manipulator.mock.ts",
     "^expo-image$": "<rootDir>/test/expo-image.mock.ts",
     "^expo-blur$": "<rootDir>/test/expo-blur.mock.ts",
+    "^expo-glass-effect$": "<rootDir>/test/expo-glass-effect.mock.ts",
     "^react-native-svg$": "<rootDir>/test/react-native-svg.mock.ts",
     "^react-native-reanimated$": "<rootDir>/test/react-native-reanimated.mock.ts",
     "^@maplibre/maplibre-react-native$": "<rootDir>/test/maplibre.mock.ts",

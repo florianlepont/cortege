@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { Alert, View } from "react-native"
 import type { CameraRef } from "@maplibre/maplibre-react-native"
 import * as Location from "expo-location"
@@ -13,16 +13,14 @@ import type { BasemapKey } from "../map/basemaps"
 import { boundsFromRegion } from "../map/maplibre/regions"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { ClusterListSheet } from "./public-map/ClusterListSheet"
-import type { ExplorerFilterBarProps, RegionKey } from "./public-map/ExplorerFilterBar"
 import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
-import { computePeriodRange, type PeriodKey } from "./public-map/period-filter"
 import { ScoreLegend } from "./public-map/ScoreLegend"
 import { SelectedSurveyCard } from "./public-map/SelectedSurveyCard"
 import { createScreenContainerStyle } from "./public-map/styles"
-import { PARCEL_MIN_ZOOM, useMapViewport } from "./public-map/useMapViewport"
+import { useMapViewport } from "./public-map/useMapViewport"
 
 const t = fr.publicMap
 const LOCATE_SPAN = 0.012
@@ -34,13 +32,6 @@ type PublicMapScreenProps = {
   parcelStatuses: PublicParcelStatusItem[]
   ownSurveyIds: string[]
   loading: boolean
-  parcelsLoading: boolean
-  fromDate: string
-  toDate: string
-  region: string
-  onChangeFromDate: (value: string) => void
-  onChangeToDate: (value: string) => void
-  onChangeRegion: (value: string) => void
   onLoad: (options?: LoadPublicMapOptions) => Promise<void>
   onLoadParcels: (input: { bbox: string; zoom: number }) => Promise<void>
   /** Told the bbox of each viewport load, so the Explorer tab reload can reuse it. */
@@ -66,13 +57,6 @@ export function PublicMapScreen({
   parcelStatuses,
   ownSurveyIds,
   loading,
-  parcelsLoading,
-  fromDate,
-  toDate,
-  region,
-  onChangeFromDate,
-  onChangeToDate,
-  onChangeRegion,
   onLoad,
   onLoadParcels,
   onViewportBboxChange,
@@ -85,16 +69,10 @@ export function PublicMapScreen({
   const theme = useBrandTheme()
   const screenStyles = useMemo(() => createScreenContainerStyle(theme), [theme])
   const cameraRef = useRef<CameraRef | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
-  const [showParcelLayer, setShowParcelLayer] = useState(true)
   const [selectedItem, setSelectedItem] = useState<PublicMapItem | null>(null)
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null)
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
   const [locating, setLocating] = useState(false)
-  // MAP-02: period/region are chips applied immediately; "mes relevés" is a pure client-side
-  // filter over the already-loaded items (no API parameter for it).
-  const [period, setPeriod] = useState<PeriodKey>("all")
-  const [mineOnly, setMineOnly] = useState(false)
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
 
@@ -104,7 +82,7 @@ export function PublicMapScreen({
 
   const viewport = useMapViewport({
     items,
-    showParcelLayer,
+    showParcelLayer: true,
     loadPublicMap: onLoad,
     loadParcels: onLoadParcels,
     animateToRegion,
@@ -117,69 +95,6 @@ export function PublicMapScreen({
     () => new Map(parcelStatuses.map((status) => [status.parcel_id, status])),
     [parcelStatuses],
   )
-  const visibleItems = useMemo(
-    () => (mineOnly ? items.filter((item) => ownSurveyIdSet.has(item.survey_id)) : items),
-    [items, mineOnly, ownSurveyIdSet],
-  )
-  const regionFilter: RegionKey = region === "ACA" || region === "M" ? region : ""
-  const activeFilterCount =
-    (period !== "all" ? 1 : 0) + (regionFilter !== "" ? 1 : 0) + (mineOnly ? 1 : 0)
-
-  // MAP-02: filters apply immediately — no "Appliquer" button. A period/region chip updates the
-  // underlying date/region state; this effect re-fires the (unbounded, whole-dataset) load and
-  // re-arms the camera fit once that state actually changes, skipping the initial mount (already
-  // handled by the viewport's own bbox-driven first load).
-  const isFirstFilterApply = useRef(true)
-  useEffect(() => {
-    if (isFirstFilterApply.current) {
-      isFirstFilterApply.current = false
-      return
-    }
-    viewport.applyFilters()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromDate, toDate, region])
-
-  const handleChangePeriod = useCallback(
-    (nextPeriod: PeriodKey) => {
-      setPeriod(nextPeriod)
-      const range = computePeriodRange(nextPeriod)
-      onChangeFromDate(range.from)
-      onChangeToDate(range.to)
-    },
-    [onChangeFromDate, onChangeToDate],
-  )
-  const handleChangeRegion = useCallback(
-    (nextRegion: RegionKey) => onChangeRegion(nextRegion),
-    [onChangeRegion],
-  )
-  const handleToggleMine = useCallback(() => setMineOnly((current) => !current), [])
-  const handleResetFilters = useCallback(() => {
-    setPeriod("all")
-    setMineOnly(false)
-    onChangeFromDate("")
-    onChangeToDate("")
-    onChangeRegion("")
-  }, [onChangeFromDate, onChangeRegion, onChangeToDate])
-
-  const filterBarProps: ExplorerFilterBarProps = {
-    period,
-    onChangePeriod: handleChangePeriod,
-    region: regionFilter,
-    onChangeRegion: handleChangeRegion,
-    mineOnly,
-    onToggleMine: handleToggleMine,
-    activeCount: activeFilterCount,
-    onReset: handleResetFilters,
-  }
-
-  const layerStatusLabel = !showParcelLayer
-    ? t.layer.hidden
-    : parcelsLoading
-      ? t.layer.loading
-      : viewport.zoom >= PARCEL_MIN_ZOOM
-        ? t.layer.active
-        : t.layer.zoomIn
-
   const handleSelectSurvey = useLatestCallback((id: string) => {
     const item = itemsById.get(id) ?? clusterItems?.find((entry) => entry.survey_id === id)
     if (item) {
@@ -212,8 +127,10 @@ export function PublicMapScreen({
     setSelectedParcelId(null)
     setClusterItems(null)
   }, [])
-  const toggleFilters = useCallback(() => setShowFilters((current) => !current), [])
-  const toggleParcelLayer = useCallback(() => setShowParcelLayer((current) => !current), [])
+  const toggleBasemap = useCallback(
+    () => onChangeBasemap(basemap === "map" ? "satellite" : "map"),
+    [basemap, onChangeBasemap],
+  )
 
   const handleLocate = useLatestCallback(async (): Promise<void> => {
     if (locating) {
@@ -268,7 +185,7 @@ export function PublicMapScreen({
     <View style={screenStyles.container}>
       <MapCanvas
         cameraRef={cameraRef}
-        items={visibleItems}
+        items={items}
         region={viewport.region}
         selectedId={selectedItem?.survey_id ?? null}
         parcelStatuses={parcelStatuses}
@@ -281,30 +198,20 @@ export function PublicMapScreen({
         basemap={basemap}
       />
 
-      <MapTopControls
-        top={insets.top + 40}
-        count={visibleItems.length}
-        loading={loading}
-        showFilters={showFilters}
-        showParcelLayer={showParcelLayer}
-        layerStatusLabel={layerStatusLabel}
-        filters={filterBarProps}
-        onToggleFilters={toggleFilters}
-        onToggleParcelLayer={toggleParcelLayer}
-        onRefresh={viewport.reload}
-        isOffline={isOffline}
-        basemap={basemap}
-        onChangeBasemap={onChangeBasemap}
-      />
+      <MapTopControls top={insets.top + 40} basemap={basemap} onToggleBasemap={toggleBasemap} />
 
       <MapBottomDock
         bottom={Math.max(12, dockBottom + 10)}
-        showEmpty={!loading && visibleItems.length === 0}
         locating={locating}
         onLocate={onLocate}
       />
 
-      <ScoreLegend bottom={Math.max(84, dockBottom + 74)} />
+      <ScoreLegend
+        bottom={Math.max(12, dockBottom + 10)}
+        count={items.length}
+        loading={loading}
+        isOffline={isOffline}
+      />
 
       {/* MAP-01: one tiered sheet for whichever map-content panel is active, replacing the three
         absolutely-positioned AppCards this screen used to stack independently. */}
