@@ -23,6 +23,7 @@ export type HomeStackParamList = AccountStackParamList & {
 
 export type SurveysStackParamList = AccountStackParamList & {
   surveysHome: undefined
+  surveySearch: undefined
   surveyDetail: undefined
   surveyContext: undefined
   surveyScore: undefined
@@ -36,10 +37,16 @@ export type PublicMapStackParamList = AccountStackParamList & {
   publicMapHome: undefined
 }
 
+/** The search tab (iOS 26 shows it as its own round button next to the bar, OA-52). */
+export type SearchStackParamList = {
+  searchHome: undefined
+}
+
 export type RootTabParamList = {
   home: NavigatorScreenParams<HomeStackParamList> | undefined
   surveys: NavigatorScreenParams<SurveysStackParamList> | undefined
   publicMap: NavigatorScreenParams<PublicMapStackParamList> | undefined
+  search: NavigatorScreenParams<SearchStackParamList> | undefined
 }
 
 declare global {

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { Platform, ListRenderItemInfo, RefreshControl, View } from "react-native"
-import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated"
+import { FlatList, ListRenderItemInfo, Platform, RefreshControl, View } from "react-native"
+import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandSpacing } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
-import { fr } from "../i18n"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import type { LocalAttachment } from "../storage"
 import {
@@ -12,89 +11,53 @@ import {
   resolveAttachmentPreview,
   selectPreviewCandidates,
 } from "./survey-screen-helpers"
-import { FilterBar } from "./survey-list/FilterBar"
 import { ListEmptyState } from "./survey-list/ListEmptyState"
-import { ListHero, useHeroGeometry } from "./survey-list/ListHero"
-import { isLeadingListItem, keyExtractor, useLeadingItems } from "./survey-list/leading-items"
-import type { SurveyListItem } from "./survey-list/leading-items"
+import { IntroStats, ListTitleBar, SectionTitle } from "./survey-list/list-chrome"
+import {
+  buildListItems,
+  isSectionHeader,
+  keyExtractor,
+  type SurveyListItem,
+} from "./survey-list/list-items"
 import { SurveyRow } from "./survey-list/SurveyRow"
 import type { SurveyRowPreview } from "./survey-list/SurveyRow"
-import { createListStyles, PAGE_CONTENT_GAP } from "./survey-list/styles"
+import { createListStyles } from "./survey-list/styles"
 import type { SurveyListScreenProps } from "./survey-list/types"
 
-// D-03: rows mounted on the first render and per batch; the leading items come on top.
+// D-03: rows mounted on the first render and per batch.
 const INITIAL_ROWS = 10
-const STICKY_HEADER_INDICES = [0]
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
-// HOME-01: Mes Relevés is a pure list — title, search, filters, a "+" in the header. The
-// dashboard concerns (resume action, alerts, progress) live on Home instead.
+/**
+ * Mes Relevés (OA-56): the figures, then the surveys in "À terminer" and "Terminés". Searching and
+ * filtering moved to the search page (OA-52, OA-54), so the list always shows every survey.
+ */
 export function SurveyListScreen({
   surveys,
-  visibleSurveys,
   selectedSurveyId,
   attachmentsBySurvey,
   surveyDetails,
-  surveyQuery,
-  setSurveyQuery,
-  surveyFromDate,
-  setSurveyFromDate,
-  surveyToDate,
-  setSurveyToDate,
-  statusFilter,
-  setStatusFilter,
-  visibilityFilter: _visibilityFilter,
-  setVisibilityFilter: _setVisibilityFilter,
-  syncFilter,
-  setSyncFilter,
-  blockedFilter,
-  setBlockedFilter,
-  attachmentFilter,
-  setAttachmentFilter,
-  sortMode,
-  setSortMode,
-  resetFilters,
-  useNativeSearchUI = false,
-  showInlineSearch = true,
+  showTitleBar,
   onRefresh,
   onDeleteSurvey,
   onOpenCreateSurvey,
+  onOpenSearch,
   onOpenSurvey,
   onEnsureAttachmentPreviews,
 }: SurveyListScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createListStyles(theme), [theme])
   const [refreshing, setRefreshing] = useState(false)
-  const scrollY = useSharedValue(0)
   const insets = useSafeAreaInsets()
+  // The iOS header is transparent: the list starts below it. Without a native header (Android,
+  // JS tabs) the screen draws its own title bar under the status bar.
+  const headerHeight = useHeaderHeight()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
-  const heroGeometry = useHeroGeometry(insets.top)
-  const trimmedQuery = surveyQuery.trim()
-  const hasQuery = trimmedQuery.length > 0
-  // The native iOS header (with its own search bar and "+" button) replaces this plain-title
-  // hero and its own SyncStatusPill (D-08); the JS/Android path keeps both here.
-  const showHero = !useNativeSearchUI
-  const showFiltersPanel = useNativeSearchUI || showInlineSearch
 
-  // ── Computed stats ──────────────────────────────────────────────────────────
+  const { items, toFinishCount } = useMemo(() => buildListItems(surveys), [surveys])
 
-  const advancedFilterCount = useMemo(() => {
-    let count = 0
-    if (surveyFromDate.trim()) count += 1
-    if (surveyToDate.trim()) count += 1
-    if (syncFilter !== "all") count += 1
-    if (blockedFilter !== "all") count += 1
-    if (attachmentFilter !== "all") count += 1
-    if (sortMode !== "updated_desc") count += 1
-    return count
-  }, [attachmentFilter, blockedFilter, sortMode, surveyFromDate, surveyToDate, syncFilter])
-
-  const totalFilterCount = advancedFilterCount + (statusFilter !== "all" ? 1 : 0)
-
-  // D-11: ask for the first photo of every visible survey so a pulled ("remote")
-  // attachment downloads on demand instead of staying hidden in the list.
-  const firstPhotoPerVisibleSurveyKey = visibleSurveys
+  // D-11: ask for the first photo of every survey so a pulled ("remote") attachment downloads on
+  // demand instead of staying hidden in the list.
+  const firstPhotoKey = surveys
     .map((survey) => {
       const firstPhoto = (attachmentsBySurvey[survey.id] ?? []).find(isPhotoAttachment)
       return firstPhoto ? `${firstPhoto.id}:${firstPhoto.file_state}` : null
@@ -103,44 +66,12 @@ export function SurveyListScreen({
     .join(",")
 
   useEffect(() => {
-    const candidates = visibleSurveys
+    const candidates = surveys
       .map((survey) => (attachmentsBySurvey[survey.id] ?? []).find(isPhotoAttachment))
       .filter((attachment): attachment is LocalAttachment => Boolean(attachment))
     void onEnsureAttachmentPreviews?.(selectPreviewCandidates(candidates))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firstPhotoPerVisibleSurveyKey, onEnsureAttachmentPreviews])
-
-  // ── Summary labels ──────────────────────────────────────────────────────────
-
-  const visibleSurveySummary = useMemo(() => {
-    const summary = fr.surveyList.summary
-    if (surveys.length === 0) return summary.noLocalSurvey
-    if (trimmedQuery.length > 0) {
-      return summary.results({ count: visibleSurveys.length, query: trimmedQuery })
-    }
-    if (visibleSurveys.length === surveys.length) return summary.shown(visibleSurveys.length)
-    return summary.shownOf({ visible: visibleSurveys.length, total: surveys.length })
-  }, [surveys.length, trimmedQuery, visibleSurveys.length])
-
-  const filtersSummaryLabel =
-    totalFilterCount > 0
-      ? fr.surveyList.summary.activeFilters(totalFilterCount)
-      : visibleSurveySummary
-
-  // ── Layout under the hero ───────────────────────────────────────────────────
-
-  const { expandedHeroHeight, collapsedHeroHeight, heroTopInset } = heroGeometry
-  const stickyFilterOffset = heroTopInset + collapsedHeroHeight + brandSpacing.sm
-  const topSpacerHeight = heroTopInset + expandedHeroHeight
-  // The content starts under the expanded hero. With the filters bar, the bar
-  // itself carries the last stickyFilterOffset as padding so that, once stuck,
-  // it sits below the collapsed hero (sticky header index 0).
-  const contentTopPadding = showFiltersPanel
-    ? topSpacerHeight + PAGE_CONTENT_GAP - stickyFilterOffset
-    : topSpacerHeight + PAGE_CONTENT_GAP
-  const pageBottomPadding = tabBarHeight + brandSpacing.xl + 22
-
-  // ── Pull-to-refresh ─────────────────────────────────────────────────────────
+  }, [firstPhotoKey, onEnsureAttachmentPreviews])
 
   const handleRefresh = useCallback(async () => {
     if (!onRefresh) return
@@ -164,78 +95,6 @@ export function SurveyListScreen({
     [handleRefresh, onRefresh, refreshing, theme],
   )
 
-  const handleScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y
-  })
-
-  // ── List header: the sticky filters bar (sticky index 0), memoised ─────────
-
-  const filtersHeader = useMemo(
-    () =>
-      showFiltersPanel ? (
-        <FilterBar
-          useNativeSearchUI={useNativeSearchUI}
-          stickyFilterOffset={stickyFilterOffset}
-          summaryLabel={filtersSummaryLabel}
-          advancedFilterCount={advancedFilterCount}
-          showInlineSearch={showInlineSearch}
-          surveyQuery={surveyQuery}
-          setSurveyQuery={setSurveyQuery}
-          surveyFromDate={surveyFromDate}
-          setSurveyFromDate={setSurveyFromDate}
-          surveyToDate={surveyToDate}
-          setSurveyToDate={setSurveyToDate}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          syncFilter={syncFilter}
-          setSyncFilter={setSyncFilter}
-          blockedFilter={blockedFilter}
-          setBlockedFilter={setBlockedFilter}
-          attachmentFilter={attachmentFilter}
-          setAttachmentFilter={setAttachmentFilter}
-          sortMode={sortMode}
-          setSortMode={setSortMode}
-          resetFilters={resetFilters}
-        />
-      ) : null,
-    [
-      advancedFilterCount,
-      attachmentFilter,
-      blockedFilter,
-      filtersSummaryLabel,
-      resetFilters,
-      setAttachmentFilter,
-      setBlockedFilter,
-      setSortMode,
-      setStatusFilter,
-      setSurveyFromDate,
-      setSurveyQuery,
-      setSurveyToDate,
-      setSyncFilter,
-      showFiltersPanel,
-      showInlineSearch,
-      sortMode,
-      statusFilter,
-      stickyFilterOffset,
-      surveyFromDate,
-      surveyQuery,
-      surveyToDate,
-      syncFilter,
-      useNativeSearchUI,
-    ],
-  )
-
-  // ── Leading list items: a "Résultats" caption while searching ──────────────
-
-  const leadingItems = useLeadingItems({ hasQuery, visibleSurveySummary })
-
-  const listData = useMemo<SurveyListItem[]>(
-    () => [...leadingItems, ...visibleSurveys],
-    [leadingItems, visibleSurveys],
-  )
-
-  // ── Rows ────────────────────────────────────────────────────────────────────
-
   // One preview value per survey, derived once per attachments change (D-03).
   const previewById = useMemo(() => {
     const byId: Record<string, SurveyRowPreview> = {}
@@ -250,8 +109,8 @@ export function SurveyListScreen({
 
   const renderItem = useCallback(
     ({ item }: ListRenderItemInfo<SurveyListItem>) =>
-      isLeadingListItem(item) ? (
-        item.element
+      isSectionHeader(item) ? (
+        <SectionTitle section={item.key} count={item.count} />
       ) : (
         <SurveyRow
           survey={item}
@@ -265,59 +124,47 @@ export function SurveyListScreen({
     [onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId, surveyDetails],
   )
 
-  // ── Footer: empty states and bottom spacing ─────────────────────────────────
-
-  const showEmptyState = surveys.length === 0 || visibleSurveys.length === 0
-  const listFooter = useMemo(
+  const listHeader = useMemo(
     () => (
-      <>
-        {showEmptyState ? (
-          <ListEmptyState noSurveys={surveys.length === 0} resetFilters={resetFilters} />
+      <View style={styles.listHeader}>
+        {showTitleBar ? (
+          <ListTitleBar onOpenSearch={onOpenSearch} onOpenCreateSurvey={onOpenCreateSurvey} />
         ) : null}
-        {showHero ? <View style={{ height: brandSpacing.xl }} /> : null}
-      </>
+        {surveys.length > 0 ? <IntroStats total={surveys.length} toFinish={toFinishCount} /> : null}
+      </View>
     ),
-    [resetFilters, showEmptyState, showHero, surveys.length],
+    [onOpenCreateSurvey, onOpenSearch, showTitleBar, styles, surveys.length, toFinishCount],
   )
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  const listFooter = useMemo(
+    () => (surveys.length === 0 ? <ListEmptyState /> : null),
+    [surveys.length],
+  )
 
   return (
     <View style={styles.container}>
-      {showHero ? (
-        <ListHero
-          scrollY={scrollY}
-          geometry={heroGeometry}
-          itemCountLabel={filtersSummaryLabel}
-          onOpenCreateSurvey={onOpenCreateSurvey}
-        />
-      ) : null}
-
-      <Animated.FlatList
-        data={listData}
+      <FlatList
+        data={items}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
-        ListHeaderComponent={filtersHeader}
+        ListHeaderComponent={listHeader}
         ListFooterComponent={listFooter}
-        initialNumToRender={leadingItems.length + INITIAL_ROWS}
+        initialNumToRender={INITIAL_ROWS + 1}
         maxToRenderPerBatch={INITIAL_ROWS}
         windowSize={7}
         removeClippedSubviews
         style={styles.pageScroll}
         contentContainerStyle={[
           styles.pageContent,
-          { paddingBottom: pageBottomPadding },
-          useNativeSearchUI ? styles.pageContentNativeSearch : null,
-          showHero ? { paddingTop: contentTopPadding } : null,
+          {
+            paddingTop: showTitleBar
+              ? insets.top + brandSpacing.xs
+              : headerHeight + brandSpacing.xs,
+            paddingBottom: tabBarHeight + brandSpacing.xl + 22,
+          },
         ]}
-        scrollEventThrottle={16}
-        scrollIndicatorInsets={{
-          top: showHero ? heroTopInset + collapsedHeroHeight : 0,
-          bottom: tabBarHeight,
-        }}
-        stickyHeaderIndices={filtersHeader ? STICKY_HEADER_INDICES : undefined}
-        contentInsetAdjustmentBehavior={useNativeSearchUI ? "automatic" : "never"}
-        onScroll={handleScroll}
+        scrollIndicatorInsets={{ top: showTitleBar ? 0 : headerHeight, bottom: tabBarHeight }}
+        contentInsetAdjustmentBehavior="never"
         refreshControl={refreshControl}
       />
     </View>

@@ -214,3 +214,46 @@ export const PUBLIC_STUDIED_BY_COMMUNES_SQL = `SELECT
    ${LATEST_PUBLIC_SURVEY_OF_PARCEL}
  ) lp ON true
  WHERE p.commune_code = ANY($2::text[])`
+
+/** Rows per /public/community-surveys answer when `limit` is not given. */
+export const COMMUNITY_SURVEYS_DEFAULT_LIMIT = 30
+
+/** Escapes the LIKE wildcards of a search text, so "50%" matches a literal percent sign. */
+export function escapeLikePattern(text: string): string {
+  return text.replace(/[\\%_]/g, (char) => `\\${char}`)
+}
+
+/**
+ * /public/community-surveys: the submitted surveys of every member, newest first, optionally
+ * narrowed to those whose site name or author name contains the text. Same inclusion rule as the
+ * map (PUBLIC_SURVEY_PREDICATE: there is no private/public choice yet). The author is a LEFT JOIN
+ * because an account deletion anonymises the survey (user_id becomes NULL, migration 012).
+ */
+export function buildCommunitySurveysQuery(input: { q?: string | null; limit: number }): {
+  text: string
+  values: unknown[]
+} {
+  const conditions: string[] = [PUBLIC_SURVEY_PREDICATE, `s.submitted_at IS NOT NULL`]
+  const values: unknown[] = []
+  if (input.q) {
+    values.push(`%${escapeLikePattern(input.q)}%`)
+    conditions.push(
+      `(s.site_name ILIKE $${values.length} OR u.display_name ILIKE $${values.length})`,
+    )
+  }
+  values.push(input.limit)
+  const text = `SELECT
+   s.id,
+   s.site_name,
+   s.ibp_method_version,
+   s.scores,
+   s.submitted_at::text,
+   u.display_name AS author_name
+ FROM surveys s
+ LEFT JOIN users u
+   ON u.id = s.user_id
+ WHERE ${conditions.join("\n   AND ")}
+ ORDER BY s.submitted_at DESC
+ LIMIT $${values.length}`
+  return { text, values }
+}

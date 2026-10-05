@@ -20,6 +20,24 @@ const mockPlatform = {
 }
 
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
+// SurveySearchRoute reads its navigation from the hook: it is mounted by two navigators.
+const mockSearchNavigation = {
+  navigate: jest.fn(),
+  goBack: jest.fn(),
+  canGoBack: jest.fn(() => true),
+}
+jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockSearchNavigation }))
+const mockCommunity = { items: [], status: "idle" }
+const mockCommunityArgs: { query?: string; active?: boolean; accessToken?: string | null } = {}
+jest.mock("../../hooks/useCommunitySurveys", () => ({
+  useCommunitySurveys: (args: { query: string; active: boolean; accessToken: string | null }) => {
+    Object.assign(mockCommunityArgs, args)
+    return mockCommunity
+  },
+}))
+jest.mock("../../screens/survey-search/SurveySearchScreen", () => ({
+  SurveySearchScreen: mockScreen("surveySearch"),
+}))
 jest.mock("react-native", () => {
   const ReactRef = jest.requireActual("react") as typeof import("react")
   type PressableRenderProp<T> = T | ((state: { pressed: boolean }) => T)
@@ -197,6 +215,7 @@ import { SurveyHistoryRoute } from "./SurveyHistoryRoute"
 import { SurveyScoreRoute } from "./SurveyScoreRoute"
 import { SurveyFormRoute } from "./SurveyFormRoute"
 import { SurveyListRoute } from "./SurveyListRoute"
+import { SurveySearchRoute } from "./SurveySearchRoute"
 
 /** An action object whose members are jest.fn()s created on first access. */
 function actionsProxy<T extends object>(defaults: Record<string, unknown> = {}): T {
@@ -689,7 +708,7 @@ describe("HomeRoute", () => {
 })
 
 describe("SurveyListRoute", () => {
-  test("opens the form and a survey, with the filtered list and inline search", async () => {
+  test("opens the form, a survey and the search, and draws its own title bar", async () => {
     const fixture = makeFixture()
     const navigation = makeNavigation()
     await mount(
@@ -698,9 +717,8 @@ describe("SurveyListRoute", () => {
       </Providers>,
     )
     const list = props("surveyList")
-    expect(list.visibleSurveys).toBe(fixture.surveys.state.visibleSurveys)
-    expect(list.showInlineSearch).toBe(true)
-    expect(list.useNativeSearchUI).toBe(false)
+    expect(list.surveys).toBe(fixture.surveys.state.surveys)
+    expect(list.showTitleBar).toBe(true)
     expect(list.surveyDetails).toBe(fixture.surveys.state.surveyDetails)
     expect(navigation.setOptions).not.toHaveBeenCalled()
 
@@ -711,9 +729,12 @@ describe("SurveyListRoute", () => {
     callback("surveyList", "onOpenSurvey")("s-01")
     expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyDetail")
+
+    callback("surveyList", "onOpenSearch")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveySearch")
   })
 
-  test("with the native tab bar outside iOS it keeps the inline search", async () => {
+  test("with the native tab bar outside iOS it keeps its own title bar", async () => {
     mockPlatform.OS = "android"
     const fixture = makeFixture()
     const navigation = makeNavigation()
@@ -724,43 +745,27 @@ describe("SurveyListRoute", () => {
         </SurveysStackConfigContext.Provider>
       </Providers>,
     )
-    expect(props("surveyList").visibleSurveys).toBe(fixture.surveys.state.visibleSurveys)
-    expect(props("surveyList").showInlineSearch).toBe(true)
-    expect(props("surveyList").useNativeSearchUI).toBe(false)
+    expect(props("surveyList").showTitleBar).toBe(true)
     expect(navigation.setOptions).not.toHaveBeenCalled()
   })
 
-  test("in the native iOS Mes Relevés tab it owns the header search bar and syncs its text", async () => {
+  test("in the native iOS Mes Relevés tab it owns the header: the title and the +, no search bar", async () => {
     mockPlatform.OS = "ios"
     const fixture = makeFixture()
     const navigation = makeNavigation()
-    const nativeConfig = { useNativeNav: true }
-    const route = (query: string) => (
-      <Providers
-        fixture={{
-          ...fixture,
-          surveys: { ...fixture.surveys, state: { ...fixture.surveys.state, surveyQuery: query } },
-        }}
-      >
-        <SurveysStackConfigContext.Provider value={nativeConfig}>
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveysStackConfigContext.Provider value={{ useNativeNav: true }}>
           <SurveyListRoute navigation={navigation as never} route={{} as never} />
         </SurveysStackConfigContext.Provider>
-      </Providers>
+      </Providers>,
     )
-    const tree = await mount(route(""))
-    expect(props("surveyList").useNativeSearchUI).toBe(true)
-    expect(props("surveyList").showInlineSearch).toBe(false)
-    expect(props("surveyList").visibleSurveys).toBe(fixture.surveys.state.visibleSurveys)
+    expect(props("surveyList").showTitleBar).toBe(false)
     expect(navigation.setOptions).toHaveBeenCalledTimes(1)
 
     const setOptionsCall = navigation.setOptions.mock.calls[0][0]
-    const options = setOptionsCall.headerSearchBarOptions
-    expect(options.placeholder).toBe(fr.navigation.search.placeholder)
-    expect(options.placement).toBe("automatic")
-    options.onChangeText({ nativeEvent: { text: "chêne" } })
-    expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenLastCalledWith("chêne")
-    options.onCancelButtonPress()
-    expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenLastCalledWith("")
+    // Search is its own tab (OA-52): no header search bar.
+    expect(setOptionsCall.headerSearchBarOptions).toBeUndefined()
 
     // OA-85: the title sits left, on the same row as the "+" create button.
     expect(setOptionsCall.headerTitle).toBe("")
@@ -780,17 +785,83 @@ describe("SurveyListRoute", () => {
     expect(createButton.label).toBe(fr.surveyList.a11y.createSurvey)
     createButton.onPress()
     expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
+  })
+})
 
-    const bar = { setText: jest.fn(), clearText: jest.fn() }
-    options.ref.current = bar
+describe("SurveySearchRoute", () => {
+  beforeEach(() => {
+    mockSearchNavigation.navigate.mockClear()
+    mockSearchNavigation.goBack.mockClear()
+    mockSearchNavigation.canGoBack.mockReturnValue(true)
+  })
+
+  test("feeds the screen with the shared list filters, and queries the community only in its scope", async () => {
+    const fixture = makeFixture()
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveySearchRoute />
+      </Providers>,
+    )
+    const search = props("surveySearch")
+    expect(search.surveys).toBe(fixture.surveys.state.visibleSurveys)
+    expect(search.query).toBe(fixture.surveys.state.surveyQuery)
+    expect(search.scope).toBe("mine")
+    expect(search.community).toBe(mockCommunity)
+    expect(mockCommunityArgs.active).toBe(false)
+    expect(mockCommunityArgs.query).toBe(fixture.surveys.state.surveyQuery)
+
     await act(async () => {
-      tree.update(route("chêne"))
+      callback("surveySearch", "onScopeChange")("community")
     })
-    expect(bar.setText).toHaveBeenCalledWith("chêne")
+    expect(props("surveySearch").scope).toBe("community")
+    expect(mockCommunityArgs.active).toBe(true)
+    ;(search.onQueryChange as (value: string) => void)("chêne")
+    expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenCalledWith("chêne")
+    ;(search.onStatusFilterChange as (value: string) => void)("draft")
+    expect(fixture.surveys.actions.setStatusFilter).toHaveBeenCalledWith("draft")
+    ;(search.onAttachmentFilterChange as (value: string) => void)("with")
+    expect(fixture.surveys.actions.setAttachmentFilter).toHaveBeenCalledWith("with")
+    ;(search.onSortModeChange as (value: string) => void)("site_asc")
+    expect(fixture.surveys.actions.setSortMode).toHaveBeenCalledWith("site_asc")
+  })
+
+  test("opens a survey in the Mes Relevés stack, above the list", async () => {
+    const fixture = makeFixture()
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveySearchRoute />
+      </Providers>,
+    )
+    callback("surveySearch", "onOpenSurvey")("s-01")
+    expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
+    expect(mockSearchNavigation.navigate).toHaveBeenLastCalledWith("surveys", {
+      screen: "surveyDetail",
+      initial: false,
+    })
+  })
+
+  test("cancel resets the filters and goes back, or returns to Mes Relevés from the search tab", async () => {
+    const fixture = makeFixture()
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveySearchRoute />
+      </Providers>,
+    )
     await act(async () => {
-      tree.update(route("  "))
+      callback("surveySearch", "onScopeChange")("community")
     })
-    expect(bar.clearText).toHaveBeenCalled()
+    await act(async () => {
+      callback("surveySearch", "onCancel")()
+    })
+    expect(fixture.surveys.actions.resetFilters).toHaveBeenCalled()
+    expect(mockSearchNavigation.goBack).toHaveBeenCalledTimes(1)
+    expect(props("surveySearch").scope).toBe("mine")
+
+    mockSearchNavigation.canGoBack.mockReturnValue(false)
+    await act(async () => {
+      callback("surveySearch", "onCancel")()
+    })
+    expect(mockSearchNavigation.navigate).toHaveBeenLastCalledWith("surveys")
   })
 })
 

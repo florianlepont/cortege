@@ -2,7 +2,9 @@ import { BadRequestException } from "@nestjs/common"
 import { DatabaseService } from "../src/database/database.service"
 import { CadastreProviderService, WfsParcelFeature } from "../src/surveys/cadastre-provider.service"
 import {
+  buildCommunitySurveysQuery,
   buildPublicMapItemsQuery,
+  escapeLikePattern,
   PUBLIC_PARCEL_STATUSES_BBOX_SQL,
   PUBLIC_PARCEL_STATUSES_SQL,
   PUBLIC_STUDIED_BY_COMMUNES_SQL,
@@ -561,5 +563,77 @@ describe("toPublicMapItem (01.8-12, D-10)", () => {
   it("keeps the privacy rules: no centroid, no item; the location is rounded to 2 decimals", () => {
     expect(toPublicMapItem(row({ parcel_centroid_lat: null, ibp_method_version: V3_2 }))).toBe(null)
     expect(toPublicMapItem(row())?.display_location).toEqual({ lat: 44.44, lng: 4.44 })
+  })
+})
+
+describe("community surveys search", () => {
+  it("escapes the LIKE wildcards so a typed % or _ is literal", () => {
+    expect(escapeLikePattern("50%_a\\b")).toBe("50\\%\\_a\\\\b")
+    expect(escapeLikePattern("forêt")).toBe("forêt")
+  })
+
+  it("builds the query without a text: submitted surveys only, newest first, limit bound last", () => {
+    const query = buildCommunitySurveysQuery({ limit: 30 })
+    const sql = flat(query.text)
+    expect(sql).toContain("s.status = 'submitted' AND s.deleted_at IS NULL")
+    expect(sql).toContain("LEFT JOIN users u ON u.id = s.user_id")
+    expect(sql).toContain("ORDER BY s.submitted_at DESC LIMIT $1")
+    expect(sql).not.toContain("ILIKE")
+    expect(query.values).toEqual([30])
+  })
+
+  it("matches the site name or the author name with one escaped pattern", () => {
+    const query = buildCommunitySurveysQuery({ q: "50%", limit: 5 })
+    expect(flat(query.text)).toContain("(s.site_name ILIKE $1 OR u.display_name ILIKE $1)")
+    expect(flat(query.text)).toContain("LIMIT $2")
+    expect(query.values).toEqual(["%50\\%%", 5])
+  })
+
+  const dbRow = (overrides: Record<string, unknown> = {}) => ({
+    id: "s-1",
+    site_name: "Forêt de Bercé",
+    ibp_method_version: V3_2,
+    scores: { ibp_total: 34 },
+    submitted_at: "2026-09-28 09:41:00+00",
+    author_name: "Camille",
+    ...overrides,
+  })
+
+  it("maps the rows to the wire shape, with a null author and a zero score when missing", async () => {
+    const db = buildDb({
+      rows: [
+        dbRow(),
+        dbRow({ id: "s-2", author_name: null, scores: {}, ibp_method_version: null }),
+      ],
+    })
+    const result = await buildService(db).searchCommunitySurveys({ q: "  bercé " })
+    expect(result.items).toEqual([
+      {
+        survey_id: "s-1",
+        site_name: "Forêt de Bercé",
+        author_name: "Camille",
+        submitted_at: "2026-09-28 09:41:00+00",
+        ibp_total: 34,
+        ibp_method_version: V3_2,
+      },
+      {
+        survey_id: "s-2",
+        site_name: "Forêt de Bercé",
+        author_name: null,
+        submitted_at: "2026-09-28 09:41:00+00",
+        ibp_total: 0,
+        ibp_method_version: null,
+      },
+    ])
+    expect(db.query.mock.calls[0][1]).toEqual(["%bercé%", 30])
+  })
+
+  it("treats a blank text as no text, and clamps the limit to 1..50", async () => {
+    const db = buildDb()
+    const service = buildService(db)
+    await service.searchCommunitySurveys({ q: "   ", limit: 500 })
+    await service.searchCommunitySurveys({ limit: 0 })
+    await service.searchCommunitySurveys()
+    expect(db.query.mock.calls.map((call) => call[1])).toEqual([[50], [1], [30]])
   })
 })

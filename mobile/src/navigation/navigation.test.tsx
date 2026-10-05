@@ -120,6 +120,7 @@ jest.mock("./routes/SurveyContextRoute", () => ({ SurveyContextRoute: mockRoute(
 jest.mock("./routes/SurveyScoreRoute", () => ({ SurveyScoreRoute: mockRoute() }))
 jest.mock("./routes/SurveyHistoryRoute", () => ({ SurveyHistoryRoute: mockRoute() }))
 jest.mock("./routes/SurveyFormRoute", () => ({ SurveyFormRoute: mockRoute() }))
+jest.mock("./routes/SurveySearchRoute", () => ({ SurveySearchRoute: mockRoute() }))
 jest.mock("./routes/FactorDetailRoute", () => ({ FactorDetailRoute: mockRoute() }))
 jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),
@@ -242,7 +243,7 @@ describe("AppNavigation tree choice", () => {
     const tree = await mount(<AppNavigation />)
     expect(mockNavigators.nativeTabs).toHaveLength(1)
     expect(mockNavigators.jsTabs).toBeUndefined()
-    expect(mockScreens.search).toBeUndefined()
+    expect(mockScreens.search).toBeDefined()
     expect(warn).not.toHaveBeenCalled()
     expect(mockListConfigs).toEqual([{ useNativeNav: true }])
 
@@ -290,14 +291,14 @@ describe("AppNavigation tree choice", () => {
     }
   })
 
-  test("the native tabs render no search tab", async () => {
+  test("the native tabs add the search tab with the search role (OA-52)", async () => {
     await mount(
       <PublicMapReloadContext.Provider value={createPublicMapReloadSignal()}>
         <NativeRootTabs />
       </PublicMapReloadContext.Provider>,
     )
     expect(mockScreens.surveys).toBeDefined()
-    expect(mockScreens.search).toBeUndefined()
+    expect(mockScreens.search.options).toEqual({ role: "search" })
   })
 
   test("the root tabs refuse to render outside AppNavigation", async () => {

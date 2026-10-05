@@ -26,6 +26,10 @@ const IOS_TAB_ICONS = {
     focused: { sfSymbol: "map.fill" },
     unfocused: { sfSymbol: "map" },
   },
+  search: {
+    focused: { sfSymbol: "magnifyingglass" },
+    unfocused: { sfSymbol: "magnifyingglass" },
+  },
 } as const
 
 // BUG-07 (UX audit, Phase 2): Accueil had Mes Relevés' icon on Android's native tab bar.
@@ -33,6 +37,8 @@ const ANDROID_TAB_ICONS = {
   home: require("../../assets/tabs/home.png"),
   surveys: require("../../assets/tabs/surveys.png"),
   publicMap: require("../../assets/tabs/public-map.png"),
+  // Only the iOS tree has a search tab; Android's search is a button on Mes Relevés.
+  search: require("../../assets/tabs/surveys.png"),
 } as const
 
 export const TAB_TITLES: Record<keyof RootTabParamList, string> = fr.navigation.tabs
@@ -41,6 +47,7 @@ const JS_TAB_ICONS: Record<keyof RootTabParamList, keyof typeof Ionicons.glyphMa
   home: "home-outline",
   surveys: "list-outline",
   publicMap: "map-outline",
+  search: "search-outline",
 }
 
 // ─── Native tab screen options ────────────────────────────────────────────────

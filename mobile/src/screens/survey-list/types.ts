@@ -1,50 +1,21 @@
-import type {
-  SurveyAttachmentFilter,
-  SurveyBlockedFilter,
-  SurveyDetailResponse,
-  SurveySort,
-  SurveyStatusFilter,
-  SurveySyncFilter,
-  SurveyVisibilityFilter,
-} from "../../app/types"
+import type { SurveyDetailResponse } from "../../app/types"
 import type { LocalAttachment, LocalSurvey } from "../../storage"
 
 export type SurveyListScreenProps = {
   surveys: LocalSurvey[]
-  visibleSurveys: LocalSurvey[]
   selectedSurveyId: string | null
   attachmentsBySurvey: Record<string, LocalAttachment[]>
   /** LIST-01: the submitted surveys' canonical scores, keyed by survey id, when already loaded. */
   surveyDetails: Record<string, SurveyDetailResponse>
-  surveyQuery: string
-  setSurveyQuery: (value: string) => void
-  surveyFromDate: string
-  setSurveyFromDate: (value: string) => void
-  surveyToDate: string
-  setSurveyToDate: (value: string) => void
-  statusFilter: SurveyStatusFilter
-  setStatusFilter: (value: SurveyStatusFilter) => void
-  visibilityFilter: SurveyVisibilityFilter
-  setVisibilityFilter: (value: SurveyVisibilityFilter) => void
-  syncFilter: SurveySyncFilter
-  setSyncFilter: (value: SurveySyncFilter) => void
-  blockedFilter: SurveyBlockedFilter
-  setBlockedFilter: (value: SurveyBlockedFilter) => void
-  attachmentFilter: SurveyAttachmentFilter
-  setAttachmentFilter: (value: SurveyAttachmentFilter) => void
-  sortMode: SurveySort
-  setSortMode: (value: SurveySort) => void
-  resetFilters: () => void
   /**
-   * The native iOS header (with its search bar) is shown above the list, so
-   * the screen drops its own hero header (01.9-25, D-08).
+   * Android and the JS tabs: the screen draws its own title bar with the search and "+" buttons.
+   * On iOS the native header carries the title and the "+", and search is its own tab.
    */
-  useNativeSearchUI?: boolean
-  /** The inline search field (Android and the JS fallback). */
-  showInlineSearch?: boolean
+  showTitleBar: boolean
   onRefresh?: () => Promise<void>
   onDeleteSurvey: (surveyId: string) => void
   onOpenCreateSurvey: () => void
+  onOpenSearch: () => void
   onOpenSurvey: (surveyId: string) => void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
 }

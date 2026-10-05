@@ -20,6 +20,7 @@ import {
   patchMyProfile,
   resetIbpData,
   resetUserData,
+  searchCommunitySurveys,
   uploadMyProfilePicture,
 } from "./ibp-api"
 
@@ -136,6 +137,33 @@ describe("ibp-api", () => {
         {
           baseUrl: "https://api.example.com",
           path: "/surveys/s%201/attachments/a%2F1/download-url",
+          method: "GET",
+          token: "access-token",
+        },
+      ],
+    ])
+  })
+
+  it("builds the community search query: a trimmed, encoded text and an optional limit", async () => {
+    await searchCommunitySurveys("https://api.example.com", "access-token", {
+      q: "  forêt & bois ",
+      limit: 20,
+    })
+    await searchCommunitySurveys("https://api.example.com", "access-token", { q: "   " })
+
+    expect(mockApiRequest.mock.calls).toEqual([
+      [
+        {
+          baseUrl: "https://api.example.com",
+          path: "/public/community-surveys?q=for%C3%AAt%20%26%20bois&limit=20",
+          method: "GET",
+          token: "access-token",
+        },
+      ],
+      [
+        {
+          baseUrl: "https://api.example.com",
+          path: "/public/community-surveys",
           method: "GET",
           token: "access-token",
         },
