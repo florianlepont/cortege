@@ -9,9 +9,9 @@ import {
   View,
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { Ionicons } from "@expo/vector-icons"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
-import { brandColors, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { brandColors, brandSpacing4 } from "../../app/brand-tokens"
+import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { FACTOR_TITLES } from "../../app/constants"
 import type { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
@@ -19,8 +19,9 @@ import { fr } from "../../i18n"
 import { FactorDetailScreen } from "../FactorDetailScreen"
 import { FACTOR_ORDER } from "./components"
 import { computeFactorProgress } from "./FactorsList"
-import { findNextIncompleteFactorIndex } from "./factor-pager"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
+import { AppButton } from "../../ui/AppButton"
+import { useHeaderHeight } from "@react-navigation/elements"
 
 const t = fr.factorPager
 
@@ -29,21 +30,29 @@ type FactorPagerProps = {
   factorSections: Record<FactorKey, FactorField[]>
   factorRetainedScores: Record<FactorKey, FactorRetainedScore | null>
   methodVersion: IbpMethodVersion | null
+  /** The factor now on screen: the route puts its name in the native header. */
+  onActiveFactorChange?: (factor: FactorKey) => void
+  /** "Terminer" on the last factor: back to the list. */
+  onFinish: () => void
 }
 
 /**
- * FLOW-04: a horizontal pager A->J replacing the 20 round trips to the factor grid, with a fixed
- * footer control (prev/next, a position indicator, per-factor dots and a "next incomplete factor"
- * shortcut).
+ * FLOW-04: a horizontal pager A->J replacing the 20 round trips to the factor grid. OA-30: one slim
+ * header (the factor's name, the running total, and the A to J strip that shows each factor's state
+ * and jumps to it), the page, and a two-button footer ("Précédent", "Facteur suivant").
  */
 export function FactorPager({
   initialFactor,
   factorSections,
   factorRetainedScores,
   methodVersion,
+  onActiveFactorChange,
+  onFinish,
 }: FactorPagerProps) {
   const theme = useBrandTheme()
   const tabBarClearance = useTabBarClearance()
+  // The iOS header is transparent: the pager's own header starts below it (OA-20).
+  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createStyles(theme), [theme])
   const scrollRef = useRef<ScrollView | null>(null)
   const [pageWidth, setPageWidth] = useState(0)
@@ -78,11 +87,61 @@ export function FactorPager({
     setActiveIndex(Math.max(0, Math.min(lastIndex, index)))
   }
 
-  const nextIncompleteIndex = findNextIncompleteFactorIndex(FACTOR_ORDER, progress, activeIndex)
-  const hasNextIncomplete = nextIncompleteIndex !== null
+  const activeFactor = FACTOR_ORDER[activeIndex]
+  useEffect(() => {
+    onActiveFactorChange?.(activeFactor)
+  }, [activeFactor, onActiveFactorChange])
+  const total = useMemo(
+    () => computeIbpTotalsFromRetainedScores(factorRetainedScores).ibp_total,
+    [factorRetainedScores],
+  )
+  const isLast = activeIndex === lastIndex
 
   return (
     <View style={styles.container} onLayout={handleContainerLayout} testID="factor-pager">
+      <View style={[styles.header, { paddingTop: headerHeight + brandSpacing4.sm }]}>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {FACTOR_TITLES[activeFactor]}
+          </Text>
+          <View
+            style={styles.totalChip}
+            accessible
+            accessibilityLabel={t.totalA11y(total)}
+            testID="pager-total"
+          >
+            <Text style={styles.totalChipText}>{t.total(total)}</Text>
+          </View>
+        </View>
+        <View style={styles.strip}>
+          {FACTOR_ORDER.map((factor, index) => {
+            const factorProgress = progress[factor]
+            const state =
+              index === activeIndex
+                ? "active"
+                : factorProgress.complete
+                  ? "complete"
+                  : factorProgress.invalid > 0
+                    ? "error"
+                    : "empty"
+            return (
+              <Pressable
+                key={factor}
+                accessibilityRole="button"
+                accessibilityLabel={t.jumpTo({ factor, title: FACTOR_TITLES[factor] })}
+                accessibilityState={{ selected: index === activeIndex }}
+                onPress={() => scrollToIndex(index)}
+                hitSlop={{ top: 5, bottom: 5, left: 1, right: 1 }}
+                style={[styles.letter, styles[`letter_${state}`]]}
+                testID={`pager-letter-${factor}`}
+              >
+                <Text style={[styles.letterText, styles[`letterText_${state}`]]}>{factor}</Text>
+              </Pressable>
+            )
+          })}
+        </View>
+      </View>
+
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -98,7 +157,7 @@ export function FactorPager({
             style={{ width: pageWidth || undefined }}
             contentContainerStyle={styles.pageContent}
           >
-            {/* Only the active page mounts real content — ten factor screens' worth of hint state
+            {/* Only the active page mounts real content: ten factor screens' worth of hint state
              * and validation running at once is wasted work the surveyor never sees. */}
             {index === activeIndex ? (
               <FactorDetailScreen
@@ -113,110 +172,90 @@ export function FactorPager({
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: tabBarClearance + brandSpacing4.sm }]}>
-        <View style={styles.dotsRow}>
-          {FACTOR_ORDER.map((factor, index) => {
-            const factorProgress = progress[factor]
-            const state = factorProgress.complete
-              ? "complete"
-              : factorProgress.invalid > 0
-                ? "error"
-                : "empty"
-            const tone = theme.fieldState[state]
-            return (
-              <Pressable
-                key={factor}
-                accessibilityRole="button"
-                accessibilityLabel={t.jumpTo({ factor, title: FACTOR_TITLES[factor] })}
-                accessibilityState={{ selected: index === activeIndex }}
-                onPress={() => scrollToIndex(index)}
-                style={styles.dotHit}
-                testID={`pager-dot-${factor}`}
-              >
-                <View
-                  style={[
-                    styles.dot,
-                    { backgroundColor: tone.icon },
-                    index === activeIndex ? styles.dotActive : null,
-                  ]}
-                />
-              </Pressable>
-            )
-          })}
-        </View>
-
-        <View style={styles.controlsRow}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t.previous}
-            disabled={activeIndex === 0}
-            onPress={() => scrollToIndex(activeIndex - 1)}
-            style={[styles.chevron, activeIndex === 0 ? styles.chevronDisabled : null]}
-            testID="pager-previous"
-          >
-            <Ionicons
-              name="chevron-back"
-              size={22}
-              color={activeIndex === 0 ? theme.colors.textSecondary : brandColors.forest}
-            />
-          </Pressable>
-
-          <Text style={styles.positionText}>
-            {t.position({ index: activeIndex + 1, total: FACTOR_ORDER.length })}
-          </Text>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t.next}
-            disabled={activeIndex === lastIndex}
-            onPress={() => scrollToIndex(activeIndex + 1)}
-            style={[styles.chevron, activeIndex === lastIndex ? styles.chevronDisabled : null]}
-            testID="pager-next"
-          >
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color={activeIndex === lastIndex ? theme.colors.textSecondary : brandColors.forest}
-            />
-          </Pressable>
-        </View>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={hasNextIncomplete ? t.nextIncomplete : t.allComplete}
-          disabled={!hasNextIncomplete}
-          onPress={() => {
-            if (nextIncompleteIndex !== null) scrollToIndex(nextIncompleteIndex)
-          }}
-          style={[
-            styles.nextIncompleteButton,
-            !hasNextIncomplete ? styles.nextIncompleteButtonDisabled : null,
-          ]}
-          testID="pager-next-incomplete"
-        >
-          <Ionicons
-            name="arrow-forward-circle-outline"
-            size={18}
-            color={hasNextIncomplete ? brandColors.white : theme.colors.textSecondary}
-          />
-          <Text
-            style={[
-              styles.nextIncompleteText,
-              !hasNextIncomplete ? styles.nextIncompleteTextDisabled : null,
-            ]}
-          >
-            {hasNextIncomplete ? t.nextIncomplete : t.allComplete}
-          </Text>
-        </Pressable>
+        <AppButton
+          label={t.previous}
+          variant="secondary"
+          disabled={activeIndex === 0}
+          onPress={() => scrollToIndex(activeIndex - 1)}
+          style={styles.footerPrevious}
+          testID="pager-previous"
+        />
+        <AppButton
+          label={isLast ? t.finish : t.next}
+          onPress={() => (isLast ? onFinish() : scrollToIndex(activeIndex + 1))}
+          style={styles.footerNext}
+          testID="pager-next"
+        />
       </View>
     </View>
   )
 }
 
 function createStyles(theme: BrandTheme) {
+  const letter = {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  } as const
   return StyleSheet.create({
     container: {
       flex: 1,
     },
+    header: {
+      paddingHorizontal: brandSpacing4.md,
+      paddingBottom: brandSpacing4.smd,
+      gap: brandSpacing4.smd,
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: brandSpacing4.smd,
+    },
+    title: {
+      flex: 1,
+      fontSize: 20,
+      lineHeight: 24,
+      fontFamily: "Sora_700Bold",
+      color: theme.semanticColors.textStrong,
+    },
+    totalChip: {
+      height: 36,
+      borderRadius: 18,
+      paddingHorizontal: 12,
+      justifyContent: "center",
+      backgroundColor: theme.semanticColors.heroSurface,
+      borderWidth: 1,
+      borderColor: theme.semanticColors.heroBorder,
+    },
+    totalChipText: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: brandColors.white,
+    },
+    strip: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+    },
+    letter,
+    letter_active: { backgroundColor: theme.semanticColors.ctaPrimary },
+    letter_complete: { backgroundColor: theme.colors.successSoft },
+    letter_error: { backgroundColor: theme.colors.errorSoft },
+    letter_empty: {
+      backgroundColor: theme.semanticColors.surfaceElevated,
+      borderWidth: 1.5,
+      borderColor: theme.colors.divider,
+    },
+    letterText: {
+      fontSize: 14,
+      fontFamily: "Sora_700Bold",
+    },
+    letterText_active: { color: theme.semanticColors.onCtaPrimary },
+    letterText_complete: { color: theme.semanticColors.textStrong },
+    letterText_error: { color: theme.onSurface.danger },
+    letterText_empty: { color: theme.colors.textSecondary },
     pages: {
       flex: 1,
     },
@@ -224,75 +263,19 @@ function createStyles(theme: BrandTheme) {
       padding: brandSpacing4.md,
     },
     footer: {
+      flexDirection: "row",
+      gap: brandSpacing4.smd,
       borderTopWidth: 1,
       borderTopColor: theme.colors.divider,
       backgroundColor: theme.colors.panel,
       paddingHorizontal: brandSpacing4.md,
-      paddingTop: brandSpacing4.sm,
-      paddingBottom: brandSpacing4.md,
-      gap: brandSpacing4.sm,
+      paddingTop: brandSpacing4.smd,
     },
-    dotsRow: {
-      flexDirection: "row",
-      justifyContent: "center",
-      gap: brandSpacing4.xs,
+    footerPrevious: {
+      flex: 1,
     },
-    dotHit: {
-      width: 24,
-      height: 24,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
-    dotActive: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-    },
-    controlsRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    chevron: {
-      width: 44,
-      height: 44,
-      borderRadius: brandRadius.field,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.panelMuted,
-    },
-    chevronDisabled: {
-      opacity: 0.5,
-    },
-    positionText: {
-      fontSize: 15,
-      fontWeight: "700",
-      color: theme.colors.textPrimary,
-    },
-    nextIncompleteButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: brandSpacing4.xs,
-      minHeight: 44,
-      borderRadius: brandRadius.field,
-      backgroundColor: theme.semanticColors.ctaPrimary,
-    },
-    nextIncompleteButtonDisabled: {
-      backgroundColor: theme.colors.panelMuted,
-    },
-    nextIncompleteText: {
-      fontSize: 14,
-      fontWeight: "700",
-      color: theme.semanticColors.onCtaPrimary,
-    },
-    nextIncompleteTextDisabled: {
-      color: theme.colors.textSecondary,
+    footerNext: {
+      flex: 2,
     },
   })
 }
