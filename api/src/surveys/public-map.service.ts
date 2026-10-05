@@ -1,9 +1,14 @@
-import type { PublicParcelStatusItem as PublicParcelStatusItemContract } from "@cortege/ibp-domain"
+import type {
+  CommunitySurveyItem,
+  PublicParcelStatusItem as PublicParcelStatusItemContract,
+} from "@cortege/ibp-domain"
 import { Injectable } from "@nestjs/common"
 import { DatabaseService } from "../database/database.service"
 import { CadastreProviderService, WfsParcelFeature } from "./cadastre-provider.service"
 import {
+  buildCommunitySurveysQuery,
   buildPublicMapItemsQuery,
+  COMMUNITY_SURVEYS_DEFAULT_LIMIT,
   PUBLIC_PARCEL_STATUSES_BBOX_SQL,
   PUBLIC_PARCEL_STATUSES_SQL,
   PUBLIC_STUDIED_BY_COMMUNES_SQL,
@@ -55,6 +60,15 @@ type StudiedParcelDbRow = {
   latest_ibp_method_version?: string | null
 }
 
+type CommunitySurveyDbRow = {
+  id: string
+  site_name: string
+  ibp_method_version: string | null
+  scores: Record<string, unknown>
+  submitted_at: string
+  author_name: string | null
+}
+
 /** Below this map zoom the mobile shows no parcel, so the route answers without a query. */
 const MIN_PARCEL_STATUS_ZOOM = 15
 
@@ -92,6 +106,30 @@ export class PublicMapService {
       .map((row) => toPublicMapItem(row))
       .filter((item): item is PublicMapItem => Boolean(item))
 
+    return { items }
+  }
+
+  /** The community search: finished surveys of every member, with their author (see the query). */
+  async searchCommunitySurveys(input?: {
+    q?: string
+    limit?: number
+  }): Promise<{ items: CommunitySurveyItem[] }> {
+    const q = input?.q?.trim()
+    const query = buildCommunitySurveysQuery({
+      q: q && q.length > 0 ? q : null,
+      limit: Math.min(Math.max(input?.limit ?? COMMUNITY_SURVEYS_DEFAULT_LIMIT, 1), 50),
+    })
+    const result = await this.db.query<CommunitySurveyDbRow>(query.text, query.values)
+    const items = result.rows.map(
+      (row): CommunitySurveyItem => ({
+        survey_id: row.id,
+        site_name: row.site_name,
+        author_name: row.author_name,
+        submitted_at: row.submitted_at,
+        ibp_total: toFiniteNumber(row.scores?.ibp_total) ?? 0,
+        ibp_method_version: row.ibp_method_version ?? null,
+      }),
+    )
     return { items }
   }
 

@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards } from "@nestjs/common"
 import { AuthGuard } from "../auth/auth.guard"
 import { PublicMapService } from "./public-map.service"
+import { CommunitySurveysQueryDto } from "./dtos/community-surveys-query.dto"
 import { PublicMapItemsQueryDto } from "./dtos/public-map-items-query.dto"
 import { PublicParcelStatusesQueryDto } from "./dtos/public-parcel-statuses-query.dto"
 
@@ -12,6 +13,11 @@ export class PublicController {
   @Get("map-items")
   async getMapItems(@Query() query: PublicMapItemsQueryDto) {
     return this.publicMap.getPublicMapItems(query)
+  }
+
+  @Get("community-surveys")
+  async searchCommunitySurveys(@Query() query: CommunitySurveysQueryDto) {
+    return this.publicMap.searchCommunitySurveys(query)
   }
 
   @Get("parcels/status")

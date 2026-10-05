@@ -24,3 +24,18 @@ export type PublicParcelStatusItem = {
   latest_ibp_method_version?: string | null
   geometry?: Record<string, unknown>
 }
+
+/**
+ * One finished survey in the community search (`GET /public/community-surveys`): every member sees
+ * every submitted survey (association-only sharing), with its site name and its author's name.
+ */
+export type CommunitySurveyItem = {
+  survey_id: string
+  site_name: string
+  /** The author's display name; null once the author deleted their account. */
+  author_name: string | null
+  /** ISO timestamp of the submission. */
+  submitted_at: string
+  ibp_total: number
+  ibp_method_version?: string | null
+}

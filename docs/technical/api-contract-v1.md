@@ -1131,6 +1131,39 @@ Response `200`:
 }
 ```
 
+### GET /public/community-surveys?q=&limit=
+
+The community search of Mes Relevés (phase 12.1). Requires an authenticated member.
+
+Rules:
+
+- Returns the **submitted** surveys of every member, deleted ones excluded, newest `submitted_at`
+  first. There is no private/public choice yet (association-only sharing): the `visibility` column
+  is not read, like for the map.
+- `q` (optional, at most 100 characters) keeps the surveys whose site name or author display name
+  contains the text, ignoring case. `%`, `_` and `\` in `q` are literal characters.
+- `limit` is 1 to 50 (default 30); a larger value is capped to 50, and the request validation
+  rejects a non-integer or out-of-range one with `400`.
+- Unlike the map, the answer carries the site name and the author's display name. `author_name`
+  is `null` when the author deleted their account.
+
+Response `200`:
+
+```json
+{
+  "items": [
+    {
+      "survey_id": "2f3d8a59-7c53-4fdf-8df4-8e2325b6172c",
+      "site_name": "Forêt de Rambouillet",
+      "author_name": "Camille D.",
+      "submitted_at": "2026-09-28T09:41:00.000Z",
+      "ibp_total": 34,
+      "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02"
+    }
+  ]
+}
+```
+
 ### GET /public/parcels/status?bbox=&zoom=&year=
 
 Return parcel study status for high zoom map rendering.
