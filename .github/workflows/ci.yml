@@ -554,8 +554,8 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: npm audit (all dependencies, high+)
-        run: npm audit --audit-level=high
+      - name: npm audit (all dependencies, high+, minus the accepted advisories)
+        run: npm run audit:check
 
   image-check:
     name: Docker image check

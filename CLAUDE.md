@@ -370,7 +370,7 @@ The API sends no email: the SMTP settings and `EmailService` were removed (phase
 5. `e2e` and `e2e-minio` — API E2E against a test PostgreSQL service, in local-storage and MinIO-storage modes
 6. `mobile-build` — `expo-doctor`, `expo export` (bundle checks)
 7. `native-android` and `native-ios` — unsigned native builds (`gradlew assembleRelease` / Release-simulator `xcodebuild` on `macos-26`), each after `expo prebuild --clean`; path-filtered to `mobile/**`, `packages/**`, `package.json`, `package-lock.json`, `ci.yml`, or run on `workflow_dispatch`. See `mobile/README-native.md`
-8. `audit` — repository audit checks
+8. `audit` — `npm run audit:check` (`scripts/audit-check.mjs`): fails on any high or critical advisory except those listed with a reason in `scripts/audit-allowlist.json` (advisories with no patched release upstream), and on a listed entry that no longer matches, so the list shrinks by itself
 9. `image-check` — Docker image build when `api/**` or `packages/**` changed; its smoke tests check the image runs as non-root, holds no mobile dependency, and loads the built `ibp-domain` package
 10. `ci-ok` — aggregate gate; both native jobs are in its required set (success or skipped), and `image-check` waits on it
 11. `build` — pushes the image on `main` (see Deployment below)

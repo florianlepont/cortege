@@ -30,7 +30,8 @@
     "test:coverage:mobile": "npm --workspace mobile run test:unit:coverage",
     "test:coverage:domain": "npm --workspace @cortege/ibp-domain run test:coverage",
     "android": "npm --prefix mobile run android",
-    "ios": "npm --prefix mobile run ios"
+    "ios": "npm --prefix mobile run ios",
+    "audit:check": "node scripts/audit-check.mjs"
   },
   "devDependencies": {
     "react-test-renderer": "19.2.3"
@@ -43,6 +44,7 @@
     "multer": "^2.4.0",
     "@bottom-tabs/react-navigation": {
       "color": "^4.2.3"
-    }
+    },
+    "http-cache-semantics": "^4.3.0"
   }
 }
