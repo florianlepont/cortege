@@ -112,22 +112,6 @@ export const formatSurveyUiStatusLabel = (uiStatus: SurveyUiStatus): string => {
   return statusLabels.draft
 }
 
-export type SurveyWorkflowStatus = "draft" | "pending" | "submitted" | "expired"
-
-export const resolveSurveyWorkflowStatus = (survey: LocalSurvey): SurveyWorkflowStatus => {
-  if (survey.status === "submitted") return "submitted"
-  if (survey.status === "expired") return "expired"
-  if (survey.sync_state === "pending") return "pending"
-  return "draft"
-}
-
-export const formatSurveyWorkflowStatusLabel = (status: SurveyWorkflowStatus): string => {
-  if (status === "submitted") return statusLabels.submitted
-  if (status === "expired") return statusLabels.expired
-  if (status === "pending") return statusLabels.pending
-  return statusLabels.draft
-}
-
 export type SurveySyncDisplay = "local" | "sync" | "sync_error" | "sync_blocked"
 
 export const resolveSurveySyncDisplay = (survey: LocalSurvey): SurveySyncDisplay => {

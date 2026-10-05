@@ -24,6 +24,9 @@ export type HomeStackParamList = AccountStackParamList & {
 export type SurveysStackParamList = AccountStackParamList & {
   surveysHome: undefined
   surveyDetail: undefined
+  surveyContext: undefined
+  surveyScore: undefined
+  surveyHistory: undefined
   surveyForm: undefined
   surveyFactorDetail: { factor: FactorKey }
   surveyParcels: { surveyId: string; mode: "wizard" | "edit" }
@@ -60,6 +63,9 @@ type StackRouteProps<
 export type HomeRouteProps = StackRouteProps<HomeStackParamList, "homeRoot">
 export type SurveyListRouteProps = StackRouteProps<SurveysStackParamList, "surveysHome">
 export type SurveyDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyDetail">
+export type SurveyContextRouteProps = StackRouteProps<SurveysStackParamList, "surveyContext">
+export type SurveyScoreRouteProps = StackRouteProps<SurveysStackParamList, "surveyScore">
+export type SurveyHistoryRouteProps = StackRouteProps<SurveysStackParamList, "surveyHistory">
 export type SurveyFormRouteProps = StackRouteProps<SurveysStackParamList, "surveyForm">
 export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorDetail">
 export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "surveyParcels">

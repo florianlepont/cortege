@@ -72,7 +72,8 @@ type ScoringContextEditorProps = {
   scoringContext: ScoringContext
   activeRegion: RegionVersion
   activeVegetationStage: VegetationStage
-  onOpenParcels: () => void
+  /** Absent when the page already offers the parcel editing (the map's own button). */
+  onOpenParcels?: () => void
   onUpdateRegionVersion: (surveyId: string, region: RegionVersion) => Promise<void> | void
   onUpdateVegetationStage: (surveyId: string, stage: VegetationStage) => Promise<void> | void
   onUpdateIbpCas: (surveyId: string, ibpCas: IbpCas) => Promise<void> | void
@@ -116,7 +117,7 @@ export function ScoringContextEditor({
         title={t.contextTitle}
         subtitle={t.contextSubtitle}
         trailing={
-          canEditSurvey ? (
+          canEditSurvey && onOpenParcels ? (
             <AppButton
               label={t.editParcels}
               variant="secondary"

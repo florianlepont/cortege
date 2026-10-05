@@ -430,6 +430,9 @@ jest.mock("../screens/HomeScreen", () => ({ HomeScreen: mockProbe("home") }))
 jest.mock("../screens/SurveyDetailScreen", () => ({
   SurveyDetailScreen: mockProbe("surveyDetail"),
 }))
+jest.mock("../screens/SurveyContextScreen", () => ({ SurveyContextScreen: () => null }))
+jest.mock("../screens/SurveyScoreScreen", () => ({ SurveyScoreScreen: () => null }))
+jest.mock("../screens/SurveyHistoryScreen", () => ({ SurveyHistoryScreen: () => null }))
 jest.mock("../screens/SurveyFormScreen", () => ({ SurveyFormScreen: mockProbe("surveyForm") }))
 jest.mock("../screens/FactorDetailScreen", () => ({
   FactorDetailScreen: mockProbe("factorDetail"),

@@ -11,6 +11,9 @@ export const navigationFr = {
   headers: {
     surveys: "Mes Relevés",
     detail: "Détail",
+    surveyContext: "Contexte et parcelles",
+    surveyScore: "Score IBP",
+    surveyHistory: "Historique",
     newSurvey: "Nouveau relevé",
     editSurvey: "Modifier le relevé",
     factor: (factor: string) => `Facteur ${factor}`,
