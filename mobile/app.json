@@ -63,6 +63,7 @@
         }
       ],
       "./plugins/with-scene-delegate",
+      "./plugins/with-script-sandboxing-off",
       "expo-image",
       "expo-sharing",
       [
