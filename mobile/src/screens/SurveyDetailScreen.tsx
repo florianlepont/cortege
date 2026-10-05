@@ -53,6 +53,7 @@ export function SurveyDetailScreen({
   onRenameSurvey,
   onOpenContext,
   onOpenScore,
+  onOpenFactor,
   onOpenHistory,
   onEnsureAttachmentPreviews,
   onSimulateMissingAttachmentFile,
@@ -111,7 +112,8 @@ export function SurveyDetailScreen({
     selectedSurvey,
     data.canFinishNow,
     data.isComplete,
-    data.missingFactorCount,
+    data.filledFactorCount,
+    data.nextFactor,
   )
   const resolvedMethod = resolveMethodVersion(data.scoringContext.ibp_method_version)
   const methodLabel = resolvedMethod === IBP_METHOD_V3_2 ? "v3.2" : "v3.0"
@@ -223,6 +225,7 @@ export function SurveyDetailScreen({
         cta={cta}
         accessibilityLabel={fr.surveyDetail.a11y.finishSurvey(activeSiteName)}
         onFinish={() => void onSubmitSurvey(selectedSurvey.id)}
+        onOpenFactor={(factor) => void onOpenFactor(selectedSurvey.id, factor)}
       />
 
       <AppActionSheet

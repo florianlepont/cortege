@@ -45,10 +45,9 @@ export const surveyDetailFr = {
   // the survey can be finished.
   cta: {
     finish: "Terminer le relevé",
-    remaining: (count: number) =>
-      count === 1
-        ? "Encore 1 facteur à remplir pour terminer"
-        : `Encore ${count} facteurs à remplir pour terminer`,
+    start: "Commencer la notation",
+    continue: "Continuer la notation",
+    contextMissing: "Complétez le contexte pour terminer",
     remainingUnknown: "Remplissez les 10 facteurs pour terminer",
     pendingSync: "Synchronisez le relevé pour le terminer",
     blocked: "Synchronisation bloquée",

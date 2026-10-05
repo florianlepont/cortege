@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react"
 import { devOnlyHandler } from "../../app/dev-tools"
+import type { FactorKey } from "../../app/types"
 import { SurveyDetailScreen } from "../../screens/SurveyDetailScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
@@ -23,6 +24,10 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
 
   const onOpenContext = useLatestCallback(() => navigation.navigate("surveyContext"))
   const onOpenScore = useLatestCallback(() => navigation.navigate("surveyScore"))
+  const onOpenFactor = useLatestCallback(async (surveyId: string, factor: FactorKey) => {
+    const loaded = await actions.startEditSurvey(surveyId)
+    if (loaded) navigation.navigate("surveyFactorDetail", { factor })
+  })
   const onOpenHistory = useLatestCallback(() => navigation.navigate("surveyHistory"))
   const onSimulateMissingAttachmentFile = useMemo(
     () => devOnlyHandler(syncActions.handleSimulateMissingAttachmentFile),
@@ -51,6 +56,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
       onRenameSurvey={actions.renameSurvey}
       onOpenContext={onOpenContext}
       onOpenScore={onOpenScore}
+      onOpenFactor={onOpenFactor}
       onOpenHistory={onOpenHistory}
       onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
       onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
