@@ -429,6 +429,8 @@ describe("stack options and listeners", () => {
     expect(options({ route: { params: { mode: "wizard" } } }).title).toBe(
       fr.navigation.headers.parcelsWizard,
     )
+    expect(options({ route: { params: { mode: "wizard" } } }).presentation).toBe("card")
+    expect(options({ route: { params: { mode: "edit" } } }).presentation).toBe("formSheet")
     expect(options({ route: { params: { mode: "edit" } } }).title).toBe(
       fr.navigation.headers.parcels,
     )
