@@ -1,60 +1,48 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  Alert,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Platform,
-  RefreshControl,
-  ScrollView,
-} from "react-native"
+import { useEffect, useMemo, useState } from "react"
+import { Alert, Platform, ScrollView, View } from "react-native"
 import { useHeaderHeight } from "@react-navigation/elements"
+import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { shouldShowDevTools } from "../app/dev-tools"
-import { useBrandTheme } from "../app/theme"
 import { exportAndShareSurveyPdf, type SurveyExportData } from "../app/survey-pdf-export"
-import {
-  defaultVegetationStageForRegion,
-  normalizeVegetationStageForRegion,
-} from "../app/constants"
-import {
-  formatRemainingTime,
-  isLessThan24HoursRemaining,
-  resolveSubmissionDeadline,
-} from "../app/formatters"
-import { RegionVersion, SurveyDetailTab, VegetationStage } from "../app/types"
+import { useBrandTheme } from "../app/theme"
 import { fr, logStatusDetail } from "../i18n"
+import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
+import { AppGroupedList } from "../ui/AppGroupedList"
+import { AppNotice } from "../ui/AppNotice"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
-import { DetailHeader, type DetailHeaderHandle } from "./survey-detail/DetailHeader"
-import { DetailTabBar } from "./survey-detail/DetailTabBar"
-import { EventsTab } from "./survey-detail/EventsTab"
-import { FactorsSection } from "./survey-detail/FactorsSection"
-import { HistorySection } from "./survey-detail/HistorySection"
-import { resolveHeroMetric, resolveHeroSubmitState } from "./survey-detail/hero-state"
-import { MediaSection } from "./survey-detail/MediaSection"
-import { resolveScoringContext, ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
+import { FinishBar } from "./survey-detail/FinishBar"
+import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
+import { PhotosStrip } from "./survey-detail/PhotosStrip"
+import { ScoreCard } from "./survey-detail/ScoreCard"
 import { type SurveyDetailScreenProps } from "./survey-detail/screen-props"
-import { createDetailStyles } from "./survey-detail/styles"
-import { SummaryTab } from "./survey-detail/SummaryTab"
-import {
-  DisplayedFactorResult,
-  DisplayedScores,
-  useLocalDraftSummary,
-} from "./survey-detail/useLocalDraftSummary"
+import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
+import { resolveFinishCta, resolveStatusLine } from "./survey-detail/summary-state"
+import { SummaryHeader } from "./survey-detail/SummaryHeader"
+import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
+import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 
+const menuText = fr.surveyDetail.menu
+const actionsText = fr.surveyDetail.actions
+const rowsText = fr.surveyDetail.rows
+const summaryText = fr.surveyDetail.summary
+
+/**
+ * The summary of a survey (OA-46): its name and where it stands, the score, the photos, the map,
+ * and three rows that open the sub-pages (context and parcels, score by factor, history). The one
+ * action is the button at the bottom.
+ */
 export function SurveyDetailScreen({
   apiUrl,
   accessToken,
+  navigation,
   selectedSurvey,
   selectedSurveyAttachments,
-  surveyDetailTab,
-  setSurveyDetailTab,
   surveyDetails,
   detailsLoadingSurveyId,
   surveyEvents,
-  eventsLoadingSurveyId,
-  onLoadSurveyEvents,
   onTakePhoto,
   onPickPhoto,
   onDeleteAttachment,
@@ -62,320 +50,194 @@ export function SurveyDetailScreen({
   onSubmitSurvey,
   onRetrySurvey,
   onDiscardSurvey,
-  onOpenFactor,
   onRenameSurvey,
-  onUpdateRegionVersion,
-  onUpdateVegetationStage,
-  onUpdateIbpCas,
-  onUpdateCas3Scale,
-  onSwitchToV32,
-  onOpenParcels,
+  onOpenContext,
+  onOpenScore,
+  onOpenHistory,
   onEnsureAttachmentPreviews,
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
   const theme = useBrandTheme()
-  // OA-20: the iOS header is transparent, and the sticky hero stuck under it. The scroll view
-  // starts below the header instead.
+  // The iOS header is transparent: the scroll view starts below it (OA-20).
   const headerHeight = useHeaderHeight()
-  const styles = useMemo(() => createDetailStyles(theme), [theme])
-  const isHeroCompressedRef = useRef(false)
-  const [isHeroCompressed, setIsHeroCompressed] = useState(false)
-  const detail = surveyDetails[selectedSurvey.id]
-  // The Debug tab only exists in dev builds (D-06): a stale "debug" selection shows the summary.
-  const activeTab: SurveyDetailTab =
-    surveyDetailTab === "debug" && !shouldShowDevTools() ? "summary" : surveyDetailTab
-  // Local survey state is the live source after user actions (submit / visibility toggle).
-  const detailStatus = selectedSurvey.status
-  const detailCreatedAt = detail?.created_at ?? selectedSurvey.created_at
-  const submissionDeadline = resolveSubmissionDeadline(detailCreatedAt, detail?.expires_at ?? null)
-  const remainingTime = formatRemainingTime(submissionDeadline)
-  const isDraftNearDeadline =
-    detailStatus === "draft" && isLessThan24HoursRemaining(submissionDeadline)
-  const surveyEventList = surveyEvents[selectedSurvey.id] ?? []
-  const canonicalFactorEntries = useMemo(
-    () =>
-      detail
-        ? Object.entries(detail.factor_results).sort(([left], [right]) => left.localeCompare(right))
-        : [],
-    [detail],
-  )
-  const localDraft = useLocalDraftSummary(selectedSurvey)
-  const historyParcelId = detail?.parcel_ids?.[0] ?? detail?.parcel_id ?? null
+  const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
+  const { detail, canEditSurvey, activeSiteName } = data
+  const [menuVisible, setMenuVisible] = useState(false)
 
   const attachmentPreviewKey = selectedSurveyAttachments
     .map((attachment) => `${attachment.id}:${attachment.file_state}`)
     .join(",")
-
   useEffect(() => {
     void onEnsureAttachmentPreviews?.(selectPreviewCandidates(selectedSurveyAttachments))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attachmentPreviewKey, onEnsureAttachmentPreviews])
 
-  const useLocalDraftView = selectedSurvey.status !== "submitted" && localDraft.scores !== null
-  const displayedScores: DisplayedScores | null = useMemo(() => {
-    if (useLocalDraftView && localDraft.scores) {
-      return localDraft.scores
-    }
-    if (detail?.scores) {
-      return detail.scores
-    }
-    return localDraft.scores
-  }, [useLocalDraftView, localDraft.scores, detail?.scores])
-  const displayedFactorEntries = useMemo<Array<[string, DisplayedFactorResult]>>(() => {
-    if (useLocalDraftView && localDraft.factorEntries.length > 0) {
-      return localDraft.factorEntries
-    }
-    if (canonicalFactorEntries.length > 0) {
-      return canonicalFactorEntries as Array<[string, DisplayedFactorResult]>
-    }
-    return localDraft.factorEntries
-  }, [useLocalDraftView, localDraft.factorEntries, canonicalFactorEntries])
-  const showFactorLoadingHint =
-    detailsLoadingSurveyId === selectedSurvey.id &&
-    !displayedScores &&
-    displayedFactorEntries.length === 0
-  const canSubmitNow =
-    selectedSurvey.sync_state === "synced" &&
-    selectedSurvey.status !== "submitted" &&
-    selectedSurvey.sync_blocked !== 1 &&
-    localDraft.submitReady === true
-  const completedFactorCountForSubmit =
-    localDraft.missingFactorCount === null ? null : 10 - localDraft.missingFactorCount
-  const canEditSurvey = selectedSurvey.status !== "submitted"
-  const localDraftMeta = localDraft.meta
-  const activeRegion: RegionVersion = useMemo(() => {
-    if (localDraftMeta) return localDraftMeta.region_version
-    return detail?.region_version === "M" ? "M" : "ACA"
-  }, [localDraftMeta, detail?.region_version])
-  const activeVegetationStage: VegetationStage = useMemo(() => {
-    if (localDraftMeta) return localDraftMeta.vegetation_stage
-    const fallback = defaultVegetationStageForRegion(activeRegion)
-    return normalizeVegetationStageForRegion(
-      activeRegion,
-      typeof detail?.vegetation_stage === "string" ? detail.vegetation_stage : fallback,
-    )
-  }, [localDraftMeta, activeRegion, detail?.vegetation_stage])
-  const scoringContext = useMemo(
-    () => resolveScoringContext(localDraftMeta, detail, !canEditSurvey),
-    [localDraftMeta, detail, canEditSurvey],
-  )
-  const activeSiteName =
-    (localDraftMeta?.site_name ?? detail?.site_name ?? selectedSurvey.site_name).trim() ||
-    selectedSurvey.site_name
-
-  const exportData: SurveyExportData = useMemo(() => {
-    const detailParcelIds = detail?.parcel_ids?.length
-      ? detail.parcel_ids
-      : detail?.parcel_id
-        ? [detail.parcel_id]
-        : null
-    return {
+  const exportData: SurveyExportData = useMemo(
+    () => ({
       siteName: activeSiteName,
-      parcelIds: detailParcelIds ?? localDraftMeta?.parcel_ids ?? [],
-      observationYear: detail?.observation_year ?? localDraftMeta?.observation_year ?? null,
-      versionNumber: detail?.version_number ?? localDraftMeta?.version_number ?? null,
-      methodVersion: detail?.ibp_method_version ?? localDraftMeta?.ibp_method_version ?? null,
-      dateIso: detail?.submitted_at ?? detailCreatedAt,
-      scores: displayedScores,
-      factorEntries: displayedFactorEntries,
-    }
-  }, [
-    activeSiteName,
-    detail?.parcel_ids,
-    detail?.parcel_id,
-    detail?.observation_year,
-    detail?.version_number,
-    detail?.ibp_method_version,
-    detail?.submitted_at,
-    detailCreatedAt,
-    localDraftMeta,
-    displayedScores,
-    displayedFactorEntries,
-  ])
+      parcelIds: data.parcelIds,
+      observationYear: detail?.observation_year ?? data.localDraftMeta?.observation_year ?? null,
+      versionNumber: detail?.version_number ?? data.localDraftMeta?.version_number ?? null,
+      methodVersion: detail?.ibp_method_version ?? data.localDraftMeta?.ibp_method_version ?? null,
+      dateIso: detail?.submitted_at ?? data.createdAt,
+      scores: data.displayedScores,
+      factorEntries: data.displayedFactorEntries,
+    }),
+    [activeSiteName, data, detail],
+  )
 
-  // DET-03/04: the header's "…" menu (Renommer/Partager/Supprimer). Renommer is delegated to
-  // DetailHeader's own rename form via a ref, since that form's state already lives there.
-  const detailHeaderRef = useRef<DetailHeaderHandle>(null)
-  const [menuVisible, setMenuVisible] = useState(false)
-  const menuText = fr.surveyDetail.menu
-  const actionsText = fr.surveyDetail.actions
-
-  const handleSharePdf = async (): Promise<void> => {
+  const handleShare = useLatestCallback(async (): Promise<void> => {
     try {
       const { shared } = await exportAndShareSurveyPdf(exportData)
-      if (!shared) {
-        Alert.alert(menuText.share, actionsText.exportShareUnavailable)
-      }
+      if (!shared) Alert.alert(menuText.share, actionsText.exportShareUnavailable)
     } catch (error) {
       logStatusDetail("surveyDetail.exportPdf", error)
       Alert.alert(menuText.share, actionsText.exportFailed)
     }
-  }
+  })
+  const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
+  const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
+  useSurveyDetailHeader({
+    navigation,
+    siteName: activeSiteName,
+    onShare: () => void handleShare(),
+    onDelete: handleDelete,
+    onOpenMenu: handleOpenMenu,
+  })
 
-  const menuOptions = [
-    { label: menuText.rename, onPress: () => detailHeaderRef.current?.startRename() },
-    { label: menuText.share, onPress: () => void handleSharePdf() },
+  const statusLine = resolveStatusLine(selectedSurvey, data.isComplete)
+  const cta = resolveFinishCta(
+    selectedSurvey,
+    data.canFinishNow,
+    data.isComplete,
+    data.missingFactorCount,
+  )
+  const resolvedMethod = resolveMethodVersion(data.scoringContext.ibp_method_version)
+  const methodLabel = resolvedMethod === IBP_METHOD_V3_2 ? "v3.2" : "v3.0"
+  const rowSections = [
     {
-      label: menuText.delete,
-      destructive: true,
-      onPress: () => onDeleteSurvey(selectedSurvey.id),
+      key: "pages",
+      rows: [
+        {
+          key: "context",
+          label: rowsText.context,
+          value: rowsText.contextValue({
+            method: methodLabel,
+            cas: data.scoringContext.ibp_cas !== null ? String(data.scoringContext.ibp_cas) : null,
+          }),
+          onPress: onOpenContext,
+        },
+        {
+          key: "score",
+          label: rowsText.score,
+          value:
+            data.filledFactorCount !== null
+              ? rowsText.scoreValue(data.filledFactorCount)
+              : undefined,
+          onPress: onOpenScore,
+        },
+        {
+          key: "history",
+          label: rowsText.history,
+          value: rowsText.historyEmpty,
+          onPress: onOpenHistory,
+        },
+      ],
     },
   ]
 
-  useEffect(() => {
-    isHeroCompressedRef.current = false
-    setIsHeroCompressed(false)
-  }, [selectedSurvey.id])
-
-  const handleOpenParcels = (): void => {
-    if (!canEditSurvey) {
-      return
-    }
-    void onOpenParcels(selectedSurvey.id)
-  }
-
-  const handleDetailScroll = (event: NativeSyntheticEvent<NativeScrollEvent>): void => {
-    const nextCompressed = event.nativeEvent.contentOffset.y > 56
-    if (isHeroCompressedRef.current === nextCompressed) {
-      return
-    }
-    isHeroCompressedRef.current = nextCompressed
-    setIsHeroCompressed(nextCompressed)
-  }
-
-  const isEventsTabActive = activeTab === "events"
-  const isEventsRefreshing = isEventsTabActive && eventsLoadingSurveyId === selectedSurvey.id
-
   return (
-    <ScrollView
-      style={[styles.mainScroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
-      contentContainerStyle={styles.detailScreenContent}
-      onScroll={handleDetailScroll}
-      scrollEventThrottle={16}
-      stickyHeaderIndices={[0]}
-      // DET-05: pull-to-refresh reloads the history timeline only while it's the active tab — the
-      // summary/debug tabs keep this ScrollView's plain bounce, no refresh affordance of their own.
-      refreshControl={
-        isEventsTabActive ? (
-          <RefreshControl
-            refreshing={isEventsRefreshing}
-            onRefresh={() => void onLoadSurveyEvents(selectedSurvey.id)}
-            tintColor={theme.colors.forest}
-          />
-        ) : undefined
-      }
-    >
-      <DetailHeader
-        ref={detailHeaderRef}
-        survey={selectedSurvey}
-        activeSiteName={activeSiteName}
-        canEditSurvey={canEditSurvey}
-        isHeroCompressed={isHeroCompressed}
-        metric={resolveHeroMetric(
-          displayedScores,
-          useLocalDraftView,
-          completedFactorCountForSubmit,
-        )}
-        submitState={resolveHeroSubmitState(selectedSurvey, canSubmitNow, localDraft.submitReady)}
-        remainingTime={remainingTime}
-        attachmentCount={selectedSurveyAttachments.length}
-        onRenameSurvey={onRenameSurvey}
-        onSubmitSurvey={onSubmitSurvey}
-        onOpenMenu={() => setMenuVisible(true)}
-      />
-
-      <MediaSection
-        apiUrl={apiUrl}
-        accessToken={accessToken}
-        survey={selectedSurvey}
-        siteName={activeSiteName}
-        attachments={selectedSurveyAttachments}
-        displayLocation={detail?.display_location}
-        canEditSurvey={canEditSurvey}
-        hidden={activeTab === "debug"}
-        onOpenParcels={handleOpenParcels}
-        onTakePhoto={onTakePhoto}
-        onPickPhoto={onPickPhoto}
-        onDeleteAttachment={onDeleteAttachment}
-      />
-
-      <DetailTabBar activeTab={activeTab} onSelectTab={setSurveyDetailTab} />
-
-      {activeTab === "summary" ? (
-        <SummaryTab
-          survey={selectedSurvey}
-          remainingTime={remainingTime}
-          submissionDeadline={submissionDeadline}
-          isDraftNearDeadline={isDraftNearDeadline}
-          contextCard={
-            <ScoringContextEditor
-              surveyId={selectedSurvey.id}
-              canEditSurvey={canEditSurvey}
-              scoringContext={scoringContext}
-              activeRegion={activeRegion}
-              activeVegetationStage={activeVegetationStage}
-              onOpenParcels={handleOpenParcels}
-              onUpdateRegionVersion={onUpdateRegionVersion}
-              onUpdateVegetationStage={onUpdateVegetationStage}
-              onUpdateIbpCas={onUpdateIbpCas}
-              onUpdateCas3Scale={onUpdateCas3Scale}
-              onSwitchToV32={onSwitchToV32}
-            />
-          }
-        >
-          <FactorsSection
-            scores={displayedScores}
-            factorEntries={displayedFactorEntries}
-            useLocalDraftView={useLocalDraftView}
-            showLoadingHint={showFactorLoadingHint}
-            canEditSurvey={canEditSurvey}
-            onOpenFactor={(factor) => void onOpenFactor(selectedSurvey.id, factor)}
-          />
-          <HistorySection
-            apiUrl={apiUrl}
-            accessToken={accessToken}
-            parcelId={historyParcelId}
-            currentSurveyId={selectedSurvey.id}
-            currentScores={detail?.scores ?? null}
-            currentFactorResults={detail?.factor_results ?? null}
-          />
-          <DetailActions
-            survey={selectedSurvey}
-            onRetrySurvey={onRetrySurvey}
-            onDiscardSurvey={onDiscardSurvey}
-          />
-        </SummaryTab>
-      ) : null}
-
-      {activeTab === "events" ? (
-        <EventsTab
-          events={surveyEventList}
-          isLoading={eventsLoadingSurveyId === selectedSurvey.id}
-          onReload={() => void onLoadSurveyEvents(selectedSurvey.id)}
+    <View style={styles.scroll}>
+      <ScrollView
+        style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
+        contentContainerStyle={styles.content}
+      >
+        <SummaryHeader
+          surveyId={selectedSurvey.id}
+          siteName={activeSiteName}
+          canEdit={canEditSurvey}
+          statusLine={statusLine}
+          onRenameSurvey={onRenameSurvey}
         />
-      ) : null}
 
-      {activeTab === "debug" ? (
-        <DebugTab
+        {!canEditSurvey ? (
+          <AppNotice
+            tone="success"
+            icon="checkmark-done-circle-outline"
+            title={summaryText.submittedTitle}
+            message={summaryText.submittedMessage}
+          />
+        ) : null}
+
+        <ScoreCard
+          scores={data.displayedScores}
+          isDraftView={data.useLocalDraftView}
+          filledFactorCount={data.filledFactorCount}
+          onPress={onOpenScore}
+        />
+
+        <PhotosStrip
           survey={selectedSurvey}
           attachments={selectedSurveyAttachments}
-          events={surveyEventList}
-          createdAt={detailCreatedAt}
-          submittedAt={detail?.submitted_at ?? null}
-          publishableOnPublicMap={
-            detailStatus === "submitted" && selectedSurvey.visibility === "public"
-          }
-          onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
+          canEdit={canEditSurvey}
+          onTakePhoto={onTakePhoto}
+          onPickPhoto={onPickPhoto}
+          onDeleteAttachment={onDeleteAttachment}
         />
-      ) : null}
+
+        <ParcelMapCard
+          apiUrl={apiUrl}
+          accessToken={accessToken}
+          siteName={activeSiteName}
+          displayLocation={detail?.display_location}
+          parcelIds={data.parcelIds}
+          onPress={onOpenContext}
+        />
+
+        <AppGroupedList sections={rowSections} />
+
+        <DetailActions
+          survey={selectedSurvey}
+          onRetrySurvey={onRetrySurvey}
+          onDiscardSurvey={onDiscardSurvey}
+        />
+
+        {/* The debug view shows ids, error codes and raw payloads: dev builds only (D-06). */}
+        {shouldShowDevTools() ? (
+          <DebugTab
+            survey={selectedSurvey}
+            attachments={selectedSurveyAttachments}
+            events={surveyEvents[selectedSurvey.id] ?? []}
+            createdAt={data.createdAt}
+            submittedAt={detail?.submitted_at ?? null}
+            publishableOnPublicMap={
+              selectedSurvey.status === "submitted" && selectedSurvey.visibility === "public"
+            }
+            onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
+          />
+        ) : null}
+      </ScrollView>
+
+      <FinishBar
+        cta={cta}
+        accessibilityLabel={fr.surveyDetail.a11y.finishSurvey(activeSiteName)}
+        onFinish={() => void onSubmitSurvey(selectedSurvey.id)}
+      />
 
       <AppActionSheet
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
         title={activeSiteName}
-        options={menuOptions}
+        options={[
+          {
+            label: menuText.delete,
+            destructive: true,
+            onPress: () => onDeleteSurvey(selectedSurvey.id),
+          },
+        ]}
         cancelLabel={menuText.cancel}
       />
-    </ScrollView>
+    </View>
   )
 }

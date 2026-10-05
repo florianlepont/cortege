@@ -3,32 +3,31 @@ import { IBP_MAX } from "@cortege/ibp-domain"
 // Filled by plan 01.9-12; no other plan edits this section. Plan 01.8-14 added the method
 // version texts, the totals out of 50 (built from IBP_MAX) and the CNPF band names.
 export const surveyDetailFr = {
-  tabs: {
-    summary: "Résumé",
-    events: "Historique",
-    debug: "Débogage",
-  },
-  // DET-03/04: the native "…" menu replacing the tap-to-rename gesture and the equal-weight
-  // delete/export button row. "Visibilité" is deliberately absent — Phase 2 removed the
-  // private/public control from the app entirely (see 09-CONTEXT.md's scope decision).
+  // OA-49/50: the "…" menu now only holds the destructive action (the native menu on iOS, a sheet
+  // elsewhere). Sharing is its own header button (OA-48), renaming the pencil next to the title.
   menu: {
-    rename: "Renommer",
     share: "Partager",
     delete: "Supprimer",
     cancel: "Annuler",
   },
+  // OA-37: the status is said in words, one line under the title: "Brouillon · pas encore
+  // synchronisé". "Brouillon complet" says the ten factors and the information are filled in.
   header: {
-    eyebrow: "Détail du relevé",
     renameLabel: "Nom du relevé",
     renamePlaceholder: "Nom du relevé",
-    compactSummary: ({ workflow, sync }: { workflow: string; sync: string }) =>
-      `${workflow} · ${sync}`,
-    completionRate: "Avancement",
-    percent: (value: number) => `${value} %`,
+    status: {
+      draft: "Brouillon",
+      draftComplete: "Brouillon complet",
+      finished: "Terminé",
+    },
+    sync: {
+      synced: "synchronisé",
+      pending: "pas encore synchronisé",
+      error: "échec de la synchronisation",
+      blocked: "synchronisation bloquée",
+    },
+    syncSuffix: (sync: string) => `· ${sync}`,
     updatedAt: (date: string) => `Mis à jour ${date}`,
-    photoCount: (count: number) => (count <= 1 ? `${count} photo` : `${count} photos`),
-    submitSurvey: "Soumettre le relevé",
-    submit: "Soumettre",
   },
   metric: {
     localDraftScore: "Score du brouillon",
@@ -37,51 +36,70 @@ export const surveyDetailFr = {
     factorsCount: (count: number) => `${count}/10`,
     unknown: "—",
     total: (points: number) => `${points} / ${IBP_MAX.total}`,
-    split: ({ standTotal, contextTotal }: { standTotal: number; contextTotal: number }) =>
-      `P/G ${standTotal} / ${IBP_MAX.stand} · C ${contextTotal} / ${IBP_MAX.context}`,
+    outOfTotal: `/ ${IBP_MAX.total}`,
     standScore: (points: number) => `P/G ${points} / ${IBP_MAX.stand}`,
     contextScore: (points: number) => `C ${points} / ${IBP_MAX.context}`,
     withBand: ({ score, band }: { score: string; band: string }) => `${score} · ${band}`,
-    requiredCompleted: "Facteurs requis remplis",
-    readinessPending: "Vérification en attente",
   },
-  submit: {
-    ready: {
-      heading: "Prêt à soumettre",
-      body: "Tous les facteurs et champs requis sont remplis.",
-      pill: "Prêt",
-    },
-    pendingSync: {
-      heading: "Synchronisez avant de soumettre",
-      body: "Le relevé est complet sur le téléphone. Synchronisez-le pour pouvoir le soumettre.",
-      pill: "Sync d'abord",
-    },
-    blocked: {
-      heading: "Soumission bloquée",
-      body: "Résolvez le problème de synchronisation pour pouvoir soumettre.",
-      pill: "Bloqué",
-    },
-    progress: {
-      heading: "Soumission verrouillée",
-      body: "Les 10 facteurs doivent être remplis avant la soumission.",
-      pill: "Verrouillé",
-    },
+  // OA-40: no lock and no deadline. One button at the bottom, greyed with what is missing until
+  // the survey can be finished.
+  cta: {
+    finish: "Terminer le relevé",
+    remaining: (count: number) =>
+      count === 1
+        ? "Encore 1 facteur à remplir pour terminer"
+        : `Encore ${count} facteurs à remplir pour terminer`,
+    remainingUnknown: "Remplissez les 10 facteurs pour terminer",
+    pendingSync: "Synchronisez le relevé pour le terminer",
+    blocked: "Synchronisation bloquée",
   },
-  media: {
-    photosPage: ({ current, total }: { current: number; total: number }) =>
-      `Photos ${current}/${total}`,
-    tapMapToEdit: "Touchez la carte pour modifier les parcelles",
-    mapPreview: "Aperçu de la carte",
-    switchToPhotos: "Photos",
-    switchToMap: "Carte",
+  scoreCard: {
+    caption: "Score IBP",
+    draftCaption: "Score IBP du brouillon",
+    factorsFilled: (filled: number) =>
+      filled === 1 ? "1 facteur sur 10 rempli" : `${filled} facteurs sur 10 remplis`,
+    allFilled: "Les 10 facteurs sont remplis",
+    tapHint: "Touchez pour voir le détail.",
+  },
+  photos: {
+    title: "Photos",
+    add: "Ajouter",
+    countSuffix: (count: number) => ` · ${count}`,
+    empty: "Aucune photo pour l'instant.",
+    emptyReadOnly: "Aucune photo sur ce relevé.",
+  },
+  map: {
+    parcelCount: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),
+    noParcel: "Aucune parcelle choisie",
+  },
+  rows: {
+    context: "Contexte et parcelles",
+    score: "Score IBP",
+    history: "Historique",
+    contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
+      cas ? `${method} · cas ${cas}` : method,
+    scoreValue: (filled: number) => `${filled} sur 10`,
+    historyEmpty: "Voir les étapes",
+  },
+  // The two sub-pages of the summary (OA-46).
+  contextScreen: {
+    parcelsHeading: (count: number) => `Parcelles · ${count}`,
+    noParcel: "Aucune parcelle choisie pour ce relevé.",
+    editParcels: "Modifier les parcelles",
+    parcelLabel: (position: number) => `Parcelle ${position}`,
+  },
+  scoreScreen: {
+    standLabel: "Peuplement et gestion (A à G)",
+    contextLabel: "Contexte (H à J)",
+    factorsTitle: "Facteurs",
+    toFill: "À remplir",
+    pointsOf: ({ points, max }: { points: number; max: number }) => `${points} / ${max}`,
+    maxSuffix: (max: number) => ` / ${max}`,
   },
   summary: {
-    submittedTitle: "Relevé soumis",
+    submittedTitle: "Relevé terminé",
     submittedMessage: "Ce relevé est désormais en lecture seule.",
-    windowLabel: "Délai de soumission",
-    deadline: (date: string) => `Échéance : ${date}`,
-    nearDeadline: "Moins de 24 h avant l'expiration du relevé.",
-    contextTitle: "Contexte et parcelles",
+    contextTitle: "Méthode et station",
     contextSubtitle: "Méthode IBP et contexte de station utilisés pour le calcul.",
     editParcels: "Modifier les parcelles",
     region: (label: string) => `Région : ${label}`,
@@ -180,15 +198,16 @@ export const surveyDetailFr = {
     invalidNameMessage: "Le nom du relevé ne peut pas être vide.",
   },
   a11y: {
-    // DET-03: the "…" menu button, replacing the tap-anywhere-on-the-title gesture (no visual
-    // indicator, per the audit finding) with a discoverable, native menu affordance.
     openMenu: (name: string) => `Actions du relevé ${name}`,
-    submitSurvey: (name: string) => `Soumettre le relevé ${name}`,
+    shareSurvey: (name: string) => `Partager le relevé ${name} en PDF`,
+    renameSurvey: (name: string) => `Renommer le relevé ${name}`,
+    finishSurvey: (name: string) => `Terminer le relevé ${name}`,
     editParcels: (name: string) => `Modifier les parcelles du relevé ${name}`,
     mapPreview: (name: string) => `Carte du relevé ${name}`,
-    showPhotos: "Afficher les photos",
-    showMap: "Afficher la carte",
+    openScore: (value: string) => `Voir le détail du score, ${value}`,
     addPhoto: "Ajouter une photo",
+    photo: ({ position, total }: { position: number; total: number }) =>
+      `Photo ${position} sur ${total}`,
     deletePhoto: ({ position, total }: { position: number; total: number }) =>
       `Supprimer la photo ${position} sur ${total}`,
     openFactor: ({ title, value }: { title: string; value: string }) =>

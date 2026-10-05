@@ -192,6 +192,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - Typed through the global `ReactNavigation.RootParamList` (`navigation/types.ts`), so `useNavigation()` and `navigate` are checked without casts
 - Screens are mounted with `component={XRoute}`: memoised route components in `mobile/src/navigation/routes/` read only the contexts their screen shows. The navigator tree itself carries no data
 - 4 tabs: Accueil, Mes Relevés, Explorer, Compte. Search is the native search bar in the Mes Relevés header (no separate search tab); there is one survey stack
+- Survey detail (OA-46): `surveyDetail` is the summary (title and status line, score card, photos, map, rows, one bottom button); its sub-pages are `surveyContext` (map, parcels, method), `surveyScore` (sub-scores and the ten factors) and `surveyHistory` (events and earlier surveys of the parcel), all in the one survey stack and reading the selected survey from the surveys context. The data they share comes from `useSurveyDetailData` (`mobile/src/screens/survey-detail/`)
 - Tab bar rule (D-08): on iOS the native bar (`react-native-bottom-tabs`) is always used in Release builds; the JS bar (`@react-navigation/bottom-tabs`) is used on Android and in Expo Go. `EXPO_PUBLIC_ENABLE_NATIVE_TABS=false` is only honoured in development. Both libraries stay. Tab-bar hiding (e.g. on parcel selection) goes through `shouldHideTabBar` in `navigation/tab-bar.ts` for both trees
 
 **Text and i18n** (`mobile/src/i18n/`):

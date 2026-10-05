@@ -17,11 +17,9 @@ import {
   filterAndSortSurveys,
   formatSurveySyncDisplayLabel,
   formatSurveyUiStatusLabel,
-  formatSurveyWorkflowStatusLabel,
   getSubmitBlockReason,
   resolveEffectiveSurveyStatus,
   resolveSurveySyncDisplay,
-  resolveSurveyWorkflowStatus,
   resolveSurveyUiStatus,
 } from "./survey-logic"
 import { LocalAttachment, LocalSurvey } from "../storage"
@@ -279,21 +277,6 @@ describe("filterAndSortSurveys", () => {
     expect(formatSurveyUiStatusLabel("draft")).toBe("Brouillon")
   })
 
-  test("resolves workflow status for explicit badge display", () => {
-    expect(
-      resolveSurveyWorkflowStatus(makeSurvey({ status: "submitted", sync_state: "synced" })),
-    ).toBe("submitted")
-    expect(
-      resolveSurveyWorkflowStatus(makeSurvey({ status: "draft", sync_state: "pending" })),
-    ).toBe("pending")
-    expect(resolveSurveyWorkflowStatus(makeSurvey({ status: "draft", sync_state: "synced" }))).toBe(
-      "draft",
-    )
-    expect(
-      resolveSurveyWorkflowStatus(makeSurvey({ status: "expired", sync_state: "failed" })),
-    ).toBe("expired")
-  })
-
   test("resolves sync display for explicit badge display", () => {
     expect(
       resolveSurveySyncDisplay(makeSurvey({ status: "submitted", sync_state: "synced" })),
@@ -317,10 +300,6 @@ describe("filterAndSortSurveys", () => {
     expect(formatSurveySyncDisplayLabel("local")).toBe("Local")
     expect(formatSurveySyncDisplayLabel("sync_error")).toBe("Erreur de sync")
     expect(formatSurveySyncDisplayLabel("sync_blocked")).toBe("Sync bloqué")
-    expect(formatSurveyWorkflowStatusLabel("pending")).toBe("En attente")
-    expect(formatSurveyWorkflowStatusLabel("submitted")).toBe("Soumis")
-    expect(formatSurveyWorkflowStatusLabel("expired")).toBe("Expiré")
-    expect(formatSurveyWorkflowStatusLabel("draft")).toBe("Brouillon")
   })
 })
 
@@ -478,7 +457,6 @@ describe("labels read from the catalogue (D-06)", () => {
     expect(formatSurveyUiStatusLabel("sync_error")).toBe(status.syncError)
     expect(formatSurveyUiStatusLabel("sync_blocked")).toBe(status.syncBlocked)
     expect(formatSurveyUiStatusLabel("draft")).toBe(status.draft)
-    expect(formatSurveyWorkflowStatusLabel("pending")).toBe(status.pending)
     expect(formatSurveySyncDisplayLabel("sync")).toBe(status.synced)
     expect(formatSurveySyncDisplayLabel("local")).toBe(status.local)
   })

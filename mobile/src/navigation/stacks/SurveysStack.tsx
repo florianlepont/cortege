@@ -7,7 +7,10 @@ import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
 import { ParcelSelectionRoute } from "../routes/ParcelSelectionRoute"
+import { SurveyContextRoute } from "../routes/SurveyContextRoute"
 import { SurveyDetailRoute } from "../routes/SurveyDetailRoute"
+import { SurveyHistoryRoute } from "../routes/SurveyHistoryRoute"
+import { SurveyScoreRoute } from "../routes/SurveyScoreRoute"
 import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
@@ -79,6 +82,21 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               },
             }}
             component={SurveyDetailRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyContext"
+            options={{ title: headers.surveyContext, headerLargeTitle: false }}
+            component={SurveyContextRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyScore"
+            options={{ title: headers.surveyScore, headerLargeTitle: false }}
+            component={SurveyScoreRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyHistory"
+            options={{ title: headers.surveyHistory, headerLargeTitle: false }}
+            component={SurveyHistoryRoute}
           />
           <SurveysStack.Screen
             name="surveyForm"

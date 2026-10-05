@@ -1,6 +1,5 @@
 import { memo, useMemo } from "react"
 import { devOnlyHandler } from "../../app/dev-tools"
-import type { FactorKey } from "../../app/types"
 import { SurveyDetailScreen } from "../../screens/SurveyDetailScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
@@ -11,7 +10,8 @@ import type { SurveyDetailRouteProps } from "../types"
 /**
  * Survey detail route (phase 01.9-18, D-01): the selected survey and its
  * caches from the surveys context, the API URL from the session, and the sync
- * actions. Renders nothing until a survey is selected.
+ * actions. Renders nothing until a survey is selected. It is the summary; its sub-pages
+ * (context, score, history) are the routes next to it.
  */
 export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   navigation,
@@ -21,18 +21,9 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   const { state, actions } = useSurveys()
   const syncActions = useSyncActions()
 
-  const onOpenFactor = useLatestCallback(async (surveyId: string, factor: FactorKey) => {
-    const loaded = await actions.startEditSurvey(surveyId)
-    if (loaded) {
-      navigation.navigate("surveyFactorDetail", { factor })
-    }
-  })
-  const onOpenParcels = useLatestCallback(async (surveyId: string) => {
-    const loaded = await actions.startEditSurvey(surveyId)
-    if (loaded) {
-      navigation.navigate("surveyParcels", { surveyId, mode: "edit" })
-    }
-  })
+  const onOpenContext = useLatestCallback(() => navigation.navigate("surveyContext"))
+  const onOpenScore = useLatestCallback(() => navigation.navigate("surveyScore"))
+  const onOpenHistory = useLatestCallback(() => navigation.navigate("surveyHistory"))
   const onSimulateMissingAttachmentFile = useMemo(
     () => devOnlyHandler(syncActions.handleSimulateMissingAttachmentFile),
     [syncActions],
@@ -46,13 +37,10 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
       accessToken={accessToken}
       selectedSurvey={state.selectedSurvey}
       selectedSurveyAttachments={state.selectedSurveyAttachments}
-      surveyDetailTab={state.surveyDetailTab}
-      setSurveyDetailTab={actions.setSurveyDetailTab}
+      navigation={navigation}
       surveyDetails={state.surveyDetails}
       detailsLoadingSurveyId={state.detailsLoadingSurveyId}
       surveyEvents={state.surveyEvents}
-      eventsLoadingSurveyId={state.eventsLoadingSurveyId}
-      onLoadSurveyEvents={actions.loadSurveyEvents}
       onTakePhoto={actions.queueAttachmentFromCamera}
       onPickPhoto={actions.queueAttachmentFromLibrary}
       onDeleteAttachment={actions.deleteAttachment}
@@ -60,14 +48,10 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
       onSubmitSurvey={actions.submitSurvey}
       onRetrySurvey={actions.retrySurvey}
       onDiscardSurvey={actions.discardSurvey}
-      onOpenFactor={onOpenFactor}
       onRenameSurvey={actions.renameSurvey}
-      onUpdateRegionVersion={actions.updateRegionVersion}
-      onUpdateVegetationStage={actions.updateVegetationStage}
-      onUpdateIbpCas={actions.updateIbpCas}
-      onUpdateCas3Scale={actions.updateCas3Scale}
-      onSwitchToV32={actions.switchToV32}
-      onOpenParcels={onOpenParcels}
+      onOpenContext={onOpenContext}
+      onOpenScore={onOpenScore}
+      onOpenHistory={onOpenHistory}
       onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
       onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
     />
