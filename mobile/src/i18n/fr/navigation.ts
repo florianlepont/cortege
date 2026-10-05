@@ -6,6 +6,7 @@ export const navigationFr = {
     home: "Accueil",
     surveys: "Mes Relevés",
     publicMap: "Explorer",
+    search: "Rechercher",
     account: "Compte",
   },
   headers: {

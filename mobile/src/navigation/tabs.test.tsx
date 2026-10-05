@@ -131,6 +131,7 @@ jest.mock("./tab-config", () => {
 jest.mock("./stacks/HomeStack", () => ({ HomeTabNavigator: () => null }))
 jest.mock("./stacks/SurveysStack", () => ({ SurveysTabNavigator: () => null }))
 jest.mock("./stacks/PublicMapStack", () => ({ PublicMapTabNavigator: () => null }))
+jest.mock("./stacks/SearchStack", () => ({ SearchTabNavigator: () => null }))
 jest.mock("./stacks/AccountStack", () => ({ AccountTabNavigator: () => null }))
 
 import { selectionAsync } from "expo-haptics"
@@ -140,6 +141,8 @@ import { buildJsTabBarStyle, jsTabScreenOptions } from "./tab-config"
 
 // OA-13: Compte is no longer a tab.
 const THREE_TABS = ["home", "surveys", "publicMap"]
+// OA-52: iOS 26 draws the search role as its own button next to the bar.
+const NATIVE_TABS = [...THREE_TABS, "search"]
 
 type Options = Record<string, unknown>
 type OptionsFn = (args: Record<string, unknown>) => Options
@@ -193,9 +196,9 @@ function surveysState(leaf: string) {
 }
 
 describe("the three root tabs (D-08, OA-13)", () => {
-  test("the native tree registers exactly the three tabs", async () => {
+  test("the native tree registers the three tabs and the search tab", async () => {
     await mount()
-    expect(mockTabScreens.native).toEqual(THREE_TABS)
+    expect(mockTabScreens.native).toEqual(NATIVE_TABS)
     expect(mockTabScreens.js).toBeUndefined()
   })
 

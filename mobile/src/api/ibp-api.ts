@@ -6,6 +6,7 @@ import {
   SurveyDetailResponse,
   SurveyEventsResponse,
 } from "../app/types"
+import type { CommunitySurveyItem } from "@cortege/ibp-domain"
 import * as FileSystem from "expo-file-system/legacy"
 import { ApiError, apiRequest } from "./client"
 
@@ -234,6 +235,25 @@ export async function fetchPublicMapItems(
   return apiRequest<{ items: PublicMapItem[] }>({
     baseUrl: apiUrl,
     path: `/public/map-items${suffix}`,
+    method: "GET",
+    token: accessToken,
+  })
+}
+
+/** The community search (OA-52): finished surveys of every member, matched on name or author. */
+export async function searchCommunitySurveys(
+  apiUrl: string,
+  accessToken: string,
+  input: { q: string; limit?: number },
+): Promise<{ items: CommunitySurveyItem[] }> {
+  const queryParts: string[] = []
+  if (input.q.trim()) queryParts.push(`q=${encodeURIComponent(input.q.trim())}`)
+  if (input.limit) queryParts.push(`limit=${encodeURIComponent(String(input.limit))}`)
+  const suffix = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
+
+  return apiRequest<{ items: CommunitySurveyItem[] }>({
+    baseUrl: apiUrl,
+    path: `/public/community-surveys${suffix}`,
     method: "GET",
     token: accessToken,
   })

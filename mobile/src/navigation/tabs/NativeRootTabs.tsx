@@ -2,6 +2,7 @@ import { useCallback, useRef, type ElementType } from "react"
 import { useBrandTheme } from "../../app/theme"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
+import { SearchTabNavigator } from "../stacks/SearchStack"
 import { SurveysTabNavigator } from "../stacks/SurveysStack"
 import {
   makePublicMapTabListeners,
@@ -43,8 +44,7 @@ type NativeRootTabsProps = {
 
 /**
  * The native (iOS) tab bar from react-native-bottom-tabs: three tabs (OA-13: Compte opens from
- * the avatar). Search
- * is the native header search bar of Mes Relevés, not a tab (D-08).
+ * the avatar) and the search tab (OA-52), which iOS 26 shows as its own button beside the bar.
  */
 export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
   const deps = useTabListenerDeps()
@@ -84,6 +84,8 @@ export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
         listeners={makePublicMapTabListeners(deps)}
         component={PublicMapTabNavigator}
       />
+      {/* OA-52: iOS 26 draws the search role as its own round button next to the bar. */}
+      <NativeTab.Screen name="search" options={{ role: "search" }} component={SearchTabNavigator} />
     </NativeTab.Navigator>
   )
 }

@@ -435,6 +435,10 @@ jest.mock("../screens/SurveyDetailScreen", () => ({
 }))
 jest.mock("../screens/SurveyContextScreen", () => ({ SurveyContextScreen: () => null }))
 jest.mock("../screens/SurveyScoreScreen", () => ({ SurveyScoreScreen: () => null }))
+// The fake stacks mount every screen, search included; its rows are not the list's.
+jest.mock("../screens/survey-search/SurveySearchScreen", () => ({
+  SurveySearchScreen: () => null,
+}))
 jest.mock("../screens/SurveyHistoryScreen", () => ({ SurveyHistoryScreen: () => null }))
 jest.mock("../screens/SurveyFormScreen", () => ({ SurveyFormScreen: mockProbe("surveyForm") }))
 jest.mock("../screens/FactorDetailScreen", () => ({
