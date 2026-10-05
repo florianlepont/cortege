@@ -963,6 +963,29 @@ describe("SurveyDetailRoute", () => {
     })
     expect(fixture.surveys.actions.startEditSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFactorDetail", { factor: "C" })
+
+    // The map card opens the parcel editor directly (OA-96).
+    await act(async () => {
+      await callback("surveyDetail", "onOpenParcels")("s-01")
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
+      surveyId: "s-01",
+      mode: "edit",
+    })
+  })
+
+  test("the map card stays on the page when the survey cannot be loaded for editing", async () => {
+    const base = withSelection(makeFixture({ startEdit: false }))
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={base}>
+        <SurveyDetailRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("surveyDetail", "onOpenParcels")("s-01")
+    })
+    expect(navigation.navigate).not.toHaveBeenCalled()
   })
 
   test("the next-factor button stays on the page when the survey cannot be loaded", async () => {

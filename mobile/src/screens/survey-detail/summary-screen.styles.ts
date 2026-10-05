@@ -215,6 +215,9 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       height: 300,
     },
     // Bottom bar.
+    titlePressable: {
+      flex: 1,
+    },
     bottomBar: {
       paddingHorizontal: brandSpacing.md,
       paddingTop: 10,
