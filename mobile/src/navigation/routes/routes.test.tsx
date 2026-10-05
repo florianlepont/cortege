@@ -23,6 +23,7 @@ jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
 // SurveySearchRoute reads its navigation from the hook: it is mounted by two navigators.
 const mockSearchNavigation = {
   navigate: jest.fn(),
+  push: jest.fn(),
   goBack: jest.fn(),
   canGoBack: jest.fn(() => true),
 }
@@ -893,13 +894,10 @@ describe("SurveySearchRoute", () => {
 
 describe("CommunitySurveyRoute", () => {
   test("loads the survey of the route and opens another one from its history", async () => {
-    const navigation = { ...makeNavigation(), push: jest.fn() }
+    const navigation = mockSearchNavigation
     await mount(
       <Providers fixture={makeFixture()}>
-        <CommunitySurveyRoute
-          navigation={navigation as never}
-          route={{ params: { surveyId: "c-1" } } as never}
-        />
+        <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } }} />
       </Providers>,
     )
     const screen = props("communitySurvey")
@@ -1310,6 +1308,19 @@ describe("PublicMapRoute", () => {
     )
     expect(props("publicMap").loading).toBe(false)
     expect(mockExplorer.loadPublicMap).not.toHaveBeenCalled()
+  })
+
+  test("opening a survey from the map pushes its page in the Explorer stack (OA-59)", async () => {
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <PublicMapRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    act(() => {
+      ;(props("publicMap").onOpenSurvey as (surveyId: string) => void)("c-9")
+    })
+    expect(navigation.navigate).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-9" })
   })
 
   test("queuing a parcel download (REQ-D-offline-parcel-warning) writes to the offline queue", async () => {
