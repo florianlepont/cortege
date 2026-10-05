@@ -79,9 +79,13 @@ projects on every relevant change (`.github/workflows/ci.yml`):
 No signing key, certificate or secret is used. The `EXPO_PUBLIC_*` variables are
 dummy values (`https://ci.invalid/...`); the resulting apps are never run.
 
-The jobs run when a pull request or a push to `main` touches `mobile/**`,
-`packages/**` (the shared IBP package), the root `package.json` or
-`package-lock.json`, or `.github/workflows/ci.yml`.
+The jobs run when a pull request or a push to `main` touches what can change the
+generated native projects: `mobile/package.json`, `mobile/app.json`,
+`mobile/plugins/**`, `mobile/assets/**`, `mobile/babel.config.js`,
+`mobile/metro.config.js`, `packages/**` (the shared IBP package), the root
+`package.json` or `package-lock.json`, or `.github/workflows/ci.yml`. A change
+limited to `mobile/src/` (screens, i18n, styles) skips them; the `mobile-build`
+job (`expo-doctor`, `expo export`) still bundles it.
 They are part of **CI OK**, which accepts them as passed or skipped. To start
 them by hand, open Actions → CI → Run workflow and pick the branch.
 
