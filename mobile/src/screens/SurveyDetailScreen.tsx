@@ -177,7 +177,6 @@ export function SurveyDetailScreen({
           scores={data.displayedScores}
           isDraftView={data.useLocalDraftView}
           filledFactorCount={data.filledFactorCount}
-          onPress={onOpenScore}
         />
 
         <PhotosStrip

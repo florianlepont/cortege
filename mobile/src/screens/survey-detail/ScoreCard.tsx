@@ -1,6 +1,5 @@
 import { useMemo } from "react"
-import { Pressable, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import { View } from "react-native"
 import { IBP_MAX } from "@cortege/ibp-domain"
 import { brandOnDarkColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
@@ -18,31 +17,31 @@ type ScoreCardProps = {
   isDraftView: boolean
   /** Factors filled in out of ten; null while the local draft is being read. */
   filledFactorCount: number | null
-  onPress: () => void
 }
 
 /**
  * The one place the score shows on the summary (OA-45, OA-39): the total out of 50 and a ten-step
- * bar of the factors filled in. The detail by factor and sub-score is one tap away.
+ * bar of the factors filled in. Not tappable (owner, OA-93): the "Score IBP" row below it opens the
+ * detail by factor and sub-score.
  */
-export function ScoreCard({ scores, isDraftView, filledFactorCount, onPress }: ScoreCardProps) {
+export function ScoreCard({ scores, isDraftView, filledFactorCount }: ScoreCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const filled = filledFactorCount ?? 0
   const caption = isDraftView ? t.draftCaption : t.caption
   const hint =
     filledFactorCount === null
-      ? t.tapHint
+      ? ""
       : filled >= SEGMENT_COUNT
-        ? `${t.allFilled}. ${t.tapHint}`
-        : `${t.factorsFilled(filled)}. ${t.tapHint}`
+        ? t.allFilled
+        : t.factorsFilled(filled)
 
   return (
-    <Pressable
+    <View
       style={styles.scoreCard}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={a11y.openScore(
+      accessible
+      accessibilityRole="summary"
+      accessibilityLabel={a11y.scoreSummary(
         scores ? `${scores.ibp_total} / ${IBP_MAX.total}` : fr.surveyDetail.metric.unknown,
       )}
     >
@@ -53,7 +52,6 @@ export function ScoreCard({ scores, isDraftView, filledFactorCount, onPress }: S
         </View>
         <View style={styles.scoreCaptionRow}>
           <Text style={styles.scoreCaption}>{caption}</Text>
-          <Ionicons name="chevron-forward" size={18} color={theme.colors.white} />
         </View>
       </View>
       <View style={styles.scoreSegments}>
@@ -72,7 +70,7 @@ export function ScoreCard({ scores, isDraftView, filledFactorCount, onPress }: S
           />
         ))}
       </View>
-      <Text style={styles.scoreHint}>{hint}</Text>
-    </Pressable>
+      {hint ? <Text style={styles.scoreHint}>{hint}</Text> : null}
+    </View>
   )
 }

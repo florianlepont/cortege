@@ -104,7 +104,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
   const handleDownload = (): void => onDownload(name.trim() || defaultAreaName())
 
   return (
-    <AppCard glass padding={14} style={[styles.card, { bottom }]}>
+    <AppCard glass padding={14} style={[styles.card, areaStyles.floating, { bottom }]}>
       <AppSectionHeader
         title={t.title}
         subtitle={t.subtitle}

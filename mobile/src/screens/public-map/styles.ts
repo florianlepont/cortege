@@ -110,6 +110,12 @@ export function createControlStyles(theme: BrandTheme) {
 
 export function createOfflineAreasStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    // The sheet floats over the map, above the tab bar (its `bottom` comes from the screen).
+    floating: {
+      position: "absolute",
+      left: 12,
+      right: 12,
+    },
     nameField: {
       gap: 5,
     },

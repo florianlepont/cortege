@@ -46,9 +46,10 @@ export function GlassSurface({
   const isDark = tone === "dark" || scheme === "dark"
 
   if (LIQUID_GLASS) {
+    // Real Liquid Glass draws its own edge: an outline from the caller breaks the effect.
     return (
       <GlassView
-        style={[styles.container, style]}
+        style={[styles.container, withoutOutline(style)]}
         pointerEvents={pointerEvents}
         glassEffectStyle="regular"
         colorScheme={isDark ? "dark" : "light"}
@@ -75,6 +76,26 @@ export function GlassSurface({
       {children}
     </View>
   )
+}
+
+const OUTLINE_KEYS = [
+  "borderWidth",
+  "borderColor",
+  "borderTopWidth",
+  "borderBottomWidth",
+  "borderLeftWidth",
+  "borderRightWidth",
+  "borderTopColor",
+  "borderBottomColor",
+  "borderLeftColor",
+  "borderRightColor",
+] as const
+
+/** The caller's style without its outline (width and colour), the rest kept. */
+function withoutOutline(style: StyleProp<ViewStyle>): ViewStyle {
+  const flat: Record<string, unknown> = { ...(StyleSheet.flatten(style) ?? {}) }
+  for (const key of OUTLINE_KEYS) delete flat[key]
+  return flat as ViewStyle
 }
 
 const styles = StyleSheet.create({
