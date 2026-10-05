@@ -3,7 +3,7 @@ import { randomUUID } from "expo-crypto"
 import type { MapRegion as Region } from "../app/map-viewport"
 import { fetchPublicParcelStatuses } from "../api/ibp-api"
 import { computeRegionBbox, computeRegionBounds } from "../app/map-viewport"
-import { buildDownloadJobs, downloadAreaTiles } from "../map/offline-download"
+import { deleteAreaPacks, downloadAreaPacks } from "../map/offline-packs"
 import {
   MAX_TILE_ZOOM,
   MIN_TILE_ZOOM,
@@ -22,7 +22,9 @@ import {
   type OfflineAreaSummary,
 } from "../storage/offline-map"
 
-export type StartDownloadResult = { ok: true; areaId: string } | { ok: false; reason: "too_large" }
+export type StartDownloadResult =
+  | { ok: true; areaId: string }
+  | { ok: false; reason: "too_large" | "failed" }
 
 /**
  * Downloaded offline areas: list/download/delete (REQ-D-area-download). `startDownload` covers
@@ -32,6 +34,7 @@ export type StartDownloadResult = { ok: true; areaId: string } | { ok: false; re
 export function useOfflineAreas(
   apiUrl: string,
   accessToken: string | null,
+  enabled = true,
 ): {
   areas: OfflineAreaSummary[]
   downloadingAreaId: string | null
@@ -48,8 +51,8 @@ export function useOfflineAreas(
   }, [])
 
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    if (enabled) void refresh()
+  }, [enabled, refresh])
 
   const estimateForRegion = useCallback((region: Region): AreaDownloadEstimate => {
     return estimateAreaDownload(computeRegionBounds(region), basemapsForDownload().length)
@@ -79,12 +82,32 @@ export function useOfflineAreas(
       await refresh()
 
       const documentDirectory = getOfflineDocumentDirectory()
-      const jobs = buildDownloadJobs(bounds, basemaps, MIN_TILE_ZOOM, MAX_TILE_ZOOM)
+      // The native pack download reports a percentage; the list shows it against the estimate.
+      const toTiles = (percentage: number): number =>
+        Math.min(estimate.totalTileCount, Math.round((percentage / 100) * estimate.totalTileCount))
 
-      const progress = await downloadAreaTiles(documentDirectory, areaId, jobs, async (p) => {
-        await updateOfflineAreaProgress(areaId, p)
+      let progress: { downloadedTiles: number; failedTiles: number }
+      try {
+        const result = await downloadAreaPacks({
+          documentDirectory,
+          areaId,
+          bounds,
+          basemaps,
+          onProgress: (packProgress) => {
+            void updateOfflineAreaProgress(areaId, {
+              downloadedTiles: toTiles(packProgress.percentage),
+              failedTiles: 0,
+            }).then(refresh)
+          },
+        })
+        progress = { downloadedTiles: toTiles(result.percentage), failedTiles: 0 }
+      } catch {
+        await deleteAreaPacks(areaId).catch(() => undefined)
+        await finalizeOfflineArea(areaId, "failed", { downloadedTiles: 0, failedTiles: 0 })
+        setDownloadingAreaId(null)
         await refresh()
-      })
+        return { ok: false, reason: "failed" }
+      }
 
       if (accessToken) {
         try {
@@ -99,8 +122,7 @@ export function useOfflineAreas(
         }
       }
 
-      const status = progress.downloadedTiles > 0 ? "ready" : "failed"
-      await finalizeOfflineArea(areaId, status, progress)
+      await finalizeOfflineArea(areaId, "ready", progress)
       setDownloadingAreaId(null)
       await refresh()
 
@@ -111,6 +133,7 @@ export function useOfflineAreas(
 
   const deleteArea = useCallback(
     async (id: string): Promise<void> => {
+      await deleteAreaPacks(id).catch(() => undefined)
       await deleteOfflineAreaRecord(id)
       await refresh()
     },

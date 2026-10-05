@@ -20,12 +20,12 @@ jest.mock("../storage/offline-map", () => ({
   basemapsForDownload: (...args: unknown[]) => mockBasemapsForDownload(...args),
 }))
 
-const mockBuildDownloadJobs = jest.fn()
-const mockDownloadAreaTiles = jest.fn()
+const mockDownloadAreaPacks = jest.fn()
+const mockDeleteAreaPacks = jest.fn()
 
-jest.mock("../map/offline-download", () => ({
-  buildDownloadJobs: (...args: unknown[]) => mockBuildDownloadJobs(...args),
-  downloadAreaTiles: (...args: unknown[]) => mockDownloadAreaTiles(...args),
+jest.mock("../map/offline-packs", () => ({
+  downloadAreaPacks: (...args: unknown[]) => mockDownloadAreaPacks(...args),
+  deleteAreaPacks: (...args: unknown[]) => mockDeleteAreaPacks(...args),
 }))
 
 const mockFetchPublicParcelStatuses = jest.fn()
@@ -70,10 +70,11 @@ beforeEach(() => {
   mockGetOfflineDocumentDirectory.mockReturnValue("file:///mock/documents/")
   mockSaveOfflineAreaParcels.mockResolvedValue(undefined)
   mockBasemapsForDownload.mockReturnValue(["map", "satellite"])
-  mockBuildDownloadJobs.mockReturnValue([{ basemap: "map", tile: { z: 15, x: 1, y: 1 } }])
-  mockDownloadAreaTiles.mockImplementation(async (_dir, _id, jobs, onProgress) => {
-    await onProgress({ downloadedTiles: jobs.length, failedTiles: 0, totalTiles: jobs.length })
-    return { downloadedTiles: jobs.length, failedTiles: 0, totalTiles: jobs.length }
+  mockDeleteAreaPacks.mockResolvedValue(undefined)
+  mockDownloadAreaPacks.mockImplementation(async ({ onProgress }) => {
+    const done = { percentage: 100, completedTileCount: 10, complete: true }
+    onProgress(done)
+    return done
   })
   mockFetchPublicParcelStatuses.mockResolvedValue({ items: [{ parcel_id: "P1" }] })
 })
@@ -112,7 +113,9 @@ describe("useOfflineAreas", () => {
     expect(mockInsertOfflineArea).toHaveBeenCalledWith(
       expect.objectContaining({ name: "Bois du Nord" }),
     )
-    expect(mockDownloadAreaTiles).toHaveBeenCalled()
+    expect(mockDownloadAreaPacks).toHaveBeenCalledWith(
+      expect.objectContaining({ basemaps: ["map", "satellite"] }),
+    )
     expect(mockUpdateOfflineAreaProgress).toHaveBeenCalled()
     expect(mockFetchPublicParcelStatuses).toHaveBeenCalledWith(
       API_URL,
@@ -125,25 +128,29 @@ describe("useOfflineAreas", () => {
     expect(mockFinalizeOfflineArea).toHaveBeenCalledWith(
       expect.any(String),
       "ready",
-      expect.objectContaining({ downloadedTiles: 1 }),
+      expect.objectContaining({ downloadedTiles: expect.any(Number) }),
     )
     expect(result.current.downloadingAreaId).toBeNull()
   })
 
-  test("startDownload finalizes as failed when nothing downloaded", async () => {
-    mockDownloadAreaTiles.mockResolvedValue({ downloadedTiles: 0, failedTiles: 1, totalTiles: 1 })
+  test("startDownload finalizes as failed and removes the packs when the download errors", async () => {
+    mockDownloadAreaPacks.mockRejectedValue(new Error("network down"))
     const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
     await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
 
+    let outcome: Awaited<ReturnType<typeof result.current.startDownload>> | undefined
     await act(async () => {
-      await result.current.startDownload(REGION, "Zone")
+      outcome = await result.current.startDownload(REGION, "Zone")
     })
 
+    expect(outcome).toEqual({ ok: false, reason: "failed" })
+    expect(mockDeleteAreaPacks).toHaveBeenCalledTimes(1)
     expect(mockFinalizeOfflineArea).toHaveBeenCalledWith(
       expect.any(String),
       "failed",
       expect.objectContaining({ downloadedTiles: 0 }),
     )
+    expect(result.current.downloadingAreaId).toBeNull()
   })
 
   test("startDownload skips the parcel cache without an access token", async () => {
@@ -205,6 +212,7 @@ describe("useOfflineAreas", () => {
       await result.current.deleteArea("area-1")
     })
 
+    expect(mockDeleteAreaPacks).toHaveBeenCalledWith("area-1")
     expect(mockDeleteOfflineArea).toHaveBeenCalledWith("area-1")
     expect(result.current.areas).toHaveLength(0)
   })

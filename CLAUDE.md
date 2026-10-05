@@ -356,6 +356,7 @@ The API sends no email: the SMTP settings and `EmailService` were removed (phase
 | `EXPO_PUBLIC_AUTH0_DOMAIN` | Auth0 domain |
 | `EXPO_PUBLIC_AUTH0_CLIENT_ID` | Auth0 native app client ID |
 | `EXPO_PUBLIC_AUTH0_AUDIENCE` | Auth0 API audience |
+| `EXPO_PUBLIC_ENABLE_OFFLINE_MAPS` | Offline maps (native MapLibre packs, see `mobile/src/map/offline-packs.ts`) are on by default; `false` switches the download button and the offline style off |
 
 ---
 
