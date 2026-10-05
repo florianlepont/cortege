@@ -1,6 +1,8 @@
 // Filled by plan 01.9-17; no other plan edits this section.
 export const parcelSelectionFr = {
   currentPosition: "Ma position",
+  // Name of the offline area when the survey has no name yet.
+  areaSiteFallback: "la parcelle choisie",
   selectedCount: ({ count }: { count: number }) =>
     count > 1 ? `${count} parcelles sélectionnées` : `${count} parcelle sélectionnée`,
   noSelection: "Aucune parcelle sélectionnée",

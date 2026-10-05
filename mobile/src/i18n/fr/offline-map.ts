@@ -47,6 +47,26 @@ export const offlineMapFr = {
       deleteArea: (name: string) => `Supprimer la zone ${name}`,
     },
   },
+  // Offer to download the map around a survey (12.1 lot 3): banner in the new-survey flow, row on
+  // the survey page.
+  prompt: {
+    title: "Carte hors ligne",
+    message: (megabytes: string) =>
+      `Cette zone n'est pas encore sur votre téléphone. Téléchargez-la avant d'aller en forêt (environ 2 km autour, ${megabytes} Mo).`,
+    download: "Télécharger",
+    later: "Plus tard",
+    downloading: (percent: number) => `Téléchargement · ${percent} %`,
+    keepGoing: "Vous pouvez continuer : le relevé n'attend pas.",
+    areaName: (siteName: string) => `Autour de ${siteName}`,
+    row: {
+      missing: (megabytes: string) => `Carte hors ligne : non téléchargée (${megabytes} Mo)`,
+      downloaded: "Carte hors ligne : téléchargée",
+    },
+    a11y: {
+      download: "Télécharger la carte hors ligne autour de ce relevé",
+      later: "Ne pas télécharger la carte pour le moment",
+    },
+  },
   parcelMissing: {
     title: "Parcelle non disponible hors connexion",
     message:
