@@ -15,11 +15,13 @@ import {
   type MapRegion as Region,
 } from "../app/map-viewport"
 import { GpsCaptureResult } from "../app/types"
+import { useOfflineMapPrompt } from "../hooks/useOfflineMapPrompt"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
 import { AppNotice } from "../ui/AppNotice"
+import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
 
 const t = fr.parcelSelection
@@ -32,6 +34,7 @@ type SurveyParcelSelectionScreenProps = {
     lng: string
     collected_at: string
   }
+  siteName: string
   selectedParcelIds: string[]
   onToggleParcelSelection: (parcelId: string) => void
   onCaptureGpsLocation: () => Promise<GpsCaptureResult | null>
@@ -44,6 +47,7 @@ export function SurveyParcelSelectionScreen({
   apiUrl,
   accessToken,
   gpsLocation,
+  siteName,
   selectedParcelIds,
   onToggleParcelSelection,
   onCaptureGpsLocation,
@@ -57,6 +61,7 @@ export function SurveyParcelSelectionScreen({
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
   const [saving, setSaving] = useState(false)
+  const [offlineDismissed, setOfflineDismissed] = useState(false)
   const parsedLat = parseGpsCoordinate(gpsLocation.lat)
   const parsedLng = parseGpsCoordinate(gpsLocation.lng)
   const hasGpsCoordinates = Number.isFinite(parsedLat) && Number.isFinite(parsedLng)
@@ -98,6 +103,17 @@ export function SurveyParcelSelectionScreen({
   }
 
   const hasParcelSelection = selectedParcelIds.length > 0
+  // The map to offer is the one around the survey's position, once a parcel is chosen.
+  const offlinePoint = useMemo(
+    () =>
+      hasParcelSelection
+        ? hasGpsCoordinates
+          ? { lat: parsedLat, lng: parsedLng }
+          : { lat: mapRegion.latitude, lng: mapRegion.longitude }
+        : null,
+    [hasParcelSelection, hasGpsCoordinates, parsedLat, parsedLng, mapRegion],
+  )
+  const offlinePrompt = useOfflineMapPrompt({ apiUrl, accessToken, point: offlinePoint })
   const parcelSelectionLabel = t.selectedCount({ count: selectedParcelIds.length })
   const parcelHelperText =
     mapZoom >= 15
@@ -126,6 +142,20 @@ export function SurveyParcelSelectionScreen({
         marker={hasGpsCoordinates ? { latitude: parsedLat, longitude: parsedLng } : null}
         onRegionChange={handleMapRegionChange}
       />
+
+      {offlinePrompt.state !== "hidden" && !offlineDismissed ? (
+        <View
+          pointerEvents="box-none"
+          style={[screenStyles.promptLayer, { top: headerHeight + 8 }]}
+        >
+          <OfflineMapPrompt
+            prompt={offlinePrompt}
+            siteName={siteName.trim() || t.areaSiteFallback}
+            variant="banner"
+            onDismiss={() => setOfflineDismissed(true)}
+          />
+        </View>
+      ) : null}
 
       <View
         pointerEvents="box-none"
@@ -202,6 +232,11 @@ function createScreenStyles(theme: BrandTheme) {
       ...StyleSheet.absoluteFill,
       justifyContent: "flex-end",
       paddingHorizontal: 16,
+    },
+    promptLayer: {
+      position: "absolute",
+      left: 16,
+      right: 16,
     },
     bottomArea: {
       gap: 12,
