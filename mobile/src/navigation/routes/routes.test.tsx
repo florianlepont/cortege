@@ -23,6 +23,7 @@ jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
 // SurveySearchRoute reads its navigation from the hook: it is mounted by two navigators.
 const mockSearchNavigation = {
   navigate: jest.fn(),
+  push: jest.fn(),
   goBack: jest.fn(),
   canGoBack: jest.fn(() => true),
 }
@@ -37,6 +38,17 @@ jest.mock("../../hooks/useCommunitySurveys", () => ({
 }))
 jest.mock("../../screens/survey-search/SurveySearchScreen", () => ({
   SurveySearchScreen: mockScreen("surveySearch"),
+}))
+jest.mock("../../screens/community-survey/CommunitySurveyScreen", () => ({
+  CommunitySurveyScreen: mockScreen("communitySurvey"),
+}))
+const mockCommunitySurvey = { detail: null, photos: [], status: "loading", photosFailed: false }
+const mockCommunitySurveyArgs: { surveyId?: string; accessToken?: string | null } = {}
+jest.mock("../../hooks/useCommunitySurvey", () => ({
+  useCommunitySurvey: (_apiUrl: string, accessToken: string | null, surveyId: string) => {
+    Object.assign(mockCommunitySurveyArgs, { accessToken, surveyId })
+    return mockCommunitySurvey
+  },
 }))
 jest.mock("react-native", () => {
   const ReactRef = jest.requireActual("react") as typeof import("react")
@@ -216,6 +228,7 @@ import { SurveyScoreRoute } from "./SurveyScoreRoute"
 import { SurveyFormRoute } from "./SurveyFormRoute"
 import { SurveyListRoute } from "./SurveyListRoute"
 import { SurveySearchRoute } from "./SurveySearchRoute"
+import { CommunitySurveyRoute } from "./CommunitySurveyRoute"
 
 /** An action object whose members are jest.fn()s created on first access. */
 function actionsProxy<T extends object>(defaults: Record<string, unknown> = {}): T {
@@ -840,6 +853,20 @@ describe("SurveySearchRoute", () => {
     })
   })
 
+  test("opens a community survey in the Mes Relevés stack, above the search", async () => {
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <SurveySearchRoute />
+      </Providers>,
+    )
+    callback("surveySearch", "onOpenCommunitySurvey")("c-1")
+    expect(mockSearchNavigation.navigate).toHaveBeenLastCalledWith("surveys", {
+      screen: "communitySurvey",
+      params: { surveyId: "c-1" },
+      initial: false,
+    })
+  })
+
   test("cancel resets the filters and goes back, or returns to Mes Relevés from the search tab", async () => {
     const fixture = makeFixture()
     await mount(
@@ -862,6 +889,24 @@ describe("SurveySearchRoute", () => {
       callback("surveySearch", "onCancel")()
     })
     expect(mockSearchNavigation.navigate).toHaveBeenLastCalledWith("surveys")
+  })
+})
+
+describe("CommunitySurveyRoute", () => {
+  test("loads the survey of the route and opens another one from its history", async () => {
+    const navigation = mockSearchNavigation
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+    const screen = props("communitySurvey")
+    expect(mockCommunitySurveyArgs.surveyId).toBe("c-1")
+    expect(screen.apiUrl).toBe("http://api.test/v1")
+    expect(screen.state).toBe(mockCommunitySurvey)
+
+    callback("communitySurvey", "onOpenSurvey")("c-2")
+    expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-2" })
   })
 })
 
@@ -1263,6 +1308,19 @@ describe("PublicMapRoute", () => {
     )
     expect(props("publicMap").loading).toBe(false)
     expect(mockExplorer.loadPublicMap).not.toHaveBeenCalled()
+  })
+
+  test("opening a survey from the map pushes its page in the Explorer stack (OA-59)", async () => {
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <PublicMapRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    act(() => {
+      ;(props("publicMap").onOpenSurvey as (surveyId: string) => void)("c-9")
+    })
+    expect(navigation.navigate).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-9" })
   })
 
   test("queuing a parcel download (REQ-D-offline-parcel-warning) writes to the offline queue", async () => {

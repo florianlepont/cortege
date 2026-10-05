@@ -1,6 +1,8 @@
 import { View } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { useBrandTheme } from "../../app/theme"
+import { fr } from "../../i18n"
+import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { PublicMapRoute } from "../routes/PublicMapRoute"
 import { styles } from "../styles"
 import type { PublicMapStackParamList } from "../types"
@@ -17,6 +19,15 @@ export function PublicMapTabNavigator() {
         screenOptions={{ ...createBaseStackScreenOptions(theme), headerShown: false }}
       >
         <PublicMapStack.Screen name="publicMapHome" component={PublicMapRoute} />
+        <PublicMapStack.Screen
+          name="communitySurvey"
+          options={{
+            title: fr.navigation.headers.communitySurvey,
+            headerShown: true,
+            headerLargeTitle: false,
+          }}
+          component={CommunitySurveyRoute}
+        />
         <PublicMapStack.Screen
           name="accountHome"
           options={makeAccountHomeOptions(theme.semanticColors.textStrong)}

@@ -21,6 +21,8 @@ export type ParcelHistoryCardProps = {
   /** REQ-D-offline-parcel-warning (08-CONTEXT D-14). */
   isOffline: boolean
   onQueueDownload: (parcelId: string) => void
+  /** Opens the read-only page of one of the parcel's surveys (OA-59). */
+  onOpenSurvey: (surveyId: string) => void
   onClose: () => void
 }
 
@@ -28,23 +30,30 @@ function HistoryRow({
   item,
   previous,
   isLatest,
+  onOpen,
 }: {
   item: ParcelSurveyHistoryItem
   previous: ParcelSurveyHistoryItem | null
   isLatest: boolean
+  onOpen: (surveyId: string) => void
 }) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createPanelStyles(theme), [theme])
   const delta = previous ? computeIbpTotalDelta(item.scores, previous.scores) : null
 
+  const entry = t.entry({ year: item.observation_year, version: item.version_number, isLatest })
+
   return (
-    <View>
-      <Text style={styles.title}>
-        {t.entry({ year: item.observation_year, version: item.version_number, isLatest })}
-      </Text>
+    <Pressable
+      onPress={() => onOpen(item.survey_id)}
+      accessibilityRole="button"
+      accessibilityLabel={t.openSurvey(entry)}
+      testID={`parcel-history-open-${item.survey_id}`}
+    >
+      <Text style={styles.title}>{entry}</Text>
       <Text style={styles.meta}>{t.total(item.scores.ibp_total)}</Text>
       <Text style={styles.meta}>{delta ? t.delta.total(delta.total) : t.delta.unavailable}</Text>
-    </View>
+    </Pressable>
   )
 }
 
@@ -61,6 +70,7 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
   accessToken,
   isOffline,
   onQueueDownload,
+  onOpenSurvey,
   onClose,
 }: ParcelHistoryCardProps) {
   const theme = useBrandTheme()
@@ -116,6 +126,7 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
               item={item}
               previous={index > 0 ? items[index - 1] : null}
               isLatest={index === items.length - 1}
+              onOpen={onOpenSurvey}
             />
           ))
         : null}

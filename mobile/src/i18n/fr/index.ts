@@ -16,6 +16,7 @@ import { offlineMapFr } from "./offline-map"
 import { onboardingFr } from "./onboarding"
 import { ownerConflictFr } from "./owner-conflict"
 import { parcelHistoryFr } from "./parcel-history"
+import { communitySurveyFr } from "./community-survey"
 import { parcelSelectionFr } from "./parcel-selection"
 import { profileSetupFr } from "./profile-setup"
 import { publicMapFr } from "./public-map"
@@ -49,6 +50,7 @@ export const fr = {
   genus: genusFr,
   genusRecognition: genusRecognitionFr,
   parcelSelection: parcelSelectionFr,
+  communitySurvey: communitySurveyFr,
   parcelHistory: parcelHistoryFr,
   onboarding: onboardingFr,
   profileSetup: profileSetupFr,

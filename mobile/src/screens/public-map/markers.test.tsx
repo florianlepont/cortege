@@ -276,7 +276,14 @@ function texts(tree: ReactTestRenderer): string[] {
 }
 
 function renderCard(item: PublicMapItem): ReactTestRenderer {
-  return mount(<SelectedSurveyCard item={item} isOwnSurvey={false} onClose={jest.fn()} />)
+  return mount(
+    <SelectedSurveyCard
+      item={item}
+      isOwnSurvey={false}
+      onOpenSurvey={jest.fn()}
+      onClose={jest.fn()}
+    />,
+  )
 }
 
 describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () => {

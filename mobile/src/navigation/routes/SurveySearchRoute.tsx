@@ -35,6 +35,13 @@ export const SurveySearchRoute = memo(function SurveySearchRoute() {
     actions.openSurvey(surveyId)
     navigation.navigate("surveys", { screen: "surveyDetail", initial: false })
   })
+  const onOpenCommunitySurvey = useLatestCallback((surveyId: string) => {
+    navigation.navigate("surveys", {
+      screen: "communitySurvey",
+      params: { surveyId },
+      initial: false,
+    })
+  })
   const onCancel = useLatestCallback(() => {
     actions.resetFilters()
     setScope("mine")
@@ -61,6 +68,7 @@ export const SurveySearchRoute = memo(function SurveySearchRoute() {
       selectedSurveyId={state.selectedSurveyId}
       community={community}
       onOpenSurvey={onOpenSurvey}
+      onOpenCommunitySurvey={onOpenCommunitySurvey}
       onDeleteSurvey={actions.confirmDeleteSurvey}
       onCancel={onCancel}
       onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}

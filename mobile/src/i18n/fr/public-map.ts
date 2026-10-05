@@ -40,6 +40,7 @@ export const publicMapFr = {
   selected: {
     title: (ibp: number) => `Relevé · IBP ${ibp}/50`,
     meta: ({ region, date }: { region: string; date: string }) => `${region} · ${date}`,
+    openSurvey: "Voir le relevé",
     ownSurvey: "C'est votre propre relevé.",
   },
   clusterList: {

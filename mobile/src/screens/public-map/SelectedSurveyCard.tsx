@@ -12,6 +12,7 @@ import type { PublicMapItem } from "../../app/types"
 import { brandColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import { AppButton } from "../../ui/AppButton"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { createPanelStyles } from "./styles"
@@ -37,6 +38,7 @@ export function surveyPlaceLabel(item: PublicMapItem): string {
 export type SelectedSurveyCardProps = {
   item: PublicMapItem
   isOwnSurvey: boolean
+  onOpenSurvey: (surveyId: string) => void
   onClose: () => void
 }
 
@@ -49,6 +51,7 @@ export type SelectedSurveyCardProps = {
 export const SelectedSurveyCard = memo(function SelectedSurveyCard({
   item,
   isOwnSurvey,
+  onOpenSurvey,
   onClose,
 }: SelectedSurveyCardProps) {
   const theme = useBrandTheme()
@@ -75,6 +78,13 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
         {t.selected.meta({ region: surveyPlaceLabel(item), date: item.survey_date })}
       </Text>
 
+      <AppButton
+        label={t.selected.openSurvey}
+        variant="secondary"
+        size="sm"
+        onPress={() => onOpenSurvey(item.survey_id)}
+        testID="selected-survey-open"
+      />
       {isOwnSurvey ? (
         <AppNotice tone="info" icon="information-circle-outline" message={t.selected.ownSurvey} />
       ) : null}

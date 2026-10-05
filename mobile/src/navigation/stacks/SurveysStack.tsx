@@ -6,6 +6,7 @@ import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
+import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { ParcelSelectionRoute } from "../routes/ParcelSelectionRoute"
 import { SurveyContextRoute } from "../routes/SurveyContextRoute"
 import { SurveyDetailRoute } from "../routes/SurveyDetailRoute"
@@ -88,6 +89,11 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveySearch"
             options={{ headerShown: false }}
             component={SurveySearchRoute}
+          />
+          <SurveysStack.Screen
+            name="communitySurvey"
+            options={{ title: headers.communitySurvey, headerLargeTitle: false }}
+            component={CommunitySurveyRoute}
           />
           <SurveysStack.Screen
             name="surveyContext"

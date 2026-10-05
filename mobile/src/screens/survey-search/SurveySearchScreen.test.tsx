@@ -106,6 +106,7 @@ function makeProps(overrides: Partial<SurveySearchScreenProps> = {}): SurveySear
     selectedSurveyId: null,
     community: { items: [], status: "idle" },
     onOpenSurvey: jest.fn(),
+    onOpenCommunitySurvey: jest.fn(),
     onDeleteSurvey: jest.fn(),
     onCancel: jest.fn(),
     onEnsureAttachmentPreviews: jest.fn(),
@@ -223,6 +224,17 @@ describe("SurveySearchScreen, Communauté scope", () => {
     expect(all).toContain("Forêt x")
     expect(all).toContain("Camille")
     expect(all).toContain(fr.surveyList.community.unknownAuthor)
+  })
+
+  it("opens the page of a community survey when its row is pressed", () => {
+    const props = makeProps({
+      scope: "community",
+      community: { items: [community("x", "Camille")], status: "ready" },
+    })
+    const tree = render(props)
+    const row = tree.root.findAll((n) => n.props.testID === "community-row-x")[0]
+    act(() => row.props.onPress())
+    expect(props.onOpenCommunitySurvey).toHaveBeenCalledWith("x")
   })
 
   it("tells the loading, error and empty states", () => {

@@ -6,7 +6,11 @@ import {
   SurveyDetailResponse,
   SurveyEventsResponse,
 } from "../app/types"
-import type { CommunitySurveyItem } from "@cortege/ibp-domain"
+import type {
+  CommunitySurveyAttachment,
+  CommunitySurveyDetail,
+  CommunitySurveyItem,
+} from "@cortege/ibp-domain"
 import * as FileSystem from "expo-file-system/legacy"
 import { ApiError, apiRequest } from "./client"
 
@@ -254,6 +258,47 @@ export async function searchCommunitySurveys(
   return apiRequest<{ items: CommunitySurveyItem[] }>({
     baseUrl: apiUrl,
     path: `/public/community-surveys${suffix}`,
+    method: "GET",
+    token: accessToken,
+  })
+}
+
+/** The read-only page of a finished survey of any member (OA-59). */
+export async function fetchCommunitySurvey(
+  apiUrl: string,
+  accessToken: string,
+  surveyId: string,
+): Promise<CommunitySurveyDetail> {
+  return apiRequest<CommunitySurveyDetail>({
+    baseUrl: apiUrl,
+    path: `/public/community-surveys/${encodeURIComponent(surveyId)}`,
+    method: "GET",
+    token: accessToken,
+  })
+}
+
+export async function fetchCommunitySurveyAttachments(
+  apiUrl: string,
+  accessToken: string,
+  surveyId: string,
+): Promise<{ items: CommunitySurveyAttachment[] }> {
+  return apiRequest<{ items: CommunitySurveyAttachment[] }>({
+    baseUrl: apiUrl,
+    path: `/public/community-surveys/${encodeURIComponent(surveyId)}/attachments`,
+    method: "GET",
+    token: accessToken,
+  })
+}
+
+export async function fetchCommunityAttachmentDownload(
+  apiUrl: string,
+  accessToken: string,
+  surveyId: string,
+  attachmentId: string,
+): Promise<{ url: string; expires_at: string; requires_auth: boolean }> {
+  return apiRequest<{ url: string; expires_at: string; requires_auth: boolean }>({
+    baseUrl: apiUrl,
+    path: `/public/community-surveys/${encodeURIComponent(surveyId)}/attachments/${encodeURIComponent(attachmentId)}/download-url`,
     method: "GET",
     token: accessToken,
   })

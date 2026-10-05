@@ -26,6 +26,7 @@ export const parcelHistoryFr = {
     ]
       .filter(Boolean)
       .join(" · ") || "Relevé",
+  openSurvey: (entry: string) => `${entry}. Ouvrir ce relevé`,
   total: (points: number) => `IBP ${points}/50`,
   delta: {
     total: (value: number) => `Total ${signed(value)}`,

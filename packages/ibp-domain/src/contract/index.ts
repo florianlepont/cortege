@@ -21,5 +21,12 @@ export type {
   SyncOperationStatus,
   SyncResultError,
 } from "./sync"
-export type { CommunitySurveyItem, PublicMapItem, PublicParcelStatusItem } from "./public-map"
+export type {
+  CommunitySurveyAttachment,
+  CommunitySurveyDetail,
+  CommunitySurveyHistoryItem,
+  CommunitySurveyItem,
+  PublicMapItem,
+  PublicParcelStatusItem,
+} from "./public-map"
 export type { FactorAGenusInput, FactorALegacyCountInput } from "./factor-a"

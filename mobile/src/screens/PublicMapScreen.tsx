@@ -50,6 +50,8 @@ type PublicMapScreenProps = {
   basemap: BasemapKey
   onChangeBasemap: (basemap: BasemapKey) => void
   onQueueParcelDownload: (parcelId: string) => void
+  /** Opens the read-only page of a finished survey (OA-59), the same page as the search's. */
+  onOpenSurvey: (surveyId: string) => void
 }
 
 /**
@@ -78,6 +80,7 @@ export function PublicMapScreen({
   basemap,
   onChangeBasemap,
   onQueueParcelDownload,
+  onOpenSurvey,
 }: PublicMapScreenProps) {
   const theme = useBrandTheme()
   const screenStyles = useMemo(() => createScreenContainerStyle(theme), [theme])
@@ -246,6 +249,7 @@ export function PublicMapScreen({
       accessToken={accessToken}
       isOffline={isOffline}
       onQueueDownload={onQueueParcelDownload}
+      onOpenSurvey={onOpenSurvey}
       onClose={closeSheet}
     />
   ) : clusterItems ? (
@@ -255,6 +259,7 @@ export function PublicMapScreen({
       key={selectedItem.survey_id}
       item={selectedItem}
       isOwnSurvey={ownSurveyIdSet.has(selectedItem.survey_id)}
+      onOpenSurvey={onOpenSurvey}
       onClose={closeSheet}
     />
   ) : null

@@ -57,6 +57,8 @@ export type SurveySearchScreenProps = {
   selectedSurveyId: string | null
   community: CommunitySearchState
   onOpenSurvey: (surveyId: string) => void
+  /** Opens the read-only page of a finished survey of another member (OA-59). */
+  onOpenCommunitySurvey: (surveyId: string) => void
   onDeleteSurvey: (surveyId: string) => void
   onCancel: () => void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
@@ -91,6 +93,7 @@ export function SurveySearchScreen({
   selectedSurveyId,
   community,
   onOpenSurvey,
+  onOpenCommunitySurvey,
   onDeleteSurvey,
   onCancel,
   onEnsureAttachmentPreviews,
@@ -147,9 +150,16 @@ export function SurveySearchScreen({
           onDelete={onDeleteSurvey}
         />
       ) : (
-        <CommunityRow item={item.item} />
+        <CommunityRow item={item.item} onOpen={onOpenCommunitySurvey} />
       ),
-    [onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId, surveyDetails],
+    [
+      onDeleteSurvey,
+      onOpenCommunitySurvey,
+      onOpenSurvey,
+      previewById,
+      selectedSurveyId,
+      surveyDetails,
+    ],
   )
 
   const caption =

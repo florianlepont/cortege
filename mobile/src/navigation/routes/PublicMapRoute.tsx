@@ -26,7 +26,7 @@ import type { PublicMapRouteProps } from "../types"
  * served by the screen's own first viewport load, so it is not forced (the
  * explorer skips the identical request instead of sending it twice).
  */
-export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRouteProps) {
+export const PublicMapRoute = memo(function PublicMapRoute({ navigation }: PublicMapRouteProps) {
   const insets = useSafeAreaInsets()
   const { state: session } = useSession()
   const accessToken = useAccessToken()
@@ -46,6 +46,10 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
     accessToken,
     isOffline,
     onStatusChange: syncActions.setStatus,
+  })
+
+  const handleOpenSurvey = useLatestCallback((surveyId: string) => {
+    navigation.navigate("communitySurvey", { surveyId })
   })
 
   const viewportBboxRef = useRef<string | undefined>(undefined)
@@ -89,6 +93,7 @@ export const PublicMapRoute = memo(function PublicMapRoute(_props: PublicMapRout
         basemap={basemap}
         onChangeBasemap={setBasemap}
         onQueueParcelDownload={handleQueueParcelDownload}
+        onOpenSurvey={handleOpenSurvey}
       />
     </View>
   )

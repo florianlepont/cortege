@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common"
 import { AuthModule } from "../auth/auth.module"
 import { StorageModule } from "../storage/storage.module"
 import { CadastreProviderService } from "./cadastre-provider.service"
+import { CommunitySurveysService } from "./community-surveys.service"
 import { ParcelsController } from "./parcels.controller"
 import { ParcelsService } from "./parcels.service"
 import { PublicController } from "./public.controller"
@@ -25,6 +26,7 @@ import { SyncController } from "./sync.controller"
     CadastreProviderService,
     ParcelsService,
     PublicMapService,
+    CommunitySurveysService,
   ],
 })
 export class SurveysModule {}

@@ -67,6 +67,7 @@ describe("French catalogue", () => {
         "account",
         "authGate",
         "common",
+        "communitySurvey",
         "components",
         "factorDetail",
         "factorInput",

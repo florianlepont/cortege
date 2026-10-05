@@ -1164,6 +1164,37 @@ Response `200`:
 }
 ```
 
+### GET /public/community-surveys/{survey_id}
+
+The page of a finished survey of any member, read-only (phase 12.1). Requires an authenticated member.
+
+- Only a **submitted**, non-deleted survey answers; a draft, a deleted or an unknown id is `404`.
+- `author_name` is the author's display name, `null` once they deleted their account.
+- `parcel_ids` lists the linked parcels and `display_location` is their exact centre: **nothing is
+  rounded**, unlike the public map. This is an owner decision for internal use by the association
+  (2026-10-05); to revisit before the app opens to people outside it.
+- `scores`, `factor_results` and the method fields (`ibp_method_version`, `ibp_cas`,
+  `ibp_cas3_scale`, `region_version`, `vegetation_stage`) are those of the survey.
+- `history` lists the submitted surveys that share at least one parcel with this one, this survey
+  included (`is_current`), oldest first (year, then version), capped to 20. Versions are numbered
+  per parcel across all authors.
+
+### GET /public/community-surveys/{survey_id}/attachments
+
+The uploaded files of that survey: `{ items: [{ id, mime_type, size_bytes, created_at }] }`. The
+storage key is never returned. `404` for a survey that is not public.
+
+### GET /public/community-surveys/{survey_id}/attachments/{attachment_id}/download-url
+
+`{ url, expires_at, requires_auth }`, like the owner's route. With MinIO the URL is presigned and
+`requires_auth` is `false`; in local storage mode it is
+`/public/community-surveys/{survey_id}/attachments/{attachment_id}/content` and `requires_auth` is
+`true`. `404` for an unknown attachment, `409` for one not uploaded yet.
+
+### GET /public/community-surveys/{survey_id}/attachments/{attachment_id}/content
+
+The file itself (local storage mode only, otherwise `404`), with its `Content-Type`.
+
 ### GET /public/parcels/status?bbox=&zoom=&year=
 
 Return parcel study status for high zoom map rendering.

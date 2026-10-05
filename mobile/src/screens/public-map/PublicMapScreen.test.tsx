@@ -181,6 +181,7 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     basemap: "map",
     onChangeBasemap: jest.fn(),
     onQueueParcelDownload: jest.fn(),
+    onOpenSurvey: jest.fn(),
     ...overrides,
   }
 }
@@ -265,6 +266,62 @@ describe("PublicMapScreen", () => {
     expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
       0,
     )
+  })
+
+  test("the selected survey's card opens its read-only page (OA-59)", () => {
+    const props = makeProps({ items: [item("s-42", 45.7, 4.8, 27)] })
+    mount(props)
+    act(() =>
+      markers()
+        .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27))
+        ?.props.onPress(),
+    )
+    const open = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "AppButton" &&
+        node.props.label === fr.publicMap.selected.openSurvey,
+    )
+    act(() => open.props.onPress())
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-42")
+  })
+
+  test("a row of a tapped parcel's history opens that survey's page (OA-59)", async () => {
+    mockFetchParcelSurveyHistory.mockResolvedValue({
+      parcel_id: "studied-1",
+      items: [
+        {
+          survey_id: "s-old",
+          observation_year: 2025,
+          version_number: 1,
+          scores: { ibp_total: 24 },
+          factor_results: {},
+          submitted_at: "2025-06-10T09:00:00Z",
+        },
+        {
+          survey_id: "s-new",
+          observation_year: 2026,
+          version_number: 2,
+          scores: { ibp_total: 28 },
+          factor_results: {},
+          submitted_at: "2026-06-12T09:00:00Z",
+        },
+      ],
+    })
+    const props = makeProps({ parcelStatuses: [parcelStatus("studied-1", "studied")] })
+    mount(props)
+    const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer")
+    await act(async () => {
+      overlay.props.onParcelPress("studied-1")
+    })
+
+    const rows = tree.root.findAll((node) =>
+      String(node.props.testID ?? "").startsWith("parcel-history-open-"),
+    )
+    expect(rows.length).toBeGreaterThan(0)
+    const latest = tree.root.find((node) => node.props.testID === "parcel-history-open-s-new")
+    expect(latest.props.accessibilityRole).toBe("button")
+    act(() => latest.props.onPress())
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-new")
   })
 
   test("selecting an own survey shows a notice instead of a report entry point (Phase 2: removed)", () => {
