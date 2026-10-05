@@ -638,6 +638,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
   4. The owner explicitly records that the app is ready to open field tests to the association, with no open *blocker before field tests* entry left.
 
 **Plans**: TBD. The phase is an iterative loop (owner test → triage → fix batch → re-test), not a fixed plan list.
+**Scope decision (2026-10-05, OA-41)**: the submission deadline is out of the app for now. The survey detail shows no deadline, and the API's `expires_at` and `expired` status are no longer surfaced; removing them from the API and the data contract is part of the survey-detail redesign (OA-46), not a separate phase.
 **UI hint**: yes
 
 ### Phase 13: Field Validation
