@@ -117,6 +117,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-87 | Compte, profile picture | Choosing "Choisir depuis la galerie": the gallery takes a long time to open. | UX friction | 🟡 | 🔲 Open | | Candidates: `allowsEditing`, HEIC transcoding by the picker |
 | OA-88 | Accueil, header | The "1 à envoyer" badge next to the name is unclear and badly placed. It later turned into "À jour" once synced. | UX friction | 🟡 | ✅ Closed | #191 | Rework with OA-85: one header, a clear place for the sync state Owner confirmed the header on the phone 2026-09-29 |
 | OA-89 | Accueil, pull to refresh | The iOS refresh banner should stay open a moment while the update runs, then close. It closed at once, so for a few milliseconds it overlapped "Bonjour, Marie". | Display bug | 🔴 | ✅ Closed | #191 | With nothing to pull the request answered in a few ms; the banner now stays open at least 0.8 s Owner validated on the phone 2026-09-29 |
+| OA-90 | Communauté, relevé d'un autre membre | Owner request: open the finished survey of another member from the search (Communauté) and from the Explorer, read-only, the same page from both: score, sub-scores, ten factors, parcels, photos, history of the parcel. | Feature | 🟡 | 🔁 Fixed, awaiting owner check | #206 | Internal use, exact parcels shown (owner decision 2026-10-05); to revisit before the app opens outside the association |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
