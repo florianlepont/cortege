@@ -31,6 +31,7 @@ export const offlineMapFr = {
     defaultName: (formattedDateTime: string) => `Zone du ${formattedDateTime}`,
     estimate: ({ tiles, bytes }: { tiles: number; bytes: number }) =>
       `${tiles} tuiles · ~${formatMegabytes(bytes)}`,
+    downloadFailed: "Le téléchargement a échoué. Vérifiez votre connexion et réessayez.",
     tooLarge: "Zone trop grande pour le téléchargement : zoomez avant de réessayer.",
     empty: "Aucune zone téléchargée pour le moment.",
     status: {

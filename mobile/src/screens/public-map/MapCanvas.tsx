@@ -13,7 +13,7 @@ import type { BasemapKey } from "../../map/basemaps"
 import { CadastreLayer } from "../../map/maplibre/CadastreLayer"
 import { ParcelPolygonsLayer } from "../../map/maplibre/ParcelPolygonsLayer"
 import { boundsFromRegion, regionFromViewChange } from "../../map/maplibre/regions"
-import { mapStyleFor } from "../../map/maplibre/styles"
+import { useMapStyle } from "../../hooks/useMapStyle"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { ClusterMarker } from "./ClusterMarker"
 import { screenStyles } from "./styles"
@@ -37,6 +37,8 @@ export type MapCanvasProps = {
   onOpenClusterList: (items: PublicMapItem[]) => void
   /** REQ-D-basemap-switch (08-CONTEXT D-01). */
   basemap?: BasemapKey
+  /** Bumped after an offline download or delete so the style choice is re-checked. */
+  styleRefreshKey?: number
 }
 
 /**
@@ -58,7 +60,9 @@ export const MapCanvas = memo(function MapCanvas({
   onZoomTo,
   onOpenClusterList,
   basemap = "map",
+  styleRefreshKey = 0,
 }: MapCanvasProps) {
+  const { mapStyle, cadastreInStyle } = useMapStyle(basemap, styleRefreshKey)
   const { clusters, resolveClusterPress } = useMapClusters({ items, region })
 
   const clusterCenters = useMemo(() => {
@@ -95,13 +99,13 @@ export const MapCanvas = memo(function MapCanvas({
   return (
     <MapLibreMap
       style={screenStyles.map}
-      mapStyle={mapStyleFor(basemap)}
+      mapStyle={mapStyle}
       onRegionDidChange={handleRegionDidChange}
     >
       <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(DEFAULT_MAP_REGION) }} />
       {/* MAP-04: the device's own position is the native halo, not a marker kept by the app. */}
       <UserLocation />
-      <CadastreLayer enabled={parcelLayerRenderable} />
+      <CadastreLayer enabled={parcelLayerRenderable && !cadastreInStyle} />
       <ParcelPolygonsLayer
         items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS}
         onParcelPress={onSelectParcel}

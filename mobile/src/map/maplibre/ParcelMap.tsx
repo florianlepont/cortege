@@ -17,12 +17,12 @@ import {
 import { brandColors, brandMapTokens } from "../../app/brand-tokens"
 import type { MapCoordinate, MapRegion } from "../../app/map-viewport"
 import type { PublicParcelStatusItem } from "../../app/types"
+import { useMapStyle } from "../../hooks/useMapStyle"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { BasemapKey } from "../basemaps"
 import { CadastreLayer } from "./CadastreLayer"
 import { ParcelPolygonsLayer } from "./ParcelPolygonsLayer"
 import { boundsFromRegion, regionFromViewChange } from "./regions"
-import { mapStyleFor } from "./styles"
 
 export type ParcelMapHandle = {
   /** Moves the camera to a region. Asked before the map has loaded, it moves once it has. */
@@ -68,6 +68,7 @@ export const ParcelMap = forwardRef(function ParcelMap(
   }: ParcelMapProps,
   ref: Ref<ParcelMapHandle>,
 ) {
+  const { mapStyle, cadastreInStyle } = useMapStyle(basemap)
   const cameraRef = useRef<CameraRef | null>(null)
   const loadedRef = useRef(false)
   const pendingRef = useRef<{ region: MapRegion; durationMs: number } | null>(null)
@@ -103,7 +104,7 @@ export const ParcelMap = forwardRef(function ParcelMap(
   return (
     <MapLibreMap
       style={style}
-      mapStyle={mapStyleFor(basemap)}
+      mapStyle={mapStyle}
       dragPan={interactive}
       touchZoom={interactive}
       doubleTapZoom={interactive}
@@ -115,7 +116,7 @@ export const ParcelMap = forwardRef(function ParcelMap(
     >
       <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(initialRegion) }} />
       {showUserLocation ? <UserLocation /> : null}
-      <CadastreLayer enabled={cadastreEnabled} />
+      <CadastreLayer enabled={cadastreEnabled && !cadastreInStyle} />
       <ParcelPolygonsLayer
         items={parcels}
         selectedParcelIds={selectedParcelIds}

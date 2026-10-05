@@ -75,6 +75,28 @@ jest.mock("@maplibre/maplibre-react-native", () => {
   }
 })
 
+const mockOfflineEnabled = { value: false }
+jest.mock("../../app/feature-flags", () => ({
+  isOfflineMapsEnabled: () => mockOfflineEnabled.value,
+}))
+const mockStartDownload = jest.fn()
+const mockDeleteArea = jest.fn()
+jest.mock("../../hooks/useOfflineAreas", () => ({
+  useOfflineAreas: () => ({
+    areas: [],
+    downloadingAreaId: null,
+    estimateForRegion: () => ({
+      totalTileCount: 120,
+      estimatedBytes: 2_400_000,
+      exceedsCap: false,
+    }),
+    startDownload: (...args: unknown[]) => mockStartDownload(...args),
+    deleteArea: (...args: unknown[]) => mockDeleteArea(...args),
+    refresh: jest.fn(),
+  }),
+}))
+jest.mock("../../ui/AppStatusChip", () => ({ AppStatusChip: "AppStatusChip" }))
+
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: () => mockLocation.requestForegroundPermissionsAsync(),
   getCurrentPositionAsync: () => mockLocation.getCurrentPositionAsync(),
@@ -493,6 +515,39 @@ describe("PublicMapScreen", () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+
+  describe("offline areas (behind the feature flag)", () => {
+    afterEach(() => {
+      mockOfflineEnabled.value = false
+    })
+
+    test("flag off: no download button", () => {
+      mount(makeProps())
+      expect(
+        tree.root.findAll(
+          (node) => node.props.accessibilityLabel === fr.offlineMap.areas.openSheet,
+        ),
+      ).toHaveLength(0)
+    })
+
+    test("flag on: the button opens the sheet, a download starts for the viewport", async () => {
+      mockOfflineEnabled.value = true
+      mockStartDownload.mockResolvedValue({ ok: false, reason: "failed" })
+      mount(makeProps())
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      expect(texts()).toContain(fr.offlineMap.areas.empty)
+      const download = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "AppButton" &&
+          node.props.label === fr.offlineMap.areas.downloadThisArea,
+      )
+      await act(async () => {
+        download.props.onPress()
+      })
+      expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), expect.any(String))
+      expect(mockAlert).toHaveBeenCalledWith(fr.offlineMap.areas.downloadFailed)
+    })
   })
 
   test("locate: centres on the position, or explains a refusal or a failure", async () => {

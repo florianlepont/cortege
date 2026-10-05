@@ -30,3 +30,42 @@ export const GeoJSONSource = host("GeoJSONSource")
 export const Layer = host("Layer")
 export const ViewAnnotation = host("ViewAnnotation")
 export const UserLocation = host("UserLocation")
+
+// Native offline packs: an in-memory manager. Tests drive a pack's progress through `offlineMocks`.
+type MockPack = { id: string; metadata: Record<string, unknown>; bounds: number[] }
+type ProgressListener = (pack: MockPack, status: Record<string, unknown>) => void
+type ErrorListener = (pack: MockPack, error: { id: string; message: string }) => void
+
+export const offlineMocks = {
+  packs: [] as MockPack[],
+  listeners: new globalThis.Map<string, { progress: ProgressListener; error: ErrorListener }>(),
+  reset() {
+    offlineMocks.packs = []
+    offlineMocks.listeners = new globalThis.Map()
+    OfflineManager.createPack.mockClear()
+    OfflineManager.deletePack.mockClear()
+  },
+}
+
+export const OfflineManager = {
+  createPack: jest.fn(
+    async (
+      options: { bounds: number[]; metadata?: Record<string, unknown> },
+      progress: ProgressListener,
+      error: ErrorListener,
+    ) => {
+      const pack: MockPack = {
+        id: `pack-${offlineMocks.packs.length + 1}`,
+        metadata: options.metadata ?? {},
+        bounds: options.bounds,
+      }
+      offlineMocks.packs.push(pack)
+      offlineMocks.listeners.set(pack.id, { progress, error })
+      return pack
+    },
+  ),
+  getPacks: jest.fn(async () => offlineMocks.packs),
+  deletePack: jest.fn(async (id: string) => {
+    offlineMocks.packs = offlineMocks.packs.filter((pack) => pack.id !== id)
+  }),
+}
