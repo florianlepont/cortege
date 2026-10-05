@@ -38,6 +38,7 @@ export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
       apiUrl={session.apiUrl}
       accessToken={accessToken}
       gpsLocation={state.gpsLocation}
+      siteName={state.siteName}
       selectedParcelIds={state.selectedParcelIds}
       onToggleParcelSelection={actions.toggleParcelSelection}
       onCaptureGpsLocation={actions.captureGpsLocation}

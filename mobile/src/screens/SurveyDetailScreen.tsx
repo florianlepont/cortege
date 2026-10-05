@@ -15,6 +15,7 @@ import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
 import { FinishBar } from "./survey-detail/FinishBar"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
+import { SurveyOfflineMapRow } from "./survey-detail/SurveyOfflineMapRow"
 import { PhotosStrip } from "./survey-detail/PhotosStrip"
 import { ScoreCard } from "./survey-detail/ScoreCard"
 import { type SurveyDetailScreenProps } from "./survey-detail/screen-props"
@@ -195,6 +196,13 @@ export function SurveyDetailScreen({
           displayLocation={detail?.display_location}
           parcelIds={data.parcelIds}
           onPress={onOpenContext}
+        />
+
+        <SurveyOfflineMapRow
+          apiUrl={apiUrl}
+          accessToken={accessToken}
+          siteName={activeSiteName}
+          displayLocation={detail?.display_location}
         />
 
         <AppGroupedList sections={rowSections} />
