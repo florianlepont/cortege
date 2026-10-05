@@ -3,13 +3,14 @@ import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
 } from "../../app/constants"
-import { RegionVersion, SurveyDetailResponse, VegetationStage } from "../../app/types"
+import { FactorKey, RegionVersion, SurveyDetailResponse, VegetationStage } from "../../app/types"
 import { LocalSurvey } from "../../storage"
 import { resolveScoringContext, type ScoringContext } from "./ScoringContextEditor"
 import {
   DisplayedFactorResult,
   DisplayedScores,
   LocalDraftMeta,
+  NOT_FILLED_CLASS,
   useLocalDraftSummary,
 } from "./useLocalDraftSummary"
 
@@ -26,6 +27,8 @@ export type SurveyDetailData = {
   isComplete: boolean | null
   missingFactorCount: number | null
   filledFactorCount: number | null
+  /** The first factor (A to J) not filled yet, where "Commencer / Continuer la notation" goes. */
+  nextFactor: FactorKey | null
   localDraftMeta: LocalDraftMeta | null
   activeRegion: RegionVersion
   activeVegetationStage: VegetationStage
@@ -84,6 +87,14 @@ export function useSurveyDetailData(
   const missingFactorCount = localDraft.missingFactorCount
   const filledFactorCount = missingFactorCount === null ? null : 10 - missingFactorCount
 
+  const nextFactor = useMemo(
+    () =>
+      (localDraft.factorEntries.find(
+        ([, result]) => result.selected_class === NOT_FILLED_CLASS,
+      )?.[0] ?? null) as FactorKey | null,
+    [localDraft.factorEntries],
+  )
+
   const localDraftMeta = localDraft.meta
   const activeRegion: RegionVersion = useMemo(() => {
     if (localDraftMeta) return localDraftMeta.region_version
@@ -121,6 +132,7 @@ export function useSurveyDetailData(
     isComplete: localDraft.submitReady,
     missingFactorCount,
     filledFactorCount,
+    nextFactor,
     localDraftMeta,
     activeRegion,
     activeVegetationStage,

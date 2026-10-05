@@ -32,6 +32,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
   onOpenContext: () => void
   onOpenScore: () => void
+  /** Opens a factor of the survey to fill it ("Commencer / Continuer la notation"). */
+  onOpenFactor: (surveyId: string, factor: FactorKey) => void | Promise<void>
   onOpenHistory: () => void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
   onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
