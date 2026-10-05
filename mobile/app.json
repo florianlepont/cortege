@@ -78,6 +78,7 @@
     ],
     "ios": {
       "bundleIdentifier": "fr.etatssauvages.cortege",
+      "appleTeamId": "GF26W4D7VM",
       "infoPlist": {
         "UIApplicationSceneManifest": {
           "UIApplicationSupportsMultipleScenes": false,
