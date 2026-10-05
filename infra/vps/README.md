@@ -364,3 +364,21 @@ This VPS has 2 cores and 3.7 GB of RAM, and runs other projects. The stack caps
 itself at 768 MB for PostgreSQL, 768 MB for the API and 384 MB for MinIO, so it
 cannot starve its neighbours. Raise the limits in the compose file if the API
 starts being OOM-killed under load.
+
+## Demo community data (owner testing, remove before launch)
+
+To see the Communauté search, the parcel history and the read-only survey page before the app has
+real members, `api/scripts/seed-demo-community.js` creates three fake members with finished, public
+surveys on parcels that already exist in the database (so create and sync one survey with a
+parcel from the app first). Everything it creates is marked (`@demo.cortege.invalid` users,
+`demo-` survey ids).
+
+```bash
+# add (replaces any earlier demo data)
+docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
+  exec api node api/scripts/seed-demo-community.js
+
+# remove, before the app opens to the public
+docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
+  exec api node api/scripts/seed-demo-community.js --remove
+```
