@@ -52,7 +52,7 @@ const detailRow = (overrides: Record<string, unknown> = {}) => ({
   factor_results: { A: { selected_class: "S2", score: 4 } },
   submitted_at: "2026-09-28 09:41:00+00",
   author_name: "Camille",
-  parcel_count: 2,
+  parcel_ids: ["75101AB0123", "75101AB0124"],
   ...overrides,
 })
 
@@ -67,7 +67,7 @@ const historyRow = (id: string, version: number, total: unknown) => ({
 })
 
 describe("CommunitySurveysService.getDetail", () => {
-  it("maps the survey, rounds the location to 2 decimals and flags the current history entry", async () => {
+  it("maps the survey with its parcels and exact location, and flags the current history entry", async () => {
     const db = buildDb(
       { rows: [detailRow()] },
       { rows: [historyRow("s-1", 1, 24), historyRow("s-2", 2, "oops")] },
@@ -82,12 +82,11 @@ describe("CommunitySurveysService.getDetail", () => {
       author_name: "Camille",
       ibp_cas: 2,
       ibp_cas3_scale: true,
-      parcel_count: 2,
-      display_location: { lat: 47.31, lng: 1.31 },
+      parcel_ids: ["75101AB0123", "75101AB0124"],
+      display_location: { lat: 47.31234, lng: 1.30987 },
       scores: { ibp_total: 31 },
     })
     expect(detail).not.toHaveProperty("parcel_id")
-    expect(detail).not.toHaveProperty("parcel_ids")
     expect(detail.history).toEqual([
       expect.objectContaining({
         survey_id: "s-1",
@@ -102,22 +101,22 @@ describe("CommunitySurveysService.getDetail", () => {
     expect(db.query.mock.calls[1][1]).toEqual(["s-2", 20])
   })
 
-  it("counts a legacy single-parcel survey as one parcel, none without a parcel, and null untagged flags", async () => {
+  it("falls back to the legacy single parcel, has none without a parcel, and reads null untagged flags", async () => {
     const { service } = buildService(
       buildDb(
-        { rows: [detailRow({ parcel_count: 0, ibp_cas3_scale: null })] },
+        { rows: [detailRow({ parcel_ids: null, ibp_cas3_scale: null })] },
         { rows: [] },
-        { rows: [detailRow({ parcel_count: 0, parcel_id: null })] },
+        { rows: [detailRow({ parcel_ids: null, parcel_id: null })] },
         { rows: [] },
       ),
       buildStorage(),
       null,
     )
     const legacy = await service.getDetail("s-2")
-    expect(legacy.parcel_count).toBe(1)
+    expect(legacy.parcel_ids).toEqual(["75101AB0123"])
     expect(legacy.ibp_cas3_scale).toBe(false)
     expect(legacy.display_location).toBeNull()
-    expect((await service.getDetail("s-2")).parcel_count).toBe(0)
+    expect((await service.getDetail("s-2")).parcel_ids).toEqual([])
   })
 
   it("answers 404 when the survey is not a finished one", async () => {

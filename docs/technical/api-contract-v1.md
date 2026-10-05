@@ -1170,9 +1170,9 @@ The page of a finished survey of any member, read-only (phase 12.1). Requires an
 
 - Only a **submitted**, non-deleted survey answers; a draft, a deleted or an unknown id is `404`.
 - `author_name` is the author's display name, `null` once they deleted their account.
-- `parcel_count` is the number of linked parcels. The parcel references are **not** returned, and
-  `display_location` is rounded to 2 decimals like the public map: a cadastral reference would
-  give the exact place away.
+- `parcel_ids` lists the linked parcels and `display_location` is their exact centre: **nothing is
+  rounded**, unlike the public map. This is an owner decision for internal use by the association
+  (2026-10-05); to revisit before the app opens to people outside it.
 - `scores`, `factor_results` and the method fields (`ibp_method_version`, `ibp_cas`,
   `ibp_cas3_scale`, `region_version`, `vegetation_stage`) are those of the survey.
 - `history` lists the submitted surveys that share at least one parcel with this one, this survey

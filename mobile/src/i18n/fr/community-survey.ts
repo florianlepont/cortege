@@ -12,7 +12,6 @@ export const communitySurveyFr = {
   loading: "Chargement du relevé…",
   error: "Ce relevé n'a pas pu être chargé. Vérifiez votre connexion.",
   retry: "Réessayer",
-  approximatePosition: "Position approximative",
   contextTitle: "Méthode et station",
   rows: {
     method: "Méthode",

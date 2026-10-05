@@ -24,7 +24,7 @@ const survey = (overrides: Partial<CommunitySurveyDetail> = {}): CommunitySurvey
     A: { selected_class: "S2", score_points: 4 },
     B: { selected_class: "S1" },
   },
-  parcel_count: 1,
+  parcel_ids: ["75101AB0123"],
   display_location: { lat: 47.3, lng: 1.3 },
   history: [],
   ...overrides,

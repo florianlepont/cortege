@@ -54,9 +54,9 @@ export type CommunitySurveyHistoryItem = {
 }
 
 /**
- * A finished survey of any member (`GET /public/community-surveys/:id`), read-only. The location
- * is rounded to 2 decimals like the public map, and the parcels are only counted: their
- * cadastral references would give the exact place away.
+ * A finished survey of any member (`GET /public/community-surveys/:id`), read-only. For now every
+ * member sees its parcels and its exact position (internal use by the association): unlike the
+ * public map, nothing is rounded. To revisit before the app opens to people outside the association.
  */
 export type CommunitySurveyDetail = {
   survey_id: string
@@ -72,7 +72,7 @@ export type CommunitySurveyDetail = {
   ibp_cas3_scale: boolean
   scores: Record<string, unknown>
   factor_results: Record<string, unknown>
-  parcel_count: number
+  parcel_ids: string[]
   display_location: { lat: number; lng: number } | null
   history: CommunitySurveyHistoryItem[]
 }

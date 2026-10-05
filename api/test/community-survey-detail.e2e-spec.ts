@@ -100,7 +100,7 @@ describe("Community survey page (e2e)", () => {
       .expect(401)
   })
 
-  it("shows another member's finished survey with its author, rounded place and parcel history", async () => {
+  it("shows another member's finished survey with its author, parcels, place and parcel history", async () => {
     const authorToken = await loginTestUser(app, "e2e-community-detail-author")
     const secondToken = await loginTestUser(app, "e2e-community-detail-second")
     const readerToken = await loginTestUser(app, "e2e-community-detail-reader")
@@ -125,16 +125,15 @@ describe("Community survey page (e2e)", () => {
     expect(detail.survey_id).toBe(secondId)
     expect(detail.site_name).toBe("Bois du Second")
     expect(typeof detail.author_name).toBe("string")
-    expect(detail.parcel_count).toBe(1)
+    expect(detail.parcel_ids).toEqual([parcelId])
     expect(typeof detail.scores.ibp_total).toBe("number")
     expect(typeof detail.factor_results).toBe("object")
     expect(detail.ibp_cas3_scale).toBe(false)
-    // Rounded to 2 decimals like the public map, and no parcel reference leaks.
+    // Internal use: the exact place, not the public map's rounded one.
     const { lat, lng } = detail.display_location as { lat: number; lng: number }
-    expect(lat).toBe(Number(lat.toFixed(2)))
-    expect(lng).toBe(Number(lng.toFixed(2)))
-    expect(JSON.stringify(detail)).not.toContain(parcelId)
-    expect(detail).not.toHaveProperty("parcel_ids")
+    expect(typeof lat).toBe("number")
+    expect(typeof lng).toBe("number")
+    expect(detail).not.toHaveProperty("parcel_count")
 
     const history = detail.history as Array<{
       survey_id: string

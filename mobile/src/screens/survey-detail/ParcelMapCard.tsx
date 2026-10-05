@@ -27,8 +27,6 @@ type ParcelMapCardProps = {
   siteName: string
   displayLocation: SurveyDetailResponse["display_location"] | undefined
   parcelIds: string[]
-  /** Replaces the parcel count in the chip (a community survey shows an approximate position). */
-  chipLabel?: string
   style?: StyleProp<ViewStyle>
   /** Opens the survey's context and parcels; absent, the card is a plain picture. */
   onPress?: () => void
@@ -46,7 +44,6 @@ export function ParcelMapCard({
   siteName,
   displayLocation,
   parcelIds,
-  chipLabel,
   style,
   onPress,
   children,
@@ -87,7 +84,7 @@ export function ParcelMapCard({
   const chip = (
     <GlassSurface style={styles.mapChip} pointerEvents="none">
       <Text style={styles.mapChipText}>
-        {chipLabel ?? (parcelIds.length > 0 ? t.parcelCount(parcelIds.length) : t.noParcel)}
+        {parcelIds.length > 0 ? t.parcelCount(parcelIds.length) : t.noParcel}
       </Text>
     </GlassSurface>
   )

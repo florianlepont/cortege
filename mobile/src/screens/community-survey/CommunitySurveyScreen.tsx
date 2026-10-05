@@ -50,6 +50,20 @@ export function CommunitySurveyScreen({
 
   const scores = useMemo(() => (detail ? toDisplayedScores(detail) : null), [detail])
   const factorEntries = useMemo(() => (detail ? toFactorEntries(detail) : []), [detail])
+  const parcelSections = useMemo(
+    () => [
+      {
+        key: "parcels",
+        title: fr.surveyDetail.contextScreen.parcelsHeading(detail?.parcel_ids.length ?? 0),
+        rows: (detail?.parcel_ids ?? []).map((parcelId, index) => ({
+          key: parcelId,
+          label: fr.surveyDetail.contextScreen.parcelLabel(index + 1),
+          value: parcelId,
+        })),
+      },
+    ],
+    [detail],
+  )
   const contextSections = useMemo(
     () => [
       {
@@ -113,10 +127,10 @@ export function CommunitySurveyScreen({
         accessToken={accessToken}
         siteName={detail.site_name}
         displayLocation={detail.display_location ?? undefined}
-        parcelIds={[]}
-        chipLabel={`${t.approximatePosition} · ${fr.surveyDetail.map.parcelCount(detail.parcel_count)}`}
+        parcelIds={detail.parcel_ids}
         style={styles.mapTall}
       />
+      {detail.parcel_ids.length > 0 ? <AppGroupedList sections={parcelSections} /> : null}
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>

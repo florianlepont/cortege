@@ -30,7 +30,7 @@ type DetailDbRow = {
   factor_results: Record<string, unknown>
   submitted_at: string
   author_name: string | null
-  parcel_count: number
+  parcel_ids: string[] | null
 }
 
 type HistoryDbRow = {
@@ -82,7 +82,7 @@ export class CommunitySurveysService {
          s.factor_results,
          s.submitted_at::text,
          u.display_name AS author_name,
-         (SELECT COUNT(*)::int FROM survey_parcels sp WHERE sp.survey_id = s.id) AS parcel_count
+         (SELECT array_agg(sp.parcel_id ORDER BY sp.parcel_id) FROM survey_parcels sp WHERE sp.survey_id = s.id) AS parcel_ids
        FROM surveys s
        LEFT JOIN users u
          ON u.id = s.user_id
@@ -139,12 +139,10 @@ export class CommunitySurveysService {
       ibp_cas3_scale: row.ibp_cas3_scale === true,
       scores: row.scores,
       factor_results: row.factor_results,
-      // A legacy survey linked by `parcel_id` only still counts its one parcel.
-      parcel_count: row.parcel_count > 0 ? row.parcel_count : row.parcel_id ? 1 : 0,
-      // Rounded like the public map: the exact place stays with the author.
-      display_location: location
-        ? { lat: Number(location.lat.toFixed(2)), lng: Number(location.lng.toFixed(2)) }
-        : null,
+      // A legacy survey linked by `parcel_id` only still has its one parcel.
+      parcel_ids: row.parcel_ids ?? (row.parcel_id ? [row.parcel_id] : []),
+      // Exact, unlike the public map: the parcels are shown anyway (internal use, to revisit).
+      display_location: location,
       history: history.rows.map(
         (item): CommunitySurveyHistoryItem => ({
           survey_id: item.id,

@@ -89,7 +89,7 @@ const detail = (overrides: Partial<CommunitySurveyDetail> = {}): CommunitySurvey
   ibp_cas3_scale: false,
   scores: { ibp_total: 31, ibp_peuplement_gestion: 22, ibp_contexte: 9 },
   factor_results: {},
-  parcel_count: 2,
+  parcel_ids: ["75101AB0123", "75101AB0124"],
   display_location: { lat: 47.31, lng: 1.31 },
   history: [],
   ...overrides,
@@ -155,14 +155,25 @@ describe("CommunitySurveyScreen", () => {
     const factors = byType(tree, "FactorsList")[0]
     expect(factors.props.canEditSurvey).toBe(false)
     expect(factors.props.factorEntries).toHaveLength(10)
-    expect(byType(tree, "AppGroupedList")[0].props.sections[0].rows).toHaveLength(2)
+    const lists = byType(tree, "AppGroupedList")
+    // The context rows, then the parcels with their cadastral references.
+    expect(lists[0].props.sections[0].rows).toHaveLength(2)
+    expect(lists[1].props.sections[0].rows).toEqual([
+      {
+        key: "75101AB0123",
+        label: fr.surveyDetail.contextScreen.parcelLabel(1),
+        value: "75101AB0123",
+      },
+      {
+        key: "75101AB0124",
+        label: fr.surveyDetail.contextScreen.parcelLabel(2),
+        value: "75101AB0124",
+      },
+    ])
 
     const map = byType(tree, "ParcelMapCard")[0]
-    expect(map.props.parcelIds).toEqual([])
+    expect(map.props.parcelIds).toEqual(["75101AB0123", "75101AB0124"])
     expect(map.props.displayLocation).toEqual({ lat: 47.31, lng: 1.31 })
-    expect(map.props.chipLabel).toBe(
-      `${t.approximatePosition} · ${fr.surveyDetail.map.parcelCount(2)}`,
-    )
   })
 
   it("names an unknown author and an unnamed survey, and shows no map position when there is none", () => {
@@ -173,6 +184,11 @@ describe("CommunitySurveyScreen", () => {
     expect(all).toContain(t.unknownAuthor)
     expect(all).toContain(fr.common.untitledSurvey)
     expect(byType(tree, "ParcelMapCard")[0].props.displayLocation).toBeUndefined()
+  })
+
+  it("shows no parcel list when the survey has no parcel", () => {
+    const { tree } = render(state({ detail: detail({ parcel_ids: [] }) }))
+    expect(byType(tree, "AppGroupedList")).toHaveLength(1)
   })
 
   it("leaves the version line out when the survey has neither year nor version", () => {
