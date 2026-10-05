@@ -56,42 +56,51 @@ describe("resolveStatusLine (OA-37: the status in words)", () => {
 
 describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {
   test("a finished survey has no button", () => {
-    expect(resolveFinishCta(survey({ status: "submitted" }), false, true, 0)).toEqual({
+    expect(resolveFinishCta(survey({ status: "submitted" }), false, true, 0, null)).toEqual({
       kind: "hidden",
     })
   })
 
   test("a complete synced draft can be finished", () => {
-    expect(resolveFinishCta(survey(), true, true, 0)).toEqual({
+    expect(resolveFinishCta(survey(), true, true, 10, null)).toEqual({
       kind: "ready",
       label: c.finish,
     })
   })
 
   test("a complete draft not synced waits for the sync, or says it is blocked", () => {
-    expect(resolveFinishCta(survey({ sync_state: "pending" }), false, true, 0)).toEqual({
+    expect(resolveFinishCta(survey({ sync_state: "pending" }), false, true, 0, null)).toEqual({
       kind: "disabled",
       label: c.pendingSync,
     })
-    expect(resolveFinishCta(survey({ sync_blocked: 1 }), false, true, 0)).toEqual({
+    expect(resolveFinishCta(survey({ sync_blocked: 1 }), false, true, 0, null)).toEqual({
       kind: "disabled",
       label: c.blocked,
     })
   })
 
-  test("an incomplete draft says how many factors are missing", () => {
-    expect(resolveFinishCta(survey(), false, false, 1)).toEqual({
-      kind: "disabled",
-      label: c.remaining(1),
+  test("an incomplete draft opens the next factor: Commencer with none filled, then Continuer", () => {
+    expect(resolveFinishCta(survey(), false, false, 0, "A")).toEqual({
+      kind: "next",
+      label: c.start,
+      factor: "A",
     })
-    expect(resolveFinishCta(survey(), false, false, 3)).toEqual({
+    expect(resolveFinishCta(survey(), false, false, 3, "D")).toEqual({
+      kind: "next",
+      label: c.continue,
+      factor: "D",
+    })
+  })
+
+  test("all ten factors filled but the context missing asks for the context", () => {
+    expect(resolveFinishCta(survey(), false, false, 10, null)).toEqual({
       kind: "disabled",
-      label: c.remaining(3),
+      label: c.contextMissing,
     })
   })
 
   test("without a count it asks for the ten factors", () => {
-    expect(resolveFinishCta(survey(), false, null, null)).toEqual({
+    expect(resolveFinishCta(survey(), false, null, null, null)).toEqual({
       kind: "disabled",
       label: c.remainingUnknown,
     })
