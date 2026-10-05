@@ -6,37 +6,8 @@
 const plural = (count: number, one: string, many: string) => (count > 1 ? many : one)
 
 export const publicMapFr = {
-  badge: "Explorer",
   count: (count: number) =>
-    count === 0 ? "Aucun relevé" : `${count} ${plural(count, "relevé", "relevés")}`,
-  empty: "Aucun relevé dans cette zone",
-  layer: {
-    hidden: "Parcelles masquées",
-    loading: "Chargement du cadastre",
-    active: "Cadastre actif",
-    zoomIn: "Zoomez pour voir les parcelles",
-  },
-  // MAP-02: chips applied immediately (no free-text fields, no "Appliquer" button).
-  filters: {
-    title: "Filtres",
-    subtitle: "Appliqués immédiatement, sans quitter la carte.",
-    period: {
-      all: "Toutes périodes",
-      month: "Ce mois-ci",
-      quarter: "3 derniers mois",
-      year: "Cette année",
-    },
-    region: {
-      all: "Toutes régions",
-      ACA: "ACA",
-      M: "Méditerranée",
-    },
-    // The API matches the v3.0 region code exactly; v3.2 surveys carry a cas, not a region.
-    regionHint: "filtre les relevés v3.0 uniquement",
-    mine: "Mes relevés",
-    reset: "Réinitialiser",
-    activeCount: (count: number) => (count > 1 ? `${count} filtres` : `${count} filtre`),
-  },
+    count === 0 ? "Aucun relevé ici" : `${count} ${plural(count, "relevé", "relevés")} ici`,
   selected: {
     title: (ibp: number) => `Relevé · IBP ${ibp}/50`,
     meta: ({ region, date }: { region: string; date: string }) => `${region} · ${date}`,
@@ -57,9 +28,10 @@ export const publicMapFr = {
   cluster: {
     count: (count: number) => (count > 99 ? "99+" : String(count)),
   },
-  // MAP-03: the score-band pastille legend, collapsible.
+  // MAP-03: the score-band pastille legend, opened by the (i) button beside the count.
   legend: {
     title: "Légende",
+    subtitle: "Score IBP du dernier relevé terminé, sur 50.",
     low: "Score faible",
     mid: "Score moyen",
     high: "Score élevé",
@@ -75,14 +47,6 @@ export const publicMapFr = {
     },
   },
   a11y: {
-    showFilters: "Afficher les filtres",
-    hideFilters: "Masquer les filtres",
-    activeFilterCount: (count: number) =>
-      count > 1 ? `${count} filtres actifs` : `${count} filtre actif`,
-    resetFilters: "Réinitialiser les filtres",
-    refresh: "Actualiser la carte",
-    showParcels: "Afficher les parcelles",
-    hideParcels: "Masquer les parcelles",
     locate: "Centrer la carte sur ma position",
     closeSelection: "Fermer le relevé sélectionné",
     closeClusterList: "Fermer la liste des relevés",

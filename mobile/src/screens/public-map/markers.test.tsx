@@ -11,7 +11,6 @@ import { brandMapTokens } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { ClusterListSheet } from "./ClusterListSheet"
 import { ClusterMarker } from "./ClusterMarker"
-import { MapTopControls } from "./MapControls"
 import { SelectedSurveyCard } from "./SelectedSurveyCard"
 import { SurveyMarker } from "./SurveyMarker"
 
@@ -347,41 +346,13 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
     expect(shown).toContain("Cas 2")
     expect(shown).toContain("ARA")
   })
-
-  test("the region filter says it filters v3.0 surveys only", () => {
-    const tree = mount(
-      <MapTopControls
-        top={0}
-        count={3}
-        loading={false}
-        showFilters
-        showParcelLayer={false}
-        layerStatusLabel=""
-        filters={{
-          period: "all",
-          onChangePeriod: jest.fn(),
-          region: "",
-          onChangeRegion: jest.fn(),
-          mineOnly: false,
-          onToggleMine: jest.fn(),
-          activeCount: 0,
-          onReset: jest.fn(),
-        }}
-        onToggleFilters={jest.fn()}
-        onToggleParcelLayer={jest.fn()}
-        onRefresh={jest.fn()}
-      />,
-    )
-    expect(fr.publicMap.filters.regionHint).toBe("filtre les relevés v3.0 uniquement")
-    expect(texts(tree)).toContain(fr.publicMap.filters.regionHint)
-  })
 })
 
 describe("fr.publicMap", () => {
   test("uses singular and plural forms", () => {
-    expect(fr.publicMap.count(0)).toBe("Aucun relevé")
-    expect(fr.publicMap.count(1)).toBe("1 relevé")
-    expect(fr.publicMap.count(3)).toBe("3 relevés")
+    expect(fr.publicMap.count(0)).toBe("Aucun relevé ici")
+    expect(fr.publicMap.count(1)).toBe("1 relevé ici")
+    expect(fr.publicMap.count(3)).toBe("3 relevés ici")
     expect(fr.publicMap.a11y.cluster(1)).toBe("Groupe de 1 relevé")
     expect(fr.publicMap.clusterList.title(1)).toBe("1 relevé à cet endroit")
     expect(fr.publicMap.clusterList.title(4)).toBe("4 relevés à cet endroit")

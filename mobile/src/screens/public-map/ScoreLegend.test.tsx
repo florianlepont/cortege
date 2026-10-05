@@ -41,7 +41,7 @@ const t = fr.publicMap
 function render() {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<ScoreLegend bottom={40} />)
+    tree = renderer.create(<ScoreLegend bottom={40} count={12} />)
   })
   return tree!
 }
