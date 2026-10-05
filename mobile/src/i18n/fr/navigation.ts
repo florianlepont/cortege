@@ -12,6 +12,7 @@ export const navigationFr = {
   headers: {
     surveys: "Mes Relevés",
     detail: "Détail",
+    communitySurvey: "Relevé de la communauté",
     surveyContext: "Contexte et parcelles",
     surveyScore: "Score IBP",
     surveyHistory: "Historique",

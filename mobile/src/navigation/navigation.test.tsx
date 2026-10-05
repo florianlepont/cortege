@@ -121,6 +121,7 @@ jest.mock("./routes/SurveyScoreRoute", () => ({ SurveyScoreRoute: mockRoute() })
 jest.mock("./routes/SurveyHistoryRoute", () => ({ SurveyHistoryRoute: mockRoute() }))
 jest.mock("./routes/SurveyFormRoute", () => ({ SurveyFormRoute: mockRoute() }))
 jest.mock("./routes/SurveySearchRoute", () => ({ SurveySearchRoute: mockRoute() }))
+jest.mock("./routes/CommunitySurveyRoute", () => ({ CommunitySurveyRoute: mockRoute() }))
 jest.mock("./routes/FactorDetailRoute", () => ({ FactorDetailRoute: mockRoute() }))
 jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),

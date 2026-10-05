@@ -24,6 +24,7 @@ export type HomeStackParamList = AccountStackParamList & {
 export type SurveysStackParamList = AccountStackParamList & {
   surveysHome: undefined
   surveySearch: undefined
+  communitySurvey: { surveyId: string }
   surveyDetail: undefined
   surveyContext: undefined
   surveyScore: undefined
@@ -70,6 +71,7 @@ type StackRouteProps<
 export type HomeRouteProps = StackRouteProps<HomeStackParamList, "homeRoot">
 export type SurveyListRouteProps = StackRouteProps<SurveysStackParamList, "surveysHome">
 export type SurveyDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyDetail">
+export type CommunitySurveyRouteProps = StackRouteProps<SurveysStackParamList, "communitySurvey">
 export type SurveyContextRouteProps = StackRouteProps<SurveysStackParamList, "surveyContext">
 export type SurveyScoreRouteProps = StackRouteProps<SurveysStackParamList, "surveyScore">
 export type SurveyHistoryRouteProps = StackRouteProps<SurveysStackParamList, "surveyHistory">

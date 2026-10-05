@@ -10,6 +10,9 @@ import { ApiError } from "./client"
 import {
   deleteMyAccount,
   deleteMyProfilePicture,
+  fetchCommunityAttachmentDownload,
+  fetchCommunitySurvey,
+  fetchCommunitySurveyAttachments,
   fetchParcelSurveyHistory,
   fetchPublicMapItems,
   fetchPublicParcelStatuses,
@@ -169,6 +172,19 @@ describe("ibp-api", () => {
         },
       ],
     ])
+  })
+
+  it("builds the community survey page, photo list and photo download requests", async () => {
+    await fetchCommunitySurvey("https://api.example.com", "access-token", "s 1")
+    await fetchCommunitySurveyAttachments("https://api.example.com", "access-token", "s-1")
+    await fetchCommunityAttachmentDownload("https://api.example.com", "access-token", "s-1", "a/1")
+
+    expect(mockApiRequest.mock.calls.map(([call]) => call.path)).toEqual([
+      "/public/community-surveys/s%201",
+      "/public/community-surveys/s-1/attachments",
+      "/public/community-surveys/s-1/attachments/a%2F1/download-url",
+    ])
+    expect(mockApiRequest.mock.calls.every(([call]) => call.method === "GET")).toBe(true)
   })
 
   it("builds public map and parcel status queries, authenticated (Phase 2)", async () => {

@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react"
-import { StyleSheet, View } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 import type { CommunitySurveyItem } from "@cortege/ibp-domain"
 import { brandRadius, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
@@ -15,21 +15,23 @@ const formatDay = (iso: string): string => {
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
 }
 
-type CommunityRowProps = { item: CommunitySurveyItem }
+type CommunityRowProps = { item: CommunitySurveyItem; onOpen: (surveyId: string) => void }
 
 /**
  * A finished survey of another member (OA-52): its name, its author, the date and the score. It
- * is read-only for now: a member's survey has no page of its own yet.
+ * opens the read-only page of that survey (OA-59).
  */
-function CommunityRowComponent({ item }: CommunityRowProps) {
+function CommunityRowComponent({ item, onOpen }: CommunityRowProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const author = item.author_name?.trim() || t.unknownAuthor
   return (
-    <View
-      accessible
+    <Pressable
+      accessibilityRole="button"
       accessibilityLabel={t.a11y({ name: item.site_name, author, score: item.ibp_total })}
-      style={styles.card}
+      onPress={() => onOpen(item.survey_id)}
+      style={({ pressed }) => [styles.card, pressed ? styles.cardPressed : null]}
+      testID={`community-row-${item.survey_id}`}
     >
       <IbpScoreBadge score={item.ibp_total} size="sm" />
       <View style={styles.content}>
@@ -40,7 +42,7 @@ function CommunityRowComponent({ item }: CommunityRowProps) {
           {t.meta({ author, date: formatDay(item.submitted_at) })}
         </Text>
       </View>
-    </View>
+    </Pressable>
   )
 }
 
@@ -57,6 +59,9 @@ function createStyles(theme: BrandTheme) {
       borderColor: theme.colors.divider,
       backgroundColor: theme.semanticColors.surfaceElevated,
       padding: 12,
+    },
+    cardPressed: {
+      opacity: 0.85,
     },
     content: {
       flex: 1,
