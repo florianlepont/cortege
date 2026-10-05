@@ -56,7 +56,14 @@ jobs:
               - '.dockerignore'
               - 'packages/**'
             native:
-              - 'mobile/**'
+              # Only what can change the generated native projects; JS/TS-only changes
+              # are covered by expo-doctor and expo export in mobile-build.
+              - 'mobile/package.json'
+              - 'mobile/app.json'
+              - 'mobile/plugins/**'
+              - 'mobile/assets/**'
+              - 'mobile/babel.config.js'
+              - 'mobile/metro.config.js'
               - 'packages/**'
               - 'package.json'
               - 'package-lock.json'
