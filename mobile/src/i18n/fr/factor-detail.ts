@@ -2,18 +2,16 @@
 export const factorDetailFr = {
   fieldsProgress: ({ filledCount, totalCount }: { filledCount: number; totalCount: number }) =>
     `${filledCount}/${totalCount} champs`,
-  retainedScore: "Score retenu",
   scorePoints: ({ scoreCount }: { scoreCount: number }) => `${scoreCount} pts`,
+  scoreClass: ({ selectedClass }: { selectedClass: string }) => `Classe ${selectedClass}`,
   pending: "En attente",
   scoreHint: "Remplissez tous les champs obligatoires pour calculer le score",
-  observationsTitle: "Observations",
-  observationsSubtitle:
-    "Chaque saisie met à jour le brouillon et recalcule le score retenu en direct.",
   requiredField: ({ label }: { label: string }) => `${label} *`,
   numericPlaceholder: "Saisissez une valeur numérique",
-  captureTitle: "Que relever",
-  captureSubtitle: "À ouvrir seulement pour un rappel rapide pendant la notation de ce facteur.",
-  captureToggle: "Afficher ou masquer l'aide de saisie",
+  // OA-30: the help is behind a link, not a card open by default; the sheet closes with its button.
+  helpLink: "Que relever ?",
+  helpTitle: "Que relever ?",
+  helpClose: "Fermer l'aide",
   // Keyed by the factor field label the form passes in (see useSurveyForm).
   fieldLabels: {
     genera: "Genres autochtones observés",

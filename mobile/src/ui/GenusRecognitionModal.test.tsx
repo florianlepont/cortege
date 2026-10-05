@@ -82,8 +82,7 @@ function findByTestID(tree: renderer.ReactTestRenderer, testID: string) {
 
 async function flushMicrotasks(): Promise<void> {
   await act(async () => {
-    await Promise.resolve()
-    await Promise.resolve()
+    for (let i = 0; i < 10; i += 1) await Promise.resolve()
   })
 }
 
@@ -104,13 +103,40 @@ describe("GenusRecognitionModal", () => {
       )
     })
 
-    await act(async () => {
-      findByTestID(tree!, "genus-recognition-capture").props.onPress()
-      await flushMicrotasks()
-    })
+    // OA-33: the camera opens as soon as the sheet does.
+    await flushMicrotasks()
 
     expect(findByTestID(tree!, "genus-recognition-fallback")).toBeDefined()
     expect(launchCameraAsync).not.toHaveBeenCalled()
+  })
+
+  it("opens the camera straight away and closes the sheet when that first capture is cancelled", async () => {
+    requestCameraPermissionsAsync.mockResolvedValue({ granted: true })
+    launchCameraAsync.mockResolvedValue({ canceled: true, assets: [] })
+    const onClose = jest.fn()
+    act(() => {
+      renderer.create(
+        <GenusRecognitionModal visible onClose={onClose} onConfirmGenus={jest.fn()} />,
+      )
+    })
+
+    await flushMicrotasks()
+
+    expect(launchCameraAsync).toHaveBeenCalledTimes(1)
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(classifyGenusPhoto).not.toHaveBeenCalled()
+  })
+
+  it("does not open the camera while the sheet is hidden", async () => {
+    act(() => {
+      renderer.create(
+        <GenusRecognitionModal visible={false} onClose={jest.fn()} onConfirmGenus={jest.fn()} />,
+      )
+    })
+
+    await flushMicrotasks()
+
+    expect(requestCameraPermissionsAsync).not.toHaveBeenCalled()
   })
 
   it("shows the unavailable message and never applies a suggestion when the model can't classify", async () => {
@@ -128,10 +154,8 @@ describe("GenusRecognitionModal", () => {
       )
     })
 
-    await act(async () => {
-      findByTestID(tree!, "genus-recognition-capture").props.onPress()
-      await flushMicrotasks()
-    })
+    // OA-33: the camera opens as soon as the sheet does.
+    await flushMicrotasks()
 
     expect(findByTestID(tree!, "genus-recognition-fallback")).toBeDefined()
     expect(onConfirmGenus).not.toHaveBeenCalled()
@@ -159,10 +183,8 @@ describe("GenusRecognitionModal", () => {
       )
     })
 
-    await act(async () => {
-      findByTestID(tree!, "genus-recognition-capture").props.onPress()
-      await flushMicrotasks()
-    })
+    // OA-33: the camera opens as soon as the sheet does.
+    await flushMicrotasks()
 
     // A suggestion never applies itself (D-11) until this confirm button is pressed.
     expect(onConfirmGenus).not.toHaveBeenCalled()

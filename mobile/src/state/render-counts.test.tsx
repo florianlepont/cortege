@@ -325,6 +325,9 @@ jest.mock("react-native-safe-area-context", () => {
 
 // ─── Navigation: fake navigators that render every screen at once ────────────
 
+// The factor pager reads the native header height, which is not available in unit tests.
+jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
+
 jest.mock("@react-navigation/native", () => {
   const ReactRef = jest.requireActual("react") as typeof import("react")
   const passthrough = ({ children }: { children?: React.ReactNode }) =>

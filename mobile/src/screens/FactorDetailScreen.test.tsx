@@ -82,6 +82,31 @@ jest.mock("./FactorAGenusRecognitionEntry", () => {
   }
 })
 
+// The help sheet is a Modal, which this file's minimal react-native mock does not provide: a stand-in
+// that prints the help and the hints as text when visible is enough to check what it is given.
+jest.mock("./FactorHelpSheet", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    FactorHelpSheet: ({
+      visible,
+      help,
+      hints,
+    }: {
+      visible: boolean
+      help: string
+      hints: readonly string[]
+    }) =>
+      visible
+        ? ReactRef.createElement(
+            "View",
+            null,
+            ReactRef.createElement("Text", null, help),
+            ...hints.map((hint) => ReactRef.createElement("Text", { key: hint }, hint)),
+          )
+        : null,
+  }
+})
+
 type Node = renderer.ReactTestInstance
 
 const textOf = (node: Node): string =>
@@ -114,13 +139,13 @@ const renderDetail = (
       />,
     )
   })
-  // Open the capture help so the input hints render.
+  // Open the help sheet so the input hints render.
   act(() => {
     tree.root
       .findAll(
         (node) =>
           (node.type as unknown) === "Pressable" &&
-          node.props.accessibilityLabel === fr.factorDetail.captureToggle,
+          node.props.accessibilityLabel === fr.factorDetail.helpLink,
       )[0]
       .props.onPress()
   })

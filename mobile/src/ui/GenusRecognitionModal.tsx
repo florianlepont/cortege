@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import { Ionicons } from "@expo/vector-icons"
@@ -51,7 +51,9 @@ export function GenusRecognitionModal({
     onClose()
   }
 
-  const handleCapture = async (): Promise<void> => {
+  // OA-33: the camera opens as soon as the sheet does; there is no "take a photo" step in between.
+  // Cancelling that first capture closes the sheet; cancelling a retake keeps the results.
+  const handleCapture = async (closeOnCancel = false): Promise<void> => {
     const permission = await ImagePicker.requestCameraPermissionsAsync()
     if (!permission.granted) {
       setStep({ kind: "unavailable", message: t.cameraPermissionRequired })
@@ -64,6 +66,7 @@ export function GenusRecognitionModal({
       quality: 0.8,
     })
     if (result.canceled || result.assets.length === 0) {
+      if (closeOnCancel) handleClose()
       return
     }
 
@@ -75,6 +78,12 @@ export function GenusRecognitionModal({
       setStep({ kind: "unavailable", message: t.unavailableMessage })
     }
   }
+
+  useEffect(() => {
+    if (visible) void handleCapture(true)
+    // Only the sheet opening starts a capture; handleCapture is recreated on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible])
 
   const handleConfirm = (genus: CnpfFactorAGenusCode): void => {
     onConfirmGenus(genus)
@@ -103,13 +112,8 @@ export function GenusRecognitionModal({
 
         <ScrollView contentContainerStyle={styles.content}>
           {step.kind === "idle" ? (
-            <View style={styles.block}>
-              <Text style={styles.bodyText}>{t.captureIntro}</Text>
-              <AppButton
-                label={t.takePhoto}
-                onPress={() => void handleCapture()}
-                testID="genus-recognition-capture"
-              />
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={theme.colors.forest} />
             </View>
           ) : null}
 

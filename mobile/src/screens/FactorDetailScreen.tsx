@@ -3,16 +3,14 @@ import { Pressable, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
-import { brandColors } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
-import { FACTOR_TITLES, helpForMethod } from "../app/constants"
+import { helpForMethod } from "../app/constants"
 import { FactorField, FactorKey, FactorRetainedScore } from "../app/types"
 import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
-import { AppSectionHeader } from "../ui/AppSectionHeader"
-import { AppStatusChip } from "../ui/AppStatusChip"
 import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
+import { FactorHelpSheet } from "./FactorHelpSheet"
 import { FactorChipOption, FactorChipsInput } from "../ui/FactorChipsInput"
 import { FactorCounterInput } from "../ui/FactorCounterInput"
 import { FactorGenusListInput } from "../ui/FactorGenusListInput"
@@ -58,6 +56,11 @@ type FactorDetailScreenProps = {
   methodVersion: IbpMethodVersion | null
 }
 
+/**
+ * One factor's entry (OA-30): the input first, then the factor's score on one line, then a link to
+ * the help. The factor's name and the running total are in the pager's header, not here. Factor A
+ * opens with the photo identification (OA-31).
+ */
 export function FactorDetailScreen({
   factor,
   fields,
@@ -66,91 +69,57 @@ export function FactorDetailScreen({
 }: FactorDetailScreenProps) {
   const theme = useBrandTheme()
   const detailStyles = useMemo(() => createDetailStyles(theme), [theme])
-  const [captureHelpExpanded, setCaptureHelpExpanded] = useState(false)
+  const [helpVisible, setHelpVisible] = useState(false)
   const helpTexts = helpForMethod(methodVersion)
-  const hints = helpTexts.hints[factor]
-  const total = fields.length
-  const filled = fields.filter((field) => field.value.trim().length > 0).length
   // Phase 6 (ADR-002 D-11): the genus-list field is always A's first field (FIELD_VARIANTS.A[0]),
   // so a confirmed suggestion can be merged straight into whatever the surveyor already picked.
   const genusListField = factor === "A" ? fields[0] : null
 
   return (
     <View style={detailStyles.screen}>
-      <View style={detailStyles.heroCard}>
-        <View style={detailStyles.heroAccentOrb} />
-        <View style={detailStyles.heroHeaderRow}>
-          <View style={detailStyles.heroFactorBadge}>
-            <Text style={detailStyles.heroFactorBadgeText}>{factor}</Text>
-          </View>
-          <Text style={detailStyles.heroProgressText}>
-            {t.fieldsProgress({ filledCount: filled, totalCount: total })}
-          </Text>
-        </View>
-        <Text style={detailStyles.heroTitle}>{FACTOR_TITLES[factor]}</Text>
-        <Text style={detailStyles.heroBody}>{helpTexts.help[factor]}</Text>
-        <View style={detailStyles.heroScoreRow}>
-          <View style={detailStyles.heroScoreCard}>
-            <Text style={detailStyles.heroScoreLabel}>{t.retainedScore}</Text>
-            <Text style={detailStyles.heroScoreValue}>
-              {retainedScore ? t.scorePoints({ scoreCount: retainedScore.score }) : t.pending}
-            </Text>
-          </View>
-          <Text style={detailStyles.heroScoreMeta}>
-            {retainedScore ? retainedScore.selected_class : t.scoreHint}
-          </Text>
-        </View>
-      </View>
-
-      <AppCard variant="panelElevated" padding={18} style={detailStyles.panel}>
-        <AppSectionHeader
-          title={t.observationsTitle}
-          subtitle={t.observationsSubtitle}
-          trailing={
-            retainedScore ? (
-              <AppStatusChip label={retainedScore.selected_class} tone="success" />
-            ) : (
-              <AppStatusChip label={t.pending} tone="warning" />
-            )
-          }
-          titleStyle={detailStyles.panelTitle}
-          subtitleStyle={detailStyles.panelBody}
-        />
+      <AppCard variant="panelElevated" padding={16} style={detailStyles.panel}>
+        {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
         <View style={detailStyles.fieldsList}>
           {fields.map((field, index) => renderFactorField(factor, field, index, detailStyles))}
         </View>
-        {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
       </AppCard>
 
-      <AppCard variant="panelElevated" padding={18} style={detailStyles.panel}>
-        <Pressable
-          style={detailStyles.panelToggle}
-          onPress={() => setCaptureHelpExpanded((current) => !current)}
-          accessibilityRole="button"
-          accessibilityLabel={t.captureToggle}
-          accessibilityState={{ expanded: captureHelpExpanded }}
-        >
-          <View style={detailStyles.panelToggleCopy}>
-            <Text style={detailStyles.panelTitle}>{t.captureTitle}</Text>
-            <Text style={detailStyles.panelToggleMeta}>{t.captureSubtitle}</Text>
-          </View>
-          <Ionicons
-            name={captureHelpExpanded ? "chevron-up-outline" : "chevron-down-outline"}
-            size={20}
-            color={brandColors.forest}
-          />
-        </Pressable>
-        {captureHelpExpanded ? (
-          <View style={detailStyles.hintsList}>
-            {hints.map((hint) => (
-              <View key={`hint-${factor}-${hint}`} style={detailStyles.hintRow}>
-                <View style={detailStyles.hintDot} />
-                <Text style={detailStyles.hintText}>{hint}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-      </AppCard>
+      <View
+        style={[
+          detailStyles.scoreLine,
+          retainedScore ? detailStyles.scoreLineFilled : detailStyles.scoreLinePending,
+        ]}
+      >
+        <Text style={detailStyles.scoreLineText}>
+          {retainedScore
+            ? t.scoreClass({ selectedClass: retainedScore.selected_class })
+            : t.scoreHint}
+        </Text>
+        <Text style={detailStyles.scoreLinePoints}>
+          {retainedScore ? t.scorePoints({ scoreCount: retainedScore.score }) : t.pending}
+        </Text>
+      </View>
+
+      <Pressable
+        style={detailStyles.helpLink}
+        onPress={() => setHelpVisible(true)}
+        accessibilityRole="button"
+        accessibilityLabel={t.helpLink}
+      >
+        <Ionicons
+          name="information-circle-outline"
+          size={20}
+          color={theme.semanticColors.textStrong}
+        />
+        <Text style={detailStyles.helpLinkText}>{t.helpLink}</Text>
+      </Pressable>
+
+      <FactorHelpSheet
+        visible={helpVisible}
+        onClose={() => setHelpVisible(false)}
+        help={helpTexts.help[factor]}
+        hints={helpTexts.hints[factor]}
+      />
     </View>
   )
 }

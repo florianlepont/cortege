@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import type { FactorField, FactorKey } from "../../app/types"
+import { FACTOR_TITLES } from "../../app/constants"
 import { fr } from "../../i18n"
 import { FactorPager } from "./FactorPager"
 
@@ -37,6 +38,16 @@ jest.mock("react-native", () => {
     View: mockComponent("View"),
     Platform: { OS: "ios", select: (options: { ios?: unknown; default?: unknown }) => options.ios },
     StyleSheet: { create: <T,>(styles: T) => styles },
+  }
+})
+
+// The header is native: its height is not available in unit tests.
+jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
+
+jest.mock("../../ui/AppButton", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    AppButton: (props: { label: string }) => ReactRef.createElement("AppButton", props),
   }
 })
 
@@ -79,6 +90,8 @@ function render(
   initialFactor: FactorKey,
   sectionOverrides: Partial<Record<FactorKey, FactorField[]>> = {},
 ) {
+  const onFinish = jest.fn()
+  const onActiveFactorChange = jest.fn()
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
     tree = renderer.create(
@@ -87,6 +100,8 @@ function render(
         factorSections={sections(sectionOverrides)}
         factorRetainedScores={scores()}
         methodVersion={null}
+        onActiveFactorChange={onActiveFactorChange}
+        onFinish={onFinish}
       />,
     )
   })
@@ -98,68 +113,91 @@ function render(
         nativeEvent: { layout: { width: 300, height: 600, x: 0, y: 0 } },
       })
   })
+  const texts = () =>
+    root.findAll((n) => (n.type as unknown) === "Text").map((n) => String(n.props.children))
   return {
     tree: tree!,
+    onFinish,
+    onActiveFactorChange,
+    texts,
     byTestID: (id: string) => root.findAll((n) => n.props.testID === id)[0],
   }
 }
 
-describe("FactorPager (FLOW-04)", () => {
-  test("starts on the initial factor's page", () => {
-    const { byTestID } = render("D")
-    expect(byTestID("pager-previous")).toBeTruthy()
-    expect(byTestID("pager-dot-D").props.accessibilityState).toEqual({ selected: true })
+describe("FactorPager (FLOW-04, OA-30)", () => {
+  test("starts on the initial factor: its name in the header, its letter selected", () => {
+    const { byTestID, texts, onActiveFactorChange } = render("D")
+    expect(byTestID("pager-letter-D").props.accessibilityState).toEqual({ selected: true })
+    expect(texts()).toContain(FACTOR_TITLES.D)
+    expect(onActiveFactorChange).toHaveBeenLastCalledWith("D")
   })
 
-  test("the position indicator reflects the active factor", () => {
-    const { tree } = render("C")
-    const positionText = tree.root.findAll(
-      (n) =>
-        (n.type as unknown) === "Text" &&
-        String(n.props.children) === fr.factorPager.position({ index: 3, total: 10 }),
-    )
-    expect(positionText.length).toBeGreaterThan(0)
+  test("the header shows the running total out of 50", () => {
+    const { byTestID, texts } = render("A")
+    expect(texts()).toContain(fr.factorPager.total(0))
+    expect(byTestID("pager-total").props.accessibilityLabel).toBe(fr.factorPager.totalA11y(0))
   })
 
-  test("tapping next advances the active index and disables at the last factor", () => {
-    const { byTestID } = render("J")
-    expect(byTestID("pager-next").props.disabled).toBe(true)
-  })
-
-  test("tapping previous is disabled on the first factor", () => {
+  test("previous is disabled on the first factor", () => {
     const { byTestID } = render("A")
     expect(byTestID("pager-previous").props.disabled).toBe(true)
   })
 
-  test("tapping a dot jumps to that factor", () => {
+  test("next advances to the following factor and reports it", () => {
+    const { byTestID, onActiveFactorChange, texts } = render("A")
+    expect(byTestID("pager-next").props.label).toBe(fr.factorPager.next)
+    act(() => {
+      byTestID("pager-next").props.onPress()
+    })
+    expect(byTestID("pager-letter-B").props.accessibilityState).toEqual({ selected: true })
+    expect(onActiveFactorChange).toHaveBeenLastCalledWith("B")
+    expect(texts()).toContain(FACTOR_TITLES.B)
+  })
+
+  test("previous goes back one factor", () => {
+    const { byTestID } = render("C")
+    act(() => {
+      byTestID("pager-previous").props.onPress()
+    })
+    expect(byTestID("pager-letter-B").props.accessibilityState).toEqual({ selected: true })
+  })
+
+  test("on the last factor the button finishes", () => {
+    const { byTestID, onFinish } = render("J")
+    expect(byTestID("pager-next").props.label).toBe(fr.factorPager.finish)
+    act(() => {
+      byTestID("pager-next").props.onPress()
+    })
+    expect(onFinish).toHaveBeenCalledTimes(1)
+  })
+
+  test("tapping a letter jumps to that factor", () => {
     const { byTestID } = render("A")
     act(() => {
-      byTestID("pager-dot-F").props.onPress()
+      byTestID("pager-letter-F").props.onPress()
     })
-    expect(byTestID("pager-dot-F").props.accessibilityState).toEqual({ selected: true })
+    expect(byTestID("pager-letter-F").props.accessibilityState).toEqual({ selected: true })
   })
 
-  test("the next-incomplete shortcut is disabled once every factor is complete", () => {
-    const complete = { value: "1", touched: false, error: null }
-    const { byTestID } = render(
-      "A",
-      FACTORS.reduce((acc, f) => ({ ...acc, [f]: [field(complete)] }), {}),
-    )
-    expect(byTestID("pager-next-incomplete").props.disabled).toBe(true)
-    expect(byTestID("pager-next-incomplete").props.accessibilityLabel).toBe(
-      fr.factorPager.allComplete,
-    )
-  })
-
-  test("the next-incomplete shortcut jumps to the next incomplete factor", () => {
-    const incompleteAtF = FACTORS.reduce(
-      (acc, f) => ({ ...acc, [f]: [field(f === "F" ? {} : { value: "1" })] }),
-      {},
-    )
-    const { byTestID } = render("A", incompleteAtF)
+  test("the pager scroll settling on a page selects that factor", () => {
+    const { byTestID } = render("A")
     act(() => {
-      byTestID("pager-next-incomplete").props.onPress()
+      byTestID("factor-pager-scroll").props.onMomentumScrollEnd({
+        nativeEvent: { contentOffset: { x: 600, y: 0 } },
+      })
     })
-    expect(byTestID("pager-dot-F").props.accessibilityState).toEqual({ selected: true })
+    expect(byTestID("pager-letter-C").props.accessibilityState).toEqual({ selected: true })
+  })
+
+  test("a complete factor, an invalid one and an empty one have their own letter style", () => {
+    const { byTestID } = render("A", {
+      B: [field({ value: "1" })],
+      C: [field({ error: "bad", touched: true })],
+    })
+    // Styles are the mocked identity objects: the three states differ.
+    const styleOf = (id: string) => JSON.stringify(byTestID(id).props.style)
+    expect(styleOf("pager-letter-B")).not.toEqual(styleOf("pager-letter-D"))
+    expect(styleOf("pager-letter-C")).not.toEqual(styleOf("pager-letter-D"))
+    expect(styleOf("pager-letter-B")).not.toEqual(styleOf("pager-letter-C"))
   })
 })
