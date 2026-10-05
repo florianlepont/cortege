@@ -142,6 +142,16 @@ const chips = (tree: ReactTestRenderer) => tree.root.findAllByType("AppChoiceChi
 const chipByLabel = (tree: ReactTestRenderer, label: string) =>
   chips(tree).find((chip) => chip.props.label === label)
 const buttons = (tree: ReactTestRenderer) => tree.root.findAllByType("AppButton" as never)
+const casOptions = (tree: ReactTestRenderer) =>
+  tree.root.findAll(
+    (node) =>
+      (node.type as unknown) === "Pressable" &&
+      String(node.props.testID ?? "").startsWith("cas-option-"),
+  )
+const casOption = (tree: ReactTestRenderer, cas: number) =>
+  tree.root.find(
+    (node) => (node.type as unknown) === "Pressable" && node.props.testID === `cas-option-${cas}`,
+  )
 const switches = (tree: ReactTestRenderer) => tree.root.findAllByType("Switch" as never)
 const statusLabels = (tree: ReactTestRenderer): string[] =>
   tree.root.findAllByType("AppStatusChip" as never).map((chip) => chip.props.label as string)
@@ -254,17 +264,19 @@ describe("ScoringContextEditor, v3.2 drafts (D-08)", () => {
   test("pressing Cas 2 updates the cas and the switch updates the cas-3 scale", () => {
     const handlers = makeHandlers()
     const tree = render(v32(1), true, handlers)
-    expect(chips(tree).map((chip) => chip.props.label)).toEqual([
-      m.casLabels[1],
-      m.casLabels[2],
-      m.casLabels[3],
-      m.casLabels[4],
-    ])
-    expect(chipByLabel(tree, m.casLabels[1])!.props.active).toBe(true)
+    expect(casOptions(tree).map((option) => option.props.accessibilityLabel)).toEqual(
+      [1, 2, 3, 4].map((cas) =>
+        fr.surveyForm.wizard.optionA11y({
+          label: m.casLabels[cas as IbpCas],
+          caption: m.casCaptions[cas as IbpCas],
+        }),
+      ),
+    )
+    expect(casOption(tree, 1).props.accessibilityState).toEqual({ selected: true })
     expect(allText(tree)).toContain(m.casCaptions[1])
     expect(buttons(tree).map((button) => button.props.label)).not.toContain(m.switchToV32)
 
-    act(() => chipByLabel(tree, m.casLabels[2])!.props.onPress())
+    act(() => casOption(tree, 2).props.onPress())
     expect(handlers.onUpdateIbpCas).toHaveBeenCalledWith(SURVEY_ID, 2)
 
     const [scaleSwitch] = switches(tree)
@@ -277,8 +289,10 @@ describe("ScoringContextEditor, v3.2 drafts (D-08)", () => {
 
   test("a v3.2 draft without a cas shows the cas chips with none selected", () => {
     const tree = render(v32(null), true)
-    expect(chips(tree)).toHaveLength(4)
-    expect(chips(tree).some((chip) => chip.props.active === true)).toBe(false)
+    expect(casOptions(tree)).toHaveLength(4)
+    expect(
+      casOptions(tree).some((option) => option.props.accessibilityState.selected === true),
+    ).toBe(false)
     expect(allText(tree)).toContain(t.casMissing)
   })
 

@@ -87,8 +87,8 @@ jest.mock("../../screens/SurveyScoreScreen", () => ({
 jest.mock("../../screens/SurveyHistoryScreen", () => ({
   SurveyHistoryScreen: mockScreen("surveyHistory"),
 }))
-jest.mock("../../screens/SurveyFormScreen", () => ({
-  SurveyFormScreen: mockScreen("surveyForm"),
+jest.mock("../../screens/survey-wizard/SurveyWizardScreen", () => ({
+  SurveyWizardScreen: mockScreen("surveyForm"),
 }))
 jest.mock("../../screens/FactorDetailScreen", () => ({
   FactorDetailScreen: mockScreen("factorDetail"),
@@ -166,7 +166,7 @@ jest.mock("../../storage/offline-map", () => ({
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { AutosaveStatus } from "../../hooks/useEditingDraft"
 import { fr, type StatusMessage } from "../../i18n"
-import type { SurveyFormMethod } from "../../screens/survey-form/MethodVersionPicker"
+import type { SurveyFormMethod } from "../../screens/survey-wizard/method"
 import { AutosaveStatusProvider } from "../../state/autosave-status-context"
 import { AccessTokenProvider, SessionProvider } from "../../state/session-context"
 import type { SessionContextValue } from "../../state/session-context"
@@ -400,6 +400,7 @@ function makeNavigation() {
     navigate: jest.fn(),
     goBack: jest.fn(),
     setOptions: jest.fn(),
+    reset: jest.fn(),
   }
 }
 
@@ -978,7 +979,7 @@ describe("SurveyHistoryRoute", () => {
 })
 
 describe("SurveyFormRoute", () => {
-  test("sets the create title, opens a factor and the parcel map, and goes back after saving", async () => {
+  test("feeds the wizard, opens the parcel step and closes", async () => {
     const fixture = makeFixture()
     const navigation = makeNavigation()
     await mount(
@@ -986,11 +987,6 @@ describe("SurveyFormRoute", () => {
         <SurveyFormRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
-    expect(navigation.setOptions).toHaveBeenLastCalledWith({
-      title: fr.navigation.headers.newSurvey,
-    })
-    expect(props("surveyForm").screen).toBe("create")
-    expect(props("surveyForm")).not.toHaveProperty("status")
 
     // The method state and setters travel in one prop (01.8-13); the form never holds a
     // submitted survey, so the version stays open.
@@ -1008,31 +1004,20 @@ describe("SurveyFormRoute", () => {
     expect(fixture.form.actions.setIbpCas).toHaveBeenCalledWith(3)
     expect(fixture.form.actions.setIbpCas3Scale).toHaveBeenCalledWith(true)
 
-    callback("surveyForm", "onOpenFactor")("C")
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFactorDetail", { factor: "C" })
-    callback("surveyForm", "onOpenParcelFullscreen")()
+    callback("surveyForm", "onOpenParcels")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
       surveyId: "draft",
       mode: "wizard",
     })
-
-    await act(async () => {
-      await callback("surveyForm", "onSaveSurveyEdits")()
-      await callback("surveyForm", "onCreateDraft")()
-    })
-    expect(fixture.form.actions.saveSurveyEdits).toHaveBeenCalled()
-    expect(fixture.form.actions.createDraft).toHaveBeenCalled()
-    expect(navigation.goBack).toHaveBeenCalledTimes(2)
+    callback("surveyForm", "onClose")()
+    expect(navigation.goBack).toHaveBeenCalledTimes(1)
   })
 
-  test("sets the edit title, uses the edited survey id and stays when saving fails", async () => {
-    const base = makeFixture({ saved: false })
+  test("uses the edited survey id when a draft is open", async () => {
+    const base = makeFixture()
     const fixture: Fixture = {
       ...base,
-      form: {
-        ...base.form,
-        state: { ...base.form.state, formMode: "edit", editingSurveyId: "s-01" },
-      },
+      form: { ...base.form, state: { ...base.form.state, editingSurveyId: "s-01" } },
     }
     const navigation = makeNavigation()
     await mount(
@@ -1040,20 +1025,11 @@ describe("SurveyFormRoute", () => {
         <SurveyFormRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
-    expect(navigation.setOptions).toHaveBeenLastCalledWith({
-      title: fr.navigation.headers.editSurvey,
-    })
-    expect(props("surveyForm").screen).toBe("edit")
-    callback("surveyForm", "onOpenParcelFullscreen")()
+    callback("surveyForm", "onOpenParcels")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
       surveyId: "s-01",
       mode: "wizard",
     })
-    await act(async () => {
-      await callback("surveyForm", "onSaveSurveyEdits")()
-      await callback("surveyForm", "onCreateDraft")()
-    })
-    expect(navigation.goBack).not.toHaveBeenCalled()
   })
 })
 
@@ -1095,7 +1071,7 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
     expect(navigation.goBack).toHaveBeenCalledTimes(1)
   })
 
-  test("the parcel selection hides Done in the wizard and goes back after saving", async () => {
+  test("the wizard parcel step creates the draft and replaces the flow with the survey page", async () => {
     const fixture = makeFixture()
     const navigation = makeNavigation()
     await mount(
@@ -1106,8 +1082,45 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
         />
       </Providers>,
     )
-    expect(props("parcelSelection").hideDoneAction).toBe(true)
+    expect(props("parcelSelection").wizard).toBe(true)
     expect(props("parcelSelection").selectedParcelIds).toEqual(["p-1"])
+    await act(async () => {
+      await callback("parcelSelection", "onSave")()
+    })
+    expect(fixture.form.actions.createDraft).toHaveBeenCalled()
+    expect(navigation.reset).toHaveBeenCalledWith({
+      index: 1,
+      routes: [{ name: "surveysHome" }, { name: "surveyDetail" }],
+    })
+
+    const failing = makeFixture({ saved: false })
+    const stay = makeNavigation()
+    await mount(
+      <Providers fixture={failing}>
+        <ParcelSelectionRoute
+          navigation={stay as never}
+          route={{ params: { surveyId: "draft", mode: "wizard" } } as never}
+        />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("parcelSelection", "onSave")()
+    })
+    expect(stay.reset).not.toHaveBeenCalled()
+  })
+
+  test("the edit parcel step saves and goes back", async () => {
+    const fixture = makeFixture()
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <ParcelSelectionRoute
+          navigation={navigation as never}
+          route={{ params: { surveyId: "s-01", mode: "edit" } } as never}
+        />
+      </Providers>,
+    )
+    expect(props("parcelSelection").wizard).toBe(false)
     await act(async () => {
       await callback("parcelSelection", "onSave")()
     })
@@ -1123,7 +1136,6 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
         />
       </Providers>,
     )
-    expect(props("parcelSelection").hideDoneAction).toBe(false)
     await act(async () => {
       await callback("parcelSelection", "onSave")()
     })

@@ -1,5 +1,4 @@
 import {
-  IBP_CAS_VALUES,
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,
   IbpCas,
@@ -8,7 +7,7 @@ import {
   resolveMethodVersion,
 } from "@cortege/ibp-domain"
 import { useMemo } from "react"
-import { Switch, View } from "react-native"
+import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { RegionVersion, SurveyDetailResponse, VegetationStage } from "../../app/types"
 import { useBrandTheme } from "../../app/theme"
@@ -19,6 +18,7 @@ import { AppCard } from "../../ui/AppCard"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppStatusChip } from "../../ui/AppStatusChip"
+import { CasPicker } from "../../ui/CasPicker"
 import { createContextEditorStyles } from "./context-editor.styles"
 import { createDetailStyles } from "./styles"
 import { LocalDraftMeta } from "./useLocalDraftSummary"
@@ -213,40 +213,17 @@ export function ScoringContextEditor({
       {canEditSurvey && resolved === IBP_METHOD_V3_2 ? (
         <>
           <Text style={styles.groupTitle}>{m.casTitle}</Text>
-          <View style={sharedStyles.filterChipsRow}>
-            {IBP_CAS_VALUES.map((value) => (
-              <AppChoiceChip
-                key={`detail-ibp-cas-${value}`}
-                label={m.casLabels[value]}
-                active={ibpCas === value}
-                onPress={() => {
-                  void onUpdateIbpCas(surveyId, value)
-                }}
-              />
-            ))}
-          </View>
-          {ibpCas !== null ? (
-            <Text style={styles.hint}>{m.casCaptions[ibpCas]}</Text>
-          ) : (
-            <Text style={styles.warningHint}>{t.casMissing}</Text>
-          )}
-          <View style={styles.scaleRow}>
-            <View style={styles.scaleCopy}>
-              <Text style={styles.scaleLabel}>{m.cas3ScaleLabel}</Text>
-              <Text style={styles.hint}>{m.cas3ScaleHint}</Text>
-            </View>
-            <Switch
-              value={ibpCas3Scale}
-              onValueChange={(value) => {
-                void onUpdateCas3Scale(surveyId, value)
-              }}
-              trackColor={{ false: theme.colors.divider, true: theme.colors.moss }}
-              accessibilityRole="switch"
-              accessibilityLabel={m.cas3ScaleLabel}
-              accessibilityHint={m.cas3ScaleHint}
-              accessibilityState={{ checked: ibpCas3Scale }}
-            />
-          </View>
+          {ibpCas === null ? <Text style={styles.warningHint}>{t.casMissing}</Text> : null}
+          <CasPicker
+            value={ibpCas}
+            onChange={(value) => {
+              void onUpdateIbpCas(surveyId, value)
+            }}
+            cas3Scale={ibpCas3Scale}
+            onCas3ScaleChange={(value) => {
+              void onUpdateCas3Scale(surveyId, value)
+            }}
+          />
         </>
       ) : null}
     </AppCard>

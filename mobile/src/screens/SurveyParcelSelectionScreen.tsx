@@ -36,7 +36,8 @@ type SurveyParcelSelectionScreenProps = {
   onToggleParcelSelection: (parcelId: string) => void
   onCaptureGpsLocation: () => Promise<GpsCaptureResult | null>
   onSave: () => Promise<void>
-  hideDoneAction?: boolean
+  /** New-survey flow (step 4 of 4): the button reads "Continuer" and needs a parcel. */
+  wizard?: boolean
 }
 
 export function SurveyParcelSelectionScreen({
@@ -47,7 +48,7 @@ export function SurveyParcelSelectionScreen({
   onToggleParcelSelection,
   onCaptureGpsLocation,
   onSave,
-  hideDoneAction = false,
+  wizard = false,
 }: SurveyParcelSelectionScreenProps) {
   const theme = useBrandTheme()
   const screenStyles = useMemo(() => createScreenStyles(theme), [theme])
@@ -166,22 +167,20 @@ export function SurveyParcelSelectionScreen({
               <AppNotice tone="danger" icon="alert-circle-outline" message={t.selectionRequired} />
             ) : null}
             <Text style={screenStyles.bottomHint}>{t.tapHint}</Text>
-            {!hideDoneAction ? (
-              <AppButton
-                label={saving ? t.saving : t.done}
-                leadingIcon={saving ? "hourglass-outline" : "checkmark"}
-                size="lg"
-                style={screenStyles.doneButton}
-                onPress={() => {
-                  if (saving) {
-                    return
-                  }
-                  setSaving(true)
-                  void onSave().finally(() => setSaving(false))
-                }}
-                disabled={saving}
-              />
-            ) : null}
+            <AppButton
+              label={saving ? t.saving : wizard ? t.continue : t.done}
+              leadingIcon={saving ? "hourglass-outline" : wizard ? "arrow-forward" : "checkmark"}
+              size="lg"
+              style={screenStyles.doneButton}
+              onPress={() => {
+                if (saving) {
+                  return
+                }
+                setSaving(true)
+                void onSave().finally(() => setSaving(false))
+              }}
+              disabled={saving || (wizard && !hasParcelSelection)}
+            />
           </AppCard>
         </View>
       </View>

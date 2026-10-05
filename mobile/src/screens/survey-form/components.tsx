@@ -1,18 +1,6 @@
-import { useMemo } from "react"
-import { Pressable, View } from "react-native"
-import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { FACTOR_KEYS } from "@cortege/ibp-domain"
-import { brandColors } from "../../app/brand-tokens"
-import { useBrandTheme } from "../../app/theme"
 import { FactorKey } from "../../app/types"
-import { AppChoiceChip } from "../../ui/AppChoiceChip"
-import { createHeaderStyles } from "./header.styles"
-import { fr } from "../../i18n"
-
-export type WizardStep = "identity" | "parcels" | "factors"
-
-export const WIZARD_STEPS: WizardStep[] = ["identity", "parcels", "factors"]
 
 export const FACTOR_ORDER: FactorKey[] = [...FACTOR_KEYS]
 export const FACTOR_ICONS: Record<FactorKey, keyof typeof Ionicons.glyphMap> = {
@@ -26,95 +14,4 @@ export const FACTOR_ICONS: Record<FactorKey, keyof typeof Ionicons.glyphMap> = {
   H: "git-network-outline",
   I: "water-outline",
   J: "triangle-outline",
-}
-
-export function StepButton({
-  index,
-  label,
-  meta,
-  active,
-  complete,
-  disabled = false,
-  onPress,
-}: {
-  index: string
-  label: string
-  meta: string
-  active: boolean
-  complete: boolean
-  disabled?: boolean
-  onPress: () => void
-}) {
-  const theme = useBrandTheme()
-  const headerStyles = useMemo(() => createHeaderStyles(theme), [theme])
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={fr.surveyForm.a11y.stepButton({ index, label, meta })}
-      accessibilityState={{ selected: active, disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      style={[
-        headerStyles.stepButton,
-        active ? headerStyles.stepButtonActive : null,
-        complete && !active ? headerStyles.stepButtonComplete : null,
-        disabled ? headerStyles.stepButtonDisabled : null,
-      ]}
-    >
-      <View style={headerStyles.stepButtonTopRow}>
-        <View
-          style={[headerStyles.stepIndexPill, active ? headerStyles.stepIndexPillActive : null]}
-        >
-          <Text
-            style={[headerStyles.stepIndexText, active ? headerStyles.stepIndexTextActive : null]}
-          >
-            {index}
-          </Text>
-        </View>
-        <Ionicons
-          name={
-            active ? "radio-button-on" : complete ? "checkmark-circle" : "chevron-forward-circle"
-          }
-          size={18}
-          color={
-            active ? brandColors.white : complete ? brandColors.forest : theme.colors.textSecondary
-          }
-        />
-      </View>
-      <Text
-        numberOfLines={1}
-        style={[headerStyles.stepButtonTitle, active ? headerStyles.stepButtonTitleActive : null]}
-      >
-        {label}
-      </Text>
-      <Text
-        numberOfLines={1}
-        style={[headerStyles.stepButtonMeta, active ? headerStyles.stepButtonMetaActive : null]}
-      >
-        {meta}
-      </Text>
-      <Text
-        numberOfLines={1}
-        style={[headerStyles.stepButtonHint, active ? headerStyles.stepButtonHintActive : null]}
-      >
-        {active
-          ? fr.surveyForm.header.steps.hintCurrent
-          : disabled
-            ? fr.surveyForm.header.steps.hintNameRequired
-            : fr.surveyForm.header.steps.hintTapToOpen}
-      </Text>
-    </Pressable>
-  )
-}
-
-export function WizardChip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string
-  active: boolean
-  onPress: () => void
-}) {
-  return <AppChoiceChip label={label} active={active} onPress={onPress} />
 }

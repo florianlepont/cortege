@@ -423,6 +423,20 @@ describe("stack options and listeners", () => {
     expect(options({ route: { params: { factor: "C" } } }).title).toBe("Facteur C")
   })
 
+  test("the parcel step is titled by its mode and the wizard draws its own top bar", async () => {
+    await mount(<AppNavigation />)
+    const options = mockScreens.surveyParcels.options as OptionsFn
+    expect(options({ route: { params: { mode: "wizard" } } }).title).toBe(
+      fr.navigation.headers.parcelsWizard,
+    )
+    expect(options({ route: { params: { mode: "wizard" } } }).presentation).toBe("card")
+    expect(options({ route: { params: { mode: "edit" } } }).presentation).toBe("formSheet")
+    expect(options({ route: { params: { mode: "edit" } } }).title).toBe(
+      fr.navigation.headers.parcels,
+    )
+    expect((mockScreens.surveyForm.options as Options).headerShown).toBe(false)
+  })
+
   test("the JS surveys stack shows its own header; the native one shows the search header", async () => {
     await mount(<AppNavigation />)
     const jsStack = mockNavigators.stack.find(
