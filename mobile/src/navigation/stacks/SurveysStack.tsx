@@ -101,9 +101,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           <SurveysStack.Screen
             name="surveyForm"
             options={{
-              // SurveyFormRoute sets the create/edit title.
-              title: headers.newSurvey,
-              headerLargeTitle: false,
+              // The wizard draws its own top bar (step counter and progress).
+              headerShown: false,
             }}
             component={SurveyFormRoute}
           />
@@ -117,8 +116,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           />
           <SurveysStack.Screen
             name="surveyParcels"
-            options={{
-              title: headers.parcels,
+            options={({ route }) => ({
+              title: route.params.mode === "wizard" ? headers.parcelsWizard : headers.parcels,
               headerLargeTitle: false,
               headerStyle: { backgroundColor: brandMediaBackdrop },
               headerShadowVisible: false,
@@ -138,7 +137,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               sheetGrabberVisible: true,
               sheetCornerRadius: 24,
               sheetExpandsWhenScrolledToEdge: true,
-            }}
+            })}
             component={ParcelSelectionRoute}
           />
           <SurveysStack.Screen
