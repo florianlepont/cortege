@@ -45,6 +45,12 @@ run `npm install` at the repository root before the native build, for example be
 `npx expo run:ios --device --configuration Release`. Otherwise Metro cannot resolve the package.
 Metro bundles the package from its TypeScript source, so it needs no build step.
 
+## Signing on a device
+
+`app.json` carries `ios.appleTeamId` (the Apple team of the project owner), so `expo prebuild` writes
+the signing team into the Xcode project and a `--clean` no longer loses it. A developer building
+with another Apple account changes this value locally, or sets the team once in Xcode.
+
 ## Changing something native
 
 Express it in `app.json`, or write a config plugin under `mobile/plugins/`.
