@@ -139,7 +139,7 @@ style and native offline packs. It replaces `react-native-maps` in Explorer, par
 the survey detail map; plan it as its own batch, after checking the IGN terms of use for offline
 storage.
 
-**Offline maps (2026-10-05, 12.1 lot 2):** rebuilt on MapLibre native offline packs, behind `EXPO_PUBLIC_ENABLE_OFFLINE_MAPS`. IGN terms checked from the official pages: Licence Ouverte Etalab applies by default, no strict limit on WMTS and 400 req/s on vector tiles (cartes.gouv.fr, limites d'usage); the exact attribution wording per layer is still to confirm. Zoom 13 to 17, Plan IGN and orthophotos with the cadastre in each pack; the native downloader sets its own concurrency.
+**Offline maps (2026-10-05, 12.1 lot 2):** rebuilt on MapLibre native offline packs, on by default (owner, 2026-10-05), `EXPO_PUBLIC_ENABLE_OFFLINE_MAPS=false` is the kill switch. IGN terms checked from the official pages: Licence Ouverte Etalab applies by default, no strict limit on WMTS and 400 req/s on vector tiles (cartes.gouv.fr, limites d'usage); the exact attribution wording per layer is still to confirm. Zoom 13 to 17, Plan IGN and orthophotos with the cadastre in each pack; the native downloader sets its own concurrency.
 
 **Still to do on the maps (2026-09-29):** the dark map (IGN publishes no dark style: recolour the grey Plan IGN, step 3), then offline areas rebuilt on MapLibre offline packs (step 4; area downloads are suspended in the meantime). Explorer buttons (OA-63 to OA-67) wait for the owner's answers on which controls to keep.
 
