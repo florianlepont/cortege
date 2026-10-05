@@ -4,9 +4,8 @@
 export const genusRecognitionFr = {
   entryButton: "Identifier par photo",
   modalTitle: "Identifier un genre",
-  captureIntro:
-    "Photographiez un seul sujet : un arbre entier, une feuille ou un morceau d'écorce.",
-  takePhoto: "Prendre une photo",
+  // OA-33: the camera opens straight from the button, so the guidance sits under the button.
+  captureHint: "Photographiez un seul sujet : un arbre entier, une feuille ou un morceau d'écorce.",
   retakePhoto: "Reprendre une photo",
   cameraPermissionRequired: "Autorisez l'accès à l'appareil photo pour identifier un genre.",
   noPhotoCaptured: "Aucune photo prise.",

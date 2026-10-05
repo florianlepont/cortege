@@ -1056,6 +1056,25 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
     )
   })
 
+  test("the native header names the factor on screen, and Terminer on the last one goes back", async () => {
+    const navigation = makeNavigation()
+    const tree = await mount(
+      <Providers fixture={makeFixture()}>
+        <FactorDetailRoute
+          navigation={navigation as never}
+          route={{ params: { factor: "J" } } as never}
+        />
+      </Providers>,
+    )
+    expect(navigation.setOptions).toHaveBeenLastCalledWith({
+      title: fr.navigation.headers.factor("J"),
+    })
+    await act(async () => {
+      tree.root.findAll((n) => n.props.testID === "pager-next")[0].props.onPress()
+    })
+    expect(navigation.goBack).toHaveBeenCalledTimes(1)
+  })
+
   test("the parcel selection hides Done in the wizard and goes back after saving", async () => {
     const fixture = makeFixture()
     const navigation = makeNavigation()
