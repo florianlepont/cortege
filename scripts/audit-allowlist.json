@@ -1,0 +1,15 @@
+{
+  "comment": "High-severity advisories with no patched release upstream, accepted until one ships. Each entry must name the advisory, why it is accepted, and where it comes from. scripts/audit-check.mjs fails when an entry no longer matches an advisory, so the list shrinks by itself.",
+  "advisories": [
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "reason": "Stack exhaustion on deeply nested glob patterns. No patched release (3.0.3 is the latest and is affected). Reached only through dev tooling (jest, ts-node-dev, chokidar) that globs our own files, never user input."
+    },
+    {
+      "id": "GHSA-86w9-cpqp-85rv",
+      "package": "node-forge",
+      "reason": "RSA PKCS#1 v1.5 signature verification flaw. No patched release (1.4.0 is the latest and is affected). Reached only through @expo/cli code signing in the Expo build tooling, which verifies nothing at runtime in the app or the API."
+    }
+  ]
+}
