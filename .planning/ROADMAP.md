@@ -403,7 +403,7 @@ Plans:
   3. Factors are navigated through a horizontal pager (A→J) with a fixed footer pager control, instead of 20 round trips to the factor grid; a "next incomplete factor" shortcut exists.
   4. A fixed bottom bar carries the primary CTA (the finish bar of the survey summary, the floating letter strip and next button of the factor pager). *Rewritten 2026-10-07 (owner decision): the 2×5 factor grid with a progress ring per factor and the segmented total gauge were dropped by the new-survey wizard (OA-25, OA-40, OA-98); the running total shows in the factor pager and the survey list keeps a survey-level ring.*
   5. The decimal comma is accepted in every numeric entry point that remains. *Rewritten 2026-10-07 (owner decision): the visible autosave line ("Enregistré · 14:32") is dropped; drafts still save automatically and the manual "Save draft" label is gone.*
-  6. The parcel map's selected/studied/free states use accessible, on-brand colors readable in direct sunlight. *Rewritten 2026-10-07 (owner decision): the "Parcels near you" native sheet is dropped; parcel selection is the full-screen parcel map step of the wizard, and the Home mini-map shows the parcels around.*
+  6. The parcel map's selected/studied/free states use accessible, on-brand colors readable in direct sunlight. *Rewritten 2026-10-07 (owner decision): the "Parcels near you" native sheet is dropped from parcel selection; selection is the full-screen parcel map step of the wizard. The list is to come back on the Home (SEED-004).*
 
 **Plans**: 6 batches, executed and closed directly (no separate orchestrator/executor split for
 this phase) — see `.planning/phases/03-field-entry-ergonomics/03-CONTEXT.md` and its
