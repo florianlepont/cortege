@@ -21,6 +21,9 @@ Tabs A/B/C at the top, "Thème" button toggles light/dark.
 - **C: Mélange** — A's working screens (list, rows, factors), B's thresholds (Reprendre card, score card with ring).
 - **D: C + hero compact** — C with the Reprendre card on two lines (title and progress left, button right), owner request.
 - **E: D charte + couleur** — D's compact structure, anchored in the charter: UPPERCASE highlight labels, moss bump at the bottom of forest cards (not centred, 40% min), tone-on-tone fern, offset titles, terracotta accents, score pills by band (terracotta/ochre/moss), tinted factor tiles, sage background.
+- **F: D + courbes de niveau** — topographic contour lines tone-on-tone in forest cards and the context map.
+- **G: D + rosette IBP** — ten-petal rosette (one petal per factor A-J, length = score, colour = level) replacing ring and factor grid; mini version on Accueil.
+- **H: D + carnet de terrain** — herbarium-label look: cream paper, dashed borders, punched hole, SOUMIS stamp.
 
 ## What to Look For
 Accueil compactness (owner wants it compact), score card legibility, whether B's colour fields still feel calm in dark, whether C's two registers feel coherent.

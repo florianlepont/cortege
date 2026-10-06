@@ -142,6 +142,47 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .cE .xhero.compact:after{height:9px;width:40%}
 .cE .xhero.compact .tag{margin-bottom:6px}
 
+
+/* ===== originals on top of D ===== */
+.cF .xhero svg.topo,.cF .score-x svg.topo,.cG .score-x svg.topo{position:absolute;inset:0;width:100%;height:100%;opacity:.5;pointer-events:none}
+.cF .xhero svg.topo path,.cF .score-x svg.topo path{fill:none;stroke:var(--sage);stroke-width:1;opacity:.55}
+.cF .xhero svg.topo path:nth-child(4n){opacity:1;stroke:var(--moss);stroke-width:1.4}
+.cF .xhero>*:not(svg),.cF .score-x>*:not(svg){position:relative}
+.cF .xhero .btn{position:relative}
+.cF .map{background:var(--surface2)}
+.cF .map svg.topo{position:absolute;inset:0;width:100%;height:100%}
+.cF .map svg.topo path{fill:none;stroke:var(--sage);stroke-width:1.2}
+.cF .map svg.topo path:nth-child(4n){stroke:var(--moss);stroke-width:1.8}
+.cF .map:after{z-index:2}
+.cF .thumb{background:none;border:1.5px solid var(--sage);border-radius:50%}
+.rose{display:block}
+.cG .score-x .rose{position:absolute;right:6px;top:10px}
+.cG .score-x{padding-bottom:16px}
+.cG .xhero.compact p .rose{display:inline-block;vertical-align:middle;margin-right:6px}
+.cG .rosewrap{margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px 8px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text2)}
+.cG .legend{display:flex;flex-direction:column;gap:5px;white-space:nowrap;flex:none}.cG .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+:root:not([data-theme=dark]) .cH{--bg:#EDE6D3;--surface:#F8F3E4;--surface2:#EBE2C8;--border:#C7BC9C;--text:#2A2A1C}
+.cH .card{border:1.5px dashed var(--border);border-radius:6px;box-shadow:none}
+.cH .h1{font:800 22px Sora;letter-spacing:-.01em}
+.cH .sec{margin:18px 0 7px;display:flex;justify-content:space-between;font:700 11px Sora;letter-spacing:.14em;text-transform:uppercase;color:var(--text2);border-bottom:1.5px dashed var(--border);padding-bottom:5px}
+.cH .sec em{letter-spacing:0;text-transform:none;font:500 12px Jost;color:var(--accent)}
+.cH .rowi{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1.5px dashed var(--border)}
+.cH .rowi:last-child{border:0}
+.cH .btn{border-radius:6px}
+.cH .xhero{border-radius:8px;outline:1.5px dashed rgba(241,244,230,.4);outline-offset:-7px}
+.cH .xhero:before{content:"";position:absolute;right:12px;top:10px;width:12px;height:12px;border-radius:50%;background:var(--bg);box-shadow:inset 0 1px 2px rgba(0,0,0,.45)}
+.cH .xhero .btn{border-radius:6px}
+.cH .score-x{border-radius:8px;outline:1.5px dashed rgba(241,244,230,.4);outline-offset:-7px}
+.cH .score-x:before{content:"";position:absolute;left:50%;top:9px;width:12px;height:12px;border-radius:50%;background:var(--bg);margin-left:-6px}
+.cH .score-x{padding-top:26px}
+.cH .score-x .sub div{border-radius:6px}
+.cH .chip{border-radius:4px;text-transform:uppercase;letter-spacing:.08em;font-size:10px}
+.cH .thumb,.cH .map,.cH .fac div,.cH .seg span{border-radius:6px}
+.cH .seg span{border-style:dashed}
+.cH .stamp{position:absolute;right:14px;top:34px;border:2.5px solid #F1F4E6;color:#F1F4E6;border-radius:6px;padding:5px 9px 4px;font:800 13px Sora;letter-spacing:.12em;text-align:center;transform:rotate(-9deg);opacity:.92;line-height:1.1}
+.cH .stamp small{display:block;font:600 9px Jost;letter-spacing:.1em}
+.cH .sc{font-family:Sora}
+
 /* avatar */
 .av{width:34px;height:34px;border-radius:50%;background:var(--sage);color:var(--forest);display:grid;place-items:center;font:700 13px Sora}
 .cA .av,.cC .av{width:30px;height:30px}
@@ -179,7 +220,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 </head>
 <body>
 <div id="nav">
-  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button><button data-v="D">D · C + hero compact</button><button data-v="E">E · D charte + couleur</button>
+  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button><button data-v="D">D · C + hero compact</button><button data-v="E">E · D charte + couleur</button><button data-v="F">F · D + courbes de niveau</button><button data-v="G">G · D + rosette IBP</button><button data-v="H">H · D + carnet de terrain</button>
   <span class="sp"></span>
   <button id="theme">Thème : clair</button>
 </div>
@@ -205,10 +246,18 @@ const band=n=>n==='--'?'none':(+n<25?'low':+n<35?'mid':'high');
 const status=`<div class="status"><span>9:41</span><span>●●●</span></div>`;
 const tabs=a=>`<div class="tabbar">${[['home','Accueil'],['list','Mes relevés'],['map','Explorer']].map(([n,l])=>`<div class="${a===n?'on':''}">${I(n)}${l}</div>`).join('')}<div>${I('search')}Recherche</div></div>`;
 const ring=(v,max,c)=>{const r=36,C=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 90 90"><circle cx="45" cy="45" r="${r}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="8"/><circle cx="45" cy="45" r="${r}" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*v/max} ${C}" transform="rotate(-90 45 45)"/></svg>`};
+
+function topo(){let p='';for(let k=1;k<=11;k++){const R=14*k,pts=[];for(let a=0;a<=360;a+=15){const r=R+7*Math.sin(a*Math.PI/60+k)+5*Math.cos(a*Math.PI/37+k*2);pts.push([300+r*1.5*Math.cos(a*Math.PI/180),150+r*Math.sin(a*Math.PI/180)])}
+ p+='<path d="M'+pts.map(q=>q[0].toFixed(1)+' '+q[1].toFixed(1)).join('L')+'Z"/>'}return '<svg class="topo" viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice">'+p+'</svg>'}
+function rose(vals,size,letters){const c=size/2,r0=size*.12,rm=size*.33;let p='';
+ vals.forEach((v,i)=>{const a=i*36-90,t=v/5,len=r0+(rm-r0)*t,col=v<=2?'var(--terra)':v<=3?'var(--ochre)':'var(--moss)',w=size*.05;
+  p+=`<g transform="rotate(${a+90} ${c} ${c})"><rect x="${c-w}" y="${c-r0-(len-r0)}" width="${w*2}" height="${len-r0+2}" rx="${w}" fill="${col}"/>${letters?`<text x="${c}" y="${size*.075}" text-anchor="middle" font-size="${size*.075}" font-family="Sora" font-weight="700" fill="#D7E3C0" transform="">${'ABCDEFGHIJ'[i]}</text>`:''}</g>`});
+ return `<svg class="rose" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${c}" cy="${c}" r="${size*.1}" fill="rgba(255,255,255,.15)"/>${p}</svg>`}
+const FV=[4,3,5,2,4,3,5,3,2,3];
 function sBars(n){return `<div class="sbar">${Array.from({length:10},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`}
 
-function hero(x,c){
- if(x) return `<div class="xhero${c?' compact':''}">${fern()}<div class="tag">REPRENDRE</div><div class="t">Chênaie<span>de Bercé</span></div><p>${c?'6/10 facteurs · B12':'6/10 facteurs remplis. Parcelle B12.'}</p><a class="btn">${c?'Reprendre':'Reprendre le relevé'}</a></div>`;
+function hero(x,c,v){
+ if(x) return `<div class="xhero${c?' compact':''}">${v==='F'?topo():v==='G'?'':fern()}<div class="tag">REPRENDRE</div><div class="t">Chênaie<span>de Bercé</span></div><p>${c?(v==='G'?rose([4,3,5,2,4,3,0,0,0,0],26,false):'')+'6/10 facteurs · B12':'6/10 facteurs remplis. Parcelle B12.'}</p><a class="btn">${c?'Reprendre':'Reprendre le relevé'}</a></div>`;
  return `<div class="hero"><div class="eyebrow">Reprendre</div><div class="t">Chênaie de Bercé</div><p>6/10 facteurs remplis. Parcelle B12.</p>${sBars(6)}<div style="height:12px"></div><a class="btn">Reprendre le relevé</a></div>`}
 function home(v){
  const x=v!=='A';
@@ -216,7 +265,7 @@ function home(v){
  return `${status}<div class="scroll">
  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${x?14:10}px"><div class="h1">${(v==='B'||v==='E')?'Bonjour,<span>Florian</span>':'Bonjour, Florian'}</div><div class="av">FL</div></div>
  <div class="card alert" style="padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text2)">${I('alert','color:var(--warn);width:18px;height:18px')}<span style="flex:1">1 relevé bloqué</span><span class="chip warn">Voir</span></div>
- ${hero(x,v==='D'||v==='E')}
+ ${hero(x,'DEFGH'.includes(v),v)}
  <div class="sec"><span>Parcelles proches</span><em>Voir la carte</em></div>
  <div class="card"><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B12 · Chênaie de Bercé</div><div class="m">120 m · 4,2 ha</div></div></div><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B14 · Futaie claire</div><div class="m">340 m · 2,8 ha</div></div></div></div>
  <div class="sec"><span>Derniers relevés</span><em>Tout voir</em></div>
@@ -226,7 +275,7 @@ function home(v){
 function detail(v){
  const x=v!=='A';
  const f=[['A',4,'m'],['B',3,'l'],['C',5,'h'],['D',2,'l'],['E',4,'m'],['F',3,'m'],['G',5,'h'],['H',3,'m'],['I',2,'l'],['J',3,'m']];
- const score=x?`<div class="score-x">${ring(34,50,'#B0C78E')}<div class="eyebrow" style="color:var(--sage)">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:#D7E3C0;margin-top:4px">Potentiel élevé</div><div class="sub"><div><b class="num">24<small style="font:500 12px Jost"> /35</small></b><span>Peuplement</span></div><div><b class="num">10<small style="font:500 12px Jost"> /15</small></b><span>Contexte</span></div></div></div>`
+ const score=x?`<div class="score-x">${v==='F'?topo():''}${v==='G'?rose(FV,150,true):v==='H'?'<div class="stamp">SOUMIS<small>12 SEPT.</small></div>':ring(34,50,'#B0C78E')}<div class="eyebrow" style="color:var(--sage)">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:#D7E3C0;margin-top:4px">Potentiel élevé</div><div class="sub"><div><b class="num">24<small style="font:500 12px Jost"> /35</small></b><span>Peuplement</span></div><div><b class="num">10<small style="font:500 12px Jost"> /15</small></b><span>Contexte</span></div></div></div>`
  :`<div class="card score-s"><div class="eyebrow">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:var(--text2);margin:2px 0 12px">Potentiel élevé</div>${sBars(7)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--text2)"><span>Peuplement <b class="num" style="color:var(--text)">24/35</b></span><span>Contexte <b class="num" style="color:var(--text)">10/15</b></span></div></div>`;
  return `${status}<div class="scroll">
  <div style="color:var(--text2);font-size:13px;margin-bottom:6px">‹ Mes relevés</div>
@@ -234,9 +283,9 @@ function detail(v){
  <div style="display:flex;gap:6px;align-items:center;margin-bottom:14px"><span class="chip ok">Soumis</span><span style="font-size:12px;color:var(--text2)">Parcelle L07 · 12 sept.</span></div>
  ${score}
  <div class="sec"><span>Les dix facteurs</span><em></em></div>
- <div class="fac">${f.map(a=>`<div class="${a[2]}">${a[0]}<span class="num">${a[1]}/5</span></div>`).join('')}</div>
+ ${v==='G'?`<div class="rosewrap"><div class="legend"><span><i style="background:var(--terra)"></i>1 à 2</span><span><i style="background:var(--ochre)"></i>3</span><span><i style="background:var(--moss)"></i>4 à 5</span></div><span>Chaque pétale est un facteur, A à J. Plus il est long, meilleur est le score.</span></div>`:`<div class="fac">${f.map(a=>`<div class="${a[2]}">${a[0]}<span class="num">${a[1]}/5</span></div>`).join('')}</div>`}
  <div class="sec"><span>Contexte</span><em></em></div>
- <div class="map"></div>
+ <div class="map">${v==='F'?topo():''}</div>
  <div class="card" style="margin-top:10px"><div class="rowi"><div class="n">Méthode</div><div class="sc" style="font:500 13px Jost">IBP FR v3.2</div></div><div class="rowi"><div class="n">Observateur</div><div class="sc" style="font:500 13px Jost">Florian L.</div></div></div>
  </div>${tabs('list')}`}
 
@@ -253,7 +302,10 @@ const V={
  B:{c:'cB',d:'B · Expressif et organique : aplats forêt, rectangle noir et décalage typographique de la charte, fougère en motif, rayons 22 à 26 px, bouton terracotta arrondi, plus de couleur.',home:'B',det:'B',list:'B'},
  C:{c:'cC',d:'C · Mélange : écrans de travail sobres (liste, lignes, facteurs), seuils expressifs (carte Reprendre et carte de score en aplat forêt avec anneau).',home:'C',det:'C',list:'A'},
  D:{c:'cC',d:'D · C avec hero compact : même mélange que C, mais la carte Reprendre tient sur deux lignes (titre et progression à gauche, bouton à droite) pour gagner de la place sur Accueil.',home:'D',det:'D',list:'A'},
- E:{c:'cE',d:'E · D ancré dans la charte et plus coloré : étiquettes en MAJUSCULES (highlight) décalées sur les titres de section, bump moss en bas des cartes forêt (jamais centré, 40 % min.), fougère ton sur ton, titres décalés, terracotta pour les accents, pastilles de score colorées par bande (terracotta, ochre, moss), facteurs teintés, fond sauge.',home:'E',det:'E',list:'E'}
+ E:{c:'cE',d:'E · D ancré dans la charte et plus coloré : étiquettes en MAJUSCULES (highlight) décalées sur les titres de section, bump moss en bas des cartes forêt (jamais centré, 40 % min.), fougère ton sur ton, titres décalés, terracotta pour les accents, pastilles de score colorées par bande (terracotta, ochre, moss), facteurs teintés, fond sauge.',home:'E',det:'E',list:'E'},
+ F:{c:'cC cF',d:'F · D + courbes de niveau : la signature est la topographie. Lignes de niveau ton sur ton dans les cartes forêt et dans la carte de contexte, pastilles d\'icône cerclées. Parle de terrain et de parcelle, pas de feuille.',home:'F',det:'F',list:'A'},
+ G:{c:'cC cG',d:'G · D + rosette IBP : la signature est propre à la méthode. Dix pétales, un par facteur A à J, longueur = score, couleur = niveau (terracotta, ochre, moss). Elle remplace l\'anneau et la grille des facteurs ; en miniature sur l\'Accueil elle montre la progression du brouillon.',home:'G',det:'G',list:'A'},
+ H:{c:'cC cH',d:'H · D + carnet de terrain : la signature est le papier. Fond crème, cartes en étiquettes d\'herbier (pointillés, trou de perforation), tampon SOUMIS, titres de section façon fiche. Rayons petits, ton artisanal et scientifique.',home:'H',det:'H',list:'A'}
 };
 const root=document.getElementById('root');
 root.innerHTML=Object.entries(V).map(([k,v],i)=>`<div class="variant ${i?'':'on'}" id="v${k}"><p class="vdesc">${v.d}</p><div class="row">
