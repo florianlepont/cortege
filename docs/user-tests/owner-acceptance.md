@@ -217,5 +217,5 @@ testing, so they get no finding IDs. Check them during the first run instead.
 
 ## Readiness sign-off
 
-- [ ] No open 🔴 entry
-- [ ] The owner confirms the app is ready to open field tests to the association (date, name)
+- [x] No open 🔴 entry (2026-10-06: every entry is closed; OA-124 and OA-127 are deferred to their own later phase, SEED-002 and SEED-001, and are not blockers)
+- [x] The owner confirms the app is ready to open field tests to the association (date, name): 2026-10-06, the owner (Florian Lepont), in chat: "La 12.1 est terminée, prêt pour les tests terrain à partir du 7 octobre 2026"
