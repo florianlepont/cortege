@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sketch 008 - Direction visuelle 12.2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1E8;--surface:#F7F6F0;--surface2:#E9ECDF;--border:#D3D7C8;--text:#24311F;--text2:#5F6B58;--text3:#8A9482;
+  --forest:#334E2B;--night:#0E2210;--moss:#89A33A;--terra:#CD5833;--ochre:#CC701F;--sage:#B0C78E;
+  --accent:#334E2B;--accent-ink:#fff;--accent-soft:rgba(51,78,43,.10);--glass:rgba(247,246,240,.78);--glass-b:rgba(0,0,0,.06);
+  --warn:#CC701F;--danger:#CD5833;--ok:#4C7A2A;--page:#C9CEBF;
+}
+[data-theme=dark]{
+  --bg:#08090A;--surface:#111214;--surface2:#17181B;--border:#212226;--text:#F2F3F1;--text2:#9A9FA6;--text3:#62666D;
+  --accent:#9BC26A;--accent-ink:#0C1208;--accent-soft:rgba(155,194,106,.12);--glass:rgba(24,25,28,.72);--glass-b:rgba(255,255,255,.08);
+  --warn:#E0A13A;--danger:#E5745B;--ok:#9BC26A;--page:#000;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--page);font-family:Jost,system-ui,sans-serif;color:var(--text);padding:64px 24px 40px;transition:background .2s}
+h2,.t{font-family:Sora,system-ui,sans-serif}
+#nav{position:fixed;top:0;left:0;right:0;z-index:50;background:#16181a;color:#fff;display:flex;gap:8px;align-items:center;padding:8px 16px;font:13px Sora,system-ui}
+#nav button{background:#2a2d30;color:#ddd;border:0;border-radius:8px;padding:7px 12px;font:600 12px Sora;cursor:pointer}
+#nav button.on{background:#9BC26A;color:#0c1208}
+#nav .sp{flex:1}
+.vdesc{max-width:1100px;margin:0 auto 18px;color:var(--text2);font-size:14px;line-height:1.45;text-align:center}
+[data-theme=dark] .vdesc{color:#9a9fa6}
+.row{display:flex;gap:28px;justify-content:center;flex-wrap:wrap}
+.cell .lab{font:600 12px Sora;color:var(--text2);margin-bottom:8px;text-align:center}
+[data-theme=dark] .cell .lab{color:#9a9fa6}
+.variant{display:none}.variant.on{display:block}
+/* phone */
+.phone{width:340px;height:700px;border-radius:38px;overflow:hidden;background:var(--bg);position:relative;box-shadow:0 8px 30px rgba(0,0,0,.25);border:1px solid var(--border)}
+.scroll{position:absolute;inset:0;overflow-y:auto;padding:56px 16px 96px;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+.status{position:absolute;top:0;left:0;right:0;height:44px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 26px 4px;font:600 13px Sora;z-index:5;color:var(--text)}
+.tabbar{position:absolute;left:14px;right:14px;bottom:14px;height:62px;border-radius:31px;background:var(--glass);backdrop-filter:blur(18px);border:1px solid var(--glass-b);display:flex;justify-content:space-around;align-items:center;z-index:6;box-shadow:0 4px 18px rgba(0,0,0,.14)}
+.tabbar div{display:flex;flex-direction:column;align-items:center;gap:2px;font:500 10px Jost;color:var(--text3)}
+.tabbar div.on{color:var(--accent)}
+svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.num{font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:5px;font:600 11px Jost;padding:3px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.chip.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.chip.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.btn{display:block;text-align:center;background:var(--accent);color:var(--accent-ink);font:700 14px Sora;padding:12px;border-radius:12px}
+.sec em{font-style:normal}
+.eyebrow{font:600 11px Jost;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+
+/* ===== chrome A : sober ===== */
+.cA .card{background:var(--surface);border:1px solid var(--border);border-radius:12px}
+.cA .h1{font:700 20px Sora;letter-spacing:-.01em}
+.cA .sec{font:600 12px Sora;color:var(--text2);margin:16px 0 6px;display:flex;justify-content:space-between}
+.cA .rowi{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.cA .rowi:last-child{border:0}
+.cA .btn{border-radius:10px}
+.cA .hero{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+.cA .hero .t{font:700 17px Sora;margin:4px 0}
+.cA .hero p{font-size:13px;color:var(--text2);margin-bottom:12px}
+/* ===== chrome B : expressive ===== */
+.cB .card{background:var(--surface);border-radius:22px;box-shadow:0 1px 0 var(--border)}
+.cB .h1{font:800 26px Sora;letter-spacing:-.02em;line-height:1.05}
+.cB .h1 span{display:block;margin-left:22px}
+.cB .sec{font:800 15px Sora;margin:20px 0 8px;display:flex;justify-content:space-between;align-items:center}
+.cB .sec:before{content:"";width:14px;height:14px;background:#000;margin-right:8px;display:inline-block;border-radius:2px}
+[data-theme=dark] .cB .sec:before{background:var(--terra)}
+.cB .sec{justify-content:flex-start}.cB .sec em{margin-left:auto;font:500 12px Jost;color:var(--text2);font-style:normal}
+.cB .rowi{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--border)}
+.cB .rowi:last-child{border:0}
+.cB .btn{border-radius:99px;padding:14px}
+.xhero{position:relative;overflow:hidden;background:var(--forest);color:#F1F4E6;border-radius:26px;padding:18px 18px 18px}
+.xhero .tag{display:inline-block;background:#000;color:#fff;font:700 11px Sora;letter-spacing:.1em;padding:4px 9px;margin-left:-18px;padding-left:18px;margin-bottom:10px}
+.xhero .t{font:800 25px Sora;line-height:1.08;margin-bottom:6px;letter-spacing:-.02em}
+.xhero .t span{display:block;margin-left:20px;color:var(--sage)}
+.xhero p{font-size:13px;color:#D7E3C0;margin-bottom:14px;max-width:210px}
+.xhero .btn{background:var(--terra);color:#fff;border-radius:99px;display:inline-block;padding:11px 20px}
+.xhero svg.fern{position:absolute;right:-18px;bottom:-14px;width:150px;height:150px;opacity:.28;stroke:var(--sage)}
+/* C reuses cA chrome with cB-ish hero + score */
+.cC .card{background:var(--surface);border:1px solid var(--border);border-radius:14px}
+.cC .h1{font:700 20px Sora;letter-spacing:-.01em}
+.cC .sec{font:700 12px Sora;color:var(--text2);margin:16px 0 6px;display:flex;justify-content:space-between}
+.cC .rowi{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.cC .rowi:last-child{border:0}
+.cC .btn{border-radius:12px}
+.cC .xhero{border-radius:18px}
+/* avatar */
+.av{width:34px;height:34px;border-radius:50%;background:var(--sage);color:var(--forest);display:grid;place-items:center;font:700 13px Sora}
+.cA .av,.cC .av{width:30px;height:30px}
+/* score */
+.sbar{display:flex;gap:3px}.sbar i{flex:1;height:5px;border-radius:3px;background:var(--border)}.sbar i.on{background:var(--accent)}
+.score-s{padding:14px}
+.score-s .big{font:700 40px Sora;letter-spacing:-.02em}
+.score-s .big small{font:500 16px Jost;color:var(--text3);margin-left:4px}
+.score-x{background:var(--forest);color:#F1F4E6;border-radius:26px;padding:18px;position:relative;overflow:hidden}
+.score-x .big{font:800 56px Sora;letter-spacing:-.03em;line-height:1}
+.score-x .big small{font:500 18px Jost;color:var(--sage);margin-left:6px}
+.score-x .sub{display:flex;gap:10px;margin-top:14px}
+.score-x .sub div{flex:1;background:rgba(0,0,0,.22);border-radius:14px;padding:10px 12px}
+.score-x .sub b{font:700 20px Sora;display:block}.score-x .sub span{font-size:11px;color:#D7E3C0}
+.ring{width:84px;height:84px;position:absolute;right:16px;top:18px}
+.fac{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.fac div{background:var(--surface);border:1px solid var(--border);border-radius:10px;text-align:center;padding:7px 0 6px;font:700 15px Sora}
+.cB .fac div{border-radius:16px;border:0}
+.fac span{display:block;font:500 10px Jost;color:var(--text3)}
+.fac div.l{box-shadow:inset 0 -3px 0 var(--terra)}.fac div.m{box-shadow:inset 0 -3px 0 var(--ochre)}.fac div.h{box-shadow:inset 0 -3px 0 var(--moss)}
+.map{height:90px;border-radius:12px;background:linear-gradient(135deg,#cfd9b4,#e3e8cf 45%,#bccb98);position:relative;overflow:hidden}
+[data-theme=dark] .map{background:linear-gradient(135deg,#1b2418,#222b1e 45%,#161d14)}
+.map:after{content:"";position:absolute;left:30%;top:28%;width:38%;height:44%;background:rgba(205,88,51,.35);border:2px solid var(--terra);border-radius:6px 14px 8px 12px;transform:rotate(-6deg)}
+.cB .map{border-radius:20px}
+.seg{display:flex;gap:6px;overflow:hidden;margin:10px 0}
+.seg span{font:600 12px Jost;padding:6px 12px;border-radius:99px;border:1px solid var(--border);color:var(--text2);white-space:nowrap}
+.seg span.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cB .seg span{border:0;background:var(--surface2)}.cB .seg span.on{background:var(--accent)}
+.sc{margin-left:auto;text-align:right;font:700 15px Sora}.sc small{display:block;font:500 11px Jost;color:var(--text3)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.thumb{width:40px;height:40px;border-radius:10px;background:var(--surface2);display:grid;place-items:center;color:var(--accent);flex:none}
+.cB .thumb{border-radius:14px;width:46px;height:46px}
+.rowi .n{font:600 14px Sora;line-height:1.2}.rowi .m{font-size:12px;color:var(--text2)}
+</style>
+</head>
+<body>
+<div id="nav">
+  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button>
+  <span class="sp"></span>
+  <button id="theme">Thème : clair</button>
+</div>
+<div id="root"></div>
+<script>
+const ic={
+ home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+ list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+ map:'<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+ leaf:'<path d="M5 19c0-9 5-14 15-14 0 10-5 15-14 15M5 19l8-8"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ pin:'<path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+ cloud:'<path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 11a3.5 3.5 0 0 1-.5 7z"/>',
+ alert:'<path d="M12 3l10 18H2zM12 10v5M12 18h.01"/>'
+};
+const I=(n,s)=>`<svg class="i" viewBox="0 0 24 24" ${s?`style="${s}"`:''}>${ic[n]}</svg>`;
+function fern(){let p='<path d="M20 100C40 70 60 40 96 8" fill="none" stroke-width="2"/>';
+ for(let k=1;k<10;k++){const t=k/10,x=20+76*t,y=100-92*t,L=26*(1-t*.6);
+  p+=`<path d="M${x} ${y}l${-L} ${-L*.35}M${x} ${y}l${L*.8} ${L*.5}" stroke-width="2" fill="none"/>`;}
+ return `<svg class="fern" viewBox="0 0 120 120">${p}</svg>`}
+const status=`<div class="status"><span>9:41</span><span>●●●</span></div>`;
+const tabs=a=>`<div class="tabbar">${[['home','Accueil'],['list','Mes relevés'],['map','Explorer']].map(([n,l])=>`<div class="${a===n?'on':''}">${I(n)}${l}</div>`).join('')}<div>${I('search')}Recherche</div></div>`;
+const ring=(v,max,c)=>{const r=36,C=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 90 90"><circle cx="45" cy="45" r="${r}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="8"/><circle cx="45" cy="45" r="${r}" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*v/max} ${C}" transform="rotate(-90 45 45)"/></svg>`};
+function sBars(n){return `<div class="sbar">${Array.from({length:10},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`}
+
+function hero(x){
+ if(x) return `<div class="xhero">${fern()}<div class="tag">REPRENDRE</div><div class="t">Chênaie<span>de Bercé</span></div><p>6/10 facteurs remplis. Parcelle B12.</p><a class="btn">Reprendre le relevé</a></div>`;
+ return `<div class="hero"><div class="eyebrow">Reprendre</div><div class="t">Chênaie de Bercé</div><p>6/10 facteurs remplis. Parcelle B12.</p>${sBars(6)}<div style="height:12px"></div><a class="btn">Reprendre le relevé</a></div>`}
+function home(v){
+ const x=v!=='A';
+ const rows=[['Hêtraie de Lyons','Soumis · il y a 2 j','34','leaf'],['Pinède des Landes','Brouillon · sync en attente','--','cloud'],['Bois de Boulogne','Soumis · il y a 9 j','27','leaf']];
+ return `${status}<div class="scroll">
+ <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${x?14:10}px"><div class="h1">${v==='B'?'Bonjour,<span>Florian</span>':'Bonjour, Florian'}</div><div class="av">FL</div></div>
+ <div class="card" style="padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text2)">${I('alert','color:var(--warn);width:18px;height:18px')}<span style="flex:1">1 relevé bloqué</span><span class="chip warn">Voir</span></div>
+ ${hero(x)}
+ <div class="sec"><span>Parcelles proches</span><em>Voir la carte</em></div>
+ <div class="card"><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B12 · Chênaie de Bercé</div><div class="m">120 m · 4,2 ha</div></div></div><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B14 · Futaie claire</div><div class="m">340 m · 2,8 ha</div></div></div></div>
+ <div class="sec"><span>Derniers relevés</span><em>Tout voir</em></div>
+ <div class="card">${rows.map(r=>`<div class="rowi"><div class="thumb">${I(r[3],'width:20px;height:20px')}</div><div><div class="n">${r[0]}</div><div class="m">${r[1]}</div></div><div class="sc num">${r[2]}<small>/50</small></div></div>`).join('')}</div>
+ </div>${tabs('home')}`}
+
+function detail(v){
+ const x=v!=='A';
+ const f=[['A',4,'m'],['B',3,'l'],['C',5,'h'],['D',2,'l'],['E',4,'m'],['F',3,'m'],['G',5,'h'],['H',3,'m'],['I',2,'l'],['J',3,'m']];
+ const score=x?`<div class="score-x">${ring(34,50,'#B0C78E')}<div class="eyebrow" style="color:var(--sage)">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:#D7E3C0;margin-top:4px">Potentiel élevé</div><div class="sub"><div><b class="num">24<small style="font:500 12px Jost"> /35</small></b><span>Peuplement</span></div><div><b class="num">10<small style="font:500 12px Jost"> /15</small></b><span>Contexte</span></div></div></div>`
+ :`<div class="card score-s"><div class="eyebrow">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:var(--text2);margin:2px 0 12px">Potentiel élevé</div>${sBars(7)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--text2)"><span>Peuplement <b class="num" style="color:var(--text)">24/35</b></span><span>Contexte <b class="num" style="color:var(--text)">10/15</b></span></div></div>`;
+ return `${status}<div class="scroll">
+ <div style="color:var(--text2);font-size:13px;margin-bottom:6px">‹ Mes relevés</div>
+ <div class="h1" style="margin-bottom:6px">${v==='B'?'Hêtraie<span>de Lyons</span>':'Hêtraie de Lyons'}</div>
+ <div style="display:flex;gap:6px;align-items:center;margin-bottom:14px"><span class="chip ok">Soumis</span><span style="font-size:12px;color:var(--text2)">Parcelle L07 · 12 sept.</span></div>
+ ${score}
+ <div class="sec"><span>Les dix facteurs</span><em></em></div>
+ <div class="fac">${f.map(a=>`<div class="${a[2]}">${a[0]}<span class="num">${a[1]}/5</span></div>`).join('')}</div>
+ <div class="sec"><span>Contexte</span><em></em></div>
+ <div class="map"></div>
+ <div class="card" style="margin-top:10px"><div class="rowi"><div class="n">Méthode</div><div class="sc" style="font:500 13px Jost">IBP FR v3.2</div></div><div class="rowi"><div class="n">Observateur</div><div class="sc" style="font:500 13px Jost">Florian L.</div></div></div>
+ </div>${tabs('list')}`}
+
+function list(v){
+ const items=[['Hêtraie de Lyons','Soumis','ok','34','12 sept.'],['Pinède des Landes','Brouillon','','--','11 sept.'],['Bois de Boulogne','Soumis','ok','27','3 sept.'],['Chênaie de Bercé','En cours','warn','--','2 sept.'],['Forêt de Fontainebleau','Soumis','ok','41','28 août'],['Taillis de Marly','Soumis','ok','22','21 août']];
+ return `${status}<div class="scroll">
+ <div class="h1" style="margin-bottom:${v==='B'?12:8}px">Mes relevés</div>
+ <div class="seg"><span class="on">Tous · 12</span><span>Brouillons · 2</span><span>Soumis · 10</span></div>
+ <div class="card">${items.map(r=>`<div class="rowi"><span class="dot" style="background:${r[2]==='ok'?'var(--ok)':r[2]==='warn'?'var(--warn)':'var(--text3)'}"></span><div style="flex:1"><div class="n">${r[0]}</div><div class="m">${r[1]} · ${r[4]}</div></div><div class="sc num">${r[3]}<small>/50</small></div></div>`).join('')}</div>
+ </div>${tabs('list')}`}
+
+const V={
+ A:{c:'cA',d:'A · Linear sobre : surfaces plates, filets fins, accent vert réservé à l\'action et aux scores, rayons 10 à 12 px, Accueil compact. Le côté brandé passe par les accents et les titres.',home:'A',det:'A',list:'A'},
+ B:{c:'cB',d:'B · Expressif et organique : aplats forêt, rectangle noir et décalage typographique de la charte, fougère en motif, rayons 22 à 26 px, bouton terracotta arrondi, plus de couleur.',home:'B',det:'B',list:'B'},
+ C:{c:'cC',d:'C · Mélange : écrans de travail sobres (liste, lignes, facteurs), seuils expressifs (carte Reprendre et carte de score en aplat forêt avec anneau).',home:'C',det:'C',list:'A'}
+};
+const root=document.getElementById('root');
+root.innerHTML=Object.entries(V).map(([k,v],i)=>`<div class="variant ${i?'':'on'}" id="v${k}"><p class="vdesc">${v.d}</p><div class="row">
+ <div class="cell"><div class="lab">Accueil</div><div class="phone ${v.c}">${home(v.home)}</div></div>
+ <div class="cell"><div class="lab">Détail du relevé</div><div class="phone ${v.c}">${detail(v.det)}</div></div>
+ <div class="cell"><div class="lab">Mes relevés</div><div class="phone ${v.c}">${list(v.list)}</div></div></div></div>`).join('');
+document.querySelectorAll('#nav [data-v]').forEach(b=>b.onclick=()=>{
+ document.querySelectorAll('#nav [data-v]').forEach(x=>x.classList.toggle('on',x===b));
+ document.querySelectorAll('.variant').forEach(x=>x.classList.toggle('on',x.id==='v'+b.dataset.v))});
+const tb=document.getElementById('theme');
+tb.onclick=()=>{const d=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=d?'light':'dark';tb.textContent='Thème : '+(d?'clair':'sombre')};
+</script>
+</body>
+</html>
