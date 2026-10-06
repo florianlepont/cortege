@@ -44,6 +44,14 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           screenOptions={{
             ...createBaseStackScreenOptions(theme),
             headerLargeTitle: false,
+            // OA-94: on iOS the header takes the page colour (no blur tint), so it does not read as
+            // a band of another colour above the content.
+            ...(Platform.OS === "ios"
+              ? {
+                  headerBlurEffect: "none" as const,
+                  headerStyle: { backgroundColor: theme.colors.canvas },
+                }
+              : {}),
             ...(useNativeNav
               ? {}
               : {
@@ -75,7 +83,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           <SurveysStack.Screen
             name="surveyDetail"
             options={{
-              title: headers.detail,
+              // OA-94: the page names the survey itself, a "Détail" title says nothing.
+              title: "",
               headerLargeTitle: false,
             }}
             listeners={{
@@ -141,6 +150,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                 ? {
                     headerTransparent: true,
                     headerBlurEffect: "none" as const,
+                    headerStyle: { backgroundColor: "transparent" },
                     headerTintColor: brandColors.forest,
                     headerTitle: () => null,
                   }
