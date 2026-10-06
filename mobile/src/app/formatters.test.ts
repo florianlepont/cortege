@@ -2,7 +2,9 @@ import {
   formatDateTime,
   formatEventPayload,
   formatPoints,
+  formatShortDateTime,
   formatSyncErrorForUser,
+  parseTimestamp,
 } from "./formatters"
 import { fr } from "../i18n"
 
@@ -129,5 +131,56 @@ describe("formatDateTime", () => {
 
   test("formats a valid ISO date", () => {
     expect(formatDateTime("2026-03-10T12:00:00.000Z")).not.toBe("n/a")
+  })
+})
+
+describe("parseTimestamp (OA-112)", () => {
+  test("reads the PostgreSQL text the API sends for event dates", () => {
+    expect(parseTimestamp("2026-10-06 10:24:20.217289+00").toISOString()).toBe(
+      "2026-10-06T10:24:20.217Z",
+    )
+  })
+
+  test("reads the offset forms PostgreSQL can print", () => {
+    expect(parseTimestamp("2026-10-06 12:24:20+02").toISOString()).toBe("2026-10-06T10:24:20.000Z")
+    expect(parseTimestamp("2026-10-06 12:24:20.5+0200").toISOString()).toBe(
+      "2026-10-06T10:24:20.500Z",
+    )
+    expect(parseTimestamp("2026-10-06 05:54:20-04:30").toISOString()).toBe(
+      "2026-10-06T10:24:20.000Z",
+    )
+    expect(parseTimestamp("2026-10-06 10:24:20Z").toISOString()).toBe("2026-10-06T10:24:20.000Z")
+  })
+
+  test("leaves a standard ISO date to the date parser", () => {
+    expect(parseTimestamp("2026-10-06T10:24:20.217Z").toISOString()).toBe(
+      "2026-10-06T10:24:20.217Z",
+    )
+  })
+
+  test("is invalid for text that is not a date", () => {
+    expect(Number.isNaN(parseTimestamp("not a date").getTime())).toBe(true)
+  })
+})
+
+describe("formatShortDateTime (OA-112)", () => {
+  test("shows a PostgreSQL timestamp as a readable French date, not the raw text", () => {
+    const text = formatShortDateTime("2026-10-06 10:24:20.217289+00")
+    expect(text).not.toContain("217289")
+    expect(text).not.toContain("+00")
+    expect(text).toMatch(/2026/)
+  })
+
+  test("reads n/a when empty and keeps an unreadable value as it is", () => {
+    expect(formatShortDateTime(null)).toBe("n/a")
+    expect(formatShortDateTime("not a date")).toBe("not a date")
+  })
+})
+
+describe("formatDateTime with a PostgreSQL timestamp (OA-112)", () => {
+  test("is not the raw text", () => {
+    expect(formatDateTime("2026-10-06 10:24:20.217289+00")).not.toBe(
+      "2026-10-06 10:24:20.217289+00",
+    )
   })
 })

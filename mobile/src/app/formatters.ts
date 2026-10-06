@@ -9,9 +9,27 @@ export const formatEventPayload = (payload?: Record<string, unknown> | null): st
   return json.length > 120 ? `${json.slice(0, 117)}...` : json
 }
 
+// The API sends some timestamps as PostgreSQL text ("2026-10-06 10:24:20.217289+00": a space for
+// the "T", microseconds, an offset without minutes), which `new Date` cannot read on the device; the
+// raw text was shown in the history (OA-112). Rewrite it as ISO 8601 first, anything else is left to
+// `new Date` as it is.
+const POSTGRES_TIMESTAMP =
+  /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}(?::?\d{2})?)?$/
+
+export const parseTimestamp = (value: string): Date => {
+  const match = POSTGRES_TIMESTAMP.exec(value.trim())
+  if (!match) return new Date(value)
+  const [, day, time, fraction, zone] = match
+  const millis = fraction ? `.${fraction.slice(0, 3).padEnd(3, "0")}` : ""
+  let offset = zone ?? ""
+  if (/^[+-]\d{2}$/.test(offset)) offset = `${offset}:00`
+  else if (/^[+-]\d{4}$/.test(offset)) offset = `${offset.slice(0, 3)}:${offset.slice(3)}`
+  return new Date(`${day}T${time}${millis}${offset}`)
+}
+
 export const formatDateTime = (value?: string | null): string => {
   if (!value) return "n/a"
-  const date = new Date(value)
+  const date = parseTimestamp(value)
   if (Number.isNaN(date.getTime())) {
     return value
   }
@@ -20,7 +38,7 @@ export const formatDateTime = (value?: string | null): string => {
 
 export const formatShortDateTime = (value?: string | null): string => {
   if (!value) return "n/a"
-  const date = new Date(value)
+  const date = parseTimestamp(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleString("fr-FR", {
     day: "numeric",
