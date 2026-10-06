@@ -35,6 +35,22 @@ export const homeFr = {
     resumeButton: "Reprendre",
     newSurveyButton: "Nouveau relevé",
   },
+  // OA-107: the tools that help fill in the factors. Identifying a tree by photo is the first.
+  tools: {
+    title: "Outils",
+    identify: {
+      title: "Identifier un arbre",
+      body: "Le genre à partir d'une photo.",
+      a11y: "Identifier un arbre par photo",
+    },
+    chooseSurveyTitle: ({ genus }: { genus: string }) => `Ajouter « ${genus} » à quel relevé ?`,
+    startSurvey: "Commencer un relevé avec ce genre",
+    cancel: "Annuler",
+    genusAdded: ({ genus, name }: { genus: string; name: string }) =>
+      `${genus} ajouté au facteur A de « ${name} »`,
+    addFailed: "Le genre n'a pas pu être ajouté à ce relevé.",
+    dismissNotice: "Fermer le message",
+  },
   nearby: {
     title: "Autour de vous",
     seeMap: "Explorer ›",

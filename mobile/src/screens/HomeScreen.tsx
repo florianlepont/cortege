@@ -11,6 +11,7 @@ import { useBrandTheme } from "../app/theme"
 import { getFirstName } from "./home/first-name"
 import { formatSyncErrorForUser } from "../app/formatters"
 import { resolveSurveyUiStatus } from "../app/survey-logic"
+import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
 import type { AuthUser } from "../app/types"
 import type { LocalSurvey } from "../storage/types"
 import type { SurveyStats } from "../app/types"
@@ -23,6 +24,7 @@ import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { Skeleton } from "../ui/Skeleton"
 import { SyncStatusLine } from "../ui/SyncStatusLine"
 import { NearbyMapCard } from "./home/NearbyMapCard"
+import { ToolsSection } from "./home/ToolsSection"
 import { createStyles } from "./home/styles"
 
 const MIN_MAP_HEIGHT = 240
@@ -47,6 +49,8 @@ type HomeScreenProps = {
   nearbyParcels: NearbyParcelsState
   onLoadNearbyParcels: () => void
   onCreateSurvey: () => void
+  onCreateSurveyWithGenus: (genus: CnpfFactorAGenusCode) => void
+  onAddGenusToSurvey: (surveyId: string, genus: CnpfFactorAGenusCode) => Promise<boolean>
   onOpenSurvey: (surveyId: string) => void
   onRetrySurvey: (surveyId: string) => Promise<void>
   onOpenSyncStatus: () => void
@@ -88,6 +92,8 @@ export function HomeScreen({
   nearbyParcels,
   onLoadNearbyParcels,
   onCreateSurvey,
+  onCreateSurveyWithGenus,
+  onAddGenusToSurvey,
   onOpenSurvey,
   onRetrySurvey,
   onOpenSyncStatus,
@@ -306,6 +312,13 @@ export function HomeScreen({
             </Pressable>
           ) : null}
         </View>
+
+        {/* ── Outils (OA-107) ───────────────────────── */}
+        <ToolsSection
+          surveys={surveys}
+          onAddGenusToSurvey={onAddGenusToSurvey}
+          onStartSurveyWithGenus={onCreateSurveyWithGenus}
+        />
 
         {/* ── Parcelles proches ─────────────────────── */}
         <View style={styles.section}>

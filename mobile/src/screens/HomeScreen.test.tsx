@@ -51,6 +51,7 @@ jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader
 jest.mock("../ui/SyncStatusLine", () => ({ SyncStatusLine: "SyncStatusLine" }))
 jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))
 jest.mock("./home/NearbyMapCard", () => ({ NearbyMapCard: "NearbyMapCard" }))
+jest.mock("./home/ToolsSection", () => ({ ToolsSection: "ToolsSection" }))
 
 let tree: ReactTestRenderer
 
@@ -92,6 +93,8 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     },
     onLoadNearbyParcels: jest.fn(),
     onCreateSurvey: jest.fn(),
+    onCreateSurveyWithGenus: jest.fn(),
+    onAddGenusToSurvey: jest.fn(async () => true),
     onOpenSurvey: jest.fn(),
     onRetrySurvey: jest.fn(async () => undefined),
     onOpenSyncStatus: jest.fn(),
@@ -115,6 +118,16 @@ afterEach(() => {
 describe("HomeScreen", () => {
   beforeEach(() => jest.useFakeTimers())
   afterEach(() => jest.useRealTimers())
+
+  test("the Outils section gets the surveys and the two ways to use a genus (OA-107)", () => {
+    const surveys = [makeSurvey()]
+    const props = makeProps({ surveys })
+    mount(props)
+    const tools = tree.root.find((node) => (node.type as unknown) === "ToolsSection")
+    expect(tools.props.surveys).toBe(surveys)
+    expect(tools.props.onAddGenusToSurvey).toBe(props.onAddGenusToSurvey)
+    expect(tools.props.onStartSurveyWithGenus).toBe(props.onCreateSurveyWithGenus)
+  })
 
   test("refreshing reflects the in-flight state of onRefresh, not a hardcoded false", async () => {
     let resolveRefresh: () => void = () => undefined

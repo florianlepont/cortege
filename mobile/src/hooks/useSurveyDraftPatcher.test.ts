@@ -187,6 +187,81 @@ describe("useSurveyDraftPatcher", () => {
     })
   })
 
+  // ─── handleAddGenusToSurvey (OA-107) ───────────────────────────────────────
+
+  describe("handleAddGenusToSurvey", () => {
+    const draftWithGenera = (a: Record<string, unknown>) =>
+      makeDraftRow({ factors: { A: a, B: { strata_count: 3 } } })
+
+    test("adds the genus to factor A, after the ones already there, and keeps the rest", async () => {
+      surveyList.surveys = [
+        { id: TEST_SURVEY_ID, site_name: "Test OB", status: "draft", visibility: "private" },
+      ]
+      mockGetLocalSurveyDraft.mockResolvedValue(
+        draftWithGenera({ genera: ["Acer"], native_cover_percent: 60 }),
+      )
+      const { handleAddGenusToSurvey } = useBuildHook()
+
+      const added = await handleAddGenusToSurvey(TEST_SURVEY_ID, "Fagus")
+
+      expect(added).toBe(true)
+      expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          factors: {
+            A: { genera: ["Acer", "Fagus"], native_cover_percent: 60 },
+            B: { strata_count: 3 },
+          },
+        }),
+      )
+      expect(onStatusChange).toHaveBeenCalledWith(fr.status.editing.genusAdded({ name: "Test OB" }))
+    })
+
+    test("does not add a genus twice", async () => {
+      surveyList.surveys = [{ id: TEST_SURVEY_ID, status: "draft", visibility: "private" }]
+      mockGetLocalSurveyDraft.mockResolvedValue(draftWithGenera({ genera: ["Fagus"] }))
+      const { handleAddGenusToSurvey } = useBuildHook()
+
+      await handleAddGenusToSurvey(TEST_SURVEY_ID, "Fagus")
+
+      expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
+        expect.objectContaining({
+          factors: expect.objectContaining({ A: { genera: ["Fagus"] } }),
+        }),
+      )
+    })
+
+    test("starts factor A when the draft has none, or an old bare count", async () => {
+      surveyList.surveys = [{ id: TEST_SURVEY_ID, status: "draft", visibility: "private" }]
+      mockGetLocalSurveyDraft.mockResolvedValue(makeDraftRow({ factors: {} }))
+      const { handleAddGenusToSurvey } = useBuildHook()
+
+      await handleAddGenusToSurvey(TEST_SURVEY_ID, "Fagus")
+      expect(mockUpdateLocalDraft).toHaveBeenLastCalledWith(
+        expect.objectContaining({ factors: { A: { genera: ["Fagus"] } } }),
+      )
+
+      mockGetLocalSurveyDraft.mockResolvedValue(
+        draftWithGenera({ native_genus_count: 3, native_cover_percent: 40 }),
+      )
+      await handleAddGenusToSurvey(TEST_SURVEY_ID, "Acer")
+      expect(mockUpdateLocalDraft).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          factors: expect.objectContaining({
+            A: { native_genus_count: 3, native_cover_percent: 40, genera: ["Acer"] },
+          }),
+        }),
+      )
+    })
+
+    test("a submitted survey keeps its factors and the call says it did not apply", async () => {
+      surveyList.surveys = [{ id: TEST_SURVEY_ID, status: "submitted", visibility: "private" }]
+      const { handleAddGenusToSurvey } = useBuildHook()
+
+      expect(await handleAddGenusToSurvey(TEST_SURVEY_ID, "Fagus")).toBe(false)
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+    })
+  })
+
   // ─── handleUpdateSurveyRegionVersion ──────────────────────────────────────
 
   describe("handleUpdateSurveyRegionVersion", () => {

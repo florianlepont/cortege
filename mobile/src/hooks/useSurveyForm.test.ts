@@ -467,20 +467,43 @@ describe("useSurveyForm", () => {
       })
     })
 
-    test("A without its cover is neither sent nor scored", async () => {
+    // OA-107: the genera are kept in the draft before the cover is entered (the contract has the
+    // cover optional, the domain reports a non-blocking `factor_incomplete`), or a genus added by the
+    // photo tool would be lost on the next autosave. A is still not scored without its cover.
+    test("A without its cover keeps its genera but is not scored", async () => {
       useRealRules()
       const result = await renderForm()
       await type(result, "A", 0, FIVE_GENERA)
-      expect(result.current.draftInput.factors).not.toHaveProperty("A")
+      expect(result.current.draftInput.factors.A).toEqual({
+        genera: FIVE_GENERA.split(","),
+      })
       expect(result.current.factorRetainedScores.A).toBeNull()
     })
 
-    test("A with a cover above 100 is not sent", async () => {
+    test("A with a cover above 100 keeps its genera and drops the cover", async () => {
       useRealRules()
       const result = await renderForm()
       await type(result, "A", 0, FIVE_GENERA)
       await type(result, "A", 1, "140")
+      expect(result.current.draftInput.factors.A).toEqual({
+        genera: FIVE_GENERA.split(","),
+      })
+    })
+
+    test("A with no genus and no cover is not sent", async () => {
+      useRealRules()
+      const result = await renderForm()
       expect(result.current.draftInput.factors).not.toHaveProperty("A")
+    })
+
+    test("a genus added from outside (the photo tool) goes into A, once", async () => {
+      useRealRules()
+      const result = await renderForm()
+      await act(async () => {
+        result.current.addGenusToFactorA("Fagus")
+        result.current.addGenusToFactorA("Fagus")
+      })
+      expect(result.current.draftInput.factors.A).toEqual({ genera: ["Fagus"] })
     })
 
     test.each([

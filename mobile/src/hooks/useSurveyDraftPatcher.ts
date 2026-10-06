@@ -5,6 +5,8 @@ import {
   resolveMethodVersion,
   type IbpCas,
 } from "@cortege/ibp-domain"
+import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
+import { addGenusToListValue, serializeGenusListValue } from "../app/factor-a-genus-list"
 import { getLocalSurveyDraft, updateLocalDraft } from "../storage/surveys"
 import { DEFAULT_SURVEY_FORM, normalizeVegetationStageForRegion } from "../app/constants"
 import { migrateDraftToV32 } from "../app/ibp-scoring"
@@ -231,8 +233,33 @@ export function useSurveyDraftPatcher({ surveyList, onStatusChange }: UseSurveyD
     )
   }
 
+  /**
+   * OA-107: a genus confirmed in the photo tool goes into factor A of a draft that is not open
+   * (the list of genera, the cover and the other fields untouched). False when it did not apply.
+   */
+  const handleAddGenusToSurvey = async (
+    surveyId: string,
+    genus: CnpfFactorAGenusCode,
+  ): Promise<boolean> =>
+    patchSurveyDraftDirectly(
+      surveyId,
+      (draft) => {
+        const factorA = asRecord(draft.factors.A)
+        const stored = Array.isArray(factorA.genera)
+          ? factorA.genera.filter((code): code is string => typeof code === "string")
+          : []
+        const genera = addGenusToListValue(serializeGenusListValue(stored), genus)
+        return {
+          ...draft,
+          factors: { ...draft.factors, A: { ...factorA, genera: genera ? genera.split(",") : [] } },
+        }
+      },
+      text.genusAdded({ name: currentName(surveyId) }),
+    )
+
   return {
     patchSurveyDraftDirectly,
+    handleAddGenusToSurvey,
     handleRenameSurvey,
     handleUpdateSurveyRegionVersion,
     handleUpdateSurveyVegetationStage,

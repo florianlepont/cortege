@@ -6,6 +6,7 @@ import {
   casFromRegionStage,
   isIbpCas,
   resolveMethodVersion,
+  type CnpfFactorAGenusCode,
   type IbpCas,
   type IbpMethodVersion,
 } from "@cortege/ibp-domain"
@@ -14,7 +15,11 @@ import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
 } from "../app/constants"
-import { parseGenusListValue, serializeGenusListValue } from "../app/factor-a-genus-list"
+import {
+  addGenusToListValue,
+  parseGenusListValue,
+  serializeGenusListValue,
+} from "../app/factor-a-genus-list"
 import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { fr } from "../i18n"
@@ -227,9 +232,16 @@ export function useSurveyForm() {
   const buildFactorsPayload = useCallback((): Record<string, unknown> => {
     const payload: Record<string, unknown> = {}
 
+    // OA-107: the genera are kept even before the cover is entered (the domain contract has the
+    // cover optional), or a genus added by the photo tool would be lost on the next autosave.
     const aCover = toFiniteNumberInRange(factorA.native_cover_percent, { min: 0, max: 100 })
-    if (aCover !== null)
-      payload.A = { genera: parseGenusListValue(factorA.genera), native_cover_percent: aCover }
+    const aGenera = parseGenusListValue(factorA.genera)
+    if (aCover !== null || aGenera.length > 0) {
+      payload.A = {
+        genera: aGenera,
+        ...(aCover !== null ? { native_cover_percent: aCover } : {}),
+      }
+    }
 
     const bStrata = toFiniteNumberInRange(factorB.strata_count, { min: 0, integer: true })
     if (bStrata !== null) payload.B = { strata_count: bStrata }
@@ -356,6 +368,11 @@ export function useSurveyForm() {
     }),
     [siteName],
   )
+
+  /** OA-107: a genus confirmed from the photo tool, put in the open form's factor A. */
+  const addGenusToFactorA = (genus: CnpfFactorAGenusCode): void => {
+    setFactorA((prev) => ({ ...prev, genera: addGenusToListValue(prev.genera, genus) }))
+  }
 
   const resetSurveyForm = (): void => {
     setSiteName(DEFAULT_SURVEY_FORM.siteName)
@@ -621,6 +638,7 @@ export function useSurveyForm() {
     draftInput,
     applyDraftToForm,
     resetSurveyForm,
+    addGenusToFactorA,
     buildDraftInput,
     markSubmitAttempted,
   }
