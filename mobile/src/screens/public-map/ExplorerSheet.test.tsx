@@ -17,14 +17,73 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-jest.mock("react-native", () => ({
-  StyleSheet: { create: <T,>(value: T): T => value },
-}))
+type PanHandlers = {
+  onMoveShouldSetPanResponder: (e: unknown, g: { dy: number }) => boolean
+  onPanResponderMove: (e: unknown, g: { dy: number }) => void
+  onPanResponderRelease: (e: unknown, g: { dy: number; vy: number }) => void
+}
+
+const mockAnimations: Array<{
+  kind: string
+  toValue: number
+  finish: (finished: boolean) => void
+}> = []
+const mockValues: Array<{ value: number }> = []
+let mockPan: PanHandlers
+
+jest.mock("react-native", () => {
+  const ReactRef = require("react") as typeof import("react")
+  const mockComponent =
+    (name: string) =>
+    ({ children, ...props }: { children?: React.ReactNode }) =>
+      ReactRef.createElement(name, props, children)
+  class MockValue {
+    value: number
+    constructor(value: number) {
+      this.value = value
+      mockValues.push(this)
+    }
+    setValue(value: number) {
+      this.value = value
+    }
+  }
+  const animate = (kind: string) => (value: MockValue, config: { toValue: number }) => ({
+    start: (done?: (result: { finished: boolean }) => void) => {
+      value.value = config.toValue
+      mockAnimations.push({
+        kind,
+        toValue: config.toValue,
+        finish: (finished) => done?.({ finished }),
+      })
+    },
+  })
+  return {
+    Animated: {
+      Value: MockValue,
+      View: mockComponent("AnimatedView"),
+      timing: animate("timing"),
+      spring: animate("spring"),
+    },
+    KeyboardAvoidingView: mockComponent("KeyboardAvoidingView"),
+    PanResponder: {
+      create: (handlers: PanHandlers) => {
+        mockPan = handlers
+        return { panHandlers: { testHandler: true } }
+      },
+    },
+    Platform: { OS: "ios" },
+    ScrollView: mockComponent("ScrollView"),
+    StyleSheet: { create: <T,>(value: T): T => value, absoluteFill: {} },
+    View: mockComponent("View"),
+    useWindowDimensions: () => ({ width: 400, height: 800 }),
+  }
+})
+jest.mock("expo-blur", () => ({ BlurView: "BlurView" }))
 
 import { ExplorerSheet } from "./ExplorerSheet"
 
-function render(props: Partial<React.ComponentProps<typeof ExplorerSheet>> = {}) {
-  let tree: renderer.ReactTestRenderer | undefined
+function mount(props: Partial<React.ComponentProps<typeof ExplorerSheet>> = {}) {
+  let tree!: renderer.ReactTestRenderer
   act(() => {
     tree = renderer.create(
       <ExplorerSheet visible={false} onDismiss={jest.fn()} {...props}>
@@ -32,60 +91,78 @@ function render(props: Partial<React.ComponentProps<typeof ExplorerSheet>> = {})
       </ExplorerSheet>,
     )
   })
-  return tree!
+  return tree
 }
 
-/** The mocked BottomSheet's `onChange` prop — the mock's imperative handle calls it directly. */
-function sheetOnChange(tree: renderer.ReactTestRenderer): (index: number) => void {
-  const node = tree.root.find((n) => typeof n.props.onChange === "function")
-  return node.props.onChange as (index: number) => void
+function update(tree: renderer.ReactTestRenderer, props: { visible: boolean; children?: string }) {
+  act(() => {
+    tree.update(
+      <ExplorerSheet visible={props.visible} onDismiss={jest.fn()}>
+        {props.children ?? "content"}
+      </ExplorerSheet>,
+    )
+  })
 }
 
-describe("ExplorerSheet (MAP-01: tiered sheet)", () => {
-  test("renders its children inside a scrollable sheet body", () => {
-    const tree = render({ visible: true, children: "hello" })
+beforeEach(() => {
+  mockAnimations.length = 0
+  mockValues.length = 0
+})
+
+describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
+  test("draws nothing while hidden", () => {
+    expect(mount({ visible: false }).toJSON()).toBeNull()
+  })
+
+  test("opens by sliding up and shows its content", () => {
+    const tree = mount({ visible: true, children: "hello" })
     expect(
-      tree.root.findAll((node) => (node.type as unknown) === "BottomSheetScrollView"),
+      tree.root.findAll(
+        (node) => typeof node.type === "string" && node.props.testID === "explorer-sheet",
+      ),
     ).toHaveLength(1)
+    expect(JSON.stringify(tree.toJSON())).toContain("hello")
+    expect(mockAnimations[0]).toMatchObject({ kind: "timing", toValue: 0 })
+  })
+
+  test("closes by sliding down, keeps its content meanwhile, then unmounts", () => {
+    const tree = mount({ visible: true, children: "hello" })
+    update(tree, { visible: false, children: "gone" })
+    // 55% of an 800 pt window.
+    const closing = mockAnimations[mockAnimations.length - 1]
+    expect(closing).toMatchObject({ kind: "timing", toValue: 440 })
+    expect(JSON.stringify(tree.toJSON())).toContain("hello")
+    act(() => closing.finish(true))
+    expect(tree.toJSON()).toBeNull()
+  })
+
+  test("an interrupted close (reopened meanwhile) stays mounted", () => {
+    const tree = mount({ visible: true })
+    update(tree, { visible: false })
+    const closing = mockAnimations[mockAnimations.length - 1]
+    update(tree, { visible: true })
+    act(() => closing.finish(false))
     expect(tree.toJSON()).not.toBeNull()
   })
 
-  test("becoming visible snaps the sheet open; becoming hidden closes it, both without throwing", () => {
-    let tree: renderer.ReactTestRenderer | undefined
-    act(() => {
-      tree = renderer.create(
-        <ExplorerSheet visible={false} onDismiss={jest.fn()}>
-          content
-        </ExplorerSheet>,
-      )
-    })
-    act(() => {
-      tree!.update(
-        <ExplorerSheet visible={true} onDismiss={jest.fn()}>
-          content
-        </ExplorerSheet>,
-      )
-    })
-    act(() => {
-      tree!.update(
-        <ExplorerSheet visible={false} onDismiss={jest.fn()}>
-          content
-        </ExplorerSheet>,
-      )
-    })
-  })
-
-  test("the sheet reporting index -1 (swipe-to-dismiss) reports the dismissal", () => {
+  test("a swipe down far enough, or fast enough, dismisses; a short one springs back", () => {
     const onDismiss = jest.fn()
-    const tree = render({ visible: true, onDismiss })
-    act(() => sheetOnChange(tree)(-1))
-    expect(onDismiss).toHaveBeenCalledTimes(1)
-  })
+    mount({ visible: true, onDismiss })
+    expect(mockPan.onMoveShouldSetPanResponder({}, { dy: 2 })).toBe(false)
+    expect(mockPan.onMoveShouldSetPanResponder({}, { dy: 10 })).toBe(true)
 
-  test("a change to an open detent does not report a dismissal", () => {
-    const onDismiss = jest.fn()
-    const tree = render({ visible: true, onDismiss })
-    act(() => sheetOnChange(tree)(1))
+    mockPan.onPanResponderMove({}, { dy: 30 })
+    expect(mockValues[0].value).toBe(30)
+    mockPan.onPanResponderMove({}, { dy: -20 })
+    expect(mockValues[0].value).toBe(30)
+
+    mockPan.onPanResponderRelease({}, { dy: 30, vy: 0.1 })
     expect(onDismiss).not.toHaveBeenCalled()
+    expect(mockAnimations[mockAnimations.length - 1]).toMatchObject({ kind: "spring", toValue: 0 })
+
+    mockPan.onPanResponderRelease({}, { dy: 120, vy: 0.1 })
+    expect(onDismiss).toHaveBeenCalledTimes(1)
+    mockPan.onPanResponderRelease({}, { dy: 20, vy: 1.2 })
+    expect(onDismiss).toHaveBeenCalledTimes(2)
   })
 })

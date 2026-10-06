@@ -317,7 +317,11 @@ export function PublicMapScreen({
 
       {/* MAP-01: one tiered sheet for whichever map-content panel is active, replacing the three
         absolutely-positioned AppCards this screen used to stack independently. */}
-      <ExplorerSheet visible={sheetContent !== null} onDismiss={closeSheet}>
+      <ExplorerSheet
+        visible={sheetContent !== null}
+        onDismiss={closeSheet}
+        bottomInset={Math.max(tabBarHeight, insets.bottom)}
+      >
         {sheetContent}
       </ExplorerSheet>
     </View>
