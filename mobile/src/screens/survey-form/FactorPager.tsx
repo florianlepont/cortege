@@ -119,7 +119,9 @@ export function FactorPager({
     <View style={styles.container} onLayout={handleContainerLayout} testID="factor-pager">
       <View style={[styles.header, { paddingTop: headerHeight + brandSpacing4.sm }]}>
         <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>
+          {/* OA-35: a long name ("Milieux ouverts florifères") shrinks to fit a narrow phone
+           * instead of ending in an ellipsis. */}
+          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             {FACTOR_TITLES[activeFactor]}
           </Text>
           <View

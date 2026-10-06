@@ -29,6 +29,7 @@ jest.mock("react-native", () => ({
 }))
 
 jest.mock("expo-image-picker", () => ({
+  UIImagePickerPreferredAssetRepresentationMode: { Current: "current" },
   requestMediaLibraryPermissionsAsync: jest.fn(),
   launchImageLibraryAsync: jest.fn(),
   requestCameraPermissionsAsync: jest.fn(),
@@ -38,6 +39,7 @@ jest.mock("expo-image-picker", () => ({
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import { Alert } from "react-native"
 import * as ImagePicker from "expo-image-picker"
+import { ImageManipulator } from "../../../test/expo-image-manipulator.mock"
 import { fr } from "../../i18n"
 import { useSurveySyncProfile } from "./useSurveySyncProfile"
 
@@ -284,6 +286,57 @@ describe("useSurveySyncProfile", () => {
       await handlePickProfilePictureFromLibrary()
 
       expect(setStatus).toHaveBeenCalledWith(text.noImageSelected())
+    })
+
+    test("picks without the slow editor, crops the photo to a square JPEG and uploads it (OA-87)", async () => {
+      ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
+        granted: true,
+      })
+      ;(ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+        canceled: false,
+        assets: [{ uri: "file:///gallery/photo.heic", width: 4000, height: 3000 }],
+      })
+      mockUploadMyProfilePicture.mockResolvedValue({
+        profile_picture_url: "/me/profile-picture?v=1",
+      })
+      mockPatchMyProfile.mockResolvedValue({
+        ...AUTH_USER,
+        profile_picture_url: "/me/profile-picture?v=1",
+      })
+      const { handlePickProfilePictureFromLibrary, setStatus } = await buildHook()
+
+      await handlePickProfilePictureFromLibrary()
+
+      expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalledWith({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        preferredAssetRepresentationMode: "current",
+      })
+      expect(mockUploadMyProfilePicture).toHaveBeenCalledWith("http://localhost:3000", "token", {
+        uri: expect.stringMatching(/\.jpg$/),
+        mimeType: "image/jpeg",
+      })
+      expect(setStatus).toHaveBeenLastCalledWith(text.pictureUploaded())
+    })
+
+    test("sets a status when the photo cannot be prepared", async () => {
+      ;(ImagePicker.requestMediaLibraryPermissionsAsync as jest.Mock).mockResolvedValue({
+        granted: true,
+      })
+      ;(ImagePicker.launchImageLibraryAsync as jest.Mock).mockResolvedValue({
+        canceled: false,
+        assets: [{ uri: "file:///gallery/photo.heic", width: 4000, height: 3000 }],
+      })
+      const manipulate = ImageManipulator.manipulate as jest.Mock
+      manipulate.mockImplementationOnce(() => {
+        throw new Error("decode failed")
+      })
+      const { handlePickProfilePictureFromLibrary, setStatus } = await buildHook()
+
+      await handlePickProfilePictureFromLibrary()
+
+      expect(mockUploadMyProfilePicture).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledWith(text.pictureLibraryFailed())
     })
   })
 

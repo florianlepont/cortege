@@ -8,6 +8,7 @@ import {
   requestPasswordReset,
   uploadMyProfilePicture,
 } from "../../api/ibp-api"
+import { prepareProfilePicture } from "../../app/profile-picture"
 import { AuthUser } from "../../app/types"
 import { fr, logStatusDetail, type StatusMessage } from "../../i18n"
 import { AUTH_REQUIRED_ERROR } from "../useAuth0Session"
@@ -81,7 +82,7 @@ export function useSurveySyncProfile({
   )
 
   const uploadProfilePictureFromAsset = useCallback(
-    async (asset: ImagePicker.ImagePickerAsset): Promise<void> => {
+    async (asset: { uri: string; mimeType?: string | null }): Promise<void> => {
       const mimeType = asset.mimeType ?? guessMimeType(asset.uri)
       const file = { uri: asset.uri, mimeType }
 
@@ -140,17 +141,20 @@ export function useSurveySyncProfile({
         return
       }
 
+      // OA-87: no `allowsEditing` (it makes iOS use the legacy, slow picker) and no re-encode in
+      // the picker: it hands back the photo as it is, and the square crop is done below.
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
-        allowsEditing: true,
-        quality: 0.8,
+        allowsEditing: false,
+        preferredAssetRepresentationMode:
+          ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       })
       if (result.canceled || !result.assets?.[0]) {
         setStatus(text.noImageSelected())
         return
       }
 
-      await uploadProfilePictureFromAsset(result.assets[0])
+      await uploadProfilePictureFromAsset(await prepareProfilePicture(result.assets[0]))
     } catch (error) {
       logStatusDetail("profile.pictureLibrary", error)
       setStatus(text.pictureLibraryFailed())
