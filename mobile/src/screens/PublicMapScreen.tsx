@@ -73,6 +73,14 @@ export function PublicMapScreen({
   const theme = useBrandTheme()
   const screenStyles = useMemo(() => createScreenContainerStyle(theme), [theme])
   const cameraRef = useRef<CameraRef | null>(null)
+  // The route pulls this screen up under the status bar (marginTop: -insets.top), and the native
+  // tabs already start at the top: where the container really begins on screen varies, so it is
+  // measured. The capsule is then placed under the status bar whatever the origin (OA-103).
+  const rootRef = useRef<View | null>(null)
+  const [originY, setOriginY] = useState(0)
+  const handleRootLayout = useCallback(() => {
+    rootRef.current?.measureInWindow((_x, y) => setOriginY(y))
+  }, [])
   const [selectedItem, setSelectedItem] = useState<PublicMapItem | null>(null)
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null)
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
@@ -203,7 +211,7 @@ export function PublicMapScreen({
   ) : null
 
   return (
-    <View style={screenStyles.container}>
+    <View ref={rootRef} onLayout={handleRootLayout} style={screenStyles.container}>
       <MapCanvas
         cameraRef={cameraRef}
         items={items}
@@ -221,7 +229,7 @@ export function PublicMapScreen({
       />
 
       <MapTopControls
-        top={Math.max(insets.top, 54) + 16}
+        top={Math.max(0, insets.top + 10 - originY)}
         basemap={basemap}
         onToggleBasemap={toggleBasemap}
         onOpenOfflineAreas={offlineEnabled ? openOfflineAreas : undefined}

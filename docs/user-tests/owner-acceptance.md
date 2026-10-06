@@ -130,7 +130,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-100 | Search tab | Not integrated as an Apple Music-style separate search button: it sits inside the tab bar pill. | UX friction | 🔴 | 🔲 Open | | Owner phone test 2026-10-06 (build Release from main) |
 | OA-101 | Explorer, glass buttons | The buttons have an outline that breaks the Liquid Glass effect (is it real Liquid Glass?). | Display bug | 🔴 | 🔁 Fixed, awaiting owner check | #214 | Outline dropped on real Liquid Glass (GlassSurface); verify on the phone |
 | OA-102 | Explorer, attribution | The MapLibre (i) is hidden behind "Ma position"; remove it and put the attribution in the legend. | Display bug | 🟡 | 🔁 Fixed, awaiting owner check | #214 | MapLibre ornaments off; attribution line in the legend |
-| OA-103 | Explorer, top-right capsule | Too close to the iPhone status bar (battery). | Display bug | 🟡 | 🔁 Fixed, awaiting owner check | #214 | Capsule offset by the status bar inset (floor 54); verify on the phone |
+| OA-103 | Explorer, top-right capsule | Too close to the iPhone status bar (battery). | Display bug | 🟡 | 🔁 Fixed, awaiting owner check | #214 | The capsule is placed under the status bar from the measured screen origin (the first guess moved it up); verify on the phone |
 | OA-104 | Explorer, offline areas sheet | Broken: drawn at the very top of the screen, almost invisible. Offline download could not be tested. | Functional bug | 🔴 | 🔁 Fixed, awaiting owner check | #214 | The sheet had no absolute position: now floats above the tab bar |
 | OA-105 | Communauté | Cannot be verified without data from other members: needs fake community data for testing. | Test data | 🟡 | 🔲 Open | | Owner phone test 2026-10-06 (build Release from main) |
 
