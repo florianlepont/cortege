@@ -403,6 +403,7 @@ root.innerHTML=Object.entries(V).map(([k,v],i)=>`<div class="variant ${i?'':'on'
 document.querySelectorAll('#nav [data-v]').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('#nav [data-v]').forEach(x=>x.classList.toggle('on',x===b));
  document.querySelectorAll('.variant').forEach(x=>x.classList.toggle('on',x.id==='v'+b.dataset.v))});
+{const q=new URLSearchParams(location.search);if(q.get('theme')==='dark'){document.documentElement.dataset.theme='dark'}if(q.get('v')){const b=document.querySelector('#nav [data-v="'+q.get('v')+'"]');if(b)b.click()}}
 const tb=document.getElementById('theme');
 tb.onclick=()=>{const d=document.documentElement.dataset.theme==='dark';document.documentElement.dataset.theme=d?'light':'dark';tb.textContent='Thème : '+(d?'clair':'sombre')};
 </script>
