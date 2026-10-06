@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
@@ -65,6 +66,7 @@ export function FactorPager({
   const scrollRef = useRef<ScrollView | null>(null)
   const lettersRef = useRef<ScrollView | null>(null)
   const [pageWidth, setPageWidth] = useState(0)
+  const { width: windowWidth } = useWindowDimensions()
   const hasScrolledToInitial = useRef(false)
   const initialIndex = Math.max(0, FACTOR_ORDER.indexOf(initialFactor))
   const [activeIndex, setActiveIndex] = useState(initialIndex)
@@ -143,7 +145,9 @@ export function FactorPager({
         {FACTOR_ORDER.map((factor, index) => (
           <ScrollView
             key={factor}
-            style={{ width: pageWidth || undefined }}
+            // Until the pager is measured the page takes the window width: with no width the
+            // texts are measured on one line and the score line runs off the edge (OA-110).
+            style={{ width: pageWidth || windowWidth }}
             contentContainerStyle={[
               styles.pageContent,
               { paddingBottom: tabBarClearance + BAR_HEIGHT + 2 * brandSpacing4.md },

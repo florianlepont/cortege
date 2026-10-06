@@ -38,6 +38,7 @@ jest.mock("react-native", () => {
     View: mockComponent("View"),
     Platform: { OS: "ios", select: (options: { ios?: unknown; default?: unknown }) => options.ios },
     StyleSheet: { create: <T,>(styles: T) => styles },
+    useWindowDimensions: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }),
   }
 })
 

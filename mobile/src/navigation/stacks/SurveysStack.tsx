@@ -158,6 +158,9 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                     headerStyle: { backgroundColor: "transparent" },
                     headerTintColor: brandColors.forest,
                     headerTitle: () => null,
+                    // `headerTitle: () => null` does not blank the native title: it is still
+                    // drawn from `title` (OA-109, doubled "Parcelles"), so it is made invisible.
+                    headerTitleStyle: { color: "transparent" },
                   }
                 : {
                     headerStyle: { backgroundColor: brandMediaBackdrop },
