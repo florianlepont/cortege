@@ -9,11 +9,11 @@ scope: unknown
 
 # SEED-001: Recherche globale
 
-Le champ de recherche couvre toute l'application, pas seulement l'un ou l'autre : mes relevés, les relevés de la communauté, et les lieux sur la carte.
+La recherche porte sur l'ensemble des items de l'application, pas seulement sur les relevés : mes relevés, ceux de la communauté, les lieux sur la carte, et plus largement tout objet que l'app expose.
 
 ## Why This Matters
 
-Aujourd'hui la recherche est un champ natif dans l'en-tête de Mes Relevés et ne filtre que la liste locale. L'utilisateur s'attend à un point d'entrée unique : taper un nom de commune, de lieu-dit ou de parcelle doit centrer la carte, et la même saisie doit retrouver ses propres relevés et ceux des autres membres.
+Aujourd'hui la recherche est un champ natif dans l'en-tête de Mes Relevés et ne filtre que la liste locale. L'utilisateur s'attend à un point d'entrée unique, une recherche à l'échelle de l'application : une saisie retrouve n'importe quel item (relevés à moi ou aux membres, lieux et parcelles sur la carte, genres, facteurs IBP, réglages, écrans) et y emmène directement.
 
 ## When to Surface
 
@@ -21,7 +21,7 @@ Aujourd'hui la recherche est un champ natif dans l'en-tête de Mes Relevés et n
 
 ## Scope Estimate
 
-**Unknown** — à estimer. Pistes : une seule barre avec résultats groupés (Mes relevés / Communauté / Lieux), géocodage de lieux (IGN est déjà le fournisseur cadastre côté API), recherche communauté côté serveur (le local-first ne contient que mes données).
+**Unknown** — à estimer. Pistes : une seule barre avec résultats groupés par type d'item (Relevés / Communauté / Lieux et parcelles / Genres et facteurs / Réglages), navigation directe vers l'item, géocodage de lieux (IGN est déjà le fournisseur cadastre côté API), recherche communauté côté serveur (le local-first ne contient que mes données).
 
 ## Breadcrumbs
 
@@ -33,4 +33,4 @@ Aujourd'hui la recherche est un champ natif dans l'en-tête de Mes Relevés et n
 
 ## Notes
 
-Idée du propriétaire, 2026-10-06. Question ouverte : où vit la barre (onglet dédié, ou accessible depuis chaque onglet).
+Idée du propriétaire, 2026-10-06. Le périmètre exact des types d'items est à trancher à l'enrichissement. Question ouverte : où vit la barre (onglet dédié, ou accessible depuis chaque onglet).
