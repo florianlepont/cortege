@@ -30,9 +30,16 @@ describe("migration 014: survey_events seq and xid8 (e2e)", () => {
   const t2 = "2026-03-03T10:00:00.000Z"
 
   const insertSurvey = async (id: string, ownerId: string | null) => {
+    // OA-41: migration 019 drops surveys.expires_at, so a row seeded after it must not set it.
+    const { rowCount } = await client.query(
+      `SELECT 1 FROM information_schema.columns
+       WHERE table_schema = current_schema() AND table_name = 'surveys' AND column_name = 'expires_at'`,
+    )
+    const expiresColumn = rowCount ? ", expires_at" : ""
+    const expiresValue = rowCount ? ", NOW() + INTERVAL '30 days'" : ""
     await client.query(
-      `INSERT INTO surveys (id, user_id, site_name, status, created_at, updated_at, sync_version)
-       VALUES ($1, $2, $3, 'draft', NOW(), NOW(), 1)`,
+      `INSERT INTO surveys (id, user_id, site_name, status, created_at, updated_at${expiresColumn}, sync_version)
+       VALUES ($1, $2, $3, 'draft', NOW(), NOW()${expiresValue}, 1)`,
       [id, ownerId, `Site ${id}`],
     )
   }

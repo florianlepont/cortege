@@ -39,13 +39,21 @@ describe("migration 018: Factor A genus list shape guard (e2e)", () => {
   const noFactorsSurveyId = randomUUID()
   let logSpy: jest.SpyInstance
 
-  const insertSurvey = (id: string, factors: unknown) =>
-    client.query(
-      `INSERT INTO surveys (id, user_id, site_name, status, factors, created_at, updated_at,
+  const insertSurvey = async (id: string, factors: unknown) => {
+    // OA-41: migration 019 drops surveys.expires_at, so a row seeded after it must not set it.
+    const { rowCount } = await client.query(
+      `SELECT 1 FROM information_schema.columns
+       WHERE table_schema = current_schema() AND table_name = 'surveys' AND column_name = 'expires_at'`,
+    )
+    const expiresColumn = rowCount ? ", expires_at" : ""
+    const expiresValue = rowCount ? ", NOW() + interval '7 days'" : ""
+    return client.query(
+      `INSERT INTO surveys (id, user_id, site_name, status, factors, created_at, updated_at${expiresColumn},
                              sync_version)
-       VALUES ($1, $2, $3, 'draft', $4, NOW(), NOW(), 1)`,
+       VALUES ($1, $2, $3, 'draft', $4, NOW(), NOW()${expiresValue}, 1)`,
       [id, userId, `site ${id}`, JSON.stringify(factors)],
     )
+  }
 
   const appliedMigrations = async (): Promise<string[]> => {
     const result = await client.query<{ filename: string }>(
