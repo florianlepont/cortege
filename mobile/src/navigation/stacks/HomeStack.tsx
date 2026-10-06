@@ -5,7 +5,12 @@ import { HomeRoute } from "../routes/HomeRoute"
 import { styles } from "../styles"
 import type { HomeStackParamList } from "../types"
 import { createBaseStackScreenOptions } from "./stack-options"
-import { ACCOUNT_SCREENS, makeAccountHomeOptions, settingsScreenOptions } from "./AccountStack"
+import {
+  ACCOUNT_SCREENS,
+  makeAccountHomeOptions,
+  offlineAreasScreenOptions,
+  settingsScreenOptions,
+} from "./AccountStack"
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>()
 
@@ -26,6 +31,11 @@ export function HomeTabNavigator() {
           name="settings"
           options={settingsScreenOptions}
           component={ACCOUNT_SCREENS.settings}
+        />
+        <HomeStack.Screen
+          name="offlineAreas"
+          options={offlineAreasScreenOptions}
+          component={ACCOUNT_SCREENS.offlineAreas}
         />
       </HomeStack.Navigator>
     </View>

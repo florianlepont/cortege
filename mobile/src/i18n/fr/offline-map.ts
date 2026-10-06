@@ -41,6 +41,18 @@ export const offlineMapFr = {
     },
     progress: ({ downloaded, total }: { downloaded: number; total: number }) =>
       `${downloaded}/${total} tuiles`,
+    // Paramètres > Cartes hors ligne: the downloaded zones, to review and delete.
+    manage: {
+      title: "Cartes hors ligne",
+      sizeAndStatus: ({ megabytes, status }: { megabytes: string; status: string }) =>
+        `${megabytes} Mo · ${status}`,
+      footer:
+        "Pour télécharger une zone, ouvrez l'Explorer et touchez le bouton de téléchargement. Une zone est aussi proposée quand vous créez un relevé.",
+      empty: "Aucune zone téléchargée pour le moment.",
+      confirmDeleteTitle: (name: string) => `Supprimer « ${name} » ?`,
+      confirmDeleteMessage: "La carte de cette zone ne sera plus disponible hors connexion.",
+      confirmDelete: "Supprimer",
+    },
     a11y: {
       openSheet: "Zones hors connexion",
       closeSheet: "Fermer les zones hors connexion",

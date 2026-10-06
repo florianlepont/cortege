@@ -1,21 +1,23 @@
 import { useMemo, useState } from "react"
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
+import Constants from "expo-constants"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandSpacing, brandTypography } from "../app/brand-tokens"
+import { brandSpacing } from "../app/brand-tokens"
 import { shouldShowDevTools } from "../app/dev-tools"
+import { isOfflineMapsEnabled } from "../app/feature-flags"
+import { formatAreaMegabytes } from "../app/formatters"
 import { BrandTheme, BrandThemeMode, useBrandTheme } from "../app/theme"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
+import type { OfflineAreasSummary } from "../hooks/useOfflineAreasSummary"
 import { AppButton } from "../ui/AppButton"
-import { AppCard } from "../ui/AppCard"
 import { AppChoiceChip } from "../ui/AppChoiceChip"
 import { AppCollapsibleSection } from "../ui/AppCollapsibleSection"
 import { AppField } from "../ui/AppField"
-import { AppNotice } from "../ui/AppNotice"
-import { AppSectionHeader } from "../ui/AppSectionHeader"
-import { AppSettingsRow } from "../ui/AppSettingsRow"
+import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
 import { fr } from "../i18n"
+import { createPageTitleStyles } from "./account/styles"
 
 const t = fr.settings
 const actions = fr.common.actions
@@ -29,79 +31,38 @@ const THEME_MODE_CHOICES: Array<{ mode: BrandThemeMode; label: string }> = [
 type SettingsScreenProps = {
   apiUrl: string
   onApiUrlChange: (value: string) => void
-  onSync: () => Promise<void>
-  onPullChanges: () => Promise<void>
-  onRefreshLocalList: () => Promise<void>
-  onRefreshLocalAttachments: () => Promise<void>
+  /** The zones downloaded for offline maps, summed up for the "Cartes" row. */
+  offlineAreas: OfflineAreasSummary
+  onOpenOfflineAreas: () => void
   onDeleteAccount: () => Promise<void>
   onDebugResetIbpData: () => Promise<void>
   onDebugResetUserData: () => Promise<void>
-  status: string
 }
 
+/**
+ * Paramètres (OA-78, OA-79): the appearance, the offline maps, the about block and, last, the
+ * account deletion, as one grouped list. The sync tools are gone (sync is automatic, OA-78) and
+ * the status line is gone too: a message appears where its action happened (OA-77).
+ */
 export function SettingsScreen({
   apiUrl,
   onApiUrlChange,
-  onSync,
-  onPullChanges,
-  onRefreshLocalList,
-  onRefreshLocalAttachments,
+  offlineAreas,
+  onOpenOfflineAreas,
   onDeleteAccount,
   onDebugResetIbpData,
   onDebugResetUserData,
-  status,
 }: SettingsScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  const titleStyles = useMemo(() => createPageTitleStyles(theme), [theme])
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
   const topContentPadding = Platform.OS === "ios" ? headerHeight + brandSpacing.md : brandSpacing.md
   const bottomContentPadding = Math.max(tabBarHeight, insets.bottom) + brandSpacing.md
 
-  const [syncLoading, setSyncLoading] = useState(false)
-  const [pullLoading, setPullLoading] = useState(false)
-  const [refreshListLoading, setRefreshListLoading] = useState(false)
-  const [refreshAttachmentsLoading, setRefreshAttachmentsLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
-
-  const syncBusy = syncLoading || pullLoading || refreshListLoading || refreshAttachmentsLoading
-
-  const handleSync = async () => {
-    setSyncLoading(true)
-    try {
-      await onSync()
-    } finally {
-      setSyncLoading(false)
-    }
-  }
-
-  const handlePullChanges = async () => {
-    setPullLoading(true)
-    try {
-      await onPullChanges()
-    } finally {
-      setPullLoading(false)
-    }
-  }
-
-  const handleRefreshLocalList = async () => {
-    setRefreshListLoading(true)
-    try {
-      await onRefreshLocalList()
-    } finally {
-      setRefreshListLoading(false)
-    }
-  }
-
-  const handleRefreshLocalAttachments = async () => {
-    setRefreshAttachmentsLoading(true)
-    try {
-      await onRefreshLocalAttachments()
-    } finally {
-      setRefreshAttachmentsLoading(false)
-    }
-  }
 
   // The confirmation itself lives in onDeleteAccount (sessionActions.handleDeleteAccount): a
   // second dialog here would double-confirm with a different copy (BUG-05).
@@ -128,6 +89,86 @@ export function SettingsScreen({
     ])
   }
 
+  // ADR-002 CC-BY-4.0 obligation (Phase 6): credit the GBIF-sourced training images.
+  const showCredits = () => {
+    const texts = fr.account.credits
+    Alert.alert(texts.alertTitle, texts.alertMessage)
+  }
+
+  const sections: AppGroupedListSection[] = [
+    {
+      key: "appearance",
+      title: t.appearance.title,
+      rows: [
+        {
+          key: "appearance",
+          kind: "custom",
+          content: (
+            <View style={styles.appearanceRow}>
+              {THEME_MODE_CHOICES.map(({ mode, label }) => (
+                <AppChoiceChip
+                  key={mode}
+                  label={label}
+                  active={theme.mode === mode}
+                  onPress={() => theme.setMode(mode)}
+                  style={styles.appearanceChip}
+                />
+              ))}
+            </View>
+          ),
+        },
+      ],
+    },
+    ...(isOfflineMapsEnabled()
+      ? [
+          {
+            key: "maps",
+            title: t.maps.title,
+            rows: [
+              {
+                key: "offline-areas",
+                label: t.maps.offlineRow,
+                value:
+                  offlineAreas.count > 0
+                    ? t.maps.offlineSummary({
+                        count: offlineAreas.count,
+                        megabytes: formatAreaMegabytes(offlineAreas.bytes),
+                      })
+                    : t.maps.offlineNone,
+                onPress: onOpenOfflineAreas,
+              },
+            ],
+          },
+        ]
+      : []),
+    {
+      key: "about",
+      title: t.about.title,
+      rows: [
+        {
+          key: "version",
+          label: t.about.version,
+          value: Constants.expoConfig?.version ?? t.about.versionUnknown,
+        },
+        { key: "credits", label: t.about.credits, onPress: showCredits },
+      ],
+    },
+    {
+      key: "delete",
+      footer: t.account.deleteWarning,
+      rows: [
+        {
+          key: "delete-account",
+          label: t.account.deleteButton,
+          destructive: true,
+          centered: true,
+          loading: deleteLoading,
+          onPress: () => void confirmDeleteAccount(),
+        },
+      ],
+    },
+  ]
+
   return (
     <ScrollView
       style={styles.screen}
@@ -149,71 +190,13 @@ export function SettingsScreen({
         bottom: tabBarHeight,
       }}
     >
-      {/* Feedback de statut — en tête pour visibilité immédiate */}
-      {status.trim() ? (
-        <AppNotice message={status} tone="info" icon="information-circle-outline" />
-      ) : null}
+      <Text style={titleStyles.pageTitle} accessibilityRole="header">
+        {t.title}
+      </Text>
 
-      {/* Zone 0 — Apparence (DS-12) */}
-      <AppCard variant="panel" style={styles.section}>
-        <AppSectionHeader
-          title={t.appearance.title}
-          subtitle={t.appearance.subtitle}
-          titleStyle={styles.sectionTitle}
-        />
-        <View style={styles.appearanceRow}>
-          {THEME_MODE_CHOICES.map(({ mode, label }) => (
-            <AppChoiceChip
-              key={mode}
-              label={label}
-              active={theme.mode === mode}
-              onPress={() => theme.setMode(mode)}
-              style={styles.appearanceChip}
-            />
-          ))}
-        </View>
-      </AppCard>
+      <AppGroupedList sections={sections} />
 
-      {/* Zone 1 — Synchronisation */}
-      <AppCard variant="panel" style={styles.section}>
-        <AppSectionHeader
-          title={t.sync.title}
-          subtitle={t.sync.subtitle}
-          titleStyle={styles.sectionTitle}
-        />
-        <AppButton
-          label={t.sync.syncNow}
-          leadingIcon="sync-outline"
-          loading={syncLoading}
-          disabled={syncBusy}
-          onPress={() => void handleSync()}
-        />
-        <View style={styles.advancedDivider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerLabel}>{t.sync.advanced}</Text>
-          <View style={styles.dividerLine} />
-        </View>
-        <AppSettingsRow
-          label={t.sync.pullChanges}
-          onPress={() => void handlePullChanges()}
-          loading={pullLoading}
-          disabled={syncBusy}
-        />
-        <AppSettingsRow
-          label={t.sync.refreshLocalList}
-          onPress={() => void handleRefreshLocalList()}
-          loading={refreshListLoading}
-          disabled={syncBusy}
-        />
-        <AppSettingsRow
-          label={t.sync.refreshAttachments}
-          onPress={() => void handleRefreshLocalAttachments()}
-          loading={refreshAttachmentsLoading}
-          disabled={syncBusy}
-        />
-      </AppCard>
-
-      {/* Zone 2 — Outils développeur (repliée par défaut) */}
+      {/* Outils développeur (repliés par défaut, builds de développement seulement) */}
       {shouldShowDevTools() ? (
         <AppCollapsibleSection title={t.devTools.title} badge={t.devTools.badge}>
           <AppField
@@ -237,25 +220,6 @@ export function SettingsScreen({
           />
         </AppCollapsibleSection>
       ) : null}
-
-      {/* Zone 3 — Compte (danger zone last, not first: BUG-05) */}
-      <AppCard variant="panelElevated" style={styles.section}>
-        <AppSectionHeader
-          title={t.account.title}
-          subtitle={t.account.subtitle}
-          titleStyle={styles.sectionTitle}
-        />
-        <AppNotice tone="danger" icon="warning-outline" message={t.account.deleteWarning} />
-        <AppButton
-          label={t.account.deleteButton}
-          variant="danger"
-          size="lg"
-          leadingIcon="trash-outline"
-          loading={deleteLoading}
-          disabled={deleteLoading}
-          onPress={() => void confirmDeleteAccount()}
-        />
-      </AppCard>
     </ScrollView>
   )
 }
@@ -269,37 +233,14 @@ function createStyles(theme: BrandTheme) {
     content: {
       gap: brandSpacing.md,
     },
-    section: {
-      gap: brandSpacing.sm,
-    },
-    sectionTitle: {
-      fontSize: 17,
-      lineHeight: 20,
-    },
     appearanceRow: {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: brandSpacing.xs,
+      paddingVertical: brandSpacing.sm,
     },
     appearanceChip: {
       flexGrow: 1,
-    },
-    advancedDivider: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing.sm,
-      marginVertical: brandSpacing.xs - 2,
-    },
-    dividerLine: {
-      flex: 1,
-      height: 1,
-      backgroundColor: theme.colors.divider,
-    },
-    dividerLabel: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
-      letterSpacing: 0.4,
-      textTransform: "uppercase",
     },
   })
 }

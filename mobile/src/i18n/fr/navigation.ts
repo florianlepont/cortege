@@ -20,6 +20,7 @@ export const navigationFr = {
     factor: (factor: string) => `Facteur ${factor}`,
     parcels: "Parcelles",
     parcelsWizard: "Étape 4 sur 4",
+    offlineAreas: "Cartes hors ligne",
     account: "Compte",
     settings: "Paramètres",
   },

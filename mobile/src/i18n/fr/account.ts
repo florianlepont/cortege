@@ -4,11 +4,9 @@ export const accountFr = {
   fallbackName: "Compte",
   initialsFallback: "A",
   noEmail: "Aucun email associé",
-  defaultRole: "membre",
+  title: "Compte",
   profile: {
     title: "Profil",
-    unsaved: "Non sauvegardé",
-    saved: "Sauvegardé",
     firstName: "Prénom",
     // ACC-04: a generic example, not a real member's name.
     firstNamePlaceholder: "ex. Marie",
@@ -16,8 +14,11 @@ export const accountFr = {
     lastNamePlaceholder: "ex. Dupont",
     displayName: "Nom d'affichage",
     displayNamePlaceholder: "ex. M. Dupont",
+    // OA-72: the save bar shows only while there are unsaved changes.
+    unsavedBar: "Modifications non enregistrées",
     saving: "Enregistrement...",
-    save: "Enregistrer le profil",
+    save: "Enregistrer",
+    cancel: "Annuler",
   },
   email: {
     label: "Email",
@@ -33,20 +34,15 @@ export const accountFr = {
   // images come from GBIF occurrence media, some CC-BY-licensed and requiring photographer credit.
   credits: {
     label: "Crédits photographiques",
-    action: "Voir",
     alertTitle: "Crédits photographiques",
     alertMessage:
       "L'identification de genre par photo (section A) utilise un modèle entraîné sur des images de GBIF.org (Global Biodiversity Information Facility), publiées sous licence CC0 1.0 ou CC BY 4.0. Les images CC BY nécessitent de créditer leurs photographes ; voir gbif.org pour le mécanisme d'attribution complet.",
   },
   logout: "Se déconnecter",
-  // ACC-03: the grouped iOS-style list (Profil, Connexion, Données, À propos, Se déconnecter).
+  // ACC-03: the grouped iOS-style list (Profil, Connexion, Se déconnecter). OA-75: the data and
+  // about sections live in Paramètres.
   sections: {
     connection: "Connexion",
-    data: "Données",
-    dataRow: "Synchronisation et données",
-    about: "À propos",
-    version: "Version",
-    versionUnknown: "—",
   },
   alerts: {
     photo: {
@@ -72,6 +68,5 @@ export const accountFr = {
     editPhotoHint: "Ouvre les options de photo",
     editEmail: "Modifier l'adresse email",
     resetPassword: "Réinitialiser le mot de passe",
-    credits: "Voir les crédits photographiques",
   },
 } as const

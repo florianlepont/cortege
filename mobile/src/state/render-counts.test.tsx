@@ -758,7 +758,8 @@ import App from "../../App"
  * set-up in formKeystrokeAutosave selects survey s-01).
  *
  * After 01.9-18 (per-screen route components, data-free navigation tree):
- * a status update re-renders only Settings, and a keystroke only the three form
+ * a status update re-rendered only Settings (OA-77: Settings no longer shows the status line, so
+ * a status update re-renders no screen), and a keystroke only the three form
  * screens. The autosave and the one-survey refresh still re-render the screens
  * that read the surveys context.
  *
@@ -793,7 +794,7 @@ const EXPECTED: Record<ScenarioName, Counts> = {
     parcelSelection: 0,
     publicMap: 0,
     account: 0,
-    settings: 3,
+    settings: 0,
     rows: 0,
   },
   formKeystroke: {

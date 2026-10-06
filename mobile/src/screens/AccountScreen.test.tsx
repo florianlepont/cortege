@@ -64,12 +64,14 @@ jest.mock("react-native-safe-area-context", () => ({
 }))
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
 jest.mock("../app/useAppBottomTabBarHeight", () => ({ useAppBottomTabBarHeight: () => 68 }))
-jest.mock("expo-constants", () => ({
-  __esModule: true,
-  default: { expoConfig: { version: "1.2.3" } },
-}))
 jest.mock("./account/IdentityCard", () => ({ IdentityCard: "IdentityCard" }))
-jest.mock("./account/ProfileCard", () => ({ ProfileCard: "ProfileCard" }))
+jest.mock("../ui/GlassSurface", () => {
+  const ReactRef = jest.requireActual("react") as typeof import("react")
+  return {
+    GlassSurface: ({ children }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("GlassSurface", null, children),
+  }
+})
 
 const user: AuthUser = {
   id: "user-1",
@@ -94,7 +96,6 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof AccountScreen>
     onPickProfilePictureFromLibrary: jest.fn(async () => undefined),
     onTakeProfilePictureFromCamera: jest.fn(async () => undefined),
     onRemoveProfilePicture: jest.fn(async () => undefined),
-    onOpenSyncAndData: jest.fn(),
     onLogout: jest.fn(async () => undefined),
     ...overrides,
   }
@@ -132,10 +133,69 @@ describe("AccountScreen", () => {
     expect(tree.root.findByType("ActivityIndicator" as never)).toBeTruthy()
   })
 
-  test("renders IdentityCard and ProfileCard above the grouped list (ACC-03)", () => {
+  test("renders the identity, then the profile fields as rows of the grouped list (OA-70)", () => {
     mount(makeProps())
     expect(tree.root.findByType("IdentityCard" as never).props.currentUser).toBe(user)
-    expect(tree.root.findByType("ProfileCard" as never).props.firstName).toBe("Marie")
+    const input = (label: string) =>
+      tree.root.findByProps({ accessibilityLabel: label, autoCapitalize: "words" })
+    expect(input(fr.account.profile.firstName).props.value).toBe("Marie")
+    expect(input(fr.account.profile.lastName).props.value).toBe("Curie")
+    expect(input(fr.account.profile.displayName).props.value).toBe("Marie")
+  })
+
+  describe("the unsaved-changes bar (OA-72)", () => {
+    const editFirstName = (value: string) => {
+      const input = tree.root.findByProps({
+        accessibilityLabel: fr.account.profile.firstName,
+        autoCapitalize: "words",
+      })
+      act(() => input.props.onChangeText(value))
+    }
+
+    test("is not shown while nothing changed", () => {
+      mount(makeProps())
+      expect(tree.root.findAllByType("GlassSurface" as never)).toHaveLength(0)
+    })
+
+    test("appears when a field changes, and saving sends the three fields", () => {
+      const onSaveProfile = jest.fn(async () => undefined)
+      mount(makeProps({ onSaveProfile }))
+      editFirstName("Marie-Sklodowska")
+      expect(tree.root.findAllByType("GlassSurface" as never)).toHaveLength(1)
+
+      const save = tree.root.findByProps({ accessibilityLabel: fr.account.profile.save })
+      act(() => save.props.onPress())
+      expect(onSaveProfile).toHaveBeenCalledWith({
+        first_name: "Marie-Sklodowska",
+        last_name: "Curie",
+        display_name: "Marie",
+      })
+    })
+
+    test("cancel puts the saved values back and hides the bar", () => {
+      mount(makeProps())
+      editFirstName("Autre")
+      const cancel = tree.root.findByProps({ accessibilityLabel: fr.account.profile.cancel })
+      act(() => cancel.props.onPress())
+      expect(
+        tree.root.findByProps({
+          accessibilityLabel: fr.account.profile.firstName,
+          autoCapitalize: "words",
+        }).props.value,
+      ).toBe("Marie")
+      expect(tree.root.findAllByType("GlassSurface" as never)).toHaveLength(0)
+    })
+
+    test("while saving the buttons are disabled and the label says so", () => {
+      mount(makeProps({ profileUpdating: true }))
+      editFirstName("Autre")
+      const save = tree.root.findByProps({ accessibilityLabel: fr.account.profile.save })
+      expect(save.props.disabled).toBe(true)
+      const texts = tree.root
+        .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+        .map((node) => String([node.props.children].flat().join("")))
+      expect(texts).toContain(fr.account.profile.saving)
+    })
   })
 
   describe("Connexion section", () => {
@@ -196,20 +256,13 @@ describe("AccountScreen", () => {
     })
   })
 
-  test("the Données row opens sync and data settings", () => {
-    const onOpenSyncAndData = jest.fn()
-    mount(makeProps({ onOpenSyncAndData }))
-    const dataRow = tree.root.findByProps({ accessibilityLabel: fr.account.sections.dataRow })
-    act(() => dataRow.props.onPress())
-    expect(onOpenSyncAndData).toHaveBeenCalledTimes(1)
-  })
-
-  test("the À propos section shows the app version", () => {
+  test("data and about moved to Paramètres: no version, no credits row here (OA-74, OA-75)", () => {
     mount(makeProps())
     const texts = tree.root
       .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
       .map((node) => String([node.props.children].flat().join("")))
-    expect(texts).toContain("1.2.3")
+    expect(texts).not.toContain("1.2.3")
+    expect(texts).not.toContain(fr.account.credits.label)
   })
 
   test("Se déconnecter is destructive, isolated, and confirms before logging out", () => {

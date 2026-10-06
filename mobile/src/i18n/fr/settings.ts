@@ -1,6 +1,7 @@
 // Filled by plan 01.9-17; no other plan edits this section.
 export const settingsFr = {
   // DS-12 (UX audit, Phase 12): the theme picker.
+  title: "Paramètres",
   appearance: {
     title: "Apparence",
     subtitle: "Thème clair, sombre ou automatique.",
@@ -8,21 +9,24 @@ export const settingsFr = {
     light: "Clair",
     dark: "Sombre",
   },
+  maps: {
+    title: "Cartes",
+    offlineRow: "Cartes hors ligne",
+    // No area yet: the row says what it is for.
+    offlineNone: "Aucune zone",
+    offlineSummary: ({ count, megabytes }: { count: number; megabytes: string }) =>
+      `${count} ${count > 1 ? "zones" : "zone"} · ${megabytes} Mo`,
+  },
+  about: {
+    title: "À propos",
+    version: "Version",
+    versionUnknown: "—",
+    credits: "Crédits photographiques",
+  },
   account: {
-    title: "Compte",
-    subtitle: "Gestion de votre compte et de vos données.",
     deleteWarning:
       "Cette action est irréversible. Votre identité (nom, e-mail, photo de profil) sera supprimée ; vos relevés déjà soumis seront anonymisés et conservés à des fins scientifiques.",
     deleteButton: "Supprimer mon compte",
-  },
-  sync: {
-    title: "Synchronisation",
-    subtitle: "Rafraîchir l'état local et les données serveur.",
-    syncNow: "Synchroniser maintenant",
-    advanced: "Avancé",
-    pullChanges: "Récupérer les changements serveur",
-    refreshLocalList: "Rafraîchir la liste locale",
-    refreshAttachments: "Rafraîchir les pièces jointes",
   },
   devTools: {
     title: "Outils développeur",

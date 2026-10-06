@@ -38,18 +38,11 @@ jest.mock("react-native", () => {
   }
 })
 
-jest.mock("../../ui/AppCard", () => {
+jest.mock("../../ui/GlassSurface", () => {
   const ReactRef = jest.requireActual("react") as typeof import("react")
   return {
-    AppCard: ({ children }: { children?: React.ReactNode }) =>
-      ReactRef.createElement("AppCard", null, children),
-  }
-})
-
-jest.mock("../../ui/AppStatusChip", () => {
-  const ReactRef = jest.requireActual("react") as typeof import("react")
-  return {
-    AppStatusChip: (props: { label: string }) => ReactRef.createElement("AppStatusChip", props),
+    GlassSurface: ({ children }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("GlassSurface", null, children),
   }
 })
 
@@ -121,13 +114,12 @@ describe("IdentityCard", () => {
     })
   })
 
-  it("renders initials, the e-mail and the default role without a picture", async () => {
+  it("renders initials, the name and the e-mail, and no role chip (OA-71)", async () => {
     const { root } = await renderCard()
 
     expect(root.findAllByType("Image" as never)).toHaveLength(0)
     const texts = root.findAllByType("Text" as never).map((node) => node.props.children)
     expect(texts).toEqual(["MC", "Marie Curie", "marie@example.org"])
-    expect(root.findByType("AppStatusChip" as never).props.label).toBe(fr.account.defaultRole)
   })
 
   it("gives the camera badge a button role and catalogue labels", async () => {

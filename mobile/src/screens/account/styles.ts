@@ -1,11 +1,8 @@
 import { StyleSheet } from "react-native"
-import {
-  brandOnDarkColors,
-  brandRadius,
-  brandSpacing,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { brandSpacing, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+
+const AVATAR_SIZE = 104
 
 export function createAccountStyles(theme: BrandTheme) {
   return StyleSheet.create({
@@ -29,103 +26,144 @@ export function createAccountStyles(theme: BrandTheme) {
 
 export function createIdentityStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    identityCard: {
-      gap: 0,
-    },
-    identityRow: {
-      flexDirection: "row",
+    identity: {
       alignItems: "center",
-      gap: brandSpacing.sm + 2,
+      gap: 2,
+      paddingVertical: brandSpacing.sm,
     },
     avatarButton: {
-      width: 72,
-      height: 72,
-      borderRadius: brandRadius.avatar,
-      overflow: "visible",
-      flexShrink: 0,
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: AVATAR_SIZE / 2,
+      marginBottom: brandSpacing.sm,
     },
     avatarImage: {
-      width: 72,
-      height: 72,
-      borderRadius: brandRadius.avatar,
-      borderWidth: 2,
-      borderColor: theme.colors.canvas,
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: AVATAR_SIZE / 2,
+      backgroundColor: theme.colors.panelMuted,
     },
     avatarFallback: {
-      width: 72,
-      height: 72,
-      borderRadius: brandRadius.avatar,
+      width: AVATAR_SIZE,
+      height: AVATAR_SIZE,
+      borderRadius: AVATAR_SIZE / 2,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.colors.panelMuted,
-      borderWidth: 2,
-      borderColor: theme.colors.canvas,
     },
     avatarFallbackText: {
-      fontSize: 26,
-      lineHeight: 30,
-      fontWeight: "900",
+      fontSize: 38,
+      lineHeight: 44,
+      fontWeight: "800",
       color: theme.semanticColors.textStrong,
     },
-    // ACC-C01 : badge caméra agrandi à 28pt pour une meilleure cible tactile visuelle
+    // OA-85 family: a round Liquid Glass badge, like the header buttons.
     avatarEditBadge: {
       position: "absolute",
-      bottom: -4,
       right: -4,
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: theme.semanticColors.ctaPrimary,
-      borderWidth: 2,
-      borderColor: theme.colors.canvas,
+      bottom: -2,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       alignItems: "center",
       justifyContent: "center",
     },
-    identityCopy: {
-      flex: 1,
-      gap: 3,
-    },
     identityName: {
       ...brandTypography.sectionTitle,
-      fontSize: 18,
-      lineHeight: 22,
-      // ACC-14 : texte clair sur fond hero forest (OA-82 : fixe, le hero reste forest en sombre)
-      color: brandOnDarkColors.heroBodyOnDark,
+      fontSize: 24,
+      lineHeight: 30,
+      color: theme.semanticColors.textStrong,
     },
     identityMeta: {
-      ...brandTypography.meta,
-      // ACC-14 : texte secondaire sur fond forest
-      color: brandOnDarkColors.heroBodyOnDark,
+      ...brandTypography.sectionBody,
+      color: theme.colors.textSecondary,
     },
-    identityFooter: {
+  })
+}
+
+// The big page titles ("Compte", "Paramètres", "Cartes hors ligne") sit in the content under the
+// transparent header, like the other tabs' large titles.
+export function createPageTitleStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    pageTitle: {
+      fontSize: 34,
+      lineHeight: 40,
+      fontWeight: "800",
+      color: theme.semanticColors.textStrong,
+    },
+  })
+}
+
+// The profile fields, as rows of the grouped list (label left, editable value right).
+export function createProfileRowStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    row: {
+      minHeight: 50,
       flexDirection: "row",
       alignItems: "center",
-      marginTop: 2,
+      justifyContent: "space-between",
+      gap: brandSpacing.sm,
+    },
+    label: {
+      ...brandTypography.sectionBody,
+      fontSize: 17,
+      color: theme.colors.textPrimary,
+    },
+    input: {
+      flex: 1,
+      textAlign: "right",
+      paddingVertical: 12,
+      fontSize: 17,
+      color: theme.semanticColors.textStrong,
+    },
+    saveBar: {
+      position: "absolute",
+      left: brandSpacing.md,
+      right: brandSpacing.md,
+      minHeight: 62,
+      borderRadius: 31,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingLeft: 20,
+      paddingRight: 10,
+    },
+    saveBarText: {
+      flex: 1,
+      ...brandTypography.meta,
+      fontSize: 14,
+      color: theme.colors.textSecondary,
+    },
+    saveBarCancel: {
+      minHeight: 42,
+      paddingHorizontal: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    saveBarCancelText: {
+      ...brandTypography.button,
+      color: theme.semanticColors.textStrong,
+    },
+    saveBarSave: {
+      minHeight: 42,
+      paddingHorizontal: 18,
+      borderRadius: 21,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.semanticColors.ctaPrimary,
+    },
+    saveBarSaveDisabled: {
+      opacity: 0.6,
+    },
+    saveBarSaveText: {
+      ...brandTypography.button,
+      color: theme.semanticColors.onCtaPrimary,
     },
   })
 }
 
 export const profileStyles = StyleSheet.create({
-  panel: {
-    gap: brandSpacing.xs + 2,
-  },
-  panelHeader: {
-    marginBottom: brandSpacing.xs - 2,
-  },
-  panelTitle: {
-    fontSize: 17,
-    lineHeight: 20,
-  },
-  twoColumnRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: brandSpacing.sm,
-  },
-  halfField: {
-    flex: 1,
-    minWidth: 120,
-  },
-  // ACC-12 : styles de champ directement sur AppField (sans wrapper ProfileField)
+  // ACC-12 : styles de champ directement sur AppField
   fieldGroup: {
     gap: 4,
   },

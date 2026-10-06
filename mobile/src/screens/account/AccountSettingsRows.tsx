@@ -22,7 +22,7 @@ type UseAccountConnectionRowsInput = {
   onPasswordReset: () => Promise<void>
 }
 
-// ACC-03/ACC-09: the "Connexion" section's rows (email, password), as AppGroupedList row
+// ACC-03/ACC-09: the "Connexion" section's rows (email, password; the credits moved to Paramètres, OA-74), as AppGroupedList row
 // descriptors instead of standalone AppSettingsRow cards mixed in with the profile form.
 export function useAccountConnectionRows({
   currentUser,
@@ -46,12 +46,6 @@ export function useAccountConnectionRows({
       { text: fr.common.actions.cancel, style: "cancel" },
       { text: texts.confirm, onPress: () => void onPasswordReset() },
     ])
-  }
-
-  // ADR-002 CC-BY-4.0 obligation (Phase 6): credit the GBIF-sourced training images.
-  const handleShowCredits = (): void => {
-    const texts = fr.account.credits
-    Alert.alert(texts.alertTitle, texts.alertMessage)
   }
 
   const emailRow: AppGroupedListRow = emailEditing
@@ -117,16 +111,7 @@ export function useAccountConnectionRows({
     onPress: handlePasswordReset,
   }
 
-  // ADR-002 CC-BY-4.0 obligation (Phase 6): credit the GBIF-sourced training images.
-  const creditsRow: AppGroupedListRow = {
-    key: "credits",
-    label: fr.account.credits.label,
-    value: fr.account.credits.action,
-    accessibilityLabel: fr.account.a11y.credits,
-    onPress: handleShowCredits,
-  }
-
-  return [emailRow, passwordRow, creditsRow]
+  return [emailRow, passwordRow]
 }
 
 type UseLogoutRowInput = { onLogout: () => Promise<void> }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native"
-import Constants from "expo-constants"
+import { AppText as Text } from "../ui/AppText"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
@@ -12,8 +12,8 @@ import { AppGroupedList } from "../ui/AppGroupedList"
 import type { AppGroupedListSection } from "../ui/AppGroupedList"
 import { useAccountConnectionRows, useLogoutRow } from "./account/AccountSettingsRows"
 import { IdentityCard } from "./account/IdentityCard"
-import { ProfileCard } from "./account/ProfileCard"
-import { createAccountStyles } from "./account/styles"
+import { ProfileSaveBar, useProfileRows } from "./account/ProfileRows"
+import { createAccountStyles, createPageTitleStyles } from "./account/styles"
 
 type UpdateProfileInput = {
   first_name: string
@@ -33,14 +33,12 @@ type AccountScreenProps = {
   onPickProfilePictureFromLibrary: () => Promise<void>
   onTakeProfilePictureFromCamera: () => Promise<void>
   onRemoveProfilePicture: () => Promise<void>
-  /** ACC-03: the "Données" row opens Settings (sync actions, dev tools, delete account). */
-  onOpenSyncAndData: () => void
   onLogout: () => Promise<void>
 }
 
-// ACC-03: a grouped iOS-style list (Connexion, Données, À propos, then Se déconnecter in red)
-// instead of a mix of inline forms, standalone rows and pills. Identity and profile editing stay
-// their own cards above the list (rich, non-tabular content a grouped row doesn't fit well).
+// ACC-03, OA-70: the avatar and name, then one grouped iOS-style list (Profil, Connexion, then
+// Se déconnecter in red). The profile fields are rows of that list; a glass save bar shows only
+// while they hold unsaved changes (OA-72). Data and about live in Paramètres (OA-75).
 export function AccountScreen({
   accessToken,
   currentUser,
@@ -53,11 +51,11 @@ export function AccountScreen({
   onPickProfilePictureFromLibrary,
   onTakeProfilePictureFromCamera,
   onRemoveProfilePicture,
-  onOpenSyncAndData,
   onLogout,
 }: AccountScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createAccountStyles(theme), [theme])
+  const titleStyles = useMemo(() => createPageTitleStyles(theme), [theme])
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
@@ -93,6 +91,19 @@ export function AccountScreen({
     onPasswordReset,
   })
   const logoutRow = useLogoutRow({ onLogout })
+  const profileRows = useProfileRows({
+    firstName,
+    lastName,
+    displayName,
+    onFirstNameChange: setFirstName,
+    onLastNameChange: setLastName,
+    onDisplayNameChange: setDisplayName,
+  })
+  const resetProfile = (): void => {
+    setFirstName(currentUser?.first_name ?? "")
+    setLastName(currentUser?.last_name ?? "")
+    setDisplayName(currentUser?.display_name ?? "")
+  }
 
   // Keep header/tab bar clearance inside the scroll content so it scrolls away naturally.
   const topContentPadding = Platform.OS === "ios" ? headerHeight + brandSpacing.md : brandSpacing.md
@@ -108,32 +119,11 @@ export function AccountScreen({
   }
 
   const sections: AppGroupedListSection[] = [
+    { key: "profile", title: fr.account.profile.title, rows: profileRows },
     {
       key: "connection",
       title: fr.account.sections.connection,
       rows: connectionRows,
-    },
-    {
-      key: "data",
-      title: fr.account.sections.data,
-      rows: [
-        {
-          key: "sync",
-          label: fr.account.sections.dataRow,
-          onPress: onOpenSyncAndData,
-        },
-      ],
-    },
-    {
-      key: "about",
-      title: fr.account.sections.about,
-      rows: [
-        {
-          key: "version",
-          label: fr.account.sections.version,
-          value: Constants.expoConfig?.version ?? fr.account.sections.versionUnknown,
-        },
-      ],
     },
     {
       key: "signout",
@@ -142,58 +132,64 @@ export function AccountScreen({
   ]
 
   return (
-    // ACC-04 : ScrollView pour gérer le clavier et les petits écrans
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: topContentPadding,
-          paddingBottom: bottomContentPadding,
-          paddingHorizontal: brandSpacing.md,
-        },
-      ]}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="interactive"
-      showsVerticalScrollIndicator={false}
-      contentInsetAdjustmentBehavior="never"
-      automaticallyAdjustContentInsets={false}
-      scrollIndicatorInsets={{
-        top: Platform.OS === "ios" ? headerHeight : 0,
-        bottom: tabBarHeight,
-      }}
-    >
-      <IdentityCard
-        accessToken={accessToken}
-        apiUrl={apiUrl}
-        currentUser={currentUser}
-        profile={profile}
-        heroName={heroName}
-        profileUpdating={profileUpdating}
-        onPickProfilePictureFromLibrary={onPickProfilePictureFromLibrary}
-        onTakeProfilePictureFromCamera={onTakeProfilePictureFromCamera}
-        onRemoveProfilePicture={onRemoveProfilePicture}
-      />
+    <View style={styles.screen}>
+      {/* ACC-04 : ScrollView pour gérer le clavier et les petits écrans */}
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: topContentPadding,
+            paddingBottom: bottomContentPadding + (isProfileDirty ? SAVE_BAR_ROOM : 0),
+            paddingHorizontal: brandSpacing.md,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="never"
+        automaticallyAdjustContentInsets={false}
+        scrollIndicatorInsets={{
+          top: Platform.OS === "ios" ? headerHeight : 0,
+          bottom: tabBarHeight,
+        }}
+      >
+        <Text style={titleStyles.pageTitle} accessibilityRole="header">
+          {fr.account.title}
+        </Text>
 
-      <ProfileCard
-        firstName={firstName}
-        lastName={lastName}
-        displayName={displayName}
-        onFirstNameChange={setFirstName}
-        onLastNameChange={setLastName}
-        onDisplayNameChange={setDisplayName}
-        isProfileDirty={isProfileDirty}
-        profileUpdating={profileUpdating}
-        onSave={() =>
-          void onSaveProfile({
-            first_name: firstName,
-            last_name: lastName,
-            display_name: displayName,
-          })
-        }
-      />
+        <IdentityCard
+          accessToken={accessToken}
+          apiUrl={apiUrl}
+          currentUser={currentUser}
+          profile={profile}
+          heroName={heroName}
+          profileUpdating={profileUpdating}
+          onPickProfilePictureFromLibrary={onPickProfilePictureFromLibrary}
+          onTakeProfilePictureFromCamera={onTakeProfilePictureFromCamera}
+          onRemoveProfilePicture={onRemoveProfilePicture}
+        />
 
-      <AppGroupedList sections={sections} />
-    </ScrollView>
+        <AppGroupedList sections={sections} />
+      </ScrollView>
+
+      {isProfileDirty ? (
+        <ProfileSaveBar
+          bottom={Math.max(tabBarHeight, insets.bottom) + brandSpacing.sm}
+          saving={profileUpdating}
+          onCancel={resetProfile}
+          onSave={() =>
+            void onSaveProfile({
+              first_name: firstName,
+              last_name: lastName,
+              display_name: displayName,
+            })
+          }
+        />
+      ) : null}
+    </View>
   )
 }
+
+/** Room kept under the list so the floating save bar never hides the last row. */
+const SAVE_BAR_ROOM = 76

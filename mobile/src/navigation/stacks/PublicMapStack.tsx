@@ -7,7 +7,12 @@ import { PublicMapRoute } from "../routes/PublicMapRoute"
 import { styles } from "../styles"
 import type { PublicMapStackParamList } from "../types"
 import { createBaseStackScreenOptions } from "./stack-options"
-import { ACCOUNT_SCREENS, makeAccountHomeOptions, settingsScreenOptions } from "./AccountStack"
+import {
+  ACCOUNT_SCREENS,
+  makeAccountHomeOptions,
+  offlineAreasScreenOptions,
+  settingsScreenOptions,
+} from "./AccountStack"
 
 const PublicMapStack = createNativeStackNavigator<PublicMapStackParamList>()
 
@@ -37,6 +42,11 @@ export function PublicMapTabNavigator() {
           name="settings"
           options={settingsScreenOptions}
           component={ACCOUNT_SCREENS.settings}
+        />
+        <PublicMapStack.Screen
+          name="offlineAreas"
+          options={offlineAreasScreenOptions}
+          component={ACCOUNT_SCREENS.offlineAreas}
         />
       </PublicMapStack.Navigator>
     </View>

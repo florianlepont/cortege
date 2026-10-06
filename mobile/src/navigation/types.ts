@@ -15,6 +15,7 @@ import type { FactorKey } from "../app/types"
 export type AccountStackParamList = {
   accountHome: undefined
   settings: undefined
+  offlineAreas: undefined
 }
 
 export type HomeStackParamList = AccountStackParamList & {
@@ -83,3 +84,4 @@ export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "
 export type PublicMapRouteProps = StackRouteProps<PublicMapStackParamList, "publicMapHome">
 export type AccountRouteProps = StackRouteProps<AccountStackParamList, "accountHome">
 export type SettingsRouteProps = StackRouteProps<AccountStackParamList, "settings">
+export type OfflineAreasRouteProps = StackRouteProps<AccountStackParamList, "offlineAreas">
