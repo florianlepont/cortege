@@ -2,17 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 12.1
-current_phase_name: Owner acceptance testing
+current_phase: 12.2
+current_phase_name: visual-modernisation-inserted
 status: executing
 stopped_at: Phase 12.2 UI-SPEC approved
-last_updated: "2026-10-06T22:37:49.437Z"
-last_activity: 2026-10-06 (Phases 12.2 and 12.3 inserted by owner decision; Phase 13 now follows 12.1, 12.2 and 12.3)
+last_updated: "2026-10-06T23:42:14.567Z"
+last_activity: 2026-10-06
+last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
-  total_plans: 121
-  completed_plans: 159
+  total_plans: 144
+  completed_plans: 160
   percent: 52
 ---
 
@@ -23,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phases 1 through 12 are complete as of 2026-09-28. Next is Phase 12.1 (Owner acceptance testing, inserted 2026-09-28): the owner tests the app on their own phone, display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready. Phase 13 (Field Validation) follows and still carries the device checks deferred from Phases 6 and 8; its discussion was postponed until 12.1 closes. See `.planning/ROADMAP.md`.
+**Current focus:** Phase 12.2 — visual-modernisation-inserted
 
 ## Current Position
 
-Phase: 12.1 (Owner acceptance testing)
-Plan: Not started
-Status: Phases 1 through 12 complete; Phase 12.1 in progress (owner acceptance loop); Phases 12.2 and 12.3 inserted before Phase 13, not yet planned
-Last activity: 2026-10-06 (Phases 12.2 and 12.3 inserted by owner decision; Phase 13 now follows 12.1, 12.2 and 12.3)
+Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
+Plan: 2 of 23
+Status: Ready to execute
+Last activity: 2026-10-06 — Phase 12.2 execution started
 
 Progress: [████████░░] 21/25 phases complete
 
@@ -79,6 +80,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 01.2 P07 | 10min | 2 tasks | 8 files |
 | Phase 01.2 P08 | 21min | 2 tasks | 6 files |
 | Phase 01.2 P09 | 37min | 2 tasks | 1 files |
+| Phase 12.2 P02 | 25min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -130,6 +132,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 01.2]: handleLogout now counts unsynced work and purges only after an explicit destructive confirmation (D-03); performDeleteAccount purges via the same performLogoutAndPurge helper without the unsynced-work alert
 - [Phase 01.2]: LocalDataOwnerConflictScreen (French) blocks the app with exactly two choices when localDataOwnerStatus is conflict; App.tsx keeps it mutually exclusive with the profile-setup overlay
 - [Phase 01.2]: Device verification: steps 1-5 confirmed on real hardware (offline session keep, revoked refresh token, logout with unsynced work, other-account conflict, dev tools absent in release build); steps 6-7 (nearby-parcels list, production rate limiting) carried over as they require field conditions / a live deploy
+- [Phase 12.2-02]: Factor tone cut points (0-2 low, 3 mid, 4-5 high) are a mobile display convention; total tone delegates to bandTone(totalBand(n))
 
 ### Pending Todos
 
@@ -170,6 +173,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-06T22:37:49.432Z
+Last session: 2026-10-06T23:42:10.114Z
 Stopped at: Phase 12.2 UI-SPEC approved
 Resume file: .planning/phases/12.2-visual-modernisation-inserted/12.2-UI-SPEC.md
