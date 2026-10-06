@@ -17,7 +17,7 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import { createBaseStackScreenOptions } from "./stack-options"
+import { createBaseStackScreenOptions, hiddenNativeTitle } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -106,22 +106,34 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           />
           <SurveysStack.Screen
             name="communitySurvey"
-            options={{ title: headers.communitySurvey, headerLargeTitle: false }}
+            options={{
+              title: headers.communitySurvey,
+              headerLargeTitle: false,
+              ...hiddenNativeTitle,
+            }}
             component={CommunitySurveyRoute}
           />
           <SurveysStack.Screen
             name="surveyContext"
-            options={{ title: headers.surveyContext, headerLargeTitle: false }}
+            options={{
+              title: headers.surveyContext,
+              headerLargeTitle: false,
+              ...hiddenNativeTitle,
+            }}
             component={SurveyContextRoute}
           />
           <SurveysStack.Screen
             name="surveyScore"
-            options={{ title: headers.surveyScore, headerLargeTitle: false }}
+            options={{ title: headers.surveyScore, headerLargeTitle: false, ...hiddenNativeTitle }}
             component={SurveyScoreRoute}
           />
           <SurveysStack.Screen
             name="surveyHistory"
-            options={{ title: headers.surveyHistory, headerLargeTitle: false }}
+            options={{
+              title: headers.surveyHistory,
+              headerLargeTitle: false,
+              ...hiddenNativeTitle,
+            }}
             component={SurveyHistoryRoute}
           />
           <SurveysStack.Screen
@@ -137,6 +149,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             options={({ route }) => ({
               title: headers.factor(route.params.factor),
               headerLargeTitle: false,
+              // The pager draws the factor's name and the running total (OA-21).
+              ...hiddenNativeTitle,
               // OA-111: iOS 26 and later pops a screen with a swipe from anywhere, which would take
               // the slide along the A to J strip for a "back". The back button stays.
               gestureEnabled: false,
@@ -160,10 +174,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                     headerBlurEffect: "none" as const,
                     headerStyle: { backgroundColor: "transparent" },
                     headerTintColor: brandColors.forest,
-                    headerTitle: () => null,
-                    // `headerTitle: () => null` does not blank the native title: it is still
-                    // drawn from `title` (OA-109, doubled "Parcelles"), so it is made invisible.
-                    headerTitleStyle: { color: "transparent" },
+                    ...hiddenNativeTitle,
                   }
                 : {
                     headerStyle: { backgroundColor: brandMediaBackdrop },

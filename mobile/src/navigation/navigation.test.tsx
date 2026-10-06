@@ -433,6 +433,31 @@ describe("stack options and listeners", () => {
     expect(options({ route: { params: { factor: "C" } } }).title).toBe("Facteur C")
   })
 
+  test("a screen that draws its own title hides the native one on iOS, so a title is never doubled (OA-21)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(<AppNavigation />)
+    const resolve = (name: string, args: Record<string, unknown> = {}) => {
+      const raw = mockScreens[name].options as Options | OptionsFn
+      return typeof raw === "function" ? raw({ route: { params: {} }, ...args }) : raw
+    }
+    for (const name of [
+      "accountHome",
+      "settings",
+      "offlineAreas",
+      "communitySurvey",
+      "surveyContext",
+      "surveyScore",
+      "surveyHistory",
+    ]) {
+      const options = resolve(name, { navigation: mockNavigation })
+      expect((options.headerTitle as () => null)()).toBeNull()
+      expect(options.headerTitleStyle).toEqual({ color: "transparent" })
+    }
+    const factor = resolve("surveyFactorDetail", { route: { params: { factor: "A" } } })
+    expect((factor.headerTitle as () => null)()).toBeNull()
+    expect(factor.headerTitleStyle).toEqual({ color: "transparent" })
+  })
+
   test("the factor screen has no swipe-back: a slide along the A to J strip is not a back (OA-111)", async () => {
     await mount(<AppNavigation />)
     const options = mockScreens.surveyFactorDetail.options as OptionsFn

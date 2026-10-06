@@ -7,6 +7,7 @@ import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppText as Text } from "../ui/AppText"
 import { GlassSurface } from "../ui/GlassSurface"
+import { PageTitle } from "../ui/PageTitle"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
 import { ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
 import { type SurveyContextScreenProps } from "./survey-detail/screen-props"
@@ -62,6 +63,7 @@ export function SurveyContextScreen({
       style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
       contentContainerStyle={styles.subContent}
     >
+      <PageTitle>{fr.navigation.headers.surveyContext}</PageTitle>
       <ParcelMapCard
         apiUrl={apiUrl}
         accessToken={accessToken}

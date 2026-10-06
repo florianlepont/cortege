@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
-import { AppText as Text } from "../ui/AppText"
+import { PageTitle } from "../ui/PageTitle"
 import Constants from "expo-constants"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -17,7 +17,6 @@ import { AppCollapsibleSection } from "../ui/AppCollapsibleSection"
 import { AppField } from "../ui/AppField"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
 import { fr } from "../i18n"
-import { createPageTitleStyles } from "./account/styles"
 
 const t = fr.settings
 const actions = fr.common.actions
@@ -55,7 +54,6 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
-  const titleStyles = useMemo(() => createPageTitleStyles(theme), [theme])
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
@@ -190,9 +188,7 @@ export function SettingsScreen({
         bottom: tabBarHeight,
       }}
     >
-      <Text style={titleStyles.pageTitle} accessibilityRole="header">
-        {t.title}
-      </Text>
+      <PageTitle>{t.title}</PageTitle>
 
       <AppGroupedList sections={sections} />
 

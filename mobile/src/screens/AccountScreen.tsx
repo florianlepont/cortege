@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native"
-import { AppText as Text } from "../ui/AppText"
+import { PageTitle } from "../ui/PageTitle"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
@@ -13,7 +13,7 @@ import type { AppGroupedListSection } from "../ui/AppGroupedList"
 import { useAccountConnectionRows, useLogoutRow } from "./account/AccountSettingsRows"
 import { IdentityCard } from "./account/IdentityCard"
 import { ProfileSaveBar, useProfileRows } from "./account/ProfileRows"
-import { createAccountStyles, createPageTitleStyles } from "./account/styles"
+import { createAccountStyles } from "./account/styles"
 
 type UpdateProfileInput = {
   first_name: string
@@ -55,7 +55,6 @@ export function AccountScreen({
 }: AccountScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createAccountStyles(theme), [theme])
-  const titleStyles = useMemo(() => createPageTitleStyles(theme), [theme])
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
@@ -154,9 +153,7 @@ export function AccountScreen({
           bottom: tabBarHeight,
         }}
       >
-        <Text style={titleStyles.pageTitle} accessibilityRole="header">
-          {fr.account.title}
-        </Text>
+        <PageTitle>{fr.account.title}</PageTitle>
 
         <IdentityCard
           accessToken={accessToken}

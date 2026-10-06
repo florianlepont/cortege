@@ -5,6 +5,7 @@ import { fr } from "../../i18n"
 import { AccountRoute } from "../routes/AccountRoute"
 import { OfflineAreasRoute } from "../routes/OfflineAreasRoute"
 import { SettingsRoute } from "../routes/SettingsRoute"
+import { hiddenNativeTitle } from "./stack-options"
 
 /**
  * OA-13 (owner decision, 2026-09-28): Compte is no longer a tab. The avatar pushes these two
@@ -32,7 +33,7 @@ export function makeAccountHomeOptions(tint: string) {
   return ({ navigation }: AccountHomeOptionsArgs): NativeStackNavigationOptions => ({
     title: fr.navigation.headers.account,
     // The page draws its own large title (OA-69, OA-70); the header keeps the back and gear buttons.
-    headerTitle: () => null,
+    ...hiddenNativeTitle,
     headerShown: true,
     headerLargeTitle: false,
     headerRight: () => (
@@ -43,14 +44,14 @@ export function makeAccountHomeOptions(tint: string) {
 
 export const settingsScreenOptions: NativeStackNavigationOptions = {
   title: fr.navigation.headers.settings,
-  headerTitle: () => null,
+  ...hiddenNativeTitle,
   headerShown: true,
   headerLargeTitle: false,
 }
 
 export const offlineAreasScreenOptions: NativeStackNavigationOptions = {
   title: fr.navigation.headers.offlineAreas,
-  headerTitle: () => null,
+  ...hiddenNativeTitle,
   headerShown: true,
   headerLargeTitle: false,
 }

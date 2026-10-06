@@ -2,6 +2,8 @@ import { useMemo } from "react"
 import { Platform, ScrollView } from "react-native"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useBrandTheme } from "../app/theme"
+import { fr } from "../i18n"
+import { PageTitle } from "../ui/PageTitle"
 import { FactorsList } from "./survey-detail/FactorsList"
 import { ScoreBreakdown } from "./survey-detail/ScoreBreakdown"
 import { type SurveyScoreScreenProps } from "./survey-detail/screen-props"
@@ -28,6 +30,7 @@ export function SurveyScoreScreen({
       style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
       contentContainerStyle={styles.subContent}
     >
+      <PageTitle>{fr.navigation.headers.surveyScore}</PageTitle>
       <ScoreBreakdown scores={data.displayedScores} />
       <FactorsList
         factorEntries={data.displayedFactorEntries}
