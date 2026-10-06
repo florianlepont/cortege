@@ -39,7 +39,6 @@ import {
   classifyUploadFailure,
   FailureClassification,
 } from "./utils"
-import { markSurveyExpiredLocally } from "./surveys"
 import { apiRequest, ApiError } from "../api/client"
 import { uploadAttachmentFile, LocalFileMissingError } from "./attachments"
 import { markAttachmentFileMissing } from "./attachment-cache"
@@ -77,7 +76,7 @@ async function markSurveyQueueRowSynced(row: QueueRow): Promise<void> {
       `UPDATE local_surveys
        SET sync_state = 'synced',
            status = CASE
-             WHEN status IN ('submitted', 'expired') THEN status
+             WHEN status = 'submitted' THEN status
              ELSE 'synced'
            END,
            last_sync_error = NULL,
@@ -451,7 +450,6 @@ function buildSurveyPayloadFromRemote(survey: RemoteSurvey): SurveyQueuePayload 
     vegetation_stage: survey.vegetation_stage ?? undefined,
     factors: survey.factors ?? {},
     scores: survey.scores ?? {},
-    expires_at: survey.expires_at ?? undefined,
     // Copied so a pulled v3.2 survey keeps its method (01.8 Pitfall 4); a null or missing value
     // stays absent, so an untagged legacy row stays untagged.
     ibp_method_version: survey.ibp_method_version ?? undefined,
@@ -554,7 +552,7 @@ async function handleSurveySyncFailure(
       `UPDATE local_surveys
        SET sync_state = 'failed',
            status = CASE
-             WHEN status IN ('submitted', 'expired') THEN status
+             WHEN status = 'submitted' THEN status
              ELSE 'error'
            END,
            last_sync_error = ?,
@@ -1342,19 +1340,12 @@ export async function submitSurvey(
       body?.message ??
       error.message
     const nowIso = new Date().toISOString()
-    const isExpiredSubmit =
-      /survey is expired|survey_expired|expired and cannot be submitted/i.test(message)
     const isValidationSubmit = error.status === 422
 
-    if (isExpiredSubmit) {
-      await markSurveyExpiredLocally(surveyId)
-    } else if (isValidationSubmit) {
+    if (isValidationSubmit) {
       await db.runAsync(
         `UPDATE local_surveys
-         SET status = CASE
-               WHEN status = 'expired' THEN 'expired'
-               ELSE 'draft'
-             END,
+         SET status = 'draft',
              sync_state = 'synced',
              last_sync_error = ?,
              last_sync_error_code = 'submit_validation',
@@ -1368,7 +1359,7 @@ export async function submitSurvey(
       await db.runAsync(
         `UPDATE local_surveys
          SET status = CASE
-               WHEN status IN ('submitted', 'expired') THEN status
+               WHEN status = 'submitted' THEN status
                ELSE 'error'
              END,
              sync_state = 'failed',

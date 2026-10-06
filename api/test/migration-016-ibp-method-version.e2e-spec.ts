@@ -40,7 +40,14 @@ describe("migration 016: IBP method version columns (e2e)", () => {
   const seededSurveyIds = [randomUUID(), randomUUID(), randomUUID()]
   let logSpy: jest.SpyInstance
 
-  const insertSurvey = (id: string, columns: Record<string, unknown> = {}) => {
+  const insertSurvey = async (id: string, columns: Record<string, unknown> = {}) => {
+    // OA-41: migration 019 drops surveys.expires_at, so a row seeded after it must not set it.
+    const { rowCount } = await client.query(
+      `SELECT 1 FROM information_schema.columns
+       WHERE table_schema = current_schema() AND table_name = 'surveys' AND column_name = 'expires_at'`,
+    )
+    const expiresColumn = rowCount ? ", expires_at" : ""
+    const expiresValue = rowCount ? ", NOW() + interval '7 days'" : ""
     const names = ["id", "user_id", "site_name", "status", ...Object.keys(columns)]
     const values = [id, userId, `site ${id}`, "draft", ...Object.values(columns)]
     const placeholders = values.map((_, index) => `$${index + 1}`)
@@ -48,8 +55,8 @@ describe("migration 016: IBP method version columns (e2e)", () => {
     // this spec's own test cases, never external input.
     /* eslint-disable sql-no-unsafe-interpolation */
     return client.query(
-      `INSERT INTO surveys (${names.join(", ")}, created_at, updated_at, expires_at, sync_version)
-       VALUES (${placeholders.join(", ")}, NOW(), NOW(), NOW() + interval '7 days', 1)`,
+      `INSERT INTO surveys (${names.join(", ")}, created_at, updated_at${expiresColumn}, sync_version)
+       VALUES (${placeholders.join(", ")}, NOW(), NOW()${expiresValue}, 1)`,
       values,
     )
     /* eslint-enable sql-no-unsafe-interpolation */

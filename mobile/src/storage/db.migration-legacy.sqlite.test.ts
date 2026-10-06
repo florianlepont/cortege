@@ -63,6 +63,12 @@ beforeAll(async () => {
      VALUES ('survey-legacy', 'Parcelle Legacy', 'draft', 1, 'pending', ?)`,
     [NOW],
   )
+  // OA-41: a survey the old deadline rule had marked expired.
+  await mockDb.runAsync(
+    `INSERT INTO local_surveys (id, site_name, status, sync_version, sync_state, updated_at)
+     VALUES ('survey-expired', 'Parcelle expirée', 'expired', 1, 'synced', ?)`,
+    [NOW],
+  )
   await mockDb.runAsync(
     `INSERT INTO sync_queue (survey_id, payload, status, retry_count, created_at, updated_at)
      VALUES ('survey-legacy', ?, 'failed', 40, ?, ?)`,
@@ -92,6 +98,17 @@ describe("db migration on the oldest schema shape", () => {
     expect(survey?.visibility).toBe("private")
     expect(survey?.sync_blocked).toBe(0)
     expect(survey?.payload_json).toBeNull()
+  })
+
+  test("a survey marked expired by the old deadline rule is a draft again (OA-41)", async () => {
+    const row = await mockDb.getFirstAsync<{ status: string; site_name: string }>(
+      `SELECT status, site_name FROM local_surveys WHERE id = 'survey-expired'`,
+    )
+    expect(row).toEqual({ status: "draft", site_name: "Parcelle expirée" })
+    const others = await mockDb.getFirstAsync<{ status: string }>(
+      `SELECT status FROM local_surveys WHERE id = 'survey-legacy'`,
+    )
+    expect(others?.status).toBe("draft")
   })
 
   test("the queue row survives with retry_count reset and op_type backfilled", async () => {

@@ -59,8 +59,7 @@ Method version status (phase 01.8, 2026-09-26):
   primary parcel, mirroring `parcel_ids[0]`), never the sole linkage (`REQ-X-parcel-required` is
   overridden by multi-parcel support, `survey_parcels`).
 - For parcel follow-up, survey metadata includes `observation_year` and `version_number`.
-- A draft expires 7 days after creation.
-- After 7 days, status becomes `expired` and submission is rejected.
+- ~~A draft expires 7 days after creation. After 7 days, status becomes `expired` and submission is rejected.~~ Removed (OA-41 2026-10-06): there is no submission deadline.
 - Submission requires all mandatory factors to be filled and scorable.
 - Submission is blocked when cadastral linkage metadata is missing/invalid.
 - Allowed factor scores, both method versions:
@@ -455,10 +454,7 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   `region_version` and `vegetation_stage` (`region_version_required`, `vegetation_stage_required`).
 
 ### 8.2 Time/Status Validations
-- If `now > created_at + 7 days` and status is `draft`:
-  - force status `expired`.
-  - block submission.
-  - message: `This survey has expired (more than 7 days). Please create a new survey.`
+- ~~If `now > created_at + 7 days` and status is `draft`: force status `expired`, block submission, message `This survey has expired`.~~ Removed (OA-41 2026-10-06): there is no submission deadline, a draft is never expired.
 
 ### 8.3 Visibility Validations
 - `visibility` is required at submission (`private` or `public`).
@@ -593,8 +589,7 @@ pair are scored: an absent or incomplete factor is not "very low".
 4. Valid submission:
 - 10 scorable factors + required fields -> score computed + status `submitted`.
 
-5. Expired draft:
-- draft > 7 days -> status `expired`, submission denied.
+5. ~~Expired draft: draft > 7 days -> status `expired`, submission denied.~~ Removed (OA-41 2026-10-06): an old draft is submitted like any other.
 
 6. Visibility:
 - `private` not published in map/community surfaces, `public` eligible for publication.

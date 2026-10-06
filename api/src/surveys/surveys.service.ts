@@ -57,7 +57,6 @@ type PreparedUpsert = {
   draftValidation: IbpValidationResult
   computedScores: NonNullable<IbpValidationResult["scores"]>
   now: Date
-  expiresAt: string
 }
 
 function olderSyncVersionConflict(
@@ -143,7 +142,6 @@ export class SurveysService {
         scores: prepared.computedScores,
         syncVersion,
         now: prepared.now.toISOString(),
-        expiresAt: prepared.expiresAt,
         eventPayload: this.upsertEventPayload(prepared),
       })
       if (created) {
@@ -206,7 +204,6 @@ export class SurveysService {
         scores: rowPrepared.computedScores,
         syncVersion,
         now: rowPrepared.now.toISOString(),
-        expiresAt: rowPrepared.expiresAt,
         eventPayload: this.upsertEventPayload(rowPrepared),
       },
       casToken,
@@ -247,9 +244,6 @@ export class SurveysService {
       draftValidation,
       computedScores: this.scoresOf(draftValidation),
       now,
-      // D-03: expires_at is computed server-side at creation and never moved by an upsert; the
-      // client-sent value (kept on the DTO for compatibility) is never read here.
-      expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     }
   }
 
@@ -352,12 +346,12 @@ export class SurveysService {
         const insertResult = await db.query<{ id: string; updated_at: string }>(
           `INSERT INTO surveys (
             id, user_id, site_name, status, visibility, parcel_id, observation_year, version_number, previous_survey_id, region_version, vegetation_stage,
-            factors, factor_results, scores, location, created_at, updated_at, submitted_at, expires_at, sync_version,
+            factors, factor_results, scores, location, created_at, updated_at, submitted_at, sync_version,
             ibp_method_version, ibp_cas, ibp_cas3_scale
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-            $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19, $20,
-            $21, $22, $23
+            $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19,
+            $20, $21, $22
           )
           ON CONFLICT (id) DO NOTHING
           RETURNING id, updated_at::text`,
@@ -382,7 +376,6 @@ export class SurveysService {
             createdAt,
             createdAt,
             null,
-            prepared.expiresAt,
             syncVersion,
             columns.ibp_method_version,
             columns.ibp_cas,
@@ -984,7 +977,6 @@ export class SurveysService {
       | "created_at"
       | "updated_at"
       | "submitted_at"
-      | "expires_at"
       | "sync_version"
     > & { display_location: { lat: number; lng: number } | null }
   > {
@@ -1017,7 +1009,6 @@ export class SurveysService {
       created_at: survey.created_at,
       updated_at: survey.updated_at,
       submitted_at: survey.submitted_at,
-      expires_at: survey.expires_at,
       sync_version: survey.sync_version,
     }
   }
@@ -1060,7 +1051,6 @@ export class SurveysService {
           ibp_method_version: existing.ibp_method_version,
           ibp_cas: existing.ibp_cas,
           ibp_cas3_scale: existing.ibp_cas3_scale,
-          expires_at: existing.expires_at,
           factors: existing.factors,
         })
 
@@ -1105,24 +1095,6 @@ export class SurveysService {
         }
 
         if (!validation.ok || !validation.scores || parcelValidation.errors.length > 0) {
-          const isExpired = validation.issues.some((issue) => issue.code === "survey_expired")
-          if (isExpired && existing.status !== "expired") {
-            // This write must commit even though the request is rejected
-            // below, so we return a discriminated outcome instead of
-            // throwing (which would roll it back).
-            await db.query(
-              `UPDATE surveys
-               SET status = 'expired',
-                   updated_at = NOW()
-               WHERE id = $1 AND user_id = $2`,
-              [surveyId, user.id],
-            )
-            await this.events.insert(db, surveyId, user.id, "expired", {
-              reason: "submit_after_deadline",
-              expires_at: existing.expires_at,
-            })
-          }
-
           return {
             kind: "rejected",
             error: new UnprocessableEntityException({

@@ -243,8 +243,7 @@ Request:
     "ibp_peuplement_gestion": 20,
     "ibp_contexte": 8,
     "ibp_total": 28
-  },
-  "expires_at": "2026-03-15T10:00:00Z"
+  }
 }
 ```
 
@@ -295,8 +294,9 @@ method version, chosen when the survey is created. Three optional fields on `POS
 **`status` and `expires_at` (V1.2 hardening):** both fields are accepted for backward
 compatibility with installed apps but are always ignored by the server. A survey is always
 created with `status: "draft"`; status changes only through `POST /surveys/{id}/submit`
-(`submitted`/`expired`). `expires_at` is set by the server at creation time (`created_at` + 7
-days) and is never moved by an upsert.
+(`submitted`). There is no submission deadline (OA-41, migration 019): `expires_at` no longer
+exists on a survey, is not returned, and an `expires_at` sent by an older build is ignored; the
+`expired` status is gone and no longer accepted.
 
 **Submitted surveys are read-only by value (V1.2 hardening):** an upsert that changes the
 *value* of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
@@ -430,7 +430,6 @@ Response `200`:
   "created_at": "2026-03-08T11:00:00Z",
   "updated_at": "2026-03-08T12:00:00Z",
   "submitted_at": null,
-  "expires_at": "2026-03-15T10:00:00Z",
   "sync_version": 3
 }
 ```
@@ -521,7 +520,7 @@ Attempt submission transition (`draft` -> `submitted`) with server-side checks.
 Blocking checks include:
 
 - all required IBP factors complete and valid
-- survey not expired
+- ~~survey not expired~~ (removed, OA-41 2026-10-06: there is no submission deadline)
 - parcel linkage complete and valid (`parcel_ids[]`, `observation_year`, `version_number`)
 - the station of the survey's method (phase 01.8): `region_version` and `vegetation_stage` for
   v3.0, `ibp_cas` (1-4) for v3.2 (`ibp_cas_required`)
@@ -569,7 +568,7 @@ messages in `warnings`. The server never compares its recomputed scores with the
 | `ibp_cas_required` | yes, submit only | A v3.2 survey without `ibp_cas` in 1-4. Message: `ibp_cas is required and must be 1, 2, 3 or 4` |
 | `region_version_required` | yes, submit only | A v3.0 survey without `region_version` `ACA` or `M` |
 | `vegetation_stage_required` | yes, submit only | A v3.0 survey without `vegetation_stage` |
-| `expires_at_required`, `survey_expired` | yes, submit only | Unchanged |
+| ~~`expires_at_required`, `survey_expired`~~ | removed (OA-41) | There is no submission deadline: a survey is never refused for its age |
 | `factor_required` | yes, submit only | A factor is missing, or is still incomplete at submit |
 | `factor_incomplete` | no (draft) | A factor that cannot be scored yet: a v3.2 A or G without `ibp_cas`, a v3.2 A without its native cover, or an A (either version) that records its native cover but no genus count yet. The draft is saved and the factor is not scored |
 | `factor_invalid_raw` | yes | A factor object that no rule can read |
@@ -1374,4 +1373,4 @@ IBP validation codes (phase 01.8; the `422` body carries their messages in `erro
 - `ibp_cas_required` (blocking at submit) — a v3.2 survey has no `ibp_cas` in 1-4.
 - `ibp_method_version_unsupported` (blocking) — the method version is not a known tag.
 - `factor_incomplete` (non-blocking, draft) — a factor cannot be scored yet; it becomes `factor_required` at submit.
-- `factor_required`, `factor_invalid_raw`, `factor_invalid_score`, `factor_a_genus_invalid`, `region_version_required`, `vegetation_stage_required`, `expires_at_required`, `survey_expired` (blocking) and `factor_f_group_capped`, `consistency_a_b`, `consistency_e_f` (non-blocking).
+- `factor_required`, `factor_invalid_raw`, `factor_invalid_score`, `factor_a_genus_invalid`, `region_version_required`, `vegetation_stage_required` (blocking) and `factor_f_group_capped`, `consistency_a_b`, `consistency_e_f` (non-blocking).

@@ -99,7 +99,6 @@ export type SurveyQueuePayload = IbpMethodFields & {
   vegetation_stage?: string
   factors?: Record<string, unknown>
   scores?: Record<string, unknown>
-  expires_at?: string
 }
 
 export type SurveyDeleteQueuePayload = {

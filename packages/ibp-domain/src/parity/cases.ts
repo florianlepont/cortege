@@ -24,9 +24,6 @@ export type IbpParityCase = {
     ibp_cas3_scale?: boolean
   }
   factors: Record<string, unknown>
-  expires_at?: string
-  /** Evaluation time (ISO), for the expiry checks of submit cases. */
-  now?: string
   expect: {
     ok: boolean
     /** Per-factor score; null = not scored (missing, invalid or incomplete). */
@@ -40,7 +37,6 @@ export type IbpParityCase = {
 export type IbpReadinessCase = {
   id: string
   draft: IbpEvaluationInput
-  now: string
   expect: SubmitReadiness
 }
 
@@ -49,10 +45,6 @@ export type IbpMigrationCase = {
   draft: IbpEvaluationInput & { id?: string }
   expect: IbpEvaluationInput & { id?: string }
 }
-
-const NOW = "2026-09-26T12:00:00.000Z"
-const FUTURE = "2027-01-01T00:00:00.000Z"
-const PAST = "2026-01-01T00:00:00.000Z"
 
 const ACA_COLLINEEN = { region_version: "ACA", vegetation_stage: "collineen" }
 const ACA_SUBALPIN = { region_version: "ACA", vegetation_stage: "subalpin" }
@@ -278,12 +270,10 @@ const V30_CASES: IbpParityCase[] = [
     mode: "submit",
     context: ACA_COLLINEEN,
     factors: { A: { native_genus_count: 2 }, B: { strata_count: 3 }, C: 1 },
-    expires_at: PAST,
-    now: NOW,
     expect: {
       ok: false,
       scores: { A: 1, B: 2, C: 1, D: null, J: null },
-      issueCodes: ["survey_expired", "factor_required"],
+      issueCodes: ["factor_required"],
     },
   },
   {
@@ -293,8 +283,6 @@ const V30_CASES: IbpParityCase[] = [
     mode: "submit",
     context: ACA_COLLINEEN,
     factors: COMPLETE_DIRECT,
-    expires_at: FUTURE,
-    now: NOW,
     expect: { ok: true, scores: COMPLETE_DIRECT, totals: COMPLETE_DIRECT_TOTALS, issueCodes: [] },
   },
 ]
@@ -546,8 +534,6 @@ const V32_CASES: IbpParityCase[] = [
     mode: "submit",
     context: {},
     factors: COMPLETE_V32_OBJECTS,
-    expires_at: FUTURE,
-    now: NOW,
     expect: {
       ok: false,
       scores: { A: null, G: null, B: 2, H: 2 },
@@ -565,8 +551,6 @@ const V32_CASES: IbpParityCase[] = [
     matrixId: "MAT-CAS-02@v3.2",
     mode: "submit",
     factors: { ...COMPLETE_DIRECT, A: { native_genus_count: 5 } },
-    expires_at: FUTURE,
-    now: NOW,
     expect: { ok: false, scores: { A: null, B: 2 }, issueCodes: ["factor_required"] },
   }),
   v32({
@@ -579,20 +563,16 @@ const V32_CASES: IbpParityCase[] = [
       B: { strata_count: 3 },
       G: { open_flowering_percent: 2 },
     },
-    expires_at: PAST,
-    now: NOW,
     expect: {
       ok: false,
       scores: { A: null, B: 2, G: null, J: null },
-      issueCodes: ["survey_expired", "ibp_cas_required", "factor_required"],
+      issueCodes: ["ibp_cas_required", "factor_required"],
     },
   }),
   v32({
     id: "MAT-SUBMIT-02@v3.2",
     mode: "submit",
     factors: COMPLETE_DIRECT,
-    expires_at: FUTURE,
-    now: NOW,
     expect: { ok: true, scores: COMPLETE_DIRECT, totals: COMPLETE_DIRECT_TOTALS, issueCodes: [] },
   }),
 ]
@@ -651,35 +631,28 @@ export const IBP_READINESS_CASES: readonly IbpReadinessCase[] = [
     id: "R-1 v3.2 without ibp_cas",
     draft: {
       ibp_method_version: IBP_METHOD_V3_2,
-      expires_at: FUTURE,
       factors: COMPLETE_V32_OBJECTS,
     },
-    now: NOW,
     expect: {
       ready: false,
-      expired: false,
       missing_factors: ["A", "G"],
       missing_fields: ["ibp_cas"],
     },
   },
   {
     id: "R-2 untagged without region or stage",
-    draft: { expires_at: FUTURE, factors: COMPLETE_DIRECT },
-    now: NOW,
+    draft: { factors: COMPLETE_DIRECT },
     expect: {
       ready: false,
-      expired: false,
       missing_factors: [],
       missing_fields: ["region_version", "vegetation_stage"],
     },
   },
   {
     id: "R-2 v3.0 tag without region or stage",
-    draft: { ibp_method_version: IBP_METHOD_V3_0, expires_at: FUTURE, factors: COMPLETE_DIRECT },
-    now: NOW,
+    draft: { ibp_method_version: IBP_METHOD_V3_0, factors: COMPLETE_DIRECT },
     expect: {
       ready: false,
-      expired: false,
       missing_factors: [],
       missing_fields: ["region_version", "vegetation_stage"],
     },
@@ -689,11 +662,9 @@ export const IBP_READINESS_CASES: readonly IbpReadinessCase[] = [
     draft: {
       ibp_method_version: IBP_METHOD_V3_2,
       ibp_cas: 1,
-      expires_at: FUTURE,
       factors: COMPLETE_V32_OBJECTS,
     },
-    now: NOW,
-    expect: { ready: true, expired: false, missing_factors: [], missing_fields: [] },
+    expect: { ready: true, missing_factors: [], missing_fields: [] },
   },
 ]
 

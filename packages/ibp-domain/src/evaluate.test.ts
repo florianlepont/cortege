@@ -1,8 +1,6 @@
 import { computeRetainedScores, computeTotals, evaluateIbp } from "./evaluate"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "./method-version"
 
-const NOW = new Date("2026-09-26T12:00:00.000Z")
-const FUTURE = "2026-12-31T00:00:00.000Z"
 const PAST = "2026-01-01T00:00:00.000Z"
 const codes = (result: { issues: Array<{ code: string }> }) => result.issues.map((i) => i.code)
 
@@ -24,9 +22,8 @@ describe("evaluateIbp: dispatch (CH-6)", () => {
     "an unknown version is blocking ibp_method_version_unsupported (%s)",
     (mode) => {
       const result = evaluateIbp(
-        { ibp_method_version: "cnpf_ibp_fr_v9", factors: COMPLETE_DIRECT, expires_at: FUTURE },
+        { ibp_method_version: "cnpf_ibp_fr_v9", factors: COMPLETE_DIRECT },
         mode,
-        NOW,
       )
       expect(result.ok).toBe(false)
       expect(result.method_version).toBeNull()
@@ -139,28 +136,35 @@ describe("evaluateIbp: v3.0 (fixed, D-05)", () => {
     expect(codes(evaluateIbp({ factors: { A: 0, B: 1, E: 0, F: 2 } }, "draft"))).toEqual([])
   })
 
-  it("submit: region, stage, expiry and missing factors", () => {
-    const result = evaluateIbp({ factors: { A: 5 } }, "submit", NOW)
+  it("submit: region, stage and missing factors", () => {
+    const result = evaluateIbp({ factors: { A: 5 } }, "submit")
     expect(result.ok).toBe(false)
     expect(codes(result)).toEqual([
       "region_version_required",
       "vegetation_stage_required",
-      "expires_at_required",
       ...Array(9).fill("factor_required"),
     ])
     expect(result.scores).toEqual({ ibp_peuplement_gestion: 5, ibp_contexte: 0, ibp_total: 5 })
 
-    const expired = evaluateIbp(
-      {
-        region_version: "ACA",
-        vegetation_stage: " ",
-        expires_at: PAST,
-        factors: COMPLETE_DIRECT,
-      },
+    const blankStage = evaluateIbp(
+      { region_version: "ACA", vegetation_stage: " ", factors: COMPLETE_DIRECT },
       "submit",
-      NOW,
     )
-    expect(codes(expired)).toEqual(["vegetation_stage_required", "survey_expired"])
+    expect(codes(blankStage)).toEqual(["vegetation_stage_required"])
+  })
+
+  // OA-41: there is no submission deadline. A past `expires_at`, or none, blocks nothing.
+  it("submit: a survey is never refused for its age (OA-41)", () => {
+    const complete = {
+      region_version: "ACA",
+      vegetation_stage: "collineen",
+      factors: COMPLETE_DIRECT,
+    }
+    // A survey from an older build still carries one; the type no longer has the field.
+    const withDeadline = (expires_at: string | null) => ({ ...complete, expires_at })
+    expect(evaluateIbp(withDeadline(PAST), "submit").ok).toBe(true)
+    expect(evaluateIbp(withDeadline(null), "submit").ok).toBe(true)
+    expect(evaluateIbp(complete, "submit").ok).toBe(true)
   })
 
   it("submit: a complete v3.0 survey is ok with the totals", () => {
@@ -169,24 +173,14 @@ describe("evaluateIbp: v3.0 (fixed, D-05)", () => {
         ibp_method_version: IBP_METHOD_V3_0,
         region_version: "M",
         vegetation_stage: "meso_mediterraneen",
-        expires_at: FUTURE,
         factors: COMPLETE_DIRECT,
       },
       "submit",
-      NOW,
     )
     expect(result.ok).toBe(true)
     expect(result.issues).toEqual([])
     expect(result.scores).toEqual({ ibp_peuplement_gestion: 17, ibp_contexte: 7, ibp_total: 24 })
     expect(result.incomplete_factors).toEqual([])
-  })
-
-  it("defaults `now` to the current time", () => {
-    const result = evaluateIbp(
-      { region_version: "ACA", vegetation_stage: "collineen", expires_at: PAST, factors: {} },
-      "submit",
-    )
-    expect(codes(result)).toContain("survey_expired")
   })
 })
 
@@ -232,9 +226,8 @@ describe("evaluateIbp: v3.2", () => {
 
   it("submit without ibp_cas: ibp_cas_required + factor_required for A and G", () => {
     const result = evaluateIbp(
-      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 7, expires_at: FUTURE, factors: complete32 },
+      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 7, factors: complete32 },
       "submit",
-      NOW,
     )
     expect(result.ok).toBe(false)
     expect(codes(result)).toEqual(["ibp_cas_required", "factor_required", "factor_required"])
@@ -243,9 +236,8 @@ describe("evaluateIbp: v3.2", () => {
 
   it("region and stage are not required; a complete v3.2 survey is ok", () => {
     const result = evaluateIbp(
-      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, expires_at: FUTURE, factors: complete32 },
+      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, factors: complete32 },
       "submit",
-      NOW,
     )
     expect(result.ok).toBe(true)
     expect(result.factor_scores).toEqual({
@@ -267,7 +259,6 @@ describe("evaluateIbp: v3.2", () => {
     const input = {
       ibp_method_version: IBP_METHOD_V3_2,
       ibp_cas: 1,
-      expires_at: FUTURE,
       factors: { ...complete32, A: { native_genus_count: 5 } },
     }
     const draft = evaluateIbp(input, "draft")
@@ -280,7 +271,7 @@ describe("evaluateIbp: v3.2", () => {
         factor: "A",
       },
     ])
-    const submit = evaluateIbp(input, "submit", NOW)
+    const submit = evaluateIbp(input, "submit")
     expect(submit.issues).toEqual([
       { code: "factor_required", message: "factor A is required", blocking: true, factor: "A" },
     ])

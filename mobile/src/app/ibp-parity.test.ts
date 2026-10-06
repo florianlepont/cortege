@@ -46,10 +46,10 @@ describe("IBP_READINESS_CASES through the mobile adapter", () => {
   it.each(IBP_READINESS_CASES.map((c) => [c.id, c] as const))(
     "%s (parcels selected)",
     (_id, readinessCase) => {
-      const readiness = evaluateSubmitReadinessFromDraft(
-        { ...readinessCase.draft, parcel_ids: PARCEL },
-        new Date(readinessCase.now),
-      )
+      const readiness = evaluateSubmitReadinessFromDraft({
+        ...readinessCase.draft,
+        parcel_ids: PARCEL,
+      })
       expect(readiness).toEqual(readinessCase.expect)
     },
   )
@@ -57,10 +57,10 @@ describe("IBP_READINESS_CASES through the mobile adapter", () => {
   it.each(IBP_READINESS_CASES.map((c) => [c.id, c] as const))(
     "%s (no parcel) adds parcel_ids",
     (_id, readinessCase) => {
-      const readiness = evaluateSubmitReadinessFromDraft(
-        { ...readinessCase.draft, parcel_ids: [] },
-        new Date(readinessCase.now),
-      )
+      const readiness = evaluateSubmitReadinessFromDraft({
+        ...readinessCase.draft,
+        parcel_ids: [],
+      })
       expect(readiness).toEqual({
         ...readinessCase.expect,
         ready: false,

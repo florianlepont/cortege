@@ -7,18 +7,11 @@ describe("IBP_PARITY_CASES through IbpRulesService", () => {
   const service = new IbpRulesService()
   const uniqueSorted = (values: readonly string[]) => [...new Set(values)].sort()
 
-  afterEach(() => {
-    jest.useRealTimers()
-  })
-
   function run(parityCase: IbpParityCase) {
-    // The adapter has no clock parameter: a case's evaluation time is set on the system clock.
-    if (parityCase.now) jest.useFakeTimers({ now: new Date(parityCase.now) })
     const input = {
       ...parityCase.context,
       ibp_method_version: parityCase.method,
       factors: parityCase.factors,
-      expires_at: parityCase.expires_at,
     }
     return parityCase.mode === "submit"
       ? service.validateSubmit(input)

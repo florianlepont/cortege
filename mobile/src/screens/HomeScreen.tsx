@@ -62,7 +62,7 @@ type HomeScreenProps = {
 /** The most recently updated draft, if it was touched within the resume window (HOME-02). */
 export function pickResumeDraft(surveys: LocalSurvey[]): LocalSurvey | null {
   const candidates = surveys
-    .filter((survey) => survey.status !== "submitted" && survey.status !== "expired")
+    .filter((survey) => survey.status !== "submitted")
     .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))
   const mostRecent = candidates[0]
   if (!mostRecent) return null

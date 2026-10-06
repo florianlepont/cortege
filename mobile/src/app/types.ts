@@ -81,7 +81,7 @@ export type PublicParcelStatusItem = Omit<DomainPublicParcelStatusItem, "geometr
   geometry?: GeoJsonGeometry
 }
 
-export type SurveyStatusFilter = "all" | "draft" | "submitted" | "expired"
+export type SurveyStatusFilter = "all" | "draft" | "submitted"
 export type SurveyVisibilityFilter = "all" | "private" | "public"
 export type SurveySyncFilter = "all" | "pending" | "synced" | "failed"
 export type SurveyBlockedFilter = "all" | "blocked" | "unblocked"

@@ -20,10 +20,6 @@ export const formatSubmitReadinessError = (
   surveyId: string,
   readiness: ReturnType<typeof evaluateSubmitReadinessFromDraft>,
 ): string => {
-  if (readiness.expired) {
-    return `Survey ${surveyId} is expired and cannot be submitted`
-  }
-
   const parts: string[] = []
   if (readiness.missing_factors.length > 0) {
     parts.push(`missing/invalid factors: ${readiness.missing_factors.join(", ")}`)

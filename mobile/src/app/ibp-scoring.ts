@@ -72,11 +72,8 @@ export type SubmitReadiness = Omit<DomainSubmitReadiness, "missing_fields"> & {
 export type SubmitReadinessDraft = IbpEvaluationInput & { parcel_ids?: unknown }
 
 /** Whether a local draft can be submitted: the package's readiness, plus a parcel selection. */
-export const evaluateSubmitReadinessFromDraft = (
-  draft: SubmitReadinessDraft,
-  now: Date = new Date(),
-): SubmitReadiness => {
-  const readiness = evaluateSubmitReadiness(draft, now)
+export const evaluateSubmitReadinessFromDraft = (draft: SubmitReadinessDraft): SubmitReadiness => {
+  const readiness = evaluateSubmitReadiness(draft)
   const missingFields: SubmitReadiness["missing_fields"] = [...readiness.missing_fields]
   if (resolveDraftParcelIds(draft).length === 0) {
     missingFields.push("parcel_ids")

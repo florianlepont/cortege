@@ -352,7 +352,6 @@ export class SurveysSyncService {
          s.created_at::text,
          s.updated_at::text,
          s.submitted_at::text,
-         s.expires_at::text,
          s.sync_version,
          s.deleted_at::text
        FROM surveys s

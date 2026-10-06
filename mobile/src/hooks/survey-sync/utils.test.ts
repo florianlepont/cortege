@@ -85,7 +85,6 @@ describe("formatSubmitReadinessError", () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function makeReadiness(overrides: Record<string, unknown> = {}): any {
     return {
-      expired: false,
       missing_factors: [],
       missing_fields: [],
       ready: true,
@@ -93,10 +92,10 @@ describe("formatSubmitReadinessError", () => {
     }
   }
 
-  test("returns expired message when expired", () => {
-    const msg = formatSubmitReadinessError("survey-1", makeReadiness({ expired: true }))
-    expect(msg).toContain("expired")
-    expect(msg).toContain("survey-1")
+  // OA-41: no submission deadline, so an old draft is never reported as expired.
+  test("never reports a draft as expired, whatever its age", () => {
+    const msg = formatSubmitReadinessError("survey-1", makeReadiness({ missing_factors: ["A"] }))
+    expect(msg).not.toContain("expired")
   })
 
   test("returns generic 'not ready' message when nothing is missing", () => {

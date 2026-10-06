@@ -17,8 +17,7 @@ export function normalizeSurveyStatusFilter(status?: string): SurveyRow["status"
     normalized === "draft" ||
     normalized === "submitted" ||
     normalized === "synced" ||
-    normalized === "error" ||
-    normalized === "expired"
+    normalized === "error"
   ) {
     return normalized
   }

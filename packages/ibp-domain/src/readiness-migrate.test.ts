@@ -3,88 +3,81 @@ import { evaluateSubmitReadiness } from "./readiness"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "./method-version"
 import type { IbpEvaluationInput } from "./evaluate"
 
-const NOW = new Date("2026-09-26T12:00:00.000Z")
 const COMPLETE_DIRECT = { A: 5, B: 2, C: 1, D: 0, E: 2, F: 5, G: 2, H: 2, I: 5, J: 0 }
 
 describe("evaluateSubmitReadiness", () => {
   it("v3.0 (untagged): region and stage are required", () => {
-    const readiness = evaluateSubmitReadiness({ factors: COMPLETE_DIRECT }, NOW)
+    const readiness = evaluateSubmitReadiness({ factors: COMPLETE_DIRECT })
     expect(readiness).toEqual({
       ready: false,
-      expired: false,
       missing_factors: [],
       missing_fields: ["region_version", "vegetation_stage"],
     })
   })
 
-  it("v3.0 complete and not expired is ready", () => {
-    const readiness = evaluateSubmitReadiness(
-      {
-        ibp_method_version: IBP_METHOD_V3_0,
-        region_version: "ACA",
-        vegetation_stage: "collineen",
-        expires_at: "2026-12-31T00:00:00.000Z",
-        factors: COMPLETE_DIRECT,
-      },
-      NOW,
-    )
+  it("v3.0 complete is ready", () => {
+    const readiness = evaluateSubmitReadiness({
+      ibp_method_version: IBP_METHOD_V3_0,
+      region_version: "ACA",
+      vegetation_stage: "collineen",
+      factors: COMPLETE_DIRECT,
+    })
     expect(readiness).toEqual({
       ready: true,
-      expired: false,
       missing_factors: [],
       missing_fields: [],
     })
   })
 
   it("v3.2 without cas: ibp_cas missing and A, G not ready", () => {
-    const readiness = evaluateSubmitReadiness(
-      {
-        ibp_method_version: IBP_METHOD_V3_2,
-        factors: {
-          ...COMPLETE_DIRECT,
-          A: { native_genus_count: 5, native_cover_percent: 60 },
-          G: { open_flowering_percent: 2 },
-        },
+    const readiness = evaluateSubmitReadiness({
+      ibp_method_version: IBP_METHOD_V3_2,
+      factors: {
+        ...COMPLETE_DIRECT,
+        A: { native_genus_count: 5, native_cover_percent: 60 },
+        G: { open_flowering_percent: 2 },
       },
-      NOW,
-    )
+    })
     expect(readiness.missing_fields).toEqual(["ibp_cas"])
     expect(readiness.missing_factors).toEqual(["A", "G"])
     expect(readiness.ready).toBe(false)
   })
 
   it("v3.2 with cas: no region or stage needed", () => {
-    const readiness = evaluateSubmitReadiness(
-      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 2, factors: COMPLETE_DIRECT },
-      NOW,
-    )
+    const readiness = evaluateSubmitReadiness({
+      ibp_method_version: IBP_METHOD_V3_2,
+      ibp_cas: 2,
+      factors: COMPLETE_DIRECT,
+    })
     expect(readiness).toEqual({
       ready: true,
-      expired: false,
       missing_factors: [],
       missing_fields: [],
     })
   })
 
   it("unknown version: ibp_method_version missing, every factor missing", () => {
-    const readiness = evaluateSubmitReadiness(
-      { ibp_method_version: "v9", factors: COMPLETE_DIRECT },
-      NOW,
-    )
+    const readiness = evaluateSubmitReadiness({
+      ibp_method_version: "v9",
+      factors: COMPLETE_DIRECT,
+    })
     expect(readiness.missing_fields).toEqual(["ibp_method_version"])
     expect(readiness.missing_factors).toHaveLength(10)
   })
 
-  it("expiry detection is unchanged (unparsable dates are not expired)", () => {
-    const base = { region_version: "M", vegetation_stage: "supra_mediterraneen", factors: {} }
-    expect(
-      evaluateSubmitReadiness({ ...base, expires_at: "2026-01-01T00:00:00Z" }, NOW).expired,
-    ).toBe(true)
-    expect(evaluateSubmitReadiness({ ...base, expires_at: "garbage" }, NOW).expired).toBe(false)
-    expect(evaluateSubmitReadiness({ ...base, expires_at: null }, NOW).expired).toBe(false)
-    expect(evaluateSubmitReadiness({ ...base, expires_at: "2020-01-01T00:00:00Z" }).expired).toBe(
-      true,
-    )
+  // OA-41: there is no submission deadline, so a draft's age never makes it unready.
+  it("a past, unreadable or missing expires_at never makes a draft unready (OA-41)", () => {
+    const complete = {
+      region_version: "M",
+      vegetation_stage: "supra_mediterraneen",
+      factors: COMPLETE_DIRECT,
+    }
+    for (const expires_at of ["2020-01-01T00:00:00Z", "garbage", null, undefined]) {
+      // A draft from an older build still carries one; the type no longer has the field.
+      const readiness = evaluateSubmitReadiness({ ...complete, expires_at } as typeof complete)
+      expect(readiness.ready).toBe(true)
+      expect(readiness).not.toHaveProperty("expired")
+    }
   })
 })
 
@@ -166,7 +159,7 @@ describe("migrateDraftToV32 (CH-7)", () => {
       vegetation_stage: "collineen",
       factors: { B: { strata_count: 3, native_cover_percent: 70 } },
     })
-    expect(evaluateSubmitReadiness(migrated, NOW).missing_factors).toContain("A")
+    expect(evaluateSubmitReadiness(migrated).missing_factors).toContain("A")
   })
 
   it("a v3.2 draft is returned as an unchanged copy", () => {

@@ -99,7 +99,6 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
           ...context,
           factors: draft.factors,
           parcel_ids: draft.parcel_ids,
-          expires_at: draft.expires_at,
         })
         const entries = FACTOR_KEYS.map<[string, DisplayedFactorResult]>((factorCode) => {
           const score = retained[factorCode]

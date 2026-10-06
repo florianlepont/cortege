@@ -36,8 +36,7 @@ export type SurveyRowProps = {
 const t = fr.surveyList
 
 function resolveSurveyRowTone(uiStatus: ReturnType<typeof resolveSurveyUiStatus>): SurveyRowTone {
-  if (uiStatus === "sync_error" || uiStatus === "sync_blocked" || uiStatus === "expired")
-    return "danger"
+  if (uiStatus === "sync_error" || uiStatus === "sync_blocked") return "danger"
   if (uiStatus === "submitted") return "success"
   if (uiStatus === "sync_pending") return "warning"
   return "neutral"

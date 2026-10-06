@@ -50,7 +50,6 @@ describe("SurveysService upsert fast path", () => {
       created_at: "2026-01-01 00:00:00+00",
       updated_at: "2026-01-01 00:00:00+00",
       submitted_at: null,
-      expires_at: "2026-01-08 00:00:00+00",
       sync_version: 1,
       last_sync_error: null,
       deleted_at: null,
@@ -448,32 +447,34 @@ describe("SurveysRepository fast-path statements", () => {
     scores: { ibp_total: 0 },
     syncVersion: 1,
     now: "2026-01-01T00:00:00.000Z",
-    expiresAt: "2026-01-08T00:00:00.000Z",
     eventPayload: { sync_version: 1 },
   }
 
-  it("binds sorted, de-duplicated parcels and the create or CAS token as $23", () => {
+  it("binds sorted, de-duplicated parcels, and the CAS token as $26 of an update only", () => {
     const create = fastWriteValues(input, null)
-    expect(create).toHaveLength(26)
+    expect(create).toHaveLength(25)
     expect(create[15]).toEqual(["01001A0001", "01001B0002"])
     expect(create[16]).toEqual(["01001", "01001"])
     expect(create[17]).toEqual(["AA", "BA"])
     expect(create[18]).toEqual(["0001", "0002"])
-    expect(create[22]).toBe("2026-01-08T00:00:00.000Z")
-    expect(fastWriteValues(input, "777")[22]).toBe("777")
+    const update = fastWriteValues(input, "777")
+    expect(update).toHaveLength(26)
+    expect(update[25]).toBe("777")
+    // The method columns sit at the same place in both: an update only adds the token.
+    expect(update.slice(22, 25)).toEqual(create.slice(22, 25))
   })
 
-  it("binds the method columns as $24..$26 and writes them in both statements", () => {
-    expect(fastWriteValues(input, null).slice(23)).toEqual([
+  it("binds the method columns as $23..$25 and writes them in both statements", () => {
+    expect(fastWriteValues(input, null).slice(22)).toEqual([
       "cnpf_ibp_fr_v3_2_2026-02-02",
       3,
       false,
     ])
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain("ibp_method_version, ibp_cas, ibp_cas3_scale")
-    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("$24::text, $25::smallint, $26::boolean")
-    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_method_version = $24::text")
-    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas = $25::smallint")
-    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas3_scale = $26::boolean")
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("$23::text, $24::smallint, $25::boolean")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_method_version = $23::text")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas = $24::smallint")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas3_scale = $25::boolean")
   })
 
   it("gates parcel registration on the survey write and uses the shared event insert", () => {
@@ -482,7 +483,7 @@ describe("SurveysRepository fast-path statements", () => {
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain(
       "INSERT INTO survey_events (id, survey_id, actor_id, event_type, payload)",
     )
-    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("xmin = $23::xid")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("xmin = $26::xid")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("sync_version < $14::int")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("status <> 'submitted'")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("EXISTS (SELECT 1 FROM u)")

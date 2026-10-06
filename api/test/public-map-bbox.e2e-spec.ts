@@ -144,10 +144,10 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
     for (const [surveyId, visibility, parcelId] of surveys) {
       await db.query(
         `INSERT INTO surveys (id, user_id, site_name, status, visibility, region_version, scores,
-                              created_at, updated_at, submitted_at, expires_at, sync_version,
+                              created_at, updated_at, submitted_at, sync_version,
                               observation_year, version_number)
          VALUES ($1, $2, $3, 'submitted', $4, 'ACA', '{"ibp_total": 21}'::jsonb,
-                 now(), now(), now(), now() + interval '7 days', 1, 2025, 1)`,
+                 now(), now(), now(), 1, 2025, 1)`,
         [surveyId, userId, `Bbox site ${surveyId}`, visibility],
       )
       await db.query(`INSERT INTO survey_parcels (survey_id, parcel_id) VALUES ($1, $2)`, [

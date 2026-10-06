@@ -47,7 +47,7 @@ Required fields:
 - `site_name` (string)
 - `parcel_id` (string, nullable compatibility field = primary parcel)
 - `parcel_ids` (string[], nullable in early draft, required for submit)
-- `status` (enum: `draft` | `submitted` | `synced` | `error` | `expired`)
+- `status` (enum: `draft` | `submitted` | `synced` | `error`; `expired` was removed with the deadline, OA-41, migration 019)
 - `visibility` (enum: `private` | `public`)
 - `observation_year` (integer)
 - `version_number` (integer, starts at 1 per parcel history context)
@@ -58,7 +58,6 @@ Required fields:
 - `created_at` (timestamp)
 - `updated_at` (timestamp)
 - `submitted_at` (timestamp, nullable)
-- `expires_at` (timestamp)
 - `sync_version` (integer, incremented on each local update)
 
 Optional fields:
@@ -268,14 +267,14 @@ Optional fields:
 - `confidence_note` (string, nullable)
 
 ## Survey State Transitions (V1)
-- `draft -> submitted` (required fields complete and not expired)
+- `draft -> submitted` (required fields complete)
 - `submitted -> synced` (server accepted)
 - `submitted -> error` (sync failed)
 - `error -> submitted` (retry attempt)
-- `draft -> expired` (now > `expires_at`)
+- ~~`draft -> expired` (now > `expires_at`)~~ (removed, OA-41 2026-10-06: there is no submission deadline). A survey is never refused for its age. The `expired` status and the `expires_at` column were removed by migration 019.
 
 ## Consistency Rules
-- `expires_at = created_at + 7 days`
+- ~~`expires_at = created_at + 7 days`~~ (removed, OA-41 2026-10-06: there is no submission deadline, the column is dropped by migration 019)
 - `visibility` default is `private`
 - at least one parcel is required for `submitted` surveys (`parcel_ids.length >= 1`)
 - `observation_year` and `version_number` are required for `submitted` surveys
