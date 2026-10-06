@@ -44,10 +44,18 @@ jest.mock("react-native", () => {
 // The header is native: its height is not available in unit tests.
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
 
-jest.mock("../../ui/AppButton", () => {
+jest.mock("../../ui/GlassSurface", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
-    AppButton: (props: { label: string }) => ReactRef.createElement("AppButton", props),
+    GlassSurface: ({ children }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("GlassSurface", null, children),
+  }
+})
+
+jest.mock("@expo/vector-icons", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    Ionicons: (props: { name: string }) => ReactRef.createElement("Ionicons", props),
   }
 })
 
@@ -138,14 +146,9 @@ describe("FactorPager (FLOW-04, OA-30)", () => {
     expect(byTestID("pager-total").props.accessibilityLabel).toBe(fr.factorPager.totalA11y(0))
   })
 
-  test("previous is disabled on the first factor", () => {
-    const { byTestID } = render("A")
-    expect(byTestID("pager-previous").props.disabled).toBe(true)
-  })
-
   test("next advances to the following factor and reports it", () => {
     const { byTestID, onActiveFactorChange, texts } = render("A")
-    expect(byTestID("pager-next").props.label).toBe(fr.factorPager.next)
+    expect(byTestID("pager-next").props.accessibilityLabel).toBe(fr.factorPager.next)
     act(() => {
       byTestID("pager-next").props.onPress()
     })
@@ -154,17 +157,17 @@ describe("FactorPager (FLOW-04, OA-30)", () => {
     expect(texts()).toContain(FACTOR_TITLES.B)
   })
 
-  test("previous goes back one factor", () => {
+  test("going back is a tap on an earlier letter", () => {
     const { byTestID } = render("C")
     act(() => {
-      byTestID("pager-previous").props.onPress()
+      byTestID("pager-letter-B").props.onPress()
     })
     expect(byTestID("pager-letter-B").props.accessibilityState).toEqual({ selected: true })
   })
 
   test("on the last factor the button finishes", () => {
     const { byTestID, onFinish } = render("J")
-    expect(byTestID("pager-next").props.label).toBe(fr.factorPager.finish)
+    expect(byTestID("pager-next").props.accessibilityLabel).toBe(fr.factorPager.finish)
     act(() => {
       byTestID("pager-next").props.onPress()
     })
