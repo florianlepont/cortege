@@ -29,10 +29,9 @@ import { scoreFactorV32 } from "./rules/v3-2"
 
 export type { IbpSurveyContext, IbpValidationIssue } from "./rules/common"
 
-/** What the rules read from a survey: its context, raw factors and expiry. */
+/** What the rules read from a survey: its context and raw factors. */
 export type IbpEvaluationInput = IbpSurveyContext & {
   factors?: unknown
-  expires_at?: string | null
 }
 
 export type IbpEvaluationMode = "draft" | "submit"
@@ -141,7 +140,7 @@ function addConsistencyWarnings(
  * unknown one is blocking `ibp_method_version_unsupported`. Draft mode reports only unreadable or
  * out-of-set factors as blocking (never a recomputed-score mismatch, D-05 replay safety); submit
  * mode also requires the context and every factor scored. A survey has no submission deadline
- * (OA-41): `expires_at` is no longer read.
+ * (OA-41).
  */
 export function evaluateIbp(input: IbpEvaluationInput, mode: IbpEvaluationMode): IbpEvaluation {
   const issues: IbpValidationIssue[] = []

@@ -399,10 +399,10 @@ describe("Surveys idempotency (e2e)", () => {
     await db.query(
       `INSERT INTO surveys (
          id, user_id, site_name, status, visibility, region_version, vegetation_stage,
-         factors, factor_results, scores, location, created_at, updated_at, submitted_at, expires_at, sync_version
+         factors, factor_results, scores, location, created_at, updated_at, submitted_at, sync_version
        ) VALUES (
          $1, $2, $3, 'submitted', 'public', 'ACA', 'collineen',
-         '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, $4::jsonb, $5::timestamptz, $5::timestamptz, $5::timestamptz, ($5::timestamptz + INTERVAL '365 days'), 1
+         '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, $4::jsonb, $5::timestamptz, $5::timestamptz, $5::timestamptz, 1
        )`,
       [surveyId, userId, "No Event Forest", payloadLocation, nowIso],
     )

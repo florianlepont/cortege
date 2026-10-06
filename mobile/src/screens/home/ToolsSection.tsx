@@ -28,7 +28,7 @@ const PAGE_H = 20
 
 export function openDrafts(surveys: LocalSurvey[]): LocalSurvey[] {
   return surveys
-    .filter((survey) => survey.status !== "submitted" && survey.status !== "expired")
+    .filter((survey) => survey.status !== "submitted")
     .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))
     .slice(0, MAX_SURVEYS_OFFERED)
 }

@@ -1,7 +1,6 @@
 import { computeRetainedScores, computeTotals, evaluateIbp } from "./evaluate"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "./method-version"
 
-const FUTURE = "2026-12-31T00:00:00.000Z"
 const PAST = "2026-01-01T00:00:00.000Z"
 const codes = (result: { issues: Array<{ code: string }> }) => result.issues.map((i) => i.code)
 
@@ -23,7 +22,7 @@ describe("evaluateIbp: dispatch (CH-6)", () => {
     "an unknown version is blocking ibp_method_version_unsupported (%s)",
     (mode) => {
       const result = evaluateIbp(
-        { ibp_method_version: "cnpf_ibp_fr_v9", factors: COMPLETE_DIRECT, expires_at: FUTURE },
+        { ibp_method_version: "cnpf_ibp_fr_v9", factors: COMPLETE_DIRECT },
         mode,
       )
       expect(result.ok).toBe(false)
@@ -161,9 +160,11 @@ describe("evaluateIbp: v3.0 (fixed, D-05)", () => {
       vegetation_stage: "collineen",
       factors: COMPLETE_DIRECT,
     }
-    expect(evaluateIbp({ ...complete, expires_at: PAST }, "submit").ok).toBe(true)
-    expect(evaluateIbp({ ...complete, expires_at: null }, "submit").ok).toBe(true)
-    expect(evaluateIbp({ ...complete }, "submit").ok).toBe(true)
+    // A survey from an older build still carries one; the type no longer has the field.
+    const withDeadline = (expires_at: string | null) => ({ ...complete, expires_at })
+    expect(evaluateIbp(withDeadline(PAST), "submit").ok).toBe(true)
+    expect(evaluateIbp(withDeadline(null), "submit").ok).toBe(true)
+    expect(evaluateIbp(complete, "submit").ok).toBe(true)
   })
 
   it("submit: a complete v3.0 survey is ok with the totals", () => {
@@ -172,7 +173,6 @@ describe("evaluateIbp: v3.0 (fixed, D-05)", () => {
         ibp_method_version: IBP_METHOD_V3_0,
         region_version: "M",
         vegetation_stage: "meso_mediterraneen",
-        expires_at: FUTURE,
         factors: COMPLETE_DIRECT,
       },
       "submit",
@@ -226,7 +226,7 @@ describe("evaluateIbp: v3.2", () => {
 
   it("submit without ibp_cas: ibp_cas_required + factor_required for A and G", () => {
     const result = evaluateIbp(
-      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 7, expires_at: FUTURE, factors: complete32 },
+      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 7, factors: complete32 },
       "submit",
     )
     expect(result.ok).toBe(false)
@@ -236,7 +236,7 @@ describe("evaluateIbp: v3.2", () => {
 
   it("region and stage are not required; a complete v3.2 survey is ok", () => {
     const result = evaluateIbp(
-      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, expires_at: FUTURE, factors: complete32 },
+      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, factors: complete32 },
       "submit",
     )
     expect(result.ok).toBe(true)
@@ -259,7 +259,6 @@ describe("evaluateIbp: v3.2", () => {
     const input = {
       ibp_method_version: IBP_METHOD_V3_2,
       ibp_cas: 1,
-      expires_at: FUTURE,
       factors: { ...complete32, A: { native_genus_count: 5 } },
     }
     const draft = evaluateIbp(input, "draft")

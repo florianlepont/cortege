@@ -126,7 +126,7 @@ describe("Surveys submit (e2e)", () => {
   it("submits a survey created more than 7 days ago", async () => {
     const { accessToken, surveyId } = await createDraftReadyToSubmit("e2e-submit-old")
     const longAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    await db.query("UPDATE surveys SET expires_at = $2 WHERE id = $1", [surveyId, longAgo])
+    await db.query("UPDATE surveys SET created_at = $2 WHERE id = $1", [surveyId, longAgo])
 
     const submit = await request(app.getHttpServer())
       .post(`/v1/surveys/${surveyId}/submit`)
@@ -134,26 +134,6 @@ describe("Surveys submit (e2e)", () => {
       .expect(201)
 
     expect(submit.body.status).toBe("submitted")
-  })
-
-  it("submits a survey that the old deadline rule had marked expired", async () => {
-    const { accessToken, surveyId } = await createDraftReadyToSubmit("e2e-submit-was-expired")
-    await db.query("UPDATE surveys SET status = 'expired', expires_at = $2 WHERE id = $1", [
-      surveyId,
-      new Date(Date.now() - 60_000).toISOString(),
-    ])
-
-    const submit = await request(app.getHttpServer())
-      .post(`/v1/surveys/${surveyId}/submit`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(201)
-
-    expect(submit.body.status).toBe("submitted")
-    const detail = await request(app.getHttpServer())
-      .get(`/v1/surveys/${surveyId}`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(200)
-    expect(detail.body.status).toBe("submitted")
   })
 
   it("submits valid IBP survey and returns computed scores", async () => {

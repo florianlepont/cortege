@@ -243,8 +243,7 @@ Request:
     "ibp_peuplement_gestion": 20,
     "ibp_contexte": 8,
     "ibp_total": 28
-  },
-  "expires_at": "2026-03-15T10:00:00Z"
+  }
 }
 ```
 
@@ -295,8 +294,9 @@ method version, chosen when the survey is created. Three optional fields on `POS
 **`status` and `expires_at` (V1.2 hardening):** both fields are accepted for backward
 compatibility with installed apps but are always ignored by the server. A survey is always
 created with `status: "draft"`; status changes only through `POST /surveys/{id}/submit`
-(`submitted`/`expired`). `expires_at` is set by the server at creation time (`created_at` + 7
-days) and is never moved by an upsert.
+(`submitted`). There is no submission deadline (OA-41, migration 019): `expires_at` no longer
+exists on a survey, is not returned, and an `expires_at` sent by an older build is ignored; the
+`expired` status is gone and no longer accepted.
 
 **Submitted surveys are read-only by value (V1.2 hardening):** an upsert that changes the
 *value* of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
@@ -430,7 +430,6 @@ Response `200`:
   "created_at": "2026-03-08T11:00:00Z",
   "updated_at": "2026-03-08T12:00:00Z",
   "submitted_at": null,
-  "expires_at": "2026-03-15T10:00:00Z",
   "sync_version": 3
 }
 ```

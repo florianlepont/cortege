@@ -155,10 +155,9 @@ describe("ibp-scoring", () => {
       },
       parcel_ids: ["75056000AB0001"],
     }
-    const readiness = evaluateSubmitReadinessFromDraft({
-      ...complete,
-      expires_at: "2020-01-01T00:00:00.000Z",
-    })
+    // A draft from an older build still carries an expires_at.
+    const withOldDeadline = { ...complete, expires_at: "2020-01-01T00:00:00.000Z" }
+    const readiness = evaluateSubmitReadinessFromDraft(withOldDeadline)
 
     expect(readiness.ready).toBe(true)
     expect(readiness).not.toHaveProperty("expired")

@@ -34,7 +34,6 @@ function makeRow(overrides: Partial<SurveyRow> = {}): SurveyRow {
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
     submitted_at: "2026-01-01T00:00:00.000Z",
-    expires_at: "2026-12-31T00:00:00.000Z",
     sync_version: 1,
     last_sync_error: null,
     deleted_at: null,

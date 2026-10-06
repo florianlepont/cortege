@@ -15,12 +15,11 @@ describe("evaluateSubmitReadiness", () => {
     })
   })
 
-  it("v3.0 complete and not expired is ready", () => {
+  it("v3.0 complete is ready", () => {
     const readiness = evaluateSubmitReadiness({
       ibp_method_version: IBP_METHOD_V3_0,
       region_version: "ACA",
       vegetation_stage: "collineen",
-      expires_at: "2026-12-31T00:00:00.000Z",
       factors: COMPLETE_DIRECT,
     })
     expect(readiness).toEqual({
@@ -74,7 +73,8 @@ describe("evaluateSubmitReadiness", () => {
       factors: COMPLETE_DIRECT,
     }
     for (const expires_at of ["2020-01-01T00:00:00Z", "garbage", null, undefined]) {
-      const readiness = evaluateSubmitReadiness({ ...complete, expires_at })
+      // A draft from an older build still carries one; the type no longer has the field.
+      const readiness = evaluateSubmitReadiness({ ...complete, expires_at } as typeof complete)
       expect(readiness.ready).toBe(true)
       expect(readiness).not.toHaveProperty("expired")
     }

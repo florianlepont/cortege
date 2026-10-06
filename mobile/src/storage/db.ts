@@ -23,7 +23,7 @@ export const SYNC_BATCH_SIZE = 100
 // PRAGMA user_version target. Bump this and push a new entry onto MIGRATIONS
 // (below) whenever the schema changes; initLocalDb() migrates any existing
 // install from its current version up to this one, one migration at a time.
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 // The factor keys come from the shared package (01.8 criterion 1); a mutable copy keeps the
 // array type every importer already uses.
@@ -196,9 +196,23 @@ async function migration3(tx: TxHandle): Promise<void> {
   `)
 }
 
+/**
+ * Migration 4 (version 3 -> 4), OA-41: there is no submission deadline any more and the `expired`
+ * status is gone. A local survey the old rule had marked `expired` goes back to `draft`, so it can
+ * be edited and submitted like any other.
+ */
+async function migration4(tx: TxHandle): Promise<void> {
+  await tx.execAsync(`UPDATE local_surveys SET status = 'draft' WHERE status = 'expired';`)
+}
+
 // Migration N lives at index N-1; MIGRATIONS[currentVersion] is the next one
 // to run on the way up to SCHEMA_VERSION.
-const MIGRATIONS: Array<(tx: TxHandle) => Promise<void>> = [migration1, migration2, migration3]
+const MIGRATIONS: Array<(tx: TxHandle) => Promise<void>> = [
+  migration1,
+  migration2,
+  migration3,
+  migration4,
+]
 
 export async function initLocalDb(): Promise<void> {
   const db = await getDb()

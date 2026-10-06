@@ -199,20 +199,6 @@ describe("filterAndSortSurveys", () => {
     expect(result[0].id).toBe("s-b")
   })
 
-  test("filters by status expired from survey status", () => {
-    const attachmentCounts = buildAttachmentCountBySurvey(attachments)
-    const withExpired = surveys.map((survey) =>
-      survey.id === "s-a" ? { ...survey, status: "expired" } : survey,
-    )
-    const result = filterAndSortSurveys(
-      withExpired,
-      { ...baseFilters, statusFilter: "expired" },
-      attachmentCounts,
-    )
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe("s-a")
-  })
-
   test("filters by updated date range", () => {
     const attachmentCounts = buildAttachmentCountBySurvey(attachments)
     const result = filterAndSortSurveys(
@@ -239,9 +225,6 @@ describe("filterAndSortSurveys", () => {
     expect(resolveSurveyUiStatus(makeSurvey({ status: "submitted", sync_state: "synced" }))).toBe(
       "submitted",
     )
-    expect(resolveSurveyUiStatus(makeSurvey({ status: "expired", sync_state: "failed" }))).toBe(
-      "expired",
-    )
     expect(resolveSurveyUiStatus(makeSurvey({ status: "draft", sync_state: "pending" }))).toBe(
       "sync_pending",
     )
@@ -262,15 +245,10 @@ describe("filterAndSortSurveys", () => {
         makeSurvey({ status: "submitted", sync_state: "failed", sync_blocked: 1 }),
       ),
     ).toBe("sync_blocked")
-    // expired still wins over a failed sync: it is a terminal, unrelated state.
-    expect(resolveSurveyUiStatus(makeSurvey({ status: "expired", sync_state: "failed" }))).toBe(
-      "expired",
-    )
   })
 
   test("formats UI state labels", () => {
     expect(formatSurveyUiStatusLabel("submitted")).toBe("Soumis")
-    expect(formatSurveyUiStatusLabel("expired")).toBe("Expiré")
     expect(formatSurveyUiStatusLabel("sync_error")).toBe("Erreur de sync")
     expect(formatSurveyUiStatusLabel("sync_pending")).toBe("Sync en attente")
     expect(formatSurveyUiStatusLabel("sync_blocked")).toBe("Sync bloqué")
@@ -452,7 +430,6 @@ describe("labels read from the catalogue (D-06)", () => {
   test("survey status labels come from the catalogue", () => {
     const status = fr.common.surveyStatus
     expect(formatSurveyUiStatusLabel("submitted")).toBe(status.submitted)
-    expect(formatSurveyUiStatusLabel("expired")).toBe(status.expired)
     expect(formatSurveyUiStatusLabel("sync_pending")).toBe(status.syncPending)
     expect(formatSurveyUiStatusLabel("sync_error")).toBe(status.syncError)
     expect(formatSurveyUiStatusLabel("sync_blocked")).toBe(status.syncBlocked)

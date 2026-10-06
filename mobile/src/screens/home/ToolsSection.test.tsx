@@ -120,7 +120,6 @@ describe("openDrafts", () => {
     const surveys = [
       makeSurvey({ id: "old", updated_at: "2026-10-01T00:00:00.000Z" }),
       makeSurvey({ id: "sub", status: "submitted" }),
-      makeSurvey({ id: "exp", status: "expired" }),
       ...["a", "b", "c", "d"].map((id, i) =>
         makeSurvey({ id: id, updated_at: `2026-10-0${i + 2}T00:00:00.000Z` }),
       ),

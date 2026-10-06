@@ -70,7 +70,6 @@ export type SyncChangeSurvey = IbpMethodFields & {
   created_at?: string | null
   updated_at?: string
   submitted_at?: string | null
-  expires_at?: string | null
   sync_version: number
   deleted_at?: string | null
 }
