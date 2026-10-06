@@ -180,37 +180,6 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     map: {
       ...StyleSheet.absoluteFill,
     },
-    mapChip: {
-      position: "absolute",
-      left: 12,
-      top: 12,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 14,
-      overflow: "hidden",
-    },
-    mapChipText: {
-      ...brandTypography.meta,
-      fontFamily: "Jost-SemiBold",
-      color: theme.semanticColors.textStrong,
-    },
-    mapAction: {
-      position: "absolute",
-      left: 12,
-      bottom: 12,
-    },
-    mapActionInner: {
-      minHeight: HIT_TARGET,
-      paddingHorizontal: 16,
-      borderRadius: HIT_TARGET / 2,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    mapActionText: {
-      ...brandTypography.button,
-      color: theme.semanticColors.textStrong,
-    },
     mapTall: {
       height: 300,
     },

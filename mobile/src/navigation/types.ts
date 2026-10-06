@@ -35,8 +35,11 @@ export type SurveysStackParamList = AccountStackParamList & {
   surveyParcels: { surveyId: string; mode: "wizard" | "edit" }
 }
 
+/** OA-59: where a survey page sends Explorer (the `nonce` makes the same survey re-focus). */
+export type PublicMapFocus = { surveyId: string; lat: number; lng: number; nonce: number }
+
 export type PublicMapStackParamList = AccountStackParamList & {
-  publicMapHome: undefined
+  publicMapHome: { focus?: PublicMapFocus } | undefined
   communitySurvey: { surveyId: string }
 }
 

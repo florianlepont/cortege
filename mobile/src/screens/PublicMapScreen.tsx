@@ -1,13 +1,14 @@
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Alert, View } from "react-native"
 import type { CameraRef } from "@maplibre/maplibre-react-native"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import type { MapRegion } from "../app/map-viewport"
+import { buildFocusedMapRegion, type MapRegion } from "../app/map-viewport"
 import { isOfflineMapsEnabled } from "../app/feature-flags"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { useBrandTheme } from "../app/theme"
 import type { PublicMapItem, PublicParcelStatusItem } from "../app/types"
+import type { PublicMapFocus } from "../navigation/types"
 import type { LoadPublicMapOptions } from "../hooks/usePublicMapExplorer"
 import { fr } from "../i18n"
 import type { BasemapKey } from "../map/basemaps"
@@ -28,6 +29,7 @@ import { useMapViewport } from "./public-map/useMapViewport"
 const t = fr.publicMap
 const offlineT = fr.offlineMap.areas
 const LOCATE_SPAN = 0.012
+const NO_DRAFTS: PublicMapItem[] = []
 
 type PublicMapScreenProps = {
   apiUrl: string
@@ -35,6 +37,10 @@ type PublicMapScreenProps = {
   items: PublicMapItem[]
   parcelStatuses: PublicParcelStatusItem[]
   ownSurveyIds: string[]
+  /** OA-59: the author's drafts, drawn beside the public surveys and visible to them alone. */
+  draftItems?: PublicMapItem[]
+  /** OA-59: a survey page asked to see its survey here; centres the map on it and selects it. */
+  focus?: PublicMapFocus
   loading: boolean
   onLoad: (options?: LoadPublicMapOptions) => Promise<void>
   onLoadParcels: (input: { bbox: string; zoom: number }) => Promise<void>
@@ -60,6 +66,8 @@ export function PublicMapScreen({
   items,
   parcelStatuses,
   ownSurveyIds,
+  draftItems = NO_DRAFTS,
+  focus,
   loading,
   onLoad,
   onLoadParcels,
@@ -106,7 +114,15 @@ export function PublicMapScreen({
   })
 
   const ownSurveyIdSet = useMemo(() => new Set(ownSurveyIds), [ownSurveyIds])
-  const itemsById = useMemo(() => new Map(items.map((item) => [item.survey_id, item])), [items])
+  const draftIdSet = useMemo(() => new Set(draftItems.map((item) => item.survey_id)), [draftItems])
+  const mapItems = useMemo(
+    () => (draftItems.length > 0 ? [...items, ...draftItems] : items),
+    [items, draftItems],
+  )
+  const itemsById = useMemo(
+    () => new Map(mapItems.map((item) => [item.survey_id, item])),
+    [mapItems],
+  )
   const parcelStatusById = useMemo(
     () => new Map(parcelStatuses.map((status) => [status.parcel_id, status])),
     [parcelStatuses],
@@ -133,17 +149,49 @@ export function PublicMapScreen({
     setClusterItems(leaves)
   }, [])
   const { moveTo } = viewport
+
+  // OA-59: "Voir sur la carte" lands here with a survey to show. The camera goes there at once; the
+  // survey is selected as soon as it is among the markers (a public one arrives with the viewport
+  // load that the move triggers).
+  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null)
+  const focusNonce = focus?.nonce
+  useEffect(() => {
+    if (!focus) return
+    setPendingFocusId(focus.surveyId)
+    // Centred a little north of the survey, so its marker stays above the sheet that opens.
+    const target = buildFocusedMapRegion(focus)
+    moveTo({ ...target, latitude: target.latitude - target.latitudeDelta * 0.22 }, 0)
+    // The nonce identifies one request; the focus object itself is rebuilt by the navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusNonce, moveTo])
+  useEffect(() => {
+    if (!pendingFocusId) return
+    const item = itemsById.get(pendingFocusId)
+    if (!item) return
+    setSelectedParcelId(null)
+    setClusterItems(null)
+    setSelectedItem(item)
+    setPendingFocusId(null)
+  }, [pendingFocusId, itemsById])
+
   const handleZoomTo = useCallback((target: MapRegion) => moveTo(target, 450), [moveTo])
   // MAP-01: the sheet reports a dismissal (drag-down or the content's own close button) without
   // saying which panel was open — closing all three is safe since they're already mutually
   // exclusive (selecting one clears the others, see handleSelectSurvey/handleSelectParcel/
   // handleOpenClusterList above).
   const closeSheet = useCallback(() => {
+    setShowOfflineAreas(false)
+    setPendingFocusId(null)
     setSelectedItem(null)
     setSelectedParcelId(null)
     setClusterItems(null)
   }, [])
-  const openOfflineAreas = useCallback(() => setShowOfflineAreas(true), [])
+  const openOfflineAreas = useCallback(() => {
+    setSelectedItem(null)
+    setSelectedParcelId(null)
+    setClusterItems(null)
+    setShowOfflineAreas(true)
+  }, [])
   const closeOfflineAreas = useCallback(() => setShowOfflineAreas(false), [])
   const { startDownload } = offlineAreas
   const handleDownloadArea = useCallback(
@@ -187,7 +235,18 @@ export function PublicMapScreen({
 
   const dockBottom = Math.max(tabBarHeight, insets.bottom)
 
-  const sheetContent = selectedParcelId ? (
+  // One sheet for whichever panel is open, the offline areas included (OA-66): the same drag
+  // handle and height as every other fiche of the Explorer.
+  const sheetContent = showOfflineAreas ? (
+    <OfflineAreasSheet
+      areas={offlineAreas.areas}
+      downloadingAreaId={offlineAreas.downloadingAreaId}
+      estimate={offlineAreas.estimateForRegion(viewport.region)}
+      onDownload={handleDownloadArea}
+      onDelete={(id) => void offlineAreas.deleteArea(id)}
+      onClose={closeOfflineAreas}
+    />
+  ) : selectedParcelId ? (
     <ParcelHistoryCard
       key={selectedParcelId}
       parcelId={selectedParcelId}
@@ -205,6 +264,7 @@ export function PublicMapScreen({
       key={selectedItem.survey_id}
       item={selectedItem}
       isOwnSurvey={ownSurveyIdSet.has(selectedItem.survey_id)}
+      isDraft={draftIdSet.has(selectedItem.survey_id)}
       onOpenSurvey={onOpenSurvey}
       onClose={closeSheet}
     />
@@ -214,7 +274,8 @@ export function PublicMapScreen({
     <View ref={rootRef} onLayout={handleRootLayout} style={screenStyles.container}>
       <MapCanvas
         cameraRef={cameraRef}
-        items={items}
+        items={mapItems}
+        draftIds={draftIdSet}
         region={viewport.region}
         selectedId={selectedItem?.survey_id ?? null}
         parcelStatuses={parcelStatuses}
@@ -243,22 +304,10 @@ export function PublicMapScreen({
 
       <ScoreLegend
         bottom={Math.max(12, dockBottom + 10)}
-        count={items.length}
+        count={mapItems.length}
         loading={loading}
         isOffline={isOffline}
       />
-
-      {showOfflineAreas ? (
-        <OfflineAreasSheet
-          bottom={Math.max(12, dockBottom + 10)}
-          areas={offlineAreas.areas}
-          downloadingAreaId={offlineAreas.downloadingAreaId}
-          estimate={offlineAreas.estimateForRegion(viewport.region)}
-          onDownload={handleDownloadArea}
-          onDelete={(id) => void offlineAreas.deleteArea(id)}
-          onClose={closeOfflineAreas}
-        />
-      ) : null}
 
       {/* MAP-01: one tiered sheet for whichever map-content panel is active, replacing the three
         absolutely-positioned AppCards this screen used to stack independently. */}

@@ -6,8 +6,8 @@ import type { SurveyDetailResponse } from "../../app/types"
 import { useParcelStatuses } from "../../hooks/useParcelStatuses"
 import { fr } from "../../i18n"
 import { ParcelMap } from "../../map/maplibre/ParcelMap"
-import { AppText as Text } from "../../ui/AppText"
-import { GlassSurface } from "../../ui/GlassSurface"
+import { MapInfoPill, MapOverlayCorners } from "../public-map/MapChips"
+import { SeeOnMapAction } from "./SeeOnMapAction"
 import { resolveDisplayCoordinates } from "../survey-screen-helpers"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
 
@@ -30,7 +30,9 @@ type ParcelMapCardProps = {
   style?: StyleProp<ViewStyle>
   /** Opens the survey's context and parcels; absent, the card is a plain picture. */
   onPress?: () => void
-  /** Overlays drawn on the map (a floating action). */
+  /** OA-59: the survey whose position the "Voir sur la carte" action opens in Explorer. */
+  surveyId?: string
+  /** Other actions drawn on the map, under "Voir sur la carte" (bottom right). */
   children?: ReactNode
 }
 
@@ -46,6 +48,7 @@ export function ParcelMapCard({
   parcelIds,
   style,
   onPress,
+  surveyId,
   children,
 }: ParcelMapCardProps) {
   const theme = useBrandTheme()
@@ -84,12 +87,21 @@ export function ParcelMapCard({
       interactive={false}
     />
   )
-  const chip = (
-    <GlassSurface style={styles.mapChip} pointerEvents="none">
-      <Text style={styles.mapChipText}>
-        {parcelIds.length > 0 ? t.parcelCount(parcelIds.length) : t.noParcel}
-      </Text>
-    </GlassSurface>
+  // The corners are the Explorer's: the fact on the left, the actions on the right.
+  const overlays = (
+    <MapOverlayCorners
+      info={
+        <MapInfoPill label={parcelIds.length > 0 ? t.parcelCount(parcelIds.length) : t.noParcel} />
+      }
+      actions={
+        <>
+          {surveyId && coordinates ? (
+            <SeeOnMapAction surveyId={surveyId} siteName={siteName} coordinates={coordinates} />
+          ) : null}
+          {children}
+        </>
+      }
+    />
   )
 
   if (onPress) {
@@ -101,8 +113,7 @@ export function ParcelMapCard({
         accessibilityLabel={a11y.editParcels(siteName)}
       >
         {map}
-        {chip}
-        {children}
+        {overlays}
       </Pressable>
     )
   }
@@ -114,8 +125,7 @@ export function ParcelMapCard({
       accessibilityLabel={a11y.mapPreview(siteName)}
     >
       {map}
-      {chip}
-      {children}
+      {overlays}
     </View>
   )
 }

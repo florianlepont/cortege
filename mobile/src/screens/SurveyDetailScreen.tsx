@@ -195,6 +195,7 @@ export function SurveyDetailScreen({
           siteName={activeSiteName}
           displayLocation={detail?.display_location}
           parcelIds={data.parcelIds}
+          surveyId={selectedSurvey.id}
           onPress={() => (canEditSurvey ? void onOpenParcels(selectedSurvey.id) : onOpenContext())}
         />
 

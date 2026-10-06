@@ -128,6 +128,7 @@ export function CommunitySurveyScreen({
         siteName={detail.site_name}
         displayLocation={detail.display_location ?? undefined}
         parcelIds={detail.parcel_ids}
+        surveyId={detail.survey_id}
         style={styles.mapTall}
       />
       {detail.parcel_ids.length > 0 ? <AppGroupedList sections={parcelSections} /> : null}

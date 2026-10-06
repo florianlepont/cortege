@@ -36,6 +36,12 @@ export const markerStyles = StyleSheet.create({
     borderColor: brandColors.white,
     ...brandShadow.card,
   },
+  // OA-59: an own draft, white with a dashed forest outline (the legend shows the same swatch).
+  scorePastilleDraft: {
+    backgroundColor: brandColors.white,
+    borderStyle: "dashed",
+    borderColor: brandColors.forest,
+  },
   scorePastille_low: {
     backgroundColor: brandMapTokens.scoreMarker.low,
   },
@@ -110,12 +116,6 @@ export function createControlStyles(theme: BrandTheme) {
 
 export function createOfflineAreasStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    // The sheet floats over the map, above the tab bar (its `bottom` comes from the screen).
-    floating: {
-      position: "absolute",
-      left: 12,
-      right: 12,
-    },
     nameField: {
       gap: 5,
     },
@@ -124,7 +124,7 @@ export function createOfflineAreasStyles(theme: BrandTheme) {
       color: brandColors.terracotta,
     },
     list: {
-      maxHeight: 220,
+      marginTop: 4,
     },
     row: {
       borderTopWidth: 1,

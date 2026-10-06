@@ -11,10 +11,19 @@ export type SurveyMarkerProps = {
   coordinate: MapCoordinate
   ibpTotal: number
   selected: boolean
+  /** An unfinished survey of the author: drawn dashed and white instead of a score colour. */
+  draft?: boolean
   onSelect: (id: string) => void
 }
 
-function SurveyMarkerBase({ id, coordinate, ibpTotal, selected, onSelect }: SurveyMarkerProps) {
+function SurveyMarkerBase({
+  id,
+  coordinate,
+  ibpTotal,
+  selected,
+  draft = false,
+  onSelect,
+}: SurveyMarkerProps) {
   const handlePress = useCallback(() => onSelect(id), [id, onSelect])
   const tone = bandTone(totalBand(ibpTotal))
 
@@ -29,10 +38,12 @@ function SurveyMarkerBase({ id, coordinate, ibpTotal, selected, onSelect }: Surv
       <View
         accessible
         accessibilityRole="button"
-        accessibilityLabel={fr.publicMap.a11y.surveyMarker(ibpTotal)}
+        accessibilityLabel={
+          draft ? fr.publicMap.a11y.draftMarker(ibpTotal) : fr.publicMap.a11y.surveyMarker(ibpTotal)
+        }
         style={[
           markerStyles.scorePastille,
-          markerStyles[`scorePastille_${tone}`],
+          draft ? markerStyles.scorePastilleDraft : markerStyles[`scorePastille_${tone}`],
           selected ? markerStyles.scorePastilleSelected : null,
         ]}
       />
@@ -46,6 +57,7 @@ function sameMarkerProps(prev: SurveyMarkerProps, next: SurveyMarkerProps): bool
     prev.id === next.id &&
     prev.ibpTotal === next.ibpTotal &&
     prev.selected === next.selected &&
+    prev.draft === next.draft &&
     prev.onSelect === next.onSelect &&
     prev.coordinate.latitude === next.coordinate.latitude &&
     prev.coordinate.longitude === next.coordinate.longitude

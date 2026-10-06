@@ -283,6 +283,38 @@ describe("PublicMapScreen", () => {
     )
   })
 
+  test("draws the author's draft dashed, with its own card and legend row (OA-59)", () => {
+    const props = makeProps({ draftItems: [item("d-1", 45.7, 4.8, 15)], ownSurveyIds: ["d-1"] })
+    mount(props)
+    const marker = markers().find(
+      (node) => node.props.accessibilityLabel === fr.publicMap.a11y.draftMarker(15),
+    ) as ReactTestInstance
+    act(() => marker.props.onPress())
+
+    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
+    expect(header.props.title).toBe(fr.publicMap.draft.title(15))
+    expect(texts()).toContain(fr.publicMap.draft.meta)
+    // The "your own survey" notice is for a published survey only.
+    expect(
+      tree.root.findAll((node) => node.props.message === fr.publicMap.selected.ownSurvey),
+    ).toHaveLength(0)
+  })
+
+  test("a focus request centres the map and selects the survey once it is among the markers (OA-59)", () => {
+    const focus = { surveyId: "s-7", lat: 45.7, lng: 4.8, nonce: 1 }
+    const props = makeProps({ focus })
+    mount(props)
+    expect(mockAnimateToRegion).toHaveBeenCalled()
+    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
+      0,
+    )
+
+    // The public survey arrives with the viewport load the move triggered.
+    update({ ...props, items: [item("s-7", 45.7, 4.8, 33)] })
+    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
+    expect(header.props.title).toBe(fr.publicMap.selected.title(33))
+  })
+
   test("the selected survey's card opens its read-only page (OA-59)", () => {
     const props = makeProps({ items: [item("s-42", 45.7, 4.8, 27)] })
     mount(props)

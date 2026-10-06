@@ -14,6 +14,12 @@ export const publicMapFr = {
     openSurvey: "Voir le relevé",
     ownSurvey: "C'est votre propre relevé.",
   },
+  // OA-59: an own draft shows on the Explorer map, to its author only.
+  draft: {
+    title: (ibp: number) => `Brouillon · IBP ${ibp}/50`,
+    meta: "Visible de vous seul",
+    open: "Ouvrir le relevé",
+  },
   clusterList: {
     title: (count: number) => `${count} ${plural(count, "relevé", "relevés")} à cet endroit`,
     subtitle: "Les positions sont arrondies à environ 1 km.",
@@ -36,6 +42,7 @@ export const publicMapFr = {
     low: "Score faible",
     mid: "Score moyen",
     high: "Score élevé",
+    draft: "Brouillon, visible de vous seul",
   },
   alerts: {
     locationDisabled: {
@@ -55,6 +62,7 @@ export const publicMapFr = {
     showLegend: "Afficher la légende des scores",
     hideLegend: "Masquer la légende des scores",
     surveyMarker: (ibp: number) => `Relevé, IBP ${ibp}/50`,
+    draftMarker: (ibp: number) => `Brouillon, IBP ${ibp}/50`,
     cluster: (count: number) => `Groupe de ${count} ${plural(count, "relevé", "relevés")}`,
     clusterListItem: ({ ibp, date, region }: { ibp: number; date: string; region: string }) =>
       `Relevé, IBP ${ibp}/50, ${date}, ${region}`,

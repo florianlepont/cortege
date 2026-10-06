@@ -15,4 +15,13 @@ export const parcelSelectionFr = {
   saving: "Enregistrement…",
   done: "Terminé",
   continue: "Continuer",
+  // The legend of the parcel colours, same place and look as the Explorer's (OA-59 batch).
+  legend: {
+    title: "Légende",
+    subtitle: "Parcelles cadastrales.",
+    selected: "Parcelle de ce relevé",
+    studied: "Déjà étudiée",
+    neutral: "Pas encore étudiée",
+    zoomIn: "Zoomez davantage",
+  },
 } as const

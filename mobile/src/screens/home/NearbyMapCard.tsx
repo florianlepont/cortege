@@ -7,6 +7,7 @@ import { hasMixedMethodVersions, type NearbyParcelsState } from "../../hooks/use
 import { fr } from "../../i18n"
 import { ParcelMap } from "../../map/maplibre/ParcelMap"
 import { GlassSurface } from "../../ui/GlassSurface"
+import { MAP_EDGE } from "../public-map/MapChips"
 
 const t = fr.home.nearby
 const sectorT = fr.home.sector
@@ -92,8 +93,8 @@ function createStyles(theme: BrandTheme) {
     },
     scoreBadge: {
       position: "absolute",
-      top: 10,
-      left: 10,
+      top: MAP_EDGE,
+      left: MAP_EDGE,
       borderRadius: 18,
       paddingHorizontal: 14,
       paddingVertical: 8,
@@ -115,9 +116,9 @@ function createStyles(theme: BrandTheme) {
     },
     summary: {
       position: "absolute",
-      left: 10,
-      right: 10,
-      bottom: 10,
+      left: MAP_EDGE,
+      right: MAP_EDGE,
+      bottom: MAP_EDGE,
       borderRadius: 20,
       paddingHorizontal: 14,
       paddingVertical: 10,

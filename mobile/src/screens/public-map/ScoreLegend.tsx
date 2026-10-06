@@ -6,34 +6,45 @@ import { brandColors, brandMapTokens, brandRadius, brandTypography } from "../..
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { GlassSurface } from "../../ui/GlassSurface"
+import { MAP_EDGE, MAP_PILL_HEIGHT } from "./MapChips"
 import { OfflineIndicatorBadge } from "./OfflineControls"
 
 const t = fr.publicMap
 
-const ROWS: Array<{ tone: keyof typeof brandMapTokens.scoreMarker; label: string }> = [
-  { tone: "high", label: t.legend.high },
-  { tone: "mid", label: t.legend.mid },
-  { tone: "low", label: t.legend.low },
+export type MapLegendRow = { color: string; label: string; dashed?: boolean }
+
+const SCORE_ROWS: MapLegendRow[] = [
+  { color: brandMapTokens.scoreMarker.high, label: t.legend.high },
+  { color: brandMapTokens.scoreMarker.mid, label: t.legend.mid },
+  { color: brandMapTokens.scoreMarker.low, label: t.legend.low },
+  { color: brandColors.white, label: t.legend.draft, dashed: true },
 ]
 
-export type ScoreLegendProps = {
+export type MapLegendProps = {
   bottom: number
-  /** Surveys in the loaded viewport (the "12 relevés ici" pill). */
-  count: number
+  /** The count pill's text ("12 relevés ici"). */
+  countLabel: string
+  title: string
+  subtitle: string
+  rows: MapLegendRow[]
   loading?: boolean
   isOffline?: boolean
 }
 
 /**
- * Bottom-left of the map: the survey count with the (i) button beside it, which opens the
- * legend of the score colours (MAP-03). Liquid Glass on iOS 26.
+ * Bottom-left of every interactive map: a count with the (i) button beside it, which opens the
+ * legend of the map's colours (MAP-03). Liquid Glass on iOS 26. The Explorer and the parcel
+ * picker both draw it, with their own rows.
  */
-export const ScoreLegend = memo(function ScoreLegend({
+export const MapLegend = memo(function MapLegend({
   bottom,
-  count,
+  countLabel,
+  title,
+  subtitle,
+  rows,
   loading = false,
   isOffline = false,
-}: ScoreLegendProps) {
+}: MapLegendProps) {
   const [expanded, setExpanded] = useState(false)
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -42,12 +53,16 @@ export const ScoreLegend = memo(function ScoreLegend({
     <View style={[styles.container, { bottom }]} pointerEvents="box-none">
       {expanded ? (
         <GlassSurface tone="auto" style={styles.panel}>
-          <Text style={styles.title}>{t.legend.title}</Text>
-          <Text style={styles.subtitle}>{t.legend.subtitle}</Text>
-          {ROWS.map((row) => (
-            <View key={row.tone} style={styles.row}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+          {rows.map((row) => (
+            <View key={row.label} style={styles.row}>
               <View
-                style={[styles.swatch, { backgroundColor: brandMapTokens.scoreMarker[row.tone] }]}
+                style={[
+                  styles.swatch,
+                  { backgroundColor: row.color },
+                  row.dashed ? styles.swatchDashed : null,
+                ]}
               />
               <Text style={styles.rowLabel}>{row.label}</Text>
             </View>
@@ -58,7 +73,7 @@ export const ScoreLegend = memo(function ScoreLegend({
       <View style={styles.line}>
         <GlassSurface tone="auto" style={styles.countPill}>
           {loading ? <ActivityIndicator size="small" color={brandColors.forest} /> : null}
-          <Text style={styles.countText}>{t.count(count)}</Text>
+          <Text style={styles.countText}>{countLabel}</Text>
         </GlassSurface>
         <GlassSurface tone="auto" interactive style={styles.toggle}>
           <Pressable
@@ -81,11 +96,32 @@ export const ScoreLegend = memo(function ScoreLegend({
   )
 })
 
+export type ScoreLegendProps = {
+  bottom: number
+  /** Surveys in the loaded viewport (the "12 relevés ici" pill). */
+  count: number
+  loading?: boolean
+  isOffline?: boolean
+}
+
+/** The Explorer's legend: the survey count and the score colours of its markers. */
+export const ScoreLegend = memo(function ScoreLegend({ count, ...rest }: ScoreLegendProps) {
+  return (
+    <MapLegend
+      {...rest}
+      countLabel={t.count(count)}
+      title={t.legend.title}
+      subtitle={t.legend.subtitle}
+      rows={SCORE_ROWS}
+    />
+  )
+})
+
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     container: {
       position: "absolute",
-      left: 14,
+      left: MAP_EDGE,
       alignItems: "flex-start",
       gap: 8,
     },
@@ -99,7 +135,7 @@ function createStyles(theme: BrandTheme) {
       borderWidth: 1,
       borderColor: theme.colors.divider,
       paddingHorizontal: 14,
-      height: 40,
+      height: MAP_PILL_HEIGHT,
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
@@ -145,6 +181,11 @@ function createStyles(theme: BrandTheme) {
       width: 14,
       height: 14,
       borderRadius: 7,
+    },
+    swatchDashed: {
+      borderWidth: 1.5,
+      borderStyle: "dashed",
+      borderColor: brandColors.forest,
     },
     attribution: {
       ...brandTypography.meta,

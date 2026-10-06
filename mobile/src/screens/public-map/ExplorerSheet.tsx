@@ -65,6 +65,9 @@ export function ExplorerSheet({ visible, onDismiss, children }: ExplorerSheetPro
       index={-1}
       snapPoints={SNAP_POINTS}
       enablePanDownToClose
+      keyboardBehavior="extend"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       onChange={handleChange}
       backgroundComponent={SheetBackground}
       handleIndicatorStyle={styles.handleIndicator}

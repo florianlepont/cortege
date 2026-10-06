@@ -1,0 +1,32 @@
+import { useNavigation } from "@react-navigation/native"
+import { fr } from "../../i18n"
+import { MapActionPill } from "../public-map/MapChips"
+
+const t = fr.surveyDetail.map
+const a11y = fr.surveyDetail.a11y
+
+/** "Voir sur la carte": the Explorer tab, centred on the survey and with it selected (OA-59). */
+export function SeeOnMapAction({
+  surveyId,
+  siteName,
+  coordinates,
+}: {
+  surveyId: string
+  siteName: string
+  coordinates: { lat: number; lng: number }
+}) {
+  const navigation = useNavigation()
+  return (
+    <MapActionPill
+      icon="map-outline"
+      label={t.seeOnMap}
+      accessibilityLabel={a11y.seeOnMap(siteName)}
+      onPress={() =>
+        navigation.navigate("publicMap", {
+          screen: "publicMapHome",
+          params: { focus: { surveyId, ...coordinates, nonce: Date.now() } },
+        })
+      }
+    />
+  )
+}

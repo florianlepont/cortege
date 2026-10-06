@@ -38,6 +38,8 @@ export function surveyPlaceLabel(item: PublicMapItem): string {
 export type SelectedSurveyCardProps = {
   item: PublicMapItem
   isOwnSurvey: boolean
+  /** OA-59: an unfinished survey of the author, shown to them alone. */
+  isDraft?: boolean
   onOpenSurvey: (surveyId: string) => void
   onClose: () => void
 }
@@ -51,6 +53,7 @@ export type SelectedSurveyCardProps = {
 export const SelectedSurveyCard = memo(function SelectedSurveyCard({
   item,
   isOwnSurvey,
+  isDraft = false,
   onOpenSurvey,
   onClose,
 }: SelectedSurveyCardProps) {
@@ -61,7 +64,7 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
   return (
     <View style={styles.card}>
       <AppSectionHeader
-        title={t.selected.title(item.ibp_total)}
+        title={isDraft ? t.draft.title(item.ibp_total) : t.selected.title(item.ibp_total)}
         trailing={
           <Pressable
             onPress={onClose}
@@ -75,17 +78,19 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
       />
       {methodLabel ? <Text style={styles.meta}>{methodLabel}</Text> : null}
       <Text style={styles.meta}>
-        {t.selected.meta({ region: surveyPlaceLabel(item), date: item.survey_date })}
+        {isDraft
+          ? t.draft.meta
+          : t.selected.meta({ region: surveyPlaceLabel(item), date: item.survey_date })}
       </Text>
 
       <AppButton
-        label={t.selected.openSurvey}
+        label={isDraft ? t.draft.open : t.selected.openSurvey}
         variant="secondary"
         size="sm"
         onPress={() => onOpenSurvey(item.survey_id)}
         testID="selected-survey-open"
       />
-      {isOwnSurvey ? (
+      {isOwnSurvey && !isDraft ? (
         <AppNotice tone="info" icon="information-circle-outline" message={t.selected.ownSurvey} />
       ) : null}
     </View>
