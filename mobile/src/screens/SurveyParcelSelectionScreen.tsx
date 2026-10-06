@@ -146,6 +146,7 @@ export function SurveyParcelSelectionScreen({
     [hasParcelSelection, hasGpsCoordinates, parsedLat, parsedLng, mapRegion],
   )
   const offlinePrompt = useOfflineMapPrompt({ apiUrl, accessToken, point: offlinePoint })
+  const offlineBannerVisible = offlinePrompt.state !== "hidden" && !offlineDismissed
   const parcelSelectionLabel = t.selectedCount({ count: selectedParcelIds.length })
   const parcelHelperText =
     mapZoom >= 15
@@ -228,7 +229,11 @@ export function SurveyParcelSelectionScreen({
       ) : null}
 
       <MapTopControls
-        onOpenOfflineAreas={offlineEnabled ? () => setShowOfflineAreas(true) : undefined}
+        // While the offline proposal (or its progress) is on screen, the capsule's own download
+        // button would say the same thing twice: it comes back once the proposal is closed.
+        onOpenOfflineAreas={
+          offlineEnabled && !offlineBannerVisible ? () => setShowOfflineAreas(true) : undefined
+        }
         top={capsuleTop}
         basemap={basemap}
         onToggleBasemap={() => setBasemap((current) => (current === "map" ? "satellite" : "map"))}
@@ -253,7 +258,7 @@ export function SurveyParcelSelectionScreen({
         loading={parcelsLoading}
       />
 
-      {offlinePrompt.state !== "hidden" && !offlineDismissed ? (
+      {offlineBannerVisible ? (
         <View pointerEvents="box-none" style={[screenStyles.topArea, { top: capsuleTop }]}>
           <OfflineMapPrompt
             prompt={offlinePrompt}
