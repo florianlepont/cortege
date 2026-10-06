@@ -129,7 +129,7 @@ export function createWizardStyles(theme: BrandTheme) {
     },
     badgeText: {
       ...brandTypography.meta,
-      fontFamily: "Jost_600SemiBold",
+      fontFamily: "Jost-SemiBold",
       color: theme.semanticColors.textStrong,
     },
     choiceHint: {

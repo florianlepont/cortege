@@ -88,8 +88,9 @@ export function createAuthStyles(theme: BrandTheme) {
     },
     heroTitle: {
       ...brandTypography.heroTitle,
-      fontSize: 28,
-      lineHeight: 33,
+      // OA-05: 32 pt, the title was judged too discreet next to the rest of the screen.
+      fontSize: 32,
+      lineHeight: 37,
       color: brandOnDarkColors.heroBodyOnDark,
     },
     heroBody: {

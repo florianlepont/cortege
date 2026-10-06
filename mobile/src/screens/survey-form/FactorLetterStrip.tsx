@@ -177,7 +177,7 @@ function createStyles(theme: BrandTheme) {
     },
     letterText: {
       fontSize: 14,
-      fontFamily: "Sora_700Bold",
+      fontFamily: "Sora-Bold",
     },
     letterText_active: { color: theme.semanticColors.onCtaPrimary },
     letterText_complete: { color: theme.semanticColors.textStrong },
@@ -211,7 +211,7 @@ function createStyles(theme: BrandTheme) {
     bubbleLetter: {
       fontSize: 30,
       lineHeight: 34,
-      fontFamily: "Sora_700Bold",
+      fontFamily: "Sora-Bold",
       color: brandColors.white,
     },
     bubbleTitle: {

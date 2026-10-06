@@ -110,7 +110,7 @@ function createStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost_600SemiBold",
+      fontFamily: "Jost-SemiBold",
       color: theme.colors.textPrimary,
     },
     caption: {
@@ -126,7 +126,7 @@ function createStyles(theme: BrandTheme) {
     },
     switchLabel: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost_500Medium",
+      fontFamily: "Jost-Medium",
       color: theme.colors.textPrimary,
     },
   })
