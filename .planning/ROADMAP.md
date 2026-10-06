@@ -648,7 +648,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 
 **Goal**: The app is more pleasant to look at, more modern and more dynamic, in light and dark mode, before the association sees it.
 **Depends on**: Phase 12 (dark mode, Liquid Glass, motion system), Phase 12.1 (the owner's findings feed this phase rather than being redone)
-**Requirements**: none yet in `REQUIREMENTS.md`, added by the 2026-10-06 owner decision
+**Requirements**: REQ-QA-visual-modernisation
 **Source**: owner decision 2026-10-06, folded into the MVP.
 **Success Criteria** (what must be TRUE):
 
@@ -664,7 +664,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 
 **Goal**: We know, from a documented audit, the real state of code quality, test coverage, architecture and security, and the blockers it finds are fixed before field tests.
 **Depends on**: Phase 11 (durable backend), Phase 12.2 (audit the code that will ship), and the 2026-09 audit (`docs/audits/audit-2026-09-code-complet.md`) as the baseline to compare against
-**Requirements**: none yet in `REQUIREMENTS.md`, added by the 2026-10-06 owner decision
+**Requirements**: REQ-QA-deep-audit
 **Source**: owner decision 2026-10-06, folded into the MVP.
 **Success Criteria** (what must be TRUE):
 
