@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { FlatList, ListRenderItemInfo, Platform, RefreshControl, View } from "react-native"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandSpacing } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
@@ -48,9 +47,9 @@ export function SurveyListScreen({
   const styles = useMemo(() => createListStyles(theme), [theme])
   const [refreshing, setRefreshing] = useState(false)
   const insets = useSafeAreaInsets()
-  // The iOS header is transparent: the list starts below it. Without a native header (Android,
-  // JS tabs) the screen draws its own title bar under the status bar.
-  const headerHeight = useHeaderHeight()
+  // The iOS header of this screen is opaque (SurveysStack), so the list already starts below it:
+  // adding its height again left a ~100pt gap (OA-99). Without a native header (Android, JS tabs)
+  // the screen draws its own title bar under the status bar.
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
 
   const { items, toFinishCount } = useMemo(() => buildListItems(surveys), [surveys])
@@ -157,13 +156,11 @@ export function SurveyListScreen({
         contentContainerStyle={[
           styles.pageContent,
           {
-            paddingTop: showTitleBar
-              ? insets.top + brandSpacing.xs
-              : headerHeight + brandSpacing.xs,
+            paddingTop: showTitleBar ? insets.top + brandSpacing.xs : brandSpacing.xs,
             paddingBottom: tabBarHeight + brandSpacing.xl + 22,
           },
         ]}
-        scrollIndicatorInsets={{ top: showTitleBar ? 0 : headerHeight, bottom: tabBarHeight }}
+        scrollIndicatorInsets={{ bottom: tabBarHeight }}
         contentInsetAdjustmentBehavior="never"
         refreshControl={refreshControl}
       />
