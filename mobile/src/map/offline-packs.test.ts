@@ -138,20 +138,22 @@ describe("failures", () => {
     ).rejects.toThrow("disk full")
   })
 
-  test("an error reported after the download completed is ignored", async () => {
+  test("a second pack stopping after the first one failed is ignored", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
       areaId: "a",
       bounds: BOUNDS,
-      basemaps: ["map"],
+      basemaps: ["map", "satellite"],
       onProgress: jest.fn(),
     })
     await flush()
-    const [pack] = offlineMocks.packs
-    const listeners = offlineMocks.listeners.get(pack.id)!
-    listeners.progress(pack, { percentage: 100, completedTileCount: 5, state: "complete" })
-    await expect(done).resolves.toMatchObject({ complete: true })
-    listeners.error(pack, { id: pack.id, message: "late" })
+    const [first, second] = offlineMocks.packs
+    for (const pack of [first, second]) {
+      const listeners = offlineMocks.listeners.get(pack.id)!
+      listeners.progress(pack, { percentage: 3, completedTileCount: 1, state: "active" })
+      listeners.progress(pack, { percentage: 3, completedTileCount: 1, state: "inactive" })
+    }
+    await expect(done).rejects.toThrow("stopped before it was complete")
   })
 })
 
