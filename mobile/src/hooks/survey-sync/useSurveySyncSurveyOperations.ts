@@ -8,7 +8,6 @@ import {
   discardSurveyLocalChanges,
   getLocalSurveyDraft,
   LocalSurvey,
-  markSurveyExpiredLocally,
   queueDeleteAttachment,
   queueDeleteSurvey,
   queueLocalAttachment,
@@ -35,7 +34,6 @@ const surveyName = (survey: Pick<LocalSurvey, "site_name"> | undefined): string 
 
 // D-06: names the missing pieces in French, without the survey id.
 const describeReadiness = (name: string, readiness: SubmitReadiness) => {
-  if (readiness.expired) return text.expired({ name })
   const parts: string[] = []
   if (readiness.missing_factors.length > 0) {
     parts.push(text.readiness.missingFactors({ factors: readiness.missing_factors.join(", ") }))
@@ -191,14 +189,9 @@ export function useSurveySyncSurveyOperations({
           vegetation_stage: draft.vegetation_stage,
           factors: draft.factors,
           parcel_ids: draft.parcel_ids,
-          expires_at: draft.expires_at,
         })
 
         if (!readiness.ready) {
-          if (readiness.expired) {
-            await markSurveyExpiredLocally(surveyId)
-            await refreshLocalSurveys()
-          }
           setStatus(describeReadiness(name, readiness))
           return
         }

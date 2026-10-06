@@ -23,10 +23,8 @@ describe("IBP_PARITY_CASES (matrix v2)", () => {
         ...parityCase.context,
         ibp_method_version: parityCase.method,
         factors: parityCase.factors,
-        expires_at: parityCase.expires_at,
       },
       parityCase.mode,
-      parityCase.now ? new Date(parityCase.now) : undefined,
     )
 
     expect(result.ok).toBe(parityCase.expect.ok)
@@ -96,9 +94,7 @@ describe("IBP_PARITY_CASES (matrix v2)", () => {
 
 describe("IBP_READINESS_CASES", () => {
   it.each(IBP_READINESS_CASES.map((c) => [c.id, c] as const))("%s", (_id, readinessCase) => {
-    expect(evaluateSubmitReadiness(readinessCase.draft, new Date(readinessCase.now))).toEqual(
-      readinessCase.expect,
-    )
+    expect(evaluateSubmitReadiness(readinessCase.draft)).toEqual(readinessCase.expect)
   })
 })
 

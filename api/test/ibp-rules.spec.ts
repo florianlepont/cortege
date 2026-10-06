@@ -127,16 +127,24 @@ describe("IbpRulesService (unit)", () => {
     expect(result.method_version).toBe(IBP_METHOD_V3_2)
   })
 
-  it("validateSubmit blocks expired surveys and missing required factors", () => {
-    const result = service.validateSubmit({
-      ...ACA_COLLINEEN,
-      expires_at: new Date(Date.now() - 60_000).toISOString(),
-      factors: { A: 1 },
-    })
+  it("validateSubmit blocks missing required factors", () => {
+    const result = service.validateSubmit({ ...ACA_COLLINEEN, factors: { A: 1 } })
 
     expect(result.ok).toBe(false)
-    expect(result.errors.join(" | ")).toContain("survey is expired and cannot be submitted")
     expect(result.errors.join(" | ")).toContain("factor B is required")
+  })
+
+  // OA-41: no submission deadline. An `expires_at` in the past (a client of an older build still
+  // sends one, and the column is still filled) blocks nothing.
+  it("validateSubmit ignores a past expires_at (OA-41)", () => {
+    const result = service.validateSubmit({
+      ...ACA_COLLINEEN,
+      expires_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+      factors: completeDirect,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.errors.join(" | ")).not.toContain("expired")
   })
 
   it("validateSubmit succeeds with complete valid payload and computes aggregate scores", () => {

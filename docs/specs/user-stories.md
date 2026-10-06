@@ -76,7 +76,7 @@ their own epic documents), not V2 — they were previously filed under "V2 Backl
 - Changing a survey from `public` to `private` must remove it from community surfaces.
 - Deleting a survey must remove it from community surfaces.
 - Pedagogical content must be accessible on demand during survey entry without interrupting form completion.
-- A draft survey expires 7 days after creation; after that, it becomes expired ("caduc") and cannot be submitted.
+- ~~A draft survey expires 7 days after creation; after that, it becomes expired ("caduc") and cannot be submitted.~~ Removed (OA-41 2026-10-06): there is no submission deadline.
 - Public map data is anonymized (no personal data exposed). Viewport loading and clustering do not change this: locations stay rounded to about 1 km and no survey id is shown.
 - At high zoom level, map surfaces (create/update/detail/explore) must display cadastral parcels and their study status (`studied` vs `not_studied`).
 - Points are awarded only for valid submitted surveys (not drafts).

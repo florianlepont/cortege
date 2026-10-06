@@ -16,7 +16,6 @@ const mockUpdateSurveyVisibility = jest.fn()
 const mockQueueDeleteSurvey = jest.fn()
 const mockQueueLocalAttachment = jest.fn()
 const mockQueueDeleteAttachment = jest.fn()
-const mockMarkSurveyExpiredLocally = jest.fn()
 const mockSyncPending = jest.fn()
 const mockPreparePhotoForStorage = jest.fn()
 const mockDeleteAttachmentFile = jest.fn()
@@ -49,7 +48,6 @@ jest.mock("../../storage", () => ({
   queueDeleteSurvey: mockQueueDeleteSurvey,
   queueLocalAttachment: mockQueueLocalAttachment,
   queueDeleteAttachment: mockQueueDeleteAttachment,
-  markSurveyExpiredLocally: mockMarkSurveyExpiredLocally,
   syncPending: mockSyncPending,
 }))
 jest.mock("../../storage/attachments", () => ({
@@ -162,7 +160,6 @@ describe("useSurveySyncSurveyOperations", () => {
       })
       mockEvaluateSubmitReadiness.mockReturnValue({
         ready: false,
-        expired: false,
         missing_factors: ["A1"],
         missing_fields: [],
       })
@@ -171,28 +168,6 @@ describe("useSurveySyncSurveyOperations", () => {
       expect(setStatus).toHaveBeenCalledWith(
         text.notReady({ name, details: text.readiness.missingFactors({ factors: "A1" }) }),
       )
-    })
-
-    test("marks survey expired when readiness check returns expired", async () => {
-      mockGetSubmitBlockReason.mockReturnValue(null)
-      mockGetLocalSurveyDraft.mockResolvedValue({
-        region_version: "ACA",
-        vegetation_stage: "planitiaire",
-        factors: {},
-        parcel_ids: [],
-        expires_at: "2020-01-01",
-      })
-      mockEvaluateSubmitReadiness.mockReturnValue({
-        ready: false,
-        expired: true,
-        missing_factors: [],
-        missing_fields: [],
-      })
-      mockMarkSurveyExpiredLocally.mockResolvedValue(undefined)
-      const { handleSubmitSurvey, refreshLocalSurveys } = await buildHook()
-      await handleSubmitSurvey("survey-1")
-      expect(mockMarkSurveyExpiredLocally).toHaveBeenCalledWith("survey-1")
-      expect(refreshLocalSurveys).toHaveBeenCalled()
     })
 
     test("submits successfully and updates status", async () => {
@@ -206,7 +181,6 @@ describe("useSurveySyncSurveyOperations", () => {
       })
       mockEvaluateSubmitReadiness.mockReturnValue({
         ready: true,
-        expired: false,
         missing_factors: [],
         missing_fields: [],
       })
@@ -228,7 +202,6 @@ describe("useSurveySyncSurveyOperations", () => {
       })
       mockEvaluateSubmitReadiness.mockReturnValue({
         ready: true,
-        expired: false,
         missing_factors: [],
         missing_fields: [],
       })
@@ -250,7 +223,6 @@ describe("useSurveySyncSurveyOperations", () => {
       })
       mockEvaluateSubmitReadiness.mockReturnValue({
         ready: true,
-        expired: false,
         missing_factors: [],
         missing_fields: [],
       })
@@ -283,7 +255,6 @@ describe("useSurveySyncSurveyOperations", () => {
       mockGetLocalSurveyDraft.mockResolvedValue({ parcel_ids: [] })
       mockEvaluateSubmitReadiness.mockReturnValue({
         ready: false,
-        expired: false,
         missing_factors: [],
         missing_fields: ["region_version", "vegetation_stage", "parcel_ids"],
       })
@@ -359,7 +330,6 @@ describe("useSurveySyncSurveyOperations", () => {
       })
       mockEvaluateSubmitReadiness.mockReturnValue({
         ready: false,
-        expired: false,
         missing_factors: [],
         missing_fields: ["parcel_ids"],
       })
@@ -375,7 +345,6 @@ describe("useSurveySyncSurveyOperations", () => {
       mockGetLocalSurveyDraft.mockResolvedValue({ ibp_method_version: "unknown", parcel_ids: [] })
       mockEvaluateSubmitReadiness.mockReturnValue({
         ready: false,
-        expired: false,
         missing_factors: [],
         missing_fields: ["ibp_method_version"],
       })
@@ -389,26 +358,17 @@ describe("useSurveySyncSurveyOperations", () => {
       )
     })
 
-    test("reports an expired draft and a draft with nothing named missing", async () => {
+    test("reports a draft with nothing named missing", async () => {
       mockGetSubmitBlockReason.mockReturnValue(null)
       mockGetLocalSurveyDraft.mockResolvedValue({ parcel_ids: [] })
       mockEvaluateSubmitReadiness.mockReturnValueOnce({
         ready: false,
-        expired: true,
-        missing_factors: [],
-        missing_fields: [],
-      })
-      mockEvaluateSubmitReadiness.mockReturnValueOnce({
-        ready: false,
-        expired: false,
         missing_factors: [],
         missing_fields: [],
       })
       const { handleSubmitSurvey, setStatus } = await buildHook()
       await handleSubmitSurvey("survey-1")
-      await handleSubmitSurvey("survey-1")
-      expect(setStatus).toHaveBeenNthCalledWith(1, text.expired({ name }))
-      expect(setStatus).toHaveBeenNthCalledWith(2, text.notReadyGeneric({ name }))
+      expect(setStatus).toHaveBeenCalledWith(text.notReadyGeneric({ name }))
     })
 
     test("reports a rejected submit without the server text", async () => {

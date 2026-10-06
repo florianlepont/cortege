@@ -39,7 +39,6 @@ import {
   classifyUploadFailure,
   FailureClassification,
 } from "./utils"
-import { markSurveyExpiredLocally } from "./surveys"
 import { apiRequest, ApiError } from "../api/client"
 import { uploadAttachmentFile, LocalFileMissingError } from "./attachments"
 import { markAttachmentFileMissing } from "./attachment-cache"
@@ -1342,13 +1341,9 @@ export async function submitSurvey(
       body?.message ??
       error.message
     const nowIso = new Date().toISOString()
-    const isExpiredSubmit =
-      /survey is expired|survey_expired|expired and cannot be submitted/i.test(message)
     const isValidationSubmit = error.status === 422
 
-    if (isExpiredSubmit) {
-      await markSurveyExpiredLocally(surveyId)
-    } else if (isValidationSubmit) {
+    if (isValidationSubmit) {
       await db.runAsync(
         `UPDATE local_surveys
          SET status = CASE

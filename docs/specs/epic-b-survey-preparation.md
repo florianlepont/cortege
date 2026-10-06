@@ -38,7 +38,7 @@ Acceptance criteria
 
 -  The detail view displays survey information (site, parcel ids, last update date, version, and basic history).
 
-- The detail view displays the submission deadline (creation date + 7 days) and remaining time.
+- ~~The detail view displays the submission deadline (creation date + 7 days) and remaining time.~~ Removed (OA-41 2026-10-06): there is no submission deadline.
 
 - The detail view displays the survey completion rate.
 

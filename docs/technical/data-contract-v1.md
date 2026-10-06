@@ -268,14 +268,14 @@ Optional fields:
 - `confidence_note` (string, nullable)
 
 ## Survey State Transitions (V1)
-- `draft -> submitted` (required fields complete and not expired)
+- `draft -> submitted` (required fields complete)
 - `submitted -> synced` (server accepted)
 - `submitted -> error` (sync failed)
 - `error -> submitted` (retry attempt)
-- `draft -> expired` (now > `expires_at`)
+- ~~`draft -> expired` (now > `expires_at`)~~ (removed, OA-41 2026-10-06: there is no submission deadline). A survey is never refused for its age. The `expired` status and the `expires_at` column stay for rows created before; they are removed in a later step.
 
 ## Consistency Rules
-- `expires_at = created_at + 7 days`
+- ~~`expires_at = created_at + 7 days`~~ (removed, OA-41 2026-10-06: there is no submission deadline): still written (the column is NOT NULL) but read by nothing
 - `visibility` default is `private`
 - at least one parcel is required for `submitted` surveys (`parcel_ids.length >= 1`)
 - `observation_year` and `version_number` are required for `submitted` surveys

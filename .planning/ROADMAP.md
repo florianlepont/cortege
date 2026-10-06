@@ -639,6 +639,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 
 **Plans**: TBD. The phase is an iterative loop (owner test → triage → fix batch → re-test), not a fixed plan list.
 **Scope decision (2026-10-05, OA-41)**: the submission deadline is out of the app for now. The survey detail shows no deadline, and the API's `expires_at` and `expired` status are no longer surfaced; removing them from the API and the data contract is part of the survey-detail redesign (OA-46), not a separate phase.
+**Update (2026-10-06, OA-41)**: the deadline was hidden but still enforced: the server refused a submit made more than 7 days after creation and marked the survey `expired` for good, and the phone did the same locally. Step 1 (this batch) stops applying it everywhere (domain, API, phone) without any migration. Step 2, after counting the rows already `expired` in production: put them back to `draft`, then remove the `expires_at` column, the `expired` status and the local SQLite handling.
 **UI hint**: yes
 
 ### Phase 13: Field Validation

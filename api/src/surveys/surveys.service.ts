@@ -247,8 +247,9 @@ export class SurveysService {
       draftValidation,
       computedScores: this.scoresOf(draftValidation),
       now,
-      // D-03: expires_at is computed server-side at creation and never moved by an upsert; the
-      // client-sent value (kept on the DTO for compatibility) is never read here.
+      // OA-41: a survey has no submission deadline any more: nothing reads `expires_at` and no
+      // survey is expired. The value is still written because the column is NOT NULL; the column
+      // and the `expired` status are removed once the rows already expired are dealt with.
       expiresAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     }
   }
@@ -1060,7 +1061,6 @@ export class SurveysService {
           ibp_method_version: existing.ibp_method_version,
           ibp_cas: existing.ibp_cas,
           ibp_cas3_scale: existing.ibp_cas3_scale,
-          expires_at: existing.expires_at,
           factors: existing.factors,
         })
 
@@ -1105,24 +1105,6 @@ export class SurveysService {
         }
 
         if (!validation.ok || !validation.scores || parcelValidation.errors.length > 0) {
-          const isExpired = validation.issues.some((issue) => issue.code === "survey_expired")
-          if (isExpired && existing.status !== "expired") {
-            // This write must commit even though the request is rejected
-            // below, so we return a discriminated outcome instead of
-            // throwing (which would roll it back).
-            await db.query(
-              `UPDATE surveys
-               SET status = 'expired',
-                   updated_at = NOW()
-               WHERE id = $1 AND user_id = $2`,
-              [surveyId, user.id],
-            )
-            await this.events.insert(db, surveyId, user.id, "expired", {
-              reason: "submit_after_deadline",
-              expires_at: existing.expires_at,
-            })
-          }
-
           return {
             kind: "rejected",
             error: new UnprocessableEntityException({

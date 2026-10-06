@@ -90,10 +90,16 @@ describe("Surveys submit (e2e)", () => {
     expect(submit.body.errors.join(" ")).toContain("parcel_ids is required for submit")
   })
 
-  it("marks survey as expired when submit is attempted after deadline", async () => {
-    const accessToken = await loginTestUser(app, "e2e-submit-expired")
-    const surveyId = uniqueId("e2e-submit-expired")
-    const expiredAt = new Date(Date.now() - 60_000).toISOString()
+  // OA-41: there is no submission deadline. The server used to refuse a submit made more than 7
+  // days after creation and mark the survey "expired" for good.
+  async function createDraftReadyToSubmit(label: string) {
+    const accessToken = await loginTestUser(app, label)
+    const surveyId = uniqueId(label)
+    const seed = uniqueCoordSeed()
+    const lat = 48.643 + seed / 100000
+    const lng = 1.829 + seed / 100000
+    const parcelId = await resolveParcel(app, accessToken, lat, lng)
+    const versionNumber = await getNextVersionNumber(db, parcelId)
 
     await request(app.getHttpServer())
       .post("/v1/surveys")
@@ -101,35 +107,53 @@ describe("Surveys submit (e2e)", () => {
       .send({
         id: surveyId,
         sync_version: 1,
-        site_name: "Expired Forest",
+        site_name: "Old Forest",
         status: "draft",
         visibility: "private",
+        parcel_id: parcelId,
+        observation_year: 2025,
+        version_number: versionNumber,
         region_version: "ACA",
         vegetation_stage: "collineen",
-        expires_at: expiredAt,
         factors: validDirectFactors,
-        location: { source: "gps", lat: 48.643, lng: 1.829 },
+        location: { source: "gps", lat, lng },
       })
       .expect(201)
 
-    // D-03: expires_at is computed server-side and never moved by an upsert;
-    // set it directly to force the expired path for this test.
-    await db.query("UPDATE surveys SET expires_at = $2 WHERE id = $1", [surveyId, expiredAt])
+    return { accessToken, surveyId }
+  }
+
+  it("submits a survey created more than 7 days ago", async () => {
+    const { accessToken, surveyId } = await createDraftReadyToSubmit("e2e-submit-old")
+    const longAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+    await db.query("UPDATE surveys SET expires_at = $2 WHERE id = $1", [surveyId, longAgo])
 
     const submit = await request(app.getHttpServer())
       .post(`/v1/surveys/${surveyId}/submit`)
       .set("Authorization", `Bearer ${accessToken}`)
-      .expect(422)
+      .expect(201)
 
-    expect(Array.isArray(submit.body.errors)).toBe(true)
-    expect(submit.body.errors.join(" ")).toContain("survey is expired")
+    expect(submit.body.status).toBe("submitted")
+  })
 
+  it("submits a survey that the old deadline rule had marked expired", async () => {
+    const { accessToken, surveyId } = await createDraftReadyToSubmit("e2e-submit-was-expired")
+    await db.query("UPDATE surveys SET status = 'expired', expires_at = $2 WHERE id = $1", [
+      surveyId,
+      new Date(Date.now() - 60_000).toISOString(),
+    ])
+
+    const submit = await request(app.getHttpServer())
+      .post(`/v1/surveys/${surveyId}/submit`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(201)
+
+    expect(submit.body.status).toBe("submitted")
     const detail = await request(app.getHttpServer())
       .get(`/v1/surveys/${surveyId}`)
       .set("Authorization", `Bearer ${accessToken}`)
       .expect(200)
-
-    expect(detail.body.status).toBe("expired")
+    expect(detail.body.status).toBe("submitted")
   })
 
   it("submits valid IBP survey and returns computed scores", async () => {
