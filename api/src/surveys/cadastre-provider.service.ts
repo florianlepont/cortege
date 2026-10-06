@@ -23,6 +23,34 @@ export type WfsParcelFeature = {
   geometry: JsonRecord
 }
 
+/**
+ * The middle of a GeoJSON geometry's bounding box, or null without a usable coordinate. A parcel
+ * is small, so the box centre is a fair centroid for placing a pin and zooming a map.
+ */
+export function geometryCenter(geometry: unknown): { lat: number; lng: number } | null {
+  let minLng = Infinity
+  let maxLng = -Infinity
+  let minLat = Infinity
+  let maxLat = -Infinity
+  const visit = (node: unknown): void => {
+    if (!Array.isArray(node)) return
+    if (node.length >= 2 && typeof node[0] === "number" && typeof node[1] === "number") {
+      const [lng, lat] = node as number[]
+      if (Number.isFinite(lng) && Number.isFinite(lat)) {
+        minLng = Math.min(minLng, lng)
+        maxLng = Math.max(maxLng, lng)
+        minLat = Math.min(minLat, lat)
+        maxLat = Math.max(maxLat, lat)
+      }
+      return
+    }
+    for (const child of node) visit(child)
+  }
+  visit((geometry as { coordinates?: unknown } | null | undefined)?.coordinates)
+  if (!Number.isFinite(minLng) || !Number.isFinite(minLat)) return null
+  return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 }
+}
+
 export type LngLatBbox = { minLng: number; minLat: number; maxLng: number; maxLat: number }
 
 /** A cached feature, with the geometry bounds used to filter it to a request bbox. */
@@ -172,6 +200,23 @@ export class CadastreProviderService {
       }
     }
     return output
+  }
+
+  /**
+   * A parcel known only by its identifier (IDU: commune 5, prefix 3, section 2, number 4): its
+   * geometry and centre from the IGN, or null (not the IGN provider, an unparsable id, no answer).
+   * The parcels the app registers by id carry no position until this fills it in.
+   */
+  async lookupParcelById(
+    parcelId: string,
+  ): Promise<{ centroid: { lat: number; lng: number }; geometry: JsonRecord } | null> {
+    if (this.provider !== "ign") return null
+    const match = /^(\d{5})\d{3}([A-Z0-9]{2})(\d{4})$/.exec(parcelId.trim().toUpperCase())
+    if (!match) return null
+    const geometry = await this.resolveGeometryFromApiCarto(match[1], match[2], match[3])
+    if (!geometry) return null
+    const centroid = geometryCenter(geometry)
+    return centroid ? { centroid, geometry } : null
   }
 
   async resolveFromPoint(lat: number, lng: number): Promise<CadastreResolvedParcel | null> {

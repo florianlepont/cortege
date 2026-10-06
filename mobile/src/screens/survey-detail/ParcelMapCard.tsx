@@ -96,7 +96,12 @@ export function ParcelMapCard({
       actions={
         <>
           {surveyId && coordinates ? (
-            <SeeOnMapAction surveyId={surveyId} siteName={siteName} coordinates={coordinates} />
+            <SeeOnMapAction
+              surveyId={surveyId}
+              siteName={siteName}
+              coordinates={coordinates}
+              parcelIds={parcelIds}
+            />
           ) : null}
           {children}
         </>

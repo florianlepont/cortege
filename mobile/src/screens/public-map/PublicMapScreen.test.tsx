@@ -310,7 +310,7 @@ describe("PublicMapScreen", () => {
   })
 
   test("a focus request centres the map and selects the survey once it is among the markers (OA-59)", () => {
-    const focus = { surveyId: "s-7", lat: 45.7, lng: 4.8, nonce: 1 }
+    const focus = { surveyId: "s-7", lat: 45.7, lng: 4.8, parcelIds: ["P1"], nonce: 1 }
     const props = makeProps({ focus })
     mount(props)
     expect(mockAnimateToRegion).toHaveBeenCalled()
@@ -577,7 +577,9 @@ describe("PublicMapScreen", () => {
       mockStartDownload.mockResolvedValue({ ok: false, reason: "failed" })
       mount(makeProps())
       act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
-      expect(texts()).toContain(fr.offlineMap.areas.empty)
+      // The panel downloads; the areas already on the phone are managed in Paramètres (OA-123).
+      expect(texts().some((text) => text.includes("tuiles"))).toBe(true)
+      expect(texts()).not.toContain(fr.offlineMap.areas.empty)
       const download = tree.root.find(
         (node) =>
           (node.type as unknown) === "AppButton" &&

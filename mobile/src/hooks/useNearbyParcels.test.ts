@@ -131,6 +131,28 @@ describe("useNearbyParcels", () => {
     expect(result.current.locationDenied).toBe(false)
   })
 
+  test("a position that never comes ends as an error, not as an endless placeholder (OA-113)", async () => {
+    jest.useFakeTimers()
+    try {
+      mockGetForegroundPermissionsAsync.mockResolvedValue({ granted: true })
+      mockGetCurrentPositionAsync.mockReturnValue(new Promise(() => undefined))
+
+      const { result } = await renderHook(() => useNearbyParcels(API_URL, ACCESS_TOKEN))
+      let pending: Promise<void> | undefined
+      await act(async () => {
+        pending = result.current.load()
+        await jest.advanceTimersByTimeAsync(20000)
+        await pending
+      })
+
+      expect(result.current.error).toBe(true)
+      expect(result.current.loading).toBe(false)
+      expect(mockFetchPublicParcelStatuses).not.toHaveBeenCalled()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
   test("load sets error when the request fails", async () => {
     mockGetForegroundPermissionsAsync.mockResolvedValue({ granted: true })
     mockGetCurrentPositionAsync.mockResolvedValue({ coords: { latitude: 46, longitude: 2 } })

@@ -122,6 +122,9 @@ function createStyles(theme: BrandTheme) {
     container: {
       position: "absolute",
       left: MAP_EDGE,
+      // The panel wraps inside the screen (its attribution line is long): it ends before the right
+      // edge instead of running past it (OA-119).
+      right: MAP_EDGE,
       alignItems: "flex-start",
       gap: 8,
     },

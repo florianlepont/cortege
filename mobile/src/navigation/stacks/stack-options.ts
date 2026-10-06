@@ -25,6 +25,19 @@ export function createBaseStackScreenOptions(theme: BrandTheme) {
 }
 
 /**
+ * OA-94, OA-125: on iOS the header takes the page colour (no blur tint), so it does not read as a
+ * band of another colour above the content. Compte, Paramètres and the other pushed pages share it.
+ */
+export function pageColourHeader(theme: BrandTheme) {
+  return Platform.OS === "ios"
+    ? {
+        headerBlurEffect: "none" as const,
+        headerStyle: { backgroundColor: theme.colors.canvas },
+      }
+    : {}
+}
+
+/**
  * OA-21: the screen draws its own title, so the native one is hidden. `headerTitle: () => null` is
  * not enough on iOS (the native title is still drawn from `title`, OA-109, doubled "Compte"), so it
  * is made invisible too. `title` stays for the back button and accessibility.

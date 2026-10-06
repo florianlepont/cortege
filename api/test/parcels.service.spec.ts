@@ -228,6 +228,58 @@ describe("ParcelsService", () => {
     })
   })
 
+  describe("a parcel without a position", () => {
+    const found = {
+      centroid: { lat: 48.86, lng: 2.36 },
+      geometry: { type: "Polygon", coordinates: [] },
+    }
+    const noLocation = { rows: [{ lat: null, lng: null, fallback_lat: null, fallback_lng: null }] }
+
+    it("is looked up at the IGN, stored, and the location is read again", async () => {
+      const lookupParcelById = jest.fn().mockResolvedValue(found)
+      const db = buildDb(
+        noLocation,
+        { rows: [{ parcel_id: "94077000AW0066" }] },
+        { rows: [] },
+        {
+          rows: [{ lat: 48.86, lng: 2.36, fallback_lat: null, fallback_lng: null }],
+        },
+      )
+
+      const location = await buildService(db, { lookupParcelById }).displayLocation(db, "s1", null)
+
+      expect(location).toEqual({ lat: 48.86, lng: 2.36 })
+      expect(lookupParcelById).toHaveBeenCalledWith("94077000AW0066")
+      expect(sqlOf(db, 2)).toContain("UPDATE parcels")
+      expect(db.query.mock.calls[2][1]).toEqual([
+        "94077000AW0066",
+        JSON.stringify(found.geometry),
+        JSON.stringify(found.centroid),
+      ])
+    })
+
+    it("is not asked again for ten minutes after the IGN had no answer", async () => {
+      const lookupParcelById = jest.fn().mockResolvedValue(null)
+      const missing = { rows: [{ parcel_id: "94077000AW0066" }] }
+      const db = buildDb(noLocation, missing, noLocation, missing)
+      const service = buildService(db, { lookupParcelById })
+
+      await expect(service.displayLocation(db, "s1", null)).resolves.toBeNull()
+      await expect(service.displayLocation(db, "s1", null)).resolves.toBeNull()
+
+      expect(lookupParcelById).toHaveBeenCalledTimes(1)
+    })
+
+    it("stays null when nothing is linked", async () => {
+      const lookupParcelById = jest.fn()
+      const db = buildDb(noLocation, { rows: [] })
+      await expect(
+        buildService(db, { lookupParcelById }).displayLocation(db, "s1", null),
+      ).resolves.toBeNull()
+      expect(lookupParcelById).not.toHaveBeenCalled()
+    })
+  })
+
   describe("resolveParcelByCoordinates", () => {
     it("rejects missing coordinates", async () => {
       await expect(buildService().resolveParcelByCoordinates({ lat: "x" })).rejects.toBeInstanceOf(
