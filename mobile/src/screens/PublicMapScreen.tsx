@@ -244,11 +244,9 @@ export function PublicMapScreen({
   // handle and height as every other fiche of the Explorer.
   const sheetContent = showOfflineAreas ? (
     <OfflineAreasSheet
-      areas={offlineAreas.areas}
       downloadingAreaId={offlineAreas.downloadingAreaId}
       estimate={offlineAreas.estimateForRegion(viewport.region)}
       onDownload={handleDownloadArea}
-      onDelete={(id) => void offlineAreas.deleteArea(id)}
       onClose={closeOfflineAreas}
     />
   ) : selectedParcelId ? (

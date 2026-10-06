@@ -144,7 +144,6 @@ export const surveyDetailFr = {
   events: {
     title: "Historique du relevé",
     subtitle: "Synchronisation et étapes de ce relevé.",
-    reload: "Recharger",
     loading: "Chargement de l'historique…",
     empty: "Aucun événement chargé pour l'instant.",
   },

@@ -53,11 +53,7 @@ export function SurveyHistoryScreen({
       }
     >
       <PageTitle>{fr.navigation.headers.surveyHistory}</PageTitle>
-      <EventsTab
-        events={surveyEvents[selectedSurvey.id] ?? []}
-        isLoading={isLoading}
-        onReload={() => void onLoadSurveyEvents(selectedSurvey.id)}
-      />
+      <EventsTab events={surveyEvents[selectedSurvey.id] ?? []} isLoading={isLoading} />
       <HistorySection
         apiUrl={apiUrl}
         accessToken={accessToken}

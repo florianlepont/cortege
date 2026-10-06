@@ -577,7 +577,9 @@ describe("PublicMapScreen", () => {
       mockStartDownload.mockResolvedValue({ ok: false, reason: "failed" })
       mount(makeProps())
       act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
-      expect(texts()).toContain(fr.offlineMap.areas.empty)
+      // The panel downloads; the areas already on the phone are managed in Paramètres (OA-123).
+      expect(texts().some((text) => text.includes("tuiles"))).toBe(true)
+      expect(texts()).not.toContain(fr.offlineMap.areas.empty)
       const download = tree.root.find(
         (node) =>
           (node.type as unknown) === "AppButton" &&

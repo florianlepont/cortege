@@ -6,7 +6,6 @@ import { formatShortDateTime } from "../../app/formatters"
 import { SurveyEventItem } from "../../app/types"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { SkeletonRow } from "../../ui/Skeleton"
@@ -18,7 +17,6 @@ import { createTabsStyles } from "./tabs.styles"
 type EventsTabProps = {
   events: SurveyEventItem[]
   isLoading: boolean
-  onReload: () => void
 }
 
 const t = fr.surveyDetail.events
@@ -46,7 +44,7 @@ function toneColors(theme: BrandTheme, tone: EventTone): { background: string; i
  * active only while this tab is selected; a loading skeleton covers the first load only, not a
  * pull-to-refresh of an already-loaded list (the RefreshControl spinner covers that case).
  */
-export function EventsTab({ events, isLoading, onReload }: EventsTabProps) {
+export function EventsTab({ events, isLoading }: EventsTabProps) {
   const theme = useBrandTheme()
   const sharedStyles = useMemo(() => createDetailStyles(theme), [theme])
   const styles = useMemo(() => createTabsStyles(theme), [theme])
@@ -56,19 +54,7 @@ export function EventsTab({ events, isLoading, onReload }: EventsTabProps) {
   return (
     <View style={sharedStyles.detailSection}>
       <AppCard variant="panelElevated" padding={18} style={styles.eventsCard}>
-        <AppSectionHeader
-          title={t.title}
-          subtitle={t.subtitle}
-          trailing={
-            <AppButton
-              label={t.reload}
-              variant="secondary"
-              size="sm"
-              leadingIcon="refresh-outline"
-              onPress={onReload}
-            />
-          }
-        />
+        <AppSectionHeader title={t.title} subtitle={t.subtitle} />
         {showSkeleton
           ? Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
               <SkeletonRow key={`events-skeleton-${index}`} />

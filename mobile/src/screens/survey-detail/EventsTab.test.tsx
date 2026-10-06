@@ -82,13 +82,13 @@ function mount(props: React.ComponentProps<typeof EventsTab>): ReactTestRenderer
 
 describe("EventsTab", () => {
   test("shows a loading skeleton on the first load (no events yet)", () => {
-    const tree = mount({ events: [], isLoading: true, onReload: jest.fn() })
+    const tree = mount({ events: [], isLoading: true })
     expect(tree.root.findAllByType("SkeletonRow" as never)).toHaveLength(3)
     expect(tree.toJSON()).not.toBeNull()
   })
 
   test("shows the empty message once loading finishes with no events", () => {
-    const tree = mount({ events: [], isLoading: false, onReload: jest.fn() })
+    const tree = mount({ events: [], isLoading: false })
     expect(tree.root.findAllByType("SkeletonRow" as never)).toHaveLength(0)
     const text = tree.root.findAllByType("Text" as never).map((node) => node.props.children)
     expect(text).toContain(t.empty)
@@ -100,7 +100,7 @@ describe("EventsTab", () => {
       makeEvent({ id: "2", event_type: "submitted" }),
       makeEvent({ id: "3", event_type: "sync_failed" }),
     ]
-    const tree = mount({ events, isLoading: false, onReload: jest.fn() })
+    const tree = mount({ events, isLoading: false })
 
     expect(tree.root.findAllByType("SkeletonRow" as never)).toHaveLength(0)
     const labels = tree.root.findAllByType("Text" as never).map((node) => node.props.children)
@@ -111,16 +111,9 @@ describe("EventsTab", () => {
 
   test("keeps showing existing events (no skeleton) while a pull-to-refresh reload is in flight", () => {
     const events = [makeEvent()]
-    const tree = mount({ events, isLoading: true, onReload: jest.fn() })
+    const tree = mount({ events, isLoading: true })
     expect(tree.root.findAllByType("SkeletonRow" as never)).toHaveLength(0)
     const labels = tree.root.findAllByType("Text" as never).map((node) => node.props.children)
     expect(labels).toContain(fr.surveyDetail.eventTypes.submitted)
-  })
-
-  test("the reload button calls onReload", () => {
-    const onReload = jest.fn()
-    const tree = mount({ events: [], isLoading: false, onReload })
-    tree.root.findByType("AppButton" as never).props.onPress()
-    expect(onReload).toHaveBeenCalledTimes(1)
   })
 })
