@@ -375,7 +375,7 @@ The API sends no email: the SMTP settings and `EmailService` were removed (phase
 8. `audit` — `npm run audit:check` (`scripts/audit-check.mjs`): fails on any high or critical advisory except those listed with a reason in `scripts/audit-allowlist.json` (advisories with no patched release upstream), and on a listed entry that no longer matches, so the list shrinks by itself
 9. `image-check` — Docker image build when `api/**` or `packages/**` changed; its smoke tests check the image runs as non-root, holds no mobile dependency, and loads the built `ibp-domain` package
 10. `ci-ok` — aggregate gate; both native jobs are in its required set (success or skipped), and `image-check` waits on it
-11. `build` — pushes the image on `main` (see Deployment below)
+11. `build` — pushes the image on `main` (see Deployment below). It runs on `always()` gated by `ci-ok` itself, because a job skipped further up the chain (the native builds, when only the API changed) would otherwise skip it too and the image would never be published (found 2026-10-06 after PR #235)
 
 A separate `codeql.yml` workflow runs CodeQL analysis.
 

@@ -51,6 +51,7 @@ jobs:
               - 'packages/**'
             image:
               - 'api/**'
+              - '.github/workflows/ci.yml'
               - 'package.json'
               - 'package-lock.json'
               - '.dockerignore'
@@ -783,7 +784,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [changes, ci-ok]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.image == 'true'
+    # `always()`: without it the job is skipped whenever a job further up the chain was skipped
+    # (the native builds are, when only the API changed), even though `ci-ok` succeeded, and the
+    # image is never published. The gate is `ci-ok` itself.
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.changes.outputs.image == 'true' && needs.ci-ok.result == 'success'
     permissions:
       contents: read
       packages: write
