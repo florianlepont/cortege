@@ -58,7 +58,7 @@ list is never ambiguous.
 - [x] **Phase 10: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
 - [x] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone (completed 2026-09-27)
 - [x] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F (completed 2026-09-28)
-- [x] **Phase 12.1: Owner acceptance testing** (INSERTED) - The owner tests the app on their own phone; display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready for the association's field tests (completed 2026-10-06; the owner declared the app ready for field tests from 2026-10-07)
+- [x] **Phase 12.1: Owner acceptance testing** (INSERTED) - The owner tests the app on their own phone; display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready for the association's field tests (completed 2026-10-06; the owner declared the app ready for field tests, which open after Phases 12.2 and 12.3)
 - [ ] **Phase 12.2: Visual Modernisation** (INSERTED) - A more pleasant, modern and lively interface: visual refresh and motion across the main screens (owner decision 2026-10-06)
 - [ ] **Phase 12.3: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed (owner decision 2026-10-06)
 - [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
@@ -408,7 +408,7 @@ Plans:
 **Plans**: 6 batches, executed and closed directly (no separate orchestrator/executor split for
 this phase) — see `.planning/phases/03-field-entry-ergonomics/03-CONTEXT.md` and its
 `03-0N-SUMMARY.md` files for what each batch shipped and its test evidence.
-**Outcome (2026-10-06)**: closed. Two phone passes (the second on the build of `main` 4419590), 127 entries logged in the grid and every one closed or deferred: OA-124 (split the survey change log from the parcel history, SEED-002) and OA-127 (map layers, SEED-001) are phases of their own for later, not blockers. The owner wrote in chat: "La 12.1 est terminée, prêt pour les tests terrain à partir du 7 octobre 2026". The demo data (`api/scripts/seed-demo-community.js`) must be removed before the app opens to anyone else.
+**Outcome (2026-10-06)**: closed. Two phone passes (the second on the build of `main` 4419590), 127 entries logged in the grid and every one closed or deferred: OA-124 (split the survey change log from the parcel history, SEED-002) and OA-127 (map layers, SEED-001) are phases of their own for later, not blockers. The owner wrote in chat: "La 12.1 est terminée, prêt pour les tests terrain à partir du 7 octobre 2026", then decided the same evening to do Phases 12.2 and 12.3 first ("tant pis pour la date"): Phase 13 keeps its dependencies and the field tests do not open on 2026-10-07. The demo data (`api/scripts/seed-demo-community.js`) stays on the server for the owner's tests and must be removed before the app opens to anyone else.
 **UI hint**: yes
 **Status**: Complete (2026-09-27). All 7 success criteria met; scope decisions (Factor A and F stay
 numeric, B is chips not slider, the CTA is not renamed to "Vérifier et soumettre") are recorded in
