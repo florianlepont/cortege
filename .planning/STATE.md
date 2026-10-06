@@ -6,14 +6,14 @@ current_phase: 12.1
 current_phase_name: Owner acceptance testing
 status: executing
 stopped_at: Phase 12.1 (Owner acceptance testing) inserted before Phase 13; Phase 13 discussion postponed
-last_updated: "2026-09-28T16:14:38.133Z"
-last_activity: 2026-09-28
+last_updated: "2026-10-06T12:00:00.000Z"
+last_activity: 2026-10-06
 progress:
-  total_phases: 23
+  total_phases: 25
   completed_phases: 21
   total_plans: 159
   completed_plans: 159
-  percent: 91
+  percent: 84
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 
 Phase: 12.1 (Owner acceptance testing)
 Plan: Not started
-Status: Phases 1 through 12 complete; Phase 12.1 inserted before Phase 13, not yet planned
-Last activity: 2026-09-28 (Phase 12.1 inserted by owner decision; Phase 13 discussion postponed until 12.1 closes)
+Status: Phases 1 through 12 complete; Phase 12.1 in progress (owner acceptance loop); Phases 12.2 and 12.3 inserted before Phase 13, not yet planned
+Last activity: 2026-10-06 (Phases 12.2 and 12.3 inserted by owner decision; Phase 13 now follows 12.1, 12.2 and 12.3)
 
-Progress: [█████████░] 21/23 phases complete
+Progress: [████████░░] 21/25 phases complete
 
 ## Performance Metrics
 
@@ -156,6 +156,8 @@ Decisions table. Decisions affecting current work:
 - Phases 01.6–01.9 inserted after Phase 1 to close the rest of the 2026-09 code audit (lots L10, L13–L20 and the remainders of L7, L16, L20): sync feed and object storage; API configuration, service split and database tuning; shared IBP domain package and test completeness; mobile state architecture, i18n, accessibility and hygiene
 - After Phase 1.9 the roadmap moved to flat numbering (Phases 2–13). Phase 2 (association-only sharing) and the UX/UI audit lots (Phases 3, 4, 7, 9, 12) were inserted by owner decision on 2026-09-27; Phase 13 (Field Validation) now depends on all of them
 - Phase 12.1 inserted after Phase 12: Owner acceptance testing: the owner still finds many display bugs and UX friction on their own phone and judged Phase 13 field tests with the association premature (owner decision 2026-09-28) (URGENT)
+- Phases 12.2 (Visual Modernisation, `REQ-QA-visual-modernisation`) and 12.3 (In-depth Quality Audit, `REQ-QA-deep-audit`) inserted after Phase 12.1 by owner decision 2026-10-06: a more modern and dynamic interface, then a deep audit of code quality, test coverage, architecture and security, both before Phase 13's field tests
+- Seeds are kept in `.planning/seeds/` (SEED-001 map layers, SEED-002 parcel journal, SEED-003 global search across all app items)
 
 ## Deferred Items
 
@@ -168,6 +170,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-09-28
-Stopped at: Phase 12.1 inserted; next step /gsd-discuss-phase 12.1 or /gsd-plan-phase 12.1
+Last session: 2026-10-06
+Stopped at: Phases 12.2 and 12.3 inserted; 12.1 owner acceptance loop continues, then /gsd-discuss-phase 12.2 or /gsd-plan-phase 12.2
 Resume file: None
