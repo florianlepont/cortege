@@ -393,14 +393,14 @@ function useAppController() {
 
   // ─── Nearby parcels (home screen) ──────────────────────────────────────────
 
-  const { parcels, sectorAvgScore, loading, locationDenied, error } = nearbyParcels
+  const { position, parcels, sectorAvgScore, loading, locationDenied, error } = nearbyParcels
   const loadNearbyParcels = useLatestCallback(nearbyParcels.load)
   const nearby = useMemo<NearbyParcelsContextValue>(
     () => ({
-      state: { parcels, sectorAvgScore, loading, locationDenied, error },
+      state: { position, parcels, sectorAvgScore, loading, locationDenied, error },
       load: loadNearbyParcels,
     }),
-    [parcels, sectorAvgScore, loading, locationDenied, error, loadNearbyParcels],
+    [position, parcels, sectorAvgScore, loading, locationDenied, error, loadNearbyParcels],
   )
 
   return {

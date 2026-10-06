@@ -15,6 +15,8 @@ export type NearbyParcel = PublicParcelStatusItem & {
 }
 
 export type NearbyParcelsState = {
+  /** Where the phone is, for the Home mini-map (null until a position is known). */
+  position: { lat: number; lng: number } | null
   parcels: NearbyParcel[]
   sectorAvgScore: number | null
   loading: boolean
@@ -67,6 +69,7 @@ export function hasMixedMethodVersions(
 
 export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
   const [state, setState] = useState<NearbyParcelsState>({
+    position: null,
     parcels: [],
     sectorAvgScore: null,
     loading: false,
@@ -116,6 +119,7 @@ export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
           : null
 
       setState({
+        position: { lat, lng },
         parcels: withDistance,
         sectorAvgScore,
         loading: false,

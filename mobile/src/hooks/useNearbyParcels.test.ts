@@ -58,6 +58,8 @@ describe("useNearbyParcels", () => {
     expect(result.current.loading).toBe(false)
     expect(result.current.parcels).toEqual([])
     expect(result.current.sectorAvgScore).toBeNull()
+    // The Home mini-map centres on the position the parcels were loaded around.
+    expect(result.current.position).toEqual({ lat: 46, lng: 2 })
   })
 
   test("load does nothing without an access token (Phase 2: the route requires a member)", async () => {

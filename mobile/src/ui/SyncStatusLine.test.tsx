@@ -1,8 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
-import { Ionicons } from "@expo/vector-icons"
 import * as Haptics from "expo-haptics"
-import { resolveSyncStatusPillState, SyncStatusPill } from "./SyncStatusPill"
+import { resolveSyncStatusLineState, SyncStatusLine } from "./SyncStatusLine"
 import { fr } from "../i18n"
 
 jest.mock("react-native", () => {
@@ -64,71 +63,71 @@ function render(props: { isOnline: boolean; isSyncing: boolean; pendingCount: nu
   let tree: renderer.ReactTestRenderer | undefined
   const onPress = jest.fn()
   act(() => {
-    tree = renderer.create(<SyncStatusPill {...props} onPress={onPress} />)
+    tree = renderer.create(<SyncStatusLine {...props} onPress={onPress} />)
   })
   const root = tree!.root
   const texts = root
     .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
     .map((node) => String([node.props.children].flat().join("")))
-  const icon = root.findAllByType(Ionicons)[0]
+  const spinner = root.findAll((node) => (node.type as unknown) === "ActivityIndicator")[0]
   const pressable = root.findByType("Pressable" as never)
-  return { texts, icon, onPress, pressable, rerender: tree!.update }
+  return { texts, spinner, onPress, pressable, rerender: tree!.update }
 }
 
-describe("resolveSyncStatusPillState (SYNC-02)", () => {
+describe("resolveSyncStatusLineState (SYNC-02)", () => {
   test("offline always wins, even mid-sync or with work pending", () => {
-    expect(resolveSyncStatusPillState({ isOnline: false, isSyncing: true, pendingCount: 3 })).toBe(
+    expect(resolveSyncStatusLineState({ isOnline: false, isSyncing: true, pendingCount: 3 })).toBe(
       "offline",
     )
   })
 
   test("syncing wins over pending work when online", () => {
-    expect(resolveSyncStatusPillState({ isOnline: true, isSyncing: true, pendingCount: 2 })).toBe(
+    expect(resolveSyncStatusLineState({ isOnline: true, isSyncing: true, pendingCount: 2 })).toBe(
       "syncing",
     )
   })
 
   test("pending work shows toSend once idle", () => {
-    expect(resolveSyncStatusPillState({ isOnline: true, isSyncing: false, pendingCount: 2 })).toBe(
+    expect(resolveSyncStatusLineState({ isOnline: true, isSyncing: false, pendingCount: 2 })).toBe(
       "toSend",
     )
   })
 
   test("nothing pending and online reads up to date", () => {
-    expect(resolveSyncStatusPillState({ isOnline: true, isSyncing: false, pendingCount: 0 })).toBe(
+    expect(resolveSyncStatusLineState({ isOnline: true, isSyncing: false, pendingCount: 0 })).toBe(
       "upToDate",
     )
   })
 })
 
-describe("SyncStatusPill renders the matching label and icon", () => {
+describe("SyncStatusLine renders the matching label", () => {
   test("offline", () => {
-    const { texts, icon } = render({ isOnline: false, isSyncing: false, pendingCount: 0 })
-    expect(texts).toContain(fr.components.syncStatusPill.offline)
-    expect(icon.props.name).toBe("cloud-offline-outline")
+    const { texts, spinner } = render({ isOnline: false, isSyncing: false, pendingCount: 0 })
+    expect(texts).toContain(fr.components.syncStatusLine.offline)
+    expect(spinner).toBeUndefined()
   })
 
   test("toSend with a count", () => {
-    const { texts, icon } = render({ isOnline: true, isSyncing: false, pendingCount: 4 })
-    expect(texts).toContain(fr.components.syncStatusPill.toSend({ count: 4 }))
-    expect(icon.props.name).toBe("cloud-upload-outline")
+    const { texts, spinner } = render({ isOnline: true, isSyncing: false, pendingCount: 4 })
+    expect(texts).toContain(fr.components.syncStatusLine.toSend({ count: 4 }))
+    expect(spinner).toBeUndefined()
   })
 
-  test("syncing shows a spinner, not the sync icon", () => {
-    const { texts, icon } = render({ isOnline: true, isSyncing: true, pendingCount: 0 })
-    expect(texts).toContain(fr.components.syncStatusPill.syncing)
-    expect(icon).toBeUndefined()
+  test("syncing shows a spinner, not a dot", () => {
+    const { texts, spinner } = render({ isOnline: true, isSyncing: true, pendingCount: 0 })
+    expect(texts).toContain(fr.components.syncStatusLine.syncing)
+    expect(spinner).toBeDefined()
   })
 
   test("up to date", () => {
-    const { texts, icon } = render({ isOnline: true, isSyncing: false, pendingCount: 0 })
-    expect(texts).toContain(fr.components.syncStatusPill.upToDate)
-    expect(icon.props.name).toBe("checkmark-circle-outline")
+    const { texts, spinner } = render({ isOnline: true, isSyncing: false, pendingCount: 0 })
+    expect(texts).toContain(fr.components.syncStatusLine.upToDate)
+    expect(spinner).toBeUndefined()
   })
 })
 
-describe("SyncStatusPill interaction", () => {
-  test("tapping the pill calls onPress", () => {
+describe("SyncStatusLine interaction", () => {
+  test("tapping the line calls onPress", () => {
     const { pressable, onPress } = render({ isOnline: true, isSyncing: false, pendingCount: 0 })
     act(() => {
       pressable.props.onPress()
@@ -141,21 +140,21 @@ describe("SyncStatusPill interaction", () => {
     let tree: renderer.ReactTestRenderer | undefined
     act(() => {
       tree = renderer.create(
-        <SyncStatusPill isOnline isSyncing pendingCount={0} onPress={jest.fn()} />,
+        <SyncStatusLine isOnline isSyncing pendingCount={0} onPress={jest.fn()} />,
       )
     })
     expect(notifySuccess).not.toHaveBeenCalled()
 
     act(() => {
       tree!.update(
-        <SyncStatusPill isOnline isSyncing={false} pendingCount={0} onPress={jest.fn()} />,
+        <SyncStatusLine isOnline isSyncing={false} pendingCount={0} onPress={jest.fn()} />,
       )
     })
     expect(notifySuccess).toHaveBeenCalledTimes(1)
 
     act(() => {
       tree!.update(
-        <SyncStatusPill isOnline isSyncing={false} pendingCount={2} onPress={jest.fn()} />,
+        <SyncStatusLine isOnline isSyncing={false} pendingCount={2} onPress={jest.fn()} />,
       )
     })
     expect(notifySuccess).toHaveBeenCalledTimes(1)

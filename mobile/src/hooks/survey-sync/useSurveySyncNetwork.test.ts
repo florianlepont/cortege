@@ -242,7 +242,7 @@ describe("useSurveySyncNetwork", () => {
     })
   })
 
-  // ─── SYNC-02: the reactive booleans SyncStatusPill reads ──────────────────
+  // ─── SYNC-02: the reactive booleans SyncStatusLine reads ──────────────────
 
   describe("isOnline", () => {
     test("defaults to true before the network probe resolves", async () => {

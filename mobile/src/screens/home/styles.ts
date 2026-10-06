@@ -25,8 +25,6 @@ export function createStyles(theme: BrandTheme) {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: PAGE_H,
-      marginBottom: 16,
     },
     greetingTitle: {
       fontSize: 28,
@@ -38,6 +36,11 @@ export function createStyles(theme: BrandTheme) {
       flex: 1,
       flexShrink: 1,
       marginRight: brandSpacing.sm,
+    },
+    greetingBlock: {
+      paddingHorizontal: PAGE_H,
+      marginBottom: 16,
+      gap: 6,
     },
     nativeHeaderSync: {
       flexDirection: "row",
@@ -129,13 +132,31 @@ export function createStyles(theme: BrandTheme) {
     heroButtonLabel: {
       color: theme.scheme === "dark" ? theme.semanticColors.onCtaPrimary : brandColors.forest,
     },
-    // HOME-02: secondary "Nouveau relevé" action once the primary CTA becomes "Reprendre".
-    heroSecondaryButton: {
-      marginTop: 4,
-      borderColor: brandOnDarkColors.heroPanelBorderOnDark,
-      backgroundColor: "transparent",
+    // The draft's progress: ten segments, one per factor.
+    progressRow: {
+      flexDirection: "row",
+      gap: 4,
+      marginVertical: 8,
     },
-    heroSecondaryButtonLabel: {
+    progressSegment: {
+      flex: 1,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: brandOnDarkColors.heroPanelBorderOnDark,
+    },
+    progressSegmentDone: {
+      backgroundColor: theme.semanticColors.accent,
+    },
+    // HOME-02: "Nouveau relevé" is a plain link once the primary CTA becomes "Reprendre".
+    heroLink: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+    },
+    heroLinkLabel: {
+      ...brandTypography.button,
       color: brandOnDarkColors.heroBodyOnDark,
     },
 
@@ -152,55 +173,9 @@ export function createStyles(theme: BrandTheme) {
       color: theme.semanticColors.accent,
     },
 
-    // Parcels
-    parcelsList: {
-      paddingHorizontal: PAGE_H,
-      gap: 10,
-    },
     loadingRow: {
       paddingHorizontal: PAGE_H,
       gap: 10,
-    },
-    // Sector score card
-    sectorCard: {
-      backgroundColor: theme.semanticColors.surfaceSoft,
-      borderRadius: brandRadius.card,
-      borderWidth: 1,
-      borderColor: theme.colors.divider,
-      padding: 16,
-      gap: 10,
-      marginTop: 4,
-    },
-    sectorHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    sectorLabel: {
-      fontSize: 12,
-      fontWeight: "800",
-      letterSpacing: 0.8,
-      color: theme.semanticColors.textStrong,
-      textTransform: "uppercase",
-      flex: 1,
-    },
-    sectorScore: {
-      fontSize: 22,
-      fontWeight: "900",
-      color: theme.semanticColors.textStrong,
-    },
-    scoreDotsRow: {
-      flexDirection: "row",
-      gap: 6,
-    },
-    scoreDot: {
-      width: 18,
-      height: 18,
-      borderRadius: 9,
-    },
-    sectorMeta: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
     },
   })
 }

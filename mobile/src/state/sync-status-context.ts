@@ -2,7 +2,7 @@ import { createContext, useContext } from "react"
 
 /**
  * Sync-status context (phase 7, SYNC-02): `isOnline` and `isSyncing` only, read by
- * `SyncStatusPill` in the Home and Mes Relevés headers. Kept separate from the status-message
+ * `SyncStatusLine` in the Home and Mes Relevés headers. Kept separate from the status-message
  * context (`status-context.ts`) on purpose: a status-message update (e.g. "relevé ouvert") must
  * not re-render Home and Mes Relevés, only Settings — the same narrow-context pattern as
  * `useAccessToken`/`useNearbyParcelsState` (see `AppStateProvider.tsx`).

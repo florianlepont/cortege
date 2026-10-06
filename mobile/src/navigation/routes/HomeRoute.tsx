@@ -18,7 +18,7 @@ import type { HomeRouteProps } from "../types"
 /**
  * Home route (phase 01.9-18, D-01): the signed-in user, the local surveys and
  * the nearby parcels. Phase 7 (SYNC-02) also reads the narrow sync-status
- * context's `isOnline`/`isSyncing` booleans, for the dashboard's `SyncStatusPill`.
+ * context's `isOnline`/`isSyncing` booleans, for the dashboard's `SyncStatusLine`.
  */
 export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps) {
   const { state: session } = useSession()
