@@ -17,7 +17,7 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle } from "./stack-options"
+import { createBaseStackScreenOptions, hiddenNativeTitle, pageColourHeader } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -51,12 +51,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             headerLargeTitle: false,
             // OA-94: on iOS the header takes the page colour (no blur tint), so it does not read as
             // a band of another colour above the content.
-            ...(Platform.OS === "ios"
-              ? {
-                  headerBlurEffect: "none" as const,
-                  headerStyle: { backgroundColor: theme.colors.canvas },
-                }
-              : {}),
+            ...pageColourHeader(theme),
             ...(useNativeNav
               ? {}
               : {

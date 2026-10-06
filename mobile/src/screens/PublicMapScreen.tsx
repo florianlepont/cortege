@@ -280,6 +280,7 @@ export function PublicMapScreen({
         items={mapItems}
         draftIds={draftIdSet}
         initialRegion={initialRegion}
+        highlightedParcelIds={focus?.parcelIds}
         region={viewport.region}
         selectedId={selectedItem?.survey_id ?? null}
         parcelStatuses={parcelStatuses}

@@ -4,7 +4,7 @@ import { useBrandTheme } from "../../app/theme"
 import { HomeRoute } from "../routes/HomeRoute"
 import { styles } from "../styles"
 import type { HomeStackParamList } from "../types"
-import { createBaseStackScreenOptions } from "./stack-options"
+import { createBaseStackScreenOptions, pageColourHeader } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -19,7 +19,11 @@ export function HomeTabNavigator() {
   return (
     <View style={styles.tabScreenContainer}>
       <HomeStack.Navigator
-        screenOptions={{ ...createBaseStackScreenOptions(theme), headerShown: false }}
+        screenOptions={{
+          ...createBaseStackScreenOptions(theme),
+          ...pageColourHeader(theme),
+          headerShown: false,
+        }}
       >
         <HomeStack.Screen name="homeRoot" component={HomeRoute} />
         <HomeStack.Screen

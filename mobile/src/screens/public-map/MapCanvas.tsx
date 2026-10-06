@@ -39,6 +39,8 @@ export type MapCanvasProps = {
   onOpenClusterList: (items: PublicMapItem[]) => void
   /** REQ-D-basemap-switch (08-CONTEXT D-01). */
   basemap?: BasemapKey
+  /** The parcels of the survey shown from its page, drawn highlighted (OA-116). */
+  highlightedParcelIds?: string[]
   /** Where the camera starts (a survey to show, OA-59); France by default. */
   initialRegion?: MapRegion
   /** Bumped after an offline download or delete so the style choice is re-checked. */
@@ -66,6 +68,7 @@ export const MapCanvas = memo(function MapCanvas({
   onOpenClusterList,
   basemap = "map",
   initialRegion = DEFAULT_MAP_REGION,
+  highlightedParcelIds,
   styleRefreshKey = 0,
 }: MapCanvasProps) {
   const { mapStyle, cadastreInStyle } = useMapStyle(basemap, styleRefreshKey)
@@ -116,6 +119,7 @@ export const MapCanvas = memo(function MapCanvas({
       <CadastreLayer enabled={parcelLayerRenderable && !cadastreInStyle} />
       <ParcelPolygonsLayer
         items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS}
+        selectedParcelIds={highlightedParcelIds}
         onParcelPress={onSelectParcel}
       />
       {clusters.map((entry) => {

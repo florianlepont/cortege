@@ -10,10 +10,12 @@ export function SeeOnMapAction({
   surveyId,
   siteName,
   coordinates,
+  parcelIds,
 }: {
   surveyId: string
   siteName: string
   coordinates: { lat: number; lng: number }
+  parcelIds: string[]
 }) {
   const navigation = useNavigation()
   return (
@@ -24,7 +26,7 @@ export function SeeOnMapAction({
       onPress={() =>
         navigation.navigate("publicMap", {
           screen: "publicMapHome",
-          params: { focus: { surveyId, ...coordinates, nonce: Date.now() } },
+          params: { focus: { surveyId, ...coordinates, parcelIds, nonce: Date.now() } },
         })
       }
     />

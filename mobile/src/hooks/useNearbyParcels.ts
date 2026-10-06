@@ -67,6 +67,8 @@ export function hasMixedMethodVersions(
   return versions.size > 1
 }
 
+const POSITION_TIMEOUT_MS = 20000
+
 export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
   const [state, setState] = useState<NearbyParcelsState>({
     position: null,
@@ -93,9 +95,14 @@ export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
         }
       }
 
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      })
+      // A position that never comes (indoors, location services stalling) ends as an error the
+      // card can show, not as a placeholder that waits forever (OA-113).
+      const position = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        new Promise<never>((_resolve, reject) =>
+          setTimeout(() => reject(new Error("position timeout")), POSITION_TIMEOUT_MS),
+        ),
+      ])
       const { latitude: lat, longitude: lng } = position.coords
       const bbox = buildBboxAroundPoint({ lat, lng }, RADIUS_DEG)
 

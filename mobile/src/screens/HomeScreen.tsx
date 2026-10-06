@@ -118,9 +118,11 @@ export function HomeScreen({
     [apiUrl, currentUser?.profile_picture_url],
   )
 
+  // The nearby parcels need the access token: loaded again once it arrives (OA-113, the card stayed
+  // an empty placeholder when the token came after the first render).
   useEffect(() => {
-    onLoadNearbyParcels()
-  }, [onLoadNearbyParcels])
+    if (accessToken) onLoadNearbyParcels()
+  }, [accessToken, onLoadNearbyParcels])
 
   const hasAlerts = surveyStats.blocked > 0 || surveyStats.failed > 0
   const isBlockedAlert = surveyStats.blocked > 0

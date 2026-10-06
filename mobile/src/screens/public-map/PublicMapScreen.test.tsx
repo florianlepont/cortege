@@ -310,7 +310,7 @@ describe("PublicMapScreen", () => {
   })
 
   test("a focus request centres the map and selects the survey once it is among the markers (OA-59)", () => {
-    const focus = { surveyId: "s-7", lat: 45.7, lng: 4.8, nonce: 1 }
+    const focus = { surveyId: "s-7", lat: 45.7, lng: 4.8, parcelIds: ["P1"], nonce: 1 }
     const props = makeProps({ focus })
     mount(props)
     expect(mockAnimateToRegion).toHaveBeenCalled()

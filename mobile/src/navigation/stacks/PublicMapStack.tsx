@@ -6,7 +6,7 @@ import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { PublicMapRoute } from "../routes/PublicMapRoute"
 import { styles } from "../styles"
 import type { PublicMapStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle } from "./stack-options"
+import { createBaseStackScreenOptions, hiddenNativeTitle, pageColourHeader } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -21,7 +21,11 @@ export function PublicMapTabNavigator() {
   return (
     <View style={styles.tabScreenContainer}>
       <PublicMapStack.Navigator
-        screenOptions={{ ...createBaseStackScreenOptions(theme), headerShown: false }}
+        screenOptions={{
+          ...createBaseStackScreenOptions(theme),
+          ...pageColourHeader(theme),
+          headerShown: false,
+        }}
       >
         <PublicMapStack.Screen name="publicMapHome" component={PublicMapRoute} />
         <PublicMapStack.Screen
