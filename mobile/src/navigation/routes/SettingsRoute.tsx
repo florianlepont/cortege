@@ -1,31 +1,36 @@
-import { memo } from "react"
+import { memo, useEffect } from "react"
 import { SettingsScreen } from "../../screens/SettingsScreen"
+import { useOfflineAreasSummary } from "../../hooks/useOfflineAreasSummary"
 import { useSession } from "../../state/session-context"
-import { useStatus } from "../../state/status-context"
 import { useSyncActions } from "../../state/sync-actions-context"
+import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SettingsRouteProps } from "../types"
 
 /**
- * Settings route (phase 01.9-18, D-01). The only reader of the status context:
- * a status update re-renders this screen and no other.
+ * Settings route (phase 01.9-18, D-01). OA-78: no sync tools any more, and no status line (OA-77);
+ * the offline-areas summary is read again each time the screen is shown.
  */
-export const SettingsRoute = memo(function SettingsRoute(_props: SettingsRouteProps) {
-  const { status } = useStatus()
+export const SettingsRoute = memo(function SettingsRoute({ navigation }: SettingsRouteProps) {
   const { state: session, actions: sessionActions } = useSession()
   const syncActions = useSyncActions()
+  const { summary, refresh } = useOfflineAreasSummary()
+
+  useEffect(() => navigation.addListener?.("focus", () => void refresh()), [navigation, refresh])
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  const onOpenOfflineAreas = useLatestCallback(() => navigation.navigate("offlineAreas"))
 
   return (
     <SettingsScreen
       apiUrl={session.apiUrl}
       onApiUrlChange={sessionActions.setApiUrl}
-      onSync={syncActions.handleSync}
-      onPullChanges={syncActions.handlePullChanges}
-      onRefreshLocalList={syncActions.refreshLocalSurveys}
-      onRefreshLocalAttachments={syncActions.refreshLocalAttachments}
+      offlineAreas={summary}
+      onOpenOfflineAreas={onOpenOfflineAreas}
       onDeleteAccount={sessionActions.handleDeleteAccount}
       onDebugResetIbpData={syncActions.handleDebugResetIbpData}
       onDebugResetUserData={syncActions.handleDebugResetUserData}
-      status={status}
     />
   )
 })

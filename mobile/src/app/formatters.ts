@@ -59,3 +59,6 @@ export const formatSyncErrorForUser = (
   }
   return fr.syncErrors.generic
 }
+
+/** A byte count as megabytes with one decimal ("38.0"), for the offline-map zones. */
+export const formatAreaMegabytes = (bytes: number): string => (bytes / 1_000_000).toFixed(1)

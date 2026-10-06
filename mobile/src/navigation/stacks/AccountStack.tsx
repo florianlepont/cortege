@@ -3,6 +3,7 @@ import type { NativeStackNavigationOptions } from "@react-navigation/native-stac
 import { Ionicons } from "@expo/vector-icons"
 import { fr } from "../../i18n"
 import { AccountRoute } from "../routes/AccountRoute"
+import { OfflineAreasRoute } from "../routes/OfflineAreasRoute"
 import { SettingsRoute } from "../routes/SettingsRoute"
 
 /**
@@ -30,6 +31,8 @@ type AccountHomeOptionsArgs = { navigation: { navigate: (name: "settings") => vo
 export function makeAccountHomeOptions(tint: string) {
   return ({ navigation }: AccountHomeOptionsArgs): NativeStackNavigationOptions => ({
     title: fr.navigation.headers.account,
+    // The page draws its own large title (OA-69, OA-70); the header keeps the back and gear buttons.
+    headerTitle: () => null,
     headerShown: true,
     headerLargeTitle: false,
     headerRight: () => (
@@ -40,6 +43,14 @@ export function makeAccountHomeOptions(tint: string) {
 
 export const settingsScreenOptions: NativeStackNavigationOptions = {
   title: fr.navigation.headers.settings,
+  headerTitle: () => null,
+  headerShown: true,
+  headerLargeTitle: false,
+}
+
+export const offlineAreasScreenOptions: NativeStackNavigationOptions = {
+  title: fr.navigation.headers.offlineAreas,
+  headerTitle: () => null,
   headerShown: true,
   headerLargeTitle: false,
 }
@@ -47,4 +58,5 @@ export const settingsScreenOptions: NativeStackNavigationOptions = {
 export const ACCOUNT_SCREENS = {
   accountHome: AccountRoute,
   settings: SettingsRoute,
+  offlineAreas: OfflineAreasRoute,
 } as const

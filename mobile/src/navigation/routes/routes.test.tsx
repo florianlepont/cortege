@@ -129,6 +129,9 @@ jest.mock("../../screens/SurveyParcelSelectionScreen", () => ({
 jest.mock("../../screens/PublicMapScreen", () => ({ PublicMapScreen: mockScreen("publicMap") }))
 jest.mock("../../screens/AccountScreen", () => ({ AccountScreen: mockScreen("account") }))
 jest.mock("../../screens/SettingsScreen", () => ({ SettingsScreen: mockScreen("settings") }))
+jest.mock("../../screens/OfflineAreasScreen", () => ({
+  OfflineAreasScreen: mockScreen("offlineAreas"),
+}))
 
 const mockExplorer = {
   items: [],
@@ -191,6 +194,7 @@ jest.mock("../../hooks/useOfflinePendingParcelDrain", () => ({
 const mockAddPendingParcelDownload = jest.fn()
 jest.mock("../../storage/offline-map", () => ({
   addPendingParcelDownload: (...args: unknown[]) => mockAddPendingParcelDownload(...args),
+  listOfflineAreas: jest.fn(async () => []),
 }))
 
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
@@ -220,6 +224,7 @@ import { FactorDetailRoute } from "./FactorDetailRoute"
 import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
+import { OfflineAreasRoute } from "./OfflineAreasRoute"
 import { SettingsRoute } from "./SettingsRoute"
 import { SurveyContextRoute } from "./SurveyContextRoute"
 import { SurveyDetailRoute } from "./SurveyDetailRoute"
@@ -479,20 +484,70 @@ beforeEach(() => {
 })
 
 describe("SettingsRoute", () => {
-  test("passes the status, the session and the sync actions", async () => {
+  test("passes the session, the offline-areas summary and the account and debug actions", async () => {
     const fixture = makeFixture()
+    const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
-        <SettingsRoute navigation={makeNavigation() as never} route={{} as never} />
+        <SettingsRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
     const settings = props("settings")
-    expect(settings.status).toBe(fr.status.session.ready())
     expect(settings.apiUrl).toBe("http://api.test/v1")
     expect(settings.onApiUrlChange).toBe(fixture.session.actions.setApiUrl)
-    expect(settings.onSync).toBe(fixture.syncActions.handleSync)
-    expect(settings.onRefreshLocalList).toBe(fixture.syncActions.refreshLocalSurveys)
     expect(settings.onDeleteAccount).toBe(fixture.session.actions.handleDeleteAccount)
+    expect(settings.onDebugResetIbpData).toBe(fixture.syncActions.handleDebugResetIbpData)
+    expect(settings.offlineAreas).toEqual({ count: 0, bytes: 0 })
+    // The status line is gone (OA-77) and so are the sync tools (OA-78).
+    expect(settings.status).toBeUndefined()
+    expect(settings.onSync).toBeUndefined()
+
+    callback("settings", "onOpenOfflineAreas")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("offlineAreas")
+  })
+
+  test("reads the offline areas again each time it is shown", async () => {
+    const listeners: Record<string, () => void> = {}
+    const navigation = {
+      ...makeNavigation(),
+      addListener: jest.fn((event: string, handler: () => void) => {
+        listeners[event] = handler
+        return jest.fn()
+      }),
+    }
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <SettingsRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    await act(async () => {
+      listeners.focus()
+    })
+    expect(navigation.addListener).toHaveBeenCalledWith("focus", expect.any(Function))
+  })
+})
+
+describe("OfflineAreasRoute", () => {
+  test("shows the downloaded zones, deletes one and reads them again on focus", async () => {
+    const listeners: Record<string, () => void> = {}
+    const navigation = {
+      ...makeNavigation(),
+      addListener: jest.fn((event: string, handler: () => void) => {
+        listeners[event] = handler
+        return jest.fn()
+      }),
+    }
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <OfflineAreasRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("offlineAreas").areas).toEqual([])
+    await act(async () => {
+      listeners.focus()
+      callback("offlineAreas", "onDeleteArea")("area-1")
+    })
+    expect(navigation.addListener).toHaveBeenCalledWith("focus", expect.any(Function))
   })
 })
 
@@ -507,9 +562,7 @@ describe("AccountRoute", () => {
     )
     expect(props("account").accessToken).toBe("token-1")
     expect(props("account").onLogout).toBe(fixture.session.actions.handleLogout)
-
-    callback("account", "onOpenSyncAndData")()
-    expect(navigation.navigate).toHaveBeenLastCalledWith("settings")
+    expect(props("account").onOpenSyncAndData).toBeUndefined()
 
     await mount(
       <Providers fixture={{ ...fixture, accessToken: null }}>

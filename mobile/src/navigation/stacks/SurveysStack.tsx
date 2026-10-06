@@ -18,7 +18,12 @@ import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
 import { createBaseStackScreenOptions } from "./stack-options"
-import { ACCOUNT_SCREENS, makeAccountHomeOptions, settingsScreenOptions } from "./AccountStack"
+import {
+  ACCOUNT_SCREENS,
+  makeAccountHomeOptions,
+  offlineAreasScreenOptions,
+  settingsScreenOptions,
+} from "./AccountStack"
 import { SurveysStackConfigContext, type SurveysStackConfig } from "./surveys-stack-config"
 
 const SurveysStack = createNativeStackNavigator<SurveysStackParamList>()
@@ -175,6 +180,11 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="settings"
             options={settingsScreenOptions}
             component={ACCOUNT_SCREENS.settings}
+          />
+          <SurveysStack.Screen
+            name="offlineAreas"
+            options={offlineAreasScreenOptions}
+            component={ACCOUNT_SCREENS.offlineAreas}
           />
         </SurveysStack.Navigator>
       </View>

@@ -128,6 +128,7 @@ jest.mock("./routes/ParcelSelectionRoute", () => ({
 }))
 jest.mock("./routes/AccountRoute", () => ({ AccountRoute: mockRoute() }))
 jest.mock("./routes/SettingsRoute", () => ({ SettingsRoute: mockRoute() }))
+jest.mock("./routes/OfflineAreasRoute", () => ({ OfflineAreasRoute: mockRoute() }))
 jest.mock("./routes/SurveyListRoute", () => {
   const config = jest.requireActual("./stacks/surveys-stack-config") as {
     useSurveysStackConfig: () => { useNativeNav: boolean }
@@ -230,7 +231,14 @@ describe("AppNavigation tree choice", () => {
     expect(mockNavigators.jsTabs).toHaveLength(1)
     expect(mockNavigators.nativeTabs).toBeUndefined()
     expect(Object.keys(mockScreens)).toEqual(
-      expect.arrayContaining(["home", "surveys", "publicMap", "accountHome", "settings"]),
+      expect.arrayContaining([
+        "home",
+        "surveys",
+        "publicMap",
+        "accountHome",
+        "settings",
+        "offlineAreas",
+      ]),
     )
     // OA-13: Compte is pushed onto a tab's stack, not a tab of its own.
     expect(mockScreens.account).toBeUndefined()
@@ -474,12 +482,24 @@ describe("stack options and listeners", () => {
     }
   })
 
+  test("Paramètres and Cartes hors ligne draw their own title too", async () => {
+    await mount(<AppNavigation />)
+    const settings = mockScreens.settings.options as Options
+    expect(settings.title).toBe(fr.navigation.headers.settings)
+    expect((settings.headerTitle as () => null)()).toBeNull()
+    const areas = mockScreens.offlineAreas.options as Options
+    expect(areas.title).toBe(fr.navigation.headers.offlineAreas)
+    expect((areas.headerTitle as () => null)()).toBeNull()
+  })
+
   test("the account header button opens the settings", async () => {
     await mount(<AppNavigation />)
     const options = (mockScreens.accountHome.options as OptionsFn)({
       navigation: mockNavigation,
     })
     expect(options.title).toBe(fr.navigation.headers.account)
+    // The page draws its own large title (OA-69): the header keeps only its buttons.
+    expect((options.headerTitle as () => null)()).toBeNull()
     const button = await mount((options.headerRight as () => React.ReactElement)())
     const pressable = button.root.findByType("Pressable" as unknown as React.ElementType)
     expect(pressable.props.accessibilityLabel).toBe(fr.navigation.a11y.openSettings)

@@ -2,11 +2,9 @@ import { useMemo } from "react"
 import { ActionSheetIOS, Alert, Image, Platform, Pressable, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandComponentTokens } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { AuthUser } from "../../app/types"
-import { AppCard } from "../../ui/AppCard"
-import { AppStatusChip } from "../../ui/AppStatusChip"
+import { GlassSurface } from "../../ui/GlassSurface"
 import { fr } from "../../i18n"
 import { createIdentityStyles } from "./styles"
 
@@ -67,7 +65,6 @@ export function IdentityCard({
   )
   const heroSubtitle = currentUser.email ?? fr.account.noEmail
   const initials = resolveInitials(currentUser, profile)
-  const roleLabel = currentUser.role?.trim() || fr.account.defaultRole
 
   // ACC-01 : Action Sheet native au lieu du Modal custom
   const openPhotoActions = (): void => {
@@ -121,59 +118,46 @@ export function IdentityCard({
     }
   }
 
+  // OA-70: a centred avatar with a glass camera badge, the name and the email under it (no card,
+  // no role chip: OA-71).
   return (
-    // ACC-14 : Carte d'identité en variant hero (fond forest)
-    <AppCard
-      variant="hero"
-      padding={brandComponentTokens.card.compactPadding}
-      style={styles.identityCard}
-    >
-      <View style={styles.identityRow}>
-        {/* ACC-11 : Avatar avec badge caméra */}
-        <Pressable
-          style={styles.avatarButton}
-          onPress={openPhotoActions}
-          disabled={profileUpdating}
-          accessibilityRole="button"
-          accessibilityLabel={fr.account.a11y.editPhoto}
-          accessibilityHint={fr.account.a11y.editPhotoHint}
-          hitSlop={{ top: 4, right: 4, bottom: 4, left: 0 }}
-        >
-          {profilePictureUri ? (
-            <Image
-              source={{
-                uri: profilePictureUri,
-                headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-              }}
-              style={styles.avatarImage}
-              accessible={false}
-            />
-          ) : (
-            <View style={styles.avatarFallback}>
-              <Text style={styles.avatarFallbackText} accessible={false}>
-                {initials || fr.account.initialsFallback}
-              </Text>
-            </View>
-          )}
-          {/* ACC-C01 : Badge caméra agrandi à 28pt, centrage icône garanti */}
-          <View style={styles.avatarEditBadge}>
-            <Ionicons name="camera" size={13} color={theme.semanticColors.onCtaPrimary} />
+    <View style={styles.identity}>
+      {/* ACC-11 : Avatar avec badge caméra */}
+      <Pressable
+        style={styles.avatarButton}
+        onPress={openPhotoActions}
+        disabled={profileUpdating}
+        accessibilityRole="button"
+        accessibilityLabel={fr.account.a11y.editPhoto}
+        accessibilityHint={fr.account.a11y.editPhotoHint}
+        hitSlop={{ top: 4, right: 4, bottom: 4, left: 4 }}
+      >
+        {profilePictureUri ? (
+          <Image
+            source={{
+              uri: profilePictureUri,
+              headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+            }}
+            style={styles.avatarImage}
+            accessible={false}
+          />
+        ) : (
+          <View style={styles.avatarFallback}>
+            <Text style={styles.avatarFallbackText} accessible={false}>
+              {initials || fr.account.initialsFallback}
+            </Text>
           </View>
-        </Pressable>
-
-        <View style={styles.identityCopy}>
-          <Text style={styles.identityName} numberOfLines={1}>
-            {heroName}
-          </Text>
-          <Text style={styles.identityMeta} numberOfLines={1}>
-            {heroSubtitle}
-          </Text>
-          {/* ACC-I07 : chip de rôle avec tone onDark pour s'intégrer au fond forest */}
-          <View style={styles.identityFooter}>
-            <AppStatusChip label={roleLabel} tone="onDark" />
-          </View>
-        </View>
-      </View>
-    </AppCard>
+        )}
+        <GlassSurface style={styles.avatarEditBadge} pointerEvents="none">
+          <Ionicons name="camera-outline" size={18} color={theme.semanticColors.textStrong} />
+        </GlassSurface>
+      </Pressable>
+      <Text style={styles.identityName} numberOfLines={1}>
+        {heroName}
+      </Text>
+      <Text style={styles.identityMeta} numberOfLines={1}>
+        {heroSubtitle}
+      </Text>
+    </View>
   )
 }
