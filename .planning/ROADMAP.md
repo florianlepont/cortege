@@ -689,6 +689,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
   4. The survey list, survey detail, survey form and map screens have tests covering their sync-status, filter and error states, so the flows the field tests exercise are protected against regression.
   5. Every field-test case cites a unique story ID: the six Epic D stories have six distinct IDs, and `docs/specs/user-stories.md` §4 uses the MVP / V1 / V2 taxonomy.
   6. Each field observer's feedback is collected in one feedback grid (`docs/user-tests/field-feedback.md`): bugs, interface friction (slow entry, unclear screens, anything that gets in the way on a parcel) and suggestions, each with an ID, the screen concerned and the observer. At the end of the phase every entry is triaged as *release blocker*, *next milestone* or *rejected* (with a reason); the release blockers are fixed, in a short follow-up phase if needed, before the milestone closes.
+  7. The checks deferred from earlier phases are run on real devices and recorded: genus recognition on Android (latency and accuracy) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, and the splash and permission-refusal paths of onboarding (see the `human_verification` entries of the Phase 6, 8, 9 and 10 `VERIFICATION.md`).
 
 **Plans**: TBD
 

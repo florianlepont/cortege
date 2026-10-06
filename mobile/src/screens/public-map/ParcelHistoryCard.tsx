@@ -2,6 +2,7 @@ import { memo, useMemo, useState } from "react"
 import { Pressable, Text, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { computeIbpTotalDelta } from "../../app/ibp-scoring"
+import { brandOverlayTokens } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import type { ParcelSurveyHistoryItem } from "../../app/types"
 import { useParcelSurveyHistory } from "../../hooks/useParcelSurveyHistory"
@@ -97,7 +98,7 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
             accessibilityRole="button"
             accessibilityLabel={fr.publicMap.a11y.closeParcelHistory}
           >
-            <Ionicons name="close" size={18} color="#40654f" />
+            <Ionicons name="close" size={18} color={brandOverlayTokens.closeIcon} />
           </Pressable>
         }
         titleStyle={styles.title}

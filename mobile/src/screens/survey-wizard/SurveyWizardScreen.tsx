@@ -9,6 +9,7 @@ import {
   type IbpMethodVersion,
 } from "@cortege/ibp-domain"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../../app/constants"
+import { brandColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { RegionVersion, VegetationStage } from "../../app/types"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
@@ -194,7 +195,9 @@ export function SurveyWizardScreen({
                     testID={`method-option-${choice.version}`}
                   >
                     <View style={[styles.radio, selected ? styles.radioSelected : null]}>
-                      {selected ? <Ionicons name="checkmark" size={14} color="#FFFFFF" /> : null}
+                      {selected ? (
+                        <Ionicons name="checkmark" size={14} color={brandColors.white} />
+                      ) : null}
                     </View>
                     <View style={styles.choiceCopy}>
                       <View style={styles.choiceTitleRow}>
