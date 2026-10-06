@@ -366,6 +366,12 @@ export const brandMapTokens = {
     high: brandColors.moss,
   },
   scoreMarkerSelectedBorder: brandColors.forest,
+  // OA-126: a studied parcel of the Explorer is filled with the colour of its score band.
+  scoreParcelFill: {
+    low: "rgba(205, 88, 51, 0.55)",
+    mid: "rgba(204, 112, 31, 0.55)",
+    high: "rgba(137, 163, 58, 0.55)",
+  },
 } as const
 
 // Phase 4 (DS-06..DS-09, audit §4): the motion system. Kept as plain data (durations in ms, easing

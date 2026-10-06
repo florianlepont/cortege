@@ -103,3 +103,41 @@ describe("buildParcelFeatureCollection", () => {
     expect(buildParcelFeatureCollection([])).toEqual({ type: "FeatureCollection", features: [] })
   })
 })
+
+describe("by score (the Explorer, OA-126)", () => {
+  const scored = (id: string, total: number | null | undefined, status = "studied") =>
+    ({
+      parcel_id: id,
+      study_status: status,
+      latest_ibp_total: total,
+      geometry: { type: "Polygon", coordinates: [RING] },
+    }) as unknown as PublicParcelStatusItem
+
+  const fillOf = (item: PublicParcelStatusItem, selected: string[] = [], byScore = true) =>
+    buildParcelFeatureCollection([item], selected, { byScore }).features[0].properties
+
+  test("a studied parcel takes the fill and outline of the band of its total", () => {
+    expect(fillOf(scored("L", 8)).fill).toBe(brandMapTokens.scoreParcelFill.low)
+    expect(fillOf(scored("L", 8)).stroke).toBe(brandMapTokens.scoreMarker.low)
+    expect(fillOf(scored("M", 27)).fill).toBe(brandMapTokens.scoreParcelFill.mid)
+    expect(fillOf(scored("H", 45)).fill).toBe(brandMapTokens.scoreParcelFill.high)
+  })
+
+  test("the survey shown keeps its score colour with the heavy dark outline", () => {
+    const properties = fillOf(scored("H", 45), ["h"])
+    expect(properties.fill).toBe(brandMapTokens.scoreParcelFill.high)
+    expect(properties.stroke).toBe(brandMapTokens.scoreMarkerSelectedBorder)
+    expect(properties.strokeWidth).toBe(brandMapTokens.strokeWidthSelected)
+  })
+
+  test("a parcel without a usable total, or never studied, keeps the plain paint", () => {
+    expect(fillOf(scored("N", null)).fill).toBe(brandMapTokens.parcelStudiedFill)
+    expect(fillOf(scored("N", Number.NaN)).fill).toBe(brandMapTokens.parcelStudiedFill)
+    expect(fillOf(scored("N", undefined)).fill).toBe(brandMapTokens.parcelStudiedFill)
+    expect(fillOf(scored("U", 40, "not_studied")).fill).toBe(brandMapTokens.parcelNeutralFill)
+  })
+
+  test("the parcel picker keeps the status colours whatever the total", () => {
+    expect(fillOf(scored("H", 45), [], false).fill).toBe(brandMapTokens.parcelStudiedFill)
+  })
+})

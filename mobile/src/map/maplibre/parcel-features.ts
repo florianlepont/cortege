@@ -1,3 +1,4 @@
+import { bandTone, totalBand } from "@cortege/ibp-domain"
 import { brandMapTokens } from "../../app/brand-tokens"
 import type { PublicParcelStatusItem } from "../../app/types"
 
@@ -47,7 +48,28 @@ const toPolygon = (value: unknown): Ring[] | null => {
   return [outerRing, ...holes.map(toRing).filter((ring): ring is Ring => ring !== null)]
 }
 
-const paint = (studied: boolean, selected: boolean) => {
+/** The fill and outline of a studied parcel from the band of its latest total (OA-126). */
+const scorePaint = (total: number) => {
+  const tone = bandTone(totalBand(total))
+  return {
+    fill: brandMapTokens.scoreParcelFill[tone],
+    stroke: brandMapTokens.scoreMarker[tone],
+    strokeWidth: brandMapTokens.strokeWidthDefault,
+  }
+}
+
+const paint = (studied: boolean, selected: boolean, score: number | null, byScore: boolean) => {
+  if (byScore && studied && score !== null) {
+    const base = scorePaint(score)
+    // The survey shown from its page keeps its score colour, with the heavy dark outline.
+    return selected
+      ? {
+          ...base,
+          stroke: brandMapTokens.scoreMarkerSelectedBorder,
+          strokeWidth: brandMapTokens.strokeWidthSelected,
+        }
+      : base
+  }
   if (selected) {
     return {
       fill: brandMapTokens.parcelSelectedFill,
@@ -70,6 +92,7 @@ const paint = (studied: boolean, selected: boolean) => {
 export function buildParcelFeatureCollection(
   items: PublicParcelStatusItem[],
   selectedParcelIds: string[] = [],
+  options: { byScore?: boolean } = {},
 ): ParcelFeatureCollection {
   const selectedIds = new Set(selectedParcelIds.map((id) => id.trim().toUpperCase()))
   const features: ParcelFeatureCollection["features"] = []
@@ -81,7 +104,14 @@ export function buildParcelFeatureCollection(
     const selected = selectedIds.has(item.parcel_id.trim().toUpperCase())
     const properties: ParcelFeatureProperties = {
       parcel_id: item.parcel_id,
-      ...paint(item.study_status === "studied", selected),
+      ...paint(
+        item.study_status === "studied",
+        selected,
+        typeof item.latest_ibp_total === "number" && Number.isFinite(item.latest_ibp_total)
+          ? item.latest_ibp_total
+          : null,
+        options.byScore === true,
+      ),
     }
 
     if (geometry.type === "Polygon") {

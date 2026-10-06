@@ -42,9 +42,17 @@ export const homeFr = {
       title: "Identifier un arbre",
       body: "Le genre à partir d'une photo.",
       a11y: "Identifier un arbre par photo",
+      // The button of a result says where it leads: a survey is chosen next (OA-114).
+      confirm: "Utiliser dans un relevé",
     },
-    chooseSurveyTitle: ({ genus }: { genus: string }) => `Ajouter « ${genus} » à quel relevé ?`,
+    // OA-114: the native sheet that follows. Starting a survey is the main action, adding to a
+    // survey in progress the alternative.
+    chooseSurveyTitle: ({ genus }: { genus: string }) => genus,
     startSurvey: "Commencer un relevé avec ce genre",
+    addToSurveyTitle: "Ou l'ajouter à un relevé en cours",
+    addToSurveyFooter: "Le genre est ajouté au facteur A du relevé choisi.",
+    noOpenSurvey: "Aucun relevé en cours.",
+    close: "Fermer",
     cancel: "Annuler",
     genusAdded: ({ genus, name }: { genus: string; name: string }) =>
       `${genus} ajouté au facteur A de « ${name} »`,

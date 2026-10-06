@@ -36,7 +36,7 @@ jest.mock("react-native", () => {
   }
 })
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
-jest.mock("../../ui/AppActionSheet", () => ({ AppActionSheet: "AppActionSheet" }))
+jest.mock("./GenusTargetSheet", () => ({ GenusTargetSheet: "GenusTargetSheet" }))
 jest.mock("../../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
 jest.mock("../../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
 jest.mock("../../ui/GenusRecognitionModal", () => ({
@@ -90,7 +90,7 @@ const byType = (type: string) =>
 const maybeByType = (type: string) =>
   tree.root.findAll((node) => (node.type as unknown) === type)[0] as ReactTestInstance | undefined
 const modal = () => byType("GenusRecognitionModal")
-const sheet = () => byType("AppActionSheet")
+const sheet = () => byType("GenusTargetSheet")
 
 /** Photo tool open, a genus confirmed, the recognition sheet closed, the survey sheet delay run. */
 function confirmFagus() {
@@ -184,28 +184,26 @@ describe("ToolsSection", () => {
       jest.advanceTimersByTime(500)
     })
     expect(sheet().props.visible).toBe(true)
-    expect(sheet().props.title).toBe(t.chooseSurveyTitle({ genus: fr.genus.displayName.Fagus }))
-    expect(sheet().props.cancelLabel).toBe(t.cancel)
-    expect(sheet().props.options.map((option: { label: string }) => option.label)).toEqual([
-      "Test OB",
-      fr.common.untitledSurvey,
-      t.startSurvey,
+    expect(sheet().props.genusName).toBe(fr.genus.displayName.Fagus)
+    expect(sheet().props.targets).toEqual([
+      { id: "s1", name: "Test OB", progress: 4 },
+      { id: "s2", name: fr.common.untitledSurvey, progress: 4 },
     ])
+    // The photo result says a survey is chosen next (OA-114).
+    expect(modal().props.confirmLabel).toBe(t.identify.confirm)
   })
 
-  test("with no survey in progress only 'commencer un relevé' is offered", () => {
+  test("with no survey in progress the sheet has no survey to choose, only to start one", () => {
     mount([makeSurvey({ status: "submitted" })])
     confirmFagus()
-    expect(sheet().props.options.map((option: { label: string }) => option.label)).toEqual([
-      t.startSurvey,
-    ])
+    expect(sheet().props.targets).toEqual([])
   })
 
   test("choosing a survey adds the genus to it and confirms it", async () => {
     const { onAddGenusToSurvey } = mount([makeSurvey({ id: "s1", site_name: "Test OB" })])
     confirmFagus()
     await act(async () => {
-      sheet().props.options[0].onPress()
+      sheet().props.onChooseTarget("s1")
     })
     expect(onAddGenusToSurvey).toHaveBeenCalledWith("s1", "Fagus")
     expect(byType("AppNotice").props.tone).toBe("success")
@@ -220,7 +218,7 @@ describe("ToolsSection", () => {
     })
     confirmFagus()
     await act(async () => {
-      sheet().props.options[0].onPress()
+      sheet().props.onChooseTarget("s1")
     })
     expect(byType("AppNotice").props.tone).toBe("warning")
     expect(byType("AppNotice").props.message).toBe(t.addFailed)
@@ -230,7 +228,7 @@ describe("ToolsSection", () => {
     const { onStartSurveyWithGenus } = mount()
     confirmFagus()
     act(() => {
-      sheet().props.options[1].onPress()
+      sheet().props.onStartSurvey()
     })
     expect(onStartSurveyWithGenus).toHaveBeenCalledWith("Fagus")
   })
@@ -252,7 +250,7 @@ describe("ToolsSection", () => {
     mount()
     confirmFagus()
     await act(async () => {
-      sheet().props.options[0].onPress()
+      sheet().props.onChooseTarget("s1")
     })
     expect(maybeByType("AppNotice")).toBeDefined()
     act(() => {
@@ -262,7 +260,7 @@ describe("ToolsSection", () => {
 
     confirmFagus()
     await act(async () => {
-      sheet().props.options[0].onPress()
+      sheet().props.onChooseTarget("s1")
     })
     act(() => {
       byType("AppNotice").props.action.onPress()

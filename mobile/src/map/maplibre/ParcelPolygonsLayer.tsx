@@ -7,6 +7,8 @@ import { buildParcelFeatureCollection } from "./parcel-features"
 type ParcelPolygonsLayerProps = {
   items: PublicParcelStatusItem[]
   selectedParcelIds?: string[]
+  /** The Explorer: a studied parcel is filled by the band of its latest score (OA-126). */
+  byScore?: boolean
   onParcelPress?: (parcelId: string) => void
 }
 
@@ -17,11 +19,12 @@ type ParcelPolygonsLayerProps = {
 export function ParcelPolygonsLayer({
   items,
   selectedParcelIds,
+  byScore = false,
   onParcelPress,
 }: ParcelPolygonsLayerProps) {
   const data = useMemo(
-    () => buildParcelFeatureCollection(items, selectedParcelIds),
-    [items, selectedParcelIds],
+    () => buildParcelFeatureCollection(items, selectedParcelIds, { byScore }),
+    [items, selectedParcelIds, byScore],
   )
 
   const handlePress = onParcelPress

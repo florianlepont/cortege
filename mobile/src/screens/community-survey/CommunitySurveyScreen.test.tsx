@@ -144,7 +144,11 @@ describe("CommunitySurveyScreen", () => {
     const all = texts(tree).join(" | ")
     expect(all).toContain("Bois du Second")
     expect(all).toContain("Camille")
-    expect(all).toContain(t.versionLine({ year: 2026, version: 2 }))
+    // OA-115: a status line in words, the year, the version and the method as chips.
+    expect(all).toContain("2026")
+    expect(all).toContain(t.versionChip(2))
+    expect(all).toContain("Terminé · Camille")
+    expect(all).not.toMatch(/\d{4}-\d{2}-\d{2} \d{2}:/)
     expect(all).toContain(t.readOnly)
 
     expect(byType(tree, "ScoreBreakdown")[0].props.scores).toEqual({
