@@ -137,6 +137,9 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             options={({ route }) => ({
               title: headers.factor(route.params.factor),
               headerLargeTitle: false,
+              // OA-111: iOS 26 and later pops a screen with a swipe from anywhere, which would take
+              // the slide along the A to J strip for a "back". The back button stays.
+              gestureEnabled: false,
             })}
             component={FactorDetailRoute}
           />
