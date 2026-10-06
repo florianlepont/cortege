@@ -657,7 +657,32 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
   3. Transitions and feedback use the Reanimated motion system consistently and respect the system reduced-motion setting.
   4. The owner confirms the result on their own phone.
 
-**Plans**: TBD
+**Plans:** 23 plans in 13 waves (6 owner checkpoints that stop the pipeline: direction gate, one phone check per screen batch, final confirmation)
+
+Plans:
+- [ ] 12.2-01-PLAN.md — Align the direction text with the planning defaults; owner gate before any code (criterion 1)
+- [ ] 12.2-02-PLAN.md — Reanimated mock reduced-motion toggle, motion gate test, ibp-display and contour-paths helpers
+- [ ] 12.2-03-PLAN.md — Visual tokens and BrandTheme.visual, contrast test, radii and typography roles, Sora Light, ESLint colour rule repair
+- [ ] 12.2-04-PLAN.md — ForestCard, ContourLines, GradientNumeral, GlowBar, useScreenFocus
+- [ ] 12.2-05-PLAN.md — AppCard glass variant, ScreenBackdrop, AppButton glow variant, HaloPulse
+- [ ] 12.2-06-PLAN.md — ScoreRing, FactorBarsChart, useEntrance, AnimatedNumber, status dot spring, catalogue entries
+- [ ] 12.2-07-PLAN.md — Both tab bar trees, glass chips with inverted active state, section header and page title
+- [ ] 12.2-08-PLAN.md — Home: forest resume card, backdrop, glass cards, sector ring, entrances (batch 1)
+- [ ] 12.2-09-PLAN.md — Account and Settings: glass grouped lists with icon tiles, compact layout (batch 1)
+- [ ] 12.2-10-PLAN.md — Owner phone check, batch 1
+- [ ] 12.2-11-PLAN.md — My Surveys and search: score rings, glass rows, entrances, animated empty state (batch 2)
+- [ ] 12.2-12-PLAN.md — Survey detail summary: forest score card, factor bars, submit feedback (batch 2)
+- [ ] 12.2-13-PLAN.md — Survey detail Score, History and Context pages (batch 2)
+- [ ] 12.2-14-PLAN.md — Owner phone check, batch 2 (numeral rendering decided here)
+- [ ] 12.2-15-PLAN.md — Factor entry chrome: pager, letter strip, tiles, rings, factor detail (batch 3)
+- [ ] 12.2-16-PLAN.md — Survey wizard and factor inputs, tokens only (batch 3)
+- [ ] 12.2-17-PLAN.md — Owner phone check, batch 3 (field ergonomics)
+- [ ] 12.2-18-PLAN.md — Explorer overlays, selected card, cluster list, sheets; map untouched (batch 4)
+- [ ] 12.2-19-PLAN.md — Owner phone check, batch 4
+- [ ] 12.2-20-PLAN.md — Outline icon harmonisation and icon gate (D-07)
+- [ ] 12.2-21-PLAN.md — Em dash catalogue gate, motion consistency audit, dark pass
+- [ ] 12.2-22-PLAN.md — Charter section 13, direction corrections, Phase 13 Android carry-over, animals seed, CLAUDE.md note
+- [ ] 12.2-23-PLAN.md — Final owner confirmation on the phone and approval of the direction text (criteria 1 and 4)
 **UI hint**: yes
 
 ### Phase 12.3: In-depth Quality Audit (INSERTED)
@@ -725,7 +750,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 12.1. Owner acceptance testing | 0/TBD | Not started | - |
-| 12.2. Visual Modernisation | 0/TBD | Not started | - |
+| 12.2. Visual Modernisation | 0/23 | Planned | - |
 | 12.3. In-depth Quality Audit | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
 
