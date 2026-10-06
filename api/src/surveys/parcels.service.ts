@@ -136,6 +136,61 @@ export class ParcelsService {
     surveyId: string,
     fallbackParcelId?: string | null,
   ): Promise<{ lat: number; lng: number } | null> {
+    const location = await this.queryDisplayLocation(db, surveyId, fallbackParcelId)
+    if (location) return location
+    // Parcels registered by id only have no position: ask the IGN once, keep the answer, look again.
+    if ((await this.backfillMissingCentroids(db, surveyId)) > 0) {
+      return this.queryDisplayLocation(db, surveyId, fallbackParcelId)
+    }
+    return null
+  }
+
+  // A lookup the IGN could not answer is not repeated for a while: a survey page is read often.
+  private readonly lookupFailures = new Map<string, number>()
+  private static readonly LOOKUP_RETRY_MS = 10 * 60 * 1000
+  private static readonly LOOKUPS_PER_READ = 5
+
+  /**
+   * Fills the geometry and centroid of the survey's parcels that have none, from the IGN by
+   * identifier. Returns how many parcels were updated.
+   */
+  async backfillMissingCentroids(db: Queryable, surveyId: string): Promise<number> {
+    const missing = await db.query<{ parcel_id: string }>(
+      `SELECT p.parcel_id
+       FROM survey_parcels sp
+       JOIN parcels p ON p.parcel_id = sp.parcel_id
+       WHERE sp.survey_id = $1 AND p.centroid_lat IS NULL
+       LIMIT $2`,
+      [surveyId, ParcelsService.LOOKUPS_PER_READ],
+    )
+    let updated = 0
+    for (const { parcel_id: parcelId } of missing.rows) {
+      const failedAt = this.lookupFailures.get(parcelId)
+      if (failedAt !== undefined && Date.now() - failedAt < ParcelsService.LOOKUP_RETRY_MS) {
+        continue
+      }
+      const found = await this.cadastreProvider.lookupParcelById(parcelId)
+      if (!found) {
+        this.lookupFailures.set(parcelId, Date.now())
+        continue
+      }
+      await db.query(
+        `UPDATE parcels
+         SET geometry = $2::jsonb, centroid = $3::jsonb, source = 'ign_apicarto', updated_at = NOW()
+         WHERE parcel_id = $1 AND centroid_lat IS NULL`,
+        [parcelId, JSON.stringify(found.geometry), JSON.stringify(found.centroid)],
+      )
+      this.lookupFailures.delete(parcelId)
+      updated += 1
+    }
+    return updated
+  }
+
+  private async queryDisplayLocation(
+    db: Queryable,
+    surveyId: string,
+    fallbackParcelId?: string | null,
+  ): Promise<{ lat: number; lng: number } | null> {
     const result = await db.query<{
       lat: number | null
       lng: number | null

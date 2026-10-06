@@ -119,6 +119,14 @@ describe("HomeScreen", () => {
   beforeEach(() => jest.useFakeTimers())
   afterEach(() => jest.useRealTimers())
 
+  test("the nearby parcels load once the access token is there, not before (OA-113)", () => {
+    const props = makeProps({ accessToken: null })
+    mount(props)
+    expect(props.onLoadNearbyParcels).not.toHaveBeenCalled()
+    act(() => tree.update(<HomeScreen {...props} accessToken="token" />))
+    expect(props.onLoadNearbyParcels).toHaveBeenCalledTimes(1)
+  })
+
   test("the Outils section gets the surveys and the two ways to use a genus (OA-107)", () => {
     const surveys = [makeSurvey()]
     const props = makeProps({ surveys })

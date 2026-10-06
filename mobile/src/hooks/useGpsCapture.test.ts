@@ -41,7 +41,7 @@ describe("useGpsCapture", () => {
   let surveyForm: { applyGpsLocation: jest.Mock }
   let onStatusChange: jest.Mock
   let onAlert: jest.Mock
-  let handleCaptureGpsLocation: () => Promise<{
+  let handleCaptureGpsLocation: (options?: { silent?: boolean }) => Promise<{
     lat: number
     lng: number
     collected_at: string
@@ -75,6 +75,23 @@ describe("useGpsCapture", () => {
 
     expect(result).toBeNull()
     expect(onAlert).toHaveBeenCalledWith(text.alerts.permissionDenied.title, expect.any(String))
+  })
+
+  test("a silent capture (a map opening on the position by itself) never raises an alert", async () => {
+    mockHasServicesEnabledAsync.mockResolvedValue(false)
+    expect(await handleCaptureGpsLocation({ silent: true })).toBeNull()
+
+    mockHasServicesEnabledAsync.mockResolvedValue(true)
+    mockGetForegroundPermissionsAsync.mockResolvedValue({ granted: false })
+    mockRequestForegroundPermissionsAsync.mockResolvedValue({ granted: false })
+    expect(await handleCaptureGpsLocation({ silent: true })).toBeNull()
+
+    mockGetForegroundPermissionsAsync.mockResolvedValue({ granted: true })
+    mockGetLastKnownPositionAsync.mockResolvedValue(null)
+    mockGetCurrentPositionAsync.mockRejectedValue(new Error("no fix"))
+    expect(await handleCaptureGpsLocation({ silent: true })).toBeNull()
+
+    expect(onAlert).not.toHaveBeenCalled()
   })
 
   test("uses existing permission without requesting again", async () => {

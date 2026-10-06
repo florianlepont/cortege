@@ -16,7 +16,12 @@ describe("SeeOnMapAction (OA-59)", () => {
     let tree!: renderer.ReactTestRenderer
     act(() => {
       tree = renderer.create(
-        <SeeOnMapAction surveyId="s-1" siteName="Bois" coordinates={{ lat: 46.5, lng: 2.1 }} />,
+        <SeeOnMapAction
+          surveyId="s-1"
+          siteName="Bois"
+          coordinates={{ lat: 46.5, lng: 2.1 }}
+          parcelIds={["P1"]}
+        />,
       )
     })
     const pill = tree.root.findByType("MapActionPill" as never)
@@ -25,7 +30,7 @@ describe("SeeOnMapAction (OA-59)", () => {
     act(() => pill.props.onPress())
     expect(mockNavigate).toHaveBeenCalledWith("publicMap", {
       screen: "publicMapHome",
-      params: { focus: { surveyId: "s-1", lat: 46.5, lng: 2.1, nonce: 1234 } },
+      params: { focus: { surveyId: "s-1", lat: 46.5, lng: 2.1, parcelIds: ["P1"], nonce: 1234 } },
     })
   })
 })

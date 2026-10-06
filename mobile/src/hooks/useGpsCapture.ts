@@ -12,12 +12,19 @@ type UseGpsCaptureParams = {
 const text = fr.status.gps
 
 export function useGpsCapture({ surveyForm, onStatusChange, onAlert }: UseGpsCaptureParams) {
-  const handleCaptureGpsLocation = async (): Promise<GpsCaptureResult | null> => {
+  /** `silent`: a capture the app asks for by itself (a map opening on the phone's position) never
+   * raises an alert; only the user's own tap does. */
+  const handleCaptureGpsLocation = async (options?: {
+    silent?: boolean
+  }): Promise<GpsCaptureResult | null> => {
+    const alert = (title: string, message: string): void => {
+      if (!options?.silent) onAlert(title, message)
+    }
     try {
       const locationServicesEnabled = await Location.hasServicesEnabledAsync()
       if (!locationServicesEnabled) {
         onStatusChange(text.servicesDisabled())
-        onAlert(text.alerts.servicesDisabled.title, text.alerts.servicesDisabled.message)
+        alert(text.alerts.servicesDisabled.title, text.alerts.servicesDisabled.message)
         return null
       }
 
@@ -28,7 +35,7 @@ export function useGpsCapture({ surveyForm, onStatusChange, onAlert }: UseGpsCap
         : await Location.requestForegroundPermissionsAsync()
       if (!permission.granted) {
         onStatusChange(text.permissionDenied())
-        onAlert(text.alerts.permissionDenied.title, text.alerts.permissionDenied.message)
+        alert(text.alerts.permissionDenied.title, text.alerts.permissionDenied.message)
         return null
       }
 
@@ -69,7 +76,7 @@ export function useGpsCapture({ surveyForm, onStatusChange, onAlert }: UseGpsCap
     } catch (error) {
       logStatusDetail("gps.capture", error)
       onStatusChange(text.failed())
-      onAlert(text.alerts.unavailable.title, text.alerts.unavailable.message)
+      alert(text.alerts.unavailable.title, text.alerts.unavailable.message)
       return null
     }
   }

@@ -3,6 +3,7 @@ import * as http from "http"
 import { AddressInfo, Socket } from "net"
 import {
   CadastreProviderService,
+  geometryCenter,
   LngLatBbox,
   WfsParcelFeature,
   WFS_MAX_TILES_PER_REQUEST,
@@ -176,6 +177,95 @@ describe("CadastreProviderService", () => {
     expect(apiCartoUrl.searchParams.get("code_insee")).toBe("75104")
     expect(apiCartoUrl.searchParams.get("section")).toBe("AE")
     expect(apiCartoUrl.searchParams.get("numero")).toBe("0003")
+  })
+
+  describe("a parcel known only by its identifier", () => {
+    const polygon = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [2.35, 48.85],
+          [2.37, 48.85],
+          [2.37, 48.87],
+          [2.35, 48.85],
+        ],
+      ],
+    }
+
+    it("looks the geometry up by commune, section and number and returns the centre of its box", async () => {
+      const fetchMock = jest.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ features: [{ geometry: polygon }] }),
+      })
+      global.fetch = fetchMock as unknown as typeof global.fetch
+
+      const found = await buildService({ CADASTRE_PROVIDER: "ign" }).lookupParcelById(
+        "94077000aw0066",
+      )
+
+      expect(found?.geometry).toEqual(polygon)
+      expect(found?.centroid.lat).toBeCloseTo(48.86, 6)
+      expect(found?.centroid.lng).toBeCloseTo(2.36, 6)
+      const url = fetchMock.mock.calls[0][0]
+      expect(url.searchParams.get("code_insee")).toBe("94077")
+      expect(url.searchParams.get("section")).toBe("AW")
+      expect(url.searchParams.get("numero")).toBe("0066")
+    })
+
+    it("answers null without a call when the provider is not IGN or the id is not an IDU", async () => {
+      const fetchMock = jest.fn()
+      global.fetch = fetchMock as unknown as typeof global.fetch
+      await expect(buildService({}).lookupParcelById("94077000AW0066")).resolves.toBeNull()
+      await expect(
+        buildService({ CADASTRE_PROVIDER: "ign" }).lookupParcelById("DEMO0001"),
+      ).resolves.toBeNull()
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it("answers null when the IGN has no geometry or only an empty one", async () => {
+      global.fetch = jest
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ features: [] }) })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ features: [{ geometry: { type: "Polygon", coordinates: [] } }] }),
+        }) as unknown as typeof global.fetch
+      const service = buildService({ CADASTRE_PROVIDER: "ign" })
+      await expect(service.lookupParcelById("94077000AW0066")).resolves.toBeNull()
+      await expect(service.lookupParcelById("94077000AW0067")).resolves.toBeNull()
+    })
+  })
+
+  describe("geometryCenter", () => {
+    it("takes the middle of the box of any GeoJSON nesting and ignores what is not a coordinate", () => {
+      expect(
+        geometryCenter({
+          type: "MultiPolygon",
+          coordinates: [
+            [
+              [
+                [1, 40],
+                [3, 40],
+                [3, 42],
+              ],
+            ],
+            [
+              [
+                [5, 44],
+                ["x", 1],
+                [Number.NaN, 2],
+              ],
+            ],
+          ],
+        }),
+      ).toEqual({ lat: 42, lng: 3 })
+    })
+
+    it("is null without any coordinate", () => {
+      expect(geometryCenter(undefined)).toBeNull()
+      expect(geometryCenter({ coordinates: [] })).toBeNull()
+      expect(geometryCenter({ coordinates: "x" })).toBeNull()
+    })
   })
 
   it("falls back to a synthetic parcel when IGN returns no feature and fallback is enabled", async () => {

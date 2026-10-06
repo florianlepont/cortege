@@ -36,7 +36,14 @@ export type SurveysStackParamList = AccountStackParamList & {
 }
 
 /** OA-59: where a survey page sends Explorer (the `nonce` makes the same survey re-focus). */
-export type PublicMapFocus = { surveyId: string; lat: number; lng: number; nonce: number }
+export type PublicMapFocus = {
+  surveyId: string
+  lat: number
+  lng: number
+  /** The survey's parcels, drawn highlighted on the Explorer map (OA-116). */
+  parcelIds: string[]
+  nonce: number
+}
 
 export type PublicMapStackParamList = AccountStackParamList & {
   publicMapHome: { focus?: PublicMapFocus } | undefined

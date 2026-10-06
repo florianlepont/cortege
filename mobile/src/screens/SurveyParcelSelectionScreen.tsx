@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react"
-import { Platform, StyleSheet, View } from "react-native"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useHeaderHeight } from "@react-navigation/elements"
+import { Alert, Platform, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
@@ -20,11 +21,15 @@ import {
   type MapRegion as Region,
 } from "../app/map-viewport"
 import { GpsCaptureResult } from "../app/types"
+import { isOfflineMapsEnabled } from "../app/feature-flags"
+import { useOfflineAreas } from "../hooks/useOfflineAreas"
 import { useOfflineMapPrompt } from "../hooks/useOfflineMapPrompt"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
 import type { BasemapKey } from "../map/basemaps"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
+import { ExplorerSheet } from "./public-map/ExplorerSheet"
+import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { MapLegend, type MapLegendRow } from "./public-map/ScoreLegend"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
@@ -34,6 +39,7 @@ import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
 
 const t = fr.parcelSelection
+const offlineT = fr.offlineMap.areas
 const headers = fr.navigation.headers
 
 // The colours of the parcel layer (ParcelPolygonsLayer), for the legend the Explorer's look gets.
@@ -54,7 +60,7 @@ type SurveyParcelSelectionScreenProps = {
   siteName: string
   selectedParcelIds: string[]
   onToggleParcelSelection: (parcelId: string) => void
-  onCaptureGpsLocation: () => Promise<GpsCaptureResult | null>
+  onCaptureGpsLocation: (options?: { silent?: boolean }) => Promise<GpsCaptureResult | null>
   onSave: () => Promise<void>
   /** New-survey flow (step 4 of 4): the button reads "Continuer" and needs a parcel. */
   wizard?: boolean
@@ -77,12 +83,17 @@ export function SurveyParcelSelectionScreen({
   const [basemap, setBasemap] = useState<BasemapKey>("map")
   const [locating, setLocating] = useState(false)
   const insets = useSafeAreaInsets()
+  const headerHeight = useHeaderHeight()
   const tabBarHeight = useAppBottomTabBarHeight()
   const [saving, setSaving] = useState(false)
   // The bottom card's height: the map controls sit just above it, bottom right and left like the
   // Explorer's, whatever the card holds (a notice appears when no parcel is chosen).
   const [cardHeight, setCardHeight] = useState(0)
   const [offlineDismissed, setOfflineDismissed] = useState(false)
+  // The same download button and panel as the Explorer's: the capsule is one component everywhere.
+  const offlineEnabled = isOfflineMapsEnabled()
+  const offlineAreas = useOfflineAreas(apiUrl, accessToken, offlineEnabled)
+  const [showOfflineAreas, setShowOfflineAreas] = useState(false)
   const parsedLat = parseGpsCoordinate(gpsLocation.lat)
   const parsedLng = parseGpsCoordinate(gpsLocation.lng)
   const hasGpsCoordinates = Number.isFinite(parsedLat) && Number.isFinite(parsedLng)
@@ -135,6 +146,7 @@ export function SurveyParcelSelectionScreen({
     [hasParcelSelection, hasGpsCoordinates, parsedLat, parsedLng, mapRegion],
   )
   const offlinePrompt = useOfflineMapPrompt({ apiUrl, accessToken, point: offlinePoint })
+  const offlineBannerVisible = offlinePrompt.state !== "hidden" && !offlineDismissed
   const parcelSelectionLabel = t.selectedCount({ count: selectedParcelIds.length })
   const parcelHelperText =
     mapZoom >= 15
@@ -146,17 +158,20 @@ export function SurveyParcelSelectionScreen({
   // The iOS header is transparent over the map (the native back button is the glass one), so the
   // controls start under the status bar; on Android the opaque header already sits above the map.
   const controlsTop = Platform.OS === "ios" ? insets.top + 6 : 12
+  // The basemap capsule sits under the header bar: the transparent native header takes the touches
+  // of everything drawn in its band, so a button there never received a tap (OA-118).
+  const capsuleTop = Platform.OS === "ios" ? headerHeight + 8 : 12
 
   const cardBottomInset = Math.max(Math.max(tabBarHeight, insets.bottom), 12) + 12
   const controlsBottom = cardBottomInset + cardHeight + 12
 
-  const handleLocate = async (): Promise<void> => {
+  const handleLocate = async (silent = false): Promise<void> => {
     if (locating) {
       return
     }
     setLocating(true)
     try {
-      const capturedLocation = await onCaptureGpsLocation()
+      const capturedLocation = await onCaptureGpsLocation({ silent })
       if (!capturedLocation) {
         return
       }
@@ -167,6 +182,28 @@ export function SurveyParcelSelectionScreen({
       setLocating(false)
     }
   }
+
+  // OA-117: a survey without a captured position opens on the phone's, not on France.
+  const autoLocatedRef = useRef(false)
+  useEffect(() => {
+    if (hasGpsCoordinates || autoLocatedRef.current) return
+    autoLocatedRef.current = true
+    void handleLocate(true)
+    // Once, when the screen opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const { startDownload } = offlineAreas
+  const handleDownloadArea = useCallback(
+    (name: string) => {
+      void startDownload(mapRegion, name).then((outcome) => {
+        if (!outcome.ok) {
+          Alert.alert(outcome.reason === "too_large" ? offlineT.tooLarge : offlineT.downloadFailed)
+        }
+      })
+    },
+    [startDownload, mapRegion],
+  )
 
   return (
     <View style={screenStyles.fullscreen}>
@@ -192,7 +229,12 @@ export function SurveyParcelSelectionScreen({
       ) : null}
 
       <MapTopControls
-        top={controlsTop}
+        // While the offline proposal (or its progress) is on screen, the capsule's own download
+        // button would say the same thing twice: it comes back once the proposal is closed.
+        onOpenOfflineAreas={
+          offlineEnabled && !offlineBannerVisible ? () => setShowOfflineAreas(true) : undefined
+        }
+        top={capsuleTop}
         basemap={basemap}
         onToggleBasemap={() => setBasemap((current) => (current === "map" ? "satellite" : "map"))}
       />
@@ -216,8 +258,8 @@ export function SurveyParcelSelectionScreen({
         loading={parcelsLoading}
       />
 
-      {offlinePrompt.state !== "hidden" && !offlineDismissed ? (
-        <View pointerEvents="box-none" style={[screenStyles.topArea, { top: controlsTop + 56 }]}>
+      {offlineBannerVisible ? (
+        <View pointerEvents="box-none" style={[screenStyles.topArea, { top: capsuleTop }]}>
           <OfflineMapPrompt
             prompt={offlinePrompt}
             siteName={siteName.trim() || t.areaSiteFallback}
@@ -266,6 +308,19 @@ export function SurveyParcelSelectionScreen({
           </AppCard>
         </View>
       </View>
+
+      <ExplorerSheet
+        visible={showOfflineAreas}
+        onDismiss={() => setShowOfflineAreas(false)}
+        bottomInset={Math.max(tabBarHeight, insets.bottom)}
+      >
+        <OfflineAreasSheet
+          downloadingAreaId={offlineAreas.downloadingAreaId}
+          estimate={offlineAreas.estimateForRegion(mapRegion)}
+          onDownload={handleDownloadArea}
+          onClose={() => setShowOfflineAreas(false)}
+        />
+      </ExplorerSheet>
     </View>
   )
 }

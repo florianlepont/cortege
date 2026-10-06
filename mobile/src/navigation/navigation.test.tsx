@@ -515,6 +515,21 @@ describe("stack options and listeners", () => {
     }
   })
 
+  test("the Accueil and Explorer stacks, which host Compte and Paramètres, have the page-colour header on iOS (OA-125)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(<AppNavigation />)
+    const withHeader = mockNavigators.stack.filter(
+      (props) => (props.screenOptions as Options).headerBlurEffect === "none",
+    )
+    // Accueil, Mes Relevés and Explorer: every stack that can push Compte.
+    expect(withHeader.length).toBeGreaterThanOrEqual(3)
+    for (const props of withHeader) {
+      expect((props.screenOptions as Options).headerStyle).toEqual({
+        backgroundColor: expect.any(String),
+      })
+    }
+  })
+
   test("Paramètres and Cartes hors ligne draw their own title too", async () => {
     await mount(<AppNavigation />)
     const settings = mockScreens.settings.options as Options
