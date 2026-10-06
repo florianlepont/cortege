@@ -2,7 +2,7 @@ import { useMemo } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { formatDateTime } from "../../app/formatters"
+import { formatShortDateTime } from "../../app/formatters"
 import { SurveyEventItem } from "../../app/types"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -91,7 +91,9 @@ export function EventsTab({ events, isLoading, onReload }: EventsTabProps) {
                   </View>
                   <View style={styles.timelineContent}>
                     <Text style={styles.eventTitle}>{eventTypeLabel(event.event_type)}</Text>
-                    <Text style={sharedStyles.rowMeta}>{formatDateTime(event.created_at)}</Text>
+                    <Text style={sharedStyles.rowMeta}>
+                      {formatShortDateTime(event.created_at)}
+                    </Text>
                   </View>
                 </View>
               )
