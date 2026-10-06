@@ -175,7 +175,7 @@ describe("SurveysSyncService.syncBatch", () => {
     expect(surveysService.upsertForUser).toHaveBeenCalledTimes(1)
   })
 
-  it("strips unknown fields but keeps status/expires_at (D-03, D-12)", async () => {
+  it("strips unknown fields and still accepts the ignored expires_at of older builds (D-03, D-12, OA-41)", async () => {
     const { service, surveysService } = buildService()
 
     const result = await service.syncBatch(AUTH_USER as never, {

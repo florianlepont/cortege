@@ -31,8 +31,8 @@ describe("migration 014: survey_events seq and xid8 (e2e)", () => {
 
   const insertSurvey = async (id: string, ownerId: string | null) => {
     await client.query(
-      `INSERT INTO surveys (id, user_id, site_name, status, created_at, updated_at, expires_at, sync_version)
-       VALUES ($1, $2, $3, 'draft', NOW(), NOW(), NOW() + INTERVAL '30 days', 1)`,
+      `INSERT INTO surveys (id, user_id, site_name, status, created_at, updated_at, sync_version)
+       VALUES ($1, $2, $3, 'draft', NOW(), NOW(), 1)`,
       [id, ownerId, `Site ${id}`],
     )
   }

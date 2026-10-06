@@ -48,8 +48,8 @@ describe("migration 016: IBP method version columns (e2e)", () => {
     // this spec's own test cases, never external input.
     /* eslint-disable sql-no-unsafe-interpolation */
     return client.query(
-      `INSERT INTO surveys (${names.join(", ")}, created_at, updated_at, expires_at, sync_version)
-       VALUES (${placeholders.join(", ")}, NOW(), NOW(), NOW() + interval '7 days', 1)`,
+      `INSERT INTO surveys (${names.join(", ")}, created_at, updated_at, sync_version)
+       VALUES (${placeholders.join(", ")}, NOW(), NOW(), 1)`,
       values,
     )
     /* eslint-enable sql-no-unsafe-interpolation */

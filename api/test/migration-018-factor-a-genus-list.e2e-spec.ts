@@ -42,8 +42,8 @@ describe("migration 018: Factor A genus list shape guard (e2e)", () => {
   const insertSurvey = (id: string, factors: unknown) =>
     client.query(
       `INSERT INTO surveys (id, user_id, site_name, status, factors, created_at, updated_at,
-                             expires_at, sync_version)
-       VALUES ($1, $2, $3, 'draft', $4, NOW(), NOW(), NOW() + interval '7 days', 1)`,
+                             sync_version)
+       VALUES ($1, $2, $3, 'draft', $4, NOW(), NOW(), 1)`,
       [id, userId, `site ${id}`, JSON.stringify(factors)],
     )
 
