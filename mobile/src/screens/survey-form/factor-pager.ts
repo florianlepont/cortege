@@ -19,3 +19,13 @@ export function findNextIncompleteFactorIndex(
   }
   return null
 }
+
+/**
+ * OA-111: the letter under a finger on the A to J strip. `x` is the touch position along the strip
+ * (0 at its left edge), `width` the strip's width; the ten letters share it evenly, and a finger
+ * that slides past either end keeps the first or last letter.
+ */
+export function letterIndexAt(x: number, width: number, count: number): number {
+  if (count <= 0 || !(width > 0) || !Number.isFinite(x)) return 0
+  return Math.max(0, Math.min(count - 1, Math.floor((x / width) * count)))
+}

@@ -75,6 +75,7 @@ jest.mock("react-native", () => {
   return {
     Platform: mockPlatform,
     StyleSheet: { create: <T,>(value: T): T => value },
+    useWindowDimensions: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }),
     View: "View",
     ScrollView: "ScrollView",
     KeyboardAvoidingView: "KeyboardAvoidingView",

@@ -433,6 +433,12 @@ describe("stack options and listeners", () => {
     expect(options({ route: { params: { factor: "C" } } }).title).toBe("Facteur C")
   })
 
+  test("the factor screen has no swipe-back: a slide along the A to J strip is not a back (OA-111)", async () => {
+    await mount(<AppNavigation />)
+    const options = mockScreens.surveyFactorDetail.options as OptionsFn
+    expect(options({ route: { params: { factor: "A" } } }).gestureEnabled).toBe(false)
+  })
+
   test("the parcel step is titled by its mode and the wizard draws its own top bar", async () => {
     await mount(<AppNavigation />)
     const options = mockScreens.surveyParcels.options as OptionsFn
@@ -475,6 +481,8 @@ describe("stack options and listeners", () => {
       const ios = options({ route: { params: { mode } } })
       expect(ios.headerTransparent).toBe(true)
       expect((ios.headerTitle as () => null)()).toBeNull()
+      // The native title is still drawn from `title`, so it is invisible (OA-109).
+      expect(ios.headerTitleStyle).toEqual({ color: "transparent" })
       mockPlatform.OS = "android"
       const android = options({ route: { params: { mode } } })
       expect(android.headerTransparent).toBeUndefined()

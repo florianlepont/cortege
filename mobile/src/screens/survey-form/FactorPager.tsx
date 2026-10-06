@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
@@ -19,17 +20,15 @@ import { fr } from "../../i18n"
 import { FactorDetailScreen } from "../FactorDetailScreen"
 import { FACTOR_ORDER } from "./components"
 import { computeFactorProgress } from "./FactorsList"
+import { FactorLetterStrip, STRIP_HEIGHT } from "./FactorLetterStrip"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { Ionicons } from "@expo/vector-icons"
-import { GlassSurface } from "../../ui/GlassSurface"
 import { useHeaderHeight } from "@react-navigation/elements"
 
 const t = fr.factorPager
 
-// The bottom bar: lettered pills in a glass capsule and a round "next" button beside it.
-const LETTER_SIZE = 38
-const LETTER_GAP = 6
-const BAR_HEIGHT = 60
+// The bottom bar: the A to J strip (FactorLetterStrip) and a round "next" button beside it.
+const BAR_HEIGHT = STRIP_HEIGHT
 
 type FactorPagerProps = {
   initialFactor: FactorKey
@@ -45,9 +44,9 @@ type FactorPagerProps = {
 /**
  * FLOW-04: a horizontal pager A->J replacing the 20 round trips to the factor grid. OA-98: a slim
  * title row (the factor's name and the running total) under the transparent native header, the page,
- * and a floating bottom bar in Liquid Glass: the A to J letters (each shows its factor's state and
- * jumps to it, the active one stays in view) and a round button for the next factor ("Terminer" on
- * the last). Going back is a tap on a letter or a swipe.
+ * and a floating bottom bar in Liquid Glass: the A to J letters (each shows its factor's state; a tap
+ * or a slide of the finger along the strip goes to a factor, a bubble names it) and a round button
+ * for the next factor ("Terminer" on the last). Going back is a letter or a swipe.
  */
 export function FactorPager({
   initialFactor,
@@ -63,12 +62,11 @@ export function FactorPager({
   const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createStyles(theme), [theme])
   const scrollRef = useRef<ScrollView | null>(null)
-  const lettersRef = useRef<ScrollView | null>(null)
   const [pageWidth, setPageWidth] = useState(0)
+  const { width: windowWidth } = useWindowDimensions()
   const hasScrolledToInitial = useRef(false)
   const initialIndex = Math.max(0, FACTOR_ORDER.indexOf(initialFactor))
   const [activeIndex, setActiveIndex] = useState(initialIndex)
-
   const progress = useMemo(() => computeFactorProgress(factorSections), [factorSections])
   const lastIndex = FACTOR_ORDER.length - 1
 
@@ -82,10 +80,10 @@ export function FactorPager({
     scrollRef.current?.scrollTo({ x: initialIndex * pageWidth, animated: false })
   }, [initialIndex, pageWidth])
 
-  const scrollToIndex = (index: number): void => {
+  const scrollToIndex = (index: number, animated = true): void => {
     const clamped = Math.max(0, Math.min(lastIndex, index))
     if (pageWidth > 0) {
-      scrollRef.current?.scrollTo({ x: clamped * pageWidth, animated: true })
+      scrollRef.current?.scrollTo({ x: clamped * pageWidth, animated })
     }
     setActiveIndex(clamped)
   }
@@ -93,31 +91,26 @@ export function FactorPager({
   const handleMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>): void => {
     if (pageWidth <= 0) return
     const index = Math.round(event.nativeEvent.contentOffset.x / pageWidth)
-    setActiveIndex(Math.max(0, Math.min(lastIndex, index)))
+    const clamped = Math.max(0, Math.min(lastIndex, index))
+    setActiveIndex(clamped)
   }
 
   const activeFactor = FACTOR_ORDER[activeIndex]
   useEffect(() => {
     onActiveFactorChange?.(activeFactor)
   }, [activeFactor, onActiveFactorChange])
-  // Keep the active letter in view in the bar (it scrolls: ten pills do not fit next to the button).
-  useEffect(() => {
-    lettersRef.current?.scrollTo({
-      x: Math.max(0, activeIndex * (LETTER_SIZE + LETTER_GAP) - 2 * (LETTER_SIZE + LETTER_GAP)),
-      animated: true,
-    })
-  }, [activeIndex])
   const total = useMemo(
     () => computeIbpTotalsFromRetainedScores(factorRetainedScores).ibp_total,
     [factorRetainedScores],
   )
   const isLast = activeIndex === lastIndex
-
   return (
     <View style={styles.container} onLayout={handleContainerLayout} testID="factor-pager">
       <View style={[styles.header, { paddingTop: headerHeight + brandSpacing4.sm }]}>
         <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>
+          {/* OA-35: a long name ("Milieux ouverts florifères") shrinks to fit a narrow phone
+           * instead of ending in an ellipsis. */}
+          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             {FACTOR_TITLES[activeFactor]}
           </Text>
           <View
@@ -143,7 +136,9 @@ export function FactorPager({
         {FACTOR_ORDER.map((factor, index) => (
           <ScrollView
             key={factor}
-            style={{ width: pageWidth || undefined }}
+            // Until the pager is measured the page takes the window width: with no width the
+            // texts are measured on one line and the score line runs off the edge (OA-110).
+            style={{ width: pageWidth || windowWidth }}
             contentContainerStyle={[
               styles.pageContent,
               { paddingBottom: tabBarClearance + BAR_HEIGHT + 2 * brandSpacing4.md },
@@ -167,40 +162,7 @@ export function FactorPager({
         pointerEvents="box-none"
         style={[styles.bar, { bottom: tabBarClearance + brandSpacing4.sm }]}
       >
-        <GlassSurface style={styles.letterBar}>
-          <ScrollView
-            ref={lettersRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.letterContent}
-          >
-            {FACTOR_ORDER.map((factor, index) => {
-              const factorProgress = progress[factor]
-              const state =
-                index === activeIndex
-                  ? "active"
-                  : factorProgress.complete
-                    ? "complete"
-                    : factorProgress.invalid > 0
-                      ? "error"
-                      : "empty"
-              return (
-                <Pressable
-                  key={factor}
-                  accessibilityRole="button"
-                  accessibilityLabel={t.jumpTo({ factor, title: FACTOR_TITLES[factor] })}
-                  accessibilityState={{ selected: index === activeIndex }}
-                  onPress={() => scrollToIndex(index)}
-                  hitSlop={{ top: 5, bottom: 5, left: 1, right: 1 }}
-                  style={[styles.letter, styles[`letter_${state}`]]}
-                  testID={`pager-letter-${factor}`}
-                >
-                  <Text style={[styles.letterText, styles[`letterText_${state}`]]}>{factor}</Text>
-                </Pressable>
-              )
-            })}
-          </ScrollView>
-        </GlassSurface>
+        <FactorLetterStrip activeIndex={activeIndex} progress={progress} onSelect={scrollToIndex} />
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={isLast ? t.finish : t.next}
@@ -220,13 +182,6 @@ export function FactorPager({
 }
 
 function createStyles(theme: BrandTheme) {
-  const letter = {
-    width: LETTER_SIZE,
-    height: LETTER_SIZE,
-    borderRadius: LETTER_SIZE / 2,
-    alignItems: "center",
-    justifyContent: "center",
-  } as const
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -263,23 +218,6 @@ function createStyles(theme: BrandTheme) {
       fontWeight: "700",
       color: brandColors.white,
     },
-    letter,
-    letter_active: { backgroundColor: theme.semanticColors.ctaPrimary },
-    letter_complete: { backgroundColor: theme.colors.successSoft },
-    letter_error: { backgroundColor: theme.colors.errorSoft },
-    letter_empty: {
-      backgroundColor: theme.semanticColors.surfaceElevated,
-      borderWidth: 1.5,
-      borderColor: theme.colors.divider,
-    },
-    letterText: {
-      fontSize: 14,
-      fontFamily: "Sora_700Bold",
-    },
-    letterText_active: { color: theme.semanticColors.onCtaPrimary },
-    letterText_complete: { color: theme.semanticColors.textStrong },
-    letterText_error: { color: theme.onSurface.danger },
-    letterText_empty: { color: theme.colors.textSecondary },
     pages: {
       flex: 1,
     },
@@ -293,17 +231,6 @@ function createStyles(theme: BrandTheme) {
       flexDirection: "row",
       alignItems: "center",
       gap: brandSpacing4.smd,
-    },
-    letterBar: {
-      flex: 1,
-      height: BAR_HEIGHT,
-      borderRadius: BAR_HEIGHT / 2,
-      justifyContent: "center",
-    },
-    letterContent: {
-      alignItems: "center",
-      gap: LETTER_GAP,
-      paddingHorizontal: 10,
     },
     nextButton: {
       width: BAR_HEIGHT,

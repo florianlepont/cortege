@@ -7,6 +7,8 @@ export const factorPagerFr = {
   finish: "Terminer",
   total: (points: number) => `${points} / ${IBP_MAX.total}`,
   totalA11y: (points: number) => `Total du relevé ${points} sur ${IBP_MAX.total}`,
-  jumpTo: ({ factor, title }: { factor: string; title: string }) =>
-    `Aller au facteur ${factor} : ${title}`,
+  // OA-111: the A to J strip is one adjustable control for VoiceOver (swipe up or down to change).
+  indexLabel: "Navigation entre les facteurs",
+  indexValue: ({ factor, title }: { factor: string; title: string }) =>
+    `Facteur ${factor}, ${title}`,
 } as const

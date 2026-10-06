@@ -137,6 +137,9 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             options={({ route }) => ({
               title: headers.factor(route.params.factor),
               headerLargeTitle: false,
+              // OA-111: iOS 26 and later pops a screen with a swipe from anywhere, which would take
+              // the slide along the A to J strip for a "back". The back button stays.
+              gestureEnabled: false,
             })}
             component={FactorDetailRoute}
           />
@@ -158,6 +161,9 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                     headerStyle: { backgroundColor: "transparent" },
                     headerTintColor: brandColors.forest,
                     headerTitle: () => null,
+                    // `headerTitle: () => null` does not blank the native title: it is still
+                    // drawn from `title` (OA-109, doubled "Parcelles"), so it is made invisible.
+                    headerTitleStyle: { color: "transparent" },
                   }
                 : {
                     headerStyle: { backgroundColor: brandMediaBackdrop },

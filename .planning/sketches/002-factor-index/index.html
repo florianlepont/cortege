@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Index A à J des facteurs (OA-111)</title>
+<style>
+  :root {
+    --page: #eef0e7;
+    --card: #f7f6f0;
+    --forest: #334e2b;
+    --forest-night: #0e2210;
+    --text: #1e2b19;
+    --muted: #6b7566;
+    --divider: #d3d8c7;
+    --success: #e3ecc9;
+    --success-dot: #7ea03a;
+    --error-dot: #c8472b;
+    --glass: rgba(250, 250, 244, 0.62);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #d9ddd0; font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; color: var(--text); padding: 28px 24px 40px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 22px; }
+  .row { display: flex; gap: 28px; align-items: flex-start; }
+  .col { width: 402px; flex: none; }
+  .label { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .note { font-size: 13px; color: var(--muted); line-height: 1.4; margin-bottom: 10px; min-height: 54px; }
+  .phone { position: relative; width: 402px; height: 640px; background: var(--page); border-radius: 38px; overflow: hidden; box-shadow: 0 6px 24px rgba(30,43,25,.18); }
+  .head { position: absolute; top: 14px; left: 0; right: 0; text-align: center; font-weight: 700; font-size: 17px; }
+  .back { position: absolute; top: 10px; left: 14px; width: 44px; height: 44px; border-radius: 22px; background: var(--glass); border: 1px solid rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .title { position: absolute; top: 70px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .title b { font-weight: 400; font-size: 22px; color: var(--forest); }
+  .chip { background: var(--forest); color: #fff; font-weight: 700; font-size: 15px; padding: 7px 14px; border-radius: 20px; }
+  .panel { position: absolute; top: 124px; left: 20px; right: 20px; height: 150px; background: var(--card); border: 1px solid var(--divider); border-radius: 22px; padding: 16px; }
+  .panel .in { border: 2px solid #8a8f80; border-radius: 18px; height: 100%; padding: 12px 14px; font-size: 14px; color: var(--muted); }
+  .slider { margin-top: 14px; height: 6px; border-radius: 3px; background: var(--divider); position: relative; }
+  .slider i { position: absolute; left: 0; top: -9px; width: 24px; height: 24px; border-radius: 12px; background: var(--forest); }
+  .score { position: absolute; top: 290px; left: 20px; right: 20px; height: 54px; border-radius: 16px; background: #e8e6d8; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; font-size: 15px; }
+  .tabs { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; gap: 10px; align-items: center; }
+  .tabs .pill { flex: 1; height: 56px; border-radius: 28px; background: var(--glass); border: 1px solid rgba(255,255,255,.7); display: flex; justify-content: space-around; align-items: center; font-size: 11px; color: var(--text); backdrop-filter: blur(14px); }
+  .tabs .circ { width: 56px; height: 56px; border-radius: 28px; background: var(--glass); border: 1px solid rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .bar { position: absolute; left: 16px; right: 16px; bottom: 82px; display: flex; gap: 12px; align-items: center; }
+  .next { flex: none; border-radius: 50%; background: var(--forest); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 4px 12px rgba(30,43,25,.25); }
+  .glass { flex: 1; background: var(--glass); border: 1px solid rgba(255,255,255,.75); backdrop-filter: blur(16px); box-shadow: 0 2px 10px rgba(30,43,25,.08); }
+
+  /* AVANT : cercles cerclés, barre de 60, défile */
+  .old .glass { height: 60px; border-radius: 30px; display: flex; align-items: center; gap: 6px; padding: 0 10px; overflow: hidden; }
+  .old .next { width: 60px; height: 60px; }
+  .old .l { flex: none; width: 38px; height: 38px; border-radius: 19px; border: 1.5px solid var(--divider); background: #f7f6f0; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: var(--muted); }
+  .old .l.on { background: var(--forest); color: #fff; border-color: var(--forest); }
+
+  /* APRÈS : 10 lettres, sans cercles, plus fine */
+  .new .glass { height: 46px; border-radius: 23px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; position: relative; }
+  .new .next { width: 46px; height: 46px; font-size: 22px; }
+  .new .l { position: relative; flex: 1; text-align: center; font-weight: 700; font-size: 14px; color: var(--muted); height: 46px; display: flex; align-items: center; justify-content: center; }
+  .new .l.on { color: #fff; }
+  .new .l.on::before { content: ""; position: absolute; width: 30px; height: 30px; border-radius: 15px; background: var(--forest); z-index: -1; }
+  .new .l.ok { color: var(--forest); }
+  .new .l.ok::after, .new .l.err::after { content: ""; position: absolute; bottom: 6px; width: 5px; height: 5px; border-radius: 3px; background: var(--success-dot); }
+  .new .l.err { color: var(--error-dot); }
+  .new .l.err::after { background: var(--error-dot); }
+  .new .l.mag { transform: scale(1.35); color: #fff; }
+  .new .glass .l { z-index: 1; }
+
+  /* bulle pendant le glissement */
+  .bubble { position: absolute; bottom: 140px; background: rgba(14,34,16,.9); color: #f3f1e6; border-radius: 22px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 18px rgba(14,34,16,.3); }
+  .bubble b { font-size: 34px; line-height: 1; font-weight: 700; }
+  .bubble span { font-size: 14px; line-height: 1.2; max-width: 150px; }
+  .bubble::after { content: ""; position: absolute; bottom: -7px; left: var(--tail, 50%); width: 14px; height: 14px; background: rgba(14,34,16,.9); transform: rotate(45deg) translateX(-50%); }
+  .finger { position: absolute; width: 44px; height: 44px; border-radius: 22px; border: 2px solid rgba(51,78,43,.45); background: rgba(51,78,43,.12); }
+
+  .legend { margin-top: 26px; display: flex; gap: 28px; font-size: 14px; line-height: 1.5; }
+  .legend div { width: 402px; }
+  .legend h3 { font-size: 15px; margin-bottom: 4px; }
+  ul { padding-left: 18px; }
+</style>
+</head>
+<body>
+<h1>Index A à J des facteurs (OA-111)</h1>
+<div class="sub">Même place que la barre actuelle, même bouton rond « suivant ». La barre s'affine et se fait glisser du doigt, comme l'index des Contacts.</div>
+
+<div class="row">
+
+  <!-- 1. AVANT -->
+  <div class="col">
+    <div class="label">1. Aujourd'hui</div>
+    <div class="note">Cercles cerclés de 38 pt, barre de 60 pt, seules A à G tiennent : il faut faire défiler la barre.</div>
+    <div class="phone old">
+      <div class="back">‹</div><div class="head">Facteur G</div>
+      <div class="title"><b>Milieux ouverts florifères</b><span class="chip">2 / 50</span></div>
+      <div class="panel"><div class="in">Milieux ouverts fleuris (%) : 50 %<div class="slider"><i style="left:120px"></i></div></div></div>
+      <div class="score"><span>Classe S2</span><span>2 pts</span></div>
+      <div class="bar">
+        <div class="glass">
+          <div class="l">B</div><div class="l">C</div><div class="l">D</div><div class="l">E</div><div class="l">F</div><div class="l on">G</div><div class="l">H</div>
+        </div>
+        <div class="next">→</div>
+      </div>
+      <div class="tabs"><div class="pill"><span>Accueil</span><span>Mes Relevés</span><span>Explorer</span></div><div class="circ">⌕</div></div>
+    </div>
+  </div>
+
+  <!-- 2. REPOS -->
+  <div class="col">
+    <div class="label">2. Au repos (proposition)</div>
+    <div class="note">Les dix lettres tiennent d'un coup, sans cercles : juste les lettres, la courante dans une pastille pleine. Barre de 46 pt.</div>
+    <div class="phone new">
+      <div class="back">‹</div><div class="head">Facteur G</div>
+      <div class="title"><b>Milieux ouverts florifères</b><span class="chip">2 / 50</span></div>
+      <div class="panel"><div class="in">Milieux ouverts fleuris (%) : 50 %<div class="slider"><i style="left:120px"></i></div></div></div>
+      <div class="score"><span>Classe S2</span><span>2 pts</span></div>
+      <div class="bar">
+        <div class="glass">
+          <div class="l ok">A</div><div class="l ok">B</div><div class="l ok">C</div><div class="l err">D</div><div class="l">E</div><div class="l">F</div><div class="l on">G</div><div class="l">H</div><div class="l">I</div><div class="l">J</div>
+        </div>
+        <div class="next">→</div>
+      </div>
+      <div class="tabs"><div class="pill"><span>Accueil</span><span>Mes Relevés</span><span>Explorer</span></div><div class="circ">⌕</div></div>
+    </div>
+  </div>
+
+  <!-- 3. GLISSEMENT -->
+  <div class="col">
+    <div class="label">3. Pendant le glissement (proposition)</div>
+    <div class="note">Le doigt est posé sur la barre et glisse : la lettre sous le doigt grossit, une bulle donne son nom, la page derrière change en direct, un petit « tic » à chaque facteur franchi.</div>
+    <div class="phone new">
+      <div class="back">‹</div><div class="head">Facteur F</div>
+      <div class="title"><b>Dendromicrohabitats</b><span class="chip">2 / 50</span></div>
+      <div class="panel"><div class="in">Arbres par ha *<div style="margin-top:12px;height:44px;border:1.5px solid #8a8f80;border-radius:14px;background:#f3f1ea"></div></div></div>
+      <div class="score"><span>Remplissez tous les champs…</span><span>En attente</span></div>
+      <div class="bubble" style="left:125px;--tail:50%"><b>F</b><span>Dendromicrohabitats</span></div>
+      <div class="bar">
+        <div class="glass">
+          <div class="l ok">A</div><div class="l ok">B</div><div class="l ok">C</div><div class="l err">D</div><div class="l">E</div><div class="l on mag">F</div><div class="l">G</div><div class="l">H</div><div class="l">I</div><div class="l">J</div>
+          <div class="finger" style="left:156px;top:1px"></div>
+        </div>
+        <div class="next">→</div>
+      </div>
+      <div class="tabs"><div class="pill"><span>Accueil</span><span>Mes Relevés</span><span>Explorer</span></div><div class="circ">⌕</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="legend">
+  <div>
+    <h3>États d'une lettre</h3>
+    <ul>
+      <li>Courante : pastille pleine vert forêt, lettre blanche.</li>
+      <li>Complète : lettre vert forêt avec un point vert dessous.</li>
+      <li>Erreur : lettre rouge avec un point rouge.</li>
+      <li>Vide : lettre grise, sans point.</li>
+    </ul>
+  </div>
+  <div>
+    <h3>Comportement</h3>
+    <ul>
+      <li>Toucher une lettre : on y va, comme aujourd'hui.</li>
+      <li>Poser le doigt et glisser : la page suit en direct, sans animation, un retour haptique léger à chaque facteur franchi.</li>
+      <li>Relâcher : on reste sur le facteur choisi, la bulle disparaît.</li>
+      <li>VoiceOver : la barre est réglable (glisser vers le haut ou le bas change de facteur).</li>
+    </ul>
+  </div>
+  <div>
+    <h3>Inchangé</h3>
+    <ul>
+      <li>Position : au-dessus de la barre d'onglets, bouton rond « suivant » à droite (coche au dernier facteur).</li>
+      <li>Verre : même matière que la barre actuelle.</li>
+      <li>Le contenu de la page garde sa marge basse pour ne rien cacher.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>
