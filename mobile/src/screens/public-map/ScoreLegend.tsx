@@ -52,6 +52,7 @@ export const ScoreLegend = memo(function ScoreLegend({
               <Text style={styles.rowLabel}>{row.label}</Text>
             </View>
           ))}
+          <Text style={styles.attribution}>{t.legend.attribution}</Text>
         </GlassSurface>
       ) : null}
       <View style={styles.line}>
@@ -144,6 +145,12 @@ function createStyles(theme: BrandTheme) {
       width: 14,
       height: 14,
       borderRadius: 7,
+    },
+    attribution: {
+      ...brandTypography.meta,
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+      marginTop: 4,
     },
     rowLabel: {
       ...brandTypography.meta,

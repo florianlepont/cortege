@@ -143,20 +143,6 @@ export function SurveyParcelSelectionScreen({
         onRegionChange={handleMapRegionChange}
       />
 
-      {offlinePrompt.state !== "hidden" && !offlineDismissed ? (
-        <View
-          pointerEvents="box-none"
-          style={[screenStyles.promptLayer, { top: headerHeight + 8 }]}
-        >
-          <OfflineMapPrompt
-            prompt={offlinePrompt}
-            siteName={siteName.trim() || t.areaSiteFallback}
-            variant="banner"
-            onDismiss={() => setOfflineDismissed(true)}
-          />
-        </View>
-      ) : null}
-
       <View
         pointerEvents="box-none"
         style={[
@@ -167,6 +153,14 @@ export function SurveyParcelSelectionScreen({
         ]}
       >
         <View style={screenStyles.bottomArea}>
+          {offlinePrompt.state !== "hidden" && !offlineDismissed ? (
+            <OfflineMapPrompt
+              prompt={offlinePrompt}
+              siteName={siteName.trim() || t.areaSiteFallback}
+              variant="banner"
+              onDismiss={() => setOfflineDismissed(true)}
+            />
+          ) : null}
           <View style={screenStyles.floatingActions}>
             <AppButton
               label={t.currentPosition}
@@ -232,11 +226,6 @@ function createScreenStyles(theme: BrandTheme) {
       ...StyleSheet.absoluteFill,
       justifyContent: "flex-end",
       paddingHorizontal: 16,
-    },
-    promptLayer: {
-      position: "absolute",
-      left: 16,
-      right: 16,
     },
     bottomArea: {
       gap: 12,

@@ -221,7 +221,7 @@ export function PublicMapScreen({
       />
 
       <MapTopControls
-        top={insets.top + 40}
+        top={Math.max(insets.top, 54) + 16}
         basemap={basemap}
         onToggleBasemap={toggleBasemap}
         onOpenOfflineAreas={offlineEnabled ? openOfflineAreas : undefined}

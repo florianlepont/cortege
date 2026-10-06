@@ -53,6 +53,7 @@ export function SurveyDetailScreen({
   onDiscardSurvey,
   onRenameSurvey,
   onOpenContext,
+  onOpenParcels,
   onOpenScore,
   onOpenFactor,
   onOpenHistory,
@@ -177,7 +178,6 @@ export function SurveyDetailScreen({
           scores={data.displayedScores}
           isDraftView={data.useLocalDraftView}
           filledFactorCount={data.filledFactorCount}
-          onPress={onOpenScore}
         />
 
         <PhotosStrip
@@ -195,7 +195,7 @@ export function SurveyDetailScreen({
           siteName={activeSiteName}
           displayLocation={detail?.display_location}
           parcelIds={data.parcelIds}
-          onPress={onOpenContext}
+          onPress={() => (canEditSurvey ? void onOpenParcels(selectedSurvey.id) : onOpenContext())}
         />
 
         <SurveyOfflineMapRow

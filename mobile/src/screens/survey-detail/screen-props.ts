@@ -31,6 +31,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onDiscardSurvey: (surveyId: string) => Promise<void>
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
   onOpenContext: () => void
+  /** Opens the parcel editor straight from the map card (OA-96). */
+  onOpenParcels: (surveyId: string) => Promise<void> | void
   onOpenScore: () => void
   /** Opens a factor of the survey to fill it ("Commencer / Continuer la notation"). */
   onOpenFactor: (surveyId: string, factor: FactorKey) => void | Promise<void>

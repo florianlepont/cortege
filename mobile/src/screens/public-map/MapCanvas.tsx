@@ -100,6 +100,8 @@ export const MapCanvas = memo(function MapCanvas({
     <MapLibreMap
       style={screenStyles.map}
       mapStyle={mapStyle}
+      attribution={false}
+      logo={false}
       onRegionDidChange={handleRegionDidChange}
     >
       <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(DEFAULT_MAP_REGION) }} />

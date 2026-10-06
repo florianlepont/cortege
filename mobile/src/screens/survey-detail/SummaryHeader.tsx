@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
 import { Alert, Pressable, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
@@ -22,7 +21,7 @@ type SummaryHeaderProps = {
 }
 
 /**
- * The title block of the summary: the survey's name with a pencil to rename it (OA-50), and one
+ * The title block of the summary: the survey's name, tapped to rename it (OA-50, OA-95), and one
  * line in words saying where the survey stands (OA-37).
  */
 export function SummaryHeader({
@@ -85,19 +84,21 @@ export function SummaryHeader({
         </View>
       ) : (
         <View style={styles.titleRow}>
-          <Text style={styles.title} accessibilityRole="header">
-            {siteName}
-          </Text>
           {canEdit ? (
+            // The title is the control (OA-95): a tap edits it, no pencil.
             <Pressable
-              style={styles.iconButton}
               onPress={() => setIsRenaming(true)}
               accessibilityRole="button"
               accessibilityLabel={a11y.renameSurvey(siteName)}
+              style={styles.titlePressable}
             >
-              <Ionicons name="pencil" size={18} color={theme.semanticColors.textStrong} />
+              <Text style={styles.title}>{siteName}</Text>
             </Pressable>
-          ) : null}
+          ) : (
+            <Text style={styles.title} accessibilityRole="header">
+              {siteName}
+            </Text>
+          )}
         </View>
       )}
       <View style={styles.statusLine}>

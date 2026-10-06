@@ -58,7 +58,6 @@ export const surveyDetailFr = {
     factorsFilled: (filled: number) =>
       filled === 1 ? "1 facteur sur 10 rempli" : `${filled} facteurs sur 10 remplis`,
     allFilled: "Les 10 facteurs sont remplis",
-    tapHint: "Touchez pour voir le détail.",
   },
   photos: {
     title: "Photos",
@@ -203,7 +202,7 @@ export const surveyDetailFr = {
     finishSurvey: (name: string) => `Terminer le relevé ${name}`,
     editParcels: (name: string) => `Modifier les parcelles du relevé ${name}`,
     mapPreview: (name: string) => `Carte du relevé ${name}`,
-    openScore: (value: string) => `Voir le détail du score, ${value}`,
+    scoreSummary: (value: string) => `Score IBP, ${value}`,
     addPhoto: "Ajouter une photo",
     photo: ({ position, total }: { position: number; total: number }) =>
       `Photo ${position} sur ${total}`,

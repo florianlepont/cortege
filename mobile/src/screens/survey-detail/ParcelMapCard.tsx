@@ -72,6 +72,9 @@ export function ParcelMapCard({
 
   const map = (
     <ParcelMap
+      // The map keeps its first region: remount once the survey's position is known, so it
+      // zooms on the parcels instead of staying on France (OA-96).
+      key={coordinates ? "located" : "unlocated"}
       style={styles.map}
       initialRegion={region}
       cadastreEnabled={zoom >= 15}

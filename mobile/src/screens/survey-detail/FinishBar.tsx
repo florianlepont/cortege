@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useAppBottomTabBarHeight } from "../../app/useAppBottomTabBarHeight"
 import { useBrandTheme } from "../../app/theme"
 import type { FactorKey } from "../../app/types"
 import { AppButton } from "../../ui/AppButton"
@@ -22,9 +23,13 @@ export function FinishBar({ cta, accessibilityLabel, onFinish, onOpenFactor }: F
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const insets = useSafeAreaInsets()
+  // The tab bar floats over the page: the button sits above it, not behind it (OA-94).
+  const tabBarHeight = useAppBottomTabBarHeight()
   if (cta.kind === "hidden") return null
   return (
-    <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+    <View
+      style={[styles.bottomBar, { paddingBottom: Math.max(tabBarHeight, insets.bottom, 12) + 8 }]}
+    >
       <AppButton
         label={cta.label}
         size="lg"

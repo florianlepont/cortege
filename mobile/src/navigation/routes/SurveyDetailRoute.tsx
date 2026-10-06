@@ -23,6 +23,10 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   const syncActions = useSyncActions()
 
   const onOpenContext = useLatestCallback(() => navigation.navigate("surveyContext"))
+  const onOpenParcels = useLatestCallback(async (surveyId: string) => {
+    const loaded = await actions.startEditSurvey(surveyId)
+    if (loaded) navigation.navigate("surveyParcels", { surveyId, mode: "edit" })
+  })
   const onOpenScore = useLatestCallback(() => navigation.navigate("surveyScore"))
   const onOpenFactor = useLatestCallback(async (surveyId: string, factor: FactorKey) => {
     const loaded = await actions.startEditSurvey(surveyId)
@@ -55,6 +59,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
       onDiscardSurvey={actions.discardSurvey}
       onRenameSurvey={actions.renameSurvey}
       onOpenContext={onOpenContext}
+      onOpenParcels={onOpenParcels}
       onOpenScore={onOpenScore}
       onOpenFactor={onOpenFactor}
       onOpenHistory={onOpenHistory}

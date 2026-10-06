@@ -105,6 +105,8 @@ export const ParcelMap = forwardRef(function ParcelMap(
     <MapLibreMap
       style={style}
       mapStyle={mapStyle}
+      attribution={false}
+      logo={false}
       dragPan={interactive}
       touchZoom={interactive}
       doubleTapZoom={interactive}
