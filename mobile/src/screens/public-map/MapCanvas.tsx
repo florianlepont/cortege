@@ -120,9 +120,15 @@ export const MapCanvas = memo(function MapCanvas({
       <ParcelPolygonsLayer
         items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS}
         selectedParcelIds={highlightedParcelIds}
+        byScore
         onParcelPress={onSelectParcel}
       />
       {clusters.map((entry) => {
+        // From zoom 15 the parcels themselves, filled by score, replace the groups and the dots
+        // of the public surveys (OA-126); the author's own drafts keep their marker.
+        if (parcelLayerRenderable) {
+          if (entry.kind !== "item" || !draftIds?.has(entry.item.survey_id)) return null
+        }
         if (entry.kind === "cluster") {
           return (
             <ClusterMarker

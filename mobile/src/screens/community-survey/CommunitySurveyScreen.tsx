@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } 
 import { Image as ExpoImage } from "expo-image"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { brandTypography } from "../../app/brand-tokens"
+import { parseTimestamp } from "../../app/formatters"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
@@ -26,7 +27,7 @@ type CommunitySurveyScreenProps = {
 }
 
 const formatDay = (iso: string): string => {
-  const date = new Date(iso)
+  const date = parseTimestamp(iso)
   if (Number.isNaN(date.getTime())) return iso
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
 }
@@ -96,42 +97,37 @@ export function CommunitySurveyScreen({
   }
 
   const author = detail.author_name?.trim() || t.unknownAuthor
-  const versionLine = t.versionLine({
-    year: detail.observation_year,
-    version: detail.version_number,
-  })
+  // Year, version and method as chips instead of a grey line (OA-115).
+  const chips = [
+    detail.observation_year !== null ? String(detail.observation_year) : null,
+    detail.version_number !== null ? t.versionChip(detail.version_number) : null,
+    ...toContextRows(detail)
+      .filter((row) => row.label === t.rows.method)
+      .map((row) => row.value),
+  ].filter((chip): chip is string => chip !== null && chip !== "")
 
   return (
     <ScrollView style={scrollStyle} contentContainerStyle={styles.subContent}>
+      {/* The same skeleton as one of my surveys (OA-115): title and status line, score, photos,
+        map, then Contexte et parcelles, Score IBP and the parcel's history. */}
       <View style={own.titleBlock}>
         <Text accessibilityRole="header" style={own.title}>
           {detail.site_name.trim() || fr.common.untitledSurvey}
         </Text>
-        <Text style={own.meta}>{t.meta({ author, date: formatDay(detail.submitted_at) })}</Text>
-        {versionLine ? <Text style={own.meta}>{versionLine}</Text> : null}
-        <Text style={own.readOnly}>{t.readOnly}</Text>
+        <Text style={own.meta}>
+          {t.statusLine({ author, date: formatDay(detail.submitted_at) })}
+        </Text>
+        <View style={own.chips}>
+          {chips.map((chip) => (
+            <View key={chip} style={own.chip}>
+              <Text style={own.chipText}>{chip}</Text>
+            </View>
+          ))}
+        </View>
       </View>
 
       <ScoreBreakdown scores={scores} />
-      <FactorsList
-        factorEntries={factorEntries}
-        showLoadingHint={false}
-        canEditSurvey={false}
-        onOpenFactor={() => undefined}
-      />
-
-      <AppGroupedList sections={contextSections} />
-
-      <ParcelMapCard
-        apiUrl={apiUrl}
-        accessToken={accessToken}
-        siteName={detail.site_name}
-        displayLocation={detail.display_location ?? undefined}
-        parcelIds={detail.parcel_ids}
-        surveyId={detail.survey_id}
-        style={styles.mapTall}
-      />
-      {detail.parcel_ids.length > 0 ? <AppGroupedList sections={parcelSections} /> : null}
+      <Text style={own.readOnly}>{t.readOnly}</Text>
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -172,6 +168,32 @@ export function CommunitySurveyScreen({
           </Text>
         )}
       </View>
+
+      <ParcelMapCard
+        apiUrl={apiUrl}
+        accessToken={accessToken}
+        siteName={detail.site_name}
+        displayLocation={detail.display_location ?? undefined}
+        parcelIds={detail.parcel_ids}
+        surveyId={detail.survey_id}
+        style={styles.mapTall}
+      />
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{fr.navigation.headers.surveyContext}</Text>
+      </View>
+      <AppGroupedList sections={contextSections} />
+      {detail.parcel_ids.length > 0 ? <AppGroupedList sections={parcelSections} /> : null}
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{fr.navigation.headers.surveyScore}</Text>
+      </View>
+      <FactorsList
+        factorEntries={factorEntries}
+        showLoadingHint={false}
+        canEditSurvey={false}
+        onOpenFactor={() => undefined}
+      />
 
       {detail.history.length > 1 ? (
         <View style={styles.section}>
@@ -240,6 +262,23 @@ function createOwnStyles(theme: BrandTheme) {
     meta: {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
+    },
+    chips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      paddingTop: 6,
+    },
+    chip: {
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+      backgroundColor: theme.colors.panelMuted,
+    },
+    chipText: {
+      ...brandTypography.meta,
+      fontFamily: "Jost-SemiBold",
+      color: theme.semanticColors.textStrong,
     },
     readOnly: {
       ...brandTypography.meta,

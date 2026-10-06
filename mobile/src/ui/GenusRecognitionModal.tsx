@@ -34,6 +34,8 @@ type GenusRecognitionModalProps = {
   onClose: () => void
   /** The surveyor confirmed this suggestion - the caller adds it to Factor A's genus list (D-13). */
   onConfirmGenus: (genus: CnpfFactorAGenusCode) => void
+  /** The confirm button's text, when the genus does not go into the open survey's Factor A. */
+  confirmLabel?: string
 }
 
 /**
@@ -45,6 +47,7 @@ export function GenusRecognitionModal({
   visible,
   onClose,
   onConfirmGenus,
+  confirmLabel,
 }: GenusRecognitionModalProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -177,7 +180,7 @@ export function GenusRecognitionModal({
                         </Text>
                       </View>
                       <AppButton
-                        label={t.confirmGenus}
+                        label={confirmLabel ?? t.confirmGenus}
                         size="sm"
                         onPress={() => handleConfirm(suggestion.genus)}
                         testID={`genus-recognition-confirm-${suggestion.genus}`}

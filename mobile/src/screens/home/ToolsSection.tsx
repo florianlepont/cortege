@@ -6,11 +6,11 @@ import { brandSpacing, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
-import { AppActionSheet } from "../../ui/AppActionSheet"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppText as Text } from "../../ui/AppText"
 import { GenusRecognitionModal } from "../../ui/GenusRecognitionModal"
+import { GenusTargetSheet } from "./GenusTargetSheet"
 
 const t = fr.home.tools
 
@@ -77,33 +77,31 @@ export function ToolsSection({
   }
 
   const genusName = genus ? fr.genus.displayName[genus] : ""
-  const options = genus
-    ? [
-        ...openDrafts(surveys).map((survey) => ({
-          label: survey.site_name?.trim() || fr.common.untitledSurvey,
-          onPress: () => {
-            const chosen = genus
-            void onAddGenusToSurvey(survey.id, chosen).then((added) =>
-              setNotice(
-                added
-                  ? {
-                      tone: "success",
-                      message: t.genusAdded({
-                        genus: fr.genus.displayName[chosen],
-                        name: survey.site_name?.trim() || fr.common.untitledSurvey,
-                      }),
-                    }
-                  : { tone: "warning", message: t.addFailed },
-              ),
-            )
-          },
-        })),
-        {
-          label: t.startSurvey,
-          onPress: () => onStartSurveyWithGenus(genus),
-        },
-      ]
+  const targets = genus
+    ? openDrafts(surveys).map((survey) => ({
+        id: survey.id,
+        name: survey.site_name?.trim() || fr.common.untitledSurvey,
+        progress: Math.round(survey.completion_rate / 10),
+      }))
     : []
+  const addToSurvey = (surveyId: string): void => {
+    if (genus === null) return
+    const chosen = genus
+    const target = targets.find((entry) => entry.id === surveyId)
+    void onAddGenusToSurvey(surveyId, chosen).then((added) =>
+      setNotice(
+        added
+          ? {
+              tone: "success",
+              message: t.genusAdded({
+                genus: fr.genus.displayName[chosen],
+                name: target?.name ?? fr.common.untitledSurvey,
+              }),
+            }
+          : { tone: "warning", message: t.addFailed },
+      ),
+    )
+  }
 
   return (
     <View style={styles.section}>
@@ -137,13 +135,17 @@ export function ToolsSection({
         visible={identifying}
         onClose={() => setIdentifying(false)}
         onConfirmGenus={setGenus}
+        confirmLabel={t.identify.confirm}
       />
-      <AppActionSheet
+      <GenusTargetSheet
         visible={sheetOpen}
+        genusName={genusName}
+        targets={targets}
+        onStartSurvey={() => {
+          if (genus !== null) onStartSurveyWithGenus(genus)
+        }}
+        onChooseTarget={addToSurvey}
         onClose={closeSheet}
-        title={t.chooseSurveyTitle({ genus: genusName })}
-        options={options}
-        cancelLabel={t.cancel}
       />
     </View>
   )

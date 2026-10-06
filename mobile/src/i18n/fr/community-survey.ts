@@ -2,12 +2,11 @@
 // search. The score, the factors and the photos reuse the texts of the survey's own pages.
 export const communitySurveyFr = {
   headerTitle: "Relevé de la communauté",
-  meta: ({ author, date }: { author: string; date: string }) => `par ${author} · le ${date}`,
+  // OA-115: the status line of the page, like "Brouillon · synchronisé" on one of my surveys.
+  statusLine: ({ author, date }: { author: string; date: string }) =>
+    `Terminé · ${author} · ${date}`,
+  versionChip: (version: number) => `version ${version}`,
   unknownAuthor: "un ancien membre",
-  versionLine: ({ year, version }: { year: number | null; version: number | null }) =>
-    [year !== null ? `Année ${year}` : null, version !== null ? `version ${version}` : null]
-      .filter((part): part is string => part !== null)
-      .join(" · "),
   readOnly: "Relevé d'un autre membre : consultation seule.",
   loading: "Chargement du relevé…",
   error: "Ce relevé n'a pas pu être chargé. Vérifiez votre connexion.",
@@ -21,7 +20,7 @@ export const communitySurveyFr = {
   },
   photosFailed: "Les photos n'ont pas pu être chargées.",
   history: {
-    title: "Autres relevés de ces parcelles",
+    title: "Historique de la parcelle",
     current: "Ce relevé",
     row: ({
       author,
