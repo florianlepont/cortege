@@ -1,10 +1,8 @@
 import { IBP_MAX } from "@cortege/ibp-domain"
 
-// Phase 3 (FLOW-04): the A->J horizontal pager and its fixed footer control. OA-30: the header is
-// one slim row (the factor's name and the running total) over the A to J strip; the footer is two
-// buttons.
+// Phase 3 (FLOW-04): the A->J horizontal pager. OA-98: a slim title row (the factor's name and the
+// running total) on top; at the bottom a glass bar of A to J letters and a round "next" button.
 export const factorPagerFr = {
-  previous: "Précédent",
   next: "Facteur suivant",
   finish: "Terminer",
   total: (points: number) => `${points} / ${IBP_MAX.total}`,
