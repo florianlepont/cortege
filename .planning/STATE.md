@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.1
 current_phase_name: Owner acceptance testing
 status: executing
-stopped_at: Phase 12.1 (Owner acceptance testing) inserted before Phase 13; Phase 13 discussion postponed
-last_updated: "2026-10-06T12:00:00.000Z"
+stopped_at: Phase 12.1 (Owner acceptance testing) complete 2026-10-06; field tests open after Phases 12.2 and 12.3 (owner decision 2026-10-06), which are still to plan
+last_updated: "2026-10-06T23:00:00.000Z"
 last_activity: 2026-10-06
 progress:
   total_phases: 25
-  completed_phases: 21
+  completed_phases: 22
   total_plans: 159
   completed_plans: 159
-  percent: 84
+  percent: 88
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 
 Phase: 12.1 (Owner acceptance testing)
 Plan: Not started
-Status: Phases 1 through 12 complete; Phase 12.1 in progress (owner acceptance loop); Phases 12.2 and 12.3 inserted before Phase 13, not yet planned
-Last activity: 2026-10-06 (Phases 12.2 and 12.3 inserted by owner decision; Phase 13 now follows 12.1, 12.2 and 12.3)
+Status: Phases 1 through 12 and 12.1 complete; Phases 12.2 and 12.3 come before the field tests (owner decision 2026-10-06), not yet planned
+Last activity: 2026-10-06 (Phase 12.1 closed by the owner; field tests postponed until Phases 12.2 and 12.3 are done)
 
-Progress: [████████░░] 21/25 phases complete
+Progress: [█████████░] 22/25 phases complete
 
 ## Performance Metrics
 
