@@ -5,8 +5,8 @@ milestone_name: milestone
 current_phase: 12.1
 current_phase_name: Owner acceptance testing
 status: executing
-stopped_at: Phase 12.2 context gathered
-last_updated: "2026-10-06T21:34:32.660Z"
+stopped_at: Phase 12.2 UI-SPEC approved
+last_updated: "2026-10-06T22:37:49.437Z"
 last_activity: 2026-10-06 (Phases 12.2 and 12.3 inserted by owner decision; Phase 13 now follows 12.1, 12.2 and 12.3)
 progress:
   total_phases: 25
@@ -170,6 +170,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-06T21:34:32.636Z
-Stopped at: Phase 12.2 context gathered
-Resume file: .planning/phases/12.2-visual-modernisation-inserted/12.2-CONTEXT.md
+Last session: 2026-10-06T22:37:49.432Z
+Stopped at: Phase 12.2 UI-SPEC approved
+Resume file: .planning/phases/12.2-visual-modernisation-inserted/12.2-UI-SPEC.md
