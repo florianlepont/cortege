@@ -90,6 +90,58 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .cC .rowi:last-child{border:0}
 .cC .btn{border-radius:12px}
 .cC .xhero{border-radius:18px}
+
+/* ===== chrome E : charter-anchored, colourful ===== */
+.cE{--bg:#E4EAD3}
+[data-theme=dark] .cE{--bg:#0B0D0A}
+.cE .card{background:var(--surface);border:0;border-radius:20px;box-shadow:0 1px 0 color-mix(in srgb,var(--sage) 70%,transparent)}
+.cE .h1{font:800 26px Sora;letter-spacing:-.02em;line-height:1.05}
+.cE .h1 span{display:block;margin-left:22px;color:var(--terra)}
+.cE .sec{margin:20px 0 9px -6px;display:flex;justify-content:space-between;align-items:center}
+.cE .sec span{background:var(--forest);color:#F1F4E6;font:700 11px Sora;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px 4px 12px;border-radius:2px 8px 8px 2px}
+.cE .sec:nth-of-type(2n) span{background:var(--terra)}
+[data-theme=dark] .cE .sec span{background:color-mix(in srgb,var(--sage) 22%,#111)}
+.cE .sec em{font:600 12px Jost;color:var(--accent)}
+.cE .rowi{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid color-mix(in srgb,var(--sage) 45%,transparent)}
+.cE .rowi:last-child{border:0}
+.cE .btn{border-radius:99px}
+.cE .av{background:var(--terra);color:#fff}
+.cE .thumb{border-radius:50%;width:42px;height:42px;background:color-mix(in srgb,var(--moss) 25%,transparent);color:var(--forest)}
+[data-theme=dark] .cE .thumb{color:var(--sage)}
+.cE .thumb.draft{background:color-mix(in srgb,var(--mauve,#9494B0) 30%,transparent);color:#6b6b8c}
+.cE .alert{background:color-mix(in srgb,var(--salmon,#DA8D77) 28%,var(--surface))}
+.cE .sc[data-b]{background:var(--b);color:#fff;padding:5px 9px 3px;border-radius:12px;min-width:46px;text-align:center}
+.cE .sc[data-b] small{color:rgba(255,255,255,.8);font-size:10px}
+.cE .sc[data-b=low]{--b:var(--terra)}.cE .sc[data-b=mid]{--b:var(--ochre)}.cE .sc[data-b=high]{--b:#5E7E22}
+[data-theme=dark] .cE .sc[data-b=high]{--b:#6F9330}
+.cE .sc[data-b=none]{background:transparent;color:var(--text3)}
+.cE .seg span{border:0;background:color-mix(in srgb,var(--sage) 45%,var(--surface));color:var(--forest);font-weight:600}
+[data-theme=dark] .cE .seg span{color:var(--text2);background:var(--surface2)}
+.cE .seg span.on{background:var(--forest);color:#fff}
+.cE .seg span:nth-child(2).on{background:var(--ochre)}
+.cE .tabbar div.on{color:var(--forest);background:color-mix(in srgb,var(--moss) 40%,transparent);padding:6px 14px;border-radius:22px}
+[data-theme=dark] .cE .tabbar div.on{color:var(--moss)}
+.cE .fac div{border:0;border-radius:14px;color:var(--forest);background:color-mix(in srgb,var(--moss) 28%,var(--surface));box-shadow:none}
+.cE .fac div.l{background:color-mix(in srgb,var(--terra) 24%,var(--surface));box-shadow:none}
+.cE .fac div.m{background:color-mix(in srgb,var(--ochre) 24%,var(--surface));box-shadow:none}
+[data-theme=dark] .cE .fac div{color:var(--text)}
+.cE .fac div.h{box-shadow:none}
+.cE .map{border-radius:20px}
+.cE .chip{background:var(--forest);color:#fff}
+.cE .chip.ok{background:#5E7E22;color:#fff}.cE .chip.warn{background:var(--ochre);color:#fff}
+.cE .xhero{border-radius:22px}
+.cE .xhero .tag{background:var(--terra);color:#fff}
+.cE .xhero .t span{color:var(--sage)}
+.cE .xhero .btn{background:var(--moss);color:#14210F}
+.cE .xhero:after,.cE .score-x:after{content:"";position:absolute;left:18px;bottom:0;width:46%;height:12px;background:var(--moss);border-radius:14px 14px 0 0}
+.cE .score-x{border-radius:22px;padding-bottom:26px}
+.cE .score-x .sub div:nth-child(1){background:color-mix(in srgb,var(--moss) 30%,#0E2210)}
+.cE .score-x .sub div:nth-child(2){background:color-mix(in srgb,var(--mauve,#9494B0) 32%,#0E2210)}
+.cE .score-x .eyebrow{color:var(--sage)}
+.cE .xhero.compact{padding-bottom:20px}
+.cE .xhero.compact:after{height:9px;width:40%}
+.cE .xhero.compact .tag{margin-bottom:6px}
+
 /* avatar */
 .av{width:34px;height:34px;border-radius:50%;background:var(--sage);color:var(--forest);display:grid;place-items:center;font:700 13px Sora}
 .cA .av,.cC .av{width:30px;height:30px}
@@ -127,7 +179,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 </head>
 <body>
 <div id="nav">
-  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button><button data-v="D">D · C + hero compact</button>
+  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button><button data-v="D">D · C + hero compact</button><button data-v="E">E · D charte + couleur</button>
   <span class="sp"></span>
   <button id="theme">Thème : clair</button>
 </div>
@@ -149,6 +201,7 @@ function fern(){let p='<path d="M20 100C40 70 60 40 96 8" fill="none" stroke-wid
  for(let k=1;k<10;k++){const t=k/10,x=20+76*t,y=100-92*t,L=26*(1-t*.6);
   p+=`<path d="M${x} ${y}l${-L} ${-L*.35}M${x} ${y}l${L*.8} ${L*.5}" stroke-width="2" fill="none"/>`;}
  return `<svg class="fern" viewBox="0 0 120 120">${p}</svg>`}
+const band=n=>n==='--'?'none':(+n<25?'low':+n<35?'mid':'high');
 const status=`<div class="status"><span>9:41</span><span>●●●</span></div>`;
 const tabs=a=>`<div class="tabbar">${[['home','Accueil'],['list','Mes relevés'],['map','Explorer']].map(([n,l])=>`<div class="${a===n?'on':''}">${I(n)}${l}</div>`).join('')}<div>${I('search')}Recherche</div></div>`;
 const ring=(v,max,c)=>{const r=36,C=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 90 90"><circle cx="45" cy="45" r="${r}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="8"/><circle cx="45" cy="45" r="${r}" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*v/max} ${C}" transform="rotate(-90 45 45)"/></svg>`};
@@ -161,13 +214,13 @@ function home(v){
  const x=v!=='A';
  const rows=[['Hêtraie de Lyons','Soumis · il y a 2 j','34','leaf'],['Pinède des Landes','Brouillon · sync en attente','--','cloud'],['Bois de Boulogne','Soumis · il y a 9 j','27','leaf']];
  return `${status}<div class="scroll">
- <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${x?14:10}px"><div class="h1">${v==='B'?'Bonjour,<span>Florian</span>':'Bonjour, Florian'}</div><div class="av">FL</div></div>
- <div class="card" style="padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text2)">${I('alert','color:var(--warn);width:18px;height:18px')}<span style="flex:1">1 relevé bloqué</span><span class="chip warn">Voir</span></div>
- ${hero(x,v==='D')}
+ <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${x?14:10}px"><div class="h1">${(v==='B'||v==='E')?'Bonjour,<span>Florian</span>':'Bonjour, Florian'}</div><div class="av">FL</div></div>
+ <div class="card alert" style="padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text2)">${I('alert','color:var(--warn);width:18px;height:18px')}<span style="flex:1">1 relevé bloqué</span><span class="chip warn">Voir</span></div>
+ ${hero(x,v==='D'||v==='E')}
  <div class="sec"><span>Parcelles proches</span><em>Voir la carte</em></div>
  <div class="card"><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B12 · Chênaie de Bercé</div><div class="m">120 m · 4,2 ha</div></div></div><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B14 · Futaie claire</div><div class="m">340 m · 2,8 ha</div></div></div></div>
  <div class="sec"><span>Derniers relevés</span><em>Tout voir</em></div>
- <div class="card">${rows.map(r=>`<div class="rowi"><div class="thumb">${I(r[3],'width:20px;height:20px')}</div><div><div class="n">${r[0]}</div><div class="m">${r[1]}</div></div><div class="sc num">${r[2]}<small>/50</small></div></div>`).join('')}</div>
+ <div class="card">${rows.map(r=>`<div class="rowi"><div class="thumb ${r[2]==='--'?'draft':''}">${I(r[3],'width:20px;height:20px')}</div><div><div class="n">${r[0]}</div><div class="m">${r[1]}</div></div><div class="sc num" data-b="${band(r[2])}">${r[2]}<small>/50</small></div></div>`).join('')}</div>
  </div>${tabs('home')}`}
 
 function detail(v){
@@ -177,7 +230,7 @@ function detail(v){
  :`<div class="card score-s"><div class="eyebrow">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:var(--text2);margin:2px 0 12px">Potentiel élevé</div>${sBars(7)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--text2)"><span>Peuplement <b class="num" style="color:var(--text)">24/35</b></span><span>Contexte <b class="num" style="color:var(--text)">10/15</b></span></div></div>`;
  return `${status}<div class="scroll">
  <div style="color:var(--text2);font-size:13px;margin-bottom:6px">‹ Mes relevés</div>
- <div class="h1" style="margin-bottom:6px">${v==='B'?'Hêtraie<span>de Lyons</span>':'Hêtraie de Lyons'}</div>
+ <div class="h1" style="margin-bottom:6px">${(v==='B'||v==='E')?'Hêtraie<span>de Lyons</span>':'Hêtraie de Lyons'}</div>
  <div style="display:flex;gap:6px;align-items:center;margin-bottom:14px"><span class="chip ok">Soumis</span><span style="font-size:12px;color:var(--text2)">Parcelle L07 · 12 sept.</span></div>
  ${score}
  <div class="sec"><span>Les dix facteurs</span><em></em></div>
@@ -192,14 +245,15 @@ function list(v){
  return `${status}<div class="scroll">
  <div class="h1" style="margin-bottom:${v==='B'?12:8}px">Mes relevés</div>
  <div class="seg"><span class="on">Tous · 12</span><span>Brouillons · 2</span><span>Soumis · 10</span></div>
- <div class="card">${items.map(r=>`<div class="rowi"><span class="dot" style="background:${r[2]==='ok'?'var(--ok)':r[2]==='warn'?'var(--warn)':'var(--text3)'}"></span><div style="flex:1"><div class="n">${r[0]}</div><div class="m">${r[1]} · ${r[4]}</div></div><div class="sc num">${r[3]}<small>/50</small></div></div>`).join('')}</div>
+ <div class="card">${items.map(r=>`<div class="rowi"><span class="dot" style="background:${r[2]==='ok'?'var(--ok)':r[2]==='warn'?'var(--warn)':'var(--text3)'}"></span><div style="flex:1"><div class="n">${r[0]}</div><div class="m">${r[1]} · ${r[4]}</div></div><div class="sc num" data-b="${band(r[3])}">${r[3]}<small>/50</small></div></div>`).join('')}</div>
  </div>${tabs('list')}`}
 
 const V={
  A:{c:'cA',d:'A · Linear sobre : surfaces plates, filets fins, accent vert réservé à l\'action et aux scores, rayons 10 à 12 px, Accueil compact. Le côté brandé passe par les accents et les titres.',home:'A',det:'A',list:'A'},
  B:{c:'cB',d:'B · Expressif et organique : aplats forêt, rectangle noir et décalage typographique de la charte, fougère en motif, rayons 22 à 26 px, bouton terracotta arrondi, plus de couleur.',home:'B',det:'B',list:'B'},
  C:{c:'cC',d:'C · Mélange : écrans de travail sobres (liste, lignes, facteurs), seuils expressifs (carte Reprendre et carte de score en aplat forêt avec anneau).',home:'C',det:'C',list:'A'},
- D:{c:'cC',d:'D · C avec hero compact : même mélange que C, mais la carte Reprendre tient sur deux lignes (titre et progression à gauche, bouton à droite) pour gagner de la place sur Accueil.',home:'D',det:'D',list:'A'}
+ D:{c:'cC',d:'D · C avec hero compact : même mélange que C, mais la carte Reprendre tient sur deux lignes (titre et progression à gauche, bouton à droite) pour gagner de la place sur Accueil.',home:'D',det:'D',list:'A'},
+ E:{c:'cE',d:'E · D ancré dans la charte et plus coloré : étiquettes en MAJUSCULES (highlight) décalées sur les titres de section, bump moss en bas des cartes forêt (jamais centré, 40 % min.), fougère ton sur ton, titres décalés, terracotta pour les accents, pastilles de score colorées par bande (terracotta, ochre, moss), facteurs teintés, fond sauge.',home:'E',det:'E',list:'E'}
 };
 const root=document.getElementById('root');
 root.innerHTML=Object.entries(V).map(([k,v],i)=>`<div class="variant ${i?'':'on'}" id="v${k}"><p class="vdesc">${v.d}</p><div class="row">
