@@ -21,8 +21,8 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--page);font-family:Jost,system-ui,sans-serif;color:var(--text);padding:64px 24px 40px;transition:background .2s}
 h2,.t{font-family:Sora,system-ui,sans-serif}
-#nav{position:fixed;top:0;left:0;right:0;z-index:50;background:#16181a;color:#fff;display:flex;gap:8px;align-items:center;padding:8px 16px;font:13px Sora,system-ui}
-#nav button{background:#2a2d30;color:#ddd;border:0;border-radius:8px;padding:7px 12px;font:600 12px Sora;cursor:pointer}
+#nav{position:fixed;top:0;left:0;right:0;z-index:50;overflow-x:auto;white-space:nowrap;background:#16181a;color:#fff;display:flex;gap:8px;align-items:center;padding:8px 16px;font:13px Sora,system-ui}
+#nav button{white-space:nowrap;flex:none;background:#2a2d30;color:#ddd;border:0;border-radius:8px;padding:7px 12px;font:600 12px Sora;cursor:pointer}
 #nav button.on{background:#9BC26A;color:#0c1208}
 #nav .sp{flex:1}
 .vdesc{max-width:1100px;margin:0 auto 18px;color:var(--text2);font-size:14px;line-height:1.45;text-align:center}
@@ -183,6 +183,52 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .cH .stamp small{display:block;font:600 9px Jost;letter-spacing:.1em}
 .cH .sc{font-family:Sora}
 
+
+/* ===== I : F, more modern ===== */
+.cI{background:radial-gradient(90% 40% at 0% 0%,color-mix(in srgb,var(--moss) 22%,transparent),transparent 70%),radial-gradient(70% 35% at 100% 18%,color-mix(in srgb,var(--sage) 35%,transparent),transparent 70%),var(--bg)}
+[data-theme=dark] .cI{background:radial-gradient(90% 40% at 0% 0%,rgba(137,163,58,.16),transparent 70%),radial-gradient(70% 35% at 100% 20%,rgba(51,78,43,.45),transparent 70%),var(--bg)}
+.cI .card{border-radius:22px;border:1px solid var(--glass-b);background:var(--glass);backdrop-filter:blur(14px);box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 8px 24px rgba(30,45,25,.06)}
+[data-theme=dark] .cI .card{box-shadow:0 1px 0 rgba(255,255,255,.05) inset}
+.cI .h1{font:600 24px Sora;letter-spacing:-.025em}
+.cI .sec{margin:20px 2px 8px;font:600 13px Sora;color:var(--text2);display:flex;justify-content:space-between}
+.cI .sec em{color:var(--accent);font:500 12px Jost}
+.cI .rowi{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--glass-b)}
+.cI .rowi:last-child{border:0}
+.cI .thumb{width:38px;height:38px;border-radius:12px;background:color-mix(in srgb,var(--moss) 18%,transparent);color:var(--accent)}
+.cI .xhero{border-radius:26px;background:radial-gradient(120% 150% at 88% -10%,#6f9a3c 0%,rgba(111,154,60,0) 58%),linear-gradient(140deg,#1d3418 0%,#334E2B 55%,#0E2210 100%);box-shadow:0 16px 36px -12px rgba(30,60,25,.55),inset 0 1px 0 rgba(255,255,255,.14)}
+.cI .xhero .tag{background:rgba(255,255,255,.14);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.22);border-radius:99px;color:#EAF1D8;font:600 10px Jost;letter-spacing:.14em;margin:0 0 7px;padding:3px 10px}
+.cI .xhero.compact .tag{margin:0 0 7px}
+.cI .xhero .t{font-weight:700;letter-spacing:-.02em}
+.cI .xhero .btn{background:linear-gradient(180deg,#B9D76B,#89A33A);color:#14210F;border-radius:99px;box-shadow:0 8px 22px rgba(137,163,58,.5),inset 0 1px 0 rgba(255,255,255,.5);font-weight:700}
+.cI .xhero .t span{color:#C8DDA0}
+.cI svg.topo{animation:drift 26s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate(-6px,2px) scale(1.04)}to{transform:translate(8px,-4px) scale(1.1)}}
+@media (prefers-reduced-motion:reduce){.cI svg.topo{animation:none}}
+.cI .score-x{border-radius:28px;background:radial-gradient(110% 130% at 100% -10%,#6f9a3c 0%,rgba(111,154,60,0) 55%),linear-gradient(150deg,#1d3418,#334E2B 60%,#0E2210);box-shadow:0 18px 40px -14px rgba(30,60,25,.6),inset 0 1px 0 rgba(255,255,255,.14);padding-bottom:18px}
+.cI .score-x .big{font:300 68px Sora;letter-spacing:-.05em;background:linear-gradient(180deg,#fff,#C8DDA0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cI .score-x .big small{font:400 20px Jost;-webkit-text-fill-color:#B0C78E;letter-spacing:0}
+.cI .score-x .eyebrow{color:#C8DDA0}
+.cI .score-x .glow{height:6px;border-radius:6px;background:rgba(255,255,255,.14);margin:12px 0 2px;position:relative}
+.cI .score-x .glow i{position:absolute;left:0;top:0;bottom:0;width:68%;border-radius:6px;background:linear-gradient(90deg,#89A33A,#D5EC8F);box-shadow:0 0 14px rgba(190,230,110,.8)}
+.cI .score-x .sub div{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(6px);border-radius:16px}
+.cI .score-x .sub b{font-weight:600}
+.cI .chip{border-radius:99px}
+.cI .chip.ok{background:color-mix(in srgb,var(--moss) 22%,transparent);color:var(--ok)}
+.cI .seg span{border:1px solid var(--glass-b);background:var(--glass);backdrop-filter:blur(8px);font-weight:500}
+.cI .seg span.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.cI .tabbar{background:var(--glass);backdrop-filter:blur(24px) saturate(1.4);height:64px}
+.cI .tabbar div.on{color:var(--accent)}
+.cI .tabbar div.on:after{content:"";width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:1px;box-shadow:0 0 8px var(--accent)}
+.cI .tabbar div:not(.on):after{content:"";width:4px;height:4px}
+.cI .map{border-radius:22px;background:var(--surface2)}
+.cI .av{background:linear-gradient(135deg,#B0C78E,#89A33A);color:#14210F}
+.mr{width:38px;height:38px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),color-mix(in srgb,var(--text3) 25%,transparent) 0);display:grid;place-items:center;margin-left:auto;flex:none}
+.mr b{width:31px;height:31px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font:600 12px Sora}
+.mr.none{background:none;border:1.5px dashed var(--text3)}.mr.none b{background:none;color:var(--text3)}
+.bars10{display:flex;gap:6px;align-items:flex-end;height:78px;padding:12px 14px 8px}
+.bars10 div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font:600 10px Sora;color:var(--text3);gap:4px}
+.bars10 i{width:100%;border-radius:6px;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 100%,#fff 20%),var(--c));box-shadow:0 0 12px color-mix(in srgb,var(--c) 40%,transparent)}
+
 /* avatar */
 .av{width:34px;height:34px;border-radius:50%;background:var(--sage);color:var(--forest);display:grid;place-items:center;font:700 13px Sora}
 .cA .av,.cC .av{width:30px;height:30px}
@@ -220,7 +266,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 </head>
 <body>
 <div id="nav">
-  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button><button data-v="D">D · C + hero compact</button><button data-v="E">E · D charte + couleur</button><button data-v="F">F · D + courbes de niveau</button><button data-v="G">G · D + rosette IBP</button><button data-v="H">H · D + carnet de terrain</button>
+  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button><button data-v="D">D · C + hero compact</button><button data-v="E">E · D charte + couleur</button><button data-v="F">F · D + courbes de niveau</button><button data-v="G">G · D + rosette IBP</button><button data-v="H">H · D + carnet de terrain</button><button data-v="I">I · F plus moderne</button>
   <span class="sp"></span>
   <button id="theme">Thème : clair</button>
 </div>
@@ -254,10 +300,11 @@ function rose(vals,size,letters){const c=size/2,r0=size*.12,rm=size*.33;let p=''
   p+=`<g transform="rotate(${a+90} ${c} ${c})"><rect x="${c-w}" y="${c-r0-(len-r0)}" width="${w*2}" height="${len-r0+2}" rx="${w}" fill="${col}"/>${letters?`<text x="${c}" y="${size*.075}" text-anchor="middle" font-size="${size*.075}" font-family="Sora" font-weight="700" fill="#D7E3C0" transform="">${'ABCDEFGHIJ'[i]}</text>`:''}</g>`});
  return `<svg class="rose" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${c}" cy="${c}" r="${size*.1}" fill="rgba(255,255,255,.15)"/>${p}</svg>`}
 const FV=[4,3,5,2,4,3,5,3,2,3];
+function mring(n){if(n==='--')return '<div class="mr none"><b>--</b></div>';const c=+n<25?'var(--terra)':+n<35?'var(--ochre)':'var(--moss)';return `<div class="mr" style="--p:${n*2};--c:${c}"><b class="num">${n}</b></div>`}
 function sBars(n){return `<div class="sbar">${Array.from({length:10},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`}
 
 function hero(x,c,v){
- if(x) return `<div class="xhero${c?' compact':''}">${v==='F'?topo():v==='G'?'':fern()}<div class="tag">REPRENDRE</div><div class="t">Chênaie<span>de Bercé</span></div><p>${c?(v==='G'?rose([4,3,5,2,4,3,0,0,0,0],26,false):'')+'6/10 facteurs · B12':'6/10 facteurs remplis. Parcelle B12.'}</p><a class="btn">${c?'Reprendre':'Reprendre le relevé'}</a></div>`;
+ if(x) return `<div class="xhero${c?' compact':''}">${v==='F'||v==='I'?topo():v==='G'?'':fern()}<div class="tag">REPRENDRE</div><div class="t">Chênaie<span>de Bercé</span></div><p>${c?(v==='G'?rose([4,3,5,2,4,3,0,0,0,0],26,false):'')+'6/10 facteurs · B12':'6/10 facteurs remplis. Parcelle B12.'}</p><a class="btn">${c?'Reprendre':'Reprendre le relevé'}</a></div>`;
  return `<div class="hero"><div class="eyebrow">Reprendre</div><div class="t">Chênaie de Bercé</div><p>6/10 facteurs remplis. Parcelle B12.</p>${sBars(6)}<div style="height:12px"></div><a class="btn">Reprendre le relevé</a></div>`}
 function home(v){
  const x=v!=='A';
@@ -265,17 +312,17 @@ function home(v){
  return `${status}<div class="scroll">
  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${x?14:10}px"><div class="h1">${(v==='B'||v==='E')?'Bonjour,<span>Florian</span>':'Bonjour, Florian'}</div><div class="av">FL</div></div>
  <div class="card alert" style="padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text2)">${I('alert','color:var(--warn);width:18px;height:18px')}<span style="flex:1">1 relevé bloqué</span><span class="chip warn">Voir</span></div>
- ${hero(x,'DEFGH'.includes(v),v)}
+ ${hero(x,'DEFGHI'.includes(v),v)}
  <div class="sec"><span>Parcelles proches</span><em>Voir la carte</em></div>
  <div class="card"><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B12 · Chênaie de Bercé</div><div class="m">120 m · 4,2 ha</div></div></div><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B14 · Futaie claire</div><div class="m">340 m · 2,8 ha</div></div></div></div>
  <div class="sec"><span>Derniers relevés</span><em>Tout voir</em></div>
- <div class="card">${rows.map(r=>`<div class="rowi"><div class="thumb ${r[2]==='--'?'draft':''}">${I(r[3],'width:20px;height:20px')}</div><div><div class="n">${r[0]}</div><div class="m">${r[1]}</div></div><div class="sc num" data-b="${band(r[2])}">${r[2]}<small>/50</small></div></div>`).join('')}</div>
+ <div class="card">${rows.map(r=>`<div class="rowi"><div class="thumb ${r[2]==='--'?'draft':''}">${I(r[3],'width:20px;height:20px')}</div><div><div class="n">${r[0]}</div><div class="m">${r[1]}</div></div>${v==='I'?mring(r[2]):`<div class="sc num" data-b="${band(r[2])}">${r[2]}<small>/50</small></div>`}</div>`).join('')}</div>
  </div>${tabs('home')}`}
 
 function detail(v){
  const x=v!=='A';
  const f=[['A',4,'m'],['B',3,'l'],['C',5,'h'],['D',2,'l'],['E',4,'m'],['F',3,'m'],['G',5,'h'],['H',3,'m'],['I',2,'l'],['J',3,'m']];
- const score=x?`<div class="score-x">${v==='F'?topo():''}${v==='G'?rose(FV,150,true):v==='H'?'<div class="stamp">SOUMIS<small>12 SEPT.</small></div>':ring(34,50,'#B0C78E')}<div class="eyebrow" style="color:var(--sage)">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:#D7E3C0;margin-top:4px">Potentiel élevé</div><div class="sub"><div><b class="num">24<small style="font:500 12px Jost"> /35</small></b><span>Peuplement</span></div><div><b class="num">10<small style="font:500 12px Jost"> /15</small></b><span>Contexte</span></div></div></div>`
+ const score=x?`<div class="score-x">${v==='F'||v==='I'?topo():''}${v==='I'?'':v==='G'?rose(FV,150,true):v==='H'?'<div class="stamp">SOUMIS<small>12 SEPT.</small></div>':ring(34,50,'#B0C78E')}<div class="eyebrow" style="color:var(--sage)">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:#D7E3C0;margin-top:4px">Potentiel élevé</div>${v==='I'?'<div class="glow"><i></i></div>':''}<div class="sub"><div><b class="num">24<small style="font:500 12px Jost"> /35</small></b><span>Peuplement</span></div><div><b class="num">10<small style="font:500 12px Jost"> /15</small></b><span>Contexte</span></div></div></div>`
  :`<div class="card score-s"><div class="eyebrow">Indice IBP</div><div class="big num">34<small>/50</small></div><div style="font-size:13px;color:var(--text2);margin:2px 0 12px">Potentiel élevé</div>${sBars(7)}<div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:var(--text2)"><span>Peuplement <b class="num" style="color:var(--text)">24/35</b></span><span>Contexte <b class="num" style="color:var(--text)">10/15</b></span></div></div>`;
  return `${status}<div class="scroll">
  <div style="color:var(--text2);font-size:13px;margin-bottom:6px">‹ Mes relevés</div>
@@ -283,9 +330,9 @@ function detail(v){
  <div style="display:flex;gap:6px;align-items:center;margin-bottom:14px"><span class="chip ok">Soumis</span><span style="font-size:12px;color:var(--text2)">Parcelle L07 · 12 sept.</span></div>
  ${score}
  <div class="sec"><span>Les dix facteurs</span><em></em></div>
- ${v==='G'?`<div class="rosewrap"><div class="legend"><span><i style="background:var(--terra)"></i>1 à 2</span><span><i style="background:var(--ochre)"></i>3</span><span><i style="background:var(--moss)"></i>4 à 5</span></div><span>Chaque pétale est un facteur, A à J. Plus il est long, meilleur est le score.</span></div>`:`<div class="fac">${f.map(a=>`<div class="${a[2]}">${a[0]}<span class="num">${a[1]}/5</span></div>`).join('')}</div>`}
+ ${v==='I'?`<div class="card bars10">${f.map(a=>`<div><i style="height:${a[1]*16}%;--c:${a[1]<=2?'var(--terra)':a[1]<=3?'var(--ochre)':'var(--moss)'}"></i>${a[0]}</div>`).join('')}</div>`:v==='G'?`<div class="rosewrap"><div class="legend"><span><i style="background:var(--terra)"></i>1 à 2</span><span><i style="background:var(--ochre)"></i>3</span><span><i style="background:var(--moss)"></i>4 à 5</span></div><span>Chaque pétale est un facteur, A à J. Plus il est long, meilleur est le score.</span></div>`:`<div class="fac">${f.map(a=>`<div class="${a[2]}">${a[0]}<span class="num">${a[1]}/5</span></div>`).join('')}</div>`}
  <div class="sec"><span>Contexte</span><em></em></div>
- <div class="map">${v==='F'?topo():''}</div>
+ <div class="map">${v==='F'||v==='I'?topo():''}</div>
  <div class="card" style="margin-top:10px"><div class="rowi"><div class="n">Méthode</div><div class="sc" style="font:500 13px Jost">IBP FR v3.2</div></div><div class="rowi"><div class="n">Observateur</div><div class="sc" style="font:500 13px Jost">Florian L.</div></div></div>
  </div>${tabs('list')}`}
 
@@ -294,7 +341,7 @@ function list(v){
  return `${status}<div class="scroll">
  <div class="h1" style="margin-bottom:${v==='B'?12:8}px">Mes relevés</div>
  <div class="seg"><span class="on">Tous · 12</span><span>Brouillons · 2</span><span>Soumis · 10</span></div>
- <div class="card">${items.map(r=>`<div class="rowi"><span class="dot" style="background:${r[2]==='ok'?'var(--ok)':r[2]==='warn'?'var(--warn)':'var(--text3)'}"></span><div style="flex:1"><div class="n">${r[0]}</div><div class="m">${r[1]} · ${r[4]}</div></div><div class="sc num" data-b="${band(r[3])}">${r[3]}<small>/50</small></div></div>`).join('')}</div>
+ <div class="card">${items.map(r=>`<div class="rowi"><span class="dot" style="background:${r[2]==='ok'?'var(--ok)':r[2]==='warn'?'var(--warn)':'var(--text3)'}"></span><div style="flex:1"><div class="n">${r[0]}</div><div class="m">${r[1]} · ${r[4]}</div></div>${v==='I'?mring(r[3]):`<div class="sc num" data-b="${band(r[3])}">${r[3]}<small>/50</small></div>`}</div>`).join('')}</div>
  </div>${tabs('list')}`}
 
 const V={
@@ -305,7 +352,8 @@ const V={
  E:{c:'cE',d:'E · D ancré dans la charte et plus coloré : étiquettes en MAJUSCULES (highlight) décalées sur les titres de section, bump moss en bas des cartes forêt (jamais centré, 40 % min.), fougère ton sur ton, titres décalés, terracotta pour les accents, pastilles de score colorées par bande (terracotta, ochre, moss), facteurs teintés, fond sauge.',home:'E',det:'E',list:'E'},
  F:{c:'cC cF',d:'F · D + courbes de niveau : la signature est la topographie. Lignes de niveau ton sur ton dans les cartes forêt et dans la carte de contexte, pastilles d\'icône cerclées. Parle de terrain et de parcelle, pas de feuille.',home:'F',det:'F',list:'A'},
  G:{c:'cC cG',d:'G · D + rosette IBP : la signature est propre à la méthode. Dix pétales, un par facteur A à J, longueur = score, couleur = niveau (terracotta, ochre, moss). Elle remplace l\'anneau et la grille des facteurs ; en miniature sur l\'Accueil elle montre la progression du brouillon.',home:'G',det:'G',list:'A'},
- H:{c:'cC cH',d:'H · D + carnet de terrain : la signature est le papier. Fond crème, cartes en étiquettes d\'herbier (pointillés, trou de perforation), tampon SOUMIS, titres de section façon fiche. Rayons petits, ton artisanal et scientifique.',home:'H',det:'H',list:'A'}
+ H:{c:'cC cH',d:'H · D + carnet de terrain : la signature est le papier. Fond crème, cartes en étiquettes d\'herbier (pointillés, trou de perforation), tampon SOUMIS, titres de section façon fiche. Rayons petits, ton artisanal et scientifique.',home:'H',det:'H',list:'A'},
+ I:{c:'cC cF cI',d:'I · F plus moderne : lueurs et dégradés dans les cartes forêt, verre sur les cartes et puces, contours qui dérivent lentement (désactivé en reduced-motion), gros chiffre fin avec jauge lumineuse, dix facteurs en barres, score en anneaux dans les listes, bouton moss en pilule avec halo, barre d\'onglets en verre avec point actif.',home:'I',det:'I',list:'I'}
 };
 const root=document.getElementById('root');
 root.innerHTML=Object.entries(V).map(([k,v],i)=>`<div class="variant ${i?'':'on'}" id="v${k}"><p class="vdesc">${v.d}</p><div class="row">

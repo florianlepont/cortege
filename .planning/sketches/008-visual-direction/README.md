@@ -24,6 +24,7 @@ Tabs A/B/C at the top, "Thème" button toggles light/dark.
 - **F: D + courbes de niveau** — topographic contour lines tone-on-tone in forest cards and the context map.
 - **G: D + rosette IBP** — ten-petal rosette (one petal per factor A-J, length = score, colour = level) replacing ring and factor grid; mini version on Accueil.
 - **H: D + carnet de terrain** — herbarium-label look: cream paper, dashed borders, punched hole, SOUMIS stamp.
+- **I: F plus moderne** — F with glow gradients, glass cards, slowly drifting contours (off under reduced-motion), light large numeral with glowing gauge, ten factors as bars, score rings in lists, pill button with halo, glass tab bar with active dot.
 
 ## What to Look For
 Accueil compactness (owner wants it compact), score card legibility, whether B's colour fields still feel calm in dark, whether C's two registers feel coherent.
