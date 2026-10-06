@@ -62,7 +62,6 @@ export type SurveyRow = {
   created_at: string
   updated_at: string
   submitted_at: string | null
-  expires_at: string
   sync_version: number
   last_sync_error: string | null
   deleted_at: string | null

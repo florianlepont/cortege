@@ -17,7 +17,6 @@ export const commonFr = {
     draft: "Brouillon",
     pending: "En attente",
     submitted: "Soumis",
-    expired: "Expiré",
     syncPending: "Sync en attente",
     syncError: "Erreur de sync",
     syncBlocked: "Sync bloqué",

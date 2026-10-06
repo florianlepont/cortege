@@ -4,7 +4,7 @@ import type { FactorClass } from "../factors"
 // the API's class-validator DTOs.
 
 /** Survey lifecycle status, as the API stores and sends it. */
-export type SurveyStatus = "draft" | "submitted" | "synced" | "error" | "expired"
+export type SurveyStatus = "draft" | "submitted" | "synced" | "error"
 
 /** Survey visibility on the public map. */
 export type SurveyVisibility = "private" | "public"
@@ -51,7 +51,6 @@ export type SurveyUpsertPayload = IbpMethodFields & {
   vegetation_stage?: string
   factors?: Record<string, unknown>
   scores?: Record<string, unknown>
-  expires_at?: string
 }
 
 /** Replaces API `SurveyPatchBody` (surveys.types.ts). */
@@ -87,7 +86,6 @@ export type SurveyDetail = IbpMethodFields & {
   created_at?: string
   updated_at?: string
   submitted_at?: string | null
-  expires_at?: string | null
   sync_version?: number
   factor_results: Record<string, FactorCanonical>
   scores: IbpScores

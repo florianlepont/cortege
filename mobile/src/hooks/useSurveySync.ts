@@ -500,11 +500,7 @@ export function useSurveySync({
     if (!selectedSurvey) {
       return
     }
-    if (
-      selectedSurvey.status !== "submitted" &&
-      selectedSurvey.status !== "expired" &&
-      selectedSurvey.sync_state !== "synced"
-    ) {
+    if (selectedSurvey.status !== "submitted" && selectedSurvey.sync_state !== "synced") {
       return
     }
     if (surveyDetails[selectedSurveyId]) {

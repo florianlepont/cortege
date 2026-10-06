@@ -34,7 +34,6 @@ function makeRow(overrides: Partial<SurveyRow> = {}): SurveyRow {
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
     submitted_at: "2026-01-01T00:00:00.000Z",
-    expires_at: "2026-12-31T00:00:00.000Z",
     sync_version: 1,
     last_sync_error: null,
     deleted_at: null,
@@ -624,13 +623,12 @@ describe("classifySameVersionContent", () => {
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("conflict")
   })
 
-  it("excludes scores, status and expires_at", () => {
+  it("excludes scores and status", () => {
     const existing = makeRow()
     const body: SurveyUpsertBody = {
       ...sameBody(existing),
       scores: { ibp_total: 99 },
       status: "draft",
-      expires_at: "2030-01-01T00:00:00.000Z",
     }
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("identical")
   })

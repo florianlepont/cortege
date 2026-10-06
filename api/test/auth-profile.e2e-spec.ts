@@ -238,11 +238,11 @@ describe("Auth + profile (e2e)", () => {
     await db.query(
       `INSERT INTO surveys (
          id, user_id, site_name, status, visibility, factors, factor_results, scores, location,
-         created_at, updated_at, submitted_at, expires_at, sync_version
+         created_at, updated_at, submitted_at, sync_version
        )
        VALUES
-         ($1, $2, 'Submitted survey', 'submitted', 'public', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, NOW(), NOW(), NOW(), NOW() + interval '7 days', 1),
-         ($3, $2, 'Draft survey', 'draft', 'private', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, NOW(), NOW(), NULL, NOW() + interval '7 days', 1)`,
+         ($1, $2, 'Submitted survey', 'submitted', 'public', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, NOW(), NOW(), NOW(), 1),
+         ($3, $2, 'Draft survey', 'draft', 'private', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, NOW(), NOW(), NULL, 1)`,
       [submittedSurveyId, user.id, draftSurveyId],
     )
 

@@ -70,7 +70,7 @@ export const computeSurveyStats = (surveys: LocalSurvey[]): SurveyStats => {
 }
 
 export const resolveEffectiveSurveyStatus = (survey: LocalSurvey): LocalSurvey["status"] => {
-  if (survey.status === "submitted" || survey.status === "expired") {
+  if (survey.status === "submitted") {
     return survey.status
   }
   if (survey.sync_state === "failed") {
@@ -82,19 +82,12 @@ export const resolveEffectiveSurveyStatus = (survey: LocalSurvey): LocalSurvey["
   return survey.status
 }
 
-export type SurveyUiStatus =
-  | "draft"
-  | "sync_pending"
-  | "sync_error"
-  | "sync_blocked"
-  | "submitted"
-  | "expired"
+export type SurveyUiStatus = "draft" | "sync_pending" | "sync_error" | "sync_blocked" | "submitted"
 
 // BUG-03 (UX audit, Phase 2): a sync failure is checked before "submitted", so a survey the app
 // already marked submitted but then failed to sync never reads "Soumis" in green — the workflow
 // status and the sync status are two different axes, and a failure on either always wins.
 export const resolveSurveyUiStatus = (survey: LocalSurvey): SurveyUiStatus => {
-  if (survey.status === "expired") return "expired"
   if (survey.sync_state === "failed") {
     return survey.sync_blocked === 1 ? "sync_blocked" : "sync_error"
   }
@@ -105,7 +98,6 @@ export const resolveSurveyUiStatus = (survey: LocalSurvey): SurveyUiStatus => {
 
 export const formatSurveyUiStatusLabel = (uiStatus: SurveyUiStatus): string => {
   if (uiStatus === "submitted") return statusLabels.submitted
-  if (uiStatus === "expired") return statusLabels.expired
   if (uiStatus === "sync_pending") return statusLabels.syncPending
   if (uiStatus === "sync_error") return statusLabels.syncError
   if (uiStatus === "sync_blocked") return statusLabels.syncBlocked
@@ -143,12 +135,8 @@ export const filterAndSortSurveys = (
   const toBoundary = parseDateFilterBoundary(filters.surveyToDate, "end")
 
   const filtered = surveys.filter((survey) => {
-    const lifecycleStatus: "draft" | "submitted" | "expired" =
-      survey.status === "submitted"
-        ? "submitted"
-        : survey.status === "expired"
-          ? "expired"
-          : "draft"
+    const lifecycleStatus: "draft" | "submitted" =
+      survey.status === "submitted" ? "submitted" : "draft"
     const updatedAtTs = parseDate(survey.updated_at)
     if (fromBoundary !== null && updatedAtTs < fromBoundary) return false
     if (toBoundary !== null && updatedAtTs > toBoundary) return false

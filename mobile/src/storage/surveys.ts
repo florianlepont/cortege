@@ -628,20 +628,3 @@ export async function discardSurveyLocalChanges(
     return result
   })
 }
-
-export async function markSurveyExpiredLocally(surveyId: string): Promise<void> {
-  const db = await getDb()
-  const nowIso = new Date().toISOString()
-  await db.runAsync(
-    `UPDATE local_surveys
-     SET status = 'expired',
-         sync_state = 'synced',
-         last_sync_error = NULL,
-         last_sync_error_code = NULL,
-         last_sync_error_at = NULL,
-         sync_blocked = 0,
-         updated_at = ?
-     WHERE id = ?`,
-    [nowIso, surveyId],
-  )
-}

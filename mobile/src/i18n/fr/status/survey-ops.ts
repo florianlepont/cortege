@@ -55,8 +55,6 @@ export const surveyOpsStatusFr = {
     statusText(
       `« ${name} » a un conflit de synchronisation. Réessayez ou annulez la modification locale d'abord.`,
     ),
-  expired: ({ name }: { name: string }) =>
-    statusText(`« ${name} » a expiré et ne peut plus être soumis`),
   notReady: ({ name, details }: { name: string; details: string }) =>
     statusText(`« ${name} » n'est pas prêt à être soumis : ${details}`),
   notReadyGeneric: ({ name }: { name: string }) =>

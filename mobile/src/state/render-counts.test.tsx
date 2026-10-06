@@ -653,7 +653,6 @@ jest.mock("../storage/surveys", () => ({
   queueDeleteSurvey: jest.fn(),
   retrySurveyNow: jest.fn(),
   discardSurveyLocalChanges: jest.fn(),
-  markSurveyExpiredLocally: jest.fn(),
   submitSurvey: jest.fn(),
   updateSurveyVisibility: jest.fn(),
 }))

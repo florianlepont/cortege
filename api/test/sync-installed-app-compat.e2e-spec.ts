@@ -173,12 +173,9 @@ describe("Installed-app sync payload compatibility (e2e)", () => {
       .expect(200)
 
     expect(afterFirstBatch.body.status).toBe("draft")
-    const createdAtMs = new Date(afterFirstBatch.body.created_at).getTime()
-    const expiresAtMs = new Date(afterFirstBatch.body.expires_at).getTime()
-    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
-    // The client sent a 1-year expires_at; the server must have ignored it.
-    expect(expiresAtMs).toBeGreaterThanOrEqual(createdAtMs + sevenDaysMs - 60_000)
-    expect(expiresAtMs).toBeLessThanOrEqual(createdAtMs + sevenDaysMs + 60_000)
+    // The client sent a 1-year expires_at; the server accepts it and ignores it: a survey has no
+    // deadline any more (OA-41), so the response carries none.
+    expect(afterFirstBatch.body).not.toHaveProperty("expires_at")
     expect(afterFirstBatch.body.parcel_ids).toContain(parcelId)
 
     // (2) attachment.delete of the created attachment.
@@ -280,7 +277,6 @@ describe("Installed-app sync payload compatibility (e2e)", () => {
         vegetation_stage: remoteSurvey.vegetation_stage,
         factors: remoteSurvey.factors,
         scores: remoteSurvey.scores,
-        expires_at: remoteSurvey.expires_at,
         ...overrides,
       }
     }
@@ -507,7 +503,6 @@ describe("Installed-app sync payload compatibility (e2e)", () => {
       vegetation_stage: remote.vegetation_stage,
       factors: remote.factors,
       scores: remote.scores,
-      expires_at: remote.expires_at,
     })
 
     for (const syncVersion of [

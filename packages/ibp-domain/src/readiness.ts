@@ -13,7 +13,6 @@ export type SubmitReadinessField =
 
 export type SubmitReadiness = {
   ready: boolean
-  expired: boolean
   missing_factors: FactorKey[]
   missing_fields: SubmitReadinessField[]
 }
@@ -23,10 +22,7 @@ export type SubmitReadiness = {
  * cas; a factor is missing when it is absent, unreadable, out of its allowed set or incomplete.
  * An unsupported version reports `ibp_method_version` and every factor missing.
  */
-export function evaluateSubmitReadiness(
-  draft: IbpEvaluationInput,
-  now: Date = new Date(),
-): SubmitReadiness {
+export function evaluateSubmitReadiness(draft: IbpEvaluationInput): SubmitReadiness {
   const version = resolveMethodVersion(draft.ibp_method_version)
   const retained = computeRetainedScores(draft.factors, draft)
   const missingFactors = FACTOR_KEYS.filter((key) => retained[key] === null)
@@ -42,12 +38,8 @@ export function evaluateSubmitReadiness(
     if (!stage.trim()) missingFields.push("vegetation_stage")
   }
 
-  const expiresAt = typeof draft.expires_at === "string" ? Date.parse(draft.expires_at) : NaN
-  const expired = Number.isFinite(expiresAt) ? now.getTime() > expiresAt : false
-
   return {
-    ready: !expired && missingFactors.length === 0 && missingFields.length === 0,
-    expired,
+    ready: missingFactors.length === 0 && missingFields.length === 0,
     missing_factors: missingFactors,
     missing_fields: missingFields,
   }

@@ -19,7 +19,7 @@ jest.mock("expo-sqlite", () => ({
   openDatabaseAsync: jest.fn(async () => mockActiveDb),
 }))
 
-import { initLocalDb } from "./db"
+import { initLocalDb, SCHEMA_VERSION } from "./db"
 import { computePayloadCompletion, safeParseJson, toSurveyQueuePayload } from "./utils"
 
 const NOW = "2026-01-01T00:00:00.000Z"
@@ -188,10 +188,10 @@ beforeAll(async () => {
   await initLocalDb()
 })
 
-describe("db migration v0 -> v3 (data preservation, D-08)", () => {
-  test("PRAGMA user_version is 3 after migrating through 1, 2 and 3 in one call", async () => {
+describe("db migration v0 -> latest (data preservation, D-08)", () => {
+  test("PRAGMA user_version is the latest after migrating through every version in one call", async () => {
     const version = await mockDb.getFirstAsync<{ user_version: number }>(`PRAGMA user_version`)
-    expect(version?.user_version).toBe(3)
+    expect(version?.user_version).toBe(SCHEMA_VERSION)
   })
 
   test("migration 2 backfills payload_completion on a v0 install (01.9 D-03)", async () => {
@@ -293,7 +293,7 @@ describe("db migration v0 -> v3 (data preservation, D-08)", () => {
     await initLocalDb()
 
     const version = await mockDb.getFirstAsync<{ user_version: number }>(`PRAGMA user_version`)
-    expect(version?.user_version).toBe(3)
+    expect(version?.user_version).toBe(SCHEMA_VERSION)
 
     const row = await mockDb.getFirstAsync<{ retry_count: number }>(
       `SELECT retry_count FROM sync_queue WHERE id = (SELECT MIN(id) FROM sync_queue)`,
@@ -382,7 +382,7 @@ describe("db migration v1 -> v2 (payload_completion, 01.9 D-03)", () => {
 
   test("user_version is 3", async () => {
     const version = await v1Db.getFirstAsync<{ user_version: number }>(`PRAGMA user_version`)
-    expect(version?.user_version).toBe(3)
+    expect(version?.user_version).toBe(SCHEMA_VERSION)
   })
 
   test("payload_completion equals computePayloadCompletion of each stored payload", async () => {
@@ -420,7 +420,7 @@ describe("db migration v1 -> v2 (payload_completion, 01.9 D-03)", () => {
     await initV1()
 
     const version = await v1Db.getFirstAsync<{ user_version: number }>(`PRAGMA user_version`)
-    expect(version?.user_version).toBe(3)
+    expect(version?.user_version).toBe(SCHEMA_VERSION)
     // No backfill re-ran: the value written after migration is kept.
     expect(await completionById()).toEqual({ ...before, "v1-light": 55 })
     const columns = await v1Db.getAllAsync<{ name: string }>(`PRAGMA table_info(local_surveys)`)

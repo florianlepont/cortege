@@ -75,6 +75,9 @@ never compares a recomputed score with the stored one. The only newly blocked sh
 Context for the A and G cases is given; other factors do not depend on it. The subalpine scale
 applies when `region_version=ACA` and `vegetation_stage=subalpin`.
 
+> **No submission deadline (OA-41).** `expires_at` is no longer read: neither `expires_at_required` nor `survey_expired` exists, and readiness has no `expired` flag. A survey is never refused for its age.
+
+
 | Case ID | Mode | Context | Input | Expected | Issues |
 |---|---|---|---|---|---|
 | MAT-A-01@v3.0 | draft | ACA, collineen | `A.native_genus_count=2` | `A=1` | none |
@@ -98,8 +101,8 @@ applies when `region_version=ACA` and `vegetation_stage=subalpin`.
 | MAT-J-01@v3.0 | draft | any | `J.type_count=2` | `J=5` | none |
 | MAT-CONS-01@v3.0 | draft | any | direct `A=0`, `B=2` | `A=0`, `B=2` | W `consistency_a_b` |
 | MAT-CONS-02@v3.0 | draft | any | direct `E=0`, `F=5` | `E=0`, `F=5` | W `consistency_e_f` |
-| MAT-SUBMIT-01@v3.0 | submit | ACA, collineen | `expires_at` in the past; factors incomplete (A to J not all present) | not all scored | B `survey_expired`, B `factor_required` for each missing factor |
-| MAT-SUBMIT-02@v3.0 | submit | ACA, collineen, `expires_at` in the future | direct `A=5, B=2, C=1, D=0, E=2, F=5, G=2, H=2, I=5, J=0` | same scores; `ok=true` | none |
+| MAT-SUBMIT-01@v3.0 | submit | ACA, collineen | factors incomplete (A to J not all present) | not all scored | B `factor_required` for each missing factor |
+| MAT-SUBMIT-02@v3.0 | submit | ACA, collineen | direct `A=5, B=2, C=1, D=0, E=2, F=5, G=2, H=2, I=5, J=0` | same scores; `ok=true` | none |
 
 MAT-SUBMIT-02@v3.0 totals: `ibp_peuplement_gestion=17`, `ibp_contexte=7`, `ibp_total=24`.
 
@@ -149,8 +152,8 @@ need `ibp_cas`. The cas-3 scale for A and G applies when `ibp_cas=3` or `ibp_cas
 | MAT-CONS-02@v3.2 | draft | any | direct `E=0`, `F=5` | `E=0`, `F=5` | W `consistency_e_f` |
 | MAT-CAS-01@v3.2 | draft; then submit | no `ibp_cas` | A count and cover, G percent, other factors complete | draft: A and G not scored, `ok=true`; submit: A and G not scored | draft: W `factor_incomplete` (A, G); submit: B `ibp_cas_required`, B `factor_required` (A, G) |
 | MAT-CAS-02@v3.2 | draft; then submit | cas 1 | `A.native_genus_count=5` without any cover | A not scored; draft `ok=true` | draft: W `factor_incomplete` (A); submit (other factors complete): B `factor_required` (A) |
-| MAT-SUBMIT-01@v3.2 | submit | no `ibp_cas` | `expires_at` in the past; factors incomplete | not all scored | B `survey_expired`, B `ibp_cas_required`, B `factor_required` for each missing or incomplete factor |
-| MAT-SUBMIT-02@v3.2 | submit | cas 1, `expires_at` in the future | direct `A=5, B=2, C=1, D=0, E=2, F=5, G=2, H=2, I=5, J=0` | same scores; `ok=true` | none |
+| MAT-SUBMIT-01@v3.2 | submit | no `ibp_cas` | factors incomplete | not all scored | B `ibp_cas_required`, B `factor_required` for each missing or incomplete factor |
+| MAT-SUBMIT-02@v3.2 | submit | cas 1 | direct `A=5, B=2, C=1, D=0, E=2, F=5, G=2, H=2, I=5, J=0` | same scores; `ok=true` | none |
 
 MAT-SUBMIT-02@v3.2 totals: `ibp_peuplement_gestion=17`, `ibp_contexte=7`, `ibp_total=24`. They
 equal the v3.0 totals: the aggregation is unchanged (GS-1).

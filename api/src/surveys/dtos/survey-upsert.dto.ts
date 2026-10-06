@@ -30,8 +30,8 @@ export class SurveyUpsertDto {
   site_name?: string
 
   @IsOptional()
-  @IsEnum(["draft", "submitted", "synced", "error", "expired"])
-  status?: "draft" | "submitted" | "synced" | "error" | "expired"
+  @IsEnum(["draft", "submitted", "synced", "error"])
+  status?: "draft" | "submitted" | "synced" | "error"
 
   @IsOptional()
   @IsEnum(["private", "public"])
@@ -91,6 +91,8 @@ export class SurveyUpsertDto {
   @IsObject()
   scores?: Record<string, unknown>
 
+  // OA-41: there is no submission deadline any more. Accepted and ignored, because the app builds
+  // from before still send it and the pipe rejects unknown properties.
   @IsOptional()
   @IsString()
   expires_at?: string

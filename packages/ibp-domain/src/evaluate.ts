@@ -29,10 +29,9 @@ import { scoreFactorV32 } from "./rules/v3-2"
 
 export type { IbpSurveyContext, IbpValidationIssue } from "./rules/common"
 
-/** What the rules read from a survey: its context, raw factors and expiry. */
+/** What the rules read from a survey: its context and raw factors. */
 export type IbpEvaluationInput = IbpSurveyContext & {
   factors?: unknown
-  expires_at?: string | null
 }
 
 export type IbpEvaluationMode = "draft" | "submit"
@@ -83,11 +82,10 @@ function isMissing(value: unknown): boolean {
   return value === undefined || value === null || value === ""
 }
 
-/** The submit-only checks on the survey context and expiry (§3.3). */
+/** The submit-only checks on the survey context (§3.3). There is no submission deadline (OA-41). */
 function addSubmitContextIssues(
   input: IbpEvaluationInput,
   version: IbpMethodVersion,
-  now: Date,
   issues: IbpValidationIssue[],
 ): void {
   if (version === IBP_METHOD_V3_2) {
@@ -103,12 +101,6 @@ function addSubmitContextIssues(
     if (!input.vegetation_stage || !input.vegetation_stage.trim()) {
       issues.push(issue("vegetation_stage_required", "vegetation_stage is required", true))
     }
-  }
-
-  if (!input.expires_at) {
-    issues.push(issue("expires_at_required", "expires_at is required", true))
-  } else if (now > new Date(input.expires_at)) {
-    issues.push(issue("survey_expired", "survey is expired and cannot be submitted", true))
   }
 }
 
@@ -147,13 +139,10 @@ function addConsistencyWarnings(
  * Scores and validates a survey under its method version (CH-6): a missing version is v3.0, an
  * unknown one is blocking `ibp_method_version_unsupported`. Draft mode reports only unreadable or
  * out-of-set factors as blocking (never a recomputed-score mismatch, D-05 replay safety); submit
- * mode also requires the context, a valid expiry and every factor scored.
+ * mode also requires the context and every factor scored. A survey has no submission deadline
+ * (OA-41).
  */
-export function evaluateIbp(
-  input: IbpEvaluationInput,
-  mode: IbpEvaluationMode,
-  now: Date = new Date(),
-): IbpEvaluation {
+export function evaluateIbp(input: IbpEvaluationInput, mode: IbpEvaluationMode): IbpEvaluation {
   const issues: IbpValidationIssue[] = []
   const retained = emptyRetained()
   const version = resolveMethodVersion(input.ibp_method_version)
@@ -170,7 +159,7 @@ export function evaluateIbp(
   }
 
   if (mode === "submit") {
-    addSubmitContextIssues(input, version, now, issues)
+    addSubmitContextIssues(input, version, issues)
   }
 
   const rawFactors = isRecord(input.factors) ? input.factors : {}

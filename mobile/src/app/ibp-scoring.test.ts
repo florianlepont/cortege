@@ -117,7 +117,6 @@ describe("ibp-scoring", () => {
     })
 
     expect(readiness.ready).toBe(false)
-    expect(readiness.expired).toBe(false)
     expect(readiness.missing_fields).toEqual(["parcel_ids"])
     expect(readiness.missing_factors).toEqual(["C", "D", "E", "F", "G", "H", "I", "J"])
   })
@@ -138,8 +137,9 @@ describe("ibp-scoring", () => {
     expect(unknown.missing_fields).toEqual(["ibp_method_version"])
   })
 
-  test("marks expired surveys as not ready", () => {
-    const readiness = evaluateSubmitReadinessFromDraft({
+  // OA-41: there is no submission deadline, so an old draft is as ready as a new one.
+  test("a complete draft is ready whatever its expires_at (OA-41)", () => {
+    const complete = {
       ...ACA_COLLINEEN,
       factors: {
         A: { native_genus_count: 2 },
@@ -154,28 +154,25 @@ describe("ibp-scoring", () => {
         J: { type_count: 1 },
       },
       parcel_ids: ["75056000AB0001"],
-      expires_at: "2020-01-01T00:00:00.000Z",
-    })
+    }
+    // A draft from an older build still carries an expires_at.
+    const withOldDeadline = { ...complete, expires_at: "2020-01-01T00:00:00.000Z" }
+    const readiness = evaluateSubmitReadinessFromDraft(withOldDeadline)
 
-    expect(readiness.ready).toBe(false)
-    expect(readiness.expired).toBe(true)
+    expect(readiness.ready).toBe(true)
+    expect(readiness).not.toHaveProperty("expired")
     expect(readiness.missing_factors).toHaveLength(0)
     expect(readiness.missing_fields).toHaveLength(0)
   })
 
   test("a complete v3.0 draft with parcels is ready", () => {
-    const readiness = evaluateSubmitReadinessFromDraft(
-      {
-        ...ACA_COLLINEEN,
-        factors: { A: 5, B: 2, C: 1, D: 0, E: 2, F: 5, G: 2, H: 2, I: 5, J: 0 },
-        parcel_ids: ["75056000AB0001"],
-        expires_at: "2027-01-01T00:00:00.000Z",
-      },
-      new Date("2026-09-26T12:00:00.000Z"),
-    )
+    const readiness = evaluateSubmitReadinessFromDraft({
+      ...ACA_COLLINEEN,
+      factors: { A: 5, B: 2, C: 1, D: 0, E: 2, F: 5, G: 2, H: 2, I: 5, J: 0 },
+      parcel_ids: ["75056000AB0001"],
+    })
     expect(readiness).toEqual({
       ready: true,
-      expired: false,
       missing_factors: [],
       missing_fields: [],
     })

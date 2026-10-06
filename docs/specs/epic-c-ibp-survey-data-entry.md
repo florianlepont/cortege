@@ -91,7 +91,7 @@ Acceptance criteria
 
 **Release:** MVP
 
-Submission of a completed survey requires all IBP factors to be filled and scoreable, with specific metadata present. If blocked, the app shows reasons for the blockage. Surveys older than 7 days are marked as expired. Successful submissions change the survey status to read-only and trigger automatic synchronization.
+Submission of a completed survey requires all IBP factors to be filled and scoreable, with specific metadata present. If blocked, the app shows reasons for the blockage. ~~Surveys older than 7 days are marked as expired.~~ (Removed, OA-41 2026-10-06: there is no submission deadline.) Successful submissions change the survey status to read-only and trigger automatic synchronization.
 
 As a contributor, I want to submit a completed survey to share my observation.
 
@@ -103,7 +103,7 @@ Acceptance criteria
 
 - When submission is blocked, the app displays an explicit reason and identifies missing items (missing factors and/or required fields).
 
-- Submission is blocked if the survey is older than 7 days; the survey transitions to status `expired`.
+- ~~Submission is blocked if the survey is older than 7 days; the survey transitions to status `expired`.~~ Removed (OA-41 2026-10-06): a survey is never refused for its age.
 
 - After a successful submission request, survey status transitions to `submitted` and the survey becomes read-only for data entry.
 

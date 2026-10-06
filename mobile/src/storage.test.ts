@@ -22,7 +22,6 @@ import {
   queueDeleteAttachment,
   retrySurveyNow,
   discardSurveyLocalChanges,
-  markSurveyExpiredLocally,
   clearLocalIbpData,
   syncPending,
   pullRemoteChanges,
@@ -648,20 +647,6 @@ describe("discardSurveyLocalChanges", () => {
     const row = await selectSurveyById(TEST_SURVEY_ID)
     expect(row?.sync_state).toBe("synced")
     expect(row?.status).toBe("synced")
-  })
-})
-
-// ═══════════════════════════════════════════════════════════════════════════
-// markSurveyExpiredLocally
-// ═══════════════════════════════════════════════════════════════════════════
-
-describe("markSurveyExpiredLocally", () => {
-  test("runs an UPDATE setting status to expired", async () => {
-    await insertSurveyRow(makeSurveyRow())
-    await markSurveyExpiredLocally(TEST_SURVEY_ID)
-    const row = await selectSurveyById(TEST_SURVEY_ID)
-    expect(row?.status).toBe("expired")
-    expect(row?.sync_state).toBe("synced")
   })
 })
 

@@ -457,46 +457,4 @@ describe("Surveys transactions (e2e)", () => {
     )
     expect(events.rows[0].count).toBe("1")
   })
-
-  it("persists status='expired' and the 'expired' event when submit is rejected after the deadline", async () => {
-    const accessToken = await login(`e2e-tx-expired-${Date.now()}@ibp.local`)
-    const surveyId = `e2e-tx-expired-${Date.now()}`
-
-    await request(app.getHttpServer())
-      .post("/v1/surveys")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        id: surveyId,
-        sync_version: 1,
-        site_name: "Expired Rollback Forest",
-        region_version: "ACA",
-        vegetation_stage: "collineen",
-        factors: validFactors,
-      })
-      .expect(201)
-
-    await db.query(`UPDATE surveys SET expires_at = NOW() - interval '1 minute' WHERE id = $1`, [
-      surveyId,
-    ])
-
-    await request(app.getHttpServer())
-      .post(`/v1/surveys/${surveyId}/submit`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(422)
-
-    const surveyRow = await db.query<{ status: string }>(
-      `SELECT status FROM surveys WHERE id = $1`,
-      [surveyId],
-    )
-    expect(surveyRow.rows[0].status).toBe("expired")
-
-    const events = await db.query<{ count: string }>(
-      `SELECT count(*)::text AS count
-       FROM survey_events
-       WHERE survey_id = $1
-         AND event_type = 'expired'`,
-      [surveyId],
-    )
-    expect(events.rows[0].count).toBe("1")
-  })
 })
