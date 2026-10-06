@@ -114,7 +114,10 @@ describe("migration 018: Factor A genus list shape guard (e2e)", () => {
 
   it("was applied by the runner, which recorded it after 017", async () => {
     const applied = await appliedMigrations()
-    expect(applied[applied.length - 1]).toBe(MIGRATION_018)
+    // The runner also applies whatever comes after 018; only the 017 -> 018 order matters here.
+    expect(applied.indexOf(MIGRATION_018)).toBe(
+      applied.indexOf("017_association_only_visibility.sql") + 1,
+    )
     expect(applied).toContain("017_association_only_visibility.sql")
     expect(logSpy).toHaveBeenCalledWith(`Applied migration: ${MIGRATION_018}`)
   })

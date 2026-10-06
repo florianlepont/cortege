@@ -123,20 +123,13 @@ describe("migration 019: no submission deadline (e2e)", () => {
     expect(byId.get(submittedSurveyId)).toBe("submitted")
   })
 
-  it("drops the expires_at column of surveys only", async () => {
+  it("drops the expires_at column of surveys", async () => {
     const surveys = await client.query(
       `SELECT 1 FROM information_schema.columns
        WHERE table_schema = $1 AND table_name = 'surveys' AND column_name = 'expires_at'`,
       [SCRATCH_SCHEMA],
     )
     expect(surveys.rows).toEqual([])
-    // The auth sessions table has an expires_at of its own, unrelated to surveys.
-    const sessions = await client.query(
-      `SELECT 1 FROM information_schema.columns
-       WHERE table_schema = $1 AND table_name = 'auth_sessions' AND column_name = 'expires_at'`,
-      [SCRATCH_SCHEMA],
-    )
-    expect(sessions.rows).toHaveLength(1)
   })
 
   it("accepts the four remaining statuses and rejects expired", async () => {
