@@ -56,7 +56,7 @@ export function ExplorerSheet({
   const styles = useMemo(() => createStyles(theme), [theme])
   const { height: windowHeight } = useWindowDimensions()
   const sheetHeight = Math.round(windowHeight * HEIGHT_RATIO)
-  const translateY = useRef(new Animated.Value(sheetHeight)).current
+  const translateY = useRef(new Animated.Value(sheetHeight + bottomInset)).current
   // Kept mounted while it slides out, so the close is seen.
   const [mounted, setMounted] = useState(visible)
   const onDismissRef = useRef(onDismiss)
@@ -76,13 +76,13 @@ export function ExplorerSheet({
       return
     }
     Animated.timing(translateY, {
-      toValue: sheetHeight,
+      toValue: sheetHeight + bottomInset,
       duration: CLOSE_MS,
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) setMounted(false)
     })
-  }, [visible, sheetHeight, translateY])
+  }, [visible, sheetHeight, bottomInset, translateY])
 
   const panResponder = useMemo(
     () =>
@@ -106,8 +106,9 @@ export function ExplorerSheet({
   if (!mounted) return null
 
   return (
-    // The area ends above the tab bar (`bottom`), not by padding: the keyboard view replaces its own.
-    <View pointerEvents="box-none" style={[styles.host, { bottom: bottomInset }]}>
+    // The panel runs down to the screen edge, behind the floating tab bar, like a system sheet; its
+    // content stops above the bar (the bottom padding of the scroll content).
+    <View pointerEvents="box-none" style={styles.host}>
       <KeyboardAvoidingView
         pointerEvents="box-none"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -115,7 +116,10 @@ export function ExplorerSheet({
       >
         <Animated.View
           testID="explorer-sheet"
-          style={[styles.sheet, { maxHeight: sheetHeight, transform: [{ translateY }] }]}
+          style={[
+            styles.sheet,
+            { maxHeight: sheetHeight + bottomInset, transform: [{ translateY }] },
+          ]}
         >
           <SheetBackground />
           <View style={styles.handleArea} {...panResponder.panHandlers}>
@@ -123,7 +127,7 @@ export function ExplorerSheet({
           </View>
           <ScrollView
             style={styles.scroll}
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[styles.content, { paddingBottom: 24 + bottomInset }]}
             keyboardShouldPersistTaps="handled"
           >
             {shownRef.current}
@@ -139,6 +143,7 @@ function createStyles(theme: BrandTheme) {
     host: {
       position: "absolute",
       top: 0,
+      bottom: 0,
       left: 0,
       right: 0,
       justifyContent: "flex-end",
