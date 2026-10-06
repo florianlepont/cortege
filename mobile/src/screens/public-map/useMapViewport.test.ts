@@ -239,6 +239,15 @@ describe("useMapViewport", () => {
     expect(result.current.fitOnce(PARIS)).toBe(true)
     expect(animateToRegion).toHaveBeenLastCalledWith(PARIS, 520)
   })
+
+  test("focusTo animates the camera and takes the pending fit (a survey to show, OA-59)", async () => {
+    const { result, animateToRegion } = await setup()
+    await act(async () => {
+      result.current.focusTo(LYON, 0)
+    })
+    expect(animateToRegion).toHaveBeenCalledWith(LYON, 0)
+    expect(result.current.fitOnce(PARIS)).toBe(false)
+  })
 })
 
 describe("computeRegionFromItems", () => {
