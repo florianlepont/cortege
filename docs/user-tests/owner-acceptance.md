@@ -133,6 +133,7 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 | OA-103 | Explorer, top-right capsule | Too close to the iPhone status bar (battery). | Display bug | 🟡 | 🔁 Fixed, awaiting owner check | #214 | The capsule is placed under the status bar from the measured screen origin (the first guess moved it up); verify on the phone |
 | OA-104 | Explorer, offline areas sheet | Broken: drawn at the very top of the screen, almost invisible. Offline download could not be tested. | Functional bug | 🔴 | 🔁 Fixed, awaiting owner check | #214 | The sheet had no absolute position: now floats above the tab bar |
 | OA-105 | Communauté | Cannot be verified without data from other members: needs fake community data for testing. | Test data | 🟡 | 🔲 Open | | Owner phone test 2026-10-06 (build Release from main) |
+| OA-106 | Parcel selection | The offline-map download proposal should sit at the top of the screen, not above the bottom panel. | Suggestion | 🟡 | 🔧 Fixed, awaiting owner check | | Owner phone test 2026-10-06 |
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
