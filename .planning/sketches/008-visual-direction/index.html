@@ -75,6 +75,12 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .xhero .t span{display:block;margin-left:20px;color:var(--sage)}
 .xhero p{font-size:13px;color:#D7E3C0;margin-bottom:14px;max-width:210px}
 .xhero .btn{background:var(--terra);color:#fff;border-radius:99px;display:inline-block;padding:11px 20px}
+.xhero.compact{padding:12px 14px;border-radius:18px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center}
+.xhero.compact .tag{grid-column:1/-1;margin:0 0 6px -14px;padding:3px 9px 3px 14px;font-size:10px;justify-self:start}
+.xhero.compact .t{font-size:18px;margin:0;line-height:1.1;white-space:nowrap}.xhero.compact .t span{display:inline;margin:0 0 0 5px}
+.xhero.compact p{grid-column:1;font-size:12px;margin:0;max-width:none}
+.xhero.compact .btn{grid-column:2;grid-row:2/4;padding:9px 14px;font-size:13px;white-space:nowrap}
+.xhero.compact svg.fern{width:90px;height:90px;right:60px;bottom:-22px;opacity:.2}
 .xhero svg.fern{position:absolute;right:-18px;bottom:-14px;width:150px;height:150px;opacity:.28;stroke:var(--sage)}
 /* C reuses cA chrome with cB-ish hero + score */
 .cC .card{background:var(--surface);border:1px solid var(--border);border-radius:14px}
@@ -121,7 +127,7 @@ svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 </head>
 <body>
 <div id="nav">
-  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button>
+  <button class="on" data-v="A">A · Sobre</button><button data-v="B">B · Expressif</button><button data-v="C">C · Mélange</button><button data-v="D">D · C + hero compact</button>
   <span class="sp"></span>
   <button id="theme">Thème : clair</button>
 </div>
@@ -148,8 +154,8 @@ const tabs=a=>`<div class="tabbar">${[['home','Accueil'],['list','Mes relevés']
 const ring=(v,max,c)=>{const r=36,C=2*Math.PI*r;return `<svg class="ring" viewBox="0 0 90 90"><circle cx="45" cy="45" r="${r}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="8"/><circle cx="45" cy="45" r="${r}" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${C*v/max} ${C}" transform="rotate(-90 45 45)"/></svg>`};
 function sBars(n){return `<div class="sbar">${Array.from({length:10},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>`}
 
-function hero(x){
- if(x) return `<div class="xhero">${fern()}<div class="tag">REPRENDRE</div><div class="t">Chênaie<span>de Bercé</span></div><p>6/10 facteurs remplis. Parcelle B12.</p><a class="btn">Reprendre le relevé</a></div>`;
+function hero(x,c){
+ if(x) return `<div class="xhero${c?' compact':''}">${fern()}<div class="tag">REPRENDRE</div><div class="t">Chênaie<span>de Bercé</span></div><p>${c?'6/10 facteurs · B12':'6/10 facteurs remplis. Parcelle B12.'}</p><a class="btn">${c?'Reprendre':'Reprendre le relevé'}</a></div>`;
  return `<div class="hero"><div class="eyebrow">Reprendre</div><div class="t">Chênaie de Bercé</div><p>6/10 facteurs remplis. Parcelle B12.</p>${sBars(6)}<div style="height:12px"></div><a class="btn">Reprendre le relevé</a></div>`}
 function home(v){
  const x=v!=='A';
@@ -157,7 +163,7 @@ function home(v){
  return `${status}<div class="scroll">
  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${x?14:10}px"><div class="h1">${v==='B'?'Bonjour,<span>Florian</span>':'Bonjour, Florian'}</div><div class="av">FL</div></div>
  <div class="card" style="padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--text2)">${I('alert','color:var(--warn);width:18px;height:18px')}<span style="flex:1">1 relevé bloqué</span><span class="chip warn">Voir</span></div>
- ${hero(x)}
+ ${hero(x,v==='D')}
  <div class="sec"><span>Parcelles proches</span><em>Voir la carte</em></div>
  <div class="card"><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B12 · Chênaie de Bercé</div><div class="m">120 m · 4,2 ha</div></div></div><div class="rowi">${I('pin','color:var(--accent);width:18px;height:18px')}<div><div class="n">B14 · Futaie claire</div><div class="m">340 m · 2,8 ha</div></div></div></div>
  <div class="sec"><span>Derniers relevés</span><em>Tout voir</em></div>
@@ -192,7 +198,8 @@ function list(v){
 const V={
  A:{c:'cA',d:'A · Linear sobre : surfaces plates, filets fins, accent vert réservé à l\'action et aux scores, rayons 10 à 12 px, Accueil compact. Le côté brandé passe par les accents et les titres.',home:'A',det:'A',list:'A'},
  B:{c:'cB',d:'B · Expressif et organique : aplats forêt, rectangle noir et décalage typographique de la charte, fougère en motif, rayons 22 à 26 px, bouton terracotta arrondi, plus de couleur.',home:'B',det:'B',list:'B'},
- C:{c:'cC',d:'C · Mélange : écrans de travail sobres (liste, lignes, facteurs), seuils expressifs (carte Reprendre et carte de score en aplat forêt avec anneau).',home:'C',det:'C',list:'A'}
+ C:{c:'cC',d:'C · Mélange : écrans de travail sobres (liste, lignes, facteurs), seuils expressifs (carte Reprendre et carte de score en aplat forêt avec anneau).',home:'C',det:'C',list:'A'},
+ D:{c:'cC',d:'D · C avec hero compact : même mélange que C, mais la carte Reprendre tient sur deux lignes (titre et progression à gauche, bouton à droite) pour gagner de la place sur Accueil.',home:'D',det:'D',list:'A'}
 };
 const root=document.getElementById('root');
 root.innerHTML=Object.entries(V).map(([k,v],i)=>`<div class="variant ${i?'':'on'}" id="v${k}"><p class="vdesc">${v.d}</p><div class="row">

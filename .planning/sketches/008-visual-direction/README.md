@@ -19,6 +19,7 @@ Tabs A/B/C at the top, "Thème" button toggles light/dark.
 - **A: Sobre** — Linear-like: flat surfaces, thin rules, 10-12 px radii, green only on action and scores, compact Accueil.
 - **B: Expressif** — charter markers: forest colour fields, black rectangle tag, typographic offset, fern motif, 22-26 px radii, terracotta pill button.
 - **C: Mélange** — A's working screens (list, rows, factors), B's thresholds (Reprendre card, score card with ring).
+- **D: C + hero compact** — C with the Reprendre card on two lines (title and progress left, button right), owner request.
 
 ## What to Look For
 Accueil compactness (owner wants it compact), score card legibility, whether B's colour fields still feel calm in dark, whether C's two registers feel coherent.
