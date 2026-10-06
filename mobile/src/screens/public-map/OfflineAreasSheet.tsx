@@ -1,6 +1,5 @@
 import { memo, useMemo, useState } from "react"
 import { Pressable, View } from "react-native"
-import { BottomSheetTextInput } from "@gorhom/bottom-sheet"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
@@ -126,7 +125,6 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
         onChangeText={setName}
         placeholder={t.namePlaceholder}
         containerStyle={areaStyles.nameField}
-        InputComponent={BottomSheetTextInput as never}
       />
 
       <Text style={estimate.exceedsCap ? areaStyles.warning : styles.meta}>

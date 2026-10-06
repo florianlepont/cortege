@@ -39,6 +39,8 @@ export type MapCanvasProps = {
   onOpenClusterList: (items: PublicMapItem[]) => void
   /** REQ-D-basemap-switch (08-CONTEXT D-01). */
   basemap?: BasemapKey
+  /** Where the camera starts (a survey to show, OA-59); France by default. */
+  initialRegion?: MapRegion
   /** Bumped after an offline download or delete so the style choice is re-checked. */
   styleRefreshKey?: number
 }
@@ -63,6 +65,7 @@ export const MapCanvas = memo(function MapCanvas({
   onZoomTo,
   onOpenClusterList,
   basemap = "map",
+  initialRegion = DEFAULT_MAP_REGION,
   styleRefreshKey = 0,
 }: MapCanvasProps) {
   const { mapStyle, cadastreInStyle } = useMapStyle(basemap, styleRefreshKey)
@@ -107,7 +110,7 @@ export const MapCanvas = memo(function MapCanvas({
       logo={false}
       onRegionDidChange={handleRegionDidChange}
     >
-      <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(DEFAULT_MAP_REGION) }} />
+      <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(initialRegion) }} />
       {/* MAP-04: the device's own position is the native halo, not a marker kept by the app. */}
       <UserLocation />
       <CadastreLayer enabled={parcelLayerRenderable && !cadastreInStyle} />

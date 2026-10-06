@@ -367,18 +367,33 @@ starts being OOM-killed under load.
 
 ## Demo community data (owner testing, remove before launch)
 
-To see the Communauté search, the parcel history and the read-only survey page before the app has
-real members, `api/scripts/seed-demo-community.js` creates three fake members with finished, public
-surveys on parcels that already exist in the database (so create and sync one survey with a
-parcel from the app first). Everything it creates is marked (`@demo.cortege.invalid` users,
-`demo-` survey ids).
+To see the Communauté search, the Explorer map, the parcel history and the read-only survey page
+before the app has real members, `api/scripts/seed-demo-community.js` creates eight fake members
+with about a hundred finished, public surveys spread over France (on invented parcels with a
+centroid), plus a dozen surveys on the owner's own account (drafts and finished ones, on invented
+parcels around Paris). Everything it creates is marked (`@demo.cortege.invalid` users, `demo-`
+survey ids, parcels with source `demo`) and `--remove` takes it all away.
+
+`--wipe-all` first deletes EVERY survey, event and attachment row of the database (users and
+parcels are kept, object storage files are left behind). Use it only while the database holds
+test data. Take a dump first:
 
 ```bash
-# add (replaces any earlier demo data)
+docker exec cortege-postgres pg_dump -U cortege -d cortege | gzip > /home/ubuntu/backups/pre-demo-seed-$(date +%Y%m%d-%H%M%S).sql.gz
+
+# wipe every survey, then add the demo data and the owner's surveys
+docker exec -i -w /app/api cortege-api node - --wipe-all --owner-email=florian.lepont@icloud.com \
+  < api/scripts/seed-demo-community.js
+
+# add (replaces earlier demo data, keeps the other surveys); the script can also come from the image:
 docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
   exec api node api/scripts/seed-demo-community.js
 
-# remove, before the app opens to the public
+# remove the demo data only, before the app opens to the public
 docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
   exec api node api/scripts/seed-demo-community.js --remove
 ```
+
+Options: `--count=100` (community surveys), `--owner-email=...` (the account that gets its own
+surveys; a warning and no survey if no user has that email).
+

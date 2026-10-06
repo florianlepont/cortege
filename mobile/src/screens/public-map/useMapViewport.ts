@@ -170,6 +170,15 @@ export function useMapViewport({
     [animate],
   )
 
+  /** A survey to show (OA-59) takes the camera: the late first load must not fit over it. */
+  const focusTo = useCallback(
+    (target: Region, durationMs: number) => {
+      fitRef.current.armed = false
+      animate(target, durationMs)
+    },
+    [animate],
+  )
+
   /** Explicit refresh: the current viewport, even when it was just loaded. */
   const reload = useLatestCallback(() => {
     const bbox = computeRegionBbox(region)
@@ -192,6 +201,7 @@ export function useMapViewport({
     onRegionChangeComplete,
     fitOnce,
     moveTo,
+    focusTo,
     reload,
     applyFilters,
   }

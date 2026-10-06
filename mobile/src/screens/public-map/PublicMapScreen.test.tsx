@@ -23,6 +23,15 @@ const mockLocation = {
   getCurrentPositionAsync: jest.fn(),
 }
 
+// The panel's own animation and gestures are tested in ExplorerSheet.test.tsx.
+jest.mock("./ExplorerSheet", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    ExplorerSheet: ({ visible, children }: { visible: boolean; children?: React.ReactNode }) =>
+      visible ? ReactRef.createElement("ExplorerSheet", null, children) : null,
+  }
+})
+
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent =
