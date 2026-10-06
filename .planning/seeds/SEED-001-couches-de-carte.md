@@ -3,7 +3,7 @@ id: SEED-001
 status: dormant
 planted: 2026-10-06
 planted_during: Phase 12.1 (owner acceptance testing)
-trigger_when: after the phone pass of phase 12.1 and before phase 13 (field validation); or any milestone that touches the maps, offline packs or the Explorer
+trigger_when: a phase of its own, later; NOT part of phase 12.1 (owner decision 2026-10-06). Surfaces at the next milestone scan, or with any milestone that touches the maps, offline packs or the Explorer
 scope: medium
 ---
 
@@ -25,7 +25,8 @@ colorées par score (OA-126).
 
 ## When to Surface
 
-**Trigger:** après le passage téléphone de la phase 12.1, avant la phase 13 (validation terrain), ou
+**Trigger:** une phase à part, plus tard. Décision du propriétaire (6 octobre 2026) : ce sujet ne se
+traite pas dans la phase 12.1 et ne bloque pas sa sortie. Il remonte au prochain examen de jalon, ou
 dès qu'un jalon touche les cartes, les zones hors ligne ou l'Explorer.
 
 ## Scope Estimate
