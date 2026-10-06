@@ -2,7 +2,7 @@
 sketch: 008
 name: visual-direction
 question: "Which personality makes the app modern and lively while staying Cortege (phase 12.2)?"
-winner: null
+winner: "I"
 tags: [visual-direction, 12.2, home, score, list, light, dark]
 ---
 
