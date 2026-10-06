@@ -131,27 +131,27 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             options={({ route }) => ({
               title: route.params.mode === "wizard" ? headers.parcelsWizard : headers.parcels,
               headerLargeTitle: false,
-              headerStyle: { backgroundColor: brandMediaBackdrop },
               headerShadowVisible: false,
-              headerTintColor: brandColors.white,
-              headerTitleStyle: {
-                color: brandColors.white,
-                fontSize: 18,
-                fontWeight: "800" as const,
-              },
               contentStyle: { backgroundColor: brandMediaBackdrop },
-              // New survey (step 4 of 4): a full-screen push, like the other steps. Editing a
-              // survey's parcels keeps the DS-15 (UX audit, Phase 12) formSheet with detents, a
-              // partial sheet that keeps the map visible, expandable to nearly full height.
-              ...(route.params.mode === "wizard"
-                ? { presentation: "card" as const }
+              // OA-91, OA-97: one full-screen map for the wizard step and the edit. On iOS the
+              // header is transparent over the map with only the native glass back button; the
+              // screen draws its own title pill. Android keeps its dark opaque header.
+              presentation: "card" as const,
+              ...(Platform.OS === "ios"
+                ? {
+                    headerTransparent: true,
+                    headerBlurEffect: "none" as const,
+                    headerTintColor: brandColors.forest,
+                    headerTitle: () => null,
+                  }
                 : {
-                    presentation: "formSheet" as const,
-                    sheetAllowedDetents: [0.62, 0.94],
-                    sheetInitialDetentIndex: 1,
-                    sheetGrabberVisible: true,
-                    sheetCornerRadius: 24,
-                    sheetExpandsWhenScrolledToEdge: true,
+                    headerStyle: { backgroundColor: brandMediaBackdrop },
+                    headerTintColor: brandColors.white,
+                    headerTitleStyle: {
+                      color: brandColors.white,
+                      fontSize: 18,
+                      fontWeight: "800" as const,
+                    },
                   }),
             })}
             component={ParcelSelectionRoute}

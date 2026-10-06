@@ -432,7 +432,7 @@ describe("stack options and listeners", () => {
       fr.navigation.headers.parcelsWizard,
     )
     expect(options({ route: { params: { mode: "wizard" } } }).presentation).toBe("card")
-    expect(options({ route: { params: { mode: "edit" } } }).presentation).toBe("formSheet")
+    expect(options({ route: { params: { mode: "edit" } } }).presentation).toBe("card")
     expect(options({ route: { params: { mode: "edit" } } }).title).toBe(
       fr.navigation.headers.parcels,
     )
@@ -457,6 +457,21 @@ describe("stack options and listeners", () => {
         headerTransparent: false,
       }),
     )
+  })
+
+  test("the parcel map is one full-screen map: transparent header on iOS, dark opaque on Android", async () => {
+    await mount(<AppNavigation />)
+    const options = mockScreens.surveyParcels.options as OptionsFn
+    for (const mode of ["wizard", "edit"]) {
+      mockPlatform.OS = "ios"
+      const ios = options({ route: { params: { mode } } })
+      expect(ios.headerTransparent).toBe(true)
+      expect((ios.headerTitle as () => null)()).toBeNull()
+      mockPlatform.OS = "android"
+      const android = options({ route: { params: { mode } } })
+      expect(android.headerTransparent).toBeUndefined()
+      expect(android.headerStyle).toBeDefined()
+    }
   })
 
   test("the account header button opens the settings", async () => {

@@ -65,21 +65,28 @@ export const MapTopControls = memo(function MapTopControls({
 })
 
 export type MapBottomDockProps = {
-  bottom: number
+  /** Distance from the bottom edge; give `top` instead to anchor the button under a top capsule. */
+  bottom?: number
+  top?: number
   locating: boolean
   onLocate: () => void
 }
 
-/** The locate button, bottom right. */
+/** The locate button, bottom right (or under the top capsule). */
 export const MapBottomDock = memo(function MapBottomDock({
   bottom,
+  top,
   locating,
   onLocate,
 }: MapBottomDockProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createControlStyles(theme), [theme])
   return (
-    <GlassSurface tone="auto" interactive style={[styles.locateGlass, { bottom }]}>
+    <GlassSurface
+      tone="auto"
+      interactive
+      style={[styles.locateGlass, top !== undefined ? { top } : { bottom }]}
+    >
       <Pressable
         style={styles.capsuleButton}
         onPress={onLocate}
