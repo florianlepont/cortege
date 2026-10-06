@@ -38,6 +38,7 @@ jest.mock("react-native", () => {
     View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T): T => styles },
     Platform: { OS: "ios", select: <T,>(options: { ios?: T; default?: T }) => options.ios },
+    useWindowDimensions: () => ({ width: 390, height: 844 }),
   }
 })
 jest.mock("react-native-safe-area-context", () => ({
@@ -47,10 +48,9 @@ jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
 jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
-jest.mock("../ui/SyncStatusPill", () => ({ SyncStatusPill: "SyncStatusPill" }))
-jest.mock("../components/cards/ParcelNearbyCard", () => ({ ParcelNearbyCard: "ParcelNearbyCard" }))
-jest.mock("./home/SectorScoreCard", () => ({ SectorScoreCard: "SectorScoreCard" }))
-jest.mock("../hooks/useNearbyParcels", () => ({ hasMixedMethodVersions: () => false }))
+jest.mock("../ui/SyncStatusLine", () => ({ SyncStatusLine: "SyncStatusLine" }))
+jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))
+jest.mock("./home/NearbyMapCard", () => ({ NearbyMapCard: "NearbyMapCard" }))
 
 let tree: ReactTestRenderer
 
@@ -83,6 +83,7 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     isOnline: true,
     isSyncing: false,
     nearbyParcels: {
+      position: null,
       parcels: [],
       sectorAvgScore: null,
       loading: false,
@@ -171,7 +172,7 @@ describe("HomeScreen", () => {
         onOpenSyncStatus,
       }),
     )
-    const pill = tree.root.findByType("SyncStatusPill" as never)
+    const pill = tree.root.findByType("SyncStatusLine" as never)
     expect(pill.props.isOnline).toBe(false)
     expect(pill.props.isSyncing).toBe(true)
     expect(pill.props.pendingCount).toBe(3)
@@ -203,7 +204,13 @@ describe("HomeScreen", () => {
         .findAllByType("AppButton" as never)
         .map((node) => node.props.label)
       expect(buttonLabels).toContain(fr.home.hero.resumeButton)
-      expect(buttonLabels).toContain(fr.home.hero.newSurveyButton)
+      // "Nouveau relevé" is a plain link under the primary button.
+      const newSurveyLink = tree.root.findAll(
+        (node) =>
+          (node.type as unknown) === "Pressable" &&
+          node.props.accessibilityLabel === fr.home.hero.newSurveyButton,
+      )
+      expect(newSurveyLink).toHaveLength(1)
 
       expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
 
@@ -217,6 +224,34 @@ describe("HomeScreen", () => {
         resumeButton?.props.onPress()
       })
       expect(onOpenSurvey).toHaveBeenCalledWith("survey-1")
+    })
+
+    test("the resume hero draws one progress segment per filled factor, and the link starts a new survey", () => {
+      const onCreateSurvey = jest.fn()
+      mount(
+        makeProps({
+          surveys: [makeSurvey({ completion_rate: 40, updated_at: new Date().toISOString() })],
+          onCreateSurvey,
+        }),
+      )
+      const done = tree.root.findAll(
+        (node) => (node.type as unknown) === "View" && node.props.testID === "hero-progress-done",
+      )
+      const todo = tree.root.findAll(
+        (node) => (node.type as unknown) === "View" && node.props.testID === "hero-progress-todo",
+      )
+      expect(done).toHaveLength(4)
+      expect(todo).toHaveLength(6)
+
+      const link = tree.root.findAll(
+        (node) =>
+          (node.type as unknown) === "Pressable" &&
+          node.props.accessibilityLabel === fr.home.hero.newSurveyButton,
+      )[0]
+      act(() => {
+        link.props.onPress()
+      })
+      expect(onCreateSurvey).toHaveBeenCalledTimes(1)
     })
 
     test("an unnamed draft reads 'Reprendre votre relevé' (OA-17)", () => {
@@ -382,6 +417,46 @@ describe("HomeScreen", () => {
 })
 
 describe("pickAlertSurvey", () => {
+  describe("Autour de vous (mini-map)", () => {
+    const position = { lat: 45.1, lng: 5.7 }
+
+    test("loading, or no position yet, shows a placeholder the size of the map", () => {
+      mount(makeProps({ nearbyParcels: { ...makeProps().nearbyParcels, loading: true } }))
+      expect(tree.root.findAllByType("Skeleton" as never)).toHaveLength(1)
+      expect(tree.root.findAllByType("NearbyMapCard" as never)).toHaveLength(0)
+      act(() => tree.unmount())
+      mount(makeProps())
+      expect(tree.root.findAllByType("Skeleton" as never)).toHaveLength(1)
+    })
+
+    test("a known position shows the map card, and tapping it opens the Explorer", () => {
+      const onNavigateToExplorer = jest.fn()
+      mount(
+        makeProps({
+          nearbyParcels: { ...makeProps().nearbyParcels, position },
+          onNavigateToExplorer,
+        }),
+      )
+      const card = tree.root.findByType("NearbyMapCard" as never)
+      expect(card.props.nearby.position).toEqual(position)
+      expect(card.props.height).toBeGreaterThanOrEqual(240)
+      act(() => {
+        card.props.onPress()
+      })
+      expect(onNavigateToExplorer).toHaveBeenCalledTimes(1)
+    })
+
+    test("a denied location or a load error shows a notice instead of the map", () => {
+      mount(makeProps({ nearbyParcels: { ...makeProps().nearbyParcels, locationDenied: true } }))
+      expect(tree.root.findAllByType("NearbyMapCard" as never)).toHaveLength(0)
+      expect(tree.root.findAllByType("AppNotice" as never)).toHaveLength(1)
+      act(() => tree.unmount())
+      mount(makeProps({ nearbyParcels: { ...makeProps().nearbyParcels, error: true } }))
+      expect(tree.root.findAllByType("NearbyMapCard" as never)).toHaveLength(0)
+      expect(tree.root.findAllByType("AppNotice" as never)).toHaveLength(1)
+    })
+  })
+
   test("a blocked survey outranks a plain sync error", () => {
     const error = makeSurvey({ id: "err", sync_state: "failed", sync_blocked: 0 })
     const blocked = makeSurvey({ id: "blocked", sync_state: "failed", sync_blocked: 1 })

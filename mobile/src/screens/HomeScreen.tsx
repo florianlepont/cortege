@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useHeaderHeight } from "@react-navigation/elements"
-import { Pressable, RefreshControl, ScrollView, View } from "react-native"
+import { Pressable, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { brandOnDarkColors } from "../app/brand-tokens"
+import { brandRadius } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { getFirstName } from "./home/first-name"
 import { formatSyncErrorForUser } from "../app/formatters"
@@ -15,14 +17,16 @@ import type { SurveyStats } from "../app/types"
 import { AppButton } from "../ui/AppButton"
 import { AppNotice } from "../ui/AppNotice"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
-import { ParcelNearbyCard } from "../components/cards/ParcelNearbyCard"
-import { hasMixedMethodVersions, type NearbyParcelsState } from "../hooks/useNearbyParcels"
+import type { NearbyParcelsState } from "../hooks/useNearbyParcels"
 import { fr } from "../i18n"
 import { resolveProfilePictureUri } from "./account/IdentityCard"
-import { SkeletonRow } from "../ui/Skeleton"
-import { SyncStatusPill } from "../ui/SyncStatusPill"
-import { SectorScoreCard } from "./home/SectorScoreCard"
+import { Skeleton } from "../ui/Skeleton"
+import { SyncStatusLine } from "../ui/SyncStatusLine"
+import { NearbyMapCard } from "./home/NearbyMapCard"
 import { createStyles } from "./home/styles"
+
+const MIN_MAP_HEIGHT = 240
+const MAP_HEIGHT_RATIO = 0.34
 
 /** OA-89: the least time the pull-to-refresh banner stays open. */
 const MIN_REFRESH_MS = 800
@@ -97,6 +101,9 @@ export function HomeScreen({
   // OA-85: iOS 26 lays the screen out under the native header, so the content reserves its height.
   const headerHeight = useHeaderHeight()
   const [refreshing, setRefreshing] = useState(false)
+  // The map takes the room left under the hero (OA-19, Home redesign), never less than a card.
+  const windowHeight = useWindowDimensions().height
+  const mapHeight = Math.max(MIN_MAP_HEIGHT, Math.round(windowHeight * MAP_HEIGHT_RATIO))
   const firstName = getFirstName(currentUser)
   // HOME-06: the avatar shows the profile photo (it used to render nothing once one existed) and
   // is tappable to Compte.
@@ -113,6 +120,9 @@ export function HomeScreen({
   const isBlockedAlert = surveyStats.blocked > 0
   const alertSurvey = hasAlerts ? pickAlertSurvey(surveys) : null
   const resumeDraft = pickResumeDraft(surveys)
+  const resumeFactors = resumeDraft
+    ? Math.round(Math.max(0, Math.min(100, resumeDraft.completion_rate)) / 10)
+    : 0
   // LIST-07: threads last_sync_error_code through, like SurveyRow/DetailActions already do, so
   // the same survey never shows two different error messages depending on which screen renders it.
   const failedAlertMessage = alertSurvey
@@ -158,9 +168,9 @@ export function HomeScreen({
       >
         {nativeHeader ? (
           // OA-85, OA-88: the header holds the greeting and the profile button; the sync state is
-          // a labelled pill on its own row under it.
+          // a quiet line on its own row under it.
           <View style={styles.nativeHeaderSync}>
-            <SyncStatusPill
+            <SyncStatusLine
               isOnline={isOnline}
               isSyncing={isSyncing}
               pendingCount={surveyStats.pending}
@@ -168,27 +178,20 @@ export function HomeScreen({
             />
           </View>
         ) : (
-          <View style={styles.greeting}>
-            {/* OA-15: no date (owner decision). OA-16: a long first name shrinks, then ellipsises,
-              instead of pushing the pill and the avatar off screen. */}
-            <View style={styles.greetingText}>
-              <Text
-                style={styles.greetingTitle}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.75}
-              >
-                {firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
-              </Text>
-            </View>
-            <View style={styles.headerTrailing}>
-              {/* SYNC-02: visible on the dashboard, not only in Settings. */}
-              <SyncStatusPill
-                isOnline={isOnline}
-                isSyncing={isSyncing}
-                pendingCount={surveyStats.pending}
-                onPress={onOpenSyncStatus}
-              />
+          <View style={styles.greetingBlock}>
+            <View style={styles.greeting}>
+              {/* OA-15: no date (owner decision). OA-16: a long first name shrinks, then
+                ellipsises, instead of pushing the avatar off screen. */}
+              <View style={styles.greetingText}>
+                <Text
+                  style={styles.greetingTitle}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.75}
+                >
+                  {firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
+                </Text>
+              </View>
               <Pressable
                 style={styles.avatarButton}
                 onPress={onNavigateToAccount}
@@ -212,6 +215,13 @@ export function HomeScreen({
                 )}
               </Pressable>
             </View>
+            {/* SYNC-02: visible on the dashboard, not only in Settings. */}
+            <SyncStatusLine
+              isOnline={isOnline}
+              isSyncing={isSyncing}
+              pendingCount={surveyStats.pending}
+              onPress={onOpenSyncStatus}
+            />
           </View>
         )}
 
@@ -258,13 +268,23 @@ export function HomeScreen({
           </Text>
           <Text style={styles.heroBody}>
             {resumeDraft
-              ? fr.home.hero.resumeBody({
-                  completed: Math.round(
-                    Math.max(0, Math.min(100, resumeDraft.completion_rate)) / 10,
-                  ),
-                })
+              ? fr.home.hero.resumeBody({ completed: resumeFactors })
               : fr.home.hero.body}
           </Text>
+          {resumeDraft ? (
+            <View style={styles.progressRow} accessible={false}>
+              {Array.from({ length: 10 }, (_, index) => (
+                <View
+                  key={index}
+                  testID={index < resumeFactors ? "hero-progress-done" : "hero-progress-todo"}
+                  style={[
+                    styles.progressSegment,
+                    index < resumeFactors ? styles.progressSegmentDone : null,
+                  ]}
+                />
+              ))}
+            </View>
+          ) : null}
           <AppButton
             label={resumeDraft ? fr.home.hero.resumeButton : fr.home.hero.button}
             leadingIcon={resumeDraft ? "play-outline" : "add"}
@@ -275,15 +295,15 @@ export function HomeScreen({
             labelStyle={styles.heroButtonLabel}
           />
           {resumeDraft ? (
-            <AppButton
-              label={fr.home.hero.newSurveyButton}
-              leadingIcon="add"
-              size="md"
-              variant="secondary"
+            <Pressable
+              style={styles.heroLink}
               onPress={onCreateSurvey}
-              style={styles.heroSecondaryButton}
-              labelStyle={styles.heroSecondaryButtonLabel}
-            />
+              accessibilityRole="button"
+              accessibilityLabel={fr.home.hero.newSurveyButton}
+            >
+              <Ionicons name="add" size={18} color={brandOnDarkColors.heroBodyOnDark} />
+              <Text style={styles.heroLinkLabel}>{fr.home.hero.newSurveyButton}</Text>
+            </Pressable>
           ) : null}
         </View>
 
@@ -316,37 +336,17 @@ export function HomeScreen({
             <View style={styles.pageInset}>
               <AppNotice tone="warning" icon="wifi-outline" message={fr.home.nearby.loadError} />
             </View>
-          ) : nearbyParcels.loading ? (
-            <View style={styles.loadingRow}>
-              <SkeletonRow />
-              <SkeletonRow />
-            </View>
-          ) : nearbyParcels.parcels.length === 0 ? (
-            // OA-19: the notices ran to the screen edges; they take the page margins like the cards.
+          ) : nearbyParcels.loading || !nearbyParcels.position ? (
             <View style={styles.pageInset}>
-              <AppNotice tone="info" icon="leaf-outline" message={fr.home.nearby.empty} />
+              <Skeleton height={mapHeight} borderRadius={brandRadius.card} />
             </View>
           ) : (
-            <View style={styles.parcelsList}>
-              {nearbyParcels.parcels.map((parcel) => (
-                <ParcelNearbyCard
-                  key={parcel.parcel_id}
-                  parcel={parcel}
-                  distanceKm={parcel.distanceKm}
-                  surveyCount={parcel.surveyCount}
-                  onPress={onNavigateToExplorer}
-                />
-              ))}
-
-              {nearbyParcels.sectorAvgScore != null ? (
-                <SectorScoreCard
-                  score={nearbyParcels.sectorAvgScore}
-                  analysedCount={
-                    nearbyParcels.parcels.filter((p) => p.latest_ibp_total != null).length
-                  }
-                  mixedMethods={hasMixedMethodVersions(nearbyParcels.parcels)}
-                />
-              ) : null}
+            <View style={styles.pageInset}>
+              <NearbyMapCard
+                nearby={{ ...nearbyParcels, position: nearbyParcels.position }}
+                height={mapHeight}
+                onPress={onNavigateToExplorer}
+              />
             </View>
           )}
         </View>

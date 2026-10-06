@@ -389,6 +389,7 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
     },
     nearby: {
       state: {
+        position: null,
         parcels: [],
         sectorAvgScore: null,
         loading: false,

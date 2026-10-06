@@ -37,17 +37,18 @@ export const homeFr = {
   },
   nearby: {
     title: "Autour de vous",
-    seeMap: "Voir carte ›",
+    seeMap: "Explorer ›",
     seeMapLabel: "Voir la carte",
     locationDenied: "Activez la localisation pour voir les parcelles proches.",
     loadError: "Impossible de charger les parcelles. Vérifiez votre connexion.",
-    empty: "Aucune parcelle relevée dans un rayon de 2,5 km.",
+    empty: "Aucune parcelle relevée à moins de 2,5 km. Lancez-vous !",
+    summary: ({ count }: { count: number }) =>
+      `${count} ${plural(count, "parcelle")} ${plural(count, "relevée")}`,
+    radius: "dans un rayon de 2,5 km autour de vous",
   },
   sector: {
-    label: "SCORE IBP MOYEN DU SECTEUR",
+    label: "SCORE MOYEN DU SECTEUR",
     score: ({ score }: { score: number }) => `${score} / 50`,
     mixedMethods: "méthodes v3.0 et v3.2 mêlées",
-    meta: ({ count }: { count: number }) =>
-      `${count} ${plural(count, "relevé")} ${plural(count, "analysé")} · rayon ~2,5 km`,
   },
 } as const

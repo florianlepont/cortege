@@ -60,7 +60,7 @@ export function useSurveySyncNetwork({
   ownerStatusRef.current = ownerStatus
 
   // SYNC-02: reactive mirrors of the connectivity probe and the in-flight push/pull count, read by
-  // SyncStatusPill. Optimistic defaults (online, not syncing) avoid a false "offline" flash before
+  // SyncStatusLine. Optimistic defaults (online, not syncing) avoid a false "offline" flash before
   // the first network probe resolves; `lastOnlineStateRef` above stays the source of truth for the
   // auto-sync gating logic, which already treats "not confirmed online" as not online.
   const [isOnline, setIsOnline] = useState(true)
