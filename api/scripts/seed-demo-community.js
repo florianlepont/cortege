@@ -15,36 +15,40 @@
  * POSTGRES_* variables (a production run: inside the API container, see infra/vps/README.md).
  * It also needs at least one parcel in the database: it adds surveys on existing parcels only.
  */
-const path = require('path')
-const { Client } = require('pg')
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
+const path = require("path")
+const { Client } = require("pg")
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") })
 
-const DEMO_EMAIL_SUFFIX = '@demo.cortege.invalid'
-const DEMO_SURVEY_PREFIX = 'demo-'
-const METHOD_V3_2 = 'cnpf_ibp_fr_v3_2_2026-02-02'
+const DEMO_EMAIL_SUFFIX = "@demo.cortege.invalid"
+const DEMO_SURVEY_PREFIX = "demo-"
+const METHOD_V3_2 = "cnpf_ibp_fr_v3_2_2026-02-02"
 
 const MEMBERS = [
-  { key: 'camille', first: 'Camille', last: 'Martin' },
-  { key: 'yanis', first: 'Yanis', last: 'Bernard' },
-  { key: 'lea', first: 'Léa', last: 'Moreau' },
+  { key: "camille", first: "Camille", last: "Martin" },
+  { key: "yanis", first: "Yanis", last: "Bernard" },
+  { key: "lea", first: "Léa", last: "Moreau" },
 ]
-const SITE_NAMES = ['Bois des Roches', 'Lisière du Nord', 'Parcelle de la source', 'Taillis de l\'Étang']
+const SITE_NAMES = [
+  "Bois des Roches",
+  "Lisière du Nord",
+  "Parcelle de la source",
+  "Taillis de l'Étang",
+]
 
 function connect() {
   return new Client({
-    host: process.env.POSTGRES_HOST || 'localhost',
+    host: process.env.POSTGRES_HOST || "localhost",
     port: Number(process.env.POSTGRES_PORT || 5432),
-    user: process.env.POSTGRES_USER || 'ibp',
-    password: process.env.POSTGRES_PASSWORD || 'ibp',
-    database: process.env.POSTGRES_DB || 'ibp',
+    user: process.env.POSTGRES_USER || "ibp",
+    password: process.env.POSTGRES_PASSWORD || "ibp",
+    database: process.env.POSTGRES_DB || "ibp",
   })
 }
 
 async function remove(client) {
-  await client.query(
-    `DELETE FROM survey_events WHERE survey_id LIKE $1`,
-    [`${DEMO_SURVEY_PREFIX}%`],
-  )
+  await client.query(`DELETE FROM survey_events WHERE survey_id LIKE $1`, [
+    `${DEMO_SURVEY_PREFIX}%`,
+  ])
   const surveys = await client.query(`DELETE FROM surveys WHERE id LIKE $1`, [
     `${DEMO_SURVEY_PREFIX}%`,
   ])
@@ -56,7 +60,7 @@ async function remove(client) {
 
 /** Direct factor scores valid under the rules; varied but plausible, checked by the engine. */
 function buildFactors(seed) {
-  const { allowedScoresFor, FACTOR_KEYS } = require('@cortege/ibp-domain')
+  const { allowedScoresFor, FACTOR_KEYS } = require("@cortege/ibp-domain")
   const factors = {}
   FACTOR_KEYS.forEach((key, index) => {
     const allowed = [...allowedScoresFor(key)].sort((a, b) => a - b)
@@ -66,7 +70,7 @@ function buildFactors(seed) {
 }
 
 async function add(client) {
-  const { evaluateIbp } = require('@cortege/ibp-domain')
+  const { evaluateIbp } = require("@cortege/ibp-domain")
   await remove(client)
 
   const parcels = await client.query(
@@ -77,13 +81,13 @@ async function add(client) {
   )
   if (parcels.rowCount === 0) {
     throw new Error(
-      'No parcel in the database yet. Create a survey with a parcel from the app and sync it, then run this again.',
+      "No parcel in the database yet. Create a survey with a parcel from the app and sync it, then run this again.",
     )
   }
 
   const userIds = []
   for (const member of MEMBERS) {
-    const id = require('crypto').randomUUID()
+    const id = require("crypto").randomUUID()
     await client.query(
       `INSERT INTO users (id, email, role, first_name, last_name, display_name, auth0_sub)
        VALUES ($1, $2, 'contributor', $3, $4, $5, $6)`,
@@ -115,12 +119,12 @@ async function add(client) {
       const factors = buildFactors(seed)
       const evaluation = evaluateIbp(
         { ibp_method_version: METHOD_V3_2, ibp_cas: 1, factors },
-        'draft',
+        "draft",
       )
       if (!evaluation.ok || !evaluation.scores) {
-        throw new Error(`Demo factors rejected by the engine: ${evaluation.errors.join('; ')}`)
+        throw new Error(`Demo factors rejected by the engine: ${evaluation.errors.join("; ")}`)
       }
-      const id = `${DEMO_SURVEY_PREFIX}${require('crypto').randomUUID()}`
+      const id = `${DEMO_SURVEY_PREFIX}${require("crypto").randomUUID()}`
       const submittedAt = new Date(Date.UTC(year, 5 + parcelIndex, 10 + yearIndex, 10, 0, 0))
       const location = {
         lat: String(parcel.centroid.lat),
@@ -131,10 +135,10 @@ async function add(client) {
         `INSERT INTO surveys
            (id, user_id, site_name, status, visibility, ibp_method_version, ibp_cas, ibp_cas3_scale,
             factors, factor_results, scores, location, parcel_id, observation_year, version_number,
-            created_at, updated_at, submitted_at, expires_at, sync_version)
+            created_at, updated_at, submitted_at, sync_version)
          VALUES ($1, $2, $3, 'submitted', 'public', $4, 1, false,
                  $5::jsonb, $6::jsonb, $7::jsonb, $8::jsonb, $9, $10, $11,
-                 $12, $12, $12, $13, 1)`,
+                 $12, $12, $12, 1)`,
         [
           id,
           userId,
@@ -148,7 +152,6 @@ async function add(client) {
           year,
           version.rows[0].next,
           submittedAt.toISOString(),
-          new Date(submittedAt.getTime() + 365 * 24 * 3600 * 1000).toISOString(),
         ],
       )
       await client.query(
@@ -169,12 +172,12 @@ async function main() {
   const client = connect()
   await client.connect()
   try {
-    await client.query('BEGIN')
-    if (process.argv.includes('--remove')) await remove(client)
+    await client.query("BEGIN")
+    if (process.argv.includes("--remove")) await remove(client)
     else await add(client)
-    await client.query('COMMIT')
+    await client.query("COMMIT")
   } catch (error) {
-    await client.query('ROLLBACK')
+    await client.query("ROLLBACK")
     throw error
   } finally {
     await client.end()

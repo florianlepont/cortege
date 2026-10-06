@@ -7,7 +7,6 @@ describe("IbpRulesService (unit)", () => {
   const service = new IbpRulesService()
 
   const ACA_COLLINEEN = { region_version: "ACA", vegetation_stage: "collineen" } as const
-  const inOneHour = () => new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
   // A-F = 1, G = H = 2 (BUG-2: G and H accept only 0, 2 or 5), I = 2, J = 5.
   const completeDirect = { A: 1, B: 1, C: 1, D: 1, E: 1, F: 1, G: 2, H: 2, I: 2, J: 5 }
@@ -137,11 +136,13 @@ describe("IbpRulesService (unit)", () => {
   // OA-41: no submission deadline. An `expires_at` in the past (a client of an older build still
   // sends one, and the column is still filled) blocks nothing.
   it("validateSubmit ignores a past expires_at (OA-41)", () => {
-    const result = service.validateSubmit({
+    // The type has no such field any more: an older build's payload still has it.
+    const olderBuildInput = {
       ...ACA_COLLINEEN,
       expires_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
       factors: completeDirect,
-    })
+    }
+    const result = service.validateSubmit(olderBuildInput)
 
     expect(result.ok).toBe(true)
     expect(result.errors.join(" | ")).not.toContain("expired")
@@ -150,7 +151,6 @@ describe("IbpRulesService (unit)", () => {
   it("validateSubmit succeeds with complete valid payload and computes aggregate scores", () => {
     const result = service.validateSubmit({
       ...ACA_COLLINEEN,
-      expires_at: inOneHour(),
       factors: completeDirect,
     })
 
@@ -168,7 +168,6 @@ describe("IbpRulesService (unit)", () => {
     const result = service.validateSubmit({
       region_version: "ACA",
       vegetation_stage: "",
-      expires_at: inOneHour(),
       factors: completeDirect,
     })
 
@@ -179,7 +178,6 @@ describe("IbpRulesService (unit)", () => {
   it("validateSubmit accepts payload without location metadata", () => {
     const result = service.validateSubmit({
       ...ACA_COLLINEEN,
-      expires_at: inOneHour(),
       factors: completeDirect,
     })
 

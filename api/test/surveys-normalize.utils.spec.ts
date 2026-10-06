@@ -623,13 +623,12 @@ describe("classifySameVersionContent", () => {
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("conflict")
   })
 
-  it("excludes scores, status and expires_at", () => {
+  it("excludes scores and status", () => {
     const existing = makeRow()
     const body: SurveyUpsertBody = {
       ...sameBody(existing),
       scores: { ibp_total: 99 },
       status: "draft",
-      expires_at: "2030-01-01T00:00:00.000Z",
     }
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("identical")
   })
