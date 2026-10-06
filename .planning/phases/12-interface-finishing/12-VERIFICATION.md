@@ -1,14 +1,15 @@
 ---
 phase: 12-interface-finishing
 verified: 2026-10-06T00:00:00Z
-status: human_needed
-score: 2/3 must-haves verified as written; 1 satisfied differently (formSheet half of criterion 2 superseded by Phase 12.1)
+status: passed
+score: 3/3 must-haves verified (formSheet half through a rewritten criterion)
 behavior_unverified: 0
-overrides_applied: 0
-human_verification:
-  - test: "Accept or amend ROADMAP success criterion 2 of Phase 12: 'parcel selection uses a formSheet with detents instead of a full-screen modal'"
-    expected: "Either record an override in this file (suggested block below) or reword the criterion to 'parcel selection is one full-screen glass map with a transparent header and a bottom panel'"
-    why_human: "The code no longer matches the literal criterion. The owner replaced the formSheet with a full-screen map in Phase 12.1 (OA-91, OA-97, owner-confirmed on the phone 2026-10-06). Only the owner can accept that deviation; the verifier cannot invent an acceptance."
+overrides_applied: 1
+overrides:
+  - must_have: "Parcel selection uses a formSheet with detents instead of a full-screen modal"
+    reason: "Replaced by one full-screen glass parcel map in Phase 12.1 (OA-91, OA-97). ROADMAP criterion 2 rewritten by the owner on 2026-10-07; no code change."
+    accepted_by: owner
+    accepted_at: "2026-10-07"
 ---
 
 # Phase 12: Interface Finishing Verification Report

@@ -2,13 +2,15 @@
 phase: 10-survey-export-ownership
 verified: 2026-10-06T21:35:47Z
 status: human_needed
-score: 4/5 must-haves verified
+score: 5/5 must-haves verified
 behavior_unverified: 0
-overrides_applied: 0
+overrides_applied: 1
+overrides:
+  - must_have: "The PDF contains the ten factor scores"
+    reason: "Owner decision 2026-10-07: the ten factor values in the PDF are the class labels (S1, S2 ...), as 10-CONTEXT.md D-02 decided. ROADMAP criterion 3 reworded; no code change."
+    accepted_by: owner
+    accepted_at: "2026-10-07"
 human_verification:
-  - test: "Decide whether the PDF must list each factor's points (0 to 5) in addition to, or instead of, its class label."
-    expected: "Either the owner accepts class labels (S1, S2 ...) as 'the ten factor scores', as 10-CONTEXT.md D-02 decided, or a follow-up adds the per-factor points the survey page now shows."
-    why_human: "Product decision. In Phase 10 the on-screen factor tile showed the class, and the PDF mirrored it. Since the OA-37 to OA-50 redesign (Phase 12.1) the survey's score page shows points per factor ('3 / 5'), not the class, so the PDF and the screen no longer say the same thing. The data is available to the PDF (`DisplayedFactorResult.score_points`)."
   - test: "On a real phone, open a submitted survey, tap the share button in the header, and send the PDF to Mail, Files or Drive. Repeat in airplane mode after an app restart, on a survey that was opened once while online."
     expected: "The share sheet opens with a PDF that shows site, parcels, observation year, version, date, ten factors and the IBP total. In airplane mode the PDF is still produced and year and version are still filled in (not a dash)."
     why_human: "expo-print and expo-sharing are mocked in every test. The OS share sheet and the offline restart cannot be run from Jest. The owner's phone passes closed OA-48 (the button's prominence) on 2026-10-06 but record nothing about the PDF content or airplane mode."

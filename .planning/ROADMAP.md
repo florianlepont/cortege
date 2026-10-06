@@ -510,11 +510,11 @@ owner's 2026-09-27 decision, rather than blocking this phase indefinitely.
 **Source**: `docs/design/ux-ui-audit-2026-09.md` §3.2 (HOME-01…SYNC-03) and §7 Lot 3
 **Success Criteria** (what must be TRUE):
 
-  1. Home becomes a dashboard (resume action, alerts, progress); Mes Relevés becomes a pure list (title, search, filters, a "+" in the header); the duplicated draft cards merge into one `SurveyProgressCard`.
-  2. A `SyncStatusPill` (offline · N to send · syncing · up to date) is visible in the Home and Mes Relevés headers, not only in Settings; a blocked/conflicted survey never reads "Soumis" in green (this restates BUG-03, fixed in Phase 2 — this phase carries the pattern to every screen that shows survey status).
-  3. Survey detail shows one score with its denominator and a peuplement/contexte split (`IbpFactorBars`), instead of the same number repeated three times with no scale.
+  1. Home becomes a dashboard (resume action, actionable alerts, progress in the resume hero); Mes Relevés becomes a pure list (title, search, filters, a "+" in the header). *Rewritten 2026-10-07 (owner decision, after the Phase 12.1 redesigns): the duplicated draft cards are gone rather than merged into a `SurveyProgressCard`.*
+  2. Sync state (offline · N to send · syncing · up to date) is visible outside Settings, as the quiet sync line on Home; a blocked/conflicted survey never reads "Soumis" in green (BUG-03, carried to every screen that shows survey status). *Rewritten 2026-10-07 (owner decision, after the Phase 12.1 redesigns): the pill was replaced by `SyncStatusLine` and Mes Relevés carries no indicator (OA-51).*
+  3. Survey detail shows one score with its denominator and a peuplement/contexte split, instead of the same number repeated three times with no scale. *Rewritten 2026-10-07 (owner decision, after the Phase 12.1 redesigns): delivered by the score card and the score sub-page (OA-46); `IbpFactorBars` is not used.*
   4. The survey list row shows a score or progress ring; deletion follows the iOS swipe convention (destructive on the right) with a confirmation and an accessible alternative.
-  5. Compte is a grouped iOS-style list (Profile, Connection, Data, About, then Sign out) instead of a mix of inline forms, rows and pills.
+  5. Compte is a grouped iOS-style list (Profile, Connection, then Sign out) instead of a mix of inline forms, rows and pills. *Rewritten 2026-10-07 (owner decision, after the Phase 12.1 redesigns): Data and About moved to Paramètres (OA-75).*
 
 **Plans**: 6 batches, executed and closed directly (no separate orchestrator/executor split for
 this phase) — see `.planning/phases/07-information-architecture/07-CONTEXT.md` and its
@@ -569,7 +569,7 @@ mode walkthrough) is the one item Phase 13's field validation should confirm.
 
   1. A three-screen carousel (ten factors · offline · member map) runs before login on first launch, followed by a permissions-priming screen for location and camera with a link to Settings on refusal; "already seen" is persisted.
   2. The Expo splash and adaptive icon are configured natively, so no default Expo splash flashes before `TypewriterSplash`.
-  3. Explorer's floating panels become a tiered native sheet (2–3 detents) instead of absolutely-positioned cards; filters are immediate chips (period, region, "my surveys") instead of free-text fields and an "Apply" button, with an active-filter count and a reset action.
+  3. Explorer's floating panels become one blurred sheet instead of absolutely-positioned cards. *Rewritten 2026-10-07 (owner decision, after the Phase 12.1 redesigns): the tiered native sheet failed on iOS 27 (OA-66) and all Explorer filters were removed (OA-67), so there are no chips, active-filter count or reset.*
   4. Map markers show the survey's score band (moss/ochre/terracotta) with a legend, instead of a single off-brand system pin color; the user's position uses the native `showsUserLocation` halo instead of a custom marker.
 
 **Plans**: 7 batches, executed and closed directly (no separate orchestrator/executor split for
@@ -586,9 +586,9 @@ DS-13, DET-03/04, HOME-06, LIST-07, ACC-02) to its batch.
 **Requirements**: REQ-C-pdf-export, REQ-B-manage-published
 **Success Criteria** (what must be TRUE):
 
-  1. [x] From a survey's detail, the surveyor generates a PDF on the device and sends it through the OS share sheet to any installed target — Google Drive, Wimi, mail, AirDrop. (`DetailActions.tsx`'s "Exporter en PDF" button → `survey-pdf-export.ts`'s `exportAndShareSurveyPdf`)
+  1. [x] From a survey's detail, the surveyor generates a PDF on the device and sends it through the OS share sheet to any installed target — Google Drive, Wimi, mail, AirDrop. (`survey-pdf-export.ts`'s `exportAndShareSurveyPdf`) *Rewritten 2026-10-07 (owner decision, after the Phase 12.1 redesigns): the button is now the "Partager" item of the survey header (Phase 12.1), not "Exporter en PDF" in `DetailActions.tsx`.*
   2. [x] The export works in airplane mode: the PDF is produced and shared with no API call. (no `fetch`/`apiRequest` in `survey-pdf-export.ts`; `observation_year`/`version_number` cached locally via `cacheSurveyCanonicalFields` so they survive an offline restart — see `10-CONTEXT.md` D-01)
-  3. [x] The PDF contains the survey's identifying data (site, parcel ids, observation year, version, date), the ten factor scores and the IBP total. (`buildSurveyExportHtml`, unit-tested in `survey-pdf-export.test.ts`)
+  3. [x] The PDF contains the survey's identifying data (site, parcel ids, observation year, version, date), the ten factor values as class labels and the IBP total. (`buildSurveyExportHtml`, unit-tested in `survey-pdf-export.test.ts`) *Rewritten 2026-10-07 (owner decision, after the Phase 12.1 redesigns): class labels, not points, as `10-CONTEXT.md` D-02 decided.*
   4. [x] The surveyor deletes their own survey behind a confirmation step, and it disappears from their list. (already built pre-Phase-10 — `confirmDeleteSurvey`'s `Alert.alert` + synchronous local delete; verified, not rebuilt)
   5. [x] ~~No private/public visibility control is presented anywhere in the app~~ — done in Phase 2, re-verified in Phase 10.
 
@@ -619,7 +619,7 @@ DS-13, DET-03/04, HOME-06, LIST-07, ACC-02) to its batch.
 **Success Criteria** (what must be TRUE):
 
   1. [x] `light`/`dark` themes exist on the same semantic tokens through `useBrandTheme()`, defaulting to `automatic`. (`mobile/src/app/theme.ts`, persisted via `storage/theme-preference.ts`, picked in Settings' new "Apparence" section; every screen/component converted, see `12-01` through `12-04` and `12-06`/`12-07` summaries)
-  2. [x] Floating map and card controls use `expo-blur` or `expo-glass-effect` instead of a flat `rgba` fill; parcel selection uses a `formSheet` with detents instead of a full-screen modal. (new `ui/GlassSurface.tsx` + `AppCard`'s `glass` prop, applied across `public-map/` and the parcel map's floating controls — `12-05`/`12-06`; `SurveysStack.tsx`'s `surveyParcels` route presents as `formSheet` with two detents)
+  2. [x] Floating map and card controls use `expo-blur` or `expo-glass-effect` instead of a flat `rgba` fill (`ui/GlassSurface.tsx` + `AppCard`'s `glass` prop). *Rewritten 2026-10-07 (owner decision, after the Phase 12.1 redesigns): parcel selection is one full-screen glass parcel map, not a `formSheet` with detents (OA-91, OA-97).*
   3. [x] Survey-detail history renders as an icon timeline with pull-to-refresh and a loading skeleton, instead of plain text. (`EventsTab.tsx` rewrite + new `event-icons.ts`, `SkeletonRow`, `SurveyDetailScreen.tsx`'s `RefreshControl` — `12-07`)
 
 **Plans**: 7 batches, executed and closed directly (no separate orchestrator/executor split) — see

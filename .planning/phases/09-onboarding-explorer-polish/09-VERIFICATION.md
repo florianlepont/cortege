@@ -10,6 +10,7 @@ overrides:
     reason: "Both halves were reversed after the phase by recorded owner decisions. All Explorer filters were removed (OA-67, closed in PR #207, 'the owner's call', confirmed on the phone 2026-10-06). The sheet is one Animated panel at 55 percent height because @gorhom/bottom-sheet opened as a sliver on iOS 27 (OA-66, validated on the iOS 27 simulator 2026-10-06). The intent of the criterion (no floating absolute cards, immediate filtering UX) is superseded, not missed."
     accepted_by: "owner, as recorded in docs/user-tests/owner-acceptance.md (OA-66, OA-67); transcribed by the verifier, not a fresh sign-off"
     accepted_at: "2026-10-06T00:00:00Z"
+    roadmap_rewritten: "2026-10-07 (criterion 3 reworded by the owner; no code change)"
 human_verification:
   - test: "On a fresh install (Release build), launch the app and watch the first second before the carousel."
     expected: "The forest green native splash with the logo shows, then the app. No default white Expo splash. Note whether the login screen flashes for a moment before the carousel appears (see Anti-Patterns, first row)."

@@ -1,14 +1,15 @@
 ---
 phase: 07-information-architecture
 verified: 2026-10-06
-status: human_needed
-score: 5/5 success criteria met in intent; 1 verified as written, 4 satisfied differently by owner-validated Phase 12.1 redesigns (formal acceptance of the new wording pending)
+status: passed
+score: 5/5 success criteria met (4 through rewritten criteria)
 behavior_unverified: 0
-overrides_applied: 0
-human_verification:
-  - test: "Accept or amend the wording of ROADMAP Phase 7 success criteria 1, 2, 3 and 5, which Phase 12.1 redesigned after this phase closed"
-    expected: "Either add the suggested overrides block below to this file, or reword the four criteria to what the app now does (see the truths table)"
-    why_human: "The code no longer matches the literal text of four criteria (SyncStatusPill replaced by SyncStatusLine and absent from Mes Relevés; SurveyProgressCard and IbpFactorBars no longer rendered; Compte no longer holds Data and About). Each change traces to an owner decision recorded in docs/user-tests/owner-acceptance.md and confirmed on the phone, but only the owner can formally accept a deviation from the roadmap contract; the verifier does not write that acceptance for them."
+overrides_applied: 1
+overrides:
+  - must_have: "Criteria 1, 2, 3 and 5 as first written (SurveyProgressCard, SyncStatusPill in both headers, IbpFactorBars, Data and About in Compte)"
+    reason: "Redesigned in Phase 12.1 (OA-14 to 19, OA-46, OA-51, OA-75). ROADMAP criteria rewritten by the owner on 2026-10-07; no code change."
+    accepted_by: owner
+    accepted_at: "2026-10-07"
 ---
 
 # Phase 07: Information Architecture Verification Report
