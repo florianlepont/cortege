@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { StyleSheet, View } from "react-native"
+import { Platform, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { brandColors, brandMediaBackdrop, brandShadow, brandTypography } from "../app/brand-tokens"
@@ -17,14 +16,18 @@ import {
 import { GpsCaptureResult } from "../app/types"
 import { useOfflineMapPrompt } from "../hooks/useOfflineMapPrompt"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
+import type { BasemapKey } from "../map/basemaps"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
+import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
+import { GlassSurface } from "../ui/GlassSurface"
 import { AppNotice } from "../ui/AppNotice"
 import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
 
 const t = fr.parcelSelection
+const headers = fr.navigation.headers
 
 type SurveyParcelSelectionScreenProps = {
   apiUrl: string
@@ -57,7 +60,8 @@ export function SurveyParcelSelectionScreen({
   const theme = useBrandTheme()
   const screenStyles = useMemo(() => createScreenStyles(theme), [theme])
   const mapRef = useRef<ParcelMapHandle | null>(null)
-  const headerHeight = useHeaderHeight()
+  const [basemap, setBasemap] = useState<BasemapKey>("map")
+  const [locating, setLocating] = useState(false)
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
   const [saving, setSaving] = useState(false)
@@ -122,19 +126,35 @@ export function SurveyParcelSelectionScreen({
         : t.visibleCount({ count: parcelStatuses.length })
       : t.zoomToSelect
 
+  // The iOS header is transparent over the map (the native back button is the glass one), so the
+  // controls start under the status bar; on Android the opaque header already sits above the map.
+  const controlsTop = Platform.OS === "ios" ? insets.top + 6 : 12
+
+  const handleLocate = async (): Promise<void> => {
+    if (locating) {
+      return
+    }
+    setLocating(true)
+    try {
+      const capturedLocation = await onCaptureGpsLocation()
+      if (!capturedLocation) {
+        return
+      }
+      const nextRegion = buildFocusedMapRegion(capturedLocation)
+      setMapRegion((current) => (areRegionsNearlyEqual(current, nextRegion) ? current : nextRegion))
+      syncMapRegion(nextRegion, 420)
+    } finally {
+      setLocating(false)
+    }
+  }
+
   return (
-    <View
-      style={[
-        screenStyles.fullscreen,
-        {
-          marginTop: -headerHeight,
-        },
-      ]}
-    >
+    <View style={screenStyles.fullscreen}>
       <ParcelMap
         ref={mapRef}
         style={screenStyles.map}
         initialRegion={mapRegion}
+        basemap={basemap}
         cadastreEnabled={mapZoom >= 15}
         parcels={parcelStatuses}
         selectedParcelIds={selectedParcelIds}
@@ -143,8 +163,27 @@ export function SurveyParcelSelectionScreen({
         onRegionChange={handleMapRegionChange}
       />
 
+      {Platform.OS === "ios" ? (
+        <GlassSurface pointerEvents="none" style={[screenStyles.titlePill, { top: controlsTop }]}>
+          <Text style={screenStyles.titlePillText}>
+            {wizard ? headers.parcelsWizard : headers.parcels}
+          </Text>
+        </GlassSurface>
+      ) : null}
+
+      <MapTopControls
+        top={controlsTop}
+        basemap={basemap}
+        onToggleBasemap={() => setBasemap((current) => (current === "map" ? "satellite" : "map"))}
+      />
+      <MapBottomDock
+        top={controlsTop + 60}
+        locating={locating}
+        onLocate={() => void handleLocate()}
+      />
+
       {offlinePrompt.state !== "hidden" && !offlineDismissed ? (
-        <View pointerEvents="box-none" style={[screenStyles.topArea, { top: headerHeight + 8 }]}>
+        <View pointerEvents="box-none" style={[screenStyles.topArea, { top: controlsTop + 56 }]}>
           <OfflineMapPrompt
             prompt={offlinePrompt}
             siteName={siteName.trim() || t.areaSiteFallback}
@@ -164,27 +203,6 @@ export function SurveyParcelSelectionScreen({
         ]}
       >
         <View style={screenStyles.bottomArea}>
-          <View style={screenStyles.floatingActions}>
-            <AppButton
-              label={t.currentPosition}
-              leadingIcon="locate-outline"
-              size="sm"
-              style={screenStyles.locateButton}
-              onPress={() => {
-                void onCaptureGpsLocation().then((capturedLocation) => {
-                  if (!capturedLocation) {
-                    return
-                  }
-                  const nextRegion = buildFocusedMapRegion(capturedLocation)
-                  setMapRegion((current) =>
-                    areRegionsNearlyEqual(current, nextRegion) ? current : nextRegion,
-                  )
-                  syncMapRegion(nextRegion, 420)
-                })
-              }}
-            />
-          </View>
-
           <AppCard glass style={screenStyles.bottomSheet}>
             <Text style={screenStyles.bottomTitle}>
               {hasParcelSelection ? parcelSelectionLabel : t.noSelection}
@@ -234,18 +252,22 @@ function createScreenStyles(theme: BrandTheme) {
     topArea: {
       position: "absolute",
       left: 16,
-      right: 16,
+      right: 78,
     },
     bottomArea: {
       gap: 12,
     },
-    floatingActions: {
-      alignSelf: "flex-end",
+    titlePill: {
+      position: "absolute",
+      alignSelf: "center",
+      height: 44,
+      paddingHorizontal: 18,
+      borderRadius: 22,
+      justifyContent: "center",
     },
-    locateButton: {
-      borderWidth: 1,
-      borderColor: brandColors.sage,
-      ...brandShadow.card,
+    titlePillText: {
+      ...brandTypography.button,
+      color: brandColors.forest,
     },
     // DS-15 (Phase 12): a real blurred glass panel (`AppCard glass`) instead of a flat
     // `brandTranslucentPanel` fill.
