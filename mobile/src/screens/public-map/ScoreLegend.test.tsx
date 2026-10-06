@@ -77,6 +77,16 @@ describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
     expect(tree.root.findByProps({ accessibilityLabel: t.a11y.hideLegend })).toBeTruthy()
   })
 
+  test("also explains the dashed marker of the author's own draft (OA-59)", () => {
+    const tree = render()
+    act(() => tree.root.findByProps({ accessibilityLabel: t.a11y.showLegend }).props.onPress())
+    expect(
+      tree.root.findAll(
+        (node) => (node.type as unknown) === "Text" && node.props.children === t.legend.draft,
+      ),
+    ).toHaveLength(1)
+  })
+
   test("each row's swatch uses the score-band's marker color", () => {
     const tree = render()
     const toggle = tree.root.findByProps({ accessibilityLabel: t.a11y.showLegend })

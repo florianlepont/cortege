@@ -1,5 +1,6 @@
 import { memo, useMemo, useState } from "react"
-import { Pressable, ScrollView, View } from "react-native"
+import { Pressable, View } from "react-native"
+import { BottomSheetTextInput } from "@gorhom/bottom-sheet"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../../app/brand-tokens"
@@ -8,7 +9,6 @@ import type { AreaDownloadEstimate } from "../../map/tile-math"
 import type { OfflineAreaStatus, OfflineAreaSummary } from "../../storage/offline-map"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
-import { AppCard } from "../../ui/AppCard"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppStatusChip, type AppStatusChipTone } from "../../ui/AppStatusChip"
@@ -74,7 +74,6 @@ const AreaRow = memo(function AreaRow({ area, downloading, onDelete }: AreaRowPr
 })
 
 export type OfflineAreasSheetProps = {
-  bottom: number
   areas: OfflineAreaSummary[]
   downloadingAreaId: string | null
   estimate: AreaDownloadEstimate
@@ -85,10 +84,10 @@ export type OfflineAreasSheetProps = {
 
 /**
  * Downloaded-area management (REQ-D-area-download): the current viewport's download size
- * estimate and progress, plus the list of already-downloaded areas with delete.
+ * estimate and progress, plus the list of already-downloaded areas with delete. Drawn in the
+ * Explorer's bottom sheet like every other panel of the map (OA-66).
  */
 export const OfflineAreasSheet = memo(function OfflineAreasSheet({
-  bottom,
   areas,
   downloadingAreaId,
   estimate,
@@ -104,7 +103,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
   const handleDownload = (): void => onDownload(name.trim() || defaultAreaName())
 
   return (
-    <AppCard glass padding={14} style={[styles.card, areaStyles.floating, { bottom }]}>
+    <View style={styles.card}>
       <AppSectionHeader
         title={t.title}
         subtitle={t.subtitle}
@@ -127,6 +126,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
         onChangeText={setName}
         placeholder={t.namePlaceholder}
         containerStyle={areaStyles.nameField}
+        InputComponent={BottomSheetTextInput as never}
       />
 
       <Text style={estimate.exceedsCap ? areaStyles.warning : styles.meta}>
@@ -142,7 +142,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
         loading={downloading}
       />
 
-      <ScrollView style={areaStyles.list}>
+      <View style={areaStyles.list}>
         {areas.length === 0 ? (
           <Text style={styles.meta}>{t.empty}</Text>
         ) : (
@@ -155,7 +155,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
             />
           ))
         )}
-      </ScrollView>
-    </AppCard>
+      </View>
+    </View>
   )
 })

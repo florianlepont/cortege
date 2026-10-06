@@ -1,14 +1,15 @@
-import { memo, useCallback, useContext, useEffect, useRef } from "react"
+import { memo, useCallback, useContext, useEffect, useMemo, useRef } from "react"
 import { View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useBasemapPreference } from "../../hooks/useBasemapPreference"
 import { useIsOffline } from "../../hooks/useIsOffline"
 import { useOfflinePendingParcelDrain } from "../../hooks/useOfflinePendingParcelDrain"
+import { ownDraftMapItems } from "../../map/own-drafts"
 import { usePublicMapExplorer } from "../../hooks/usePublicMapExplorer"
 import { PublicMapScreen } from "../../screens/PublicMapScreen"
 import { addPendingParcelDownload } from "../../storage/offline-map"
 import { useAccessToken, useSession } from "../../state/session-context"
-import { useSurveys } from "../../state/surveys-context"
+import { useSurveyActions, useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { PublicMapReloadContext } from "../public-map-reload"
@@ -26,11 +27,15 @@ import type { PublicMapRouteProps } from "../types"
  * served by the screen's own first viewport load, so it is not forced (the
  * explorer skips the identical request instead of sending it twice).
  */
-export const PublicMapRoute = memo(function PublicMapRoute({ navigation }: PublicMapRouteProps) {
+export const PublicMapRoute = memo(function PublicMapRoute({
+  navigation,
+  route,
+}: PublicMapRouteProps) {
   const insets = useSafeAreaInsets()
   const { state: session } = useSession()
   const accessToken = useAccessToken()
   const { state: surveys } = useSurveys()
+  const surveyActions = useSurveyActions()
   const syncActions = useSyncActions()
   const reloadSignal = useContext(PublicMapReloadContext)
 
@@ -48,7 +53,18 @@ export const PublicMapRoute = memo(function PublicMapRoute({ navigation }: Publi
     onStatusChange: syncActions.setStatus,
   })
 
+  // OA-59: the author's drafts are drawn beside the public surveys, from the details the phone has.
+  const draftItems = useMemo(
+    () => ownDraftMapItems(surveys.surveyDetails, new Set(explorer.items.map((i) => i.survey_id))),
+    [surveys.surveyDetails, explorer.items],
+  )
   const handleOpenSurvey = useLatestCallback((surveyId: string) => {
+    if (draftItems.some((item) => item.survey_id === surveyId)) {
+      // A draft has no community page: it opens as the author's own survey.
+      surveyActions.openSurvey(surveyId)
+      navigation.navigate("surveys", { screen: "surveyDetail" })
+      return
+    }
     navigation.navigate("communitySurvey", { surveyId })
   })
 
@@ -78,6 +94,8 @@ export const PublicMapRoute = memo(function PublicMapRoute({ navigation }: Publi
         items={explorer.items}
         parcelStatuses={explorer.parcelStatuses}
         ownSurveyIds={surveys.ownSurveyIds}
+        draftItems={draftItems}
+        focus={route.params?.focus}
         loading={explorer.loading}
         onLoad={explorer.loadPublicMap}
         onLoadParcels={explorer.loadPublicParcels}

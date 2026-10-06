@@ -26,6 +26,8 @@ const NO_PARCELS: PublicParcelStatusItem[] = []
 export type MapCanvasProps = {
   cameraRef: RefObject<CameraRef | null>
   items: PublicMapItem[]
+  /** OA-59: the ids of `items` that are the author's own drafts (drawn dashed). */
+  draftIds?: ReadonlySet<string>
   region: MapRegion
   selectedId: string | null
   parcelStatuses: PublicParcelStatusItem[]
@@ -50,6 +52,7 @@ export type MapCanvasProps = {
 export const MapCanvas = memo(function MapCanvas({
   cameraRef,
   items,
+  draftIds,
   region,
   selectedId,
   parcelStatuses,
@@ -126,15 +129,17 @@ export const MapCanvas = memo(function MapCanvas({
           )
         }
         const selected = entry.item.survey_id === selectedId
+        const draft = draftIds?.has(entry.item.survey_id) ?? false
         return (
           <SurveyMarker
             // `selected` is part of the key too (tracksViewChanges false, MAP-03): a selection
             // change remounts the marker instead of re-tracking its view every frame.
-            key={`${entry.key}-${selected}`}
+            key={`${entry.key}-${selected}-${draft}`}
             id={entry.item.survey_id}
             coordinate={{ latitude: entry.latitude, longitude: entry.longitude }}
             ibpTotal={entry.item.ibp_total}
             selected={selected}
+            draft={draft}
             onSelect={onSelectSurvey}
           />
         )

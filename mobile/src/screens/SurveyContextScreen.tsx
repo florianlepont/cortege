@@ -1,13 +1,12 @@
 import { useMemo } from "react"
-import { Platform, Pressable, ScrollView, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import { Platform, ScrollView, View } from "react-native"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppText as Text } from "../ui/AppText"
-import { GlassSurface } from "../ui/GlassSurface"
 import { PageTitle } from "../ui/PageTitle"
+import { MapActionPill } from "./public-map/MapChips"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
 import { ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
 import { type SurveyContextScreenProps } from "./survey-detail/screen-props"
@@ -70,20 +69,16 @@ export function SurveyContextScreen({
         siteName={activeSiteName}
         displayLocation={detail?.display_location}
         parcelIds={parcelIds}
+        surveyId={selectedSurvey.id}
         style={styles.mapTall}
       >
         {canEditSurvey ? (
-          <Pressable
-            style={styles.mapAction}
-            onPress={() => void onOpenParcels(selectedSurvey.id)}
-            accessibilityRole="button"
+          <MapActionPill
+            icon="pencil"
+            label={t.editParcels}
             accessibilityLabel={a11y.editParcels(activeSiteName)}
-          >
-            <GlassSurface style={styles.mapActionInner}>
-              <Ionicons name="pencil" size={18} color={theme.semanticColors.textStrong} />
-              <Text style={styles.mapActionText}>{t.editParcels}</Text>
-            </GlassSurface>
-          </Pressable>
+            onPress={() => void onOpenParcels(selectedSurvey.id)}
+          />
         ) : null}
       </ParcelMapCard>
 

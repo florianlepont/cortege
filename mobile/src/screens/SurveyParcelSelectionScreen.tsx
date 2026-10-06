@@ -3,7 +3,13 @@ import { Platform, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
-import { brandColors, brandMediaBackdrop, brandShadow, brandTypography } from "../app/brand-tokens"
+import {
+  brandColors,
+  brandMapTokens,
+  brandMediaBackdrop,
+  brandShadow,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import {
   DEFAULT_FRANCE_CENTER,
@@ -19,6 +25,7 @@ import { useParcelStatuses } from "../hooks/useParcelStatuses"
 import type { BasemapKey } from "../map/basemaps"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
+import { MapLegend, type MapLegendRow } from "./public-map/ScoreLegend"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
 import { GlassSurface } from "../ui/GlassSurface"
@@ -28,6 +35,13 @@ import { fr } from "../i18n"
 
 const t = fr.parcelSelection
 const headers = fr.navigation.headers
+
+// The colours of the parcel layer (ParcelPolygonsLayer), for the legend the Explorer's look gets.
+const PARCEL_LEGEND_ROWS: MapLegendRow[] = [
+  { color: brandMapTokens.parcelSelected, label: t.legend.selected },
+  { color: brandMapTokens.parcelStudied, label: t.legend.studied },
+  { color: brandMapTokens.parcelNeutral, label: t.legend.neutral },
+]
 
 type SurveyParcelSelectionScreenProps = {
   apiUrl: string
@@ -65,6 +79,9 @@ export function SurveyParcelSelectionScreen({
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
   const [saving, setSaving] = useState(false)
+  // The bottom card's height: the map controls sit just above it, bottom right and left like the
+  // Explorer's, whatever the card holds (a notice appears when no parcel is chosen).
+  const [cardHeight, setCardHeight] = useState(0)
   const [offlineDismissed, setOfflineDismissed] = useState(false)
   const parsedLat = parseGpsCoordinate(gpsLocation.lat)
   const parsedLng = parseGpsCoordinate(gpsLocation.lng)
@@ -130,6 +147,9 @@ export function SurveyParcelSelectionScreen({
   // controls start under the status bar; on Android the opaque header already sits above the map.
   const controlsTop = Platform.OS === "ios" ? insets.top + 6 : 12
 
+  const cardBottomInset = Math.max(Math.max(tabBarHeight, insets.bottom), 12) + 12
+  const controlsBottom = cardBottomInset + cardHeight + 12
+
   const handleLocate = async (): Promise<void> => {
     if (locating) {
       return
@@ -177,9 +197,23 @@ export function SurveyParcelSelectionScreen({
         onToggleBasemap={() => setBasemap((current) => (current === "map" ? "satellite" : "map"))}
       />
       <MapBottomDock
-        top={controlsTop + 60}
+        bottom={controlsBottom}
         locating={locating}
         onLocate={() => void handleLocate()}
+      />
+      <MapLegend
+        bottom={controlsBottom}
+        countLabel={
+          mapZoom >= 15
+            ? parcelsLoading
+              ? t.loadingOverlay
+              : t.visibleCount({ count: parcelStatuses.length })
+            : t.legend.zoomIn
+        }
+        title={t.legend.title}
+        subtitle={t.legend.subtitle}
+        rows={PARCEL_LEGEND_ROWS}
+        loading={parcelsLoading}
       />
 
       {offlinePrompt.state !== "hidden" && !offlineDismissed ? (
@@ -198,11 +232,14 @@ export function SurveyParcelSelectionScreen({
         style={[
           screenStyles.overlayLayer,
           {
-            paddingBottom: Math.max(Math.max(tabBarHeight, insets.bottom), 12) + 12,
+            paddingBottom: cardBottomInset,
           },
         ]}
       >
-        <View style={screenStyles.bottomArea}>
+        <View
+          style={screenStyles.bottomArea}
+          onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
+        >
           <AppCard glass style={screenStyles.bottomSheet}>
             <Text style={screenStyles.bottomTitle}>
               {hasParcelSelection ? parcelSelectionLabel : t.noSelection}

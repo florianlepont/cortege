@@ -1,4 +1,4 @@
-import { useMemo, useState, type Ref } from "react"
+import { useMemo, useState, type ComponentType, type Ref } from "react"
 import {
   StyleProp,
   StyleSheet,
@@ -16,6 +16,8 @@ type AppFieldProps = {
   label: string
   error?: string | null
   inputRef?: Ref<TextInput>
+  /** A text input of another kind, such as a bottom sheet's keyboard-aware one. */
+  InputComponent?: ComponentType<TextInputProps & { ref?: Ref<TextInput> }>
   containerStyle?: StyleProp<ViewStyle>
   labelStyle?: StyleProp<TextStyle>
   inputStyle?: StyleProp<TextStyle>
@@ -26,6 +28,7 @@ export function AppField({
   label,
   error,
   inputRef,
+  InputComponent = TextInput,
   containerStyle,
   labelStyle,
   inputStyle,
@@ -42,7 +45,7 @@ export function AppField({
   return (
     <View style={[styles.container, containerStyle]}>
       <Text style={[styles.label, labelStyle]}>{label}</Text>
-      <TextInput
+      <InputComponent
         ref={inputRef}
         style={[
           styles.input,

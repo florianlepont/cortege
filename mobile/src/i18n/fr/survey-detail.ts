@@ -69,6 +69,8 @@ export const surveyDetailFr = {
   map: {
     parcelCount: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),
     noParcel: "Aucune parcelle choisie",
+    // OA-59: opens Explorer on the survey.
+    seeOnMap: "Voir sur la carte",
   },
   rows: {
     context: "Contexte et parcelles",
@@ -202,6 +204,7 @@ export const surveyDetailFr = {
     finishSurvey: (name: string) => `Terminer le relevé ${name}`,
     editParcels: (name: string) => `Modifier les parcelles du relevé ${name}`,
     mapPreview: (name: string) => `Carte du relevé ${name}`,
+    seeOnMap: (name: string) => `Voir le relevé ${name} sur la carte`,
     scoreSummary: (value: string) => `Score IBP, ${value}`,
     addPhoto: "Ajouter une photo",
     photo: ({ position, total }: { position: number; total: number }) =>

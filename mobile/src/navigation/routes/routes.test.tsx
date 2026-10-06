@@ -1410,6 +1410,41 @@ describe("PublicMapRoute", () => {
     expect(navigation.navigate).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-9" })
   })
 
+  test("draws the author's located drafts and opens one as their own survey (OA-59)", async () => {
+    const fixture = makeFixture()
+    fixture.surveys.state.surveyDetails = {
+      "s-01": {
+        id: "s-01",
+        status: "draft",
+        display_location: { lat: 46.5, lng: 2.1 },
+        created_at: "2026-10-01T09:30:00.000Z",
+        factor_results: {},
+        scores: { ibp_peuplement_gestion: 10, ibp_contexte: 5, ibp_total: 15 },
+      },
+    } as never
+    // A public survey is already on the map; the draft is not one of them.
+    ;(mockExplorer as { items: unknown[] }).items = [{ survey_id: "pub-1" }]
+    const navigation = makeNavigation()
+    const focus = { surveyId: "s-01", lat: 46.5, lng: 2.1, nonce: 1 }
+    await mount(
+      <Providers fixture={fixture}>
+        <PublicMapRoute navigation={navigation as never} route={{ params: { focus } } as never} />
+      </Providers>,
+    )
+    expect(props("publicMap").focus).toBe(focus)
+    expect(
+      (props("publicMap").draftItems as Array<{ survey_id: string }>).map((i) => i.survey_id),
+    ).toEqual(["s-01"])
+
+    act(() => {
+      ;(props("publicMap").onOpenSurvey as (surveyId: string) => void)("s-01")
+    })
+    expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
+    expect(navigation.navigate).toHaveBeenCalledWith("surveys", { screen: "surveyDetail" })
+    expect(navigation.navigate).not.toHaveBeenCalledWith("communitySurvey", expect.anything())
+    ;(mockExplorer as { items: unknown[] }).items = []
+  })
+
   test("queuing a parcel download (REQ-D-offline-parcel-warning) writes to the offline queue", async () => {
     await mount(
       <Providers fixture={makeFixture()}>
