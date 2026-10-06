@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>En-têtes cohérents (OA-21, OA-68)</title>
+<style>
+  :root {
+    --page: #eef0e7; --card: #fff; --forest: #334e2b; --text: #1e2b19; --muted: #6b7566;
+    --divider: #d3d8c7; --glass: rgba(250,250,244,.66); --moss: #89a33a; --warn: #8a5a12;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #d9ddd0; font-family: -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; color: var(--text); padding: 26px 24px 36px; width: 1500px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin-bottom: 20px; max-width: 1200px; line-height: 1.4; }
+  .row { display: flex; gap: 22px; align-items: flex-start; }
+  .col { width: 330px; flex: none; }
+  .label { font-weight: 700; font-size: 15px; margin-bottom: 3px; }
+  .note { font-size: 12.5px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; min-height: 52px; }
+  .phone { position: relative; width: 330px; height: 560px; background: var(--page); border-radius: 34px; overflow: hidden; box-shadow: 0 6px 22px rgba(30,43,25,.18); font-size: 13px; }
+  .phone.map { background: linear-gradient(135deg,#e6e8de 0%,#d4d9c8 40%,#e9ebe2 100%); }
+  .phone.map::before { content:""; position:absolute; inset:0; background:
+     repeating-linear-gradient(60deg, rgba(120,130,100,.18) 0 1px, transparent 1px 38px),
+     repeating-linear-gradient(-20deg, rgba(120,130,100,.14) 0 1px, transparent 1px 52px); }
+  .status { position: absolute; top: 12px; left: 28px; font-weight: 600; font-size: 14px; }
+  .btn { position: absolute; top: 40px; width: 38px; height: 38px; border-radius: 19px; background: var(--glass); border: 1px solid rgba(255,255,255,.8); display: flex; align-items: center; justify-content: center; font-size: 18px; backdrop-filter: blur(12px); box-shadow: 0 1px 6px rgba(30,43,25,.08); }
+  .btn.l { left: 14px; } .btn.r { right: 14px; } .btn.r2 { right: 58px; }
+  .btn.wide { width: 82px; right: 14px; justify-content: space-around; padding: 0 6px; }
+  .mid { position: absolute; top: 48px; left: 0; right: 0; text-align: center; font-weight: 700; font-size: 15px; }
+  .big { position: absolute; left: 18px; right: 18px; font-size: 30px; font-weight: 800; color: var(--forest); letter-spacing: -.3px; }
+  .h2 { position: absolute; left: 18px; right: 18px; display: flex; justify-content: space-between; align-items: center; }
+  .h2 b { font-size: 19px; font-weight: 500; color: var(--forest); }
+  .chip { background: var(--forest); color: #fff; font-weight: 700; font-size: 13px; padding: 6px 12px; border-radius: 16px; }
+  .card { position: absolute; left: 14px; right: 14px; background: var(--card); border: 1px solid var(--divider); border-radius: 18px; padding: 12px 14px; }
+  .card .ln { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--divider); color: var(--text); }
+  .card .ln:last-child { border-bottom: 0; }
+  .card .ln span:last-child { color: var(--muted); }
+  .dark { background: var(--forest); color: #fff; border: 0; border-radius: 20px; }
+  .tabs { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; gap: 8px; align-items: center; }
+  .tabs .pill { flex: 1; height: 46px; border-radius: 23px; background: var(--glass); border: 1px solid rgba(255,255,255,.8); display: flex; justify-content: space-around; align-items: center; font-size: 10px; backdrop-filter: blur(12px); }
+  .tabs .circ { width: 46px; height: 46px; border-radius: 23px; background: var(--glass); border: 1px solid rgba(255,255,255,.8); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .pillt { position: absolute; top: 44px; left: 50%; transform: translateX(-50%); background: var(--glass); border: 1px solid rgba(255,255,255,.8); border-radius: 18px; padding: 8px 16px; font-weight: 600; color: var(--forest); backdrop-filter: blur(12px); }
+  .bad { position: absolute; top: 48px; left: 0; right: 0; text-align: center; font-weight: 700; font-size: 15px; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 10px; margin-right: 6px; }
+  .tag.k { background: #e3ecc9; color: #3f5a1a; } .tag.x { background: #f3d9cf; color: #8a2f17; }
+  .dim { position:absolute; left:14px; font-size:10px; color:#c8472b; }
+  hr { border: 0; border-top: 2px dashed #b9bfae; margin: 34px 0 22px; }
+  h2 { font-size: 18px; margin-bottom: 4px; }
+  .rules { display: flex; gap: 22px; margin-top: 18px; font-size: 13.5px; line-height: 1.5; }
+  .rules div { width: 330px; } .rules h3 { font-size: 14px; margin-bottom: 3px; } ul { padding-left: 16px; }
+</style>
+</head>
+<body>
+<h1>En-têtes cohérents (OA-21, OA-68)</h1>
+<div class="sub">Trois types d'en-tête, pas plus. Partout : boutons de verre sans contour, 44 pt de zone tactile, mêmes marges (14 pt), jamais deux titres sur un même écran.</div>
+
+<!-- ================= PLANCHE 1 ================= -->
+<div class="row">
+  <div class="col">
+    <div class="label"><span class="tag k">Type 1</span>Racine</div>
+    <div class="note">Accueil, Mes Relevés, Explorer. Titre ou accroche à gauche dessiné par la page, une seule action de verre à droite, <b>à la même place</b> d'un écran à l'autre. Inchangé.</div>
+    <div class="phone">
+      <div class="status">9:41</div>
+      <div class="btn r">◐</div>
+      <div class="big" style="top:44px">Mes Relevés</div>
+      <div class="card" style="top:104px;height:70px;display:flex;gap:10px;background:transparent;border:0;padding:0"><div style="flex:1;background:#fff;border:1px solid var(--divider);border-radius:16px;padding:10px 12px"><b style="font-size:24px;font-weight:400;color:var(--forest)">4</b><br>relevés au total</div><div style="flex:1;background:#fff;border:1px solid var(--divider);border-radius:16px;padding:10px 12px"><b style="font-size:24px;font-weight:400;color:var(--forest)">4</b><br>à terminer</div></div>
+      <div class="card" style="top:200px;height:80px"><b>Test OB</b><br><span style="color:var(--muted)">Brouillon · 6 oct.</span></div>
+      <div class="tabs"><div class="pill"><span>Accueil</span><span>Mes Relevés</span><span>Explorer</span></div><div class="circ">⌕</div></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="label"><span class="tag k">Type 2</span>Sous-page, page longue</div>
+    <div class="note">Compte, Paramètres, Cartes hors ligne. Retour de verre, <b>un seul</b> grand titre à gauche, actions de verre à droite. Plus de titre natif centré en plus.</div>
+    <div class="phone">
+      <div class="status">9:41</div>
+      <div class="btn l">‹</div><div class="btn r">⚙</div>
+      <div class="big" style="top:96px">Compte</div>
+      <div class="card" style="top:156px"><div class="ln"><span>Prénom</span><span>Marie</span></div><div class="ln"><span>Nom</span><span>Lepont</span></div><div class="ln"><span>Nom d'affichage</span><span>Marie Lepont</span></div></div>
+      <div class="card" style="top:300px"><div class="ln"><span>Email</span><span>marie@…</span></div><div class="ln"><span>Mot de passe</span><span>Réinitialiser ›</span></div></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="label"><span class="tag k">Type 2</span>Sous-page, page de saisie</div>
+    <div class="note">Relevé, Contexte, Score, Facteurs. Retour de verre, <b>pas de titre centré</b> : la page porte le sien, avec le total à droite. Le facteur : nom et total, la barre A à J dit la lettre.</div>
+    <div class="phone">
+      <div class="status">9:41</div>
+      <div class="btn l">‹</div>
+      <div class="h2" style="top:92px"><b style="font-size:21px">Dendromicrohabitats</b><span class="chip">2 / 50</span></div>
+      <div class="card" style="top:140px;height:96px"><span style="color:var(--muted)">Arbres par ha *</span><div style="margin-top:8px;height:38px;border:1.5px solid #8a8f80;border-radius:14px;background:#f3f1ea"></div></div>
+      <div class="card" style="top:250px;background:#e8e6d8;border:0;display:flex;justify-content:space-between"><span>Remplissez tous les champs…</span><span style="color:var(--muted)">En attente</span></div>
+      <div class="tabs" style="bottom:66px"><div class="pill" style="height:40px;justify-content:space-around;font-weight:700;color:var(--muted)"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span style="background:var(--forest);color:#fff;width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center">F</span><span>G</span><span>H</span><span>I</span><span>J</span></div><div class="circ" style="background:var(--forest);color:#fff;width:40px;height:40px">→</div></div>
+      <div class="tabs"><div class="pill"><span>Accueil</span><span>Mes Relevés</span><span>Explorer</span></div><div class="circ">⌕</div></div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="label"><span class="tag k">Type 3</span>Plein écran</div>
+    <div class="note">Carte de parcelle, assistant de relevé, Explorer. En-tête transparent, contrôles de verre qui flottent sur le contenu, titre en pastille de verre quand il en faut un. Inchangé.</div>
+    <div class="phone map">
+      <div class="status">9:41</div>
+      <div class="btn l">‹</div><div class="pillt">Parcelles</div><div class="btn r">◍</div><div class="btn r" style="top:86px">➤</div>
+      <div class="card" style="top:380px;height:100px;background:rgba(250,250,244,.8);backdrop-filter:blur(14px)"><b style="font-size:16px">1 parcelle sélectionnée</b><div style="margin-top:12px;background:var(--forest);color:#fff;border-radius:22px;text-align:center;padding:10px">Terminé</div></div>
+      <div class="tabs"><div class="pill"><span>Accueil</span><span>Mes Relevés</span><span>Explorer</span></div><div class="circ">⌕</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="rules">
+  <div><h3>Ce qui ne bouge pas</h3><ul><li>Les surfaces pleines (cartes, liste de facteurs, chiffres de Mes Relevés) restent opaques : elles se lisent mieux.</li><li>Pas de nouvel effet : on harmonise le verre existant (OA-68).</li></ul></div>
+  <div><h3>Règle unique</h3><ul><li>Titre natif : toujours masqué quand la page dessine le sien (le bug « Compte » deux fois, comme OA-109).</li><li>Un bouton d'en-tête = 44 pt, verre sans contour, 14 pt du bord.</li></ul></div>
+  <div><h3>Hors lot</h3><ul><li>Mode sombre.</li><li>La police (OA-05), traitée juste après.</li></ul></div>
+</div>
+
+<hr>
+
+<!-- ================= PLANCHE 2 : AVANT / APRÈS ================= -->
+<h2>Les écrans qui changent</h2>
+<div class="sub" style="margin-bottom:12px">Trois écrans touchés : le titre en double de Compte, de Paramètres et de Cartes hors ligne, le « Facteur F » centré des facteurs, et les sous-pages du relevé.</div>
+<div class="row">
+  <div class="col">
+    <div class="label"><span class="tag x">Avant</span>Compte</div>
+    <div class="note">« Compte » deux fois : titre natif centré <i>et</i> grand titre.</div>
+    <div class="phone" style="height:380px">
+      <div class="status">9:41</div><div class="btn l">‹</div><div class="bad">Compte</div><div class="btn r">⚙</div>
+      <div class="big" style="top:96px">Compte</div>
+      <div class="card" style="top:156px"><div class="ln"><span>Prénom</span><span>Marie</span></div><div class="ln"><span>Nom</span><span>Lepont</span></div></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="label"><span class="tag k">Après</span>Compte et Paramètres</div>
+    <div class="note">Un seul titre : le grand titre à gauche, le centre est vide. Idem pour Cartes hors ligne.</div>
+    <div class="phone" style="height:380px">
+      <div class="status">9:41</div><div class="btn l">‹</div><div class="btn r">⚙</div>
+      <div class="big" style="top:96px">Compte</div>
+      <div class="card" style="top:156px"><div class="ln"><span>Prénom</span><span>Marie</span></div><div class="ln"><span>Nom</span><span>Lepont</span></div></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="label"><span class="tag x">Avant</span>Facteur F</div>
+    <div class="note">« Facteur F » au centre, puis le nom du facteur : deux lignes pour une information, que la barre A à J donne déjà.</div>
+    <div class="phone" style="height:380px">
+      <div class="status">9:41</div><div class="btn l">‹</div><div class="bad">Facteur F</div>
+      <div class="h2" style="top:100px"><b>Dendromicrohabitats</b><span class="chip">2 / 50</span></div>
+      <div class="card" style="top:150px;height:96px"><span style="color:var(--muted)">Arbres par ha *</span><div style="margin-top:8px;height:38px;border:1.5px solid #8a8f80;border-radius:14px;background:#f3f1ea"></div></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="label"><span class="tag k">Après</span>Facteur F</div>
+    <div class="note">Le nom du facteur passe en haut à la place du titre centré, avec le total : la page gagne une ligne.</div>
+    <div class="phone" style="height:380px">
+      <div class="status">9:41</div><div class="btn l">‹</div>
+      <div class="h2" style="top:92px"><b style="font-size:21px">Dendromicrohabitats</b><span class="chip">2 / 50</span></div>
+      <div class="card" style="top:140px;height:96px"><span style="color:var(--muted)">Arbres par ha *</span><div style="margin-top:8px;height:38px;border:1.5px solid #8a8f80;border-radius:14px;background:#f3f1ea"></div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

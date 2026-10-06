@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
+import { PageTitle } from "../ui/PageTitle"
 import { Ionicons } from "@expo/vector-icons"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -11,7 +12,7 @@ import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { fr } from "../i18n"
 import type { OfflineAreaSummary } from "../storage/offline-map"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
-import { createAccountStyles, createPageTitleStyles } from "./account/styles"
+import { createAccountStyles } from "./account/styles"
 
 const t = fr.offlineMap.areas
 const manage = t.manage
@@ -28,7 +29,6 @@ type OfflineAreasScreenProps = {
 export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createAccountStyles(theme), [theme])
-  const titleStyles = useMemo(() => createPageTitleStyles(theme), [theme])
   const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
@@ -93,9 +93,7 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
       contentInsetAdjustmentBehavior="never"
       automaticallyAdjustContentInsets={false}
     >
-      <Text style={titleStyles.pageTitle} accessibilityRole="header">
-        {manage.title}
-      </Text>
+      <PageTitle>{manage.title}</PageTitle>
       {areas.length === 0 ? (
         <View>
           <Text style={[rowStyles.meta, { color: theme.colors.textSecondary }]}>

@@ -83,17 +83,6 @@ export function createIdentityStyles(theme: BrandTheme) {
 
 // The big page titles ("Compte", "Paramètres", "Cartes hors ligne") sit in the content under the
 // transparent header, like the other tabs' large titles.
-export function createPageTitleStyles(theme: BrandTheme) {
-  return StyleSheet.create({
-    pageTitle: {
-      fontSize: 34,
-      lineHeight: 40,
-      fontWeight: "800",
-      color: theme.semanticColors.textStrong,
-    },
-  })
-}
-
 // The profile fields, as rows of the grouped list (label left, editable value right).
 export function createProfileRowStyles(theme: BrandTheme) {
   return StyleSheet.create({

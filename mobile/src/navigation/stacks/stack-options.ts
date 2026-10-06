@@ -23,3 +23,13 @@ export function createBaseStackScreenOptions(theme: BrandTheme) {
         }),
   }
 }
+
+/**
+ * OA-21: the screen draws its own title, so the native one is hidden. `headerTitle: () => null` is
+ * not enough on iOS (the native title is still drawn from `title`, OA-109, doubled "Compte"), so it
+ * is made invisible too. `title` stays for the back button and accessibility.
+ */
+export const hiddenNativeTitle = {
+  headerTitle: () => null,
+  headerTitleStyle: { color: "transparent" },
+} as const

@@ -2,6 +2,8 @@ import { useEffect, useMemo } from "react"
 import { Platform, RefreshControl, ScrollView } from "react-native"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useBrandTheme } from "../app/theme"
+import { fr } from "../i18n"
+import { PageTitle } from "../ui/PageTitle"
 import { EventsTab } from "./survey-detail/EventsTab"
 import { HistorySection } from "./survey-detail/HistorySection"
 import { type SurveyHistoryScreenProps } from "./survey-detail/screen-props"
@@ -50,6 +52,7 @@ export function SurveyHistoryScreen({
         />
       }
     >
+      <PageTitle>{fr.navigation.headers.surveyHistory}</PageTitle>
       <EventsTab
         events={surveyEvents[selectedSurvey.id] ?? []}
         isLoading={isLoading}
