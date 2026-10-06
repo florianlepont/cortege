@@ -293,6 +293,20 @@ export const brandTranslucentPanel = {
 // Phase 4 (DS-04): dark solid backdrop behind full-screen media/map surfaces before content loads.
 export const brandMediaBackdrop = "#132434"
 
+// Phase 12.2 (DS-04 follow-up): the last colour literals found outside the tokens file by the
+// lint rule once it covered `src/ui`, `src/screens`, `src/components` and `src/navigation`.
+export const brandOverlayTokens = {
+  /** Deep forest strip under the factor letters of the survey form. */
+  factorStripBackground: "rgba(14, 34, 16, 0.92)",
+  /** Dimmed backdrop behind an action sheet. */
+  actionSheetScrim: "rgba(15, 22, 12, 0.4)",
+  /** Glass fill over a dark and over a light surface. */
+  glassFillDark: "rgba(8, 13, 19, 0.38)",
+  glassFillLight: "rgba(247, 246, 240, 0.38)",
+  /** Close icon on the parcel history card. */
+  closeIcon: "#40654f",
+} as const
+
 /** The live camera screen (genus recognition): controls and hints drawn over the preview. */
 export const brandCameraTokens = {
   controlBackground: "rgba(15, 22, 12, 0.55)",

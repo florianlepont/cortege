@@ -2,6 +2,7 @@ import { ReactNode } from "react"
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { BlurView } from "expo-blur"
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect"
+import { brandOverlayTokens } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 
 type GlassSurfaceTone = "auto" | "dark"
@@ -70,7 +71,11 @@ export function GlassSurface({
       <View
         style={[
           StyleSheet.absoluteFill,
-          { backgroundColor: isDark ? "rgba(8, 13, 19, 0.38)" : "rgba(247, 246, 240, 0.38)" },
+          {
+            backgroundColor: isDark
+              ? brandOverlayTokens.glassFillDark
+              : brandOverlayTokens.glassFillLight,
+          },
         ]}
       />
       {children}

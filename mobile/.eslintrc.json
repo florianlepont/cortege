@@ -77,6 +77,14 @@
             "message": "Use the French catalogue in src/i18n (phase 01.9 D-06)"
           },
           {
+            "selector": "Literal[value=/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
+            "message": "Hex colors live in app/brand-tokens.ts only (phase 4 DS-04)"
+          },
+          {
+            "selector": "Literal[value=/^rgba?\\(/]",
+            "message": "rgb()/rgba() colors live in app/brand-tokens.ts only (phase 4 DS-04)"
+          },
+          {
             "selector": "ImportSpecifier[imported.name='statusText']",
             "message": "Build status messages in src/i18n only (phase 01.9 D-06)"
           }
@@ -115,6 +123,14 @@
           {
             "selector": "JSXOpeningElement[name.name='Pressable']:not(:has(JSXAttribute[name.name='accessibilityLabel']))",
             "message": "Pressable needs accessibilityLabel from the catalogue (phase 01.9 D-07)"
+          },
+          {
+            "selector": "Literal[value=/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
+            "message": "Hex colors live in app/brand-tokens.ts only (phase 4 DS-04)"
+          },
+          {
+            "selector": "Literal[value=/^rgba?\\(/]",
+            "message": "rgb()/rgba() colors live in app/brand-tokens.ts only (phase 4 DS-04)"
           },
           {
             "selector": "ImportSpecifier[imported.name='statusText']",

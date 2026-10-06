@@ -40,14 +40,14 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [ ] **REQ-A-signup** — Contributor creates an account with email + password, with validation, verification and actionable errors. *(Built — `BUG-A3-4` open: duplicate email shows a generic Auth0 error)*
 - [x] **REQ-A-profile** — Contributor views and edits first name, last name, display name and profile picture (camera or gallery). *(Built)*
 - [ ] **REQ-A-forgot-password** — Contributor requests a reset link, single-use and expiring after 24 h. *(Built — `BUG-A6-2` open: reset email lands in spam, an Auth0 tenant setting)*
-- [ ] **REQ-A-delete-account** — Contributor deletes the account irreversibly; personal data erased, submitted surveys anonymised and retained. *(Partial — API (`DELETE /me`) built and correct; no mobile entry point exists. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
+- [x] **REQ-A-delete-account** — Contributor deletes the account irreversibly; personal data erased, submitted surveys anonymised and retained. *(Partial — API (`DELETE /me`) built and correct; no mobile entry point exists. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
 
 ### B — Survey Preparation
 
 - [x] **REQ-B-survey-list** — Contributor sees their surveys with parcel ids, name, last update, version, status and completion rate; filterable by status and date; visible offline. *(Built)*
-- [ ] **REQ-B-survey-detail** — Contributor sees survey detail with submission deadline, completion rate, previous surveys on the same parcel, and IBP total + factor-level deltas against previous versions. *(Partial — the parcel-history API (`GET /parcels/:parcelId/surveys/history`) exists but no mobile screen calls it. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
+- [x] **REQ-B-survey-detail** — Contributor sees survey detail with submission deadline, completion rate, previous surveys on the same parcel, and IBP total + factor-level deltas against previous versions. *(Partial — the parcel-history API (`GET /parcels/:parcelId/surveys/history`) exists but no mobile screen calls it. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
 - [x] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone — every submitted survey is visible by default to every authenticated association member.** *(Built — Phase 10 verified the delete/confirmation flow was already complete; corrected from "Partial", which described the Phase 2 visibility-toggle removal, not this flow)*
-- [ ] **REQ-B-own-surveys-map** — The map screen requires authentication and shows the surveys submitted by any association member — not an anonymous public set, and not only the contributor's own. `PublicMapScreen` and its navigation are kept; only the data source and the auth requirement change. `GET /public/map-items` and `GET /public/parcels/status` require authentication instead of staying open. *(New — redefined 2026-09-27 from "own surveys" to "members' surveys"; created by this milestone)*
+- [x] **REQ-B-own-surveys-map** — The map screen requires authentication and shows the surveys submitted by any association member — not an anonymous public set, and not only the contributor's own. `PublicMapScreen` and its navigation are kept; only the data source and the auth requirement change. `GET /public/map-items` and `GET /public/parcels/status` require authentication instead of staying open. *(New — redefined 2026-09-27 from "own surveys" to "members' surveys"; created by this milestone)*
 
 ### C — IBP Survey Data Entry
 
@@ -137,9 +137,9 @@ loss, no duplicates — or that expose accounts run first (Phases 1.2–1.5), th
 - [x] **REQ-AUD-db-tuning** — Public-surveys partial index, generated centroid columns with a btree index (no PostGIS), migration advisory lock, dead `auth_sessions` tables dropped. *(Audit efficiency findings, ARCH-7. Remainder of lot L16)*
 - [x] **REQ-AUD-ibp-domain** — A shared `ibp-domain` workspace package holds the IBP rules and sync contract types used by both API and mobile, verified by one parity fixture. *(Audit ARCH-1, T6. Lot L17)*
 - [x] **REQ-AUD-test-infra-rest** — The RS256 path of `AuthGuard` is tested against a local JWKS; the catch-all E2E suite is split by feature and uses random UUIDs. *(Audit T2, T5. Remainder of lot L7)*
-- [ ] **REQ-AUD-mobile-state** — Memoised contexts replace the prop funnel; the survey list is virtualised; completion is precomputed; screens are split under 400 lines; unused styles are removed; navigation is typed; the map requests by bbox and clusters markers. *(Audit ARCH-4 and mobile efficiency findings. Lot L18)*
-- [ ] **REQ-AUD-i18n-a11y** — Every user-facing string comes from a French i18n catalogue, status messages are user-facing, and interactive elements carry accessibility roles and labels. *(Audit i18n and accessibility findings. Lot L19)*
-- [ ] **REQ-AUD-hygiene** — Root package, tsconfig and unused dependencies cleaned up; `CLAUDE.md` and technical docs match the code; the audit links each finding to its closing PR. *(Audit ARCH-7, ARCH-8. Remainder of lot L20)*
+- [x] **REQ-AUD-mobile-state** — Memoised contexts replace the prop funnel; the survey list is virtualised; completion is precomputed; screens are split under 400 lines; unused styles are removed; navigation is typed; the map requests by bbox and clusters markers. *(Audit ARCH-4 and mobile efficiency findings. Lot L18)*
+- [x] **REQ-AUD-i18n-a11y** — Every user-facing string comes from a French i18n catalogue, status messages are user-facing, and interactive elements carry accessibility roles and labels. *(Audit i18n and accessibility findings. Lot L19)*
+- [x] **REQ-AUD-hygiene** — Root package, tsconfig and unused dependencies cleaned up; `CLAUDE.md` and technical docs match the code; the audit links each finding to its closing PR. *(Audit ARCH-7, ARCH-8. Remainder of lot L20)*
 
 ## Cross-Cutting Business Rules
 

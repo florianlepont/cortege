@@ -447,7 +447,7 @@ Cette section relie chaque constat à la phase de remédiation qui le traite et 
 | [ARCH-6](#arch-6) | Ordre du flux `/sync/changes` et cas B | 01.6 | [#154](https://github.com/florianlepont/cortege/pull/154) |
 | [ARCH-7](#arch-7) | Hygiène : `REFRESH_TOKEN_SECRET`, tables `auth_sessions`, verrou de migration | 01.7 | [#156](https://github.com/florianlepont/cortege/pull/156) |
 | [ARCH-7](#arch-7) | Hygiène : `App.tsx` et dépendances racine, dépendances inutiles, bibliothèques d'onglets | 01.9 | [#159](https://github.com/florianlepont/cortege/pull/159) |
-| [ARCH-8](#arch-8) | `CLAUDE.md` obsolète | 01.9-32 | closing PR of plan 01.9-32 (see `01.9-VALIDATION.md`, "Closing plan (01.9-32)"; this sweep could only run after phase 01.8 merged in #162) |
+| [ARCH-8](#arch-8) | `CLAUDE.md` obsolète | 01.9-32 | #167 (closing plan 01.9-32, see `01.9-VALIDATION.md`; ran after phase 01.8 merged in #162) |
 | [A-C1](#a-c1) | Limite de débit globale partagée | 01.2 | [#125](https://github.com/florianlepont/cortege/pull/125), [#129](https://github.com/florianlepont/cortege/pull/129) |
 | [A-H1](#a-h1) | Liaison de compte par e-mail non vérifié | 01.2 | [#126](https://github.com/florianlepont/cortege/pull/126), [#129](https://github.com/florianlepont/cortege/pull/129) |
 | [A-H2](#a-h2) | `/sync` non validé, contournement de la soumission | 01.4 | [#145](https://github.com/florianlepont/cortege/pull/145) |
