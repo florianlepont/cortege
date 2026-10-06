@@ -45,6 +45,8 @@
     "@bottom-tabs/react-navigation": {
       "color": "^4.2.3"
     },
-    "http-cache-semantics": "^4.3.0"
+    "http-cache-semantics": "^4.3.0",
+    "proxy-addr": "^2.0.8",
+    "source-map-js": "^1.2.2"
   }
 }
