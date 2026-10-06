@@ -39,10 +39,19 @@ function SheetBackground({ style, pointerEvents }: BottomSheetBackgroundProps) {
 
 export function ExplorerSheet({ visible, onDismiss, children }: ExplorerSheetProps) {
   const sheetRef = useRef<BottomSheet>(null)
+  // A sheet that is already wanted when the screen mounts (a survey opened from its page, OA-59)
+  // starts open through the initial index: asking it to snap before its first layout leaves it
+  // stuck at the bottom of the screen.
+  const initialIndex = useRef(visible ? 0 : -1).current
+  const mountedRef = useRef(false)
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
 
   useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true
+      return
+    }
     if (visible) {
       sheetRef.current?.snapToIndex(0)
     } else {
@@ -62,8 +71,11 @@ export function ExplorerSheet({ visible, onDismiss, children }: ExplorerSheetPro
   return (
     <BottomSheet
       ref={sheetRef}
-      index={-1}
+      index={initialIndex}
       snapPoints={SNAP_POINTS}
+      // Version 5 sizes a sheet to its content by default, which adds a snap point below the two
+      // below and opens a sheet of a few points at the bottom of the screen.
+      enableDynamicSizing={false}
       enablePanDownToClose
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"

@@ -31,6 +31,12 @@ const offlineT = fr.offlineMap.areas
 const LOCATE_SPAN = 0.012
 const NO_DRAFTS: PublicMapItem[] = []
 
+/** The region that shows a survey, centred a little north of it so its marker clears the sheet. */
+function focusRegion(focus: PublicMapFocus): MapRegion {
+  const target = buildFocusedMapRegion(focus)
+  return { ...target, latitude: target.latitude - target.latitudeDelta * 0.22 }
+}
+
 type PublicMapScreenProps = {
   apiUrl: string
   accessToken: string | null
@@ -148,22 +154,21 @@ export function PublicMapScreen({
     setSelectedParcelId(null)
     setClusterItems(leaves)
   }, [])
-  const { moveTo } = viewport
+  const { moveTo, focusTo } = viewport
 
-  // OA-59: "Voir sur la carte" lands here with a survey to show. The camera goes there at once; the
-  // survey is selected as soon as it is among the markers (a public one arrives with the viewport
-  // load that the move triggers).
+  // OA-59: "Voir sur la carte" lands here with a survey to show. A screen opened for it starts the
+  // camera there; one already open moves there. The survey is selected as soon as it is among the
+  // markers (a public one arrives with the viewport load that the move triggers).
+  const initialRegion = useRef(focus ? focusRegion(focus) : undefined).current
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null)
   const focusNonce = focus?.nonce
   useEffect(() => {
     if (!focus) return
     setPendingFocusId(focus.surveyId)
-    // Centred a little north of the survey, so its marker stays above the sheet that opens.
-    const target = buildFocusedMapRegion(focus)
-    moveTo({ ...target, latitude: target.latitude - target.latitudeDelta * 0.22 }, 0)
+    focusTo(focusRegion(focus), 0)
     // The nonce identifies one request; the focus object itself is rebuilt by the navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusNonce, moveTo])
+  }, [focusNonce, focusTo])
   useEffect(() => {
     if (!pendingFocusId) return
     const item = itemsById.get(pendingFocusId)
@@ -276,6 +281,7 @@ export function PublicMapScreen({
         cameraRef={cameraRef}
         items={mapItems}
         draftIds={draftIdSet}
+        initialRegion={initialRegion}
         region={viewport.region}
         selectedId={selectedItem?.survey_id ?? null}
         parcelStatuses={parcelStatuses}
