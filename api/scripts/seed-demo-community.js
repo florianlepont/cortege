@@ -13,6 +13,7 @@
  *
  * Needs the built shared package (`npm run build:domain`) for the IBP scores, and the usual
  * POSTGRES_* variables (a production run: inside the API container, see infra/vps/README.md).
+ * It also needs at least one parcel in the database: it adds surveys on existing parcels only.
  */
 const path = require('path')
 const { Client } = require('pg')
