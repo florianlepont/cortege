@@ -201,7 +201,7 @@ function createStyles(theme: BrandTheme) {
       flex: 1,
       fontSize: 20,
       lineHeight: 24,
-      fontFamily: "Sora_700Bold",
+      fontFamily: "Sora-Bold",
       color: theme.semanticColors.textStrong,
     },
     totalChip: {

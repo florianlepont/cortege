@@ -22,7 +22,7 @@ export function createScoreStyles(theme: BrandTheme) {
       gap: 6,
     },
     totalValue: {
-      fontFamily: "Sora_700Bold",
+      fontFamily: "Sora-Bold",
       fontSize: 44,
       lineHeight: 48,
       color: theme.colors.white,
@@ -47,7 +47,7 @@ export function createScoreStyles(theme: BrandTheme) {
     },
     subScoreValue: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost_600SemiBold",
+      fontFamily: "Jost-SemiBold",
       color: theme.colors.white,
     },
     track: {
@@ -100,7 +100,7 @@ export function createScoreStyles(theme: BrandTheme) {
       backgroundColor: theme.colors.errorSoft,
     },
     badgeText: {
-      fontFamily: "Sora_700Bold",
+      fontFamily: "Sora-Bold",
       fontSize: 14,
       color: theme.semanticColors.textStrong,
     },
@@ -118,16 +118,16 @@ export function createScoreStyles(theme: BrandTheme) {
     },
     rowPoints: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost_600SemiBold",
+      fontFamily: "Jost-SemiBold",
       color: theme.colors.textPrimary,
     },
     rowPointsMax: {
-      fontFamily: "Jost_400Regular",
+      fontFamily: "Jost-Regular",
       color: theme.colors.textSecondary,
     },
     rowPending: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost_500Medium",
+      fontFamily: "Jost-Medium",
       color: theme.onSurface.danger,
     },
     hint: {

@@ -50,63 +50,69 @@ export const brandFontFamilies = {
 } as const
 
 // Typography tokens with the embedded stand-in fonts wired in. Each role names a concrete weighted
-// font file (e.g. `Sora_800ExtraBold`) rather than a family + numeric `fontWeight`: these are static
+// font file (e.g. `Sora-ExtraBold`) rather than a family + numeric `fontWeight`: these are static
 // per-weight font files, and pairing a specific file with a numeric `fontWeight` risks Android
 // synthesizing a different weight on top of it. Sora ships no 900 cut, so the two roles that want a
-// 900 weight (`heroTitle`, `sectionTitle`) use its heaviest, `Sora_800ExtraBold`.
+// 900 weight (`heroTitle`, `sectionTitle`) use its heaviest, `Sora-ExtraBold`.
+//
+// OA-05: the file name IS the font's PostScript name. iOS looks a font up by that internal name and
+// Android by the file name, so with the two equal one string serves both. A file named differently
+// (the old `Sora_800ExtraBold.ttf`) is not found on iOS, which then silently falls back to the system
+// font in a normal weight. `src/__checks__/fonts.test.ts` reads the name inside each file and checks
+// it against this file and `app.json`.
 export const brandTypography = {
   heroEyebrow: {
     fontSize: 12,
     lineHeight: 14,
-    fontFamily: "Jost_600SemiBold",
+    fontFamily: "Jost-SemiBold",
     letterSpacing: 1.2,
   },
   heroTitle: {
     fontSize: 34,
     lineHeight: 38,
-    fontFamily: "Sora_800ExtraBold",
+    fontFamily: "Sora-ExtraBold",
   },
   heroBody: {
     fontSize: 15,
     lineHeight: 21,
-    fontFamily: "Sora_500Medium",
+    fontFamily: "Sora-Medium",
   },
   sectionTitle: {
     fontSize: 28,
     lineHeight: 31,
-    fontFamily: "Sora_800ExtraBold",
+    fontFamily: "Sora-ExtraBold",
   },
   sectionBody: {
     fontSize: 14,
     lineHeight: 20,
-    fontFamily: "Sora_500Medium",
+    fontFamily: "Sora-Medium",
   },
   label: {
     fontSize: 13,
     lineHeight: 16,
-    fontFamily: "Sora_800ExtraBold",
+    fontFamily: "Sora-ExtraBold",
     letterSpacing: 0.2,
   },
   input: {
     fontSize: 16,
     lineHeight: 20,
-    fontFamily: "Sora_600SemiBold",
+    fontFamily: "Sora-SemiBold",
   },
   button: {
     fontSize: 16,
     lineHeight: 20,
-    fontFamily: "Sora_700Bold",
+    fontFamily: "Sora-Bold",
   },
   meta: {
     fontSize: 12,
     lineHeight: 16,
-    fontFamily: "Jost_600SemiBold",
+    fontFamily: "Jost-SemiBold",
   },
 } as const
 
 // The default `<Text>` face for anything that does not spread a `brandTypography` role above —
 // applied once via `Text.defaultProps` in `App.tsx` so no screen is left in the OS default face.
-export const brandDefaultFontFamily = "Jost_400Regular"
+export const brandDefaultFontFamily = "Jost-Regular"
 
 // Phase 9 (DS-05, audit §5): an iOS-style typographic scale with a 12pt floor — every role here is
 // >= 12, unlike several of the 10-11pt literals it replaces at individual call sites. Additive next

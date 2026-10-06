@@ -216,20 +216,20 @@ reversible substitution: `brandFontFamilies` in `mobile/src/app/brand-tokens.ts`
 real `preferred` name next to the `standIn` actually rendered, so swapping in Mazzard H later is a
 token-file change, not a design decision.
 
-`brandTypography` roles name a concrete embedded font file rather than a family + numeric
+`brandTypography` roles name a concrete embedded font file (its file name is its PostScript name: iOS finds a font by that internal name, Android by the file name, so the two must match, `mobile/src/__checks__/fonts.test.ts`, OA-05) rather than a family + numeric
 `fontWeight` (static per-weight files risk Android re-synthesizing a different weight on top of the
 one already baked into the file):
 
 | Role | Embedded file |
 |------|---------------|
-| `heroTitle`, `sectionTitle` | `Sora_800ExtraBold` (Sora ships no 900 cut) |
-| `heroBody`, `sectionBody` | `Sora_500Medium` |
-| `label` | `Sora_800ExtraBold` |
-| `input` | `Sora_600SemiBold` |
-| `button` | `Sora_700Bold` |
-| `heroEyebrow`, `meta` | `Jost_600SemiBold` |
+| `heroTitle`, `sectionTitle` | `Sora-ExtraBold` (Sora ships no 900 cut) |
+| `heroBody`, `sectionBody` | `Sora-Medium` |
+| `label` | `Sora-ExtraBold` |
+| `input` | `Sora-SemiBold` |
+| `button` | `Sora-Bold` |
+| `heroEyebrow`, `meta` | `Jost-SemiBold` |
 
-`brandDefaultFontFamily` (`Jost_400Regular`) is the fallback for any `<Text>` that doesn't spread a
+`brandDefaultFontFamily` (`Jost-Regular`) is the fallback for any `<Text>` that doesn't spread a
 `brandTypography` role. Since React Native's `Text` has no `defaultProps` to patch in this RN version
 (a plain function component, not a class), `mobile/src/ui/AppText.tsx` is the mechanism instead: it
 wraps RN's `Text` with the default font first in the style array (an explicit `fontFamily` from a

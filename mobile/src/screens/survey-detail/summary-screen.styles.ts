@@ -63,7 +63,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     },
     statusStrong: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost_600SemiBold",
+      fontFamily: "Jost-SemiBold",
       color: theme.colors.textPrimary,
     },
     statusMuted: {
@@ -91,7 +91,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       gap: 6,
     },
     scoreValue: {
-      fontFamily: "Sora_700Bold",
+      fontFamily: "Sora-Bold",
       fontSize: 40,
       lineHeight: 44,
       color: theme.colors.white,
@@ -191,7 +191,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     },
     mapChipText: {
       ...brandTypography.meta,
-      fontFamily: "Jost_600SemiBold",
+      fontFamily: "Jost-SemiBold",
       color: theme.semanticColors.textStrong,
     },
     mapAction: {
