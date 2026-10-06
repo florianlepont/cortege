@@ -69,7 +69,7 @@ describe("downloadAreaPacks", () => {
     expect(options).toMatchObject({ minZoom: 13, maxZoom: 17, bounds: [1, 46, 1.02, 46.02] })
   })
 
-  test("a native download error rejects", async () => {
+  test("a pack that stops before it is complete rejects with the last native error", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
       areaId: "a",
@@ -79,8 +79,45 @@ describe("downloadAreaPacks", () => {
     })
     await flush()
     const [pack] = offlineMocks.packs
-    offlineMocks.listeners.get(pack.id)!.error(pack, { id: pack.id, message: "network down" })
+    const listeners = offlineMocks.listeners.get(pack.id)!
+    listeners.progress(pack, { percentage: 10, completedTileCount: 4, state: "active" })
+    listeners.error(pack, { id: pack.id, message: "network down" })
+    listeners.progress(pack, { percentage: 10, completedTileCount: 4, state: "inactive" })
     await expect(done).rejects.toThrow("network down")
+  })
+
+  test("a stopped pack without any reported error still rejects", async () => {
+    const done = downloadAreaPacks({
+      documentDirectory: DOCS,
+      areaId: "a",
+      bounds: BOUNDS,
+      basemaps: ["map"],
+      onProgress: jest.fn(),
+    })
+    await flush()
+    const [pack] = offlineMocks.packs
+    const listeners = offlineMocks.listeners.get(pack.id)!
+    listeners.progress(pack, { percentage: 0, completedTileCount: 0, state: "active" })
+    listeners.progress(pack, { percentage: 0, completedTileCount: 0, state: "inactive" })
+    await expect(done).rejects.toThrow("stopped before it was complete")
+  })
+
+  test("a missing resource is not fatal: the download goes on and completes (IGN @2x sprite 404)", async () => {
+    const done = downloadAreaPacks({
+      documentDirectory: DOCS,
+      areaId: "a",
+      bounds: BOUNDS,
+      basemaps: ["map"],
+      onProgress: jest.fn(),
+    })
+    await flush()
+    const [pack] = offlineMocks.packs
+    const listeners = offlineMocks.listeners.get(pack.id)!
+    listeners.progress(pack, { percentage: 0, completedTileCount: 0, state: "inactive" })
+    listeners.progress(pack, { percentage: 5, completedTileCount: 2, state: "active" })
+    listeners.error(pack, { id: pack.id, message: "HTTP status code 404" })
+    listeners.progress(pack, { percentage: 100, completedTileCount: 40, state: "complete" })
+    await expect(done).resolves.toMatchObject({ complete: true, completedTileCount: 40 })
   })
 })
 
