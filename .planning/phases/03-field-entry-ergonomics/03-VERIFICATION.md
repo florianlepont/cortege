@@ -1,45 +1,21 @@
 ---
 phase: 03-field-entry-ergonomics
 verified: 2026-10-06T20:00:00Z
-status: gaps_found
-score: 4/7 must-haves verified
+status: passed
+score: 7/7 must-haves verified (3 through rewritten criteria)
 behavior_unverified: 0
-overrides_applied: 0
+overrides_applied: 1
 re_verification: false
-gaps:
-  - truth: "Autosave is visible (\"Enregistré · 14:32\") instead of implied by a \"Save draft\" label (criterion 5, second half)"
-    status: failed
-    reason: "Nothing renders the autosave status any more. FixedActionBar (the only consumer) was deleted by the OA-25 wizard rewrite (commit 626cb81). useEditingDraft still computes autosaveStatus and AppStateProvider still publishes it through AutosaveStatusProvider, but useAutosaveStatus has no consumer outside contexts.test.tsx, and fr.surveyForm.autosave.* strings are used nowhere. The old manual \"Enregistrer le brouillon\" label is gone too, so only the \"visible\" half is missing."
-    artifacts:
-      - path: "mobile/src/state/autosave-status-context.ts"
-        issue: "Provider mounted in AppStateProvider.tsx:444, hook never called by a screen"
-      - path: "mobile/src/i18n/fr/survey-form.ts"
-        issue: "autosave.saved/saving/failed/idle unused"
-    missing:
-      - "Render the autosave line somewhere the surveyor sees it while scoring (FactorPager title row, or the survey summary), or accept the removal with an override and delete the dead context, strings and the render-count pin"
-  - truth: "Fixed bottom bar, per-factor progress ring morphing into a check mark in the 2x5 grid, and a segmented total gauge visible from the first screen (criterion 4)"
-    status: partial
-    reason: "Fixed bottom CTA exists in the new design (FinishBar on the survey summary, the floating letter strip and next button in FactorPager). The 2x5 factor grid no longer exists: FactorTile (with its ring) is exported by survey-form/FactorsList.tsx but rendered nowhere; FactorProgressRing now only appears as a survey-level ring in SurveyRow. IbpTotalGauge is imported by nothing but its own test. The wizard (4 questions) shows no total. The running total shows only inside FactorPager (totalChip) and on the summary score card."
-    artifacts:
-      - path: "mobile/src/ui/IbpTotalGauge.tsx"
-        issue: "Orphaned: no importer except IbpTotalGauge.test.tsx"
-      - path: "mobile/src/screens/survey-form/FactorsList.tsx"
-        issue: "FactorTile/FactorsList component dead; only computeFactorProgress and the FactorProgress type are used"
-    missing:
-      - "Either restore a segmented gauge and per-factor ring where the surveyor scores, or override criterion 4 as superseded by OA-25/OA-40/OA-98 and delete IbpTotalGauge and the dead FactorTile"
-  - truth: "Parcel selection is also offered as a \"Parcels near you\" native sheet (criterion 6, second half)"
-    status: failed
-    reason: "NearbyParcelsSheet.tsx was deleted by the OA-25 wizard rewrite. SurveyParcelSelectionScreen has no nearby list. useNearbyParcelsState is now consumed only by HomeRoute (home NearbyMapCard), which is a map card, not a parcel-selection sheet. The catalogue module fr.nearbyParcelsSheet remains with no consumer."
-    artifacts:
-      - path: "mobile/src/i18n/fr/nearby-parcels-sheet.ts"
-        issue: "Orphaned catalogue section"
-      - path: "mobile/src/screens/SurveyParcelSelectionScreen.tsx"
-        issue: "No nearby-parcels entry point"
-    missing:
-      - "Reintroduce a nearby-parcels list on the parcel selection map, or override as superseded by the full-screen parcel map step of the wizard"
+overrides:
+  - truth: "Criteria 4, 5 and 6 as first written (progress ring and total gauge in the 2x5 grid, visible autosave line, nearby parcels sheet)"
+    reason: "Superseded by the new-survey wizard (OA-25, OA-40, OA-98). ROADMAP criteria rewritten by the owner on 2026-10-07; no code change."
+    accepted_by: owner
+    accepted_at: "2026-10-07"
 ---
 
 # Phase 3: Field-Entry Ergonomics Verification Report
+
+> **Update 2026-10-07:** the owner rewrote criteria 4, 5 and 6 in `ROADMAP.md` to match the wizard that replaced the original form (see `overrides` above). The findings below describe the code as verified on 2026-10-06; the orphaned `IbpTotalGauge`, `FactorTile`, autosave context and `fr.nearbyParcelsSheet` catalogue module remain as dead code, left untouched by decision.
 
 **Phase Goal:** Scoring a factor is a tap, not a typed number: a survey drops from about 80-90 interactions to about 35-45, with no keyboard for 80% of them.
 **Verified:** 2026-10-06, branch `claude/roadmap-seeds-16a6af` (after Phase 12.1)

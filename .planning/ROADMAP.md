@@ -401,9 +401,9 @@ Plans:
   1. A `FactorInput` component ships in four variants — counter (C/D/E), segmented control (H), checkable chips with a derived count (B/I/J), slider in 5% steps (B/G) — replacing every `keyboardType="numeric"` field in the ten factors.
   2. A factor's error state shows only after the field is left or submission is attempted, never on first open; empty, error and complete each have a distinct, non-alarming visual state.
   3. Factors are navigated through a horizontal pager (A→J) with a fixed footer pager control, instead of 20 round trips to the factor grid; a "next incomplete factor" shortcut exists.
-  4. A fixed bottom action bar carries the primary CTA; the 2×5 factor summary grid shows a progress ring per factor that morphs into a check mark, plus a segmented total gauge visible from the first screen, not only at the last step.
-  5. The decimal comma is accepted in every numeric entry point that remains; autosave is visible ("Enregistré · 14:32") instead of implied by a "Save draft" label that suggests a manual step.
-  6. The parcel map's selected/studied/free states use accessible, on-brand colors readable in direct sunlight, and parcel selection is also offered as a "Parcels near you" native sheet.
+  4. A fixed bottom bar carries the primary CTA (the finish bar of the survey summary, the floating letter strip and next button of the factor pager). *Rewritten 2026-10-07 (owner decision): the 2×5 factor grid with a progress ring per factor and the segmented total gauge were dropped by the new-survey wizard (OA-25, OA-40, OA-98); the running total shows in the factor pager and the survey list keeps a survey-level ring.*
+  5. The decimal comma is accepted in every numeric entry point that remains. *Rewritten 2026-10-07 (owner decision): the visible autosave line ("Enregistré · 14:32") is dropped; drafts still save automatically and the manual "Save draft" label is gone.*
+  6. The parcel map's selected/studied/free states use accessible, on-brand colors readable in direct sunlight. *Rewritten 2026-10-07 (owner decision): the "Parcels near you" native sheet is dropped; parcel selection is the full-screen parcel map step of the wizard, and the Home mini-map shows the parcels around.*
 
 **Plans**: 6 batches, executed and closed directly (no separate orchestrator/executor split for
 this phase) — see `.planning/phases/03-field-entry-ergonomics/03-CONTEXT.md` and its
