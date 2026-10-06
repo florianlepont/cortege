@@ -19,8 +19,44 @@ export function useAnimatedStyle<T>(factory: () => T): T {
   return factory()
 }
 
+let reducedMotion = false
+
+// Flips what the mocked `useReducedMotion()` returns, so a test can exercise every reduced-motion
+// branch. Tests import it by relative path (for example `../../test/react-native-reanimated.mock`):
+// Jest resolves that path to the same module instance as the mapped `react-native-reanimated`, so
+// the flag is shared. Reset it to false in `afterEach`.
+export function setReducedMotion(value: boolean): void {
+  reducedMotion = value
+}
+
 export function useReducedMotion(): boolean {
-  return false
+  return reducedMotion
+}
+
+export function useAnimatedProps<T>(factory: () => T): T {
+  return factory()
+}
+
+export function useDerivedValue<T>(factory: () => T): SharedValue<T> {
+  return { value: factory() }
+}
+
+export function withDelay<T>(_delayMs: number, animation: T): T {
+  return animation
+}
+
+export function withSequence<T>(...animations: T[]): T {
+  return animations[animations.length - 1]
+}
+
+export function useAnimatedReaction(): void {}
+
+export function interpolateColor(_value: number, _input: number[], output: string[]): string {
+  return output[output.length - 1]
+}
+
+export function runOnJS<F>(fn: F): F {
+  return fn
 }
 
 export function withSpring<T>(toValue: T): T {
@@ -77,6 +113,9 @@ function createChainableBuilder(): ChainableBuilder {
 }
 
 export const FadeIn = createChainableBuilder()
+export const FadeInDown = createChainableBuilder()
+export const FadeInUp = createChainableBuilder()
+export const ZoomIn = createChainableBuilder()
 export const FadeOut = createChainableBuilder()
 export const LinearTransition = createChainableBuilder()
 export const SlideInDown = createChainableBuilder()
