@@ -1,5 +1,5 @@
 ---
-id: SEED-001
+id: SEED-003
 status: dormant
 planted: 2026-10-06
 planted_during: Phase 11 (Durable Backend) / Phase 13 (Field Validation) pending
@@ -7,7 +7,7 @@ trigger_when: next milestone, when the community/social surface or map navigatio
 scope: unknown
 ---
 
-# SEED-001: Recherche globale
+# SEED-003: Recherche globale
 
 La recherche porte sur l'ensemble des items de l'application, pas seulement sur les relevés : mes relevés, ceux de la communauté, les lieux sur la carte, et plus largement tout objet que l'app expose.
 

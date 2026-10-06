@@ -59,6 +59,8 @@ list is never ambiguous.
 - [x] **Phase 11: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone (completed 2026-09-27)
 - [x] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F (completed 2026-09-28)
 - [ ] **Phase 12.1: Owner acceptance testing** (INSERTED) - The owner tests the app on their own phone; display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready for the association's field tests
+- [ ] **Phase 12.2: Visual Modernisation** (INSERTED) - A more pleasant, modern and lively interface: visual refresh and motion across the main screens (owner decision 2026-10-06)
+- [ ] **Phase 12.3: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed (owner decision 2026-10-06)
 - [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
 
 ## Phase Details
@@ -642,10 +644,41 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 **Update (2026-10-06, OA-41)**: the deadline was hidden but still enforced: the server refused a submit made more than 7 days after creation and marked the survey `expired` for good, and the phone did the same locally. Done in one batch (owner: production is test data, nothing to preserve): the deadline is not applied anywhere (domain, API, phone), the `expires_at` column and the `expired` status are removed (API migration 019, SQLite migration 4), and a survey the old rule had marked `expired` goes back to `draft`.
 **UI hint**: yes
 
+### Phase 12.2: Visual Modernisation (INSERTED)
+
+**Goal**: The app is more pleasant to look at, more modern and more dynamic, in light and dark mode, before the association sees it.
+**Depends on**: Phase 12 (dark mode, Liquid Glass, motion system), Phase 12.1 (the owner's findings feed this phase rather than being redone)
+**Requirements**: none yet in `REQUIREMENTS.md`, added by the 2026-10-06 owner decision
+**Source**: owner decision 2026-10-06, folded into the MVP.
+**Success Criteria** (what must be TRUE):
+
+  1. A short visual direction is written down (what "modern and dynamic" means for the brand charter `docs/design/charte-graphique-etats-sauvages-spec.md`: typography, colour, depth, iconography, imagery) and the owner approves it before the screens are touched.
+  2. The main screens (Accueil, Mes Relevés, survey form and detail, Explorer, Compte) follow that direction, in light and dark mode, with no regression on field ergonomics (Phase 3) or accessibility (contrast, touch targets, reduced motion).
+  3. Transitions and feedback use the Reanimated motion system consistently and respect the system reduced-motion setting.
+  4. The owner confirms the result on their own phone.
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 12.3: In-depth Quality Audit (INSERTED)
+
+**Goal**: We know, from a documented audit, the real state of code quality, test coverage, architecture and security, and the blockers it finds are fixed before field tests.
+**Depends on**: Phase 11 (durable backend), Phase 12.2 (audit the code that will ship), and the 2026-09 audit (`docs/audits/audit-2026-09-code-complet.md`) as the baseline to compare against
+**Requirements**: none yet in `REQUIREMENTS.md`, added by the 2026-10-06 owner decision
+**Source**: owner decision 2026-10-06, folded into the MVP.
+**Success Criteria** (what must be TRUE):
+
+  1. An audit report in `docs/audits/` covers four axes: code quality (duplication, dead code, complexity, lint and type debt), test coverage (measured per workspace, gaps on critical paths such as sync, auth and IBP rules), architecture (module boundaries, offline-first and sync design, shared `ibp-domain` package) and security (auth, authorisation per survey, input validation, rate limiting, storage and presigned URLs, secrets, dependencies, mobile data at rest).
+  2. Each finding has an ID, severity and a triage (*blocker before field tests*, *fix later*, *rejected* with a reason); the previous audit's findings are re-checked as closed or still open.
+  3. Every *blocker before field tests* finding is fixed and verified, in batches.
+  4. Coverage thresholds and the CI checks that guard the audited axes are recorded, so the result does not decay.
+
+**Plans**: TBD
+
 ### Phase 13: Field Validation
 
 **Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
-**Depends on**: Phase 12.1 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
+**Depends on**: Phases 12.2 and 12.3 (visual modernisation and quality audit), Phase 12.1 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
 **Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
 **Success Criteria** (what must be TRUE):
 
@@ -661,7 +694,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 12.1 → 13
+Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 12.1 → 12.2 → 12.3 → 13
 
 Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 2 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 8, whose offline-map work builds on the map Phase 2 repoints. Phases 3, 4, 7, 9 and 12 (the UX/UI audit, folded into MVP by owner decision 2026-09-27) are threaded between the phases they depend on for components (Phase 3 before Phase 5, so Factor A's genus-list UI reuses the new field components) or for a stable screen to redesign (Phase 7 after Phase 6, Phase 9 after Phase 8, Phase 12 last, right before Phase 13). Phases 10–11 do not depend on Phases 1.6–1.9 or Phase 2 either, so they can interleave if the schedule requires it.
 
@@ -692,6 +725,8 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 12.1. Owner acceptance testing | 0/TBD | Not started | - |
+| 12.2. Visual Modernisation | 0/TBD | Not started | - |
+| 12.3. In-depth Quality Audit | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
 
 ## Coverage
