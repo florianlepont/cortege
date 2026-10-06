@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.1
 current_phase_name: Owner acceptance testing
 status: executing
-stopped_at: Phase 12.1 (Owner acceptance testing) inserted before Phase 13; Phase 13 discussion postponed
-last_updated: "2026-10-06T12:00:00.000Z"
-last_activity: 2026-10-06
+stopped_at: Phase 12.2 context gathered
+last_updated: "2026-10-06T21:34:32.660Z"
+last_activity: 2026-10-06 (Phases 12.2 and 12.3 inserted by owner decision; Phase 13 now follows 12.1, 12.2 and 12.3)
 progress:
   total_phases: 25
-  completed_phases: 21
-  total_plans: 159
+  completed_phases: 13
+  total_plans: 121
   completed_plans: 159
-  percent: 84
+  percent: 52
 ---
 
 # Project State
@@ -170,6 +170,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-06
-Stopped at: Phases 12.2 and 12.3 inserted; 12.1 owner acceptance loop continues, then /gsd-discuss-phase 12.2 or /gsd-plan-phase 12.2
-Resume file: None
+Last session: 2026-10-06T21:34:32.636Z
+Stopped at: Phase 12.2 context gathered
+Resume file: .planning/phases/12.2-visual-modernisation-inserted/12.2-CONTEXT.md
