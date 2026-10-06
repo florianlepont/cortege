@@ -3,7 +3,7 @@ id: SEED-002
 status: dormant
 planted: 2026-10-06
 planted_during: Phase 12.1 (Owner acceptance testing)
-trigger_when: after the phone pass of phase 12.1; or any milestone that touches the survey page, the history, the survey events or the parcel history
+trigger_when: a phase of its own, later; NOT part of phase 12.1 (owner decision 2026-10-06). Surfaces at the next milestone scan, or with any milestone that touches the survey page, the history, the survey events or the parcel history
 scope: small
 ---
 
@@ -27,8 +27,10 @@ suivi de la forêt). Mélangés sur une seule page, aucun des deux ne se lit bie
 
 ## When to Surface
 
-**Trigger:** après le passage téléphone de la phase 12.1 (fin de la phase), ou dès qu'un jalon
-touche la page d'un relevé, l'historique, les événements de relevé ou l'historique de parcelle.
+**Trigger:** une phase à part, plus tard. Décision du propriétaire (6 octobre 2026) : ce sujet ne se
+traite pas dans la phase 12.1 et ne bloque pas sa sortie. Il remonte au prochain examen de jalon, ou
+dès qu'un jalon touche la page d'un relevé, l'historique, les événements de relevé ou l'historique
+de parcelle.
 
 ## Scope Estimate
 
