@@ -748,6 +748,15 @@ describe("HomeRoute", () => {
       initial: false,
     })
 
+    // OA-107: the photo tool starts a survey with the genus, and adds one to a survey in progress.
+    callback("home", "onCreateSurveyWithGenus")("Fagus")
+    expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenLastCalledWith({ genus: "Fagus" })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveys", {
+      screen: "surveyForm",
+      initial: false,
+    })
+    expect(props("home").onAddGenusToSurvey).toBe(fixture.surveys.actions.addGenusToSurvey)
+
     callback("home", "onOpenSurvey")("s-01")
     expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveys", {

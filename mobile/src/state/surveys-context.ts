@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react"
-import type { IbpCas } from "@cortege/ibp-domain"
+import type { CnpfFactorAGenusCode, IbpCas } from "@cortege/ibp-domain"
 import type {
   RegionVersion,
   SurveyDetailResponse,
@@ -72,7 +72,10 @@ export type SurveyActions = {
   deleteAttachment: SurveyOperations["handleDeleteAttachment"]
   loadCanonicalDetails: (surveyId: string, options?: { silent?: boolean }) => Promise<void>
   loadSurveyEvents: (surveyId: string, options?: { silent?: boolean }) => Promise<void>
-  openCreateSurvey: () => void
+  /** OA-107: `genus` starts the survey with that genus already in factor A. */
+  openCreateSurvey: (options?: { genus?: CnpfFactorAGenusCode }) => void
+  /** OA-107: false when the genus could not be added (submitted survey, not found). */
+  addGenusToSurvey: (surveyId: string, genus: CnpfFactorAGenusCode) => Promise<boolean>
   startEditSurvey: (surveyId: string) => Promise<boolean>
   renameSurvey: (surveyId: string, nextSiteName: string) => Promise<void>
   updateRegionVersion: (surveyId: string, region: RegionVersion) => Promise<void>

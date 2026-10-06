@@ -239,6 +239,7 @@ function useAppController() {
     openCreateSurvey: editing.handleOpenCreateSurvey,
     startEditSurvey: editing.handleStartEditSurvey,
     renameSurvey: draftPatcher.handleRenameSurvey,
+    addGenusToSurvey: draftPatcher.handleAddGenusToSurvey,
     updateRegionVersion: draftPatcher.handleUpdateSurveyRegionVersion,
     updateVegetationStage: draftPatcher.handleUpdateSurveyVegetationStage,
     updateIbpCas: draftPatcher.handleUpdateSurveyIbpCas,

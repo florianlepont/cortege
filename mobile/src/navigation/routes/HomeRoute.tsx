@@ -1,4 +1,5 @@
 import { memo, useLayoutEffect, useMemo } from "react"
+import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
 import { fr } from "../../i18n"
 import { getNativeTabsAvailability } from "../native-tabs-availability"
 import { HomeScreen } from "../../screens/HomeScreen"
@@ -30,6 +31,11 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
 
   const onCreateSurvey = useLatestCallback(() => {
     actions.openCreateSurvey()
+    navigation.navigate("surveys", { screen: "surveyForm", initial: false })
+  })
+  // OA-107: the photo tool's "commencer un relevé avec ce genre".
+  const onCreateSurveyWithGenus = useLatestCallback((genus: CnpfFactorAGenusCode) => {
+    actions.openCreateSurvey({ genus })
     navigation.navigate("surveys", { screen: "surveyForm", initial: false })
   })
   const onOpenSurvey = useLatestCallback((surveyId: string) => {
@@ -103,6 +109,8 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
       nearbyParcels={nearbyParcels.state}
       onLoadNearbyParcels={nearbyParcels.load}
       onCreateSurvey={onCreateSurvey}
+      onCreateSurveyWithGenus={onCreateSurveyWithGenus}
+      onAddGenusToSurvey={actions.addGenusToSurvey}
       onOpenSurvey={onOpenSurvey}
       onRetrySurvey={actions.retrySurvey}
       onOpenSyncStatus={onOpenSyncStatus}

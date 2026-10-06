@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
+import {
+  IBP_METHOD_V3_2,
+  resolveMethodVersion,
+  type CnpfFactorAGenusCode,
+} from "@cortege/ibp-domain"
 import { createLocalDraft, getLocalSurveyDraft, updateLocalDraft } from "../storage/surveys"
 import { DEFAULT_SURVEY_FORM } from "../app/constants"
 import { fr, logStatusDetail, type StatusMessage } from "../i18n"
@@ -172,7 +176,9 @@ export function useEditingDraft({
     }
   }, [editingSurveyId, editingSurveyVisibility, surveyForm.draftInput])
 
-  const handleOpenCreateSurvey = (): void => {
+  // OA-107: `genus` starts the survey with that genus already in factor A (the photo tool's
+  // "commencer un relevé avec ce genre").
+  const handleOpenCreateSurvey = (options?: { genus?: CnpfFactorAGenusCode }): void => {
     if (autosaveTimerRef.current) {
       clearTimeout(autosaveTimerRef.current)
       autosaveTimerRef.current = null
@@ -184,6 +190,7 @@ export function useEditingDraft({
     setFormMode("create")
     onCloseSurveyDetail()
     surveyForm.resetSurveyForm()
+    if (options?.genus) surveyForm.addGenusToFactorA(options.genus)
     onStatusChange(text.createOpened())
 
     if (createDraftBootstrappingRef.current) {
@@ -200,7 +207,7 @@ export function useEditingDraft({
         : {}),
       ibp_cas: DEFAULT_SURVEY_FORM.ibpCas,
       ibp_cas3_scale: DEFAULT_SURVEY_FORM.ibpCas3Scale,
-      factors: {},
+      factors: options?.genus ? { A: { genera: [options.genus] } } : {},
       parcel_ids: [],
     }
 

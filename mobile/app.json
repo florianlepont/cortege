@@ -14,14 +14,14 @@
         "expo-image-picker",
         {
           "photosPermission": "Cortege accède à vos photos pour joindre des photos de la parcelle à vos relevés.",
-          "cameraPermission": "Cortege utilise l'appareil photo pour photographier la parcelle pendant le relevé.",
+          "cameraPermission": "Cortege utilise l'appareil photo pour photographier la parcelle pendant le relevé et pour identifier un arbre.",
           "microphonePermission": "Cortege n'utilise le micro que pour le son des vidéos prises avec l'appareil photo."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Cortege utilise l'appareil photo pour photographier la parcelle pendant le relevé.",
+          "cameraPermission": "Cortege utilise l'appareil photo pour photographier la parcelle pendant le relevé et pour identifier un arbre.",
           "microphonePermission": false,
           "recordAudioAndroid": false
         }

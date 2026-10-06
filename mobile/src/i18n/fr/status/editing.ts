@@ -39,6 +39,8 @@ export const editingStatusFr = {
     statusText(`Échelle du cas 3 mise à jour pour « ${name} »`),
   switchedToV32: ({ name }: { name: string }) =>
     statusText(`« ${name} » suit maintenant IBP v3.2 : vérifiez le cas`),
+  genusAdded: ({ name }: { name: string }) =>
+    statusText(`Genre ajouté au facteur A de « ${name} »`),
   switchNotAllowed: ({ name }: { name: string }) =>
     statusText(`Ce changement ne s'applique pas à la méthode IBP de « ${name} »`),
   updateFailed: () => statusText(`Impossible d'enregistrer la modification. ${RETRY}`),

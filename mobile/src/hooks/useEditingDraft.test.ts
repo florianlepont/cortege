@@ -50,6 +50,7 @@ describe("useEditingDraft", () => {
   let surveyForm: {
     draftInput: Record<string, unknown>
     resetSurveyForm: jest.Mock
+    addGenusToFactorA: jest.Mock
     buildDraftInput: jest.Mock
     applyDraftToForm: jest.Mock
     applyGpsLocation: jest.Mock
@@ -92,6 +93,7 @@ describe("useEditingDraft", () => {
         factors: {},
       },
       resetSurveyForm: jest.fn(),
+      addGenusToFactorA: jest.fn(),
       buildDraftInput: jest.fn().mockReturnValue({
         site_name: "Built site",
         region_version: "ACA",
@@ -166,6 +168,26 @@ describe("useEditingDraft", () => {
         factors: {},
         parcel_ids: [],
       })
+    })
+
+    test("starts the survey with a genus in factor A when the photo tool asks for it (OA-107)", async () => {
+      const { handleOpenCreateSurvey } = await buildHook()
+
+      handleOpenCreateSurvey({ genus: "Fagus" })
+      await new Promise((resolve) => setImmediate(resolve))
+
+      expect(surveyForm.addGenusToFactorA).toHaveBeenCalledWith("Fagus")
+      expect(mockCreateLocalDraft).toHaveBeenCalledWith(
+        expect.objectContaining({ factors: { A: { genera: ["Fagus"] } } }),
+      )
+    })
+
+    test("without a genus the form is left as reset (OA-107)", async () => {
+      const { handleOpenCreateSurvey } = await buildHook()
+
+      handleOpenCreateSurvey()
+
+      expect(surveyForm.addGenusToFactorA).not.toHaveBeenCalled()
     })
 
     test("does not start a second draft if bootstrapping is already in progress", async () => {
