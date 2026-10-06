@@ -27,6 +27,17 @@ export const parseTimestamp = (value: string): Date => {
   return new Date(`${day}T${time}${millis}${offset}`)
 }
 
+/**
+ * A day in words ("16 mai 2026", or with an abbreviated month "16 mai 2026" for "short"),
+ * from the server's timestamps, which Hermes cannot read as they are ("2026-05-16 10:00:00+00").
+ * An unreadable value comes back unchanged.
+ */
+export const formatDay = (value: string, month: "short" | "long" = "long"): string => {
+  const date = parseTimestamp(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString("fr-FR", { day: "numeric", month, year: "numeric" })
+}
+
 export const formatDateTime = (value?: string | null): string => {
   if (!value) return "n/a"
   const date = parseTimestamp(value)

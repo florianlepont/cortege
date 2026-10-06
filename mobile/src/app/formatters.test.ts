@@ -1,5 +1,6 @@
 import {
   formatDateTime,
+  formatDay,
   formatEventPayload,
   formatPoints,
   formatShortDateTime,
@@ -182,5 +183,16 @@ describe("formatDateTime with a PostgreSQL timestamp (OA-112)", () => {
     expect(formatDateTime("2026-10-06 10:24:20.217289+00")).not.toBe(
       "2026-10-06 10:24:20.217289+00",
     )
+  })
+})
+
+describe("formatDay", () => {
+  test("reads the server's timestamp and writes the day in words, long or short", () => {
+    expect(formatDay("2026-05-16 10:00:00+00")).toBe("16 mai 2026")
+    expect(formatDay("2026-08-22T10:00:00.000Z", "short")).toMatch(/^22 août 2026$/)
+  })
+
+  test("an unreadable value comes back unchanged", () => {
+    expect(formatDay("pas une date")).toBe("pas une date")
   })
 })

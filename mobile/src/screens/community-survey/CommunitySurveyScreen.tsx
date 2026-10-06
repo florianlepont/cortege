@@ -3,7 +3,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } 
 import { Image as ExpoImage } from "expo-image"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { brandTypography } from "../../app/brand-tokens"
-import { parseTimestamp } from "../../app/formatters"
+import { formatDay } from "../../app/formatters"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
@@ -24,12 +24,6 @@ type CommunitySurveyScreenProps = {
   state: CommunitySurveyState
   /** Opens another survey of the history. */
   onOpenSurvey: (surveyId: string) => void
-}
-
-const formatDay = (iso: string): string => {
-  const date = parseTimestamp(iso)
-  if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
 }
 
 /**

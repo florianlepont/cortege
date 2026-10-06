@@ -2,18 +2,13 @@ import { memo, useMemo } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import type { CommunitySurveyItem } from "@cortege/ibp-domain"
 import { brandRadius, brandTypography } from "../../app/brand-tokens"
+import { formatDay } from "../../app/formatters"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppText as Text } from "../../ui/AppText"
 import { IbpScoreBadge } from "../../ui/IbpScoreBadge"
 
 const t = fr.surveyList.community
-
-const formatDay = (iso: string): string => {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return iso
-  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
-}
 
 type CommunityRowProps = { item: CommunitySurveyItem; onOpen: (surveyId: string) => void }
 
@@ -39,7 +34,7 @@ function CommunityRowComponent({ item, onOpen }: CommunityRowProps) {
           {item.site_name.trim() || fr.common.untitledSurvey}
         </Text>
         <Text numberOfLines={1} style={styles.meta}>
-          {t.meta({ author, date: formatDay(item.submitted_at) })}
+          {t.meta({ author, date: formatDay(item.submitted_at, "short") })}
         </Text>
       </View>
     </Pressable>
