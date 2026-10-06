@@ -39,7 +39,12 @@ export async function downloadAreaPacks(input: {
   onProgress: (progress: AreaPackProgress) => void
 }): Promise<AreaPackProgress> {
   const { areaId, bounds, basemaps, onProgress } = input
-  const entries = basemaps.map(() => ({ percentage: 0, tiles: 0, done: false }))
+  const entries = basemaps.map(() => ({ percentage: 0, tiles: 0, done: false, started: false }))
+  // The native downloader reports a missing resource (a sprite the IGN does not publish, a tile
+  // outside its coverage) as an error but goes on with the rest of the pack: only a download that
+  // stops before it is complete is a failure (found on the phone: the IGN "Gris" style has no @2x
+  // sprite, its 404 aborted every download).
+  let lastError = ""
 
   const snapshot = (): AreaPackProgress => ({
     percentage: entries.reduce((sum, entry) => sum + entry.percentage, 0) / entries.length,
@@ -70,6 +75,11 @@ export async function downloadAreaPacks(input: {
           entry.percentage = status.percentage
           entry.tiles = status.completedTileCount
           entry.done = status.state === "complete"
+          if (status.state === "active") entry.started = true
+          if (status.state === "inactive" && entry.started && !entry.done) {
+            fail(new Error(lastError || "offline pack stopped before it was complete"))
+            return
+          }
           const progress = snapshot()
           onProgress(progress)
           if (!settled && progress.complete) {
@@ -77,7 +87,9 @@ export async function downloadAreaPacks(input: {
             resolve(progress)
           }
         },
-        (_pack, error) => fail(new Error(error.message)),
+        (_pack, error) => {
+          lastError = error.message
+        },
       )
     }
 
