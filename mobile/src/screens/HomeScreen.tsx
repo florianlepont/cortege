@@ -22,7 +22,7 @@ import type { NearbyParcelsState } from "../hooks/useNearbyParcels"
 import { fr } from "../i18n"
 import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { Skeleton } from "../ui/Skeleton"
-import { SyncStatusLine } from "../ui/SyncStatusLine"
+import { SyncStatusLine, isSyncStatusLineVisible } from "../ui/SyncStatusLine"
 import { NearbyMapCard } from "./home/NearbyMapCard"
 import { ResumeCard } from "./home/ResumeCard"
 import { ToolsSection } from "./home/ToolsSection"
@@ -125,6 +125,13 @@ export function HomeScreen({
     if (accessToken) onLoadNearbyParcels()
   }, [accessToken, onLoadNearbyParcels])
 
+  // D-20b: the sync line only shows when there is something to say (syncing, work waiting, offline);
+  // up to date there is no line and no wrapper, so no empty gap is left under the header.
+  const showSyncLine = isSyncStatusLineVisible({
+    isOnline,
+    isSyncing,
+    pendingCount: surveyStats.pending,
+  })
   const hasAlerts = surveyStats.blocked > 0 || surveyStats.failed > 0
   // The entrance stagger counts the sections actually shown: the alert notice is the first one.
   // Each section slides up whenever Accueil becomes visible (focus, overlays gone), see EntranceView.
@@ -181,15 +188,17 @@ export function HomeScreen({
       >
         {nativeHeader ? (
           // OA-85, OA-88: the header holds the greeting and the profile button; the sync state is
-          // a quiet line on its own row under it.
-          <View style={styles.nativeHeaderSync}>
-            <SyncStatusLine
-              isOnline={isOnline}
-              isSyncing={isSyncing}
-              pendingCount={surveyStats.pending}
-              onPress={onOpenSyncStatus}
-            />
-          </View>
+          // a quiet line on its own row under it, only when there is something to say.
+          showSyncLine ? (
+            <View style={styles.nativeHeaderSync}>
+              <SyncStatusLine
+                isOnline={isOnline}
+                isSyncing={isSyncing}
+                pendingCount={surveyStats.pending}
+                onPress={onOpenSyncStatus}
+              />
+            </View>
+          ) : null
         ) : (
           <View style={styles.greetingBlock}>
             <View style={styles.greeting}>
@@ -228,13 +237,15 @@ export function HomeScreen({
                 )}
               </Pressable>
             </View>
-            {/* SYNC-02: visible on the dashboard, not only in Settings. */}
-            <SyncStatusLine
-              isOnline={isOnline}
-              isSyncing={isSyncing}
-              pendingCount={surveyStats.pending}
-              onPress={onOpenSyncStatus}
-            />
+            {/* SYNC-02: visible on the dashboard, not only in Settings, when there is news. */}
+            {showSyncLine ? (
+              <SyncStatusLine
+                isOnline={isOnline}
+                isSyncing={isSyncing}
+                pendingCount={surveyStats.pending}
+                onPress={onOpenSyncStatus}
+              />
+            ) : null}
           </View>
         )}
 

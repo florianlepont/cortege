@@ -53,7 +53,19 @@ jest.mock("../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
 jest.mock("../ui/ScreenBackdrop", () => ({ ScreenBackdrop: "ScreenBackdrop" }))
 jest.mock("../ui/EntranceView", () => ({ EntranceView: "EntranceView" }))
 jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
-jest.mock("../ui/SyncStatusLine", () => ({ SyncStatusLine: "SyncStatusLine" }))
+jest.mock("../ui/SyncStatusLine", () => ({
+  SyncStatusLine: "SyncStatusLine",
+  // The real rule, without the animation module the real component pulls in.
+  isSyncStatusLineVisible: ({
+    isOnline,
+    isSyncing,
+    pendingCount,
+  }: {
+    isOnline: boolean
+    isSyncing: boolean
+    pendingCount: number
+  }) => !isOnline || isSyncing || pendingCount > 0,
+}))
 jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))
 jest.mock("./home/NearbyMapCard", () => ({ NearbyMapCard: "NearbyMapCard" }))
 jest.mock("./home/ToolsSection", () => ({ ToolsSection: "ToolsSection" }))
@@ -207,6 +219,48 @@ describe("HomeScreen", () => {
       pill.props.onPress()
     })
     expect(onOpenSyncStatus).toHaveBeenCalledTimes(1)
+  })
+
+  describe("the sync line shows only when there is news (D-20b)", () => {
+    const stats = (pending: number) => ({
+      total: 1,
+      draft: 1,
+      submitted: 0,
+      pending,
+      synced: 0,
+      failed: 0,
+      blocked: 0,
+    })
+
+    test.each([false, true])("up to date: no line and no wrapper (nativeHeader %s)", (native) => {
+      mount(makeProps({ nativeHeader: native, surveyStats: stats(0) }))
+      expect(tree.root.findAllByType("SyncStatusLine" as never)).toHaveLength(0)
+      // Nothing is reserved for it: with the native header the first thing in the scroll content is
+      // the first section, not an empty row.
+      const scroll = tree.root.findByType("ScrollView" as never)
+      if (native) {
+        const first = scroll.children[0] as ReactTestInstance
+        expect(first.type as unknown).toBe("EntranceView")
+        expect(
+          scroll.children.filter(
+            (child) => ((child as ReactTestInstance).type as unknown) === "View",
+          ),
+        ).toHaveLength(0)
+      }
+    })
+
+    test.each([false, true])("work waiting: the line shows (nativeHeader %s)", (native) => {
+      mount(makeProps({ nativeHeader: native, surveyStats: stats(2) }))
+      expect(tree.root.findAllByType("SyncStatusLine" as never)).toHaveLength(1)
+    })
+
+    test("syncing or offline: the line shows even with nothing pending", () => {
+      mount(makeProps({ isSyncing: true }))
+      expect(tree.root.findAllByType("SyncStatusLine" as never)).toHaveLength(1)
+      act(() => tree.unmount())
+      mount(makeProps({ isOnline: false }))
+      expect(tree.root.findAllByType("SyncStatusLine" as never)).toHaveLength(1)
+    })
   })
 
   describe("variant I look (12.2)", () => {

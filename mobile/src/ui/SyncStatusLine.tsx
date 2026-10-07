@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 import { AppText as Text } from "./AppText"
-import { brandColors, brandMotion, brandTypography } from "../app/brand-tokens"
+import { brandMotion, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppPressable } from "./AppPressable"
@@ -30,8 +30,8 @@ const t = fr.components.syncStatusLine
 
 /**
  * SYNC-02: offline · N à envoyer · en cours · à jour, a quiet line under the Home greeting (OA-88,
- * not only in Settings): a green dot when all is well, amber text when something needs attention.
- * Offline always wins, then an in-progress sync, then unsent work.
+ * not only in Settings). Offline always wins, then an in-progress sync, then unsent work.
+ * D-20b: "à jour" is not shown (the owner: the note is useless), see `isSyncStatusLineVisible`.
  */
 export function resolveSyncStatusLineState({
   isOnline,
@@ -44,11 +44,20 @@ export function resolveSyncStatusLineState({
   return "upToDate"
 }
 
-const LABEL_BY_STATE: Record<SyncStatusLineState, (pendingCount: number) => string> = {
+/** D-20b: the line only exists when there is something to say; up to date it draws nothing. */
+export function isSyncStatusLineVisible(
+  input: Pick<SyncStatusLineProps, "isOnline" | "isSyncing" | "pendingCount">,
+): boolean {
+  return resolveSyncStatusLineState(input) !== "upToDate"
+}
+
+const LABEL_BY_STATE: Record<
+  Exclude<SyncStatusLineState, "upToDate">,
+  (pendingCount: number) => string
+> = {
   offline: () => t.offline,
   toSend: (pendingCount) => t.toSend({ count: pendingCount }),
   syncing: () => t.syncing,
-  upToDate: () => t.upToDate,
 }
 
 export function SyncStatusLine({
@@ -82,8 +91,11 @@ export function SyncStatusLine({
 
   const dotAnimatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: dotScale.value }] }))
 
+  // Up to date: nothing to say, no view at all (so the caller reserves no gap). The hooks above
+  // still run, so the success haptic of a sync that just finished is kept.
+  if (state === "upToDate") return null
+
   const label = LABEL_BY_STATE[state](pendingCount)
-  const needsAttention = state === "offline" || state === "toSend"
 
   return (
     <AppPressable
@@ -97,11 +109,9 @@ export function SyncStatusLine({
       {state === "syncing" ? (
         <ActivityIndicator size="small" color={theme.colors.textSecondary} />
       ) : (
-        <Animated.View
-          style={[styles.dot, needsAttention ? styles.dotWarning : styles.dotOk, dotAnimatedStyle]}
-        />
+        <Animated.View style={[styles.dot, styles.dotWarning, dotAnimatedStyle]} />
       )}
-      <Text style={[styles.label, needsAttention ? styles.labelWarning : null]}>{label}</Text>
+      <Text style={[styles.label, state !== "syncing" ? styles.labelWarning : null]}>{label}</Text>
     </AppPressable>
   )
 }
@@ -119,7 +129,6 @@ function createStyles(theme: BrandTheme) {
       height: 8,
       borderRadius: 4,
     },
-    dotOk: { backgroundColor: brandColors.moss },
     dotWarning: { backgroundColor: theme.onSurface.warning },
     label: {
       ...brandTypography.meta,

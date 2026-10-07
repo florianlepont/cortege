@@ -80,7 +80,6 @@ export const componentsFr = {
     toSend: ({ count }: { count: number }) =>
       count > 1 ? `${count} relevés à envoyer` : "1 relevé à envoyer",
     syncing: "Synchronisation…",
-    upToDate: "À jour",
     a11yHint: "Touchez pour voir le détail de la synchronisation",
   },
 } as const
