@@ -1,7 +1,7 @@
 ---
 id: SEED-004
-status: triggered
-scheduled_in: Phase 24
+status: done
+done_in: Phase 23 (built within the visual modernisation, owner statement 2026-10-07)
 planted: 2026-10-07
 planted_during: Phase 12.2 and 12.3 pending
 trigger_when: Phase 12.2 (Visual Modernisation) if the Home is reworked, otherwise the next milestone scan

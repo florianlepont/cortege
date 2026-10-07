@@ -1,6 +1,7 @@
 ---
 id: SEED-003
-status: dormant
+status: triggered
+scheduled_in: Phase 25
 planted: 2026-10-06
 planted_during: Phase 11 (Durable Backend) / Phase 13 (Field Validation) pending
 trigger_when: next milestone, when the community/social surface or map navigation is reworked

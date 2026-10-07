@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 23
 current_phase_name: Visual Modernisation
 status: executing
-stopped_at: Roadmap renumbered flat 2026-10-07; Phase 23 in progress, Phases 24 to 26 to plan before field tests (Phase 27)
+stopped_at: Roadmap renumbered flat 2026-10-07; Phase 23 in progress, Phases 24 to 27 to plan before field tests (Phase 28)
 last_updated: "2026-10-07T12:00:00.000Z"
 last_activity: 2026-10-07
 progress:
-  total_phases: 27
+  total_phases: 28
   completed_phases: 22
   total_plans: 159
   completed_plans: 159
-  percent: 81
+  percent: 79
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phases 1 through 22 are complete (owner acceptance closed 2026-10-06). Phase 23 (Visual Modernisation) is in progress. Then Phase 24 (Home nearby parcels and survey history split, SEED-004 and SEED-002), Phase 25 (UX/UI audit and design system update) and Phase 26 (in-depth quality audit) come before Phase 27 (Field Validation), which carries the device checks deferred from Phases 15, 17, 18 and 19. The roadmap was renumbered flat on 2026-10-07; see `.planning/ROADMAP.md` for the old-to-new table.
+**Current focus:** Phases 1 through 22 are complete (owner acceptance closed 2026-10-06). Phase 23 (Visual Modernisation) is in progress. Then Phase 24 (Home nearby parcels and survey history split, SEED-004 and SEED-002), Phase 27 (UX/UI audit and design system update) and Phase 28 (in-depth quality audit) come before Phase 28 (Field Validation), which carries the device checks deferred from Phases 15, 17, 18 and 19. The roadmap was renumbered flat on 2026-10-07; see `.planning/ROADMAP.md` for the old-to-new table.
 
 ## Current Position
 
 Phase: 23 (Visual Modernisation, in progress)
 Plan: Not planned (the owner is working on it directly)
-Status: Phases 1 through 22 complete; Phases 23 to 26 come before the field tests (Phase 27), 24 to 26 not yet planned
-Last activity: 2026-10-07 (roadmap renumbered flat 1 to 27; Phase 24 added from SEED-004 and SEED-002; UX/UI audit is Phase 25, deep audit Phase 26)
+Status: Phases 1 through 22 complete; Phases 23 to 27 come before the field tests (Phase 28), 24 to 27 not yet planned
+Last activity: 2026-10-07 (roadmap renumbered flat 1 to 28; Phase 24 (SEED-002) and Phase 25 (SEED-003) added; SEED-004 done in Phase 23; UX/UI audit is Phase 26, deep audit Phase 27)
 
-Progress: [████████░░] 22/27 phases complete
+Progress: [████████░░] 22/28 phases complete
 
 ## Performance Metrics
 
@@ -154,10 +154,10 @@ Decisions table. Decisions affecting current work:
 - Phase 2 inserted after Phase 1: Reconcile the IBP method version — repo implements Fr v3.0, CNPF publishes FR v3.2 (URGENT)
 - Phases 3–6 inserted after Phase 1 from the 2026-09 code audit (URGENT): stop field data loss and account exposure; CI and test safety net; API sync integrity; mobile sync engine reliability. Phase 16 now depends on Phases 3, 5 and 6.
 - Phases 7–10 inserted after Phase 1 to close the rest of the 2026-09 code audit (lots L10, L13–L20 and the remainders of L7, L16, L20): sync feed and object storage; API configuration, service split and database tuning; shared IBP domain package and test completeness; mobile state architecture, i18n, accessibility and hygiene
-- After Phase 10 the roadmap moved to flat numbering (Phases 11–27). Phase 11 (association-only sharing) and the UX/UI audit lots (Phases 12, 13, 16, 18, 21) were inserted by owner decision on 2026-09-27; Phase 27 (Field Validation) now depends on all of them
-- Phase 22 inserted after Phase 21: Owner acceptance testing: the owner still finds many display bugs and UX friction on their own phone and judged Phase 27 field tests with the association premature (owner decision 2026-09-28) (URGENT)
-- Phases 23 (Visual Modernisation, `REQ-QA-visual-modernisation`) and 26 (In-depth Quality Audit, `REQ-QA-deep-audit`) inserted after Phase 22 by owner decision 2026-10-06; Phase 25 (UX/UI Audit & Design System Update, `REQ-QA-ux-audit`) and Phase 24 (Home nearby parcels and survey history split, from SEED-004 and SEED-002) added 2026-10-07. Same day the roadmap was renumbered flat (1 to 27, no more `1.x` or `12.x`); the old-to-new table is in `ROADMAP.md`.
-- Seeds are kept in `.planning/seeds/` (SEED-001 map layers, SEED-002 and SEED-004 scheduled in Phase 24, SEED-003 global search across all app items)
+- After Phase 10 the roadmap moved to flat numbering (Phases 11–28). Phase 11 (association-only sharing) and the UX/UI audit lots (Phases 12, 13, 16, 18, 21) were inserted by owner decision on 2026-09-27; Phase 28 (Field Validation) now depends on all of them
+- Phase 22 inserted after Phase 21: Owner acceptance testing: the owner still finds many display bugs and UX friction on their own phone and judged Phase 28 field tests with the association premature (owner decision 2026-09-28) (URGENT)
+- Phases 23 (Visual Modernisation, `REQ-QA-visual-modernisation`) and 27 (In-depth Quality Audit, `REQ-QA-deep-audit`) inserted after Phase 22 by owner decision 2026-10-06; on 2026-10-07 Phase 26 (UX/UI Audit & Design System Update, `REQ-QA-ux-audit`), Phase 24 (survey history split, SEED-002) and Phase 25 (global search, SEED-003) were added; SEED-004 (nearby parcels on Home) is done within Phase 23. Same day the roadmap was renumbered flat (1 to 28, no more `1.x` or `12.x`); the old-to-new table is in `ROADMAP.md`.
+- Seeds are kept in `.planning/seeds/` (SEED-001 map layers, SEED-002 scheduled in Phase 24, SEED-003 global search in Phase 25, SEED-004 done in Phase 23)
 
 ## Deferred Items
 

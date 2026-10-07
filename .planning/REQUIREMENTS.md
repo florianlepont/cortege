@@ -29,7 +29,7 @@ prefixes `ML` (species recognition groundwork), `INF` (infrastructure), `QA` (qu
 ### A — Access and Security
 
 Five of six are Built and field-tested (`docs/user-tests/epic-a-access-and-security.md`, 28 cases);
-two of those five carry open defects, fixed in Phase 27. Account deletion is Partial: the API path
+two of those five carry open defects, fixed in Phase 28. Account deletion is Partial: the API path
 is built and untested-by-necessity (no mobile entry point existed to test), fixed in Phase 11.
 Social login was found unbuilt on 2026-09-27 (no code anywhere in `mobile/src`, despite this
 document previously marking it "Built") and is moved to **Deferred — Next Milestone** below —
@@ -58,7 +58,7 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [x] **REQ-C-submit** — Submission is blocked until all ten factors are scoreable and parcel linkage metadata is present, blocked past 7 days, states the explicit reason when blocked, and transitions to `submitted` + read-only with automatic sync. *(Built)*
 - [x] **REQ-C-help** — Each complex field exposes on-demand pedagogical help that does not lose form progress. *(Built)*
 - [ ] **REQ-C-versioning** — A survey carries an explicit version number and observation year; the app proposes the next version on an already-studied parcel and shows previous scores. *(Partial — `version_number`/`observation_year` are recorded (`api/migrations/008_parcels_and_versioning.sql`), but no next-version suggestion or previous-scores UI exists. Corrected 2026-09-27, was wrongly marked "Built". Originally labelled V1; promoted to MVP because parcel history is in scope. Build in Phase 11)*
-- [x] **REQ-C-species-recognition** — From the Factor A section, the contributor photographs a single subject and the app suggests the most likely tree **genus** with its alternatives, each carrying a per-genus calibrated plain-words confidence indicator; all 34 CNPF genera are suggested; the contributor confirms each suggestion and the accepted genus is saved in Factor A's genus list; recognition runs on-device with the model bundled in the app, and works in airplane mode. *(New — US-C9. Revised 2026-09-26 to match ADR-002. Gated behind `REQ-ML-adr` (satisfied) and `REQ-ML-contracts` (satisfied); Built in Phase 15, closed 2026-09-27 — the real MD5-verified `genus_classifier.tflite` and its labels are in place (PR #176 then #178), preprocessing confirmed by inspecting the source SavedModel rather than assumed. Two verifications explicitly deferred to Phase 27's field validation, by owner decision: a real Android device latency/accuracy run (closing Phase 1's own accepted deviation), and real-device recognition accuracy against actual tree photographs. See `.planning/phases/15-genus-recognition-factor-a/`)*
+- [x] **REQ-C-species-recognition** — From the Factor A section, the contributor photographs a single subject and the app suggests the most likely tree **genus** with its alternatives, each carrying a per-genus calibrated plain-words confidence indicator; all 34 CNPF genera are suggested; the contributor confirms each suggestion and the accepted genus is saved in Factor A's genus list; recognition runs on-device with the model bundled in the app, and works in airplane mode. *(New — US-C9. Revised 2026-09-26 to match ADR-002. Gated behind `REQ-ML-adr` (satisfied) and `REQ-ML-contracts` (satisfied); Built in Phase 15, closed 2026-09-27 — the real MD5-verified `genus_classifier.tflite` and its labels are in place (PR #176 then #178), preprocessing confirmed by inspecting the source SavedModel rather than assumed. Two verifications explicitly deferred to Phase 28's field validation, by owner decision: a real Android device latency/accuracy run (closing Phase 1's own accepted deviation), and real-device recognition accuracy against actual tree photographs. See `.planning/phases/15-genus-recognition-factor-a/`)*
 - [x] **REQ-C-pdf-export** — Contributor exports a survey as a PDF generated **on device** (expo-print) and delivers it through the OS share sheet (expo-sharing) to any installed target — Google Drive, Wimi, mail, AirDrop. Must work offline. No API endpoint, no direct Drive OAuth integration. *(Built — Phase 19)*
 
 ### D — Offline and Synchronization
@@ -95,10 +95,11 @@ every binding contract (conflict-report warning 5).
 - [ ] **REQ-QA-bug-a3-4** — Sign-up with an already-registered email shows a specific message inviting the user to log in, not a generic Auth0 error. *(New — `BUG-A3-4`, medium)*
 - [ ] **REQ-QA-bug-a6-2** — Password-reset email deliverability is closed as an **Auth0 tenant configuration** item (sender domain / DKIM), with the tenant change recorded. Explicitly **not** an SMTP fix. *(New — `BUG-A6-2`, re-scoped)*
 - [ ] **REQ-QA-visual-modernisation** — The interface is visibly more pleasant, modern and dynamic: a written visual direction approved by the owner, applied to the main screens in light and dark mode, with consistent Reanimated motion that respects reduced-motion, and no regression on field ergonomics or accessibility. *(New — owner decision 2026-10-06, Phase 23)*
-- [ ] **REQ-B-nearby-parcels-home** — The Home lists the parcels near the user and starts a survey on the chosen one, with clear empty, offline and location-refused states. *(New — owner decision 2026-10-07, SEED-004, Phase 24)*
+- [ ] **REQ-B-nearby-parcels-home** — The Home lists the parcels near the user and starts a survey on the chosen one, with clear empty, offline and location-refused states. *(New — owner decision 2026-10-07, SEED-004; built within Phase 23, to be checked off when Phase 23 closes)*
 - [ ] **REQ-C-history-split** — The survey change log and the history of earlier surveys on the same parcel are two distinct entries, and another member's survey shows the parcel history only. *(New — owner decision 2026-10-07, SEED-002 / OA-124, Phase 24)*
-- [ ] **REQ-QA-ux-audit** — A documented UX/UI audit of every screen (light and dark) checks global coherence, accessibility and visual bugs, the design system and charter are updated to match Phase 23, and every *blocker before field tests* finding is fixed and confirmed by the owner. *(New — owner decision 2026-10-07, Phase 25)*
-- [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 26)*
+- [ ] **REQ-B-global-search** — One search covers the whole app: the member's own surveys, the other members' surveys, places and parcels on the map, and the other items the app exposes, with grouped results that lead straight to the item. *(New — owner decision 2026-10-07, SEED-003, Phase 25)*
+- [ ] **REQ-QA-ux-audit** — A documented UX/UI audit of every screen (light and dark) checks global coherence, accessibility and visual bugs, the design system and charter are updated to match Phase 23, and every *blocker before field tests* finding is fixed and confirmed by the owner. *(New — owner decision 2026-10-07, Phase 26)*
+- [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 27)*
 
 ### DOC — Documentation Accuracy
 
@@ -148,7 +149,7 @@ loss, no duplicates — or that expose accounts run first (Phases 3–6), the re
 
 Carried from `.planning/intel/requirements.md`. These are rules that constrain the requirements
 above rather than deliverables in their own right, so they are not exclusively phase-mapped; they
-are verified within the phases that touch them and in the Phase 27 field tests.
+are verified within the phases that touch them and in the Phase 28 field tests.
 
 | Rule | Status this milestone |
 |------|----------------------|
@@ -170,7 +171,7 @@ are verified within the phases that touch them and in the Phase 27 field tests.
 
 ## Non-Functional Requirements
 
-Active for this milestone; verified in Phase 27 alongside the field tests.
+Active for this milestone; verified in Phase 28 alongside the field tests.
 
 | ID | Requirement |
 |----|-------------|
@@ -277,41 +278,42 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-QA-ibp-version | New | Phase 2 | Build |
 | REQ-QA-sql-injection | New | Phase 20 | Build |
 | REQ-QA-indexes | New | Phase 20 | Build |
-| REQ-DOC-taxonomy | New | Phase 27 | Build |
-| REQ-DOC-epicd-ids | New | Phase 27 | Build |
-| REQ-QA-bug-a3-4 | New | Phase 27 | Build |
-| REQ-QA-bug-a6-2 | New | Phase 27 | Build |
-| REQ-QA-screen-tests | New | Phase 27 | Build |
+| REQ-DOC-taxonomy | New | Phase 28 | Build |
+| REQ-DOC-epicd-ids | New | Phase 28 | Build |
+| REQ-QA-bug-a3-4 | New | Phase 28 | Build |
+| REQ-QA-bug-a6-2 | New | Phase 28 | Build |
+| REQ-QA-screen-tests | New | Phase 28 | Build |
 | REQ-QA-visual-modernisation | New | Phase 23 | Build |
-| REQ-B-nearby-parcels-home | New | Phase 24 | Build |
+| REQ-B-nearby-parcels-home | New | Phase 23 | Build |
 | REQ-C-history-split | New | Phase 24 | Build |
-| REQ-QA-ux-audit | New | Phase 25 | Build |
-| REQ-QA-deep-audit | New | Phase 26 | Build |
-| REQ-FT-field-tests | New | Phase 27 | Build |
-| REQ-A-login | Built | Phase 27 | Verify |
-| REQ-A-logout | Built | Phase 27 | Verify |
-| REQ-A-signup | Built | Phase 27 | Verify (+ `BUG-A3-4` fix) |
-| REQ-A-profile | Built | Phase 27 | Verify |
-| REQ-A-forgot-password | Built | Phase 27 | Verify (+ `BUG-A6-2` fix) |
-| REQ-B-survey-list | Built | Phase 27 | Verify |
-| REQ-C-guided-entry | Built | Phase 27 | Verify |
-| REQ-C-save-draft | Built | Phase 27 | Verify |
-| REQ-C-photos | Built | Phase 27 | Verify |
-| REQ-C-parcel-linkage | Built | Phase 27 | Verify |
-| REQ-C-submit | Built | Phase 27 | Verify |
-| REQ-C-help | Built | Phase 27 | Verify |
-| REQ-D-offline-work | Built | Phase 27 | Verify |
-| REQ-D-auto-sync | Built | Phase 27 | Verify |
-| REQ-D-conflict-resolution | Built | Phase 27 | Verify |
+| REQ-B-global-search | New | Phase 25 | Build |
+| REQ-QA-ux-audit | New | Phase 26 | Build |
+| REQ-QA-deep-audit | New | Phase 27 | Build |
+| REQ-FT-field-tests | New | Phase 28 | Build |
+| REQ-A-login | Built | Phase 28 | Verify |
+| REQ-A-logout | Built | Phase 28 | Verify |
+| REQ-A-signup | Built | Phase 28 | Verify (+ `BUG-A3-4` fix) |
+| REQ-A-profile | Built | Phase 28 | Verify |
+| REQ-A-forgot-password | Built | Phase 28 | Verify (+ `BUG-A6-2` fix) |
+| REQ-B-survey-list | Built | Phase 28 | Verify |
+| REQ-C-guided-entry | Built | Phase 28 | Verify |
+| REQ-C-save-draft | Built | Phase 28 | Verify |
+| REQ-C-photos | Built | Phase 28 | Verify |
+| REQ-C-parcel-linkage | Built | Phase 28 | Verify |
+| REQ-C-submit | Built | Phase 28 | Verify |
+| REQ-C-help | Built | Phase 28 | Verify |
+| REQ-D-offline-work | Built | Phase 28 | Verify |
+| REQ-D-auto-sync | Built | Phase 28 | Verify |
+| REQ-D-conflict-resolution | Built | Phase 28 | Verify |
 
 **Coverage:**
 
-- MVP requirements: **70** total (`REQ-A-social-login` moved to Deferred — Next Milestone 2026-09-27, found unbuilt)
-- Mapped to phases: **70** ✓
+- MVP requirements: **71** total (`REQ-A-social-login` moved to Deferred — Next Milestone 2026-09-27, found unbuilt)
+- Mapped to phases: **71** ✓
 - Unmapped: **0** ✓
-- Of which carry build work: **55** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 11, 2026-18-27); 15 are already built and are verified in Phase 27
+- Of which carry build work: **56** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 11, 2026-09-27); 15 are already built and are verified in Phase 28
 - Deferred to next milestone: 20 · Deferred to V2: 4
 
 ---
 *Requirements defined: 2026-09-22*
-*Last updated: 2026-10-07 — phases renumbered flat (1 to 27), added `REQ-B-nearby-parcels-home` and `REQ-C-history-split` (Phase 24). Earlier the same day, added `REQ-QA-ux-audit` (Phase 25); the deep audit moved to Phase 26. Earlier, 2026-10-06 — added `REQ-QA-visual-modernisation` (Phase 23) and `REQ-QA-deep-audit` (Phase 25). Earlier, 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*
+*Last updated: 2026-10-07 — phases renumbered flat (1 to 28), added `REQ-B-nearby-parcels-home` (Phase 23), `REQ-C-history-split` (Phase 24) and `REQ-B-global-search` (Phase 25). Earlier the same day, added `REQ-QA-ux-audit` (Phase 26); the deep audit moved to Phase 27. Earlier, 2026-10-06 — added `REQ-QA-visual-modernisation` (Phase 23) and `REQ-QA-deep-audit` (Phase 26). Earlier, 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*

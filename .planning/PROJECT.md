@@ -34,7 +34,7 @@ Shipped and field-tested (28 manual cases, `docs/user-tests/epic-a-access-and-se
 
 ### Built but not yet field-tested
 
-Working in the codebase; their field-test evidence is the deliverable of Phase 27:
+Working in the codebase; their field-test evidence is the deliverable of Phase 28:
 
 - ✓ Survey list and survey detail with parcel history — Epic B
 - ✓ Guided ten-factor entry, draft saving, photos, parcel linkage, submission, on-demand help, versioning — Epic C
