@@ -10,8 +10,8 @@ import { createBaseStackScreenOptions, hiddenNativeTitle } from "./stack-options
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
-  offlineAreasScreenOptions,
-  settingsScreenOptions,
+  makeOfflineAreasScreenOptions,
+  makeSettingsScreenOptions,
 } from "./AccountStack"
 
 const PublicMapStack = createNativeStackNavigator<PublicMapStackParamList>()
@@ -38,17 +38,17 @@ export function PublicMapTabNavigator() {
         />
         <PublicMapStack.Screen
           name="accountHome"
-          options={makeAccountHomeOptions(theme.semanticColors.textStrong)}
+          options={makeAccountHomeOptions(theme)}
           component={ACCOUNT_SCREENS.accountHome}
         />
         <PublicMapStack.Screen
           name="settings"
-          options={settingsScreenOptions}
+          options={makeSettingsScreenOptions(theme)}
           component={ACCOUNT_SCREENS.settings}
         />
         <PublicMapStack.Screen
           name="offlineAreas"
-          options={offlineAreasScreenOptions}
+          options={makeOfflineAreasScreenOptions(theme)}
           component={ACCOUNT_SCREENS.offlineAreas}
         />
       </PublicMapStack.Navigator>

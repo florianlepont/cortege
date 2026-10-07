@@ -6,6 +6,7 @@ import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SettingsRouteProps } from "../types"
 import { ScreenFrame } from "../../ui/ScreenFrame"
+import { usesNativeLargeTitle } from "../large-title"
 
 /**
  * Settings route (phase 01.9-18, D-01). OA-78: no sync tools any more, and no status line (OA-77);
@@ -24,7 +25,8 @@ export const SettingsRoute = memo(function SettingsRoute({ navigation }: Setting
   const onOpenOfflineAreas = useLatestCallback(() => navigation.navigate("offlineAreas"))
 
   return (
-    <ScreenFrame>
+    // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
+    <ScreenFrame largeTitle={usesNativeLargeTitle()}>
       <SettingsScreen
         apiUrl={session.apiUrl}
         onApiUrlChange={sessionActions.setApiUrl}

@@ -3,6 +3,7 @@ import { KeyboardAvoidingView, Platform } from "react-native"
 import { AccountScreen } from "../../screens/AccountScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { ScreenFrame } from "../../ui/ScreenFrame"
+import { usesNativeLargeTitle } from "../large-title"
 import { styles } from "../styles"
 import type { AccountRouteProps } from "../types"
 import { PictureStatusAlert } from "./PictureStatusAlert"
@@ -28,7 +29,8 @@ export const AccountRoute = memo(function AccountRoute({ navigation }: AccountRo
   )
 
   return (
-    <ScreenFrame>
+    // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
+    <ScreenFrame largeTitle={usesNativeLargeTitle()}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.accountScreenWrap}

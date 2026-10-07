@@ -7,6 +7,7 @@ import { AuthUser } from "../app/types"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
+import { useFrameLargeTitle } from "../ui/frame-large-title"
 import type { AppGroupedListSection } from "../ui/AppGroupedList"
 import { useAccountConnectionRows, useLogoutRow } from "./account/AccountSettingsRows"
 import { IdentityCard } from "./account/IdentityCard"
@@ -53,6 +54,7 @@ export function AccountScreen({
 }: AccountScreenProps) {
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
+  const largeTitle = useFrameLargeTitle()
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [displayName, setDisplayName] = useState("")
@@ -101,9 +103,11 @@ export function AccountScreen({
 
   // D-19: the route's ScreenFrame starts the page below the transparent header and clips the
   // scroll there, so only a small top margin is left here; the tab bar clearance stays inside the
-  // scroll content so it scrolls away naturally.
+  // scroll content so it scrolls away naturally. 12.2-17: under the native large title iOS insets
+  // the scroll view itself (header above, tab bar below), so only the margins are left.
   const topContentPadding = brandSpacing.md
-  const bottomContentPadding = Math.max(tabBarHeight, insets.bottom) + brandSpacing.md
+  const bottomContentPadding =
+    (largeTitle ? 0 : Math.max(tabBarHeight, insets.bottom)) + brandSpacing.md
 
   // ACC-C02 : état de chargement quand currentUser n'est pas encore disponible
   if (currentUser === null) {
@@ -143,10 +147,11 @@ export function AccountScreen({
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior={largeTitle ? "automatic" : "never"}
         automaticallyAdjustContentInsets={false}
-        scrollIndicatorInsets={{ bottom: tabBarHeight }}
+        scrollIndicatorInsets={largeTitle ? undefined : { bottom: tabBarHeight }}
       >
+        {/* Nothing under the native large title: the header names the page (12.2-17). */}
         <PageTitle>{fr.account.title}</PageTitle>
 
         <IdentityCard

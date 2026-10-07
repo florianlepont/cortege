@@ -1711,3 +1711,62 @@ describe("the halo frame on every page (D-19)", () => {
     expect(hostViews(tree, "screen-frame")).toHaveLength(0)
   })
 })
+
+describe("the native large title frame (12.2-17)", () => {
+  beforeEach(() => {
+    mockNativeTabs.value = false
+  })
+
+  function withSelection(fixture: Fixture): Fixture {
+    return {
+      ...fixture,
+      surveys: {
+        ...fixture.surveys,
+        state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
+      } as unknown as SurveysContextValue,
+    }
+  }
+
+  function hostViews(tree: renderer.ReactTestRenderer, testID: string) {
+    return tree.root.findAll(
+      (node) => (node.type as unknown) === "View" && node.props.testID === testID,
+    )
+  }
+
+  const nav = () => makeNavigation() as never
+  const largeTitleRoutes: [string, () => React.ReactElement][] = [
+    ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
+    ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
+    ["offlineAreas", () => <OfflineAreasRoute navigation={nav()} route={{} as never} />],
+  ]
+
+  test.each(largeTitleRoutes)(
+    "%s in the native iOS tab tree: no header padding, the halo on the frame, the page first",
+    async (name, element) => {
+      mockNativeTabs.value = true
+      const tree = await mount(
+        <Providers fixture={withSelection(makeFixture())}>{element()}</Providers>,
+      )
+      const frames = hostViews(tree, "screen-frame")
+      expect(frames).toHaveLength(1)
+      const style = Object.assign({}, ...[frames[0].props.style].flat()) as Record<string, unknown>
+      expect(style.paddingTop).toBeUndefined()
+      expect(style.experimental_backgroundImage).toBeDefined()
+      expect(hostViews(tree, "screen-frame-backdrop")).toHaveLength(0)
+      expect(props(name)).toBeDefined()
+    },
+  )
+
+  test.each(largeTitleRoutes)(
+    "%s elsewhere (Android, Expo Go): the frame of D-19, header padding and halo child",
+    async (_name, element) => {
+      const tree = await mount(
+        <Providers fixture={withSelection(makeFixture())}>{element()}</Providers>,
+      )
+      const frames = hostViews(tree, "screen-frame")
+      const style = Object.assign({}, ...[frames[0].props.style].flat()) as Record<string, unknown>
+      expect(style.paddingTop).toBe(44)
+      expect(hostViews(tree, "screen-frame-backdrop")).toHaveLength(1)
+    },
+  )
+})

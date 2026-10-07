@@ -15,6 +15,7 @@ import { AppChoiceChip } from "../ui/AppChoiceChip"
 import { AppCollapsibleSection } from "../ui/AppCollapsibleSection"
 import { AppField } from "../ui/AppField"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
+import { useFrameLargeTitle } from "../ui/frame-large-title"
 import { fr } from "../i18n"
 
 const t = fr.settings
@@ -56,8 +57,11 @@ export function SettingsScreen({
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
   // D-19: the route's ScreenFrame starts the page below the transparent header and clips there.
+  // 12.2-17: under the native large title iOS insets the scroll view (header, tab bar) itself.
+  const largeTitle = useFrameLargeTitle()
   const topContentPadding = brandSpacing.md
-  const bottomContentPadding = Math.max(tabBarHeight, insets.bottom) + brandSpacing.md
+  const bottomContentPadding =
+    (largeTitle ? 0 : Math.max(tabBarHeight, insets.bottom)) + brandSpacing.md
 
   const [deleteLoading, setDeleteLoading] = useState(false)
 
@@ -195,9 +199,9 @@ export function SettingsScreen({
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
       showsVerticalScrollIndicator={false}
-      contentInsetAdjustmentBehavior="never"
+      contentInsetAdjustmentBehavior={largeTitle ? "automatic" : "never"}
       automaticallyAdjustContentInsets={false}
-      scrollIndicatorInsets={{ bottom: tabBarHeight }}
+      scrollIndicatorInsets={largeTitle ? undefined : { bottom: tabBarHeight }}
     >
       <PageTitle>{t.title}</PageTitle>
 

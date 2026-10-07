@@ -1,11 +1,12 @@
 import { Pressable } from "react-native"
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack"
 import { Ionicons } from "@expo/vector-icons"
+import type { BrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AccountRoute } from "../routes/AccountRoute"
 import { OfflineAreasRoute } from "../routes/OfflineAreasRoute"
 import { SettingsRoute } from "../routes/SettingsRoute"
-import { hiddenNativeTitle } from "./stack-options"
+import { pageTitleOptions } from "./stack-options"
 
 /**
  * OA-13 (owner decision, 2026-09-28): Compte is no longer a tab. The avatar pushes these two
@@ -28,32 +29,39 @@ function SettingsHeaderButton({ onPress, color }: { onPress: () => void; color: 
 
 type AccountHomeOptionsArgs = { navigation: { navigate: (name: "settings") => void } }
 
-/** Header options for Compte; `tint` is the theme's strong text colour. */
-export function makeAccountHomeOptions(tint: string) {
+/**
+ * Header options for Compte. The title is the native large title in the native iOS tab tree
+ * (12.2-17: it collapses into the bar as the page scrolls), elsewhere the page draws it (OA-69,
+ * OA-70) and the native one is hidden; the header keeps the back and gear buttons either way.
+ */
+export function makeAccountHomeOptions(theme: BrandTheme) {
+  const tint = theme.semanticColors.textStrong
   return ({ navigation }: AccountHomeOptionsArgs): NativeStackNavigationOptions => ({
     title: fr.navigation.headers.account,
-    // The page draws its own large title (OA-69, OA-70); the header keeps the back and gear buttons.
-    ...hiddenNativeTitle,
+    ...pageTitleOptions(theme),
     headerShown: true,
-    headerLargeTitle: false,
     headerRight: () => (
       <SettingsHeaderButton color={tint} onPress={() => navigation.navigate("settings")} />
     ),
   })
 }
 
-export const settingsScreenOptions: NativeStackNavigationOptions = {
-  title: fr.navigation.headers.settings,
-  ...hiddenNativeTitle,
-  headerShown: true,
-  headerLargeTitle: false,
+/** Paramètres: the same title rule as Compte (12.2-17). */
+export function makeSettingsScreenOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  return {
+    title: fr.navigation.headers.settings,
+    ...pageTitleOptions(theme),
+    headerShown: true,
+  }
 }
 
-export const offlineAreasScreenOptions: NativeStackNavigationOptions = {
-  title: fr.navigation.headers.offlineAreas,
-  ...hiddenNativeTitle,
-  headerShown: true,
-  headerLargeTitle: false,
+/** Cartes hors ligne: the same title rule as Compte (12.2-17). */
+export function makeOfflineAreasScreenOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  return {
+    title: fr.navigation.headers.offlineAreas,
+    ...pageTitleOptions(theme),
+    headerShown: true,
+  }
 }
 
 export const ACCOUNT_SCREENS = {

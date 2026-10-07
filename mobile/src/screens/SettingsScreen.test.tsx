@@ -8,6 +8,7 @@ import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-
 import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { SettingsScreen } from "./SettingsScreen"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 
 const mockAlert = jest.fn()
 const mockShouldShowDevTools = jest.fn(() => false)
@@ -339,5 +340,46 @@ describe("SettingsScreen", () => {
       act(() => userButtons.find((button) => button.text === fr.settings.alerts.empty)!.onPress?.())
       expect(props.onDebugResetUserData).toHaveBeenCalledTimes(1)
     })
+  })
+})
+
+type LargeStyle = Record<string, unknown>
+function flattenLarge(style: unknown): LargeStyle {
+  if (Array.isArray(style))
+    return style.reduce<LargeStyle>((acc, s) => ({ ...acc, ...flattenLarge(s) }), {})
+  return (style as LargeStyle | null | undefined) ?? {}
+}
+
+describe("SettingsScreen under the native large title (12.2-17)", () => {
+  function mountLarge(props: React.ComponentProps<typeof SettingsScreen>) {
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <SettingsScreen {...props} />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+  }
+  const pageTitles = () =>
+    tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.children === fr.settings.title,
+    )
+
+  test("no in-page title and the insets left to iOS", () => {
+    mountLarge(makeProps())
+    expect(pageTitles()).toHaveLength(0)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    expect(scroll.props.scrollIndicatorInsets).toBeUndefined()
+    expect(flattenLarge(scroll.props.contentContainerStyle).paddingBottom).toBe(16)
+  })
+
+  test("outside it the page keeps its title and its own tab bar clearance", () => {
+    mount(makeProps())
+    expect(pageTitles()).toHaveLength(1)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
+    expect(scroll.props.scrollIndicatorInsets).toEqual({ bottom: 50 })
+    expect(flattenLarge(scroll.props.contentContainerStyle).paddingBottom).toBe(50 + 16)
   })
 })

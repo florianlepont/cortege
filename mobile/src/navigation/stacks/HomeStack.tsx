@@ -8,8 +8,8 @@ import { createBaseStackScreenOptions } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
-  offlineAreasScreenOptions,
-  settingsScreenOptions,
+  makeOfflineAreasScreenOptions,
+  makeSettingsScreenOptions,
 } from "./AccountStack"
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>()
@@ -26,17 +26,17 @@ export function HomeTabNavigator() {
         <HomeStack.Screen name="homeRoot" component={HomeRoute} />
         <HomeStack.Screen
           name="accountHome"
-          options={makeAccountHomeOptions(theme.semanticColors.textStrong)}
+          options={makeAccountHomeOptions(theme)}
           component={ACCOUNT_SCREENS.accountHome}
         />
         <HomeStack.Screen
           name="settings"
-          options={settingsScreenOptions}
+          options={makeSettingsScreenOptions(theme)}
           component={ACCOUNT_SCREENS.settings}
         />
         <HomeStack.Screen
           name="offlineAreas"
-          options={offlineAreasScreenOptions}
+          options={makeOfflineAreasScreenOptions(theme)}
           component={ACCOUNT_SCREENS.offlineAreas}
         />
       </HomeStack.Navigator>

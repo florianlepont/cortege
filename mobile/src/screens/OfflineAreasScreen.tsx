@@ -10,6 +10,7 @@ import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { fr } from "../i18n"
 import type { OfflineAreaSummary } from "../storage/offline-map"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
+import { useFrameLargeTitle } from "../ui/frame-large-title"
 import { accountStyles as styles } from "./account/styles"
 
 const t = fr.offlineMap.areas
@@ -28,6 +29,7 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
   const theme = useBrandTheme()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
+  const largeTitle = useFrameLargeTitle()
 
   const confirmDelete = (area: OfflineAreaSummary): void => {
     Alert.alert(manage.confirmDeleteTitle(area.name), manage.confirmDeleteMessage, [
@@ -80,14 +82,15 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
       contentContainerStyle={[
         styles.content,
         {
-          // D-19: the route's ScreenFrame starts the page below the transparent header.
+          // D-19: the route's ScreenFrame starts the page below the transparent header. 12.2-17:
+          // under the native large title iOS insets the scroll view (header, tab bar) itself.
           paddingTop: brandSpacing.md,
-          paddingBottom: Math.max(tabBarHeight, insets.bottom) + brandSpacing.md,
+          paddingBottom: (largeTitle ? 0 : Math.max(tabBarHeight, insets.bottom)) + brandSpacing.md,
           paddingHorizontal: brandSpacing.md,
         },
       ]}
       showsVerticalScrollIndicator={false}
-      contentInsetAdjustmentBehavior="never"
+      contentInsetAdjustmentBehavior={largeTitle ? "automatic" : "never"}
       automaticallyAdjustContentInsets={false}
     >
       <PageTitle>{manage.title}</PageTitle>

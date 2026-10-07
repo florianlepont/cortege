@@ -5,6 +5,7 @@ import type { AuthUser } from "../app/types"
 import { fr } from "../i18n"
 import { Ionicons } from "@expo/vector-icons"
 import { AccountScreen } from "./AccountScreen"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 
 const originalConsoleError = console.error
 
@@ -310,5 +311,53 @@ describe("AccountScreen", () => {
     expect(confirm?.style).toBe("destructive")
     act(() => confirm?.onPress?.())
     expect(onLogout).toHaveBeenCalled()
+  })
+})
+
+type LargeStyle = Record<string, unknown>
+function flattenLarge(style: unknown): LargeStyle {
+  if (Array.isArray(style))
+    return style.reduce<LargeStyle>((acc, s) => ({ ...acc, ...flattenLarge(s) }), {})
+  return (style as LargeStyle | null | undefined) ?? {}
+}
+
+describe("AccountScreen under the native large title (12.2-17)", () => {
+  function mountLarge(props: React.ComponentProps<typeof AccountScreen>) {
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <AccountScreen {...props} />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+  }
+  const pageTitles = () =>
+    tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.children === fr.account.title,
+    )
+
+  test("the header names the page: no in-page title, the title is never doubled", () => {
+    mountLarge(makeProps())
+    expect(pageTitles()).toHaveLength(0)
+  })
+
+  test("the scroll view leaves the insets to iOS: automatic, no tab bar padding or indicator inset", () => {
+    mountLarge(makeProps())
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    expect(scroll.props.scrollIndicatorInsets).toBeUndefined()
+    const content = flattenLarge(scroll.props.contentContainerStyle)
+    // The 16 pt margins only; the 68 pt tab bar is inset by the system.
+    expect(content.paddingTop).toBe(16)
+    expect(content.paddingBottom).toBe(16)
+  })
+
+  test("outside it the page keeps its title and its own tab bar clearance", () => {
+    mount(makeProps())
+    expect(pageTitles()).toHaveLength(1)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
+    expect(scroll.props.scrollIndicatorInsets).toEqual({ bottom: 68 })
+    expect(flattenLarge(scroll.props.contentContainerStyle).paddingBottom).toBe(68 + 16)
   })
 })

@@ -21,8 +21,8 @@ import { createBaseStackScreenOptions, hiddenNativeTitle } from "./stack-options
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
-  offlineAreasScreenOptions,
-  settingsScreenOptions,
+  makeOfflineAreasScreenOptions,
+  makeSettingsScreenOptions,
 } from "./AccountStack"
 import { SurveysStackConfigContext, type SurveysStackConfig } from "./surveys-stack-config"
 
@@ -188,17 +188,17 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           />
           <SurveysStack.Screen
             name="accountHome"
-            options={makeAccountHomeOptions(theme.semanticColors.textStrong)}
+            options={makeAccountHomeOptions(theme)}
             component={ACCOUNT_SCREENS.accountHome}
           />
           <SurveysStack.Screen
             name="settings"
-            options={settingsScreenOptions}
+            options={makeSettingsScreenOptions(theme)}
             component={ACCOUNT_SCREENS.settings}
           />
           <SurveysStack.Screen
             name="offlineAreas"
-            options={offlineAreasScreenOptions}
+            options={makeOfflineAreasScreenOptions(theme)}
             component={ACCOUNT_SCREENS.offlineAreas}
           />
         </SurveysStack.Navigator>

@@ -10,12 +10,15 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 
-const mockPlatform = { OS: "android" as "android" | "ios" }
+const mockPlatform = { OS: "android" as "android" | "ios", Version: 26 as number | string }
 
 jest.mock("react-native", () => ({
   Platform: {
     get OS() {
       return mockPlatform.OS
+    },
+    get Version() {
+      return mockPlatform.Version
     },
     select: (options: Record<string, unknown>) =>
       mockPlatform.OS in options ? options[mockPlatform.OS] : options.default,
@@ -181,6 +184,7 @@ import {
 } from "./tab-config"
 import { JsRootTabs } from "./tabs/JsRootTabs"
 import { NativeRootTabs } from "./tabs/NativeRootTabs"
+import { nativeLargeTitle } from "./stacks/stack-options"
 
 type Options = Record<string, unknown>
 type OptionsFn = (args: Record<string, unknown>) => Options
@@ -205,6 +209,7 @@ afterAll(() => {
 
 beforeEach(() => {
   mockPlatform.OS = "android"
+  mockPlatform.Version = 26
   mockConstants.executionEnvironment = "bare"
   mockConstants.appOwnership = null
   delete process.env.EXPO_PUBLIC_ENABLE_NATIVE_TABS
@@ -455,29 +460,60 @@ describe("stack options and listeners", () => {
     expect(options({ route: { params: { factor: "C" } } }).title).toBe("Facteur C")
   })
 
-  test("a screen that draws its own title hides the native one on iOS, so a title is never doubled (OA-21)", async () => {
+  // Pages whose title is the native large title in the native iOS tab tree (12.2-17).
+  const ACCOUNT_PAGES = ["accountHome", "settings", "offlineAreas"]
+  const SURVEY_SUB_PAGES = ["communitySurvey", "surveyContext", "surveyScore", "surveyHistory"]
+  const resolveOwn = (name: string, args: Record<string, unknown> = {}) => {
+    const raw = mockScreens[name].options as Options | OptionsFn
+    return typeof raw === "function"
+      ? raw({ route: { params: {} }, navigation: mockNavigation, ...args })
+      : raw
+  }
+
+  test.each([
+    ["Android", "android", "bare"],
+    ["Expo Go on iOS", "ios", "storeClient"],
+  ] as const)(
+    "%s: a page that draws its own title hides the native one, so a title is never doubled (OA-21)",
+    async (_label, os, environment) => {
+      mockPlatform.OS = os
+      mockConstants.executionEnvironment = environment
+      await mount(<AppNavigation />)
+      for (const name of [...ACCOUNT_PAGES, ...SURVEY_SUB_PAGES]) {
+        const options = resolveOwn(name)
+        expect((options.headerTitle as () => null)()).toBeNull()
+        expect(options.headerTitleStyle).toEqual({ color: "transparent" })
+        expect(options.headerLargeTitleEnabled).toBeUndefined()
+      }
+      const factor = resolveOwn("surveyFactorDetail", { route: { params: { factor: "A" } } })
+      expect((factor.headerTitle as () => null)()).toBeNull()
+      expect(factor.headerTitleStyle).toEqual({ color: "transparent" })
+    },
+  )
+
+  test("native iOS tab tree: Compte, Paramètres and Cartes hors ligne have the native large title (12.2-17)", async () => {
     mockPlatform.OS = "ios"
     await mount(<AppNavigation />)
-    const resolve = (name: string, args: Record<string, unknown> = {}) => {
-      const raw = mockScreens[name].options as Options | OptionsFn
-      return typeof raw === "function" ? raw({ route: { params: {} }, ...args }) : raw
+    const titles: Record<string, string> = {
+      accountHome: fr.navigation.headers.account,
+      settings: fr.navigation.headers.settings,
+      offlineAreas: fr.navigation.headers.offlineAreas,
     }
-    for (const name of [
-      "accountHome",
-      "settings",
-      "offlineAreas",
-      "communitySurvey",
-      "surveyContext",
-      "surveyScore",
-      "surveyHistory",
-    ]) {
-      const options = resolve(name, { navigation: mockNavigation })
-      expect((options.headerTitle as () => null)()).toBeNull()
-      expect(options.headerTitleStyle).toEqual({ color: "transparent" })
+    for (const name of ACCOUNT_PAGES) {
+      const options = effectiveOptions(name)
+      expect(options).toEqual(expect.objectContaining(nativeLargeTitle(defaultTheme)))
+      expect(options.title).toBe(titles[name])
+      // The halo stays continuous behind the bar, and no custom title view hides the large one.
+      expect(options.headerTransparent).toBe(true)
+      expect(options.headerTitle).toBeUndefined()
+      expect(options.headerShown).toBe(true)
     }
-    const factor = resolve("surveyFactorDetail", { route: { params: { factor: "A" } } })
+    // The gear button stays in the bar of Compte.
+    expect(typeof resolveOwn("accountHome").headerRight).toBe("function")
+    // The factor pager keeps its own title row above the pages (no large title, see 12.2-17).
+    const factor = resolveOwn("surveyFactorDetail", { route: { params: { factor: "A" } } })
+    expect(factor.headerLargeTitleEnabled).toBeUndefined()
     expect((factor.headerTitle as () => null)()).toBeNull()
-    expect(factor.headerTitleStyle).toEqual({ color: "transparent" })
   })
 
   test("the factor screen has no swipe-back: a slide along the A to J strip is not a back (OA-111)", async () => {
