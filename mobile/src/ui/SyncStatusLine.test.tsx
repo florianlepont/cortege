@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
 import * as Haptics from "expo-haptics"
+import * as reanimated from "../../test/react-native-reanimated.mock"
 import { resolveSyncStatusLineState, SyncStatusLine } from "./SyncStatusLine"
 import { fr } from "../i18n"
 
@@ -160,5 +161,51 @@ describe("SyncStatusLine interaction", () => {
     expect(notifySuccess).toHaveBeenCalledTimes(1)
 
     notifySuccess.mockRestore()
+  })
+
+  describe("status dot spring (D-08 status icons)", () => {
+    const withSequenceSpy = jest.spyOn(reanimated, "withSequence")
+
+    beforeEach(() => {
+      withSequenceSpy.mockClear()
+    })
+
+    afterEach(() => {
+      reanimated.setReducedMotion(false)
+    })
+
+    function finishSync() {
+      const notifySuccess = jest.spyOn(Haptics, "notificationAsync")
+      let tree: renderer.ReactTestRenderer | undefined
+      act(() => {
+        tree = renderer.create(
+          <SyncStatusLine isOnline isSyncing pendingCount={0} onPress={jest.fn()} />,
+        )
+      })
+      act(() => {
+        tree!.update(
+          <SyncStatusLine isOnline isSyncing={false} pendingCount={0} onPress={jest.fn()} />,
+        )
+      })
+      const calls = notifySuccess.mock.calls.length
+      notifySuccess.mockRestore()
+      return calls
+    }
+
+    test("a finished sync springs the dot in and still fires the haptic once", () => {
+      expect(finishSync()).toBe(1)
+      expect(withSequenceSpy).toHaveBeenCalledTimes(1)
+    })
+
+    test("under Reduce Motion the haptic fires but the dot does not animate", () => {
+      reanimated.setReducedMotion(true)
+      expect(finishSync()).toBe(1)
+      expect(withSequenceSpy).not.toHaveBeenCalled()
+    })
+
+    test("no spring without a syncing-to-up-to-date transition", () => {
+      render({ isOnline: true, isSyncing: false, pendingCount: 0 })
+      expect(withSequenceSpy).not.toHaveBeenCalled()
+    })
   })
 })

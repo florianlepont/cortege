@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useRef } from "react"
-import { ActivityIndicator, StyleProp, StyleSheet, View, ViewStyle } from "react-native"
+import { ActivityIndicator, StyleProp, StyleSheet, ViewStyle } from "react-native"
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated"
 import { AppText as Text } from "./AppText"
-import { brandColors, brandTypography } from "../app/brand-tokens"
+import { brandColors, brandMotion, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppPressable } from "./AppPressable"
@@ -53,15 +62,25 @@ export function SyncStatusLine({
   const styles = useMemo(() => createStyles(theme), [theme])
   const state = resolveSyncStatusLineState({ isOnline, isSyncing, pendingCount })
   const previousStateRef = useRef(state)
+  const reduced = useReducedMotion()
+  const dotScale = useSharedValue(1)
 
   useEffect(() => {
     // A sync that just finished successfully gets a light haptic nudge (audit §3.2 SYNC-02): the
-    // dot goes from the spinner to the green one.
+    // dot goes from the spinner to the green one, and springs in (D-08 status icons).
     if (previousStateRef.current === "syncing" && state === "upToDate") {
       feedback.notify.success()
+      if (!reduced) {
+        dotScale.value = withSequence(
+          withTiming(0.6, { duration: 0 }),
+          withSpring(1, { ...brandMotion.springs.snappy, reduceMotion: ReduceMotion.System }),
+        )
+      }
     }
     previousStateRef.current = state
-  }, [state])
+  }, [state, reduced, dotScale])
+
+  const dotAnimatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: dotScale.value }] }))
 
   const label = LABEL_BY_STATE[state](pendingCount)
   const needsAttention = state === "offline" || state === "toSend"
@@ -78,7 +97,9 @@ export function SyncStatusLine({
       {state === "syncing" ? (
         <ActivityIndicator size="small" color={theme.colors.textSecondary} />
       ) : (
-        <View style={[styles.dot, needsAttention ? styles.dotWarning : styles.dotOk]} />
+        <Animated.View
+          style={[styles.dot, needsAttention ? styles.dotWarning : styles.dotOk, dotAnimatedStyle]}
+        />
       )}
       <Text style={[styles.label, needsAttention ? styles.labelWarning : null]}>{label}</Text>
     </AppPressable>
