@@ -25,6 +25,7 @@ import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
+import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 
 const menuText = fr.surveyDetail.menu
 const actionsText = fr.surveyDetail.actions
@@ -121,6 +122,9 @@ export function SurveyDetailScreen({
     data.nextFactor,
   )
   const resolvedMethod = resolveMethodVersion(data.scoringContext.ibp_method_version)
+  // With the bottom button the scroll area stops above it (and above the tab bar). Without it
+  // (a finished survey) the page runs under the floating tab bar: the last row needs the room.
+  const contentStyle = useSubPageContentStyle(styles.content, cta.kind === "hidden")
   const methodLabel = resolvedMethod === IBP_METHOD_V3_2 ? "v3.2" : "v3.0"
   const rowSections = [
     {
@@ -158,7 +162,7 @@ export function SurveyDetailScreen({
     <View style={styles.scroll}>
       <ScrollView
         style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={contentStyle}
       >
         <SummaryHeader
           surveyId={selectedSurvey.id}

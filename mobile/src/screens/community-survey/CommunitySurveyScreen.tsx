@@ -14,6 +14,7 @@ import { FactorsList } from "../survey-detail/FactorsList"
 import { ParcelMapCard } from "../survey-detail/ParcelMapCard"
 import { ScoreBreakdown } from "../survey-detail/ScoreBreakdown"
 import { createSummaryScreenStyles } from "../survey-detail/summary-screen.styles"
+import { useSubPageContentStyle } from "../survey-detail/useSubPageContent"
 import { toContextRows, toDisplayedScores, toFactorEntries } from "./view-model"
 
 const t = fr.communitySurvey
@@ -40,6 +41,7 @@ export function CommunitySurveyScreen({
   const theme = useBrandTheme()
   const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const contentStyle = useSubPageContentStyle(styles.subContent)
   const own = useMemo(() => createOwnStyles(theme), [theme])
   const { detail, photos, status, photosFailed } = state
 
@@ -101,7 +103,7 @@ export function CommunitySurveyScreen({
   ].filter((chip): chip is string => chip !== null && chip !== "")
 
   return (
-    <ScrollView style={scrollStyle} contentContainerStyle={styles.subContent}>
+    <ScrollView style={scrollStyle} contentContainerStyle={contentStyle}>
       {/* The same skeleton as one of my surveys (OA-115): title and status line, score, photos,
         map, then Contexte et parcelles, Score IBP and the parcel's history. */}
       <View style={own.titleBlock}>

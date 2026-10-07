@@ -2,6 +2,7 @@ import React from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
 import type { LocalSurvey } from "../storage/types"
 import { SurveyContextScreen } from "./SurveyContextScreen"
+import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
 import type { SurveyContextScreenProps } from "./survey-detail/screen-props"
 
 const originalConsoleError = console.error
@@ -33,6 +34,7 @@ jest.mock("react-native", () => {
   }
 })
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
+jest.mock("../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("../ui/AppGroupedList", () => ({ AppGroupedList: "AppGroupedList" }))
 jest.mock("../ui/PageTitle", () => ({ PageTitle: "PageTitle" }))
 jest.mock("./public-map/MapChips", () => ({ MapActionPill: "MapActionPill" }))
@@ -101,5 +103,21 @@ describe("SurveyContextScreen (variant I)", () => {
     const tree = render()
     expect(tree.root.findAllByType("AppGroupedList" as never)).toHaveLength(0)
     expect(JSON.stringify(tree.toJSON())).toContain("Aucune parcelle choisie")
+  })
+})
+
+type Style = Record<string, unknown>
+function flattenStyle(style: unknown): Style {
+  if (Array.isArray(style))
+    return style.reduce<Style>((acc, s) => ({ ...acc, ...flattenStyle(s) }), {})
+  return (style as Style | undefined | null) ?? {}
+}
+
+describe("bottom clearance above the tab bar", () => {
+  test("the scroll content ends above the floating tab bar, with a margin", () => {
+    const scroll = render().root.findByType("ScrollView" as never)
+    const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
+    expect(padding).toBe(90 + PAGE_END_MARGIN)
+    expect(padding).toBeGreaterThanOrEqual(90)
   })
 })

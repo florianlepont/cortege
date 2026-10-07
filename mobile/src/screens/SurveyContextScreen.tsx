@@ -11,6 +11,7 @@ import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
 import { ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
 import { type SurveyContextScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
+import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 
 const t = fr.surveyDetail.contextScreen
@@ -36,6 +37,7 @@ export function SurveyContextScreen({
   const theme = useBrandTheme()
   const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const contentStyle = useSubPageContentStyle(styles.subContent)
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName, parcelIds } = data
 
@@ -60,7 +62,7 @@ export function SurveyContextScreen({
   return (
     <ScrollView
       style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
-      contentContainerStyle={styles.subContent}
+      contentContainerStyle={contentStyle}
     >
       <PageTitle>{fr.navigation.headers.surveyContext}</PageTitle>
       <ParcelMapCard

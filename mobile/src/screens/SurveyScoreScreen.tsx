@@ -10,6 +10,7 @@ import { FactorsList } from "./survey-detail/FactorsList"
 import { ScoreBreakdown } from "./survey-detail/ScoreBreakdown"
 import { type SurveyScoreScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
+import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 
 /**
@@ -25,6 +26,7 @@ export function SurveyScoreScreen({
   const theme = useBrandTheme()
   const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const contentStyle = useSubPageContentStyle(styles.subContent)
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
 
   const factorPoints = useMemo(
@@ -35,7 +37,7 @@ export function SurveyScoreScreen({
   return (
     <ScrollView
       style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
-      contentContainerStyle={styles.subContent}
+      contentContainerStyle={contentStyle}
     >
       <PageTitle>{fr.navigation.headers.surveyScore}</PageTitle>
       <ScoreBreakdown scores={data.displayedScores} />

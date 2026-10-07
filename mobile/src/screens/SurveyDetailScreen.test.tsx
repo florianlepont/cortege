@@ -6,6 +6,7 @@ import { notificationAsync } from "../../test/expo-haptics.mock"
 import type { LocalSurvey } from "../storage/types"
 import { SurveyDetailScreen } from "./SurveyDetailScreen"
 import type { SurveyDetailScreenProps } from "./survey-detail/screen-props"
+import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
 
 const originalConsoleError = console.error
 
@@ -23,6 +24,7 @@ afterAll(() => {
 
 afterEach(() => {
   notificationAsync.mockClear()
+  mockCtaKind = "hidden"
 })
 
 jest.mock("react-native", () => {
@@ -58,10 +60,15 @@ jest.mock("./survey-detail/PhotosStrip", () => ({ PhotosStrip: "PhotosStrip" }))
 jest.mock("./survey-detail/ScoreCard", () => ({ ScoreCard: "ScoreCard" }))
 jest.mock("./survey-detail/SummaryHeader", () => ({ SummaryHeader: "SummaryHeader" }))
 jest.mock("./survey-detail/useSurveyDetailHeader", () => ({ useSurveyDetailHeader: jest.fn() }))
+let mockCtaKind: "hidden" | "next" = "hidden"
 jest.mock("./survey-detail/summary-state", () => ({
   resolveStatusLine: () => ({ status: "Brouillon", sync: "x", syncTone: "ok" }),
-  resolveFinishCta: () => ({ kind: "hidden" }),
+  resolveFinishCta: () =>
+    mockCtaKind === "hidden"
+      ? { kind: "hidden" }
+      : { kind: "next", label: "Continuer", factor: "A" },
 }))
+jest.mock("../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("./survey-detail/useSurveyDetailData", () => ({
   useSurveyDetailData: () => ({
     detail: undefined,
@@ -167,5 +174,30 @@ describe("SurveyDetailScreen summary", () => {
     update(tree, "synced")
     expect(byType(tree, "ScoreCard")[0].props.pulseTrigger).toBe(1)
     expect(notificationAsync).toHaveBeenCalledTimes(1)
+  })
+})
+
+type Style = Record<string, unknown>
+function flattenStyle(style: unknown): Style {
+  if (Array.isArray(style))
+    return style.reduce<Style>((acc, s) => ({ ...acc, ...flattenStyle(s) }), {})
+  return (style as Style | undefined | null) ?? {}
+}
+
+describe("SurveyDetailScreen bottom clearance", () => {
+  test("without the bottom button the last row scrolls above the floating tab bar", () => {
+    const tree = mount("submitted")
+    const scroll = byType(tree, "ScrollView")[0]
+    const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
+    expect(padding).toBe(90 + PAGE_END_MARGIN)
+    expect(padding).toBeGreaterThanOrEqual(90)
+  })
+
+  test("with the bottom button the scroll area already stops above it, so no extra room", () => {
+    mockCtaKind = "next"
+    const tree = mount("draft")
+    const scroll = byType(tree, "ScrollView")[0]
+    const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
+    expect(padding).toBeLessThan(90)
   })
 })

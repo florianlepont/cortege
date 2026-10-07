@@ -7,6 +7,7 @@ import type { CommunitySurveyDetail } from "@cortege/ibp-domain"
 import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
+import { PAGE_END_MARGIN } from "../survey-detail/useSubPageContent"
 import { CommunitySurveyScreen } from "./CommunitySurveyScreen"
 
 const t = fr.communitySurvey
@@ -43,6 +44,7 @@ jest.mock("react-native", () => {
   }
 })
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
+jest.mock("../../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("expo-image", () => {
   const ReactRef = require("react") as typeof import("react")
   return { Image: (props: object) => ReactRef.createElement("ExpoImage", props) }
@@ -273,5 +275,22 @@ describe("CommunitySurveyScreen", () => {
     }
     const { tree } = render(state({ detail: detail({ history: [only] }) }))
     expect(texts(tree)).not.toContain(t.history.title)
+  })
+})
+
+type Style = Record<string, unknown>
+function flattenStyle(style: unknown): Style {
+  if (Array.isArray(style))
+    return style.reduce<Style>((acc, s) => ({ ...acc, ...flattenStyle(s) }), {})
+  return (style as Style | undefined | null) ?? {}
+}
+
+describe("bottom clearance above the tab bar", () => {
+  it("the scroll content ends above the floating tab bar, with a margin", () => {
+    const { tree } = render(state())
+    const scroll = byType(tree, "ScrollView")[0]
+    const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
+    expect(padding).toBe(90 + PAGE_END_MARGIN)
+    expect(padding).toBeGreaterThanOrEqual(90)
   })
 })

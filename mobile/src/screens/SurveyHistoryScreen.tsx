@@ -8,6 +8,7 @@ import { EventsTab } from "./survey-detail/EventsTab"
 import { HistorySection } from "./survey-detail/HistorySection"
 import { type SurveyHistoryScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
+import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 
 /**
@@ -27,6 +28,7 @@ export function SurveyHistoryScreen({
   const theme = useBrandTheme()
   const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const contentStyle = useSubPageContentStyle(styles.subContent)
   const { detail, parcelIds } = useSurveyDetailData(
     selectedSurvey,
     surveyDetails,
@@ -43,7 +45,7 @@ export function SurveyHistoryScreen({
   return (
     <ScrollView
       style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
-      contentContainerStyle={styles.subContent}
+      contentContainerStyle={contentStyle}
       refreshControl={
         <RefreshControl
           refreshing={isLoading}
