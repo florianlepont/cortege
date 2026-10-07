@@ -3,6 +3,7 @@ import renderer, { act } from "react-test-renderer"
 import { ActionSheetIOS, Alert, Platform } from "react-native"
 import type { AuthUser } from "../../app/types"
 import { fr } from "../../i18n"
+import { defaultTheme } from "../../app/theme"
 import { IdentityCard, resolveInitials, resolveProfilePictureUri } from "./IdentityCard"
 
 const originalConsoleError = console.error
@@ -120,6 +121,22 @@ describe("IdentityCard", () => {
     expect(root.findAllByType("Image" as never)).toHaveLength(0)
     const texts = root.findAllByType("Text" as never).map((node) => node.props.children)
     expect(texts).toEqual(["MC", "Marie Curie", "marie@example.org"])
+  })
+
+  it("is a compact glass card with a 56 pt avatar, still above the 44 pt touch minimum", async () => {
+    const { root } = await renderCard()
+
+    const card = root.findAllByType("View" as never)[0]
+    const glass = defaultTheme.visual.glass
+    expect(card.props.style).toMatchObject({
+      flexDirection: "row",
+      backgroundColor: glass.cardFill,
+      borderColor: glass.cardBorder,
+      borderRadius: 22,
+    })
+    const avatar = root.findByType("Pressable" as never)
+    expect(avatar.props.style).toMatchObject({ width: 56, height: 56 })
+    expect(56).toBeGreaterThanOrEqual(44)
   })
 
   it("gives the camera badge a button role and catalogue labels", async () => {

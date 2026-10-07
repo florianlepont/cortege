@@ -93,6 +93,7 @@ export function useAccountConnectionRows({
       }
     : {
         key: "email",
+        icon: "mail-outline",
         label: fr.account.email.label,
         value: currentEmail ?? fr.account.email.empty,
         accessibilityLabel: fr.account.a11y.editEmail,
@@ -105,6 +106,7 @@ export function useAccountConnectionRows({
   // ACC-I08 : value = action courte, pas une description longue
   const passwordRow: AppGroupedListRow = {
     key: "password",
+    icon: "key-outline",
     label: fr.account.password.label,
     value: fr.account.password.action,
     accessibilityLabel: fr.account.a11y.resetPassword,
@@ -129,6 +131,7 @@ export function useLogoutRow({ onLogout }: UseLogoutRowInput): AppGroupedListRow
 
   return {
     key: "logout",
+    icon: "log-out-outline",
     label: fr.account.logout,
     destructive: true,
     centered: true,

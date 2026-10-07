@@ -167,12 +167,14 @@ function createStyles(theme: BrandTheme) {
     list: {
       gap: brandSpacing4.md,
     },
+    // Compact rule (UI-SPEC): the header sits 24 above (16 list gap + 8) and 8 below.
     section: {
-      gap: brandSpacing4.xs,
+      gap: brandSpacing4.sm,
     },
     sectionTitle: {
       ...brandTypography.sectionHeader,
       color: theme.colors.textSecondary,
+      marginTop: brandSpacing4.sm,
       paddingHorizontal: brandSpacing4.xs,
     },
     sectionFooter: {

@@ -3,6 +3,7 @@ import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "r
 import { Alert } from "react-native"
 import type { AuthUser } from "../app/types"
 import { fr } from "../i18n"
+import { Ionicons } from "@expo/vector-icons"
 import { AccountScreen } from "./AccountScreen"
 
 const originalConsoleError = console.error
@@ -141,6 +142,33 @@ describe("AccountScreen", () => {
     expect(input(fr.account.profile.firstName).props.value).toBe("Marie")
     expect(input(fr.account.profile.lastName).props.value).toBe("Curie")
     expect(input(fr.account.profile.displayName).props.value).toBe("Marie")
+  })
+
+  test("gives every row an outline icon, in list order", () => {
+    mount(makeProps())
+    const names = tree.root
+      .findAllByType(Ionicons as unknown as React.ComponentType<{ name: string }>)
+      .map((node) => node.props.name)
+      .filter((name) => name !== "chevron-forward")
+    expect(names).toEqual([
+      "person-outline",
+      "person-outline",
+      "at-outline",
+      "mail-outline",
+      "key-outline",
+      "log-out-outline",
+    ])
+    names.forEach((name) => expect(name.endsWith("-outline")).toBe(true))
+  })
+
+  test("shows 'Non renseigné' for a missing e-mail, never an em dash", () => {
+    mount(makeProps({ currentUser: { ...user, email: null as unknown as string } }))
+    const texts = tree.root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .map((node) => String([node.props.children].flat().join("")))
+    expect(fr.account.email.empty).toBe("Non renseigné")
+    expect(texts).toContain("Non renseigné")
+    expect(fr.account.email.empty).not.toContain("\u2014")
   })
 
   describe("the unsaved-changes bar (OA-72)", () => {
