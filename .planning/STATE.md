@@ -6,14 +6,14 @@ current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
 stopped_at: Phase 12.2 UI-SPEC approved
-last_updated: "2026-10-07T04:47:36.564Z"
+last_updated: "2026-10-07T04:53:50.598Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 162
+  completed_plans: 163
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 4 of 23
+Plan: 5 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -83,6 +83,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P02 | 25min | 3 tasks | 6 files |
 | Phase 12.2 P01 | gate | 2 tasks | 1 files |
 | Phase 12.2 P03 | 25min | 3 tasks | 17 files |
+| Phase 12.2 P04 | 25min | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 01.2]: Device verification: steps 1-5 confirmed on real hardware (offline session keep, revoked refresh token, logout with unsynced work, other-account conflict, dev tools absent in release build); steps 6-7 (nearby-parcels list, production rate limiting) carried over as they require field conditions / a live deploy
 - [Phase 12.2-02]: Factor tone cut points (0-2 low, 3 mid, 4-5 high) are a mobile display convention; total tone delegates to bandTone(totalBand(n))
 - [Phase 12.2]: 03: Light ring and bar high tone is #728A2D (D-16); dark forest halo core rgba(111, 154, 60, 0.55) in one token (D-14); GlassSurface uses static keyed brandGlassFills, Android flat higher-alpha fill (D-17)
+- [Phase 12.2-04]: GlowBar track does not clip so the fill glow shows; NUMERAL_RENDER_MODE is the single fallback switch for the gradient numeral
 
 ### Pending Todos
 
@@ -176,6 +178,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-07T04:47:31.918Z
+Last session: 2026-10-07T04:53:43.857Z
 Stopped at: Phase 12.2 UI-SPEC approved
 Resume file: .planning/phases/12.2-visual-modernisation-inserted/12.2-UI-SPEC.md
