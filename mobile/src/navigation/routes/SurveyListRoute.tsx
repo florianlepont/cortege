@@ -61,7 +61,6 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
     <SurveyListScreen
       surveys={state.surveys}
       selectedSurveyId={state.selectedSurveyId}
-      attachmentsBySurvey={state.attachmentsBySurvey}
       surveyDetails={state.surveyDetails}
       showTitleBar={!nativeHeader}
       onRefresh={syncActions.handlePullChanges}
@@ -69,7 +68,6 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
       onOpenCreateSurvey={onOpenCreateSurvey}
       onOpenSearch={onOpenSearch}
       onOpenSurvey={onOpenSurvey}
-      onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
     />
   )
 })

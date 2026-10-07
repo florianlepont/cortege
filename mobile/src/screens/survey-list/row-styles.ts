@@ -83,21 +83,6 @@ export function createRowStyles(theme: BrandTheme) {
       alignItems: "center",
       justifyContent: "center",
     },
-    // P2-COMPACT-01: reduced thumbnail size
-    surveyCardMedia: {
-      width: 56,
-      height: 72,
-    },
-    surveyCardPreview: {
-      width: "100%",
-      height: "100%",
-      borderRadius: 12,
-      backgroundColor: theme.colors.panelMuted,
-    },
-    surveyCardPreviewPlaceholder: {
-      alignItems: "center",
-      justifyContent: "center",
-    },
     surveyCardContent: {
       flex: 1,
       gap: brandSpacing4.xs,

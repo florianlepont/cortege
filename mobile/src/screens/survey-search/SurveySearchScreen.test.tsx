@@ -113,7 +113,6 @@ function makeProps(overrides: Partial<SurveySearchScreenProps> = {}): SurveySear
     sortMode: "updated_desc",
     onSortModeChange: jest.fn(),
     surveys: [mine("a"), mine("b")],
-    attachmentsBySurvey: {},
     surveyDetails: {},
     selectedSurveyId: null,
     community: { items: [], status: "idle" },
@@ -121,7 +120,6 @@ function makeProps(overrides: Partial<SurveySearchScreenProps> = {}): SurveySear
     onOpenCommunitySurvey: jest.fn(),
     onDeleteSurvey: jest.fn(),
     onCancel: jest.fn(),
-    onEnsureAttachmentPreviews: jest.fn(),
     ...overrides,
   }
 }

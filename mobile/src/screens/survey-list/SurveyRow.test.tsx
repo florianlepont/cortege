@@ -1,3 +1,5 @@
+import fs from "fs"
+import path from "path"
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
@@ -73,7 +75,6 @@ function makeSurvey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
 function mount(overrides: Partial<SurveyRowProps> = {}) {
   const props: SurveyRowProps = {
     survey: makeSurvey(),
-    preview: null,
     score: null,
     selected: false,
     onOpen: jest.fn(),
@@ -171,6 +172,28 @@ describe("SurveyRow glass card and interactions", () => {
     expect(props.onOpen).not.toHaveBeenCalled()
     // the pressed fill is gone: the wave is the feedback (D-21)
     expect(JSON.stringify(card.props.style)).not.toContain(defaultTheme.colors.surfaceSoft)
+  })
+
+  test("shows no photo thumbnail: the row is the ring, the title, the status chip and the date", () => {
+    const { card } = mount({ survey: makeSurvey({ status: "submitted" }), score: 34 })
+    // accent bar, ring column and text column, then the wave layer: nothing between ring and text
+    expect(card.children).toHaveLength(4)
+    expect(tree.root.findAllByType("ScoreRing" as never)).toHaveLength(1)
+    const texts = tree.root
+      .findAll((node) => (node.type as unknown) === "Text")
+      .map((node) => String(node.props.children))
+    expect(texts).toContain("Parcelle A")
+  })
+
+  test("no row code loads a photo any more", () => {
+    for (const file of [
+      "SurveyRow.tsx",
+      "SurveyRowFrame.tsx",
+      "../survey-search/CommunityRow.tsx",
+    ]) {
+      const source = fs.readFileSync(path.join(__dirname, file), "utf8")
+      expect(source).not.toMatch(/expo-image|ActivityIndicator|attachmentId|image-outline/)
+    }
   })
 
   test("pressing the row opens the survey", () => {

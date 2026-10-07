@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useMemo, useRef } from "react"
 import {
   FlatList,
   ListRenderItemInfo,
@@ -21,18 +21,13 @@ import type {
 import { useAppBottomTabBarHeight } from "../../app/useAppBottomTabBarHeight"
 import type { CommunitySearchState } from "../../hooks/useCommunitySurveys"
 import { fr } from "../../i18n"
-import type { LocalAttachment, LocalSurvey } from "../../storage"
+import type { LocalSurvey } from "../../storage"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppText as Text } from "../../ui/AppText"
 import { feedback } from "../../ui/feedback"
 import { ListEntranceRow } from "../../ui/ListEntranceRow"
 import { useListEntrance } from "../../ui/useListEntrance"
-import { SurveyRow, type SurveyRowPreview } from "../survey-list/SurveyRow"
-import {
-  isPhotoAttachment,
-  resolveAttachmentPreview,
-  selectPreviewCandidates,
-} from "../survey-screen-helpers"
+import { SurveyRow } from "../survey-list/SurveyRow"
 import { CommunityRow } from "./CommunityRow"
 import { createSearchStyles } from "./search.styles"
 
@@ -55,7 +50,6 @@ export type SurveySearchScreenProps = {
   onSortModeChange: (value: SurveySort) => void
   /** The user's surveys after the query and the filters. */
   surveys: LocalSurvey[]
-  attachmentsBySurvey: Record<string, LocalAttachment[]>
   surveyDetails: Record<string, SurveyDetailResponse>
   selectedSurveyId: string | null
   community: CommunitySearchState
@@ -64,7 +58,6 @@ export type SurveySearchScreenProps = {
   onOpenCommunitySurvey: (surveyId: string) => void
   onDeleteSurvey: (surveyId: string) => void
   onCancel: () => void
-  onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
 }
 
 type SearchItem =
@@ -91,7 +84,6 @@ export function SurveySearchScreen({
   sortMode,
   onSortModeChange,
   surveys,
-  attachmentsBySurvey,
   surveyDetails,
   selectedSurveyId,
   community,
@@ -99,7 +91,6 @@ export function SurveySearchScreen({
   onOpenCommunitySurvey,
   onDeleteSurvey,
   onCancel,
-  onEnsureAttachmentPreviews,
 }: SurveySearchScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSearchStyles(theme), [theme])
@@ -108,24 +99,6 @@ export function SurveySearchScreen({
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
   const inputRef = useRef<TextInput>(null)
   const trimmedQuery = query.trim()
-
-  useEffect(() => {
-    const candidates = surveys
-      .map((survey) => (attachmentsBySurvey[survey.id] ?? []).find(isPhotoAttachment))
-      .filter((attachment): attachment is LocalAttachment => Boolean(attachment))
-    void onEnsureAttachmentPreviews?.(selectPreviewCandidates(candidates))
-  }, [attachmentsBySurvey, onEnsureAttachmentPreviews, surveys])
-
-  const previewById = useMemo(() => {
-    const byId: Record<string, SurveyRowPreview> = {}
-    for (const [surveyId, attachments] of Object.entries(attachmentsBySurvey)) {
-      const firstPhoto = attachments.find(isPhotoAttachment)
-      if (firstPhoto) {
-        byId[surveyId] = { ...resolveAttachmentPreview(firstPhoto), attachmentId: firstPhoto.id }
-      }
-    }
-    return byId
-  }, [attachmentsBySurvey])
 
   const data = useMemo<SearchItem[]>(
     () =>
@@ -150,7 +123,6 @@ export function SurveySearchScreen({
         {item.kind === "mine" ? (
           <SurveyRow
             survey={item.survey}
-            preview={previewById[item.survey.id] ?? null}
             score={surveyDetails[item.survey.id]?.scores?.ibp_total ?? null}
             selected={selectedSurveyId === item.survey.id}
             index={index}
@@ -167,7 +139,6 @@ export function SurveySearchScreen({
       onDeleteSurvey,
       onOpenCommunitySurvey,
       onOpenSurvey,
-      previewById,
       selectedSurveyId,
       surveyDetails,
     ],

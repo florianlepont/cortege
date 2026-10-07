@@ -14,8 +14,6 @@ export type SurveyRowFrameProps = Omit<PressableProps, "style" | "children"> & {
   selected?: boolean
   /** The ring column (40 pt wide). */
   indicator: ReactNode
-  /** Optional photo thumbnail, between the ring and the text. */
-  media?: ReactNode
   title: string
   /** The line under the title: at least as tall as a status chip, so every row has the same height. */
   status: ReactNode
@@ -33,7 +31,6 @@ export function SurveyRowFrame({
   tone = "neutral",
   selected = false,
   indicator,
-  media,
   title,
   status,
   support,
@@ -59,8 +56,6 @@ export function SurveyRowFrame({
       <View style={[styles.surveyCardAccent, accentStyle]} />
 
       <View style={styles.surveyCardIndicator}>{indicator}</View>
-
-      {media}
 
       <View style={styles.surveyCardContent}>
         <View style={styles.surveyCardHeader}>

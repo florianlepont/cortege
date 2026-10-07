@@ -118,7 +118,6 @@ describe("CommunityRow size (D-23)", () => {
     render(
       <SurveyRow
         survey={survey()}
-        preview={null}
         score={34}
         selected={false}
         onOpen={jest.fn()}

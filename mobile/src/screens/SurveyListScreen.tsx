@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { FlatList, ListRenderItemInfo, Platform, RefreshControl, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandSpacing } from "../app/brand-tokens"
@@ -6,12 +6,6 @@ import { useBrandTheme } from "../app/theme"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { ListEntranceRow } from "../ui/ListEntranceRow"
 import { useListEntrance } from "../ui/useListEntrance"
-import type { LocalAttachment } from "../storage"
-import {
-  isPhotoAttachment,
-  resolveAttachmentPreview,
-  selectPreviewCandidates,
-} from "./survey-screen-helpers"
 import { ListEmptyState } from "./survey-list/ListEmptyState"
 import { ListSummaryCard } from "./survey-list/ListSummaryCard"
 import { ListTitleBar, SectionTitle } from "./survey-list/list-chrome"
@@ -22,7 +16,6 @@ import {
   type SurveyListItem,
 } from "./survey-list/list-items"
 import { SurveyRow } from "./survey-list/SurveyRow"
-import type { SurveyRowPreview } from "./survey-list/SurveyRow"
 import { createListStyles } from "./survey-list/styles"
 import type { SurveyListScreenProps } from "./survey-list/types"
 
@@ -36,7 +29,6 @@ const INITIAL_ROWS = 10
 export function SurveyListScreen({
   surveys,
   selectedSurveyId,
-  attachmentsBySurvey,
   surveyDetails,
   showTitleBar,
   onRefresh,
@@ -44,7 +36,6 @@ export function SurveyListScreen({
   onOpenCreateSurvey,
   onOpenSearch,
   onOpenSurvey,
-  onEnsureAttachmentPreviews,
 }: SurveyListScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createListStyles(theme), [theme])
@@ -57,24 +48,6 @@ export function SurveyListScreen({
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
 
   const { items, toFinishCount } = useMemo(() => buildListItems(surveys), [surveys])
-
-  // D-11: ask for the first photo of every survey so a pulled ("remote") attachment downloads on
-  // demand instead of staying hidden in the list.
-  const firstPhotoKey = surveys
-    .map((survey) => {
-      const firstPhoto = (attachmentsBySurvey[survey.id] ?? []).find(isPhotoAttachment)
-      return firstPhoto ? `${firstPhoto.id}:${firstPhoto.file_state}` : null
-    })
-    .filter((key): key is string => key !== null)
-    .join(",")
-
-  useEffect(() => {
-    const candidates = surveys
-      .map((survey) => (attachmentsBySurvey[survey.id] ?? []).find(isPhotoAttachment))
-      .filter((attachment): attachment is LocalAttachment => Boolean(attachment))
-    void onEnsureAttachmentPreviews?.(selectPreviewCandidates(candidates))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [firstPhotoKey, onEnsureAttachmentPreviews])
 
   const handleRefresh = useCallback(async () => {
     if (!onRefresh) return
@@ -98,18 +71,6 @@ export function SurveyListScreen({
     [handleRefresh, onRefresh, refreshing, theme],
   )
 
-  // One preview value per survey, derived once per attachments change (D-03).
-  const previewById = useMemo(() => {
-    const byId: Record<string, SurveyRowPreview> = {}
-    for (const [surveyId, attachments] of Object.entries(attachmentsBySurvey)) {
-      const firstPhoto = attachments.find(isPhotoAttachment)
-      if (firstPhoto) {
-        byId[surveyId] = { ...resolveAttachmentPreview(firstPhoto), attachmentId: firstPhoto.id }
-      }
-    }
-    return byId
-  }, [attachmentsBySurvey])
-
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<SurveyListItem>) =>
       isSectionHeader(item) ? (
@@ -120,7 +81,6 @@ export function SurveyListScreen({
         <ListEntranceRow index={index} canAnimate={canAnimateRow}>
           <SurveyRow
             survey={item}
-            preview={previewById[item.id] ?? null}
             score={surveyDetails[item.id]?.scores?.ibp_total ?? null}
             selected={selectedSurveyId === item.id}
             index={index}
@@ -129,7 +89,7 @@ export function SurveyListScreen({
           />
         </ListEntranceRow>
       ),
-    [canAnimateRow, onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId, surveyDetails],
+    [canAnimateRow, onDeleteSurvey, onOpenSurvey, selectedSurveyId, surveyDetails],
   )
 
   const listHeader = useMemo(

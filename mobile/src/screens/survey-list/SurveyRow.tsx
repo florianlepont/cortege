@@ -1,7 +1,6 @@
 import { memo, useCallback, useMemo, useRef } from "react"
-import { ActivityIndicator, Pressable, View } from "react-native"
+import { Pressable } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import Swipeable from "react-native-gesture-handler/Swipeable"
 import { useBrandTheme } from "../../app/theme"
@@ -11,19 +10,12 @@ import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppStatusChip } from "../../ui/AppStatusChip"
 import { ScoreRing } from "../../ui/ScoreRing"
-import type { AttachmentPreview } from "../survey-screen-helpers"
 import { feedback } from "../../ui/feedback"
 import { createRowStyles } from "./row-styles"
 import { SurveyRowFrame, type SurveyRowTone } from "./SurveyRowFrame"
 
-type RowStyles = ReturnType<typeof createRowStyles>
-
-/** First photo preview of a survey, with the attachment id used as image recycling key. */
-export type SurveyRowPreview = AttachmentPreview & { attachmentId: string }
-
 export type SurveyRowProps = {
   survey: LocalSurvey
-  preview: SurveyRowPreview | null
   /** LIST-01: the submitted survey's IBP total, once known — null shows a plain "submitted" ring. */
   score: number | null
   selected: boolean
@@ -40,53 +32,6 @@ function resolveSurveyRowTone(uiStatus: ReturnType<typeof resolveSurveyUiStatus>
   if (uiStatus === "submitted") return "success"
   if (uiStatus === "sync_pending") return "warning"
   return "neutral"
-}
-
-function previewEqual(left: SurveyRowPreview | null, right: SurveyRowPreview | null): boolean {
-  if (left === right) return true
-  if (!left || !right) return false
-  if (left.attachmentId !== right.attachmentId || left.kind !== right.kind) return false
-  if (left.kind === "image" && right.kind === "image") return left.uri === right.uri
-  return true
-}
-
-function RowPreview({
-  preview,
-  theme,
-  styles,
-}: {
-  preview: SurveyRowPreview
-  theme: ReturnType<typeof useBrandTheme>
-  styles: RowStyles
-}) {
-  if (preview.kind === "image") {
-    return (
-      <View style={styles.surveyCardMedia}>
-        <ExpoImage
-          source={{ uri: preview.uri }}
-          style={styles.surveyCardPreview}
-          contentFit="cover"
-          cachePolicy="memory"
-          recyclingKey={preview.attachmentId}
-        />
-      </View>
-    )
-  }
-  return (
-    <View style={styles.surveyCardMedia}>
-      <View style={[styles.surveyCardPreview, styles.surveyCardPreviewPlaceholder]}>
-        {preview.kind === "loading" ? (
-          <ActivityIndicator size="small" color={theme.colors.textSecondary} />
-        ) : (
-          <Ionicons
-            name={preview.kind === "missing" ? "warning-outline" : "image-outline"}
-            size={18}
-            color={theme.colors.textSecondary}
-          />
-        )}
-      </View>
-    </View>
-  )
 }
 
 // LIST-01: the score ring (12.2-11). A submitted survey with a known total gets the band-coloured
@@ -130,7 +75,6 @@ function RowIndicator({
  */
 function SurveyRowComponent({
   survey,
-  preview,
   score,
   selected,
   index = 0,
@@ -219,8 +163,6 @@ function SurveyRowComponent({
             index={index}
           />
         }
-        /* P2-COMPACT-01: thumbnail only when photo exists */
-        media={preview ? <RowPreview preview={preview} theme={theme} styles={styles} /> : null}
         /* OA-58: an unnamed draft no longer shows as a blank row. */
         title={survey.site_name?.trim() || fr.common.untitledSurvey}
         status={
@@ -250,6 +192,5 @@ export const SurveyRow = memo(
     previous.score === next.score &&
     previous.selected === next.selected &&
     previous.onOpen === next.onOpen &&
-    previous.onDelete === next.onDelete &&
-    previewEqual(previous.preview, next.preview),
+    previous.onDelete === next.onDelete,
 )

@@ -113,7 +113,6 @@ function makeProps(overrides: Partial<SurveyListScreenProps> = {}): SurveyListSc
       survey("b", "submitted", "2026-10-02T00:00:00.000Z"),
     ],
     selectedSurveyId: null,
-    attachmentsBySurvey: {},
     surveyDetails: {},
     showTitleBar: false,
     onDeleteSurvey: jest.fn(),

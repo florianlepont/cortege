@@ -310,7 +310,6 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
         selectedSurveyId: null,
         selectedSurvey: null,
         selectedSurveyAttachments: [],
-        attachmentsBySurvey: {},
         surveyQuery: "",
         surveyFromDate: "",
         surveyToDate: "",
