@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { brandColors, brandShadow, brandSpacing4 } from "../../app/brand-tokens"
+import { brandColors, brandScrims, brandShadow, brandSpacing4 } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { FACTOR_TITLES } from "../../app/constants"
 import { fr } from "../../i18n"
@@ -205,7 +205,7 @@ function createStyles(theme: BrandTheme) {
       paddingVertical: 10,
       paddingHorizontal: 16,
       borderRadius: 22,
-      backgroundColor: "rgba(14, 34, 16, 0.92)",
+      backgroundColor: brandScrims.letterBubble,
       ...brandShadow.card,
     },
     bubbleLetter: {

@@ -97,7 +97,7 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
             accessibilityRole="button"
             accessibilityLabel={fr.publicMap.a11y.closeParcelHistory}
           >
-            <Ionicons name="close" size={18} color="#40654f" />
+            <Ionicons name="close" size={18} color={theme.colors.textSecondary} />
           </Pressable>
         }
         titleStyle={styles.title}

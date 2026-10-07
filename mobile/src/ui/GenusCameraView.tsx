@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { CameraView } from "expo-camera"
 import { Ionicons } from "@expo/vector-icons"
-import { brandCameraTokens, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { brandCameraTokens, brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { fr } from "../i18n"
 import { AppText as Text } from "./AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -104,7 +104,7 @@ function createStyles() {
   return StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: "#000000",
+      backgroundColor: brandColors.black,
     },
     preview: {
       ...StyleSheet.absoluteFill,

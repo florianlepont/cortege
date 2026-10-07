@@ -25,6 +25,8 @@
         "src/i18n/**",
         "src/app/brand-tokens.ts",
         "src/app/theme.ts",
+        "src/app/visual-tokens.ts",
+        "src/app/theme-visual.ts",
         "src/**/*.test.ts",
         "src/**/*.test.tsx"
       ],
@@ -37,11 +39,11 @@
           },
           {
             "selector": "Literal[value=/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
-            "message": "Hex colors live in app/brand-tokens.ts only (phase 4 DS-04)"
+            "message": "Hex colors live in app/brand-tokens.ts, app/theme.ts, app/visual-tokens.ts or app/theme-visual.ts only (phase 4 DS-04, phase 12.2)"
           },
           {
             "selector": "Literal[value=/^rgba?\\(/]",
-            "message": "rgb()/rgba() colors live in app/brand-tokens.ts only (phase 4 DS-04)"
+            "message": "rgb()/rgba() colors live in app/brand-tokens.ts, app/theme.ts, app/visual-tokens.ts or app/theme-visual.ts only (phase 4 DS-04, phase 12.2)"
           }
         ]
       }
@@ -79,6 +81,14 @@
           {
             "selector": "ImportSpecifier[imported.name='statusText']",
             "message": "Build status messages in src/i18n only (phase 01.9 D-06)"
+          },
+          {
+            "selector": "Literal[value=/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
+            "message": "Hex colors live in app/brand-tokens.ts, app/theme.ts, app/visual-tokens.ts or app/theme-visual.ts only (phase 4 DS-04, phase 12.2)"
+          },
+          {
+            "selector": "Literal[value=/^rgba?\\(/]",
+            "message": "rgb()/rgba() colors live in app/brand-tokens.ts, app/theme.ts, app/visual-tokens.ts or app/theme-visual.ts only (phase 4 DS-04, phase 12.2)"
           }
         ]
       }
@@ -119,6 +129,14 @@
           {
             "selector": "ImportSpecifier[imported.name='statusText']",
             "message": "Build status messages in src/i18n only (phase 01.9 D-06)"
+          },
+          {
+            "selector": "Literal[value=/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
+            "message": "Hex colors live in app/brand-tokens.ts, app/theme.ts, app/visual-tokens.ts or app/theme-visual.ts only (phase 4 DS-04, phase 12.2)"
+          },
+          {
+            "selector": "Literal[value=/^rgba?\\(/]",
+            "message": "rgb()/rgba() colors live in app/brand-tokens.ts, app/theme.ts, app/visual-tokens.ts or app/theme-visual.ts only (phase 4 DS-04, phase 12.2)"
           }
         ]
       }

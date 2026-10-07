@@ -46,6 +46,7 @@ jest.mock("react-native", () => {
     View: mockComponent("View"),
     Alert: { alert: (...args: unknown[]) => mockAlert(...args) },
     StyleSheet: { create: <T,>(styles: T): T => styles, absoluteFill: {} },
+    Platform: { OS: "ios" },
   }
 })
 

@@ -30,6 +30,7 @@ jest.mock("react-native", () => {
     View: mockComponent("View"),
     Pressable: mockComponent("Pressable"),
     StyleSheet: { create: <T,>(value: T): T => value },
+    Platform: { OS: "ios" },
   }
 })
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))

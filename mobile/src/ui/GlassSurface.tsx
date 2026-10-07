@@ -1,8 +1,9 @@
 import { ReactNode } from "react"
-import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
+import { Platform, StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { BlurView } from "expo-blur"
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect"
 import { useBrandTheme } from "../app/theme"
+import { brandGlassFills } from "../app/visual-tokens"
 
 type GlassSurfaceTone = "auto" | "dark"
 
@@ -60,6 +61,11 @@ export function GlassSurface({
     )
   }
 
+  // Static keyed fills: `tone="dark"` overrides the app scheme. Android gets the higher-alpha flat
+  // fill because expo-blur draws no real blur there (D-17).
+  const fills = Platform.OS === "android" ? brandGlassFills.android : brandGlassFills.control
+  const overlayFill = fills[isDark ? "dark" : "light"]
+
   return (
     <View style={[styles.container, style]} pointerEvents={pointerEvents}>
       <BlurView
@@ -67,12 +73,7 @@ export function GlassSurface({
         intensity={intensity}
         tint={isDark ? "dark" : "light"}
       />
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: isDark ? "rgba(8, 13, 19, 0.38)" : "rgba(247, 246, 240, 0.38)" },
-        ]}
-      />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: overlayFill }]} />
       {children}
     </View>
   )
