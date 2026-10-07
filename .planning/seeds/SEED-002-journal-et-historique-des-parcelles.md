@@ -1,6 +1,7 @@
 ---
 id: SEED-002
-status: dormant
+status: triggered
+scheduled_in: Phase 24
 planted: 2026-10-06
 planted_during: Phase 12.1 (Owner acceptance testing)
 trigger_when: a phase of its own, later; NOT part of phase 12.1 (owner decision 2026-10-06). Surfaces at the next milestone scan, or with any milestone that touches the survey page, the history, the survey events or the parcel history

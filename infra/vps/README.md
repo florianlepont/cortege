@@ -152,7 +152,7 @@ infra/vps/restore-postgres.sh /home/ubuntu/backups/postgres/cortege-postgres-<ti
 
 Run this rehearsal after installing the timer, and again after any change to
 either script, so "the backup works" is never just an assumption. See
-`.planning/phases/11-durable-backend/` for the local rehearsal this phase ran
+`.planning/phases/20-durable-backend/` for the local rehearsal this phase ran
 (same scripts, against the dev Compose stack) and its recorded output.
 
 ## Restoring the database (disaster recovery)

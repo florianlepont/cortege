@@ -34,7 +34,7 @@ Shipped and field-tested (28 manual cases, `docs/user-tests/epic-a-access-and-se
 
 ### Built but not yet field-tested
 
-Working in the codebase; their field-test evidence is the deliverable of Phase 13:
+Working in the codebase; their field-test evidence is the deliverable of Phase 28:
 
 - ✓ Survey list and survey detail with parcel history — Epic B
 - ✓ Guided ten-factor entry, draft saving, photos, parcel linkage, submission, on-demand help, versioning — Epic C
@@ -147,7 +147,7 @@ any of them requires a superseding ADR, not a phase decision.
 </decisions>
 
 **Consequence for this milestone:** DEC-013 and DEC-014 leave hosting undecided at ADR level, which
-is why ratifying the current VPS is in scope (Phase 11). DEC-005 is why `BUG-A6-2` is an Auth0 tenant
+is why ratifying the current VPS is in scope (Phase 20). DEC-005 is why `BUG-A6-2` is an Auth0 tenant
 setting and why `EmailService` is dead code. DEC-006 and DEC-008 are what the field tests prove.
 
 ## Key Decisions
@@ -165,7 +165,7 @@ Decisions made for this milestone, on top of the locked ADR-001 set.
 | PDF export is generated on device (expo-print) and delivered through the OS share sheet (expo-sharing) — no API endpoint, no Drive OAuth | Must work offline, which rules out a server-side generator; the share sheet reaches Drive, Wimi, mail and AirDrop without integrating any of them | — Pending |
 | `PublicMapScreen` and its navigation are kept; only its data source changes to the user's own surveys. `GET /public/map-items` and `GET /public/parcels/status` stay in place, unused | Keeps the next milestone's public map a data-source swap rather than a rebuild; the offline-map work grafts onto the same screen | — Pending |
 | `BUG-A6-2` re-scoped from an SMTP problem to an Auth0 tenant configuration item | DEC-005 delegates password reset entirely to Auth0; there is no SMTP path in the reset flow | ✓ Good |
-| The whole 2026-09 code audit (lots L1–L20) is remediated in this milestone: data-loss, sync-integrity and account-safety lots first (Phases 1.2–1.5), then sync-feed, storage, architecture, performance, i18n and hygiene lots (Phases 1.6–1.9) | Several findings (session error wipes offline data, concurrent drains, unbounded batches, submit bypass through `/sync`) directly contradict the core value; the owner chose to close the rest before building further rather than carry it into the next milestone | — Pending |
+| The whole 2026-09 code audit (lots L1–L20) is remediated in this milestone: data-loss, sync-integrity and account-safety lots first (Phases 3–6), then sync-feed, storage, architecture, performance, i18n and hygiene lots (Phases 7–10) | Several findings (session error wipes offline data, concurrent drains, unbounded batches, submit bypass through `/sync`) directly contradict the core value; the owner chose to close the rest before building further rather than carry it into the next milestone | — Pending |
 | Email-based account linking is kept but requires `email_verified === true` | `REQ-A-social-login` depends on it to join Google/Apple sign-in to an existing account; unverified emails were an account-takeover path | — Pending |
 | Logging out with unsynced work purges local data only after a confirmation that counts what will be lost; a session error never purges | Keeps a shared device clean without ever destroying field data silently | — Pending |
 | Geographic filtering will use generated centroid columns with a btree index, not PostGIS | No new extension or image for a rectangle filter; decided with the audit remainder | — Pending |

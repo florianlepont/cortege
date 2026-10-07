@@ -202,7 +202,7 @@ shipped app: real typefaces, the full semantic color token set (with an ESLint r
 skeleton. Before any of this was written, a sketchboard (an interactive HTML mock, not shipped code)
 was iterated on live with the product owner — the typeface and the IBP badge's colors below are its
 direct output, not an implementer's unilateral call. Full rationale and the batch-by-batch build
-record: `.planning/phases/04-visual-foundations-motion/`.
+record: `.planning/phases/13-visual-foundations-motion/`.
 
 ### 12.1 Typefaces actually loaded
 

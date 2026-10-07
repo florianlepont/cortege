@@ -13,7 +13,7 @@ config.resolver.assetExts.push('tflite');
 // already configures Metro's monorepo lookup (watchFolders, nodeModulesPaths)
 // to find them, so no resolver overrides are needed here. A single copy of
 // react and react-native ends up in the bundle — verified in phase 01.3 by
-// the source-map single-copy check recorded in 01.3-03-SUMMARY.md.
+// the source-map single-copy check recorded in 04-03-SUMMARY.md.
 //
 // The shared workspace package @cortege/ibp-domain (packages/ibp-domain) is
 // resolved from source through its `react-native` field (Metro's

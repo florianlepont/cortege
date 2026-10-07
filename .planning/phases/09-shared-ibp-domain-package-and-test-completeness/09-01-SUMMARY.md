@@ -1,0 +1,131 @@
+---
+phase: 09-shared-ibp-domain-package-and-test-completeness
+plan: 01
+subsystem: monorepo-tooling
+tags: [npm-workspaces, ibp-domain, docker, ci, jest, metro]
+requires: []
+provides:
+  - "@cortege/ibp-domain workspace package (factor keys, method-version constants and resolver, wire contract types)"
+  - "Package resolution in API tsc, API unit + E2E Jest, mobile tsc + Jest, Metro/expo export, the API Docker image"
+  - "CI: packages/** in shared/image/native filters, package test step, image smoke for the package"
+affects: [01.8-02, 01.8-03, 01.8-04, 01.8-05, 01.8-06, 01.8-07, 01.8-08, 01.8-11, 01.8-12, 01.8-16]
+tech-stack:
+  added: []
+  patterns:
+    - "Hybrid workspace package: main -> dist (Node runtime), types and react-native -> src (tsc, Metro); Jest maps the name to src"
+    - "Workspace dependency spec \"*\" (not workspace:*); no prepare/install scripts"
+key-files:
+  created:
+    - packages/ibp-domain/package.json
+    - packages/ibp-domain/tsconfig.json
+    - packages/ibp-domain/tsconfig.build.json
+    - packages/ibp-domain/jest.config.js
+    - packages/ibp-domain/.eslintrc.json
+    - packages/ibp-domain/src/index.ts
+    - packages/ibp-domain/src/factors.ts
+    - packages/ibp-domain/src/factors.test.ts
+    - packages/ibp-domain/src/method-version.ts
+    - packages/ibp-domain/src/method-version.test.ts
+    - packages/ibp-domain/src/contract/index.ts
+    - packages/ibp-domain/src/contract/survey.ts
+    - packages/ibp-domain/src/contract/sync.ts
+    - packages/ibp-domain/src/contract/public-map.ts
+  modified:
+    - package.json
+    - package-lock.json
+    - api/package.json
+    - mobile/package.json
+    - api/jest.config.js
+    - api/jest.unit.config.js
+    - mobile/jest.unit.config.js
+    - mobile/metro.config.js
+    - api/Dockerfile
+    - .dockerignore
+    - .github/workflows/ci.yml
+decisions:
+  - "isSameMethodVersion returns false when either side is unsupported (even two identical unknown strings): an unknown version is never silently accepted as unchanged"
+  - "Contract types: a field is required only when both the API and the app rely on it today; otherwise optional (the adoption plans narrow locally)"
+  - "PublicParcelStatusItem.geometry stays Record<string, unknown> (what the API sends); mobile narrows it to its GeoJsonGeometry in 01.8-07"
+  - "Package ESLint: extends the root config, env node off, no-console error, no-restricted-globals for process/window/document"
+  - "Barrel uses export * from ./contract (contract/index.ts is type-only exports), not export type *, to stay safe for Metro's Babel"
+metrics:
+  duration: "~25 min"
+  completed: 2026-09-26
+  tasks: 3
+  files: 25
+---
+
+# Phase 01.8 Plan 01: Shared IBP domain package wiring Summary
+
+A private `@cortege/ibp-domain` workspace (factor keys, the v3.0/v3.2 method-version tags with a null-means-v3.0 resolver, and the survey/sync/public-map wire types carrying `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`). It is wired into npm workspaces, both Jest configs, Metro, the API Docker image and CI. Every toolchain except Node at runtime reads it from `src`.
+
+## What was done
+
+- **Task 1 (TDD).** RED commit `e462342`: the skeleton plus failing tests (the modules did not exist). GREEN commit `f20d0e4`: the seed modules. The package has 20 tests at 100% statements, branches, functions and lines. Thresholds are 95/90/95/95; `contract/**` and `index.ts` are excluded because they hold types only. `tsc -p tsconfig.build.json` emits `dist/` and `require()` lists every runtime export. There is no `prepare`, `postinstall` or `install` script.
+- **Task 2 (`108d847`).** Added the root workspace `packages/ibp-domain` and `"@cortege/ibp-domain": "*"` in api and mobile `dependencies`. Root scripts:
+  - new: `build:domain` and `test:coverage:domain`;
+  - changed: `dev:api` (builds the package first; `dev:api:migrated` inherits this), `typecheck` and `test:unit` (both now include the package).
+  - Jest mappers were added to `api/jest.config.js`, `api/jest.unit.config.js` (new `moduleNameMapper`; thresholds untouched) and `mobile/jest.unit.config.js` (thresholds untouched). Only the comment in `metro.config.js` changed.
+  - `.gitignore` is unchanged: `git check-ignore` shows the `dist/` rule on line 8 already covers `packages/ibp-domain/dist/index.js`, and `coverage/` covers the package coverage.
+- **Task 3 (`1772e61`).**
+  - Dockerfile, builder stage: copies the package manifest before `npm ci`, then the package, then runs `npm --workspace @cortege/ibp-domain run build` before the API build.
+  - Dockerfile, runtime stage: copies the package manifest before `npm ci --omit=dev`, then `COPY --from=builder .../packages/ibp-domain/dist`. USER, EXPOSE, HEALTHCHECK and CMD are unchanged.
+  - `.dockerignore` excludes `packages/*/src/**/*.test.ts`.
+  - `ci.yml`:
+    - `'packages/**'` is in the `shared`, `image` and `native` filters;
+    - new step "Unit tests — ibp-domain package" in `unit-api`, before the API tests;
+    - new step "Smoke test — ibp-domain package in image" after the "no mobile deps" step;
+    - job names and action pins are unchanged.
+
+## Evidence
+
+- **Lockfile:** `git diff --stat package-lock.json` gives 19 insertions and 1 deletion. The changes are the workspace list, two dependency lines, `node_modules/@cortege/ibp-domain` with `"resolved": "packages/ibp-domain", "link": true`, and the `packages/ibp-domain` entry. `npm install --offline` downloaded nothing. `npm ci --dry-run` is clean.
+- **Consumer probes** (temporary files, deleted afterwards and never committed). Each ran with no `packages/ibp-domain/dist` present:
+  - API `tsc -p tsconfig.build.json` type-checked a module importing `FACTOR_KEYS`, `IBP_METHOD_V3_2` and `SyncChangeSurvey`. It still emitted `api/dist/main.js` at the usual path.
+  - An API unit Jest spec passed (`jest.unit.config.js`).
+  - An API E2E-config Jest run passed (`jest.config.js`; `globalSetup` was replaced by a no-op because no DB is needed for a resolution probe).
+  - Mobile `tsc --noEmit` passed, and a mobile Jest test passed.
+- **expo export:** a temporary `import "./src/zz-ibp-probe"` was added to `mobile/App.tsx` and reverted afterwards. `expo export --platform android` succeeded with no package `dist`. The Hermes bundle `index-2ca222b6….hbc` contains `cnpf_ibp_fr_v3_2_2026-02-02` once. So Metro resolves the package from source through `react-native` and Expo's workspace support.
+- **Node runtime:** after `npm run build:domain`, `node -e 'require("@cortege/ibp-domain")'` from `api/` printed the v3.2 tag.
+- **Docker.** I built a local image through the agent proxy. The build used a scratchpad-only Dockerfile that adds the proxy CA with `COPY --from=ccr` and the `NODE_EXTRA_CA_CERTS`/`npm_config_cafile` env, and ran `--network host --build-context ccr=/root/.ccr`. None of that is committed.
+  - The runtime image runs from `/app` as uid 1000.
+  - `packages/ibp-domain/dist/index.js` exists, and `packages/ibp-domain` contains only `dist` and `package.json`.
+  - `node_modules/@cortege/ibp-domain` links to `../../packages/ibp-domain`.
+  - There is no `node_modules/expo` and no `node_modules/react-native`.
+  - `require("@cortege/ibp-domain")` returns `cnpf_ibp_fr_v3_2_2026-02-02`.
+  - The container booted against a throwaway `postgres:16` on port 55432 (to avoid parallel agents): migrations ran, then `/v1/health` returned `{"status":"ok",...}`. The first boot failed with ECONNREFUSED because Postgres was not yet accepting connections; a restart after `pg_isready` succeeded. Containers and the image were removed afterwards.
+  - The CI smoke uses `sh -c`, which the sandbox would not run here. I ran the same checks through `node -e` instead.
+- **Gate:**
+  - `npm run lint`: 0 errors and 0 warnings in mobile, api and the package.
+  - `npm run typecheck`: green.
+  - `npm run test:unit`: 20 package, 638 API and 1050 mobile tests pass.
+  - `npm run test:coverage:mobile`: exit 0, thresholds met.
+  - `npm run format:check`: clean.
+  - `actionlint` on `ci.yml`: clean.
+
+## Deviations from Plan
+
+None to the plan's intent. Minor choices:
+- The plan specified no `SyncChangeEvent`, `SurveyStatus`, `SurveyVisibility`, `SyncEntity`, `SyncAction` or `SyncOperationStatus` types. I added them to the contract because the changes feed sends `events` and the other unions are shared literals.
+- The API E2E Jest mapper was proven with a no-op `globalSetup`, not a full E2E run. There was no test DB in this worktree, and parallel plans may use port 5432.
+
+## Known Stubs
+
+None. Nothing in api or mobile imports the package yet. That is intended: adoption happens in 01.8-06, -07 and -08, and the rules come in 01.8-04.
+
+## Threat Flags
+
+None. The threat register was addressed as follows:
+- **T-01.8-01:** the package is private and scoped, and the lockfile has `link: true`.
+- **T-01.8-02:** there is no prepare script, and the image smoke checks the package dist and `require()`.
+- **T-01.8-03:** the mobile-deps smoke is kept, and package tests are excluded from the image.
+- **T-01.8-04:** `packages/**` is in the `image` filter.
+
+## TDD Gate Compliance
+
+`test(01.8-01)` `e462342` (RED, the suites failed with "Cannot find module"), then `feat(01.8-01)` `f20d0e4` (GREEN). No refactor was needed.
+
+## Self-Check: PASSED
+
+- All 14 created package files exist, and every modified file is committed.
+- Commits `e462342`, `f20d0e4`, `108d847` and `1772e61` are present in `git log`.
