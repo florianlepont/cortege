@@ -5,6 +5,8 @@ import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
 import { Image as ExpoImage } from "expo-image"
 import { HomeScreen, pickAlertSurvey, pickResumeDraft } from "./HomeScreen"
+import { ResumeCard } from "./home/ResumeCard"
+import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
 import type { LocalSurvey } from "../storage/types"
 
@@ -48,6 +50,7 @@ jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
 jest.mock("../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
+jest.mock("../ui/ScreenBackdrop", () => ({ ScreenBackdrop: "ScreenBackdrop" }))
 jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
 jest.mock("../ui/SyncStatusLine", () => ({ SyncStatusLine: "SyncStatusLine" }))
 jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))
@@ -203,6 +206,67 @@ describe("HomeScreen", () => {
       pill.props.onPress()
     })
     expect(onOpenSyncStatus).toHaveBeenCalledTimes(1)
+  })
+
+  describe("variant I look (12.2)", () => {
+    const entering = () =>
+      tree.root
+        .findAll((node) => (node.type as unknown) === "View" && node.props.entering !== undefined)
+        .map((node) => node)
+
+    test("renders the backdrop once, before the scroll view, which has no opaque background", () => {
+      mount(makeProps())
+      expect(tree.root.findAllByType("ScreenBackdrop" as never)).toHaveLength(1)
+      const order = tree.root
+        .findAll((node) => ["ScreenBackdrop", "ScrollView"].includes(node.type as string))
+        .map((node) => node.type)
+      expect(order).toEqual(["ScreenBackdrop", "ScrollView"])
+      const scroll = tree.root.findByType("ScrollView" as never)
+      expect((scroll.props.style as { backgroundColor?: string }).backgroundColor).toBeUndefined()
+    })
+
+    test("the resume card, tools and nearby sections enter on first mount", () => {
+      mount(makeProps())
+      expect(entering()).toHaveLength(3)
+    })
+
+    test("the alert notice is a fourth entering section", () => {
+      mount(
+        makeProps({
+          surveys: [makeSurvey({ sync_state: "failed", sync_blocked: 0 })],
+          surveyStats: {
+            total: 1,
+            draft: 0,
+            submitted: 0,
+            pending: 0,
+            synced: 0,
+            failed: 1,
+            blocked: 0,
+          },
+        }),
+      )
+      expect(entering()).toHaveLength(4)
+    })
+
+    test("the nearby trailing link uses the accent text colour of the scheme", () => {
+      mount(makeProps())
+      const header = tree.root.findByType("AppSectionHeader" as never)
+      type Props<T> = React.ReactElement<T>
+      const trailing = header.props.trailing as Props<{ children: Props<{ style: unknown }> }>
+      const link = trailing.props.children
+      const style = Object.assign({}, ...[link.props.style].flat()) as { color?: string }
+      expect(style.color).toBe(defaultTheme.visual.accentText)
+    })
+
+    test("renders the resume card with the draft and its two actions", () => {
+      const draft = makeSurvey()
+      const props = makeProps({ surveys: [draft] })
+      mount(props)
+      const card = tree.root.findByType(ResumeCard)
+      expect(card.props.resumeDraft).toBe(draft)
+      expect(card.props.onResume).toBe(props.onOpenSurvey)
+      expect(card.props.onCreateSurvey).toBe(props.onCreateSurvey)
+    })
   })
 
   describe("HOME-02: the hero becomes a resume action", () => {

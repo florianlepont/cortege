@@ -1,12 +1,13 @@
 import { useMemo } from "react"
-import { Pressable, StyleSheet } from "react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { brandColors, brandRadius, brandTypography } from "../../app/brand-tokens"
+import { brandColors, brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { hasMixedMethodVersions, type NearbyParcelsState } from "../../hooks/useNearbyParcels"
 import { fr } from "../../i18n"
 import { ParcelMap } from "../../map/maplibre/ParcelMap"
 import { GlassSurface } from "../../ui/GlassSurface"
+import { ScoreRing } from "../../ui/ScoreRing"
 import { MAP_EDGE } from "../public-map/MapChips"
 
 const t = fr.home.nearby
@@ -61,11 +62,21 @@ export function NearbyMapCard({ nearby, height, onPress }: NearbyMapCardProps) {
       />
       {sectorAvgScore != null ? (
         <GlassSurface style={styles.scoreBadge} pointerEvents="none">
-          <Text style={styles.scoreLabel}>{sectorT.label}</Text>
-          <Text style={styles.scoreValue}>{sectorT.score({ score: sectorAvgScore })}</Text>
-          {hasMixedMethodVersions(parcels) ? (
-            <Text style={styles.scoreMeta}>{sectorT.mixedMethods}</Text>
-          ) : null}
+          {/* D-15: the ring is decoration here, the texts already speak the score. */}
+          <View
+            style={styles.scoreRing}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <ScoreRing score={Math.round(sectorAvgScore)} />
+          </View>
+          <View style={styles.scoreCopy}>
+            <Text style={styles.scoreLabel}>{sectorT.label}</Text>
+            <Text style={styles.scoreValue}>{sectorT.score({ score: sectorAvgScore })}</Text>
+            {hasMixedMethodVersions(parcels) ? (
+              <Text style={styles.scoreMeta}>{sectorT.mixedMethods}</Text>
+            ) : null}
+          </View>
         </GlassSurface>
       ) : null}
       <GlassSurface style={styles.summary} pointerEvents="none">
@@ -98,6 +109,16 @@ function createStyles(theme: BrandTheme) {
       borderRadius: 18,
       paddingHorizontal: 14,
       paddingVertical: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.smd,
+    },
+    scoreRing: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    scoreCopy: {
+      flexShrink: 1,
     },
     scoreLabel: {
       ...brandTypography.meta,

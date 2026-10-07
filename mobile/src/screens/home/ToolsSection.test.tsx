@@ -4,6 +4,8 @@
  */
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
+import { brandInteraction, brandRadius } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { openDrafts, ToolsSection } from "./ToolsSection"
@@ -138,6 +140,21 @@ describe("ToolsSection", () => {
     expect(byType("Pressable").props.accessibilityLabel).toBe(t.identify.a11y)
     expect(modal().props.visible).toBe(false)
     expect(sheet().props.visible).toBe(false)
+  })
+
+  test("the identify card has the glass look and keeps its accessibility contract and hit area", () => {
+    mount()
+    const card = byType("Pressable")
+    const style = Object.assign({}, ...[card.props.style].flat()) as Record<string, unknown>
+    const { glass } = defaultTheme.visual
+    expect(style.backgroundColor).toBe(glass.cardFill)
+    expect(style.borderColor).toBe(glass.cardBorder)
+    expect(style.borderWidth).toBe(1)
+    expect(style.boxShadow).toBe(glass.cardShadow)
+    expect(style.borderRadius).toBe(brandRadius.card)
+    expect(card.props.accessibilityRole).toBe("button")
+    expect(card.props.testID).toBe("tool-identify-tree")
+    expect(style.minHeight as number).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
   })
 
   test("the card opens the photo tool", () => {

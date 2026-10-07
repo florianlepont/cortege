@@ -27,6 +27,7 @@ jest.mock("react-native", () => {
   return {
     Pressable: mockComponent("Pressable"),
     Text: mockComponent("Text"),
+    View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T): T => styles, absoluteFill: { position: "absolute" } },
     Platform: { OS: "ios", select: <T,>(options: { ios?: T }) => options.ios },
   }
@@ -36,6 +37,7 @@ jest.mock("../../hooks/useNearbyParcels", () => ({
     new Set(parcels.map((parcel) => parcel.latest_ibp_method_version ?? "3.0")).size > 1,
 }))
 jest.mock("../../map/maplibre/ParcelMap", () => ({ ParcelMap: "ParcelMap" }))
+jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
 jest.mock("../../ui/GlassSurface", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -101,6 +103,25 @@ describe("NearbyMapCard", () => {
     expect(texts).toContain(fr.home.nearby.radius)
   })
 
+  test("the sector badge draws a ring for the rounded mean, hidden from accessibility", () => {
+    const { root } = render([parcel()], 31.6)
+    const ring = root.findByType("ScoreRing" as never)
+    expect(ring.props.score).toBe(32)
+    const wrapper = root.findAll(
+      (node: ReactTestInstance) =>
+        (node.type as unknown) === "View" &&
+        node.props.accessibilityElementsHidden === true &&
+        node.props.importantForAccessibility === "no-hide-descendants",
+    )
+    expect(wrapper).toHaveLength(1)
+    expect(wrapper[0].findAllByType("ScoreRing" as never)).toHaveLength(1)
+  })
+
+  test("the live map has no contour lines over it (D-13)", () => {
+    const { root } = render([parcel()], 27)
+    expect(root.findAllByType("ContourLines" as never)).toHaveLength(0)
+  })
+
   test("mentions mixed method versions next to the score", () => {
     const { texts } = render(
       [parcel(), parcel({ parcel_id: "p2", latest_ibp_method_version: null })],
@@ -110,8 +131,9 @@ describe("NearbyMapCard", () => {
   })
 
   test("no scored parcel: no score badge", () => {
-    const { texts } = render([parcel({ latest_ibp_total: null })], null)
+    const { texts, root } = render([parcel({ latest_ibp_total: null })], null)
     expect(texts).not.toContain(fr.home.sector.label)
+    expect(root.findAllByType("ScoreRing" as never)).toHaveLength(0)
   })
 
   test("nothing nearby invites to start", () => {

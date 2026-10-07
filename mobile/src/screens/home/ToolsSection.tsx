@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
-import { brandSpacing, brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandRadius,
+  brandSpacing4,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
@@ -24,7 +29,7 @@ const MAX_SURVEYS_OFFERED = 5
 const SHEET_DELAY_MS = 450
 const NOTICE_MS = 5000
 /** The same page margin as the rest of Accueil (home/styles.ts). */
-const PAGE_H = 20
+const PAGE_H = brandSpacing4.md
 
 export function openDrafts(surveys: LocalSurvey[]): LocalSurvey[] {
   return surveys
@@ -154,35 +159,38 @@ export function ToolsSection({
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     section: {
-      marginTop: brandSpacing.xl + 4,
+      marginTop: brandSpacing4.lg,
     },
     header: {
       paddingHorizontal: PAGE_H,
-      marginBottom: 14,
+      marginBottom: brandSpacing4.sm,
     },
     notice: {
       marginHorizontal: PAGE_H,
-      marginBottom: 12,
+      marginBottom: brandSpacing4.smd,
     },
     row: {
       flexDirection: "row",
-      gap: 12,
+      gap: brandSpacing4.smd,
       paddingHorizontal: PAGE_H,
     },
     card: {
       flex: 1,
       maxWidth: 220,
-      borderRadius: 22,
-      borderWidth: 1.5,
-      borderColor: theme.semanticColors.ctaPrimary,
-      backgroundColor: theme.semanticColors.surfaceElevated,
-      padding: 14,
-      gap: 6,
+      minHeight: brandInteraction.hitTarget.min,
+      borderRadius: brandRadius.card,
+      borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
+      borderCurve: "continuous",
+      padding: brandSpacing4.md,
+      gap: brandSpacing4.xs,
     },
     icon: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: brandRadius.badgeSm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.semanticColors.ctaPrimary,

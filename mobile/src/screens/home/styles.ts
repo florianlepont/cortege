@@ -1,14 +1,19 @@
 import { StyleSheet } from "react-native"
-import { brandRadius, brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
-const PAGE_H = 20
+// Compact density (D-05): the page inset is 16, blocks sit 16 apart, sections 24.
+const PAGE_H = brandSpacing4.md
 
 export function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    scroll: {
+    // The root view carries the canvas and the backdrop halo; the scroll view stays transparent.
+    screen: {
       flex: 1,
       backgroundColor: theme.colors.canvas,
+    },
+    scroll: {
+      flex: 1,
     },
     content: {
       gap: 0,
@@ -21,10 +26,8 @@ export function createStyles(theme: BrandTheme) {
       alignItems: "center",
     },
     greetingTitle: {
-      fontSize: 28,
-      fontWeight: "800",
+      ...brandTypography.screenTitle,
       color: theme.semanticColors.textStrong,
-      lineHeight: 32,
     },
     greetingText: {
       flex: 1,
@@ -33,13 +36,13 @@ export function createStyles(theme: BrandTheme) {
     },
     greetingBlock: {
       paddingHorizontal: PAGE_H,
-      marginBottom: 16,
-      gap: 6,
+      marginBottom: brandSpacing4.md,
+      gap: brandSpacing4.xs,
     },
     nativeHeaderSync: {
       flexDirection: "row",
       paddingHorizontal: PAGE_H,
-      marginBottom: 16,
+      marginBottom: brandSpacing4.md,
     },
     pageInset: {
       marginHorizontal: PAGE_H,
@@ -71,7 +74,7 @@ export function createStyles(theme: BrandTheme) {
     // Notice
     notice: {
       marginHorizontal: PAGE_H,
-      marginBottom: 16,
+      marginBottom: brandSpacing4.md,
     },
 
     // The resume card block (ResumeCard draws the card itself).
@@ -81,15 +84,15 @@ export function createStyles(theme: BrandTheme) {
 
     // Sections
     section: {
-      marginTop: brandSpacing.xl + 4,
+      marginTop: brandSpacing4.lg,
     },
     sectionHeader: {
       paddingHorizontal: PAGE_H,
-      marginBottom: 14,
+      marginBottom: brandSpacing4.sm,
     },
     trailingLink: {
       ...brandTypography.label,
-      color: theme.semanticColors.accent,
+      color: theme.visual.accentText,
     },
 
     loadingRow: {
