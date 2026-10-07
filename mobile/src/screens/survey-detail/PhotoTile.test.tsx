@@ -1,11 +1,11 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
-import { brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { brandRadius } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalAttachment } from "../../storage"
 import { PHOTO_FADE_MS, PhotoTile, photoTileStatusText } from "./PhotoTile"
-import { createSummaryScreenStyles, PHOTO_TILE } from "./summary-screen.styles"
+import { createPhotoStyles, PHOTO_LAYOUT, type PhotoSize } from "./photos.styles"
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -71,11 +71,15 @@ function attachment(overrides: Partial<LocalAttachment> = {}): LocalAttachment {
   } as unknown as LocalAttachment
 }
 
+// The two sizes a tile has on a 390 pt window (`resolvePhotoSize`): full width 16:10, or a strip tile.
+const SINGLE: PhotoSize = { mode: "single", width: 358, height: 223.75 }
+const STRIP: PhotoSize = { mode: "strip", width: 279.24, height: 209.43 }
+
 let tree: ReactTestRenderer
 
-function mount(item: LocalAttachment): ReactTestInstance {
+function mount(item: LocalAttachment, size: PhotoSize = STRIP): ReactTestInstance {
   act(() => {
-    tree = renderer.create(<PhotoTile attachment={item} />)
+    tree = renderer.create(<PhotoTile attachment={item} size={size} />)
   })
   return tree.root
 }
@@ -89,34 +93,35 @@ afterEach(() => {
 })
 
 describe("photo tile box (D-27b)", () => {
-  test("one 4:3 size, one radius on the 4 grid with continuous corners, and a glass hairline", () => {
-    const styles = createSummaryScreenStyles(defaultTheme)
-    expect(PHOTO_TILE.width / PHOTO_TILE.height).toBeCloseTo(4 / 3)
-    expect(PHOTO_TILE.width % 4).toBe(0)
-    expect(PHOTO_TILE.height % 4).toBe(0)
-    expect(PHOTO_TILE.radius % 4).toBe(0)
-    expect(PHOTO_TILE.radius).toBeLessThan(brandRadius.card)
-    expect(PHOTO_TILE.gap % 4).toBe(0)
+  test("one radius on the 4 grid with continuous corners, and a glass hairline, whatever the size", () => {
+    const styles = createPhotoStyles(defaultTheme)
+    expect(PHOTO_LAYOUT.radius).toBe(20)
+    expect(PHOTO_LAYOUT.radius % 4).toBe(0)
+    expect(PHOTO_LAYOUT.radius).toBeLessThan(brandRadius.card)
+    expect(PHOTO_LAYOUT.gap % 4).toBe(0)
     expect(styles.photo).toMatchObject({
-      width: PHOTO_TILE.width,
-      height: PHOTO_TILE.height,
-      borderRadius: PHOTO_TILE.radius,
+      borderRadius: PHOTO_LAYOUT.radius,
       borderCurve: "continuous",
       borderWidth: 1,
       borderColor: defaultTheme.visual.glass.cardBorder,
       overflow: "hidden",
     })
-    expect(styles.photoPress.width).toBe(PHOTO_TILE.width)
-    expect(styles.photoPress.height).toBe(PHOTO_TILE.height)
-    expect(styles.photoRow.gap).toBe(PHOTO_TILE.gap)
-    expect(styles.photoScrollContent.gap).toBe(PHOTO_TILE.gap)
+    // The size is the caller's: the style itself has none.
+    expect(styles.photo).not.toHaveProperty("width")
+    expect(styles.photo).not.toHaveProperty("height")
+    expect(styles.photoPress.borderRadius).toBe(PHOTO_LAYOUT.radius)
+    expect(styles.stripContent.gap).toBe(PHOTO_LAYOUT.gap)
   })
 
-  test("the strip scrolls edge to edge of the card: the card padding is taken back and given to the content", () => {
-    const styles = createSummaryScreenStyles(defaultTheme)
-    expect(styles.photoScroll.marginHorizontal).toBe(-brandSpacing4.md)
-    expect(styles.photoScrollContent.paddingHorizontal).toBe(brandSpacing4.md)
-    expect(styles.photosCard.padding).toBe(brandSpacing4.md)
+  test.each([
+    ["a single photo", SINGLE],
+    ["a strip tile", STRIP],
+  ] as const)("takes the box of %s", (_label, size) => {
+    const root = mount(attachment(), size)
+    expect(flatten(root.findByProps({ testID: "photo-tile-image" }).props.style)).toMatchObject({
+      width: size.width,
+      height: size.height,
+    })
   })
 
   test.each([
@@ -132,8 +137,8 @@ describe("photo tile box (D-27b)", () => {
     const root = mount(item)
     const box = root.findByProps({ testID })
     expect(flatten(box.props.style)).toMatchObject({
-      width: PHOTO_TILE.width,
-      height: PHOTO_TILE.height,
+      width: STRIP.width,
+      height: STRIP.height,
     })
   })
 })
@@ -155,9 +160,13 @@ describe("photo tile states", () => {
   test("the skeleton fills the tile, so the image arriving moves nothing", () => {
     const root = mount(attachment())
     const skeleton = types(root, "Skeleton")[0]
-    expect(skeleton.props.width).toBe(PHOTO_TILE.width)
-    expect(skeleton.props.height).toBe(PHOTO_TILE.height)
+    expect(skeleton.props.width).toBe(STRIP.width)
+    expect(skeleton.props.height).toBe(STRIP.height)
     expect(skeleton.props.borderRadius).toBe(0)
+    act(() => tree.unmount())
+    const single = types(mount(attachment(), SINGLE), "Skeleton")[0]
+    expect(single.props.width).toBe(SINGLE.width)
+    expect(single.props.height).toBe(SINGLE.height)
   })
 
   test("the picture fades in, and does not under Reduce Motion", () => {
@@ -188,7 +197,9 @@ describe("photo tile states", () => {
     act(() => types(root, "ExpoImage")[0].props.onLoad())
     expect(types(root, "Skeleton")).toHaveLength(0)
     act(() =>
-      tree.update(<PhotoTile attachment={attachment({ local_uri: "file:///photos/b.jpg" })} />),
+      tree.update(
+        <PhotoTile attachment={attachment({ local_uri: "file:///photos/b.jpg" })} size={STRIP} />,
+      ),
     )
     expect(types(tree.root, "Skeleton")).toHaveLength(1)
   })
@@ -208,7 +219,7 @@ describe("photo tile states", () => {
   })
 
   test("the fallback is a neutral face: centred, on the muted surface, in the secondary text colour", () => {
-    const styles = createSummaryScreenStyles(defaultTheme)
+    const styles = createPhotoStyles(defaultTheme)
     expect(styles.photo.backgroundColor).toBe(defaultTheme.colors.panelMuted)
     expect(styles.photoFallback).toMatchObject({ alignItems: "center", justifyContent: "center" })
     expect(styles.photoFallbackText.color).toBe(defaultTheme.colors.textSecondary)

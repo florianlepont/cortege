@@ -67,7 +67,8 @@ export const surveyDetailFr = {
     title: "Photos",
     add: "Ajouter",
     countSuffix: (count: number) => ` · ${count}`,
-    empty: "Aucune photo pour l'instant.",
+    // The line of the dashed tile of a draft without photo (pressable like "Ajouter").
+    emptyAdd: "Ajouter une photo",
     emptyReadOnly: "Aucune photo sur ce relevé.",
     // One short word in the tile of a photo that cannot be shown (the full sentence is the
     // accessibility value of the tile, `labels.attachmentPreview`).

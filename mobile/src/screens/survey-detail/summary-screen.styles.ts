@@ -9,12 +9,6 @@ import {
 import { BrandTheme } from "../../app/theme"
 import { FINISH_BAR } from "./finish-bar-layout"
 
-/**
- * A photo tile (12.2-14, D-27b): one 4:3 size for every state and every photo (the shape of a phone
- * photo, so "cover" crops nothing), one corner radius on the 4-grid, one gap between tiles. The
- * summary card and the community page both read it.
- */
-export const PHOTO_TILE = { width: 128, height: 96, radius: 16, gap: 12 } as const
 const HIT_TARGET = 44
 
 /** Styles of the survey summary screen (OA-46): title block, score card, photos, map, rows, CTA. */
@@ -126,18 +120,8 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       marginTop: brandSpacing4.sm,
       color: theme.visual.forest.body,
     },
-    // Photos. `photosCard` is the glass card of the summary strip; `section`, `sectionHeader` and
-    // `photoRow` are also read by the context and community pages.
-    photosCard: {
-      gap: brandSpacing4.smd,
-      padding: brandSpacing4.md,
-      borderRadius: brandRadius.card,
-      borderWidth: 1,
-      borderColor: theme.visual.glass.cardBorder,
-      backgroundColor: theme.visual.glass.cardFill,
-      boxShadow: theme.visual.glass.cardShadow,
-      borderCurve: "continuous",
-    },
+    // Sections. The photo block is styled in `photos.styles.ts`; `section`, `sectionHeader` and the
+    // titles below are also read by the context and community pages.
     section: {
       gap: 10,
     },
@@ -163,68 +147,6 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     sectionTitleCount: {
       ...brandTypography.sectionBody,
       color: theme.colors.textSecondary,
-    },
-    addButton: {
-      minHeight: HIT_TARGET,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-    },
-    addButtonText: {
-      ...brandTypography.button,
-      color: theme.semanticColors.textStrong,
-    },
-    photoRow: {
-      flexDirection: "row",
-      gap: PHOTO_TILE.gap,
-    },
-    // The strip of the summary card scrolls edge to edge of the card (the card padding is taken back
-    // and given to the content), so a tile slides under the card edge instead of being cut 16 pt
-    // inside it.
-    photoScroll: {
-      marginHorizontal: -brandSpacing4.md,
-      flexGrow: 0,
-    },
-    photoScrollContent: {
-      flexDirection: "row",
-      gap: PHOTO_TILE.gap,
-      paddingHorizontal: brandSpacing4.md,
-    },
-    // The tile: a fixed 4:3 box with a hairline from the glass tokens, so nothing moves when the
-    // image arrives and a missing photo is as big as a loaded one.
-    photo: {
-      width: PHOTO_TILE.width,
-      height: PHOTO_TILE.height,
-      borderRadius: PHOTO_TILE.radius,
-      borderCurve: "continuous",
-      borderWidth: 1,
-      borderColor: theme.visual.glass.cardBorder,
-      backgroundColor: theme.colors.panelMuted,
-      overflow: "hidden",
-    },
-    // The press target around a tile: the same box, so the 128 x 96 area is the hit area.
-    photoPress: {
-      width: PHOTO_TILE.width,
-      height: PHOTO_TILE.height,
-      borderRadius: PHOTO_TILE.radius,
-      borderCurve: "continuous",
-    },
-    photoImage: {
-      ...StyleSheet.absoluteFill,
-    },
-    // The neutral tile of a photo that is missing or cannot be shown: an outline icon and one
-    // short word on the muted surface.
-    photoFallback: {
-      ...StyleSheet.absoluteFill,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: brandSpacing4.xs,
-      paddingHorizontal: brandSpacing4.sm,
-    },
-    photoFallbackText: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
-      textAlign: "center",
     },
     photoEmpty: {
       ...brandTypography.sectionBody,

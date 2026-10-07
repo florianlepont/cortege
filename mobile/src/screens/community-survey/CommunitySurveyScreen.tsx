@@ -11,6 +11,8 @@ import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
 import { FactorsList } from "../survey-detail/FactorsList"
 import { ParcelMapCard } from "../survey-detail/ParcelMapCard"
+import { PhotoGallery } from "../survey-detail/PhotoGallery"
+import { createPhotoStyles } from "../survey-detail/photos.styles"
 import { ScoreBreakdown } from "../survey-detail/ScoreBreakdown"
 import { createSummaryScreenStyles } from "../survey-detail/summary-screen.styles"
 import { useSubPageContentStyle } from "../survey-detail/useSubPageContent"
@@ -40,6 +42,7 @@ export function CommunitySurveyScreen({
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const contentStyle = useSubPageContentStyle(styles.subContent)
+  const photoStyles = useMemo(() => createPhotoStyles(theme), [theme])
   const own = useMemo(() => createOwnStyles(theme), [theme])
   const { detail, photos, status, photosFailed } = state
 
@@ -136,27 +139,28 @@ export function CommunitySurveyScreen({
           </Text>
         </View>
         {photos.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.photoRow}>
-              {photos.map((photo, index) => (
+          <PhotoGallery
+            ids={photos.map((photo) => photo.id)}
+            renderPhoto={(id, index, size) => {
+              const photo = photos[index]
+              return (
                 <View
-                  key={photo.id}
-                  style={styles.photo}
+                  style={[photoStyles.photo, { width: size.width, height: size.height }]}
                   accessible
                   accessibilityRole="image"
                   accessibilityLabel={t.a11y.photo({ index: index + 1, total: photos.length })}
                 >
                   <ExpoImage
                     source={{ uri: photo.uri, headers: photo.headers }}
-                    style={styles.photoImage}
+                    style={photoStyles.photoImage}
                     contentFit="cover"
                     cachePolicy="memory"
-                    recyclingKey={photo.id}
+                    recyclingKey={id}
                   />
                 </View>
-              ))}
-            </View>
-          </ScrollView>
+              )
+            }}
+          />
         ) : (
           <Text style={styles.photoEmpty}>
             {photosFailed ? t.photosFailed : fr.surveyDetail.photos.emptyReadOnly}

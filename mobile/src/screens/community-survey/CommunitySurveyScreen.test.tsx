@@ -40,6 +40,7 @@ jest.mock("react-native", () => {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Platform: { OS: "ios" },
+    useWindowDimensions: () => ({ width: 390, height: 844 }),
     StyleSheet: { create: <T,>(styles: T) => styles },
   }
 })
@@ -219,6 +220,33 @@ describe("CommunitySurveyScreen", () => {
       { uri: "https://files.example/a-1", headers: undefined },
       { uri: "http://api.test/v1/x", headers: { Authorization: "Bearer token" } },
     ])
+  })
+
+  it("draws one photo full width at 16:10 and several as a 4:3 strip of 78 percent tiles", () => {
+    const one = render(state({ photos: [{ id: "a-1", uri: "https://files.example/a-1" }] }))
+    const [single] = byType(one.tree, "ExpoImage")
+    expect(single).toBeDefined()
+    const imageBoxes = (tree: renderer.ReactTestRenderer) =>
+      byType(tree, "View").filter((node) => node.props.accessibilityRole === "image")
+    const singleBox = imageBoxes(one.tree)[0].props.style
+    const box = (style: unknown) =>
+      Object.assign({}, ...(style as object[])) as Record<string, number>
+    expect(box(singleBox).width).toBe(390 - 32)
+    expect(box(singleBox).width / box(singleBox).height).toBeCloseTo(1.6)
+
+    const many = render(
+      state({
+        photos: [
+          { id: "a-1", uri: "https://files.example/a-1" },
+          { id: "a-2", uri: "https://files.example/a-2" },
+        ],
+      }),
+    )
+    const boxes = imageBoxes(many.tree)
+    expect(boxes).toHaveLength(2)
+    const tile = box(boxes[0].props.style)
+    expect(tile.width).toBeCloseTo((390 - 32) * 0.78)
+    expect(tile.width / tile.height).toBeCloseTo(4 / 3)
   })
 
   it("says when there is no photo, or when the photos failed to load", () => {

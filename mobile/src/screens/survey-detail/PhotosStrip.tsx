@@ -1,12 +1,15 @@
 import { useMemo } from "react"
-import { Alert, Pressable, ScrollView, View } from "react-native"
+import { Alert, Pressable, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { LocalAttachment, LocalSurvey } from "../../storage"
 import { AppText as Text } from "../../ui/AppText"
 import { isPhotoAttachment } from "../survey-screen-helpers"
+import { GlassSurface } from "../../ui/GlassSurface"
+import { PhotoGallery } from "./PhotoGallery"
 import { PhotoTile, photoTileStatusText } from "./PhotoTile"
+import { createPhotoStyles } from "./photos.styles"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
 
 const t = fr.surveyDetail.photos
@@ -23,9 +26,11 @@ type PhotosStripProps = {
 }
 
 /**
- * The survey's photos, visible on the summary (OA-43), with "Ajouter" next to the title. Photos
- * are part of the survey: no longer behind a small camera button on the map. A tap on a photo of
- * a draft offers to remove it.
+ * The survey's photos, visible on the summary (OA-43), as a section of the page with no framing
+ * card: the title and count, a compact glass "Ajouter" pill, then the photos as the star (one photo
+ * full width at 16:10, several as a snapping 4:3 strip with the next tile peeking, a dashed tile to
+ * add one for a draft without; nothing for a submitted survey without). A tap on a photo of a draft
+ * offers to remove it.
  */
 export function PhotosStrip({
   survey,
@@ -37,6 +42,7 @@ export function PhotosStrip({
 }: PhotosStripProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const photoStyles = useMemo(() => createPhotoStyles(theme), [theme])
   const photos = useMemo(() => attachments.filter(isPhotoAttachment), [attachments])
 
   const handleAdd = (): void => {
@@ -59,9 +65,12 @@ export function PhotosStrip({
     ])
   }
 
+  // Nothing to show and nothing to add: no block at all (a submitted survey without photo).
+  if (photos.length === 0 && !canEdit) return null
+
   return (
-    <View style={styles.photosCard}>
-      <View style={styles.sectionHeader}>
+    <View style={photoStyles.block}>
+      <View style={photoStyles.header}>
         <Text style={styles.cardTitle} accessibilityRole="header">
           {t.title}
           {photos.length > 0 ? (
@@ -70,39 +79,45 @@ export function PhotosStrip({
         </Text>
         {canEdit ? (
           <Pressable
-            style={styles.addButton}
+            style={photoStyles.addHit}
             onPress={handleAdd}
             accessibilityRole="button"
             accessibilityLabel={a11y.addPhoto}
           >
-            <Ionicons name="add" size={20} color={theme.semanticColors.textStrong} />
-            <Text style={styles.addButtonText}>{t.add}</Text>
+            <GlassSurface tone="auto" pointerEvents="none" style={photoStyles.addPill}>
+              <Ionicons name="add" size={18} color={theme.semanticColors.textStrong} />
+              <Text style={photoStyles.addPillText}>{t.add}</Text>
+            </GlassSurface>
           </Pressable>
         ) : null}
       </View>
       {photos.length === 0 ? (
-        <Text style={styles.photoEmpty}>{canEdit ? t.empty : t.emptyReadOnly}</Text>
-      ) : (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.photoScroll}
-          contentContainerStyle={styles.photoScrollContent}
+        <Pressable
+          style={photoStyles.emptyTile}
+          onPress={handleAdd}
+          accessibilityRole="button"
+          accessibilityLabel={a11y.addPhoto}
+          testID="photos-empty-tile"
         >
-          {photos.map((attachment, index) => (
+          <Ionicons name="camera-outline" size={28} color={theme.colors.textSecondary} />
+          <Text style={photoStyles.emptyText}>{t.emptyAdd}</Text>
+        </Pressable>
+      ) : (
+        <PhotoGallery
+          ids={photos.map((attachment) => attachment.id)}
+          renderPhoto={(id, index, size) => (
             <Pressable
-              key={attachment.id}
-              style={styles.photoPress}
-              onPress={() => handlePhotoPress(attachment.id)}
+              style={[photoStyles.photoPress, { width: size.width, height: size.height }]}
+              onPress={() => handlePhotoPress(id)}
               accessibilityRole={canEdit ? "button" : "image"}
               accessibilityLabel={a11y.photo({ position: index + 1, total: photos.length })}
               accessibilityHint={canEdit ? alerts.deletePhotoTitle : undefined}
-              accessibilityValue={{ text: photoTileStatusText(attachment) }}
+              accessibilityValue={{ text: photoTileStatusText(photos[index]) }}
             >
-              <PhotoTile attachment={attachment} />
+              <PhotoTile attachment={photos[index]} size={size} />
             </Pressable>
-          ))}
-        </ScrollView>
+          )}
+        />
       )}
     </View>
   )

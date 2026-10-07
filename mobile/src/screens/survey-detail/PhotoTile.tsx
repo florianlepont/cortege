@@ -9,7 +9,7 @@ import { LocalAttachment } from "../../storage"
 import { AppText as Text } from "../../ui/AppText"
 import { Skeleton } from "../../ui/Skeleton"
 import { AttachmentPreview, resolveAttachmentPreview } from "../survey-screen-helpers"
-import { createSummaryScreenStyles, PHOTO_TILE } from "./summary-screen.styles"
+import { createPhotoStyles, PhotoSize } from "./photos.styles"
 
 const t = fr.surveyDetail.photos
 
@@ -33,10 +33,10 @@ export function photoTileStatusText(
 
 function FallbackFace({ kind }: { kind: "missing" | "unavailable" }) {
   const theme = useBrandTheme()
-  const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const styles = useMemo(() => createPhotoStyles(theme), [theme])
   return (
     <View style={styles.photoFallback} testID="photo-tile-fallback">
-      <Ionicons name="image-outline" size={24} color={theme.colors.textSecondary} />
+      <Ionicons name="image-outline" size={28} color={theme.colors.textSecondary} />
       <Text style={styles.photoFallbackText} numberOfLines={1}>
         {kind === "missing" ? t.tileMissing : t.tileUnavailable}
       </Text>
@@ -49,9 +49,17 @@ function FallbackFace({ kind }: { kind: "missing" | "unavailable" }) {
  * the image arrives; a file that fails to load turns into the neutral fallback instead of a hole.
  * Keyed by the uri by the parent, so a new file starts from the skeleton again.
  */
-function ImageFace({ attachmentId, uri }: { attachmentId: string; uri: string }) {
+function ImageFace({
+  attachmentId,
+  uri,
+  size,
+}: {
+  attachmentId: string
+  uri: string
+  size: PhotoSize
+}) {
   const theme = useBrandTheme()
-  const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const styles = useMemo(() => createPhotoStyles(theme), [theme])
   const reduced = useReducedMotion()
   const [phase, setPhase] = useState<"loading" | "loaded" | "failed">("loading")
 
@@ -61,8 +69,8 @@ function ImageFace({ attachmentId, uri }: { attachmentId: string; uri: string })
     <>
       {phase === "loading" ? (
         <Skeleton
-          width={PHOTO_TILE.width}
-          height={PHOTO_TILE.height}
+          width={size.width}
+          height={size.height}
           borderRadius={0}
           style={styles.photoImage}
         />
@@ -82,32 +90,38 @@ function ImageFace({ attachmentId, uri }: { attachmentId: string; uri: string })
 }
 
 /**
- * One photo of the survey as a tile (12.2-14, D-27b): always the same 4:3 box with the same radius
- * and hairline (`styles.photo`), whatever it shows. A local file gets its picture over a calm
+ * One photo of the survey as a tile (12.2-14, D-27b): always the box `size` says (16:10 and the
+ * full width for a single photo, 4:3 at 78 percent of the width in a strip) with the same 20 pt
+ * radius and hairline (`styles.photo`), whatever it shows. A local file gets its picture over a calm
  * skeleton, a photo still to download only the skeleton, a missing or unusable file a neutral face
  * with an outline icon and one word. The long sentence of `labels.attachmentPreview` is the
  * accessibility value, so no text overflows the tile. The parent owns the press and its label.
  */
 export function PhotoTile({
   attachment,
+  size,
   style,
 }: {
   attachment: LocalAttachment
+  size: PhotoSize
   style?: StyleProp<ViewStyle>
 }) {
   const theme = useBrandTheme()
-  const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const styles = useMemo(() => createPhotoStyles(theme), [theme])
   const preview = resolveAttachmentPreview(attachment)
   const state = resolvePhotoTileState(preview)
 
   return (
-    <View style={[styles.photo, style]} testID={`photo-tile-${state}`}>
+    <View
+      style={[styles.photo, { width: size.width, height: size.height }, style]}
+      testID={`photo-tile-${state}`}
+    >
       {preview.kind === "image" ? (
-        <ImageFace key={preview.uri} attachmentId={attachment.id} uri={preview.uri} />
+        <ImageFace key={preview.uri} attachmentId={attachment.id} uri={preview.uri} size={size} />
       ) : preview.kind === "loading" ? (
         <Skeleton
-          width={PHOTO_TILE.width}
-          height={PHOTO_TILE.height}
+          width={size.width}
+          height={size.height}
           borderRadius={0}
           style={styles.photoImage}
         />
