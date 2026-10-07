@@ -12,6 +12,7 @@ import {
   glassCtaFills,
   glassCtaInk,
   glassCtaSecondary,
+  mapControlGlass,
   mixWithWhite,
   pillLabelColor,
   pressWaveFill,
@@ -23,6 +24,12 @@ import {
 // neutrals of `theme.ts` are untouched (D-03); this layer only adds surfaces, tones and glows.
 
 export type BrandVisualTone = { base: string; top: string; image: string; shadow: string }
+
+/**
+ * A glass surface with its own tint (`GlassSurface`'s `surface`): `tint` for the Liquid Glass
+ * (iOS 26), `fill` over the blur (older iOS), `android` the flat fill (no blur there, D-17).
+ */
+export type GlassFill = { tint: string; fill: string; android: string }
 
 export type BrandVisual = {
   backdrop: string
@@ -70,6 +77,19 @@ export type BrandVisual = {
     androidFill: string
     iconTile: string
     iconTint: string
+  }
+  /**
+   * Controls floating over a map (12.2-19 fix round): the map does not follow the scheme, so in
+   * dark the glass is a near opaque forest graphite with light content. `glass` goes to
+   * `GlassSurface`'s `surface`, `hairline` is the control's outline (fallback only, the Liquid
+   * Glass draws its own rim), `icon` the glyph colour, `text` and `textMuted` the labels.
+   */
+  mapControl: {
+    glass: GlassFill
+    hairline: string
+    icon: string
+    text: string
+    textMuted: string
   }
   /**
    * Forest glass of the big call-to-action buttons (D-27c, D-28, charter forest with a white
@@ -193,6 +213,17 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       androidFill: brandGlassFills.android[scheme],
       iconTile: "rgba(137, 163, 58, 0.18)",
       iconTint: accentText,
+    },
+    mapControl: {
+      glass: {
+        tint: mapControlGlass[scheme].tint,
+        fill: mapControlGlass[scheme].fill,
+        android: mapControlGlass[scheme].android,
+      },
+      hairline: dark ? mapControlGlass.dark.hairline : colors.divider,
+      icon: mapControlGlass[scheme].icon,
+      text: mapControlGlass[scheme].text,
+      textMuted: mapControlGlass[scheme].textMuted,
     },
     glassCta: {
       tint: glassCtaFills[scheme].tint,

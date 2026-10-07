@@ -3,6 +3,7 @@ import { Platform, StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { BlurView } from "expo-blur"
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect"
 import { useBrandTheme } from "../app/theme"
+import type { GlassFill } from "../app/theme-visual"
 import { brandGlassFills } from "../app/visual-tokens"
 
 type GlassSurfaceTone = "auto" | "dark"
@@ -21,6 +22,12 @@ type GlassSurfaceProps = {
   pointerEvents?: "auto" | "none" | "box-none" | "box-only"
   /** Liquid Glass reacts to touch (press shimmer): for a surface that is itself a button. */
   interactive?: boolean
+  /**
+   * The surface's own glass in place of the default fill: a tint on the Liquid Glass, a fill over
+   * the blur, a flat fill on Android. A control floating over a map passes
+   * `theme.visual.mapControl.glass` (12.2-19 fix round: the map does not follow the scheme).
+   */
+  surface?: GlassFill
 }
 
 /**
@@ -45,6 +52,7 @@ export function GlassSurface({
   intensity = 46,
   pointerEvents,
   interactive = false,
+  surface,
 }: GlassSurfaceProps) {
   const { scheme } = useBrandTheme()
   const isDark = tone === "dark" || scheme === "dark"
@@ -58,6 +66,7 @@ export function GlassSurface({
         glassEffectStyle="regular"
         colorScheme={isDark ? "dark" : "light"}
         isInteractive={interactive}
+        tintColor={surface?.tint}
       >
         {children}
       </GlassView>
@@ -66,8 +75,10 @@ export function GlassSurface({
 
   // Static keyed fills: `tone="dark"` overrides the app scheme. Android gets the higher-alpha flat
   // fill because expo-blur draws no real blur there (D-17).
-  const fills = Platform.OS === "android" ? brandGlassFills.android : brandGlassFills.control
-  const overlayFill = fills[isDark ? "dark" : "light"]
+  const android = Platform.OS === "android"
+  const fills = android ? brandGlassFills.android : brandGlassFills.control
+  const ownFill = surface ? (android ? surface.android : surface.fill) : undefined
+  const overlayFill = ownFill ?? fills[isDark ? "dark" : "light"]
 
   return (
     <View style={[styles.container, style]} pointerEvents={pointerEvents}>

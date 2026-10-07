@@ -53,6 +53,7 @@ import {
   brandTypography,
 } from "../../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../../app/theme"
+import { GlassSurface } from "../../ui/GlassSurface"
 import { ScoreLegend } from "./ScoreLegend"
 
 const darkTheme = buildTheme("automatic", "dark", () => {})
@@ -172,32 +173,50 @@ describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
     expect(40 + 2 * (toggle.props.hitSlop as number)).toBe(brandInteraction.hitTarget.min)
   })
 
-  test("icon and spinner use the theme's accent text colour in light and dark (12.2-18)", () => {
+  test("icon and spinner use the map control colour in light and dark (12.2-19)", () => {
     const light = render(true)
     expect(light.root.findByType("Ionicons" as never).props.color).toBe(
-      defaultTheme.visual.accentText,
+      defaultTheme.visual.mapControl.icon,
     )
+    expect(light.root.findByType("Ionicons" as never).props.size).toBe(24)
     expect(light.root.findByType("ActivityIndicator" as never).props.color).toBe(
-      defaultTheme.visual.accentText,
+      defaultTheme.visual.mapControl.icon,
     )
     mockScheme.current = "dark"
     const dark = render(true)
-    expect(dark.root.findByType("Ionicons" as never).props.color).toBe(darkTheme.visual.accentText)
-    expect(dark.root.findByType("ActivityIndicator" as never).props.color).toBe(
-      darkTheme.visual.accentText,
+    expect(dark.root.findByType("Ionicons" as never).props.color).toBe(
+      darkTheme.visual.mapControl.icon,
     )
-    expect(darkTheme.visual.accentText).not.toBe(brandColors.forest)
+    expect(dark.root.findByType("ActivityIndicator" as never).props.color).toBe(
+      darkTheme.visual.mapControl.icon,
+    )
+    expect(darkTheme.visual.mapControl.icon).not.toBe(brandColors.forest)
   })
 
-  test("the panel title is a section header and the row labels a secondary footnote", () => {
+  test("count pill, toggle and panel sit on the map control glass with its hairline (12.2-19)", () => {
+    mockScheme.current = "dark"
+    const tree = render()
+    expand(tree)
+    const surfaces = tree.root.findAllByType(GlassSurface)
+    expect(surfaces).toHaveLength(3)
+    for (const surface of surfaces) {
+      expect(surface.props.surface).toEqual(darkTheme.visual.mapControl.glass)
+      expect(flat(surface.props.style).borderColor).toBe(darkTheme.visual.mapControl.hairline)
+    }
+    const count = flat(textNode(tree, t.count(12)).props.style)
+    expect(count.color).toBe(darkTheme.visual.mapControl.text)
+  })
+
+  test("the panel title is a section header and the row labels a muted footnote", () => {
     const tree = render()
     expand(tree)
     const title = flat(textNode(tree, t.legend.title).props.style)
     expect(title.fontFamily).toBe(brandTypography.sectionHeader.fontFamily)
     expect(title.fontSize).toBe(brandTypography.sectionHeader.fontSize)
+    expect(title.color).toBe(defaultTheme.visual.mapControl.text)
     const row = flat(textNode(tree, t.legend.high).props.style)
     expect(row.fontSize).toBe(brandTypeScale.footnote.fontSize)
     expect(row.lineHeight).toBe(brandTypeScale.footnote.lineHeight)
-    expect(row.color).toBe(defaultTheme.colors.textSecondary)
+    expect(row.color).toBe(defaultTheme.visual.mapControl.textMuted)
   })
 })

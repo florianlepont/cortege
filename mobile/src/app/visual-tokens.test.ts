@@ -467,3 +467,69 @@ describe.each(schemes)("secondary glass button, %s scheme", (scheme) => {
     expect(alpha).toBeLessThan(1)
   })
 })
+
+// The basemaps do not follow the app scheme: the same light plan (white roads, paper land) and the
+// same dark orthophoto (forest canopy, black as its extreme) lie under the map controls in light and
+// dark, plus a mid-tone field of the orthophoto.
+const mapBackdrops = ["#FFFFFF", "#F2EFE9", "#6B7356", "#1C2618", "#000000"]
+
+describe.each(schemes)("map controls over the basemap (12.2-19 fix round), %s scheme", (scheme) => {
+  const control = themes[scheme].visual.mapControl
+  const glassKeys = ["tint", "fill", "android"] as const
+
+  function alphaOf(rgba: string): number {
+    return Number(/, (\d(\.\d+)?)\)$/.exec(rgba)?.[1])
+  }
+
+  test.each(glassKeys)(
+    "icons reach 3:1 and labels 4.5:1 on the %s glass over the plan and the orthophoto",
+    (key) => {
+      for (const backdrop of mapBackdrops) {
+        const surface = compositeOver(control.glass[key], backdrop)
+        expect(contrastRatio(control.icon, surface)).toBeGreaterThanOrEqual(3)
+        expect(contrastRatio(control.text, surface)).toBeGreaterThanOrEqual(4.5)
+        expect(contrastRatio(control.textMuted, surface)).toBeGreaterThanOrEqual(4.5)
+      }
+    },
+  )
+
+  test("the glass stays translucent, so the real blur and refraction show (D-04, D-12)", () => {
+    for (const key of glassKeys) {
+      expect(alphaOf(control.glass[key])).toBeGreaterThan(0)
+      expect(alphaOf(control.glass[key])).toBeLessThan(1)
+    }
+    // Android draws no blur (D-17): its flat fill is the densest.
+    expect(alphaOf(control.glass.android)).toBeGreaterThanOrEqual(alphaOf(control.glass.fill))
+  })
+
+  if (scheme === "dark") {
+    test("dark: a near opaque dark glass with light content, even over the white plan", () => {
+      expect(alphaOf(control.glass.tint)).toBeGreaterThanOrEqual(0.8)
+      expect(alphaOf(control.glass.fill)).toBeGreaterThanOrEqual(0.8)
+      const overPlan = compositeOver(control.glass.fill, "#FFFFFF")
+      expect(relativeLuminance(overPlan)).toBeLessThan(0.06)
+      for (const ink of [control.icon, control.text, control.textMuted]) {
+        expect(relativeLuminance(ink)).toBeGreaterThan(0.5)
+      }
+    })
+
+    test("dark: the light hairline stands out from the glass over the plan", () => {
+      const surface = compositeOver(control.glass.fill, "#FFFFFF")
+      expect(control.hairline).toMatch(/^rgba\(255, 255, 255, 0\.\d+\)$/)
+      expect(
+        contrastRatio(compositeOver(control.hairline, surface), surface),
+      ).toBeGreaterThanOrEqual(1.8)
+    })
+
+    test("dark: the 38% glass and the moss accent it replaces failed 3:1 over the plan", () => {
+      const before = compositeOver(brandGlassFills.control.dark, "#FFFFFF")
+      expect(contrastRatio(themes.dark.visual.accentText, before)).toBeLessThan(3)
+    })
+  } else {
+    test("light: the glyph stays the forest accent and the outline the theme divider", () => {
+      expect(control.icon).toBe(themes.light.visual.accentText)
+      expect(control.text).toBe(themes.light.colors.textPrimary)
+      expect(control.hairline).toBe(themes.light.colors.divider)
+    })
+  }
+})

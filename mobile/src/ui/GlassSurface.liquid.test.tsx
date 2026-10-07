@@ -46,4 +46,13 @@ describe("GlassSurface on Liquid Glass (iOS 26)", () => {
     expect(glass.props.tintColor).toBeUndefined()
     expect(glass.props.colorScheme).toBe("light")
   })
+
+  test("a surface with its own glass tints the Liquid Glass (map controls, 12.2-19)", () => {
+    const surface = { tint: "rgba(16, 24, 14, 0.84)", fill: "unused", android: "unused" }
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<GlassSurface surface={surface} />)
+    })
+    expect(tree.root.findByType("GlassView" as never).props.tintColor).toBe(surface.tint)
+  })
 })

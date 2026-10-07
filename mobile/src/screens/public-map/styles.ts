@@ -91,7 +91,7 @@ export function createControlStyles(theme: BrandTheme) {
       width: 50,
       borderRadius: 25,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.visual.mapControl.hairline,
     },
     capsuleButton: {
       width: 50,
@@ -102,7 +102,7 @@ export function createControlStyles(theme: BrandTheme) {
     capsuleSeparator: {
       height: StyleSheet.hairlineWidth,
       marginHorizontal: 10,
-      backgroundColor: theme.colors.divider,
+      backgroundColor: theme.visual.mapControl.hairline,
     },
     locateGlass: {
       position: "absolute",
@@ -111,7 +111,7 @@ export function createControlStyles(theme: BrandTheme) {
       height: 50,
       borderRadius: 25,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.visual.mapControl.hairline,
     },
   })
 }

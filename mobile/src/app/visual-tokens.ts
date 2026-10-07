@@ -123,6 +123,40 @@ export const brandGlassFills = {
   },
 } as const
 
+// Glass of the controls floating over a map (12.2-19 fix round, owner: "En dark mode les boutons
+// de explorer sont difficiles à voir"). The basemaps do not follow the app scheme (the plan and the
+// orthophoto look the same in light and dark), so the 38% dark glass of `brandGlassFills` turned
+// into a muddy grey over the light plan, with thin green icons that nearly vanished. Over a map the
+// glass is therefore a near opaque forest graphite in dark, with a light hairline, light moss icons
+// and near white text; in light it is a denser frosted paper (the 38% light glass, modelled over a
+// dark orthophoto, left the forest icon under 3:1). `tint` tints the Liquid Glass (iOS 26, the
+// system keeps its refraction and rim), `fill` lies over the real blur (older iOS), `android` is the
+// flat fill where expo-blur draws no blur (D-17). The light hairline is the theme's divider, set in
+// `theme-visual.ts`. Checked at 3:1 (icons) and 4.5:1 (text) over the plan and the orthophoto in
+// `visual-tokens.test.ts`.
+export const mapControlGlass = {
+  light: {
+    tint: "rgba(247, 246, 240, 0.76)",
+    fill: "rgba(247, 246, 240, 0.76)",
+    android: "rgba(247, 246, 240, 0.92)",
+    icon: brandColors.forest,
+    text: "#24311F",
+    textMuted: "#3D4B37",
+  },
+  dark: {
+    tint: "rgba(16, 24, 14, 0.84)",
+    fill: "rgba(16, 24, 14, 0.84)",
+    android: "rgba(16, 24, 14, 0.94)",
+    hairline: "rgba(255, 255, 255, 0.28)",
+    icon: "#D2E8A8",
+    text: "#F2F3F1",
+    textMuted: "#C9CED3",
+  },
+} as const
+
+/** Glyph size of a map control (was 22): a heavier glyph that reads over any basemap. */
+export const mapControlIconSize = 24
+
 // Label colour of the glow pill (kept as a named constant: an object key called `label` holding a
 // string literal is read as user-facing text by the structure gate).
 export const pillLabelColor = "#14210F"

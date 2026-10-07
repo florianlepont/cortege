@@ -122,14 +122,33 @@ describe("map chips (the overlays every map shares)", () => {
     expect(texts(tree)).toEqual(["info", "act"])
   })
 
-  test("the action icon takes the theme's accent text colour, light in dark mode (12.2-18)", () => {
+  test("the action icon takes the map control colour, light moss in dark mode (12.2-19)", () => {
     const light = renderAction().root.findByType("Ionicons" as never)
+    expect(light.props.color).toBe(defaultTheme.visual.mapControl.icon)
     expect(light.props.color).toBe(defaultTheme.visual.accentText)
     mockScheme.current = "dark"
     const dark = renderAction().root.findByType("Ionicons" as never)
-    const darkAccent = buildTheme("automatic", "dark", () => {}).visual.accentText
-    expect(dark.props.color).toBe(darkAccent)
+    const darkTheme = buildTheme("automatic", "dark", () => {})
+    expect(dark.props.color).toBe(darkTheme.visual.mapControl.icon)
     expect(dark.props.color).not.toBe(brandColors.forest)
+  })
+
+  test("over the map the pills take the map control glass, near opaque in dark (12.2-19)", () => {
+    mockScheme.current = "dark"
+    const darkTheme = buildTheme("automatic", "dark", () => {})
+    const glass = renderAction().root.findByType("GlassSurface" as never)
+    expect(glass.props.surface).toEqual(darkTheme.visual.mapControl.glass)
+    expect([glass.props.style].flat()[0].borderColor).toBe(darkTheme.visual.mapControl.hairline)
+    let info!: renderer.ReactTestRenderer
+    act(() => {
+      info = renderer.create(<MapInfoPill label="2 parcelles" />)
+    })
+    expect(info.root.findByType("GlassSurface" as never).props.surface).toEqual(
+      darkTheme.visual.mapControl.glass,
+    )
+    const label = info.root.findByType("Text" as never)
+    const labelStyle = Object.assign({}, ...[label.props.style].flat(3).filter(Boolean))
+    expect(labelStyle.color).toBe(darkTheme.visual.mapControl.text)
   })
 
   test("the pills keep their glass surface, height, and a 44 pt target (D-04, D-05)", () => {

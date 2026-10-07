@@ -29,7 +29,12 @@ export const MapInfoPill = memo(function MapInfoPill({ label, style }: MapInfoPi
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   return (
-    <GlassSurface tone="auto" pointerEvents="none" style={[styles.pill, style]}>
+    <GlassSurface
+      tone="auto"
+      pointerEvents="none"
+      surface={theme.visual.mapControl.glass}
+      style={[styles.pill, style]}
+    >
       <Text style={styles.pillText}>{label}</Text>
     </GlassSurface>
   )
@@ -52,7 +57,12 @@ export const MapActionPill = memo(function MapActionPill({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   return (
-    <GlassSurface tone="auto" interactive style={styles.pill}>
+    <GlassSurface
+      tone="auto"
+      interactive
+      surface={theme.visual.mapControl.glass}
+      style={styles.pill}
+    >
       <Pressable
         style={styles.actionHit}
         hitSlop={{ top: MAP_CONTROL_HIT_SLOP, bottom: MAP_CONTROL_HIT_SLOP }}
@@ -60,8 +70,8 @@ export const MapActionPill = memo(function MapActionPill({
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
       >
-        {/* Theme-aware accent: the fixed forest was dark on the dark glass (12.2-18). */}
-        <Ionicons name={icon} size={18} color={theme.visual.accentText} />
+        {/* The map control glyph colour: light moss on the dark map glass (12.2-18, 12.2-19). */}
+        <Ionicons name={icon} size={18} color={theme.visual.mapControl.icon} />
         <Text style={styles.pillText}>{label}</Text>
       </Pressable>
     </GlassSurface>
@@ -110,14 +120,14 @@ function createStyles(theme: BrandTheme) {
       height: MAP_PILL_HEIGHT,
       borderRadius: brandRadius.pill,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.visual.mapControl.hairline,
       paddingHorizontal: 14,
       flexDirection: "row",
       alignItems: "center",
     },
     pillText: {
       ...brandTypography.meta,
-      color: theme.colors.textPrimary,
+      color: theme.visual.mapControl.text,
     },
     actionHit: {
       height: MAP_PILL_HEIGHT,
