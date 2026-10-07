@@ -1,5 +1,7 @@
 import React from "react"
 import renderer, { act, ReactTestRenderer } from "react-test-renderer"
+import { brandRadius, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { SurveyEventItem } from "../../app/types"
 import { EventsTab } from "./EventsTab"
@@ -62,6 +64,13 @@ jest.mock("../../ui/Skeleton", () => {
 
 const t = fr.surveyDetail.events
 
+type Style = Record<string, unknown>
+
+function flatten(style: unknown): Style {
+  if (Array.isArray(style)) return style.reduce<Style>((acc, s) => ({ ...acc, ...flatten(s) }), {})
+  return (style as Style | undefined | null) ?? {}
+}
+
 function makeEvent(overrides: Partial<SurveyEventItem> = {}): SurveyEventItem {
   return {
     id: "event-1",
@@ -115,5 +124,35 @@ describe("EventsTab", () => {
     expect(tree.root.findAllByType("SkeletonRow" as never)).toHaveLength(0)
     const labels = tree.root.findAllByType("Text" as never).map((node) => node.props.children)
     expect(labels).toContain(fr.surveyDetail.eventTypes.submitted)
+  })
+
+  test("the timeline sits in a glass card (fill, hairline, radius 22) with 4-grid spacing", () => {
+    const tree = mount({ events: [makeEvent()], isLoading: false })
+    const card = flatten(tree.root.findAllByType("View" as never)[0]?.props.style)
+    expect(card).toMatchObject({
+      backgroundColor: defaultTheme.visual.glass.cardFill,
+      borderColor: defaultTheme.visual.glass.cardBorder,
+      borderRadius: brandRadius.card,
+    })
+    expect((card.padding as number) % 4).toBe(0)
+    expect((card.gap as number) % 4).toBe(0)
+  })
+
+  test("icon tiles use radius 12 and the row texts use the new hierarchy", () => {
+    const tree = mount({ events: [makeEvent()], isLoading: false })
+    const tile = tree.root
+      .findAllByType("View" as never)
+      .find((node) => flatten(node.props.style).borderRadius === brandRadius.badgeSm)
+    expect(tile).toBeDefined()
+    const texts = tree.root.findAllByType("Text" as never)
+    const title = texts.find((node) => node.props.children === fr.surveyDetail.eventTypes.submitted)
+    expect(flatten(title?.props.style)).toMatchObject({
+      fontFamily: brandTypography.input.fontFamily,
+      fontSize: brandTypography.input.fontSize,
+    })
+    const meta = texts.find(
+      (node) => flatten(node.props.style).fontSize === brandTypeScale.footnote.fontSize,
+    )
+    expect(flatten(meta?.props.style).color).toBe(defaultTheme.colors.textSecondary)
   })
 })

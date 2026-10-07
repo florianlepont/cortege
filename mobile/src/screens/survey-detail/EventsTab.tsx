@@ -6,12 +6,10 @@ import { formatShortDateTime } from "../../app/formatters"
 import { SurveyEventItem } from "../../app/types"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import { AppCard } from "../../ui/AppCard"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { SkeletonRow } from "../../ui/Skeleton"
 import { eventTypeLabel } from "./event-labels"
 import { eventVisual, type EventTone } from "./event-icons"
-import { createDetailStyles } from "./styles"
 import { createTabsStyles } from "./tabs.styles"
 
 type EventsTabProps = {
@@ -46,47 +44,42 @@ function toneColors(theme: BrandTheme, tone: EventTone): { background: string; i
  */
 export function EventsTab({ events, isLoading }: EventsTabProps) {
   const theme = useBrandTheme()
-  const sharedStyles = useMemo(() => createDetailStyles(theme), [theme])
   const styles = useMemo(() => createTabsStyles(theme), [theme])
   const showSkeleton = isLoading && events.length === 0
   const showEmpty = !isLoading && events.length === 0
 
   return (
-    <View style={sharedStyles.detailSection}>
-      <AppCard variant="panelElevated" padding={18} style={styles.eventsCard}>
-        <AppSectionHeader title={t.title} subtitle={t.subtitle} />
-        {showSkeleton
-          ? Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
-              <SkeletonRow key={`events-skeleton-${index}`} />
-            ))
-          : null}
-        {showEmpty ? <Text style={sharedStyles.rowMeta}>{t.empty}</Text> : null}
-        {!showSkeleton && events.length > 0 ? (
-          <View>
-            {events.map((event, index) => {
-              const visual = eventVisual(event.event_type)
-              const colors = toneColors(theme, visual.tone)
-              const isLast = index === events.length - 1
-              return (
-                <View key={event.id} style={styles.timelineRow}>
-                  <View style={styles.timelineRail}>
-                    <View style={[styles.timelineDot, { backgroundColor: colors.background }]}>
-                      <Ionicons name={visual.icon} size={14} color={colors.icon} />
-                    </View>
-                    {!isLast ? <View style={styles.timelineConnector} /> : null}
+    <View style={styles.eventsCard}>
+      <AppSectionHeader title={t.title} subtitle={t.subtitle} />
+      {showSkeleton
+        ? Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
+            <SkeletonRow key={`events-skeleton-${index}`} />
+          ))
+        : null}
+      {showEmpty ? <Text style={styles.timelineMeta}>{t.empty}</Text> : null}
+      {!showSkeleton && events.length > 0 ? (
+        <View>
+          {events.map((event, index) => {
+            const visual = eventVisual(event.event_type)
+            const colors = toneColors(theme, visual.tone)
+            const isLast = index === events.length - 1
+            return (
+              <View key={event.id} style={styles.timelineRow}>
+                <View style={styles.timelineRail}>
+                  <View style={[styles.timelineDot, { backgroundColor: colors.background }]}>
+                    <Ionicons name={visual.icon} size={16} color={colors.icon} />
                   </View>
-                  <View style={styles.timelineContent}>
-                    <Text style={styles.eventTitle}>{eventTypeLabel(event.event_type)}</Text>
-                    <Text style={sharedStyles.rowMeta}>
-                      {formatShortDateTime(event.created_at)}
-                    </Text>
-                  </View>
+                  {!isLast ? <View style={styles.timelineConnector} /> : null}
                 </View>
-              )
-            })}
-          </View>
-        ) : null}
-      </AppCard>
+                <View style={styles.timelineContent}>
+                  <Text style={styles.timelineTitle}>{eventTypeLabel(event.event_type)}</Text>
+                  <Text style={styles.timelineMeta}>{formatShortDateTime(event.created_at)}</Text>
+                </View>
+              </View>
+            )
+          })}
+        </View>
+      ) : null}
     </View>
   )
 }
