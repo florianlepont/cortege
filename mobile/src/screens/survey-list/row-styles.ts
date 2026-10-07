@@ -13,6 +13,9 @@ import { BrandTheme } from "../../app/theme"
 // community row) is exactly as tall as one that carries a chip (D-23).
 export const ROW_STATUS_MIN_HEIGHT = 2 * 5 + 2 + brandTypography.meta.lineHeight
 
+/** Width of the trailing ring column of a list row (the 38 pt ring, centred). */
+export const SURVEY_ROW_RING_COLUMN = 40
+
 // Survey list row styles (01.9-22), moved from SurveyListScreen. Phase 12.2-11: glass card (no
 // elevation or shadow spread: an Android elevation under a translucent fill smears grey), 4-grid
 // spacing, Sora row title.
@@ -77,14 +80,19 @@ export function createRowStyles(theme: BrandTheme) {
     surveyCardAccentNeutral: {
       backgroundColor: "transparent",
     },
-    // LIST-01: the score ring column, always shown.
+    // LIST-01, D-27: the score ring column, always shown, on the trailing side and centred on the
+    // row. It never shrinks, so the text column (minWidth 0) wraps or truncates before the ring.
     surveyCardIndicator: {
-      width: 40,
+      width: SURVEY_ROW_RING_COLUMN,
+      flexShrink: 0,
+      alignSelf: "center",
       alignItems: "center",
       justifyContent: "center",
+      marginLeft: brandSpacing4.xs,
     },
     surveyCardContent: {
       flex: 1,
+      minWidth: 0,
       gap: brandSpacing4.xs,
     },
     surveyCardHeader: {

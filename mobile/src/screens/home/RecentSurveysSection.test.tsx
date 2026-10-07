@@ -420,6 +420,21 @@ describe("RecentSurveysSection (D-20c)", () => {
       expect(chip).toBeDefined()
     })
 
+    test("the ring is on the trailing side, centred on the row, and the text keeps its room (D-27)", () => {
+      mount([makeSurvey("a")])
+      const row = rows()[0]
+      const [accent, content, column, wave] = row.children as ReactTestInstance[]
+      expect(styleOf(accent).width).toBe(4)
+      expect(styleOf(content)).toMatchObject({ flex: 1, minWidth: 0 })
+      expect(column.findAllByType("ScoreRing" as never)).toHaveLength(1)
+      expect(content.findAllByType("ScoreRing" as never)).toHaveLength(0)
+      expect(styleOf(column)).toMatchObject({ width: RECENT_LAYOUT.ringSize, flexShrink: 0 })
+      expect(wave.props.testID).toBe("ripple-layer")
+      // the row centres its children vertically, so the ring is centred in the 52 pt
+      expect(styleOf(row).alignItems).toBe("center")
+      expect(styleOf(row).paddingHorizontal).toBe(16)
+    })
+
     test("the ring is the smaller 32 pt one, in a column of its own width", () => {
       mount([makeSurvey("a")])
       const ring = rows()[0].findByType("ScoreRing" as never)

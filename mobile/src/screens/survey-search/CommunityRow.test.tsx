@@ -90,15 +90,16 @@ afterEach(() => {
 })
 
 // The styles that define the size of a row, read from the host nodes of its shared frame: the card
-// (padding, border, minimum height), the accent bar, the ring column, the text column, the title
-// line, the title text and the status line.
+// (padding, border, minimum height), the accent bar, the text column, the title line, the title
+// text, the status line and the trailing ring column.
 function boxStyles(tree: ReactTestRenderer) {
   const card = tree.root.findAll(
     (node: ReactTestInstance) =>
       (node.type as unknown) === "Pressable" && node.props.accessibilityRole === "button",
   )[0]
   const views = tree.root.findAll((node) => (node.type as unknown) === "View")
-  const [accent, indicator, content, header, statusRow] = views.map((view) => view.props.style)
+  const [accent, content, header, statusRow] = views.map((view) => view.props.style)
+  const indicator = (card.children[2] as ReactTestInstance).props.style
   const title = tree.root.findAll(
     (node) => (node.type as unknown) === "Text" && node.props.numberOfLines === 2,
   )[0]
@@ -134,6 +135,7 @@ describe("CommunityRow size (D-23)", () => {
     const styles = boxStyles(others())
     expect(styles.card.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
     expect(styles.indicator.width).toBe(40)
+    expect(styles.indicator.alignSelf).toBe("center")
     expect(styles.statusRow.minHeight).toBe(ROW_STATUS_MIN_HEIGHT)
     expect(ROW_STATUS_MIN_HEIGHT).toBe(28)
   })

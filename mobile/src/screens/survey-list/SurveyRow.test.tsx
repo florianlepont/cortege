@@ -4,6 +4,7 @@ import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
+import { scoreRingGeometry } from "../../app/visual-tokens"
 import type { LocalSurvey } from "../../storage/types"
 import { SurveyRow, type SurveyRowProps } from "./SurveyRow"
 
@@ -176,13 +177,37 @@ describe("SurveyRow glass card and interactions", () => {
 
   test("shows no photo thumbnail: the row is the ring, the title, the status chip and the date", () => {
     const { card } = mount({ survey: makeSurvey({ status: "submitted" }), score: 34 })
-    // accent bar, ring column and text column, then the wave layer: nothing between ring and text
+    // accent bar, text column and ring column, then the wave layer: no thumbnail anywhere
     expect(card.children).toHaveLength(4)
     expect(tree.root.findAllByType("ScoreRing" as never)).toHaveLength(1)
     const texts = tree.root
       .findAll((node) => (node.type as unknown) === "Text")
       .map((node) => String(node.props.children))
     expect(texts).toContain("Parcelle A")
+  })
+
+  test("the ring is on the trailing side, vertically centred, and the text column reserves its width (D-27)", () => {
+    const { card } = mount({ survey: makeSurvey({ status: "submitted" }), score: 34 })
+    const [accent, content, indicator, wave] = card.children as ReactTestInstance[]
+    expect(accent.props.style[0].width).toBe(4)
+    expect(wave.props.testID).toBe("ripple-layer")
+    // the ring is the last child before the wave layer, after the title and the status line
+    expect(indicator.findAllByType("ScoreRing" as never)).toHaveLength(1)
+    expect(content.findAllByType("ScoreRing" as never)).toHaveLength(0)
+    const column = indicator.props.style
+    expect(column).toMatchObject({ alignSelf: "center", flexShrink: 0, width: 40 })
+    // 44 pt hit area, 38 pt ring in a 40 pt column, one card padding from the trailing edge
+    expect(column.width).toBeGreaterThanOrEqual(scoreRingGeometry.size)
+    // the text column takes the rest and may shrink below its content: a long title wraps
+    // (two lines) and truncates before it reaches the ring, also at a large text size
+    expect(content.props.style).toMatchObject({ flex: 1, minWidth: 0 })
+    const title = content
+      .findAll((node) => (node.type as unknown) === "Text" && node.props.numberOfLines === 2)
+      .at(0)
+    expect(Object.assign({}, ...[title?.props.style].flat(3))).toMatchObject({ flex: 1 })
+    const cardStyle = card.props.style.filter(Boolean)[0]
+    expect(cardStyle.paddingHorizontal).toBe(brandSpacing4.md)
+    expect(cardStyle.paddingHorizontal % 4).toBe(0)
   })
 
   test("no row code loads a photo any more", () => {

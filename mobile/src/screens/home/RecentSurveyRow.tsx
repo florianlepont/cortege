@@ -50,13 +50,14 @@ export function RecentSurveyRow({
       style={styles.row}
     >
       <View style={[rowStyles.surveyCardAccent, accentStyle]} />
-      <View style={styles.indicator}>{indicator}</View>
       <View style={styles.content}>
         <Text numberOfLines={1} style={styles.title}>
           {title}
         </Text>
         <View style={styles.statusRow}>{status}</View>
       </View>
+      {/* D-27: the ring is on the trailing side, like the rows of Mes Relevés. */}
+      <View style={styles.indicator}>{indicator}</View>
     </RipplePressable>
   )
 }
@@ -75,6 +76,7 @@ function createStyles(theme: BrandTheme) {
     },
     indicator: {
       width: RECENT_LAYOUT.ringSize,
+      flexShrink: 0,
       alignItems: "center",
       justifyContent: "center",
     },
