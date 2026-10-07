@@ -132,9 +132,6 @@ export function createRowStyles(theme: BrandTheme) {
       ...brandTypeScale.footnote,
       color: theme.componentColors.surveyList.supportDangerText,
     },
-    surveyCardPressed: {
-      backgroundColor: theme.colors.surfaceSoft,
-    },
     badgeTextDanger: {
       color: theme.componentColors.surveyList.badgeDangerText,
     },

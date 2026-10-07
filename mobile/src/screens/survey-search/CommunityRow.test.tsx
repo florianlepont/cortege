@@ -103,7 +103,7 @@ function boxStyles(tree: ReactTestRenderer) {
     (node) => (node.type as unknown) === "Text" && node.props.numberOfLines === 2,
   )[0]
   return {
-    card: card.props.style({ pressed: false })[0],
+    card: card.props.style[0],
     accent: accent[0],
     indicator,
     content,
@@ -151,6 +151,17 @@ describe("CommunityRow size (D-23)", () => {
     const row = tree.root.findAll((node) => node.props.testID === "community-row-c1")[0]
     act(() => row.props.onPress())
     expect(onOpen).toHaveBeenCalledWith("c1")
+  })
+
+  test("carries the green wave and opens only on press", () => {
+    const onOpen = jest.fn()
+    const tree = render(<CommunityRow item={item} onOpen={onOpen} />)
+    expect(
+      tree.root.findAll((n) => (n.type as unknown) === "View" && n.props.testID === "ripple-layer"),
+    ).toHaveLength(1)
+    const row = tree.root.findByType("Pressable" as never)
+    act(() => row.props.onPressIn({ nativeEvent: { locationX: 30, locationY: 10 } }))
+    expect(onOpen).not.toHaveBeenCalled()
   })
 
   test("an unnamed survey and an unknown author get the catalogue fallbacks", () => {

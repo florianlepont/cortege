@@ -145,7 +145,7 @@ describe("SurveyRow memoisation", () => {
 describe("SurveyRow glass card and interactions", () => {
   test("the card is a glass surface with the card radius and a 44 pt minimum height", () => {
     const { card } = mount()
-    const style = card.props.style({ pressed: false }).filter(Boolean)[0]
+    const style = card.props.style.filter(Boolean)[0]
     const { glass } = defaultTheme.visual
     expect(style).toMatchObject({
       backgroundColor: glass.cardFill,
@@ -160,6 +160,17 @@ describe("SurveyRow glass card and interactions", () => {
     expect(brandRadius.card).toBe(22)
     expect(style.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
     expect(style).not.toHaveProperty("elevation")
+  })
+
+  test("the row carries the green wave: touching it starts no navigation, only pressing opens", () => {
+    const { card, props } = mount()
+    expect(
+      tree.root.findAll((n) => (n.type as unknown) === "View" && n.props.testID === "ripple-layer"),
+    ).toHaveLength(1)
+    act(() => card.props.onPressIn({ nativeEvent: { locationX: 30, locationY: 10 } }))
+    expect(props.onOpen).not.toHaveBeenCalled()
+    // the pressed fill is gone: the wave is the feedback (D-21)
+    expect(JSON.stringify(card.props.style)).not.toContain(defaultTheme.colors.surfaceSoft)
   })
 
   test("pressing the row opens the survey", () => {

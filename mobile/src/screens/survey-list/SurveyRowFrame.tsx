@@ -1,8 +1,9 @@
 import { ReactNode, useMemo } from "react"
-import { Pressable, PressableProps, View } from "react-native"
+import { PressableProps, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
 import { AppText as Text } from "../../ui/AppText"
+import { RipplePressable } from "../../ui/RipplePressable"
 import { createRowStyles } from "./row-styles"
 
 export type SurveyRowTone = "neutral" | "success" | "warning" | "danger"
@@ -48,14 +49,11 @@ export function SurveyRowFrame({
   }[tone]
 
   return (
-    <Pressable
+    // The press feedback is the green wave of `RipplePressable` (D-21), not a pressed fill.
+    <RipplePressable
       accessibilityRole="button"
       {...pressableProps}
-      style={({ pressed }) => [
-        styles.surveyCard,
-        selected ? styles.surveyCardSelected : null,
-        pressed && styles.surveyCardPressed,
-      ]}
+      style={[styles.surveyCard, selected ? styles.surveyCardSelected : null]}
     >
       {/* Accent bar: transparent for neutral (N-06) */}
       <View style={[styles.surveyCardAccent, accentStyle]} />
@@ -87,6 +85,6 @@ export function SurveyRowFrame({
           </Text>
         ) : null}
       </View>
-    </Pressable>
+    </RipplePressable>
   )
 }
