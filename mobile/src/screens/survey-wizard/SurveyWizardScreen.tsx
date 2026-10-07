@@ -8,17 +8,19 @@ import {
   resolveMethodVersion,
   type IbpMethodVersion,
 } from "@cortege/ibp-domain"
-import { brandColors } from "../../app/brand-tokens"
+import { brandSpacing4 } from "../../app/brand-tokens"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../../app/constants"
 import { useBrandTheme } from "../../app/theme"
 import { RegionVersion, VegetationStage } from "../../app/types"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppField } from "../../ui/AppField"
 import { AppText as Text } from "../../ui/AppText"
 import { CasPicker } from "../../ui/CasPicker"
+import { GlassButton } from "../../ui/GlassButton"
+import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
+import { useFinishBarHeight } from "../survey-detail/useFinishBarHeight"
 import type { SurveyFormMethod } from "./method"
 import { createWizardStyles } from "./wizard.styles"
 
@@ -76,6 +78,8 @@ export function SurveyWizardScreen({
   const styles = useMemo(() => createWizardStyles(theme), [theme])
   const insets = useSafeAreaInsets()
   const tabBarClearance = useTabBarClearance()
+  // The call to action floats over the page: the scroll content ends above it.
+  const { barHeight, onBarLayout } = useFinishBarHeight(true)
   const [stepIndex, setStepIndex] = useState(0)
   const step = STEPS[stepIndex]
   const resolved = resolveMethodVersion(method.version)
@@ -116,7 +120,7 @@ export function SurveyWizardScreen({
           : w.region.body
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} testID="wizard-screen">
       <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
         <View style={styles.topRow}>
           <Pressable
@@ -151,7 +155,10 @@ export function SurveyWizardScreen({
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.body}
+        contentContainerStyle={[
+          styles.body,
+          { paddingBottom: (barHeight ?? 0) + brandSpacing4.md },
+        ]}
         keyboardShouldPersistTaps="handled"
         testID="wizard-body"
       >
@@ -196,7 +203,7 @@ export function SurveyWizardScreen({
                   >
                     <View style={[styles.radio, selected ? styles.radioSelected : null]}>
                       {selected ? (
-                        <Ionicons name="checkmark" size={14} color={brandColors.white} />
+                        <Ionicons name="checkmark" size={14} color={theme.visual.chip.activeText} />
                       ) : null}
                     </View>
                     <View style={styles.choiceCopy}>
@@ -205,9 +212,7 @@ export function SurveyWizardScreen({
                           {fr.ibpMethod.versions[choice.version]}
                         </Text>
                         {choice.recommended ? (
-                          <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{w.method.recommended}</Text>
-                          </View>
+                          <Text style={styles.recommended}>{w.method.recommended}</Text>
                         ) : null}
                       </View>
                       <Text style={styles.choiceHint}>{choice.hint}</Text>
@@ -255,8 +260,13 @@ export function SurveyWizardScreen({
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: tabBarClearance + 12 }]}>
-        <AppButton
+      <View
+        pointerEvents="box-none"
+        onLayout={onBarLayout}
+        style={[styles.footer, { paddingBottom: finishBarBottomPadding(tabBarClearance) }]}
+        testID="wizard-footer"
+      >
+        <GlassButton
           label={w.continue}
           size="lg"
           disabled={!canContinue}
