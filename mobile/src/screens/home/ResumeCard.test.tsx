@@ -275,9 +275,9 @@ describe("ResumeCard", () => {
     // 6 pt segments and the 1 pt rule over the 44 pt link.
     expect(styleOf(progress).marginTop).toBe(24)
     expect(styleOf(progress).marginTop).toBe(RESUME_LAYOUT.progressGap)
-    const segment = tree.root.find(
+    const segment = tree.root.findAll(
       (node) => (node.type as unknown) === "View" && node.props.testID === "hero-progress-todo",
-    )
+    )[0]
     expect(styleOf(segment).height).toBe(RESUME_LAYOUT.progressHeight)
     const footer = tree.root.find(
       (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
