@@ -1,0 +1,217 @@
+---
+phase: 09-shared-ibp-domain-package-and-test-completeness
+plan: 16
+subsystem: phase-gate
+tags: [gate, validation, coverage, docker, expo-export, e2e, minio, pr-draft]
+status: complete
+requires: [01.8-01, 01.8-02, 01.8-03, 01.8-04, 01.8-05, 01.8-06, 01.8-07, 01.8-08, 01.8-09, 01.8-10, 01.8-11, 01.8-12, 01.8-13, 01.8-14, 01.8-15]
+provides:
+  - "09-VALIDATION.md: local gate (30 rows), measurements, matrix v2 / fixture cross-check, criterion 1-6 evidence, coverage ratchet, owner review items, 01.9-32 hand-over"
+  - "Coverage floors raised to the gate measurement (API auth + surveys, mobile i18n, hooks, screens, ui)"
+  - "The phase PR body draft (below), with the owner's 6-step iPhone check in French"
+affects: [01.9-32]
+tech-stack:
+  added: []
+  patterns: []
+key-files:
+  created:
+    - .planning/phases/09-shared-ibp-domain-package-and-test-completeness/09-16-SUMMARY.md
+  modified:
+    - .planning/phases/09-shared-ibp-domain-package-and-test-completeness/09-VALIDATION.md
+    - api/jest.unit.config.js
+    - mobile/jest.unit.config.js
+decisions:
+  - "The local Docker build uses a scratchpad copy of api/Dockerfile that only adds the agent-proxy CA; the committed file is proven by CI's image-check (Task 2)"
+  - "The owner-check simulation ran against the built image itself (container on the local PostgreSQL and MinIO; config-refusal and deploy-guard on the image's /app copied out), because the worktree's symlinked node_modules reach the main checkout's package without a dist"
+  - "packages/ibp-domain/jest.config.js stays at 100/100/100/100 (already the maximum); no threshold lowered anywhere"
+metrics:
+  duration: "~45 min (Task 1); phase gate spanned 2026-09-26 21:00 UTC to 2026-09-27 07:17 UTC across all 4 tasks"
+  completed: "2026-09-27"
+  tasks: "4 of 4 (phase complete)"
+  files: 4
+---
+
+# Phase 01.8 Plan 16: Phase gate Summary — phase complete
+
+The whole local gate is green on the integrated phase. Lint, typecheck and format pass. The package, API and mobile unit suites pass with coverage, and the coverage floors were raised to the measurement. The four 01.9 scanners are at 0. The full E2E passes in local and MinIO modes. The API image builds, passes its smoke checks, migrates 001-016 and answers health. The owner-check simulation passes against that built image, including old-app payloads and the 01.8 public-read probes. `expo export` works for android and ios and bundles the v3.2 rules. Matrix v2 and the parity fixture list the same 59 case ids. The phase PR (#162) is green on every CI job, including both native builds. It merged to `main` at 2026-09-27T05:34Z; the API deployed and was probed healthy before the owner rebuilt the app. The owner completed all 6 steps of the iPhone check and approved: "Tout fonctionne". Everything is recorded in `09-VALIDATION.md`, whose status is now `complete` with `nyquist_compliant: true`.
+
+## Tasks
+
+| Task | Name | Commit | Status |
+|------|------|--------|--------|
+| 1 | Full local gate, measurements, criterion evidence, coverage ratchet, review items, hand-over; PR body draft | `9e163bb` (ratchet), `a2c6f13` (VALIDATION), plus this SUMMARY's commit | done |
+| 2 | Phase PR CI evidence (orchestrator), native builds included | see "Task 2" below | done: run 36273758197 success, both native jobs and image-check ran and succeeded |
+| 3 | Merge, VPS deploy, production probes | see "Task 3" below | done: merged 05:34Z, digest sha256:304d51e7…, health 24/24, production simulation 9/9 (2 WARN) |
+| 4 | Owner iPhone check | see "Task 4" below (VALIDATION commit) | done: approuvé, all 6 steps; PR #164 fixed along the way |
+
+## Gate results (details in 09-VALIDATION.md "Local gate")
+
+| Command | Result |
+|---------|--------|
+| `npm run lint` | exit 0; 0 errors, 0 warnings |
+| `npm run typecheck` | exit 0 |
+| `npm run format:check` | clean. The 5 gitignored `.claude/` tooling files only warn in the main checkout. They are not in git and CI does not see them. `prettier --check` on the 528 tracked `ts/tsx/json` files exits 0 |
+| Package `test:coverage` | 8 suites, 210 tests, 100/100/100/100 |
+| API `test:unit:coverage` | 32 suites, 745 tests; thresholds met before and after the ratchet |
+| Mobile `test:unit:coverage` | 93 suites, 1271 tests; thresholds met before and after the ratchet |
+| Scanners literals / unused-styles / long-files / status-ids | 0 / 0 / 0 / 0 |
+| Full E2E, local mode (`ibp_p18_16_test`) | 33 suites; 207 passed, 3 skipped, 210 total; 53 s |
+| Full E2E, MinIO mode (pinned `pgsty/minio`, `127.0.0.1:19716`) | 33 suites; 209 passed, 1 skipped, 210 total; 34 s |
+| Docker build + C3 smoke + boot | image built (with the proxy-CA copy, see Deviations); uid 1000, package dist only, no expo/react-native, `require` prints the v3.2 tag; migrations 001-016 applied at boot; `/v1/health` ok |
+| Owner-check simulation on the built image | devices 27/27, seed of an old-app and a v3.2 survey 11/11, restart 4/4, config-refusal 10/10, deploy-guard 16/16. The production phase run locally: 9/11, and both 01.8 probes pass; the 2 FAILs are the production-only checks, expected under NODE_ENV=test and proven by config-refusal |
+| `expo export` android / ios | exit 0; 1506 / 1510 modules; v3.2 tag once in each Hermes bundle |
+| C1 grep / C5 grep / D-03 survey-list grep | 0 / 0 / 0 |
+| Matrix v2 ↔ fixture ids | 59 = 59, equal |
+| Query budget | 201 statements per 100 operations (unchanged since 01.7) |
+
+## Coverage ratchet (raised rows only; no row lowered)
+
+| File | Row | Before | After |
+|------|-----|--------|-------|
+| api | `./src/auth/` | 87/78/82/89 | 88/78/83/89 |
+| api | `./src/surveys/` | 84/70/84/84 | 84/71/84/84 |
+| mobile | `./src/i18n/` | 100/73/100/100 | 100/76/100/100 |
+| mobile | `./src/hooks/` | 90/80/94/90 | 90/80/95/91 |
+| mobile | `./src/screens/` | 46/33/40/46 | 56/45/49/55 |
+| mobile | `./src/ui/` | 44/29/31/46 | 59/35/42/59 |
+
+## Deviations from Plan
+
+1. **[Environment] The Docker build needs the proxy CA.** The committed `api/Dockerfile` failed at `npm ci`, because the build has no registry access here without the agent proxy. The image was built from a scratchpad copy that adds only the proxy-CA `COPY`/`ENV` lines, with `--network host` and the proxy build args, as in 01.8-01. That copy is not committed. The committed file is proven by CI's "Docker image check" (Task 2).
+2. **[Environment] The simulation ran against the built image.** The worktree's `node_modules` are symlinks to the main checkout, so a Node start from `api/dist` reaches the main checkout's `packages/ibp-domain`, which has no `dist`. 01.8-12 hit the same limit. So:
+   - `devices`, `restart` and the local `production` probes ran against the `cortege:01.8` container, which used the local PostgreSQL and the MinIO container;
+   - `config-refusal` and `deploy-guard` ran on the image's own `/app`, copied out with `docker cp` (`SIM_API_DIR`).
+3. **[Addition] A scratchpad seed script.** It gives the local `production` phase public data: an old-app survey through `/v1/sync` and a v3.2 survey. This exercised the 01.8-12 probes against the real API for the first time; 01.8-12 had only a stub.
+4. **The E2E environment was exported inline.** The sandbox refuses to `source` the scratchpad `e2e-env.sh`.
+
+No code fix was needed for the local gate: every command in Task 1 passed on its first run.
+
+5. **[Rule 1/Rule 2 — found during Task 4, fixed in PR #164, not this plan's files] Two mobile bugs blocked the owner's device check.** Neither is in this plan's `files_modified`; both were fixed and merged separately, mobile-only, no server deploy needed:
+   - **Bug found because of 01.8-13.** The Identity step's `ScrollView` (`mobile/src/screens/survey-form/useWizardScroll.ts`, `SurveyFormScreen.tsx`) had `scrollEnabled` locked off unless the site-name field was focused. 01.8-13's `MethodVersionPicker` card made that step taller than an iPhone screen, so with scrolling locked, nothing below the fold — including Continue — was reachable. This is a genuine 01.8-13 regression surfaced only on a real device (RNTL component tests do not exercise `ScrollView` height against a real viewport).
+   - **Pre-existing bug, unrelated to 01.8.** Home's create/open-survey navigation (`HomeRoute.tsx`) omitted `initial: false`, so the surveys stack could mount with only the form or detail screen and no list underneath.
+   - PR #164 fixed both. Its CI was fully green, including both native builds. The owner merged it at 2026-09-27T07:08Z and rebuilt with `npx expo run:ios --device --configuration Release`. The Task 4 check then ran cleanly end to end.
+   - Recorded in `09-VALIDATION.md` under "Owner device check" and "Owner review items".
+
+## Known Stubs
+
+None.
+
+## Threat Flags
+
+None. T-01.8-41 (an unproven local gate) is mitigated by Task 1. T-01.8-42 to T-01.8-44 belong to Tasks 2-4.
+
+---
+
+## PR body draft (for the orchestrator)
+
+The draft is in English and has no attribution trailers and no model identifiers, as the plan asks. The orchestrator applies its own PR conventions.
+
+```markdown
+## Phase 01.8 — Shared IBP domain package, IBP FR v3.2, test completeness
+
+### For observers (the app)
+- **Method choice per survey.** Creating a survey now asks for the IBP method: **v3.2 is preselected**, v3.0 stays available (for example to re-survey a parcel under its earlier method). The method is fixed once the survey is submitted.
+- **v3.2 asks for the "cas" (1 to 4), not the region.** The Parcelles step shows the four cas with their captions and a "cas 3 scale for A and G" switch; v3.0 surveys keep the region and vegetation stage.
+- **Native cover moves to Factor A** (both methods): A is capped at 2 when the native cover is under 50 %; B no longer has a cover field.
+- **Totals are shown out of 50** everywhere a total appears (home sector card, nearby badge, public map, form, survey detail). The badge and the home card use band colours; the detail colours the /35 stand and /15 context sub-scores with the CNPF bands.
+- Old surveys open as v3.0 with their original score. Drafts keep their method; an unsubmitted v3.0 draft can be switched to v3.2 from its detail screen.
+
+### For the owner
+- **Deploy order: API first, then the app.** Merge → wait for the VPS to pull the new image (about 5 minutes; `update-stack.sh` runs migration 016 before restarting) → Claude probes production (`/v1/health`, the public reads show `ibp_method_version`) → only then build and install the new app. A new app against the old API would be refused (422) on v3.2 surveys.
+- **Items to review** (none blocks the merge): the /50 total colour cut-offs 10/20/30/40 (an app convention; CNPF only charts the /35 and /15 axes); the home average mixing v3.0 and v3.2 surveys (flagged with a "méthodes mêlées" line); cas 1 preselected for new v3.2 surveys; the map "Région" filter only finds v3.0 surveys (hint shown). The full list is in `09-VALIDATION.md` → "Owner review items".
+
+### Compatibility
+- **Migration 016 is additive and nullable**: `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale` on `surveys`, with CHECK constraints; no backfill; NULL means v3.0. It runs under the migration runner's lock, and the previous API keeps working on the migrated table.
+- **Installed apps keep syncing as v3.0**: payloads without a method version are v3.0, identical replays of submitted surveys stay `synced`, and a v3.2 survey edited by an old app keeps its v3.2 method.
+- **Phone storage is unchanged**: no SQLite migration (`SCHEMA_VERSION` stays 2); the method fields live in the survey JSON payload.
+- **New API issue codes** `ibp_cas_required`, `ibp_method_version_unsupported` and `factor_incomplete` (plus labels for the three new fields) are handed to 01.9-32 for their French texts.
+
+### Tests
+- **One rule set, three runners**: the IBP rules live once in `packages/ibp-domain`; the same 64-entry parity fixture (matrix v2, 59 case ids) runs in the package, through the API adapter and through the mobile adapter. The known `factor_f_group_capped` drift is gone.
+- **RS256 for real**: `AuthGuard` is tested with the real `jwks-rsa` client against a JWKS served on the loopback (valid, expired, wrong audience, unknown kid, wrong issuer, algorithm confusion).
+- **E2E split**: the catch-all idempotency suite is split into submit, visibility, public map, attachments and parcel history files with `randomUUID()` ids; new E2E for migration 016, the method version and the public reads. Full E2E green in local and MinIO modes.
+- Package coverage 100 %; API and mobile coverage floors raised, none lowered.
+
+### Contrôle sur l'iPhone, après la mise en production (6 étapes, environ 15 minutes)
+
+1. Avant d'installer : ouvrir l'app actuelle sur l'iPhone, attendre la synchronisation, et vérifier qu'aucun relevé n'est en erreur. Puis sur le Mac, dans le dossier cortege : `git checkout main && git pull && npm install`, brancher l'iPhone et lancer : `cd mobile && npx expo run:ios --device --configuration Release`
+2. Créer un relevé : l'écran « Identité » propose « Méthode IBP », et « v3.2 » est cochée. Continuer : l'étape « Parcelles » demande le cas (1 à 4), pas la région.
+3. Ouvrir le facteur A : saisir 5 genres et 40 % de couvert autochtone. Le facteur A vaut 2 et le total s'affiche « … / 50 ».
+4. Créer un second relevé en choisissant « v3.0 » : l'étape « Parcelles » demande la région et l'étage, comme avant.
+5. Ouvrir un ancien relevé déjà envoyé : il s'ouvre, indique « v3.0 » et garde son score d'origine, affiché sur 50.
+6. Sur l'accueil, la carte « Autour de vous » affiche des scores « / 50 ». Attendre la synchronisation : aucun relevé n'est en erreur.
+
+Si tout est bon, répondre « approuvé ». Sinon, indiquer le numéro de l'étape qui ne va pas et ce que vous voyez.
+```
+
+---
+
+## Checkpoint: what Task 2 needs from the orchestrator
+
+1. Push the phase branch, including `9e163bb`, `a2c6f13` and this SUMMARY's commit. Open or update PR #162 with the body above.
+2. When CI and CodeQL finish, send back:
+   - the run URL;
+   - the conclusion and duration of every job: "Detect changed paths", "Lint, format, typecheck", "Unit tests — API", "Unit tests — Mobile", "E2E tests — API", "E2E tests — API (MinIO mode)", "Mobile build check", "Native build — Android", "Native build — iOS", "Dependency audit", "Docker image check", "CI OK" and CodeQL. Both native jobs, both E2E jobs, "Docker image check" and "CI OK" must be **success, not skipped**; "Build & push" runs on main only;
+   - the gradle `BUILD SUCCESSFUL` line of "Native build — Android" and the xcodebuild `BUILD SUCCEEDED` line of "Native build — iOS";
+   - or the failing job's log.
+
+## Self-Check: PASSED
+
+- FOUND: `09-VALIDATION.md` (Local gate, Measurements, Criterion evidence, Coverage ratchet, Owner review items, Hand-over filled; no ⬜ in Measurements or Criterion evidence)
+- FOUND commits: `9e163bb`, `a2c6f13`
+
+## Task 2: CI evidence (recorded in 09-VALIDATION.md "CI Evidence")
+
+- **Run:** https://github.com/florianlepont/cortege/actions/runs/36273758197, head `553ef51`, conclusion success, 21:40:45 → 21:58:42 UTC.
+- **Jobs:** all jobs succeeded, including "Docker image check" and both native builds, which ran rather than being skipped. "Build & push" was skipped (main pushes only). CodeQL succeeded.
+- **Build lines:** Android `BUILD SUCCESSFUL in 14m 51s` (584 tasks); iOS `** BUILD SUCCEEDED **`.
+- **Compared with 01.9:**
+  - Android gradle took 14 min 51 s against 14 min 54 s, so it is unchanged.
+  - iOS xcodebuild took 15 min 37 s against 11 min 39 s. The phase adds no native dependency, so this is most likely runner variance; it is noted for the trend.
+- **The committed `api/Dockerfile`:** CI proves it builds and passes every smoke step, which the local gate could not do in the sandbox.
+
+## Checkpoint: what Task 3 needs
+
+1. **Owner:** merge PR #162 on GitHub (one PR, D-15).
+2. **Orchestrator:** confirm the merge time and that "Build & push Docker image" succeeded on main, with the pushed image digest (`ghcr.io/florianlepont/cortege:latest`).
+3. **Executor, after that:**
+   - poll `https://cortege.algernon.ovh/v1/health` every 30 s, for up to 30 min;
+   - run `SIM_BASE=https://cortege.algernon.ovh/v1 NODE_USE_ENV_PROXY=1 node scripts/owner-check-simulation.mjs production`, which is read-only;
+   - record the result under "Post-deploy".
+   
+   The iPhone checklist is presented only once the new API is shown live.
+
+## Task 3: merge, deploy, production probes (recorded in 09-VALIDATION.md "Post-deploy")
+
+- **Merge and image:** merged at 2026-09-27T05:34Z (main `52dc73d`). The main CI run 36297603852 succeeded, and "Build & push" pushed `sha256:304d51e7f354…c97fca` at 05:53:46Z.
+- **Health:** 24 of 24 polls between 06:00:11Z and 06:11:58Z returned 200, and no poll failed.
+- **Production simulation (read-only):** 9/9 passed, with 2 warnings. Production has no public survey, so the `ibp_method_version` and `latest_ibp_method_version` key probes had nothing to inspect.
+- **What proves the new image:** the image identity rests on the digest and the deploy timing, not on a response key. The functional proof is the owner's iPhone steps 1, 2 and 6.
+
+## Task 4: owner iPhone check (recorded in 09-VALIDATION.md "Owner device check" and "Post-deploy")
+
+The owner completed all 6 steps and answered **"approuvé"**: "Tout fonctionne".
+
+| Step | Result |
+|------|--------|
+| 1 | Installed app synced first, no survey in error (production old-client proof for D-13). After PR #164 (see Deviations) merged and the app rebuilt, this step also confirmed `npx expo run:ios --device --configuration Release` |
+| 2 | "Méthode IBP" shown with v3.2 preselected; "Parcelles" asked for the cas, not the region |
+| 3 | Factor A (5 genera, 40 % cover) scored 2; total shown "… / 50". The owner needed a one-line clarification that the count and cover are two numeric fields, not one picker — not a bug |
+| 4 | A v3.0 survey's "Parcelles" step asked for region and vegetation stage, as before |
+| 5 | An old submitted survey opened as v3.0 with its original score, out of 50 |
+| 6 | Home's "Autour de vous" showed "/50" scores; sync completed with nothing in error |
+
+**Deviation found during this task:** PR #164 (mobile-only, merged 2026-09-27T07:08Z, CI fully green including native builds, no server deploy needed) fixed two bugs that blocked the owner's first attempt — see "Deviations from Plan" item 5.
+
+`09-VALIDATION.md` frontmatter is now `status: complete`, `nyquist_compliant: true`. All per-task rows (01.8-16-T1 to T4) and all six ROADMAP criteria are green.
+
+## Phase 01.8 complete
+
+All six ROADMAP success criteria are proven: locally (Task 1), on CI including native builds (Task 2), in production (Task 3), and by the owner on a real device (Task 4). The phase is ready for its closing steps (STATE.md, ROADMAP.md, REQUIREMENTS.md), which the orchestrator owns.
+
+## Self-Check (final): PASSED
+
+- FOUND: `09-VALIDATION.md` — every section filled, `status: complete`, `nyquist_compliant: true`, no `⬜` outside the legend line
+- FOUND: `09-16-SUMMARY.md` (this file) — Tasks 1-4 all reported
+- FOUND commits: `9e163bb`, `a2c6f13`, `32c935b` (Task 1), `e29a6e6` (Task 2), `142d099` (Task 3), and this Task 4 commit
+- FOUND (external, orchestrator-supplied, not in this worktree): PR #162 merged at `52dc73d`; PR #164 merged at `2026-09-27T07:08Z`, fixing the two mobile bugs found during the device check

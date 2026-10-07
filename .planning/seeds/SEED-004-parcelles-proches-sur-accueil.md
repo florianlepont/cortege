@@ -1,6 +1,7 @@
 ---
 id: SEED-004
-status: dormant
+status: triggered
+scheduled_in: Phase 24
 planted: 2026-10-07
 planted_during: Phase 12.2 and 12.3 pending
 trigger_when: Phase 12.2 (Visual Modernisation) if the Home is reworked, otherwise the next milestone scan
@@ -28,7 +29,7 @@ La phase 3 offrait la sélection d'une parcelle proche en un geste. L'assistant 
 - `mobile/src/navigation/routes/HomeRoute.tsx`, `mobile/src/screens/HomeScreen.tsx` : consommateurs actuels des parcelles proches
 - `mobile/src/i18n/fr/nearby-parcels-sheet.ts` : textes orphelins, réutilisables
 - `git show 626cb81^:mobile/src/screens/survey-form/NearbyParcelsSheet.tsx` : ancienne implémentation
-- `.planning/phases/03-field-entry-ergonomics/03-VERIFICATION.md`
+- `.planning/phases/12-field-entry-ergonomics/12-VERIFICATION.md`
 
 ## Notes
 

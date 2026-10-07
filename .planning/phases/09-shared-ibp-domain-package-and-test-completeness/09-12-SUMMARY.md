@@ -1,0 +1,129 @@
+---
+phase: 09-shared-ibp-domain-package-and-test-completeness
+plan: 12
+subsystem: api-public-map-method-version
+tags: [ibp, method-version, public-map, contracts, production-probes, e2e]
+requires: [01.8-09]
+provides:
+  - "/v1/public/map-items items carry ibp_method_version and ibp_cas (always present, null kept)"
+  - "/v1/public/parcels/status items carry latest_ibp_method_version from the same LATERAL latest row as latest_ibp_total (DB and IGN paths)"
+  - "API and data contracts document the method fields, the storage rule, the read-only rule, the validation codes and the region filter semantics"
+  - "owner-check-simulation production phase: read-only probes proving migration 016 and the new image are live"
+affects: [01.8-13, 01.8-16, 01.9-32]
+tech-stack:
+  added: []
+  patterns:
+    - "API wire shapes checked against the @cortege/ibp-domain contract types with `satisfies` (no runtime code)"
+    - "Legacy-parity EXPLAIN specs compare the pre-01.8 columns and require the new ones to be present"
+key-files:
+  created:
+    - api/test/public-map-method-version.e2e-spec.ts
+  modified:
+    - api/src/surveys/public-map.queries.ts
+    - api/src/surveys/public-map.utils.ts
+    - api/src/surveys/public-map.service.ts
+    - api/test/public-map.service.spec.ts
+    - api/test/public-map-bbox.e2e-spec.ts
+    - api/test/public-routes-explain.e2e-spec.ts
+    - docs/technical/api-contract-v1.md
+    - docs/technical/data-contract-v1.md
+    - scripts/owner-check-simulation.mjs
+decisions:
+  - "The public method fields are always present on the wire (null when not stored), so the production probe can test the key; null is never turned into the v3.0 tag"
+  - "The IGN study-status path (PUBLIC_STUDIED_BY_COMMUNES_SQL) also returns latest_ibp_method_version, since it shares the LATERAL latest-row probe"
+  - "The region filter is unchanged (exact region_version match): it only matches v3.0 surveys, and there is no cas filter (CH-9, documented)"
+  - "A production probe with no public item or parcel to inspect prints WARN and does not fail the run"
+metrics:
+  duration: "~60 min"
+  completed: 2026-09-26
+  tasks: 2
+  files: 10
+---
+
+# Phase 01.8 Plan 12: Method version on the public reads, contracts and production probes Summary
+
+Public map items now carry `ibp_method_version` and `ibp_cas`. Parcel statuses carry `latest_ibp_method_version`, taken from the same latest public survey as `latest_ibp_total`. Both changes are additive and only touch the select lists: predicates, parameters, the 500/1000 limits and the rounded locations are unchanged. The API and data contracts now document the method version end to end. The owner-check simulation gains two read-only production probes that show migration 016 and the new image are live.
+
+## Tasks
+
+| Task | Name | Commits |
+|---|---|---|
+| 1 | Version fields in public map items and parcel statuses (unit + E2E) | e74d526 (test, RED), 8160310 (feat) |
+| 2 | API and data contracts, production probes, full API suites | a19b5ec |
+
+## What changed
+
+- **Queries** (`public-map.queries.ts`)
+  - The map-items outer and inner selects add `s.ibp_method_version, s.ibp_cas`.
+  - `LATEST_PUBLIC_SURVEY_OF_PARCEL` adds `s.ibp_method_version`.
+  - `PARCEL_STATUS_COLUMNS` and `PUBLIC_STUDIED_BY_COMMUNES_SQL` return `lp.ibp_method_version AS latest_ibp_method_version`.
+  - The region filter (`s.region_version = $n`) and the parameter order are untouched, and the header comment records CH-9.
+- **Mappers.** `toPublicMapItem` maps `ibp_method_version ?? null` and `ibp_cas` (a finite number, else null). The DB path and the IGN path of `getPublicParcelStatuses` map `latest_ibp_method_version ?? null`. Each wire literal `satisfies` the package contract type (`PublicMapItem`, `PublicParcelStatusItem`).
+- **API contract.** The contract now documents:
+  - the three fields on POST/PATCH/sync bodies: values, null = v3.0, the storage rule per method, the effective-version rule (null counts as absent), and the 400 / `invalid_sync_operation` validation;
+  - read-only after submit: 409 on POST/sync replays and 422 `submitted_read_only_fields` on PATCH, with normalised comparisons where the explicit v3.0 tag equals null;
+  - the detail and `/sync/changes` fields;
+  - a new "IBP factor validation (phase 01.8)" section:
+    - a codes table with `ibp_cas_required`, `ibp_method_version_unsupported` and `factor_incomplete` (non-blocking);
+    - allowed scores (G/H `{0, 2, 5}`) and the native-cover cap on A;
+  - the map-items fields and region semantics, and the parcels/status `latest_ibp_method_version`;
+  - error code list entries.
+  - The contract did not state G/H sets or the cover cap before, so they were added rather than corrected.
+- **Data contract.** The data contract now documents:
+  - the `surveys` columns from migration 016, with the two CHECK constraints, NULL = v3.0 and no backfill;
+  - the region/stage enum as v3.0 only;
+  - the station model per method, and fixed after submit;
+  - the factor payload change (A carries `native_cover_percent` / `native_cover_below_50`; B's legacy cover is read only for v3.0);
+  - that the fields live in `payload_json` on mobile;
+  - the public read-model fields, and the consistency rules.
+- **Simulation** (`phaseProduction`, GET only):
+  - the first map item (mainland-France bbox) must have the `ibp_method_version` and `ibp_cas` keys;
+  - `/public/parcels/status?bbox=<France>` must answer 200 with an items array, and its first item must have `latest_ibp_method_version`;
+  - an empty list prints `WARN` and is counted apart;
+  - the summary line shows the warning count.
+
+## Verification
+
+| Check | Result |
+|---|---|
+| `npm --workspace api run test:unit:coverage` | 32 suites, 745 tests pass (739 before); thresholds met, none changed. `public-map.queries.ts` 100 %, `public-map.service.ts` 100/97.22/100/100 |
+| Public E2E (`public-map|public-routes-explain`, `ibp_p18_12_test`) | 4 suites, 24 tests pass; explain (no Seq Scan, legacy parity) and bbox green |
+| Full API E2E, local mode (`ibp_p18_12_test`, ACCESS_TOKEN_SECRET unset, under `flock`) | 33 suites; 207 passed, 3 skipped, 210 total |
+| `npm run lint` / `npm run typecheck` / `npm run format:check` | exit 0 / exit 0 / all files pass |
+| `node --check scripts/owner-check-simulation.mjs` | ok |
+| Probes against a stub API (new shape / empty lists / pre-01.8 shape) | 11/11 PASS / 9/9 PASS with 2 WARN / 2 FAIL on the two new probes, as intended |
+| `grep -c ibp_method_version` api-contract / data-contract / simulation | 22 / 5 / 10; `ibp_cas_required` in api-contract: 3 |
+
+E2E cases in `public-map-method-version.e2e-spec.ts` (4 tests, `configureApp` pipe, randomUUID seeds):
+- map items: a v3.2 survey gives `ibp_method_version` v3.2, `ibp_cas` 2 and `region_code` "unknown". An untagged survey gives null for both, and the keys are present.
+- privacy: a private v3.2 survey is absent, locations are rounded to 2 decimals, and items have exactly the 7 documented keys.
+- `region=ACA` returns the untagged ACA survey and not the v3.2 one, which was sent with ACA but is stored with a NULL region.
+- parcels/status: the v3.2 parcel gives `latest_ibp_method_version` v3.2, and the untagged one gives null. The parcel whose only survey is private is `not_studied` with null.
+
+## Deviations from Plan
+
+1. **[Rule 3] The explain and bbox E2E specs needed small adaptations.** The plan says they stay "unchanged and green", but they compare raw rows with `toEqual`, so any new column breaks them.
+   - `public-routes-explain.e2e-spec.ts`: the legacy-parity checks (map items, parcel statuses with and without a bbox, studied-by-communes) compare every pre-01.8 column. A new helper `withoutMethodColumns` requires the new columns to be present and drops them before the comparison.
+   - `public-map-bbox.e2e-spec.ts`: one expected item gains `ibp_method_version: null, ibp_cas: null`.
+   - The EXPLAIN assertions (no Seq Scan, indexes used) are unchanged and green.
+2. **[Rule 2] The IGN path gets the version too.** The plan named the LATERAL parcel-status queries. `PUBLIC_STUDIED_BY_COMMUNES_SQL`, which serves the IGN WFS path of the same route, shares that probe, so it also returns `latest_ibp_method_version`. Without it the route's shape would depend on the cadastre provider.
+3. **The new E2E sends no `location`.** It runs through `configureApp`, whose `forbidNonWhitelisted` pipe rejects the field; `location` has not been part of survey write payloads since V1.2.
+4. **The local API run for the probes was replaced by a stub server.** The built API cannot start from this worktree, because `@cortege/ibp-domain` resolves through the symlinked `node_modules` to the main checkout, which has no `dist`. The probe logic was exercised against a small stub with the three shapes instead (results above). The E2E already covers the real responses.
+5. **Environment.** The E2E variables were exported inline, not sourced.
+
+## TDD Gate Compliance
+
+RED `e74d526`: the unit spec failed to compile against the old types (unknown properties), and the new E2E was added in the same commit. GREEN `8160310`. No refactor commit.
+
+## Known Stubs
+
+None.
+
+## Threat Flags
+
+None. There is no new endpoint. T-01.8-33 (accepted: method metadata only, the private survey is absent in the E2E), T-01.8-34 (select-list change only, explain E2E green) and T-01.8-35 (the probes are GET only) hold.
+
+## Self-Check: PASSED
+
+- FOUND: api/test/public-map-method-version.e2e-spec.ts, docs/technical/api-contract-v1.md, docs/technical/data-contract-v1.md, scripts/owner-check-simulation.mjs
+- FOUND commits: e74d526, 8160310, a19b5ec

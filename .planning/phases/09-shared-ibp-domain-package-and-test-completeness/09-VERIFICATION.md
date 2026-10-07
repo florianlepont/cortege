@@ -1,0 +1,109 @@
+---
+phase: 09-shared-ibp-domain-package-and-test-completeness
+verified: 2026-10-06T21:40:00Z
+status: passed
+score: 6/6 must-haves verified
+overrides_applied: 0
+human_verification: []
+---
+
+# Phase 01.8: Shared IBP domain package and test completeness Verification Report
+
+**Phase Goal:** The IBP rules and the sync contract types are defined once and proven identical on both sides, and the API's authentication path is tested for real.
+**Verified:** 2026-10-06T21:40:00Z
+**Status:** passed
+**Re-verification:** No, initial verification. This report was written after the fact: the phase closed on 2026-09-27 and the verification runs against the code on branch `claude/roadmap-seeds-16a6af` (main at `0fb6d2f`, which includes phases 02 to 12.1). Where later phases reshaped a file, the criterion is checked against the file as it is now.
+
+## Goal Achievement
+
+### Observable Truths (Roadmap Success Criteria)
+
+| # | Truth | Status | Evidence |
+|---|-------|--------|----------|
+| 1 | `packages/ibp-domain` exports factor keys, allowed sets, scoring and draft/submit validation as pure functions plus the sync contract types; `IbpRulesService` and `mobile/src/app/ibp-scoring.ts` delegate to it; `mobile/src/app/types.ts` imports its contract types. | VERIFIED | `packages/ibp-domain/package.json` has no runtime dependency (devDependencies only), `main` points to `dist`, `types`/`react-native` to `src`. Source has `evaluate.ts`, `factors.ts`, `rules/{common,scales,v3-0,v3-2}.ts`, `context/{cas,region-stage}.ts`, `readiness.ts`, `migrate.ts`, `bands.ts`, `contract/{sync,survey,public-map,factor-a}.ts`. `api/src/surveys/ibp-rules.service.ts` is 28 lines and only calls `evaluateIbp(input, "draft" \| "submit")`. `mobile/src/app/ibp-scoring.ts` (118 lines now, 88 at phase close) imports and re-exports from `@cortege/ibp-domain`. `mobile/src/app/types.ts` and `mobile/src/storage/types.ts` import from the package. `grep -rnE "STANDARD_ALLOWED\|IJ_ALLOWED\|scoreFactor[A-J]\b\|isSubalpin" api/src mobile/src` returns 0 lines. |
+| 2 | One parity fixture runs in the package, through the API adapter and the mobile adapter; the `factor_f_group_capped` drift is resolved. | VERIFIED | `packages/ibp-domain/src/parity/cases.ts` plus `parity.test.ts`; `api/test/ibp-parity.spec.ts`; `mobile/src/app/ibp-parity.test.ts`. I ran the API specs (`auth.guard.rs256`, `ibp-parity`, `ibp-rules`: 3 suites, 93/93 passed) and the mobile specs (`ibp-parity`, `ibp-scoring`, `IbpScoreBadge`: 3 suites, 101/101 passed). `factor_f_group_capped` now lives in `rules/common.ts` and is exercised in `packages/ibp-domain/src/evaluate.test.ts`, `rules/rules.test.ts`, `api/test/ibp-rules.spec.ts` and `api/test/ibp-parity.spec.ts`. |
+| 3 | The API image builds with the package and `expo export` resolves it in CI. | VERIFIED | `api/Dockerfile` copies `packages/ibp-domain/package.json`, runs `npm --workspace @cortege/ibp-domain run build`, and copies the package `dist` into the runtime stage (lines 8 to 39). `ci.yml` puts `packages/**` in three path filters (lines 51, 58, 68), runs "Unit tests, ibp-domain package" (line 150) and "Smoke test, ibp-domain package in image" (line 625). VALIDATION.md records CI run 36273758197 on PR #162 with image-check, mobile-build, native-android and native-ios all success, and main run 36297603852 green. I did not rebuild the image here (no network or Docker build in this check); the Docker and `expo export` proof is the recorded CI evidence, and `npm run typecheck` (which builds the API against the package) exits 0 here. |
+| 4 | `AuthGuard`'s RS256 path is tested against a locally served JWKS: valid, expired, wrong audience, unknown `kid`. | VERIFIED | `api/test/auth.guard.rs256.spec.ts` passes here (part of the 93/93 run above). VALIDATION.md lists 9 cases (valid, cache hit, expired, wrong audience, unknown kid, wrong issuer, HS256 confusion, wrong signature under the served kid, default JWKS URI), served from a loopback server with the real `jwks-rsa` client. |
+| 5 | `surveys-idempotency.e2e-spec.ts` is split by feature (submit, visibility, public map, attachments, parcel history) and uses `randomUUID()` instead of `Date.now()`. | VERIFIED | Split files exist: `surveys-submit`, `surveys-visibility`, `public-map-items`, `surveys-attachments`, `parcel-history` (all `*.e2e-spec.ts`), plus the slimmed `surveys-idempotency.e2e-spec.ts`. `api/test/helpers/surveys-e2e.ts` draws ids, emails and coordinate seeds from `randomUUID()` (lines 30 to 45). `Date.now()` count in the five split files, the idempotency file and the helper: 0 except `surveys-submit.e2e-spec.ts:128`, a date offset (`new Date(Date.now() - 30 days)`), not an id. Other files with `Date.now()` ids (`surveys-same-version`, `surveys-transactions`, `surveys-upsert-cas`) were not part of the criterion. I did not re-run the E2E suite here (it needs a PostgreSQL test database); VALIDATION.md rows 15 and 16 and CI run 36273758197 record it green in local and MinIO modes. |
+| 6 | The package rules implement IBP FR v3.2 per ADR-003 (CH-1..CH-11), with v3.0 kept for surveys tagged v3.0 or untagged; every survey carries its method version, picked at creation (default v3.2, v3.0 available), fixed after submit; total shown out of 50; citation docs say v3.2 is implemented. | VERIFIED | **Rules and dispatch:** `rules/v3-2.ts`, `rules/v3-0.ts`, `context/cas.ts`, `method-version.ts` (`DEFAULT_IBP_METHOD_VERSION = IBP_METHOD_V3_2`); package suite re-run here with coverage: 9 suites, 230/230 passed, 100/100/100/100 coverage (495/495 statements, 278/278 branches). **Storage:** `api/migrations/016_ibp_method_version.sql` adds nullable `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale` with CHECK constraints (null means v3.0); `migration-016-ibp-method-version.e2e-spec.ts` exists; the fields flow through `surveys.repository.ts`, `surveys.service.ts`, `surveys-sync.service.ts`, `public-map.queries.ts`. **Picked at creation:** `mobile/src/app/constants.ts:57` defaults `DEFAULT_SURVEY_FORM.ibpMethodVersion` to the v3.2 default; `useEditingDraft.ts` creates new drafts with it; the creation wizard (`mobile/src/screens/survey-wizard/SurveyWizardScreen.tsx`, `METHOD_CHOICES` lists v3.2 recommended and v3.0) asks for the cas (v3.2) or region and stage (v3.0). The `MethodVersionPicker` and `ScoringContextSection` components named in the plans no longer exist: later phases replaced the form by the wizard, and the detail editor is `survey-detail/ScoringContextEditor.tsx` (its test file exists). **Fixed after submit:** `surveys.service.ts:441` (`survey_submitted_read_only`, 409) and `:712` (`submitted_read_only_fields`, 422); `surveys-method-version.e2e-spec.ts` has 20 cases. **/50:** catalogue strings in `fr/home.ts` (`/ 50`), `fr/components.ts` (`/50`), `fr/community-survey.ts`, `fr/public-map.ts`, `fr/parcel-history.ts`; `IbpScoreBadge.test.tsx` passes here. **Docs:** `docs/references/README.md:11` and `docs/specs/ibp-form-spec.md:28` say "Implemented: v3.2 (v3.0 available per survey)"; the grep for "target method / v3.2 target / target: v3.2" finds nothing; `docs/technical/ibp-validation-matrix-v2.md` exists (249 lines) and `docs/README.md` indexes it. **Behavior-dependent parts** (fixed-after-submit 409/422, untagged replay stays valid): the covering E2E specs exist and are recorded green in CI runs 36273758197 and 36297603852 and in VALIDATION.md rows 15 and 16; I did not re-run them here. The owner's six-step iPhone check on 2026-09-27 (v3.2 preselected, cas asked, A scored 2 with total "/ 50", v3.0 path, old submitted survey opens as v3.0 with its original score, sync without error) was approved. |
+
+**Score:** 6/6 truths verified (0 present but behavior-unverified)
+
+### Required Artifacts
+
+| Artifact | Expected | Status | Details |
+|----------|----------|--------|---------|
+| `packages/ibp-domain/` (`src/index.ts`, `evaluate.ts`, `rules/*`, `context/*`, `contract/*`, `parity/cases.ts`, `jest.config.js`) | Shared pure package, 100% coverage | VERIFIED | 230 tests pass, 100% coverage on all four counters |
+| `api/src/surveys/ibp-rules.service.ts` | Thin adapter | VERIFIED | 28 lines, delegates to `evaluateIbp` |
+| `mobile/src/app/ibp-scoring.ts`, `mobile/src/app/types.ts` | Adapter and package types | VERIFIED | Import from `@cortege/ibp-domain` |
+| `api/migrations/016_ibp_method_version.sql` | Columns and CHECKs | VERIFIED | Present; E2E spec present |
+| `api/test/auth.guard.rs256.spec.ts` | RS256 against loopback JWKS | VERIFIED | Passes |
+| `api/test/{surveys-submit,surveys-visibility,public-map-items,surveys-attachments,parcel-history}.e2e-spec.ts`, `helpers/surveys-e2e.ts` | Split suites | VERIFIED | Present, `randomUUID` helper |
+| `api/test/{ibp-parity,ibp-rules}.spec.ts`, `mobile/src/app/ibp-parity.test.ts` | Parity through both adapters | VERIFIED | Pass |
+| `docs/technical/ibp-validation-matrix-v2.md` | Matrix equal to the fixture | VERIFIED | Exists; equality (59 = 59 ids) was cross-checked in VALIDATION.md, not re-done here |
+| `api/Dockerfile`, `.github/workflows/ci.yml` | Image and CI wiring | VERIFIED | Package build and smoke steps present |
+
+### Key Link Verification
+
+| From | To | Via | Status | Details |
+|------|----|-----|--------|---------|
+| `IbpRulesService` | `evaluateIbp` | direct import | WIRED | `ibp-rules.service.ts` |
+| `ibp-scoring.ts`, `types.ts`, `storage/types.ts` | `@cortege/ibp-domain` | import / re-export | WIRED | Resolved by Metro and Jest to `src` |
+| `useSurveyForm`, `useEditingDraft` | `DEFAULT_SURVEY_FORM.ibpMethodVersion` | v3.2 default | WIRED | `constants.ts:57`, `useSurveyForm.ts:157` |
+| `SurveyWizardScreen` | method choice and cas | `METHOD_CHOICES`, wizard props | WIRED | Rendered from `SurveyFormRoute` |
+| `surveys.service` | read-only guard for method fields | 409 and 422 codes | WIRED | Lines 441 and 712 |
+| `ci.yml` filters | `packages/**` | `shared`, `image`, `native` | WIRED | Lines 51, 58, 68 |
+
+### Data-Flow Trace (Level 4)
+
+| Artifact | Data Variable | Source | Produces Real Data | Status |
+|----------|---------------|--------|--------------------|--------|
+| Public map and parcel status responses | `ibp_method_version`, `latest_ibp_method_version` | `public-map.queries.ts` on the `surveys` columns from migration 016 | Yes (E2E `public-map-method-version.e2e-spec.ts` exists; production had no public survey at phase close, so the probe saw empty lists) | FLOWING |
+| Survey wizard and detail | `ibpMethodVersion`, `ibp_cas` | `useSurveyForm` state saved into `payload_json`, synced through `/v1/sync` | Yes (owner device check step 2 to 6) | FLOWING |
+
+### Behavioral Spot-Checks
+
+| Behavior | Command | Result | Status |
+|----------|---------|--------|--------|
+| Package rules and 100% coverage | `npm --workspace @cortege/ibp-domain run test:coverage` | 9 suites, 230/230, 100% on all counters | PASS |
+| API adapter, parity, RS256 | `npm --workspace api run test:unit -- auth.guard.rs256 ibp-parity ibp-rules` | 3 suites, 93/93 | PASS |
+| Mobile adapter, parity, badge | `npm --workspace mobile run test:unit -- ibp-parity ibp-scoring IbpScoreBadge ...` | 3 suites, 101/101 | PASS |
+| Lint, typecheck | `npm run lint`; `npm run typecheck` | exit 0; exit 0 (typecheck builds the API against the package) | PASS |
+| No rule code left in adapters | `grep -rnE "STANDARD_ALLOWED\|IJ_ALLOWED\|scoreFactor[A-J]\b\|isSubalpin" api/src mobile/src` | 0 lines | PASS |
+| API E2E (method version, split suites, migration 016) | not run | needs a PostgreSQL test database; recorded green in CI | SKIP (routed to CI evidence) |
+
+### Probe Execution
+
+No probes are declared by the phase and `scripts/*/tests/probe-*.sh` does not exist. Step 7c: SKIPPED. `scripts/owner-check-simulation.mjs` was run by the plans (VALIDATION.md rows 21 to 26); I did not re-run it because it needs a running API.
+
+### Requirements Coverage
+
+| Requirement | Source Plan | Description | Status | Evidence |
+|-------------|------------|-------------|--------|----------|
+| REQ-AUD-ibp-domain | 01.8-01, 04 to 15 | Shared IBP package, v3.2 implementation | SATISFIED | Truths 1, 2, 3, 6 |
+| REQ-AUD-test-infra-rest | 01.8-02, 03 | RS256 test, E2E split | SATISFIED | Truths 4, 5 |
+
+No orphaned requirements.
+
+### Anti-Patterns Found
+
+| File | Line | Pattern | Severity | Impact |
+|------|------|---------|----------|--------|
+| `.planning/phases/01.8*/09-VALIDATION.md` | "Owner review items" | Several owner review items (band cut-offs, mixed-methods sector line, public-map "Région" filter matching v3.0 only) are recorded as open, none as blocking | Info | Product decisions, not defects |
+| Roadmap criterion 6 plan names | n/a | `MethodVersionPicker`, `ScoringContextSection` no longer exist; later phases moved the choice to `SurveyWizardScreen` | Info | Behavior preserved; plan file names are stale |
+| `packages/ibp-domain/src/index.ts` | n/a | The parity fixture is exported from the package entry and bundled by Metro (VALIDATION.md owner item) | Info | Dead data in the app bundle, harmless |
+
+A grep for `TBD|FIXME|XXX` over `packages/ibp-domain/src`, `api/src/surveys`, `mobile/src/state`, `mobile/src/i18n` and `mobile/src/navigation` finds nothing.
+
+### Human Verification Required
+
+None open. The one manual item (owner iPhone check, 6 steps) was completed and approved on 2026-09-27, recorded in VALIDATION.md "Owner device check". The optional production query for surveys with G/H = 1 (ADR-003 open question 1) was declared not needed by the owner (D-04, test data only).
+
+### Gaps Summary
+
+No gaps. The package exists with real rules at 100% coverage, both adapters hold no rule code, one fixture runs three times and the three suites pass here, RS256 is tested against a real loopback JWKS, the E2E suite is split with a `randomUUID` helper, migration 016 and the read-only guards are in place, v3.2 is the default and v3.0 stays selectable, totals read "/ 50", and the citation docs say v3.2 is implemented. The only things not re-executed in this verification are the API E2E suites and the Docker and `expo export` builds; for these the evidence is the recorded green CI runs (36273758197 on PR #162, 36297603852 on main) and the owner's device approval.
+
+---
+
+_Verified: 2026-10-06T21:40:00Z_
+_Verifier: Claude (gsd-verifier)_

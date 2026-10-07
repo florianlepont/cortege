@@ -768,7 +768,7 @@ import App from "../../App"
  * s-01 becomes the most recent draft and moves into the "continue draft" card,
  * so s-20 re-enters the list as a row: 1 row render. In oneSurveyRefresh the
  * renamed s-17 is the one row that re-renders.
- * The pre-phase numbers are in 01.9-render-counts-before.json.
+ * The pre-phase numbers are in 10-render-counts-before.json.
  */
 const EXPECTED: Record<ScenarioName, Counts> = {
   initialMount: {
