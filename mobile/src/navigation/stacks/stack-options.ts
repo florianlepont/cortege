@@ -38,6 +38,20 @@ export function pageColourHeader(theme: BrandTheme) {
 }
 
 /**
+ * 12.2-10: the native iOS header of a screen that draws the backdrop halo (`ScreenBackdrop`, Accueil
+ * only). It is transparent, with no blur, tint or shadow, so the halo runs on behind it and there is
+ * no seam where an opaque canvas band used to cut it (owner check on the iPhone). The screen insets
+ * its content by `useHeaderHeight()`, so nothing scrolls under the title. Pages without a halo keep
+ * `pageColourHeader`, where a transparent header would let their content slide under the title.
+ */
+export const backdropHeader = {
+  headerTransparent: true,
+  headerBlurEffect: "none" as const,
+  headerShadowVisible: false,
+  headerStyle: { backgroundColor: "transparent" },
+}
+
+/**
  * OA-21: the screen draws its own title, so the native one is hidden. `headerTitle: () => null` is
  * not enough on iOS (the native title is still drawn from `title`, OA-109, doubled "Compte"), so it
  * is made invisible too. `title` stays for the back button and accessibility.

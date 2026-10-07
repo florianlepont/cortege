@@ -642,6 +642,11 @@ describe("HomeRoute native header (OA-85)", () => {
     const options = navigation.setOptions.mock.calls.at(-1)[0]
     expect(options.headerShown).toBe(true)
     expect(options.title).toBe("")
+    // 12.2-10: the header is transparent so the backdrop halo is not cut by a canvas band.
+    expect(options.headerTransparent).toBe(true)
+    expect(options.headerBlurEffect).toBe("none")
+    expect(options.headerShadowVisible).toBe(false)
+    expect(options.headerStyle).toEqual({ backgroundColor: "transparent" })
 
     const [titleItem] = options.unstable_headerLeftItems()
     expect(titleItem.type).toBe("custom")
