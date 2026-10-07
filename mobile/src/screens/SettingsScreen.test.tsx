@@ -5,6 +5,7 @@
  */
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
+import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { SettingsScreen } from "./SettingsScreen"
 
@@ -90,11 +91,13 @@ jest.mock("../ui/AppChoiceChip", () => {
       label,
       active,
       onPress,
+      style,
     }: {
       label: string
       active?: boolean
       onPress?: () => void
-    }) => ReactRef.createElement("AppChoiceChip", { label, active, onPress }),
+      style?: unknown
+    }) => ReactRef.createElement("AppChoiceChip", { label, active, onPress, style }),
   }
 })
 jest.mock("../ui/AppGroupedList", () => {
@@ -125,6 +128,7 @@ type Row = {
   key: string
   kind?: string
   label?: string
+  icon?: string
   value?: string
   destructive?: boolean
   loading?: boolean
@@ -201,6 +205,49 @@ describe("SettingsScreen", () => {
     expect(chips.find((chip) => chip.props.active)?.props.label).toBe(fr.settings.appearance.dark)
     act(() => chips[1].props.onPress())
     expect(mockSetMode).toHaveBeenCalledWith("light")
+  })
+
+  test("the three theme chips sit in one glass segment container", () => {
+    mount(makeProps())
+    const chips = tree.root.findAllByType("AppChoiceChip" as never)
+    const segment = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "View" &&
+        (node.props.style as { borderRadius?: number } | undefined)?.borderRadius === 999,
+    )
+    expect(segment.findAllByType("AppChoiceChip" as never)).toHaveLength(3)
+    expect(segment.props.style).toMatchObject({
+      flexDirection: "row",
+      backgroundColor: defaultTheme.visual.chip.fill,
+      borderWidth: 1,
+      borderColor: defaultTheme.visual.chip.border,
+      borderRadius: 999,
+      padding: 4,
+      gap: 4,
+    })
+    chips.forEach((chip) => {
+      expect([chip.props.style].flat()).toContainEqual({ flex: 1 })
+    })
+    // the active chip keeps the inverted look of AppChoiceChip, the others melt into the segment
+    const [automatic, , dark] = chips
+    expect([automatic.props.style].flat()).toContainEqual(
+      expect.objectContaining({ backgroundColor: "transparent" }),
+    )
+    expect([dark.props.style].flat()).not.toContainEqual(
+      expect.objectContaining({ backgroundColor: "transparent" }),
+    )
+  })
+
+  test("the rows carry outline icons", () => {
+    mount(makeProps())
+    expect(row("maps", "offline-areas").icon).toBe("cloud-download-outline")
+    expect(row("about", "version").icon).toBe("information-circle-outline")
+    expect(row("about", "credits").icon).toBe("leaf-outline")
+    expect(row("delete", "delete-account").icon).toBe("trash-outline")
+  })
+
+  test("an unknown version reads 'Non renseigné', never an em dash", () => {
+    expect(fr.settings.about.versionUnknown).toBe("Non renseigné")
   })
 
   describe("Cartes hors ligne row", () => {

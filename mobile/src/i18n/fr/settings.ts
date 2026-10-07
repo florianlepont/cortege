@@ -20,7 +20,7 @@ export const settingsFr = {
   about: {
     title: "À propos",
     version: "Version",
-    versionUnknown: "—",
+    versionUnknown: "Non renseigné",
     credits: "Crédits photographiques",
   },
   account: {

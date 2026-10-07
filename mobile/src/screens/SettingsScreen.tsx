@@ -4,7 +4,7 @@ import { PageTitle } from "../ui/PageTitle"
 import Constants from "expo-constants"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandSpacing } from "../app/brand-tokens"
+import { brandRadius, brandSpacing, brandSpacing4 } from "../app/brand-tokens"
 import { shouldShowDevTools } from "../app/dev-tools"
 import { isOfflineMapsEnabled } from "../app/feature-flags"
 import { formatAreaMegabytes } from "../app/formatters"
@@ -102,29 +102,37 @@ export function SettingsScreen({
           key: "appearance",
           kind: "custom",
           content: (
-            <View style={styles.appearanceRow}>
-              {THEME_MODE_CHOICES.map(({ mode, label }) => (
-                <AppChoiceChip
-                  key={mode}
-                  label={label}
-                  active={theme.mode === mode}
-                  onPress={() => theme.setMode(mode)}
-                  style={styles.appearanceChip}
-                />
-              ))}
+            // Glass segment group: inactive chips melt into it, the active one is the inverted
+            // neutral chip of AppChoiceChip (direction principle 7).
+            <View style={styles.segment}>
+              {THEME_MODE_CHOICES.map(({ mode, label }) => {
+                const active = theme.mode === mode
+                return (
+                  <AppChoiceChip
+                    key={mode}
+                    label={label}
+                    active={active}
+                    onPress={() => theme.setMode(mode)}
+                    style={
+                      active ? styles.segmentChip : [styles.segmentChip, styles.segmentChipIdle]
+                    }
+                  />
+                )
+              })}
             </View>
           ),
         },
       ],
     },
     ...(isOfflineMapsEnabled()
-      ? [
+      ? ([
           {
             key: "maps",
             title: t.maps.title,
             rows: [
               {
                 key: "offline-areas",
+                icon: "cloud-download-outline",
                 label: t.maps.offlineRow,
                 value:
                   offlineAreas.count > 0
@@ -137,7 +145,7 @@ export function SettingsScreen({
               },
             ],
           },
-        ]
+        ] satisfies AppGroupedListSection[])
       : []),
     {
       key: "about",
@@ -145,10 +153,16 @@ export function SettingsScreen({
       rows: [
         {
           key: "version",
+          icon: "information-circle-outline",
           label: t.about.version,
           value: Constants.expoConfig?.version ?? t.about.versionUnknown,
         },
-        { key: "credits", label: t.about.credits, onPress: showCredits },
+        {
+          key: "credits",
+          icon: "leaf-outline",
+          label: t.about.credits,
+          onPress: showCredits,
+        },
       ],
     },
     {
@@ -157,6 +171,7 @@ export function SettingsScreen({
       rows: [
         {
           key: "delete-account",
+          icon: "trash-outline",
           label: t.account.deleteButton,
           destructive: true,
           centered: true,
@@ -227,16 +242,23 @@ function createStyles(theme: BrandTheme) {
       backgroundColor: theme.colors.canvas,
     },
     content: {
-      gap: brandSpacing.md,
+      gap: brandSpacing4.md,
     },
-    appearanceRow: {
+    segment: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      gap: brandSpacing.xs,
-      paddingVertical: brandSpacing.sm,
+      gap: brandSpacing4.xs,
+      padding: brandSpacing4.xs,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      borderColor: theme.visual.chip.border,
+      backgroundColor: theme.visual.chip.fill,
     },
-    appearanceChip: {
-      flexGrow: 1,
+    segmentChip: {
+      flex: 1,
+    },
+    segmentChipIdle: {
+      borderColor: "transparent",
+      backgroundColor: "transparent",
     },
   })
 }
