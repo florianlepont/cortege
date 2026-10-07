@@ -3,6 +3,7 @@ import renderer, { act } from "react-test-renderer"
 import { View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { brandColors } from "../app/brand-tokens"
+import { defaultTheme } from "../app/theme"
 import { FactorCounterInput } from "./FactorCounterInput"
 
 const originalConsoleError = console.error
@@ -136,5 +137,31 @@ describe("FactorCounterInput (FLOW-01 counter variant, FLOW-02 error timing)", (
     // FactorInputShell's error border is `colors.terracotta`, a theme-invariant hue (same in
     // light and dark), so this stays a direct comparison against the static token.
     expect(style.borderColor).toBe(brandColors.terracotta)
+  })
+
+  describe("chip tokens, sizes unchanged (D-05)", () => {
+    type Style = Record<string, unknown>
+    const flatten = (style: unknown): Style =>
+      Array.isArray(style)
+        ? style.reduce<Style>((acc, item) => ({ ...acc, ...flatten(item) }), {})
+        : ((style as Style | null | undefined) ?? {})
+
+    test("the - and + buttons keep 56 pt and take the chip fill and border", () => {
+      const { findByTestID } = render({ value: "2", testID: "c" })
+      for (const id of ["c-decrease", "c-increase"]) {
+        const style = flatten(findByTestID(id).props.style)
+        expect(style.width).toBe(56)
+        expect(style.height).toBe(56)
+        expect(style.minHeight).toBe(56)
+        expect(style.backgroundColor).toBe(defaultTheme.visual.chip.fill)
+        expect(style.borderWidth).toBe(1)
+        expect(style.borderColor).toBe(defaultTheme.visual.chip.border)
+      }
+    })
+
+    test("the value area keeps its 56 pt minimum height", () => {
+      const { findByTestID } = render({ value: "2", testID: "c" })
+      expect(flatten(findByTestID("c-value").props.style).minHeight).toBe(56)
+    })
   })
 })

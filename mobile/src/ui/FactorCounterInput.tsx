@@ -175,9 +175,12 @@ function createStyles(theme: BrandTheme) {
       width: BUTTON_SIZE,
       height: BUTTON_SIZE,
       borderRadius: brandRadius.field,
+      minHeight: BUTTON_SIZE,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.colors.panelMuted,
+      backgroundColor: theme.visual.chip.fill,
+      borderWidth: 1,
+      borderColor: theme.visual.chip.border,
     },
     valueWrap: {
       flex: 1,
