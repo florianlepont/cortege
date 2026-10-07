@@ -108,6 +108,34 @@ export const brandTypography = {
     lineHeight: 16,
     fontFamily: "Jost-SemiBold",
   },
+  // Phase 12.2: weight 300 (Sora-Light) is used by the score numeral only (UI-SPEC Typography).
+  numeral: {
+    fontSize: 68,
+    lineHeight: 72,
+    fontFamily: "Sora-Light",
+    letterSpacing: -3.4,
+  },
+  numeralUnit: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontFamily: "Jost-Regular",
+  },
+  screenTitle: {
+    fontSize: 24,
+    lineHeight: 28,
+    fontFamily: "Sora-SemiBold",
+    letterSpacing: -0.6,
+  },
+  sectionHeader: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Sora-SemiBold",
+  },
+  ringValue: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Sora-SemiBold",
+  },
 } as const
 
 // The default `<Text>` face for anything that does not spread a `brandTypography` role above —
@@ -153,7 +181,11 @@ export const brandFontScaleCaps = {
 export const brandRadius = {
   hero: 34,
   panel: 30,
-  card: 24,
+  // Phase 12.2: 24 -> 22; forestCard, forestHero and bar are new (UI-SPEC Visual Contract).
+  card: 22,
+  forestCard: 26,
+  forestHero: 28,
+  bar: 6,
   field: 18,
   avatar: 20,
   pill: 999,
@@ -299,6 +331,13 @@ export const brandCameraTokens = {
   hintBackground: "rgba(15, 22, 12, 0.62)",
   shutterRing: "rgba(255, 255, 255, 0.18)",
   guide: "#FFFFFF",
+} as const
+
+// Phase 12.2: scrims that were literal colours in `src/ui` and `src/screens` (same values, tokenised
+// when the ESLint colour rule was repaired).
+export const brandScrims = {
+  actionSheetBackdrop: "rgba(15, 22, 12, 0.4)",
+  letterBubble: "rgba(14, 34, 16, 0.92)",
 } as const
 
 // Phase 12 (DS-12): IBP score colours (`ibpScoreTokens`), the field-entry state triad

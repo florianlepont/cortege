@@ -46,6 +46,7 @@
         "expo-font",
         {
           "fonts": [
+            "./assets/fonts/Sora-Light.ttf",
             "./assets/fonts/Sora-Medium.ttf",
             "./assets/fonts/Sora-SemiBold.ttf",
             "./assets/fonts/Sora-Bold.ttf",
