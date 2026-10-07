@@ -32,8 +32,8 @@ async function mount(initial: string) {
   })
 }
 
-describe("useSubmitSuccessPulse", () => {
-  test("a draft that is submitted pulses once with the success haptic", async () => {
+describe("useSubmitSuccessPulse (D-25: only the real finish celebrates)", () => {
+  test("a draft that is finished pulses once with the success haptic", async () => {
     const { result, rerender } = await mount("draft")
     expect(result.current).toBe(0)
     expect(notificationAsync).not.toHaveBeenCalled()
@@ -44,38 +44,47 @@ describe("useSubmitSuccessPulse", () => {
     expect(notificationAsync).toHaveBeenCalledWith("success")
   })
 
-  test("submitted turning synced is the same submit: no second pulse", async () => {
+  test("an ordinary draft sync (draft to synced) does not pulse", async () => {
     const { result, rerender } = await mount("draft")
-    await rerender({ status: "submitted" })
-    await rerender({ status: "synced" })
-    expect(result.current).toBe(1)
-    expect(notificationAsync).toHaveBeenCalledTimes(1)
-  })
-
-  test("a survey opened already submitted never pulses", async () => {
-    const { result, rerender } = await mount("submitted")
-    expect(result.current).toBe(0)
     await rerender({ status: "synced" })
     expect(result.current).toBe(0)
     expect(notificationAsync).not.toHaveBeenCalled()
   })
 
-  test("a retry that succeeds after an error pulses", async () => {
-    const { result, rerender } = await mount("error")
+  test("a synced draft that is finished pulses once: the usual finish", async () => {
+    const { result, rerender } = await mount("draft")
     await rerender({ status: "synced" })
+    await rerender({ status: "submitted" })
     expect(result.current).toBe(1)
     expect(notificationAsync).toHaveBeenCalledTimes(1)
+  })
+
+  test("a draft whose last send failed and is then finished pulses once", async () => {
+    const { result, rerender } = await mount("error")
+    await rerender({ status: "submitted" })
+    expect(result.current).toBe(1)
+    expect(notificationAsync).toHaveBeenCalledTimes(1)
+  })
+
+  test("a survey opened already finished never pulses, nor on a re-render", async () => {
+    const { result, rerender } = await mount("submitted")
+    expect(result.current).toBe(0)
+    await rerender({ status: "submitted" })
+    expect(result.current).toBe(0)
+    expect(notificationAsync).not.toHaveBeenCalled()
   })
 
   test("other transitions do not pulse", async () => {
     const { result, rerender } = await mount("draft")
     await rerender({ status: "error" })
     await rerender({ status: "draft" })
+    await rerender({ status: "synced" })
+    await rerender({ status: "error" })
     expect(result.current).toBe(0)
     expect(notificationAsync).not.toHaveBeenCalled()
   })
 
-  test("a second submit after a return to draft pulses again", async () => {
+  test("a second finish after a return to draft pulses again", async () => {
     const { result, rerender } = await mount("draft")
     await rerender({ status: "submitted" })
     await rerender({ status: "draft" })

@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react"
 import { feedback } from "../../ui/feedback"
 
-const BEFORE_SUBMIT = new Set(["draft", "error"])
-const AFTER_SUBMIT = new Set(["submitted", "synced"])
+// The stored statuses of a survey not finished yet: "draft", "synced" (a draft the sync engine
+// sent) and "error" (a draft whose last send failed).
+const BEFORE_FINISH = new Set(["draft", "synced", "error"])
 
 /**
- * Counts successful submits seen while the screen is open (D-08, action feedback). A submit
- * succeeds when the survey's status goes from "draft" or "error" to "submitted" or "synced": the
- * success haptic fires and the returned counter goes up by one, which the score card's halo reads
- * as its pulse trigger. Nothing fires on the first render (a survey opened already submitted), nor
- * when "submitted" turns into "synced" (the same submit, only synced afterwards). Observation
- * only: the submit logic itself is not touched.
+ * Counts the surveys finished while the screen is open (D-08, D-25). A finish succeeds when the
+ * stored status becomes "submitted": only `submitSurvey`'s success path writes it on the phone, so
+ * this is the finish result itself, wherever the finish was started. The success haptic fires and
+ * the returned counter goes up by one; the summary reads it to scroll to the score card, which
+ * pulses its halo and pops. An ordinary draft sync ("draft" to "synced") is not a finish and does
+ * nothing, and nothing fires on the first render (a survey opened already finished).
  */
 export function useSubmitSuccessPulse(status: string): number {
   const previous = useRef(status)
@@ -19,7 +20,7 @@ export function useSubmitSuccessPulse(status: string): number {
   useEffect(() => {
     const before = previous.current
     previous.current = status
-    if (BEFORE_SUBMIT.has(before) && AFTER_SUBMIT.has(status)) {
+    if (BEFORE_FINISH.has(before) && status === "submitted") {
       feedback.notify.success()
       setCount((current) => current + 1)
     }

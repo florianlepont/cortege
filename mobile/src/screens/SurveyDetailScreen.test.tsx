@@ -3,6 +3,7 @@ import { join } from "node:path"
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { notificationAsync } from "../../test/expo-haptics.mock"
+import { setReducedMotion } from "../../test/react-native-reanimated.mock"
 import type { LocalSurvey } from "../storage/types"
 import { SurveyDetailScreen } from "./SurveyDetailScreen"
 import type { SurveyDetailScreenProps } from "./survey-detail/screen-props"
@@ -25,7 +26,11 @@ afterAll(() => {
 afterEach(() => {
   notificationAsync.mockClear()
   mockCtaKind = "hidden"
+  mockScrollTo.mockClear()
+  setReducedMotion(false)
 })
+
+const mockScrollTo = jest.fn()
 
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -125,7 +130,10 @@ function makeProps(status: string): SurveyDetailScreenProps {
 function mount(status: string): ReactTestRenderer {
   let tree: ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<SurveyDetailScreen {...makeProps(status)} />)
+    tree = renderer.create(<SurveyDetailScreen {...makeProps(status)} />, {
+      createNodeMock: (element) =>
+        (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+    })
   })
   return tree!
 }
@@ -162,18 +170,53 @@ describe("SurveyDetailScreen summary", () => {
     expect(byType(tree, "AppGroupedList")[0].props.sections[0].rows).toHaveLength(3)
   })
 
-  test("the score card pulses and the haptic fires when a submit succeeds, not on mount", () => {
+  test("D-25: the finish scrolls to the top, pulses the score card and fires the haptic once", () => {
     const tree = mount("draft")
     expect(byType(tree, "ScoreCard")[0].props.pulseTrigger).toBe(0)
     expect(notificationAsync).not.toHaveBeenCalled()
+    expect(mockScrollTo).not.toHaveBeenCalled()
+
+    // An ordinary draft sync is not a finish.
+    update(tree, "synced")
+    expect(byType(tree, "ScoreCard")[0].props.pulseTrigger).toBe(0)
+    expect(notificationAsync).not.toHaveBeenCalled()
+    expect(mockScrollTo).not.toHaveBeenCalled()
 
     update(tree, "submitted")
     expect(byType(tree, "ScoreCard")[0].props.pulseTrigger).toBe(1)
     expect(notificationAsync).toHaveBeenCalledTimes(1)
+    expect(mockScrollTo).toHaveBeenCalledTimes(1)
+    expect(mockScrollTo).toHaveBeenCalledWith({ y: 0, animated: true })
 
-    update(tree, "synced")
-    expect(byType(tree, "ScoreCard")[0].props.pulseTrigger).toBe(1)
+    update(tree, "submitted")
     expect(notificationAsync).toHaveBeenCalledTimes(1)
+    expect(mockScrollTo).toHaveBeenCalledTimes(1)
+  })
+
+  test("D-25: under Reduce Motion the finish jumps to the top without animation", () => {
+    setReducedMotion(true)
+    const tree = mount("synced")
+    update(tree, "submitted")
+    expect(notificationAsync).toHaveBeenCalledTimes(1)
+    expect(mockScrollTo).toHaveBeenCalledWith({ y: 0, animated: false })
+  })
+
+  test("a survey opened already finished neither scrolls nor celebrates", () => {
+    mount("submitted")
+    expect(notificationAsync).not.toHaveBeenCalled()
+    expect(mockScrollTo).not.toHaveBeenCalled()
+  })
+
+  test("the bottom button finishes the survey through onSubmitSurvey", () => {
+    const props = makeProps("draft")
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    act(() => {
+      byType(tree!, "FinishBar")[0].props.onFinish()
+    })
+    expect(props.onSubmitSurvey).toHaveBeenCalledWith("survey-1")
   })
 })
 

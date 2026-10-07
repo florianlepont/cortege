@@ -5,7 +5,7 @@ import { brandMotion, brandRadius, brandTypography } from "../../app/brand-token
 import { defaultTheme } from "../../app/theme"
 import { glowBarGeometry, numeralGeometry } from "../../app/visual-tokens"
 import { fr } from "../../i18n"
-import { ScoreCard } from "./ScoreCard"
+import { FINISH_POP_SCALE, ScoreCard } from "./ScoreCard"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
 
 const originalConsoleError = console.error
@@ -153,6 +153,56 @@ describe("ScoreCard", () => {
       trigger: 2,
       radius: brandRadius.forestHero,
       shadow: defaultTheme.visual.forest.shadow,
+    })
+  })
+
+  describe("finish pop (D-25)", () => {
+    const rerender = (tree: ReactTestRenderer, pulseTrigger: number) =>
+      act(() => {
+        tree.update(
+          <ScoreCard
+            scores={scores}
+            isDraftView={false}
+            filledFactorCount={10}
+            pulseTrigger={pulseTrigger}
+          />,
+        )
+      })
+    const popCalls = () =>
+      withSpringSpy.mock.calls.filter(([toValue]) => toValue === FINISH_POP_SCALE)
+
+    test("the card rests at its size and does not pop on mount", () => {
+      const tree = render({ pulseTrigger: 3 })
+      expect(flatten(byType(tree, "View")[0].props.style).transform).toEqual([{ scale: 1 }])
+      expect(popCalls()).toHaveLength(0)
+    })
+
+    test("pops once, about 3 percent, with brand springs and the system reduce motion", () => {
+      const tree = render({ pulseTrigger: 0 })
+      rerender(tree, 1)
+      expect(FINISH_POP_SCALE).toBeGreaterThan(1)
+      expect(FINISH_POP_SCALE).toBeLessThanOrEqual(1.04)
+      expect(popCalls()).toEqual([
+        [
+          FINISH_POP_SCALE,
+          expect.objectContaining({ ...brandMotion.springs.snappy, reduceMotion: "system" }),
+        ],
+      ])
+      expect(withSpringSpy).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ ...brandMotion.springs.gentle, reduceMotion: "system" }),
+      )
+      // Back to its size: no loop.
+      expect(flatten(byType(tree, "View")[0].props.style).transform).toEqual([{ scale: 1 }])
+      rerender(tree, 1)
+      expect(popCalls()).toHaveLength(1)
+    })
+
+    test("under Reduce Motion the card does not move", () => {
+      reanimated.setReducedMotion(true)
+      const tree = render({ pulseTrigger: 0 })
+      rerender(tree, 1)
+      expect(popCalls()).toHaveLength(0)
     })
   })
 

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Alert, Platform, ScrollView, View } from "react-native"
+import { useReducedMotion } from "react-native-reanimated"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { shouldShowDevTools } from "../app/dev-tools"
@@ -71,6 +72,16 @@ export function SurveyDetailScreen({
   const { detail, canEditSurvey, activeSiteName } = data
   const [menuVisible, setMenuVisible] = useState(false)
   const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
+  // D-25: at the finish the page goes back to the top, so the score card's halo and pop are seen
+  // (without animation under Reduce Motion, where only the haptic plays).
+  const scrollRef = useRef<ScrollView>(null)
+  const reduceMotion = useReducedMotion()
+  const scrolledPulse = useRef(pulseTrigger)
+  useEffect(() => {
+    if (scrolledPulse.current === pulseTrigger) return
+    scrolledPulse.current = pulseTrigger
+    scrollRef.current?.scrollTo({ y: 0, animated: !reduceMotion })
+  }, [pulseTrigger, reduceMotion])
 
   const attachmentPreviewKey = selectedSurveyAttachments
     .map((attachment) => `${attachment.id}:${attachment.file_state}`)
@@ -161,6 +172,7 @@ export function SurveyDetailScreen({
   return (
     <View style={styles.scroll}>
       <ScrollView
+        ref={scrollRef}
         style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
         contentContainerStyle={contentStyle}
       >

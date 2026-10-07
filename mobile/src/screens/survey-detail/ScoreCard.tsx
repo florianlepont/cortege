@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { View } from "react-native"
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withSequence,
   withSpring,
 } from "react-native-reanimated"
 import { IBP_MAX } from "@cortege/ibp-domain"
@@ -25,6 +26,8 @@ const t = fr.surveyDetail.scoreCard
 const a11y = fr.surveyDetail.a11y
 const FACTOR_COUNT = 10
 const NUMERAL_TRAVEL = 8
+// The calm "pop" of the card at the finish (D-25): up to 3 percent larger, then back, once.
+export const FINISH_POP_SCALE = 1.03
 // Width of one digit of the tile value (Sora-SemiBold 16): the counting text keeps its final width.
 const TILE_DIGIT_WIDTH = 11
 
@@ -33,7 +36,7 @@ type ScoreCardProps = {
   isDraftView: boolean
   /** Factors filled in out of ten; null while the local draft is being read. */
   filledFactorCount: number | null
-  /** The halo pulses once each time this value changes (a successful submit). */
+  /** The halo pulses and the card pops once each time this value changes (a finished survey). */
   pulseTrigger: number
 }
 
@@ -65,6 +68,8 @@ function ScoreTile({ label, value, max, styles }: TileProps) {
  * 35, context out of 15) counting up. Not tappable (owner, OA-93): the "Score IBP" row below opens
  * the detail by factor and sub-score. The mount animations do not replay when returning from a
  * sub-page, because the summary stays mounted under it. One summary label reads the whole card.
+ * At the finish (D-25) the halo pulses and the card pops once, on the UI thread; under Reduce
+ * Motion neither moves (the success haptic, fired by the caller, stays).
  */
 export function ScoreCard({
   scores,
@@ -89,14 +94,30 @@ export function ScoreCard({
     transform: [{ translateY: (1 - entrance.value) * NUMERAL_TRAVEL }],
   }))
 
+  const pop = useSharedValue(1)
+  const previousPulse = useRef(pulseTrigger)
+  useEffect(() => {
+    if (previousPulse.current === pulseTrigger) return
+    previousPulse.current = pulseTrigger
+    if (reduced) return
+    pop.value = withSequence(
+      withSpring(FINISH_POP_SCALE, {
+        ...brandMotion.springs.snappy,
+        reduceMotion: ReduceMotion.System,
+      }),
+      withSpring(1, { ...brandMotion.springs.gentle, reduceMotion: ReduceMotion.System }),
+    )
+  }, [pulseTrigger, reduced, pop])
+  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }))
+
   const filled = filledFactorCount ?? 0
   const caption = isDraftView ? t.draftCaption : t.caption
   const hint =
     filledFactorCount === null ? "" : filled >= FACTOR_COUNT ? t.allFilled : t.factorsFilled(filled)
 
   return (
-    <View
-      style={styles.scoreWrap}
+    <Animated.View
+      style={[styles.scoreWrap, popStyle]}
       accessible
       accessibilityRole="summary"
       accessibilityLabel={a11y.scoreSummary(
@@ -139,6 +160,6 @@ export function ScoreCard({
         ) : null}
         {hint ? <Text style={styles.scoreHint}>{hint}</Text> : null}
       </ForestCard>
-    </View>
+    </Animated.View>
   )
 }
