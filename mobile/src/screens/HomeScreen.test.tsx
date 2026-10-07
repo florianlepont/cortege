@@ -51,6 +51,7 @@ jest.mock("../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
 jest.mock("../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
 jest.mock("../ui/ScreenBackdrop", () => ({ ScreenBackdrop: "ScreenBackdrop" }))
+jest.mock("../ui/EntranceView", () => ({ EntranceView: "EntranceView" }))
 jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
 jest.mock("../ui/SyncStatusLine", () => ({ SyncStatusLine: "SyncStatusLine" }))
 jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))
@@ -209,10 +210,9 @@ describe("HomeScreen", () => {
   })
 
   describe("variant I look (12.2)", () => {
-    const entering = () =>
-      tree.root
-        .findAll((node) => (node.type as unknown) === "View" && node.props.entering !== undefined)
-        .map((node) => node)
+    // The sections that slide up when the screen becomes visible, in screen order, by stagger index.
+    const entering = () => tree.root.findAll((node) => (node.type as unknown) === "EntranceView")
+    const indexes = () => entering().map((node) => node.props.index as number)
 
     test("renders the backdrop once, before the scroll view, which has no opaque background", () => {
       mount(makeProps())
@@ -225,9 +225,10 @@ describe("HomeScreen", () => {
       expect((scroll.props.style as { backgroundColor?: string }).backgroundColor).toBeUndefined()
     })
 
-    test("the resume card, tools and nearby sections enter on first mount", () => {
+    test("the resume card, tools and nearby sections slide up, staggered 0, 1, 2", () => {
       mount(makeProps())
       expect(entering()).toHaveLength(3)
+      expect(indexes()).toEqual([0, 1, 2])
     })
 
     test("the alert notice is a fourth entering section", () => {
@@ -246,6 +247,7 @@ describe("HomeScreen", () => {
         }),
       )
       expect(entering()).toHaveLength(4)
+      expect(indexes()).toEqual([0, 1, 2, 3])
     })
 
     test("the nearby trailing link uses the accent text colour of the scheme", () => {

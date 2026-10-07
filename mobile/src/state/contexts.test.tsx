@@ -60,8 +60,16 @@ jest.mock("../screens/onboarding/OnboardingFlow", () => ({
 jest.mock("../screens/LocalDataOwnerConflictScreen", () => ({
   LocalDataOwnerConflictScreen: mockOverlayProbe("ownerConflict"),
 }))
+// The probe records what the cover context says to the navigation tree (12.2-10).
+const mockCoverSeen: boolean[] = []
 jest.mock("../navigation/AppNavigation", () => ({
-  AppNavigation: () => null,
+  AppNavigation: () => {
+    const { useScreenCovered } = jest.requireActual("../ui/screen-cover-context") as {
+      useScreenCovered: () => boolean
+    }
+    mockCoverSeen.push(useScreenCovered())
+    return null
+  },
   useResetToHomeOnSignOut: () => undefined,
 }))
 
@@ -628,6 +636,49 @@ describe("App shell overlays", () => {
   test("shows no overlay for a signed-in user with a name", async () => {
     const tree = await mountApp()
     expect(Object.keys(mockOverlayProps)).toEqual([])
+    await unmount(tree)
+  })
+
+  test("the navigation tree is told when an overlay covers it (12.2-10)", async () => {
+    const lastCover = () => mockCoverSeen[mockCoverSeen.length - 1]
+    const cases: [string, () => void][] = [
+      ["no overlay", () => undefined],
+      ["the auth gate", () => (mockSession.isAuthenticated = false)],
+      ["the owner conflict", () => (mockLocalDataOwner.status = "conflict")],
+      [
+        "the profile setup",
+        () => (mockSession.currentUser = { ...savedUser, first_name: "", last_name: "" }),
+      ],
+      ["the onboarding", () => mockLoadOnboardingSeen.mockImplementation(async () => false)],
+    ]
+    const expected = [false, true, true, true, true]
+    for (const [index, [, arrange]] of cases.entries()) {
+      mockCoverSeen.length = 0
+      arrange()
+      const tree = await mountApp()
+      expect(lastCover()).toBe(expected[index])
+      await unmount(tree)
+      mockSession.isAuthenticated = true
+      mockSession.currentUser = savedUser
+      mockLocalDataOwner.status = "ok"
+      mockLoadOnboardingSeen.mockImplementation(async () => true)
+    }
+  })
+
+  test("the welcome covers the tree too, until it is dismissed (12.2-10)", async () => {
+    mockSession.currentUser = { ...savedUser, first_name: "", last_name: "" }
+    mockCoverSeen.length = 0
+    const tree = await mountApp()
+    mockSession.currentUser = { ...savedUser, first_name: "Ada", last_name: "Lovelace" }
+    await act(async () => {
+      tree.update(<App />)
+    })
+    expect(mockOverlayProps.welcome).toBeDefined()
+    expect(mockCoverSeen[mockCoverSeen.length - 1]).toBe(true)
+    await act(async () => {
+      ;(mockOverlayProps.welcome.onContinue as () => void)()
+    })
+    expect(mockCoverSeen[mockCoverSeen.length - 1]).toBe(false)
     await unmount(tree)
   })
 

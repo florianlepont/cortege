@@ -441,4 +441,7 @@ export const brandMotion = {
   // noticeably longer to finish animating in than a short one.
   staggerMs: 40,
   staggerMax: 8,
+  // Screen sections that slide up each time their screen becomes visible (Accueil, 12.2-10): the
+  // distance in points. The owner did not notice the 240 ms fade of the first version.
+  sectionEntranceTravel: 20,
 } as const

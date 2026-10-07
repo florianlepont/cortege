@@ -15,7 +15,8 @@ export type EntranceBuilder = ReturnType<typeof buildEntrance>
  * First-mount staggered entrance for list rows and cards (D-08): 240 ms FadeInDown, 40 ms apart,
  * for rows 0 to 7 only. Rows remounted by a virtualised list get no entrance, because the hook's
  * first-mount flag is per component instance and a recycled or scrolled-back row would otherwise
- * replay it (RESEARCH Pitfall 6). Nothing at all under Reduce Motion.
+ * replay it (RESEARCH Pitfall 6). Nothing at all under Reduce Motion. Screen sections (Accueil) use
+ * `useFocusEntrance` instead, which replays when the screen becomes visible (12.2-10).
  */
 export function useEntrance(): (index: number) => EntranceBuilder | undefined {
   const reduced = useReducedMotion()

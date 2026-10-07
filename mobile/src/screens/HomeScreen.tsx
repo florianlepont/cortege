@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useHeaderHeight } from "@react-navigation/elements"
 import { Pressable, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native"
-import Animated from "react-native-reanimated"
 import { AppText as Text } from "../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
@@ -17,13 +16,13 @@ import type { LocalSurvey } from "../storage/types"
 import type { SurveyStats } from "../app/types"
 import { AppNotice } from "../ui/AppNotice"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
+import { EntranceView } from "../ui/EntranceView"
 import { ScreenBackdrop } from "../ui/ScreenBackdrop"
 import type { NearbyParcelsState } from "../hooks/useNearbyParcels"
 import { fr } from "../i18n"
 import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { Skeleton } from "../ui/Skeleton"
 import { SyncStatusLine } from "../ui/SyncStatusLine"
-import { useEntrance } from "../ui/useEntrance"
 import { NearbyMapCard } from "./home/NearbyMapCard"
 import { ResumeCard } from "./home/ResumeCard"
 import { ToolsSection } from "./home/ToolsSection"
@@ -106,7 +105,6 @@ export function HomeScreen({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const insets = useSafeAreaInsets()
-  const entrance = useEntrance()
   // OA-85: iOS 26 lays the screen out under the native header, so the content reserves its height.
   const headerHeight = useHeaderHeight()
   const [refreshing, setRefreshing] = useState(false)
@@ -129,6 +127,7 @@ export function HomeScreen({
 
   const hasAlerts = surveyStats.blocked > 0 || surveyStats.failed > 0
   // The entrance stagger counts the sections actually shown: the alert notice is the first one.
+  // Each section slides up whenever Accueil becomes visible (focus, overlays gone), see EntranceView.
   const firstSection = hasAlerts ? 1 : 0
   const isBlockedAlert = surveyStats.blocked > 0
   const alertSurvey = hasAlerts ? pickAlertSurvey(surveys) : null
@@ -241,7 +240,7 @@ export function HomeScreen({
 
         {/* ── Alertes ───────────────────────────────── */}
         {hasAlerts ? (
-          <Animated.View entering={entrance(0)} style={styles.notice}>
+          <EntranceView index={0} style={styles.notice}>
             <AppNotice
               tone={isBlockedAlert ? "danger" : "warning"}
               icon={isBlockedAlert ? "warning-outline" : "cloud-upload-outline"}
@@ -268,29 +267,29 @@ export function HomeScreen({
                   : undefined
               }
             />
-          </Animated.View>
+          </EntranceView>
         ) : null}
 
         {/* ── Hero CTA (HOME-02: resume a recent draft, or start a new one) ──── */}
-        <Animated.View entering={entrance(firstSection)} style={styles.block}>
+        <EntranceView index={firstSection} style={styles.block}>
           <ResumeCard
             resumeDraft={resumeDraft}
             onResume={onOpenSurvey}
             onCreateSurvey={onCreateSurvey}
           />
-        </Animated.View>
+        </EntranceView>
 
         {/* ── Outils (OA-107) ───────────────────────── */}
-        <Animated.View entering={entrance(firstSection + 1)}>
+        <EntranceView index={firstSection + 1}>
           <ToolsSection
             surveys={surveys}
             onAddGenusToSurvey={onAddGenusToSurvey}
             onStartSurveyWithGenus={onCreateSurveyWithGenus}
           />
-        </Animated.View>
+        </EntranceView>
 
         {/* ── Parcelles proches ─────────────────────── */}
-        <Animated.View entering={entrance(firstSection + 2)} style={styles.section}>
+        <EntranceView index={firstSection + 2} style={styles.section}>
           <AppSectionHeader
             title={fr.home.nearby.title}
             trailing={
@@ -331,7 +330,7 @@ export function HomeScreen({
               />
             </View>
           )}
-        </Animated.View>
+        </EntranceView>
       </ScrollView>
     </View>
   )
