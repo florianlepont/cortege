@@ -107,8 +107,9 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
   }),
 }))
 jest.mock("../../ui/AppStatusChip", () => ({ AppStatusChip: "AppStatusChip" }))
-// The glow's own motion (pulse, Reduce Motion, focus) is tested in EdgePulse.test.tsx.
-jest.mock("./EdgePulse", () => ({ EdgePulse: "EdgePulse" }))
+// The glow is drawn by the navigation layer (download-edge-glow.test.tsx) and its motion is tested in
+// EdgePulse.test.tsx; here only the screen's request for it is counted.
+jest.mock("../../navigation/download-edge-glow", () => ({ DownloadEdgeGlow: "DownloadEdgeGlow" }))
 
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: () => mockLocation.requestForegroundPermissionsAsync(),
@@ -581,7 +582,7 @@ describe("PublicMapScreen", () => {
     })
 
     const edgePulses = () =>
-      tree.root.findAll((node) => (node.type as unknown) === "EdgePulse").length
+      tree.root.findAll((node) => (node.type as unknown) === "DownloadEdgeGlow").length
 
     test("download mode: the map's edge glows while the area is chosen, and only then (12.2-19)", async () => {
       mockOfflineEnabled.value = true

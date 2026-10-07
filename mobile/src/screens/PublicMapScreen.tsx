@@ -8,6 +8,7 @@ import { isOfflineMapsEnabled } from "../app/feature-flags"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { useBrandTheme } from "../app/theme"
 import type { PublicMapItem, PublicParcelStatusItem } from "../app/types"
+import { DownloadEdgeGlow } from "../navigation/download-edge-glow"
 import type { PublicMapFocus } from "../navigation/types"
 import type { LoadPublicMapOptions } from "../hooks/usePublicMapExplorer"
 import { fr } from "../i18n"
@@ -16,7 +17,6 @@ import { boundsFromRegion } from "../map/maplibre/regions"
 import { useOfflineAreas } from "../hooks/useOfflineAreas"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { ClusterListSheet } from "./public-map/ClusterListSheet"
-import { EdgePulse } from "./public-map/EdgePulse"
 import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
@@ -236,8 +236,9 @@ export function PublicMapScreen({
   const onLocate = useCallback(() => void handleLocate(), [handleLocate])
 
   const dockBottom = Math.max(tabBarHeight, insets.bottom)
-  // 12.2-19: download mode is the open download panel before a download starts. The map's edge
-  // glows green then, since the area shown is the one the download takes.
+  // 12.2-19: download mode is the open download panel before a download starts. The screen's edge
+  // glows green then, since the area shown is the one the download takes. The glow goes round the
+  // whole screen, above the panel and the tab bar, so the navigation layer draws it.
   const choosingArea = showOfflineAreas && !areaChosen && offlineAreas.downloadingAreaId === null
 
   // One sheet for whichever panel is open, the offline areas included (OA-66): the same drag
@@ -286,8 +287,7 @@ export function PublicMapScreen({
         styleRefreshKey={readyAreaCount}
       />
 
-      {/* Over the map, under its controls and the sheet. */}
-      {choosingArea ? <EdgePulse /> : null}
+      {choosingArea ? <DownloadEdgeGlow /> : null}
 
       <MapTopControls
         top={Math.max(0, insets.top + 10 - originY)}

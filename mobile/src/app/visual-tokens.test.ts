@@ -18,6 +18,7 @@ import {
   buildRadialGradient,
   edgeGlowGeometry,
   edgeGlowGreens,
+  edgeLightMotion,
   edgePulseMotion,
   forestStops,
   mixWithWhite,
@@ -589,7 +590,7 @@ describe.each(schemes)(
   },
 )
 
-describe("download edge glow (12.2-19 fix round: stronger and wider)", () => {
+describe("download edge glow (12.2-19 fix rounds: stronger, then round the whole screen)", () => {
   const glow = themes.light.visual.edgeGlow
   const layers = splitTopLevel(glow)
 
@@ -611,8 +612,8 @@ describe("download edge glow (12.2-19 fix round: stronger and wider)", () => {
   test("a crisp line, a tight band and a wide halo, all inset", () => {
     expect(layers).toEqual([
       `inset 0 0 0 3px ${edgeGlowGreens.line}`,
-      `inset 0 0 16px 6px ${withAlpha(edgeGlowGreens.band, 0.9)}`,
-      `inset 0 0 36px 10px ${withAlpha(edgeGlowGreens.halo, 0.6)}`,
+      `inset 0 0 12px 4px ${withAlpha(edgeGlowGreens.band, 0.85)}`,
+      `inset 0 0 28px 8px ${withAlpha(edgeGlowGreens.halo, 0.45)}`,
     ])
   })
 
@@ -623,6 +624,17 @@ describe("download edge glow (12.2-19 fix round: stronger and wider)", () => {
     expect(depth).toBeLessThanOrEqual(48)
     expect(band.spread + band.blur).toBeLessThan(depth)
     expect(line).toBeGreaterThanOrEqual(3)
+  })
+
+  test("over the white panel the halo stays light: the panel's text keeps its contrast", () => {
+    // The glow now lies over the panel, whose content starts 16 pt in from the edge.
+    expect(edgeGlowGeometry.halo.alpha).toBeLessThanOrEqual(0.5)
+    expect(edgeGlowGeometry.band.spread + edgeGlowGeometry.band.blur).toBeLessThanOrEqual(16)
+  })
+
+  test("the glow's corners follow the iPhone display radius", () => {
+    expect(edgeGlowGeometry.corner).toBeGreaterThanOrEqual(47)
+    expect(edgeGlowGeometry.corner).toBeLessThanOrEqual(55)
   })
 
   test("the line keeps 3:1 against the white plan and the dark orthophoto", () => {
@@ -643,10 +655,19 @@ describe("download edge glow (12.2-19 fix round: stronger and wider)", () => {
     )
   })
 
-  test("pulses from 0.55 to full over 1.4 s and stays at full under Reduce Motion", () => {
-    expect(edgePulseMotion.minOpacity).toBeGreaterThanOrEqual(0.5)
-    expect(edgePulseMotion.minOpacity).toBeLessThanOrEqual(0.6)
-    expect(edgePulseMotion.halfCycleMs * 2).toBe(1400)
+  test("pulses gently from 0.7 to full over 2.2 s and stays at full under Reduce Motion", () => {
+    expect(edgePulseMotion.minOpacity).toBe(0.7)
+    expect(edgePulseMotion.halfCycleMs * 2).toBe(2200)
     expect(edgePulseMotion.stillOpacity).toBe(1)
+  })
+
+  test("a light travels round the screen in 3.2 s, its core the brightest green", () => {
+    expect(edgeLightMotion.lapMs).toBe(3200)
+    expect(edgeLightMotion.fraction).toBeGreaterThan(0)
+    expect(edgeLightMotion.fraction).toBeLessThan(0.25)
+    expect(edgeLightMotion.coreWidth).toBeLessThan(edgeLightMotion.glowWidth)
+    for (const green of [edgeGlowGreens.line, edgeGlowGreens.band, edgeGlowGreens.halo]) {
+      expect(relativeLuminance(edgeGlowGreens.light)).toBeGreaterThan(relativeLuminance(green))
+    }
   })
 })

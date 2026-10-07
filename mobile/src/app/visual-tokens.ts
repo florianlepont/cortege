@@ -259,22 +259,29 @@ export const glassCtaSecondary = {
 } as const
 
 // Download mode of the Explorer (12.2-19, owner: "le bord de l'écran s'illumine en vert, avec un
-// pulse"): the map's edge glows green, so the area shown reads as the one to download. The fix round
+// pulse"): the edge glows green, so the area shown reads as the one to download. The first fix round
 // (owner: "l'effet pulsé en téléchargement n'est pas assez intense encore") made it much stronger:
-// a crisp 3 pt line, a tight band for definition and a wide halo about 46 pt deep (spread plus
-// blur), in saturated greens brighter than the brand moss. The line keeps 3:1 against the white
-// plan and the dark orthophoto alike. The basemaps do not follow the scheme, so both schemes draw
-// the same glow. Inset shadows only, no border (12.2-17).
+// a crisp 3 pt line, a tight band for definition and a wide halo, in saturated greens brighter than
+// the brand moss. The second (owner: "je m'attendais à avoir un truc qui fasse tout le tour de
+// l'écran") moved it round the whole screen, over the panel and the tab bar, with the screen's
+// rounded corners, and added a light that travels round it. Over the white panel the halo is a little
+// shallower and lighter, so the panel's text and button keep their contrast; the line keeps 3:1
+// against the white plan and the dark orthophoto alike. The basemaps do not follow the scheme, so
+// both schemes draw the same glow. Inset shadows only, no border (12.2-17).
 export const edgeGlowGreens = {
   line: "#4E9620",
   band: "#6DB52E",
   halo: "#7BC234",
+  /** The core of the travelling light, brighter than every other green of the glow. */
+  light: "#9BEA3E",
 } as const
 
 export const edgeGlowGeometry = {
   line: 3,
-  band: { blur: 16, spread: 6, alpha: 0.9 },
-  halo: { blur: 36, spread: 10, alpha: 0.6 },
+  band: { blur: 12, spread: 4, alpha: 0.85 },
+  halo: { blur: 28, spread: 8, alpha: 0.45 },
+  /** Corner radius of the glow, near the iPhone display radius (about 47 to 55 pt). */
+  corner: 52,
 } as const
 
 /** The three inset layers of the download glow, the line first. */
@@ -289,9 +296,19 @@ export function buildEdgeGlow(): string {
 
 export const downloadEdgeGlow = buildEdgeGlow()
 
-/** Pulse of that glow: opacity from `minOpacity` to 1 and back, `halfCycleMs` each way (a 1.4 s
- * cycle); still at the full strength (`stillOpacity`) under Reduce Motion. */
-export const edgePulseMotion = { halfCycleMs: 700, minOpacity: 0.55, stillOpacity: 1 } as const
+/** Gentle pulse of that glow: opacity from `minOpacity` to 1 and back, `halfCycleMs` each way (a
+ * 2.2 s cycle); still at the full strength (`stillOpacity`) under Reduce Motion. */
+export const edgePulseMotion = { halfCycleMs: 1100, minOpacity: 0.7, stillOpacity: 1 } as const
+
+/** The light that travels round the glow, clockwise, one lap in `lapMs`: a bright core over a wider
+ * soft stroke, `fraction` of the perimeter long. None under Reduce Motion. */
+export const edgeLightMotion = {
+  lapMs: 3200,
+  fraction: 0.14,
+  coreWidth: 4,
+  glowWidth: 14,
+  glowOpacity: 0.55,
+} as const
 
 // Geometry of the chart and score components (not spacing).
 export const scoreRingGeometry = { size: 38, stroke: 4, dash: "3 4" } as const
