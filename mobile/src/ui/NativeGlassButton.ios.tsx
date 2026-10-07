@@ -106,7 +106,7 @@ export function NativeGlassButton({
   return (
     <View style={[styles.wrapper, style]}>
       {host}
-      <View pointerEvents="none" style={[styles.edge, edge ? { borderColor: edge } : null]} />
+      <View pointerEvents="none" style={[styles.edge, { borderColor: edge }]} />
     </View>
   )
 }

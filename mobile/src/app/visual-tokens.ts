@@ -121,7 +121,7 @@ export const pillLabelColor = "#14210F"
 // Forest glass of the big call-to-action buttons (D-27c, D-28). The owner first saw the saturated
 // moss and found it too light ("je m'imaginais un plus foncé"), then chose, from a board of four
 // greens, the charter's forest: so both schemes use `brandColors.forest` (#334E2B) with a white
-// label (9.9:1). `tint` is the opaque green the native iOS 26 glass button is tinted with
+// label (9.3:1). `tint` is the opaque green the native iOS 26 glass button is tinted with
 // (`buttonStyle("glassProminent")`): the system adds its own glass material, specular highlight and
 // press response on top. `flat` is the translucent fill of the fallback (Android, iOS before 26): no
 // blur, see-through. `flatOff` is the disabled fallback, a pale neutral glass clearly less saturated
