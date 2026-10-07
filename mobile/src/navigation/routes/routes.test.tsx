@@ -1671,6 +1671,8 @@ describe("the halo frame on every page (D-19)", () => {
       "communitySurvey",
       () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
     ],
+    // 12.2-16: the wizard. The stack hides its header, so on a phone the inset is 0.
+    ["surveyForm", () => <SurveyFormRoute navigation={nav()} route={{} as never} />],
     ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
     ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
     ["offlineAreas", () => <OfflineAreasRoute navigation={nav()} route={{} as never} />],
