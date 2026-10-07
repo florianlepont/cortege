@@ -38,8 +38,10 @@ type ResumeCardProps = {
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  // The stored count of filled factors, the same definition as the survey detail. Never
+  // `completion_rate / 10`: that percentage also counts the name, the method and the parcel.
   const resumeFactors = resumeDraft
-    ? Math.round(Math.max(0, Math.min(100, resumeDraft.completion_rate)) / 10)
+    ? Math.max(0, Math.min(FACTOR_COUNT, Math.round(resumeDraft.factors_filled)))
     : 0
 
   return (

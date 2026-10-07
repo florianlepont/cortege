@@ -64,7 +64,9 @@ function makeSurvey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
     sync_blocked: 0,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-10-05T10:00:00.000Z",
-    completion_rate: 40,
+    // Deliberately not factors_filled * 10: the sheet shows the factor count, not the percentage.
+    completion_rate: 64,
+    factors_filled: 4,
     ...overrides,
   }
 }

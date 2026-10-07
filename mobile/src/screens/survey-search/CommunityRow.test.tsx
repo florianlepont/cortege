@@ -61,6 +61,7 @@ function survey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-10-05T10:00:00.000Z",
     completion_rate: 100,
+    factors_filled: 0,
     ...overrides,
   }
 }

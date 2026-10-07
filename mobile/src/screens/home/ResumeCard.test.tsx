@@ -56,7 +56,9 @@ function makeSurvey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
     sync_blocked: 0,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-10-05T10:00:00.000Z",
-    completion_rate: 40,
+    // Deliberately not factors_filled * 10: the card reads the factor count, not the percentage.
+    completion_rate: 71,
+    factors_filled: 4,
     ...overrides,
   }
 }
@@ -219,7 +221,7 @@ describe("ResumeCard", () => {
   })
 
   test("the ten segments share the inner width exactly: equal flex, 4 pt gap, no minimum width", () => {
-    const { segments } = mount(makeSurvey({ completion_rate: 30 }))
+    const { segments } = mount(makeSurvey({ factors_filled: 3 }))
     const all = [...segments("hero-progress-done"), ...segments("hero-progress-todo")]
     expect(all).toHaveLength(10)
     const first = styleOf(all[0])
@@ -255,8 +257,16 @@ describe("ResumeCard", () => {
     expect(card.props.contours).not.toBe(false)
   })
 
+  test("six factors with four context slots filled read 6, not the 71 percent rounded to 7 (12.2-14)", () => {
+    const { texts, segments } = mount(makeSurvey({ completion_rate: 71, factors_filled: 6 }))
+    expect(texts).toContain(t.resumeBody({ completed: 6 }))
+    expect(texts).not.toContain(t.resumeBody({ completed: 7 }))
+    expect(segments("hero-progress-done")).toHaveLength(6)
+    expect(segments("hero-progress-todo")).toHaveLength(4)
+  })
+
   test("the completion is clamped to the ten segments", () => {
-    const { segments } = mount(makeSurvey({ completion_rate: 250 }))
+    const { segments } = mount(makeSurvey({ factors_filled: 25 }))
     expect(segments("hero-progress-done")).toHaveLength(10)
     expect(segments("hero-progress-todo")).toHaveLength(0)
   })

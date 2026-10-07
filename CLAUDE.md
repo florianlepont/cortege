@@ -149,7 +149,7 @@ npm run android               # Expo Android build
 
 The mobile app is designed to work without connectivity. All survey data is persisted locally in SQLite before being synced.
 
-**SQLite schema** (`mobile/src/storage/db.ts`, `PRAGMA user_version` migrations, currently at 4 — migration 2 adds `payload_completion`, precomputed at the four payload-write sites instead of parsed from JSON on every list read; migration 4 puts a survey the old deadline rule had marked `expired` back to `draft`, OA-41):
+**SQLite schema** (`mobile/src/storage/db.ts`, `PRAGMA user_version` migrations, currently at 5 — migration 2 adds `payload_completion`, precomputed at the four payload-write sites instead of parsed from JSON on every list read (a percentage of 14 slots, never a factor count); migration 4 puts a survey the old deadline rule had marked `expired` back to `draft`, OA-41; migration 5 adds `payload_factors_filled`, the factors filled out of ten by `countFilledFactors` (`mobile/src/app/ibp-scoring.ts`), written at the same four sites and read by Accueil's resume card and the survey detail alike):
 - `local_surveys` — survey drafts with sync state, payload and the precomputed `payload_completion`
 - `sync_queue` — ordered queue of pending operations (upsert, delete, etc.)
 - `local_attachments` — photo metadata and upload state

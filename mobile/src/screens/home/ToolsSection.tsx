@@ -82,7 +82,7 @@ export function ToolsSection({
     ? openDrafts(surveys).map((survey) => ({
         id: survey.id,
         name: survey.site_name?.trim() || fr.common.untitledSurvey,
-        progress: Math.round(survey.completion_rate / 10),
+        progress: survey.factors_filled,
       }))
     : []
   const addToSurvey = (surveyId: string): void => {

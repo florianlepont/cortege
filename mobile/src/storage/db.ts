@@ -3,6 +3,7 @@ import * as SQLite from "expo-sqlite"
 import { runInTransaction, TxHandle } from "./transaction"
 import {
   computePayloadCompletion,
+  computePayloadFactorsFilled,
   deriveQueueOpType,
   safeParseJson,
   toSurveyQueuePayload,
@@ -23,7 +24,7 @@ export const SYNC_BATCH_SIZE = 100
 // PRAGMA user_version target. Bump this and push a new entry onto MIGRATIONS
 // (below) whenever the schema changes; initLocalDb() migrates any existing
 // install from its current version up to this one, one migration at a time.
-export const SCHEMA_VERSION = 4
+export const SCHEMA_VERSION = 5
 
 // The factor keys come from the shared package (01.8 criterion 1); a mutable copy keeps the
 // array type every importer already uses.
@@ -205,6 +206,33 @@ async function migration4(tx: TxHandle): Promise<void> {
   await tx.execAsync(`UPDATE local_surveys SET status = 'draft' WHERE status = 'expired';`)
 }
 
+/**
+ * Migration 5 (version 4 -> 5), 12.2-14. Additive only: adds
+ * local_surveys.payload_factors_filled (factors filled, 0-10, by the app's single definition) and
+ * backfills it from payload_json. Accueil's resume card and the genus target sheet used to derive
+ * "n/10 factors" from payload_completion, a percentage of 14 slots that also counts the name, the
+ * method and the parcel, so a draft with four of those and six factors read 7. payload_json and
+ * payload_completion are only read, never rewritten; a malformed payload yields 0.
+ */
+async function migration5(tx: TxHandle): Promise<void> {
+  await ensureColumn(
+    tx,
+    "local_surveys",
+    "payload_factors_filled",
+    "payload_factors_filled INTEGER NOT NULL DEFAULT 0",
+  )
+  const rows = await tx.getAllAsync<{ id: string; payload_json: string | null }>(
+    `SELECT id, payload_json FROM local_surveys`,
+  )
+  for (const row of rows) {
+    const payload = row.payload_json ? toSurveyQueuePayload(safeParseJson(row.payload_json)) : null
+    await tx.runAsync(`UPDATE local_surveys SET payload_factors_filled = ? WHERE id = ?`, [
+      computePayloadFactorsFilled(payload),
+      row.id,
+    ])
+  }
+}
+
 // Migration N lives at index N-1; MIGRATIONS[currentVersion] is the next one
 // to run on the way up to SCHEMA_VERSION.
 const MIGRATIONS: Array<(tx: TxHandle) => Promise<void>> = [
@@ -212,6 +240,7 @@ const MIGRATIONS: Array<(tx: TxHandle) => Promise<void>> = [
   migration2,
   migration3,
   migration4,
+  migration5,
 ]
 
 export async function initLocalDb(): Promise<void> {

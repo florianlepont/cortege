@@ -64,6 +64,19 @@ export const resolveDraftParcelIds = (input: { parcel_ids?: unknown }): string[]
   return output
 }
 
+/**
+ * How many of the ten factors count as filled: the ones whose retained score is not null, i.e. the
+ * complement of the package readiness `missing_factors`. This is the one definition of "factors
+ * filled" of the app: the survey detail (`useLocalDraftSummary`), the stored list column
+ * (`payload_factors_filled`) and so Accueil's resume card and the genus target sheet all read it. A
+ * factor with a value the package does not score (empty, partial, outside its allowed set) is not
+ * filled, whatever other fields of the payload say.
+ */
+export const countFilledFactors = (draft: IbpEvaluationInput): number =>
+  FACTOR_KEYS.length -
+  evaluateSubmitReadiness({ ...draft, factors: isObject(draft.factors) ? draft.factors : {} })
+    .missing_factors.length
+
 /** The package readiness, with the app's own `parcel_ids` requirement. */
 export type SubmitReadiness = Omit<DomainSubmitReadiness, "missing_fields"> & {
   missing_fields: Array<SubmitReadinessField | "parcel_ids">

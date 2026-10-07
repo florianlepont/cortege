@@ -92,6 +92,7 @@ function makeSurvey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: new Date().toISOString(),
     completion_rate: 40,
+    factors_filled: 0,
     ...overrides,
   }
 }
@@ -423,7 +424,13 @@ describe("HomeScreen", () => {
       const onCreateSurvey = jest.fn()
       mount(
         makeProps({
-          surveys: [makeSurvey({ completion_rate: 40, updated_at: new Date().toISOString() })],
+          surveys: [
+            makeSurvey({
+              completion_rate: 64,
+              factors_filled: 4,
+              updated_at: new Date().toISOString(),
+            }),
+          ],
           onCreateSurvey,
         }),
       )

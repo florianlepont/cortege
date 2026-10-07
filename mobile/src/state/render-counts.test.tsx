@@ -118,6 +118,7 @@ function mockMakeSurvey(index: number): LocalSurvey {
     created_at: `2026-09-${n}T08:00:00.000Z`,
     updated_at: `2026-09-${n}T09:00:00.000Z`,
     completion_rate: (index * 5) % 101,
+    factors_filled: 0,
   }
 }
 

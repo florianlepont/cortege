@@ -32,6 +32,7 @@ import {
   safeParseJson,
   buildSyncChangesPath,
   computePayloadCompletion,
+  computePayloadFactorsFilled,
   normalizeParcelIds,
   hasPendingQueueForSurvey,
   classifyRequestError,
@@ -290,8 +291,8 @@ async function applyRemoteChanges(
       const payload = buildSurveyPayloadFromRemote(survey)
       const createdAt = survey.created_at ?? now
       await db.runAsync(
-        `INSERT INTO local_surveys (id, site_name, status, visibility, sync_version, sync_state, last_sync_error, last_sync_error_code, last_sync_error_at, sync_blocked, payload_json, payload_completion, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, 'synced', NULL, NULL, NULL, 0, ?, ?, ?, ?)`,
+        `INSERT INTO local_surveys (id, site_name, status, visibility, sync_version, sync_state, last_sync_error, last_sync_error_code, last_sync_error_at, sync_blocked, payload_json, payload_completion, payload_factors_filled, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'synced', NULL, NULL, NULL, 0, ?, ?, ?, ?, ?)`,
         [
           survey.id,
           survey.site_name ?? "Remote survey",
@@ -301,6 +302,7 @@ async function applyRemoteChanges(
           JSON.stringify(payload),
           // Precomputed so the list never parses payloads (01.9 D-03).
           computePayloadCompletion(payload),
+          computePayloadFactorsFilled(payload),
           createdAt,
           now,
         ],
@@ -326,6 +328,7 @@ async function applyRemoteChanges(
              sync_blocked = 0,
              payload_json = ?,
              payload_completion = ?,
+             payload_factors_filled = ?,
              updated_at = ?
          WHERE id = ?`,
         [
@@ -336,6 +339,7 @@ async function applyRemoteChanges(
           JSON.stringify(payload),
           // Precomputed so the list never parses payloads (01.9 D-03).
           computePayloadCompletion(payload),
+          computePayloadFactorsFilled(payload),
           now,
           survey.id,
         ],
