@@ -54,7 +54,9 @@ export function createSearchStyles(theme: BrandTheme) {
     },
     cancel: {
       ...brandTypography.input,
-      color: theme.colors.forest,
+      // `forest` is theme-invariant and vanishes on the dark canvas (OA-83); the accent text token is
+      // the brand green in light and a light green in dark, both at 4.5:1 or more on the canvas.
+      color: theme.visual.accentText,
       paddingVertical: brandSpacing4.smd,
     },
     // The glass segment container (fill and border are set from `theme.visual.chip` at the call
