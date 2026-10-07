@@ -50,11 +50,11 @@ function createStyles(theme: BrandTheme) {
       gap: 4,
     },
     title: {
-      ...brandTypography.sectionTitle,
-      color: theme.semanticColors.textStrong,
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textPrimary,
     },
     subtitle: {
-      ...brandTypography.sectionBody,
+      ...brandTypography.meta,
       color: theme.colors.textSecondary,
     },
   })

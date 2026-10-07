@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { StyleSheet } from "react-native"
+import { brandFontScaleCaps, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { AppText as Text } from "./AppText"
 
@@ -11,7 +12,11 @@ export function PageTitle({ children }: { children: string }) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   return (
-    <Text style={styles.pageTitle} accessibilityRole="header">
+    <Text
+      style={styles.pageTitle}
+      accessibilityRole="header"
+      maxFontSizeMultiplier={brandFontScaleCaps.title}
+    >
       {children}
     </Text>
   )
@@ -20,10 +25,8 @@ export function PageTitle({ children }: { children: string }) {
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     pageTitle: {
-      fontSize: 34,
-      lineHeight: 40,
-      fontWeight: "800",
-      color: theme.semanticColors.textStrong,
+      ...brandTypography.screenTitle,
+      color: theme.colors.textPrimary,
     },
   })
 }
