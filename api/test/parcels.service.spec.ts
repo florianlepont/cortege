@@ -64,10 +64,11 @@ describe("ParcelsService", () => {
       // Inserted in parcel_id order (lock order), one fresh uuid per row.
       expect(parcelIds).toEqual(["13055000CD0002", "75056000AB0001", "BAD"])
       expect(new Set(ids).size).toBe(3)
-      // Same placeholder fields as the old single-id path (parseParcelIdentifier).
-      expect(communes).toEqual(["00000", "00000", "00000"])
-      expect(sections).toEqual(["AA", "AA", "AA"])
-      expect(numbers).toEqual(["0000", "0000", "0000"])
+      // An IGN identifier (IDU) gives its own commune, section and number (12.2-19), keyed like
+      // the WFS features; an unknown form keeps the placeholder fields (parseParcelIdentifier).
+      expect(communes).toEqual(["13055", "75056", "00000"])
+      expect(sections).toEqual(["CD", "AB", "AA"])
+      expect(numbers).toEqual(["0002", "0001", "0000"])
     })
 
     it("derives commune, section and number from a short parcel id", async () => {

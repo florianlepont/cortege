@@ -405,12 +405,27 @@ export function normalizeCentroid(
   }
 }
 
+// The IGN parcel identifier (IDU) the app sends for a parcel picked on the map: commune 5 digits,
+// absorbed-commune prefix 3, section 2 (a leading zero for one-letter sections, "0A"), number 4.
+const IDU_PATTERN = /^(\d{5})\d{3}([0-9A-Z]{2})(\d{4})$/
+
+/**
+ * Commune, section and number of a parcel id, in the form the IGN WFS features are keyed by
+ * (`parseWfsFeatures`: section letters only, number on 4 digits), so the public parcel statuses
+ * match a parcel registered by id to the IGN polygon drawn for it (12.2-19). Unknown forms get
+ * the placeholder "00000"/"AA"/"0000".
+ */
 export function parseParcelIdentifier(parcelId: string): {
   communeCode: string
   section: string
   number: string
 } {
   const normalized = parcelId.trim().toUpperCase()
+  const idu = IDU_PATTERN.exec(normalized)
+  const iduSection = idu ? normalizeParcelSection(idu[2]) : null
+  if (idu && iduSection) {
+    return { communeCode: idu[1], section: iduSection, number: idu[3] }
+  }
   const match = /^(\d{5})([A-Z]{1,3})(\d{1,4})$/.exec(normalized)
   if (match) {
     return {
