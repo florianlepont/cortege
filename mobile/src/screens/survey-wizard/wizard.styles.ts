@@ -34,7 +34,7 @@ export function createWizardStyles(theme: BrandTheme) {
       borderRadius: WIZARD_ICON_BUTTON / 2,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: glass.cardFill,
+      backgroundColor: theme.visual.glass.cardFill,
       borderWidth: 1,
       borderColor: glass.cardBorder,
     },
