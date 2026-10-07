@@ -16,6 +16,7 @@ import { useBrandTheme } from "../app/theme"
 import { scoreRingGeometry } from "../app/visual-tokens"
 import { fr } from "../i18n"
 import { AppText } from "./AppText"
+import { useScreenVisible } from "./useScreenVisible"
 
 const t = fr.components.scoreRing
 
@@ -85,6 +86,7 @@ export function ScoreRing({
 }: ScoreRingProps) {
   const theme = useBrandTheme()
   const reduced = useReducedMotion()
+  const visible = useScreenVisible()
   const [animateIn] = useState(() => shouldAnimateRing(animationKey, index, reduced))
 
   const hasScore = score !== null
@@ -98,8 +100,10 @@ export function ScoreRing({
 
   const progress = useSharedValue(animateIn ? 0 : ratio)
 
+  // The fill starts when the screen is visible, not at mount: the list mounts at launch under the
+  // splash, so a mount-time fill had ended before anyone saw it (12.2-11 fix).
   useEffect(() => {
-    if (!animateIn) return
+    if (!animateIn || !visible) return
     progress.value = withDelay(
       index * brandMotion.staggerMs,
       withTiming(ratio, {
@@ -108,7 +112,7 @@ export function ScoreRing({
         reduceMotion: ReduceMotion.System,
       }),
     )
-  }, [animateIn, index, ratio, progress])
+  }, [animateIn, visible, index, ratio, progress])
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: circumference * (1 - progress.value),

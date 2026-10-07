@@ -15,6 +15,12 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
+// The real navigation package is ESM and cannot be loaded here; only its context object is needed.
+jest.mock("@react-navigation/native", () => {
+  const ReactRef = jest.requireActual("react") as typeof import("react")
+  return { NavigationContext: ReactRef.createContext(undefined) }
+})
+
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent =
@@ -31,10 +37,13 @@ jest.mock("react-native", () => {
   }
 })
 
+import { NavigationContext } from "@react-navigation/native"
+import { createFakeNavigation } from "../../test/fake-navigation"
 import * as reanimated from "../../test/react-native-reanimated.mock"
 import { brandTypography } from "../app/brand-tokens"
 import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
+import { ScreenCoverContext } from "./screen-cover-context"
 import { resetAnimatedRingKeys, ringGeometry, ScoreRing, shouldAnimateRing } from "./ScoreRing"
 
 const withDelaySpy = jest.spyOn(reanimated, "withDelay")
@@ -239,5 +248,38 @@ describe("ScoreRing motion", () => {
       ringGeometry(38, 4, 0.5).dashOffset,
     )
     expect(withDelaySpy).not.toHaveBeenCalled()
+  })
+
+  test("under an overlay the fill waits, and starts once the screen is visible (12.2-11 fix)", () => {
+    let tree: renderer.ReactTestRenderer | undefined
+    const element = (covered: boolean) => (
+      <ScreenCoverContext.Provider value={covered}>
+        <ScoreRing score={25} animationKey="cover:25" index={1} />
+      </ScreenCoverContext.Provider>
+    )
+    act(() => {
+      tree = renderer.create(element(true))
+    })
+    expect(withDelaySpy).not.toHaveBeenCalled()
+    act(() => tree!.update(element(false)))
+    expect(withDelaySpy).toHaveBeenCalledTimes(1)
+    expect(withDelaySpy.mock.calls[0][0]).toBe(40)
+    act(() => tree!.unmount())
+  })
+
+  test("in an unfocused screen the fill waits for the focus", () => {
+    const { navigation, emit } = createFakeNavigation(false)
+    let tree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(
+        <NavigationContext.Provider value={navigation as never}>
+          <ScoreRing score={25} animationKey="focus:25" />
+        </NavigationContext.Provider>,
+      )
+    })
+    expect(withDelaySpy).not.toHaveBeenCalled()
+    emit("focus")
+    expect(withDelaySpy).toHaveBeenCalledTimes(1)
+    act(() => tree!.unmount())
   })
 })
