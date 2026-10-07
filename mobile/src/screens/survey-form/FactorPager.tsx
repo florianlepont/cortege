@@ -11,7 +11,7 @@ import {
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
-import { brandColors, brandShadow, brandSpacing4 } from "../../app/brand-tokens"
+import { brandRadius, brandShadow, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { FACTOR_TITLES } from "../../app/constants"
@@ -27,8 +27,10 @@ import { useHeaderHeight } from "@react-navigation/elements"
 
 const t = fr.factorPager
 
-// The bottom bar: the A to J strip (FactorLetterStrip) and a round "next" button beside it.
-const BAR_HEIGHT = STRIP_HEIGHT
+// The bottom bar: the A to J strip (FactorLetterStrip) and a round "next" button beside it. Field
+// sizes (D-05): the bar and the round button stay 46 pt, the total pill 36 pt.
+export const BAR_HEIGHT = STRIP_HEIGHT
+export const TOTAL_CHIP_HEIGHT = 36
 
 type FactorPagerProps = {
   initialFactor: FactorKey
@@ -197,26 +199,30 @@ function createStyles(theme: BrandTheme) {
       justifyContent: "space-between",
       gap: brandSpacing4.smd,
     },
+    // The screen title role (Sora SemiBold 24 on 28): its line is shorter than the 36 pt total
+    // pill, so the row keeps its height (D-05).
     title: {
       flex: 1,
-      fontSize: 20,
-      lineHeight: 24,
-      fontFamily: "Sora-Bold",
+      ...brandTypography.screenTitle,
       color: theme.semanticColors.textStrong,
     },
+    // The running total is a small forest pill (variant I): forest gradient over its flat
+    // fallback, white figures, a light hairline, no shadow. Same 36 pt height and padding.
     totalChip: {
-      height: 36,
-      borderRadius: 18,
-      paddingHorizontal: 12,
+      height: TOTAL_CHIP_HEIGHT,
+      borderRadius: brandRadius.pill,
+      paddingHorizontal: brandSpacing4.smd,
       justifyContent: "center",
-      backgroundColor: theme.semanticColors.heroSurface,
+      backgroundColor: theme.visual.forest.fallback,
+      experimental_backgroundImage: theme.visual.forest.image,
       borderWidth: 1,
-      borderColor: theme.semanticColors.heroBorder,
+      borderColor: theme.visual.forest.hairline,
     },
     totalChipText: {
       fontSize: 15,
-      fontWeight: "700",
-      color: brandColors.white,
+      lineHeight: 20,
+      fontFamily: "Sora-Bold",
+      color: theme.visual.forest.title,
     },
     pages: {
       flex: 1,

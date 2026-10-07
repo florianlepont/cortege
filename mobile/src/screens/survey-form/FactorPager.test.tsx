@@ -3,8 +3,10 @@ import renderer, { act } from "react-test-renderer"
 import type { FactorField, FactorKey } from "../../app/types"
 import { FACTOR_TITLES } from "../../app/constants"
 import { fr } from "../../i18n"
+import { defaultTheme } from "../../app/theme"
 import { feedback } from "../../ui/feedback"
-import { FactorPager } from "./FactorPager"
+import { BAR_HEIGHT, FactorPager, TOTAL_CHIP_HEIGHT } from "./FactorPager"
+import { PILL_SIZE, STRIP_HEIGHT } from "./FactorLetterStrip"
 
 // OA-111: the light tick for each factor crossed while sliding along the strip.
 jest.mock("../../ui/feedback", () => ({ feedback: { selection: jest.fn() } }))
@@ -339,5 +341,74 @@ describe("FactorPager (FLOW-04, OA-30, OA-111)", () => {
         .findAll((n) => (n.type as unknown) === "View").length - 1
     expect(viewsIn("pager-letter-E")).toBe(1)
     expect(viewsIn("pager-letter-D")).toBe(0)
+  })
+})
+
+type Style = Record<string, unknown>
+const flat = (style: unknown): Style =>
+  Array.isArray(style)
+    ? style.reduce<Style>((acc, part) => ({ ...acc, ...flat(part) }), {})
+    : ((style ?? {}) as Style)
+
+describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => {
+  const visual = defaultTheme.visual
+
+  test("field sizes keep their values: strip 46, letter pill 30, bar and round button 46", () => {
+    expect(STRIP_HEIGHT).toBe(46)
+    expect(PILL_SIZE).toBe(30)
+    expect(BAR_HEIGHT).toBe(46)
+    const { byTestID } = render("A")
+    const next = flat(byTestID("pager-next").props.style)
+    expect(next.width).toBe(46)
+    expect(next.height).toBe(46)
+    expect(next.borderRadius).toBe(23)
+  })
+
+  test("the total is a small forest pill: gradient, fallback, white figures, no shadow", () => {
+    const { byTestID } = render("A")
+    const chip = byTestID("pager-total")
+    const style = flat(chip.props.style)
+    expect(style.backgroundColor).toBe(visual.forest.fallback)
+    expect(style.experimental_backgroundImage).toBe(visual.forest.image)
+    expect(style.boxShadow).toBeUndefined()
+    expect(style.shadowOpacity).toBeUndefined()
+    expect(style.height).toBe(TOTAL_CHIP_HEIGHT)
+    expect(TOTAL_CHIP_HEIGHT).toBe(36)
+    expect(style.borderRadius).toBe(999)
+    const text = chip.findAll((n) => (n.type as unknown) === "Text")[0]
+    expect(flat(text.props.style).color).toBe(visual.forest.title)
+    expect(chip.props.accessibilityLabel).toBe(fr.factorPager.totalA11y(0))
+  })
+
+  test("the title takes the screen title role without growing the 36 pt title row", () => {
+    const { tree } = render("A")
+    const title = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.children === FACTOR_TITLES.A,
+    )[0]
+    const style = flat(title.props.style)
+    expect(style.fontFamily).toBe("Sora-SemiBold")
+    expect(style.lineHeight as number).toBeLessThanOrEqual(TOTAL_CHIP_HEIGHT)
+    // The row is as tall as its tallest child: the total pill, as before.
+    expect(Math.max(style.lineHeight as number, TOTAL_CHIP_HEIGHT)).toBe(36)
+  })
+
+  test("the current letter is the inverted neutral pill; complete and error dots use the tokens", () => {
+    const { tree } = render("A", {
+      B: [field({ value: "1" })],
+      C: [field({ error: "bad", touched: true })],
+    })
+    const letter = (factor: FactorKey) =>
+      tree.root.findAll((n) => n.props.testID === `pager-letter-${factor}`)[0]
+    const innerViews = (factor: FactorKey) =>
+      letter(factor).findAll((n) => (n.type as unknown) === "View" && n.props.testID === undefined)
+    const pill = flat(innerViews("A")[0].props.style)
+    expect(pill.backgroundColor).toBe(visual.chip.activeBg)
+    expect(pill.width).toBe(PILL_SIZE)
+    const activeText = letter("A").findAll((n) => (n.type as unknown) === "Text")[0]
+    expect(flat(activeText.props.style).color).toBe(visual.chip.activeText)
+    expect(flat(innerViews("B")[0].props.style).backgroundColor).toBe(visual.score.high)
+    expect(flat(innerViews("C")[0].props.style).backgroundColor).toBe(defaultTheme.onSurface.danger)
+    const emptyText = letter("D").findAll((n) => (n.type as unknown) === "Text")[0]
+    expect(flat(emptyText.props.style).color).toBe(defaultTheme.colors.textSecondary)
   })
 })

@@ -18,7 +18,7 @@ const t = fr.factorPager
 // pill; a finger laid on the strip and slid along it moves through the factors, like the index of
 // the Contacts app.
 export const STRIP_HEIGHT = 46
-const PILL_SIZE = 30
+export const PILL_SIZE = 30
 const STRIP_PADDING = 8
 const BUBBLE_WIDTH = 200
 
@@ -173,13 +173,14 @@ function createStyles(theme: BrandTheme) {
       width: PILL_SIZE,
       height: PILL_SIZE,
       borderRadius: PILL_SIZE / 2,
-      backgroundColor: theme.semanticColors.ctaPrimary,
+      // Variant I: the current letter is the inverted neutral pill of the chips.
+      backgroundColor: theme.visual.chip.activeBg,
     },
     letterText: {
       fontSize: 14,
       fontFamily: "Sora-Bold",
     },
-    letterText_active: { color: theme.semanticColors.onCtaPrimary },
+    letterText_active: { color: theme.visual.chip.activeText },
     letterText_complete: { color: theme.semanticColors.textStrong },
     letterText_error: { color: theme.onSurface.danger },
     letterText_empty: { color: theme.colors.textSecondary },
@@ -190,7 +191,8 @@ function createStyles(theme: BrandTheme) {
       height: 5,
       borderRadius: 2.5,
     },
-    dot_complete: { backgroundColor: brandColors.moss },
+    // D-16: the score green (darker moss in light, 3.6:1), not the brand moss.
+    dot_complete: { backgroundColor: theme.visual.score.high },
     dot_error: { backgroundColor: theme.onSurface.danger },
     bubbleWrap: {
       position: "absolute",
