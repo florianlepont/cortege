@@ -8,6 +8,7 @@ import {
   forestHaloCore,
   mixWithWhite,
   pillLabelColor,
+  pressWaveFill,
   withAlpha,
 } from "./visual-tokens"
 
@@ -20,6 +21,8 @@ export type BrandVisualTone = { base: string; top: string; image: string; shadow
 export type BrandVisual = {
   backdrop: string
   accentText: string
+  /** Moss tint of the green wave on a pressed list row (D-21). */
+  pressWave: string
   forest: {
     image: string
     heroImage: string
@@ -100,6 +103,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
   return {
     backdrop: backdrops[scheme],
     accentText,
+    pressWave: pressWaveFill[scheme],
     forest: {
       image: buildForestImage(haloCore),
       heroImage: buildForestHeroImage(haloCore),

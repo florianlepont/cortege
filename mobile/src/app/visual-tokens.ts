@@ -19,6 +19,13 @@ export const forestHaloCore = {
   dark: "rgba(111, 154, 60, 0.55)",
 } as const
 
+// Green wave of a pressed list row (D-21): a moss tint on the surface, a little lighter and greener
+// in dark so it reads on the Graphite card. One token to retune after the owner's phone check.
+export const pressWaveFill = {
+  light: "rgba(137, 163, 58, 0.26)",
+  dark: "rgba(155, 194, 106, 0.22)",
+} as const
+
 export const forestHaloEnd = "rgba(111, 154, 60, 0)"
 
 function joinStops(stops: readonly GradientStop[]): string {

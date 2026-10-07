@@ -251,4 +251,10 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
     expect(contrastRatio(visual.accentText, colors.panel)).toBeGreaterThanOrEqual(4.5)
     expect(contrastRatio(visual.accentText, colors.canvas)).toBeGreaterThanOrEqual(4.5)
   })
+
+  test("row text stays readable under the green press wave at its full strength (D-21)", () => {
+    const wave = compositeOver(visual.pressWave, colors.panel)
+    expect(contrastRatio(colors.textPrimary, wave)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(colors.textSecondary, wave)).toBeGreaterThanOrEqual(4.5)
+  })
 })

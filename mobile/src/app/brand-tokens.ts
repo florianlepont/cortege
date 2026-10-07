@@ -444,4 +444,8 @@ export const brandMotion = {
   // Screen sections that slide up each time their screen becomes visible (Accueil, 12.2-10): the
   // distance in points. The owner did not notice the 240 ms fade of the first version.
   sectionEntranceTravel: 20,
+  // Green wave on a pressed list row (D-21): it grows from the touch point over `durationMs` with the
+  // decelerate easing while it fades out; `startRadius` is its size at the first frame. Reduce Motion
+  // draws no wave, only the `reducedFadeMs` highlight fade.
+  pressWave: { durationMs: 420, startRadius: 12, reducedFadeMs: 240 },
 } as const
