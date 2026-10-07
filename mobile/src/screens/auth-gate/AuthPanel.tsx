@@ -5,8 +5,8 @@ import { LEGAL_PRIVACY_URL, LEGAL_TERMS_URL } from "../../app/auth0-config"
 import { brandSpacing } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { feedback } from "../../ui/feedback"
+import { GlassButton } from "../../ui/GlassButton"
 import { createAuthStyles } from "./styles"
 
 const WEBSITE_URL = "https://etatssauvages.org"
@@ -68,7 +68,7 @@ export function AuthPanel({
           )}
 
           <View style={authStyles.actionsGroup}>
-            <AppButton
+            <GlassButton
               label={submitting ? texts.panel.loginInProgress : texts.panel.login}
               onPress={onLoginPress}
               loading={submitting}
@@ -87,9 +87,10 @@ export function AuthPanel({
               <Text style={authStyles.forgotPasswordText}>{texts.panel.forgotPassword}</Text>
             </Pressable>
 
-            <AppButton
+            <GlassButton
               label={texts.panel.register}
               variant="secondary"
+              size="md"
               onPress={onRegisterPress}
               disabled={submitting}
               style={authStyles.secondaryButton}

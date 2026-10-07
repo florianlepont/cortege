@@ -109,6 +109,7 @@ jest.mock("react-native-safe-area-context", () => ({
 }))
 
 import { fr } from "../i18n"
+import { GlassButton } from "../ui/GlassButton"
 import { AuthGateScreen } from "./AuthGateScreen"
 
 type Handlers = {
@@ -218,5 +219,44 @@ describe("AuthGateScreen", () => {
     })
 
     expect(renderedTexts(component)).toContain("Identifiants invalides")
+  })
+
+  it("uses the glass buttons: forest primary, neutral secondary, the link stays a text link", async () => {
+    const component = await renderScreen(makeHandlers())
+
+    const submit = component.root.findByProps({ testID: "auth-submit" })
+    const register = component.root.findByProps({ testID: "auth-register" })
+    expect(submit.type).toBe(GlassButton)
+    expect(register.type).toBe(GlassButton)
+    expect(submit.props.variant).toBeUndefined()
+    expect(register.props.variant).toBe("secondary")
+    // The big buttons keep their 44 pt minimum height.
+    expect(submit.props.size ?? "lg").toBe("lg")
+    expect(register.props.size).toBe("md")
+    expect(component.root.findByProps({ testID: "auth-forgot-password" }).type).not.toBe(
+      GlassButton,
+    )
+  })
+
+  it("shows the loading state on the login button and disables the register one while signing in", async () => {
+    const handlers = makeHandlers()
+    let finish: (value: string | null) => void = () => undefined
+    handlers.onLogin.mockImplementationOnce(
+      () => new Promise<string | null>((resolve) => (finish = resolve)),
+    )
+    const component = await renderScreen(handlers)
+
+    await act(async () => {
+      component.root.findByProps({ testID: "auth-submit" }).props.onPress()
+    })
+    const submit = component.root.findByProps({ testID: "auth-submit" })
+    expect(submit.props.loading).toBe(true)
+    expect(submit.props.label).toBe(fr.authGate.panel.loginInProgress)
+    expect(component.root.findByProps({ testID: "auth-register" }).props.disabled).toBe(true)
+
+    await act(async () => {
+      finish(null)
+    })
+    expect(component.root.findByProps({ testID: "auth-submit" }).props.loading).toBe(false)
   })
 })
