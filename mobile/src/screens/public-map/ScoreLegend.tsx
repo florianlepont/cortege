@@ -2,17 +2,26 @@ import { memo, useMemo, useState } from "react"
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandMapTokens, brandRadius, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandMapTokens,
+  brandRadius,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { GlassSurface } from "../../ui/GlassSurface"
-import { MAP_EDGE, MAP_PILL_HEIGHT } from "./MapChips"
+import { MAP_CONTROL_HIT_SLOP, MAP_EDGE, MAP_PILL_HEIGHT } from "./MapChips"
 import { OfflineIndicatorBadge } from "./OfflineControls"
 
 const t = fr.publicMap
 
 export type MapLegendRow = { color: string; label: string; dashed?: boolean }
 
+// The swatches are the marker colours themselves (`markerStyles` in styles.ts), so the legend always
+// describes the markers drawn on the map; they are not restyled with the overlays (12.2-18).
 const SCORE_ROWS: MapLegendRow[] = [
   { color: brandMapTokens.scoreMarker.high, label: t.legend.high },
   { color: brandMapTokens.scoreMarker.mid, label: t.legend.mid },
@@ -72,12 +81,13 @@ export const MapLegend = memo(function MapLegend({
       ) : null}
       <View style={styles.line}>
         <GlassSurface tone="auto" style={styles.countPill}>
-          {loading ? <ActivityIndicator size="small" color={brandColors.forest} /> : null}
+          {loading ? <ActivityIndicator size="small" color={theme.visual.accentText} /> : null}
           <Text style={styles.countText}>{countLabel}</Text>
         </GlassSurface>
         <GlassSurface tone="auto" interactive style={styles.toggle}>
           <Pressable
             style={styles.toggleHit}
+            hitSlop={MAP_CONTROL_HIT_SLOP}
             onPress={() => setExpanded((current) => !current)}
             accessibilityRole="button"
             accessibilityLabel={expanded ? t.a11y.hideLegend : t.a11y.showLegend}
@@ -86,7 +96,7 @@ export const MapLegend = memo(function MapLegend({
             <Ionicons
               name={expanded ? "close" : "information-circle-outline"}
               size={22}
-              color={brandColors.forest}
+              color={theme.visual.accentText}
             />
           </Pressable>
         </GlassSurface>
@@ -164,11 +174,11 @@ function createStyles(theme: BrandTheme) {
       borderRadius: brandRadius.card,
       borderWidth: 1,
       borderColor: theme.colors.divider,
-      padding: 14,
-      gap: 8,
+      padding: brandSpacing4.md,
+      gap: brandSpacing4.sm,
     },
     title: {
-      ...brandTypography.label,
+      ...brandTypography.sectionHeader,
       color: theme.semanticColors.textStrong,
     },
     subtitle: {
@@ -178,7 +188,7 @@ function createStyles(theme: BrandTheme) {
     row: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
+      gap: brandSpacing4.sm,
     },
     swatch: {
       width: 14,
@@ -194,11 +204,11 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       fontSize: 12,
       color: theme.colors.textSecondary,
-      marginTop: 4,
+      marginTop: brandSpacing4.xs,
     },
     rowLabel: {
-      ...brandTypography.meta,
-      color: theme.colors.textPrimary,
+      ...brandTypeScale.footnote,
+      color: theme.colors.textSecondary,
     },
   })
 }

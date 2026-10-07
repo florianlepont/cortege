@@ -1,7 +1,6 @@
 import { memo, useMemo } from "react"
 import { ActivityIndicator, Pressable, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import type { BasemapKey } from "../../map/basemaps"
 import { fr } from "../../i18n"
@@ -44,7 +43,7 @@ export const MapTopControls = memo(function MapTopControls({
         <Ionicons
           name={target === "satellite" ? "earth-outline" : "map-outline"}
           size={22}
-          color={brandColors.forest}
+          color={theme.visual.accentText}
         />
       </Pressable>
       {onOpenOfflineAreas ? (
@@ -56,7 +55,7 @@ export const MapTopControls = memo(function MapTopControls({
             accessibilityRole="button"
             accessibilityLabel={offlineT.areas.openSheet}
           >
-            <Ionicons name="download-outline" size={22} color={brandColors.forest} />
+            <Ionicons name="download-outline" size={22} color={theme.visual.accentText} />
           </Pressable>
         </>
       ) : null}
@@ -96,9 +95,9 @@ export const MapBottomDock = memo(function MapBottomDock({
         accessibilityState={{ disabled: locating, busy: locating }}
       >
         {locating ? (
-          <ActivityIndicator size="small" color={brandColors.forest} />
+          <ActivityIndicator size="small" color={theme.visual.accentText} />
         ) : (
-          <Ionicons name="navigate" size={22} color={brandColors.forest} />
+          <Ionicons name="navigate" size={22} color={theme.visual.accentText} />
         )}
       </Pressable>
     </GlassSurface>

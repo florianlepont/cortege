@@ -1,12 +1,19 @@
 import { StyleSheet } from "react-native"
 import {
   brandColors,
+  brandInteraction,
   brandMapTokens,
   brandRadius,
   brandShadow,
+  brandSpacing4,
+  brandTypeScale,
   brandTypography,
 } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+import { SURVEY_ROW_RING_COLUMN } from "../survey-list/row-styles"
+
+/** Width of the accent outline of the selected survey in the Explorer sheet. */
+export const SELECTED_OUTLINE_WIDTH = 2
 
 // Theme-invariant: every color here is a static brand hue, not a neutral that inverts with the
 // theme, so this stays a plain export (no `useBrandTheme()` needed at its call sites).
@@ -164,18 +171,54 @@ export function createOfflineIndicatorStyles(theme: BrandTheme) {
   })
 }
 
+// The panels of the Explorer sheet (selected survey, cluster list, parcel history, offline areas),
+// 12.2-18: 4 grid spacing, the sheet title one step up from the section header, and the selected
+// survey drawn as a glass row with the accent outline (UI-SPEC accent list item 4) and its ring on
+// the trailing side (D-27a). No gradient here, so the 2 pt outline is a plain border (12.2-17).
 export function createPanelStyles(theme: BrandTheme) {
   return StyleSheet.create({
     card: {
-      gap: 10,
+      gap: brandSpacing4.smd,
     },
     title: {
-      ...brandTypography.label,
+      ...brandTypography.sectionHeader,
+      ...brandTypeScale.headline,
       color: theme.semanticColors.textStrong,
     },
     meta: {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
+    },
+    selectedSummary: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+      minHeight: brandInteraction.hitTarget.min,
+      borderRadius: brandRadius.card,
+      borderWidth: SELECTED_OUTLINE_WIDTH,
+      borderColor: theme.visual.accentText,
+      backgroundColor: theme.visual.glass.cardFill,
+      paddingVertical: brandSpacing4.smd,
+      paddingHorizontal: brandSpacing4.md,
+    },
+    selectedText: {
+      flex: 1,
+      minWidth: 0,
+      gap: brandSpacing4.xs,
+    },
+    selectedPlace: {
+      ...brandTypeScale.subhead,
+      fontFamily: brandTypography.input.fontFamily,
+      color: theme.colors.textPrimary,
+    },
+    ringColumn: {
+      width: SURVEY_ROW_RING_COLUMN,
+      flexShrink: 0,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rows: {
+      gap: brandSpacing4.sm,
     },
     clusterRow: {
       borderTopWidth: 1,

@@ -2,7 +2,7 @@ import { memo, useMemo } from "react"
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText as Text } from "../../ui/AppText"
-import { brandColors, brandRadius, brandTypography } from "../../app/brand-tokens"
+import { brandInteraction, brandRadius, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { GlassSurface } from "../../ui/GlassSurface"
 
@@ -13,6 +13,11 @@ import { GlassSurface } from "../../ui/GlassSurface"
  */
 export const MAP_EDGE = 14
 export const MAP_PILL_HEIGHT = 40
+/**
+ * Extra touch area around a 40 pt map control, so its target reaches the 44 pt minimum without
+ * changing the drawn size (D-05).
+ */
+export const MAP_CONTROL_HIT_SLOP = (brandInteraction.hitTarget.min - MAP_PILL_HEIGHT) / 2
 
 type MapInfoPillProps = {
   label: string
@@ -50,11 +55,13 @@ export const MapActionPill = memo(function MapActionPill({
     <GlassSurface tone="auto" interactive style={styles.pill}>
       <Pressable
         style={styles.actionHit}
+        hitSlop={{ top: MAP_CONTROL_HIT_SLOP, bottom: MAP_CONTROL_HIT_SLOP }}
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
       >
-        <Ionicons name={icon} size={18} color={brandColors.forest} />
+        {/* Theme-aware accent: the fixed forest was dark on the dark glass (12.2-18). */}
+        <Ionicons name={icon} size={18} color={theme.visual.accentText} />
         <Text style={styles.pillText}>{label}</Text>
       </Pressable>
     </GlassSurface>

@@ -1,7 +1,6 @@
 import { memo, useMemo } from "react"
-import { Pressable, View } from "react-native"
+import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { Ionicons } from "@expo/vector-icons"
 import {
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,
@@ -9,12 +8,13 @@ import {
   resolveMethodVersion,
 } from "@cortege/ibp-domain"
 import type { PublicMapItem } from "../../app/types"
-import { brandColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { GlassButton } from "../../ui/GlassButton"
+import { ScoreRing } from "../../ui/ScoreRing"
+import { SheetCloseButton } from "./SheetCloseButton"
 import { createPanelStyles } from "./styles"
 
 const t = fr.publicMap
@@ -65,27 +65,32 @@ export const SelectedSurveyCard = memo(function SelectedSurveyCard({
     <View style={styles.card}>
       <AppSectionHeader
         title={isDraft ? t.draft.title(item.ibp_total) : t.selected.title(item.ibp_total)}
-        trailing={
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel={t.a11y.closeSelection}
-          >
-            <Ionicons name="close" size={18} color={brandColors.forest} />
-          </Pressable>
-        }
+        trailing={<SheetCloseButton accessibilityLabel={t.a11y.closeSelection} onPress={onClose} />}
         titleStyle={styles.title}
       />
-      {methodLabel ? <Text style={styles.meta}>{methodLabel}</Text> : null}
-      <Text style={styles.meta}>
-        {isDraft
-          ? t.draft.meta
-          : t.selected.meta({ region: surveyPlaceLabel(item), date: item.survey_date })}
-      </Text>
+      {/* 12.2-18: the selected survey as a glass row with the accent outline, its place and date
+          on the left and its ring on the trailing side, centred (D-27a). No photo (owner). */}
+      <View testID="selected-survey-summary" style={styles.selectedSummary}>
+        <View style={styles.selectedText}>
+          <Text style={styles.selectedPlace}>
+            {isDraft
+              ? t.draft.meta
+              : t.selected.meta({ region: surveyPlaceLabel(item), date: item.survey_date })}
+          </Text>
+          {methodLabel ? <Text style={styles.meta}>{methodLabel}</Text> : null}
+        </View>
+        <View style={styles.ringColumn}>
+          <ScoreRing
+            score={item.ibp_total}
+            index={0}
+            animationKey={`${item.survey_id}:${item.ibp_total}`}
+          />
+        </View>
+      </View>
 
-      <AppButton
+      {/* The full-width action of the panel is the glass call to action (D-27c, D-28), same size. */}
+      <GlassButton
         label={isDraft ? t.draft.open : t.selected.openSurvey}
-        variant="secondary"
         size="sm"
         onPress={() => onOpenSurvey(item.survey_id)}
         testID="selected-survey-open"

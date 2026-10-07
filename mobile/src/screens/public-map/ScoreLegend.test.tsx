@@ -26,6 +26,7 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
+    ActivityIndicator: mockComponent("ActivityIndicator"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Pressable: mockComponent("Pressable"),
@@ -34,17 +35,53 @@ jest.mock("react-native", () => {
   }
 })
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+// The theme the legend reads, switchable per test (light by default).
+const mockScheme: { current: "light" | "dark" } = { current: "light" }
+jest.mock("../../app/theme", () => {
+  const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
+  const themes = {
+    light: actual.defaultTheme,
+    dark: actual.buildTheme("automatic", "dark", () => {}),
+  }
+  return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
+})
 
+import {
+  brandColors,
+  brandInteraction,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
+import { buildTheme, defaultTheme } from "../../app/theme"
 import { ScoreLegend } from "./ScoreLegend"
+
+const darkTheme = buildTheme("automatic", "dark", () => {})
+
+afterEach(() => {
+  mockScheme.current = "light"
+})
+
+const flat = (style: unknown): Record<string, unknown> =>
+  Object.assign({}, ...[style].flat(3).filter(Boolean))
+
+function textNode(tree: renderer.ReactTestRenderer, label: string) {
+  return tree.root.find(
+    (node) => (node.type as unknown) === "Text" && node.props.children === label,
+  )
+}
 
 const t = fr.publicMap
 
-function render() {
+function render(loading = false) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<ScoreLegend bottom={40} count={12} />)
+    tree = renderer.create(<ScoreLegend bottom={40} count={12} loading={loading} />)
   })
   return tree!
+}
+
+function expand(tree: renderer.ReactTestRenderer) {
+  act(() => tree.root.findByProps({ accessibilityLabel: t.a11y.showLegend }).props.onPress())
 }
 
 describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
@@ -106,5 +143,59 @@ describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
       )
       expect(views.length).toBeGreaterThan(0)
     }
+  })
+
+  test("the swatches are exactly the marker colours, and the draft swatch stays dashed", () => {
+    const tree = render()
+    expand(tree)
+    const swatches = tree.root
+      .findAll((node) => (node.type as unknown) === "View" && flat(node.props.style).width === 14)
+      .map((node) => flat(node.props.style))
+    expect(swatches.map((style) => style.backgroundColor)).toEqual([
+      brandMapTokens.scoreMarker.high,
+      brandMapTokens.scoreMarker.mid,
+      brandMapTokens.scoreMarker.low,
+      brandColors.white,
+    ])
+    expect(swatches[3].borderStyle).toBe("dashed")
+    expect(swatches[3].borderColor).toBe(brandColors.forest)
+    expect(swatches.slice(0, 3).every((style) => style.borderStyle === undefined)).toBe(true)
+  })
+
+  test("the toggle keeps its 40 pt glass disc and a 44 pt target (D-05)", () => {
+    const toggle = render().root.findByType("Pressable" as never)
+    const style = flat(toggle.props.style)
+    expect(style.width).toBe(40)
+    expect(style.height).toBe(40)
+    expect(40 + 2 * (toggle.props.hitSlop as number)).toBe(brandInteraction.hitTarget.min)
+  })
+
+  test("icon and spinner use the theme's accent text colour in light and dark (12.2-18)", () => {
+    const light = render(true)
+    expect(light.root.findByType("Ionicons" as never).props.color).toBe(
+      defaultTheme.visual.accentText,
+    )
+    expect(light.root.findByType("ActivityIndicator" as never).props.color).toBe(
+      defaultTheme.visual.accentText,
+    )
+    mockScheme.current = "dark"
+    const dark = render(true)
+    expect(dark.root.findByType("Ionicons" as never).props.color).toBe(darkTheme.visual.accentText)
+    expect(dark.root.findByType("ActivityIndicator" as never).props.color).toBe(
+      darkTheme.visual.accentText,
+    )
+    expect(darkTheme.visual.accentText).not.toBe(brandColors.forest)
+  })
+
+  test("the panel title is a section header and the row labels a secondary footnote", () => {
+    const tree = render()
+    expand(tree)
+    const title = flat(textNode(tree, t.legend.title).props.style)
+    expect(title.fontFamily).toBe(brandTypography.sectionHeader.fontFamily)
+    expect(title.fontSize).toBe(brandTypography.sectionHeader.fontSize)
+    const row = flat(textNode(tree, t.legend.high).props.style)
+    expect(row.fontSize).toBe(brandTypeScale.footnote.fontSize)
+    expect(row.lineHeight).toBe(brandTypeScale.footnote.lineHeight)
+    expect(row.color).toBe(defaultTheme.colors.textSecondary)
   })
 })

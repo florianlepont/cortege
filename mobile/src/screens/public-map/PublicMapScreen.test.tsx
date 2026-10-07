@@ -128,6 +128,15 @@ jest.mock("../../ui/AppButton", () => {
       ReactRef.createElement("AppButton", { label, onPress }),
   }
 })
+// The Explorer panels' full-width actions are glass calls to action (12.2-18).
+jest.mock("../../ui/GlassButton", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    GlassButton: ({ label, onPress }: { label: string; onPress: () => void }) =>
+      ReactRef.createElement("GlassButton", { label, onPress }),
+  }
+})
+jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
 jest.mock("../../ui/AppCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -335,7 +344,7 @@ describe("PublicMapScreen", () => {
     )
     const open = tree.root.find(
       (node) =>
-        (node.type as unknown) === "AppButton" &&
+        (node.type as unknown) === "GlassButton" &&
         node.props.label === fr.publicMap.selected.openSurvey,
     )
     act(() => open.props.onPress())

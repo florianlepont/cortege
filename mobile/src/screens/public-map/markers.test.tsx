@@ -34,6 +34,8 @@ jest.mock("react-native", () => {
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../ui/AppButton", () => ({ AppButton: "AppButton" }))
+jest.mock("../../ui/GlassButton", () => ({ GlassButton: "GlassButton" }))
+jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
 jest.mock("../../ui/AppCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
