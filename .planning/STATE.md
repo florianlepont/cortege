@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
-stopped_at: Completed 12.2-14-PLAN.md
-last_updated: "2026-10-07T10:28:28.821Z"
+stopped_at: Completed 12.2-15-PLAN.md
+last_updated: "2026-10-07T10:56:05.452Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 173
+  completed_plans: 174
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 15 of 23
+Plan: 16 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -94,6 +94,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P12 | 35min | 3 tasks | 12 files |
 | Phase 12.2 P13 | 30 min | 3 tasks | 20 files |
 | Phase 12.2 P14 | owner check | 1 tasks | 0 files |
+| Phase 12.2 P15 | 90 min | 3 tasks | 32 files |
 
 ## Accumulated Context
 
@@ -158,6 +159,9 @@ Decisions table. Decisions affecting current work:
 - [Phase 12.2]: 12.2-12: summary tile values keep the width of their final digits (count-up TextInput); the submit pulse observes the status transition in a hook and leaves the submit logic untouched; header title and status styles moved into SummaryHeader
 - [Phase 12.2]: 12.2-13: sub-score tones via bandTone(standBand/contextBand) in ScoreBreakdown; shared subContent rhythm 16/24/48 for the four sub-pages; History and Context glass cards as style recipes on plain Views
 - [Phase 12.2]: 12.2-14: big calls to action are the native iOS 26 glass button (GlassButton over @expo/ui, D-28) in the charter forest #334E2B with a white label; rings on the trailing side of rows; halo on every screen through ScreenFrame; factors filled has one definition stored by migration 5
+- [Phase 12.2]: 12.2-15: the D-26 pill floats in its own row above the A to J bar; the 46 pt round button keeps its place and only goes back (close icon) beside it
+- [Phase 12.2]: 12.2-15: a finish from the pager writes the pending form edits first (flushDraft), then runs submitSurvey; success is the status turning submitted, then popTo surveyDetail
+- [Phase 12.2]: 12.2-15: the summary halo and pop wait until it is seen again after a pager finish (useVisiblePulse); the haptic stays immediate and single
 
 ### Pending Todos
 
@@ -198,6 +202,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-07T10:28:25.398Z
-Stopped at: Completed 12.2-14-PLAN.md
+Last session: 2026-10-07T10:55:42.739Z
+Stopped at: Completed 12.2-15-PLAN.md
 Resume file: None
