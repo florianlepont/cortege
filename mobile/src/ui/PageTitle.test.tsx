@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { PageTitle } from "./PageTitle"
+import { FrameLargeTitleContext } from "./frame-large-title"
 import { brandFontScaleCaps, brandTypography } from "../app/brand-tokens"
 import { defaultTheme } from "../app/theme"
 
@@ -49,5 +50,19 @@ describe("PageTitle (OA-21)", () => {
     })
     expect(style).not.toHaveProperty("fontWeight")
     expect(text.props.maxFontSizeMultiplier).toBe(brandFontScaleCaps.title)
+  })
+})
+
+describe("PageTitle under the native large title (12.2-17)", () => {
+  test("renders nothing: the native header already names the page, never twice", () => {
+    let tree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <PageTitle>Compte</PageTitle>
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+    expect(tree!.toJSON()).toBeNull()
   })
 })

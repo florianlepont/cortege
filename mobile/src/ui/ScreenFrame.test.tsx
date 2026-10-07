@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { buildTheme, defaultTheme } from "../app/theme"
+import { useFrameInsetBehavior, useFrameLargeTitle } from "./frame-large-title"
 import { ScreenFrame } from "./ScreenFrame"
 
 const originalConsoleError = console.error
@@ -115,5 +116,76 @@ describe("ScreenFrame", () => {
     expect(flatten(backdrop.props.style).experimental_backgroundImage).toBe(
       mockTheme.visual.backdrop,
     )
+  })
+})
+
+function FrameProbe() {
+  const largeTitle = useFrameLargeTitle()
+  const behavior = useFrameInsetBehavior()
+  return React.createElement("Text", { testID: "probe", largeTitle, behavior })
+}
+
+function renderLarge(children: React.ReactNode = React.createElement(FrameProbe)) {
+  let tree: renderer.ReactTestRenderer | undefined
+  act(() => {
+    tree = renderer.create(<ScreenFrame largeTitle>{children}</ScreenFrame>)
+  })
+  return tree!.root
+}
+
+describe("ScreenFrame under the native large title (12.2-17)", () => {
+  test("leaves the insets to the system: no header padding, the page starts at the top", () => {
+    const frame = hostView(renderLarge(), "screen-frame")
+    const style = flatten(frame.props.style)
+    expect(style.flex).toBe(1)
+    expect(style.paddingTop).toBeUndefined()
+  })
+
+  test("paints the canvas and the halo on itself: the page's scroll view is its first child", () => {
+    const root = renderLarge(React.createElement("ScrollView", { testID: "page-scroll" }))
+    const frame = hostView(root, "screen-frame")
+    expect(flatten(frame.props.style)).toMatchObject({
+      backgroundColor: defaultTheme.colors.canvas,
+      experimental_backgroundImage: defaultTheme.visual.backdrop,
+    })
+    const children = frame.children as renderer.ReactTestInstance[]
+    expect(children).toHaveLength(1)
+    expect(children[0].props.testID).toBe("page-scroll")
+    expect(root.findAll((n) => n.props.testID === "screen-frame-backdrop")).toHaveLength(0)
+  })
+
+  test("does not follow the header height, which changes while the title collapses", () => {
+    mockHeader.height = 140
+    const frame = hostView(renderLarge(), "screen-frame")
+    expect(JSON.stringify(frame.props.style)).not.toContain("140")
+  })
+
+  test("tells the page: no own title, automatic insets for its first scroll view", () => {
+    const probe = renderLarge().findByProps({ testID: "probe" })
+    expect(probe.props.largeTitle).toBe(true)
+    expect(probe.props.behavior).toBe("automatic")
+  })
+
+  test("outside a large title frame the page keeps its title and its own insets", () => {
+    let tree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(
+        <ScreenFrame>
+          <FrameProbe />
+        </ScreenFrame>,
+      )
+    })
+    const probe = tree!.root.findByProps({ testID: "probe" })
+    expect(probe.props.largeTitle).toBe(false)
+    expect(probe.props.behavior).toBe("never")
+  })
+
+  test("follows the dark scheme", () => {
+    mockTheme = buildTheme("dark", "dark", () => {})
+    const frame = hostView(renderLarge(), "screen-frame")
+    expect(flatten(frame.props.style)).toMatchObject({
+      backgroundColor: mockTheme.colors.canvas,
+      experimental_backgroundImage: mockTheme.visual.backdrop,
+    })
   })
 })

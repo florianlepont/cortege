@@ -139,6 +139,19 @@ export const brandTypography = {
     lineHeight: 18,
     fontFamily: "Sora-SemiBold",
   },
+  // 12.2-17 (collapsing titles): the native iOS header titles. The large title sits under the bar
+  // and shrinks into the small centred `navTitle` on scroll. 28 pt (`brandTypeScale.title1`) like
+  // the header title of Accueil, between the 24 pt in-page title and the 34 pt iOS default, so a
+  // survey name still fits a 375 pt phone. Only family and size reach the native bar (no line
+  // height, no tracking); the weight is given beside them in `stack-options.ts`.
+  navLargeTitle: {
+    fontSize: 28,
+    fontFamily: "Sora-SemiBold",
+  },
+  navTitle: {
+    fontSize: 17,
+    fontFamily: "Sora-SemiBold",
+  },
   ringValue: {
     fontSize: 12,
     lineHeight: 16,
