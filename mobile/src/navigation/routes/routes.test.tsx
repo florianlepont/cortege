@@ -1031,6 +1031,14 @@ describe("CommunitySurveyRoute native large title (12.2-17)", () => {
     })
   })
 
+  test("a survey from the API without a usable name leaves the stack's title", async () => {
+    mockNativeTabs.value = true
+    loaded.detail = { site_name: null }
+    loaded.status = "ready"
+    await render()
+    expect(mockSearchNavigation.setOptions).not.toHaveBeenCalled()
+  })
+
   test("while loading the stack's title stays", async () => {
     mockNativeTabs.value = true
     await render()

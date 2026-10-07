@@ -36,7 +36,10 @@ export const CommunitySurveyRoute = memo(function CommunitySurveyRoute({
   })
 
   const largeTitle = usesNativeLargeTitle()
-  const siteName = state.detail ? state.detail.site_name.trim() || fr.common.untitledSurvey : null
+  // The survey comes from the API: a name that is not a string leaves the stack's title.
+  const loadedName: unknown = state.detail?.site_name
+  const siteName =
+    typeof loadedName === "string" ? loadedName.trim() || fr.common.untitledSurvey : null
   useLayoutEffect(() => {
     if (largeTitle && siteName !== null) navigation.setOptions({ title: siteName })
   }, [largeTitle, navigation, siteName])
