@@ -157,6 +157,35 @@ describe("ToolsSection", () => {
     expect(style.minHeight as number).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
   })
 
+  test("the identify entry is one slim full-width row of 56 to 64 pt (D-20d)", () => {
+    mount()
+    const card = byType("Pressable")
+    const style = Object.assign({}, ...[card.props.style].flat()) as Record<string, unknown>
+    // A row of icon tile, texts and chevron, not a half-width tile: it spans the page and has no
+    // maximum width.
+    expect(style.flexDirection).toBe("row")
+    expect(style.alignItems).toBe("center")
+    expect(style.maxWidth).toBeUndefined()
+    expect(style.flex).toBeUndefined()
+    const minHeight = style.minHeight as number
+    expect(minHeight).toBeGreaterThanOrEqual(56)
+    expect(minHeight).toBeLessThanOrEqual(64)
+    expect(minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+    // The 40 pt icon tile plus the vertical padding gives that height.
+    const icon = card.findAll(
+      (node) =>
+        (node.type as unknown) === "View" && (node.props.style as { width?: number })?.width === 40,
+    )
+    expect(icon).toHaveLength(1)
+    expect((style.paddingVertical as number) * 2 + 40).toBe(minHeight)
+    expect((style.paddingVertical as number) % 4).toBe(0)
+    // The title and the one-line subtitle are both there, and nothing else carries text (no tag).
+    const texts = card
+      .findAll((node) => (node.type as unknown) === "Text")
+      .map((node) => String([node.props.children].flat().join("")))
+    expect(texts).toEqual([t.identify.title, t.identify.body])
+  })
+
   test("the card opens the photo tool", () => {
     mount()
     act(() => {

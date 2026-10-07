@@ -2,12 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
-import {
-  brandInteraction,
-  brandRadius,
-  brandSpacing4,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
@@ -30,6 +25,8 @@ const SHEET_DELAY_MS = 450
 const NOTICE_MS = 5000
 /** The same page margin as the rest of Accueil (home/styles.ts). */
 const PAGE_H = brandSpacing4.md
+/** The slim tool row: the 40 pt icon tile and 8 pt above and below it. */
+const TOOL_ROW_MIN_HEIGHT = 56
 
 export function openDrafts(surveys: LocalSurvey[]): LocalSurvey[] {
   return surveys
@@ -131,8 +128,11 @@ export function ToolsSection({
           <View style={styles.icon}>
             <Ionicons name="camera-outline" size={22} color={theme.semanticColors.onCtaPrimary} />
           </View>
-          <Text style={styles.cardTitle}>{t.identify.title}</Text>
-          <Text style={styles.cardBody}>{t.identify.body}</Text>
+          <View style={styles.copy}>
+            <Text style={styles.cardTitle}>{t.identify.title}</Text>
+            <Text style={styles.cardBody}>{t.identify.body}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
         </Pressable>
       </View>
 
@@ -169,23 +169,27 @@ function createStyles(theme: BrandTheme) {
       marginHorizontal: PAGE_H,
       marginBottom: brandSpacing4.smd,
     },
+    // D-20d: one slim full-width row (40 pt icon tile, 8 pt around it: 56 pt), not a half-width tile.
     row: {
-      flexDirection: "row",
-      gap: brandSpacing4.smd,
       paddingHorizontal: PAGE_H,
     },
     card: {
-      flex: 1,
-      maxWidth: 220,
-      minHeight: brandInteraction.hitTarget.min,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.smd,
+      minHeight: TOOL_ROW_MIN_HEIGHT,
       borderRadius: brandRadius.card,
       borderWidth: 1,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,
       boxShadow: theme.visual.glass.cardShadow,
       borderCurve: "continuous",
-      padding: brandSpacing4.md,
-      gap: brandSpacing4.xs,
+      paddingVertical: brandSpacing4.sm,
+      paddingLeft: brandSpacing4.sm,
+      paddingRight: brandSpacing4.md,
+    },
+    copy: {
+      flex: 1,
     },
     icon: {
       width: 40,
