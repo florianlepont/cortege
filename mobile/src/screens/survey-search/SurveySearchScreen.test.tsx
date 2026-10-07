@@ -76,7 +76,7 @@ jest.mock("../../ui/AppChoiceChip", () => ({
     return ReactRef.createElement("AppChoiceChip", props)
   },
 }))
-jest.mock("../../ui/IbpScoreBadge", () => ({ IbpScoreBadge: () => null }))
+jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
 
 const mine = (id: string): LocalSurvey =>
   ({ id, site_name: `Site ${id}` }) as unknown as LocalSurvey
@@ -232,6 +232,8 @@ describe("SurveySearchScreen, Communauté scope", () => {
       community: { items: [community("x", "Camille")], status: "ready" },
     })
     const tree = render(props)
+    const ring = tree.root.findByType("ScoreRing" as never)
+    expect(ring.props.score).toBe(34)
     const row = tree.root.findAll((n) => n.props.testID === "community-row-x")[0]
     act(() => row.props.onPress())
     expect(props.onOpenCommunitySurvey).toHaveBeenCalledWith("x")

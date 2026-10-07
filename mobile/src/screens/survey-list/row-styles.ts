@@ -1,20 +1,31 @@
 import { StyleSheet } from "react-native"
-import { brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandRadius,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
-// Survey list row styles (01.9-22), moved from SurveyListScreen.
+// Survey list row styles (01.9-22), moved from SurveyListScreen. Phase 12.2-11: glass card (no
+// elevation or shadow spread: an Android elevation under a translucent fill smears grey), 4-grid
+// spacing, Sora row title.
 export function createRowStyles(theme: BrandTheme) {
   return StyleSheet.create({
     surveyCard: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 8,
+      gap: brandSpacing4.sm,
+      minHeight: brandInteraction.hitTarget.min,
       borderRadius: brandRadius.card,
+      borderCurve: "continuous",
       borderWidth: 1,
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.semanticColors.surfaceElevated,
-      padding: 10, // P2-COMPACT-01: 12 → 10
-      ...brandShadow.card,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
+      paddingVertical: brandSpacing4.smd,
+      paddingHorizontal: brandSpacing4.md,
     },
     surveySwipeable: {
       overflow: "visible",
@@ -23,14 +34,14 @@ export function createRowStyles(theme: BrandTheme) {
       width: 124,
       alignSelf: "stretch",
       // OA-57: a gap between the card and the delete button.
-      marginLeft: 8,
-      marginRight: 8,
+      marginLeft: brandSpacing4.sm,
+      marginRight: brandSpacing4.sm,
       borderRadius: brandRadius.card,
       backgroundColor: theme.colors.terracotta,
       alignItems: "center",
       justifyContent: "center",
-      gap: 6,
-      paddingHorizontal: 14,
+      gap: brandSpacing4.sm,
+      paddingHorizontal: brandSpacing4.md,
     },
     surveyDeleteActionPressed: {
       opacity: 0.88,
@@ -61,7 +72,7 @@ export function createRowStyles(theme: BrandTheme) {
     surveyCardAccentNeutral: {
       backgroundColor: "transparent",
     },
-    // LIST-01: the score badge / progress ring column, always shown.
+    // LIST-01: the score ring column, always shown.
     surveyCardIndicator: {
       width: 40,
       alignItems: "center",
@@ -84,19 +95,17 @@ export function createRowStyles(theme: BrandTheme) {
     },
     surveyCardContent: {
       flex: 1,
-      gap: 5,
+      gap: brandSpacing4.xs,
     },
     surveyCardHeader: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 6,
+      gap: brandSpacing4.sm,
     },
     surveyCardTitle: {
       flex: 1,
       ...brandTypography.input,
-      fontSize: 17,
-      lineHeight: 21,
-      fontWeight: "800",
+      lineHeight: 22,
       color: theme.colors.textPrimary,
     },
     surveyCardSelectedIcon: {
@@ -106,19 +115,15 @@ export function createRowStyles(theme: BrandTheme) {
     surveyCardStatusRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: brandSpacing4.sm,
       flexWrap: "wrap",
     },
     surveyCardMeta: {
-      ...brandTypography.meta,
-      fontSize: 12,
-      lineHeight: 14,
+      ...brandTypeScale.footnote,
       color: theme.colors.textSecondary,
     },
     surveyCardSupport: {
-      ...brandTypography.meta,
-      fontSize: 12,
-      lineHeight: 14,
+      ...brandTypeScale.footnote,
       color: theme.componentColors.surveyList.supportDangerText,
     },
     surveyCardPressed: {

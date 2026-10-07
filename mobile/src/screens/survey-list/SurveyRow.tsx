@@ -10,8 +10,7 @@ import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/surv
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppStatusChip } from "../../ui/AppStatusChip"
-import { FactorProgressRing } from "../../ui/FactorProgressRing"
-import { IbpScoreBadge } from "../../ui/IbpScoreBadge"
+import { ScoreRing } from "../../ui/ScoreRing"
 import type { AttachmentPreview } from "../survey-screen-helpers"
 import { feedback } from "../../ui/feedback"
 import { createRowStyles } from "./row-styles"
@@ -29,6 +28,8 @@ export type SurveyRowProps = {
   /** LIST-01: the submitted survey's IBP total, once known — null shows a plain "submitted" ring. */
   score: number | null
   selected: boolean
+  /** Position in the list: drives the ring's entrance stagger (rows 0 to 7 only). */
+  index?: number
   onOpen: (surveyId: string) => void
   onDelete: (surveyId: string) => void
 }
@@ -98,37 +99,44 @@ function RowPreview({
   )
 }
 
-// LIST-01: a score badge for a submitted survey with a known total, a plain completion ring
-// otherwise (submitted-but-unscored, or a draft in progress).
+// LIST-01: the score ring (12.2-11). A submitted survey with a known total gets the band-coloured
+// ring, a submitted one without a score the dashed "no score" ring, a draft a neutral arc showing
+// how many of the ten factors are filled.
 function RowIndicator({
+  surveyId,
   isSubmitted,
   score,
   completionRate,
+  index,
   styles,
 }: {
+  surveyId: string
   isSubmitted: boolean
   score: number | null
   completionRate: number
+  index: number
   styles: RowStyles
 }) {
   if (isSubmitted) {
-    if (score != null) {
-      return (
-        <View style={styles.surveyCardIndicator}>
-          <IbpScoreBadge score={score} size="sm" />
-        </View>
-      )
-    }
     return (
       <View style={styles.surveyCardIndicator}>
-        <FactorProgressRing progress={1} complete size={32} />
+        {score != null ? (
+          <ScoreRing score={score} index={index} animationKey={`${surveyId}:${score}`} />
+        ) : (
+          <ScoreRing score={null} />
+        )}
       </View>
     )
   }
   const clamped = Math.max(0, Math.min(100, completionRate))
   return (
     <View style={styles.surveyCardIndicator}>
-      <FactorProgressRing progress={clamped / 100} complete={false} size={32} />
+      <ScoreRing
+        score={null}
+        completion={clamped / 100}
+        index={index}
+        animationKey={`${surveyId}:draft:${clamped}`}
+      />
     </View>
   )
 }
@@ -143,6 +151,7 @@ function SurveyRowComponent({
   preview,
   score,
   selected,
+  index = 0,
   onOpen,
   onDelete,
 }: SurveyRowProps) {
@@ -229,9 +238,11 @@ function SurveyRowComponent({
         <View style={[styles.surveyCardAccent, accentStyles[rowTone]]} />
 
         <RowIndicator
+          surveyId={surveyId}
           isSubmitted={survey.status === "submitted"}
           score={score}
           completionRate={survey.completion_rate}
+          index={index}
           styles={styles}
         />
 
@@ -282,6 +293,7 @@ export const SurveyRow = memo(
     previous.survey === next.survey &&
     previous.score === next.score &&
     previous.selected === next.selected &&
+    previous.index === next.index &&
     previous.onOpen === next.onOpen &&
     previous.onDelete === next.onDelete &&
     previewEqual(previous.preview, next.preview),
