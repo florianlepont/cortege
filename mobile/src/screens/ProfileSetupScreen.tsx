@@ -14,10 +14,10 @@ import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
-import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
+import { GlassButton } from "../ui/GlassButton"
 import { fr } from "../i18n"
 
 const t = fr.profileSetup
@@ -141,13 +141,13 @@ export function ProfileSetupScreen({
           </View>
 
           <View style={styles.actions}>
-            <AppButton
+            <GlassButton
               label={saving ? t.saving : t.start}
               onPress={() => void handleContinue()}
               disabled={saving || !firstName.trim()}
               size="lg"
             />
-            <AppButton
+            <GlassButton
               label={t.skip}
               variant="secondary"
               onPress={onSkip}
