@@ -16,6 +16,7 @@ import { boundsFromRegion } from "../map/maplibre/regions"
 import { useOfflineAreas } from "../hooks/useOfflineAreas"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { ClusterListSheet } from "./public-map/ClusterListSheet"
+import { EdgePulse } from "./public-map/EdgePulse"
 import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
@@ -101,6 +102,10 @@ export function PublicMapScreen({
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
   const [locating, setLocating] = useState(false)
   const [showOfflineAreas, setShowOfflineAreas] = useState(false)
+  // Set once a download of the shown area has started from the open panel: the area is chosen, so
+  // the green edge goes. A refused or failed download clears it (the user moves the map and tries
+  // again); reopening the panel starts a new choice.
+  const [areaChosen, setAreaChosen] = useState(false)
   const offlineEnabled = isOfflineMapsEnabled()
   const offlineAreas = useOfflineAreas(apiUrl, accessToken, offlineEnabled)
   const readyAreaCount = offlineAreas.areas.filter((area) => area.status === "ready").length
@@ -184,14 +189,17 @@ export function PublicMapScreen({
   const openOfflineAreas = useCallback(() => {
     setSelectedParcelId(null)
     setClusterItems(null)
+    setAreaChosen(false)
     setShowOfflineAreas(true)
   }, [])
   const closeOfflineAreas = useCallback(() => setShowOfflineAreas(false), [])
   const { startDownload } = offlineAreas
   const handleDownloadArea = useCallback(
     (name: string) => {
+      setAreaChosen(true)
       void startDownload(viewport.region, name).then((outcome) => {
         if (!outcome.ok) {
+          setAreaChosen(false)
           Alert.alert(outcome.reason === "too_large" ? offlineT.tooLarge : offlineT.downloadFailed)
         }
       })
@@ -228,6 +236,9 @@ export function PublicMapScreen({
   const onLocate = useCallback(() => void handleLocate(), [handleLocate])
 
   const dockBottom = Math.max(tabBarHeight, insets.bottom)
+  // 12.2-19: download mode is the open download panel before a download starts. The map's edge
+  // glows green then, since the area shown is the one the download takes.
+  const choosingArea = showOfflineAreas && !areaChosen && offlineAreas.downloadingAreaId === null
 
   // One sheet for whichever panel is open, the offline areas included (OA-66): the same drag
   // handle and height as every other fiche of the Explorer.
@@ -274,6 +285,9 @@ export function PublicMapScreen({
         basemap={basemap}
         styleRefreshKey={readyAreaCount}
       />
+
+      {/* Over the map, under its controls and the sheet. */}
+      {choosingArea ? <EdgePulse /> : null}
 
       <MapTopControls
         top={Math.max(0, insets.top + 10 - originY)}

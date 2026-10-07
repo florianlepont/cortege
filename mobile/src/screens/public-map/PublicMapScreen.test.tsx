@@ -91,10 +91,11 @@ jest.mock("../../app/feature-flags", () => ({
 }))
 const mockStartDownload = jest.fn()
 const mockDeleteArea = jest.fn()
+const mockDownloading: { areaId: string | null } = { areaId: null }
 jest.mock("../../hooks/useOfflineAreas", () => ({
   useOfflineAreas: () => ({
     areas: [],
-    downloadingAreaId: null,
+    downloadingAreaId: mockDownloading.areaId,
     estimateForRegion: () => ({
       totalTileCount: 120,
       estimatedBytes: 2_400_000,
@@ -106,6 +107,8 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
   }),
 }))
 jest.mock("../../ui/AppStatusChip", () => ({ AppStatusChip: "AppStatusChip" }))
+// The glow's own motion (pulse, Reduce Motion, focus) is tested in EdgePulse.test.tsx.
+jest.mock("./EdgePulse", () => ({ EdgePulse: "EdgePulse" }))
 
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: () => mockLocation.requestForegroundPermissionsAsync(),
@@ -574,6 +577,70 @@ describe("PublicMapScreen", () => {
   describe("offline areas (behind the feature flag)", () => {
     afterEach(() => {
       mockOfflineEnabled.value = false
+      mockDownloading.areaId = null
+    })
+
+    const edgePulses = () =>
+      tree.root.findAll((node) => (node.type as unknown) === "EdgePulse").length
+
+    test("download mode: the map's edge glows while the area is chosen, and only then (12.2-19)", async () => {
+      mockOfflineEnabled.value = true
+      let finish: (outcome: { ok: boolean; reason?: string }) => void = () => undefined
+      mockStartDownload.mockReturnValue(
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+      )
+      const props = makeProps()
+      mount(props)
+      expect(edgePulses()).toBe(0)
+
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      expect(edgePulses()).toBe(1)
+
+      // The download starts: the area is chosen, the glow goes and stays gone once it is done.
+      const download = () =>
+        tree.root.find(
+          (node) =>
+            (node.type as unknown) === "GlassButton" &&
+            node.props.label === fr.offlineMap.areas.downloadThisArea,
+        )
+      act(() => download().props.onPress())
+      expect(edgePulses()).toBe(0)
+      await act(async () => finish({ ok: true }))
+      expect(edgePulses()).toBe(0)
+
+      // Reopened: a new choice, the glow is back; closing the panel ends the mode.
+      act(() => byLabel(fr.offlineMap.areas.a11y.closeSheet).props.onPress())
+      expect(edgePulses()).toBe(0)
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      expect(edgePulses()).toBe(1)
+
+      // A refused download leaves the mode on, to move the map and try again.
+      mockStartDownload.mockResolvedValue({ ok: false, reason: "too_large" })
+      await act(async () => download().props.onPress())
+      expect(mockAlert).toHaveBeenCalledWith(fr.offlineMap.areas.tooLarge)
+      expect(edgePulses()).toBe(1)
+
+      // A download already running (started earlier) keeps the glow off.
+      mockDownloading.areaId = "area-1"
+      update({ ...props })
+      expect(edgePulses()).toBe(0)
+    })
+
+    test("no glow over the map outside download mode (a cluster list open)", () => {
+      mockOfflineEnabled.value = true
+      mount(
+        makeProps({
+          items: [item("a", 45.76, 4.84), item("b", 45.76, 4.84)],
+          parcelStatuses: [parcelStatus("studied-1", "studied")],
+        }),
+      )
+      const cluster = markers().find(
+        (node) => node.props.accessibilityLabel === fr.publicMap.a11y.cluster(2),
+      ) as ReactTestInstance
+      act(() => cluster.props.onPress())
+      expect(edgePulses()).toBe(0)
     })
 
     test("flag off: no download button", () => {

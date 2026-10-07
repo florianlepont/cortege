@@ -6,6 +6,7 @@ import {
   buildForestImage,
   buildInsetRing,
   buildLinearGradient,
+  downloadEdgeGlow,
   forestHaloCore,
   glassCtaEdges,
   glassCtaFills,
@@ -28,6 +29,8 @@ export type BrandVisual = {
   accentText: string
   /** Moss tint of the green wave on a pressed list row (D-21). */
   pressWave: string
+  /** Inset green glow around the Explorer map in download mode (12.2-19, `EdgePulse`). */
+  edgeGlow: string
   forest: {
     image: string
     heroImage: string
@@ -136,6 +139,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
     backdrop: backdrops[scheme],
     accentText,
     pressWave: pressWaveFill[scheme],
+    edgeGlow: downloadEdgeGlow[scheme],
     forest: {
       image: buildForestImage(haloCore),
       heroImage: buildForestHeroImage(haloCore),

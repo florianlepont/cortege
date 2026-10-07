@@ -203,6 +203,20 @@ export const glassCtaSecondary = {
   },
 } as const
 
+// Download mode of the Explorer (12.2-19, owner: "le bord de l'écran s'illumine en vert, avec un
+// pulse"): the map's edge glows green, so the area shown reads as the one to download. A 2 pt inset
+// ring and a soft inset halo in a bright moss that reads over the plan and the satellite basemaps;
+// dark is a little lighter. Inset shadows only, no border (12.2-17). One token to retune after the
+// owner's phone check.
+export const downloadEdgeGlow = {
+  light: "inset 0 0 0 2px rgba(137, 163, 58, 0.95), inset 0 0 28px 8px rgba(137, 163, 58, 0.6)",
+  dark: "inset 0 0 0 2px rgba(155, 194, 106, 0.95), inset 0 0 28px 8px rgba(155, 194, 106, 0.55)",
+} as const
+
+/** Pulse of that glow: opacity from `minOpacity` to 1 and back, `halfCycleMs` each way (a 1.6 s
+ * cycle); a still `stillOpacity` under Reduce Motion. */
+export const edgePulseMotion = { halfCycleMs: 800, minOpacity: 0.35, stillOpacity: 0.85 } as const
+
 // Geometry of the chart and score components (not spacing).
 export const scoreRingGeometry = { size: 38, stroke: 4, dash: "3 4" } as const
 export const factorBarGeometry = { gap: 6, radius: 6, maxHeight: 64, stub: 4 } as const
