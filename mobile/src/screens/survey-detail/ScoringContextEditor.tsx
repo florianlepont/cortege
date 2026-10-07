@@ -14,7 +14,6 @@ import { useBrandTheme } from "../../app/theme"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../../app/vegetation"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
-import { AppCard } from "../../ui/AppCard"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppStatusChip } from "../../ui/AppStatusChip"
@@ -112,7 +111,7 @@ export function ScoringContextEditor({
     )?.label ?? activeVegetationStage
 
   return (
-    <AppCard variant="panelElevated" padding={18} style={styles.detailMetadataCard}>
+    <View style={styles.detailMetadataCard}>
       <AppSectionHeader
         title={t.contextTitle}
         subtitle={t.contextSubtitle}
@@ -226,6 +225,6 @@ export function ScoringContextEditor({
           />
         </>
       ) : null}
-    </AppCard>
+    </View>
   )
 }

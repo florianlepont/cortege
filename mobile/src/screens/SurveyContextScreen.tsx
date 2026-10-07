@@ -74,7 +74,7 @@ export function SurveyContextScreen({
       >
         {canEditSurvey ? (
           <MapActionPill
-            icon="pencil"
+            icon="pencil-outline"
             label={t.editParcels}
             accessibilityLabel={a11y.editParcels(activeSiteName)}
             onPress={() => void onOpenParcels(selectedSurvey.id)}

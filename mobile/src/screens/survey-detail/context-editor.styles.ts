@@ -1,42 +1,44 @@
 import { StyleSheet } from "react-native"
-import { brandRadius, brandShadow, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
 // Styles of the scoring context card (ScoringContextEditor, plan 01.8-14), moved out of
 // summary.styles.ts with the card.
 export function createContextEditorStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    // Glass card (variant I): same recipe as the photos card of the summary.
     detailMetadataCard: {
-      borderRadius: 28,
+      gap: brandSpacing4.smd,
+      padding: brandSpacing4.md,
+      borderRadius: brandRadius.card,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.colors.panel,
-      padding: 18,
-      gap: 12,
-      ...brandShadow.card,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
+      borderCurve: "continuous",
     },
     detailParcelsEditButton: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: brandSpacing4.xs,
       borderRadius: brandRadius.pill,
       borderWidth: 1,
       borderColor: theme.colors.divider,
       backgroundColor: theme.colors.panelMuted,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: brandSpacing4.smd,
+      paddingVertical: brandSpacing4.sm,
     },
     methodBlock: {
-      gap: 6,
+      gap: brandSpacing4.sm,
     },
     groupTitle: {
-      ...brandTypography.heroEyebrow,
+      ...brandTypography.sectionHeader,
       color: theme.colors.textSecondary,
     },
     summaryRow: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     summaryItem: {
       color: theme.semanticColors.textStrong,
@@ -55,20 +57,6 @@ export function createContextEditorStyles(theme: BrandTheme) {
     },
     switchVersionButton: {
       alignSelf: "flex-start",
-    },
-    scaleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-    },
-    scaleCopy: {
-      flex: 1,
-      gap: 2,
-    },
-    scaleLabel: {
-      ...brandTypography.label,
-      color: theme.colors.textPrimary,
     },
   })
 }
