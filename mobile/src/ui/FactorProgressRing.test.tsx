@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
-import { FactorProgressRing } from "./FactorProgressRing"
+import { defaultTheme } from "../app/theme"
+import { DEFAULT_RING_SIZE, FactorProgressRing, STROKE_WIDTH } from "./FactorProgressRing"
 
 const originalConsoleError = console.error
 
@@ -54,5 +55,42 @@ describe("FactorProgressRing (FLOW-06: ring morphs into a check mark)", () => {
     const strokeOf = (tree: renderer.ReactTestRenderer) =>
       tree.root.findAll((n) => (n.type as unknown) === "Circle")[1].props.stroke
     expect(strokeOf(empty)).not.toBe(strokeOf(error))
+  })
+})
+
+describe("FactorProgressRing score tokens (12.2-15, D-16)", () => {
+  const score = defaultTheme.visual.score
+  const circles = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAll((n) => (n.type as unknown) === "Circle")
+
+  test("the track is visual.score.track and the arc in progress visual.score.neutral", () => {
+    const tree = render({ progress: 0.5, complete: false })
+    const [track, arc] = circles(tree)
+    expect(track.props.stroke).toBe(score.track)
+    expect(arc.props.stroke).toBe(score.neutral)
+  })
+
+  test("the complete check is visual.score.high, the darker moss in light", () => {
+    const tree = render({ progress: 1, complete: true })
+    const icon = tree.root.findAll((n) => n.props.name === "checkmark-circle")[0]
+    expect(icon.props.color).toBe(score.high)
+    expect(score.high).toBe("#728A2D")
+  })
+
+  test("an invalid factor keeps the error tone", () => {
+    const tree = render({ progress: 0.3, complete: false, hasError: true })
+    expect(circles(tree)[1].props.stroke).toBe(defaultTheme.fieldState.error.icon)
+  })
+
+  test("size and stroke keep their values", () => {
+    expect(DEFAULT_RING_SIZE).toBe(28)
+    expect(STROKE_WIDTH).toBe(3)
+    const svg = render({ progress: 0.5, complete: false }).root.findAll(
+      (n) => (n.type as unknown) === "Svg",
+    )[0]
+    expect(svg.props.width).toBe(28)
+    expect(circles(render({ progress: 0.5, complete: false, size: 20 }))[0].props.strokeWidth).toBe(
+      3,
+    )
   })
 })

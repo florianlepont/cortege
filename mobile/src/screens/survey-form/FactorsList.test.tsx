@@ -5,6 +5,8 @@ import { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
 import { fr } from "../../i18n"
 import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { FACTOR_ORDER } from "./components"
+import { defaultTheme } from "../../app/theme"
+import { FACTOR_TILE_MIN_HEIGHT } from "./factors.styles"
 import { computeFactorProgress, FactorProgress, FactorsList } from "./FactorsList"
 
 const originalConsoleError = console.error
@@ -210,5 +212,41 @@ describe("computeFactorProgress (FLOW-02: untouched is neutral, not a warning)",
       sections([{ ...untouchedField("Champ obligatoire"), touched: true }]),
     )
     expect(progress.A.invalid).toBe(1)
+  })
+})
+
+describe("factor tiles in variant I glass (12.2-15)", () => {
+  type Style = Record<string, unknown>
+  const flat = (style: unknown): Style =>
+    Array.isArray(style)
+      ? style.reduce<Style>((acc, part) => ({ ...acc, ...flat(part) }), {})
+      : ((style ?? {}) as Style)
+  const tiles = () => renderList().root.findAllByType("Pressable" as unknown as React.ElementType)
+  const glass = defaultTheme.visual.glass
+
+  test("each tile is a glass card: translucent fill, hairline, radius 22, no blur", () => {
+    const style = flat(tiles()[3].props.style)
+    expect(style.backgroundColor).toBe(glass.cardFill)
+    expect(style.borderColor).toBe(glass.cardBorder)
+    expect(style.boxShadow).toBe(glass.cardShadow)
+    expect(style.borderRadius).toBe(22)
+    expect(style.borderWidth).toBe(1)
+  })
+
+  test("the tone is the hairline: complete in the score green, the fill stays glass", () => {
+    const complete = flat(tiles()[1].props.style)
+    expect(complete.borderColor).toBe(defaultTheme.visual.score.high)
+    expect(complete.backgroundColor).toBe(glass.cardFill)
+  })
+
+  test("sizes and touch targets keep their values: at least 44 pt, same width rule, 4-grid gaps", () => {
+    const style = flat(tiles()[0].props.style)
+    expect(FACTOR_TILE_MIN_HEIGHT).toBeGreaterThanOrEqual(44)
+    expect(style.minHeight).toBe(FACTOR_TILE_MIN_HEIGHT)
+    expect(style.width).toBe("30.5%")
+    expect(style.minWidth).toBe(92)
+    expect(style.paddingVertical).toBe(8)
+    expect(style.paddingHorizontal).toBe(8)
+    expect((style.gap as number) % 4).toBe(0)
   })
 })
