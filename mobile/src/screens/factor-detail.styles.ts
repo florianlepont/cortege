@@ -23,7 +23,6 @@ export function createDetailStyles(theme: BrandTheme) {
     scoreLine: {
       minHeight: SCORE_LINE_MIN_HEIGHT,
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
       borderWidth: 1,
       paddingHorizontal: brandSpacing4.md,
       flexDirection: "row",
@@ -120,7 +119,6 @@ export function createDetailStyles(theme: BrandTheme) {
       flexDirection: "row",
       gap: brandSpacing4.smd,
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
       borderWidth: 1,
       padding: brandSpacing4.smd,
       backgroundColor: theme.visual.glass.cardFill,

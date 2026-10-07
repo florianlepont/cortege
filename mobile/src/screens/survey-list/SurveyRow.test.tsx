@@ -156,13 +156,24 @@ describe("SurveyRow glass card and interactions", () => {
       borderWidth: 1,
       boxShadow: glass.cardShadow,
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
       paddingVertical: brandSpacing4.smd,
       paddingHorizontal: brandSpacing4.md,
     })
     expect(brandRadius.card).toBe(22)
     expect(style.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
     expect(style).not.toHaveProperty("elevation")
+    // 12.2-17: circular corners (RN on iOS draws the shadow and the hairline with circular arcs).
+    expect(style).not.toHaveProperty("borderCurve")
+  })
+
+  test("the press wave layer sits inside the hairline with the card's inner radius (12.2-17)", () => {
+    const { card } = mount()
+    const style = card.props.style.filter(Boolean)[0]
+    const wave = (card.children as ReactTestInstance[]).at(-1) as ReactTestInstance
+    expect(wave.props.testID).toBe("ripple-layer")
+    const layer = Object.assign({}, ...[wave.props.style].flat(2).filter(Boolean))
+    expect(layer.borderRadius).toBe(style.borderRadius - style.borderWidth)
+    expect(layer).not.toHaveProperty("borderCurve")
   })
 
   test("the row carries the green wave: touching it starts no navigation, only pressing opens", () => {

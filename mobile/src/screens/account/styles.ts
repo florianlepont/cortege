@@ -36,7 +36,6 @@ export function createIdentityStyles(theme: BrandTheme) {
       gap: brandSpacing4.smd,
       padding: brandSpacing4.md,
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
       borderWidth: 1,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,

@@ -15,7 +15,6 @@ export function createContextEditorStyles(theme: BrandTheme) {
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,
       boxShadow: theme.visual.glass.cardShadow,
-      borderCurve: "continuous",
     },
     detailParcelsEditButton: {
       flexDirection: "row",

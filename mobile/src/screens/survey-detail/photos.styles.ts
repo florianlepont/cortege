@@ -85,7 +85,6 @@ export function createPhotoStyles(theme: BrandTheme) {
     // missing photo is as big as a loaded one. Width and height come from `resolvePhotoSize`.
     photo: {
       borderRadius: PHOTO_LAYOUT.radius,
-      borderCurve: "continuous",
       borderWidth: 1,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.colors.panelMuted,
@@ -94,7 +93,6 @@ export function createPhotoStyles(theme: BrandTheme) {
     // The press target around a tile: the same box as the tile.
     photoPress: {
       borderRadius: PHOTO_LAYOUT.radius,
-      borderCurve: "continuous",
     },
     photoImage: {
       ...StyleSheet.absoluteFill,
@@ -118,7 +116,6 @@ export function createPhotoStyles(theme: BrandTheme) {
     emptyTile: {
       minHeight: PHOTO_LAYOUT.emptyHeight,
       borderRadius: PHOTO_LAYOUT.radius,
-      borderCurve: "continuous",
       borderWidth: 1.5,
       borderStyle: "dashed",
       borderColor: theme.colors.inputBorder,

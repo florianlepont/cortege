@@ -93,7 +93,7 @@ afterEach(() => {
 })
 
 describe("photo tile box (D-27b)", () => {
-  test("one radius on the 4 grid with continuous corners, and a glass hairline, whatever the size", () => {
+  test("one radius on the 4 grid with circular corners, and a glass hairline, whatever the size", () => {
     const styles = createPhotoStyles(defaultTheme)
     expect(PHOTO_LAYOUT.radius).toBe(20)
     expect(PHOTO_LAYOUT.radius % 4).toBe(0)
@@ -101,11 +101,13 @@ describe("photo tile box (D-27b)", () => {
     expect(PHOTO_LAYOUT.gap % 4).toBe(0)
     expect(styles.photo).toMatchObject({
       borderRadius: PHOTO_LAYOUT.radius,
-      borderCurve: "continuous",
       borderWidth: 1,
       borderColor: defaultTheme.visual.glass.cardBorder,
       overflow: "hidden",
     })
+    // 12.2-17: RN on iOS masks the image with circular arcs; a continuous hairline would not match.
+    expect(styles.photo).not.toHaveProperty("borderCurve")
+    expect(styles.photoPress).not.toHaveProperty("borderCurve")
     // The size is the caller's: the style itself has none.
     expect(styles.photo).not.toHaveProperty("width")
     expect(styles.photo).not.toHaveProperty("height")

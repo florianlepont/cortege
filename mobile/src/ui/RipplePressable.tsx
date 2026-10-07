@@ -198,7 +198,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     overflow: "hidden",
-    borderCurve: "continuous",
   },
   wave: {
     position: "absolute",

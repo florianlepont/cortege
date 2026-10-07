@@ -13,6 +13,14 @@ import ts from "typescript"
 // `RCTViewComponentView.mm` and `RCTBackgroundImageUtils.mm`), so a border ring around a gradient
 // shows the opposite edge of the gradient under the hairline: a flat, darker or lighter ring around
 // the card. A hairline on a gradient view is an inset ring (`buildInsetRing`) instead.
+//
+// border-curve: on iOS only the layers RN shapes through `CALayer.cornerRadius` (the background
+// colour, the gradient, a Core Animation border) follow `borderCurve`. Box shadows (outset and
+// inset, `RCTBoxShadow.mm`), a translucent hairline drawn as an image (`RCTBorderDrawing.m`), the
+// overflow clip of a view with a shadow (its container layer) and the mask of an image are built
+// with circular arcs (`RCTPathCreateWithRoundedRect`). A `borderCurve: "continuous"` card with a
+// hairline or a shadow therefore draws two different corner shapes, and the flat fill shows past
+// the hairline at the corners. Every surface keeps circular corners, so all its layers agree.
 
 type Finding = { file: string; line: number; rule: string }
 
@@ -58,6 +66,10 @@ function findBorderedGradients(files: string[]): Finding[] {
       names.includes("experimental_backgroundImage") &&
       names.some((name) => BORDER_WIDTH.test(name)),
   )
+}
+
+function findBorderCurves(files: string[]): Finding[] {
+  return findInObjects(files, "border-curve", (names) => names.includes("borderCurve"))
 }
 
 const SRC_ROOT = path.resolve(__dirname, "..")
@@ -131,6 +143,30 @@ describe("findBorderedGradients", () => {
   })
 })
 
+describe("findBorderCurves", () => {
+  it("flags a style object with a borderCurve, whatever its value", () => {
+    const file = writeFixture(
+      "card.ts",
+      [
+        'const a = { borderRadius: 22, borderCurve: "continuous", borderWidth: 1 }',
+        'const b = { "borderCurve": "circular" }',
+        "",
+      ].join("\n"),
+    )
+
+    expect(findBorderCurves([file])).toEqual([
+      { file, line: 1, rule: "border-curve" },
+      { file, line: 2, rule: "border-curve" },
+    ])
+  })
+
+  it("accepts a plain radius", () => {
+    const file = writeFixture("ok.ts", "const a = { borderRadius: 22, borderWidth: 1 }\n")
+
+    expect(findBorderCurves([file])).toEqual([])
+  })
+})
+
 describe("layer gates on mobile/src", () => {
   const files = sourceFiles(SRC_ROOT)
 
@@ -140,5 +176,9 @@ describe("layer gates on mobile/src", () => {
 
   it("has no border on a view that carries a gradient", () => {
     expect(findBorderedGradients(files)).toEqual([])
+  })
+
+  it("keeps circular corners on every surface (no borderCurve)", () => {
+    expect(findBorderCurves(files)).toEqual([])
   })
 })

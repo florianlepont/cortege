@@ -81,7 +81,6 @@ function createStyles(theme: BrandTheme) {
       borderWidth: 1,
       borderColor: theme.visual.glass.cardBorder,
       boxShadow: theme.visual.glass.cardShadow,
-      borderCurve: "continuous",
     },
     glassBorder: {
       borderWidth: 1,

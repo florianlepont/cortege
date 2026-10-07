@@ -185,7 +185,6 @@ function createStyles(theme: BrandTheme) {
     // 12.2 (D-12): a glass card, translucent fill and hairline, no blur and no elevation.
     sectionBody: {
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
       borderWidth: 1,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,

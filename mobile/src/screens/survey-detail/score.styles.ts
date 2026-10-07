@@ -78,7 +78,6 @@ export function createScoreStyles(theme: BrandTheme) {
       borderColor: hairline,
       backgroundColor: theme.visual.glass.cardFill,
       boxShadow: theme.visual.glass.cardShadow,
-      borderCurve: "continuous",
       overflow: "hidden",
     },
     row: {

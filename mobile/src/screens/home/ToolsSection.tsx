@@ -182,7 +182,6 @@ function createStyles(theme: BrandTheme) {
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,
       boxShadow: theme.visual.glass.cardShadow,
-      borderCurve: "continuous",
       paddingVertical: brandSpacing4.sm,
       paddingLeft: brandSpacing4.sm,
       paddingRight: brandSpacing4.md,

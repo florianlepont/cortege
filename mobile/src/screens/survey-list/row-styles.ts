@@ -16,6 +16,15 @@ export const ROW_STATUS_MIN_HEIGHT = 2 * 5 + 2 + brandTypography.meta.lineHeight
 /** Width of the trailing ring column of a list row (the 38 pt ring, centred). */
 export const SURVEY_ROW_RING_COLUMN = 40
 
+/** The hairline of a row card. */
+export const SURVEY_CARD_BORDER = 1
+
+/**
+ * Radius of the press wave layer of a row (12.2-17): the layer sits inside the hairline, so it takes
+ * the card's inner radius and stays concentric with the card's inner edge.
+ */
+export const SURVEY_CARD_INNER_RADIUS = brandRadius.card - SURVEY_CARD_BORDER
+
 // Survey list row styles (01.9-22), moved from SurveyListScreen. Phase 12.2-11: glass card (no
 // elevation or shadow spread: an Android elevation under a translucent fill smears grey), 4-grid
 // spacing, Sora row title.
@@ -27,8 +36,7 @@ export function createRowStyles(theme: BrandTheme) {
       gap: brandSpacing4.sm,
       minHeight: brandInteraction.hitTarget.min,
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
-      borderWidth: 1,
+      borderWidth: SURVEY_CARD_BORDER,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,
       boxShadow: theme.visual.glass.cardShadow,

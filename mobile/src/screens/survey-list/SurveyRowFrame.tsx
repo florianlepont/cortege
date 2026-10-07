@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
 import { AppText as Text } from "../../ui/AppText"
 import { RipplePressable } from "../../ui/RipplePressable"
-import { createRowStyles } from "./row-styles"
+import { createRowStyles, SURVEY_CARD_INNER_RADIUS } from "./row-styles"
 
 export type SurveyRowTone = "neutral" | "success" | "warning" | "danger"
 
@@ -49,6 +49,7 @@ export function SurveyRowFrame({
     // The press feedback is the green wave of `RipplePressable` (D-21), not a pressed fill.
     <RipplePressable
       accessibilityRole="button"
+      rippleRadius={SURVEY_CARD_INNER_RADIUS}
       {...pressableProps}
       style={[styles.surveyCard, selected ? styles.surveyCardSelected : null]}
     >

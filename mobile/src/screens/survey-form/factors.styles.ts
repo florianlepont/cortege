@@ -41,7 +41,6 @@ export function createFactorStyles(theme: BrandTheme) {
       minHeight: FACTOR_TILE_MIN_HEIGHT,
       flexGrow: 1,
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
       paddingHorizontal: brandSpacing4.sm,
       paddingVertical: brandSpacing4.sm,
       gap: brandSpacing4.xs,

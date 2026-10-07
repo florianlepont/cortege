@@ -33,7 +33,6 @@ export function createSearchStyles(theme: BrandTheme) {
       gap: brandSpacing4.sm,
       minHeight: brandInteraction.hitTarget.min,
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
       borderWidth: 1,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,

@@ -161,7 +161,6 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       borderWidth: 1,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,
-      borderCurve: "continuous",
     },
     map: {
       ...StyleSheet.absoluteFill,

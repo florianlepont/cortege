@@ -79,8 +79,9 @@ describe("AppCard", () => {
       borderColor: theme.visual.glass.cardBorder,
       boxShadow: theme.visual.glass.cardShadow,
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
     })
+    // 12.2-17: circular corners, like the hairline and the shadow RN draws for them on iOS.
+    expect(style).not.toHaveProperty("borderCurve")
     expect(brandRadius.card).toBe(22)
     expect(style).not.toHaveProperty("elevation")
     expect(style).not.toHaveProperty("shadowOpacity")

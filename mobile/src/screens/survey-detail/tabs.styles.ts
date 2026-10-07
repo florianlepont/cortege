@@ -21,7 +21,6 @@ export function createTabsStyles(theme: BrandTheme) {
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,
       boxShadow: theme.visual.glass.cardShadow,
-      borderCurve: "continuous",
     },
     eventRow: {
       gap: 4,

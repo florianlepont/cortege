@@ -178,7 +178,6 @@ function createStyles(theme: BrandTheme) {
     // The glass of a Mes Relevés card, once for the three rows.
     card: {
       borderRadius: brandRadius.card,
-      borderCurve: "continuous",
       borderWidth: RECENT_LAYOUT.cardBorder,
       borderColor: theme.visual.glass.cardBorder,
       backgroundColor: theme.visual.glass.cardFill,
@@ -187,7 +186,6 @@ function createStyles(theme: BrandTheme) {
     clip: {
       overflow: "hidden",
       borderRadius: brandRadius.card - RECENT_LAYOUT.cardBorder,
-      borderCurve: "continuous",
     },
     separator: {
       height: RECENT_LAYOUT.separator,

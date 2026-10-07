@@ -99,7 +99,6 @@ export function createWizardStyles(theme: BrandTheme) {
       gap: brandSpacing4.md,
       padding: brandSpacing4.md,
       borderRadius: 22,
-      borderCurve: "continuous",
       borderWidth: 1,
       borderColor: glass.cardBorder,
       backgroundColor: glass.cardFill,

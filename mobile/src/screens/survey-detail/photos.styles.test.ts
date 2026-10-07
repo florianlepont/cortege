@@ -77,7 +77,6 @@ describe("photo block styles", () => {
       minHeight: 96,
       borderStyle: "dashed",
       borderRadius: PHOTO_LAYOUT.radius,
-      borderCurve: "continuous",
       backgroundColor: defaultTheme.visual.glass.cardFill,
       borderColor: defaultTheme.colors.inputBorder,
     })
