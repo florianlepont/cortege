@@ -1,15 +1,14 @@
 import { memo, useMemo, useState } from "react"
-import { Pressable, View } from "react-native"
+import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import type { AreaDownloadEstimate } from "../../map/tile-math"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { createOfflineAreasStyles, createPanelStyles } from "./styles"
+import { GlassButton } from "../../ui/GlassButton"
+import { SheetCloseButton } from "./SheetCloseButton"
+import { createPanelStyles, offlineAreasStyles as areaStyles } from "./styles"
 
 const t = fr.offlineMap.areas
 
@@ -41,7 +40,6 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
   onClose,
 }: OfflineAreasSheetProps) {
   const theme = useBrandTheme()
-  const areaStyles = useMemo(() => createOfflineAreasStyles(theme), [theme])
   const styles = useMemo(() => createPanelStyles(theme), [theme])
   const [name, setName] = useState(defaultAreaName)
   const downloading = downloadingAreaId !== null
@@ -54,15 +52,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
         subtitle={t.subtitle}
         titleStyle={styles.title}
         subtitleStyle={styles.meta}
-        trailing={
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel={t.a11y.closeSheet}
-          >
-            <Ionicons name="close" size={18} color={brandColors.forest} />
-          </Pressable>
-        }
+        trailing={<SheetCloseButton accessibilityLabel={t.a11y.closeSheet} onPress={onClose} />}
       />
 
       <AppField
@@ -79,8 +69,10 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
           : t.estimate({ tiles: estimate.totalTileCount, bytes: estimate.estimatedBytes })}
       </Text>
 
-      <AppButton
+      {/* The panel's full-width action is the glass call to action (D-27c, D-28), same size. */}
+      <GlassButton
         label={downloading ? t.downloading : t.downloadThisArea}
+        size="md"
         onPress={handleDownload}
         disabled={downloading || estimate.exceedsCap}
         loading={downloading}

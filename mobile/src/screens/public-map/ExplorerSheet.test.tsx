@@ -80,6 +80,8 @@ jest.mock("react-native", () => {
 })
 jest.mock("expo-blur", () => ({ BlurView: "BlurView" }))
 
+import { brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { ExplorerSheet } from "./ExplorerSheet"
 
 function mount(props: Partial<React.ComponentProps<typeof ExplorerSheet>> = {}) {
@@ -164,5 +166,25 @@ describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
     mockPan.onPanResponderRelease({}, { dy: 20, vy: 1.2 })
     expect(onDismiss).toHaveBeenCalledTimes(2)
+  })
+
+  test("keeps its blurred background, a divider handle and 4 grid content padding (12.2-18)", () => {
+    const tree = mount({ visible: true, bottomInset: 50 })
+    expect(tree.root.findAllByType("BlurView" as never)).toHaveLength(1)
+    const handleArea = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testHandler === true,
+    )
+    const [indicator] = handleArea.findAll(
+      (node) => (node.type as unknown) === "View" && node.props.style?.height === 5,
+    )
+    expect(indicator.props.style).toMatchObject({
+      backgroundColor: defaultTheme.colors.divider,
+      borderRadius: brandRadius.pill,
+    })
+    const scroll = tree.root.findByType("ScrollView" as never)
+    const [content, extra] = scroll.props.contentContainerStyle as Record<string, number>[]
+    expect(content.paddingHorizontal).toBe(brandSpacing4.md)
+    expect(content.gap).toBe(brandSpacing4.smd)
+    expect(extra.paddingBottom).toBe(brandSpacing4.lg + 50)
   })
 })

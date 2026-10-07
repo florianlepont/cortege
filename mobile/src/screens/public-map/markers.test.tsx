@@ -36,6 +36,14 @@ jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../../ui/GlassButton", () => ({ GlassButton: "GlassButton" }))
 jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
+// The panel rows' entrance is covered by PanelRowEntrance.test.tsx and useFocusEntrance.test.tsx.
+jest.mock("../../ui/EntranceView", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    EntranceView: ({ index, children }: { index: number; children?: React.ReactNode }) =>
+      ReactRef.createElement("EntranceView", { index }, children),
+  }
+})
 jest.mock("../../ui/AppCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return {

@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native"
 import { BlurView } from "expo-blur"
-import { brandRadius } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 
 // MAP-01: the one panel of the Explorer (a selected survey, a cluster's list, a parcel's history,
@@ -127,7 +127,10 @@ export function ExplorerSheet({
           </View>
           <ScrollView
             style={styles.scroll}
-            contentContainerStyle={[styles.content, { paddingBottom: 24 + bottomInset }]}
+            contentContainerStyle={[
+              styles.content,
+              { paddingBottom: brandSpacing4.lg + bottomInset },
+            ]}
             keyboardShouldPersistTaps="handled"
           >
             {shownRef.current}
@@ -159,22 +162,23 @@ function createStyles(theme: BrandTheme) {
     },
     handleArea: {
       alignItems: "center",
-      paddingTop: 8,
-      paddingBottom: 12,
+      paddingTop: brandSpacing4.sm,
+      paddingBottom: brandSpacing4.smd,
     },
     handleIndicator: {
       width: 44,
       height: 5,
-      borderRadius: 3,
+      borderRadius: brandRadius.pill,
       backgroundColor: theme.colors.divider,
     },
     scroll: {
       flexGrow: 0,
     },
+    // 12.2-18: the panels sit on the 4 grid, at the page margin of the other screens.
     content: {
-      paddingHorizontal: 18,
-      paddingBottom: 24,
-      gap: 12,
+      paddingHorizontal: brandSpacing4.md,
+      paddingBottom: brandSpacing4.lg,
+      gap: brandSpacing4.smd,
     },
   })
 }

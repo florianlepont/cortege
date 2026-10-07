@@ -121,35 +121,17 @@ export function createControlStyles(theme: BrandTheme) {
   })
 }
 
-export function createOfflineAreasStyles(theme: BrandTheme) {
-  return StyleSheet.create({
-    nameField: {
-      gap: 5,
-    },
-    warning: {
-      ...brandTypography.meta,
-      color: brandColors.terracotta,
-    },
-    list: {
-      marginTop: 4,
-    },
-    row: {
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.divider,
-      paddingVertical: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-    },
-    rowInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    deleteButton: {
-      padding: 6,
-    },
-  })
-}
+// The offline areas panel (12.2-18): its list of areas moved to Paramètres (OA-123), so only the
+// name field and the size warning are styled here; theme-invariant.
+export const offlineAreasStyles = StyleSheet.create({
+  nameField: {
+    gap: brandSpacing4.xs,
+  },
+  warning: {
+    ...brandTypography.meta,
+    color: brandColors.terracotta,
+  },
+})
 
 export function createOfflineIndicatorStyles(theme: BrandTheme) {
   return StyleSheet.create({
@@ -219,19 +201,6 @@ export function createPanelStyles(theme: BrandTheme) {
     },
     rows: {
       gap: brandSpacing4.sm,
-    },
-    clusterRow: {
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.divider,
-      paddingVertical: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
-    },
-    clusterRowText: {
-      ...brandTypography.meta,
-      color: theme.colors.textPrimary,
     },
   })
 }

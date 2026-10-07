@@ -137,6 +137,14 @@ jest.mock("../../ui/GlassButton", () => {
   }
 })
 jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
+// The panel rows' entrance is covered by PanelRowEntrance.test.tsx and useFocusEntrance.test.tsx.
+jest.mock("../../ui/EntranceView", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    EntranceView: ({ index, children }: { index: number; children?: React.ReactNode }) =>
+      ReactRef.createElement("EntranceView", { index }, children),
+  }
+})
 jest.mock("../../ui/AppCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -384,10 +392,26 @@ describe("PublicMapScreen", () => {
       String(node.props.testID ?? "").startsWith("parcel-history-open-"),
     )
     expect(rows.length).toBeGreaterThan(0)
-    const latest = tree.root.find((node) => node.props.testID === "parcel-history-open-s-new")
+    // The row is the shared survey row frame (12.2-18): its pressable carries the role.
+    const latest = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "Pressable" && node.props.testID === "parcel-history-open-s-new",
+    )
     expect(latest.props.accessibilityRole).toBe("button")
     act(() => latest.props.onPress())
     expect(props.onOpenSurvey).toHaveBeenCalledWith("s-new")
+    // 12.2-18: each row carries its ring (trailing column of the shared row) and enters in order.
+    const rings = tree.root.findAll((node) => (node.type as unknown) === "ScoreRing")
+    expect(
+      rings.map((ring) => [ring.props.score, ring.props.index, ring.props.animationKey]),
+    ).toEqual([
+      [24, 0, "s-old:24"],
+      [28, 1, "s-new:28"],
+    ])
+    const entrances = tree.root.findAll((node) => (node.type as unknown) === "EntranceView")
+    expect(entrances.map((node) => node.props.index)).toEqual([0, 1])
+    expect(texts()).toContain(fr.parcelHistory.total(28))
+    expect(texts()).toContain(fr.parcelHistory.delta.total(4))
   })
 
   test("selecting an own survey shows a notice instead of a report entry point (Phase 2: removed)", () => {
@@ -467,7 +491,7 @@ describe("PublicMapScreen", () => {
 
     const downloadButton = tree.root.find(
       (node) =>
-        (node.type as unknown) === "AppButton" &&
+        (node.type as unknown) === "GlassButton" &&
         node.props.label === fr.offlineMap.parcelMissing.downloadAction,
     )
     await act(async () => {
@@ -484,7 +508,7 @@ describe("PublicMapScreen", () => {
     expect(
       tree.root.findAll(
         (node) =>
-          (node.type as unknown) === "AppButton" &&
+          (node.type as unknown) === "GlassButton" &&
           node.props.label === fr.offlineMap.parcelMissing.downloadAction,
       ),
     ).toHaveLength(0)
@@ -592,7 +616,7 @@ describe("PublicMapScreen", () => {
       expect(texts()).not.toContain(fr.offlineMap.areas.empty)
       const download = tree.root.find(
         (node) =>
-          (node.type as unknown) === "AppButton" &&
+          (node.type as unknown) === "GlassButton" &&
           node.props.label === fr.offlineMap.areas.downloadThisArea,
       )
       await act(async () => {
