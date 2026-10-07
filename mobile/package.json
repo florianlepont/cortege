@@ -21,6 +21,7 @@
   "dependencies": {
     "@bottom-tabs/react-navigation": "^1.4.0",
     "@cortege/ibp-domain": "*",
+    "@expo/ui": "~57.0.19",
     "@expo/vector-icons": "^15.0.2",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@maplibre/maplibre-react-native": "^11.4.0",
@@ -81,6 +82,13 @@
     "ts-jest": "^29.4.6"
   },
   "expo": {
+    "autolinking": {
+      "android": {
+        "exclude": [
+          "@expo/ui"
+        ]
+      }
+    },
     "doctor": {
       "reactNativeDirectoryCheck": {
         "exclude": [
