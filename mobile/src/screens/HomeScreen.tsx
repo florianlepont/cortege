@@ -5,7 +5,6 @@ import { AppText as Text } from "../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandOnDarkColors } from "../app/brand-tokens"
 import { brandRadius } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { getFirstName } from "./home/first-name"
@@ -15,7 +14,6 @@ import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
 import type { AuthUser } from "../app/types"
 import type { LocalSurvey } from "../storage/types"
 import type { SurveyStats } from "../app/types"
-import { AppButton } from "../ui/AppButton"
 import { AppNotice } from "../ui/AppNotice"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
 import type { NearbyParcelsState } from "../hooks/useNearbyParcels"
@@ -24,6 +22,7 @@ import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { Skeleton } from "../ui/Skeleton"
 import { SyncStatusLine } from "../ui/SyncStatusLine"
 import { NearbyMapCard } from "./home/NearbyMapCard"
+import { ResumeCard } from "./home/ResumeCard"
 import { ToolsSection } from "./home/ToolsSection"
 import { createStyles } from "./home/styles"
 
@@ -128,9 +127,6 @@ export function HomeScreen({
   const isBlockedAlert = surveyStats.blocked > 0
   const alertSurvey = hasAlerts ? pickAlertSurvey(surveys) : null
   const resumeDraft = pickResumeDraft(surveys)
-  const resumeFactors = resumeDraft
-    ? Math.round(Math.max(0, Math.min(100, resumeDraft.completion_rate)) / 10)
-    : 0
   // LIST-07: threads last_sync_error_code through, like SurveyRow/DetailActions already do, so
   // the same survey never shows two different error messages depending on which screen renders it.
   const failedAlertMessage = alertSurvey
@@ -263,56 +259,12 @@ export function HomeScreen({
         ) : null}
 
         {/* ── Hero CTA (HOME-02: resume a recent draft, or start a new one) ──── */}
-        <View style={styles.heroCta}>
-          <Text style={styles.heroEyebrow}>
-            {resumeDraft ? fr.home.hero.resumeEyebrow : fr.home.hero.eyebrow}
-          </Text>
-          <Text style={styles.heroTitle}>
-            {resumeDraft
-              ? resumeDraft.site_name
-                ? fr.home.hero.resumeTitle({ name: resumeDraft.site_name })
-                : fr.home.hero.resumeTitleUnnamed
-              : fr.home.hero.title}
-          </Text>
-          <Text style={styles.heroBody}>
-            {resumeDraft
-              ? fr.home.hero.resumeBody({ completed: resumeFactors })
-              : fr.home.hero.body}
-          </Text>
-          {resumeDraft ? (
-            <View style={styles.progressRow} accessible={false}>
-              {Array.from({ length: 10 }, (_, index) => (
-                <View
-                  key={index}
-                  testID={index < resumeFactors ? "hero-progress-done" : "hero-progress-todo"}
-                  style={[
-                    styles.progressSegment,
-                    index < resumeFactors ? styles.progressSegmentDone : null,
-                  ]}
-                />
-              ))}
-            </View>
-          ) : null}
-          <AppButton
-            label={resumeDraft ? fr.home.hero.resumeButton : fr.home.hero.button}
-            leadingIcon={resumeDraft ? "play-outline" : "add"}
-            size="lg"
-            variant="primary"
-            onPress={resumeDraft ? () => onOpenSurvey(resumeDraft.id) : onCreateSurvey}
-            style={styles.heroButton}
-            labelStyle={styles.heroButtonLabel}
+        <View style={styles.block}>
+          <ResumeCard
+            resumeDraft={resumeDraft}
+            onResume={onOpenSurvey}
+            onCreateSurvey={onCreateSurvey}
           />
-          {resumeDraft ? (
-            <Pressable
-              style={styles.heroLink}
-              onPress={onCreateSurvey}
-              accessibilityRole="button"
-              accessibilityLabel={fr.home.hero.newSurveyButton}
-            >
-              <Ionicons name="add" size={18} color={brandOnDarkColors.heroBodyOnDark} />
-              <Text style={styles.heroLinkLabel}>{fr.home.hero.newSurveyButton}</Text>
-            </Pressable>
-          ) : null}
         </View>
 
         {/* ── Outils (OA-107) ───────────────────────── */}

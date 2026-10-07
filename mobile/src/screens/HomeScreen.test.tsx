@@ -47,6 +47,7 @@ jest.mock("react-native-safe-area-context", () => ({
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
+jest.mock("../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
 jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
 jest.mock("../ui/SyncStatusLine", () => ({ SyncStatusLine: "SyncStatusLine" }))
 jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))

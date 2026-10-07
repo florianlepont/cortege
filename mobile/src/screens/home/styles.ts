@@ -1,11 +1,5 @@
-import { Platform, StyleSheet } from "react-native"
-import {
-  brandColors,
-  brandOnDarkColors,
-  brandRadius,
-  brandSpacing,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { StyleSheet } from "react-native"
+import { brandRadius, brandSpacing, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
 const PAGE_H = 20
@@ -80,84 +74,9 @@ export function createStyles(theme: BrandTheme) {
       marginBottom: 16,
     },
 
-    // Hero CTA
-    heroCta: {
+    // The resume card block (ResumeCard draws the card itself).
+    block: {
       marginHorizontal: PAGE_H,
-      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
-      backgroundColor: theme.semanticColors.heroSurface,
-      borderWidth: 1,
-      borderColor: theme.semanticColors.heroBorder,
-      borderRadius: brandRadius.card,
-      padding: 24,
-      paddingBottom: 28,
-      gap: 8,
-      overflow: "hidden",
-      ...Platform.select({
-        ios: {
-          shadowColor: theme.colors.black,
-          shadowOpacity: 0.15,
-          shadowRadius: 20,
-          shadowOffset: { width: 0, height: 8 },
-        },
-        android: { elevation: 4 },
-      }),
-    },
-    heroEyebrow: {
-      fontSize: 12,
-      fontWeight: "800",
-      letterSpacing: 1.5,
-      color: theme.semanticColors.accent,
-      textTransform: "uppercase",
-    },
-    heroTitle: {
-      fontSize: 26,
-      fontWeight: "900",
-      // OA-83: canvas was light text on the forest hero in light mode only; the hero stays forest in
-      // both themes, so its text is a fixed light tone.
-      color: brandOnDarkColors.heroBodyOnDark,
-      lineHeight: 30,
-    },
-    heroBody: {
-      ...brandTypography.sectionBody,
-      color: brandOnDarkColors.heroBodyOnDark,
-      marginBottom: 4,
-    },
-    // OA-84: in light mode the hero and ctaPrimary are both forest, which hid the button; the
-    // primary action is a light button on the forest hero (dark mode keeps its lime accent).
-    heroButton: {
-      backgroundColor:
-        theme.scheme === "dark" ? theme.semanticColors.ctaPrimary : brandColors.white,
-      marginTop: 4,
-    },
-    heroButtonLabel: {
-      color: theme.scheme === "dark" ? theme.semanticColors.onCtaPrimary : brandColors.forest,
-    },
-    // The draft's progress: ten segments, one per factor.
-    progressRow: {
-      flexDirection: "row",
-      gap: 4,
-      marginVertical: 8,
-    },
-    progressSegment: {
-      flex: 1,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: brandOnDarkColors.heroPanelBorderOnDark,
-    },
-    progressSegmentDone: {
-      backgroundColor: theme.semanticColors.accent,
-    },
-    // HOME-02: "Nouveau relevé" is a plain link once the primary CTA becomes "Reprendre".
-    heroLink: {
-      minHeight: 44,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 6,
-    },
-    heroLinkLabel: {
-      ...brandTypography.button,
-      color: brandOnDarkColors.heroBodyOnDark,
     },
 
     // Sections
