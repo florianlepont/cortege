@@ -1,36 +1,44 @@
 import { StyleSheet } from "react-native"
-import {
-  brandColors,
-  brandOnDarkColors,
-  brandRadius,
-  brandSpacing,
-  brandTypography,
-} from "../app/brand-tokens"
+import { brandOnDarkColors, brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme } from "../app/theme"
 
-/** OA-30: the factor screen is the input first. No hero, the score on one line, the help behind a link. */
+// Field sizes (D-05): the score line and the help link keep their heights.
+export const SCORE_LINE_MIN_HEIGHT = 52
+export const HELP_LINK_MIN_HEIGHT = 44
+
+/**
+ * OA-30: the factor screen is the input first. No hero, the score on one line, the help behind a
+ * link. Phase 12.2 (variant I): the input card (AppCard `glass`), the pending score line and the
+ * help hints are glass without blur (D-12) at the card radius, block gaps on the 4-grid. The input
+ * chrome (`fieldBlock`, `fieldLabel`, `input`) keeps its legacy roles (UI-SPEC Typography exception).
+ */
 export function createDetailStyles(theme: BrandTheme) {
   return StyleSheet.create({
     screen: {
-      gap: brandSpacing.md,
+      gap: brandSpacing4.md,
     },
     panel: {
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
     scoreLine: {
-      minHeight: 52,
-      borderRadius: 16,
-      paddingHorizontal: 16,
+      minHeight: SCORE_LINE_MIN_HEIGHT,
+      borderRadius: brandRadius.card,
+      borderCurve: "continuous",
+      borderWidth: 1,
+      paddingHorizontal: brandSpacing4.md,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
+    // A scored factor keeps its soft green (the state reads at a glance); the hairline melts in.
     scoreLineFilled: {
       backgroundColor: theme.colors.successSoft,
+      borderColor: theme.colors.successSoft,
     },
     scoreLinePending: {
-      backgroundColor: theme.colors.panelMuted,
+      backgroundColor: theme.visual.glass.cardFill,
+      borderColor: theme.visual.glass.cardBorder,
     },
     scoreLineText: {
       flex: 1,
@@ -43,18 +51,18 @@ export function createDetailStyles(theme: BrandTheme) {
       color: theme.semanticColors.textStrong,
     },
     helpLink: {
-      minHeight: 44,
+      minHeight: HELP_LINK_MIN_HEIGHT,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      paddingHorizontal: 4,
+      gap: brandSpacing4.sm,
+      paddingHorizontal: brandSpacing4.xs,
     },
     helpLinkText: {
       ...brandTypography.button,
       color: theme.semanticColors.textStrong,
     },
     fieldsList: {
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
     fieldBlock: {
       gap: 6,
@@ -81,7 +89,7 @@ export function createDetailStyles(theme: BrandTheme) {
       paddingHorizontal: 20,
       paddingTop: 16,
       paddingBottom: 34,
-      gap: 14,
+      gap: brandSpacing4.md,
     },
     sheetHeader: {
       flexDirection: "row",
@@ -106,21 +114,25 @@ export function createDetailStyles(theme: BrandTheme) {
       color: theme.colors.textPrimary,
     },
     hintsList: {
-      gap: 10,
+      gap: brandSpacing4.smd,
     },
     hintRow: {
       flexDirection: "row",
-      gap: 10,
-      borderRadius: brandRadius.field,
-      padding: 12,
-      backgroundColor: theme.semanticColors.surfaceElevated,
+      gap: brandSpacing4.smd,
+      borderRadius: brandRadius.card,
+      borderCurve: "continuous",
+      borderWidth: 1,
+      padding: brandSpacing4.smd,
+      backgroundColor: theme.visual.glass.cardFill,
+      borderColor: theme.visual.glass.cardBorder,
     },
+    // D-16: the score green (darker moss in light), not the brand moss.
     hintDot: {
       width: 8,
       height: 8,
       marginTop: 7,
       borderRadius: 4,
-      backgroundColor: brandColors.moss,
+      backgroundColor: theme.visual.score.high,
     },
     hintText: {
       flex: 1,

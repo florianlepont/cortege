@@ -3,7 +3,13 @@ import renderer, { act } from "react-test-renderer"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, type IbpMethodVersion } from "@cortege/ibp-domain"
 import type { FactorField, FactorKey } from "../app/types"
 import { fr } from "../i18n"
+import { defaultTheme } from "../app/theme"
 import { FactorDetailScreen } from "./FactorDetailScreen"
+import {
+  createDetailStyles,
+  HELP_LINK_MIN_HEIGHT,
+  SCORE_LINE_MIN_HEIGHT,
+} from "./factor-detail.styles"
 
 const originalConsoleError = console.error
 
@@ -40,8 +46,15 @@ jest.mock("react-native", () => {
 jest.mock("../ui/AppCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
-    AppCard: ({ children }: { children?: React.ReactNode }) =>
-      ReactRef.createElement("AppCard", null, children),
+    AppCard: ({
+      children,
+      variant,
+      padding,
+    }: {
+      children?: React.ReactNode
+      variant?: string
+      padding?: number
+    }) => ReactRef.createElement("AppCard", { variant, padding }, children),
   }
 })
 
@@ -257,5 +270,87 @@ describe("FactorDetailScreen fields", () => {
   test("H renders no AppField (segmented variant, 0/2/5 only)", () => {
     const { inputs } = renderDetail("H", [field("class_score")], IBP_METHOD_V3_2)
     expect(inputs).toHaveLength(0)
+  })
+})
+
+describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15)", () => {
+  type Style = Record<string, unknown>
+  const flat = (style: unknown): Style =>
+    Array.isArray(style)
+      ? style.reduce<Style>((acc, part) => ({ ...acc, ...flat(part) }), {})
+      : ((style ?? {}) as Style)
+  const glass = defaultTheme.visual.glass
+  const renderPlain = (retainedScore: { selected_class: string; score: number } | null) => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor="F"
+          fields={[field("trees_per_ha")]}
+          retainedScore={retainedScore as never}
+          methodVersion={IBP_METHOD_V3_2}
+        />,
+      )
+    })
+    return tree
+  }
+  const scoreLine = (tree: renderer.ReactTestRenderer) =>
+    flat(
+      tree.root.findAll(
+        (n) => (n.type as unknown) === "View" && n.props.testID === "factor-score-line",
+      )[0].props.style,
+    )
+
+  test("the input card is the glass card, padding 16 kept", () => {
+    const card = renderPlain(null).root.findAllByType("AppCard" as unknown as React.ElementType)[0]
+    expect(card.props.variant).toBe("glass")
+    expect(card.props.padding).toBe(16)
+  })
+
+  test("the pending score line is glass at the card radius and keeps its 52 pt", () => {
+    const style = scoreLine(renderPlain(null))
+    expect(style.backgroundColor).toBe(glass.cardFill)
+    expect(style.borderColor).toBe(glass.cardBorder)
+    expect(style.borderRadius).toBe(22)
+    expect(SCORE_LINE_MIN_HEIGHT).toBe(52)
+    expect(style.minHeight).toBe(52)
+  })
+
+  test("a scored factor keeps its soft green line", () => {
+    const style = scoreLine(renderPlain({ selected_class: "S2", score: 2 }))
+    expect(style.backgroundColor).toBe(defaultTheme.colors.successSoft)
+    expect(style.minHeight).toBe(52)
+  })
+
+  test("the help link keeps its 44 pt target", () => {
+    const link = renderPlain(null).root.findAll(
+      (n) =>
+        (n.type as unknown) === "Pressable" &&
+        n.props.accessibilityLabel === fr.factorDetail.helpLink,
+    )[0]
+    expect(HELP_LINK_MIN_HEIGHT).toBe(44)
+    expect(flat(link.props.style).minHeight).toBe(44)
+  })
+
+  test("the help hints are glass rows, block gaps on the 4-grid, input chrome untouched", () => {
+    const styles = createDetailStyles(defaultTheme)
+    expect(styles.hintRow.backgroundColor).toBe(glass.cardFill)
+    expect(styles.hintRow.borderColor).toBe(glass.cardBorder)
+    expect(styles.hintRow.borderRadius).toBe(22)
+    expect(styles.hintDot.backgroundColor).toBe(defaultTheme.visual.score.high)
+    for (const gap of [
+      styles.screen.gap,
+      styles.panel.gap,
+      styles.fieldsList.gap,
+      styles.hintsList.gap,
+      styles.sheet.gap,
+    ]) {
+      expect((gap as number) % 4).toBe(0)
+    }
+    // UI-SPEC Typography exception: the field input chrome keeps its legacy roles.
+    expect(styles.fieldLabel.fontFamily).toBe("Sora-ExtraBold")
+    expect(styles.input).toEqual({ paddingHorizontal: 14, paddingVertical: 12 })
+    expect(styles.sheetClose.width).toBe(44)
+    expect(styles.sheetClose.height).toBe(44)
   })
 })
