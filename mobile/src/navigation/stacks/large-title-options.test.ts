@@ -93,8 +93,8 @@ describe("nativeLargeTitle", () => {
       mockPlatform.Version = version
       const options = nativeLargeTitle(defaultTheme)
       // Owner, batch 3 round 2: a blur behind the collapsed title, on every iOS version.
-      expect(options.headerBlurEffect).toBe("systemChromeMaterial")
-      expect(COLLAPSED_BAR_BLUR).toBe("systemChromeMaterial")
+      expect(options.headerBlurEffect).toBe("systemMaterial")
+      expect(COLLAPSED_BAR_BLUR).toBe("systemMaterial")
       if (hidesEdge) {
         // Only the top edge: the bottom edge (the tab bar) keeps the system default.
         expect(options.scrollEdgeEffects).toEqual({ top: "hidden" })
@@ -114,7 +114,7 @@ describe("nativeLargeTitle", () => {
     mockPlatform.OS = "android"
     mockPlatform.Version = 34
     const options = nativeLargeTitle(defaultTheme)
-    expect(options.headerBlurEffect).toBe("systemChromeMaterial")
+    expect(options.headerBlurEffect).toBe("systemMaterial")
     expect(options).not.toHaveProperty("scrollEdgeEffects")
   })
 })

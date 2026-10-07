@@ -52,8 +52,12 @@ export const hiddenNativeTitle = {
   headerTitleStyle: { color: "transparent" },
 } as const
 
-/** The material of the collapsed bar, the system's own navigation bar material (per scheme). */
-export const COLLAPSED_BAR_BLUR = "systemChromeMaterial" as const
+/**
+ * The material of the collapsed bar (per scheme). `systemMaterial` rather than the bar's usual
+ * chrome material: seen on the simulator, the chrome one is nearly opaque and read as a white band
+ * over the halo; this one still blurs the rows passing under it while keeping the title readable.
+ */
+export const COLLAPSED_BAR_BLUR = "systemMaterial" as const
 
 /** iOS 26 and later can draw a scroll edge effect under the bar (Liquid Glass). */
 function hasSystemScrollEdgeEffect(): boolean {

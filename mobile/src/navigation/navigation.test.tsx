@@ -260,7 +260,7 @@ function expectHaloHeader(options: Options) {
   const { headerBlurEffect: _blur, ...transparent } = HALO_HEADER
   expect(options).toEqual(expect.objectContaining(transparent))
   expect(options.headerBlurEffect).toBe(
-    options.headerLargeTitleEnabled === true ? "systemChromeMaterial" : "none",
+    options.headerLargeTitleEnabled === true ? "systemMaterial" : "none",
   )
 }
 
