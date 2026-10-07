@@ -23,7 +23,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phases 1 through 22 are complete (owner acceptance closed 2026-10-06). Phase 23 (Visual Modernisation) is in progress. Then Phase 24 (Home nearby parcels and survey history split, SEED-004 and SEED-002), Phase 27 (UX/UI audit and design system update) and Phase 28 (in-depth quality audit) come before Phase 28 (Field Validation), which carries the device checks deferred from Phases 15, 17, 18 and 19. The roadmap was renumbered flat on 2026-10-07; see `.planning/ROADMAP.md` for the old-to-new table.
+**Current focus:** Phases 1 through 22 are complete (owner acceptance closed 2026-10-06). Phase 23 (Visual Modernisation) is in progress. Then Phase 24 (survey history split, SEED-002), Phase 25 (global search, SEED-003), Phase 26 (UX/UI audit and design system update) and Phase 27 (in-depth quality audit) come before Phase 28 (Field Validation), which carries the device checks deferred from Phases 15, 17, 18 and 19. The roadmap was renumbered flat on 2026-10-07; see `.planning/ROADMAP.md` for the old-to-new table.
 
 ## Current Position
 
