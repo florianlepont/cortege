@@ -1,10 +1,12 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import * as reanimated from "../../../test/react-native-reanimated.mock"
-import { brandMotion, brandRadius } from "../../app/brand-tokens"
+import { brandMotion, brandRadius, brandTypography } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
+import { glowBarGeometry, numeralGeometry } from "../../app/visual-tokens"
 import { fr } from "../../i18n"
 import { ScoreCard } from "./ScoreCard"
+import { createSummaryScreenStyles } from "./summary-screen.styles"
 
 const originalConsoleError = console.error
 
@@ -180,5 +182,58 @@ describe("ScoreCard", () => {
       opacity: 1,
       transform: [{ translateY: 0 }],
     })
+  })
+})
+
+describe("ScoreCard height (D-24)", () => {
+  const styles = createSummaryScreenStyles(defaultTheme)
+  const num = (value: unknown): number => (typeof value === "number" ? value : 0)
+  const footnoteLine = 18
+
+  // The vertical stack of the card, from its styles (the Jest renderer does not run Yoga).
+  function stackHeight(withHint: boolean): number {
+    const tile =
+      2 * num(styles.scoreTile.paddingVertical) +
+      footnoteLine +
+      num(styles.scoreTile.gap) +
+      brandTypography.input.lineHeight
+    return (
+      2 * num(styles.scoreContent.padding) +
+      brandTypography.label.lineHeight +
+      num(styles.scoreNumeral.marginTop) +
+      numeralGeometry.height +
+      num(styles.scoreBar.marginTop) +
+      glowBarGeometry.height +
+      num(styles.scoreTiles.marginTop) +
+      tile +
+      (withHint ? num(styles.scoreHint.marginTop) + brandTypography.meta.lineHeight : 0)
+    )
+  }
+
+  // Before the correction: 24 pt padding, 68 pt numeral (76 pt box), 12 and 16 pt gaps, 12 pt tiles.
+  const PREVIOUS_WITH_HINT = 272
+  const PREVIOUS_WITHOUT_HINT = 244
+
+  test("is 15 to 20 percent shorter than before, with and without the hint", () => {
+    const withHint = stackHeight(true)
+    const withoutHint = stackHeight(false)
+    expect(1 - withHint / PREVIOUS_WITH_HINT).toBeGreaterThanOrEqual(0.15)
+    expect(1 - withHint / PREVIOUS_WITH_HINT).toBeLessThanOrEqual(0.2)
+    expect(1 - withoutHint / PREVIOUS_WITHOUT_HINT).toBeGreaterThanOrEqual(0.15)
+    expect(1 - withoutHint / PREVIOUS_WITHOUT_HINT).toBeLessThanOrEqual(0.2)
+  })
+
+  test("keeps the 4 grid and a legible numeral", () => {
+    for (const value of [
+      styles.scoreContent.padding,
+      styles.scoreBar.marginTop,
+      styles.scoreTiles.marginTop,
+      styles.scoreTile.paddingVertical,
+      styles.scoreHint.marginTop,
+    ]) {
+      expect(num(value) % 4).toBe(0)
+    }
+    expect(brandTypography.numeralCard.fontSize).toBeGreaterThanOrEqual(52)
+    expect(brandTypography.numeralCard.fontFamily).toBe("Sora-Light")
   })
 })

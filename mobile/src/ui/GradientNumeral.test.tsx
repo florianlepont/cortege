@@ -78,17 +78,39 @@ describe("GradientNumeral", () => {
     expect(new Set(ids).size).toBe(2)
   })
 
-  test("the numeral is Sora Light 68 and the unit a sage TSpan", () => {
+  test("the numeral is Sora Light 56 and the unit a sage TSpan", () => {
     const tree = render()
     const text = byType(tree, "Text")[0]
     expect(text.props.fontFamily).toBe(brandTypography.numeral.fontFamily)
     expect(text.props.fontFamily).toBe("Sora-Light")
-    expect(text.props.fontSize).toBe(68)
+    expect(text.props.fontSize).toBe(56)
     expect(text.props.y).toBe(numeralGeometry.baseline)
     const unit = byType(tree, "TSpan")[0]
     expect(unit.props.fontFamily).toBe(brandTypography.numeralUnit.fontFamily)
     expect(unit.props.fill).toBe(defaultTheme.visual.forest.sage)
     expect(unit.props.children).toBe("/50")
+  })
+
+  test("the unit shares the numeral baseline and keeps a clear gap after the last digit", () => {
+    const unit = byType(render(), "TSpan")[0]
+    // Same baseline: no vertical shift on the unit.
+    expect(unit.props.dy).toBeUndefined()
+    expect(unit.props.y).toBeUndefined()
+    // The negative letter spacing is added back, so the clear gap is the token (10 pt), not 3 pt.
+    expect(brandTypography.numeralCard.letterSpacing).toBeLessThan(0)
+    expect(unit.props.dx - Math.abs(brandTypography.numeralCard.letterSpacing)).toBe(
+      numeralGeometry.unitGap,
+    )
+    expect(numeralGeometry.unitGap).toBeGreaterThanOrEqual(8)
+  })
+
+  test("the Svg is tall enough for the numeral and keeps room under the baseline", () => {
+    expect(numeralGeometry.baseline).toBeGreaterThan(brandTypography.numeralCard.fontSize * 0.85)
+    expect(numeralGeometry.height - numeralGeometry.baseline).toBeGreaterThanOrEqual(8)
+    // The unit fits in the room after the digits.
+    expect(numeralGeometry.unitWidth).toBeGreaterThan(
+      numeralGeometry.unitGap + Math.abs(brandTypography.numeralCard.letterSpacing) + 40,
+    )
   })
 
   test("the Svg is sized from the digit count and hidden from assistive tech", () => {
@@ -109,9 +131,11 @@ describe("GradientNumeral", () => {
     expect(flatten(numeral.props.style)).toMatchObject({
       color: defaultTheme.visual.forest.numeralFallback,
       fontFamily: "Sora-Light",
-      fontSize: 68,
+      fontSize: 56,
     })
     expect(flatten(unit.props.style).color).toBe(defaultTheme.visual.forest.sage)
+    expect(flatten(unit.props.style).marginLeft).toBe(numeralGeometry.unitGap)
+    expect(flatten(byType(tree, "View")[0].props.style).alignItems).toBe("baseline")
     expect(numeral.props.accessible).toBe(false)
     expect(unit.props.accessible).toBe(false)
   })

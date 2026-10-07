@@ -132,4 +132,12 @@ export const contourDrift = {
   mossWidth: 1.4,
 } as const
 export const tabDot = { size: 4 } as const
-export const numeralGeometry = { digitWidth: 42, unitWidth: 64, height: 76, baseline: 62 } as const
+// The card numeral is `brandTypography.numeralCard` (56). `unitGap` is the clear gap between the last
+// digit and the unit: the negative letter spacing already pulls the unit in, so it is added back.
+export const numeralGeometry = {
+  digitWidth: 35,
+  unitWidth: 64,
+  unitGap: 10,
+  height: 62,
+  baseline: 51,
+} as const

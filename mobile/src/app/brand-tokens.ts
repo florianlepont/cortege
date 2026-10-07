@@ -115,6 +115,14 @@ export const brandTypography = {
     fontFamily: "Sora-Light",
     letterSpacing: -3.4,
   },
+  // The numeral of the survey summary's forest card, one notch under `numeral` (D-24: a card about
+  // 18 percent shorter). The Score page keeps the 68 pt `numeral`.
+  numeralCard: {
+    fontSize: 56,
+    lineHeight: 60,
+    fontFamily: "Sora-Light",
+    letterSpacing: -2.8,
+  },
   numeralUnit: {
     fontSize: 20,
     lineHeight: 24,

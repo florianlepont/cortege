@@ -15,8 +15,6 @@ export type NumeralRenderMode = "gradient" | "solid"
  */
 export const NUMERAL_RENDER_MODE: NumeralRenderMode = "gradient"
 
-const UNIT_GAP = 6
-
 type GradientNumeralProps = {
   value: number | null
   /** Catalogue text such as the "out of 50" unit; this file holds no literal text. */
@@ -26,7 +24,7 @@ type GradientNumeralProps = {
 }
 
 /**
- * The score numeral of the forest card (Sora Light 68, white to #C8DDA0 gradient, sage unit).
+ * The score numeral of the forest card (Sora Light 56, white to #C8DDA0 gradient, sage unit).
  * Decoration for assistive tech: the parent card owns the one accessibility label. SVG text does
  * not follow Dynamic Type (UI-SPEC Typography exception).
  */
@@ -46,7 +44,7 @@ export function GradientNumeral({
       <View style={styles.row} testID={testID}>
         <AppText
           accessible={false}
-          style={[brandTypography.numeral, { color: theme.visual.forest.numeralFallback }]}
+          style={[brandTypography.numeralCard, { color: theme.visual.forest.numeralFallback }]}
         >
           {value}
         </AppText>
@@ -61,6 +59,9 @@ export function GradientNumeral({
   }
 
   const gradientId = `numeral-${rawId.replace(/[^A-Za-z0-9_-]/g, "")}`
+  // The numeral has a negative letter spacing, also applied after its last digit: add it back so
+  // the clear gap before the unit is `unitGap`.
+  const unitOffset = numeralGeometry.unitGap - brandTypography.numeralCard.letterSpacing
   const width = String(value).length * numeralGeometry.digitWidth + numeralGeometry.unitWidth
 
   return (
@@ -80,14 +81,14 @@ export function GradientNumeral({
       <SvgText
         x={0}
         y={numeralGeometry.baseline}
-        fontFamily={brandTypography.numeral.fontFamily}
-        fontSize={brandTypography.numeral.fontSize}
-        letterSpacing={brandTypography.numeral.letterSpacing}
+        fontFamily={brandTypography.numeralCard.fontFamily}
+        fontSize={brandTypography.numeralCard.fontSize}
+        letterSpacing={brandTypography.numeralCard.letterSpacing}
         fill={`url(#${gradientId})`}
       >
         {value}
         <TSpan
-          dx={UNIT_GAP}
+          dx={unitOffset}
           fontFamily={brandTypography.numeralUnit.fontFamily}
           fontSize={brandTypography.numeralUnit.fontSize}
           letterSpacing={0}
@@ -101,6 +102,7 @@ export function GradientNumeral({
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "flex-end" },
-  unit: { marginLeft: UNIT_GAP },
+  // Baseline alignment: the unit sits on the numeral's baseline, not on the bottom of its line box.
+  row: { flexDirection: "row", alignItems: "baseline" },
+  unit: { marginLeft: numeralGeometry.unitGap },
 })

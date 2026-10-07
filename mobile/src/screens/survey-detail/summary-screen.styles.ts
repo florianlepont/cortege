@@ -65,8 +65,10 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     scoreWrap: {
       position: "relative",
     },
+    // D-24: 16 pt around instead of 24, tighter gaps between the blocks, and the 56 pt numeral: the
+    // card is about 18 percent shorter than before (about 222 pt with the hint instead of 272).
     scoreContent: {
-      padding: brandSpacing4.lg,
+      padding: brandSpacing4.md,
     },
     scoreCaption: {
       ...brandTypography.label,
@@ -77,17 +79,18 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       marginTop: brandSpacing4.xs,
     },
     scoreBar: {
-      marginTop: brandSpacing4.smd,
+      marginTop: brandSpacing4.sm,
     },
     scoreTiles: {
       flexDirection: "row",
       gap: brandSpacing4.smd,
-      marginTop: brandSpacing4.md,
+      marginTop: brandSpacing4.smd,
     },
     scoreTile: {
       flex: 1,
       gap: brandSpacing4.xs,
-      padding: brandSpacing4.smd,
+      paddingVertical: brandSpacing4.sm,
+      paddingHorizontal: brandSpacing4.smd,
       borderRadius: brandRadius.badge,
       borderWidth: 1,
       borderColor: theme.visual.forest.tileBorder,
@@ -114,7 +117,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     },
     scoreHint: {
       ...brandTypography.meta,
-      marginTop: brandSpacing4.smd,
+      marginTop: brandSpacing4.sm,
       color: theme.visual.forest.body,
     },
     // Photos. `photosCard` is the glass card of the summary strip; `section`, `sectionHeader` and
