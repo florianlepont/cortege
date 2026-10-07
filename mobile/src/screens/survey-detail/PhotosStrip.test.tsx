@@ -47,7 +47,11 @@ jest.mock("../survey-screen-helpers", () => ({
   isPhotoAttachment: (attachment: { mime_type: string }) =>
     attachment.mime_type.startsWith("image/"),
 }))
-jest.mock("./AttachmentPhotoPreview", () => ({ AttachmentPhotoPreview: "AttachmentPhotoPreview" }))
+jest.mock("./PhotoTile", () => ({
+  PhotoTile: "PhotoTile",
+  photoTileStatusText: (attachment: { file_state: string }) =>
+    attachment.file_state === "missing" ? "missing" : undefined,
+}))
 
 const t = fr.surveyDetail.photos
 
@@ -57,11 +61,11 @@ function flatten(style: unknown): Style {
   return (style as Style | undefined | null) ?? {}
 }
 
-function render(photoCount: number): ReactTestRenderer {
+function render(photoCount: number, fileState = "local"): ReactTestRenderer {
   const attachments = Array.from({ length: photoCount }, (_, index) => ({
     id: `a${index}`,
     mime_type: "image/jpeg",
-    file_state: "local",
+    file_state: fileState,
   })) as unknown as LocalAttachment[]
   let tree!: ReactTestRenderer
   act(() => {
@@ -111,5 +115,48 @@ describe("PhotosStrip heading (D-24)", () => {
   test("the add button keeps its 44 pt hit area next to the title", () => {
     const styles = createSummaryScreenStyles(defaultTheme)
     expect(styles.addButton.minHeight).toBeGreaterThanOrEqual(44)
+  })
+})
+
+describe("PhotosStrip tiles (D-27b)", () => {
+  const pressables = (tree: ReactTestRenderer) =>
+    tree.root.findAll(
+      (n) =>
+        (n.type as unknown) === "Pressable" && n.props.accessibilityLabel?.startsWith("Photo "),
+    )
+
+  test("every photo is the same fixed 4:3 press target, a tile inside, evenly spaced", () => {
+    const styles = createSummaryScreenStyles(defaultTheme)
+    const tree = render(3)
+    const targets = pressables(tree)
+    expect(targets).toHaveLength(3)
+    for (const target of targets) {
+      expect(target.props.style).toEqual(styles.photoPress)
+      expect(target.findAllByType("PhotoTile" as never)).toHaveLength(1)
+    }
+    expect(styles.photoPress.width / styles.photoPress.height).toBeCloseTo(4 / 3)
+    expect(styles.photoPress.width).toBeGreaterThanOrEqual(44)
+    expect(styles.photoPress.height).toBeGreaterThanOrEqual(44)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.style).toEqual(styles.photoScroll)
+    expect(scroll.props.contentContainerStyle).toEqual(styles.photoScrollContent)
+  })
+
+  test("one photo and several use the same tile size", () => {
+    expect(pressables(render(1))).toHaveLength(1)
+    expect(pressables(render(4))).toHaveLength(4)
+    expect(pressables(render(1))[0].props.style).toEqual(pressables(render(4))[0].props.style)
+  })
+
+  test("the labels come from the catalogue and a photo without picture adds its status as value", () => {
+    const tree = render(2, "missing")
+    const [first] = pressables(tree)
+    expect(first.props.accessibilityLabel).toBe(
+      fr.surveyDetail.a11y.photo({ position: 1, total: 2 }),
+    )
+    expect(first.props.accessibilityValue).toEqual({ text: "missing" })
+    expect(first.props.accessibilityRole).toBe("button")
+    const loaded = pressables(render(1))[0]
+    expect(loaded.props.accessibilityValue).toEqual({ text: undefined })
   })
 })

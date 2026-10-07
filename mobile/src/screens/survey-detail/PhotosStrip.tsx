@@ -6,7 +6,7 @@ import { fr } from "../../i18n"
 import { LocalAttachment, LocalSurvey } from "../../storage"
 import { AppText as Text } from "../../ui/AppText"
 import { isPhotoAttachment } from "../survey-screen-helpers"
-import { AttachmentPhotoPreview } from "./AttachmentPhotoPreview"
+import { PhotoTile, photoTileStatusText } from "./PhotoTile"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
 
 const t = fr.surveyDetail.photos
@@ -86,22 +86,20 @@ export function PhotosStrip({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.photoRow}
+          style={styles.photoScroll}
+          contentContainerStyle={styles.photoScrollContent}
         >
           {photos.map((attachment, index) => (
             <Pressable
               key={attachment.id}
-              style={styles.photo}
+              style={styles.photoPress}
               onPress={() => handlePhotoPress(attachment.id)}
               accessibilityRole={canEdit ? "button" : "image"}
               accessibilityLabel={a11y.photo({ position: index + 1, total: photos.length })}
               accessibilityHint={canEdit ? alerts.deletePhotoTitle : undefined}
+              accessibilityValue={{ text: photoTileStatusText(attachment) }}
             >
-              <AttachmentPhotoPreview
-                attachment={attachment}
-                imageStyle={styles.photoImage}
-                placeholderStyle={styles.photoImage}
-              />
+              <PhotoTile attachment={attachment} />
             </Pressable>
           ))}
         </ScrollView>

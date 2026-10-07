@@ -69,6 +69,10 @@ export const surveyDetailFr = {
     countSuffix: (count: number) => ` · ${count}`,
     empty: "Aucune photo pour l'instant.",
     emptyReadOnly: "Aucune photo sur ce relevé.",
+    // One short word in the tile of a photo that cannot be shown (the full sentence is the
+    // accessibility value of the tile, `labels.attachmentPreview`).
+    tileMissing: "Introuvable",
+    tileUnavailable: "Indisponible",
   },
   map: {
     parcelCount: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),
