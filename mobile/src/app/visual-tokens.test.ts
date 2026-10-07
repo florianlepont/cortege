@@ -21,6 +21,7 @@ import {
   edgeLightMotion,
   edgePulseMotion,
   forestStops,
+  forestWaves,
   mixWithWhite,
   withAlpha,
 } from "./visual-tokens"
@@ -669,5 +670,37 @@ describe("download edge glow (12.2-19 fix rounds: stronger, then round the whole
     for (const green of [edgeGlowGreens.line, edgeGlowGreens.band, edgeGlowGreens.halo]) {
       expect(relativeLuminance(edgeGlowGreens.light)).toBeGreaterThan(relativeLuminance(green))
     }
+  })
+})
+
+describe("forest card waves (12.2-19 fix round)", () => {
+  const forest = themes.light.visual.forest
+
+  test("one sage line, faint enough that the card's text keeps AA where it crosses a wave", () => {
+    for (const stop of Object.values(forestStops)) {
+      const under = compositeOver(withAlpha(forest.contourSage, forestWaves.opacity), stop)
+      expect(contrastRatio(forest.body, under)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(forest.title, under)).toBeGreaterThanOrEqual(4.5)
+    }
+    expect(themes.dark.visual.forest.contourSage).toBe(forest.contourSage)
+  })
+
+  test("both loops last 8 to 14 s, the breath on the sign-in ripples' 10 s cycle", () => {
+    for (const ms of [forestWaves.travelMs, forestWaves.breatheMs]) {
+      expect(ms).toBeGreaterThanOrEqual(8000)
+      expect(ms).toBeLessThanOrEqual(14000)
+    }
+    expect(forestWaves.breatheMs).toBe(10000)
+  })
+
+  test("a gentle swell: the lines stay in the lower half and inside the card as they breathe", () => {
+    expect(forestWaves.baselines).toHaveLength(3)
+    for (const baseline of forestWaves.baselines) {
+      expect(baseline).toBeGreaterThan(0.5)
+      expect(baseline).toBeLessThan(1)
+    }
+    expect(forestWaves.amplitudeRatio).toBeLessThanOrEqual(0.1)
+    expect(forestWaves.breatheScaleY).toBeLessThanOrEqual(0.2)
+    expect(forestWaves.breatheY).toBeLessThanOrEqual(4)
   })
 })

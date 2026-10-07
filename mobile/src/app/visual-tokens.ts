@@ -325,6 +325,28 @@ export const contourDrift = {
   sageWidth: 1,
   mossWidth: 1.4,
 } as const
+// The flowing waves of Accueil's forest card (12.2-19 fix round, owner: "je m'attendais à un truc un
+// peu dynamique comme les vagues sur l'écran de connexion"). The sign-in waves are three organic
+// ripples that spread from the logo and fade, one every third of a 10 s linear cycle; the card takes
+// that rhythm: three wave lines a third of a wavelength apart, drifting one wavelength in a linear
+// `travelMs` and breathing (rising and falling by `breatheY` pt, swelling by `breatheScaleY`) on a
+// sine over the sign-in's 10 s cycle. One SVG path, sage, faint enough that the title, the factors
+// line and the button keep AA over it.
+export const forestWaves = {
+  travelMs: 12000,
+  breatheMs: 10000,
+  /** Wavelength, as a share of the card width. */
+  periodRatio: 0.8,
+  /** Baselines of the three lines, as shares of the card height (the lower half of the card). */
+  baselines: [0.56, 0.72, 0.88],
+  /** Crest height of the first line, as a share of the card height; each next line is lower. */
+  amplitudeRatio: 0.07,
+  breatheY: 3,
+  breatheScaleY: 0.14,
+  width: 1.8,
+  /** The most the body text (4.5:1 on the gradient's mid stop) allows where a line crosses it. */
+  opacity: 0.2,
+} as const
 // The static contours behind Accueil's "Nouveau relevé" glass card (12.2-19 fix round): a faint
 // texture under the text, never the forest card's full strength. The lines are drawn for the forest,
 // so the light glass takes a little more of them than the dark one to show at all.

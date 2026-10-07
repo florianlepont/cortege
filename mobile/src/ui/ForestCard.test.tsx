@@ -31,6 +31,13 @@ jest.mock("react-native", () => {
   }
 })
 
+jest.mock("./ForestWaves", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    ForestWaves: (props: Record<string, unknown>) => ReactRef.createElement("ForestWaves", props),
+  }
+})
+
 jest.mock("./ContourLines", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -160,6 +167,19 @@ describe("ForestCard", () => {
     const { tree } = render({ animatedContours: false })
     const contours = tree.root.findAll((n) => (n.type as unknown) === "ContourLines")
     expect(contours[0].props.animated).toBe(false)
+  })
+
+  test("no waves by default", () => {
+    const { tree } = render()
+    expect(tree.root.findAll((n) => (n.type as unknown) === "ForestWaves")).toHaveLength(0)
+  })
+
+  test("waves: the waves are the one animated layer, over still contours, inside the clip", () => {
+    const { tree } = render({ waves: true })
+    const contours = tree.root.findAll((n) => (n.type as unknown) === "ContourLines")
+    expect(contours[0].props.animated).toBe(false)
+    const clipView = tree.root.findAll((n) => (n.type as unknown) === "View")[1]
+    expect(clipView.findAll((n) => (n.type as unknown) === "ForestWaves")).toHaveLength(1)
   })
 
   test("contours={false} omits the contour layer", () => {

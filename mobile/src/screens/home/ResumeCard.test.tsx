@@ -219,6 +219,14 @@ describe("ResumeCard", () => {
     expect(card.props.contours).not.toBe(false)
   })
 
+  test.each([
+    ["the start card", null],
+    ["the resume card", makeSurvey()],
+  ])("%s carries the flowing waves (12.2-19 fix round)", (_name, draft) => {
+    mount(draft)
+    expect(tree.root.findByType("ForestCard" as never).props.waves).toBe(true)
+  })
+
   test("six factors with four context slots filled read 6, not the 71 percent rounded to 7 (12.2-14)", () => {
     const { texts, segments } = mount(makeSurvey({ completion_rate: 71, factors_filled: 6 }))
     expect(texts).toContain(t.resumeBody({ completed: 6 }))

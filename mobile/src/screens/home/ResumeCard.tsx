@@ -28,7 +28,9 @@ type ResumeCardProps = {
  * on the iPhone). Text stays on the left so nothing sits under the halo at the top right of the
  * card, and the progress sits a full 24 pt under the button row. 12.2-19 fix round (owner): the
  * "Nouveau relevé" footer read as an action of the draft, so it left the card for `NewSurveyCard`,
- * drawn under it by Accueil only beside a draft.
+ * drawn under it by Accueil only beside a draft. Second fix round (owner: "je m'attendais à un truc
+ * un peu dynamique comme les vagues sur l'écran de connexion"): both forms of the card carry flowing
+ * waves (`ForestWaves`), which replace the contour drift as the card's one animated layer.
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -40,7 +42,7 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
     : 0
 
   return (
-    <ForestCard variant="resume" testID="home-resume-card">
+    <ForestCard variant="resume" waves testID="home-resume-card">
       <View style={styles.main}>
         <View style={styles.row}>
           <View style={styles.copy}>
