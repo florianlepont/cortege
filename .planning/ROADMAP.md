@@ -657,7 +657,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
   3. Transitions and feedback use the Reanimated motion system consistently and respect the system reduced-motion setting.
   4. The owner confirms the result on their own phone.
 
-**Plans:** 12/23 plans executed
+**Plans:** 13/23 plans executed
 
 Plans:
 **Wave 1**
@@ -689,7 +689,7 @@ Plans:
 
 - [x] 12.2-11-PLAN.md — My Surveys and search: score rings, glass rows, entrances, animated empty state (batch 2)
 - [x] 12.2-12-PLAN.md — Survey detail summary: forest score card, factor bars, submit feedback (batch 2)
-- [ ] 12.2-13-PLAN.md — Survey detail Score, History and Context pages (batch 2)
+- [x] 12.2-13-PLAN.md — Survey detail Score, History and Context pages (batch 2)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
@@ -794,7 +794,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 12.1. Owner acceptance testing | 0/TBD | Not started | - |
-| 12.2. Visual Modernisation | 12/23 | In Progress|  |
+| 12.2. Visual Modernisation | 13/23 | In Progress|  |
 | 12.3. In-depth Quality Audit | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
 

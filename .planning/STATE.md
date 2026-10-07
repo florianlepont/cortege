@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
-stopped_at: Completed 12.2-12-PLAN.md
-last_updated: "2026-10-07T06:11:20.162Z"
+stopped_at: Completed 12.2-13-PLAN.md
+last_updated: "2026-10-07T06:20:31.400Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 171
+  completed_plans: 172
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 13 of 23
+Plan: 14 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -92,6 +92,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P10 | owner check | 1 tasks | 0 files |
 | Phase 12.2 P11 | 30min | 3 tasks | 13 files |
 | Phase 12.2 P12 | 35min | 3 tasks | 12 files |
+| Phase 12.2 P13 | 30 min | 3 tasks | 20 files |
 
 ## Accumulated Context
 
@@ -154,6 +155,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 12.2-09]: Grouped list headers sit 24 above and 8 below (16 list gap plus 8 title margin); profile custom rows reuse the exported AppGroupedListIconTile
 - [Phase 12.2]: 12.2-11: SurveyRow memo ignores the index prop (read at mount only) so list shifts do not re-render every row; scope switch keeps tab-role pressables styled as glass chips — render-counts autosave scenario regressed from 1 to 10 row renders when index was compared
 - [Phase 12.2]: 12.2-12: summary tile values keep the width of their final digits (count-up TextInput); the submit pulse observes the status transition in a hook and leaves the submit logic untouched; header title and status styles moved into SummaryHeader
+- [Phase 12.2]: 12.2-13: sub-score tones via bandTone(standBand/contextBand) in ScoreBreakdown; shared subContent rhythm 16/24/48 for the four sub-pages; History and Context glass cards as style recipes on plain Views
 
 ### Pending Todos
 
@@ -194,6 +196,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-07T06:11:05.592Z
-Stopped at: Completed 12.2-12-PLAN.md
+Last session: 2026-10-07T06:20:19.251Z
+Stopped at: Completed 12.2-13-PLAN.md
 Resume file: None
