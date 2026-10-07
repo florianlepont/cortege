@@ -1,7 +1,13 @@
 import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandRadius,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppPressable } from "../../ui/AppPressable"
@@ -85,63 +91,60 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     stats: {
       flexDirection: "row",
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
+    // Glass card, same recipe as the rows below (no blur, no elevation).
     stat: {
       flex: 1,
-      gap: 2,
-      borderRadius: 18,
+      gap: brandSpacing4.xxs,
+      borderRadius: brandRadius.card,
+      borderCurve: "continuous",
       borderWidth: 1,
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.semanticColors.surfaceElevated,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
+      paddingHorizontal: brandSpacing4.md,
+      paddingVertical: brandSpacing4.smd,
     },
     statValue: {
-      ...brandTypography.sectionTitle,
-      fontSize: 28,
-      lineHeight: 32,
-      color: theme.colors.forest,
+      ...brandTypography.screenTitle,
+      color: theme.colors.textPrimary,
     },
     statLabel: {
-      ...brandTypography.meta,
+      ...brandTypeScale.footnote,
       color: theme.colors.textSecondary,
     },
+    // 12 of list gap plus 12 of padding above, the list gap minus 4 below: 24 above and 8 below.
     sectionTitle: {
-      ...brandTypography.sectionTitle,
-      fontSize: 20,
-      lineHeight: 26,
-      color: theme.colors.forest,
-      paddingTop: 8,
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textPrimary,
+      paddingTop: brandSpacing4.smd,
+      marginBottom: -brandSpacing4.xs,
     },
     sectionCount: {
-      ...brandTypography.sectionTitle,
-      fontSize: 20,
-      lineHeight: 26,
+      ...brandTypography.sectionHeader,
       color: theme.colors.textSecondary,
     },
     titleBar: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
-      paddingTop: 4,
+      gap: brandSpacing4.sm,
+      paddingTop: brandSpacing4.xs,
     },
     title: {
-      ...brandTypography.sectionTitle,
+      ...brandTypography.screenTitle,
       flex: 1,
-      fontSize: 30,
-      lineHeight: 36,
-      color: theme.colors.forest,
+      color: theme.colors.textPrimary,
     },
     roundButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
+      width: brandInteraction.hitTarget.min,
+      height: brandInteraction.hitTarget.min,
+      borderRadius: brandRadius.pill,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.semanticColors.surfaceElevated,
+      borderColor: theme.visual.chip.border,
+      backgroundColor: theme.visual.chip.fill,
     },
   })
 }

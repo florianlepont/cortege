@@ -1,7 +1,9 @@
 import { StyleSheet } from "react-native"
+import { brandSpacing4 } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
-export const PAGE_CONTENT_GAP = 10
+// 12 pt between cards, on the 4 grid (12.2-11); the owner asked for clear separation (12.2-10).
+export const PAGE_CONTENT_GAP = brandSpacing4.smd
 
 // Screen-level styles and the few keys several survey list parts share.
 export function createListStyles(theme: BrandTheme) {
@@ -16,12 +18,9 @@ export function createListStyles(theme: BrandTheme) {
       flex: 1,
     },
     pageContent: {
-      paddingHorizontal: 16,
+      paddingHorizontal: brandSpacing4.md,
       paddingTop: 0,
-      gap: PAGE_CONTENT_GAP, // P3-COMPACT-03: 14 → 10
-    },
-    pageContentNativeSearch: {
-      paddingTop: 8,
+      gap: PAGE_CONTENT_GAP,
     },
 
     listHeader: {

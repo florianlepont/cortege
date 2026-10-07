@@ -28,7 +28,7 @@ export type SurveyRowProps = {
   /** LIST-01: the submitted survey's IBP total, once known — null shows a plain "submitted" ring. */
   score: number | null
   selected: boolean
-  /** Position in the list: drives the ring's entrance stagger (rows 0 to 7 only). */
+  /** Position in the list: read at mount only, for the ring entrance stagger (rows 0 to 7). */
   index?: number
   onOpen: (surveyId: string) => void
   onDelete: (surveyId: string) => void
@@ -287,13 +287,14 @@ function SurveyRowComponent({
   )
 }
 
+// `index` is left out of the comparison on purpose: it only drives the entrance stagger at mount, and
+// comparing it would re-render every row below a draft that moves into the "continue" card.
 export const SurveyRow = memo(
   SurveyRowComponent,
   (previous, next) =>
     previous.survey === next.survey &&
     previous.score === next.score &&
     previous.selected === next.selected &&
-    previous.index === next.index &&
     previous.onOpen === next.onOpen &&
     previous.onDelete === next.onDelete &&
     previewEqual(previous.preview, next.preview),

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { FlatList, ListRenderItemInfo, Platform, RefreshControl, View } from "react-native"
+import Animated from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandSpacing } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
+import { useEntrance } from "../ui/useEntrance"
 import type { LocalAttachment } from "../storage"
 import {
   isPhotoAttachment,
@@ -45,6 +47,7 @@ export function SurveyListScreen({
 }: SurveyListScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createListStyles(theme), [theme])
+  const entrance = useEntrance()
   const [refreshing, setRefreshing] = useState(false)
   const insets = useSafeAreaInsets()
   // The iOS header of this screen is opaque (SurveysStack), so the list already starts below it:
@@ -107,20 +110,24 @@ export function SurveyListScreen({
   }, [attachmentsBySurvey])
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<SurveyListItem>) =>
+    ({ item, index }: ListRenderItemInfo<SurveyListItem>) =>
       isSectionHeader(item) ? (
         <SectionTitle section={item.key} count={item.count} />
       ) : (
-        <SurveyRow
-          survey={item}
-          preview={previewById[item.id] ?? null}
-          score={surveyDetails[item.id]?.scores?.ibp_total ?? null}
-          selected={selectedSurveyId === item.id}
-          onOpen={onOpenSurvey}
-          onDelete={onDeleteSurvey}
-        />
+        // First mount only, rows 0 to 7 (D-08): a row the list remounts on scroll gets no entrance.
+        <Animated.View entering={entrance(index)}>
+          <SurveyRow
+            survey={item}
+            preview={previewById[item.id] ?? null}
+            score={surveyDetails[item.id]?.scores?.ibp_total ?? null}
+            selected={selectedSurveyId === item.id}
+            index={index}
+            onOpen={onOpenSurvey}
+            onDelete={onDeleteSurvey}
+          />
+        </Animated.View>
       ),
-    [onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId, surveyDetails],
+    [entrance, onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId, surveyDetails],
   )
 
   const listHeader = useMemo(

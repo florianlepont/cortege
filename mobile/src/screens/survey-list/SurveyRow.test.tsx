@@ -130,6 +130,18 @@ describe("SurveyRow score ring (12.2-11)", () => {
   })
 })
 
+describe("SurveyRow memoisation", () => {
+  test("a changed index alone does not re-render the row, a changed score does", () => {
+    const { props } = mount({ survey: makeSurvey({ status: "submitted" }), score: 34, index: 1 })
+    act(() => tree.update(<SurveyRow {...props} index={2} />))
+    expect(tree.root.findByType("ScoreRing" as never).props.index).toBe(1)
+    act(() => tree.update(<SurveyRow {...props} index={2} score={35} />))
+    const ring = tree.root.findByType("ScoreRing" as never)
+    expect(ring.props.score).toBe(35)
+    expect(ring.props.index).toBe(2)
+  })
+})
+
 describe("SurveyRow glass card and interactions", () => {
   test("the card is a glass surface with the card radius and a 44 pt minimum height", () => {
     const { card } = mount()
