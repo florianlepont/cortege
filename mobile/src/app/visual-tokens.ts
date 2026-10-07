@@ -308,6 +308,10 @@ export const contourDrift = {
   sageWidth: 1,
   mossWidth: 1.4,
 } as const
+// The static contours behind Accueil's "Nouveau relevé" glass card (12.2-19 fix round): a faint
+// texture under the text, never the forest card's full strength. The lines are drawn for the forest,
+// so the light glass takes a little more of them than the dark one to show at all.
+export const glassContourOpacity = { light: 0.3, dark: 0.2 } as const
 export const tabDot = { size: 4 } as const
 // The card numeral is `brandTypography.numeralCard` (56). `unitGap` is the clear gap between the last
 // digit and the unit: the negative letter spacing already pulls the unit in, so it is added back.

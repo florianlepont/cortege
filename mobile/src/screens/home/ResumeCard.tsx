@@ -1,12 +1,6 @@
 import { useMemo } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
-import {
-  brandInteraction,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { StyleSheet, View } from "react-native"
+import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
@@ -23,17 +17,18 @@ type ResumeCardProps = {
   /** The draft touched within the resume window, or null for the "start a survey" card. */
   resumeDraft: LocalSurvey | null
   onResume: (surveyId: string) => void
+  /** The "start a survey" button of the card without a draft. */
   onCreateSurvey: () => void
 }
 
 /**
- * HOME-02, variant I: the compact forest card of Accueil. With a recent draft it resumes it (title,
- * "n/10 factors" line, ten progress segments, a plain "new survey" link); without one it invites to
- * start. Title and button say what the card is, so it has no tag pill (owner check on the iPhone).
- * Text stays on the left so nothing sits under the halo at the top right of the card. The progress
- * sits a full 24 pt under the button row, and the "new survey" link has its own footer: a full-width
- * rule in the forest rule token and a slightly lighter band, so the two groups read as distinct
- * (D-20a, owner check on the iPhone: the gap alone was not enough).
+ * HOME-02, variant I: the compact forest card of Accueil. With a recent draft it only resumes it
+ * (title, "n/10 factors" line, ten progress segments, "Reprendre"); without one it is the "start a
+ * survey" call to action. Title and button say what the card is, so it has no tag pill (owner check
+ * on the iPhone). Text stays on the left so nothing sits under the halo at the top right of the
+ * card, and the progress sits a full 24 pt under the button row. 12.2-19 fix round (owner): the
+ * "Nouveau relevé" footer read as an action of the draft, so it left the card for `NewSurveyCard`,
+ * drawn under it by Accueil only beside a draft.
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -83,19 +78,6 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
           </View>
         ) : null}
       </View>
-      {resumeDraft ? (
-        <View style={styles.footer} testID="home-resume-footer">
-          <Pressable
-            style={styles.link}
-            onPress={onCreateSurvey}
-            accessibilityRole="button"
-            accessibilityLabel={t.newSurveyButton}
-          >
-            <Ionicons name="add-outline" size={18} color={theme.visual.forest.body} />
-            <Text style={styles.linkLabel}>{t.newSurveyButton}</Text>
-          </Pressable>
-        </View>
-      ) : null}
     </ForestCard>
   )
 }
@@ -103,8 +85,6 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
 function createStyles(theme: BrandTheme) {
   const forest = theme.visual.forest
   return StyleSheet.create({
-    // The card content has no padding of its own: the footer rule runs edge to edge. The padding
-    // of the card body is `main`'s.
     main: {
       padding: RESUME_LAYOUT.padding,
     },
@@ -146,26 +126,6 @@ function createStyles(theme: BrandTheme) {
     },
     progressSegmentDone: {
       backgroundColor: forest.glowFallback,
-    },
-    // D-20a: a full-width rule (the forest tag border, stronger than the card hairline) over a
-    // footer band of its own, so "Nouveau relevé" is clearly a second group.
-    footer: {
-      borderTopWidth: RESUME_LAYOUT.footerRule,
-      borderTopColor: forest.tagBorder,
-      backgroundColor: forest.tileFill,
-      paddingVertical: RESUME_LAYOUT.footerPaddingY,
-      paddingHorizontal: brandSpacing4.md,
-    },
-    link: {
-      minHeight: brandInteraction.hitTarget.min,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: brandSpacing4.xs,
-    },
-    linkLabel: {
-      ...brandTypography.button,
-      color: forest.body,
     },
   })
 }

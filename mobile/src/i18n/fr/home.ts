@@ -31,7 +31,13 @@ export const homeFr = {
     resumeTitleUnnamed: "Votre relevé en cours",
     resumeBody: ({ completed }: { completed: number }) => `${completed}/10 facteurs remplis.`,
     resumeButton: "Reprendre",
-    newSurveyButton: "Nouveau relevé",
+  },
+  // 12.2-19 fix round (owner): "Nouveau relevé" left the resume card for a glass card of its own
+  // under it, shown only beside a draft. The helper says what the wizard asks first: the site's
+  // name, then the method, then the parcels on the map.
+  newSurvey: {
+    label: "Nouveau relevé",
+    helper: "Nom du site, méthode et parcelles.",
   },
   // D-20c: the last three surveys, under the resume card. Rows read like the ones of Mes Relevés.
   recent: {

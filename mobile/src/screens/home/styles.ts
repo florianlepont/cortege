@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native"
 import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
-import { HOME_GAPS } from "./layout-budget"
+import { HOME_GAPS, NEW_SURVEY_LAYOUT } from "./layout-budget"
 
 // Compact density (D-05): the page inset is 16, blocks and sections sit 16 apart (`HOME_GAPS`, the
 // vertical budget that keeps the nearby map in view at launch).
@@ -82,6 +82,10 @@ export function createStyles(theme: BrandTheme) {
     // The resume card block (ResumeCard draws the card itself).
     block: {
       marginHorizontal: PAGE_H,
+    },
+    // The "Nouveau relevé" card under it, when there is a draft (`NEW_SURVEY_LAYOUT`).
+    newSurvey: {
+      marginTop: NEW_SURVEY_LAYOUT.gap,
     },
 
     // Sections

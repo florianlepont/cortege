@@ -25,6 +25,7 @@ import { Skeleton } from "../ui/Skeleton"
 import { SyncStatusLine, isSyncStatusLineVisible } from "../ui/SyncStatusLine"
 import { HOME_GAPS, nearbyMapHeight } from "./home/layout-budget"
 import { NearbyMapCard } from "./home/NearbyMapCard"
+import { NewSurveyCard } from "./home/NewSurveyCard"
 import { RECENT_SURVEYS_COUNT, RecentSurveysSection } from "./home/RecentSurveysSection"
 import { ResumeCard } from "./home/ResumeCard"
 import { ToolsSection } from "./home/ToolsSection"
@@ -292,12 +293,19 @@ export function HomeScreen({
         ) : null}
 
         {/* ── Hero CTA (HOME-02: resume a recent draft, or start a new one) ──── */}
+        {/* 12.2-19 fix round: beside a draft, "Nouveau relevé" is a glass card of its own under the
+          hero, in the same entrance slot; without one the hero starts the survey itself. */}
         <EntranceView index={firstSection} style={styles.block}>
           <ResumeCard
             resumeDraft={resumeDraft}
             onResume={onOpenSurvey}
             onCreateSurvey={onCreateSurvey}
           />
+          {resumeDraft ? (
+            <View style={styles.newSurvey}>
+              <NewSurveyCard onPress={onCreateSurvey} />
+            </View>
+          ) : null}
         </EntranceView>
 
         {/* ── Mes relevés récents (D-20c) ───────────── */}

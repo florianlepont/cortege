@@ -5,7 +5,7 @@ import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
 import { Image as ExpoImage } from "expo-image"
 import { HomeScreen, pickAlertSurvey, pickResumeDraft } from "./HomeScreen"
-import { HOME_GAPS, nearbyMapHeight } from "./home/layout-budget"
+import { HOME_GAPS, NEW_SURVEY_LAYOUT, nearbyMapHeight } from "./home/layout-budget"
 import { ResumeCard } from "./home/ResumeCard"
 import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
@@ -70,6 +70,7 @@ jest.mock("../ui/SyncStatusLine", () => ({
 jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))
 jest.mock("./home/NearbyMapCard", () => ({ NearbyMapCard: "NearbyMapCard" }))
 jest.mock("./home/ToolsSection", () => ({ ToolsSection: "ToolsSection" }))
+jest.mock("./home/NewSurveyCard", () => ({ NewSurveyCard: "NewSurveyCard" }))
 jest.mock("./home/RecentSurveysSection", () => ({
   RecentSurveysSection: "RecentSurveysSection",
   RECENT_SURVEYS_COUNT: 3,
@@ -384,6 +385,8 @@ describe("HomeScreen", () => {
         .findAll((node) => (node.type as unknown) === "Text")
         .map((node) => String([node.props.children].flat().join("")))
       expect(texts).toContain(fr.home.hero.title)
+      // The hero is the "new survey" action itself: no second card, never the action twice.
+      expect(tree.root.findAllByType("NewSurveyCard" as never)).toHaveLength(0)
     })
 
     test("a draft updated within 48h becomes the resume hero, and no separate progress card (OA-17)", () => {
@@ -398,13 +401,16 @@ describe("HomeScreen", () => {
         .findAllByType("AppButton" as never)
         .map((node) => node.props.label)
       expect(buttonLabels).toContain(fr.home.hero.resumeButton)
-      // "Nouveau relevé" is a plain link under the primary button.
-      const newSurveyLink = tree.root.findAll(
-        (node) =>
-          (node.type as unknown) === "Pressable" &&
-          node.props.accessibilityLabel === fr.home.hero.newSurveyButton,
-      )
-      expect(newSurveyLink).toHaveLength(1)
+      // 12.2-19 fix round: "Nouveau relevé" is a glass card of its own under the hero, in the same
+      // entrance slot, right after the resume card.
+      const newSurveyCards = tree.root.findAllByType("NewSurveyCard" as never)
+      expect(newSurveyCards).toHaveLength(1)
+      const slot = tree.root.findByType(ResumeCard).parent
+      expect(slot?.findAllByType("NewSurveyCard" as never)).toHaveLength(1)
+      const wrapper = newSurveyCards[0].parent
+      expect(Object.assign({}, ...[wrapper?.props.style].flat())).toEqual({
+        marginTop: NEW_SURVEY_LAYOUT.gap,
+      })
 
       expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
 
@@ -420,7 +426,7 @@ describe("HomeScreen", () => {
       expect(onOpenSurvey).toHaveBeenCalledWith("survey-1")
     })
 
-    test("the resume hero draws one progress segment per filled factor, and the link starts a new survey", () => {
+    test("the resume hero draws one progress segment per filled factor, and the card under it starts a new survey", () => {
       const onCreateSurvey = jest.fn()
       mount(
         makeProps({
@@ -443,13 +449,10 @@ describe("HomeScreen", () => {
       expect(done).toHaveLength(4)
       expect(todo).toHaveLength(6)
 
-      const link = tree.root.findAll(
-        (node) =>
-          (node.type as unknown) === "Pressable" &&
-          node.props.accessibilityLabel === fr.home.hero.newSurveyButton,
-      )[0]
+      const card = tree.root.findByType("NewSurveyCard" as never)
+      expect(card.props.onPress).toBe(onCreateSurvey)
       act(() => {
-        link.props.onPress()
+        card.props.onPress()
       })
       expect(onCreateSurvey).toHaveBeenCalledTimes(1)
     })
@@ -475,6 +478,7 @@ describe("HomeScreen", () => {
         .findAll((node) => (node.type as unknown) === "Text")
         .map((node) => String([node.props.children].flat().join("")))
       expect(texts).toContain(fr.home.hero.title)
+      expect(tree.root.findAllByType("NewSurveyCard" as never)).toHaveLength(0)
     })
 
     test("a submitted survey is never picked as the resume draft", () => {

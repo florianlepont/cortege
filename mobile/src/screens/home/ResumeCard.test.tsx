@@ -1,7 +1,6 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
-import { brandInteraction, brandSpacing4 } from "../../app/brand-tokens"
-import { defaultTheme } from "../../app/theme"
+import { brandSpacing4 } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { RESUME_LAYOUT, resumeCardHeight } from "./layout-budget"
@@ -77,9 +76,11 @@ function mount(resumeDraft: LocalSurvey | null) {
   const button = tree.root.findByType("AppButton" as never)
   const segments = (testID: string) =>
     tree.root.findAll((node) => (node.type as unknown) === "View" && node.props.testID === testID)
+  // Any second action: a pressable, or anything named "Nouveau relevé" (12.2-19 fix round).
   const links = tree.root.findAll(
     (node: ReactTestInstance) =>
-      (node.type as unknown) === "Pressable" && node.props.accessibilityLabel === t.newSurveyButton,
+      (node.type as unknown) === "Pressable" ||
+      node.props.accessibilityLabel === fr.home.newSurvey.label,
   )
   return { onResume, onCreateSurvey, texts, button, segments, links }
 }
@@ -89,7 +90,7 @@ afterEach(() => {
 })
 
 describe("ResumeCard", () => {
-  test("without a draft: the start card, a glow button, no progress and no link", () => {
+  test("without a draft: the start card, a glow button, no progress and no second action", () => {
     const { texts, button, segments, links, onCreateSurvey } = mount(null)
     expect(texts).toEqual(expect.arrayContaining([t.title, t.body]))
     expect(button.props.label).toBe(t.button)
@@ -101,7 +102,7 @@ describe("ResumeCard", () => {
     expect(onCreateSurvey).toHaveBeenCalledTimes(1)
   })
 
-  test("with a draft: resume texts, progress segments, resume button and new survey link", () => {
+  test("with a draft: resume texts, progress segments and the resume button", () => {
     const { texts, button, segments, links, onResume, onCreateSurvey } = mount(makeSurvey())
     expect(texts).toEqual(
       expect.arrayContaining([
@@ -115,19 +116,8 @@ describe("ResumeCard", () => {
     expect(button.props.variant).toBe("glow")
     act(() => button.props.onPress())
     expect(onResume).toHaveBeenCalledWith("survey-1")
-
-    expect(links).toHaveLength(1)
-    const style = (
-      Array.isArray(links[0].props.style) ? links[0].props.style : [links[0].props.style]
-    )
-      .flat()
-      .reduce(
-        (acc: Record<string, unknown>, item: Record<string, unknown>) => ({ ...acc, ...item }),
-        {},
-      )
-    expect(style.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
-    act(() => links[0].props.onPress())
-    expect(onCreateSurvey).toHaveBeenCalledTimes(1)
+    expect(links).toHaveLength(0)
+    expect(onCreateSurvey).not.toHaveBeenCalled()
   })
 
   test("there is no tag pill: its text is gone in both states (owner check on the iPhone)", () => {
@@ -167,41 +157,20 @@ describe("ResumeCard", () => {
     )
   }
 
-  test("a full-width rule and a footer band of their own separate the link (D-20a)", () => {
-    mount(makeSurvey())
-    const footer = tree.root.find(
-      (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
-    )
-    const footerStyle = styleOf(footer)
-    const forest = defaultTheme.visual.forest
-    expect(footerStyle.borderTopWidth).toBeGreaterThanOrEqual(1)
-    expect(footerStyle.borderTopColor).toBe(forest.tagBorder)
-    expect(footerStyle.backgroundColor).toBe(forest.tileFill)
-    // The footer is a direct child of the card content (not of the padded body): the rule is edge
-    // to edge, and the link is the only thing in it.
+  test("with a draft the card only resumes: no footer, no second action (12.2-19 fix round)", () => {
+    const { links } = mount(makeSurvey())
+    expect(links).toHaveLength(0)
+    expect(
+      tree.root.findAll(
+        (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
+      ),
+    ).toHaveLength(0)
+    // The card holds the padded body alone, the progress inside it; the one button is "Reprendre".
     const card = tree.root.findByType("ForestCard" as never)
-    const children = React.Children.toArray(card.props.children) as React.ReactElement[]
-    expect(children).toHaveLength(2)
-    expect(card.props.contentStyle).toBeUndefined()
-    const link = footer.findAll(
-      (node) =>
-        (node.type as unknown) === "Pressable" &&
-        node.props.accessibilityLabel === t.newSurveyButton,
-    )
-    expect(link).toHaveLength(1)
-    expect(styleOf(link[0]).minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
-    expect(((footerStyle.paddingVertical as number) ?? 0) % 4).toBe(0)
-  })
-
-  test("the link is not inside the padded body, the progress is", () => {
-    mount(makeSurvey())
-    const footer = tree.root.find(
-      (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
-    )
+    expect(React.Children.toArray(card.props.children)).toHaveLength(1)
     const progress = tree.root.find(
       (node) => (node.type as unknown) === "View" && node.props.accessible === false,
     )
-    expect(footer.findAll((node) => node === progress)).toHaveLength(0)
     const body = tree.root.find(
       (node) =>
         (node.type as unknown) === "View" &&
@@ -209,15 +178,8 @@ describe("ResumeCard", () => {
         node.findAll((inner) => inner === progress).length > 0,
     )
     expect(body).toBeDefined()
-  })
-
-  test("without a draft there is no footer and no rule", () => {
-    mount(null)
-    expect(
-      tree.root.findAll(
-        (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
-      ),
-    ).toHaveLength(0)
+    expect(tree.root.findAllByType("AppButton" as never)).toHaveLength(1)
+    expect(Object.keys(t)).not.toContain("newSurveyButton")
   })
 
   test("the ten segments share the inner width exactly: equal flex, 4 pt gap, no minimum width", () => {
@@ -282,26 +244,17 @@ describe("ResumeCard", () => {
       (node) => (node.type as unknown) === "View" && node.props.accessible === false,
     )
     // The 24 pt between the button and the segments stays (owner check on the iPhone), as do the
-    // 6 pt segments and the 1 pt rule over the 44 pt link.
+    // 6 pt segments.
     expect(styleOf(progress).marginTop).toBe(24)
     expect(styleOf(progress).marginTop).toBe(RESUME_LAYOUT.progressGap)
     const segment = tree.root.findAll(
       (node) => (node.type as unknown) === "View" && node.props.testID === "hero-progress-todo",
     )[0]
     expect(styleOf(segment).height).toBe(RESUME_LAYOUT.progressHeight)
-    const footer = tree.root.find(
-      (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
-    )
-    expect(styleOf(footer).borderTopWidth).toBe(RESUME_LAYOUT.footerRule)
-    expect(styleOf(footer).paddingVertical).toBe(RESUME_LAYOUT.footerPaddingY)
-    // The band is the 44 pt link: rule plus link, plus the body. The card's hairline is an inset
-    // ring inside the box (12.2-17), so it adds no height.
+    // The body alone: no footer band any more (12.2-19 fix round). The card's hairline is an
+    // inset ring inside the box (12.2-17), so it adds no height.
     expect(resumeCardHeight(true, 1, 1)).toBe(
-      2 * RESUME_LAYOUT.padding +
-        52 +
-        RESUME_LAYOUT.progressGap +
-        RESUME_LAYOUT.progressHeight +
-        (RESUME_LAYOUT.footerRule + 2 * RESUME_LAYOUT.footerPaddingY + 44),
+      2 * RESUME_LAYOUT.padding + 52 + RESUME_LAYOUT.progressGap + RESUME_LAYOUT.progressHeight,
     )
   })
 })

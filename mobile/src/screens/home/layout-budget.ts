@@ -1,6 +1,7 @@
 import {
   brandComponentTokens,
   brandInteraction,
+  brandRadius,
   brandSpacing4,
   brandTypeScale,
   brandTypography,
@@ -31,7 +32,8 @@ export const HOME_GAPS = {
 
 /**
  * The resume card: the numbers its styles use. The card has no border (12.2-17: its hairline is an
- * inset ring drawn inside the box, `ForestCard`), so it adds nothing to the height.
+ * inset ring drawn inside the box, `ForestCard`), so it adds nothing to the height. 12.2-19 fix
+ * round: it only resumes now, the "Nouveau relevé" footer left it for `NEW_SURVEY_LAYOUT`.
  */
 export const RESUME_LAYOUT = {
   padding: brandSpacing4.md,
@@ -41,10 +43,27 @@ export const RESUME_LAYOUT = {
   /** Owner check: the button and the ten segments read as two blocks 24 pt apart. */
   progressGap: brandSpacing4.lg,
   progressHeight: 6,
-  /** The footer band is the 44 pt link itself: the rule and the band are what separate it (D-20a). */
-  footerPaddingY: 0,
-  footerRule: HAIRLINE,
 } as const
+
+/**
+ * The "Nouveau relevé" glass card under the resume card (12.2-19 fix round, only beside a draft): a
+ * 40 pt moss disc with 8 pt above and below it, so the pressable is 56 pt tall (field use, more than
+ * the 44 pt minimum), inside the 1 pt hairline of the glass card.
+ */
+export const NEW_SURVEY_LAYOUT = {
+  /** Between the resume card and this one: they read as one block of two actions. */
+  gap: brandSpacing4.smd,
+  minHeight: 56,
+  paddingY: brandSpacing4.sm,
+  disc: 40,
+  icon: 24,
+  /** The chevron of the tool rows. */
+  chevron: 18,
+  border: HAIRLINE,
+} as const
+
+/** The pressable inside the card's hairline: the wave stops at the inner edge of the curve. */
+export const NEW_SURVEY_INNER_RADIUS = brandRadius.card - NEW_SURVEY_LAYOUT.border
 
 /** The recent surveys: slim rows of one glass card, divided by hairlines (12.2-14). */
 export const RECENT_LAYOUT = {
@@ -97,7 +116,7 @@ export const MIN_VISIBLE_NEARBY = 96
 export type HomeBudgetInput = {
   windowHeight: number
   safeTop: number
-  /** A draft in progress: the resume card has its ten segments and its footer. */
+  /** A draft in progress: the resume card has its ten segments, the "Nouveau relevé" card shows. */
   hasDraft?: boolean
   /** Lines the title of the resume card takes next to the button (a long site name wraps to 2). */
   resumeTitleLines?: 1 | 2
@@ -116,9 +135,14 @@ export function resumeCardHeight(hasDraft: boolean, titleLines: number, bodyLine
     r.textGap +
     bodyLines * brandTypeScale.subhead.lineHeight
   const row = Math.max(r.buttonHeight, copy)
-  const main = 2 * r.padding + row + (hasDraft ? r.progressGap + r.progressHeight : 0)
-  const footer = hasDraft ? r.footerRule + 2 * r.footerPaddingY + HIT : 0
-  return main + footer
+  return 2 * r.padding + row + (hasDraft ? r.progressGap + r.progressHeight : 0)
+}
+
+/** The "Nouveau relevé" card with the gap above it; none without a draft (the hero starts one). */
+export function newSurveyCardHeight(hasDraft: boolean): number {
+  if (!hasDraft) return 0
+  const n = NEW_SURVEY_LAYOUT
+  return n.gap + 2 * n.border + n.minHeight
 }
 
 export function recentSectionHeight(count: number): number {
@@ -156,6 +180,7 @@ export function homeMapVisible(input: HomeBudgetInput): {
     HOME_GAPS.contentTop +
     alertHeight +
     resumeCardHeight(hasDraft, resumeTitleLines, resumeBodyLines) +
+    newSurveyCardHeight(hasDraft) +
     recentSectionHeight(recentCount) +
     toolsSectionHeight() +
     HOME_GAPS.section
