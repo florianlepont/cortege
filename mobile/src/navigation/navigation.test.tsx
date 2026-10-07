@@ -543,6 +543,8 @@ describe("stack options and listeners", () => {
     )
     expect(jsStack).toBeDefined()
     expect((mockScreens.surveysHome.options as Options).headerShown).toBe(false)
+    // The JS list draws its own title bar: no native large title.
+    expect(effectiveOptions("surveysHome").headerLargeTitleEnabled).toBeUndefined()
 
     for (const key of Object.keys(mockScreens)) delete mockScreens[key]
     mockPlatform.OS = "ios"
@@ -553,6 +555,8 @@ describe("stack options and listeners", () => {
         headerShown: true,
         // D-19: transparent, the halo runs on behind the title and the "+" (no canvas band).
         ...HALO_HEADER,
+        // 12.2-17: the native large title, which collapses into the bar as the list scrolls.
+        ...nativeLargeTitle(defaultTheme),
       }),
     )
   })

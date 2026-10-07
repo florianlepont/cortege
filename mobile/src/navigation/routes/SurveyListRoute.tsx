@@ -3,7 +3,7 @@ import { Platform } from "react-native"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { SurveyListScreen } from "../../screens/SurveyListScreen"
-import { iconHeaderButton, titleHeaderItems } from "../header-items"
+import { iconHeaderButton } from "../header-items"
 import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -13,8 +13,9 @@ import type { SurveyListRouteProps } from "../types"
 
 /**
  * Survey list route (phase 01.9-18, D-01): the surveys context and the sync
- * actions. In the native iOS tree it also owns the native header (the title on the left, the "+"
- * on the right, OA-85); the surveys stack navigator does not subscribe to the surveys context.
+ * actions. In the native iOS tree it also owns the native header's "+" (OA-85); the title is the
+ * native large title set by the stack (12.2-17), which collapses into the bar as the list scrolls.
+ * The surveys stack navigator does not subscribe to the surveys context.
  * The native-nav boolean is static navigator configuration read from
  * SurveysStackConfigContext, not data.
  *
@@ -43,10 +44,9 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
   useLayoutEffect(() => {
     if (!nativeHeader) return
     navigation.setOptions({
-      // OA-85: the title sits left and the "+" right, on one row shared with Accueil.
+      // OA-85: the "+" on the right of the bar. 12.2-17: no title item of our own any more, the
+      // stack's native large title names the list (no headerTitle here, it would blank it).
       // D-19: no headerStyle here, the stack gives the transparent halo header.
-      headerTitle: "",
-      unstable_headerLeftItems: () => titleHeaderItems(fr.navigation.headers.surveys),
       unstable_headerRightItems: () => [
         iconHeaderButton({
           label: fr.surveyList.a11y.createSurvey,
@@ -59,7 +59,7 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
   }, [nativeHeader, navigation, onOpenCreateSurvey, theme])
 
   return (
-    <ScreenFrame>
+    <ScreenFrame largeTitle={nativeHeader}>
       <SurveyListScreen
         surveys={state.surveys}
         selectedSurveyId={state.selectedSurveyId}

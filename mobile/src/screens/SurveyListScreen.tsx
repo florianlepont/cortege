@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandSpacing } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
+import { useFrameLargeTitle } from "../ui/frame-large-title"
 import { ListEntranceRow } from "../ui/ListEntranceRow"
 import { useListEntrance } from "../ui/useListEntrance"
 import { ListEmptyState } from "./survey-list/ListEmptyState"
@@ -44,8 +45,10 @@ export function SurveyListScreen({
   const insets = useSafeAreaInsets()
   // D-19: the route's ScreenFrame already starts the list below the native iOS header: adding its
   // height again left a ~100pt gap (OA-99). Without a native header (Android, JS tabs) the screen
-  // draws its own title bar under the status bar.
+  // draws its own title bar under the status bar. 12.2-17: under the native large title iOS
+  // insets the list itself (header above, tab bar below), which also drives the collapse.
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
+  const largeTitle = useFrameLargeTitle()
 
   const { items, toFinishCount } = useMemo(() => buildListItems(surveys), [surveys])
 
@@ -128,11 +131,11 @@ export function SurveyListScreen({
           styles.pageContent,
           {
             paddingTop: showTitleBar ? insets.top + brandSpacing.xs : brandSpacing.xs,
-            paddingBottom: tabBarHeight + brandSpacing.xl + 22,
+            paddingBottom: (largeTitle ? 0 : tabBarHeight) + brandSpacing.xl + 22,
           },
         ]}
-        scrollIndicatorInsets={{ bottom: tabBarHeight }}
-        contentInsetAdjustmentBehavior="never"
+        scrollIndicatorInsets={largeTitle ? undefined : { bottom: tabBarHeight }}
+        contentInsetAdjustmentBehavior={largeTitle ? "automatic" : "never"}
         refreshControl={refreshControl}
       />
     </View>

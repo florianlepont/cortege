@@ -843,11 +843,11 @@ describe("SurveyListRoute", () => {
     expect(navigation.setOptions).not.toHaveBeenCalled()
   })
 
-  test("in the native iOS Mes Relevés tab it owns the header: the title and the +, no search bar", async () => {
+  test("in the native iOS Mes Relevés tab it owns the header's +, the title is the native large title", async () => {
     mockPlatform.OS = "ios"
     const fixture = makeFixture()
     const navigation = makeNavigation()
-    await mount(
+    const tree = await mount(
       <Providers fixture={fixture}>
         <SurveysStackConfigContext.Provider value={{ useNativeNav: true }}>
           <SurveyListRoute navigation={navigation as never} route={{} as never} />
@@ -863,24 +863,23 @@ describe("SurveyListRoute", () => {
     // D-19: no canvas band, the stack's transparent halo header is kept.
     expect(setOptionsCall.headerStyle).toBeUndefined()
 
-    // OA-85: the title sits left, on the same row as the "+" create button.
-    expect(setOptionsCall.headerTitle).toBe("")
-    const [titleItem] = setOptionsCall.unstable_headerLeftItems()
-    expect(titleItem.hidesSharedBackground).toBe(true)
-    let titleTree: renderer.ReactTestRenderer | undefined
-    act(() => {
-      titleTree = renderer.create(titleItem.element)
-    })
-    expect(
-      titleTree!.root.findAll((node) => (node.type as unknown) === "Text").length,
-    ).toBeGreaterThan(0)
-    act(() => titleTree!.unmount())
+    // 12.2-17: no title of our own in the bar (a headerTitle "" would blank the large title).
+    expect(setOptionsCall).not.toHaveProperty("headerTitle")
+    expect(setOptionsCall).not.toHaveProperty("unstable_headerLeftItems")
 
     // SYNC-02/HOME-01: the native header also carries the "+" create button.
     const [createButton] = setOptionsCall.unstable_headerRightItems()
     expect(createButton.label).toBe(fr.surveyList.a11y.createSurvey)
     createButton.onPress()
     expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
+
+    // The frame leaves the insets to iOS (large title mode): no header padding, no halo child.
+    const frame = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "screen-frame",
+    )
+    const style = Object.assign({}, ...[frame.props.style].flat()) as Record<string, unknown>
+    expect(style.paddingTop).toBeUndefined()
+    expect(style.experimental_backgroundImage).toBeDefined()
   })
 })
 

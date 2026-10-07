@@ -2,11 +2,12 @@ import React from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
 import { NavigationContext } from "@react-navigation/native"
 import { createFakeNavigation } from "../../test/fake-navigation"
-import { brandMotion } from "../app/brand-tokens"
+import { brandMotion, brandSpacing } from "../app/brand-tokens"
 import type { LocalSurvey } from "../storage/types"
 import { LIST_ENTRANCE_GRACE_MS } from "../ui/useListEntrance"
 import { ENTRANCE_REWIND_DELAY_MS } from "../ui/useFocusEntrance"
 import { SurveyListScreen } from "./SurveyListScreen"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import type { SurveyListScreenProps } from "./survey-list/types"
 
 const originalConsoleError = console.error
@@ -45,6 +46,9 @@ jest.mock("react-native", () => {
     removeClippedSubviews?: boolean
     ListHeaderComponent?: React.ReactElement
     ListFooterComponent?: React.ReactElement | null
+    contentInsetAdjustmentBehavior?: string
+    scrollIndicatorInsets?: unknown
+    contentContainerStyle?: unknown
   }) =>
     ReactRef.createElement(
       "FlatList",
@@ -53,6 +57,9 @@ jest.mock("react-native", () => {
         removeClippedSubviews: props.removeClippedSubviews,
         footer: props.ListFooterComponent,
         header: props.ListHeaderComponent,
+        contentInsetAdjustmentBehavior: props.contentInsetAdjustmentBehavior,
+        scrollIndicatorInsets: props.scrollIndicatorInsets,
+        contentContainerStyle: props.contentContainerStyle,
       },
       props.data.map((item, index) =>
         ReactRef.createElement(
@@ -266,5 +273,41 @@ describe("SurveyListScreen (12.2-11)", () => {
     expect(
       (list.props.header as React.ReactElement<{ children: unknown[] }>).props.children,
     ).toEqual([null, null])
+  })
+})
+
+describe("SurveyListScreen under the native large title (12.2-17)", () => {
+  const listContent = (root: renderer.ReactTestInstance) => {
+    const list = root.findByType("FlatList" as never)
+    return {
+      list,
+      style: Object.assign({}, ...[list.props.contentContainerStyle].flat()) as Record<
+        string,
+        unknown
+      >,
+    }
+  }
+
+  test("the list leaves the insets to iOS: automatic, no tab bar padding or indicator inset", () => {
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <SurveyListScreen {...makeProps()} />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+    const { list, style } = listContent(tree.root)
+    expect(list.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    expect(list.props.scrollIndicatorInsets).toBeUndefined()
+    // The room under the last row only; the 68 pt tab bar is inset by the system.
+    expect(style.paddingBottom).toBe(brandSpacing.xl + 22)
+    expect(style.paddingTop).toBe(brandSpacing.xs)
+  })
+
+  test("outside it the list keeps its own tab bar clearance (Android, Expo Go)", () => {
+    const { list, style } = listContent(mount(makeProps()))
+    expect(list.props.contentInsetAdjustmentBehavior).toBe("never")
+    expect(list.props.scrollIndicatorInsets).toEqual({ bottom: 68 })
+    expect(style.paddingBottom).toBe(68 + brandSpacing.xl + 22)
   })
 })

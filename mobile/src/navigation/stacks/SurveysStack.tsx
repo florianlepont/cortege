@@ -17,7 +17,7 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle } from "./stack-options"
+import { createBaseStackScreenOptions, hiddenNativeTitle, nativeLargeTitle } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -32,14 +32,14 @@ const headers = fr.navigation.headers
 type SurveysTabNavigatorProps = { useNativeNav?: boolean }
 
 /**
- * The one survey stack (D-08). In the native iOS tree, Mes Relevés shows the
- * native header with its search bar (set up by SurveyListRoute); elsewhere the
- * list keeps its own inline search.
+ * The one survey stack (D-08). In the native iOS tree, Mes Relevés shows the native header with
+ * its large title and the "+" (set up by SurveyListRoute, 12.2-17); elsewhere the list draws its
+ * own title bar with the search and "+" buttons.
  */
 export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigatorProps) {
   const surveyActions = useSurveyActions()
   const theme = useBrandTheme()
-  const nativeSearchEnabled = useNativeNav && Platform.OS === "ios"
+  const nativeListHeader = useNativeNav && Platform.OS === "ios"
   const config = useMemo<SurveysStackConfig>(() => ({ useNativeNav }), [useNativeNav])
 
   return (
@@ -69,10 +69,12 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveysHome"
             options={{
               title: headers.surveys,
-              headerShown: nativeSearchEnabled,
-              headerLargeTitle: false,
-              // D-19: the halo runs on behind the header (stack default); the route's ScreenFrame
-              // starts the list below it. The header items are set by SurveyListRoute.
+              headerShown: nativeListHeader,
+              // 12.2-17: in the native iOS tree the title is the native large title, which shrinks
+              // into the bar as the list scrolls; the route's ScreenFrame leaves the insets to
+              // iOS. D-19: the halo runs on behind the header (stack default). The "+" is set by
+              // SurveyListRoute.
+              ...(nativeListHeader ? nativeLargeTitle(theme) : { headerLargeTitle: false }),
             }}
             component={SurveyListRoute}
           />
