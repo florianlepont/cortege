@@ -6,14 +6,14 @@ current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
 stopped_at: Completed 12.2-06-PLAN.md
-last_updated: "2026-10-07T05:11:02.236Z"
+last_updated: "2026-10-07T05:18:41.414Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 166
+  completed_plans: 167
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 8 of 23
+Plan: 9 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -87,6 +87,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P05 | 20min | 2 tasks | 8 files |
 | Phase 12.2 P06 | 20min | 3 tasks | 12 files |
 | Phase 12.2 P07 | 30min | 3 tasks | 15 files |
+| Phase 12.2 P08 | 25min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 12.2-06]: A factor scored 0 draws the 4 pt low-tone stub with glow; only a null factor uses the track colour with no shadow
 - [Phase 12.2-06]: ScoreRing, FactorBarsChart and the motion helpers take tones only through totalTone and factorTone (no 25/35 split); the ring entrance plays once per survey and score for rows 0 to 7
 - [Phase 12.2]: [Phase 12.2-07]: Tab tints come from theme.visual.tab in both trees; status chip tones keep only their fill with a glass hairline border
+- [Phase 12.2]: 12.2-08: Accueil entrance indices count the sections shown (no stagger gap without alert); resume glow pill uses AppButton size md
 
 ### Pending Todos
 
@@ -185,6 +187,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-07T05:10:53.300Z
+Last session: 2026-10-07T05:18:28.115Z
 Stopped at: Completed 12.2-06-PLAN.md
 Resume file: None
