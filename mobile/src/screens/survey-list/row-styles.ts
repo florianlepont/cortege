@@ -8,6 +8,11 @@ import {
 } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
+// The status line of a row is as tall as a status chip (two 5 pt paddings, the 1 pt hairline on both
+// sides and one line of `brandTypography.meta`), so a row whose second line is plain text (a
+// community row) is exactly as tall as one that carries a chip (D-23).
+export const ROW_STATUS_MIN_HEIGHT = 2 * 5 + 2 + brandTypography.meta.lineHeight
+
 // Survey list row styles (01.9-22), moved from SurveyListScreen. Phase 12.2-11: glass card (no
 // elevation or shadow spread: an Android elevation under a translucent fill smears grey), 4-grid
 // spacing, Sora row title.
@@ -117,6 +122,7 @@ export function createRowStyles(theme: BrandTheme) {
       alignItems: "center",
       gap: brandSpacing4.sm,
       flexWrap: "wrap",
+      minHeight: ROW_STATUS_MIN_HEIGHT,
     },
     surveyCardMeta: {
       ...brandTypeScale.footnote,
