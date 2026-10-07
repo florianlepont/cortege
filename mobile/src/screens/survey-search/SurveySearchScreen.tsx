@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import Animated from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { CommunitySurveyItem } from "@cortege/ibp-domain"
 import { useBrandTheme } from "../../app/theme"
@@ -24,6 +25,8 @@ import { fr } from "../../i18n"
 import type { LocalAttachment, LocalSurvey } from "../../storage"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppText as Text } from "../../ui/AppText"
+import { feedback } from "../../ui/feedback"
+import { useEntrance } from "../../ui/useEntrance"
 import { SurveyRow, type SurveyRowPreview } from "../survey-list/SurveyRow"
 import {
   isPhotoAttachment,
@@ -100,6 +103,7 @@ export function SurveySearchScreen({
 }: SurveySearchScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSearchStyles(theme), [theme])
+  const entrance = useEntrance()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
   const inputRef = useRef<TextInput>(null)
@@ -139,20 +143,26 @@ export function SurveySearchScreen({
     onSortModeChange(SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length])
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<SearchItem>) =>
-      item.kind === "mine" ? (
-        <SurveyRow
-          survey={item.survey}
-          preview={previewById[item.survey.id] ?? null}
-          score={surveyDetails[item.survey.id]?.scores?.ibp_total ?? null}
-          selected={selectedSurveyId === item.survey.id}
-          onOpen={onOpenSurvey}
-          onDelete={onDeleteSurvey}
-        />
-      ) : (
-        <CommunityRow item={item.item} onOpen={onOpenCommunitySurvey} />
-      ),
+    ({ item, index }: ListRenderItemInfo<SearchItem>) => (
+      // First mount only, rows 0 to 7 (D-08): typing in the field does not replay the entrance.
+      <Animated.View entering={entrance(index)}>
+        {item.kind === "mine" ? (
+          <SurveyRow
+            survey={item.survey}
+            preview={previewById[item.survey.id] ?? null}
+            score={surveyDetails[item.survey.id]?.scores?.ibp_total ?? null}
+            selected={selectedSurveyId === item.survey.id}
+            index={index}
+            onOpen={onOpenSurvey}
+            onDelete={onDeleteSurvey}
+          />
+        ) : (
+          <CommunityRow item={item.item} onOpen={onOpenCommunitySurvey} />
+        )}
+      </Animated.View>
+    ),
     [
+      entrance,
       onDeleteSurvey,
       onOpenCommunitySurvey,
       onOpenSurvey,
@@ -213,13 +223,24 @@ export function SurveySearchScreen({
           </Pressable>
         </View>
 
-        <View style={styles.segments} accessibilityRole="tablist">
+        {/* Glass segment group, like the Settings appearance picker: the active scope is the
+            inverted neutral chip (direction principle 7). */}
+        <View
+          style={[
+            styles.segments,
+            { backgroundColor: theme.visual.chip.fill, borderColor: theme.visual.chip.border },
+          ]}
+          accessibilityRole="tablist"
+        >
           {(["mine", "community"] as const).map((value) => (
             <Pressable
               key={value}
               accessibilityRole="tab"
               accessibilityState={{ selected: scope === value }}
-              onPress={() => onScopeChange(value)}
+              onPress={() => {
+                feedback.selection()
+                onScopeChange(value)
+              }}
               style={[styles.segment, scope === value ? styles.segmentActive : null]}
             >
               <Text

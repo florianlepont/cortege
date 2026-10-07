@@ -1,6 +1,8 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import type { CommunitySurveyItem } from "@cortege/ibp-domain"
+import { brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage"
 import { SurveySearchScreen, type SurveySearchScreenProps } from "./SurveySearchScreen"
@@ -203,6 +205,65 @@ describe("SurveySearchScreen, Mes relevés scope", () => {
     expect(tabs).toHaveLength(2)
     press(tabs[1])
     expect(props.onScopeChange).toHaveBeenCalledWith("community")
+  })
+})
+
+describe("SurveySearchScreen, glass look and entrances (12.2-11)", () => {
+  const flat = (style: unknown): Record<string, unknown> =>
+    Object.assign({}, ...([style].flat(2).filter(Boolean) as object[]))
+
+  it("puts the two scopes in one glass segment container, each chip at least 44 pt", () => {
+    const tree = render(makeProps())
+    const group = byType(tree, "View").find((node) => node.props.accessibilityRole === "tablist")!
+    const { chip } = defaultTheme.visual
+    expect(flat(group.props.style)).toMatchObject({
+      backgroundColor: chip.fill,
+      borderColor: chip.border,
+      borderRadius: brandRadius.pill,
+      padding: brandSpacing4.xs,
+    })
+    const tabs = byType(tree, "Pressable").filter((node) => node.props.accessibilityRole === "tab")
+    for (const tab of tabs) {
+      expect(flat(tab.props.style)).toMatchObject({ flex: 1 })
+      expect(flat(tab.props.style).minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+    }
+  })
+
+  it("draws the active scope as the inverted chip and marks it selected", () => {
+    const tabs = byType(render(makeProps({ scope: "community" })), "Pressable").filter(
+      (node) => node.props.accessibilityRole === "tab",
+    )
+    expect(tabs.map((tab) => tab.props.accessibilityState.selected)).toEqual([false, true])
+    expect(flat(tabs[1].props.style).backgroundColor).toBe(defaultTheme.visual.chip.activeBg)
+    expect(flat(tabs[0].props.style).backgroundColor).toBeUndefined()
+  })
+
+  it("gives the search field the glass card look and keeps its height", () => {
+    const tree = render(makeProps())
+    const field = byType(tree, "View").find(
+      (node) => flat(node.props.style).backgroundColor === defaultTheme.visual.glass.cardFill,
+    )!
+    const style = flat(field.props.style)
+    expect(style).toMatchObject({
+      borderColor: defaultTheme.visual.glass.cardBorder,
+      borderRadius: brandRadius.card,
+    })
+    expect(style.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+  })
+
+  it("wraps every row in an entering view and hands the survey row its index", () => {
+    const tree = render(makeProps())
+    const wrappers = byType(tree, "View").filter((node) => "entering" in node.props)
+    expect(wrappers).toHaveLength(2)
+    expect(wrappers.every((node) => node.props.entering !== undefined)).toBe(true)
+    expect(byType(tree, "SurveyRow").map((row) => row.props.index)).toEqual([0, 1])
+    const communityTree = render(
+      makeProps({
+        scope: "community",
+        community: { items: [community("x", "Camille")], status: "ready" },
+      }),
+    )
+    expect(byType(communityTree, "View").filter((node) => "entering" in node.props)).toHaveLength(1)
   })
 })
 

@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandRadius,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import type { BrandTheme } from "../../app/theme"
 
 export function createSearchStyles(theme: BrandTheme) {
@@ -9,27 +15,30 @@ export function createSearchStyles(theme: BrandTheme) {
       backgroundColor: theme.colors.canvas,
     },
     top: {
-      paddingHorizontal: 16,
-      paddingBottom: 12,
-      gap: 12,
+      paddingHorizontal: brandSpacing4.md,
+      paddingBottom: brandSpacing4.smd,
+      gap: brandSpacing4.smd,
       backgroundColor: theme.colors.canvas,
     },
     fieldRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
+    // Glass field: same fill, hairline and radius as the cards below it.
     field: {
       flex: 1,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      height: 44,
-      borderRadius: 22,
+      gap: brandSpacing4.sm,
+      minHeight: brandInteraction.hitTarget.min,
+      borderRadius: brandRadius.card,
+      borderCurve: "continuous",
       borderWidth: 1,
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.semanticColors.surfaceElevated,
-      paddingHorizontal: 14,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
+      paddingHorizontal: brandSpacing4.md,
     },
     input: {
       flex: 1,
@@ -46,54 +55,55 @@ export function createSearchStyles(theme: BrandTheme) {
     cancel: {
       ...brandTypography.input,
       color: theme.colors.forest,
-      paddingVertical: 10,
+      paddingVertical: brandSpacing4.smd,
     },
+    // The glass segment container (fill and border are set from `theme.visual.chip` at the call
+    // site, like the Settings picker); each scope is one chip of at least 44 pt.
     segments: {
       flexDirection: "row",
-      padding: 3,
-      gap: 3,
-      borderRadius: 14,
-      backgroundColor: theme.colors.divider,
+      padding: brandSpacing4.xs,
+      gap: brandSpacing4.xs,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
     },
     segment: {
       flex: 1,
-      height: 38,
+      minHeight: brandInteraction.hitTarget.min,
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: 11,
+      borderRadius: brandRadius.pill,
     },
     segmentActive: {
-      backgroundColor: theme.semanticColors.surfaceElevated,
+      backgroundColor: theme.visual.chip.activeBg,
     },
     segmentLabel: {
       ...brandTypography.meta,
       fontSize: 15,
-      color: theme.colors.textSecondary,
+      lineHeight: 20,
+      color: theme.visual.chip.text,
     },
     segmentLabelActive: {
-      color: theme.colors.forest,
-      fontWeight: "600",
+      color: theme.visual.chip.activeText,
     },
     chips: {
       flexDirection: "row",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     list: {
       flex: 1,
     },
     listContent: {
-      paddingHorizontal: 16,
-      gap: 10,
+      paddingHorizontal: brandSpacing4.md,
+      gap: brandSpacing4.smd,
     },
     caption: {
-      ...brandTypography.meta,
+      ...brandTypeScale.footnote,
       color: theme.colors.textSecondary,
     },
     hint: {
-      ...brandTypography.meta,
+      ...brandTypeScale.footnote,
       color: theme.colors.textSecondary,
-      lineHeight: 20,
-      paddingTop: 8,
+      paddingTop: brandSpacing4.sm,
     },
   })
 }
