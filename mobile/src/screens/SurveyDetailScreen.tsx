@@ -24,6 +24,7 @@ import { resolveFinishCta, resolveStatusLine } from "./survey-detail/summary-sta
 import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
+import { useVisiblePulse } from "./survey-detail/useVisiblePulse"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 import { useFinishBarHeight } from "./survey-detail/useFinishBarHeight"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
@@ -70,6 +71,8 @@ export function SurveyDetailScreen({
   const { detail, canEditSurvey, activeSiteName } = data
   const [menuVisible, setMenuVisible] = useState(false)
   const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
+  // D-26: a finish from the factor pager plays the halo and pop once the summary is seen again.
+  const shownPulse = useVisiblePulse(pulseTrigger, navigation)
   // D-25: at the finish the page goes back to the top, so the score card's halo and pop are seen
   // (without animation under Reduce Motion, where only the haptic plays).
   const scrollRef = useRef<ScrollView>(null)
@@ -198,7 +201,7 @@ export function SurveyDetailScreen({
           scores={data.displayedScores}
           isDraftView={data.useLocalDraftView}
           filledFactorCount={data.filledFactorCount}
-          pulseTrigger={pulseTrigger}
+          pulseTrigger={shownPulse}
         />
 
         <PhotosStrip

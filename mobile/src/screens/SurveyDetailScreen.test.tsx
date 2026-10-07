@@ -193,6 +193,46 @@ describe("SurveyDetailScreen summary", () => {
     expect(mockScrollTo).toHaveBeenCalledTimes(1)
   })
 
+  test("D-26: finished from the factor pager, the haptic plays at once and the halo when the summary is back", () => {
+    type Listener = (event: { data?: { closing?: boolean } }) => void
+    const listeners: Record<string, Listener[]> = {}
+    let focused = false
+    const navigation = {
+      setOptions: jest.fn(),
+      isFocused: () => focused,
+      addListener: (type: string, callback: Listener) => {
+        ;(listeners[type] ??= []).push(callback)
+        return () => {
+          listeners[type] = listeners[type].filter((item) => item !== callback)
+        }
+      },
+    }
+    const render = (status: string) => (
+      <SurveyDetailScreen {...makeProps(status)} navigation={navigation as never} />
+    )
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(render("synced"), {
+        createNodeMock: (element) =>
+          (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+      })
+    })
+    // The summary is covered by the pager when the finish lands.
+    act(() => {
+      tree!.update(render("submitted"))
+    })
+    expect(notificationAsync).toHaveBeenCalledTimes(1)
+    expect(mockScrollTo).toHaveBeenCalledTimes(1)
+    expect(byType(tree!, "ScoreCard")[0].props.pulseTrigger).toBe(0)
+    // The pager pops: the summary appears, the halo and pop play, the haptic does not repeat.
+    focused = true
+    act(() => {
+      listeners.transitionEnd.forEach((listener) => listener({ data: { closing: false } }))
+    })
+    expect(byType(tree!, "ScoreCard")[0].props.pulseTrigger).toBe(1)
+    expect(notificationAsync).toHaveBeenCalledTimes(1)
+  })
+
   test("D-25: under Reduce Motion the finish jumps to the top without animation", () => {
     setReducedMotion(true)
     const tree = mount("synced")

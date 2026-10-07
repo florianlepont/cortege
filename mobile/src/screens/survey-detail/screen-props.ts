@@ -8,6 +8,7 @@ import {
 } from "../../app/types"
 import { LocalAttachment, LocalSurvey } from "../../storage"
 import type { HeaderNavigation } from "./useSurveyDetailHeader"
+import type { PulseNavigation } from "./useVisiblePulse"
 
 /** What the summary and its sub-pages all read about the selected survey. */
 type SurveyDetailBaseProps = {
@@ -19,7 +20,7 @@ type SurveyDetailBaseProps = {
 }
 
 export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
-  navigation: HeaderNavigation
+  navigation: HeaderNavigation & PulseNavigation
   selectedSurveyAttachments: LocalAttachment[]
   surveyEvents: Record<string, SurveyEventItem[]>
   onTakePhoto: (surveyId: string) => Promise<void> | void
