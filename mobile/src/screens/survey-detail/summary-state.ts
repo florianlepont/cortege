@@ -26,9 +26,22 @@ export const resolveStatusLine = (survey: LocalSurvey, isComplete: boolean | nul
 }
 
 /**
+ * Whether the "Terminer le relevé" button is live (D-25): the ten factors and the information are
+ * filled in, the survey is named, not blocked and not finished yet. Whether it is synced does not
+ * matter: the finish sends the last changes itself before the submit call. An unnamed draft never
+ * leaves the phone (OA-18), so it is asked for a name first.
+ */
+export const canFinishSurvey = (survey: LocalSurvey, isComplete: boolean | null): boolean =>
+  isComplete === true &&
+  survey.status !== "submitted" &&
+  survey.sync_blocked !== 1 &&
+  (survey.site_name ?? "").trim() !== ""
+
+/**
  * The single button at the bottom (OA-40). `hidden` once the survey is finished; `next` opens the
  * first factor still to fill ("Commencer" with none filled, then "Continuer"); `disabled` says
- * what is missing; `ready` finishes the survey.
+ * what is missing (a name, or a blocked sync); `ready` finishes the survey. There is no sync step
+ * to wait for (D-25).
  */
 export type FinishCta =
   | { kind: "hidden" }
@@ -48,7 +61,7 @@ export const resolveFinishCta = (
   if (isComplete === true) {
     return {
       kind: "disabled",
-      label: survey.sync_blocked === 1 ? c.blocked : c.pendingSync,
+      label: survey.sync_blocked === 1 ? c.blocked : c.nameRequired,
     }
   }
   if (filledFactorCount === null) return { kind: "disabled", label: c.remainingUnknown }

@@ -42,14 +42,15 @@ export const surveyDetailFr = {
     withBand: ({ score, band }: { score: string; band: string }) => `${score} · ${band}`,
   },
   // OA-40: no lock and no deadline. One button at the bottom, greyed with what is missing until
-  // the survey can be finished.
+  // the survey can be finished. D-25: no sync step, the finish sends the last changes itself; an
+  // unnamed draft is asked for a name (it never leaves the phone, OA-18).
   cta: {
     finish: "Terminer le relevé",
     start: "Commencer la notation",
     continue: "Continuer la notation",
     contextMissing: "Complétez le contexte pour terminer",
     remainingUnknown: "Remplissez les 10 facteurs pour terminer",
-    pendingSync: "Synchronisez le relevé pour le terminer",
+    nameRequired: "Nommez le relevé pour le terminer",
     blocked: "Synchronisation bloquée",
   },
   scoreCard: {
