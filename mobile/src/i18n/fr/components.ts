@@ -1,3 +1,5 @@
+import { IBP_MAX } from "@cortege/ibp-domain"
+
 // Filled by plan 01.9-16; no other plan edits this section.
 // Texts of the shared cards, the splash screen and the ui/ primitives.
 export const componentsFr = {
@@ -56,6 +58,21 @@ export const componentsFr = {
     contextGroup: "Contexte",
     points: ({ points }: { points: number }) => `${points}/5`,
     notFilled: "—",
+  },
+  // Phase 12.2 (D-15): the list score ring and the ten non-interactive factor bars. One label each.
+  scoreRing: {
+    label: ({ score }: { score: number }) => `Score ${score} sur ${IBP_MAX.total}`,
+    none: "Pas de score",
+    draft: ({ filled }: { filled: number }) =>
+      filled === 1 ? "1 facteur sur 10 rempli" : `${filled} facteurs sur 10 remplis`,
+  },
+  factorBars: {
+    label: (entries: ReadonlyArray<{ letter: string; points: number | null }>) =>
+      `Facteurs. ${entries
+        .map(({ letter, points }) =>
+          points === null ? `${letter} non rempli` : `${letter} ${points} sur 5`,
+        )
+        .join(", ")}.`,
   },
   // Phase 7 (SYNC-02): the 4-state pill visible in the Home and Mes Relevés headers.
   syncStatusLine: {

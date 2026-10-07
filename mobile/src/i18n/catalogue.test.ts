@@ -36,6 +36,14 @@ const sampleArgument: unknown = new Proxy(
   },
 )
 
+// Entries that take a list instead of a parameter object get a real list.
+const LIST_ARGUMENTS: Record<string, unknown> = {
+  "components.factorBars.label": [
+    { letter: "A", points: 3 },
+    { letter: "B", points: null },
+  ],
+}
+
 type Leaf = { path: string; value: unknown }
 
 const collectLeaves = (node: unknown, path: string, into: Leaf[]): Leaf[] => {
@@ -123,7 +131,7 @@ describe("French catalogue", () => {
     const functions = leaves.filter((leaf) => typeof leaf.value === "function")
     for (const leaf of functions) {
       const render = leaf.value as (argument: unknown) => unknown
-      expectUserFacing(leaf.path, render(sampleArgument))
+      expectUserFacing(leaf.path, render(LIST_ARGUMENTS[leaf.path] ?? sampleArgument))
     }
   })
 
