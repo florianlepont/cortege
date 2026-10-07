@@ -8,8 +8,10 @@ import { useBrandTheme } from "../app/theme"
 import { fr, logStatusDetail } from "../i18n"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
+import { AppCard } from "../ui/AppCard"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppNotice } from "../ui/AppNotice"
+import { FactorBarsChart, factorPointsFromEntries } from "../ui/FactorBarsChart"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
@@ -23,6 +25,7 @@ import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles
 import { resolveFinishCta, resolveStatusLine } from "./survey-detail/summary-state"
 import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
+import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 
 const menuText = fr.surveyDetail.menu
@@ -67,6 +70,11 @@ export function SurveyDetailScreen({
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName } = data
   const [menuVisible, setMenuVisible] = useState(false)
+  const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
+  const factorPoints = useMemo(
+    () => factorPointsFromEntries(data.displayedFactorEntries),
+    [data.displayedFactorEntries],
+  )
 
   const attachmentPreviewKey = selectedSurveyAttachments
     .map((attachment) => `${attachment.id}:${attachment.file_state}`)
@@ -178,8 +186,12 @@ export function SurveyDetailScreen({
           scores={data.displayedScores}
           isDraftView={data.useLocalDraftView}
           filledFactorCount={data.filledFactorCount}
-          pulseTrigger={0}
+          pulseTrigger={pulseTrigger}
         />
+
+        <AppCard variant="glass">
+          <FactorBarsChart entries={factorPoints} animate />
+        </AppCard>
 
         <PhotosStrip
           survey={selectedSurvey}
