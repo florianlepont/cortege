@@ -211,6 +211,14 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
     }
   })
 
+  test("forest body and title on the 9% white footer band of the resume card over each stop", () => {
+    for (const stop of stops) {
+      const band = compositeOver(forest.tileFill, stop)
+      expect(contrastRatio(forest.body, band)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(forest.title, band)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
   test("pill label on the pill top and fallback", () => {
     expect(contrastRatio(visual.pill.label, visual.pill.top)).toBeGreaterThanOrEqual(4.5)
     expect(contrastRatio(visual.pill.label, visual.pill.fallback)).toBeGreaterThanOrEqual(4.5)

@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { brandInteraction, brandSpacing4 } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { ResumeCard } from "./ResumeCard"
@@ -151,6 +152,93 @@ describe("ResumeCard", () => {
       )
     expect(style.marginTop).toBeGreaterThanOrEqual(brandSpacing4.md)
     expect((style.marginTop as number) % 4).toBe(0)
+  })
+
+  function styleOf(node: ReactTestInstance): Record<string, unknown> {
+    return [node.props.style].flat(3).reduce(
+      (acc: Record<string, unknown>, item: Record<string, unknown> | null | undefined) => ({
+        ...acc,
+        ...(item ?? {}),
+      }),
+      {},
+    )
+  }
+
+  test("a full-width rule and a footer band of their own separate the link (D-20a)", () => {
+    mount(makeSurvey())
+    const footer = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
+    )
+    const footerStyle = styleOf(footer)
+    const forest = defaultTheme.visual.forest
+    expect(footerStyle.borderTopWidth).toBeGreaterThanOrEqual(1)
+    expect(footerStyle.borderTopColor).toBe(forest.tagBorder)
+    expect(footerStyle.backgroundColor).toBe(forest.tileFill)
+    // The footer is a direct child of the card content (not of the padded body): the rule is edge
+    // to edge, and the link is the only thing in it.
+    const card = tree.root.findByType("ForestCard" as never)
+    const children = React.Children.toArray(card.props.children) as React.ReactElement[]
+    expect(children).toHaveLength(2)
+    expect(card.props.contentStyle).toBeUndefined()
+    const link = footer.findAll(
+      (node) =>
+        (node.type as unknown) === "Pressable" &&
+        node.props.accessibilityLabel === t.newSurveyButton,
+    )
+    expect(link).toHaveLength(1)
+    expect(styleOf(link[0]).minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+    expect(((footerStyle.paddingVertical as number) ?? 0) % 4).toBe(0)
+  })
+
+  test("the link is not inside the padded body, the progress is", () => {
+    mount(makeSurvey())
+    const footer = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
+    )
+    const progress = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.accessible === false,
+    )
+    expect(footer.findAll((node) => node === progress)).toHaveLength(0)
+    const body = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "View" &&
+        styleOf(node).padding === brandSpacing4.md &&
+        node.findAll((inner) => inner === progress).length > 0,
+    )
+    expect(body).toBeDefined()
+  })
+
+  test("without a draft there is no footer and no rule", () => {
+    mount(null)
+    expect(
+      tree.root.findAll(
+        (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
+      ),
+    ).toHaveLength(0)
+  })
+
+  test("the ten segments share the inner width exactly: equal flex, 4 pt gap, no minimum width", () => {
+    const { segments } = mount(makeSurvey({ completion_rate: 30 }))
+    const all = [...segments("hero-progress-done"), ...segments("hero-progress-todo")]
+    expect(all).toHaveLength(10)
+    const first = styleOf(all[0])
+    for (const segment of all) {
+      const style = styleOf(segment)
+      expect(style.flexGrow).toBe(1)
+      expect(style.flexShrink).toBe(1)
+      expect(style.flexBasis).toBe(0)
+      expect(style.minWidth).toBe(0)
+      expect(style.width).toBeUndefined()
+      expect(style.height).toBe(first.height)
+    }
+    const row = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.accessible === false,
+    )
+    const rowStyle = styleOf(row)
+    expect(rowStyle.flexDirection).toBe("row")
+    expect(rowStyle.gap).toBe(brandSpacing4.xs)
+    expect(rowStyle.alignSelf).toBe("stretch")
+    expect(row.children).toHaveLength(10)
   })
 
   test("an unnamed draft reads the unnamed title", () => {

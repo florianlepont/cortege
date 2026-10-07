@@ -30,7 +30,9 @@ type ResumeCardProps = {
  * "n/10 factors" line, ten progress segments, a plain "new survey" link); without one it invites to
  * start. Title and button say what the card is, so it has no tag pill (owner check on the iPhone).
  * Text stays on the left so nothing sits under the halo at the top right of the card. The progress
- * sits a full 24 pt under the button row, so the two never read as one block.
+ * sits a full 24 pt under the button row, and the "new survey" link has its own footer: a full-width
+ * rule in the forest rule token and a slightly lighter band, so the two groups read as distinct
+ * (D-20a, owner check on the iPhone: the gap alone was not enough).
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -40,30 +42,30 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
     : 0
 
   return (
-    <ForestCard variant="resume" contentStyle={styles.content} testID="home-resume-card">
-      <View style={styles.row}>
-        <View style={styles.copy}>
-          <Text style={styles.title} numberOfLines={2}>
-            {resumeDraft
-              ? resumeDraft.site_name
-                ? t.resumeTitle({ name: resumeDraft.site_name })
-                : t.resumeTitleUnnamed
-              : t.title}
-          </Text>
-          <Text style={styles.body}>
-            {resumeDraft ? t.resumeBody({ completed: resumeFactors }) : t.body}
-          </Text>
+    <ForestCard variant="resume" testID="home-resume-card">
+      <View style={styles.main}>
+        <View style={styles.row}>
+          <View style={styles.copy}>
+            <Text style={styles.title} numberOfLines={2}>
+              {resumeDraft
+                ? resumeDraft.site_name
+                  ? t.resumeTitle({ name: resumeDraft.site_name })
+                  : t.resumeTitleUnnamed
+                : t.title}
+            </Text>
+            <Text style={styles.body}>
+              {resumeDraft ? t.resumeBody({ completed: resumeFactors }) : t.body}
+            </Text>
+          </View>
+          <AppButton
+            label={resumeDraft ? t.resumeButton : t.button}
+            leadingIcon={resumeDraft ? "play-outline" : "add-outline"}
+            variant="glow"
+            size="md"
+            onPress={resumeDraft ? () => onResume(resumeDraft.id) : onCreateSurvey}
+          />
         </View>
-        <AppButton
-          label={resumeDraft ? t.resumeButton : t.button}
-          leadingIcon={resumeDraft ? "play-outline" : "add-outline"}
-          variant="glow"
-          size="md"
-          onPress={resumeDraft ? () => onResume(resumeDraft.id) : onCreateSurvey}
-        />
-      </View>
-      {resumeDraft ? (
-        <>
+        {resumeDraft ? (
           <View style={styles.progressRow} accessible={false}>
             {Array.from({ length: FACTOR_COUNT }, (_, index) => (
               <View
@@ -76,6 +78,10 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
               />
             ))}
           </View>
+        ) : null}
+      </View>
+      {resumeDraft ? (
+        <View style={styles.footer} testID="home-resume-footer">
           <Pressable
             style={styles.link}
             onPress={onCreateSurvey}
@@ -85,7 +91,7 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
             <Ionicons name="add-outline" size={18} color={theme.visual.forest.body} />
             <Text style={styles.linkLabel}>{t.newSurveyButton}</Text>
           </Pressable>
-        </>
+        </View>
       ) : null}
     </ForestCard>
   )
@@ -94,7 +100,9 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
 function createStyles(theme: BrandTheme) {
   const forest = theme.visual.forest
   return StyleSheet.create({
-    content: {
+    // The card content has no padding of its own: the footer rule runs edge to edge. The padding
+    // of the card body is `main`'s.
+    main: {
       padding: brandSpacing4.md,
     },
     row: {
@@ -117,18 +125,33 @@ function createStyles(theme: BrandTheme) {
     },
     progressRow: {
       flexDirection: "row",
+      alignSelf: "stretch",
       gap: brandSpacing4.xs,
       // Owner check on the iPhone: the button sat too close to the progress. 24 reads as two blocks.
       marginTop: brandSpacing4.lg,
     },
+    // Ten equal parts of the inner width: the basis is 0 and nothing sets a minimum width, so the
+    // last segment can never run past the right edge of the card.
     progressSegment: {
-      flex: 1,
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: 0,
+      minWidth: 0,
       height: 6,
       borderRadius: 3,
       backgroundColor: forest.tagFill,
     },
     progressSegmentDone: {
       backgroundColor: forest.glowFallback,
+    },
+    // D-20a: a full-width rule (the forest tag border, stronger than the card hairline) over a
+    // footer band of its own, so "Nouveau relevé" is clearly a second group.
+    footer: {
+      borderTopWidth: 1,
+      borderTopColor: forest.tagBorder,
+      backgroundColor: forest.tileFill,
+      paddingVertical: brandSpacing4.xs,
+      paddingHorizontal: brandSpacing4.md,
     },
     link: {
       minHeight: brandInteraction.hitTarget.min,
