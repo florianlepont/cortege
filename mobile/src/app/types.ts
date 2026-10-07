@@ -127,6 +127,6 @@ export type SurveyStats = {
 export type SubmitBlockReason =
   | "not_found"
   | "already_submitted"
-  | "not_synced"
   | "survey_blocked"
+  | "name_required"
   | null

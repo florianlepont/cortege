@@ -9,6 +9,7 @@
 const mockGetSubmitBlockReason = jest.fn()
 const mockEvaluateSubmitReadiness = jest.fn()
 const mockGetLocalSurveyDraft = jest.fn()
+const mockListLocalSurveys = jest.fn()
 const mockSubmitSurvey = jest.fn()
 const mockRetrySurveyNow = jest.fn()
 const mockDiscardSurveyLocalChanges = jest.fn()
@@ -41,6 +42,7 @@ jest.mock("../../app/ibp-scoring", () => ({
 }))
 jest.mock("../../storage", () => ({
   getLocalSurveyDraft: mockGetLocalSurveyDraft,
+  listLocalSurveys: mockListLocalSurveys,
   submitSurvey: mockSubmitSurvey,
   retrySurveyNow: mockRetrySurveyNow,
   discardSurveyLocalChanges: mockDiscardSurveyLocalChanges,
@@ -88,6 +90,7 @@ async function buildHook(overrides: Record<string, unknown> = {}) {
     maybeAutoSync: jest.fn().mockResolvedValue(undefined),
     handleLoadCanonicalDetails: jest.fn().mockResolvedValue(undefined),
     syncAllowed: true,
+    isOnline: true,
     ensureSyncOwner: jest.fn().mockResolvedValue(true),
     syncActivity: createSyncActivity(),
     ...overrides,
@@ -103,6 +106,10 @@ describe("useSurveySyncSurveyOperations", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     debug = jest.spyOn(console, "debug").mockImplementation(() => undefined)
+    // By default the survey is already synced: the finish goes straight to the submit call.
+    mockListLocalSurveys.mockResolvedValue([
+      { id: "survey-1", sync_state: "synced", sync_blocked: 0 },
+    ])
   })
 
   afterEach(async () => {
@@ -127,11 +134,13 @@ describe("useSurveySyncSurveyOperations", () => {
       expect(setStatus).toHaveBeenCalledWith(text.alreadySubmitted({ name }))
     })
 
-    test("sets status when not synced", async () => {
-      mockGetSubmitBlockReason.mockReturnValue("not_synced")
+    test("D-25: an unnamed draft asks for a name and sends nothing", async () => {
+      mockGetSubmitBlockReason.mockReturnValue("name_required")
       const { handleSubmitSurvey, setStatus } = await buildHook()
       await handleSubmitSurvey("survey-1")
-      expect(setStatus).toHaveBeenCalledWith(text.notSynced({ name }))
+      expect(setStatus).toHaveBeenCalledWith(text.nameRequired())
+      expect(mockSyncPending).not.toHaveBeenCalled()
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
     })
 
     test("sets status when survey-level sync conflict", async () => {
@@ -387,6 +396,186 @@ describe("useSurveySyncSurveyOperations", () => {
       const { handleSubmitSurvey, setStatus } = await buildHook()
       await handleSubmitSurvey("survey-1")
       expect(setStatus).toHaveBeenCalledWith(text.submitCheckFailed({ name }))
+    })
+  })
+
+  describe("handleSubmitSurvey sends the pending changes first (D-25)", () => {
+    const localRow = (sync_state: string, sync_blocked = 0) => [
+      { id: "survey-1", sync_state, sync_blocked },
+    ]
+
+    function readyToFinish() {
+      mockGetSubmitBlockReason.mockReturnValue(null)
+      mockGetLocalSurveyDraft.mockResolvedValue({ parcel_ids: ["p1"] })
+      mockEvaluateSubmitReadiness.mockReturnValue({ ready: true })
+      mockSyncPending.mockResolvedValue({ synced: 1, failed: 0 })
+      mockSubmitSurvey.mockResolvedValue({ ok: true })
+    }
+
+    test("a pending survey is synced quietly, then submitted", async () => {
+      readyToFinish()
+      mockListLocalSurveys
+        .mockResolvedValueOnce(localRow("pending"))
+        .mockResolvedValueOnce(localRow("synced"))
+      const { handleSubmitSurvey, setStatus, ensureSyncOwner } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+
+      expect(ensureSyncOwner).toHaveBeenCalledWith("auth0|owner")
+      expect(mockSyncPending).toHaveBeenCalledTimes(1)
+      expect(mockSyncPending).toHaveBeenCalledWith("http://localhost:3000", "token")
+      expect(mockSubmitSurvey).toHaveBeenCalledWith("http://localhost:3000", "token", "survey-1")
+      expect(mockSyncPending.mock.invocationCallOrder[0]).toBeLessThan(
+        mockSubmitSurvey.mock.invocationCallOrder[0],
+      )
+      expect(mockRetrySurveyNow).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledTimes(1)
+      expect(setStatus).toHaveBeenCalledWith(text.submitted({ name }))
+    })
+
+    test("an already synced survey is submitted without a sync round", async () => {
+      readyToFinish()
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockSyncPending).not.toHaveBeenCalled()
+      expect(mockSubmitSurvey).toHaveBeenCalledTimes(1)
+      expect(setStatus).toHaveBeenCalledWith(text.submitted({ name }))
+    })
+
+    test("a joined drain that missed the last edit gets a second round", async () => {
+      readyToFinish()
+      mockListLocalSurveys
+        .mockResolvedValueOnce(localRow("pending"))
+        .mockResolvedValueOnce(localRow("pending"))
+        .mockResolvedValueOnce(localRow("synced"))
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockSyncPending).toHaveBeenCalledTimes(2)
+      expect(mockSubmitSurvey).toHaveBeenCalledTimes(1)
+      expect(setStatus).toHaveBeenCalledWith(text.submitted({ name }))
+    })
+
+    test("changes still not sent after two rounds: no submit, no success, a calm message", async () => {
+      readyToFinish()
+      mockListLocalSurveys.mockResolvedValue(localRow("pending"))
+      const { handleSubmitSurvey, setStatus, refreshLocalSurveys } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockSyncPending).toHaveBeenCalledTimes(2)
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+      expect(refreshLocalSurveys).toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledTimes(1)
+      expect(setStatus).toHaveBeenCalledWith(text.finishNotSentYet({ name }))
+    })
+
+    test("a failed upsert stops after one round: no submit, the calm message", async () => {
+      readyToFinish()
+      mockSyncPending.mockResolvedValue({ synced: 0, failed: 1 })
+      mockListLocalSurveys
+        .mockResolvedValueOnce(localRow("pending"))
+        .mockResolvedValueOnce(localRow("failed"))
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockSyncPending).toHaveBeenCalledTimes(1)
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledWith(text.finishNotSentYet({ name }))
+    })
+
+    test("a sync that throws: no submit, no success, the detail goes to the debug log only", async () => {
+      readyToFinish()
+      const failure = new Error("socket hang up")
+      mockSyncPending.mockRejectedValue(failure)
+      mockListLocalSurveys.mockResolvedValue(localRow("pending"))
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledTimes(1)
+      expect(setStatus).toHaveBeenCalledWith(text.finishNotSentYet({ name }))
+      expect(JSON.stringify(setStatus.mock.calls)).not.toContain("socket hang up")
+      expect(debug).toHaveBeenCalledWith("[status] surveyOps.submitPendingChanges", failure)
+    })
+
+    test("a survey whose last send failed (backoff) is retried at once, then submitted", async () => {
+      readyToFinish()
+      mockRetrySurveyNow.mockResolvedValue({ queued: 1 })
+      mockListLocalSurveys
+        .mockResolvedValueOnce(localRow("failed"))
+        .mockResolvedValueOnce(localRow("synced"))
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockRetrySurveyNow).toHaveBeenCalledWith("survey-1")
+      expect(mockRetrySurveyNow.mock.invocationCallOrder[0]).toBeLessThan(
+        mockSyncPending.mock.invocationCallOrder[0],
+      )
+      expect(mockSubmitSurvey).toHaveBeenCalledTimes(1)
+      expect(setStatus).toHaveBeenCalledWith(text.submitted({ name }))
+    })
+
+    test("a survey blocked by the sync round reports the conflict and is not submitted", async () => {
+      readyToFinish()
+      mockListLocalSurveys
+        .mockResolvedValueOnce(localRow("pending"))
+        .mockResolvedValueOnce(localRow("failed", 1))
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledWith(text.surveyConflict({ name }))
+    })
+
+    test("a survey gone from the phone during the round is reported not found", async () => {
+      readyToFinish()
+      mockListLocalSurveys.mockResolvedValueOnce(localRow("pending")).mockResolvedValueOnce([])
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledWith(text.notFound())
+    })
+
+    test("offline: postponed calmly, nothing is sent and the finish stays possible", async () => {
+      readyToFinish()
+      mockListLocalSurveys.mockResolvedValue(localRow("pending"))
+      const { handleSubmitSurvey, setStatus, withAuthRetry } = await buildHook({ isOnline: false })
+      await handleSubmitSurvey("survey-1")
+      expect(withAuthRetry).not.toHaveBeenCalled()
+      expect(mockSyncPending).not.toHaveBeenCalled()
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledWith(text.submitPostponed({ name }))
+      const shown = JSON.stringify(setStatus.mock.calls).toLowerCase()
+      expect(shown).not.toContain("synchronis")
+      expect(shown).not.toContain("—")
+    })
+
+    test("the owner check failing during the round postpones calmly, no submit", async () => {
+      readyToFinish()
+      mockListLocalSurveys.mockResolvedValue(localRow("pending"))
+      const { handleSubmitSurvey, setStatus } = await buildHook({
+        ensureSyncOwner: jest.fn().mockResolvedValue(false),
+      })
+      await handleSubmitSurvey("survey-1")
+      expect(mockSyncPending).not.toHaveBeenCalled()
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledWith(text.submitPostponed({ name }))
+    })
+
+    test("a session that ended during the round asks to log in, no submit", async () => {
+      readyToFinish()
+      mockListLocalSurveys.mockResolvedValue(localRow("pending"))
+      const { handleSubmitSurvey, setStatus, clearSession } = await buildHook({
+        withAuthRetry: jest.fn().mockRejectedValue(new Error("AUTH_REQUIRED")),
+      })
+      await handleSubmitSurvey("survey-1")
+      expect(clearSession).toHaveBeenCalled()
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+      expect(setStatus).toHaveBeenCalledWith(text.submitLoginRequired())
+    })
+
+    test("a 422 after the round keeps today's handling", async () => {
+      readyToFinish()
+      mockListLocalSurveys
+        .mockResolvedValueOnce(localRow("pending"))
+        .mockResolvedValueOnce(localRow("synced"))
+      mockSubmitSurvey.mockResolvedValue({ ok: false, message: "factor A invalid" })
+      const { handleSubmitSurvey, setStatus } = await buildHook()
+      await handleSubmitSurvey("survey-1")
+      expect(setStatus).toHaveBeenCalledWith(text.submitRejected({ name }))
     })
   })
 

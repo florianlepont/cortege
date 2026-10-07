@@ -488,6 +488,7 @@ export function useSurveySync({
     maybeAutoSync,
     handleLoadCanonicalDetails,
     syncAllowed: localDataOwner.syncAllowed,
+    isOnline,
     ensureSyncOwner: localDataOwner.ensureSyncOwner,
     syncActivity,
   })

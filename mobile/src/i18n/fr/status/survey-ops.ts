@@ -49,8 +49,13 @@ export const surveyOpsStatusFr = {
   // Submit
   notFound: () => statusText("Relevé introuvable sur cet appareil"),
   alreadySubmitted: ({ name }: { name: string }) => statusText(`« ${name} » est déjà soumis`),
-  notSynced: ({ name }: { name: string }) =>
-    statusText(`« ${name} » doit être synchronisé avant d'être soumis`),
+  // D-25: the finish sends the survey's last changes itself; these say what happened, calmly,
+  // and never ask the user to synchronise.
+  nameRequired: () => statusText("Nommez le relevé pour le terminer"),
+  finishNotSentYet: ({ name }: { name: string }) =>
+    statusText(
+      `Les dernières modifications de « ${name} » n'ont pas encore pu être envoyées. Réessayez de terminer le relevé dans un instant.`,
+    ),
   surveyConflict: ({ name }: { name: string }) =>
     statusText(
       `« ${name} » a un conflit de synchronisation. Réessayez ou annulez la modification locale d'abord.`,
@@ -72,7 +77,9 @@ export const surveyOpsStatusFr = {
   submitCheckFailed: ({ name }: { name: string }) =>
     statusText(`Impossible de vérifier « ${name} » avant la soumission, réessayez`),
   submitPostponed: ({ name }: { name: string }) =>
-    statusText(`Soumission de « ${name} » reportée : ${OWNER_PENDING}`),
+    statusText(
+      `« ${name} » est enregistré sur cet appareil. Vous pourrez le terminer dès que la connexion sera rétablie.`,
+    ),
   submitted: ({ name }: { name: string }) => statusText(`« ${name} » a été soumis`),
   submitRejected: ({ name }: { name: string }) =>
     statusText(`Soumission de « ${name} » refusée : ouvrez le relevé pour corriger`),
