@@ -63,8 +63,9 @@ export type BrandVisual = {
     iconTint: string
   }
   /**
-   * Green glass of the big call-to-action buttons (D-27c): `tint` for real Liquid Glass, `flat` for
-   * the fallback, the `*Off` entries for the disabled look, `ink` the text colour on each.
+   * Green glass of the big call-to-action buttons (D-27c, D-28): `tint` for the native iOS 26 glass
+   * button, `flat` with its `hairline`, `shadow` and `sheen` for the fallback, the `*Off` entries
+   * for the disabled fallback, `ink` the label colour on the green (both), `inkOff` on the disabled.
    */
   glassCta: {
     tint: string
@@ -72,7 +73,7 @@ export type BrandVisual = {
     ink: string
     hairline: string
     shadow: string
-    tintOff: string
+    sheen: string
     flatOff: string
     inkOff: string
     hairlineOff: string
@@ -180,7 +181,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       ink: glassCtaInk[scheme].on,
       hairline: glassCtaEdges[scheme].hairline,
       shadow: glassCtaEdges[scheme].shadow,
-      tintOff: glassCtaFills[scheme].tintOff,
+      sheen: glassCtaEdges[scheme].sheen,
       flatOff: glassCtaFills[scheme].flatOff,
       inkOff: glassCtaInk[scheme].off,
       hairlineOff: glassCtaEdges[scheme].hairlineOff,

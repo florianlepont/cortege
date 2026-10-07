@@ -1,7 +1,12 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
-import { defaultTheme } from "../app/theme"
+import { impactAsync as impactAsyncReal } from "expo-haptics"
+import { brandInteraction } from "../app/brand-tokens"
+import { buildTheme, defaultTheme } from "../app/theme"
 
+// iOS 26 with a binary that carries `@expo/ui`: the native SwiftUI glass button (D-28). Metro would
+// pick `NativeGlassButton.ios.tsx` on iOS; Jest resolves the default file, so the iOS one is mapped
+// in by hand, and its native-module check sees a module.
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent =
@@ -12,17 +17,7 @@ jest.mock("react-native", () => {
     View: mockComponent("View"),
     Text: mockComponent("Text"),
     ActivityIndicator: mockComponent("ActivityIndicator"),
-    Pressable: ({
-      children,
-      ...props
-    }: {
-      children?: React.ReactNode | ((state: { pressed: boolean }) => React.ReactNode)
-    }) =>
-      ReactRef.createElement(
-        "Pressable",
-        props,
-        typeof children === "function" ? children({ pressed: false }) : children,
-      ),
+    Pressable: mockComponent("Pressable"),
     Platform: { OS: "ios" },
     StyleSheet: {
       create: <T,>(styles: T) => styles,
@@ -32,16 +27,26 @@ jest.mock("react-native", () => {
     },
   }
 })
-jest.mock("expo-glass-effect", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    isLiquidGlassAvailable: () => true,
-    GlassView: ({ children, ...props }: { children?: React.ReactNode }) =>
-      ReactRef.createElement("GlassView", props, children),
+jest.mock("expo-glass-effect", () => ({
+  isLiquidGlassAvailable: () => true,
+  GlassView: () => null,
+}))
+jest.mock("expo", () => ({ requireOptionalNativeModule: (name: string) => ({ name }) }))
+jest.mock("./NativeGlassButton", () => jest.requireActual("./NativeGlassButton.ios"))
+// The theme the button reads, switchable per test (light by default).
+const mockScheme: { current: "light" | "dark" } = { current: "light" }
+jest.mock("../app/theme", () => {
+  const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
+  const themes = {
+    light: actual.defaultTheme,
+    dark: actual.buildTheme("automatic", "dark", () => {}),
   }
+  return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
 
-import { GlassButton } from "./GlassButton"
+import { GlassButton, NATIVE_SYMBOLS } from "./GlassButton"
+
+const impactAsync = impactAsyncReal as jest.Mock
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -56,10 +61,24 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
+afterEach(() => {
+  impactAsync.mockClear()
+})
+
+type Modifier = { $type: string; [key: string]: unknown }
 type Style = Record<string, unknown>
+
 function flatten(style: unknown): Style {
   if (Array.isArray(style)) return style.reduce<Style>((acc, s) => ({ ...acc, ...flatten(s) }), {})
   return (style as Style | undefined | null) ?? {}
+}
+
+function byType(root: ReactTestInstance, name: string): ReactTestInstance[] {
+  return root.findAll((n) => (n.type as unknown) === name)
+}
+
+function modifier(node: ReactTestInstance, type: string): Modifier | undefined {
+  return (node.props.modifiers as Modifier[]).find((m) => m.$type === type)
 }
 
 function render(props: Partial<React.ComponentProps<typeof GlassButton>> = {}) {
@@ -68,45 +87,189 @@ function render(props: Partial<React.ComponentProps<typeof GlassButton>> = {}) {
     tree = renderer.create(<GlassButton label="Terminer" onPress={() => {}} {...props} />)
   })
   const root = tree!.root
-  const glass = root.findAll((n) => (n.type as unknown) === "GlassView") as ReactTestInstance[]
-  const container = root.findAll((n) => (n.type as unknown) === "View")[0]
-  return { root, glass, style: flatten(container.props.style) }
+  const [host] = byType(root, "Host")
+  const [button] = byType(root, "Button")
+  const [text] = byType(root, "Text")
+  return { root, host, button, text }
 }
 
 const cta = defaultTheme.visual.glassCta
 
-describe("GlassButton on Liquid Glass (iOS 26)", () => {
-  test("is one interactive GlassView tinted green, filling the pill behind the label", () => {
-    const { glass } = render()
-    expect(glass).toHaveLength(1)
-    expect(glass[0].props.tintColor).toBe(cta.tint)
-    expect(glass[0].props.isInteractive).toBe(true)
-    expect(glass[0].props.glassEffectStyle).toBe("regular")
-    expect(flatten(glass[0].props.style)).toMatchObject({
-      position: "absolute",
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
+describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => {
+  test("is one SwiftUI glass-prominent Button tinted with the moss token, in a Host", () => {
+    const { root, host, button } = render()
+    expect(byType(root, "Host")).toHaveLength(1)
+    expect(byType(root, "Button")).toHaveLength(1)
+    expect(host.findAll((n) => n === button)).toHaveLength(1)
+    expect(modifier(button, "buttonStyle")).toEqual({
+      $type: "buttonStyle",
+      style: "glassProminent",
     })
+    expect(modifier(button, "tint")).toEqual({
+      $type: "tint",
+      tint: { type: "color", color: cta.tint },
+    })
+    expect(modifier(button, "disabled")).toEqual({ $type: "disabled", disabled: false })
   })
 
-  test("the button itself carries no fill, hairline or shadow: the glass draws its own edge", () => {
-    const { style } = render()
-    for (const key of ["backgroundColor", "borderWidth", "borderColor", "boxShadow"]) {
+  test("no drawn pill: no pressable, no glass view, no fill, hairline or shadow of ours", () => {
+    const { root, host } = render()
+    expect(byType(root, "Pressable")).toHaveLength(0)
+    expect(byType(root, "GlassView")).toHaveLength(0)
+    const style = flatten(host.props.style)
+    for (const key of [
+      "backgroundColor",
+      "borderWidth",
+      "boxShadow",
+      "experimental_backgroundImage",
+    ]) {
       expect(style).not.toHaveProperty(key)
     }
   })
 
-  test("disabled swaps in the pale tint and stops the press shimmer", () => {
-    const { glass } = render({ disabled: true })
-    expect(glass[0].props.tintColor).toBe(cta.tintOff)
-    expect(glass[0].props.isInteractive).toBe(false)
+  test("the label is the Sora button face in the ink token, scaling with Dynamic Type", () => {
+    const { text } = render()
+    expect(text.props.children).toBe("Terminer")
+    expect(modifier(text, "font")).toEqual({
+      $type: "font",
+      family: "Sora-Bold",
+      size: 16,
+      textStyle: "body",
+    })
+    expect(modifier(text, "foregroundStyle")).toEqual({
+      $type: "foregroundStyle",
+      style: { type: "color", color: cta.ink },
+    })
   })
 
-  test("loading keeps the green tint but is not interactive", () => {
-    const { glass } = render({ loading: true })
-    expect(glass[0].props.tintColor).toBe(cta.tint)
-    expect(glass[0].props.isInteractive).toBe(false)
+  test("the label row fills the host, so the capsule is as wide as the bar", () => {
+    const { root } = render()
+    const [row] = byType(root, "HStack")
+    const fill = modifier(row, "frame") as unknown as { maxWidth: number; maxHeight: number }
+    expect(Number.isFinite(fill.maxWidth)).toBe(true)
+    expect(fill.maxWidth).toBeGreaterThanOrEqual(1000)
+    expect(fill.maxHeight).toBeGreaterThanOrEqual(1000)
+  })
+
+  test("the host follows the app's scheme, stretches and grows with its label", () => {
+    const { host } = render()
+    expect(host.props.colorScheme).toBe(defaultTheme.scheme)
+    expect(host.props.matchContents).toEqual({ vertical: true })
+    expect(flatten(host.props.style).alignSelf).toBe("stretch")
+  })
+
+  test("sizes: large 50, regular 44, small promoted to 44 (no hit slop natively)", () => {
+    const cases = [
+      ["lg", "large", 50],
+      ["md", "regular", 44],
+      ["sm", "small", 44],
+    ] as const
+    for (const [size, control, minHeight] of cases) {
+      const { host, button } = render({ size })
+      expect(modifier(button, "controlSize")).toEqual({ $type: "controlSize", size: control })
+      expect(flatten(host.props.style).minHeight).toBe(minHeight)
+      expect(minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+    }
+    expect(modifier(render({ size: "sm" }).text, "font")).toMatchObject({ size: 12 })
+  })
+
+  test("pressing taps once and calls onPress", () => {
+    const onPress = jest.fn()
+    const { button } = render({ onPress })
+    act(() => {
+      ;(button.props.onPress as () => void)()
+    })
+    expect(impactAsync).toHaveBeenCalledTimes(1)
+    expect(impactAsync).toHaveBeenCalledWith("light")
+    expect(onPress).toHaveBeenCalledTimes(1)
+  })
+
+  test("disabled is the system disabled look, with the label colour left to the system", () => {
+    const onPress = jest.fn()
+    const { button, text } = render({ disabled: true, onPress })
+    expect(modifier(button, "disabled")).toEqual({ $type: "disabled", disabled: true })
+    expect(modifier(button, "tint")).toBeDefined()
+    expect(modifier(text, "foregroundStyle")).toBeUndefined()
+    act(() => {
+      ;(button.props.onPress as () => void)()
+    })
+    expect(onPress).not.toHaveBeenCalled()
+    expect(impactAsync).not.toHaveBeenCalled()
+  })
+
+  test("loading shows a spinner beside the label, keeps the green and ignores presses", () => {
+    const onPress = jest.fn()
+    const { root, button, text } = render({ loading: true, onPress })
+    const spinners = byType(root, "ProgressView")
+    expect(spinners).toHaveLength(1)
+    expect(modifier(spinners[0], "tint")).toEqual({
+      $type: "tint",
+      tint: { type: "color", color: cta.ink },
+    })
+    expect(modifier(spinners[0], "accessibilityHidden")).toEqual({
+      $type: "accessibilityHidden",
+      hidden: true,
+    })
+    expect(text.props.children).toBe("Terminer")
+    expect(modifier(button, "disabled")).toEqual({ $type: "disabled", disabled: false })
+    act(() => {
+      ;(button.props.onPress as () => void)()
+    })
+    expect(onPress).not.toHaveBeenCalled()
+    expect(impactAsync).not.toHaveBeenCalled()
+  })
+
+  test("accessibility: the label by default, a given label wins, the testID is the identifier", () => {
+    const { button } = render({ testID: "finish-bar-button" })
+    expect(button.props.testID).toBe("finish-bar-button")
+    expect(modifier(button, "accessibilityLabel")).toEqual({
+      $type: "accessibilityLabel",
+      label: "Terminer",
+    })
+    expect(
+      modifier(
+        render({ accessibilityLabel: "Terminer le relevé Parcelle A" }).button,
+        "accessibilityLabel",
+      ),
+    ).toEqual({ $type: "accessibilityLabel", label: "Terminer le relevé Parcelle A" })
+    expect(
+      (
+        modifier(render({ label: "  " }).button, "accessibilityLabel") as unknown as {
+          label: string
+        }
+      ).label,
+    ).toBeTruthy()
+  })
+
+  test("a leading icon becomes its SF Symbol, hidden from VoiceOver; an unmapped one is left out", () => {
+    const { root } = render({ leadingIcon: "checkmark" })
+    const [image] = byType(root, "Image")
+    expect(image.props.systemName).toBe(NATIVE_SYMBOLS.checkmark)
+    expect(modifier(image, "accessibilityHidden")).toEqual({
+      $type: "accessibilityHidden",
+      hidden: true,
+    })
+    expect(byType(render({ leadingIcon: "leaf" }).root, "Image")).toHaveLength(0)
+    expect(byType(render().root, "Image")).toHaveLength(0)
+  })
+
+  test("the caller's style reaches the host", () => {
+    const { host } = render({ style: { width: "100%" } })
+    expect(flatten(host.props.style)).toMatchObject({ width: "100%", alignSelf: "stretch" })
+  })
+
+  test("the dark theme hands the dark scheme and its tint to the host", () => {
+    mockScheme.current = "dark"
+    try {
+      const { host, button } = render()
+      const dark = buildTheme("automatic", "dark", () => {})
+      expect(host.props.colorScheme).toBe("dark")
+      expect(modifier(button, "tint")).toEqual({
+        $type: "tint",
+        tint: { type: "color", color: dark.visual.glassCta.tint },
+      })
+    } finally {
+      mockScheme.current = "light"
+    }
   })
 })

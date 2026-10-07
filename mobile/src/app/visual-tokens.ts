@@ -116,45 +116,60 @@ export const brandGlassFills = {
 // string literal is read as user-facing text by the structure gate).
 export const pillLabelColor = "#14210F"
 
-// Green glass of the big call-to-action buttons (D-27c). `tint` is what Liquid Glass (iOS 26)
-// receives as `tintColor`: the glass blends it over whatever is behind the button, so the button
-// stays see-through. `flat` is the translucent fill of the fallback (Android, iOS before 26): no
-// blur, a touch more opaque because nothing refracts. The "Off" pair is the disabled look: a pale
-// neutral glass, clearly less saturated than the green. Light is the brand forest, dark the
-// brand's lighter call-to-action green (`ctaPrimary`), like the solid button it replaces.
+// Green glass of the big call-to-action buttons (D-27c, made more saturated with a clearer
+// highlight for D-28: "Plus saturé et un reflet plus marqué"). `tint` is the opaque green the native
+// iOS 26 glass button is tinted with (`buttonStyle("glassProminent")`): the system adds its own
+// glass material, specular highlight and press response on top. `flat` is the translucent fill of
+// the fallback (Android, iOS before 26): no blur, see-through. `flatOff` is the disabled fallback, a
+// pale neutral glass clearly less saturated than the green (the native button uses the system
+// disabled look instead). Both schemes use the brand moss of the glow pill, the most saturated green
+// of the palette (the D-27c pill was the duller forest in light and lime in dark), with the pill's
+// near black label.
 export const glassCtaFills = {
   light: {
-    tint: "rgba(51, 78, 43, 0.82)",
-    flat: "rgba(51, 78, 43, 0.9)",
-    tintOff: "rgba(36, 49, 31, 0.07)",
+    tint: "#89A33A",
+    flat: "rgba(137, 163, 58, 0.92)",
     flatOff: "rgba(36, 49, 31, 0.09)",
   },
   dark: {
-    tint: "rgba(155, 194, 106, 0.8)",
-    flat: "rgba(155, 194, 106, 0.88)",
-    tintOff: "rgba(242, 243, 241, 0.1)",
+    tint: "#89A33A",
+    flat: "rgba(137, 163, 58, 0.95)",
     flatOff: "rgba(242, 243, 241, 0.12)",
   },
 } as const
 
-// Text colour on the green glass (white on the forest glass, near black on the light green one) and
-// on the disabled glass. Named constants for the same structure-gate reason as `pillLabelColor`.
+// Text colour on the green (the glow pill's near black, both schemes) and on the disabled fallback.
+// Named constants for the same structure-gate reason as `pillLabelColor`.
 export const glassCtaInk = {
-  light: { on: "#FFFFFF", off: "#3D4B37" },
-  dark: { on: "#0C1208", off: "#B4B8BD" },
+  light: { on: pillLabelColor, off: "#3D4B37" },
+  dark: { on: pillLabelColor, off: "#B4B8BD" },
 } as const
 
-// Edge of the fallback button: a hairline, an inner top highlight and a soft green shadow. Real
-// Liquid Glass draws its own edge and light, so none of this is used on iOS 26.
+// Edge of the fallback button: a crisp light hairline, then in one `boxShadow` a soft green halo, a
+// marked top rim highlight and a faint lower rim shade, so the pill reads as a lit glass bead. The
+// `sheen` is a white reflection over the top half of the fill. The native glass draws its own edge
+// and light, so none of this is used on iOS 26.
 export const glassCtaEdges = {
   light: {
-    hairline: "rgba(255, 255, 255, 0.22)",
-    shadow: "0 8px 22px rgba(51, 78, 43, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.28)",
+    hairline: "rgba(255, 255, 255, 0.55)",
+    shadow:
+      "0 8px 22px rgba(137, 163, 58, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -1px 0 rgba(20, 33, 15, 0.18)",
+    sheen: buildLinearGradient(180, [
+      ["rgba(255, 255, 255, 0.36)", 0],
+      ["rgba(255, 255, 255, 0.1)", 46],
+      ["rgba(255, 255, 255, 0)", 56],
+    ]),
     hairlineOff: "rgba(36, 49, 31, 0.14)",
   },
   dark: {
-    hairline: "rgba(255, 255, 255, 0.4)",
-    shadow: "0 8px 22px rgba(155, 194, 106, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
+    hairline: "rgba(255, 255, 255, 0.6)",
+    shadow:
+      "0 8px 22px rgba(137, 163, 58, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(12, 18, 8, 0.22)",
+    sheen: buildLinearGradient(180, [
+      ["rgba(255, 255, 255, 0.32)", 0],
+      ["rgba(255, 255, 255, 0.08)", 46],
+      ["rgba(255, 255, 255, 0)", 56],
+    ]),
     hairlineOff: "rgba(255, 255, 255, 0.14)",
   },
 } as const

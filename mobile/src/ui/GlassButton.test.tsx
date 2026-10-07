@@ -78,10 +78,11 @@ function render(props: Partial<React.ComponentProps<typeof GlassButton>> = {}) {
 const cta = defaultTheme.visual.glassCta
 
 describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
-  test("draws a translucent green fill with a hairline and a soft shadow, and no blur or glass view", () => {
+  test("draws a translucent moss fill with a hairline, a reflection and a shadow, and no blur or glass view", () => {
     const { style, root } = render()
     expect(style).toMatchObject({
       backgroundColor: cta.flat,
+      experimental_backgroundImage: cta.sheen,
       borderWidth: 1,
       borderColor: cta.hairline,
       boxShadow: cta.shadow,
@@ -89,6 +90,9 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
     })
     expect(root.findAll((n) => (n.type as unknown) === "GlassView")).toHaveLength(0)
     expect(root.findAll((n) => (n.type as unknown) === "BlurView")).toHaveLength(0)
+    // Not the native SwiftUI button: Jest resolves the default (Android) half of the split.
+    expect(root.findAll((n) => (n.type as unknown) === "Host")).toHaveLength(0)
+    expect(root.findAll((n) => (n.type as unknown) === "Button")).toHaveLength(0)
     // The fill is see-through: it is not an opaque colour.
     expect(String(style.backgroundColor)).toMatch(/^rgba\(.*, 0\.\d+\)$/)
   })
@@ -103,6 +107,7 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
     const { style, label, pressable } = render({ disabled: true })
     expect(style).toMatchObject({ backgroundColor: cta.flatOff, borderColor: cta.hairlineOff })
     expect(style).not.toHaveProperty("boxShadow")
+    expect(style).not.toHaveProperty("experimental_backgroundImage")
     expect(style).not.toHaveProperty("opacity")
     expect(flatten(label.props.style).color).toBe(cta.inkOff)
     expect(pressable.props.disabled).toBe(true)

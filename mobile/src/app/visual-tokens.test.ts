@@ -287,15 +287,16 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
   })
 })
 
-describe.each(schemes)("green glass call to action (D-27c), %s scheme", (scheme) => {
+describe.each(schemes)("green glass call to action (D-27c, D-28), %s scheme", (scheme) => {
   const theme = themes[scheme]
   const { visual, colors } = theme
   const cta = visual.glassCta
 
   // The worst plausible backdrops behind the button, never the glass itself: the canvas, the panel,
   // the strongest point of each backdrop halo, and the extreme of the scheme (pure white in light,
-  // pure black in dark) for content that scrolls behind the bar. The label is lightest on the
-  // lightest backdrop in light and darkest on the darkest in dark, and the extreme covers both.
+  // pure black in dark) for content that scrolls behind the bar. The label is near black on a light
+  // green in both schemes, so the darkest backdrop the translucent fill can let through is the risk,
+  // and the halos and the extreme cover it.
   const halos = splitTopLevel(visual.backdrop).map((layer) => {
     const first = /rgba\([^)]*\)/.exec(layer)
     if (!first) throw new Error(`No colour in ${layer}`)
@@ -303,17 +304,35 @@ describe.each(schemes)("green glass call to action (D-27c), %s scheme", (scheme)
   })
   const extreme = scheme === "light" ? "#FFFFFF" : "#000000"
   const backdrops = [colors.canvas, colors.panel, extreme, ...halos]
+  // Every colour stop of the fallback's reflection, strongest first.
+  const sheenStops = [...cta.sheen.matchAll(/rgba\([^)]*\)/g)].map((match) => match[0])
 
-  function saturation(hex: string): number {
-    const channels = [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16))
-    const max = Math.max(...channels)
-    return max === 0 ? 0 : (max - Math.min(...channels)) / max
+  function channels(hex: string): number[] {
+    return [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16))
   }
 
+  function saturation(hex: string): number {
+    const rgb = channels(hex)
+    const max = Math.max(...rgb)
+    return max === 0 ? 0 : (max - Math.min(...rgb)) / max
+  }
+
+  test("the native glass tint is an opaque, saturated green and its label reads at 4.5:1", () => {
+    expect(cta.tint).toMatch(/^#[0-9A-F]{6}$/)
+    const [r, g, b] = channels(cta.tint)
+    expect(g).toBeGreaterThan(r)
+    expect(g).toBeGreaterThan(b)
+    expect(saturation(cta.tint)).toBeGreaterThan(0.45)
+    expect(contrastRatio(cta.ink, cta.tint)).toBeGreaterThanOrEqual(4.5)
+    // The system's specular highlight only lightens the glass: with a near black label, a lighter
+    // green only raises the contrast. Check a 30% white highlight to be sure.
+    expect(
+      contrastRatio(cta.ink, compositeOver("rgba(255, 255, 255, 0.3)", cta.tint)),
+    ).toBeGreaterThan(contrastRatio(cta.ink, cta.tint))
+  })
+
   test.each([
-    ["glass tint", "tint", "ink"],
     ["flat fallback", "flat", "ink"],
-    ["glass tint, disabled", "tintOff", "inkOff"],
     ["flat fallback, disabled", "flatOff", "inkOff"],
   ] as const)("the label reads at 4.5:1 on the %s over every backdrop", (_name, fill, ink) => {
     for (const backdrop of backdrops) {
@@ -322,32 +341,56 @@ describe.each(schemes)("green glass call to action (D-27c), %s scheme", (scheme)
     }
   })
 
-  test("the fills are translucent, so the content behind shows through", () => {
-    for (const fill of [cta.tint, cta.flat, cta.tintOff, cta.flatOff]) {
+  test("the label still reads at 4.5:1 under every stop of the fallback's reflection", () => {
+    expect(sheenStops.length).toBeGreaterThanOrEqual(2)
+    for (const backdrop of backdrops) {
+      const fill = compositeOver(cta.flat, backdrop)
+      for (const stop of sheenStops) {
+        expect(contrastRatio(cta.ink, compositeOver(stop, fill))).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+  })
+
+  test("the fallback fills are translucent, so the content behind shows through", () => {
+    for (const fill of [cta.flat, cta.flatOff]) {
       const alpha = Number(/, (\d(\.\d+)?)\)$/.exec(fill)?.[1])
       expect(alpha).toBeGreaterThan(0)
       expect(alpha).toBeLessThan(1)
     }
-    expect(cta.tint).not.toBe(cta.tintOff)
   })
 
-  test("the enabled glass is green and the disabled one is clearly less saturated", () => {
-    const tint = compositeOver(cta.tint, colors.canvas)
-    const off = compositeOver(cta.tintOff, colors.canvas)
-    const [r, g, b] = [1, 3, 5].map((index) => parseInt(tint.slice(index, index + 2), 16))
-    expect(g).toBeGreaterThan(r)
-    expect(g).toBeGreaterThan(b)
-    expect(saturation(tint)).toBeGreaterThan(saturation(off) + 0.1)
+  test("the fallback is the native tint's green, saturated, and the disabled one clearly less", () => {
     const flat = compositeOver(cta.flat, colors.canvas)
     const flatOff = compositeOver(cta.flatOff, colors.canvas)
+    const [r, g, b] = channels(flat)
+    expect(g).toBeGreaterThan(r)
+    expect(g).toBeGreaterThan(b)
     expect(saturation(flat)).toBeGreaterThan(saturation(flatOff) + 0.1)
+    // Same colour as the native tint, only made translucent.
+    expect(channels(cta.tint)).toEqual(
+      (/rgba\((\d+), (\d+), (\d+),/.exec(cta.flat) ?? []).slice(1, 4).map(Number),
+    )
+  })
+
+  test("the fallback is more saturated and more marked than the D-27c pill it replaces", () => {
+    // D-27c: forest at 0.9 (light) and lime at 0.88 (dark) with a 0.28 / 0.35 top rim.
+    const before = scheme === "light" ? "rgba(51, 78, 43, 0.9)" : "rgba(155, 194, 106, 0.88)"
+    const beforeRim = scheme === "light" ? 0.28 : 0.35
+    for (const backdrop of [colors.canvas, extreme]) {
+      expect(saturation(compositeOver(cta.flat, backdrop))).toBeGreaterThan(
+        saturation(compositeOver(before, backdrop)),
+      )
+    }
+    const rim = /inset 0 1px 0 rgba\(255, 255, 255, (\d(\.\d+)?)\)/.exec(cta.shadow)
+    expect(Number(rim?.[1])).toBeGreaterThan(beforeRim + 0.2)
   })
 
   test("the fallback edge tokens are well formed", () => {
     const layer =
       /^(inset )?-?\d+(px)? -?\d+(px)? \d+(px)?( -?\d+px)? (rgba\([^)]*\)|#[0-9A-Fa-f]{6})$/
     for (const part of splitTopLevel(cta.shadow)) expect(part).toMatch(layer)
-    expect(cta.hairline).toMatch(/^rgba\(/)
+    expect(cta.sheen).toMatch(/^linear-gradient\(180deg, /)
+    expect(cta.hairline).toMatch(/^rgba\(255, 255, 255, /)
     expect(cta.hairlineOff).toMatch(/^rgba\(/)
   })
 })
