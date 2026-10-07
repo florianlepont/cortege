@@ -155,4 +155,14 @@ describe("EventsTab", () => {
     )
     expect(flatten(meta?.props.style).color).toBe(defaultTheme.colors.textSecondary)
   })
+
+  test("the Relevé soumis check uses the readable success tokens on its tile", () => {
+    const tree = mount({ events: [makeEvent()], isLoading: false })
+    const icon = tree.root.find((node) => node.props.name === "checkmark-circle-outline")
+    expect(icon.props.color).toBe(defaultTheme.onSurface.success)
+    const tile = tree.root
+      .findAllByType("View" as never)
+      .find((node) => flatten(node.props.style).borderRadius === brandRadius.badgeSm)
+    expect(flatten(tile?.props.style).backgroundColor).toBe(defaultTheme.colors.successSoft)
+  })
 })
