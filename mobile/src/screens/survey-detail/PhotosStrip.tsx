@@ -62,10 +62,10 @@ export function PhotosStrip({
   return (
     <View style={styles.photosCard}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle} accessibilityRole="header">
+        <Text style={styles.cardTitle} accessibilityRole="header">
           {t.title}
           {photos.length > 0 ? (
-            <Text style={styles.sectionTitleCount}>{t.countSuffix(photos.length)}</Text>
+            <Text style={styles.cardTitleCount}>{t.countSuffix(photos.length)}</Text>
           ) : null}
         </Text>
         {canEdit ? (

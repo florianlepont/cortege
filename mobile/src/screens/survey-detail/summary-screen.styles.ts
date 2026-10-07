@@ -140,6 +140,16 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       alignItems: "center",
       justifyContent: "space-between",
     },
+    // The title of a card on the summary (Photos), the role of `AppSectionHeader` and of the other
+    // cards (D-24). `sectionTitle` below is the legacy 28 pt role the community page still reads.
+    cardTitle: {
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textPrimary,
+    },
+    cardTitleCount: {
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textSecondary,
+    },
     sectionTitle: {
       ...brandTypography.sectionTitle,
       color: theme.semanticColors.textStrong,
