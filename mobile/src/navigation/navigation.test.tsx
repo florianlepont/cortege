@@ -251,6 +251,19 @@ const HALO_HEADER = {
   headerStyle: { backgroundColor: "transparent" },
 }
 
+/**
+ * The halo header of a page: transparent with no shadow (D-19). Under the native large title
+ * (12.2-17) the collapsed bar takes the system material once content is under it (owner, batch 3
+ * round 2); the transparent large-title state keeps the halo at rest.
+ */
+function expectHaloHeader(options: Options) {
+  const { headerBlurEffect: _blur, ...transparent } = HALO_HEADER
+  expect(options).toEqual(expect.objectContaining(transparent))
+  expect(options.headerBlurEffect).toBe(
+    options.headerLargeTitleEnabled === true ? "systemChromeMaterial" : "none",
+  )
+}
+
 describe("AppNavigation tree choice", () => {
   test("Android mounts the JS tabs and logs the fallback", async () => {
     await mount(<AppNavigation />)
@@ -530,7 +543,7 @@ describe("stack options and listeners", () => {
       expect(options).toEqual(expect.objectContaining(nativeLargeTitle(defaultTheme)))
       expect(options.title).toBe(titles[name])
       expect(options.headerTitle).toBeUndefined()
-      expect(options).toEqual(expect.objectContaining(HALO_HEADER))
+      expectHaloHeader(options)
     }
     // The summary's title is the survey's name, set by the screen; it starts empty (OA-94).
     const detail = effectiveOptions("surveyDetail")
@@ -604,7 +617,7 @@ describe("stack options and listeners", () => {
         "surveyHistory",
       ]
       for (const name of surveyPages) {
-        expect(effectiveOptions(name)).toEqual(expect.objectContaining(HALO_HEADER))
+        expectHaloHeader(effectiveOptions(name))
       }
       // The search page draws its own top block under the status bar: no native header.
       expect((mockScreens.surveySearch.options as Options).headerShown).toBe(false)
@@ -640,7 +653,7 @@ describe("stack options and listeners", () => {
         expect(props.screenOptions).toEqual(expect.objectContaining(HALO_HEADER))
       }
       for (const name of ["accountHome", "settings", "offlineAreas"]) {
-        expect(effectiveOptions(name)).toEqual(expect.objectContaining(HALO_HEADER))
+        expectHaloHeader(effectiveOptions(name))
       }
     },
   )

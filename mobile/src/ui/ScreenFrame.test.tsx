@@ -154,6 +154,16 @@ describe("ScreenFrame under the native large title (12.2-17)", () => {
     expect(root.findAll((n) => n.props.testID === "screen-frame-backdrop")).toHaveLength(0)
   })
 
+  test("stays a real native parent of the page (Fabric would otherwise mount the children beside it)", () => {
+    const frame = hostView(renderLarge(), "screen-frame")
+    expect(frame.props.collapsable).toBe(false)
+  })
+
+  test("the D-19 frame keeps the default (its first child is the halo, not a scroll view)", () => {
+    const frame = hostView(render(), "screen-frame")
+    expect(frame.props.collapsable).toBeUndefined()
+  })
+
   test("does not follow the header height, which changes while the title collapses", () => {
     mockHeader.height = 140
     const frame = hostView(renderLarge(), "screen-frame")

@@ -27,7 +27,12 @@ jest.mock("../native-tabs-availability", () => ({
 import { brandTypography } from "../../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../../app/theme"
 import { usesNativeLargeTitle } from "../large-title"
-import { hiddenNativeTitle, nativeLargeTitle, pageTitleOptions } from "./stack-options"
+import {
+  COLLAPSED_BAR_BLUR,
+  hiddenNativeTitle,
+  nativeLargeTitle,
+  pageTitleOptions,
+} from "./stack-options"
 
 beforeEach(() => {
   mockPlatform.OS = "ios"
@@ -75,21 +80,42 @@ describe("nativeLargeTitle", () => {
   })
 
   test.each([
-    [26, "none"],
-    ["26.1", "none"],
-    [27, "none"],
-    [18, "systemChromeMaterial"],
-    ["17.5", "systemChromeMaterial"],
-    [undefined, "systemChromeMaterial"],
-  ])("iOS %s: the bar blur is %s (iOS 26 draws its own scroll edge effect)", (version, blur) => {
-    mockPlatform.Version = version
-    expect(nativeLargeTitle(defaultTheme).headerBlurEffect).toBe(blur)
+    [26, true],
+    ["26.1", true],
+    [27, true],
+    ["27.0.1", true],
+    [18, false],
+    ["17.5", false],
+    [undefined, false],
+  ])(
+    "iOS %s: the collapsed bar is blurred; top scroll edge effect hidden: %s",
+    (version, hidesEdge) => {
+      mockPlatform.Version = version
+      const options = nativeLargeTitle(defaultTheme)
+      // Owner, batch 3 round 2: a blur behind the collapsed title, on every iOS version.
+      expect(options.headerBlurEffect).toBe("systemChromeMaterial")
+      expect(COLLAPSED_BAR_BLUR).toBe("systemChromeMaterial")
+      if (hidesEdge) {
+        // Only the top edge: the bottom edge (the tab bar) keeps the system default.
+        expect(options.scrollEdgeEffects).toEqual({ top: "hidden" })
+      } else {
+        expect(options).not.toHaveProperty("scrollEdgeEffects")
+      }
+    },
+  )
+
+  test("the large title state stays transparent, so the blur shows only once content is under it", () => {
+    const options = nativeLargeTitle(defaultTheme)
+    expect(options.headerLargeStyle).toEqual({ backgroundColor: "transparent" })
+    expect(options.headerBlurEffect).not.toBe("none")
   })
 
-  test("no iOS 26 scroll edge effect outside iOS", () => {
+  test("no iOS 26 scroll edge setting outside iOS", () => {
     mockPlatform.OS = "android"
     mockPlatform.Version = 34
-    expect(nativeLargeTitle(defaultTheme).headerBlurEffect).toBe("systemChromeMaterial")
+    const options = nativeLargeTitle(defaultTheme)
+    expect(options.headerBlurEffect).toBe("systemChromeMaterial")
+    expect(options).not.toHaveProperty("scrollEdgeEffects")
   })
 })
 

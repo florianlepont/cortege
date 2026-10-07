@@ -14,7 +14,8 @@ type ScreenFrameProps = {
    * the scroll view, and the header height changes while the title collapses), and paints the halo
    * on itself instead of in a child view: iOS finds the scroll view that drives the collapse (and
    * the iOS 26 scroll edge effect) by following the first subview from the screen down, so nothing
-   * may come before the page's scroll view.
+   * may come before the page's scroll view, and the frame must stay a real parent of it (see
+   * `LargeTitleFrame`).
    */
   largeTitle?: boolean
 }
@@ -65,12 +66,20 @@ function HeaderInsetFrame({ children, testID }: { children: ReactNode; testID: s
 /**
  * No `useHeaderHeight()` here: under a large title the header height changes while the page
  * scrolls, and the frame has nothing to do with it.
+ *
+ * `collapsable={false}` (12.2-17, found on the simulator): a view that only paints (background
+ * colour, gradient, test id) gets a native view but no stacking context in Fabric, so React Native
+ * mounts its children beside it, in its parent. The frame then sat empty in front of the page's
+ * scroll view, iOS followed the first subview into it, found no scroll view, and the large title
+ * neither collapsed nor blurred while the rows slid under it. Non-collapsable, the frame keeps its
+ * children inside, and the page's scroll view is the first view iOS meets.
  */
 function LargeTitleFrame({ children, testID }: { children: ReactNode; testID: string }) {
   const theme = useBrandTheme()
   return (
     <FrameLargeTitleContext.Provider value>
       <View
+        collapsable={false}
         style={[
           styles.frame,
           {

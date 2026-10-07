@@ -52,7 +52,10 @@ export const hiddenNativeTitle = {
   headerTitleStyle: { color: "transparent" },
 } as const
 
-/** iOS 26 and later draw the scroll edge effect under the bar themselves (Liquid Glass). */
+/** The material of the collapsed bar, the system's own navigation bar material (per scheme). */
+export const COLLAPSED_BAR_BLUR = "systemChromeMaterial" as const
+
+/** iOS 26 and later can draw a scroll edge effect under the bar (Liquid Glass). */
 function hasSystemScrollEdgeEffect(): boolean {
   return Platform.OS === "ios" && Number.parseInt(String(Platform.Version), 10) >= 26
 }
@@ -63,10 +66,14 @@ function hasSystemScrollEdgeEffect(): boolean {
  * bar as the page scrolls, the system behaviour (`UINavigationBar` large title). Kept on top of
  * `backdropHeader`, so the halo stays continuous behind the bar:
  *
- * - the large title state is fully transparent (`headerLargeStyle`, no shadow);
- * - on iOS 26 and later the bar keeps no blur: the system's scroll edge effect fades the content
- *   that passes under it. Before iOS 26 the collapsed bar gets the system material, the classic
- *   look, so the small title never sits on bare content;
+ * - the large title state is fully transparent (`headerLargeStyle`, no shadow): at the top of the
+ *   page the halo runs on behind the bar, with no band of colour;
+ * - once content passes under the bar, the bar gets the system material (owner, batch 3 round 2:
+ *   "il doit y avoir un flou pour la lisibilité"), so the small title and the bar buttons stay
+ *   readable over the rows. iOS switches between the two by itself (the transparent large-title
+ *   state is the scroll edge appearance, the blurred one the standard appearance). On iOS 26 and
+ *   later the top scroll edge effect is hidden on these pages: react-native-screens warns that it
+ *   overlaps a blur, and the material already does its job;
  * - Sora SemiBold in the theme's strong text colour (per scheme), for both titles. The weight is
  *   given with the family: native-stack adds the system weight 700 to the large title, and iOS
  *   resolves a font name plus a weight inside its family, which would pick Sora Bold.
@@ -82,7 +89,8 @@ export function nativeLargeTitle(theme: BrandTheme): NativeStackNavigationOption
     headerLargeStyle: { backgroundColor: "transparent" },
     headerLargeTitleStyle: { ...brandTypography.navLargeTitle, fontWeight: "600", color },
     headerTitleStyle: { ...brandTypography.navTitle, fontWeight: "600", color },
-    headerBlurEffect: hasSystemScrollEdgeEffect() ? "none" : "systemChromeMaterial",
+    headerBlurEffect: COLLAPSED_BAR_BLUR,
+    ...(hasSystemScrollEdgeEffect() ? { scrollEdgeEffects: { top: "hidden" as const } } : {}),
   }
 }
 
