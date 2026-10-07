@@ -52,6 +52,8 @@ describe("markerItemsAtParcelZoom (12.2-19: a score never vanishes at zoom 15)",
 
   test("a survey inside a scored parcel loses its marker (a newer survey of the parcel)", () => {
     expect(ids(markerItemsAtParcelZoom([survey("old")], [parcel()]))).toEqual([])
+    const withoutId = parcel({ latest_submitted_survey_id: undefined })
+    expect(ids(markerItemsAtParcelZoom([survey("old")], [withoutId]))).toEqual([])
   })
 
   test("a survey keeps its marker when no parcel shows its score", () => {
@@ -90,6 +92,7 @@ describe("markerItemsAtParcelZoom (12.2-19: a score never vanishes at zoom 15)",
     for (const geometry of [
       { type: "Polygon" as const, coordinates: [] },
       { type: "Polygon" as const, coordinates: "nope" },
+      { type: "Polygon" as const, coordinates: ["nope"] },
       { type: "Polygon" as const, coordinates: [[[2.44, 48.83]]] },
       { type: "MultiPolygon" as const, coordinates: [[], "x"] },
       {
