@@ -4,6 +4,20 @@ import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { PagerFinishNotice } from "./PagerFinishNotice"
 
+const originalConsoleError = console.error
+
+beforeAll(() => {
+  ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+  jest.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+    if (String(args[0] ?? "").includes("react-test-renderer is deprecated")) return
+    originalConsoleError(...(args as Parameters<typeof console.error>))
+  })
+})
+
+afterAll(() => {
+  jest.restoreAllMocks()
+})
+
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent =
