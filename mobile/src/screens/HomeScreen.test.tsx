@@ -69,6 +69,10 @@ jest.mock("../ui/SyncStatusLine", () => ({
 jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))
 jest.mock("./home/NearbyMapCard", () => ({ NearbyMapCard: "NearbyMapCard" }))
 jest.mock("./home/ToolsSection", () => ({ ToolsSection: "ToolsSection" }))
+jest.mock("./home/RecentSurveysSection", () => ({
+  RecentSurveysSection: "RecentSurveysSection",
+  RECENT_SURVEYS_COUNT: 3,
+}))
 
 let tree: ReactTestRenderer
 
@@ -97,6 +101,7 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     accessToken: "token-abc",
     apiUrl: "http://localhost:3000",
     surveys: [],
+    surveyDetails: {},
     surveyStats: { total: 0, draft: 0, submitted: 0, pending: 0, synced: 0, failed: 0, blocked: 0 },
     isOnline: true,
     isSyncing: false,
@@ -115,6 +120,7 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     onOpenSurvey: jest.fn(),
     onRetrySurvey: jest.fn(async () => undefined),
     onOpenSyncStatus: jest.fn(),
+    onOpenSurveyList: jest.fn(),
     onNavigateToExplorer: jest.fn(),
     onNavigateToAccount: jest.fn(),
     onRefresh: jest.fn(async () => undefined),
@@ -279,7 +285,7 @@ describe("HomeScreen", () => {
       expect((scroll.props.style as { backgroundColor?: string }).backgroundColor).toBeUndefined()
     })
 
-    test("the resume card, tools and nearby sections slide up, staggered 0, 1, 2", () => {
+    test("without a survey the resume card, tools and nearby slide up, staggered 0, 1, 2", () => {
       mount(makeProps())
       expect(entering()).toHaveLength(3)
       expect(indexes()).toEqual([0, 1, 2])
@@ -300,8 +306,52 @@ describe("HomeScreen", () => {
           },
         }),
       )
-      expect(entering()).toHaveLength(4)
-      expect(indexes()).toEqual([0, 1, 2, 3])
+      // The alert (0), the resume card (1), the recent surveys (header 2, one row 3), tools (4),
+      // nearby (5): the recent surveys' own entrance views are inside their (mocked) section.
+      expect(indexes()).toEqual([0, 1, 4, 5])
+      expect(recent().props.firstIndex).toBe(2)
+    })
+
+    const recent = () => tree.root.findByType("RecentSurveysSection" as never)
+
+    test.each([
+      [1, [0, 3, 4]],
+      [2, [0, 4, 5]],
+      [3, [0, 5, 6]],
+      [8, [0, 5, 6]],
+    ])(
+      "with %i survey(s): resume card, recent surveys, tools, nearby in that order (D-20c)",
+      (count, expected) => {
+        const surveys = Array.from({ length: count }, (_, position) =>
+          makeSurvey({ id: `s${position}`, status: "submitted" }),
+        )
+        mount(makeProps({ surveys }))
+        // [resume card, tools, nearby] by stagger index: the recent surveys take 1 + rows slots.
+        expect(indexes()).toEqual(expected)
+        expect(recent().props.firstIndex).toBe(1)
+        const order = tree.root
+          .findAll((node) =>
+            ["EntranceView", "RecentSurveysSection"].includes(node.type as unknown as string),
+          )
+          .map((node) => node.type as unknown as string)
+        expect(order).toEqual([
+          "EntranceView",
+          "RecentSurveysSection",
+          "EntranceView",
+          "EntranceView",
+        ])
+      },
+    )
+
+    test("the recent surveys get the surveys, their details and the two ways out", () => {
+      const surveys = [makeSurvey({ id: "a" }), makeSurvey({ id: "b" })]
+      const surveyDetails = {}
+      const props = makeProps({ surveys, surveyDetails })
+      mount(props)
+      expect(recent().props.surveys).toBe(surveys)
+      expect(recent().props.surveyDetails).toBe(surveyDetails)
+      expect(recent().props.onOpenSurvey).toBe(props.onOpenSurvey)
+      expect(recent().props.onSeeAll).toBe(props.onOpenSurveyList)
     })
 
     test("the nearby trailing link uses the accent text colour of the scheme", () => {

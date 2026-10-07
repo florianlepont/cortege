@@ -33,6 +33,12 @@ export const homeFr = {
     resumeButton: "Reprendre",
     newSurveyButton: "Nouveau relevé",
   },
+  // D-20c: the last three surveys, under the resume card. Rows read like the ones of Mes Relevés.
+  recent: {
+    title: "Mes relevés récents",
+    seeAll: "Tout voir",
+    seeAllLabel: "Voir tous mes relevés",
+  },
   // OA-107: the tools that help fill in the factors. Identifying a tree by photo is the first.
   tools: {
     title: "Outils",

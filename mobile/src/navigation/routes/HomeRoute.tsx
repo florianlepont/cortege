@@ -43,6 +43,12 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
     actions.openSurvey(surveyId)
     navigation.navigate("surveys", { screen: "surveyDetail", initial: false })
   })
+  // D-20c: "Tout voir" of the recent surveys goes to the list itself, not to a survey page the
+  // Mes Relevés stack may still be showing. No `initial: false`: the list is the stack's first
+  // screen, so it would be pushed a second time on top of itself.
+  const onOpenSurveyList = useLatestCallback(() => {
+    navigation.navigate("surveys", { screen: "surveysHome" })
+  })
   const onNavigateToExplorer = useLatestCallback(() => {
     navigation.navigate("publicMap")
   })
@@ -103,6 +109,7 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
       accessToken={accessToken}
       apiUrl={session.apiUrl}
       surveys={surveys.surveys}
+      surveyDetails={surveys.surveyDetails}
       surveyStats={surveys.surveyStats}
       isOnline={isOnline}
       isSyncing={isSyncing}
@@ -114,6 +121,7 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
       onOpenSurvey={onOpenSurvey}
       onRetrySurvey={actions.retrySurvey}
       onOpenSyncStatus={onOpenSyncStatus}
+      onOpenSurveyList={onOpenSurveyList}
       onNavigateToExplorer={onNavigateToExplorer}
       onNavigateToAccount={onNavigateToAccount}
       onRefresh={syncActions.handlePullChanges}

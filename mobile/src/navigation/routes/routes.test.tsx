@@ -738,6 +738,7 @@ describe("HomeRoute", () => {
     expect(props("home").nearbyParcels).toBe(fixture.nearby.state)
     expect(props("home").onLoadNearbyParcels).toBe(fixture.nearby.load)
     expect(props("home").surveys).toBe(fixture.surveys.state.surveys)
+    expect(props("home").surveyDetails).toBe(fixture.surveys.state.surveyDetails)
     expect(props("home").isOnline).toBe(fixture.isOnline)
     expect(props("home").isSyncing).toBe(fixture.isSyncing)
     expect(props("home").onRetrySurvey).toBe(fixture.surveys.actions.retrySurvey)
@@ -767,6 +768,10 @@ describe("HomeRoute", () => {
       screen: "surveyDetail",
       initial: false,
     })
+
+    // D-20c: "Tout voir" of the recent surveys shows the list itself (not pushed on top of itself).
+    callback("home", "onOpenSurveyList")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveys", { screen: "surveysHome" })
 
     callback("home", "onNavigateToExplorer")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("publicMap")

@@ -13,7 +13,7 @@ import { resolveSurveyUiStatus } from "../app/survey-logic"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
 import type { AuthUser } from "../app/types"
 import type { LocalSurvey } from "../storage/types"
-import type { SurveyStats } from "../app/types"
+import type { SurveyDetailResponse, SurveyStats } from "../app/types"
 import { AppNotice } from "../ui/AppNotice"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
 import { EntranceView } from "../ui/EntranceView"
@@ -24,6 +24,7 @@ import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { Skeleton } from "../ui/Skeleton"
 import { SyncStatusLine, isSyncStatusLineVisible } from "../ui/SyncStatusLine"
 import { NearbyMapCard } from "./home/NearbyMapCard"
+import { RECENT_SURVEYS_COUNT, RecentSurveysSection } from "./home/RecentSurveysSection"
 import { ResumeCard } from "./home/ResumeCard"
 import { ToolsSection } from "./home/ToolsSection"
 import { createStyles } from "./home/styles"
@@ -44,6 +45,8 @@ type HomeScreenProps = {
   accessToken: string | null
   apiUrl: string
   surveys: LocalSurvey[]
+  /** The scores of the surveys opened this session, for the rings of the recent surveys. */
+  surveyDetails: Readonly<Record<string, SurveyDetailResponse | undefined>>
   surveyStats: SurveyStats
   isOnline: boolean
   isSyncing: boolean
@@ -55,6 +58,8 @@ type HomeScreenProps = {
   onOpenSurvey: (surveyId: string) => void
   onRetrySurvey: (surveyId: string) => Promise<void>
   onOpenSyncStatus: () => void
+  /** "Tout voir" of the recent surveys: the Mes Relevés tab. */
+  onOpenSurveyList: () => void
   onNavigateToExplorer: () => void
   onNavigateToAccount: () => void
   onRefresh: () => Promise<void>
@@ -87,6 +92,7 @@ export function HomeScreen({
   accessToken,
   apiUrl,
   surveys,
+  surveyDetails,
   surveyStats,
   isOnline,
   isSyncing,
@@ -98,6 +104,7 @@ export function HomeScreen({
   onOpenSurvey,
   onRetrySurvey,
   onOpenSyncStatus,
+  onOpenSurveyList,
   onNavigateToExplorer,
   onNavigateToAccount,
   onRefresh,
@@ -136,6 +143,11 @@ export function HomeScreen({
   // The entrance stagger counts the sections actually shown: the alert notice is the first one.
   // Each section slides up whenever Accueil becomes visible (focus, overlays gone), see EntranceView.
   const firstSection = hasAlerts ? 1 : 0
+  // D-20c: the recent surveys take one stagger slot for their header and one per row (none without
+  // a survey), so the order stays alert, resume card, recent surveys, tools, nearby.
+  const recentIndex = firstSection + 1
+  const recentSlots = surveys.length > 0 ? Math.min(surveys.length, RECENT_SURVEYS_COUNT) + 1 : 0
+  const toolsIndex = recentIndex + recentSlots
   const isBlockedAlert = surveyStats.blocked > 0
   const alertSurvey = hasAlerts ? pickAlertSurvey(surveys) : null
   const resumeDraft = pickResumeDraft(surveys)
@@ -290,8 +302,17 @@ export function HomeScreen({
           />
         </EntranceView>
 
+        {/* ── Mes relevés récents (D-20c) ───────────── */}
+        <RecentSurveysSection
+          surveys={surveys}
+          surveyDetails={surveyDetails}
+          onOpenSurvey={onOpenSurvey}
+          onSeeAll={onOpenSurveyList}
+          firstIndex={recentIndex}
+        />
+
         {/* ── Outils (OA-107) ───────────────────────── */}
-        <EntranceView index={firstSection + 1}>
+        <EntranceView index={toolsIndex}>
           <ToolsSection
             surveys={surveys}
             onAddGenusToSurvey={onAddGenusToSurvey}
@@ -300,7 +321,7 @@ export function HomeScreen({
         </EntranceView>
 
         {/* ── Parcelles proches ─────────────────────── */}
-        <EntranceView index={firstSection + 2} style={styles.section}>
+        <EntranceView index={toolsIndex + 1} style={styles.section}>
           <AppSectionHeader
             title={fr.home.nearby.title}
             trailing={
