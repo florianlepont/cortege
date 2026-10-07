@@ -38,7 +38,7 @@ export function FactorsList({
   const styles = useMemo(() => createScoreStyles(theme), [theme])
 
   return (
-    <View style={{ gap: 10 }}>
+    <View style={styles.listBlock}>
       <Text style={styles.listTitle} accessibilityRole="header">
         {s.factorsTitle}
       </Text>

@@ -1,5 +1,7 @@
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
+import { brandInteraction, brandRadius } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { FactorsList } from "./FactorsList"
 import { DisplayedFactorResult, NOT_FILLED_CLASS } from "./useLocalDraftSummary"
@@ -26,14 +28,8 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
-    Pressable: ({
-      children,
-      style: _style,
-      ...props
-    }: {
-      children?: React.ReactNode
-      style?: unknown
-    }) => ReactRef.createElement("Pressable", props, children),
+    Pressable: ({ children, ...props }: { children?: React.ReactNode; style?: unknown }) =>
+      ReactRef.createElement("Pressable", props, children),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T): T => styles },
@@ -43,6 +39,13 @@ jest.mock("react-native", () => {
 
 const f = fr.surveyDetail.factors
 const s = fr.surveyDetail.scoreScreen
+
+type Style = Record<string, unknown>
+
+function flatten(style: unknown): Style {
+  if (Array.isArray(style)) return style.reduce<Style>((acc, s) => ({ ...acc, ...flatten(s) }), {})
+  return (style as Style | undefined | null) ?? {}
+}
 
 const textOf = (node: ReactTestInstance): string => [node.props.children].flat().join("")
 
@@ -99,5 +102,38 @@ describe("FactorsList (OA-45: the score once, as a list)", () => {
     expect(loading.tree.root.findAllByType("Text" as never).map(textOf)).toContain(f.loading)
     const empty = render({ factorEntries: [] })
     expect(empty.tree.root.findAllByType("Text" as never).map(textOf)).toContain(f.notLoaded)
+  })
+
+  test("every row keeps a 44 pt minimum height, pressed or not, and a press handler", () => {
+    const { tree } = render()
+    for (const row of rows(tree)) {
+      const style = row.props.style as (state: { pressed: boolean }) => unknown
+      expect(flatten(style({ pressed: false })).minHeight).toBeGreaterThanOrEqual(
+        brandInteraction.hitTarget.min,
+      )
+      expect(flatten(style({ pressed: true })).minHeight).toBeGreaterThanOrEqual(
+        brandInteraction.hitTarget.min,
+      )
+      expect(typeof row.props.onPress).toBe("function")
+    }
+  })
+
+  test("the rows sit in one glass card and the row padding is on the 4 grid", () => {
+    const { tree } = render()
+    const card = tree.root
+      .findAllByType("View" as never)
+      .find((node) => flatten(node.props.style).overflow === "hidden")
+    expect(flatten(card?.props.style)).toMatchObject({
+      backgroundColor: defaultTheme.visual.glass.cardFill,
+      borderColor: defaultTheme.visual.glass.cardBorder,
+      borderRadius: brandRadius.card,
+    })
+    const row = rows(tree)[0]
+    const rowStyle = flatten(
+      (row?.props.style as (s: { pressed: boolean }) => unknown)({ pressed: false }),
+    )
+    for (const key of ["paddingVertical", "paddingLeft", "paddingRight", "gap"]) {
+      expect((rowStyle[key] as number) % 4).toBe(0)
+    }
   })
 })

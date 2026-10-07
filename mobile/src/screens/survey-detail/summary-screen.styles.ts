@@ -201,9 +201,9 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     },
     // Sub-pages shared.
     subContent: {
-      padding: brandSpacing.md,
-      gap: 18,
-      paddingBottom: 48,
+      padding: brandSpacing4.md,
+      gap: brandSpacing4.lg,
+      paddingBottom: brandSpacing4.xxl,
     },
     hairline: {
       height: 1,

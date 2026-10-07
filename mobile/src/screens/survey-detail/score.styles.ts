@@ -1,83 +1,94 @@
 import { StyleSheet } from "react-native"
-import { brandOnDarkColors, brandRadius, brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandRadius,
+  brandSpacing4,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
 const BADGE = 32
+const TRACK = 8
 
 /** Styles of the "Score IBP" page: the total with its two sub-scores, then one row per factor. */
 export function createScoreStyles(theme: BrandTheme) {
-  const hairline = theme.componentColors.card.panelBorder
+  const hairline = theme.visual.glass.cardBorder
   return StyleSheet.create({
     breakdown: {
-      borderRadius: brandRadius.card,
-      padding: 18,
-      gap: 16,
-      backgroundColor: theme.semanticColors.heroSurface,
-      borderWidth: 1,
-      borderColor: theme.semanticColors.heroBorder,
+      gap: brandSpacing4.md,
     },
     totalRow: {
       flexDirection: "row",
       alignItems: "baseline",
-      gap: 6,
+      gap: brandSpacing4.sm,
     },
     totalValue: {
-      fontFamily: "Sora-Bold",
-      fontSize: 44,
-      lineHeight: 48,
-      color: theme.colors.white,
+      ...brandTypography.numeral,
+      color: theme.colors.textPrimary,
+    },
+    // No score yet: the words stay at title size, a 68 pt numeral would not fit them.
+    totalUnknown: {
+      ...brandTypography.screenTitle,
+      color: theme.colors.textSecondary,
     },
     totalMax: {
-      fontSize: 18,
-      color: theme.colors.white,
-      opacity: 0.8,
+      ...brandTypography.numeralUnit,
+      color: theme.colors.textSecondary,
     },
     subScore: {
-      gap: 6,
+      gap: brandSpacing4.sm,
     },
     subScoreHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
     subScoreLabel: {
-      ...brandTypography.sectionBody,
-      color: theme.colors.white,
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textSecondary,
       flexShrink: 1,
     },
     subScoreValue: {
-      ...brandTypography.sectionBody,
-      fontFamily: "Jost-SemiBold",
-      color: theme.colors.white,
+      ...brandTypography.input,
+      color: theme.colors.textPrimary,
     },
     track: {
-      height: 8,
-      borderRadius: 4,
+      height: TRACK,
+      borderRadius: brandRadius.bar,
       overflow: "hidden",
-      backgroundColor: brandOnDarkColors.heroBorderStrongOnDark,
+      backgroundColor: theme.visual.score.track,
     },
     fill: {
-      height: 8,
-      backgroundColor: theme.semanticColors.accent,
+      height: TRACK,
+      borderRadius: brandRadius.bar,
+    },
+    chartCard: {
+      gap: brandSpacing4.smd,
+    },
+    listBlock: {
+      gap: brandSpacing4.sm,
     },
     listTitle: {
-      ...brandTypography.sectionTitle,
-      color: theme.semanticColors.textStrong,
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textSecondary,
     },
     list: {
-      borderRadius: 20,
+      borderRadius: brandRadius.card,
       borderWidth: 1,
       borderColor: hairline,
-      backgroundColor: theme.semanticColors.surfaceElevated,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
+      borderCurve: "continuous",
       overflow: "hidden",
     },
     row: {
-      minHeight: 56,
-      paddingLeft: 16,
-      paddingRight: 14,
+      minHeight: brandInteraction.hitTarget.min + brandSpacing4.smd,
+      paddingVertical: brandSpacing4.sm,
+      paddingLeft: brandSpacing4.md,
+      paddingRight: brandSpacing4.md,
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
     rowPressed: {
       backgroundColor: theme.colors.panelMuted,
@@ -89,7 +100,7 @@ export function createScoreStyles(theme: BrandTheme) {
     badge: {
       width: BADGE,
       height: BADGE,
-      borderRadius: BADGE / 2,
+      borderRadius: brandRadius.badgeSm,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -106,7 +117,7 @@ export function createScoreStyles(theme: BrandTheme) {
     },
     rowCopy: {
       flex: 1,
-      gap: 2,
+      gap: brandSpacing4.xxs,
     },
     rowTitle: {
       ...brandTypography.sectionBody,
