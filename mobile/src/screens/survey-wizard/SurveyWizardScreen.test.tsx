@@ -55,6 +55,8 @@ jest.mock("../../ui/AppField", () => ({ AppField: "AppField" }))
 jest.mock("../../ui/CasPicker", () => ({ CasPicker: "CasPicker" }))
 jest.mock("../../ui/AppChoiceChip", () => ({ AppChoiceChip: "AppChoiceChip" }))
 jest.mock("../../ui/GlassButton", () => ({ GlassButton: "GlassButton" }))
+// The native header bridge talks to the navigator; here only what the wizard hands it matters.
+jest.mock("./WizardNativeHeader", () => ({ WizardNativeHeader: "WizardNativeHeader" }))
 
 const w = fr.surveyForm.wizard
 
@@ -312,5 +314,63 @@ describe("SurveyWizardScreen: v3.0 region and stage", () => {
     act(() => {
       chips[0].props.onPress()
     })
+  })
+})
+
+describe("SurveyWizardScreen under the native iOS header (12.2-17)", () => {
+  const header = (tree: ReactTestRenderer) =>
+    tree.root.findAll((n) => (n.type as unknown) === "WizardNativeHeader")[0]
+
+  test("no back button or step label of its own: the system back and the bar's title replace them", () => {
+    const { tree } = mount({ nativeHeader: true })
+    expect(byTestID(tree, "wizard-back")).toBeUndefined()
+    expect(
+      tree.root.findAll((n) => typeof n.type === "string" && n.props.children === "Étape 1 sur 4"),
+    ).toHaveLength(0)
+    expect(header(tree).props.title).toBe(w.stepLabel({ step: 1, total: 4 }))
+    expect(header(tree).props.canStepBack).toBe(false)
+  })
+
+  test("keeps the progress, the question and the floating Continuer, below the bar", () => {
+    const { tree } = mount({ nativeHeader: true })
+    const segments = tree.root.findAll(
+      (n) => typeof n.type === "string" && flatten(n.props.style).height === 4,
+    )
+    expect(segments).toHaveLength(4)
+    expect(button(tree)).toBeDefined()
+    // The route's ScreenFrame already starts below the bar: no status bar gap here (47 + 8).
+    const topBar = tree.root.findAll(
+      (n) => typeof n.type === "string" && flatten(n.props.style).paddingTop !== undefined,
+    )[0]
+    expect(flatten(topBar.props.style).paddingTop).toBe(brandSpacing4.sm)
+  })
+
+  test("the bar follows the step; back steps back inside the wizard past the first question", () => {
+    const { tree, onClose } = mount({ nativeHeader: true })
+    next(tree)
+    expect(header(tree).props.title).toBe(w.stepLabel({ step: 2, total: 4 }))
+    expect(header(tree).props.canStepBack).toBe(true)
+    next(tree)
+    expect(header(tree).props.title).toBe(w.stepLabel({ step: 3, total: 4 }))
+    act(() => {
+      header(tree).props.onStepBack()
+    })
+    expect(header(tree).props.title).toBe(w.stepLabel({ step: 2, total: 4 }))
+    act(() => {
+      header(tree).props.onStepBack()
+    })
+    expect(header(tree).props.canStepBack).toBe(false)
+    // Leaving from the first question is the stack's own pop, not onClose.
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  test("without the native header (Android) the wizard keeps its top bar and no bridge", () => {
+    const { tree } = mount()
+    expect(header(tree)).toBeUndefined()
+    expect(byTestID(tree, "wizard-back")).toBeDefined()
+    const topBar = tree.root.findAll(
+      (n) => typeof n.type === "string" && flatten(n.props.style).paddingTop !== undefined,
+    )[0]
+    expect(flatten(topBar.props.style).paddingTop).toBe(47 + 8)
   })
 })

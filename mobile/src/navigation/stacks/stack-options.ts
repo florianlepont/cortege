@@ -106,3 +106,29 @@ export function nativeLargeTitle(theme: BrandTheme): NativeStackNavigationOption
 export function pageTitleOptions(theme: BrandTheme): NativeStackNavigationOptions {
   return usesNativeLargeTitle() ? nativeLargeTitle(theme) : hiddenNativeTitle
 }
+
+/**
+ * 12.2-17 (owner: "Oui je préfère l'en-tête natif"): the survey creation wizard shows the stack's
+ * native header on iOS, with the system back button and the step counter as its small centred
+ * title (set by the wizard, `WizardNativeHeader`). The header stays the transparent halo header
+ * (D-19, no blur): the route's ScreenFrame starts the page below it, so no content ever passes
+ * under the bar. Android keeps the wizard's own top bar (header hidden, unchanged).
+ */
+export function wizardUsesNativeHeader(): boolean {
+  return Platform.OS === "ios"
+}
+
+export function wizardHeaderOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  if (!wizardUsesNativeHeader()) return { headerShown: false }
+  return {
+    headerShown: true,
+    headerLargeTitleEnabled: false,
+    // The wizard puts "Étape 1 sur 4" here once mounted; nothing is shown before that.
+    title: "",
+    headerTitleStyle: {
+      ...brandTypography.navTitle,
+      fontWeight: "600",
+      color: theme.semanticColors.textStrong,
+    },
+  }
+}

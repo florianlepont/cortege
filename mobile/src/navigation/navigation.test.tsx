@@ -575,7 +575,29 @@ describe("stack options and listeners", () => {
     expect(options({ route: { params: { mode: "edit" } } }).title).toBe(
       fr.navigation.headers.parcels,
     )
+    // Android: the wizard keeps its own top bar (12.2-17 changes iOS only).
     expect((mockScreens.surveyForm.options as Options).headerShown).toBe(false)
+  })
+
+  test("iOS: the wizard shows the native transparent header with the system back button (12.2-17)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(<AppNavigation />)
+    const wizard = effectiveOptions("surveyForm")
+    expect(wizard.headerShown).toBe(true)
+    // The step counter is set by the wizard; no large title, no custom back or title view.
+    expect(wizard.title).toBe("")
+    expect(wizard.headerLargeTitleEnabled).toBe(false)
+    expect(wizard.headerTitle).toBeUndefined()
+    expect(wizard.headerLeft).toBeUndefined()
+    expect(wizard.headerBackButtonDisplayMode).toBe("minimal")
+    expect(wizard.headerTitleStyle).toEqual({
+      fontFamily: "Sora-SemiBold",
+      fontSize: 17,
+      fontWeight: "600",
+      color: defaultTheme.semanticColors.textStrong,
+    })
+    // D-19: the transparent halo header, no blur (the page starts below the bar).
+    expectHaloHeader(wizard)
   })
 
   test("the JS surveys stack shows its own header; the native one shows the halo header", async () => {

@@ -23,6 +23,7 @@ import {
   hiddenNativeTitle,
   nativeLargeTitle,
   pageTitleOptions,
+  wizardHeaderOptions,
 } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
@@ -144,10 +145,9 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           />
           <SurveysStack.Screen
             name="surveyForm"
-            options={{
-              // The wizard draws its own top bar (step counter and progress).
-              headerShown: false,
-            }}
+            // 12.2-17: the native header with the system back button on iOS (the wizard puts its
+            // step counter in the bar); Android keeps the wizard's own top bar.
+            options={wizardHeaderOptions(theme)}
             component={SurveyFormRoute}
           />
           <SurveysStack.Screen

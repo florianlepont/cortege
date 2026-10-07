@@ -23,6 +23,7 @@ import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
 import { useFinishBarHeight } from "../survey-detail/useFinishBarHeight"
 import type { SurveyFormMethod } from "./method"
 import { createWizardStyles } from "./wizard.styles"
+import { WizardNativeHeader } from "./WizardNativeHeader"
 
 const w = fr.surveyForm.wizard
 
@@ -45,6 +46,11 @@ type SurveyWizardScreenProps = {
   onOpenParcels: () => void
   /** Leaving from the first step. */
   onClose: () => void
+  /**
+   * 12.2-17: the stack shows its native header (iOS) with the system back button; the wizard then
+   * puts the step counter in the bar and draws neither its own back button nor the status bar gap.
+   */
+  nativeHeader?: boolean
 }
 
 const METHOD_CHOICES: ReadonlyArray<{
@@ -73,6 +79,7 @@ export function SurveyWizardScreen({
   onRegionChange,
   onOpenParcels,
   onClose,
+  nativeHeader = false,
 }: SurveyWizardScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createWizardStyles(theme), [theme])
@@ -119,28 +126,43 @@ export function SurveyWizardScreen({
           ? w.cas.body
           : w.region.body
 
+  const stepLabel = w.stepLabel({ step: stepIndex + 1, total: TOTAL_STEPS })
+
   return (
     <View style={styles.screen} testID="wizard-screen">
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.topRow}>
-          <Pressable
-            style={styles.iconButton}
-            onPress={goBack}
-            accessibilityRole="button"
-            accessibilityLabel={stepIndex === 0 ? w.close : w.back}
-            testID="wizard-back"
-          >
-            <Ionicons
-              name={stepIndex === 0 ? "close" : "chevron-back"}
-              size={22}
-              color={theme.semanticColors.textStrong}
-            />
-          </Pressable>
-          <Text style={styles.stepLabel}>
-            {w.stepLabel({ step: stepIndex + 1, total: TOTAL_STEPS })}
-          </Text>
-          <View style={styles.topSpacer} />
-        </View>
+      {nativeHeader ? (
+        <WizardNativeHeader
+          title={stepLabel}
+          canStepBack={stepIndex > 0}
+          onStepBack={() => setStepIndex(stepIndex - 1)}
+        />
+      ) : null}
+      <View
+        style={[
+          styles.topBar,
+          // Under the native header the route's ScreenFrame already starts below the bar.
+          { paddingTop: nativeHeader ? brandSpacing4.sm : insets.top + 8 },
+        ]}
+      >
+        {nativeHeader ? null : (
+          <View style={styles.topRow}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={goBack}
+              accessibilityRole="button"
+              accessibilityLabel={stepIndex === 0 ? w.close : w.back}
+              testID="wizard-back"
+            >
+              <Ionicons
+                name={stepIndex === 0 ? "close" : "chevron-back"}
+                size={22}
+                color={theme.semanticColors.textStrong}
+              />
+            </Pressable>
+            <Text style={styles.stepLabel}>{stepLabel}</Text>
+            <View style={styles.topSpacer} />
+          </View>
+        )}
         <View style={styles.progress}>
           {Array.from({ length: TOTAL_STEPS }, (_, index) => (
             <View

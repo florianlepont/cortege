@@ -1293,6 +1293,18 @@ describe("SurveyFormRoute", () => {
     })
     callback("surveyForm", "onClose")()
     expect(navigation.goBack).toHaveBeenCalledTimes(1)
+    // Android: the wizard draws its own top bar.
+    expect(props("surveyForm").nativeHeader).toBe(false)
+  })
+
+  test("iOS: the wizard is told the stack shows the native header (12.2-17)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <SurveyFormRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyForm").nativeHeader).toBe(true)
   })
 
   test("uses the edited survey id when a draft is open", async () => {
