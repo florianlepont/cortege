@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { notificationAsync } from "../../test/expo-haptics.mock"
@@ -43,14 +45,8 @@ jest.mock("../app/dev-tools", () => ({ shouldShowDevTools: () => false }))
 jest.mock("../app/survey-pdf-export", () => ({ exportAndShareSurveyPdf: jest.fn() }))
 jest.mock("./survey-screen-helpers", () => ({ selectPreviewCandidates: () => [] }))
 jest.mock("../ui/AppActionSheet", () => ({ AppActionSheet: "AppActionSheet" }))
-jest.mock("../ui/AppCard", () => ({ AppCard: "AppCard" }))
 jest.mock("../ui/AppGroupedList", () => ({ AppGroupedList: "AppGroupedList" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
-jest.mock("../ui/FactorBarsChart", () => ({
-  FactorBarsChart: "FactorBarsChart",
-  factorPointsFromEntries: (entries: Array<[string, { score_points: number | null }]>) =>
-    Object.fromEntries(entries.map(([key, value]) => [key, value.score_points])),
-}))
 jest.mock("./survey-detail/DebugTab", () => ({ DebugTab: "DebugTab" }))
 jest.mock("./survey-detail/DetailActions", () => ({ DetailActions: "DetailActions" }))
 jest.mock("./survey-detail/FinishBar", () => ({ FinishBar: "FinishBar" }))
@@ -137,17 +133,20 @@ const byType = (tree: ReactTestRenderer, type: string): ReactTestInstance[] =>
   tree.root.findAll((n) => (n.type as unknown) === type)
 
 describe("SurveyDetailScreen summary", () => {
-  test("shows the ten factor bars in a glass card right under the score card", () => {
+  test("has no factor bar chart and no glass card: the chart lives on the score page only (D-24)", () => {
     const tree = mount("draft")
+    expect(byType(tree, "FactorBarsChart")).toHaveLength(0)
+    expect(byType(tree, "AppCard")).toHaveLength(0)
     const scroll = byType(tree, "ScrollView")[0]
     const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
-    expect(order.indexOf("AppCard")).toBe(order.indexOf("ScoreCard") + 1)
+    // The score card is followed straight by the photos.
+    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("ScoreCard") + 1)
+  })
 
-    const card = byType(tree, "AppCard")[0]
-    expect(card.props.variant).toBe("glass")
-    const chart = byType(tree, "FactorBarsChart")[0]
-    expect(chart.props.animate).toBe(true)
-    expect(chart.props.entries).toEqual({ A: 3, B: null, "not-a-factor": 1 })
+  test("the source of the summary no longer imports the chart", () => {
+    const source = readFileSync(join(__dirname, "SurveyDetailScreen.tsx"), "utf8")
+    expect(source).not.toContain("FactorBarsChart")
+    expect(source).not.toContain("factorPointsFromEntries")
   })
 
   test("keeps the one bottom button and the three rows", () => {

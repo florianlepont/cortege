@@ -8,10 +8,8 @@ import { useBrandTheme } from "../app/theme"
 import { fr, logStatusDetail } from "../i18n"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
-import { AppCard } from "../ui/AppCard"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppNotice } from "../ui/AppNotice"
-import { FactorBarsChart, factorPointsFromEntries } from "../ui/FactorBarsChart"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
@@ -36,7 +34,8 @@ const summaryText = fr.surveyDetail.summary
 /**
  * The summary of a survey (OA-46): its name and where it stands, the score, the photos, the map,
  * and three rows that open the sub-pages (context and parcels, score by factor, history). The one
- * action is the button at the bottom.
+ * action is the button at the bottom. The coloured chart of the ten factors is not here (D-24): it
+ * lives on the score page only.
  */
 export function SurveyDetailScreen({
   apiUrl,
@@ -71,10 +70,6 @@ export function SurveyDetailScreen({
   const { detail, canEditSurvey, activeSiteName } = data
   const [menuVisible, setMenuVisible] = useState(false)
   const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
-  const factorPoints = useMemo(
-    () => factorPointsFromEntries(data.displayedFactorEntries),
-    [data.displayedFactorEntries],
-  )
 
   const attachmentPreviewKey = selectedSurveyAttachments
     .map((attachment) => `${attachment.id}:${attachment.file_state}`)
@@ -188,10 +183,6 @@ export function SurveyDetailScreen({
           filledFactorCount={data.filledFactorCount}
           pulseTrigger={pulseTrigger}
         />
-
-        <AppCard variant="glass">
-          <FactorBarsChart entries={factorPoints} animate />
-        </AppCard>
 
         <PhotosStrip
           survey={selectedSurvey}
