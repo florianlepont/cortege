@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
-import { Alert, Pressable, View } from "react-native"
-import { useBrandTheme } from "../../app/theme"
+import { Alert, Pressable, StyleSheet, View } from "react-native"
+import { brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import { type BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppField } from "../../ui/AppField"
@@ -33,6 +34,7 @@ export function SummaryHeader({
 }: SummaryHeaderProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const headerStyles = useMemo(() => createHeaderStyles(theme), [theme])
   const [isRenaming, setIsRenaming] = useState(false)
   const [nameInput, setNameInput] = useState(siteName)
 
@@ -92,10 +94,10 @@ export function SummaryHeader({
               accessibilityLabel={a11y.renameSurvey(siteName)}
               style={styles.titlePressable}
             >
-              <Text style={styles.title}>{siteName}</Text>
+              <Text style={headerStyles.title}>{siteName}</Text>
             </Pressable>
           ) : (
-            <Text style={styles.title} accessibilityRole="header">
+            <Text style={headerStyles.title} accessibilityRole="header">
               {siteName}
             </Text>
           )}
@@ -103,9 +105,30 @@ export function SummaryHeader({
       )}
       <View style={styles.statusLine}>
         <View style={[styles.statusDot, { backgroundColor: dotColor }]} />
-        <Text style={styles.statusStrong}>{statusLine.status}</Text>
-        <Text style={styles.statusMuted}>{h.syncSuffix(statusLine.sync)}</Text>
+        <Text style={headerStyles.statusStrong}>{statusLine.status}</Text>
+        <Text style={headerStyles.statusMuted}>{h.syncSuffix(statusLine.sync)}</Text>
       </View>
     </View>
   )
+}
+
+function createHeaderStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    title: {
+      flex: 1,
+      ...brandTypography.screenTitle,
+      color: theme.semanticColors.textStrong,
+    },
+    statusStrong: {
+      ...brandTypeScale.footnote,
+      fontFamily: "Jost-SemiBold",
+      color: theme.colors.textSecondary,
+    },
+    statusMuted: {
+      ...brandTypeScale.footnote,
+      fontFamily: "Jost-Regular",
+      color: theme.colors.textSecondary,
+      flexShrink: 1,
+    },
+  })
 }

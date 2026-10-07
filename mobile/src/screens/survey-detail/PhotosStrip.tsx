@@ -60,7 +60,7 @@ export function PhotosStrip({
   }
 
   return (
-    <View style={styles.section}>
+    <View style={styles.photosCard}>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle} accessibilityRole="header">
           {t.title}

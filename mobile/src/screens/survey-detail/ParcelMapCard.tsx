@@ -6,6 +6,7 @@ import type { SurveyDetailResponse } from "../../app/types"
 import { useParcelStatuses } from "../../hooks/useParcelStatuses"
 import { fr } from "../../i18n"
 import { ParcelMap } from "../../map/maplibre/ParcelMap"
+import { ContourLines } from "../../ui/ContourLines"
 import { MapInfoPill, MapOverlayCorners } from "../public-map/MapChips"
 import { SeeOnMapAction } from "./SeeOnMapAction"
 import { resolveDisplayCoordinates } from "../survey-screen-helpers"
@@ -87,6 +88,9 @@ export function ParcelMapCard({
       interactive={false}
     />
   )
+  // Static contours beneath the live map: seen only where it has not drawn (loading, offline
+  // without tiles), never over it (D-13).
+  const placeholder = <ContourLines animated={false} />
   // The corners are the Explorer's: the fact on the left, the actions on the right.
   const overlays = (
     <MapOverlayCorners
@@ -117,6 +121,7 @@ export function ParcelMapCard({
         accessibilityRole="button"
         accessibilityLabel={a11y.editParcels(siteName)}
       >
+        {placeholder}
         {map}
         {overlays}
       </Pressable>
@@ -129,6 +134,7 @@ export function ParcelMapCard({
       accessibilityRole="image"
       accessibilityLabel={a11y.mapPreview(siteName)}
     >
+      {placeholder}
       {map}
       {overlays}
     </View>

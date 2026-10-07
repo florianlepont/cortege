@@ -33,13 +33,6 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       alignItems: "center",
       gap: 10,
     },
-    title: {
-      flex: 1,
-      ...brandTypography.heroTitle,
-      fontSize: 25,
-      lineHeight: 29,
-      color: theme.semanticColors.textStrong,
-    },
     iconButton: {
       width: HIT_TARGET,
       height: HIT_TARGET,
@@ -66,16 +59,6 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       width: 9,
       height: 9,
       borderRadius: 5,
-    },
-    statusStrong: {
-      ...brandTypography.sectionBody,
-      fontFamily: "Jost-SemiBold",
-      color: theme.colors.textPrimary,
-    },
-    statusMuted: {
-      ...brandTypography.sectionBody,
-      color: theme.colors.textSecondary,
-      flexShrink: 1,
     },
     // Score card (forest hero, variant I). Text stays in the left and lower part of the card, away
     // from the halo at the top right (RESEARCH Pitfall 4).
@@ -134,7 +117,18 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       marginTop: brandSpacing4.smd,
       color: theme.visual.forest.body,
     },
-    // Photos.
+    // Photos. `photosCard` is the glass card of the summary strip; `section`, `sectionHeader` and
+    // `photoRow` are also read by the context and community pages.
+    photosCard: {
+      gap: brandSpacing4.smd,
+      padding: brandSpacing4.md,
+      borderRadius: brandRadius.card,
+      borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
+      borderCurve: "continuous",
+    },
     section: {
       gap: 10,
     },
@@ -180,11 +174,15 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
     },
     // Map card.
+    // The contour placeholder sits under the live map and shows only where it has not drawn.
     mapCard: {
       height: 190,
       borderRadius: brandRadius.card,
       overflow: "hidden",
-      backgroundColor: theme.colors.panelMuted,
+      borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      borderCurve: "continuous",
     },
     map: {
       ...StyleSheet.absoluteFill,
