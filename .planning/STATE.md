@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.1
 current_phase_name: Owner acceptance testing
 status: executing
-stopped_at: Phase 12.1 (Owner acceptance testing) complete 2026-10-06; field tests open after Phases 12.2 and 12.3 (owner decision 2026-10-06), which are still to plan
+stopped_at: Phase 12.1 (Owner acceptance testing) complete 2026-10-06; field tests open after Phases 12.2, 12.3 and 12.4 (owner decision 2026-10-06, 12.3 and 12.4 renumbered 2026-10-07), which are still to plan
 last_updated: "2026-10-06T23:00:00.000Z"
 last_activity: 2026-10-06
 progress:
-  total_phases: 25
+  total_phases: 26
   completed_phases: 22
   total_plans: 159
   completed_plans: 159
-  percent: 88
+  percent: 85
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 
 Phase: 12.1 (Owner acceptance testing)
 Plan: Not started
-Status: Phases 1 through 12 and 12.1 complete; Phases 12.2 and 12.3 come before the field tests (owner decision 2026-10-06), not yet planned
-Last activity: 2026-10-06 (Phase 12.1 closed by the owner; field tests postponed until Phases 12.2 and 12.3 are done)
+Status: Phases 1 through 12 and 12.1 complete; Phases 12.2, 12.3 and 12.4 come before the field tests (owner decision 2026-10-06), not yet planned
+Last activity: 2026-10-07 (UX/UI audit inserted as Phase 12.3, deep audit renumbered 12.4; field tests wait for 12.2 to 12.4)
 
-Progress: [█████████░] 22/25 phases complete
+Progress: [████████░░] 22/26 phases complete
 
 ## Performance Metrics
 
@@ -156,7 +156,7 @@ Decisions table. Decisions affecting current work:
 - Phases 01.6–01.9 inserted after Phase 1 to close the rest of the 2026-09 code audit (lots L10, L13–L20 and the remainders of L7, L16, L20): sync feed and object storage; API configuration, service split and database tuning; shared IBP domain package and test completeness; mobile state architecture, i18n, accessibility and hygiene
 - After Phase 1.9 the roadmap moved to flat numbering (Phases 2–13). Phase 2 (association-only sharing) and the UX/UI audit lots (Phases 3, 4, 7, 9, 12) were inserted by owner decision on 2026-09-27; Phase 13 (Field Validation) now depends on all of them
 - Phase 12.1 inserted after Phase 12: Owner acceptance testing: the owner still finds many display bugs and UX friction on their own phone and judged Phase 13 field tests with the association premature (owner decision 2026-09-28) (URGENT)
-- Phases 12.2 (Visual Modernisation, `REQ-QA-visual-modernisation`) and 12.3 (In-depth Quality Audit, `REQ-QA-deep-audit`) inserted after Phase 12.1 by owner decision 2026-10-06: a more modern and dynamic interface, then a deep audit of code quality, test coverage, architecture and security, both before Phase 13's field tests
+- Phases 12.2 (Visual Modernisation, `REQ-QA-visual-modernisation`) inserted after Phase 12.1 by owner decision 2026-10-06 (and 12.3, a UX/UI audit with a design system update, `REQ-QA-ux-audit`, inserted 2026-10-07; the deep audit, `REQ-QA-deep-audit`, is now Phase 12.4): a more modern and dynamic interface, then a UX/UI audit, then a deep audit of code quality, test coverage, architecture and security, both before Phase 13's field tests
 - Seeds are kept in `.planning/seeds/` (SEED-001 map layers, SEED-002 parcel journal, SEED-003 global search across all app items)
 
 ## Deferred Items
@@ -171,5 +171,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-10-06
-Stopped at: Phases 12.2 and 12.3 inserted; 12.1 owner acceptance loop continues, then /gsd-discuss-phase 12.2 or /gsd-plan-phase 12.2
+Stopped at: Phases 12.2, 12.3 and 12.4 inserted; 12.1 owner acceptance loop continues, then /gsd-discuss-phase 12.2 or /gsd-plan-phase 12.2
 Resume file: None

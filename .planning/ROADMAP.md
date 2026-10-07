@@ -60,7 +60,8 @@ list is never ambiguous.
 - [x] **Phase 12: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F (completed 2026-09-28)
 - [x] **Phase 12.1: Owner acceptance testing** (INSERTED) - The owner tests the app on their own phone; display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready for the association's field tests (completed 2026-10-06; the owner declared the app ready for field tests, which open after Phases 12.2 and 12.3)
 - [ ] **Phase 12.2: Visual Modernisation** (INSERTED) - A more pleasant, modern and lively interface: visual refresh and motion across the main screens (owner decision 2026-10-06)
-- [ ] **Phase 12.3: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed (owner decision 2026-10-06)
+- [ ] **Phase 12.3: UX/UI Audit & Design System Update** (INSERTED) - Audit the interface after Phase 12.2, update the design system to match, check global coherence across screens and fix visual bugs (owner decision 2026-10-07)
+- [ ] **Phase 12.4: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed (owner decision 2026-10-06)
 - [ ] **Phase 13: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
 
 ## Phase Details
@@ -661,10 +662,26 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 12.3: In-depth Quality Audit (INSERTED)
+### Phase 12.3: UX/UI Audit & Design System Update (INSERTED)
+
+**Goal**: After the visual modernisation, the interface is coherent from one screen to the next, the design system documents what the app now is, and the visual bugs are gone.
+**Depends on**: Phase 12.2 (audits and documents what 12.2 produced)
+**Requirements**: REQ-QA-ux-audit
+**Source**: owner decision 2026-10-07, folded into the MVP. Baseline: `docs/design/ux-ui-audit-2026-09.md` and `docs/design/charte-graphique-etats-sauvages-spec.md`.
+**Success Criteria** (what must be TRUE):
+
+  1. A UX/UI audit report in `docs/design/` covers every screen in light and dark mode on iOS (and Android where it differs): global coherence (spacing, typography, colour, iconography, components, motion, wording), accessibility (contrast, touch targets, reduced motion, Dynamic Type) and visual bugs, with the previous audit's findings re-checked.
+  2. Each finding has an ID, severity and a triage (*blocker before field tests*, *fix later*, *rejected* with a reason), logged in one grid.
+  3. The design system is updated to match Phase 12.2: tokens, components and motion rules are documented in the charter, stale sections are corrected, and no screen keeps a one-off style the system does not describe (the colour lint rule stays green).
+  4. Every *blocker before field tests* finding is fixed in batches, and the owner confirms them on their phone.
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 12.4: In-depth Quality Audit (INSERTED)
 
 **Goal**: We know, from a documented audit, the real state of code quality, test coverage, architecture and security, and the blockers it finds are fixed before field tests.
-**Depends on**: Phase 11 (durable backend), Phase 12.2 (audit the code that will ship), and the 2026-09 audit (`docs/audits/audit-2026-09-code-complet.md`) as the baseline to compare against
+**Depends on**: Phase 11 (durable backend), Phase 12.3 (audit the code that will ship), and the 2026-09 audit (`docs/audits/audit-2026-09-code-complet.md`) as the baseline to compare against
 **Requirements**: REQ-QA-deep-audit
 **Source**: owner decision 2026-10-06, folded into the MVP.
 **Success Criteria** (what must be TRUE):
@@ -679,7 +696,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 ### Phase 13: Field Validation
 
 **Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
-**Depends on**: Phases 12.2 and 12.3 (visual modernisation and quality audit), Phase 12.1 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
+**Depends on**: Phases 12.2, 12.3 and 12.4 (visual modernisation, UX/UI audit, quality audit), Phase 12.1 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
 **Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
 **Success Criteria** (what must be TRUE):
 
@@ -696,7 +713,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 12.1 → 12.2 → 12.3 → 13
+Phases execute in numeric order: 1 → 1.1 → 1.2 → … → 1.9 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 12.1 → 12.2 → 12.3 → 12.4 → 13
 
 Phases 1.2–1.9 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 2 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 8, whose offline-map work builds on the map Phase 2 repoints. Phases 3, 4, 7, 9 and 12 (the UX/UI audit, folded into MVP by owner decision 2026-09-27) are threaded between the phases they depend on for components (Phase 3 before Phase 5, so Factor A's genus-list UI reuses the new field components) or for a stable screen to redesign (Phase 7 after Phase 6, Phase 9 after Phase 8, Phase 12 last, right before Phase 13). Phases 10–11 do not depend on Phases 1.6–1.9 or Phase 2 either, so they can interleave if the schedule requires it.
 
@@ -728,7 +745,8 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 12. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 12.1. Owner acceptance testing | 0/TBD | Not started | - |
 | 12.2. Visual Modernisation | 0/TBD | Not started | - |
-| 12.3. In-depth Quality Audit | 0/TBD | Not started | - |
+| 12.3. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
+| 12.4. In-depth Quality Audit | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
 
 ## Coverage

@@ -95,7 +95,8 @@ every binding contract (conflict-report warning 5).
 - [ ] **REQ-QA-bug-a3-4** — Sign-up with an already-registered email shows a specific message inviting the user to log in, not a generic Auth0 error. *(New — `BUG-A3-4`, medium)*
 - [ ] **REQ-QA-bug-a6-2** — Password-reset email deliverability is closed as an **Auth0 tenant configuration** item (sender domain / DKIM), with the tenant change recorded. Explicitly **not** an SMTP fix. *(New — `BUG-A6-2`, re-scoped)*
 - [ ] **REQ-QA-visual-modernisation** — The interface is visibly more pleasant, modern and dynamic: a written visual direction approved by the owner, applied to the main screens in light and dark mode, with consistent Reanimated motion that respects reduced-motion, and no regression on field ergonomics or accessibility. *(New — owner decision 2026-10-06, Phase 12.2)*
-- [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 12.3)*
+- [ ] **REQ-QA-ux-audit** — A documented UX/UI audit of every screen (light and dark) checks global coherence, accessibility and visual bugs, the design system and charter are updated to match Phase 12.2, and every *blocker before field tests* finding is fixed and confirmed by the owner. *(New — owner decision 2026-10-07, Phase 12.3)*
+- [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 12.4)*
 
 ### DOC — Documentation Accuracy
 
@@ -280,7 +281,8 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-QA-bug-a6-2 | New | Phase 13 | Build |
 | REQ-QA-screen-tests | New | Phase 13 | Build |
 | REQ-QA-visual-modernisation | New | Phase 12.2 | Build |
-| REQ-QA-deep-audit | New | Phase 12.3 | Build |
+| REQ-QA-ux-audit | New | Phase 12.3 | Build |
+| REQ-QA-deep-audit | New | Phase 12.4 | Build |
 | REQ-FT-field-tests | New | Phase 13 | Build |
 | REQ-A-login | Built | Phase 13 | Verify |
 | REQ-A-logout | Built | Phase 13 | Verify |
@@ -300,12 +302,12 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 
 **Coverage:**
 
-- MVP requirements: **67** total (`REQ-A-social-login` moved to Deferred — Next Milestone 2026-09-27, found unbuilt)
-- Mapped to phases: **67** ✓
+- MVP requirements: **68** total (`REQ-A-social-login` moved to Deferred — Next Milestone 2026-09-27, found unbuilt)
+- Mapped to phases: **68** ✓
 - Unmapped: **0** ✓
-- Of which carry build work: **52** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 2, 2026-09-27); 15 are already built and are verified in Phase 13
+- Of which carry build work: **53** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 2, 2026-09-27); 15 are already built and are verified in Phase 13
 - Deferred to next milestone: 20 · Deferred to V2: 4
 
 ---
 *Requirements defined: 2026-09-22*
-*Last updated: 2026-10-06 — added `REQ-QA-visual-modernisation` (Phase 12.2) and `REQ-QA-deep-audit` (Phase 12.3). Earlier, 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*
+*Last updated: 2026-10-07 — added `REQ-QA-ux-audit` (Phase 12.3); the deep audit moved to Phase 12.4. Earlier, 2026-10-06 — added `REQ-QA-visual-modernisation` (Phase 12.2) and `REQ-QA-deep-audit` (Phase 12.3). Earlier, 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*
