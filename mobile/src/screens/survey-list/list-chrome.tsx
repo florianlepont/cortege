@@ -5,7 +5,6 @@ import {
   brandInteraction,
   brandRadius,
   brandSpacing4,
-  brandTypeScale,
   brandTypography,
 } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
@@ -15,24 +14,6 @@ import { AppText as Text } from "../../ui/AppText"
 import type { SectionKey } from "./list-items"
 
 const t = fr.surveyList
-
-/** The two figures under the title (OA-53): how many surveys, and how many are left to finish. */
-export function IntroStats({ total, toFinish }: { total: number; toFinish: number }) {
-  const theme = useBrandTheme()
-  const styles = useMemo(() => createStyles(theme), [theme])
-  return (
-    <View style={styles.stats}>
-      <View style={styles.stat}>
-        <Text style={styles.statValue}>{total}</Text>
-        <Text style={styles.statLabel}>{t.intro.total(total)}</Text>
-      </View>
-      <View style={styles.stat}>
-        <Text style={styles.statValue}>{toFinish}</Text>
-        <Text style={styles.statLabel}>{t.intro.toFinish}</Text>
-      </View>
-    </View>
-  )
-}
 
 export function SectionTitle({ section, count }: { section: SectionKey; count: number }) {
   const theme = useBrandTheme()
@@ -89,31 +70,6 @@ export function ListTitleBar({ onOpenSearch, onOpenCreateSurvey }: TitleBarProps
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    stats: {
-      flexDirection: "row",
-      gap: brandSpacing4.smd,
-    },
-    // Glass card, same recipe as the rows below (no blur, no elevation).
-    stat: {
-      flex: 1,
-      gap: brandSpacing4.xxs,
-      borderRadius: brandRadius.card,
-      borderCurve: "continuous",
-      borderWidth: 1,
-      borderColor: theme.visual.glass.cardBorder,
-      backgroundColor: theme.visual.glass.cardFill,
-      boxShadow: theme.visual.glass.cardShadow,
-      paddingHorizontal: brandSpacing4.md,
-      paddingVertical: brandSpacing4.smd,
-    },
-    statValue: {
-      ...brandTypography.screenTitle,
-      color: theme.colors.textPrimary,
-    },
-    statLabel: {
-      ...brandTypeScale.footnote,
-      color: theme.colors.textSecondary,
-    },
     // 12 of list gap plus 12 of padding above, the list gap minus 4 below: 24 above and 8 below.
     sectionTitle: {
       ...brandTypography.sectionHeader,

@@ -78,8 +78,8 @@ jest.mock("react-native-safe-area-context", () => ({
 jest.mock("../app/useAppBottomTabBarHeight", () => ({ useAppBottomTabBarHeight: () => 68 }))
 jest.mock("./survey-list/SurveyRow", () => ({ SurveyRow: "SurveyRow" }))
 jest.mock("./survey-list/ListEmptyState", () => ({ ListEmptyState: "ListEmptyState" }))
+jest.mock("./survey-list/ListSummaryCard", () => ({ ListSummaryCard: "ListSummaryCard" }))
 jest.mock("./survey-list/list-chrome", () => ({
-  IntroStats: "IntroStats",
   ListTitleBar: "ListTitleBar",
   SectionTitle: "SectionTitle",
 }))
@@ -223,6 +223,17 @@ describe("SurveyListScreen (12.2-11)", () => {
     act(() => tree.update(<SurveyListScreen {...makeProps({ surveys: surveys(4) })} />))
     expect(root.findAllByType("SurveyRow" as never)).toHaveLength(4)
     expect(wrappers(root)).toHaveLength(3)
+  })
+
+  test("shows the one summary card with the figures the screen already had (D-22)", () => {
+    const list = mount(makeProps()).findByType("FlatList" as never)
+    const header = list.props.header as React.ReactElement<{ children: React.ReactElement[] }>
+    const card = header.props.children.find(Boolean) as React.ReactElement<{
+      total: number
+      toFinish: number
+    }>
+    expect(card.type).toBe("ListSummaryCard")
+    expect(card.props).toEqual({ total: 2, toFinish: 1 })
   })
 
   test("shows the empty state, and no figures, without surveys", () => {

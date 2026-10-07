@@ -13,7 +13,8 @@ import {
   selectPreviewCandidates,
 } from "./survey-screen-helpers"
 import { ListEmptyState } from "./survey-list/ListEmptyState"
-import { IntroStats, ListTitleBar, SectionTitle } from "./survey-list/list-chrome"
+import { ListSummaryCard } from "./survey-list/ListSummaryCard"
+import { ListTitleBar, SectionTitle } from "./survey-list/list-chrome"
 import {
   buildListItems,
   isSectionHeader,
@@ -29,7 +30,7 @@ import type { SurveyListScreenProps } from "./survey-list/types"
 const INITIAL_ROWS = 10
 
 /**
- * Mes Relevés (OA-56): the figures, then the surveys in "À terminer" and "Terminés". Searching and
+ * Mes Relevés (OA-56): the forest summary card with the figures (D-22), then the surveys in "À terminer" and "Terminés". Searching and
  * filtering moved to the search page (OA-52, OA-54), so the list always shows every survey.
  */
 export function SurveyListScreen({
@@ -137,7 +138,9 @@ export function SurveyListScreen({
         {showTitleBar ? (
           <ListTitleBar onOpenSearch={onOpenSearch} onOpenCreateSurvey={onOpenCreateSurvey} />
         ) : null}
-        {surveys.length > 0 ? <IntroStats total={surveys.length} toFinish={toFinishCount} /> : null}
+        {surveys.length > 0 ? (
+          <ListSummaryCard total={surveys.length} toFinish={toFinishCount} />
+        ) : null}
       </View>
     ),
     [onOpenCreateSurvey, onOpenSearch, showTitleBar, styles, surveys.length, toFinishCount],

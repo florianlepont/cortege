@@ -1,5 +1,7 @@
 // Filled by plan 01.9-22 then 01.9-27; no other plan edits this section.
 const plural = (count: number, word: string): string => (count > 1 ? `${word}s` : word)
+const totalLabel = (count: number): string => (count > 1 ? "relevés au total" : "relevé au total")
+const toFinishLabel = "à terminer"
 
 export const surveyListFr = {
   row: {
@@ -25,8 +27,11 @@ export const surveyListFr = {
   },
   // OA-53, OA-55: two figures under the title, then the surveys in two sections.
   intro: {
-    total: (count: number) => (count > 1 ? "relevés au total" : "relevé au total"),
-    toFinish: "à terminer",
+    total: totalLabel,
+    toFinish: toFinishLabel,
+    // One spoken sentence for the summary card: both figures with their labels.
+    summary: ({ total, toFinish }: { total: number; toFinish: number }) =>
+      `${total} ${totalLabel(total)}, ${toFinish} ${toFinishLabel}`,
   },
   sections: {
     toFinish: "À terminer",
