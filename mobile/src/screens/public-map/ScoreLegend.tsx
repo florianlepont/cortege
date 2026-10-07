@@ -21,12 +21,14 @@ const t = fr.publicMap
 export type MapLegendRow = { color: string; label: string; dashed?: boolean }
 
 // The swatches are the marker colours themselves (`markerStyles` in styles.ts), so the legend always
-// describes the markers drawn on the map; they are not restyled with the overlays (12.2-18).
+// describes the markers drawn on the map; they are not restyled with the overlays (12.2-18). The
+// last row is the warm grey of a parcel without a score (12.2-19), drawn from zoom 15.
 const SCORE_ROWS: MapLegendRow[] = [
   { color: brandMapTokens.scoreMarker.high, label: t.legend.high },
   { color: brandMapTokens.scoreMarker.mid, label: t.legend.mid },
   { color: brandMapTokens.scoreMarker.low, label: t.legend.low },
   { color: brandColors.white, label: t.legend.draft, dashed: true },
+  { color: brandMapTokens.parcelUnscored, label: t.legend.unscored },
 ]
 
 export type MapLegendProps = {

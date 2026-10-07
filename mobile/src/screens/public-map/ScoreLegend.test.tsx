@@ -156,10 +156,12 @@ describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
       brandMapTokens.scoreMarker.mid,
       brandMapTokens.scoreMarker.low,
       brandColors.white,
+      brandMapTokens.parcelUnscored,
     ])
     expect(swatches[3].borderStyle).toBe("dashed")
     expect(swatches[3].borderColor).toBe(brandColors.forest)
     expect(swatches.slice(0, 3).every((style) => style.borderStyle === undefined)).toBe(true)
+    expect(swatches[4].borderStyle).toBeUndefined()
   })
 
   test("the toggle keeps its 40 pt glass disc and a 44 pt target (D-05)", () => {

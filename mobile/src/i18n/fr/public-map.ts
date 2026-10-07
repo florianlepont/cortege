@@ -27,6 +27,7 @@ export const publicMapFr = {
     mid: "Score moyen",
     high: "Score élevé",
     draft: "Brouillon, visible de vous seul",
+    unscored: "Parcelle sans score",
   },
   alerts: {
     locationDisabled: {

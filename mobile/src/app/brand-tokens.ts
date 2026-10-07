@@ -432,6 +432,12 @@ export const brandMapTokens = {
     mid: "rgba(204, 112, 31, 0.55)",
     high: "rgba(137, 163, 58, 0.55)",
   },
+  // 12.2-19: an Explorer parcel without a score (never studied, or studied without a usable total)
+  // is a warm grey, so green on that map only ever means a high score. The basemaps are not
+  // scheme aware (plan or orthophoto, same in light and dark), so one pair reads on both: the
+  // outline keeps 3:1 against the light plan and the dark orthophoto alike.
+  parcelUnscored: "#8C847A",
+  parcelUnscoredFill: "rgba(140, 132, 122, 0.22)",
 } as const
 
 // Phase 4 (DS-06..DS-09, audit §4): the motion system. Kept as plain data (durations in ms, easing
