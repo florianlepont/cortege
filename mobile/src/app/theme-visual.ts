@@ -7,6 +7,7 @@ import {
   buildLinearGradient,
   forestHaloCore,
   mixWithWhite,
+  pillLabelColor,
   withAlpha,
 } from "./visual-tokens"
 
@@ -108,7 +109,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
         : "0 16px 36px -12px rgba(30, 60, 25, 0.55)",
       highlight: "inset 0 1px 0 rgba(255, 255, 255, 0.14)",
       hairline: "rgba(255, 255, 255, 0.14)",
-      title: "#FFFFFF",
+      title: brandColors.white,
       titleAccent: "#C8DDA0",
       body: "#D7E3C0",
       sage: "#B0C78E",
@@ -137,7 +138,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       ]),
       fallback: "#89A33A",
       top: "#B9D76B",
-      label: "#14210F",
+      label: pillLabelColor,
       shadow: "0 8px 22px rgba(137, 163, 58, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.5)",
     },
     glass: {

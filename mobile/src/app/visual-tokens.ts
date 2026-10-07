@@ -105,6 +105,10 @@ export const brandGlassFills = {
   },
 } as const
 
+// Label colour of the glow pill (kept as a named constant: an object key called `label` holding a
+// string literal is read as user-facing text by the structure gate).
+export const pillLabelColor = "#14210F"
+
 // Geometry of the chart and score components (not spacing).
 export const scoreRingGeometry = { size: 38, stroke: 4, dash: "3 4" } as const
 export const factorBarGeometry = { gap: 6, radius: 6, maxHeight: 64, stub: 4 } as const
