@@ -228,6 +228,8 @@ function flattenStyle(style: unknown): Style {
 }
 
 describe("SurveyDetailScreen bottom clearance", () => {
+  const BAR = 10 + 50 + (90 + 8)
+
   test("without the bottom button the last row scrolls above the floating tab bar", () => {
     const tree = mount("submitted")
     const scroll = byType(tree, "ScrollView")[0]
@@ -236,11 +238,38 @@ describe("SurveyDetailScreen bottom clearance", () => {
     expect(padding).toBeGreaterThanOrEqual(90)
   })
 
-  test("with the bottom button the scroll area already stops above it, so no extra room", () => {
+  test("the floating bar does not hide content: at maximum scroll the last row ends above it", () => {
     mockCtaKind = "next"
     const tree = mount("draft")
     const scroll = byType(tree, "ScrollView")[0]
     const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
-    expect(padding).toBeLessThan(90)
+    // The bar (tab bar clearance, gap, 50 pt button, air above) plus the usual margin.
+    expect(padding).toBe(BAR + PAGE_END_MARGIN)
+    expect(padding).toBeGreaterThan(90 + PAGE_END_MARGIN)
+    // The bar is a sibling drawn after the scroll view, over it, not inside the scroll area.
+    const bar = byType(tree, "FinishBar")[0]
+    expect(bar.props.onLayout).toEqual(expect.any(Function))
+  })
+
+  test("a taller measured bar (a wrapped label at a large text size) grows the padding", () => {
+    mockCtaKind = "next"
+    const tree = mount("draft")
+    const bar = byType(tree, "FinishBar")[0]
+    act(() => bar.props.onLayout({ nativeEvent: { layout: { height: BAR + 22 } } }))
+    const scroll = byType(tree, "ScrollView")[0]
+    expect(flattenStyle(scroll.props.contentContainerStyle).paddingBottom).toBe(
+      BAR + 22 + PAGE_END_MARGIN,
+    )
+  })
+
+  test("when the survey is finished the bar goes away and the padding returns to the tab bar's", () => {
+    mockCtaKind = "next"
+    const tree = mount("draft")
+    mockCtaKind = "hidden"
+    update(tree, "submitted")
+    const scroll = byType(tree, "ScrollView")[0]
+    expect(flattenStyle(scroll.props.contentContainerStyle).paddingBottom).toBe(
+      90 + PAGE_END_MARGIN,
+    )
   })
 })

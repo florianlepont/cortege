@@ -23,10 +23,10 @@ afterAll(() => {
 
 const base = { padding: 16, gap: 24, paddingBottom: 48 }
 
-function readStyle(needsClearance?: boolean): unknown {
+function readStyle(barHeight?: number | null): unknown {
   let result: unknown
   function Probe() {
-    result = useSubPageContentStyle(base, needsClearance)
+    result = useSubPageContentStyle(base, barHeight)
     return null
   }
   act(() => {
@@ -53,7 +53,14 @@ describe("useSubPageContentStyle", () => {
     expect(extra.paddingBottom).toBeGreaterThan(base.paddingBottom)
   })
 
-  test("a page with its own bottom bar keeps its base style", () => {
-    expect(readStyle(false)).toBe(base)
+  test("a page with its own floating bar ends above it: the bar height replaces the clearance", () => {
+    // The bar's height is measured from the page's bottom edge, so it already includes the clearance.
+    expect(readStyle(158)).toEqual([base, { paddingBottom: 158 + PAGE_END_MARGIN }])
+    const [, extra] = readStyle(158) as [unknown, { paddingBottom: number }]
+    expect(extra.paddingBottom).toBeGreaterThan(mockClearance + PAGE_END_MARGIN)
+  })
+
+  test("no bar (null) means the tab bar clearance alone", () => {
+    expect(readStyle(null)).toEqual([base, { paddingBottom: 100 + PAGE_END_MARGIN }])
   })
 })

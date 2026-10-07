@@ -7,6 +7,7 @@ import {
   brandTypography,
 } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+import { FINISH_BAR } from "./finish-bar-layout"
 
 /**
  * A photo tile (12.2-14, D-27b): one 4:3 size for every state and every photo (the shape of a phone
@@ -250,10 +251,16 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     titlePressable: {
       flex: 1,
     },
+    // D-27c: no background. The bar floats over the bottom of the page (the content scrolls behind
+    // it) and the green glass button is its only filled element; the screen pads the scroll
+    // content by the bar's height. `paddingTop` is `FINISH_BAR.paddingTop`.
     bottomBar: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
       paddingHorizontal: brandSpacing.md,
-      paddingTop: 10,
-      backgroundColor: theme.colors.canvas,
+      paddingTop: FINISH_BAR.paddingTop,
     },
     // Sub-pages shared.
     subContent: {

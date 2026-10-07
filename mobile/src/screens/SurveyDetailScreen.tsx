@@ -25,6 +25,7 @@ import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
+import { useFinishBarHeight } from "./survey-detail/useFinishBarHeight"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 
 const menuText = fr.surveyDetail.menu
@@ -130,9 +131,11 @@ export function SurveyDetailScreen({
     data.nextFactor,
   )
   const resolvedMethod = resolveMethodVersion(data.scoringContext.ibp_method_version)
-  // With the bottom button the scroll area stops above it (and above the tab bar). Without it
-  // (a finished survey) the page runs under the floating tab bar: the last row needs the room.
-  const contentStyle = useSubPageContentStyle(styles.content, cta.kind === "hidden")
+  // The bottom button floats over the page on a transparent bar (D-27c), so at maximum scroll the
+  // last row must end above the bar (its measured height, tab bar clearance included). Without the
+  // bar (a finished survey) the page runs under the floating tab bar: the last row needs that room.
+  const { barHeight, onBarLayout } = useFinishBarHeight(cta.kind !== "hidden")
+  const contentStyle = useSubPageContentStyle(styles.content, barHeight)
   const methodLabel = resolvedMethod === IBP_METHOD_V3_2 ? "v3.2" : "v3.0"
   const rowSections = [
     {
@@ -253,6 +256,7 @@ export function SurveyDetailScreen({
         accessibilityLabel={fr.surveyDetail.a11y.finishSurvey(activeSiteName)}
         onFinish={() => void onSubmitSurvey(selectedSurvey.id)}
         onOpenFactor={(factor) => void onOpenFactor(selectedSurvey.id, factor)}
+        onLayout={onBarLayout}
       />
 
       <AppActionSheet
