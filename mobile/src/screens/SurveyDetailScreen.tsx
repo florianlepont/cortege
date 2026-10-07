@@ -178,6 +178,7 @@ export function SurveyDetailScreen({
           scores={data.displayedScores}
           isDraftView={data.useLocalDraftView}
           filledFactorCount={data.filledFactorCount}
+          pulseTrigger={0}
         />
 
         <PhotosStrip

@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandRadius, brandSpacing, brandTypography } from "../../app/brand-tokens"
+import {
+  brandRadius,
+  brandSpacing,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
 const PHOTO_SIZE = 104
@@ -71,59 +77,62 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
       flexShrink: 1,
     },
-    // Score card.
-    scoreCard: {
-      borderRadius: brandRadius.card,
-      padding: 18,
-      gap: 12,
-      backgroundColor: theme.semanticColors.heroSurface,
-      borderWidth: 1,
-      borderColor: theme.semanticColors.heroBorder,
+    // Score card (forest hero, variant I). Text stays in the left and lower part of the card, away
+    // from the halo at the top right (RESEARCH Pitfall 4).
+    scoreWrap: {
+      position: "relative",
     },
-    scoreTopRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    scoreValueRow: {
-      flexDirection: "row",
-      alignItems: "baseline",
-      gap: 6,
-    },
-    scoreValue: {
-      fontFamily: "Sora-Bold",
-      fontSize: 40,
-      lineHeight: 44,
-      color: theme.colors.white,
-    },
-    scoreMax: {
-      fontSize: 18,
-      color: theme.colors.white,
-      opacity: 0.8,
-    },
-    scoreCaptionRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
+    scoreContent: {
+      padding: brandSpacing4.lg,
     },
     scoreCaption: {
-      ...brandTypography.sectionBody,
-      color: theme.colors.white,
-      opacity: 0.9,
+      ...brandTypography.label,
+      color: theme.visual.forest.body,
     },
-    scoreSegments: {
+    scoreNumeral: {
+      alignSelf: "flex-start",
+      marginTop: brandSpacing4.xs,
+    },
+    scoreBar: {
+      marginTop: brandSpacing4.smd,
+    },
+    scoreTiles: {
       flexDirection: "row",
-      gap: 4,
+      gap: brandSpacing4.smd,
+      marginTop: brandSpacing4.md,
     },
-    scoreSegment: {
+    scoreTile: {
       flex: 1,
-      height: 6,
-      borderRadius: 3,
+      gap: brandSpacing4.xs,
+      padding: brandSpacing4.smd,
+      borderRadius: brandRadius.badge,
+      borderWidth: 1,
+      borderColor: theme.visual.forest.tileBorder,
+      backgroundColor: theme.visual.forest.tileFill,
+    },
+    scoreTileLabel: {
+      ...brandTypeScale.footnote,
+      fontFamily: "Jost-Regular",
+      color: theme.visual.forest.body,
+    },
+    scoreTileValueRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: brandSpacing4.xs,
+    },
+    scoreTileValue: {
+      ...brandTypography.input,
+      color: theme.visual.forest.title,
+    },
+    scoreTileOutOf: {
+      ...brandTypeScale.footnote,
+      fontFamily: "Jost-Regular",
+      color: theme.visual.forest.sage,
     },
     scoreHint: {
       ...brandTypography.meta,
-      color: theme.colors.white,
-      opacity: 0.85,
+      marginTop: brandSpacing4.smd,
+      color: theme.visual.forest.body,
     },
     // Photos.
     section: {

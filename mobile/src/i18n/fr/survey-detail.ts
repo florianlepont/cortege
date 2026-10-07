@@ -34,7 +34,7 @@ export const surveyDetailFr = {
     ibpTotal: "IBP total",
     factorsReady: "Facteurs remplis",
     factorsCount: (count: number) => `${count}/10`,
-    unknown: "—",
+    unknown: "Non renseigné",
     total: (points: number) => `${points} / ${IBP_MAX.total}`,
     outOfTotal: `/ ${IBP_MAX.total}`,
     standScore: (points: number) => `P/G ${points} / ${IBP_MAX.stand}`,
@@ -58,6 +58,7 @@ export const surveyDetailFr = {
     factorsFilled: (filled: number) =>
       filled === 1 ? "1 facteur sur 10 rempli" : `${filled} facteurs sur 10 remplis`,
     allFilled: "Les 10 facteurs sont remplis",
+    outOf: ({ max }: { max: number }) => `/ ${max}`,
   },
   photos: {
     title: "Photos",
