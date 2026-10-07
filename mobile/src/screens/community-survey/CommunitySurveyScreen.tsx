@@ -9,6 +9,7 @@ import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
+import { useFrameInsetBehavior, useFrameLargeTitle } from "../../ui/frame-large-title"
 import { FactorsList } from "../survey-detail/FactorsList"
 import { ParcelMapCard } from "../survey-detail/ParcelMapCard"
 import { PhotoGallery } from "../survey-detail/PhotoGallery"
@@ -45,6 +46,9 @@ export function CommunitySurveyScreen({
   const photoStyles = useMemo(() => createPhotoStyles(theme), [theme])
   const own = useMemo(() => createOwnStyles(theme), [theme])
   const { detail, photos, status, photosFailed } = state
+  // 12.2-17: under the native iOS large title the header names the survey and iOS insets the page.
+  const nativeTitle = useFrameLargeTitle()
+  const insetBehavior = useFrameInsetBehavior()
 
   const scores = useMemo(() => (detail ? toDisplayedScores(detail) : null), [detail])
   const factorEntries = useMemo(() => (detail ? toFactorEntries(detail) : []), [detail])
@@ -105,13 +109,19 @@ export function CommunitySurveyScreen({
   ].filter((chip): chip is string => chip !== null && chip !== "")
 
   return (
-    <ScrollView style={scrollStyle} contentContainerStyle={contentStyle}>
+    <ScrollView
+      style={scrollStyle}
+      contentContainerStyle={contentStyle}
+      contentInsetAdjustmentBehavior={insetBehavior}
+    >
       {/* The same skeleton as one of my surveys (OA-115): title and status line, score, photos,
         map, then Contexte et parcelles, Score IBP and the parcel's history. */}
       <View style={own.titleBlock}>
-        <Text accessibilityRole="header" style={own.title}>
-          {detail.site_name.trim() || fr.common.untitledSurvey}
-        </Text>
+        {nativeTitle ? null : (
+          <Text accessibilityRole="header" style={own.title}>
+            {detail.site_name.trim() || fr.common.untitledSurvey}
+          </Text>
+        )}
         <Text style={own.meta}>
           {t.statusLine({ author, date: formatDay(detail.submitted_at) })}
         </Text>

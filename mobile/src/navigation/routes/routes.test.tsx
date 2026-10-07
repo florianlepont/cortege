@@ -26,6 +26,7 @@ const mockSearchNavigation = {
   push: jest.fn(),
   goBack: jest.fn(),
   canGoBack: jest.fn(() => true),
+  setOptions: jest.fn(),
 }
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockSearchNavigation }))
 const mockCommunity = { items: [], status: "idle" }
@@ -992,6 +993,58 @@ describe("CommunitySurveyRoute", () => {
   })
 })
 
+describe("CommunitySurveyRoute native large title (12.2-17)", () => {
+  const loaded = mockCommunitySurvey as unknown as { detail: unknown; status: string }
+
+  beforeEach(() => {
+    mockNativeTabs.value = false
+    mockSearchNavigation.setOptions.mockClear()
+  })
+  afterEach(() => {
+    loaded.detail = null
+    loaded.status = "loading"
+  })
+
+  async function render() {
+    return mount(
+      <Providers fixture={makeFixture()}>
+        <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+  }
+
+  test("the loaded survey's name becomes the native large title", async () => {
+    mockNativeTabs.value = true
+    loaded.detail = { site_name: "  Bois de la Cure  " }
+    loaded.status = "ready"
+    await render()
+    expect(mockSearchNavigation.setOptions).toHaveBeenCalledWith({ title: "Bois de la Cure" })
+  })
+
+  test("a survey without a name gets the untitled label", async () => {
+    mockNativeTabs.value = true
+    loaded.detail = { site_name: "   " }
+    loaded.status = "ready"
+    await render()
+    expect(mockSearchNavigation.setOptions).toHaveBeenCalledWith({
+      title: fr.common.untitledSurvey,
+    })
+  })
+
+  test("while loading the stack's title stays", async () => {
+    mockNativeTabs.value = true
+    await render()
+    expect(mockSearchNavigation.setOptions).not.toHaveBeenCalled()
+  })
+
+  test("outside the native iOS tab tree the page names the survey itself", async () => {
+    loaded.detail = { site_name: "Bois de la Cure" }
+    loaded.status = "ready"
+    await render()
+    expect(mockSearchNavigation.setOptions).not.toHaveBeenCalled()
+  })
+})
+
 describe("SurveyDetailRoute", () => {
   test("renders nothing until a survey is selected", async () => {
     await mount(
@@ -1738,6 +1791,10 @@ describe("the native large title frame (12.2-17)", () => {
     ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
     ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
     ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
+    [
+      "communitySurvey",
+      () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
+    ],
     ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
     ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
     ["offlineAreas", () => <OfflineAreasRoute navigation={nav()} route={{} as never} />],

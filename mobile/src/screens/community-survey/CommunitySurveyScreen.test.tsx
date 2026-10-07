@@ -8,6 +8,7 @@ import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
 import { PAGE_END_MARGIN } from "../survey-detail/useSubPageContent"
+import { FrameLargeTitleContext } from "../../ui/frame-large-title"
 import { CommunitySurveyScreen } from "./CommunitySurveyScreen"
 
 const t = fr.communitySurvey
@@ -320,5 +321,46 @@ describe("bottom clearance above the tab bar", () => {
     const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
     expect(padding).toBe(90 + PAGE_END_MARGIN)
     expect(padding).toBeGreaterThanOrEqual(90)
+  })
+})
+
+describe("under the native large title (12.2-17)", () => {
+  function renderLarge(current: CommunitySurveyState) {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <CommunitySurveyScreen
+            apiUrl="http://api.test/v1"
+            accessToken="token"
+            state={current}
+            onOpenSurvey={jest.fn()}
+          />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+    return tree
+  }
+
+  it("the header names the survey: no in-page title, the author line and chips stay", () => {
+    const tree = renderLarge(state())
+    const headers = byType(tree, "Text").filter((node) => node.props.accessibilityRole === "header")
+    expect(headers).toHaveLength(0)
+    const all = texts(tree).join(" | ")
+    expect(all).toContain("Terminé · Camille")
+    expect(all).toContain(t.versionChip(2))
+  })
+
+  it("iOS insets the page: automatic insets, only the margin under the last item", () => {
+    const scroll = byType(renderLarge(state()), "ScrollView")[0]
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    expect(flattenStyle(scroll.props.contentContainerStyle).paddingBottom).toBe(PAGE_END_MARGIN)
+  })
+
+  it("elsewhere the page draws its own title", () => {
+    const { tree } = render(state())
+    const headers = byType(tree, "Text").filter((node) => node.props.accessibilityRole === "header")
+    expect(headers).toHaveLength(1)
+    expect(byType(tree, "ScrollView")[0].props.contentInsetAdjustmentBehavior).toBe("never")
   })
 })

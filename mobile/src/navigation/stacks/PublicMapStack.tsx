@@ -6,7 +6,7 @@ import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { PublicMapRoute } from "../routes/PublicMapRoute"
 import { styles } from "../styles"
 import type { PublicMapStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle } from "./stack-options"
+import { createBaseStackScreenOptions, pageTitleOptions } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -29,10 +29,10 @@ export function PublicMapTabNavigator() {
         <PublicMapStack.Screen
           name="communitySurvey"
           options={{
+            // 12.2-17: the native large title in the native iOS tree, as in Mes Relevés.
             title: fr.navigation.headers.communitySurvey,
             headerShown: true,
-            headerLargeTitle: false,
-            ...hiddenNativeTitle,
+            ...pageTitleOptions(theme),
           }}
           component={CommunitySurveyRoute}
         />

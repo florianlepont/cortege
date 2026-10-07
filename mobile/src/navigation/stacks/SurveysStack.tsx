@@ -108,9 +108,10 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           <SurveysStack.Screen
             name="communitySurvey"
             options={{
+              // 12.2-17: the native large title in the native iOS tree (the route puts the
+              // survey's name in it once loaded), else the page's own title.
               title: headers.communitySurvey,
-              headerLargeTitle: false,
-              ...hiddenNativeTitle,
+              ...pageTitleOptions(theme),
             }}
             component={CommunitySurveyRoute}
           />

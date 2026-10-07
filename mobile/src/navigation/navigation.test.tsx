@@ -520,6 +520,7 @@ describe("stack options and listeners", () => {
     mockPlatform.OS = "ios"
     await mount(<AppNavigation />)
     const titles: Record<string, string> = {
+      communitySurvey: fr.navigation.headers.communitySurvey,
       surveyContext: fr.navigation.headers.surveyContext,
       surveyScore: fr.navigation.headers.surveyScore,
       surveyHistory: fr.navigation.headers.surveyHistory,
