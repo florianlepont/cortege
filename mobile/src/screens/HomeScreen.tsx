@@ -23,14 +23,12 @@ import { fr } from "../i18n"
 import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { Skeleton } from "../ui/Skeleton"
 import { SyncStatusLine, isSyncStatusLineVisible } from "../ui/SyncStatusLine"
+import { HOME_GAPS, nearbyMapHeight } from "./home/layout-budget"
 import { NearbyMapCard } from "./home/NearbyMapCard"
 import { RECENT_SURVEYS_COUNT, RecentSurveysSection } from "./home/RecentSurveysSection"
 import { ResumeCard } from "./home/ResumeCard"
 import { ToolsSection } from "./home/ToolsSection"
 import { createStyles } from "./home/styles"
-
-const MIN_MAP_HEIGHT = 240
-const MAP_HEIGHT_RATIO = 0.34
 
 /** OA-89: the least time the pull-to-refresh banner stays open. */
 const MIN_REFRESH_MS = 800
@@ -115,9 +113,9 @@ export function HomeScreen({
   // OA-85: iOS 26 lays the screen out under the native header, so the content reserves its height.
   const headerHeight = useHeaderHeight()
   const [refreshing, setRefreshing] = useState(false)
-  // The map takes the room left under the hero (OA-19, Home redesign), never less than a card.
+  // The map card is a share of the window, never taller than its overlays need (`nearbyMapHeight`).
   const windowHeight = useWindowDimensions().height
-  const mapHeight = Math.max(MIN_MAP_HEIGHT, Math.round(windowHeight * MAP_HEIGHT_RATIO))
+  const mapHeight = nearbyMapHeight(windowHeight)
   const firstName = getFirstName(currentUser)
   // HOME-06: the avatar shows the profile photo (it used to render nothing once one existed) and
   // is tappable to Compte.
@@ -183,7 +181,7 @@ export function HomeScreen({
         contentContainerStyle={[
           styles.content,
           {
-            paddingTop: nativeHeader ? brandSpacing4.md : brandSpacing4.md + brandSpacing4.xs,
+            paddingTop: nativeHeader ? HOME_GAPS.contentTop : brandSpacing4.md + brandSpacing4.xs,
             paddingBottom: insets.bottom + 80,
           },
         ]}

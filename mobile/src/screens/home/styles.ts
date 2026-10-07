@@ -1,8 +1,10 @@
 import { StyleSheet } from "react-native"
 import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+import { HOME_GAPS } from "./layout-budget"
 
-// Compact density (D-05): the page inset is 16, blocks sit 16 apart, sections 24.
+// Compact density (D-05): the page inset is 16, blocks and sections sit 16 apart (`HOME_GAPS`, the
+// vertical budget that keeps the nearby map in view at launch).
 const PAGE_H = brandSpacing4.md
 
 export function createStyles(theme: BrandTheme) {
@@ -84,11 +86,11 @@ export function createStyles(theme: BrandTheme) {
 
     // Sections
     section: {
-      marginTop: brandSpacing4.lg,
+      marginTop: HOME_GAPS.section,
     },
     sectionHeader: {
       paddingHorizontal: PAGE_H,
-      marginBottom: brandSpacing4.sm,
+      marginBottom: HOME_GAPS.sectionHeader,
     },
     trailingLink: {
       ...brandTypography.label,

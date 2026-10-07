@@ -8,6 +8,7 @@ import { brandInteraction, brandRadius } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
+import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
 import { openDrafts, ToolsSection } from "./ToolsSection"
 
 const originalConsoleError = console.error
@@ -134,6 +135,18 @@ describe("openDrafts", () => {
 })
 
 describe("ToolsSection", () => {
+  test("its gaps and row height are the ones the layout budget counts (12.2-14)", () => {
+    mount()
+    const flat = (node: ReactTestInstance) =>
+      Object.assign({}, ...[node.props.style].flat()) as Record<string, unknown>
+    const section = tree.root.find(
+      (node) => (node.type as unknown) === "View" && flat(node).marginTop !== undefined,
+    )
+    expect(flat(section).marginTop).toBe(HOME_GAPS.section)
+    expect(flat(byType("AppSectionHeader")).marginBottom).toBe(HOME_GAPS.sectionHeader)
+    expect(flat(byType("Pressable")).minHeight).toBe(TOOL_ROW_MIN_HEIGHT)
+  })
+
   test("shows the Outils section with the photo identification card, the tool closed", () => {
     mount()
     expect(byType("AppSectionHeader").props.title).toBe(t.title)

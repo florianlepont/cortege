@@ -13,6 +13,7 @@ import type { LocalSurvey } from "../../storage/types"
 import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
 import { ForestCard } from "../../ui/ForestCard"
+import { RESUME_LAYOUT } from "./layout-budget"
 
 const t = fr.home.hero
 
@@ -103,7 +104,7 @@ function createStyles(theme: BrandTheme) {
     // The card content has no padding of its own: the footer rule runs edge to edge. The padding
     // of the card body is `main`'s.
     main: {
-      padding: brandSpacing4.md,
+      padding: RESUME_LAYOUT.padding,
     },
     row: {
       flexDirection: "row",
@@ -112,7 +113,7 @@ function createStyles(theme: BrandTheme) {
     },
     copy: {
       flex: 1,
-      gap: brandSpacing4.xs,
+      gap: RESUME_LAYOUT.textGap,
       alignItems: "flex-start",
     },
     title: {
@@ -128,7 +129,7 @@ function createStyles(theme: BrandTheme) {
       alignSelf: "stretch",
       gap: brandSpacing4.xs,
       // Owner check on the iPhone: the button sat too close to the progress. 24 reads as two blocks.
-      marginTop: brandSpacing4.lg,
+      marginTop: RESUME_LAYOUT.progressGap,
     },
     // Ten equal parts of the inner width: the basis is 0 and nothing sets a minimum width, so the
     // last segment can never run past the right edge of the card.
@@ -137,8 +138,8 @@ function createStyles(theme: BrandTheme) {
       flexShrink: 1,
       flexBasis: 0,
       minWidth: 0,
-      height: 6,
-      borderRadius: 3,
+      height: RESUME_LAYOUT.progressHeight,
+      borderRadius: RESUME_LAYOUT.progressHeight / 2,
       backgroundColor: forest.tagFill,
     },
     progressSegmentDone: {
@@ -147,10 +148,10 @@ function createStyles(theme: BrandTheme) {
     // D-20a: a full-width rule (the forest tag border, stronger than the card hairline) over a
     // footer band of its own, so "Nouveau relevé" is clearly a second group.
     footer: {
-      borderTopWidth: 1,
+      borderTopWidth: RESUME_LAYOUT.footerRule,
       borderTopColor: forest.tagBorder,
       backgroundColor: forest.tileFill,
-      paddingVertical: brandSpacing4.xs,
+      paddingVertical: RESUME_LAYOUT.footerPaddingY,
       paddingHorizontal: brandSpacing4.md,
     },
     link: {

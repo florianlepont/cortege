@@ -11,6 +11,7 @@ import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppText as Text } from "../../ui/AppText"
 import { GenusRecognitionModal } from "../../ui/GenusRecognitionModal"
 import { GenusTargetSheet } from "./GenusTargetSheet"
+import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
 
 const t = fr.home.tools
 
@@ -25,8 +26,6 @@ const SHEET_DELAY_MS = 450
 const NOTICE_MS = 5000
 /** The same page margin as the rest of Accueil (home/styles.ts). */
 const PAGE_H = brandSpacing4.md
-/** The slim tool row: the 40 pt icon tile and 8 pt above and below it. */
-const TOOL_ROW_MIN_HEIGHT = 56
 
 export function openDrafts(surveys: LocalSurvey[]): LocalSurvey[] {
   return surveys
@@ -159,11 +158,11 @@ export function ToolsSection({
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     section: {
-      marginTop: brandSpacing4.lg,
+      marginTop: HOME_GAPS.section,
     },
     header: {
       paddingHorizontal: PAGE_H,
-      marginBottom: brandSpacing4.sm,
+      marginBottom: HOME_GAPS.sectionHeader,
     },
     notice: {
       marginHorizontal: PAGE_H,

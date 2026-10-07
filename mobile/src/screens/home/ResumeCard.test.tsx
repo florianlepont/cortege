@@ -4,6 +4,7 @@ import { brandInteraction, brandSpacing4 } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
+import { RESUME_LAYOUT, resumeCardHeight } from "./layout-budget"
 import { ResumeCard } from "./ResumeCard"
 
 const originalConsoleError = console.error
@@ -258,5 +259,39 @@ describe("ResumeCard", () => {
     const { segments } = mount(makeSurvey({ completion_rate: 250 }))
     expect(segments("hero-progress-done")).toHaveLength(10)
     expect(segments("hero-progress-todo")).toHaveLength(0)
+  })
+
+  test("the paddings and gaps are the ones the layout budget counts (12.2-14)", () => {
+    mount(makeSurvey())
+    const body = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "View" && styleOf(node).padding === RESUME_LAYOUT.padding,
+    )
+    expect(body).toBeDefined()
+    const progress = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.accessible === false,
+    )
+    // The 24 pt between the button and the segments stays (owner check on the iPhone), as do the
+    // 6 pt segments and the 1 pt rule over the 44 pt link.
+    expect(styleOf(progress).marginTop).toBe(24)
+    expect(styleOf(progress).marginTop).toBe(RESUME_LAYOUT.progressGap)
+    const segment = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "hero-progress-todo",
+    )
+    expect(styleOf(segment).height).toBe(RESUME_LAYOUT.progressHeight)
+    const footer = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-footer",
+    )
+    expect(styleOf(footer).borderTopWidth).toBe(RESUME_LAYOUT.footerRule)
+    expect(styleOf(footer).paddingVertical).toBe(RESUME_LAYOUT.footerPaddingY)
+    // The band is the 44 pt link: rule plus link plus the card's two hairlines, plus the body.
+    expect(resumeCardHeight(true, 1, 1)).toBe(
+      2 * RESUME_LAYOUT.border +
+        (2 * RESUME_LAYOUT.padding +
+          52 +
+          RESUME_LAYOUT.progressGap +
+          RESUME_LAYOUT.progressHeight) +
+        (RESUME_LAYOUT.footerRule + 2 * RESUME_LAYOUT.footerPaddingY + 44),
+    )
   })
 })

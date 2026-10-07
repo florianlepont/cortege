@@ -5,6 +5,7 @@ import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
 import { Image as ExpoImage } from "expo-image"
 import { HomeScreen, pickAlertSurvey, pickResumeDraft } from "./HomeScreen"
+import { HOME_GAPS, nearbyMapHeight } from "./home/layout-budget"
 import { ResumeCard } from "./home/ResumeCard"
 import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
@@ -631,11 +632,36 @@ describe("pickAlertSurvey", () => {
       )
       const card = tree.root.findByType("NearbyMapCard" as never)
       expect(card.props.nearby.position).toEqual(position)
-      expect(card.props.height).toBeGreaterThanOrEqual(240)
+      // 34 percent of the window, never taller a minimum than the overlays need (12.2-14).
+      expect(card.props.height).toBe(nearbyMapHeight(844))
+      expect(card.props.height).toBe(287)
       act(() => {
         card.props.onPress()
       })
       expect(onNavigateToExplorer).toHaveBeenCalledTimes(1)
+    })
+
+    test("the vertical gaps are the budget's: 12 under the native header, 16 before the section (12.2-14)", () => {
+      mount(
+        makeProps({
+          nativeHeader: true,
+          nearbyParcels: { ...makeProps().nearbyParcels, position },
+        }),
+      )
+      const flat = (node: { props: { style?: unknown } }) =>
+        Object.assign({}, ...[node.props.style].flat()) as Record<string, unknown>
+      const scroll = tree.root.findByType("ScrollView" as never)
+      expect(flat({ props: { style: scroll.props.contentContainerStyle } }).paddingTop).toBe(
+        HOME_GAPS.contentTop,
+      )
+      const nearby = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "EntranceView" &&
+          node.findAll((inner) => (inner.type as unknown) === "NearbyMapCard").length > 0,
+      )
+      expect(flat(nearby).marginTop).toBe(HOME_GAPS.section)
+      const header = nearby.findByType("AppSectionHeader" as never)
+      expect(flat(header).marginBottom).toBe(HOME_GAPS.sectionHeader)
     })
 
     test("a denied location or a load error shows a notice instead of the map", () => {
