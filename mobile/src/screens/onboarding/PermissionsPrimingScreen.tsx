@@ -5,11 +5,12 @@ import * as ImagePicker from "expo-image-picker"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { brandSpacing, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { GlassButton } from "../../ui/GlassButton"
+import { permissionIconColors } from "./permission-icons"
 import { AppCard } from "../../ui/AppCard"
 import { BrandHighlight } from "../../ui/BrandHighlight"
 
@@ -40,11 +41,12 @@ function PermissionRow({
 }: PermissionRowProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  const iconColors = useMemo(() => permissionIconColors(theme), [theme])
   return (
     <AppCard variant="panelElevated" padding={16} style={styles.row}>
       <View style={styles.rowHeader}>
         <View style={styles.rowIcon}>
-          <Ionicons name={icon} size={20} color={brandColors.forest} />
+          <Ionicons name={icon} size={20} color={iconColors.icon} />
         </View>
         <View style={styles.rowCopy}>
           <Text style={styles.rowTitle}>{title}</Text>
@@ -56,12 +58,12 @@ function PermissionRow({
         <AppButton label={actionLabel} variant="secondary" size="sm" onPress={onRequest} />
       ) : status === "granted" ? (
         <View style={styles.rowStatus}>
-          <Ionicons name="checkmark-circle" size={16} color={brandColors.moss} />
+          <Ionicons name="checkmark-circle" size={16} color={iconColors.grantedIcon} />
           <Text style={styles.rowStatusGranted}>{grantedLabel}</Text>
         </View>
       ) : (
         <View style={styles.rowStatus}>
-          <Ionicons name="close-circle" size={16} color={brandColors.terracotta} />
+          <Ionicons name="close-circle" size={16} color={iconColors.deniedIcon} />
           <Text style={styles.rowStatusDenied}>{deniedLabel}</Text>
           <Text
             style={styles.settingsLink}
@@ -170,7 +172,7 @@ function createStyles(theme: BrandTheme) {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.colors.successSoft,
+      backgroundColor: permissionIconColors(theme).tile,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -198,7 +200,7 @@ function createStyles(theme: BrandTheme) {
     },
     rowStatusDenied: {
       ...brandTypography.meta,
-      color: brandColors.terracotta,
+      color: permissionIconColors(theme).deniedIcon,
     },
     settingsLink: {
       ...brandTypography.meta,

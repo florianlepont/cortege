@@ -69,6 +69,7 @@ jest.mock("expo-image-picker", () => ({
 }))
 
 import { Linking } from "react-native"
+import { permissionIconColors } from "./permission-icons"
 import { PermissionsPrimingScreen } from "./PermissionsPrimingScreen"
 
 const t = fr.onboarding.permissions
@@ -142,6 +143,27 @@ describe("PermissionsPrimingScreen (ONB-01: location + camera priming)", () => {
       await action.props.onPress()
     })
     expect(tree.root.findByProps({ children: t.camera.denied })).toBeTruthy()
+  })
+
+  test("the location and camera icons use the readable tokens, not the brand forest", () => {
+    const tree = render()
+    const colors = permissionIconColors(defaultTheme)
+    for (const name of ["location-outline", "camera-outline"]) {
+      expect(tree.root.findByProps({ name }).props.color).toBe(colors.icon)
+    }
+  })
+
+  test("the granted check and the denied cross use the readable tokens", async () => {
+    mockRequestForegroundPermissionsAsync.mockResolvedValue({ granted: true })
+    mockRequestCameraPermissionsAsync.mockResolvedValue({ granted: false })
+    const tree = render()
+    await act(async () => {
+      await tree.root.findByProps({ accessibilityLabel: t.location.action }).props.onPress()
+      await tree.root.findByProps({ accessibilityLabel: t.camera.action }).props.onPress()
+    })
+    const colors = permissionIconColors(defaultTheme)
+    expect(tree.root.findByProps({ name: "checkmark-circle" }).props.color).toBe(colors.grantedIcon)
+    expect(tree.root.findByProps({ name: "close-circle" }).props.color).toBe(colors.deniedIcon)
   })
 
   test("Continuer is the green glass button (D-27c)", () => {
