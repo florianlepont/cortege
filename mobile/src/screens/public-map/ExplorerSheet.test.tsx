@@ -168,9 +168,16 @@ describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
     expect(onDismiss).toHaveBeenCalledTimes(2)
   })
 
-  test("keeps its blurred background, a divider handle and 4 grid content padding (12.2-18)", () => {
+  test("keeps its blurred background, a visible handle and 4 grid content padding (12.2-18)", () => {
     const tree = mount({ visible: true, bottomInset: 50 })
     expect(tree.root.findAllByType("BlurView" as never)).toHaveLength(1)
+    // 12.2-19 fix round: a fill over the blur, so the theme's text tokens read over any basemap.
+    const fill = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "explorer-sheet-fill",
+    )
+    expect(Object.assign({}, ...[fill.props.style].flat())).toMatchObject({
+      backgroundColor: defaultTheme.visual.sheet.fill,
+    })
     const handleArea = tree.root.find(
       (node) => (node.type as unknown) === "View" && node.props.testHandler === true,
     )
@@ -178,7 +185,7 @@ describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
       (node) => (node.type as unknown) === "View" && node.props.style?.height === 5,
     )
     expect(indicator.props.style).toMatchObject({
-      backgroundColor: defaultTheme.colors.divider,
+      backgroundColor: defaultTheme.visual.sheet.handle,
       borderRadius: brandRadius.pill,
     })
     const scroll = tree.root.findByType("ScrollView" as never)

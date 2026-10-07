@@ -7,6 +7,7 @@ import {
   buildInsetRing,
   buildLinearGradient,
   downloadEdgeGlow,
+  explorerSheetGlass,
   forestHaloCore,
   glassCtaEdges,
   glassCtaFills,
@@ -90,6 +91,18 @@ export type BrandVisual = {
     icon: string
     text: string
     textMuted: string
+  }
+  /**
+   * The Explorer's bottom sheet (12.2-19 fix round): `fill` over its blur so the theme's text tokens
+   * read over any basemap, `handle` the drag indicator, and the 44 pt glass close circle (`close`
+   * to `GlassSurface`'s `surface`, `closeHairline` its outline, `closeIcon` its glyph).
+   */
+  sheet: {
+    fill: string
+    handle: string
+    close: GlassFill
+    closeHairline: string
+    closeIcon: string
   }
   /**
    * Forest glass of the big call-to-action buttons (D-27c, D-28, charter forest with a white
@@ -224,6 +237,17 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       icon: mapControlGlass[scheme].icon,
       text: mapControlGlass[scheme].text,
       textMuted: mapControlGlass[scheme].textMuted,
+    },
+    sheet: {
+      fill: explorerSheetGlass[scheme].fill,
+      handle: explorerSheetGlass[scheme].handle,
+      close: {
+        tint: explorerSheetGlass[scheme].closeFill,
+        fill: explorerSheetGlass[scheme].closeFill,
+        android: explorerSheetGlass[scheme].closeFill,
+      },
+      closeHairline: explorerSheetGlass[scheme].closeHairline,
+      closeIcon: colors.textPrimary,
     },
     glassCta: {
       tint: glassCtaFills[scheme].tint,

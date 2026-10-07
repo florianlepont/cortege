@@ -157,6 +157,27 @@ export const mapControlGlass = {
 /** Glyph size of a map control (was 22): a heavier glyph that reads over any basemap. */
 export const mapControlIconSize = 24
 
+// The Explorer's bottom sheet (12.2-19 fix round, owner's dark screenshot of "Zones hors connexion":
+// the subtitle, the size estimate and the close glyph nearly vanished). The sheet's dark blur over
+// the light basemap gave a mid grey under the grey secondary text, so a fill now lies over the blur,
+// dense enough for the theme's own text tokens at 4.5:1 over the plan and the orthophoto. The close
+// button is a 44 pt glass circle: `closeFill` tints it (Liquid Glass) or fills it (fallback), with a
+// `closeHairline` outline; `handle` is the drag indicator, which the dark divider made invisible.
+export const explorerSheetGlass = {
+  light: {
+    fill: "rgba(247, 246, 240, 0.88)",
+    handle: "rgba(36, 49, 31, 0.24)",
+    closeFill: "rgba(36, 49, 31, 0.08)",
+    closeHairline: "rgba(36, 49, 31, 0.16)",
+  },
+  dark: {
+    fill: "rgba(17, 18, 20, 0.88)",
+    handle: "rgba(255, 255, 255, 0.32)",
+    closeFill: "rgba(255, 255, 255, 0.14)",
+    closeHairline: "rgba(255, 255, 255, 0.24)",
+  },
+} as const
+
 // Label colour of the glow pill (kept as a named constant: an object key called `label` holding a
 // string literal is read as user-facing text by the structure gate).
 export const pillLabelColor = "#14210F"

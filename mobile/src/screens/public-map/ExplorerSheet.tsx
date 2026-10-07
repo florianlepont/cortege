@@ -34,15 +34,23 @@ export type ExplorerSheetProps = {
 }
 
 // DS-15 (UX audit, Phase 12): the panel's own background, blurred instead of a flat fill,
-// tinted to the app's own light/dark theme rather than the OS scheme.
+// tinted to the app's own light/dark theme rather than the OS scheme. 12.2-19 fix round: a fill
+// lies over the blur (`theme.visual.sheet.fill`), because the dark blur over the light basemap gave
+// a mid grey on which the secondary text and the close glyph nearly vanished.
 function SheetBackground() {
-  const { scheme } = useBrandTheme()
+  const { scheme, visual } = useBrandTheme()
   return (
-    <BlurView
-      style={StyleSheet.absoluteFill}
-      intensity={50}
-      tint={scheme === "dark" ? "dark" : "light"}
-    />
+    <>
+      <BlurView
+        style={StyleSheet.absoluteFill}
+        intensity={50}
+        tint={scheme === "dark" ? "dark" : "light"}
+      />
+      <View
+        testID="explorer-sheet-fill"
+        style={[StyleSheet.absoluteFill, { backgroundColor: visual.sheet.fill }]}
+      />
+    </>
   )
 }
 
@@ -173,7 +181,7 @@ function createStyles(theme: BrandTheme) {
       width: 44,
       height: 5,
       borderRadius: brandRadius.pill,
-      backgroundColor: theme.colors.divider,
+      backgroundColor: theme.visual.sheet.handle,
     },
     scroll: {
       flexGrow: 0,

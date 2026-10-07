@@ -533,3 +533,53 @@ describe.each(schemes)("map controls over the basemap (12.2-19 fix round), %s sc
     })
   }
 })
+
+describe.each(schemes)(
+  "Explorer sheet over the basemap (12.2-19 fix round), %s scheme",
+  (scheme) => {
+    const theme = themes[scheme]
+    const { colors, visual } = theme
+    const sheet = visual.sheet
+    const surfaces = mapBackdrops.map((backdrop) => compositeOver(sheet.fill, backdrop))
+
+    test("title, body, subtitle, estimate and warning text reach 4.5:1 on the sheet", () => {
+      const texts = [
+        colors.textPrimary,
+        colors.textSecondary,
+        theme.semanticColors.textStrong,
+        theme.onSurface.danger,
+      ]
+      for (const surface of surfaces) {
+        for (const text of texts) expect(contrastRatio(text, surface)).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+
+    test("the close glyph reads at 4.5:1 on its glass circle, above the 3:1 icon floor", () => {
+      expect(sheet.closeIcon).toBe(colors.textPrimary)
+      for (const surface of surfaces) {
+        for (const key of ["tint", "fill", "android"] as const) {
+          const circle = compositeOver(sheet.close[key], surface)
+          expect(contrastRatio(sheet.closeIcon, circle)).toBeGreaterThanOrEqual(4.5)
+        }
+      }
+    })
+
+    test("the close circle's outline and the drag handle stand out from the sheet", () => {
+      for (const surface of surfaces) {
+        const circle = compositeOver(sheet.close.fill, surface)
+        expect(contrastRatio(compositeOver(sheet.closeHairline, circle), surface)).toBeGreaterThan(
+          1.3,
+        )
+        expect(contrastRatio(compositeOver(sheet.handle, surface), surface)).toBeGreaterThan(1.5)
+      }
+    })
+
+    if (scheme === "dark") {
+      test("dark: the theme's grey text failed 4.5:1 on the bare dark glass over the plan", () => {
+        // The sheet without its fill, modelled as the 38% dark glass over the white plan.
+        const before = compositeOver(brandGlassFills.control.dark, "#FFFFFF")
+        expect(contrastRatio(colors.textSecondary, before)).toBeLessThan(4.5)
+      })
+    }
+  },
+)

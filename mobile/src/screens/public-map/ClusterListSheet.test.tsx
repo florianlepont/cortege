@@ -23,6 +23,13 @@ jest.mock("react-native", () => {
 })
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
+jest.mock("../../ui/GlassSurface", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    GlassSurface: ({ children, ...props }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("GlassSurface", props, children),
+  }
+})
 // The entrance itself is covered by useFocusEntrance.test.tsx; here, which rows get one.
 jest.mock("../../ui/EntranceView", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -36,7 +43,7 @@ import { brandInteraction, brandMotion } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { SURVEY_ROW_RING_COLUMN } from "../survey-list/row-styles"
 import { ClusterListSheet } from "./ClusterListSheet"
-import { SHEET_CLOSE_ICON_SIZE } from "./SheetCloseButton"
+import { SHEET_CLOSE_SIZE } from "./SheetCloseButton"
 
 const t = fr.publicMap
 
@@ -167,7 +174,8 @@ describe("ClusterListSheet (Explorer, 12.2-18)", () => {
         node.props.accessibilityLabel === t.a11y.closeClusterList,
     )
     expect(close.props.accessibilityRole).toBe("button")
-    expect(SHEET_CLOSE_ICON_SIZE + 2 * close.props.hitSlop).toBe(brandInteraction.hitTarget.min)
+    expect(SHEET_CLOSE_SIZE).toBe(brandInteraction.hitTarget.min)
+    expect(close.props.style).toMatchObject({ width: SHEET_CLOSE_SIZE, height: SHEET_CLOSE_SIZE })
     act(() => close.props.onPress())
     expect(onClose).toHaveBeenCalledTimes(1)
   })

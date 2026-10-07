@@ -117,14 +117,11 @@ export function createControlStyles(theme: BrandTheme) {
 }
 
 // The offline areas panel (12.2-18): its list of areas moved to Paramètres (OA-123), so only the
-// name field and the size warning are styled here; theme-invariant.
+// name field and the button are styled here; theme-invariant. The size warning is the panel's
+// `warning` (theme-aware, 12.2-19 fix round).
 export const offlineAreasStyles = StyleSheet.create({
   nameField: {
     gap: brandSpacing4.xs,
-  },
-  warning: {
-    ...brandTypography.meta,
-    color: brandColors.terracotta,
   },
   downloadButton: {
     alignSelf: "stretch",
@@ -167,6 +164,12 @@ export function createPanelStyles(theme: BrandTheme) {
     meta: {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
+    },
+    // 12.2-19 fix round: the danger text of the theme (light on the dark sheet), not the brand
+    // terracotta, which stayed under 4.5:1 on the dark sheet.
+    warning: {
+      ...brandTypography.meta,
+      color: theme.onSurface.danger,
     },
     rows: {
       gap: brandSpacing4.sm,

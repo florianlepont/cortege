@@ -63,7 +63,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
         containerStyle={areaStyles.nameField}
       />
 
-      <Text style={estimate.exceedsCap ? areaStyles.warning : styles.meta}>
+      <Text style={estimate.exceedsCap ? styles.warning : styles.meta}>
         {estimate.exceedsCap
           ? t.tooLarge
           : t.estimate({ tiles: estimate.totalTileCount, bytes: estimate.estimatedBytes })}
