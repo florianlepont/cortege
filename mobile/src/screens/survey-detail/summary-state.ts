@@ -8,17 +8,28 @@ const h = fr.surveyDetail.header
 const c = fr.surveyDetail.cta
 const bands = fr.surveyDetail.bands
 
-/** The status line under the title: "Brouillon" then "pas encore synchronisé" (OA-37). */
-export type StatusLine = { status: string; sync: string; syncTone: "ok" | "pending" | "danger" }
+/**
+ * The status line under the title: "Brouillon" then "pas encore synchronisé" (OA-37). A finished
+ * survey stays discreet (D-25): just "Terminé" once synced, "Terminé · synchronisation en cours"
+ * while its last changes are still being sent; a failed or blocked sync still says so. `sync` is
+ * null when there is nothing to add after the status.
+ */
+export type StatusLine = {
+  status: string
+  sync: string | null
+  syncTone: "ok" | "pending" | "danger"
+}
 
 export const resolveStatusLine = (survey: LocalSurvey, isComplete: boolean | null): StatusLine => {
   const syncDisplay = resolveSurveySyncDisplay(survey)
-  const status =
-    survey.status === "submitted"
-      ? h.status.finished
-      : isComplete === true
-        ? h.status.draftComplete
-        : h.status.draft
+  const finished = survey.status === "submitted"
+  const status = finished
+    ? h.status.finished
+    : isComplete === true
+      ? h.status.draftComplete
+      : h.status.draft
+  if (finished && syncDisplay === "sync") return { status, sync: null, syncTone: "ok" }
+  if (finished && syncDisplay === "local") return { status, sync: h.sync.sending, syncTone: "ok" }
   if (syncDisplay === "sync") return { status, sync: h.sync.synced, syncTone: "ok" }
   if (syncDisplay === "sync_error") return { status, sync: h.sync.error, syncTone: "danger" }
   if (syncDisplay === "sync_blocked") return { status, sync: h.sync.blocked, syncTone: "danger" }

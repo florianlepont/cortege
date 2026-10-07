@@ -57,6 +57,33 @@ describe("resolveStatusLine (OA-37: the status in words)", () => {
   test("a submitted survey is 'Terminé'", () => {
     expect(resolveStatusLine(survey({ status: "submitted" }), true).status).toBe(h.status.finished)
   })
+
+  test("D-25: a finished, synced survey is just 'Terminé', with nothing after it", () => {
+    expect(resolveStatusLine(survey({ status: "submitted" }), true)).toEqual({
+      status: h.status.finished,
+      sync: null,
+      syncTone: "ok",
+    })
+  })
+
+  test("D-25: a finished survey still sending says so discreetly", () => {
+    expect(resolveStatusLine(survey({ status: "submitted", sync_state: "pending" }), true)).toEqual(
+      { status: h.status.finished, sync: h.sync.sending, syncTone: "ok" },
+    )
+    expect(h.sync.sending).toBe("synchronisation en cours")
+  })
+
+  test("a finished survey keeps the error and blocked wording", () => {
+    expect(
+      resolveStatusLine(survey({ status: "submitted", sync_state: "failed" }), true),
+    ).toMatchObject({ status: h.status.finished, sync: h.sync.error, syncTone: "danger" })
+    expect(
+      resolveStatusLine(
+        survey({ status: "submitted", sync_state: "failed", sync_blocked: 1 }),
+        true,
+      ),
+    ).toMatchObject({ status: h.status.finished, sync: h.sync.blocked, syncTone: "danger" })
+  })
 })
 
 describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {

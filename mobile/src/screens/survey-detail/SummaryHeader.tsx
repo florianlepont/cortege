@@ -106,7 +106,9 @@ export function SummaryHeader({
       <View style={styles.statusLine}>
         <View style={[styles.statusDot, { backgroundColor: dotColor }]} />
         <Text style={headerStyles.statusStrong}>{statusLine.status}</Text>
-        <Text style={headerStyles.statusMuted}>{h.syncSuffix(statusLine.sync)}</Text>
+        {statusLine.sync ? (
+          <Text style={headerStyles.statusMuted}>{h.syncSuffix(statusLine.sync)}</Text>
+        ) : null}
       </View>
     </View>
   )

@@ -23,6 +23,8 @@ export const surveyDetailFr = {
     sync: {
       synced: "synchronisé",
       pending: "pas encore synchronisé",
+      // D-25: a finished survey whose last changes are still being sent, said discreetly.
+      sending: "synchronisation en cours",
       error: "échec de la synchronisation",
       blocked: "synchronisation bloquée",
     },
