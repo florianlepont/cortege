@@ -4,6 +4,7 @@ import { useOfflineAreas } from "../../hooks/useOfflineAreas"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { OfflineAreasRouteProps } from "../types"
+import { ScreenFrame } from "../../ui/ScreenFrame"
 
 /** Offline-areas route (Paramètres > Cartes hors ligne): the downloaded zones and their delete. */
 export const OfflineAreasRoute = memo(function OfflineAreasRoute({
@@ -18,5 +19,9 @@ export const OfflineAreasRoute = memo(function OfflineAreasRoute({
 
   const onDeleteArea = useLatestCallback((areaId: string) => void deleteArea(areaId))
 
-  return <OfflineAreasScreen areas={areas} onDeleteArea={onDeleteArea} />
+  return (
+    <ScreenFrame>
+      <OfflineAreasScreen areas={areas} onDeleteArea={onDeleteArea} />
+    </ScreenFrame>
+  )
 })

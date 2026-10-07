@@ -46,6 +46,8 @@ jest.mock("expo-constants", () => ({
 
 type ScreenRecord = {
   name: string
+  /** The props of the navigator that registered the screen (its `screenOptions`). */
+  navigator?: Record<string, unknown>
   options?: unknown
   listeners?: Record<string, (...args: unknown[]) => void>
   component?: React.ComponentType<Record<string, unknown>>
@@ -57,12 +59,13 @@ const mockNavigation = { navigate: jest.fn(), setOptions: jest.fn() }
 
 function mockCreateFakeNavigator(kind: string) {
   const ReactRef = jest.requireActual("react") as typeof import("react")
+  const NavigatorProps = ReactRef.createContext<Record<string, unknown> | undefined>(undefined)
   const Navigator = ({ children, ...props }: { children?: React.ReactNode }) => {
     ;(mockNavigators[kind] ??= []).push(props)
-    return ReactRef.createElement(ReactRef.Fragment, null, children)
+    return ReactRef.createElement(NavigatorProps.Provider, { value: props }, children)
   }
   const Screen = (props: ScreenRecord) => {
-    mockScreens[props.name] = props
+    mockScreens[props.name] = { ...props, navigator: ReactRef.useContext(NavigatorProps) }
     if (!props.component) return null
     return ReactRef.createElement(props.component, {
       navigation: mockNavigation,
@@ -223,6 +226,24 @@ async function mount(element: React.ReactElement) {
 
 function press(name: string) {
   mockScreens[name].listeners?.tabPress()
+}
+
+/** The options a screen really gets: its navigator's `screenOptions`, then its own `options`. */
+function effectiveOptions(name: string, args: Record<string, unknown> = {}): Options {
+  const record = mockScreens[name]
+  const own = record.options as Options | OptionsFn | undefined
+  const resolved =
+    typeof own === "function"
+      ? own({ route: { params: {} }, navigation: mockNavigation, ...args })
+      : (own ?? {})
+  return { ...((record.navigator?.screenOptions as Options | undefined) ?? {}), ...resolved }
+}
+
+const HALO_HEADER = {
+  headerTransparent: true,
+  headerBlurEffect: "none",
+  headerShadowVisible: false,
+  headerStyle: { backgroundColor: "transparent" },
 }
 
 describe("AppNavigation tree choice", () => {
@@ -490,13 +511,12 @@ describe("stack options and listeners", () => {
     for (const key of Object.keys(mockScreens)) delete mockScreens[key]
     mockPlatform.OS = "ios"
     await mount(<AppNavigation />)
-    expect(mockScreens.surveysHome.options).toEqual(
+    expect(effectiveOptions("surveysHome")).toEqual(
       expect.objectContaining({
         title: fr.navigation.headers.surveys,
         headerShown: true,
         // D-19: transparent, the halo runs on behind the title and the "+" (no canvas band).
-        headerTransparent: true,
-        headerStyle: { backgroundColor: "transparent" },
+        ...HALO_HEADER,
       }),
     )
   })
@@ -515,14 +535,7 @@ describe("stack options and listeners", () => {
         "surveyHistory",
       ]
       for (const name of surveyPages) {
-        expect(mockScreens[name].options).toEqual(
-          expect.objectContaining({
-            headerTransparent: true,
-            headerBlurEffect: "none",
-            headerShadowVisible: false,
-            headerStyle: { backgroundColor: "transparent" },
-          }),
-        )
+        expect(effectiveOptions(name)).toEqual(expect.objectContaining(HALO_HEADER))
       }
       // The search page draws its own top block under the status bar: no native header.
       expect((mockScreens.surveySearch.options as Options).headerShown).toBe(false)
@@ -541,25 +554,38 @@ describe("stack options and listeners", () => {
       expect(ios.headerTitleStyle).toEqual({ color: "transparent" })
       mockPlatform.OS = "android"
       const android = options({ route: { params: { mode } } })
-      expect(android.headerTransparent).toBeUndefined()
+      // The stack default is transparent (D-19): the map keeps its opaque bar on Android.
+      expect(android.headerTransparent).toBe(false)
       expect(android.headerStyle).toBeDefined()
     }
   })
 
-  test("the Accueil and Explorer stacks, which host Compte and Paramètres, have the page-colour header on iOS (OA-125)", async () => {
-    mockPlatform.OS = "ios"
-    await mount(<AppNavigation />)
-    const withHeader = mockNavigators.stack.filter(
-      (props) => (props.screenOptions as Options).headerBlurEffect === "none",
-    )
-    // Accueil, Mes Relevés and Explorer: every stack that can push Compte.
-    expect(withHeader.length).toBeGreaterThanOrEqual(3)
-    for (const props of withHeader) {
-      expect((props.screenOptions as Options).headerStyle).toEqual({
-        backgroundColor: expect.any(String),
-      })
-    }
-  })
+  test.each(["ios", "android"] as const)(
+    "every stack defaults to the transparent halo header on %s, Compte and Paramètres included (D-19)",
+    async (os) => {
+      mockPlatform.OS = os
+      await mount(<AppNavigation />)
+      // Accueil, Mes Relevés, Explorer and (iOS) the search tab.
+      expect(mockNavigators.stack.length).toBeGreaterThanOrEqual(3)
+      for (const props of mockNavigators.stack) {
+        expect(props.screenOptions).toEqual(expect.objectContaining(HALO_HEADER))
+      }
+      for (const name of ["accountHome", "settings", "offlineAreas"]) {
+        expect(effectiveOptions(name)).toEqual(expect.objectContaining(HALO_HEADER))
+      }
+    },
+  )
+
+  test.each(["ios", "android"] as const)(
+    "the factor pager keeps the opaque page-colour header on %s until plan 12.2-15",
+    async (os) => {
+      mockPlatform.OS = os
+      await mount(<AppNavigation />)
+      const factor = effectiveOptions("surveyFactorDetail", { route: { params: { factor: "A" } } })
+      expect(factor.headerStyle).toEqual({ backgroundColor: defaultTheme.colors.canvas })
+      expect(factor.headerTransparent).toBe(os === "ios")
+    },
+  )
 
   test("Paramètres and Cartes hors ligne draw their own title too", async () => {
     await mount(<AppNavigation />)

@@ -2,7 +2,6 @@ import { useMemo, useState } from "react"
 import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
 import { PageTitle } from "../ui/PageTitle"
 import Constants from "expo-constants"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandRadius, brandSpacing, brandSpacing4 } from "../app/brand-tokens"
 import { shouldShowDevTools } from "../app/dev-tools"
@@ -54,10 +53,10 @@ export function SettingsScreen({
 }: SettingsScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
-  const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
-  const topContentPadding = Platform.OS === "ios" ? headerHeight + brandSpacing.md : brandSpacing.md
+  // D-19: the route's ScreenFrame starts the page below the transparent header and clips there.
+  const topContentPadding = brandSpacing.md
   const bottomContentPadding = Math.max(tabBarHeight, insets.bottom) + brandSpacing.md
 
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -198,10 +197,7 @@ export function SettingsScreen({
       showsVerticalScrollIndicator={false}
       contentInsetAdjustmentBehavior="never"
       automaticallyAdjustContentInsets={false}
-      scrollIndicatorInsets={{
-        top: Platform.OS === "ios" ? headerHeight : 0,
-        bottom: tabBarHeight,
-      }}
+      scrollIndicatorInsets={{ bottom: tabBarHeight }}
     >
       <PageTitle>{t.title}</PageTitle>
 
@@ -237,9 +233,9 @@ export function SettingsScreen({
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    // D-19: no background, the route's ScreenFrame is the page (canvas and halo).
     screen: {
       flex: 1,
-      backgroundColor: theme.colors.canvas,
     },
     content: {
       gap: brandSpacing4.md,

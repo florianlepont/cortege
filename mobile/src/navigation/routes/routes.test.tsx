@@ -1500,6 +1500,9 @@ describe("the halo frame on every page (D-19)", () => {
       "communitySurvey",
       () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
     ],
+    ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
+    ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
+    ["offlineAreas", () => <OfflineAreasRoute navigation={nav()} route={{} as never} />],
   ]
 
   test.each(framedRoutes)(

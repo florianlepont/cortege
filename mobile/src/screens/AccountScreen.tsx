@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native"
 import { PageTitle } from "../ui/PageTitle"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
-import { useBrandTheme } from "../app/theme"
 import { AuthUser } from "../app/types"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { fr } from "../i18n"
@@ -13,7 +11,7 @@ import type { AppGroupedListSection } from "../ui/AppGroupedList"
 import { useAccountConnectionRows, useLogoutRow } from "./account/AccountSettingsRows"
 import { IdentityCard } from "./account/IdentityCard"
 import { ProfileSaveBar, useProfileRows } from "./account/ProfileRows"
-import { createAccountStyles } from "./account/styles"
+import { accountStyles as styles } from "./account/styles"
 
 type UpdateProfileInput = {
   first_name: string
@@ -53,9 +51,6 @@ export function AccountScreen({
   onRemoveProfilePicture,
   onLogout,
 }: AccountScreenProps) {
-  const theme = useBrandTheme()
-  const styles = useMemo(() => createAccountStyles(theme), [theme])
-  const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
   const [firstName, setFirstName] = useState("")
@@ -104,8 +99,10 @@ export function AccountScreen({
     setDisplayName(currentUser?.display_name ?? "")
   }
 
-  // Keep header/tab bar clearance inside the scroll content so it scrolls away naturally.
-  const topContentPadding = Platform.OS === "ios" ? headerHeight + brandSpacing.md : brandSpacing.md
+  // D-19: the route's ScreenFrame starts the page below the transparent header and clips the
+  // scroll there, so only a small top margin is left here; the tab bar clearance stays inside the
+  // scroll content so it scrolls away naturally.
+  const topContentPadding = brandSpacing.md
   const bottomContentPadding = Math.max(tabBarHeight, insets.bottom) + brandSpacing.md
 
   // ACC-C02 : état de chargement quand currentUser n'est pas encore disponible
@@ -148,10 +145,7 @@ export function AccountScreen({
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
-        scrollIndicatorInsets={{
-          top: Platform.OS === "ios" ? headerHeight : 0,
-          bottom: tabBarHeight,
-        }}
+        scrollIndicatorInsets={{ bottom: tabBarHeight }}
       >
         <PageTitle>{fr.account.title}</PageTitle>
 

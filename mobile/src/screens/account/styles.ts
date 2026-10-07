@@ -10,25 +10,22 @@ import { BrandTheme } from "../../app/theme"
 
 const AVATAR_SIZE = 56
 
-export function createAccountStyles(theme: BrandTheme) {
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: theme.colors.canvas,
-    },
-    loadingContainer: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.canvas,
-    },
-    // D-05: compact, blocks 16 apart on the 4-grid
-    content: {
-      gap: brandSpacing4.md,
-      paddingBottom: brandSpacing4.xl,
-    },
-  })
-}
+// No colour since D-19: the route's ScreenFrame is the page (canvas and halo).
+export const accountStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // D-05: compact, blocks 16 apart on the 4-grid
+  content: {
+    gap: brandSpacing4.md,
+    paddingBottom: brandSpacing4.xl,
+  },
+})
 
 // D-05, sketch 009: a horizontal glass card, the avatar on the left, name and email on the right.
 export function createIdentityStyles(theme: BrandTheme) {

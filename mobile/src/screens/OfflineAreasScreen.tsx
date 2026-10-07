@@ -1,9 +1,7 @@
-import { useMemo } from "react"
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { PageTitle } from "../ui/PageTitle"
 import { Ionicons } from "@expo/vector-icons"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
@@ -12,7 +10,7 @@ import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { fr } from "../i18n"
 import type { OfflineAreaSummary } from "../storage/offline-map"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
-import { createAccountStyles } from "./account/styles"
+import { accountStyles as styles } from "./account/styles"
 
 const t = fr.offlineMap.areas
 const manage = t.manage
@@ -28,8 +26,6 @@ type OfflineAreasScreenProps = {
  */
 export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenProps) {
   const theme = useBrandTheme()
-  const styles = useMemo(() => createAccountStyles(theme), [theme])
-  const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
 
@@ -84,7 +80,8 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: Platform.OS === "ios" ? headerHeight + brandSpacing.md : brandSpacing.md,
+          // D-19: the route's ScreenFrame starts the page below the transparent header.
+          paddingTop: brandSpacing.md,
           paddingBottom: Math.max(tabBarHeight, insets.bottom) + brandSpacing.md,
           paddingHorizontal: brandSpacing.md,
         },

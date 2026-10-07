@@ -17,12 +17,7 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import {
-  backdropHeader,
-  createBaseStackScreenOptions,
-  hiddenNativeTitle,
-  pageColourHeader,
-} from "./stack-options"
+import { createBaseStackScreenOptions, hiddenNativeTitle, pageColourHeader } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -52,11 +47,10 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
       <View style={styles.tabScreenContainer}>
         <SurveysStack.Navigator
           screenOptions={{
+            // D-19: the transparent halo header by default; every page with a header draws a
+            // ScreenFrame in its route (the factor pager opts out below until plan 12.2-15).
             ...createBaseStackScreenOptions(theme),
             headerLargeTitle: false,
-            // OA-94: on iOS the header takes the page colour (no blur tint), so it does not read as
-            // a band of another colour above the content.
-            ...pageColourHeader(theme),
             ...(useNativeNav
               ? {}
               : {
@@ -67,8 +61,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                     fontWeight: "900" as const,
                     color: theme.colors.forest,
                   },
-                  headerStyle: { backgroundColor: theme.colors.canvas },
-                  headerShadowVisible: false,
                   headerTintColor: theme.colors.forest,
                 }),
           }}
@@ -79,9 +71,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.surveys,
               headerShown: nativeSearchEnabled,
               headerLargeTitle: false,
-              // D-19: the halo runs on behind the header; the route's ScreenFrame starts the list
-              // below it. The header items are set by SurveyListRoute.
-              ...backdropHeader,
+              // D-19: the halo runs on behind the header (stack default); the route's ScreenFrame
+              // starts the list below it. The header items are set by SurveyListRoute.
             }}
             component={SurveyListRoute}
           />
@@ -91,7 +82,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               // OA-94: the page names the survey itself, a "Détail" title says nothing.
               title: "",
               headerLargeTitle: false,
-              ...backdropHeader,
             }}
             listeners={{
               beforeRemove: () => {
@@ -111,7 +101,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.communitySurvey,
               headerLargeTitle: false,
               ...hiddenNativeTitle,
-              ...backdropHeader,
             }}
             component={CommunitySurveyRoute}
           />
@@ -121,7 +110,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.surveyContext,
               headerLargeTitle: false,
               ...hiddenNativeTitle,
-              ...backdropHeader,
             }}
             component={SurveyContextRoute}
           />
@@ -131,7 +119,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.surveyScore,
               headerLargeTitle: false,
               ...hiddenNativeTitle,
-              ...backdropHeader,
             }}
             component={SurveyScoreRoute}
           />
@@ -141,7 +128,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.surveyHistory,
               headerLargeTitle: false,
               ...hiddenNativeTitle,
-              ...backdropHeader,
             }}
             component={SurveyHistoryRoute}
           />
@@ -163,6 +149,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               // OA-111: iOS 26 and later pops a screen with a swipe from anywhere, which would take
               // the slide along the A to J strip for a "back". The back button stays.
               gestureEnabled: false,
+              // No halo yet (plan 12.2-15 gives it the ScreenFrame): the opaque page-colour header.
+              ...pageColourHeader(theme),
             })}
             component={FactorDetailRoute}
           />
@@ -186,6 +174,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                     ...hiddenNativeTitle,
                   }
                 : {
+                    // The stack default is transparent (D-19); this map keeps its opaque bar.
+                    headerTransparent: false,
                     headerStyle: { backgroundColor: brandMediaBackdrop },
                     headerTintColor: brandColors.white,
                     headerTitleStyle: {

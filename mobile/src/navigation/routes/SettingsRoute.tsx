@@ -5,6 +5,7 @@ import { useSession } from "../../state/session-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SettingsRouteProps } from "../types"
+import { ScreenFrame } from "../../ui/ScreenFrame"
 
 /**
  * Settings route (phase 01.9-18, D-01). OA-78: no sync tools any more, and no status line (OA-77);
@@ -23,14 +24,16 @@ export const SettingsRoute = memo(function SettingsRoute({ navigation }: Setting
   const onOpenOfflineAreas = useLatestCallback(() => navigation.navigate("offlineAreas"))
 
   return (
-    <SettingsScreen
-      apiUrl={session.apiUrl}
-      onApiUrlChange={sessionActions.setApiUrl}
-      offlineAreas={summary}
-      onOpenOfflineAreas={onOpenOfflineAreas}
-      onDeleteAccount={sessionActions.handleDeleteAccount}
-      onDebugResetIbpData={syncActions.handleDebugResetIbpData}
-      onDebugResetUserData={syncActions.handleDebugResetUserData}
-    />
+    <ScreenFrame>
+      <SettingsScreen
+        apiUrl={session.apiUrl}
+        onApiUrlChange={sessionActions.setApiUrl}
+        offlineAreas={summary}
+        onOpenOfflineAreas={onOpenOfflineAreas}
+        onDeleteAccount={sessionActions.handleDeleteAccount}
+        onDebugResetIbpData={syncActions.handleDebugResetIbpData}
+        onDebugResetUserData={syncActions.handleDebugResetUserData}
+      />
+    </ScreenFrame>
   )
 })
