@@ -29,9 +29,11 @@ export const HOME_GAPS = {
   sectionHeader: brandSpacing4.sm,
 } as const
 
-/** The resume card: the numbers its styles use. */
+/**
+ * The resume card: the numbers its styles use. The card has no border (12.2-17: its hairline is an
+ * inset ring drawn inside the box, `ForestCard`), so it adds nothing to the height.
+ */
 export const RESUME_LAYOUT = {
-  border: HAIRLINE,
   padding: brandSpacing4.md,
   /** The glow button (`AppButton` size md). */
   buttonHeight: brandComponentTokens.button.minHeight,
@@ -116,7 +118,7 @@ export function resumeCardHeight(hasDraft: boolean, titleLines: number, bodyLine
   const row = Math.max(r.buttonHeight, copy)
   const main = 2 * r.padding + row + (hasDraft ? r.progressGap + r.progressHeight : 0)
   const footer = hasDraft ? r.footerRule + 2 * r.footerPaddingY + HIT : 0
-  return 2 * r.border + main + footer
+  return main + footer
 }
 
 export function recentSectionHeight(count: number): number {

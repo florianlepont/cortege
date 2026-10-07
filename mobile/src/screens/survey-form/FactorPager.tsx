@@ -251,7 +251,8 @@ function createStyles(theme: BrandTheme) {
       color: theme.semanticColors.textStrong,
     },
     // The running total is a small forest pill (variant I): forest gradient over its flat
-    // fallback, white figures, a light hairline, no shadow. Same 36 pt height and padding.
+    // fallback, white figures, a light hairline, no drop shadow. Same 36 pt height and padding.
+    // The hairline is an inset ring, never a border on the gradient view (12.2-17, see ForestCard).
     totalChip: {
       height: TOTAL_CHIP_HEIGHT,
       borderRadius: brandRadius.pill,
@@ -259,8 +260,7 @@ function createStyles(theme: BrandTheme) {
       justifyContent: "center",
       backgroundColor: theme.visual.forest.fallback,
       experimental_backgroundImage: theme.visual.forest.image,
-      borderWidth: 1,
-      borderColor: theme.visual.forest.hairline,
+      boxShadow: theme.visual.forest.ring,
     },
     totalChipText: {
       fontSize: 15,

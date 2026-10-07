@@ -4,6 +4,7 @@ import {
   brandGlassFills,
   buildForestHeroImage,
   buildForestImage,
+  buildInsetRing,
   buildLinearGradient,
   forestHaloCore,
   glassCtaEdges,
@@ -34,6 +35,10 @@ export type BrandVisual = {
     shadow: string
     highlight: string
     hairline: string
+    /** The forest card's edge: the hairline as an inset ring plus the top highlight (12.2-17). */
+    edge: string
+    /** The hairline alone as an inset ring, for a small forest pill (no highlight). */
+    ring: string
     title: string
     titleAccent: string
     body: string
@@ -122,6 +127,10 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
   const cardBorder = dark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)"
   // D-16: brand moss (2.63:1) fails on the light surface, so rings and bars use a darker moss there.
   const high = dark ? brandColors.moss : "#728A2D"
+  // Forest edge (12.2-17): never a `borderWidth` on a gradient view, see `buildInsetRing`. The
+  // highlight is a 2 pt band so its inner point sits just inside the 1 pt ring.
+  const forestHairline = "rgba(255, 255, 255, 0.14)"
+  const forestHighlight = "inset 0 2px 0 rgba(255, 255, 255, 0.14)"
 
   return {
     backdrop: backdrops[scheme],
@@ -134,8 +143,10 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       shadow: dark
         ? "0 16px 36px -12px rgba(0, 0, 0, 0.6)"
         : "0 16px 36px -12px rgba(30, 60, 25, 0.55)",
-      highlight: "inset 0 1px 0 rgba(255, 255, 255, 0.14)",
-      hairline: "rgba(255, 255, 255, 0.14)",
+      highlight: forestHighlight,
+      hairline: forestHairline,
+      edge: `${buildInsetRing(forestHairline)}, ${forestHighlight}`,
+      ring: buildInsetRing(forestHairline),
       title: brandColors.white,
       titleAccent: "#C8DDA0",
       body: "#D7E3C0",
@@ -184,7 +195,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       flat: glassCtaFills[scheme].flat,
       ink: glassCtaInk[scheme].on,
       hairline: glassCtaEdges[scheme].hairline,
-      shadow: glassCtaEdges[scheme].shadow,
+      shadow: `${buildInsetRing(glassCtaEdges[scheme].hairline)}, ${glassCtaEdges[scheme].shadow}`,
       sheen: glassCtaEdges[scheme].sheen,
       flatOff: glassCtaFills[scheme].flatOff,
       inkOff: glassCtaInk[scheme].off,

@@ -377,13 +377,15 @@ describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => 
     expect(next.borderRadius).toBe(23)
   })
 
-  test("the total is a small forest pill: gradient, fallback, white figures, no shadow", () => {
+  test("the total is a small forest pill: gradient, fallback, white figures, no drop shadow", () => {
     const { byTestID } = render("A")
     const chip = byTestID("pager-total")
     const style = flat(chip.props.style)
     expect(style.backgroundColor).toBe(visual.forest.fallback)
     expect(style.experimental_backgroundImage).toBe(visual.forest.image)
-    expect(style.boxShadow).toBeUndefined()
+    // Only the inset hairline ring: no outset shadow.
+    expect(style.boxShadow).toBe(visual.forest.ring)
+    expect(String(style.boxShadow)).toMatch(/^inset 0 0 0 1px rgba\(/)
     expect(style.shadowOpacity).toBeUndefined()
     expect(style.height).toBe(TOTAL_CHIP_HEIGHT)
     expect(TOTAL_CHIP_HEIGHT).toBe(36)
@@ -391,6 +393,16 @@ describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => 
     const text = chip.findAll((n) => (n.type as unknown) === "Text")[0]
     expect(flat(text.props.style).color).toBe(visual.forest.title)
     expect(chip.props.accessibilityLabel).toBe(fr.factorPager.totalA11y(0))
+  })
+
+  test("the total pill has no border under its gradient and circular corners (12.2-17)", () => {
+    // A border on the gradient view showed the tiled gradient as a flat ring around the pill.
+    const style = flat(render("A").byTestID("pager-total").props.style)
+    for (const key of Object.keys(style)) expect(key).not.toMatch(/^border.*Width$/)
+    expect(style.borderColor).toBeUndefined()
+    expect(style.borderCurve).toBeUndefined()
+    // The fallback colour sits on the gradient view itself, never on a larger layer.
+    expect(style.backgroundColor).toBe(visual.forest.fallback)
   })
 
   test("the pager header starts 8 pt under the route's ScreenFrame inset, no header height of its own (D-19)", () => {

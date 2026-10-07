@@ -42,6 +42,15 @@ export function buildRadialGradient(shape: string, stops: readonly GradientStop[
   return `radial-gradient(${shape}, ${joinStops(stops)})`
 }
 
+/**
+ * A 1 pt hairline drawn as an inset box-shadow ring (12.2-17). Used instead of `borderWidth` on a
+ * view that carries `experimental_backgroundImage`: RN sizes the gradient to the padding box and
+ * tiles it, so a border ring would show the opposite edge of the gradient under the hairline.
+ */
+export function buildInsetRing(colour: string): string {
+  return `inset 0 0 0 1px ${colour}`
+}
+
 /** Compact forest card ("Reprendre"): halo top right over the 140deg base. */
 export function buildForestImage(haloCore: string): string {
   return [
@@ -149,12 +158,15 @@ export const glassCtaInk = {
 // Edge of the fallback button: a crisp light hairline, then in one `boxShadow` a soft green halo, a
 // marked top rim highlight and a faint lower rim shade, so the pill reads as a lit glass bead. The
 // `sheen` is a white reflection over the top half of the fill, kept light enough for the white
-// label. The native glass draws its own edge and light, so none of this is used on iOS 26.
+// label. The native glass draws its own edge and light, so none of this is used on iOS 26. The
+// hairline is drawn as an inset ring (`buildInsetRing`, in `theme-visual.ts`), not a border, because
+// the button also carries the `sheen` gradient; the rims are 2 pt bands so their inner point sits
+// just inside the ring, where they sat inside the old 1 pt border.
 export const glassCtaEdges = {
   light: {
     hairline: "rgba(255, 255, 255, 0.55)",
     shadow:
-      "0 8px 22px rgba(51, 78, 43, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -1px 0 rgba(14, 34, 16, 0.3)",
+      "0 8px 22px rgba(51, 78, 43, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.75), inset 0 -2px 0 rgba(14, 34, 16, 0.3)",
     sheen: buildLinearGradient(180, [
       ["rgba(255, 255, 255, 0.16)", 0],
       ["rgba(255, 255, 255, 0.05)", 46],
@@ -165,7 +177,7 @@ export const glassCtaEdges = {
   dark: {
     hairline: "rgba(255, 255, 255, 0.6)",
     shadow:
-      "0 8px 22px rgba(137, 163, 58, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.3)",
+      "0 8px 22px rgba(137, 163, 58, 0.26), inset 0 2px 0 rgba(255, 255, 255, 0.7), inset 0 -2px 0 rgba(0, 0, 0, 0.3)",
     sheen: buildLinearGradient(180, [
       ["rgba(255, 255, 255, 0.16)", 0],
       ["rgba(255, 255, 255, 0.05)", 46],

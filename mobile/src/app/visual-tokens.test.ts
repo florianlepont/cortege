@@ -12,6 +12,7 @@ import {
   brandGlassFills,
   buildForestHeroImage,
   buildForestImage,
+  buildInsetRing,
   buildLinearGradient,
   buildRadialGradient,
   forestStops,
@@ -92,6 +93,12 @@ describe("gradient and colour builders", () => {
         ["rgba(0, 0, 0, 0)", 50],
       ]),
     ).toBe("radial-gradient(10% 20% at 0% 0%, #000000 0%, rgba(0, 0, 0, 0) 50%)")
+  })
+
+  test("the inset ring is a 1 pt inset box shadow with no blur (12.2-17)", () => {
+    expect(buildInsetRing("rgba(255, 255, 255, 0.14)")).toBe(
+      "inset 0 0 0 1px rgba(255, 255, 255, 0.14)",
+    )
   })
 
   test("forest images stack the halo over the base", () => {
@@ -176,6 +183,8 @@ describe("BrandTheme.visual", () => {
     const shadows = [
       visual.forest.shadow,
       visual.forest.highlight,
+      visual.forest.edge,
+      visual.forest.ring,
       visual.forest.glowShadow,
       visual.pill.shadow,
       visual.glass.cardShadow,
@@ -383,8 +392,13 @@ describe.each(schemes)("forest glass call to action (D-27c, D-28), %s scheme", (
   test("the fallback keeps a marked top rim highlight over the forest", () => {
     // D-27c rim was 0.28 / 0.35; D-28 made it much clearer and the forest keeps it.
     const beforeRim = scheme === "light" ? 0.28 : 0.35
-    const rim = /inset 0 1px 0 rgba\(255, 255, 255, (\d(\.\d+)?)\)/.exec(cta.shadow)
+    // 12.2-17: a 2 pt band, its inner point just inside the 1 pt inset hairline ring.
+    const rim = /inset 0 2px 0 rgba\(255, 255, 255, (\d(\.\d+)?)\)/.exec(cta.shadow)
     expect(Number(rim?.[1])).toBeGreaterThan(beforeRim + 0.2)
+  })
+
+  test("the fallback hairline is an inset ring at the head of the shadow, not a border (12.2-17)", () => {
+    expect(splitTopLevel(cta.shadow)[0]).toBe(`inset 0 0 0 1px ${cta.hairline}`)
   })
 
   test("the disabled label is clearly muted against the white label yet readable", () => {

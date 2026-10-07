@@ -83,11 +83,15 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
     expect(style).toMatchObject({
       backgroundColor: cta.flat,
       experimental_backgroundImage: cta.sheen,
-      borderWidth: 1,
-      borderColor: cta.hairline,
       boxShadow: cta.shadow,
       borderRadius: brandRadius.pill,
     })
+    // 12.2-17: the hairline is the inset ring at the head of the shadow, never a border under the
+    // sheen gradient (RN tiles the gradient into the border ring).
+    expect(String(style.boxShadow).startsWith(`inset 0 0 0 1px ${cta.hairline}, `)).toBe(true)
+    for (const key of Object.keys(style)) expect(key).not.toMatch(/^border.*Width$/)
+    expect(style.borderColor).toBeUndefined()
+    expect(style.borderCurve).toBeUndefined()
     expect(root.findAll((n) => (n.type as unknown) === "GlassView")).toHaveLength(0)
     expect(root.findAll((n) => (n.type as unknown) === "BlurView")).toHaveLength(0)
     // Not the native SwiftUI button: Jest resolves the default (Android) half of the split.

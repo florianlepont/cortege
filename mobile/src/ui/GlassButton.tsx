@@ -190,11 +190,11 @@ function createStyles(theme: BrandTheme) {
     sm: { minHeight: button.minHeightSmall, paddingHorizontal: button.horizontalPaddingSmall },
     md: { minHeight: button.minHeight, paddingHorizontal: button.horizontalPadding },
     lg: { minHeight: button.minHeightLarge, paddingHorizontal: button.horizontalPaddingLarge },
+    // The hairline is the inset ring at the head of `cta.shadow`, not a border: a border on a view
+    // with a gradient shows the tiled gradient under it (12.2-17, see ForestCard).
     flat: {
       backgroundColor: cta.flat,
       experimental_backgroundImage: cta.sheen,
-      borderWidth: 1,
-      borderColor: cta.hairline,
       boxShadow: cta.shadow,
     },
     outline: {

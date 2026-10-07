@@ -294,13 +294,13 @@ describe("ResumeCard", () => {
     )
     expect(styleOf(footer).borderTopWidth).toBe(RESUME_LAYOUT.footerRule)
     expect(styleOf(footer).paddingVertical).toBe(RESUME_LAYOUT.footerPaddingY)
-    // The band is the 44 pt link: rule plus link plus the card's two hairlines, plus the body.
+    // The band is the 44 pt link: rule plus link, plus the body. The card's hairline is an inset
+    // ring inside the box (12.2-17), so it adds no height.
     expect(resumeCardHeight(true, 1, 1)).toBe(
-      2 * RESUME_LAYOUT.border +
-        (2 * RESUME_LAYOUT.padding +
-          52 +
-          RESUME_LAYOUT.progressGap +
-          RESUME_LAYOUT.progressHeight) +
+      2 * RESUME_LAYOUT.padding +
+        52 +
+        RESUME_LAYOUT.progressGap +
+        RESUME_LAYOUT.progressHeight +
         (RESUME_LAYOUT.footerRule + 2 * RESUME_LAYOUT.footerPaddingY + 44),
     )
   })

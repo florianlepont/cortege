@@ -21,10 +21,19 @@ type ForestCardProps = {
 
 /**
  * The variant I forest card (D-12): a coloured shadow on an unclipped outer shell and a clipped
- * inner view that carries the gradient, hairline and inset highlight. The solid fallback colour is
- * always set because an invalid gradient string draws nothing. No `elevation` (it smears grey on
- * Android); below API 28 the card simply has no glow. The card is a container: accessibility
- * labels belong to the caller.
+ * inner view that carries the gradient, the fallback colour and the edge. The solid fallback colour
+ * is always set, on the clipped view only, because an invalid gradient string draws nothing.
+ *
+ * Layering rules (12.2-17, owner: the flat layer showed past the gradient at the edges):
+ * - No `borderWidth` on the gradient view: RN sizes the gradient to the padding box and tiles it
+ *   (`background-repeat: repeat`), so a 1 pt border ring shows the opposite edge of the gradient
+ *   under the hairline. The hairline is an inset 1 pt ring in `forest.edge` instead.
+ * - Circular corners on both views (no `borderCurve`): RN on iOS draws box shadows and the
+ *   overflow clip with circular arcs, only the background follows `borderCurve`.
+ * - The shell has no background: an outset `boxShadow` is drawn outside the box, around the clip.
+ *
+ * No `elevation` (it smears grey on Android); below API 28 the card simply has no glow. The card is
+ * a container: accessibility labels belong to the caller.
  */
 export function ForestCard({
   children,
@@ -56,17 +65,13 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     shell: {
       boxShadow: theme.visual.forest.shadow,
-      borderCurve: "continuous",
     },
     shellResume: { borderRadius: brandRadius.forestCard },
     shellHero: { borderRadius: brandRadius.forestHero },
     clip: {
       overflow: "hidden",
-      borderWidth: 1,
-      borderColor: theme.visual.forest.hairline,
       backgroundColor: theme.visual.forest.fallback,
-      boxShadow: theme.visual.forest.highlight,
-      borderCurve: "continuous",
+      boxShadow: theme.visual.forest.edge,
     },
     clipResume: {
       borderRadius: brandRadius.forestCard,

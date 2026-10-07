@@ -96,16 +96,50 @@ describe("ForestCard", () => {
     expect(clip.experimental_backgroundImage).toBe(defaultTheme.visual.forest.heroImage)
   })
 
-  test("the shell carries the coloured shadow, the clip the hairline and highlight", () => {
+  test("the shell carries the coloured shadow, the clip the edge (inset ring and highlight)", () => {
     const forest = defaultTheme.visual.forest
     const { shell, clip } = render()
     expect(shell.boxShadow).toBe(forest.shadow)
     expect(shell.overflow).toBeUndefined()
-    expect(clip).toMatchObject({
-      overflow: "hidden",
-      borderWidth: 1,
-      borderColor: forest.hairline,
-      boxShadow: forest.highlight,
+    expect(clip).toMatchObject({ overflow: "hidden", boxShadow: forest.edge })
+    expect(forest.edge).toBe(`inset 0 0 0 1px ${forest.hairline}, ${forest.highlight}`)
+  })
+
+  // 12.2-17 (owner, iPhone): the flat layer showed past the gradient at the edges and corners.
+  describe.each([
+    ["resume", "resume"],
+    ["hero", "hero"],
+  ] as const)("layering invariants, %s", (_name, variant) => {
+    test("shell and clip resolve the same radius and no borderCurve", () => {
+      const { shell, clip } = render({ variant })
+      expect(typeof shell.borderRadius).toBe("number")
+      expect(clip.borderRadius).toBe(shell.borderRadius)
+      // RN on iOS draws box shadows and the overflow clip with circular arcs only.
+      expect(shell.borderCurve).toBeUndefined()
+      expect(clip.borderCurve).toBeUndefined()
+    })
+
+    test("a caller style cannot give the shell a background or a different radius", () => {
+      const { shell, clip } = render({ variant, style: { marginTop: 8 } })
+      expect(shell.backgroundColor).toBeUndefined()
+      expect(clip.borderRadius).toBe(shell.borderRadius)
+    })
+
+    test("no border on the gradient view: the hairline is an inset ring", () => {
+      const { shell, clip } = render({ variant })
+      for (const layer of [shell, clip]) {
+        for (const key of Object.keys(layer)) expect(key).not.toMatch(/^border.*(Width|Color)$/)
+      }
+      expect(String(clip.boxShadow)).toMatch(/^inset 0 0 0 1px rgba\(/)
+    })
+
+    test("the fallback colour sits on the clipped gradient view only", () => {
+      const { shell, clip } = render({ variant })
+      expect(clip.experimental_backgroundImage).toBeDefined()
+      expect(clip.backgroundColor).toBe(defaultTheme.visual.forest.fallback)
+      expect(clip.overflow).toBe("hidden")
+      expect(shell.backgroundColor).toBeUndefined()
+      expect(shell.experimental_backgroundImage).toBeUndefined()
     })
   })
 

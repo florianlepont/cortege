@@ -77,9 +77,10 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
   })
 
   test("the heights add up as drawn (a draft, one line of title and body)", () => {
-    expect(resumeCardHeight(true, 1, 1)).toBe(161)
-    expect(resumeCardHeight(true, 2, 1)).toBe(189)
-    expect(resumeCardHeight(false, 1, 2)).toBe(2 + 32 + 28 + 4 + 40 + 0)
+    // 12.2-17: the forest card has no border any more (inset ring), 2 pt less than before.
+    expect(resumeCardHeight(true, 1, 1)).toBe(159)
+    expect(resumeCardHeight(true, 2, 1)).toBe(187)
+    expect(resumeCardHeight(false, 1, 2)).toBe(32 + 28 + 4 + 40 + 0)
     expect(toolsSectionHeight()).toBe(
       HOME_GAPS.section + SECTION_HEADER_HEIGHT + HOME_GAPS.sectionHeader + TOOL_ROW_MIN_HEIGHT,
     )
@@ -94,7 +95,7 @@ describe("the vertical budget of Accueil (12.2-14)", () => {
 
     test("a draft, three recent surveys, no alert: the nearby section shows at launch", () => {
       const { section, map, sectionTop } = homeMapVisible(base)
-      expect(sectionTop).toBe(503)
+      expect(sectionTop).toBe(501)
       expect(section).toBeGreaterThanOrEqual(MIN_VISIBLE_NEARBY)
       // Its header row (18 + 8) and a real piece of the map.
       expect(map).toBeGreaterThanOrEqual(MIN_VISIBLE_NEARBY - SECTION_HEADER_HEIGHT - 8)
