@@ -2,7 +2,7 @@ import { Fragment, ReactNode, useMemo } from "react"
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppGroupedListNavRow = {
@@ -16,6 +16,8 @@ type AppGroupedListNavRow = {
   loading?: boolean
   disabled?: boolean
   accessibilityLabel?: string
+  /** Leading outline glyph in a 28 pt tile (D-07: `-outline` names only). */
+  icon?: keyof typeof Ionicons.glyphMap
 }
 
 type AppGroupedListCustomRow = {
@@ -37,8 +39,36 @@ type AppGroupedListProps = {
   sections: AppGroupedListSection[]
 }
 
+function hasIcon(row: AppGroupedListRow): boolean {
+  return !isCustomRow(row) && Boolean(row.icon)
+}
+
 function isCustomRow(row: AppGroupedListRow): row is AppGroupedListCustomRow {
   return row.kind === "custom"
+}
+
+/**
+ * 12.2 (D-12): the leading tile of a row, 28 pt, radius 12, 18% moss over the glass with the accent
+ * outline glyph. Decorative: the row label carries the meaning.
+ */
+export function AppGroupedListIconTile({
+  name,
+  destructive,
+}: {
+  name: keyof typeof Ionicons.glyphMap
+  destructive?: boolean
+}) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  return (
+    <View style={styles.iconTile} accessible={false}>
+      <Ionicons
+        name={name}
+        size={ICON_SIZE}
+        color={destructive ? theme.colors.terracotta : theme.visual.glass.iconTint}
+      />
+    </View>
+  )
 }
 
 /**
@@ -57,7 +87,9 @@ export function AppGroupedList({ sections }: AppGroupedListProps) {
           <View style={styles.sectionBody}>
             {section.rows.map((row, index) => (
               <Fragment key={row.key}>
-                {index > 0 ? <View style={styles.divider} /> : null}
+                {index > 0 ? (
+                  <View style={[styles.divider, hasIcon(row) ? styles.dividerInset : null]} />
+                ) : null}
                 {isCustomRow(row) ? (
                   <View style={styles.customRow}>{row.content}</View>
                 ) : (
@@ -104,6 +136,7 @@ function NavRow({
       accessibilityLabel={row.accessibilityLabel ?? row.label}
       accessibilityState={{ disabled: row.disabled || row.loading, busy: row.loading }}
     >
+      {row.icon ? <AppGroupedListIconTile name={row.icon} destructive={row.destructive} /> : null}
       <Text style={labelStyle} numberOfLines={1}>
         {row.label}
       </Text>
@@ -126,49 +159,54 @@ function NavRow({
 }
 
 const ROW_MIN_HEIGHT = 48
+const ICON_TILE_SIZE = 28
+const ICON_SIZE = 20
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     list: {
-      gap: brandSpacing.md,
+      gap: brandSpacing4.md,
     },
     section: {
-      gap: brandSpacing.xs,
+      gap: brandSpacing4.xs,
     },
     sectionTitle: {
-      ...brandTypography.meta,
-      fontSize: 12,
-      fontWeight: "800",
-      letterSpacing: 0.3,
+      ...brandTypography.sectionHeader,
       color: theme.colors.textSecondary,
-      textTransform: "uppercase",
-      paddingHorizontal: brandSpacing.xs,
+      paddingHorizontal: brandSpacing4.xs,
     },
     sectionFooter: {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
-      paddingHorizontal: brandSpacing.xs,
+      paddingHorizontal: brandSpacing4.xs,
     },
+    // 12.2 (D-12): a glass card, translucent fill and hairline, no blur and no elevation.
     sectionBody: {
       borderRadius: brandRadius.card,
+      borderCurve: "continuous",
       borderWidth: 1,
-      borderColor: theme.componentColors.card.panelBorder,
-      backgroundColor: theme.semanticColors.surfaceElevated,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
       overflow: "hidden",
     },
     divider: {
       height: 1,
-      marginLeft: brandSpacing.md,
+      marginLeft: brandSpacing4.md,
       backgroundColor: theme.colors.divider,
+    },
+    // With a leading tile, the hairline starts under the label.
+    dividerInset: {
+      marginLeft: brandSpacing4.md + ICON_TILE_SIZE + brandSpacing4.smd,
     },
     row: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: brandSpacing.sm,
+      gap: brandSpacing4.smd,
       minHeight: ROW_MIN_HEIGHT,
-      paddingHorizontal: brandSpacing.md,
-      paddingVertical: brandSpacing.sm,
+      paddingHorizontal: brandSpacing4.md,
+      paddingVertical: brandSpacing4.smd,
     },
     rowCentered: {
       justifyContent: "center",
@@ -177,12 +215,21 @@ function createStyles(theme: BrandTheme) {
       backgroundColor: theme.colors.surfaceSoft,
     },
     customRow: {
-      paddingHorizontal: brandSpacing.md,
-      paddingVertical: brandSpacing.sm,
+      paddingHorizontal: brandSpacing4.md,
+      paddingVertical: brandSpacing4.xs,
+    },
+    iconTile: {
+      width: ICON_TILE_SIZE,
+      height: ICON_TILE_SIZE,
+      borderRadius: brandRadius.badgeSm,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.visual.glass.iconTile,
     },
     label: {
       ...brandTypography.input,
       fontSize: 16,
+      flexShrink: 1,
       color: theme.colors.textPrimary,
     },
     labelDestructive: {
@@ -195,8 +242,9 @@ function createStyles(theme: BrandTheme) {
     rowTrailing: {
       flexDirection: "row",
       alignItems: "center",
-      gap: brandSpacing.xs,
+      gap: brandSpacing4.xs,
       flexShrink: 1,
+      marginLeft: "auto",
     },
     value: {
       ...brandTypography.sectionBody,

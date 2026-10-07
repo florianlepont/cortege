@@ -2,7 +2,9 @@ import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
 import { AppGroupedList, type AppGroupedListSection } from "./AppGroupedList"
 import { AppText as Text } from "./AppText"
+import { Ionicons } from "@expo/vector-icons"
 import { brandColors } from "../app/brand-tokens"
+import { defaultTheme } from "../app/theme"
 
 jest.mock("react-native", () => {
   const ReactActual = jest.requireActual<typeof import("react")>("react")
@@ -54,13 +56,31 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-type FlatStyle = { color?: string }
+type FlatStyle = {
+  color?: string
+  backgroundColor?: string
+  borderWidth?: number
+  borderColor?: string
+  boxShadow?: string
+  borderRadius?: number
+  overflow?: string
+  paddingVertical?: number
+  paddingHorizontal?: number
+  minHeight?: number
+  width?: number
+  height?: number
+}
 
 function flattenStyle(style: unknown): FlatStyle {
   if (Array.isArray(style)) {
     return Object.assign({}, ...style.map(flattenStyle)) as FlatStyle
   }
   return (style ?? {}) as FlatStyle
+}
+
+function findGlyph(root: ReactTestInstance, name: string): ReactTestInstance {
+  const glyphs = root.findAllByType(Ionicons as unknown as React.ComponentType<object>)
+  return glyphs.find((node) => node.props.name === name)!
 }
 
 function render(sections: AppGroupedListSection[]) {
@@ -166,5 +186,86 @@ describe("AppGroupedList (ACC-03)", () => {
       },
     ])
     expect(texts).toContain("Custom content")
+  })
+
+  test("a section body is a glass card (fill, hairline, shadow, radius 22)", () => {
+    const { root } = render([{ key: "s", rows: [{ key: "row", label: "Version", value: "1" }] }])
+    const body = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "View")
+      .map((node) => flattenStyle(node.props.style))
+      .find((style) => style.borderRadius === 22)
+    const glass = defaultTheme.visual.glass
+    expect(body).toMatchObject({
+      backgroundColor: glass.cardFill,
+      borderWidth: 1,
+      borderColor: glass.cardBorder,
+      boxShadow: glass.cardShadow,
+      overflow: "hidden",
+    })
+  })
+
+  test("a nav row pads 12 by 16 and keeps a 48 pt minimum height", () => {
+    const { root } = render([{ key: "s", rows: [{ key: "row", label: "Mot de passe" }] }])
+    const pressable = root.find(
+      (node: ReactTestInstance) =>
+        (node.type as unknown) === "Pressable" && node.props.accessibilityLabel === "Mot de passe",
+    )
+    const row = flattenStyle(pressable.props.style)
+    expect(row).toMatchObject({ paddingVertical: 12, paddingHorizontal: 16, minHeight: 48 })
+  })
+
+  test("a row with an icon renders a 28 pt moss tile holding a 20 pt accent glyph", () => {
+    const { root } = render([
+      {
+        key: "s",
+        rows: [{ key: "row", label: "Email", icon: "mail-outline", onPress: jest.fn() }],
+      },
+    ])
+    const glyph = findGlyph(root, "mail-outline")
+    expect(glyph.props).toMatchObject({
+      name: "mail-outline",
+      size: 20,
+      color: defaultTheme.visual.glass.iconTint,
+    })
+    const tile = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "View")
+      .find(
+        (node) =>
+          flattenStyle(node.props.style).backgroundColor === defaultTheme.visual.glass.iconTile,
+      )
+    expect(flattenStyle(tile?.props.style)).toMatchObject({
+      width: 28,
+      height: 28,
+      borderRadius: 12,
+    })
+    expect(tile?.props.accessible).toBe(false)
+  })
+
+  test("a destructive row icon uses the destructive label colour", () => {
+    const { root } = render([
+      {
+        key: "s",
+        rows: [
+          {
+            key: "d",
+            label: "Supprimer",
+            icon: "trash-outline",
+            destructive: true,
+            onPress: jest.fn(),
+          },
+        ],
+      },
+    ])
+    const glyph = findGlyph(root, "trash-outline")
+    expect(glyph.props.color).toBe(brandColors.terracotta)
+  })
+
+  test("a row without icon renders no tile", () => {
+    const { root } = render([{ key: "s", rows: [{ key: "row", label: "Version" }] }])
+    expect(root.findAllByType(Ionicons as unknown as React.ComponentType<object>)).toHaveLength(0)
+    const tiles = root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "View")
+      .filter((node) => flattenStyle(node.props.style).width === 28)
+    expect(tiles).toHaveLength(0)
   })
 })
