@@ -5,7 +5,13 @@ import { FACTOR_TITLES } from "../../app/constants"
 import { fr } from "../../i18n"
 import { defaultTheme } from "../../app/theme"
 import { feedback } from "../../ui/feedback"
-import { BAR_HEIGHT, FactorPager, TOTAL_CHIP_HEIGHT } from "./FactorPager"
+import {
+  BAR_HEIGHT,
+  FactorPager,
+  FINISH_ROW_MIN_HEIGHT,
+  type PagerFinishAction,
+  TOTAL_CHIP_HEIGHT,
+} from "./FactorPager"
 import { PILL_SIZE, STRIP_HEIGHT } from "./FactorLetterStrip"
 
 // OA-111: the light tick for each factor crossed while sliding along the strip.
@@ -56,6 +62,14 @@ jest.mock("../../ui/GlassSurface", () => {
   }
 })
 
+// D-26: the pill is the shared GlassButton (its native and fallback looks have their own tests).
+jest.mock("../../ui/GlassButton", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    GlassButton: (props: Record<string, unknown>) => ReactRef.createElement("GlassButton", props),
+  }
+})
+
 jest.mock("@expo/vector-icons", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -101,6 +115,7 @@ function scores() {
 function render(
   initialFactor: FactorKey,
   sectionOverrides: Partial<Record<FactorKey, FactorField[]>> = {},
+  finishAction: PagerFinishAction | null = null,
 ) {
   const onFinish = jest.fn()
   const onActiveFactorChange = jest.fn()
@@ -114,6 +129,7 @@ function render(
         methodVersion={null}
         onActiveFactorChange={onActiveFactorChange}
         onFinish={onFinish}
+        finishAction={finishAction}
       />,
     )
   })
@@ -418,5 +434,136 @@ describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => 
     expect(flat(innerViews("C")[0].props.style).backgroundColor).toBe(defaultTheme.onSurface.danger)
     const emptyText = letter("D").findAll((n) => (n.type as unknown) === "Text")[0]
     expect(flat(emptyText.props.style).color).toBe(defaultTheme.colors.textSecondary)
+  })
+})
+
+describe("FactorPager D-26: Terminer le relevé on the last factor", () => {
+  const action = (overrides: Partial<PagerFinishAction> = {}): PagerFinishAction => ({
+    label: fr.surveyDetail.cta.finish,
+    accessibilityLabel: fr.surveyDetail.a11y.finishSurvey("Lisière"),
+    loading: false,
+    onPress: jest.fn(),
+    notice: null,
+    ...overrides,
+  })
+  const glassButtons = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAll((n) => (n.type as unknown) === "GlassButton")
+  const pageContent = (tree: renderer.ReactTestRenderer) =>
+    flat(
+      tree.root.findAll(
+        (n) =>
+          (n.type as unknown) === "ScrollView" &&
+          n.props.contentContainerStyle !== undefined &&
+          n.findAll((c) => (c.type as unknown) === "FactorDetailScreenProbe").length > 0,
+      )[0].props.contentContainerStyle,
+    )
+
+  test("without a finish (not complete or not named) the last button stays the plain Terminer", () => {
+    const { tree, byTestID, maybeByTestID, onFinish } = render("J")
+    expect(glassButtons(tree)).toHaveLength(0)
+    expect(maybeByTestID("pager-finish-row")).toBeUndefined()
+    expect(byTestID("pager-next").props.accessibilityLabel).toBe(fr.factorPager.finish)
+    const icon = byTestID("pager-next").findAll((n) => (n.type as unknown) === "Ionicons")[0]
+    expect(icon.props.name).toBe("checkmark")
+    act(() => {
+      byTestID("pager-next").props.onPress()
+    })
+    expect(onFinish).toHaveBeenCalledTimes(1)
+    // tab bar 68 + bar 46 + 2 x 16.
+    expect(pageContent(tree).paddingBottom).toBe(146)
+  })
+
+  test("the pill is offered on the last factor only", () => {
+    const { tree, byTestID } = render("I", {}, action())
+    expect(glassButtons(tree)).toHaveLength(0)
+    expect(byTestID("pager-next").props.accessibilityLabel).toBe(fr.factorPager.next)
+    act(() => {
+      byTestID("pager-next").props.onPress()
+    })
+    expect(glassButtons(tree)).toHaveLength(1)
+  })
+
+  test("on the last factor: a labelled 50 pt glass pill that calls the finish once", () => {
+    const onPress = jest.fn()
+    const { tree } = render("J", {}, action({ onPress }))
+    const [pill] = glassButtons(tree)
+    expect(pill.props.label).toBe("Terminer le relevé")
+    expect(pill.props.label).not.toContain("\u2014")
+    expect(pill.props.accessibilityLabel).toBe(fr.surveyDetail.a11y.finishSurvey("Lisière"))
+    expect(pill.props.size).toBe("lg")
+    expect(pill.props.loading).toBe(false)
+    expect(pill.props.testID).toBe("pager-finish-survey")
+    expect(FINISH_ROW_MIN_HEIGHT).toBeGreaterThanOrEqual(50)
+    act(() => {
+      pill.props.onPress()
+    })
+    expect(onPress).toHaveBeenCalledTimes(1)
+  })
+
+  test("the pill row floats above the bar with no fill and moves or shrinks no control", () => {
+    const plain = render("J")
+    const withPill = render("J", {}, action())
+    const row = withPill.byTestID("pager-finish-row")
+    expect(row.props.pointerEvents).toBe("box-none")
+    const rowStyle = flat(row.props.style)
+    expect(rowStyle.position).toBe("absolute")
+    expect(rowStyle.backgroundColor).toBeUndefined()
+    expect(rowStyle.experimental_backgroundImage).toBeUndefined()
+    // Tab bar 68 + 8 under the bar, the 46 pt bar, 12 above it.
+    expect(rowStyle.bottom).toBe(134)
+    // The round button and the strip keep their sizes and place.
+    expect(flat(withPill.byTestID("pager-next").props.style)).toEqual(
+      flat(plain.byTestID("pager-next").props.style),
+    )
+    const barOf = (r: ReturnType<typeof render>) =>
+      r.tree.root.findAll(
+        (n) =>
+          (n.type as unknown) === "View" &&
+          n.props.pointerEvents === "box-none" &&
+          n.props.testID === undefined,
+      )[0]
+    expect(flat(barOf(withPill).props.style)).toEqual(flat(barOf(plain).props.style))
+  })
+
+  test("beside the pill the round button only goes back to the summary", () => {
+    const onPress = jest.fn()
+    const { byTestID, onFinish } = render("J", {}, action({ onPress }))
+    expect(byTestID("pager-next").props.accessibilityLabel).toBe(fr.factorPager.close)
+    const icon = byTestID("pager-next").findAll((n) => (n.type as unknown) === "Ionicons")[0]
+    expect(icon.props.name).toBe("close")
+    act(() => {
+      byTestID("pager-next").props.onPress()
+    })
+    expect(onFinish).toHaveBeenCalledTimes(1)
+    expect(onPress).not.toHaveBeenCalled()
+  })
+
+  test("the page ends above the pill row, measured, at least 50 pt", () => {
+    const { tree, byTestID } = render("J", {}, action())
+    // 146 + 50 + 12.
+    expect(pageContent(tree).paddingBottom).toBe(208)
+    act(() => {
+      byTestID("pager-finish-row").props.onLayout({
+        nativeEvent: { layout: { width: 300, height: 120, x: 0, y: 0 } },
+      })
+    })
+    expect(pageContent(tree).paddingBottom).toBe(278)
+    act(() => {
+      byTestID("pager-finish-row").props.onLayout({
+        nativeEvent: { layout: { width: 300, height: 10, x: 0, y: 0 } },
+      })
+    })
+    expect(pageContent(tree).paddingBottom).toBe(208)
+  })
+
+  test("loading and the notice pass through", () => {
+    const { tree, byTestID } = render(
+      "J",
+      {},
+      action({ loading: true, notice: React.createElement("NoticeProbe") }),
+    )
+    expect(glassButtons(tree)[0].props.loading).toBe(true)
+    const row = byTestID("pager-finish-row")
+    expect(row.findAll((n) => (n.type as unknown) === "NoticeProbe")).toHaveLength(1)
   })
 })

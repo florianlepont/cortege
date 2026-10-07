@@ -102,6 +102,13 @@ jest.mock("../../app/useAppBottomTabBarHeight", () => ({
   useTabBarClearance: () => 68,
   useAppBottomTabBarHeight: () => 68,
 }))
+// D-26: the pager's finish pill (the button's own looks are tested in ui/GlassButton*.test.tsx).
+jest.mock("../../ui/GlassButton", () => {
+  const ReactRef = jest.requireActual("react") as typeof import("react")
+  return {
+    GlassButton: (props: Record<string, unknown>) => ReactRef.createElement("GlassButton", props),
+  }
+})
 jest.mock("../../screens/HomeScreen", () => ({ HomeScreen: mockScreen("home") }))
 jest.mock("../../screens/SurveyListScreen", () => ({
   SurveyListScreen: mockScreen("surveyList"),
@@ -221,7 +228,7 @@ import {
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "../public-map-reload"
 import { SurveysStackConfigContext } from "../stacks/surveys-stack-config"
 import { AccountRoute } from "./AccountRoute"
-import { FactorDetailRoute } from "./FactorDetailRoute"
+import { FactorDetailRoute, FinishStatusNotice } from "./FactorDetailRoute"
 import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
@@ -437,6 +444,7 @@ function makeNavigation() {
   return {
     navigate: jest.fn(),
     goBack: jest.fn(),
+    popTo: jest.fn(),
     setOptions: jest.fn(),
     reset: jest.fn(),
   }
@@ -1244,6 +1252,164 @@ describe("SurveyFormRoute", () => {
       surveyId: "s-01",
       mode: "wizard",
     })
+  })
+})
+
+describe("FactorDetailRoute: Terminer le relevé from the pager (D-26)", () => {
+  // A complete v3.0 draft (ten scored factors and a parcel), the one of ibp-scoring.test.ts.
+  const COMPLETE_DRAFT = {
+    site_name: "Site 01",
+    region_version: "ACA",
+    vegetation_stage: "collineen",
+    factors: {
+      A: { native_genus_count: 2 },
+      B: { strata_count: 2, covered_autochthonous_percent: 80 },
+      C: { bmg_count: 0, bmm_count: 1, surface_ha: 1 },
+      D: { bmg_count: 0, bmm_count: 1, surface_ha: 1 },
+      E: { tgb_count: 0, gb_count: 1, surface_ha: 1 },
+      F: { trees_per_ha: 2 },
+      G: { open_flowering_percent: 2 },
+      H: { class_score: 2 },
+      I: { type_count: 1 },
+      J: { type_count: 1 },
+    },
+    parcel_ids: ["75056000AB0001"],
+  }
+
+  function editing(
+    fixture: Fixture,
+    options: { draft?: unknown; surveyStatus?: string; status?: StatusMessage } = {},
+  ): Fixture {
+    return {
+      ...fixture,
+      status: options.status ?? fixture.status,
+      surveys: {
+        ...fixture.surveys,
+        state: {
+          ...fixture.surveys.state,
+          surveys: [{ ...survey, status: options.surveyStatus ?? "draft" }],
+        },
+      } as unknown as SurveysContextValue,
+      form: {
+        state: {
+          ...fixture.form.state,
+          editingSurveyId: "s-01",
+          draftInput: options.draft ?? COMPLETE_DRAFT,
+        },
+        actions: fixture.form.actions,
+      } as unknown as SurveyFormContextValue,
+    }
+  }
+
+  const pill = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAll((n) => (n.type as unknown) === "GlassButton")[0]
+
+  function renderRoute(fixture: Fixture, navigation = makeNavigation()) {
+    const element = (current: Fixture) => (
+      <Providers fixture={current}>
+        <FactorDetailRoute
+          navigation={navigation as never}
+          route={{ params: { factor: "J" } } as never}
+        />
+      </Providers>
+    )
+    return { element, navigation }
+  }
+
+  test("a complete, named survey on the last factor offers the labelled pill", async () => {
+    const base = makeFixture()
+    const fixture = editing({ ...base, form: { ...base.form, actions: actionsProxy() } })
+    const { element } = renderRoute(fixture)
+    const tree = await mount(element(fixture))
+    expect(pill(tree).props.label).toBe(fr.surveyDetail.cta.finish)
+    expect(pill(tree).props.accessibilityLabel).toBe(fr.surveyDetail.a11y.finishSurvey("Site 01"))
+    expect(pill(tree).props.loading).toBe(false)
+  })
+
+  test("press: the edits are written, the finish runs once, success goes back to the summary", async () => {
+    const base = makeFixture()
+    const formActions = actionsProxy<SurveyFormContextValue["actions"]>({ flushDraft: true })
+    const fixture = editing({ ...base, form: { ...base.form, actions: formActions } })
+    const { element, navigation } = renderRoute(fixture)
+    const tree = await mount(element(fixture))
+    await act(async () => {
+      pill(tree).props.onPress()
+    })
+    expect(formActions.flushDraft).toHaveBeenCalledTimes(1)
+    expect(fixture.surveys.actions.submitSurvey).toHaveBeenCalledTimes(1)
+    expect(fixture.surveys.actions.submitSurvey).toHaveBeenCalledWith("s-01")
+    expect(navigation.popTo).not.toHaveBeenCalled()
+
+    // The finish wrote "submitted": the list refresh reaches the route.
+    await act(async () => {
+      tree.update(element(editing(fixture, { surveyStatus: "submitted" })))
+    })
+    expect(navigation.popTo).toHaveBeenCalledTimes(1)
+    expect(navigation.popTo).toHaveBeenCalledWith("surveyDetail")
+    // No haptic here: the summary's useSubmitSuccessPulse plays it (D-25).
+    expect(pill(tree)).toBeUndefined()
+  })
+
+  test("a calm failure stays on the pager and shows the status message the finish set", async () => {
+    const base = makeFixture()
+    const postponed = fr.status.surveyOps.submitPostponed({ name: "Site 01" })
+    const fixture = editing({
+      ...base,
+      form: { ...base.form, actions: actionsProxy({ flushDraft: true }) },
+    })
+    const { element, navigation } = renderRoute(fixture)
+    const tree = await mount(element(fixture))
+    expect(tree.root.findAll((n) => n.props.testID === "pager-finish-notice")).toHaveLength(0)
+    await act(async () => {
+      tree.update(element({ ...fixture, status: postponed }))
+    })
+    await act(async () => {
+      pill(tree).props.onPress()
+    })
+    expect(navigation.popTo).not.toHaveBeenCalled()
+    expect(navigation.goBack).not.toHaveBeenCalled()
+    const notices = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.testID === "pager-finish-notice",
+    )
+    expect(notices).toHaveLength(1)
+    expect(notices[0].props.children).toBe(postponed)
+    expect(postponed).not.toContain("\u2014")
+    expect(pill(tree).props.loading).toBe(false)
+  })
+
+  test("not complete: no pill, the last button is the plain Terminer that goes back", async () => {
+    const fixture = editing(makeFixture(), { draft: {} })
+    const { element, navigation } = renderRoute(fixture)
+    const tree = await mount(element(fixture))
+    expect(pill(tree)).toBeUndefined()
+    const next = tree.root.findAll((n) => n.props.testID === "pager-next")[0]
+    expect(next.props.accessibilityLabel).toBe(fr.factorPager.finish)
+    await act(async () => {
+      next.props.onPress()
+    })
+    expect(navigation.goBack).toHaveBeenCalledTimes(1)
+    expect(fixture.surveys.actions.submitSurvey).not.toHaveBeenCalled()
+  })
+
+  test("the notice keeps the message of its finish, not a later status", async () => {
+    const first = fr.status.surveyOps.submitPostponed({ name: "Site 01" })
+    const fixture = { ...makeFixture(), status: first }
+    const tree = await mount(
+      <Providers fixture={fixture}>
+        <FinishStatusNotice />
+      </Providers>,
+    )
+    await act(async () => {
+      tree.update(
+        <Providers fixture={{ ...fixture, status: fr.status.session.ready() }}>
+          <FinishStatusNotice />
+        </Providers>,
+      )
+    })
+    const text = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.testID === "pager-finish-notice",
+    )[0]
+    expect(text.props.children).toBe(first)
   })
 })
 
