@@ -29,7 +29,8 @@ type ResumeCardProps = {
  * HOME-02, variant I: the compact forest card of Accueil. With a recent draft it resumes it (title,
  * "n/10 factors" line, ten progress segments, a plain "new survey" link); without one it invites to
  * start. Title and button say what the card is, so it has no tag pill (owner check on the iPhone).
- * Text stays on the left so nothing sits under the halo at the top right of the card.
+ * Text stays on the left so nothing sits under the halo at the top right of the card. The progress
+ * sits a full 24 pt under the button row, so the two never read as one block.
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -117,7 +118,8 @@ function createStyles(theme: BrandTheme) {
     progressRow: {
       flexDirection: "row",
       gap: brandSpacing4.xs,
-      marginTop: brandSpacing4.smd,
+      // Owner check on the iPhone: the button sat too close to the progress. 24 reads as two blocks.
+      marginTop: brandSpacing4.lg,
     },
     progressSegment: {
       flex: 1,

@@ -1,6 +1,6 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
-import { brandInteraction } from "../../app/brand-tokens"
+import { brandInteraction, brandSpacing4 } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { ResumeCard } from "./ResumeCard"
@@ -136,6 +136,21 @@ describe("ResumeCard", () => {
       act(() => tree.unmount())
     }
     mount(null)
+  })
+
+  test("the progress sits well under the button row, on the 4 grid (owner check on the iPhone)", () => {
+    mount(makeSurvey())
+    const progress = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.accessible === false,
+    )
+    const style = [progress.props.style]
+      .flat()
+      .reduce(
+        (acc: Record<string, unknown>, item: Record<string, unknown>) => ({ ...acc, ...item }),
+        {},
+      )
+    expect(style.marginTop).toBeGreaterThanOrEqual(brandSpacing4.md)
+    expect((style.marginTop as number) % 4).toBe(0)
   })
 
   test("an unnamed draft reads the unnamed title", () => {
