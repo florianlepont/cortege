@@ -132,8 +132,8 @@ jest.mock("../../ui/AppButton", () => {
 jest.mock("../../ui/GlassButton", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
-    GlassButton: ({ label, onPress }: { label: string; onPress: () => void }) =>
-      ReactRef.createElement("GlassButton", { label, onPress }),
+    GlassButton: (props: { label: string; onPress: () => void }) =>
+      ReactRef.createElement("GlassButton", props),
   }
 })
 jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
@@ -598,6 +598,10 @@ describe("PublicMapScreen", () => {
           (node.type as unknown) === "GlassButton" &&
           node.props.label === fr.offlineMap.areas.downloadThisArea,
       )
+      // 12.2-19: the big call to action (50 pt) across the whole panel, not the thin `md` one.
+      expect(download.props.size).toBe("lg")
+      expect(download.props.style).toMatchObject({ alignSelf: "stretch" })
+      expect(download.props.disabled).toBe(false)
       await act(async () => {
         download.props.onPress()
       })

@@ -21,8 +21,9 @@ export const offlineMapFr = {
   areas: {
     openSheet: "Zones hors connexion",
     title: "Zones hors connexion",
-    subtitle: "Téléchargez la zone affichée pour l'utiliser sans réseau.",
-    downloadThisArea: "Télécharger cette zone",
+    // 12.2-19: the map's edge glows green while this panel is open; the subtitle points at it.
+    subtitle: "La zone affichée, encadrée en vert, sera disponible sans réseau.",
+    downloadThisArea: "Télécharger la zone affichée",
     downloading: "Téléchargement…",
     nameLabel: "Nom de la zone",
     namePlaceholder: "Ex. Bois du Nord",

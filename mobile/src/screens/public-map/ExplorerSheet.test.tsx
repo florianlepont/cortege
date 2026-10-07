@@ -187,4 +187,11 @@ describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
     expect(content.gap).toBe(brandSpacing4.smd)
     expect(extra.paddingBottom).toBe(brandSpacing4.lg + 50)
   })
+
+  test("a panel that fits does not scroll or bounce; only an overflowing one does (12.2-19)", () => {
+    const scroll = mount({ visible: true }).root.findByType("ScrollView" as never)
+    expect(scroll.props.alwaysBounceVertical).toBe(false)
+    // Scrolling itself stays on, for a long cluster list or the panel squeezed by the keyboard.
+    expect(scroll.props.scrollEnabled).not.toBe(false)
+  })
 })

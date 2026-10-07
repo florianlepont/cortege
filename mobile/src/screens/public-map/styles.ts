@@ -126,6 +126,9 @@ export const offlineAreasStyles = StyleSheet.create({
     ...brandTypography.meta,
     color: brandColors.terracotta,
   },
+  downloadButton: {
+    alignSelf: "stretch",
+  },
 })
 
 export function createOfflineIndicatorStyles(theme: BrandTheme) {

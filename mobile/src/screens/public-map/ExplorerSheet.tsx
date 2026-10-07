@@ -132,6 +132,10 @@ export function ExplorerSheet({
               { paddingBottom: brandSpacing4.lg + bottomInset },
             ]}
             keyboardShouldPersistTaps="handled"
+            // 12.2-19 (owner: "on peut scroller dans la fenêtre donc c'est bizarre"): a panel that
+            // fits does not move under the finger; only one taller than the sheet (a long cluster
+            // list, or the panel squeezed by the keyboard) scrolls and bounces.
+            alwaysBounceVertical={false}
           >
             {shownRef.current}
           </ScrollView>

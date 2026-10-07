@@ -69,13 +69,16 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
           : t.estimate({ tiles: estimate.totalTileCount, bytes: estimate.estimatedBytes })}
       </Text>
 
-      {/* The panel's full-width action is the glass call to action (D-27c, D-28), same size. */}
+      {/* The panel's one action is the big glass call to action (D-27c, D-28): 12.2-19, the owner
+          found the `md` button too thin, so it is `lg` (50 pt) across the whole panel. */}
       <GlassButton
         label={downloading ? t.downloading : t.downloadThisArea}
-        size="md"
+        size="lg"
         onPress={handleDownload}
         disabled={downloading || estimate.exceedsCap}
         loading={downloading}
+        style={areaStyles.downloadButton}
+        testID="offline-area-download"
       />
     </View>
   )
