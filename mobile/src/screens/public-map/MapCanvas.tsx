@@ -11,6 +11,7 @@ import type { MapCoordinate, MapRegion } from "../../app/map-viewport"
 import type { PublicMapItem, PublicParcelStatusItem } from "../../app/types"
 import type { BasemapKey } from "../../map/basemaps"
 import { CadastreLayer } from "../../map/maplibre/CadastreLayer"
+import { markerItemsAtParcelZoom } from "../../map/maplibre/parcel-coverage"
 import { ParcelPolygonsLayer } from "../../map/maplibre/ParcelPolygonsLayer"
 import { boundsFromRegion, regionFromViewChange } from "../../map/maplibre/regions"
 import { useMapStyle } from "../../hooks/useMapStyle"
@@ -72,7 +73,14 @@ export const MapCanvas = memo(function MapCanvas({
   styleRefreshKey = 0,
 }: MapCanvasProps) {
   const { mapStyle, cadastreInStyle } = useMapStyle(basemap, styleRefreshKey)
-  const { clusters, resolveClusterPress } = useMapClusters({ items, region })
+  // From zoom 15 the parcels, filled by score, replace the markers (OA-126), except the author's
+  // own drafts and any survey no scored parcel shows yet: its score never vanishes (12.2-19).
+  const markerItems = useMemo(
+    () =>
+      parcelLayerRenderable ? markerItemsAtParcelZoom(items, parcelStatuses, draftIds) : items,
+    [draftIds, items, parcelLayerRenderable, parcelStatuses],
+  )
+  const { clusters, resolveClusterPress } = useMapClusters({ items: markerItems, region })
 
   const clusterCenters = useMemo(() => {
     const centers = new Map<number, MapCoordinate>()
@@ -124,11 +132,6 @@ export const MapCanvas = memo(function MapCanvas({
         onParcelPress={onSelectParcel}
       />
       {clusters.map((entry) => {
-        // From zoom 15 the parcels themselves, filled by score, replace the groups and the dots
-        // of the public surveys (OA-126); the author's own drafts keep their marker.
-        if (parcelLayerRenderable) {
-          if (entry.kind !== "item" || !draftIds?.has(entry.item.survey_id)) return null
-        }
         if (entry.kind === "cluster") {
           return (
             <ClusterMarker
