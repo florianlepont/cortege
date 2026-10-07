@@ -33,6 +33,7 @@ describe("GlassSurface on Liquid Glass (iOS 26)", () => {
       tree = renderer.create(
         <GlassSurface
           interactive
+          tintColor="rgba(51, 78, 43, 0.82)"
           style={{ borderRadius: 20, borderWidth: 1, borderColor: "#000", padding: 8 }}
         />,
       )
@@ -43,6 +44,7 @@ describe("GlassSurface on Liquid Glass (iOS 26)", () => {
     expect(style.borderWidth).toBeUndefined()
     expect(style.borderColor).toBeUndefined()
     expect(glass.props.isInteractive).toBe(true)
+    expect(glass.props.tintColor).toBe("rgba(51, 78, 43, 0.82)")
     expect(glass.props.colorScheme).toBe("light")
   })
 })

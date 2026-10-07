@@ -286,3 +286,68 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
     expect(contrastRatio(colors.textSecondary, wave)).toBeGreaterThanOrEqual(4.5)
   })
 })
+
+describe.each(schemes)("green glass call to action (D-27c), %s scheme", (scheme) => {
+  const theme = themes[scheme]
+  const { visual, colors } = theme
+  const cta = visual.glassCta
+
+  // The worst plausible backdrops behind the button, never the glass itself: the canvas, the panel,
+  // the strongest point of each backdrop halo, and the extreme of the scheme (pure white in light,
+  // pure black in dark) for content that scrolls behind the bar. The label is lightest on the
+  // lightest backdrop in light and darkest on the darkest in dark, and the extreme covers both.
+  const halos = splitTopLevel(visual.backdrop).map((layer) => {
+    const first = /rgba\([^)]*\)/.exec(layer)
+    if (!first) throw new Error(`No colour in ${layer}`)
+    return compositeOver(first[0], colors.canvas)
+  })
+  const extreme = scheme === "light" ? "#FFFFFF" : "#000000"
+  const backdrops = [colors.canvas, colors.panel, extreme, ...halos]
+
+  function saturation(hex: string): number {
+    const channels = [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16))
+    const max = Math.max(...channels)
+    return max === 0 ? 0 : (max - Math.min(...channels)) / max
+  }
+
+  test.each([
+    ["glass tint", "tint", "ink"],
+    ["flat fallback", "flat", "ink"],
+    ["glass tint, disabled", "tintOff", "inkOff"],
+    ["flat fallback, disabled", "flatOff", "inkOff"],
+  ] as const)("the label reads at 4.5:1 on the %s over every backdrop", (_name, fill, ink) => {
+    for (const backdrop of backdrops) {
+      const effective = compositeOver(cta[fill], backdrop)
+      expect(contrastRatio(cta[ink], effective)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  test("the fills are translucent, so the content behind shows through", () => {
+    for (const fill of [cta.tint, cta.flat, cta.tintOff, cta.flatOff]) {
+      const alpha = Number(/, (\d(\.\d+)?)\)$/.exec(fill)?.[1])
+      expect(alpha).toBeGreaterThan(0)
+      expect(alpha).toBeLessThan(1)
+    }
+    expect(cta.tint).not.toBe(cta.tintOff)
+  })
+
+  test("the enabled glass is green and the disabled one is clearly less saturated", () => {
+    const tint = compositeOver(cta.tint, colors.canvas)
+    const off = compositeOver(cta.tintOff, colors.canvas)
+    const [r, g, b] = [1, 3, 5].map((index) => parseInt(tint.slice(index, index + 2), 16))
+    expect(g).toBeGreaterThan(r)
+    expect(g).toBeGreaterThan(b)
+    expect(saturation(tint)).toBeGreaterThan(saturation(off) + 0.1)
+    const flat = compositeOver(cta.flat, colors.canvas)
+    const flatOff = compositeOver(cta.flatOff, colors.canvas)
+    expect(saturation(flat)).toBeGreaterThan(saturation(flatOff) + 0.1)
+  })
+
+  test("the fallback edge tokens are well formed", () => {
+    const layer =
+      /^(inset )?-?\d+(px)? -?\d+(px)? \d+(px)?( -?\d+px)? (rgba\([^)]*\)|#[0-9A-Fa-f]{6})$/
+    for (const part of splitTopLevel(cta.shadow)) expect(part).toMatch(layer)
+    expect(cta.hairline).toMatch(/^rgba\(/)
+    expect(cta.hairlineOff).toMatch(/^rgba\(/)
+  })
+})

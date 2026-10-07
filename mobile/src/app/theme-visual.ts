@@ -6,6 +6,9 @@ import {
   buildForestImage,
   buildLinearGradient,
   forestHaloCore,
+  glassCtaEdges,
+  glassCtaFills,
+  glassCtaInk,
   mixWithWhite,
   pillLabelColor,
   pressWaveFill,
@@ -58,6 +61,21 @@ export type BrandVisual = {
     androidFill: string
     iconTile: string
     iconTint: string
+  }
+  /**
+   * Green glass of the big call-to-action buttons (D-27c): `tint` for real Liquid Glass, `flat` for
+   * the fallback, the `*Off` entries for the disabled look, `ink` the text colour on each.
+   */
+  glassCta: {
+    tint: string
+    flat: string
+    ink: string
+    hairline: string
+    shadow: string
+    tintOff: string
+    flatOff: string
+    inkOff: string
+    hairlineOff: string
   }
   tab: {
     activeTint: string
@@ -155,6 +173,17 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       androidFill: brandGlassFills.android[scheme],
       iconTile: "rgba(137, 163, 58, 0.18)",
       iconTint: accentText,
+    },
+    glassCta: {
+      tint: glassCtaFills[scheme].tint,
+      flat: glassCtaFills[scheme].flat,
+      ink: glassCtaInk[scheme].on,
+      hairline: glassCtaEdges[scheme].hairline,
+      shadow: glassCtaEdges[scheme].shadow,
+      tintOff: glassCtaFills[scheme].tintOff,
+      flatOff: glassCtaFills[scheme].flatOff,
+      inkOff: glassCtaInk[scheme].off,
+      hairlineOff: glassCtaEdges[scheme].hairlineOff,
     },
     tab: {
       activeTint: accentText,

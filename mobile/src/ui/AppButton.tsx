@@ -19,7 +19,7 @@ import { feedback } from "./feedback"
  * cards only (UI-SPEC accent list item 2). Terracotta is never a call to action.
  */
 type AppButtonVariant = "primary" | "secondary" | "danger" | "dangerSoft" | "glow"
-type AppButtonSize = "sm" | "md" | "lg"
+export type AppButtonSize = "sm" | "md" | "lg"
 
 type AppButtonProps = {
   label?: string
@@ -125,7 +125,7 @@ export function AppButton({
 // Every size keeps a hit area of at least `hitTarget.min` (D-05): the small button and the small
 // and medium icon-only buttons are drawn below 44 pt, so the touch area grows past the visible
 // shape instead (the 37 call sites render exactly as before).
-function hitSlopFor(iconOnly: boolean, size: AppButtonSize): number {
+export function hitSlopFor(iconOnly: boolean, size: AppButtonSize): number {
   const { button } = brandComponentTokens
   const drawn = iconOnly
     ? size === "lg"

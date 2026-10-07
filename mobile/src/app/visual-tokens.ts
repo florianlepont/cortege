@@ -116,6 +116,49 @@ export const brandGlassFills = {
 // string literal is read as user-facing text by the structure gate).
 export const pillLabelColor = "#14210F"
 
+// Green glass of the big call-to-action buttons (D-27c). `tint` is what Liquid Glass (iOS 26)
+// receives as `tintColor`: the glass blends it over whatever is behind the button, so the button
+// stays see-through. `flat` is the translucent fill of the fallback (Android, iOS before 26): no
+// blur, a touch more opaque because nothing refracts. The "Off" pair is the disabled look: a pale
+// neutral glass, clearly less saturated than the green. Light is the brand forest, dark the
+// brand's lighter call-to-action green (`ctaPrimary`), like the solid button it replaces.
+export const glassCtaFills = {
+  light: {
+    tint: "rgba(51, 78, 43, 0.82)",
+    flat: "rgba(51, 78, 43, 0.9)",
+    tintOff: "rgba(36, 49, 31, 0.07)",
+    flatOff: "rgba(36, 49, 31, 0.09)",
+  },
+  dark: {
+    tint: "rgba(155, 194, 106, 0.8)",
+    flat: "rgba(155, 194, 106, 0.88)",
+    tintOff: "rgba(242, 243, 241, 0.1)",
+    flatOff: "rgba(242, 243, 241, 0.12)",
+  },
+} as const
+
+// Text colour on the green glass (white on the forest glass, near black on the light green one) and
+// on the disabled glass. Named constants for the same structure-gate reason as `pillLabelColor`.
+export const glassCtaInk = {
+  light: { on: "#FFFFFF", off: "#3D4B37" },
+  dark: { on: "#0C1208", off: "#B4B8BD" },
+} as const
+
+// Edge of the fallback button: a hairline, an inner top highlight and a soft green shadow. Real
+// Liquid Glass draws its own edge and light, so none of this is used on iOS 26.
+export const glassCtaEdges = {
+  light: {
+    hairline: "rgba(255, 255, 255, 0.22)",
+    shadow: "0 8px 22px rgba(51, 78, 43, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.28)",
+    hairlineOff: "rgba(36, 49, 31, 0.14)",
+  },
+  dark: {
+    hairline: "rgba(255, 255, 255, 0.4)",
+    shadow: "0 8px 22px rgba(155, 194, 106, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
+    hairlineOff: "rgba(255, 255, 255, 0.14)",
+  },
+} as const
+
 // Geometry of the chart and score components (not spacing).
 export const scoreRingGeometry = { size: 38, stroke: 4, dash: "3 4" } as const
 export const factorBarGeometry = { gap: 6, radius: 6, maxHeight: 64, stub: 4 } as const

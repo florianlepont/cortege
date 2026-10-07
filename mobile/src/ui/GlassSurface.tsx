@@ -10,6 +10,9 @@ type GlassSurfaceTone = "auto" | "dark"
 // iOS 26 and later only; evaluated once, the answer does not change while the app runs.
 const LIQUID_GLASS = isLiquidGlassAvailable()
 
+/** Whether `GlassSurface` draws real Liquid Glass here (iOS 26 and later); false on Android and older iOS. */
+export const LIQUID_GLASS_AVAILABLE = LIQUID_GLASS
+
 type GlassSurfaceProps = {
   children?: ReactNode
   style?: StyleProp<ViewStyle>
@@ -18,6 +21,8 @@ type GlassSurfaceProps = {
   pointerEvents?: "auto" | "none" | "box-none" | "box-only"
   /** Liquid Glass reacts to touch (press shimmer): for a surface that is itself a button. */
   interactive?: boolean
+  /** Colour the glass is tinted with (Liquid Glass only: the blur fallback ignores it). */
+  tintColor?: string
 }
 
 /**
@@ -42,6 +47,7 @@ export function GlassSurface({
   intensity = 46,
   pointerEvents,
   interactive = false,
+  tintColor,
 }: GlassSurfaceProps) {
   const { scheme } = useBrandTheme()
   const isDark = tone === "dark" || scheme === "dark"
@@ -55,6 +61,7 @@ export function GlassSurface({
         glassEffectStyle="regular"
         colorScheme={isDark ? "dark" : "light"}
         isInteractive={interactive}
+        tintColor={tintColor}
       >
         {children}
       </GlassView>
