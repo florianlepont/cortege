@@ -5,6 +5,8 @@ import { brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-to
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage"
+import * as reanimated from "../../../test/react-native-reanimated.mock"
+import { LIST_ENTRANCE_GRACE_MS } from "../../ui/useListEntrance"
 import { SurveySearchScreen, type SurveySearchScreenProps } from "./SurveySearchScreen"
 
 const t = fr.surveyList.search
@@ -22,6 +24,14 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
+// The real navigation package is ESM and cannot be loaded here; only its context object is needed.
+jest.mock("@react-navigation/native", () => {
+  const ReactRef = jest.requireActual("react") as typeof import("react")
+  return { NavigationContext: ReactRef.createContext(undefined) }
+})
+// The entrance wrapper is replaced by a host element that keeps its props, so the test reads what
+// the screen asked for (its own behaviour is covered by ListEntranceRow.test.tsx).
+jest.mock("../../ui/ListEntranceRow", () => ({ ListEntranceRow: "ListEntranceRow" }))
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent = (name: string) => {
@@ -251,11 +261,10 @@ describe("SurveySearchScreen, glass look and entrances (12.2-11)", () => {
     expect(style.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
   })
 
-  it("wraps every row in an entering view and hands the survey row its index", () => {
+  it("wraps every row in an entrance row and hands the survey row its index", () => {
     const tree = render(makeProps())
-    const wrappers = byType(tree, "View").filter((node) => "entering" in node.props)
-    expect(wrappers).toHaveLength(2)
-    expect(wrappers.every((node) => node.props.entering !== undefined)).toBe(true)
+    const wrappers = byType(tree, "ListEntranceRow")
+    expect(wrappers.map((node) => node.props.index)).toEqual([0, 1])
     expect(byType(tree, "SurveyRow").map((row) => row.props.index)).toEqual([0, 1])
     const communityTree = render(
       makeProps({
@@ -263,7 +272,43 @@ describe("SurveySearchScreen, glass look and entrances (12.2-11)", () => {
         community: { items: [community("x", "Camille")], status: "ready" },
       }),
     )
-    expect(byType(communityTree, "View").filter((node) => "entering" in node.props)).toHaveLength(1)
+    expect(byType(communityTree, "ListEntranceRow")).toHaveLength(1)
+  })
+
+  describe("which rows take part in the entrance (12.2-11 fix)", () => {
+    let now = 1_000_000
+    let nowSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      now = 1_000_000
+      nowSpy = jest.spyOn(Date, "now").mockImplementation(() => now)
+    })
+
+    afterEach(() => {
+      nowSpy.mockRestore()
+      reanimated.setReducedMotion(false)
+    })
+
+    const canAnimate = (tree: renderer.ReactTestRenderer) =>
+      byType(tree, "ListEntranceRow")[0].props.canAnimate as (index: number) => boolean
+
+    it("lets rows 0 to 7 join when the page mounts, and no row from the eighth on", () => {
+      const ask = canAnimate(render(makeProps()))
+      expect([0, 1, 7].map(ask)).toEqual([true, true, true])
+      expect([8, 9, 30].map(ask)).toEqual([false, false, false])
+    })
+
+    it("lets no row join once the page has been on screen: scrolling and typing never replay", () => {
+      const ask = canAnimate(render(makeProps()))
+      now += LIST_ENTRANCE_GRACE_MS + 1
+      expect([0, 1, 7].map(ask)).toEqual([false, false, false])
+    })
+
+    it("lets no row join under Reduce Motion", () => {
+      reanimated.setReducedMotion(true)
+      const ask = canAnimate(render(makeProps()))
+      expect([0, 1].map(ask)).toEqual([false, false])
+    })
   })
 })
 

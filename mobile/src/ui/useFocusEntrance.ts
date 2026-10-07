@@ -28,7 +28,8 @@ export const ENTRANCE_REWIND_DELAY_MS = 600
  * starts, so a section appearing above does not replay the others. Under Reduce Motion the section
  * is simply shown. Returns an animated style: opacity and a translateY of 20 pt down to 0.
  *
- * Not for rows of virtualised lists, which stay first-mount-only (`useEntrance`, RESEARCH Pitfall 6).
+ * Rows of virtualised lists reach this hook only through `ListEntranceRow`, which keeps rows the list
+ * remounts on scroll out of it (RESEARCH Pitfall 6, `useListEntrance`).
  */
 export function useFocusEntrance(index: number) {
   const reduced = useReducedMotion()

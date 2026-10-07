@@ -334,6 +334,8 @@ jest.mock("@react-navigation/native", () => {
     ReactRef.createElement(ReactRef.Fragment, null, children)
   return {
     NavigationContainer: passthrough,
+    // Read by useScreenFocus (the list entrance): no navigator, so every screen counts as focused.
+    NavigationContext: ReactRef.createContext(undefined),
     useNavigation: () => mockNavigation,
     useRoute: () => ({ key: "route", name: "route", params: mockDefaultParams }),
     getFocusedRouteNameFromRoute: () => undefined,

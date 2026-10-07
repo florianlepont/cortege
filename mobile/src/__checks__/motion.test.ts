@@ -45,7 +45,7 @@ function findUnguardedBuilders(files: string[]): Finding[] {
     .filter((file) => {
       const text = read(file)
       if (!/\b(entering|exiting|layout)=\{/.test(text)) return false
-      return !text.includes("ReduceMotion.System") && !/\buseEntrance\b/.test(text)
+      return !text.includes("ReduceMotion.System")
     })
     .map((file) => ({ file, rule: "unguarded-builder" }))
 }
@@ -140,7 +140,7 @@ describe("findNativeDriverOff", () => {
 })
 
 describe("findUnguardedBuilders", () => {
-  it("reports an entering prop built without ReduceMotion.System or useEntrance", () => {
+  it("reports an entering prop built without ReduceMotion.System", () => {
     const file = writeFixture(
       "src/ui/Bare.tsx",
       "export const A = () => <Animated.View entering={FadeIn.duration(200)} />\n",
@@ -156,18 +156,6 @@ describe("findUnguardedBuilders", () => {
         "export const A = () => (",
         "  <Animated.View entering={FadeIn.duration(200).reduceMotion(ReduceMotion.System)} />",
         ")",
-      ].join("\n"),
-    )
-
-    expect(findUnguardedBuilders([file])).toEqual([])
-  })
-
-  it("accepts a file that gets its entrance from useEntrance", () => {
-    const file = writeFixture(
-      "src/ui/Hook.tsx",
-      [
-        'import { useEntrance } from "./useEntrance"',
-        "export const A = () => <Animated.View entering={useEntrance(0)} />",
       ].join("\n"),
     )
 

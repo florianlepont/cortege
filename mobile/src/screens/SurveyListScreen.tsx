@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { FlatList, ListRenderItemInfo, Platform, RefreshControl, View } from "react-native"
-import Animated from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandSpacing } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
-import { useEntrance } from "../ui/useEntrance"
+import { ListEntranceRow } from "../ui/ListEntranceRow"
+import { useListEntrance } from "../ui/useListEntrance"
 import type { LocalAttachment } from "../storage"
 import {
   isPhotoAttachment,
@@ -47,7 +47,7 @@ export function SurveyListScreen({
 }: SurveyListScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createListStyles(theme), [theme])
-  const entrance = useEntrance()
+  const canAnimateRow = useListEntrance()
   const [refreshing, setRefreshing] = useState(false)
   const insets = useSafeAreaInsets()
   // The iOS header of this screen is opaque (SurveysStack), so the list already starts below it:
@@ -114,8 +114,9 @@ export function SurveyListScreen({
       isSectionHeader(item) ? (
         <SectionTitle section={item.key} count={item.count} />
       ) : (
-        // First mount only, rows 0 to 7 (D-08): a row the list remounts on scroll gets no entrance.
-        <Animated.View entering={entrance(index)}>
+        // Rows 0 to 7 that mount with the screen slide up when it becomes visible (D-08); a row the
+        // list remounts on scroll gets no entrance.
+        <ListEntranceRow index={index} canAnimate={canAnimateRow}>
           <SurveyRow
             survey={item}
             preview={previewById[item.id] ?? null}
@@ -125,9 +126,9 @@ export function SurveyListScreen({
             onOpen={onOpenSurvey}
             onDelete={onDeleteSurvey}
           />
-        </Animated.View>
+        </ListEntranceRow>
       ),
-    [entrance, onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId, surveyDetails],
+    [canAnimateRow, onDeleteSurvey, onOpenSurvey, previewById, selectedSurveyId, surveyDetails],
   )
 
   const listHeader = useMemo(

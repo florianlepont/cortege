@@ -9,7 +9,6 @@ import {
   View,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import Animated from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { CommunitySurveyItem } from "@cortege/ibp-domain"
 import { useBrandTheme } from "../../app/theme"
@@ -26,7 +25,8 @@ import type { LocalAttachment, LocalSurvey } from "../../storage"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppText as Text } from "../../ui/AppText"
 import { feedback } from "../../ui/feedback"
-import { useEntrance } from "../../ui/useEntrance"
+import { ListEntranceRow } from "../../ui/ListEntranceRow"
+import { useListEntrance } from "../../ui/useListEntrance"
 import { SurveyRow, type SurveyRowPreview } from "../survey-list/SurveyRow"
 import {
   isPhotoAttachment,
@@ -103,7 +103,7 @@ export function SurveySearchScreen({
 }: SurveySearchScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSearchStyles(theme), [theme])
-  const entrance = useEntrance()
+  const canAnimateRow = useListEntrance()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
   const inputRef = useRef<TextInput>(null)
@@ -144,8 +144,9 @@ export function SurveySearchScreen({
 
   const renderItem = useCallback(
     ({ item, index }: ListRenderItemInfo<SearchItem>) => (
-      // First mount only, rows 0 to 7 (D-08): typing in the field does not replay the entrance.
-      <Animated.View entering={entrance(index)}>
+      // Rows 0 to 7 that mount with the screen slide up when it becomes visible (D-08): typing in
+      // the field or scrolling does not replay the entrance.
+      <ListEntranceRow index={index} canAnimate={canAnimateRow}>
         {item.kind === "mine" ? (
           <SurveyRow
             survey={item.survey}
@@ -159,10 +160,10 @@ export function SurveySearchScreen({
         ) : (
           <CommunityRow item={item.item} onOpen={onOpenCommunitySurvey} />
         )}
-      </Animated.View>
+      </ListEntranceRow>
     ),
     [
-      entrance,
+      canAnimateRow,
       onDeleteSurvey,
       onOpenCommunitySurvey,
       onOpenSurvey,
