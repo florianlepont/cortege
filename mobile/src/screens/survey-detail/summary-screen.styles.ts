@@ -15,9 +15,9 @@ const HIT_TARGET = 44
 export function createSummaryScreenStyles(theme: BrandTheme) {
   const hairline = theme.componentColors.card.panelBorder
   return StyleSheet.create({
+    // D-19: no background, the route's ScreenFrame is the page (canvas and halo).
     scroll: {
       flex: 1,
-      backgroundColor: theme.colors.canvas,
     },
     content: {
       padding: brandSpacing.md,

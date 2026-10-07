@@ -6,6 +6,7 @@ import { useCommunitySurvey } from "../../hooks/useCommunitySurvey"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { CommunitySurveyRouteProps } from "../types"
+import { ScreenFrame } from "../../ui/ScreenFrame"
 
 /**
  * The page of a finished survey of another member (OA-59), opened from the Communauté search, from
@@ -29,11 +30,13 @@ export const CommunitySurveyRoute = memo(function CommunitySurveyRoute({
   })
 
   return (
-    <CommunitySurveyScreen
-      apiUrl={session.apiUrl}
-      accessToken={accessToken}
-      state={state}
-      onOpenSurvey={onOpenSurvey}
-    />
+    <ScreenFrame>
+      <CommunitySurveyScreen
+        apiUrl={session.apiUrl}
+        accessToken={accessToken}
+        state={state}
+        onOpenSurvey={onOpenSurvey}
+      />
+    </ScreenFrame>
   )
 })

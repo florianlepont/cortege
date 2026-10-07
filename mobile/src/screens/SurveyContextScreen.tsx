@@ -1,6 +1,5 @@
 import { useMemo } from "react"
-import { Platform, ScrollView, View } from "react-native"
-import { useHeaderHeight } from "@react-navigation/elements"
+import { ScrollView, View } from "react-native"
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
@@ -35,7 +34,6 @@ export function SurveyContextScreen({
   onSwitchToV32,
 }: SurveyContextScreenProps) {
   const theme = useBrandTheme()
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const contentStyle = useSubPageContentStyle(styles.subContent)
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
@@ -61,7 +59,8 @@ export function SurveyContextScreen({
 
   return (
     <ScrollView
-      style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
+      // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
+      style={styles.scroll}
       contentContainerStyle={contentStyle}
     >
       <PageTitle>{fr.navigation.headers.surveyContext}</PageTitle>

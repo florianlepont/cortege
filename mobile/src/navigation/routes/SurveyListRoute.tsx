@@ -8,6 +8,7 @@ import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { useSurveysStackConfig } from "../stacks/surveys-stack-config"
+import { ScreenFrame } from "../../ui/ScreenFrame"
 import type { SurveyListRouteProps } from "../types"
 
 /**
@@ -43,8 +44,8 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
     if (!nativeHeader) return
     navigation.setOptions({
       // OA-85: the title sits left and the "+" right, on one row shared with Accueil.
+      // D-19: no headerStyle here, the stack gives the transparent halo header.
       headerTitle: "",
-      headerStyle: { backgroundColor: theme.colors.canvas },
       unstable_headerLeftItems: () => titleHeaderItems(fr.navigation.headers.surveys),
       unstable_headerRightItems: () => [
         iconHeaderButton({
@@ -58,16 +59,18 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
   }, [nativeHeader, navigation, onOpenCreateSurvey, theme])
 
   return (
-    <SurveyListScreen
-      surveys={state.surveys}
-      selectedSurveyId={state.selectedSurveyId}
-      surveyDetails={state.surveyDetails}
-      showTitleBar={!nativeHeader}
-      onRefresh={syncActions.handlePullChanges}
-      onDeleteSurvey={actions.confirmDeleteSurvey}
-      onOpenCreateSurvey={onOpenCreateSurvey}
-      onOpenSearch={onOpenSearch}
-      onOpenSurvey={onOpenSurvey}
-    />
+    <ScreenFrame>
+      <SurveyListScreen
+        surveys={state.surveys}
+        selectedSurveyId={state.selectedSurveyId}
+        surveyDetails={state.surveyDetails}
+        showTitleBar={!nativeHeader}
+        onRefresh={syncActions.handlePullChanges}
+        onDeleteSurvey={actions.confirmDeleteSurvey}
+        onOpenCreateSurvey={onOpenCreateSurvey}
+        onOpenSearch={onOpenSearch}
+        onOpenSurvey={onOpenSurvey}
+      />
+    </ScreenFrame>
   )
 })

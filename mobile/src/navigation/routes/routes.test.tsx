@@ -852,6 +852,8 @@ describe("SurveyListRoute", () => {
     const setOptionsCall = navigation.setOptions.mock.calls[0][0]
     // Search is its own tab (OA-52): no header search bar.
     expect(setOptionsCall.headerSearchBarOptions).toBeUndefined()
+    // D-19: no canvas band, the stack's transparent halo header is kept.
+    expect(setOptionsCall.headerStyle).toBeUndefined()
 
     // OA-85: the title sits left, on the same row as the "+" create button.
     expect(setOptionsCall.headerTitle).toBe("")
@@ -1466,5 +1468,70 @@ describe("PublicMapRoute", () => {
     })
 
     expect(mockAddPendingParcelDownload).toHaveBeenCalledWith("parcel-1")
+  })
+})
+
+describe("the halo frame on every page (D-19)", () => {
+  function withSelection(fixture: Fixture): Fixture {
+    return {
+      ...fixture,
+      surveys: {
+        ...fixture.surveys,
+        state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
+      } as unknown as SurveysContextValue,
+    }
+  }
+
+  function hostViews(tree: renderer.ReactTestRenderer, testID: string) {
+    return tree.root.findAll(
+      (node) => (node.type as unknown) === "View" && node.props.testID === testID,
+    )
+  }
+
+  const nav = () => makeNavigation() as never
+  const framedRoutes: [string, () => React.ReactElement][] = [
+    ["surveyList", () => <SurveyListRoute navigation={nav()} route={{} as never} />],
+    ["surveySearch", () => <SurveySearchRoute />],
+    ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
+    ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
+    ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
+    ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
+    [
+      "communitySurvey",
+      () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
+    ],
+  ]
+
+  test.each(framedRoutes)(
+    "%s is drawn in one ScreenFrame: the halo behind, the page below the header",
+    async (name, element) => {
+      const tree = await mount(
+        <Providers fixture={withSelection(makeFixture())}>{element()}</Providers>,
+      )
+      const frames = hostViews(tree, "screen-frame")
+      expect(frames).toHaveLength(1)
+      // useHeaderHeight() is 44 in this suite: the page starts below the header.
+      expect(frames[0].props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining({ paddingTop: 44 })]),
+      )
+      const backdrops = hostViews(tree, "screen-frame-backdrop")
+      expect(backdrops).toHaveLength(1)
+      expect(backdrops[0].props.pointerEvents).toBe("none")
+      // The screen itself is inside the frame, after the halo.
+      expect(props(name)).toBeDefined()
+      const probes = frames[0].findAll(
+        (node) => (node.type as { name?: string }).name === "ScreenProbe",
+      )
+      expect(probes).toHaveLength(1)
+    },
+  )
+
+  test("Accueil keeps the halo it draws itself: its route adds no frame", async () => {
+    const tree = await mount(
+      <Providers fixture={makeFixture()}>
+        <HomeRoute navigation={nav()} route={{} as never} />
+      </Providers>,
+    )
+    expect(hostViews(tree, "screen-frame")).toHaveLength(0)
   })
 })

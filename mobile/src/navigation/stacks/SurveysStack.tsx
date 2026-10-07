@@ -17,7 +17,12 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle, pageColourHeader } from "./stack-options"
+import {
+  backdropHeader,
+  createBaseStackScreenOptions,
+  hiddenNativeTitle,
+  pageColourHeader,
+} from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -74,9 +79,9 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.surveys,
               headerShown: nativeSearchEnabled,
               headerLargeTitle: false,
-              headerTransparent: nativeSearchEnabled ? false : undefined,
-              headerShadowVisible: false,
-              // headerSearchBarOptions are set by SurveyListRoute (it owns the query).
+              // D-19: the halo runs on behind the header; the route's ScreenFrame starts the list
+              // below it. The header items are set by SurveyListRoute.
+              ...backdropHeader,
             }}
             component={SurveyListRoute}
           />
@@ -86,6 +91,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               // OA-94: the page names the survey itself, a "Détail" title says nothing.
               title: "",
               headerLargeTitle: false,
+              ...backdropHeader,
             }}
             listeners={{
               beforeRemove: () => {
@@ -105,6 +111,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.communitySurvey,
               headerLargeTitle: false,
               ...hiddenNativeTitle,
+              ...backdropHeader,
             }}
             component={CommunitySurveyRoute}
           />
@@ -114,12 +121,18 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.surveyContext,
               headerLargeTitle: false,
               ...hiddenNativeTitle,
+              ...backdropHeader,
             }}
             component={SurveyContextRoute}
           />
           <SurveysStack.Screen
             name="surveyScore"
-            options={{ title: headers.surveyScore, headerLargeTitle: false, ...hiddenNativeTitle }}
+            options={{
+              title: headers.surveyScore,
+              headerLargeTitle: false,
+              ...hiddenNativeTitle,
+              ...backdropHeader,
+            }}
             component={SurveyScoreRoute}
           />
           <SurveysStack.Screen
@@ -128,6 +141,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               title: headers.surveyHistory,
               headerLargeTitle: false,
               ...hiddenNativeTitle,
+              ...backdropHeader,
             }}
             component={SurveyHistoryRoute}
           />

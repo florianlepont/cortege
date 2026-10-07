@@ -17,7 +17,7 @@ import {
 } from "./survey-list/list-items"
 import { resolveRowScore } from "./survey-list/row-score"
 import { SurveyRow } from "./survey-list/SurveyRow"
-import { createListStyles } from "./survey-list/styles"
+import { listStyles as styles } from "./survey-list/styles"
 import type { SurveyListScreenProps } from "./survey-list/types"
 
 // D-03: rows mounted on the first render and per batch.
@@ -39,13 +39,12 @@ export function SurveyListScreen({
   onOpenSurvey,
 }: SurveyListScreenProps) {
   const theme = useBrandTheme()
-  const styles = useMemo(() => createListStyles(theme), [theme])
   const canAnimateRow = useListEntrance()
   const [refreshing, setRefreshing] = useState(false)
   const insets = useSafeAreaInsets()
-  // The iOS header of this screen is opaque (SurveysStack), so the list already starts below it:
-  // adding its height again left a ~100pt gap (OA-99). Without a native header (Android, JS tabs)
-  // the screen draws its own title bar under the status bar.
+  // D-19: the route's ScreenFrame already starts the list below the native iOS header: adding its
+  // height again left a ~100pt gap (OA-99). Without a native header (Android, JS tabs) the screen
+  // draws its own title bar under the status bar.
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
 
   const { items, toFinishCount } = useMemo(() => buildListItems(surveys), [surveys])
@@ -104,7 +103,7 @@ export function SurveyListScreen({
         ) : null}
       </View>
     ),
-    [onOpenCreateSurvey, onOpenSearch, showTitleBar, styles, surveys.length, toFinishCount],
+    [onOpenCreateSurvey, onOpenSearch, showTitleBar, surveys.length, toFinishCount],
   )
 
   const listFooter = useMemo(

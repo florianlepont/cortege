@@ -6,7 +6,12 @@ import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { PublicMapRoute } from "../routes/PublicMapRoute"
 import { styles } from "../styles"
 import type { PublicMapStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle, pageColourHeader } from "./stack-options"
+import {
+  backdropHeader,
+  createBaseStackScreenOptions,
+  hiddenNativeTitle,
+  pageColourHeader,
+} from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -35,6 +40,7 @@ export function PublicMapTabNavigator() {
             headerShown: true,
             headerLargeTitle: false,
             ...hiddenNativeTitle,
+            ...backdropHeader,
           }}
           component={CommunitySurveyRoute}
         />

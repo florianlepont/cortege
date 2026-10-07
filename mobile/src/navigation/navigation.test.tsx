@@ -479,7 +479,7 @@ describe("stack options and listeners", () => {
     expect((mockScreens.surveyForm.options as Options).headerShown).toBe(false)
   })
 
-  test("the JS surveys stack shows its own header; the native one shows the search header", async () => {
+  test("the JS surveys stack shows its own header; the native one shows the halo header", async () => {
     await mount(<AppNavigation />)
     const jsStack = mockNavigators.stack.find(
       (props) => (props.screenOptions as Options).headerTitleAlign === "left",
@@ -494,10 +494,40 @@ describe("stack options and listeners", () => {
       expect.objectContaining({
         title: fr.navigation.headers.surveys,
         headerShown: true,
-        headerTransparent: false,
+        // D-19: transparent, the halo runs on behind the title and the "+" (no canvas band).
+        headerTransparent: true,
+        headerStyle: { backgroundColor: "transparent" },
       }),
     )
   })
+
+  test.each(["ios", "android"] as const)(
+    "the survey pages have the transparent halo header on %s (D-19)",
+    async (os) => {
+      mockPlatform.OS = os
+      await mount(<AppNavigation />)
+      const surveyPages = [
+        "surveysHome",
+        "surveyDetail",
+        "communitySurvey",
+        "surveyContext",
+        "surveyScore",
+        "surveyHistory",
+      ]
+      for (const name of surveyPages) {
+        expect(mockScreens[name].options).toEqual(
+          expect.objectContaining({
+            headerTransparent: true,
+            headerBlurEffect: "none",
+            headerShadowVisible: false,
+            headerStyle: { backgroundColor: "transparent" },
+          }),
+        )
+      }
+      // The search page draws its own top block under the status bar: no native header.
+      expect((mockScreens.surveySearch.options as Options).headerShown).toBe(false)
+    },
+  )
 
   test("the parcel map is one full-screen map: transparent header on iOS, dark opaque on Android", async () => {
     await mount(<AppNavigation />)

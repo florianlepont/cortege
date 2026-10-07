@@ -17,10 +17,13 @@ describe("search page cancel label", () => {
     "is the accent text token and meets AA on the %s canvas",
     (scheme) => {
       const theme = buildTheme("automatic", scheme, () => {})
-      const { cancel, container } = createSearchStyles(theme)
+      const { cancel, container, top } = createSearchStyles(theme)
 
       expect(cancel.color).toBe(theme.visual.accentText)
-      expect(container.backgroundColor).toBe(theme.colors.canvas)
+      // D-19: the page and its top block draw no colour: the route's ScreenFrame paints the canvas
+      // (and the halo, whose cores are checked in visual-tokens.test.ts) behind them.
+      expect("backgroundColor" in container).toBe(false)
+      expect("backgroundColor" in top).toBe(false)
       expect(contrastRatio(String(cancel.color), theme.colors.canvas)).toBeGreaterThanOrEqual(4.5)
     },
   )

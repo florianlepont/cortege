@@ -5,6 +5,7 @@ import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyScoreRouteProps } from "../types"
+import { ScreenFrame } from "../../ui/ScreenFrame"
 
 /** "Score IBP": the total, the sub-scores and the factors of the selected survey. */
 export const SurveyScoreRoute = memo(function SurveyScoreRoute({
@@ -24,13 +25,15 @@ export const SurveyScoreRoute = memo(function SurveyScoreRoute({
   if (!state.selectedSurvey) return null
 
   return (
-    <SurveyScoreScreen
-      apiUrl={session.apiUrl}
-      accessToken={accessToken}
-      selectedSurvey={state.selectedSurvey}
-      surveyDetails={state.surveyDetails}
-      detailsLoadingSurveyId={state.detailsLoadingSurveyId}
-      onOpenFactor={onOpenFactor}
-    />
+    <ScreenFrame>
+      <SurveyScoreScreen
+        apiUrl={session.apiUrl}
+        accessToken={accessToken}
+        selectedSurvey={state.selectedSurvey}
+        surveyDetails={state.surveyDetails}
+        detailsLoadingSurveyId={state.detailsLoadingSurveyId}
+        onOpenFactor={onOpenFactor}
+      />
+    </ScreenFrame>
   )
 })

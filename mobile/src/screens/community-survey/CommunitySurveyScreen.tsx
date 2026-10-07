@@ -1,7 +1,6 @@
 import { useMemo } from "react"
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import { Image as ExpoImage } from "expo-image"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { brandTypography } from "../../app/brand-tokens"
 import { formatDay } from "../../app/formatters"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
@@ -39,7 +38,6 @@ export function CommunitySurveyScreen({
   onOpenSurvey,
 }: CommunitySurveyScreenProps) {
   const theme = useBrandTheme()
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const contentStyle = useSubPageContentStyle(styles.subContent)
   const own = useMemo(() => createOwnStyles(theme), [theme])
@@ -72,7 +70,8 @@ export function CommunitySurveyScreen({
     [detail],
   )
 
-  const scrollStyle = [styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]
+  // The header is transparent: the route's ScreenFrame starts the page below it (D-19).
+  const scrollStyle = styles.scroll
 
   if (status === "loading" || !detail) {
     return (

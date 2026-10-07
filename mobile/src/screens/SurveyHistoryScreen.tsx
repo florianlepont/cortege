@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react"
-import { Platform, RefreshControl, ScrollView } from "react-native"
-import { useHeaderHeight } from "@react-navigation/elements"
+import { RefreshControl, ScrollView } from "react-native"
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { PageTitle } from "../ui/PageTitle"
@@ -26,7 +25,6 @@ export function SurveyHistoryScreen({
   onLoadSurveyEvents,
 }: SurveyHistoryScreenProps) {
   const theme = useBrandTheme()
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const contentStyle = useSubPageContentStyle(styles.subContent)
   const { detail, parcelIds } = useSurveyDetailData(
@@ -44,7 +42,8 @@ export function SurveyHistoryScreen({
 
   return (
     <ScrollView
-      style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
+      // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
+      style={styles.scroll}
       contentContainerStyle={contentStyle}
       refreshControl={
         <RefreshControl

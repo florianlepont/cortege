@@ -10,15 +10,15 @@ import type { BrandTheme } from "../../app/theme"
 
 export function createSearchStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    // D-19: no background on the page or its top block, the route's ScreenFrame is the page
+    // (canvas and halo), so the halo runs on behind the field.
     container: {
       flex: 1,
-      backgroundColor: theme.colors.canvas,
     },
     top: {
       paddingHorizontal: brandSpacing4.md,
       paddingBottom: brandSpacing4.smd,
       gap: brandSpacing4.smd,
-      backgroundColor: theme.colors.canvas,
     },
     fieldRow: {
       flexDirection: "row",

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Alert, Platform, ScrollView, View } from "react-native"
+import { Alert, ScrollView, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { shouldShowDevTools } from "../app/dev-tools"
 import { exportAndShareSurveyPdf, type SurveyExportData } from "../app/survey-pdf-export"
@@ -65,8 +64,6 @@ export function SurveyDetailScreen({
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
   const theme = useBrandTheme()
-  // The iOS header is transparent: the scroll view starts below it (OA-20).
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName } = data
@@ -173,7 +170,8 @@ export function SurveyDetailScreen({
     <View style={styles.scroll}>
       <ScrollView
         ref={scrollRef}
-        style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
+        // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
+        style={styles.scroll}
         contentContainerStyle={contentStyle}
       >
         <SummaryHeader
