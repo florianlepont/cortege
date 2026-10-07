@@ -84,8 +84,8 @@ export type BrandVisual = {
     flatOff: string
     inkOff: string
     hairlineOff: string
-    /** Secondary (system `glass`) button: label, fallback fill and outline, native edge. */
-    secondary: { ink: string; flat: string; hairline: string; edge: string }
+    /** Secondary (system `glass`) button: label, fallback fill and outline. */
+    secondary: { ink: string; flat: string; hairline: string }
   }
   tab: {
     activeTint: string
@@ -204,7 +204,6 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
         ink: colors.textPrimary,
         flat: glassCtaSecondary[scheme].flat,
         hairline: glassCtaSecondary[scheme].hairline,
-        edge: glassCtaSecondary[scheme].edge,
       },
     },
     tab: {

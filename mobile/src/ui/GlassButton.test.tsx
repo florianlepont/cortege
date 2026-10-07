@@ -192,6 +192,13 @@ describe("GlassButton secondary, flat fallback", () => {
     expect(style).not.toHaveProperty("experimental_backgroundImage")
     expect(style.backgroundColor).not.toBe(cta.flat)
     expect(root.findAll((n) => (n.type as unknown) === "Host")).toHaveLength(0)
+    // 12.2-17: the outline is the border of the button itself (same box, same radius), never a
+    // separate overlay that could take another size.
+    const bordered = root.findAll(
+      (n) => typeof n.type === "string" && "borderWidth" in flatten(n.props.style),
+    )
+    expect(bordered).toHaveLength(1)
+    expect(style.borderCurve).toBeUndefined()
   })
 
   test("the label and the icon use the primary text colour", () => {

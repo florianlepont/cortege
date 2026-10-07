@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
 import { impactAsync as impactAsyncReal } from "expo-haptics"
-import { brandInteraction, brandRadius } from "../app/brand-tokens"
+import { brandInteraction } from "../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../app/theme"
 
 // iOS 26 with a binary that carries `@expo/ui`: the native SwiftUI glass button (D-28). Metro would
@@ -313,20 +313,19 @@ describe("GlassButton secondary on iOS 26: the neutral system glass button", () 
     }
   })
 
-  test("a hairline overlay sits over the glass, lets touches through and adds no layout", () => {
+  test("nothing is drawn over the system glass: no outline, no wrapper (12.2-17)", () => {
+    // Owner, iPhone: the overlaid hairline showed as a green outline of another size than the
+    // system capsule. The system glass button is the whole visual.
     const { root, host } = render({ variant: "secondary", style: { width: "100%" } })
-    const overlays = byType(root, "View").filter((n) => n.props.pointerEvents === "none")
-    expect(overlays).toHaveLength(1)
-    expect(flatten(overlays[0].props.style)).toMatchObject({
-      borderWidth: 1,
-      borderColor: cta.secondary.edge,
-      borderRadius: brandRadius.pill,
+    expect(byType(root, "View")).toHaveLength(0)
+    expect(root.findAll((n) => "borderWidth" in flatten(n.props.style))).toHaveLength(0)
+    // The caller's style goes to the host itself, which keeps stretching and its minimum height.
+    expect(flatten(host.props.style)).toMatchObject({
+      width: "100%",
+      alignSelf: "stretch",
+      minHeight: 50,
     })
-    // The caller's style moves to the wrapper; the host keeps stretching and its minimum height.
-    const wrapper = byType(root, "View").find((n) => n.findAll((c) => c === host).length > 0)
-    expect(flatten(wrapper?.props.style)).toMatchObject({ width: "100%", alignSelf: "stretch" })
-    expect(flatten(host.props.style)).toMatchObject({ alignSelf: "stretch", minHeight: 50 })
-    // The primary has no overlay.
+    expect(host.props).not.toHaveProperty("edge")
     expect(byType(render().root, "View")).toHaveLength(0)
   })
 

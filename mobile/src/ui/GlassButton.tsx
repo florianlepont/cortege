@@ -86,7 +86,8 @@ const USE_NATIVE_GLASS =
  * the specular highlight and the press response. On Android and older iOS it is a flat translucent
  * forest fill with a crisp hairline, a marked top rim, a faint white reflection over its top half
  * and a soft shadow, and no blur (D-12). The `secondary` variant is the neutral companion: the
- * system `glass` style with a hairline on iOS 26, an outlined translucent pill elsewhere. Either
+ * bare system `glass` style on iOS 26 (no outline of ours, 12.2-17), an outlined translucent pill
+ * elsewhere, its outline the border of the button itself. Either
  * way the button replaces the opaque bar behind a primary `AppButton`, and what scrolls behind the
  * fallback stays visible through it.
  *
@@ -130,7 +131,6 @@ export function GlassButton({
         minHeight={geometry.minHeight}
         variant={variant}
         tint={secondary ? undefined : cta.tint}
-        edge={secondary ? cta.secondary.edge : undefined}
         ink={secondary ? cta.secondary.ink : cta.ink}
         fontFamily={typography.fontFamily}
         fontSize={typography.fontSize}

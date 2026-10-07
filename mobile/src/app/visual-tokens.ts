@@ -189,18 +189,17 @@ export const glassCtaEdges = {
 
 // Secondary glass button (the system `glass` style natively, an outlined translucent pill in the
 // fallback), for the second action next to a forest primary: neutral, no tint, the label in the
-// app's primary text colour. `flat` and `hairline` draw the fallback; `edge` is the hairline laid
-// over the native glass, which on a flat cream sheet has almost no contrast of its own.
+// app's primary text colour. `flat` and `hairline` draw the fallback only (the fill and the border
+// of the button itself). Nothing is drawn over the native glass (12.2-17: an overlaid hairline
+// showed as a green outline of another size than the system capsule).
 export const glassCtaSecondary = {
   light: {
     flat: "rgba(255, 255, 255, 0.5)",
     hairline: "rgba(51, 78, 43, 0.38)",
-    edge: "rgba(51, 78, 43, 0.28)",
   },
   dark: {
     flat: "rgba(255, 255, 255, 0.08)",
     hairline: "rgba(255, 255, 255, 0.3)",
-    edge: "rgba(255, 255, 255, 0.2)",
   },
 } as const
 

@@ -20,13 +20,11 @@ export type NativeGlassButtonProps = {
   minHeight: number
   /**
    * `primary` is the forest-tinted `glassProminent` button, `secondary` the neutral system `glass`
-   * button (no tint) with a hairline `edge` drawn over it.
+   * button (no tint, nothing drawn over it).
    */
   variant: "primary" | "secondary"
   /** Forest the system glass is tinted with (`glassProminent`); absent for `secondary`. */
   tint?: string
-  /** Hairline laid over the secondary glass so it reads on a flat background. */
-  edge?: string
   /** Label colour on the tint or the glass (AA 4.5:1, `visual-tokens.test.ts`). */
   ink: string
   fontFamily: string

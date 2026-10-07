@@ -1,4 +1,4 @@
-import { StyleSheet, View } from "react-native"
+import { StyleSheet } from "react-native"
 import { requireOptionalNativeModule } from "expo"
 import { Button, HStack, Host, Image, ProgressView, Text } from "@expo/ui/swift-ui"
 import {
@@ -12,7 +12,6 @@ import {
   frame,
   tint,
 } from "@expo/ui/swift-ui/modifiers"
-import { brandRadius } from "../app/brand-tokens"
 import type { NativeGlassButtonProps } from "./NativeGlassButton.types"
 
 /**
@@ -29,10 +28,10 @@ const FILL = 10000
 /**
  * The real iOS 26 glass button (D-28): a SwiftUI `Button` with `buttonStyle("glassProminent")`,
  * tinted with the charter forest, inside a `Host`. The secondary variant is the neutral system
- * `glass` style, untinted, with a token hairline laid over it (a glass capsule on a flat cream
- * sheet has hardly any edge of its own). The system draws the capsule, the glass
- * material, the specular highlight and the press response; we only give it the tint, the label row
- * and the size. Rendered by `GlassButton` only on iOS 26 and later (`isLiquidGlassAvailable()`);
+ * `glass` style, untinted, and nothing else: the system glass button is the whole visual. (12.2-17:
+ * a 1 pt hairline laid over it showed on the iPhone as a green outline of another size than the
+ * system capsule, so it is gone.) The system draws the capsule, the glass material, the specular
+ * highlight and the press response; we only give it the tint, the label row and the size. Rendered by `GlassButton` only on iOS 26 and later (`isLiquidGlassAvailable()`);
  * on older iOS the same style silently falls back to the automatic button style, which is why
  * `GlassButton` keeps the flat fallback there instead.
  *
@@ -48,7 +47,6 @@ export function NativeGlassButton({
   minHeight,
   variant,
   tint: tintColor,
-  edge,
   ink,
   fontFamily,
   fontSize,
@@ -62,11 +60,11 @@ export function NativeGlassButton({
 }: NativeGlassButtonProps) {
   const inkModifiers = isDisabled ? [] : [foregroundStyle(ink)]
   const secondary = variant === "secondary"
-  const host = (
+  return (
     <Host
       matchContents={{ vertical: true }}
       colorScheme={colorScheme}
-      style={[styles.host, { minHeight }, secondary ? null : style]}
+      style={[styles.host, { minHeight }, style]}
     >
       <Button
         onPress={onPress}
@@ -101,26 +99,10 @@ export function NativeGlassButton({
       </Button>
     </Host>
   )
-  if (!secondary) return host
-  // The hairline is an overlay that lets touches through, so it adds nothing to the layout.
-  return (
-    <View style={[styles.wrapper, style]}>
-      {host}
-      <View pointerEvents="none" style={[styles.edge, { borderColor: edge }]} />
-    </View>
-  )
 }
 
 const styles = StyleSheet.create({
   host: {
     alignSelf: "stretch",
-  },
-  wrapper: {
-    alignSelf: "stretch",
-  },
-  edge: {
-    ...StyleSheet.absoluteFill,
-    borderRadius: brandRadius.pill,
-    borderWidth: 1,
   },
 })

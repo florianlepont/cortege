@@ -456,11 +456,12 @@ describe.each(schemes)("secondary glass button, %s scheme", (scheme) => {
     }
   })
 
-  test("the outline and the native edge are visible hairlines, translucent, not the forest button", () => {
-    for (const edge of [secondary.hairline, secondary.edge]) {
-      expect(edge).toMatch(/^rgba\(\d+, \d+, \d+, 0\.\d+\)$/)
-      expect(contrastRatio(compositeOver(edge, colors.canvas), colors.canvas)).toBeGreaterThan(1.2)
-    }
+  test("the fallback outline is a visible hairline, translucent, not the forest button", () => {
+    const edge = secondary.hairline
+    expect(edge).toMatch(/^rgba\(\d+, \d+, \d+, 0\.\d+\)$/)
+    expect(contrastRatio(compositeOver(edge, colors.canvas), colors.canvas)).toBeGreaterThan(1.2)
+    // 12.2-17: no outline token for the native glass any more.
+    expect(Object.keys(secondary).sort()).toEqual(["flat", "hairline", "ink"])
     const alpha = Number(/, (\d(\.\d+)?)\)$/.exec(secondary.flat)?.[1])
     expect(alpha).toBeGreaterThan(0)
     expect(alpha).toBeLessThan(1)
