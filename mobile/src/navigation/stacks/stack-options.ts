@@ -1,19 +1,34 @@
 import { Platform } from "react-native"
 import { BrandTheme } from "../../app/theme"
 
-/** Screen options shared by every stack navigator. Call with the caller's `useBrandTheme()` value. */
+/**
+ * D-19 (first on Accueil in 12.2-10): the header of a screen that shows the backdrop halo. It is
+ * transparent, with no blur, tint or shadow, on every platform, so the halo runs on behind it and
+ * there is no band of another colour at the top. Its pair is `ScreenFrame` (`ui/ScreenFrame.tsx`),
+ * which the route wraps around its screen: the frame draws the halo and pushes the content below
+ * the header (`useHeaderHeight()`), so nothing slides under the title (OA-94).
+ */
+export const backdropHeader = {
+  headerTransparent: true,
+  headerBlurEffect: "none" as const,
+  headerShadowVisible: false,
+  headerStyle: { backgroundColor: "transparent" },
+}
+
+/**
+ * Screen options shared by every stack navigator. Call with the caller's `useBrandTheme()` value.
+ * The header is `backdropHeader` by default (D-19), so a new screen with a header needs a
+ * `ScreenFrame` in its route; a screen that does not draw the halo yet opts out with
+ * `pageColourHeader`.
+ */
 export function createBaseStackScreenOptions(theme: BrandTheme) {
   return {
     headerBackButtonDisplayMode: "minimal" as const,
     contentStyle: { backgroundColor: theme.colors.canvas },
+    ...backdropHeader,
     ...(Platform.OS === "ios"
-      ? {
-          headerTransparent: true,
-          headerBlurEffect: "systemMaterial" as const,
-        }
+      ? {}
       : {
-          headerStyle: { backgroundColor: theme.colors.canvas },
-          headerShadowVisible: false,
           headerTintColor: theme.colors.forest,
           headerTitleStyle: {
             color: theme.colors.forest,
@@ -25,8 +40,11 @@ export function createBaseStackScreenOptions(theme: BrandTheme) {
 }
 
 /**
- * OA-94, OA-125: on iOS the header takes the page colour (no blur tint), so it does not read as a
- * band of another colour above the content. Compte, Paramètres and the other pushed pages share it.
+ * The opaque page-colour header of a screen that does not draw the backdrop halo (OA-94, OA-125):
+ * the header takes the page colour, so it does not read as a band of another colour above the
+ * content, and the content scrolling under it is hidden. On iOS the header stays laid out over the
+ * screen (the screen insets itself by `useHeaderHeight()`); on Android it is in the layout flow.
+ * Left for the survey form screens until their plans give them the halo (12.2-15, 12.2-16).
  */
 export function pageColourHeader(theme: BrandTheme) {
   return Platform.OS === "ios"
@@ -34,21 +52,11 @@ export function pageColourHeader(theme: BrandTheme) {
         headerBlurEffect: "none" as const,
         headerStyle: { backgroundColor: theme.colors.canvas },
       }
-    : {}
-}
-
-/**
- * 12.2-10: the native iOS header of a screen that draws the backdrop halo (`ScreenBackdrop`, Accueil
- * only). It is transparent, with no blur, tint or shadow, so the halo runs on behind it and there is
- * no seam where an opaque canvas band used to cut it (owner check on the iPhone). The screen insets
- * its content by `useHeaderHeight()`, so nothing scrolls under the title. Pages without a halo keep
- * `pageColourHeader`, where a transparent header would let their content slide under the title.
- */
-export const backdropHeader = {
-  headerTransparent: true,
-  headerBlurEffect: "none" as const,
-  headerShadowVisible: false,
-  headerStyle: { backgroundColor: "transparent" },
+    : {
+        headerTransparent: false,
+        headerShadowVisible: false,
+        headerStyle: { backgroundColor: theme.colors.canvas },
+      }
 }
 
 /**

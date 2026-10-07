@@ -260,6 +260,26 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
     expect(contrastRatio(visual.accentText, colors.canvas)).toBeGreaterThanOrEqual(4.5)
   })
 
+  test("page text stays readable on each backdrop halo core over the canvas (D-19)", () => {
+    // Every framed page draws its title and rows over the backdrop (ScreenFrame). Each of the two
+    // radial layers starts at full strength at its own corner; text is checked on each core.
+    const cores = splitTopLevel(visual.backdrop).map((layer) => {
+      const first = /rgba\([^)]*\)/.exec(layer)
+      if (!first) throw new Error(`No colour in ${layer}`)
+      return compositeOver(first[0], colors.canvas)
+    })
+    expect(cores).toHaveLength(2)
+    const texts = [
+      colors.textPrimary,
+      colors.textSecondary,
+      theme.semanticColors.textStrong,
+      visual.accentText,
+    ]
+    for (const core of cores) {
+      for (const text of texts) expect(contrastRatio(text, core)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
   test("row text stays readable under the green press wave at its full strength (D-21)", () => {
     const wave = compositeOver(visual.pressWave, colors.panel)
     expect(contrastRatio(colors.textPrimary, wave)).toBeGreaterThanOrEqual(4.5)

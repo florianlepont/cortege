@@ -564,7 +564,47 @@ describe("stack options and listeners", () => {
           createBaseStackScreenOptions: (theme: unknown) => Options
         }
         const options = createBaseStackScreenOptions(defaultTheme)
-        expect("headerTransparent" in options).toBe(os === "ios")
+        expect(options.contentStyle).toEqual({ backgroundColor: defaultTheme.colors.canvas })
+        // Android draws its own title colour; iOS keeps the system's.
+        expect("headerTintColor" in options).toBe(os === "android")
+      })
+    }
+  })
+
+  test("every stack screen has the transparent halo header by default, on both platforms (D-19)", () => {
+    for (const os of ["ios", "android"] as const) {
+      mockPlatform.OS = os
+      jest.isolateModules(() => {
+        const { createBaseStackScreenOptions, backdropHeader } = jest.requireActual(
+          "./stacks/stack-options",
+        ) as {
+          createBaseStackScreenOptions: (theme: unknown) => Options
+          backdropHeader: Options
+        }
+        expect(backdropHeader).toEqual({
+          headerTransparent: true,
+          headerBlurEffect: "none",
+          headerShadowVisible: false,
+          headerStyle: { backgroundColor: "transparent" },
+        })
+        expect(createBaseStackScreenOptions(defaultTheme)).toEqual(
+          expect.objectContaining(backdropHeader),
+        )
+      })
+    }
+  })
+
+  test("the page-colour opt-out is an opaque canvas header on both platforms", () => {
+    for (const os of ["ios", "android"] as const) {
+      mockPlatform.OS = os
+      jest.isolateModules(() => {
+        const { pageColourHeader } = jest.requireActual("./stacks/stack-options") as {
+          pageColourHeader: (theme: unknown) => Options
+        }
+        const options = pageColourHeader(defaultTheme)
+        expect(options.headerStyle).toEqual({ backgroundColor: defaultTheme.colors.canvas })
+        // iOS keeps the header over the screen (the screen insets itself); Android lays it out.
+        expect(options.headerTransparent).toBe(os === "ios" ? undefined : false)
       })
     }
   })
