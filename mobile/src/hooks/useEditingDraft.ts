@@ -89,6 +89,8 @@ export function useEditingDraft({
   const autosaveInFlightRef = useRef(false)
   const autosaveSignatureRef = useRef("")
   const pendingAutosaveRef = useRef<PendingAutosaveRequest | null>(null)
+  // Settles when the save now writing has finished (null when none is writing): a flush waits on it.
+  const autosaveWriteRef = useRef<Promise<void> | null>(null)
   const editingSurveyIdRef = useRef(editingSurveyId)
   editingSurveyIdRef.current = editingSurveyId
   const createDraftBootstrappingRef = useRef(false)
@@ -110,6 +112,10 @@ export function useEditingDraft({
       return
     }
     autosaveInFlightRef.current = true
+    let settleWrite: () => void = () => {}
+    autosaveWriteRef.current = new Promise<void>((resolve) => {
+      settleWrite = resolve
+    })
     setAutosaveStatus((current) => ({ ...current, state: "saving" }))
 
     try {
@@ -127,6 +133,8 @@ export function useEditingDraft({
       setAutosaveStatus((current) => ({ ...current, state: "error" }))
     } finally {
       autosaveInFlightRef.current = false
+      autosaveWriteRef.current = null
+      settleWrite()
       const pending = pendingAutosaveRef.current
       pendingAutosaveRef.current = null
       if (
@@ -324,11 +332,40 @@ export function useEditingDraft({
     }
   }
 
+  /**
+   * D-26: writes the form's edits now instead of after the 900 ms autosave delay, so a finish
+   * started from the factor pager reads the draft the surveyor sees. A save already writing ends
+   * first. Editing goes on (unlike `handleSaveSurveyEdits`, which also leaves the edit mode).
+   * Resolves true when the stored draft matches the form, false when the write failed (the
+   * autosave failure message is then the status, as for any autosave).
+   */
+  const handleFlushDraft = async (): Promise<boolean> => {
+    const surveyId = editingSurveyIdRef.current
+    if (!surveyId) return true
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current)
+      autosaveTimerRef.current = null
+    }
+    pendingAutosaveRef.current = null
+    const input = surveyForm.draftInput
+    const signature = JSON.stringify(input)
+    if (autosaveWriteRef.current) await autosaveWriteRef.current
+    if (autosaveSignatureRef.current === signature) return true
+    await runAutosaveRef.current?.({
+      surveyId,
+      input,
+      visibility: editingSurveyVisibility,
+      signature,
+    })
+    return autosaveSignatureRef.current === signature
+  }
+
   return {
     handleOpenCreateSurvey,
     handleCreateDraft,
     handleStartEditSurvey,
     handleSaveSurveyEdits,
+    handleFlushDraft,
     autosaveStatus,
   }
 }

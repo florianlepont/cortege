@@ -331,6 +331,7 @@ function useAppController() {
     resetSurveyForm: surveyForm.resetSurveyForm,
     buildDraftInput: surveyForm.buildDraftInput,
     saveSurveyEdits: editing.handleSaveSurveyEdits,
+    flushDraft: editing.handleFlushDraft,
     createDraft: editing.handleCreateDraft,
     captureGpsLocation: gpsCapture.handleCaptureGpsLocation,
     markSubmitAttempted: surveyForm.markSubmitAttempted,

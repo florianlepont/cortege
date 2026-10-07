@@ -43,6 +43,8 @@ export type SurveyFormActions = {
   resetSurveyForm: SurveyForm["resetSurveyForm"]
   buildDraftInput: SurveyForm["buildDraftInput"]
   saveSurveyEdits: () => Promise<boolean>
+  /** D-26: writes the pending form edits now and keeps editing; false when the write failed. */
+  flushDraft: () => Promise<boolean>
   createDraft: () => Promise<boolean>
   captureGpsLocation: (options?: { silent?: boolean }) => Promise<GpsCaptureResult | null>
   markSubmitAttempted: SurveyForm["markSubmitAttempted"]
