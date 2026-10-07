@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useRef } from "react"
 import { Alert } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import { evaluateSubmitReadinessFromDraft } from "../../app/ibp-scoring"
@@ -181,7 +181,7 @@ export function useSurveySyncSurveyOperations({
     [maybeAutoSync, refreshLocalAttachments, setStatus],
   )
 
-  const handleSubmitSurvey = useCallback(
+  const finishSurvey = useCallback(
     async (surveyId: string): Promise<void> => {
       const name = surveyName(surveys.find((survey) => survey.id === surveyId))
       const blockReason = getSubmitBlockReason(surveyId, surveys)
@@ -319,6 +319,22 @@ export function useSurveySyncSurveyOperations({
       syncAllowed,
       withAuthRetry,
     ],
+  )
+
+  // One finish at a time per survey: a second tap during the sync round or the submit call is
+  // ignored, so the server never gets two submits for the same survey from this phone.
+  const finishingSurveyIds = useRef(new Set<string>())
+  const handleSubmitSurvey = useCallback(
+    async (surveyId: string): Promise<void> => {
+      if (finishingSurveyIds.current.has(surveyId)) return
+      finishingSurveyIds.current.add(surveyId)
+      try {
+        await finishSurvey(surveyId)
+      } finally {
+        finishingSurveyIds.current.delete(surveyId)
+      }
+    },
+    [finishSurvey],
   )
 
   const handleRetrySurvey = useCallback(

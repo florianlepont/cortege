@@ -567,6 +567,34 @@ describe("useSurveySyncSurveyOperations", () => {
       expect(setStatus).toHaveBeenCalledWith(text.submitLoginRequired())
     })
 
+    test("a second tap during the finish is ignored: one sync round, one submit", async () => {
+      readyToFinish()
+      let releaseSync: (value: { synced: number; failed: number }) => void = () => undefined
+      mockSyncPending.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            releaseSync = resolve
+          }),
+      )
+      mockListLocalSurveys
+        .mockResolvedValueOnce(localRow("pending"))
+        .mockResolvedValueOnce(localRow("synced"))
+      const { handleSubmitSurvey } = await buildHook()
+      const first = handleSubmitSurvey("survey-1")
+      const second = handleSubmitSurvey("survey-1")
+      await second
+      await new Promise((resolve) => setImmediate(resolve))
+      releaseSync({ synced: 1, failed: 0 })
+      await first
+      expect(mockSyncPending).toHaveBeenCalledTimes(1)
+      expect(mockSubmitSurvey).toHaveBeenCalledTimes(1)
+
+      // Once settled, the survey can be finished again (for example after a failure).
+      mockListLocalSurveys.mockResolvedValue(localRow("synced"))
+      await handleSubmitSurvey("survey-1")
+      expect(mockSubmitSurvey).toHaveBeenCalledTimes(2)
+    })
+
     test("a 422 after the round keeps today's handling", async () => {
       readyToFinish()
       mockListLocalSurveys
