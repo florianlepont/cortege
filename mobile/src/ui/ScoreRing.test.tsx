@@ -43,6 +43,7 @@ import * as reanimated from "../../test/react-native-reanimated.mock"
 import { brandTypography } from "../app/brand-tokens"
 import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
+import { Circle } from "react-native-svg"
 import { ScreenCoverContext } from "./screen-cover-context"
 import { resetAnimatedRingKeys, ringGeometry, ScoreRing, shouldAnimateRing } from "./ScoreRing"
 
@@ -281,5 +282,68 @@ describe("ScoreRing motion", () => {
     emit("focus")
     expect(withDelaySpy).toHaveBeenCalledTimes(1)
     act(() => tree!.unmount())
+  })
+})
+
+describe("ScoreRing reused by its row when the value arrives after the mount (batch 2 device fix)", () => {
+  // The Jest mock of useSharedValue returns a new object on every render; a real shared value is
+  // created once per component, which is what made the arc stay at the ratio of the first mount.
+  const sharedValueSpy = jest.spyOn(reanimated, "useSharedValue")
+
+  beforeEach(() => {
+    sharedValueSpy.mockClear()
+    sharedValueSpy.mockImplementation(<T,>(initial: T) => React.useRef({ value: initial }).current)
+  })
+
+  afterEach(() => {
+    sharedValueSpy.mockReset()
+  })
+
+  function mount(props: Partial<Props>) {
+    let tree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<ScoreRing score={null} {...props} />)
+    })
+    return {
+      update: (next: Partial<Props>) =>
+        act(() => tree!.update(<ScoreRing score={null} {...next} />)),
+      /** The one shared value of the ring (created once, like a real one). */
+      progress: () => (sharedValueSpy.mock.results[0].value as { value: number }).value,
+      /** Keys of the element wrappers drawing the circles, in order. */
+      circleKeys: () =>
+        tree!.root
+          .findAllByType(Circle as never)
+          .map(
+            (n) =>
+              (n as unknown as { _currentFiber: () => { key: string | null } })._currentFiber().key,
+          ),
+    }
+  }
+
+  test("a score that arrives later draws the arc at its ratio", () => {
+    const view = mount({ score: null })
+    expect(view.progress()).toBe(0)
+    view.update({ score: 25, animationKey: "late:25" })
+    expect(view.progress()).toBeCloseTo(0.5)
+  })
+
+  test("a completion that changes moves the draft arc", () => {
+    const view = mount({ score: null, completion: 0.3 })
+    expect(view.progress()).toBeCloseTo(0.3)
+    view.update({ score: null, completion: 0.8 })
+    expect(view.progress()).toBeCloseTo(0.8)
+  })
+
+  test("the dashed track and the plain track are different elements, so the dash does not stay", () => {
+    const view = mount({ score: null })
+    expect(view.circleKeys()).toEqual(["dashed"])
+    view.update({ score: 25 })
+    expect(view.circleKeys()[0]).toBe("track")
+  })
+
+  test("a ring that plays its entrance keeps waiting for the timing, not the plain ratio", () => {
+    const view = mount({ score: 25, animationKey: "anim:25" })
+    expect(withDelaySpy).toHaveBeenCalledTimes(1)
+    expect(view.progress()).toBeCloseTo(0.5)
   })
 })

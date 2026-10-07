@@ -103,7 +103,14 @@ export function ScoreRing({
   // The fill starts when the screen is visible, not at mount: the list mounts at launch under the
   // splash, so a mount-time fill had ended before anyone saw it (12.2-11 fix).
   useEffect(() => {
-    if (!animateIn || !visible) return
+    // A ring that does not play its entrance follows its ratio as it is: the score or the completion
+    // can arrive after the first mount (the row is reused when the survey detail loads), and the
+    // shared value was created for the ratio the ring had at mount.
+    if (!animateIn) {
+      progress.value = ratio
+      return
+    }
+    if (!visible) return
     progress.value = withDelay(
       index * brandMotion.staggerMs,
       withTiming(ratio, {
@@ -140,6 +147,7 @@ export function ScoreRing({
       >
         {showArc ? (
           <Circle
+            key="track"
             cx={centre}
             cy={centre}
             r={radius}
@@ -149,6 +157,7 @@ export function ScoreRing({
           />
         ) : (
           <Circle
+            key="dashed"
             cx={centre}
             cy={centre}
             r={radius}
