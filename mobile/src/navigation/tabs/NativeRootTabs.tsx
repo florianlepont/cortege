@@ -1,4 +1,5 @@
 import { useCallback, useRef, type ElementType } from "react"
+import { brandTypography } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
@@ -33,6 +34,8 @@ function NativeSurveysTab() {
   return <SurveysTabNavigator useNativeNav />
 }
 
+const nativeTabLabelStyle = { fontFamily: brandTypography.meta.fontFamily }
+
 type NativeRootTabsProps = {
   /**
    * `@bottom-tabs/react-navigation` has no per-screen hide option, only this
@@ -49,8 +52,9 @@ type NativeRootTabsProps = {
 export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
   const deps = useTabListenerDeps()
   const theme = useBrandTheme()
-  // Sketch 001 A: the active tab takes the accent (light green) in dark mode.
-  const activeTint = theme.scheme === "dark" ? theme.semanticColors.accent : theme.colors.forest
+  // D-08: the system Liquid Glass bar keeps its material; only the active tint and the label font
+  // come from the tokens (no background colour, no dot).
+  const activeTint = theme.visual.tab.activeTint
   const screenOptions = useCallback(
     (props: Parameters<typeof nativeTabScreenOptions>[0]) => ({
       ...nativeTabScreenOptions(props),
@@ -72,6 +76,7 @@ export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
       screenListeners={tabPressHaptics}
       minimizeBehavior="automatic"
       tabBarHidden={tabBarHidden}
+      tabLabelStyle={nativeTabLabelStyle}
     >
       <NativeTab.Screen name="home" component={HomeTabNavigator} />
       <NativeTab.Screen

@@ -373,9 +373,10 @@ describe("tab options", () => {
     const options = jsTabScreenOptions(defaultTheme, { route: { name: "publicMap" } })
     expect(options.tabBarLabel).toBe("Explorer")
     expect(options.tabBarStyle.height).toBe(buildJsTabBarStyle(defaultTheme).height)
-    const icon = options.tabBarIcon({ color: "red", size: 20 })
+    const icon = options.tabBarIcon({ color: "red", size: 20, focused: false })
+    expect(icon.props.theme).toBe(defaultTheme)
     expect(icon.props).toEqual(
-      expect.objectContaining({ name: "map-outline", size: 20, color: "red" }),
+      expect.objectContaining({ name: "map-outline", size: 20, color: "red", focused: false }),
     )
   })
 

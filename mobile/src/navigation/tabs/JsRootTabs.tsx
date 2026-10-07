@@ -1,5 +1,6 @@
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { useReducedMotion } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useBrandTheme } from "../../app/theme"
 import { HomeTabNavigator } from "../stacks/HomeStack"
@@ -30,10 +31,12 @@ export function JsRootTabs() {
   const deps = useTabListenerDeps()
   const insets = useSafeAreaInsets()
   const theme = useBrandTheme()
+  // Startup snapshot is enough for the tab fade (D-08).
+  const reducedMotion = useReducedMotion()
 
   return (
     <JsTab.Navigator
-      screenOptions={(props) => jsTabScreenOptions(theme, props, insets)}
+      screenOptions={(props) => jsTabScreenOptions(theme, props, insets, { reducedMotion })}
       screenListeners={tabPressHaptics}
     >
       <JsTab.Screen name="home" options={{ headerShown: false }} component={HomeTabNavigator} />

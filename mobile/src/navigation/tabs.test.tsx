@@ -108,7 +108,10 @@ jest.mock("@bottom-tabs/react-navigation", () => ({
 
 jest.mock("../app/theme", () => {
   const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
-  return { ...actual, useBrandTheme: () => ({ ...actual.defaultTheme, scheme: mockScheme.value }) }
+  return {
+    ...actual,
+    useBrandTheme: () => actual.buildTheme("automatic", mockScheme.value, () => undefined),
+  }
 })
 jest.mock("./tab-bar", () => {
   const actual = jest.requireActual("./tab-bar") as typeof import("./tab-bar")
@@ -136,8 +139,10 @@ jest.mock("./stacks/AccountStack", () => ({ AccountTabNavigator: () => null }))
 
 import { selectionAsync } from "expo-haptics"
 import { AppNavigation, useResetToHomeOnSignOut } from "./AppNavigation"
-import { defaultTheme } from "../app/theme"
-import { buildJsTabBarStyle, jsTabScreenOptions } from "./tab-config"
+import { buildTheme, defaultTheme } from "../app/theme"
+import { setReducedMotion } from "../../test/react-native-reanimated.mock"
+import { brandTypography } from "../app/brand-tokens"
+import { buildJsTabBarStyle } from "./tab-config"
 
 // OA-13: Compte is no longer a tab.
 const THREE_TABS = ["home", "surveys", "publicMap"]
@@ -172,6 +177,7 @@ beforeEach(() => {
   mockNavRef.resetRoot.mockClear()
   mockScheme.value = "light"
   mockHideRule.value = false
+  setReducedMotion(false)
 })
 
 async function mount() {
@@ -293,19 +299,26 @@ describe("OA-07: a session end resets the tabs to Accueil", () => {
   })
 })
 
-describe("dark mode tab tint and the shared hide rule", () => {
-  test("native tree: the active tint is the accent in dark mode, forest in light", async () => {
+describe("tab tints and the shared hide rule", () => {
+  test("native tree: the active tint and label font come from the tokens, in both schemes", async () => {
     await mount()
-    const light = (mockNativeNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
-      route: { name: "home" },
-    })
+    const nativeProps = mockNativeNavigatorProps.at(-1)
+    const light = (nativeProps?.screenOptions as OptionsFn)({ route: { name: "home" } })
+    expect(light.tabBarActiveTintColor).toBe(defaultTheme.visual.tab.activeTint)
+    expect(nativeProps?.tabLabelStyle).toEqual({ fontFamily: brandTypography.meta.fontFamily })
+    // The system Liquid Glass material is kept: no background colour is set.
+    expect(nativeProps).not.toHaveProperty("tabBarStyle")
+    expect(light).not.toHaveProperty("tabBarStyle")
+
     mockScheme.value = "dark"
     await mount()
     const dark = (mockNativeNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
       route: { name: "home" },
     })
-    expect(light.tabBarActiveTintColor).toBe(defaultTheme.colors.forest)
-    expect(dark.tabBarActiveTintColor).toBe(defaultTheme.semanticColors.accent)
+    expect(dark.tabBarActiveTintColor).toBe(
+      buildTheme("automatic", "dark", () => undefined).visual.tab.activeTint,
+    )
+    expect(dark.tabBarActiveTintColor).not.toBe(light.tabBarActiveTintColor)
   })
 
   test("JS tree: a route the rule hides gets a hidden tab bar", async () => {
@@ -316,12 +329,20 @@ describe("dark mode tab tint and the shared hide rule", () => {
     expect(options({ route: { focused: "anything" } }).tabBarStyle).toEqual({ display: "none" })
   })
 
-  test("JS tab screen options take the accent tint in dark mode", () => {
-    const dark = jsTabScreenOptions(
-      { ...defaultTheme, scheme: "dark" },
-      { route: { name: "home" } },
-    )
-    expect(dark.tabBarActiveTintColor).toBe(defaultTheme.semanticColors.accent)
+  test("JS tree: the tab animation is a fade, and none under Reduce Motion", async () => {
+    mockPlatform.OS = "android"
+    await mount()
+    const fade = (mockJsNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
+      route: { name: "home" },
+    })
+    expect(fade.animation).toBe("fade")
+
+    setReducedMotion(true)
+    await mount()
+    const none = (mockJsNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
+      route: { name: "home" },
+    })
+    expect(none.animation).toBe("none")
   })
 })
 
