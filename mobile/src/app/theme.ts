@@ -10,6 +10,7 @@ import {
 } from "react"
 import { useColorScheme } from "react-native"
 import { brandColors } from "./brand-tokens"
+import { makeVisualColors, type BrandVisual } from "./theme-visual"
 import {
   DEFAULT_THEME_MODE,
   loadThemeModePreference,
@@ -400,9 +401,10 @@ export type BrandTheme = {
   componentColors: BrandComponentColors
   fieldState: BrandFieldState
   ibpScoreColors: BrandIbpScoreColors
+  visual: BrandVisual
 }
 
-function buildTheme(
+export function buildTheme(
   mode: BrandThemeMode,
   scheme: BrandColorScheme,
   setMode: BrandTheme["setMode"],
@@ -420,6 +422,7 @@ function buildTheme(
     componentColors: makeComponentColors(colors, semanticColors, onSurface),
     fieldState: makeFieldState(colors, onSurface),
     ibpScoreColors: makeIbpScoreColors(colors, onSurface),
+    visual: makeVisualColors(scheme, colors),
   }
 }
 
