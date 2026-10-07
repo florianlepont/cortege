@@ -87,7 +87,7 @@ afterEach(() => {
 describe("ResumeCard", () => {
   test("without a draft: the start card, a glow button, no progress and no link", () => {
     const { texts, button, segments, links, onCreateSurvey } = mount(null)
-    expect(texts).toEqual(expect.arrayContaining([t.eyebrow, t.title, t.body]))
+    expect(texts).toEqual(expect.arrayContaining([t.title, t.body]))
     expect(button.props.label).toBe(t.button)
     expect(button.props.variant).toBe("glow")
     expect(segments("hero-progress-done")).toHaveLength(0)
@@ -101,7 +101,6 @@ describe("ResumeCard", () => {
     const { texts, button, segments, links, onResume, onCreateSurvey } = mount(makeSurvey())
     expect(texts).toEqual(
       expect.arrayContaining([
-        t.resumeEyebrow,
         t.resumeTitle({ name: "Parcelle A" }),
         t.resumeBody({ completed: 4 }),
       ]),
@@ -125,6 +124,18 @@ describe("ResumeCard", () => {
     expect(style.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
     act(() => links[0].props.onPress())
     expect(onCreateSurvey).toHaveBeenCalledTimes(1)
+  })
+
+  test("there is no tag pill: its text is gone in both states (owner check on the iPhone)", () => {
+    for (const draft of [null, makeSurvey()]) {
+      const { texts } = mount(draft)
+      expect(texts).not.toContain("REPRENDRE")
+      expect(texts).not.toContain("COMMENCER")
+      expect(Object.keys(t)).not.toEqual(expect.arrayContaining(["eyebrow"]))
+      expect(Object.keys(t)).not.toEqual(expect.arrayContaining(["resumeEyebrow"]))
+      act(() => tree.unmount())
+    }
+    mount(null)
   })
 
   test("an unnamed draft reads the unnamed title", () => {

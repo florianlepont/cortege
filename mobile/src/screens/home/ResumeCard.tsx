@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import {
   brandInteraction,
-  brandRadius,
   brandSpacing4,
   brandTypeScale,
   brandTypography,
@@ -29,7 +28,8 @@ type ResumeCardProps = {
 /**
  * HOME-02, variant I: the compact forest card of Accueil. With a recent draft it resumes it (title,
  * "n/10 factors" line, ten progress segments, a plain "new survey" link); without one it invites to
- * start. Text stays on the left so nothing sits under the halo at the top right of the card.
+ * start. Title and button say what the card is, so it has no tag pill (owner check on the iPhone).
+ * Text stays on the left so nothing sits under the halo at the top right of the card.
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -42,9 +42,6 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
     <ForestCard variant="resume" contentStyle={styles.content} testID="home-resume-card">
       <View style={styles.row}>
         <View style={styles.copy}>
-          <View style={styles.tag}>
-            <Text style={styles.tagLabel}>{resumeDraft ? t.resumeEyebrow : t.eyebrow}</Text>
-          </View>
           <Text style={styles.title} numberOfLines={2}>
             {resumeDraft
               ? resumeDraft.site_name
@@ -108,19 +105,6 @@ function createStyles(theme: BrandTheme) {
       flex: 1,
       gap: brandSpacing4.xs,
       alignItems: "flex-start",
-    },
-    tag: {
-      backgroundColor: forest.tagFill,
-      borderWidth: 1,
-      borderColor: forest.tagBorder,
-      borderRadius: brandRadius.pill,
-      paddingHorizontal: brandSpacing4.smd,
-      paddingVertical: brandSpacing4.xxs,
-    },
-    tagLabel: {
-      ...brandTypography.heroEyebrow,
-      color: forest.tagText,
-      textTransform: "uppercase",
     },
     title: {
       ...brandTypography.screenTitle,
