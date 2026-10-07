@@ -9,6 +9,7 @@ import { brandColors, brandSpacing, brandTypography } from "../../app/brand-toke
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
+import { GlassButton } from "../../ui/GlassButton"
 import { AppCard } from "../../ui/AppCard"
 import { BrandHighlight } from "../../ui/BrandHighlight"
 
@@ -129,7 +130,7 @@ export function PermissionsPrimingScreen({ onDone }: PermissionsPrimingScreenPro
       </View>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, brandSpacing.lg) }]}>
-        <AppButton label={t.continue} size="lg" onPress={onDone} style={styles.continueButton} />
+        <GlassButton label={t.continue} size="lg" onPress={onDone} style={styles.continueButton} />
       </View>
     </View>
   )

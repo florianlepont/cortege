@@ -1,5 +1,6 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 
 const originalConsoleError = console.error
@@ -70,6 +71,18 @@ import { OnboardingCarouselScreen } from "./OnboardingCarouselScreen"
 
 const t = fr.onboarding.carousel
 
+function hasGlassFill(node: renderer.ReactTestInstance): boolean {
+  const fill = defaultTheme.visual.glassCta.flat
+  return (
+    node.findAll((n) => {
+      const style = ([] as unknown[]).concat(n.props.style ?? []).flat(Infinity)
+      return style.some(
+        (entry) => (entry as { backgroundColor?: string } | null)?.backgroundColor === fill,
+      )
+    }).length > 0
+  )
+}
+
 function render(props: Partial<React.ComponentProps<typeof OnboardingCarouselScreen>> = {}) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
@@ -98,6 +111,12 @@ describe("OnboardingCarouselScreen (ONB-01: 3-screen carousel)", () => {
     expect(martens).toHaveLength(1)
     expect(martens[0].props.accessible).toBe(false)
     expect(tree.root.findByProps({ testID: "onboarding-marten" }).props.pointerEvents).toBe("none")
+  })
+
+  test("the big button is the green glass button, the skip stays a small secondary one (D-27c)", () => {
+    const tree = render()
+    expect(hasGlassFill(tree.root.findByProps({ accessibilityLabel: t.next }))).toBe(true)
+    expect(hasGlassFill(tree.root.findByProps({ accessibilityLabel: t.skip }))).toBe(false)
   })
 
   test("the skip button calls onSkip", () => {

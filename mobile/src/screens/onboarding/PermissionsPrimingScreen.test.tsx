@@ -1,5 +1,6 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 
 const originalConsoleError = console.error
@@ -72,6 +73,18 @@ import { PermissionsPrimingScreen } from "./PermissionsPrimingScreen"
 
 const t = fr.onboarding.permissions
 
+function hasGlassFill(node: renderer.ReactTestInstance): boolean {
+  const fill = defaultTheme.visual.glassCta.flat
+  return (
+    node.findAll((n) => {
+      const style = ([] as unknown[]).concat(n.props.style ?? []).flat(Infinity)
+      return style.some(
+        (entry) => (entry as { backgroundColor?: string } | null)?.backgroundColor === fill,
+      )
+    }).length > 0
+  )
+}
+
 function render(props: Partial<React.ComponentProps<typeof PermissionsPrimingScreen>> = {}) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
@@ -129,6 +142,11 @@ describe("PermissionsPrimingScreen (ONB-01: location + camera priming)", () => {
       await action.props.onPress()
     })
     expect(tree.root.findByProps({ children: t.camera.denied })).toBeTruthy()
+  })
+
+  test("Continuer is the green glass button (D-27c)", () => {
+    const tree = render()
+    expect(hasGlassFill(tree.root.findByProps({ accessibilityLabel: t.continue }))).toBe(true)
   })
 
   test("Continuer calls onDone regardless of permission outcome", () => {
