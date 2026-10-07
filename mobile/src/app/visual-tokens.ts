@@ -3,6 +3,8 @@
 // per-scheme resolution of these stops lives in `theme-visual.ts` (`BrandTheme.visual`). Values come
 // from `12.2-UI-SPEC.md`, never from the sketch: the spec overrides sketch colours where contrast fails.
 
+import { brandColors } from "./brand-tokens"
+
 export type GradientStop = readonly [colour: string, percent: number]
 
 /** The three stops of the forest card gradient (a = start, b = mid, c = end). */
@@ -116,47 +118,46 @@ export const brandGlassFills = {
 // string literal is read as user-facing text by the structure gate).
 export const pillLabelColor = "#14210F"
 
-// Green glass of the big call-to-action buttons (D-27c, made more saturated with a clearer
-// highlight for D-28: "Plus saturé et un reflet plus marqué"). `tint` is the opaque green the native
-// iOS 26 glass button is tinted with (`buttonStyle("glassProminent")`): the system adds its own
-// glass material, specular highlight and press response on top. `flat` is the translucent fill of
-// the fallback (Android, iOS before 26): no blur, see-through. `flatOff` is the disabled fallback, a
-// pale neutral glass clearly less saturated than the green (the native button uses the system
-// disabled look instead). Both schemes use the brand moss of the glow pill, the most saturated green
-// of the palette (the D-27c pill was the duller forest in light and lime in dark), with the pill's
-// near black label.
+// Forest glass of the big call-to-action buttons (D-27c, D-28). The owner first saw the saturated
+// moss and found it too light ("je m'imaginais un plus foncé"), then chose, from a board of four
+// greens, the charter's forest: so both schemes use `brandColors.forest` (#334E2B) with a white
+// label (9.9:1). `tint` is the opaque green the native iOS 26 glass button is tinted with
+// (`buttonStyle("glassProminent")`): the system adds its own glass material, specular highlight and
+// press response on top. `flat` is the translucent fill of the fallback (Android, iOS before 26): no
+// blur, see-through. `flatOff` is the disabled fallback, a pale neutral glass clearly less saturated
+// than the green (the native button uses the system disabled look instead).
 export const glassCtaFills = {
   light: {
-    tint: "#89A33A",
-    flat: "rgba(137, 163, 58, 0.92)",
+    tint: brandColors.forest,
+    flat: withAlpha(brandColors.forest, 0.94),
     flatOff: "rgba(36, 49, 31, 0.09)",
   },
   dark: {
-    tint: "#89A33A",
-    flat: "rgba(137, 163, 58, 0.95)",
+    tint: brandColors.forest,
+    flat: withAlpha(brandColors.forest, 0.96),
     flatOff: "rgba(242, 243, 241, 0.12)",
   },
 } as const
 
-// Text colour on the green (the glow pill's near black, both schemes) and on the disabled fallback.
-// Named constants for the same structure-gate reason as `pillLabelColor`.
+// Text colour on the forest (white, both schemes) and on the disabled fallback. Named constants for
+// the same structure-gate reason as `pillLabelColor`.
 export const glassCtaInk = {
-  light: { on: pillLabelColor, off: "#3D4B37" },
-  dark: { on: pillLabelColor, off: "#B4B8BD" },
+  light: { on: brandColors.white, off: "#3D4B37" },
+  dark: { on: brandColors.white, off: "#B4B8BD" },
 } as const
 
 // Edge of the fallback button: a crisp light hairline, then in one `boxShadow` a soft green halo, a
 // marked top rim highlight and a faint lower rim shade, so the pill reads as a lit glass bead. The
-// `sheen` is a white reflection over the top half of the fill. The native glass draws its own edge
-// and light, so none of this is used on iOS 26.
+// `sheen` is a white reflection over the top half of the fill, kept light enough for the white
+// label. The native glass draws its own edge and light, so none of this is used on iOS 26.
 export const glassCtaEdges = {
   light: {
     hairline: "rgba(255, 255, 255, 0.55)",
     shadow:
-      "0 8px 22px rgba(137, 163, 58, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -1px 0 rgba(20, 33, 15, 0.18)",
+      "0 8px 22px rgba(51, 78, 43, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -1px 0 rgba(14, 34, 16, 0.3)",
     sheen: buildLinearGradient(180, [
-      ["rgba(255, 255, 255, 0.36)", 0],
-      ["rgba(255, 255, 255, 0.1)", 46],
+      ["rgba(255, 255, 255, 0.16)", 0],
+      ["rgba(255, 255, 255, 0.05)", 46],
       ["rgba(255, 255, 255, 0)", 56],
     ]),
     hairlineOff: "rgba(36, 49, 31, 0.14)",
@@ -164,13 +165,30 @@ export const glassCtaEdges = {
   dark: {
     hairline: "rgba(255, 255, 255, 0.6)",
     shadow:
-      "0 8px 22px rgba(137, 163, 58, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(12, 18, 8, 0.22)",
+      "0 8px 22px rgba(137, 163, 58, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.7), inset 0 -1px 0 rgba(0, 0, 0, 0.3)",
     sheen: buildLinearGradient(180, [
-      ["rgba(255, 255, 255, 0.32)", 0],
-      ["rgba(255, 255, 255, 0.08)", 46],
+      ["rgba(255, 255, 255, 0.16)", 0],
+      ["rgba(255, 255, 255, 0.05)", 46],
       ["rgba(255, 255, 255, 0)", 56],
     ]),
     hairlineOff: "rgba(255, 255, 255, 0.14)",
+  },
+} as const
+
+// Secondary glass button (the system `glass` style natively, an outlined translucent pill in the
+// fallback), for the second action next to a forest primary: neutral, no tint, the label in the
+// app's primary text colour. `flat` and `hairline` draw the fallback; `edge` is the hairline laid
+// over the native glass, which on a flat cream sheet has almost no contrast of its own.
+export const glassCtaSecondary = {
+  light: {
+    flat: "rgba(255, 255, 255, 0.5)",
+    hairline: "rgba(51, 78, 43, 0.38)",
+    edge: "rgba(51, 78, 43, 0.28)",
+  },
+  dark: {
+    flat: "rgba(255, 255, 255, 0.08)",
+    hairline: "rgba(255, 255, 255, 0.3)",
+    edge: "rgba(255, 255, 255, 0.2)",
   },
 } as const
 

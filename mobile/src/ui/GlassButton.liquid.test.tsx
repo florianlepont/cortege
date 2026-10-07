@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
 import { impactAsync as impactAsyncReal } from "expo-haptics"
-import { brandInteraction } from "../app/brand-tokens"
+import { brandInteraction, brandRadius } from "../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../app/theme"
 
 // iOS 26 with a binary that carries `@expo/ui`: the native SwiftUI glass button (D-28). Metro would
@@ -96,7 +96,7 @@ function render(props: Partial<React.ComponentProps<typeof GlassButton>> = {}) {
 const cta = defaultTheme.visual.glassCta
 
 describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => {
-  test("is one SwiftUI glass-prominent Button tinted with the moss token, in a Host", () => {
+  test("is one SwiftUI glass-prominent Button tinted with the forest token, in a Host", () => {
     const { root, host, button } = render()
     expect(byType(root, "Host")).toHaveLength(1)
     expect(byType(root, "Button")).toHaveLength(1)
@@ -110,6 +110,25 @@ describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => 
       tint: { type: "color", color: cta.tint },
     })
     expect(modifier(button, "disabled")).toEqual({ $type: "disabled", disabled: false })
+  })
+
+  test("the tint is the charter forest and the label is explicitly white, in both schemes", () => {
+    for (const scheme of ["light", "dark"] as const) {
+      mockScheme.current = scheme
+      try {
+        const { button, text } = render()
+        expect(modifier(button, "tint")).toEqual({
+          $type: "tint",
+          tint: { type: "color", color: "#334E2B" },
+        })
+        expect(modifier(text, "foregroundStyle")).toEqual({
+          $type: "foregroundStyle",
+          style: { type: "color", color: "#FFFFFF" },
+        })
+      } finally {
+        mockScheme.current = "light"
+      }
+    }
   })
 
   test("no drawn pill: no pressable, no glass view, no fill, hairline or shadow of ours", () => {
@@ -197,7 +216,7 @@ describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => 
     expect(impactAsync).not.toHaveBeenCalled()
   })
 
-  test("loading shows a spinner beside the label, keeps the green and ignores presses", () => {
+  test("loading shows a spinner beside the label, keeps the tint and ignores presses", () => {
     const onPress = jest.fn()
     const { root, button, text } = render({ loading: true, onPress })
     const spinners = byType(root, "ProgressView")
@@ -271,5 +290,67 @@ describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => 
     } finally {
       mockScheme.current = "light"
     }
+  })
+})
+
+describe("GlassButton secondary on iOS 26: the neutral system glass button", () => {
+  test("is the system glass style, untinted, with the primary text colour for the label", () => {
+    for (const scheme of ["light", "dark"] as const) {
+      mockScheme.current = scheme
+      try {
+        const theme = scheme === "light" ? defaultTheme : buildTheme("automatic", "dark", () => {})
+        const { root, button, text } = render({ variant: "secondary" })
+        expect(modifier(button, "buttonStyle")).toEqual({ $type: "buttonStyle", style: "glass" })
+        expect(modifier(button, "tint")).toBeUndefined()
+        expect(modifier(text, "foregroundStyle")).toEqual({
+          $type: "foregroundStyle",
+          style: { type: "color", color: theme.colors.textPrimary },
+        })
+        expect(byType(root, "Pressable")).toHaveLength(0)
+      } finally {
+        mockScheme.current = "light"
+      }
+    }
+  })
+
+  test("a hairline overlay sits over the glass, lets touches through and adds no layout", () => {
+    const { root, host } = render({ variant: "secondary", style: { width: "100%" } })
+    const overlays = byType(root, "View").filter((n) => n.props.pointerEvents === "none")
+    expect(overlays).toHaveLength(1)
+    expect(flatten(overlays[0].props.style)).toMatchObject({
+      borderWidth: 1,
+      borderColor: cta.secondary.edge,
+      borderRadius: brandRadius.pill,
+    })
+    // The caller's style moves to the wrapper; the host keeps stretching and its minimum height.
+    const wrapper = byType(root, "View").find((n) => n.findAll((c) => c === host).length > 0)
+    expect(flatten(wrapper?.props.style)).toMatchObject({ width: "100%", alignSelf: "stretch" })
+    expect(flatten(host.props.style)).toMatchObject({ alignSelf: "stretch", minHeight: 50 })
+    // The primary has no overlay.
+    expect(byType(render().root, "View")).toHaveLength(0)
+  })
+
+  test("keeps the press, haptic, disabled, loading and accessibility contract", () => {
+    const onPress = jest.fn()
+    const { button } = render({ variant: "secondary", onPress, testID: "register" })
+    expect(button.props.testID).toBe("register")
+    act(() => {
+      ;(button.props.onPress as () => void)()
+    })
+    expect(onPress).toHaveBeenCalledTimes(1)
+    expect(impactAsync).toHaveBeenCalledTimes(1)
+    const off = render({ variant: "secondary", disabled: true, onPress })
+    expect(modifier(off.button, "disabled")).toEqual({ $type: "disabled", disabled: true })
+    expect(modifier(off.text, "foregroundStyle")).toBeUndefined()
+    const busy = render({ variant: "secondary", loading: true, onPress })
+    expect(byType(busy.root, "ProgressView")).toHaveLength(1)
+    act(() => {
+      ;(busy.button.props.onPress as () => void)()
+    })
+    expect(onPress).toHaveBeenCalledTimes(1)
+    expect(modifier(render({ variant: "secondary", size: "md" }).button, "controlSize")).toEqual({
+      $type: "controlSize",
+      size: "regular",
+    })
   })
 })

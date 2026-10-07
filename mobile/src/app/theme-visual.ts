@@ -9,6 +9,7 @@ import {
   glassCtaEdges,
   glassCtaFills,
   glassCtaInk,
+  glassCtaSecondary,
   mixWithWhite,
   pillLabelColor,
   pressWaveFill,
@@ -63,9 +64,10 @@ export type BrandVisual = {
     iconTint: string
   }
   /**
-   * Green glass of the big call-to-action buttons (D-27c, D-28): `tint` for the native iOS 26 glass
-   * button, `flat` with its `hairline`, `shadow` and `sheen` for the fallback, the `*Off` entries
-   * for the disabled fallback, `ink` the label colour on the green (both), `inkOff` on the disabled.
+   * Forest glass of the big call-to-action buttons (D-27c, D-28, charter forest with a white
+   * label): `tint` for the native iOS 26 glass button, `flat` with its `hairline`, `shadow` and
+   * `sheen` for the fallback, the `*Off` entries for the disabled fallback, `ink` the label colour
+   * on the forest (both), `inkOff` on the disabled.
    */
   glassCta: {
     tint: string
@@ -77,6 +79,8 @@ export type BrandVisual = {
     flatOff: string
     inkOff: string
     hairlineOff: string
+    /** Secondary (system `glass`) button: label, fallback fill and outline, native edge. */
+    secondary: { ink: string; flat: string; hairline: string; edge: string }
   }
   tab: {
     activeTint: string
@@ -185,6 +189,12 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       flatOff: glassCtaFills[scheme].flatOff,
       inkOff: glassCtaInk[scheme].off,
       hairlineOff: glassCtaEdges[scheme].hairlineOff,
+      secondary: {
+        ink: colors.textPrimary,
+        flat: glassCtaSecondary[scheme].flat,
+        hairline: glassCtaSecondary[scheme].hairline,
+        edge: glassCtaSecondary[scheme].edge,
+      },
     },
     tab: {
       activeTint: accentText,

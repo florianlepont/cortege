@@ -78,7 +78,7 @@ function render(props: Partial<React.ComponentProps<typeof GlassButton>> = {}) {
 const cta = defaultTheme.visual.glassCta
 
 describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
-  test("draws a translucent moss fill with a hairline, a reflection and a shadow, and no blur or glass view", () => {
+  test("draws a translucent forest fill with a hairline, a reflection and a shadow, and no blur or glass view", () => {
     const { style, root } = render()
     expect(style).toMatchObject({
       backgroundColor: cta.flat,
@@ -114,7 +114,7 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
     expect(pressable.props.accessibilityState).toEqual({ disabled: true, busy: false })
   })
 
-  test("loading keeps the green look, shows a spinner and ignores presses", () => {
+  test("loading keeps the forest look, shows a spinner and ignores presses", () => {
     const { style, root, pressable } = render({ loading: true })
     expect(style.backgroundColor).toBe(cta.flat)
     const spinner = root.findAll((n) => (n.type as unknown) === "ActivityIndicator")
@@ -172,5 +172,49 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
     })
     expect(style.alignSelf).toBe("stretch")
     expect(flatten(label.props.style).letterSpacing).toBe(1)
+  })
+})
+
+describe("GlassButton secondary, flat fallback", () => {
+  test("is an outlined translucent pill: no forest fill, no shadow, no reflection", () => {
+    const { style, root } = render({ variant: "secondary" })
+    expect(style).toMatchObject({
+      backgroundColor: cta.secondary.flat,
+      borderWidth: 1,
+      borderColor: cta.secondary.hairline,
+      borderRadius: brandRadius.pill,
+    })
+    expect(style).not.toHaveProperty("boxShadow")
+    expect(style).not.toHaveProperty("experimental_backgroundImage")
+    expect(style.backgroundColor).not.toBe(cta.flat)
+    expect(root.findAll((n) => (n.type as unknown) === "Host")).toHaveLength(0)
+  })
+
+  test("the label and the icon use the primary text colour", () => {
+    const { label, root } = render({ variant: "secondary", leadingIcon: "checkmark" })
+    expect(flatten(label.props.style).color).toBe(cta.secondary.ink)
+    expect(root.findByType(Ionicons).props.color).toBe(cta.secondary.ink)
+    expect(cta.secondary.ink).toBe(defaultTheme.colors.textPrimary)
+  })
+
+  test("disabled shares the pale neutral glass of the primary, loading keeps the outline", () => {
+    const off = render({ variant: "secondary", disabled: true })
+    expect(off.style).toMatchObject({ backgroundColor: cta.flatOff, borderColor: cta.hairlineOff })
+    expect(flatten(off.label.props.style).color).toBe(cta.inkOff)
+    const busy = render({ variant: "secondary", loading: true })
+    expect(busy.style.backgroundColor).toBe(cta.secondary.flat)
+    expect(busy.pressable.props.disabled).toBe(true)
+    expect(busy.pressable.props.accessibilityState).toEqual({ disabled: true, busy: true })
+  })
+
+  test("keeps the 44 pt hit area and the press contract", () => {
+    const onPress = jest.fn()
+    const { style, pressable } = render({ variant: "secondary", size: "md", onPress })
+    expect(style.minHeight).toBe(44)
+    act(() => {
+      ;(pressable.props.onPress as () => void)()
+    })
+    expect(onPress).toHaveBeenCalledTimes(1)
+    expect(impactAsync).toHaveBeenCalledWith("light")
   })
 })

@@ -287,16 +287,16 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
   })
 })
 
-describe.each(schemes)("green glass call to action (D-27c, D-28), %s scheme", (scheme) => {
+describe.each(schemes)("forest glass call to action (D-27c, D-28), %s scheme", (scheme) => {
   const theme = themes[scheme]
   const { visual, colors } = theme
   const cta = visual.glassCta
 
   // The worst plausible backdrops behind the button, never the glass itself: the canvas, the panel,
   // the strongest point of each backdrop halo, and the extreme of the scheme (pure white in light,
-  // pure black in dark) for content that scrolls behind the bar. The label is near black on a light
-  // green in both schemes, so the darkest backdrop the translucent fill can let through is the risk,
-  // and the halos and the extreme cover it.
+  // pure black in dark) for content that scrolls behind the bar. The label is white on the forest in
+  // both schemes, so the lightest backdrop the translucent fill can let through is the risk (pure
+  // white in light), and the halos and the extreme cover it.
   const halos = splitTopLevel(visual.backdrop).map((layer) => {
     const first = /rgba\([^)]*\)/.exec(layer)
     if (!first) throw new Error(`No colour in ${layer}`)
@@ -317,18 +317,26 @@ describe.each(schemes)("green glass call to action (D-27c, D-28), %s scheme", (s
     return max === 0 ? 0 : (max - Math.min(...rgb)) / max
   }
 
-  test("the native glass tint is an opaque, saturated green and its label reads at 4.5:1", () => {
-    expect(cta.tint).toMatch(/^#[0-9A-F]{6}$/)
+  test("the native glass tint is the charter forest and the white label reads at 4.5:1", () => {
+    expect(cta.tint).toBe(brandColors.forest)
+    expect(cta.tint).toBe("#334E2B")
+    expect(cta.ink).toBe(brandColors.white)
     const [r, g, b] = channels(cta.tint)
     expect(g).toBeGreaterThan(r)
     expect(g).toBeGreaterThan(b)
-    expect(saturation(cta.tint)).toBeGreaterThan(0.45)
-    expect(contrastRatio(cta.ink, cta.tint)).toBeGreaterThanOrEqual(4.5)
-    // The system's specular highlight only lightens the glass: with a near black label, a lighter
-    // green only raises the contrast. Check a 30% white highlight to be sure.
+    expect(contrastRatio(cta.ink, cta.tint)).toBeGreaterThanOrEqual(9)
+    // The system's specular highlight lightens the glass: a white label must still read at 4.5:1
+    // under a 20% white highlight (the specular is local to the top edge, never spread over the label).
     expect(
-      contrastRatio(cta.ink, compositeOver("rgba(255, 255, 255, 0.3)", cta.tint)),
-    ).toBeGreaterThan(contrastRatio(cta.ink, cta.tint))
+      contrastRatio(cta.ink, compositeOver("rgba(255, 255, 255, 0.2)", cta.tint)),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the tint is the same forest in both schemes and darker than the brand moss it replaces", () => {
+    expect(themes.light.visual.glassCta.tint).toBe(themes.dark.visual.glassCta.tint)
+    expect(contrastRatio(cta.tint, brandColors.white)).toBeGreaterThan(
+      contrastRatio(brandColors.moss, brandColors.white) * 2,
+    )
   })
 
   test.each([
@@ -359,7 +367,7 @@ describe.each(schemes)("green glass call to action (D-27c, D-28), %s scheme", (s
     }
   })
 
-  test("the fallback is the native tint's green, saturated, and the disabled one clearly less", () => {
+  test("the fallback is the native tint's forest made translucent, and the disabled one clearly less saturated", () => {
     const flat = compositeOver(cta.flat, colors.canvas)
     const flatOff = compositeOver(cta.flatOff, colors.canvas)
     const [r, g, b] = channels(flat)
@@ -372,17 +380,20 @@ describe.each(schemes)("green glass call to action (D-27c, D-28), %s scheme", (s
     )
   })
 
-  test("the fallback is more saturated and more marked than the D-27c pill it replaces", () => {
-    // D-27c: forest at 0.9 (light) and lime at 0.88 (dark) with a 0.28 / 0.35 top rim.
-    const before = scheme === "light" ? "rgba(51, 78, 43, 0.9)" : "rgba(155, 194, 106, 0.88)"
+  test("the fallback keeps a marked top rim highlight over the forest", () => {
+    // D-27c rim was 0.28 / 0.35; D-28 made it much clearer and the forest keeps it.
     const beforeRim = scheme === "light" ? 0.28 : 0.35
-    for (const backdrop of [colors.canvas, extreme]) {
-      expect(saturation(compositeOver(cta.flat, backdrop))).toBeGreaterThan(
-        saturation(compositeOver(before, backdrop)),
-      )
-    }
     const rim = /inset 0 1px 0 rgba\(255, 255, 255, (\d(\.\d+)?)\)/.exec(cta.shadow)
     expect(Number(rim?.[1])).toBeGreaterThan(beforeRim + 0.2)
+  })
+
+  test("the disabled label is clearly muted against the white label yet readable", () => {
+    expect(cta.inkOff).not.toBe(cta.ink)
+    for (const backdrop of backdrops) {
+      expect(
+        contrastRatio(cta.inkOff, compositeOver(cta.flatOff, backdrop)),
+      ).toBeGreaterThanOrEqual(4.5)
+    }
   })
 
   test("the fallback edge tokens are well formed", () => {
@@ -392,5 +403,52 @@ describe.each(schemes)("green glass call to action (D-27c, D-28), %s scheme", (s
     expect(cta.sheen).toMatch(/^linear-gradient\(180deg, /)
     expect(cta.hairline).toMatch(/^rgba\(255, 255, 255, /)
     expect(cta.hairlineOff).toMatch(/^rgba\(/)
+  })
+})
+
+describe.each(schemes)("secondary glass button, %s scheme", (scheme) => {
+  const theme = themes[scheme]
+  const { visual, colors } = theme
+  const secondary = visual.glassCta.secondary
+  const extreme = scheme === "light" ? "#FFFFFF" : "#000000"
+  const halos = splitTopLevel(visual.backdrop).map((layer) => {
+    const first = /rgba\([^)]*\)/.exec(layer)
+    if (!first) throw new Error(`No colour in ${layer}`)
+    return compositeOver(first[0], colors.canvas)
+  })
+  const backdrops = [colors.canvas, colors.panel, extreme, ...halos]
+
+  test("the label is the app's primary text colour", () => {
+    expect(secondary.ink).toBe(colors.textPrimary)
+  })
+
+  test("the label reads at 4.5:1 on the outlined fallback over every backdrop", () => {
+    for (const backdrop of backdrops) {
+      expect(
+        contrastRatio(secondary.ink, compositeOver(secondary.flat, backdrop)),
+      ).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  test("the label reads at 4.5:1 on the bare native glass over the canvas and the panel", () => {
+    // The system glass is see-through: the worst case is the backdrop itself, plus a 30% white
+    // highlight in light or a 12% white lift in dark.
+    const lift = scheme === "light" ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.12)"
+    for (const backdrop of [colors.canvas, colors.panel, extreme]) {
+      expect(contrastRatio(secondary.ink, backdrop)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(secondary.ink, compositeOver(lift, backdrop))).toBeGreaterThanOrEqual(
+        4.5,
+      )
+    }
+  })
+
+  test("the outline and the native edge are visible hairlines, translucent, not the forest button", () => {
+    for (const edge of [secondary.hairline, secondary.edge]) {
+      expect(edge).toMatch(/^rgba\(\d+, \d+, \d+, 0\.\d+\)$/)
+      expect(contrastRatio(compositeOver(edge, colors.canvas), colors.canvas)).toBeGreaterThan(1.2)
+    }
+    const alpha = Number(/, (\d(\.\d+)?)\)$/.exec(secondary.flat)?.[1])
+    expect(alpha).toBeGreaterThan(0)
+    expect(alpha).toBeLessThan(1)
   })
 })

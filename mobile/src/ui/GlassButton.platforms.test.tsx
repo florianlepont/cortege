@@ -125,6 +125,7 @@ describe("GlassButton picks the native glass button only where it exists", () =>
         accessibilityLabel: "OK",
         controlSize: "large",
         minHeight: 50,
+        variant: "primary",
         tint: "#000000",
         ink: "#FFFFFF",
         fontFamily: "Sora-Bold",

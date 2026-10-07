@@ -21,8 +21,15 @@ import type { NativeControlSize, NativeSymbolName } from "./NativeGlassButton.ty
 
 type IoniconName = keyof typeof Ionicons.glyphMap
 
+/**
+ * `primary` is the forest glass call to action, the default. `secondary` is the neutral companion
+ * next to it (the system `glass` button, untinted, label in the primary text colour).
+ */
+export type GlassButtonVariant = "primary" | "secondary"
+
 type GlassButtonProps = {
   label: string
+  variant?: GlassButtonVariant
   /** `lg` (50 pt) for the big call to action of a screen, the default. */
   size?: AppButtonSize
   /**
@@ -32,7 +39,7 @@ type GlassButtonProps = {
   leadingIcon?: IoniconName
   accessibilityLabel?: string
   disabled?: boolean
-  /** Shows a spinner, keeps the green look and ignores presses. */
+  /** Shows a spinner, keeps the forest look and ignores presses. */
   loading?: boolean
   onPress: () => void
   testID?: string
@@ -73,13 +80,15 @@ const USE_NATIVE_GLASS =
   LIQUID_GLASS_AVAILABLE && NATIVE_GLASS_BUTTON_AVAILABLE && Platform.OS === "ios"
 
 /**
- * The big call-to-action button on green glass (12.2-14, D-27c, D-28). On iOS 26 and later it is
+ * The big call-to-action button on forest glass (12.2-14, D-27c, D-28). On iOS 26 and later it is
  * the system's own glass button (`NativeGlassButton`: SwiftUI `glassProminent` tinted with the
- * saturated brand moss), not a drawn pill: the system draws the capsule, the material, the
- * specular highlight and the press response. On Android and older iOS it is a flat translucent moss
- * fill with a crisp hairline, a marked top rim, a white reflection over its top half and a soft
- * green shadow, and no blur (D-12). Either way the button replaces the opaque bar behind a primary
- * `AppButton`, and what scrolls behind the fallback stays visible through it.
+ * charter forest and a white label), not a drawn pill: the system draws the capsule, the material,
+ * the specular highlight and the press response. On Android and older iOS it is a flat translucent
+ * forest fill with a crisp hairline, a marked top rim, a faint white reflection over its top half
+ * and a soft shadow, and no blur (D-12). The `secondary` variant is the neutral companion: the
+ * system `glass` style with a hairline on iOS 26, an outlined translucent pill elsewhere. Either
+ * way the button replaces the opaque bar behind a primary `AppButton`, and what scrolls behind the
+ * fallback stays visible through it.
  *
  * Same sizes, 44 pt hit area, light haptic and accessibility contract as `AppButton`. Disabled is
  * the system disabled look natively, and a pale neutral glass with a softer label in the fallback.
@@ -87,6 +96,7 @@ const USE_NATIVE_GLASS =
  */
 export function GlassButton({
   label,
+  variant = "primary",
   size = "lg",
   leadingIcon,
   accessibilityLabel,
@@ -100,6 +110,7 @@ export function GlassButton({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const cta = theme.visual.glassCta
+  const secondary = variant === "secondary"
   const isDisabled = disabled || loading
   const a11yLabel = accessibilityLabel ?? (label.trim() || fr.components.appButton.defaultLabel)
   const handlePress = () => {
@@ -117,8 +128,10 @@ export function GlassButton({
         accessibilityLabel={a11yLabel}
         controlSize={geometry.control}
         minHeight={geometry.minHeight}
-        tint={cta.tint}
-        ink={cta.ink}
+        variant={variant}
+        tint={secondary ? undefined : cta.tint}
+        edge={secondary ? cta.secondary.edge : undefined}
+        ink={secondary ? cta.secondary.ink : cta.ink}
         fontFamily={typography.fontFamily}
         fontSize={typography.fontSize}
         colorScheme={theme.scheme}
@@ -132,7 +145,7 @@ export function GlassButton({
     )
   }
 
-  const ink = disabled ? cta.inkOff : cta.ink
+  const ink = disabled ? cta.inkOff : secondary ? cta.secondary.ink : cta.ink
   const iconSize = size === "lg" ? 18 : size === "sm" ? 15 : 16
   return (
     <AppPressable
@@ -141,7 +154,12 @@ export function GlassButton({
       disabled={isDisabled}
       hitSlop={hitSlopFor(false, size)}
       onPress={handlePress}
-      style={[styles.base, styles[size], disabled ? styles.flatOff : styles.flat, style]}
+      style={[
+        styles.base,
+        styles[size],
+        disabled ? styles.flatOff : secondary ? styles.outline : styles.flat,
+        style,
+      ]}
       testID={testID}
     >
       {loading ? (
@@ -178,6 +196,11 @@ function createStyles(theme: BrandTheme) {
       borderWidth: 1,
       borderColor: cta.hairline,
       boxShadow: cta.shadow,
+    },
+    outline: {
+      backgroundColor: cta.secondary.flat,
+      borderWidth: 1,
+      borderColor: cta.secondary.hairline,
     },
     flatOff: {
       backgroundColor: cta.flatOff,

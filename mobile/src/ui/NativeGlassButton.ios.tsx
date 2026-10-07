@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { requireOptionalNativeModule } from "expo"
 import { Button, HStack, Host, Image, ProgressView, Text } from "@expo/ui/swift-ui"
 import {
@@ -12,6 +12,7 @@ import {
   frame,
   tint,
 } from "@expo/ui/swift-ui/modifiers"
+import { brandRadius } from "../app/brand-tokens"
 import type { NativeGlassButtonProps } from "./NativeGlassButton.types"
 
 /**
@@ -27,7 +28,9 @@ const FILL = 10000
 
 /**
  * The real iOS 26 glass button (D-28): a SwiftUI `Button` with `buttonStyle("glassProminent")`,
- * tinted with the saturated brand green, inside a `Host`. The system draws the capsule, the glass
+ * tinted with the charter forest, inside a `Host`. The secondary variant is the neutral system
+ * `glass` style, untinted, with a token hairline laid over it (a glass capsule on a flat cream
+ * sheet has hardly any edge of its own). The system draws the capsule, the glass
  * material, the specular highlight and the press response; we only give it the tint, the label row
  * and the size. Rendered by `GlassButton` only on iOS 26 and later (`isLiquidGlassAvailable()`);
  * on older iOS the same style silently falls back to the automatic button style, which is why
@@ -36,14 +39,16 @@ const FILL = 10000
  * Sizing: the host stretches to the width it is given and keeps `minHeight`; `matchContents`
  * (vertical) lets it grow when the label wraps at a large text size. The label row is framed to
  * fill the host, so the capsule is the host. Disabled is the system disabled look (the label colour
- * is left to the system then); loading shows a `ProgressView` next to the label and keeps the green.
+ * is left to the system then); loading shows a `ProgressView` next to the label and keeps the tint.
  */
 export function NativeGlassButton({
   label,
   accessibilityLabel: a11yLabel,
   controlSize: size,
   minHeight,
+  variant,
   tint: tintColor,
+  edge,
   ink,
   fontFamily,
   fontSize,
@@ -56,19 +61,20 @@ export function NativeGlassButton({
   style,
 }: NativeGlassButtonProps) {
   const inkModifiers = isDisabled ? [] : [foregroundStyle(ink)]
-  return (
+  const secondary = variant === "secondary"
+  const host = (
     <Host
       matchContents={{ vertical: true }}
       colorScheme={colorScheme}
-      style={[styles.host, { minHeight }, style]}
+      style={[styles.host, { minHeight }, secondary ? null : style]}
     >
       <Button
         onPress={onPress}
         testID={testID}
         modifiers={[
-          buttonStyle("glassProminent"),
+          buttonStyle(secondary ? "glass" : "glassProminent"),
           controlSize(size),
-          tint(tintColor),
+          ...(tintColor ? [tint(tintColor)] : []),
           disabled(isDisabled),
           accessibilityLabel(a11yLabel),
         ]}
@@ -95,10 +101,26 @@ export function NativeGlassButton({
       </Button>
     </Host>
   )
+  if (!secondary) return host
+  // The hairline is an overlay that lets touches through, so it adds nothing to the layout.
+  return (
+    <View style={[styles.wrapper, style]}>
+      {host}
+      <View pointerEvents="none" style={[styles.edge, edge ? { borderColor: edge } : null]} />
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
   host: {
     alignSelf: "stretch",
+  },
+  wrapper: {
+    alignSelf: "stretch",
+  },
+  edge: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: brandRadius.pill,
+    borderWidth: 1,
   },
 })
