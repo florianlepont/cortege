@@ -7,6 +7,9 @@ export const surveyDetailFr = {
   // elsewhere). Sharing is its own header button (OA-48), renaming the pencil next to the title.
   menu: {
     share: "Partager",
+    // 12.2-17: on iOS the survey's name is the native large title, which is not a button: renaming
+    // moves to the "…" menu.
+    rename: "Renommer",
     delete: "Supprimer",
     cancel: "Annuler",
   },

@@ -4,6 +4,7 @@ import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppText as Text } from "../ui/AppText"
+import { useFrameInsetBehavior } from "../ui/frame-large-title"
 import { PageTitle } from "../ui/PageTitle"
 import { MapActionPill } from "./public-map/MapChips"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
@@ -36,6 +37,8 @@ export function SurveyContextScreen({
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const contentStyle = useSubPageContentStyle(styles.subContent)
+  // 12.2-17: iOS insets the page under the native large title (PageTitle then draws nothing).
+  const insetBehavior = useFrameInsetBehavior()
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName, parcelIds } = data
 
@@ -62,6 +65,7 @@ export function SurveyContextScreen({
       // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
       style={styles.scroll}
       contentContainerStyle={contentStyle}
+      contentInsetAdjustmentBehavior={insetBehavior}
     >
       <PageTitle>{fr.navigation.headers.surveyContext}</PageTitle>
       <ParcelMapCard

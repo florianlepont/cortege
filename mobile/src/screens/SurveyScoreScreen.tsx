@@ -4,6 +4,7 @@ import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppCard } from "../ui/AppCard"
 import { FactorBarsChart, factorPointsFromEntries } from "../ui/FactorBarsChart"
+import { useFrameInsetBehavior } from "../ui/frame-large-title"
 import { PageTitle } from "../ui/PageTitle"
 import { FactorsList } from "./survey-detail/FactorsList"
 import { ScoreBreakdown } from "./survey-detail/ScoreBreakdown"
@@ -25,6 +26,8 @@ export function SurveyScoreScreen({
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const contentStyle = useSubPageContentStyle(styles.subContent)
+  // 12.2-17: iOS insets the page under the native large title (PageTitle then draws nothing).
+  const insetBehavior = useFrameInsetBehavior()
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
 
   const factorPoints = useMemo(
@@ -37,6 +40,7 @@ export function SurveyScoreScreen({
       // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
       style={styles.scroll}
       contentContainerStyle={contentStyle}
+      contentInsetAdjustmentBehavior={insetBehavior}
     >
       <PageTitle>{fr.navigation.headers.surveyScore}</PageTitle>
       <ScoreBreakdown scores={data.displayedScores} />

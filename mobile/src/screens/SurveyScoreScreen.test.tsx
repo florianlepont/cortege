@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
 import type { LocalSurvey } from "../storage/types"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import { SurveyScoreScreen } from "./SurveyScoreScreen"
 import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
 import type { SurveyScoreScreenProps } from "./survey-detail/screen-props"
@@ -59,7 +60,7 @@ jest.mock("./survey-detail/useSurveyDetailData", () => ({
 
 const survey = { id: "s1" } as unknown as LocalSurvey
 
-function render(): ReactTestRenderer {
+function render(largeTitle = false): ReactTestRenderer {
   const props = {
     selectedSurvey: survey,
     surveyDetails: {},
@@ -68,7 +69,11 @@ function render(): ReactTestRenderer {
   } as unknown as SurveyScoreScreenProps
   let tree: ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<SurveyScoreScreen {...props} />)
+    tree = renderer.create(
+      <FrameLargeTitleContext.Provider value={largeTitle}>
+        <SurveyScoreScreen {...props} />
+      </FrameLargeTitleContext.Provider>,
+    )
   })
   return tree as ReactTestRenderer
 }
@@ -107,5 +112,19 @@ describe("bottom clearance above the tab bar", () => {
     const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
     expect(padding).toBe(90 + PAGE_END_MARGIN)
     expect(padding).toBeGreaterThanOrEqual(90)
+  })
+})
+
+describe("under the native large title (12.2-17)", () => {
+  test("iOS insets the page: automatic insets, only the margin under the last item", () => {
+    const scroll = render(true).root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
+    expect(padding).toBe(PAGE_END_MARGIN)
+  })
+
+  test("elsewhere the page keeps its own insets", () => {
+    const scroll = render().root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
   })
 })

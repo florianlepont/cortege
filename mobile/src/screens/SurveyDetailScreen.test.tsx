@@ -5,7 +5,11 @@ import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "r
 import { notificationAsync } from "../../test/expo-haptics.mock"
 import { setReducedMotion } from "../../test/react-native-reanimated.mock"
 import type { LocalSurvey } from "../storage/types"
+import { Alert } from "react-native"
+import { fr } from "../i18n"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import { SurveyDetailScreen } from "./SurveyDetailScreen"
+import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 import type { SurveyDetailScreenProps } from "./survey-detail/screen-props"
 import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
 
@@ -42,7 +46,7 @@ jest.mock("react-native", () => {
     View: mockComponent("View"),
     ScrollView: mockComponent("ScrollView"),
     Text: mockComponent("Text"),
-    Alert: { alert: jest.fn() },
+    Alert: { alert: jest.fn(), prompt: jest.fn() },
     Platform: { OS: "ios", select: (o: Record<string, unknown>) => o.ios },
     StyleSheet: { create: <T,>(styles: T) => styles },
   }
@@ -311,5 +315,102 @@ describe("SurveyDetailScreen bottom clearance", () => {
     expect(flattenStyle(scroll.props.contentContainerStyle).paddingBottom).toBe(
       90 + PAGE_END_MARGIN,
     )
+  })
+})
+
+describe("SurveyDetailScreen under the native large title (12.2-17)", () => {
+  const headerMock = useSurveyDetailHeader as jest.Mock
+  type HeaderParams = Parameters<typeof useSurveyDetailHeader>[0]
+  const lastHeader = (): HeaderParams => headerMock.mock.calls.at(-1)![0] as HeaderParams
+
+  function mountLarge(status: string, props: Partial<SurveyDetailScreenProps> = {}) {
+    const element = (next: string) => (
+      <FrameLargeTitleContext.Provider value>
+        <SurveyDetailScreen {...makeProps(next)} {...props} />
+      </FrameLargeTitleContext.Provider>
+    )
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(element(status), {
+        createNodeMock: (node) =>
+          (node.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+      })
+    })
+    return { tree: tree!, update: (next: string) => act(() => tree!.update(element(next))) }
+  }
+
+  beforeEach(() => {
+    headerMock.mockClear()
+    ;(Alert.prompt as jest.Mock).mockClear()
+    ;(Alert.alert as jest.Mock).mockClear()
+  })
+
+  test("the header carries the name: large title on, rename offered for an editable survey", () => {
+    mountLarge("draft")
+    expect(lastHeader().largeTitle).toBe(true)
+    expect(lastHeader().siteName).toBe("Parcelle A")
+    expect(typeof lastHeader().onRename).toBe("function")
+  })
+
+  test("the scroll view leaves the insets to iOS", () => {
+    const { tree } = mountLarge("draft")
+    expect(byType(tree, "ScrollView")[0].props.contentInsetAdjustmentBehavior).toBe("automatic")
+  })
+
+  test("Renommer opens the system prompt on the current name and saves the trimmed name", () => {
+    const onRenameSurvey = jest.fn()
+    mountLarge("draft", { onRenameSurvey })
+    act(() => lastHeader().onRename!())
+    const [title, message, buttons, type, defaultValue] = (Alert.prompt as jest.Mock).mock
+      .calls[0] as [
+      string,
+      undefined,
+      { text: string; onPress?: (v?: string) => void }[],
+      string,
+      string,
+    ]
+    expect(title).toBe(fr.surveyDetail.header.renameLabel)
+    expect(message).toBeUndefined()
+    expect(type).toBe("plain-text")
+    expect(defaultValue).toBe("Parcelle A")
+    expect(buttons.map((b) => b.text)).toEqual([fr.common.actions.cancel, fr.common.actions.save])
+    buttons[1].onPress!("  Lisière nord  ")
+    expect(onRenameSurvey).toHaveBeenCalledWith("survey-1", "Lisière nord")
+  })
+
+  test("an empty name is refused with the usual alert, nothing is renamed", () => {
+    const onRenameSurvey = jest.fn()
+    mountLarge("draft", { onRenameSurvey })
+    act(() => lastHeader().onRename!())
+    const buttons = (Alert.prompt as jest.Mock).mock.calls[0][2] as {
+      onPress?: (v?: string) => void
+    }[]
+    buttons[1].onPress!("   ")
+    buttons[1].onPress!(undefined)
+    expect(onRenameSurvey).not.toHaveBeenCalled()
+    expect(Alert.alert).toHaveBeenCalledWith(
+      fr.surveyDetail.alerts.invalidNameTitle,
+      fr.surveyDetail.alerts.invalidNameMessage,
+    )
+  })
+
+  test("D-25: the finish goes back to the resting top under the large title, not to 0", () => {
+    const { tree, update } = mountLarge("synced")
+    const scroll = byType(tree, "ScrollView")[0]
+    act(() => scroll.props.onScrollBeginDrag({ nativeEvent: { contentOffset: { x: 0, y: -140 } } }))
+    update("submitted")
+    expect(mockScrollTo).toHaveBeenCalledWith({ y: -140, animated: true })
+  })
+})
+
+describe("SurveyDetailScreen without the large title", () => {
+  test("the page names the survey itself: no large title, no rename in the menu", () => {
+    const headerMock = useSurveyDetailHeader as jest.Mock
+    headerMock.mockClear()
+    const tree = mount("draft")
+    const params = headerMock.mock.calls.at(-1)![0] as Parameters<typeof useSurveyDetailHeader>[0]
+    expect(params.largeTitle).toBe(false)
+    expect(params.onRename).toBeUndefined()
+    expect(byType(tree, "ScrollView")[0].props.contentInsetAdjustmentBehavior).toBe("never")
   })
 })

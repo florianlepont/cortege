@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
 import type { LocalSurvey } from "../storage/types"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import { SurveyContextScreen } from "./SurveyContextScreen"
 import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
 import type { SurveyContextScreenProps } from "./survey-detail/screen-props"
@@ -57,7 +58,7 @@ jest.mock("./survey-detail/useSurveyDetailData", () => ({
   }),
 }))
 
-function render(): ReactTestRenderer {
+function render(largeTitle = false): ReactTestRenderer {
   const props = {
     apiUrl: "http://api",
     accessToken: null,
@@ -73,7 +74,11 @@ function render(): ReactTestRenderer {
   } as SurveyContextScreenProps
   let tree: ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<SurveyContextScreen {...props} />)
+    tree = renderer.create(
+      <FrameLargeTitleContext.Provider value={largeTitle}>
+        <SurveyContextScreen {...props} />
+      </FrameLargeTitleContext.Provider>,
+    )
   })
   return tree as ReactTestRenderer
 }
@@ -119,5 +124,19 @@ describe("bottom clearance above the tab bar", () => {
     const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
     expect(padding).toBe(90 + PAGE_END_MARGIN)
     expect(padding).toBeGreaterThanOrEqual(90)
+  })
+})
+
+describe("under the native large title (12.2-17)", () => {
+  test("iOS insets the page: automatic insets, only the margin under the last item", () => {
+    const scroll = render(true).root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
+    expect(padding).toBe(PAGE_END_MARGIN)
+  })
+
+  test("elsewhere the page keeps its own insets", () => {
+    const scroll = render().root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
   })
 })

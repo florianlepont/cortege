@@ -6,6 +6,7 @@ import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppField } from "../../ui/AppField"
 import { AppText as Text } from "../../ui/AppText"
+import { useFrameLargeTitle } from "../../ui/frame-large-title"
 import { type StatusLine } from "./summary-state"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
 
@@ -24,6 +25,9 @@ type SummaryHeaderProps = {
 /**
  * The title block of the summary: the survey's name, tapped to rename it (OA-50, OA-95), and one
  * line in words saying where the survey stands (OA-37).
+ *
+ * 12.2-17: under the native iOS large title the header shows the name (and keeps it on screen while
+ * the page scrolls), so only the status line is drawn here; renaming is in the header's "…" menu.
  */
 export function SummaryHeader({
   surveyId,
@@ -35,6 +39,7 @@ export function SummaryHeader({
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const headerStyles = useMemo(() => createHeaderStyles(theme), [theme])
+  const nativeTitle = useFrameLargeTitle()
   const [isRenaming, setIsRenaming] = useState(false)
   const [nameInput, setNameInput] = useState(siteName)
 
@@ -84,7 +89,7 @@ export function SummaryHeader({
             />
           </View>
         </View>
-      ) : (
+      ) : nativeTitle ? null : (
         <View style={styles.titleRow}>
           {canEdit ? (
             // The title is the control (OA-95): a tap edits it, no pencil.

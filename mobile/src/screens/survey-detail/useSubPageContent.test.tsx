@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { brandSpacing4 } from "../../app/brand-tokens"
+import { FrameLargeTitleContext } from "../../ui/frame-large-title"
 import { PAGE_END_MARGIN, pageBottomPadding, useSubPageContentStyle } from "./useSubPageContent"
 
 let mockClearance = 100
@@ -62,5 +63,36 @@ describe("useSubPageContentStyle", () => {
 
   test("no bar (null) means the tab bar clearance alone", () => {
     expect(readStyle(null)).toEqual([base, { paddingBottom: 100 + PAGE_END_MARGIN }])
+  })
+})
+
+describe("useSubPageContentStyle under the native large title (12.2-17)", () => {
+  function readLarge(barHeight?: number | null): unknown {
+    let result: unknown
+    function Probe() {
+      result = useSubPageContentStyle(base, barHeight)
+      return null
+    }
+    act(() => {
+      renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <Probe />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+    return result
+  }
+
+  test("iOS insets the tab bar itself: only the margin is left under the last item", () => {
+    expect(readLarge()).toEqual([base, { paddingBottom: PAGE_END_MARGIN }])
+    expect(readLarge(null)).toEqual([base, { paddingBottom: PAGE_END_MARGIN }])
+  })
+
+  test("a floating bar adds only its part above the tab bar's clearance", () => {
+    expect(readLarge(158)).toEqual([base, { paddingBottom: 158 - 100 + PAGE_END_MARGIN }])
+  })
+
+  test("a bar shorter than the clearance adds nothing", () => {
+    expect(readLarge(60)).toEqual([base, { paddingBottom: PAGE_END_MARGIN }])
   })
 })

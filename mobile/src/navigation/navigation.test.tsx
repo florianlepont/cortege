@@ -516,6 +516,34 @@ describe("stack options and listeners", () => {
     expect((factor.headerTitle as () => null)()).toBeNull()
   })
 
+  test("native iOS tab tree: the survey summary and its sub-pages have the native large title (12.2-17)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(<AppNavigation />)
+    const titles: Record<string, string> = {
+      surveyContext: fr.navigation.headers.surveyContext,
+      surveyScore: fr.navigation.headers.surveyScore,
+      surveyHistory: fr.navigation.headers.surveyHistory,
+    }
+    for (const name of Object.keys(titles)) {
+      const options = effectiveOptions(name)
+      expect(options).toEqual(expect.objectContaining(nativeLargeTitle(defaultTheme)))
+      expect(options.title).toBe(titles[name])
+      expect(options.headerTitle).toBeUndefined()
+      expect(options).toEqual(expect.objectContaining(HALO_HEADER))
+    }
+    // The summary's title is the survey's name, set by the screen; it starts empty (OA-94).
+    const detail = effectiveOptions("surveyDetail")
+    expect(detail).toEqual(expect.objectContaining(nativeLargeTitle(defaultTheme)))
+    expect(detail.title).toBe("")
+  })
+
+  test("Android: the survey summary keeps its own title, no native large title", async () => {
+    await mount(<AppNavigation />)
+    const detail = effectiveOptions("surveyDetail")
+    expect(detail.title).toBe("")
+    expect(detail.headerLargeTitleEnabled).toBeUndefined()
+  })
+
   test("the factor screen has no swipe-back: a slide along the A to J strip is not a back (OA-111)", async () => {
     await mount(<AppNavigation />)
     const options = mockScreens.surveyFactorDetail.options as OptionsFn

@@ -17,7 +17,13 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle, nativeLargeTitle } from "./stack-options"
+import { usesNativeLargeTitle } from "../large-title"
+import {
+  createBaseStackScreenOptions,
+  hiddenNativeTitle,
+  nativeLargeTitle,
+  pageTitleOptions,
+} from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -81,9 +87,11 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           <SurveysStack.Screen
             name="surveyDetail"
             options={{
-              // OA-94: the page names the survey itself, a "Détail" title says nothing.
+              // OA-94: the page names the survey itself, a "Détail" title says nothing. 12.2-17: in
+              // the native iOS tree the name is the native large title, set by the screen
+              // (`useSurveyDetailHeader`), so it stays on screen as the page scrolls.
               title: "",
-              headerLargeTitle: false,
+              ...(usesNativeLargeTitle() ? nativeLargeTitle(theme) : {}),
             }}
             listeners={{
               beforeRemove: () => {
@@ -110,8 +118,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveyContext"
             options={{
               title: headers.surveyContext,
-              headerLargeTitle: false,
-              ...hiddenNativeTitle,
+              // 12.2-17: the native large title in the native iOS tree, else the page's own title.
+              ...pageTitleOptions(theme),
             }}
             component={SurveyContextRoute}
           />
@@ -119,8 +127,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveyScore"
             options={{
               title: headers.surveyScore,
-              headerLargeTitle: false,
-              ...hiddenNativeTitle,
+              // 12.2-17: the native large title in the native iOS tree, else the page's own title.
+              ...pageTitleOptions(theme),
             }}
             component={SurveyScoreRoute}
           />
@@ -128,8 +136,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveyHistory"
             options={{
               title: headers.surveyHistory,
-              headerLargeTitle: false,
-              ...hiddenNativeTitle,
+              // 12.2-17: the native large title in the native iOS tree, else the page's own title.
+              ...pageTitleOptions(theme),
             }}
             component={SurveyHistoryRoute}
           />

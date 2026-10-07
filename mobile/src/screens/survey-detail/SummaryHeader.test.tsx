@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { fr } from "../../i18n"
+import { FrameLargeTitleContext } from "../../ui/frame-large-title"
 import { SummaryHeader } from "./SummaryHeader"
 import type { StatusLine } from "./summary-state"
 
@@ -74,4 +75,34 @@ describe("SummaryHeader status line", () => {
     const tree = render({ status: h.status.finished, sync: h.sync.sending, syncTone: "ok" })
     expect(texts(tree).slice(1).join(" ")).toBe("Terminé · synchronisation en cours")
   })
+})
+
+describe("SummaryHeader under the native large title (12.2-17)", () => {
+  function renderLarge(canEdit: boolean): ReactTestRenderer {
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <SummaryHeader
+            surveyId="survey-1"
+            siteName="Parcelle A"
+            canEdit={canEdit}
+            statusLine={{ status: h.status.draft, sync: h.sync.pending, syncTone: "pending" }}
+            onRenameSurvey={jest.fn()}
+          />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+    return tree!
+  }
+
+  test.each([true, false])(
+    "the header names the survey: only the status line is drawn (editable %s)",
+    (canEdit) => {
+      const tree = renderLarge(canEdit)
+      expect(texts(tree)).toEqual([h.status.draft, h.syncSuffix(h.sync.pending)])
+      // No tappable title: renaming is in the header's menu.
+      expect(tree.root.findAll((n) => (n.type as unknown) === "Pressable")).toHaveLength(0)
+    },
+  )
 })

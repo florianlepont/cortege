@@ -1734,6 +1734,10 @@ describe("the native large title frame (12.2-17)", () => {
 
   const nav = () => makeNavigation() as never
   const largeTitleRoutes: [string, () => React.ReactElement][] = [
+    ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
+    ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
+    ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
+    ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
     ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
     ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
     ["offlineAreas", () => <OfflineAreasRoute navigation={nav()} route={{} as never} />],

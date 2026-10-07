@@ -15,6 +15,13 @@ export type HeaderNavigation = {
 type UseSurveyDetailHeaderParams = {
   navigation: HeaderNavigation
   siteName: string
+  /**
+   * 12.2-17: the page is named by the native large title (iOS native tab tree): the header's title
+   * follows the survey's name, and renaming moves to the "…" menu.
+   */
+  largeTitle?: boolean
+  /** Renames the survey (stable); offered in the menu under the large title, when editable. */
+  onRename?: () => void
   /** Both callbacks must be stable (`useLatestCallback`): the header items capture them. */
   onShare: () => void
   onDelete: () => void
@@ -26,10 +33,15 @@ type UseSurveyDetailHeaderParams = {
  * The summary's header actions (OA-48, OA-49): "Partager" as its own visible button, and a "…"
  * menu that only holds "Supprimer". On iOS they are native header items (the system draws the
  * glass and the menu); elsewhere two icon buttons, the second opening a sheet.
+ *
+ * 12.2-17: under the native large title the header's title is the survey's name (it shrinks into
+ * the bar as the page scrolls, so the name stays on screen) and the menu offers "Renommer" first.
  */
 export function useSurveyDetailHeader({
   navigation,
   siteName,
+  largeTitle = false,
+  onRename,
   onShare,
   onDelete,
   onOpenMenu,
@@ -39,7 +51,18 @@ export function useSurveyDetailHeader({
 
   useLayoutEffect(() => {
     if (Platform.OS === "ios") {
+      const renameItems = onRename
+        ? [
+            {
+              type: "action" as const,
+              label: menuText.rename,
+              icon: { type: "sfSymbol" as const, name: "pencil" as const },
+              onPress: onRename,
+            },
+          ]
+        : []
       navigation.setOptions({
+        ...(largeTitle ? { title: siteName } : {}),
         unstable_headerRightItems: () => [
           {
             type: "button",
@@ -57,6 +80,7 @@ export function useSurveyDetailHeader({
             accessibilityLabel: a11y.openMenu(siteName),
             menu: {
               items: [
+                ...renameItems,
                 {
                   type: "action",
                   label: menuText.delete,
@@ -93,7 +117,7 @@ export function useSurveyDetailHeader({
         </View>
       ),
     })
-  }, [navigation, siteName, tint, onShare, onDelete, onOpenMenu])
+  }, [navigation, siteName, largeTitle, tint, onRename, onShare, onDelete, onOpenMenu])
 }
 
 const styles = StyleSheet.create({

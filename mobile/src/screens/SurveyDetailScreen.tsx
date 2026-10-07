@@ -10,6 +10,7 @@ import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppNotice } from "../ui/AppNotice"
+import { useFrameInsetBehavior, useFrameLargeTitle } from "../ui/frame-large-title"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
@@ -28,11 +29,14 @@ import { useVisiblePulse } from "./survey-detail/useVisiblePulse"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 import { useFinishBarHeight } from "./survey-detail/useFinishBarHeight"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
+import { useScrollTop } from "./survey-detail/useScrollTop"
 
 const menuText = fr.surveyDetail.menu
 const actionsText = fr.surveyDetail.actions
 const rowsText = fr.surveyDetail.rows
 const summaryText = fr.surveyDetail.summary
+const headerText = fr.surveyDetail.header
+const alertsText = fr.surveyDetail.alerts
 
 /**
  * The summary of a survey (OA-46): its name and where it stands, the score, the photos, the map,
@@ -76,13 +80,17 @@ export function SurveyDetailScreen({
   // D-25: at the finish the page goes back to the top, so the score card's halo and pop are seen
   // (without animation under Reduce Motion, where only the haptic plays).
   const scrollRef = useRef<ScrollView>(null)
+  const { onScrollBeginDrag, scrollToTop } = useScrollTop(scrollRef)
   const reduceMotion = useReducedMotion()
   const scrolledPulse = useRef(pulseTrigger)
   useEffect(() => {
     if (scrolledPulse.current === pulseTrigger) return
     scrolledPulse.current = pulseTrigger
-    scrollRef.current?.scrollTo({ y: 0, animated: !reduceMotion })
-  }, [pulseTrigger, reduceMotion])
+    scrollToTop(!reduceMotion)
+  }, [pulseTrigger, reduceMotion, scrollToTop])
+  // 12.2-17: under the native iOS large title the header carries the survey's name.
+  const largeTitle = useFrameLargeTitle()
+  const insetBehavior = useFrameInsetBehavior()
 
   const attachmentPreviewKey = selectedSurveyAttachments
     .map((attachment) => `${attachment.id}:${attachment.file_state}`)
@@ -117,9 +125,35 @@ export function SurveyDetailScreen({
   })
   const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
   const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
+  // 12.2-17: the native large title is not a button, so the name is edited from the "…" menu in
+  // the system's text prompt (iOS only, like the large title).
+  const handleRename = useLatestCallback(() => {
+    Alert.prompt(
+      headerText.renameLabel,
+      undefined,
+      [
+        { text: fr.common.actions.cancel, style: "cancel" },
+        {
+          text: fr.common.actions.save,
+          onPress: (value?: string) => {
+            const nextName = (value ?? "").trim()
+            if (!nextName) {
+              Alert.alert(alertsText.invalidNameTitle, alertsText.invalidNameMessage)
+              return
+            }
+            void onRenameSurvey(selectedSurvey.id, nextName)
+          },
+        },
+      ],
+      "plain-text",
+      activeSiteName,
+    )
+  })
   useSurveyDetailHeader({
     navigation,
     siteName: activeSiteName,
+    largeTitle,
+    onRename: largeTitle && canEditSurvey ? handleRename : undefined,
     onShare: () => void handleShare(),
     onDelete: handleDelete,
     onOpenMenu: handleOpenMenu,
@@ -176,9 +210,12 @@ export function SurveyDetailScreen({
     <View style={styles.scroll}>
       <ScrollView
         ref={scrollRef}
-        // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
+        // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19),
+        // or iOS insets it under the native large title (12.2-17).
         style={styles.scroll}
         contentContainerStyle={contentStyle}
+        contentInsetAdjustmentBehavior={insetBehavior}
+        onScrollBeginDrag={onScrollBeginDrag}
       >
         <SummaryHeader
           surveyId={selectedSurvey.id}

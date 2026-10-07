@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import type { LocalSurvey } from "../storage/types"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import { SurveyHistoryScreen } from "./SurveyHistoryScreen"
 import type { SurveyHistoryScreenProps } from "./survey-detail/screen-props"
 import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
@@ -49,7 +50,7 @@ function flattenStyle(style: unknown): Style {
   return (style as Style | undefined | null) ?? {}
 }
 
-function render(): renderer.ReactTestRenderer {
+function render(largeTitle = false): renderer.ReactTestRenderer {
   const props = {
     apiUrl: "http://api",
     accessToken: null,
@@ -62,7 +63,11 @@ function render(): renderer.ReactTestRenderer {
   } as unknown as SurveyHistoryScreenProps
   let tree!: renderer.ReactTestRenderer
   act(() => {
-    tree = renderer.create(<SurveyHistoryScreen {...props} />)
+    tree = renderer.create(
+      <FrameLargeTitleContext.Provider value={largeTitle}>
+        <SurveyHistoryScreen {...props} />
+      </FrameLargeTitleContext.Provider>,
+    )
   })
   return tree
 }
@@ -79,5 +84,19 @@ describe("SurveyHistoryScreen", () => {
     const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
     expect(padding).toBe(90 + PAGE_END_MARGIN)
     expect(padding).toBeGreaterThanOrEqual(90)
+  })
+})
+
+describe("under the native large title (12.2-17)", () => {
+  test("iOS insets the page: automatic insets, only the margin under the last item", () => {
+    const scroll = render(true).root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
+    expect(padding).toBe(PAGE_END_MARGIN)
+  })
+
+  test("elsewhere the page keeps its own insets", () => {
+    const scroll = render().root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
   })
 })

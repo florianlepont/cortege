@@ -5,6 +5,7 @@ import { useSurveys } from "../../state/surveys-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyContextRouteProps } from "../types"
 import { ScreenFrame } from "../../ui/ScreenFrame"
+import { usesNativeLargeTitle } from "../large-title"
 
 /** "Contexte et parcelles": the map, the parcels and the method of the selected survey. */
 export const SurveyContextRoute = memo(function SurveyContextRoute({
@@ -24,7 +25,8 @@ export const SurveyContextRoute = memo(function SurveyContextRoute({
   if (!state.selectedSurvey) return null
 
   return (
-    <ScreenFrame>
+    // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
+    <ScreenFrame largeTitle={usesNativeLargeTitle()}>
       <SurveyContextScreen
         apiUrl={session.apiUrl}
         accessToken={accessToken}
