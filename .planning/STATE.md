@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
-stopped_at: Completed 12.2-16-PLAN.md
-last_updated: "2026-10-07T11:21:45.680Z"
+stopped_at: Completed 12.2-17-PLAN.md
+last_updated: "2026-10-07T15:10:16.124Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 175
+  completed_plans: 176
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 17 of 23
+Plan: 18 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -96,6 +96,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P14 | owner check | 1 tasks | 0 files |
 | Phase 12.2 P15 | 90 min | 3 tasks | 32 files |
 | Phase 12.2 P16 | 35 min | 2 tasks | 11 files |
+| Phase 12.2 P17 | owner check | 1 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -163,6 +164,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 12.2]: 12.2-15: the D-26 pill floats in its own row above the A to J bar; the 46 pt round button keeps its place and only goes back (close icon) beside it
 - [Phase 12.2]: 12.2-15: a finish from the pager writes the pending form edits first (flushDraft), then runs submitSurvey; success is the status turning submitted, then popTo surveyDetail
 - [Phase 12.2]: 12.2-15: the summary halo and pop wait until it is seen again after a pager finish (useVisiblePulse); the haptic stays immediate and single
+- [Phase 12.2]: 12.2-17: wizard uses the native transparent header with the system back button on iOS (D-29); pages whose title scrolled away get the native collapsing large title with a blur behind the collapsed bar (D-30); no border under a gradient, circular corners on layered surfaces
 
 ### Pending Todos
 
@@ -203,6 +205,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-07T11:21:45.675Z
-Stopped at: Completed 12.2-16-PLAN.md
+Last session: 2026-10-07T15:10:12.694Z
+Stopped at: Completed 12.2-17-PLAN.md
 Resume file: None
