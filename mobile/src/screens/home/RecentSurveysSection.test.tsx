@@ -1,11 +1,12 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
-import { brandInteraction, brandSpacing4 } from "../../app/brand-tokens"
+import { brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { formatShortDateTime } from "../../app/formatters"
 import { formatSurveyUiStatusLabel } from "../../app/survey-logic"
 import { defaultTheme } from "../../app/theme"
 import type { SurveyDetailResponse } from "../../app/types"
 import { fr } from "../../i18n"
+import { HOME_GAPS, RECENT_LAYOUT, recentSectionHeight } from "./layout-budget"
 import type { LocalSurvey } from "../../storage/types"
 import * as feedbackModule from "../../ui/feedback"
 import {
@@ -300,12 +301,165 @@ describe("RecentSurveysSection (D-20c)", () => {
     )
     const style = styleOf(section)
     expect(style.marginHorizontal).toBe(brandSpacing4.md)
-    expect(style.marginTop).toBe(brandSpacing4.lg)
-    const gap = styleOf(
+    // The 44 pt header already holds 13 pt of air above its title: 12 on top (HOME_GAPS.recent).
+    expect(style.marginTop).toBe(HOME_GAPS.recent)
+    expect((style.marginTop as number) % 4).toBe(0)
+  })
+
+  describe("compact rows in one glass card (12.2-14)", () => {
+    const card = () =>
       tree.root.find(
-        (node) => (node.type as unknown) === "View" && styleOf(node).gap === brandSpacing4.sm,
-      ),
-    ).gap as number
-    expect(gap % 4).toBe(0)
+        (node: ReactTestInstance) =>
+          (node.type as unknown) === "View" && node.props.testID === "home-recent-card",
+      )
+    const separators = () =>
+      tree.root.findAll(
+        (node: ReactTestInstance) =>
+          (node.type as unknown) === "View" && node.props.testID === "home-recent-separator",
+      )
+
+    test("the three rows are inside one card, which carries the glass look", () => {
+      mount([makeSurvey("a"), makeSurvey("b"), makeSurvey("c")])
+      expect(
+        tree.root.findAll(
+          (node: ReactTestInstance) =>
+            (node.type as unknown) === "View" && node.props.testID === "home-recent-card",
+        ),
+      ).toHaveLength(1)
+      expect(card().findAll((node) => rows().includes(node))).toHaveLength(3)
+      const style = styleOf(card())
+      expect(style.borderRadius).toBe(brandRadius.card)
+      expect(style.borderWidth).toBe(1)
+      expect(style.borderColor).toBe(defaultTheme.visual.glass.cardBorder)
+      expect(style.backgroundColor).toBe(defaultTheme.visual.glass.cardFill)
+      expect(style.boxShadow).toBe(defaultTheme.visual.glass.cardShadow)
+    })
+
+    test("a row is flat: no card, border, fill or shadow of its own", () => {
+      mount([makeSurvey("a"), makeSurvey("b"), makeSurvey("c")])
+      for (const row of rows()) {
+        const style = styleOf(row)
+        expect(style.borderWidth).toBeUndefined()
+        expect(style.backgroundColor).toBeUndefined()
+        expect(style.boxShadow).toBeUndefined()
+        expect(style.borderRadius).toBeUndefined()
+      }
+    })
+
+    test("the card clips the wave to its corners, which the rows draw square", () => {
+      mount([makeSurvey("a"), makeSurvey("b")])
+      const clip = tree.root.find(
+        (node: ReactTestInstance) =>
+          (node.type as unknown) === "View" && styleOf(node).overflow === "hidden",
+      )
+      expect(styleOf(clip).borderRadius).toBe(brandRadius.card - 1)
+      expect(card().findAll((node) => node === clip)).toHaveLength(1)
+      for (const row of rows()) {
+        const layer = row.find(
+          (node) => (node.type as unknown) === "View" && node.props.testID === "ripple-layer",
+        )
+        expect(styleOf(layer).borderRadius).toBe(0)
+      }
+    })
+
+    test("hairline rules divide the rows: one fewer than the rows, none above the first", () => {
+      mount([makeSurvey("a"), makeSurvey("b"), makeSurvey("c")])
+      expect(separators()).toHaveLength(2)
+      for (const separator of separators()) {
+        expect(styleOf(separator).height).toBe(1)
+        expect(styleOf(separator).backgroundColor).toBe(defaultTheme.colors.divider)
+      }
+      // Row, rule, row, rule, row: a rule is never first or last in the card.
+      const order = card()
+        .findAll(
+          (node: ReactTestInstance) =>
+            (node.type as unknown) === "Pressable" ||
+            ((node.type as unknown) === "View" && node.props.testID === "home-recent-separator"),
+        )
+        .filter((node) => node.props.testID?.startsWith("home-recent-"))
+        .map((node) => (node.props.testID.startsWith("home-recent-row-") ? "row" : "rule"))
+      expect(order).toEqual(["row", "rule", "row", "rule", "row"])
+      act(() => tree.unmount())
+      mount([makeSurvey("a")])
+      expect(separators()).toHaveLength(0)
+      act(() => tree.unmount())
+      mount([makeSurvey("a"), makeSurvey("b")])
+      expect(separators()).toHaveLength(1)
+    })
+
+    test("a row is 52 pt: at least a 44 pt hit area, no more than the compact height", () => {
+      mount([makeSurvey("a"), makeSurvey("b"), makeSurvey("c")])
+      for (const row of rows()) {
+        const style = styleOf(row)
+        expect(style.minHeight).toBe(RECENT_LAYOUT.rowHeight)
+        expect(style.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+        expect(style.minHeight).toBeLessThanOrEqual(56)
+        expect(style.height).toBeUndefined()
+        // Two 20 pt lines between the vertical paddings give exactly that height.
+        expect(2 * (style.paddingVertical as number) + 20 + 20).toBe(style.minHeight)
+        expect(style.flexDirection).toBe("row")
+      }
+    })
+
+    test("the title is one 20 pt line, the chip and date share the 20 pt second line", () => {
+      mount([makeSurvey("a")])
+      const row = rows()[0]
+      const title = row
+        .findAll((node) => (node.type as unknown) === "Text")
+        .find((node) => String([node.props.children].flat().join("")) === "Parcelle a")
+      expect(title?.props.numberOfLines).toBe(1)
+      expect(styleOf(title as ReactTestInstance).lineHeight).toBe(20)
+      const statusRow = row.find(
+        (node) => (node.type as unknown) === "View" && styleOf(node).minHeight === 20,
+      )
+      expect(styleOf(statusRow).flexDirection).toBe("row")
+      expect(styleOf(statusRow).flexWrap).toBeUndefined()
+      const chip = row
+        .findAll((node) => (node.type as unknown) === "View")
+        .find((node) => styleOf(node).paddingVertical === RECENT_LAYOUT.chipPaddingY)
+      expect(chip).toBeDefined()
+    })
+
+    test("the ring is the smaller 32 pt one, in a column of its own width", () => {
+      mount([makeSurvey("a")])
+      const ring = rows()[0].findByType("ScoreRing" as never)
+      expect(ring.props.size).toBe(RECENT_LAYOUT.ringSize)
+      expect(RECENT_LAYOUT.ringSize).toBeLessThan(38)
+      const column = rows()[0].find(
+        (node) =>
+          (node.type as unknown) === "View" && styleOf(node).width === RECENT_LAYOUT.ringSize,
+      )
+      expect(column).toBeDefined()
+    })
+
+    test("a tone keeps its accent bar, like a Mes Relevés row", () => {
+      mount([
+        makeSurvey("a", { status: "submitted", sync_state: "synced" }),
+        makeSurvey("b", { sync_state: "failed", sync_blocked: 0 }),
+      ])
+      const bar = (row: ReactTestInstance) =>
+        row.find((node) => (node.type as unknown) === "View" && styleOf(node).width === 4)
+      const colours = rows().map((row) => styleOf(bar(row)).backgroundColor)
+      expect(colours[0]).not.toBe(colours[1])
+      expect(colours[0]).not.toBe("transparent")
+    })
+
+    test("the section height is the one the budget counts", () => {
+      expect(recentSectionHeight(3)).toBe(
+        HOME_GAPS.recent +
+          RECENT_LAYOUT.headerHeight +
+          RECENT_LAYOUT.headerGap +
+          2 * RECENT_LAYOUT.cardBorder +
+          3 * RECENT_LAYOUT.rowHeight +
+          2 * RECENT_LAYOUT.separator,
+      )
+      mount([makeSurvey("a")])
+      const header = tree.root.find(
+        (node: ReactTestInstance) =>
+          (node.type as unknown) === "View" &&
+          styleOf(node).marginBottom === RECENT_LAYOUT.headerGap,
+      )
+      expect(header).toBeDefined()
+    })
   })
 })

@@ -21,18 +21,21 @@ export function RowIndicator({
   score,
   completionRate,
   index,
+  size,
 }: {
   surveyId: string
   isSubmitted: boolean
   score: number | null
   completionRate: number
   index: number
+  /** A smaller ring for a slim row (Accueil's recent surveys); the lists keep the default. */
+  size?: number
 }) {
   if (isSubmitted) {
     return score != null ? (
-      <ScoreRing score={score} index={index} animationKey={`${surveyId}:${score}`} />
+      <ScoreRing score={score} index={index} animationKey={`${surveyId}:${score}`} size={size} />
     ) : (
-      <ScoreRing score={null} />
+      <ScoreRing score={null} size={size} />
     )
   }
   const clamped = Math.max(0, Math.min(100, completionRate))
@@ -40,6 +43,7 @@ export function RowIndicator({
     <ScoreRing
       score={null}
       completion={clamped / 100}
+      size={size}
       index={index}
       animationKey={`${surveyId}:draft:${clamped}`}
     />
