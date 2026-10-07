@@ -22,6 +22,11 @@ export type LocalSurvey = {
   created_at: string
   updated_at: string
   completion_rate: number
+  /**
+   * The IBP total (/50) the server last reported for a submitted survey, read from the local payload
+   * by `listLocalSurveys` (12.2-14). Null when there is none; absent on a survey returned by a write.
+   */
+  ibp_total?: number | null
 }
 
 export type QueueOpType =

@@ -175,6 +175,30 @@ describe("SurveyListScreen (12.2-11)", () => {
     expect(wrappers(root)).toHaveLength(2)
   })
 
+  test("rows get their score from the local list at once, a loaded detail being fresher (12.2-14)", () => {
+    const scored = { ...survey("b", "submitted", "2026-10-02T00:00:00.000Z"), ibp_total: 37 }
+    const bare = survey("c", "submitted", "2026-10-01T00:00:00.000Z")
+    const draft = survey("a", "draft", "2026-10-03T00:00:00.000Z")
+    const scores = (root: renderer.ReactTestInstance) =>
+      Object.fromEntries(
+        root
+          .findAllByType("SurveyRow" as never)
+          .map((row) => [row.props.survey.id, row.props.score]),
+      )
+
+    const fresh = mount(makeProps({ surveys: [draft, scored, bare], surveyDetails: {} }))
+    expect(scores(fresh)).toEqual({ a: null, b: 37, c: null })
+
+    act(() => tree.unmount())
+    const opened = mount(
+      makeProps({
+        surveys: [draft, scored, bare],
+        surveyDetails: { b: { scores: { ibp_total: 41 } } as never },
+      }),
+    )
+    expect(scores(opened)).toEqual({ a: null, b: 41, c: null })
+  })
+
   test("section headers are not wrapped in an entrance view", () => {
     const root = mount(makeProps())
     expect(root.findAllByType("SectionTitle" as never)).toHaveLength(2)

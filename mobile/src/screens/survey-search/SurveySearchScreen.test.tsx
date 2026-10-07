@@ -166,6 +166,23 @@ describe("SurveySearchScreen, Mes relevés scope", () => {
     expect(props.onSortModeChange).toHaveBeenLastCalledWith("updated_asc")
   })
 
+  it("gives the rows their score from the local list at once, a loaded detail being fresher (12.2-14)", () => {
+    const scored = { ...mine("a"), ibp_total: 29 } as LocalSurvey
+    const scoresOf = (props: SurveySearchScreenProps) =>
+      Object.fromEntries(
+        byType(render(props), "SurveyRow").map((row) => [row.props.survey.id, row.props.score]),
+      )
+    expect(scoresOf(makeProps({ surveys: [scored, mine("b")] }))).toEqual({ a: 29, b: null })
+    expect(
+      scoresOf(
+        makeProps({
+          surveys: [scored, mine("b")],
+          surveyDetails: { a: { scores: { ibp_total: 33 } } as never },
+        }),
+      ),
+    ).toEqual({ a: 33, b: null })
+  })
+
   it("a pressed active chip clears its filter and the sort cycles back to the first mode", () => {
     const props = makeProps({
       statusFilter: "draft",

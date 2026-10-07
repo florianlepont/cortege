@@ -27,6 +27,7 @@ import { AppText as Text } from "../../ui/AppText"
 import { feedback } from "../../ui/feedback"
 import { ListEntranceRow } from "../../ui/ListEntranceRow"
 import { useListEntrance } from "../../ui/useListEntrance"
+import { resolveRowScore } from "../survey-list/row-score"
 import { SurveyRow } from "../survey-list/SurveyRow"
 import { CommunityRow } from "./CommunityRow"
 import { createSearchStyles } from "./search.styles"
@@ -123,7 +124,7 @@ export function SurveySearchScreen({
         {item.kind === "mine" ? (
           <SurveyRow
             survey={item.survey}
-            score={surveyDetails[item.survey.id]?.scores?.ibp_total ?? null}
+            score={resolveRowScore(item.survey, surveyDetails)}
             selected={selectedSurveyId === item.survey.id}
             index={index}
             onOpen={onOpenSurvey}

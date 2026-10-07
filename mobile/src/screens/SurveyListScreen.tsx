@@ -15,6 +15,7 @@ import {
   keyExtractor,
   type SurveyListItem,
 } from "./survey-list/list-items"
+import { resolveRowScore } from "./survey-list/row-score"
 import { SurveyRow } from "./survey-list/SurveyRow"
 import { createListStyles } from "./survey-list/styles"
 import type { SurveyListScreenProps } from "./survey-list/types"
@@ -81,7 +82,7 @@ export function SurveyListScreen({
         <ListEntranceRow index={index} canAnimate={canAnimateRow}>
           <SurveyRow
             survey={item}
-            score={surveyDetails[item.id]?.scores?.ibp_total ?? null}
+            score={resolveRowScore(item, surveyDetails)}
             selected={selectedSurveyId === item.id}
             index={index}
             onOpen={onOpenSurvey}

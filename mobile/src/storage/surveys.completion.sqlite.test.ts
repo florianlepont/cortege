@@ -210,8 +210,83 @@ describe("listLocalSurveys reads completion from SQL (01.9 D-03)", () => {
     )
     expect(getAllSpy).toHaveBeenCalledTimes(1)
     const sql = String(getAllSpy.mock.calls[0]?.[0])
-    expect(sql).not.toContain("payload_json")
+    // 12.2-14: the payload is only reached through json_extract, never selected.
+    expect(sql).not.toMatch(/SELECT\s+payload_json|,\s*payload_json\s*,/)
     expect(sql).toContain("payload_completion END AS completion_rate")
+    expect(sql).toContain("json_extract(payload_json, '$.scores.ibp_total')")
+  })
+})
+
+describe("listLocalSurveys reads the submitted total from the payload (12.2-14)", () => {
+  async function insertRow(id: string, status: string, payloadJson: string | null) {
+    const db = await getDb()
+    await db.runAsync(
+      `INSERT INTO local_surveys (id, site_name, status, visibility, sync_version, sync_state, sync_blocked, payload_json, payload_completion, created_at, updated_at)
+       VALUES (?, ?, ?, 'private', 1, 'synced', 0, ?, 50, ?, ?)`,
+      [id, id, status, payloadJson, NOW, NOW],
+    )
+  }
+
+  async function totals(): Promise<Record<string, number | null | undefined>> {
+    const surveys = await listLocalSurveys()
+    return Object.fromEntries(surveys.map((survey) => [survey.id, survey.ibp_total]))
+  }
+
+  test("a submitted survey carries scores.ibp_total, as pulled from the server", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse([
+        {
+          id: "remote-scored",
+          site_name: "Notée",
+          status: "submitted",
+          sync_version: 3,
+          scores: { ibp_total: 37, ibp_peuplement_gestion: 25, ibp_contexte: 12 },
+        },
+      ]),
+    )
+    await pullRemoteChanges("http://api", "token")
+
+    expect((await totals())["remote-scored"]).toBe(37)
+  })
+
+  test("a total of 0 is kept (a real score, not a missing one)", async () => {
+    await insertRow("zero", "submitted", JSON.stringify({ scores: { ibp_total: 0 } }))
+    expect((await totals()).zero).toBe(0)
+  })
+
+  test("a submitted survey without a usable total reads null", async () => {
+    await insertRow("no-scores", "submitted", JSON.stringify({ scores: {} }))
+    await insertRow("no-key", "submitted", JSON.stringify({ site_name: "x" }))
+    await insertRow("text", "submitted", JSON.stringify({ scores: { ibp_total: "37" } }))
+    await insertRow("null-total", "submitted", JSON.stringify({ scores: { ibp_total: null } }))
+    await insertRow("no-payload", "submitted", null)
+    await insertRow("broken", "submitted", "{not json")
+
+    expect(await totals()).toEqual({
+      "no-scores": null,
+      "no-key": null,
+      text: null,
+      "null-total": null,
+      "no-payload": null,
+      broken: null,
+    })
+  })
+
+  test("a draft never carries a total, even when its payload holds an old one", async () => {
+    await insertRow("draft", "draft", JSON.stringify({ scores: { ibp_total: 41 } }))
+    expect((await totals()).draft).toBeNull()
+  })
+
+  test("the list still makes no JSON.parse call and returns no payload", async () => {
+    await insertRow("scored", "submitted", JSON.stringify({ scores: { ibp_total: 22 } }))
+    const parseSpy = jest.spyOn(JSON, "parse")
+
+    const surveys = await listLocalSurveys()
+
+    expect(parseSpy).not.toHaveBeenCalled()
+    parseSpy.mockRestore()
+    expect(surveys[0]).toMatchObject({ id: "scored", ibp_total: 22 })
+    expect(surveys[0]).not.toHaveProperty("payload_json")
   })
 })
 

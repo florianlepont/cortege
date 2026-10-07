@@ -476,11 +476,18 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
 export async function listLocalSurveys(): Promise<LocalSurvey[]> {
   const db = await getDb()
   // 01.9 D-03: completion was stored at write time (payload_completion) and
-  // "submitted = 100" is applied here in SQL, so the list never selects or
-  // parses payload_json.
+  // "submitted = 100" is applied here in SQL, so the list never parses payload_json in JS.
+  // 12.2-14: the row score ring of a submitted survey reads the server total the pull stored in the
+  // payload (`scores.ibp_total`) with SQLite's json_extract: inside the engine, only for submitted
+  // rows (the CASE skips the others), only when the payload is valid JSON and the value is a
+  // number. Nothing is parsed per row in JS and the raw payload is never selected.
   return db.getAllAsync<LocalSurvey>(
     `SELECT id, site_name, status, visibility, sync_version, sync_state, last_sync_error, last_sync_error_code, last_sync_error_at, sync_blocked, created_at, updated_at,
-       CASE WHEN status = 'submitted' THEN 100 ELSE payload_completion END AS completion_rate
+       CASE WHEN status = 'submitted' THEN 100 ELSE payload_completion END AS completion_rate,
+       CASE WHEN status = 'submitted' AND json_valid(payload_json)
+         THEN CASE WHEN json_type(payload_json, '$.scores.ibp_total') IN ('integer', 'real')
+           THEN json_extract(payload_json, '$.scores.ibp_total') END
+       END AS ibp_total
      FROM local_surveys
      ORDER BY updated_at DESC`,
   )
