@@ -4,7 +4,12 @@ import { brandComponentTokens, brandRadius, brandShadow } from "../app/brand-tok
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { GlassSurface } from "./GlassSurface"
 
-type AppCardVariant = "panel" | "panelElevated" | "surface" | "soft" | "hero"
+/**
+ * `glass` is the card look of variant I without blur (D-12): a translucent fill, a hairline and an
+ * inner highlight (light also a soft shadow), no elevation. The blurred surface for a card floating
+ * over a map or photo stays the separate boolean `glass` prop below (D-04).
+ */
+type AppCardVariant = "panel" | "panelElevated" | "surface" | "soft" | "hero" | "glass"
 
 type AppCardProps = {
   children: ReactNode
@@ -69,6 +74,14 @@ function createStyles(theme: BrandTheme) {
       borderWidth: 1,
       borderColor: theme.semanticColors.heroBorder,
       ...brandShadow.card,
+    },
+    // No `brandShadow.card` here: an Android elevation under a translucent fill smears grey.
+    glass: {
+      backgroundColor: theme.visual.glass.cardFill,
+      borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
+      boxShadow: theme.visual.glass.cardShadow,
+      borderCurve: "continuous",
     },
     glassBorder: {
       borderWidth: 1,
