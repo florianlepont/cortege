@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandRadius, brandTypography } from "../app/brand-tokens"
+import { brandColors, brandRadius, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 
 export type AppStatusChipTone = "neutral" | "success" | "warning" | "danger" | "onDark"
@@ -19,7 +19,14 @@ export function AppStatusChip({ label, tone = "neutral", style, labelStyle }: Ap
 
   return (
     <View style={[styles.base, styles[tone], style]}>
-      <Text style={[styles.label, tone === "onDark" && styles.labelOnDark, labelStyle]}>
+      <Text
+        style={[
+          styles.label,
+          tone === "success" && styles.labelSuccess,
+          tone === "onDark" && styles.labelOnDark,
+          labelStyle,
+        ]}
+      >
         {label}
       </Text>
     </View>
@@ -28,26 +35,24 @@ export function AppStatusChip({ label, tone = "neutral", style, labelStyle }: Ap
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    // Phase 12.2: a glass hairline on every tone; the tone only changes the fill.
     base: {
       borderRadius: brandRadius.pill,
       borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
       paddingHorizontal: 9,
       paddingVertical: 5,
     },
     neutral: {
-      borderColor: theme.componentColors.statusChip.neutralBorder,
-      backgroundColor: theme.componentColors.statusChip.neutralBackground,
+      backgroundColor: theme.visual.chip.fill,
     },
     success: {
-      borderColor: theme.componentColors.statusChip.successBorder,
       backgroundColor: theme.componentColors.statusChip.successBackground,
     },
     warning: {
-      borderColor: theme.componentColors.statusChip.warningBorder,
       backgroundColor: theme.componentColors.statusChip.warningBackground,
     },
     danger: {
-      borderColor: theme.componentColors.statusChip.dangerBorder,
       backgroundColor: theme.componentColors.statusChip.dangerBackground,
     },
     onDark: {
@@ -57,6 +62,11 @@ function createStyles(theme: BrandTheme) {
     label: {
       ...brandTypography.meta,
       color: theme.componentColors.statusChip.textColor,
+    },
+    // The sketch's success green fails AA on the soft fill: forest in light (UI-SPEC forbidden list).
+    labelSuccess: {
+      color:
+        theme.scheme === "dark" ? theme.componentColors.statusChip.textColor : brandColors.forest,
     },
     labelOnDark: {
       color: theme.componentColors.statusChip.onDarkTextColor,
