@@ -1614,7 +1614,7 @@ describe("PublicMapRoute", () => {
     expect(mockExplorerArgs.onStatusChange).toBe(fixture.syncActions.setStatus)
     expect(props("publicMap").apiUrl).toBe("http://api.test/v1")
     expect(props("publicMap").accessToken).toBe(fixture.accessToken)
-    expect(props("publicMap").ownSurveyIds).toEqual(["s-01"])
+    expect(props("publicMap")).not.toHaveProperty("ownSurveyIds")
     expect(mockExplorer.loadPublicMap).toHaveBeenCalledTimes(1)
     // The press that mounted the route is not forced: the screen's first viewport load serves it.
     expect(mockExplorer.loadPublicMap).toHaveBeenLastCalledWith({ bbox: undefined, force: false })

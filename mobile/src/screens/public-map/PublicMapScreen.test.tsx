@@ -214,7 +214,6 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     accessToken: "access-token",
     items: [],
     parcelStatuses: [],
-    ownSurveyIds: [],
     loading: false,
     onLoad: jest.fn(async () => undefined),
     onLoadParcels: jest.fn(async () => undefined),
@@ -287,76 +286,73 @@ describe("PublicMapScreen", () => {
     expect(texts()).toContain(fr.publicMap.count(1))
   })
 
-  test("a marker press shows the survey card, which never shows the id", () => {
-    const props = makeProps({ items: [item("secret-id", 45.7, 4.8, 27)] })
+  test("a marker press opens the survey's page at once, with no card in between (12.2-19)", () => {
+    const props = makeProps({ items: [item("s-42", 45.7, 4.8, 27)] })
     mount(props)
-    const marker = markers().find(
-      (node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27),
-    ) as ReactTestInstance
-    act(() => marker.props.onPress())
+    const marker = () =>
+      markers().find(
+        (node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27),
+      ) as ReactTestInstance
+    act(() => marker().props.onPress())
 
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.publicMap.selected.title(27))
-    // The annotation's technical `id` is not user-facing: what a user reads or hears never has it.
-    const visible = tree.root
-      .findAll((node) => typeof node.type === "string")
-      .flatMap((node) => [node.props.accessibilityLabel, node.props.children].flat(2))
-      .filter((value): value is string => typeof value === "string")
-    expect(visible.join(" ")).not.toContain("secret-id")
-
-    act(() => byLabel(fr.publicMap.a11y.closeSelection).props.onPress())
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
-      0,
-    )
+    expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-42")
+    // No panel: the sheet stays closed and nothing offers a second "open" step.
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
+    expect(tree.root.findAll((node) => (node.type as unknown) === "GlassButton")).toHaveLength(0)
+    // The marker of the survey just opened is drawn selected when the map is seen again.
+    expect(marker().props.selected).toBe(true)
   })
 
-  test("draws the author's draft dashed, with its own card and legend row (OA-59)", () => {
-    const props = makeProps({ draftItems: [item("d-1", 45.7, 4.8, 15)], ownSurveyIds: ["d-1"] })
+  test("a double tap on a marker opens the survey once; a later tap opens it again", () => {
+    const nowSpy = jest.spyOn(Date, "now").mockReturnValue(10_000)
+    try {
+      const props = makeProps({ items: [item("s-42", 45.7, 4.8, 27)] })
+      mount(props)
+      const press = () =>
+        act(() =>
+          markers()
+            .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27))
+            ?.props.onPress(),
+        )
+      press()
+      nowSpy.mockReturnValue(10_300)
+      press()
+      expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)
+      // Back on the map a while later, a new tap opens it again.
+      nowSpy.mockReturnValue(12_000)
+      press()
+      expect(props.onOpenSurvey).toHaveBeenCalledTimes(2)
+    } finally {
+      nowSpy.mockRestore()
+    }
+  })
+
+  test("the author's draft marker opens it directly too (OA-59)", () => {
+    const props = makeProps({ draftItems: [item("d-1", 45.7, 4.8, 15)] })
     mount(props)
     const marker = markers().find(
       (node) => node.props.accessibilityLabel === fr.publicMap.a11y.draftMarker(15),
     ) as ReactTestInstance
     act(() => marker.props.onPress())
-
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.publicMap.draft.title(15))
-    expect(texts()).toContain(fr.publicMap.draft.meta)
-    // The "your own survey" notice is for a published survey only.
-    expect(
-      tree.root.findAll((node) => node.props.message === fr.publicMap.selected.ownSurvey),
-    ).toHaveLength(0)
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("d-1")
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
   })
 
-  test("a focus request centres the map and selects the survey once it is among the markers (OA-59)", () => {
+  test("a focus request centres the map and highlights the survey's marker, no panel (OA-59)", () => {
     const focus = { surveyId: "s-7", lat: 45.7, lng: 4.8, parcelIds: ["P1"], nonce: 1 }
     const props = makeProps({ focus })
     mount(props)
     expect(mockAnimateToRegion).toHaveBeenCalled()
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
-      0,
-    )
 
     // The public survey arrives with the viewport load the move triggered.
     update({ ...props, items: [item("s-7", 45.7, 4.8, 33)] })
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.publicMap.selected.title(33))
-  })
-
-  test("the selected survey's card opens its read-only page (OA-59)", () => {
-    const props = makeProps({ items: [item("s-42", 45.7, 4.8, 27)] })
-    mount(props)
-    act(() =>
-      markers()
-        .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27))
-        ?.props.onPress(),
-    )
-    const open = tree.root.find(
-      (node) =>
-        (node.type as unknown) === "GlassButton" &&
-        node.props.label === fr.publicMap.selected.openSurvey,
-    )
-    act(() => open.props.onPress())
-    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-42")
+    const marker = markers().find(
+      (node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(33),
+    ) as ReactTestInstance
+    expect(marker.props.selected).toBe(true)
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
+    expect(props.onOpenSurvey).not.toHaveBeenCalled()
   })
 
   test("a row of a tapped parcel's history opens that survey's page (OA-59)", async () => {
@@ -412,24 +408,6 @@ describe("PublicMapScreen", () => {
     expect(entrances.map((node) => node.props.index)).toEqual([0, 1])
     expect(texts()).toContain(fr.parcelHistory.total(28))
     expect(texts()).toContain(fr.parcelHistory.delta.total(4))
-  })
-
-  test("selecting an own survey shows a notice instead of a report entry point (Phase 2: removed)", () => {
-    const props = makeProps({ items: [item("mine", 48.8, 2.3, 12)] })
-    props.ownSurveyIds = ["mine"]
-    mount(props)
-    act(() =>
-      markers()
-        .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(12))
-        ?.props.onPress(),
-    )
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppNotice")).toHaveLength(1)
-    expect(
-      tree.root.findAll(
-        (node) =>
-          (node.type as unknown) === "AppButton" && node.props.label === "Signaler ce relevé",
-      ),
-    ).toHaveLength(0)
   })
 
   test("tapping a studied parcel opens its history; a not-studied parcel does nothing", async () => {
@@ -514,7 +492,7 @@ describe("PublicMapScreen", () => {
     ).toHaveLength(0)
   })
 
-  test("a cluster that cannot split opens the list, and a row selects the survey", () => {
+  test("a cluster that cannot split opens the list, and a row opens the survey directly", () => {
     const props = makeProps({
       items: [item("a", 45.76, 4.84, 10), item("b", 45.76, 4.84, 20), item("c", 45.76, 4.84, 30)],
     })
@@ -532,10 +510,11 @@ describe("PublicMapScreen", () => {
         fr.publicMap.a11y.clusterListItem({ ibp: 20, date: "2026-05-01", region: "ARA" }),
       ).props.onPress(),
     )
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.publicMap.selected.title(20))
+    expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("b")
+    // The list stays under the survey page, so back returns to it.
+    expect(texts()).toContain(fr.publicMap.clusterList.row({ ibp: 20, date: "2026-05-01" }))
 
-    act(() => cluster.props.onPress())
     act(() => byLabel(fr.publicMap.a11y.closeClusterList).props.onPress())
     expect(texts()).not.toContain(fr.publicMap.clusterList.row({ ibp: 20, date: "2026-05-01" }))
   })

@@ -93,7 +93,6 @@ export const PublicMapRoute = memo(function PublicMapRoute({
         accessToken={accessToken}
         items={explorer.items}
         parcelStatuses={explorer.parcelStatuses}
-        ownSurveyIds={surveys.ownSurveyIds}
         draftItems={draftItems}
         focus={route.params?.focus}
         loading={explorer.loading}

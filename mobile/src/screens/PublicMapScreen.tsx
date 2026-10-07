@@ -22,7 +22,6 @@ import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
 import { ScoreLegend } from "./public-map/ScoreLegend"
-import { SelectedSurveyCard } from "./public-map/SelectedSurveyCard"
 import { createScreenContainerStyle } from "./public-map/styles"
 import { useMapViewport } from "./public-map/useMapViewport"
 
@@ -30,6 +29,8 @@ const t = fr.publicMap
 const offlineT = fr.offlineMap.areas
 const LOCATE_SPAN = 0.012
 const NO_DRAFTS: PublicMapItem[] = []
+// A second tap within this window (a double tap, or a tap during the push) opens nothing more.
+const OPEN_SURVEY_GUARD_MS = 800
 
 /** The region that shows a survey, centred a little north of it so its marker clears the sheet. */
 function focusRegion(focus: PublicMapFocus): MapRegion {
@@ -42,10 +43,9 @@ type PublicMapScreenProps = {
   accessToken: string | null
   items: PublicMapItem[]
   parcelStatuses: PublicParcelStatusItem[]
-  ownSurveyIds: string[]
   /** OA-59: the author's drafts, drawn beside the public surveys and visible to them alone. */
   draftItems?: PublicMapItem[]
-  /** OA-59: a survey page asked to see its survey here; centres the map on it and selects it. */
+  /** OA-59: a survey page asked to see its survey here; centres the map on it and highlights it. */
   focus?: PublicMapFocus
   loading: boolean
   onLoad: (options?: LoadPublicMapOptions) => Promise<void>
@@ -71,7 +71,6 @@ export function PublicMapScreen({
   accessToken,
   items,
   parcelStatuses,
-  ownSurveyIds,
   draftItems = NO_DRAFTS,
   focus,
   loading,
@@ -95,7 +94,9 @@ export function PublicMapScreen({
   const handleRootLayout = useCallback(() => {
     rootRef.current?.measureInWindow((_x, y) => setOriginY(y))
   }, [])
-  const [selectedItem, setSelectedItem] = useState<PublicMapItem | null>(null)
+  // The survey whose marker is drawn selected: the last one opened from the map or shown from its
+  // page (OA-59). No panel goes with it (12.2-19).
+  const [highlightedId, setHighlightedId] = useState<string | null>(null)
   const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null)
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
   const [locating, setLocating] = useState(false)
@@ -119,80 +120,68 @@ export function PublicMapScreen({
     onViewportBboxChange,
   })
 
-  const ownSurveyIdSet = useMemo(() => new Set(ownSurveyIds), [ownSurveyIds])
   const draftIdSet = useMemo(() => new Set(draftItems.map((item) => item.survey_id)), [draftItems])
   const mapItems = useMemo(
     () => (draftItems.length > 0 ? [...items, ...draftItems] : items),
     [items, draftItems],
   )
-  const itemsById = useMemo(
-    () => new Map(mapItems.map((item) => [item.survey_id, item])),
-    [mapItems],
-  )
   const parcelStatusById = useMemo(
     () => new Map(parcelStatuses.map((status) => [status.parcel_id, status])),
     [parcelStatuses],
   )
+  // 12.2-19 (owner: "pourquoi un clic n'ouvre pas direct le relevé ?"): a survey opens its page at
+  // once, from its marker or from a row of a panel, with no summary card in between. Back returns
+  // to the map as it was left (the stack keeps this screen mounted).
+  const lastOpenAtRef = useRef(-OPEN_SURVEY_GUARD_MS)
+  const openSurvey = useLatestCallback((id: string) => {
+    const now = Date.now()
+    if (now - lastOpenAtRef.current < OPEN_SURVEY_GUARD_MS) return
+    lastOpenAtRef.current = now
+    setHighlightedId(id)
+    onOpenSurvey(id)
+  })
+  // A marker belongs to another place than an open cluster list or parcel history: those close.
   const handleSelectSurvey = useLatestCallback((id: string) => {
-    const item = itemsById.get(id) ?? clusterItems?.find((entry) => entry.survey_id === id)
-    if (item) {
-      setSelectedParcelId(null)
-      setSelectedItem(item)
-      setClusterItems(null)
-    }
+    setSelectedParcelId(null)
+    setClusterItems(null)
+    openSurvey(id)
   })
   const handleSelectParcel = useLatestCallback((parcelId: string) => {
     const status = parcelStatusById.get(parcelId)
     if (status?.study_status === "studied") {
-      setSelectedItem(null)
       setClusterItems(null)
       setSelectedParcelId(parcelId)
     }
   })
   const handleOpenClusterList = useCallback((leaves: PublicMapItem[]) => {
-    setSelectedItem(null)
     setSelectedParcelId(null)
     setClusterItems(leaves)
   }, [])
   const { moveTo, focusTo } = viewport
 
   // OA-59: "Voir sur la carte" lands here with a survey to show. A screen opened for it starts the
-  // camera there; one already open moves there. The survey is selected as soon as it is among the
-  // markers (a public one arrives with the viewport load that the move triggers).
+  // camera there; one already open moves there. Its marker is drawn selected as soon as it is among
+  // the markers (a public one arrives with the viewport load that the move triggers).
   const initialRegion = useRef(focus ? focusRegion(focus) : undefined).current
-  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null)
   const focusNonce = focus?.nonce
   useEffect(() => {
     if (!focus) return
-    setPendingFocusId(focus.surveyId)
+    setHighlightedId(focus.surveyId)
     focusTo(focusRegion(focus), 0)
     // The nonce identifies one request; the focus object itself is rebuilt by the navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusNonce, focusTo])
-  useEffect(() => {
-    if (!pendingFocusId) return
-    const item = itemsById.get(pendingFocusId)
-    if (!item) return
-    setSelectedParcelId(null)
-    setClusterItems(null)
-    setSelectedItem(item)
-    setPendingFocusId(null)
-  }, [pendingFocusId, itemsById])
 
   const handleZoomTo = useCallback((target: MapRegion) => moveTo(target, 450), [moveTo])
   // MAP-01: the sheet reports a dismissal (drag-down or the content's own close button) without
-  // saying which panel was open — closing all three is safe since they're already mutually
-  // exclusive (selecting one clears the others, see handleSelectSurvey/handleSelectParcel/
-  // handleOpenClusterList above).
+  // saying which panel was open; closing all of them is safe since they are mutually exclusive
+  // (opening one clears the others, see handleSelectParcel and handleOpenClusterList above).
   const closeSheet = useCallback(() => {
     setShowOfflineAreas(false)
-    setPendingFocusId(null)
-    setSelectedItem(null)
     setSelectedParcelId(null)
     setClusterItems(null)
   }, [])
   const openOfflineAreas = useCallback(() => {
-    setSelectedItem(null)
     setSelectedParcelId(null)
     setClusterItems(null)
     setShowOfflineAreas(true)
@@ -257,20 +246,12 @@ export function PublicMapScreen({
       accessToken={accessToken}
       isOffline={isOffline}
       onQueueDownload={onQueueParcelDownload}
-      onOpenSurvey={onOpenSurvey}
+      onOpenSurvey={openSurvey}
       onClose={closeSheet}
     />
   ) : clusterItems ? (
-    <ClusterListSheet items={clusterItems} onSelect={handleSelectSurvey} onClose={closeSheet} />
-  ) : selectedItem ? (
-    <SelectedSurveyCard
-      key={selectedItem.survey_id}
-      item={selectedItem}
-      isOwnSurvey={ownSurveyIdSet.has(selectedItem.survey_id)}
-      isDraft={draftIdSet.has(selectedItem.survey_id)}
-      onOpenSurvey={onOpenSurvey}
-      onClose={closeSheet}
-    />
+    // The list stays open under the survey page, so back returns to it and its other surveys.
+    <ClusterListSheet items={clusterItems} onSelect={openSurvey} onClose={closeSheet} />
   ) : null
 
   return (
@@ -282,7 +263,7 @@ export function PublicMapScreen({
         initialRegion={initialRegion}
         highlightedParcelIds={focus?.parcelIds}
         region={viewport.region}
-        selectedId={selectedItem?.survey_id ?? null}
+        selectedId={highlightedId}
         parcelStatuses={parcelStatuses}
         parcelLayerRenderable={viewport.parcelLayerRenderable}
         onRegionChangeComplete={viewport.onRegionChangeComplete}
