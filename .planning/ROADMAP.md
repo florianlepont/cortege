@@ -657,7 +657,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
   3. Transitions and feedback use the Reanimated motion system consistently and respect the system reduced-motion setting.
   4. The owner confirms the result on their own phone.
 
-**Plans:** 5/23 plans executed
+**Plans:** 6/23 plans executed
 
 Plans:
 **Wave 1**
@@ -673,7 +673,7 @@ Plans:
 
 - [x] 12.2-04-PLAN.md — ForestCard, ContourLines, GradientNumeral, GlowBar, useScreenFocus
 - [x] 12.2-05-PLAN.md — AppCard glass variant, ScreenBackdrop, AppButton glow variant, HaloPulse
-- [ ] 12.2-06-PLAN.md — ScoreRing, FactorBarsChart, useEntrance, AnimatedNumber, status dot spring, catalogue entries
+- [x] 12.2-06-PLAN.md — ScoreRing, FactorBarsChart, useEntrance, AnimatedNumber, status dot spring, catalogue entries
 - [ ] 12.2-07-PLAN.md — Both tab bar trees, glass chips with inverted active state, section header and page title
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -794,7 +794,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 12.1. Owner acceptance testing | 0/TBD | Not started | - |
-| 12.2. Visual Modernisation | 5/23 | In Progress|  |
+| 12.2. Visual Modernisation | 6/23 | In Progress|  |
 | 12.3. In-depth Quality Audit | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
 

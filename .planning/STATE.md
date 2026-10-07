@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
-stopped_at: Phase 12.2 UI-SPEC approved
-last_updated: "2026-10-07T04:58:16.596Z"
+stopped_at: Completed 12.2-06-PLAN.md
+last_updated: "2026-10-07T05:05:08.067Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 164
+  completed_plans: 165
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 6 of 23
+Plan: 7 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -85,6 +85,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P03 | 25min | 3 tasks | 17 files |
 | Phase 12.2 P04 | 25min | 3 tasks | 10 files |
 | Phase 12.2 P05 | 20min | 2 tasks | 8 files |
+| Phase 12.2 P06 | 20min | 3 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,8 @@ Decisions table. Decisions affecting current work:
 - [Phase 12.2]: 03: Light ring and bar high tone is #728A2D (D-16); dark forest halo core rgba(111, 154, 60, 0.55) in one token (D-14); GlassSurface uses static keyed brandGlassFills, Android flat higher-alpha fill (D-17)
 - [Phase 12.2-04]: GlowBar track does not clip so the fill glow shows; NUMERAL_RENDER_MODE is the single fallback switch for the gradient numeral
 - [Phase 12.2-05]: 44 pt hit area for sm and small icon-only AppButton comes from hitSlop, visible sizes unchanged
+- [Phase 12.2-06]: A factor scored 0 draws the 4 pt low-tone stub with glow; only a null factor uses the track colour with no shadow
+- [Phase 12.2-06]: ScoreRing, FactorBarsChart and the motion helpers take tones only through totalTone and factorTone (no 25/35 split); the ring entrance plays once per survey and score for rows 0 to 7
 
 ### Pending Todos
 
@@ -180,6 +183,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-07T04:58:12.101Z
-Stopped at: Phase 12.2 UI-SPEC approved
-Resume file: .planning/phases/12.2-visual-modernisation-inserted/12.2-UI-SPEC.md
+Last session: 2026-10-07T05:05:08.062Z
+Stopped at: Completed 12.2-06-PLAN.md
+Resume file: None
