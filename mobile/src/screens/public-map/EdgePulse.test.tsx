@@ -93,13 +93,17 @@ describe("EdgePulse (12.2-19)", () => {
     expect(style.position).toBe("absolute")
     expect(style.boxShadow).toBe(defaultTheme.visual.edgeGlow)
     expect(String(style.boxShadow)).toMatch(/^inset /)
+    // 12.2-19 fix round: a line, a band and a wide halo, all inset.
+    expect(String(style.boxShadow).split(", inset ")).toHaveLength(3)
     // Layer rules of 12.2-17: no border and no continuous corners on this layer.
     expect(style).not.toHaveProperty("borderWidth")
     expect(style).not.toHaveProperty("borderCurve")
   })
 
-  test("pulses on the UI thread in a 1.6 s cycle, guarded by Reduce Motion", () => {
-    render()
+  test("pulses on the UI thread in a 1.4 s cycle from 0.55 to full, guarded by Reduce Motion", () => {
+    const tree = render()
+    expect(flatStyle(tree).opacity).toBe(edgePulseMotion.minOpacity)
+    expect(edgePulseMotion.minOpacity).toBe(0.55)
     expect(withRepeatSpy).toHaveBeenCalledTimes(1)
     const [, count, reverse, , reduceMotion] = withRepeatSpy.mock.calls[0] as unknown[]
     expect(count).toBe(-1)
@@ -112,7 +116,7 @@ describe("EdgePulse (12.2-19)", () => {
         reduceMotion: reanimated.ReduceMotion.System,
       }),
     )
-    expect(edgePulseMotion.halfCycleMs * 2).toBe(1600)
+    expect(edgePulseMotion.halfCycleMs * 2).toBe(1400)
   })
 
   test("pulses while the screen is focused", () => {
@@ -120,11 +124,12 @@ describe("EdgePulse (12.2-19)", () => {
     expect(withRepeatSpy).toHaveBeenCalledTimes(1)
   })
 
-  test("under Reduce Motion the glow is still: no loop, a fixed opacity", () => {
+  test("under Reduce Motion the glow is still at full strength: no loop", () => {
     reanimated.setReducedMotion(true)
     const tree = render()
     expect(withRepeatSpy).not.toHaveBeenCalled()
     expect(flatStyle(tree).opacity).toBe(edgePulseMotion.stillOpacity)
+    expect(edgePulseMotion.stillOpacity).toBe(1)
   })
 
   test("no loop while the screen is not focused or is covered by an overlay", () => {

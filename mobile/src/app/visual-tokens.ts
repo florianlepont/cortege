@@ -259,18 +259,39 @@ export const glassCtaSecondary = {
 } as const
 
 // Download mode of the Explorer (12.2-19, owner: "le bord de l'écran s'illumine en vert, avec un
-// pulse"): the map's edge glows green, so the area shown reads as the one to download. A 2 pt inset
-// ring and a soft inset halo in a bright moss that reads over the plan and the satellite basemaps;
-// dark is a little lighter. Inset shadows only, no border (12.2-17). One token to retune after the
-// owner's phone check.
-export const downloadEdgeGlow = {
-  light: "inset 0 0 0 2px rgba(137, 163, 58, 0.95), inset 0 0 28px 8px rgba(137, 163, 58, 0.6)",
-  dark: "inset 0 0 0 2px rgba(155, 194, 106, 0.95), inset 0 0 28px 8px rgba(155, 194, 106, 0.55)",
+// pulse"): the map's edge glows green, so the area shown reads as the one to download. The fix round
+// (owner: "l'effet pulsé en téléchargement n'est pas assez intense encore") made it much stronger:
+// a crisp 3 pt line, a tight band for definition and a wide halo about 46 pt deep (spread plus
+// blur), in saturated greens brighter than the brand moss. The line keeps 3:1 against the white
+// plan and the dark orthophoto alike. The basemaps do not follow the scheme, so both schemes draw
+// the same glow. Inset shadows only, no border (12.2-17).
+export const edgeGlowGreens = {
+  line: "#4E9620",
+  band: "#6DB52E",
+  halo: "#7BC234",
 } as const
 
-/** Pulse of that glow: opacity from `minOpacity` to 1 and back, `halfCycleMs` each way (a 1.6 s
- * cycle); a still `stillOpacity` under Reduce Motion. */
-export const edgePulseMotion = { halfCycleMs: 800, minOpacity: 0.35, stillOpacity: 0.85 } as const
+export const edgeGlowGeometry = {
+  line: 3,
+  band: { blur: 16, spread: 6, alpha: 0.9 },
+  halo: { blur: 36, spread: 10, alpha: 0.6 },
+} as const
+
+/** The three inset layers of the download glow, the line first. */
+export function buildEdgeGlow(): string {
+  const { line, band, halo } = edgeGlowGeometry
+  return [
+    `inset 0 0 0 ${line}px ${edgeGlowGreens.line}`,
+    `inset 0 0 ${band.blur}px ${band.spread}px ${withAlpha(edgeGlowGreens.band, band.alpha)}`,
+    `inset 0 0 ${halo.blur}px ${halo.spread}px ${withAlpha(edgeGlowGreens.halo, halo.alpha)}`,
+  ].join(", ")
+}
+
+export const downloadEdgeGlow = buildEdgeGlow()
+
+/** Pulse of that glow: opacity from `minOpacity` to 1 and back, `halfCycleMs` each way (a 1.4 s
+ * cycle); still at the full strength (`stillOpacity`) under Reduce Motion. */
+export const edgePulseMotion = { halfCycleMs: 700, minOpacity: 0.55, stillOpacity: 1 } as const
 
 // Geometry of the chart and score components (not spacing).
 export const scoreRingGeometry = { size: 38, stroke: 4, dash: "3 4" } as const

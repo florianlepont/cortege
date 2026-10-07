@@ -10,11 +10,15 @@ import { compositeOver, contrastRatio, relativeLuminance } from "./contrast"
 import { buildTheme, defaultTheme, type BrandTheme } from "./theme"
 import {
   brandGlassFills,
+  buildEdgeGlow,
   buildForestHeroImage,
   buildForestImage,
   buildInsetRing,
   buildLinearGradient,
   buildRadialGradient,
+  edgeGlowGeometry,
+  edgeGlowGreens,
+  edgePulseMotion,
   forestStops,
   mixWithWhite,
   withAlpha,
@@ -192,6 +196,7 @@ describe("BrandTheme.visual", () => {
       visual.factorBar.low.shadow,
       visual.factorBar.mid.shadow,
       visual.factorBar.high.shadow,
+      visual.edgeGlow,
     ]
     const layer =
       /^(inset )?-?\d+(px)? -?\d+(px)? \d+(px)?( -?\d+px)? (rgba\([^)]*\)|#[0-9A-Fa-f]{6})$/
@@ -583,3 +588,65 @@ describe.each(schemes)(
     }
   },
 )
+
+describe("download edge glow (12.2-19 fix round: stronger and wider)", () => {
+  const glow = themes.light.visual.edgeGlow
+  const layers = splitTopLevel(glow)
+
+  function channels(hex: string): number[] {
+    return [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16))
+  }
+
+  function saturation(hex: string): number {
+    const rgb = channels(hex)
+    const max = Math.max(...rgb)
+    return max === 0 ? 0 : (max - Math.min(...rgb)) / max
+  }
+
+  test("one glow in both schemes: the basemap does not follow the scheme", () => {
+    expect(themes.dark.visual.edgeGlow).toBe(glow)
+    expect(glow).toBe(buildEdgeGlow())
+  })
+
+  test("a crisp line, a tight band and a wide halo, all inset", () => {
+    expect(layers).toEqual([
+      `inset 0 0 0 3px ${edgeGlowGreens.line}`,
+      `inset 0 0 16px 6px ${withAlpha(edgeGlowGreens.band, 0.9)}`,
+      `inset 0 0 36px 10px ${withAlpha(edgeGlowGreens.halo, 0.6)}`,
+    ])
+  })
+
+  test("the halo is 36 to 48 pt deep on every edge, the band inside it", () => {
+    const { band, halo, line } = edgeGlowGeometry
+    const depth = halo.spread + halo.blur
+    expect(depth).toBeGreaterThanOrEqual(36)
+    expect(depth).toBeLessThanOrEqual(48)
+    expect(band.spread + band.blur).toBeLessThan(depth)
+    expect(line).toBeGreaterThanOrEqual(3)
+  })
+
+  test("the line keeps 3:1 against the white plan and the dark orthophoto", () => {
+    for (const backdrop of ["#FFFFFF", "#F2EFE9", "#1C2618", "#000000"]) {
+      expect(contrastRatio(edgeGlowGreens.line, backdrop)).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  test("saturated greens, the halo brighter than the brand moss it replaces", () => {
+    for (const green of Object.values(edgeGlowGreens)) {
+      const [r, g, b] = channels(green)
+      expect(g).toBeGreaterThan(r)
+      expect(g).toBeGreaterThan(b)
+      expect(saturation(green)).toBeGreaterThan(saturation(brandColors.moss))
+    }
+    expect(relativeLuminance(edgeGlowGreens.halo)).toBeGreaterThan(
+      relativeLuminance(brandColors.moss),
+    )
+  })
+
+  test("pulses from 0.55 to full over 1.4 s and stays at full under Reduce Motion", () => {
+    expect(edgePulseMotion.minOpacity).toBeGreaterThanOrEqual(0.5)
+    expect(edgePulseMotion.minOpacity).toBeLessThanOrEqual(0.6)
+    expect(edgePulseMotion.halfCycleMs * 2).toBe(1400)
+    expect(edgePulseMotion.stillOpacity).toBe(1)
+  })
+})

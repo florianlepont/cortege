@@ -172,7 +172,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
     backdrop: backdrops[scheme],
     accentText,
     pressWave: pressWaveFill[scheme],
-    edgeGlow: downloadEdgeGlow[scheme],
+    edgeGlow: downloadEdgeGlow,
     forest: {
       image: buildForestImage(haloCore),
       heroImage: buildForestHeroImage(haloCore),

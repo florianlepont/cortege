@@ -18,10 +18,11 @@ const { halfCycleMs, minOpacity, stillOpacity } = edgePulseMotion
 
 /**
  * The green edge of the Explorer map in download mode (12.2-19): an inset glow over the whole map,
- * pulsing gently (opacity only, on the UI thread, a 1.6 s cycle) so the area shown reads as the one
- * that will be downloaded. Mounted only while that mode lasts. It never takes a touch, and it is
- * hidden from screen readers (the panel's subtitle says the same in words). The loop runs only
- * while the screen can be seen; under Reduce Motion the glow is still.
+ * a 3 pt line, a tight band and a halo about 46 pt deep (`theme.visual.edgeGlow`), pulsing between
+ * 0.55 and full strength (opacity only, on the UI thread, a 1.4 s cycle) so the area shown reads as
+ * the one that will be downloaded. Mounted only while that mode lasts. It never takes a touch, and
+ * it is hidden from screen readers (the panel's subtitle says the same in words). The loop runs
+ * only while the screen can be seen; under Reduce Motion the glow is still, at full strength.
  */
 export const EdgePulse = memo(function EdgePulse() {
   const theme = useBrandTheme()
