@@ -17,7 +17,7 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle, pageColourHeader } from "./stack-options"
+import { createBaseStackScreenOptions, hiddenNativeTitle } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
@@ -48,7 +48,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
         <SurveysStack.Navigator
           screenOptions={{
             // D-19: the transparent halo header by default; every page with a header draws a
-            // ScreenFrame in its route (the factor pager opts out below until plan 12.2-15).
+            // ScreenFrame in its route, the factor pager included (12.2-15).
             ...createBaseStackScreenOptions(theme),
             headerLargeTitle: false,
             ...(useNativeNav
@@ -149,8 +149,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               // OA-111: iOS 26 and later pops a screen with a swipe from anywhere, which would take
               // the slide along the A to J strip for a "back". The back button stays.
               gestureEnabled: false,
-              // No halo yet (plan 12.2-15 gives it the ScreenFrame): the opaque page-colour header.
-              ...pageColourHeader(theme),
+              // D-19: the stack's transparent halo header; FactorDetailRoute draws the ScreenFrame.
             })}
             component={FactorDetailRoute}
           />

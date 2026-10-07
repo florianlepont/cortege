@@ -577,13 +577,18 @@ describe("stack options and listeners", () => {
   )
 
   test.each(["ios", "android"] as const)(
-    "the factor pager keeps the opaque page-colour header on %s until plan 12.2-15",
+    "the factor pager has the transparent halo header on %s like every page (D-19, 12.2-15)",
     async (os) => {
       mockPlatform.OS = os
       await mount(<AppNavigation />)
       const factor = effectiveOptions("surveyFactorDetail", { route: { params: { factor: "A" } } })
-      expect(factor.headerStyle).toEqual({ backgroundColor: defaultTheme.colors.canvas })
-      expect(factor.headerTransparent).toBe(os === "ios")
+      expect(factor).toEqual(expect.objectContaining(HALO_HEADER))
+      // Its own options keep only the title, the hidden native title and no swipe-back.
+      const own = (mockScreens.surveyFactorDetail.options as OptionsFn)({
+        route: { params: { factor: "A" } },
+      })
+      expect(own.headerStyle).toBeUndefined()
+      expect(own.headerTransparent).toBeUndefined()
     },
   )
 
@@ -646,21 +651,6 @@ describe("stack options and listeners", () => {
         expect(createBaseStackScreenOptions(defaultTheme)).toEqual(
           expect.objectContaining(backdropHeader),
         )
-      })
-    }
-  })
-
-  test("the page-colour opt-out is an opaque canvas header on both platforms", () => {
-    for (const os of ["ios", "android"] as const) {
-      mockPlatform.OS = os
-      jest.isolateModules(() => {
-        const { pageColourHeader } = jest.requireActual("./stacks/stack-options") as {
-          pageColourHeader: (theme: unknown) => Options
-        }
-        const options = pageColourHeader(defaultTheme)
-        expect(options.headerStyle).toEqual({ backgroundColor: defaultTheme.colors.canvas })
-        // iOS keeps the header over the screen (the screen insets itself); Android lays it out.
-        expect(options.headerTransparent).toBe(os === "ios" ? undefined : false)
       })
     }
   })

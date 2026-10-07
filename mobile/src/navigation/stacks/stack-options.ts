@@ -18,8 +18,8 @@ export const backdropHeader = {
 /**
  * Screen options shared by every stack navigator. Call with the caller's `useBrandTheme()` value.
  * The header is `backdropHeader` by default (D-19), so a new screen with a header needs a
- * `ScreenFrame` in its route; a screen that does not draw the halo yet opts out with
- * `pageColourHeader`.
+ * `ScreenFrame` in its route. Every stack screen with a header draws it since 12.2-15 (the
+ * factor pager was the last opt-out); the full-screen parcel map sets its own header.
  */
 export function createBaseStackScreenOptions(theme: BrandTheme) {
   return {
@@ -37,26 +37,6 @@ export function createBaseStackScreenOptions(theme: BrandTheme) {
           },
         }),
   }
-}
-
-/**
- * The opaque page-colour header of a screen that does not draw the backdrop halo (OA-94, OA-125):
- * the header takes the page colour, so it does not read as a band of another colour above the
- * content, and the content scrolling under it is hidden. On iOS the header stays laid out over the
- * screen (the screen insets itself by `useHeaderHeight()`); on Android it is in the layout flow.
- * Left for the survey form screens until their plans give them the halo (12.2-15, 12.2-16).
- */
-export function pageColourHeader(theme: BrandTheme) {
-  return Platform.OS === "ios"
-    ? {
-        headerBlurEffect: "none" as const,
-        headerStyle: { backgroundColor: theme.colors.canvas },
-      }
-    : {
-        headerTransparent: false,
-        headerShadowVisible: false,
-        headerStyle: { backgroundColor: theme.colors.canvas },
-      }
 }
 
 /**

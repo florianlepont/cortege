@@ -1496,6 +1496,11 @@ describe("the halo frame on every page (D-19)", () => {
     ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
     ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
     ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
+    // 12.2-15: the factor pager, its page probe is the active factor's screen.
+    [
+      "factorDetail",
+      () => <FactorDetailRoute navigation={nav()} route={{ params: { factor: "A" } } as never} />,
+    ],
     [
       "communitySurvey",
       () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,

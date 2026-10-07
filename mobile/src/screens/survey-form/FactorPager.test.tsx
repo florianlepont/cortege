@@ -48,9 +48,6 @@ jest.mock("react-native", () => {
   }
 })
 
-// The header is native: its height is not available in unit tests.
-jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
-
 jest.mock("../../ui/GlassSurface", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -378,6 +375,17 @@ describe("FactorPager variant I tokens, sizes unchanged (12.2-15, D-05)", () => 
     const text = chip.findAll((n) => (n.type as unknown) === "Text")[0]
     expect(flat(text.props.style).color).toBe(visual.forest.title)
     expect(chip.props.accessibilityLabel).toBe(fr.factorPager.totalA11y(0))
+  })
+
+  test("the pager header starts 8 pt under the route's ScreenFrame inset, no header height of its own (D-19)", () => {
+    const { tree } = render("A")
+    const header = tree.root.findAll(
+      (n) =>
+        (n.type as unknown) === "View" &&
+        n.findAll((c) => c.props.testID === "pager-total").length > 0 &&
+        flat(n.props.style).paddingHorizontal === 16,
+    )[0]
+    expect(flat(header.props.style).paddingTop).toBe(8)
   })
 
   test("the title takes the screen title role without growing the 36 pt title row", () => {

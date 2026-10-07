@@ -23,7 +23,6 @@ import { computeFactorProgress } from "./FactorsList"
 import { FactorLetterStrip, STRIP_HEIGHT } from "./FactorLetterStrip"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { Ionicons } from "@expo/vector-icons"
-import { useHeaderHeight } from "@react-navigation/elements"
 
 const t = fr.factorPager
 
@@ -60,8 +59,6 @@ export function FactorPager({
 }: FactorPagerProps) {
   const theme = useBrandTheme()
   const tabBarClearance = useTabBarClearance()
-  // The iOS header is transparent: the pager's own header starts below it (OA-20).
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createStyles(theme), [theme])
   const scrollRef = useRef<ScrollView | null>(null)
   const [pageWidth, setPageWidth] = useState(0)
@@ -108,7 +105,7 @@ export function FactorPager({
   const isLast = activeIndex === lastIndex
   return (
     <View style={styles.container} onLayout={handleContainerLayout} testID="factor-pager">
-      <View style={[styles.header, { paddingTop: headerHeight + brandSpacing4.sm }]}>
+      <View style={styles.header}>
         <View style={styles.titleRow}>
           {/* OA-35: a long name ("Milieux ouverts florifères") shrinks to fit a narrow phone
            * instead of ending in an ellipsis. */}
@@ -188,7 +185,9 @@ function createStyles(theme: BrandTheme) {
     container: {
       flex: 1,
     },
+    // D-19: the route's ScreenFrame already starts the pager below the transparent header (OA-20).
     header: {
+      paddingTop: brandSpacing4.sm,
       paddingHorizontal: brandSpacing4.md,
       paddingBottom: brandSpacing4.smd,
       gap: brandSpacing4.smd,
