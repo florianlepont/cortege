@@ -1,4 +1,5 @@
 import type { PublicMapItem as PublicMapItemContract } from "@cortege/ibp-domain"
+import { normalizeCentroid } from "./surveys-normalize.utils"
 
 export type PublicMapDbRow = {
   id: string
@@ -35,10 +36,20 @@ export function normalizeDateInput(value: string | undefined): string | null {
   return trimmed
 }
 
+/**
+ * One map item, or null for a survey without a parcel centroid (excluded from the map).
+ * `display_location` is the exact centre of the survey's linked parcels
+ * (LINKED_PARCELS_CENTRE_SQL), through the same normalizeCentroid as the community survey page,
+ * so both agree to the digit.
+ * Owner decision 2026-10-08: no rounding any more (it used to be 2 decimals, about 1 km), so the
+ * dot of a survey lands on its parcel and turns into that parcel at parcel zoom.
+ */
 export function toPublicMapItem(row: PublicMapDbRow): PublicMapItem | null {
-  const lat = asFiniteNumber(row.parcel_centroid_lat)
-  const lng = asFiniteNumber(row.parcel_centroid_lng)
-  if (lat === null || lng === null) {
+  const location = normalizeCentroid({
+    lat: row.parcel_centroid_lat,
+    lng: row.parcel_centroid_lng,
+  })
+  if (location === null) {
     return null
   }
 
@@ -50,10 +61,7 @@ export function toPublicMapItem(row: PublicMapDbRow): PublicMapItem | null {
 
   return {
     survey_id: row.id,
-    display_location: {
-      lat: Number(lat.toFixed(2)),
-      lng: Number(lng.toFixed(2)),
-    },
+    display_location: location,
     survey_date: surveyDate,
     region_code: row.region_version ?? "unknown",
     ibp_total: ibpTotal,

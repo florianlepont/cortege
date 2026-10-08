@@ -69,9 +69,10 @@ export type ClusterListSheetProps = {
 }
 
 /**
- * The surveys of a cluster that zooming cannot split (Pitfall 7): public locations are rounded to
- * about 1 km, so several surveys can share one point. Shown in the Explorer sheet (MAP-01), whose
- * own scroll view provides the scrolling. A row opens its survey's page directly (12.2-19).
+ * The surveys of a cluster that zooming cannot split (Pitfall 7): surveys of the same parcels share
+ * one exact point, and surveys close together stay merged at the last cluster zoom. Shown in the
+ * Explorer sheet (MAP-01), whose own scroll view provides the scrolling. A row opens its survey's
+ * page directly (12.2-19).
  */
 export const ClusterListSheet = memo(function ClusterListSheet({
   items,

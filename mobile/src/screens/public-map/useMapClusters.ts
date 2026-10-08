@@ -58,8 +58,9 @@ export function computeRegionBboxArray(region: Region): [number, number, number,
 
 /**
  * The zoom used to query clusters. It is capped at CLUSTER_MAX_ZOOM so surveys
- * sharing a rounded display location (Pitfall 7) stay one tappable cluster
- * instead of stacked, unreachable markers.
+ * sharing one display location (Pitfall 7: the exact centre of the same
+ * parcels, since 2026-10-08) stay one tappable cluster instead of stacked,
+ * unreachable markers.
  */
 export function computeClusterZoom(region: Region): number {
   return Math.min(CLUSTER_MAX_ZOOM, Math.max(0, Math.floor(computeRegionZoom(region))))

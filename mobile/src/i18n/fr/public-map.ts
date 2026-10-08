@@ -10,7 +10,9 @@ export const publicMapFr = {
     count === 0 ? "Aucun relevé ici" : `${count} ${plural(count, "relevé", "relevés")} ici`,
   clusterList: {
     title: (count: number) => `${count} ${plural(count, "relevé", "relevés")} à cet endroit`,
-    subtitle: "Les positions sont arrondies à environ 1 km.",
+    // Positions are exact since 2026-10-08: only surveys of the same parcels, or too close to
+    // split at the last cluster zoom, end up in this list.
+    subtitle: "Ces relevés sont trop proches pour être séparés sur la carte.",
     row: ({ ibp, date }: { ibp: number; date: string }) => `IBP ${ibp}/50 · ${date}`,
   },
   // The v3.2 cas of a survey, shown in a cluster row where a v3.0 survey shows its region.

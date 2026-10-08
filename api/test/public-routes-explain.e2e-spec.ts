@@ -116,7 +116,7 @@ type MapItemRow = {
 }
 
 // AVG over 1-3 doubles may differ in the last bit with the summation order, so the averages
-// are compared to 9 decimals (the API rounds them to 2).
+// are compared to 9 decimals (the API keeps 6, normalizeCentroid).
 const roundAverage = (value: number | null): number | null =>
   value === null ? null : Math.round(value * 1e9) / 1e9
 

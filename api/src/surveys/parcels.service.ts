@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, UnprocessableEntityException } from "@
 import { randomUUID } from "crypto"
 import { DatabaseService, Queryable } from "../database/database.service"
 import { CadastreProviderService } from "./cadastre-provider.service"
+import { LINKED_PARCELS_CENTRE_SQL } from "./public-map.queries"
 import { ParcelRow, SurveyRow } from "./surveys.types"
 import {
   normalizeCentroid,
@@ -129,7 +130,8 @@ export class ParcelsService {
    * The survey's map position in one query (D-10): the average of its linked parcels'
    * centroids, else the centroid of `fallbackParcelId` (the legacy single parcel), else null.
    * Reads the generated centroid_lat/centroid_lng columns (migration 015), which are NULL for
-   * malformed or out-of-range centroids.
+   * malformed or out-of-range centroids. The average is LINKED_PARCELS_CENTRE_SQL, the same centre
+   * the public map items carry (owner decision 2026-10-08).
    */
   async displayLocation(
     db: Queryable,
@@ -198,16 +200,13 @@ export class ParcelsService {
       fallback_lng: number | null
     }>(
       `SELECT
-         linked.lat,
-         linked.lng,
+         linked.parcel_centroid_lat AS lat,
+         linked.parcel_centroid_lng AS lng,
          fallback.centroid_lat AS fallback_lat,
          fallback.centroid_lng AS fallback_lng
-       FROM (
-         SELECT AVG(p.centroid_lat) AS lat, AVG(p.centroid_lng) AS lng
-         FROM survey_parcels sp
-         JOIN parcels p
-           ON p.parcel_id = sp.parcel_id
-         WHERE sp.survey_id = $1
+       FROM (SELECT $1::text AS id) s
+       CROSS JOIN LATERAL (
+         ${LINKED_PARCELS_CENTRE_SQL}
        ) linked
        LEFT JOIN parcels fallback
          ON fallback.parcel_id = $2::text`,
