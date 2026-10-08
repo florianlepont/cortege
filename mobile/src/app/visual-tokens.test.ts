@@ -23,8 +23,10 @@ import {
   edgeGlowGreens,
   edgePulseMotion,
   explorerSheetGlass,
+  buildForestShield,
+  forestAurora,
+  forestShieldImage,
   forestStops,
-  forestRipples,
   mixWithWhite,
   withAlpha,
 } from "./visual-tokens"
@@ -753,79 +755,104 @@ describe("offline download progress bar (12.2-19 third round)", () => {
   })
 })
 
-describe("forest card ripples (12.2-19 third round: the sign-in screen's)", () => {
-  const forest = themes.light.visual.forest
-  const r = forestRipples
+describe("forest card aurora (12.2-19 fourth round: sketch 010, A + F)", () => {
+  const a = forestAurora
+  const discs = [a.moss, a.teal, a.ochre]
 
-  // Opacity of one disc `p` through its cycle, the keyframes of `rippleAt`.
-  function discOpacity(p: number): number {
-    const xs = [0, r.peakAt, r.fadeAt, 1]
-    const ys = [0, r.peakOpacity, r.fadeOpacity, 0]
-    for (let i = 0; i < xs.length - 1; i += 1) {
-      if (p >= xs[i] && p <= xs[i + 1]) {
-        return ys[i] + ((p - xs[i]) / (xs[i + 1] - xs[i])) * (ys[i + 1] - ys[i])
+  // The brightest the aurora ever makes a point of the card: all three discs at their peak, one
+  // over the other (they cross while drifting), over a stop of the card gradient.
+  function worstAurora(stop: string): string {
+    return discs.reduce(
+      (under, disc) => compositeOver(withAlpha(disc.colour, disc.peak), under),
+      stop,
+    )
+  }
+
+  // The shield's alpha at a share of the card's width (its stops are percents).
+  function shieldAt(share: number): number {
+    const stopsAt = a.shield.stops
+    for (let i = 0; i < stopsAt.length - 1; i += 1) {
+      const [fromAlpha, fromAt] = stopsAt[i]
+      const [toAlpha, toAt] = stopsAt[i + 1]
+      if (share * 100 <= toAt) {
+        return fromAlpha + ((share * 100 - fromAt) / (toAt - fromAt)) * (toAlpha - fromAlpha)
       }
     }
     return 0
   }
 
-  // The most the three discs ever cover a point together (at the button all three overlap).
-  function worstStack(): number {
-    let worst = 0
-    for (let step = 0; step <= 1000; step += 1) {
-      const phase = step / 1000
-      let clear = 1
-      for (let index = 0; index < r.count; index += 1) {
-        clear *= 1 - discOpacity((((phase - index / r.count) % 1) + 1) % 1)
+  test("three discs of the sketch, moss, teal and a faint ochre, at 0.30 to 0.45 at their peak", () => {
+    for (const disc of discs) {
+      expect(disc.peak).toBeGreaterThanOrEqual(0.3)
+      expect(disc.peak).toBeLessThanOrEqual(0.45)
+      // A glow: each lifts the card a little wherever it passes.
+      for (const stop of stops) {
+        const lifted = compositeOver(withAlpha(disc.colour, disc.peak), stop)
+        expect(relativeLuminance(lifted)).toBeGreaterThan(relativeLuminance(stop))
       }
-      worst = Math.max(worst, 1 - clear)
     }
-    return worst
-  }
-
-  test("the sign-in rhythm: three discs, a third of a 10 s cycle apart", () => {
-    expect(r.cycleMs).toBe(10000)
-    expect(r.count).toBe(3)
-    expect([r.scaleStart, r.scaleEarly, r.growAt]).toEqual([0.3, 1.6, 0.15])
+    expect(a.ochre.peak).toBeLessThan(a.moss.peak)
+    // A soft disc drawn once: full at the centre, nothing at the rim, never brighter than its peak.
+    expect(a.falloff[0]).toEqual([0, 1])
+    expect(a.falloff[a.falloff.length - 1]).toEqual([1, 0])
+    for (const [, share] of a.falloff) expect(share).toBeLessThanOrEqual(1)
   })
 
-  test("calm: at most 0.14 to 0.16 at the peak, nearly gone by 70 % of the cycle", () => {
-    expect(r.peakOpacity).toBeGreaterThanOrEqual(0.12)
-    expect(r.peakOpacity).toBeLessThanOrEqual(0.16)
-    expect(r.fadeOpacity).toBeLessThan(r.peakOpacity / 2)
-  })
-
-  test("a green only slightly lighter than the card, not a light green line", () => {
-    expect(forest.ripple).toBe(r.colour)
-    expect(themes.dark.visual.forest.ripple).toBe(r.colour)
-    for (const stop of Object.values(forestStops)) {
-      const lifted = compositeOver(withAlpha(r.colour, r.peakOpacity), stop)
-      expect(relativeLuminance(lifted)).toBeGreaterThan(relativeLuminance(stop))
-      expect(contrastRatio(lifted, stop)).toBeLessThan(1.2)
-    }
-    // Far darker than the sage of the old wave lines.
-    expect(relativeLuminance(r.colour)).toBeLessThan(relativeLuminance(forest.contourSage) / 2)
-  })
-
-  test("the title and the factors line keep 4.5:1 under all three discs at their worst", () => {
-    const stack = worstStack()
-    expect(stack).toBeGreaterThan(r.peakOpacity)
-    for (const stop of Object.values(forestStops)) {
-      const under = compositeOver(withAlpha(r.colour, stack), stop)
-      expect(contrastRatio(forest.title, under)).toBeGreaterThanOrEqual(4.5)
-      expect(contrastRatio(forest.body, under)).toBeGreaterThanOrEqual(4.5)
+  test("the shield darkens the text side and is gone by about 80 % of the width", () => {
+    expect(forestShieldImage).toBe(buildForestShield())
+    expect(forestShieldImage).toBe(
+      "linear-gradient(90deg, rgba(14, 34, 16, 0.55) 0%, rgba(14, 34, 16, 0.3) 55%, " +
+        "rgba(14, 34, 16, 0) 82%)",
+    )
+    expect(a.shield.colour).toBe(forestStops.c)
+    expect(shieldAt(0)).toBeCloseTo(0.55)
+    expect(shieldAt(0.85)).toBe(0)
+    // It only ever fades towards the right, so the text's worst point is the column's end.
+    for (let share = 0; share < 1; share += 0.05) {
+      expect(shieldAt(share + 0.05)).toBeLessThanOrEqual(shieldAt(share))
     }
   })
 
-  test("the filled segments keep 3:1 under the lightest disc at its peak", () => {
-    for (const stop of Object.values(forestStops)) {
-      const under = compositeOver(withAlpha(r.colour, r.peakOpacity), stop)
-      expect(contrastRatio(forest.glowFallback, under)).toBeGreaterThanOrEqual(3)
-      // The empty segment's track reads as before: the disc takes almost nothing from it.
-      const track = (bg: string) => compositeOver(forest.tagFill, bg)
-      expect(contrastRatio(track(under), under)).toBeGreaterThan(
-        contrastRatio(track(stop), stop) - 0.1,
-      )
+  test("the title and the factors line keep 4.5:1 over the brightest aurora, shield applied", () => {
+    // Same text colours in both schemes: the card is always forest.
+    expect(themes.dark.visual.forest.title).toBe(themes.light.visual.forest.title)
+    expect(themes.dark.visual.forest.body).toBe(themes.light.visual.forest.body)
+    const forest = themes.light.visual.forest
+    for (const stop of stops) {
+      for (let share = 0; share <= a.textReach; share += 0.02) {
+        const under = compositeOver(withAlpha(a.shield.colour, shieldAt(share)), worstAurora(stop))
+        expect(contrastRatio(forest.title, under)).toBeGreaterThanOrEqual(4.5)
+        expect(contrastRatio(forest.body, under)).toBeGreaterThanOrEqual(4.5)
+      }
     }
+  })
+
+  test("the filled segments keep 3:1 where there is no shield, a contour line under them", () => {
+    for (const stop of stops) {
+      const aurora = worstAurora(stop)
+      const line = compositeOver(withAlpha(a.trace.light, a.trace.maxOpacity), aurora)
+      expect(contrastRatio(a.progressDone, aurora)).toBeGreaterThanOrEqual(3)
+      expect(contrastRatio(a.progressDone, line)).toBeGreaterThanOrEqual(3)
+      // The empty track stays darker than a filled segment.
+      const track = compositeOver(themes.light.visual.forest.tagFill, aurora)
+      expect(relativeLuminance(track)).toBeLessThan(relativeLuminance(a.progressDone))
+    }
+    // The deep contour green is the fainter of the two.
+    expect(relativeLuminance(a.trace.deep)).toBeLessThan(relativeLuminance(a.trace.light))
+  })
+
+  test("the contours stay faint and thin, and fade before the text column", () => {
+    expect(a.trace.maxOpacity).toBeLessThanOrEqual(0.35)
+    expect(a.trace.width).toBe(1)
+    expect(a.textReach).toBeGreaterThanOrEqual(0.6)
+    expect(a.textReach).toBeLessThan(1)
+  })
+
+  test.each(schemes)("%s: the button is opaque, so its label keeps its contrast", (scheme) => {
+    const { pill } = themes[scheme].visual
+    expect(pill.fallback).toMatch(/^#[0-9A-F]{6}$/i)
+    expect(pill.top).toMatch(/^#[0-9A-F]{6}$/i)
+    expect(contrastRatio(pill.label, pill.fallback)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(pill.label, pill.top)).toBeGreaterThanOrEqual(4.5)
   })
 })

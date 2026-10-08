@@ -31,14 +31,6 @@ jest.mock("react-native", () => {
   }
 })
 
-jest.mock("./ForestRipples", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    ForestRipples: (props: Record<string, unknown>) =>
-      ReactRef.createElement("ForestRipples", props),
-  }
-})
-
 jest.mock("./ContourLines", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -170,22 +162,26 @@ describe("ForestCard", () => {
     expect(contours[0].props.animated).toBe(false)
   })
 
-  test("no ripples by default", () => {
+  test("no backdrop by default", () => {
     const { tree } = render()
-    expect(tree.root.findAll((n) => (n.type as unknown) === "ForestRipples")).toHaveLength(0)
+    const clipView = tree.root.findAll((n) => (n.type as unknown) === "View")[1]
+    expect(clipView.children).toHaveLength(2)
   })
 
-  test("ripples: the one animated layer, over still contours, inside the clip, from the point given", () => {
-    const origin = { x: 280, y: 50 }
-    const { tree } = render({ ripples: true, rippleOrigin: origin })
-    const contours = tree.root.findAll((n) => (n.type as unknown) === "ContourLines")
-    expect(contours[0].props.animated).toBe(false)
+  test("a backdrop sits inside the clip, over the gradient and under the content (12.2-19)", () => {
+    const { tree } = render({ contours: false, backdrop: React.createElement("Aurora") })
     const clipView = tree.root.findAll((n) => (n.type as unknown) === "View")[1]
-    const ripples = clipView.findAll((n) => (n.type as unknown) === "ForestRipples")
-    expect(ripples).toHaveLength(1)
-    expect(ripples[0].props.origin).toBe(origin)
-    // No wave lines any more (12.2-19 third round).
-    expect(tree.root.findAll((n) => (n.type as unknown) === "ForestWaves")).toHaveLength(0)
+    const [first, second] = clipView.children as renderer.ReactTestInstance[]
+    expect(clipView.children).toHaveLength(2)
+    expect(first.type).toBe("Aurora")
+    expect(second.findAll((n) => (n.type as unknown) === "Child")).toHaveLength(1)
+    expect(tree.root.findAll((n) => (n.type as unknown) === "ContourLines")).toHaveLength(0)
+  })
+
+  test("other cards keep their contour drift beside a backdrop", () => {
+    const { tree } = render({ backdrop: React.createElement("Aurora") })
+    const contours = tree.root.findAll((n) => (n.type as unknown) === "ContourLines")
+    expect(contours[0].props.animated).toBe(true)
   })
 
   test("contours={false} omits the contour layer", () => {

@@ -3,16 +3,19 @@ import { LayoutChangeEvent, StyleSheet, View } from "react-native"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import { forestAurora } from "../../app/visual-tokens"
 import type { LocalSurvey } from "../../storage/types"
 import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
+import { ForestAurora } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
-import type { RipplePoint } from "../../ui/ForestRipples"
 import { RESUME_LAYOUT } from "./layout-budget"
 
 const t = fr.home.hero
 
 const FACTOR_COUNT = 10
+/** Between the text column and the button. */
+const ROW_GAP = brandSpacing4.smd
 
 type ResumeCardProps = {
   /** The draft touched within the resume window, or null for the "start a survey" card. */
@@ -29,10 +32,10 @@ type ResumeCardProps = {
  * on the iPhone). Text stays on the left so nothing sits under the halo at the top right of the
  * card, and the progress sits a full 24 pt under the button row. 12.2-19 fix round (owner): the
  * "Nouveau relevé" footer read as an action of the draft, so it left the card for `NewSurveyCard`,
- * drawn under it by Accueil only beside a draft. Second fix round (owner: "je m'attendais à un truc
- * un peu dynamique comme les vagues sur l'écran de connexion"): both forms of the card carry the
- * sign-in screen's ripples (`ForestRipples`, third round: rings spreading from behind the button and
- * fading, not wave lines), which replace the contour drift as the card's one animated layer.
+ * drawn under it by Accueil only beside a draft. Fourth fix round (owner: the ripples did not
+ * please and the full-card contour lines hurt the reading, "un mélange de A et F" from sketch 010):
+ * both forms of the card carry `ForestAurora` (drifting aurora, a shield under the text, contours
+ * tracing themselves right of the text only) as their one animated layer, and no contour layer.
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -42,17 +45,20 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
   const resumeFactors = resumeDraft
     ? Math.max(0, Math.min(FACTOR_COUNT, Math.round(resumeDraft.factors_filled)))
     : 0
-  // The ripples spread from behind the button: its centre, in the card's space (the row sits at
-  // the card's padding).
-  const [rippleOrigin, setRippleOrigin] = useState<RipplePoint | null>(null)
+  // The contours are drawn right of the text column only: its end, in the card's space (the row
+  // sits at the card's padding, the button a gap after the column).
+  const [traceStart, setTraceStart] = useState<number | null>(null)
   const handleButtonLayout = (event: LayoutChangeEvent): void => {
-    const { x, y, width, height } = event.nativeEvent.layout
-    const pad = RESUME_LAYOUT.padding
-    setRippleOrigin({ x: pad + x + width / 2, y: pad + y + height / 2 })
+    setTraceStart(RESUME_LAYOUT.padding + event.nativeEvent.layout.x - ROW_GAP)
   }
 
   return (
-    <ForestCard variant="resume" ripples rippleOrigin={rippleOrigin} testID="home-resume-card">
+    <ForestCard
+      variant="resume"
+      contours={false}
+      backdrop={<ForestAurora traceStart={traceStart} testID="home-resume-aurora" />}
+      testID="home-resume-card"
+    >
       <View style={styles.main}>
         <View style={styles.row}>
           <View style={styles.copy}>
@@ -105,7 +111,7 @@ function createStyles(theme: BrandTheme) {
     row: {
       flexDirection: "row",
       alignItems: "center",
-      gap: brandSpacing4.smd,
+      gap: ROW_GAP,
     },
     copy: {
       flex: 1,
@@ -138,8 +144,9 @@ function createStyles(theme: BrandTheme) {
       borderRadius: RESUME_LAYOUT.progressHeight / 2,
       backgroundColor: forest.tagFill,
     },
+    // The pale forest green: it keeps 3:1 over the brightest aurora (`visual-tokens.test.ts`).
     progressSegmentDone: {
-      backgroundColor: forest.glowFallback,
+      backgroundColor: forestAurora.progressDone,
     },
   })
 }

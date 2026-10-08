@@ -3,7 +3,6 @@ import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { brandRadius } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { ContourLines } from "./ContourLines"
-import { ForestRipples, type RipplePoint } from "./ForestRipples"
 
 type ForestCardVariant = "resume" | "hero"
 
@@ -16,12 +15,10 @@ type ForestCardProps = {
   /** Contour drift loop; false draws the static frame (Android, if frames drop). */
   animatedContours?: boolean
   /**
-   * Ripples spreading over the contours (Accueil's card, 12.2-19, like the sign-in screen). They are
-   * then the card's one animated layer: the contours under them are drawn still.
+   * A layer drawn inside the clip, over the gradient and under the content: Accueil's aurora
+   * (`ForestAurora`, 12.2-19), which comes without the contours (`contours={false}`).
    */
-  ripples?: boolean
-  /** The point the ripples spread from (the centre of the card's button), in the card's space. */
-  rippleOrigin?: RipplePoint | null
+  backdrop?: ReactNode
   style?: StyleProp<ViewStyle>
   contentStyle?: StyleProp<ViewStyle>
   testID?: string
@@ -48,8 +45,7 @@ export function ForestCard({
   variant = "resume",
   contours = true,
   animatedContours = true,
-  ripples = false,
-  rippleOrigin,
+  backdrop,
   style,
   contentStyle,
   testID,
@@ -64,8 +60,8 @@ export function ForestCard({
       testID={testID}
     >
       <View style={[styles.clip, hero ? styles.clipHero : styles.clipResume]}>
-        {contours ? <ContourLines animated={animatedContours && !ripples} /> : null}
-        {ripples ? <ForestRipples origin={rippleOrigin} testID="forest-ripples" /> : null}
+        {contours ? <ContourLines animated={animatedContours} /> : null}
+        {backdrop}
         <View style={contentStyle}>{children}</View>
       </View>
     </View>

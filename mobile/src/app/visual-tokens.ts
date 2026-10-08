@@ -335,28 +335,51 @@ export const contourDrift = {
   sageWidth: 1,
   mossWidth: 1.4,
 } as const
-// The ripples of Accueil's forest card (12.2-19, owner: "ce n'est pas l'animation de l'écran de
-// connexion … et les lignes vert clair rendent le tout illisible"). The sign-in screen's animation,
-// retold: three blobs behind the logo that spread outward and fade, one every third of a 10 s linear
-// cycle (`HeroSection`, scale 0.3 to 1.6 at 15 % then on, opacity in by 6 % and nearly out by 70 %).
-// On the card they are discs spreading from behind its button to its farthest corner, in a green
-// only slightly lighter than the card gradient and at most 0.14 opaque, so the title, the factors
-// line and the segments keep their contrast (tested with all three discs over one another).
-export const forestRipples = {
-  cycleMs: 10000,
-  count: 3,
-  /** Diameter of a disc at scale 1, in points. */
-  size: 48,
-  scaleStart: 0.3,
-  scaleEarly: 1.6,
-  /** Shares of the cycle: swollen to `scaleEarly`, in at its peak, faded to `fadeOpacity`. */
-  growAt: 0.15,
-  peakAt: 0.06,
-  fadeAt: 0.7,
-  peakOpacity: 0.14,
-  fadeOpacity: 0.035,
-  colour: "#557343",
+// Accueil's forest card hero (12.2-19 fourth round, owner: "un mélange de A et F", sketch 010): an
+// aurora of three soft discs drifting behind the content, a shield darkening the text side, and
+// faint contours tracing themselves on the right (geometry and timing: `forest-aurora-shape.ts`).
+// Same values in both schemes, the card is always forest. The discs are deep greens and a faint
+// ochre so the title, the factors line and the segments keep their contrast with all three at
+// their peak over one another and a contour line on top (`visual-tokens.test.ts`).
+export const forestAurora = {
+  /** Colour and opacity at a disc's centre; it fades to nothing at its rim (`falloff`). */
+  moss: { colour: "#54902A", peak: 0.44 },
+  teal: { colour: "#2C8062", peak: 0.4 },
+  ochre: { colour: "#A2843A", peak: 0.3 },
+  /** [share of the radius, share of the peak]: a soft edge drawn once, no runtime blur. */
+  falloff: [
+    [0, 1],
+    [0.4, 0.7],
+    [0.75, 0.25],
+    [1, 0],
+  ],
+  /** Left to right darkening over the aurora and under the text: [alpha, percent of the width]. */
+  shield: {
+    colour: forestStops.c,
+    stops: [
+      [0.55, 0],
+      [0.3, 55],
+      [0, 82],
+    ],
+  },
+  /** How far the text column can reach, as a share of the card's width (about 60 % at most). */
+  textReach: 0.64,
+  /** The traced contours: two greens, at most `maxOpacity` and `width` pt thin. */
+  trace: { light: "#6E8F3A", deep: "#5A7A30", maxOpacity: 0.3, width: 1 },
+  /** Filled progress segments: the pale forest green, 3:1 over the brightest aurora. */
+  progressDone: "#C8DDA0",
 } as const
+
+/** The shield's gradient (`experimental_backgroundImage`). */
+export function buildForestShield(): string {
+  const { colour, stops } = forestAurora.shield
+  return buildLinearGradient(
+    90,
+    stops.map(([alpha, percent]) => [withAlpha(colour, alpha), percent] as const),
+  )
+}
+
+export const forestShieldImage = buildForestShield()
 // The static contours behind Accueil's "Nouveau relevé" glass card (12.2-19 fix round): a faint
 // texture under the text, never the forest card's full strength. The lines are drawn for the forest,
 // so the light glass takes a little more of them than the dark one to show at all.

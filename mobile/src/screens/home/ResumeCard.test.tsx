@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { brandSpacing4 } from "../../app/brand-tokens"
+import { forestAurora } from "../../app/visual-tokens"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { RESUME_LAYOUT, resumeCardHeight } from "./layout-budget"
@@ -36,6 +37,7 @@ jest.mock("react-native", () => {
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
+jest.mock("../../ui/ForestAurora", () => ({ ForestAurora: "ForestAurora" }))
 
 const t = fr.home.hero
 
@@ -211,24 +213,25 @@ describe("ResumeCard", () => {
     expect(texts).toContain(t.resumeTitleUnnamed)
   })
 
-  test("the card is a resume forest card with contours", () => {
+  test("the card is a resume forest card, without the full-card contours (12.2-19)", () => {
     mount(null)
     const card = tree.root.findByType("ForestCard" as never)
     expect(card.props.variant).toBe("resume")
     expect(card.props.testID).toBe("home-resume-card")
-    expect(card.props.contours).not.toBe(false)
+    // The owner: the lines behind the text hurt the reading.
+    expect(card.props.contours).toBe(false)
   })
 
   test.each([
     ["the start card", null],
     ["the resume card", makeSurvey()],
-  ])("%s ripples from behind its button, like the sign-in screen (12.2-19)", (_name, draft) => {
+  ])("%s carries the aurora, its contours right of the text only (12.2-19)", (_name, draft) => {
     mount(draft)
-    const card = () => tree.root.findByType("ForestCard" as never)
-    expect(card().props.ripples).toBe(true)
-    expect(card().props).not.toHaveProperty("waves")
-    // Until the button is measured the rings have no point of their own.
-    expect(card().props.rippleOrigin).toBeNull()
+    const aurora = () => tree.root.findByType("ForestCard" as never).props.backdrop
+    expect(aurora().type).toBe("ForestAurora")
+    expect(tree.root.findByType("ForestCard" as never).props).not.toHaveProperty("ripples")
+    // Until the button is measured the contours have no room of their own.
+    expect(aurora().props.traceStart).toBeNull()
     const wrapper = tree.root.find(
       (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-button",
     )
@@ -236,11 +239,19 @@ describe("ResumeCard", () => {
     act(() =>
       wrapper.props.onLayout({ nativeEvent: { layout: { x: 230, y: 8, width: 110, height: 44 } } }),
     )
-    // The row sits at the card's padding: the centre of the button, in the card's space.
-    expect(card().props.rippleOrigin).toEqual({
-      x: RESUME_LAYOUT.padding + 230 + 55,
-      y: RESUME_LAYOUT.padding + 8 + 22,
-    })
+    // The row sits at the card's padding; the text column ends a row gap before the button.
+    expect(aurora().props.traceStart).toBe(RESUME_LAYOUT.padding + 230 - brandSpacing4.smd)
+    const row = tree.root.find(
+      (node) => (node.type as unknown) === "View" && styleOf(node).alignItems === "center",
+    )
+    expect(styleOf(row).gap).toBe(brandSpacing4.smd)
+  })
+
+  test("the filled segments are the pale forest green that keeps 3:1 over the aurora", () => {
+    const { segments } = mount(makeSurvey())
+    expect(styleOf(segments("hero-progress-done")[0]).backgroundColor).toBe(
+      forestAurora.progressDone,
+    )
   })
 
   test("six factors with four context slots filled read 6, not the 71 percent rounded to 7 (12.2-14)", () => {
