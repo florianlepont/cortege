@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
-stopped_at: Completed 12.2-20-PLAN.md
-last_updated: "2026-10-08T10:19:00.000Z"
+stopped_at: Completed 12.2-21-PLAN.md
+last_updated: "2026-10-08T10:42:00.000Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 179
+  completed_plans: 180
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 21 of 23
+Plan: 22 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -100,6 +100,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P18 | 16min | 2 tasks | 20 files |
 | Phase 12.2 P19 | owner check | 1 tasks | 0 files |
 | Phase 12.2 P20 | 9min | 2 tasks | 40 files |
+| Phase 12.2 P21 | 22min | 3 tasks | 25 files |
 
 ## Accumulated Context
 
@@ -171,6 +172,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 12.2]: 12.2-18: Explorer panel rows (cluster list, parcel history) reuse SurveyRowFrame with the ScoreRing trailing (D-27a) and enter through EntranceView (rows 0 to 7); full-width panel actions are GlassButton at unchanged sizes; no halo on the Explorer or its sheets; one SheetCloseButton with a 44 pt target
 - [Phase 12.2]: 12.2-19: Explorer markers open the survey directly (intermediate card removed); the download panel has a 46 pt button and a progress bar, and download mode is a full-screen green pulse drawn at the navigation layer; map controls and sheets use near-opaque glass in dark mode; unscored parcels are warm grey and a scored survey keeps its marker until a scored parcel shows it; Accueil's Nouveau relevé is a glass card of its own; forest cards carry the owner-tuned mist and diagonal flowing contours with an SVG mask behind text
 - [Phase 12.2]: 12.2-20: every Ionicons glyph in mobile/src is an outline variant, locked by `__checks__/icons.test.ts` (D-07); GlassButton's native SF Symbol map is keyed by outline glyphs with unfilled symbols; tab SF Symbols and Android PNG tab icons untouched; no control changed size
+- [Phase 12.2]: 12.2-21: em dash gate over every string, template and JSX text under mobile/src (survey-export.ts out of scope), comments skipped through the TypeScript parser; motion gate per call (ReduceMotion.System unless the file branches on useReducedMotion()), React Native Animated confined to six allowlisted sign-in and sheet files, every endless loop gated by useScreenVisible; ExplorerSheet honours Reduce Motion; no open dark correction (no token changed); map overlays that keep theme text take theme.visual.mapPanel, map-control-like overlays the map control glass and ink
 
 ### Pending Todos
 
@@ -212,6 +214,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T10:19:00.000Z
-Stopped at: Completed 12.2-20-PLAN.md
+Last session: 2026-10-08T10:42:00.000Z
+Stopped at: Completed 12.2-21-PLAN.md
 Resume file: None

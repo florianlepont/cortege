@@ -657,7 +657,7 @@ each batch shipped; `12-VALIDATION.md` maps each success criterion above to its 
   3. Transitions and feedback use the Reanimated motion system consistently and respect the system reduced-motion setting.
   4. The owner confirms the result on their own phone.
 
-**Plans:** 20/23 plans executed
+**Plans:** 21/23 plans executed
 
 Plans:
 **Wave 1**
@@ -715,7 +715,7 @@ Plans:
 **Wave 12** *(blocked on Wave 11 completion)*
 
 - [x] 12.2-20-PLAN.md — Outline icon harmonisation and icon gate (D-07)
-- [ ] 12.2-21-PLAN.md — Em dash catalogue gate, motion consistency audit, dark pass
+- [x] 12.2-21-PLAN.md — Em dash catalogue gate, motion consistency audit, dark pass
 - [ ] 12.2-22-PLAN.md — Charter section 13, direction corrections, Phase 13 Android carry-over, animals seed, CLAUDE.md note
 
 **Wave 13** *(blocked on Wave 12 completion)*
@@ -794,7 +794,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 11. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 12. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 12.1. Owner acceptance testing | 0/TBD | Not started | - |
-| 12.2. Visual Modernisation | 20/23 | In Progress|  |
+| 12.2. Visual Modernisation | 21/23 | In Progress|  |
 | 12.3. In-depth Quality Audit | 0/TBD | Not started | - |
 | 13. Field Validation | 0/TBD | Not started | - |
 
