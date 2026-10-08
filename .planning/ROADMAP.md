@@ -749,6 +749,7 @@ Plans:
 **Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
 **Depends on**: Phases 12.2 and 12.3 (visual modernisation and quality audit), Phase 12.1 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 1.2, 1.4, 1.5, 1.6 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
 **Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
+**Carried over from Phase 12.2 (D-17)**: an Android device pass of the visual refresh (gradients, coloured shadows, flat glass fill on cards, map controls and sheets, the download edge glow at the navigation layer, the forest card SVG mask, and the cost of the forest card mist and flowing contours: turn `ForestCard`'s `motion` off on Android if frames drop; header tint in dark mode). See charter section 13.9.
 **Success Criteria** (what must be TRUE):
 
   1. A field-test report exists for each of Epics B, C and D, in the form of `docs/user-tests/epic-a-access-and-security.md`, with a recorded outcome for every case.
