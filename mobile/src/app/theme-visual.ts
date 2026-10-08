@@ -7,6 +7,7 @@ import {
   buildInsetRing,
   buildLinearGradient,
   downloadEdgeGlow,
+  downloadEdgeGlowDeep,
   explorerSheetGlass,
   forestHaloCore,
   glassCtaEdges,
@@ -39,6 +40,8 @@ export type BrandVisual = {
   pressWave: string
   /** Inset green glow around the Explorer map in download mode (12.2-19, `EdgePulse`). */
   edgeGlow: string
+  /** The deeper halo of that glow, swelling in at the top of each beat (12.2-19 third round). */
+  edgeGlowDeep: string
   forest: {
     image: string
     heroImage: string
@@ -173,6 +176,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
     accentText,
     pressWave: pressWaveFill[scheme],
     edgeGlow: downloadEdgeGlow,
+    edgeGlowDeep: downloadEdgeGlowDeep,
     forest: {
       image: buildForestImage(haloCore),
       heroImage: buildForestHeroImage(haloCore),

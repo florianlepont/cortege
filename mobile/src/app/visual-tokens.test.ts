@@ -11,6 +11,7 @@ import { buildTheme, defaultTheme, type BrandTheme } from "./theme"
 import {
   brandGlassFills,
   buildEdgeGlow,
+  buildEdgeGlowDeep,
   buildForestHeroImage,
   buildForestImage,
   buildInsetRing,
@@ -18,8 +19,8 @@ import {
   buildRadialGradient,
   edgeGlowGeometry,
   edgeGlowGreens,
-  edgeLightMotion,
   edgePulseMotion,
+  explorerSheetGlass,
   forestStops,
   forestWaves,
   mixWithWhite,
@@ -656,20 +657,68 @@ describe("download edge glow (12.2-19 fix rounds: stronger, then round the whole
     )
   })
 
-  test("pulses gently from 0.7 to full over 2.2 s and stays at full under Reduce Motion", () => {
-    expect(edgePulseMotion.minOpacity).toBe(0.7)
-    expect(edgePulseMotion.halfCycleMs * 2).toBe(2200)
+  test("a strong pulse, 0.35 to full over 1.5 s, still at full under Reduce Motion", () => {
+    expect(edgePulseMotion.minOpacity).toBe(0.35)
+    expect(edgePulseMotion.halfCycleMs * 2).toBe(1500)
     expect(edgePulseMotion.stillOpacity).toBe(1)
   })
 
-  test("a light travels round the screen in 3.2 s, its core the brightest green", () => {
-    expect(edgeLightMotion.lapMs).toBe(3200)
-    expect(edgeLightMotion.fraction).toBeGreaterThan(0)
-    expect(edgeLightMotion.fraction).toBeLessThan(0.25)
-    expect(edgeLightMotion.coreWidth).toBeLessThan(edgeLightMotion.glowWidth)
-    for (const green of [edgeGlowGreens.line, edgeGlowGreens.band, edgeGlowGreens.halo]) {
-      expect(relativeLuminance(edgeGlowGreens.light)).toBeGreaterThan(relativeLuminance(green))
+  test("the deeper halo of the top of the beat is 48 to 56 pt deep, beyond the base halo", () => {
+    const { deep, halo } = edgeGlowGeometry
+    const depth = deep.spread + deep.blur
+    expect(depth).toBeGreaterThanOrEqual(48)
+    expect(depth).toBeLessThanOrEqual(56)
+    expect(depth).toBeGreaterThan(halo.spread + halo.blur)
+    expect(themes.light.visual.edgeGlowDeep).toBe(buildEdgeGlowDeep())
+    expect(themes.dark.visual.edgeGlowDeep).toBe(themes.light.visual.edgeGlowDeep)
+    expect(buildEdgeGlowDeep()).toBe(
+      `inset 0 0 38px 14px ${withAlpha(edgeGlowGreens.halo, deep.alpha)}`,
+    )
+  })
+
+  test("no travelling light any more: only the line, band and halo greens are left", () => {
+    expect(Object.keys(edgeGlowGreens).sort()).toEqual(["band", "halo", "line"])
+  })
+
+  describe("at the top of the beat the panel's text keeps 4.5:1 under the glow", () => {
+    // An inset shadow of blur b is a Gaussian of sigma b / 2 past its spread: its alpha `distance` pt
+    // in from the edge is alpha * erfc((distance - spread) / (sigma * sqrt 2)) / 2.
+    function erf(x: number): number {
+      // Abramowitz and Stegun 7.1.26, within 1.5e-7.
+      const sign = x < 0 ? -1 : 1
+      const t = 1 / (1 + 0.3275911 * Math.abs(x))
+      const poly =
+        t *
+        (0.254829592 +
+          t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))))
+      return sign * (1 - poly * Math.exp(-x * x))
     }
+    function layerAlpha(layer: { blur: number; spread: number; alpha: number }, distance: number) {
+      if (distance <= layer.spread) return layer.alpha
+      const sigma = layer.blur / 2
+      return (layer.alpha * (1 - erf((distance - layer.spread) / (sigma * Math.SQRT2)))) / 2
+    }
+    // The panel's content starts 16 pt in from the screen edge (the sheet's horizontal padding).
+    const contentInset = 16
+
+    test.each(schemes)("%s sheet", (scheme) => {
+      const { band, halo, deep } = edgeGlowGeometry
+      const sheet = compositeOver(
+        explorerSheetGlass[scheme].fill,
+        scheme === "light" ? "#FFFFFF" : "#000000",
+      )
+      let under = sheet
+      for (const [green, layer] of [
+        [edgeGlowGreens.halo, deep],
+        [edgeGlowGreens.halo, halo],
+        [edgeGlowGreens.band, band],
+      ] as const) {
+        under = compositeOver(withAlpha(green, layerAlpha(layer, contentInset)), under)
+      }
+      const { colors, semanticColors } = themes[scheme]
+      expect(contrastRatio(semanticColors.textStrong, under)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(colors.textSecondary, under)).toBeGreaterThanOrEqual(4.5)
+    })
   })
 })
 

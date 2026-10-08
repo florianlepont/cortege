@@ -264,22 +264,24 @@ export const glassCtaSecondary = {
 // a crisp 3 pt line, a tight band for definition and a wide halo, in saturated greens brighter than
 // the brand moss. The second (owner: "je m'attendais à avoir un truc qui fasse tout le tour de
 // l'écran") moved it round the whole screen, over the panel and the tab bar, with the screen's
-// rounded corners, and added a light that travels round it. Over the white panel the halo is a little
-// shallower and lighter, so the panel's text and button keep their contrast; the line keeps 3:1
-// against the white plan and the dark orthophoto alike. The basemaps do not follow the scheme, so
-// both schemes draw the same glow. Inset shadows only, no border (12.2-17).
+// rounded corners. The third (owner: "j'aurais préféré juste un pulse plus fort, pas le truc qui
+// tourne") took the travelling light out and made the pulse itself stronger: a deeper halo swells in
+// at the top of each beat. Over the white panel the halo stays light enough for the panel's text to
+// keep 4.5:1; the line keeps 3:1 against the white plan and the dark orthophoto alike. The basemaps
+// do not follow the scheme, so both schemes draw the same glow. Inset shadows only, no border
+// (12.2-17).
 export const edgeGlowGreens = {
   line: "#4E9620",
   band: "#6DB52E",
   halo: "#7BC234",
-  /** The core of the travelling light, brighter than every other green of the glow. */
-  light: "#9BEA3E",
 } as const
 
 export const edgeGlowGeometry = {
   line: 3,
   band: { blur: 12, spread: 4, alpha: 0.85 },
   halo: { blur: 28, spread: 8, alpha: 0.45 },
+  /** The deeper halo that swells in at the top of each beat: 52 pt deep (spread plus blur). */
+  deep: { blur: 38, spread: 14, alpha: 0.22 },
   /** Corner radius of the glow, near the iPhone display radius (about 47 to 55 pt). */
   corner: 52,
 } as const
@@ -294,21 +296,19 @@ export function buildEdgeGlow(): string {
   ].join(", ")
 }
 
+/** The deeper halo of the glow, a layer of its own so it can swell in at the top of the beat. */
+export function buildEdgeGlowDeep(): string {
+  const { deep } = edgeGlowGeometry
+  return `inset 0 0 ${deep.blur}px ${deep.spread}px ${withAlpha(edgeGlowGreens.halo, deep.alpha)}`
+}
+
 export const downloadEdgeGlow = buildEdgeGlow()
+export const downloadEdgeGlowDeep = buildEdgeGlowDeep()
 
-/** Gentle pulse of that glow: opacity from `minOpacity` to 1 and back, `halfCycleMs` each way (a
- * 2.2 s cycle); still at the full strength (`stillOpacity`) under Reduce Motion. */
-export const edgePulseMotion = { halfCycleMs: 1100, minOpacity: 0.7, stillOpacity: 1 } as const
-
-/** The light that travels round the glow, clockwise, one lap in `lapMs`: a bright core over a wider
- * soft stroke, `fraction` of the perimeter long. None under Reduce Motion. */
-export const edgeLightMotion = {
-  lapMs: 3200,
-  fraction: 0.14,
-  coreWidth: 4,
-  glowWidth: 14,
-  glowOpacity: 0.55,
-} as const
+/** Strong pulse of that glow: opacity from `minOpacity` to 1 and back, `halfCycleMs` each way (a
+ * 1.5 s cycle), the deeper halo following from nothing to full; both still at the full strength
+ * (`stillOpacity`) under Reduce Motion. */
+export const edgePulseMotion = { halfCycleMs: 750, minOpacity: 0.35, stillOpacity: 1 } as const
 
 // Geometry of the chart and score components (not spacing).
 export const scoreRingGeometry = { size: 38, stroke: 4, dash: "3 4" } as const

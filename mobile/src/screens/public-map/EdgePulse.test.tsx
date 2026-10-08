@@ -3,14 +3,9 @@ import renderer, { act } from "react-test-renderer"
 import { NavigationContext } from "@react-navigation/native"
 import * as reanimated from "../../../test/react-native-reanimated.mock"
 import { defaultTheme } from "../../app/theme"
-import {
-  edgeGlowGeometry,
-  edgeGlowGreens,
-  edgeLightMotion,
-  edgePulseMotion,
-} from "../../app/visual-tokens"
+import { edgeGlowGeometry, edgePulseMotion } from "../../app/visual-tokens"
 import { ScreenCoverContext } from "../../ui/screen-cover-context"
-import { EdgePulse, lightPath, roundedRectPerimeter } from "./EdgePulse"
+import { deepHaloOpacity, EdgePulse } from "./EdgePulse"
 
 // The real package is ESM and cannot be loaded here; only its context object is needed.
 jest.mock("@react-navigation/native", () => {
@@ -30,7 +25,6 @@ jest.mock("react-native", () => {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T) => styles, absoluteFill: { position: "absolute" } },
-    useWindowDimensions: () => ({ width: 400, height: 800 }),
   }
 })
 
@@ -85,11 +79,10 @@ function render({ focused, covered = false }: { focused?: boolean; covered?: boo
 type StyleEntry = Record<string, unknown>
 const byTestId = (tree: renderer.ReactTestRenderer, testID: string) =>
   tree.root.findAll((n) => n.props.testID === testID && typeof n.type === "string")
-const halo = (tree: renderer.ReactTestRenderer) => byTestId(tree, "explorer-edge-halo")[0]
-const haloStyle = (tree: renderer.ReactTestRenderer): StyleEntry =>
-  Object.assign({}, ...(halo(tree).props.style as StyleEntry[]))
-const lights = (tree: renderer.ReactTestRenderer) =>
-  tree.root.findAll((n) => (n.type as unknown) === "Rect")
+const layerStyle = (tree: renderer.ReactTestRenderer, testID: string): StyleEntry =>
+  Object.assign({}, ...(byTestId(tree, testID)[0].props.style as StyleEntry[]))
+const haloStyle = (tree: renderer.ReactTestRenderer) => layerStyle(tree, "explorer-edge-halo")
+const deepStyle = (tree: renderer.ReactTestRenderer) => layerStyle(tree, "explorer-edge-deep")
 
 describe("EdgePulse (12.2-19)", () => {
   test("covers the whole screen with rounded corners and never takes a touch", () => {
@@ -102,22 +95,35 @@ describe("EdgePulse (12.2-19)", () => {
     const style = haloStyle(tree)
     expect(style.position).toBe("absolute")
     expect(style.borderRadius).toBe(edgeGlowGeometry.corner)
-    expect(edgeGlowGeometry.corner).toBeGreaterThanOrEqual(47)
-    expect(edgeGlowGeometry.corner).toBeLessThanOrEqual(55)
     expect(style.boxShadow).toBe(defaultTheme.visual.edgeGlow)
     expect(String(style.boxShadow)).toMatch(/^inset /)
     // A line, a band and a wide halo, all inset.
     expect(String(style.boxShadow).split(", inset ")).toHaveLength(3)
-    // Layer rules of 12.2-17: no border and no continuous corners on this layer.
-    expect(style).not.toHaveProperty("borderWidth")
-    expect(style).not.toHaveProperty("borderCurve")
+    const deep = deepStyle(tree)
+    expect(deep.position).toBe("absolute")
+    expect(deep.borderRadius).toBe(edgeGlowGeometry.corner)
+    expect(deep.boxShadow).toBe(defaultTheme.visual.edgeGlowDeep)
+    // Layer rules of 12.2-17: no border and no continuous corners on these layers.
+    for (const layer of [style, deep]) {
+      expect(layer).not.toHaveProperty("borderWidth")
+      expect(layer).not.toHaveProperty("borderCurve")
+    }
   })
 
-  test("the halo pulses gently on the UI thread, guarded by Reduce Motion", () => {
+  test("only a pulse: no travelling light, no SVG stroke round the edge (third fix round)", () => {
+    const tree = render()
+    expect(tree.root.findAll((n) => (n.type as unknown) === "Rect")).toHaveLength(0)
+    expect(tree.root.findAll((n) => (n.type as unknown) === "Svg")).toHaveLength(0)
+    expect(byTestId(tree, "explorer-edge-light")).toHaveLength(0)
+    expect(withRepeatSpy).toHaveBeenCalledTimes(1)
+  })
+
+  test("the halo beats strongly on the UI thread, 0.35 to full on a 1.5 s cycle", () => {
     const tree = render()
     expect(haloStyle(tree).opacity).toBe(edgePulseMotion.minOpacity)
-    expect(edgePulseMotion.minOpacity).toBe(0.7)
-    expect(withRepeatSpy).toHaveBeenCalledTimes(2)
+    expect(edgePulseMotion.minOpacity).toBe(0.35)
+    // The deeper halo is out at the low point of the beat.
+    expect(deepStyle(tree).opacity).toBe(0)
     const [, count, reverse, , reduceMotion] = withRepeatSpy.mock.calls[0] as unknown[]
     expect(count).toBe(-1)
     expect(reverse).toBe(true)
@@ -129,75 +135,30 @@ describe("EdgePulse (12.2-19)", () => {
         reduceMotion: reanimated.ReduceMotion.System,
       }),
     )
-    expect(edgePulseMotion.halfCycleMs * 2).toBe(2200)
+    expect(edgePulseMotion.halfCycleMs * 2).toBe(1500)
   })
 
-  test("a brighter light travels round the screen, one lap in 3.2 s, never reversing", () => {
-    const tree = render()
-    const [, count, reverse, , reduceMotion] = withRepeatSpy.mock.calls[1] as unknown[]
-    expect(count).toBe(-1)
-    expect(reverse).toBe(false)
-    expect(reduceMotion).toBe(reanimated.ReduceMotion.System)
-    expect(withTimingSpy).toHaveBeenCalledWith(
-      1,
-      expect.objectContaining({
-        duration: edgeLightMotion.lapMs,
-        easing: reanimated.Easing.linear,
-        reduceMotion: reanimated.ReduceMotion.System,
-      }),
-    )
-    expect(edgeLightMotion.lapMs).toBe(3200)
-
-    const [glow, core] = lights(tree)
-    expect(glow.props.stroke).toBe(edgeGlowGreens.halo)
-    expect(glow.props.strokeWidth).toBe(edgeLightMotion.glowWidth)
-    expect(core.props.stroke).toBe(edgeGlowGreens.light)
-    expect(core.props.strokeWidth).toBe(edgeLightMotion.coreWidth)
-    for (const [node, width] of [
-      [glow, edgeLightMotion.glowWidth],
-      [core, edgeLightMotion.coreWidth],
-    ] as const) {
-      const path = lightPath(400, 800, width)
-      expect(node.props).toMatchObject(path.rect)
-      expect(node.props.strokeDasharray).toEqual(path.dashArray)
-      // The mock resolves the lap at its start: the dash sits at the top left, offset 0.
-      expect(Object.is(node.props.animatedProps.strokeDashoffset, -0)).toBe(true)
-    }
-  })
-
-  test("the light's outline is the screen inset by half its stroke, with rounded corners", () => {
-    const path = lightPath(400, 800, 14)
-    expect(path.rect).toEqual({
-      x: 7,
-      y: 7,
-      width: 386,
-      height: 786,
-      rx: edgeGlowGeometry.corner - 7,
-      ry: edgeGlowGeometry.corner - 7,
-    })
-    expect(path.perimeter).toBeCloseTo(roundedRectPerimeter(386, 786, edgeGlowGeometry.corner - 7))
-    const [dash, gap] = path.dashArray
-    expect(dash + gap).toBeCloseTo(path.perimeter)
-    expect(dash / path.perimeter).toBeCloseTo(edgeLightMotion.fraction)
-    // A square with corners of radius r: four sides of 2r less the corners, plus one circle.
-    expect(roundedRectPerimeter(20, 20, 10)).toBeCloseTo(2 * Math.PI * 10)
-    expect(roundedRectPerimeter(10, 20, 0)).toBe(60)
-    // A screen smaller than the stroke draws nothing rather than a negative rectangle.
-    expect(lightPath(4, 4, 14).rect).toMatchObject({ width: 0, height: 0 })
+  test("the deeper halo swells in with the beat: nothing at the low point, full at the top", () => {
+    expect(deepHaloOpacity(edgePulseMotion.minOpacity)).toBe(0)
+    expect(deepHaloOpacity(1)).toBe(1)
+    expect(deepHaloOpacity((edgePulseMotion.minOpacity + 1) / 2)).toBeCloseTo(0.5)
+    // Clamped outside the beat.
+    expect(deepHaloOpacity(0)).toBe(0)
+    expect(deepHaloOpacity(1.2)).toBe(1)
   })
 
   test("pulses while the screen is focused", () => {
     render({ focused: true })
-    expect(withRepeatSpy).toHaveBeenCalledTimes(2)
+    expect(withRepeatSpy).toHaveBeenCalledTimes(1)
   })
 
-  test("under Reduce Motion the glow is still at full strength, with no travelling light", () => {
+  test("under Reduce Motion the glow is still at full strength, the deep halo with it", () => {
     reanimated.setReducedMotion(true)
     const tree = render()
     expect(withRepeatSpy).not.toHaveBeenCalled()
     expect(haloStyle(tree).opacity).toBe(edgePulseMotion.stillOpacity)
     expect(edgePulseMotion.stillOpacity).toBe(1)
-    expect(lights(tree)).toHaveLength(0)
+    expect(deepStyle(tree).opacity).toBe(1)
   })
 
   test("no loop while the screen is not focused or is covered by an overlay", () => {
