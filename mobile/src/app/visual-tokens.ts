@@ -123,6 +123,19 @@ export const brandGlassFills = {
   },
 } as const
 
+// Dark Liquid Glass of a floating surface with no glass of its own (12.2-23, owner on iOS 26 in
+// dark: "tous les boutons et les fenêtres avec les effets Liquid Glass vont vers leur
+// transparence"). The untinted system glass let the content behind show through, so in dark the
+// glass is tinted with the Graphite panel and laid over an `underlay`: a dense fill drawn behind the
+// glass, inside its shape, which the glass then refracts instead of the busy content. `UIGlassEffect`
+// takes the tint as a tint of its material, not as a fill, so its alpha alone never gives a dense
+// surface; the underlay does, and the system still draws its blur, rim and highlight on top. Light
+// keeps the untinted system glass (no entry).
+export const liquidGlassDark = {
+  tint: "rgba(24, 25, 28, 0.92)",
+  underlay: "rgba(24, 25, 28, 0.88)",
+} as const
+
 // Glass of the controls floating over a map (12.2-19 fix round, owner: "En dark mode les boutons
 // de explorer sont difficiles à voir"). The basemaps do not follow the app scheme (the plan and the
 // orthophoto look the same in light and dark), so the 38% dark glass of `brandGlassFills` turned
@@ -133,7 +146,10 @@ export const brandGlassFills = {
 // system keeps its refraction and rim), `fill` lies over the real blur (older iOS), `android` is the
 // flat fill where expo-blur draws no blur (D-17). The light hairline is the theme's divider, set in
 // `theme-visual.ts`. Checked at 3:1 (icons) and 4.5:1 (text) over the plan and the orthophoto in
-// `visual-tokens.test.ts`.
+// `visual-tokens.test.ts`. 12.2-23 (owner on iOS 26, dark: the Explorer's glass still went see
+// through): the dark tint and fill go from 0.84 to 0.92, and the Liquid Glass gets a dense
+// `underlay` behind it (see `liquidGlassDark`), since the system glass does not honour the tint's
+// alpha as a fill.
 export const mapControlGlass = {
   light: {
     tint: "rgba(247, 246, 240, 0.76)",
@@ -144,14 +160,27 @@ export const mapControlGlass = {
     textMuted: "#3D4B37",
   },
   dark: {
-    tint: "rgba(16, 24, 14, 0.84)",
-    fill: "rgba(16, 24, 14, 0.84)",
+    tint: "rgba(16, 24, 14, 0.92)",
+    fill: "rgba(16, 24, 14, 0.92)",
     android: "rgba(16, 24, 14, 0.94)",
+    underlay: "rgba(16, 24, 14, 0.88)",
     hairline: "rgba(255, 255, 255, 0.28)",
     icon: "#D2E8A8",
     text: "#F2F3F1",
     textMuted: "#C9CED3",
   },
+} as const
+
+// Selected tab tint (12.2-23, owner on iOS 26 in dark: "le tab de navigation sélectionné est peu
+// lisible"). The dark accent moss (#9BC26A) on the system's dark selection pill, with the list
+// showing through the bar's glass, read as a dark green on grey. Dark now takes the light moss of
+// the map controls; light keeps the charter forest. The native bar gets both as one dynamic colour,
+// resolved by the bar's own appearance (it follows the system, not the app's theme choice), the JS
+// bar the one of the app's scheme. Checked against the pill and the bar's glass over a dark list and
+// over a white map in `tab-tint.test.ts`.
+export const tabActiveTint = {
+  light: brandColors.forest,
+  dark: mapControlGlass.dark.icon,
 } as const
 
 /** Glyph size of a map control (was 22): a heavier glyph that reads over any basemap. */
@@ -163,6 +192,8 @@ export const mapControlIconSize = 24
 // dense enough for the theme's own text tokens at 4.5:1 over the plan and the orthophoto. The close
 // button is a 44 pt glass circle: `closeFill` tints it (Liquid Glass) or fills it (fallback), with a
 // `closeHairline` outline; `handle` is the drag indicator, which the dark divider made invisible.
+// 12.2-23 (owner on iOS 26, dark: the sheets still showed the map through): the dark fill goes from
+// 0.88 to 0.96, the blur kept under it. The same fill is the map panel's glass and its underlay.
 export const explorerSheetGlass = {
   light: {
     fill: "rgba(247, 246, 240, 0.88)",
@@ -171,7 +202,7 @@ export const explorerSheetGlass = {
     closeHairline: "rgba(36, 49, 31, 0.16)",
   },
   dark: {
-    fill: "rgba(17, 18, 20, 0.88)",
+    fill: "rgba(17, 18, 20, 0.96)",
     handle: "rgba(255, 255, 255, 0.32)",
     closeFill: "rgba(255, 255, 255, 0.14)",
     closeHairline: "rgba(255, 255, 255, 0.24)",

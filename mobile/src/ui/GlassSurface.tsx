@@ -4,7 +4,7 @@ import { BlurView } from "expo-blur"
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect"
 import { useBrandTheme } from "../app/theme"
 import type { GlassFill } from "../app/theme-visual"
-import { brandGlassFills } from "../app/visual-tokens"
+import { brandGlassFills, liquidGlassDark } from "../app/visual-tokens"
 
 type GlassSurfaceTone = "auto" | "dark"
 
@@ -40,7 +40,11 @@ type GlassSurfaceProps = {
  * fixed dark treatment `brandOnDarkColors`/`brandMediaBackdrop` already use on those same surfaces.
  *
  * On iOS 26 and later the surface is real Liquid Glass (`expo-glass-effect`), which refracts the
- * map behind it and follows the system light/dark look; older iOS and Android keep the blur.
+ * map behind it and follows the system light/dark look; older iOS and Android keep the blur. In dark
+ * (12.2-23) the Liquid Glass is dense: tinted (the surface's own tint, else `liquidGlassDark`) and
+ * laid over an underlay, the `GlassView`'s own background, drawn behind the glass and clipped to its
+ * shape. `UIGlassEffect` treats the tint as a tint of its material, so the tint alone left the
+ * content behind showing through.
  *
  * `style` should carry layout/shape only (radius, border, padding, position) — this component owns
  * `backgroundColor` and `overflow` so the blur is actually visible and clipped to the shape.
@@ -59,14 +63,20 @@ export function GlassSurface({
 
   if (LIQUID_GLASS) {
     // Real Liquid Glass draws its own edge: an outline from the caller breaks the effect.
+    const own = surface ?? (isDark ? liquidGlassDark : undefined)
+    const underlay = isDark ? own?.underlay : undefined
     return (
       <GlassView
-        style={[styles.container, withoutOutline(style)]}
+        style={[
+          styles.container,
+          withoutOutline(style),
+          underlay ? { backgroundColor: underlay } : null,
+        ]}
         pointerEvents={pointerEvents}
         glassEffectStyle="regular"
         colorScheme={isDark ? "dark" : "light"}
         isInteractive={interactive}
-        tintColor={surface?.tint}
+        tintColor={own?.tint}
       >
         {children}
       </GlassView>

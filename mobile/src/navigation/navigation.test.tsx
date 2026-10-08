@@ -27,6 +27,7 @@ jest.mock("react-native", () => ({
   StatusBar: "StatusBar",
   View: "View",
   Pressable: "Pressable",
+  DynamicColorIOS: (tuple: { light: string; dark: string }) => ({ dynamic: tuple }),
 }))
 
 // DS-13: JsRootTabs reads the safe-area bottom inset to size the JS tab bar.

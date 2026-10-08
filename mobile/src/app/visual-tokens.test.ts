@@ -670,10 +670,12 @@ describe.each(schemes)("map panel over the basemap (12.2-21 dark pass), %s schem
   )
 
   test("it is the Explorer sheet's fill, the panel already tested above", () => {
+    // Dark also lays the same fill behind the Liquid Glass (12.2-23, `glass-density.test.ts`).
     expect(visual.mapPanel).toEqual({
       tint: visual.sheet.fill,
       fill: visual.sheet.fill,
       android: visual.sheet.fill,
+      ...(scheme === "dark" ? { underlay: visual.sheet.fill } : {}),
     })
   })
 

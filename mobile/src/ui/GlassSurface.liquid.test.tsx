@@ -22,9 +22,28 @@ jest.mock("expo-glass-effect", () => {
       ReactRef.createElement("GlassView", props, children),
   }
 })
-jest.mock("../app/theme", () => ({ useBrandTheme: () => ({ scheme: "light" }) }))
+const mockScheme = { value: "light" as "light" | "dark" }
+jest.mock("../app/theme", () => ({ useBrandTheme: () => ({ scheme: mockScheme.value }) }))
 
+import { liquidGlassDark } from "../app/visual-tokens"
 import { GlassSurface } from "./GlassSurface"
+
+function glassOf(element: React.ReactElement) {
+  let tree!: renderer.ReactTestRenderer
+  act(() => {
+    tree = renderer.create(element)
+  })
+  const glass = tree.root.findByType("GlassView" as never)
+  return { glass, style: Object.assign({}, ...[glass.props.style].flat(Infinity)) }
+}
+
+beforeAll(() => {
+  ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
+})
+
+afterEach(() => {
+  mockScheme.value = "light"
+})
 
 describe("GlassSurface on Liquid Glass (iOS 26)", () => {
   test("renders a GlassView and drops the caller's outline, keeping the shape", () => {
@@ -54,5 +73,47 @@ describe("GlassSurface on Liquid Glass (iOS 26)", () => {
       tree = renderer.create(<GlassSurface surface={surface} />)
     })
     expect(tree.root.findByType("GlassView" as never).props.tintColor).toBe(surface.tint)
+  })
+
+  test("light: the untinted system glass, with no underlay", () => {
+    const { glass, style } = glassOf(<GlassSurface />)
+    expect(glass.props.tintColor).toBeUndefined()
+    expect(style.backgroundColor).toBeUndefined()
+  })
+
+  test("dark (12.2-23): a surface with no glass of its own is tinted and laid over an underlay", () => {
+    mockScheme.value = "dark"
+    const { glass, style } = glassOf(<GlassSurface style={{ borderRadius: 12 }} />)
+    expect(glass.props.tintColor).toBe(liquidGlassDark.tint)
+    expect(style.backgroundColor).toBe(liquidGlassDark.underlay)
+    expect(style.borderRadius).toBe(12)
+    expect(glass.props.colorScheme).toBe("dark")
+  })
+
+  test("dark: a surface's own underlay is drawn behind its own tint", () => {
+    mockScheme.value = "dark"
+    const surface = {
+      tint: "rgba(16, 24, 14, 0.92)",
+      fill: "unused",
+      android: "unused",
+      underlay: "rgba(16, 24, 14, 0.88)",
+    }
+    const { glass, style } = glassOf(<GlassSurface surface={surface} />)
+    expect(glass.props.tintColor).toBe(surface.tint)
+    expect(style.backgroundColor).toBe(surface.underlay)
+  })
+
+  test("dark: a surface with a tint but no underlay (the sheet's close circle) keeps it so", () => {
+    mockScheme.value = "dark"
+    const surface = { tint: "rgba(255, 255, 255, 0.14)", fill: "unused", android: "unused" }
+    const { glass, style } = glassOf(<GlassSurface surface={surface} />)
+    expect(glass.props.tintColor).toBe(surface.tint)
+    expect(style.backgroundColor).toBeUndefined()
+  })
+
+  test("a light surface never draws an underlay, even one it carries", () => {
+    const surface = { tint: "t", fill: "unused", android: "unused", underlay: "u" }
+    const { style } = glassOf(<GlassSurface surface={surface} />)
+    expect(style.backgroundColor).toBeUndefined()
   })
 })

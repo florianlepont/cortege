@@ -19,6 +19,7 @@ import {
   mixWithWhite,
   pillLabelColor,
   pressWaveFill,
+  tabActiveTint,
   withAlpha,
 } from "./visual-tokens"
 
@@ -31,8 +32,10 @@ export type BrandVisualTone = { base: string; top: string; image: string; shadow
 /**
  * A glass surface with its own tint (`GlassSurface`'s `surface`): `tint` for the Liquid Glass
  * (iOS 26), `fill` over the blur (older iOS), `android` the flat fill (no blur there, D-17).
+ * `underlay` (dark only, 12.2-23) is a dense fill drawn behind the Liquid Glass, inside its shape,
+ * so the surface reads near opaque: the system glass takes the tint as a tint, not as a fill.
  */
-export type GlassFill = { tint: string; fill: string; android: string }
+export type GlassFill = { tint: string; fill: string; android: string; underlay?: string }
 
 export type BrandVisual = {
   backdrop: string
@@ -247,6 +250,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
         tint: mapControlGlass[scheme].tint,
         fill: mapControlGlass[scheme].fill,
         android: mapControlGlass[scheme].android,
+        ...(dark ? { underlay: mapControlGlass.dark.underlay } : {}),
       },
       hairline: dark ? mapControlGlass.dark.hairline : colors.divider,
       icon: mapControlGlass[scheme].icon,
@@ -257,6 +261,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       tint: explorerSheetGlass[scheme].fill,
       fill: explorerSheetGlass[scheme].fill,
       android: explorerSheetGlass[scheme].fill,
+      ...(dark ? { underlay: explorerSheetGlass.dark.fill } : {}),
     },
     sheet: {
       fill: explorerSheetGlass[scheme].fill,
@@ -286,7 +291,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       },
     },
     tab: {
-      activeTint: accentText,
+      activeTint: tabActiveTint[scheme],
       inactiveTint: colors.textSecondary,
       dot: "#89A33A",
       dotShadow: dark ? "0 0 8px rgba(155, 194, 106, 0.8)" : "0 0 8px rgba(137, 163, 58, 0.8)",

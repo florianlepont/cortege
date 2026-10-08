@@ -1,6 +1,7 @@
-import { useCallback, useRef, type ElementType } from "react"
+import { useMemo, useRef, type ElementType } from "react"
+import { DynamicColorIOS } from "react-native"
 import { brandTypography } from "../../app/brand-tokens"
-import { useBrandTheme } from "../../app/theme"
+import { tabActiveTint } from "../../app/visual-tokens"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
 import { SearchTabNavigator } from "../stacks/SearchStack"
@@ -51,17 +52,18 @@ type NativeRootTabsProps = {
  */
 export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
   const deps = useTabListenerDeps()
-  const theme = useBrandTheme()
   // D-08: the system Liquid Glass bar keeps its material; only the active tint and the label font
-  // come from the tokens (no background colour, no dot).
-  const activeTint = theme.visual.tab.activeTint
-  const screenOptions = useCallback(
-    (props: Parameters<typeof nativeTabScreenOptions>[0]) => ({
+  // come from the tokens (no background colour, no dot). 12.2-23: the tint is one dynamic colour,
+  // the charter forest in light and the light moss in dark, which UIKit resolves with the bar's own
+  // appearance. The bar follows the system's light or dark (the app's theme choice does not reach
+  // UIKit), so a tint picked from the app's scheme could land the dark moss on the light bar.
+  const screenOptions = useMemo(() => {
+    const activeTint = DynamicColorIOS({ light: tabActiveTint.light, dark: tabActiveTint.dark })
+    return (props: Parameters<typeof nativeTabScreenOptions>[0]) => ({
       ...nativeTabScreenOptions(props),
       tabBarActiveTintColor: activeTint,
-    }),
-    [activeTint],
-  )
+    })
+  }, [])
   const nativeTabRef = useRef<TabNavigatorLike | null>(null)
 
   if (nativeTabRef.current == null) {

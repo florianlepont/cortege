@@ -24,6 +24,7 @@ jest.mock("react-native", () => ({
   StatusBar: "StatusBar",
   View: "View",
   Pressable: "Pressable",
+  DynamicColorIOS: (tuple: { light: string; dark: string }) => ({ dynamic: tuple }),
 }))
 
 // DS-13: JsRootTabs reads the safe-area bottom inset to size the JS tab bar.
@@ -142,6 +143,7 @@ import { AppNavigation, useResetToHomeOnSignOut } from "./AppNavigation"
 import { buildTheme, defaultTheme } from "../app/theme"
 import { setReducedMotion } from "../../test/react-native-reanimated.mock"
 import { brandTypography } from "../app/brand-tokens"
+import { tabActiveTint } from "../app/visual-tokens"
 import { buildJsTabBarStyle } from "./tab-config"
 
 // OA-13: Compte is no longer a tab.
@@ -304,21 +306,26 @@ describe("tab tints and the shared hide rule", () => {
     await mount()
     const nativeProps = mockNativeNavigatorProps.at(-1)
     const light = (nativeProps?.screenOptions as OptionsFn)({ route: { name: "home" } })
-    expect(light.tabBarActiveTintColor).toBe(defaultTheme.visual.tab.activeTint)
+    // 12.2-23: one dynamic colour that UIKit resolves with the bar's own appearance, the forest in
+    // light and the light moss in dark, so the selected tab reads on either bar.
+    const dynamicTint = { dynamic: { light: tabActiveTint.light, dark: tabActiveTint.dark } }
+    expect(light.tabBarActiveTintColor).toEqual(dynamicTint)
+    expect(tabActiveTint.light).toBe(defaultTheme.visual.tab.activeTint)
     expect(nativeProps?.tabLabelStyle).toEqual({ fontFamily: brandTypography.meta.fontFamily })
     // The system Liquid Glass material is kept: no background colour is set.
     expect(nativeProps).not.toHaveProperty("tabBarStyle")
     expect(light).not.toHaveProperty("tabBarStyle")
 
+    // The app's own dark choice does not reach UIKit: the bar keeps the same dynamic colour.
     mockScheme.value = "dark"
     await mount()
     const dark = (mockNativeNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
       route: { name: "home" },
     })
-    expect(dark.tabBarActiveTintColor).toBe(
+    expect(dark.tabBarActiveTintColor).toEqual(dynamicTint)
+    expect(tabActiveTint.dark).toBe(
       buildTheme("automatic", "dark", () => undefined).visual.tab.activeTint,
     )
-    expect(dark.tabBarActiveTintColor).not.toBe(light.tabBarActiveTintColor)
   })
 
   test("JS tree: a route the rule hides gets a hidden tab bar", async () => {
