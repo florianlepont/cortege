@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native"
 import { BlurView } from "expo-blur"
+import { useReducedMotion } from "react-native-reanimated"
 import { brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 
@@ -19,6 +20,8 @@ import { BrandTheme, useBrandTheme } from "../../app/theme"
 // scrolls inside; a swipe down on its handle dismisses it, and the content's own close button
 // does the same. It is drawn with plain Animated: the bottom-sheet library opened it as a sliver
 // on iOS 27 (no snap, no animation reported), and the panel has no need of a second detent.
+// Reduce Motion (12.2-21, D-08): the panel is placed open or closed at once, and a short swipe
+// puts it back without the spring; the swipe itself still follows the finger and dismisses.
 const HEIGHT_RATIO = 0.55
 const DISMISS_DISTANCE = 80
 const DISMISS_VELOCITY = 0.8
@@ -62,6 +65,7 @@ export function ExplorerSheet({
 }: ExplorerSheetProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  const reducedMotion = useReducedMotion()
   const { height: windowHeight } = useWindowDimensions()
   const sheetHeight = Math.round(windowHeight * HEIGHT_RATIO)
   const translateY = useRef(new Animated.Value(sheetHeight + bottomInset)).current
@@ -76,11 +80,20 @@ export function ExplorerSheet({
   useEffect(() => {
     if (visible) {
       setMounted(true)
+      if (reducedMotion) {
+        translateY.setValue(0)
+        return
+      }
       Animated.timing(translateY, {
         toValue: 0,
         duration: OPEN_MS,
         useNativeDriver: true,
       }).start()
+      return
+    }
+    if (reducedMotion) {
+      translateY.setValue(sheetHeight + bottomInset)
+      setMounted(false)
       return
     }
     Animated.timing(translateY, {
@@ -90,7 +103,7 @@ export function ExplorerSheet({
     }).start(({ finished }) => {
       if (finished) setMounted(false)
     })
-  }, [visible, sheetHeight, bottomInset, translateY])
+  }, [visible, sheetHeight, bottomInset, translateY, reducedMotion])
 
   const panResponder = useMemo(
     () =>
@@ -105,10 +118,11 @@ export function ExplorerSheet({
             onDismissRef.current()
             return
           }
-          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start()
+          if (reducedMotion) translateY.setValue(0)
+          else Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start()
         },
       }),
-    [translateY],
+    [translateY, reducedMotion],
   )
 
   if (!mounted) return null

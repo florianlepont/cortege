@@ -80,6 +80,7 @@ jest.mock("react-native", () => {
 })
 jest.mock("expo-blur", () => ({ BlurView: "BlurView" }))
 
+import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { ExplorerSheet } from "./ExplorerSheet"
@@ -109,6 +110,10 @@ function update(tree: renderer.ReactTestRenderer, props: { visible: boolean; chi
 beforeEach(() => {
   mockAnimations.length = 0
   mockValues.length = 0
+})
+
+afterEach(() => {
+  setReducedMotion(false)
 })
 
 describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
@@ -166,6 +171,40 @@ describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
     mockPan.onPanResponderRelease({}, { dy: 20, vy: 1.2 })
     expect(onDismiss).toHaveBeenCalledTimes(2)
+  })
+
+  test("under Reduce Motion it is placed open and closed at once, with no slide (12.2-21)", () => {
+    setReducedMotion(true)
+    const tree = mount({ visible: true, children: "hello", bottomInset: 50 })
+    expect(JSON.stringify(tree.toJSON())).toContain("hello")
+    expect(mockValues[0].value).toBe(0)
+    expect(mockAnimations).toHaveLength(0)
+
+    act(() => {
+      tree.update(
+        <ExplorerSheet visible={false} onDismiss={jest.fn()} bottomInset={50}>
+          gone
+        </ExplorerSheet>,
+      )
+    })
+    expect(mockAnimations).toHaveLength(0)
+    // 55% of an 800 pt window, plus the inset.
+    expect(mockValues[0].value).toBe(490)
+    expect(tree.toJSON()).toBeNull()
+  })
+
+  test("under Reduce Motion a short swipe puts it back without the spring; a long one dismisses", () => {
+    setReducedMotion(true)
+    const onDismiss = jest.fn()
+    mount({ visible: true, onDismiss })
+    mockPan.onPanResponderMove({}, { dy: 30 })
+    expect(mockValues[0].value).toBe(30)
+    mockPan.onPanResponderRelease({}, { dy: 30, vy: 0.1 })
+    expect(mockValues[0].value).toBe(0)
+    expect(mockAnimations).toHaveLength(0)
+    expect(onDismiss).not.toHaveBeenCalled()
+    mockPan.onPanResponderRelease({}, { dy: 120, vy: 0.1 })
+    expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
   test("keeps its blurred background, a visible handle and 4 grid content padding (12.2-18)", () => {

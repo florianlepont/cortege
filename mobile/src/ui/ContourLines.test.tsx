@@ -5,6 +5,7 @@ import * as reanimated from "../../test/react-native-reanimated.mock"
 import { CONTOUR_PATHS, CONTOUR_VIEWBOX } from "../app/contour-paths"
 import { defaultTheme } from "../app/theme"
 import { ContourLines } from "./ContourLines"
+import { ScreenCoverContext } from "./screen-cover-context"
 
 // The real package is ESM and cannot be loaded here; only its context object is needed.
 jest.mock("@react-navigation/native", () => {
@@ -126,6 +127,19 @@ describe("ContourLines", () => {
 
   test("does not drift while the screen is not focused", () => {
     render({}, false)
+    expect(withRepeatSpy).not.toHaveBeenCalled()
+  })
+
+  test("does not drift while an app overlay covers the screen (12.2-21)", () => {
+    act(() => {
+      renderer.create(
+        <ScreenCoverContext.Provider value={true}>
+          <NavigationContext.Provider value={fakeNavigation(true)}>
+            <ContourLines />
+          </NavigationContext.Provider>
+        </ScreenCoverContext.Provider>,
+      )
+    })
     expect(withRepeatSpy).not.toHaveBeenCalled()
   })
 })

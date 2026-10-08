@@ -37,7 +37,10 @@ export function AppCollapsibleSection({
   const toggle = () => {
     setExpanded((prev) => {
       const next = !prev
-      chevronRotation.value = withTiming(next ? 180 : 0, { duration: brandMotion.durations.base })
+      chevronRotation.value = withTiming(next ? 180 : 0, {
+        duration: brandMotion.durations.base,
+        reduceMotion: ReduceMotion.System,
+      })
       return next
     })
   }

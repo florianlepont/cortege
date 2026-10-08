@@ -15,7 +15,7 @@ import { Path, Svg } from "react-native-svg"
 import { CONTOUR_PATHS, CONTOUR_VIEWBOX } from "../app/contour-paths"
 import { useBrandTheme } from "../app/theme"
 import { contourDrift } from "../app/visual-tokens"
-import { useScreenFocus } from "./useScreenFocus"
+import { useScreenVisible } from "./useScreenVisible"
 
 type ContourLinesProps = {
   /** Drift loop on (default). Off draws the static frame; Android passes false if frames drop. */
@@ -25,7 +25,8 @@ type ContourLinesProps = {
 
 /**
  * The topographic contour signature of variant I (decoration only). The slow drift runs only while
- * the screen is focused and never under Reduce Motion, which renders the static first frame.
+ * the screen can be seen (focused and not under an app overlay, 12.2-21) and never under Reduce
+ * Motion, which renders the static first frame.
  * Budget: at most two animated hero layers per screen, this drift and the forest card's aurora
  * counted together (`__checks__/motion.test.ts`), and never placed over a live map (D-13). Only
  * transforms are animated. Since 12.2-19 the forest cards draw the mist's flowing contours
@@ -34,11 +35,11 @@ type ContourLinesProps = {
 export function ContourLines({ animated = true, testID }: ContourLinesProps) {
   const theme = useBrandTheme()
   const t = useSharedValue(0)
-  const focused = useScreenFocus()
+  const visible = useScreenVisible()
   const reduced = useReducedMotion()
 
   useEffect(() => {
-    if (!animated || !focused || reduced) {
+    if (!animated || !visible || reduced) {
       cancelAnimation(t)
       return undefined
     }
@@ -54,7 +55,7 @@ export function ContourLines({ animated = true, testID }: ContourLinesProps) {
       ReduceMotion.System,
     )
     return () => cancelAnimation(t)
-  }, [animated, focused, reduced, t])
+  }, [animated, visible, reduced, t])
 
   const driftStyle = useAnimatedStyle(() => ({
     transform: [
