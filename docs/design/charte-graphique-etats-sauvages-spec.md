@@ -551,17 +551,22 @@ guard; the confetti is only rendered when motion is allowed.
 
 ### 13.10 Status and open items
 
-Status: pending the owner's final confirmation (plan 12.2-23).
+Status: approved by the owner on 2026-10-08, after the phone confirmation of build 39b4f005
+(plan 12.2-23). The French direction text carries the same date.
 
-Open items for that check and later:
+Still open after the approval:
 - Parcel colour by score on the owner's survey: needs the server fix for IGN parcel ids (migration
-  `020_parcel_idu_fields.sql`), which reaches production only once merged to `main`. Corsican
-  parcel ids (`2A`, `2B`) stay unmatched.
-- The form pager title stays fixed (no native collapse): asked, never answered.
-- Sketch 009 elements (glowing pill on the wizard's next button and the counters' plus, completion
-  ring in the header) and the field ergonomics confirmation (nothing smaller or harder to tap).
-- `GenusTargetSheet` native glass button and `CasPicker` glass treatment.
-- The wizard edge swipe on a device; the hard clip line under transparent headers on scroll.
+  `020_parcel_idu_fields.sql`), which reaches production only once merged to `main` and deployed.
+  Corsican parcel ids (`2A`, `2B`) stay unmatched.
+- The basemap does not follow dark mode (MapLibre styles stay light). No phase plans it, and the
+  owner chose not to record a seed for it (2026-10-08).
+- The iOS 26 tab bar glass and the search button are drawn by the system: their density cannot be
+  changed without replacing the system bar, which D-08 rules out (13.8).
+- Asked during the phase, not answered, carried to Phase 12.3 or later: the fixed form pager title
+  (no native collapse); the sketch 009 elements (glowing pill on the wizard's next button and the
+  counters' plus, completion ring in the header); the `GenusTargetSheet` native glass button and
+  the `CasPicker` glass treatment; the wizard edge swipe on a device; the hard clip line under
+  transparent headers on scroll.
 - Explorer sheet drag runs on the JS thread (`PanResponder`): candidate for Phase 12.3. The Compte
   loading spinner is low contrast in dark: Phase 12.3.
 - Android pass: Phase 13 (13.9).

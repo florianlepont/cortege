@@ -1,6 +1,8 @@
 # Direction visuelle, phase 12.2
 
-Statut : choisie par le propriétaire le 2026-10-07 (variante I de la maquette `.planning/sketches/008-visual-direction/index.html`), alignée le 2026-10-07 sur les arbitrages de mise en œuvre ci-dessous, puis corrigée à chacune des quatre vérifications sur téléphone (2026-10-07 et 2026-10-08). Le propriétaire lit ce texte avant toute modification d'écran (critère 1 de la phase 12.2) ; le statut final est écrit à la clôture de la phase (plan 12.2-23).
+Statut : approuvée par le propriétaire le 2026-10-08, après la confirmation sur téléphone de la version 39b4f005 (variante I de la maquette `.planning/sketches/008-visual-direction/index.html`, appliquée en phase 12.2).
+
+Historique : choisie par le propriétaire le 2026-10-07 (variante I), alignée le 2026-10-07 sur les arbitrages de mise en œuvre ci-dessous, puis corrigée à chacune des quatre vérifications sur téléphone (2026-10-07 et 2026-10-08) et pendant la confirmation finale (plan 12.2-23, 2026-10-08). Le propriétaire a lu ce texte avant toute modification d'écran (critère 1 de la phase 12.2).
 
 Elle prolonge la charte (`charte-graphique-etats-sauvages-spec.md`, section 13 pour ce qui a été livré) et ne la remplace pas : couleurs de marque, Sora et Jost, mouvement `brandMotion` et mode sombre Graphite restent ceux des phases 4 et 12.
 
