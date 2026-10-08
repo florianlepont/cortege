@@ -247,7 +247,7 @@ describe("ResumeCard", () => {
     expect(styleOf(row).gap).toBe(brandSpacing4.smd)
   })
 
-  test("with a draft the segments sit in the shielded band, half the gap under the button", () => {
+  test("with a draft the segments sit under the band shield, half the gap under the button", () => {
     mount(makeSurvey())
     layoutOf("home-resume-button", BUTTON)
     // The band is not known yet: still nothing drawn, so the segments never show unshielded.

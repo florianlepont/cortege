@@ -1,218 +1,97 @@
-import { AURORA_DISCS, auroraRoam, TRACE_PATHS, traceMotion } from "./forest-aurora-shape"
-import {
-  bloomAmount,
-  closedSpline,
-  discPoseAt,
-  planAurora,
-  planDisc,
-  planTrace,
-  seededRandom,
-  type TracePlan,
-  traceLineOffset,
-  visibleShare,
-} from "./forest-motion"
-
-const SEEDS = Array.from({ length: 40 }, (_, i) => 1 + i * 7919)
+import { FLOW_PATHS, flowMotion, MIST_DISCS, mistMotion } from "./forest-aurora-shape"
+import { discPose, flowOffset, pingPong, planMist, seededRandom } from "./forest-motion"
 
 describe("seeded generator", () => {
   test("the same seed gives the same numbers, all in 0 to 1", () => {
-    const a = seededRandom(42)
-    const b = seededRandom(42)
-    const first = Array.from({ length: 200 }, () => a())
-    expect(Array.from({ length: 200 }, () => b())).toEqual(first)
-    for (const value of first) {
-      expect(value).toBeGreaterThanOrEqual(0)
-      expect(value).toBeLessThan(1)
-    }
-    expect(seededRandom(43)()).not.toBe(first[0])
-  })
-
-  test("a plan is drawn from its seed only", () => {
-    expect(planAurora(7, AURORA_DISCS)).toEqual(planAurora(7, AURORA_DISCS))
-    expect(planAurora(7, AURORA_DISCS)).not.toEqual(planAurora(8, AURORA_DISCS))
+    const first = seededRandom(42)
+    const second = seededRandom(42)
+    const numbers = Array.from({ length: 200 }, () => first())
+    expect(Array.from({ length: 200 }, () => second())).toEqual(numbers)
+    expect(numbers.every((value) => value >= 0 && value < 1)).toBe(true)
+    expect(seededRandom(43)()).not.toBe(numbers[0])
   })
 })
 
-describe("aurora paths (owner: continuous, random)", () => {
-  test("each disc's path takes over a minute, with legs of 9, 13 and 17 s", () => {
-    expect(AURORA_DISCS.map((disc) => disc.legMs)).toEqual([9000, 13000, 17000])
-    for (const disc of AURORA_DISCS) expect(disc.legs * disc.legMs).toBeGreaterThanOrEqual(60000)
-    expect(new Set(AURORA_DISCS.map((disc) => disc.legs * disc.legMs)).size).toBe(3)
+describe("the owner's mist (round4.html: spd 2, size 0.7)", () => {
+  test("three discs of 294 pt, legs of 7, 9 and 11.5 s, the sketch's drifts", () => {
+    expect(MIST_DISCS.map((disc) => disc.size)).toEqual([294, 294, 294])
+    expect(MIST_DISCS.map((disc) => disc.legMs)).toEqual([7000, 9000, 11500])
+    expect(MIST_DISCS.map((disc) => disc.drift)).toEqual([
+      { x: 210, y: 110, scale: 1.2 },
+      { x: -210, y: 90, scale: 0.85 },
+      { x: 230, y: -110, scale: 1.25 },
+    ])
+    expect(MIST_DISCS.map((disc) => disc.anchor)).toEqual([
+      { left: -60, top: -120 },
+      { right: -120, top: -40 },
+      { left: 60, bottom: -220 },
+    ])
   })
 
-  test("the waypoints are drawn inside their ranges, the bloom at the rightmost", () => {
-    for (const seed of SEEDS) {
-      const random = seededRandom(seed)
-      for (const disc of AURORA_DISCS) {
-        const plan = planDisc(disc, random)
-        expect(plan.across).toHaveLength(disc.legs)
-        for (let i = 0; i < disc.legs; i += 1) {
-          expect(plan.across[i]).toBeGreaterThanOrEqual(auroraRoam.across[0])
-          expect(plan.across[i]).toBeLessThanOrEqual(auroraRoam.across[1])
-          expect(plan.down[i]).toBeGreaterThanOrEqual(disc.rows[0])
-          expect(plan.down[i]).toBeLessThanOrEqual(disc.rows[1])
-          expect(plan.alpha[i]).toBeGreaterThanOrEqual(auroraRoam.alpha[0])
-          expect(plan.alpha[i]).toBeLessThanOrEqual(auroraRoam.alpha[1])
-        }
-        expect(plan.across[plan.bloomAt]).toBe(Math.max(...plan.across))
-        expect(plan.bloomHalf * 2 * disc.legMs).toBeCloseTo(auroraRoam.bloomMs)
-        expect(plan.start).toBeGreaterThanOrEqual(0)
-        expect(plan.start).toBeLessThan(1)
-      }
-    }
+  test("a disc drifts there and back, eased, seamless over each period of 2", () => {
+    expect(pingPong(0)).toBe(0)
+    expect(pingPong(0.5)).toBeCloseTo(0.5)
+    expect(pingPong(1)).toBe(1)
+    expect(pingPong(1.5)).toBeCloseTo(0.5)
+    expect(pingPong(2)).toBe(0)
+    expect(pingPong(-0.5)).toBeCloseTo(pingPong(1.5))
+    expect(pingPong(0.1)).toBeLessThan(0.1)
+    expect(pingPong(0.9)).toBeGreaterThan(0.9)
   })
 
-  test("the curve passes through every waypoint and loops without a jump", () => {
-    const points = [0.2, 0.9, 0.4, 0.7]
-    points.forEach((point, i) => expect(closedSpline(points, i, 0)).toBeCloseTo(point))
-    expect(closedSpline(points, 3, 1)).toBeCloseTo(points[0])
-    const [moss] = AURORA_DISCS
-    const plan = planDisc(moss, seededRandom(3))
-    const atStart = discPoseAt(0, plan)
-    for (const phase of [1, 2, -1, 0.9999999]) {
-      const pose = discPoseAt(phase, plan)
-      expect(pose.across).toBeCloseTo(atStart.across, 4)
-      expect(pose.down).toBeCloseTo(atStart.down, 4)
-      expect(pose.scale).toBeCloseTo(atStart.scale, 4)
-      expect(pose.alpha).toBeCloseTo(atStart.alpha, 4)
-    }
+  test("its pose runs from its rest to the far end of its drift", () => {
+    const [moss] = MIST_DISCS
+    expect(discPose(0, moss)).toEqual({ translateX: 0, translateY: 0, scale: 1 })
+    expect(discPose(1, moss)).toEqual({ translateX: 210, translateY: 110, scale: 1.2 })
   })
 
-  test("it never stops: the pose keeps changing all along the path", () => {
-    for (const disc of AURORA_DISCS) {
-      const plan = planDisc(disc, seededRandom(11))
-      const stepMs = 250
-      const steps = (disc.legs * disc.legMs) / stepMs
-      let still = 0
-      for (let k = 0; k < steps; k += 1) {
-        const a = discPoseAt(k / steps, plan)
-        const b = discPoseAt((k + 1) / steps, plan)
-        if (Math.abs(a.across - b.across) + Math.abs(a.down - b.down) < 1e-4) still += 1
-      }
-      // At most a waypoint where both directions turn at once.
-      expect(still).toBeLessThanOrEqual(disc.legs)
-    }
-  })
-
-  test("it blooms to its full peak once per path, for about two seconds, and stays in bounds", () => {
-    for (const seed of SEEDS) {
-      AURORA_DISCS.forEach((disc) => {
-        const plan = planDisc(disc, seededRandom(seed))
-        const steps = disc.legs * 100
-        let bloomed = 0
-        let inBounds = true
-        for (let k = 0; k < steps; k += 1) {
-          const pose = discPoseAt(k / steps, plan)
-          inBounds &&= pose.alpha >= 0 && pose.alpha <= 1 && pose.scale > 0.5
-          if (pose.alpha > 0.995) bloomed += (disc.legs * disc.legMs) / steps
-        }
-        expect(inBounds).toBe(true)
-        const top = discPoseAt(plan.bloomAt / disc.legs, plan)
-        expect(top.alpha).toBe(1)
-        expect(bloomed).toBeLessThan(auroraRoam.bloomMs)
+  test("legs and flow periods a few percent apart per mount, every start drawn at random", () => {
+    const plans = Array.from({ length: 30 }, (_, seed) => planMist(seed + 1))
+    for (const plan of plans) {
+      plan.discs.forEach((disc, index) => {
+        const base = MIST_DISCS[index].legMs
+        expect(Math.abs(disc.legMs - base) / base).toBeLessThanOrEqual(mistMotion.jitter)
+        expect(disc.start).toBeGreaterThanOrEqual(0)
+        expect(disc.start).toBeLessThan(2)
+      })
+      plan.flows.forEach((flow, index) => {
+        const base = flowMotion.periodsMs[index]
+        expect(Math.abs(flow.periodMs - base) / base).toBeLessThanOrEqual(mistMotion.jitter)
+        expect(flow.start).toBeGreaterThanOrEqual(0)
+        expect(flow.start).toBeLessThan(1)
       })
     }
-    const plan = planDisc(AURORA_DISCS[0], seededRandom(5))
-    // Measured round the loop: a bloom at the last waypoint reaches over the start.
-    const wrapped = { ...plan, bloomAt: 0 }
-    expect(bloomAmount(AURORA_DISCS[0].legs - plan.bloomHalf / 2, wrapped, 7)).toBeGreaterThan(0)
-    expect(bloomAmount(3, wrapped, 7)).toBe(0)
+    expect(planMist(7)).toEqual(planMist(7))
+    expect(new Set(plans.map((plan) => plan.discs[0].legMs)).size).toBe(plans.length)
+    expect(mistMotion.jitter).toBeLessThanOrEqual(0.1)
   })
 })
 
-describe("contour relay (owner: never stops, random)", () => {
-  const step = 50
-
-  function sample(plan: TracePlan, t: number) {
-    return plan.lines.map((line) => traceLineOffset(t, line))
-  }
-
-  function moving(plan: TracePlan, t: number): boolean {
-    return plan.lines.some((line) =>
-      line.starts.some((start, k) => t > start && t < start + line.durations[k]),
-    )
-  }
-
-  test("a loop lasts over a minute and every line both draws and erases in it", () => {
-    for (const seed of SEEDS) {
-      const plan = planTrace(seededRandom(seed))
-      expect(plan.loopMs).toBeGreaterThanOrEqual(traceMotion.loopMs)
-      expect(plan.lines).toHaveLength(TRACE_PATHS.length)
-      for (const line of plan.lines) {
-        expect(line.kinds).toContain(1)
-        expect(line.kinds).toContain(0)
-        // One stroke at a time per line, alternating.
-        for (let k = 1; k < line.starts.length; k += 1) {
-          expect(line.starts[k]).toBeGreaterThanOrEqual(line.starts[k - 1] + line.durations[k - 1])
-          expect(line.kinds[k]).not.toBe(line.kinds[k - 1])
-        }
-      }
-    }
+describe("the flowing light (round4.html: flowSpd 1)", () => {
+  test("one pass every 7, 10 and 13 s", () => {
+    expect(flowMotion.periodsMs).toEqual([7000, 10000, 13000])
+    expect(FLOW_PATHS).toHaveLength(3)
   })
 
-  test("at every moment a line is moving and one shows; never all hidden, never all held", () => {
-    for (const seed of SEEDS) {
-      const plan = planTrace(seededRandom(seed))
-      const broken: number[] = []
-      for (let t = step / 2; t < plan.loopMs; t += step) {
-        const shares = sample(plan, t).map(visibleShare)
-        const ok = moving(plan, t) && Math.max(...shares) > 0 && shares.some((share) => share < 1)
-        if (!ok) broken.push(t)
-      }
-      expect(broken).toEqual([])
-    }
+  test("the dash runs from the line's start to past its end, then comes round again", () => {
+    const pattern = flowMotion.dash + flowMotion.gap
+    expect(flowOffset(0)).toBe(pattern)
+    expect(flowOffset(0.5)).toBeCloseTo(pattern / 2)
+    expect(flowOffset(1)).toBe(pattern)
+    expect(flowOffset(-0.25)).toBeCloseTo(flowOffset(0.75))
   })
 
-  test("the holds between strokes vary: a random relay, not a fixed stagger", () => {
-    const plan = planTrace(seededRandom(99))
-    const holds = plan.lines.flatMap((line) =>
-      line.starts.slice(1).map((start, k) => start - (line.starts[k] + line.durations[k])),
-    )
-    expect(new Set(holds.map((hold) => Math.round(hold / 100))).size).toBeGreaterThan(5)
-    // Some lines draw while others erase.
-    let crossing = false
-    for (let t = 0; t < plan.loopMs && !crossing; t += step) {
-      const kinds = plan.lines.flatMap((line) =>
-        line.starts
-          .map((start, k) => (t > start && t < start + line.durations[k] ? line.kinds[k] : -1))
-          .filter((kind) => kind >= 0),
-      )
-      crossing = kinds.includes(0) && kinds.includes(1)
-    }
-    expect(crossing).toBe(true)
-  })
-
-  test("it loops without a jump: the lines end as they started", () => {
-    for (const seed of SEEDS) {
-      const plan = planTrace(seededRandom(seed))
-      const start = sample(plan, 0).map(visibleShare)
-      const end = sample(plan, plan.loopMs).map(visibleShare)
-      expect(end).toEqual(start)
-      expect(start).toEqual(traceMotion.initialDrawn.map((on) => (on ? 1 : 0)))
-    }
-  })
-
-  test("a stroke draws a line from its start, then erases it from its start", () => {
-    const line = { initial: 0, starts: [0, 5000], durations: [2000, 2000], kinds: [1, 0] }
-    expect(traceLineOffset(0, line)).toBe(traceMotion.dash)
-    expect(traceLineOffset(1000, line)).toBeCloseTo(traceMotion.dash / 2)
-    expect(traceLineOffset(3000, line)).toBe(0)
-    expect(traceLineOffset(6000, line)).toBeCloseTo(-traceMotion.dash / 2)
-    expect(traceLineOffset(8000, line)).toBe(-traceMotion.dash)
-    expect(visibleShare(-traceMotion.dash)).toBe(0)
-    expect(visibleShare(traceMotion.dash / 2)).toBe(0.5)
-  })
-
-  test("the dash is longer than every line: a line is hidden whole before it is traced", () => {
-    // Cubic segments only, so the control polygon bounds each line's length.
-    for (const d of TRACE_PATHS) {
-      const numbers = (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number)
+  test("a short dash, and a pattern longer than every line: one dash at a time", () => {
+    expect(flowMotion.dash).toBeLessThanOrEqual(30)
+    for (const d of FLOW_PATHS) {
+      // Cubic segments only, so the control polygon bounds each line's length.
       expect(d).toMatch(/^M[\d\s.]+(C[\d\s.]+)+$/)
+      const numbers = (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number)
       let polygon = 0
       for (let i = 2; i < numbers.length; i += 2) {
         polygon += Math.hypot(numbers[i] - numbers[i - 2], numbers[i + 1] - numbers[i - 1])
       }
-      expect(polygon).toBeLessThan(traceMotion.dash)
+      expect(polygon + flowMotion.dash).toBeLessThanOrEqual(flowMotion.dash + flowMotion.gap)
     }
   })
 })

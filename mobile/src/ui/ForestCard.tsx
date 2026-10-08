@@ -12,7 +12,7 @@ type ForestCardProps = {
   /** "resume" is the Home resume card (radius 26), "hero" the survey detail score card (28). */
   variant?: ForestCardVariant
   /**
-   * The aurora and its tracing contours behind the content (`ForestAurora`, 12.2-19), on by
+   * The mist and its flowing contours behind the content (`ForestAurora`, 12.2-19), on by
    * default: every forest card has them. Off draws the bare gradient.
    */
   motion?: boolean

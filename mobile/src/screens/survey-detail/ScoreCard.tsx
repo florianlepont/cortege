@@ -36,8 +36,8 @@ const ZONE_GAP = brandSpacing4.smd
 type Measured = { caption: number | null; numeral: number | null; lower: number | null }
 
 /**
- * The card's clear zone (12.2-19 fifth round): right of the caption and the numeral, above the bar,
- * the tiles and the hint, which all sit in the shielded band. Null until the three are measured.
+ * The card's clear zone (12.2-19): right of the caption and the numeral, above the bar, the tiles
+ * and the hint, which all sit under the shield's feathered band. Null until the three are measured.
  */
 function useScoreZone() {
   const [measured, setMeasured] = useState<Measured>({ caption: null, numeral: null, lower: null })

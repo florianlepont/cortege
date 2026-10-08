@@ -1,95 +1,95 @@
-// The forest card's backdrop (12.2-19 fourth and fifth rounds, owner: "un mélange de A et F",
-// sketch 010, then "les halos de couleur sont vraiment trop light"): an aurora of three soft discs
-// roaming behind the content, a shield keeping each card's text readable over them, and faint
-// contours tracing and erasing themselves in the card's clear zone. Colours only; the geometry and
-// timing live in `forest-aurora-shape.ts`, the motion in `forest-motion.ts`. Same values in both
-// schemes, the card is always forest. Hex and rgba literals are allowed in this file (ESLint).
+// The forest card's backdrop (12.2-19), as the owner tuned it live in sketch 010 `round4.html`
+// ("spd=2 fogA=1.6 size=0.7 flowSpd=1 flowA=1"): a mist of three soft discs drifting behind the
+// content, faint contour lines with a dash of light flowing along them, a veil fading the left of
+// the card, and a feathered shield keeping each card's text readable. Colours only; the geometry
+// and timing live in `forest-aurora-shape.ts`. Same values in both schemes, the card is always
+// forest. Hex and rgba literals are allowed in this file (ESLint).
 //
-// Readability is tested in `forest-aurora-tokens.test.ts` on the worst case: all three discs at
-// their peak, the lighter core, one over the other, over every stop of the card gradient, under the
-// card's shield. Each card's text sits in its shielded zones only (`ForestAurora`'s `zone`).
+// No layer may draw a flat zone or a hard edge (owner: "le fond devient uni en vert"): every
+// shield is a gradient from nothing, tested in `forest-aurora-tokens.test.ts` with the contrast of
+// each card's text at the mist's worst, over the points the discs can reach.
 
-import { buildLinearGradient, forestStops, mixWithWhite, withAlpha } from "./visual-tokens"
+import { buildLinearGradient, forestStops, withAlpha } from "./visual-tokens"
+
+/** The owner's "Intensité de la brume" (fogA) applied to the sketch's base alphas. */
+const FOG = 1.6
 
 export const forestAurora = {
-  /** Colour at a disc's rim side and its opacity at the brightest moment (bloom included). */
-  moss: { colour: "#5FA82C", peak: 0.7 },
-  teal: { colour: "#1F9A78", peak: 0.65 },
-  ochre: { colour: "#C8913A", peak: 0.45 },
-  /** The centre of a disc is its colour mixed this much with white: a slightly lighter heart. */
-  coreLift: 0.15,
-  /** [share of the radius, share of the peak]: a soft edge drawn once, no runtime blur. */
-  falloff: [
-    [0, 1],
-    [0.35, 0.8],
-    [0.7, 0.3],
-    [1, 0],
-  ],
+  /** Colour at a disc's centre and its opacity there; it fades to nothing at its rim. */
+  moss: { colour: "#6EBE3C", peak: 0.42 * FOG },
+  teal: { colour: "#1EAA8C", peak: 0.38 * FOG },
+  ochre: { colour: "#DCAA3C", peak: 0.26 * FOG },
+  /** The contours: faint base lines and a short bright dash with a soft glow under it. */
+  lines: {
+    base: "#8CB950",
+    baseOpacity: 0.18,
+    light: "#D7F096",
+    lightOpacity: 1,
+    glow: "#C8EC78",
+    glowOpacity: 0.3,
+    width: 1.2,
+    glowWidth: 4,
+  },
   /**
-   * Where the text column ends when a card gives no zone of its own, as a share of its width (the
-   * shield covers up to there and the discs roam to its right).
+   * Where the text column ends when a card gives no zone of its own, as a share of its width.
    */
   textReach: 0.64,
-  /** The traced contours: two greens, at most `maxOpacity` and `width` pt thin. */
-  trace: { light: "#7FA347", deep: "#64873A", maxOpacity: 0.34, width: 1 },
-  /** Filled progress segments of Accueil's card: the pale forest green, 3:1 in the shielded band. */
+  /** Filled progress segments of Accueil's card: the pale forest green, 3:1 at the mist's worst. */
   progressDone: "#C8DDA0",
 } as const
 
 export type AuroraTone = "moss" | "teal" | "ochre"
 
-/** The lighter heart of a disc. */
-export function auroraCore(tone: AuroraTone): string {
-  return mixWithWhite(forestAurora[tone].colour, forestAurora.coreLift)
-}
+/**
+ * The veil of the sketch (its `.mask`): the card's first green, 0.9 at the left edge, gone at 60 %
+ * of the width. It sits over the mist and the lines, so both fade towards the text.
+ */
+export const forestVeil = { colour: forestStops.a, alpha: 0.9, reach: 60 } as const
+
+export const forestVeilImage = buildLinearGradient(90, [
+  [withAlpha(forestVeil.colour, forestVeil.alpha), 0],
+  [withAlpha(forestVeil.colour, 0), forestVeil.reach],
+])
 
 /**
- * The shield: the card's darkest green over the aurora and under the text. Each card has a text
- * column on the left (`column`, up to the zone's left edge) and may have a band at the bottom
- * (`band`, from the zone's bottom edge down); both fade into the clear zone over `fade` points, so
- * no text ever sits on a fade. `standard` covers white titles, the pale body and the pale accent
- * (Accueil, Mes Relevés); `score` also covers the sage units and the glass tiles of the survey's
- * score card, which need more.
+ * The shield over the text, in the card's darkest green, all gradients: across the card from
+ * `start` at its left edge to `end` where its text column ends, then down to nothing over `fade`
+ * points; and, for a card with text at its bottom (Accueil's segments, the score card's bar and
+ * tiles), a band rising from nothing over `feather` points to `band` where that text starts and on
+ * to `bandEnd` at the bottom edge. `standard` is Accueil's and Mes Relevés'; `score` is the score
+ * card's, whose sage unit and glass tiles need more.
  */
 export const forestShield = {
   colour: forestStops.c,
-  fade: { column: 56, band: 28 },
-  standard: { column: 0.55, band: 0.55 },
-  score: { column: 0.64, band: 0.8 },
+  fade: 90,
+  feather: 48,
+  standard: { start: 0.5, end: 0.44, band: 0.24, bandEnd: 0.34 },
+  score: { start: 0.5, end: 0.5, band: 0.54, bandEnd: 0.62 },
 } as const
 
 export type ForestShieldKey = "standard" | "score"
 
-export type ShieldLayers = {
-  /** Over the text column. */
-  column: string
-  /** The column's fade into the clear zone, left to right. */
-  columnFade: string
-  /** Over the bottom band. */
-  band: string
-  /** The band's fade into the clear zone, top to bottom. */
-  bandFade: string
+const percent = (value: number, total: number) =>
+  Math.round(Math.min(100, Math.max(0, (value / total) * 100)) * 100) / 100
+
+/** The shield across a card `width` wide whose text column ends at `left`. */
+export function buildColumnShield(key: ForestShieldKey, width: number, left: number): string {
+  const { colour, fade } = forestShield
+  const { start, end } = forestShield[key]
+  return buildLinearGradient(90, [
+    [withAlpha(colour, start), 0],
+    [withAlpha(colour, end), percent(left, width)],
+    [withAlpha(colour, 0), percent(left + fade, width)],
+  ])
 }
 
-export function buildShieldLayers(key: ForestShieldKey): ShieldLayers {
-  const { colour } = forestShield
-  const { column, band } = forestShield[key]
-  const clear = withAlpha(colour, 0)
-  return {
-    column: withAlpha(colour, column),
-    columnFade: buildLinearGradient(90, [
-      [withAlpha(colour, column), 0],
-      [clear, 100],
-    ]),
-    band: withAlpha(colour, band),
-    bandFade: buildLinearGradient(180, [
-      [clear, 0],
-      [withAlpha(colour, band), 100],
-    ]),
-  }
-}
-
-export const forestShieldLayers: Record<ForestShieldKey, ShieldLayers> = {
-  standard: buildShieldLayers("standard"),
-  score: buildShieldLayers("score"),
+/** The band from `feather` above its text down to the card's bottom, `height` points in all. */
+export function buildBandShield(key: ForestShieldKey, height: number): string {
+  const { colour, feather } = forestShield
+  const { band, bandEnd } = forestShield[key]
+  return buildLinearGradient(180, [
+    [withAlpha(colour, 0), 0],
+    [withAlpha(colour, band), percent(feather, height)],
+    [withAlpha(colour, bandEnd), 100],
+  ])
 }

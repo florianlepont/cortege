@@ -3,20 +3,21 @@ import renderer, { act } from "react-test-renderer"
 import { NavigationContext } from "@react-navigation/native"
 import * as reanimated from "../../test/react-native-reanimated.mock"
 import {
-  AURORA_DISCS,
-  auroraRoam,
+  FLOW_PATHS,
+  FLOW_VIEWBOX,
+  flowMotion,
+  MIST_DISCS,
+  mistMotion,
   resolveZone,
-  TRACE_PATHS,
-  TRACE_VIEWBOX,
-  traceMotion,
 } from "../app/forest-aurora-shape"
 import {
-  auroraCore,
+  buildBandShield,
+  buildColumnShield,
   forestAurora,
   forestShield,
-  forestShieldLayers,
+  forestVeilImage,
 } from "../app/forest-aurora-tokens"
-import { discPoseAt, planAurora, traceLineOffset } from "../app/forest-motion"
+import { discPose, flowOffset, planMist } from "../app/forest-motion"
 import { ScreenCoverContext } from "./screen-cover-context"
 import { type AuroraZone, ForestAurora } from "./ForestAurora"
 
@@ -70,7 +71,7 @@ afterEach(() => {
 const SEED = 1234
 const BOX = { width: 360, height: 150 }
 const ZONE: AuroraZone = { left: 214, bottom: 110 }
-const plan = planAurora(SEED, AURORA_DISCS)
+const plan = planMist(SEED)
 
 const noopUnsubscribe = () => undefined
 const fakeNavigation = (focused: boolean) =>
@@ -125,9 +126,7 @@ function render(options: Options = {}, laidOut = true) {
   return tree!
 }
 
-const paths = (tree: renderer.ReactTestRenderer) => byType(tree.root, "Path")
-
-describe("ForestAurora (12.2-19 fifth round: every forest card, continuous, stronger)", () => {
+describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => {
   test("decoration only: never touched, hidden from screen readers, over the whole card", () => {
     const [layer] = byTestID(render(), "aurora")
     expect(layer.props.pointerEvents).toBe("none")
@@ -155,190 +154,195 @@ describe("ForestAurora (12.2-19 fifth round: every forest card, continuous, stro
       right: BOX.width,
       height: BOX.height,
     })
-    // A measured zone is kept inside the card.
     expect(resolveZone(BOX, { left: -4, bottom: 400 })).toEqual({
       left: 0,
       bottom: BOX.height,
       right: BOX.width,
       height: BOX.height,
     })
-    const [trace] = byTestID(render({ zone: undefined }), "forest-trace")
-    expect(flat(trace.props.style).left).toBe(BOX.width * forestAurora.textReach)
+    const [flow] = byTestID(render({ zone: undefined }), "forest-flow")
+    expect(flat(flow.props.style).left).toBe(BOX.width * forestAurora.textReach)
   })
 
-  test("the same size laid out again changes nothing", () => {
+  test("the same size laid out again changes nothing; a new size moves the lines' area", () => {
     const tree = render()
-    const before = byTestID(tree, "forest-trace")[0].props.style
+    const before = byTestID(tree, "forest-flow")[0].props.style
     layout(tree)
-    expect(byTestID(tree, "forest-trace")[0].props.style).toEqual(before)
+    expect(byTestID(tree, "forest-flow")[0].props.style).toEqual(before)
     layout(tree, { width: 300, height: 150 })
-    expect(flat(byTestID(tree, "forest-trace")[0].props.style).width).toBe(300 - ZONE.left)
+    expect(flat(byTestID(tree, "forest-flow")[0].props.style).width).toBe(
+      300 - (ZONE.left as number),
+    )
   })
 
-  test("three soft discs, moss, teal and ochre, larger, with a lighter heart", () => {
-    const discs = byTestID(render(), "forest-aurora-disc")
+  test("three soft discs at the sketch's places, fading to nothing at the rim", () => {
+    const discs = byTestID(render(), "forest-mist-disc")
     expect(discs).toHaveLength(3)
-    expect(AURORA_DISCS.map((disc) => disc.size)).toEqual([312, 286, 220])
     discs.forEach((disc, index) => {
-      const shape = AURORA_DISCS[index]
+      const shape = MIST_DISCS[index]
       const tone = forestAurora[shape.key]
       expect(flat(disc.props.style)).toMatchObject({
         position: "absolute",
-        left: 0,
-        top: 0,
         width: shape.size,
         height: shape.size,
+        ...shape.anchor,
       })
-      // Only the transforms and the opacity are animated.
-      expect(Object.keys(disc.props.style[2]).sort()).toEqual(["opacity", "transform"])
+      // Transforms only.
+      expect(Object.keys(disc.props.style[2])).toEqual(["transform"])
       const [gradient] = byType(disc, "RadialGradient")
-      const stops = byType(gradient, "Stop")
-      expect(stops.map((stop) => stop.props.stopColor)).toEqual([
-        auroraCore(shape.key),
-        ...stops.slice(1).map(() => tone.colour),
+      expect(
+        byType(gradient, "Stop").map((stop) => [stop.props.stopColor, stop.props.stopOpacity]),
+      ).toEqual([
+        [tone.colour, tone.peak],
+        [tone.colour, 0],
       ])
-      expect(stops[0].props.stopOpacity).toBe(tone.peak)
-      expect(stops[stops.length - 1].props.stopOpacity).toBe(0)
       const [circle] = byType(disc, "Circle")
       expect(circle.props.fill).toBe(`url(#${gradient.props.id})`)
-      expect(circle.props.r).toBe(shape.size / 2)
-    })
-  })
-
-  test("each disc sits where its random path starts, in the clear zone", () => {
-    const discs = byTestID(render(), "forest-aurora-disc")
-    const clear = resolveZone(BOX, ZONE)
-    discs.forEach((disc, index) => {
-      const shape = AURORA_DISCS[index]
-      const pose = discPoseAt(plan.discs[index].start, plan.discs[index])
+      // Where its drift starts, drawn at random per mount.
+      const pose = discPose(plan.discs[index].start, shape)
       const [x, y, scale] = disc.props.style[2].transform
-      expect(x.translateX + shape.size / 2).toBeCloseTo(
-        clear.left + pose.across * (clear.right - clear.left),
-      )
-      expect(y.translateY + shape.size / 2).toBeCloseTo(pose.down * clear.bottom)
+      expect(x.translateX).toBeCloseTo(pose.translateX)
+      expect(y.translateY).toBeCloseTo(pose.translateY)
       expect(scale.scale).toBeCloseTo(pose.scale)
-      expect(disc.props.style[2].opacity).toBeCloseTo(pose.alpha)
     })
   })
 
-  test("the shield covers the text column and the bottom band, fading into the clear zone", () => {
-    const tree = render({ shield: "score" })
-    const layers = forestShieldLayers.score
-    const [column] = byTestID(tree, "forest-shield-column")
-    expect(flat(column.props.style)).toMatchObject({
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: ZONE.left,
-      height: ZONE.bottom,
-      backgroundColor: layers.column,
-    })
-    const [columnFade] = byTestID(tree, "forest-shield-column-fade")
-    expect(flat(columnFade.props.style)).toMatchObject({
-      left: ZONE.left,
-      width: forestShield.fade.column,
-      height: ZONE.bottom,
-      experimental_backgroundImage: layers.columnFade,
-    })
-    const [band] = byTestID(tree, "forest-shield-band")
-    expect(flat(band.props.style)).toMatchObject({
-      left: 0,
-      right: 0,
-      top: ZONE.bottom,
-      bottom: 0,
-      backgroundColor: layers.band,
-    })
-    const [bandFade] = byTestID(tree, "forest-shield-band-fade")
-    expect(flat(bandFade.props.style)).toMatchObject({
-      top: (ZONE.bottom as number) - forestShield.fade.band,
-      height: forestShield.fade.band,
-      experimental_backgroundImage: layers.bandFade,
-    })
-  })
-
-  test("the standard shield by default; no band without one, no column without text", () => {
-    const tree = render({ zone: { left: 200 } })
-    expect(flat(byTestID(tree, "forest-shield-column")[0].props.style).backgroundColor).toBe(
-      forestShieldLayers.standard.column,
-    )
-    expect(byTestID(tree, "forest-shield-band")).toHaveLength(0)
-    const bare = render({ zone: { left: 0 } })
-    expect(byTestID(bare, "forest-shield-column")).toHaveLength(0)
-  })
-
-  test("layered: discs, then the shield, then the contours", () => {
+  test("layered as the sketch: mist, lines, veil, then the shield", () => {
     const [layers] = byTestID(render(), "forest-aurora-layers")
     const order = layers
       .findAll((n) => typeof n.type === "string" && typeof n.props.testID === "string")
       .map((n) => n.props.testID)
-      .filter((testID) => testID !== "forest-aurora-layers")
+      .filter(
+        (testID) =>
+          ![
+            "forest-aurora-layers",
+            "forest-flow-base",
+            "forest-flow-glow",
+            "forest-flow-light",
+          ].includes(testID),
+      )
     expect(order).toEqual([
-      "forest-aurora-disc",
-      "forest-aurora-disc",
-      "forest-aurora-disc",
+      "forest-mist-disc",
+      "forest-mist-disc",
+      "forest-mist-disc",
+      "forest-flow",
+      "forest-veil",
       "forest-shield-column",
-      "forest-shield-column-fade",
-      "forest-shield-band-fade",
       "forest-shield-band",
-      "forest-trace",
     ])
+    const [veil] = byTestID(render(), "forest-veil")
+    expect(flat(veil.props.style)).toMatchObject({
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      experimental_backgroundImage: forestVeilImage,
+    })
   })
 
-  test("the contours are drawn in the clear zone only: right of the text, above the band", () => {
-    const [trace] = byTestID(render(), "forest-trace")
-    expect(flat(trace.props.style)).toEqual({
+  test("the shield is gradients over the whole width and from above the band, no solid layer", () => {
+    const tree = render({ shield: "score" })
+    const [column] = byTestID(tree, "forest-shield-column")
+    expect(flat(column.props.style)).toEqual({
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      experimental_backgroundImage: buildColumnShield("score", BOX.width, ZONE.left),
+    })
+    const [band] = byTestID(tree, "forest-shield-band")
+    const top = (ZONE.bottom as number) - forestShield.feather
+    expect(flat(band.props.style)).toEqual({
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      top,
+      experimental_backgroundImage: buildBandShield("score", BOX.height - top),
+    })
+    // No layer anywhere carries a flat fill.
+    for (const node of tree.root.findAll((n) => typeof n.type === "string")) {
+      expect(flat(node.props.style).backgroundColor).toBeUndefined()
+    }
+  })
+
+  test("the standard shield by default; no band for a card without text at its bottom", () => {
+    const tree = render({ zone: { left: 200 } })
+    expect(
+      flat(byTestID(tree, "forest-shield-column")[0].props.style).experimental_backgroundImage,
+    ).toBe(buildColumnShield("standard", BOX.width, 200))
+    expect(byTestID(tree, "forest-shield-band")).toHaveLength(0)
+    // A band right at the top starts its feather at the card's edge.
+    const high = render({ zone: { left: 200, bottom: 20 } })
+    expect(flat(byTestID(high, "forest-shield-band")[0].props.style).top).toBe(0)
+  })
+
+  test("the lines are in the clear zone only: right of the text, above the band", () => {
+    const tree = render()
+    const [flow] = byTestID(tree, "forest-flow")
+    expect(flat(flow.props.style)).toEqual({
       position: "absolute",
       top: 0,
       left: ZONE.left,
-      width: BOX.width - ZONE.left,
+      width: BOX.width - (ZONE.left as number),
       height: ZONE.bottom,
     })
-    const [svg] = byType(trace, "Svg")
-    expect(svg.props.viewBox).toBe(`0 0 ${TRACE_VIEWBOX.width} ${TRACE_VIEWBOX.height}`)
+    const [svg] = byType(flow, "Svg")
+    expect(svg.props.viewBox).toBe(`0 0 ${FLOW_VIEWBOX.width} ${FLOW_VIEWBOX.height}`)
     expect(svg.props.preserveAspectRatio).toBe("xMinYMax slice")
   })
 
-  test("four thin faint lines fading in from the left, where their relay starts", () => {
+  test("three faint lines, each with a bright dash and its glow flowing along it", () => {
     const tree = render()
-    const lines = paths(tree)
-    expect(lines.map((line) => line.props.d)).toEqual([...TRACE_PATHS])
-    lines.forEach((line, index) => {
-      expect(line.props.strokeWidth).toBe(forestAurora.trace.width)
-      expect(line.props.fill).toBe("none")
-      expect(line.props.strokeDasharray).toEqual([traceMotion.dash, traceMotion.dash])
-      expect(line.props.animatedProps.strokeDashoffset).toBeCloseTo(
-        traceLineOffset(plan.trace.start * plan.trace.loopMs, plan.trace.lines[index]),
-      )
-    })
-    const gradients = byType(tree.root, "LinearGradient")
-    expect(gradients.map((g) => g.props.id)).toEqual(["forest-trace-light", "forest-trace-deep"])
-    for (const gradient of gradients) {
-      expect(gradient.props.x2).toBe(TRACE_VIEWBOX.width * traceMotion.fadeEnd)
-      const [from, to] = byType(gradient, "Stop")
-      expect(from.props.stopOpacity).toBe(0)
-      expect(to.props.stopOpacity).toBe(forestAurora.trace.maxOpacity)
+    const lines = forestAurora.lines
+    const bases = byTestID(tree, "forest-flow-base")
+    expect(bases.map((base) => base.props.d)).toEqual([...FLOW_PATHS])
+    for (const base of bases) {
+      expect(base.props).toMatchObject({
+        stroke: lines.base,
+        strokeOpacity: lines.baseOpacity,
+        strokeWidth: lines.width,
+        fill: "none",
+      })
+      expect(base.props.strokeDasharray).toBeUndefined()
     }
-    expect(lines.map((line) => line.props.stroke)).toEqual([
-      "url(#forest-trace-light)",
-      "url(#forest-trace-deep)",
-      "url(#forest-trace-light)",
-      "url(#forest-trace-deep)",
-    ])
+    const glows = byTestID(tree, "forest-flow-glow")
+    const lights = byTestID(tree, "forest-flow-light")
+    expect(lights.map((light) => light.props.d)).toEqual([...FLOW_PATHS])
+    lights.forEach((light, index) => {
+      expect(light.props).toMatchObject({
+        stroke: lines.light,
+        strokeOpacity: lines.lightOpacity,
+        strokeWidth: lines.width,
+      })
+      expect(glows[index].props).toMatchObject({
+        stroke: lines.glow,
+        strokeOpacity: lines.glowOpacity,
+        strokeWidth: lines.glowWidth,
+      })
+      for (const path of [light, glows[index]]) {
+        expect(path.props.strokeDasharray).toEqual([flowMotion.dash, flowMotion.gap])
+        expect(path.props.animatedProps.strokeDashoffset).toBeCloseTo(
+          flowOffset(plan.flows[index].start),
+        )
+      }
+    })
   })
 
-  test("while visible: endless loops on the UI thread, never one that stops, and a fade in", () => {
+  test("while visible: endless linear loops on the UI thread, and a fade in", () => {
     const tree = render({ focused: true })
-    // Three discs and the contours' relay: endless linear phases, guarded by Reduce Motion.
-    expect(withRepeatSpy).toHaveBeenCalledTimes(4)
+    // Three discs and six flowing paths' three phases.
+    expect(withRepeatSpy).toHaveBeenCalledTimes(6)
     for (const call of withRepeatSpy.mock.calls) {
       const [, count, reverse, , reduceMotion] = call as unknown[]
       expect([count, reverse, reduceMotion]).toEqual([-1, false, reanimated.ReduceMotion.System])
     }
     expect(timingConfigs().map((config) => config?.duration)).toEqual(
       expect.arrayContaining([
-        ...AURORA_DISCS.map((disc) => disc.legs * disc.legMs),
-        plan.trace.loopMs,
-        auroraRoam.revealMs,
+        ...plan.discs.map((disc) => 2 * disc.legMs),
+        ...plan.flows.map((flow) => flow.periodMs),
+        mistMotion.revealMs,
       ]),
     )
     for (const config of timingConfigs()) {
@@ -354,18 +358,18 @@ describe("ForestAurora (12.2-19 fifth round: every forest card, continuous, stro
     const tree = render({ seed: null })
     expect(random).toHaveBeenCalled()
     random.mockRestore()
-    const expected = planAurora(Math.floor(0.5 * 2147483647), AURORA_DISCS)
-    const [first] = byTestID(tree, "forest-aurora-disc")
-    expect(first.props.style[2].opacity).toBeCloseTo(
-      discPoseAt(expected.discs[0].start, expected.discs[0]).alpha,
+    const expected = planMist(Math.floor(0.5 * 2147483647))
+    const [first] = byTestID(tree, "forest-mist-disc")
+    expect(first.props.style[2].transform[0].translateX).toBeCloseTo(
+      discPose(expected.discs[0].start, MIST_DISCS[0]).translateX,
     )
   })
 
   test("not while the screen is hidden or covered: everything stops where it is", () => {
     for (const options of [{ focused: false }, { covered: true }]) {
       const tree = render(options)
-      expect(byTestID(tree, "forest-aurora-disc")).toHaveLength(3)
-      expect(paths(tree)).toHaveLength(4)
+      expect(byTestID(tree, "forest-mist-disc")).toHaveLength(3)
+      expect(byTestID(tree, "forest-flow-light")).toHaveLength(3)
     }
     expect(withRepeatSpy).not.toHaveBeenCalled()
     expect(withTimingSpy).not.toHaveBeenCalled()
@@ -379,21 +383,22 @@ describe("ForestAurora (12.2-19 fifth round: every forest card, continuous, stro
     layout(tree!)
     expect(withRepeatSpy).not.toHaveBeenCalled()
     act(() => tree!.update(element({ covered: false })))
-    expect(withRepeatSpy).toHaveBeenCalledTimes(4)
+    expect(withRepeatSpy).toHaveBeenCalledTimes(6)
   })
 
-  test("under Reduce Motion: the discs rest, the lines are drawn and still, no fade", () => {
+  test("under Reduce Motion: discs at rest, the lines drawn without their flowing light", () => {
     reanimated.setReducedMotion(true)
     const tree = render({ focused: true })
     expect(withRepeatSpy).not.toHaveBeenCalled()
     expect(withTimingSpy).not.toHaveBeenCalled()
-    for (const line of paths(tree)) expect(line.props.animatedProps.strokeDashoffset).toBe(0)
+    expect(byTestID(tree, "forest-flow-base")).toHaveLength(3)
+    expect(byTestID(tree, "forest-flow-light")).toHaveLength(0)
+    expect(byTestID(tree, "forest-flow-glow")).toHaveLength(0)
     const [layers] = byTestID(tree, "forest-aurora-layers")
     expect(layers.props.style[1]).toEqual({ opacity: 1 })
-    const discs = byTestID(tree, "forest-aurora-disc")
-    discs.forEach((disc, index) => {
-      const rest = discPoseAt(plan.discs[index].start, plan.discs[index])
-      expect(disc.props.style[2].opacity).toBeCloseTo(rest.alpha)
-    })
+    for (const disc of byTestID(tree, "forest-mist-disc")) {
+      const [x, y, scale] = disc.props.style[2].transform
+      expect([x.translateX + 0, y.translateY + 0, scale.scale]).toEqual([0, 0, 1])
+    }
   })
 })
