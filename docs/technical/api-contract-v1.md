@@ -1283,6 +1283,12 @@ Response `200`:
 }
 ```
 
+`commune_code`, `section` and `number` follow the parcel key of `data-contract-v1.md` (section 9):
+for an IGN identifier the commune is the arrondissement in Paris, Lyon and Marseille (e.g.
+`75112000BL0010` gives `75112` / `BL` / `0010`), and a numbered Alsace-Moselle section keeps its two
+digits (`67392000090001` gives `67392` / `09` / `0001`). `/public/parcels/status` keys the IGN
+polygons the same way, so a studied parcel always matches its polygon.
+
 ### GET /parcels/{parcel_id}/surveys/history?limit=
 
 Return longitudinal survey history for one parcel.

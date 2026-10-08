@@ -233,6 +233,17 @@ yet: once the image is published, the owner runs the commands of `infra/vps/READ
 community data") and checks the Explorer at parcel zoom on a demo place (Fontainebleau, Sénart,
 Rambouillet).
 
+Note 2026-10-08, same branch, owner answer "oui corrige": two kinds of real parcel could never be
+coloured by score on the Explorer, whatever the data. In Alsace-Moselle sections are numbered
+("09"): the API kept letters only, so these parcels were registered with a placeholder key and
+their polygons were dropped. In Paris, Lyon and Marseille the IGN identifier carries the
+arrondissement (75112) and the IGN polygon the city (75056), so the two keys never met. Both now
+share one key (the arrondissement, the two-digit section), and migration 021 repairs the parcels
+already registered. The demo data now also covers them: "Vosges du Nord" (Bas-Rhin, numbered
+sections) is back, and among the owner's places "Vincennes" lands in Vincennes itself (94080) and
+"Bois de Boulogne" in Paris (75116). To check on the phone after the deploy: these parcels coloured
+at parcel zoom.
+
 ## Fix batches
 
 | Batch | PR | Entries | Re-tested on |

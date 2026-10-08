@@ -218,6 +218,23 @@ Generated columns (migration 015, `GENERATED ALWAYS AS … STORED`, never writte
 Indexes:
 - btree (`centroid_lat`, `centroid_lng`) // `idx_parcels_centroid_lat_lng`, bbox lookups (no PostGIS)
 
+Parcel key (commune, section, number), shared by the parcels the app registers and the IGN polygons
+the Explorer draws (`parseParcelIdu`, `parseWfsParcelProperties`; repaired for older rows by
+migrations 020 and 021):
+- A parcel registered by its IGN identifier (IDU: commune 5 digits, absorbed-commune prefix 3,
+  section 2, number 4, e.g. `94080000AB0012`) takes its key from the IDU.
+- `commune_code` is the IDU's commune. In Paris, Lyon and Marseille this is the **arrondissement**
+  code (75101 to 75120, 69381 to 69389, 13201 to 13216), not the city's code_insee (75056, 69123,
+  13055): sections and numbers restart in every arrondissement, so the city code would make two
+  parcels collide. The API asks API Carto with the city's code_insee and the arrondissement's
+  `code_arr`.
+- `section`: a section with a letter keeps its letters only (`0A` is stored `A`, `AB` stays `AB`);
+  a numbered section (Alsace-Moselle, e.g. `09`) keeps its two digits. The two forms never collide.
+  An IDU section `00` is not a section (the placeholder key `00000` / `AA` / `0000` is kept).
+- `number` is on 4 digits.
+- Known limit: parcels of two absorbed communes (prefix other than `000`) of one commune can share
+  a section and number; the key has no prefix, so both would show the same study status.
+
 ### 10) Parcel Study Status (Read Model, V1.1 Addendum)
 High-zoom map layer showing whether a parcel is already studied.
 
