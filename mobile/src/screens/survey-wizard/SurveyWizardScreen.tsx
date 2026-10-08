@@ -8,19 +8,22 @@ import {
   resolveMethodVersion,
   type IbpMethodVersion,
 } from "@cortege/ibp-domain"
+import { brandSpacing4 } from "../../app/brand-tokens"
 import { REGION_OPTIONS, VEGETATION_STAGE_OPTIONS_BY_REGION } from "../../app/constants"
-import { brandColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { RegionVersion, VegetationStage } from "../../app/types"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppField } from "../../ui/AppField"
 import { AppText as Text } from "../../ui/AppText"
 import { CasPicker } from "../../ui/CasPicker"
+import { GlassButton } from "../../ui/GlassButton"
+import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
+import { useFinishBarHeight } from "../survey-detail/useFinishBarHeight"
 import type { SurveyFormMethod } from "./method"
 import { createWizardStyles } from "./wizard.styles"
+import { WizardNativeHeader } from "./WizardNativeHeader"
 
 const w = fr.surveyForm.wizard
 
@@ -43,6 +46,11 @@ type SurveyWizardScreenProps = {
   onOpenParcels: () => void
   /** Leaving from the first step. */
   onClose: () => void
+  /**
+   * 12.2-17: the stack shows its native header (iOS) with the system back button; the wizard then
+   * puts the step counter in the bar and draws neither its own back button nor the status bar gap.
+   */
+  nativeHeader?: boolean
 }
 
 const METHOD_CHOICES: ReadonlyArray<{
@@ -71,11 +79,14 @@ export function SurveyWizardScreen({
   onRegionChange,
   onOpenParcels,
   onClose,
+  nativeHeader = false,
 }: SurveyWizardScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createWizardStyles(theme), [theme])
   const insets = useSafeAreaInsets()
   const tabBarClearance = useTabBarClearance()
+  // The call to action floats over the page: the scroll content ends above it.
+  const { barHeight, onBarLayout } = useFinishBarHeight(true)
   const [stepIndex, setStepIndex] = useState(0)
   const step = STEPS[stepIndex]
   const resolved = resolveMethodVersion(method.version)
@@ -115,28 +126,43 @@ export function SurveyWizardScreen({
           ? w.cas.body
           : w.region.body
 
+  const stepLabel = w.stepLabel({ step: stepIndex + 1, total: TOTAL_STEPS })
+
   return (
-    <View style={styles.screen}>
-      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
-        <View style={styles.topRow}>
-          <Pressable
-            style={styles.iconButton}
-            onPress={goBack}
-            accessibilityRole="button"
-            accessibilityLabel={stepIndex === 0 ? w.close : w.back}
-            testID="wizard-back"
-          >
-            <Ionicons
-              name={stepIndex === 0 ? "close" : "chevron-back"}
-              size={22}
-              color={theme.semanticColors.textStrong}
-            />
-          </Pressable>
-          <Text style={styles.stepLabel}>
-            {w.stepLabel({ step: stepIndex + 1, total: TOTAL_STEPS })}
-          </Text>
-          <View style={styles.topSpacer} />
-        </View>
+    <View style={styles.screen} testID="wizard-screen">
+      {nativeHeader ? (
+        <WizardNativeHeader
+          title={stepLabel}
+          canStepBack={stepIndex > 0}
+          onStepBack={() => setStepIndex(stepIndex - 1)}
+        />
+      ) : null}
+      <View
+        style={[
+          styles.topBar,
+          // Under the native header the route's ScreenFrame already starts below the bar.
+          { paddingTop: nativeHeader ? brandSpacing4.sm : insets.top + 8 },
+        ]}
+      >
+        {nativeHeader ? null : (
+          <View style={styles.topRow}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={goBack}
+              accessibilityRole="button"
+              accessibilityLabel={stepIndex === 0 ? w.close : w.back}
+              testID="wizard-back"
+            >
+              <Ionicons
+                name={stepIndex === 0 ? "close-outline" : "chevron-back-outline"}
+                size={22}
+                color={theme.semanticColors.textStrong}
+              />
+            </Pressable>
+            <Text style={styles.stepLabel}>{stepLabel}</Text>
+            <View style={styles.topSpacer} />
+          </View>
+        )}
         <View style={styles.progress}>
           {Array.from({ length: TOTAL_STEPS }, (_, index) => (
             <View
@@ -151,7 +177,10 @@ export function SurveyWizardScreen({
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.body}
+        contentContainerStyle={[
+          styles.body,
+          { paddingBottom: (barHeight ?? 0) + brandSpacing4.md },
+        ]}
         keyboardShouldPersistTaps="handled"
         testID="wizard-body"
       >
@@ -196,7 +225,11 @@ export function SurveyWizardScreen({
                   >
                     <View style={[styles.radio, selected ? styles.radioSelected : null]}>
                       {selected ? (
-                        <Ionicons name="checkmark" size={14} color={brandColors.white} />
+                        <Ionicons
+                          name="checkmark-outline"
+                          size={14}
+                          color={theme.visual.chip.activeText}
+                        />
                       ) : null}
                     </View>
                     <View style={styles.choiceCopy}>
@@ -205,9 +238,7 @@ export function SurveyWizardScreen({
                           {fr.ibpMethod.versions[choice.version]}
                         </Text>
                         {choice.recommended ? (
-                          <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{w.method.recommended}</Text>
-                          </View>
+                          <Text style={styles.recommended}>{w.method.recommended}</Text>
                         ) : null}
                       </View>
                       <Text style={styles.choiceHint}>{choice.hint}</Text>
@@ -255,8 +286,13 @@ export function SurveyWizardScreen({
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: tabBarClearance + 12 }]}>
-        <AppButton
+      <View
+        pointerEvents="box-none"
+        onLayout={onBarLayout}
+        style={[styles.footer, { paddingBottom: finishBarBottomPadding(tabBarClearance) }]}
+        testID="wizard-footer"
+      >
+        <GlassButton
           label={w.continue}
           size="lg"
           disabled={!canContinue}

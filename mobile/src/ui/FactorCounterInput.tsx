@@ -121,7 +121,7 @@ export function FactorCounterInput({
           style={styles.button}
           testID={testID ? `${testID}-decrease` : undefined}
         >
-          <Ionicons name="remove" size={22} color={theme.colors.forest} />
+          <Ionicons name="remove-outline" size={22} color={theme.colors.forest} />
         </Pressable>
 
         {editing ? (
@@ -156,7 +156,7 @@ export function FactorCounterInput({
           style={styles.button}
           testID={testID ? `${testID}-increase` : undefined}
         >
-          <Ionicons name="add" size={22} color={theme.colors.forest} />
+          <Ionicons name="add-outline" size={22} color={theme.colors.forest} />
         </Pressable>
       </View>
     </FactorInputShell>
@@ -175,9 +175,12 @@ function createStyles(theme: BrandTheme) {
       width: BUTTON_SIZE,
       height: BUTTON_SIZE,
       borderRadius: brandRadius.field,
+      minHeight: BUTTON_SIZE,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.colors.panelMuted,
+      backgroundColor: theme.visual.chip.fill,
+      borderWidth: 1,
+      borderColor: theme.visual.chip.border,
     },
     valueWrap: {
       flex: 1,

@@ -1,4 +1,5 @@
 import { brandMapTokens } from "../../app/brand-tokens"
+import { contrastRatio } from "../../app/contrast"
 import type { PublicParcelStatusItem } from "../../app/types"
 import { buildParcelFeatureCollection } from "./parcel-features"
 
@@ -130,14 +131,59 @@ describe("by score (the Explorer, OA-126)", () => {
     expect(properties.strokeWidth).toBe(brandMapTokens.strokeWidthSelected)
   })
 
-  test("a parcel without a usable total, or never studied, keeps the plain paint", () => {
-    expect(fillOf(scored("N", null)).fill).toBe(brandMapTokens.parcelStudiedFill)
-    expect(fillOf(scored("N", Number.NaN)).fill).toBe(brandMapTokens.parcelStudiedFill)
-    expect(fillOf(scored("N", undefined)).fill).toBe(brandMapTokens.parcelStudiedFill)
-    expect(fillOf(scored("U", 40, "not_studied")).fill).toBe(brandMapTokens.parcelNeutralFill)
+  test("a parcel without a usable total, or never studied, is the warm grey, never green", () => {
+    const unscored = {
+      fill: brandMapTokens.parcelUnscoredFill,
+      stroke: brandMapTokens.parcelUnscored,
+      strokeWidth: brandMapTokens.strokeWidthDefault,
+    }
+    expect(fillOf(scored("N", null))).toMatchObject(unscored)
+    expect(fillOf(scored("N", Number.NaN))).toMatchObject(unscored)
+    expect(fillOf(scored("N", undefined))).toMatchObject(unscored)
+    expect(fillOf(scored("U", 40, "not_studied"))).toMatchObject(unscored)
+    expect(fillOf(scored("U", null, "not_studied"))).toMatchObject(unscored)
+  })
+
+  test("a selected parcel without a score keeps the selected paint", () => {
+    expect(fillOf(scored("N", null), ["n"])).toMatchObject({
+      fill: brandMapTokens.parcelSelectedFill,
+      stroke: brandMapTokens.parcelSelected,
+      strokeWidth: brandMapTokens.strokeWidthSelected,
+    })
+  })
+
+  test("the warm grey is neither green nor any score colour", () => {
+    const greens = [
+      brandMapTokens.parcelStudied,
+      brandMapTokens.parcelNeutral,
+      brandMapTokens.parcelStudiedFill,
+      brandMapTokens.parcelNeutralFill,
+      ...Object.values(brandMapTokens.scoreMarker),
+      ...Object.values(brandMapTokens.scoreParcelFill),
+    ]
+    expect(greens).not.toContain(brandMapTokens.parcelUnscored)
+    expect(greens).not.toContain(brandMapTokens.parcelUnscoredFill)
+    // A warm grey: red over green over blue, with green never the strongest channel.
+    const [r, g, b] = [1, 3, 5].map((at) =>
+      parseInt(brandMapTokens.parcelUnscored.slice(at, at + 2), 16),
+    )
+    expect(r).toBeGreaterThanOrEqual(g)
+    expect(g).toBeGreaterThanOrEqual(b)
+    expect(r - b).toBeLessThan(32)
+  })
+
+  test("the grey outline reads on the light plan and on the dark orthophoto (3:1)", () => {
+    // Stand-ins for the two basemaps: white and the IGN plan's beige, a dark forest orthophoto.
+    for (const background of ["#FFFFFF", "#F2EFE9", "#2E3A24"]) {
+      expect(contrastRatio(brandMapTokens.parcelUnscored, background)).toBeGreaterThanOrEqual(3)
+    }
   })
 
   test("the parcel picker keeps the status colours whatever the total", () => {
     expect(fillOf(scored("H", 45), [], false).fill).toBe(brandMapTokens.parcelStudiedFill)
+    expect(fillOf(scored("N", null), [], false).fill).toBe(brandMapTokens.parcelStudiedFill)
+    expect(fillOf(scored("U", null, "not_studied"), [], false).fill).toBe(
+      brandMapTokens.parcelNeutralFill,
+    )
   })
 })

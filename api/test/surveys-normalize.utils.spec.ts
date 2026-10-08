@@ -4,7 +4,11 @@ import {
   classifySameVersionContent,
   getChangedSubmittedReadOnlyFields,
   getSubmittedReadOnlyFields,
+  buildParcelKey,
   isStrictTimestamp,
+  normalizeParcelPartToDigits,
+  normalizeParcelSection,
+  parseParcelIdentifier,
   parseSyncChangesCursor,
   resolveSurveyMethodColumns,
   sameSurveyMethodColumns,
@@ -643,5 +647,66 @@ describe("classifySameVersionContent", () => {
     } as unknown as SurveyUpsertBody
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("identical")
     expect(classifySameVersionContent({}, existing, ["12345AB0042"])).toBe("identical")
+  })
+})
+
+describe("parseParcelIdentifier (12.2-19: a parcel registered by its IGN identifier)", () => {
+  test("an IDU gives its commune, section and number", () => {
+    expect(parseParcelIdentifier("94080000AB0012")).toEqual({
+      communeCode: "94080",
+      section: "AB",
+      number: "0012",
+    })
+    expect(parseParcelIdentifier(" 75112000ce0001 ")).toEqual({
+      communeCode: "75112",
+      section: "CE",
+      number: "0001",
+    })
+  })
+
+  test("a one-letter section keeps its letter only, as the WFS features do", () => {
+    expect(parseParcelIdentifier("940800000A0012")).toEqual({
+      communeCode: "94080",
+      section: "A",
+      number: "0012",
+    })
+  })
+
+  test("its key is the key of the WFS feature of the same parcel", () => {
+    // parseWfsFeatures keys a feature by code_insee, section and numero, normalised like this.
+    for (const [idu, props] of [
+      ["94080000AB0012", { code_insee: "94080", section: "AB", numero: "12" }],
+      ["94080000OA0007", { code_insee: "94080", section: "OA", numero: "7" }],
+      ["751120000C0450", { code_insee: "75112", section: "0C", numero: "450" }],
+    ] as const) {
+      const parsed = parseParcelIdentifier(idu)
+      expect(buildParcelKey(parsed.communeCode, parsed.section, parsed.number)).toBe(
+        buildParcelKey(
+          normalizeParcelPartToDigits(props.code_insee, 5)!,
+          normalizeParcelSection(props.section)!,
+          normalizeParcelPartToDigits(props.numero, 4)!,
+        ),
+      )
+    }
+  })
+
+  test("the short form and unknown ids keep their earlier result", () => {
+    expect(parseParcelIdentifier("75104ae3")).toEqual({
+      communeCode: "75104",
+      section: "AE",
+      number: "0003",
+    })
+    expect(parseParcelIdentifier("75104B12")).toEqual({
+      communeCode: "75104",
+      section: "BA",
+      number: "0012",
+    })
+    for (const unknown of ["bad", "", "94080000000012", "9408000AB0012"]) {
+      expect(parseParcelIdentifier(unknown)).toEqual({
+        communeCode: "00000",
+        section: "AA",
+        number: "0000",
+      })
+    }
   })
 })

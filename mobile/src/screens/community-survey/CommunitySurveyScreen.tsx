@@ -1,7 +1,6 @@
 import { useMemo } from "react"
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import { Image as ExpoImage } from "expo-image"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { brandTypography } from "../../app/brand-tokens"
 import { formatDay } from "../../app/formatters"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
@@ -10,10 +9,14 @@ import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
+import { useFrameInsetBehavior, useFrameLargeTitle } from "../../ui/frame-large-title"
 import { FactorsList } from "../survey-detail/FactorsList"
 import { ParcelMapCard } from "../survey-detail/ParcelMapCard"
+import { PhotoGallery } from "../survey-detail/PhotoGallery"
+import { createPhotoStyles } from "../survey-detail/photos.styles"
 import { ScoreBreakdown } from "../survey-detail/ScoreBreakdown"
 import { createSummaryScreenStyles } from "../survey-detail/summary-screen.styles"
+import { useSubPageContentStyle } from "../survey-detail/useSubPageContent"
 import { toContextRows, toDisplayedScores, toFactorEntries } from "./view-model"
 
 const t = fr.communitySurvey
@@ -38,10 +41,14 @@ export function CommunitySurveyScreen({
   onOpenSurvey,
 }: CommunitySurveyScreenProps) {
   const theme = useBrandTheme()
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const contentStyle = useSubPageContentStyle(styles.subContent)
+  const photoStyles = useMemo(() => createPhotoStyles(theme), [theme])
   const own = useMemo(() => createOwnStyles(theme), [theme])
   const { detail, photos, status, photosFailed } = state
+  // 12.2-17: under the native iOS large title the header names the survey and iOS insets the page.
+  const nativeTitle = useFrameLargeTitle()
+  const insetBehavior = useFrameInsetBehavior()
 
   const scores = useMemo(() => (detail ? toDisplayedScores(detail) : null), [detail])
   const factorEntries = useMemo(() => (detail ? toFactorEntries(detail) : []), [detail])
@@ -70,7 +77,8 @@ export function CommunitySurveyScreen({
     [detail],
   )
 
-  const scrollStyle = [styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]
+  // The header is transparent: the route's ScreenFrame starts the page below it (D-19).
+  const scrollStyle = styles.scroll
 
   if (status === "loading" || !detail) {
     return (
@@ -101,13 +109,19 @@ export function CommunitySurveyScreen({
   ].filter((chip): chip is string => chip !== null && chip !== "")
 
   return (
-    <ScrollView style={scrollStyle} contentContainerStyle={styles.subContent}>
+    <ScrollView
+      style={scrollStyle}
+      contentContainerStyle={contentStyle}
+      contentInsetAdjustmentBehavior={insetBehavior}
+    >
       {/* The same skeleton as one of my surveys (OA-115): title and status line, score, photos,
         map, then Contexte et parcelles, Score IBP and the parcel's history. */}
       <View style={own.titleBlock}>
-        <Text accessibilityRole="header" style={own.title}>
-          {detail.site_name.trim() || fr.common.untitledSurvey}
-        </Text>
+        {nativeTitle ? null : (
+          <Text accessibilityRole="header" style={own.title}>
+            {detail.site_name.trim() || fr.common.untitledSurvey}
+          </Text>
+        )}
         <Text style={own.meta}>
           {t.statusLine({ author, date: formatDay(detail.submitted_at) })}
         </Text>
@@ -135,27 +149,28 @@ export function CommunitySurveyScreen({
           </Text>
         </View>
         {photos.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.photoRow}>
-              {photos.map((photo, index) => (
+          <PhotoGallery
+            ids={photos.map((photo) => photo.id)}
+            renderPhoto={(id, index, size) => {
+              const photo = photos[index]
+              return (
                 <View
-                  key={photo.id}
-                  style={styles.photo}
+                  style={[photoStyles.photo, { width: size.width, height: size.height }]}
                   accessible
                   accessibilityRole="image"
                   accessibilityLabel={t.a11y.photo({ index: index + 1, total: photos.length })}
                 >
                   <ExpoImage
                     source={{ uri: photo.uri, headers: photo.headers }}
-                    style={styles.photoImage}
+                    style={photoStyles.photoImage}
                     contentFit="cover"
                     cachePolicy="memory"
-                    recyclingKey={photo.id}
+                    recyclingKey={id}
                   />
                 </View>
-              ))}
-            </View>
-          </ScrollView>
+              )
+            }}
+          />
         ) : (
           <Text style={styles.photoEmpty}>
             {photosFailed ? t.photosFailed : fr.surveyDetail.photos.emptyReadOnly}

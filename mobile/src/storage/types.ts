@@ -22,6 +22,17 @@ export type LocalSurvey = {
   created_at: string
   updated_at: string
   completion_rate: number
+  /**
+   * Factors filled in out of ten, by the app's single definition (`countFilledFactors`), stored at
+   * write time. The n/10 of Accueil's resume card and the genus sheet; `completion_rate` is a
+   * percentage of 14 slots and is not a factor count.
+   */
+  factors_filled: number
+  /**
+   * The IBP total (/50) the server last reported for a submitted survey, read from the local payload
+   * by `listLocalSurveys` (12.2-14). Null when there is none; absent on a survey returned by a write.
+   */
+  ibp_total?: number | null
 }
 
 export type QueueOpType =

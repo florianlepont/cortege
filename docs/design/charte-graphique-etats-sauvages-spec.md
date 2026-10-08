@@ -242,7 +242,8 @@ wrapping other RN primitives the same way.
 
 125 hard-coded hex/`rgba` literals outside `brand-tokens.ts` (measured at 119 on this branch, after
 Phase 3) are gone. An ESLint rule (`mobile/.eslintrc.json`, `no-restricted-syntax` on `#hex` and
-`rgba(`/`rgb(` literals) rejects a new one anywhere under `mobile/src` except the tokens file itself.
+`rgba(`/`rgb(` literals) rejects a new one anywhere under `mobile/src` except the token files. Since
+Phase 12.2 there are five of them; see section 13.1 for the list and the rule's exact scope.
 
 **Contrast fixes (DS-01/DS-02)** — white text directly on a saturated fill, and the raw
 ochre/terracotta hue directly on their own soft backgrounds, both measured below WCAG's 4.5:1:
@@ -337,3 +338,235 @@ placeholder boxes (LIST-08). The same "respects Reduce Motion, pauses in the bac
 was applied to the app's one other ambient decorative loop, the auth screen's background blobs
 (`auth-gate/HeroSection.tsx`) — left on the legacy `Animated` API since it already runs
 `useNativeDriver: true` and isn't one of DS-07's `useNativeDriver: false` cases.
+
+## 13) Visual Direction, variant I (Phase 12.2, 2026-10)
+
+Phase 12.2 ("Visual Modernisation") gave the app the look the owner chose from sketch 008, variant
+I: calm and modern like Linear, with luminous forest cards, glass and contour lines as the
+signature. This section records what shipped after four owner phone checks (2026-10-07 and
+2026-10-08), not the first plan. The French direction text, with the owner's corrections, is
+`docs/design/direction-visuelle-12-2.md`. Build record: `.planning/phases/23-visual-modernisation/`
+(`23-UI-SPEC.md`, decisions D-01 to D-30 in `23-CONTEXT.md`, and the `23-NN-FIXES.md` logs).
+
+### 13.1 Tokens
+
+- **Light or dark: the system decides.** `BrandThemeProvider` (`app/theme.ts`) builds the theme
+  from `useColorScheme()` and follows every system change live. There is no in-app theme setting
+  (owner decision, 2026-10-08: the Apparence choice of Paramètres was removed), so UIKit (tab bar,
+  Liquid Glass, alerts, keyboard) and the JS theme always agree. `app.json` keeps
+  `userInterfaceStyle: "automatic"`; a `theme_mode` row an older build left in `local_meta` is
+  ignored.
+- **Where colours live.** Hex and `rgb()`/`rgba()` literals are allowed in five token files only:
+  `app/brand-tokens.ts`, `app/theme.ts`, `app/visual-tokens.ts`, `app/theme-visual.ts` and
+  `app/forest-aurora-tokens.ts`. The ESLint rule (`mobile/.eslintrc.json`, `no-restricted-syntax`)
+  applies to every `.ts` and `.tsx` under `mobile/src` except those files, `src/i18n/**` and tests.
+- **`app/visual-tokens.ts`**: static stops and builders (`forestStops`, `buildLinearGradient`,
+  `buildRadialGradient`, `buildForestImage`, `buildForestHeroImage`, `buildInsetRing`,
+  `withAlpha`), the glass fills (`brandGlassFills`, `mapControlGlass`, `explorerSheetGlass`,
+  `glassCtaFills`), the download edge glow and chart geometry (`scoreRingGeometry`,
+  `factorBarGeometry`, `glowBarGeometry`, `numeralGeometry`).
+- **`app/theme-visual.ts`**: `makeVisualColors(scheme, colors)` resolves the stops per scheme into
+  `BrandVisual`, read by components as `useBrandTheme().visual` (`backdrop`, `forest`, `pill`,
+  `glass`, `mapControl`, `mapPanel`, `sheet`, `glassCta`, `tab`, `score`, `factorBar`, `chip`,
+  `pressWave`, `edgeGlow`, `downloadBar`).
+- **`app/forest-aurora-tokens.ts`** (colours) with `app/forest-aurora-shape.ts` (geometry and
+  timing) and `app/forest-motion.ts` (pure motion plans): the forest card backdrop (13.2).
+- **Brand dims** stay in `brand-tokens.ts`: radii (13.2), typography roles (13.3), `brandMotion`,
+  `button.minHeightPanel` 46 (the Explorer download button), map colours such as
+  `parcelUnscored` (warm grey `#8C847A`).
+- **Contrast tests.** `app/visual-tokens.test.ts` checks every text and graphic pair of the UI-SPEC
+  in both schemes, the dark distinctness of the 18 per-scheme tokens, and the map glass over
+  light and dark basemaps. `app/forest-aurora-tokens.test.ts` stacks every animated layer of the
+  forest card at its peak behind each block of text; its margins are thin (lowest 3.03:1 for a 3:1
+  graphic, 4.56:1 for text), so any retune of the mist or the shields must re-run it.
+
+### 13.2 Surfaces
+
+- **Cards: glass without blur** (D-12). `AppCard variant="glass"`: translucent fill, hairline,
+  1 pt inner top highlight, no `elevation`. Real blur (`GlassSurface`: `BlurView` before iOS 26,
+  `GlassView` Liquid Glass on iOS 26) stays on floating controls only: sheets, map buttons and
+  chips (D-04). The system blur behind a collapsed large title (13.8) is the header's own.
+- **Over a map, dense glass.** Basemaps stay light in dark mode (they do not follow the scheme),
+  so floating controls take `GlassSurface`'s `surface` prop: `theme.visual.mapControl.glass` with
+  its own ink for control-like overlays (`MapControls`, `MapTitlePill`, the Accueil map pills),
+  `theme.visual.mapPanel` (the Explorer sheet's dense fill) for cards and banners that keep the
+  theme's text (parcel picker card, offline banner).
+- **Explorer sheet: native glass in both schemes** (12.2-23). On iOS 26 the sheet is Liquid Glass
+  (`theme.visual.sheet.glass`): dark `darkGlassTint` (0.68 Graphite), light `lightGlassTint`
+  (0.68 warm paper). Its content takes the glass ink (`withGlassInk`: brighter inks in dark,
+  `glassInkLight` darker secondary, strong and danger inks in light), which keeps 4.5:1 over the
+  white plan, the satellite and black (`app/glass-density.test.ts`). Older iOS and Android keep the
+  blur with the 0.88 fill.
+- **Forest card** (`ui/ForestCard.tsx`, at most one per screen: Accueil resume card, Mes Relevés
+  summary card, survey detail score card). An unclipped shell carries the only coloured shadow; a
+  clipped inner view carries the gradient (`#1D3418` to `#334E2B` to `#0E2210`, halo top right,
+  dimmer in dark through one token, D-14), the solid fallback `#334E2B`, and its edge as an inset
+  ring. Over the gradient and under the content, `ui/ForestAurora.tsx` draws the backdrop the owner
+  tuned live in sketch 010 (`.planning/sketches/010-forest-card-motion/round4.html` for the values,
+  `round5.html` for the diagonal lines):
+  - three soft radial discs of mist (moss, teal, ochre) drifting on legs of 7 s, 9 s and 11.5 s;
+  - four diagonal S-curve contour lines over the whole card, with a short dash of light flowing
+    along each (passes of 7, 10, 13 and 10 s);
+  - an SVG mask fading the lines behind text (12% left) and a feathered radial shield behind each
+    measured block of text (`blocks`, `shield` props). No layer draws a flat zone or a hard edge.
+  The aurora replaced earlier tries (drifting contours, waves, ripples). `motion={false}` draws the
+  bare gradient.
+- **Layering rules** (12.2-17): no `borderWidth` on a view that carries
+  `experimental_backgroundImage` (RN tiles the gradient under the border; use `buildInsetRing`),
+  and no `borderCurve`: corners are circular everywhere, because shadows and clips are circular
+  (owner: the difference is invisible, D-29).
+- **Radii** (`brandRadius`): `card` 22, `forestCard` 26, `forestHero` 28, tile 16, icon tile 12,
+  field 18, pill 999, `bar` 6.
+- **Backdrop** (D-19): `ScreenBackdrop` draws a moss and sage halo (forest in dark) on every screen
+  through `ScreenFrame`, under a transparent header; content is inset below the header, never
+  under it.
+
+### 13.3 Typography
+
+Sora and Jost stay (D-06). One new embedded file, `Sora-Light.ttf` (PostScript name `Sora-Light`).
+New `brandTypography` roles:
+
+| Role | Font, size / line height |
+|------|--------------------------|
+| `numeral` | `Sora-Light` 68 / 72, tracking -3.4 (Score page) |
+| `numeralCard` | `Sora-Light` 56 / 60, tracking -2.8 (survey summary card, D-24) |
+| `numeralUnit` | `Jost-Regular` 20 / 24 ("/50") |
+| `screenTitle` | `Sora-SemiBold` 24 / 28, tracking -0.6 |
+| `sectionHeader` | `Sora-SemiBold` 13 / 18 |
+| `ringValue` | `Sora-SemiBold` 12 / 16 |
+| `navLargeTitle`, `navTitle` | `Sora-SemiBold` 28 and 17 (native iOS large and collapsed titles, D-30) |
+
+Weight 300 is used by the score numeral only. The factor input chrome, auth and onboarding keep
+their legacy roles (`heroTitle`, `sectionTitle`, `label`, `input`, `button`).
+
+### 13.4 Colour rules
+
+- **Accent is reserved**: the active tab tint and the JS tab dot, the moss glow pill on the
+  Accueil resume card, section header trailing actions, the high band of rings and bars, the glow
+  bar, text links and the icon tiles of Compte and Paramètres. Not accent: chips, segments,
+  chevrons, field borders.
+- **Big calls to action are forest**, not moss: the native glass button (13.5) is tinted with the
+  charter forest `#334E2B` and a white label (owner choice D-28).
+- **Light mode high tone `#728A2D`** (3.6:1 on the light surface) for rings and bars; brand moss
+  `#89A33A` is never text and never a ring or bar on a light surface (D-16).
+- **Three sketch colours are forbidden** because they fail AA: the sketch's `text3` (`#8A9482`,
+  and `#62666D` in dark) as text, moss as text or graphic on light surfaces, and the `--ok`
+  `#4C7A2A` chip text. Light text never sits under the forest halo core.
+- **Factor tones are a display convention**, not an IBP rule (D-15): 0 to 2 terracotta, 3 ochre,
+  4 to 5 the high tone, in `app/ibp-display.ts`. Totals take `bandTone(totalBand(n))` from
+  `@cortege/ibp-domain`; never a split copied from the sketch.
+- **Explorer parcels**: a parcel without a score is warm grey (`parcelUnscored`); green means a
+  high score only. A scored survey keeps its marker at parcel zoom until a scored parcel shows it
+  (`markerItemsAtParcelZoom`), and a tap on a marker opens the survey directly (no intermediate
+  card). The parcel picker keeps its sage and moss.
+- **Terracotta** is for alerts, destructive actions and the low band only, never a CTA.
+
+### 13.5 Primitives (`mobile/src/ui/`)
+
+| Primitive | Role |
+|-----------|------|
+| `ForestCard`, `ForestAurora` | forest card and its animated backdrop (13.2) |
+| `ContourLines` | static contour rings (`app/contour-paths.ts`): survey map card placeholder, behind the Accueil "Nouveau relevé" card; its drift exists but every use is still (`animated={false}`) |
+| `GradientNumeral` | SVG score numeral, white to `#C8DDA0`; `NUMERAL_RENDER_MODE` stays `"gradient"` (kept at the batch 2 check), `"solid"` is the one-line fallback |
+| `GlowBar`, `ScoreRing`, `FactorBarsChart` | glowing /50 gauge; 38 pt list ring on the trailing side of rows (D-27a), dashed when there is no score; ten non-interactive factor bars, on the Score page only (D-24) |
+| `AnimatedNumber`, `HaloPulse` | count-up for tile values; one-shot halo on submit and sync success |
+| `useFocusEntrance` / `EntranceView`, `useListEntrance` / `ListEntranceRow` | section slide-up on each focus (360 ms, 20 pt); list row entrance, rows 0 to 7, first mount |
+| `RipplePressable` | green wave from the touch point on list rows (D-21), a highlight under Reduce Motion |
+| `ScreenFrame`, `ScreenBackdrop` | canvas, halo and header inset; `largeTitle` for native collapsing titles |
+| `AppCard` `variant="glass"`, `GlassSurface` `surface` | card glass without blur; floating glass with a dense fill over maps |
+| `AppButton` `variant="glow"` | moss gradient pill, on the Accueil resume card only; the resume card only resumes (or starts a survey when there is no draft), and beside a draft "Nouveau relevé" is its own glass card below it (`home/NewSurveyCard.tsx`) |
+| `GlassButton` | the big CTA: native SwiftUI `glassProminent` button on iOS 26 (`NativeGlassButton.ios.tsx`, `@expo/ui`), flat translucent forest fallback elsewhere; transparent floating action bar (D-27c, D-28) |
+| `useScreenVisible` | focused and not under an app overlay: every loop and focus entrance waits for it |
+
+Navigation-level: `DownloadEdgeGlowHost` (`navigation/download-edge-glow.tsx`) draws `EdgePulse`, a
+full-screen pulsing green edge glow over the panel and the tab bar while the Explorer download panel
+is open; `DownloadStatusView` shows the progress bar and its done and failed states.
+
+### 13.6 Motion
+
+Everything goes through `brandMotion` with `ReduceMotion.System`; haptics only through
+`ui/feedback.ts`; no `LayoutAnimation`, no `useNativeDriver: false`; only transform, opacity and
+SVG props animate.
+
+| Area | Element | As shipped |
+|------|---------|------------|
+| Score | glow bar | 0 to value, 500 ms decelerate, 120 ms delay |
+| | numeral | fade and 8 pt rise, `springs.snappy` |
+| | list rings | 360 ms, 40 ms stagger, rows 0 to 7, once per survey and score |
+| | factor bars | `scaleY` from the bottom, `springs.gentle`, 40 ms stagger |
+| Entrances | Accueil sections and others | 360 ms slide-up of 20 pt, replayed on each focus, 40 ms stagger |
+| | list rows | rows 0 to 7, first mount only |
+| Feedback | press | `AppPressable` spring 0.97; list rows the 420 ms green wave |
+| | finish and sync | `HaloPulse` 500 ms with `notify.success()`; the pager's "Terminer le relevé" finishes the survey (D-25, D-26) |
+| Ambient | forest card mist and flowing light | endless, linear, per-mount jitter; fades in over 700 ms |
+| | download edge glow | 750 ms half beats; full and still under Reduce Motion |
+| | skeleton | 900 ms pulse |
+| Transitions | stacks, sheets | native; JS tabs `fade` (`none` under Reduce Motion) |
+
+Reduce Motion: values start at their final state, entrances jump to the end, loops stay still.
+Every endless loop (`withRepeat`, `Animated.loop`) runs only while `useScreenVisible()` is true. A
+screen shows at most two animated hero layers (forest aurora or drifting contours); today each
+route has at most one. React Native `Animated` is allowed only in six listed files (sign-in,
+welcome and splash screens, the confetti, the Explorer sheet), each with its own reduced-motion
+guard; the confetti is only rendered when motion is allowed.
+
+### 13.7 Gates
+
+| Gate | File |
+|------|------|
+| Colour literals only in the five token files | `mobile/.eslintrc.json` |
+| Contrast, both schemes; forest card worst case | `app/visual-tokens.test.ts`, `app/forest-aurora-tokens.test.ts` |
+| Motion: guarded timings per call, legacy `Animated` allowlist, loops gated by `useScreenVisible`, hero budget of two, haptics only in `feedback.ts` | `src/__checks__/motion.test.ts` |
+| Icons: every Ionicons glyph ends in `-outline` (D-07) | `src/__checks__/icons.test.ts` |
+| No em dash in any string, template or JSX text (`survey-export.ts` excepted) | `src/__checks__/catalogue-dash.test.ts` |
+| No border on a gradient view, no `borderCurve` | `src/__checks__/layers.test.ts` |
+| Font file name equals PostScript name | `src/__checks__/fonts.test.ts` |
+| 400-line cap on `src/screens` and `src/navigation`, unused style keys, user-facing literals | `src/__checks__/structure.test.ts` |
+
+### 13.8 Tab bars and headers
+
+- **Native iOS bar** (Release): the system Liquid Glass bar is kept; only the active tint
+  (`visual.tab.activeTint`) and the label font are set. No dot, no custom shape.
+- **JS bar** (Android, Expo Go): translucent glass fill without blur, top hairline, active label in
+  SemiBold, 4 pt moss dot under the active icon, `fade` between tabs.
+- **Headers** (iOS): transparent over the halo (D-19); native collapsing large titles with a
+  `systemMaterial` blur behind the collapsed bar on Mes Relevés, Compte, Paramètres, Cartes hors
+  ligne, the survey summary and its three sub-pages and the community survey page (D-30); the
+  survey wizard uses the native header and back button (D-29). Accueil keeps its greeting in the
+  bar.
+
+### 13.9 Platform fallbacks
+
+- **Android**: flat translucent fill on cards and floating controls (no blur), the JS tab bar, in-page
+  titles and the wizard's own top bar, the flat forest button instead of the native glass button.
+  `@expo/ui` is iOS only: only `*.ios.tsx` files import it, and `mobile/package.json` excludes it
+  from Android autolinking (`expo.autolinking.android.exclude`).
+- **Gradients and shadows**: a solid `backgroundColor` is always set; below API 28 there is no
+  outset shadow, so the forest card loses its glow (accepted).
+- **Before iOS 26**: `BlurView` instead of Liquid Glass, flat button fallback.
+- **Android device pass: Phase 28** (Field Validation, numbered 13 before the flat renumbering; D-17). To check there: the inset glow at the navigation layer,
+  the forest card SVG mask, the flat map control and sheet fills, the smoothness of the three mist
+  discs and the flowing lines on an older phone (turn `ForestCard`'s `motion` off on Android if
+  frames drop), and the Android header tint, which does not follow the scheme yet.
+
+### 13.10 Status and open items
+
+Status: approved by the owner on 2026-10-08, after the phone confirmation of build 39b4f005
+(plan 12.2-23). The French direction text carries the same date.
+
+Still open after the approval:
+- Parcel colour by score on the owner's survey: needs the server fix for IGN parcel ids (migration
+  `020_parcel_idu_fields.sql`), which reaches production only once merged to `main` and deployed.
+  Corsican parcel ids (`2A`, `2B`) stay unmatched.
+- The basemap does not follow dark mode (MapLibre styles stay light). The owner chose not to record a seed for it (2026-10-08); the
+  colourised base map added the same day as Phase 23 criterion 4 (light and dark) now covers it.
+- The iOS 26 tab bar glass and the search button are drawn by the system: their density cannot be
+  changed without replacing the system bar, which D-08 rules out (13.8).
+- Asked during the phase, not answered, carried to Phase 26 (the UX/UI audit, old 12.3) or later: the fixed form pager title
+  (no native collapse); the sketch 009 elements (glowing pill on the wizard's next button and the
+  counters' plus, completion ring in the header); the `GenusTargetSheet` native glass button and
+  the `CasPicker` glass treatment; the wizard edge swipe on a device; the hard clip line under
+  transparent headers on scroll.
+- Explorer sheet drag runs on the JS thread (`PanResponder`): candidate for Phase 26. The Compte
+  loading spinner is low contrast in dark: Phase 26.
+- Android pass: Phase 28 (13.9).

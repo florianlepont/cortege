@@ -1,5 +1,6 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 
 const originalConsoleError = console.error
@@ -68,9 +69,22 @@ jest.mock("expo-image-picker", () => ({
 }))
 
 import { Linking } from "react-native"
+import { permissionIconColors } from "./permission-icons"
 import { PermissionsPrimingScreen } from "./PermissionsPrimingScreen"
 
 const t = fr.onboarding.permissions
+
+function hasGlassFill(node: renderer.ReactTestInstance): boolean {
+  const fill = defaultTheme.visual.glassCta.flat
+  return (
+    node.findAll((n) => {
+      const style = ([] as unknown[]).concat(n.props.style ?? []).flat(Infinity)
+      return style.some(
+        (entry) => (entry as { backgroundColor?: string } | null)?.backgroundColor === fill,
+      )
+    }).length > 0
+  )
+}
 
 function render(props: Partial<React.ComponentProps<typeof PermissionsPrimingScreen>> = {}) {
   let tree: renderer.ReactTestRenderer | undefined
@@ -129,6 +143,36 @@ describe("PermissionsPrimingScreen (ONB-01: location + camera priming)", () => {
       await action.props.onPress()
     })
     expect(tree.root.findByProps({ children: t.camera.denied })).toBeTruthy()
+  })
+
+  test("the location and camera icons use the readable tokens, not the brand forest", () => {
+    const tree = render()
+    const colors = permissionIconColors(defaultTheme)
+    for (const name of ["location-outline", "camera-outline"]) {
+      expect(tree.root.findByProps({ name }).props.color).toBe(colors.icon)
+    }
+  })
+
+  test("the granted check and the denied cross use the readable tokens", async () => {
+    mockRequestForegroundPermissionsAsync.mockResolvedValue({ granted: true })
+    mockRequestCameraPermissionsAsync.mockResolvedValue({ granted: false })
+    const tree = render()
+    await act(async () => {
+      await tree.root.findByProps({ accessibilityLabel: t.location.action }).props.onPress()
+      await tree.root.findByProps({ accessibilityLabel: t.camera.action }).props.onPress()
+    })
+    const colors = permissionIconColors(defaultTheme)
+    expect(tree.root.findByProps({ name: "checkmark-circle-outline" }).props.color).toBe(
+      colors.grantedIcon,
+    )
+    expect(tree.root.findByProps({ name: "close-circle-outline" }).props.color).toBe(
+      colors.deniedIcon,
+    )
+  })
+
+  test("Continuer is the green glass button (D-27c)", () => {
+    const tree = render()
+    expect(hasGlassFill(tree.root.findByProps({ accessibilityLabel: t.continue }))).toBe(true)
   })
 
   test("Continuer calls onDone regardless of permission outcome", () => {

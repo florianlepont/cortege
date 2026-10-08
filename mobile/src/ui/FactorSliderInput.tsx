@@ -85,7 +85,7 @@ export function FactorSliderInput({
           style={styles.stepButton}
           testID={testID ? `${testID}-decrease` : undefined}
         >
-          <Ionicons name="remove" size={18} color={theme.colors.forest} />
+          <Ionicons name="remove-outline" size={18} color={theme.colors.forest} />
         </Pressable>
 
         <View
@@ -125,7 +125,7 @@ export function FactorSliderInput({
           style={styles.stepButton}
           testID={testID ? `${testID}-increase` : undefined}
         >
-          <Ionicons name="add" size={18} color={theme.colors.forest} />
+          <Ionicons name="add-outline" size={18} color={theme.colors.forest} />
         </Pressable>
       </View>
     </FactorInputShell>
@@ -145,7 +145,9 @@ function createStyles(theme: BrandTheme) {
       borderRadius: brandRadius.field,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.colors.panelMuted,
+      backgroundColor: theme.visual.chip.fill,
+      borderWidth: 1,
+      borderColor: theme.visual.chip.border,
     },
     track: {
       flex: 1,
@@ -155,12 +157,14 @@ function createStyles(theme: BrandTheme) {
     trackFill: {
       height: TRACK_HEIGHT,
       borderRadius: TRACK_HEIGHT / 2,
-      backgroundColor: theme.componentColors.choiceChip.background,
+      backgroundColor: theme.visual.score.track,
       overflow: "hidden",
     },
     fill: {
       height: TRACK_HEIGHT,
-      backgroundColor: theme.colors.moss,
+      // D-16: the brand moss fails the 3:1 graphic contrast on light surfaces, the score green
+      // (#728A2D in light) holds it.
+      backgroundColor: theme.visual.score.high,
     },
     thumb: {
       position: "absolute",

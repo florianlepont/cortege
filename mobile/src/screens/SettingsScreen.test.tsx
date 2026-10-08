@@ -1,16 +1,16 @@
 /**
- * Tests for SettingsScreen (Phase 2 / BUG-05, then OA-74/78/79): one grouped list (appearance, offline
- * maps, about, account deletion), no sync tools, and the delete button confirms once, through
- * onDeleteAccount, without an extra local Alert.
+ * Tests for SettingsScreen (Phase 2 / BUG-05, then OA-74/78/79): one grouped list (offline maps,
+ * about, account deletion), no sync tools, no theme choice, and the delete button confirms once,
+ * through onDeleteAccount, without an extra local Alert.
  */
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
 import { fr } from "../i18n"
 import { SettingsScreen } from "./SettingsScreen"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 
 const mockAlert = jest.fn()
 const mockShouldShowDevTools = jest.fn(() => false)
-const mockSetMode = jest.fn()
 const mockOfflineEnabled = jest.fn(() => true)
 
 const originalConsoleError = console.error
@@ -54,17 +54,6 @@ jest.mock("expo-constants", () => ({
 jest.mock("../app/useAppBottomTabBarHeight", () => ({ useAppBottomTabBarHeight: () => 50 }))
 jest.mock("../app/dev-tools", () => ({ shouldShowDevTools: () => mockShouldShowDevTools() }))
 jest.mock("../app/feature-flags", () => ({ isOfflineMapsEnabled: () => mockOfflineEnabled() }))
-jest.mock("../app/theme", () => {
-  const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
-  return {
-    ...actual,
-    useBrandTheme: () => ({
-      ...actual.useBrandTheme(),
-      mode: "dark",
-      setMode: (mode: string) => mockSetMode(mode),
-    }),
-  }
-})
 jest.mock("../ui/AppCollapsibleSection", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -81,20 +70,6 @@ jest.mock("../ui/AppButton", () => {
   return {
     AppButton: ({ label, onPress }: { label: string; onPress: () => void }) =>
       ReactRef.createElement("AppButton", { label, onPress }),
-  }
-})
-jest.mock("../ui/AppChoiceChip", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    AppChoiceChip: ({
-      label,
-      active,
-      onPress,
-    }: {
-      label: string
-      active?: boolean
-      onPress?: () => void
-    }) => ReactRef.createElement("AppChoiceChip", { label, active, onPress }),
   }
 })
 jest.mock("../ui/AppGroupedList", () => {
@@ -125,6 +100,7 @@ type Row = {
   key: string
   kind?: string
   label?: string
+  icon?: string
   value?: string
   destructive?: boolean
   loading?: boolean
@@ -163,7 +139,6 @@ const row = (sectionKey: string, rowKey: string): Row =>
 
 beforeEach(() => {
   mockAlert.mockClear()
-  mockSetMode.mockClear()
   mockShouldShowDevTools.mockReturnValue(false)
   mockOfflineEnabled.mockReturnValue(true)
 })
@@ -173,14 +148,16 @@ afterEach(() => {
 })
 
 describe("SettingsScreen", () => {
-  test("the sections are appearance, maps, about, then the account deletion last (OA-79)", () => {
+  test("the sections are maps, about, then the account deletion last (OA-79)", () => {
     mount(makeProps())
-    expect(sections().map((section) => section.key)).toEqual([
-      "appearance",
-      "maps",
-      "about",
-      "delete",
-    ])
+    expect(sections().map((section) => section.key)).toEqual(["maps", "about", "delete"])
+  })
+
+  test("without offline maps the first section is about, never an empty one", () => {
+    mockOfflineEnabled.mockReturnValue(false)
+    mount(makeProps())
+    expect(sections().map((section) => section.key)).toEqual(["about", "delete"])
+    sections().forEach((section) => expect(section.rows.length).toBeGreaterThan(0))
   })
 
   test("there is no sync tool and no status line any more (OA-77, OA-78)", () => {
@@ -190,17 +167,23 @@ describe("SettingsScreen", () => {
     expect(tree.root.findAllByType("AppNotice" as never)).toHaveLength(0)
   })
 
-  test("the appearance row offers the three themes and switches to the chosen one", () => {
+  test("there is no theme choice: the app follows the system appearance (2026-10-08)", () => {
     mount(makeProps())
-    const chips = tree.root.findAllByType("AppChoiceChip" as never)
-    expect(chips.map((chip) => chip.props.label)).toEqual([
-      fr.settings.appearance.automatic,
-      fr.settings.appearance.light,
-      fr.settings.appearance.dark,
-    ])
-    expect(chips.find((chip) => chip.props.active)?.props.label).toBe(fr.settings.appearance.dark)
-    act(() => chips[1].props.onPress())
-    expect(mockSetMode).toHaveBeenCalledWith("light")
+    expect(sections().some((section) => section.key === "appearance")).toBe(false)
+    expect(tree.root.findAllByType("AppChoiceChip" as never)).toHaveLength(0)
+    expect("appearance" in fr.settings).toBe(false)
+  })
+
+  test("the rows carry outline icons", () => {
+    mount(makeProps())
+    expect(row("maps", "offline-areas").icon).toBe("cloud-download-outline")
+    expect(row("about", "version").icon).toBe("information-circle-outline")
+    expect(row("about", "credits").icon).toBe("leaf-outline")
+    expect(row("delete", "delete-account").icon).toBe("trash-outline")
+  })
+
+  test("an unknown version reads 'Non renseigné', never an em dash", () => {
+    expect(fr.settings.about.versionUnknown).toBe("Non renseigné")
   })
 
   describe("Cartes hors ligne row", () => {
@@ -292,5 +275,46 @@ describe("SettingsScreen", () => {
       act(() => userButtons.find((button) => button.text === fr.settings.alerts.empty)!.onPress?.())
       expect(props.onDebugResetUserData).toHaveBeenCalledTimes(1)
     })
+  })
+})
+
+type LargeStyle = Record<string, unknown>
+function flattenLarge(style: unknown): LargeStyle {
+  if (Array.isArray(style))
+    return style.reduce<LargeStyle>((acc, s) => ({ ...acc, ...flattenLarge(s) }), {})
+  return (style as LargeStyle | null | undefined) ?? {}
+}
+
+describe("SettingsScreen under the native large title (12.2-17)", () => {
+  function mountLarge(props: React.ComponentProps<typeof SettingsScreen>) {
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <SettingsScreen {...props} />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+  }
+  const pageTitles = () =>
+    tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.children === fr.settings.title,
+    )
+
+  test("no in-page title and the insets left to iOS", () => {
+    mountLarge(makeProps())
+    expect(pageTitles()).toHaveLength(0)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    expect(scroll.props.scrollIndicatorInsets).toBeUndefined()
+    expect(flattenLarge(scroll.props.contentContainerStyle).paddingBottom).toBe(16)
+  })
+
+  test("outside it the page keeps its title and its own tab bar clearance", () => {
+    mount(makeProps())
+    expect(pageTitles()).toHaveLength(1)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
+    expect(scroll.props.scrollIndicatorInsets).toEqual({ bottom: 50 })
+    expect(flattenLarge(scroll.props.contentContainerStyle).paddingBottom).toBe(50 + 16)
   })
 })

@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useHeaderHeight } from "@react-navigation/elements"
-import { Alert, Platform, StyleSheet, View } from "react-native"
+import { Platform, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import {
-  brandColors,
   brandMapTokens,
   brandMediaBackdrop,
   brandShadow,
@@ -27,20 +26,22 @@ import { useOfflineMapPrompt } from "../hooks/useOfflineMapPrompt"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
 import type { BasemapKey } from "../map/basemaps"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
+import { MapTitlePill } from "./public-map/MapChips"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
+import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
 import { MapLegend, type MapLegendRow } from "./public-map/ScoreLegend"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
-import { GlassSurface } from "../ui/GlassSurface"
 import { AppNotice } from "../ui/AppNotice"
 import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
 
 const t = fr.parcelSelection
-const offlineT = fr.offlineMap.areas
 const headers = fr.navigation.headers
+const NEXT_ICON = "arrow-forward-outline"
+const DONE_ICON = "checkmark-outline"
 
 // The colours of the parcel layer (ParcelPolygonsLayer), for the legend the Explorer's look gets.
 const PARCEL_LEGEND_ROWS: MapLegendRow[] = [
@@ -193,16 +194,19 @@ export function SurveyParcelSelectionScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const { startDownload } = offlineAreas
-  const handleDownloadArea = useCallback(
-    (name: string) => {
-      void startDownload(mapRegion, name).then((outcome) => {
-        if (!outcome.ok) {
-          Alert.alert(outcome.reason === "too_large" ? offlineT.tooLarge : offlineT.downloadFailed)
-        }
-      })
+  const { startDownload, clearDownloadStatus } = offlineAreas
+  const handleDownloadArea = useAreaDownloadAction({
+    startDownload,
+    region: mapRegion,
+    panelOpen: showOfflineAreas,
+  })
+  // A finished download's outcome is not shown again; a running one keeps its bar.
+  const toggleOfflineAreas = useCallback(
+    (open: boolean) => {
+      clearDownloadStatus()
+      setShowOfflineAreas(open)
     },
-    [startDownload, mapRegion],
+    [clearDownloadStatus],
   )
 
   return (
@@ -221,18 +225,14 @@ export function SurveyParcelSelectionScreen({
       />
 
       {Platform.OS === "ios" ? (
-        <GlassSurface pointerEvents="none" style={[screenStyles.titlePill, { top: controlsTop }]}>
-          <Text style={screenStyles.titlePillText}>
-            {wizard ? headers.parcelsWizard : headers.parcels}
-          </Text>
-        </GlassSurface>
+        <MapTitlePill label={wizard ? headers.parcelsWizard : headers.parcels} top={controlsTop} />
       ) : null}
 
       <MapTopControls
         // While the offline proposal (or its progress) is on screen, the capsule's own download
         // button would say the same thing twice: it comes back once the proposal is closed.
         onOpenOfflineAreas={
-          offlineEnabled && !offlineBannerVisible ? () => setShowOfflineAreas(true) : undefined
+          offlineEnabled && !offlineBannerVisible ? () => toggleOfflineAreas(true) : undefined
         }
         top={capsuleTop}
         basemap={basemap}
@@ -282,7 +282,7 @@ export function SurveyParcelSelectionScreen({
           style={screenStyles.bottomArea}
           onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
         >
-          <AppCard glass style={screenStyles.bottomSheet}>
+          <AppCard glass surface={theme.visual.mapPanel} style={screenStyles.bottomSheet}>
             <Text style={screenStyles.bottomTitle}>
               {hasParcelSelection ? parcelSelectionLabel : t.noSelection}
             </Text>
@@ -293,7 +293,7 @@ export function SurveyParcelSelectionScreen({
             <Text style={screenStyles.bottomHint}>{t.tapHint}</Text>
             <AppButton
               label={saving ? t.saving : wizard ? t.continue : t.done}
-              leadingIcon={saving ? "hourglass-outline" : wizard ? "arrow-forward" : "checkmark"}
+              leadingIcon={saving ? "hourglass-outline" : wizard ? NEXT_ICON : DONE_ICON}
               size="lg"
               style={screenStyles.doneButton}
               onPress={() => {
@@ -311,14 +311,17 @@ export function SurveyParcelSelectionScreen({
 
       <ExplorerSheet
         visible={showOfflineAreas}
-        onDismiss={() => setShowOfflineAreas(false)}
+        onDismiss={() => toggleOfflineAreas(false)}
         bottomInset={Math.max(tabBarHeight, insets.bottom)}
       >
         <OfflineAreasSheet
           downloadingAreaId={offlineAreas.downloadingAreaId}
+          downloadStatus={offlineAreas.downloadStatus}
           estimate={offlineAreas.estimateForRegion(mapRegion)}
           onDownload={handleDownloadArea}
-          onClose={() => setShowOfflineAreas(false)}
+          onDone={() => toggleOfflineAreas(false)}
+          onRetry={handleDownloadArea}
+          onClose={() => toggleOfflineAreas(false)}
         />
       </ExplorerSheet>
     </View>
@@ -348,18 +351,6 @@ function createScreenStyles(theme: BrandTheme) {
     },
     bottomArea: {
       gap: 12,
-    },
-    titlePill: {
-      position: "absolute",
-      alignSelf: "center",
-      height: 44,
-      paddingHorizontal: 18,
-      borderRadius: 22,
-      justifyContent: "center",
-    },
-    titlePillText: {
-      ...brandTypography.button,
-      color: brandColors.forest,
     },
     // DS-15 (Phase 12): a real blurred glass panel (`AppCard glass`) instead of a flat
     // `brandTranslucentPanel` fill.

@@ -36,7 +36,7 @@ export function FactorHelpSheet({ visible, onClose, help, hints }: FactorHelpShe
               accessibilityRole="button"
               accessibilityLabel={t.helpClose}
             >
-              <Ionicons name="close" size={20} color={theme.semanticColors.textStrong} />
+              <Ionicons name="close-outline" size={20} color={theme.semanticColors.textStrong} />
             </Pressable>
           </View>
           <ScrollView>

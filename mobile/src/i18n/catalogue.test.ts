@@ -36,6 +36,14 @@ const sampleArgument: unknown = new Proxy(
   },
 )
 
+// Entries that take a list instead of a parameter object get a real list.
+const LIST_ARGUMENTS: Record<string, unknown> = {
+  "components.factorBars.label": [
+    { letter: "A", points: 3 },
+    { letter: "B", points: null },
+  ],
+}
+
 type Leaf = { path: string; value: unknown }
 
 const collectLeaves = (node: unknown, path: string, into: Leaf[]): Leaf[] => {
@@ -123,7 +131,7 @@ describe("French catalogue", () => {
     const functions = leaves.filter((leaf) => typeof leaf.value === "function")
     for (const leaf of functions) {
       const render = leaf.value as (argument: unknown) => unknown
-      expectUserFacing(leaf.path, render(sampleArgument))
+      expectUserFacing(leaf.path, render(LIST_ARGUMENTS[leaf.path] ?? sampleArgument))
     }
   })
 
@@ -136,6 +144,14 @@ describe("French catalogue", () => {
 
   test("common holds the untitled survey label", () => {
     expect(fr.common.untitledSurvey).toBe("Relevé sans titre")
+  })
+
+  test("Accueil's new survey action has its own group, out of the resume card (12.2-19)", () => {
+    expect(fr.home.newSurvey.label).toBe("Nouveau relevé")
+    // The wizard asks the site's name first, then the method, then the parcels.
+    expect(fr.home.newSurvey.helper).toBe("Nom du site, méthode et parcelles.")
+    expect(Object.keys(fr.home.hero)).not.toContain("newSurveyButton")
+    for (const text of Object.values(fr.home.newSurvey)) expect(text).not.toMatch(/[–—]/)
   })
 
   test("the French catalogue satisfies the widened Catalog type", () => {

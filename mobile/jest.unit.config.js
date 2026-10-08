@@ -27,6 +27,9 @@ module.exports = {
     "^expo-image$": "<rootDir>/test/expo-image.mock.ts",
     "^expo-blur$": "<rootDir>/test/expo-blur.mock.ts",
     "^expo-glass-effect$": "<rootDir>/test/expo-glass-effect.mock.ts",
+    // The native iOS glass button (D-28): SwiftUI views and their modifiers as plain records.
+    "^@expo/ui/swift-ui$": "<rootDir>/test/expo-ui-swift-ui.mock.ts",
+    "^@expo/ui/swift-ui/modifiers$": "<rootDir>/test/expo-ui-swift-ui-modifiers.mock.ts",
     "^react-native-svg$": "<rootDir>/test/react-native-svg.mock.ts",
     "^react-native-reanimated$": "<rootDir>/test/react-native-reanimated.mock.ts",
     "^@maplibre/maplibre-react-native$": "<rootDir>/test/maplibre.mock.ts",

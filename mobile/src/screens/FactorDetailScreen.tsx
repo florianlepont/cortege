@@ -77,7 +77,7 @@ export function FactorDetailScreen({
 
   return (
     <View style={detailStyles.screen}>
-      <AppCard variant="panelElevated" padding={16} style={detailStyles.panel}>
+      <AppCard variant="glass" padding={16} style={detailStyles.panel}>
         {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
         <View style={detailStyles.fieldsList}>
           {fields.map((field, index) => renderFactorField(factor, field, index, detailStyles))}
@@ -85,6 +85,7 @@ export function FactorDetailScreen({
       </AppCard>
 
       <View
+        testID="factor-score-line"
         style={[
           detailStyles.scoreLine,
           retainedScore ? detailStyles.scoreLineFilled : detailStyles.scoreLinePending,

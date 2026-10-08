@@ -1,5 +1,6 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { defaultTheme } from "../app/theme"
 import { FactorSliderInput } from "./FactorSliderInput"
 
 const originalConsoleError = console.error
@@ -114,5 +115,45 @@ describe("FactorSliderInput (FLOW-01 slider variant, 5% steps)", () => {
       (n) => (n.type as unknown) === "Text" && String(n.props.children) === "Champ obligatoire",
     )
     expect(errorTexts).toHaveLength(0)
+  })
+
+  describe("score tokens, sizes unchanged (D-05, D-16)", () => {
+    type Style = Record<string, unknown>
+    const flatten = (style: unknown): Style =>
+      Array.isArray(style)
+        ? style.reduce<Style>((acc, item) => ({ ...acc, ...flatten(item) }), {})
+        : ((style as Style | null | undefined) ?? {})
+
+    test("the fill is the score green and the track the score track", () => {
+      const { tree } = render("40")
+      const track = findTrack(tree)
+      const views = track.findAll((n) => (n.type as unknown) === "View")
+      const trackFill = flatten(views.find((v) => v.props.pointerEvents === "none")?.props.style)
+      const fill = flatten(views.find((v) => flatten(v.props.style).width === "40%")?.props.style)
+      expect(trackFill.backgroundColor).toBe(defaultTheme.visual.score.track)
+      expect(fill.backgroundColor).toBe(defaultTheme.visual.score.high)
+      expect(fill.backgroundColor).not.toBe(defaultTheme.colors.moss)
+    })
+
+    test("the track is 8 pt, the thumb 28 pt and the touch row 44 pt", () => {
+      const { tree } = render("40")
+      const track = findTrack(tree)
+      const views = track.findAll((n) => (n.type as unknown) === "View")
+      const trackFill = flatten(views.find((v) => v.props.pointerEvents === "none")?.props.style)
+      expect(trackFill.height).toBe(8)
+      const thumb = views
+        .map((v) => flatten(v.props.style))
+        .find((style) => style.position === "absolute")
+      expect(thumb?.width).toBe(28)
+      expect(thumb?.height).toBe(28)
+      expect(flatten(track.props.style).height).toBe(44)
+      for (const id of ["g-increase", "g-decrease"]) {
+        const button = flatten(tree.root.findAll((n) => n.props.testID === id)[0].props.style)
+        expect(button.width).toBe(44)
+        expect(button.height).toBe(44)
+        expect(button.backgroundColor).toBe(defaultTheme.visual.chip.fill)
+        expect(button.borderColor).toBe(defaultTheme.visual.chip.border)
+      }
+    })
   })
 })

@@ -339,3 +339,122 @@ describe("useEditingDraft autosaveStatus (FLOW-07)", () => {
     expect(result.current.autosaveStatus).toEqual({ state: "idle", savedAt: null })
   })
 })
+
+// D-26 (12.2-15): the factor pager's "Terminer le relevé" writes the pending edits first, so the
+// finish reads the draft the surveyor sees, not the one of 900 ms ago.
+describe("useEditingDraft handleFlushDraft (D-26)", () => {
+  beforeEach(() => {
+    jest.useFakeTimers()
+    mockCreateLocalDraft.mockReset()
+    mockGetLocalSurveyDraft.mockReset()
+    mockUpdateLocalDraft.mockReset()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  const renderEditing = (props: Parameters<typeof useEditingDraft>[0]) =>
+    renderHook((current: Parameters<typeof useEditingDraft>[0]) => useEditingDraft(current), {
+      initialProps: props,
+    })
+
+  test("writes the waiting edit at once, keeps editing, and the timer does not write it again", async () => {
+    mockUpdateLocalDraft.mockResolvedValue({})
+    const props = buildProps("A")
+    const { result } = await renderEditing(props)
+
+    let flushed: boolean | undefined
+    await act(async () => {
+      flushed = await result.current.handleFlushDraft()
+    })
+    expect(flushed).toBe(true)
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
+    expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ survey_id: TEST_SURVEY_ID, site_name: "A", visibility: "private" }),
+    )
+    expect(result.current.autosaveStatus.state).toBe("saved")
+    // Unlike handleSaveSurveyEdits, the edit mode stays.
+    expect(props.setEditingSurveyId).not.toHaveBeenCalled()
+    expect(props.setFormMode).not.toHaveBeenCalled()
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(2000)
+    })
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
+  })
+
+  test("nothing to write when the stored draft already matches the form", async () => {
+    mockUpdateLocalDraft.mockResolvedValue({})
+    const { result } = await renderEditing(buildProps("A"))
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(900)
+    })
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
+
+    let flushed: boolean | undefined
+    await act(async () => {
+      flushed = await result.current.handleFlushDraft()
+    })
+    expect(flushed).toBe(true)
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
+  })
+
+  test("waits for a save already writing, then writes the latest edit", async () => {
+    const deferredA = createDeferred<Record<string, unknown>>()
+    mockUpdateLocalDraft.mockReturnValueOnce(deferredA.promise)
+    const { result, rerender } = await renderEditing(buildProps("A"))
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(900)
+    })
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
+    await rerender(buildProps("B"))
+
+    mockUpdateLocalDraft.mockResolvedValueOnce({})
+    let flushed: boolean | undefined
+    let flush: Promise<boolean> | undefined
+    await act(async () => {
+      flush = result.current.handleFlushDraft()
+      await Promise.resolve()
+    })
+    // A is still writing: B waits for it.
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
+    await act(async () => {
+      deferredA.resolve({})
+      flushed = await flush
+    })
+    expect(flushed).toBe(true)
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(2)
+    expect(mockUpdateLocalDraft).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ site_name: "B" }),
+    )
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(2000)
+    })
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(2)
+  })
+
+  test("a failed write answers false with the autosave failure message", async () => {
+    mockUpdateLocalDraft.mockRejectedValueOnce(new Error("disk full"))
+    const props = buildProps("A")
+    const { result } = await renderEditing(props)
+    let flushed: boolean | undefined
+    await act(async () => {
+      flushed = await result.current.handleFlushDraft()
+    })
+    expect(flushed).toBe(false)
+    expect(props.onStatusChange).toHaveBeenCalledWith(fr.status.editing.autosaveFailed())
+    expect(result.current.autosaveStatus.state).toBe("error")
+  })
+
+  test("no survey being edited: nothing to write", async () => {
+    const { result } = await renderEditing(buildProps("A", null))
+    let flushed: boolean | undefined
+    await act(async () => {
+      flushed = await result.current.handleFlushDraft()
+    })
+    expect(flushed).toBe(true)
+    expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+  })
+})

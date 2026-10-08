@@ -1,10 +1,10 @@
 import { memo, useMemo } from "react"
 import { ActivityIndicator, Pressable, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import type { BasemapKey } from "../../map/basemaps"
 import { fr } from "../../i18n"
+import { mapControlIconSize } from "../../app/visual-tokens"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { createControlStyles } from "./styles"
 
@@ -22,7 +22,9 @@ export type MapTopControlsProps = {
 
 /**
  * The top-right capsule (Liquid Glass on iOS 26): basemap switch and, when wired, the offline
- * areas. The icon shows the basemap a tap leads to.
+ * areas. The icon shows the basemap a tap leads to. Its glass is the map control glass
+ * (`theme.visual.mapControl`): the map stays light in dark mode, so the control is a near opaque
+ * forest graphite there with light moss glyphs (12.2-19 fix round).
  */
 export const MapTopControls = memo(function MapTopControls({
   top,
@@ -34,7 +36,12 @@ export const MapTopControls = memo(function MapTopControls({
   const styles = useMemo(() => createControlStyles(theme), [theme])
   const target = basemap === "map" ? "satellite" : "map"
   return (
-    <GlassSurface tone="auto" interactive style={[styles.capsule, { top }]}>
+    <GlassSurface
+      tone="auto"
+      interactive
+      surface={theme.visual.mapControl.glass}
+      style={[styles.capsule, { top }]}
+    >
       <Pressable
         style={styles.capsuleButton}
         onPress={onToggleBasemap}
@@ -43,8 +50,8 @@ export const MapTopControls = memo(function MapTopControls({
       >
         <Ionicons
           name={target === "satellite" ? "earth-outline" : "map-outline"}
-          size={22}
-          color={brandColors.forest}
+          size={mapControlIconSize}
+          color={theme.visual.mapControl.icon}
         />
       </Pressable>
       {onOpenOfflineAreas ? (
@@ -56,7 +63,11 @@ export const MapTopControls = memo(function MapTopControls({
             accessibilityRole="button"
             accessibilityLabel={offlineT.areas.openSheet}
           >
-            <Ionicons name="download-outline" size={22} color={brandColors.forest} />
+            <Ionicons
+              name="download-outline"
+              size={mapControlIconSize}
+              color={theme.visual.mapControl.icon}
+            />
           </Pressable>
         </>
       ) : null}
@@ -85,6 +96,7 @@ export const MapBottomDock = memo(function MapBottomDock({
     <GlassSurface
       tone="auto"
       interactive
+      surface={theme.visual.mapControl.glass}
       style={[styles.locateGlass, top !== undefined ? { top } : { bottom }]}
     >
       <Pressable
@@ -96,9 +108,13 @@ export const MapBottomDock = memo(function MapBottomDock({
         accessibilityState={{ disabled: locating, busy: locating }}
       >
         {locating ? (
-          <ActivityIndicator size="small" color={brandColors.forest} />
+          <ActivityIndicator size="small" color={theme.visual.mapControl.icon} />
         ) : (
-          <Ionicons name="navigate" size={22} color={brandColors.forest} />
+          <Ionicons
+            name="navigate-outline"
+            size={mapControlIconSize}
+            color={theme.visual.mapControl.icon}
+          />
         )}
       </Pressable>
     </GlassSurface>

@@ -118,8 +118,8 @@ export function IdentityCard({
     }
   }
 
-  // OA-70: a centred avatar with a glass camera badge, the name and the email under it (no card,
-  // no role chip: OA-71).
+  // OA-70, D-05: a compact glass card, the avatar with its glass camera badge on the left, the
+  // name and the email on the right (no role chip: OA-71).
   return (
     <View style={styles.identity}>
       {/* ACC-11 : Avatar avec badge caméra */}
@@ -149,15 +149,17 @@ export function IdentityCard({
           </View>
         )}
         <GlassSurface style={styles.avatarEditBadge} pointerEvents="none">
-          <Ionicons name="camera-outline" size={18} color={theme.semanticColors.textStrong} />
+          <Ionicons name="camera-outline" size={14} color={theme.semanticColors.textStrong} />
         </GlassSurface>
       </Pressable>
-      <Text style={styles.identityName} numberOfLines={1}>
-        {heroName}
-      </Text>
-      <Text style={styles.identityMeta} numberOfLines={1}>
-        {heroSubtitle}
-      </Text>
+      <View style={styles.identityTexts}>
+        <Text style={styles.identityName} numberOfLines={1}>
+          {heroName}
+        </Text>
+        <Text style={styles.identityMeta} numberOfLines={1}>
+          {heroSubtitle}
+        </Text>
+      </View>
     </View>
   )
 }

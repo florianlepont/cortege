@@ -7,6 +7,8 @@ import type { CommunitySurveyDetail } from "@cortege/ibp-domain"
 import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
+import { PAGE_END_MARGIN } from "../survey-detail/useSubPageContent"
+import { FrameLargeTitleContext } from "../../ui/frame-large-title"
 import { CommunitySurveyScreen } from "./CommunitySurveyScreen"
 
 const t = fr.communitySurvey
@@ -39,10 +41,12 @@ jest.mock("react-native", () => {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Platform: { OS: "ios" },
+    useWindowDimensions: () => ({ width: 390, height: 844 }),
     StyleSheet: { create: <T,>(styles: T) => styles },
   }
 })
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
+jest.mock("../../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("expo-image", () => {
   const ReactRef = require("react") as typeof import("react")
   return { Image: (props: object) => ReactRef.createElement("ExpoImage", props) }
@@ -219,6 +223,33 @@ describe("CommunitySurveyScreen", () => {
     ])
   })
 
+  it("draws one photo full width at 16:10 and several as a 4:3 strip of 78 percent tiles", () => {
+    const one = render(state({ photos: [{ id: "a-1", uri: "https://files.example/a-1" }] }))
+    const [single] = byType(one.tree, "ExpoImage")
+    expect(single).toBeDefined()
+    const imageBoxes = (tree: renderer.ReactTestRenderer) =>
+      byType(tree, "View").filter((node) => node.props.accessibilityRole === "image")
+    const singleBox = imageBoxes(one.tree)[0].props.style
+    const box = (style: unknown) =>
+      Object.assign({}, ...(style as object[])) as Record<string, number>
+    expect(box(singleBox).width).toBe(390 - 32)
+    expect(box(singleBox).width / box(singleBox).height).toBeCloseTo(1.6)
+
+    const many = render(
+      state({
+        photos: [
+          { id: "a-1", uri: "https://files.example/a-1" },
+          { id: "a-2", uri: "https://files.example/a-2" },
+        ],
+      }),
+    )
+    const boxes = imageBoxes(many.tree)
+    expect(boxes).toHaveLength(2)
+    const tile = box(boxes[0].props.style)
+    expect(tile.width).toBeCloseTo((390 - 32) * 0.78)
+    expect(tile.width / tile.height).toBeCloseTo(4 / 3)
+  })
+
   it("says when there is no photo, or when the photos failed to load", () => {
     expect(texts(render(state()).tree)).toContain(fr.surveyDetail.photos.emptyReadOnly)
     expect(texts(render(state({ photosFailed: true })).tree)).toContain(t.photosFailed)
@@ -273,5 +304,63 @@ describe("CommunitySurveyScreen", () => {
     }
     const { tree } = render(state({ detail: detail({ history: [only] }) }))
     expect(texts(tree)).not.toContain(t.history.title)
+  })
+})
+
+type Style = Record<string, unknown>
+function flattenStyle(style: unknown): Style {
+  if (Array.isArray(style))
+    return style.reduce<Style>((acc, s) => ({ ...acc, ...flattenStyle(s) }), {})
+  return (style as Style | undefined | null) ?? {}
+}
+
+describe("bottom clearance above the tab bar", () => {
+  it("the scroll content ends above the floating tab bar, with a margin", () => {
+    const { tree } = render(state())
+    const scroll = byType(tree, "ScrollView")[0]
+    const padding = flattenStyle(scroll.props.contentContainerStyle).paddingBottom as number
+    expect(padding).toBe(90 + PAGE_END_MARGIN)
+    expect(padding).toBeGreaterThanOrEqual(90)
+  })
+})
+
+describe("under the native large title (12.2-17)", () => {
+  function renderLarge(current: CommunitySurveyState) {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <CommunitySurveyScreen
+            apiUrl="http://api.test/v1"
+            accessToken="token"
+            state={current}
+            onOpenSurvey={jest.fn()}
+          />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+    return tree
+  }
+
+  it("the header names the survey: no in-page title, the author line and chips stay", () => {
+    const tree = renderLarge(state())
+    const headers = byType(tree, "Text").filter((node) => node.props.accessibilityRole === "header")
+    expect(headers).toHaveLength(0)
+    const all = texts(tree).join(" | ")
+    expect(all).toContain("Terminé · Camille")
+    expect(all).toContain(t.versionChip(2))
+  })
+
+  it("iOS insets the page: automatic insets, only the margin under the last item", () => {
+    const scroll = byType(renderLarge(state()), "ScrollView")[0]
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    expect(flattenStyle(scroll.props.contentContainerStyle).paddingBottom).toBe(PAGE_END_MARGIN)
+  })
+
+  it("elsewhere the page draws its own title", () => {
+    const { tree } = render(state())
+    const headers = byType(tree, "Text").filter((node) => node.props.accessibilityRole === "header")
+    expect(headers).toHaveLength(1)
+    expect(byType(tree, "ScrollView")[0].props.contentInsetAdjustmentBehavior).toBe("never")
   })
 })

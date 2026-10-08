@@ -108,6 +108,55 @@ export const brandTypography = {
     lineHeight: 16,
     fontFamily: "Jost-SemiBold",
   },
+  // Phase 12.2: weight 300 (Sora-Light) is used by the score numeral only (UI-SPEC Typography).
+  numeral: {
+    fontSize: 68,
+    lineHeight: 72,
+    fontFamily: "Sora-Light",
+    letterSpacing: -3.4,
+  },
+  // The numeral of the survey summary's forest card, one notch under `numeral` (D-24: a card about
+  // 18 percent shorter). The Score page keeps the 68 pt `numeral`.
+  numeralCard: {
+    fontSize: 56,
+    lineHeight: 60,
+    fontFamily: "Sora-Light",
+    letterSpacing: -2.8,
+  },
+  numeralUnit: {
+    fontSize: 20,
+    lineHeight: 24,
+    fontFamily: "Jost-Regular",
+  },
+  screenTitle: {
+    fontSize: 24,
+    lineHeight: 28,
+    fontFamily: "Sora-SemiBold",
+    letterSpacing: -0.6,
+  },
+  sectionHeader: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Sora-SemiBold",
+  },
+  // 12.2-17 (collapsing titles): the native iOS header titles. The large title sits under the bar
+  // and shrinks into the small centred `navTitle` on scroll. 28 pt (`brandTypeScale.title1`) like
+  // the header title of Accueil, between the 24 pt in-page title and the 34 pt iOS default, so a
+  // survey name still fits a 375 pt phone. Only family and size reach the native bar (no line
+  // height, no tracking); the weight is given beside them in `stack-options.ts`.
+  navLargeTitle: {
+    fontSize: 28,
+    fontFamily: "Sora-SemiBold",
+  },
+  navTitle: {
+    fontSize: 17,
+    fontFamily: "Sora-SemiBold",
+  },
+  ringValue: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Sora-SemiBold",
+  },
 } as const
 
 // The default `<Text>` face for anything that does not spread a `brandTypography` role above —
@@ -153,7 +202,11 @@ export const brandFontScaleCaps = {
 export const brandRadius = {
   hero: 34,
   panel: 30,
-  card: 24,
+  // Phase 12.2: 24 -> 22; forestCard, forestHero and bar are new (UI-SPEC Visual Contract).
+  card: 22,
+  forestCard: 26,
+  forestHero: 28,
+  bar: 6,
   field: 18,
   avatar: 20,
   pill: 999,
@@ -300,11 +353,6 @@ export const brandOverlayTokens = {
   factorStripBackground: "rgba(14, 34, 16, 0.92)",
   /** Dimmed backdrop behind an action sheet. */
   actionSheetScrim: "rgba(15, 22, 12, 0.4)",
-  /** Glass fill over a dark and over a light surface. */
-  glassFillDark: "rgba(8, 13, 19, 0.38)",
-  glassFillLight: "rgba(247, 246, 240, 0.38)",
-  /** Close icon on the parcel history card. */
-  closeIcon: "#40654f",
 } as const
 
 /** The live camera screen (genus recognition): controls and hints drawn over the preview. */
@@ -326,6 +374,7 @@ export const brandComponentTokens = {
     minHeight: 44,
     minHeightSmall: 36,
     minHeightLarge: 50,
+    minHeightPanel: 46, // 12.2-19: the offline panel's download, between md (too thin) and lg (too big)
     horizontalPaddingSmall: 10,
     horizontalPadding: 16,
     horizontalPaddingLarge: 14,
@@ -386,6 +435,12 @@ export const brandMapTokens = {
     mid: "rgba(204, 112, 31, 0.55)",
     high: "rgba(137, 163, 58, 0.55)",
   },
+  // 12.2-19: an Explorer parcel without a score (never studied, or studied without a usable total)
+  // is a warm grey, so green on that map only ever means a high score. The basemaps are not
+  // scheme aware (plan or orthophoto, same in light and dark), so one pair reads on both: the
+  // outline keeps 3:1 against the light plan and the dark orthophoto alike.
+  parcelUnscored: "#8C847A",
+  parcelUnscoredFill: "rgba(140, 132, 122, 0.22)",
 } as const
 
 // Phase 4 (DS-06..DS-09, audit §4): the motion system. Kept as plain data (durations in ms, easing
@@ -416,4 +471,11 @@ export const brandMotion = {
   // noticeably longer to finish animating in than a short one.
   staggerMs: 40,
   staggerMax: 8,
+  // Screen sections that slide up each time their screen becomes visible (Accueil, 12.2-10): the
+  // distance in points. The owner did not notice the 240 ms fade of the first version.
+  sectionEntranceTravel: 20,
+  // Green wave on a pressed list row (D-21): it grows from the touch point over `durationMs` with the
+  // decelerate easing while it fades out; `startRadius` is its size at the first frame. Reduce Motion
+  // draws no wave, only the `reducedFadeMs` highlight fade.
+  pressWave: { durationMs: 420, startRadius: 12, reducedFadeMs: 240 },
 } as const

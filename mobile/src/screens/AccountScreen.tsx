@@ -1,19 +1,18 @@
 import { useEffect, useMemo, useState } from "react"
 import { ActivityIndicator, Platform, ScrollView, View } from "react-native"
 import { PageTitle } from "../ui/PageTitle"
-import { useHeaderHeight } from "@react-navigation/elements"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
-import { useBrandTheme } from "../app/theme"
 import { AuthUser } from "../app/types"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
+import { useFrameLargeTitle } from "../ui/frame-large-title"
 import type { AppGroupedListSection } from "../ui/AppGroupedList"
 import { useAccountConnectionRows, useLogoutRow } from "./account/AccountSettingsRows"
 import { IdentityCard } from "./account/IdentityCard"
 import { ProfileSaveBar, useProfileRows } from "./account/ProfileRows"
-import { createAccountStyles } from "./account/styles"
+import { accountStyles as styles } from "./account/styles"
 
 type UpdateProfileInput = {
   first_name: string
@@ -53,11 +52,9 @@ export function AccountScreen({
   onRemoveProfilePicture,
   onLogout,
 }: AccountScreenProps) {
-  const theme = useBrandTheme()
-  const styles = useMemo(() => createAccountStyles(theme), [theme])
-  const headerHeight = useHeaderHeight()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
+  const largeTitle = useFrameLargeTitle()
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [displayName, setDisplayName] = useState("")
@@ -104,9 +101,13 @@ export function AccountScreen({
     setDisplayName(currentUser?.display_name ?? "")
   }
 
-  // Keep header/tab bar clearance inside the scroll content so it scrolls away naturally.
-  const topContentPadding = Platform.OS === "ios" ? headerHeight + brandSpacing.md : brandSpacing.md
-  const bottomContentPadding = Math.max(tabBarHeight, insets.bottom) + brandSpacing.md
+  // D-19: the route's ScreenFrame starts the page below the transparent header and clips the
+  // scroll there, so only a small top margin is left here; the tab bar clearance stays inside the
+  // scroll content so it scrolls away naturally. 12.2-17: under the native large title iOS insets
+  // the scroll view itself (header above, tab bar below), so only the margins are left.
+  const topContentPadding = brandSpacing.md
+  const bottomContentPadding =
+    (largeTitle ? 0 : Math.max(tabBarHeight, insets.bottom)) + brandSpacing.md
 
   // ACC-C02 : état de chargement quand currentUser n'est pas encore disponible
   if (currentUser === null) {
@@ -146,13 +147,11 @@ export function AccountScreen({
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="never"
+        contentInsetAdjustmentBehavior={largeTitle ? "automatic" : "never"}
         automaticallyAdjustContentInsets={false}
-        scrollIndicatorInsets={{
-          top: Platform.OS === "ios" ? headerHeight : 0,
-          bottom: tabBarHeight,
-        }}
+        scrollIndicatorInsets={largeTitle ? undefined : { bottom: tabBarHeight }}
       >
+        {/* Nothing under the native large title: the header names the page (12.2-17). */}
         <PageTitle>{fr.account.title}</PageTitle>
 
         <IdentityCard

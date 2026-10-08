@@ -180,6 +180,9 @@ export const filterAndSortSurveys = (
   return sorted
 }
 
+// D-25 (12.2-14): a draft not synced yet is no longer refused here. The finish sends the survey's
+// pending changes itself before the submit call. An unnamed draft is refused instead: it never
+// leaves the phone (OA-18), so its pending changes could not be sent.
 export const getSubmitBlockReason = (
   surveyId: string,
   surveys: LocalSurvey[],
@@ -188,8 +191,8 @@ export const getSubmitBlockReason = (
   if (!target) return "not_found"
 
   if (target.status === "submitted") return "already_submitted"
-  if (target.sync_state !== "synced") return "not_synced"
   if (target.sync_blocked === 1) return "survey_blocked"
+  if (!target.site_name?.trim()) return "name_required"
 
   return null
 }

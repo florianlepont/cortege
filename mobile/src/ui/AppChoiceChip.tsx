@@ -3,6 +3,7 @@ import { Pressable, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-na
 import { AppText as Text } from "./AppText"
 import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
+import { feedback } from "./feedback"
 
 export type AppChoiceChipTone = "neutral" | "success" | "warning" | "danger"
 
@@ -28,6 +29,13 @@ export function AppChoiceChip({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const isInteractive = typeof onPress === "function"
+  // Principle 7: a selection tick on every interactive press, then the caller's handler.
+  const handlePress = onPress
+    ? () => {
+        feedback.selection()
+        onPress()
+      }
+    : undefined
 
   return (
     <Pressable
@@ -35,10 +43,10 @@ export function AppChoiceChip({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !isInteractive, selected: active }}
       disabled={!isInteractive}
-      onPress={onPress}
+      onPress={handlePress}
       style={[
         styles.base,
-        isInteractive ? styles.interactive : styles.static,
+        isInteractive ? null : styles.static,
         styles[tone],
         active ? styles.active : null,
         style,
@@ -64,21 +72,12 @@ function createStyles(theme: BrandTheme) {
       minHeight: brandComponentTokens.choiceChip.minHeight,
       borderRadius: brandRadius.pill,
       borderWidth: 1,
-      borderColor: theme.componentColors.choiceChip.border,
-      backgroundColor: theme.componentColors.choiceChip.background,
+      borderColor: theme.visual.chip.border,
+      backgroundColor: theme.visual.chip.fill,
       paddingHorizontal: 10,
       paddingVertical: 7,
       alignItems: "center",
       justifyContent: "center",
-    },
-    interactive: {
-      borderColor: theme.componentColors.choiceChip.interactiveBorder,
-      backgroundColor: theme.componentColors.choiceChip.interactiveBackground,
-      shadowColor: theme.colors.black,
-      shadowOpacity: 0.04,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 1,
     },
     neutral: {},
     success: {
@@ -91,21 +90,21 @@ function createStyles(theme: BrandTheme) {
       backgroundColor: theme.componentColors.choiceChip.dangerBackground,
     },
     active: {
-      borderColor: theme.componentColors.choiceChip.activeBorder,
-      backgroundColor: theme.componentColors.choiceChip.activeBackground,
+      borderColor: theme.visual.chip.activeBg,
+      backgroundColor: theme.visual.chip.activeBg,
     },
     static: {
       opacity: 0.76,
     },
     label: {
       ...brandTypography.meta,
-      color: theme.componentColors.choiceChip.text,
+      color: theme.visual.chip.text,
     },
     labelStatic: {
       color: theme.componentColors.choiceChip.staticText,
     },
     labelActive: {
-      color: theme.componentColors.choiceChip.activeText,
+      color: theme.visual.chip.activeText,
     },
   })
 }

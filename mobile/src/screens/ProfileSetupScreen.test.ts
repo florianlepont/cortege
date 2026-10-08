@@ -72,6 +72,7 @@ jest.mock("react-native-safe-area-context", () => ({
 }))
 
 import { fr } from "../i18n"
+import { GlassButton } from "../ui/GlassButton"
 import { ProfileSetupScreen } from "./ProfileSetupScreen"
 
 describe("ProfileSetupScreen", () => {
@@ -128,5 +129,27 @@ describe("ProfileSetupScreen", () => {
     })
 
     expect(onSkip).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses the glass buttons: forest Commencer, neutral Passer, disabled until a first name", async () => {
+    let component: renderer.ReactTestRenderer
+    await act(async () => {
+      component = renderer.create(
+        React.createElement(ProfileSetupScreen, {
+          saving: false,
+          onSave: jest.fn(async () => undefined),
+          onSkip: jest.fn(),
+        }),
+      )
+    })
+    const buttons = component!.root.findAllByType(GlassButton)
+    expect(buttons.map((button) => button.props.label)).toEqual([
+      fr.profileSetup.start,
+      fr.profileSetup.skip,
+    ])
+    expect(buttons[0].props.variant).toBeUndefined()
+    expect(buttons[0].props.disabled).toBe(true)
+    expect(buttons[1].props.variant).toBe("secondary")
+    expect(buttons.every((button) => button.props.size === "lg")).toBe(true)
   })
 })

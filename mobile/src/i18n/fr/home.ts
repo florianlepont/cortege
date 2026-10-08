@@ -22,18 +22,28 @@ export const homeFr = {
     actionRetry: "Réessayer",
   },
   hero: {
-    eyebrow: "COMMENCER",
     title: "Nouveau relevé IBP",
     body: "Localisez une parcelle et démarrez l'inventaire.",
     button: "Démarrer un relevé",
     // HOME-02: the hero becomes a resume action when a draft was touched in the last 48h.
-    resumeEyebrow: "REPRENDRE",
-    // OA-84: the eyebrow and the button already say "Reprendre"; the title is the survey.
+    // OA-84: the button already says "Reprendre"; the title is the survey. No tag pill (12.2-10).
     resumeTitle: ({ name }: { name: string }) => name,
     resumeTitleUnnamed: "Votre relevé en cours",
     resumeBody: ({ completed }: { completed: number }) => `${completed}/10 facteurs remplis.`,
     resumeButton: "Reprendre",
-    newSurveyButton: "Nouveau relevé",
+  },
+  // 12.2-19 fix round (owner): "Nouveau relevé" left the resume card for a glass card of its own
+  // under it, shown only beside a draft. The helper says what the wizard asks first: the site's
+  // name, then the method, then the parcels on the map.
+  newSurvey: {
+    label: "Nouveau relevé",
+    helper: "Nom du site, méthode et parcelles.",
+  },
+  // D-20c: the last three surveys, under the resume card. Rows read like the ones of Mes Relevés.
+  recent: {
+    title: "Mes relevés récents",
+    seeAll: "Tout voir",
+    seeAllLabel: "Voir tous mes relevés",
   },
   // OA-107: the tools that help fill in the factors. Identifying a tree by photo is the first.
   tools: {

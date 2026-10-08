@@ -1,0 +1,115 @@
+---
+phase: 23-visual-modernisation
+plan: 06
+subsystem: mobile-ui-dataviz-motion
+tags: [score-ring, factor-bars, reanimated, reduce-motion, entrance, count-up, i18n]
+requires: ["12.2-02", "12.2-03"]
+provides:
+  - "ScoreRing: 38 pt list ring coloured by bandTone(totalBand(score)), dashed track without score, neutral completion arc for drafts"
+  - "shouldAnimateRing / resetAnimatedRingKeys: once-per-survey-and-score entrance for rows 0 to 7"
+  - "FactorBarsChart and factorPointsFromEntries: ten non-interactive bars A to J, one accessibility label"
+  - "useEntrance: first-mount FadeInDown builder (240 ms, 40 ms stagger, rows 0 to 7)"
+  - "AnimatedNumber: UI-thread count-up text (500 ms)"
+  - "SyncStatusLine status dot spring on sync completion"
+  - "fr.components.scoreRing and fr.components.factorBars catalogue entries"
+affects: [12.2 batches 1, 2 and 4 screens that show rings, bars, counted numbers and staggered lists]
+tech-stack:
+  added: []
+  patterns:
+    - "Module-level Set keyed by survey and score to play a list entrance once (RESEARCH Pitfall 6)"
+    - "Transform-only animation (scaleY, scaleX), never height or boxShadow"
+    - "Count-up through a read-only Animated TextInput and animatedProps text"
+key-files:
+  created:
+    - mobile/src/ui/ScoreRing.tsx
+    - mobile/src/ui/ScoreRing.test.tsx
+    - mobile/src/ui/FactorBarsChart.tsx
+    - mobile/src/ui/FactorBarsChart.test.tsx
+    - mobile/src/ui/useEntrance.ts
+    - mobile/src/ui/useEntrance.test.tsx
+    - mobile/src/ui/AnimatedNumber.tsx
+    - mobile/src/ui/AnimatedNumber.test.tsx
+  modified:
+    - mobile/src/i18n/fr/components.ts
+    - mobile/src/i18n/catalogue.test.ts
+    - mobile/src/ui/SyncStatusLine.tsx
+    - mobile/src/ui/SyncStatusLine.test.tsx
+key-decisions:
+  - "A factor scored 0 is a filled factor: it draws the 4 pt stub in the low tone with its glow, so it reads differently from a null (not filled) factor, which is the track colour with no shadow"
+  - "Draft ring label counts factors as round(completion * 10); a completion of 0 still draws a (zero length) neutral arc and reads '0 facteurs sur 10 remplis', only a missing completion gives the dashed 'Pas de score' ring"
+  - "The ring and the bars take the band and tone only through totalTone and factorTone; no 25/35 split exists in these files (D-15)"
+metrics:
+  tasks: 3
+  files: 12
+  completed: 2026-10-07
+status: complete
+---
+
+# Phase 12.2 Plan 06: Score ring, factor bars and motion helpers Summary
+
+Variant I data visualisation and motion helpers: a 38 pt band-coloured list score ring, ten non-interactive factor bars, a first-mount entrance hook, a UI-thread count-up number and a spring on the sync status dot, all honouring Reduce Motion, with their French catalogue texts.
+
+## Tasks
+
+| Task | Name | Commit |
+|------|------|--------|
+| 1 | Catalogue entries and ScoreRing | a1bcd60 |
+| 2 | FactorBarsChart | 7931e96 |
+| 3 | useEntrance, AnimatedNumber and the SyncStatusLine status spring | b97f52c |
+
+## What was built
+
+- **ScoreRing** (`ScoreRing.tsx`): `ringGeometry`, `shouldAnimateRing`, `resetAnimatedRingKeys`, `ScoreRing`. Arc tone from `theme.visual.score[totalTone(score)]`; track in `visual.score.track`; no score and no completion gives one dashed (`"3 4"`) neutral track, no arc and no number; a draft gets a neutral completion arc. The arc animates through `useAnimatedProps` on `strokeDashoffset` (360 ms decelerate, 40 ms per row) only when `shouldAnimateRing` answers true at mount (rows 0 to 7, once per key, never under Reduce Motion). Root `View` is one accessible `image` with the catalogue label; the `Svg` is hidden; no press handler.
+- **FactorBarsChart** (`FactorBarsChart.tsx`): ten bars from `FACTOR_KEYS`, height `max(4, points / 5 * 64)`, tone by `factorTone` (gradient image, base fallback and shadow from `visual.factorBar`), empty factor in the track colour. Animation is `scaleY` from `transformOrigin: "bottom"` with a gentle spring and a 40 ms stagger. One label for the chart; columns hidden individually; no `onPress` anywhere (about 22 pt wide, below 44 pt, so factor navigation stays on the Score page rows). `factorPointsFromEntries` drops unknown keys.
+- **useEntrance**: returns `(index) => EntranceBuilder | undefined`; a `FadeInDown` builder with `.reduceMotion(ReduceMotion.System)` only on the first mount, for index below 8, and nothing under Reduce Motion.
+- **AnimatedNumber**: read-only Animated `TextInput` driven by `animatedProps.text`, 500 ms decelerate, hidden from accessibility, starts at the final value under Reduce Motion.
+- **SyncStatusLine**: the status dot is an `Animated.View`; on syncing to upToDate the haptic still fires once and, unless Reduce Motion, `withSequence(withTiming(0.6, 0), withSpring(1, springs.snappy))` runs.
+- **Catalogue** (`components.ts`): `scoreRing.label/none/draft` and `factorBars.label`, no em dash. The old `ibpScoreBadge.noScore` and `ibpFactorBars.notFilled` placeholders are untouched, as planned (plan 12.2-21 removes them).
+
+## Verification
+
+- `npm run lint`, `npm run typecheck` exit 0.
+- Mobile suite with coverage (`npm run test:coverage:mobile`): 189 suites, 2055 tests pass, no coverage threshold error (the `./src/ui/` and `./src/i18n/` floors hold).
+- Motion gate test (`src/__checks__/motion.test.ts`) passes with the new files.
+- ibp-domain suite: 230 pass. `npm run format:check` flags only `.claude/settings.local.json` (local file, ignored per instructions).
+- Not re-run: the API unit suite (known unrelated local failure in `check-env-parity.spec.ts`, macOS bash 3.2).
+
+## Deviations from Plan
+
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] Catalogue sample test could not call a list-argument entry**
+- **Found during:** Task 1
+- **Issue:** `src/i18n/catalogue.test.ts` calls every function entry with a Proxy parameter object; `factorBars.label` takes an array (as the plan specifies), so `entries.map` was a string and the generic test threw.
+- **Fix:** added a `LIST_ARGUMENTS` map in the catalogue test giving `components.factorBars.label` a real two-entry list; every other entry is unchanged.
+- **Files modified:** mobile/src/i18n/catalogue.test.ts
+- **Commit:** a1bcd60
+
+**2. [Rule 1 - Bug] `StyleSheet.absoluteFillObject` does not exist in the RN 0.86 types**
+- **Found during:** Task 1
+- **Issue:** the compile failed on `absoluteFillObject`.
+- **Fix:** use `StyleSheet.absoluteFill` for the number overlay.
+- **Files modified:** mobile/src/ui/ScoreRing.tsx
+- **Commit:** a1bcd60
+
+## Test-environment notes
+
+- The Reanimated Jest mock returns a fresh object from every `useSharedValue` call, so a test cannot observe a value after the effect writes it. The AnimatedNumber test therefore asserts the first-frame value ("0"), the timing target and config, and the Reduce Motion initial value rather than a resolved final text.
+- `useEntrance` tests read the builders while the probe renders, because the first-mount flag flips in an effect right after the first commit.
+
+## Deferred Issues
+
+- `npm run format:check` flags `.claude/settings.local.json`, a local harness file (unrelated).
+- `npm run test:unit` at the root fails locally in the API suite `check-env-parity.spec.ts` (macOS bash 3.2), unrelated.
+
+## Known Stubs
+
+None. The new components are not yet used by any screen; the later 12.2 batches wire them in (that is their purpose in the plan).
+
+## Threat Flags
+
+None. T-12.2-09 (band colours): ring tone goes through `totalTone`, tested per band (15, 25, 35), no split re-implemented. T-12.2-10 (accessibility tree): one catalogue label per ring and chart, SVG and bars hidden (tests). T-12.2-11 (motion): every builder and timing carries `ReduceMotion.System`; Reduce Motion tests for ring, bars, entrance, count-up and dot; the motion gate test passes.
+
+## Self-Check: PASSED
+
+Files exist: ScoreRing.tsx and test, FactorBarsChart.tsx and test, useEntrance.ts and test, AnimatedNumber.tsx and test. Commits a1bcd60, 7931e96, b97f52c are on the branch.

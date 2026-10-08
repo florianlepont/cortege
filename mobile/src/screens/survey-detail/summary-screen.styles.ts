@@ -1,17 +1,23 @@
 import { StyleSheet } from "react-native"
-import { brandRadius, brandSpacing, brandTypography } from "../../app/brand-tokens"
+import {
+  brandRadius,
+  brandSpacing,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+import { FINISH_BAR } from "./finish-bar-layout"
 
-const PHOTO_SIZE = 104
 const HIT_TARGET = 44
 
 /** Styles of the survey summary screen (OA-46): title block, score card, photos, map, rows, CTA. */
 export function createSummaryScreenStyles(theme: BrandTheme) {
   const hairline = theme.componentColors.card.panelBorder
   return StyleSheet.create({
+    // D-19: no background, the route's ScreenFrame is the page (canvas and halo).
     scroll: {
       flex: 1,
-      backgroundColor: theme.colors.canvas,
     },
     content: {
       padding: brandSpacing.md,
@@ -26,13 +32,6 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
-    },
-    title: {
-      flex: 1,
-      ...brandTypography.heroTitle,
-      fontSize: 25,
-      lineHeight: 29,
-      color: theme.semanticColors.textStrong,
     },
     iconButton: {
       width: HIT_TARGET,
@@ -61,71 +60,72 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       height: 9,
       borderRadius: 5,
     },
-    statusStrong: {
-      ...brandTypography.sectionBody,
-      fontFamily: "Jost-SemiBold",
-      color: theme.colors.textPrimary,
+    // Score card (forest hero, variant I). Text stays in the left and lower part of the card, away
+    // from the halo at the top right (RESEARCH Pitfall 4).
+    scoreWrap: {
+      position: "relative",
     },
-    statusMuted: {
-      ...brandTypography.sectionBody,
-      color: theme.colors.textSecondary,
-      flexShrink: 1,
+    // D-24: 16 pt around instead of 24, tighter gaps between the blocks, and the 56 pt numeral: the
+    // card is about 18 percent shorter than before (about 222 pt with the hint instead of 272).
+    scoreContent: {
+      padding: brandSpacing4.md,
     },
-    // Score card.
-    scoreCard: {
-      borderRadius: brandRadius.card,
-      padding: 18,
-      gap: 12,
-      backgroundColor: theme.semanticColors.heroSurface,
-      borderWidth: 1,
-      borderColor: theme.semanticColors.heroBorder,
+    // Its own width, so the card can measure where its text column ends (the aurora's clear zone).
+    scoreCaption: {
+      alignSelf: "flex-start",
+      ...brandTypography.label,
+      color: theme.visual.forest.body,
     },
-    scoreTopRow: {
+    scoreNumeral: {
+      alignSelf: "flex-start",
+      marginTop: brandSpacing4.xs,
+    },
+    scoreBar: {
+      marginTop: brandSpacing4.sm,
+    },
+    scoreTiles: {
       flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      gap: brandSpacing4.smd,
+      marginTop: brandSpacing4.smd,
     },
-    scoreValueRow: {
+    scoreTile: {
+      flex: 1,
+      gap: brandSpacing4.xs,
+      paddingVertical: brandSpacing4.sm,
+      paddingHorizontal: brandSpacing4.smd,
+      borderRadius: brandRadius.badge,
+      borderWidth: 1,
+      borderColor: theme.visual.forest.tileBorder,
+      backgroundColor: theme.visual.forest.tileFill,
+    },
+    scoreTileLabel: {
+      ...brandTypeScale.footnote,
+      fontFamily: "Jost-Regular",
+      color: theme.visual.forest.body,
+    },
+    scoreTileValueRow: {
       flexDirection: "row",
       alignItems: "baseline",
-      gap: 6,
+      gap: brandSpacing4.xs,
     },
-    scoreValue: {
-      fontFamily: "Sora-Bold",
-      fontSize: 40,
-      lineHeight: 44,
-      color: theme.colors.white,
+    scoreTileValue: {
+      ...brandTypography.input,
+      color: theme.visual.forest.title,
     },
-    scoreMax: {
-      fontSize: 18,
-      color: theme.colors.white,
-      opacity: 0.8,
-    },
-    scoreCaptionRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-    },
-    scoreCaption: {
-      ...brandTypography.sectionBody,
-      color: theme.colors.white,
-      opacity: 0.9,
-    },
-    scoreSegments: {
-      flexDirection: "row",
-      gap: 4,
-    },
-    scoreSegment: {
-      flex: 1,
-      height: 6,
-      borderRadius: 3,
+    // The body tint, not the sage: the sage was 3.9:1 on the glass tile over the card's mid green
+    // even before the mist (12.2-19), the body tint keeps 4.5:1 under it (forest-aurora tokens).
+    scoreTileOutOf: {
+      ...brandTypeScale.footnote,
+      fontFamily: "Jost-Regular",
+      color: theme.visual.forest.body,
     },
     scoreHint: {
       ...brandTypography.meta,
-      color: theme.colors.white,
-      opacity: 0.85,
+      marginTop: brandSpacing4.sm,
+      color: theme.visual.forest.body,
     },
-    // Photos.
+    // Sections. The photo block is styled in `photos.styles.ts`; `section`, `sectionHeader` and the
+    // titles below are also read by the context and community pages.
     section: {
       gap: 10,
     },
@@ -133,6 +133,16 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+    },
+    // The title of a card on the summary (Photos), the role of `AppSectionHeader` and of the other
+    // cards (D-24). `sectionTitle` below is the legacy 28 pt role the community page still reads.
+    cardTitle: {
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textPrimary,
+    },
+    cardTitleCount: {
+      ...brandTypography.sectionHeader,
+      color: theme.colors.textSecondary,
     },
     sectionTitle: {
       ...brandTypography.sectionTitle,
@@ -142,40 +152,19 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       ...brandTypography.sectionBody,
       color: theme.colors.textSecondary,
     },
-    addButton: {
-      minHeight: HIT_TARGET,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-    },
-    addButtonText: {
-      ...brandTypography.button,
-      color: theme.semanticColors.textStrong,
-    },
-    photoRow: {
-      flexDirection: "row",
-      gap: 10,
-    },
-    photo: {
-      width: PHOTO_SIZE,
-      height: PHOTO_SIZE,
-      borderRadius: 16,
-      overflow: "hidden",
-    },
-    photoImage: {
-      width: PHOTO_SIZE,
-      height: PHOTO_SIZE,
-    },
     photoEmpty: {
       ...brandTypography.sectionBody,
       color: theme.colors.textSecondary,
     },
     // Map card.
+    // The contour placeholder sits under the live map and shows only where it has not drawn.
     mapCard: {
       height: 190,
       borderRadius: brandRadius.card,
       overflow: "hidden",
-      backgroundColor: theme.colors.panelMuted,
+      borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
     },
     map: {
       ...StyleSheet.absoluteFill,
@@ -187,16 +176,22 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     titlePressable: {
       flex: 1,
     },
+    // D-27c: no background. The bar floats over the bottom of the page (the content scrolls behind
+    // it) and the green glass button is its only filled element; the screen pads the scroll
+    // content by the bar's height. `paddingTop` is `FINISH_BAR.paddingTop`.
     bottomBar: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
       paddingHorizontal: brandSpacing.md,
-      paddingTop: 10,
-      backgroundColor: theme.colors.canvas,
+      paddingTop: FINISH_BAR.paddingTop,
     },
     // Sub-pages shared.
     subContent: {
-      padding: brandSpacing.md,
-      gap: 18,
-      paddingBottom: 48,
+      padding: brandSpacing4.md,
+      gap: brandSpacing4.lg,
+      paddingBottom: brandSpacing4.xxl,
     },
     hairline: {
       height: 1,

@@ -24,7 +24,7 @@ jest.mock("react-native", () => {
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 47, right: 0, bottom: 34, left: 0 }),
 }))
-jest.mock("../ui/AppButton", () => ({ AppButton: "AppButton" }))
+jest.mock("../ui/GlassButton", () => ({ GlassButton: "GlassButton" }))
 jest.mock("../ui/AppText", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -87,7 +87,7 @@ describe("WelcomeScreen (OA-08)", () => {
   test("the button starts the app", async () => {
     const onContinue = jest.fn()
     const tree = await mount({ name: "Marie", onContinue })
-    const button = tree.root.findByType("AppButton" as never)
+    const button = tree.root.findByType("GlassButton" as never)
     expect(button.props.label).toBe(fr.welcome.start)
     button.props.onPress()
     expect(onContinue).toHaveBeenCalledTimes(1)

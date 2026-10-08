@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { StatusBar } from "react-native"
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native"
 import { useBrandTheme } from "../app/theme"
+import { DownloadEdgeGlowHost } from "./download-edge-glow"
 import { buildNavigationTheme, statusBarStyleForScheme } from "./navigation-theme"
 import { getNativeTabsAvailability, type NativeTabsAvailability } from "./native-tabs-availability"
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "./public-map-reload"
@@ -97,13 +98,16 @@ export function AppNavigation() {
 
   return (
     <PublicMapReloadContext.Provider value={publicMapReload}>
-      <NavigationContainer
-        ref={navigationRef}
-        theme={navigationTheme}
-        onStateChange={availability.native ? onStateChange : undefined}
-      >
-        <AppTabs availability={availability} tabBarHidden={tabBarHidden} />
-      </NavigationContainer>
+      {/* 12.2-19: the Explorer's download glow is drawn after the tree, above its tab bar. */}
+      <DownloadEdgeGlowHost>
+        <NavigationContainer
+          ref={navigationRef}
+          theme={navigationTheme}
+          onStateChange={availability.native ? onStateChange : undefined}
+        >
+          <AppTabs availability={availability} tabBarHidden={tabBarHidden} />
+        </NavigationContainer>
+      </DownloadEdgeGlowHost>
     </PublicMapReloadContext.Provider>
   )
 }

@@ -10,6 +10,7 @@ import {
   SyncBatchResult,
   QueueOpType,
 } from "./types"
+import { countFilledFactors } from "../app/ibp-scoring"
 import { FACTOR_KEYS, LEGACY_DEFAULT_FACTOR_VALUES } from "./db"
 import type { DbExecutor } from "./transaction"
 import { ApiError } from "../api/client"
@@ -165,6 +166,24 @@ export const computePayloadCompletion = (payload: SurveyQueuePayload | null): nu
 
   return Math.max(0, Math.min(100, Math.round((completed / total) * 100)))
 }
+
+/**
+ * Factors filled (0-10) of a payload, by the app's single definition (`countFilledFactors`). Stored
+ * at write time in local_surveys.payload_factors_filled, next to payload_completion, which is a
+ * percentage of 14 slots (name, method, parcel and the ten factors) and must not be read as a
+ * factor count: four filled context slots add 3 to the tenths.
+ */
+export const computePayloadFactorsFilled = (payload: SurveyQueuePayload | null): number =>
+  payload
+    ? countFilledFactors({
+        ibp_method_version: payload.ibp_method_version,
+        ibp_cas: payload.ibp_cas,
+        ibp_cas3_scale: payload.ibp_cas3_scale,
+        region_version: payload.region_version,
+        vegetation_stage: payload.vegetation_stage,
+        factors: payload.factors,
+      })
+    : 0
 
 export const computeCompletionRate = (
   status: string,

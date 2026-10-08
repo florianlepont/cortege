@@ -118,6 +118,7 @@ function mockMakeSurvey(index: number): LocalSurvey {
     created_at: `2026-09-${n}T08:00:00.000Z`,
     updated_at: `2026-09-${n}T09:00:00.000Z`,
     completion_rate: (index * 5) % 101,
+    factors_filled: 0,
   }
 }
 
@@ -334,6 +335,8 @@ jest.mock("@react-navigation/native", () => {
     ReactRef.createElement(ReactRef.Fragment, null, children)
   return {
     NavigationContainer: passthrough,
+    // Read by useScreenFocus (the list entrance): no navigator, so every screen counts as focused.
+    NavigationContext: ReactRef.createContext(undefined),
     useNavigation: () => mockNavigation,
     useRoute: () => ({ key: "route", name: "route", params: mockDefaultParams }),
     getFocusedRouteNameFromRoute: () => undefined,
@@ -801,7 +804,10 @@ const EXPECTED: Record<ScenarioName, Counts> = {
     surveyList: 0,
     surveyDetail: 0,
     surveyForm: 1,
-    factorDetail: 1,
+    // 12.2-15: the factor pager is memoised (its route also reads the surveys list for the D-26
+    // finish); a site-name keystroke leaves its factor fields unchanged, so the page does not
+    // re-render, down from 1.
+    factorDetail: 0,
     parcelSelection: 1,
     publicMap: 0,
     account: 0,
@@ -815,7 +821,8 @@ const EXPECTED: Record<ScenarioName, Counts> = {
     // The new-survey wizard no longer shows the autosave indicator (OA-25), so surveyForm pays
     // only the one shared-context render, down from 3.
     surveyForm: 1,
-    factorDetail: 1,
+    // 12.2-15: memoised factor pager, as in formKeystroke (the list refresh does not reach it).
+    factorDetail: 0,
     parcelSelection: 1,
     publicMap: 1,
     account: 0,

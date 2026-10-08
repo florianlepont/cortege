@@ -1,15 +1,19 @@
 import { memo, useMemo, useState } from "react"
-import { Pressable, Text, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import { View } from "react-native"
 import { computeIbpTotalDelta } from "../../app/ibp-scoring"
-import { brandOverlayTokens } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import type { ParcelSurveyHistoryItem } from "../../app/types"
 import { useParcelSurveyHistory } from "../../hooks/useParcelSurveyHistory"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
+import { AppText as Text } from "../../ui/AppText"
+import { GlassButton } from "../../ui/GlassButton"
+import { ScoreRing } from "../../ui/ScoreRing"
+import { createRowStyles } from "../survey-list/row-styles"
+import { SurveyRowFrame } from "../survey-list/SurveyRowFrame"
+import { PanelRowEntrance } from "./PanelRowEntrance"
+import { SheetCloseButton } from "./SheetCloseButton"
 import { createPanelStyles } from "./styles"
 
 const t = fr.parcelHistory
@@ -27,34 +31,47 @@ export type ParcelHistoryCardProps = {
   onClose: () => void
 }
 
+// 12.2-18: a survey row of Mes Relevés (`SurveyRowFrame`: glass card, 44 pt minimum, green wave on
+// press), the entry as the title, the total and the change under it, the ring on the trailing side
+// (D-27a). No photo.
 function HistoryRow({
   item,
   previous,
+  index,
   isLatest,
   onOpen,
 }: {
   item: ParcelSurveyHistoryItem
   previous: ParcelSurveyHistoryItem | null
+  index: number
   isLatest: boolean
   onOpen: (surveyId: string) => void
 }) {
   const theme = useBrandTheme()
-  const styles = useMemo(() => createPanelStyles(theme), [theme])
+  const rowStyles = useMemo(() => createRowStyles(theme), [theme])
   const delta = previous ? computeIbpTotalDelta(item.scores, previous.scores) : null
+  const total = item.scores.ibp_total
 
   const entry = t.entry({ year: item.observation_year, version: item.version_number, isLatest })
 
   return (
-    <Pressable
+    <SurveyRowFrame
       onPress={() => onOpen(item.survey_id)}
-      accessibilityRole="button"
       accessibilityLabel={t.openSurvey(entry)}
       testID={`parcel-history-open-${item.survey_id}`}
-    >
-      <Text style={styles.title}>{entry}</Text>
-      <Text style={styles.meta}>{t.total(item.scores.ibp_total)}</Text>
-      <Text style={styles.meta}>{delta ? t.delta.total(delta.total) : t.delta.unavailable}</Text>
-    </Pressable>
+      indicator={
+        <ScoreRing score={total} index={index} animationKey={`${item.survey_id}:${total}`} />
+      }
+      title={entry}
+      status={
+        <>
+          <Text style={rowStyles.surveyCardMeta}>{t.total(total)}</Text>
+          <Text style={rowStyles.surveyCardMeta}>
+            {delta ? t.delta.total(delta.total) : t.delta.unavailable}
+          </Text>
+        </>
+      }
+    />
   )
 }
 
@@ -93,44 +110,45 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
       <AppSectionHeader
         title={t.title}
         trailing={
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
+          <SheetCloseButton
             accessibilityLabel={fr.publicMap.a11y.closeParcelHistory}
-          >
-            <Ionicons name="close" size={18} color={brandOverlayTokens.closeIcon} />
-          </Pressable>
+            onPress={onClose}
+          />
         }
         titleStyle={styles.title}
       />
       {loading ? <AppNotice tone="info" message={t.loading} /> : null}
       {!loading && error ? <AppNotice tone="danger" message={t.loadFailed} /> : null}
       {offline ? (
-        <View>
+        <View style={styles.card}>
           <AppNotice
             tone="warning"
             title={missingT.title}
             message={queued ? missingT.queued : missingT.message}
           />
           {!queued ? (
-            <AppButton label={missingT.downloadAction} onPress={handleQueueDownload} />
+            <GlassButton label={missingT.downloadAction} size="md" onPress={handleQueueDownload} />
           ) : null}
         </View>
       ) : null}
       {!loading && !error && !offline && items.length === 0 ? (
         <AppNotice tone="info" message={t.empty} />
       ) : null}
-      {!loading && !error && !offline
-        ? items.map((item, index) => (
-            <HistoryRow
-              key={item.survey_id}
-              item={item}
-              previous={index > 0 ? items[index - 1] : null}
-              isLatest={index === items.length - 1}
-              onOpen={onOpenSurvey}
-            />
-          ))
-        : null}
+      {!loading && !error && !offline && items.length > 0 ? (
+        <View style={styles.rows}>
+          {items.map((item, index) => (
+            <PanelRowEntrance key={item.survey_id} index={index}>
+              <HistoryRow
+                item={item}
+                previous={index > 0 ? items[index - 1] : null}
+                index={index}
+                isLatest={index === items.length - 1}
+                onOpen={onOpenSurvey}
+              />
+            </PanelRowEntrance>
+          ))}
+        </View>
+      ) : null}
     </View>
   )
 })

@@ -8,6 +8,7 @@ import { ProfileHeaderButton } from "../../screens/home/ProfileHeaderButton"
 import { resolveProfilePictureUri } from "../../screens/account/IdentityCard"
 import { useBrandTheme } from "../../app/theme"
 import { iconHeaderButton, titleHeaderItems } from "../header-items"
+import { backdropHeader } from "../stacks/stack-options"
 import { useNearbyParcelsState } from "../../state/nearby-parcels-context"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
@@ -42,6 +43,12 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
     actions.openSurvey(surveyId)
     navigation.navigate("surveys", { screen: "surveyDetail", initial: false })
   })
+  // D-20c: "Tout voir" of the recent surveys goes to the list itself, not to a survey page the
+  // Mes Relevés stack may still be showing. No `initial: false`: the list is the stack's first
+  // screen, so it would be pushed a second time on top of itself.
+  const onOpenSurveyList = useLatestCallback(() => {
+    navigation.navigate("surveys", { screen: "surveysHome" })
+  })
   const onNavigateToExplorer = useLatestCallback(() => {
     navigation.navigate("publicMap")
   })
@@ -67,9 +74,8 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
     navigation.setOptions({
       headerShown: true,
       title: "",
-      headerShadowVisible: false,
-      // The header takes the app's canvas colour, or a band of another colour shows above it.
-      headerStyle: { backgroundColor: theme.colors.canvas },
+      // 12.2-10: transparent, so the backdrop halo of the screen runs on behind the header.
+      ...backdropHeader,
       unstable_headerLeftItems: () =>
         titleHeaderItems(
           firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting,
@@ -103,6 +109,7 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
       accessToken={accessToken}
       apiUrl={session.apiUrl}
       surveys={surveys.surveys}
+      surveyDetails={surveys.surveyDetails}
       surveyStats={surveys.surveyStats}
       isOnline={isOnline}
       isSyncing={isSyncing}
@@ -114,6 +121,7 @@ export const HomeRoute = memo(function HomeRoute({ navigation }: HomeRouteProps)
       onOpenSurvey={onOpenSurvey}
       onRetrySurvey={actions.retrySurvey}
       onOpenSyncStatus={onOpenSyncStatus}
+      onOpenSurveyList={onOpenSurveyList}
       onNavigateToExplorer={onNavigateToExplorer}
       onNavigateToAccount={onNavigateToAccount}
       onRefresh={syncActions.handlePullChanges}

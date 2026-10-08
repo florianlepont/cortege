@@ -4,6 +4,7 @@ import {
   computeIbpTotalDelta,
   computeIbpTotalsFromRetainedScores,
   computeRetainedScoresFromRawFactors,
+  countFilledFactors,
   evaluateSubmitReadinessFromDraft,
   resolveDraftParcelIds,
   resolveFactorScoreFromRaw,
@@ -217,5 +218,50 @@ describe("computeIbpTotalDelta and computeFactorDeltas (REQ-C-versioning)", () =
       },
     }
     expect(computeFactorDeltas(current, previous)).toEqual({ A: 2 })
+  })
+})
+
+describe("countFilledFactors (12.2-14: the one definition of factors filled)", () => {
+  const SIX_FACTORS = {
+    A: { native_genus_count: 5 },
+    B: { strata_count: 3, covered_autochthonous_percent: 60 },
+    C: { bmg_count: 2, bmm_count: 2, surface_ha: 1 },
+    D: { bmg_count: 0, bmm_count: 2, surface_ha: 1 },
+    E: { tgb_count: 6, gb_count: 0, surface_ha: 1 },
+    F: { trees_per_ha: 9 },
+  }
+
+  test("counts the factors the package scores", () => {
+    expect(countFilledFactors({ ...ACA_COLLINEEN, factors: SIX_FACTORS })).toBe(6)
+    expect(countFilledFactors({ ...ACA_COLLINEEN, factors: {} })).toBe(0)
+  })
+
+  test("a factor with a partial value is not filled, even though it holds a value", () => {
+    // B holds a strata count the package cannot read: a value in the payload, not a scored factor.
+    expect(
+      countFilledFactors({
+        ...ACA_COLLINEEN,
+        factors: { A: { native_genus_count: 5 }, B: { strata_count: "abc" } },
+      }),
+    ).toBe(1)
+  })
+
+  test("a missing or malformed factors object counts none and does not throw", () => {
+    expect(countFilledFactors({ ...ACA_COLLINEEN, factors: undefined })).toBe(0)
+    expect(countFilledFactors({ ...ACA_COLLINEEN, factors: [] as never })).toBe(0)
+    expect(countFilledFactors({ ...ACA_COLLINEEN, factors: "x" as never })).toBe(0)
+  })
+
+  test("is ten minus the readiness missing factors, whatever the method version", () => {
+    for (const draft of [
+      { ...ACA_COLLINEEN, factors: SIX_FACTORS },
+      { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, factors: SIX_FACTORS },
+      { ibp_method_version: IBP_METHOD_V3_2, factors: SIX_FACTORS },
+      { ...ACA_COLLINEEN, factors: { A: { native_genus_count: 5 }, B: { strata_count: "abc" } } },
+    ]) {
+      expect(countFilledFactors(draft)).toBe(
+        10 - evaluateSubmitReadinessFromDraft(draft).missing_factors.length,
+      )
+    }
   })
 })

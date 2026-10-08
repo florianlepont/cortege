@@ -45,6 +45,7 @@ const makeSurvey = (overrides: Partial<LocalSurvey>): LocalSurvey => ({
   created_at: "2026-03-01T09:00:00.000Z",
   updated_at: "2026-03-01T10:00:00.000Z",
   completion_rate: 0,
+  factors_filled: 0,
   ...overrides,
 })
 
@@ -302,11 +303,27 @@ describe("getSubmitBlockReason", () => {
     expect(getSubmitBlockReason("target", surveys)).toBe("survey_blocked")
   })
 
-  test("returns not_synced when survey is not synced yet", () => {
-    const surveys: LocalSurvey[] = [
+  test("D-25: a draft not synced yet can be finished, the finish sends it first", () => {
+    const pending: LocalSurvey[] = [
       makeSurvey({ id: "target", sync_state: "pending", status: "draft" }),
     ]
-    expect(getSubmitBlockReason("target", surveys)).toBe("not_synced")
+    expect(getSubmitBlockReason("target", pending)).toBeNull()
+    const failed: LocalSurvey[] = [
+      makeSurvey({ id: "target", sync_state: "failed", status: "error", sync_blocked: 0 }),
+    ]
+    expect(getSubmitBlockReason("target", failed)).toBeNull()
+  })
+
+  test("D-25: an unnamed draft asks for a name (it never leaves the phone, OA-18)", () => {
+    for (const site_name of ["", "   "]) {
+      const surveys: LocalSurvey[] = [makeSurvey({ id: "target", site_name })]
+      expect(getSubmitBlockReason("target", surveys)).toBe("name_required")
+    }
+  })
+
+  test("a blocked unnamed draft reports the block first", () => {
+    const surveys: LocalSurvey[] = [makeSurvey({ id: "target", site_name: "", sync_blocked: 1 })]
+    expect(getSubmitBlockReason("target", surveys)).toBe("survey_blocked")
   })
 
   test("returns already_submitted for submitted survey", () => {

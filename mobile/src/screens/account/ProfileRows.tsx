@@ -3,13 +3,15 @@ import { Pressable, TextInput, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import type { AppGroupedListRow } from "../../ui/AppGroupedList"
+import type { Ionicons } from "@expo/vector-icons"
+import { AppGroupedListIconTile, type AppGroupedListRow } from "../../ui/AppGroupedList"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { createProfileRowStyles } from "./styles"
 
 const t = fr.account.profile
 
 type ProfileFieldRowProps = {
+  icon: keyof typeof Ionicons.glyphMap
   label: string
   value: string
   placeholder: string
@@ -20,6 +22,7 @@ type ProfileFieldRowProps = {
 }
 
 function ProfileFieldRow({
+  icon,
   label,
   value,
   placeholder,
@@ -32,6 +35,7 @@ function ProfileFieldRow({
   const styles = useMemo(() => createProfileRowStyles(theme), [theme])
   return (
     <View style={styles.row}>
+      <AppGroupedListIconTile name={icon} />
       <Text style={styles.label}>{label}</Text>
       <TextInput
         ref={inputRef}
@@ -77,6 +81,7 @@ export function useProfileRows({
       kind: "custom",
       content: (
         <ProfileFieldRow
+          icon="person-outline"
           label={t.firstName}
           value={firstName}
           placeholder={t.firstNamePlaceholder}
@@ -91,6 +96,7 @@ export function useProfileRows({
       kind: "custom",
       content: (
         <ProfileFieldRow
+          icon="person-outline"
           label={t.lastName}
           value={lastName}
           placeholder={t.lastNamePlaceholder}
@@ -106,6 +112,7 @@ export function useProfileRows({
       kind: "custom",
       content: (
         <ProfileFieldRow
+          icon="at-outline"
           label={t.displayName}
           value={displayName}
           placeholder={t.displayNamePlaceholder}

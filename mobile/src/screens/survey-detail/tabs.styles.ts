@@ -1,17 +1,26 @@
 import { StyleSheet } from "react-native"
-import { brandShadow, brandTypography } from "../../app/brand-tokens"
+import {
+  brandRadius,
+  brandShadow,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+
+const TIMELINE_TILE = 32
 
 export function createTabsStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    // Glass card of the history page (variant I): same recipe as the photos card of the summary.
     eventsCard: {
-      borderRadius: 28,
+      gap: brandSpacing4.smd,
+      padding: brandSpacing4.md,
+      borderRadius: brandRadius.card,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.colors.panel,
-      padding: 18,
-      gap: 12,
-      ...brandShadow.card,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
     },
     eventRow: {
       gap: 4,
@@ -27,33 +36,42 @@ export function createTabsStyles(theme: BrandTheme) {
       ...brandTypography.sectionBody,
       color: theme.colors.textSecondary,
     },
-    // DET-05: the icon timeline replacing EventsTab's plain text rows — a dot per event on a
-    // vertical rail, connected to the next one, with no rail below the last event.
+    // DET-05: the icon timeline: a tile per event on a vertical rail, connected to the next one,
+    // with no rail below the last event.
     timelineRow: {
       flexDirection: "row",
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
     timelineRail: {
       alignItems: "center",
-      width: 28,
+      width: TIMELINE_TILE,
     },
     timelineDot: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
+      width: TIMELINE_TILE,
+      height: TIMELINE_TILE,
+      borderRadius: brandRadius.badgeSm,
       alignItems: "center",
       justifyContent: "center",
     },
     timelineConnector: {
       flex: 1,
       width: 2,
-      marginVertical: 2,
+      marginVertical: brandSpacing4.xxs,
       backgroundColor: theme.colors.divider,
     },
     timelineContent: {
       flex: 1,
-      paddingBottom: 16,
-      gap: 2,
+      paddingBottom: brandSpacing4.md,
+      gap: brandSpacing4.xxs,
+    },
+    timelineTitle: {
+      ...brandTypography.input,
+      color: theme.colors.textPrimary,
+    },
+    timelineMeta: {
+      ...brandTypeScale.footnote,
+      fontFamily: "Jost-Regular",
+      color: theme.colors.textSecondary,
     },
     debugCard: {
       borderRadius: 28,

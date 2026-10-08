@@ -3,7 +3,9 @@ import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "r
 import { Alert } from "react-native"
 import type { AuthUser } from "../app/types"
 import { fr } from "../i18n"
+import { Ionicons } from "@expo/vector-icons"
 import { AccountScreen } from "./AccountScreen"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 
 const originalConsoleError = console.error
 
@@ -141,6 +143,33 @@ describe("AccountScreen", () => {
     expect(input(fr.account.profile.firstName).props.value).toBe("Marie")
     expect(input(fr.account.profile.lastName).props.value).toBe("Curie")
     expect(input(fr.account.profile.displayName).props.value).toBe("Marie")
+  })
+
+  test("gives every row an outline icon, in list order", () => {
+    mount(makeProps())
+    const names = tree.root
+      .findAllByType(Ionicons as unknown as React.ComponentType<{ name: string }>)
+      .map((node) => node.props.name)
+      .filter((name) => name !== "chevron-forward-outline")
+    expect(names).toEqual([
+      "person-outline",
+      "person-outline",
+      "at-outline",
+      "mail-outline",
+      "key-outline",
+      "log-out-outline",
+    ])
+    names.forEach((name) => expect(name.endsWith("-outline")).toBe(true))
+  })
+
+  test("shows 'Non renseigné' for a missing e-mail, never an em dash", () => {
+    mount(makeProps({ currentUser: { ...user, email: null as unknown as string } }))
+    const texts = tree.root
+      .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+      .map((node) => String([node.props.children].flat().join("")))
+    expect(fr.account.email.empty).toBe("Non renseigné")
+    expect(texts).toContain("Non renseigné")
+    expect(fr.account.email.empty).not.toContain("\u2014")
   })
 
   describe("the unsaved-changes bar (OA-72)", () => {
@@ -282,5 +311,53 @@ describe("AccountScreen", () => {
     expect(confirm?.style).toBe("destructive")
     act(() => confirm?.onPress?.())
     expect(onLogout).toHaveBeenCalled()
+  })
+})
+
+type LargeStyle = Record<string, unknown>
+function flattenLarge(style: unknown): LargeStyle {
+  if (Array.isArray(style))
+    return style.reduce<LargeStyle>((acc, s) => ({ ...acc, ...flattenLarge(s) }), {})
+  return (style as LargeStyle | null | undefined) ?? {}
+}
+
+describe("AccountScreen under the native large title (12.2-17)", () => {
+  function mountLarge(props: React.ComponentProps<typeof AccountScreen>) {
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value>
+          <AccountScreen {...props} />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+  }
+  const pageTitles = () =>
+    tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.children === fr.account.title,
+    )
+
+  test("the header names the page: no in-page title, the title is never doubled", () => {
+    mountLarge(makeProps())
+    expect(pageTitles()).toHaveLength(0)
+  })
+
+  test("the scroll view leaves the insets to iOS: automatic, no tab bar padding or indicator inset", () => {
+    mountLarge(makeProps())
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    expect(scroll.props.scrollIndicatorInsets).toBeUndefined()
+    const content = flattenLarge(scroll.props.contentContainerStyle)
+    // The 16 pt margins only; the 68 pt tab bar is inset by the system.
+    expect(content.paddingTop).toBe(16)
+    expect(content.paddingBottom).toBe(16)
+  })
+
+  test("outside it the page keeps its title and its own tab bar clearance", () => {
+    mount(makeProps())
+    expect(pageTitles()).toHaveLength(1)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
+    expect(scroll.props.scrollIndicatorInsets).toEqual({ bottom: 68 })
+    expect(flattenLarge(scroll.props.contentContainerStyle).paddingBottom).toBe(68 + 16)
   })
 })

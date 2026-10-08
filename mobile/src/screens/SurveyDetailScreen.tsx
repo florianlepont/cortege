@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
-import { Alert, Platform, ScrollView, View } from "react-native"
-import { useHeaderHeight } from "@react-navigation/elements"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Alert, ScrollView, View } from "react-native"
+import { useReducedMotion } from "react-native-reanimated"
 import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { shouldShowDevTools } from "../app/dev-tools"
 import { exportAndShareSurveyPdf, type SurveyExportData } from "../app/survey-pdf-export"
@@ -10,6 +10,7 @@ import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppNotice } from "../ui/AppNotice"
+import { useFrameInsetBehavior, useFrameLargeTitle } from "../ui/frame-large-title"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
@@ -23,17 +24,25 @@ import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles
 import { resolveFinishCta, resolveStatusLine } from "./survey-detail/summary-state"
 import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
+import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
+import { useVisiblePulse } from "./survey-detail/useVisiblePulse"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
+import { useFinishBarHeight } from "./survey-detail/useFinishBarHeight"
+import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
+import { useScrollTop } from "./survey-detail/useScrollTop"
 
 const menuText = fr.surveyDetail.menu
 const actionsText = fr.surveyDetail.actions
 const rowsText = fr.surveyDetail.rows
 const summaryText = fr.surveyDetail.summary
+const headerText = fr.surveyDetail.header
+const alertsText = fr.surveyDetail.alerts
 
 /**
  * The summary of a survey (OA-46): its name and where it stands, the score, the photos, the map,
  * and three rows that open the sub-pages (context and parcels, score by factor, history). The one
- * action is the button at the bottom.
+ * action is the button at the bottom. The coloured chart of the ten factors is not here (D-24): it
+ * lives on the score page only.
  */
 export function SurveyDetailScreen({
   apiUrl,
@@ -61,12 +70,27 @@ export function SurveyDetailScreen({
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
   const theme = useBrandTheme()
-  // The iOS header is transparent: the scroll view starts below it (OA-20).
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName } = data
   const [menuVisible, setMenuVisible] = useState(false)
+  const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
+  // D-26: a finish from the factor pager plays the halo and pop once the summary is seen again.
+  const shownPulse = useVisiblePulse(pulseTrigger, navigation)
+  // D-25: at the finish the page goes back to the top, so the score card's halo and pop are seen
+  // (without animation under Reduce Motion, where only the haptic plays).
+  const scrollRef = useRef<ScrollView>(null)
+  const { onScrollBeginDrag, scrollToTop } = useScrollTop(scrollRef)
+  const reduceMotion = useReducedMotion()
+  const scrolledPulse = useRef(pulseTrigger)
+  useEffect(() => {
+    if (scrolledPulse.current === pulseTrigger) return
+    scrolledPulse.current = pulseTrigger
+    scrollToTop(!reduceMotion)
+  }, [pulseTrigger, reduceMotion, scrollToTop])
+  // 12.2-17: under the native iOS large title the header carries the survey's name.
+  const largeTitle = useFrameLargeTitle()
+  const insetBehavior = useFrameInsetBehavior()
 
   const attachmentPreviewKey = selectedSurveyAttachments
     .map((attachment) => `${attachment.id}:${attachment.file_state}`)
@@ -101,9 +125,35 @@ export function SurveyDetailScreen({
   })
   const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
   const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
+  // 12.2-17: the native large title is not a button, so the name is edited from the "…" menu in
+  // the system's text prompt (iOS only, like the large title).
+  const handleRename = useLatestCallback(() => {
+    Alert.prompt(
+      headerText.renameLabel,
+      undefined,
+      [
+        { text: fr.common.actions.cancel, style: "cancel" },
+        {
+          text: fr.common.actions.save,
+          onPress: (value?: string) => {
+            const nextName = (value ?? "").trim()
+            if (!nextName) {
+              Alert.alert(alertsText.invalidNameTitle, alertsText.invalidNameMessage)
+              return
+            }
+            void onRenameSurvey(selectedSurvey.id, nextName)
+          },
+        },
+      ],
+      "plain-text",
+      activeSiteName,
+    )
+  })
   useSurveyDetailHeader({
     navigation,
     siteName: activeSiteName,
+    largeTitle,
+    onRename: largeTitle && canEditSurvey ? handleRename : undefined,
     onShare: () => void handleShare(),
     onDelete: handleDelete,
     onOpenMenu: handleOpenMenu,
@@ -118,6 +168,11 @@ export function SurveyDetailScreen({
     data.nextFactor,
   )
   const resolvedMethod = resolveMethodVersion(data.scoringContext.ibp_method_version)
+  // The bottom button floats over the page on a transparent bar (D-27c), so at maximum scroll the
+  // last row must end above the bar (its measured height, tab bar clearance included). Without the
+  // bar (a finished survey) the page runs under the floating tab bar: the last row needs that room.
+  const { barHeight, onBarLayout } = useFinishBarHeight(cta.kind !== "hidden")
+  const contentStyle = useSubPageContentStyle(styles.content, barHeight)
   const methodLabel = resolvedMethod === IBP_METHOD_V3_2 ? "v3.2" : "v3.0"
   const rowSections = [
     {
@@ -154,8 +209,13 @@ export function SurveyDetailScreen({
   return (
     <View style={styles.scroll}>
       <ScrollView
-        style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
-        contentContainerStyle={styles.content}
+        ref={scrollRef}
+        // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19),
+        // or iOS insets it under the native large title (12.2-17).
+        style={styles.scroll}
+        contentContainerStyle={contentStyle}
+        contentInsetAdjustmentBehavior={insetBehavior}
+        onScrollBeginDrag={onScrollBeginDrag}
       >
         <SummaryHeader
           surveyId={selectedSurvey.id}
@@ -178,6 +238,7 @@ export function SurveyDetailScreen({
           scores={data.displayedScores}
           isDraftView={data.useLocalDraftView}
           filledFactorCount={data.filledFactorCount}
+          pulseTrigger={shownPulse}
         />
 
         <PhotosStrip
@@ -235,6 +296,7 @@ export function SurveyDetailScreen({
         accessibilityLabel={fr.surveyDetail.a11y.finishSurvey(activeSiteName)}
         onFinish={() => void onSubmitSurvey(selectedSurvey.id)}
         onOpenFactor={(factor) => void onOpenFactor(selectedSurvey.id, factor)}
+        onLayout={onBarLayout}
       />
 
       <AppActionSheet

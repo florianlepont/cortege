@@ -6,7 +6,6 @@ import type { FactorCanonical, IbpScores, ParcelSurveyHistoryItem } from "../../
 import { useBrandTheme } from "../../app/theme"
 import { useParcelSurveyHistory } from "../../hooks/useParcelSurveyHistory"
 import { fr } from "../../i18n"
-import { AppCard } from "../../ui/AppCard"
 import { AppNotice } from "../../ui/AppNotice"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { createSummaryStyles } from "./summary.styles"
@@ -74,7 +73,7 @@ export function HistorySection({
       : null
 
   return (
-    <AppCard variant="panelElevated" padding={18} style={styles.historyPanel}>
+    <View style={styles.historyPanel}>
       <AppSectionHeader title={t.title} subtitle={t.subtitle} />
 
       {loading ? <AppNotice tone="info" message={t.loading} /> : null}
@@ -125,6 +124,6 @@ export function HistorySection({
             <HistoryRow key={item.survey_id} item={item} styles={styles} />
           ))
         : null}
-    </AppCard>
+    </View>
   )
 }

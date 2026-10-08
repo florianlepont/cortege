@@ -210,7 +210,11 @@ export function AuthGateScreen({
                 accessibilityRole="button"
                 accessibilityLabel={fr.common.actions.close}
               >
-                <Ionicons name="close-circle" size={26} color={theme.colors.textSecondary} />
+                <Ionicons
+                  name="close-circle-outline"
+                  size={26}
+                  color={theme.colors.textSecondary}
+                />
               </Pressable>
             </View>
             <AppField

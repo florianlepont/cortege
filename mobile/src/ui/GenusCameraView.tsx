@@ -59,7 +59,7 @@ export function GenusCameraView({ onCapture, onClose, onError }: GenusCameraView
           style={styles.closeButton}
           testID="genus-camera-close"
         >
-          <Ionicons name="close" size={22} color={brandCameraTokens.guide} />
+          <Ionicons name="close-outline" size={22} color={brandCameraTokens.guide} />
         </Pressable>
         <Text style={styles.title}>{t.modalTitle}</Text>
         <View style={styles.closeButton} />

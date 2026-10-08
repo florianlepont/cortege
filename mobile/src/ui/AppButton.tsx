@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons"
 import {
   brandColors,
   brandComponentTokens,
+  brandInteraction,
   brandRadius,
   brandTypography,
 } from "../app/brand-tokens"
@@ -13,8 +14,12 @@ import { fr } from "../i18n"
 import { AppPressable } from "./AppPressable"
 import { feedback } from "./feedback"
 
-type AppButtonVariant = "primary" | "secondary" | "danger" | "dangerSoft"
-type AppButtonSize = "sm" | "md" | "lg"
+/**
+ * `glow` (variant I, Phase 12.2) is the moss gradient pill, the primary call to action on forest
+ * cards only (UI-SPEC accent list item 2). Terracotta is never a call to action.
+ */
+type AppButtonVariant = "primary" | "secondary" | "danger" | "dangerSoft" | "glow"
+export type AppButtonSize = "sm" | "md" | "lg"
 
 type AppButtonProps = {
   label?: string
@@ -55,7 +60,9 @@ export function AppButton({
         ? theme.onSurface.danger
         : variant === "primary"
           ? theme.semanticColors.onCtaPrimary
-          : brandColors.white
+          : variant === "glow"
+            ? theme.visual.pill.label
+            : brandColors.white
   const iconSize = size === "lg" ? 18 : size === "sm" ? 15 : 16
   const isDisabled = disabled || loading
 
@@ -64,6 +71,7 @@ export function AppButton({
       accessibilityLabel={accessibilityLabel ?? label ?? fr.components.appButton.defaultLabel}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
+      hitSlop={hitSlopFor(iconOnly, size)}
       onPress={() => {
         // A light tap on every button press (owner: the taps were felt on Reprendre and Nouveau relevé).
         feedback.impact.light()
@@ -101,7 +109,9 @@ export function AppButton({
                 ? styles.labelDangerSoft
                 : variant === "primary"
                   ? styles.labelPrimary
-                  : null,
+                  : variant === "glow"
+                    ? styles.labelGlow
+                    : null,
             labelStyle,
           ]}
         >
@@ -110,6 +120,25 @@ export function AppButton({
       ) : null}
     </AppPressable>
   )
+}
+
+// Every size keeps a hit area of at least `hitTarget.min` (D-05): the small button and the small
+// and medium icon-only buttons are drawn below 44 pt, so the touch area grows past the visible
+// shape instead (the 37 call sites render exactly as before).
+export function hitSlopFor(iconOnly: boolean, size: AppButtonSize): number {
+  const { button } = brandComponentTokens
+  const drawn = iconOnly
+    ? size === "lg"
+      ? button.iconOnlySizeLarge
+      : size === "sm"
+        ? button.iconOnlySizeSmall
+        : button.iconOnlySize
+    : size === "lg"
+      ? button.minHeightLarge
+      : size === "sm"
+        ? button.minHeightSmall
+        : button.minHeight
+  return Math.max(0, Math.ceil((brandInteraction.hitTarget.min - drawn) / 2))
 }
 
 function createStyles(theme: BrandTheme) {
@@ -154,6 +183,16 @@ function createStyles(theme: BrandTheme) {
     },
     labelPrimary: {
       color: theme.semanticColors.onCtaPrimary,
+    },
+    glow: {
+      backgroundColor: theme.visual.pill.fallback,
+      experimental_backgroundImage: theme.visual.pill.image,
+      boxShadow: theme.visual.pill.shadow,
+      borderRadius: brandRadius.pill,
+    },
+    labelGlow: {
+      color: theme.visual.pill.label,
+      fontFamily: brandTypography.input.fontFamily,
     },
     secondary: {
       backgroundColor: theme.componentColors.button.secondaryBackground,

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
-import { brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
@@ -11,6 +11,7 @@ import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { AppText as Text } from "../../ui/AppText"
 import { GenusRecognitionModal } from "../../ui/GenusRecognitionModal"
 import { GenusTargetSheet } from "./GenusTargetSheet"
+import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
 
 const t = fr.home.tools
 
@@ -24,7 +25,7 @@ const MAX_SURVEYS_OFFERED = 5
 const SHEET_DELAY_MS = 450
 const NOTICE_MS = 5000
 /** The same page margin as the rest of Accueil (home/styles.ts). */
-const PAGE_H = 20
+const PAGE_H = brandSpacing4.md
 
 export function openDrafts(surveys: LocalSurvey[]): LocalSurvey[] {
   return surveys
@@ -81,7 +82,7 @@ export function ToolsSection({
     ? openDrafts(surveys).map((survey) => ({
         id: survey.id,
         name: survey.site_name?.trim() || fr.common.untitledSurvey,
-        progress: Math.round(survey.completion_rate / 10),
+        progress: survey.factors_filled,
       }))
     : []
   const addToSurvey = (surveyId: string): void => {
@@ -126,8 +127,11 @@ export function ToolsSection({
           <View style={styles.icon}>
             <Ionicons name="camera-outline" size={22} color={theme.semanticColors.onCtaPrimary} />
           </View>
-          <Text style={styles.cardTitle}>{t.identify.title}</Text>
-          <Text style={styles.cardBody}>{t.identify.body}</Text>
+          <View style={styles.copy}>
+            <Text style={styles.cardTitle}>{t.identify.title}</Text>
+            <Text style={styles.cardBody}>{t.identify.body}</Text>
+          </View>
+          <Ionicons name="chevron-forward-outline" size={18} color={theme.colors.textSecondary} />
         </Pressable>
       </View>
 
@@ -154,35 +158,41 @@ export function ToolsSection({
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     section: {
-      marginTop: brandSpacing.xl + 4,
+      marginTop: HOME_GAPS.section,
     },
     header: {
       paddingHorizontal: PAGE_H,
-      marginBottom: 14,
+      marginBottom: HOME_GAPS.sectionHeader,
     },
     notice: {
       marginHorizontal: PAGE_H,
-      marginBottom: 12,
+      marginBottom: brandSpacing4.smd,
     },
+    // D-20d: one slim full-width row (40 pt icon tile, 8 pt around it: 56 pt), not a half-width tile.
     row: {
-      flexDirection: "row",
-      gap: 12,
       paddingHorizontal: PAGE_H,
     },
     card: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.smd,
+      minHeight: TOOL_ROW_MIN_HEIGHT,
+      borderRadius: brandRadius.card,
+      borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
+      paddingVertical: brandSpacing4.sm,
+      paddingLeft: brandSpacing4.sm,
+      paddingRight: brandSpacing4.md,
+    },
+    copy: {
       flex: 1,
-      maxWidth: 220,
-      borderRadius: 22,
-      borderWidth: 1.5,
-      borderColor: theme.semanticColors.ctaPrimary,
-      backgroundColor: theme.semanticColors.surfaceElevated,
-      padding: 14,
-      gap: 6,
     },
     icon: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: brandRadius.badgeSm,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: theme.semanticColors.ctaPrimary,

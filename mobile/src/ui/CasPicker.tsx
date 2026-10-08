@@ -2,7 +2,7 @@ import { useMemo } from "react"
 import { Pressable, StyleSheet, Switch, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { IBP_CAS_VALUES, type IbpCas } from "@cortege/ibp-domain"
-import { brandColors, brandRadius, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppText as Text } from "./AppText"
@@ -42,7 +42,15 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
             testID={`cas-option-${cas}`}
           >
             <View style={[styles.radio, selected ? styles.radioSelected : null]}>
-              {selected ? <Ionicons name="checkmark" size={14} color={brandColors.white} /> : null}
+              {selected ? (
+                // The ink of the filled radio (12.2-21 dark pass): white on the forest, dark on the
+                // dark scheme's light green, where white was 2:1.
+                <Ionicons
+                  name="checkmark-outline"
+                  size={14}
+                  color={theme.semanticColors.onCtaPrimary}
+                />
+              ) : null}
             </View>
             <View style={styles.copy}>
               <Text style={styles.title}>{m.casLabels[cas]}</Text>

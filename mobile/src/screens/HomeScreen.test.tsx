@@ -5,6 +5,9 @@ import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
 import { Image as ExpoImage } from "expo-image"
 import { HomeScreen, pickAlertSurvey, pickResumeDraft } from "./HomeScreen"
+import { HOME_GAPS, NEW_SURVEY_LAYOUT, nearbyMapHeight } from "./home/layout-budget"
+import { ResumeCard } from "./home/ResumeCard"
+import { defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
 import type { LocalSurvey } from "../storage/types"
 
@@ -47,11 +50,31 @@ jest.mock("react-native-safe-area-context", () => ({
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
+jest.mock("../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
+jest.mock("../ui/ScreenBackdrop", () => ({ ScreenBackdrop: "ScreenBackdrop" }))
+jest.mock("../ui/EntranceView", () => ({ EntranceView: "EntranceView" }))
 jest.mock("../ui/AppSectionHeader", () => ({ AppSectionHeader: "AppSectionHeader" }))
-jest.mock("../ui/SyncStatusLine", () => ({ SyncStatusLine: "SyncStatusLine" }))
+jest.mock("../ui/SyncStatusLine", () => ({
+  SyncStatusLine: "SyncStatusLine",
+  // The real rule, without the animation module the real component pulls in.
+  isSyncStatusLineVisible: ({
+    isOnline,
+    isSyncing,
+    pendingCount,
+  }: {
+    isOnline: boolean
+    isSyncing: boolean
+    pendingCount: number
+  }) => !isOnline || isSyncing || pendingCount > 0,
+}))
 jest.mock("../ui/Skeleton", () => ({ Skeleton: "Skeleton" }))
 jest.mock("./home/NearbyMapCard", () => ({ NearbyMapCard: "NearbyMapCard" }))
 jest.mock("./home/ToolsSection", () => ({ ToolsSection: "ToolsSection" }))
+jest.mock("./home/NewSurveyCard", () => ({ NewSurveyCard: "NewSurveyCard" }))
+jest.mock("./home/RecentSurveysSection", () => ({
+  RecentSurveysSection: "RecentSurveysSection",
+  RECENT_SURVEYS_COUNT: 3,
+}))
 
 let tree: ReactTestRenderer
 
@@ -70,6 +93,7 @@ function makeSurvey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: new Date().toISOString(),
     completion_rate: 40,
+    factors_filled: 0,
     ...overrides,
   }
 }
@@ -80,6 +104,7 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     accessToken: "token-abc",
     apiUrl: "http://localhost:3000",
     surveys: [],
+    surveyDetails: {},
     surveyStats: { total: 0, draft: 0, submitted: 0, pending: 0, synced: 0, failed: 0, blocked: 0 },
     isOnline: true,
     isSyncing: false,
@@ -98,6 +123,7 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
     onOpenSurvey: jest.fn(),
     onRetrySurvey: jest.fn(async () => undefined),
     onOpenSyncStatus: jest.fn(),
+    onOpenSurveyList: jest.fn(),
     onNavigateToExplorer: jest.fn(),
     onNavigateToAccount: jest.fn(),
     onRefresh: jest.fn(async () => undefined),
@@ -204,6 +230,154 @@ describe("HomeScreen", () => {
     expect(onOpenSyncStatus).toHaveBeenCalledTimes(1)
   })
 
+  describe("the sync line shows only when there is news (D-20b)", () => {
+    const stats = (pending: number) => ({
+      total: 1,
+      draft: 1,
+      submitted: 0,
+      pending,
+      synced: 0,
+      failed: 0,
+      blocked: 0,
+    })
+
+    test.each([false, true])("up to date: no line and no wrapper (nativeHeader %s)", (native) => {
+      mount(makeProps({ nativeHeader: native, surveyStats: stats(0) }))
+      expect(tree.root.findAllByType("SyncStatusLine" as never)).toHaveLength(0)
+      // Nothing is reserved for it: with the native header the first thing in the scroll content is
+      // the first section, not an empty row.
+      const scroll = tree.root.findByType("ScrollView" as never)
+      if (native) {
+        const first = scroll.children[0] as ReactTestInstance
+        expect(first.type as unknown).toBe("EntranceView")
+        expect(
+          scroll.children.filter(
+            (child) => ((child as ReactTestInstance).type as unknown) === "View",
+          ),
+        ).toHaveLength(0)
+      }
+    })
+
+    test.each([false, true])("work waiting: the line shows (nativeHeader %s)", (native) => {
+      mount(makeProps({ nativeHeader: native, surveyStats: stats(2) }))
+      expect(tree.root.findAllByType("SyncStatusLine" as never)).toHaveLength(1)
+    })
+
+    test("syncing or offline: the line shows even with nothing pending", () => {
+      mount(makeProps({ isSyncing: true }))
+      expect(tree.root.findAllByType("SyncStatusLine" as never)).toHaveLength(1)
+      act(() => tree.unmount())
+      mount(makeProps({ isOnline: false }))
+      expect(tree.root.findAllByType("SyncStatusLine" as never)).toHaveLength(1)
+    })
+  })
+
+  describe("variant I look (12.2)", () => {
+    // The sections that slide up when the screen becomes visible, in screen order, by stagger index.
+    const entering = () => tree.root.findAll((node) => (node.type as unknown) === "EntranceView")
+    const indexes = () => entering().map((node) => node.props.index as number)
+
+    test("renders the backdrop once, before the scroll view, which has no opaque background", () => {
+      mount(makeProps())
+      expect(tree.root.findAllByType("ScreenBackdrop" as never)).toHaveLength(1)
+      const order = tree.root
+        .findAll((node) => ["ScreenBackdrop", "ScrollView"].includes(node.type as string))
+        .map((node) => node.type)
+      expect(order).toEqual(["ScreenBackdrop", "ScrollView"])
+      const scroll = tree.root.findByType("ScrollView" as never)
+      expect((scroll.props.style as { backgroundColor?: string }).backgroundColor).toBeUndefined()
+    })
+
+    test("without a survey the resume card, tools and nearby slide up, staggered 0, 1, 2", () => {
+      mount(makeProps())
+      expect(entering()).toHaveLength(3)
+      expect(indexes()).toEqual([0, 1, 2])
+    })
+
+    test("the alert notice is a fourth entering section", () => {
+      mount(
+        makeProps({
+          surveys: [makeSurvey({ sync_state: "failed", sync_blocked: 0 })],
+          surveyStats: {
+            total: 1,
+            draft: 0,
+            submitted: 0,
+            pending: 0,
+            synced: 0,
+            failed: 1,
+            blocked: 0,
+          },
+        }),
+      )
+      // The alert (0), the resume card (1), the recent surveys (header 2, one row 3), tools (4),
+      // nearby (5): the recent surveys' own entrance views are inside their (mocked) section.
+      expect(indexes()).toEqual([0, 1, 4, 5])
+      expect(recent().props.firstIndex).toBe(2)
+    })
+
+    const recent = () => tree.root.findByType("RecentSurveysSection" as never)
+
+    test.each([
+      [1, [0, 3, 4]],
+      [2, [0, 4, 5]],
+      [3, [0, 5, 6]],
+      [8, [0, 5, 6]],
+    ])(
+      "with %i survey(s): resume card, recent surveys, tools, nearby in that order (D-20c)",
+      (count, expected) => {
+        const surveys = Array.from({ length: count }, (_, position) =>
+          makeSurvey({ id: `s${position}`, status: "submitted" }),
+        )
+        mount(makeProps({ surveys }))
+        // [resume card, tools, nearby] by stagger index: the recent surveys take 1 + rows slots.
+        expect(indexes()).toEqual(expected)
+        expect(recent().props.firstIndex).toBe(1)
+        const order = tree.root
+          .findAll((node) =>
+            ["EntranceView", "RecentSurveysSection"].includes(node.type as unknown as string),
+          )
+          .map((node) => node.type as unknown as string)
+        expect(order).toEqual([
+          "EntranceView",
+          "RecentSurveysSection",
+          "EntranceView",
+          "EntranceView",
+        ])
+      },
+    )
+
+    test("the recent surveys get the surveys, their details and the two ways out", () => {
+      const surveys = [makeSurvey({ id: "a" }), makeSurvey({ id: "b" })]
+      const surveyDetails = {}
+      const props = makeProps({ surveys, surveyDetails })
+      mount(props)
+      expect(recent().props.surveys).toBe(surveys)
+      expect(recent().props.surveyDetails).toBe(surveyDetails)
+      expect(recent().props.onOpenSurvey).toBe(props.onOpenSurvey)
+      expect(recent().props.onSeeAll).toBe(props.onOpenSurveyList)
+    })
+
+    test("the nearby trailing link uses the accent text colour of the scheme", () => {
+      mount(makeProps())
+      const header = tree.root.findByType("AppSectionHeader" as never)
+      type Props<T> = React.ReactElement<T>
+      const trailing = header.props.trailing as Props<{ children: Props<{ style: unknown }> }>
+      const link = trailing.props.children
+      const style = Object.assign({}, ...[link.props.style].flat()) as { color?: string }
+      expect(style.color).toBe(defaultTheme.visual.accentText)
+    })
+
+    test("renders the resume card with the draft and its two actions", () => {
+      const draft = makeSurvey()
+      const props = makeProps({ surveys: [draft] })
+      mount(props)
+      const card = tree.root.findByType(ResumeCard)
+      expect(card.props.resumeDraft).toBe(draft)
+      expect(card.props.onResume).toBe(props.onOpenSurvey)
+      expect(card.props.onCreateSurvey).toBe(props.onCreateSurvey)
+    })
+  })
+
   describe("HOME-02: the hero becomes a resume action", () => {
     test("no draft: the default 'new survey' hero shows, no progress card", () => {
       mount(makeProps({ surveys: [] }))
@@ -211,6 +385,8 @@ describe("HomeScreen", () => {
         .findAll((node) => (node.type as unknown) === "Text")
         .map((node) => String([node.props.children].flat().join("")))
       expect(texts).toContain(fr.home.hero.title)
+      // The hero is the "new survey" action itself: no second card, never the action twice.
+      expect(tree.root.findAllByType("NewSurveyCard" as never)).toHaveLength(0)
     })
 
     test("a draft updated within 48h becomes the resume hero, and no separate progress card (OA-17)", () => {
@@ -225,13 +401,16 @@ describe("HomeScreen", () => {
         .findAllByType("AppButton" as never)
         .map((node) => node.props.label)
       expect(buttonLabels).toContain(fr.home.hero.resumeButton)
-      // "Nouveau relevé" is a plain link under the primary button.
-      const newSurveyLink = tree.root.findAll(
-        (node) =>
-          (node.type as unknown) === "Pressable" &&
-          node.props.accessibilityLabel === fr.home.hero.newSurveyButton,
-      )
-      expect(newSurveyLink).toHaveLength(1)
+      // 12.2-19 fix round: "Nouveau relevé" is a glass card of its own under the hero, in the same
+      // entrance slot, right after the resume card.
+      const newSurveyCards = tree.root.findAllByType("NewSurveyCard" as never)
+      expect(newSurveyCards).toHaveLength(1)
+      const slot = tree.root.findByType(ResumeCard).parent
+      expect(slot?.findAllByType("NewSurveyCard" as never)).toHaveLength(1)
+      const wrapper = newSurveyCards[0].parent
+      expect(Object.assign({}, ...[wrapper?.props.style].flat())).toEqual({
+        marginTop: NEW_SURVEY_LAYOUT.gap,
+      })
 
       expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
 
@@ -247,11 +426,17 @@ describe("HomeScreen", () => {
       expect(onOpenSurvey).toHaveBeenCalledWith("survey-1")
     })
 
-    test("the resume hero draws one progress segment per filled factor, and the link starts a new survey", () => {
+    test("the resume hero draws one progress segment per filled factor, and the card under it starts a new survey", () => {
       const onCreateSurvey = jest.fn()
       mount(
         makeProps({
-          surveys: [makeSurvey({ completion_rate: 40, updated_at: new Date().toISOString() })],
+          surveys: [
+            makeSurvey({
+              completion_rate: 64,
+              factors_filled: 4,
+              updated_at: new Date().toISOString(),
+            }),
+          ],
           onCreateSurvey,
         }),
       )
@@ -264,13 +449,10 @@ describe("HomeScreen", () => {
       expect(done).toHaveLength(4)
       expect(todo).toHaveLength(6)
 
-      const link = tree.root.findAll(
-        (node) =>
-          (node.type as unknown) === "Pressable" &&
-          node.props.accessibilityLabel === fr.home.hero.newSurveyButton,
-      )[0]
+      const card = tree.root.findByType("NewSurveyCard" as never)
+      expect(card.props.onPress).toBe(onCreateSurvey)
       act(() => {
-        link.props.onPress()
+        card.props.onPress()
       })
       expect(onCreateSurvey).toHaveBeenCalledTimes(1)
     })
@@ -296,6 +478,7 @@ describe("HomeScreen", () => {
         .findAll((node) => (node.type as unknown) === "Text")
         .map((node) => String([node.props.children].flat().join("")))
       expect(texts).toContain(fr.home.hero.title)
+      expect(tree.root.findAllByType("NewSurveyCard" as never)).toHaveLength(0)
     })
 
     test("a submitted survey is never picked as the resume draft", () => {
@@ -460,11 +643,36 @@ describe("pickAlertSurvey", () => {
       )
       const card = tree.root.findByType("NearbyMapCard" as never)
       expect(card.props.nearby.position).toEqual(position)
-      expect(card.props.height).toBeGreaterThanOrEqual(240)
+      // 34 percent of the window, never taller a minimum than the overlays need (12.2-14).
+      expect(card.props.height).toBe(nearbyMapHeight(844))
+      expect(card.props.height).toBe(287)
       act(() => {
         card.props.onPress()
       })
       expect(onNavigateToExplorer).toHaveBeenCalledTimes(1)
+    })
+
+    test("the vertical gaps are the budget's: 12 under the native header, 16 before the section (12.2-14)", () => {
+      mount(
+        makeProps({
+          nativeHeader: true,
+          nearbyParcels: { ...makeProps().nearbyParcels, position },
+        }),
+      )
+      const flat = (node: { props: { style?: unknown } }) =>
+        Object.assign({}, ...[node.props.style].flat()) as Record<string, unknown>
+      const scroll = tree.root.findByType("ScrollView" as never)
+      expect(flat({ props: { style: scroll.props.contentContainerStyle } }).paddingTop).toBe(
+        HOME_GAPS.contentTop,
+      )
+      const nearby = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "EntranceView" &&
+          node.findAll((inner) => (inner.type as unknown) === "NearbyMapCard").length > 0,
+      )
+      expect(flat(nearby).marginTop).toBe(HOME_GAPS.section)
+      const header = nearby.findByType("AppSectionHeader" as never)
+      expect(flat(header).marginBottom).toBe(HOME_GAPS.sectionHeader)
     })
 
     test("a denied location or a load error shows a notice instead of the map", () => {

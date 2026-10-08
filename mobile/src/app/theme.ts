@@ -1,20 +1,8 @@
-import {
-  createContext,
-  createElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react"
+import { createContext, createElement, useContext, type ReactNode } from "react"
 import { useColorScheme } from "react-native"
 import { brandColors } from "./brand-tokens"
-import {
-  DEFAULT_THEME_MODE,
-  loadThemeModePreference,
-  saveThemeModePreference,
-} from "../storage/theme-preference"
+import { makeVisualColors, type BrandVisual } from "./theme-visual"
+import { glassInkDark, glassInkLight } from "./visual-tokens"
 
 /**
  * Phase 12 (DS-12, UX audit): light/dark theming on the same semantic tokens.
@@ -33,7 +21,6 @@ import {
  * (`brandColors.forest`, `.moss`, …) or a static token group is untouched.
  */
 export type BrandColorScheme = "light" | "dark"
-export type BrandThemeMode = BrandColorScheme | "automatic"
 
 // The neutrals that invert between light and dark: backgrounds, text, dividers and the status-soft
 // fills. Everything else in `brandColors` (the brand hues, plus forestNight/disabledMuted/
@@ -139,7 +126,11 @@ export type BrandSemanticColors = {
   warningSurface: string
 }
 
-function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): BrandSemanticColors {
+function makeSemanticColors(
+  colors: BrandColors,
+  scheme: BrandColorScheme,
+  strongInk?: string,
+): BrandSemanticColors {
   return {
     backgroundCanvas: colors.canvas,
     surfaceBase: colors.panel,
@@ -151,7 +142,8 @@ function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): Bran
     textSecondary: colors.textSecondary,
     // OA-83: `forest` is theme-invariant, so forest text vanished on the dark canvas. Strong text
     // (titles, labels, links) takes the light sage on dark.
-    textStrong: scheme === "dark" ? colors.textPrimary : colors.forest,
+    // The light glass ink (`withGlassInk`) passes a darker forest.
+    textStrong: strongInk ?? (scheme === "dark" ? colors.textPrimary : colors.forest),
     // OA-80 (sketch 001, direction A "Graphite" chosen by the owner): in dark mode the forest
     // heroes become a bordered surface, and the primary action a mid green that keeps white text.
     heroSurface: scheme === "dark" ? colors.panel : colors.forest,
@@ -391,88 +383,106 @@ function makeIbpScoreColors(
 }
 
 export type BrandTheme = {
-  mode: BrandThemeMode
   scheme: BrandColorScheme
-  setMode: (mode: BrandThemeMode) => void
   colors: BrandColors
   onSurface: BrandOnSurfaceColors
   semanticColors: BrandSemanticColors
   componentColors: BrandComponentColors
   fieldState: BrandFieldState
   ibpScoreColors: BrandIbpScoreColors
+  visual: BrandVisual
 }
 
-function buildTheme(
-  mode: BrandThemeMode,
-  scheme: BrandColorScheme,
-  setMode: BrandTheme["setMode"],
-): BrandTheme {
-  const colors = resolvePalette(scheme)
+export function buildTheme(scheme: BrandColorScheme): BrandTheme {
   const onSurface = scheme === "dark" ? darkOnSurface : lightOnSurface
-  const semanticColors = makeSemanticColors(colors, scheme)
+  return assembleTheme(scheme, resolvePalette(scheme), onSurface)
+}
+
+function assembleTheme(
+  scheme: BrandColorScheme,
+  colors: BrandColors,
+  onSurface: BrandOnSurfaceColors,
+  strongInk?: string,
+): BrandTheme {
+  const semanticColors = makeSemanticColors(colors, scheme, strongInk)
   return {
-    mode,
     scheme,
-    setMode,
     colors,
     onSurface,
     semanticColors,
     componentColors: makeComponentColors(colors, semanticColors, onSurface),
     fieldState: makeFieldState(colors, onSurface),
     ibpScoreColors: makeIbpScoreColors(colors, onSurface),
+    visual: makeVisualColors(scheme, colors),
   }
 }
 
-// The default theme (light, "automatic", a no-op setter) doubles as the context's default value —
-// deliberately not a "must be used inside a provider" throw like `useStatus`/`useSession`. Nearly
-// every styled file in the app calls `useBrandTheme()` (this phase's whole point), including a
-// great many component tests that render a screen or a `ui/` primitive in isolation with no
-// wrapping provider; defaulting to the light theme there keeps that large existing test suite
-// working unchanged, at the cost of never being able to detect a genuinely missing provider. The
-// real app always mounts `BrandThemeProvider` in `App.tsx`, so this default is only ever observed
-// in tests.
+// The default theme (light) doubles as the context's default value — deliberately not a "must be
+// used inside a provider" throw like `useStatus`/`useSession`. Nearly every styled file in the app
+// calls `useBrandTheme()` (this phase's whole point), including a great many component tests that
+// render a screen or a `ui/` primitive in isolation with no wrapping provider; defaulting to the
+// light theme there keeps that large existing test suite working unchanged, at the cost of never
+// being able to detect a genuinely missing provider. The real app always mounts
+// `BrandThemeProvider` in `App.tsx`, so this default is only ever observed in tests.
 // Exported for tests that call a theme-taking helper (jsTabScreenOptions, buildJsTabBarStyle…)
-// directly, outside a component — the same light/"automatic" theme `useBrandTheme()` falls back to
-// without a provider, so a test's expected value stays exactly what the pre-Phase-12 static tokens
-// resolved to.
-export const defaultTheme = buildTheme(DEFAULT_THEME_MODE, "light", () => {})
+// directly, outside a component — the same light theme `useBrandTheme()` falls back to without a
+// provider, so a test's expected value stays exactly what the pre-Phase-12 static tokens resolved
+// to.
+export const defaultTheme = buildTheme("light")
+const darkTheme = buildTheme("dark")
 
 const BrandThemeContext = createContext<BrandTheme>(defaultTheme)
 
 /**
- * Wraps the app (outside `AppStateProvider`, in `App.tsx`) so a theme choice is available before
- * auth resolves and to every screen. Resolves "automatic" against the OS scheme (`useColorScheme`)
- * — `app.json`'s `userInterfaceStyle: "automatic"` is what lets that OS value reflect the device's
- * own setting rather than being pinned light. The chosen mode persists to `local_meta`
- * (`storage/theme-preference.ts`) and is read back on the next launch.
+ * Wraps the app (outside `AppStateProvider`, in `App.tsx`) so the theme is available before auth
+ * resolves and to every screen. The theme follows the system appearance only (owner decision,
+ * 2026-10-08: no in-app theme setting): `useColorScheme` re-renders on every system change, and
+ * `app.json`'s `userInterfaceStyle: "automatic"` lets that value reflect the device's own setting.
+ * UIKit follows the same system value, so the native tab bar, glass, alerts and keyboard always
+ * agree with the JS theme. A `theme_mode` row an older build left in `local_meta` is ignored.
  */
 export function BrandThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme()
-  const [mode, setModeState] = useState<BrandThemeMode>(DEFAULT_THEME_MODE)
-
-  useEffect(() => {
-    let cancelled = false
-    void loadThemeModePreference().then((saved) => {
-      if (!cancelled) setModeState(saved)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const setMode = useCallback((next: BrandThemeMode) => {
-    setModeState(next)
-    void saveThemeModePreference(next)
-  }, [])
-
-  const scheme: BrandColorScheme =
-    mode === "automatic" ? (systemScheme === "dark" ? "dark" : "light") : mode
-
-  const value = useMemo(() => buildTheme(mode, scheme, setMode), [mode, scheme, setMode])
-
+  // Both themes are built once, so the value keeps its identity between renders.
+  const value = systemScheme === "dark" ? darkTheme : defaultTheme
   return createElement(BrandThemeContext.Provider, { value }, children)
 }
 
 export function useBrandTheme(): BrandTheme {
   return useContext(BrandThemeContext)
+}
+
+const glassInkThemes = new WeakMap<BrandTheme, BrandTheme>()
+
+type GlassInk = { textSecondary: string; danger: string; textStrong?: string }
+
+const glassInks: Record<BrandColorScheme, GlassInk> = { light: glassInkLight, dark: glassInkDark }
+
+/**
+ * The theme of content on translucent Liquid Glass (12.2-23 correction), as iOS draws vibrant
+ * labels on its materials: in dark the secondary and danger inks brighter (`glassInkDark`), in
+ * light the secondary, strong and danger inks darker (`glassInkLight`), every derived token rebuilt
+ * from them. One per theme, cached.
+ */
+export function withGlassInk(theme: BrandTheme): BrandTheme {
+  const cached = glassInkThemes.get(theme)
+  if (cached) return cached
+  const ink = glassInks[theme.scheme]
+  const inked = assembleTheme(
+    theme.scheme,
+    { ...theme.colors, textSecondary: ink.textSecondary },
+    { ...theme.onSurface, danger: ink.danger },
+    ink.textStrong,
+  )
+  glassInkThemes.set(theme, inked)
+  return inked
+}
+
+/**
+ * Gives its children the glass ink theme (`withGlassInk`): `GlassSurface` wraps its content on dark
+ * Liquid Glass, and on light Liquid Glass whose `surface` asks for it (`ink`, the Explorer sheet).
+ */
+export function GlassInkProvider({ children }: { children?: ReactNode }) {
+  const value = withGlassInk(useBrandTheme())
+  return createElement(BrandThemeContext.Provider, { value }, children)
 }

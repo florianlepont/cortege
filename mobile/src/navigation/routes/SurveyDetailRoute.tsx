@@ -7,6 +7,8 @@ import { useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyDetailRouteProps } from "../types"
+import { ScreenFrame } from "../../ui/ScreenFrame"
+import { usesNativeLargeTitle } from "../large-title"
 
 /**
  * Survey detail route (phase 01.9-18, D-01): the selected survey and its
@@ -41,30 +43,33 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   if (!state.selectedSurvey) return null
 
   return (
-    <SurveyDetailScreen
-      apiUrl={session.apiUrl}
-      accessToken={accessToken}
-      selectedSurvey={state.selectedSurvey}
-      selectedSurveyAttachments={state.selectedSurveyAttachments}
-      navigation={navigation}
-      surveyDetails={state.surveyDetails}
-      detailsLoadingSurveyId={state.detailsLoadingSurveyId}
-      surveyEvents={state.surveyEvents}
-      onTakePhoto={actions.queueAttachmentFromCamera}
-      onPickPhoto={actions.queueAttachmentFromLibrary}
-      onDeleteAttachment={actions.deleteAttachment}
-      onDeleteSurvey={actions.confirmDeleteSurvey}
-      onSubmitSurvey={actions.submitSurvey}
-      onRetrySurvey={actions.retrySurvey}
-      onDiscardSurvey={actions.discardSurvey}
-      onRenameSurvey={actions.renameSurvey}
-      onOpenContext={onOpenContext}
-      onOpenParcels={onOpenParcels}
-      onOpenScore={onOpenScore}
-      onOpenFactor={onOpenFactor}
-      onOpenHistory={onOpenHistory}
-      onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
-      onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
-    />
+    // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
+    <ScreenFrame largeTitle={usesNativeLargeTitle()}>
+      <SurveyDetailScreen
+        apiUrl={session.apiUrl}
+        accessToken={accessToken}
+        selectedSurvey={state.selectedSurvey}
+        selectedSurveyAttachments={state.selectedSurveyAttachments}
+        navigation={navigation}
+        surveyDetails={state.surveyDetails}
+        detailsLoadingSurveyId={state.detailsLoadingSurveyId}
+        surveyEvents={state.surveyEvents}
+        onTakePhoto={actions.queueAttachmentFromCamera}
+        onPickPhoto={actions.queueAttachmentFromLibrary}
+        onDeleteAttachment={actions.deleteAttachment}
+        onDeleteSurvey={actions.confirmDeleteSurvey}
+        onSubmitSurvey={actions.submitSurvey}
+        onRetrySurvey={actions.retrySurvey}
+        onDiscardSurvey={actions.discardSurvey}
+        onRenameSurvey={actions.renameSurvey}
+        onOpenContext={onOpenContext}
+        onOpenParcels={onOpenParcels}
+        onOpenScore={onOpenScore}
+        onOpenFactor={onOpenFactor}
+        onOpenHistory={onOpenHistory}
+        onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
+        onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
+      />
+    </ScreenFrame>
   )
 })

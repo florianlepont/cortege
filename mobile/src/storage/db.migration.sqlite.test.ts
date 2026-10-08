@@ -20,7 +20,12 @@ jest.mock("expo-sqlite", () => ({
 }))
 
 import { initLocalDb, SCHEMA_VERSION } from "./db"
-import { computePayloadCompletion, safeParseJson, toSurveyQueuePayload } from "./utils"
+import {
+  computePayloadCompletion,
+  computePayloadFactorsFilled,
+  safeParseJson,
+  toSurveyQueuePayload,
+} from "./utils"
 
 const NOW = "2026-01-01T00:00:00.000Z"
 const NEXT_RETRY_AT = "2026-01-01T00:05:00.000Z"
@@ -425,5 +430,135 @@ describe("db migration v1 -> v2 (payload_completion, 01.9 D-03)", () => {
     expect(await completionById()).toEqual({ ...before, "v1-light": 55 })
     const columns = await v1Db.getAllAsync<{ name: string }>(`PRAGMA table_info(local_surveys)`)
     expect(columns.filter((column) => column.name === "payload_completion")).toHaveLength(1)
+  })
+})
+
+// Schema exactly as migration 4 leaves the surveys table: the migration 2 column, no migration 5 one.
+const V4_SCHEMA = `
+  ${V1_SCHEMA}
+  ALTER TABLE local_surveys ADD COLUMN payload_completion INTEGER NOT NULL DEFAULT 0;
+  PRAGMA user_version = 4;
+`
+
+// The draft of 12.2-14: name, region, stage, parcel and the six factors A to F. Its payload_completion
+// is 71, which the resume card used to turn into "7/10 factors" while the detail said 6.
+const V4_PAYLOADS: Record<string, string> = {
+  "v4-six": JSON.stringify({
+    id: "v4-six",
+    sync_version: 2,
+    site_name: "Lisière de la Marne",
+    region_version: "ACA",
+    vegetation_stage: "collineen",
+    parcel_ids: ["ab12"],
+    factors: {
+      A: { native_genus_count: 5 },
+      B: { strata_count: 3, covered_autochthonous_percent: 60 },
+      C: { bmg_count: 2, bmm_count: 2, surface_ha: 1 },
+      D: { bmg_count: 0, bmm_count: 2, surface_ha: 1 },
+      E: { tgb_count: 6, gb_count: 0, surface_ha: 1 },
+      F: { trees_per_ha: 9 },
+    },
+  }),
+  "v4-partial": JSON.stringify({
+    id: "v4-partial",
+    sync_version: 1,
+    site_name: "Partielle",
+    region_version: "ACA",
+    vegetation_stage: "collineen",
+    factors: { A: { native_genus_count: 5 }, B: { strata_count: "abc" } },
+  }),
+  "v4-empty": JSON.stringify({ id: "v4-empty", sync_version: 1, site_name: "Vide" }),
+  "v4-corrupt": "{not json",
+}
+
+describe("db migration v4 -> v5 (payload_factors_filled, 12.2-14)", () => {
+  const v4Db = createNodeSqliteDb()
+  let initV4: () => Promise<void>
+
+  beforeAll(async () => {
+    await v4Db.execAsync(V4_SCHEMA)
+    for (const [id, payloadJson] of Object.entries(V4_PAYLOADS)) {
+      await v4Db.runAsync(
+        `INSERT INTO local_surveys (id, site_name, status, visibility, sync_version, sync_state, sync_blocked, payload_json, payload_completion, created_at, updated_at)
+         VALUES (?, ?, 'draft', 'private', 1, 'synced', 0, ?, ?, ?, ?)`,
+        [
+          id,
+          id,
+          payloadJson,
+          computePayloadCompletion(toSurveyQueuePayload(safeParseJson(payloadJson))),
+          NOW,
+          NOW,
+        ],
+      )
+    }
+
+    mockActiveDb = v4Db
+    await jest.isolateModulesAsync(async () => {
+      const dbModule = await import("./db")
+      initV4 = dbModule.initLocalDb
+    })
+    await initV4()
+  })
+
+  afterAll(() => {
+    mockActiveDb = mockDb
+  })
+
+  async function factorsById(): Promise<Record<string, number>> {
+    const rows = await v4Db.getAllAsync<{ id: string; payload_factors_filled: number }>(
+      `SELECT id, payload_factors_filled FROM local_surveys`,
+    )
+    return Object.fromEntries(rows.map((row) => [row.id, row.payload_factors_filled]))
+  }
+
+  test("user_version is the latest", async () => {
+    const version = await v4Db.getFirstAsync<{ user_version: number }>(`PRAGMA user_version`)
+    expect(version?.user_version).toBe(SCHEMA_VERSION)
+    expect(SCHEMA_VERSION).toBeGreaterThanOrEqual(5)
+  })
+
+  test("payload_factors_filled is backfilled from each stored payload", async () => {
+    const factors = await factorsById()
+    for (const id of ["v4-six", "v4-partial", "v4-empty"]) {
+      expect(factors[id]).toBe(
+        computePayloadFactorsFilled(toSurveyQueuePayload(safeParseJson(V4_PAYLOADS[id]))),
+      )
+    }
+    // Six factors, where payload_completion (71) read as 7 tenths; a B the package cannot read is not a factor.
+    expect(factors["v4-six"]).toBe(6)
+    expect(factors["v4-partial"]).toBe(1)
+    expect(factors["v4-empty"]).toBe(0)
+  })
+
+  test("the completion the old reading used is untouched and would have said 7", async () => {
+    const row = await v4Db.getFirstAsync<{ payload_completion: number }>(
+      `SELECT payload_completion FROM local_surveys WHERE id = 'v4-six'`,
+    )
+    expect(row?.payload_completion).toBe(71)
+    expect(Math.round((row?.payload_completion ?? 0) / 10)).toBe(7)
+  })
+
+  test("a row whose payload_json is not valid JSON gets 0 and the migration completes", async () => {
+    expect((await factorsById())["v4-corrupt"]).toBe(0)
+  })
+
+  test("payload_json is never rewritten", async () => {
+    const rows = await v4Db.getAllAsync<{ id: string; payload_json: string }>(
+      `SELECT id, payload_json FROM local_surveys`,
+    )
+    for (const row of rows) {
+      expect(row.payload_json).toBe(V4_PAYLOADS[row.id])
+    }
+  })
+
+  test("running initLocalDb again keeps what was written after the migration", async () => {
+    await v4Db.runAsync(`UPDATE local_surveys SET payload_factors_filled = 9 WHERE id = 'v4-empty'`)
+    const before = await factorsById()
+
+    await initV4()
+
+    expect(await factorsById()).toEqual(before)
+    const columns = await v4Db.getAllAsync<{ name: string }>(`PRAGMA table_info(local_surveys)`)
+    expect(columns.filter((column) => column.name === "payload_factors_filled")).toHaveLength(1)
   })
 })

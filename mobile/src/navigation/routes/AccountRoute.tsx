@@ -2,6 +2,8 @@ import { memo, useEffect } from "react"
 import { KeyboardAvoidingView, Platform } from "react-native"
 import { AccountScreen } from "../../screens/AccountScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
+import { ScreenFrame } from "../../ui/ScreenFrame"
+import { usesNativeLargeTitle } from "../large-title"
 import { styles } from "../styles"
 import type { AccountRouteProps } from "../types"
 import { PictureStatusAlert } from "./PictureStatusAlert"
@@ -27,25 +29,28 @@ export const AccountRoute = memo(function AccountRoute({ navigation }: AccountRo
   )
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.accountScreenWrap}
-    >
-      <PictureStatusAlert />
-      <AccountScreen
-        accessToken={accessToken ?? ""}
-        currentUser={session.currentUser}
-        profile={session.profile}
-        profileUpdating={session.profileUpdating}
-        apiUrl={session.apiUrl}
-        onSaveProfile={actions.handleUpdateProfile}
-        onChangeEmail={actions.handleChangeEmail}
-        onPasswordReset={actions.handlePasswordReset}
-        onPickProfilePictureFromLibrary={actions.handlePickProfilePictureFromLibrary}
-        onTakeProfilePictureFromCamera={actions.handleTakeProfilePictureFromCamera}
-        onRemoveProfilePicture={actions.handleRemoveProfilePicture}
-        onLogout={actions.handleLogout}
-      />
-    </KeyboardAvoidingView>
+    // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
+    <ScreenFrame largeTitle={usesNativeLargeTitle()}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.accountScreenWrap}
+      >
+        <PictureStatusAlert />
+        <AccountScreen
+          accessToken={accessToken ?? ""}
+          currentUser={session.currentUser}
+          profile={session.profile}
+          profileUpdating={session.profileUpdating}
+          apiUrl={session.apiUrl}
+          onSaveProfile={actions.handleUpdateProfile}
+          onChangeEmail={actions.handleChangeEmail}
+          onPasswordReset={actions.handlePasswordReset}
+          onPickProfilePictureFromLibrary={actions.handlePickProfilePictureFromLibrary}
+          onTakeProfilePictureFromCamera={actions.handleTakeProfilePictureFromCamera}
+          onRemoveProfilePicture={actions.handleRemoveProfilePicture}
+          onLogout={actions.handleLogout}
+        />
+      </KeyboardAvoidingView>
+    </ScreenFrame>
   )
 })

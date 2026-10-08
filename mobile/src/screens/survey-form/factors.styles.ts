@@ -1,15 +1,19 @@
 import { StyleSheet } from "react-native"
-import { brandColors, brandShadow, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandShadow, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+
+// Phase 12.2 (variant I): the factor tiles are glass cards without blur (D-12), radius 22, gaps
+// on the 4-grid; their sizes and touch targets are unchanged (D-05).
+export const FACTOR_TILE_MIN_HEIGHT = 44
 
 export function createFactorStyles(theme: BrandTheme) {
   return StyleSheet.create({
     scoreHeroCard: {
-      borderRadius: 28,
+      borderRadius: brandRadius.card,
       backgroundColor: theme.semanticColors.surfaceElevated,
-      paddingHorizontal: 18,
-      paddingVertical: 18,
-      gap: 4,
+      paddingHorizontal: brandSpacing4.md,
+      paddingVertical: brandSpacing4.md,
+      gap: brandSpacing4.xs,
       ...brandShadow.card,
     },
     scoreHeroLabel: {
@@ -29,40 +33,41 @@ export function createFactorStyles(theme: BrandTheme) {
     factorGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 6,
+      gap: brandSpacing4.sm,
     },
     factorTile: {
       width: "30.5%",
       minWidth: 92,
+      minHeight: FACTOR_TILE_MIN_HEIGHT,
       flexGrow: 1,
-      borderRadius: 18,
-      paddingHorizontal: 8,
-      paddingVertical: 8,
-      gap: 4,
+      borderRadius: brandRadius.card,
+      paddingHorizontal: brandSpacing4.sm,
+      paddingVertical: brandSpacing4.sm,
+      gap: brandSpacing4.xs,
       borderWidth: 1,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
     },
+    // The tone is the hairline only: the glass fill stays, the ring says the progress.
     factorTilePending: {
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.semanticColors.surfaceElevated,
+      borderColor: theme.visual.glass.cardBorder,
     },
     factorTileComplete: {
-      borderColor: brandColors.moss,
-      backgroundColor: theme.colors.successSoft,
+      borderColor: theme.visual.score.high,
     },
     factorTileWarning: {
-      borderColor: brandColors.terracotta,
-      backgroundColor: theme.colors.errorSoft,
+      borderColor: theme.onSurface.danger,
     },
     factorTileTopRow: {
       flexDirection: "row",
-      gap: 6,
+      gap: brandSpacing4.sm,
       justifyContent: "space-between",
       alignItems: "center",
     },
     factorTileIdentity: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 5,
+      gap: brandSpacing4.xs,
     },
     factorBadge: {
       width: 24,
@@ -87,8 +92,9 @@ export function createFactorStyles(theme: BrandTheme) {
       justifyContent: "center",
       backgroundColor: theme.colors.panelMuted,
     },
+    // The input role's Sora SemiBold at the tile's 12 pt on 13 (sizes unchanged, D-05).
     factorTileTitle: {
-      ...brandTypography.label,
+      ...brandTypography.input,
       fontSize: 12,
       lineHeight: 13,
       color: theme.colors.textPrimary,

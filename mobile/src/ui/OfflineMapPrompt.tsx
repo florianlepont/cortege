@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandRadius, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import type { OfflineMapPrompt as OfflineMapPromptModel } from "../hooks/useOfflineMapPrompt"
 import { fr } from "../i18n"
@@ -20,7 +20,12 @@ type OfflineMapPromptProps = {
   onDismiss?: () => void
 }
 
-/** Offers the map around a survey for offline use, shows the download progress, then the result. */
+/**
+ * Offers the map around a survey for offline use, shows the download progress, then the result.
+ * 12.2-21 dark pass: the icons and the progress fill take the accent (forest in light, light green in
+ * dark, where the forest was about 2:1), and the banner, which floats over the parcel picker's map,
+ * takes the map panel glass so its text reads over any basemap.
+ */
 export const OfflineMapPrompt = memo(function OfflineMapPrompt({
   prompt,
   siteName,
@@ -37,7 +42,7 @@ export const OfflineMapPrompt = memo(function OfflineMapPrompt({
     if (prompt.state === "downloading") {
       return (
         <View style={styles.row}>
-          <Ionicons name="cloud-download-outline" size={18} color={brandColors.forest} />
+          <Ionicons name="cloud-download-outline" size={18} color={theme.visual.accentText} />
           <Text style={styles.rowText}>{t.downloading(prompt.percent)}</Text>
         </View>
       )
@@ -45,7 +50,7 @@ export const OfflineMapPrompt = memo(function OfflineMapPrompt({
     if (prompt.state === "covered") {
       return (
         <View style={styles.row}>
-          <Ionicons name="checkmark-circle-outline" size={18} color={brandColors.forest} />
+          <Ionicons name="checkmark-circle-outline" size={18} color={theme.visual.accentText} />
           <Text style={styles.rowText}>{t.row.downloaded}</Text>
         </View>
       )
@@ -68,10 +73,10 @@ export const OfflineMapPrompt = memo(function OfflineMapPrompt({
   // banner: nothing to show once the area is on the phone
   if (prompt.state === "covered") return null
   return (
-    <GlassSurface tone="auto" style={styles.banner}>
+    <GlassSurface tone="auto" surface={theme.visual.mapPanel} style={styles.banner}>
       <View style={styles.bannerHead}>
         <View style={styles.bannerIcon}>
-          <Ionicons name="cloud-download-outline" size={20} color={brandColors.forest} />
+          <Ionicons name="cloud-download-outline" size={20} color={theme.visual.accentText} />
         </View>
         <View style={styles.bannerBody}>
           <Text style={styles.bannerTitle}>{t.title}</Text>
@@ -142,7 +147,7 @@ function createStyles(theme: BrandTheme) {
       backgroundColor: theme.colors.divider,
       marginVertical: 4,
     },
-    fill: { height: 6, backgroundColor: brandColors.forest },
+    fill: { height: 6, backgroundColor: theme.visual.accentText },
     row: {
       flexDirection: "row",
       alignItems: "center",

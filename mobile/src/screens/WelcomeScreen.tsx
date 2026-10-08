@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandFontScaleCaps, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
-import { AppButton } from "../ui/AppButton"
+import { GlassButton } from "../ui/GlassButton"
 import { AppText as Text } from "../ui/AppText"
 import { BrandHighlight } from "../ui/BrandHighlight"
 import { ConfettiBurst } from "../ui/ConfettiBurst"
@@ -160,7 +160,7 @@ export function WelcomeScreen({ name, onContinue }: WelcomeScreenProps) {
       />
 
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, brandSpacing.lg) }]}>
-        <AppButton label={t.start} size="lg" onPress={onContinue} />
+        <GlassButton label={t.start} size="lg" onPress={onContinue} />
       </View>
 
       {reducedMotion ? null : <ConfettiBurst />}

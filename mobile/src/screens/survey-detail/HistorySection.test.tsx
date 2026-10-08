@@ -1,5 +1,7 @@
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
+import { brandRadius, brandTypography } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { HistorySection } from "./HistorySection"
 
@@ -182,5 +184,44 @@ describe("fr.parcelHistory.entry", () => {
 
   test("falls back to a plain label when year, version and isLatest are all absent", () => {
     expect(fr.parcelHistory.entry({ year: null, version: null, isLatest: false })).toBe("Relevé")
+  })
+
+  test("the section sits in a glass card and its row texts use the new hierarchy", async () => {
+    mockFetchParcelSurveyHistory.mockResolvedValue({
+      parcel_id: "p1",
+      items: [
+        {
+          survey_id: "previous-1",
+          observation_year: 2025,
+          version_number: 1,
+          scores: { ibp_peuplement_gestion: 15, ibp_contexte: 12, ibp_total: 27 },
+          factor_results: {},
+          submitted_at: "2025-06-01T00:00:00.000Z",
+        },
+      ],
+    })
+    await mount(BASE_PROPS)
+    const flatten = (style: unknown): Record<string, unknown> =>
+      Array.isArray(style)
+        ? style.reduce((acc, item) => ({ ...acc, ...flatten(item) }), {})
+        : ((style as Record<string, unknown> | null | undefined) ?? {})
+    const card = flatten(tree.root.findAllByType("View" as never)[0]?.props.style)
+    expect(card).toMatchObject({
+      backgroundColor: defaultTheme.visual.glass.cardFill,
+      borderColor: defaultTheme.visual.glass.cardBorder,
+      borderRadius: brandRadius.card,
+    })
+    expect((card.padding as number) % 4).toBe(0)
+    const title = tree.root
+      .findAll((node) => (node.type as unknown) === "Text")
+      .find(
+        (node) =>
+          [node.props.children].flat().join("") ===
+          fr.parcelHistory.entry({ year: 2025, version: 1, isLatest: false }),
+      )
+    expect(flatten(title?.props.style)).toMatchObject({
+      fontFamily: brandTypography.input.fontFamily,
+      fontSize: brandTypography.input.fontSize,
+    })
   })
 })

@@ -4,12 +4,12 @@ import { useBrandTheme } from "../../app/theme"
 import { HomeRoute } from "../routes/HomeRoute"
 import { styles } from "../styles"
 import type { HomeStackParamList } from "../types"
-import { createBaseStackScreenOptions, pageColourHeader } from "./stack-options"
+import { createBaseStackScreenOptions } from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
-  offlineAreasScreenOptions,
-  settingsScreenOptions,
+  makeOfflineAreasScreenOptions,
+  makeSettingsScreenOptions,
 } from "./AccountStack"
 
 const HomeStack = createNativeStackNavigator<HomeStackParamList>()
@@ -19,26 +19,24 @@ export function HomeTabNavigator() {
   return (
     <View style={styles.tabScreenContainer}>
       <HomeStack.Navigator
-        screenOptions={{
-          ...createBaseStackScreenOptions(theme),
-          ...pageColourHeader(theme),
-          headerShown: false,
-        }}
+        // D-19: the transparent halo header by default (Compte, Paramètres, Cartes hors ligne draw
+        // a ScreenFrame; Accueil draws its own halo).
+        screenOptions={{ ...createBaseStackScreenOptions(theme), headerShown: false }}
       >
         <HomeStack.Screen name="homeRoot" component={HomeRoute} />
         <HomeStack.Screen
           name="accountHome"
-          options={makeAccountHomeOptions(theme.semanticColors.textStrong)}
+          options={makeAccountHomeOptions(theme)}
           component={ACCOUNT_SCREENS.accountHome}
         />
         <HomeStack.Screen
           name="settings"
-          options={settingsScreenOptions}
+          options={makeSettingsScreenOptions(theme)}
           component={ACCOUNT_SCREENS.settings}
         />
         <HomeStack.Screen
           name="offlineAreas"
-          options={offlineAreasScreenOptions}
+          options={makeOfflineAreasScreenOptions(theme)}
           component={ACCOUNT_SCREENS.offlineAreas}
         />
       </HomeStack.Navigator>

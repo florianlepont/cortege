@@ -26,24 +26,63 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
+    ActivityIndicator: mockComponent("ActivityIndicator"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Pressable: mockComponent("Pressable"),
     StyleSheet: { create: <T,>(value: T): T => value },
+    Platform: { OS: "ios" },
   }
 })
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+// The theme the legend reads, switchable per test (light by default).
+const mockScheme: { current: "light" | "dark" } = { current: "light" }
+jest.mock("../../app/theme", () => {
+  const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
+  const themes = {
+    light: actual.defaultTheme,
+    dark: actual.buildTheme("dark"),
+  }
+  return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
+})
 
+import {
+  brandColors,
+  brandInteraction,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
+import { buildTheme, defaultTheme } from "../../app/theme"
+import { GlassSurface } from "../../ui/GlassSurface"
 import { ScoreLegend } from "./ScoreLegend"
+
+const darkTheme = buildTheme("dark")
+
+afterEach(() => {
+  mockScheme.current = "light"
+})
+
+const flat = (style: unknown): Record<string, unknown> =>
+  Object.assign({}, ...[style].flat(3).filter(Boolean))
+
+function textNode(tree: renderer.ReactTestRenderer, label: string) {
+  return tree.root.find(
+    (node) => (node.type as unknown) === "Text" && node.props.children === label,
+  )
+}
 
 const t = fr.publicMap
 
-function render() {
+function render(loading = false) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<ScoreLegend bottom={40} count={12} />)
+    tree = renderer.create(<ScoreLegend bottom={40} count={12} loading={loading} />)
   })
   return tree!
+}
+
+function expand(tree: renderer.ReactTestRenderer) {
+  act(() => tree.root.findByProps({ accessibilityLabel: t.a11y.showLegend }).props.onPress())
 }
 
 describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
@@ -105,5 +144,79 @@ describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
       )
       expect(views.length).toBeGreaterThan(0)
     }
+  })
+
+  test("the swatches are exactly the marker colours, and the draft swatch stays dashed", () => {
+    const tree = render()
+    expand(tree)
+    const swatches = tree.root
+      .findAll((node) => (node.type as unknown) === "View" && flat(node.props.style).width === 14)
+      .map((node) => flat(node.props.style))
+    expect(swatches.map((style) => style.backgroundColor)).toEqual([
+      brandMapTokens.scoreMarker.high,
+      brandMapTokens.scoreMarker.mid,
+      brandMapTokens.scoreMarker.low,
+      brandColors.white,
+      brandMapTokens.parcelUnscored,
+    ])
+    expect(swatches[3].borderStyle).toBe("dashed")
+    expect(swatches[3].borderColor).toBe(brandColors.forest)
+    expect(swatches.slice(0, 3).every((style) => style.borderStyle === undefined)).toBe(true)
+    expect(swatches[4].borderStyle).toBeUndefined()
+  })
+
+  test("the toggle keeps its 40 pt glass disc and a 44 pt target (D-05)", () => {
+    const toggle = render().root.findByType("Pressable" as never)
+    const style = flat(toggle.props.style)
+    expect(style.width).toBe(40)
+    expect(style.height).toBe(40)
+    expect(40 + 2 * (toggle.props.hitSlop as number)).toBe(brandInteraction.hitTarget.min)
+  })
+
+  test("icon and spinner use the map control colour in light and dark (12.2-19)", () => {
+    const light = render(true)
+    expect(light.root.findByType("Ionicons" as never).props.color).toBe(
+      defaultTheme.visual.mapControl.icon,
+    )
+    expect(light.root.findByType("Ionicons" as never).props.size).toBe(24)
+    expect(light.root.findByType("ActivityIndicator" as never).props.color).toBe(
+      defaultTheme.visual.mapControl.icon,
+    )
+    mockScheme.current = "dark"
+    const dark = render(true)
+    expect(dark.root.findByType("Ionicons" as never).props.color).toBe(
+      darkTheme.visual.mapControl.icon,
+    )
+    expect(dark.root.findByType("ActivityIndicator" as never).props.color).toBe(
+      darkTheme.visual.mapControl.icon,
+    )
+    expect(darkTheme.visual.mapControl.icon).not.toBe(brandColors.forest)
+  })
+
+  test("count pill, toggle and panel sit on the map control glass with its hairline (12.2-19)", () => {
+    mockScheme.current = "dark"
+    const tree = render()
+    expand(tree)
+    const surfaces = tree.root.findAllByType(GlassSurface)
+    expect(surfaces).toHaveLength(3)
+    for (const surface of surfaces) {
+      expect(surface.props.surface).toEqual(darkTheme.visual.mapControl.glass)
+      expect(flat(surface.props.style).borderColor).toBe(darkTheme.visual.mapControl.hairline)
+    }
+    const count = flat(textNode(tree, t.count(12)).props.style)
+    expect(count.color).toBe(darkTheme.visual.mapControl.text)
+  })
+
+  test("the panel title is a section header and the row labels a muted footnote", () => {
+    const tree = render()
+    expand(tree)
+    const title = flat(textNode(tree, t.legend.title).props.style)
+    expect(title.fontFamily).toBe(brandTypography.sectionHeader.fontFamily)
+    expect(title.fontSize).toBe(brandTypography.sectionHeader.fontSize)
+    expect(title.color).toBe(defaultTheme.visual.mapControl.text)
+    const row = flat(textNode(tree, t.legend.high).props.style)
+    expect(row.fontSize).toBe(brandTypeScale.footnote.fontSize)
+    expect(row.lineHeight).toBe(brandTypeScale.footnote.lineHeight)
+    expect(row.color).toBe(defaultTheme.visual.mapControl.textMuted)
   })
 })

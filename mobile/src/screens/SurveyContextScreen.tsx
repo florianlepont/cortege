@@ -1,16 +1,17 @@
 import { useMemo } from "react"
-import { Platform, ScrollView, View } from "react-native"
-import { useHeaderHeight } from "@react-navigation/elements"
+import { ScrollView, View } from "react-native"
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppText as Text } from "../ui/AppText"
+import { useFrameInsetBehavior } from "../ui/frame-large-title"
 import { PageTitle } from "../ui/PageTitle"
 import { MapActionPill } from "./public-map/MapChips"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
 import { ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
 import { type SurveyContextScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
+import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 
 const t = fr.surveyDetail.contextScreen
@@ -34,8 +35,10 @@ export function SurveyContextScreen({
   onSwitchToV32,
 }: SurveyContextScreenProps) {
   const theme = useBrandTheme()
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const contentStyle = useSubPageContentStyle(styles.subContent)
+  // 12.2-17: iOS insets the page under the native large title (PageTitle then draws nothing).
+  const insetBehavior = useFrameInsetBehavior()
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName, parcelIds } = data
 
@@ -59,8 +62,10 @@ export function SurveyContextScreen({
 
   return (
     <ScrollView
-      style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
-      contentContainerStyle={styles.subContent}
+      // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
+      style={styles.scroll}
+      contentContainerStyle={contentStyle}
+      contentInsetAdjustmentBehavior={insetBehavior}
     >
       <PageTitle>{fr.navigation.headers.surveyContext}</PageTitle>
       <ParcelMapCard
@@ -74,7 +79,7 @@ export function SurveyContextScreen({
       >
         {canEditSurvey ? (
           <MapActionPill
-            icon="pencil"
+            icon="pencil-outline"
             label={t.editParcels}
             accessibilityLabel={a11y.editParcels(activeSiteName)}
             onPress={() => void onOpenParcels(selectedSurvey.id)}

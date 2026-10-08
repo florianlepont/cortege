@@ -1,10 +1,9 @@
 import type { SurveyDetailResponse } from "../../app/types"
-import type { LocalAttachment, LocalSurvey } from "../../storage"
+import type { LocalSurvey } from "../../storage"
 
 export type SurveyListScreenProps = {
   surveys: LocalSurvey[]
   selectedSurveyId: string | null
-  attachmentsBySurvey: Record<string, LocalAttachment[]>
   /** LIST-01: the submitted surveys' canonical scores, keyed by survey id, when already loaded. */
   surveyDetails: Record<string, SurveyDetailResponse>
   /**
@@ -17,5 +16,4 @@ export type SurveyListScreenProps = {
   onOpenCreateSurvey: () => void
   onOpenSearch: () => void
   onOpenSurvey: (surveyId: string) => void
-  onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
 }

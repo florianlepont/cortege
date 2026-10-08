@@ -19,6 +19,7 @@ import {
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
+import { GlassButton } from "../../ui/GlassButton"
 import { BrandHighlight } from "../../ui/BrandHighlight"
 
 const t = fr.onboarding.carousel
@@ -124,7 +125,7 @@ export function OnboardingCarouselScreen({ onSkip, onFinish }: OnboardingCarouse
       </View>
 
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, brandSpacing.lg) }]}>
-        <AppButton
+        <GlassButton
           label={isLastSlide ? t.start : t.next}
           size="lg"
           onPress={handlePrimaryPress}

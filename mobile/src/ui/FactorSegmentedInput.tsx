@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandInteraction, brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
 
@@ -77,18 +77,19 @@ function createStyles(theme: BrandTheme) {
     },
     segment: {
       flex: 1,
-      minHeight: 44,
+      minHeight: brandInteraction.hitTarget.min,
       borderRadius: brandRadius.field,
       alignItems: "center",
       justifyContent: "center",
       paddingHorizontal: brandSpacing4.sm,
-      backgroundColor: theme.componentColors.choiceChip.background,
+      backgroundColor: theme.visual.chip.fill,
       borderWidth: 1,
-      borderColor: theme.componentColors.choiceChip.border,
+      borderColor: theme.visual.chip.border,
     },
+    // Direction principle 7: the active segment is the inverted neutral pill.
     segmentActive: {
-      backgroundColor: theme.componentColors.choiceChip.activeBackground,
-      borderColor: theme.componentColors.choiceChip.activeBorder,
+      backgroundColor: theme.visual.chip.activeBg,
+      borderColor: theme.visual.chip.activeBg,
     },
     segmentText: {
       ...brandTypography.meta,
@@ -96,7 +97,7 @@ function createStyles(theme: BrandTheme) {
       textAlign: "center",
     },
     segmentTextActive: {
-      color: theme.componentColors.choiceChip.activeText,
+      color: theme.visual.chip.activeText,
     },
   })
 }

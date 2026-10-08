@@ -22,7 +22,7 @@ export const accountFr = {
   },
   email: {
     label: "Email",
-    empty: "—",
+    empty: "Non renseigné",
     newLabel: "Nouvel email",
     invalid: "Email invalide",
   },

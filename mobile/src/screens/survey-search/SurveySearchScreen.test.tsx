@@ -1,8 +1,12 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import type { CommunitySurveyItem } from "@cortege/ibp-domain"
+import { brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage"
+import * as reanimated from "../../../test/react-native-reanimated.mock"
+import { LIST_ENTRANCE_GRACE_MS } from "../../ui/useListEntrance"
 import { SurveySearchScreen, type SurveySearchScreenProps } from "./SurveySearchScreen"
 
 const t = fr.surveyList.search
@@ -20,6 +24,14 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
+// The real navigation package is ESM and cannot be loaded here; only its context object is needed.
+jest.mock("@react-navigation/native", () => {
+  const ReactRef = jest.requireActual("react") as typeof import("react")
+  return { NavigationContext: ReactRef.createContext(undefined) }
+})
+// The entrance wrapper is replaced by a host element that keeps its props, so the test reads what
+// the screen asked for (its own behaviour is covered by ListEntranceRow.test.tsx).
+jest.mock("../../ui/ListEntranceRow", () => ({ ListEntranceRow: "ListEntranceRow" }))
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent = (name: string) => {
@@ -76,7 +88,7 @@ jest.mock("../../ui/AppChoiceChip", () => ({
     return ReactRef.createElement("AppChoiceChip", props)
   },
 }))
-jest.mock("../../ui/IbpScoreBadge", () => ({ IbpScoreBadge: () => null }))
+jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
 
 const mine = (id: string): LocalSurvey =>
   ({ id, site_name: `Site ${id}` }) as unknown as LocalSurvey
@@ -101,7 +113,6 @@ function makeProps(overrides: Partial<SurveySearchScreenProps> = {}): SurveySear
     sortMode: "updated_desc",
     onSortModeChange: jest.fn(),
     surveys: [mine("a"), mine("b")],
-    attachmentsBySurvey: {},
     surveyDetails: {},
     selectedSurveyId: null,
     community: { items: [], status: "idle" },
@@ -109,7 +120,6 @@ function makeProps(overrides: Partial<SurveySearchScreenProps> = {}): SurveySear
     onOpenCommunitySurvey: jest.fn(),
     onDeleteSurvey: jest.fn(),
     onCancel: jest.fn(),
-    onEnsureAttachmentPreviews: jest.fn(),
     ...overrides,
   }
 }
@@ -154,6 +164,23 @@ describe("SurveySearchScreen, Mes relevés scope", () => {
     expect(props.onAttachmentFilterChange).toHaveBeenLastCalledWith("with")
     press(chips[3])
     expect(props.onSortModeChange).toHaveBeenLastCalledWith("updated_asc")
+  })
+
+  it("gives the rows their score from the local list at once, a loaded detail being fresher (12.2-14)", () => {
+    const scored = { ...mine("a"), ibp_total: 29 } as LocalSurvey
+    const scoresOf = (props: SurveySearchScreenProps) =>
+      Object.fromEntries(
+        byType(render(props), "SurveyRow").map((row) => [row.props.survey.id, row.props.score]),
+      )
+    expect(scoresOf(makeProps({ surveys: [scored, mine("b")] }))).toEqual({ a: 29, b: null })
+    expect(
+      scoresOf(
+        makeProps({
+          surveys: [scored, mine("b")],
+          surveyDetails: { a: { scores: { ibp_total: 33 } } as never },
+        }),
+      ),
+    ).toEqual({ a: 33, b: null })
   })
 
   it("a pressed active chip clears its filter and the sort cycles back to the first mode", () => {
@@ -206,6 +233,100 @@ describe("SurveySearchScreen, Mes relevés scope", () => {
   })
 })
 
+describe("SurveySearchScreen, glass look and entrances (12.2-11)", () => {
+  const flat = (style: unknown): Record<string, unknown> =>
+    Object.assign({}, ...([style].flat(2).filter(Boolean) as object[]))
+
+  it("puts the two scopes in one glass segment container, each chip at least 44 pt", () => {
+    const tree = render(makeProps())
+    const group = byType(tree, "View").find((node) => node.props.accessibilityRole === "tablist")!
+    const { chip } = defaultTheme.visual
+    expect(flat(group.props.style)).toMatchObject({
+      backgroundColor: chip.fill,
+      borderColor: chip.border,
+      borderRadius: brandRadius.pill,
+      padding: brandSpacing4.xs,
+    })
+    const tabs = byType(tree, "Pressable").filter((node) => node.props.accessibilityRole === "tab")
+    for (const tab of tabs) {
+      expect(flat(tab.props.style)).toMatchObject({ flex: 1 })
+      expect(flat(tab.props.style).minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+    }
+  })
+
+  it("draws the active scope as the inverted chip and marks it selected", () => {
+    const tabs = byType(render(makeProps({ scope: "community" })), "Pressable").filter(
+      (node) => node.props.accessibilityRole === "tab",
+    )
+    expect(tabs.map((tab) => tab.props.accessibilityState.selected)).toEqual([false, true])
+    expect(flat(tabs[1].props.style).backgroundColor).toBe(defaultTheme.visual.chip.activeBg)
+    expect(flat(tabs[0].props.style).backgroundColor).toBeUndefined()
+  })
+
+  it("gives the search field the glass card look and keeps its height", () => {
+    const tree = render(makeProps())
+    const field = byType(tree, "View").find(
+      (node) => flat(node.props.style).backgroundColor === defaultTheme.visual.glass.cardFill,
+    )!
+    const style = flat(field.props.style)
+    expect(style).toMatchObject({
+      borderColor: defaultTheme.visual.glass.cardBorder,
+      borderRadius: brandRadius.card,
+    })
+    expect(style.minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+  })
+
+  it("wraps every row in an entrance row and hands the survey row its index", () => {
+    const tree = render(makeProps())
+    const wrappers = byType(tree, "ListEntranceRow")
+    expect(wrappers.map((node) => node.props.index)).toEqual([0, 1])
+    expect(byType(tree, "SurveyRow").map((row) => row.props.index)).toEqual([0, 1])
+    const communityTree = render(
+      makeProps({
+        scope: "community",
+        community: { items: [community("x", "Camille")], status: "ready" },
+      }),
+    )
+    expect(byType(communityTree, "ListEntranceRow")).toHaveLength(1)
+  })
+
+  describe("which rows take part in the entrance (12.2-11 fix)", () => {
+    let now = 1_000_000
+    let nowSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      now = 1_000_000
+      nowSpy = jest.spyOn(Date, "now").mockImplementation(() => now)
+    })
+
+    afterEach(() => {
+      nowSpy.mockRestore()
+      reanimated.setReducedMotion(false)
+    })
+
+    const canAnimate = (tree: renderer.ReactTestRenderer) =>
+      byType(tree, "ListEntranceRow")[0].props.canAnimate as (index: number) => boolean
+
+    it("lets rows 0 to 7 join when the page mounts, and no row from the eighth on", () => {
+      const ask = canAnimate(render(makeProps()))
+      expect([0, 1, 7].map(ask)).toEqual([true, true, true])
+      expect([8, 9, 30].map(ask)).toEqual([false, false, false])
+    })
+
+    it("lets no row join once the page has been on screen: scrolling and typing never replay", () => {
+      const ask = canAnimate(render(makeProps()))
+      now += LIST_ENTRANCE_GRACE_MS + 1
+      expect([0, 1, 7].map(ask)).toEqual([false, false, false])
+    })
+
+    it("lets no row join under Reduce Motion", () => {
+      reanimated.setReducedMotion(true)
+      const ask = canAnimate(render(makeProps()))
+      expect([0, 1].map(ask)).toEqual([false, false])
+    })
+  })
+})
+
 describe("SurveySearchScreen, Communauté scope", () => {
   it("lists the finished surveys of the others, hides the filters and shows no own survey", () => {
     const tree = render(
@@ -232,6 +353,8 @@ describe("SurveySearchScreen, Communauté scope", () => {
       community: { items: [community("x", "Camille")], status: "ready" },
     })
     const tree = render(props)
+    const ring = tree.root.findByType("ScoreRing" as never)
+    expect(ring.props.score).toBe(34)
     const row = tree.root.findAll((n) => n.props.testID === "community-row-x")[0]
     act(() => row.props.onPress())
     expect(props.onOpenCommunitySurvey).toHaveBeenCalledWith("x")

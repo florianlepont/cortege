@@ -1,4 +1,5 @@
 import type { Ionicons } from "@expo/vector-icons"
+import type { BrandTheme } from "../../app/theme"
 import { KNOWN_EVENT_TYPES, type KnownEventType } from "./event-labels"
 
 export type EventTone = "neutral" | "success" | "warning" | "danger"
@@ -35,4 +36,29 @@ function isKnownEventType(type: string): type is KnownEventType {
  * never a raw lookup that could throw or read off the prototype (matches `eventTypeLabel`). */
 export function eventVisual(type: string): EventVisual {
   return isKnownEventType(type) ? EVENT_VISUALS[type] : UNKNOWN_EVENT_VISUAL
+}
+
+/**
+ * The tile and icon colours of a timeline tone (owner check on the iPhone, dark mode: the green
+ * check of "Relevé soumis" was dim green on a dark green tile). Every icon comes from the text-on-
+ * surface tokens made for its soft tile (`onSurface`: darkened in light, lightened in dark), or
+ * from `textSecondary` on the muted neutral tile, so each pair clears 3:1 for a graphic (in fact
+ * 4.5:1) in both schemes. The brand `forest` is no longer used here: it is invisible on the dark
+ * success tile.
+ */
+export function eventToneColors(
+  theme: BrandTheme,
+  tone: EventTone,
+): { background: string; icon: string } {
+  switch (tone) {
+    case "success":
+      return { background: theme.colors.successSoft, icon: theme.onSurface.success }
+    case "warning":
+      return { background: theme.colors.warningSoft, icon: theme.onSurface.warning }
+    case "danger":
+      return { background: theme.colors.errorSoft, icon: theme.onSurface.danger }
+    case "neutral":
+    default:
+      return { background: theme.colors.panelMuted, icon: theme.colors.textSecondary }
+  }
 }

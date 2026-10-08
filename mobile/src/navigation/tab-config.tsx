@@ -1,7 +1,14 @@
 import { useContext } from "react"
-import { Platform } from "react-native"
+import { Platform, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors } from "../app/brand-tokens"
+import {
+  brandColors,
+  brandRadius,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../app/brand-tokens"
+import { tabDot } from "../app/visual-tokens"
 import { BrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { feedback } from "../ui/feedback"
@@ -79,8 +86,10 @@ export type TabBarInsets = { bottom: number }
 export function buildJsTabBarStyle(theme: BrandTheme, insets: TabBarInsets = { bottom: 0 }) {
   const paddingBottom = Math.max(insets.bottom, JS_TAB_BAR_MIN_PADDING_BOTTOM)
   return {
-    backgroundColor: theme.colors.panel,
-    borderTopColor: theme.colors.divider,
+    // Variant I glass fill and hairline (D-08). The bar stays in the layout flow with the same
+    // height (RESEARCH Pitfall 10): no position key, so useTabBarClearance keeps working.
+    backgroundColor: theme.visual.tab.background,
+    borderTopColor: theme.visual.tab.border,
     borderTopWidth: 1,
     height: JS_TAB_BAR_CONTENT_HEIGHT + JS_TAB_BAR_PADDING_TOP + paddingBottom,
     paddingBottom,
@@ -88,23 +97,65 @@ export function buildJsTabBarStyle(theme: BrandTheme, insets: TabBarInsets = { b
   }
 }
 
+const tabIconStyles = StyleSheet.create({
+  column: { alignItems: "center", justifyContent: "center", gap: brandSpacing4.xs },
+  dot: { width: tabDot.size, height: tabDot.size, borderRadius: brandRadius.pill },
+})
+
+type JsTabIconProps = {
+  name: keyof typeof Ionicons.glyphMap
+  color: string
+  size: number
+  focused: boolean
+  theme: BrandTheme
+}
+
+/** The JS bar icon with the decorative moss dot under the active glyph; the dot is hidden from
+ * accessibility because the tab label carries the selected state. */
+export function JsTabIcon({ name, color, size, focused, theme }: JsTabIconProps) {
+  return (
+    <View style={tabIconStyles.column}>
+      <Ionicons name={name} size={size} color={color} />
+      <View
+        importantForAccessibility="no"
+        accessibilityElementsHidden
+        style={[
+          tabIconStyles.dot,
+          focused
+            ? { backgroundColor: theme.visual.tab.dot, boxShadow: theme.visual.tab.dotShadow }
+            : { backgroundColor: "transparent" },
+        ]}
+      />
+    </View>
+  )
+}
+
 export function jsTabScreenOptions(
   theme: BrandTheme,
   { route }: { route: { name: keyof RootTabParamList } },
   insets: TabBarInsets = { bottom: 0 },
+  options: { reducedMotion?: boolean } = {},
 ) {
   return {
     headerShown: false,
     title: TAB_TITLES[route.name],
     tabBarLabel: TAB_TITLES[route.name],
-    // Sketch 001 A: the active tab takes the accent (light green) in dark mode.
-    tabBarActiveTintColor:
-      theme.scheme === "dark" ? theme.semanticColors.accent : theme.colors.forest,
-    tabBarInactiveTintColor: theme.colors.textSecondary,
+    animation: options.reducedMotion ? ("none" as const) : ("fade" as const),
+    tabBarActiveTintColor: theme.visual.tab.activeTint,
+    tabBarInactiveTintColor: theme.visual.tab.inactiveTint,
     tabBarStyle: buildJsTabBarStyle(theme, insets),
-    tabBarLabelStyle: { fontSize: 12, fontWeight: "600" as const },
-    tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-      <Ionicons name={JS_TAB_ICONS[route.name]} size={size} color={color} />
+    tabBarLabelStyle: {
+      fontFamily: brandTypography.meta.fontFamily,
+      fontSize: brandTypeScale.caption.fontSize,
+    },
+    tabBarIcon: ({ color, size, focused }: { color: string; size: number; focused: boolean }) => (
+      <JsTabIcon
+        name={JS_TAB_ICONS[route.name]}
+        color={color}
+        size={size}
+        focused={focused}
+        theme={theme}
+      />
     ),
   }
 }

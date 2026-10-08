@@ -1,13 +1,14 @@
 import { useEffect, useMemo } from "react"
-import { Platform, RefreshControl, ScrollView } from "react-native"
-import { useHeaderHeight } from "@react-navigation/elements"
+import { RefreshControl, ScrollView } from "react-native"
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
+import { useFrameInsetBehavior } from "../ui/frame-large-title"
 import { PageTitle } from "../ui/PageTitle"
 import { EventsTab } from "./survey-detail/EventsTab"
 import { HistorySection } from "./survey-detail/HistorySection"
 import { type SurveyHistoryScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
+import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 
 /**
@@ -25,8 +26,10 @@ export function SurveyHistoryScreen({
   onLoadSurveyEvents,
 }: SurveyHistoryScreenProps) {
   const theme = useBrandTheme()
-  const headerHeight = useHeaderHeight()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
+  const contentStyle = useSubPageContentStyle(styles.subContent)
+  // 12.2-17: iOS insets the page under the native large title (PageTitle then draws nothing).
+  const insetBehavior = useFrameInsetBehavior()
   const { detail, parcelIds } = useSurveyDetailData(
     selectedSurvey,
     surveyDetails,
@@ -42,8 +45,10 @@ export function SurveyHistoryScreen({
 
   return (
     <ScrollView
-      style={[styles.scroll, Platform.OS === "ios" ? { marginTop: headerHeight } : null]}
-      contentContainerStyle={styles.subContent}
+      // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
+      style={styles.scroll}
+      contentContainerStyle={contentStyle}
+      contentInsetAdjustmentBehavior={insetBehavior}
       refreshControl={
         <RefreshControl
           refreshing={isLoading}

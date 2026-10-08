@@ -48,9 +48,11 @@ export function FactorInputShell({
       <View style={styles.labelRow}>
         <Text style={[styles.label, { color: tone.text }]}>{label}</Text>
         {state === "complete" ? (
-          <Ionicons name="checkmark-circle" size={18} color={tone.icon} />
+          <Ionicons name="checkmark-circle-outline" size={18} color={tone.icon} />
         ) : null}
-        {state === "error" ? <Ionicons name="alert-circle" size={18} color={tone.icon} /> : null}
+        {state === "error" ? (
+          <Ionicons name="alert-circle-outline" size={18} color={tone.icon} />
+        ) : null}
       </View>
       {children}
       {helperText ? <Text style={styles.helperText}>{helperText}</Text> : null}

@@ -77,6 +77,15 @@ const paint = (studied: boolean, selected: boolean, score: number | null, byScor
       strokeWidth: brandMapTokens.strokeWidthSelected,
     }
   }
+  if (byScore) {
+    // 12.2-19: on the Explorer every parcel without a score is the same warm grey, studied or
+    // not, so green only ever means a high score there.
+    return {
+      fill: brandMapTokens.parcelUnscoredFill,
+      stroke: brandMapTokens.parcelUnscored,
+      strokeWidth: brandMapTokens.strokeWidthDefault,
+    }
+  }
   return {
     fill: studied ? brandMapTokens.parcelStudiedFill : brandMapTokens.parcelNeutralFill,
     stroke: studied ? brandMapTokens.parcelStudied : brandMapTokens.parcelNeutral,
@@ -86,7 +95,8 @@ const paint = (studied: boolean, selected: boolean, score: number | null, byScor
 
 /**
  * The parcels of the current view as one GeoJSON collection for a single fill layer. The colours
- * are computed here (selected outranks studied, studied outranks the neutral default) and travel
+ * are computed here (selected outranks studied, studied outranks the neutral default; with
+ * `byScore`, a scored parcel takes its band colour and every other one the warm grey) and travel
  * as feature properties, so the layer reads them with `["get", ...]`.
  */
 export function buildParcelFeatureCollection(

@@ -6,6 +6,7 @@ import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
+import { GlassButton } from "../ui/GlassButton"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
 import { fr } from "../i18n"
 
@@ -66,7 +67,7 @@ export function LocalDataOwnerConflictScreen({
           <Text style={styles.bodyText}>{bodyText}</Text>
 
           <View style={styles.actions}>
-            <AppButton label={t.switchAccount} onPress={onSwitchAccount} size="lg" />
+            <GlassButton label={t.switchAccount} onPress={onSwitchAccount} size="lg" />
             <AppButton label={t.discard} variant="dangerSoft" onPress={onDiscard} size="lg" />
           </View>
         </AppCard>

@@ -1,41 +1,50 @@
 import { StyleSheet } from "react-native"
-import { brandSpacing, brandTypography } from "../../app/brand-tokens"
+import {
+  brandRadius,
+  brandSpacing,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
-const AVATAR_SIZE = 104
+const AVATAR_SIZE = 56
 
-export function createAccountStyles(theme: BrandTheme) {
-  return StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: theme.colors.canvas,
-    },
-    loadingContainer: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: theme.colors.canvas,
-    },
-    // ACC-N02 : gap inter-sections avec brandSpacing.md pour une meilleure respiration
-    content: {
-      gap: brandSpacing.md,
-      paddingBottom: brandSpacing.xl,
-    },
-  })
-}
+// No colour since D-19: the route's ScreenFrame is the page (canvas and halo).
+export const accountStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  // D-05: compact, blocks 16 apart on the 4-grid
+  content: {
+    gap: brandSpacing4.md,
+    paddingBottom: brandSpacing4.xl,
+  },
+})
 
+// D-05, sketch 009: a horizontal glass card, the avatar on the left, name and email on the right.
 export function createIdentityStyles(theme: BrandTheme) {
   return StyleSheet.create({
     identity: {
+      flexDirection: "row",
       alignItems: "center",
-      gap: 2,
-      paddingVertical: brandSpacing.sm,
+      gap: brandSpacing4.smd,
+      padding: brandSpacing4.md,
+      borderRadius: brandRadius.card,
+      borderWidth: 1,
+      borderColor: theme.visual.glass.cardBorder,
+      backgroundColor: theme.visual.glass.cardFill,
+      boxShadow: theme.visual.glass.cardShadow,
     },
     avatarButton: {
       width: AVATAR_SIZE,
       height: AVATAR_SIZE,
       borderRadius: AVATAR_SIZE / 2,
-      marginBottom: brandSpacing.sm,
     },
     avatarImage: {
       width: AVATAR_SIZE,
@@ -49,33 +58,34 @@ export function createIdentityStyles(theme: BrandTheme) {
       borderRadius: AVATAR_SIZE / 2,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.colors.panelMuted,
+      backgroundColor: theme.visual.glass.iconTile,
     },
     avatarFallbackText: {
-      fontSize: 38,
-      lineHeight: 44,
-      fontWeight: "800",
-      color: theme.semanticColors.textStrong,
+      ...brandTypography.screenTitle,
+      letterSpacing: 0,
+      color: theme.visual.glass.iconTint,
     },
-    // OA-85 family: a round Liquid Glass badge, like the header buttons.
+    // OA-85 family: a round Liquid Glass badge, like the header buttons (a floating control).
     avatarEditBadge: {
       position: "absolute",
-      right: -4,
-      bottom: -2,
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      right: -brandSpacing4.xs,
+      bottom: -brandSpacing4.xs,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
       alignItems: "center",
       justifyContent: "center",
     },
+    identityTexts: {
+      flex: 1,
+      gap: brandSpacing4.xxs,
+    },
     identityName: {
-      ...brandTypography.sectionTitle,
-      fontSize: 24,
-      lineHeight: 30,
+      ...brandTypography.screenTitle,
       color: theme.semanticColors.textStrong,
     },
     identityMeta: {
-      ...brandTypography.sectionBody,
+      ...brandTypeScale.footnote,
       color: theme.colors.textSecondary,
     },
   })
@@ -87,22 +97,23 @@ export function createIdentityStyles(theme: BrandTheme) {
 export function createProfileRowStyles(theme: BrandTheme) {
   return StyleSheet.create({
     row: {
-      minHeight: 50,
+      minHeight: 48,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: brandSpacing.sm,
+      gap: brandSpacing4.smd,
     },
     label: {
       ...brandTypography.sectionBody,
-      fontSize: 17,
+      fontSize: 16,
       color: theme.colors.textPrimary,
     },
     input: {
       flex: 1,
       textAlign: "right",
-      paddingVertical: 12,
-      fontSize: 17,
+      minHeight: 44,
+      paddingVertical: brandSpacing4.sm,
+      fontSize: 16,
       color: theme.semanticColors.textStrong,
     },
     saveBar: {
@@ -167,6 +178,7 @@ export const profileStyles = StyleSheet.create({
   },
   emailEditBlock: {
     gap: brandSpacing.xs + 2,
+    paddingVertical: brandSpacing4.sm,
   },
   emailEditActions: {
     flexDirection: "row",

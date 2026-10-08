@@ -1,0 +1,311 @@
+# 12.2-23 Fixes
+
+## Selected tab in dark, dense dark Liquid Glass
+
+Owner's final phone check (build fb6052c, iOS 26, dark mode, screenshot of Mes Relevés):
+
+> "En mode sombre, le tab de navigation sélectionné est peu lisible. Par ailleurs dans ton monde sombre notamment sur l'Explorer tous les boutons et les fenêtres avec les effets Liquid Glass vont vers leur transparence. Après le souci est aussi que la carte n'est pas encore colorisée pour le mode nuit, mais ça on le verra plus tard."
+
+One code commit: e4927f7. The map basemap, markers and clustering were not touched (the dark basemap is for later, as the owner said). Light mode values are unchanged.
+
+### 1. Selected tab legibility
+
+**Found.**
+- The native bar (`react-native-bottom-tabs` 1.4.0, `NativeRootTabs.tsx`) took `theme.visual.tab.activeTint`, which was `accentText`: the forest `#334E2B` in light and the accent moss `#9BC26A` in dark. The JS bar (`jsTabScreenOptions`) used the same token.
+- On the iOS 26 bar the system draws the selection pill and the glass. The list behind shows through the glass. With the 72% dark glass modelled over the white plan, `#9BC26A` falls to 3.3:1, under 4.5:1 for the label.
+- The tint was picked from the app's scheme, but the app's theme choice (Réglages: automatic, light, dark) never reaches UIKit: there is no `Appearance.setColorScheme`, and `app.json` is `userInterfaceStyle: "automatic"`. The native bar therefore follows the system appearance. With the app forced dark on a light phone, the dark-scheme moss landed on a light bar, and the reverse.
+- Label weight: `react-native-bottom-tabs` takes one `tabLabelStyle` (`fontFamily`, `fontWeight`, `fontSize`) and applies it to both the normal and the selected title attributes (`TabViewImpl.swift`, `selectedAttributes` uses `props.fontWeight`). There is no per-state weight. On iOS 26 `tabBarInactiveTintColor` has no effect (documented in `TabView.tsx`). The label stays Jost SemiBold in both states, and the selected state is carried by the tint and the system pill.
+
+**Changed.**
+- New token `tabActiveTint` (`visual-tokens.ts`): `light` is the charter forest `brandColors.forest`, and `dark` is the light moss `#D2E8A8` of the map controls (`mapControlGlass.dark.icon`). `theme.visual.tab.activeTint` is now `tabActiveTint[scheme]`, which the JS bar (Android, Expo Go) uses.
+- Native bar: `tabBarActiveTintColor` is now one `DynamicColorIOS({ light, dark })` built from `tabActiveTint`. UIKit resolves it with the bar's own trait collection. The selected item is then forest on a light bar and light moss on a dark bar, whatever the app's theme choice. If the iOS 26 glass flips its appearance over the content behind it, the tint follows. Fabric converts `DynamicColorIOS` in the `items[].activeTintColor` prop (`PlatformColorParser.mm`, `RCTUIColorFromSharedColor` in `RCTTabViewComponentView.mm`). `NativeRootTabs` is rendered on iOS only (`getNativeTabsAvailability`), so `DynamicColorIOS` never runs on Android.
+- D-08 is kept: no bar background colour, the system Liquid Glass material is untouched.
+
+**Contrast** (`tab-tint.test.ts`). Worst-case models of the system-drawn parts: the dark pill `#3A3A3C`, the dark bar glass `rgba(28, 28, 30, 0.72)`, the light pill `#D1D1D6` and the light bar glass `rgba(250, 250, 250, 0.72)`. Every selected icon and label passes 4.5:1, which also covers 3:1 for the icon.
+
+| Scheme | Background | Ratio |
+|---|---|---|
+| Dark, `#D2E8A8` | pill `#3A3A3C` | 8.6:1 |
+| Dark, `#D2E8A8` | glass over the list | 13.3:1 |
+| Dark, `#D2E8A8` | glass over the white plan | 5.0:1 (was 3.3:1 with `#9BC26A`) |
+| Light, `#334E2B` | pill `#D1D1D6` | 6.1:1 |
+| Light, `#334E2B` | glass over the white plan | 9.0:1 |
+| Light, `#334E2B` | glass over the dark orthophoto | 5.0:1 |
+
+### 2. Dark Liquid Glass too transparent
+
+**Found.**
+- `GlassSurface` on iOS 26 renders `expo-glass-effect`'s `GlassView` (57.0.4). The native side passes `tintColor` straight to `UIGlassEffect.tintColor` (`GlassView.swift`, `updateEffect`), with the alpha left inside the `UIColor`.
+- UIKit uses that colour as a tint of the glass material, not as a fill. The material keeps its own translucency, so raising the tint alpha alone (the 12.2-19 warning) cannot make the surface dense. This matches what the owner saw at 0.84.
+- Surfaces with no `surface` prop had no tint at all in dark: the plain system glass. These are the form's letter strip, the pager finish notice, the profile save bar, the avatar badge, the photo strip's add pill and `AppCard glass` without a surface.
+- The Explorer sheets ("Zones hors connexion", cluster list, parcel history) do not use Liquid Glass. `ExplorerSheet` is an `expo-blur` `BlurView` with a `0.88` dark fill over it, and over the white plan that gives a visible grey.
+
+**Changed.**
+- `GlassFill` gains an optional `underlay`, set in dark only. On iOS 26 `GlassSurface` passes it as the `GlassView`'s own `backgroundColor`. RN draws it on the view's layer, behind the `UIVisualEffectView` subview and clipped to the same radius (`overflow: "hidden"`). The glass then refracts a dense fill instead of the map or list. The system still draws its blur, rim, specular highlight and interactive shimmer on top. The caller's outline is still stripped as before.
+- `mapControlGlass.dark`: `tint` and `fill` go from 0.84 to 0.92, and `underlay` is a new `rgba(16, 24, 14, 0.88)`. `android` stays 0.94. This covers the floating top capsule, locate, legend toggle, legend panel, count chip, the title and chip pills, and the nearby card on Accueil.
+- `explorerSheetGlass.dark.fill` goes from 0.88 to 0.96, with the blur kept under it. This covers the Explorer sheets. `mapPanel` (the parcel picker's bottom card and the offline banner) takes the same fill, and in dark also as its underlay.
+- New `liquidGlassDark` (`tint` `rgba(24, 25, 28, 0.92)`, `underlay` 0.88). In dark, `GlassSurface` uses it when the caller gives no `surface`.
+- Unchanged: light mode (no tint, no underlay where there was none), the Android flat fills, the older-iOS default blur fill, and the sheet's close circle (tinted, no underlay: it sits on the dense sheet).
+
+**Contrast and density** (`glass-density.test.ts`, `visual-tokens.test.ts`). Each glass is modelled as underlay then tint, over the basemaps `#FFFFFF`, `#F2EFE9`, `#6B7356`, `#1C2618` and `#000000`.
+- Over the white plan, every dark glass now stays under 0.025 relative luminance. Before, the 0.84 glass was above 0.04 and the 0.88 sheet above 0.025.
+- Map control icons and labels now reach 7:1 or more on every basemap, a margin over the 3:1 and 4.5:1 floors.
+- The theme's primary and secondary text reach 4.5:1 on `liquidGlassDark` on every basemap.
+- The existing map control, sheet, map panel, edge glow and download bar contrast tests all still pass on the denser values.
+
+### Not changed, and why
+
+- **The search button and the bar's own glass.** iOS 26 draws both (`role: "search"`). `react-native-bottom-tabs` only exposes `tabBarStyle.backgroundColor` (an opaque `UITabBarAppearance` background) and `scrollEdgeAppearance`. Either would replace the system Liquid Glass bar, which D-08 forbids. The noise behind the labels is left to the system. The new tint keeps the selected label at 5:1 or more even over the white plan.
+- **The secondary `GlassButton`** (the native SwiftUI `glass` button, used in the auth panel and profile setup). It sits on app chrome, not over the map. SwiftUI's `glass` style has no density control. An underlay on its host risks a ring of another size than the system capsule (12.2-17), so it is left as is.
+- **The map basemap, markers and clustering.** Not touched: the dark basemap is for later.
+
+### Tests
+
+- `mobile/src/app/tab-tint.test.ts` (new): the token per scheme, the theme's `tab.activeTint` per scheme, the contrast of the selected icon and label against the pill and the bar glass (dark list, white plan, orthophoto, both schemes), the old `#9BC26A` failing over the white plan, and the JS bar tint on its glass.
+- `mobile/src/app/glass-density.test.ts` (new):
+  - the dark map control glass (0.92 tint and fill, underlay 0.85 or more, still under 1, Android at least as dense);
+  - the dark sheet and map panel at 0.96, with the panel's underlay;
+  - `liquidGlassDark` contrast on every basemap;
+  - darkness over the white plan, and the 7:1 margin of the map control ink;
+  - the old values failing;
+  - light glass unchanged.
+- `mobile/src/ui/GlassSurface.liquid.test.tsx`:
+  - in light, no tint and no underlay;
+  - in dark with no surface, `liquidGlassDark`'s tint and underlay (the shape kept);
+  - in dark, a surface's own underlay behind its own tint;
+  - in dark, a tinted surface with no underlay keeps none;
+  - a light surface never draws an underlay.
+- `mobile/src/navigation/tabs.test.tsx`: the native tint is the dynamic `{ light: forest, dark: #D2E8A8 }` in both app schemes, and the JS tokens match. `navigation.test.tsx`: `DynamicColorIOS` added to the `react-native` mock.
+- `mobile/src/app/visual-tokens.test.ts`: the map panel equality includes the dark underlay.
+
+Gates:
+- `npm run lint`: clean.
+- `npm run typecheck`: clean.
+- `npm run test:coverage:mobile`: 256 suites, 3065 tests passed.
+- `npm --workspace @cortege/ibp-domain run test`: 9 suites, 230 tests passed.
+- `npm run format:check`: only the untracked `.claude/settings.local.json` is reported.
+
+### Device-only checks (iPhone, iOS 26)
+
+1. Dark mode, Mes Relevés: the selected tab's icon and label are light moss and clearly readable on the selection pill. Unselected tabs are system white.
+2. Light mode: the selected tab is forest, readable over the list and over the Explorer's plan and orthophoto.
+3. Theme mismatch: app forced to Sombre in Réglages on a phone in light, and the reverse. The selected tab follows the bar's own look (forest on the light bar, light moss on the dark bar), never dark moss on a light bar.
+4. Explorer in dark, over the plan and the orthophoto: the top capsule, locate, legend button and panel, and count chip read as dense dark glass. The map barely shows through. The rim and highlight are still visible, and there is no square corner or dark ring outside the rounded shape (this checks that the underlay is clipped to the radius).
+5. Explorer sheets in dark ("Zones hors connexion", cluster list, parcel history): near opaque, blur still faintly present, text and close glyph crisp.
+6. Interactive glass (legend toggle, sheet close circle): the press shimmer still shows on the denser surfaces.
+7. Other floating glass in dark: the factor letter strip and pager finish notice in the form, the profile save bar, the avatar edit badge, the photo strip's add pill and the parcel picker's bottom card. Each reads dense, with its text readable.
+8. Light mode Explorer and sheets: unchanged from build fb6052c.
+9. The search button and the tab bar glass are still system drawn (unchanged by design). Say if the noise behind the labels is still a problem: the only lever left is an opaque bar background, which D-08 rules out.
+
+## Dark glass: native and transparent
+
+Owner, after build dd56d30:
+
+> "c'était l'inverse, je voulais dire que le verre en mode sombre n'était PAS assez transparent. Les panneaux du verre devraient être du verre natif et pas du flou d'ailleurs."
+
+Section 2 above read "vont vers leur transparence" the wrong way round and made the dark glass near opaque. This round undoes that and makes the dark glass translucent native Liquid Glass, the Explorer sheets included. One code commit: 1f2d082. The selected tab fix (section 1), light mode, the Android flat fills, the basemap, markers and clustering are not touched.
+
+### What changed
+
+**Underlay removed.**
+- `GlassFill` loses `underlay`. `GlassSurface` no longer paints a background behind the `GlassView`.
+- In dark, the `GlassView` gets only a moderate tint. The system draws the blur, rim, highlight and press shimmer.
+
+**Map controls** (`mapControlGlass.dark`): the top capsule, locate, legend toggle and panel, count chip, title and chip pills, and Accueil's nearby card.
+- `tint` and `fill` go from 0.92 to **0.66**, `rgba(16, 24, 14, 0.66)`.
+- `android` stays 0.94.
+- The icons stay light moss `#D2E8A8` at 24 pt, and the labels stay `#F2F3F1`.
+- The muted label goes from `#C9CED3` to `#E3E6E9`. The old grey alone needed a 0.72 glass.
+
+**Theme-text glass**: the parcel picker's bottom card and offline banner (`mapPanel`), and every dark `GlassSurface` with no `surface` (`liquidGlassDark`).
+- They take one tint, `darkGlassTint` = `rgba(17, 18, 20, 0.68)`. Before, they had 0.92 or 0.96 plus an underlay.
+- The blur fallback (older iOS) and Android take the sheet fill, back to 0.88.
+
+**Glass ink.**
+- On Liquid Glass in dark, `GlassSurface` wraps its content in `GlassInkProvider`. This is `withGlassInk(theme)` in `theme.ts`: the same theme with `textSecondary` `#9A9FA6` replaced by `#D8DCDF` and `onSurface.danger` `#E8A78F` replaced by `#FFCDB8`. Every derived token is rebuilt from these, and the result is cached per theme.
+- This is the RN counterpart of the vibrant labels iOS draws on its materials. The theme's own grey would need a 0.85 glass, which is the opaque look the owner rejected.
+- Light content keeps the theme's own ink.
+
+**Explorer sheets** (`ExplorerSheet`: "Zones hors connexion", the cluster list, the parcel history).
+- In dark on iOS 26 the panel is now a `GlassSurface` (`expo-glass-effect` `GlassView`, the same primitive as the controls). It uses `theme.visual.sheet.glass` (tint `darkGlassTint`), with only the top corners rounded (`GlassView` takes per-corner radii) and `flexShrink: 1` so a long list still scrolls.
+- The drag handle, the 44 pt close circle, the slide in and out, and Reduce Motion are unchanged. The handle and the content sit on the glass.
+- The blur plus fill stays for light (unchanged), older iOS and Android. The dark fill goes back from 0.96 to 0.88.
+- The dark close circle's tint goes from 0.14 to 0.08, so its glyph keeps 4.5:1 on the lighter glass.
+- No scrim was needed: with the glass ink, a uniform 0.68 tint carries every text on the sheet. A scrim would only have darkened the body again.
+
+### How low the tint can go
+
+Model: the tint laid flat over the basemap, using the existing `contrast.ts` helpers, over five backdrops: white plan `#FFFFFF`, paper plan `#F2EFE9`, mid satellite `#6B7356`, dark canopy `#1C2618` and black.
+
+- **The 0.35 to 0.5 range is not reachable for text over the white plan.** Even pure white text needs a 0.59 dark tint to reach 4.5:1, and a pure white icon needs 0.46 for 3:1. `glass-density.test.ts` pins this for 0.35, 0.4, 0.45 and 0.5.
+- **Map controls: 0.66.** The muted label sets it, and 0.64 fails (tested). The icons alone would allow 0.55.
+- **Theme-text glass and sheets: 0.68.** The glass secondary and danger inks set it, and 0.66 fails (tested). Primary text alone would allow 0.61.
+- **The glass is now much lighter.** Over the white plan the surface's relative luminance goes from 0.009 (the 0.92 tint over the 0.88 underlay) and 0.011 (the 0.96 sheet) to 0.131 (controls) and 0.112 (sheets): a mid grey instead of near black, so the map shows through.
+
+| Ink on glass | White plan | Paper plan | Mid satellite | Dark canopy | Black |
+|---|---|---|---|---|---|
+| Controls (0.66): icon `#D2E8A8` (3:1) | 4.4 | 4.8 | 9.3 | 13.1 | 14.5 |
+| Controls: label `#F2F3F1` (4.5:1) | 5.2 | 5.7 | 11.1 | 15.5 | 17.3 |
+| Controls: muted `#E3E6E9` (4.5:1) | 4.6 | 5.1 | 9.9 | 13.8 | 15.3 |
+| Sheet (0.68): primary `#F2F3F1` | 5.8 | 6.3 | 11.9 | 16.1 | 17.6 |
+| Sheet: glass secondary `#D8DCDF` | 4.7 | 5.1 | 9.6 | 13.0 | 14.2 |
+| Sheet: glass danger `#FFCDB8` | 4.5 | 4.9 | 9.2 | 12.5 | 13.7 |
+| Sheet: close glyph on its 0.08 circle | 4.8 | 5.2 | 9.3 | 13.0 | 14.8 |
+| Sheet: download bar `#9BC26A` (3:1) | 3.2 | 3.4 | 6.5 | 8.8 | 9.6 |
+| For reference, theme grey `#9A9FA6` (not used on the glass) | 2.4 | 2.6 | 5.0 | 6.7 | 7.3 |
+
+The same 0.68 tint and the same inks apply to the map panel and to the default dark glass.
+
+**What the model cannot show.** `UIGlassEffect` takes `tintColor` as a tint of its material, not as a fill, and the material has its own blur, dimming, rim and adaptive look. On the device the glass could read lighter than the flat model, with the map showing through more and lower contrast. It could also read darker, because the dark material adds its own dimming. Only the phone can tell. If the owner finds it still too dense, the tokens are the only lever: `mapControlGlass.dark.tint` and `darkGlassTint`. Going lower trades away the 4.5:1 over the white plan on paper.
+
+### Tests
+
+- `mobile/src/app/glass-density.test.ts` (rewritten):
+  - no underlay anywhere;
+  - tints between 0.6 and 0.7;
+  - Android and fallback fills unchanged;
+  - controls pass at 0.66 and fail at 0.64; glass ink passes at 0.68 and fails at 0.66;
+  - the theme's own grey and danger fail on the glass;
+  - nothing in 0.35 to 0.5 carries white text over the white plan;
+  - close circle, hairline, handle and download bar on the sheet glass;
+  - `withGlassInk` only changes the two inks, is cached, and returns a light theme unchanged;
+  - light unchanged.
+- `mobile/src/app/glass-ink.test.ts` (new): `GlassInkProvider` under `BrandThemeProvider`, in dark (glass inks) and in light (theme inks).
+- `mobile/src/ui/GlassSurface.liquid.test.tsx`:
+  - light has no tint, no fill and no ink scope;
+  - dark uses the default tint, with no background and the content inside `GlassInkProvider`;
+  - a dark surface's own tint, with no background;
+  - `tone="dark"` wraps the content.
+- `mobile/src/screens/public-map/ExplorerSheet.test.tsx`:
+  - dark on iOS 26 renders `GlassSurface` with `sheet.glass`, the top radii and `flexShrink`, with the handle and scroll on it, no blur and no fill;
+  - light on iOS 26 keeps the blur;
+  - dark without Liquid Glass keeps the blur and the 0.88 fill.
+- `mobile/src/app/visual-tokens.test.ts`: the dark control glass is translucent with light inks. The map panel's `tint` glass is checked with the glass ink, and the map panel equals the sheet glass tint plus the sheet fill.
+
+Gates:
+- `npm run lint`: clean.
+- `npm run typecheck`: clean.
+- `npm run test:coverage:mobile`: 257 suites, 3073 tests passed.
+- `npm --workspace @cortege/ibp-domain run test`: 9 suites, 230 tests passed.
+- `npm run format:check`: only the untracked `.claude/settings.local.json` is reported.
+
+### Investigation: syncing the in-app theme to UIKit (no code change)
+
+**Today.**
+- The choice made in Réglages (`SettingsScreen.tsx`, `theme.setMode`) is stored in `local_meta` under `theme_mode` (`storage/theme-preference.ts`).
+- It is applied only in JS: `BrandThemeProvider` (`app/theme.ts`) resolves `automatic` through `useColorScheme()` and builds the theme.
+- Nothing tells UIKit. The windows keep `overrideUserInterfaceStyle = .unspecified`, so the native tab bar, the search button, alerts, the keyboard, pickers and system sheets follow the phone's setting.
+- Our own glass already follows the app: `GlassSurface` and `GlassButton` pass `colorScheme` explicitly.
+
+**RN 0.86 API.**
+- The API is `Appearance.setColorScheme('light' | 'dark' | 'unspecified')`. `null` is no longer in the type; `'unspecified'` replaces it.
+- On iOS (`RCTAppearance.mm`) it sets `overrideUserInterfaceStyle` on every window of every connected scene. The root view's trait change then posts `RCTUserInterfaceStyleDidChangeNotification`, and `useColorScheme()` reports the forced value.
+- On Android (`AppearanceModule.kt`) it calls `AppCompatDelegate.setDefaultNightMode(YES / NO / FOLLOW_SYSTEM)`.
+
+**Change needed (small).**
+- One effect in `BrandThemeProvider`: `useEffect(() => Appearance.setColorScheme(mode === "automatic" ? "unspecified" : mode), [mode])`, which runs after the saved mode loads and on every Réglages change.
+- `automatic` must map to `'unspecified'`, never to a resolved scheme. Otherwise `useColorScheme()` would keep returning the forced value and "automatic" would stop following the phone.
+- Forced modes already ignore `useColorScheme()`, so the scheme logic does not change.
+- `theme.test.ts` needs `Appearance` in its `react-native` mock, plus three tests (light, dark, automatic to `unspecified`).
+- `NativeRootTabs`' `DynamicColorIOS` tint can stay: it is still correct, and it covers the launch frames before the preference loads.
+- Effect: the native bar, the search button, the selection pill, alerts and the keyboard all follow the in-app choice. The theme-mismatch case in section 1 (device check 3) goes away.
+
+**Risks.**
+- **Launch flash.** The preference loads asynchronously from SQLite, so a phone in light with the app set to Sombre shows light native chrome for the first frames, then flips once. The JS theme already does the same today.
+- **`app.json`.** `userInterfaceStyle` must stay `"automatic"`. A fixed value would pin `UIUserInterfaceStyle` in Info.plist and the override would fight it.
+- **Android.**
+  - `expo-system-ui` is not installed, so prebuild only warns about `userInterfaceStyle`. `setDefaultNightMode` acts on the AppCompat DayNight theme.
+  - Expo's generated `MainActivity` normally declares `uiMode` in `configChanges`, so AppCompat applies the change without recreating the activity. This should be checked once after `expo prebuild`, because a recreate would remount the JS tree.
+  - Android's bars are JS (`@react-navigation/bottom-tabs`) and already follow the app theme, so the gain there is only system dialogs and the keyboard.
+- **Expo Go.** The call works (RN core), but it overrides Expo Go's own window too. That is harmless in development.
+- **Unaffected.** MapLibre's basemap does not follow the trait collection, so it is untouched. Auth0's `ASWebAuthenticationSession` is system UI and may keep the phone's look.
+
+Verdict: a small, low-risk change (one effect plus a test mock), worth a separate commit with its own device check.
+
+### Device-only checks (iPhone, iOS 26, dark)
+
+1. Explorer over the plan and over the orthophoto:
+   - the top capsule, locate, legend button and panel, and count chip read as clearly translucent native glass, with the map visible through them, the system rim and highlight, and no dark slab;
+   - icons and labels stay readable over the white plan.
+2. Explorer sheets ("Zones hors connexion", cluster list, parcel history):
+   - real Liquid Glass with only the top corners rounded, the map visible through it;
+   - the handle visible; drag to dismiss and the close circle work;
+   - subtitles, the size estimate and the warning text readable (lighter greys than before, by design);
+   - a long cluster list scrolls inside the sheet.
+3. The close circle on the sheet is glass on glass. Check that its rim and press shimmer show and that it does not look muddy. If it does, the fix is to drop its tint, not to make the sheet denser.
+4. Other dark glass:
+   - the parcel picker's bottom card and offline banner, the form's letter strip and pager notice, the profile save bar, the avatar badge and the photo strip's add pill are translucent;
+   - their secondary text is the lighter grey.
+5. Light mode: Explorer, sheets and controls unchanged from build fb6052c.
+6. Selected tab: unchanged from section 1.
+
+## System theme only, native glass sheets in light
+
+Two owner decisions (2026-10-08), commits cfa11e7 and be192d43.
+
+### 1. No in-app theme setting
+
+Owner: "Je veux que l'utilisateur ne puisse plus le paramétrer dans l'app". The app follows the system light or dark only.
+
+- `BrandThemeProvider` (`app/theme.ts`) builds the theme from `useColorScheme()` alone and follows every system change live. Both themes are built once (`defaultTheme`, a dark twin), so the context value keeps its identity. A `null` scheme falls back to light.
+- `buildTheme(scheme)` takes the scheme only: `mode` and `setMode` left `BrandTheme`.
+- No `theme_mode` read or write any more; a row an older build stored in `local_meta` stays there, ignored. No SQLite migration.
+- No `Appearance.setColorScheme`: UIKit (tab bar, search button, Liquid Glass, alerts, keyboard) follows the same system value as the JS theme, so they can no longer disagree. This makes the investigation above ("syncing the in-app theme to UIKit") moot: nothing to sync.
+- `app.json` keeps `userInterfaceStyle: "automatic"` (checked).
+- Paramètres: the Apparence section is gone; the list starts with Cartes (or À propos when offline maps are off), no empty section or divider.
+
+Removed:
+- files `mobile/src/storage/theme-preference.ts` and `theme-preference.sqlite.test.ts`;
+- symbols `BrandThemeMode`, `THEME_MODE_KEY`, `DEFAULT_THEME_MODE`, `loadThemeModePreference`, `saveThemeModePreference`, `BrandTheme.mode`, `BrandTheme.setMode`, `THEME_MODE_CHOICES` and the segment styles of `SettingsScreen`;
+- catalogue `fr.settings.appearance` (title, subtitle, Automatique, Clair, Sombre);
+- tests: the appearance row and segment tests of `SettingsScreen.test.tsx`, the persisted-mode and `setMode` cases of `theme.test.ts`, the `theme-preference` mocks of eight suites.
+
+Added tests: `theme.test.ts` (dark, light, `null`, live switch with stable identity, no storage import and no `Appearance` in `theme.ts`), `SettingsScreen.test.tsx` (no appearance section, no empty section with offline maps off).
+
+Docs: `CLAUDE.md` (visual layer), charte 13.1, `direction-visuelle-12-2.md`, a dated note in `docs/user-tests/owner-acceptance.md` under the findings (OA-82 row left as it was). `docs/specs/` has no user story on the theme, nothing to annotate.
+
+### 2. Light Explorer sheets as native Liquid Glass
+
+The owner's "devraient être du verre natif et pas du flou" was not limited to dark. On iOS 26 the light sheet is now `GlassSurface` too (`theme.visual.sheet.glass`, required in both schemes). Blur plus 0.88 fill stays for older iOS and Android. The map controls, the map panel (parcel picker card, offline banner), the basemap, markers, clustering and the selected tab are untouched.
+
+**Tint.** `lightGlassTint` = `rgba(247, 246, 240, 0.68)`, the light panel's warm paper at the dark glass's density.
+
+- Over a dark basemap the light glass turns grey (`#A8A7A3` over black), so the black backdrop is the worst case for dark ink.
+- The theme's own inks would need: primary `#24311F` 0.60, strong forest `#334E2B` 0.74, danger `#8A2F14` 0.78, secondary `#51604B` 0.86, download bar `#5E7A1F` 0.83 (3:1).
+- So the light sheet takes a glass ink, as dark does: `glassInkLight` = secondary `#333F2F`, strong `#2B4224`, danger `#6B220D` (primary stays `#24311F`). With it **0.68 is the lowest that passes; 0.66 fails** (secondary 4.34, strong 4.31, danger 4.42). Tested.
+- The ink reaches the content through `GlassFill.ink` (light `sheet.glass` sets it): `GlassSurface` wraps light content in `GlassInkProvider` only when asked, so other light glass (map controls, cards) keeps the theme's ink. Dark content is always inked, as before.
+- `withGlassInk` now inks light themes too (it returned them unchanged); `assembleTheme` takes an optional strong ink. A `tone="dark"` surface in a light app no longer gets an ink scope (before: a no-op scope); the tone is unused in production.
+
+Knock-on light changes:
+- sheet handle `rgba(36, 49, 31, 0.24)` to `0.28` (1.44 to 1.54 over black, floor 1.5);
+- download bar fill `#5E7A1F` to `#3F5A12` (3.25 on the glass over black; 5.95 on its track; the bar is only drawn in the offline sheet, so the fallback fill gets the deeper green too).
+
+| Ink on the light sheet glass (0.68) | White plan | Paper plan | Mid satellite | Dark canopy | Black |
+|---|---|---|---|---|---|
+| Primary `#24311F` (4.5:1) | 13.0 | 12.4 | 8.4 | 6.5 | 5.7 |
+| Glass secondary `#333F2F` (4.5:1) | 10.5 | 10.1 | 6.8 | 5.2 | 4.6 |
+| Glass strong `#2B4224` (4.5:1) | 10.5 | 10.0 | 6.8 | 5.2 | 4.6 |
+| Glass danger `#6B220D` (4.5:1) | 10.7 | 10.2 | 6.9 | 5.3 | 4.7 |
+| Forest icon `#334E2B` (3:1) | 8.8 | 8.4 | 5.7 | 4.4 | 3.8 |
+| Download bar `#3F5A12` (3:1) | 7.4 | 7.1 | 4.8 | 3.7 | 3.3 |
+| Close glyph on its 0.08 circle (4.5:1) | 11.2 | 10.7 | 7.4 | 5.7 | 5.1 |
+| For reference, theme secondary `#51604B` (not used on the glass) | 6.4 | 6.1 | 4.1 | 3.2 | 2.8 |
+
+Close hairline over its circle: 1.40 (floor 1.3).
+
+Tests: `glass-density.test.ts` (light sheet glass entry, ink at 0.68 and failing at 0.66, theme inks failing, primary alone 0.60, icons, close, hairline, handle and bar, old handle and bar failing; light controls and map panel unchanged), `glass-ink.test.ts` (light content in the light ink, light theme untouched outside the glass), `GlassSurface.liquid.test.tsx` (light `ink` surface wrapped, tinted light surface not, `tone="dark"` in light not), `ExplorerSheet.test.tsx` (light on iOS 26 is `GlassSurface` with the light glass, no blur or fill; light fallback keeps the blur and 0.88 fill), `visual-tokens.test.ts` (map panel: light content keeps the theme ink on its 0.88 tint).
+
+Gates:
+- `npm run lint`, `npm run typecheck`: clean.
+- `npm run test:coverage:mobile`: 256 suites, 3080 tests passed.
+- `npm --workspace @cortege/ibp-domain run test`: 9 suites, 230 tests passed.
+- `npm run format:check`: only the untracked `.claude/settings.local.json`.
+
+### Device-only checks (iPhone, iOS 26)
+
+1. Paramètres: no Apparence row; the page starts with Cartes, no blank section above it.
+2. Switch the phone between light and dark (Control Centre) with the app open, on Accueil, the Explorer and an open sheet: the app, the native tab bar, the search button and the glass change together at once, with no frame where they disagree; a system alert and the keyboard match.
+3. An install that had "Sombre" or "Clair" chosen in Réglages now follows the phone.
+4. Light Explorer sheets ("Zones hors connexion", cluster list, parcel history): real Liquid Glass with the map visible through it, top corners only rounded; handle visible; drag and the close circle work; a long list scrolls.
+5. Light sheet over the orthophoto and over a dark area: titles, subtitles (darker grey than before, by design), the size estimate, the warning text and the download bar read clearly. If the system material reads lighter or darker than the flat model, the lever is `lightGlassTint` only.
+6. This replaces device check 5 above ("Light mode: Explorer, sheets and controls unchanged"): light map controls and the parcel picker card are still unchanged, the sheets are not.

@@ -1,7 +1,6 @@
 import { memo, useCallback, useMemo, useRef } from "react"
-import { ActivityIndicator, Pressable, View } from "react-native"
+import { Pressable } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import Swipeable from "react-native-gesture-handler/Swipeable"
 import { useBrandTheme } from "../../app/theme"
@@ -10,128 +9,23 @@ import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/surv
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppStatusChip } from "../../ui/AppStatusChip"
-import { FactorProgressRing } from "../../ui/FactorProgressRing"
-import { IbpScoreBadge } from "../../ui/IbpScoreBadge"
-import type { AttachmentPreview } from "../survey-screen-helpers"
 import { feedback } from "../../ui/feedback"
 import { createRowStyles } from "./row-styles"
-
-type RowStyles = ReturnType<typeof createRowStyles>
-
-type SurveyRowTone = "neutral" | "success" | "warning" | "danger"
-
-/** First photo preview of a survey, with the attachment id used as image recycling key. */
-export type SurveyRowPreview = AttachmentPreview & { attachmentId: string }
+import { RowIndicator, resolveSurveyRowTone } from "./row-indicator"
+import { SurveyRowFrame } from "./SurveyRowFrame"
 
 export type SurveyRowProps = {
   survey: LocalSurvey
-  preview: SurveyRowPreview | null
   /** LIST-01: the submitted survey's IBP total, once known — null shows a plain "submitted" ring. */
   score: number | null
   selected: boolean
+  /** Position in the list: read at mount only, for the ring entrance stagger (rows 0 to 7). */
+  index?: number
   onOpen: (surveyId: string) => void
   onDelete: (surveyId: string) => void
 }
 
 const t = fr.surveyList
-
-function resolveSurveyRowTone(uiStatus: ReturnType<typeof resolveSurveyUiStatus>): SurveyRowTone {
-  if (uiStatus === "sync_error" || uiStatus === "sync_blocked") return "danger"
-  if (uiStatus === "submitted") return "success"
-  if (uiStatus === "sync_pending") return "warning"
-  return "neutral"
-}
-
-function accentStyleByTone(styles: RowStyles) {
-  return {
-    success: styles.surveyCardAccentSuccess,
-    warning: styles.surveyCardAccentWarning,
-    danger: styles.surveyCardAccentDanger,
-    neutral: styles.surveyCardAccentNeutral,
-  } as const
-}
-
-function previewEqual(left: SurveyRowPreview | null, right: SurveyRowPreview | null): boolean {
-  if (left === right) return true
-  if (!left || !right) return false
-  if (left.attachmentId !== right.attachmentId || left.kind !== right.kind) return false
-  if (left.kind === "image" && right.kind === "image") return left.uri === right.uri
-  return true
-}
-
-function RowPreview({
-  preview,
-  theme,
-  styles,
-}: {
-  preview: SurveyRowPreview
-  theme: ReturnType<typeof useBrandTheme>
-  styles: RowStyles
-}) {
-  if (preview.kind === "image") {
-    return (
-      <View style={styles.surveyCardMedia}>
-        <ExpoImage
-          source={{ uri: preview.uri }}
-          style={styles.surveyCardPreview}
-          contentFit="cover"
-          cachePolicy="memory"
-          recyclingKey={preview.attachmentId}
-        />
-      </View>
-    )
-  }
-  return (
-    <View style={styles.surveyCardMedia}>
-      <View style={[styles.surveyCardPreview, styles.surveyCardPreviewPlaceholder]}>
-        {preview.kind === "loading" ? (
-          <ActivityIndicator size="small" color={theme.colors.textSecondary} />
-        ) : (
-          <Ionicons
-            name={preview.kind === "missing" ? "warning-outline" : "image-outline"}
-            size={18}
-            color={theme.colors.textSecondary}
-          />
-        )}
-      </View>
-    </View>
-  )
-}
-
-// LIST-01: a score badge for a submitted survey with a known total, a plain completion ring
-// otherwise (submitted-but-unscored, or a draft in progress).
-function RowIndicator({
-  isSubmitted,
-  score,
-  completionRate,
-  styles,
-}: {
-  isSubmitted: boolean
-  score: number | null
-  completionRate: number
-  styles: RowStyles
-}) {
-  if (isSubmitted) {
-    if (score != null) {
-      return (
-        <View style={styles.surveyCardIndicator}>
-          <IbpScoreBadge score={score} size="sm" />
-        </View>
-      )
-    }
-    return (
-      <View style={styles.surveyCardIndicator}>
-        <FactorProgressRing progress={1} complete size={32} />
-      </View>
-    )
-  }
-  const clamped = Math.max(0, Math.min(100, completionRate))
-  return (
-    <View style={styles.surveyCardIndicator}>
-      <FactorProgressRing progress={clamped / 100} complete={false} size={32} />
-    </View>
-  )
-}
 
 /**
  * One survey list row (01.9-22, D-03). Memoised: it re-renders only when its own
@@ -140,15 +34,14 @@ function RowIndicator({
  */
 function SurveyRowComponent({
   survey,
-  preview,
   score,
   selected,
+  index = 0,
   onOpen,
   onDelete,
 }: SurveyRowProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createRowStyles(theme), [theme])
-  const accentStyles = useMemo(() => accentStyleByTone(styles), [styles])
   const swipeableRef = useRef<Swipeable>(null)
   const surveyId = survey.id
   const uiStatus = resolveSurveyUiStatus(survey)
@@ -208,8 +101,7 @@ function SurveyRowComponent({
       rightThreshold={56}
       containerStyle={styles.surveySwipeable}
     >
-      <Pressable
-        accessibilityRole="button"
+      <SurveyRowFrame
         accessibilityState={{ selected }}
         accessibilityLabel={t.a11y.openSurvey({
           name: survey.site_name,
@@ -218,43 +110,22 @@ function SurveyRowComponent({
         })}
         accessibilityActions={accessibilityActions}
         onAccessibilityAction={handleAccessibilityAction}
-        style={({ pressed }) => [
-          styles.surveyCard,
-          selected ? styles.surveyCardSelected : null,
-          pressed && styles.surveyCardPressed,
-        ]}
         onPress={handleOpen}
-      >
-        {/* Accent bar — transparent for neutral (N-06) */}
-        <View style={[styles.surveyCardAccent, accentStyles[rowTone]]} />
-
-        <RowIndicator
-          isSubmitted={survey.status === "submitted"}
-          score={score}
-          completionRate={survey.completion_rate}
-          styles={styles}
-        />
-
-        {/* P2-COMPACT-01: thumbnail only when photo exists */}
-        {preview ? <RowPreview preview={preview} theme={theme} styles={styles} /> : null}
-
-        <View style={styles.surveyCardContent}>
-          <View style={styles.surveyCardHeader}>
-            <Text numberOfLines={2} style={styles.surveyCardTitle}>
-              {/* OA-58: an unnamed draft no longer shows as a blank row. */}
-              {survey.site_name?.trim() || fr.common.untitledSurvey}
-            </Text>
-            {selected ? (
-              <Ionicons
-                name="checkmark-circle"
-                size={18}
-                color={theme.colors.forest}
-                style={styles.surveyCardSelectedIcon}
-              />
-            ) : null}
-          </View>
-
-          <View style={styles.surveyCardStatusRow}>
+        tone={rowTone}
+        selected={selected}
+        indicator={
+          <RowIndicator
+            surveyId={surveyId}
+            isSubmitted={survey.status === "submitted"}
+            score={score}
+            completionRate={survey.completion_rate}
+            index={index}
+          />
+        }
+        /* OA-58: an unnamed draft no longer shows as a blank row. */
+        title={survey.site_name?.trim() || fr.common.untitledSurvey}
+        status={
+          <>
             <AppStatusChip
               label={uiStatusLabel}
               tone={rowTone}
@@ -263,19 +134,16 @@ function SurveyRowComponent({
             <Text numberOfLines={1} style={styles.surveyCardMeta}>
               {t.row.updatedMeta(updatedAt)}
             </Text>
-          </View>
-
-          {supportText ? (
-            <Text numberOfLines={2} style={styles.surveyCardSupport}>
-              {supportText}
-            </Text>
-          ) : null}
-        </View>
-      </Pressable>
+          </>
+        }
+        support={supportText}
+      />
     </Swipeable>
   )
 }
 
+// `index` is left out of the comparison on purpose: it only drives the entrance stagger at mount, and
+// comparing it would re-render every row below a draft that moves into the "continue" card.
 export const SurveyRow = memo(
   SurveyRowComponent,
   (previous, next) =>
@@ -283,6 +151,5 @@ export const SurveyRow = memo(
     previous.score === next.score &&
     previous.selected === next.selected &&
     previous.onOpen === next.onOpen &&
-    previous.onDelete === next.onDelete &&
-    previewEqual(previous.preview, next.preview),
+    previous.onDelete === next.onDelete,
 )

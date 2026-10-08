@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useRef } from "react"
 import { Alert } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import { evaluateSubmitReadinessFromDraft } from "../../app/ibp-scoring"
@@ -7,6 +7,7 @@ import { fr, logStatusDetail, type StatusMessage } from "../../i18n"
 import {
   discardSurveyLocalChanges,
   getLocalSurveyDraft,
+  listLocalSurveys,
   LocalSurvey,
   queueDeleteAttachment,
   queueDeleteSurvey,
@@ -75,9 +76,14 @@ type UseSurveySyncSurveyOperationsParams = {
   maybeAutoSync: (trigger: string) => Promise<void>
   handleLoadCanonicalDetails: (surveyId: string, options?: { silent?: boolean }) => Promise<void>
   syncAllowed: boolean
+  /** The connectivity probe of useSurveySyncNetwork: offline, the finish is postponed calmly. */
+  isOnline: boolean
   ensureSyncOwner: EnsureSyncOwner
   syncActivity: SyncActivity
 }
+
+const readLocalSurvey = async (surveyId: string): Promise<LocalSurvey | undefined> =>
+  (await listLocalSurveys()).find((survey) => survey.id === surveyId)
 
 export function useSurveySyncSurveyOperations({
   apiUrl,
@@ -95,6 +101,7 @@ export function useSurveySyncSurveyOperations({
   maybeAutoSync,
   handleLoadCanonicalDetails,
   syncAllowed,
+  isOnline,
   ensureSyncOwner,
   syncActivity,
 }: UseSurveySyncSurveyOperationsParams) {
@@ -107,6 +114,27 @@ export function useSurveySyncSurveyOperations({
         return syncActivity.run(() => syncPending(apiUrl, token))
       }),
     [apiUrl, ensureSyncOwner, syncActivity, withAuthRetry],
+  )
+
+  // D-25: the finish sends the survey's pending changes itself, quietly, before the submit call
+  // (the server needs the latest upsert first). It goes through the same owner-guarded, single-flight
+  // drain as the background sync, so the two never overlap. A drain already running is joined and
+  // may have read the queue before the last edit was queued: a second round sends that edit. A
+  // survey whose last send failed (backoff, not blocked) is retried at once, like "Réessayer".
+  // Returns the survey as stored afterwards; the caller submits only when it reads "synced".
+  const sendPendingChangesBeforeFinish = useCallback(
+    async (surveyId: string): Promise<LocalSurvey | undefined> => {
+      let current = await readLocalSurvey(surveyId)
+      if (!current || current.sync_state === "synced" || current.sync_blocked === 1) return current
+      if (current.sync_state === "failed") await retrySurveyNow(surveyId)
+      for (let round = 0; round < 2; round += 1) {
+        await runOwnerGuardedSync()
+        current = await readLocalSurvey(surveyId)
+        if (!current || current.sync_state !== "pending") break
+      }
+      return current
+    },
+    [runOwnerGuardedSync],
   )
 
   const queueAttachmentAsset = useCallback(
@@ -153,7 +181,7 @@ export function useSurveySyncSurveyOperations({
     [maybeAutoSync, refreshLocalAttachments, setStatus],
   )
 
-  const handleSubmitSurvey = useCallback(
+  const finishSurvey = useCallback(
     async (surveyId: string): Promise<void> => {
       const name = surveyName(surveys.find((survey) => survey.id === surveyId))
       const blockReason = getSubmitBlockReason(surveyId, surveys)
@@ -165,12 +193,12 @@ export function useSurveySyncSurveyOperations({
         setStatus(text.alreadySubmitted({ name }))
         return
       }
-      if (blockReason === "not_synced") {
-        setStatus(text.notSynced({ name }))
-        return
-      }
       if (blockReason === "survey_blocked") {
         setStatus(text.surveyConflict({ name }))
+        return
+      }
+      if (blockReason === "name_required") {
+        setStatus(text.nameRequired())
         return
       }
 
@@ -201,8 +229,43 @@ export function useSurveySyncSurveyOperations({
         return
       }
 
-      if (!syncAllowed) {
+      if (!syncAllowed || !isOnline) {
         setStatus(text.submitPostponed({ name }))
+        return
+      }
+
+      try {
+        const local = await sendPendingChangesBeforeFinish(surveyId)
+        if (local && local.sync_state !== "synced") {
+          await refreshLocalSurveys()
+          await refreshLocalAttachments()
+        }
+        if (!local) {
+          setStatus(text.notFound())
+          return
+        }
+        if (local.sync_blocked === 1) {
+          setStatus(text.surveyConflict({ name }))
+          return
+        }
+        if (local.sync_state !== "synced") {
+          setStatus(text.finishNotSentYet({ name }))
+          return
+        }
+      } catch (error) {
+        await refreshLocalSurveys()
+        await refreshLocalAttachments()
+        if (isAuthRequiredError(error)) {
+          await clearSession()
+          setStatus(text.submitLoginRequired())
+          return
+        }
+        if (isSyncOwnerMismatchError(error) || isSyncSuspendedError(error)) {
+          setStatus(text.submitPostponed({ name }))
+          return
+        }
+        logStatusDetail("surveyOps.submitPendingChanges", error)
+        setStatus(text.finishNotSentYet({ name }))
         return
       }
 
@@ -247,13 +310,31 @@ export function useSurveySyncSurveyOperations({
       ensureSyncOwner,
       handleLoadCanonicalDetails,
       onStopEditing,
+      isOnline,
       refreshLocalAttachments,
       refreshLocalSurveys,
+      sendPendingChangesBeforeFinish,
       setStatus,
       surveys,
       syncAllowed,
       withAuthRetry,
     ],
+  )
+
+  // One finish at a time per survey: a second tap during the sync round or the submit call is
+  // ignored, so the server never gets two submits for the same survey from this phone.
+  const finishingSurveyIds = useRef(new Set<string>())
+  const handleSubmitSurvey = useCallback(
+    async (surveyId: string): Promise<void> => {
+      if (finishingSurveyIds.current.has(surveyId)) return
+      finishingSurveyIds.current.add(surveyId)
+      try {
+        await finishSurvey(surveyId)
+      } finally {
+        finishingSurveyIds.current.delete(surveyId)
+      }
+    },
+    [finishSurvey],
   )
 
   const handleRetrySurvey = useCallback(

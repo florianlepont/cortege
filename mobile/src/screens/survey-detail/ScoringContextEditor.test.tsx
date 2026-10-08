@@ -2,6 +2,8 @@ import React from "react"
 import renderer, { act, ReactTestRenderer } from "react-test-renderer"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, IbpCas } from "@cortege/ibp-domain"
 import { SurveyDetailResponse } from "../../app/types"
+import { brandComponentTokens, brandRadius } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { LocalDraftMeta } from "./useLocalDraftSummary"
 import { resolveScoringContext, ScoringContext, ScoringContextEditor } from "./ScoringContextEditor"
@@ -355,5 +357,21 @@ describe("resolveScoringContext", () => {
         false,
       ),
     ).toEqual(untagged)
+  })
+})
+
+describe("ScoringContextEditor, variant I card", () => {
+  test("the card is glass (fill, hairline, radius 22) on a 4 grid and keeps its chips at 44 pt", () => {
+    const tree = render(v30, true)
+    const card = tree.root.findAllByType("View" as never)[0]?.props.style as Record<string, unknown>
+    expect(card).toMatchObject({
+      backgroundColor: defaultTheme.visual.glass.cardFill,
+      borderColor: defaultTheme.visual.glass.cardBorder,
+      borderRadius: brandRadius.card,
+    })
+    expect((card.padding as number) % 4).toBe(0)
+    expect((card.gap as number) % 4).toBe(0)
+    expect(brandComponentTokens.choiceChip.minHeight).toBeGreaterThanOrEqual(44)
+    expect(chips(tree).length).toBeGreaterThan(0)
   })
 })

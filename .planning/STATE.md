@@ -5,14 +5,15 @@ milestone_name: milestone
 current_phase: 23
 current_phase_name: Visual Modernisation
 status: executing
-stopped_at: Roadmap renumbered flat 2026-10-07; Phase 23 in progress, Phases 24 to 27 to plan before field tests (Phase 28)
-last_updated: "2026-10-07T12:00:00.000Z"
-last_activity: 2026-10-07
+stopped_at: Completed 23-23-PLAN.md (Phase 23 plans 01 to 23 executed, phase verification human_needed; criteria 4 to 8 added on 2026-10-07/08 not yet planned)
+last_updated: "2026-10-08T12:56:32.000Z"
+last_activity: 2026-10-08
+last_activity_desc: Phase 23 (old 12.2) plans 01 to 23 executed, owner go on the phone
 progress:
   total_phases: 28
   completed_phases: 22
-  total_plans: 159
-  completed_plans: 159
+  total_plans: 182
+  completed_plans: 182
   percent: 79
 ---
 
@@ -23,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phases 1 through 22 are complete (owner acceptance closed 2026-10-06). Phase 23 (Visual Modernisation) is in progress. Then Phase 24 (survey history split, SEED-002), Phase 25 (global search, SEED-003), Phase 26 (UX/UI audit and design system update) and Phase 27 (in-depth quality audit) come before Phase 28 (Field Validation), which carries the device checks deferred from Phases 15, 17, 18 and 19. The roadmap was renumbered flat on 2026-10-07; see `.planning/ROADMAP.md` for the old-to-new table.
+**Current focus:** Phases 1 through 22 are complete (owner acceptance closed 2026-10-06). Phase 23 (Visual Modernisation, old 12.2) is in progress: plans 01 to 23 are executed and the owner gave his go on the phone (2026-10-08), phase verification is pending (human_needed), and criteria 4 to 8 (map colourisation, offline packs, design spec, component homogenisation, native components), added on 2026-10-07 and 2026-10-08, are still to plan. Then Phase 24 (survey history split, SEED-002), Phase 25 (global search, SEED-003), Phase 26 (UX/UI audit and design system update) and Phase 27 (in-depth quality audit) come before Phase 28 (Field Validation), which carries the device checks deferred from Phases 15, 17, 18 and 19 and the Android device pass of Phase 23. The roadmap was renumbered flat on 2026-10-07; see `.planning/ROADMAP.md` for the old-to-new table.
 
 ## Current Position
 
-Phase: 23 (Visual Modernisation, in progress)
-Plan: Not planned (the owner is working on it directly)
-Status: Phases 1 through 22 complete; Phases 23 to 27 come before the field tests (Phase 28), 24 to 27 not yet planned
-Last activity: 2026-10-07 (roadmap renumbered flat 1 to 28; Phase 24 (SEED-002) and Phase 25 (SEED-003) added; SEED-004 done in Phase 23; UX/UI audit is Phase 26, deep audit Phase 27)
+Phase: 23 (Visual Modernisation, old 12.2) — EXECUTING
+Plan: 23 of 23 (all plans executed; criteria 4 to 8 not yet planned)
+Status: Plans complete, phase verification pending (human_needed); Phases 24 to 27 not yet planned, then field tests (Phase 28)
+Last activity: 2026-10-08 (Phase 23 plan 23: owner go on the phone); 2026-10-07 (roadmap renumbered flat 1 to 28; Phase 24 (SEED-002) and Phase 25 (SEED-003) added; SEED-004 done in Phase 23; UX/UI audit is Phase 26, deep audit Phase 27)
 
 Progress: [████████░░] 22/28 phases complete
 
@@ -79,6 +80,29 @@ Progress: [████████░░] 22/28 phases complete
 | Phase 3 P07 | 10min | 2 tasks | 8 files |
 | Phase 3 P08 | 21min | 2 tasks | 6 files |
 | Phase 3 P09 | 37min | 2 tasks | 1 files |
+| Phase 23 P02 | 25min | 3 tasks | 6 files |
+| Phase 23 P01 | gate | 2 tasks | 1 files |
+| Phase 23 P03 | 25min | 3 tasks | 17 files |
+| Phase 23 P04 | 25min | 3 tasks | 10 files |
+| Phase 23 P05 | 20min | 2 tasks | 8 files |
+| Phase 23 P06 | 20min | 3 tasks | 12 files |
+| Phase 23 P07 | 30min | 3 tasks | 15 files |
+| Phase 23 P08 | 25min | 2 tasks | 9 files |
+| Phase 23 P09 | 30min | 3 tasks | 12 files |
+| Phase 23 P10 | owner check | 1 tasks | 0 files |
+| Phase 23 P11 | 30min | 3 tasks | 13 files |
+| Phase 23 P12 | 35min | 3 tasks | 12 files |
+| Phase 23 P13 | 30 min | 3 tasks | 20 files |
+| Phase 23 P14 | owner check | 1 tasks | 0 files |
+| Phase 23 P15 | 90 min | 3 tasks | 32 files |
+| Phase 23 P16 | 35 min | 2 tasks | 11 files |
+| Phase 23 P17 | owner check | 1 tasks | 0 files |
+| Phase 23 P18 | 16min | 2 tasks | 20 files |
+| Phase 23 P19 | owner check | 1 tasks | 0 files |
+| Phase 23 P20 | 9min | 2 tasks | 40 files |
+| Phase 23 P21 | 22min | 3 tasks | 25 files |
+| Phase 23 P22 | 7min | 2 tasks | 5 files |
+| Phase 23 P23 | owner check | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -130,6 +154,29 @@ Decisions table. Decisions affecting current work:
 - [Phase 3]: handleLogout now counts unsynced work and purges only after an explicit destructive confirmation (D-03); performDeleteAccount purges via the same performLogoutAndPurge helper without the unsynced-work alert
 - [Phase 3]: LocalDataOwnerConflictScreen (French) blocks the app with exactly two choices when localDataOwnerStatus is conflict; App.tsx keeps it mutually exclusive with the profile-setup overlay
 - [Phase 3]: Device verification: steps 1-5 confirmed on real hardware (offline session keep, revoked refresh token, logout with unsynced work, other-account conflict, dev tools absent in release build); steps 6-7 (nearby-parcels list, production rate limiting) carried over as they require field conditions / a live deploy
+- [Phase 23-02]: Factor tone cut points (0-2 low, 3 mid, 4-5 high) are a mobile display convention; total tone delegates to bandTone(totalBand(n))
+- [Phase 23]: 03: Light ring and bar high tone is #728A2D (D-16); dark forest halo core rgba(111, 154, 60, 0.55) in one token (D-14); GlassSurface uses static keyed brandGlassFills, Android flat higher-alpha fill (D-17)
+- [Phase 23-04]: GlowBar track does not clip so the fill glow shows; NUMERAL_RENDER_MODE is the single fallback switch for the gradient numeral
+- [Phase 23-05]: 44 pt hit area for sm and small icon-only AppButton comes from hitSlop, visible sizes unchanged
+- [Phase 23-06]: A factor scored 0 draws the 4 pt low-tone stub with glow; only a null factor uses the track colour with no shadow
+- [Phase 23-06]: ScoreRing, FactorBarsChart and the motion helpers take tones only through totalTone and factorTone (no 25/35 split); the ring entrance plays once per survey and score for rows 0 to 7
+- [Phase 23]: [Phase 23-07]: Tab tints come from theme.visual.tab in both trees; status chip tones keep only their fill with a glass hairline border
+- [Phase 23]: 23-08: Accueil entrance indices count the sections shown (no stagger gap without alert); resume glow pill uses AppButton size md
+- [Phase 23-09]: Grouped list headers sit 24 above and 8 below (16 list gap plus 8 title margin); profile custom rows reuse the exported AppGroupedListIconTile
+- [Phase 23]: 23-11: SurveyRow memo ignores the index prop (read at mount only) so list shifts do not re-render every row; scope switch keeps tab-role pressables styled as glass chips — render-counts autosave scenario regressed from 1 to 10 row renders when index was compared
+- [Phase 23]: 23-12: summary tile values keep the width of their final digits (count-up TextInput); the submit pulse observes the status transition in a hook and leaves the submit logic untouched; header title and status styles moved into SummaryHeader
+- [Phase 23]: 23-13: sub-score tones via bandTone(standBand/contextBand) in ScoreBreakdown; shared subContent rhythm 16/24/48 for the four sub-pages; History and Context glass cards as style recipes on plain Views
+- [Phase 23]: 23-14: big calls to action are the native iOS 26 glass button (GlassButton over @expo/ui, D-28) in the charter forest #334E2B with a white label; rings on the trailing side of rows; halo on every screen through ScreenFrame; factors filled has one definition stored by migration 5
+- [Phase 23]: 23-15: the D-26 pill floats in its own row above the A to J bar; the 46 pt round button keeps its place and only goes back (close icon) beside it
+- [Phase 23]: 23-15: a finish from the pager writes the pending form edits first (flushDraft), then runs submitSurvey; success is the status turning submitted, then popTo surveyDetail
+- [Phase 23]: 23-15: the summary halo and pop wait until it is seen again after a pager finish (useVisiblePulse); the haptic stays immediate and single
+- [Phase 23]: 23-17: wizard uses the native transparent header with the system back button on iOS (D-29); pages whose title scrolled away get the native collapsing large title with a blur behind the collapsed bar (D-30); no border under a gradient, circular corners on layered surfaces
+- [Phase 23]: 23-18: Explorer panel rows (cluster list, parcel history) reuse SurveyRowFrame with the ScoreRing trailing (D-27a) and enter through EntranceView (rows 0 to 7); full-width panel actions are GlassButton at unchanged sizes; no halo on the Explorer or its sheets; one SheetCloseButton with a 44 pt target
+- [Phase 23]: 23-19: Explorer markers open the survey directly (intermediate card removed); the download panel has a 46 pt button and a progress bar, and download mode is a full-screen green pulse drawn at the navigation layer; map controls and sheets use near-opaque glass in dark mode; unscored parcels are warm grey and a scored survey keeps its marker until a scored parcel shows it; Accueil's Nouveau relevé is a glass card of its own; forest cards carry the owner-tuned mist and diagonal flowing contours with an SVG mask behind text
+- [Phase 23]: 23-20: every Ionicons glyph in mobile/src is an outline variant, locked by `__checks__/icons.test.ts` (D-07); GlassButton's native SF Symbol map is keyed by outline glyphs with unfilled symbols; tab SF Symbols and Android PNG tab icons untouched; no control changed size
+- [Phase 23]: 23-21: em dash gate over every string, template and JSX text under mobile/src (survey-export.ts out of scope), comments skipped through the TypeScript parser; motion gate per call (ReduceMotion.System unless the file branches on useReducedMotion()), React Native Animated confined to six allowlisted sign-in and sheet files, every endless loop gated by useScreenVisible; ExplorerSheet honours Reduce Motion; no open dark correction (no token changed); map overlays that keep theme text take theme.visual.mapPanel, map-control-like overlays the map control glass and ink
+- [Phase 23]: 23-22: charter section 13 records variant I as shipped (five token files, ForestAurora forest cards, forest native glass CTA over @expo/ui, dense map glass, gates, platform fallbacks), status pending plan 23-23; direction text carries the four phone checks without the final marker; SEED-005 animals dormant (numbered SEED-004 when planted, renumbered at the merge because main took SEED-004 for nearby parcels); Phase 28 (old 13) carries the Android device pass (ForestCard motion as the knob); CLAUDE.md has a Visual layer block and its gates
+- [Phase 23]: 23-23: owner "go" on build 39b4f005 (2026-10-08) for the whole phase; direction text "Statut : approuvée par le propriétaire le 2026-10-08" and charter 13.10 "approved by the owner on 2026-10-08"; light or dark follows the system only (in-app Apparence setting removed); dark Liquid Glass translucent and native with a glass ink; Explorer sheets native Liquid Glass on iOS 26 in both schemes; selected tab tint as DynamicColorIOS; dark basemap colouring not planned, owner declined a seed
 
 ### Pending Todos
 
@@ -138,6 +185,7 @@ Decisions table. Decisions affecting current work:
 - Investigate iOS Release build navigation (2026-09-25): `npx expo run:ios --device --configuration Release` shows the JS tab bar instead of the native liquid-glass one, and "Mes relevés" does not work. The dev build also shows a non-glass bar; first check `mobile/.env` for a leftover `EXPO_PUBLIC_ENABLE_NATIVE_TABS=false`. Then re-run the offline cold-start device check (phase 01.5 criterion 7) on a working Release build.
 
 - Verify nearby-parcels list on device near known parcels (carried over from Phase 3-18 step 6; automated coverage exists in `useNearbyParcels.test.ts` / `map-viewport.test.ts`)
+- After the Phase 23 (old 12.2) branch is merged and the API deployed (fix e7537b5, migration 020): check on the owner's phone that his Vincennes survey's parcel is drawn in its score colour at parcel zoom (owner: test once all lots are developed, no separate PR)
 - After API deploy: check Caddy/API logs for 429 bursts under concurrent sync; set `TRUST_PROXY=loopback,uniquelocal` in `/home/ubuntu/cortege.env` if unauthenticated requests share one bucket (carried over from Phase 3-18 step 7)
 
 ### Blockers/Concerns
@@ -157,7 +205,7 @@ Decisions table. Decisions affecting current work:
 - After Phase 10 the roadmap moved to flat numbering (Phases 11–28). Phase 11 (association-only sharing) and the UX/UI audit lots (Phases 12, 13, 16, 18, 21) were inserted by owner decision on 2026-09-27; Phase 28 (Field Validation) now depends on all of them
 - Phase 22 inserted after Phase 21: Owner acceptance testing: the owner still finds many display bugs and UX friction on their own phone and judged Phase 28 field tests with the association premature (owner decision 2026-09-28) (URGENT)
 - Phases 23 (Visual Modernisation, `REQ-QA-visual-modernisation`) and 27 (In-depth Quality Audit, `REQ-QA-deep-audit`) inserted after Phase 22 by owner decision 2026-10-06; on 2026-10-07 Phase 26 (UX/UI Audit & Design System Update, `REQ-QA-ux-audit`), Phase 24 (survey history split, SEED-002) and Phase 25 (global search, SEED-003) were added; SEED-004 (nearby parcels on Home) is done within Phase 23. Same day the roadmap was renumbered flat (1 to 28, no more `1.x` or `12.x`); the old-to-new table is in `ROADMAP.md`.
-- Seeds are kept in `.planning/seeds/` (SEED-001 map layers, SEED-002 scheduled in Phase 24, SEED-003 global search in Phase 25, SEED-004 done in Phase 23)
+- Seeds are kept in `.planning/seeds/` (SEED-001 map layers, SEED-002 scheduled in Phase 24, SEED-003 global search in Phase 25, SEED-004 done in Phase 23, SEED-005 animals dormant)
 
 ## Deferred Items
 
@@ -170,6 +218,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-07
-Stopped at: Roadmap renumbered; finish Phase 23, then /gsd-discuss-phase 24
+Last session: 2026-10-08T12:56:32.000Z
+Stopped at: Completed 23-23-PLAN.md; Phase 23 verification human_needed, criteria 4 to 8 to plan, then /gsd-discuss-phase 24
 Resume file: None

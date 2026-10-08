@@ -39,13 +39,16 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
+    AccessibilityInfo: { announceForAccessibility: jest.fn() },
     ActivityIndicator: mockComponent("ActivityIndicator"),
+    Keyboard: { dismiss: jest.fn() },
     Pressable: mockComponent("Pressable"),
     ScrollView: mockComponent("ScrollView"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Alert: { alert: (...args: unknown[]) => mockAlert(...args) },
     StyleSheet: { create: <T,>(styles: T): T => styles, absoluteFill: {} },
+    Platform: { OS: "ios" },
   }
 })
 
@@ -90,10 +93,15 @@ jest.mock("../../app/feature-flags", () => ({
 }))
 const mockStartDownload = jest.fn()
 const mockDeleteArea = jest.fn()
+const mockDownloading: { areaId: string | null } = { areaId: null }
+const mockDownloadStatus: { value: unknown } = { value: null }
+const mockClearDownloadStatus = jest.fn()
 jest.mock("../../hooks/useOfflineAreas", () => ({
   useOfflineAreas: () => ({
     areas: [],
-    downloadingAreaId: null,
+    downloadingAreaId: mockDownloading.areaId,
+    downloadStatus: mockDownloadStatus.value,
+    clearDownloadStatus: mockClearDownloadStatus,
     estimateForRegion: () => ({
       totalTileCount: 120,
       estimatedBytes: 2_400_000,
@@ -105,6 +113,9 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
   }),
 }))
 jest.mock("../../ui/AppStatusChip", () => ({ AppStatusChip: "AppStatusChip" }))
+// The glow is drawn by the navigation layer (download-edge-glow.test.tsx) and its motion is tested in
+// EdgePulse.test.tsx; here only the screen's request for it is counted.
+jest.mock("../../navigation/download-edge-glow", () => ({ DownloadEdgeGlow: "DownloadEdgeGlow" }))
 
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: () => mockLocation.requestForegroundPermissionsAsync(),
@@ -125,6 +136,23 @@ jest.mock("../../ui/AppButton", () => {
   return {
     AppButton: ({ label, onPress }: { label: string; onPress: () => void }) =>
       ReactRef.createElement("AppButton", { label, onPress }),
+  }
+})
+// The Explorer panels' full-width actions are glass calls to action (12.2-18).
+jest.mock("../../ui/GlassButton", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    GlassButton: (props: { label: string; onPress: () => void }) =>
+      ReactRef.createElement("GlassButton", props),
+  }
+})
+jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
+// The panel rows' entrance is covered by PanelRowEntrance.test.tsx and useFocusEntrance.test.tsx.
+jest.mock("../../ui/EntranceView", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    EntranceView: ({ index, children }: { index: number; children?: React.ReactNode }) =>
+      ReactRef.createElement("EntranceView", { index }, children),
   }
 })
 jest.mock("../../ui/AppCard", () => {
@@ -196,7 +224,6 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     accessToken: "access-token",
     items: [],
     parcelStatuses: [],
-    ownSurveyIds: [],
     loading: false,
     onLoad: jest.fn(async () => undefined),
     onLoadParcels: jest.fn(async () => undefined),
@@ -234,9 +261,18 @@ function markers(): ReactTestInstance[] {
   return tree.root.findAll((node) => (node.type as unknown) === "Marker")
 }
 
+// The offline panel lays out unseen copies of its statuses to reserve their height (12.2-19):
+// what the user sees is outside that measuring layer.
+function shown(node: ReactTestInstance): boolean {
+  for (let parent = node.parent; parent; parent = parent.parent) {
+    if (parent.props.testID === "offline-area-measure") return false
+  }
+  return true
+}
+
 function texts(): string[] {
   return tree.root
-    .findAll((node) => (node.type as unknown) === "Text")
+    .findAll((node) => (node.type as unknown) === "Text" && shown(node))
     .map((node) => [node.props.children].flat().join(""))
 }
 
@@ -269,76 +305,73 @@ describe("PublicMapScreen", () => {
     expect(texts()).toContain(fr.publicMap.count(1))
   })
 
-  test("a marker press shows the survey card, which never shows the id", () => {
-    const props = makeProps({ items: [item("secret-id", 45.7, 4.8, 27)] })
+  test("a marker press opens the survey's page at once, with no card in between (12.2-19)", () => {
+    const props = makeProps({ items: [item("s-42", 45.7, 4.8, 27)] })
     mount(props)
-    const marker = markers().find(
-      (node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27),
-    ) as ReactTestInstance
-    act(() => marker.props.onPress())
+    const marker = () =>
+      markers().find(
+        (node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27),
+      ) as ReactTestInstance
+    act(() => marker().props.onPress())
 
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.publicMap.selected.title(27))
-    // The annotation's technical `id` is not user-facing: what a user reads or hears never has it.
-    const visible = tree.root
-      .findAll((node) => typeof node.type === "string")
-      .flatMap((node) => [node.props.accessibilityLabel, node.props.children].flat(2))
-      .filter((value): value is string => typeof value === "string")
-    expect(visible.join(" ")).not.toContain("secret-id")
-
-    act(() => byLabel(fr.publicMap.a11y.closeSelection).props.onPress())
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
-      0,
-    )
+    expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-42")
+    // No panel: the sheet stays closed and nothing offers a second "open" step.
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
+    expect(tree.root.findAll((node) => (node.type as unknown) === "GlassButton")).toHaveLength(0)
+    // The marker of the survey just opened is drawn selected when the map is seen again.
+    expect(marker().props.selected).toBe(true)
   })
 
-  test("draws the author's draft dashed, with its own card and legend row (OA-59)", () => {
-    const props = makeProps({ draftItems: [item("d-1", 45.7, 4.8, 15)], ownSurveyIds: ["d-1"] })
+  test("a double tap on a marker opens the survey once; a later tap opens it again", () => {
+    const nowSpy = jest.spyOn(Date, "now").mockReturnValue(10_000)
+    try {
+      const props = makeProps({ items: [item("s-42", 45.7, 4.8, 27)] })
+      mount(props)
+      const press = () =>
+        act(() =>
+          markers()
+            .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27))
+            ?.props.onPress(),
+        )
+      press()
+      nowSpy.mockReturnValue(10_300)
+      press()
+      expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)
+      // Back on the map a while later, a new tap opens it again.
+      nowSpy.mockReturnValue(12_000)
+      press()
+      expect(props.onOpenSurvey).toHaveBeenCalledTimes(2)
+    } finally {
+      nowSpy.mockRestore()
+    }
+  })
+
+  test("the author's draft marker opens it directly too (OA-59)", () => {
+    const props = makeProps({ draftItems: [item("d-1", 45.7, 4.8, 15)] })
     mount(props)
     const marker = markers().find(
       (node) => node.props.accessibilityLabel === fr.publicMap.a11y.draftMarker(15),
     ) as ReactTestInstance
     act(() => marker.props.onPress())
-
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.publicMap.draft.title(15))
-    expect(texts()).toContain(fr.publicMap.draft.meta)
-    // The "your own survey" notice is for a published survey only.
-    expect(
-      tree.root.findAll((node) => node.props.message === fr.publicMap.selected.ownSurvey),
-    ).toHaveLength(0)
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("d-1")
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
   })
 
-  test("a focus request centres the map and selects the survey once it is among the markers (OA-59)", () => {
+  test("a focus request centres the map and highlights the survey's marker, no panel (OA-59)", () => {
     const focus = { surveyId: "s-7", lat: 45.7, lng: 4.8, parcelIds: ["P1"], nonce: 1 }
     const props = makeProps({ focus })
     mount(props)
     expect(mockAnimateToRegion).toHaveBeenCalled()
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
-      0,
-    )
 
     // The public survey arrives with the viewport load the move triggered.
     update({ ...props, items: [item("s-7", 45.7, 4.8, 33)] })
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.publicMap.selected.title(33))
-  })
-
-  test("the selected survey's card opens its read-only page (OA-59)", () => {
-    const props = makeProps({ items: [item("s-42", 45.7, 4.8, 27)] })
-    mount(props)
-    act(() =>
-      markers()
-        .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27))
-        ?.props.onPress(),
-    )
-    const open = tree.root.find(
-      (node) =>
-        (node.type as unknown) === "AppButton" &&
-        node.props.label === fr.publicMap.selected.openSurvey,
-    )
-    act(() => open.props.onPress())
-    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-42")
+    const marker = markers().find(
+      (node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(33),
+    ) as ReactTestInstance
+    expect(marker.props.selected).toBe(true)
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
+    expect(props.onOpenSurvey).not.toHaveBeenCalled()
   })
 
   test("a row of a tapped parcel's history opens that survey's page (OA-59)", async () => {
@@ -374,28 +407,26 @@ describe("PublicMapScreen", () => {
       String(node.props.testID ?? "").startsWith("parcel-history-open-"),
     )
     expect(rows.length).toBeGreaterThan(0)
-    const latest = tree.root.find((node) => node.props.testID === "parcel-history-open-s-new")
+    // The row is the shared survey row frame (12.2-18): its pressable carries the role.
+    const latest = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "Pressable" && node.props.testID === "parcel-history-open-s-new",
+    )
     expect(latest.props.accessibilityRole).toBe("button")
     act(() => latest.props.onPress())
     expect(props.onOpenSurvey).toHaveBeenCalledWith("s-new")
-  })
-
-  test("selecting an own survey shows a notice instead of a report entry point (Phase 2: removed)", () => {
-    const props = makeProps({ items: [item("mine", 48.8, 2.3, 12)] })
-    props.ownSurveyIds = ["mine"]
-    mount(props)
-    act(() =>
-      markers()
-        .find((node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(12))
-        ?.props.onPress(),
-    )
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppNotice")).toHaveLength(1)
+    // 12.2-18: each row carries its ring (trailing column of the shared row) and enters in order.
+    const rings = tree.root.findAll((node) => (node.type as unknown) === "ScoreRing")
     expect(
-      tree.root.findAll(
-        (node) =>
-          (node.type as unknown) === "AppButton" && node.props.label === "Signaler ce relevé",
-      ),
-    ).toHaveLength(0)
+      rings.map((ring) => [ring.props.score, ring.props.index, ring.props.animationKey]),
+    ).toEqual([
+      [24, 0, "s-old:24"],
+      [28, 1, "s-new:28"],
+    ])
+    const entrances = tree.root.findAll((node) => (node.type as unknown) === "EntranceView")
+    expect(entrances.map((node) => node.props.index)).toEqual([0, 1])
+    expect(texts()).toContain(fr.parcelHistory.total(28))
+    expect(texts()).toContain(fr.parcelHistory.delta.total(4))
   })
 
   test("tapping a studied parcel opens its history; a not-studied parcel does nothing", async () => {
@@ -457,7 +488,7 @@ describe("PublicMapScreen", () => {
 
     const downloadButton = tree.root.find(
       (node) =>
-        (node.type as unknown) === "AppButton" &&
+        (node.type as unknown) === "GlassButton" &&
         node.props.label === fr.offlineMap.parcelMissing.downloadAction,
     )
     await act(async () => {
@@ -474,13 +505,13 @@ describe("PublicMapScreen", () => {
     expect(
       tree.root.findAll(
         (node) =>
-          (node.type as unknown) === "AppButton" &&
+          (node.type as unknown) === "GlassButton" &&
           node.props.label === fr.offlineMap.parcelMissing.downloadAction,
       ),
     ).toHaveLength(0)
   })
 
-  test("a cluster that cannot split opens the list, and a row selects the survey", () => {
+  test("a cluster that cannot split opens the list, and a row opens the survey directly", () => {
     const props = makeProps({
       items: [item("a", 45.76, 4.84, 10), item("b", 45.76, 4.84, 20), item("c", 45.76, 4.84, 30)],
     })
@@ -498,10 +529,11 @@ describe("PublicMapScreen", () => {
         fr.publicMap.a11y.clusterListItem({ ibp: 20, date: "2026-05-01", region: "ARA" }),
       ).props.onPress(),
     )
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.publicMap.selected.title(20))
+    expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("b")
+    // The list stays under the survey page, so back returns to it.
+    expect(texts()).toContain(fr.publicMap.clusterList.row({ ibp: 20, date: "2026-05-01" }))
 
-    act(() => cluster.props.onPress())
     act(() => byLabel(fr.publicMap.a11y.closeClusterList).props.onPress())
     expect(texts()).not.toContain(fr.publicMap.clusterList.row({ ibp: 20, date: "2026-05-01" }))
   })
@@ -561,6 +593,72 @@ describe("PublicMapScreen", () => {
   describe("offline areas (behind the feature flag)", () => {
     afterEach(() => {
       mockOfflineEnabled.value = false
+      mockDownloading.areaId = null
+      mockDownloadStatus.value = null
+      mockClearDownloadStatus.mockClear()
+    })
+
+    const edgePulses = () =>
+      tree.root.findAll((node) => (node.type as unknown) === "DownloadEdgeGlow").length
+
+    test("download mode: the map's edge glows while the area is chosen, and only then (12.2-19)", async () => {
+      mockOfflineEnabled.value = true
+      let finish: (outcome: { ok: boolean; reason?: string }) => void = () => undefined
+      mockStartDownload.mockReturnValue(
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+      )
+      const props = makeProps()
+      mount(props)
+      expect(edgePulses()).toBe(0)
+
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      expect(edgePulses()).toBe(1)
+
+      // The download starts: the area is chosen, the glow goes and stays gone once it is done.
+      const download = () =>
+        tree.root.find(
+          (node) =>
+            (node.type as unknown) === "GlassButton" &&
+            node.props.label === fr.offlineMap.areas.downloadThisArea,
+        )
+      act(() => download().props.onPress())
+      expect(edgePulses()).toBe(0)
+      await act(async () => finish({ ok: true }))
+      expect(edgePulses()).toBe(0)
+
+      // Reopened: a new choice, the glow is back; closing the panel ends the mode.
+      act(() => byLabel(fr.offlineMap.areas.a11y.closeSheet).props.onPress())
+      expect(edgePulses()).toBe(0)
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      expect(edgePulses()).toBe(1)
+
+      // A refused download leaves the mode on, to move the map and try again.
+      mockStartDownload.mockResolvedValue({ ok: false, reason: "too_large" })
+      await act(async () => download().props.onPress())
+      expect(mockAlert).toHaveBeenCalledWith(fr.offlineMap.areas.tooLarge)
+      expect(edgePulses()).toBe(1)
+
+      // A download already running (started earlier) keeps the glow off.
+      mockDownloading.areaId = "area-1"
+      update({ ...props })
+      expect(edgePulses()).toBe(0)
+    })
+
+    test("no glow over the map outside download mode (a cluster list open)", () => {
+      mockOfflineEnabled.value = true
+      mount(
+        makeProps({
+          items: [item("a", 45.76, 4.84), item("b", 45.76, 4.84)],
+          parcelStatuses: [parcelStatus("studied-1", "studied")],
+        }),
+      )
+      const cluster = markers().find(
+        (node) => node.props.accessibilityLabel === fr.publicMap.a11y.cluster(2),
+      ) as ReactTestInstance
+      act(() => cluster.props.onPress())
+      expect(edgePulses()).toBe(0)
     })
 
     test("flag off: no download button", () => {
@@ -582,13 +680,108 @@ describe("PublicMapScreen", () => {
       expect(texts()).not.toContain(fr.offlineMap.areas.empty)
       const download = tree.root.find(
         (node) =>
-          (node.type as unknown) === "AppButton" &&
+          (node.type as unknown) === "GlassButton" &&
           node.props.label === fr.offlineMap.areas.downloadThisArea,
       )
+      // 12.2-19: the call to action across the whole panel, 46 pt (md too thin, lg too big).
+      expect(download.props.minHeight).toBe(46)
+      expect(download.props.style).toMatchObject({ alignSelf: "stretch" })
+      expect(download.props.disabled).toBe(false)
       await act(async () => {
         download.props.onPress()
       })
       expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), expect.any(String))
+      // 12.2-19 third round: the open panel shows the failure itself, with its retry; no alert.
+      expect(mockAlert).not.toHaveBeenCalled()
+    })
+
+    const statusView = () =>
+      tree.root.findAll(
+        (node) => node.props.testID?.startsWith?.("offline-download-") === true && shown(node),
+      )
+
+    test("the panel shows the running download, then its outcome; Terminé closes it", () => {
+      mockOfflineEnabled.value = true
+      mount(makeProps())
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      // Opening the panel drops a finished download's outcome.
+      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(1)
+
+      mockDownloading.areaId = "area-1"
+      mockDownloadStatus.value = {
+        phase: "running",
+        areaId: "area-1",
+        name: "Bois du Nord",
+        percentage: 42,
+        downloadedTiles: 51,
+        totalTiles: 120,
+      }
+      update(makeProps())
+      expect(texts()).toContain("Téléchargement : 42 %")
+      expect(texts()).toContain("51 sur 120 tuiles")
+
+      mockDownloading.areaId = null
+      mockDownloadStatus.value = {
+        phase: "done",
+        areaId: "area-1",
+        name: "Bois du Nord",
+        percentage: 100,
+        downloadedTiles: 120,
+        totalTiles: 120,
+      }
+      update(makeProps())
+      expect(texts()).toContain(fr.offlineMap.areas.done.title)
+      expect(statusView().length).toBeGreaterThan(0)
+      const done = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "GlassButton" &&
+          node.props.label === fr.offlineMap.areas.done.close &&
+          shown(node),
+      )
+      act(() => done.props.onPress())
+      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(2)
+      expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(
+        0,
+      )
+    })
+
+    test("retry after a failure downloads the area shown again, under the same name", async () => {
+      mockOfflineEnabled.value = true
+      mockStartDownload.mockResolvedValue({ ok: true, areaId: "area-2" })
+      mount(makeProps())
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      mockDownloadStatus.value = { phase: "failed", areaId: "area-1", name: "Lisière" }
+      update(makeProps())
+      expect(texts()).toContain(fr.offlineMap.areas.failed.title)
+      const retry = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "GlassButton" &&
+          node.props.label === fr.offlineMap.areas.failed.retry &&
+          shown(node),
+      )
+      await act(async () => retry.props.onPress())
+      expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), "Lisière")
+      expect(mockAlert).not.toHaveBeenCalled()
+    })
+
+    test("a failure once the panel is closed is still told by an alert", async () => {
+      mockOfflineEnabled.value = true
+      let finish: (outcome: { ok: boolean; reason?: string }) => void = () => undefined
+      mockStartDownload.mockReturnValue(
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+      )
+      mount(makeProps())
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      const download = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "GlassButton" &&
+          node.props.label === fr.offlineMap.areas.downloadThisArea,
+      )
+      act(() => download.props.onPress())
+      act(() => byLabel(fr.offlineMap.areas.a11y.closeSheet).props.onPress())
+      await act(async () => finish({ ok: false, reason: "failed" }))
       expect(mockAlert).toHaveBeenCalledWith(fr.offlineMap.areas.downloadFailed)
     })
   })

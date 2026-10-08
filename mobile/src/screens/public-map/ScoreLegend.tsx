@@ -2,22 +2,34 @@ import { memo, useMemo, useState } from "react"
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandColors, brandMapTokens, brandRadius, brandTypography } from "../../app/brand-tokens"
+import {
+  brandColors,
+  brandMapTokens,
+  brandRadius,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import { mapControlIconSize } from "../../app/visual-tokens"
 import { GlassSurface } from "../../ui/GlassSurface"
-import { MAP_EDGE, MAP_PILL_HEIGHT } from "./MapChips"
+import { MAP_CONTROL_HIT_SLOP, MAP_EDGE, MAP_PILL_HEIGHT } from "./MapChips"
 import { OfflineIndicatorBadge } from "./OfflineControls"
 
 const t = fr.publicMap
 
 export type MapLegendRow = { color: string; label: string; dashed?: boolean }
 
+// The swatches are the marker colours themselves (`markerStyles` in styles.ts), so the legend always
+// describes the markers drawn on the map; they are not restyled with the overlays (12.2-18). The
+// last row is the warm grey of a parcel without a score (12.2-19), drawn from zoom 15.
 const SCORE_ROWS: MapLegendRow[] = [
   { color: brandMapTokens.scoreMarker.high, label: t.legend.high },
   { color: brandMapTokens.scoreMarker.mid, label: t.legend.mid },
   { color: brandMapTokens.scoreMarker.low, label: t.legend.low },
   { color: brandColors.white, label: t.legend.draft, dashed: true },
+  { color: brandMapTokens.parcelUnscored, label: t.legend.unscored },
 ]
 
 export type MapLegendProps = {
@@ -33,8 +45,9 @@ export type MapLegendProps = {
 
 /**
  * Bottom-left of every interactive map: a count with the (i) button beside it, which opens the
- * legend of the map's colours (MAP-03). Liquid Glass on iOS 26. The Explorer and the parcel
- * picker both draw it, with their own rows.
+ * legend of the map's colours (MAP-03). Liquid Glass on iOS 26, on the map control glass
+ * (`theme.visual.mapControl`, near opaque in dark: the map stays light, 12.2-19 fix round). The
+ * Explorer and the parcel picker both draw it, with their own rows.
  */
 export const MapLegend = memo(function MapLegend({
   bottom,
@@ -48,11 +61,12 @@ export const MapLegend = memo(function MapLegend({
   const [expanded, setExpanded] = useState(false)
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  const glass = theme.visual.mapControl.glass
 
   return (
     <View style={[styles.container, { bottom }]} pointerEvents="box-none">
       {expanded ? (
-        <GlassSurface tone="auto" style={styles.panel}>
+        <GlassSurface tone="auto" surface={glass} style={styles.panel}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
           {rows.map((row) => (
@@ -71,22 +85,23 @@ export const MapLegend = memo(function MapLegend({
         </GlassSurface>
       ) : null}
       <View style={styles.line}>
-        <GlassSurface tone="auto" style={styles.countPill}>
-          {loading ? <ActivityIndicator size="small" color={brandColors.forest} /> : null}
+        <GlassSurface tone="auto" surface={glass} style={styles.countPill}>
+          {loading ? <ActivityIndicator size="small" color={theme.visual.mapControl.icon} /> : null}
           <Text style={styles.countText}>{countLabel}</Text>
         </GlassSurface>
-        <GlassSurface tone="auto" interactive style={styles.toggle}>
+        <GlassSurface tone="auto" interactive surface={glass} style={styles.toggle}>
           <Pressable
             style={styles.toggleHit}
+            hitSlop={MAP_CONTROL_HIT_SLOP}
             onPress={() => setExpanded((current) => !current)}
             accessibilityRole="button"
             accessibilityLabel={expanded ? t.a11y.hideLegend : t.a11y.showLegend}
             accessibilityState={{ expanded }}
           >
             <Ionicons
-              name={expanded ? "close" : "information-circle-outline"}
-              size={22}
-              color={brandColors.forest}
+              name={expanded ? "close-outline" : "information-circle-outline"}
+              size={mapControlIconSize}
+              color={theme.visual.mapControl.icon}
             />
           </Pressable>
         </GlassSurface>
@@ -136,7 +151,7 @@ function createStyles(theme: BrandTheme) {
     countPill: {
       borderRadius: brandRadius.pill,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.visual.mapControl.hairline,
       paddingHorizontal: 14,
       height: MAP_PILL_HEIGHT,
       flexDirection: "row",
@@ -145,14 +160,14 @@ function createStyles(theme: BrandTheme) {
     },
     countText: {
       ...brandTypography.meta,
-      color: theme.colors.textPrimary,
+      color: theme.visual.mapControl.text,
     },
     toggle: {
       width: 40,
       height: 40,
       borderRadius: 20,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.visual.mapControl.hairline,
     },
     toggleHit: {
       width: 40,
@@ -163,22 +178,22 @@ function createStyles(theme: BrandTheme) {
     panel: {
       borderRadius: brandRadius.card,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
-      padding: 14,
-      gap: 8,
+      borderColor: theme.visual.mapControl.hairline,
+      padding: brandSpacing4.md,
+      gap: brandSpacing4.sm,
     },
     title: {
-      ...brandTypography.label,
-      color: theme.semanticColors.textStrong,
+      ...brandTypography.sectionHeader,
+      color: theme.visual.mapControl.text,
     },
     subtitle: {
       ...brandTypography.meta,
-      color: theme.colors.textSecondary,
+      color: theme.visual.mapControl.textMuted,
     },
     row: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
+      gap: brandSpacing4.sm,
     },
     swatch: {
       width: 14,
@@ -193,12 +208,12 @@ function createStyles(theme: BrandTheme) {
     attribution: {
       ...brandTypography.meta,
       fontSize: 12,
-      color: theme.colors.textSecondary,
-      marginTop: 4,
+      color: theme.visual.mapControl.textMuted,
+      marginTop: brandSpacing4.xs,
     },
     rowLabel: {
-      ...brandTypography.meta,
-      color: theme.colors.textPrimary,
+      ...brandTypeScale.footnote,
+      color: theme.visual.mapControl.textMuted,
     },
   })
 }

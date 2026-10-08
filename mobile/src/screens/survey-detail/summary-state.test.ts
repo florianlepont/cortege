@@ -1,6 +1,11 @@
 import { fr } from "../../i18n"
 import { LocalSurvey } from "../../storage"
-import { resolveFinishCta, resolveStatusLine, resolveSubScoreBands } from "./summary-state"
+import {
+  canFinishSurvey,
+  resolveFinishCta,
+  resolveStatusLine,
+  resolveSubScoreBands,
+} from "./summary-state"
 
 const h = fr.surveyDetail.header
 const c = fr.surveyDetail.cta
@@ -52,6 +57,33 @@ describe("resolveStatusLine (OA-37: the status in words)", () => {
   test("a submitted survey is 'Terminé'", () => {
     expect(resolveStatusLine(survey({ status: "submitted" }), true).status).toBe(h.status.finished)
   })
+
+  test("D-25: a finished, synced survey is just 'Terminé', with nothing after it", () => {
+    expect(resolveStatusLine(survey({ status: "submitted" }), true)).toEqual({
+      status: h.status.finished,
+      sync: null,
+      syncTone: "ok",
+    })
+  })
+
+  test("D-25: a finished survey still sending says so discreetly", () => {
+    expect(resolveStatusLine(survey({ status: "submitted", sync_state: "pending" }), true)).toEqual(
+      { status: h.status.finished, sync: h.sync.sending, syncTone: "ok" },
+    )
+    expect(h.sync.sending).toBe("synchronisation en cours")
+  })
+
+  test("a finished survey keeps the error and blocked wording", () => {
+    expect(
+      resolveStatusLine(survey({ status: "submitted", sync_state: "failed" }), true),
+    ).toMatchObject({ status: h.status.finished, sync: h.sync.error, syncTone: "danger" })
+    expect(
+      resolveStatusLine(
+        survey({ status: "submitted", sync_state: "failed", sync_blocked: 1 }),
+        true,
+      ),
+    ).toMatchObject({ status: h.status.finished, sync: h.sync.blocked, syncTone: "danger" })
+  })
 })
 
 describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {
@@ -68,15 +100,30 @@ describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {
     })
   })
 
-  test("a complete draft not synced waits for the sync, or says it is blocked", () => {
-    expect(resolveFinishCta(survey({ sync_state: "pending" }), false, true, 0, null)).toEqual({
-      kind: "disabled",
-      label: c.pendingSync,
-    })
-    expect(resolveFinishCta(survey({ sync_blocked: 1 }), false, true, 0, null)).toEqual({
+  test("D-25: a complete draft not synced yet can be finished too, with no sync wording", () => {
+    for (const sync_state of ["pending", "failed"] as const) {
+      const pending = survey({ sync_state })
+      const cta = resolveFinishCta(pending, canFinishSurvey(pending, true), true, 10, null)
+      expect(cta).toEqual({ kind: "ready", label: c.finish })
+    }
+    expect(c.finish.toLowerCase()).not.toContain("synchronis")
+  })
+
+  test("a complete draft whose sync is blocked says it is blocked", () => {
+    const blocked = survey({ sync_state: "failed", sync_blocked: 1 })
+    expect(resolveFinishCta(blocked, canFinishSurvey(blocked, true), true, 10, null)).toEqual({
       kind: "disabled",
       label: c.blocked,
     })
+  })
+
+  test("D-25: a complete but unnamed draft asks for a name instead of a sync", () => {
+    for (const site_name of ["", "  "]) {
+      const unnamed = survey({ site_name, sync_state: "pending" })
+      const cta = resolveFinishCta(unnamed, canFinishSurvey(unnamed, true), true, 10, null)
+      expect(cta).toEqual({ kind: "disabled", label: c.nameRequired })
+    }
+    expect(c.nameRequired).not.toMatch(/synchronis|—/i)
   })
 
   test("an incomplete draft opens the next factor: Commencer with none filled, then Continuer", () => {
@@ -104,6 +151,23 @@ describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {
       kind: "disabled",
       label: c.remainingUnknown,
     })
+  })
+})
+
+describe("canFinishSurvey (D-25: complete, named, not blocked, not finished)", () => {
+  test("a complete named draft can be finished whatever its sync state", () => {
+    for (const sync_state of ["synced", "pending", "failed"] as const) {
+      expect(canFinishSurvey(survey({ sync_state }), true)).toBe(true)
+    }
+  })
+
+  test("not while incomplete, unread, finished, blocked or unnamed", () => {
+    expect(canFinishSurvey(survey(), false)).toBe(false)
+    expect(canFinishSurvey(survey(), null)).toBe(false)
+    expect(canFinishSurvey(survey({ status: "submitted" }), true)).toBe(false)
+    expect(canFinishSurvey(survey({ sync_blocked: 1 }), true)).toBe(false)
+    expect(canFinishSurvey(survey({ site_name: " " }), true)).toBe(false)
+    expect(canFinishSurvey(survey({ site_name: undefined }), true)).toBe(false)
   })
 })
 

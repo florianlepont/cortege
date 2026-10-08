@@ -4,6 +4,7 @@ import { Alert } from "react-native"
 import { fr } from "../i18n"
 import type { OfflineAreaSummary } from "../storage/offline-map"
 import { OfflineAreasScreen } from "./OfflineAreasScreen"
+import { FrameLargeTitleContext } from "../ui/frame-large-title"
 
 const originalConsoleError = console.error
 
@@ -138,5 +139,45 @@ describe("OfflineAreasScreen", () => {
     }[]
     act(() => buttons.find((b) => b.text === fr.offlineMap.areas.manage.confirmDelete)?.onPress?.())
     expect(onDeleteArea).toHaveBeenCalledWith("a1")
+  })
+})
+
+type LargeStyle = Record<string, unknown>
+function flattenLarge(style: unknown): LargeStyle {
+  if (Array.isArray(style))
+    return style.reduce<LargeStyle>((acc, s) => ({ ...acc, ...flattenLarge(s) }), {})
+  return (style as LargeStyle | null | undefined) ?? {}
+}
+
+describe("OfflineAreasScreen under the native large title (12.2-17)", () => {
+  function mountWith(largeTitle: boolean) {
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value={largeTitle}>
+          <OfflineAreasScreen areas={[area()]} onDeleteArea={jest.fn()} />
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+  }
+  const pageTitles = () =>
+    tree.root.findAll(
+      (n) =>
+        (n.type as unknown) === "Text" && n.props.children === fr.offlineMap.areas.manage.title,
+    )
+
+  test("no in-page title and the insets left to iOS", () => {
+    mountWith(true)
+    expect(pageTitles()).toHaveLength(0)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("automatic")
+    expect(flattenLarge(scroll.props.contentContainerStyle).paddingBottom).toBe(16)
+  })
+
+  test("outside it the page keeps its title and its own tab bar clearance", () => {
+    mountWith(false)
+    expect(pageTitles()).toHaveLength(1)
+    const scroll = tree.root.findByType("ScrollView" as never)
+    expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
+    expect(flattenLarge(scroll.props.contentContainerStyle).paddingBottom).toBe(68 + 16)
   })
 })

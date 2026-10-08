@@ -38,7 +38,8 @@ Other top-level directories:
 | Database | PostgreSQL 16 (raw SQL via `pg`, no ORM) |
 | Auth | Auth0 — RS256 JWT validated against JWKS; native Auth0 SDK on mobile |
 | Object storage | S3-compatible: MinIO (local dev), configurable for AWS S3 (prod) |
-| Maps | React Native Maps 1.27 |
+| Maps | MapLibre (`@maplibre/maplibre-react-native` 11) |
+| Mobile visuals | `react-native-reanimated` 4 (motion), `react-native-svg`, `expo-blur` / `expo-glass-effect` (glass), `@expo/ui` (native iOS 26 glass buttons, iOS only) |
 | Testing | Jest 29 + ts-jest; Supertest for API E2E |
 | Linting | ESLint 8 + `@typescript-eslint` |
 | Formatting | Prettier 3.8 |
@@ -149,7 +150,7 @@ npm run android               # Expo Android build
 
 The mobile app is designed to work without connectivity. All survey data is persisted locally in SQLite before being synced.
 
-**SQLite schema** (`mobile/src/storage/db.ts`, `PRAGMA user_version` migrations, currently at 4 — migration 2 adds `payload_completion`, precomputed at the four payload-write sites instead of parsed from JSON on every list read; migration 4 puts a survey the old deadline rule had marked `expired` back to `draft`, OA-41):
+**SQLite schema** (`mobile/src/storage/db.ts`, `PRAGMA user_version` migrations, currently at 5 — migration 2 adds `payload_completion`, precomputed at the four payload-write sites instead of parsed from JSON on every list read (a percentage of 14 slots, never a factor count); migration 4 puts a survey the old deadline rule had marked `expired` back to `draft`, OA-41; migration 5 adds `payload_factors_filled`, the factors filled out of ten by `countFilledFactors` (`mobile/src/app/ibp-scoring.ts`), written at the same four sites and read by Accueil's resume card and the survey detail alike):
 - `local_surveys` — survey drafts with sync state, payload and the precomputed `payload_completion`
 - `sync_queue` — ordered queue of pending operations (upsert, delete, etc.)
 - `local_attachments` — photo metadata and upload state
@@ -198,6 +199,17 @@ The mobile app is designed to work without connectivity. All survey data is pers
 **Text and i18n** (`mobile/src/i18n/`):
 - All user-facing text comes from the typed French catalogue `fr` (`mobile/src/i18n/fr/`, one module per screen or area)
 - Status-line texts are `StatusMessage` values, built only by catalogue functions; raw technical detail goes to `logStatusDetail` (debug console, dev builds only)
+- No em dash (U+2014) in any string, template or JSX text under `mobile/src` (`survey-export.ts` excepted), enforced by `src/__checks__/catalogue-dash.test.ts`
+
+**Visual layer** (`mobile/src/app/`, `mobile/src/ui/`; reference: section 13 of `docs/design/charte-graphique-etats-sauvages-spec.md`, direction text `docs/design/direction-visuelle-12-2.md`):
+- Light or dark follows the system appearance only (`BrandThemeProvider` in `app/theme.ts`, `useColorScheme()`, live): there is no in-app theme setting (owner decision 2026-10-08), no `theme_mode` read or write and no `Appearance.setColorScheme`; `app.json` keeps `userInterfaceStyle: "automatic"`
+- Colours only through `useBrandTheme()` (`colors`, `semanticColors`, `visual`). Static stops and builders in `app/visual-tokens.ts`, per-scheme values in `app/theme-visual.ts` (`useBrandTheme().visual`), the forest card backdrop in `app/forest-aurora-tokens.ts` (colours), `forest-aurora-shape.ts` (geometry) and `forest-motion.ts` (motion plans)
+- Hex and `rgba(` literals are allowed only in `brand-tokens.ts`, `theme.ts`, `visual-tokens.ts`, `theme-visual.ts` and `forest-aurora-tokens.ts` (ESLint, every `.ts`/`.tsx` under `mobile/src`)
+- Signature primitives: `ForestCard` (one per screen, draws `ForestAurora`: drifting mist and flowing diagonal contour lines, text kept readable by a mask and shields), `ContourLines` (static rings), `GradientNumeral`, `GlowBar`, `ScoreRing`, `FactorBarsChart`, `RipplePressable` (list rows), `ScreenFrame` (halo backdrop under a transparent header, `largeTitle` for native collapsing titles), `AppCard variant="glass"`, `AppButton variant="glow"`, `GlassButton` (big CTA)
+- `GlassButton` renders the native SwiftUI glass button on iOS 26 through `@expo/ui` (only `*.ios.tsx` files import it; excluded from Android autolinking in `mobile/package.json`), a flat translucent fallback elsewhere
+- Real blur (`GlassSurface`) only on floating controls; controls over a map pass a dense `surface` (`theme.visual.mapControl.glass` or `mapPanel`), because basemaps stay light in dark mode. The Explorer sheet is native Liquid Glass in both schemes on iOS 26 (`theme.visual.sheet.glass`, content in the glass ink, `withGlassInk`). No `borderWidth` on a gradient view (use `buildInsetRing`), no `borderCurve`
+- Icons: Ionicons outline glyphs only (`-outline`)
+- Motion through `brandMotion` with `ReduceMotion.System` on every timing (or a `useReducedMotion()` branch); entrances via `useFocusEntrance`/`EntranceView` (sections) and `useListEntrance` (rows); every endless loop gated by `useScreenVisible()`; at most two animated hero layers per screen; React Native `Animated` only in the allowlisted files of `src/__checks__/motion.test.ts`; haptics only through `ui/feedback.ts`
 
 **HTTP client** (`mobile/src/api/client.ts`):
 - Thin wrapper over `fetch` with Bearer token injection, timeout handling, and typed `ApiError`
@@ -266,6 +278,8 @@ Method version: the app implements IBP FR v3.2, with IBP Fr v3.0 available per s
 | `mobile/src/hooks/useSurveySync.ts` | Central sync + state orchestrator |
 | `mobile/src/navigation/AppNavigation.tsx` | Navigation container, native or JS tab tree |
 | `mobile/src/i18n/fr/index.ts` | Typed French catalogue (all user-facing text) |
+| `mobile/src/app/visual-tokens.ts` | Static visual stops, gradient and glass builders, chart geometry |
+| `mobile/src/app/theme-visual.ts` | Per-scheme visual tokens (`useBrandTheme().visual`) |
 | `mobile/src/storage/db.ts` | SQLite schema, `initLocalDb`, constants |
 | `mobile/src/storage/surveys.ts` | Survey read/write helpers |
 | `mobile/src/storage/sync.ts` | Sync queue management |
@@ -298,7 +312,8 @@ Method version: the app implements IBP FR v3.2, with IBP Fr v3.0 available per s
 - Located alongside source files as `*.test.ts` / `*.test.tsx`
 - Run with: `npm run test:unit`
 - Config: `mobile/jest.unit.config.js`, `api/jest.unit.config.js`
-- Mocks: `mobile/src/__mocks__/` and `api/test/__mocks__/`
+- Mocks: `mobile/test/*.mock.ts` (mapped in `mobile/jest.unit.config.js`) and `api/test/__mocks__/`
+- The Reanimated mock (`mobile/test/react-native-reanimated.mock.ts`) exports `setReducedMotion(true)` to test reduced-motion paths. Source gates in `mobile/src/__checks__/`: `motion.test.ts`, `icons.test.ts` (outline glyphs only), `catalogue-dash.test.ts`, `layers.test.ts`, `fonts.test.ts`, `structure.test.ts` (400-line cap on `src/screens` and `src/navigation`); contrast in `src/app/visual-tokens.test.ts` (both schemes) and `src/app/forest-aurora-tokens.test.ts`
 - `api/test/auth.guard.rs256.spec.ts` tests the RS256 path of `AuthGuard` with the real `jwks-rsa` client against a loopback JWKS server (no network)
 
 ### Shared package tests

@@ -11,7 +11,6 @@ import { brandMapTokens } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { ClusterListSheet } from "./ClusterListSheet"
 import { ClusterMarker } from "./ClusterMarker"
-import { SelectedSurveyCard } from "./SelectedSurveyCard"
 import { SurveyMarker } from "./SurveyMarker"
 
 const mockMarkerRenders: { count: number } = { count: 0 }
@@ -34,6 +33,23 @@ jest.mock("react-native", () => {
 
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../ui/AppButton", () => ({ AppButton: "AppButton" }))
+jest.mock("../../ui/GlassButton", () => ({ GlassButton: "GlassButton" }))
+jest.mock("../../ui/GlassSurface", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    GlassSurface: ({ children, ...props }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("GlassSurface", props, children),
+  }
+})
+jest.mock("../../ui/ScoreRing", () => ({ ScoreRing: "ScoreRing" }))
+// The panel rows' entrance is covered by PanelRowEntrance.test.tsx and useFocusEntrance.test.tsx.
+jest.mock("../../ui/EntranceView", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    EntranceView: ({ index, children }: { index: number; children?: React.ReactNode }) =>
+      ReactRef.createElement("EntranceView", { index }, children),
+  }
+})
 jest.mock("../../ui/AppCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -274,22 +290,10 @@ function texts(tree: ReactTestRenderer): string[] {
     .map((node) => String([node.props.children].flat().join("")))
 }
 
-function renderCard(item: PublicMapItem): ReactTestRenderer {
-  return mount(
-    <SelectedSurveyCard
-      item={item}
-      isOwnSurvey={false}
-      onOpenSurvey={jest.fn()}
-      onClose={jest.fn()}
-    />,
-  )
-}
-
-describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () => {
-  test("marker, cluster row and selected card titles read the total out of 50", () => {
+describe("IBP totals out of 50 and the cas on the map (01.8 D-03, D-10)", () => {
+  test("marker and cluster row titles read the total out of 50", () => {
     expect(fr.publicMap.a11y.surveyMarker(12)).toContain("IBP 12/50")
     expect(fr.publicMap.clusterList.row({ ibp: 12, date: "2026-05-01" })).toContain("IBP 12/50")
-    expect(fr.publicMap.selected.title(12)).toContain("IBP 12/50")
     const marker = mount(
       <SurveyMarker
         id="s-1"
@@ -302,33 +306,18 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
     expect(markerLabel(marker)).toContain("IBP 12/50")
   })
 
-  test("a v3.2 survey with a cas shows the method and the cas instead of the region", () => {
-    const tree = renderCard(
-      makeItem({ ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 3, region_code: "unknown" }),
-    )
-    const header = tree.root.findByType("AppSectionHeader" as never)
-    expect(header.props.title).toBe("Relevé · IBP 12/50")
-    const shown = texts(tree)
-    expect(shown).toContain("IBP v3.2")
-    expect(shown).toContain(fr.publicMap.selected.meta({ region: "Cas 3", date: "2026-05-01" }))
-    expect(shown.join(" ")).not.toContain("unknown")
-    expect(shown.join(" ")).not.toContain("s-9")
-  })
-
-  test("a survey without method fields reads as v3.0 with its region", () => {
-    const shown = texts(renderCard(makeItem()))
-    expect(shown).toContain("IBP v3.0")
-    expect(shown).toContain(fr.publicMap.selected.meta({ region: "ARA", date: "2026-05-01" }))
-    const tagged = texts(
-      renderCard(makeItem({ ibp_method_version: IBP_METHOD_V3_0, ibp_cas: null })),
-    )
-    expect(tagged).toContain("IBP v3.0")
-  })
-
   test("the cluster list labels each row out of 50 with its cas or region", () => {
     const items = [
       makeItem({ survey_id: "s-1", ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 2 }),
       makeItem({ survey_id: "s-2", ibp_total: 30 }),
+      // A v3.0 survey shows its region even if it carries a cas.
+      makeItem({
+        survey_id: "s-3",
+        ibp_total: 18,
+        ibp_method_version: IBP_METHOD_V3_0,
+        ibp_cas: 4,
+        region_code: "BFC",
+      }),
     ]
     const tree = mount(<ClusterListSheet items={items} onSelect={jest.fn()} onClose={jest.fn()} />)
     const labels = tree.root
@@ -340,8 +329,11 @@ describe("IBP totals out of 50 and the method on the map (01.8 D-03, D-10)", () 
     expect(labels).toContain(
       fr.publicMap.a11y.clusterListItem({ ibp: 30, date: "2026-05-01", region: "ARA" }),
     )
-    expect(labels.filter((label) => label.includes("/50"))).toHaveLength(2)
-    expect(labels.join(" ")).not.toMatch(/s-[12]/)
+    expect(labels).toContain(
+      fr.publicMap.a11y.clusterListItem({ ibp: 18, date: "2026-05-01", region: "BFC" }),
+    )
+    expect(labels.filter((label) => label.includes("/50"))).toHaveLength(3)
+    expect(labels.join(" ")).not.toMatch(/s-[123]/)
     const shown = texts(tree)
     expect(shown).toContain("Cas 2")
     expect(shown).toContain("ARA")

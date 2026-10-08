@@ -7,6 +7,9 @@ export const surveyDetailFr = {
   // elsewhere). Sharing is its own header button (OA-48), renaming the pencil next to the title.
   menu: {
     share: "Partager",
+    // 12.2-17: on iOS the survey's name is the native large title, which is not a button: renaming
+    // moves to the "…" menu.
+    rename: "Renommer",
     delete: "Supprimer",
     cancel: "Annuler",
   },
@@ -23,6 +26,8 @@ export const surveyDetailFr = {
     sync: {
       synced: "synchronisé",
       pending: "pas encore synchronisé",
+      // D-25: a finished survey whose last changes are still being sent, said discreetly.
+      sending: "synchronisation en cours",
       error: "échec de la synchronisation",
       blocked: "synchronisation bloquée",
     },
@@ -34,7 +39,7 @@ export const surveyDetailFr = {
     ibpTotal: "IBP total",
     factorsReady: "Facteurs remplis",
     factorsCount: (count: number) => `${count}/10`,
-    unknown: "—",
+    unknown: "Non renseigné",
     total: (points: number) => `${points} / ${IBP_MAX.total}`,
     outOfTotal: `/ ${IBP_MAX.total}`,
     standScore: (points: number) => `P/G ${points} / ${IBP_MAX.stand}`,
@@ -42,14 +47,15 @@ export const surveyDetailFr = {
     withBand: ({ score, band }: { score: string; band: string }) => `${score} · ${band}`,
   },
   // OA-40: no lock and no deadline. One button at the bottom, greyed with what is missing until
-  // the survey can be finished.
+  // the survey can be finished. D-25: no sync step, the finish sends the last changes itself; an
+  // unnamed draft is asked for a name (it never leaves the phone, OA-18).
   cta: {
     finish: "Terminer le relevé",
     start: "Commencer la notation",
     continue: "Continuer la notation",
     contextMissing: "Complétez le contexte pour terminer",
     remainingUnknown: "Remplissez les 10 facteurs pour terminer",
-    pendingSync: "Synchronisez le relevé pour le terminer",
+    nameRequired: "Nommez le relevé pour le terminer",
     blocked: "Synchronisation bloquée",
   },
   scoreCard: {
@@ -58,13 +64,19 @@ export const surveyDetailFr = {
     factorsFilled: (filled: number) =>
       filled === 1 ? "1 facteur sur 10 rempli" : `${filled} facteurs sur 10 remplis`,
     allFilled: "Les 10 facteurs sont remplis",
+    outOf: ({ max }: { max: number }) => `/ ${max}`,
   },
   photos: {
     title: "Photos",
     add: "Ajouter",
     countSuffix: (count: number) => ` · ${count}`,
-    empty: "Aucune photo pour l'instant.",
+    // The line of the dashed tile of a draft without photo (pressable like "Ajouter").
+    emptyAdd: "Ajouter une photo",
     emptyReadOnly: "Aucune photo sur ce relevé.",
+    // One short word in the tile of a photo that cannot be shown (the full sentence is the
+    // accessibility value of the tile, `labels.attachmentPreview`).
+    tileMissing: "Introuvable",
+    tileUnavailable: "Indisponible",
   },
   map: {
     parcelCount: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),

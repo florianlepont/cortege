@@ -1,20 +1,21 @@
-import { Platform, StyleSheet } from "react-native"
-import {
-  brandColors,
-  brandOnDarkColors,
-  brandRadius,
-  brandSpacing,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { StyleSheet } from "react-native"
+import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+import { HOME_GAPS, NEW_SURVEY_LAYOUT } from "./layout-budget"
 
-const PAGE_H = 20
+// Compact density (D-05): the page inset is 16, blocks and sections sit 16 apart (`HOME_GAPS`, the
+// vertical budget that keeps the nearby map in view at launch).
+const PAGE_H = brandSpacing4.md
 
 export function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    scroll: {
+    // The root view carries the canvas and the backdrop halo; the scroll view stays transparent.
+    screen: {
       flex: 1,
       backgroundColor: theme.colors.canvas,
+    },
+    scroll: {
+      flex: 1,
     },
     content: {
       gap: 0,
@@ -27,10 +28,8 @@ export function createStyles(theme: BrandTheme) {
       alignItems: "center",
     },
     greetingTitle: {
-      fontSize: 28,
-      fontWeight: "800",
+      ...brandTypography.screenTitle,
       color: theme.semanticColors.textStrong,
-      lineHeight: 32,
     },
     greetingText: {
       flex: 1,
@@ -39,13 +38,13 @@ export function createStyles(theme: BrandTheme) {
     },
     greetingBlock: {
       paddingHorizontal: PAGE_H,
-      marginBottom: 16,
-      gap: 6,
+      marginBottom: brandSpacing4.md,
+      gap: brandSpacing4.xs,
     },
     nativeHeaderSync: {
       flexDirection: "row",
       paddingHorizontal: PAGE_H,
-      marginBottom: 16,
+      marginBottom: brandSpacing4.md,
     },
     pageInset: {
       marginHorizontal: PAGE_H,
@@ -77,100 +76,29 @@ export function createStyles(theme: BrandTheme) {
     // Notice
     notice: {
       marginHorizontal: PAGE_H,
-      marginBottom: 16,
+      marginBottom: brandSpacing4.md,
     },
 
-    // Hero CTA
-    heroCta: {
+    // The resume card block (ResumeCard draws the card itself).
+    block: {
       marginHorizontal: PAGE_H,
-      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
-      backgroundColor: theme.semanticColors.heroSurface,
-      borderWidth: 1,
-      borderColor: theme.semanticColors.heroBorder,
-      borderRadius: brandRadius.card,
-      padding: 24,
-      paddingBottom: 28,
-      gap: 8,
-      overflow: "hidden",
-      ...Platform.select({
-        ios: {
-          shadowColor: theme.colors.black,
-          shadowOpacity: 0.15,
-          shadowRadius: 20,
-          shadowOffset: { width: 0, height: 8 },
-        },
-        android: { elevation: 4 },
-      }),
     },
-    heroEyebrow: {
-      fontSize: 12,
-      fontWeight: "800",
-      letterSpacing: 1.5,
-      color: theme.semanticColors.accent,
-      textTransform: "uppercase",
-    },
-    heroTitle: {
-      fontSize: 26,
-      fontWeight: "900",
-      // OA-83: canvas was light text on the forest hero in light mode only; the hero stays forest in
-      // both themes, so its text is a fixed light tone.
-      color: brandOnDarkColors.heroBodyOnDark,
-      lineHeight: 30,
-    },
-    heroBody: {
-      ...brandTypography.sectionBody,
-      color: brandOnDarkColors.heroBodyOnDark,
-      marginBottom: 4,
-    },
-    // OA-84: in light mode the hero and ctaPrimary are both forest, which hid the button; the
-    // primary action is a light button on the forest hero (dark mode keeps its lime accent).
-    heroButton: {
-      backgroundColor:
-        theme.scheme === "dark" ? theme.semanticColors.ctaPrimary : brandColors.white,
-      marginTop: 4,
-    },
-    heroButtonLabel: {
-      color: theme.scheme === "dark" ? theme.semanticColors.onCtaPrimary : brandColors.forest,
-    },
-    // The draft's progress: ten segments, one per factor.
-    progressRow: {
-      flexDirection: "row",
-      gap: 4,
-      marginVertical: 8,
-    },
-    progressSegment: {
-      flex: 1,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: brandOnDarkColors.heroPanelBorderOnDark,
-    },
-    progressSegmentDone: {
-      backgroundColor: theme.semanticColors.accent,
-    },
-    // HOME-02: "Nouveau relevé" is a plain link once the primary CTA becomes "Reprendre".
-    heroLink: {
-      minHeight: 44,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 6,
-    },
-    heroLinkLabel: {
-      ...brandTypography.button,
-      color: brandOnDarkColors.heroBodyOnDark,
+    // The "Nouveau relevé" card under it, when there is a draft (`NEW_SURVEY_LAYOUT`).
+    newSurvey: {
+      marginTop: NEW_SURVEY_LAYOUT.gap,
     },
 
     // Sections
     section: {
-      marginTop: brandSpacing.xl + 4,
+      marginTop: HOME_GAPS.section,
     },
     sectionHeader: {
       paddingHorizontal: PAGE_H,
-      marginBottom: 14,
+      marginBottom: HOME_GAPS.sectionHeader,
     },
     trailingLink: {
       ...brandTypography.label,
-      color: theme.semanticColors.accent,
+      color: theme.visual.accentText,
     },
 
     loadingRow: {

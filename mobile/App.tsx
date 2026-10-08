@@ -14,6 +14,7 @@ import { WelcomeScreen } from "./src/screens/WelcomeScreen"
 import { AppStateProvider } from "./src/state/AppStateProvider"
 import { useSession } from "./src/state/session-context"
 import { loadOnboardingSeen } from "./src/storage/onboarding-preference"
+import { ScreenCoverContext } from "./src/ui/screen-cover-context"
 
 // ONB-02: keeps the native splash (app.json's "expo-splash-screen" plugin config — same forest
 // background and logo mark as TypewriterSplash) on screen until the JS tree has committed its
@@ -81,11 +82,22 @@ function AppShell() {
     !showProfileSetupOverlay &&
     !showOnboarding
 
+  // 12.2-10: the tree stays mounted under the overlays, so the screens are told when nobody can
+  // see them yet; their entrances start once the cover is gone.
+  const covered =
+    showAuthOverlay ||
+    showOwnerConflictOverlay ||
+    showProfileSetupOverlay ||
+    welcomeName !== null ||
+    showOnboarding
+
   return (
     <View style={containerStyle}>
       <SafeAreaView style={containerStyle} edges={["left", "right"]}>
         <View style={styles.appLayout}>
-          <AppNavigation />
+          <ScreenCoverContext.Provider value={covered}>
+            <AppNavigation />
+          </ScreenCoverContext.Provider>
         </View>
       </SafeAreaView>
 

@@ -108,7 +108,10 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }))
 
+import { compositeOver, contrastRatio } from "../app/contrast"
+import { buildTheme, defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
+import { GlassButton } from "../ui/GlassButton"
 import { AuthGateScreen } from "./AuthGateScreen"
 
 type Handlers = {
@@ -218,5 +221,62 @@ describe("AuthGateScreen", () => {
     })
 
     expect(renderedTexts(component)).toContain("Identifiants invalides")
+    // 12.2-21 dark pass: the danger ink of the scheme, not the brand terracotta (3:1 in light).
+    const message = component.root.find(
+      (node) =>
+        (node.type as unknown) === "Text" && node.props.children === "Identifiants invalides",
+    )
+    const style = Object.assign({}, ...[message.props.style].flat(3).filter(Boolean))
+    expect(style.color).toBe(defaultTheme.onSurface.danger)
+  })
+
+  it("the error message reads at 4.5:1 on its banner in both schemes (12.2-21)", () => {
+    for (const scheme of ["light", "dark"] as const) {
+      const theme = buildTheme(scheme)
+      const surface = theme.semanticColors.errorSurface
+      const banner = surface.startsWith("rgba")
+        ? compositeOver(surface, theme.colors.canvas)
+        : surface
+      expect(contrastRatio(theme.onSurface.danger, banner)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  it("uses the glass buttons: forest primary, neutral secondary, the link stays a text link", async () => {
+    const component = await renderScreen(makeHandlers())
+
+    const submit = component.root.findByProps({ testID: "auth-submit" })
+    const register = component.root.findByProps({ testID: "auth-register" })
+    expect(submit.type).toBe(GlassButton)
+    expect(register.type).toBe(GlassButton)
+    expect(submit.props.variant).toBeUndefined()
+    expect(register.props.variant).toBe("secondary")
+    // The big buttons keep their 44 pt minimum height.
+    expect(submit.props.size ?? "lg").toBe("lg")
+    expect(register.props.size).toBe("md")
+    expect(component.root.findByProps({ testID: "auth-forgot-password" }).type).not.toBe(
+      GlassButton,
+    )
+  })
+
+  it("shows the loading state on the login button and disables the register one while signing in", async () => {
+    const handlers = makeHandlers()
+    let finish: (value: string | null) => void = () => undefined
+    handlers.onLogin.mockImplementationOnce(
+      () => new Promise<string | null>((resolve) => (finish = resolve)),
+    )
+    const component = await renderScreen(handlers)
+
+    await act(async () => {
+      component.root.findByProps({ testID: "auth-submit" }).props.onPress()
+    })
+    const submit = component.root.findByProps({ testID: "auth-submit" })
+    expect(submit.props.loading).toBe(true)
+    expect(submit.props.label).toBe(fr.authGate.panel.loginInProgress)
+    expect(component.root.findByProps({ testID: "auth-register" }).props.disabled).toBe(true)
+
+    await act(async () => {
+      finish(null)
+    })
+    expect(component.root.findByProps({ testID: "auth-submit" }).props.loading).toBe(false)
   })
 })

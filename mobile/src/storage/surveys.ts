@@ -19,6 +19,7 @@ import {
   normalizeParcelIds,
   computeCompletionRate,
   computePayloadCompletion,
+  computePayloadFactorsFilled,
   isSurveyQueuePayload,
   isAttachmentQueuePayload,
   isAttachmentDeleteQueuePayload,
@@ -45,8 +46,8 @@ export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> 
 
   await runInTransaction(async (tx) => {
     await tx.runAsync(
-      `INSERT INTO local_surveys (id, site_name, status, visibility, sync_version, sync_state, last_sync_error, last_sync_error_code, last_sync_error_at, sync_blocked, payload_json, payload_completion, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO local_surveys (id, site_name, status, visibility, sync_version, sync_state, last_sync_error, last_sync_error_code, last_sync_error_at, sync_blocked, payload_json, payload_completion, payload_factors_filled, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         input.site_name,
@@ -61,6 +62,7 @@ export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> 
         JSON.stringify(payload),
         // Precomputed so the list never parses payloads (01.9 D-03).
         computePayloadCompletion(payload),
+        computePayloadFactorsFilled(payload),
         now,
         now,
       ],
@@ -87,6 +89,7 @@ export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> 
     created_at: now,
     updated_at: now,
     completion_rate: computeCompletionRate("draft", payload),
+    factors_filled: computePayloadFactorsFilled(payload),
   }
 }
 
@@ -439,6 +442,7 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
            sync_blocked = 0,
            payload_json = ?,
            payload_completion = ?,
+           payload_factors_filled = ?,
            updated_at = ?
        WHERE id = ?`,
       [
@@ -448,6 +452,7 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
         JSON.stringify(nextPayload),
         // Precomputed so the list never parses payloads (01.9 D-03).
         computePayloadCompletion(nextPayload),
+        computePayloadFactorsFilled(nextPayload),
         now,
         input.survey_id,
       ],
@@ -470,17 +475,28 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
     created_at: createdAt ?? now,
     updated_at: now,
     completion_rate: computeCompletionRate("draft", nextPayload),
+    factors_filled: computePayloadFactorsFilled(nextPayload),
   }
 }
 
 export async function listLocalSurveys(): Promise<LocalSurvey[]> {
   const db = await getDb()
+  // 12.2-14: factors_filled is the stored payload_factors_filled, the app's single definition of
+  // "factors filled" (never payload_completion / 10, which counts name, method and parcel too).
   // 01.9 D-03: completion was stored at write time (payload_completion) and
-  // "submitted = 100" is applied here in SQL, so the list never selects or
-  // parses payload_json.
+  // "submitted = 100" is applied here in SQL, so the list never parses payload_json in JS.
+  // 12.2-14: the row score ring of a submitted survey reads the server total the pull stored in the
+  // payload (`scores.ibp_total`) with SQLite's json_extract: inside the engine, only for submitted
+  // rows (the CASE skips the others), only when the payload is valid JSON and the value is a
+  // number. Nothing is parsed per row in JS and the raw payload is never selected.
   return db.getAllAsync<LocalSurvey>(
     `SELECT id, site_name, status, visibility, sync_version, sync_state, last_sync_error, last_sync_error_code, last_sync_error_at, sync_blocked, created_at, updated_at,
-       CASE WHEN status = 'submitted' THEN 100 ELSE payload_completion END AS completion_rate
+       CASE WHEN status = 'submitted' THEN 100 ELSE payload_completion END AS completion_rate,
+       payload_factors_filled AS factors_filled,
+       CASE WHEN status = 'submitted' AND json_valid(payload_json)
+         THEN CASE WHEN json_type(payload_json, '$.scores.ibp_total') IN ('integer', 'real')
+           THEN json_extract(payload_json, '$.scores.ibp_total') END
+       END AS ibp_total
      FROM local_surveys
      ORDER BY updated_at DESC`,
   )

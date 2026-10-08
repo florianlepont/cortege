@@ -8,9 +8,9 @@ import {
 import { useCommunitySurveys } from "../../hooks/useCommunitySurveys"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
-import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { RootTabParamList } from "../types"
+import { ScreenFrame } from "../../ui/ScreenFrame"
 
 /**
  * The search page (OA-52): the user's own surveys through the shared list filters, and the
@@ -22,7 +22,6 @@ export const SurveySearchRoute = memo(function SurveySearchRoute() {
   const { state: session } = useSession()
   const accessToken = useAccessToken()
   const { state, actions } = useSurveys()
-  const syncActions = useSyncActions()
   const [scope, setScope] = useState<SearchScope>("mine")
   const community = useCommunitySurveys({
     apiUrl: session.apiUrl,
@@ -51,27 +50,27 @@ export const SurveySearchRoute = memo(function SurveySearchRoute() {
   })
 
   return (
-    <SurveySearchScreen
-      query={state.surveyQuery}
-      onQueryChange={actions.setSurveyQuery}
-      scope={scope}
-      onScopeChange={setScope}
-      statusFilter={state.statusFilter}
-      onStatusFilterChange={actions.setStatusFilter}
-      attachmentFilter={state.attachmentFilter}
-      onAttachmentFilterChange={actions.setAttachmentFilter}
-      sortMode={state.sortMode}
-      onSortModeChange={actions.setSortMode}
-      surveys={state.visibleSurveys}
-      attachmentsBySurvey={state.attachmentsBySurvey}
-      surveyDetails={state.surveyDetails}
-      selectedSurveyId={state.selectedSurveyId}
-      community={community}
-      onOpenSurvey={onOpenSurvey}
-      onOpenCommunitySurvey={onOpenCommunitySurvey}
-      onDeleteSurvey={actions.confirmDeleteSurvey}
-      onCancel={onCancel}
-      onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
-    />
+    <ScreenFrame>
+      <SurveySearchScreen
+        query={state.surveyQuery}
+        onQueryChange={actions.setSurveyQuery}
+        scope={scope}
+        onScopeChange={setScope}
+        statusFilter={state.statusFilter}
+        onStatusFilterChange={actions.setStatusFilter}
+        attachmentFilter={state.attachmentFilter}
+        onAttachmentFilterChange={actions.setAttachmentFilter}
+        sortMode={state.sortMode}
+        onSortModeChange={actions.setSortMode}
+        surveys={state.visibleSurveys}
+        surveyDetails={state.surveyDetails}
+        selectedSurveyId={state.selectedSurveyId}
+        community={community}
+        onOpenSurvey={onOpenSurvey}
+        onOpenCommunitySurvey={onOpenCommunitySurvey}
+        onDeleteSurvey={actions.confirmDeleteSurvey}
+        onCancel={onCancel}
+      />
+    </ScreenFrame>
   )
 })

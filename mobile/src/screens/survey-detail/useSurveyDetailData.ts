@@ -6,6 +6,7 @@ import {
 import { FactorKey, RegionVersion, SurveyDetailResponse, VegetationStage } from "../../app/types"
 import { LocalSurvey } from "../../storage"
 import { resolveScoringContext, type ScoringContext } from "./ScoringContextEditor"
+import { canFinishSurvey } from "./summary-state"
 import {
   DisplayedFactorResult,
   DisplayedScores,
@@ -21,7 +22,7 @@ export type SurveyDetailData = {
   useLocalDraftView: boolean
   showFactorLoadingHint: boolean
   canEditSurvey: boolean
-  /** The survey is complete, synced and not yet finished: the "Terminer" button is live. */
+  /** Complete, named, not blocked, not finished: "Terminer" is live, synced or not (D-25). */
   canFinishNow: boolean
   /** The ten factors and the information are filled in (null until the local draft is read). */
   isComplete: boolean | null
@@ -79,11 +80,7 @@ export function useSurveyDetailData(
     !displayedScores &&
     displayedFactorEntries.length === 0
 
-  const canFinishNow =
-    selectedSurvey.sync_state === "synced" &&
-    selectedSurvey.status !== "submitted" &&
-    selectedSurvey.sync_blocked !== 1 &&
-    localDraft.submitReady === true
+  const canFinishNow = canFinishSurvey(selectedSurvey, localDraft.submitReady)
   const missingFactorCount = localDraft.missingFactorCount
   const filledFactorCount = missingFactorCount === null ? null : 10 - missingFactorCount
 

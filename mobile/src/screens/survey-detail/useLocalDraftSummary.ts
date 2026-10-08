@@ -2,6 +2,7 @@ import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { useEffect, useState } from "react"
 import {
   computeIbpTotalsFromRetainedScores,
+  countFilledFactors,
   computeRetainedScoresFromRawFactors,
   evaluateSubmitReadinessFromDraft,
 } from "../../app/ibp-scoring"
@@ -100,6 +101,8 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
           factors: draft.factors,
           parcel_ids: draft.parcel_ids,
         })
+        // The same count the stored list column holds (Accueil's resume card reads it).
+        const filledFactorCount = countFilledFactors({ ...context, factors: draft.factors })
         const entries = FACTOR_KEYS.map<[string, DisplayedFactorResult]>((factorCode) => {
           const score = retained[factorCode]
           return [
@@ -121,7 +124,7 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
           },
           factorEntries: entries,
           submitReady: readiness.ready,
-          missingFactorCount: readiness.missing_factors.length,
+          missingFactorCount: FACTOR_KEYS.length - filledFactorCount,
           meta: {
             site_name:
               typeof draft.site_name === "string" && draft.site_name.trim().length > 0

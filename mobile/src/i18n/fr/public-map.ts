@@ -8,28 +8,12 @@ const plural = (count: number, one: string, many: string) => (count > 1 ? many :
 export const publicMapFr = {
   count: (count: number) =>
     count === 0 ? "Aucun relevé ici" : `${count} ${plural(count, "relevé", "relevés")} ici`,
-  selected: {
-    title: (ibp: number) => `Relevé · IBP ${ibp}/50`,
-    meta: ({ region, date }: { region: string; date: string }) => `${region} · ${date}`,
-    openSurvey: "Voir le relevé",
-    ownSurvey: "C'est votre propre relevé.",
-  },
-  // OA-59: an own draft shows on the Explorer map, to its author only.
-  draft: {
-    title: (ibp: number) => `Brouillon · IBP ${ibp}/50`,
-    meta: "Visible de vous seul",
-    open: "Ouvrir le relevé",
-  },
   clusterList: {
     title: (count: number) => `${count} ${plural(count, "relevé", "relevés")} à cet endroit`,
     subtitle: "Les positions sont arrondies à environ 1 km.",
     row: ({ ibp, date }: { ibp: number; date: string }) => `IBP ${ibp}/50 · ${date}`,
   },
-  // Method version of a survey (D-10) and its v3.2 cas, shown where v3.0 shows the region.
-  method: {
-    v3_0: "IBP v3.0",
-    v3_2: "IBP v3.2",
-  },
+  // The v3.2 cas of a survey, shown in a cluster row where a v3.0 survey shows its region.
   cas: (cas: number) => `Cas ${cas}`,
   cluster: {
     count: (count: number) => (count > 99 ? "99+" : String(count)),
@@ -43,6 +27,7 @@ export const publicMapFr = {
     mid: "Score moyen",
     high: "Score élevé",
     draft: "Brouillon, visible de vous seul",
+    unscored: "Parcelle sans score",
   },
   alerts: {
     locationDisabled: {
@@ -56,7 +41,6 @@ export const publicMapFr = {
   },
   a11y: {
     locate: "Centrer la carte sur ma position",
-    closeSelection: "Fermer le relevé sélectionné",
     closeClusterList: "Fermer la liste des relevés",
     closeParcelHistory: "Fermer l'historique de la parcelle",
     showLegend: "Afficher la légende des scores",

@@ -1,0 +1,122 @@
+---
+phase: 23-visual-modernisation
+plan: 13
+subsystem: mobile-screens-survey-detail-subpages
+tags: [survey-detail, score-page, history-page, context-page, glass-cards, band-tones, factor-bars, variant-i]
+requires: ["12.2-06", "12.2-10", "12.2-12"]
+provides:
+  - "Score page: Sora Light numeral in a glass breakdown card, sub-score tracks toned by bandTone(standBand/contextBand), ten factor bars card, glass factor rows (44 pt kept)"
+  - "History page: events timeline and earlier-surveys list as glass cards, 12 radius icon tiles, new row hierarchy"
+  - "Context page: glass method and station card, outline pencil on the map action"
+  - "Sub-page content rhythm (subContent) on the 4 grid: 16 padding, 24 between blocks, 48 bottom"
+affects: [CommunitySurveyScreen (reuses ScoreBreakdown, FactorsList and subContent), batch 2 phone check]
+tech-stack:
+  added: []
+  patterns:
+    - "Glass card as a style recipe from theme.visual.glass (fill, hairline, shadow, radius 22, continuous corners) on a plain View where the card owns its own padding and gap, as PhotosStrip does"
+    - "Band tone computed by the caller from the shared package and handed to a presentational track component"
+key-files:
+  created:
+    - mobile/src/screens/SurveyScoreScreen.test.tsx
+    - mobile/src/screens/SurveyContextScreen.test.tsx
+    - mobile/src/screens/survey-detail/ScoreBreakdown.test.tsx
+    - mobile/src/screens/survey-detail/summary-screen.styles.test.ts
+  modified:
+    - mobile/src/screens/SurveyScoreScreen.tsx
+    - mobile/src/screens/survey-detail/ScoreBreakdown.tsx
+    - mobile/src/screens/survey-detail/score.styles.ts
+    - mobile/src/screens/survey-detail/FactorsList.tsx
+    - mobile/src/screens/survey-detail/FactorsList.test.tsx
+    - mobile/src/screens/survey-detail/EventsTab.tsx
+    - mobile/src/screens/survey-detail/EventsTab.test.tsx
+    - mobile/src/screens/survey-detail/HistorySection.tsx
+    - mobile/src/screens/survey-detail/HistorySection.test.tsx
+    - mobile/src/screens/survey-detail/tabs.styles.ts
+    - mobile/src/screens/survey-detail/summary.styles.ts
+    - mobile/src/screens/survey-detail/summary-screen.styles.ts
+    - mobile/src/screens/SurveyContextScreen.tsx
+    - mobile/src/screens/survey-detail/ScoringContextEditor.tsx
+    - mobile/src/screens/survey-detail/ScoringContextEditor.test.tsx
+    - mobile/src/screens/survey-detail/context-editor.styles.ts
+key-decisions:
+  - "Sub-score tones come from bandTone(standBand(v)) and bandTone(contextBand(v)) in ScoreBreakdown; SubScore only receives a tone, so no mobile threshold exists (T-12.2-25)"
+  - "The shared subContent style (padding 16, block gap 24, bottom 48) is changed once for all four sub-pages, so SurveyHistoryScreen needs no gap of its own and the community survey page follows the same rhythm"
+  - "The History and Context cards use the glass style recipe on a plain View (like PhotosStrip) instead of AppCard, because each card owns its padding and gap and the plan's grep reads visual.glass in the style files"
+  - "Without a score the breakdown shows Non renseigné at title size and hides the /50 unit: a 68 pt numeral cannot hold the words"
+  - "Dead style keys deleted: factorTile*, submittedReadonlyBanner and deadline* in summary.styles.ts (no reader before this plan), scaleRow, scaleCopy and scaleLabel in context-editor.styles.ts; DetailActions keys (actionPanel, discardLink) and DebugTab keys kept"
+patterns-established:
+  - "A row list in a glass card keeps its Pressable minHeight as hitTarget.min plus a 12 grid step (56) and a test reads the flattened style for pressed and unpressed"
+requirements-completed: []
+metrics:
+  tasks: 3
+  files: 20
+  duration: about 30 min
+  completed: 2026-10-07
+status: complete
+---
+
+# Phase 12.2 Plan 13: Survey detail sub-pages (variant I) Summary
+
+The Score, History and Context pages now read as the same app as the refreshed summary: glass cards, 22 radius, a thin large total with band-toned sub-score tracks, the ten factor bars on the Score page and the new typographic hierarchy, with no change to what the pages do.
+
+## Tasks
+
+| Task | Name | Commit |
+|------|------|--------|
+| 1 | Score page | 085e6cc |
+| 2 | History page | 169570e |
+| 3 | Context page | 4610cef |
+
+## What was built
+
+- **Score page**: `ScoreBreakdown` sits in an `AppCard variant="glass"` (padding 24). The total is `brandTypography.numeral` (Sora Light 68) in `textPrimary` with the `/ 50` unit in `numeralUnit` and `textSecondary`. `SubScore` takes a `tone`; stand fills with `theme.visual.score[bandTone(standBand(v))]` and context with `bandTone(contextBand(v))`, on a `visual.score.track` track (radius 6). Labels use `sectionHeader`. `SurveyScoreScreen` renders PageTitle, breakdown, a glass `AppCard` with `FactorBarsChart` (entries memoised from `factorPointsFromEntries(data.displayedFactorEntries)`, `animate`), then `FactorsList`. `FactorsList` rows sit in a glass card (fill, hairline, shadow, radius 22), padding and gaps on the 4 grid, `minHeight` 56 (above the 44 minimum), the badge radius is 12, and the press and the disabled state for a finished survey are untouched. The bars stay non-interactive; the rows are still the only way to open a factor (D-15). `score.styles.ts` lost no key that still had a reader; its colours now come from `visual.*`.
+- **History page**: `EventsTab` and `HistorySection` are glass cards (`visual.glass.cardFill`, `cardBorder`, `cardShadow`, radius 22, padding 16, gap 12). Timeline icon tiles are 32 pt with radius 12 and a 16 pt icon; the rail, connector and row spacing are on the grid. Event and history titles use `brandTypography.input`, meta lines `brandTypeScale.footnote` (Jost Regular) in `textSecondary`. Delta chips keep their content, with 4-grid padding. Pull-to-refresh, the first-load skeleton, the empty message and the earlier-survey rows behave as before.
+- **Context page**: the method and station card (`ScoringContextEditor`) is a glass card with 4-grid spacing and `sectionHeader` group titles; the version, region and stage chips and the choice chips keep their components (44 pt chips come from `AppChoiceChip`, unchanged). `SurveyContextScreen` uses `"pencil-outline"` on the map action. The parcels list (`AppGroupedList`) and `ParcelMapCard` (plan 12.2-12) are untouched; no contour is drawn over the live map.
+- **Rhythm**: `subContent` in `summary-screen.styles.ts` is now padding 16, block gap 24, bottom 48, shared by the four sub-pages (Score, History, Context and the community survey).
+- **Tests**: new `ScoreBreakdown.test.tsx` (glass card, numeral and unit styles, tone and width per band edge for stand and context, track colour, no-score state), `SurveyScoreScreen.test.tsx` (child order, bars card glass with the entries, rows still wired), `SurveyContextScreen.test.tsx` (order, outline pencil, no edit action when read-only, no-parcel text), `summary-screen.styles.test.ts` (block gap); `FactorsList.test.tsx` (44 pt minimum pressed and unpressed, glass list, 4-grid row padding), `EventsTab.test.tsx` and `HistorySection.test.tsx` (glass card, tile radius, text hierarchy), `ScoringContextEditor.test.tsx` (glass card, 44 pt chip token).
+
+## Open 12.1 findings absorbed (D-10)
+
+None. The open entries touching these pages are OA-124 (events and parcel history split under "Historique", deferred by the owner to SEED-002, a phase of its own) and OA-96 (map zoom, waiting for the deployed API image); neither is part of a restyle.
+
+## Decisions and notes
+
+- **Community survey**: `CommunitySurveyScreen` reuses `ScoreBreakdown`, `FactorsList` and `subContent`, so it gets the new look and rhythm with no code change; its test (which mocks both components) stays green. It does not show the factor bars card; the plan did not ask for it there.
+- **Row padding**: the factor row's right padding went from 14 to 16 and its vertical padding is 8 on top of the 56 minimum, so a row reads the same height as before.
+- **Device only**: the Sora Light 68 numeral next to the unit, the sub-score tone colours in both schemes, the glass fill over the page canvas for the lists, the density of 24 pt gaps on the History page with several events, and whether the delta chips need a glass fill of their own. None checked here (no build, simulator or phone).
+
+## Deviations from Plan
+
+### Auto-fixed Issues
+
+**1. [Rule 2 - Missing critical test] Pages without a test**
+- **Found during:** Tasks 1 and 3
+- **Issue:** `SurveyScoreScreen`, `ScoreBreakdown` and `SurveyContextScreen` had no unit test, so the plan's behaviours (child order, band tones, outline pencil) had no check.
+- **Fix:** added the three test files and a styles test for the shared block gap.
+- **Commits:** 085e6cc, 169570e, 4610cef
+
+**2. [Scope note] The unit is hidden without a score**
+- The old code always showed the `/ 50` unit, so a survey without a score read "Non renseigné / 50". At 68 pt that does not fit, so the empty state uses a title-size style and no unit (plan behaviour: it shows `metric.unknown`). Commit 085e6cc.
+
+**3. [Scope note] FactorsList test mock**
+- The `react-native` mock in `FactorsList.test.tsx` dropped the Pressable `style`; it now passes it through so the 44 pt assertion can read it. Commit 085e6cc.
+
+## Known Stubs
+
+None.
+
+## Threat Flags
+
+None. T-12.2-25 mitigated: the tones come from `bandTone(standBand/contextBand)` of `@cortege/ibp-domain` (grep gate and edge tests at stand 7 and 14, context 5 and 10). T-12.2-26 mitigated: `ScoringContextEditor` logic is unchanged (only its wrapper element and styles), and its existing read-only and edit tests pass unchanged.
+
+## Verification
+
+- `npm run lint` and `npm run typecheck` exit 0.
+- `npm run test:coverage:mobile` exits 0: 206 suites, 2176 tests, thresholds met. `npm --workspace @cortege/ibp-domain run test`: 230 pass. The API unit suite was not re-run (known unrelated local failure in `check-env-parity.spec.ts`, macOS bash 3.2).
+- `npm run format:check` flags only the untracked local `.claude/settings.local.json` (ignored per instructions).
+- `SurveyContextScreen.tsx` is 107 lines; every touched screen file is under 400 lines.
+- Not checked here (no build, simulator or phone): the look of the three pages in light and dark.
+
+## Self-Check: PASSED
+
+Files exist: the four new test files and the sixteen modified files listed above. Commits 085e6cc, 169570e and 4610cef are on the branch.

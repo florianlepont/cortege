@@ -999,6 +999,21 @@ describe("useSurveySync", () => {
         expect.objectContaining({ syncAllowed: false }),
       )
     })
+
+    test("D-25: the survey operations get the owner gate and the network probe", async () => {
+      mockLocalDataOwner.syncAllowed = false
+      mockUseSurveySyncNetwork.mockReturnValue({
+        handleSync: jest.fn(),
+        handlePullChanges: jest.fn(),
+        maybeAutoSync: jest.fn(),
+        isOnline: false,
+      })
+      await renderSync()
+
+      expect(mockUseSurveySyncSurveyOperations).toHaveBeenCalledWith(
+        expect.objectContaining({ syncAllowed: false, isOnline: false }),
+      )
+    })
   })
 
   // ─── handleDiscardForeignData (D-04 conflict: delete the other account's data) ───

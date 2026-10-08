@@ -5,8 +5,7 @@ import { AppText as Text } from "../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandOnDarkColors } from "../app/brand-tokens"
-import { brandRadius } from "../app/brand-tokens"
+import { brandRadius, brandSpacing4 } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { getFirstName } from "./home/first-name"
 import { formatSyncErrorForUser } from "../app/formatters"
@@ -14,21 +13,23 @@ import { resolveSurveyUiStatus } from "../app/survey-logic"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
 import type { AuthUser } from "../app/types"
 import type { LocalSurvey } from "../storage/types"
-import type { SurveyStats } from "../app/types"
-import { AppButton } from "../ui/AppButton"
+import type { SurveyDetailResponse, SurveyStats } from "../app/types"
 import { AppNotice } from "../ui/AppNotice"
 import { AppSectionHeader } from "../ui/AppSectionHeader"
+import { EntranceView } from "../ui/EntranceView"
+import { ScreenBackdrop } from "../ui/ScreenBackdrop"
 import type { NearbyParcelsState } from "../hooks/useNearbyParcels"
 import { fr } from "../i18n"
 import { resolveProfilePictureUri } from "./account/IdentityCard"
 import { Skeleton } from "../ui/Skeleton"
-import { SyncStatusLine } from "../ui/SyncStatusLine"
+import { SyncStatusLine, isSyncStatusLineVisible } from "../ui/SyncStatusLine"
+import { HOME_GAPS, nearbyMapHeight } from "./home/layout-budget"
 import { NearbyMapCard } from "./home/NearbyMapCard"
+import { NewSurveyCard } from "./home/NewSurveyCard"
+import { RECENT_SURVEYS_COUNT, RecentSurveysSection } from "./home/RecentSurveysSection"
+import { ResumeCard } from "./home/ResumeCard"
 import { ToolsSection } from "./home/ToolsSection"
 import { createStyles } from "./home/styles"
-
-const MIN_MAP_HEIGHT = 240
-const MAP_HEIGHT_RATIO = 0.34
 
 /** OA-89: the least time the pull-to-refresh banner stays open. */
 const MIN_REFRESH_MS = 800
@@ -43,6 +44,8 @@ type HomeScreenProps = {
   accessToken: string | null
   apiUrl: string
   surveys: LocalSurvey[]
+  /** The scores of the surveys opened this session, for the rings of the recent surveys. */
+  surveyDetails: Readonly<Record<string, SurveyDetailResponse | undefined>>
   surveyStats: SurveyStats
   isOnline: boolean
   isSyncing: boolean
@@ -54,6 +57,8 @@ type HomeScreenProps = {
   onOpenSurvey: (surveyId: string) => void
   onRetrySurvey: (surveyId: string) => Promise<void>
   onOpenSyncStatus: () => void
+  /** "Tout voir" of the recent surveys: the Mes Relevés tab. */
+  onOpenSurveyList: () => void
   onNavigateToExplorer: () => void
   onNavigateToAccount: () => void
   onRefresh: () => Promise<void>
@@ -86,6 +91,7 @@ export function HomeScreen({
   accessToken,
   apiUrl,
   surveys,
+  surveyDetails,
   surveyStats,
   isOnline,
   isSyncing,
@@ -97,6 +103,7 @@ export function HomeScreen({
   onOpenSurvey,
   onRetrySurvey,
   onOpenSyncStatus,
+  onOpenSurveyList,
   onNavigateToExplorer,
   onNavigateToAccount,
   onRefresh,
@@ -107,9 +114,9 @@ export function HomeScreen({
   // OA-85: iOS 26 lays the screen out under the native header, so the content reserves its height.
   const headerHeight = useHeaderHeight()
   const [refreshing, setRefreshing] = useState(false)
-  // The map takes the room left under the hero (OA-19, Home redesign), never less than a card.
+  // The map card is a share of the window, never taller than its overlays need (`nearbyMapHeight`).
   const windowHeight = useWindowDimensions().height
-  const mapHeight = Math.max(MIN_MAP_HEIGHT, Math.round(windowHeight * MAP_HEIGHT_RATIO))
+  const mapHeight = nearbyMapHeight(windowHeight)
   const firstName = getFirstName(currentUser)
   // HOME-06: the avatar shows the profile photo (it used to render nothing once one existed) and
   // is tappable to Compte.
@@ -124,13 +131,25 @@ export function HomeScreen({
     if (accessToken) onLoadNearbyParcels()
   }, [accessToken, onLoadNearbyParcels])
 
+  // D-20b: the sync line only shows when there is something to say (syncing, work waiting, offline);
+  // up to date there is no line and no wrapper, so no empty gap is left under the header.
+  const showSyncLine = isSyncStatusLineVisible({
+    isOnline,
+    isSyncing,
+    pendingCount: surveyStats.pending,
+  })
   const hasAlerts = surveyStats.blocked > 0 || surveyStats.failed > 0
+  // The entrance stagger counts the sections actually shown: the alert notice is the first one.
+  // Each section slides up whenever Accueil becomes visible (focus, overlays gone), see EntranceView.
+  const firstSection = hasAlerts ? 1 : 0
+  // D-20c: the recent surveys take one stagger slot for their header and one per row (none without
+  // a survey), so the order stays alert, resume card, recent surveys, tools, nearby.
+  const recentIndex = firstSection + 1
+  const recentSlots = surveys.length > 0 ? Math.min(surveys.length, RECENT_SURVEYS_COUNT) + 1 : 0
+  const toolsIndex = recentIndex + recentSlots
   const isBlockedAlert = surveyStats.blocked > 0
   const alertSurvey = hasAlerts ? pickAlertSurvey(surveys) : null
   const resumeDraft = pickResumeDraft(surveys)
-  const resumeFactors = resumeDraft
-    ? Math.round(Math.max(0, Math.min(100, resumeDraft.completion_rate)) / 10)
-    : 0
   // LIST-07: threads last_sync_error_code through, like SurveyRow/DetailActions already do, so
   // the same survey never shows two different error messages depending on which screen renders it.
   const failedAlertMessage = alertSurvey
@@ -156,12 +175,16 @@ export function HomeScreen({
   return (
     // OA-11: the scroll view starts below the status bar, so the pull-to-refresh spinner shows
     // instead of hiding under it. OA-12: a short text under the spinner says what it fetches.
-    <View style={[styles.scroll, { paddingTop: nativeHeader ? headerHeight : insets.top }]}>
+    <View style={[styles.screen, { paddingTop: nativeHeader ? headerHeight : insets.top }]}>
+      <ScreenBackdrop />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: nativeHeader ? 16 : 20, paddingBottom: insets.bottom + 80 },
+          {
+            paddingTop: nativeHeader ? HOME_GAPS.contentTop : brandSpacing4.md + brandSpacing4.xs,
+            paddingBottom: insets.bottom + 80,
+          },
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -176,15 +199,17 @@ export function HomeScreen({
       >
         {nativeHeader ? (
           // OA-85, OA-88: the header holds the greeting and the profile button; the sync state is
-          // a quiet line on its own row under it.
-          <View style={styles.nativeHeaderSync}>
-            <SyncStatusLine
-              isOnline={isOnline}
-              isSyncing={isSyncing}
-              pendingCount={surveyStats.pending}
-              onPress={onOpenSyncStatus}
-            />
-          </View>
+          // a quiet line on its own row under it, only when there is something to say.
+          showSyncLine ? (
+            <View style={styles.nativeHeaderSync}>
+              <SyncStatusLine
+                isOnline={isOnline}
+                isSyncing={isSyncing}
+                pendingCount={surveyStats.pending}
+                onPress={onOpenSyncStatus}
+              />
+            </View>
+          ) : null
         ) : (
           <View style={styles.greetingBlock}>
             <View style={styles.greeting}>
@@ -218,112 +243,91 @@ export function HomeScreen({
                   />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <Ionicons name="person" size={20} color={theme.colors.textSecondary} />
+                    <Ionicons name="person-outline" size={20} color={theme.colors.textSecondary} />
                   </View>
                 )}
               </Pressable>
             </View>
-            {/* SYNC-02: visible on the dashboard, not only in Settings. */}
-            <SyncStatusLine
-              isOnline={isOnline}
-              isSyncing={isSyncing}
-              pendingCount={surveyStats.pending}
-              onPress={onOpenSyncStatus}
-            />
+            {/* SYNC-02: visible on the dashboard, not only in Settings, when there is news. */}
+            {showSyncLine ? (
+              <SyncStatusLine
+                isOnline={isOnline}
+                isSyncing={isSyncing}
+                pendingCount={surveyStats.pending}
+                onPress={onOpenSyncStatus}
+              />
+            ) : null}
           </View>
         )}
 
         {/* ── Alertes ───────────────────────────────── */}
         {hasAlerts ? (
-          <AppNotice
-            tone={isBlockedAlert ? "danger" : "warning"}
-            icon={isBlockedAlert ? "warning-outline" : "cloud-upload-outline"}
-            title={
-              isBlockedAlert
-                ? fr.home.alerts.blocked({ count: surveyStats.blocked })
-                : fr.home.alerts.failed({ count: surveyStats.failed })
-            }
-            message={isBlockedAlert ? fr.home.alerts.blockedMessage : failedAlertMessage}
-            action={
-              alertSurvey
-                ? {
-                    label: isBlockedAlert ? fr.home.alerts.actionView : fr.home.alerts.actionRetry,
-                    onPress: () => {
-                      if (isBlockedAlert) {
-                        onOpenSurvey(alertSurvey.id)
-                      } else {
-                        void onRetrySurvey(alertSurvey.id)
-                      }
-                    },
-                  }
-                : undefined
-            }
-            style={styles.notice}
-          />
+          <EntranceView index={0} style={styles.notice}>
+            <AppNotice
+              tone={isBlockedAlert ? "danger" : "warning"}
+              icon={isBlockedAlert ? "warning-outline" : "cloud-upload-outline"}
+              title={
+                isBlockedAlert
+                  ? fr.home.alerts.blocked({ count: surveyStats.blocked })
+                  : fr.home.alerts.failed({ count: surveyStats.failed })
+              }
+              message={isBlockedAlert ? fr.home.alerts.blockedMessage : failedAlertMessage}
+              action={
+                alertSurvey
+                  ? {
+                      label: isBlockedAlert
+                        ? fr.home.alerts.actionView
+                        : fr.home.alerts.actionRetry,
+                      onPress: () => {
+                        if (isBlockedAlert) {
+                          onOpenSurvey(alertSurvey.id)
+                        } else {
+                          void onRetrySurvey(alertSurvey.id)
+                        }
+                      },
+                    }
+                  : undefined
+              }
+            />
+          </EntranceView>
         ) : null}
 
         {/* ── Hero CTA (HOME-02: resume a recent draft, or start a new one) ──── */}
-        <View style={styles.heroCta}>
-          <Text style={styles.heroEyebrow}>
-            {resumeDraft ? fr.home.hero.resumeEyebrow : fr.home.hero.eyebrow}
-          </Text>
-          <Text style={styles.heroTitle}>
-            {resumeDraft
-              ? resumeDraft.site_name
-                ? fr.home.hero.resumeTitle({ name: resumeDraft.site_name })
-                : fr.home.hero.resumeTitleUnnamed
-              : fr.home.hero.title}
-          </Text>
-          <Text style={styles.heroBody}>
-            {resumeDraft
-              ? fr.home.hero.resumeBody({ completed: resumeFactors })
-              : fr.home.hero.body}
-          </Text>
-          {resumeDraft ? (
-            <View style={styles.progressRow} accessible={false}>
-              {Array.from({ length: 10 }, (_, index) => (
-                <View
-                  key={index}
-                  testID={index < resumeFactors ? "hero-progress-done" : "hero-progress-todo"}
-                  style={[
-                    styles.progressSegment,
-                    index < resumeFactors ? styles.progressSegmentDone : null,
-                  ]}
-                />
-              ))}
-            </View>
-          ) : null}
-          <AppButton
-            label={resumeDraft ? fr.home.hero.resumeButton : fr.home.hero.button}
-            leadingIcon={resumeDraft ? "play-outline" : "add"}
-            size="lg"
-            variant="primary"
-            onPress={resumeDraft ? () => onOpenSurvey(resumeDraft.id) : onCreateSurvey}
-            style={styles.heroButton}
-            labelStyle={styles.heroButtonLabel}
+        {/* 12.2-19 fix round: beside a draft, "Nouveau relevé" is a glass card of its own under the
+          hero, in the same entrance slot; without one the hero starts the survey itself. */}
+        <EntranceView index={firstSection} style={styles.block}>
+          <ResumeCard
+            resumeDraft={resumeDraft}
+            onResume={onOpenSurvey}
+            onCreateSurvey={onCreateSurvey}
           />
           {resumeDraft ? (
-            <Pressable
-              style={styles.heroLink}
-              onPress={onCreateSurvey}
-              accessibilityRole="button"
-              accessibilityLabel={fr.home.hero.newSurveyButton}
-            >
-              <Ionicons name="add" size={18} color={brandOnDarkColors.heroBodyOnDark} />
-              <Text style={styles.heroLinkLabel}>{fr.home.hero.newSurveyButton}</Text>
-            </Pressable>
+            <View style={styles.newSurvey}>
+              <NewSurveyCard onPress={onCreateSurvey} />
+            </View>
           ) : null}
-        </View>
+        </EntranceView>
 
-        {/* ── Outils (OA-107) ───────────────────────── */}
-        <ToolsSection
+        {/* ── Mes relevés récents (D-20c) ───────────── */}
+        <RecentSurveysSection
           surveys={surveys}
-          onAddGenusToSurvey={onAddGenusToSurvey}
-          onStartSurveyWithGenus={onCreateSurveyWithGenus}
+          surveyDetails={surveyDetails}
+          onOpenSurvey={onOpenSurvey}
+          onSeeAll={onOpenSurveyList}
+          firstIndex={recentIndex}
         />
 
+        {/* ── Outils (OA-107) ───────────────────────── */}
+        <EntranceView index={toolsIndex}>
+          <ToolsSection
+            surveys={surveys}
+            onAddGenusToSurvey={onAddGenusToSurvey}
+            onStartSurveyWithGenus={onCreateSurveyWithGenus}
+          />
+        </EntranceView>
+
         {/* ── Parcelles proches ─────────────────────── */}
-        <View style={styles.section}>
+        <EntranceView index={toolsIndex + 1} style={styles.section}>
           <AppSectionHeader
             title={fr.home.nearby.title}
             trailing={
@@ -364,7 +368,7 @@ export function HomeScreen({
               />
             </View>
           )}
-        </View>
+        </EntranceView>
       </ScrollView>
     </View>
   )

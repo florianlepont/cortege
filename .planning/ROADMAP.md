@@ -681,7 +681,78 @@ each batch shipped; `21-VALIDATION.md` maps each success criterion above to its 
   8. Native libraries and platform components are used as much as possible (native iOS tab bar and header items, native sheets, menus and pickers, Liquid Glass through `expo-glass-effect`, the maps and animation libraries already in the project) instead of custom-drawn equivalents; each custom component that remains has a stated reason.
   9. The owner confirms the result on their own phone.
 
-**Plans**: TBD
+**Plans:** 23/23 plans executed
+
+Plans:
+**Wave 1**
+
+- [x] 23-01-PLAN.md — Align the direction text with the planning defaults; owner gate before any code (criterion 1)
+- [x] 23-02-PLAN.md — Reanimated mock reduced-motion toggle, motion gate test, ibp-display and contour-paths helpers
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 23-03-PLAN.md — Visual tokens and BrandTheme.visual, contrast test, radii and typography roles, Sora Light, ESLint colour rule repair
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 23-04-PLAN.md — ForestCard, ContourLines, GradientNumeral, GlowBar, useScreenFocus
+- [x] 23-05-PLAN.md — AppCard glass variant, ScreenBackdrop, AppButton glow variant, HaloPulse
+- [x] 23-06-PLAN.md — ScoreRing, FactorBarsChart, useEntrance, AnimatedNumber, status dot spring, catalogue entries
+- [x] 23-07-PLAN.md — Both tab bar trees, glass chips with inverted active state, section header and page title
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 23-08-PLAN.md — Home: forest resume card, backdrop, glass cards, sector ring, entrances (batch 1)
+- [x] 23-09-PLAN.md — Account and Settings: glass grouped lists with icon tiles, compact layout (batch 1)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 23-10-PLAN.md — Owner phone check, batch 1
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [x] 23-11-PLAN.md — My Surveys and search: score rings, glass rows, entrances, animated empty state (batch 2)
+- [x] 23-12-PLAN.md — Survey detail summary: forest score card, factor bars, submit feedback (batch 2)
+- [x] 23-13-PLAN.md — Survey detail Score, History and Context pages (batch 2)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [x] 23-14-PLAN.md — Owner phone check, batch 2 (numeral rendering decided here)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [x] 23-15-PLAN.md — Factor entry chrome: pager, letter strip, tiles, rings, factor detail (batch 3)
+- [x] 23-16-PLAN.md — Survey wizard and factor inputs, tokens only (batch 3)
+
+**Wave 9** *(blocked on Wave 8 completion)*
+
+- [x] 23-17-PLAN.md — Owner phone check, batch 3 (field ergonomics)
+
+**Wave 10** *(blocked on Wave 9 completion)*
+
+- [x] 23-18-PLAN.md — Explorer overlays, selected card, cluster list, sheets; map untouched (batch 4)
+
+**Wave 11** *(blocked on Wave 10 completion)*
+
+- [x] 23-19-PLAN.md — Owner phone check, batch 4
+
+**Wave 12** *(blocked on Wave 11 completion)*
+
+- [x] 23-20-PLAN.md — Outline icon harmonisation and icon gate (D-07)
+- [x] 23-21-PLAN.md — Em dash catalogue gate, motion consistency audit, dark pass
+- [x] 23-22-PLAN.md — Charter section 13, direction corrections, Phase 28 Android carry-over (planned as "Phase 13"), animals seed, CLAUDE.md note
+
+**Wave 13** *(blocked on Wave 12 completion)*
+
+- [x] 23-23-PLAN.md — Final owner confirmation on the phone and approval of the direction text (criteria 1 and 9, numbered 1 and 4 when planned)
+
+**Cross-cutting constraints:**
+
+- D-18: this checkpoint stops the pipeline (gate blocking-human) and is never auto-approved
+- Only open Phase 22 (old 12.1) findings on these screens are absorbed, named by OA id (D-10)
+
+**Coverage note (merge of main, 2026-10-08):** plans 01 to 23 were written against the first four criteria (now criteria 1, 2, 3 and 9). Criteria 4 to 8 (map colourisation, offline packs with the new background, design spec kept in step, component inventory and homogenisation, native components first) were added to this phase on main on 2026-10-07 and 2026-10-08 and are not covered by these plans yet; the phase stays open for them.
+
 **UI hint**: yes
 
 ### Phase 24: Survey History Split (INSERTED)
@@ -752,6 +823,7 @@ each batch shipped; `21-VALIDATION.md` maps each success criterion above to its 
 **Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
 **Depends on**: Phases 23, 25, 26 and 27 (visual modernisation, global search, UX/UI audit, quality audit), Phase 22 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 3, 5, 6, 7 (field tests must not run on the data-loss and sync defects), 3, 4, 7, 9 and 12 (field tests should exercise the ergonomics and screens the UX audit rebuilt, not the ones it found broken), 6, 8, 10, 11
 **Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
+**Carried over from Phase 23 (old 12.2, D-17)**: an Android device pass of the visual refresh (gradients, coloured shadows, flat glass fill on cards, map controls and sheets, the download edge glow at the navigation layer, the forest card SVG mask, and the cost of the forest card mist and flowing contours: turn `ForestCard`'s `motion` off on Android if frames drop; header tint in dark mode). See charter section 13.9.
 **Success Criteria** (what must be TRUE):
 
   1. A field-test report exists for each of Epics B, C and D, in the form of `docs/user-tests/epic-a-access-and-security.md`, with a recorded outcome for every case.
@@ -798,7 +870,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 20. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 21. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
-| 23. Visual Modernisation | 0/TBD | Not started | - |
+| 23. Visual Modernisation | 23/23 | In Progress (verification human_needed) |  |
 | 24. Survey History Split | 0/TBD | Not started | - |
 | 25. Global Search | 0/TBD | Not started | - |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |

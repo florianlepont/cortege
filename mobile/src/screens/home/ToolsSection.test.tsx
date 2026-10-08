@@ -4,8 +4,11 @@
  */
 import React from "react"
 import renderer, { act, ReactTestInstance, ReactTestRenderer } from "react-test-renderer"
+import { brandInteraction, brandRadius } from "../../app/brand-tokens"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
+import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
 import { openDrafts, ToolsSection } from "./ToolsSection"
 
 const originalConsoleError = console.error
@@ -61,7 +64,9 @@ function makeSurvey(overrides: Partial<LocalSurvey> = {}): LocalSurvey {
     sync_blocked: 0,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-10-05T10:00:00.000Z",
-    completion_rate: 40,
+    // Deliberately not factors_filled * 10: the sheet shows the factor count, not the percentage.
+    completion_rate: 64,
+    factors_filled: 4,
     ...overrides,
   }
 }
@@ -132,12 +137,68 @@ describe("openDrafts", () => {
 })
 
 describe("ToolsSection", () => {
+  test("its gaps and row height are the ones the layout budget counts (12.2-14)", () => {
+    mount()
+    const flat = (node: ReactTestInstance) =>
+      Object.assign({}, ...[node.props.style].flat()) as Record<string, unknown>
+    const section = tree.root.find(
+      (node) => (node.type as unknown) === "View" && flat(node).marginTop !== undefined,
+    )
+    expect(flat(section).marginTop).toBe(HOME_GAPS.section)
+    expect(flat(byType("AppSectionHeader")).marginBottom).toBe(HOME_GAPS.sectionHeader)
+    expect(flat(byType("Pressable")).minHeight).toBe(TOOL_ROW_MIN_HEIGHT)
+  })
+
   test("shows the Outils section with the photo identification card, the tool closed", () => {
     mount()
     expect(byType("AppSectionHeader").props.title).toBe(t.title)
     expect(byType("Pressable").props.accessibilityLabel).toBe(t.identify.a11y)
     expect(modal().props.visible).toBe(false)
     expect(sheet().props.visible).toBe(false)
+  })
+
+  test("the identify card has the glass look and keeps its accessibility contract and hit area", () => {
+    mount()
+    const card = byType("Pressable")
+    const style = Object.assign({}, ...[card.props.style].flat()) as Record<string, unknown>
+    const { glass } = defaultTheme.visual
+    expect(style.backgroundColor).toBe(glass.cardFill)
+    expect(style.borderColor).toBe(glass.cardBorder)
+    expect(style.borderWidth).toBe(1)
+    expect(style.boxShadow).toBe(glass.cardShadow)
+    expect(style.borderRadius).toBe(brandRadius.card)
+    expect(card.props.accessibilityRole).toBe("button")
+    expect(card.props.testID).toBe("tool-identify-tree")
+    expect(style.minHeight as number).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+  })
+
+  test("the identify entry is one slim full-width row of 56 to 64 pt (D-20d)", () => {
+    mount()
+    const card = byType("Pressable")
+    const style = Object.assign({}, ...[card.props.style].flat()) as Record<string, unknown>
+    // A row of icon tile, texts and chevron, not a half-width tile: it spans the page and has no
+    // maximum width.
+    expect(style.flexDirection).toBe("row")
+    expect(style.alignItems).toBe("center")
+    expect(style.maxWidth).toBeUndefined()
+    expect(style.flex).toBeUndefined()
+    const minHeight = style.minHeight as number
+    expect(minHeight).toBeGreaterThanOrEqual(56)
+    expect(minHeight).toBeLessThanOrEqual(64)
+    expect(minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+    // The 40 pt icon tile plus the vertical padding gives that height.
+    const icon = card.findAll(
+      (node) =>
+        (node.type as unknown) === "View" && (node.props.style as { width?: number })?.width === 40,
+    )
+    expect(icon).toHaveLength(1)
+    expect((style.paddingVertical as number) * 2 + 40).toBe(minHeight)
+    expect((style.paddingVertical as number) % 4).toBe(0)
+    // The title and the one-line subtitle are both there, and nothing else carries text (no tag).
+    const texts = card
+      .findAll((node) => (node.type as unknown) === "Text")
+      .map((node) => String([node.props.children].flat().join("")))
+    expect(texts).toEqual([t.identify.title, t.identify.body])
   })
 
   test("the card opens the photo tool", () => {

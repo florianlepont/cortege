@@ -24,6 +24,7 @@ jest.mock("react-native", () => ({
   StatusBar: "StatusBar",
   View: "View",
   Pressable: "Pressable",
+  DynamicColorIOS: (tuple: { light: string; dark: string }) => ({ dynamic: tuple }),
 }))
 
 // DS-13: JsRootTabs reads the safe-area bottom inset to size the JS tab bar.
@@ -108,7 +109,10 @@ jest.mock("@bottom-tabs/react-navigation", () => ({
 
 jest.mock("../app/theme", () => {
   const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
-  return { ...actual, useBrandTheme: () => ({ ...actual.defaultTheme, scheme: mockScheme.value }) }
+  return {
+    ...actual,
+    useBrandTheme: () => actual.buildTheme(mockScheme.value),
+  }
 })
 jest.mock("./tab-bar", () => {
   const actual = jest.requireActual("./tab-bar") as typeof import("./tab-bar")
@@ -136,8 +140,11 @@ jest.mock("./stacks/AccountStack", () => ({ AccountTabNavigator: () => null }))
 
 import { selectionAsync } from "expo-haptics"
 import { AppNavigation, useResetToHomeOnSignOut } from "./AppNavigation"
-import { defaultTheme } from "../app/theme"
-import { buildJsTabBarStyle, jsTabScreenOptions } from "./tab-config"
+import { buildTheme, defaultTheme } from "../app/theme"
+import { setReducedMotion } from "../../test/react-native-reanimated.mock"
+import { brandTypography } from "../app/brand-tokens"
+import { tabActiveTint } from "../app/visual-tokens"
+import { buildJsTabBarStyle } from "./tab-config"
 
 // OA-13: Compte is no longer a tab.
 const THREE_TABS = ["home", "surveys", "publicMap"]
@@ -172,6 +179,7 @@ beforeEach(() => {
   mockNavRef.resetRoot.mockClear()
   mockScheme.value = "light"
   mockHideRule.value = false
+  setReducedMotion(false)
 })
 
 async function mount() {
@@ -293,19 +301,29 @@ describe("OA-07: a session end resets the tabs to Accueil", () => {
   })
 })
 
-describe("dark mode tab tint and the shared hide rule", () => {
-  test("native tree: the active tint is the accent in dark mode, forest in light", async () => {
+describe("tab tints and the shared hide rule", () => {
+  test("native tree: the active tint and label font come from the tokens, in both schemes", async () => {
     await mount()
-    const light = (mockNativeNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
-      route: { name: "home" },
-    })
+    const nativeProps = mockNativeNavigatorProps.at(-1)
+    const light = (nativeProps?.screenOptions as OptionsFn)({ route: { name: "home" } })
+    // 12.2-23: one dynamic colour that UIKit resolves with the bar's own appearance, the forest in
+    // light and the light moss in dark, so the selected tab reads on either bar.
+    const dynamicTint = { dynamic: { light: tabActiveTint.light, dark: tabActiveTint.dark } }
+    expect(light.tabBarActiveTintColor).toEqual(dynamicTint)
+    expect(tabActiveTint.light).toBe(defaultTheme.visual.tab.activeTint)
+    expect(nativeProps?.tabLabelStyle).toEqual({ fontFamily: brandTypography.meta.fontFamily })
+    // The system Liquid Glass material is kept: no background colour is set.
+    expect(nativeProps).not.toHaveProperty("tabBarStyle")
+    expect(light).not.toHaveProperty("tabBarStyle")
+
+    // The app's own dark choice does not reach UIKit: the bar keeps the same dynamic colour.
     mockScheme.value = "dark"
     await mount()
     const dark = (mockNativeNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
       route: { name: "home" },
     })
-    expect(light.tabBarActiveTintColor).toBe(defaultTheme.colors.forest)
-    expect(dark.tabBarActiveTintColor).toBe(defaultTheme.semanticColors.accent)
+    expect(dark.tabBarActiveTintColor).toEqual(dynamicTint)
+    expect(tabActiveTint.dark).toBe(buildTheme("dark").visual.tab.activeTint)
   })
 
   test("JS tree: a route the rule hides gets a hidden tab bar", async () => {
@@ -316,12 +334,20 @@ describe("dark mode tab tint and the shared hide rule", () => {
     expect(options({ route: { focused: "anything" } }).tabBarStyle).toEqual({ display: "none" })
   })
 
-  test("JS tab screen options take the accent tint in dark mode", () => {
-    const dark = jsTabScreenOptions(
-      { ...defaultTheme, scheme: "dark" },
-      { route: { name: "home" } },
-    )
-    expect(dark.tabBarActiveTintColor).toBe(defaultTheme.semanticColors.accent)
+  test("JS tree: the tab animation is a fade, and none under Reduce Motion", async () => {
+    mockPlatform.OS = "android"
+    await mount()
+    const fade = (mockJsNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
+      route: { name: "home" },
+    })
+    expect(fade.animation).toBe("fade")
+
+    setReducedMotion(true)
+    await mount()
+    const none = (mockJsNavigatorProps.at(-1)?.screenOptions as OptionsFn)({
+      route: { name: "home" },
+    })
+    expect(none.animation).toBe("none")
   })
 })
 

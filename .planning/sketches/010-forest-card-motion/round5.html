@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carte forêt : lignes diagonales sur toute la carte</title>
+<style>
+  :root { --f1:#1D3418; --f2:#2C4A26; --f3:#0E2210; --moss:#89A33A; --txt:#F2F3F1; --txt2:#B9C4B3; --ink:#0E2210; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:#0b0f0c; color:var(--txt); font:15px/1.4 -apple-system,"Helvetica Neue",sans-serif; padding:26px 20px 60px; }
+  h1 { font-size:22px; font-weight:600; letter-spacing:-.02em; margin-bottom:6px; }
+  p.lead { color:var(--txt2); max-width:760px; margin-bottom:24px; }
+  .row { display:grid; grid-template-columns:repeat(auto-fill,minmax(350px,1fr)); gap:34px 26px; max-width:1240px; }
+  figure { display:flex; flex-direction:column; gap:12px; }
+  figcaption b { display:block; font-size:16px; margin-bottom:2px; }
+  figcaption span { color:var(--txt2); font-size:13px; display:block; max-width:350px; }
+  .pair { display:flex; flex-direction:column; gap:14px; }
+
+  .card { position:relative; width:340px; border-radius:26px; overflow:hidden; isolation:isolate;
+    background:linear-gradient(135deg,var(--f1),var(--f2) 55%,var(--f3));
+    box-shadow:0 14px 36px rgba(60,110,40,.25), inset 0 0 0 1px rgba(200,221,160,.12); }
+  .hero { height:158px; } .score { height:250px; }
+  .fx { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+  /* feathered text shield: no hard edge anywhere */
+  .card::after { content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
+    background:linear-gradient(90deg,rgba(14,34,16,.5),rgba(14,34,16,.18) 55%,rgba(14,34,16,0) 85%); }
+  .t { position:relative; z-index:5; }
+  .hero .t { padding:18px 18px 0; display:flex; justify-content:space-between; align-items:flex-start; }
+  .title { font-size:26px; font-weight:600; letter-spacing:-.02em; line-height:1.1; }
+  .sub { color:var(--txt2); font-size:14px; margin-top:4px; }
+  .cta { background:linear-gradient(180deg,#B6CE6B,#89A33A); color:var(--ink); font-weight:600; border-radius:999px; padding:11px 16px; font-size:15px; box-shadow:0 6px 18px rgba(137,163,58,.35); white-space:nowrap; }
+  .segs { position:absolute; z-index:5; left:18px; right:18px; bottom:20px; display:grid; grid-template-columns:repeat(10,1fr); gap:5px; }
+  .segs i { height:5px; border-radius:3px; background:rgba(176,199,142,.2); } .segs i.on { background:#C8DDA0; }
+  .score .t { padding:18px; }
+  .score .cap { font-weight:600; font-size:15px; }
+  .score .big { font-size:62px; font-weight:300; letter-spacing:-.03em; line-height:1; margin:8px 0 10px; color:#E8F2CF; }
+  .score .big small { font-size:22px; color:var(--txt2); margin-left:8px; }
+  .score .bar { height:6px; border-radius:3px; background:rgba(176,199,142,.2); } .score .bar i { display:block; width:18%; height:100%; border-radius:3px; background:#C8DDA0; }
+  .tiles { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .tiles div { border-radius:14px; padding:10px 12px; background:rgba(255,255,255,.07); box-shadow:inset 0 0 0 1px rgba(200,221,160,.14); font-size:13px; color:var(--txt2); }
+  .tiles b { display:block; font-size:20px; color:var(--txt); margin-top:2px; font-weight:600; }
+
+  /* 1. BRUME : a calm evenly spread fog, very low alpha, no edges */
+  .v1 .fog { position:absolute; width:520px; height:520px; border-radius:50%; background:radial-gradient(closest-side,rgba(120,180,70,.30),rgba(120,180,70,0)); }
+  .v1 .f1 { left:-120px; top:-200px; animation:v1a 22s ease-in-out infinite alternate; }
+  .v1 .f2 { right:-200px; top:-60px; background:radial-gradient(closest-side,rgba(60,150,120,.26),rgba(60,150,120,0)); animation:v1b 29s ease-in-out infinite alternate; }
+  .v1 .f3 { left:20px; bottom:-340px; background:radial-gradient(closest-side,rgba(190,160,70,.18),rgba(190,160,70,0)); animation:v1c 35s ease-in-out infinite alternate; }
+  @keyframes v1a { to { transform:translate(120px,70px) scale(1.15); } }
+  @keyframes v1b { to { transform:translate(-110px,60px) scale(.9); } }
+  @keyframes v1c { to { transform:translate(160px,-60px) scale(1.2); } }
+
+  /* 2. RAYONS : soft light shafts sliding, like sun through the canopy */
+  .v2 .ray { position:absolute; top:-60%; bottom:-60%; width:90px; transform:rotate(24deg); background:linear-gradient(90deg,transparent,rgba(220,240,170,.16),transparent); filter:blur(8px); }
+  .v2 .r1 { left:-120px; animation:v2 14s linear infinite; } .v2 .r2 { left:-120px; width:140px; animation:v2 19s linear infinite -7s; opacity:.8; } .v2 .r3 { left:-120px; width:60px; animation:v2 11s linear infinite -3s; opacity:.7; }
+  @keyframes v2 { from { transform:translateX(0) rotate(24deg); } to { transform:translateX(560px) rotate(24deg); } }
+  .v2 .glow { position:absolute; right:-80px; top:-100px; width:300px; height:300px; border-radius:50%; background:radial-gradient(closest-side,rgba(150,205,80,.28),transparent); animation:v2g 9s ease-in-out infinite alternate; }
+  @keyframes v2g { from { opacity:.5; } to { opacity:1; } }
+
+  /* 3. DÉGRADÉ QUI RESPIRE : only the card's own gradient slowly shifts */
+  .v3 .fx { background:linear-gradient(120deg,#1D3418,#2F5A2A,#1E5A47,#3B5B2A,#1D3418); background-size:300% 300%; animation:v3 18s ease-in-out infinite; opacity:.9; }
+  @keyframes v3 { 0%,100% { background-position:0% 50%; } 50% { background-position:100% 50%; } }
+  .v3 .spot { position:absolute; right:-60px; top:-80px; width:240px; height:240px; border-radius:50%; background:radial-gradient(closest-side,rgba(160,215,90,.30),transparent); animation:v2g 7s ease-in-out infinite alternate; }
+
+  /* 4. LUCIOLES : many tiny lights, endless random respawn */
+  .v4 .p { position:absolute; width:3px; height:3px; border-radius:50%; background:#E6F5B8; box-shadow:0 0 8px 2px rgba(200,236,120,.7); opacity:0; animation:rise linear infinite; }
+  @keyframes rise { 0% { transform:translate(0,30px); opacity:0; } 20% { opacity:.9; } 70% { opacity:.6; } 100% { transform:translate(var(--dx),-210px); opacity:0; } }
+  .v4 .halo { position:absolute; left:0; right:0; bottom:-60px; height:140px; background:radial-gradient(closest-side at 70% 100%,rgba(120,180,70,.28),transparent); animation:v2g 8s ease-in-out infinite alternate; }
+
+  /* 5. COURBES QUI COULENT : contour lines with light flowing along them */
+  .v5 svg { position:absolute; inset:0; width:100%; height:100%; }
+  .v5 path { fill:none; stroke-width:1.2; stroke-linecap:round; }
+  .v5 .base { stroke:rgba(140,185,80,.16); }
+  .v5 .flow { stroke:rgba(215,240,150,.7); stroke-dasharray:26 300; animation:flow 7s linear infinite; filter:drop-shadow(0 0 3px rgba(200,236,120,.8)); }
+  .v5 .flow.b { animation-duration:10s; animation-delay:-4s; } .v5 .flow.c { animation-duration:13s; animation-delay:-8s; }
+  @keyframes flow { from { stroke-dashoffset:326; } to { stroke-dashoffset:0; } }
+  .v5 .mask { position:absolute; inset:0; background:linear-gradient(90deg,rgba(29,52,24,.9),rgba(29,52,24,0) 60%); }
+  @media (prefers-reduced-motion:reduce) { .fx * , .fx { animation:none !important; } }
+
+  /* 1 + 5 mix, three intensity levels via CSS variables */
+  .mix { --fog:1; --flowA:.7; --base:.16; --glow:3px; }
+  .mix.lvl1 { --fog:.8; --flowA:.55; --base:.12; --glow:2px; }
+  .mix.lvl2 { --fog:1.1; --flowA:.8; --base:.18; --glow:3px; }
+  .mix.lvl3 { --fog:1.45; --flowA:1; --base:.26; --glow:4px; }
+  .mix .fog { position:absolute; width:520px; height:520px; border-radius:50%; opacity:var(--fog); }
+  .mix .f1 { left:-120px; top:-200px; background:radial-gradient(closest-side,rgba(120,180,70,.30),rgba(120,180,70,0)); animation:v1a 22s ease-in-out infinite alternate; }
+  .mix .f2 { right:-200px; top:-60px; background:radial-gradient(closest-side,rgba(60,150,120,.26),rgba(60,150,120,0)); animation:v1b 29s ease-in-out infinite alternate; }
+  .mix .f3 { left:20px; bottom:-340px; background:radial-gradient(closest-side,rgba(190,160,70,.18),rgba(190,160,70,0)); animation:v1c 35s ease-in-out infinite alternate; }
+  @keyframes v1a { to { transform:translate(120px,70px) scale(1.15); } }
+  @keyframes v1b { to { transform:translate(-110px,60px) scale(.9); } }
+  @keyframes v1c { to { transform:translate(160px,-60px) scale(1.2); } }
+  .mix svg { position:absolute; inset:0; width:100%; height:100%; }
+  .mix path { fill:none; stroke-width:1.2; stroke-linecap:round; }
+  .mix .base { stroke:rgba(140,185,80,var(--base)); }
+  .mix .flow { stroke:rgba(215,240,150,var(--flowA)); stroke-dasharray:26 300; animation:flow 7s linear infinite; filter:drop-shadow(0 0 var(--glow) rgba(200,236,120,.8)); }
+  .mix .flow.b { animation-duration:10s; animation-delay:-4s; } .mix .flow.c { animation-duration:13s; animation-delay:-8s; }
+  @keyframes flow { from { stroke-dashoffset:326; } to { stroke-dashoffset:0; } }
+  .mix .mask { position:absolute; inset:0; background:linear-gradient(90deg,rgba(29,52,24,.9),rgba(29,52,24,0) 60%); }
+
+  .ctl { position:sticky; top:0; z-index:50; background:#0b0f0cf2; border-bottom:1px solid #223; padding:12px 0 14px; margin-bottom:18px; display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px 22px; max-width:1240px; }
+  .ctl label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--txt2); }
+  .ctl label b { color:var(--txt); font-weight:600; display:flex; justify-content:space-between; }
+  .ctl input { width:100%; accent-color:#89A33A; }
+  .out { grid-column:1/-1; font:12px ui-monospace,monospace; color:#B6CE6B; }
+  /* live-tuned mix */
+  .live { --spd:2.5; --fogA:1.6; --size:1; --hue:1; --flowSpd:1; --flowA:.8; }
+  .live .fog { position:absolute; border-radius:50%; width:calc(420px * var(--size)); height:calc(420px * var(--size)); }
+  .live .f1 { left:-60px; top:-120px; background:radial-gradient(closest-side,rgba(110,190,60,calc(.42 * var(--fogA))),rgba(110,190,60,0) 100%); animation:l1 calc(14s / var(--spd)) ease-in-out infinite alternate; }
+  .live .f2 { right:-120px; top:-40px; background:radial-gradient(closest-side,rgba(30,170,140,calc(.38 * var(--fogA))),rgba(30,170,140,0)); animation:l2 calc(18s / var(--spd)) ease-in-out infinite alternate; }
+  .live .f3 { left:60px; bottom:-220px; background:radial-gradient(closest-side,rgba(220,170,60,calc(.26 * var(--fogA))),rgba(220,170,60,0)); animation:l3 calc(23s / var(--spd)) ease-in-out infinite alternate; }
+  @keyframes l1 { to { transform:translate(210px,110px) scale(1.2); } }
+  @keyframes l2 { to { transform:translate(-210px,90px) scale(.85); } }
+  @keyframes l3 { to { transform:translate(230px,-110px) scale(1.25); } }
+  .live svg { position:absolute; inset:0; width:100%; height:100%; }
+  .live path { fill:none; stroke-width:1.2; stroke-linecap:round; }
+  .live .base { stroke:rgba(140,185,80,.18); }
+  .live .flow { stroke:rgba(215,240,150,var(--flowA)); stroke-dasharray:26 300; animation:flow calc(7s / var(--flowSpd)) linear infinite; filter:drop-shadow(0 0 3px rgba(200,236,120,.8)); }
+  .live .flow.b { animation-duration:calc(10s / var(--flowSpd)); animation-delay:-4s; } .live .flow.c { animation-duration:calc(13s / var(--flowSpd)); animation-delay:-8s; }
+  @keyframes flow { from { stroke-dashoffset:326; } to { stroke-dashoffset:0; } }
+  .live .mask { position:absolute; inset:0; background:linear-gradient(90deg,rgba(29,52,24,.9),rgba(29,52,24,0) 60%); }
+
+  .shd { position:absolute; z-index:3; pointer-events:none; border-radius:50%; background:radial-gradient(closest-side,rgba(14,34,16,.6),rgba(14,34,16,0)); }
+  .live .mask { display:none; }
+</style>
+</head>
+<body>
+<h1>Lignes diagonales sur toute la carte</h1>
+<p class="lead">Tes réglages (brume 2 / 1,6 / 0,7, courbes 1 / 1) avec des courbes en S qui montent du bas gauche vers le haut droit, réparties sur toute la carte. Derrière chaque bloc de texte, un fondu doux estompe lignes et brume. Les curseurs sont gardés si tu veux ajuster. Ouvre-la dans ton navigateur pour voir le mouvement.</p>
+<div class="ctl" id="ctl"></div>
+<div class="row"><figure class="live" id="live"><div class="pair">
+ <div class="card hero"><div class="fx" id="fx1"></div></div>
+ <div class="card score"><div class="fx" id="fx2"></div></div></div></figure></div>
+<script>
+const HERO = `<div class="t"><div><div class="title">Lisière de la<br>Marne</div><div class="sub">6/10 facteurs remplis.</div></div><div class="cta">▷ Reprendre</div></div>
+ <div class="segs"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>`;
+const SCORE = `<div class="t"><div class="cap">Score IBP du brouillon</div><div class="big">9<small>/ 50</small></div><div class="bar"><i></i></div>
+ <div class="tiles"><div>Peuplement et gestion<b>9 / 35</b></div><div>Contexte<b>0 / 15</b></div></div></div>`;
+// diagonal S-curves, bottom-left to top-right, spread over the whole card (viewBox = card size)
+const paths = h => [
+ `M-10 ${h*0.55} C60 ${h*0.50} 90 ${h*0.62} 150 ${h*0.30} S270 ${h*0.05} 350 ${h*-0.05}`,
+ `M-10 ${h*0.95} C70 ${h*0.85} 110 ${h*0.95} 180 ${h*0.62} S290 ${h*0.30} 350 ${h*0.12}`,
+ `M30 ${h*1.05} C110 ${h*1.0} 160 ${h*1.08} 230 ${h*0.82} S310 ${h*0.58} 350 ${h*0.48}`,
+ `M-10 ${h*0.22} C40 ${h*0.2} 70 ${h*0.28} 120 ${h*0.08} S200 ${h*-0.06} 240 ${h*-0.1}`,
+];
+const fx = (h, shields) => `<i class="fog f1"></i><i class="fog f2"></i><i class="fog f3"></i>${shields}<svg viewBox="0 0 340 ${h}" preserveAspectRatio="none">${paths(h).map(d=>`<path class="base" d="${d}"/>`).join('')}${paths(h).map((d,i)=>`<path class="flow ${['','b','c','b'][i]}" d="${d}" style="animation-delay:-${i*2.3}s"/>`).join('')}</svg>`;
+const sh = (l,t,w,h) => `<i class="shd" style="left:${l}px;top:${t}px;width:${w}px;height:${h}px"></i>`;
+document.querySelector('.hero').insertAdjacentHTML('beforeend', HERO);
+document.querySelector('.score').insertAdjacentHTML('beforeend', SCORE);
+document.getElementById('fx1').innerHTML = fx(158, sh(-40,0,280,150)+sh(-20,110,380,90));
+document.getElementById('fx2').innerHTML = fx(250, sh(-50,-10,330,150)+sh(-30,110,400,150));
+const S = [['spd','Vitesse de la brume',.5,6,.5,2],['fogA','Intensité de la brume',.5,3,.1,1.6],['size','Taille des nappes',.6,1.8,.1,.7],['flowSpd','Vitesse des courbes',.4,3,.1,1],['flowA','Éclat des points de lumière',.2,1,.05,1]];
+const ctl = document.getElementById('ctl'), live = document.getElementById('live'); const out = document.createElement('div'); out.className='out';
+S.forEach(([k,l,min,max,step,def]) => { const lab=document.createElement('label'); lab.innerHTML=`<b><span>${l}</span><span id="v_${k}">${def}</span></b><input type="range" min="${min}" max="${max}" step="${step}" value="${def}">`;
+  const inp=lab.querySelector('input'); inp.addEventListener('input',()=>{ live.style.setProperty('--'+k, inp.value); lab.querySelector('#v_'+k).textContent=inp.value; show(); }); ctl.appendChild(lab); live.style.setProperty('--'+k, def); });
+ctl.appendChild(out);
+function show(){ out.textContent = 'RÉGLAGES : ' + S.map(([k])=>k+'='+live.style.getPropertyValue('--'+k)).join('  '); }
+show();
+</script>
+</body>
+</html>

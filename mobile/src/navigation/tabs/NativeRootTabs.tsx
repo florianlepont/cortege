@@ -1,5 +1,7 @@
-import { useCallback, useRef, type ElementType } from "react"
-import { useBrandTheme } from "../../app/theme"
+import { useMemo, useRef, type ElementType } from "react"
+import { DynamicColorIOS } from "react-native"
+import { brandTypography } from "../../app/brand-tokens"
+import { tabActiveTint } from "../../app/visual-tokens"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
 import { SearchTabNavigator } from "../stacks/SearchStack"
@@ -33,6 +35,8 @@ function NativeSurveysTab() {
   return <SurveysTabNavigator useNativeNav />
 }
 
+const nativeTabLabelStyle = { fontFamily: brandTypography.meta.fontFamily }
+
 type NativeRootTabsProps = {
   /**
    * `@bottom-tabs/react-navigation` has no per-screen hide option, only this
@@ -48,16 +52,18 @@ type NativeRootTabsProps = {
  */
 export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
   const deps = useTabListenerDeps()
-  const theme = useBrandTheme()
-  // Sketch 001 A: the active tab takes the accent (light green) in dark mode.
-  const activeTint = theme.scheme === "dark" ? theme.semanticColors.accent : theme.colors.forest
-  const screenOptions = useCallback(
-    (props: Parameters<typeof nativeTabScreenOptions>[0]) => ({
+  // D-08: the system Liquid Glass bar keeps its material; only the active tint and the label font
+  // come from the tokens (no background colour, no dot). 12.2-23: the tint is one dynamic colour,
+  // the charter forest in light and the light moss in dark, which UIKit resolves with the bar's own
+  // appearance. The bar and the app's theme both follow the system's light or dark (there is no
+  // in-app choice since 2026-10-08); the dynamic colour also covers the frame of a system switch.
+  const screenOptions = useMemo(() => {
+    const activeTint = DynamicColorIOS({ light: tabActiveTint.light, dark: tabActiveTint.dark })
+    return (props: Parameters<typeof nativeTabScreenOptions>[0]) => ({
       ...nativeTabScreenOptions(props),
       tabBarActiveTintColor: activeTint,
-    }),
-    [activeTint],
-  )
+    })
+  }, [])
   const nativeTabRef = useRef<TabNavigatorLike | null>(null)
 
   if (nativeTabRef.current == null) {
@@ -72,6 +78,7 @@ export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
       screenListeners={tabPressHaptics}
       minimizeBehavior="automatic"
       tabBarHidden={tabBarHidden}
+      tabLabelStyle={nativeTabLabelStyle}
     >
       <NativeTab.Screen name="home" component={HomeTabNavigator} />
       <NativeTab.Screen

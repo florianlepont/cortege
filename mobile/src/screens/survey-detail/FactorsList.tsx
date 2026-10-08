@@ -38,7 +38,7 @@ export function FactorsList({
   const styles = useMemo(() => createScoreStyles(theme), [theme])
 
   return (
-    <View style={{ gap: 10 }}>
+    <View style={styles.listBlock}>
       <Text style={styles.listTitle} accessibilityRole="header">
         {s.factorsTitle}
       </Text>
@@ -93,7 +93,11 @@ export function FactorsList({
                   <Text style={styles.rowPending}>{s.toFill}</Text>
                 )}
                 {canOpen ? (
-                  <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+                  <Ionicons
+                    name="chevron-forward-outline"
+                    size={18}
+                    color={theme.colors.textSecondary}
+                  />
                 ) : null}
               </Pressable>
             )

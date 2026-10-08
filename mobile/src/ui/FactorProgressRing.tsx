@@ -3,7 +3,8 @@ import { Circle, Svg } from "react-native-svg"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../app/theme"
 
-const STROKE_WIDTH = 3
+export const STROKE_WIDTH = 3
+export const DEFAULT_RING_SIZE = 28
 
 type FactorProgressRingProps = {
   /** 0-1: filled fields over total fields for this factor. */
@@ -14,22 +15,27 @@ type FactorProgressRingProps = {
   testID?: string
 }
 
-/** FLOW-06: a per-factor progress ring that morphs into a check mark once the factor is complete. */
+/**
+ * FLOW-06: a per-factor progress ring that morphs into a check mark once the factor is complete.
+ * Phase 12.2 (variant I): the score tokens, the track `visual.score.track`, the arc in progress
+ * `visual.score.neutral`, the complete check `visual.score.high` (the darker moss in light, D-16);
+ * an invalid factor keeps the error tone. Size and stroke unchanged.
+ */
 export function FactorProgressRing({
   progress,
   complete,
   hasError = false,
-  size = 28,
+  size = DEFAULT_RING_SIZE,
   testID,
 }: FactorProgressRingProps) {
   const theme = useBrandTheme()
-  const tone = complete ? theme.fieldState.complete : hasError ? theme.fieldState.error : null
-  const ringColor = tone ? tone.icon : theme.colors.divider
+  const score = theme.visual.score
+  const ringColor = complete ? score.high : hasError ? theme.fieldState.error.icon : score.neutral
 
   if (complete) {
     return (
       <View style={{ width: size, height: size }} testID={testID}>
-        <Ionicons name="checkmark-circle" size={size} color={ringColor} />
+        <Ionicons name="checkmark-circle-outline" size={size} color={ringColor} />
       </View>
     )
   }
@@ -45,7 +51,7 @@ export function FactorProgressRing({
         cx={size / 2}
         cy={size / 2}
         r={radius}
-        stroke={theme.colors.panelMuted}
+        stroke={theme.visual.score.track}
         strokeWidth={STROKE_WIDTH}
         fill="none"
       />

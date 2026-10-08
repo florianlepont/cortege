@@ -8,17 +8,28 @@ const h = fr.surveyDetail.header
 const c = fr.surveyDetail.cta
 const bands = fr.surveyDetail.bands
 
-/** The status line under the title: "Brouillon" then "pas encore synchronisé" (OA-37). */
-export type StatusLine = { status: string; sync: string; syncTone: "ok" | "pending" | "danger" }
+/**
+ * The status line under the title: "Brouillon" then "pas encore synchronisé" (OA-37). A finished
+ * survey stays discreet (D-25): just "Terminé" once synced, "Terminé · synchronisation en cours"
+ * while its last changes are still being sent; a failed or blocked sync still says so. `sync` is
+ * null when there is nothing to add after the status.
+ */
+export type StatusLine = {
+  status: string
+  sync: string | null
+  syncTone: "ok" | "pending" | "danger"
+}
 
 export const resolveStatusLine = (survey: LocalSurvey, isComplete: boolean | null): StatusLine => {
   const syncDisplay = resolveSurveySyncDisplay(survey)
-  const status =
-    survey.status === "submitted"
-      ? h.status.finished
-      : isComplete === true
-        ? h.status.draftComplete
-        : h.status.draft
+  const finished = survey.status === "submitted"
+  const status = finished
+    ? h.status.finished
+    : isComplete === true
+      ? h.status.draftComplete
+      : h.status.draft
+  if (finished && syncDisplay === "sync") return { status, sync: null, syncTone: "ok" }
+  if (finished && syncDisplay === "local") return { status, sync: h.sync.sending, syncTone: "ok" }
   if (syncDisplay === "sync") return { status, sync: h.sync.synced, syncTone: "ok" }
   if (syncDisplay === "sync_error") return { status, sync: h.sync.error, syncTone: "danger" }
   if (syncDisplay === "sync_blocked") return { status, sync: h.sync.blocked, syncTone: "danger" }
@@ -26,9 +37,22 @@ export const resolveStatusLine = (survey: LocalSurvey, isComplete: boolean | nul
 }
 
 /**
+ * Whether the "Terminer le relevé" button is live (D-25): the ten factors and the information are
+ * filled in, the survey is named, not blocked and not finished yet. Whether it is synced does not
+ * matter: the finish sends the last changes itself before the submit call. An unnamed draft never
+ * leaves the phone (OA-18), so it is asked for a name first.
+ */
+export const canFinishSurvey = (survey: LocalSurvey, isComplete: boolean | null): boolean =>
+  isComplete === true &&
+  survey.status !== "submitted" &&
+  survey.sync_blocked !== 1 &&
+  (survey.site_name ?? "").trim() !== ""
+
+/**
  * The single button at the bottom (OA-40). `hidden` once the survey is finished; `next` opens the
  * first factor still to fill ("Commencer" with none filled, then "Continuer"); `disabled` says
- * what is missing; `ready` finishes the survey.
+ * what is missing (a name, or a blocked sync); `ready` finishes the survey. There is no sync step
+ * to wait for (D-25).
  */
 export type FinishCta =
   | { kind: "hidden" }
@@ -48,7 +72,7 @@ export const resolveFinishCta = (
   if (isComplete === true) {
     return {
       kind: "disabled",
-      label: survey.sync_blocked === 1 ? c.blocked : c.pendingSync,
+      label: survey.sync_blocked === 1 ? c.blocked : c.nameRequired,
     }
   }
   if (filledFactorCount === null) return { kind: "disabled", label: c.remainingUnknown }

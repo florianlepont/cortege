@@ -1,0 +1,184 @@
+---
+phase: 23-visual-modernisation
+plan: 15
+subsystem: survey-form-factor-entry
+tags: [factor-pager, letter-strip, factor-tiles, progress-ring, factor-detail, halo, glass-button, finish-workflow]
+requires: ["12.2-14"]
+provides:
+  - "Factor pager, A to J letter strip, factor tiles, progress ring and factor detail page in the variant I tokens, every field size unchanged (D-05)"
+  - "Halo on the factor pager through ScreenFrame under the stack's transparent header (D-19); the last pageColourHeader opt-out is gone"
+  - "'Terminer le relevé' pill on the last factor of a complete, named survey, finishing from the pager with the survey detail's finish action (D-26)"
+  - "SurveyFormActions.flushDraft: writes the pending form edits at once and keeps editing"
+  - "The summary's halo and pop wait until the summary is seen again after a finish from the pager"
+affects: [12.2-16, 12.2-17]
+tech-stack:
+  added: []
+  patterns:
+    - "usePagerFinish: offer on canFinishSurvey plus the live draft's package readiness; flushDraft then submitSurvey; success observed as the stored status turning submitted, then popTo the summary"
+    - "Floating unfilled action row above a field bar (no control of the bar moves), page padding from the measured row with a 50 pt floor"
+    - "useVisiblePulse: defer a visual celebration of a covered stack screen to its transitionEnd (not closing), 600 ms after focus as fallback"
+    - "A status-context leaf mounted only after a failed action, freezing the message at mount (FinishStatusNotice)"
+key-files:
+  created:
+    - mobile/src/screens/survey-form/usePagerFinish.ts
+    - mobile/src/screens/survey-form/usePagerFinish.test.ts
+    - mobile/src/screens/survey-form/PagerFinishNotice.tsx
+    - mobile/src/screens/survey-form/PagerFinishNotice.test.tsx
+    - mobile/src/screens/survey-detail/useVisiblePulse.ts
+    - mobile/src/screens/survey-detail/useVisiblePulse.test.ts
+  modified:
+    - mobile/src/screens/survey-form/FactorPager.tsx
+    - mobile/src/screens/survey-form/FactorPager.test.tsx
+    - mobile/src/screens/survey-form/FactorLetterStrip.tsx
+    - mobile/src/screens/survey-form/styles.ts
+    - mobile/src/screens/survey-form/FactorsList.tsx
+    - mobile/src/screens/survey-form/FactorsList.test.tsx
+    - mobile/src/screens/survey-form/factors.styles.ts
+    - mobile/src/ui/FactorProgressRing.tsx
+    - mobile/src/ui/FactorProgressRing.test.tsx
+    - mobile/src/screens/FactorDetailScreen.tsx
+    - mobile/src/screens/FactorDetailScreen.test.tsx
+    - mobile/src/screens/factor-detail.styles.ts
+    - mobile/src/navigation/routes/FactorDetailRoute.tsx
+    - mobile/src/navigation/routes/routes.test.tsx
+    - mobile/src/navigation/stacks/SurveysStack.tsx
+    - mobile/src/navigation/stacks/stack-options.ts
+    - mobile/src/navigation/navigation.test.tsx
+    - mobile/src/hooks/useEditingDraft.ts
+    - mobile/src/hooks/useEditingDraft.autosave.test.ts
+    - mobile/src/state/AppStateProvider.tsx
+    - mobile/src/state/survey-form-context.ts
+    - mobile/src/state/render-counts.test.tsx
+    - mobile/src/screens/SurveyDetailScreen.tsx
+    - mobile/src/screens/SurveyDetailScreen.test.tsx
+    - mobile/src/screens/survey-detail/screen-props.ts
+    - mobile/src/i18n/fr/factor-pager.ts
+key-decisions:
+  - "The D-26 pill floats in its own row above the A to J bar instead of replacing the 46 pt round button in place: a labelled 50 pt pill cannot fit the round slot without shrinking the strip, which D-05 and the owner's 'move or shrink no control' forbid. Beside the pill the round button keeps its size and place and only goes back to the summary (close icon, label 'Revenir au relevé sans le terminer')"
+  - "A finish from the pager first writes the form's pending edits (new flushDraft action): the finish reads the draft from SQLite and the 900 ms autosave may not have run yet after the last answer"
+  - "Success is the survey's stored status turning 'submitted' (the only success write), observed in the surveys list; the route then calls navigation.popTo('surveyDetail'), so a pager opened from the Score page also lands on the summary"
+  - "The summary's success haptic stays where it is (useSubmitSuccessPulse, once, at the finish, so it is felt on the pager); its halo and pop were spent under the pager and the pop transition, so they now wait for the summary to appear (useVisiblePulse)"
+  - "The calm message of a pager finish that did not finish is shown above the pill on its own glass (it was only visible in Paramètres before), frozen at the moment the finish ended"
+  - "FactorPager is memoised: the route now reads the surveys list; render counts improve (a site-name keystroke no longer re-renders the factor page)"
+  - "The pager's round next button stays a 46 pt solid icon button: GlassButton has no icon-only form and the size is fixed by D-05"
+requirements-completed: []
+metrics:
+  duration: "about 90 min"
+  tasks: 3
+  files: 32
+  completed: 2026-10-07
+status: complete
+---
+
+# Phase 12.2 Plan 15: Factor entry chrome (batch 3 part 1) Summary
+
+Pager, A to J strip, factor tiles, progress ring and factor detail page take the variant I tokens with every field size pinned by tests. The pager gets the halo under a transparent header (D-19). On the last factor of a complete, named survey a "Terminer le relevé" native glass pill finishes the survey from the pager and goes back to the summary, where the halo and pop play once it is in view (D-26).
+
+## What was built
+
+### Task 1: pager and letter strip (8e9805b)
+
+- Total chip (`pager-total`): small forest pill, `visual.forest.fallback` under `visual.forest.image`, white figures (`visual.forest.title`), forest hairline, no shadow. Height 36, padding 12, radius pill; the accessibility label is unchanged.
+- Title: `brandTypography.screenTitle` (Sora SemiBold 24 on 28). Its 28 pt line is shorter than the 36 pt pill, so the row stays 36 pt (asserted).
+- Letter strip: current letter on the inverted neutral chip (`visual.chip.activeBg` and `activeText`), inactive letters `textSecondary`, complete dots `visual.score.high` (D-16), error dots `onSurface.danger`. `STRIP_HEIGHT` 46, `PILL_SIZE` 30, the dots, the floating GlassSurface strip, the bubble and the selection tick are unchanged.
+- `survey-form/styles.ts`: only the three keys `FactorsList` reads remain (13 unused keys deleted); card radius 22, 4-grid gaps.
+- No progress bar exists in the pager any more (OA-98 removed it), so the plan's "progress bar in score tokens" had nothing to apply to. `BAR_HEIGHT` is the bottom bar (= `STRIP_HEIGHT`, 46) and is pinned.
+
+### D-19 halo (662a779)
+
+`FactorDetailRoute` renders the pager inside `ScreenFrame`; the pager drops its own `useHeaderHeight()` inset and keeps its 8 pt top padding. `surveyFactorDetail` inherits `backdropHeader` (transparent on both platforms); `pageColourHeader` had no other user and is deleted with its test. The header back button and `gestureEnabled: false` (OA-111) are unchanged. Content cannot pass under the header: the frame starts the pager below it.
+
+### D-26 finish from the pager (799f727, 5689b4e, d23d9ca)
+
+- When it is offered: `usePagerFinish` uses the pure `canFinishSurvey(survey, isComplete)` of `summary-state.ts` on the survey being edited (`editingSurveyId` in the local list), with `isComplete` from the live form draft (`evaluateSubmitReadinessFromDraft`, the package readiness plus a parcel). The pager shows the pill on the last factor only.
+- Press: one finish at a time (a ref plus `GlassButton loading`, on top of `handleSubmitSurvey`'s own per-survey guard). It calls `flushDraft()` (pending edits written now), then `submitSurvey(surveyId)`, the survey detail CTA's action, which sends the pending changes itself and then submits.
+- Success: the stored status becomes "submitted", the route calls `navigation.popTo("surveyDetail")`. The summary, mounted under the pager, fires the success haptic once at that moment (`useSubmitSuccessPulse`, not duplicated), scrolls to the top under the pager, and its halo and pop now wait for the summary to appear (`useVisiblePulse`: `transitionEnd` not closing, or 600 ms after focus). No celebration on the pager.
+- Calm failure or postponement (offline, last changes not sent, a refusal, a failed write of the edits): the pager stays and the status message that the finish set shows above the pill on a glass notice (polite live region). Nothing celebrates.
+- Not complete or not named: no pill, and the last round button stays the plain "Terminer" (check icon) that goes back, exactly as before.
+- Layout: the pill row is absolute above the bar (bottom = tab bar clearance + 8 + 46 + 12), `box-none`, no fill. Only the pill (GlassButton `lg`, at least 50 pt, native `glassProminent` on iOS 26, forest fallback elsewhere) and the notice glass are drawn. The page padding grows by the measured row height (50 pt floor) plus 12. The strip and the round button keep their style, size and place (asserted).
+- Label "Terminer le relevé" and accessibility label "Terminer le relevé {nom}" come from the catalogue (`fr.surveyDetail.cta.finish`, `a11y.finishSurvey`); new key `fr.factorPager.close`. No em dash.
+
+### Task 2: factor tiles and progress ring (a927f30)
+
+- `FactorProgressRing`: track `visual.score.track`, arc in progress `visual.score.neutral`, complete check `visual.score.high`, invalid factor keeps the error tone. Size 28 and stroke 3 pinned.
+- `FactorTile`: glass card (`cardFill`, `cardBorder`, `cardShadow`, radius 22, continuous corners); the tone moves to the hairline (complete `score.high`, warning `onSurface.danger`). An explicit `minHeight: 44`, the same width rule (30.5 percent, 92 minimum) and 8 pt padding, 4-grid gaps. The title takes the input role family at its 12 pt on 13 size (the plan's 16 pt input size would have grown the tile, D-05 wins). The icon uses `visual.accentText` instead of the brand forest, which was dark on dark.
+- Caller check (plan): `grep -rln "IbpTotalGauge\|SurveyProgressCard" mobile/src --include=*.tsx | grep -v test | grep -v "ui/IbpTotalGauge.tsx\|ui/SurveyProgressCard.tsx"` prints nothing. Both are left untouched and reported unused for the Phase 12.3 dead-code audit.
+- Found in passing: `FactorsList` and `FactorTile` (survey-form) have no caller in `src` either; only `computeFactorProgress` is used (by the pager and the strip). The survey detail and the community page use `survey-detail/FactorsList`, a different file. The tiles were restyled as planned, but nobody sees them; also for the 12.3 audit. `FactorProgressRing`'s only caller is that `FactorTile`.
+
+### Task 3: factor detail page (5ce4b2e)
+
+Input card on `AppCard variant="glass"` (padding 16 kept). Pending score line is glass at radius 22, a scored line keeps its soft green. Help hint rows are glass with the hint dot in `score.high`. Block gaps are on the 4-grid. The 52 pt score line, the 44 pt help link and the 44 pt sheet close button are pinned. Input chrome (`fieldBlock`, `fieldLabel`, `input`) is untouched (UI-SPEC Typography exception). The page has no section labels other than the field labels, so `sectionHeader` had nothing to apply to. D-10: no open OA entry concerns this page (checked in `docs/user-tests/owner-acceptance.md`).
+
+## Deviations from Plan
+
+### Owner decisions applied (D-19, D-26, D-27c, D-28, given after planning)
+
+1. **[D-19] Halo on the pager.** The plan said the pager keeps `pageColourHeader`; superseded. ScreenFrame plus transparent header, opt-out function removed (662a779).
+2. **[D-26] Finish from the pager.** Not in the plan. Added `usePagerFinish`, `PagerFinishNotice`, `FinishStatusNotice`, the pill row, tests (5689b4e).
+3. **[D-27c, D-28] Transparent bars and GlassButton.** The pager bar was already floating with no fill (the strip is floating glass, D-04). The pill row is unfilled and the pill is `GlassButton`. The 46 pt round next button stays a solid icon button: GlassButton has no icon-only form and D-05 fixes the size.
+
+### Auto-fixed issues
+
+**1. [Rule 2 - Missing critical functionality] Pending edits written before a pager finish**
+- **Found during:** D-26 design
+- **Issue:** `finishSurvey` reads the draft from SQLite. Right after the last answer the 900 ms autosave usually has not run, so a finish would have failed its readiness check or submitted the previous draft.
+- **Fix:** `useEditingDraft.handleFlushDraft` (published as `SurveyFormActions.flushDraft`). It clears the timer, waits for a save already writing, writes the form draft if it differs and keeps the edit mode (unlike `saveSurveyEdits`). It returns false on a failed write, with the autosave failure status. Five tests.
+- **Files modified:** `useEditingDraft.ts`, `AppStateProvider.tsx`, `survey-form-context.ts`, `useEditingDraft.autosave.test.ts`
+- **Commit:** 799f727
+
+**2. [Rule 2 - Missing critical functionality] Celebration visible after a finish from the pager**
+- **Found during:** checking `useSubmitSuccessPulse.ts` and `SurveyDetailScreen.tsx` as instructed
+- **Issue:** the pulse counter goes up as soon as the status turns "submitted", while the pager still covers the summary. The 500 ms halo and the pop then play under the pager and during the pop transition, mostly unseen. D-26 asks for the haptic, the halo and the pop, then the summary on the score card.
+- **Fix:** `useVisiblePulse` gives the score card a trigger that waits for the summary to be on screen. The haptic and the scroll to the top are unchanged and immediate; on screen (the bottom-button finish) nothing changes.
+- **Files modified:** `useVisiblePulse.ts` (new), `SurveyDetailScreen.tsx`, `screen-props.ts`, tests
+- **Commit:** d23d9ca
+
+**3. [Rule 2] Calm message visible on the pager.** The status context is shown only in Paramètres, so a failed or postponed finish from the pager would have been silent. A leaf reads the status only after a finish ended without finishing and shows it on glass above the pill (5689b4e).
+
+**4. [Rule 3 - Blocking] Render-count gate.** The route now reads the surveys context. `FactorPager` is memoised so a list refresh does not re-render the page. The gate's `formKeystroke` and `formKeystrokeAutosave` expectations for the factor page go from 1 to 0, an improvement, documented in the test (5689b4e).
+
+**5. [Rule 1] Test hygiene.** Filtered the react-test-renderer deprecation in the new notice test (058ea00).
+
+### Plan text that did not apply
+
+- "Progress bar in score tokens": the pager has no progress bar (removed by OA-98).
+- "Section labels in `sectionHeader`" on the factor detail page: there are none besides the field labels (input chrome, excluded).
+- Tile title `brandTypography.input` and meta `footnote`: sizes kept (12 on 13, meta 12 on 16) because the plan also says to keep the tile size (D-05). Only the family changed.
+
+## TDD Gate Compliance
+
+The three plan tasks and the D-26 work were committed as `feat` commits with their tests in the same commit, not as separate RED and GREEN commits. Every assertion was run after it was written and passes. The token and size assertions of task 1 were first run against a wrong selector and failed before the selector was fixed. No separate failing-test commit exists, so there is no RED gate in the history.
+
+## For the batch 3 phone check (12.2-17), owner questions
+
+- Sketch 009 shows a moss glow pill on the next button, a counter plus button in moss glow and a completion ring in the pager header. Not adopted (UI-SPEC keeps the glow pill on forest cards). Should any of them come in?
+- The D-26 pill sits above the bar, with the round button turned into "back without finishing" (close icon) beside it. Is the close icon right there, or should the round button keep the check?
+- The halo and pop now play when the summary appears after a finish from the pager. Is the timing right (end of the pop transition)?
+
+## Device-only checks
+
+- The halo under the transparent header on the pager in light and dark, iOS 26: no seam, native back button readable, factor name and total pill below the header. Then Android (Phase 13).
+- The pill: native `glassProminent` forest capsule at 50 pt and full row width above the floating strip, loading spinner during the finish, no overlap with the strip or the tab bar. Also the page padding at maximum scroll on J (the last chips must clear the pill). Check at large Dynamic Type (the row is measured).
+- The whole finish on a phone: fill J, tap the pill at once (the edit is flushed first), the haptic on the pager, the pop back to the summary, then the halo and pop on the score card. The `transitionEnd` event on the revealed summary is assumed from native-stack behaviour; the 600 ms focus fallback covers its absence.
+- Offline tap: the notice text on glass above the pill, readable in light and dark, the pager stays.
+- Opened from the Score page: `popTo` lands on the summary, not on Score.
+- The forest total pill over the halo, and the inverted neutral letter pill in dark mode.
+- The factor detail card as glass over the halo (chips and counters on a translucent card), and the glass hint rows in the help sheet.
+
+## Residual risks
+
+- `useVisiblePulse` relies on native-stack emitting `transitionEnd` (not closing) on the screen revealed by a pop, as it does through react-native-screens `onAppear`. If it does not, the halo plays 600 ms after focus.
+- A finish whose result lands after the user left the pager by the back button: the route is unmounted, so no navigation happens. The summary still celebrates, since it is visible.
+- `flushDraft` after a failed write leaves the edit unsaved until the next change, as a failed autosave does today. The failure message is shown.
+
+## Known Stubs
+
+None.
+
+## Gates
+
+`npm run lint`, `npm run typecheck`, `npm run test:coverage:mobile` (232 suites, 2619 tests, thresholds hold, `src/navigation` 100 percent on all four), the `ibp-domain` suite (230 tests) and `npm run format:check` (only the untracked `.claude/settings.local.json` is flagged) pass. No dependency change, `api/` and `@cortege/ibp-domain` untouched, no `useSurveySync` outside `AppStateProvider`, sync semantics unchanged. No build, simulator or iPhone run.
+
+## Self-Check: PASSED
+
+Files created exist (usePagerFinish.ts, PagerFinishNotice.tsx, useVisiblePulse.ts, this summary); commits 8e9805b, 662a779, 799f727, 5689b4e, d23d9ca, 058ea00, a927f30, 5ce4b2e are in the branch history; the plan acceptance greps pass.

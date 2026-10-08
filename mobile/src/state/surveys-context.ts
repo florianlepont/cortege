@@ -27,7 +27,6 @@ export type SurveysState = {
   selectedSurveyId: string | null
   selectedSurvey: SurveyList["selectedSurvey"]
   selectedSurveyAttachments: SurveyList["selectedSurveyAttachments"]
-  attachmentsBySurvey: SurveyList["attachmentsBySurvey"]
   surveyQuery: string
   surveyFromDate: string
   surveyToDate: string

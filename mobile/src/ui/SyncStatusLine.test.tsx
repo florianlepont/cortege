@@ -1,7 +1,12 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
 import * as Haptics from "expo-haptics"
-import { resolveSyncStatusLineState, SyncStatusLine } from "./SyncStatusLine"
+import * as reanimated from "../../test/react-native-reanimated.mock"
+import {
+  isSyncStatusLineVisible,
+  resolveSyncStatusLineState,
+  SyncStatusLine,
+} from "./SyncStatusLine"
 import { fr } from "../i18n"
 
 jest.mock("react-native", () => {
@@ -66,6 +71,9 @@ function render(props: { isOnline: boolean; isSyncing: boolean; pendingCount: nu
     tree = renderer.create(<SyncStatusLine {...props} onPress={onPress} />)
   })
   const root = tree!.root
+  if (tree!.toJSON() === null) {
+    return { texts: [], spinner: undefined, onPress, pressable: undefined, rerender: tree!.update }
+  }
   const texts = root
     .findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
     .map((node) => String([node.props.children].flat().join("")))
@@ -119,18 +127,61 @@ describe("SyncStatusLine renders the matching label", () => {
     expect(spinner).toBeDefined()
   })
 
-  test("up to date", () => {
-    const { texts, spinner } = render({ isOnline: true, isSyncing: false, pendingCount: 0 })
-    expect(texts).toContain(fr.components.syncStatusLine.upToDate)
-    expect(spinner).toBeUndefined()
+  test("up to date draws nothing at all (D-20b): no text, no dot, no view", () => {
+    let tree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(
+        <SyncStatusLine isOnline isSyncing={false} pendingCount={0} onPress={jest.fn()} />,
+      )
+    })
+    expect(tree!.toJSON()).toBeNull()
+    expect(Object.keys(fr.components.syncStatusLine)).not.toContain("upToDate")
+  })
+
+  test("it appears again as soon as there is something to say, and goes when it is done", () => {
+    let tree: renderer.ReactTestRenderer | undefined
+    const line = (pendingCount: number, isSyncing = false) => (
+      <SyncStatusLine
+        isOnline
+        isSyncing={isSyncing}
+        pendingCount={pendingCount}
+        onPress={jest.fn()}
+      />
+    )
+    act(() => {
+      tree = renderer.create(line(0))
+    })
+    expect(tree!.toJSON()).toBeNull()
+    act(() => tree!.update(line(2)))
+    expect(tree!.toJSON()).not.toBeNull()
+    act(() => tree!.update(line(2, true)))
+    expect(
+      tree!.root.findAll((node) => (node.type as unknown) === "ActivityIndicator"),
+    ).toHaveLength(1)
+    act(() => tree!.update(line(2)))
+    act(() => tree!.update(line(0)))
+    expect(tree!.toJSON()).toBeNull()
+  })
+
+  test("isSyncStatusLineVisible is false only when up to date", () => {
+    expect(isSyncStatusLineVisible({ isOnline: true, isSyncing: false, pendingCount: 0 })).toBe(
+      false,
+    )
+    expect(isSyncStatusLineVisible({ isOnline: true, isSyncing: false, pendingCount: 1 })).toBe(
+      true,
+    )
+    expect(isSyncStatusLineVisible({ isOnline: true, isSyncing: true, pendingCount: 0 })).toBe(true)
+    expect(isSyncStatusLineVisible({ isOnline: false, isSyncing: false, pendingCount: 0 })).toBe(
+      true,
+    )
   })
 })
 
 describe("SyncStatusLine interaction", () => {
   test("tapping the line calls onPress", () => {
-    const { pressable, onPress } = render({ isOnline: true, isSyncing: false, pendingCount: 0 })
+    const { pressable, onPress } = render({ isOnline: true, isSyncing: false, pendingCount: 2 })
     act(() => {
-      pressable.props.onPress()
+      pressable!.props.onPress()
     })
     expect(onPress).toHaveBeenCalledTimes(1)
   })
@@ -160,5 +211,51 @@ describe("SyncStatusLine interaction", () => {
     expect(notifySuccess).toHaveBeenCalledTimes(1)
 
     notifySuccess.mockRestore()
+  })
+
+  describe("status dot spring (D-08 status icons)", () => {
+    const withSequenceSpy = jest.spyOn(reanimated, "withSequence")
+
+    beforeEach(() => {
+      withSequenceSpy.mockClear()
+    })
+
+    afterEach(() => {
+      reanimated.setReducedMotion(false)
+    })
+
+    function finishSync() {
+      const notifySuccess = jest.spyOn(Haptics, "notificationAsync")
+      let tree: renderer.ReactTestRenderer | undefined
+      act(() => {
+        tree = renderer.create(
+          <SyncStatusLine isOnline isSyncing pendingCount={0} onPress={jest.fn()} />,
+        )
+      })
+      act(() => {
+        tree!.update(
+          <SyncStatusLine isOnline isSyncing={false} pendingCount={0} onPress={jest.fn()} />,
+        )
+      })
+      const calls = notifySuccess.mock.calls.length
+      notifySuccess.mockRestore()
+      return calls
+    }
+
+    test("a finished sync springs the dot in and still fires the haptic once", () => {
+      expect(finishSync()).toBe(1)
+      expect(withSequenceSpy).toHaveBeenCalledTimes(1)
+    })
+
+    test("under Reduce Motion the haptic fires but the dot does not animate", () => {
+      reanimated.setReducedMotion(true)
+      expect(finishSync()).toBe(1)
+      expect(withSequenceSpy).not.toHaveBeenCalled()
+    })
+
+    test("no spring without a syncing-to-up-to-date transition", () => {
+      render({ isOnline: true, isSyncing: false, pendingCount: 2 })
+      expect(withSequenceSpy).not.toHaveBeenCalled()
+    })
   })
 })

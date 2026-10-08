@@ -17,12 +17,19 @@ import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
 import type { SurveysStackParamList } from "../types"
-import { createBaseStackScreenOptions, hiddenNativeTitle, pageColourHeader } from "./stack-options"
+import { usesNativeLargeTitle } from "../large-title"
+import {
+  createBaseStackScreenOptions,
+  hiddenNativeTitle,
+  nativeLargeTitle,
+  pageTitleOptions,
+  wizardHeaderOptions,
+} from "./stack-options"
 import {
   ACCOUNT_SCREENS,
   makeAccountHomeOptions,
-  offlineAreasScreenOptions,
-  settingsScreenOptions,
+  makeOfflineAreasScreenOptions,
+  makeSettingsScreenOptions,
 } from "./AccountStack"
 import { SurveysStackConfigContext, type SurveysStackConfig } from "./surveys-stack-config"
 
@@ -32,14 +39,14 @@ const headers = fr.navigation.headers
 type SurveysTabNavigatorProps = { useNativeNav?: boolean }
 
 /**
- * The one survey stack (D-08). In the native iOS tree, Mes Relevés shows the
- * native header with its search bar (set up by SurveyListRoute); elsewhere the
- * list keeps its own inline search.
+ * The one survey stack (D-08). In the native iOS tree, Mes Relevés shows the native header with
+ * its large title and the "+" (set up by SurveyListRoute, 12.2-17); elsewhere the list draws its
+ * own title bar with the search and "+" buttons.
  */
 export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigatorProps) {
   const surveyActions = useSurveyActions()
   const theme = useBrandTheme()
-  const nativeSearchEnabled = useNativeNav && Platform.OS === "ios"
+  const nativeListHeader = useNativeNav && Platform.OS === "ios"
   const config = useMemo<SurveysStackConfig>(() => ({ useNativeNav }), [useNativeNav])
 
   return (
@@ -47,11 +54,10 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
       <View style={styles.tabScreenContainer}>
         <SurveysStack.Navigator
           screenOptions={{
+            // D-19: the transparent halo header by default; every page with a header draws a
+            // ScreenFrame in its route, the factor pager included (12.2-15).
             ...createBaseStackScreenOptions(theme),
             headerLargeTitle: false,
-            // OA-94: on iOS the header takes the page colour (no blur tint), so it does not read as
-            // a band of another colour above the content.
-            ...pageColourHeader(theme),
             ...(useNativeNav
               ? {}
               : {
@@ -62,8 +68,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                     fontWeight: "900" as const,
                     color: theme.colors.forest,
                   },
-                  headerStyle: { backgroundColor: theme.colors.canvas },
-                  headerShadowVisible: false,
                   headerTintColor: theme.colors.forest,
                 }),
           }}
@@ -72,20 +76,23 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveysHome"
             options={{
               title: headers.surveys,
-              headerShown: nativeSearchEnabled,
-              headerLargeTitle: false,
-              headerTransparent: nativeSearchEnabled ? false : undefined,
-              headerShadowVisible: false,
-              // headerSearchBarOptions are set by SurveyListRoute (it owns the query).
+              headerShown: nativeListHeader,
+              // 12.2-17: in the native iOS tree the title is the native large title, which shrinks
+              // into the bar as the list scrolls; the route's ScreenFrame leaves the insets to
+              // iOS. D-19: the halo runs on behind the header (stack default). The "+" is set by
+              // SurveyListRoute.
+              ...(nativeListHeader ? nativeLargeTitle(theme) : { headerLargeTitle: false }),
             }}
             component={SurveyListRoute}
           />
           <SurveysStack.Screen
             name="surveyDetail"
             options={{
-              // OA-94: the page names the survey itself, a "Détail" title says nothing.
+              // OA-94: the page names the survey itself, a "Détail" title says nothing. 12.2-17: in
+              // the native iOS tree the name is the native large title, set by the screen
+              // (`useSurveyDetailHeader`), so it stays on screen as the page scrolls.
               title: "",
-              headerLargeTitle: false,
+              ...(usesNativeLargeTitle() ? nativeLargeTitle(theme) : {}),
             }}
             listeners={{
               beforeRemove: () => {
@@ -102,9 +109,10 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           <SurveysStack.Screen
             name="communitySurvey"
             options={{
+              // 12.2-17: the native large title in the native iOS tree (the route puts the
+              // survey's name in it once loaded), else the page's own title.
               title: headers.communitySurvey,
-              headerLargeTitle: false,
-              ...hiddenNativeTitle,
+              ...pageTitleOptions(theme),
             }}
             component={CommunitySurveyRoute}
           />
@@ -112,31 +120,34 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveyContext"
             options={{
               title: headers.surveyContext,
-              headerLargeTitle: false,
-              ...hiddenNativeTitle,
+              // 12.2-17: the native large title in the native iOS tree, else the page's own title.
+              ...pageTitleOptions(theme),
             }}
             component={SurveyContextRoute}
           />
           <SurveysStack.Screen
             name="surveyScore"
-            options={{ title: headers.surveyScore, headerLargeTitle: false, ...hiddenNativeTitle }}
+            options={{
+              title: headers.surveyScore,
+              // 12.2-17: the native large title in the native iOS tree, else the page's own title.
+              ...pageTitleOptions(theme),
+            }}
             component={SurveyScoreRoute}
           />
           <SurveysStack.Screen
             name="surveyHistory"
             options={{
               title: headers.surveyHistory,
-              headerLargeTitle: false,
-              ...hiddenNativeTitle,
+              // 12.2-17: the native large title in the native iOS tree, else the page's own title.
+              ...pageTitleOptions(theme),
             }}
             component={SurveyHistoryRoute}
           />
           <SurveysStack.Screen
             name="surveyForm"
-            options={{
-              // The wizard draws its own top bar (step counter and progress).
-              headerShown: false,
-            }}
+            // 12.2-17: the native header with the system back button on iOS (the wizard puts its
+            // step counter in the bar); Android keeps the wizard's own top bar.
+            options={wizardHeaderOptions(theme)}
             component={SurveyFormRoute}
           />
           <SurveysStack.Screen
@@ -149,6 +160,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               // OA-111: iOS 26 and later pops a screen with a swipe from anywhere, which would take
               // the slide along the A to J strip for a "back". The back button stays.
               gestureEnabled: false,
+              // D-19: the stack's transparent halo header; FactorDetailRoute draws the ScreenFrame.
             })}
             component={FactorDetailRoute}
           />
@@ -172,6 +184,8 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                     ...hiddenNativeTitle,
                   }
                 : {
+                    // The stack default is transparent (D-19); this map keeps its opaque bar.
+                    headerTransparent: false,
                     headerStyle: { backgroundColor: brandMediaBackdrop },
                     headerTintColor: brandColors.white,
                     headerTitleStyle: {
@@ -185,17 +199,17 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           />
           <SurveysStack.Screen
             name="accountHome"
-            options={makeAccountHomeOptions(theme.semanticColors.textStrong)}
+            options={makeAccountHomeOptions(theme)}
             component={ACCOUNT_SCREENS.accountHome}
           />
           <SurveysStack.Screen
             name="settings"
-            options={settingsScreenOptions}
+            options={makeSettingsScreenOptions(theme)}
             component={ACCOUNT_SCREENS.settings}
           />
           <SurveysStack.Screen
             name="offlineAreas"
-            options={offlineAreasScreenOptions}
+            options={makeOfflineAreasScreenOptions(theme)}
             component={ACCOUNT_SCREENS.offlineAreas}
           />
         </SurveysStack.Navigator>

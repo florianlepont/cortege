@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useMemo, useRef } from "react"
 import {
   FlatList,
   ListRenderItemInfo,
@@ -21,15 +21,14 @@ import type {
 import { useAppBottomTabBarHeight } from "../../app/useAppBottomTabBarHeight"
 import type { CommunitySearchState } from "../../hooks/useCommunitySurveys"
 import { fr } from "../../i18n"
-import type { LocalAttachment, LocalSurvey } from "../../storage"
+import type { LocalSurvey } from "../../storage"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppText as Text } from "../../ui/AppText"
-import { SurveyRow, type SurveyRowPreview } from "../survey-list/SurveyRow"
-import {
-  isPhotoAttachment,
-  resolveAttachmentPreview,
-  selectPreviewCandidates,
-} from "../survey-screen-helpers"
+import { feedback } from "../../ui/feedback"
+import { ListEntranceRow } from "../../ui/ListEntranceRow"
+import { useListEntrance } from "../../ui/useListEntrance"
+import { resolveRowScore } from "../survey-list/row-score"
+import { SurveyRow } from "../survey-list/SurveyRow"
 import { CommunityRow } from "./CommunityRow"
 import { createSearchStyles } from "./search.styles"
 
@@ -52,7 +51,6 @@ export type SurveySearchScreenProps = {
   onSortModeChange: (value: SurveySort) => void
   /** The user's surveys after the query and the filters. */
   surveys: LocalSurvey[]
-  attachmentsBySurvey: Record<string, LocalAttachment[]>
   surveyDetails: Record<string, SurveyDetailResponse>
   selectedSurveyId: string | null
   community: CommunitySearchState
@@ -61,7 +59,6 @@ export type SurveySearchScreenProps = {
   onOpenCommunitySurvey: (surveyId: string) => void
   onDeleteSurvey: (surveyId: string) => void
   onCancel: () => void
-  onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
 }
 
 type SearchItem =
@@ -88,7 +85,6 @@ export function SurveySearchScreen({
   sortMode,
   onSortModeChange,
   surveys,
-  attachmentsBySurvey,
   surveyDetails,
   selectedSurveyId,
   community,
@@ -96,32 +92,14 @@ export function SurveySearchScreen({
   onOpenCommunitySurvey,
   onDeleteSurvey,
   onCancel,
-  onEnsureAttachmentPreviews,
 }: SurveySearchScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSearchStyles(theme), [theme])
+  const canAnimateRow = useListEntrance()
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
   const inputRef = useRef<TextInput>(null)
   const trimmedQuery = query.trim()
-
-  useEffect(() => {
-    const candidates = surveys
-      .map((survey) => (attachmentsBySurvey[survey.id] ?? []).find(isPhotoAttachment))
-      .filter((attachment): attachment is LocalAttachment => Boolean(attachment))
-    void onEnsureAttachmentPreviews?.(selectPreviewCandidates(candidates))
-  }, [attachmentsBySurvey, onEnsureAttachmentPreviews, surveys])
-
-  const previewById = useMemo(() => {
-    const byId: Record<string, SurveyRowPreview> = {}
-    for (const [surveyId, attachments] of Object.entries(attachmentsBySurvey)) {
-      const firstPhoto = attachments.find(isPhotoAttachment)
-      if (firstPhoto) {
-        byId[surveyId] = { ...resolveAttachmentPreview(firstPhoto), attachmentId: firstPhoto.id }
-      }
-    }
-    return byId
-  }, [attachmentsBySurvey])
 
   const data = useMemo<SearchItem[]>(
     () =>
@@ -139,24 +117,29 @@ export function SurveySearchScreen({
     onSortModeChange(SORT_CYCLE[(SORT_CYCLE.indexOf(sortMode) + 1) % SORT_CYCLE.length])
 
   const renderItem = useCallback(
-    ({ item }: ListRenderItemInfo<SearchItem>) =>
-      item.kind === "mine" ? (
-        <SurveyRow
-          survey={item.survey}
-          preview={previewById[item.survey.id] ?? null}
-          score={surveyDetails[item.survey.id]?.scores?.ibp_total ?? null}
-          selected={selectedSurveyId === item.survey.id}
-          onOpen={onOpenSurvey}
-          onDelete={onDeleteSurvey}
-        />
-      ) : (
-        <CommunityRow item={item.item} onOpen={onOpenCommunitySurvey} />
-      ),
+    ({ item, index }: ListRenderItemInfo<SearchItem>) => (
+      // Rows 0 to 7 that mount with the screen slide up when it becomes visible (D-08): typing in
+      // the field or scrolling does not replay the entrance.
+      <ListEntranceRow index={index} canAnimate={canAnimateRow}>
+        {item.kind === "mine" ? (
+          <SurveyRow
+            survey={item.survey}
+            score={resolveRowScore(item.survey, surveyDetails)}
+            selected={selectedSurveyId === item.survey.id}
+            index={index}
+            onOpen={onOpenSurvey}
+            onDelete={onDeleteSurvey}
+          />
+        ) : (
+          <CommunityRow item={item.item} onOpen={onOpenCommunitySurvey} />
+        )}
+      </ListEntranceRow>
+    ),
     [
+      canAnimateRow,
       onDeleteSurvey,
       onOpenCommunitySurvey,
       onOpenSurvey,
-      previewById,
       selectedSurveyId,
       surveyDetails,
     ],
@@ -183,7 +166,7 @@ export function SurveySearchScreen({
       <View style={[styles.top, { paddingTop: insets.top + 12 }]}>
         <View style={styles.fieldRow}>
           <View style={styles.field}>
-            <Ionicons name="search" size={18} color={theme.colors.textSecondary} />
+            <Ionicons name="search-outline" size={20} color={theme.colors.textSecondary} />
             <TextInput
               ref={inputRef}
               value={query}
@@ -204,7 +187,11 @@ export function SurveySearchScreen({
                 style={styles.clearButton}
                 hitSlop={8}
               >
-                <Ionicons name="close-circle" size={18} color={theme.colors.textSecondary} />
+                <Ionicons
+                  name="close-circle-outline"
+                  size={18}
+                  color={theme.colors.textSecondary}
+                />
               </Pressable>
             ) : null}
           </View>
@@ -213,13 +200,23 @@ export function SurveySearchScreen({
           </Pressable>
         </View>
 
-        <View style={styles.segments} accessibilityRole="tablist">
+        {/* Glass segment group: the active scope is the inverted neutral chip (principle 7). */}
+        <View
+          style={[
+            styles.segments,
+            { backgroundColor: theme.visual.chip.fill, borderColor: theme.visual.chip.border },
+          ]}
+          accessibilityRole="tablist"
+        >
           {(["mine", "community"] as const).map((value) => (
             <Pressable
               key={value}
               accessibilityRole="tab"
               accessibilityState={{ selected: scope === value }}
-              onPress={() => onScopeChange(value)}
+              onPress={() => {
+                feedback.selection()
+                onScopeChange(value)
+              }}
               style={[styles.segment, scope === value ? styles.segmentActive : null]}
             >
               <Text

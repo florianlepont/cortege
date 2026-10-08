@@ -107,7 +107,8 @@ describe("migration 019: no submission deadline (e2e)", () => {
 
   it("was applied by the runner, which recorded it after 018", async () => {
     const applied = await appliedMigrations()
-    expect(applied[applied.length - 1]).toBe(MIGRATION_019)
+    // The runner also applies whatever comes after 019; only the 018 -> 019 order matters here.
+    expect(applied.indexOf(MIGRATION_019)).toBe(applied.indexOf("018_factor_a_genus_list.sql") + 1)
     expect(applied).toContain("018_factor_a_genus_list.sql")
     expect(logSpy).toHaveBeenCalledWith(`Applied migration: ${MIGRATION_019}`)
   })

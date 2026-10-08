@@ -26,6 +26,7 @@ const mockSearchNavigation = {
   push: jest.fn(),
   goBack: jest.fn(),
   canGoBack: jest.fn(() => true),
+  setOptions: jest.fn(),
 }
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockSearchNavigation }))
 const mockCommunity = { items: [], status: "idle" }
@@ -102,6 +103,13 @@ jest.mock("../../app/useAppBottomTabBarHeight", () => ({
   useTabBarClearance: () => 68,
   useAppBottomTabBarHeight: () => 68,
 }))
+// D-26: the pager's finish pill (the button's own looks are tested in ui/GlassButton*.test.tsx).
+jest.mock("../../ui/GlassButton", () => {
+  const ReactRef = jest.requireActual("react") as typeof import("react")
+  return {
+    GlassButton: (props: Record<string, unknown>) => ReactRef.createElement("GlassButton", props),
+  }
+})
 jest.mock("../../screens/HomeScreen", () => ({ HomeScreen: mockScreen("home") }))
 jest.mock("../../screens/SurveyListScreen", () => ({
   SurveyListScreen: mockScreen("surveyList"),
@@ -221,7 +229,7 @@ import {
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "../public-map-reload"
 import { SurveysStackConfigContext } from "../stacks/surveys-stack-config"
 import { AccountRoute } from "./AccountRoute"
-import { FactorDetailRoute } from "./FactorDetailRoute"
+import { FactorDetailRoute, FinishStatusNotice } from "./FactorDetailRoute"
 import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
@@ -310,7 +318,6 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
         selectedSurveyId: null,
         selectedSurvey: null,
         selectedSurveyAttachments: [],
-        attachmentsBySurvey: {},
         surveyQuery: "",
         surveyFromDate: "",
         surveyToDate: "",
@@ -438,6 +445,7 @@ function makeNavigation() {
   return {
     navigate: jest.fn(),
     goBack: jest.fn(),
+    popTo: jest.fn(),
     setOptions: jest.fn(),
     reset: jest.fn(),
   }
@@ -642,6 +650,11 @@ describe("HomeRoute native header (OA-85)", () => {
     const options = navigation.setOptions.mock.calls.at(-1)[0]
     expect(options.headerShown).toBe(true)
     expect(options.title).toBe("")
+    // 12.2-10: the header is transparent so the backdrop halo is not cut by a canvas band.
+    expect(options.headerTransparent).toBe(true)
+    expect(options.headerBlurEffect).toBe("none")
+    expect(options.headerShadowVisible).toBe(false)
+    expect(options.headerStyle).toEqual({ backgroundColor: "transparent" })
 
     const [titleItem] = options.unstable_headerLeftItems()
     expect(titleItem.type).toBe("custom")
@@ -734,6 +747,7 @@ describe("HomeRoute", () => {
     expect(props("home").nearbyParcels).toBe(fixture.nearby.state)
     expect(props("home").onLoadNearbyParcels).toBe(fixture.nearby.load)
     expect(props("home").surveys).toBe(fixture.surveys.state.surveys)
+    expect(props("home").surveyDetails).toBe(fixture.surveys.state.surveyDetails)
     expect(props("home").isOnline).toBe(fixture.isOnline)
     expect(props("home").isSyncing).toBe(fixture.isSyncing)
     expect(props("home").onRetrySurvey).toBe(fixture.surveys.actions.retrySurvey)
@@ -763,6 +777,10 @@ describe("HomeRoute", () => {
       screen: "surveyDetail",
       initial: false,
     })
+
+    // D-20c: "Tout voir" of the recent surveys shows the list itself (not pushed on top of itself).
+    callback("home", "onOpenSurveyList")()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveys", { screen: "surveysHome" })
 
     callback("home", "onNavigateToExplorer")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("publicMap")
@@ -826,11 +844,11 @@ describe("SurveyListRoute", () => {
     expect(navigation.setOptions).not.toHaveBeenCalled()
   })
 
-  test("in the native iOS Mes Relevés tab it owns the header: the title and the +, no search bar", async () => {
+  test("in the native iOS Mes Relevés tab it owns the header's +, the title is the native large title", async () => {
     mockPlatform.OS = "ios"
     const fixture = makeFixture()
     const navigation = makeNavigation()
-    await mount(
+    const tree = await mount(
       <Providers fixture={fixture}>
         <SurveysStackConfigContext.Provider value={{ useNativeNav: true }}>
           <SurveyListRoute navigation={navigation as never} route={{} as never} />
@@ -843,25 +861,26 @@ describe("SurveyListRoute", () => {
     const setOptionsCall = navigation.setOptions.mock.calls[0][0]
     // Search is its own tab (OA-52): no header search bar.
     expect(setOptionsCall.headerSearchBarOptions).toBeUndefined()
+    // D-19: no canvas band, the stack's transparent halo header is kept.
+    expect(setOptionsCall.headerStyle).toBeUndefined()
 
-    // OA-85: the title sits left, on the same row as the "+" create button.
-    expect(setOptionsCall.headerTitle).toBe("")
-    const [titleItem] = setOptionsCall.unstable_headerLeftItems()
-    expect(titleItem.hidesSharedBackground).toBe(true)
-    let titleTree: renderer.ReactTestRenderer | undefined
-    act(() => {
-      titleTree = renderer.create(titleItem.element)
-    })
-    expect(
-      titleTree!.root.findAll((node) => (node.type as unknown) === "Text").length,
-    ).toBeGreaterThan(0)
-    act(() => titleTree!.unmount())
+    // 12.2-17: no title of our own in the bar (a headerTitle "" would blank the large title).
+    expect(setOptionsCall).not.toHaveProperty("headerTitle")
+    expect(setOptionsCall).not.toHaveProperty("unstable_headerLeftItems")
 
     // SYNC-02/HOME-01: the native header also carries the "+" create button.
     const [createButton] = setOptionsCall.unstable_headerRightItems()
     expect(createButton.label).toBe(fr.surveyList.a11y.createSurvey)
     createButton.onPress()
     expect(fixture.surveys.actions.openCreateSurvey).toHaveBeenCalled()
+
+    // The frame leaves the insets to iOS (large title mode): no header padding, no halo child.
+    const frame = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "screen-frame",
+    )
+    const style = Object.assign({}, ...[frame.props.style].flat()) as Record<string, unknown>
+    expect(style.paddingTop).toBeUndefined()
+    expect(style.experimental_backgroundImage).toBeDefined()
   })
 })
 
@@ -971,6 +990,66 @@ describe("CommunitySurveyRoute", () => {
 
     callback("communitySurvey", "onOpenSurvey")("c-2")
     expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-2" })
+  })
+})
+
+describe("CommunitySurveyRoute native large title (12.2-17)", () => {
+  const loaded = mockCommunitySurvey as unknown as { detail: unknown; status: string }
+
+  beforeEach(() => {
+    mockNativeTabs.value = false
+    mockSearchNavigation.setOptions.mockClear()
+  })
+  afterEach(() => {
+    loaded.detail = null
+    loaded.status = "loading"
+  })
+
+  async function render() {
+    return mount(
+      <Providers fixture={makeFixture()}>
+        <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+  }
+
+  test("the loaded survey's name becomes the native large title", async () => {
+    mockNativeTabs.value = true
+    loaded.detail = { site_name: "  Bois de la Cure  " }
+    loaded.status = "ready"
+    await render()
+    expect(mockSearchNavigation.setOptions).toHaveBeenCalledWith({ title: "Bois de la Cure" })
+  })
+
+  test("a survey without a name gets the untitled label", async () => {
+    mockNativeTabs.value = true
+    loaded.detail = { site_name: "   " }
+    loaded.status = "ready"
+    await render()
+    expect(mockSearchNavigation.setOptions).toHaveBeenCalledWith({
+      title: fr.common.untitledSurvey,
+    })
+  })
+
+  test("a survey from the API without a usable name leaves the stack's title", async () => {
+    mockNativeTabs.value = true
+    loaded.detail = { site_name: null }
+    loaded.status = "ready"
+    await render()
+    expect(mockSearchNavigation.setOptions).not.toHaveBeenCalled()
+  })
+
+  test("while loading the stack's title stays", async () => {
+    mockNativeTabs.value = true
+    await render()
+    expect(mockSearchNavigation.setOptions).not.toHaveBeenCalled()
+  })
+
+  test("outside the native iOS tab tree the page names the survey itself", async () => {
+    loaded.detail = { site_name: "Bois de la Cure" }
+    loaded.status = "ready"
+    await render()
+    expect(mockSearchNavigation.setOptions).not.toHaveBeenCalled()
   })
 })
 
@@ -1214,6 +1293,18 @@ describe("SurveyFormRoute", () => {
     })
     callback("surveyForm", "onClose")()
     expect(navigation.goBack).toHaveBeenCalledTimes(1)
+    // Android: the wizard draws its own top bar.
+    expect(props("surveyForm").nativeHeader).toBe(false)
+  })
+
+  test("iOS: the wizard is told the stack shows the native header (12.2-17)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <SurveyFormRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyForm").nativeHeader).toBe(true)
   })
 
   test("uses the edited survey id when a draft is open", async () => {
@@ -1233,6 +1324,164 @@ describe("SurveyFormRoute", () => {
       surveyId: "s-01",
       mode: "wizard",
     })
+  })
+})
+
+describe("FactorDetailRoute: Terminer le relevé from the pager (D-26)", () => {
+  // A complete v3.0 draft (ten scored factors and a parcel), the one of ibp-scoring.test.ts.
+  const COMPLETE_DRAFT = {
+    site_name: "Site 01",
+    region_version: "ACA",
+    vegetation_stage: "collineen",
+    factors: {
+      A: { native_genus_count: 2 },
+      B: { strata_count: 2, covered_autochthonous_percent: 80 },
+      C: { bmg_count: 0, bmm_count: 1, surface_ha: 1 },
+      D: { bmg_count: 0, bmm_count: 1, surface_ha: 1 },
+      E: { tgb_count: 0, gb_count: 1, surface_ha: 1 },
+      F: { trees_per_ha: 2 },
+      G: { open_flowering_percent: 2 },
+      H: { class_score: 2 },
+      I: { type_count: 1 },
+      J: { type_count: 1 },
+    },
+    parcel_ids: ["75056000AB0001"],
+  }
+
+  function editing(
+    fixture: Fixture,
+    options: { draft?: unknown; surveyStatus?: string; status?: StatusMessage } = {},
+  ): Fixture {
+    return {
+      ...fixture,
+      status: options.status ?? fixture.status,
+      surveys: {
+        ...fixture.surveys,
+        state: {
+          ...fixture.surveys.state,
+          surveys: [{ ...survey, status: options.surveyStatus ?? "draft" }],
+        },
+      } as unknown as SurveysContextValue,
+      form: {
+        state: {
+          ...fixture.form.state,
+          editingSurveyId: "s-01",
+          draftInput: options.draft ?? COMPLETE_DRAFT,
+        },
+        actions: fixture.form.actions,
+      } as unknown as SurveyFormContextValue,
+    }
+  }
+
+  const pill = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAll((n) => (n.type as unknown) === "GlassButton")[0]
+
+  function renderRoute(fixture: Fixture, navigation = makeNavigation()) {
+    const element = (current: Fixture) => (
+      <Providers fixture={current}>
+        <FactorDetailRoute
+          navigation={navigation as never}
+          route={{ params: { factor: "J" } } as never}
+        />
+      </Providers>
+    )
+    return { element, navigation }
+  }
+
+  test("a complete, named survey on the last factor offers the labelled pill", async () => {
+    const base = makeFixture()
+    const fixture = editing({ ...base, form: { ...base.form, actions: actionsProxy() } })
+    const { element } = renderRoute(fixture)
+    const tree = await mount(element(fixture))
+    expect(pill(tree).props.label).toBe(fr.surveyDetail.cta.finish)
+    expect(pill(tree).props.accessibilityLabel).toBe(fr.surveyDetail.a11y.finishSurvey("Site 01"))
+    expect(pill(tree).props.loading).toBe(false)
+  })
+
+  test("press: the edits are written, the finish runs once, success goes back to the summary", async () => {
+    const base = makeFixture()
+    const formActions = actionsProxy<SurveyFormContextValue["actions"]>({ flushDraft: true })
+    const fixture = editing({ ...base, form: { ...base.form, actions: formActions } })
+    const { element, navigation } = renderRoute(fixture)
+    const tree = await mount(element(fixture))
+    await act(async () => {
+      pill(tree).props.onPress()
+    })
+    expect(formActions.flushDraft).toHaveBeenCalledTimes(1)
+    expect(fixture.surveys.actions.submitSurvey).toHaveBeenCalledTimes(1)
+    expect(fixture.surveys.actions.submitSurvey).toHaveBeenCalledWith("s-01")
+    expect(navigation.popTo).not.toHaveBeenCalled()
+
+    // The finish wrote "submitted": the list refresh reaches the route.
+    await act(async () => {
+      tree.update(element(editing(fixture, { surveyStatus: "submitted" })))
+    })
+    expect(navigation.popTo).toHaveBeenCalledTimes(1)
+    expect(navigation.popTo).toHaveBeenCalledWith("surveyDetail")
+    // No haptic here: the summary's useSubmitSuccessPulse plays it (D-25).
+    expect(pill(tree)).toBeUndefined()
+  })
+
+  test("a calm failure stays on the pager and shows the status message the finish set", async () => {
+    const base = makeFixture()
+    const postponed = fr.status.surveyOps.submitPostponed({ name: "Site 01" })
+    const fixture = editing({
+      ...base,
+      form: { ...base.form, actions: actionsProxy({ flushDraft: true }) },
+    })
+    const { element, navigation } = renderRoute(fixture)
+    const tree = await mount(element(fixture))
+    expect(tree.root.findAll((n) => n.props.testID === "pager-finish-notice")).toHaveLength(0)
+    await act(async () => {
+      tree.update(element({ ...fixture, status: postponed }))
+    })
+    await act(async () => {
+      pill(tree).props.onPress()
+    })
+    expect(navigation.popTo).not.toHaveBeenCalled()
+    expect(navigation.goBack).not.toHaveBeenCalled()
+    const notices = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.testID === "pager-finish-notice",
+    )
+    expect(notices).toHaveLength(1)
+    expect(notices[0].props.children).toBe(postponed)
+    expect(postponed).not.toContain("\u2014")
+    expect(pill(tree).props.loading).toBe(false)
+  })
+
+  test("not complete: no pill, the last button is the plain Terminer that goes back", async () => {
+    const fixture = editing(makeFixture(), { draft: {} })
+    const { element, navigation } = renderRoute(fixture)
+    const tree = await mount(element(fixture))
+    expect(pill(tree)).toBeUndefined()
+    const next = tree.root.findAll((n) => n.props.testID === "pager-next")[0]
+    expect(next.props.accessibilityLabel).toBe(fr.factorPager.finish)
+    await act(async () => {
+      next.props.onPress()
+    })
+    expect(navigation.goBack).toHaveBeenCalledTimes(1)
+    expect(fixture.surveys.actions.submitSurvey).not.toHaveBeenCalled()
+  })
+
+  test("the notice keeps the message of its finish, not a later status", async () => {
+    const first = fr.status.surveyOps.submitPostponed({ name: "Site 01" })
+    const fixture = { ...makeFixture(), status: first }
+    const tree = await mount(
+      <Providers fixture={fixture}>
+        <FinishStatusNotice />
+      </Providers>,
+    )
+    await act(async () => {
+      tree.update(
+        <Providers fixture={{ ...fixture, status: fr.status.session.ready() }}>
+          <FinishStatusNotice />
+        </Providers>,
+      )
+    })
+    const text = tree.root.findAll(
+      (n) => (n.type as unknown) === "Text" && n.props.testID === "pager-finish-notice",
+    )[0]
+    expect(text.props.children).toBe(first)
   })
 })
 
@@ -1365,7 +1614,7 @@ describe("PublicMapRoute", () => {
     expect(mockExplorerArgs.onStatusChange).toBe(fixture.syncActions.setStatus)
     expect(props("publicMap").apiUrl).toBe("http://api.test/v1")
     expect(props("publicMap").accessToken).toBe(fixture.accessToken)
-    expect(props("publicMap").ownSurveyIds).toEqual(["s-01"])
+    expect(props("publicMap")).not.toHaveProperty("ownSurveyIds")
     expect(mockExplorer.loadPublicMap).toHaveBeenCalledTimes(1)
     // The press that mounted the route is not forced: the screen's first viewport load serves it.
     expect(mockExplorer.loadPublicMap).toHaveBeenLastCalledWith({ bbox: undefined, force: false })
@@ -1458,4 +1707,146 @@ describe("PublicMapRoute", () => {
 
     expect(mockAddPendingParcelDownload).toHaveBeenCalledWith("parcel-1")
   })
+})
+
+describe("the halo frame on every page (D-19)", () => {
+  function withSelection(fixture: Fixture): Fixture {
+    return {
+      ...fixture,
+      surveys: {
+        ...fixture.surveys,
+        state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
+      } as unknown as SurveysContextValue,
+    }
+  }
+
+  function hostViews(tree: renderer.ReactTestRenderer, testID: string) {
+    return tree.root.findAll(
+      (node) => (node.type as unknown) === "View" && node.props.testID === testID,
+    )
+  }
+
+  const nav = () => makeNavigation() as never
+  const framedRoutes: [string, () => React.ReactElement][] = [
+    ["surveyList", () => <SurveyListRoute navigation={nav()} route={{} as never} />],
+    ["surveySearch", () => <SurveySearchRoute />],
+    ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
+    ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
+    ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
+    ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
+    // 12.2-15: the factor pager, its page probe is the active factor's screen.
+    [
+      "factorDetail",
+      () => <FactorDetailRoute navigation={nav()} route={{ params: { factor: "A" } } as never} />,
+    ],
+    [
+      "communitySurvey",
+      () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
+    ],
+    // 12.2-16: the wizard. The stack hides its header, so on a phone the inset is 0.
+    ["surveyForm", () => <SurveyFormRoute navigation={nav()} route={{} as never} />],
+    ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
+    ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
+    ["offlineAreas", () => <OfflineAreasRoute navigation={nav()} route={{} as never} />],
+  ]
+
+  test.each(framedRoutes)(
+    "%s is drawn in one ScreenFrame: the halo behind, the page below the header",
+    async (name, element) => {
+      const tree = await mount(
+        <Providers fixture={withSelection(makeFixture())}>{element()}</Providers>,
+      )
+      const frames = hostViews(tree, "screen-frame")
+      expect(frames).toHaveLength(1)
+      // useHeaderHeight() is 44 in this suite: the page starts below the header.
+      expect(frames[0].props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining({ paddingTop: 44 })]),
+      )
+      const backdrops = hostViews(tree, "screen-frame-backdrop")
+      expect(backdrops).toHaveLength(1)
+      expect(backdrops[0].props.pointerEvents).toBe("none")
+      // The screen itself is inside the frame, after the halo.
+      expect(props(name)).toBeDefined()
+      const probes = frames[0].findAll(
+        (node) => (node.type as { name?: string }).name === "ScreenProbe",
+      )
+      expect(probes).toHaveLength(1)
+    },
+  )
+
+  test("Accueil keeps the halo it draws itself: its route adds no frame", async () => {
+    const tree = await mount(
+      <Providers fixture={makeFixture()}>
+        <HomeRoute navigation={nav()} route={{} as never} />
+      </Providers>,
+    )
+    expect(hostViews(tree, "screen-frame")).toHaveLength(0)
+  })
+})
+
+describe("the native large title frame (12.2-17)", () => {
+  beforeEach(() => {
+    mockNativeTabs.value = false
+  })
+
+  function withSelection(fixture: Fixture): Fixture {
+    return {
+      ...fixture,
+      surveys: {
+        ...fixture.surveys,
+        state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
+      } as unknown as SurveysContextValue,
+    }
+  }
+
+  function hostViews(tree: renderer.ReactTestRenderer, testID: string) {
+    return tree.root.findAll(
+      (node) => (node.type as unknown) === "View" && node.props.testID === testID,
+    )
+  }
+
+  const nav = () => makeNavigation() as never
+  const largeTitleRoutes: [string, () => React.ReactElement][] = [
+    ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
+    ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
+    ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
+    ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
+    [
+      "communitySurvey",
+      () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
+    ],
+    ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
+    ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
+    ["offlineAreas", () => <OfflineAreasRoute navigation={nav()} route={{} as never} />],
+  ]
+
+  test.each(largeTitleRoutes)(
+    "%s in the native iOS tab tree: no header padding, the halo on the frame, the page first",
+    async (name, element) => {
+      mockNativeTabs.value = true
+      const tree = await mount(
+        <Providers fixture={withSelection(makeFixture())}>{element()}</Providers>,
+      )
+      const frames = hostViews(tree, "screen-frame")
+      expect(frames).toHaveLength(1)
+      const style = Object.assign({}, ...[frames[0].props.style].flat()) as Record<string, unknown>
+      expect(style.paddingTop).toBeUndefined()
+      expect(style.experimental_backgroundImage).toBeDefined()
+      expect(hostViews(tree, "screen-frame-backdrop")).toHaveLength(0)
+      expect(props(name)).toBeDefined()
+    },
+  )
+
+  test.each(largeTitleRoutes)(
+    "%s elsewhere (Android, Expo Go): the frame of D-19, header padding and halo child",
+    async (_name, element) => {
+      const tree = await mount(
+        <Providers fixture={withSelection(makeFixture())}>{element()}</Providers>,
+      )
+      const frames = hostViews(tree, "screen-frame")
+      const style = Object.assign({}, ...[frames[0].props.style].flat()) as Record<string, unknown>
+      expect(style.paddingTop).toBe(44)
+      expect(hostViews(tree, "screen-frame-backdrop")).toHaveLength(1)
+    },
+  )
 })

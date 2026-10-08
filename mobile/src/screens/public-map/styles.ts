@@ -4,6 +4,8 @@ import {
   brandMapTokens,
   brandRadius,
   brandShadow,
+  brandSpacing4,
+  brandTypeScale,
   brandTypography,
 } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
@@ -89,7 +91,7 @@ export function createControlStyles(theme: BrandTheme) {
       width: 50,
       borderRadius: 25,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.visual.mapControl.hairline,
     },
     capsuleButton: {
       width: 50,
@@ -100,7 +102,7 @@ export function createControlStyles(theme: BrandTheme) {
     capsuleSeparator: {
       height: StyleSheet.hairlineWidth,
       marginHorizontal: 10,
-      backgroundColor: theme.colors.divider,
+      backgroundColor: theme.visual.mapControl.hairline,
     },
     locateGlass: {
       position: "absolute",
@@ -109,40 +111,36 @@ export function createControlStyles(theme: BrandTheme) {
       height: 50,
       borderRadius: 25,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.visual.mapControl.hairline,
     },
   })
 }
 
-export function createOfflineAreasStyles(theme: BrandTheme) {
-  return StyleSheet.create({
-    nameField: {
-      gap: 5,
-    },
-    warning: {
-      ...brandTypography.meta,
-      color: brandColors.terracotta,
-    },
-    list: {
-      marginTop: 4,
-    },
-    row: {
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.divider,
-      paddingVertical: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-    },
-    rowInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    deleteButton: {
-      padding: 6,
-    },
-  })
-}
+// The offline areas panel (12.2-18): its list of areas moved to Paramètres (OA-123), so only the
+// name field and the button are styled here; theme-invariant. The size warning is the panel's
+// `warning` (theme-aware, 12.2-19 fix round).
+export const offlineAreasStyles = StyleSheet.create({
+  form: {
+    gap: brandSpacing4.smd,
+  },
+  // The form under a download's progress or outcome: laid out, so it keeps the panel's height,
+  // but not seen.
+  hidden: {
+    opacity: 0,
+  },
+  statusLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
+  nameField: {
+    gap: brandSpacing4.xs,
+  },
+  downloadButton: {
+    alignSelf: "stretch",
+  },
+})
 
 export function createOfflineIndicatorStyles(theme: BrandTheme) {
   return StyleSheet.create({
@@ -164,31 +162,31 @@ export function createOfflineIndicatorStyles(theme: BrandTheme) {
   })
 }
 
+// The panels of the Explorer sheet (cluster list, parcel history, offline areas), 12.2-18: 4 grid
+// spacing and the sheet title one step up from the section header. The selected survey card went
+// in 12.2-19: a survey marker opens the survey's page directly.
 export function createPanelStyles(theme: BrandTheme) {
   return StyleSheet.create({
     card: {
-      gap: 10,
+      gap: brandSpacing4.smd,
     },
     title: {
-      ...brandTypography.label,
+      ...brandTypography.sectionHeader,
+      ...brandTypeScale.headline,
       color: theme.semanticColors.textStrong,
     },
     meta: {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
     },
-    clusterRow: {
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.divider,
-      paddingVertical: 10,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
-    },
-    clusterRowText: {
+    // 12.2-19 fix round: the danger text of the theme (light on the dark sheet), not the brand
+    // terracotta, which stayed under 4.5:1 on the dark sheet.
+    warning: {
       ...brandTypography.meta,
-      color: theme.colors.textPrimary,
+      color: theme.onSurface.danger,
+    },
+    rows: {
+      gap: brandSpacing4.sm,
     },
   })
 }

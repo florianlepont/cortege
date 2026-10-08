@@ -5,6 +5,8 @@ import { IBP_MAX } from "@cortege/ibp-domain"
 export const factorPagerFr = {
   next: "Facteur suivant",
   finish: "Terminer",
+  // D-26: beside the "Terminer le relevé" pill, the round button only goes back to the summary.
+  close: "Revenir au relevé sans le terminer",
   total: (points: number) => `${points} / ${IBP_MAX.total}`,
   totalA11y: (points: number) => `Total du relevé ${points} sur ${IBP_MAX.total}`,
   // OA-111: the A to J strip is one adjustable control for VoiceOver (swipe up or down to change).
