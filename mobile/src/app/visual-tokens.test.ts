@@ -210,6 +210,58 @@ describe("BrandTheme.visual", () => {
   })
 })
 
+// 12.2-21 dark pass: every per-scheme token of UI-SPEC has its own dark value, so no light value
+// leaks into the Graphite dark screens (and the reverse). The contrast pairs below then hold for
+// each scheme's own values.
+describe("dark pass: per-scheme tokens differ between light and dark (12.2-21)", () => {
+  const perScheme: Record<string, (visual: BrandTheme["visual"]) => string> = {
+    backdrop: (visual) => visual.backdrop,
+    accentText: (visual) => visual.accentText,
+    "glass.cardFill": (visual) => visual.glass.cardFill,
+    "glass.cardBorder": (visual) => visual.glass.cardBorder,
+    "glass.cardShadow": (visual) => visual.glass.cardShadow,
+    "glass.controlFill": (visual) => visual.glass.controlFill,
+    "glass.androidFill": (visual) => visual.glass.androidFill,
+    "tab.activeTint": (visual) => visual.tab.activeTint,
+    "tab.background": (visual) => visual.tab.background,
+    "tab.border": (visual) => visual.tab.border,
+    "chip.activeBg": (visual) => visual.chip.activeBg,
+    "chip.activeText": (visual) => visual.chip.activeText,
+    "score.high": (visual) => visual.score.high,
+    "score.track": (visual) => visual.score.track,
+    "score.neutral": (visual) => visual.score.neutral,
+    "forest.image": (visual) => visual.forest.image,
+    "forest.heroImage": (visual) => visual.forest.heroImage,
+    "forest.shadow": (visual) => visual.forest.shadow,
+  }
+
+  test.each(Object.keys(perScheme))("%s has its own dark value", (key) => {
+    const light = perScheme[key](themes.light.visual)
+    const dark = perScheme[key](themes.dark.visual)
+    expect(light).toEqual(expect.any(String))
+    expect(light.length).toBeGreaterThan(0)
+    expect(dark).not.toBe(light)
+  })
+
+  test("the dark values are the darker surfaces and the lighter inks", () => {
+    const { light, dark } = { light: themes.light.visual, dark: themes.dark.visual }
+    // Glass and tab surfaces: dark over the dark canvas, light over the light one.
+    for (const key of ["cardFill", "controlFill", "androidFill"] as const) {
+      const overLight = compositeOver(light.glass[key], themes.light.colors.canvas)
+      const overDark = compositeOver(dark.glass[key], themes.dark.colors.canvas)
+      expect(relativeLuminance(overDark)).toBeLessThan(relativeLuminance(overLight))
+    }
+    // Inks read on their own scheme: the dark accent and active tab tint are the lighter greens.
+    expect(relativeLuminance(dark.accentText)).toBeGreaterThan(relativeLuminance(light.accentText))
+    expect(relativeLuminance(dark.tab.activeTint)).toBeGreaterThan(
+      relativeLuminance(light.tab.activeTint),
+    )
+    expect(relativeLuminance(dark.chip.activeBg)).toBeGreaterThan(
+      relativeLuminance(light.chip.activeBg),
+    )
+  })
+})
+
 describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
   const theme = themes[scheme]
   const { visual, colors } = theme
