@@ -21,13 +21,13 @@ import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
+import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
 import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
 import { ScoreLegend } from "./public-map/ScoreLegend"
 import { createScreenContainerStyle } from "./public-map/styles"
 import { useMapViewport } from "./public-map/useMapViewport"
 
 const t = fr.publicMap
-const offlineT = fr.offlineMap.areas
 const LOCATE_SPAN = 0.012
 const NO_DRAFTS: PublicMapItem[] = []
 // A second tap within this window (a double tap, or a tap during the push) opens nothing more.
@@ -108,6 +108,7 @@ export function PublicMapScreen({
   const [areaChosen, setAreaChosen] = useState(false)
   const offlineEnabled = isOfflineMapsEnabled()
   const offlineAreas = useOfflineAreas(apiUrl, accessToken, offlineEnabled)
+  const { startDownload, clearDownloadStatus } = offlineAreas
   const readyAreaCount = offlineAreas.areas.filter((area) => area.status === "ready").length
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
@@ -185,27 +186,29 @@ export function PublicMapScreen({
     setShowOfflineAreas(false)
     setSelectedParcelId(null)
     setClusterItems(null)
-  }, [])
+    clearDownloadStatus()
+  }, [clearDownloadStatus])
   const openOfflineAreas = useCallback(() => {
     setSelectedParcelId(null)
     setClusterItems(null)
     setAreaChosen(false)
+    // A finished download's outcome is not shown again; a running one keeps its bar.
+    clearDownloadStatus()
     setShowOfflineAreas(true)
-  }, [])
-  const closeOfflineAreas = useCallback(() => setShowOfflineAreas(false), [])
-  const { startDownload } = offlineAreas
-  const handleDownloadArea = useCallback(
-    (name: string) => {
-      setAreaChosen(true)
-      void startDownload(viewport.region, name).then((outcome) => {
-        if (!outcome.ok) {
-          setAreaChosen(false)
-          Alert.alert(outcome.reason === "too_large" ? offlineT.tooLarge : offlineT.downloadFailed)
-        }
-      })
-    },
-    [startDownload, viewport.region],
-  )
+  }, [clearDownloadStatus])
+  const closeOfflineAreas = useCallback(() => {
+    setShowOfflineAreas(false)
+    clearDownloadStatus()
+  }, [clearDownloadStatus])
+  const chooseArea = useCallback(() => setAreaChosen(true), [])
+  const unchooseArea = useCallback(() => setAreaChosen(false), [])
+  const handleDownloadArea = useAreaDownloadAction({
+    startDownload,
+    region: viewport.region,
+    panelOpen: showOfflineAreas,
+    onStart: chooseArea,
+    onFailure: unchooseArea,
+  })
   const toggleBasemap = useCallback(
     () => onChangeBasemap(basemap === "map" ? "satellite" : "map"),
     [basemap, onChangeBasemap],
@@ -246,8 +249,11 @@ export function PublicMapScreen({
   const sheetContent = showOfflineAreas ? (
     <OfflineAreasSheet
       downloadingAreaId={offlineAreas.downloadingAreaId}
+      downloadStatus={offlineAreas.downloadStatus}
       estimate={offlineAreas.estimateForRegion(viewport.region)}
       onDownload={handleDownloadArea}
+      onDone={closeOfflineAreas}
+      onRetry={handleDownloadArea}
       onClose={closeOfflineAreas}
     />
   ) : selectedParcelId ? (

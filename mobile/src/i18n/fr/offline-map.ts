@@ -42,6 +42,27 @@ export const offlineMapFr = {
     },
     progress: ({ downloaded, total }: { downloaded: number; total: number }) =>
       `${downloaded}/${total} tuiles`,
+    // 12.2-19 third round (owner: "pas de barre de progression du téléchargement"): the panel's
+    // states once the download has started, in place of its form.
+    running: {
+      percent: (percent: number) => `Téléchargement : ${percent} %`,
+      tiles: ({ downloaded, total }: { downloaded: number; total: number }) =>
+        `${downloaded} sur ${total} tuiles`,
+      a11y: {
+        bar: (name: string) => `Téléchargement de la zone ${name}`,
+        value: (percent: number) => `${percent} %`,
+      },
+    },
+    done: {
+      title: "Zone disponible hors connexion",
+      message: (name: string) => `${name} est enregistrée sur ce téléphone.`,
+      close: "Terminé",
+    },
+    failed: {
+      title: "Le téléchargement a échoué",
+      message: "Vérifiez votre connexion, puis réessayez.",
+      retry: "Réessayer",
+    },
     // Paramètres > Cartes hors ligne: the downloaded zones, to review and delete.
     manage: {
       title: "Cartes hors ligne",

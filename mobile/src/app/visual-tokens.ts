@@ -310,6 +310,16 @@ export const downloadEdgeGlowDeep = buildEdgeGlowDeep()
  * (`stillOpacity`) under Reduce Motion. */
 export const edgePulseMotion = { halfCycleMs: 750, minOpacity: 0.35, stillOpacity: 1 } as const
 
+// Progress bar of an area download in the Explorer's offline panel (12.2-19 third round): a thick
+// rounded bar, the fill a moss that keeps 3:1 against the sheet and the track in both schemes (the
+// brand moss itself is 2.7:1 on the light sheet, so the light fill is a deeper moss; the dark one
+// is the dark scheme's accent green). `smoothMs`: the fill eases to each new report.
+export const downloadBarGeometry = { height: 10, smoothMs: 400 } as const
+export const downloadBarColors = {
+  light: { track: "#DDE3CF", fill: "#5E7A1F" },
+  dark: { track: "#2C2F34", fill: "#9BC26A" },
+} as const
+
 // Geometry of the chart and score components (not spacing).
 export const scoreRingGeometry = { size: 38, stroke: 4, dash: "3 4" } as const
 export const factorBarGeometry = { gap: 6, radius: 6, maxHeight: 64, stub: 4 } as const

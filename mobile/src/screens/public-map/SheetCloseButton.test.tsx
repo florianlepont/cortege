@@ -8,6 +8,7 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
+    Keyboard: { dismiss: jest.fn() },
     Pressable: mockComponent("Pressable"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
@@ -111,8 +112,11 @@ describe("OfflineAreasSheet text in dark mode (12.2-19 fix round)", () => {
     return mount(
       <OfflineAreasSheet
         downloadingAreaId={null}
+        downloadStatus={null}
         estimate={{ ...estimate, exceedsCap }}
         onDownload={jest.fn()}
+        onDone={jest.fn()}
+        onRetry={jest.fn()}
         onClose={jest.fn()}
       />,
     )

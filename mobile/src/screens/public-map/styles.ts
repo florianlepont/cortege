@@ -120,6 +120,20 @@ export function createControlStyles(theme: BrandTheme) {
 // name field and the button are styled here; theme-invariant. The size warning is the panel's
 // `warning` (theme-aware, 12.2-19 fix round).
 export const offlineAreasStyles = StyleSheet.create({
+  form: {
+    gap: brandSpacing4.smd,
+  },
+  // The form under a download's progress or outcome: laid out, so it keeps the panel's height,
+  // but not seen.
+  hidden: {
+    opacity: 0,
+  },
+  statusLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+  },
   nameField: {
     gap: brandSpacing4.xs,
   },

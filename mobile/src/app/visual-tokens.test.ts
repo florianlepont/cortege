@@ -17,6 +17,8 @@ import {
   buildInsetRing,
   buildLinearGradient,
   buildRadialGradient,
+  downloadBarColors,
+  downloadBarGeometry,
   edgeGlowGeometry,
   edgeGlowGreens,
   edgePulseMotion,
@@ -719,6 +721,35 @@ describe("download edge glow (12.2-19 fix rounds: stronger, then round the whole
       expect(contrastRatio(semanticColors.textStrong, under)).toBeGreaterThanOrEqual(4.5)
       expect(contrastRatio(colors.textSecondary, under)).toBeGreaterThanOrEqual(4.5)
     })
+  })
+})
+
+describe("offline download progress bar (12.2-19 third round)", () => {
+  test("a thick rounded bar that eases to each report", () => {
+    expect(downloadBarGeometry.height).toBe(10)
+    expect(downloadBarGeometry.smoothMs).toBeGreaterThan(0)
+    expect(downloadBarGeometry.smoothMs).toBeLessThanOrEqual(500)
+  })
+
+  test.each(schemes)("%s: the fill keeps 3:1 against the sheet and against its track", (scheme) => {
+    const { track, fill } = themes[scheme].visual.downloadBar
+    expect(themes[scheme].visual.downloadBar).toBe(downloadBarColors[scheme])
+    // The sheet's fill over the brightest and the darkest map under it.
+    for (const map of ["#FFFFFF", "#000000"]) {
+      const sheet = compositeOver(explorerSheetGlass[scheme].fill, map)
+      expect(contrastRatio(fill, sheet)).toBeGreaterThanOrEqual(3)
+    }
+    expect(contrastRatio(fill, track)).toBeGreaterThanOrEqual(3)
+  })
+
+  test("the light fill is a deeper moss: the brand moss is under 3:1 on the light sheet", () => {
+    const sheet = compositeOver(explorerSheetGlass.light.fill, "#FFFFFF")
+    expect(contrastRatio(brandColors.moss, sheet)).toBeLessThan(3)
+    const [r, g, b] = [1, 3, 5].map((i) =>
+      parseInt(downloadBarColors.light.fill.slice(i, i + 2), 16),
+    )
+    expect(g).toBeGreaterThan(r)
+    expect(g).toBeGreaterThan(b)
   })
 })
 

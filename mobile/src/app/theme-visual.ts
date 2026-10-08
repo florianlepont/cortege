@@ -6,6 +6,7 @@ import {
   buildForestImage,
   buildInsetRing,
   buildLinearGradient,
+  downloadBarColors,
   downloadEdgeGlow,
   downloadEdgeGlowDeep,
   explorerSheetGlass,
@@ -42,6 +43,8 @@ export type BrandVisual = {
   edgeGlow: string
   /** The deeper halo of that glow, swelling in at the top of each beat (12.2-19 third round). */
   edgeGlowDeep: string
+  /** Track and fill of the offline panel's download progress bar (12.2-19 third round). */
+  downloadBar: { track: string; fill: string }
   forest: {
     image: string
     heroImage: string
@@ -177,6 +180,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
     pressWave: pressWaveFill[scheme],
     edgeGlow: downloadEdgeGlow,
     edgeGlowDeep: downloadEdgeGlowDeep,
+    downloadBar: downloadBarColors[scheme],
     forest: {
       image: buildForestImage(haloCore),
       heroImage: buildForestHeroImage(haloCore),

@@ -22,6 +22,27 @@ import {
   type OfflineAreaSummary,
 } from "../storage/offline-map"
 
+/** Progress of an area download, for the panel's progress bar (12.2-19 third round). */
+export type AreaDownloadProgress = {
+  areaId: string
+  name: string
+  /** 0 to 100, completed resources over required ones, averaged over the basemaps; never goes back. */
+  percentage: number
+  /** Tiles done out of `totalTiles`, read from the percentage against the estimate. */
+  downloadedTiles: number
+  totalTiles: number
+}
+
+/**
+ * The last download started from this screen: running, done or failed. It stays at its outcome
+ * until `clearDownloadStatus`, so the panel goes straight from the bar to its outcome, never back
+ * to the form in between.
+ */
+export type AreaDownloadStatus =
+  | ({ phase: "running" } & AreaDownloadProgress)
+  | ({ phase: "done" } & AreaDownloadProgress)
+  | { phase: "failed"; areaId: string; name: string }
+
 export type StartDownloadResult =
   | { ok: true; areaId: string }
   | { ok: false; reason: "too_large" | "failed" }
@@ -38,6 +59,8 @@ export function useOfflineAreas(
 ): {
   areas: OfflineAreaSummary[]
   downloadingAreaId: string | null
+  downloadStatus: AreaDownloadStatus | null
+  clearDownloadStatus: () => void
   estimateForRegion: (region: Region) => AreaDownloadEstimate
   startDownload: (region: Region, name: string) => Promise<StartDownloadResult>
   deleteArea: (id: string) => Promise<void>
@@ -45,6 +68,10 @@ export function useOfflineAreas(
 } {
   const [areas, setAreas] = useState<OfflineAreaSummary[]>([])
   const [downloadingAreaId, setDownloadingAreaId] = useState<string | null>(null)
+  const [downloadStatus, setDownloadStatus] = useState<AreaDownloadStatus | null>(null)
+  const clearDownloadStatus = useCallback(() => {
+    setDownloadStatus((status) => (status?.phase === "running" ? status : null))
+  }, [])
 
   const refresh = useCallback(async (): Promise<void> => {
     setAreas(await listOfflineAreas())
@@ -69,31 +96,48 @@ export function useOfflineAreas(
       }
 
       const areaId = randomUUID()
-      await insertOfflineArea({
-        id: areaId,
-        name,
-        bounds,
-        minZoom: MIN_TILE_ZOOM,
-        maxZoom: MAX_TILE_ZOOM,
-        totalTiles: estimate.totalTileCount,
-        estimatedBytes: estimate.estimatedBytes,
-      })
-      setDownloadingAreaId(areaId)
-      await refresh()
-
-      const documentDirectory = getOfflineDocumentDirectory()
       // The native pack download reports a percentage; the list shows it against the estimate.
       const toTiles = (percentage: number): number =>
         Math.min(estimate.totalTileCount, Math.round((percentage / 100) * estimate.totalTileCount))
+      // The download panel switches to its progress bar at once, before the first native report.
+      // A percentage that a basemap's later start would pull back is held: the bar only moves on.
+      let shownPercentage = 0
+      // A late native report (another basemap's pack) never takes the panel back from its outcome.
+      let finished = false
+      const progressAt = (percentage: number): AreaDownloadProgress => {
+        shownPercentage = Math.max(shownPercentage, Math.min(100, percentage))
+        return {
+          areaId,
+          name,
+          percentage: shownPercentage,
+          downloadedTiles: toTiles(shownPercentage),
+          totalTiles: estimate.totalTileCount,
+        }
+      }
+      setDownloadStatus({ phase: "running", ...progressAt(0) })
+      setDownloadingAreaId(areaId)
 
       let progress: { downloadedTiles: number; failedTiles: number }
       try {
+        await insertOfflineArea({
+          id: areaId,
+          name,
+          bounds,
+          minZoom: MIN_TILE_ZOOM,
+          maxZoom: MAX_TILE_ZOOM,
+          totalTiles: estimate.totalTileCount,
+          estimatedBytes: estimate.estimatedBytes,
+        })
+        await refresh()
+        const documentDirectory = getOfflineDocumentDirectory()
         const result = await downloadAreaPacks({
           documentDirectory,
           areaId,
           bounds,
           basemaps,
           onProgress: (packProgress) => {
+            if (finished) return
+            setDownloadStatus({ phase: "running", ...progressAt(packProgress.percentage) })
             void updateOfflineAreaProgress(areaId, {
               downloadedTiles: toTiles(packProgress.percentage),
               failedTiles: 0,
@@ -101,10 +145,15 @@ export function useOfflineAreas(
           },
         })
         progress = { downloadedTiles: toTiles(result.percentage), failedTiles: 0 }
+        finished = true
       } catch {
+        finished = true
         await deleteAreaPacks(areaId).catch(() => undefined)
-        await finalizeOfflineArea(areaId, "failed", { downloadedTiles: 0, failedTiles: 0 })
+        await finalizeOfflineArea(areaId, "failed", { downloadedTiles: 0, failedTiles: 0 }).catch(
+          () => undefined,
+        )
         setDownloadingAreaId(null)
+        setDownloadStatus({ phase: "failed", areaId, name })
         await refresh()
         return { ok: false, reason: "failed" }
       }
@@ -124,6 +173,7 @@ export function useOfflineAreas(
 
       await finalizeOfflineArea(areaId, "ready", progress)
       setDownloadingAreaId(null)
+      setDownloadStatus({ phase: "done", ...progressAt(100) })
       await refresh()
 
       return { ok: true, areaId }
@@ -140,5 +190,14 @@ export function useOfflineAreas(
     [refresh],
   )
 
-  return { areas, downloadingAreaId, estimateForRegion, startDownload, deleteArea, refresh }
+  return {
+    areas,
+    downloadingAreaId,
+    downloadStatus,
+    clearDownloadStatus,
+    estimateForRegion,
+    startDownload,
+    deleteArea,
+    refresh,
+  }
 }

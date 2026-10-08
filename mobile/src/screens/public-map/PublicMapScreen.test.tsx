@@ -39,7 +39,9 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
+    AccessibilityInfo: { announceForAccessibility: jest.fn() },
     ActivityIndicator: mockComponent("ActivityIndicator"),
+    Keyboard: { dismiss: jest.fn() },
     Pressable: mockComponent("Pressable"),
     ScrollView: mockComponent("ScrollView"),
     Text: mockComponent("Text"),
@@ -92,10 +94,14 @@ jest.mock("../../app/feature-flags", () => ({
 const mockStartDownload = jest.fn()
 const mockDeleteArea = jest.fn()
 const mockDownloading: { areaId: string | null } = { areaId: null }
+const mockDownloadStatus: { value: unknown } = { value: null }
+const mockClearDownloadStatus = jest.fn()
 jest.mock("../../hooks/useOfflineAreas", () => ({
   useOfflineAreas: () => ({
     areas: [],
     downloadingAreaId: mockDownloading.areaId,
+    downloadStatus: mockDownloadStatus.value,
+    clearDownloadStatus: mockClearDownloadStatus,
     estimateForRegion: () => ({
       totalTileCount: 120,
       estimatedBytes: 2_400_000,
@@ -579,6 +585,8 @@ describe("PublicMapScreen", () => {
     afterEach(() => {
       mockOfflineEnabled.value = false
       mockDownloading.areaId = null
+      mockDownloadStatus.value = null
+      mockClearDownloadStatus.mockClear()
     })
 
     const edgePulses = () =>
@@ -674,6 +682,93 @@ describe("PublicMapScreen", () => {
         download.props.onPress()
       })
       expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), expect.any(String))
+      // 12.2-19 third round: the open panel shows the failure itself, with its retry; no alert.
+      expect(mockAlert).not.toHaveBeenCalled()
+    })
+
+    const statusView = () =>
+      tree.root.findAll((node) => node.props.testID?.startsWith?.("offline-download-") === true)
+
+    test("the panel shows the running download, then its outcome; Terminé closes it", () => {
+      mockOfflineEnabled.value = true
+      mount(makeProps())
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      // Opening the panel drops a finished download's outcome.
+      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(1)
+
+      mockDownloading.areaId = "area-1"
+      mockDownloadStatus.value = {
+        phase: "running",
+        areaId: "area-1",
+        name: "Bois du Nord",
+        percentage: 42,
+        downloadedTiles: 51,
+        totalTiles: 120,
+      }
+      update(makeProps())
+      expect(texts()).toContain("Téléchargement : 42 %")
+      expect(texts()).toContain("51 sur 120 tuiles")
+
+      mockDownloading.areaId = null
+      mockDownloadStatus.value = {
+        phase: "done",
+        areaId: "area-1",
+        name: "Bois du Nord",
+        percentage: 100,
+        downloadedTiles: 120,
+        totalTiles: 120,
+      }
+      update(makeProps())
+      expect(texts()).toContain(fr.offlineMap.areas.done.title)
+      expect(statusView().length).toBeGreaterThan(0)
+      const done = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "GlassButton" &&
+          node.props.label === fr.offlineMap.areas.done.close,
+      )
+      act(() => done.props.onPress())
+      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(2)
+      expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(
+        0,
+      )
+    })
+
+    test("retry after a failure downloads the area shown again, under the same name", async () => {
+      mockOfflineEnabled.value = true
+      mockStartDownload.mockResolvedValue({ ok: true, areaId: "area-2" })
+      mount(makeProps())
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      mockDownloadStatus.value = { phase: "failed", areaId: "area-1", name: "Lisière" }
+      update(makeProps())
+      expect(texts()).toContain(fr.offlineMap.areas.failed.title)
+      const retry = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "GlassButton" &&
+          node.props.label === fr.offlineMap.areas.failed.retry,
+      )
+      await act(async () => retry.props.onPress())
+      expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), "Lisière")
+      expect(mockAlert).not.toHaveBeenCalled()
+    })
+
+    test("a failure once the panel is closed is still told by an alert", async () => {
+      mockOfflineEnabled.value = true
+      let finish: (outcome: { ok: boolean; reason?: string }) => void = () => undefined
+      mockStartDownload.mockReturnValue(
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+      )
+      mount(makeProps())
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      const download = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "GlassButton" &&
+          node.props.label === fr.offlineMap.areas.downloadThisArea,
+      )
+      act(() => download.props.onPress())
+      act(() => byLabel(fr.offlineMap.areas.a11y.closeSheet).props.onPress())
+      await act(async () => finish({ ok: false, reason: "failed" }))
       expect(mockAlert).toHaveBeenCalledWith(fr.offlineMap.areas.downloadFailed)
     })
   })
