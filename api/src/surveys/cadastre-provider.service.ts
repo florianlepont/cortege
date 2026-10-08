@@ -3,9 +3,13 @@ import { ConfigService } from "@nestjs/config"
 import { LRUCache } from "lru-cache"
 import { appConfigOf } from "../config/app-config"
 import {
+  apiCartoSection,
+  arrondissementCity,
   buildParcelKey,
+  featureCommuneCode,
   normalizeParcelPartToDigits,
   normalizeParcelSection,
+  parseParcelIdu,
 } from "./surveys-normalize.utils"
 
 type JsonRecord = Record<string, unknown>
@@ -49,6 +53,40 @@ export function geometryCenter(geometry: unknown): { lat: number; lng: number } 
   visit((geometry as { coordinates?: unknown } | null | undefined)?.coordinates)
   if (!Number.isFinite(minLng) || !Number.isFinite(minLat)) return null
   return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 }
+}
+
+/**
+ * The key of an IGN parcel feature (WFS or API Carto properties), the same as the parcel
+ * registered by its id: an IDU gives commune, section and number through parseParcelIdu (so the
+ * registration and the drawn polygon always agree, arrondissements and numbered sections
+ * included); a feature without an IDU falls back on its commune (featureCommuneCode), section
+ * and numero. Null when the key is incomplete.
+ */
+export function parseWfsParcelProperties(
+  properties: Record<string, unknown>,
+): { parcel_id: string; commune_code: string; section: string; number: string } | null {
+  const idu = typeof properties.idu === "string" ? properties.idu.trim().toUpperCase() : ""
+  const parsed = parseParcelIdu(idu)
+  if (parsed) {
+    return {
+      parcel_id: idu,
+      commune_code: parsed.communeCode,
+      section: parsed.section,
+      number: parsed.number,
+    }
+  }
+  const communeCode = featureCommuneCode(properties)
+  const section = normalizeParcelSection(properties.section)
+  const number = normalizeParcelPartToDigits(properties.numero, 4)
+  if (!communeCode || !section || !number) {
+    return null
+  }
+  return {
+    parcel_id: idu.length > 0 ? idu : `${communeCode}${section}${number}`,
+    commune_code: communeCode,
+    section,
+    number,
+  }
 }
 
 export type LngLatBbox = { minLng: number; minLat: number; maxLng: number; maxLat: number }
@@ -211,9 +249,13 @@ export class CadastreProviderService {
     parcelId: string,
   ): Promise<{ centroid: { lat: number; lng: number }; geometry: JsonRecord } | null> {
     if (this.provider !== "ign") return null
-    const match = /^(\d{5})\d{3}([A-Z0-9]{2})(\d{4})$/.exec(parcelId.trim().toUpperCase())
-    if (!match) return null
-    const geometry = await this.resolveGeometryFromApiCarto(match[1], match[2], match[3])
+    const idu = parseParcelIdu(parcelId)
+    if (!idu) return null
+    const geometry = await this.resolveGeometryFromApiCarto(
+      idu.communeCode,
+      idu.section,
+      idu.number,
+    )
     if (!geometry) return null
     const centroid = geometryCenter(geometry)
     return centroid ? { centroid, geometry } : null
@@ -296,9 +338,18 @@ export class CadastreProviderService {
       rawMunicipalityCode,
     )
     let communeCode = this.normalizeCommuneCode(rawCommune) ?? communeCodeFromDepartmentMunicipality
-    let section = this.normalizeSection(rawSection)
+    let section = normalizeParcelSection(rawSection)
     let number = this.normalizeNumber(rawNumber)
     let parcelId = this.normalizeParcelId(rawParcelId)
+
+    // An IDU is the parcel's own key, as when the app registers it by id: the geocoder's commune is
+    // the city in Paris, Lyon and Marseille, the IDU's the arrondissement.
+    const idu = parcelId ? parseParcelIdu(parcelId) : null
+    if (idu) {
+      communeCode = idu.communeCode
+      section = idu.section
+      number = idu.number
+    }
 
     if ((!communeCode || !section || !number) && parcelId) {
       const parsed = this.parseParcelIdentifier(parcelId)
@@ -337,8 +388,11 @@ export class CadastreProviderService {
     number: string,
   ): Promise<JsonRecord | undefined> {
     const url = new URL(this.ignApiCartoParcelUrl)
-    url.searchParams.set("code_insee", communeCode)
-    url.searchParams.set("section", section)
+    // API Carto knows Paris, Lyon and Marseille parcels by the city's code_insee and code_arr.
+    const arrondissement = arrondissementCity(communeCode)
+    url.searchParams.set("code_insee", arrondissement?.city ?? communeCode)
+    if (arrondissement) url.searchParams.set("code_arr", arrondissement.codeArr)
+    url.searchParams.set("section", apiCartoSection(section))
     url.searchParams.set("numero", number)
     url.searchParams.set("source_ign", "PCI")
     url.searchParams.set("_limit", "1")
@@ -395,29 +449,19 @@ export class CadastreProviderService {
         continue
       }
 
-      const communeCode = normalizeParcelPartToDigits(properties.code_insee, 5)
-      const section = normalizeParcelSection(properties.section)
-      const number = normalizeParcelPartToDigits(properties.numero, 4)
-      if (!communeCode || !section || !number) {
+      const key = parseWfsParcelProperties(properties)
+      if (!key) {
         continue
       }
 
-      const parcelKey = buildParcelKey(communeCode, section, number)
+      const parcelKey = buildParcelKey(key.commune_code, key.section, key.number)
       const bounds = this.geometryBounds(geometry.coordinates)
       if (seen.has(parcelKey) || !bounds) {
         continue
       }
       seen.add(parcelKey)
 
-      const idu = typeof properties.idu === "string" ? properties.idu.trim().toUpperCase() : ""
-      features.push({
-        parcel_id: idu.length > 0 ? idu : `${communeCode}${section}${number}`,
-        commune_code: communeCode,
-        section,
-        number,
-        geometry,
-        bounds,
-      })
+      features.push({ ...key, geometry, bounds })
     }
 
     return features
@@ -599,17 +643,6 @@ export class CadastreProviderService {
       departmentCode.length >= 3 ? departmentCode.slice(-3) : departmentCode.slice(-2)
     const normalizedMunicipality = municipalityCode.padStart(3, "0").slice(-3)
     return `${normalizedDepartment}${normalizedMunicipality}`
-  }
-
-  private normalizeSection(value: string | null): string | null {
-    if (!value) {
-      return null
-    }
-    const normalized = value.replace(/[^A-Za-z]/g, "").toUpperCase()
-    if (normalized.length === 0) {
-      return null
-    }
-    return normalized.slice(0, 3)
   }
 
   private normalizeNumber(value: string | null): string | null {

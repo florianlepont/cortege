@@ -220,6 +220,30 @@ API image is published.
 was built from (`"unknown"` outside a CI-built image): `curl -s https://cortege.algernon.ovh/v1/health`.
 Same branch; the first image published after the merge is the first one that answers it.
 
+### Demo data on real parcels (owner request 2026-10-08)
+
+"Est-ce que tu pourrais faire en sorte que l'ensemble des fausses données soit reliées à de
+vraies parcelles ?" Note 2026-10-08: the demo surveys of OA-105 sat on invented parcels
+(`DEMO0902`...), which never match an IGN polygon, so the parcel colours by score (OA-126) could
+not be tested. `api/scripts/seed-demo-community.js` now links every demo survey, the community ones
+and the owner's, to 1 to 3 real IGN parcels near its place, registered like the app registers a
+parcel; a re-run (or `--remove`) also deletes the invented 12.1 parcels. `--dry-run` shows the
+parcels it would use without writing anything. Branch `fix/demo-seed-real-parcels`, not deployed
+yet: once the image is published, the owner runs the commands of `infra/vps/README.md` ("Demo
+community data") and checks the Explorer at parcel zoom on a demo place (Fontainebleau, Sénart,
+Rambouillet).
+
+Note 2026-10-08, same branch, owner answer "oui corrige": two kinds of real parcel could never be
+coloured by score on the Explorer, whatever the data. In Alsace-Moselle sections are numbered
+("09"): the API kept letters only, so these parcels were registered with a placeholder key and
+their polygons were dropped. In Paris, Lyon and Marseille the IGN identifier carries the
+arrondissement (75112) and the IGN polygon the city (75056), so the two keys never met. Both now
+share one key (the arrondissement, the two-digit section), and migration 021 repairs the parcels
+already registered. The demo data now also covers them: "Vosges du Nord" (Bas-Rhin, numbered
+sections) is back, and among the owner's places "Vincennes" lands in Vincennes itself (94080) and
+"Bois de Boulogne" in Paris (75116). To check on the phone after the deploy: these parcels coloured
+at parcel zoom.
+
 ## Fix batches
 
 | Batch | PR | Entries | Re-tested on |

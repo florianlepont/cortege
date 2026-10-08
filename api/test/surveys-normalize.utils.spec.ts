@@ -1,6 +1,10 @@
 import { BadRequestException } from "@nestjs/common"
+import { parseWfsParcelProperties } from "../src/surveys/cadastre-provider.service"
 import {
+  apiCartoSection,
+  arrondissementCity,
   buildSyncChangesCursor,
+  featureCommuneCode,
   classifySameVersionContent,
   getChangedSubmittedReadOnlyFields,
   getSubmittedReadOnlyFields,
@@ -9,6 +13,7 @@ import {
   normalizeParcelPartToDigits,
   normalizeParcelSection,
   parseParcelIdentifier,
+  parseParcelIdu,
   parseSyncChangesCursor,
   resolveSurveyMethodColumns,
   sameSurveyMethodColumns,
@@ -708,5 +713,176 @@ describe("parseParcelIdentifier (12.2-19: a parcel registered by its IGN identif
         number: "0000",
       })
     }
+  })
+})
+
+describe("cadastral sections, lettered and numbered (Alsace-Moselle)", () => {
+  test("a lettered section keeps its letters only, as before", () => {
+    expect(normalizeParcelSection("0A")).toBe("A")
+    expect(normalizeParcelSection("ab")).toBe("AB")
+    expect(normalizeParcelSection(" 0c ")).toBe("C")
+    expect(normalizeParcelSection("ABCD")).toBe("ABC")
+  })
+
+  test("a numbered section keeps two digits and never collides with a lettered one", () => {
+    expect(normalizeParcelSection("09")).toBe("09")
+    expect(normalizeParcelSection("22")).toBe("22")
+    expect(normalizeParcelSection("9")).toBe("09")
+    expect(normalizeParcelSection(9)).toBe("09")
+    expect(normalizeParcelSection("A")).not.toBe(normalizeParcelSection("01"))
+  })
+
+  test("no section, or an all-zero one, is none", () => {
+    for (const value of ["", "  ", "00", "0", null, undefined, {}]) {
+      expect(normalizeParcelSection(value)).toBeNull()
+    }
+  })
+
+  test("API Carto is always asked for two characters", () => {
+    expect(apiCartoSection("A")).toBe("0A")
+    expect(apiCartoSection("AB")).toBe("AB")
+    expect(apiCartoSection("09")).toBe("09")
+  })
+
+  test("an Alsace-Moselle IDU gives its numbered section", () => {
+    expect(parseParcelIdentifier("67392000090001")).toEqual({
+      communeCode: "67392",
+      section: "09",
+      number: "0001",
+    })
+    expect(parseParcelIdu("57250000220220")).toEqual({
+      communeCode: "57250",
+      section: "22",
+      number: "0220",
+    })
+    expect(parseParcelIdu("675350000C0109")).toEqual({
+      communeCode: "67535",
+      section: "C",
+      number: "0109",
+    })
+    expect(parseParcelIdu("94080000000012")).toBeNull()
+    expect(parseParcelIdu("75104AE3")).toBeNull()
+  })
+})
+
+describe("Paris, Lyon and Marseille arrondissements", () => {
+  test("an arrondissement code gives its city and code_arr", () => {
+    expect(arrondissementCity("75112")).toEqual({ city: "75056", codeArr: "112" })
+    expect(arrondissementCity("75101")).toEqual({ city: "75056", codeArr: "101" })
+    expect(arrondissementCity("75120")).toEqual({ city: "75056", codeArr: "120" })
+    expect(arrondissementCity("69381")).toEqual({ city: "69123", codeArr: "381" })
+    expect(arrondissementCity("69389")).toEqual({ city: "69123", codeArr: "389" })
+    expect(arrondissementCity("13201")).toEqual({ city: "13055", codeArr: "201" })
+    expect(arrondissementCity("13216")).toEqual({ city: "13055", codeArr: "216" })
+    for (const other of ["75056", "75121", "69123", "69390", "13055", "13217", "94080", "2A004"]) {
+      expect(arrondissementCity(other)).toBeNull()
+    }
+  })
+
+  test("a feature's commune is its IDU's, else code_dep + code_arr, else code_insee", () => {
+    expect(featureCommuneCode({ idu: "75112000BL0010", code_insee: "75056" })).toBe("75112")
+    expect(featureCommuneCode({ idu: "132018010B0128", code_insee: "13055" })).toBe("13201")
+    expect(featureCommuneCode({ code_dep: "69", code_arr: "381", code_insee: "69123" })).toBe(
+      "69381",
+    )
+    expect(featureCommuneCode({ code_dep: "77", code_arr: "000", code_insee: "77186" })).toBe(
+      "77186",
+    )
+    expect(featureCommuneCode({ code_insee: "94080" })).toBe("94080")
+    expect(featureCommuneCode({})).toBeNull()
+  })
+})
+
+describe("one key for a parcel, registered by id and drawn from the IGN", () => {
+  // WFS properties as the IGN Parcellaire Express returns them (checked 2026-10-08).
+  const cases: Array<[string, Record<string, unknown>]> = [
+    [
+      "771860000K0311",
+      {
+        idu: "771860000K0311",
+        code_dep: "77",
+        code_com: "186",
+        code_arr: "000",
+        code_insee: "77186",
+        section: "0K",
+        numero: "0311",
+      },
+    ],
+    [
+      "67392000090001",
+      {
+        idu: "67392000090001",
+        code_dep: "67",
+        code_com: "392",
+        code_arr: "000",
+        code_insee: "67392",
+        section: "09",
+        numero: "0001",
+      },
+    ],
+    [
+      "75112000BL0010",
+      {
+        idu: "75112000BL0010",
+        code_dep: "75",
+        code_com: "056",
+        code_arr: "112",
+        code_insee: "75056",
+        section: "BL",
+        numero: "0010",
+      },
+    ],
+    [
+      "69381000AR0166",
+      {
+        idu: "69381000AR0166",
+        code_dep: "69",
+        code_com: "123",
+        code_arr: "381",
+        code_insee: "69123",
+        section: "AR",
+        numero: "0166",
+      },
+    ],
+    [
+      "132018010B0128",
+      {
+        idu: "132018010B0128",
+        code_dep: "13",
+        code_com: "055",
+        code_arr: "201",
+        code_insee: "13055",
+        section: "0B",
+        numero: "0128",
+      },
+    ],
+  ]
+
+  test.each(cases)("%s", (parcelId, properties) => {
+    const registered = parseParcelIdentifier(parcelId)
+    const drawn = parseWfsParcelProperties(properties)
+    expect(drawn?.parcel_id).toBe(parcelId)
+    expect(buildParcelKey(registered.communeCode, registered.section, registered.number)).toBe(
+      buildParcelKey(drawn!.commune_code, drawn!.section, drawn!.number),
+    )
+  })
+
+  test("a feature without an IDU keeps its properties, arrondissement included", () => {
+    expect(
+      parseWfsParcelProperties({
+        code_dep: "75",
+        code_arr: "112",
+        code_insee: "75056",
+        section: "BL",
+        numero: "10",
+      }),
+    ).toEqual({ parcel_id: "75112BL0010", commune_code: "75112", section: "BL", number: "0010" })
+    expect(parseWfsParcelProperties({ code_insee: "67392", section: "09", numero: "1" })).toEqual({
+      parcel_id: "6739209" + "0001",
+      commune_code: "67392",
+      section: "09",
+      number: "0001",
+    })
+    expect(parseWfsParcelProperties({ code_insee: "67392", section: "00", numero: "1" })).toBeNull()
   })
 })

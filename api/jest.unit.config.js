@@ -10,6 +10,9 @@ module.exports = {
   // The shared package is read from source, so the tests need no built dist (phase 01.8).
   moduleNameMapper: {
     '^@cortege/ibp-domain$': '<rootDir>/../packages/ibp-domain/src/index.ts',
+    // scripts/lib/demo-parcels.js reads the API helpers from the compiled API; the tests read the
+    // sources instead, so they need no build.
+    '^\\.\\./\\.\\./dist/surveys/(.*)$': '<rootDir>/src/surveys/$1',
   },
   collectCoverageFrom: [
     '<rootDir>/src/**/*.ts',

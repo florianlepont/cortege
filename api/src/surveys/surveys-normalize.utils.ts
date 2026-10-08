@@ -406,14 +406,30 @@ export function normalizeCentroid(
 }
 
 // The IGN parcel identifier (IDU) the app sends for a parcel picked on the map: commune 5 digits,
-// absorbed-commune prefix 3, section 2 (a leading zero for one-letter sections, "0A"), number 4.
+// absorbed-commune prefix 3, section 2 (a leading zero for one-letter sections, "0A"; two digits
+// for a numbered section in Alsace-Moselle, "09"), number 4.
 const IDU_PATTERN = /^(\d{5})\d{3}([0-9A-Z]{2})(\d{4})$/
 
 /**
+ * Commune, section and number of an IGN parcel identifier (IDU), or null when the id is not one
+ * (or its section is "00"). The one reading of an IDU, shared by the registration of a parcel by
+ * id, the IGN features the Explorer draws and the API Carto lookup.
+ */
+export function parseParcelIdu(
+  parcelId: string,
+): { communeCode: string; section: string; number: string } | null {
+  const idu = IDU_PATTERN.exec(parcelId.trim().toUpperCase())
+  const section = idu ? normalizeParcelSection(idu[2]) : null
+  return idu && section ? { communeCode: idu[1], section, number: idu[3] } : null
+}
+
+/**
  * Commune, section and number of a parcel id, in the form the IGN WFS features are keyed by
- * (`parseWfsFeatures`: section letters only, number on 4 digits), so the public parcel statuses
- * match a parcel registered by id to the IGN polygon drawn for it (12.2-19). Unknown forms get
- * the placeholder "00000"/"AA"/"0000".
+ * (`parseWfsFeatures`: section through normalizeParcelSection, number on 4 digits), so the public
+ * parcel statuses match a parcel registered by id to the IGN polygon drawn for it (12.2-19). An
+ * IDU gives its own commune (the arrondissement in Paris, Lyon and Marseille) and its section,
+ * lettered or numbered (Alsace-Moselle "09"). The legacy short form ("75104AE3") only knows
+ * lettered sections. Unknown forms get the placeholder "00000"/"AA"/"0000".
  */
 export function parseParcelIdentifier(parcelId: string): {
   communeCode: string
@@ -421,10 +437,9 @@ export function parseParcelIdentifier(parcelId: string): {
   number: string
 } {
   const normalized = parcelId.trim().toUpperCase()
-  const idu = IDU_PATTERN.exec(normalized)
-  const iduSection = idu ? normalizeParcelSection(idu[2]) : null
-  if (idu && iduSection) {
-    return { communeCode: idu[1], section: iduSection, number: idu[3] }
+  const idu = parseParcelIdu(normalized)
+  if (idu) {
+    return idu
   }
   const match = /^(\d{5})([A-Z]{1,3})(\d{1,4})$/.exec(normalized)
   if (match) {
@@ -518,18 +533,75 @@ export function normalizeParcelPartToDigits(value: unknown, width: number): stri
   return digits.padStart(width, "0").slice(-width)
 }
 
+/**
+ * A cadastral section in the one form shared by the parcels the app registers and the IGN
+ * polygons it draws (the Explorer key, `buildParcelKey`):
+ * - a section with a letter keeps its letters only ("0A" becomes "A", "AB" stays "AB");
+ * - a numbered section, as in Alsace-Moselle ("09"), keeps its two digits ("9" becomes "09").
+ *   Letters-only and digits-only forms never collide. An all-zero section ("00") is not one.
+ */
 export function normalizeParcelSection(value: unknown): string | null {
   if (typeof value !== "string" && typeof value !== "number") {
     return null
   }
-  const normalized = String(value)
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z]/g, "")
-  if (normalized.length === 0) {
+  const upper = String(value).trim().toUpperCase()
+  const letters = upper.replace(/[^A-Z]/g, "")
+  if (letters.length > 0) {
+    return letters.slice(0, 3)
+  }
+  const digits = upper.replace(/[^0-9]/g, "")
+  if (digits.length === 0 || /^0+$/.test(digits)) {
     return null
   }
-  return normalized.slice(0, 3)
+  return digits.padStart(2, "0").slice(-2)
+}
+
+/**
+ * The section as API Carto expects it: always two characters ("A" is asked as "0A"; "AB" and a
+ * numbered "09" as they are).
+ */
+export function apiCartoSection(section: string): string {
+  return section.length === 1 ? `0${section}` : section
+}
+
+// Paris, Lyon and Marseille: the IGN cadastre numbers their parcels by arrondissement. The IDU and
+// the parcel's commune key carry the arrondissement code (75112, 69381, 13201), while code_insee
+// of the WFS and API Carto is the city's (75056, 69123, 13055), with the arrondissement in
+// code_arr. Sections and numbers restart in every arrondissement, so the key keeps the
+// arrondissement code: the city code would make parcels of two arrondissements collide.
+const ARRONDISSEMENT_CITIES: Array<{ city: string; first: number; last: number }> = [
+  { city: "75056", first: 75101, last: 75120 },
+  { city: "69123", first: 69381, last: 69389 },
+  { city: "13055", first: 13201, last: 13216 },
+]
+
+/**
+ * The city of an arrondissement commune code and the arrondissement's code_arr ("75112" gives
+ * 75056 and 112), or null for any other commune.
+ */
+export function arrondissementCity(communeCode: string): { city: string; codeArr: string } | null {
+  if (!/^\d{5}$/.test(communeCode)) return null
+  const code = Number(communeCode)
+  const found = ARRONDISSEMENT_CITIES.find((entry) => code >= entry.first && code <= entry.last)
+  return found ? { city: found.city, codeArr: communeCode.slice(2) } : null
+}
+
+/**
+ * The commune key of an IGN feature (WFS, API Carto) from its properties: the commune of its IDU
+ * when it has one (an arrondissement in Paris, Lyon and Marseille), else code_dep + code_arr for
+ * an arrondissement, else code_insee.
+ */
+export function featureCommuneCode(properties: Record<string, unknown>): string | null {
+  const idu = typeof properties.idu === "string" ? properties.idu.trim().toUpperCase() : ""
+  const iduMatch = IDU_PATTERN.exec(idu)
+  if (iduMatch) return iduMatch[1]
+  const department = typeof properties.code_dep === "string" ? properties.code_dep.trim() : ""
+  const codeArr = typeof properties.code_arr === "string" ? properties.code_arr.trim() : ""
+  if (/^\d{2}$/.test(department) && /^\d{3}$/.test(codeArr) && codeArr !== "000") {
+    const candidate = `${department}${codeArr}`
+    if (arrondissementCity(candidate)) return candidate
+  }
+  return normalizeParcelPartToDigits(properties.code_insee, 5)
 }
 
 export function buildParcelKey(communeCode: string, section: string, number: string): string {

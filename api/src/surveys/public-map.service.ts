@@ -199,7 +199,9 @@ export class PublicMapService {
    * Study status for IGN features, computed per request (never cached, D-08): the latest
    * public submitted survey of each parcel, ranked as before. The lookup only covers parcels
    * in the features' communes (D-08, T-01.7-39). Features only match parcels on their exact
-   * commune code, so the restriction does not change the result.
+   * commune code, so the restriction does not change the result. Both sides use the same key
+   * (parseWfsParcelProperties, parseParcelIdu): the arrondissement code in Paris, Lyon and
+   * Marseille, a two-digit section for a numbered Alsace-Moselle section.
    */
   private async withStudyStatus(
     features: WfsParcelFeature[],
