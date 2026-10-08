@@ -112,10 +112,12 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       ...brandTypography.input,
       color: theme.visual.forest.title,
     },
+    // The body tint, not the sage: the sage was 3.9:1 on the glass tile over the card's mid green
+    // even before the mist (12.2-19), the body tint keeps 4.5:1 under it (forest-aurora tokens).
     scoreTileOutOf: {
       ...brandTypeScale.footnote,
       fontFamily: "Jost-Regular",
-      color: theme.visual.forest.sage,
+      color: theme.visual.forest.body,
     },
     scoreHint: {
       ...brandTypography.meta,

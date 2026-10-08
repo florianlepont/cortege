@@ -108,6 +108,17 @@ describe("ScoreCard", () => {
     )
   })
 
+  test("the tiles' units read in the body tint, 4.5:1 under the mist (12.2-19)", () => {
+    const tree = render()
+    const units = byType(tree, "Text").filter((n) =>
+      [t.outOf({ max: 35 }), t.outOf({ max: 15 })].includes([n.props.children].flat().join("")),
+    )
+    expect(units).toHaveLength(2)
+    for (const unit of units) {
+      expect(flatten(unit.props.style).color).toBe(defaultTheme.visual.forest.body)
+    }
+  })
+
   test("the tile value keeps the width of its final digits", () => {
     const tree = render({ scores: { ...scores, ibp_contexte: 5 } })
     const [stand, context] = byType(tree, "AnimatedNumber")
