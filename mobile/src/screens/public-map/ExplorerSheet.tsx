@@ -14,6 +14,7 @@ import { BlurView } from "expo-blur"
 import { useReducedMotion } from "react-native-reanimated"
 import { brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
+import { GlassSurface, LIQUID_GLASS_AVAILABLE } from "../../ui/GlassSurface"
 
 // MAP-01: the one panel of the Explorer (a selected survey, a cluster's list, a parcel's history,
 // the offline areas). It rises from the bottom edge, above the tab bar, to half of the screen and
@@ -39,7 +40,10 @@ export type ExplorerSheetProps = {
 // DS-15 (UX audit, Phase 12): the panel's own background, blurred instead of a flat fill,
 // tinted to the app's own light/dark theme rather than the OS scheme. 12.2-19 fix round: a fill
 // lies over the blur (`theme.visual.sheet.fill`), because the dark blur over the light basemap gave
-// a mid grey on which the secondary text and the close glyph nearly vanished.
+// a mid grey on which the secondary text and the close glyph nearly vanished. 12.2-23 correction
+// (owner: "les panneaux du verre devraient être du verre natif et pas du flou"): in dark on iOS 26
+// the panel is the system Liquid Glass instead (`theme.visual.sheet.glass`, a translucent tint, its
+// content in the glass ink); this blur and fill stay for light, older iOS and Android.
 function SheetBackground() {
   const { scheme, visual } = useBrandTheme()
   return (
@@ -127,6 +131,26 @@ export function ExplorerSheet({
 
   if (!mounted) return null
 
+  const glass = LIQUID_GLASS_AVAILABLE ? theme.visual.sheet.glass : undefined
+  const body = (
+    <>
+      <View style={styles.handleArea} {...panResponder.panHandlers}>
+        <View style={styles.handleIndicator} />
+      </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingBottom: brandSpacing4.lg + bottomInset }]}
+        keyboardShouldPersistTaps="handled"
+        // 12.2-19 (owner: "on peut scroller dans la fenêtre donc c'est bizarre"): a panel that
+        // fits does not move under the finger; only one taller than the sheet (a long cluster
+        // list, or the panel squeezed by the keyboard) scrolls and bounces.
+        alwaysBounceVertical={false}
+      >
+        {shownRef.current}
+      </ScrollView>
+    </>
+  )
+
   return (
     // The panel runs down to the screen edge, behind the floating tab bar, like a system sheet; its
     // content stops above the bar (the bottom padding of the scroll content).
@@ -143,24 +167,16 @@ export function ExplorerSheet({
             { maxHeight: sheetHeight + bottomInset, transform: [{ translateY }] },
           ]}
         >
-          <SheetBackground />
-          <View style={styles.handleArea} {...panResponder.panHandlers}>
-            <View style={styles.handleIndicator} />
-          </View>
-          <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={[
-              styles.content,
-              { paddingBottom: brandSpacing4.lg + bottomInset },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            // 12.2-19 (owner: "on peut scroller dans la fenêtre donc c'est bizarre"): a panel that
-            // fits does not move under the finger; only one taller than the sheet (a long cluster
-            // list, or the panel squeezed by the keyboard) scrolls and bounces.
-            alwaysBounceVertical={false}
-          >
-            {shownRef.current}
-          </ScrollView>
+          {glass ? (
+            <GlassSurface surface={glass} style={styles.glass}>
+              {body}
+            </GlassSurface>
+          ) : (
+            <>
+              <SheetBackground />
+              {body}
+            </>
+          )}
         </Animated.View>
       </KeyboardAvoidingView>
     </View>
@@ -183,6 +199,12 @@ function createStyles(theme: BrandTheme) {
     },
     sheet: {
       overflow: "hidden",
+      borderTopLeftRadius: brandRadius.panel,
+      borderTopRightRadius: brandRadius.panel,
+    },
+    // The Liquid Glass panel follows the sheet's shape and shrinks with it, so the list scrolls.
+    glass: {
+      flexShrink: 1,
       borderTopLeftRadius: brandRadius.panel,
       borderTopRightRadius: brandRadius.panel,
     },

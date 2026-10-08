@@ -11,6 +11,7 @@ import {
 import { useColorScheme } from "react-native"
 import { brandColors } from "./brand-tokens"
 import { makeVisualColors, type BrandVisual } from "./theme-visual"
+import { glassInkDark } from "./visual-tokens"
 import {
   DEFAULT_THEME_MODE,
   loadThemeModePreference,
@@ -409,8 +410,17 @@ export function buildTheme(
   scheme: BrandColorScheme,
   setMode: BrandTheme["setMode"],
 ): BrandTheme {
-  const colors = resolvePalette(scheme)
   const onSurface = scheme === "dark" ? darkOnSurface : lightOnSurface
+  return assembleTheme(mode, scheme, setMode, resolvePalette(scheme), onSurface)
+}
+
+function assembleTheme(
+  mode: BrandThemeMode,
+  scheme: BrandColorScheme,
+  setMode: BrandTheme["setMode"],
+  colors: BrandColors,
+  onSurface: BrandOnSurfaceColors,
+): BrandTheme {
   const semanticColors = makeSemanticColors(colors, scheme)
   return {
     mode,
@@ -478,4 +488,32 @@ export function BrandThemeProvider({ children }: { children: ReactNode }) {
 
 export function useBrandTheme(): BrandTheme {
   return useContext(BrandThemeContext)
+}
+
+const glassInkThemes = new WeakMap<BrandTheme, BrandTheme>()
+
+/**
+ * The theme of content on the translucent dark Liquid Glass (12.2-23 correction): the secondary
+ * and danger inks brighter (`glassInkDark`), every derived token rebuilt from them, as iOS draws
+ * vibrant labels on its materials. A light theme is returned as is. One per theme, cached.
+ */
+export function withGlassInk(theme: BrandTheme): BrandTheme {
+  if (theme.scheme !== "dark") return theme
+  const cached = glassInkThemes.get(theme)
+  if (cached) return cached
+  const inked = assembleTheme(
+    theme.mode,
+    theme.scheme,
+    theme.setMode,
+    { ...theme.colors, textSecondary: glassInkDark.textSecondary },
+    { ...theme.onSurface, danger: glassInkDark.danger },
+  )
+  glassInkThemes.set(theme, inked)
+  return inked
+}
+
+/** Gives its children the glass ink theme (`withGlassInk`): `GlassSurface` wraps its content. */
+export function GlassInkProvider({ children }: { children?: ReactNode }) {
+  const value = withGlassInk(useBrandTheme())
+  return createElement(BrandThemeContext.Provider, { value }, children)
 }

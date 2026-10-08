@@ -2,7 +2,7 @@ import { ReactNode } from "react"
 import { Platform, StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { BlurView } from "expo-blur"
 import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect"
-import { useBrandTheme } from "../app/theme"
+import { GlassInkProvider, useBrandTheme } from "../app/theme"
 import type { GlassFill } from "../app/theme-visual"
 import { brandGlassFills, liquidGlassDark } from "../app/visual-tokens"
 
@@ -41,10 +41,10 @@ type GlassSurfaceProps = {
  *
  * On iOS 26 and later the surface is real Liquid Glass (`expo-glass-effect`), which refracts the
  * map behind it and follows the system light/dark look; older iOS and Android keep the blur. In dark
- * (12.2-23) the Liquid Glass is dense: tinted (the surface's own tint, else `liquidGlassDark`) and
- * laid over an underlay, the `GlassView`'s own background, drawn behind the glass and clipped to its
- * shape. `UIGlassEffect` treats the tint as a tint of its material, so the tint alone left the
- * content behind showing through.
+ * (12.2-23 correction) the Liquid Glass stays translucent: a moderate tint (the surface's own, else
+ * `liquidGlassDark`) and no fill behind it, the system drawing its blur, rim and highlight. Its
+ * content gets the glass ink theme (`GlassInkProvider`: brighter secondary and danger inks), which
+ * is what keeps the theme's text at 4.5:1 on that translucent glass over a light map.
  *
  * `style` should carry layout/shape only (radius, border, padding, position) — this component owns
  * `backgroundColor` and `overflow` so the blur is actually visible and clipped to the shape.
@@ -63,22 +63,17 @@ export function GlassSurface({
 
   if (LIQUID_GLASS) {
     // Real Liquid Glass draws its own edge: an outline from the caller breaks the effect.
-    const own = surface ?? (isDark ? liquidGlassDark : undefined)
-    const underlay = isDark ? own?.underlay : undefined
+    const tint = surface?.tint ?? (isDark ? liquidGlassDark.tint : undefined)
     return (
       <GlassView
-        style={[
-          styles.container,
-          withoutOutline(style),
-          underlay ? { backgroundColor: underlay } : null,
-        ]}
+        style={[styles.container, withoutOutline(style)]}
         pointerEvents={pointerEvents}
         glassEffectStyle="regular"
         colorScheme={isDark ? "dark" : "light"}
         isInteractive={interactive}
-        tintColor={own?.tint}
+        tintColor={tint}
       >
-        {children}
+        {isDark ? <GlassInkProvider>{children}</GlassInkProvider> : children}
       </GlassView>
     )
   }

@@ -7,7 +7,7 @@ jest.mock("../storage/theme-preference", () => ({
 
 import { brandColors } from "./brand-tokens"
 import { compositeOver, contrastRatio, relativeLuminance } from "./contrast"
-import { buildTheme, defaultTheme, type BrandTheme } from "./theme"
+import { buildTheme, defaultTheme, withGlassInk, type BrandTheme } from "./theme"
 import {
   brandGlassFills,
   buildEdgeGlow,
@@ -565,13 +565,15 @@ describe.each(schemes)("map controls over the basemap (12.2-19 fix round), %s sc
   })
 
   if (scheme === "dark") {
-    test("dark: a near opaque dark glass with light content, even over the white plan", () => {
-      expect(alphaOf(control.glass.tint)).toBeGreaterThanOrEqual(0.8)
-      expect(alphaOf(control.glass.fill)).toBeGreaterThanOrEqual(0.8)
+    test("dark: a translucent dark glass with light content (12.2-23 correction)", () => {
+      // The lowest tint that keeps the ratios above (`glass-density.test.ts`), the map showing
+      // through; the light inks are what let it be that low.
+      expect(alphaOf(control.glass.tint)).toBeLessThanOrEqual(0.7)
+      expect(alphaOf(control.glass.fill)).toBeLessThanOrEqual(0.7)
       const overPlan = compositeOver(control.glass.fill, "#FFFFFF")
-      expect(relativeLuminance(overPlan)).toBeLessThan(0.06)
+      expect(relativeLuminance(overPlan)).toBeLessThan(0.2)
       for (const ink of [control.icon, control.text, control.textMuted]) {
-        expect(relativeLuminance(ink)).toBeGreaterThan(0.5)
+        expect(relativeLuminance(ink)).toBeGreaterThan(0.7)
       }
     })
 
@@ -662,20 +664,28 @@ describe.each(schemes)("map panel over the basemap (12.2-21 dark pass), %s schem
   test.each(["tint", "fill", "android"] as const)(
     "the theme's text reads at 4.5:1 on the %s glass over the plan and the orthophoto",
     (key) => {
+      // On the dark Liquid Glass (`tint`) the content takes the glass ink (12.2-23 correction).
+      const inked = key === "tint" ? withGlassInk(theme) : theme
+      const inks = [
+        inked.colors.textPrimary,
+        inked.colors.textSecondary,
+        inked.semanticColors.textStrong,
+        inked.onSurface.danger,
+      ]
+      expect(inks.length).toBe(texts.length)
       for (const backdrop of mapBackdrops) {
         const surface = compositeOver(visual.mapPanel[key], backdrop)
-        for (const text of texts) expect(contrastRatio(text, surface)).toBeGreaterThanOrEqual(4.5)
+        for (const text of inks) expect(contrastRatio(text, surface)).toBeGreaterThanOrEqual(4.5)
       }
     },
   )
 
-  test("it is the Explorer sheet's fill, the panel already tested above", () => {
-    // Dark also lays the same fill behind the Liquid Glass (12.2-23, `glass-density.test.ts`).
+  test("it is the Explorer sheet's glass, the panel already tested above", () => {
+    // Dark: the sheet's translucent Liquid Glass tint, its fill for the fallbacks (12.2-23).
     expect(visual.mapPanel).toEqual({
-      tint: visual.sheet.fill,
+      tint: visual.sheet.glass?.tint ?? visual.sheet.fill,
       fill: visual.sheet.fill,
       android: visual.sheet.fill,
-      ...(scheme === "dark" ? { underlay: visual.sheet.fill } : {}),
     })
   })
 

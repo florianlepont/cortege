@@ -79,10 +79,27 @@ jest.mock("react-native", () => {
   }
 })
 jest.mock("expo-blur", () => ({ BlurView: "BlurView" }))
+// 12.2-23 correction: the dark sheet is native Liquid Glass on iOS 26, the blur stays elsewhere.
+const mockGlass = { liquid: false, dark: false }
+jest.mock("../../ui/GlassSurface", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    get LIQUID_GLASS_AVAILABLE() {
+      return mockGlass.liquid
+    },
+    GlassSurface: ({ children, ...props }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("GlassSurface", props, children),
+  }
+})
+jest.mock("../../app/theme", () => {
+  const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
+  const dark = actual.buildTheme("automatic", "dark", () => {})
+  return { ...actual, useBrandTheme: () => (mockGlass.dark ? dark : actual.defaultTheme) }
+})
 
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { brandRadius, brandSpacing4 } from "../../app/brand-tokens"
-import { defaultTheme } from "../../app/theme"
+import { buildTheme, defaultTheme } from "../../app/theme"
 import { ExplorerSheet } from "./ExplorerSheet"
 
 function mount(props: Partial<React.ComponentProps<typeof ExplorerSheet>> = {}) {
@@ -114,6 +131,8 @@ beforeEach(() => {
 
 afterEach(() => {
   setReducedMotion(false)
+  mockGlass.liquid = false
+  mockGlass.dark = false
 })
 
 describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
@@ -239,5 +258,51 @@ describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
     expect(scroll.props.alwaysBounceVertical).toBe(false)
     // Scrolling itself stays on, for a long cluster list or the panel squeezed by the keyboard.
     expect(scroll.props.scrollEnabled).not.toBe(false)
+  })
+})
+
+describe("ExplorerSheet surface (12.2-23 correction: native glass, not a blur)", () => {
+  const dark = buildTheme("automatic", "dark", () => {})
+  const sheetFill = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAll(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "explorer-sheet-fill",
+    )
+
+  test("dark on iOS 26: the panel is Liquid Glass with the translucent tint, no blur or fill", () => {
+    mockGlass.liquid = true
+    mockGlass.dark = true
+    const tree = mount({ visible: true, children: "hello" })
+    const glass = tree.root.findByType("GlassSurface" as never)
+    expect(glass.props.surface).toEqual(dark.visual.sheet.glass)
+    expect(glass.props.surface.tint).toBe(dark.visual.mapPanel.tint)
+    expect(glass.props.style).toEqual({
+      flexShrink: 1,
+      borderTopLeftRadius: brandRadius.panel,
+      borderTopRightRadius: brandRadius.panel,
+    })
+    expect(tree.root.findAllByType("BlurView" as never)).toHaveLength(0)
+    expect(sheetFill(tree)).toHaveLength(0)
+    // The handle (drag to dismiss) and the content live on the glass.
+    expect(glass.findAll((node) => node.props.testHandler === true).length).toBeGreaterThan(0)
+    expect(glass.findAllByType("ScrollView" as never)).toHaveLength(1)
+    expect(JSON.stringify(tree.toJSON())).toContain("hello")
+  })
+
+  test("light on iOS 26 keeps the blur and its fill (light unchanged)", () => {
+    mockGlass.liquid = true
+    const tree = mount({ visible: true })
+    expect(tree.root.findAllByType("GlassSurface" as never)).toHaveLength(0)
+    expect(tree.root.findAllByType("BlurView" as never)).toHaveLength(1)
+    expect(sheetFill(tree)).toHaveLength(1)
+  })
+
+  test("dark before iOS 26 and on Android: the blur with the dark fill as before", () => {
+    mockGlass.dark = true
+    const tree = mount({ visible: true })
+    expect(tree.root.findAllByType("GlassSurface" as never)).toHaveLength(0)
+    const [fill] = sheetFill(tree)
+    expect(Object.assign({}, ...[fill.props.style].flat())).toMatchObject({
+      backgroundColor: dark.visual.sheet.fill,
+    })
   })
 })

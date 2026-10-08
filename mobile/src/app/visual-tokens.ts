@@ -123,17 +123,29 @@ export const brandGlassFills = {
   },
 } as const
 
-// Dark Liquid Glass of a floating surface with no glass of its own (12.2-23, owner on iOS 26 in
-// dark: "tous les boutons et les fenêtres avec les effets Liquid Glass vont vers leur
-// transparence"). The untinted system glass let the content behind show through, so in dark the
-// glass is tinted with the Graphite panel and laid over an `underlay`: a dense fill drawn behind the
-// glass, inside its shape, which the glass then refracts instead of the busy content. `UIGlassEffect`
-// takes the tint as a tint of its material, not as a fill, so its alpha alone never gives a dense
-// surface; the underlay does, and the system still draws its blur, rim and highlight on top. Light
+// Dark Liquid Glass (12.2-23 correction, owner on iOS 26: "le verre en mode sombre n'était PAS assez
+// transparent. Les panneaux du verre devraient être du verre natif et pas du flou"). The first
+// 12.2-23 round read the opposite and made the dark glass near opaque (0.92 tints over a 0.88
+// underlay); that is undone, there is no underlay any more. The dark glass is the system Liquid
+// Glass with a moderate Graphite tint, so the map shows through with the system blur, rim and
+// highlight. The tint is the lowest that keeps the content legible over the worst basemap: modelled
+// as a flat layer over the white plan, even pure white text needs 0.59 for 4.5:1, so no tint in 0.35
+// to 0.5 can carry text there. Its content takes the glass ink below (`glassInkDark`), brighter than
+// the theme's secondary and danger inks, in the way iOS draws vibrant labels on its materials.
+// Checked in `glass-density.test.ts`, with 0.66 failing.
+export const darkGlassTint = "rgba(17, 18, 20, 0.68)"
+
+// A dark Liquid Glass surface with no glass of its own (`GlassSurface` with no `surface`). Light
 // keeps the untinted system glass (no entry).
-export const liquidGlassDark = {
-  tint: "rgba(24, 25, 28, 0.92)",
-  underlay: "rgba(24, 25, 28, 0.88)",
+export const liquidGlassDark = { tint: darkGlassTint } as const
+
+// The ink of the theme's content on the translucent dark Liquid Glass (12.2-23 correction):
+// `GlassSurface` gives its children a theme with these in place of `textSecondary` (#9A9FA6) and
+// `onSurface.danger` (#E8A78F), which need a 0.85 and a 0.78 glass over the white plan. The
+// primary text is the theme's own near white. Dark only; light content keeps the theme's ink.
+export const glassInkDark = {
+  textSecondary: "#D8DCDF",
+  danger: "#FFCDB8",
 } as const
 
 // Glass of the controls floating over a map (12.2-19 fix round, owner: "En dark mode les boutons
@@ -146,10 +158,10 @@ export const liquidGlassDark = {
 // system keeps its refraction and rim), `fill` lies over the real blur (older iOS), `android` is the
 // flat fill where expo-blur draws no blur (D-17). The light hairline is the theme's divider, set in
 // `theme-visual.ts`. Checked at 3:1 (icons) and 4.5:1 (text) over the plan and the orthophoto in
-// `visual-tokens.test.ts`. 12.2-23 (owner on iOS 26, dark: the Explorer's glass still went see
-// through): the dark tint and fill go from 0.84 to 0.92, and the Liquid Glass gets a dense
-// `underlay` behind it (see `liquidGlassDark`), since the system glass does not honour the tint's
-// alpha as a fill.
+// `visual-tokens.test.ts`. 12.2-23 correction (owner: the dark glass was not transparent enough):
+// the dark tint and fill go from 0.84 to 0.66, the lowest at which the light moss icons keep 3:1
+// and the labels 4.5:1 over the white plan (0.64 fails, `glass-density.test.ts`). The muted label
+// goes from #C9CED3 to #E3E6E9, which needed a 0.72 glass. Android keeps its 0.94 flat fill.
 export const mapControlGlass = {
   light: {
     tint: "rgba(247, 246, 240, 0.76)",
@@ -160,14 +172,13 @@ export const mapControlGlass = {
     textMuted: "#3D4B37",
   },
   dark: {
-    tint: "rgba(16, 24, 14, 0.92)",
-    fill: "rgba(16, 24, 14, 0.92)",
+    tint: "rgba(16, 24, 14, 0.66)",
+    fill: "rgba(16, 24, 14, 0.66)",
     android: "rgba(16, 24, 14, 0.94)",
-    underlay: "rgba(16, 24, 14, 0.88)",
     hairline: "rgba(255, 255, 255, 0.28)",
     icon: "#D2E8A8",
     text: "#F2F3F1",
-    textMuted: "#C9CED3",
+    textMuted: "#E3E6E9",
   },
 } as const
 
@@ -192,8 +203,10 @@ export const mapControlIconSize = 24
 // dense enough for the theme's own text tokens at 4.5:1 over the plan and the orthophoto. The close
 // button is a 44 pt glass circle: `closeFill` tints it (Liquid Glass) or fills it (fallback), with a
 // `closeHairline` outline; `handle` is the drag indicator, which the dark divider made invisible.
-// 12.2-23 (owner on iOS 26, dark: the sheets still showed the map through): the dark fill goes from
-// 0.88 to 0.96, the blur kept under it. The same fill is the map panel's glass and its underlay.
+// 12.2-23 correction (owner: "les panneaux du verre devraient être du verre natif et pas du flou"):
+// on iOS 26 the dark sheet is the system Liquid Glass tinted with `tint` (`darkGlassTint`), its
+// content in the glass ink; `fill` (back to 0.88) stays the blur fallback of older iOS and Android.
+// The close circle's tint goes from 0.14 to 0.08, so its glyph keeps 4.5:1 on the lighter glass.
 export const explorerSheetGlass = {
   light: {
     fill: "rgba(247, 246, 240, 0.88)",
@@ -202,9 +215,10 @@ export const explorerSheetGlass = {
     closeHairline: "rgba(36, 49, 31, 0.16)",
   },
   dark: {
-    fill: "rgba(17, 18, 20, 0.96)",
+    tint: darkGlassTint,
+    fill: "rgba(17, 18, 20, 0.88)",
     handle: "rgba(255, 255, 255, 0.32)",
-    closeFill: "rgba(255, 255, 255, 0.14)",
+    closeFill: "rgba(255, 255, 255, 0.08)",
     closeHairline: "rgba(255, 255, 255, 0.24)",
   },
 } as const
