@@ -173,10 +173,70 @@ describe("CadastreProviderService", () => {
     expect(reverseUrl.searchParams.get("lat")).toBe("48.8566")
     expect(reverseUrl.searchParams.get("lon")).toBe("2.3522")
 
+    // A Paris arrondissement: API Carto knows it by the city's code_insee and its code_arr.
     const apiCartoUrl = fetchMock.mock.calls[1][0]
-    expect(apiCartoUrl.searchParams.get("code_insee")).toBe("75104")
+    expect(apiCartoUrl.searchParams.get("code_insee")).toBe("75056")
+    expect(apiCartoUrl.searchParams.get("code_arr")).toBe("104")
     expect(apiCartoUrl.searchParams.get("section")).toBe("AE")
     expect(apiCartoUrl.searchParams.get("numero")).toBe("0003")
+  })
+
+  it("registers a parcel found by point with its IDU's key (arrondissement, numbered section)", async () => {
+    // Reverse geocoder answers as checked on 2026-10-08: the commune is the city, the id the IDU.
+    const answers = [
+      {
+        id: "75112000BL0010",
+        departmentcode: "75",
+        municipalitycode: "056",
+        districtcode: "112",
+        section: "BL",
+        number: "0010",
+      },
+      {
+        id: "67392000090001",
+        departmentcode: "67",
+        municipalitycode: "392",
+        districtcode: "000",
+        section: "09",
+        number: "0001",
+      },
+    ]
+    const fetchMock = jest.fn(async (url: URL) =>
+      url.searchParams.get("index") === "parcel"
+        ? {
+            ok: true,
+            json: async () => ({
+              features: [
+                {
+                  properties: answers.shift(),
+                  geometry: { type: "Point", coordinates: [2.4, 48.8] },
+                },
+              ],
+            }),
+          }
+        : { ok: true, json: async () => ({ features: [] }) },
+    )
+    global.fetch = fetchMock as unknown as typeof global.fetch
+    const service = buildService({
+      CADASTRE_PROVIDER: "ign",
+      CADASTRE_PROVIDER_ALLOW_FALLBACK: "false",
+    })
+
+    const paris = await service.resolveFromPoint(48.831, 2.4087)
+    const alsace = await service.resolveFromPoint(48.9514, 7.3995)
+
+    expect([paris?.parcel_id, paris?.commune_code, paris?.section, paris?.number]).toEqual([
+      "75112000BL0010",
+      "75112",
+      "BL",
+      "0010",
+    ])
+    expect([alsace?.parcel_id, alsace?.commune_code, alsace?.section, alsace?.number]).toEqual([
+      "67392000090001",
+      "67392",
+      "09",
+      "0001",
+    ])
   })
 
   describe("a parcel known only by its identifier", () => {
@@ -210,6 +270,31 @@ describe("CadastreProviderService", () => {
       expect(url.searchParams.get("code_insee")).toBe("94077")
       expect(url.searchParams.get("section")).toBe("AW")
       expect(url.searchParams.get("numero")).toBe("0066")
+    })
+
+    it("asks API Carto for Paris, Lyon and Marseille by city and code_arr, sections on two characters", async () => {
+      const fetchMock = jest.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ features: [{ geometry: polygon }] }),
+      })
+      global.fetch = fetchMock as unknown as typeof global.fetch
+      const service = buildService({ CADASTRE_PROVIDER: "ign" })
+
+      for (const id of ["75112000BL0010", "69381000AR0166", "132018010B0128", "67392000090001"]) {
+        await expect(service.lookupParcelById(id)).resolves.not.toBeNull()
+      }
+      const asked = fetchMock.mock.calls.map(([url]: [URL]) => [
+        url.searchParams.get("code_insee"),
+        url.searchParams.get("code_arr"),
+        url.searchParams.get("section"),
+        url.searchParams.get("numero"),
+      ])
+      expect(asked).toEqual([
+        ["75056", "112", "BL", "0010"],
+        ["69123", "381", "AR", "0166"],
+        ["13055", "201", "0B", "0128"],
+        ["67392", null, "09", "0001"],
+      ])
     })
 
     it("answers null without a call when the provider is not IGN or the id is not an IDU", async () => {
@@ -371,6 +456,34 @@ describe("CadastreProviderService IGN WFS client (D-08)", () => {
     expect(service.wfsEnabled).toBe(false)
     await expect(service.fetchParcelFeaturesInBbox(innerBbox(PARIS_X, PARIS_Y))).resolves.toBe(null)
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("keeps numbered sections and arrondissements, keyed like the parcels registered by id", async () => {
+    const tile = tileBounds(PARIS_X, PARIS_Y)
+    const center = { lng: (tile.minLng + tile.maxLng) / 2, lat: (tile.minLat + tile.maxLat) / 2 }
+    const alsace = squareFeature(
+      { code_insee: "67392", section: "09", numero: "0001", idu: "67392000090001" },
+      center,
+    )
+    const paris = squareFeature(
+      { code_insee: "75056", section: "BL", numero: "0010", idu: "75112000BL0010" },
+      { lng: center.lng + 0.001, lat: center.lat },
+    )
+    mockFetch(() => okJson({ features: [alsace, paris] }))
+
+    const features = await buildService(IGN).fetchParcelFeaturesInBbox(innerBbox(PARIS_X, PARIS_Y))
+
+    expect(
+      features?.map(({ parcel_id, commune_code, section, number }) => [
+        parcel_id,
+        commune_code,
+        section,
+        number,
+      ]),
+    ).toEqual([
+      ["67392000090001", "67392", "09", "0001"],
+      ["75112000BL0010", "75112", "BL", "0010"],
+    ])
   })
 
   it("fetches one z15 tile with the tile bounds and serves later calls from the cache", async () => {
