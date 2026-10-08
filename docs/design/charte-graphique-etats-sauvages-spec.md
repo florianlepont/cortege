@@ -313,19 +313,33 @@ helper (`survey-list/haptics.ts`, now deleted) was needlessly withholding feedba
 
 ### 12.4 `AppPressable` — the single pressable primitive (DS-06)
 
-`mobile/src/ui/AppPressable.tsx` replaces the inconsistent pressed-opacity values (0.7, 0.4, 0.76…)
-spread across individual components:
+`mobile/src/ui/AppPressable.tsx` is THE pressable of the app. Screens, components, navigation and
+`ui/` never import `Pressable` from `react-native` (ESLint `no-restricted-imports` in
+`mobile/.eslintrc.json`); the only exceptions are `RipplePressable` (list rows with the green press
+wave, built on the plain `Pressable`) and the modal backdrops of `AppActionSheet` and
+`FactorHelpSheet` (allowlisted, they go with the native sheets). It replaces the inconsistent
+pressed-opacity values (0.7, 0.4, 0.76…) once spread across components:
 - **Spring scale** to `brandInteraction.pressedScale` (0.97) via `brandMotion.springs.press`, applied
   to an inner `Animated.View` rather than the `Pressable` itself (Reanimated's
-  `createAnimatedComponent` can't consume the `style={(state) => ...}` callback form several existing
-  consumers rely on — wrapping instead of replacing keeps it working). Skipped entirely under
-  `useReducedMotion()`.
+  `createAnimatedComponent` can't consume the `style={(state) => ...}` callback form). The layout
+  keys of `style` (width, height, min/max, flex, margin, position, `alignSelf`, `zIndex`...) stay on
+  the `Pressable`, so a card with `flex: 1` or a margin is laid out as before; fill, border, padding
+  and radius go to the inner view, which grows to fill. Skipped entirely under `useReducedMotion()`.
 - **Android ripple** (`android_ripple`), defaulting to `brandInteraction.rippleColor`
   (`rgba(0, 0, 0, 0.08)`).
-- **A required `accessibilityLabel`** — not optional; TypeScript enforces it at every call site.
+- **A required `accessibilityLabel`**, enforced by TypeScript at every call site, and an
+  `accessibilityRole` that defaults to `button` (pass `radio`, `tab`, `link`, `text` or `none` when
+  it is not one).
+- Props: `rippleColor` (ripple colour); `disableScale` (no scale and no wrapper view, `style` goes
+  straight to the `Pressable`: rows with a `pressed` fill, controls inside a `GlassSurface
+  interactive`, which has its own press shimmer); `disableRipple` (no Android ripple, same cases).
+  Everything else of `PressableProps` is forwarded (`hitSlop`, `disabled`, `onPressIn`/`onPressOut`,
+  `testID`, `accessibilityState`, `accessible`...).
+- Guarded by `ui/AppPressable.test.tsx` (pressed feedback, Reduce Motion, disabled, ripple, style
+  split, accessibility props).
 
-Migrated: `AppButton` (previously had no pressed feedback at all), `DraftCard` and `ParcelNearbyCard`
-(neither had an accessibility label before this phase).
+Used by `AppButton`, `GlassButton`, the icon and text buttons, cards, rows and selectable controls
+of every screen (about 56 sites migrated in phase 23, batch 4).
 
 ### 12.5 Loading skeleton
 
