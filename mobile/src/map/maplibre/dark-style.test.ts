@@ -15,6 +15,8 @@ describe("parseColor", () => {
     expect(parseColor("#FF000080")?.a).toBeCloseTo(0.5, 1)
     expect(parseColor("rgba(255, 255, 255, 0.25)")).toMatchObject({ l: 1, a: 0.25 })
     expect(parseColor("rgb(0, 128, 0)")?.h).toBeCloseTo(120, 0)
+    expect(parseColor("rgb(0, 0, 255)")?.h).toBeCloseTo(240, 0)
+    expect(parseColor("#0000ff")?.h).toBeCloseTo(240, 0)
   })
 
   test("leaves anything else alone", () => {
@@ -89,6 +91,36 @@ describe("darkenPlanIgnStyle", () => {
     expect(paint("road")["line-width"]).toBe(2)
     expect(lightnessOf(paint("label")["text-color"] as string)).toBeGreaterThanOrEqual(70)
     expect(lightnessOf(paint("label")["text-halo-color"] as string)).toBeLessThanOrEqual(10)
+  })
+
+  test("recolours zoom stops (legacy functions) and leaves numbers alone", () => {
+    const withStops = darkenPlanIgnStyle({
+      version: 8,
+      sources: {},
+      layers: [
+        {
+          id: "water",
+          type: "fill",
+          source: "x",
+          paint: {
+            "fill-color": {
+              stops: [
+                [10, "#FFFFFF"],
+                [15, "#000000"],
+              ],
+            },
+          },
+        },
+      ],
+    } as unknown as StyleSpecification)
+    const layer = withStops.layers[1] as unknown as {
+      paint: Record<string, { stops: [number, string][] }>
+    }
+    const paint = layer.paint
+    const stops = paint["fill-color"].stops
+    expect(stops.map(([zoom]) => zoom)).toEqual([10, 15])
+    expect(lightnessOf(stops[0][1])).toBeLessThanOrEqual(10)
+    expect(lightnessOf(stops[1][1])).toBeGreaterThanOrEqual(80)
   })
 
   test("keeps sources, sprite and glyphs, so the same tiles serve both themes", () => {
