@@ -261,9 +261,18 @@ function markers(): ReactTestInstance[] {
   return tree.root.findAll((node) => (node.type as unknown) === "Marker")
 }
 
+// The offline panel lays out unseen copies of its statuses to reserve their height (12.2-19):
+// what the user sees is outside that measuring layer.
+function shown(node: ReactTestInstance): boolean {
+  for (let parent = node.parent; parent; parent = parent.parent) {
+    if (parent.props.testID === "offline-area-measure") return false
+  }
+  return true
+}
+
 function texts(): string[] {
   return tree.root
-    .findAll((node) => (node.type as unknown) === "Text")
+    .findAll((node) => (node.type as unknown) === "Text" && shown(node))
     .map((node) => [node.props.children].flat().join(""))
 }
 
@@ -687,7 +696,9 @@ describe("PublicMapScreen", () => {
     })
 
     const statusView = () =>
-      tree.root.findAll((node) => node.props.testID?.startsWith?.("offline-download-") === true)
+      tree.root.findAll(
+        (node) => node.props.testID?.startsWith?.("offline-download-") === true && shown(node),
+      )
 
     test("the panel shows the running download, then its outcome; Terminé closes it", () => {
       mockOfflineEnabled.value = true
@@ -724,7 +735,8 @@ describe("PublicMapScreen", () => {
       const done = tree.root.find(
         (node) =>
           (node.type as unknown) === "GlassButton" &&
-          node.props.label === fr.offlineMap.areas.done.close,
+          node.props.label === fr.offlineMap.areas.done.close &&
+          shown(node),
       )
       act(() => done.props.onPress())
       expect(mockClearDownloadStatus).toHaveBeenCalledTimes(2)
@@ -744,7 +756,8 @@ describe("PublicMapScreen", () => {
       const retry = tree.root.find(
         (node) =>
           (node.type as unknown) === "GlassButton" &&
-          node.props.label === fr.offlineMap.areas.failed.retry,
+          node.props.label === fr.offlineMap.areas.failed.retry &&
+          shown(node),
       )
       await act(async () => retry.props.onPress())
       expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), "Lisière")

@@ -78,6 +78,26 @@ export type DownloadStatusViewProps = {
   status: AreaDownloadStatus
   onDone: () => void
   onRetry: () => void
+  /** False for the panel's hidden copies that only measure each state: they never speak. */
+  announce?: boolean
+}
+
+/**
+ * One status of each kind for an area `name`, at their widest (a full bar, five-digit tile counts):
+ * the panel lays them out unseen to reserve the tallest state's height (12.2-19).
+ */
+export function measureStatuses(name: string, totalTiles: number): AreaDownloadStatus[] {
+  const progress = {
+    name,
+    percentage: 100,
+    downloadedTiles: Math.max(totalTiles, 10000),
+    totalTiles: Math.max(totalTiles, 10000),
+  }
+  return [
+    { phase: "running", areaId: "measure-running", ...progress },
+    { phase: "done", areaId: "measure-done", ...progress },
+    { phase: "failed", areaId: "measure-failed", name },
+  ]
 }
 
 /**
@@ -91,6 +111,7 @@ export const DownloadStatusView = memo(function DownloadStatusView({
   status,
   onDone,
   onRetry,
+  announce = true,
 }: DownloadStatusViewProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -99,14 +120,15 @@ export const DownloadStatusView = memo(function DownloadStatusView({
   const announced = useRef(0)
 
   useEffect(() => {
-    if (step === null || step <= announced.current) return
+    if (!announce || step === null || step <= announced.current) return
     announced.current = step
     AccessibilityInfo.announceForAccessibility(t.running.percent(step))
-  }, [step])
+  }, [announce, step])
   useEffect(() => {
+    if (!announce) return
     if (status.phase === "done") AccessibilityInfo.announceForAccessibility(t.done.title)
     if (status.phase === "failed") AccessibilityInfo.announceForAccessibility(t.failed.title)
-  }, [status.phase])
+  }, [announce, status.phase])
 
   if (status.phase === "failed") {
     return (

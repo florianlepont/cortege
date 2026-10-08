@@ -18,3 +18,6 @@ export const foregroundStyle = (color: string) =>
 export const accessibilityLabel = (label: string) => createModifier("accessibilityLabel", { label })
 export const accessibilityHidden = (hidden: boolean = true) =>
   createModifier("accessibilityHidden", { hidden })
+export const lineLimit = (limit?: number) => createModifier("lineLimit", { limit })
+export const minimumScaleFactor = (factor: number) =>
+  createModifier("minimumScaleFactor", { factor })

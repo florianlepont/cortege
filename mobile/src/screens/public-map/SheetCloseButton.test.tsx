@@ -25,6 +25,11 @@ jest.mock("../../ui/GlassSurface", () => {
 })
 jest.mock("../../ui/AppField", () => ({ AppField: "AppField" }))
 jest.mock("../../ui/GlassButton", () => ({ GlassButton: "GlassButton" }))
+// The panel's unseen status copies are covered by OfflineAreasSheet.test.tsx.
+jest.mock("./DownloadStatusView", () => ({
+  DownloadStatusView: "DownloadStatusView",
+  measureStatuses: () => [],
+}))
 jest.mock("../../ui/AppSectionHeader", () => {
   const ReactRef = require("react") as typeof import("react")
   return {

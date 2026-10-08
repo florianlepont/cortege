@@ -34,7 +34,8 @@ type GlassButtonProps = {
   size?: AppButtonSize
   /**
    * Height of the button in points, in place of the size's own (a token, never below the 44 pt
-   * hit target): the one panel button drawn between two sizes (`button.minHeightPanel`).
+   * hit target): the offline panel's buttons drawn between two sizes (`button.minHeightPanel`).
+   * Natively the host is then exactly that tall and the capsule fills it (see `NativeGlassButton`).
    */
   minHeight?: number
   /**
@@ -135,6 +136,7 @@ export function GlassButton({
         accessibilityLabel={a11yLabel}
         controlSize={geometry.control}
         minHeight={minHeight ?? geometry.minHeight}
+        height={minHeight}
         variant={variant}
         tint={secondary ? undefined : cta.tint}
         ink={secondary ? cta.secondary.ink : cta.ink}

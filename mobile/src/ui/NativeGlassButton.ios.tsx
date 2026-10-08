@@ -10,6 +10,8 @@ import {
   font,
   foregroundStyle,
   frame,
+  lineLimit,
+  minimumScaleFactor,
   tint,
 } from "@expo/ui/swift-ui/modifiers"
 import type { NativeGlassButtonProps } from "./NativeGlassButton.types"
@@ -45,6 +47,7 @@ export function NativeGlassButton({
   accessibilityLabel: a11yLabel,
   controlSize: size,
   minHeight,
+  height,
   variant,
   tint: tintColor,
   ink,
@@ -60,11 +63,16 @@ export function NativeGlassButton({
 }: NativeGlassButtonProps) {
   const inkModifiers = isDisabled ? [] : [foregroundStyle(ink)]
   const secondary = variant === "secondary"
+  // An exact height: the host is that box, the SwiftUI button is offered exactly its size and its
+  // label row fills it, so the capsule is the box and nothing is drawn outside it. Otherwise the
+  // host follows the button (`matchContents`), floored at `minHeight`.
+  const exact = height !== undefined
+  const fitModifiers = exact ? [lineLimit(1), minimumScaleFactor(0.75)] : []
   return (
     <Host
-      matchContents={{ vertical: true }}
+      matchContents={exact ? undefined : { vertical: true }}
       colorScheme={colorScheme}
-      style={[styles.host, { minHeight }, style]}
+      style={[styles.host, exact ? { height } : { minHeight }, style]}
     >
       <Button
         onPress={onPress}
@@ -91,6 +99,7 @@ export function NativeGlassButton({
             modifiers={[
               font({ family: fontFamily, size: fontSize, textStyle: "body" }),
               ...inkModifiers,
+              ...fitModifiers,
             ]}
           >
             {label}

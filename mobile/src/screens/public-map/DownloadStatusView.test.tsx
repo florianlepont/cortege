@@ -28,7 +28,12 @@ import { defaultTheme } from "../../app/theme"
 import { downloadBarGeometry } from "../../app/visual-tokens"
 import type { AreaDownloadProgress, AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
-import { announceStep, DownloadProgressBar, DownloadStatusView } from "./DownloadStatusView"
+import {
+  announceStep,
+  DownloadProgressBar,
+  DownloadStatusView,
+  measureStatuses,
+} from "./DownloadStatusView"
 
 const t = fr.offlineMap.areas
 const originalConsoleError = console.error
@@ -191,5 +196,29 @@ describe("DownloadStatusView (12.2-19 third round)", () => {
     // The fill keeps 3:1 against its track (non-text contrast).
     const { track, fill } = defaultTheme.visual.downloadBar
     expect(contrastRatio(fill, track)).toBeGreaterThanOrEqual(3)
+  })
+
+  test("the panel's unseen measuring copies never speak, and are at their widest", () => {
+    const statuses = measureStatuses("Lisière", 186)
+    expect(statuses.map((status) => status.phase)).toEqual(["running", "done", "failed"])
+    expect(statuses[0]).toMatchObject({
+      percentage: 100,
+      downloadedTiles: 10000,
+      totalTiles: 10000,
+    })
+    expect(measureStatuses("Lisière", 123456)[1]).toMatchObject({ totalTiles: 123456 })
+    for (const status of statuses) {
+      act(() => {
+        renderer.create(
+          <DownloadStatusView
+            status={status}
+            announce={false}
+            onDone={jest.fn()}
+            onRetry={jest.fn()}
+          />,
+        )
+      })
+    }
+    expect(mockAnnounce).not.toHaveBeenCalled()
   })
 })

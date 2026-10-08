@@ -192,10 +192,31 @@ describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => 
     expect(modifier(render({ size: "sm" }).text, "font")).toMatchObject({ size: 12 })
   })
 
-  test("a given height is the host's floor, on the regular control (offline panel, 46 pt)", () => {
-    const { host, button } = render({ size: "md", minHeight: 46 })
+  test("a given height is the host's exact box, filled by the capsule (offline panel, 46 pt)", () => {
+    const { host, button, text } = render({ size: "md", minHeight: 46 })
     expect(modifier(button, "controlSize")).toEqual({ $type: "controlSize", size: "regular" })
-    expect(flatten(host.props.style).minHeight).toBe(46)
+    // 12.2-19: a host sized to the SwiftUI button (matchContents) kept the capsule at its own
+    // ideal height and it overlapped the estimate above it. The host is now exactly 46 pt, offered
+    // whole to the button, whose label row fills it: nothing is drawn outside the box.
+    const style = flatten(host.props.style)
+    expect(style.height).toBe(46)
+    expect(style).not.toHaveProperty("minHeight")
+    expect(host.props.matchContents).toBeUndefined()
+    const fill = modifier(button.findByType("HStack" as never), "frame")
+    expect(fill).toMatchObject({ maxWidth: expect.any(Number), maxHeight: expect.any(Number) })
+    // The label stays on one line and shrinks a little before it would outgrow the box.
+    expect(modifier(text, "lineLimit")).toEqual({ $type: "lineLimit", limit: 1 })
+    expect(modifier(text, "minimumScaleFactor")).toEqual({
+      $type: "minimumScaleFactor",
+      factor: 0.75,
+    })
+  })
+
+  test("without a given height the host still grows with its label, no line limit", () => {
+    const { host, text } = render({ size: "lg" })
+    expect(host.props.matchContents).toEqual({ vertical: true })
+    expect(flatten(host.props.style)).not.toHaveProperty("height")
+    expect(modifier(text, "lineLimit")).toBeUndefined()
   })
 
   test("pressing taps once and calls onPress", () => {

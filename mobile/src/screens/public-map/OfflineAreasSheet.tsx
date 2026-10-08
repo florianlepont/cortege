@@ -1,5 +1,5 @@
-import { memo, useMemo, useState } from "react"
-import { Keyboard, View } from "react-native"
+import { memo, useCallback, useMemo, useState } from "react"
+import { Keyboard, LayoutChangeEvent, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { brandComponentTokens } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
@@ -9,11 +9,13 @@ import { fr } from "../../i18n"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { GlassButton } from "../../ui/GlassButton"
-import { DownloadStatusView } from "./DownloadStatusView"
+import { DownloadStatusView, measureStatuses } from "./DownloadStatusView"
 import { SheetCloseButton } from "./SheetCloseButton"
 import { createPanelStyles, offlineAreasStyles as areaStyles } from "./styles"
 
 const t = fr.offlineMap.areas
+
+const noop = (): void => undefined
 
 const pad = (value: number): string => String(value).padStart(2, "0")
 
@@ -43,8 +45,11 @@ export type OfflineAreasSheetProps = {
  * Explorer's bottom sheet like every other panel of the map (OA-66).
  *
  * Once a download has started (12.2-19 third round), the panel shows its progress bar, then its
- * outcome (`DownloadStatusView`), over the form: the form stays laid out but hidden, so the panel
- * keeps the same height in every state and nothing under the header moves.
+ * outcome (`DownloadStatusView`), over the form. The panel keeps one height in every state, the
+ * tallest one, measured: the form stays in the flow (hidden under a status), and unseen copies of
+ * the three statuses are laid out with the panel's real width and text size, their tallest height
+ * the body's minimum. The estimate (or the size warning) and the button stack in the flow, so
+ * nothing can overlap whatever the text size, the screen or the keyboard.
  */
 export const OfflineAreasSheet = memo(function OfflineAreasSheet({
   downloadingAreaId,
@@ -65,6 +70,19 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
     onDownload(name.trim() || defaultAreaName())
   }
   const formHidden = downloadStatus !== null
+  // The tallest of the three statuses, as laid out (never a fixed number).
+  const [statusHeights, setStatusHeights] = useState<Record<string, number>>({})
+  const reserved = Math.max(0, ...Object.values(statusHeights))
+  const measure = useCallback((phase: string, event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout
+    setStatusHeights((current) =>
+      current[phase] === height ? current : { ...current, [phase]: height },
+    )
+  }, [])
+  const measured = useMemo(
+    () => measureStatuses(downloadStatus?.name ?? name, estimate.totalTileCount),
+    [downloadStatus?.name, name, estimate.totalTileCount],
+  )
 
   return (
     <View style={styles.card}>
@@ -76,7 +94,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
         trailing={<SheetCloseButton accessibilityLabel={t.a11y.closeSheet} onPress={onClose} />}
       />
 
-      <View>
+      <View testID="offline-area-body" style={{ minHeight: reserved }}>
         <View
           testID="offline-area-form"
           pointerEvents={formHidden ? "none" : "auto"}
@@ -111,6 +129,24 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
             style={areaStyles.downloadButton}
             testID="offline-area-download"
           />
+        </View>
+        <View
+          testID="offline-area-measure"
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[areaStyles.statusLayer, areaStyles.hidden]}
+        >
+          {measured.map((status) => (
+            <View
+              key={status.phase}
+              testID={`offline-area-measure-${status.phase}`}
+              onLayout={(event) => measure(status.phase, event)}
+              style={areaStyles.statusLayer}
+            >
+              <DownloadStatusView status={status} announce={false} onDone={noop} onRetry={noop} />
+            </View>
+          ))}
         </View>
         {downloadStatus ? (
           <View style={areaStyles.statusLayer}>

@@ -19,6 +19,13 @@ export type NativeGlassButtonProps = {
   /** Minimum height of the host (and so of the capsule, which fills it), in points. */
   minHeight: number
   /**
+   * The exact height of the host, which the capsule fills (12.2-19, the offline panel's 46 pt
+   * buttons). The host then no longer sizes itself to the SwiftUI button: a `matchContents` host
+   * keeps the button at its own ideal height, which is not the height asked for, and the capsule
+   * overlapped the text above it. The label stays on one line and shrinks a little to fit.
+   */
+  height?: number
+  /**
    * `primary` is the forest-tinted `glassProminent` button, `secondary` the neutral system `glass`
    * button (no tint, nothing drawn over it).
    */
