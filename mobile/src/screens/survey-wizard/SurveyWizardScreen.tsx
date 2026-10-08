@@ -154,7 +154,7 @@ export function SurveyWizardScreen({
               testID="wizard-back"
             >
               <Ionicons
-                name={stepIndex === 0 ? "close" : "chevron-back"}
+                name={stepIndex === 0 ? "close-outline" : "chevron-back-outline"}
                 size={22}
                 color={theme.semanticColors.textStrong}
               />
@@ -225,7 +225,11 @@ export function SurveyWizardScreen({
                   >
                     <View style={[styles.radio, selected ? styles.radioSelected : null]}>
                       {selected ? (
-                        <Ionicons name="checkmark" size={14} color={theme.visual.chip.activeText} />
+                        <Ionicons
+                          name="checkmark-outline"
+                          size={14}
+                          color={theme.visual.chip.activeText}
+                        />
                       ) : null}
                     </View>
                     <View style={styles.choiceCopy}>

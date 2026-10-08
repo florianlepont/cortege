@@ -42,11 +42,19 @@ function closingBrace(text: string, open: number): number {
   return text.length - 1
 }
 
+/**
+ * String literals of an expression that can be its value: an operand of a comparison
+ * (`kind === "unavailable" ? ...`) is a condition, not a glyph.
+ */
 function stringLiterals(text: string, offset: number): Hit[] {
-  return [...text.matchAll(/"([^"\n]*)"|'([^'\n]*)'/g)].map((match) => ({
-    index: offset + (match.index ?? 0),
-    glyph: match[1] ?? match[2],
-  }))
+  return [...text.matchAll(/"([^"\n]*)"|'([^'\n]*)'/g)]
+    .filter((match) => {
+      const start = match.index ?? 0
+      const before = text.slice(0, start).trimEnd()
+      const after = text.slice(start + match[0].length).trimStart()
+      return !/[=!]=$/.test(before) && !/^[=!]=/.test(after)
+    })
+    .map((match) => ({ index: offset + (match.index ?? 0), glyph: match[1] ?? match[2] }))
 }
 
 /** Glyphs of a JSX attribute value starting at `start`: `"x"` or every literal inside `{...}`. */
@@ -230,7 +238,7 @@ describe("findNonOutlineIcons", () => {
     ])
   })
 
-  it("reports icon properties and icon attributes, not colours or outline names", () => {
+  it("reports icon properties and attributes, not colours, conditions or outline names", () => {
     const file = writeFixture(
       "src/screens/Rows.tsx",
       [
@@ -239,6 +247,8 @@ describe("findNonOutlineIcons", () => {
         'export const B = () => <AppButton leadingIcon="add" label={l} />',
         'export const C = () => <AppNotice icon={ok ? "checkmark-circle-outline" : "alert-circle"} />',
         'export const D = () => <Chip trailingIcon="chevron-forward-outline" />',
+        'export const E = () => <Ionicons name={kind === "unavailable" ? "image-outline" : "x-outline"} />',
+        'export const F = () => <AppNotice icon={"success" !== tone ? "flag-outline" : "leaf"} />',
       ].join("\n"),
     )
 
@@ -246,6 +256,7 @@ describe("findNonOutlineIcons", () => {
       { file, glyph: "mail" },
       { file, glyph: "add" },
       { file, glyph: "alert-circle" },
+      { file, glyph: "leaf" },
     ])
   })
 
@@ -290,17 +301,10 @@ describe("findNonOutlineIcons", () => {
 })
 
 describe("icon gate on mobile/src (D-07)", () => {
-  const targets = [
-    "ui",
-    "navigation",
-    "screens/FactorHelpSheet.tsx",
-    "screens/AuthGateScreen.tsx",
-    "screens/onboarding",
-  ]
-  const files = targets.flatMap((target) => sourceFiles(path.join(SRC_ROOT, target)))
+  const files = sourceFiles(SRC_ROOT)
 
   it("scans a real set of source files", () => {
-    expect(files.length).toBeGreaterThan(30)
+    expect(files.length).toBeGreaterThan(200)
   })
 
   it("names outline Ionicons glyphs only", () => {

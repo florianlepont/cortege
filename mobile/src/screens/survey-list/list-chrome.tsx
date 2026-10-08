@@ -54,7 +54,7 @@ export function ListTitleBar({ onOpenSearch, onOpenCreateSurvey }: TitleBarProps
         onPress={onOpenSearch}
         style={styles.roundButton}
       >
-        <Ionicons name="search" size={20} color={theme.colors.forest} />
+        <Ionicons name="search-outline" size={20} color={theme.colors.forest} />
       </AppPressable>
       <AppPressable
         accessibilityRole="button"
@@ -62,7 +62,7 @@ export function ListTitleBar({ onOpenSearch, onOpenCreateSurvey }: TitleBarProps
         onPress={onOpenCreateSurvey}
         style={styles.roundButton}
       >
-        <Ionicons name="add" size={24} color={theme.colors.forest} />
+        <Ionicons name="add-outline" size={24} color={theme.colors.forest} />
       </AppPressable>
     </View>
   )

@@ -131,7 +131,7 @@ export function ToolsSection({
             <Text style={styles.cardTitle}>{t.identify.title}</Text>
             <Text style={styles.cardBody}>{t.identify.body}</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+          <Ionicons name="chevron-forward-outline" size={18} color={theme.colors.textSecondary} />
         </Pressable>
       </View>
 

@@ -94,7 +94,7 @@ describe("SheetCloseButton (12.2-19 fix round)", () => {
     })
     expect(SHEET_CLOSE_SIZE).toBe(brandInteraction.hitTarget.min)
     const glyph = tree.root.findByType("Ionicons" as never)
-    expect(glyph.props.name).toBe("close")
+    expect(glyph.props.name).toBe("close-outline")
     expect(glyph.props.size).toBe(SHEET_CLOSE_ICON_SIZE)
     expect(glyph.props.color).toBe(dark.colors.textPrimary)
     const button = tree.root.findByType("Pressable" as never)

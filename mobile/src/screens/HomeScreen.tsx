@@ -243,7 +243,7 @@ export function HomeScreen({
                   />
                 ) : (
                   <View style={styles.avatarPlaceholder}>
-                    <Ionicons name="person" size={20} color={theme.colors.textSecondary} />
+                    <Ionicons name="person-outline" size={20} color={theme.colors.textSecondary} />
                   </View>
                 )}
               </Pressable>

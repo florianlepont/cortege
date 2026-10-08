@@ -476,7 +476,7 @@ describe("FactorPager D-26: Terminer le relevé on the last factor", () => {
     expect(maybeByTestID("pager-finish-row")).toBeUndefined()
     expect(byTestID("pager-next").props.accessibilityLabel).toBe(fr.factorPager.finish)
     const icon = byTestID("pager-next").findAll((n) => (n.type as unknown) === "Ionicons")[0]
-    expect(icon.props.name).toBe("checkmark")
+    expect(icon.props.name).toBe("checkmark-outline")
     act(() => {
       byTestID("pager-next").props.onPress()
     })
@@ -542,7 +542,7 @@ describe("FactorPager D-26: Terminer le relevé on the last factor", () => {
     const { byTestID, onFinish } = render("J", {}, action({ onPress }))
     expect(byTestID("pager-next").props.accessibilityLabel).toBe(fr.factorPager.close)
     const icon = byTestID("pager-next").findAll((n) => (n.type as unknown) === "Ionicons")[0]
-    expect(icon.props.name).toBe("close")
+    expect(icon.props.name).toBe("close-outline")
     act(() => {
       byTestID("pager-next").props.onPress()
     })

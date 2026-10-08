@@ -215,7 +215,9 @@ export const FactorPager = memo(function FactorPager({
           testID="pager-next"
         >
           <Ionicons
-            name={showFinish ? "close" : isLast ? "checkmark" : "arrow-forward"}
+            name={
+              showFinish ? "close-outline" : isLast ? "checkmark-outline" : "arrow-forward-outline"
+            }
             size={26}
             color={theme.semanticColors.onCtaPrimary}
           />

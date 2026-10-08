@@ -85,7 +85,7 @@ export function PhotosStrip({
             accessibilityLabel={a11y.addPhoto}
           >
             <GlassSurface tone="auto" pointerEvents="none" style={photoStyles.addPill}>
-              <Ionicons name="add" size={18} color={theme.semanticColors.textStrong} />
+              <Ionicons name="add-outline" size={18} color={theme.semanticColors.textStrong} />
               <Text style={photoStyles.addPillText}>{t.add}</Text>
             </GlassSurface>
           </Pressable>

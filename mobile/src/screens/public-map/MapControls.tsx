@@ -111,7 +111,7 @@ export const MapBottomDock = memo(function MapBottomDock({
           <ActivityIndicator size="small" color={theme.visual.mapControl.icon} />
         ) : (
           <Ionicons
-            name="navigate"
+            name="navigate-outline"
             size={mapControlIconSize}
             color={theme.visual.mapControl.icon}
           />

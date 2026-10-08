@@ -93,7 +93,11 @@ export function FactorsList({
                   <Text style={styles.rowPending}>{s.toFill}</Text>
                 )}
                 {canOpen ? (
-                  <Ionicons name="chevron-forward" size={18} color={theme.colors.textSecondary} />
+                  <Ionicons
+                    name="chevron-forward-outline"
+                    size={18}
+                    color={theme.colors.textSecondary}
+                  />
                 ) : null}
               </Pressable>
             )

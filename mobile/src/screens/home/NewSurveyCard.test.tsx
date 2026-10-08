@@ -117,7 +117,7 @@ describe("NewSurveyCard (12.2-19 fix round)", () => {
     const { texts } = mount()
     expect(texts).toEqual([t.label, t.helper])
     const icons = tree.root.findAllByType("Ionicons" as never).map((node) => node.props.name)
-    expect(icons).toEqual(["add-outline", "chevron-forward"])
+    expect(icons).toEqual(["add-outline", "chevron-forward-outline"])
     const disc = tree.root.findAllByType("Ionicons" as never)[0].parent as ReactTestInstance
     const discStyle = styleOf(disc)
     expect(discStyle.width).toBe(NEW_SURVEY_LAYOUT.disc)

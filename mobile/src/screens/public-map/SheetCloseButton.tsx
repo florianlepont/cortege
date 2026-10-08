@@ -35,7 +35,11 @@ export const SheetCloseButton = memo(function SheetCloseButton({
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
       >
-        <Ionicons name="close" size={SHEET_CLOSE_ICON_SIZE} color={theme.visual.sheet.closeIcon} />
+        <Ionicons
+          name="close-outline"
+          size={SHEET_CLOSE_ICON_SIZE}
+          color={theme.visual.sheet.closeIcon}
+        />
       </Pressable>
     </GlassSurface>
   )

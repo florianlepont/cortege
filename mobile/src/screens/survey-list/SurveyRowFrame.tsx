@@ -63,7 +63,7 @@ export function SurveyRowFrame({
           </Text>
           {selected ? (
             <Ionicons
-              name="checkmark-circle"
+              name="checkmark-circle-outline"
               size={18}
               color={theme.colors.forest}
               style={styles.surveyCardSelectedIcon}

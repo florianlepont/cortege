@@ -41,6 +41,8 @@ import { fr } from "../i18n"
 
 const t = fr.parcelSelection
 const headers = fr.navigation.headers
+const NEXT_ICON = "arrow-forward-outline"
+const DONE_ICON = "checkmark-outline"
 
 // The colours of the parcel layer (ParcelPolygonsLayer), for the legend the Explorer's look gets.
 const PARCEL_LEGEND_ROWS: MapLegendRow[] = [
@@ -296,7 +298,7 @@ export function SurveyParcelSelectionScreen({
             <Text style={screenStyles.bottomHint}>{t.tapHint}</Text>
             <AppButton
               label={saving ? t.saving : wizard ? t.continue : t.done}
-              leadingIcon={saving ? "hourglass-outline" : wizard ? "arrow-forward" : "checkmark"}
+              leadingIcon={saving ? "hourglass-outline" : wizard ? NEXT_ICON : DONE_ICON}
               size="lg"
               style={screenStyles.doneButton}
               onPress={() => {

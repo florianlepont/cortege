@@ -133,7 +133,7 @@ describe("PhotosStrip heading (D-24)", () => {
     expect(add[0].props.style).toEqual(styles.addHit)
     expect(styles.addHit.minHeight).toBeGreaterThanOrEqual(44)
     expect(add[0].findAllByType("GlassSurface" as never)).toHaveLength(1)
-    expect(add[0].findAllByType("Ionicons" as never)[0].props.name).toBe("add")
+    expect(add[0].findAllByType("Ionicons" as never)[0].props.name).toBe("add-outline")
     expect(
       add[0].findAll((n) => (n.type as unknown) === "Text").map((n) => n.props.children),
     ).toEqual([t.add])

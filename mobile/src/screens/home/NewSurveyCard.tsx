@@ -59,7 +59,7 @@ export function NewSurveyCard({ onPress }: NewSurveyCardProps) {
           <Text style={styles.helper}>{t.helper}</Text>
         </View>
         <Ionicons
-          name="chevron-forward"
+          name="chevron-forward-outline"
           size={NEW_SURVEY_LAYOUT.chevron}
           color={theme.colors.textSecondary}
         />

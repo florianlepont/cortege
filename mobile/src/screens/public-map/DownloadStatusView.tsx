@@ -134,7 +134,7 @@ export const DownloadStatusView = memo(function DownloadStatusView({
     return (
       <View testID="offline-download-failed" style={styles.body}>
         <View style={styles.titleRow}>
-          <Ionicons name="alert-circle" size={20} color={theme.onSurface.danger} />
+          <Ionicons name="alert-circle-outline" size={20} color={theme.onSurface.danger} />
           <Text accessibilityRole="header" style={[styles.title, styles.danger]}>
             {t.failed.title}
           </Text>
@@ -156,7 +156,11 @@ export const DownloadStatusView = memo(function DownloadStatusView({
     return (
       <View testID="offline-download-done" style={styles.body}>
         <View style={styles.titleRow}>
-          <Ionicons name="checkmark-circle" size={20} color={theme.visual.downloadBar.fill} />
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={20}
+            color={theme.visual.downloadBar.fill}
+          />
           <Text accessibilityRole="header" style={styles.title}>
             {t.done.title}
           </Text>

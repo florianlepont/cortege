@@ -112,7 +112,7 @@ export function useSurveyDetailHeader({
             accessibilityRole="button"
             accessibilityLabel={a11y.openMenu(siteName)}
           >
-            <Ionicons name="ellipsis-horizontal" size={22} color={tint} />
+            <Ionicons name="ellipsis-horizontal-outline" size={22} color={tint} />
           </Pressable>
         </View>
       ),

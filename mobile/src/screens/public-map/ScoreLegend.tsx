@@ -99,7 +99,7 @@ export const MapLegend = memo(function MapLegend({
             accessibilityState={{ expanded }}
           >
             <Ionicons
-              name={expanded ? "close" : "information-circle-outline"}
+              name={expanded ? "close-outline" : "information-circle-outline"}
               size={mapControlIconSize}
               color={theme.visual.mapControl.icon}
             />

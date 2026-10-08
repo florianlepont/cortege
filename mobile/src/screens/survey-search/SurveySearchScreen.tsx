@@ -166,7 +166,7 @@ export function SurveySearchScreen({
       <View style={[styles.top, { paddingTop: insets.top + 12 }]}>
         <View style={styles.fieldRow}>
           <View style={styles.field}>
-            <Ionicons name="search" size={18} color={theme.colors.textSecondary} />
+            <Ionicons name="search-outline" size={20} color={theme.colors.textSecondary} />
             <TextInput
               ref={inputRef}
               value={query}
@@ -187,7 +187,11 @@ export function SurveySearchScreen({
                 style={styles.clearButton}
                 hitSlop={8}
               >
-                <Ionicons name="close-circle" size={18} color={theme.colors.textSecondary} />
+                <Ionicons
+                  name="close-circle-outline"
+                  size={18}
+                  color={theme.colors.textSecondary}
+                />
               </Pressable>
             ) : null}
           </View>
