@@ -61,3 +61,9 @@ alourdir l'intégration.
 Planche d'abord, avec le propriétaire : cinq fonds côte à côte sur la même forêt (Plan IGN standard,
 Plan IGN gris, orthophoto, carte topographique, fond avec BD Forêt), parcelles et cadastre dessinés par
 dessus.
+
+## Mise à jour 2026-10-08
+
+La colorisation du fond de carte est déplacée dans la phase 23 (modernisation visuelle), à la demande du
+propriétaire. Il reste dans ce seed : le relief, les couches forestières (BD Forêt) et les autres fonds
+éventuels, qui restent dormants.
