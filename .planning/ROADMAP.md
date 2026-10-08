@@ -674,7 +674,9 @@ each batch shipped; `21-VALIDATION.md` maps each success criterion above to its 
   1. A short visual direction is written down (what "modern and dynamic" means for the brand charter `docs/design/charte-graphique-etats-sauvages-spec.md`: typography, colour, depth, iconography, imagery) and the owner approves it before the screens are touched.
   2. The main screens (Accueil, Mes Relevés, survey form and detail, Explorer, Compte) follow that direction, in light and dark mode, with no regression on field ergonomics (Phase 12) or accessibility (contrast, touch targets, reduced motion).
   3. Transitions and feedback use the Reanimated motion system consistently and respect the system reduced-motion setting.
-  4. The owner confirms the result on their own phone.
+  4. The maps are colourised: the base map is no longer only the grey IGN plan and the satellite photo. A comparison board (same places, same parcels, each candidate background) comes first, the owner picks, then the chosen colourised background is integrated in light and dark mode, with the cadastre and the parcel colours (selected, studied, not studied, score) staying legible on every background. Added 2026-10-08 (owner decision, from SEED-001 / OA-127).
+  5. Offline map packs stay reasonable with the new background (size of a zone, number of IGN tiles at zooms 13 to 17, a style with its sprites so that downloading does not fail as the grey style did, OA-120).
+  6. The owner confirms the result on their own phone.
 
 **Plans**: TBD
 **UI hint**: yes
