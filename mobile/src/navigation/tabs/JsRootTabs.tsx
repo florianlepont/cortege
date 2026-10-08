@@ -1,3 +1,4 @@
+// Why custom: the native bar (react-native-bottom-tabs) is iOS only; Android and Expo Go need the JS bar (D-08), so it stays and is styled to match.
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { useReducedMotion } from "react-native-reanimated"

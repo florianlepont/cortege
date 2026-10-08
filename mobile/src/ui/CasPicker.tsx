@@ -1,3 +1,4 @@
+// Why custom: four selectable cards with an explanation each (IBP CAS 1 to 4); no native card radio exists, only the scale switch is a native Switch.
 import { useMemo } from "react"
 import { StyleSheet, Switch, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"

@@ -1,3 +1,4 @@
+// Why custom: no native stepper with a typeable value, 56 pt glove-sized buttons and the brand look; the SwiftUI Stepper is iOS only.
 import { useEffect, useMemo, useRef, useState } from "react"
 import { StyleSheet, TextInput, View } from "react-native"
 import { AppText as Text } from "./AppText"

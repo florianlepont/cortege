@@ -1,3 +1,4 @@
+// Why custom: native @expo/ui Slider is iOS only (excluded from Android autolinking) and has no +/- step buttons, brand track or glove-friendly 5% taps; evaluation in docs/design/component-inventory-phase-23.md 9.
 import { useMemo, useRef, useState } from "react"
 import { GestureResponderEvent, LayoutChangeEvent, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"

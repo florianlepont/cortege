@@ -628,6 +628,22 @@ Still open after the approval:
   loading spinner is low contrast in dark: Phase 26.
 - Android pass: Phase 28 (13.9).
 
+### 13.10b Native-first rule (Phase 23, batch 8)
+
+Decide native or custom in this order: (1) if the system offers the control on both platforms
+(`ActionSheetIOS`, `Alert`, `Switch`, native-stack header and sheets), use it; (2) if only iOS
+offers it (`@expo/ui`, native header items, formSheet), use it in a `*.ios.tsx` file with the
+custom view as the Android and Expo Go fallback, behind the same props and with a mock in jest;
+(3) keep a custom control only for a written reason: no equivalent, a field need the native one
+lacks (glove-sized targets, +/- buttons, 5 % snap, typeable value), or a brand surface. Every
+custom control opens with a `Why custom:` comment, and the register is section 9 of
+`component-inventory-phase-23.md`.
+
+Custom controls today: `FactorSliderInput` and `FactorSegmentedInput` (native `Slider` and
+`Picker` are iOS only and lose the step buttons and brand look; device spike pending),
+`FactorCounterInput`, `FactorChipsInput`, `CasPicker`, `ExplorerSheet` (non-modal over the map),
+`ForestCard`, the JS tab bar (Android, Expo Go).
+
 ### 13.11 Map backgrounds (Phase 23, 2026-10)
 
 The map offers two backgrounds, picked by the owner on a comparison board of six candidates

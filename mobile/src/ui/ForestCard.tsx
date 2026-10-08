@@ -1,3 +1,4 @@
+// Why custom: brand hero surface (gradient, SVG mask, glow, mist discs); no native equivalent, and it must look the same on Android.
 import { ReactNode, useMemo } from "react"
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { brandRadius } from "../app/brand-tokens"

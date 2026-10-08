@@ -1,3 +1,4 @@
+// Why custom: native @expo/ui segmented Picker is iOS only, takes no per-option testID or accessibilityLabel and cannot carry the brand pill look; evaluation in docs/design/component-inventory-phase-23.md 9.
 import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"

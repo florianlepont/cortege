@@ -1,3 +1,4 @@
+// Why custom: multi-select chips with a per-choice score have no native control (Picker is single select, Menu hides the choices).
 import { useMemo, useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
