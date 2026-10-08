@@ -51,6 +51,33 @@ describe("writeOfflineStyle", () => {
     )
   })
 
+  test("map: also writes the dark variant next to it, the light URL is returned", async () => {
+    const plan = {
+      version: 8,
+      sources: { plan: { type: "vector", url: "x" } },
+      layers: [{ id: "land", type: "fill", source: "plan", paint: { "fill-color": "#FFFFFF" } }],
+    }
+    const fetchImpl = jest.fn(async () => ({ ok: true, json: async () => plan }))
+    const uri = await writeOfflineStyle(DOCS, "map", fetchImpl)
+    expect(uri).toBe(offlineStyleUri(DOCS, "map"))
+    expect(await offlineStyleExists(DOCS, "map", true)).toBe(true)
+    expect(offlineStyleUri(DOCS, "map", true)).toBe(`${DOCS}offline-styles/map-dark.json`)
+    const written = new Map(
+      (FileSystem.writeAsStringAsync as jest.Mock).mock.calls.map(
+        ([target, content]: [string, string]) => [target, content],
+      ),
+    )
+    const dark = written.get(offlineStyleUri(DOCS, "map", true))
+    expect(dark).toContain("basemap-dark-ground")
+    expect(dark).toContain(CADASTRE_SOURCE_ID)
+    expect(written.get(uri)).not.toContain("basemap-dark-ground")
+  })
+
+  test("satellite: no dark variant", async () => {
+    await writeOfflineStyle(DOCS, "satellite", jest.fn())
+    expect(await offlineStyleExists(DOCS, "satellite", true)).toBe(false)
+  })
+
   test("map: a failed style fetch rejects (nothing written)", async () => {
     const fetchImpl = jest.fn(async () => ({ ok: false, json: async () => ({}) }))
     await expect(writeOfflineStyle(DOCS, "map", fetchImpl)).rejects.toThrow("could not be fetched")

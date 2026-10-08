@@ -3,7 +3,7 @@ import { CADASTRE_TILES, ORTHO_STYLE, PLAN_IGN_STYLE_URL, mapStyleFor } from "./
 describe("map styles", () => {
   test("the plan basemap is the IGN vector style URL", () => {
     expect(mapStyleFor("map")).toBe(PLAN_IGN_STYLE_URL)
-    expect(PLAN_IGN_STYLE_URL).toMatch(/^https:\/\/data\.geopf\.fr\/.*PLAN\.IGN\/gris\.json$/)
+    expect(PLAN_IGN_STYLE_URL).toMatch(/^https:\/\/data\.geopf\.fr\/.*PLAN\.IGN\/standard\.json$/)
   })
 
   test("the satellite basemap is the IGN orthophoto raster style", () => {

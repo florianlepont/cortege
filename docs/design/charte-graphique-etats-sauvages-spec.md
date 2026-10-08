@@ -555,11 +555,7 @@ Status: approved by the owner on 2026-10-08, after the phone confirmation of bui
 (plan 12.2-23). The French direction text carries the same date.
 
 Still open after the approval:
-- Parcel colour by score on the owner's survey: needs the server fix for IGN parcel ids (migration
-  `020_parcel_idu_fields.sql`), which reaches production only once merged to `main` and deployed.
-  Corsican parcel ids (`2A`, `2B`) stay unmatched.
-- The basemap does not follow dark mode (MapLibre styles stay light). The owner chose not to record a seed for it (2026-10-08); the
-  colourised base map added the same day as Phase 23 criterion 4 (light and dark) now covers it.
+- Corsican parcel ids (`2A`, `2B`) stay unmatched (the parcel colour by score on the owner's survey was confirmed on the phone on 2026-10-08, after migration `020_parcel_idu_fields.sql` reached production).
 - The iOS 26 tab bar glass and the search button are drawn by the system: their density cannot be
   changed without replacing the system bar, which D-08 rules out (13.8).
 - Asked during the phase, not answered, carried to Phase 26 (the UX/UI audit, old 12.3) or later: the fixed form pager title
@@ -570,3 +566,26 @@ Still open after the approval:
 - Explorer sheet drag runs on the JS thread (`PanResponder`): candidate for Phase 26. The Compte
   loading spinner is low contrast in dark: Phase 26.
 - Android pass: Phase 28 (13.9).
+
+### 13.11 Map backgrounds (Phase 23, 2026-10)
+
+The map offers two backgrounds, picked by the owner on a comparison board of six candidates
+(`.planning/sketches/map-basemaps/`): grey Plan IGN (the former default), standard Plan IGN in colour,
+classic Plan IGN, standard and grey with the BD Forêt layer, and the aerial photographs.
+
+- **Map** is the IGN "standard" vector style (`PLAN_IGN_STYLE_URL`, `map/maplibre/styles.ts`): roads,
+  buildings and woods in colour. The grey style is no longer used.
+- **Dark theme.** IGN publishes no dark style, so `map/maplibre/dark-style.ts` recolours the standard
+  one: the lightness of every colour property is flipped (clamped to 8 to 88 %), the saturation is
+  toned down to 75 %, hue and alpha are kept, and a dark ground (`brandMapTokens.darkBasemapBackground`)
+  goes under the layers. Sources, sprite and glyphs are untouched, so the same vector tiles serve both
+  themes. The recolouring runs on the fetched style (`plan-ign-style.ts`, fetched once per app run); if
+  it fails the published light style stays, the map is never blank.
+- **Satellite** has one look in both themes.
+- **Offline.** One pack serves both themes (same tiles). `writeOfflineStyle` writes `map.json` (light,
+  used to create the pack) and `map-dark.json` (dark) with the cadastre inside; in the dark theme the
+  hook reads the dark file, or the light one for a pack downloaded before the dark variant existed.
+- **Parcel colours** (selected, studied, not studied, score) are drawn above the basemap and must
+  stay legible on it: check them on the phone in both themes after any change of palette.
+- **BD Forêt** (forest inventory layer) and relief were looked at and not adopted: the layer is very
+  loud at forest zoom and conflicts with the score colours. They stay in SEED-001.
