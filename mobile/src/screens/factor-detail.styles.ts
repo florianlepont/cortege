@@ -1,6 +1,5 @@
 import { StyleSheet } from "react-native"
 import {
-  brandOnDarkColors,
   brandRadius,
   brandSpacing,
   brandSpacing4,
@@ -82,15 +81,8 @@ export function createDetailStyles(theme: BrandTheme) {
       paddingVertical: brandSpacing4.smd,
     },
     // The help sheet.
-    sheetBackdrop: {
-      flex: 1,
-      justifyContent: "flex-end",
-      backgroundColor: brandOnDarkColors.heroScrimOnDark,
-    },
     sheet: {
-      borderTopLeftRadius: 26,
-      borderTopRightRadius: 26,
-      maxHeight: "80%",
+      flex: 1,
       backgroundColor: theme.semanticColors.backgroundCanvas,
       paddingHorizontal: 20,
       paddingTop: brandSpacing4.md,

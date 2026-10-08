@@ -5,10 +5,13 @@ Date: `2026-03-11`
 Source: Etats Sauvages graphic charter, `ETATS_SAUVAGES_CHARTE_EB_V2` (2025-09-16) — internal document, not redistributed in this repository.
 
 ## 1) Objective
+
 Define clear, implementation-ready UI rules to ensure the app consistently follows the **Etats Sauvages** visual identity on mobile (and web when relevant).
 
 ## 2) Core Brand Principles
+
 The charter defines 4 key visual markers that must be preserved:
+
 - `Typography offset`: side-step mindset, momentum, energy.
 - `Black rectangle`: impact and differentiation.
 - `Fern`: forest, wild, living nature.
@@ -17,48 +20,58 @@ The charter defines 4 key visual markers that must be preserved:
 Product implication: the interface must stay organic, natural, high-contrast, and strongly branded (avoid generic UI patterns).
 
 ## 3) Official Color Palette
+
 Extracted from the charter palette page:
 
-| Token | Hex | CMYK | Recommended UI usage |
-|---|---|---|---|
-| `brand.terracotta` | `#CD5833` | C00 M77 Y86 K00 | Strong accent, secondary CTA, brand alerts |
-| `brand.moss` | `#89A33A` | C56 M16 Y100 K02 | Primary accent, success, active states |
-| `brand.forest` | `#334E2B` | C88 M42 Y100 K46 | Main brand color (titles, strong text, deep surfaces) |
-| `brand.sage` | `#B0C78E` | C42 M5 Y55 K0 | Soft backgrounds, secondary surfaces |
-| `brand.mauve` | `#9494B0` | C48 M40 Y18 K00 | Secondary/info accent |
-| `brand.ochre` | `#CC701F` | C5 M65 Y100 K00 | Signal/warm emphasis |
-| `brand.salmon` | `#DA8D77` | C00 M55 Y50 K00 | Editorial accents/backgrounds |
+| Token              | Hex       | CMYK             | Recommended UI usage                                  |
+| ------------------ | --------- | ---------------- | ----------------------------------------------------- |
+| `brand.terracotta` | `#CD5833` | C00 M77 Y86 K00  | Strong accent, secondary CTA, brand alerts            |
+| `brand.moss`       | `#89A33A` | C56 M16 Y100 K02 | Primary accent, success, active states                |
+| `brand.forest`     | `#334E2B` | C88 M42 Y100 K46 | Main brand color (titles, strong text, deep surfaces) |
+| `brand.sage`       | `#B0C78E` | C42 M5 Y55 K0    | Soft backgrounds, secondary surfaces                  |
+| `brand.mauve`      | `#9494B0` | C48 M40 Y18 K00  | Secondary/info accent                                 |
+| `brand.ochre`      | `#CC701F` | C5 M65 Y100 K00  | Signal/warm emphasis                                  |
+| `brand.salmon`     | `#DA8D77` | C00 M55 Y50 K00  | Editorial accents/backgrounds                         |
 
 Support colors (from logo rules):
+
 - `brand.black`: `#000000`
 - `brand.white`: `#FFFFFF`
 
 ## 4) Official Typography
+
 According to the charter:
+
 - `Mazzard H` (Light/Regular/Bold/Black): titles and primary text.
 - `HeadTurn Smooth`: highlighted word(s) / very short emphasis text.
 - `Futura` (Medium/Bold): secondary text.
 
 UI usage rules:
+
 - Screen title: `Mazzard H Bold/Black`.
 - Body, labels, inputs: `Mazzard H Regular`.
 - Secondary metadata/microcopy: `Futura Medium`.
 - Short editorial badge (1-3 words): `HeadTurn Smooth` (limited use).
 
 Fallbacks when custom fonts are unavailable:
+
 - `Mazzard H` -> `Avenir Next` / `system-ui`
 - `Futura` -> `Avenir Next` / `system-ui`
 - `HeadTurn Smooth` -> `Mazzard H Bold`
 
 ## 5) Logo Rules (Mandatory)
+
 ### 5.1 Clear Space
+
 - Keep a protective area of `1/6 of X` around the logo (charter rule).
 
 ### 5.2 Minimum Size
+
 - Never go below `25 mm` in print.
 - For digital UI, use a practical minimum equivalent: `>= 95 px` width.
 
 ### 5.3 Forbidden Uses (DON'T)
+
 - Do not change logo opacity.
 - Do not change logo colors.
 - Do not distort logo proportions.
@@ -66,44 +79,55 @@ Fallbacks when custom fonts are unavailable:
 - Do not shift the bump element inside the logo.
 
 ## 6) Visual Language Elements
+
 ### 6.1 Highlights
+
 - Always in `UPPERCASE`.
 - Respect the intended highlight shape proportions.
 - Padding around highlighted word: `0.5x` (x = lowercase x height).
 
 ### 6.2 Icons and Arrows
+
 - Can use charter colors.
 - Purpose: rhythm, signaling, key information emphasis.
 
 ### 6.3 Fern
+
 - Brand ornamental/background element.
 - On photography: natural tones only.
 - Prefer tone-on-tone and non-intrusive placement.
 
 ### 6.4 Bump
+
 - Always placed at the bottom of a visual/container.
 - Never centered.
 - Minimum width: `40%` of the visual width (vertical, square, horizontal formats).
 
 ### 6.5 Diagrams
+
 - `< 6` segments: monochromatic scale or multiple colors are acceptable.
 - `> 6` segments: use distinct colors for readability.
 - Use simplified round logo badge in center with shadow.
 
 ## 7) Product UI Translation (Mobile)
+
 ### 7.1 Centralized Tokens
+
 Create/maintain a single token file (`mobile/src/app/brand-tokens.ts`) containing:
+
 - Official colors.
 - Typography styles and scale.
 - Radius, shadow, spacing primitives.
 
 ### 7.2 Visual Hierarchy
+
 - Main app background: light natural tones (`sage`/neutrals).
 - Premium surfaces (hero/strong cards): `forest` with overlays.
 - Primary CTA: `moss` or `forest` depending on contrast.
 - Secondary CTA: `forest` outline or `terracotta/ochre` fill.
 
 ### 7.3 Key Components
+
 - `Buttons`: rounded corners, strong typographic weight, avoid oversized labels.
 - `Tabs/Segmented controls`: clean pill style, deep-tone active state.
 - `Cards`: soft borders, light surfaces, text contrast >= AA.
@@ -111,16 +135,19 @@ Create/maintain a single token file (`mobile/src/app/brand-tokens.ts`) containin
 - `Map overlays`: subtle brand cues only (fern/bump only if readability is preserved).
 
 ### 7.4 Authentication Screen
+
 - Keep only essential decorative elements (no visual overload).
 - Ensure clear branding: logo + "Etats Sauvages".
 - Keep balanced proportion between CTAs and form fields.
 
 ## 8) Minimum Accessibility Requirements
+
 - Standard text contrast: target `WCAG AA`.
 - Do not encode status by color alone (add icon/text).
 - Minimum touch target size: `44x44 pt`.
 
 ## 9) Design QA Checklist (UI Definition of Done)
+
 - Only charter color tokens are used.
 - Typography is compliant (or fallback is explicitly documented).
 - Logo usage is compliant (clear space, size, no forbidden transforms).
@@ -129,6 +156,7 @@ Create/maintain a single token file (`mobile/src/app/brand-tokens.ts`) containin
 - Contrast is validated on critical screens (auth, list, detail, map).
 
 ## 10) Governance
+
 - Any non-charter color must be explicitly approved (PR + rationale).
 - Any new component variant must reference existing design tokens.
 - This spec is authoritative for UI decisions until a newer charter version is published.
@@ -141,6 +169,7 @@ new field-entry components. Documented here so this spec matches what the app ac
 redoing it.
 
 ### 11.1 Token slice (`mobile/src/app/brand-tokens.ts`)
+
 - `brandSpacing4`: a strict 4-grid (`xxs 2, xs 4, sm 8, smd 12, md 16, lg 24, xl 32, xxl 48`),
   additive to the existing `brandSpacing` aliases (which stay in place during the migration).
 - `brandFieldState`: the three states any field-entry control renders — `empty` (neutral),
@@ -154,10 +183,12 @@ redoing it.
   `userLocation`. Selected outranks studied outranks neutral.
 
 ### 11.2 `FactorInput` (`mobile/src/ui/Factor{Counter,Segmented,Chips,Slider}Input.tsx`)
+
 Four variants, all sharing `FactorInputShell`'s tri-state border/icon/error rendering
 (`resolveFactorInputState(hasValue, showError)`, where `showError` is always the caller's own
 `touched && Boolean(error)` — no variant ever shows an error before the field has been left or
 submission attempted):
+
 - **Counter** (`FactorCounterInput`): 56pt −/+ targets with long-press acceleration; tapping the
   number opens a comma-accepting text fallback for values a tap count would be tedious for.
 - **Segmented control** (`FactorSegmentedInput`): a single-select row of pills, generic
@@ -169,18 +200,21 @@ submission attempted):
   control (gloves, direct sunlight).
 
 ### 11.3 Factor pager (`mobile/src/screens/survey-form/FactorPager.tsx`)
+
 A horizontal pager (A→J) with a fixed footer control: prev/next chevrons, a position indicator,
 per-factor tone dots (tap to jump), and a "next incomplete factor" shortcut
 (`factor-pager.ts`'s `findNextIncompleteFactorIndex`). Replaces the previous per-factor stack
 screen, which required returning to the factor grid between every pair of factors.
 
 ### 11.4 Fixed action bar (`mobile/src/screens/survey-form/FixedActionBar.tsx`)
+
 A bottom bar fixed outside the scrolling content (not a CTA at the end of a long scroll) carrying
 the step's primary CTA and, on the factors step, the visible autosave line ("Enregistré · 14:32",
 "Enregistrement…", or "Échec de l'enregistrement" in terracotta) — replacing a "Save draft" label
 that implied a manual step where autosave already runs.
 
 ### 11.5 Progress ring
+
 - `FactorProgressRing` (`mobile/src/ui/FactorProgressRing.tsx`): an SVG ring (`react-native-svg`)
   that fills as a factor's fields are completed and morphs into a check mark once done. Used in the
   2×5 factor summary grid.
@@ -188,6 +222,7 @@ that implied a manual step where autosave already runs.
   score is shown by `ScoreRing` and the score card.
 
 ### 11.6 "Parcels near you" sheet
+
 `NearbyParcelsSheet` (`mobile/src/screens/survey-form/NearbyParcelsSheet.tsx`): a native `Modal`
 (`presentationStyle="pageSheet"` on iOS) offered as an alternative to tapping a polygon on the map,
 with 56pt checkable rows. Reuses the existing `useNearbyParcelsState()` context rather than a
@@ -219,14 +254,14 @@ token-file change, not a design decision.
 `fontWeight` (static per-weight files risk Android re-synthesizing a different weight on top of the
 one already baked into the file):
 
-| Role | Embedded file |
-|------|---------------|
+| Role                        | Embedded file                            |
+| --------------------------- | ---------------------------------------- |
 | `heroTitle`, `sectionTitle` | `Sora-ExtraBold` (Sora ships no 900 cut) |
-| `heroBody`, `sectionBody` | `Sora-Medium` |
-| `label` | `Sora-ExtraBold` |
-| `input` | `Sora-SemiBold` |
-| `button` | `Sora-Bold` |
-| `heroEyebrow`, `meta` | `Jost-SemiBold` |
+| `heroBody`, `sectionBody`   | `Sora-Medium`                            |
+| `label`                     | `Sora-ExtraBold`                         |
+| `input`                     | `Sora-SemiBold`                          |
+| `button`                    | `Sora-Bold`                              |
+| `heroEyebrow`, `meta`       | `Jost-SemiBold`                          |
 
 `brandDefaultFontFamily` (`Jost-Regular`) is the fallback for any `<Text>` that doesn't spread a
 `brandTypography` role. Since React Native's `Text` has no `defaultProps` to patch in this RN version
@@ -246,6 +281,7 @@ Phase 12.2 there are five of them; see section 13.1 for the list and the rule's 
 
 **Contrast fixes (DS-01/DS-02)** — white text directly on a saturated fill, and the raw
 ochre/terracotta hue directly on their own soft backgrounds, both measured below WCAG's 4.5:1:
+
 - `brandOnWarningSurface` (`#7A4A0A`) and `brandOnDangerSurface` (`#8A2F14`): darkened text tokens
   for `warningSoft`/`errorSoft` backgrounds (~5:1+). `brandOnSuccessSurface` is `brandColors.forest`
   (already AAA on `successSoft`/`sage`).
@@ -259,6 +295,7 @@ ochre/terracotta hue directly on their own soft backgrounds, both measured below
   `brandFieldState.error.{text,icon}`.
 
 **New token groups**, added to `mobile/src/app/brand-tokens.ts`:
+
 - `brandColors` additions: `forestNight` (a near-black forest, deep backdrops), `disabledMuted`,
   `disabledNeutral` (disabled-state fills the hex migration surfaced).
 - `brandSemanticColors` additions (the "glass over a dark hero" family, alongside the existing
@@ -294,7 +331,7 @@ Reanimated import in the tokens file):
 - **Easings** (bezier control points, for `Easing.bezier(...)`): `standard [0.2, 0, 0, 1]`,
   `decelerate [0, 0, 0, 1]`, `accelerate [0.3, 0, 1, 1]`.
 - **Springs** (for `withSpring(value, brandMotion.springs.x)`): `press { damping 18, stiffness 420,
-  mass 0.6 }`, `snappy { damping 20, stiffness 260 }`, `gentle { damping 22, stiffness 140 }` — the
+mass 0.6 }`, `snappy { damping 20, stiffness 260 }`, `gentle { damping 22, stiffness 140 }` — the
   audit's exact numbers, tried live in the sketchboard and kept unchanged.
 - **List stagger**: `staggerMs 40`, `staggerMax 8`.
 
@@ -319,6 +356,7 @@ helper (`survey-list/haptics.ts`, now deleted) was needlessly withholding feedba
 wave, built on the plain `Pressable`) and the modal backdrops of `AppActionSheet` and
 `FactorHelpSheet` (allowlisted, they go with the native sheets). It replaces the inconsistent
 pressed-opacity values (0.7, 0.4, 0.76…) once spread across components:
+
 - **Spring scale** to `brandInteraction.pressedScale` (0.97) via `brandMotion.springs.press`, applied
   to an inner `Animated.View` rather than the `Pressable` itself (Reanimated's
   `createAnimatedComponent` can't consume the `style={(state) => ...}` callback form). The layout
@@ -332,7 +370,7 @@ pressed-opacity values (0.7, 0.4, 0.76…) once spread across components:
   it is not one).
 - Props: `rippleColor` (ripple colour); `disableScale` (no scale and no wrapper view, `style` goes
   straight to the `Pressable`: rows with a `pressed` fill, controls inside a `GlassSurface
-  interactive`, which has its own press shimmer); `disableRipple` (no Android ripple, same cases).
+interactive`, which has its own press shimmer); `disableRipple` (no Android ripple, same cases).
   Everything else of `PressableProps` is forwarded (`hitSlop`, `disabled`, `onPressIn`/`onPressOut`,
   `testID`, `accessibilityState`, `accessible`...).
 - Guarded by `ui/AppPressable.test.tsx` (pressed feedback, Reduce Motion, disabled, ripple, style
@@ -422,8 +460,8 @@ signature. This section records what shipped after four owner phone checks (2026
     along each (passes of 7, 10, 13 and 10 s);
   - an SVG mask fading the lines behind text (12% left) and a feathered radial shield behind each
     measured block of text (`blocks`, `shield` props). No layer draws a flat zone or a hard edge.
-  The aurora replaced earlier tries (drifting contours, waves, ripples). `motion={false}` draws the
-  bare gradient.
+    The aurora replaced earlier tries (drifting contours, waves, ripples). `motion={false}` draws the
+    bare gradient.
 - **Layering rules** (12.2-17): no `borderWidth` on a view that carries
   `experimental_backgroundImage` (RN tiles the gradient under the border; use `buildInsetRing`),
   and no `borderCurve`: corners are circular everywhere, because shadows and clips are circular
@@ -439,14 +477,14 @@ signature. This section records what shipped after four owner phone checks (2026
 Sora and Jost stay (D-06). One new embedded file, `Sora-Light.ttf` (PostScript name `Sora-Light`).
 New `brandTypography` roles:
 
-| Role | Font, size / line height |
-|------|--------------------------|
-| `numeral` | `Sora-Light` 68 / 72, tracking -3.4 (Score page) |
-| `numeralCard` | `Sora-Light` 56 / 60, tracking -2.8 (survey summary card, D-24) |
-| `numeralUnit` | `Jost-Regular` 20 / 24 ("/50") |
-| `screenTitle` | `Sora-SemiBold` 24 / 28, tracking -0.6 |
-| `sectionHeader` | `Sora-SemiBold` 13 / 18 |
-| `ringValue` | `Sora-SemiBold` 12 / 16 |
+| Role                        | Font, size / line height                                                |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `numeral`                   | `Sora-Light` 68 / 72, tracking -3.4 (Score page)                        |
+| `numeralCard`               | `Sora-Light` 56 / 60, tracking -2.8 (survey summary card, D-24)         |
+| `numeralUnit`               | `Jost-Regular` 20 / 24 ("/50")                                          |
+| `screenTitle`               | `Sora-SemiBold` 24 / 28, tracking -0.6                                  |
+| `sectionHeader`             | `Sora-SemiBold` 13 / 18                                                 |
+| `ringValue`                 | `Sora-SemiBold` 12 / 16                                                 |
 | `navLargeTitle`, `navTitle` | `Sora-SemiBold` 28 and 17 (native iOS large and collapsed titles, D-30) |
 
 Weight 300 is used by the score numeral only. The factor input chrome, auth and onboarding keep
@@ -476,20 +514,20 @@ their legacy roles (`heroTitle`, `sectionTitle`, `label`, `input`, `button`).
 
 ### 13.5 Primitives (`mobile/src/ui/`)
 
-| Primitive | Role |
-|-----------|------|
-| `ForestCard`, `ForestAurora` | forest card and its animated backdrop (13.2) |
-| `ContourLines` | static contour rings (`app/contour-paths.ts`): survey map card placeholder, behind the Accueil "Nouveau relevé" card; its drift exists but every use is still (`animated={false}`) |
-| `GradientNumeral` | SVG score numeral, white to `#C8DDA0`; `NUMERAL_RENDER_MODE` stays `"gradient"` (kept at the batch 2 check), `"solid"` is the one-line fallback |
-| `ProgressBar` (variant `glow`), `ScoreRing`, `FactorBarsChart` | glowing /50 gauge; 38 pt list ring on the trailing side of rows (D-27a), dashed when there is no score; ten non-interactive factor bars, on the Score page only (D-24) |
-| `AnimatedNumber`, `HaloPulse` | count-up for tile values; one-shot halo on submit and sync success |
-| `useFocusEntrance` / `EntranceView`, `useListEntrance` / `ListEntranceRow` | section slide-up on each focus (360 ms, 20 pt); list row entrance, rows 0 to 7, first mount |
-| `RipplePressable` | green wave from the touch point on list rows (D-21), a highlight under Reduce Motion |
-| `ScreenFrame`, `ScreenBackdrop` | canvas, halo and header inset; `largeTitle` for native collapsing titles |
-| `AppCard` `variant="glass"`, `GlassSurface` `surface` | card glass without blur; floating glass with a dense fill over maps |
-| `AppButton` `variant="glow"` | moss gradient pill, on the Accueil resume card only; the resume card only resumes (or starts a survey when there is no draft), and beside a draft "Nouveau relevé" is its own glass card below it (`home/NewSurveyCard.tsx`) |
-| `GlassButton` | the big CTA: native SwiftUI `glassProminent` button on iOS 26 (`NativeGlassButton.ios.tsx`, `@expo/ui`), flat translucent forest fallback elsewhere; transparent floating action bar (D-27c, D-28) |
-| `useScreenVisible` | focused and not under an app overlay: every loop and focus entrance waits for it |
+| Primitive                                                                  | Role                                                                                                                                                                                                                         |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ForestCard`, `ForestAurora`                                               | forest card and its animated backdrop (13.2)                                                                                                                                                                                 |
+| `ContourLines`                                                             | static contour rings (`app/contour-paths.ts`): survey map card placeholder, behind the Accueil "Nouveau relevé" card; its drift exists but every use is still (`animated={false}`)                                           |
+| `GradientNumeral`                                                          | SVG score numeral, white to `#C8DDA0`; `NUMERAL_RENDER_MODE` stays `"gradient"` (kept at the batch 2 check), `"solid"` is the one-line fallback                                                                              |
+| `ProgressBar` (variant `glow`), `ScoreRing`, `FactorBarsChart`             | glowing /50 gauge; 38 pt list ring on the trailing side of rows (D-27a), dashed when there is no score; ten non-interactive factor bars, on the Score page only (D-24)                                                       |
+| `AnimatedNumber`, `HaloPulse`                                              | count-up for tile values; one-shot halo on submit and sync success                                                                                                                                                           |
+| `useFocusEntrance` / `EntranceView`, `useListEntrance` / `ListEntranceRow` | section slide-up on each focus (360 ms, 20 pt); list row entrance, rows 0 to 7, first mount                                                                                                                                  |
+| `RipplePressable`                                                          | green wave from the touch point on list rows (D-21), a highlight under Reduce Motion                                                                                                                                         |
+| `ScreenFrame`, `ScreenBackdrop`                                            | canvas, halo and header inset; `largeTitle` for native collapsing titles                                                                                                                                                     |
+| `AppCard` `variant="glass"`, `GlassSurface` `surface`                      | card glass without blur; floating glass with a dense fill over maps                                                                                                                                                          |
+| `AppButton` `variant="glow"`                                               | moss gradient pill, on the Accueil resume card only; the resume card only resumes (or starts a survey when there is no draft), and beside a draft "Nouveau relevé" is its own glass card below it (`home/NewSurveyCard.tsx`) |
+| `GlassButton`                                                              | the big CTA: native SwiftUI `glassProminent` button on iOS 26 (`NativeGlassButton.ios.tsx`, `@expo/ui`), flat translucent forest fallback elsewhere; transparent floating action bar (D-27c, D-28)                           |
+| `useScreenVisible`                                                         | focused and not under an app overlay: every loop and focus entrance waits for it                                                                                                                                             |
 
 Navigation-level: `DownloadEdgeGlowHost` (`navigation/download-edge-glow.tsx`) draws `EdgePulse`, a
 full-screen pulsing green edge glow over the panel and the tab bar while the Explorer download panel
@@ -501,20 +539,20 @@ Everything goes through `brandMotion` with `ReduceMotion.System`; haptics only t
 `ui/feedback.ts`; no `LayoutAnimation`, no `useNativeDriver: false`; only transform, opacity and
 SVG props animate.
 
-| Area | Element | As shipped |
-|------|---------|------------|
-| Score | glow bar | 0 to value, 500 ms decelerate, 120 ms delay |
-| | numeral | fade and 8 pt rise, `springs.snappy` |
-| | list rings | 360 ms, 40 ms stagger, rows 0 to 7, once per survey and score |
-| | factor bars | `scaleY` from the bottom, `springs.gentle`, 40 ms stagger |
-| Entrances | Accueil sections and others | 360 ms slide-up of 20 pt, replayed on each focus, 40 ms stagger |
-| | list rows | rows 0 to 7, first mount only |
-| Feedback | press | `AppPressable` spring 0.97; list rows the 420 ms green wave |
-| | finish and sync | `HaloPulse` 500 ms with `notify.success()`; the pager's "Terminer le relevé" finishes the survey (D-25, D-26) |
-| Ambient | forest card mist and flowing light | endless, linear, per-mount jitter; fades in over 700 ms |
-| | download edge glow | 750 ms half beats; full and still under Reduce Motion |
-| | skeleton | 900 ms pulse |
-| Transitions | stacks, sheets | native; JS tabs `fade` (`none` under Reduce Motion) |
+| Area        | Element                            | As shipped                                                                                                    |
+| ----------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Score       | glow bar                           | 0 to value, 500 ms decelerate, 120 ms delay                                                                   |
+|             | numeral                            | fade and 8 pt rise, `springs.snappy`                                                                          |
+|             | list rings                         | 360 ms, 40 ms stagger, rows 0 to 7, once per survey and score                                                 |
+|             | factor bars                        | `scaleY` from the bottom, `springs.gentle`, 40 ms stagger                                                     |
+| Entrances   | Accueil sections and others        | 360 ms slide-up of 20 pt, replayed on each focus, 40 ms stagger                                               |
+|             | list rows                          | rows 0 to 7, first mount only                                                                                 |
+| Feedback    | press                              | `AppPressable` spring 0.97; list rows the 420 ms green wave                                                   |
+|             | finish and sync                    | `HaloPulse` 500 ms with `notify.success()`; the pager's "Terminer le relevé" finishes the survey (D-25, D-26) |
+| Ambient     | forest card mist and flowing light | endless, linear, per-mount jitter; fades in over 700 ms                                                       |
+|             | download edge glow                 | 750 ms half beats; full and still under Reduce Motion                                                         |
+|             | skeleton                           | 900 ms pulse                                                                                                  |
+| Transitions | stacks, sheets                     | native; JS tabs `fade` (`none` under Reduce Motion)                                                           |
 
 Reduce Motion: values start at their final state, entrances jump to the end, loops stay still.
 Every endless loop (`withRepeat`, `Animated.loop`) runs only while `useScreenVisible()` is true. A
@@ -525,16 +563,16 @@ guard; the confetti is only rendered when motion is allowed.
 
 ### 13.7 Gates
 
-| Gate | File |
-|------|------|
-| Colour literals only in the five token files | `mobile/.eslintrc.json` |
-| Contrast, both schemes; forest card worst case | `app/visual-tokens.test.ts`, `app/forest-aurora-tokens.test.ts` |
-| Motion: guarded timings per call, legacy `Animated` allowlist, loops gated by `useScreenVisible`, hero budget of two, haptics only in `feedback.ts` | `src/__checks__/motion.test.ts` |
-| Icons: every Ionicons glyph ends in `-outline` (D-07) | `src/__checks__/icons.test.ts` |
-| No em dash in any string, template or JSX text (`survey-export.ts` excepted) | `src/__checks__/catalogue-dash.test.ts` |
-| No border on a gradient view, no `borderCurve` | `src/__checks__/layers.test.ts` |
-| Font file name equals PostScript name | `src/__checks__/fonts.test.ts` |
-| 400-line cap on `src/screens` and `src/navigation`, unused style keys, user-facing literals | `src/__checks__/structure.test.ts` |
+| Gate                                                                                                                                                | File                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Colour literals only in the five token files                                                                                                        | `mobile/.eslintrc.json`                                         |
+| Contrast, both schemes; forest card worst case                                                                                                      | `app/visual-tokens.test.ts`, `app/forest-aurora-tokens.test.ts` |
+| Motion: guarded timings per call, legacy `Animated` allowlist, loops gated by `useScreenVisible`, hero budget of two, haptics only in `feedback.ts` | `src/__checks__/motion.test.ts`                                 |
+| Icons: every Ionicons glyph ends in `-outline` (D-07)                                                                                               | `src/__checks__/icons.test.ts`                                  |
+| No em dash in any string, template or JSX text (`survey-export.ts` excepted)                                                                        | `src/__checks__/catalogue-dash.test.ts`                         |
+| No border on a gradient view, no `borderCurve`                                                                                                      | `src/__checks__/layers.test.ts`                                 |
+| Font file name equals PostScript name                                                                                                               | `src/__checks__/fonts.test.ts`                                  |
+| 400-line cap on `src/screens` and `src/navigation`, unused style keys, user-facing literals                                                         | `src/__checks__/structure.test.ts`                              |
 
 ### 13.8 Tab bars and headers
 
@@ -546,7 +584,13 @@ guard; the confetti is only rendered when motion is allowed.
   `systemMaterial` blur behind the collapsed bar on Mes Relevés, Compte, Paramètres, Cartes hors
   ligne, the survey summary and its three sub-pages and the community survey page (D-30); the
   survey wizard uses the native header and back button (D-29). Accueil keeps its greeting in the
-  bar.
+  bar. Header buttons are native header items on iOS (`unstable_headerRightItems`: the plus of Mes
+  Relevés, the avatar of Accueil, the gear of Compte, share and menu of the survey summary); Android
+  draws JS buttons, native-stack having no header items there.
+- **Sheets and menus** (iOS): action menus are the system `ActionSheetIOS` (`AppActionSheet`, photo
+  sheet of Compte), the factor help is a native form sheet of the survey stack, and the genus
+  target sheet a page sheet. Android keeps the custom bottom sheet for `AppActionSheet` and a modal
+  screen for the factor help.
 
 ### 13.9 Platform fallbacks
 
@@ -556,6 +600,9 @@ guard; the confetti is only rendered when motion is allowed.
   from Android autolinking (`expo.autolinking.android.exclude`).
 - **Gradients and shadows**: a solid `backgroundColor` is always set; below API 28 there is no
   outset shadow, so the forest card loses its glow (accepted).
+- **Sheets and header items**: native sheets, the system action sheet and native header items are
+  iOS only; Android and Expo Go keep the custom action sheet, the stack `modal` help screen and JS
+  header buttons (batch 7 of the Phase 23 inventory).
 - **Before iOS 26**: `BlurView` instead of Liquid Glass, flat button fallback.
 - **Android device pass: Phase 28** (Field Validation, numbered 13 before the flat renumbering; D-17). To check there: the inset glow at the navigation layer,
   the forest card SVG mask, the flat map control and sheet fills, the smoothness of the three mist
@@ -568,6 +615,7 @@ Status: approved by the owner on 2026-10-08, after the phone confirmation of bui
 (plan 12.2-23). The French direction text carries the same date.
 
 Still open after the approval:
+
 - Corsican parcel ids (`2A`, `2B`) stay unmatched (the parcel colour by score on the owner's survey was confirmed on the phone on 2026-10-08, after migration `020_parcel_idu_fields.sql` reached production).
 - The iOS 26 tab bar glass and the search button are drawn by the system: their density cannot be
   changed without replacing the system bar, which D-08 rules out (13.8).

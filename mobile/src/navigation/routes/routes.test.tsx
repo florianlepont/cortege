@@ -129,6 +129,10 @@ jest.mock("../../screens/SurveyHistoryScreen", () => ({
 jest.mock("../../screens/survey-wizard/SurveyWizardScreen", () => ({
   SurveyWizardScreen: mockScreen("surveyForm"),
 }))
+jest.mock("../../screens/FactorHelpSheet", () => ({
+  FactorHelpSheet: mockScreen("factorHelp"),
+}))
+
 jest.mock("../../screens/FactorDetailScreen", () => ({
   FactorDetailScreen: mockScreen("factorDetail"),
 }))
@@ -230,6 +234,7 @@ import { PublicMapReloadContext, createPublicMapReloadSignal } from "../public-m
 import { SurveysStackConfigContext } from "../stacks/surveys-stack-config"
 import { AccountRoute } from "./AccountRoute"
 import { FactorDetailRoute, FinishStatusNotice } from "./FactorDetailRoute"
+import { FactorHelpRoute } from "./FactorHelpRoute"
 import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
@@ -1502,6 +1507,38 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
     expect(props("factorDetail").fields).toBe(
       (fixture.form.state.factorSections as Record<string, unknown>).A,
     )
+  })
+
+  test("Que relever ? opens the help route with the texts, and the sheet closes by going back", async () => {
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <FactorDetailRoute
+          navigation={navigation as never}
+          route={{ params: { factor: "A" } } as never}
+        />
+      </Providers>,
+    )
+    ;(props("factorDetail").onOpenHelp as (help: string, hints: readonly string[]) => void)(
+      "Aide",
+      ["Un", "Deux"],
+    )
+    expect(navigation.navigate).toHaveBeenCalledWith("surveyFactorHelp", {
+      help: "Aide",
+      hints: ["Un", "Deux"],
+    })
+
+    const helpNavigation = makeNavigation()
+    await mount(
+      <FactorHelpRoute
+        navigation={helpNavigation as never}
+        route={{ params: { help: "Aide", hints: ["Un"] } } as never}
+      />,
+    )
+    expect(props("factorHelp").help).toBe("Aide")
+    expect(props("factorHelp").hints).toEqual(["Un"])
+    ;(props("factorHelp").onClose as () => void)()
+    expect(helpNavigation.goBack).toHaveBeenCalledTimes(1)
   })
 
   test("the native header names the factor on screen, and Terminer on the last one goes back", async () => {

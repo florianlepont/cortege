@@ -61,6 +61,8 @@ type FactorPagerProps = {
   onActiveFactorChange?: (factor: FactorKey) => void
   /** "Terminer" on the last factor: back to the list. */
   onFinish: () => void
+  /** "Que relever ?": opens the help sheet route with the factor's texts. */
+  onOpenHelp: (help: string, hints: readonly string[]) => void
   /**
    * D-26: on the last factor, a labelled "Terminer le relevé" pill above the bar that finishes the
    * survey; the round button then only goes back. Null (the default) keeps the plain "Terminer".
@@ -84,6 +86,7 @@ export const FactorPager = memo(function FactorPager({
   methodVersion,
   onActiveFactorChange,
   onFinish,
+  onOpenHelp,
   finishAction = null,
 }: FactorPagerProps) {
   const theme = useBrandTheme()
@@ -186,6 +189,7 @@ export const FactorPager = memo(function FactorPager({
                 fields={factorSections[factor]}
                 retainedScore={factorRetainedScores[factor]}
                 methodVersion={methodVersion}
+                onOpenHelp={onOpenHelp}
               />
             ) : null}
           </ScrollView>

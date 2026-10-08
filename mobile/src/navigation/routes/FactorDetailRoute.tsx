@@ -54,6 +54,11 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
     [navigation],
   )
   const handleFinish = useCallback(() => navigation.goBack(), [navigation])
+  const handleOpenHelp = useCallback(
+    (help: string, hints: readonly string[]) =>
+      navigation.navigate("surveyFactorHelp", { help, hints: [...hints] }),
+    [navigation],
+  )
   // Back to the summary, also when the pager was opened from the Score page.
   const handleFinished = useLatestCallback(() => navigation.popTo("surveyDetail"))
 
@@ -88,6 +93,7 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         methodVersion={state.ibpMethodVersion}
         onActiveFactorChange={handleActiveFactorChange}
         onFinish={handleFinish}
+        onOpenHelp={handleOpenHelp}
         finishAction={finishAction}
       />
     </ScreenFrame>

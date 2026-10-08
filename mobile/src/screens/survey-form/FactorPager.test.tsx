@@ -129,6 +129,7 @@ function render(
         methodVersion={null}
         onActiveFactorChange={onActiveFactorChange}
         onFinish={onFinish}
+        onOpenHelp={jest.fn()}
         finishAction={finishAction}
       />,
     )

@@ -1,5 +1,5 @@
-import { useMemo } from "react"
-import { Modal, Pressable, StyleSheet, View } from "react-native"
+import { useEffect, useMemo, useRef } from "react"
+import { ActionSheetIOS, Modal, Platform, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
@@ -29,10 +29,11 @@ type AppActionSheetProps = {
 }
 
 /**
- * DET-03/04: a native-style action sheet (Modal, slides up, backdrop dismiss) for a screen's "…"
- * menu — no extra native dependency, since a plain RN Modal already covers the gesture and looks
- * the part on both platforms. Every option closes the sheet before running, so a caller never has
- * to remember to.
+ * DET-03/04: the action sheet of a screen's "…" menu. On iOS it is the system sheet
+ * (`ActionSheetIOS`, as the photo sheet of `IdentityCard`): drawn by iOS, with its own cancel
+ * button, and destructive options in red. Android has no such system sheet, so it keeps a custom
+ * one (Modal, slides up, backdrop dismiss). Same props on both: every option closes the sheet
+ * before running, so a caller never has to remember to.
  */
 export function AppActionSheet({
   visible,
@@ -44,10 +45,47 @@ export function AppActionSheet({
   const insets = useSafeAreaInsets()
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  const isIos = Platform.OS === "ios"
+  // The system sheet is shown by an effect when `visible` turns true; the latest props are read
+  // through a ref so a re-render of the caller does not show it again.
+  const latest = useRef({ onClose, options, title, cancelLabel })
+  latest.current = { onClose, options, title, cancelLabel }
+
+  useEffect(() => {
+    if (!isIos || !visible) return
+    const {
+      onClose: close,
+      options: items,
+      title: sheetTitle,
+      cancelLabel: cancel,
+    } = latest.current
+    const destructiveIndex = items.findIndex((option) => option.destructive)
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title: sheetTitle,
+        options: [...items.map((option) => option.label), cancel],
+        cancelButtonIndex: items.length,
+        destructiveButtonIndex: destructiveIndex >= 0 ? destructiveIndex : undefined,
+      },
+      (buttonIndex) => {
+        close()
+        if (buttonIndex < items.length) items[buttonIndex].onPress()
+      },
+    )
+  }, [isIos, visible])
+
+  if (isIos) return null
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessible={false} />
+      <AppPressable
+        style={styles.backdrop}
+        onPress={onClose}
+        accessible={false}
+        accessibilityLabel={cancelLabel}
+        disableScale
+        disableRipple
+      />
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, brandSpacing.md) }]}>
         {title ? <Text style={styles.title}>{title}</Text> : null}
         {options.map((option) => (

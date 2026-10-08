@@ -153,9 +153,7 @@
         "src/**/*.test.ts",
         "src/**/*.test.tsx",
         "src/ui/AppPressable.tsx",
-        "src/ui/RipplePressable.tsx",
-        "src/ui/AppActionSheet.tsx",
-        "src/screens/FactorHelpSheet.tsx"
+        "src/ui/RipplePressable.tsx"
       ],
       "rules": {
         "no-restricted-imports": [
@@ -165,7 +163,7 @@
               {
                 "name": "react-native",
                 "importNames": ["Pressable"],
-                "message": "Use AppPressable from src/ui (charter 12.4). Only the files allowlisted in mobile/.eslintrc.json keep a raw Pressable (modal backdrops)."
+                "message": "Use AppPressable from src/ui (charter 12.4). Only the files allowlisted in mobile/.eslintrc.json keep a raw Pressable (the primitives themselves)."
               }
             ]
           }

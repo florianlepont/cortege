@@ -130,6 +130,7 @@ jest.mock("./routes/SurveyFormRoute", () => ({ SurveyFormRoute: mockRoute() }))
 jest.mock("./routes/SurveySearchRoute", () => ({ SurveySearchRoute: mockRoute() }))
 jest.mock("./routes/CommunitySurveyRoute", () => ({ CommunitySurveyRoute: mockRoute() }))
 jest.mock("./routes/FactorDetailRoute", () => ({ FactorDetailRoute: mockRoute() }))
+jest.mock("./routes/FactorHelpRoute", () => ({ FactorHelpRoute: mockRoute() }))
 jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),
 }))
@@ -522,8 +523,8 @@ describe("stack options and listeners", () => {
       expect(options.headerTitle).toBeUndefined()
       expect(options.headerShown).toBe(true)
     }
-    // The gear button stays in the bar of Compte.
-    expect(typeof resolveOwn("accountHome").headerRight).toBe("function")
+    // The gear is a native header item in the bar of Compte.
+    expect(typeof resolveOwn("accountHome").unstable_headerRightItems).toBe("function")
     // The factor pager keeps its own title row above the pages (no large title, see 12.2-17).
     const factor = resolveOwn("surveyFactorDetail", { route: { params: { factor: "A" } } })
     expect(factor.headerLargeTitleEnabled).toBeUndefined()
@@ -720,6 +721,40 @@ describe("stack options and listeners", () => {
     expect(pressable.props.accessibilityLabel).toBe(fr.navigation.a11y.openSettings)
     pressable.props.onPress()
     expect(mockNavigation.navigate).toHaveBeenCalledWith("settings")
+  })
+
+  test("on iOS the account gear is a native header item, with no JS button", async () => {
+    mockPlatform.OS = "ios"
+    await mount(<AppNavigation />)
+    const options = (mockScreens.accountHome.options as OptionsFn)({
+      navigation: mockNavigation,
+    })
+    expect(options.headerRight).toBeUndefined()
+    const [item] = (options.unstable_headerRightItems as () => Record<string, unknown>[])()
+    expect(item).toEqual(
+      expect.objectContaining({
+        type: "button",
+        label: fr.navigation.a11y.openSettings,
+        icon: { type: "sfSymbol", name: "gearshape" },
+      }),
+    )
+    ;(item.onPress as () => void)()
+    expect(mockNavigation.navigate).toHaveBeenCalledWith("settings")
+  })
+
+  test("the factor help is a native form sheet on iOS and a modal on Android", async () => {
+    await mount(<AppNavigation />)
+    const android = mockScreens.surveyFactorHelp.options as Options
+    expect(android.presentation).toBe("modal")
+    expect(android.headerShown).toBe(false)
+    mockPlatform.OS = "ios"
+    const { factorHelpScreenOptions } = jest.requireActual("./stacks/stack-options") as {
+      factorHelpScreenOptions: (theme: unknown) => Options
+    }
+    const ios = factorHelpScreenOptions(defaultTheme)
+    expect(ios.presentation).toBe("formSheet")
+    expect(ios.sheetGrabberVisible).toBe(true)
+    expect(ios.sheetAllowedDetents).toEqual([0.5, 1])
   })
 
   test("the shared stack options follow the platform at load time", () => {

@@ -1,4 +1,4 @@
-import {} from "react-native"
+import { Platform } from "react-native"
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack"
 import { Ionicons } from "@expo/vector-icons"
 import type { BrandTheme } from "../../app/theme"
@@ -6,6 +6,7 @@ import { fr } from "../../i18n"
 import { AccountRoute } from "../routes/AccountRoute"
 import { OfflineAreasRoute } from "../routes/OfflineAreasRoute"
 import { SettingsRoute } from "../routes/SettingsRoute"
+import { iconHeaderButton } from "../header-items"
 import { pageTitleOptions } from "./stack-options"
 import { AppPressable } from "../../ui/AppPressable"
 
@@ -41,9 +42,25 @@ export function makeAccountHomeOptions(theme: BrandTheme) {
     title: fr.navigation.headers.account,
     ...pageTitleOptions(theme),
     headerShown: true,
-    headerRight: () => (
-      <SettingsHeaderButton color={tint} onPress={() => navigation.navigate("settings")} />
-    ),
+    // The gear is a native header item on iOS (SF Symbol, glass drawn by the system, as the plus
+    // of Mes Relevés and the avatar of Accueil); native-stack has no header items on Android, so
+    // the JS button stays there.
+    ...(Platform.OS === "ios"
+      ? {
+          unstable_headerRightItems: () => [
+            iconHeaderButton({
+              label: fr.navigation.a11y.openSettings,
+              sfSymbol: "gearshape",
+              tintColor: theme.semanticColors.accent,
+              onPress: () => navigation.navigate("settings"),
+            }),
+          ],
+        }
+      : {
+          headerRight: () => (
+            <SettingsHeaderButton color={tint} onPress={() => navigation.navigate("settings")} />
+          ),
+        }),
   })
 }
 
