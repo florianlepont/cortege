@@ -103,11 +103,13 @@ describe("AppCard", () => {
     expect(surface.props.surface).toEqual(dark.visual.mapPanel)
   })
 
-  test("variant panel is unchanged", () => {
-    const style = flatten(render({ variant: "panel" }).view.props.style)
+  test("the default variant is the elevated panel", () => {
+    const style = flatten(render().view.props.style)
     expect(style.backgroundColor).toBe(defaultTheme.colors.panel)
-    expect(style).not.toHaveProperty("boxShadow")
-    expect(style).not.toHaveProperty("borderWidth")
+    expect(style).toMatchObject({
+      borderWidth: 1,
+      borderColor: defaultTheme.componentColors.card.panelBorder,
+    })
   })
 
   test("padding and style overrides apply", () => {

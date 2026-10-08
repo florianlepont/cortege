@@ -113,8 +113,6 @@ export type BrandSemanticColors = {
   textPrimary: string
   textSecondary: string
   textStrong: string
-  heroSurface: string
-  heroBorder: string
   onCtaPrimary: string
   accent: string
   ctaPrimary: string
@@ -146,8 +144,6 @@ function makeSemanticColors(
     textStrong: strongInk ?? (scheme === "dark" ? colors.textPrimary : colors.forest),
     // OA-80 (sketch 001, direction A "Graphite" chosen by the owner): in dark mode the forest
     // heroes become a bordered surface, and the primary action a mid green that keeps white text.
-    heroSurface: scheme === "dark" ? colors.panel : colors.forest,
-    heroBorder: scheme === "dark" ? "#26282C" : colors.forest,
     // Sketch 001 A: the primary action is the light green with dark ink.
     ctaPrimary: scheme === "dark" ? "#9BC26A" : colors.forest,
     onCtaPrimary: scheme === "dark" ? "#0C1208" : brandColors.white,
@@ -168,11 +164,9 @@ export type BrandComponentColors = {
     secondaryBackground: string
     secondaryBorder: string
     secondaryLabel: string
-    dangerBackground: string
   }
   card: {
     surfaceBorder: string
-    softSurface: string
     panelBorder: string
   }
   field: {
@@ -256,11 +250,9 @@ function makeComponentColors(
       secondaryBorder: semanticColors.ctaSecondaryOutline,
       // Sketch 001 A: a ghost button with a faint border and light text in dark mode.
       secondaryLabel: semanticColors.textStrong,
-      dangerBackground: semanticColors.ctaDanger,
     },
     card: {
       surfaceBorder: colors.panelMuted,
-      softSurface: semanticColors.surfaceSoft,
       panelBorder: colors.divider,
     },
     field: {

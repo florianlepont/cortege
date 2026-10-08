@@ -207,7 +207,7 @@ Both trees keep `shouldHideTabBar` and the always-visible rule (OA-28). The JS b
 | 2a | Mes Relevés, search page | `SurveyRow` with `ScoreRing`, glass cards, status chips glass, filter chips glass with inverted active, animated empty state | list virtualisation settings, swipe/tap behaviour, 44 pt rows |
 | 2b | Survey detail summary and Score, Contexte, Historique pages | forest score card (numeral, glow bar, tiles) with drift contours; ten factor bars on summary and Score page; context map card keeps the live map, contours only on its placeholder; glass cards for rows and photos; one bottom button (glow pill is NOT used here, existing primary variant) | one-bottom-button summary (OA-46), `useSurveyDetailData`, sub-page structure, tab bar visible |
 | 3 | Survey form, wizard | refinement only: radii to scale, block gaps to scale, gauge and ring tokens and glow, letter strip tokens, two literal colours tokenised | every `Factor*Input` size, 44 pt targets, pager behaviour, field density (D-05) |
-| 4 | Explorer | chips glass with inverted active, legend and selected card ring in tokens, sheets and cluster list radii; map untouched | markers, clustering, `@gorhom/bottom-sheet` behaviour, map layers |
+| 4 | Explorer | chips glass with inverted active, legend and selected card ring in tokens, sheets and cluster list radii; map untouched | markers, clustering, `ExplorerSheet` behaviour (`@gorhom/bottom-sheet` removed), map layers |
 | Foundations | Tab bars, global | see Color, Tab bar; Ionicons outline harmonisation sweep (D-07) in the closing plan | `shouldHideTabBar` plumbing, navigation typing |
 
 ---

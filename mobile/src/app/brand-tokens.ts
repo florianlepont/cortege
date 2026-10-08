@@ -211,7 +211,7 @@ export const brandRadius = {
   avatar: 20,
   pill: 999,
   // Phase 9 (DS-10): the IBP score badge's corner radius, previously two magic numbers
-  // (`IbpScoreBadge.tsx`'s `badgeMd`/`badgeSm`) duplicated wherever a badge shape was needed.
+  // (`badgeMd`/`badgeSm` of the former score badge) duplicated wherever a badge shape was needed.
   badge: 16,
   badgeSm: 12,
 } as const
@@ -422,7 +422,7 @@ export const brandMapTokens = {
   strokeWidthSelected: 3,
   strokeWidthDefault: 2,
   // Phase 9 (MAP-03): the public map's survey markers, by IBP total score band tone (bandTone
-  // applied to totalBand — the same 3-tone split IbpScoreBadge already reads its colors from,
+  // applied to totalBand — the same 3-tone split the score ring reads its colors from,
   // here as the saturated hue itself rather than a soft background). MAP-04: the device's own
   // position is `showsUserLocation`'s native halo, not a marker — no token needed for it.
   scoreMarker: {

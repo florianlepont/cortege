@@ -33,7 +33,6 @@ module.exports = {
     "^react-native-svg$": "<rootDir>/test/react-native-svg.mock.ts",
     "^react-native-reanimated$": "<rootDir>/test/react-native-reanimated.mock.ts",
     "^@maplibre/maplibre-react-native$": "<rootDir>/test/maplibre.mock.ts",
-    "^@gorhom/bottom-sheet$": "<rootDir>/test/gorhom-bottom-sheet.mock.ts",
     "\\.(png|jpg|jpeg|gif|webp)$": "<rootDir>/test/image.mock.ts",
     // Metro resolves this to a numeric asset id (metro.config.js); the mock is the same shape.
     "\\.tflite$": "<rootDir>/test/image.mock.ts",

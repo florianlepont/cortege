@@ -21,7 +21,7 @@ export type DisplayedScores = {
 export type DisplayedFactorResult = {
   selected_class: string
   warnings: string[]
-  // DET-01: the factor's retained points (0-5), fed to IbpFactorBars; null when not filled.
+  // DET-01: the factor's retained points (0-5), null when not filled.
   score_points: number | null
 }
 export type LocalDraftMeta = {

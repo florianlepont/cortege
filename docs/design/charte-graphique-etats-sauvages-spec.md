@@ -180,13 +180,12 @@ the step's primary CTA and, on the factors step, the visible autosave line ("Enr
 "Enregistrement…", or "Échec de l'enregistrement" in terracotta) — replacing a "Save draft" label
 that implied a manual step where autosave already runs.
 
-### 11.5 Progress ring and total gauge
+### 11.5 Progress ring
 - `FactorProgressRing` (`mobile/src/ui/FactorProgressRing.tsx`): an SVG ring (`react-native-svg`)
   that fills as a factor's fields are completed and morphs into a check mark once done. Used in the
   2×5 factor summary grid.
-- `IbpTotalGauge` (`mobile/src/ui/IbpTotalGauge.tsx`): a 10-segment gauge (one bar per factor,
-  colored by that factor's state) plus the running score total, rendered on every wizard step (not
-  only the factors step), so the total is visible from the first screen.
+- The 10-segment total gauge (`IbpTotalGauge`) was removed in Phase 23 (no importer); the running
+  score is shown by `ScoreRing` and the score card.
 
 ### 11.6 "Parcels near you" sheet
 `NearbyParcelsSheet` (`mobile/src/screens/survey-form/NearbyParcelsSheet.tsx`): a native `Modal`

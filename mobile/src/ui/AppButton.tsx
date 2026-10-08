@@ -18,7 +18,7 @@ import { feedback } from "./feedback"
  * `glow` (variant I, Phase 12.2) is the moss gradient pill, the primary call to action on forest
  * cards only (UI-SPEC accent list item 2). Terracotta is never a call to action.
  */
-type AppButtonVariant = "primary" | "secondary" | "danger" | "dangerSoft" | "glow"
+type AppButtonVariant = "primary" | "secondary" | "dangerSoft" | "glow"
 export type AppButtonSize = "sm" | "md" | "lg"
 
 type AppButtonProps = {
@@ -198,9 +198,6 @@ function createStyles(theme: BrandTheme) {
       backgroundColor: theme.componentColors.button.secondaryBackground,
       borderWidth: 1,
       borderColor: theme.componentColors.button.secondaryBorder,
-    },
-    danger: {
-      backgroundColor: theme.componentColors.button.dangerBackground,
     },
     dangerSoft: {
       backgroundColor: theme.colors.errorSoft,

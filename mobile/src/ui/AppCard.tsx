@@ -10,7 +10,7 @@ import { GlassSurface } from "./GlassSurface"
  * inner highlight (light also a soft shadow), no elevation. The blurred surface for a card floating
  * over a map or photo stays the separate boolean `glass` prop below (D-04).
  */
-type AppCardVariant = "panel" | "panelElevated" | "surface" | "soft" | "hero" | "glass"
+type AppCardVariant = "panelElevated" | "surface" | "glass"
 
 type AppCardProps = {
   children: ReactNode
@@ -29,7 +29,7 @@ type AppCardProps = {
 
 export function AppCard({
   children,
-  variant = "panel",
+  variant = "panelElevated",
   padding = brandComponentTokens.card.defaultPadding,
   glass = false,
   surface,
@@ -54,9 +54,6 @@ function createStyles(theme: BrandTheme) {
     base: {
       borderRadius: brandRadius.card,
     },
-    panel: {
-      backgroundColor: theme.colors.panel,
-    },
     panelElevated: {
       backgroundColor: theme.colors.panel,
       borderWidth: 1,
@@ -67,19 +64,6 @@ function createStyles(theme: BrandTheme) {
       backgroundColor: theme.semanticColors.surfaceElevated,
       borderWidth: 1,
       borderColor: theme.componentColors.card.surfaceBorder,
-      ...brandShadow.card,
-    },
-    soft: {
-      backgroundColor: theme.componentColors.card.softSurface,
-      borderWidth: 1,
-      borderColor: theme.componentColors.card.surfaceBorder,
-    },
-    // Dark premium surface — for identity/hero cards on dark brand background
-    hero: {
-      // OA-80 (sketch 001, A Graphite): forest in light, a bordered surface in dark.
-      backgroundColor: theme.semanticColors.heroSurface,
-      borderWidth: 1,
-      borderColor: theme.semanticColors.heroBorder,
       ...brandShadow.card,
     },
     // No `brandShadow.card` here: an Android elevation under a translucent fill smears grey.
