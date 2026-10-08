@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
-stopped_at: Completed 12.2-21-PLAN.md
-last_updated: "2026-10-08T10:42:00.000Z"
+stopped_at: Completed 12.2-22-PLAN.md
+last_updated: "2026-10-08T10:53:00.000Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 180
+  completed_plans: 181
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 22 of 23
+Plan: 23 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -101,6 +101,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P19 | owner check | 1 tasks | 0 files |
 | Phase 12.2 P20 | 9min | 2 tasks | 40 files |
 | Phase 12.2 P21 | 22min | 3 tasks | 25 files |
+| Phase 12.2 P22 | 7min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -173,6 +174,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 12.2]: 12.2-19: Explorer markers open the survey directly (intermediate card removed); the download panel has a 46 pt button and a progress bar, and download mode is a full-screen green pulse drawn at the navigation layer; map controls and sheets use near-opaque glass in dark mode; unscored parcels are warm grey and a scored survey keeps its marker until a scored parcel shows it; Accueil's Nouveau relevé is a glass card of its own; forest cards carry the owner-tuned mist and diagonal flowing contours with an SVG mask behind text
 - [Phase 12.2]: 12.2-20: every Ionicons glyph in mobile/src is an outline variant, locked by `__checks__/icons.test.ts` (D-07); GlassButton's native SF Symbol map is keyed by outline glyphs with unfilled symbols; tab SF Symbols and Android PNG tab icons untouched; no control changed size
 - [Phase 12.2]: 12.2-21: em dash gate over every string, template and JSX text under mobile/src (survey-export.ts out of scope), comments skipped through the TypeScript parser; motion gate per call (ReduceMotion.System unless the file branches on useReducedMotion()), React Native Animated confined to six allowlisted sign-in and sheet files, every endless loop gated by useScreenVisible; ExplorerSheet honours Reduce Motion; no open dark correction (no token changed); map overlays that keep theme text take theme.visual.mapPanel, map-control-like overlays the map control glass and ink
+- [Phase 12.2]: 12.2-22: charter section 13 records variant I as shipped (five token files, ForestAurora forest cards, forest native glass CTA over @expo/ui, dense map glass, gates, platform fallbacks), status pending plan 12.2-23; direction text carries the four phone checks without the final marker; SEED-004 animals dormant; Phase 13 carries the Android device pass (ForestCard motion as the knob); CLAUDE.md has a Visual layer block and its gates
 
 ### Pending Todos
 
@@ -214,6 +216,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T10:42:00.000Z
-Stopped at: Completed 12.2-21-PLAN.md
+Last session: 2026-10-08T10:53:00.000Z
+Stopped at: Completed 12.2-22-PLAN.md
 Resume file: None
