@@ -105,15 +105,6 @@ export function createControlStyles(theme: BrandTheme) {
       marginHorizontal: brandSpacing.sm,
       backgroundColor: theme.visual.mapControl.hairline,
     },
-    locateGlass: {
-      position: "absolute",
-      right: 14,
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      borderWidth: 1,
-      borderColor: theme.visual.mapControl.hairline,
-    },
   })
 }
 

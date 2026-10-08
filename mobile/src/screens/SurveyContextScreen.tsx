@@ -6,7 +6,7 @@ import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppText as Text } from "../ui/AppText"
 import { useFrameInsetBehavior } from "../ui/frame-large-title"
 import { PageTitle } from "../ui/PageTitle"
-import { MapActionPill } from "./public-map/MapChips"
+import { GlassIconButton } from "./public-map/GlassIconButton"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
 import { ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
 import { type SurveyContextScreenProps } from "./survey-detail/screen-props"
@@ -78,7 +78,8 @@ export function SurveyContextScreen({
         style={styles.mapTall}
       >
         {canEditSurvey ? (
-          <MapActionPill
+          <GlassIconButton
+            variant="map-pill"
             icon="pencil-outline"
             label={t.editParcels}
             accessibilityLabel={a11y.editParcels(activeSiteName)}

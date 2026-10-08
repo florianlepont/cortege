@@ -10,7 +10,7 @@ import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { GlassButton } from "../../ui/GlassButton"
 import { DownloadStatusView, measureStatuses } from "./DownloadStatusView"
-import { SheetCloseButton } from "./SheetCloseButton"
+import { GlassIconButton } from "./GlassIconButton"
 import { createPanelStyles, offlineAreasStyles as areaStyles } from "./styles"
 
 const t = fr.offlineMap.areas
@@ -91,7 +91,13 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
         subtitle={t.subtitle}
         titleStyle={styles.title}
         subtitleStyle={styles.meta}
-        trailing={<SheetCloseButton accessibilityLabel={t.a11y.closeSheet} onPress={onClose} />}
+        trailing={
+          <GlassIconButton
+            variant="close"
+            accessibilityLabel={t.a11y.closeSheet}
+            onPress={onClose}
+          />
+        }
       />
 
       <View testID="offline-area-body" style={{ minHeight: reserved }}>

@@ -116,4 +116,13 @@ describe("AppCard", () => {
     const style = flatten(render({ padding: 7, style: { margin: 3 } }).view.props.style)
     expect(style).toMatchObject({ padding: 7, margin: 3 })
   })
+
+  test("the radius prop names the corner: card (22, default) or field", () => {
+    expect(flatten(render().view.props.style).borderRadius).toBe(brandRadius.card)
+    expect(flatten(render({ radius: "field" }).view.props.style).borderRadius).toBe(
+      brandRadius.field,
+    )
+    const glass = render({ glass: true, radius: "field" }).surface
+    expect(flatten(glass.props.style).borderRadius).toBe(brandRadius.field)
+  })
 })

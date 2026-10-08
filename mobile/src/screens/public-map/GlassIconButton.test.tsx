@@ -51,7 +51,7 @@ import { brandComponentTokens, brandInteraction } from "../../app/brand-tokens"
 import { buildTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { OfflineAreasSheet } from "./OfflineAreasSheet"
-import { SHEET_CLOSE_ICON_SIZE, SHEET_CLOSE_SIZE, SheetCloseButton } from "./SheetCloseButton"
+import { GlassIconButton, SHEET_CLOSE_ICON_SIZE, SHEET_CLOSE_SIZE } from "./GlassIconButton"
 
 const originalConsoleError = console.error
 
@@ -79,10 +79,12 @@ function mount(element: React.ReactElement): renderer.ReactTestRenderer {
   return tree
 }
 
-describe("SheetCloseButton (12.2-19 fix round)", () => {
+describe("GlassIconButton close variant (12.2-19 fix round)", () => {
   test("a 44 pt glass circle with a bright glyph, closing on press", () => {
     const onPress = jest.fn()
-    const tree = mount(<SheetCloseButton accessibilityLabel="Fermer" onPress={onPress} />)
+    const tree = mount(
+      <GlassIconButton variant="close" accessibilityLabel="Fermer" onPress={onPress} />,
+    )
     const circle = tree.root.findByType("GlassSurface" as never)
     expect(circle.props.interactive).toBe(true)
     expect(circle.props.surface).toEqual(dark.visual.sheet.close)

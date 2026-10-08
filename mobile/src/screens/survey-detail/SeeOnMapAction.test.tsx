@@ -4,8 +4,8 @@ import { fr } from "../../i18n"
 
 const mockNavigate = jest.fn()
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => ({ navigate: mockNavigate }) }))
-jest.mock("../public-map/MapChips", () => ({
-  MapActionPill: "MapActionPill",
+jest.mock("../public-map/GlassIconButton", () => ({
+  GlassIconButton: "GlassIconButton",
 }))
 
 import { SeeOnMapAction } from "./SeeOnMapAction"
@@ -24,7 +24,7 @@ describe("SeeOnMapAction (OA-59)", () => {
         />,
       )
     })
-    const pill = tree.root.findByType("MapActionPill" as never)
+    const pill = tree.root.findByType("GlassIconButton" as never)
     expect(pill.props.label).toBe(fr.surveyDetail.map.seeOnMap)
     expect(pill.props.accessibilityLabel).toBe(fr.surveyDetail.a11y.seeOnMap("Bois"))
     act(() => pill.props.onPress())

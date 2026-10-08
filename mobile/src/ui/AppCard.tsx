@@ -16,6 +16,8 @@ type AppCardProps = {
   children: ReactNode
   variant?: AppCardVariant
   padding?: number
+  /** Named corner radius: "card" (22, default) or "field" (the tighter inner cards). */
+  radius?: "card" | "field"
   /** DS-15 (Phase 12): a real blurred glass surface instead of a flat fill, for a card floating
    * over a map or photo (ignores `variant`'s own background — the blur supplies it). */
   glass?: boolean
@@ -31,6 +33,7 @@ export function AppCard({
   children,
   variant = "panelElevated",
   padding = brandComponentTokens.card.defaultPadding,
+  radius = "card",
   glass = false,
   surface,
   style,
@@ -38,15 +41,20 @@ export function AppCard({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
 
+  const corner = { borderRadius: brandRadius[radius] }
+
   if (glass) {
     return (
-      <GlassSurface surface={surface} style={[styles.base, styles.glassBorder, { padding }, style]}>
+      <GlassSurface
+        surface={surface}
+        style={[styles.base, corner, styles.glassBorder, { padding }, style]}
+      >
         {children}
       </GlassSurface>
     )
   }
 
-  return <View style={[styles.base, styles[variant], { padding }, style]}>{children}</View>
+  return <View style={[styles.base, corner, styles[variant], { padding }, style]}>{children}</View>
 }
 
 function createStyles(theme: BrandTheme) {

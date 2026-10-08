@@ -4,7 +4,7 @@ import { Camera } from "expo-camera"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
-import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { confidenceLine } from "../app/genus-recognition-text"
 import type { GenusSuggestion } from "../recognition/calibration"
 import { classifyGenusPhoto } from "../recognition/genusClassifierModel"
@@ -166,7 +166,7 @@ export function GenusRecognitionModal({
                     key={suggestion.genus}
                     variant="panelElevated"
                     padding={14}
-                    style={styles.resultCard}
+                    radius="field"
                   >
                     <View style={styles.resultRow}>
                       <View style={styles.resultCopy}>
@@ -240,9 +240,6 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.sectionTitle,
       fontSize: 18,
       color: theme.semanticColors.textStrong,
-    },
-    resultCard: {
-      borderRadius: brandRadius.field,
     },
     resultRow: {
       flexDirection: "row",

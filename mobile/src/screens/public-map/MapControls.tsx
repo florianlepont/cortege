@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react"
-import { ActivityIndicator, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
 import type { BasemapKey } from "../../map/basemaps"
@@ -8,6 +8,7 @@ import { mapControlIconSize } from "../../app/visual-tokens"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { createControlStyles } from "./styles"
 import { AppPressable } from "../../ui/AppPressable"
+import { GlassIconButton } from "./GlassIconButton"
 
 const t = fr.publicMap
 const offlineT = fr.offlineMap
@@ -95,35 +96,18 @@ export const MapBottomDock = memo(function MapBottomDock({
   locating,
   onLocate,
 }: MapBottomDockProps) {
-  const theme = useBrandTheme()
-  const styles = useMemo(() => createControlStyles(theme), [theme])
   return (
-    <GlassSurface
-      tone="auto"
-      interactive
-      surface={theme.visual.mapControl.glass}
-      style={[styles.locateGlass, top !== undefined ? { top } : { bottom }]}
-    >
-      <AppPressable
-        disableScale
-        disableRipple
-        style={styles.capsuleButton}
-        onPress={onLocate}
-        disabled={locating}
-        accessibilityRole="button"
-        accessibilityLabel={t.a11y.locate}
-        accessibilityState={{ disabled: locating, busy: locating }}
-      >
-        {locating ? (
-          <ActivityIndicator size="small" color={theme.visual.mapControl.icon} />
-        ) : (
-          <Ionicons
-            name="navigate-outline"
-            size={mapControlIconSize}
-            color={theme.visual.mapControl.icon}
-          />
-        )}
-      </AppPressable>
-    </GlassSurface>
+    <GlassIconButton
+      variant="map-circle"
+      icon="navigate-outline"
+      busy={locating}
+      onPress={onLocate}
+      accessibilityLabel={t.a11y.locate}
+      style={[dockStyles.position, top !== undefined ? { top } : { bottom }]}
+    />
   )
+})
+
+const dockStyles = StyleSheet.create({
+  position: { position: "absolute", right: 14 },
 })

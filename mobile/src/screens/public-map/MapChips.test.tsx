@@ -38,11 +38,11 @@ import { buildTheme, defaultTheme } from "../../app/theme"
 import {
   MAP_CONTROL_HIT_SLOP,
   MAP_PILL_HEIGHT,
-  MapActionPill,
   MapInfoPill,
   MapOverlayCorners,
   MapTitlePill,
 } from "./MapChips"
+import { GlassIconButton } from "./GlassIconButton"
 
 const originalConsoleError = console.error
 
@@ -66,7 +66,8 @@ function renderAction(): renderer.ReactTestRenderer {
   let tree!: renderer.ReactTestRenderer
   act(() => {
     tree = renderer.create(
-      <MapActionPill
+      <GlassIconButton
+        variant="map-pill"
         icon="map-outline"
         label="Voir"
         accessibilityLabel="Voir le relevé"
@@ -96,7 +97,8 @@ describe("map chips (the overlays every map shares)", () => {
     let tree!: renderer.ReactTestRenderer
     act(() => {
       tree = renderer.create(
-        <MapActionPill
+        <GlassIconButton
+          variant="map-pill"
           icon="map-outline"
           label="Voir"
           accessibilityLabel="Voir le relevé"
