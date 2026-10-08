@@ -220,6 +220,19 @@ API image is published.
 was built from (`"unknown"` outside a CI-built image): `curl -s https://cortege.algernon.ovh/v1/health`.
 Same branch; the first image published after the merge is the first one that answers it.
 
+### Demo data on real parcels (owner request 2026-10-08)
+
+"Est-ce que tu pourrais faire en sorte que l'ensemble des fausses données soit reliées à de
+vraies parcelles ?" Note 2026-10-08: the demo surveys of OA-105 sat on invented parcels
+(`DEMO0902`...), which never match an IGN polygon, so the parcel colours by score (OA-126) could
+not be tested. `api/scripts/seed-demo-community.js` now links every demo survey, the community ones
+and the owner's, to 1 to 3 real IGN parcels near its place, registered like the app registers a
+parcel; a re-run (or `--remove`) also deletes the invented 12.1 parcels. `--dry-run` shows the
+parcels it would use without writing anything. Branch `fix/demo-seed-real-parcels`, not deployed
+yet: once the image is published, the owner runs the commands of `infra/vps/README.md` ("Demo
+community data") and checks the Explorer at parcel zoom on a demo place (Fontainebleau, Sénart,
+Rambouillet).
+
 ## Fix batches
 
 | Batch | PR | Entries | Re-tested on |

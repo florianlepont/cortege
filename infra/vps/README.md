@@ -375,10 +375,27 @@ starts being OOM-killed under load.
 
 To see the Communauté search, the Explorer map, the parcel history and the read-only survey page
 before the app has real members, `api/scripts/seed-demo-community.js` creates eight fake members
-with about a hundred finished, public surveys spread over France (on invented parcels with a
-centroid), plus a dozen surveys on the owner's own account (drafts and finished ones, on invented
-parcels around Paris). Everything it creates is marked (`@demo.cortege.invalid` users, `demo-`
-survey ids, parcels with source `demo`) and `--remove` takes it all away.
+with about a hundred finished, public surveys spread over France, plus a dozen surveys on the
+owner's own account (drafts and finished ones, around Paris). Everything it creates is marked
+(`@demo.cortege.invalid` users, `demo-` survey ids, parcels with source `demo`) and `--remove`
+takes it all away.
+
+Since 2026-10-08 every demo survey sits on 1 to 3 **real IGN parcels** (two sites per place, the
+same parcels on every run), so the Explorer colours them by score at parcel zoom and the survey
+map, parcel history and parcel picker behave as with a field survey. The script asks the IGN
+cadastre WFS (`data.geopf.fr`, the service the API already uses; `CADASTRE_IGN_WFS_URL`,
+`CADASTRE_IGN_WFS_TYPENAME` and `CADASTRE_PROVIDER_TIMEOUT_MS` apply) one point at a time, so the
+API container must reach the internet. It resolves every parcel before touching the database: if a
+site cannot be resolved it stops, lists the sites and writes nothing. There is no fallback to
+invented parcels. Parcels the seed registers get source `demo`; a parcel that was already in the
+database (registered by a real survey) is reused as it is and never marked. `--remove` and the
+replacing run also delete the invented parcels of 12.1 (`DEMO0001`...), and never delete a `demo`
+parcel that a real survey links (the output counts those).
+
+The script runs from the image (it uses the compiled API helpers in `api/dist`): deploy the image
+that contains this version first (`curl -s https://cortege.algernon.ovh/v1/health` gives the
+commit). Piping the script from the host (`node - < ...`) no longer works, it needs its
+`scripts/lib` module.
 
 `--wipe-all` first deletes EVERY survey, event and attachment row of the database (users and
 parcels are kept, object storage files are left behind). Use it only while the database holds
@@ -387,19 +404,25 @@ test data. Take a dump first:
 ```bash
 docker exec cortege-postgres pg_dump -U cortege -d cortege | gzip > /home/ubuntu/backups/pre-demo-seed-$(date +%Y%m%d-%H%M%S).sql.gz
 
-# wipe every survey, then add the demo data and the owner's surveys
-docker exec -i -w /app/api cortege-api node - --wipe-all --owner-email=florian.lepont@icloud.com \
-  < api/scripts/seed-demo-community.js
-
-# add (replaces earlier demo data, keeps the other surveys); the script can also come from the image:
+# dry run: resolves the real parcels at the IGN and prints the table of what would be created
+# (place, surveys, parcel ids, centre, commune); writes nothing
 docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
-  exec api node api/scripts/seed-demo-community.js
+  exec api node api/scripts/seed-demo-community.js --dry-run
 
-# remove the demo data only, before the app opens to the public
+# replace the demo data (removes the earlier demo data, invented 12.1 parcels included, keeps the
+# other surveys) and add the owner's surveys
+docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
+  exec api node api/scripts/seed-demo-community.js --owner-email=florian.lepont@icloud.com
+
+# or: wipe every survey first, then add the demo data and the owner's surveys
+docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
+  exec api node api/scripts/seed-demo-community.js --wipe-all --owner-email=florian.lepont@icloud.com
+
+# remove the demo data only, before the app opens to the public (no IGN call)
 docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env \
   exec api node api/scripts/seed-demo-community.js --remove
 ```
 
 Options: `--count=100` (community surveys), `--owner-email=...` (the account that gets its own
-surveys; a warning and no survey if no user has that email).
+surveys; a warning and no survey if no user has that email), `--dry-run`.
 
