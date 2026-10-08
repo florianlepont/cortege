@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 12.2
 current_phase_name: visual-modernisation-inserted
 status: executing
-stopped_at: Completed 12.2-18-PLAN.md
-last_updated: "2026-10-07T15:27:26.746Z"
+stopped_at: Completed 12.2-19-PLAN.md
+last_updated: "2026-10-08T10:06:00.000Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 12.2 execution started
 progress:
   total_phases: 25
   completed_phases: 13
   total_plans: 144
-  completed_plans: 177
+  completed_plans: 178
   percent: 52
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 12.2 (visual-modernisation-inserted) — EXECUTING
-Plan: 19 of 23
+Plan: 20 of 23
 Status: Ready to execute
 Last activity: 2026-10-06 — Phase 12.2 execution started
 
@@ -98,6 +98,7 @@ Progress: [████████░░] 21/25 phases complete
 | Phase 12.2 P16 | 35 min | 2 tasks | 11 files |
 | Phase 12.2 P17 | owner check | 1 tasks | 0 files |
 | Phase 12.2 P18 | 16min | 2 tasks | 20 files |
+| Phase 12.2 P19 | owner check | 1 tasks | 0 files |
 
 ## Accumulated Context
 
@@ -167,6 +168,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 12.2]: 12.2-15: the summary halo and pop wait until it is seen again after a pager finish (useVisiblePulse); the haptic stays immediate and single
 - [Phase 12.2]: 12.2-17: wizard uses the native transparent header with the system back button on iOS (D-29); pages whose title scrolled away get the native collapsing large title with a blur behind the collapsed bar (D-30); no border under a gradient, circular corners on layered surfaces
 - [Phase 12.2]: 12.2-18: Explorer panel rows (cluster list, parcel history) reuse SurveyRowFrame with the ScoreRing trailing (D-27a) and enter through EntranceView (rows 0 to 7); full-width panel actions are GlassButton at unchanged sizes; no halo on the Explorer or its sheets; one SheetCloseButton with a 44 pt target
+- [Phase 12.2]: 12.2-19: Explorer markers open the survey directly (intermediate card removed); the download panel has a 46 pt button and a progress bar, and download mode is a full-screen green pulse drawn at the navigation layer; map controls and sheets use near-opaque glass in dark mode; unscored parcels are warm grey and a scored survey keeps its marker until a scored parcel shows it; Accueil's Nouveau relevé is a glass card of its own; forest cards carry the owner-tuned mist and diagonal flowing contours with an SVG mask behind text
 
 ### Pending Todos
 
@@ -175,6 +177,7 @@ Decisions table. Decisions affecting current work:
 - Investigate iOS Release build navigation (2026-09-25): `npx expo run:ios --device --configuration Release` shows the JS tab bar instead of the native liquid-glass one, and "Mes relevés" does not work. The dev build also shows a non-glass bar; first check `mobile/.env` for a leftover `EXPO_PUBLIC_ENABLE_NATIVE_TABS=false`. Then re-run the offline cold-start device check (phase 01.5 criterion 7) on a working Release build.
 
 - Verify nearby-parcels list on device near known parcels (carried over from Phase 01.2-09 step 6; automated coverage exists in `useNearbyParcels.test.ts` / `map-viewport.test.ts`)
+- After the 12.2 branch is merged and the API deployed (fix e7537b5, migration 020): check on the owner's phone that his Vincennes survey's parcel is drawn in its score colour at parcel zoom (owner: test once all lots are developed, no separate PR)
 - After API deploy: check Caddy/API logs for 429 bursts under concurrent sync; set `TRUST_PROXY=loopback,uniquelocal` in `/home/ubuntu/cortege.env` if unauthenticated requests share one bucket (carried over from Phase 01.2-09 step 7)
 
 ### Blockers/Concerns
@@ -207,6 +210,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-07T15:26:58.662Z
-Stopped at: Completed 12.2-18-PLAN.md
+Last session: 2026-10-08T10:06:00.000Z
+Stopped at: Completed 12.2-19-PLAN.md
 Resume file: None
