@@ -12,7 +12,9 @@ import { PublicMapDbRow, PublicMapItem, toPublicMapItem } from "../src/surveys/p
 import { loginTestUser } from "./helpers/surveys-e2e"
 
 // 01.9 D-05: GET /v1/public/map-items takes an optional bbox=minLng,minLat,maxLng,maxLat and
-// keeps only the submitted surveys whose linked parcel centroid lies inside it. Without bbox the
+// keeps only the submitted surveys whose linked parcel centroid lies inside it. Since 2026-10-08
+// (owner decision) each item sits at the exact centre of its linked parcels, the same point as the
+// survey's community page. Without bbox the
 // answer is exactly the pre-01.9 one, so installed apps are unaffected. A malformed bbox gets
 // parseBbox's fixed 400 without echoing the input (T-01.9-14), an over-long one the
 // ValidationPipe's 400 (T-01.9-11). The bbox predicate walks idx_parcels_centroid_lat_lng
@@ -78,6 +80,11 @@ const BOX = { minLng: 12.3, minLat: 41.8, maxLng: 12.4, maxLat: 41.9 }
 const BOX_PARAM = `${BOX.minLng},${BOX.minLat},${BOX.maxLng},${BOX.maxLat}`
 const INSIDE = { lat: 41.851234, lng: 12.351234 }
 const OUTSIDE = { lat: 41.951234, lng: 12.451234 }
+// Two more parcels inside the box, both linked to one survey: its map position is the centre of
+// the pair (owner decision 2026-10-08), exactly the one the community survey page shows.
+const PAIR_A = { lat: 41.861234, lng: 12.361234 }
+const PAIR_B = { lat: 41.871238, lng: 12.381236 }
+const PAIR_CENTRE = { lat: 41.866236, lng: 12.371235 }
 
 describe("public map items by bbox (e2e, 01.9 D-05)", () => {
   let app: NestExpressApplication
@@ -88,11 +95,14 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
   const insidePublicId = `bbox-in-pub-${stamp}`
   const outsidePublicId = `bbox-out-pub-${stamp}`
   const insidePrivateId = `bbox-in-prv-${stamp}`
-  const surveyIds = [insidePublicId, outsidePublicId, insidePrivateId]
+  const pairId = `bbox-pair-${stamp}`
+  const surveyIds = [insidePublicId, outsidePublicId, insidePrivateId, pairId]
   const parcelIds = {
     inside: `99BBXIN${stamp}`,
     outside: `99BBXOUT${stamp}`,
     insidePrivate: `99BBXPRV${stamp}`,
+    pairA: `99BBXPA${stamp}`,
+    pairB: `99BBXPB${stamp}`,
   }
 
   let accessToken: string
@@ -128,6 +138,8 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
       [parcelIds.inside, INSIDE],
       [parcelIds.outside, OUTSIDE],
       [parcelIds.insidePrivate, INSIDE],
+      [parcelIds.pairA, PAIR_A],
+      [parcelIds.pairB, PAIR_B],
     ]
     for (const [parcelId, centroid] of parcels) {
       await db.query(
@@ -136,12 +148,13 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
         [randomUUID(), parcelId, parcelId.slice(-4), JSON.stringify(centroid)],
       )
     }
-    const surveys: Array<[string, string, string]> = [
-      [insidePublicId, "public", parcelIds.inside],
-      [outsidePublicId, "public", parcelIds.outside],
-      [insidePrivateId, "private", parcelIds.insidePrivate],
+    const surveys: Array<[string, string, string[]]> = [
+      [insidePublicId, "public", [parcelIds.inside]],
+      [outsidePublicId, "public", [parcelIds.outside]],
+      [insidePrivateId, "private", [parcelIds.insidePrivate]],
+      [pairId, "public", [parcelIds.pairA, parcelIds.pairB]],
     ]
-    for (const [surveyId, visibility, parcelId] of surveys) {
+    for (const [surveyId, visibility, linkedParcelIds] of surveys) {
       await db.query(
         `INSERT INTO surveys (id, user_id, site_name, status, visibility, region_version, scores,
                               created_at, updated_at, submitted_at, sync_version,
@@ -150,10 +163,12 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
                  now(), now(), now(), 1, 2025, 1)`,
         [surveyId, userId, `Bbox site ${surveyId}`, visibility],
       )
-      await db.query(`INSERT INTO survey_parcels (survey_id, parcel_id) VALUES ($1, $2)`, [
-        surveyId,
-        parcelId,
-      ])
+      for (const parcelId of linkedParcelIds) {
+        await db.query(`INSERT INTO survey_parcels (survey_id, parcel_id) VALUES ($1, $2)`, [
+          surveyId,
+          parcelId,
+        ])
+      }
     }
   })
 
@@ -195,16 +210,13 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
     expect(ids(items)).toContain(insidePublicId)
     expect(ids(items)).not.toContain(outsidePublicId)
     expect(ids(items)).toContain(insidePrivateId)
-    for (const item of items) {
-      // display_location is the rounded parcel centroid (2 decimals, privacy rule unchanged).
-      expect(item.display_location.lng).toBeGreaterThanOrEqual(BOX.minLng - 0.005)
-      expect(item.display_location.lng).toBeLessThanOrEqual(BOX.maxLng + 0.005)
-      expect(item.display_location.lat).toBeGreaterThanOrEqual(BOX.minLat - 0.005)
-      expect(item.display_location.lat).toBeLessThanOrEqual(BOX.maxLat + 0.005)
-    }
+    // Owner decision 2026-10-08: display_location is the exact parcel centre, no longer rounded.
+    expect(items.find((item) => item.survey_id === insidePrivateId)?.display_location).toEqual(
+      INSIDE,
+    )
     expect(items.find((item) => item.survey_id === insidePublicId)).toEqual({
       survey_id: insidePublicId,
-      display_location: { lat: 41.85, lng: 12.35 },
+      display_location: INSIDE,
       survey_date: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       region_code: "ACA",
       ibp_total: 21,
@@ -221,6 +233,25 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
     const outsideItems = await getItems({ bbox: "12.42,41.92,12.48,41.98" })
     expect(ids(outsideItems)).toContain(outsidePublicId)
     expect(ids(outsideItems)).not.toContain(insidePublicId)
+  })
+
+  it("places a survey of two parcels at the centre of the pair, as its community page does", async () => {
+    const pair = (await getItems({ bbox: BOX_PARAM })).find((item) => item.survey_id === pairId)
+    expect(pair?.display_location).toEqual(PAIR_CENTRE)
+
+    const detail = await request(app.getHttpServer())
+      .get(`/v1/public/community-surveys/${pairId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200)
+    expect(detail.body.parcel_ids).toEqual([parcelIds.pairA, parcelIds.pairB].sort())
+    expect(detail.body.display_location).toEqual(pair?.display_location)
+
+    // The single-parcel surveys agree with their community page too.
+    const single = await request(app.getHttpServer())
+      .get(`/v1/public/community-surveys/${insidePublicId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200)
+    expect(single.body.display_location).toEqual(INSIDE)
   })
 
   it("a blank bbox is no bbox", async () => {

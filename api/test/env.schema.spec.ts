@@ -144,6 +144,16 @@ describe("config: boolean and enum parsing (today's predicates)", () => {
     expect(loadAppConfig({ DEBUG_DATA_RESET_ENABLED: "1" }).debug.dataResetEnabled).toBe(false)
   })
 
+  it("keeps GIT_SHA only when it is a git sha (7 to 40 hex characters, lowercased)", () => {
+    const sha = "0123456789abcdef0123456789abcdef01234567"
+    expect(loadAppConfig({}).build.commit).toBeNull()
+    expect(loadAppConfig({ GIT_SHA: sha }).build.commit).toBe(sha)
+    expect(loadAppConfig({ GIT_SHA: " A7A26B4 " }).build.commit).toBe("a7a26b4")
+    for (const value of ["", "   ", "a7a26b", `${sha}0`, "main", "a7a26b49; rm", "unknown"]) {
+      expect(loadAppConfig({ GIT_SHA: value }).build.commit).toBeNull()
+    }
+  })
+
   it("keeps CADASTRE_PROVIDER_ALLOW_FALLBACK on unless it is exactly 'false'", () => {
     expect(loadAppConfig({}).cadastre.allowFallback).toBe(true)
     expect(

@@ -205,6 +205,21 @@ Not changed: the Accueil card keeps its sector score badge top left (it has no e
 Seen only in code and unit tests so far: the owner checks the layout on the phone at the end of the
 acceptance run.
 
+### Public map dot on its parcel (owner feedback 2026-10-08, after Phase 23)
+
+"Le point n'est pas à la place de la parcelle." Owner decision 2026-10-08: the public map items
+(`GET /v1/public/map-items`) no longer round the position to 2 decimals (about 1 km, the dot fell
+300 to 550 m from its parcel). Each survey now sits at the exact centre of its parcels, the centre
+of the whole set when it covers several, the same point as its community survey page. The cluster
+list no longer says "Les positions sont arrondies à environ 1 km". Branch
+`fix/public-map-exact-location`, not deployed yet: to check on the phone at parcel zoom once the
+API image is published.
+
+"Tu peux interroger l'API pour vérifier sa version ?" Until now `GET /v1/health` only said
+`status`, `service` and `timestamp`. It now also answers `commit`, the git commit the deployed image
+was built from (`"unknown"` outside a CI-built image): `curl -s https://cortege.algernon.ovh/v1/health`.
+Same branch; the first image published after the merge is the first one that answers it.
+
 ## Fix batches
 
 | Batch | PR | Entries | Re-tested on |

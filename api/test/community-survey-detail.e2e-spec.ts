@@ -13,7 +13,7 @@ import {
 } from "./helpers/surveys-e2e"
 
 // /v1/public/community-surveys/:id and its attachments: a finished survey of any member, read-only
-// (association-only sharing), with the author, a rounded location and the history of its parcel.
+// (association-only sharing), with the author, the exact centre of its parcels and the history of its parcel.
 
 describe("Community survey page (e2e)", () => {
   let app: INestApplication
@@ -129,7 +129,7 @@ describe("Community survey page (e2e)", () => {
     expect(typeof detail.scores.ibp_total).toBe("number")
     expect(typeof detail.factor_results).toBe("object")
     expect(detail.ibp_cas3_scale).toBe(false)
-    // Internal use: the exact place, not the public map's rounded one.
+    // The exact centre of the linked parcels, the same point as the map item (2026-10-08).
     const { lat, lng } = detail.display_location as { lat: number; lng: number }
     expect(typeof lat).toBe("number")
     expect(typeof lng).toBe("number")

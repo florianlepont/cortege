@@ -604,6 +604,9 @@ jobs:
           push: false
           load: true
           tags: cortege:ci
+          # Shown by GET /v1/health as `commit` (checked by the smoke test below).
+          build-args: |
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -665,6 +668,11 @@ jobs:
             docker logs api-smoke
             exit 1
           fi
+
+          # The image reports the commit it was built from (GIT_SHA build arg).
+          body=$(curl -fsS http://127.0.0.1:3000/v1/health)
+          echo "$body"
+          echo "$body" | grep -q "\"commit\":\"${GITHUB_SHA}\""
 
       # D-05: production must refuse the dev defaults, on the image itself.
       # The CMD is overridden because the default one runs migrate.js first,
@@ -823,5 +831,8 @@ jobs:
           tags: |
             ghcr.io/florianlepont/cortege:latest
             ghcr.io/florianlepont/cortege:sha-${{ github.sha }}
+          # GET /v1/health answers this commit, so the deployed version can be read from outside.
+          build-args: |
+            GIT_SHA=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

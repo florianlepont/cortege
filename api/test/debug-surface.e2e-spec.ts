@@ -84,6 +84,10 @@ describe("Debug surface gating in production (e2e)", () => {
   })
 
   it("still returns 200 for GET /v1/health", async () => {
-    await request(app.getHttpServer()).get("/v1/health").expect(200)
+    const response = await request(app.getHttpServer()).get("/v1/health").expect(200)
+    // The body carries the build commit and nothing else about the build or the environment.
+    expect(Object.keys(response.body).sort()).toEqual(["commit", "service", "status", "timestamp"])
+    expect(response.body.status).toBe("ok")
+    expect(response.body.commit).toMatch(/^(unknown|[0-9a-f]{7,40})$/)
   })
 })

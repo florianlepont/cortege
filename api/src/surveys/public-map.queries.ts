@@ -14,6 +14,23 @@ export const PUBLIC_MAP_ITEMS_LIMIT = 500
 /** Rows per /public/parcels/status answer on the database path, unchanged since before 01.7. */
 export const PUBLIC_PARCEL_STATUSES_LIMIT = 1000
 
+/**
+ * The centre of the linked parcels of survey `s` (its `s.id`): the average of their generated
+ * centroid columns (migration 015, NULL for a malformed or out-of-range centroid), over the whole
+ * set when the survey covers several parcels. This is the one definition of a survey's map
+ * position, shared by /public/map-items (below) and ParcelsService.displayLocation (the survey
+ * pages), so both place a survey at the same point; the API then passes the pair through
+ * normalizeCentroid. Owner decision 2026-10-08: the public map shows this exact centre, no longer
+ * a rounded one. Used inside a LATERAL join on a relation aliased `s`.
+ */
+export const LINKED_PARCELS_CENTRE_SQL = `SELECT
+     AVG(p.centroid_lat) AS parcel_centroid_lat,
+     AVG(p.centroid_lng) AS parcel_centroid_lng
+   FROM survey_parcels sp
+   JOIN parcels p
+     ON p.parcel_id = sp.parcel_id
+   WHERE sp.survey_id = s.id`
+
 export type PublicMapItemsFilters = {
   /** YYYY-MM-DD, already validated by normalizeDateInput. */
   from?: string | null
@@ -37,7 +54,8 @@ export type PublicMapItemsFilters = {
  * Limit first: the inner query walks idx_surveys_public_submitted (submitted_at DESC) and
  * stops after 500 rows; the LATERAL aggregate then reads the 1-3 links of each of those
  * surveys through survey_parcels_pkey and the parcels unique index (5.0 ms, no seq scan).
- * The averages read the generated centroid columns instead of casting the JSON per row.
+ * The averages read the generated centroid columns instead of casting the JSON per row
+ * (LINKED_PARCELS_CENTRE_SQL, the same centre as the survey pages).
  *
  * Optional filters are appended in the same order as before (from, to, region), so the
  * parameter list is unchanged.
@@ -106,13 +124,7 @@ export function buildPublicMapItemsQuery(filters: PublicMapItemsFilters = {}): {
    LIMIT ${PUBLIC_MAP_ITEMS_LIMIT}
  ) s
  LEFT JOIN LATERAL (
-   SELECT
-     AVG(p.centroid_lat) AS parcel_centroid_lat,
-     AVG(p.centroid_lng) AS parcel_centroid_lng
-   FROM survey_parcels sp
-   JOIN parcels p
-     ON p.parcel_id = sp.parcel_id
-   WHERE sp.survey_id = s.id
+   ${LINKED_PARCELS_CENTRE_SQL}
  ) agg ON true
  ORDER BY s.submitted_at DESC`
 

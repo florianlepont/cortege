@@ -182,7 +182,7 @@ Anonymized representation used by community map surfaces.
 
 Required fields:
 - `survey_id` (uuid)
-- `display_location` (jsonb) // reduced precision (2 decimals in current API read model)
+- `display_location` (jsonb) // exact centre of the linked parcels, 6 decimals like the stored centroids, the same point as the community survey page (owner decision 2026-10-08; 2 decimals before)
 - `survey_date` (date)
 - `region_code` (string) // the survey's `region_version`, or `unknown` when it has none (every v3.2 survey)
 - `ibp_total` (integer)

@@ -1,6 +1,10 @@
 // Wire types of the public map endpoints, shared by the API and the app.
 
-/** Replaces API `PublicMapItem` (public-map.utils.ts) and mobile `PublicMapItem` (app/types.ts). */
+/**
+ * Replaces API `PublicMapItem` (public-map.utils.ts) and mobile `PublicMapItem` (app/types.ts).
+ * `display_location` is the exact centre of the survey's linked parcels, not rounded (owner
+ * decision 2026-10-08; it was rounded to 2 decimals before).
+ */
 export type PublicMapItem = {
   survey_id: string
   display_location: { lat: number; lng: number }
@@ -55,8 +59,9 @@ export type CommunitySurveyHistoryItem = {
 
 /**
  * A finished survey of any member (`GET /public/community-surveys/:id`), read-only. For now every
- * member sees its parcels and its exact position (internal use by the association): unlike the
- * public map, nothing is rounded. To revisit before the app opens to people outside the association.
+ * member sees its parcels and its exact position (internal use by the association), the same point
+ * as its public map item (owner decision 2026-10-08). To revisit before the app opens to people
+ * outside the association.
  */
 export type CommunitySurveyDetail = {
   survey_id: string

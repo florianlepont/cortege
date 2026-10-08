@@ -41,6 +41,12 @@ COPY --from=builder /app/api/dist ./api/dist
 COPY api/scripts ./api/scripts
 COPY api/migrations ./api/migrations
 
+# The git commit of this image, passed by CI (--build-arg GIT_SHA=<sha>) and shown by
+# GET /v1/health as `commit` ("unknown" when built without it). Declared after the COPY steps so
+# a new commit only rebuilds this metadata layer, never the npm install.
+ARG GIT_SHA=""
+ENV GIT_SHA=${GIT_SHA}
+
 USER node
 
 EXPOSE 3000

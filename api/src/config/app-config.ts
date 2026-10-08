@@ -41,6 +41,15 @@ function isTrue(value: string | undefined): boolean {
   return (value ?? "false").toLowerCase() === "true"
 }
 
+/**
+ * GIT_SHA (set at image build time) when it is a git sha: 7 to 40 hex characters, lowercased.
+ * Anything else, or nothing (local dev), is null, so /v1/health can never echo arbitrary text.
+ */
+function parseCommit(value: string | undefined): string | null {
+  const trimmed = (value ?? "").trim()
+  return /^[0-9a-f]{7,40}$/i.test(trimmed) ? trimmed.toLowerCase() : null
+}
+
 function parseCors(value: string | undefined): { mode: CorsMode; origins: string[] } {
   const trimmed = (value ?? "").trim()
   if (!trimmed) {
@@ -119,6 +128,9 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     debug: {
       dataResetEnabled: isTrue(v.DEBUG_DATA_RESET_ENABLED),
+    },
+    build: {
+      commit: parseCommit(v.GIT_SHA),
     },
   }
 }

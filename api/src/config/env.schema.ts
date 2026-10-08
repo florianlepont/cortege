@@ -64,6 +64,10 @@ export class EnvironmentVariables {
 
   // Debug
   @IsOptional() @IsString() DEBUG_DATA_RESET_ENABLED?: string
+
+  // Build: the git commit of the image, set by api/Dockerfile from the CI build arg (never in an
+  // env file). Shown by GET /v1/health; anything that is not a hex sha is ignored there.
+  @IsOptional() @IsString() GIT_SHA?: string
 }
 
 /**

@@ -141,7 +141,7 @@ export class CommunitySurveysService {
       factor_results: row.factor_results,
       // A legacy survey linked by `parcel_id` only still has its one parcel.
       parcel_ids: row.parcel_ids ?? (row.parcel_id ? [row.parcel_id] : []),
-      // Exact, unlike the public map: the parcels are shown anyway (internal use, to revisit).
+      // Exact, like the public map since 2026-10-08 (owner decision): internal use, to revisit.
       display_location: location,
       history: history.rows.map(
         (item): CommunitySurveyHistoryItem => ({

@@ -28,6 +28,33 @@ Base path: `/v1`
 - `Report`: covered
 - `Public Map Item` (optional V1 read model): covered
 
+## 0) Health
+
+### GET /health
+
+No authentication; throttled like every route. Read by the image's Docker
+`HEALTHCHECK`, `infra/vps/update-stack.sh` and the CI smoke test (all three look at the status code
+only), and by anyone checking which commit the deployed API runs.
+
+Response `200`:
+
+```json
+{
+  "status": "ok",
+  "service": "cortege-api",
+  "timestamp": "2026-10-08T09:15:00.000Z",
+  "commit": "a7a26b49c0ffee0123456789abcdef0123456789"
+}
+```
+
+- `commit` (added 2026-10-08) is the git commit the running image was built from: the full sha CI
+  passes as the `GIT_SHA` build argument of `api/Dockerfile`. It is `"unknown"` for an API that was
+  not built by CI (local dev, `npm run dev:api`) and for any `GIT_SHA` that is not 7 to 40 hex
+  characters. The image of a commit is also tagged `ghcr.io/florianlepont/cortege:sha-<commit>`.
+- Nothing else about the build or the environment is exposed (no library versions, no settings).
+
+Check the deployed version: `curl -s https://cortege.algernon.ovh/v1/health`.
+
 ## 1) Authentication
 
 Authentication is fully delegated to **Auth0**. The backend does not expose login, register, refresh, or logout endpoints. All token issuance and session lifecycle (access token, refresh token, rotation, revocation) are handled by Auth0.
@@ -1094,8 +1121,20 @@ Query + formatting rules in V1:
   - Without `bbox` the response is the same as before 01.9, so older app versions are
     unaffected.
 - Results are ordered by `submitted_at DESC` and capped to `500` items, with or without `bbox`.
-- `display_location` is rounded to 2 decimals.
-- Surveys missing parcel-centroid coordinates are excluded.
+- `display_location` is the exact centre of the survey's linked parcels: the average of their
+  centroids, over the whole set when the survey covers several parcels. It is **not rounded**: it
+  keeps the 6 decimals (about 10 cm) the parcel centroids are stored with, and it is computed by the
+  same query and normalisation as the community survey page (`GET /public/community-surveys/{survey_id}`),
+  so both give the same point. **Owner decision 2026-10-08**: the dot of a survey must sit on its
+  parcel, so that at parcel zoom it turns into that coloured parcel. Until then it was rounded to 2
+  decimals (about 1 km), which drew the dot 300 to 550 m away from its parcel.
+- Privacy: the centre of a parcel is public cadastre information (the parcel outlines are already
+  served by `/public/parcels/status`). The item adds no personal data: no author, no site name, no
+  free text, no photo, no GPS fix of the observer; only the survey id, the parcel centre, the
+  submission date, the region code, the total score and the method fields below.
+- Surveys missing parcel-centroid coordinates are excluded. A parcel registered by id only gets its
+  centroid from the IGN the first time a page of its survey (the author's or the community one) is
+  read; the map then shows it.
 - `region_code` is the survey's `region_version`, or `"unknown"` when it has none (every v3.2
   survey).
 - `ibp_method_version` and `ibp_cas` (phase 01.8, additive) are always present: the survey's
@@ -1110,7 +1149,7 @@ Response `200`:
   "items": [
     {
       "survey_id": "2f3d8a59-7c53-4fdf-8df4-8e2325b6172c",
-      "display_location": { "lat": 48.64, "lng": 1.83 },
+      "display_location": { "lat": 48.649127, "lng": 1.827315 },
       "survey_date": "2026-03-08",
       "region_code": "ACA",
       "ibp_total": 28,
@@ -1119,7 +1158,7 @@ Response `200`:
     },
     {
       "survey_id": "8b1e7c1a-2f0d-4a57-9d4c-1f2e3a4b5c6d",
-      "display_location": { "lat": 45.12, "lng": 5.68 },
+      "display_location": { "lat": 45.123406, "lng": 5.678921 },
       "survey_date": "2026-09-30",
       "region_code": "unknown",
       "ibp_total": 31,
@@ -1170,8 +1209,9 @@ The page of a finished survey of any member, read-only (phase 12.1). Requires an
 - Only a **submitted**, non-deleted survey answers; a draft, a deleted or an unknown id is `404`.
 - `author_name` is the author's display name, `null` once they deleted their account.
 - `parcel_ids` lists the linked parcels and `display_location` is their exact centre: **nothing is
-  rounded**, unlike the public map. This is an owner decision for internal use by the association
-  (2026-10-05); to revisit before the app opens to people outside it.
+  rounded**. This is an owner decision for internal use by the association (2026-10-05); to revisit
+  before the app opens to people outside it. Since 2026-10-08 the public map item of the survey
+  carries the same point (same query, same normalisation).
 - `scores`, `factor_results` and the method fields (`ibp_method_version`, `ibp_cas`,
   `ibp_cas3_scale`, `region_version`, `vegetation_stage`) are those of the survey.
 - `history` lists the submitted surveys that share at least one parcel with this one, this survey

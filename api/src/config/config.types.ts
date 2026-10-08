@@ -68,4 +68,8 @@ export type AppConfig = {
   debug: {
     dataResetEnabled: boolean
   }
+  build: {
+    /** The git commit the image was built from (lowercase hex, 7 to 40 chars), or null. */
+    commit: string | null
+  }
 }

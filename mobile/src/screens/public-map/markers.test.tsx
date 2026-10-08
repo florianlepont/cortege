@@ -349,4 +349,11 @@ describe("fr.publicMap", () => {
     expect(fr.publicMap.clusterList.title(1)).toBe("1 relevé à cet endroit")
     expect(fr.publicMap.clusterList.title(4)).toBe("4 relevés à cet endroit")
   })
+
+  test("the cluster list no longer says positions are rounded (exact since 2026-10-08)", () => {
+    expect(fr.publicMap.clusterList.subtitle).toBe(
+      "Ces relevés sont trop proches pour être séparés sur la carte.",
+    )
+    expect(fr.publicMap.clusterList.subtitle).not.toMatch(/arrondi|1 km/)
+  })
 })

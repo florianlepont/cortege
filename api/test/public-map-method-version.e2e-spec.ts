@@ -5,6 +5,7 @@ import request = require("supertest")
 import { AppModule } from "../src/app.module"
 import { configureApp } from "../src/app.setup"
 import { DatabaseService } from "../src/database/database.service"
+import { normalizeCentroid } from "../src/surveys/surveys-normalize.utils"
 import {
   getNextVersionNumber,
   loginTestUser,
@@ -24,7 +25,10 @@ import {
 //
 // Phase 2 (association-only sharing): both routes require an authenticated member and show every
 // submitted survey regardless of visibility, so "v32Private" (never patched to public) now shows
-// up exactly like the public ones; the rounded-location rule is otherwise unchanged.
+// up exactly like the public ones.
+//
+// Owner decision 2026-10-08: the map items no longer round the location; each sits at the exact
+// centre of its linked parcels.
 
 const V3_2 = "cnpf_ibp_fr_v3_2_2026-02-02"
 
@@ -180,13 +184,21 @@ describe("Public map method version (e2e)", () => {
     expect(untagged).toHaveProperty("ibp_cas", null)
   })
 
-  it("shows a never-published private survey to any member too, locations are rounded", async () => {
+  it("shows a never-published private survey to any member too, at its exact parcel centre", async () => {
     const items = await mapItems()
 
     expect(items.some((item) => item.survey_id === ids.v32Private)).toBe(true)
+    for (const key of Object.keys(ids) as Array<keyof typeof ids>) {
+      const stored = await db.query<{ centroid_lat: number; centroid_lng: number }>(
+        `SELECT centroid_lat, centroid_lng FROM parcels WHERE parcel_id = $1`,
+        [parcels[key]],
+      )
+      const item = items.find((candidate) => candidate.survey_id === ids[key])
+      expect(item?.display_location).toEqual(
+        normalizeCentroid({ lat: stored.rows[0].centroid_lat, lng: stored.rows[0].centroid_lng }),
+      )
+    }
     for (const item of items) {
-      expect(Number(item.display_location.lat.toFixed(2))).toBe(item.display_location.lat)
-      expect(Number(item.display_location.lng.toFixed(2))).toBe(item.display_location.lng)
       expect(Object.keys(item).sort()).toEqual(
         [
           "display_location",

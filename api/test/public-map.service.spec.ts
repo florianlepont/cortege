@@ -11,6 +11,7 @@ import {
 } from "../src/surveys/public-map.queries"
 import { PublicMapService } from "../src/surveys/public-map.service"
 import { PublicMapDbRow, toPublicMapItem } from "../src/surveys/public-map.utils"
+import { normalizeCentroid } from "../src/surveys/surveys-normalize.utils"
 
 type QueryResult = { rows: unknown[] }
 
@@ -273,7 +274,7 @@ describe("PublicMapService", () => {
         items: [
           {
             survey_id: "s1",
-            display_location: { lat: 48.86, lng: 2.35 },
+            display_location: { lat: 48.8566, lng: 2.3522 },
             survey_date: "2026-03-04",
             region_code: "ACA",
             ibp_total: 31,
@@ -282,7 +283,7 @@ describe("PublicMapService", () => {
           },
           {
             survey_id: "s3",
-            display_location: { lat: 45.12, lng: 5.68 },
+            display_location: { lat: 45.1234, lng: 5.6789 },
             survey_date: "2026-03-03",
             region_code: "unknown",
             ibp_total: 40,
@@ -540,7 +541,7 @@ describe("toPublicMapItem (01.8-12, D-10)", () => {
       toPublicMapItem(row({ region_version: null, ibp_method_version: V3_2, ibp_cas: 3 })),
     ).toEqual({
       survey_id: "s1",
-      display_location: { lat: 44.44, lng: 4.44 },
+      display_location: { lat: 44.444, lng: 4.444 },
       survey_date: "2026-05-06",
       region_code: "unknown",
       ibp_total: 17,
@@ -560,9 +561,35 @@ describe("toPublicMapItem (01.8-12, D-10)", () => {
     expect(item).toHaveProperty("ibp_cas", null)
   })
 
-  it("keeps the privacy rules: no centroid, no item; the location is rounded to 2 decimals", () => {
+  it("no centroid, no item; the location is the exact parcel centre, not rounded (2026-10-08)", () => {
     expect(toPublicMapItem(row({ parcel_centroid_lat: null, ibp_method_version: V3_2 }))).toBe(null)
-    expect(toPublicMapItem(row())?.display_location).toEqual({ lat: 44.44, lng: 4.44 })
+    expect(toPublicMapItem(row({ parcel_centroid_lng: null }))).toBe(null)
+    expect(toPublicMapItem(row())?.display_location).toEqual({ lat: 44.444, lng: 4.444 })
+    // The 6-decimal centroids of real parcels come back unchanged (about 10 cm).
+    expect(
+      toPublicMapItem(row({ parcel_centroid_lat: 48.649127, parcel_centroid_lng: 1.827315 }))
+        ?.display_location,
+    ).toEqual({ lat: 48.649127, lng: 1.827315 })
+  })
+
+  it("reads the averaged centre exactly as the community survey page does (normalizeCentroid)", () => {
+    // pg can hand AVG() back as a string; the float noise of an average is trimmed to 6 decimals.
+    const lat = (48.649127 + 48.651131) / 2
+    const lng = (1.827315 + 1.829319) / 2
+    const item = toPublicMapItem(
+      row({ parcel_centroid_lat: String(lat) as unknown as number, parcel_centroid_lng: lng }),
+    )
+    expect(item?.display_location).toEqual(normalizeCentroid({ lat, lng }))
+    expect(item?.display_location).toEqual({ lat: 48.650129, lng: 1.828317 })
+  })
+
+  it("drops a blank or out-of-range centre instead of placing the survey at 0, 0", () => {
+    expect(
+      toPublicMapItem(
+        row({ parcel_centroid_lat: "" as unknown as number, parcel_centroid_lng: 2 }),
+      ),
+    ).toBe(null)
+    expect(toPublicMapItem(row({ parcel_centroid_lat: 91 }))).toBe(null)
   })
 })
 

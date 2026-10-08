@@ -33,7 +33,7 @@ The app is a public-interest project led by the association Etats-Sauvages and i
 - Offline mode + synchronization.
 - Survey statuses (draft, expired, submitted, synced, error).
 - Personal point counter based on completed IBP surveys.
-- Explore map focused on parcel analysis in France (parcel status, latest IBP score, and access to parcel history). The map loads the public surveys of the visible area once the user stops moving it, and groups nearby surveys into clusters; tapping a cluster zooms in, or lists its surveys when they share the same rounded location.
+- Explore map focused on parcel analysis in France (parcel status, latest IBP score, and access to parcel history). The map loads the public surveys of the visible area once the user stops moving it, and groups nearby surveys into clusters; tapping a cluster zooms in, or lists its surveys when zooming cannot separate them (surveys of the same parcels share one point).
 - User-controlled survey visibility: private (default) or public (shared with community).
 - Post-publication survey management (delete survey, switch private/public).
 - Association visibility surfaces in-app (mission, impact, actions).
@@ -77,7 +77,7 @@ their own epic documents), not V2 — they were previously filed under "V2 Backl
 - Deleting a survey must remove it from community surfaces.
 - Pedagogical content must be accessible on demand during survey entry without interrupting form completion.
 - ~~A draft survey expires 7 days after creation; after that, it becomes expired ("caduc") and cannot be submitted.~~ Removed (OA-41 2026-10-06): there is no submission deadline.
-- Public map data is anonymized (no personal data exposed). Viewport loading and clustering do not change this: locations stay rounded to about 1 km and no survey id is shown.
+- Public map data is anonymized (no personal data exposed). Viewport loading and clustering do not change this. A survey is placed at the exact centre of its parcels (public cadastre information, owner decision 2026-10-08, no longer rounded to about 1 km) and no survey id is shown.
 - At high zoom level, map surfaces (create/update/detail/explore) must display cadastral parcels and their study status (`studied` vs `not_studied`).
 - Points are awarded only for valid submitted surveys (not drafts).
 - Anti-cheat rules are needed (duplicate locations, spam submissions, fake entries).

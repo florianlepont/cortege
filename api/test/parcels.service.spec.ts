@@ -2,6 +2,10 @@ import { BadRequestException, UnprocessableEntityException } from "@nestjs/commo
 import { DatabaseService } from "../src/database/database.service"
 import { CadastreProviderService } from "../src/surveys/cadastre-provider.service"
 import { ParcelsService } from "../src/surveys/parcels.service"
+import {
+  buildPublicMapItemsQuery,
+  LINKED_PARCELS_CENTRE_SQL,
+} from "../src/surveys/public-map.queries"
 import { SurveyRow } from "../src/surveys/surveys.types"
 
 type QueryResult = { rows: unknown[] }
@@ -210,6 +214,25 @@ describe("ParcelsService", () => {
       expect(sql).toContain("centroid_lat")
       expect(sql).toContain("centroid_lng")
       expect(db.query.mock.calls[0][1]).toEqual(["survey-1", "P1"])
+    })
+
+    it("averages the linked parcels with the public map's own aggregate (2026-10-08)", async () => {
+      const db = buildDb({
+        rows: [{ lat: 48.5, lng: 2.5, fallback_lat: null, fallback_lng: null }],
+      })
+
+      await buildService().displayLocation(db, "survey-1", null)
+
+      const flat = (text: string) => text.replace(/\s+/g, " ").trim()
+      const centre = flat(LINKED_PARCELS_CENTRE_SQL)
+      expect(sqlOf(db)).toContain(
+        "FROM (SELECT $1::text AS id) s CROSS JOIN LATERAL ( " + centre + " )",
+      )
+      expect(sqlOf(db)).toContain("linked.parcel_centroid_lat AS lat")
+      // The map items read the very same average, keyed on each listed survey.
+      expect(flat(buildPublicMapItemsQuery().text)).toContain(
+        "LEFT JOIN LATERAL ( " + centre + " ) agg",
+      )
     })
 
     it("falls back to the legacy parcel's centroid, then to null", async () => {

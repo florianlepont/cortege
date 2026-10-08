@@ -154,8 +154,8 @@ Define a simple, scalable, and pragmatic architecture to deliver a reliable IBP 
    - The camera fits the items only after the first load and after an explicit filter apply (which loads every matching item, without `bbox`). It never re-fits after a viewport load: moving the camera would change the `bbox` and trigger another load, in a loop.
    - The Explorer tab press forces a reload of the last viewport `bbox`.
    - The cadastre parcel layer is loaded on the same debounce, from zoom 15.
-5. Mobile clustering: markers are grouped on the device with `supercluster` (radius 60 px, clusters up to zoom 16, `useMapClusters`). Survey and cluster markers are memoised and their presses pass ids. A cluster tap zooms to its expansion zoom; when the cluster cannot split (locations are rounded, so several surveys can share one point), it opens the list of its surveys instead.
-6. Anonymisation and rounding are unchanged: the API still rounds `display_location` to 2 decimals (about 1 km) and exposes no personal data. The map shows scores, dates and region codes, never survey ids.
+5. Mobile clustering: markers are grouped on the device with `supercluster` (radius 60 px, clusters up to zoom 16, `useMapClusters`). Survey and cluster markers are memoised and their presses pass ids. A cluster tap zooms to its expansion zoom; when the cluster cannot split (surveys of the same parcels share one exact point, and surveys close together stay merged at the last cluster zoom), it opens the list of its surveys instead.
+6. No personal data: `display_location` is the exact centre of the survey's linked parcels (public cadastre information), no longer rounded to 2 decimals (owner decision 2026-10-08), so a survey's dot sits on its parcel. The map shows scores, dates and region codes, never survey ids.
 
 ### H) Parcel Resolution and Versioning
 1. Mobile captures GPS or manual address

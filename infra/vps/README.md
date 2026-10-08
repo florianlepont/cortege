@@ -94,7 +94,13 @@ docker compose -f infra/docker-compose.vps.yml logs -f api
 
 Every `main` build is also tagged `ghcr.io/florianlepont/cortege:sha-<commit>`. The
 image runs as the non-root `node` user and reports Docker health from
-`/v1/health`.
+`/v1/health`. That route also answers `commit`, the git commit the running image was
+built from (since 2026-10-08), so the deployed version can be read from anywhere:
+
+```bash
+curl -s https://cortege.algernon.ovh/v1/health
+# {"status":"ok","service":"cortege-api","timestamp":"...","commit":"<full sha>"}
+```
 
 To roll back to a known-good commit:
 
