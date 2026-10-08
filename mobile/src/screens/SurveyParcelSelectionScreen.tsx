@@ -5,7 +5,6 @@ import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import {
-  brandColors,
   brandMapTokens,
   brandMediaBackdrop,
   brandShadow,
@@ -27,6 +26,7 @@ import { useOfflineMapPrompt } from "../hooks/useOfflineMapPrompt"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
 import type { BasemapKey } from "../map/basemaps"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
+import { MapTitlePill } from "./public-map/MapChips"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
@@ -34,7 +34,6 @@ import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
 import { MapLegend, type MapLegendRow } from "./public-map/ScoreLegend"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
-import { GlassSurface } from "../ui/GlassSurface"
 import { AppNotice } from "../ui/AppNotice"
 import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
@@ -226,11 +225,7 @@ export function SurveyParcelSelectionScreen({
       />
 
       {Platform.OS === "ios" ? (
-        <GlassSurface pointerEvents="none" style={[screenStyles.titlePill, { top: controlsTop }]}>
-          <Text style={screenStyles.titlePillText}>
-            {wizard ? headers.parcelsWizard : headers.parcels}
-          </Text>
-        </GlassSurface>
+        <MapTitlePill label={wizard ? headers.parcelsWizard : headers.parcels} top={controlsTop} />
       ) : null}
 
       <MapTopControls
@@ -287,7 +282,7 @@ export function SurveyParcelSelectionScreen({
           style={screenStyles.bottomArea}
           onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
         >
-          <AppCard glass style={screenStyles.bottomSheet}>
+          <AppCard glass surface={theme.visual.mapPanel} style={screenStyles.bottomSheet}>
             <Text style={screenStyles.bottomTitle}>
               {hasParcelSelection ? parcelSelectionLabel : t.noSelection}
             </Text>
@@ -356,18 +351,6 @@ function createScreenStyles(theme: BrandTheme) {
     },
     bottomArea: {
       gap: 12,
-    },
-    titlePill: {
-      position: "absolute",
-      alignSelf: "center",
-      height: 44,
-      paddingHorizontal: 18,
-      borderRadius: 22,
-      justifyContent: "center",
-    },
-    titlePillText: {
-      ...brandTypography.button,
-      color: brandColors.forest,
     },
     // DS-15 (Phase 12): a real blurred glass panel (`AppCard glass`) instead of a flat
     // `brandTranslucentPanel` fill.

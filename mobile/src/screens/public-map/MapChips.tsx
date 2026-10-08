@@ -40,6 +40,33 @@ export const MapInfoPill = memo(function MapInfoPill({ label, style }: MapInfoPi
   )
 })
 
+type MapTitlePillProps = {
+  label: string
+  /** Distance from the top of the map, under the transparent header. */
+  top: number
+}
+
+/**
+ * The page title over a full-screen map, centred at the top (the parcel picker on iOS, whose header
+ * is transparent). It takes the map control glass and ink like the other overlays, so it reads over
+ * the plan and the orthophoto in both schemes (12.2-21 dark pass: the forest title on the default
+ * glass fell to 3.7:1 in dark over the plan and 2:1 in light over the orthophoto).
+ */
+export const MapTitlePill = memo(function MapTitlePill({ label, top }: MapTitlePillProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  return (
+    <GlassSurface
+      tone="auto"
+      pointerEvents="none"
+      surface={theme.visual.mapControl.glass}
+      style={[styles.titlePill, { top }]}
+    >
+      <Text style={styles.titleText}>{label}</Text>
+    </GlassSurface>
+  )
+})
+
 type MapActionPillProps = {
   icon: keyof typeof Ionicons.glyphMap
   label: string
@@ -127,6 +154,20 @@ function createStyles(theme: BrandTheme) {
     },
     pillText: {
       ...brandTypography.meta,
+      color: theme.visual.mapControl.text,
+    },
+    titlePill: {
+      position: "absolute",
+      alignSelf: "center",
+      height: brandInteraction.hitTarget.min,
+      paddingHorizontal: 18,
+      borderRadius: brandRadius.pill,
+      borderWidth: 1,
+      borderColor: theme.visual.mapControl.hairline,
+      justifyContent: "center",
+    },
+    titleText: {
+      ...brandTypography.button,
       color: theme.visual.mapControl.text,
     },
     actionHit: {

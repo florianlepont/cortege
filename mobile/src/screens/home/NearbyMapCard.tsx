@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { brandColors, brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { hasMixedMethodVersions, type NearbyParcelsState } from "../../hooks/useNearbyParcels"
 import { fr } from "../../i18n"
@@ -26,6 +26,8 @@ type NearbyMapCardProps = {
 /**
  * OA-19, Home redesign: the parcels around the phone as one still map card (the Explorer opens on
  * tap), with the sector's mean IBP score on top and a one-line summary in Liquid Glass below.
+ * 12.2-21 dark pass: both overlays take the map control glass and ink, like every overlay on a map.
+ * The forest text on the default glass fell to about 3.3:1 in dark over the plan.
  */
 export function NearbyMapCard({ nearby, height, onPress }: NearbyMapCardProps) {
   const theme = useBrandTheme()
@@ -61,7 +63,11 @@ export function NearbyMapCard({ nearby, height, onPress }: NearbyMapCardProps) {
         interactive={false}
       />
       {sectorAvgScore != null ? (
-        <GlassSurface style={styles.scoreBadge} pointerEvents="none">
+        <GlassSurface
+          surface={theme.visual.mapControl.glass}
+          style={styles.scoreBadge}
+          pointerEvents="none"
+        >
           {/* D-15: the ring is decoration here, the texts already speak the score. */}
           <View
             style={styles.scoreRing}
@@ -79,7 +85,11 @@ export function NearbyMapCard({ nearby, height, onPress }: NearbyMapCardProps) {
           </View>
         </GlassSurface>
       ) : null}
-      <GlassSurface style={styles.summary} pointerEvents="none">
+      <GlassSurface
+        surface={theme.visual.mapControl.glass}
+        style={styles.summary}
+        pointerEvents="none"
+      >
         {parcels.length === 0 ? (
           <Text style={styles.summaryTitle}>{t.empty}</Text>
         ) : (
@@ -124,16 +134,16 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       fontSize: 11,
       letterSpacing: 0.8,
-      color: brandColors.forest,
+      color: theme.visual.mapControl.text,
     },
     scoreValue: {
       fontSize: 24,
       fontWeight: "800",
-      color: brandColors.forest,
+      color: theme.visual.mapControl.text,
     },
     scoreMeta: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.visual.mapControl.textMuted,
     },
     summary: {
       position: "absolute",
@@ -146,11 +156,11 @@ function createStyles(theme: BrandTheme) {
     },
     summaryTitle: {
       ...brandTypography.button,
-      color: brandColors.forest,
+      color: theme.visual.mapControl.text,
     },
     summaryMeta: {
       ...brandTypography.meta,
-      color: brandColors.forest,
+      color: theme.visual.mapControl.textMuted,
     },
   })
 }

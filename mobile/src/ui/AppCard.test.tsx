@@ -96,6 +96,13 @@ describe("AppCard", () => {
     )
   })
 
+  test("a glass card over a map passes its own surface to the glass (12.2-21 dark pass)", () => {
+    expect(render({ glass: true }).surface.props.surface).toBeUndefined()
+    const dark = buildTheme("dark", "dark", () => {})
+    const { surface } = render({ glass: true, surface: dark.visual.mapPanel })
+    expect(surface.props.surface).toEqual(dark.visual.mapPanel)
+  })
+
   test("variant panel is unchanged", () => {
     const style = flatten(render({ variant: "panel" }).view.props.style)
     expect(style.backgroundColor).toBe(defaultTheme.colors.panel)

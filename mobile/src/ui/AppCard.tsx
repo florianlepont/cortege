@@ -2,6 +2,7 @@ import { ReactNode, useMemo } from "react"
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { brandComponentTokens, brandRadius, brandShadow } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
+import type { GlassFill } from "../app/theme-visual"
 import { GlassSurface } from "./GlassSurface"
 
 /**
@@ -18,6 +19,11 @@ type AppCardProps = {
   /** DS-15 (Phase 12): a real blurred glass surface instead of a flat fill, for a card floating
    * over a map or photo (ignores `variant`'s own background — the blur supplies it). */
   glass?: boolean
+  /**
+   * With `glass`, the surface's own glass (`GlassSurface`'s `surface`): a card over a map passes
+   * `theme.visual.mapPanel`, so its text keeps 4.5:1 over any basemap (12.2-21 dark pass).
+   */
+  surface?: GlassFill
   style?: StyleProp<ViewStyle>
 }
 
@@ -26,6 +32,7 @@ export function AppCard({
   variant = "panel",
   padding = brandComponentTokens.card.defaultPadding,
   glass = false,
+  surface,
   style,
 }: AppCardProps) {
   const theme = useBrandTheme()
@@ -33,7 +40,7 @@ export function AppCard({
 
   if (glass) {
     return (
-      <GlassSurface style={[styles.base, styles.glassBorder, { padding }, style]}>
+      <GlassSurface surface={surface} style={[styles.base, styles.glassBorder, { padding }, style]}>
         {children}
       </GlassSurface>
     )

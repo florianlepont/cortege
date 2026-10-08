@@ -41,6 +41,7 @@ import {
   MapActionPill,
   MapInfoPill,
   MapOverlayCorners,
+  MapTitlePill,
 } from "./MapChips"
 
 const originalConsoleError = console.error
@@ -149,6 +150,30 @@ describe("map chips (the overlays every map shares)", () => {
     const label = info.root.findByType("Text" as never)
     const labelStyle = Object.assign({}, ...[label.props.style].flat(3).filter(Boolean))
     expect(labelStyle.color).toBe(darkTheme.visual.mapControl.text)
+  })
+
+  test("the title pill over a full-screen map takes the map control glass and ink (12.2-21)", () => {
+    mockScheme.current = "dark"
+    const darkTheme = buildTheme("automatic", "dark", () => {})
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<MapTitlePill label="Parcelles" top={60} />)
+    })
+    expect(texts(tree)).toEqual(["Parcelles"])
+    const glass = tree.root.findByType("GlassSurface" as never)
+    expect(glass.props.surface).toEqual(darkTheme.visual.mapControl.glass)
+    expect(glass.props.pointerEvents).toBe("none")
+    const style = Object.assign({}, ...[glass.props.style].flat(3).filter(Boolean))
+    expect(style).toMatchObject({
+      top: 60,
+      position: "absolute",
+      height: brandInteraction.hitTarget.min,
+      borderColor: darkTheme.visual.mapControl.hairline,
+    })
+    const label = tree.root.findByType("Text" as never)
+    const labelStyle = Object.assign({}, ...[label.props.style].flat(3).filter(Boolean))
+    expect(labelStyle.color).toBe(darkTheme.visual.mapControl.text)
+    expect(labelStyle.color).not.toBe(brandColors.forest)
   })
 
   test("the pills keep their glass surface, height, and a 44 pt target (D-04, D-05)", () => {

@@ -108,6 +108,8 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }))
 
+import { compositeOver, contrastRatio } from "../app/contrast"
+import { buildTheme, defaultTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { GlassButton } from "../ui/GlassButton"
 import { AuthGateScreen } from "./AuthGateScreen"
@@ -219,6 +221,24 @@ describe("AuthGateScreen", () => {
     })
 
     expect(renderedTexts(component)).toContain("Identifiants invalides")
+    // 12.2-21 dark pass: the danger ink of the scheme, not the brand terracotta (3:1 in light).
+    const message = component.root.find(
+      (node) =>
+        (node.type as unknown) === "Text" && node.props.children === "Identifiants invalides",
+    )
+    const style = Object.assign({}, ...[message.props.style].flat(3).filter(Boolean))
+    expect(style.color).toBe(defaultTheme.onSurface.danger)
+  })
+
+  it("the error message reads at 4.5:1 on its banner in both schemes (12.2-21)", () => {
+    for (const scheme of ["light", "dark"] as const) {
+      const theme = buildTheme("automatic", scheme, () => {})
+      const surface = theme.semanticColors.errorSurface
+      const banner = surface.startsWith("rgba")
+        ? compositeOver(surface, theme.colors.canvas)
+        : surface
+      expect(contrastRatio(theme.onSurface.danger, banner)).toBeGreaterThanOrEqual(4.5)
+    }
   })
 
   it("uses the glass buttons: forest primary, neutral secondary, the link stays a text link", async () => {

@@ -169,9 +169,11 @@ export function createAuthStyles(theme: BrandTheme) {
       paddingHorizontal: brandSpacing.md,
       paddingVertical: brandSpacing.sm,
     },
+    // 12.2-21 dark pass: the brand terracotta was 3:1 on the light error surface and 4.1:1 on the
+    // dark one; the danger ink of each scheme reads at 6:1 and 8.4:1.
     errorBannerText: {
       ...brandTypography.meta,
-      color: brandColors.terracotta,
+      color: theme.onSurface.danger,
       lineHeight: 17,
     },
     forgotPasswordLink: {

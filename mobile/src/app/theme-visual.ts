@@ -99,6 +99,13 @@ export type BrandVisual = {
     textMuted: string
   }
   /**
+   * A card or banner floating over a map that keeps the theme's own text tokens (12.2-21 dark
+   * pass): the parcel picker's bottom card and its offline banner. The Explorer sheet's dense fill,
+   * as a `GlassSurface` `surface`, because the default 38% glass over a basemap that does not follow
+   * the scheme left the secondary text near 1:1 (dark over the plan, light over the orthophoto).
+   */
+  mapPanel: GlassFill
+  /**
    * The Explorer's bottom sheet (12.2-19 fix round): `fill` over its blur so the theme's text tokens
    * read over any basemap, `handle` the drag indicator, and the 44 pt glass close circle (`close`
    * to `GlassSurface`'s `surface`, `closeHairline` its outline, `closeIcon` its glyph).
@@ -245,6 +252,11 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       icon: mapControlGlass[scheme].icon,
       text: mapControlGlass[scheme].text,
       textMuted: mapControlGlass[scheme].textMuted,
+    },
+    mapPanel: {
+      tint: explorerSheetGlass[scheme].fill,
+      fill: explorerSheetGlass[scheme].fill,
+      android: explorerSheetGlass[scheme].fill,
     },
     sheet: {
       fill: explorerSheetGlass[scheme].fill,

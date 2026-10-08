@@ -233,6 +233,7 @@ describe("dark pass: per-scheme tokens differ between light and dark (12.2-21)",
     "forest.image": (visual) => visual.forest.image,
     "forest.heroImage": (visual) => visual.forest.heroImage,
     "forest.shadow": (visual) => visual.forest.shadow,
+    "mapPanel.fill": (visual) => visual.mapPanel.fill,
   }
 
   test.each(Object.keys(perScheme))("%s has its own dark value", (key) => {
@@ -644,6 +645,63 @@ describe.each(schemes)(
     }
   },
 )
+
+// 12.2-21 dark pass: the cards and banners floating over a map that keep the theme's own text (the
+// parcel picker's bottom card and its offline banner) take `mapPanel`, the Explorer sheet's dense
+// fill, on every glass path. The default 38% glass they had left the secondary text near 1:1.
+describe.each(schemes)("map panel over the basemap (12.2-21 dark pass), %s scheme", (scheme) => {
+  const theme = themes[scheme]
+  const { colors, visual } = theme
+  const texts = [
+    colors.textPrimary,
+    colors.textSecondary,
+    theme.semanticColors.textStrong,
+    theme.onSurface.danger,
+  ]
+
+  test.each(["tint", "fill", "android"] as const)(
+    "the theme's text reads at 4.5:1 on the %s glass over the plan and the orthophoto",
+    (key) => {
+      for (const backdrop of mapBackdrops) {
+        const surface = compositeOver(visual.mapPanel[key], backdrop)
+        for (const text of texts) expect(contrastRatio(text, surface)).toBeGreaterThanOrEqual(4.5)
+      }
+    },
+  )
+
+  test("it is the Explorer sheet's fill, the panel already tested above", () => {
+    expect(visual.mapPanel).toEqual({
+      tint: visual.sheet.fill,
+      fill: visual.sheet.fill,
+      android: visual.sheet.fill,
+    })
+  })
+
+  test("the default glass it replaces failed over a basemap of the other luminance", () => {
+    // Dark over the light plan, light over the dark canopy: the secondary text near 1:1.
+    const backdrop = scheme === "dark" ? "#FFFFFF" : "#1C2618"
+    const before = compositeOver(brandGlassFills.control[scheme], backdrop)
+    expect(contrastRatio(colors.textSecondary, before)).toBeLessThan(2)
+    expect(contrastRatio(colors.textPrimary, before)).toBeLessThan(3)
+  })
+
+  test("the map control ink of the title pill and the nearby card reads on its glass", () => {
+    for (const backdrop of mapBackdrops) {
+      for (const key of ["tint", "fill", "android"] as const) {
+        const surface = compositeOver(visual.mapControl.glass[key], backdrop)
+        // The forest title on the default glass fell under 4.5:1 on one basemap or another.
+        expect(contrastRatio(visual.mapControl.text, surface)).toBeGreaterThanOrEqual(4.5)
+        expect(contrastRatio(visual.mapControl.textMuted, surface)).toBeGreaterThanOrEqual(4.5)
+      }
+    }
+    const worst = Math.min(
+      ...mapBackdrops.map((backdrop) =>
+        contrastRatio(brandColors.forest, compositeOver(brandGlassFills.control[scheme], backdrop)),
+      ),
+    )
+    expect(worst).toBeLessThan(4.5)
+  })
+})
 
 describe("download edge glow (12.2-19 fix rounds: stronger, then round the whole screen)", () => {
   const glow = themes.light.visual.edgeGlow
