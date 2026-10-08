@@ -9,12 +9,13 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated"
 import { IBP_MAX } from "@cortege/ibp-domain"
-import { brandMotion, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { brandMotion, brandRadius } from "../../app/brand-tokens"
 import { scoreRatio } from "../../app/ibp-display"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AnimatedNumber } from "../../ui/AnimatedNumber"
 import { AppText as Text } from "../../ui/AppText"
+import type { ForestTextBlock } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
 import { GlowBar } from "../../ui/GlowBar"
 import { GradientNumeral } from "../../ui/GradientNumeral"
@@ -30,35 +31,42 @@ const NUMERAL_TRAVEL = 8
 export const FINISH_POP_SCALE = 1.03
 // Width of one digit of the tile value (Sora-SemiBold 16): the counting text keeps its final width.
 const TILE_DIGIT_WIDTH = 11
-// Between the end of the caption and numeral column and the aurora's clear zone.
-const ZONE_GAP = brandSpacing4.smd
+type Rect = ForestTextBlock
 
-type Measured = { caption: number | null; numeral: number | null; lower: number | null }
+/** The rectangle around both `a` and `b`. */
+function union(a: Rect, b: Rect): Rect {
+  const x = Math.min(a.x, b.x)
+  const y = Math.min(a.y, b.y)
+  return {
+    x,
+    y,
+    width: Math.max(a.x + a.width, b.x + b.width) - x,
+    height: Math.max(a.y + a.height, b.y + b.height) - y,
+  }
+}
+
+type Measured = { caption: Rect | null; numeral: Rect | null; lower: Rect | null }
 
 /**
- * The card's clear zone (12.2-19): right of the caption and the numeral, above the bar, the tiles
- * and the hint, which all sit under the shield's feathered band. Null until the three are measured.
+ * The card's blocks of text for the mist's shield (12.2-19): the caption with the numeral, and the
+ * bar, the tiles and the hint under them (when there is any). Null until the three are measured.
  */
-function useScoreZone() {
+function useScoreBlocks() {
   const [measured, setMeasured] = useState<Measured>({ caption: null, numeral: null, lower: null })
-  const rightOf = (key: "caption" | "numeral") => (event: LayoutChangeEvent) => {
-    const { x, width } = event.nativeEvent.layout
-    setMeasured((previous) => ({ ...previous, [key]: x + width }))
-  }
-  const onLowerLayout = (event: LayoutChangeEvent) => {
-    const { y } = event.nativeEvent.layout
-    setMeasured((previous) => ({ ...previous, lower: y }))
+  const measure = (key: keyof Measured) => (event: LayoutChangeEvent) => {
+    const { x, y, width, height } = event.nativeEvent.layout
+    setMeasured((previous) => ({ ...previous, [key]: { x, y, width, height } }))
   }
   const { caption, numeral, lower } = measured
-  const zone =
+  const blocks =
     caption === null || numeral === null || lower === null
       ? null
-      : { left: Math.max(caption, numeral) + ZONE_GAP, bottom: lower }
+      : [union(caption, numeral), ...(lower.height > 0 ? [lower] : [])]
   return {
-    zone,
-    onCaptionLayout: rightOf("caption"),
-    onNumeralLayout: rightOf("numeral"),
-    onLowerLayout,
+    blocks,
+    onCaptionLayout: measure("caption"),
+    onNumeralLayout: measure("numeral"),
+    onLowerLayout: measure("lower"),
   }
 }
 
@@ -143,7 +151,7 @@ export function ScoreCard({
   }, [pulseTrigger, reduced, pop])
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }))
 
-  const { zone, onCaptionLayout, onNumeralLayout, onLowerLayout } = useScoreZone()
+  const { blocks, onCaptionLayout, onNumeralLayout, onLowerLayout } = useScoreBlocks()
 
   const filled = filledFactorCount ?? 0
   const caption = isDraftView ? t.draftCaption : t.caption
@@ -164,7 +172,7 @@ export function ScoreCard({
         radius={brandRadius.forestHero}
         shadow={theme.visual.forest.shadow}
       />
-      <ForestCard variant="hero" zone={zone} shield="score" contentStyle={styles.scoreContent}>
+      <ForestCard variant="hero" blocks={blocks} shield="score" contentStyle={styles.scoreContent}>
         <Text style={styles.scoreCaption} onLayout={onCaptionLayout}>
           {caption}
         </Text>

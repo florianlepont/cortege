@@ -3,7 +3,7 @@ import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { brandRadius } from "../app/brand-tokens"
 import type { ForestShieldKey } from "../app/forest-aurora-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
-import { type AuroraZone, ForestAurora } from "./ForestAurora"
+import { ForestAurora, type ForestTextBlock } from "./ForestAurora"
 
 type ForestCardVariant = "resume" | "hero"
 
@@ -17,11 +17,11 @@ type ForestCardProps = {
    */
   motion?: boolean
   /**
-   * The card's clear zone, where the aurora glows and the contours are drawn, measured by the
-   * caller around its text (`null` while measuring); absent, the text is taken to stay in the left
-   * part of the card. See `AuroraZone`.
+   * The card's blocks of text, measured by the caller in the card's space (`null` while
+   * measuring): the shield and the lines' mask soften the mist around each. Absent, the text is
+   * taken to fill the left part of the card.
    */
-  zone?: AuroraZone | null
+  blocks?: ForestTextBlock[] | null
   /** How dark the shield over the text is (`ForestShieldKey`). */
   shield?: ForestShieldKey
   style?: StyleProp<ViewStyle>
@@ -47,15 +47,15 @@ type ForestCardProps = {
  *
  * Motion (12.2-19 fifth round, owner: the aurora "aussi intégrée dans toutes les autres cartes
  * forêt"): the card draws `ForestAurora` inside its clip, over the gradient and under the content,
- * as its one animated layer (the old drifting contour layer is gone). Each caller passes the clear
- * zone of its own layout, so the shield covers its text and the contours stay clear of it. A
+ * as its one animated layer (the old drifting contour layer is gone), over the whole card. Each
+ * caller passes the blocks of text of its own layout, so a soft shield keeps each readable. A
  * screen shows at most two animated hero layers (`__checks__/motion.test.ts`).
  */
 export function ForestCard({
   children,
   variant = "resume",
   motion = true,
-  zone,
+  blocks,
   shield,
   style,
   contentStyle,
@@ -71,7 +71,9 @@ export function ForestCard({
       testID={testID}
     >
       <View style={[styles.clip, hero ? styles.clipHero : styles.clipResume]}>
-        {motion ? <ForestAurora zone={zone} shield={shield} testID="forest-card-aurora" /> : null}
+        {motion ? (
+          <ForestAurora blocks={blocks} shield={shield} testID="forest-card-aurora" />
+        ) : null}
         <View style={contentStyle}>{children}</View>
       </View>
     </View>

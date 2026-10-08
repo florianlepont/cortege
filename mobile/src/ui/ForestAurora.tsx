@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 import { type LayoutChangeEvent, StyleSheet, View } from "react-native"
 import Animated, {
   cancelAnimation,
@@ -11,33 +11,39 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated"
-import { Circle, Defs, Path, RadialGradient, Stop, Svg } from "react-native-svg"
 import {
-  buildBandShield,
-  buildColumnShield,
-  forestAurora,
-  type ForestShieldKey,
-  forestShield,
-  forestVeilImage,
-} from "../app/forest-aurora-tokens"
+  Circle,
+  Defs,
+  Ellipse,
+  G,
+  Mask,
+  Path,
+  RadialGradient,
+  Rect,
+  Stop,
+  Svg,
+} from "react-native-svg"
+import { buildTextShield, forestAurora, type ForestShieldKey } from "../app/forest-aurora-tokens"
 import {
-  type AuroraZone,
   type Box,
-  type ClearZone,
-  FLOW_PATHS,
-  FLOW_VIEWBOX,
+  defaultBlocks,
+  FLOW_LINES,
   flowMotion,
+  type ForestTextBlock,
+  layLine,
   MIST_DISCS,
   type MistDisc,
   mistMotion,
-  resolveZone,
+  textEllipse,
 } from "../app/forest-aurora-shape"
 import { discPose, flowOffset, planMist } from "../app/forest-motion"
 import { useScreenVisible } from "./useScreenVisible"
 
-export type { AuroraZone } from "../app/forest-aurora-shape"
+export type { ForestTextBlock } from "../app/forest-aurora-shape"
 
 const AnimatedPath = Animated.createAnimatedComponent(Path)
+
+type Live = { run: boolean; reduced: boolean }
 
 /**
  * Runs `phase` on by `span` every `periodMs`, linearly and endlessly, from where it stopped (the
@@ -75,31 +81,21 @@ function usePhase(start: number, rest: number, span: number, periodMs: number, l
   return phase
 }
 
-type Live = { run: boolean; reduced: boolean }
+type DiscProps = { disc: MistDisc; legMs: number; start: number; live: Live; box: Box; id: string }
 
-function Disc({
-  disc,
-  legMs,
-  start,
-  live,
-}: {
-  disc: MistDisc
-  legMs: number
-  start: number
-  live: Live
-}) {
+function Disc({ disc, legMs, start, live, box, id }: DiscProps) {
   // A there-and-back is a phase of 2: one leg each way.
   const phase = usePhase(start, 0, 2, 2 * legMs, live)
   const tone = forestAurora[disc.key]
-  const id = `forest-mist-${disc.key}`
   const half = disc.size / 2
+  const { width, height } = box
 
   const driftStyle = useAnimatedStyle(() => {
-    const pose = discPose(phase.value, disc)
+    const pose = discPose(phase.value, disc, width, height)
     return {
       transform: [
-        { translateX: pose.translateX },
-        { translateY: pose.translateY },
+        { translateX: pose.x - half },
+        { translateY: pose.y - half },
         { scale: pose.scale },
       ],
     }
@@ -108,7 +104,7 @@ function Disc({
   return (
     <Animated.View
       testID="forest-mist-disc"
-      style={[styles.disc, { width: disc.size, height: disc.size, ...disc.anchor }, driftStyle]}
+      style={[styles.disc, { width: disc.size, height: disc.size }, driftStyle]}
     >
       <Svg width={disc.size} height={disc.size}>
         <Defs>
@@ -123,23 +119,17 @@ function Disc({
   )
 }
 
+type FlowLightProps = { d: string; pattern: number; periodMs: number; start: number; live: Live }
+
 /** The dash of light flowing along one line, a soft glow under it. */
-function FlowLight({
-  d,
-  periodMs,
-  start,
-  live,
-}: {
-  d: string
-  periodMs: number
-  start: number
-  live: Live
-}) {
+function FlowLight({ d, pattern, periodMs, start, live }: FlowLightProps) {
   const phase = usePhase(start, 0, 1, periodMs, live)
   const lines = forestAurora.lines
-  const dash = [flowMotion.dash, flowMotion.gap]
-  const glowProps = useAnimatedProps(() => ({ strokeDashoffset: flowOffset(phase.value) }))
-  const lightProps = useAnimatedProps(() => ({ strokeDashoffset: flowOffset(phase.value) }))
+  const dash = [flowMotion.dash, pattern - flowMotion.dash]
+  const glowProps = useAnimatedProps(() => ({ strokeDashoffset: flowOffset(phase.value, pattern) }))
+  const lightProps = useAnimatedProps(() => ({
+    strokeDashoffset: flowOffset(phase.value, pattern),
+  }))
   return (
     <>
       <AnimatedPath
@@ -168,20 +158,68 @@ function FlowLight({
   )
 }
 
-function Flow({ zone, flows, live }: { zone: ClearZone; flows: FlowPlan; live: Live }) {
+type FlowProps = {
+  box: Box
+  blocks: ForestTextBlock[]
+  flows: { periodMs: number; start: number }[]
+  live: Live
+  id: string
+}
+
+/**
+ * The lines across the whole card, through a mask that lets only `floor` of them show behind each
+ * block of text, feathered softly around it.
+ */
+function Flow({ box, blocks, flows, live, id }: FlowProps) {
   const lines = forestAurora.lines
+  const laid = useMemo(() => FLOW_LINES.map((points) => layLine(points, box)), [box])
+  const hidden = 1 - lines.floor
   return (
-    <View
+    <Svg
       testID="forest-flow"
-      style={[styles.flow, { left: zone.left, width: zone.right - zone.left, height: zone.bottom }]}
+      style={styles.fill}
+      width={box.width}
+      height={box.height}
+      viewBox={`0 0 ${box.width} ${box.height}`}
     >
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${FLOW_VIEWBOX.width} ${FLOW_VIEWBOX.height}`}
-        preserveAspectRatio="xMinYMax slice"
-      >
-        {FLOW_PATHS.map((d) => (
+      <Defs>
+        {blocks.map((block, index) => {
+          const { inner } = textEllipse(block)
+          return (
+            <RadialGradient key={index} id={`${id}-hole-${index}`} cx="50%" cy="50%" r="50%">
+              <Stop offset={0} stopColor={lines.hidden} stopOpacity={hidden} />
+              <Stop offset={inner} stopColor={lines.hidden} stopOpacity={hidden} />
+              <Stop offset={1} stopColor={lines.hidden} stopOpacity={0} />
+            </RadialGradient>
+          )
+        })}
+        <Mask
+          id={`${id}-mask`}
+          x={0}
+          y={0}
+          width={box.width}
+          height={box.height}
+          maskUnits="userSpaceOnUse"
+        >
+          <Rect x={0} y={0} width={box.width} height={box.height} fill={lines.shown} />
+          {blocks.map((block, index) => {
+            const { cx, cy, rx, ry } = textEllipse(block)
+            return (
+              <Ellipse
+                key={index}
+                cx={cx}
+                cy={cy}
+                rx={rx}
+                ry={ry}
+                fill={`url(#${id}-hole-${index})`}
+                testID="forest-flow-hole"
+              />
+            )
+          })}
+        </Mask>
+      </Defs>
+      <G mask={`url(#${id}-mask)`}>
+        {laid.map(({ d }) => (
           <Path
             key={d}
             d={d}
@@ -196,57 +234,55 @@ function Flow({ zone, flows, live }: { zone: ClearZone; flows: FlowPlan; live: L
         {/* Under Reduce Motion the lines stay, without the flowing light. */}
         {live.reduced
           ? null
-          : FLOW_PATHS.map((d, index) => (
+          : laid.map(({ d, pattern }, index) => (
               <FlowLight
                 key={d}
                 d={d}
+                pattern={pattern}
                 periodMs={flows[index].periodMs}
                 start={flows[index].start}
                 live={live}
               />
             ))}
-      </Svg>
-    </View>
+      </G>
+    </Svg>
   )
 }
 
-type FlowPlan = { periodMs: number; start: number }[]
-
-/** The text shield: gradients only, from nothing, so no edge or flat zone ever shows. */
-function Shield({ zone, tone }: { zone: ClearZone; tone: ForestShieldKey }) {
-  const bandTop = Math.max(0, zone.bottom - forestShield.feather)
+/** Around each block of text, a soft ellipse of shield: a gradient from nothing, never an edge. */
+function Shield({ blocks, tone }: { blocks: ForestTextBlock[]; tone: ForestShieldKey }) {
   return (
     <>
-      <View
-        testID="forest-shield-column"
-        style={[
-          styles.fill,
-          { experimental_backgroundImage: buildColumnShield(tone, zone.right, zone.left) },
-        ]}
-      />
-      {zone.bottom < zone.height ? (
-        <View
-          testID="forest-shield-band"
-          style={[
-            styles.band,
-            {
-              top: bandTop,
-              experimental_backgroundImage: buildBandShield(tone, zone.height - bandTop),
-            },
-          ]}
-        />
-      ) : null}
+      {blocks.map((block, index) => {
+        const { cx, cy, rx, ry, inner } = textEllipse(block)
+        return (
+          <View
+            key={index}
+            testID="forest-shield"
+            style={[
+              styles.shield,
+              {
+                left: cx - rx,
+                top: cy - ry,
+                width: 2 * rx,
+                height: 2 * ry,
+                experimental_backgroundImage: buildTextShield(tone, inner),
+              },
+            ]}
+          />
+        )
+      })}
     </>
   )
 }
 
 type ForestAuroraProps = {
   /**
-   * The card's clear zone (see `AuroraZone`); `null` while the card is still measuring it (nothing
-   * is drawn yet), absent for a card with its text on the left part only (`textReach`).
+   * The card's blocks of text, measured by the card (`null` while it measures them: nothing is
+   * drawn yet); absent for a card whose text fills its left part (`textReach`).
    */
-  zone?: AuroraZone | null
-  /** How dark the shield over the text is: `score` for the survey's score card. */
+  blocks?: ForestTextBlock[] | null
+  /** How dark the shield around the text is: `score` for the survey's score card. */
   shield?: ForestShieldKey
   /** Fixes the random plan (tests); a fresh seed per mount otherwise. */
   seed?: number
@@ -254,38 +290,29 @@ type ForestAuroraProps = {
 }
 
 /**
- * The backdrop of every forest card (12.2-19), as the owner tuned it in sketch 010 `round4.html`:
- * three soft discs of moss, teal and ochre drifting there and back behind the content (7, 9 and
- * 11.5 s each way, a few percent apart per mount so they never fall into step), three faint
- * contour lines in the card's clear zone with a dash of light flowing endlessly along each, a veil
- * fading the left of the card, and a shield over the text made of gradients only, with no edge
- * and no flat zone. The discs are radial gradients drawn once; only their transforms and the
- * dashes' offsets are animated, by worklets on the UI thread. It runs only while the screen can be
- * seen and goes on from where it stopped; under Reduce Motion the discs rest and the lines are
- * drawn without their light. Decoration only, never touched or read. The card clips it.
+ * The backdrop of every forest card (12.2-19), as the owner tuned it in sketch 010 `round4.html`,
+ * over the whole card (owner: "pourquoi l'animation est limitée en haut à droite"): three soft
+ * discs of moss, teal and ochre drifting there and back across the card (7, 9 and 11.5 s each
+ * way, a few percent apart per mount), three faint contour lines crossing it with a dash of light
+ * flowing endlessly along each, and around each block of text a soft ellipse of shield, the lines
+ * fading behind it too. Gradients only: no edge and no flat zone. Only the discs' transforms and
+ * the dashes' offsets are animated, by worklets on the UI thread. It runs only while the screen
+ * can be seen and goes on from where it stopped; under Reduce Motion the discs rest and the lines
+ * are drawn without their light. Decoration only, never touched or read. The card clips it.
  */
-export function ForestAurora({ zone, shield = "standard", seed, testID }: ForestAuroraProps) {
+export function ForestAurora({ blocks, shield = "standard", seed, testID }: ForestAuroraProps) {
   const visible = useScreenVisible()
   const reduced = useReducedMotion()
   const live = useMemo(() => ({ run: visible && !reduced, reduced }), [visible, reduced])
   const [box, setBox] = useState<Box | null>(null)
   const [mountSeed] = useState(() => seed ?? Math.floor(Math.random() * 2147483647))
   const plan = useMemo(() => planMist(mountSeed), [mountSeed])
-  // Kept the same object while the numbers do not change.
-  const measuring = zone === null
-  const left = zone?.left
-  const bottom = zone?.bottom
-  const clear = useMemo(
-    () =>
-      box && !measuring
-        ? resolveZone(box, left === undefined ? undefined : { left, bottom })
-        : null,
-    [box, measuring, left, bottom],
-  )
-  const ready = clear !== null
+  const id = `forest-${useId().replace(/[^A-Za-z0-9_-]/g, "")}`
+  const measured = blocks === null ? null : box && (blocks ?? defaultBlocks(box))
+  const ready = Boolean(box && measured)
   const reveal = useSharedValue(reduced ? 1 : 0)
 
-  // The mist fades in once its zone is known, so it never pops in.
+  // The mist fades in once the card is measured, so it never pops in.
   useEffect(() => {
     if (!ready) return
     if (reduced) {
@@ -319,7 +346,7 @@ export function ForestAurora({ zone, shield = "standard", seed, testID }: Forest
       importantForAccessibility="no-hide-descendants"
       testID={testID}
     >
-      {clear ? (
+      {box && measured ? (
         <Animated.View style={[styles.fill, revealStyle]} testID="forest-aurora-layers">
           {MIST_DISCS.map((disc, index) => (
             <Disc
@@ -328,11 +355,12 @@ export function ForestAurora({ zone, shield = "standard", seed, testID }: Forest
               legMs={plan.discs[index].legMs}
               start={plan.discs[index].start}
               live={live}
+              box={box}
+              id={`${id}-${disc.key}`}
             />
           ))}
-          <Flow zone={clear} flows={plan.flows} live={live} />
-          <View style={[styles.fill, styles.veil]} testID="forest-veil" />
-          <Shield zone={clear} tone={shield} />
+          <Flow box={box} blocks={measured} flows={plan.flows} live={live} id={id} />
+          <Shield blocks={measured} tone={shield} />
         </Animated.View>
       ) : null}
     </View>
@@ -341,8 +369,6 @@ export function ForestAurora({ zone, shield = "standard", seed, testID }: Forest
 
 const styles = StyleSheet.create({
   fill: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 },
-  disc: { position: "absolute" },
-  veil: { experimental_backgroundImage: forestVeilImage },
-  band: { position: "absolute", left: 0, right: 0, bottom: 0 },
-  flow: { position: "absolute", top: 0 },
+  disc: { position: "absolute", left: 0, top: 0 },
+  shield: { position: "absolute" },
 })

@@ -1,4 +1,4 @@
-import { FLOW_PATHS, flowMotion, MIST_DISCS, mistMotion } from "./forest-aurora-shape"
+import { FLOW_LINES, flowMotion, layLine, MIST_DISCS, mistMotion } from "./forest-aurora-shape"
 import { discPose, flowOffset, pingPong, planMist, seededRandom } from "./forest-motion"
 
 describe("seeded generator", () => {
@@ -13,19 +13,16 @@ describe("seeded generator", () => {
 })
 
 describe("the owner's mist (round4.html: spd 2, size 0.7)", () => {
-  test("three discs of 294 pt, legs of 7, 9 and 11.5 s, the sketch's drifts", () => {
+  test("three discs of 294 pt, legs of 7, 9 and 11.5 s, crossing the card", () => {
     expect(MIST_DISCS.map((disc) => disc.size)).toEqual([294, 294, 294])
     expect(MIST_DISCS.map((disc) => disc.legMs)).toEqual([7000, 9000, 11500])
-    expect(MIST_DISCS.map((disc) => disc.drift)).toEqual([
-      { x: 210, y: 110, scale: 1.2 },
-      { x: -210, y: 90, scale: 0.85 },
-      { x: 230, y: -110, scale: 1.25 },
-    ])
-    expect(MIST_DISCS.map((disc) => disc.anchor)).toEqual([
-      { left: -60, top: -120 },
-      { right: -120, top: -40 },
-      { left: 60, bottom: -220 },
-    ])
+    expect(MIST_DISCS.map((disc) => disc.scale)).toEqual([1.2, 0.85, 1.25])
+    for (const disc of MIST_DISCS) {
+      // Each crosses most of the card one way or the other.
+      const across = Math.abs(disc.to[0] - disc.from[0])
+      const down = Math.abs(disc.to[1] - disc.from[1])
+      expect(Math.max(across, down)).toBeGreaterThanOrEqual(0.55)
+    }
   })
 
   test("a disc drifts there and back, eased, seamless over each period of 2", () => {
@@ -39,10 +36,10 @@ describe("the owner's mist (round4.html: spd 2, size 0.7)", () => {
     expect(pingPong(0.9)).toBeGreaterThan(0.9)
   })
 
-  test("its pose runs from its rest to the far end of its drift", () => {
+  test("its pose runs from its rest to the far end of its drift, in the card's points", () => {
     const [moss] = MIST_DISCS
-    expect(discPose(0, moss)).toEqual({ translateX: 0, translateY: 0, scale: 1 })
-    expect(discPose(1, moss)).toEqual({ translateX: 210, translateY: 110, scale: 1.2 })
+    expect(discPose(0, moss, 300, 200)).toEqual({ x: 30, y: 30, scale: 1 })
+    expect(discPose(1, moss, 300, 200)).toEqual({ x: 225, y: 190, scale: 1.2 })
   })
 
   test("legs and flow periods a few percent apart per mount, every start drawn at random", () => {
@@ -68,30 +65,23 @@ describe("the owner's mist (round4.html: spd 2, size 0.7)", () => {
 })
 
 describe("the flowing light (round4.html: flowSpd 1)", () => {
-  test("one pass every 7, 10 and 13 s", () => {
+  test("one pass every 7, 10 and 13 s along three lines", () => {
     expect(flowMotion.periodsMs).toEqual([7000, 10000, 13000])
-    expect(FLOW_PATHS).toHaveLength(3)
+    expect(FLOW_LINES).toHaveLength(3)
   })
 
   test("the dash runs from the line's start to past its end, then comes round again", () => {
-    const pattern = flowMotion.dash + flowMotion.gap
-    expect(flowOffset(0)).toBe(pattern)
-    expect(flowOffset(0.5)).toBeCloseTo(pattern / 2)
-    expect(flowOffset(1)).toBe(pattern)
-    expect(flowOffset(-0.25)).toBeCloseTo(flowOffset(0.75))
+    expect(flowOffset(0, 400)).toBe(400)
+    expect(flowOffset(0.5, 400)).toBeCloseTo(200)
+    expect(flowOffset(1, 400)).toBe(400)
+    expect(flowOffset(-0.25, 400)).toBeCloseTo(flowOffset(0.75, 400))
   })
 
-  test("a short dash, and a pattern longer than every line: one dash at a time", () => {
+  test("a line laid on a card: cubic segments, a pattern longer than the line", () => {
+    const { d, pattern } = layLine([0, 0, 0.5, 0, 0.5, 1, 1, 1], { width: 100, height: 50 })
+    expect(d).toBe("M0 0 C 50 0 50 50 100 50")
+    // The control polygon (50 + 50 + 50) plus the dash and its rest.
+    expect(pattern).toBe(150 + flowMotion.dash + flowMotion.rest)
     expect(flowMotion.dash).toBeLessThanOrEqual(30)
-    for (const d of FLOW_PATHS) {
-      // Cubic segments only, so the control polygon bounds each line's length.
-      expect(d).toMatch(/^M[\d\s.]+(C[\d\s.]+)+$/)
-      const numbers = (d.match(/-?\d+(\.\d+)?/g) ?? []).map(Number)
-      let polygon = 0
-      for (let i = 2; i < numbers.length; i += 2) {
-        polygon += Math.hypot(numbers[i] - numbers[i - 2], numbers[i + 1] - numbers[i - 1])
-      }
-      expect(polygon + flowMotion.dash).toBeLessThanOrEqual(flowMotion.dash + flowMotion.gap)
-    }
   })
 })

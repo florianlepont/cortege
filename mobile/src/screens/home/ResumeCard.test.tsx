@@ -223,7 +223,7 @@ describe("ResumeCard", () => {
     expect(card.props).not.toHaveProperty("backdrop")
   })
 
-  const zone = () => tree.root.findByType("ForestCard" as never).props.zone
+  const blocks = () => tree.root.findByType("ForestCard" as never).props.blocks
   const layoutOf = (testID: string, layout: Record<string, number>) => {
     const node = tree.root.find(
       (inner) => (inner.type as unknown) === "View" && inner.props.testID === testID,
@@ -231,32 +231,41 @@ describe("ResumeCard", () => {
     act(() => node.props.onLayout({ nativeEvent: { layout } }))
     return node
   }
-  const BUTTON = { x: 230, y: 8, width: 110, height: 44 }
+  const COPY = { x: 0, y: 0, width: 200, height: 52 }
+  // The row sits at the card's padding: the copy's place in the card.
+  const COPY_IN_CARD = {
+    x: RESUME_LAYOUT.padding,
+    y: RESUME_LAYOUT.padding,
+    width: 200,
+    height: 52,
+  }
 
-  test("the start card's clear zone is right of the text column, the whole height", () => {
+  test("the start card's block of text is its title and line, measured in the card", () => {
     mount(null)
-    // Until the button is measured the aurora has no zone: nothing is drawn yet.
-    expect(zone()).toBeNull()
-    const wrapper = layoutOf("home-resume-button", BUTTON)
-    expect(wrapper.findByType("AppButton" as never)).toBeTruthy()
-    // The row sits at the card's padding; the text column ends a row gap before the button.
-    expect(zone()).toEqual({ left: RESUME_LAYOUT.padding + 230 - brandSpacing4.smd })
+    // Until the text is measured nothing is drawn.
+    expect(blocks()).toBeNull()
+    expect(
+      tree.root
+        .find(
+          (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-button",
+        )
+        .findByType("AppButton" as never),
+    ).toBeTruthy()
+    layoutOf("home-resume-copy", COPY)
+    expect(blocks()).toEqual([COPY_IN_CARD])
     const row = tree.root.find(
       (node) => (node.type as unknown) === "View" && styleOf(node).alignItems === "center",
     )
     expect(styleOf(row).gap).toBe(brandSpacing4.smd)
   })
 
-  test("with a draft the segments sit under the band shield, half the gap under the button", () => {
+  test("with a draft the segments are a block too, and nothing is drawn before both", () => {
     mount(makeSurvey())
-    layoutOf("home-resume-button", BUTTON)
-    // The band is not known yet: still nothing drawn, so the segments never show unshielded.
-    expect(zone()).toBeNull()
+    layoutOf("home-resume-copy", COPY)
+    // The segments are not measured yet: nothing drawn, so they never show unshielded.
+    expect(blocks()).toBeNull()
     layoutOf("home-resume-progress", { x: 16, y: 92, width: 330, height: 6 })
-    expect(zone()).toEqual({
-      left: RESUME_LAYOUT.padding + 230 - brandSpacing4.smd,
-      bottom: 92 - RESUME_LAYOUT.progressGap / 2,
-    })
+    expect(blocks()).toEqual([COPY_IN_CARD, { x: 16, y: 92, width: 330, height: 6 }])
   })
 
   test("the filled segments are the pale forest green that keeps 3:1 over the aurora", () => {

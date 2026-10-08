@@ -5,6 +5,7 @@ import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppText as Text } from "../../ui/AppText"
 import { EntranceView } from "../../ui/EntranceView"
+import type { ForestTextBlock } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
 
 const t = fr.surveyList.intro
@@ -18,22 +19,22 @@ type ListSummaryCardProps = { total: number; toFinish: number }
  * the base forest, so no text sits under the halo at the top right (UI-SPEC); the "to finish"
  * figure takes the light green of the card title as the accent. The card slides in when the screen
  * becomes visible, like the sections of Accueil. 12.2-19 fifth round (owner): it carries the forest
- * aurora like Accueil's card, in place of its drifting contours; its clear zone starts a gap right
- * of the two figures, which sit under the shield.
+ * mist like Accueil's card, in place of its drifting contours, over the whole card; the two
+ * figures are measured as its block of text, softened around by the shield.
  */
 export function ListSummaryCard({ total, toFinish }: ListSummaryCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
-  const [zoneLeft, setZoneLeft] = useState<number | null>(null)
+  const [stats, setStats] = useState<ForestTextBlock | null>(null)
   const handleStatsLayout = (event: LayoutChangeEvent): void => {
-    const { x, width } = event.nativeEvent.layout
-    setZoneLeft(x + width + brandSpacing4.md)
+    const { x, y, width, height } = event.nativeEvent.layout
+    setStats({ x, y, width, height })
   }
   return (
     <EntranceView index={0}>
       <ForestCard
         variant="resume"
-        zone={zoneLeft === null ? null : { left: zoneLeft }}
+        blocks={stats === null ? null : [stats]}
         contentStyle={styles.content}
         testID="list-summary-card"
       >

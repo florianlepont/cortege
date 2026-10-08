@@ -69,16 +69,16 @@ describe("ListSummaryCard (D-22)", () => {
     expect(cards[0].props.shield).toBeUndefined()
   })
 
-  test("the aurora's clear zone starts a gap right of the two figures, the whole height", () => {
+  test("the two figures are the card's block of text for the mist's shield", () => {
     const root = mount(12, 3)
     const card = () => root.findByType("ForestCard" as never)
     // Until the figures are measured nothing is drawn.
-    expect(card().props.zone).toBeNull()
+    expect(card().props.blocks).toBeNull()
     const stats = root.findByProps({ testID: "list-summary-stats" })
     act(() =>
       stats.props.onLayout({ nativeEvent: { layout: { x: 16, y: 16, width: 180, height: 50 } } }),
     )
-    expect(card().props.zone).toEqual({ left: 16 + 180 + brandSpacing4.md })
+    expect(card().props.blocks).toEqual([{ x: 16, y: 16, width: 180, height: 50 }])
   })
 
   test("shows the same two figures and labels as before, nothing new, no tag pill", () => {

@@ -1,6 +1,6 @@
 // The motion of the forest card's backdrop (12.2-19, owner-tuned in sketch 010 `round4.html`):
-// each disc drifts there and back, eased, endlessly, and a dash of light flows along each contour
-// line. The few random numbers (legs a few percent apart, where each layer starts) are drawn once
+// each disc drifts there and back across the card, eased, endlessly, and a dash of light flows
+// along each contour line. The few random numbers (legs a few percent apart, where each layer starts) are drawn once
 // per mount from a seeded generator; the poses and offsets are worklets on the UI thread.
 
 import { flowMotion, MIST_DISCS, type MistDisc, mistMotion } from "./forest-aurora-shape"
@@ -25,24 +25,25 @@ export function pingPong(phase: number): number {
   return x * x * (3 - 2 * x)
 }
 
-/** Offset and scale of a disc at `phase`: at rest for 0, at the far end of its drift for 1. */
+/** Centre (in points) and scale of a disc at `phase` on a card of `width` and `height`. */
 export function discPose(
   phase: number,
   disc: MistDisc,
-): { translateX: number; translateY: number; scale: number } {
+  width: number,
+  height: number,
+): { x: number; y: number; scale: number } {
   "worklet"
   const k = pingPong(phase)
   return {
-    translateX: disc.drift.x * k,
-    translateY: disc.drift.y * k,
-    scale: 1 + (disc.drift.scale - 1) * k,
+    x: width * (disc.from[0] + (disc.to[0] - disc.from[0]) * k),
+    y: height * (disc.from[1] + (disc.to[1] - disc.from[1]) * k),
+    scale: 1 + (disc.scale - 1) * k,
   }
 }
 
 /** Dash offset of the flowing light at `phase` (0 to 1, it loops): it runs from the line's start. */
-export function flowOffset(phase: number): number {
+export function flowOffset(phase: number, pattern: number): number {
   "worklet"
-  const pattern = flowMotion.dash + flowMotion.gap
   return pattern * (1 - (((phase % 1) + 1) % 1))
 }
 

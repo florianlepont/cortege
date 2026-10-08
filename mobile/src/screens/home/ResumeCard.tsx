@@ -7,6 +7,7 @@ import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
+import type { ForestTextBlock } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
 import { RESUME_LAYOUT } from "./layout-budget"
 
@@ -34,9 +35,8 @@ type ResumeCardProps = {
  * drawn under it by Accueil only beside a draft. Fourth fix round (owner: the ripples did not
  * please and the full-card contour lines hurt the reading, "un mélange de A et F" from sketch 010):
  * both forms of the card carry the mist (`ForestCard`'s backdrop: a shield under the text, contours
- * with light flowing along them, right of the text only) as their one animated layer. Its clear
- * zone is right of the text column and, with a draft, above the progress segments, which sit under
- * the shield's feathered band, rising from nothing.
+ * with light flowing along them) as their one animated layer, over the whole card. The title and
+ * its line and, with a draft, the segments are measured as blocks of text, each softened around.
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -46,27 +46,30 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
   const resumeFactors = resumeDraft
     ? Math.max(0, Math.min(FACTOR_COUNT, Math.round(resumeDraft.factors_filled)))
     : 0
-  // The contours are drawn right of the text column only: its end, in the card's space (the row
-  // sits at the card's padding, the button a gap after the column).
-  const [traceStart, setTraceStart] = useState<number | null>(null)
-  const handleButtonLayout = (event: LayoutChangeEvent): void => {
-    setTraceStart(RESUME_LAYOUT.padding + event.nativeEvent.layout.x - ROW_GAP)
+  // The blocks of text the mist's shield keeps readable, in the card's space: the title and its
+  // line (the row sits at the card's padding) and, with a draft, the segments.
+  const [copyBlock, setCopyBlock] = useState<ForestTextBlock | null>(null)
+  const handleCopyLayout = (event: LayoutChangeEvent): void => {
+    const { x, y, width, height } = event.nativeEvent.layout
+    setCopyBlock({ x: RESUME_LAYOUT.padding + x, y: RESUME_LAYOUT.padding + y, width, height })
   }
-  // With a draft, the segments sit under the band shield: its text starts half the gap above them.
-  const [bandTop, setBandTop] = useState<number | null>(null)
+  const [progressBlock, setProgressBlock] = useState<ForestTextBlock | null>(null)
   const handleProgressLayout = (event: LayoutChangeEvent): void => {
-    setBandTop(event.nativeEvent.layout.y - RESUME_LAYOUT.progressGap / 2)
+    const { x, y, width, height } = event.nativeEvent.layout
+    setProgressBlock({ x, y, width, height })
   }
-  const zone =
-    traceStart === null || (resumeDraft && bandTop === null)
+  const blocks =
+    copyBlock === null || (resumeDraft && progressBlock === null)
       ? null
-      : { left: traceStart, bottom: resumeDraft ? (bandTop ?? undefined) : undefined }
+      : resumeDraft && progressBlock
+        ? [copyBlock, progressBlock]
+        : [copyBlock]
 
   return (
-    <ForestCard variant="resume" zone={zone} testID="home-resume-card">
+    <ForestCard variant="resume" blocks={blocks} testID="home-resume-card">
       <View style={styles.main}>
         <View style={styles.row}>
-          <View style={styles.copy}>
+          <View style={styles.copy} onLayout={handleCopyLayout} testID="home-resume-copy">
             <Text style={styles.title} numberOfLines={2}>
               {resumeDraft
                 ? resumeDraft.site_name
@@ -78,7 +81,7 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
               {resumeDraft ? t.resumeBody({ completed: resumeFactors }) : t.body}
             </Text>
           </View>
-          <View onLayout={handleButtonLayout} testID="home-resume-button">
+          <View testID="home-resume-button">
             <AppButton
               label={resumeDraft ? t.resumeButton : t.button}
               leadingIcon={resumeDraft ? "play-outline" : "add-outline"}

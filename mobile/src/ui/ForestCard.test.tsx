@@ -157,15 +157,15 @@ describe("ForestCard", () => {
     expect(tree.root.findAll((n) => (n.type as unknown) === "ContourLines")).toHaveLength(0)
   })
 
-  test("passes the caller's clear zone and shield to the aurora", () => {
-    const zone = { left: 180, bottom: 96 }
-    const { tree } = render({ zone, shield: "score", variant: "hero" })
+  test("passes the caller's blocks of text and shield to the mist", () => {
+    const blocks = [{ x: 16, y: 16, width: 180, height: 82 }]
+    const { tree } = render({ blocks, shield: "score", variant: "hero" })
     const aurora = tree.root.findByType("ForestAurora" as never)
-    expect(aurora.props.zone).toBe(zone)
+    expect(aurora.props.blocks).toBe(blocks)
     expect(aurora.props.shield).toBe("score")
     // Still measuring: null goes through as is (nothing drawn yet).
-    const measuring = render({ zone: null })
-    expect(measuring.tree.root.findByType("ForestAurora" as never).props.zone).toBeNull()
+    const measuring = render({ blocks: null })
+    expect(measuring.tree.root.findByType("ForestAurora" as never).props.blocks).toBeNull()
   })
 
   test("motion={false} draws the bare gradient", () => {

@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import * as reanimated from "../../../test/react-native-reanimated.mock"
-import { brandMotion, brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import { brandMotion, brandRadius, brandTypography } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { glowBarGeometry, numeralGeometry } from "../../app/visual-tokens"
 import { fr } from "../../i18n"
@@ -158,21 +158,21 @@ describe("ScoreCard", () => {
     ])
   })
 
-  // 12.2-19 fifth round (owner): the score card carries the aurora too, with its own zones.
-  describe("aurora zones", () => {
-    const zoneOf = (tree: ReactTestRenderer) => byType(tree, "ForestCard")[0].props.zone
+  // 12.2-19 (owner): the score card carries the mist too, its text measured in blocks.
+  describe("blocks of text for the mist's shield", () => {
+    const blocksOf = (tree: ReactTestRenderer) => byType(tree, "ForestCard")[0].props.blocks
     const lay = (node: ReactTestInstance, layout: Record<string, number>) =>
       act(() => node.props.onLayout({ nativeEvent: { layout } }))
 
-    test("the darker score shield, and no zone until the text column and the band are known", () => {
+    test("the darker score shield, and nothing drawn until the text is measured", () => {
       const tree = render()
       const card = byType(tree, "ForestCard")[0]
       expect(card.props.shield).toBe("score")
       expect(card.props.motion).toBeUndefined()
-      expect(zoneOf(tree)).toBeNull()
+      expect(blocksOf(tree)).toBeNull()
     })
 
-    test("clear right of the caption and the numeral, above the bar, the tiles and the hint", () => {
+    test("the caption with the numeral, then the bar, the tiles and the hint under them", () => {
       const tree = render()
       const caption = byType(tree, "Text").find((n) => n.props.children === t.caption)!
       expect(flatten(caption.props.style).alignSelf).toBe("flex-start")
@@ -193,12 +193,16 @@ describe("ScoreCard", () => {
       ).toHaveLength(1)
       lay(caption, { x: 16, y: 16, width: 70, height: 16 })
       lay(numeral, { x: 16, y: 36, width: 134, height: 62 })
-      expect(zoneOf(tree)).toBeNull()
+      expect(blocksOf(tree)).toBeNull()
       lay(lower, { x: 16, y: 98, width: 329, height: 110 })
-      expect(zoneOf(tree)).toEqual({ left: 16 + 134 + brandSpacing4.smd, bottom: 98 })
-      // A longer caption pushes the zone right.
+      expect(blocksOf(tree)).toEqual([
+        { x: 16, y: 16, width: 134, height: 82 },
+        { x: 16, y: 98, width: 329, height: 110 },
+      ])
+      // A longer caption widens the first block; an empty lower part is no block.
       lay(caption, { x: 16, y: 16, width: 180, height: 16 })
-      expect(zoneOf(tree).left).toBe(16 + 180 + brandSpacing4.smd)
+      lay(lower, { x: 16, y: 98, width: 329, height: 0 })
+      expect(blocksOf(tree)).toEqual([{ x: 16, y: 16, width: 180, height: 82 }])
     })
   })
 
