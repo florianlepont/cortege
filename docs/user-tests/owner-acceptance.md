@@ -215,6 +215,11 @@ list no longer says "Les positions sont arrondies à environ 1 km". Branch
 `fix/public-map-exact-location`, not deployed yet: to check on the phone at parcel zoom once the
 API image is published.
 
+"Tu peux interroger l'API pour vérifier sa version ?" Until now `GET /v1/health` only said
+`status`, `service` and `timestamp`. It now also answers `commit`, the git commit the deployed image
+was built from (`"unknown"` outside a CI-built image): `curl -s https://cortege.algernon.ovh/v1/health`.
+Same branch; the first image published after the merge is the first one that answers it.
+
 ## Fix batches
 
 | Batch | PR | Entries | Re-tested on |

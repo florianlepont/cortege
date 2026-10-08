@@ -28,6 +28,33 @@ Base path: `/v1`
 - `Report`: covered
 - `Public Map Item` (optional V1 read model): covered
 
+## 0) Health
+
+### GET /health
+
+No authentication; throttled like every route. Read by the image's Docker
+`HEALTHCHECK`, `infra/vps/update-stack.sh` and the CI smoke test (all three look at the status code
+only), and by anyone checking which commit the deployed API runs.
+
+Response `200`:
+
+```json
+{
+  "status": "ok",
+  "service": "cortege-api",
+  "timestamp": "2026-10-08T09:15:00.000Z",
+  "commit": "a7a26b49c0ffee0123456789abcdef0123456789"
+}
+```
+
+- `commit` (added 2026-10-08) is the git commit the running image was built from: the full sha CI
+  passes as the `GIT_SHA` build argument of `api/Dockerfile`. It is `"unknown"` for an API that was
+  not built by CI (local dev, `npm run dev:api`) and for any `GIT_SHA` that is not 7 to 40 hex
+  characters. The image of a commit is also tagged `ghcr.io/florianlepont/cortege:sha-<commit>`.
+- Nothing else about the build or the environment is exposed (no library versions, no settings).
+
+Check the deployed version: `curl -s https://cortege.algernon.ovh/v1/health`.
+
 ## 1) Authentication
 
 Authentication is fully delegated to **Auth0**. The backend does not expose login, register, refresh, or logout endpoints. All token issuance and session lifecycle (access token, refresh token, rotation, revocation) are handled by Auth0.
