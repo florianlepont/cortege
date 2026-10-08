@@ -26,8 +26,10 @@ type ContourLinesProps = {
 /**
  * The topographic contour signature of variant I (decoration only). The slow drift runs only while
  * the screen is focused and never under Reduce Motion, which renders the static first frame.
- * Budget: at most two animated instances per visible screen, and never placed over a live map
- * (D-13). Only transforms are animated.
+ * Budget: at most two animated hero layers per screen, this drift and the forest card's aurora
+ * counted together (`__checks__/motion.test.ts`), and never placed over a live map (D-13). Only
+ * transforms are animated. Since 12.2-19 the forest cards draw the aurora's tracing contours
+ * instead; the remaining uses are still (`animated={false}`).
  */
 export function ContourLines({ animated = true, testID }: ContourLinesProps) {
   const theme = useBrandTheme()

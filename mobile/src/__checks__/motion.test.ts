@@ -69,6 +69,86 @@ function findHapticsOutsideFeedback(files: string[]): Finding[] {
     .map((file) => ({ file, rule: "haptics-outside-feedback" }))
 }
 
+// Hero motion budget (12.2-19 fifth round): a screen shows at most two animated hero layers, the
+// forest card's aurora (`ForestCard`, unless `motion={false}`, or `ForestAurora` itself) and the
+// drifting `ContourLines` (unless `animated={false}`). Counted over the files a route reaches
+// through relative imports inside `src/screens` and `src/navigation`, so a layer behind a branch
+// still counts: the bound is an upper one. The `ui` primitives themselves are not walked.
+const HERO_BUDGET = 2
+const HERO_TAGS: { tag: string; off: string | null }[] = [
+  { tag: "ForestCard", off: "motion={false}" },
+  { tag: "ForestAurora", off: null },
+  { tag: "ContourLines", off: "animated={false}" },
+]
+
+/** The opening tags of `tag` in `text`, each up to its closing `>` outside braces. */
+function openingTags(text: string, tag: string): string[] {
+  const tags: string[] = []
+  const pattern = new RegExp(`<${tag}\\b`, "g")
+  for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
+    let depth = 0
+    let end = match.index
+    for (; end < text.length; end += 1) {
+      const char = text[end]
+      if (char === "{") depth += 1
+      if (char === "}") depth -= 1
+      if (char === ">" && depth === 0) break
+    }
+    tags.push(text.slice(match.index, end + 1))
+  }
+  return tags
+}
+
+function countHeroLayers(text: string): number {
+  return HERO_TAGS.reduce(
+    (sum, { tag, off }) =>
+      sum + openingTags(text, tag).filter((opening) => !off || !opening.includes(off)).length,
+    0,
+  )
+}
+
+function resolveImport(from: string, specifier: string): string | null {
+  const base = path.resolve(path.dirname(from), specifier)
+  const candidates = [
+    `${base}.tsx`,
+    `${base}.ts`,
+    path.join(base, "index.tsx"),
+    path.join(base, "index.ts"),
+  ]
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? null
+}
+
+/** Every file `entry` reaches through relative imports inside `roots`, itself included. */
+function reachable(entry: string, roots: string[]): string[] {
+  const seen = new Set<string>()
+  const queue = [entry]
+  while (queue.length > 0) {
+    const file = queue.pop() as string
+    if (seen.has(file)) continue
+    seen.add(file)
+    for (const match of read(file).matchAll(/from\s+["'](\.{1,2}\/[^"']+)["']/g)) {
+      const target = resolveImport(file, match[1])
+      if (target && roots.some((root) => target.startsWith(root + path.sep))) queue.push(target)
+    }
+  }
+  return [...seen]
+}
+
+type HeroCount = { route: string; layers: number }
+
+function countHeroBudget(routes: string[], roots: string[]): HeroCount[] {
+  return routes.map((route) => ({
+    route: path.basename(route),
+    layers: reachable(route, roots).reduce((sum, file) => sum + countHeroLayers(read(file)), 0),
+  }))
+}
+
+function findHeroBudgetBreaches(routes: string[], roots: string[]): Finding[] {
+  return countHeroBudget(routes, roots)
+    .filter(({ layers }) => layers > HERO_BUDGET)
+    .map(({ route }) => ({ file: route, rule: "hero-motion-budget" }))
+}
+
 const SRC_ROOT = path.resolve(__dirname, "..")
 const CHECKS_DIR = path.join(SRC_ROOT, "__checks__")
 
@@ -205,6 +285,66 @@ describe("findHapticsOutsideFeedback", () => {
   })
 })
 
+describe("hero motion budget", () => {
+  it("counts the animated hero layers of a tag, not the still ones", () => {
+    expect(
+      countHeroLayers(
+        [
+          "<ForestCard zone={zone === null ? null : { left: 3 }}>",
+          "<ForestCard motion={false} />",
+          "<ContourLines animated={false} />",
+          "<ContourLines />",
+          "<ForestAurora zone={z} />",
+          "<ForestCardish />",
+        ].join("\n"),
+      ),
+    ).toBe(3)
+  })
+
+  it("reports a route whose screen and components show more than two", () => {
+    const card = writeFixture(
+      "src/screens/area/Card.tsx",
+      "export const C = () => <ForestCard />\n",
+    )
+    const screen = writeFixture(
+      "src/screens/Busy.tsx",
+      'import { C } from "./area/Card"\nimport { X } from "../ui/Missing"\n' +
+        "export const S = () => <><C /><C /><ContourLines /></>\n",
+    )
+    const calm = writeFixture(
+      "src/screens/Calm.tsx",
+      'import { C } from "./area/Card"\nexport const S = () => <><C /><ContourLines animated={false} /></>\n',
+    )
+    const route = writeFixture(
+      "src/navigation/routes/BusyRoute.tsx",
+      'import { S } from "../../screens/Busy"\nimport { S as T } from "../../screens/Busy"\n',
+    )
+    const calmRoute = writeFixture(
+      "src/navigation/routes/CalmRoute.tsx",
+      'import { S } from "../../screens/Calm"\n',
+    )
+    const roots = [path.join(fixtureRoot, "src/screens"), path.join(fixtureRoot, "src/navigation")]
+    expect([card, screen, calm].every((file) => fs.existsSync(file))).toBe(true)
+    expect(countHeroBudget([route, calmRoute], roots)).toEqual([
+      { route: "BusyRoute.tsx", layers: 2 },
+      { route: "CalmRoute.tsx", layers: 1 },
+    ])
+    // The card counts once per file: the bound is on what the sources can show.
+    writeFixture(
+      "src/screens/area/Card.tsx",
+      "export const C = () => <><ForestCard /><ForestAurora /></>\n",
+    )
+    expect(findHeroBudgetBreaches([route, calmRoute], roots)).toEqual([
+      { file: "BusyRoute.tsx", rule: "hero-motion-budget" },
+    ])
+    expect(resolveImport(route, "../../screens")).toBeNull()
+    writeFixture("src/screens/index.ts", "export {}\n")
+    expect(resolveImport(route, "../../screens")).toBe(
+      path.join(fixtureRoot, "src/screens/index.ts"),
+    )
+  })
+})
+
 describe("motion gates on mobile/src", () => {
   const files = sourceFiles(SRC_ROOT)
 
@@ -230,6 +370,22 @@ describe("motion gates on mobile/src", () => {
 
   it("imports expo-haptics only in src/ui/feedback.ts", () => {
     expect(findHapticsOutsideFeedback(files)).toEqual([])
+  })
+
+  it("shows at most two animated hero layers per screen, one forest card on each (12.2-19)", () => {
+    const routesDir = path.join(SRC_ROOT, "navigation", "routes")
+    const routes = sourceFiles(routesDir).filter((file) => file.endsWith("Route.tsx"))
+    const roots = [path.join(SRC_ROOT, "screens"), path.join(SRC_ROOT, "navigation")]
+    expect(routes.length).toBeGreaterThan(10)
+    expect(findHeroBudgetBreaches(routes, roots)).toEqual([])
+    const counts = Object.fromEntries(
+      countHeroBudget(routes, roots).map(({ route, layers }) => [route, layers]),
+    )
+    expect(counts).toMatchObject({
+      "HomeRoute.tsx": 1,
+      "SurveyListRoute.tsx": 1,
+      "SurveyDetailRoute.tsx": 1,
+    })
   })
 })
 
