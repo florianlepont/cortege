@@ -11,7 +11,13 @@ import {
 } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandColors, brandOnDarkColors, brandSpacing, brandTypography } from "../app/brand-tokens"
+import {
+  brandColors,
+  brandOnDarkColors,
+  brandSpacing,
+  brandTypeScale,
+  brandTypography,
+} from "../app/brand-tokens"
 import { fr } from "../i18n"
 
 const SPECIES_NAMES = fr.components.splash.species
@@ -157,7 +163,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   twEpithet: {
-    fontSize: 16,
+    fontSize: brandTypeScale.callout.fontSize,
     fontStyle: "italic",
     fontWeight: "300",
     color: brandOnDarkColors.heroBodyOnDark,

@@ -105,7 +105,7 @@ export function createProfileRowStyles(theme: BrandTheme) {
     },
     label: {
       ...brandTypography.sectionBody,
-      fontSize: 16,
+      fontSize: brandTypeScale.callout.fontSize,
       color: theme.colors.textPrimary,
     },
     input: {
@@ -113,7 +113,7 @@ export function createProfileRowStyles(theme: BrandTheme) {
       textAlign: "right",
       minHeight: 44,
       paddingVertical: brandSpacing4.sm,
-      fontSize: 16,
+      fontSize: brandTypeScale.callout.fontSize,
       color: theme.semanticColors.textStrong,
     },
     saveBar: {

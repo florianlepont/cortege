@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandOnDarkColors, brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import {
+  brandOnDarkColors,
+  brandRadius,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme } from "../app/theme"
 
 // Field sizes (D-05): the score line and the help link keep their heights.
@@ -46,7 +52,7 @@ export function createDetailStyles(theme: BrandTheme) {
     },
     scoreLinePoints: {
       ...brandTypography.sectionTitle,
-      fontSize: 17,
+      fontSize: brandTypeScale.headline.fontSize,
       color: theme.semanticColors.textStrong,
     },
     helpLink: {
@@ -97,7 +103,7 @@ export function createDetailStyles(theme: BrandTheme) {
     },
     sheetTitle: {
       ...brandTypography.sectionTitle,
-      fontSize: 22,
+      fontSize: brandTypeScale.title2.fontSize,
       color: theme.semanticColors.textStrong,
     },
     sheetClose: {

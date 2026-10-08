@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandRadius, brandShadow, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import {
+  brandRadius,
+  brandShadow,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
 // Phase 12.2 (variant I): the factor tiles are glass cards without blur (D-12), radius 22, gaps
@@ -79,7 +85,7 @@ export function createFactorStyles(theme: BrandTheme) {
     },
     factorBadgeText: {
       ...brandTypography.label,
-      fontSize: 12,
+      fontSize: brandTypeScale.caption.fontSize,
       // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
       lineHeight: 16,
       color: theme.semanticColors.onCtaPrimary,
@@ -95,20 +101,18 @@ export function createFactorStyles(theme: BrandTheme) {
     // The input role's Sora SemiBold at the tile's 12 pt on 13 (sizes unchanged, D-05).
     factorTileTitle: {
       ...brandTypography.input,
-      fontSize: 12,
+      fontSize: brandTypeScale.caption.fontSize,
       lineHeight: 13,
       color: theme.colors.textPrimary,
     },
     factorTileMeta: {
       ...brandTypography.meta,
-      fontSize: 12,
       // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
       lineHeight: 16,
       color: theme.colors.textSecondary,
     },
     factorTileState: {
       ...brandTypography.meta,
-      fontSize: 12,
       // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").
       lineHeight: 16,
       color: theme.semanticColors.textStrong,

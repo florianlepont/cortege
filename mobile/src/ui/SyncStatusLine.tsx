@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 import { AppText as Text } from "./AppText"
-import { brandMotion, brandTypography } from "../app/brand-tokens"
+import { brandMotion, brandTypeScale, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppPressable } from "./AppPressable"
@@ -132,7 +132,7 @@ function createStyles(theme: BrandTheme) {
     dotWarning: { backgroundColor: theme.onSurface.warning },
     label: {
       ...brandTypography.meta,
-      fontSize: 15,
+      fontSize: brandTypeScale.subhead.fontSize,
       color: theme.colors.textSecondary,
     },
     labelWarning: {

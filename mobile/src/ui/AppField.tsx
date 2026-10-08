@@ -9,7 +9,12 @@ import {
   ViewStyle,
 } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
+import {
+  brandComponentTokens,
+  brandRadius,
+  brandTypeScale,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppFieldProps = {
@@ -87,7 +92,7 @@ function createStyles(theme: BrandTheme) {
       backgroundColor: theme.componentColors.field.background,
       color: theme.colors.textPrimary,
       ...brandTypography.input,
-      fontSize: 15,
+      fontSize: brandTypeScale.subhead.fontSize,
       lineHeight: 18,
       fontWeight: "500",
     },

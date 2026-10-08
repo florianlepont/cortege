@@ -118,7 +118,7 @@ function createStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost-SemiBold",
+      fontFamily: brandTypography.meta.fontFamily,
       color: theme.colors.textPrimary,
     },
     caption: {

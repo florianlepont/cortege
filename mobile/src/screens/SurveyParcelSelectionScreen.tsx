@@ -8,6 +8,7 @@ import {
   brandMapTokens,
   brandMediaBackdrop,
   brandShadow,
+  brandTypeScale,
   brandTypography,
 } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
@@ -359,13 +360,13 @@ function createScreenStyles(theme: BrandTheme) {
     },
     bottomTitle: {
       ...brandTypography.sectionTitle,
-      fontSize: 20,
+      fontSize: brandTypeScale.title3.fontSize,
       lineHeight: 24,
       color: theme.colors.textPrimary,
     },
     bottomMeta: {
       ...brandTypography.sectionBody,
-      fontSize: 13,
+      fontSize: brandTypeScale.footnote.fontSize,
       lineHeight: 18,
       color: theme.colors.textSecondary,
     },

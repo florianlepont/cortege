@@ -229,7 +229,6 @@ function createStyles(theme: BrandTheme) {
     },
     label: {
       ...brandTypography.input,
-      fontSize: 16,
       flexShrink: 1,
       color: theme.colors.textPrimary,
     },

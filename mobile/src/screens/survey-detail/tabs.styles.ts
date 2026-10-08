@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native"
 import {
+  brandDefaultFontFamily,
   brandRadius,
   brandShadow,
   brandSpacing4,
@@ -70,7 +71,7 @@ export function createTabsStyles(theme: BrandTheme) {
     },
     timelineMeta: {
       ...brandTypeScale.footnote,
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
     },
     debugCard: {

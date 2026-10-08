@@ -79,7 +79,7 @@ export function createSearchStyles(theme: BrandTheme) {
     },
     segmentLabel: {
       ...brandTypography.meta,
-      fontSize: 15,
+      fontSize: brandTypeScale.subhead.fontSize,
       lineHeight: 20,
       color: theme.visual.chip.text,
     },

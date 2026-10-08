@@ -286,7 +286,6 @@ function createOwnStyles(theme: BrandTheme) {
     },
     chipText: {
       ...brandTypography.meta,
-      fontFamily: "Jost-SemiBold",
       color: theme.semanticColors.textStrong,
     },
     readOnly: {

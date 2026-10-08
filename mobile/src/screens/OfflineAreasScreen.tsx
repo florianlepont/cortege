@@ -3,7 +3,7 @@ import { AppText as Text } from "../ui/AppText"
 import { PageTitle } from "../ui/PageTitle"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandColors, brandSpacing } from "../app/brand-tokens"
+import { brandColors, brandSpacing, brandTypeScale } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { formatAreaMegabytes } from "../app/formatters"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
@@ -113,7 +113,7 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
 const rowStyles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56 },
   info: { flex: 1, gap: 2 },
-  name: { fontSize: 17, fontWeight: "600" },
+  name: { fontSize: brandTypeScale.headline.fontSize, fontWeight: "600" },
   meta: { fontSize: 14, lineHeight: 20 },
   delete: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
 })

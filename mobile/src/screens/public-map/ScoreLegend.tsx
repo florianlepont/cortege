@@ -207,7 +207,6 @@ function createStyles(theme: BrandTheme) {
     },
     attribution: {
       ...brandTypography.meta,
-      fontSize: 12,
       color: theme.visual.mapControl.textMuted,
       marginTop: brandSpacing4.xs,
     },

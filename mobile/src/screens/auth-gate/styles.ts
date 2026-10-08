@@ -5,6 +5,7 @@ import {
   brandRadius,
   brandShadow,
   brandSpacing,
+  brandTypeScale,
   brandTypography,
 } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
@@ -184,7 +185,7 @@ export function createAuthStyles(theme: BrandTheme) {
     },
     forgotPasswordText: {
       ...brandTypography.button,
-      fontSize: 13,
+      fontSize: brandTypeScale.footnote.fontSize,
       lineHeight: 17,
       color: theme.semanticColors.textStrong,
       fontWeight: "600",
@@ -198,14 +199,13 @@ export function createAuthStyles(theme: BrandTheme) {
     },
     legalText: {
       ...brandTypography.meta,
-      fontSize: 12,
       lineHeight: 16,
       color: theme.colors.textSecondary,
       textAlign: "center",
       opacity: 0.9,
     },
     legalLink: {
-      fontSize: 12,
+      fontSize: brandTypeScale.caption.fontSize,
       color: theme.semanticColors.textStrong,
       fontWeight: "600",
       textDecorationLine: "underline",

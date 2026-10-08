@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
-import { brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
@@ -199,7 +199,7 @@ function createStyles(theme: BrandTheme) {
     },
     cardTitle: {
       ...brandTypography.button,
-      fontSize: 15,
+      fontSize: brandTypeScale.subhead.fontSize,
       color: theme.semanticColors.textStrong,
     },
     cardBody: {

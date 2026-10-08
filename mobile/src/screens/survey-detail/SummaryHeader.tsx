@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Alert, Pressable, StyleSheet, View } from "react-native"
-import { brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import { brandDefaultFontFamily, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
@@ -128,12 +128,12 @@ function createHeaderStyles(theme: BrandTheme) {
     },
     statusStrong: {
       ...brandTypeScale.footnote,
-      fontFamily: "Jost-SemiBold",
+      fontFamily: brandTypography.meta.fontFamily,
       color: theme.colors.textSecondary,
     },
     statusMuted: {
       ...brandTypeScale.footnote,
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
       flexShrink: 1,
     },

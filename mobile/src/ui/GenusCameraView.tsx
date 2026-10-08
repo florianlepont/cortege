@@ -2,7 +2,13 @@ import { useMemo, useRef, useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
 import { CameraView } from "expo-camera"
 import { Ionicons } from "@expo/vector-icons"
-import { brandCameraTokens, brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
+import {
+  brandCameraTokens,
+  brandColors,
+  brandSpacing,
+  brandTypeScale,
+  brandTypography,
+} from "../app/brand-tokens"
 import { fr } from "../i18n"
 import { AppText as Text } from "./AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -125,7 +131,7 @@ function createStyles() {
     },
     title: {
       ...brandTypography.sectionTitle,
-      fontSize: 17,
+      fontSize: brandTypeScale.headline.fontSize,
       color: brandCameraTokens.guide,
     },
     guideLayer: {
@@ -176,7 +182,7 @@ function createStyles() {
     },
     hintText: {
       ...brandTypography.sectionBody,
-      fontSize: 17,
+      fontSize: brandTypeScale.headline.fontSize,
       textAlign: "center",
       color: brandCameraTokens.guide,
     },

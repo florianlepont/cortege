@@ -11,7 +11,13 @@ import {
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
-import { brandRadius, brandShadow, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import {
+  brandRadius,
+  brandShadow,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { FACTOR_TITLES } from "../../app/constants"
@@ -265,9 +271,9 @@ function createStyles(theme: BrandTheme) {
       boxShadow: theme.visual.forest.ring,
     },
     totalChipText: {
-      fontSize: 15,
+      fontSize: brandTypeScale.subhead.fontSize,
       lineHeight: 20,
-      fontFamily: "Sora-Bold",
+      fontFamily: brandTypography.button.fontFamily,
       color: theme.visual.forest.title,
     },
     pages: {

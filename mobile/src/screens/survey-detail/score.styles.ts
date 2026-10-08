@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native"
 import {
+  brandDefaultFontFamily,
   brandInteraction,
   brandRadius,
   brandSpacing4,
@@ -110,7 +111,7 @@ export function createScoreStyles(theme: BrandTheme) {
       backgroundColor: theme.colors.errorSoft,
     },
     badgeText: {
-      fontFamily: "Sora-Bold",
+      fontFamily: brandTypography.button.fontFamily,
       fontSize: 14,
       color: theme.semanticColors.textStrong,
     },
@@ -128,11 +129,11 @@ export function createScoreStyles(theme: BrandTheme) {
     },
     rowPoints: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost-SemiBold",
+      fontFamily: brandTypography.meta.fontFamily,
       color: theme.colors.textPrimary,
     },
     rowPointsMax: {
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
     },
     rowPending: {

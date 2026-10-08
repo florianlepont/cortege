@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native"
 import {
+  brandDefaultFontFamily,
   brandRadius,
   brandSpacing,
   brandSpacing4,
@@ -100,7 +101,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     },
     scoreTileLabel: {
       ...brandTypeScale.footnote,
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.visual.forest.body,
     },
     scoreTileValueRow: {
@@ -116,7 +117,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     // even before the mist (12.2-19), the body tint keeps 4.5:1 under it (forest-aurora tokens).
     scoreTileOutOf: {
       ...brandTypeScale.footnote,
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.visual.forest.body,
     },
     scoreHint: {
