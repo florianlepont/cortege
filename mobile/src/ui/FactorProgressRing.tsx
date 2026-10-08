@@ -35,7 +35,7 @@ export function FactorProgressRing({
   if (complete) {
     return (
       <View style={{ width: size, height: size }} testID={testID}>
-        <Ionicons name="checkmark-circle" size={size} color={ringColor} />
+        <Ionicons name="checkmark-circle-outline" size={size} color={ringColor} />
       </View>
     )
   }

@@ -150,7 +150,7 @@ function NavRow({
           {row.loading ? (
             <ActivityIndicator size="small" color={theme.colors.textSecondary} />
           ) : row.onPress ? (
-            <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+            <Ionicons name="chevron-forward-outline" size={16} color={theme.colors.textSecondary} />
           ) : null}
         </View>
       ) : null}

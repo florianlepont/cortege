@@ -42,7 +42,9 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
             testID={`cas-option-${cas}`}
           >
             <View style={[styles.radio, selected ? styles.radioSelected : null]}>
-              {selected ? <Ionicons name="checkmark" size={14} color={brandColors.white} /> : null}
+              {selected ? (
+                <Ionicons name="checkmark-outline" size={14} color={brandColors.white} />
+              ) : null}
             </View>
             <View style={styles.copy}>
               <Text style={styles.title}>{m.casLabels[cas]}</Text>

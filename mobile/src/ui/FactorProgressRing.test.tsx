@@ -72,7 +72,7 @@ describe("FactorProgressRing score tokens (12.2-15, D-16)", () => {
 
   test("the complete check is visual.score.high, the darker moss in light", () => {
     const tree = render({ progress: 1, complete: true })
-    const icon = tree.root.findAll((n) => n.props.name === "checkmark-circle")[0]
+    const icon = tree.root.findAll((n) => n.props.name === "checkmark-circle-outline")[0]
     expect(icon.props.color).toBe(score.high)
     expect(score.high).toBe("#728A2D")
   })

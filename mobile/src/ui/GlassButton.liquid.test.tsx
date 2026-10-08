@@ -288,14 +288,14 @@ describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => 
   })
 
   test("a leading icon becomes its SF Symbol, hidden from VoiceOver; an unmapped one is left out", () => {
-    const { root } = render({ leadingIcon: "checkmark" })
+    const { root } = render({ leadingIcon: "checkmark-outline" })
     const [image] = byType(root, "Image")
-    expect(image.props.systemName).toBe(NATIVE_SYMBOLS.checkmark)
+    expect(image.props.systemName).toBe(NATIVE_SYMBOLS["checkmark-outline"])
     expect(modifier(image, "accessibilityHidden")).toEqual({
       $type: "accessibilityHidden",
       hidden: true,
     })
-    expect(byType(render({ leadingIcon: "leaf" }).root, "Image")).toHaveLength(0)
+    expect(byType(render({ leadingIcon: "leaf-outline" }).root, "Image")).toHaveLength(0)
     expect(byType(render().root, "Image")).toHaveLength(0)
   })
 

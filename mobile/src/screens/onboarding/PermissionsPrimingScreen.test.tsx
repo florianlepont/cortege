@@ -162,8 +162,12 @@ describe("PermissionsPrimingScreen (ONB-01: location + camera priming)", () => {
       await tree.root.findByProps({ accessibilityLabel: t.camera.action }).props.onPress()
     })
     const colors = permissionIconColors(defaultTheme)
-    expect(tree.root.findByProps({ name: "checkmark-circle" }).props.color).toBe(colors.grantedIcon)
-    expect(tree.root.findByProps({ name: "close-circle" }).props.color).toBe(colors.deniedIcon)
+    expect(tree.root.findByProps({ name: "checkmark-circle-outline" }).props.color).toBe(
+      colors.grantedIcon,
+    )
+    expect(tree.root.findByProps({ name: "close-circle-outline" }).props.color).toBe(
+      colors.deniedIcon,
+    )
   })
 
   test("Continuer is the green glass button (D-27c)", () => {

@@ -123,7 +123,7 @@ export function GenusRecognitionModal({
               accessibilityLabel={t.close}
               testID="genus-recognition-close"
             >
-              <Ionicons name="close" size={24} color={theme.colors.textPrimary} />
+              <Ionicons name="close-outline" size={24} color={theme.colors.textPrimary} />
             </Pressable>
           </View>
 

@@ -58,7 +58,7 @@ export function AppCollapsibleSection({
         <Text style={styles.title}>{title}</Text>
         {badge ? <AppStatusChip label={badge} tone="neutral" /> : null}
         <Animated.View style={chevronStyle}>
-          <Ionicons name="chevron-down" size={14} color={theme.colors.textSecondary} />
+          <Ionicons name="chevron-down-outline" size={14} color={theme.colors.textSecondary} />
         </Animated.View>
       </Pressable>
       {expanded ? (

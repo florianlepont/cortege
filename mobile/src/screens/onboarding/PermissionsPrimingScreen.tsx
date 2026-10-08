@@ -58,12 +58,12 @@ function PermissionRow({
         <AppButton label={actionLabel} variant="secondary" size="sm" onPress={onRequest} />
       ) : status === "granted" ? (
         <View style={styles.rowStatus}>
-          <Ionicons name="checkmark-circle" size={16} color={iconColors.grantedIcon} />
+          <Ionicons name="checkmark-circle-outline" size={16} color={iconColors.grantedIcon} />
           <Text style={styles.rowStatusGranted}>{grantedLabel}</Text>
         </View>
       ) : (
         <View style={styles.rowStatus}>
-          <Ionicons name="close-circle" size={16} color={iconColors.deniedIcon} />
+          <Ionicons name="close-circle-outline" size={16} color={iconColors.deniedIcon} />
           <Text style={styles.rowStatusDenied}>{deniedLabel}</Text>
           <Text
             style={styles.settingsLink}

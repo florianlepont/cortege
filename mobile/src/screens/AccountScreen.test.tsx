@@ -150,7 +150,7 @@ describe("AccountScreen", () => {
     const names = tree.root
       .findAllByType(Ionicons as unknown as React.ComponentType<{ name: string }>)
       .map((node) => node.props.name)
-      .filter((name) => name !== "chevron-forward")
+      .filter((name) => name !== "chevron-forward-outline")
     expect(names).toEqual([
       "person-outline",
       "person-outline",

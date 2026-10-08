@@ -102,7 +102,7 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
   })
 
   test("the label and the icon use the ink token", () => {
-    const { label, root } = render({ leadingIcon: "checkmark" })
+    const { label, root } = render({ leadingIcon: "checkmark-outline" })
     expect(flatten(label.props.style).color).toBe(cta.ink)
     expect(root.findByType(Ionicons).props.color).toBe(cta.ink)
   })
@@ -210,7 +210,7 @@ describe("GlassButton secondary, flat fallback", () => {
   })
 
   test("the label and the icon use the primary text colour", () => {
-    const { label, root } = render({ variant: "secondary", leadingIcon: "checkmark" })
+    const { label, root } = render({ variant: "secondary", leadingIcon: "checkmark-outline" })
     expect(flatten(label.props.style).color).toBe(cta.secondary.ink)
     expect(root.findByType(Ionicons).props.color).toBe(cta.secondary.ink)
     expect(cta.secondary.ink).toBe(defaultTheme.colors.textPrimary)

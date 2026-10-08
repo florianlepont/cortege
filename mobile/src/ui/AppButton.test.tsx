@@ -91,12 +91,12 @@ describe("AppButton", () => {
   })
 
   test("glow leading icon takes the pill label colour", () => {
-    const { root } = render({ variant: "glow", leadingIcon: "checkmark" })
+    const { root } = render({ variant: "glow", leadingIcon: "checkmark-outline" })
     expect(root.findByType(Ionicons).props.color).toBe(defaultTheme.visual.pill.label)
   })
 
   test("primary keeps its colours", () => {
-    const { style, label, root } = render({ variant: "primary", leadingIcon: "checkmark" })
+    const { style, label, root } = render({ variant: "primary", leadingIcon: "checkmark-outline" })
     expect(style.backgroundColor).toBe(defaultTheme.componentColors.button.primaryBackground)
     expect(style).not.toHaveProperty("boxShadow")
     expect(style).not.toHaveProperty("experimental_backgroundImage")
@@ -119,7 +119,7 @@ describe("AppButton", () => {
 
   test("icon-only buttons keep a hit area of at least 44 pt", () => {
     for (const size of ["sm", "md", "lg"] as const) {
-      const { style, pressable } = render({ iconOnly: true, size, leadingIcon: "close" })
+      const { style, pressable } = render({ iconOnly: true, size, leadingIcon: "close-outline" })
       const slop = (pressable.props.hitSlop as number | undefined) ?? 0
       expect((style.height as number) + 2 * slop).toBeGreaterThanOrEqual(
         brandInteraction.hitTarget.min,

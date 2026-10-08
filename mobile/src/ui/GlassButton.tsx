@@ -54,17 +54,21 @@ type GlassButtonProps = {
   labelStyle?: StyleProp<TextStyle>
 }
 
-/** The SF Symbol drawn by the native button for each Ionicons glyph a call to action may use. */
+/**
+ * The SF Symbol drawn by the native button for each Ionicons glyph a call to action may use. The
+ * app names outline glyphs only (D-07, `__checks__/icons.test.ts`), so the keys are outline
+ * glyphs and the symbols their unfilled forms.
+ */
 export const NATIVE_SYMBOLS: Partial<Record<IoniconName, NativeSymbolName>> = {
-  checkmark: "checkmark",
-  "checkmark-circle": "checkmark.circle.fill",
-  "checkmark-done": "checkmark",
-  "arrow-forward": "arrow.right",
-  "chevron-forward": "chevron.right",
-  add: "plus",
-  play: "play.fill",
-  camera: "camera.fill",
-  flag: "flag.fill",
+  "checkmark-outline": "checkmark",
+  "checkmark-circle-outline": "checkmark.circle",
+  "checkmark-done-outline": "checkmark",
+  "arrow-forward-outline": "arrow.right",
+  "chevron-forward-outline": "chevron.right",
+  "add-outline": "plus",
+  "play-outline": "play",
+  "camera-outline": "camera",
+  "flag-outline": "flag",
 }
 
 /**
