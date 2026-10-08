@@ -49,7 +49,7 @@ export const componentsFr = {
       `${title}, ${expanded ? "réduire" : "développer"}`,
   },
   ibpScoreBadge: {
-    noScore: "—",
+    noScore: "Non renseigné",
     denominator: "/50",
   },
   // Phase 7 (DET-01): horizontal bars replacing the 10-axis radar.
@@ -57,7 +57,7 @@ export const componentsFr = {
     standGroup: "Peuplement et gestion",
     contextGroup: "Contexte",
     points: ({ points }: { points: number }) => `${points}/5`,
-    notFilled: "—",
+    notFilled: "Non renseigné",
   },
   // Phase 12.2 (D-15): the list score ring and the ten non-interactive factor bars. One label each.
   scoreRing: {
