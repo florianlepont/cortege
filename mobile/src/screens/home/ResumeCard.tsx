@@ -1,5 +1,5 @@
-import { useMemo } from "react"
-import { StyleSheet, View } from "react-native"
+import { useMemo, useState } from "react"
+import { LayoutChangeEvent, StyleSheet, View } from "react-native"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -7,6 +7,7 @@ import type { LocalSurvey } from "../../storage/types"
 import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
 import { ForestCard } from "../../ui/ForestCard"
+import type { RipplePoint } from "../../ui/ForestRipples"
 import { RESUME_LAYOUT } from "./layout-budget"
 
 const t = fr.home.hero
@@ -29,8 +30,9 @@ type ResumeCardProps = {
  * card, and the progress sits a full 24 pt under the button row. 12.2-19 fix round (owner): the
  * "Nouveau relevé" footer read as an action of the draft, so it left the card for `NewSurveyCard`,
  * drawn under it by Accueil only beside a draft. Second fix round (owner: "je m'attendais à un truc
- * un peu dynamique comme les vagues sur l'écran de connexion"): both forms of the card carry flowing
- * waves (`ForestWaves`), which replace the contour drift as the card's one animated layer.
+ * un peu dynamique comme les vagues sur l'écran de connexion"): both forms of the card carry the
+ * sign-in screen's ripples (`ForestRipples`, third round: rings spreading from behind the button and
+ * fading, not wave lines), which replace the contour drift as the card's one animated layer.
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -40,9 +42,17 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
   const resumeFactors = resumeDraft
     ? Math.max(0, Math.min(FACTOR_COUNT, Math.round(resumeDraft.factors_filled)))
     : 0
+  // The ripples spread from behind the button: its centre, in the card's space (the row sits at
+  // the card's padding).
+  const [rippleOrigin, setRippleOrigin] = useState<RipplePoint | null>(null)
+  const handleButtonLayout = (event: LayoutChangeEvent): void => {
+    const { x, y, width, height } = event.nativeEvent.layout
+    const pad = RESUME_LAYOUT.padding
+    setRippleOrigin({ x: pad + x + width / 2, y: pad + y + height / 2 })
+  }
 
   return (
-    <ForestCard variant="resume" waves testID="home-resume-card">
+    <ForestCard variant="resume" ripples rippleOrigin={rippleOrigin} testID="home-resume-card">
       <View style={styles.main}>
         <View style={styles.row}>
           <View style={styles.copy}>
@@ -57,13 +67,15 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
               {resumeDraft ? t.resumeBody({ completed: resumeFactors }) : t.body}
             </Text>
           </View>
-          <AppButton
-            label={resumeDraft ? t.resumeButton : t.button}
-            leadingIcon={resumeDraft ? "play-outline" : "add-outline"}
-            variant="glow"
-            size="md"
-            onPress={resumeDraft ? () => onResume(resumeDraft.id) : onCreateSurvey}
-          />
+          <View onLayout={handleButtonLayout} testID="home-resume-button">
+            <AppButton
+              label={resumeDraft ? t.resumeButton : t.button}
+              leadingIcon={resumeDraft ? "play-outline" : "add-outline"}
+              variant="glow"
+              size="md"
+              onPress={resumeDraft ? () => onResume(resumeDraft.id) : onCreateSurvey}
+            />
+          </View>
         </View>
         {resumeDraft ? (
           <View style={styles.progressRow} accessible={false}>

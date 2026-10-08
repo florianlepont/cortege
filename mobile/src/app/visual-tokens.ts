@@ -335,27 +335,27 @@ export const contourDrift = {
   sageWidth: 1,
   mossWidth: 1.4,
 } as const
-// The flowing waves of Accueil's forest card (12.2-19 fix round, owner: "je m'attendais à un truc un
-// peu dynamique comme les vagues sur l'écran de connexion"). The sign-in waves are three organic
-// ripples that spread from the logo and fade, one every third of a 10 s linear cycle; the card takes
-// that rhythm: three wave lines a third of a wavelength apart, drifting one wavelength in a linear
-// `travelMs` and breathing (rising and falling by `breatheY` pt, swelling by `breatheScaleY`) on a
-// sine over the sign-in's 10 s cycle. One SVG path, sage, faint enough that the title, the factors
-// line and the button keep AA over it.
-export const forestWaves = {
-  travelMs: 12000,
-  breatheMs: 10000,
-  /** Wavelength, as a share of the card width. */
-  periodRatio: 0.8,
-  /** Baselines of the three lines, as shares of the card height (the lower half of the card). */
-  baselines: [0.56, 0.72, 0.88],
-  /** Crest height of the first line, as a share of the card height; each next line is lower. */
-  amplitudeRatio: 0.07,
-  breatheY: 3,
-  breatheScaleY: 0.14,
-  width: 1.8,
-  /** The most the body text (4.5:1 on the gradient's mid stop) allows where a line crosses it. */
-  opacity: 0.2,
+// The ripples of Accueil's forest card (12.2-19, owner: "ce n'est pas l'animation de l'écran de
+// connexion … et les lignes vert clair rendent le tout illisible"). The sign-in screen's animation,
+// retold: three blobs behind the logo that spread outward and fade, one every third of a 10 s linear
+// cycle (`HeroSection`, scale 0.3 to 1.6 at 15 % then on, opacity in by 6 % and nearly out by 70 %).
+// On the card they are discs spreading from behind its button to its farthest corner, in a green
+// only slightly lighter than the card gradient and at most 0.14 opaque, so the title, the factors
+// line and the segments keep their contrast (tested with all three discs over one another).
+export const forestRipples = {
+  cycleMs: 10000,
+  count: 3,
+  /** Diameter of a disc at scale 1, in points. */
+  size: 48,
+  scaleStart: 0.3,
+  scaleEarly: 1.6,
+  /** Shares of the cycle: swollen to `scaleEarly`, in at its peak, faded to `fadeOpacity`. */
+  growAt: 0.15,
+  peakAt: 0.06,
+  fadeAt: 0.7,
+  peakOpacity: 0.14,
+  fadeOpacity: 0.035,
+  colour: "#557343",
 } as const
 // The static contours behind Accueil's "Nouveau relevé" glass card (12.2-19 fix round): a faint
 // texture under the text, never the forest card's full strength. The lines are drawn for the forest,

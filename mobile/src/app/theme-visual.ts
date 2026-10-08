@@ -11,6 +11,7 @@ import {
   downloadEdgeGlowDeep,
   explorerSheetGlass,
   forestHaloCore,
+  forestRipples,
   glassCtaEdges,
   glassCtaFills,
   glassCtaInk,
@@ -69,6 +70,8 @@ export type BrandVisual = {
     numeralBottom: string
     numeralFallback: string
     contourSage: string
+    /** The ripple discs of Accueil's card (12.2-19), a green only slightly lighter than it. */
+    ripple: string
     contourMoss: string
     glowTrack: string
     glowImage: string
@@ -205,6 +208,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       numeralBottom: "#C8DDA0",
       numeralFallback: "#C8DDA0",
       contourSage: "#B0C78E",
+      ripple: forestRipples.colour,
       contourMoss: "#89A33A",
       glowTrack: "rgba(255, 255, 255, 0.14)",
       glowImage: buildLinearGradient(90, [

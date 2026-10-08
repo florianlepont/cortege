@@ -222,9 +222,25 @@ describe("ResumeCard", () => {
   test.each([
     ["the start card", null],
     ["the resume card", makeSurvey()],
-  ])("%s carries the flowing waves (12.2-19 fix round)", (_name, draft) => {
+  ])("%s ripples from behind its button, like the sign-in screen (12.2-19)", (_name, draft) => {
     mount(draft)
-    expect(tree.root.findByType("ForestCard" as never).props.waves).toBe(true)
+    const card = () => tree.root.findByType("ForestCard" as never)
+    expect(card().props.ripples).toBe(true)
+    expect(card().props).not.toHaveProperty("waves")
+    // Until the button is measured the rings have no point of their own.
+    expect(card().props.rippleOrigin).toBeNull()
+    const wrapper = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-button",
+    )
+    expect(wrapper.findByType("AppButton" as never)).toBeTruthy()
+    act(() =>
+      wrapper.props.onLayout({ nativeEvent: { layout: { x: 230, y: 8, width: 110, height: 44 } } }),
+    )
+    // The row sits at the card's padding: the centre of the button, in the card's space.
+    expect(card().props.rippleOrigin).toEqual({
+      x: RESUME_LAYOUT.padding + 230 + 55,
+      y: RESUME_LAYOUT.padding + 8 + 22,
+    })
   })
 
   test("six factors with four context slots filled read 6, not the 71 percent rounded to 7 (12.2-14)", () => {

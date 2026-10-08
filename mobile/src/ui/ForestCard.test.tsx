@@ -31,10 +31,11 @@ jest.mock("react-native", () => {
   }
 })
 
-jest.mock("./ForestWaves", () => {
+jest.mock("./ForestRipples", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
-    ForestWaves: (props: Record<string, unknown>) => ReactRef.createElement("ForestWaves", props),
+    ForestRipples: (props: Record<string, unknown>) =>
+      ReactRef.createElement("ForestRipples", props),
   }
 })
 
@@ -169,17 +170,22 @@ describe("ForestCard", () => {
     expect(contours[0].props.animated).toBe(false)
   })
 
-  test("no waves by default", () => {
+  test("no ripples by default", () => {
     const { tree } = render()
-    expect(tree.root.findAll((n) => (n.type as unknown) === "ForestWaves")).toHaveLength(0)
+    expect(tree.root.findAll((n) => (n.type as unknown) === "ForestRipples")).toHaveLength(0)
   })
 
-  test("waves: the waves are the one animated layer, over still contours, inside the clip", () => {
-    const { tree } = render({ waves: true })
+  test("ripples: the one animated layer, over still contours, inside the clip, from the point given", () => {
+    const origin = { x: 280, y: 50 }
+    const { tree } = render({ ripples: true, rippleOrigin: origin })
     const contours = tree.root.findAll((n) => (n.type as unknown) === "ContourLines")
     expect(contours[0].props.animated).toBe(false)
     const clipView = tree.root.findAll((n) => (n.type as unknown) === "View")[1]
-    expect(clipView.findAll((n) => (n.type as unknown) === "ForestWaves")).toHaveLength(1)
+    const ripples = clipView.findAll((n) => (n.type as unknown) === "ForestRipples")
+    expect(ripples).toHaveLength(1)
+    expect(ripples[0].props.origin).toBe(origin)
+    // No wave lines any more (12.2-19 third round).
+    expect(tree.root.findAll((n) => (n.type as unknown) === "ForestWaves")).toHaveLength(0)
   })
 
   test("contours={false} omits the contour layer", () => {

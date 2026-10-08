@@ -24,7 +24,7 @@ import {
   edgePulseMotion,
   explorerSheetGlass,
   forestStops,
-  forestWaves,
+  forestRipples,
   mixWithWhite,
   withAlpha,
 } from "./visual-tokens"
@@ -753,34 +753,79 @@ describe("offline download progress bar (12.2-19 third round)", () => {
   })
 })
 
-describe("forest card waves (12.2-19 fix round)", () => {
+describe("forest card ripples (12.2-19 third round: the sign-in screen's)", () => {
   const forest = themes.light.visual.forest
+  const r = forestRipples
 
-  test("one sage line, faint enough that the card's text keeps AA where it crosses a wave", () => {
+  // Opacity of one disc `p` through its cycle, the keyframes of `rippleAt`.
+  function discOpacity(p: number): number {
+    const xs = [0, r.peakAt, r.fadeAt, 1]
+    const ys = [0, r.peakOpacity, r.fadeOpacity, 0]
+    for (let i = 0; i < xs.length - 1; i += 1) {
+      if (p >= xs[i] && p <= xs[i + 1]) {
+        return ys[i] + ((p - xs[i]) / (xs[i + 1] - xs[i])) * (ys[i + 1] - ys[i])
+      }
+    }
+    return 0
+  }
+
+  // The most the three discs ever cover a point together (at the button all three overlap).
+  function worstStack(): number {
+    let worst = 0
+    for (let step = 0; step <= 1000; step += 1) {
+      const phase = step / 1000
+      let clear = 1
+      for (let index = 0; index < r.count; index += 1) {
+        clear *= 1 - discOpacity((((phase - index / r.count) % 1) + 1) % 1)
+      }
+      worst = Math.max(worst, 1 - clear)
+    }
+    return worst
+  }
+
+  test("the sign-in rhythm: three discs, a third of a 10 s cycle apart", () => {
+    expect(r.cycleMs).toBe(10000)
+    expect(r.count).toBe(3)
+    expect([r.scaleStart, r.scaleEarly, r.growAt]).toEqual([0.3, 1.6, 0.15])
+  })
+
+  test("calm: at most 0.14 to 0.16 at the peak, nearly gone by 70 % of the cycle", () => {
+    expect(r.peakOpacity).toBeGreaterThanOrEqual(0.12)
+    expect(r.peakOpacity).toBeLessThanOrEqual(0.16)
+    expect(r.fadeOpacity).toBeLessThan(r.peakOpacity / 2)
+  })
+
+  test("a green only slightly lighter than the card, not a light green line", () => {
+    expect(forest.ripple).toBe(r.colour)
+    expect(themes.dark.visual.forest.ripple).toBe(r.colour)
     for (const stop of Object.values(forestStops)) {
-      const under = compositeOver(withAlpha(forest.contourSage, forestWaves.opacity), stop)
-      expect(contrastRatio(forest.body, under)).toBeGreaterThanOrEqual(4.5)
+      const lifted = compositeOver(withAlpha(r.colour, r.peakOpacity), stop)
+      expect(relativeLuminance(lifted)).toBeGreaterThan(relativeLuminance(stop))
+      expect(contrastRatio(lifted, stop)).toBeLessThan(1.2)
+    }
+    // Far darker than the sage of the old wave lines.
+    expect(relativeLuminance(r.colour)).toBeLessThan(relativeLuminance(forest.contourSage) / 2)
+  })
+
+  test("the title and the factors line keep 4.5:1 under all three discs at their worst", () => {
+    const stack = worstStack()
+    expect(stack).toBeGreaterThan(r.peakOpacity)
+    for (const stop of Object.values(forestStops)) {
+      const under = compositeOver(withAlpha(r.colour, stack), stop)
       expect(contrastRatio(forest.title, under)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(forest.body, under)).toBeGreaterThanOrEqual(4.5)
     }
-    expect(themes.dark.visual.forest.contourSage).toBe(forest.contourSage)
   })
 
-  test("both loops last 8 to 14 s, the breath on the sign-in ripples' 10 s cycle", () => {
-    for (const ms of [forestWaves.travelMs, forestWaves.breatheMs]) {
-      expect(ms).toBeGreaterThanOrEqual(8000)
-      expect(ms).toBeLessThanOrEqual(14000)
+  test("the filled segments keep 3:1 under the lightest disc at its peak", () => {
+    for (const stop of Object.values(forestStops)) {
+      const under = compositeOver(withAlpha(r.colour, r.peakOpacity), stop)
+      expect(contrastRatio(forest.glowFallback, under)).toBeGreaterThanOrEqual(3)
+      // The empty segment's track reads as before: the disc takes almost nothing from it.
+      const track = (bg: string) => compositeOver(forest.tagFill, bg)
+      expect(contrastRatio(track(under), under)).toBeGreaterThan(
+        contrastRatio(track(stop), stop) - 0.1,
+      )
     }
-    expect(forestWaves.breatheMs).toBe(10000)
-  })
-
-  test("a gentle swell: the lines stay in the lower half and inside the card as they breathe", () => {
-    expect(forestWaves.baselines).toHaveLength(3)
-    for (const baseline of forestWaves.baselines) {
-      expect(baseline).toBeGreaterThan(0.5)
-      expect(baseline).toBeLessThan(1)
-    }
-    expect(forestWaves.amplitudeRatio).toBeLessThanOrEqual(0.1)
-    expect(forestWaves.breatheScaleY).toBeLessThanOrEqual(0.2)
-    expect(forestWaves.breatheY).toBeLessThanOrEqual(4)
   })
 })
