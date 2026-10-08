@@ -410,6 +410,8 @@ export const brandInteraction = {
 // Phase 3 (D-0 token slice, FLOW-09): parcel map polygon colors, readable in direct sunlight.
 // Selected outranks studied; studied outranks the free/neutral default.
 export const brandMapTokens = {
+  // Phase 23: the ground of the recoloured dark Plan IGN basemap (`map/maplibre/dark-style.ts`).
+  darkBasemapBackground: "#0E1512",
   parcelSelected: brandColors.terracotta,
   parcelSelectedFill: "rgba(205, 88, 51, 0.30)",
   parcelStudied: brandColors.moss,

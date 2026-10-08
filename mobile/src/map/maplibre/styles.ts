@@ -4,10 +4,10 @@ import type { BasemapKey } from "../basemaps"
 const GEOPF = "https://data.geopf.fr"
 
 /**
- * Plan IGN, the vector map of the Géoplateforme (no key needed). The grey variant is used in both
- * themes for now; IGN publishes no dark style, so the dark recolouring comes later.
+ * Plan IGN, the vector map of the Géoplateforme (no key needed), in its colour "standard" variant.
+ * IGN publishes no dark style: the dark theme recolours this one (`dark-style.ts`).
  */
-export const PLAN_IGN_STYLE_URL = `${GEOPF}/annexes/ressources/vectorTiles/styles/PLAN.IGN/gris.json`
+export const PLAN_IGN_STYLE_URL = `${GEOPF}/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json`
 
 const ORTHO_TILES = `${GEOPF}/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}`
 

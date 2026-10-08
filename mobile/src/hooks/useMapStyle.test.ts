@@ -12,7 +12,14 @@ jest.mock("../storage/offline-map", () => ({
 const mockStyleExists = jest.fn()
 jest.mock("../map/offline-styles", () => ({
   offlineStyleExists: (...args: unknown[]) => mockStyleExists(...args),
-  offlineStyleUri: (dir: string, basemap: string) => `${dir}offline-styles/${basemap}.json`,
+  offlineStyleUri: (dir: string, basemap: string, dark = false) =>
+    `${dir}offline-styles/${basemap}${dark ? "-dark" : ""}.json`,
+}))
+const mockScheme = { value: "light" }
+jest.mock("../app/theme", () => ({ useBrandTheme: () => ({ scheme: mockScheme.value }) }))
+const mockFetchDark = jest.fn()
+jest.mock("../map/maplibre/plan-ign-style", () => ({
+  fetchDarkPlanIgnStyle: (...args: unknown[]) => mockFetchDark(...args),
 }))
 
 import { cleanup, renderHook, waitFor } from "@testing-library/react-native/pure"
@@ -20,6 +27,8 @@ import { PLAN_IGN_STYLE_URL } from "../map/maplibre/styles"
 import { useMapStyle } from "./useMapStyle"
 
 beforeEach(() => {
+  mockScheme.value = "light"
+  mockFetchDark.mockReset()
   mockOffline.value = false
   mockFlag.value = true
   mockListOfflineAreas.mockResolvedValue([{ status: "ready" }])
@@ -63,5 +72,44 @@ describe("useMapStyle", () => {
     const { result } = await renderHook(() => useMapStyle("map"))
     expect(result.current.cadastreInStyle).toBe(false)
     expect(mockListOfflineAreas).not.toHaveBeenCalled()
+  })
+
+  test("dark theme, online: the recoloured plan style once it is ready", async () => {
+    mockScheme.value = "dark"
+    const darkStyle = { version: 8, sources: {}, layers: [] }
+    mockFetchDark.mockResolvedValue(darkStyle)
+    const { result } = await renderHook(() => useMapStyle("map"))
+    await waitFor(() => expect(result.current.mapStyle).toBe(darkStyle))
+    expect(result.current.cadastreInStyle).toBe(false)
+  })
+
+  test("dark theme, online, recolouring failed: the published style stays", async () => {
+    mockScheme.value = "dark"
+    mockFetchDark.mockRejectedValue(new Error("offline"))
+    const { result } = await renderHook(() => useMapStyle("map"))
+    await waitFor(() => expect(mockFetchDark).toHaveBeenCalled())
+    expect(result.current.mapStyle).toBe(PLAN_IGN_STYLE_URL)
+  })
+
+  test("dark theme never recolours the satellite", async () => {
+    mockScheme.value = "dark"
+    const { result } = await renderHook(() => useMapStyle("satellite"))
+    expect(mockFetchDark).not.toHaveBeenCalled()
+    expect(result.current.cadastreInStyle).toBe(false)
+  })
+
+  test("dark theme, offline: the dark composite file, or the light one for an older pack", async () => {
+    mockScheme.value = "dark"
+    mockOffline.value = true
+    const { result } = await renderHook(() => useMapStyle("map"))
+    await waitFor(() => expect(result.current.cadastreInStyle).toBe(true))
+    expect(result.current.mapStyle).toBe("file:///mock/documents/offline-styles/map-dark.json")
+
+    mockStyleExists.mockImplementation(
+      async (_dir: string, _basemap: string, dark?: boolean) => !dark,
+    )
+    const older = await renderHook(() => useMapStyle("map"))
+    await waitFor(() => expect(older.result.current.cadastreInStyle).toBe(true))
+    expect(older.result.current.mapStyle).toBe("file:///mock/documents/offline-styles/map.json")
   })
 })

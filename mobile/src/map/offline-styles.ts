@@ -1,6 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy"
 import type { StyleSpecification } from "@maplibre/maplibre-react-native"
 import type { BasemapKey } from "./basemaps"
+import { darkenPlanIgnStyle } from "./maplibre/dark-style"
 import { CADASTRE_TILES, ORTHO_STYLE, PLAN_IGN_STYLE_URL } from "./maplibre/styles"
 
 /** The cadastre raster is part of the downloaded styles, so it is cached with the pack. */
@@ -40,9 +41,17 @@ export function offlineStylesDir(documentDirectory: string): string {
   return `${documentDirectory}offline-styles/`
 }
 
-/** `file://` URL of the composite style of a basemap (the native pack and the map read it). */
-export function offlineStyleUri(documentDirectory: string, basemap: BasemapKey): string {
-  return `${offlineStylesDir(documentDirectory)}${basemap}.json`
+/**
+ * `file://` URL of the composite style of a basemap (the native pack and the map read it). The dark
+ * variant exists for the plan basemap only: it shares the vector tiles of the light one, so one
+ * pack serves both themes.
+ */
+export function offlineStyleUri(
+  documentDirectory: string,
+  basemap: BasemapKey,
+  dark = false,
+): string {
+  return `${offlineStylesDir(documentDirectory)}${basemap}${dark ? "-dark" : ""}.json`
 }
 
 type FetchLike = (url: string) => Promise<{ ok: boolean; json: () => Promise<unknown> }>
@@ -51,7 +60,8 @@ type FetchLike = (url: string) => Promise<{ ok: boolean; json: () => Promise<unk
  * Writes the composite style of a basemap (basemap + cadastre) to the document directory and
  * returns its `file://` URL. The Plan IGN vector style is fetched (online) and kept as published
  * apart from the cadastre layer; the orthophoto style is built in the app. Native offline packs take
- * a style URL, not an inline style, hence the file.
+ * a style URL, not an inline style, hence the file. For the plan basemap the dark recolouring is
+ * written next to it (`map-dark.json`); the returned URL is the light one, the one the pack uses.
  */
 export async function writeOfflineStyle(
   documentDirectory: string,
@@ -73,13 +83,20 @@ export async function writeOfflineStyle(
   })
   const uri = offlineStyleUri(documentDirectory, basemap)
   await FileSystem.writeAsStringAsync(uri, JSON.stringify(withCadastre(base)))
+  if (basemap === "map") {
+    await FileSystem.writeAsStringAsync(
+      offlineStyleUri(documentDirectory, basemap, true),
+      JSON.stringify(withCadastre(darkenPlanIgnStyle(base))),
+    )
+  }
   return uri
 }
 
 export async function offlineStyleExists(
   documentDirectory: string,
   basemap: BasemapKey,
+  dark = false,
 ): Promise<boolean> {
-  const info = await FileSystem.getInfoAsync(offlineStyleUri(documentDirectory, basemap))
+  const info = await FileSystem.getInfoAsync(offlineStyleUri(documentDirectory, basemap, dark))
   return info.exists
 }
