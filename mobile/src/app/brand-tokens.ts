@@ -372,6 +372,7 @@ export const brandComponentTokens = {
     minHeight: 44,
     minHeightSmall: 36,
     minHeightLarge: 50,
+    minHeightPanel: 46, // 12.2-19: the offline panel's download, between md (too thin) and lg (too big)
     horizontalPaddingSmall: 10,
     horizontalPadding: 16,
     horizontalPaddingLarge: 14,

@@ -1,6 +1,7 @@
 import { memo, useMemo, useState } from "react"
 import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
+import { brandComponentTokens } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import type { AreaDownloadEstimate } from "../../map/tile-math"
 import { fr } from "../../i18n"
@@ -69,11 +70,13 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
           : t.estimate({ tiles: estimate.totalTileCount, bytes: estimate.estimatedBytes })}
       </Text>
 
-      {/* The panel's one action is the big glass call to action (D-27c, D-28): 12.2-19, the owner
-          found the `md` button too thin, so it is `lg` (50 pt) across the whole panel. */}
+      {/* The panel's one action is the big glass call to action (D-27c, D-28), across the whole
+          panel. 12.2-19: the owner found the `md` 44 pt too thin and the `lg` 50 pt too big, so
+          it is 46 pt (`button.minHeightPanel`), the regular control drawn taller. */}
       <GlassButton
         label={downloading ? t.downloading : t.downloadThisArea}
-        size="lg"
+        size="md"
+        minHeight={brandComponentTokens.button.minHeightPanel}
         onPress={handleDownload}
         disabled={downloading || estimate.exceedsCap}
         loading={downloading}

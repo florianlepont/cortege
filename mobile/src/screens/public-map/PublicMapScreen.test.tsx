@@ -666,8 +666,8 @@ describe("PublicMapScreen", () => {
           (node.type as unknown) === "GlassButton" &&
           node.props.label === fr.offlineMap.areas.downloadThisArea,
       )
-      // 12.2-19: the big call to action (50 pt) across the whole panel, not the thin `md` one.
-      expect(download.props.size).toBe("lg")
+      // 12.2-19: the call to action across the whole panel, 46 pt (md too thin, lg too big).
+      expect(download.props.minHeight).toBe(46)
       expect(download.props.style).toMatchObject({ alignSelf: "stretch" })
       expect(download.props.disabled).toBe(false)
       await act(async () => {

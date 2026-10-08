@@ -141,6 +141,14 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
     }
   })
 
+  test("a given height replaces the size's own, the size's padding kept (offline panel, 46 pt)", () => {
+    const { style } = render({ size: "md", minHeight: 46 })
+    expect(style.minHeight).toBe(46)
+    expect(style.paddingHorizontal).toBe(16)
+    // Every other button keeps its size's height.
+    expect(render({ size: "lg" }).style.minHeight).toBe(50)
+  })
+
   test("the small size uses the meta label", () => {
     expect(flatten(render({ size: "sm" }).label.props.style).fontSize).toBe(12)
     expect(flatten(render().label.props.style).fontSize).toBe(16)

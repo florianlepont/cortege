@@ -192,6 +192,12 @@ describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => 
     expect(modifier(render({ size: "sm" }).text, "font")).toMatchObject({ size: 12 })
   })
 
+  test("a given height is the host's floor, on the regular control (offline panel, 46 pt)", () => {
+    const { host, button } = render({ size: "md", minHeight: 46 })
+    expect(modifier(button, "controlSize")).toEqual({ $type: "controlSize", size: "regular" })
+    expect(flatten(host.props.style).minHeight).toBe(46)
+  })
+
   test("pressing taps once and calls onPress", () => {
     const onPress = jest.fn()
     const { button } = render({ onPress })

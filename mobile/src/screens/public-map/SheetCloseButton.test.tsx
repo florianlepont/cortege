@@ -41,7 +41,7 @@ jest.mock("../../app/theme", () => {
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
 
-import { brandInteraction } from "../../app/brand-tokens"
+import { brandComponentTokens, brandInteraction } from "../../app/brand-tokens"
 import { buildTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { OfflineAreasSheet } from "./OfflineAreasSheet"
@@ -132,6 +132,15 @@ describe("OfflineAreasSheet text in dark mode (12.2-19 fix round)", () => {
     const line = render(true).root.findByType("Text" as never)
     expect(line.props.children).toBe(fr.offlineMap.areas.tooLarge)
     expect(flat(line.props.style).color).toBe(dark.onSurface.danger)
+  })
+
+  test("the download button is 46 pt, between md and lg, across the whole panel (12.2-19)", () => {
+    const button = render(false).root.findByType("GlassButton" as never)
+    expect(button.props.label).toBe(fr.offlineMap.areas.downloadThisArea)
+    expect(button.props.size).toBe("md")
+    expect(button.props.minHeight).toBe(brandComponentTokens.button.minHeightPanel)
+    expect(brandComponentTokens.button.minHeightPanel).toBe(46)
+    expect(button.props.style).toMatchObject({ alignSelf: "stretch" })
   })
 
   test("the close button is the glass circle", () => {

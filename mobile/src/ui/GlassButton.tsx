@@ -33,6 +33,11 @@ type GlassButtonProps = {
   /** `lg` (50 pt) for the big call to action of a screen, the default. */
   size?: AppButtonSize
   /**
+   * Height of the button in points, in place of the size's own (a token, never below the 44 pt
+   * hit target): the one panel button drawn between two sizes (`button.minHeightPanel`).
+   */
+  minHeight?: number
+  /**
    * Ionicons glyph before the label. The native iOS 26 button can only draw SF Symbols: the glyph
    * is mapped through `NATIVE_SYMBOLS`, and an unmapped one is left out there.
    */
@@ -99,6 +104,7 @@ export function GlassButton({
   label,
   variant = "primary",
   size = "lg",
+  minHeight,
   leadingIcon,
   accessibilityLabel,
   disabled = false,
@@ -128,7 +134,7 @@ export function GlassButton({
         label={label}
         accessibilityLabel={a11yLabel}
         controlSize={geometry.control}
-        minHeight={geometry.minHeight}
+        minHeight={minHeight ?? geometry.minHeight}
         variant={variant}
         tint={secondary ? undefined : cta.tint}
         ink={secondary ? cta.secondary.ink : cta.ink}
@@ -157,6 +163,7 @@ export function GlassButton({
       style={[
         styles.base,
         styles[size],
+        minHeight === undefined ? null : { minHeight },
         disabled ? styles.flatOff : secondary ? styles.outline : styles.flat,
         style,
       ]}
