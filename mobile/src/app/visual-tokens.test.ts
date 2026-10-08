@@ -23,9 +23,6 @@ import {
   edgeGlowGreens,
   edgePulseMotion,
   explorerSheetGlass,
-  buildForestShield,
-  forestAurora,
-  forestShieldImage,
   forestStops,
   mixWithWhite,
   withAlpha,
@@ -755,104 +752,4 @@ describe("offline download progress bar (12.2-19 third round)", () => {
   })
 })
 
-describe("forest card aurora (12.2-19 fourth round: sketch 010, A + F)", () => {
-  const a = forestAurora
-  const discs = [a.moss, a.teal, a.ochre]
-
-  // The brightest the aurora ever makes a point of the card: all three discs at their peak, one
-  // over the other (they cross while drifting), over a stop of the card gradient.
-  function worstAurora(stop: string): string {
-    return discs.reduce(
-      (under, disc) => compositeOver(withAlpha(disc.colour, disc.peak), under),
-      stop,
-    )
-  }
-
-  // The shield's alpha at a share of the card's width (its stops are percents).
-  function shieldAt(share: number): number {
-    const stopsAt = a.shield.stops
-    for (let i = 0; i < stopsAt.length - 1; i += 1) {
-      const [fromAlpha, fromAt] = stopsAt[i]
-      const [toAlpha, toAt] = stopsAt[i + 1]
-      if (share * 100 <= toAt) {
-        return fromAlpha + ((share * 100 - fromAt) / (toAt - fromAt)) * (toAlpha - fromAlpha)
-      }
-    }
-    return 0
-  }
-
-  test("three discs of the sketch, moss, teal and a faint ochre, at 0.30 to 0.45 at their peak", () => {
-    for (const disc of discs) {
-      expect(disc.peak).toBeGreaterThanOrEqual(0.3)
-      expect(disc.peak).toBeLessThanOrEqual(0.45)
-      // A glow: each lifts the card a little wherever it passes.
-      for (const stop of stops) {
-        const lifted = compositeOver(withAlpha(disc.colour, disc.peak), stop)
-        expect(relativeLuminance(lifted)).toBeGreaterThan(relativeLuminance(stop))
-      }
-    }
-    expect(a.ochre.peak).toBeLessThan(a.moss.peak)
-    // A soft disc drawn once: full at the centre, nothing at the rim, never brighter than its peak.
-    expect(a.falloff[0]).toEqual([0, 1])
-    expect(a.falloff[a.falloff.length - 1]).toEqual([1, 0])
-    for (const [, share] of a.falloff) expect(share).toBeLessThanOrEqual(1)
-  })
-
-  test("the shield darkens the text side and is gone by about 80 % of the width", () => {
-    expect(forestShieldImage).toBe(buildForestShield())
-    expect(forestShieldImage).toBe(
-      "linear-gradient(90deg, rgba(14, 34, 16, 0.55) 0%, rgba(14, 34, 16, 0.3) 55%, " +
-        "rgba(14, 34, 16, 0) 82%)",
-    )
-    expect(a.shield.colour).toBe(forestStops.c)
-    expect(shieldAt(0)).toBeCloseTo(0.55)
-    expect(shieldAt(0.85)).toBe(0)
-    // It only ever fades towards the right, so the text's worst point is the column's end.
-    for (let share = 0; share < 1; share += 0.05) {
-      expect(shieldAt(share + 0.05)).toBeLessThanOrEqual(shieldAt(share))
-    }
-  })
-
-  test("the title and the factors line keep 4.5:1 over the brightest aurora, shield applied", () => {
-    // Same text colours in both schemes: the card is always forest.
-    expect(themes.dark.visual.forest.title).toBe(themes.light.visual.forest.title)
-    expect(themes.dark.visual.forest.body).toBe(themes.light.visual.forest.body)
-    const forest = themes.light.visual.forest
-    for (const stop of stops) {
-      for (let share = 0; share <= a.textReach; share += 0.02) {
-        const under = compositeOver(withAlpha(a.shield.colour, shieldAt(share)), worstAurora(stop))
-        expect(contrastRatio(forest.title, under)).toBeGreaterThanOrEqual(4.5)
-        expect(contrastRatio(forest.body, under)).toBeGreaterThanOrEqual(4.5)
-      }
-    }
-  })
-
-  test("the filled segments keep 3:1 where there is no shield, a contour line under them", () => {
-    for (const stop of stops) {
-      const aurora = worstAurora(stop)
-      const line = compositeOver(withAlpha(a.trace.light, a.trace.maxOpacity), aurora)
-      expect(contrastRatio(a.progressDone, aurora)).toBeGreaterThanOrEqual(3)
-      expect(contrastRatio(a.progressDone, line)).toBeGreaterThanOrEqual(3)
-      // The empty track stays darker than a filled segment.
-      const track = compositeOver(themes.light.visual.forest.tagFill, aurora)
-      expect(relativeLuminance(track)).toBeLessThan(relativeLuminance(a.progressDone))
-    }
-    // The deep contour green is the fainter of the two.
-    expect(relativeLuminance(a.trace.deep)).toBeLessThan(relativeLuminance(a.trace.light))
-  })
-
-  test("the contours stay faint and thin, and fade before the text column", () => {
-    expect(a.trace.maxOpacity).toBeLessThanOrEqual(0.35)
-    expect(a.trace.width).toBe(1)
-    expect(a.textReach).toBeGreaterThanOrEqual(0.6)
-    expect(a.textReach).toBeLessThan(1)
-  })
-
-  test.each(schemes)("%s: the button is opaque, so its label keeps its contrast", (scheme) => {
-    const { pill } = themes[scheme].visual
-    expect(pill.fallback).toMatch(/^#[0-9A-F]{6}$/i)
-    expect(pill.top).toMatch(/^#[0-9A-F]{6}$/i)
-    expect(contrastRatio(pill.label, pill.fallback)).toBeGreaterThanOrEqual(4.5)
-    expect(contrastRatio(pill.label, pill.top)).toBeGreaterThanOrEqual(4.5)
-  })
-})
+// The forest card aurora's colours and readable zones: `forest-aurora-tokens.test.ts`.

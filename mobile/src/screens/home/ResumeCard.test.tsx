@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { brandSpacing4 } from "../../app/brand-tokens"
-import { forestAurora } from "../../app/visual-tokens"
+import { forestAurora } from "../../app/forest-aurora-tokens"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { RESUME_LAYOUT, resumeCardHeight } from "./layout-budget"
@@ -37,7 +37,6 @@ jest.mock("react-native", () => {
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
-jest.mock("../../ui/ForestAurora", () => ({ ForestAurora: "ForestAurora" }))
 
 const t = fr.home.hero
 
@@ -213,38 +212,51 @@ describe("ResumeCard", () => {
     expect(texts).toContain(t.resumeTitleUnnamed)
   })
 
-  test("the card is a resume forest card, without the full-card contours (12.2-19)", () => {
+  test("the card is a resume forest card with the aurora, the standard shield (12.2-19)", () => {
     mount(null)
     const card = tree.root.findByType("ForestCard" as never)
     expect(card.props.variant).toBe("resume")
     expect(card.props.testID).toBe("home-resume-card")
-    // The owner: the lines behind the text hurt the reading.
-    expect(card.props.contours).toBe(false)
+    // The aurora is the card's default backdrop: nothing switches it off or replaces it.
+    expect(card.props.motion).toBeUndefined()
+    expect(card.props.shield).toBeUndefined()
+    expect(card.props).not.toHaveProperty("backdrop")
   })
 
-  test.each([
-    ["the start card", null],
-    ["the resume card", makeSurvey()],
-  ])("%s carries the aurora, its contours right of the text only (12.2-19)", (_name, draft) => {
-    mount(draft)
-    const aurora = () => tree.root.findByType("ForestCard" as never).props.backdrop
-    expect(aurora().type).toBe("ForestAurora")
-    expect(tree.root.findByType("ForestCard" as never).props).not.toHaveProperty("ripples")
-    // Until the button is measured the contours have no room of their own.
-    expect(aurora().props.traceStart).toBeNull()
-    const wrapper = tree.root.find(
-      (node) => (node.type as unknown) === "View" && node.props.testID === "home-resume-button",
+  const zone = () => tree.root.findByType("ForestCard" as never).props.zone
+  const layoutOf = (testID: string, layout: Record<string, number>) => {
+    const node = tree.root.find(
+      (inner) => (inner.type as unknown) === "View" && inner.props.testID === testID,
     )
+    act(() => node.props.onLayout({ nativeEvent: { layout } }))
+    return node
+  }
+  const BUTTON = { x: 230, y: 8, width: 110, height: 44 }
+
+  test("the start card's clear zone is right of the text column, the whole height", () => {
+    mount(null)
+    // Until the button is measured the aurora has no zone: nothing is drawn yet.
+    expect(zone()).toBeNull()
+    const wrapper = layoutOf("home-resume-button", BUTTON)
     expect(wrapper.findByType("AppButton" as never)).toBeTruthy()
-    act(() =>
-      wrapper.props.onLayout({ nativeEvent: { layout: { x: 230, y: 8, width: 110, height: 44 } } }),
-    )
     // The row sits at the card's padding; the text column ends a row gap before the button.
-    expect(aurora().props.traceStart).toBe(RESUME_LAYOUT.padding + 230 - brandSpacing4.smd)
+    expect(zone()).toEqual({ left: RESUME_LAYOUT.padding + 230 - brandSpacing4.smd })
     const row = tree.root.find(
       (node) => (node.type as unknown) === "View" && styleOf(node).alignItems === "center",
     )
     expect(styleOf(row).gap).toBe(brandSpacing4.smd)
+  })
+
+  test("with a draft the segments sit in the shielded band, half the gap under the button", () => {
+    mount(makeSurvey())
+    layoutOf("home-resume-button", BUTTON)
+    // The band is not known yet: still nothing drawn, so the segments never show unshielded.
+    expect(zone()).toBeNull()
+    layoutOf("home-resume-progress", { x: 16, y: 92, width: 330, height: 6 })
+    expect(zone()).toEqual({
+      left: RESUME_LAYOUT.padding + 230 - brandSpacing4.smd,
+      bottom: 92 - RESUME_LAYOUT.progressGap / 2,
+    })
   })
 
   test("the filled segments are the pale forest green that keeps 3:1 over the aurora", () => {

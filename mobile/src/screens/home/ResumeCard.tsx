@@ -2,12 +2,11 @@ import { useMemo, useState } from "react"
 import { LayoutChangeEvent, StyleSheet, View } from "react-native"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
+import { forestAurora } from "../../app/forest-aurora-tokens"
 import { fr } from "../../i18n"
-import { forestAurora } from "../../app/visual-tokens"
 import type { LocalSurvey } from "../../storage/types"
 import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
-import { ForestAurora } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
 import { RESUME_LAYOUT } from "./layout-budget"
 
@@ -34,8 +33,10 @@ type ResumeCardProps = {
  * "Nouveau relevé" footer read as an action of the draft, so it left the card for `NewSurveyCard`,
  * drawn under it by Accueil only beside a draft. Fourth fix round (owner: the ripples did not
  * please and the full-card contour lines hurt the reading, "un mélange de A et F" from sketch 010):
- * both forms of the card carry `ForestAurora` (drifting aurora, a shield under the text, contours
- * tracing themselves right of the text only) as their one animated layer, and no contour layer.
+ * both forms of the card carry the aurora (`ForestCard`'s backdrop: a shield under the text,
+ * contours tracing themselves right of the text only) as their one animated layer. Its clear zone
+ * is right of the text column and, with a draft, above the progress segments, which sit in the
+ * shielded band.
  */
 export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCardProps) {
   const theme = useBrandTheme()
@@ -51,14 +52,18 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
   const handleButtonLayout = (event: LayoutChangeEvent): void => {
     setTraceStart(RESUME_LAYOUT.padding + event.nativeEvent.layout.x - ROW_GAP)
   }
+  // With a draft, the segments sit in the shielded band: it starts half the gap above them.
+  const [bandTop, setBandTop] = useState<number | null>(null)
+  const handleProgressLayout = (event: LayoutChangeEvent): void => {
+    setBandTop(event.nativeEvent.layout.y - RESUME_LAYOUT.progressGap / 2)
+  }
+  const zone =
+    traceStart === null || (resumeDraft && bandTop === null)
+      ? null
+      : { left: traceStart, bottom: resumeDraft ? (bandTop ?? undefined) : undefined }
 
   return (
-    <ForestCard
-      variant="resume"
-      contours={false}
-      backdrop={<ForestAurora traceStart={traceStart} testID="home-resume-aurora" />}
-      testID="home-resume-card"
-    >
+    <ForestCard variant="resume" zone={zone} testID="home-resume-card">
       <View style={styles.main}>
         <View style={styles.row}>
           <View style={styles.copy}>
@@ -84,7 +89,12 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
           </View>
         </View>
         {resumeDraft ? (
-          <View style={styles.progressRow} accessible={false}>
+          <View
+            style={styles.progressRow}
+            accessible={false}
+            onLayout={handleProgressLayout}
+            testID="home-resume-progress"
+          >
             {Array.from({ length: FACTOR_COUNT }, (_, index) => (
               <View
                 key={index}
@@ -144,7 +154,7 @@ function createStyles(theme: BrandTheme) {
       borderRadius: RESUME_LAYOUT.progressHeight / 2,
       backgroundColor: forest.tagFill,
     },
-    // The pale forest green: it keeps 3:1 over the brightest aurora (`visual-tokens.test.ts`).
+    // The pale forest green: 3:1 in the shielded band over the brightest aurora (token tests).
     progressSegmentDone: {
       backgroundColor: forestAurora.progressDone,
     },

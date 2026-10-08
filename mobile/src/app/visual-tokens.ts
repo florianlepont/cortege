@@ -335,51 +335,7 @@ export const contourDrift = {
   sageWidth: 1,
   mossWidth: 1.4,
 } as const
-// Accueil's forest card hero (12.2-19 fourth round, owner: "un mélange de A et F", sketch 010): an
-// aurora of three soft discs drifting behind the content, a shield darkening the text side, and
-// faint contours tracing themselves on the right (geometry and timing: `forest-aurora-shape.ts`).
-// Same values in both schemes, the card is always forest. The discs are deep greens and a faint
-// ochre so the title, the factors line and the segments keep their contrast with all three at
-// their peak over one another and a contour line on top (`visual-tokens.test.ts`).
-export const forestAurora = {
-  /** Colour and opacity at a disc's centre; it fades to nothing at its rim (`falloff`). */
-  moss: { colour: "#54902A", peak: 0.44 },
-  teal: { colour: "#2C8062", peak: 0.4 },
-  ochre: { colour: "#A2843A", peak: 0.3 },
-  /** [share of the radius, share of the peak]: a soft edge drawn once, no runtime blur. */
-  falloff: [
-    [0, 1],
-    [0.4, 0.7],
-    [0.75, 0.25],
-    [1, 0],
-  ],
-  /** Left to right darkening over the aurora and under the text: [alpha, percent of the width]. */
-  shield: {
-    colour: forestStops.c,
-    stops: [
-      [0.55, 0],
-      [0.3, 55],
-      [0, 82],
-    ],
-  },
-  /** How far the text column can reach, as a share of the card's width (about 60 % at most). */
-  textReach: 0.64,
-  /** The traced contours: two greens, at most `maxOpacity` and `width` pt thin. */
-  trace: { light: "#6E8F3A", deep: "#5A7A30", maxOpacity: 0.3, width: 1 },
-  /** Filled progress segments: the pale forest green, 3:1 over the brightest aurora. */
-  progressDone: "#C8DDA0",
-} as const
-
-/** The shield's gradient (`experimental_backgroundImage`). */
-export function buildForestShield(): string {
-  const { colour, stops } = forestAurora.shield
-  return buildLinearGradient(
-    90,
-    stops.map(([alpha, percent]) => [withAlpha(colour, alpha), percent] as const),
-  )
-}
-
-export const forestShieldImage = buildForestShield()
+// The forest card's aurora and shield (12.2-19) live in `forest-aurora-tokens.ts`.
 // The static contours behind Accueil's "Nouveau relevé" glass card (12.2-19 fix round): a faint
 // texture under the text, never the forest card's full strength. The lines are drawn for the forest,
 // so the light glass takes a little more of them than the dark one to show at all.

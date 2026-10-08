@@ -1,8 +1,9 @@
 import { ReactNode, useMemo } from "react"
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { brandRadius } from "../app/brand-tokens"
+import type { ForestShieldKey } from "../app/forest-aurora-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
-import { ContourLines } from "./ContourLines"
+import { type AuroraZone, ForestAurora } from "./ForestAurora"
 
 type ForestCardVariant = "resume" | "hero"
 
@@ -10,15 +11,19 @@ type ForestCardProps = {
   children?: ReactNode
   /** "resume" is the Home resume card (radius 26), "hero" the survey detail score card (28). */
   variant?: ForestCardVariant
-  /** Contour signature behind the content. */
-  contours?: boolean
-  /** Contour drift loop; false draws the static frame (Android, if frames drop). */
-  animatedContours?: boolean
   /**
-   * A layer drawn inside the clip, over the gradient and under the content: Accueil's aurora
-   * (`ForestAurora`, 12.2-19), which comes without the contours (`contours={false}`).
+   * The aurora and its tracing contours behind the content (`ForestAurora`, 12.2-19), on by
+   * default: every forest card has them. Off draws the bare gradient.
    */
-  backdrop?: ReactNode
+  motion?: boolean
+  /**
+   * The card's clear zone, where the aurora glows and the contours are drawn, measured by the
+   * caller around its text (`null` while measuring); absent, the text is taken to stay in the left
+   * part of the card. See `AuroraZone`.
+   */
+  zone?: AuroraZone | null
+  /** How dark the shield over the text is (`ForestShieldKey`). */
+  shield?: ForestShieldKey
   style?: StyleProp<ViewStyle>
   contentStyle?: StyleProp<ViewStyle>
   testID?: string
@@ -39,13 +44,19 @@ type ForestCardProps = {
  *
  * No `elevation` (it smears grey on Android); below API 28 the card simply has no glow. The card is
  * a container: accessibility labels belong to the caller.
+ *
+ * Motion (12.2-19 fifth round, owner: the aurora "aussi intégrée dans toutes les autres cartes
+ * forêt"): the card draws `ForestAurora` inside its clip, over the gradient and under the content,
+ * as its one animated layer (the old drifting contour layer is gone). Each caller passes the clear
+ * zone of its own layout, so the shield covers its text and the contours stay clear of it. A
+ * screen shows at most two animated hero layers (`__checks__/motion.test.ts`).
  */
 export function ForestCard({
   children,
   variant = "resume",
-  contours = true,
-  animatedContours = true,
-  backdrop,
+  motion = true,
+  zone,
+  shield,
   style,
   contentStyle,
   testID,
@@ -60,8 +71,7 @@ export function ForestCard({
       testID={testID}
     >
       <View style={[styles.clip, hero ? styles.clipHero : styles.clipResume]}>
-        {contours ? <ContourLines animated={animatedContours} /> : null}
-        {backdrop}
+        {motion ? <ForestAurora zone={zone} shield={shield} testID="forest-card-aurora" /> : null}
         <View style={contentStyle}>{children}</View>
       </View>
     </View>

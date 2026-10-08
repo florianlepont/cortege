@@ -1,5 +1,5 @@
-import { useEffect } from "react"
-import { StyleSheet, View } from "react-native"
+import { useEffect, useMemo, useState } from "react"
+import { type LayoutChangeEvent, StyleSheet, View } from "react-native"
 import Animated, {
   cancelAnimation,
   Easing,
@@ -9,70 +9,54 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withDelay,
   withRepeat,
   withTiming,
 } from "react-native-reanimated"
 import { Circle, Defs, LinearGradient, Path, RadialGradient, Stop, Svg } from "react-native-svg"
 import {
+  auroraCore,
+  forestAurora,
+  type ForestShieldKey,
+  forestShield,
+  forestShieldLayers,
+} from "../app/forest-aurora-tokens"
+import {
   AURORA_DISCS,
   type AuroraDisc,
+  type AuroraZone,
+  auroraRoam,
+  type Box,
+  type ClearZone,
+  resolveZone,
   TRACE_PATHS,
-  TRACE_TOTAL_MS,
   TRACE_VIEWBOX,
   traceMotion,
 } from "../app/forest-aurora-shape"
-import { forestAurora, forestShieldImage } from "../app/visual-tokens"
+import {
+  type DiscPlan,
+  discPoseAt,
+  planAurora,
+  type TraceLinePlan,
+  traceLineOffset,
+} from "../app/forest-motion"
 import { useScreenVisible } from "./useScreenVisible"
 
 const AnimatedPath = Animated.createAnimatedComponent(Path)
 
 const TRACE_TONES = ["light", "deep"] as const
 
-/** 0 to 1 and back over a phase of period 2, eased in and out: the alternate drift of a disc. */
-export function pingPong(phase: number): number {
-  "worklet"
-  const p = ((phase % 2) + 2) % 2
-  const x = p <= 1 ? p : 2 - p
-  return x * x * (3 - 2 * x)
-}
+export type { AuroraZone } from "../app/forest-aurora-shape"
 
-/** Offset and scale of a disc at `phase`: at rest for 0, at the far end of its drift for 1. */
-export function discPose(
-  phase: number,
-  disc: AuroraDisc,
-): { translateX: number; translateY: number; scale: number } {
-  "worklet"
-  const k = pingPong(phase)
-  const [from, to] = disc.travel.scale
-  return {
-    translateX: disc.travel.x * k,
-    translateY: disc.travel.y * k,
-    scale: from + (to - from) * k,
-  }
-}
-
-/** Dash offset of line `index` when the tracing is `drawn` (0 to 1) through: `dash` hides it. */
-export function traceOffset(drawn: number, index: number): number {
-  "worklet"
-  const { dash, drawMs, staggerMs } = traceMotion
-  const local = Math.min(1, Math.max(0, (drawn * TRACE_TOTAL_MS - index * staggerMs) / drawMs))
-  return dash * (1 - local * local * (3 - 2 * local))
-}
-
-/** Opacity of the drawn contours at a breathing `phase`: full at rest, `breatheLow` at most. */
-export function breathOpacity(phase: number): number {
-  "worklet"
-  return 1 - (1 - traceMotion.breatheLow) * pingPong(phase)
-}
-
-/** A seamless loop: the phase runs on by 2 (there and back) from where it stopped, linearly. */
-function loop(phase: SharedValue<number>, halfCycleMs: number) {
-  const from = phase.value % 2
+/**
+ * A seamless loop: the phase runs on by 1 from where it stopped, linearly. The plans loop at 1,
+ * so a pause never makes anything jump.
+ */
+function loop(phase: SharedValue<number>, periodMs: number) {
+  const from = ((phase.value % 1) + 1) % 1
   phase.value = from
   return withRepeat(
-    withTiming(from + 2, {
-      duration: 2 * halfCycleMs,
+    withTiming(from + 1, {
+      duration: periodMs,
       easing: Easing.linear,
       reduceMotion: ReduceMotion.System,
     }),
@@ -83,35 +67,46 @@ function loop(phase: SharedValue<number>, halfCycleMs: number) {
   )
 }
 
-type LayerProps = { run: boolean; reduced: boolean }
-
-function Disc({ disc, run, reduced }: LayerProps & { disc: AuroraDisc }) {
-  const phase = useSharedValue(0)
-  const tone = forestAurora[disc.key]
-  const id = `forest-aurora-${disc.key}`
-
+/** Runs `phase` while `run`, holds it where it is when not, puts it at `rest` under Reduce Motion. */
+function usePhase(start: number, periodMs: number, run: boolean, reduced: boolean) {
+  const phase = useSharedValue(start)
   useEffect(() => {
     if (reduced) {
-      // Still, at its rest.
       cancelAnimation(phase)
-      phase.value = 0
+      phase.value = start
       return undefined
     }
     if (!run) {
-      // Hidden: it stops where it is and drifts on from there when the screen comes back.
       cancelAnimation(phase)
       return undefined
     }
-    phase.value = loop(phase, disc.halfCycleMs)
+    phase.value = loop(phase, periodMs)
     return () => cancelAnimation(phase)
-  }, [disc.halfCycleMs, phase, reduced, run])
+  }, [periodMs, phase, reduced, run, start])
+  return phase
+}
 
-  const driftStyle = useAnimatedStyle(() => {
-    const pose = discPose(phase.value, disc)
+type LayerProps = { run: boolean; reduced: boolean; zone: ClearZone }
+
+function Disc({
+  disc,
+  plan,
+  run,
+  reduced,
+  zone,
+}: LayerProps & { disc: AuroraDisc; plan: DiscPlan }) {
+  const phase = usePhase(plan.start, disc.legs * disc.legMs, run, reduced)
+  const tone = forestAurora[disc.key]
+  const id = `forest-aurora-${disc.key}`
+  const half = disc.size / 2
+
+  const style = useAnimatedStyle(() => {
+    const pose = discPoseAt(phase.value, plan)
     return {
+      opacity: pose.alpha,
       transform: [
-        { translateX: pose.translateX },
-        { translateY: pose.translateY },
+        { translateX: zone.left + pose.across * (zone.right - zone.left) - half },
+        { translateY: pose.down * zone.bottom - half },
         { scale: pose.scale },
       ],
     }
@@ -120,24 +115,83 @@ function Disc({ disc, run, reduced }: LayerProps & { disc: AuroraDisc }) {
   return (
     <Animated.View
       testID="forest-aurora-disc"
-      style={[styles.disc, { width: disc.size, height: disc.size, ...disc.anchor }, driftStyle]}
+      style={[styles.disc, { width: disc.size, height: disc.size }, style]}
     >
       <Svg width={disc.size} height={disc.size}>
         <Defs>
           <RadialGradient id={id} cx="50%" cy="50%" r="50%">
             {forestAurora.falloff.map(([at, share]) => (
-              <Stop key={at} offset={at} stopColor={tone.colour} stopOpacity={tone.peak * share} />
+              <Stop
+                key={at}
+                offset={at}
+                stopColor={at === 0 ? auroraCore(disc.key) : tone.colour}
+                stopOpacity={tone.peak * share}
+              />
             ))}
           </RadialGradient>
         </Defs>
-        <Circle cx={disc.size / 2} cy={disc.size / 2} r={disc.size / 2} fill={`url(#${id})`} />
+        <Circle cx={half} cy={half} r={half} fill={`url(#${id})`} />
       </Svg>
     </Animated.View>
   )
 }
 
-function TraceLine({ d, index, drawn }: { d: string; index: number; drawn: SharedValue<number> }) {
-  const dashProps = useAnimatedProps(() => ({ strokeDashoffset: traceOffset(drawn.value, index) }))
+/** The shield over the text column and the bottom band, each fading into the clear zone. */
+function Shield({ zone, tone }: { zone: ClearZone; tone: ForestShieldKey }) {
+  const layers = forestShieldLayers[tone]
+  const { fade } = forestShield
+  return (
+    <>
+      {zone.left > 0 ? (
+        <>
+          <View
+            testID="forest-shield-column"
+            style={[
+              styles.panel,
+              { left: 0, width: zone.left, height: zone.bottom, backgroundColor: layers.column },
+            ]}
+          />
+          <View
+            testID="forest-shield-column-fade"
+            style={[
+              styles.panel,
+              {
+                left: zone.left,
+                width: fade.column,
+                height: zone.bottom,
+                experimental_backgroundImage: layers.columnFade,
+              },
+            ]}
+          />
+        </>
+      ) : null}
+      {zone.bottom < zone.height ? (
+        <>
+          <View
+            testID="forest-shield-band-fade"
+            style={[
+              styles.band,
+              {
+                top: zone.bottom - fade.band,
+                height: fade.band,
+                experimental_backgroundImage: layers.bandFade,
+              },
+            ]}
+          />
+          <View
+            testID="forest-shield-band"
+            style={[styles.band, { top: zone.bottom, bottom: 0, backgroundColor: layers.band }]}
+          />
+        </>
+      ) : null}
+    </>
+  )
+}
+
+function TraceLine({ d, index, plan, clock, loopMs, still }: TraceLineProps) {
+  const dashProps = useAnimatedProps(() => ({
+    strokeDashoffset: still ? 0 : traceLineOffset((((clock.value % 1) + 1) % 1) * loopMs, plan),
+  }))
   return (
     <AnimatedPath
       d={d}
@@ -151,45 +205,27 @@ function TraceLine({ d, index, drawn }: { d: string; index: number; drawn: Share
   )
 }
 
-function Trace({ start, run, reduced }: LayerProps & { start: number }) {
-  const drawn = useSharedValue(reduced ? 1 : 0)
-  const breath = useSharedValue(0)
+type TraceLineProps = {
+  d: string
+  index: number
+  plan: TraceLinePlan
+  clock: SharedValue<number>
+  loopMs: number
+  still: boolean
+}
 
-  useEffect(() => {
-    if (reduced) {
-      // Fully drawn and still.
-      cancelAnimation(drawn)
-      cancelAnimation(breath)
-      drawn.value = 1
-      breath.value = 0
-      return undefined
-    }
-    if (!run) {
-      cancelAnimation(drawn)
-      cancelAnimation(breath)
-      return undefined
-    }
-    // Drawn once: what is left of it, then the breathing starts from full strength.
-    const left = TRACE_TOTAL_MS * (1 - drawn.value)
-    if (left > 0) {
-      drawn.value = withTiming(1, {
-        duration: left,
-        easing: Easing.linear,
-        reduceMotion: ReduceMotion.System,
-      })
-    }
-    breath.value = withDelay(left, loop(breath, traceMotion.breatheHalfMs))
-    return () => {
-      cancelAnimation(drawn)
-      cancelAnimation(breath)
-    }
-  }, [breath, drawn, reduced, run])
-
-  const breathStyle = useAnimatedStyle(() => ({ opacity: breathOpacity(breath.value) }))
+function Trace({ lines, loopMs, start, run, reduced, zone }: TraceProps) {
+  const clock = usePhase(start, loopMs, run, reduced)
   const fadeEnd = TRACE_VIEWBOX.width * traceMotion.fadeEnd
 
   return (
-    <Animated.View testID="forest-trace" style={[styles.trace, { left: start }, breathStyle]}>
+    <View
+      testID="forest-trace"
+      style={[
+        styles.trace,
+        { left: zone.left, width: zone.right - zone.left, height: zone.bottom },
+      ]}
+    >
       <Svg
         width="100%"
         height="100%"
@@ -217,66 +253,134 @@ function Trace({ start, run, reduced }: LayerProps & { start: number }) {
           ))}
         </Defs>
         {TRACE_PATHS.map((d, index) => (
-          <TraceLine key={d} d={d} index={index} drawn={drawn} />
+          <TraceLine
+            key={d}
+            d={d}
+            index={index}
+            plan={lines[index]}
+            clock={clock}
+            loopMs={loopMs}
+            still={reduced}
+          />
         ))}
       </Svg>
-    </Animated.View>
+    </View>
   )
 }
 
+type TraceProps = LayerProps & { lines: TraceLinePlan[]; loopMs: number; start: number }
+
 type ForestAuroraProps = {
   /**
-   * Where the text column ends, in the card's space: the contours are drawn right of it only, and
-   * not at all until it is known.
+   * The card's clear zone (see `AuroraZone`); `null` while the card is still measuring it (nothing
+   * is drawn yet), absent for a card with its text on the left part only (`textReach`).
    */
-  traceStart?: number | null
+  zone?: AuroraZone | null
+  /** How dark the shield over the text is: `score` for the survey's score card. */
+  shield?: ForestShieldKey
+  /** Fixes the random plans (tests); a fresh seed per mount otherwise. */
+  seed?: number
   testID?: string
 }
 
 /**
- * The hero of Accueil's forest card (12.2-19 fourth round, owner: "un mélange de A et F", sketch
- * 010): three soft discs of moss, teal and ochre drifting slowly behind the content (the aurora),
- * a shield darkening the text side over them, and four faint contour lines that trace themselves
- * once right of the text, then breathe. The discs are radial gradients drawn once (no runtime
- * blur); only their transforms, the lines' dash offset and the contours' opacity are animated, on
- * the UI thread. It is the card's and Accueil's one animated layer: it runs only while the screen
- * can be seen, stops where it is when hidden, and under Reduce Motion the discs rest and the lines
- * are drawn and still. Decoration only, never touched or read. The parent clips it to its corners.
+ * The backdrop of every forest card (12.2-19 fourth and fifth rounds, owner: "un mélange de A et
+ * F", then "elle devrait se jouer un peu en continu en mode random", colours "trop light", "dans
+ * toutes les autres cartes forêt"): three soft discs of moss, teal and ochre roaming the card's
+ * clear zone on random paths of over a minute, each blooming once per path; a shield over the text
+ * zones; and four faint contours drawing and erasing themselves in turn in the clear zone, never
+ * all at rest. The discs are radial gradients drawn once (no runtime blur); only their transforms
+ * and opacity and the lines' dash offset are animated, by worklets on the UI thread that read plans
+ * drawn once per mount. It runs only while the screen can be seen and goes on from where it stopped;
+ * under Reduce Motion the discs rest and the lines are drawn and still. Decoration only, never
+ * touched or read. The card clips it to its corners.
  */
-export function ForestAurora({ traceStart, testID }: ForestAuroraProps) {
+export function ForestAurora({ zone, shield = "standard", seed, testID }: ForestAuroraProps) {
   const visible = useScreenVisible()
   const reduced = useReducedMotion()
   const run = visible && !reduced
+  const [box, setBox] = useState<Box | null>(null)
+  const [mountSeed] = useState(() => seed ?? Math.floor(Math.random() * 2147483647))
+  const plan = useMemo(() => planAurora(mountSeed, AURORA_DISCS), [mountSeed])
+  // Kept the same object while the numbers do not change, so the worklets are not rebuilt.
+  const measuring = zone === null
+  const left = zone?.left
+  const bottom = zone?.bottom
+  const clear = useMemo(
+    () =>
+      box && !measuring
+        ? resolveZone(box, left === undefined ? undefined : { left, bottom })
+        : null,
+    [box, measuring, left, bottom],
+  )
+  const ready = clear !== null
+  const reveal = useSharedValue(reduced ? 1 : 0)
+
+  // The aurora fades in once its zone is known, so it never pops in.
+  useEffect(() => {
+    if (!ready) return
+    if (reduced) {
+      reveal.value = 1
+    } else if (run) {
+      reveal.value = withTiming(1, {
+        duration: auroraRoam.revealMs,
+        easing: Easing.out(Easing.quad),
+        reduceMotion: ReduceMotion.System,
+      })
+    }
+  }, [ready, reduced, reveal, run])
+
+  const revealStyle = useAnimatedStyle(() => ({ opacity: reveal.value }))
+
+  const handleLayout = (event: LayoutChangeEvent): void => {
+    const { width, height } = event.nativeEvent.layout
+    setBox((previous) =>
+      previous && previous.width === width && previous.height === height
+        ? previous
+        : { width, height },
+    )
+  }
 
   return (
     <View
       style={styles.fill}
+      onLayout={handleLayout}
       pointerEvents="none"
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       testID={testID}
     >
-      {AURORA_DISCS.map((disc) => (
-        <Disc key={disc.key} disc={disc} run={run} reduced={reduced} />
-      ))}
-      <View style={styles.shield} testID="forest-aurora-shield" />
-      {traceStart === null || traceStart === undefined ? null : (
-        <Trace start={traceStart} run={run} reduced={reduced} />
-      )}
+      {clear ? (
+        <Animated.View style={[styles.fill, revealStyle]} testID="forest-aurora-layers">
+          {AURORA_DISCS.map((disc, index) => (
+            <Disc
+              key={disc.key}
+              disc={disc}
+              plan={plan.discs[index]}
+              run={run}
+              reduced={reduced}
+              zone={clear}
+            />
+          ))}
+          <Shield zone={clear} tone={shield} />
+          <Trace
+            lines={plan.trace.lines}
+            loopMs={plan.trace.loopMs}
+            start={plan.trace.start}
+            run={run}
+            reduced={reduced}
+            zone={clear}
+          />
+        </Animated.View>
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   fill: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0 },
-  disc: { position: "absolute" },
-  shield: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    experimental_backgroundImage: forestShieldImage,
-  },
-  trace: { position: "absolute", top: 0, right: 0, bottom: 0 },
+  disc: { position: "absolute", left: 0, top: 0 },
+  panel: { position: "absolute", top: 0 },
+  band: { position: "absolute", left: 0, right: 0 },
+  trace: { position: "absolute", top: 0 },
 })

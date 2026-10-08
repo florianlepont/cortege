@@ -31,12 +31,7 @@ jest.mock("react-native", () => {
   }
 })
 
-jest.mock("./ContourLines", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    ContourLines: (props: Record<string, unknown>) => ReactRef.createElement("ContourLines", props),
-  }
-})
+jest.mock("./ForestAurora", () => ({ ForestAurora: "ForestAurora" }))
 
 let mockTheme = defaultTheme
 jest.mock("../app/theme", () => ({
@@ -149,44 +144,35 @@ describe("ForestCard", () => {
     expect(withElevation).toHaveLength(0)
   })
 
-  test("renders the contours by default and passes animatedContours", () => {
+  // 12.2-19 fifth round (owner): the aurora is on every forest card, in place of the contour drift.
+  test("draws the aurora by default, inside the clip, over the gradient and under the content", () => {
     const { tree } = render()
-    const contours = tree.root.findAll((n) => (n.type as unknown) === "ContourLines")
-    expect(contours).toHaveLength(1)
-    expect(contours[0].props.animated).toBe(true)
-  })
-
-  test("animatedContours={false} stops the drift", () => {
-    const { tree } = render({ animatedContours: false })
-    const contours = tree.root.findAll((n) => (n.type as unknown) === "ContourLines")
-    expect(contours[0].props.animated).toBe(false)
-  })
-
-  test("no backdrop by default", () => {
-    const { tree } = render()
-    const clipView = tree.root.findAll((n) => (n.type as unknown) === "View")[1]
-    expect(clipView.children).toHaveLength(2)
-  })
-
-  test("a backdrop sits inside the clip, over the gradient and under the content (12.2-19)", () => {
-    const { tree } = render({ contours: false, backdrop: React.createElement("Aurora") })
     const clipView = tree.root.findAll((n) => (n.type as unknown) === "View")[1]
     const [first, second] = clipView.children as renderer.ReactTestInstance[]
     expect(clipView.children).toHaveLength(2)
-    expect(first.type).toBe("Aurora")
+    expect(first.type).toBe("ForestAurora")
+    expect(first.props.testID).toBe("forest-card-aurora")
     expect(second.findAll((n) => (n.type as unknown) === "Child")).toHaveLength(1)
+    // No other animated layer: one contour system per card.
     expect(tree.root.findAll((n) => (n.type as unknown) === "ContourLines")).toHaveLength(0)
   })
 
-  test("other cards keep their contour drift beside a backdrop", () => {
-    const { tree } = render({ backdrop: React.createElement("Aurora") })
-    const contours = tree.root.findAll((n) => (n.type as unknown) === "ContourLines")
-    expect(contours[0].props.animated).toBe(true)
+  test("passes the caller's clear zone and shield to the aurora", () => {
+    const zone = { left: 180, bottom: 96 }
+    const { tree } = render({ zone, shield: "score", variant: "hero" })
+    const aurora = tree.root.findByType("ForestAurora" as never)
+    expect(aurora.props.zone).toBe(zone)
+    expect(aurora.props.shield).toBe("score")
+    // Still measuring: null goes through as is (nothing drawn yet).
+    const measuring = render({ zone: null })
+    expect(measuring.tree.root.findByType("ForestAurora" as never).props.zone).toBeNull()
   })
 
-  test("contours={false} omits the contour layer", () => {
-    const { tree } = render({ contours: false })
-    expect(tree.root.findAll((n) => (n.type as unknown) === "ContourLines")).toHaveLength(0)
+  test("motion={false} draws the bare gradient", () => {
+    const { tree } = render({ motion: false })
+    expect(tree.root.findAll((n) => (n.type as unknown) === "ForestAurora")).toHaveLength(0)
+    const clipView = tree.root.findAll((n) => (n.type as unknown) === "View")[1]
+    expect(clipView.children).toHaveLength(1)
   })
 
   test("children render inside the clip view", () => {
