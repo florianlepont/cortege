@@ -78,7 +78,7 @@ const PLACES = [
   ["Brotonne", 49.5, 0.75],
   ["Argonne", 49.2, 4.9],
   ["Haguenau", 48.8, 7.78],
-  ["Grésigne", 44.05, 1.75],
+  ["Vosges du Nord", 48.95, 7.4],
   ["Gérardmer", 48.07, 6.88],
   ["Chaux", 47.05, 5.65],
   ["Morvan", 47.15, 4.05],
@@ -95,11 +95,17 @@ const PLACES = [
   ["Perche", 48.4, 0.7],
   ["Brocéliande", 48.0, -2.2],
   ["Cévennes", 44.3, 3.9],
+  ["Grésigne", 44.05, 1.75],
 ]
-// Where the owner's own surveys sit (Île-de-France and around).
+// Where the owner's own surveys sit (Île-de-France and around). A fourth element narrows a site:
+// `spread` scales how far its point may fall from the place (and its retries), `search` the size
+// of the area asked around the point, `commune` the commune codes its parcels must start with.
 const OWNER_PLACES = [
   ["Notre-Dame", 48.775, 2.565],
-  ["Vincennes", 48.83, 2.43],
+  // Vincennes itself (INSEE 94080), around the château: the owner tests there.
+  ["Vincennes", 48.8435, 2.4365, { spread: 0.1, commune: "94080" }],
+  // Paris (an arrondissement, 75116): the Bois de Boulogne has few, large parcels.
+  ["Bois de Boulogne", 48.862, 2.2515, { spread: 0.2, search: 3, commune: "751" }],
   ["Fontainebleau", 48.4, 2.69],
   ["Rambouillet", 48.64, 1.83],
   ["Sénart", 48.67, 2.5],
@@ -145,14 +151,25 @@ function connect() {
  * seeded random (kept for the retry points), so a failed site never shifts the next ones.
  */
 function makeSite(key, label, place, seed) {
+  const options = place[3] ?? {}
   const random = makeRandom(seed)
   const point = sitePoint(place, random)
   const wanted = 1 + Math.floor(random() * 3)
-  return { key, label, name: place[0], point, wanted, random }
+  return {
+    key,
+    label,
+    name: place[0],
+    point,
+    wanted,
+    random,
+    spread: options.spread ?? 1,
+    search: options.search ?? 1,
+    commune: options.commune ?? null,
+  }
 }
 
 /**
- * Community sites, interleaved over the places (site k is at place k mod 26), so a small
+ * Community sites, interleaved over the places (site k is at place k mod 27), so a small
  * `--count` still spreads over France. Only the sites that get a survey are built.
  */
 function communitySites(count) {

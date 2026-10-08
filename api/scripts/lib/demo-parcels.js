@@ -52,8 +52,7 @@ function apiHelpers() {
   }
   helpersCache = {
     parseParcelIdentifier: normalize.parseParcelIdentifier,
-    normalizeParcelSection: normalize.normalizeParcelSection,
-    normalizeParcelPartToDigits: normalize.normalizeParcelPartToDigits,
+    parseWfsParcelProperties: cadastre.parseWfsParcelProperties,
     geometryCenter: cadastre.geometryCenter,
   }
   return helpersCache
@@ -85,33 +84,40 @@ const round6 = (value) => Number(value.toFixed(6))
 
 /** The first point of a site: near its place, drawn from the site's own seeded random. */
 function sitePoint(place, random) {
-  const [, lat, lng] = place
+  const [, lat, lng, options] = place
+  const spread = options?.spread ?? 1
   return {
-    lat: round6(lat + (random() - 0.5) * 2 * SITE_SPREAD.lat),
-    lng: round6(lng + (random() - 0.5) * 2 * SITE_SPREAD.lng),
+    lat: round6(lat + (random() - 0.5) * 2 * SITE_SPREAD.lat * spread),
+    lng: round6(lng + (random() - 0.5) * 2 * SITE_SPREAD.lng * spread),
   }
 }
 
-/** The point of retry `attempt` (1, 2, ...): further from the first point at each attempt. */
-function retryPoint(base, attempt, random) {
+/**
+ * The point of retry `attempt` (1, 2, ...): further from the first point at each attempt, scaled
+ * by the site's `spread`.
+ */
+function retryPoint(base, attempt, random, spread = 1) {
   return {
-    lat: round6(base.lat + (random() - 0.5) * 2 * RETRY_STEP * attempt),
-    lng: round6(base.lng + (random() - 0.5) * 2 * RETRY_STEP * attempt),
+    lat: round6(base.lat + (random() - 0.5) * 2 * RETRY_STEP * attempt * spread),
+    lng: round6(base.lng + (random() - 0.5) * 2 * RETRY_STEP * attempt * spread),
   }
 }
 
-function bboxAround(point) {
+function bboxAround(point, scale = 1) {
   return {
-    minLng: point.lng - BBOX_HALF.lng,
-    minLat: point.lat - BBOX_HALF.lat,
-    maxLng: point.lng + BBOX_HALF.lng,
-    maxLat: point.lat + BBOX_HALF.lat,
+    minLng: point.lng - BBOX_HALF.lng * scale,
+    minLat: point.lat - BBOX_HALF.lat * scale,
+    maxLng: point.lng + BBOX_HALF.lng * scale,
+    maxLat: point.lat + BBOX_HALF.lat * scale,
   }
 }
 
-/** The WFS GetFeature URL of the parcels around a point, built like fetchWfsTile in the API. */
-function wfsUrlAround(settings, point) {
-  const bounds = bboxAround(point)
+/**
+ * The WFS GetFeature URL of the parcels around a point (`scale` widens the area), built like
+ * fetchWfsTile in the API.
+ */
+function wfsUrlAround(settings, point, scale = 1) {
+  const bounds = bboxAround(point, scale)
   const url = new URL(settings.wfsUrl)
   url.searchParams.set("service", "WFS")
   url.searchParams.set("version", "2.0.0")
@@ -130,10 +136,11 @@ const asRecord = (value) =>
   value && typeof value === "object" && !Array.isArray(value) ? value : {}
 
 /**
- * The usable parcels of a WFS answer. A feature is kept only when its IDU, read the way the app
- * reads an id (parseParcelIdentifier), gives the same commune, section and number as its
- * properties read the way the Explorer keys the polygons (parseWfsFeatures): then the registered
- * row and the drawn polygon always match. Centroid: geometryCenter, 6 decimals.
+ * The usable parcels of a WFS answer. A feature is kept only when it has an IDU and the key the
+ * Explorer gives its polygon (parseWfsParcelProperties) is the key the app registers for that id
+ * (parseParcelIdentifier): then the registered row and the drawn polygon always match, Paris,
+ * Lyon and Marseille arrondissements and Alsace-Moselle numbered sections included. Centroid:
+ * geometryCenter, 6 decimals.
  */
 function parseWfsParcels(payload, helpers = apiHelpers()) {
   const features = Array.isArray(asRecord(payload).features) ? payload.features : []
@@ -151,20 +158,18 @@ function parseWfsParcels(payload, helpers = apiHelpers()) {
     }
     const idu = typeof properties.idu === "string" ? properties.idu.trim().toUpperCase() : ""
     if (!IDU_SHAPE.test(idu) || seen.has(idu)) continue
-    const communeCode = helpers.normalizeParcelPartToDigits(properties.code_insee, 5)
-    const section = helpers.normalizeParcelSection(properties.section)
-    const number = helpers.normalizeParcelPartToDigits(properties.numero, 4)
+    const key = helpers.parseWfsParcelProperties(properties)
     const parsed = helpers.parseParcelIdentifier(idu)
     if (
-      !communeCode ||
-      !section ||
-      !number ||
-      parsed.communeCode !== communeCode ||
-      parsed.section !== section ||
-      parsed.number !== number
+      !key ||
+      key.parcel_id !== idu ||
+      parsed.communeCode !== key.commune_code ||
+      parsed.section !== key.section ||
+      parsed.number !== key.number
     ) {
       continue
     }
+    const { commune_code: communeCode, section, number } = key
     const centre = helpers.geometryCenter(geometry)
     if (!centre) continue
     seen.add(idu)
@@ -223,10 +228,14 @@ function distance2(a, b) {
 /**
  * The parcels of one site: the parcel under the point (else the nearest one), then up to
  * `wanted - 1` neighbours, nearest first, those of the same commune before the others. Parcels
- * already used by another site (`usedIds`) are skipped, so two sites never share a parcel.
+ * already used by another site (`usedIds`) are skipped, so two sites never share a parcel; with
+ * `commune`, only parcels whose commune code starts with it are taken.
  */
-function pickSiteParcels(parcels, point, wanted, usedIds = new Set()) {
-  const candidates = parcels.filter((parcel) => !usedIds.has(parcel.parcelId))
+function pickSiteParcels(parcels, point, wanted, usedIds = new Set(), commune = null) {
+  const candidates = parcels.filter(
+    (parcel) =>
+      !usedIds.has(parcel.parcelId) && (!commune || parcel.communeCode.startsWith(commune)),
+  )
   if (candidates.length === 0 || wanted < 1) return []
   const byDistance = (from) => (a, b) =>
     distance2(from, a.centroid) - distance2(from, b.centroid) ||
@@ -356,25 +365,33 @@ async function resolveSites(sites, options = {}) {
   for (const site of sites) {
     let reason = "no parcel"
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const point = attempt === 0 ? site.point : retryPoint(site.point, attempt, site.random)
+      const point =
+        attempt === 0 ? site.point : retryPoint(site.point, attempt, site.random, site.spread ?? 1)
       if (!first) await wait(delayMs * (reason.startsWith("HTTP") ? 4 : 1))
       first = false
       let payload
       try {
-        payload = await fetchImpl(wfsUrlAround(settings, point), settings.timeoutMs)
+        payload = await fetchImpl(
+          wfsUrlAround(settings, point, site.search ?? 1),
+          settings.timeoutMs,
+        )
       } catch (error) {
         reason = error instanceof Error ? error.message : String(error)
         log(`  ${site.label}: attempt ${attempt + 1} failed (${reason})`)
         continue
       }
-      const picked = pickSiteParcels(parseWfsParcels(payload, helpers), point, site.wanted, used)
+      const picked = pickSiteParcels(
+        parseWfsParcels(payload, helpers),
+        point,
+        site.wanted,
+        used,
+        site.commune ?? null,
+      )
       if (picked.length === 0) {
         const found = Array.isArray(asRecord(payload).features) ? payload.features.length : 0
-        // Alsace-Moselle sections are numbered ("09"): the Explorer keys polygons by a lettered
-        // section, so such parcels could never be coloured and are not used.
         reason =
           found > 0
-            ? `${found} parcels found, none usable (numbered sections or already used)`
+            ? `${found} parcels found, none usable (no IGN id, other commune or already used)`
             : "no parcel at this point"
         log(`  ${site.label}: attempt ${attempt + 1}, ${reason}`)
         continue

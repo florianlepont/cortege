@@ -36,7 +36,13 @@ type DemoParcelsModule = {
   makeRandom: (seed: number) => () => number
   parcelRegistrationRow: (parcel: Parcel) => Record<string, unknown>
   parseWfsParcels: (payload: unknown) => Parcel[]
-  pickSiteParcels: (parcels: Parcel[], point: Point, wanted: number, used?: Set<string>) => Parcel[]
+  pickSiteParcels: (
+    parcels: Parcel[],
+    point: Point,
+    wanted: number,
+    used?: Set<string>,
+    commune?: string | null,
+  ) => Parcel[]
   planDemoParcelRemoval: (rows: Array<{ parcel_id: string; shared: boolean }>) => {
     remove: string[]
     keptShared: string[]
@@ -54,9 +60,9 @@ type DemoParcelsModule = {
     resolved: Map<string, Parcel[]>
     failures: Array<{ label: string; reason: string }>
   }>
-  retryPoint: (base: Point, attempt: number, random: () => number) => Point
-  sitePoint: (place: [string, number, number], random: () => number) => Point
-  wfsUrlAround: (settings: Settings, point: Point) => URL
+  retryPoint: (base: Point, attempt: number, random: () => number, spread?: number) => Point
+  sitePoint: (place: [string, number, number, { spread?: number }?], random: () => number) => Point
+  wfsUrlAround: (settings: Settings, point: Point, scale?: number) => URL
 }
 
 const demo = jest.requireActual<DemoParcelsModule>("../scripts/lib/demo-parcels")
@@ -101,6 +107,17 @@ describe("seed demo parcels (real IGN parcels)", () => {
       expect(demo.sitePoint(place, demo.makeRandom(43))).not.toEqual(a)
     })
 
+    it("narrows a site point and its retries with the place's spread", () => {
+      const point = demo.sitePoint(
+        ["Vincennes", 48.8435, 2.4365, { spread: 0.1 }],
+        demo.makeRandom(3),
+      )
+      expect(Math.abs(point.lat - 48.8435)).toBeLessThanOrEqual(0.0015)
+      expect(Math.abs(point.lng - 2.4365)).toBeLessThanOrEqual(0.002)
+      const retry = demo.retryPoint(point, 4, demo.makeRandom(4), 0.1)
+      expect(Math.abs(retry.lat - point.lat)).toBeLessThanOrEqual(0.0016)
+    })
+
     it("moves a retry point further at each attempt, at 6 decimals", () => {
       const base = { lat: 48.4, lng: 2.69 }
       for (const attempt of [1, 2, 5]) {
@@ -138,6 +155,8 @@ describe("seed demo parcels (real IGN parcels)", () => {
       )
       expect(url.searchParams.get("outputFormat")).toBe("application/json")
       expect(url.searchParams.get("bbox")).toBe("2.689100,48.399400,2.690900,48.400600,EPSG:4326")
+      const wide = demo.wfsUrlAround(demo.cadastreSettings({}), { lat: 48.4, lng: 2.69 }, 3)
+      expect(wide.searchParams.get("bbox")).toBe("2.687300,48.398200,2.692700,48.401800,EPSG:4326")
     })
   })
 
@@ -179,15 +198,54 @@ describe("seed demo parcels (real IGN parcels)", () => {
       expect(parcel.geometry).toBe(geometry)
     })
 
-    it("drops what the Explorer could never match, and duplicates", () => {
+    it("keeps Alsace-Moselle and arrondissement parcels with the Explorer's key", () => {
       const parcels = demo.parseWfsParcels({
         features: [
-          // Alsace-Moselle: numbered section, no lettered key for the Explorer.
-          feature("67392000090001", { code_insee: "67392", section: "09", numero: "0001" }),
+          // Alsace-Moselle: a numbered section keeps its two digits.
+          feature("67392000090001", {
+            code_dep: "67",
+            code_com: "392",
+            code_arr: "000",
+            code_insee: "67392",
+            section: "09",
+            numero: "0001",
+          }),
           // Paris: the IDU carries the arrondissement, code_insee the city.
-          feature("75112000BL0010", { code_insee: "75056", section: "BL", numero: "0010" }),
-          // Not an IDU (Corsica, or an id from elsewhere).
+          feature("75112000BL0010", {
+            code_dep: "75",
+            code_com: "056",
+            code_arr: "112",
+            code_insee: "75056",
+            section: "BL",
+            numero: "0010",
+          }),
+        ],
+      })
+      expect(
+        parcels.map(({ parcelId, communeCode, section, number }) => [
+          parcelId,
+          communeCode,
+          section,
+          number,
+        ]),
+      ).toEqual([
+        ["67392000090001", "67392", "09", "0001"],
+        ["75112000BL0010", "75112", "BL", "0010"],
+      ])
+      for (const parcel of parcels) {
+        const registered = parseParcelIdentifier(parcel.parcelId)
+        expect(buildParcelKey(registered.communeCode, registered.section, registered.number)).toBe(
+          buildParcelKey(parcel.communeCode, parcel.section, parcel.number),
+        )
+      }
+    })
+
+    it("drops features without an IGN id, non-polygons and duplicates", () => {
+      const parcels = demo.parseWfsParcels({
+        features: [
+          // Not an IDU the app can register (Corsica, or an id from elsewhere).
           feature("2A004000AB0012", { code_insee: "2A004", section: "AB", numero: "0012" }),
+          feature("", { ...FONTAINEBLEAU, section: "AS", numero: "0141" }),
           feature("77186000AS0142", { ...FONTAINEBLEAU, section: "AS", numero: "0142" }),
           feature("77186000AS0142", { ...FONTAINEBLEAU, section: "AS", numero: "0142" }),
           { geometry: { type: "Point", coordinates: [2.69, 48.4] }, properties: {} },
@@ -229,6 +287,13 @@ describe("seed demo parcels (real IGN parcels)", () => {
         east.parcelId,
         north.parcelId,
       ])
+    })
+
+    it("keeps to the site's commune when it has one", () => {
+      expect(
+        demo.pickSiteParcels(all, point, 3, new Set(), "77999").map((p) => p.parcelId),
+      ).toEqual([farOtherCommune.parcelId])
+      expect(demo.pickSiteParcels(all, point, 3, new Set(), "94080")).toEqual([])
     })
 
     it("falls back to the nearest parcel and never reuses a parcel of another site", () => {
