@@ -265,7 +265,10 @@ describe("ResumeCard", () => {
     // The segments are not measured yet: nothing drawn, so they never show unshielded.
     expect(blocks()).toBeNull()
     layoutOf("home-resume-progress", { x: 16, y: 92, width: 330, height: 6 })
-    expect(blocks()).toEqual([COPY_IN_CARD, { x: 16, y: 92, width: 330, height: 6 }])
+    expect(blocks()).toEqual([
+      COPY_IN_CARD,
+      { x: 16, y: 92, width: 330, height: 6, tone: "graphic" },
+    ])
   })
 
   test("the filled segments are the pale forest green that keeps 3:1 over the aurora", () => {

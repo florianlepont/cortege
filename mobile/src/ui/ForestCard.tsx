@@ -18,7 +18,7 @@ type ForestCardProps = {
   motion?: boolean
   /**
    * The card's blocks of text, measured by the caller in the card's space (`null` while
-   * measuring): the shield and the lines' mask soften the mist around each. Absent, the text is
+   * measuring): a soft shield softens the mist and the lines around each. Absent, the text is
    * taken to fill the left part of the card.
    */
   blocks?: ForestTextBlock[] | null

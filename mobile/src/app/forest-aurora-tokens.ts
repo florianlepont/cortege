@@ -1,13 +1,13 @@
-// The forest card's backdrop (12.2-19), as the owner tuned it live in sketch 010 `round4.html`
-// ("spd=2 fogA=1.6 size=0.7 flowSpd=1 flowA=1"), over the whole card: a mist of three soft discs
-// drifting across it, faint contour lines crossing it with a dash of light flowing along them,
-// and a soft shield around each block of text. Colours only; the geometry and timing live in
+// The forest card's backdrop (12.2-19), as the owner validated it in sketch 010 `round5.html`
+// ("spd=2 fogA=1.6 size=0.7 flowSpd=1 flowA=1"): a mist of three soft discs drifting behind the
+// content, four diagonal contour lines over the whole card with a dash of light flowing along
+// them, and around each block of text a soft shield, as light as the text's contrast allows. Colours only; the geometry and timing live in
 // `forest-aurora-shape.ts`. Same values in both schemes, the card is always forest. Hex and rgba
 // literals are allowed in this file (ESLint).
 //
 // No layer may draw a flat zone or a hard edge (owner: "le fond devient uni en vert"): every
 // shield is a gradient from nothing, tested in `forest-aurora-tokens.test.ts` with the contrast of
-// each block of text with the mist at its peak and a dash of light passing behind it.
+// each block of text with the mist at its worst and a dash of light passing right behind it.
 
 import { buildRadialGradient, forestStops, withAlpha } from "./visual-tokens"
 
@@ -29,11 +29,6 @@ export const forestAurora = {
     glowOpacity: 0.3,
     width: 1.2,
     glowWidth: 4,
-    /** How much of the lines still shows behind a block of text (the mask's floor). */
-    floor: 0.12,
-    /** The mask's paint: what shows the lines and what hides them. */
-    shown: "#FFFFFF",
-    hidden: "#000000",
   },
   /** The share of a card's width its text is taken to fill when it gives no blocks of its own. */
   textReach: 0.64,
@@ -46,18 +41,20 @@ export type AuroraTone = "moss" | "teal" | "ochre"
 /**
  * The shield: around each block of text, a soft ellipse of the card's darkest green, `core` at the
  * block's centre, `edge` at its corners, nothing at the ellipse's rim (`textEllipse`, at least
- * `feather` points out in every direction). Never flat: it falls from the centre out. `standard` is
- * Accueil's and Mes Relevés'; `score` is the score card's, whose sage unit and glass tiles need
- * more.
+ * `feather` points out in every direction). Never flat: it falls from the centre out. Each is as
+ * light as its text allows with the mist at its worst and a dash of light right behind (the lines
+ * are not masked): `standard` for Accueil's and Mes Relevés' text, `score` for the score card's
+ * (its sage unit and glass tiles need more), `graphic` for a graphic at 3:1 (Accueil's segments).
  */
 export const forestShield = {
   colour: forestStops.c,
-  feather: 44,
-  standard: { core: 0.6, edge: 0.54 },
-  score: { core: 0.7, edge: 0.66 },
+  feather: 40,
+  standard: { core: 0.72, edge: 0.69 },
+  score: { core: 0.79, edge: 0.76 },
+  graphic: { core: 0.6, edge: 0.57 },
 } as const
 
-export type ForestShieldKey = "standard" | "score"
+export type ForestShieldKey = "standard" | "score" | "graphic"
 
 /** The shield of one block, for a view the size of its ellipse; `inner` is where its corners lie. */
 export function buildTextShield(key: ForestShieldKey, inner: number): string {

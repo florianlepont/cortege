@@ -56,7 +56,8 @@ export function ResumeCard({ resumeDraft, onResume, onCreateSurvey }: ResumeCard
   const [progressBlock, setProgressBlock] = useState<ForestTextBlock | null>(null)
   const handleProgressLayout = (event: LayoutChangeEvent): void => {
     const { x, y, width, height } = event.nativeEvent.layout
-    setProgressBlock({ x, y, width, height })
+    // A graphic, at 3:1: a lighter shield than the text's.
+    setProgressBlock({ x, y, width, height, tone: "graphic" })
   }
   const blocks =
     copyBlock === null || (resumeDraft && progressBlock === null)

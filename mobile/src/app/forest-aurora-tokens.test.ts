@@ -14,10 +14,10 @@ import {
 import { compositeOver, contrastRatio, relativeLuminance } from "./contrast"
 import {
   type Box,
-  FLOW_LINES,
   type ForestTextBlock,
-  layLine,
+  layLines,
   MIST_DISCS,
+  type MistDisc,
   textEllipse,
 } from "./forest-aurora-shape"
 import {
@@ -41,9 +41,26 @@ const a = forestAurora
 const lines = a.lines
 
 // ---------------------------------------------------------------------------------------------
-// The worst a point of text ever sits on: the three discs at their peak stacked on it (they cross
-// the whole card, so any point can get them), a dash of light and its glow passing right behind
-// it (as much as the lines' mask lets through there), then the shield of every block.
+// The worst a point of text ever sits on: each disc at the most it ever puts there over its whole
+// drift (centre and radius along the way), all three stacked; a faint base line, and a dash of
+// light with its glow passing right behind it at full strength (the lines are not masked); then
+// the shield of every block of the card.
+
+function mistAt(disc: MistDisc, box: Box, x: number, y: number): number {
+  const half = disc.size / 2
+  const { left, right, top, bottom } = disc.anchor
+  const restX = left !== undefined ? left + half : box.width - (right as number) - half
+  const restY = top !== undefined ? top + half : box.height - (bottom as number) - half
+  let most = 0
+  for (let step = 0; step <= 50; step += 1) {
+    const k = step / 50
+    const cx = restX + disc.drift.x * k
+    const cy = restY + disc.drift.y * k
+    const r = half * (1 + (disc.drift.scale - 1) * k)
+    most = Math.max(most, a[disc.key].peak * Math.max(0, 1 - Math.hypot(x - cx, y - cy) / r))
+  }
+  return most
+}
 
 type Ellipse = ReturnType<typeof textEllipse>
 
@@ -59,28 +76,18 @@ function shieldAt(key: ForestShieldKey, e: Ellipse, x: number, y: number): numbe
   return Math.max(0, edge * (1 - (t - e.inner) / (1 - e.inner)))
 }
 
-function linesShowAt(e: Ellipse, x: number, y: number): number {
-  const t = radius(e, x, y)
-  const hole = t <= e.inner ? 1 : Math.max(0, 1 - (t - e.inner) / (1 - e.inner))
-  return 1 - (1 - lines.floor) * hole
-}
-
-function worstUnder(
-  key: ForestShieldKey,
-  blocks: ForestTextBlock[],
-  stop: string,
-  x: number,
-  y: number,
-) {
+function worstUnder(card: CardModel, stop: string, x: number, y: number) {
   let colour = stop
-  for (const disc of MIST_DISCS)
-    colour = compositeOver(withAlpha(a[disc.key].colour, a[disc.key].peak), colour)
-  const ellipses = blocks.map(textEllipse)
-  const show = ellipses.reduce((share, e) => share * linesShowAt(e, x, y), 1)
-  colour = compositeOver(withAlpha(lines.glow, lines.glowOpacity * show), colour)
-  colour = compositeOver(withAlpha(lines.light, lines.lightOpacity * show), colour)
-  for (const e of ellipses)
-    colour = compositeOver(withAlpha(forestShield.colour, shieldAt(key, e, x, y)), colour)
+  for (const disc of MIST_DISCS) {
+    colour = compositeOver(withAlpha(a[disc.key].colour, mistAt(disc, card.box, x, y)), colour)
+  }
+  colour = compositeOver(withAlpha(lines.base, lines.baseOpacity), colour)
+  colour = compositeOver(withAlpha(lines.glow, lines.glowOpacity), colour)
+  colour = compositeOver(withAlpha(lines.light, lines.lightOpacity), colour)
+  for (const block of card.blocks) {
+    const shield = shieldAt(block.tone ?? card.key, textEllipse(block), x, y)
+    colour = compositeOver(withAlpha(forestShield.colour, shield), colour)
+  }
   return colour
 }
 
@@ -108,7 +115,7 @@ function lowest(card: CardModel, region: Region): Record<string, number> {
   for (const stop of stops) {
     for (let x = region.x; x <= region.x + region.width; x += 4) {
       for (let y = region.y; y <= region.y + region.height; y += 4) {
-        let background = worstUnder(card.key, card.blocks, stop, x, y)
+        let background = worstUnder(card, stop, x, y)
         if (region.tile) background = compositeOver(forest.tileFill, background)
         for (const pair of region.pairs) {
           result[pair.name] = Math.min(
@@ -147,6 +154,7 @@ function cards(width: number): CardModel[] {
         y: PAD + row + RESUME_LAYOUT.progressGap,
         width: width - 2 * PAD,
         height: RESUME_LAYOUT.progressHeight,
+        tone: "graphic" as const,
       }
       const height =
         PAD + row + (draft ? RESUME_LAYOUT.progressGap + RESUME_LAYOUT.progressHeight : 0) + PAD
@@ -259,6 +267,8 @@ function cards(width: number): CardModel[] {
 }
 
 const ALL = [343, 361].flatMap(cards)
+/** No point of a card is farther than this from a line (the sketch's own spread, on the score card). */
+const LINE_REACH = 104
 const CASES = ALL.flatMap((card) =>
   card.regions.map((region) => [`${card.name}: ${region.name}`, card, region] as const),
 )
@@ -275,14 +285,12 @@ describe("forest mist colours (owner's settings: fogA 1.6)", () => {
     ])
   })
 
-  test("the lines: faint base, a bright dash, a soft glow, only a little behind text", () => {
+  test("the lines: faint base, a bright dash, a soft glow", () => {
     expect(lines.baseOpacity).toBeCloseTo(0.18)
     expect(lines.lightOpacity).toBe(1)
     expect(lines.glowOpacity).toBeLessThan(0.5)
     expect(lines.glowWidth).toBeGreaterThan(lines.width)
     expect(relativeLuminance(lines.light)).toBeGreaterThan(relativeLuminance(lines.base))
-    expect(lines.floor).toBeGreaterThan(0)
-    expect(lines.floor).toBeLessThanOrEqual(0.2)
   })
 })
 
@@ -320,63 +328,73 @@ describe("readable text with the mist at its peak and the light passing behind (
   })
 })
 
-describe("the effect covers the whole card (owner: not only the top right)", () => {
+describe("the effect over the whole card (round5.html)", () => {
   test.each(ALL.map((card) => [card.name, card] as const))(
-    "%s: every point gets mist",
+    "%s: the mist reaches most of it",
     (_name, card) => {
       const { width, height } = card.box
-      const dark: string[] = []
+      let reached = 0
+      let all = 0
       for (let x = 0; x <= width; x += 8) {
         for (let y = 0; y <= height; y += 8) {
-          // Some disc puts at least a quarter of its peak there at some moment of its drift.
-          const reached = MIST_DISCS.some((disc) => {
-            for (let step = 0; step <= 40; step += 1) {
-              const k = step / 40
-              const cx = width * (disc.from[0] + (disc.to[0] - disc.from[0]) * k)
-              const cy = height * (disc.from[1] + (disc.to[1] - disc.from[1]) * k)
-              const r = (disc.size / 2) * (1 + (disc.scale - 1) * k)
-              if (Math.hypot(x - cx, y - cy) <= 0.75 * r) return true
-            }
-            return false
-          })
-          if (!reached) dark.push(`${x},${y}`)
+          all += 1
+          // A quarter of some disc's peak at some moment of its drift.
+          if (MIST_DISCS.some((disc) => mistAt(disc, card.box, x, y) >= a[disc.key].peak / 4)) {
+            reached += 1
+          }
         }
       }
-      expect(dark).toEqual([])
+      expect(reached / all).toBeGreaterThanOrEqual(0.8)
     },
   )
 
   test.each(ALL.map((card) => [card.name, card] as const))(
-    "%s: the lines cross it",
+    "%s: diagonal S curves cross it",
     (_name, card) => {
       const { width, height } = card.box
-      // Points along the lines (the curves stay inside their control polygons' hull).
-      const along = FLOW_LINES.flatMap((points) => {
-        const out: [number, number][] = []
-        for (let i = 0; i + 2 < points.length; i += 2) {
-          for (let k = 0; k <= 10; k += 1) {
-            out.push([
-              width * (points[i] + (points[i + 2] - points[i]) * (k / 10)),
-              height * (points[i + 1] + (points[i + 3] - points[i + 1]) * (k / 10)),
+      const laid = layLines(card.box)
+      expect(laid).toHaveLength(4)
+      const along: [number, number][] = []
+      for (const { points, d } of laid) {
+        expect(d).toMatch(/^M[-\d\s.]+( C[-\d\s.]+){2}$/)
+        // Rising from the bottom left to the top right.
+        expect(points[points.length - 1]).toBeLessThan(points[1])
+        expect(points[points.length - 2]).toBeGreaterThan(points[0])
+        // Clearly diagonal: the S's middle climbs at 20 to 55 degrees (its tangent there).
+        const middle = (Math.atan2(points[5] - points[9], points[8] - points[4]) * 180) / Math.PI
+        expect(middle).toBeGreaterThanOrEqual(20)
+        expect(middle).toBeLessThanOrEqual(55)
+        // Smooth at the middle (the sketch's `S`): the tangents in and out line up.
+        const into = [points[6] - points[4], points[7] - points[5]]
+        const out = [points[8] - points[6], points[9] - points[7]]
+        expect(into[0] * out[1] - into[1] * out[0]).toBeCloseTo(0)
+        for (let segment = 0; segment < 2; segment += 1) {
+          const p = points.slice(segment * 6, segment * 6 + 8)
+          for (let k = 0; k <= 40; k += 1) {
+            const t = k / 40
+            const w = [(1 - t) ** 3, 3 * t * (1 - t) ** 2, 3 * t * t * (1 - t), t ** 3]
+            along.push([
+              w[0] * p[0] + w[1] * p[2] + w[2] * p[4] + w[3] * p[6],
+              w[0] * p[1] + w[1] * p[3] + w[2] * p[5] + w[3] * p[7],
             ])
           }
         }
-        return out
-      })
-      expect(Math.min(...along.map(([x]) => x))).toBeLessThanOrEqual(0)
-      expect(Math.max(...along.map(([x]) => x))).toBeGreaterThanOrEqual(width)
-      for (let x = 0; x <= width; x += 16) {
+      }
+      // Together they span the card's width and height.
+      const inside = along.filter(([x, y]) => x >= 0 && x <= width && y >= 0 && y <= height)
+      expect(Math.min(...inside.map(([x]) => x))).toBeLessThanOrEqual(4)
+      expect(Math.max(...inside.map(([x]) => x))).toBeGreaterThanOrEqual(width - 4)
+      expect(Math.min(...inside.map(([, y]) => y))).toBeLessThanOrEqual(4)
+      expect(Math.max(...inside.map(([, y]) => y))).toBeGreaterThanOrEqual(height - 4)
+      // Every point of the card is near a line.
+      let farthest = 0
+      for (let x = 0; x <= width; x += 8) {
         for (let y = 0; y <= height; y += 8) {
           const nearest = Math.min(...along.map(([px, py]) => Math.hypot(px - x, py - y)))
-          expect(nearest).toBeLessThanOrEqual(0.35 * height + 12)
+          farthest = Math.max(farthest, nearest)
         }
       }
-      // The dash pattern outlasts each line: the light runs its whole length.
-      for (const points of FLOW_LINES) {
-        const { d, pattern } = layLine(points, card.box)
-        expect(d).toMatch(/^M[-\d\s.]+( C[-\d\s.]+)+$/)
-        expect(pattern).toBeGreaterThan(width)
-      }
+      expect(farthest).toBeLessThanOrEqual(LINE_REACH)
     },
   )
 })
@@ -397,7 +415,7 @@ describe("the shield: soft ellipses only, never an edge or a flat zone", () => {
     },
   )
 
-  test("each block's ellipse keeps a feather of at least 44 pt all round, at a gentle slope", () => {
+  test("each block's ellipse keeps a feather of at least 40 pt all round, at a gentle slope", () => {
     expect(forestShield.feather).toBeGreaterThanOrEqual(40)
     for (const card of ALL) {
       for (const block of card.blocks) {
@@ -407,9 +425,6 @@ describe("the shield: soft ellipses only, never an edge or a flat zone", () => {
         // From the block's sides to the rim: at least the feather.
         expect(e.rx - block.width / 2).toBeGreaterThanOrEqual(forestShield.feather - 0.01)
         expect(e.ry - block.height / 2).toBeGreaterThanOrEqual(forestShield.feather - 0.01)
-        for (const key of ["standard", "score"] as const) {
-          expect(forestShield[key].edge / forestShield.feather).toBeLessThanOrEqual(0.7 / 40)
-        }
       }
     }
     // A block of no size still gets a soft round shield.

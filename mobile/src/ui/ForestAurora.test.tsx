@@ -4,10 +4,9 @@ import { NavigationContext } from "@react-navigation/native"
 import * as reanimated from "../../test/react-native-reanimated.mock"
 import {
   defaultBlocks,
-  FLOW_LINES,
   flowMotion,
   type ForestTextBlock,
-  layLine,
+  layLines,
   MIST_DISCS,
   mistMotion,
   textEllipse,
@@ -69,6 +68,7 @@ const BOX = { width: 360, height: 150 }
 const TITLE: ForestTextBlock = { x: 16, y: 16, width: 200, height: 52 }
 const SEGMENTS: ForestTextBlock = { x: 16, y: 120, width: 328, height: 6 }
 const BLOCKS = [TITLE, SEGMENTS]
+const LINES = layLines(BOX).length
 const plan = planMist(SEED)
 
 const noopUnsubscribe = () => undefined
@@ -162,11 +162,11 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
     expect(byTestID(tree, "forest-flow-base").map((line) => line.props.d)).toEqual(before)
     layout(tree, { width: 300, height: 150 })
     expect(byTestID(tree, "forest-flow-base")[0].props.d).toBe(
-      layLine(FLOW_LINES[0], { width: 300, height: 150 }).d,
+      layLines({ width: 300, height: 150 })[0].d,
     )
   })
 
-  test("three soft discs crossing the card, fading to nothing at the rim", () => {
+  test("three soft discs at the sketch's places, fading to nothing at the rim", () => {
     const discs = byTestID(render(), "forest-mist-disc")
     expect(discs).toHaveLength(3)
     discs.forEach((disc, index) => {
@@ -174,10 +174,9 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
       const tone = forestAurora[shape.key]
       expect(flat(disc.props.style)).toMatchObject({
         position: "absolute",
-        left: 0,
-        top: 0,
         width: shape.size,
         height: shape.size,
+        ...shape.anchor,
       })
       // Transforms only.
       expect(Object.keys(disc.props.style[2])).toEqual(["transform"])
@@ -190,11 +189,11 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
       ])
       const [circle] = byType(disc, "Circle")
       expect(circle.props.fill).toBe(`url(#${gradient.props.id})`)
-      // Centred where its drift starts, drawn at random per mount, in the card's points.
-      const pose = discPose(plan.discs[index].start, shape, BOX.width, BOX.height)
+      // Where its drift starts, drawn at random per mount.
+      const pose = discPose(plan.discs[index].start, shape)
       const [x, y, scale] = disc.props.style[2].transform
-      expect(x.translateX + shape.size / 2).toBeCloseTo(pose.x)
-      expect(y.translateY + shape.size / 2).toBeCloseTo(pose.y)
+      expect(x.translateX).toBeCloseTo(pose.translateX)
+      expect(y.translateY).toBeCloseTo(pose.translateY)
       expect(scale.scale).toBeCloseTo(pose.scale)
     })
   })
@@ -245,45 +244,20 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
     )
   })
 
-  test("the lines fade behind each block of text through a soft mask, down to its floor", () => {
+  test("the lines are not masked: only the shields above them soften them behind text", () => {
     const tree = render()
-    const [mask] = byType(tree.root, "Mask")
-    const [shown] = byType(mask, "Rect")
-    expect(shown.props).toMatchObject({
-      x: 0,
-      y: 0,
-      width: BOX.width,
-      height: BOX.height,
-      fill: forestAurora.lines.shown,
-    })
-    const holes = byTestID(tree, "forest-flow-hole")
-    expect(holes).toHaveLength(BLOCKS.length)
-    BLOCKS.forEach((block, index) => {
-      const e = textEllipse(block)
-      expect(holes[index].props).toMatchObject({ cx: e.cx, cy: e.cy, rx: e.rx, ry: e.ry })
-      const gradientId = /url\(#(.*)\)/.exec(holes[index].props.fill)![1]
-      const gradient = tree.root.find(
-        (n) => n.props.id === gradientId && (n.type as unknown) === "RadialGradient",
-      )
-      expect(
-        byType(gradient, "Stop").map((stop) => [stop.props.offset, stop.props.stopOpacity]),
-      ).toEqual([
-        [0, 1 - forestAurora.lines.floor],
-        [e.inner, 1 - forestAurora.lines.floor],
-        [1, 0],
-      ])
-    })
-    const [group] = byType(tree.root, "G")
-    expect(group.props.mask).toBe(`url(#${mask.props.id})`)
+    expect(byType(tree.root, "Mask")).toHaveLength(0)
+    expect(byType(tree.root, "G")).toHaveLength(0)
+    const [flow] = byTestID(tree, "forest-flow")
     expect(
-      group.findAll((n) => n.props.testID === "forest-flow-light" && typeof n.type === "string"),
-    ).toHaveLength(3)
+      flow.findAll((n) => n.props.testID === "forest-flow-light" && typeof n.type === "string"),
+    ).toHaveLength(LINES)
   })
 
-  test("three faint lines across the card, each with a bright dash and its glow flowing", () => {
+  test("four faint diagonal lines over the card, each with a bright dash and its glow flowing", () => {
     const tree = render()
     const lines = forestAurora.lines
-    const laid = FLOW_LINES.map((points) => layLine(points, BOX))
+    const laid = layLines(BOX)
     const bases = byTestID(tree, "forest-flow-base")
     expect(bases.map((base) => base.props.d)).toEqual(laid.map(({ d }) => d))
     for (const base of bases) {
@@ -297,13 +271,12 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
     const glows = byTestID(tree, "forest-flow-glow")
     const lights = byTestID(tree, "forest-flow-light")
     lights.forEach((light, index) => {
-      const { pattern } = laid[index]
       expect(light.props).toMatchObject({ stroke: lines.light, strokeOpacity: lines.lightOpacity })
       expect(glows[index].props).toMatchObject({ stroke: lines.glow, strokeWidth: lines.glowWidth })
       for (const path of [light, glows[index]]) {
-        expect(path.props.strokeDasharray).toEqual([flowMotion.dash, pattern - flowMotion.dash])
+        expect(path.props.strokeDasharray).toEqual([flowMotion.dash, flowMotion.gap])
         expect(path.props.animatedProps.strokeDashoffset).toBeCloseTo(
-          flowOffset(plan.flows[index].start, pattern),
+          flowOffset(plan.flows[index].start),
         )
       }
     })
@@ -311,8 +284,8 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
 
   test("while visible: endless linear loops on the UI thread, and a fade in", () => {
     const tree = render({ focused: true })
-    // Three discs and six flowing paths' three phases.
-    expect(withRepeatSpy).toHaveBeenCalledTimes(6)
+    // Three discs and one phase per line (its light and its glow share it).
+    expect(withRepeatSpy).toHaveBeenCalledTimes(3 + LINES)
     for (const call of withRepeatSpy.mock.calls) {
       const [, count, reverse, , reduceMotion] = call as unknown[]
       expect([count, reverse, reduceMotion]).toEqual([-1, false, reanimated.ReduceMotion.System])
@@ -339,8 +312,8 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
     random.mockRestore()
     const expected = planMist(Math.floor(0.5 * 2147483647))
     const [first] = byTestID(tree, "forest-mist-disc")
-    expect(first.props.style[2].transform[0].translateX + MIST_DISCS[0].size / 2).toBeCloseTo(
-      discPose(expected.discs[0].start, MIST_DISCS[0], BOX.width, BOX.height).x,
+    expect(first.props.style[2].transform[0].translateX).toBeCloseTo(
+      discPose(expected.discs[0].start, MIST_DISCS[0]).translateX,
     )
   })
 
@@ -348,7 +321,7 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
     for (const options of [{ focused: false }, { covered: true }]) {
       const tree = render(options)
       expect(byTestID(tree, "forest-mist-disc")).toHaveLength(3)
-      expect(byTestID(tree, "forest-flow-light")).toHaveLength(3)
+      expect(byTestID(tree, "forest-flow-light")).toHaveLength(LINES)
     }
     expect(withRepeatSpy).not.toHaveBeenCalled()
     expect(withTimingSpy).not.toHaveBeenCalled()
@@ -362,7 +335,7 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
     layout(tree!)
     expect(withRepeatSpy).not.toHaveBeenCalled()
     act(() => tree!.update(element({ covered: false })))
-    expect(withRepeatSpy).toHaveBeenCalledTimes(6)
+    expect(withRepeatSpy).toHaveBeenCalledTimes(3 + LINES)
   })
 
   test("under Reduce Motion: discs at rest, the lines drawn without their flowing light", () => {
@@ -370,17 +343,15 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
     const tree = render({ focused: true })
     expect(withRepeatSpy).not.toHaveBeenCalled()
     expect(withTimingSpy).not.toHaveBeenCalled()
-    expect(byTestID(tree, "forest-flow-base")).toHaveLength(3)
+    expect(byTestID(tree, "forest-flow-base")).toHaveLength(LINES)
     expect(byTestID(tree, "forest-flow-light")).toHaveLength(0)
     expect(byTestID(tree, "forest-flow-glow")).toHaveLength(0)
     const [layers] = byTestID(tree, "forest-aurora-layers")
     expect(layers.props.style[1]).toEqual({ opacity: 1 })
     byTestID(tree, "forest-mist-disc").forEach((disc, index) => {
-      const shape = MIST_DISCS[index]
+      expect(index).toBeLessThan(MIST_DISCS.length)
       const [x, y, scale] = disc.props.style[2].transform
-      expect(x.translateX + shape.size / 2).toBeCloseTo(BOX.width * shape.from[0])
-      expect(y.translateY + shape.size / 2).toBeCloseTo(BOX.height * shape.from[1])
-      expect(scale.scale).toBe(1)
+      expect([x.translateX + 0, y.translateY + 0, scale.scale]).toEqual([0, 0, 1])
     })
   })
 })
