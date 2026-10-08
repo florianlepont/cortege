@@ -11,7 +11,18 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated"
-import { Circle, Defs, Path, RadialGradient, Stop, Svg } from "react-native-svg"
+import {
+  Circle,
+  Defs,
+  Ellipse,
+  G,
+  Mask,
+  Path,
+  RadialGradient,
+  Rect,
+  Stop,
+  Svg,
+} from "react-native-svg"
 import { buildTextShield, forestAurora, type ForestShieldKey } from "../app/forest-aurora-tokens"
 import {
   type Box,
@@ -144,12 +155,22 @@ function FlowLight({ d, periodMs, start, live }: FlowLightProps) {
   )
 }
 
-type FlowProps = { box: Box; flows: { periodMs: number; start: number }[]; live: Live }
+type FlowProps = {
+  box: Box
+  blocks: ForestTextBlock[]
+  flows: { periodMs: number; start: number }[]
+  live: Live
+  id: string
+}
 
-/** The four diagonal lines over the whole card; the shields above them soften them behind text. */
-function Flow({ box, flows, live }: FlowProps) {
+/**
+ * The four diagonal lines over the whole card, through a mask that lets only `floor` of them show
+ * behind each block of text, feathered softly around it, so the shields can stay light.
+ */
+function Flow({ box, blocks, flows, live, id }: FlowProps) {
   const lines = forestAurora.lines
   const laid = useMemo(() => layLines(box), [box])
+  const hidden = 1 - lines.floor
   return (
     <Svg
       testID="forest-flow"
@@ -158,30 +179,65 @@ function Flow({ box, flows, live }: FlowProps) {
       height={box.height}
       viewBox={`0 0 ${box.width} ${box.height}`}
     >
-      {laid.map(({ d }) => (
-        <Path
-          key={d}
-          d={d}
-          fill="none"
-          stroke={lines.base}
-          strokeOpacity={lines.baseOpacity}
-          strokeWidth={lines.width}
-          strokeLinecap="round"
-          testID="forest-flow-base"
-        />
-      ))}
-      {/* Under Reduce Motion the lines stay, without the flowing light. */}
-      {live.reduced
-        ? null
-        : laid.map(({ d }, index) => (
-            <FlowLight
-              key={d}
-              d={d}
-              periodMs={flows[index].periodMs}
-              start={flows[index].start}
-              live={live}
-            />
-          ))}
+      <Defs>
+        {blocks.map((block, index) => (
+          <RadialGradient key={index} id={`${id}-hole-${index}`} cx="50%" cy="50%" r="50%">
+            <Stop offset={0} stopColor={lines.hidden} stopOpacity={hidden} />
+            <Stop offset={textEllipse(block).inner} stopColor={lines.hidden} stopOpacity={hidden} />
+            <Stop offset={1} stopColor={lines.hidden} stopOpacity={0} />
+          </RadialGradient>
+        ))}
+        <Mask
+          id={`${id}-mask`}
+          x={0}
+          y={0}
+          width={box.width}
+          height={box.height}
+          maskUnits="userSpaceOnUse"
+        >
+          <Rect x={0} y={0} width={box.width} height={box.height} fill={lines.shown} />
+          {blocks.map((block, index) => {
+            const { cx, cy, rx, ry } = textEllipse(block)
+            return (
+              <Ellipse
+                key={index}
+                cx={cx}
+                cy={cy}
+                rx={rx}
+                ry={ry}
+                fill={`url(#${id}-hole-${index})`}
+                testID="forest-flow-hole"
+              />
+            )
+          })}
+        </Mask>
+      </Defs>
+      <G mask={`url(#${id}-mask)`}>
+        {laid.map(({ d }) => (
+          <Path
+            key={d}
+            d={d}
+            fill="none"
+            stroke={lines.base}
+            strokeOpacity={lines.baseOpacity}
+            strokeWidth={lines.width}
+            strokeLinecap="round"
+            testID="forest-flow-base"
+          />
+        ))}
+        {/* Under Reduce Motion the lines stay, without the flowing light. */}
+        {live.reduced
+          ? null
+          : laid.map(({ d }, index) => (
+              <FlowLight
+                key={d}
+                d={d}
+                periodMs={flows[index].periodMs}
+                start={flows[index].start}
+                live={live}
+              />
+            ))}
+      </G>
     </Svg>
   )
 }
@@ -232,7 +288,7 @@ type ForestAuroraProps = {
  * drifting there and back (7, 9 and 11.5 s each way, a few percent apart per mount), four faint
  * diagonal S curves over the whole card with a dash of light flowing endlessly along each, and
  * around each block of text a soft ellipse of shield, as light as the text's contrast allows, over
- * the mist and the lines. Gradients only: no edge and no flat zone. Only the discs' transforms and
+ * the mist and the lines, the lines fading behind it through a soft mask. Gradients only: no edge and no flat zone. Only the discs' transforms and
  * the dashes' offsets are animated, by worklets on the UI thread. It runs only while the screen
  * can be seen and goes on from where it stopped; under Reduce Motion the discs rest and the lines
  * are drawn without their light. Decoration only, never touched or read. The card clips it.
@@ -295,7 +351,7 @@ export function ForestAurora({ blocks, shield = "standard", seed, testID }: Fore
               id={`${id}-${disc.key}`}
             />
           ))}
-          <Flow box={box} flows={plan.flows} live={live} />
+          <Flow box={box} blocks={measured} flows={plan.flows} live={live} id={id} />
           <Shield blocks={measured} tone={shield} />
         </Animated.View>
       ) : null}

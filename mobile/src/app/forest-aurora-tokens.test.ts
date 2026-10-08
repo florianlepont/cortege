@@ -43,8 +43,8 @@ const lines = a.lines
 // ---------------------------------------------------------------------------------------------
 // The worst a point of text ever sits on: each disc at the most it ever puts there over its whole
 // drift (centre and radius along the way), all three stacked; a faint base line, and a dash of
-// light with its glow passing right behind it at full strength (the lines are not masked); then
-// the shield of every block of the card.
+// light with its glow passing right behind it, as much as the lines' mask lets through there;
+// then the shield of every block of the card.
 
 function mistAt(disc: MistDisc, box: Box, x: number, y: number): number {
   const half = disc.size / 2
@@ -76,14 +76,25 @@ function shieldAt(key: ForestShieldKey, e: Ellipse, x: number, y: number): numbe
   return Math.max(0, edge * (1 - (t - e.inner) / (1 - e.inner)))
 }
 
+/** The share of the lines the mask lets through at a point: `floor` behind a block, all far off. */
+function linesShowAt(e: Ellipse, x: number, y: number): number {
+  const t = radius(e, x, y)
+  const hole = t <= e.inner ? 1 : Math.max(0, 1 - (t - e.inner) / (1 - e.inner))
+  return 1 - (1 - lines.floor) * hole
+}
+
 function worstUnder(card: CardModel, stop: string, x: number, y: number) {
   let colour = stop
   for (const disc of MIST_DISCS) {
     colour = compositeOver(withAlpha(a[disc.key].colour, mistAt(disc, card.box, x, y)), colour)
   }
-  colour = compositeOver(withAlpha(lines.base, lines.baseOpacity), colour)
-  colour = compositeOver(withAlpha(lines.glow, lines.glowOpacity), colour)
-  colour = compositeOver(withAlpha(lines.light, lines.lightOpacity), colour)
+  const show = card.blocks.reduce(
+    (share, block) => share * linesShowAt(textEllipse(block), x, y),
+    1,
+  )
+  colour = compositeOver(withAlpha(lines.base, lines.baseOpacity * show), colour)
+  colour = compositeOver(withAlpha(lines.glow, lines.glowOpacity * show), colour)
+  colour = compositeOver(withAlpha(lines.light, lines.lightOpacity * show), colour)
   for (const block of card.blocks) {
     const shield = shieldAt(block.tone ?? card.key, textEllipse(block), x, y)
     colour = compositeOver(withAlpha(forestShield.colour, shield), colour)
@@ -285,7 +296,9 @@ describe("forest mist colours (owner's settings: fogA 1.6)", () => {
     ])
   })
 
-  test("the lines: faint base, a bright dash, a soft glow", () => {
+  test("the lines: faint base, a bright dash, a soft glow, only a little behind text", () => {
+    expect(lines.floor).toBeGreaterThan(0)
+    expect(lines.floor).toBeLessThanOrEqual(0.2)
     expect(lines.baseOpacity).toBeCloseTo(0.18)
     expect(lines.lightOpacity).toBe(1)
     expect(lines.glowOpacity).toBeLessThan(0.5)

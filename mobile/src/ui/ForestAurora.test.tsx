@@ -244,13 +244,39 @@ describe("ForestAurora (12.2-19: the owner's mist and flowing contours)", () => 
     )
   })
 
-  test("the lines are not masked: only the shields above them soften them behind text", () => {
+  test("the lines fade behind each block of text through a soft mask, down to its floor", () => {
     const tree = render()
-    expect(byType(tree.root, "Mask")).toHaveLength(0)
-    expect(byType(tree.root, "G")).toHaveLength(0)
-    const [flow] = byTestID(tree, "forest-flow")
+    const [mask] = byType(tree.root, "Mask")
+    const [shown] = byType(mask, "Rect")
+    expect(shown.props).toMatchObject({
+      x: 0,
+      y: 0,
+      width: BOX.width,
+      height: BOX.height,
+      fill: forestAurora.lines.shown,
+    })
+    const holes = byTestID(tree, "forest-flow-hole")
+    expect(holes).toHaveLength(BLOCKS.length)
+    BLOCKS.forEach((block, index) => {
+      const e = textEllipse(block)
+      expect(holes[index].props).toMatchObject({ cx: e.cx, cy: e.cy, rx: e.rx, ry: e.ry })
+      const gradientId = /url\(#(.*)\)/.exec(holes[index].props.fill)![1]
+      const gradient = tree.root.find(
+        (n) => n.props.id === gradientId && (n.type as unknown) === "RadialGradient",
+      )
+      // Soft: from the floor over the block to nothing at the ellipse's rim.
+      expect(
+        byType(gradient, "Stop").map((stop) => [stop.props.offset, stop.props.stopOpacity]),
+      ).toEqual([
+        [0, 1 - forestAurora.lines.floor],
+        [e.inner, 1 - forestAurora.lines.floor],
+        [1, 0],
+      ])
+    })
+    const [group] = byType(tree.root, "G")
+    expect(group.props.mask).toBe(`url(#${mask.props.id})`)
     expect(
-      flow.findAll((n) => n.props.testID === "forest-flow-light" && typeof n.type === "string"),
+      group.findAll((n) => n.props.testID === "forest-flow-light" && typeof n.type === "string"),
     ).toHaveLength(LINES)
   })
 
