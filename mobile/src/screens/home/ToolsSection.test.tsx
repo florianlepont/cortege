@@ -10,6 +10,7 @@ import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
 import { openDrafts, ToolsSection } from "./ToolsSection"
+import { pressableLook as look } from "../../../test/pressable-look"
 
 const originalConsoleError = console.error
 
@@ -160,7 +161,7 @@ describe("ToolsSection", () => {
   test("the identify card has the glass look and keeps its accessibility contract and hit area", () => {
     mount()
     const card = byType("Pressable")
-    const style = Object.assign({}, ...[card.props.style].flat()) as Record<string, unknown>
+    const style = look(card)
     const { glass } = defaultTheme.visual
     expect(style.backgroundColor).toBe(glass.cardFill)
     expect(style.borderColor).toBe(glass.cardBorder)
@@ -175,7 +176,7 @@ describe("ToolsSection", () => {
   test("the identify entry is one slim full-width row of 56 to 64 pt (D-20d)", () => {
     mount()
     const card = byType("Pressable")
-    const style = Object.assign({}, ...[card.props.style].flat()) as Record<string, unknown>
+    const style = look(card)
     // A row of icon tile, texts and chevron, not a half-width tile: it spans the page and has no
     // maximum width.
     expect(style.flexDirection).toBe("row")

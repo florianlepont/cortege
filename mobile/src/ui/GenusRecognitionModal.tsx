@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, View } from "react-native"
 import { Camera } from "expo-camera"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
@@ -14,6 +14,7 @@ import { AppButton } from "./AppButton"
 import { AppCard } from "./AppCard"
 import { AppText as Text } from "./AppText"
 import { GenusCameraView } from "./GenusCameraView"
+import { AppPressable } from "./AppPressable"
 
 const t = fr.genusRecognition
 
@@ -117,14 +118,14 @@ export function GenusRecognitionModal({
         <View style={styles.screen}>
           <View style={[styles.header, { paddingTop: insets.top + brandSpacing.md }]}>
             <Text style={styles.title}>{t.modalTitle}</Text>
-            <Pressable
+            <AppPressable
               onPress={handleClose}
               accessibilityRole="button"
               accessibilityLabel={t.close}
               testID="genus-recognition-close"
             >
               <Ionicons name="close-outline" size={24} color={theme.colors.textPrimary} />
-            </Pressable>
+            </AppPressable>
           </View>
 
           <ScrollView contentContainerStyle={styles.content}>

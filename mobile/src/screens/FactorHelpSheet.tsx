@@ -5,6 +5,7 @@ import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppText as Text } from "../ui/AppText"
 import { createDetailStyles } from "./factor-detail.styles"
+import { AppPressable } from "../ui/AppPressable"
 
 const t = fr.factorDetail
 
@@ -30,14 +31,14 @@ export function FactorHelpSheet({ visible, onClose, help, hints }: FactorHelpShe
             <Text style={styles.sheetTitle} accessibilityRole="header">
               {t.helpTitle}
             </Text>
-            <Pressable
+            <AppPressable
               style={styles.sheetClose}
               onPress={onClose}
               accessibilityRole="button"
               accessibilityLabel={t.helpClose}
             >
               <Ionicons name="close-outline" size={20} color={theme.semanticColors.textStrong} />
-            </Pressable>
+            </AppPressable>
           </View>
           <ScrollView>
             <View style={styles.hintsList}>

@@ -3,7 +3,6 @@ import {
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  Pressable,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -30,6 +29,7 @@ import { FactorLetterStrip, STRIP_HEIGHT } from "./FactorLetterStrip"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { GlassButton } from "../../ui/GlassButton"
 import { Ionicons } from "@expo/vector-icons"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.factorPager
 
@@ -213,7 +213,7 @@ export const FactorPager = memo(function FactorPager({
 
       <View pointerEvents="box-none" style={[styles.bar, { bottom: barBottom }]}>
         <FactorLetterStrip activeIndex={activeIndex} progress={progress} onSelect={scrollToIndex} />
-        <Pressable
+        <AppPressable
           accessibilityRole="button"
           accessibilityLabel={showFinish ? t.close : isLast ? t.finish : t.next}
           onPress={() => (isLast ? onFinish() : scrollToIndex(activeIndex + 1))}
@@ -227,7 +227,7 @@ export const FactorPager = memo(function FactorPager({
             size={26}
             color={theme.semanticColors.onCtaPrimary}
           />
-        </Pressable>
+        </AppPressable>
       </View>
     </View>
   )

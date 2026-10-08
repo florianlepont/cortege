@@ -143,6 +143,36 @@
       }
     },
     {
+      "files": [
+        "src/screens/**/*.tsx",
+        "src/components/**/*.tsx",
+        "src/ui/**/*.tsx",
+        "src/navigation/**/*.tsx"
+      ],
+      "excludedFiles": [
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "src/ui/AppPressable.tsx",
+        "src/ui/RipplePressable.tsx",
+        "src/ui/AppActionSheet.tsx",
+        "src/screens/FactorHelpSheet.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react-native",
+                "importNames": ["Pressable"],
+                "message": "Use AppPressable from src/ui (charter 12.4). Only the files allowlisted in mobile/.eslintrc.json keep a raw Pressable (modal backdrops)."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/**/*.test.ts", "src/**/*.test.tsx"],
       "rules": {
         "@typescript-eslint/no-require-imports": "off",

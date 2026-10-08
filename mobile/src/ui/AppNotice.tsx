@@ -1,9 +1,10 @@
 import { ReactNode, useMemo } from "react"
-import { Pressable, StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
+import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
+import { AppPressable } from "./AppPressable"
 
 type AppNoticeTone = "info" | "success" | "warning" | "danger"
 
@@ -54,7 +55,9 @@ export function AppNotice({
         <Text style={[styles.message, textTone, messageStyle]}>{message}</Text>
       </View>
       {action ? (
-        <Pressable
+        <AppPressable
+          disableScale
+          disableRipple
           onPress={action.onPress}
           accessibilityRole="button"
           accessibilityLabel={action.accessibilityLabel ?? action.label}
@@ -62,7 +65,7 @@ export function AppNotice({
           style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
         >
           <Text style={[styles.actionText, textTone]}>{action.label}</Text>
-        </Pressable>
+        </AppPressable>
       ) : null}
     </View>
   )

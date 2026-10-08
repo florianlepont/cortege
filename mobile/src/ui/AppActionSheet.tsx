@@ -12,6 +12,7 @@ import {
   brandTypography,
 } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
+import { AppPressable } from "./AppPressable"
 
 export type AppActionSheetOption = {
   label: string
@@ -50,7 +51,7 @@ export function AppActionSheet({
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, brandSpacing.md) }]}>
         {title ? <Text style={styles.title}>{title}</Text> : null}
         {options.map((option) => (
-          <Pressable
+          <AppPressable
             key={option.label}
             style={styles.row}
             onPress={() => {
@@ -66,9 +67,9 @@ export function AppActionSheet({
             >
               {option.label}
             </Text>
-          </Pressable>
+          </AppPressable>
         ))}
-        <Pressable
+        <AppPressable
           style={styles.cancelRow}
           onPress={onClose}
           accessibilityRole="button"
@@ -77,7 +78,7 @@ export function AppActionSheet({
           <Text style={styles.cancelLabel} maxFontSizeMultiplier={brandFontScaleCaps.body}>
             {cancelLabel}
           </Text>
-        </Pressable>
+        </AppPressable>
       </View>
     </Modal>
   )

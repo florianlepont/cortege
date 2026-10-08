@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react"
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native"
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText as Text } from "../../ui/AppText"
 import {
@@ -10,6 +10,7 @@ import {
 } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { GlassSurface } from "../../ui/GlassSurface"
+import { AppPressable } from "../../ui/AppPressable"
 
 /**
  * The map overlays shared by every map of the app (the Explorer is the reference): the same edge
@@ -95,7 +96,9 @@ export const MapActionPill = memo(function MapActionPill({
       surface={theme.visual.mapControl.glass}
       style={styles.pill}
     >
-      <Pressable
+      <AppPressable
+        disableScale
+        disableRipple
         style={styles.actionHit}
         hitSlop={{ top: MAP_CONTROL_HIT_SLOP, bottom: MAP_CONTROL_HIT_SLOP }}
         onPress={onPress}
@@ -105,7 +108,7 @@ export const MapActionPill = memo(function MapActionPill({
         {/* The map control glyph colour: light moss on the dark map glass (12.2-18, 12.2-19). */}
         <Ionicons name={icon} size={18} color={theme.visual.mapControl.icon} />
         <Text style={styles.pillText}>{label}</Text>
-      </Pressable>
+      </AppPressable>
     </GlassSurface>
   )
 })

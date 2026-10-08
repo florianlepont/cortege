@@ -1,9 +1,10 @@
 import { memo, useMemo } from "react"
-import { Pressable, StyleSheet } from "react-native"
+import { StyleSheet } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { brandInteraction } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { GlassSurface } from "../../ui/GlassSurface"
+import { AppPressable } from "../../ui/AppPressable"
 
 export const SHEET_CLOSE_ICON_SIZE = 20
 
@@ -29,7 +30,9 @@ export const SheetCloseButton = memo(function SheetCloseButton({
   const styles = useMemo(() => createStyles(theme), [theme])
   return (
     <GlassSurface tone="auto" interactive surface={theme.visual.sheet.close} style={styles.circle}>
-      <Pressable
+      <AppPressable
+        disableScale
+        disableRipple
         style={styles.hit}
         onPress={onPress}
         accessibilityRole="button"
@@ -40,7 +43,7 @@ export const SheetCloseButton = memo(function SheetCloseButton({
           size={SHEET_CLOSE_ICON_SIZE}
           color={theme.visual.sheet.closeIcon}
         />
-      </Pressable>
+      </AppPressable>
     </GlassSurface>
   )
 })

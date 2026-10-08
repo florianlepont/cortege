@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Alert, Pressable, StyleSheet, View } from "react-native"
+import { Alert, StyleSheet, View } from "react-native"
 import { brandDefaultFontFamily, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -9,6 +9,7 @@ import { AppText as Text } from "../../ui/AppText"
 import { useFrameLargeTitle } from "../../ui/frame-large-title"
 import { type StatusLine } from "./summary-state"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 const h = fr.surveyDetail.header
 const a11y = fr.surveyDetail.a11y
@@ -93,14 +94,14 @@ export function SummaryHeader({
         <View style={styles.titleRow}>
           {canEdit ? (
             // The title is the control (OA-95): a tap edits it, no pencil.
-            <Pressable
+            <AppPressable
               onPress={() => setIsRenaming(true)}
               accessibilityRole="button"
               accessibilityLabel={a11y.renameSurvey(siteName)}
               style={styles.titlePressable}
             >
               <Text style={headerStyles.title}>{siteName}</Text>
-            </Pressable>
+            </AppPressable>
           ) : (
             <Text style={headerStyles.title} accessibilityRole="header">
               {siteName}

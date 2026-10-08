@@ -126,7 +126,7 @@ describe("AppGroupedList (ACC-03)", () => {
     ])
     const row = root.findByProps({ accessibilityLabel: "Version" })
     expect(row.props.disabled).toBe(true)
-    expect(row.props.accessibilityRole).toBeUndefined()
+    expect(row.props.accessibilityRole).toBe("none")
   })
 
   test("a disabled or loading row cannot be pressed even with onPress set", () => {

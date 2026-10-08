@@ -5,7 +5,6 @@ import {
   Easing,
   ImageSourcePropType,
   Modal,
-  Pressable,
   StatusBar,
   View,
   useWindowDimensions,
@@ -26,6 +25,7 @@ import {
   HERO_MIN_HEIGHT_PX,
   HERO_MIN_HEIGHT_RATIO,
 } from "./auth-gate/styles"
+import { AppPressable } from "../ui/AppPressable"
 
 type AuthGateScreenProps = {
   apiUrl: string
@@ -204,7 +204,7 @@ export function AuthGateScreen({
           <View style={[devModalStyles.container, { paddingBottom: Math.max(insets.bottom, 24) }]}>
             <View style={devModalStyles.header}>
               <Text style={devModalStyles.title}>{fr.authGate.devConfig.title}</Text>
-              <Pressable
+              <AppPressable
                 onPress={() => setShowDevModal(false)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
@@ -215,7 +215,7 @@ export function AuthGateScreen({
                   size={26}
                   color={theme.colors.textSecondary}
                 />
-              </Pressable>
+              </AppPressable>
             </View>
             <AppField
               label={fr.authGate.devConfig.apiUrlLabel}

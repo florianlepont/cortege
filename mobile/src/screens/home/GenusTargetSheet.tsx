@@ -1,11 +1,12 @@
 import { useMemo } from "react"
-import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { Modal, ScrollView, StyleSheet, View } from "react-native"
 import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.tools
 
@@ -49,9 +50,14 @@ export function GenusTargetSheet({
           <Text style={styles.title} accessibilityRole="header">
             {t.chooseSurveyTitle({ genus: genusName })}
           </Text>
-          <Pressable onPress={onClose} accessibilityRole="button" hitSlop={10}>
+          <AppPressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel={t.close}
+            hitSlop={10}
+          >
             <Text style={styles.close}>{t.close}</Text>
-          </Pressable>
+          </AppPressable>
         </View>
         <ScrollView contentContainerStyle={styles.content}>
           <AppButton

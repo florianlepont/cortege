@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Pressable, View } from "react-native"
+import { View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
@@ -17,6 +17,7 @@ import { FactorGenusListInput } from "../ui/FactorGenusListInput"
 import { FactorSegmentedOption, FactorSegmentedInput } from "../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../ui/FactorSliderInput"
 import { fr } from "../i18n"
+import { AppPressable } from "../ui/AppPressable"
 
 const t = fr.factorDetail
 
@@ -101,7 +102,7 @@ export function FactorDetailScreen({
         </Text>
       </View>
 
-      <Pressable
+      <AppPressable
         style={detailStyles.helpLink}
         onPress={() => setHelpVisible(true)}
         accessibilityRole="button"
@@ -113,7 +114,7 @@ export function FactorDetailScreen({
           color={theme.semanticColors.textStrong}
         />
         <Text style={detailStyles.helpLinkText}>{t.helpLink}</Text>
-      </Pressable>
+      </AppPressable>
 
       <FactorHelpSheet
         visible={helpVisible}

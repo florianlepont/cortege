@@ -1,4 +1,4 @@
-import { Pressable } from "react-native"
+import {} from "react-native"
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack"
 import { Ionicons } from "@expo/vector-icons"
 import type { BrandTheme } from "../../app/theme"
@@ -7,6 +7,7 @@ import { AccountRoute } from "../routes/AccountRoute"
 import { OfflineAreasRoute } from "../routes/OfflineAreasRoute"
 import { SettingsRoute } from "../routes/SettingsRoute"
 import { pageTitleOptions } from "./stack-options"
+import { AppPressable } from "../../ui/AppPressable"
 
 /**
  * OA-13 (owner decision, 2026-09-28): Compte is no longer a tab. The avatar pushes these two
@@ -15,7 +16,7 @@ import { pageTitleOptions } from "./stack-options"
 
 function SettingsHeaderButton({ onPress, color }: { onPress: () => void; color: string }) {
   return (
-    <Pressable
+    <AppPressable
       accessibilityRole="button"
       accessibilityLabel={fr.navigation.a11y.openSettings}
       hitSlop={8}
@@ -23,7 +24,7 @@ function SettingsHeaderButton({ onPress, color }: { onPress: () => void; color: 
       style={{ width: 34, height: 34, alignItems: "center", justifyContent: "center" }}
     >
       <Ionicons name="settings-outline" size={22} color={color} />
-    </Pressable>
+    </AppPressable>
   )
 }
 

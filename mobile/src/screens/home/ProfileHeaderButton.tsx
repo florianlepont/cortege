@@ -1,7 +1,8 @@
 import { Image as ExpoImage } from "expo-image"
-import { Pressable, StyleSheet } from "react-native"
+import { StyleSheet } from "react-native"
 import { brandRadius } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
+import { AppPressable } from "../../ui/AppPressable"
 
 const AVATAR_SIZE = 32
 
@@ -21,7 +22,7 @@ export function ProfileHeaderButton({
   onPress,
 }: ProfileHeaderButtonProps) {
   return (
-    <Pressable
+    <AppPressable
       accessibilityRole="button"
       accessibilityLabel={fr.home.avatar}
       hitSlop={6}
@@ -36,7 +37,7 @@ export function ProfileHeaderButton({
         contentFit="cover"
         accessible={false}
       />
-    </Pressable>
+    </AppPressable>
   )
 }
 

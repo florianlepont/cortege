@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { CameraView } from "expo-camera"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -13,6 +13,7 @@ import {
 import { fr } from "../i18n"
 import { AppText as Text } from "./AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { AppPressable } from "./AppPressable"
 
 const t = fr.genusRecognition
 
@@ -59,7 +60,7 @@ export function GenusCameraView({ onCapture, onClose, onError }: GenusCameraView
       <CameraView ref={cameraRef} style={styles.preview} facing="back" />
 
       <View style={[styles.topBar, { paddingTop: insets.top + brandSpacing.sm }]}>
-        <Pressable
+        <AppPressable
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel={t.closeCamera}
@@ -67,7 +68,7 @@ export function GenusCameraView({ onCapture, onClose, onError }: GenusCameraView
           testID="genus-camera-close"
         >
           <Ionicons name="close-outline" size={22} color={brandCameraTokens.guide} />
-        </Pressable>
+        </AppPressable>
         <Text style={styles.title}>{t.modalTitle}</Text>
         <View style={styles.closeButton} />
       </View>
@@ -85,7 +86,7 @@ export function GenusCameraView({ onCapture, onClose, onError }: GenusCameraView
       </View>
 
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + brandSpacing.lg }]}>
-        <Pressable
+        <AppPressable
           onPress={() => void handleShutter()}
           disabled={capturing}
           accessibilityRole="button"
@@ -95,7 +96,7 @@ export function GenusCameraView({ onCapture, onClose, onError }: GenusCameraView
           testID="genus-camera-shutter"
         >
           <View style={styles.shutterDot} />
-        </Pressable>
+        </AppPressable>
       </View>
     </View>
   )

@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react"
-import { ActivityIndicator, Pressable, View } from "react-native"
+import { ActivityIndicator, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
 import type { BasemapKey } from "../../map/basemaps"
@@ -7,6 +7,7 @@ import { fr } from "../../i18n"
 import { mapControlIconSize } from "../../app/visual-tokens"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { createControlStyles } from "./styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.publicMap
 const offlineT = fr.offlineMap
@@ -42,7 +43,9 @@ export const MapTopControls = memo(function MapTopControls({
       surface={theme.visual.mapControl.glass}
       style={[styles.capsule, { top }]}
     >
-      <Pressable
+      <AppPressable
+        disableScale
+        disableRipple
         style={styles.capsuleButton}
         onPress={onToggleBasemap}
         accessibilityRole="button"
@@ -53,11 +56,13 @@ export const MapTopControls = memo(function MapTopControls({
           size={mapControlIconSize}
           color={theme.visual.mapControl.icon}
         />
-      </Pressable>
+      </AppPressable>
       {onOpenOfflineAreas ? (
         <>
           <View style={styles.capsuleSeparator} />
-          <Pressable
+          <AppPressable
+            disableScale
+            disableRipple
             style={styles.capsuleButton}
             onPress={onOpenOfflineAreas}
             accessibilityRole="button"
@@ -68,7 +73,7 @@ export const MapTopControls = memo(function MapTopControls({
               size={mapControlIconSize}
               color={theme.visual.mapControl.icon}
             />
-          </Pressable>
+          </AppPressable>
         </>
       ) : null}
     </GlassSurface>
@@ -99,7 +104,9 @@ export const MapBottomDock = memo(function MapBottomDock({
       surface={theme.visual.mapControl.glass}
       style={[styles.locateGlass, top !== undefined ? { top } : { bottom }]}
     >
-      <Pressable
+      <AppPressable
+        disableScale
+        disableRipple
         style={styles.capsuleButton}
         onPress={onLocate}
         disabled={locating}
@@ -116,7 +123,7 @@ export const MapBottomDock = memo(function MapBottomDock({
             color={theme.visual.mapControl.icon}
           />
         )}
-      </Pressable>
+      </AppPressable>
     </GlassSurface>
   )
 })

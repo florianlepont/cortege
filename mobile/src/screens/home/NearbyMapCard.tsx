@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
@@ -9,6 +9,7 @@ import { ParcelMap } from "../../map/maplibre/ParcelMap"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { ScoreRing } from "../../ui/ScoreRing"
 import { MAP_EDGE } from "../public-map/MapChips"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.nearby
 const sectorT = fr.home.sector
@@ -48,7 +49,7 @@ export function NearbyMapCard({ nearby, height, onPress }: NearbyMapCardProps) {
   )
 
   return (
-    <Pressable
+    <AppPressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={t.seeMapLabel}
@@ -99,7 +100,7 @@ export function NearbyMapCard({ nearby, height, onPress }: NearbyMapCardProps) {
           </>
         )}
       </GlassSurface>
-    </Pressable>
+    </AppPressable>
   )
 }
 

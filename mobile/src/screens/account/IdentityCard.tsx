@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { ActionSheetIOS, Alert, Image, Platform, Pressable, View } from "react-native"
+import { ActionSheetIOS, Alert, Image, Platform, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
@@ -7,6 +7,7 @@ import { AuthUser } from "../../app/types"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { fr } from "../../i18n"
 import { createIdentityStyles } from "./styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 export type IdentityCardProps = {
   // The only reader of the access token on the account screen: it signs the
@@ -123,7 +124,7 @@ export function IdentityCard({
   return (
     <View style={styles.identity}>
       {/* ACC-11 : Avatar avec badge caméra */}
-      <Pressable
+      <AppPressable
         style={styles.avatarButton}
         onPress={openPhotoActions}
         disabled={profileUpdating}
@@ -151,7 +152,7 @@ export function IdentityCard({
         <GlassSurface style={styles.avatarEditBadge} pointerEvents="none">
           <Ionicons name="camera-outline" size={14} color={theme.semanticColors.textStrong} />
         </GlassSurface>
-      </Pressable>
+      </AppPressable>
       <View style={styles.identityTexts}>
         <Text style={styles.identityName} numberOfLines={1}>
           {heroName}

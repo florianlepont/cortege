@@ -130,7 +130,11 @@ describe("PhotosStrip heading (D-24)", () => {
         n.props.accessibilityLabel === fr.surveyDetail.a11y.addPhoto,
     )
     expect(add).toHaveLength(1)
-    expect(add[0].props.style).toEqual(styles.addHit)
+    // Placement and size stay on the Pressable, the centring goes to the scaling inner view.
+    expect(flatten(add[0].props.style)).toMatchObject({
+      minHeight: styles.addHit.minHeight,
+      minWidth: styles.addHit.minWidth,
+    })
     expect(styles.addHit.minHeight).toBeGreaterThanOrEqual(44)
     expect(add[0].findAllByType("GlassSurface" as never)).toHaveLength(1)
     expect(add[0].findAllByType("Ionicons" as never)[0].props.name).toBe("add-outline")
@@ -228,16 +232,12 @@ describe("PhotosStrip tiles (D-27b)", () => {
     )
 
   test("every photo is a press target of the tile's own size, a tile inside, 44 pt or more", () => {
-    const styles = createPhotoStyles(defaultTheme)
     for (const count of [1, 3]) {
       const size = resolvePhotoSize(count, 390)
       const targets = pressables(render(count))
       expect(targets).toHaveLength(count)
       for (const target of targets) {
-        expect(target.props.style).toEqual([
-          styles.photoPress,
-          { width: size.width, height: size.height },
-        ])
+        expect(flatten(target.props.style)).toEqual({ width: size.width, height: size.height })
         expect(target.findAllByType("PhotoTile" as never)).toHaveLength(1)
         expect(size.width).toBeGreaterThanOrEqual(44)
         expect(size.height).toBeGreaterThanOrEqual(44)

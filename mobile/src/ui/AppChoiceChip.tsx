@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { Pressable, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native"
+import { StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import {
   brandComponentTokens,
@@ -9,6 +9,7 @@ import {
 } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { feedback } from "./feedback"
+import { AppPressable } from "./AppPressable"
 
 export type AppChoiceChipTone = "neutral" | "success" | "warning" | "danger"
 
@@ -43,7 +44,7 @@ export function AppChoiceChip({
     : undefined
 
   return (
-    <Pressable
+    <AppPressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !isInteractive, selected: active }}
@@ -67,7 +68,7 @@ export function AppChoiceChip({
       >
         {label}
       </Text>
-    </Pressable>
+    </AppPressable>
   )
 }
 

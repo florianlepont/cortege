@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { Alert, Pressable, View } from "react-native"
+import { Alert, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -11,6 +11,7 @@ import { PhotoGallery } from "./PhotoGallery"
 import { PhotoTile, photoTileStatusText } from "./PhotoTile"
 import { createPhotoStyles } from "./photos.styles"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.surveyDetail.photos
 const alerts = fr.surveyDetail.alerts
@@ -78,7 +79,7 @@ export function PhotosStrip({
           ) : null}
         </Text>
         {canEdit ? (
-          <Pressable
+          <AppPressable
             style={photoStyles.addHit}
             onPress={handleAdd}
             accessibilityRole="button"
@@ -88,11 +89,11 @@ export function PhotosStrip({
               <Ionicons name="add-outline" size={18} color={theme.semanticColors.textStrong} />
               <Text style={photoStyles.addPillText}>{t.add}</Text>
             </GlassSurface>
-          </Pressable>
+          </AppPressable>
         ) : null}
       </View>
       {photos.length === 0 ? (
-        <Pressable
+        <AppPressable
           style={photoStyles.emptyTile}
           onPress={handleAdd}
           accessibilityRole="button"
@@ -101,12 +102,12 @@ export function PhotosStrip({
         >
           <Ionicons name="camera-outline" size={28} color={theme.colors.textSecondary} />
           <Text style={photoStyles.emptyText}>{t.emptyAdd}</Text>
-        </Pressable>
+        </AppPressable>
       ) : (
         <PhotoGallery
           ids={photos.map((attachment) => attachment.id)}
           renderPhoto={(id, index, size) => (
-            <Pressable
+            <AppPressable
               style={[photoStyles.photoPress, { width: size.width, height: size.height }]}
               onPress={() => handlePhotoPress(id)}
               accessibilityRole={canEdit ? "button" : "image"}
@@ -115,7 +116,7 @@ export function PhotosStrip({
               accessibilityValue={{ text: photoTileStatusText(photos[index]) }}
             >
               <PhotoTile attachment={photos[index]} size={size} />
-            </Pressable>
+            </AppPressable>
           )}
         />
       )}

@@ -1,9 +1,10 @@
 import { useMemo } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { brandInteraction, brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
+import { AppPressable } from "./AppPressable"
 
 export type FactorSegmentedOption = { value: string; label: string }
 
@@ -46,7 +47,7 @@ export function FactorSegmentedInput({
         {options.map((option) => {
           const active = option.value === value
           return (
-            <Pressable
+            <AppPressable
               key={option.value}
               accessibilityRole="radio"
               accessibilityState={{ selected: active, checked: active }}
@@ -61,7 +62,7 @@ export function FactorSegmentedInput({
               <Text style={[styles.segmentText, active ? styles.segmentTextActive : null]}>
                 {option.label}
               </Text>
-            </Pressable>
+            </AppPressable>
           )
         })}
       </View>

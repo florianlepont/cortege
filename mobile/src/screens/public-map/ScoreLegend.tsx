@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react"
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
+import { ActivityIndicator, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import {
@@ -16,6 +16,7 @@ import { mapControlIconSize } from "../../app/visual-tokens"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { MAP_CONTROL_HIT_SLOP, MAP_EDGE, MAP_PILL_HEIGHT } from "./MapChips"
 import { OfflineIndicatorBadge } from "./OfflineControls"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.publicMap
 
@@ -90,7 +91,9 @@ export const MapLegend = memo(function MapLegend({
           <Text style={styles.countText}>{countLabel}</Text>
         </GlassSurface>
         <GlassSurface tone="auto" interactive surface={glass} style={styles.toggle}>
-          <Pressable
+          <AppPressable
+            disableScale
+            disableRipple
             style={styles.toggleHit}
             hitSlop={MAP_CONTROL_HIT_SLOP}
             onPress={() => setExpanded((current) => !current)}
@@ -103,7 +106,7 @@ export const MapLegend = memo(function MapLegend({
               size={mapControlIconSize}
               color={theme.visual.mapControl.icon}
             />
-          </Pressable>
+          </AppPressable>
         </GlassSurface>
         {isOffline ? <OfflineIndicatorBadge /> : null}
       </View>

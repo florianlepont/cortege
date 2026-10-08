@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native"
 import { Image as ExpoImage } from "expo-image"
 import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { formatDay } from "../../app/formatters"
@@ -18,6 +18,7 @@ import { ScoreBreakdown } from "../survey-detail/ScoreBreakdown"
 import { createSummaryScreenStyles } from "../survey-detail/summary-screen.styles"
 import { useSubPageContentStyle } from "../survey-detail/useSubPageContent"
 import { toContextRows, toDisplayedScores, toFactorEntries } from "./view-model"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.communitySurvey
 
@@ -209,7 +210,7 @@ export function CommunitySurveyScreen({
           <Text style={styles.sectionTitle}>{t.history.title}</Text>
           <View style={own.historyList}>
             {detail.history.map((item) => (
-              <Pressable
+              <AppPressable
                 key={item.survey_id}
                 disabled={item.is_current}
                 onPress={() => onOpenSurvey(item.survey_id)}
@@ -236,7 +237,7 @@ export function CommunitySurveyScreen({
                   </Text>
                 </View>
                 <Text style={own.historyTotal}>{t.history.total(item.ibp_total)}</Text>
-              </Pressable>
+              </AppPressable>
             ))}
           </View>
         </View>

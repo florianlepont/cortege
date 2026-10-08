@@ -7,6 +7,7 @@ import { fr } from "../../i18n"
 import { estimateFinishBarHeight, finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
 import type { SurveyFormMethod } from "./method"
 import { SurveyWizardScreen } from "./SurveyWizardScreen"
+import { pressableLook as look } from "../../../test/pressable-look"
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -125,7 +126,7 @@ describe("SurveyWizardScreen: variant I glass (12.2-16)", () => {
 
   test("the top buttons keep their 44 pt and the progress uses the score tokens", () => {
     const { tree } = mount()
-    const back = flatten(byTestID(tree, "wizard-back").props.style)
+    const back = look(byTestID(tree, "wizard-back"))
     expect(back.width).toBe(44)
     expect(back.height).toBe(44)
     expect(back.backgroundColor).toBe(defaultTheme.visual.glass.cardFill)
@@ -239,8 +240,8 @@ describe("SurveyWizardScreen: method cards", () => {
 
   test("a card is glass with a hairline; the selected one has a 2 pt accent border", () => {
     const { tree } = onMethodStep()
-    const selected = flatten(byTestID(tree, `method-option-${IBP_METHOD_V3_2}`).props.style)
-    const other = flatten(byTestID(tree, `method-option-${IBP_METHOD_V3_0}`).props.style)
+    const selected = look(byTestID(tree, `method-option-${IBP_METHOD_V3_2}`))
+    const other = look(byTestID(tree, `method-option-${IBP_METHOD_V3_0}`))
     const { glass, accentText } = defaultTheme.visual
     expect(other.backgroundColor).toBe(glass.cardFill)
     expect(other.borderWidth).toBe(1)
@@ -252,8 +253,8 @@ describe("SurveyWizardScreen: method cards", () => {
 
   test("the selected and unselected cards have the same size (padding plus border)", () => {
     const { tree } = onMethodStep()
-    const selected = flatten(byTestID(tree, `method-option-${IBP_METHOD_V3_2}`).props.style)
-    const other = flatten(byTestID(tree, `method-option-${IBP_METHOD_V3_0}`).props.style)
+    const selected = look(byTestID(tree, `method-option-${IBP_METHOD_V3_2}`))
+    const other = look(byTestID(tree, `method-option-${IBP_METHOD_V3_0}`))
     expect(Number(selected.padding) + Number(selected.borderWidth)).toBe(
       Number(other.padding) + Number(other.borderWidth),
     )

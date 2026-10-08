@@ -1,13 +1,5 @@
 import { useCallback, useMemo, useRef } from "react"
-import {
-  FlatList,
-  ListRenderItemInfo,
-  Platform,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native"
+import { FlatList, ListRenderItemInfo, Platform, ScrollView, TextInput, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { CommunitySurveyItem } from "@cortege/ibp-domain"
@@ -31,6 +23,7 @@ import { resolveRowScore } from "../survey-list/row-score"
 import { SurveyRow } from "../survey-list/SurveyRow"
 import { CommunityRow } from "./CommunityRow"
 import { createSearchStyles } from "./search.styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.surveyList.search
 
@@ -180,7 +173,7 @@ export function SurveySearchScreen({
               accessibilityLabel={t.placeholder}
             />
             {query.length > 0 ? (
-              <Pressable
+              <AppPressable
                 accessibilityRole="button"
                 accessibilityLabel={t.clear}
                 onPress={() => onQueryChange("")}
@@ -192,12 +185,12 @@ export function SurveySearchScreen({
                   size={18}
                   color={theme.colors.textSecondary}
                 />
-              </Pressable>
+              </AppPressable>
             ) : null}
           </View>
-          <Pressable accessibilityRole="button" accessibilityLabel={t.cancel} onPress={onCancel}>
+          <AppPressable accessibilityRole="button" accessibilityLabel={t.cancel} onPress={onCancel}>
             <Text style={styles.cancel}>{t.cancel}</Text>
-          </Pressable>
+          </AppPressable>
         </View>
 
         {/* Glass segment group: the active scope is the inverted neutral chip (principle 7). */}
@@ -209,9 +202,10 @@ export function SurveySearchScreen({
           accessibilityRole="tablist"
         >
           {(["mine", "community"] as const).map((value) => (
-            <Pressable
+            <AppPressable
               key={value}
               accessibilityRole="tab"
+              accessibilityLabel={t.segments[value]}
               accessibilityState={{ selected: scope === value }}
               onPress={() => {
                 feedback.selection()
@@ -224,7 +218,7 @@ export function SurveySearchScreen({
               >
                 {t.segments[value]}
               </Text>
-            </Pressable>
+            </AppPressable>
           ))}
         </View>
 

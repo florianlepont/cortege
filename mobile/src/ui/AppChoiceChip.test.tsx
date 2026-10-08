@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { selectionAsync } from "expo-haptics"
+import { pressableLook as look } from "../../test/pressable-look"
 import { AppChoiceChip } from "./AppChoiceChip"
 import { brandComponentTokens } from "../app/brand-tokens"
 import { defaultTheme } from "../app/theme"
@@ -14,6 +15,7 @@ jest.mock("react-native", () => {
   return {
     Pressable: mockComponent("Pressable"),
     Text: mockComponent("Text"),
+    View: mockComponent("View"),
     StyleSheet: { create: <T,>(styles: T): T => styles },
   }
 })
@@ -60,7 +62,7 @@ const { chip } = defaultTheme.visual
 describe("AppChoiceChip (D-05, D-08)", () => {
   test("inactive: glass fill, hairline border and secondary label", () => {
     const { pressable, text } = render({ onPress: () => undefined })
-    expect(flatten(pressable.props.style)).toMatchObject({
+    expect(look(pressable)).toMatchObject({
       backgroundColor: chip.fill,
       borderColor: chip.border,
     })
@@ -70,14 +72,14 @@ describe("AppChoiceChip (D-05, D-08)", () => {
 
   test("active: inverted neutral fill with the canvas label, selected for screen readers", () => {
     const { pressable, text } = render({ active: true, onPress: () => undefined })
-    expect(flatten(pressable.props.style).backgroundColor).toBe(chip.activeBg)
+    expect(look(pressable).backgroundColor).toBe(chip.activeBg)
     expect(flatten(text.props.style).color).toBe(chip.activeText)
     expect(pressable.props.accessibilityState.selected).toBe(true)
   })
 
   test("keeps the 44 pt minimum height", () => {
     const { pressable } = render({ onPress: () => undefined })
-    expect(flatten(pressable.props.style).minHeight).toBe(brandComponentTokens.choiceChip.minHeight)
+    expect(look(pressable).minHeight).toBe(brandComponentTokens.choiceChip.minHeight)
     expect(brandComponentTokens.choiceChip.minHeight).toBe(44)
   })
 
@@ -101,10 +103,10 @@ describe("AppChoiceChip (D-05, D-08)", () => {
 
   test("a tone tints the inactive fill and the active state still wins", () => {
     const tinted = render({ tone: "success", onPress: () => undefined })
-    expect(flatten(tinted.pressable.props.style).backgroundColor).toBe(
+    expect(look(tinted.pressable).backgroundColor).toBe(
       defaultTheme.componentColors.choiceChip.successBackground,
     )
     const active = render({ tone: "success", active: true, onPress: () => undefined })
-    expect(flatten(active.pressable.props.style).backgroundColor).toBe(chip.activeBg)
+    expect(look(active.pressable).backgroundColor).toBe(chip.activeBg)
   })
 })

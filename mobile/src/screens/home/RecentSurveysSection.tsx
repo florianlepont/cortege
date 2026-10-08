@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useMemo } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import {
   brandInteraction,
   brandRadius,
@@ -22,6 +22,7 @@ import { createRowStyles } from "../survey-list/row-styles"
 import { resolveRowScore } from "../survey-list/row-score"
 import { HOME_GAPS, RECENT_LAYOUT } from "./layout-budget"
 import { RecentSurveyRow } from "./RecentSurveyRow"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.recent
 const rowText = fr.surveyList
@@ -81,7 +82,7 @@ export function RecentSurveysSection({
         <AppSectionHeader
           title={t.title}
           trailing={
-            <Pressable
+            <AppPressable
               style={styles.seeAll}
               onPress={onSeeAll}
               accessibilityRole="button"
@@ -89,7 +90,7 @@ export function RecentSurveysSection({
               testID="home-recent-see-all"
             >
               <Text style={styles.seeAllLabel}>{t.seeAll}</Text>
-            </Pressable>
+            </AppPressable>
           }
           style={styles.header}
         />

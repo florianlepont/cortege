@@ -180,6 +180,16 @@ export const AppPressable = forwardRef<View, AppPressableProps>(function AppPres
     )
   }
 
+  if (typeof style !== "function" && typeof children !== "function") {
+    // Static style and children: no pressed-state callbacks, so the layout is computed once.
+    const { outer, inner } = splitStyle(style)
+    return (
+      <Pressable {...common} style={outer}>
+        <Animated.View style={[styles.fill, inner, animatedStyle]}>{children}</Animated.View>
+      </Pressable>
+    )
+  }
+
   return (
     <Pressable {...common} style={(state) => splitStyle(resolveStyle(state)).outer}>
       {(state) => (

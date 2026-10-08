@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useHeaderHeight } from "@react-navigation/elements"
-import { Pressable, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native"
+import { RefreshControl, ScrollView, View, useWindowDimensions } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
@@ -30,6 +30,7 @@ import { RECENT_SURVEYS_COUNT, RecentSurveysSection } from "./home/RecentSurveys
 import { ResumeCard } from "./home/ResumeCard"
 import { ToolsSection } from "./home/ToolsSection"
 import { createStyles } from "./home/styles"
+import { AppPressable } from "../ui/AppPressable"
 
 /** OA-89: the least time the pull-to-refresh banner stays open. */
 const MIN_REFRESH_MS = 800
@@ -225,7 +226,7 @@ export function HomeScreen({
                   {firstName ? fr.home.greetingWithName({ name: firstName }) : fr.home.greeting}
                 </Text>
               </View>
-              <Pressable
+              <AppPressable
                 style={styles.avatarButton}
                 onPress={onNavigateToAccount}
                 accessibilityRole="button"
@@ -246,7 +247,7 @@ export function HomeScreen({
                     <Ionicons name="person-outline" size={20} color={theme.colors.textSecondary} />
                   </View>
                 )}
-              </Pressable>
+              </AppPressable>
             </View>
             {/* SYNC-02: visible on the dashboard, not only in Settings, when there is news. */}
             {showSyncLine ? (
@@ -331,14 +332,14 @@ export function HomeScreen({
           <AppSectionHeader
             title={fr.home.nearby.title}
             trailing={
-              <Pressable
+              <AppPressable
                 onPress={onNavigateToExplorer}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={fr.home.nearby.seeMapLabel}
               >
                 <Text style={styles.trailingLink}>{fr.home.nearby.seeMap}</Text>
-              </Pressable>
+              </AppPressable>
             }
             style={styles.sectionHeader}
           />

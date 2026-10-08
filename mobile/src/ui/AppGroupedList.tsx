@@ -1,9 +1,10 @@
 import { Fragment, ReactNode, useMemo } from "react"
-import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native"
+import { ActivityIndicator, StyleSheet, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
+import { AppPressable } from "./AppPressable"
 
 type AppGroupedListNavRow = {
   key: string
@@ -124,7 +125,9 @@ function NavRow({
   ]
 
   return (
-    <Pressable
+    <AppPressable
+      disableScale
+      disableRipple
       style={({ pressed }) => [
         styles.row,
         row.centered ? styles.rowCentered : null,
@@ -132,7 +135,7 @@ function NavRow({
       ]}
       onPress={row.onPress}
       disabled={!isInteractive}
-      accessibilityRole={row.onPress ? "button" : undefined}
+      accessibilityRole={row.onPress ? "button" : "none"}
       accessibilityLabel={row.accessibilityLabel ?? row.label}
       accessibilityState={{ disabled: row.disabled || row.loading, busy: row.loading }}
     >
@@ -154,7 +157,7 @@ function NavRow({
           ) : null}
         </View>
       ) : null}
-    </Pressable>
+    </AppPressable>
   )
 }
 

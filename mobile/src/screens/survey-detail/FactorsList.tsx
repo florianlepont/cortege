@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { Pressable, View } from "react-native"
+import { View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { FACTOR_TITLES } from "../../app/constants"
 import { FactorKey } from "../../app/types"
@@ -9,6 +9,7 @@ import { AppText as Text } from "../../ui/AppText"
 import { isFactorKey } from "../survey-screen-helpers"
 import { createScoreStyles } from "./score.styles"
 import { DisplayedFactorResult, NOT_FILLED_CLASS } from "./useLocalDraftSummary"
+import { AppPressable } from "../../ui/AppPressable"
 
 const f = fr.surveyDetail.factors
 const s = fr.surveyDetail.scoreScreen
@@ -58,7 +59,9 @@ export function FactorsList({
               ? s.pointsOf({ points: factor.score_points ?? 0, max: FACTOR_MAX_POINTS })
               : s.toFill
             return (
-              <Pressable
+              <AppPressable
+                disableScale
+                disableRipple
                 key={`factor-row-${factorCode}`}
                 style={({ pressed }) => [
                   styles.row,
@@ -99,7 +102,7 @@ export function FactorsList({
                     color={theme.colors.textSecondary}
                   />
                 ) : null}
-              </Pressable>
+              </AppPressable>
             )
           })}
         </View>

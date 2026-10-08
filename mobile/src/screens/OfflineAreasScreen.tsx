@@ -1,4 +1,4 @@
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { PageTitle } from "../ui/PageTitle"
 import { Ionicons } from "@expo/vector-icons"
@@ -12,6 +12,7 @@ import type { OfflineAreaSummary } from "../storage/offline-map"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
 import { useFrameLargeTitle } from "../ui/frame-large-title"
 import { accountStyles as styles } from "./account/styles"
+import { AppPressable } from "../ui/AppPressable"
 
 const t = fr.offlineMap.areas
 const manage = t.manage
@@ -61,7 +62,7 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
                       })}
                     </Text>
                   </View>
-                  <Pressable
+                  <AppPressable
                     onPress={() => confirmDelete(area)}
                     accessibilityRole="button"
                     accessibilityLabel={t.a11y.deleteArea(area.name)}
@@ -69,7 +70,7 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
                     style={rowStyles.delete}
                   >
                     <Ionicons name="trash-outline" size={20} color={brandColors.terracotta} />
-                  </Pressable>
+                  </AppPressable>
                 </View>
               ),
             })),

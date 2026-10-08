@@ -1,5 +1,5 @@
 import { ReactNode, useMemo } from "react"
-import { Pressable, StyleProp, View, ViewStyle } from "react-native"
+import { StyleProp, View, ViewStyle } from "react-native"
 import { computeRegionZoom, type MapRegion as Region } from "../../app/map-viewport"
 import { useBrandTheme } from "../../app/theme"
 import type { SurveyDetailResponse } from "../../app/types"
@@ -11,6 +11,7 @@ import { MapInfoPill, MapOverlayCorners } from "../public-map/MapChips"
 import { SeeOnMapAction } from "./SeeOnMapAction"
 import { resolveDisplayCoordinates } from "../survey-screen-helpers"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.surveyDetail.map
 const a11y = fr.surveyDetail.a11y
@@ -115,7 +116,7 @@ export function ParcelMapCard({
 
   if (onPress) {
     return (
-      <Pressable
+      <AppPressable
         style={[styles.mapCard, style]}
         onPress={onPress}
         accessibilityRole="button"
@@ -124,7 +125,7 @@ export function ParcelMapCard({
         {placeholder}
         {map}
         {overlays}
-      </Pressable>
+      </AppPressable>
     )
   }
   return (

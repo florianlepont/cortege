@@ -1,11 +1,12 @@
 import { useMemo } from "react"
-import { Pressable, StyleSheet, Switch, View } from "react-native"
+import { StyleSheet, Switch, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { IBP_CAS_VALUES, type IbpCas } from "@cortege/ibp-domain"
 import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppText as Text } from "./AppText"
+import { AppPressable } from "./AppPressable"
 
 type CasPickerProps = {
   value: IbpCas | null
@@ -29,7 +30,7 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
       {IBP_CAS_VALUES.map((cas) => {
         const selected = value === cas
         return (
-          <Pressable
+          <AppPressable
             key={cas}
             style={[styles.card, selected ? styles.cardSelected : null]}
             onPress={() => onChange(cas)}
@@ -56,7 +57,7 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
               <Text style={styles.title}>{m.casLabels[cas]}</Text>
               <Text style={styles.caption}>{m.casCaptions[cas]}</Text>
             </View>
-          </Pressable>
+          </AppPressable>
         )
       })}
       <View style={styles.switchRow}>

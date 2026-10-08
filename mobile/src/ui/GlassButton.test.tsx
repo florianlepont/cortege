@@ -183,11 +183,7 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
       labelStyle: { letterSpacing: 1 },
     })
     // Placement keys stay on the Pressable (the outer box), see AppPressable.
-    expect(
-      flatten(
-        (pressable.props.style as (state: { pressed: boolean }) => unknown)({ pressed: false }),
-      ).alignSelf,
-    ).toBe("stretch")
+    expect(flatten(pressable.props.style).alignSelf).toBe("stretch")
     expect(flatten(label.props.style).letterSpacing).toBe(1)
   })
 })
