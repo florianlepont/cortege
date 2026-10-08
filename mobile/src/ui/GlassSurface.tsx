@@ -44,7 +44,8 @@ type GlassSurfaceProps = {
  * (12.2-23 correction) the Liquid Glass stays translucent: a moderate tint (the surface's own, else
  * `liquidGlassDark`) and no fill behind it, the system drawing its blur, rim and highlight. Its
  * content gets the glass ink theme (`GlassInkProvider`: brighter secondary and danger inks), which
- * is what keeps the theme's text at 4.5:1 on that translucent glass over a light map.
+ * is what keeps the theme's text at 4.5:1 on that translucent glass over a light map. A light
+ * surface with `ink` (the Explorer sheet) gets the darker light glass ink the same way.
  *
  * `style` should carry layout/shape only (radius, border, padding, position) — this component owns
  * `backgroundColor` and `overflow` so the blur is actually visible and clipped to the shape.
@@ -64,6 +65,8 @@ export function GlassSurface({
   if (LIQUID_GLASS) {
     // Real Liquid Glass draws its own edge: an outline from the caller breaks the effect.
     const tint = surface?.tint ?? (isDark ? liquidGlassDark.tint : undefined)
+    // The content's glass ink: always in the dark scheme, in light only where the surface asks.
+    const inked = scheme === "dark" || surface?.ink === true
     return (
       <GlassView
         style={[styles.container, withoutOutline(style)]}
@@ -73,7 +76,7 @@ export function GlassSurface({
         isInteractive={interactive}
         tintColor={tint}
       >
-        {isDark ? <GlassInkProvider>{children}</GlassInkProvider> : children}
+        {inked ? <GlassInkProvider>{children}</GlassInkProvider> : children}
       </GlassView>
     )
   }

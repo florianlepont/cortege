@@ -142,10 +142,29 @@ export const liquidGlassDark = { tint: darkGlassTint } as const
 // The ink of the theme's content on the translucent dark Liquid Glass (12.2-23 correction):
 // `GlassSurface` gives its children a theme with these in place of `textSecondary` (#9A9FA6) and
 // `onSurface.danger` (#E8A78F), which need a 0.85 and a 0.78 glass over the white plan. The
-// primary text is the theme's own near white. Dark only; light content keeps the theme's ink.
+// primary text is the theme's own near white.
 export const glassInkDark = {
   textSecondary: "#D8DCDF",
   danger: "#FFCDB8",
+} as const
+
+// Light Liquid Glass of the Explorer sheet (12.2-23, owner: "les panneaux devraient être du verre
+// natif et pas du flou", said of both schemes): the warm paper of the light panel at the dark
+// glass's density, the lowest at which the glass ink below keeps 4.5:1. Modelled as the tint laid
+// flat over the basemap, the worst case is now the black backdrop (a dark orthophoto, tiles not yet
+// drawn), where the light glass turns a mid grey (#A8A7A3). Checked in `glass-density.test.ts`,
+// with 0.66 failing.
+export const lightGlassTint = "rgba(247, 246, 240, 0.68)"
+
+// The ink of the theme's content on that light glass: darker forest inks in place of
+// `textSecondary` (#51604B), the strong text (`textStrong`, the forest #334E2B) and
+// `onSurface.danger` (#8A2F14), which need a 0.86, a 0.74 and a 0.78 glass over black. The primary
+// text is the theme's own dark forest (#24311F, enough from 0.60). Only content that asks for it
+// (`GlassFill.ink`, the light sheet) takes it; other light glass keeps the theme's ink.
+export const glassInkLight = {
+  textSecondary: "#333F2F",
+  textStrong: "#2B4224",
+  danger: "#6B220D",
 } as const
 
 // Glass of the controls floating over a map (12.2-19 fix round, owner: "En dark mode les boutons
@@ -207,10 +226,13 @@ export const mapControlIconSize = 24
 // on iOS 26 the dark sheet is the system Liquid Glass tinted with `tint` (`darkGlassTint`), its
 // content in the glass ink; `fill` (back to 0.88) stays the blur fallback of older iOS and Android.
 // The close circle's tint goes from 0.14 to 0.08, so its glyph keeps 4.5:1 on the lighter glass.
+// Then the light sheet too (`lightGlassTint`, its content in `glassInkLight`); its handle goes from
+// 0.24 to 0.28 to stay visible on the glass over a dark basemap.
 export const explorerSheetGlass = {
   light: {
+    tint: lightGlassTint,
     fill: "rgba(247, 246, 240, 0.88)",
-    handle: "rgba(36, 49, 31, 0.24)",
+    handle: "rgba(36, 49, 31, 0.28)",
     closeFill: "rgba(36, 49, 31, 0.08)",
     closeHairline: "rgba(36, 49, 31, 0.16)",
   },
@@ -358,10 +380,12 @@ export const edgePulseMotion = { halfCycleMs: 750, minOpacity: 0.35, stillOpacit
 // Progress bar of an area download in the Explorer's offline panel (12.2-19 third round): a thick
 // rounded bar, the fill a moss that keeps 3:1 against the sheet and the track in both schemes (the
 // brand moss itself is 2.7:1 on the light sheet, so the light fill is a deeper moss; the dark one
-// is the dark scheme's accent green). `smoothMs`: the fill eases to each new report.
+// is the dark scheme's accent green). `smoothMs`: the fill eases to each new report. 12.2-23: the
+// light fill deepens again (#5E7A1F to #3F5A12) for 3:1 on the light sheet glass over black (it
+// needed a 0.83 glass).
 export const downloadBarGeometry = { height: 10, smoothMs: 400 } as const
 export const downloadBarColors = {
-  light: { track: "#DDE3CF", fill: "#5E7A1F" },
+  light: { track: "#DDE3CF", fill: "#3F5A12" },
   dark: { track: "#2C2F34", fill: "#9BC26A" },
 } as const
 

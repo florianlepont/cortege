@@ -79,7 +79,7 @@ jest.mock("react-native", () => {
   }
 })
 jest.mock("expo-blur", () => ({ BlurView: "BlurView" }))
-// 12.2-23 correction: the dark sheet is native Liquid Glass on iOS 26, the blur stays elsewhere.
+// 12.2-23 correction: the sheet is native Liquid Glass on iOS 26 (both schemes), blur elsewhere.
 const mockGlass = { liquid: false, dark: false }
 jest.mock("../../ui/GlassSurface", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -288,12 +288,32 @@ describe("ExplorerSheet surface (12.2-23 correction: native glass, not a blur)",
     expect(JSON.stringify(tree.toJSON())).toContain("hello")
   })
 
-  test("light on iOS 26 keeps the blur and its fill (light unchanged)", () => {
+  test("light on iOS 26: Liquid Glass too, the warm tint, its content in the glass ink", () => {
     mockGlass.liquid = true
+    const tree = mount({ visible: true, children: "hello" })
+    const glass = tree.root.findByType("GlassSurface" as never)
+    expect(glass.props.surface).toEqual(defaultTheme.visual.sheet.glass)
+    expect(glass.props.surface).toEqual({
+      tint: "rgba(247, 246, 240, 0.68)",
+      fill: defaultTheme.visual.sheet.fill,
+      android: defaultTheme.visual.sheet.fill,
+      ink: true,
+    })
+    expect(glass.props.style).toMatchObject({ flexShrink: 1 })
+    expect(tree.root.findAllByType("BlurView" as never)).toHaveLength(0)
+    expect(sheetFill(tree)).toHaveLength(0)
+    expect(glass.findAll((node) => node.props.testHandler === true).length).toBeGreaterThan(0)
+    expect(glass.findAllByType("ScrollView" as never)).toHaveLength(1)
+  })
+
+  test("light before iOS 26 and on Android: the blur with the light fill as before", () => {
     const tree = mount({ visible: true })
     expect(tree.root.findAllByType("GlassSurface" as never)).toHaveLength(0)
     expect(tree.root.findAllByType("BlurView" as never)).toHaveLength(1)
-    expect(sheetFill(tree)).toHaveLength(1)
+    const [fill] = sheetFill(tree)
+    expect(Object.assign({}, ...[fill.props.style].flat())).toMatchObject({
+      backgroundColor: "rgba(247, 246, 240, 0.88)",
+    })
   })
 
   test("dark before iOS 26 and on Android: the blur with the dark fill as before", () => {

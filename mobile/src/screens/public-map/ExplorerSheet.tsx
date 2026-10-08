@@ -37,13 +37,14 @@ export type ExplorerSheetProps = {
   children: ReactNode
 }
 
-// DS-15 (UX audit, Phase 12): the panel's own background, blurred instead of a flat fill,
-// tinted to the app's own light/dark theme rather than the OS scheme. 12.2-19 fix round: a fill
-// lies over the blur (`theme.visual.sheet.fill`), because the dark blur over the light basemap gave
-// a mid grey on which the secondary text and the close glyph nearly vanished. 12.2-23 correction
-// (owner: "les panneaux du verre devraient être du verre natif et pas du flou"): in dark on iOS 26
-// the panel is the system Liquid Glass instead (`theme.visual.sheet.glass`, a translucent tint, its
-// content in the glass ink); this blur and fill stay for light, older iOS and Android.
+// DS-15 (UX audit, Phase 12): the panel's own background, blurred instead of a flat fill, tinted
+// to the theme's light or dark. 12.2-19 fix round: a fill lies over the blur
+// (`theme.visual.sheet.fill`), because the dark blur over the light basemap gave a mid grey on
+// which the secondary text and the close glyph nearly vanished. 12.2-23 correction (owner: "les
+// panneaux du verre devraient être du verre natif et pas du flou"): on iOS 26 the panel is the
+// system Liquid Glass instead, in dark then in light too (`theme.visual.sheet.glass`, a
+// translucent tint, its content in the glass ink); this blur and fill stay for older iOS and
+// Android.
 function SheetBackground() {
   const { scheme, visual } = useBrandTheme()
   return (

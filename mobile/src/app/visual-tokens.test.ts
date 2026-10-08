@@ -658,8 +658,9 @@ describe.each(schemes)("map panel over the basemap (12.2-21 dark pass), %s schem
   test.each(["tint", "fill", "android"] as const)(
     "the theme's text reads at 4.5:1 on the %s glass over the plan and the orthophoto",
     (key) => {
-      // On the dark Liquid Glass (`tint`) the content takes the glass ink (12.2-23 correction).
-      const inked = key === "tint" ? withGlassInk(theme) : theme
+      // On the dark Liquid Glass (`tint`) the content takes the glass ink (12.2-23 correction); the
+      // light panel's content keeps the theme's ink (its surface does not ask for the light ink).
+      const inked = key === "tint" && scheme === "dark" ? withGlassInk(theme) : theme
       const inks = [
         inked.colors.textPrimary,
         inked.colors.textSecondary,
@@ -675,9 +676,10 @@ describe.each(schemes)("map panel over the basemap (12.2-21 dark pass), %s schem
   )
 
   test("it is the Explorer sheet's glass, the panel already tested above", () => {
-    // Dark: the sheet's translucent Liquid Glass tint, its fill for the fallbacks (12.2-23).
+    // Dark: the sheet's translucent Liquid Glass tint, its fill for the fallbacks (12.2-23). Light:
+    // the sheet's dense fill everywhere (the light sheet's own glass is not used for the panel).
     expect(visual.mapPanel).toEqual({
-      tint: visual.sheet.glass?.tint ?? visual.sheet.fill,
+      tint: scheme === "dark" ? visual.sheet.glass.tint : visual.sheet.fill,
       fill: visual.sheet.fill,
       android: visual.sheet.fill,
     })

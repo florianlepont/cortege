@@ -2,7 +2,7 @@ import { createContext, createElement, useContext, type ReactNode } from "react"
 import { useColorScheme } from "react-native"
 import { brandColors } from "./brand-tokens"
 import { makeVisualColors, type BrandVisual } from "./theme-visual"
-import { glassInkDark } from "./visual-tokens"
+import { glassInkDark, glassInkLight } from "./visual-tokens"
 
 /**
  * Phase 12 (DS-12, UX audit): light/dark theming on the same semantic tokens.
@@ -126,7 +126,11 @@ export type BrandSemanticColors = {
   warningSurface: string
 }
 
-function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): BrandSemanticColors {
+function makeSemanticColors(
+  colors: BrandColors,
+  scheme: BrandColorScheme,
+  strongInk?: string,
+): BrandSemanticColors {
   return {
     backgroundCanvas: colors.canvas,
     surfaceBase: colors.panel,
@@ -138,7 +142,8 @@ function makeSemanticColors(colors: BrandColors, scheme: BrandColorScheme): Bran
     textSecondary: colors.textSecondary,
     // OA-83: `forest` is theme-invariant, so forest text vanished on the dark canvas. Strong text
     // (titles, labels, links) takes the light sage on dark.
-    textStrong: scheme === "dark" ? colors.textPrimary : colors.forest,
+    // The light glass ink (`withGlassInk`) passes a darker forest.
+    textStrong: strongInk ?? (scheme === "dark" ? colors.textPrimary : colors.forest),
     // OA-80 (sketch 001, direction A "Graphite" chosen by the owner): in dark mode the forest
     // heroes become a bordered surface, and the primary action a mid green that keeps white text.
     heroSurface: scheme === "dark" ? colors.panel : colors.forest,
@@ -397,8 +402,9 @@ function assembleTheme(
   scheme: BrandColorScheme,
   colors: BrandColors,
   onSurface: BrandOnSurfaceColors,
+  strongInk?: string,
 ): BrandTheme {
-  const semanticColors = makeSemanticColors(colors, scheme)
+  const semanticColors = makeSemanticColors(colors, scheme, strongInk)
   return {
     scheme,
     colors,
@@ -448,25 +454,34 @@ export function useBrandTheme(): BrandTheme {
 
 const glassInkThemes = new WeakMap<BrandTheme, BrandTheme>()
 
+type GlassInk = { textSecondary: string; danger: string; textStrong?: string }
+
+const glassInks: Record<BrandColorScheme, GlassInk> = { light: glassInkLight, dark: glassInkDark }
+
 /**
- * The theme of content on the translucent dark Liquid Glass (12.2-23 correction): the secondary
- * and danger inks brighter (`glassInkDark`), every derived token rebuilt from them, as iOS draws
- * vibrant labels on its materials. A light theme is returned as is. One per theme, cached.
+ * The theme of content on translucent Liquid Glass (12.2-23 correction), as iOS draws vibrant
+ * labels on its materials: in dark the secondary and danger inks brighter (`glassInkDark`), in
+ * light the secondary, strong and danger inks darker (`glassInkLight`), every derived token rebuilt
+ * from them. One per theme, cached.
  */
 export function withGlassInk(theme: BrandTheme): BrandTheme {
-  if (theme.scheme !== "dark") return theme
   const cached = glassInkThemes.get(theme)
   if (cached) return cached
+  const ink = glassInks[theme.scheme]
   const inked = assembleTheme(
     theme.scheme,
-    { ...theme.colors, textSecondary: glassInkDark.textSecondary },
-    { ...theme.onSurface, danger: glassInkDark.danger },
+    { ...theme.colors, textSecondary: ink.textSecondary },
+    { ...theme.onSurface, danger: ink.danger },
+    ink.textStrong,
   )
   glassInkThemes.set(theme, inked)
   return inked
 }
 
-/** Gives its children the glass ink theme (`withGlassInk`): `GlassSurface` wraps its content. */
+/**
+ * Gives its children the glass ink theme (`withGlassInk`): `GlassSurface` wraps its content on dark
+ * Liquid Glass, and on light Liquid Glass whose `surface` asks for it (`ink`, the Explorer sheet).
+ */
 export function GlassInkProvider({ children }: { children?: ReactNode }) {
   const value = withGlassInk(useBrandTheme())
   return createElement(BrandThemeContext.Provider, { value }, children)

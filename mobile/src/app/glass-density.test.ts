@@ -7,6 +7,8 @@ import {
   downloadBarColors,
   explorerSheetGlass,
   glassInkDark,
+  glassInkLight,
+  lightGlassTint,
   liquidGlassDark,
   mapControlGlass,
 } from "./visual-tokens"
@@ -147,23 +149,107 @@ describe("glass ink theme (12.2-23 correction)", () => {
     expect(inked.scheme).toBe("dark")
   })
 
-  test("one theme per theme, and light content keeps the theme's own ink", () => {
+  test("light: the secondary, strong and danger inks darker, every derived token follows", () => {
+    const light = withGlassInk(themes.light)
+    expect(light.colors).toEqual({
+      ...themes.light.colors,
+      textSecondary: glassInkLight.textSecondary,
+    })
+    expect(light.onSurface).toEqual({ ...themes.light.onSurface, danger: glassInkLight.danger })
+    expect(light.semanticColors.textStrong).toBe(glassInkLight.textStrong)
+    expect(light.componentColors.button.secondaryLabel).toBe(glassInkLight.textStrong)
+    expect(light.colors.textPrimary).toBe(themes.light.colors.textPrimary)
+    expect(light.scheme).toBe("light")
+  })
+
+  test("one theme per theme", () => {
     expect(withGlassInk(themes.dark)).toBe(inked)
-    expect(withGlassInk(themes.light)).toBe(themes.light)
+    expect(withGlassInk(themes.light)).toBe(withGlassInk(themes.light))
+    expect(withGlassInk(themes.light)).not.toBe(themes.light)
   })
 })
 
-describe("light glass is unchanged (12.2-23)", () => {
+// 12.2-23 (owner: "les panneaux devraient être du verre natif et pas du flou", both schemes): the
+// light Explorer sheet is native Liquid Glass too, a warm paper tint at the dark glass's density.
+// Over a dark basemap the light glass turns grey, so the black backdrop is now the worst case.
+describe("light sheet Liquid Glass (12.2-23)", () => {
+  const { visual } = themes.light
+  const lightInked = withGlassInk(themes.light)
+  const lightTexts = [
+    lightInked.colors.textPrimary,
+    lightInked.colors.textSecondary,
+    lightInked.semanticColors.textStrong,
+    lightInked.onSurface.danger,
+  ]
+
+  test("the sheet's glass is the warm paper at 0.68, asking for the glass ink", () => {
+    expect(visual.sheet.glass).toEqual({
+      tint: lightGlassTint,
+      fill: explorerSheetGlass.light.fill,
+      android: explorerSheetGlass.light.fill,
+      ink: true,
+    })
+    expect(lightGlassTint).toBe("rgba(247, 246, 240, 0.68)")
+    expect(themes.dark.visual.sheet.glass).not.toHaveProperty("ink")
+  })
+
+  test("the light glass ink reads at 4.5:1 over every basemap at 0.68, and 0.66 is too low", () => {
+    for (const text of lightTexts) expect(worst(text, lightGlassTint)).toBeGreaterThanOrEqual(4.5)
+    const lower = atAlpha(lightGlassTint, 0.66)
+    expect(lightTexts.some((text) => worst(text, lower) < 4.5)).toBe(true)
+  })
+
+  test("the theme's own inks would not read on that glass, except the primary text", () => {
+    expect(worst(themes.light.colors.textPrimary, lightGlassTint)).toBeGreaterThanOrEqual(4.5)
+    expect(worst(themes.light.colors.textSecondary, lightGlassTint)).toBeLessThan(4.5)
+    expect(worst(themes.light.semanticColors.textStrong, lightGlassTint)).toBeLessThan(4.5)
+    expect(worst(themes.light.onSurface.danger, lightGlassTint)).toBeLessThan(4.5)
+    // The primary text alone would allow 0.60, not 0.58.
+    expect(worst(themes.light.colors.textPrimary, atAlpha(lightGlassTint, 0.6))).toBeGreaterThan(
+      4.49,
+    )
+    expect(worst(themes.light.colors.textPrimary, atAlpha(lightGlassTint, 0.58))).toBeLessThan(4.5)
+  })
+
+  test("icons in the forest keep 3:1 on the glass", () => {
+    expect(worst(themes.light.colors.forest, lightGlassTint)).toBeGreaterThanOrEqual(3)
+    expect(worst(lightInked.semanticColors.textStrong, lightGlassTint)).toBeGreaterThanOrEqual(3)
+  })
+
+  test("on the light sheet glass the close circle, handle and download bar keep ratios", () => {
+    const { sheet } = lightInked.visual
+    for (const backdrop of backdrops) {
+      const surface = compositeOver(lightGlassTint, backdrop)
+      const circle = compositeOver(sheet.close.tint, surface)
+      expect(contrastRatio(sheet.closeIcon, circle)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(compositeOver(sheet.closeHairline, circle), surface)).toBeGreaterThan(
+        1.3,
+      )
+      expect(contrastRatio(compositeOver(sheet.handle, surface), surface)).toBeGreaterThan(1.5)
+      expect(contrastRatio(downloadBarColors.light.fill, surface)).toBeGreaterThanOrEqual(3)
+    }
+    // The handle at its old 0.24 and the bar's old #5E7A1F did not, over the darkest basemaps.
+    const handleBefore = Math.min(
+      ...backdrops.map((backdrop) => {
+        const surface = compositeOver(lightGlassTint, backdrop)
+        return contrastRatio(compositeOver("rgba(36, 49, 31, 0.24)", surface), surface)
+      }),
+    )
+    expect(handleBefore).toBeLessThan(1.5)
+    expect(worst("#5E7A1F", lightGlassTint)).toBeLessThan(3)
+  })
+})
+
+describe("the rest of the light glass is unchanged (12.2-23)", () => {
   const { visual } = themes.light
 
-  test("the same tints and fills as before, no native sheet glass", () => {
+  test("the same control tints, sheet fallback fill and map panel as before", () => {
     expect(visual.mapControl.glass).toEqual({
       tint: "rgba(247, 246, 240, 0.76)",
       fill: "rgba(247, 246, 240, 0.76)",
       android: "rgba(247, 246, 240, 0.92)",
     })
     expect(visual.sheet.fill).toBe("rgba(247, 246, 240, 0.88)")
-    expect(visual.sheet).not.toHaveProperty("glass")
     expect(visual.mapPanel).toEqual({
       tint: visual.sheet.fill,
       fill: visual.sheet.fill,

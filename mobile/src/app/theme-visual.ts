@@ -33,7 +33,12 @@ export type BrandVisualTone = { base: string; top: string; image: string; shadow
  * A glass surface with its own tint (`GlassSurface`'s `surface`): `tint` for the Liquid Glass
  * (iOS 26), `fill` over the blur (older iOS), `android` the flat fill (no blur there, D-17).
  */
-export type GlassFill = { tint: string; fill: string; android: string }
+/**
+ * A surface's own glass (`GlassSurface` `surface`): `tint` on the Liquid Glass, `fill` over the
+ * blur, `android` the flat fill. `ink`: on light Liquid Glass its content takes the glass ink
+ * (`withGlassInk`, `glassInkLight`); dark Liquid Glass content always does.
+ */
+export type GlassFill = { tint: string; fill: string; android: string; ink?: boolean }
 
 export type BrandVisual = {
   backdrop: string
@@ -112,10 +117,10 @@ export type BrandVisual = {
    * The Explorer's bottom sheet (12.2-19 fix round): `fill` over its blur so the theme's text tokens
    * read over any basemap, `handle` the drag indicator, and the 44 pt glass close circle (`close`
    * to `GlassSurface`'s `surface`, `closeHairline` its outline, `closeIcon` its glyph). `glass`
-   * (dark only, 12.2-23 correction) is the sheet's own native Liquid Glass on iOS 26.
+   * (12.2-23 correction, dark then light) is the sheet's own native Liquid Glass on iOS 26.
    */
   sheet: {
-    glass?: GlassFill
+    glass: GlassFill
     fill: string
     handle: string
     close: GlassFill
@@ -264,15 +269,13 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       android: explorerSheetGlass[scheme].fill,
     },
     sheet: {
-      ...(dark
-        ? {
-            glass: {
-              tint: explorerSheetGlass.dark.tint,
-              fill: explorerSheetGlass.dark.fill,
-              android: explorerSheetGlass.dark.fill,
-            },
-          }
-        : {}),
+      glass: {
+        tint: explorerSheetGlass[scheme].tint,
+        fill: explorerSheetGlass[scheme].fill,
+        android: explorerSheetGlass[scheme].fill,
+        // Dark glass content always takes the glass ink; the light sheet asks for it.
+        ...(dark ? {} : { ink: true }),
+      },
       fill: explorerSheetGlass[scheme].fill,
       handle: explorerSheetGlass[scheme].handle,
       close: {

@@ -117,13 +117,38 @@ describe("GlassSurface on Liquid Glass (iOS 26)", () => {
     expect(style.backgroundColor).toBeUndefined()
   })
 
-  test("tone dark over a light app: dark glass, the content wrapped in the glass ink scope", () => {
+  test("tone dark over a light app: dark glass, the content keeps the app's ink", () => {
+    // The light app's glass ink is darker, made for light glass: it must not reach dark glass.
     const { glass } = glassOf(
       <GlassSurface tone="dark">
         <View />
       </GlassSurface>,
     )
     expect(glass.props.colorScheme).toBe("dark")
-    expect(glass.findAllByType("GlassInkProvider" as never)).toHaveLength(1)
+    expect(glass.findAllByType("GlassInkProvider" as never)).toHaveLength(0)
+  })
+
+  test("light: a surface that asks for the glass ink gets it (the Explorer sheet, 12.2-23)", () => {
+    const surface = { tint: "rgba(247, 246, 240, 0.68)", fill: "x", android: "x", ink: true }
+    const { glass, style } = glassOf(
+      <GlassSurface surface={surface}>
+        <View testID="content" />
+      </GlassSurface>,
+    )
+    expect(glass.props.colorScheme).toBe("light")
+    expect(glass.props.tintColor).toBe(surface.tint)
+    expect(style.backgroundColor).toBeUndefined()
+    const ink = glass.findByType("GlassInkProvider" as never)
+    expect(ink.findAll((node) => node.props.testID === "content").length).toBeGreaterThan(0)
+  })
+
+  test("light: a tinted surface without `ink` keeps the theme's ink (map controls)", () => {
+    const surface = { tint: "rgba(247, 246, 240, 0.76)", fill: "x", android: "x" }
+    const { glass } = glassOf(
+      <GlassSurface surface={surface}>
+        <View />
+      </GlassSurface>,
+    )
+    expect(glass.findAllByType("GlassInkProvider" as never)).toHaveLength(0)
   })
 })

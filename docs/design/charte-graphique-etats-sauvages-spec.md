@@ -391,6 +391,12 @@ signature. This section records what shipped after four owner phone checks (2026
   its own ink for control-like overlays (`MapControls`, `MapTitlePill`, the Accueil map pills),
   `theme.visual.mapPanel` (the Explorer sheet's dense fill) for cards and banners that keep the
   theme's text (parcel picker card, offline banner).
+- **Explorer sheet: native glass in both schemes** (12.2-23). On iOS 26 the sheet is Liquid Glass
+  (`theme.visual.sheet.glass`): dark `darkGlassTint` (0.68 Graphite), light `lightGlassTint`
+  (0.68 warm paper). Its content takes the glass ink (`withGlassInk`: brighter inks in dark,
+  `glassInkLight` darker secondary, strong and danger inks in light), which keeps 4.5:1 over the
+  white plan, the satellite and black (`app/glass-density.test.ts`). Older iOS and Android keep the
+  blur with the 0.88 fill.
 - **Forest card** (`ui/ForestCard.tsx`, at most one per screen: Accueil resume card, Mes Relevés
   summary card, survey detail score card). An unclipped shell carries the only coloured shadow; a
   clipped inner view carries the gradient (`#1D3418` to `#334E2B` to `#0E2210`, halo top right,
