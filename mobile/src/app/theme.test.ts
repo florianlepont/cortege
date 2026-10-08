@@ -1,22 +1,14 @@
 jest.mock("react-native", () => ({ useColorScheme: () => mockUseColorScheme() }))
 
 const mockUseColorScheme = jest.fn<string | null | undefined, []>()
-const mockLoadThemeModePreference = jest.fn()
-const mockSaveThemeModePreference = jest.fn()
 
-jest.mock("../storage/theme-preference", () => ({
-  DEFAULT_THEME_MODE: "automatic",
-  loadThemeModePreference: (...args: unknown[]) => mockLoadThemeModePreference(...args),
-  saveThemeModePreference: (...args: unknown[]) => mockSaveThemeModePreference(...args),
-}))
-
-import { act, cleanup, renderHook, waitFor } from "@testing-library/react-native/pure"
+import { readFileSync } from "fs"
+import { join } from "path"
+import { cleanup, renderHook } from "@testing-library/react-native/pure"
 import { BrandThemeProvider, defaultTheme, useBrandTheme } from "./theme"
 
 beforeEach(() => {
   mockUseColorScheme.mockReset().mockReturnValue("light")
-  mockLoadThemeModePreference.mockReset().mockResolvedValue("automatic")
-  mockSaveThemeModePreference.mockReset().mockResolvedValue(undefined)
 })
 
 afterEach(async () => {
@@ -28,65 +20,54 @@ describe("useBrandTheme outside a provider", () => {
     const { result } = await renderHook(() => useBrandTheme())
     expect(result.current).toBe(defaultTheme)
     expect(result.current.scheme).toBe("light")
-    expect(result.current.mode).toBe("automatic")
   })
 })
 
+// Owner decision (2026-10-08): the theme follows the system appearance only, no in-app setting.
 describe("BrandThemeProvider", () => {
-  test("resolves 'automatic' to the OS dark scheme", async () => {
+  test("follows the system dark scheme", async () => {
     mockUseColorScheme.mockReturnValue("dark")
     const { result } = await renderHook(() => useBrandTheme(), { wrapper: BrandThemeProvider })
 
-    await waitFor(() => expect(result.current.scheme).toBe("dark"))
+    expect(result.current.scheme).toBe("dark")
     expect(result.current.colors.canvas).not.toBe(defaultTheme.colors.canvas)
   })
 
-  test("resolves 'automatic' to the OS light scheme", async () => {
-    mockUseColorScheme.mockReturnValue("light")
+  test("follows the system light scheme", async () => {
     const { result } = await renderHook(() => useBrandTheme(), { wrapper: BrandThemeProvider })
 
-    await waitFor(() => expect(mockLoadThemeModePreference).toHaveBeenCalled())
+    expect(result.current).toBe(defaultTheme)
+  })
+
+  test("falls back to light when the system reports no scheme", async () => {
+    mockUseColorScheme.mockReturnValue(null)
+    const { result } = await renderHook(() => useBrandTheme(), { wrapper: BrandThemeProvider })
+
     expect(result.current.scheme).toBe("light")
   })
 
-  test("loads a persisted explicit mode and ignores the OS scheme", async () => {
-    mockUseColorScheme.mockReturnValue("light")
-    mockLoadThemeModePreference.mockResolvedValue("dark")
-    const { result } = await renderHook(() => useBrandTheme(), { wrapper: BrandThemeProvider })
-
-    await waitFor(() => expect(result.current.mode).toBe("dark"))
-    expect(result.current.scheme).toBe("dark")
-  })
-
-  test("setMode updates the resolved theme immediately and persists in the background", async () => {
-    const { result } = await renderHook(() => useBrandTheme(), { wrapper: BrandThemeProvider })
-    await waitFor(() => expect(mockLoadThemeModePreference).toHaveBeenCalled())
-
-    await act(async () => {
-      result.current.setMode("dark")
-    })
-
-    expect(result.current.mode).toBe("dark")
-    expect(result.current.scheme).toBe("dark")
-    expect(mockSaveThemeModePreference).toHaveBeenCalledWith("dark")
-  })
-
-  test("ignores a load that resolves after unmount", async () => {
-    let resolveLoad: (value: string) => void = () => {}
-    mockLoadThemeModePreference.mockReturnValue(
-      new Promise<string>((resolve) => {
-        resolveLoad = resolve
-      }),
-    )
-    const { result, unmount } = await renderHook(() => useBrandTheme(), {
+  test("reacts live to a system change, with one stable theme per scheme", async () => {
+    const { result, rerender } = await renderHook(() => useBrandTheme(), {
       wrapper: BrandThemeProvider,
     })
+    const light = result.current
 
-    unmount()
-    await act(async () => {
-      resolveLoad("dark")
-    })
+    mockUseColorScheme.mockReturnValue("dark")
+    await rerender({})
+    const dark = result.current
+    expect(dark.scheme).toBe("dark")
 
-    expect(result.current.mode).toBe("automatic")
+    await rerender({})
+    expect(result.current).toBe(dark)
+
+    mockUseColorScheme.mockReturnValue("light")
+    await rerender({})
+    expect(result.current).toBe(light)
+  })
+
+  test("no theme preference is read or written, and UIKit is never forced", () => {
+    const source = readFileSync(join(__dirname, "theme.ts"), "utf8")
+    expect(source).not.toMatch(/from "\.\.\/storage|getDb\(/)
+    expect(source).not.toMatch(/Appearance/)
   })
 })

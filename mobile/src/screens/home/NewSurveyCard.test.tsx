@@ -49,7 +49,7 @@ jest.mock("../../app/theme", () => ({
 }))
 
 const t = fr.home.newSurvey
-const dark = buildTheme("dark", "dark", () => {})
+const dark = buildTheme("dark")
 
 let tree: ReactTestRenderer
 

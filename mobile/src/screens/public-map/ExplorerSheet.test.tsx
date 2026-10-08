@@ -93,7 +93,7 @@ jest.mock("../../ui/GlassSurface", () => {
 })
 jest.mock("../../app/theme", () => {
   const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
-  const dark = actual.buildTheme("automatic", "dark", () => {})
+  const dark = actual.buildTheme("dark")
   return { ...actual, useBrandTheme: () => (mockGlass.dark ? dark : actual.defaultTheme) }
 })
 
@@ -262,7 +262,7 @@ describe("ExplorerSheet (MAP-01: the Explorer's one panel)", () => {
 })
 
 describe("ExplorerSheet surface (12.2-23 correction: native glass, not a blur)", () => {
-  const dark = buildTheme("automatic", "dark", () => {})
+  const dark = buildTheme("dark")
   const sheetFill = (tree: renderer.ReactTestRenderer) =>
     tree.root.findAll(
       (node) => (node.type as unknown) === "View" && node.props.testID === "explorer-sheet-fill",

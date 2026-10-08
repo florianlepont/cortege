@@ -108,7 +108,7 @@ describe("ScreenFrame", () => {
   })
 
   test("follows the dark scheme and takes a custom test id", () => {
-    mockTheme = buildTheme("dark", "dark", () => {})
+    mockTheme = buildTheme("dark")
     const root = render("score-frame")
     const frame = hostView(root, "score-frame")
     expect(flatten(frame.props.style).backgroundColor).toBe(mockTheme.colors.canvas)
@@ -191,7 +191,7 @@ describe("ScreenFrame under the native large title (12.2-17)", () => {
   })
 
   test("follows the dark scheme", () => {
-    mockTheme = buildTheme("dark", "dark", () => {})
+    mockTheme = buildTheme("dark")
     const frame = hostView(renderLarge(), "screen-frame")
     expect(flatten(frame.props.style)).toMatchObject({
       backgroundColor: mockTheme.colors.canvas,

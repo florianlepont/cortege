@@ -1,9 +1,4 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "light" }))
-jest.mock("../storage/theme-preference", () => ({
-  DEFAULT_THEME_MODE: "automatic",
-  loadThemeModePreference: jest.fn(),
-  saveThemeModePreference: jest.fn(),
-}))
 
 import { brandColors } from "./brand-tokens"
 import { compositeOver, contrastRatio, relativeLuminance } from "./contrast"
@@ -28,10 +23,9 @@ import {
   withAlpha,
 } from "./visual-tokens"
 
-const noop = () => {}
 const themes: Record<"light" | "dark", BrandTheme> = {
-  light: buildTheme("automatic", "light", noop),
-  dark: buildTheme("automatic", "dark", noop),
+  light: buildTheme("light"),
+  dark: buildTheme("dark"),
 }
 const schemes = ["light", "dark"] as const
 const stops = [forestStops.a, forestStops.b, forestStops.c]

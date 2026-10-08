@@ -48,7 +48,7 @@ describe("JsTabIcon", () => {
   test.each(["light", "dark"] as const)(
     "%s: the focused icon shows the moss dot with its glow",
     (scheme) => {
-      const theme = buildTheme("automatic", scheme, () => undefined)
+      const theme = buildTheme(scheme)
       const { style } = renderIcon(theme, true)
       expect(style.backgroundColor).toBe(theme.visual.tab.dot)
       expect(style.boxShadow).toBe(theme.visual.tab.dotShadow)

@@ -41,7 +41,7 @@ jest.mock("../../app/theme", () => {
   const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
   const themes = {
     light: actual.defaultTheme,
-    dark: actual.buildTheme("automatic", "dark", () => {}),
+    dark: actual.buildTheme("dark"),
   }
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
@@ -56,7 +56,7 @@ import { buildTheme, defaultTheme } from "../../app/theme"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { ScoreLegend } from "./ScoreLegend"
 
-const darkTheme = buildTheme("automatic", "dark", () => {})
+const darkTheme = buildTheme("dark")
 
 afterEach(() => {
   mockScheme.current = "light"

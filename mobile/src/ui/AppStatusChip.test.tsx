@@ -11,7 +11,7 @@ jest.mock("../app/theme", () => {
   const actual = jest.requireActual<typeof import("../app/theme")>("../app/theme")
   return {
     ...actual,
-    useBrandTheme: () => actual.buildTheme("automatic", mockScheme, () => undefined),
+    useBrandTheme: () => actual.buildTheme(mockScheme),
   }
 })
 
@@ -88,7 +88,7 @@ describe("AppStatusChip (phase 12.2)", () => {
 
   test.each(["light", "dark"] as const)("%s: every tone label is at least 4.5:1", (scheme) => {
     mockScheme = scheme
-    const theme = buildTheme("automatic", scheme, () => undefined)
+    const theme = buildTheme(scheme)
     for (const tone of ["neutral", "success", "warning", "danger"] as const) {
       const { box, label } = render(tone)
       const background = compositeOver(String(box.backgroundColor), theme.colors.canvas)

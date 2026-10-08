@@ -55,8 +55,8 @@ export function NativeRootTabs({ tabBarHidden = false }: NativeRootTabsProps) {
   // D-08: the system Liquid Glass bar keeps its material; only the active tint and the label font
   // come from the tokens (no background colour, no dot). 12.2-23: the tint is one dynamic colour,
   // the charter forest in light and the light moss in dark, which UIKit resolves with the bar's own
-  // appearance. The bar follows the system's light or dark (the app's theme choice does not reach
-  // UIKit), so a tint picked from the app's scheme could land the dark moss on the light bar.
+  // appearance. The bar and the app's theme both follow the system's light or dark (there is no
+  // in-app choice since 2026-10-08); the dynamic colour also covers the frame of a system switch.
   const screenOptions = useMemo(() => {
     const activeTint = DynamicColorIOS({ light: tabActiveTint.light, dark: tabActiveTint.dark })
     return (props: Parameters<typeof nativeTabScreenOptions>[0]) => ({

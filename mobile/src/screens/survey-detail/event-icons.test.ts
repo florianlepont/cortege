@@ -1,9 +1,4 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "light" }))
-jest.mock("../../storage/theme-preference", () => ({
-  DEFAULT_THEME_MODE: "automatic",
-  loadThemeModePreference: jest.fn(),
-  saveThemeModePreference: jest.fn(),
-}))
 
 import { contrastRatio } from "../../app/contrast"
 import { buildTheme } from "../../app/theme"
@@ -31,7 +26,7 @@ describe("eventVisual", () => {
 })
 
 describe.each(["light", "dark"] as const)("eventToneColors, %s scheme", (scheme) => {
-  const theme = buildTheme("automatic", scheme, () => {})
+  const theme = buildTheme(scheme)
   const tones: EventTone[] = ["neutral", "success", "warning", "danger"]
 
   test.each(tones)("the %s icon clears 3:1 against its tile", (tone) => {

@@ -53,7 +53,7 @@ jest.mock("../../app/theme", () => {
   const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
   const themes = {
     light: actual.defaultTheme,
-    dark: actual.buildTheme("automatic", "dark", () => {}),
+    dark: actual.buildTheme("dark"),
   }
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
@@ -104,7 +104,7 @@ function render(parcels: NearbyParcel[], sectorAvgScore: number | null, onPress 
 describe("NearbyMapCard", () => {
   test.each([
     ["light", defaultTheme],
-    ["dark", buildTheme("automatic", "dark", () => {})],
+    ["dark", buildTheme("dark")],
   ] as const)(
     "overlays take the map control glass and ink in %s (12.2-21 dark pass)",
     (scheme, theme) => {

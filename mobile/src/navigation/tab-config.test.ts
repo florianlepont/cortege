@@ -16,7 +16,6 @@ import { brandTypography } from "../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../app/theme"
 import { buildJsTabBarStyle, jsTabScreenOptions } from "./tab-config"
 
-const noop = () => undefined
 const route = { route: { name: "home" as const } }
 
 describe("ANDROID_TAB_ICONS (tab-config.tsx)", () => {
@@ -51,7 +50,7 @@ describe("JS tab bar restyle (D-08)", () => {
   })
 
   test.each(["light", "dark"] as const)("the %s options come from theme.visual.tab", (scheme) => {
-    const theme = buildTheme("automatic", scheme, noop)
+    const theme = buildTheme(scheme)
     const options = jsTabScreenOptions(theme, route)
     expect(options.tabBarActiveTintColor).toBe(theme.visual.tab.activeTint)
     expect(options.tabBarInactiveTintColor).toBe(theme.visual.tab.inactiveTint)

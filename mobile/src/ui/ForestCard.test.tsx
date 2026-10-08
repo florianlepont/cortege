@@ -70,7 +70,7 @@ function ForestCardChild() {
 describe("ForestCard", () => {
   test.each([
     ["light", defaultTheme],
-    ["dark", buildTheme("dark", "dark", () => {})],
+    ["dark", buildTheme("dark")],
   ])("the clip always has the fallback colour (%s)", (_name, theme) => {
     mockTheme = theme
     const { clip } = render()

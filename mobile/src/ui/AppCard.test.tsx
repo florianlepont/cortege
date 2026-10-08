@@ -69,7 +69,7 @@ function render(props: Partial<React.ComponentProps<typeof AppCard>> = {}) {
 describe("AppCard", () => {
   test.each([
     ["light", defaultTheme],
-    ["dark", buildTheme("dark", "dark", () => {})],
+    ["dark", buildTheme("dark")],
   ])("variant glass draws the translucent card of variant I (%s)", (_name, theme) => {
     mockTheme = theme
     const style = flatten(render({ variant: "glass" }).view.props.style)
@@ -98,7 +98,7 @@ describe("AppCard", () => {
 
   test("a glass card over a map passes its own surface to the glass (12.2-21 dark pass)", () => {
     expect(render({ glass: true }).surface.props.surface).toBeUndefined()
-    const dark = buildTheme("dark", "dark", () => {})
+    const dark = buildTheme("dark")
     const { surface } = render({ glass: true, surface: dark.visual.mapPanel })
     expect(surface.props.surface).toEqual(dark.visual.mapPanel)
   })

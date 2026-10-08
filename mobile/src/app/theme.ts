@@ -1,22 +1,8 @@
-import {
-  createContext,
-  createElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react"
+import { createContext, createElement, useContext, type ReactNode } from "react"
 import { useColorScheme } from "react-native"
 import { brandColors } from "./brand-tokens"
 import { makeVisualColors, type BrandVisual } from "./theme-visual"
 import { glassInkDark } from "./visual-tokens"
-import {
-  DEFAULT_THEME_MODE,
-  loadThemeModePreference,
-  saveThemeModePreference,
-} from "../storage/theme-preference"
 
 /**
  * Phase 12 (DS-12, UX audit): light/dark theming on the same semantic tokens.
@@ -35,7 +21,6 @@ import {
  * (`brandColors.forest`, `.moss`, …) or a static token group is untouched.
  */
 export type BrandColorScheme = "light" | "dark"
-export type BrandThemeMode = BrandColorScheme | "automatic"
 
 // The neutrals that invert between light and dark: backgrounds, text, dividers and the status-soft
 // fills. Everything else in `brandColors` (the brand hues, plus forestNight/disabledMuted/
@@ -393,9 +378,7 @@ function makeIbpScoreColors(
 }
 
 export type BrandTheme = {
-  mode: BrandThemeMode
   scheme: BrandColorScheme
-  setMode: (mode: BrandThemeMode) => void
   colors: BrandColors
   onSurface: BrandOnSurfaceColors
   semanticColors: BrandSemanticColors
@@ -405,27 +388,19 @@ export type BrandTheme = {
   visual: BrandVisual
 }
 
-export function buildTheme(
-  mode: BrandThemeMode,
-  scheme: BrandColorScheme,
-  setMode: BrandTheme["setMode"],
-): BrandTheme {
+export function buildTheme(scheme: BrandColorScheme): BrandTheme {
   const onSurface = scheme === "dark" ? darkOnSurface : lightOnSurface
-  return assembleTheme(mode, scheme, setMode, resolvePalette(scheme), onSurface)
+  return assembleTheme(scheme, resolvePalette(scheme), onSurface)
 }
 
 function assembleTheme(
-  mode: BrandThemeMode,
   scheme: BrandColorScheme,
-  setMode: BrandTheme["setMode"],
   colors: BrandColors,
   onSurface: BrandOnSurfaceColors,
 ): BrandTheme {
   const semanticColors = makeSemanticColors(colors, scheme)
   return {
-    mode,
     scheme,
-    setMode,
     colors,
     onSurface,
     semanticColors,
@@ -436,53 +411,34 @@ function assembleTheme(
   }
 }
 
-// The default theme (light, "automatic", a no-op setter) doubles as the context's default value —
-// deliberately not a "must be used inside a provider" throw like `useStatus`/`useSession`. Nearly
-// every styled file in the app calls `useBrandTheme()` (this phase's whole point), including a
-// great many component tests that render a screen or a `ui/` primitive in isolation with no
-// wrapping provider; defaulting to the light theme there keeps that large existing test suite
-// working unchanged, at the cost of never being able to detect a genuinely missing provider. The
-// real app always mounts `BrandThemeProvider` in `App.tsx`, so this default is only ever observed
-// in tests.
+// The default theme (light) doubles as the context's default value — deliberately not a "must be
+// used inside a provider" throw like `useStatus`/`useSession`. Nearly every styled file in the app
+// calls `useBrandTheme()` (this phase's whole point), including a great many component tests that
+// render a screen or a `ui/` primitive in isolation with no wrapping provider; defaulting to the
+// light theme there keeps that large existing test suite working unchanged, at the cost of never
+// being able to detect a genuinely missing provider. The real app always mounts
+// `BrandThemeProvider` in `App.tsx`, so this default is only ever observed in tests.
 // Exported for tests that call a theme-taking helper (jsTabScreenOptions, buildJsTabBarStyle…)
-// directly, outside a component — the same light/"automatic" theme `useBrandTheme()` falls back to
-// without a provider, so a test's expected value stays exactly what the pre-Phase-12 static tokens
-// resolved to.
-export const defaultTheme = buildTheme(DEFAULT_THEME_MODE, "light", () => {})
+// directly, outside a component — the same light theme `useBrandTheme()` falls back to without a
+// provider, so a test's expected value stays exactly what the pre-Phase-12 static tokens resolved
+// to.
+export const defaultTheme = buildTheme("light")
+const darkTheme = buildTheme("dark")
 
 const BrandThemeContext = createContext<BrandTheme>(defaultTheme)
 
 /**
- * Wraps the app (outside `AppStateProvider`, in `App.tsx`) so a theme choice is available before
- * auth resolves and to every screen. Resolves "automatic" against the OS scheme (`useColorScheme`)
- * — `app.json`'s `userInterfaceStyle: "automatic"` is what lets that OS value reflect the device's
- * own setting rather than being pinned light. The chosen mode persists to `local_meta`
- * (`storage/theme-preference.ts`) and is read back on the next launch.
+ * Wraps the app (outside `AppStateProvider`, in `App.tsx`) so the theme is available before auth
+ * resolves and to every screen. The theme follows the system appearance only (owner decision,
+ * 2026-10-08: no in-app theme setting): `useColorScheme` re-renders on every system change, and
+ * `app.json`'s `userInterfaceStyle: "automatic"` lets that value reflect the device's own setting.
+ * UIKit follows the same system value, so the native tab bar, glass, alerts and keyboard always
+ * agree with the JS theme. A `theme_mode` row an older build left in `local_meta` is ignored.
  */
 export function BrandThemeProvider({ children }: { children: ReactNode }) {
   const systemScheme = useColorScheme()
-  const [mode, setModeState] = useState<BrandThemeMode>(DEFAULT_THEME_MODE)
-
-  useEffect(() => {
-    let cancelled = false
-    void loadThemeModePreference().then((saved) => {
-      if (!cancelled) setModeState(saved)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const setMode = useCallback((next: BrandThemeMode) => {
-    setModeState(next)
-    void saveThemeModePreference(next)
-  }, [])
-
-  const scheme: BrandColorScheme =
-    mode === "automatic" ? (systemScheme === "dark" ? "dark" : "light") : mode
-
-  const value = useMemo(() => buildTheme(mode, scheme, setMode), [mode, scheme, setMode])
-
+  // Both themes are built once, so the value keeps its identity between renders.
+  const value = systemScheme === "dark" ? darkTheme : defaultTheme
   return createElement(BrandThemeContext.Provider, { value }, children)
 }
 
@@ -502,9 +458,7 @@ export function withGlassInk(theme: BrandTheme): BrandTheme {
   const cached = glassInkThemes.get(theme)
   if (cached) return cached
   const inked = assembleTheme(
-    theme.mode,
     theme.scheme,
-    theme.setMode,
     { ...theme.colors, textSecondary: glassInkDark.textSecondary },
     { ...theme.onSurface, danger: glassInkDark.danger },
   )

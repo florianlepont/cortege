@@ -70,7 +70,7 @@ describe("nativeLargeTitle", () => {
   })
 
   test("follows the scheme: the dark theme's strong text colour", () => {
-    const dark = buildTheme("dark", "dark", () => {})
+    const dark = buildTheme("dark")
     const options = nativeLargeTitle(dark)
     const large = options.headerLargeTitleStyle as { color: string }
     const small = options.headerTitleStyle as { color: string }

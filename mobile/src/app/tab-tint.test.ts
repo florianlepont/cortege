@@ -1,9 +1,4 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "light" }))
-jest.mock("../storage/theme-preference", () => ({
-  DEFAULT_THEME_MODE: "automatic",
-  loadThemeModePreference: jest.fn(),
-  saveThemeModePreference: jest.fn(),
-}))
 
 import { brandColors } from "./brand-tokens"
 import { compositeOver, contrastRatio } from "./contrast"
@@ -17,10 +12,9 @@ import { mapControlGlass, tabActiveTint } from "./visual-tokens"
 // - light: the pill at its darkest light grey (#D1D1D6), and the bar's light glass (a 72% paper)
 //   over the white plan and over the dark orthophoto.
 // The selected icon needs 3:1 and its label 4.5:1 on each.
-const noop = () => {}
 const themes = {
-  light: buildTheme("automatic", "light", noop),
-  dark: buildTheme("automatic", "dark", noop),
+  light: buildTheme("light"),
+  dark: buildTheme("dark"),
 }
 
 const darkGlass = "rgba(28, 28, 30, 0.72)"

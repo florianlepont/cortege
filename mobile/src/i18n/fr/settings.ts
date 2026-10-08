@@ -1,14 +1,7 @@
 // Filled by plan 01.9-17; no other plan edits this section.
 export const settingsFr = {
-  // DS-12 (UX audit, Phase 12): the theme picker.
+  // The theme picker (DS-12) is gone: the app follows the system appearance (2026-10-08).
   title: "Paramètres",
-  appearance: {
-    title: "Apparence",
-    subtitle: "Thème clair, sombre ou automatique.",
-    automatic: "Automatique",
-    light: "Clair",
-    dark: "Sombre",
-  },
   maps: {
     title: "Cartes",
     offlineRow: "Cartes hors ligne",

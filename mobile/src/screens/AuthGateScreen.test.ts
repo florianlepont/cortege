@@ -232,7 +232,7 @@ describe("AuthGateScreen", () => {
 
   it("the error message reads at 4.5:1 on its banner in both schemes (12.2-21)", () => {
     for (const scheme of ["light", "dark"] as const) {
-      const theme = buildTheme("automatic", scheme, () => {})
+      const theme = buildTheme(scheme)
       const surface = theme.semanticColors.errorSurface
       const banner = surface.startsWith("rgba")
         ? compositeOver(surface, theme.colors.canvas)

@@ -30,7 +30,7 @@ jest.mock("../app/theme", () => {
   const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
   const themes = {
     light: actual.defaultTheme,
-    dark: actual.buildTheme("automatic", "dark", () => {}),
+    dark: actual.buildTheme("dark"),
   }
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
@@ -108,14 +108,14 @@ describe("OfflineMapPrompt", () => {
 
   test("over the parcel map the banner takes the map panel glass (12.2-21 dark pass)", () => {
     mockScheme.current = "dark"
-    const dark = buildTheme("automatic", "dark", () => {})
+    const dark = buildTheme("dark")
     const glass = render(model(), "banner").root.findByType("GlassSurface" as never)
     expect(glass.props.surface).toEqual(dark.visual.mapPanel)
   })
 
   test.each([
     ["light", defaultTheme],
-    ["dark", buildTheme("automatic", "dark", () => {})],
+    ["dark", buildTheme("dark")],
   ] as const)(
     "icons and progress fill take the %s accent, never the forest on dark",
     (scheme, theme) => {

@@ -186,7 +186,7 @@ export const mapControlGlass = {
 // lisible"). The dark accent moss (#9BC26A) on the system's dark selection pill, with the list
 // showing through the bar's glass, read as a dark green on grey. Dark now takes the light moss of
 // the map controls; light keeps the charter forest. The native bar gets both as one dynamic colour,
-// resolved by the bar's own appearance (it follows the system, not the app's theme choice), the JS
+// resolved by the bar's own appearance (the system's, which the app's theme also follows), the JS
 // bar the one of the app's scheme. Checked against the pill and the bar's glass over a dark list and
 // over a white map in `tab-tint.test.ts`.
 export const tabActiveTint = {

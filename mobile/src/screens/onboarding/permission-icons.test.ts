@@ -1,9 +1,4 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "light" }))
-jest.mock("../../storage/theme-preference", () => ({
-  DEFAULT_THEME_MODE: "automatic",
-  loadThemeModePreference: jest.fn(),
-  saveThemeModePreference: jest.fn(),
-}))
 
 import { brandColors } from "../../app/brand-tokens"
 import { contrastRatio } from "../../app/contrast"
@@ -11,7 +6,7 @@ import { buildTheme } from "../../app/theme"
 import { permissionIconColors } from "./permission-icons"
 
 describe.each(["light", "dark"] as const)("permissionIconColors, %s scheme", (scheme) => {
-  const theme = buildTheme("automatic", scheme, () => {})
+  const theme = buildTheme(scheme)
   const colors = permissionIconColors(theme)
 
   test("the location and camera icon clears 3:1 against its tile", () => {
@@ -35,7 +30,7 @@ describe.each(["light", "dark"] as const)("permissionIconColors, %s scheme", (sc
 })
 
 test("the brand forest the icons used to carry fails on the dark tile, which is why they do not use it", () => {
-  const dark = buildTheme("automatic", "dark", () => {})
+  const dark = buildTheme("dark")
   expect(contrastRatio(brandColors.forest, dark.colors.successSoft)).toBeLessThan(3)
   expect(permissionIconColors(dark).icon).not.toBe(brandColors.forest)
 })

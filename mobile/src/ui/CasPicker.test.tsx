@@ -22,7 +22,7 @@ jest.mock("../app/theme", () => {
   const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
   const themes = {
     light: actual.defaultTheme,
-    dark: actual.buildTheme("automatic", "dark", () => {}),
+    dark: actual.buildTheme("dark"),
   }
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
@@ -53,7 +53,7 @@ afterEach(() => {
 describe("CasPicker, dark pass (12.2-21)", () => {
   test.each([
     ["light", defaultTheme],
-    ["dark", buildTheme("automatic", "dark", () => {})],
+    ["dark", buildTheme("dark")],
   ] as const)("the selected radio's check reads on its %s fill", (scheme, theme) => {
     mockScheme.current = scheme
     let tree!: renderer.ReactTestRenderer

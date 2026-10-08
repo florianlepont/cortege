@@ -28,7 +28,7 @@ jest.mock("../../app/theme", () => {
   const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
   const themes = {
     light: actual.defaultTheme,
-    dark: actual.buildTheme("automatic", "dark", () => {}),
+    dark: actual.buildTheme("dark"),
   }
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
@@ -129,14 +129,14 @@ describe("map chips (the overlays every map shares)", () => {
     expect(light.props.color).toBe(defaultTheme.visual.accentText)
     mockScheme.current = "dark"
     const dark = renderAction().root.findByType("Ionicons" as never)
-    const darkTheme = buildTheme("automatic", "dark", () => {})
+    const darkTheme = buildTheme("dark")
     expect(dark.props.color).toBe(darkTheme.visual.mapControl.icon)
     expect(dark.props.color).not.toBe(brandColors.forest)
   })
 
   test("over the map the pills take the map control glass, near opaque in dark (12.2-19)", () => {
     mockScheme.current = "dark"
-    const darkTheme = buildTheme("automatic", "dark", () => {})
+    const darkTheme = buildTheme("dark")
     const glass = renderAction().root.findByType("GlassSurface" as never)
     expect(glass.props.surface).toEqual(darkTheme.visual.mapControl.glass)
     expect([glass.props.style].flat()[0].borderColor).toBe(darkTheme.visual.mapControl.hairline)
@@ -154,7 +154,7 @@ describe("map chips (the overlays every map shares)", () => {
 
   test("the title pill over a full-screen map takes the map control glass and ink (12.2-21)", () => {
     mockScheme.current = "dark"
-    const darkTheme = buildTheme("automatic", "dark", () => {})
+    const darkTheme = buildTheme("dark")
     let tree!: renderer.ReactTestRenderer
     act(() => {
       tree = renderer.create(<MapTitlePill label="Parcelles" top={60} />)

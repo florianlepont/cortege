@@ -1,17 +1,15 @@
-import { useMemo, useState } from "react"
-import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
+import { useState } from "react"
+import { Alert, Platform, ScrollView, StyleSheet } from "react-native"
 import { PageTitle } from "../ui/PageTitle"
 import Constants from "expo-constants"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandRadius, brandSpacing, brandSpacing4 } from "../app/brand-tokens"
+import { brandSpacing, brandSpacing4 } from "../app/brand-tokens"
 import { shouldShowDevTools } from "../app/dev-tools"
 import { isOfflineMapsEnabled } from "../app/feature-flags"
 import { formatAreaMegabytes } from "../app/formatters"
-import { BrandTheme, BrandThemeMode, useBrandTheme } from "../app/theme"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import type { OfflineAreasSummary } from "../hooks/useOfflineAreasSummary"
 import { AppButton } from "../ui/AppButton"
-import { AppChoiceChip } from "../ui/AppChoiceChip"
 import { AppCollapsibleSection } from "../ui/AppCollapsibleSection"
 import { AppField } from "../ui/AppField"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
@@ -20,12 +18,6 @@ import { fr } from "../i18n"
 
 const t = fr.settings
 const actions = fr.common.actions
-
-const THEME_MODE_CHOICES: Array<{ mode: BrandThemeMode; label: string }> = [
-  { mode: "automatic", label: t.appearance.automatic },
-  { mode: "light", label: t.appearance.light },
-  { mode: "dark", label: t.appearance.dark },
-]
 
 type SettingsScreenProps = {
   apiUrl: string
@@ -39,9 +31,10 @@ type SettingsScreenProps = {
 }
 
 /**
- * Paramètres (OA-78, OA-79): the appearance, the offline maps, the about block and, last, the
- * account deletion, as one grouped list. The sync tools are gone (sync is automatic, OA-78) and
- * the status line is gone too: a message appears where its action happened (OA-77).
+ * Paramètres (OA-78, OA-79): the offline maps, the about block and, last, the account deletion, as
+ * one grouped list. The sync tools are gone (sync is automatic, OA-78) and the status line is gone
+ * too: a message appears where its action happened (OA-77). There is no theme choice: the app
+ * follows the system appearance (owner decision, 2026-10-08).
  */
 export function SettingsScreen({
   apiUrl,
@@ -52,8 +45,6 @@ export function SettingsScreen({
   onDebugResetIbpData,
   onDebugResetUserData,
 }: SettingsScreenProps) {
-  const theme = useBrandTheme()
-  const styles = useMemo(() => createStyles(theme), [theme])
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight(Platform.select({ ios: 84, default: 68 }) ?? 68)
   // D-19: the route's ScreenFrame starts the page below the transparent header and clips there.
@@ -97,36 +88,6 @@ export function SettingsScreen({
   }
 
   const sections: AppGroupedListSection[] = [
-    {
-      key: "appearance",
-      title: t.appearance.title,
-      rows: [
-        {
-          key: "appearance",
-          kind: "custom",
-          content: (
-            // Glass segment group: inactive chips melt into it, the active one is the inverted
-            // neutral chip of AppChoiceChip (direction principle 7).
-            <View style={styles.segment}>
-              {THEME_MODE_CHOICES.map(({ mode, label }) => {
-                const active = theme.mode === mode
-                return (
-                  <AppChoiceChip
-                    key={mode}
-                    label={label}
-                    active={active}
-                    onPress={() => theme.setMode(mode)}
-                    style={
-                      active ? styles.segmentChip : [styles.segmentChip, styles.segmentChipIdle]
-                    }
-                  />
-                )
-              })}
-            </View>
-          ),
-        },
-      ],
-    },
     ...(isOfflineMapsEnabled()
       ? ([
           {
@@ -235,30 +196,12 @@ export function SettingsScreen({
   )
 }
 
-function createStyles(theme: BrandTheme) {
-  return StyleSheet.create({
-    // D-19: no background, the route's ScreenFrame is the page (canvas and halo).
-    screen: {
-      flex: 1,
-    },
-    content: {
-      gap: brandSpacing4.md,
-    },
-    segment: {
-      flexDirection: "row",
-      gap: brandSpacing4.xs,
-      padding: brandSpacing4.xs,
-      borderRadius: brandRadius.pill,
-      borderWidth: 1,
-      borderColor: theme.visual.chip.border,
-      backgroundColor: theme.visual.chip.fill,
-    },
-    segmentChip: {
-      flex: 1,
-    },
-    segmentChipIdle: {
-      borderColor: "transparent",
-      backgroundColor: "transparent",
-    },
-  })
-}
+const styles = StyleSheet.create({
+  // D-19: no background, the route's ScreenFrame is the page (canvas and halo).
+  screen: {
+    flex: 1,
+  },
+  content: {
+    gap: brandSpacing4.md,
+  },
+})

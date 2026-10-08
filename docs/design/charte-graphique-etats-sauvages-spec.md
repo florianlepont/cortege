@@ -350,6 +350,12 @@ signature. This section records what shipped after four owner phone checks (2026
 
 ### 13.1 Tokens
 
+- **Light or dark: the system decides.** `BrandThemeProvider` (`app/theme.ts`) builds the theme
+  from `useColorScheme()` and follows every system change live. There is no in-app theme setting
+  (owner decision, 2026-10-08: the Apparence choice of Paramètres was removed), so UIKit (tab bar,
+  Liquid Glass, alerts, keyboard) and the JS theme always agree. `app.json` keeps
+  `userInterfaceStyle: "automatic"`; a `theme_mode` row an older build left in `local_meta` is
+  ignored.
 - **Where colours live.** Hex and `rgb()`/`rgba()` literals are allowed in five token files only:
   `app/brand-tokens.ts`, `app/theme.ts`, `app/visual-tokens.ts`, `app/theme-visual.ts` and
   `app/forest-aurora-tokens.ts`. The ESLint rule (`mobile/.eslintrc.json`, `no-restricted-syntax`)

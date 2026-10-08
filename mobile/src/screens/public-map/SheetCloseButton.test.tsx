@@ -42,7 +42,7 @@ jest.mock("../../app/theme", () => {
   const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
   const themes = {
     light: actual.defaultTheme,
-    dark: actual.buildTheme("automatic", "dark", () => {}),
+    dark: actual.buildTheme("dark"),
   }
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
@@ -67,7 +67,7 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-const dark = buildTheme("automatic", "dark", () => {})
+const dark = buildTheme("dark")
 const flat = (style: unknown): Record<string, unknown> =>
   Object.assign({}, ...[style].flat(3).filter(Boolean))
 

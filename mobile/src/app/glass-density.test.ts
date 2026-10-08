@@ -1,9 +1,4 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "light" }))
-jest.mock("../storage/theme-preference", () => ({
-  DEFAULT_THEME_MODE: "automatic",
-  loadThemeModePreference: jest.fn(),
-  saveThemeModePreference: jest.fn(),
-}))
 
 import { compositeOver, contrastRatio } from "./contrast"
 import { buildTheme, withGlassInk } from "./theme"
@@ -21,10 +16,9 @@ import {
 // native Liquid Glass, no underlay, each tint the lowest that keeps its content legible. The glass is
 // modelled as its tint laid flat over the basemap, the white plan being the worst case; the system's
 // own blur, rim and material are not in the model (only the device shows them).
-const noop = () => {}
 const themes = {
-  light: buildTheme("automatic", "light", noop),
-  dark: buildTheme("automatic", "dark", noop),
+  light: buildTheme("light"),
+  dark: buildTheme("dark"),
 }
 const backdrops = ["#FFFFFF", "#F2EFE9", "#6B7356", "#1C2618", "#000000"]
 
@@ -150,8 +144,7 @@ describe("glass ink theme (12.2-23 correction)", () => {
     expect(inked.onSurface).toEqual({ ...themes.dark.onSurface, danger: glassInkDark.danger })
     expect(inked.semanticColors.textSecondary).toBe(glassInkDark.textSecondary)
     expect(inked.colors.textPrimary).toBe(themes.dark.colors.textPrimary)
-    expect(inked.mode).toBe(themes.dark.mode)
-    expect(inked.setMode).toBe(themes.dark.setMode)
+    expect(inked.scheme).toBe("dark")
   })
 
   test("one theme per theme, and light content keeps the theme's own ink", () => {

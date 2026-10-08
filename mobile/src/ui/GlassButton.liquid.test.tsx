@@ -39,7 +39,7 @@ jest.mock("../app/theme", () => {
   const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
   const themes = {
     light: actual.defaultTheme,
-    dark: actual.buildTheme("automatic", "dark", () => {}),
+    dark: actual.buildTheme("dark"),
   }
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
@@ -308,7 +308,7 @@ describe("GlassButton on iOS 26: the native SwiftUI glass button (D-28)", () => 
     mockScheme.current = "dark"
     try {
       const { host, button } = render()
-      const dark = buildTheme("automatic", "dark", () => {})
+      const dark = buildTheme("dark")
       expect(host.props.colorScheme).toBe("dark")
       expect(modifier(button, "tint")).toEqual({
         $type: "tint",
@@ -325,7 +325,7 @@ describe("GlassButton secondary on iOS 26: the neutral system glass button", () 
     for (const scheme of ["light", "dark"] as const) {
       mockScheme.current = scheme
       try {
-        const theme = scheme === "light" ? defaultTheme : buildTheme("automatic", "dark", () => {})
+        const theme = scheme === "light" ? defaultTheme : buildTheme("dark")
         const { root, button, text } = render({ variant: "secondary" })
         expect(modifier(button, "buttonStyle")).toEqual({ $type: "buttonStyle", style: "glass" })
         expect(modifier(button, "tint")).toBeUndefined()

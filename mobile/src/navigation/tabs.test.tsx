@@ -111,7 +111,7 @@ jest.mock("../app/theme", () => {
   const actual = jest.requireActual("../app/theme") as typeof import("../app/theme")
   return {
     ...actual,
-    useBrandTheme: () => actual.buildTheme("automatic", mockScheme.value, () => undefined),
+    useBrandTheme: () => actual.buildTheme(mockScheme.value),
   }
 })
 jest.mock("./tab-bar", () => {
@@ -323,9 +323,7 @@ describe("tab tints and the shared hide rule", () => {
       route: { name: "home" },
     })
     expect(dark.tabBarActiveTintColor).toEqual(dynamicTint)
-    expect(tabActiveTint.dark).toBe(
-      buildTheme("automatic", "dark", () => undefined).visual.tab.activeTint,
-    )
+    expect(tabActiveTint.dark).toBe(buildTheme("dark").visual.tab.activeTint)
   })
 
   test("JS tree: a route the rule hides gets a hidden tab bar", async () => {

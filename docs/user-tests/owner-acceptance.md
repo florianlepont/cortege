@@ -158,6 +158,8 @@ Mes Relevés, survey detail, Explorer, Compte, in light and dark mode.
 
 Type: Display bug · UX friction · Functional bug · Suggestion
 
+Note 2026-10-08 (phase 12.2, plan 12.2-23): owner decision, the in-app theme choice is removed. The Apparence segmented control of Paramètres (OA-82) no longer exists; the app follows the system light or dark mode only.
+
 
 ### Open decision: basemap and offline maps (OA-61, OA-62, OA-66)
 

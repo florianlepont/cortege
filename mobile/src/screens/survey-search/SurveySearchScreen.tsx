@@ -200,8 +200,7 @@ export function SurveySearchScreen({
           </Pressable>
         </View>
 
-        {/* Glass segment group, like the Settings appearance picker: the active scope is the
-            inverted neutral chip (direction principle 7). */}
+        {/* Glass segment group: the active scope is the inverted neutral chip (principle 7). */}
         <View
           style={[
             styles.segments,

@@ -72,7 +72,7 @@ describe("ScreenBackdrop", () => {
   })
 
   test("follows the dark scheme", () => {
-    mockTheme = buildTheme("dark", "dark", () => {})
+    mockTheme = buildTheme("dark")
     expect(flatten(render().props.style).experimental_backgroundImage).toBe(
       mockTheme.visual.backdrop,
     )

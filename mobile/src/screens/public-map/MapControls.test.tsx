@@ -27,7 +27,7 @@ jest.mock("../../app/theme", () => {
   const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
   const themes = {
     light: actual.defaultTheme,
-    dark: actual.buildTheme("automatic", "dark", () => {}),
+    dark: actual.buildTheme("dark"),
   }
   return { ...actual, useBrandTheme: () => themes[mockScheme.current] }
 })
@@ -81,7 +81,7 @@ describe("Explorer map controls over the basemap (12.2-19 fix round)", () => {
     "%s: every control is on the map control glass, its glyphs 24 pt in the control colour",
     (scheme) => {
       mockScheme.current = scheme
-      const theme = scheme === "dark" ? buildTheme("automatic", "dark", () => {}) : defaultTheme
+      const theme = scheme === "dark" ? buildTheme("dark") : defaultTheme
       const tree = renderControls()
       const surfaces = tree.root.findAllByType("GlassSurface" as never)
       expect(surfaces).toHaveLength(2)
@@ -110,7 +110,7 @@ describe("Explorer map controls over the basemap (12.2-19 fix round)", () => {
   })
 
   test("the locate spinner takes the control colour", () => {
-    const dark = buildTheme("automatic", "dark", () => {})
+    const dark = buildTheme("dark")
     const spinner = renderControls(true).root.findByType("ActivityIndicator" as never)
     expect(spinner.props.color).toBe(dark.visual.mapControl.icon)
   })
