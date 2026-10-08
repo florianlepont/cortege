@@ -302,6 +302,8 @@ describe("useOfflineAreas", () => {
 
     test("a storage failure before the download also ends on the failed status", async () => {
       mockInsertOfflineArea.mockRejectedValue(new Error("disk full"))
+      // Marking the area failed may fail too: the panel still leaves its running state.
+      mockFinalizeOfflineArea.mockRejectedValue(new Error("disk full"))
       const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
       await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
       let outcome: Awaited<ReturnType<typeof result.current.startDownload>> | undefined
