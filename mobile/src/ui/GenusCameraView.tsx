@@ -6,6 +6,7 @@ import {
   brandCameraTokens,
   brandColors,
   brandSpacing,
+  brandSpacing4,
   brandTypeScale,
   brandTypography,
 } from "../app/brand-tokens"
@@ -177,7 +178,7 @@ function createStyles() {
     hint: {
       borderRadius: 18,
       paddingHorizontal: brandSpacing.md,
-      paddingVertical: 12,
+      paddingVertical: brandSpacing4.smd,
       backgroundColor: brandCameraTokens.hintBackground,
     },
     hintText: {

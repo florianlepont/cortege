@@ -5,6 +5,7 @@ import {
   brandRadius,
   brandShadow,
   brandSpacing,
+  brandSpacing4,
   brandTypeScale,
   brandTypography,
 } from "../../app/brand-tokens"
@@ -42,7 +43,7 @@ export function createAuthStyles(theme: BrandTheme) {
     heroContentWrapper: {
       flex: 1,
       justifyContent: "center",
-      gap: 16,
+      gap: brandSpacing4.md,
     },
     logoBlobContainer: {
       width: HERO_LOGO_SIZE,
@@ -80,8 +81,8 @@ export function createAuthStyles(theme: BrandTheme) {
     heroContent: {
       zIndex: 2,
       alignItems: "flex-start",
-      gap: 8,
-      marginTop: 24,
+      gap: brandSpacing4.sm,
+      marginTop: brandSpacing4.lg,
     },
     heroLogo: {
       width: HERO_LOGO_SIZE,
@@ -131,9 +132,9 @@ export function createAuthStyles(theme: BrandTheme) {
     },
     panelContent: {
       flexGrow: 1,
-      paddingHorizontal: 28,
+      paddingHorizontal: brandSpacing.xl,
       paddingTop: 44,
-      gap: 16,
+      gap: brandSpacing4.md,
     },
     panelMain: {
       gap: 14,
@@ -158,7 +159,7 @@ export function createAuthStyles(theme: BrandTheme) {
       gap: 14,
     },
     primaryButton: {
-      marginTop: 2,
+      marginTop: brandSpacing4.xxs,
       minHeight: 50,
     },
     secondaryButton: {
@@ -181,7 +182,7 @@ export function createAuthStyles(theme: BrandTheme) {
       alignSelf: "center",
       paddingTop: 0,
       marginTop: -6,
-      paddingBottom: 6,
+      paddingBottom: brandSpacing.xs,
     },
     forgotPasswordText: {
       ...brandTypography.button,
@@ -194,7 +195,7 @@ export function createAuthStyles(theme: BrandTheme) {
     legalContainer: {
       alignItems: "center",
       paddingHorizontal: brandSpacing.sm,
-      paddingVertical: 6,
+      paddingVertical: brandSpacing.xs,
       gap: 14,
     },
     legalText: {
@@ -225,7 +226,7 @@ export function createDevModalStyles(theme: BrandTheme) {
     container: {
       flex: 1,
       paddingHorizontal: brandSpacing.lg,
-      paddingTop: 32,
+      paddingTop: brandSpacing4.xl,
       backgroundColor: theme.colors.canvas,
       gap: brandSpacing.md,
     },

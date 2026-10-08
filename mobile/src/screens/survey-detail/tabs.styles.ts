@@ -3,6 +3,7 @@ import {
   brandDefaultFontFamily,
   brandRadius,
   brandShadow,
+  brandSpacing,
   brandSpacing4,
   brandTypeScale,
   brandTypography,
@@ -24,10 +25,10 @@ export function createTabsStyles(theme: BrandTheme) {
       boxShadow: theme.visual.glass.cardShadow,
     },
     eventRow: {
-      gap: 4,
+      gap: brandSpacing4.xs,
       borderTopWidth: 1,
       borderTopColor: theme.colors.divider,
-      paddingTop: 12,
+      paddingTop: brandSpacing4.smd,
     },
     eventTitle: {
       ...brandTypography.label,
@@ -80,11 +81,11 @@ export function createTabsStyles(theme: BrandTheme) {
       borderColor: theme.colors.divider,
       backgroundColor: theme.colors.panel,
       padding: 18,
-      gap: 6,
+      gap: brandSpacing.xs,
       ...brandShadow.card,
     },
     debugAttachmentBlock: {
-      gap: 10,
+      gap: brandSpacing.sm,
     },
     debugAttachmentCard: {
       borderRadius: 24,
@@ -92,7 +93,7 @@ export function createTabsStyles(theme: BrandTheme) {
       borderColor: theme.colors.divider,
       backgroundColor: theme.colors.panel,
       padding: 14,
-      gap: 6,
+      gap: brandSpacing.xs,
     },
     debugAttachmentPreview: {
       width: "100%",

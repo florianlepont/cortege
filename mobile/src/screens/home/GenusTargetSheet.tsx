@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native"
-import { brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
@@ -95,11 +95,11 @@ function createStyles(theme: BrandTheme) {
       alignItems: "center",
       justifyContent: "space-between",
       paddingHorizontal: 20,
-      paddingTop: 22,
-      paddingBottom: 12,
+      paddingTop: brandSpacing.lg,
+      paddingBottom: brandSpacing4.smd,
     },
     title: { ...brandTypography.sectionTitle, color: theme.semanticColors.textStrong },
     close: { ...brandTypography.button, color: theme.semanticColors.accent },
-    content: { paddingHorizontal: 20, paddingBottom: brandSpacing.xl, gap: 8 },
+    content: { paddingHorizontal: 20, paddingBottom: brandSpacing.xl, gap: brandSpacing4.sm },
   })
 }

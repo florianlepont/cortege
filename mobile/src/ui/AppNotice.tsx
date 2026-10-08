@@ -2,7 +2,7 @@ import { ReactNode, useMemo } from "react"
 import { Pressable, StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandTypography } from "../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppNoticeTone = "info" | "success" | "warning" | "danger"
@@ -73,11 +73,11 @@ function createStyles(theme: BrandTheme) {
     base: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 8,
+      gap: brandSpacing4.sm,
       borderRadius: 16,
       borderWidth: 1,
       paddingHorizontal: 14,
-      paddingVertical: 12,
+      paddingVertical: brandSpacing4.smd,
     },
     info: {
       borderColor: theme.componentColors.notice.infoBorder,
@@ -101,7 +101,7 @@ function createStyles(theme: BrandTheme) {
     },
     copy: {
       flex: 1,
-      gap: 2,
+      gap: brandSpacing4.xxs,
     },
     title: {
       ...brandTypography.label,
@@ -124,7 +124,7 @@ function createStyles(theme: BrandTheme) {
       alignSelf: "center",
       minHeight: 32,
       justifyContent: "center",
-      paddingHorizontal: 10,
+      paddingHorizontal: brandSpacing.sm,
     },
     actionPressed: {
       opacity: 0.7,

@@ -2,7 +2,12 @@ import { memo, useMemo } from "react"
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { AppText as Text } from "../../ui/AppText"
-import { brandInteraction, brandRadius, brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandRadius,
+  brandSpacing4,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { GlassSurface } from "../../ui/GlassSurface"
 
@@ -138,7 +143,7 @@ const cornerStyles = StyleSheet.create({
     padding: MAP_EDGE,
   },
   left: { alignItems: "flex-start" },
-  right: { alignItems: "flex-end", gap: 8 },
+  right: { alignItems: "flex-end", gap: brandSpacing4.sm },
 })
 
 function createStyles(theme: BrandTheme) {
@@ -174,7 +179,7 @@ function createStyles(theme: BrandTheme) {
       height: MAP_PILL_HEIGHT,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
   })
 }

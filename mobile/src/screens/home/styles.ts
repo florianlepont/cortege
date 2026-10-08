@@ -103,7 +103,7 @@ export function createStyles(theme: BrandTheme) {
 
     loadingRow: {
       paddingHorizontal: PAGE_H,
-      gap: 10,
+      gap: brandSpacing.sm,
     },
   })
 }

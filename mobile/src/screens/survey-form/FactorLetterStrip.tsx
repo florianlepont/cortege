@@ -5,6 +5,7 @@ import {
   brandColors,
   brandOverlayTokens,
   brandShadow,
+  brandSpacing,
   brandSpacing4,
   brandTypography,
 } from "../../app/brand-tokens"
@@ -209,9 +210,9 @@ function createStyles(theme: BrandTheme) {
     bubble: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 16,
+      gap: brandSpacing4.smd,
+      paddingVertical: brandSpacing.sm,
+      paddingHorizontal: brandSpacing4.md,
       borderRadius: 22,
       backgroundColor: brandOverlayTokens.factorStripBackground,
       ...brandShadow.card,

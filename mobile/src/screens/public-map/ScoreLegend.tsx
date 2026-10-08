@@ -141,12 +141,12 @@ function createStyles(theme: BrandTheme) {
       // edge instead of running past it (OA-119).
       right: MAP_EDGE,
       alignItems: "flex-start",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     line: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     countPill: {
       borderRadius: brandRadius.pill,
@@ -156,7 +156,7 @@ function createStyles(theme: BrandTheme) {
       height: MAP_PILL_HEIGHT,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     countText: {
       ...brandTypography.meta,

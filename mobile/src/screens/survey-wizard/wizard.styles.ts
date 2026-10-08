@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native"
 import {
+  brandRadius,
   brandSpacing,
   brandSpacing4,
   brandTypeScale,
@@ -103,7 +104,7 @@ export function createWizardStyles(theme: BrandTheme) {
       alignItems: "flex-start",
       gap: brandSpacing4.md,
       padding: brandSpacing4.md,
-      borderRadius: 22,
+      borderRadius: brandRadius.card,
       borderWidth: 1,
       borderColor: glass.cardBorder,
       backgroundColor: glass.cardFill,
@@ -117,7 +118,7 @@ export function createWizardStyles(theme: BrandTheme) {
     radio: {
       width: 24,
       height: 24,
-      marginTop: 2,
+      marginTop: brandSpacing4.xxs,
       borderRadius: 12,
       borderWidth: 2,
       borderColor: theme.colors.textSecondary,

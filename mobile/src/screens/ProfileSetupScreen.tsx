@@ -12,7 +12,13 @@ import {
 } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
+import {
+  brandColors,
+  brandRadius,
+  brandSpacing,
+  brandSpacing4,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
@@ -186,7 +192,7 @@ function createStyles(theme: BrandTheme) {
       right: 14,
       width: 120,
       height: 120,
-      borderRadius: 999,
+      borderRadius: brandRadius.pill,
       backgroundColor: brandColors.sage,
       opacity: 0.28,
     },
@@ -224,11 +230,11 @@ function createStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
     },
     fields: {
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
     actions: {
-      gap: 10,
-      marginTop: 4,
+      gap: brandSpacing.sm,
+      marginTop: brandSpacing4.xs,
     },
   })
 }

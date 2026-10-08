@@ -7,6 +7,7 @@ import {
   brandComponentTokens,
   brandInteraction,
   brandRadius,
+  brandSpacing4,
   brandTypography,
 } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
@@ -146,7 +147,7 @@ function createStyles(theme: BrandTheme) {
     base: {
       borderRadius: brandRadius.pill,
       flexDirection: "row",
-      gap: 8,
+      gap: brandSpacing4.sm,
       alignItems: "center",
       justifyContent: "center",
     },

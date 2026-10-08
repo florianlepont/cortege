@@ -1,7 +1,12 @@
 import { useMemo } from "react"
 import { Pressable, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
+import {
+  brandComponentTokens,
+  brandRadius,
+  brandSpacing,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { feedback } from "./feedback"
 
@@ -74,7 +79,7 @@ function createStyles(theme: BrandTheme) {
       borderWidth: 1,
       borderColor: theme.visual.chip.border,
       backgroundColor: theme.visual.chip.fill,
-      paddingHorizontal: 10,
+      paddingHorizontal: brandSpacing.sm,
       paddingVertical: 7,
       alignItems: "center",
       justifyContent: "center",

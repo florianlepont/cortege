@@ -2,6 +2,7 @@ import { StyleSheet } from "react-native"
 import {
   brandOnDarkColors,
   brandRadius,
+  brandSpacing,
   brandSpacing4,
   brandTypeScale,
   brandTypography,
@@ -70,7 +71,7 @@ export function createDetailStyles(theme: BrandTheme) {
       gap: brandSpacing4.smd,
     },
     fieldBlock: {
-      gap: 6,
+      gap: brandSpacing.xs,
     },
     fieldLabel: {
       ...brandTypography.label,
@@ -78,7 +79,7 @@ export function createDetailStyles(theme: BrandTheme) {
     },
     input: {
       paddingHorizontal: 14,
-      paddingVertical: 12,
+      paddingVertical: brandSpacing4.smd,
     },
     // The help sheet.
     sheetBackdrop: {
@@ -92,7 +93,7 @@ export function createDetailStyles(theme: BrandTheme) {
       maxHeight: "80%",
       backgroundColor: theme.semanticColors.backgroundCanvas,
       paddingHorizontal: 20,
-      paddingTop: 16,
+      paddingTop: brandSpacing4.md,
       paddingBottom: 34,
       gap: brandSpacing4.md,
     },

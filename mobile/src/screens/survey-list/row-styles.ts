@@ -73,7 +73,7 @@ export function createRowStyles(theme: BrandTheme) {
     surveyCardAccent: {
       width: 4,
       alignSelf: "stretch",
-      borderRadius: 999,
+      borderRadius: brandRadius.pill,
       backgroundColor: theme.componentColors.surveyList.cardAccentNeutral,
     },
     surveyCardAccentSuccess: {
@@ -115,7 +115,7 @@ export function createRowStyles(theme: BrandTheme) {
       color: theme.colors.textPrimary,
     },
     surveyCardSelectedIcon: {
-      marginTop: 2,
+      marginTop: brandSpacing4.xxs,
     },
     // Status + date on same row
     surveyCardStatusRow: {

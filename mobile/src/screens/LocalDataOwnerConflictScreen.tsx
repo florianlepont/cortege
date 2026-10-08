@@ -2,7 +2,13 @@ import { useMemo } from "react"
 import { Image, ImageSourcePropType, ScrollView, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandColors, brandSpacing, brandTypography } from "../app/brand-tokens"
+import {
+  brandColors,
+  brandRadius,
+  brandSpacing,
+  brandSpacing4,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { AppButton } from "../ui/AppButton"
 import { AppCard } from "../ui/AppCard"
@@ -100,7 +106,7 @@ function createStyles(theme: BrandTheme) {
       right: 14,
       width: 120,
       height: 120,
-      borderRadius: 999,
+      borderRadius: brandRadius.pill,
       backgroundColor: brandColors.terracotta,
       opacity: 0.22,
     },
@@ -134,8 +140,8 @@ function createStyles(theme: BrandTheme) {
       color: theme.colors.textPrimary,
     },
     actions: {
-      gap: 10,
-      marginTop: 4,
+      gap: brandSpacing.sm,
+      marginTop: brandSpacing4.xs,
     },
   })
 }

@@ -250,7 +250,7 @@ function createStyles(theme: BrandTheme) {
     },
     resultCopy: {
       flex: 1,
-      gap: 2,
+      gap: brandSpacing4.xxs,
     },
     mostLikelyBadge: {
       ...brandTypography.meta,

@@ -2,7 +2,7 @@ import { ActivityIndicator, ImageStyle, StyleProp, View, ViewStyle } from "react
 import { AppText as Text } from "../../ui/AppText"
 import { Image as ExpoImage } from "expo-image"
 import { Ionicons } from "@expo/vector-icons"
-import { brandTypography } from "../../app/brand-tokens"
+import { brandSpacing, brandTypography } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { LocalAttachment } from "../../storage"
 import { AttachmentPreview, resolveAttachmentPreview } from "../survey-screen-helpers"
@@ -37,7 +37,12 @@ export function AttachmentPhotoPreview({
   }
 
   return (
-    <View style={[placeholderStyle, { alignItems: "center", justifyContent: "center", gap: 6 }]}>
+    <View
+      style={[
+        placeholderStyle,
+        { alignItems: "center", justifyContent: "center", gap: brandSpacing.xs },
+      ]}
+    >
       {preview.kind === "loading" ? (
         <ActivityIndicator size="small" color={theme.colors.forest} />
       ) : (

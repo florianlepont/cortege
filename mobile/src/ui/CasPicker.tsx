@@ -2,7 +2,7 @@ import { useMemo } from "react"
 import { Pressable, StyleSheet, Switch, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { IBP_CAS_VALUES, type IbpCas } from "@cortege/ibp-domain"
-import { brandRadius, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppText as Text } from "./AppText"
@@ -81,12 +81,12 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     list: {
-      gap: 10,
+      gap: brandSpacing.sm,
     },
     card: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 12,
+      gap: brandSpacing4.smd,
       minHeight: 64,
       padding: 14,
       borderRadius: brandRadius.field,
@@ -101,7 +101,7 @@ function createStyles(theme: BrandTheme) {
     radio: {
       width: 22,
       height: 22,
-      marginTop: 2,
+      marginTop: brandSpacing4.xxs,
       borderRadius: 11,
       borderWidth: 2,
       borderColor: theme.colors.textSecondary,
@@ -114,7 +114,7 @@ function createStyles(theme: BrandTheme) {
     },
     copy: {
       flex: 1,
-      gap: 2,
+      gap: brandSpacing4.xxs,
     },
     title: {
       ...brandTypography.sectionBody,
@@ -128,9 +128,9 @@ function createStyles(theme: BrandTheme) {
     switchRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
-      paddingHorizontal: 4,
-      paddingTop: 4,
+      gap: brandSpacing4.smd,
+      paddingHorizontal: brandSpacing4.xs,
+      paddingTop: brandSpacing4.xs,
     },
     switchLabel: {
       ...brandTypography.sectionBody,

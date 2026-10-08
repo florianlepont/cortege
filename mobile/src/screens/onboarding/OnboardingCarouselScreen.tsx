@@ -151,7 +151,7 @@ function createStyles(theme: BrandTheme) {
     },
     dots: {
       flexDirection: "row",
-      gap: 6,
+      gap: brandSpacing.xs,
     },
     dot: {
       width: 7,

@@ -4,10 +4,11 @@ import { AppText as Text } from "./AppText"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   brandFontScaleCaps,
-  brandRadius,
   brandOverlayTokens,
+  brandRadius,
   brandShadow,
   brandSpacing,
+  brandSpacing4,
   brandTypography,
 } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
@@ -94,7 +95,7 @@ function createStyles(theme: BrandTheme) {
       borderTopRightRadius: brandRadius.panel,
       paddingHorizontal: brandSpacing.lg,
       paddingTop: brandSpacing.md,
-      gap: 2,
+      gap: brandSpacing4.xxs,
       ...brandShadow.card,
     },
     title: {

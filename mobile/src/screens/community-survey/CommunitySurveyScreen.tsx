@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import { Image as ExpoImage } from "expo-image"
-import { brandTypography } from "../../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { formatDay } from "../../app/formatters"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
@@ -251,8 +251,8 @@ function createOwnStyles(theme: BrandTheme) {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      gap: 12,
-      paddingHorizontal: 24,
+      gap: brandSpacing4.smd,
+      paddingHorizontal: brandSpacing4.lg,
     },
     message: {
       ...brandTypography.sectionBody,
@@ -260,7 +260,7 @@ function createOwnStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
     },
     titleBlock: {
-      gap: 4,
+      gap: brandSpacing4.xs,
     },
     title: {
       ...brandTypography.sectionTitle,
@@ -275,12 +275,12 @@ function createOwnStyles(theme: BrandTheme) {
     chips: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
-      paddingTop: 6,
+      gap: brandSpacing4.sm,
+      paddingTop: brandSpacing.xs,
     },
     chip: {
       borderRadius: 14,
-      paddingHorizontal: 12,
+      paddingHorizontal: brandSpacing4.smd,
       paddingVertical: 5,
       backgroundColor: theme.colors.panelMuted,
     },
@@ -292,28 +292,28 @@ function createOwnStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
       fontStyle: "italic",
-      paddingTop: 4,
+      paddingTop: brandSpacing4.xs,
     },
     historyList: {
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     historyRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: brandSpacing4.smd,
       borderRadius: 16,
       borderWidth: 1,
       borderColor: theme.colors.divider,
       backgroundColor: theme.semanticColors.surfaceElevated,
       paddingHorizontal: 14,
-      paddingVertical: 12,
+      paddingVertical: brandSpacing4.smd,
     },
     historyRowCurrent: {
       borderColor: theme.colors.forest,
     },
     historyCopy: {
       flex: 1,
-      gap: 2,
+      gap: brandSpacing4.xxs,
     },
     historyTitle: {
       ...brandTypography.input,

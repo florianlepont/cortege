@@ -12,6 +12,7 @@ import { AppText as Text } from "./AppText"
 import {
   brandComponentTokens,
   brandRadius,
+  brandSpacing4,
   brandTypeScale,
   brandTypography,
 } from "../app/brand-tokens"
@@ -80,7 +81,7 @@ function createStyles(theme: BrandTheme) {
     label: {
       ...brandTypography.label,
       color: theme.colors.textPrimary,
-      marginTop: 2,
+      marginTop: brandSpacing4.xxs,
     },
     input: {
       borderWidth: 1,
