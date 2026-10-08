@@ -29,8 +29,8 @@ prefixes `ML` (species recognition groundwork), `INF` (infrastructure), `QA` (qu
 ### A — Access and Security
 
 Five of six are Built and field-tested (`docs/user-tests/epic-a-access-and-security.md`, 28 cases);
-two of those five carry open defects, fixed in Phase 13. Account deletion is Partial: the API path
-is built and untested-by-necessity (no mobile entry point existed to test), fixed in Phase 2.
+two of those five carry open defects, fixed in Phase 28. Account deletion is Partial: the API path
+is built and untested-by-necessity (no mobile entry point existed to test), fixed in Phase 11.
 Social login was found unbuilt on 2026-09-27 (no code anywhere in `mobile/src`, despite this
 document previously marking it "Built") and is moved to **Deferred — Next Milestone** below —
 `docs/specs/epic-a-access-and-security.md`'s own test plan already treats it that way.
@@ -40,14 +40,14 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [ ] **REQ-A-signup** — Contributor creates an account with email + password, with validation, verification and actionable errors. *(Built — `BUG-A3-4` open: duplicate email shows a generic Auth0 error)*
 - [x] **REQ-A-profile** — Contributor views and edits first name, last name, display name and profile picture (camera or gallery). *(Built)*
 - [ ] **REQ-A-forgot-password** — Contributor requests a reset link, single-use and expiring after 24 h. *(Built — `BUG-A6-2` open: reset email lands in spam, an Auth0 tenant setting)*
-- [ ] **REQ-A-delete-account** — Contributor deletes the account irreversibly; personal data erased, submitted surveys anonymised and retained. *(Partial — API (`DELETE /me`) built and correct; no mobile entry point exists. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
+- [x] **REQ-A-delete-account** — Contributor deletes the account irreversibly; personal data erased, submitted surveys anonymised and retained. *(Partial — API (`DELETE /me`) built and correct; no mobile entry point exists. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 11)*
 
 ### B — Survey Preparation
 
 - [x] **REQ-B-survey-list** — Contributor sees their surveys with parcel ids, name, last update, version, status and completion rate; filterable by status and date; visible offline. *(Built)*
-- [ ] **REQ-B-survey-detail** — Contributor sees survey detail with submission deadline, completion rate, previous surveys on the same parcel, and IBP total + factor-level deltas against previous versions. *(Partial — the parcel-history API (`GET /parcels/:parcelId/surveys/history`) exists but no mobile screen calls it. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 2)*
-- [x] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone — every submitted survey is visible by default to every authenticated association member.** *(Built — Phase 10 verified the delete/confirmation flow was already complete; corrected from "Partial", which described the Phase 2 visibility-toggle removal, not this flow)*
-- [ ] **REQ-B-own-surveys-map** — The map screen requires authentication and shows the surveys submitted by any association member — not an anonymous public set, and not only the contributor's own. `PublicMapScreen` and its navigation are kept; only the data source and the auth requirement change. `GET /public/map-items` and `GET /public/parcels/status` require authentication instead of staying open. *(New — redefined 2026-09-27 from "own surveys" to "members' surveys"; created by this milestone)*
+- [x] **REQ-B-survey-detail** — Contributor sees survey detail with submission deadline, completion rate, previous surveys on the same parcel, and IBP total + factor-level deltas against previous versions. *(Partial — the parcel-history API (`GET /parcels/:parcelId/surveys/history`) exists but no mobile screen calls it. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 11)*
+- [x] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone — every submitted survey is visible by default to every authenticated association member.** *(Built — Phase 19 verified the delete/confirmation flow was already complete; corrected from "Partial", which described the Phase 11 visibility-toggle removal, not this flow)*
+- [x] **REQ-B-own-surveys-map** — The map screen requires authentication and shows the surveys submitted by any association member — not an anonymous public set, and not only the contributor's own. `PublicMapScreen` and its navigation are kept; only the data source and the auth requirement change. `GET /public/map-items` and `GET /public/parcels/status` require authentication instead of staying open. *(New — redefined 2026-09-27 from "own surveys" to "members' surveys"; created by this milestone)*
 
 ### C — IBP Survey Data Entry
 
@@ -57,49 +57,53 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [x] **REQ-C-parcel-linkage** — Contributor taps parcel polygons to select or deselect them; a survey references one or many parcels (`parcel_ids[]`); the map can centre on current location; submission is blocked when linkage is missing or invalid. *(Built)*
 - [x] **REQ-C-submit** — Submission is blocked until all ten factors are scoreable and parcel linkage metadata is present, blocked past 7 days, states the explicit reason when blocked, and transitions to `submitted` + read-only with automatic sync. *(Built)*
 - [x] **REQ-C-help** — Each complex field exposes on-demand pedagogical help that does not lose form progress. *(Built)*
-- [ ] **REQ-C-versioning** — A survey carries an explicit version number and observation year; the app proposes the next version on an already-studied parcel and shows previous scores. *(Partial — `version_number`/`observation_year` are recorded (`api/migrations/008_parcels_and_versioning.sql`), but no next-version suggestion or previous-scores UI exists. Corrected 2026-09-27, was wrongly marked "Built". Originally labelled V1; promoted to MVP because parcel history is in scope. Build in Phase 2)*
-- [x] **REQ-C-species-recognition** — From the Factor A section, the contributor photographs a single subject and the app suggests the most likely tree **genus** with its alternatives, each carrying a per-genus calibrated plain-words confidence indicator; all 34 CNPF genera are suggested; the contributor confirms each suggestion and the accepted genus is saved in Factor A's genus list; recognition runs on-device with the model bundled in the app, and works in airplane mode. *(New — US-C9. Revised 2026-09-26 to match ADR-002. Gated behind `REQ-ML-adr` (satisfied) and `REQ-ML-contracts` (satisfied); Built in Phase 6, closed 2026-09-27 — the real MD5-verified `genus_classifier.tflite` and its labels are in place (PR #176 then #178), preprocessing confirmed by inspecting the source SavedModel rather than assumed. Two verifications explicitly deferred to Phase 13's field validation, by owner decision: a real Android device latency/accuracy run (closing Phase 1's own accepted deviation), and real-device recognition accuracy against actual tree photographs. See `.planning/phases/06-genus-recognition-factor-a/`)*
-- [x] **REQ-C-pdf-export** — Contributor exports a survey as a PDF generated **on device** (expo-print) and delivers it through the OS share sheet (expo-sharing) to any installed target — Google Drive, Wimi, mail, AirDrop. Must work offline. No API endpoint, no direct Drive OAuth integration. *(Built — Phase 10)*
+- [ ] **REQ-C-versioning** — A survey carries an explicit version number and observation year; the app proposes the next version on an already-studied parcel and shows previous scores. *(Partial — `version_number`/`observation_year` are recorded (`api/migrations/008_parcels_and_versioning.sql`), but no next-version suggestion or previous-scores UI exists. Corrected 2026-09-27, was wrongly marked "Built". Originally labelled V1; promoted to MVP because parcel history is in scope. Build in Phase 11)*
+- [x] **REQ-C-species-recognition** — From the Factor A section, the contributor photographs a single subject and the app suggests the most likely tree **genus** with its alternatives, each carrying a per-genus calibrated plain-words confidence indicator; all 34 CNPF genera are suggested; the contributor confirms each suggestion and the accepted genus is saved in Factor A's genus list; recognition runs on-device with the model bundled in the app, and works in airplane mode. *(New — US-C9. Revised 2026-09-26 to match ADR-002. Gated behind `REQ-ML-adr` (satisfied) and `REQ-ML-contracts` (satisfied); Built in Phase 15, closed 2026-09-27 — the real MD5-verified `genus_classifier.tflite` and its labels are in place (PR #176 then #178), preprocessing confirmed by inspecting the source SavedModel rather than assumed. Two verifications explicitly deferred to Phase 28's field validation, by owner decision: a real Android device latency/accuracy run (closing Phase 1's own accepted deviation), and real-device recognition accuracy against actual tree photographs. See `.planning/phases/15-genus-recognition-factor-a/`)*
+- [x] **REQ-C-pdf-export** — Contributor exports a survey as a PDF generated **on device** (expo-print) and delivers it through the OS share sheet (expo-sharing) to any installed target — Google Drive, Wimi, mail, AirDrop. Must work offline. No API endpoint, no direct Drive OAuth integration. *(Built — Phase 19)*
 
 ### D — Offline and Synchronization
 
 - [x] **REQ-D-offline-work** — Contributor views loaded surveys and edits drafts offline; actions are queued; parcel linkage metadata and recent cadastral context are available offline. *(Built)*
 - [x] **REQ-D-auto-sync** — On reconnection, pending surveys are sent automatically with no manual trigger; status becomes `synced`, or `error` with an actionable message; downsync includes parcel history. *(Built)*
 - [x] **REQ-D-conflict-resolution** — A server-rejected parcel/version conflict is stored as a clear blocking error explaining expected vs local state; the contributor retries after correction or discards. *(Built)*
-- [x] **REQ-D-offline-map** — A clear offline indicator is shown; the map renders a basemap and locally available parcels; GPS position displays and can be followed; zoom, pan and parcel selection work with no connectivity. *(New — Built, closed Phase 8: `OfflineIndicatorBadge`, `OfflineBasemapTile` switching to local tiles, `ParcelOverlayPolygons` fed from the offline parcel-status cache; GPS follow and zoom/pan/selection were already device-local and untouched. Not checked on a real device in airplane mode — see `08-CONTEXT.md`/ROADMAP Phase 8 status note.)*
-- [x] **REQ-D-area-download** — Contributor selects an area, sees estimated size and download progress, lists and deletes downloaded areas, and the area survives an app restart. *(New — Built, closed Phase 8: `OfflineAreasSheet` + `useOfflineAreas`, tiles and parcel cache persisted under the document directory and a new SQLite migration, so a relaunch reopens the same downloaded state. The actual force-quit/relaunch has not been run on a device in this cloud session.)*
-- [x] **REQ-D-offline-parcel-warning** — When an expected parcel is not cached, a clear message explains it and a quick action starts the download once the network returns; no infinite spinners. *(New — Built, closed Phase 8: `ParcelHistoryCard`'s offline state plus the `offline_pending_parcels` queue drained by `useOfflinePendingParcelDrain` on reconnect.)*
-- [x] **REQ-D-basemap-switch** — A basemap selector toggles at least "Satellite" and "Map"; the selection persists while navigating; the default is configurable. *(New — Built, closed Phase 8: `BasemapToggle` + `useBasemapPreference`, persisted to `local_meta`. "The default is configurable" is satisfied as a code-level constant (`DEFAULT_BASEMAP` in `storage/map-preference.ts`), not a user-facing settings toggle — no such settings surface exists elsewhere in the app either.)*
+- [x] **REQ-D-offline-map** — A clear offline indicator is shown; the map renders a basemap and locally available parcels; GPS position displays and can be followed; zoom, pan and parcel selection work with no connectivity. *(New — Built, closed Phase 17: `OfflineIndicatorBadge`, `OfflineBasemapTile` switching to local tiles, `ParcelOverlayPolygons` fed from the offline parcel-status cache; GPS follow and zoom/pan/selection were already device-local and untouched. Not checked on a real device in airplane mode — see `17-CONTEXT.md`/ROADMAP Phase 17 status note.)*
+- [x] **REQ-D-area-download** — Contributor selects an area, sees estimated size and download progress, lists and deletes downloaded areas, and the area survives an app restart. *(New — Built, closed Phase 17: `OfflineAreasSheet` + `useOfflineAreas`, tiles and parcel cache persisted under the document directory and a new SQLite migration, so a relaunch reopens the same downloaded state. The actual force-quit/relaunch has not been run on a device in this cloud session.)*
+- [x] **REQ-D-offline-parcel-warning** — When an expected parcel is not cached, a clear message explains it and a quick action starts the download once the network returns; no infinite spinners. *(New — Built, closed Phase 17: `ParcelHistoryCard`'s offline state plus the `offline_pending_parcels` queue drained by `useOfflinePendingParcelDrain` on reconnect.)*
+- [x] **REQ-D-basemap-switch** — A basemap selector toggles at least "Satellite" and "Map"; the selection persists while navigating; the default is configurable. *(New — Built, closed Phase 17: `BasemapToggle` + `useBasemapPreference`, persisted to `local_meta`. "The default is configurable" is satisfied as a code-level constant (`DEFAULT_BASEMAP` in `storage/map-preference.ts`), not a user-facing settings toggle — no such settings surface exists elsewhere in the app either.)*
 
 ### ML — Species Recognition Groundwork
 
 Blocking prerequisites for `REQ-C-species-recognition`. Both exist because US-C9 is invisible to
 every binding contract (conflict-report warning 5).
 
-- [x] **REQ-ML-adr** — An accepted ADR records the on-device ML approach: inference runtime, model and licence, on-device model size, measured latency and accuracy on real iOS and Android devices, offline-vs-online behaviour, and an explicit go/no-go for US-C9 in this milestone with a stated fallback. *(New — satisfied 2026-09-26 by ADR-002 (Accepted), **with one accepted deviation**: no real Android device was measured, by user decision; see `01-VERIFICATION.md` override. The Android latency run and accuracy spot-check must close before Phase 6 ships.)*
-- [x] **REQ-ML-contracts** — `docs/technical/data-contract-v1.md` redefines Factor A as a list of observed native genera from the CNPF regional list, with the count derived from it (ADR-002, D-15); `docs/technical/api-contract-v1.md` documents that shape in the survey payload under `/v1`; a migration implements it and preserves the scores of surveys already recorded as a bare count. The genus list round-trips through `POST /surveys/sync` idempotently. No species entity, no recognition endpoint, no stored suggestion outcome (D-01, D-06, D-14). *(New — revised 2026-09-26 to match ADR-002; Built — closed Phase 5)*
+- [x] **REQ-ML-adr** — An accepted ADR records the on-device ML approach: inference runtime, model and licence, on-device model size, measured latency and accuracy on real iOS and Android devices, offline-vs-online behaviour, and an explicit go/no-go for US-C9 in this milestone with a stated fallback. *(New — satisfied 2026-09-26 by ADR-002 (Accepted), **with one accepted deviation**: no real Android device was measured, by user decision; see `01-VERIFICATION.md` override. The Android latency run and accuracy spot-check must close before Phase 15 ships.)*
+- [x] **REQ-ML-contracts** — `docs/technical/data-contract-v1.md` redefines Factor A as a list of observed native genera from the CNPF regional list, with the count derived from it (ADR-002, D-15); `docs/technical/api-contract-v1.md` documents that shape in the survey payload under `/v1`; a migration implements it and preserves the scores of surveys already recorded as a bare count. The genus list round-trips through `POST /surveys/sync` idempotently. No species entity, no recognition endpoint, no stored suggestion outcome (D-01, D-06, D-14). *(New — revised 2026-09-26 to match ADR-002; Built — closed Phase 14)*
 
 ### INF — Infrastructure
 
-- [x] **REQ-INF-hosting-adr** — A new ADR ratifies the **current VPS** as the hosting target: Docker + Caddy + GHCR + systemd timer + MinIO on `cortege.algernon.ovh`. Supersedes the unratified alwaysdata + Cloudflare R2 note. Closes conflict-report warning 7. Not a hosting migration. *(New — closed Phase 11: `docs/technical/adr-004-hosting-and-infrastructure-v1.md`)*
-- [x] **REQ-INF-backups** — PostgreSQL leaves PoC status: a scheduled backup runs unattended and a restore into a clean database has been performed and recorded at least once. *(New — closed Phase 11: `infra/vps/backup-postgres.sh`/`restore-postgres.sh`/`cortege-backup.timer`, rehearsed locally)*
-- [x] **REQ-INF-migrations** — Migrations run reliably on deploy: a fresh database and the production database reach the same schema version through a documented path, and a failed migration does not leave the schema half-applied. *(New — closed Phase 11: `api/migrations/README.md`, verified with a deliberately broken migration)*
-- [x] **REQ-INF-deadcode** — `api/src/users/email.service.ts` (orphaned since the Auth0 migration — imported nowhere, registered in no module) and the vestigial `SMTP_*` env vars are removed from the repo, `api/.env.example` and the deployment env. *(New — already true since phase 01.9, verified in Phase 11)*
+- [x] **REQ-INF-hosting-adr** — A new ADR ratifies the **current VPS** as the hosting target: Docker + Caddy + GHCR + systemd timer + MinIO on `cortege.algernon.ovh`. Supersedes the unratified alwaysdata + Cloudflare R2 note. Closes conflict-report warning 7. Not a hosting migration. *(New — closed Phase 20: `docs/technical/adr-004-hosting-and-infrastructure-v1.md`)*
+- [x] **REQ-INF-backups** — PostgreSQL leaves PoC status: a scheduled backup runs unattended and a restore into a clean database has been performed and recorded at least once. *(New — closed Phase 20: `infra/vps/backup-postgres.sh`/`restore-postgres.sh`/`cortege-backup.timer`, rehearsed locally)*
+- [x] **REQ-INF-migrations** — Migrations run reliably on deploy: a fresh database and the production database reach the same schema version through a documented path, and a failed migration does not leave the schema half-applied. *(New — closed Phase 20: `api/migrations/README.md`, verified with a deliberately broken migration)*
+- [x] **REQ-INF-deadcode** — `api/src/users/email.service.ts` (orphaned since the Auth0 migration — imported nowhere, registered in no module) and the vestigial `SMTP_*` env vars are removed from the repo, `api/.env.example` and the deployment env. *(New — already true since phase 01.9, verified in Phase 20)*
 
 ### QA — Quality and Defects
 
 - [x] **REQ-QA-ibp-version** — The IBP method version the app implements is established and ratified. The repo cites IBP Fr v3.0 (PDFs dated 2023-03-23); the CNPF's current publication is FR v3.2 (dated 2026-02-02). All ten factors are compared, every divergence is recorded against `ibp-rules.service.ts`, `ibp-scoring.ts` and the 17-case validation matrix, and a documented decision either migrates to v3.2 or stays on v3.0 for stated reasons. *(New — surfaced by Phase 1 research)*
-- [x] **REQ-QA-sql-injection** — A lint rule rejects interpolating values into SQL strings. *(Re-scoped 2026-09-23: account deletion in `api/src/users/users.service.ts` interpolates only constant subqueries and binds the user id as `$1`, so there is no injection today; the requirement now prevents one from appearing — closed Phase 11: `api/eslint-local-rules/sql-no-unsafe-interpolation.js`)*
-- [x] **REQ-QA-indexes** — `survey_events(actor_id)` is indexed, and the redundant `idx_users_auth0_sub` (duplicates the UNIQUE constraint), `idx_survey_parcels_survey_id` (duplicates the primary-key prefix) and `idx_surveys_parcel_id` are dropped. *(Re-scoped 2026-09-23: the three indexes originally listed already exist — migrations 003, 009 and 011 — closed Phase 11: index work already done by migration 015, `EXPLAIN` evidence recorded in `.planning/phases/11-durable-backend/evidence/`)*
+- [x] **REQ-QA-sql-injection** — A lint rule rejects interpolating values into SQL strings. *(Re-scoped 2026-09-23: account deletion in `api/src/users/users.service.ts` interpolates only constant subqueries and binds the user id as `$1`, so there is no injection today; the requirement now prevents one from appearing — closed Phase 20: `api/eslint-local-rules/sql-no-unsafe-interpolation.js`)*
+- [x] **REQ-QA-indexes** — `survey_events(actor_id)` is indexed, and the redundant `idx_users_auth0_sub` (duplicates the UNIQUE constraint), `idx_survey_parcels_survey_id` (duplicates the primary-key prefix) and `idx_surveys_parcel_id` are dropped. *(Re-scoped 2026-09-23: the three indexes originally listed already exist — migrations 003, 009 and 011 — closed Phase 20: index work already done by migration 015, `EXPLAIN` evidence recorded in `.planning/phases/20-durable-backend/evidence/`)*
 - [ ] **REQ-QA-screen-tests** — The survey list, survey detail, survey form and map screens have tests covering sync-status, filter and error states. 9 of 12 screens have no coverage today. *(New)*
 - [ ] **REQ-QA-bug-a3-4** — Sign-up with an already-registered email shows a specific message inviting the user to log in, not a generic Auth0 error. *(New — `BUG-A3-4`, medium)*
 - [ ] **REQ-QA-bug-a6-2** — Password-reset email deliverability is closed as an **Auth0 tenant configuration** item (sender domain / DKIM), with the tenant change recorded. Explicitly **not** an SMTP fix. *(New — `BUG-A6-2`, re-scoped)*
-- [ ] **REQ-QA-visual-modernisation** — The interface is visibly more pleasant, modern and dynamic: a written visual direction approved by the owner, applied to the main screens in light and dark mode, with consistent Reanimated motion that respects reduced-motion, and no regression on field ergonomics or accessibility. *(New — owner decision 2026-10-06, Phase 12.2)*
-- [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 12.3)*
+- [ ] **REQ-QA-visual-modernisation** — The interface is visibly more pleasant, modern and dynamic: a written visual direction approved by the owner, applied to the main screens and to a colourised map background in light and dark mode, with consistent Reanimated motion that respects reduced-motion, with the design specification updated, existing design components reused rather than recreated and the ones already created homogenised, native libraries and components used as much as possible, and no regression on field ergonomics or accessibility. *(New — owner decision 2026-10-06, Phase 23)*
+- [ ] **REQ-B-nearby-parcels-home** — The Home lists the parcels near the user and starts a survey on the chosen one, with clear empty, offline and location-refused states. *(New — owner decision 2026-10-07, SEED-004; built within Phase 23, to be checked off when Phase 23 closes)*
+- [ ] **REQ-C-history-split** — The survey change log and the history of earlier surveys on the same parcel are two distinct entries, and another member's survey shows the parcel history only. *(New — owner decision 2026-10-07, SEED-002 / OA-124, Phase 24)*
+- [ ] **REQ-B-global-search** — One search covers the whole app: the member's own surveys, the other members' surveys, places and parcels on the map, and the other items the app exposes, with grouped results that lead straight to the item. *(New — owner decision 2026-10-07, SEED-003, Phase 25)*
+- [ ] **REQ-QA-ux-audit** — A documented UX/UI audit of every screen (light and dark) checks global coherence, accessibility and visual bugs, the design system and charter are updated to match Phase 23, and every *blocker before field tests* finding is fixed and confirmed by the owner. *(New — owner decision 2026-10-07, Phase 26)*
+- [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 27)*
 
 ### DOC — Documentation Accuracy
 
-- [x] **REQ-DOC-form-spec** — `docs/specs/ibp-form-spec.md` §4 is corrected to "one or many cadastral parcels (`parcel_ids[]`)" and §10.1 to the shipped status enum `draft | submitted | synced | error | expired` with `submitted_at` and `deleted_at`, no `deleted` value and no `published_at`. Closes conflict-report warnings 1 and 2. *(New — Built, closed Phase 5)*
+- [x] **REQ-DOC-form-spec** — `docs/specs/ibp-form-spec.md` §4 is corrected to "one or many cadastral parcels (`parcel_ids[]`)" and §10.1 to the shipped status enum `draft | submitted | synced | error | expired` with `submitted_at` and `deleted_at`, no `deleted` value and no `published_at`. Closes conflict-report warnings 1 and 2. *(New — Built, closed Phase 14)*
 - [ ] **REQ-DOC-taxonomy** — The three-phase taxonomy (MVP / V1 / V2) is adopted and `docs/specs/user-stories.md` §4 — currently titled "Scope (V1)" for the whole first release — is retitled accordingly. Closes conflict-report warning 3. *(New)*
 - [ ] **REQ-DOC-epicd-ids** — The duplicate `US-D1` / `US-D2` / `US-D3` IDs in `docs/specs/epic-d-offline-and-synchronization.md` are renumbered so the six stories have six distinct IDs. Closes conflict-report warning 4. *(New)*
 
@@ -113,7 +117,7 @@ every binding contract (conflict-report warning 5).
 
 Source: `docs/audits/audit-2026-09-code-complet.md` (findings) and `docs/audits/plan-remediation-2026-09.md`
 (lots L1–L20). All twenty lots are in this milestone: the lots that threaten the core value — no data
-loss, no duplicates — or that expose accounts run first (Phases 1.2–1.5), the rest right after (Phases 1.6–1.9).
+loss, no duplicates — or that expose accounts run first (Phases 3–6), the rest right after (Phases 7–10).
 
 - [x] **REQ-AUD-session-data-loss** — A token-refresh failure caused by the network, a timeout or an unknown error never deletes local surveys, photos or the sync queue; only an explicit refresh-token rejection ends the session, the queue survives re-login with the same account, and logout with unsynced work purges only after a confirmation that counts it. The 401 retry forces a token refresh. The pre-Auth0 session stubs are removed. *(Audit M-C1 — critical. Lot L1)*
 - [x] **REQ-AUD-rate-limit** — Rate limiting keys on the real client behind Caddy (`trust proxy` loopback, per-user tracker) with production limits that one syncing device cannot exhaust for everyone. *(Audit A-C1 — critical. Lot L2)*
@@ -129,7 +133,7 @@ loss, no duplicates — or that expose accounts run first (Phases 1.2–1.5), th
 - [x] **REQ-AUD-local-storage** — Multi-statement SQLite writes are transactional, the local schema is versioned with `PRAGMA user_version`, queue rows carry an explicit operation type, and the queue is indexed. *(Audit ARCH-3 mobile, ARCH-5. Lot L11b)*
 - [x] **REQ-AUD-photos** — Photos are resized and persisted in the document directory at capture, uploaded by streaming, network errors do not consume the retry cap, and a missing local file is surfaced instead of silently dropped. Attachments pulled from the server are displayable, and thumbnails render through `expo-image` from downsized sources. *(Audit M-H2 and the remote-attachment and image findings. Lot L12)*
 
-- [x] **REQ-AUD-offline-start** — A cold start with no network and valid stored credentials opens the signed-in app with the last known profile (cached locally) instead of the login overlay; the profile refreshes from `/me` when the API is reachable. *(Found while planning Phase 1.2: `isAuthenticated` depends on a successful `/me` call)*
+- [x] **REQ-AUD-offline-start** — A cold start with no network and valid stored credentials opens the signed-in app with the last known profile (cached locally) instead of the login overlay; the profile refreshes from `/me` when the API is reachable. *(Found while planning Phase 3: `isAuthenticated` depends on a successful `/me` call)*
 - [x] **REQ-AUD-changes-feed** — `/sync/changes` pages on a monotonic sequence and still accepts the old cursor; same-version replays with different content are conflicts; the per-poll re-send of event-less surveys is gone. *(Audit ARCH-6. Lot L10)*
 - [x] **REQ-AUD-object-storage** — One `StorageService` for surveys, attachments and users; profile pictures in object storage; storage keys contained; upload size enforced; MIME allow-list checked by own property. *(Audit A-H3, A-M3, A-M4. Lot L13)*
 - [x] **REQ-AUD-config** — Validated configuration schema, bounded `pg` pool with an error listener, strict CORS in production, Nest `Logger` everywhere, dead token secrets removed. *(Audit A-M8. Lot L14)*
@@ -137,15 +141,15 @@ loss, no duplicates — or that expose accounts run first (Phases 1.2–1.5), th
 - [x] **REQ-AUD-db-tuning** — Public-surveys partial index, generated centroid columns with a btree index (no PostGIS), migration advisory lock, dead `auth_sessions` tables dropped. *(Audit efficiency findings, ARCH-7. Remainder of lot L16)*
 - [x] **REQ-AUD-ibp-domain** — A shared `ibp-domain` workspace package holds the IBP rules and sync contract types used by both API and mobile, verified by one parity fixture. *(Audit ARCH-1, T6. Lot L17)*
 - [x] **REQ-AUD-test-infra-rest** — The RS256 path of `AuthGuard` is tested against a local JWKS; the catch-all E2E suite is split by feature and uses random UUIDs. *(Audit T2, T5. Remainder of lot L7)*
-- [ ] **REQ-AUD-mobile-state** — Memoised contexts replace the prop funnel; the survey list is virtualised; completion is precomputed; screens are split under 400 lines; unused styles are removed; navigation is typed; the map requests by bbox and clusters markers. *(Audit ARCH-4 and mobile efficiency findings. Lot L18)*
-- [ ] **REQ-AUD-i18n-a11y** — Every user-facing string comes from a French i18n catalogue, status messages are user-facing, and interactive elements carry accessibility roles and labels. *(Audit i18n and accessibility findings. Lot L19)*
-- [ ] **REQ-AUD-hygiene** — Root package, tsconfig and unused dependencies cleaned up; `CLAUDE.md` and technical docs match the code; the audit links each finding to its closing PR. *(Audit ARCH-7, ARCH-8. Remainder of lot L20)*
+- [x] **REQ-AUD-mobile-state** — Memoised contexts replace the prop funnel; the survey list is virtualised; completion is precomputed; screens are split under 400 lines; unused styles are removed; navigation is typed; the map requests by bbox and clusters markers. *(Audit ARCH-4 and mobile efficiency findings. Lot L18)*
+- [x] **REQ-AUD-i18n-a11y** — Every user-facing string comes from a French i18n catalogue, status messages are user-facing, and interactive elements carry accessibility roles and labels. *(Audit i18n and accessibility findings. Lot L19)*
+- [x] **REQ-AUD-hygiene** — Root package, tsconfig and unused dependencies cleaned up; `CLAUDE.md` and technical docs match the code; the audit links each finding to its closing PR. *(Audit ARCH-7, ARCH-8. Remainder of lot L20)*
 
 ## Cross-Cutting Business Rules
 
 Carried from `.planning/intel/requirements.md`. These are rules that constrain the requirements
 above rather than deliverables in their own right, so they are not exclusively phase-mapped; they
-are verified within the phases that touch them and in the Phase 13 field tests.
+are verified within the phases that touch them and in the Phase 28 field tests.
 
 | Rule | Status this milestone |
 |------|----------------------|
@@ -167,7 +171,7 @@ are verified within the phases that touch them and in the Phase 13 field tests.
 
 ## Non-Functional Requirements
 
-Active for this milestone; verified in Phase 13 alongside the field tests.
+Active for this milestone; verified in Phase 28 alongside the field tests.
 
 | ID | Requirement |
 |----|-------------|
@@ -187,7 +191,7 @@ Recorded, not dropped. The code already exists for several of these.
 | Requirement | Note |
 |-------------|------|
 | `REQ-A-social-login` | Sign in with Apple/Google — found unbuilt 2026-09-27 (no code anywhere in `mobile/src`, despite this document previously marking it "Built"); `docs/specs/epic-a-access-and-security.md`'s own test plan already treats it as out of this milestone |
-| `REQ-F-france-map` | Nationwide public map of `public` surveys, open to anyone unauthenticated — built, becomes unused when the map repoints to authenticated members' surveys (`REQ-B-own-surveys-map`, Phase 2) |
+| `REQ-F-france-map` | Nationwide public map of `public` surveys, open to anyone unauthenticated — built, becomes unused when the map repoints to authenticated members' surveys (`REQ-B-own-surveys-map`, Phase 11) |
 | `REQ-B-parcel-status-map` | Public parcel `studied`/`not_studied` statuses |
 | `REQ-B-explore-analysis` | Explore as a parcel analysis surface |
 | `REQ-C-privacy-choice` | Private/public visibility before submission; also restores the toggle removed from `REQ-B-manage-published` |
@@ -230,82 +234,86 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | Requirement | Status | Phase | Role |
 |-------------|--------|-------|------|
 | REQ-ML-adr | New | Phase 1 | Build |
-| REQ-AUD-session-data-loss | New | Phase 1.2 | Build |
-| REQ-AUD-rate-limit | New | Phase 1.2 | Build |
-| REQ-AUD-debug-surface | New | Phase 1.2 | Build |
-| REQ-AUD-identity | New | Phase 1.2 | Build |
-| REQ-AUD-mobile-quick-fixes | New | Phase 1.2 | Build |
-| REQ-AUD-ci-pipeline | New | Phase 1.3 | Build |
-| REQ-AUD-reproducible-image | New | Phase 1.3 | Build |
-| REQ-AUD-test-infra | New | Phase 1.3 | Build |
-| REQ-AUD-sync-validation | New | Phase 1.4 | Build |
-| REQ-AUD-transactions | New | Phase 1.4 | Build |
-| REQ-AUD-sync-engine | New | Phase 1.5 | Build |
-| REQ-AUD-local-storage | New | Phase 1.5 | Build |
-| REQ-AUD-photos | New | Phase 1.5 | Build |
-| REQ-AUD-offline-start | New | Phase 1.5 | Build |
-| REQ-AUD-changes-feed | New | Phase 1.6 | Build |
-| REQ-AUD-object-storage | New | Phase 1.6 | Build |
-| REQ-AUD-config | New | Phase 1.7 | Build |
-| REQ-AUD-surveys-split | New | Phase 1.7 | Build |
-| REQ-AUD-db-tuning | New | Phase 1.7 | Build |
-| REQ-AUD-ibp-domain | New | Phase 1.8 | Build |
-| REQ-AUD-test-infra-rest | New | Phase 1.8 | Build |
-| REQ-AUD-mobile-state | New | Phase 1.9 | Build |
-| REQ-AUD-i18n-a11y | New | Phase 1.9 | Build |
-| REQ-AUD-hygiene | New | Phase 1.9 | Build |
-| REQ-ML-contracts | New | Phase 5 | Build |
-| REQ-DOC-form-spec | New | Phase 5 | Build |
-| REQ-C-species-recognition | New | Phase 6 | Build |
-| REQ-B-own-surveys-map | New | Phase 2 | Build |
-| REQ-B-survey-detail | Partial | Phase 2 | Build |
-| REQ-C-versioning | Partial | Phase 2 | Build |
-| REQ-A-delete-account | Partial | Phase 2 | Build |
-| REQ-D-offline-map | New | Phase 8 | Built |
-| REQ-D-area-download | New | Phase 8 | Built |
-| REQ-D-offline-parcel-warning | New | Phase 8 | Built |
-| REQ-D-basemap-switch | New | Phase 8 | Built |
-| REQ-C-pdf-export | New | Phase 10 | Build |
-| REQ-B-manage-published | Partial | Phase 10 | Build |
-| REQ-INF-hosting-adr | New | Phase 11 | Build |
-| REQ-INF-backups | New | Phase 11 | Build |
-| REQ-INF-migrations | New | Phase 11 | Build |
-| REQ-INF-deadcode | New | Phase 11 | Build |
-| REQ-QA-ibp-version | New | Phase 1.1 | Build |
-| REQ-QA-sql-injection | New | Phase 11 | Build |
-| REQ-QA-indexes | New | Phase 11 | Build |
-| REQ-DOC-taxonomy | New | Phase 13 | Build |
-| REQ-DOC-epicd-ids | New | Phase 13 | Build |
-| REQ-QA-bug-a3-4 | New | Phase 13 | Build |
-| REQ-QA-bug-a6-2 | New | Phase 13 | Build |
-| REQ-QA-screen-tests | New | Phase 13 | Build |
-| REQ-QA-visual-modernisation | New | Phase 12.2 | Build |
-| REQ-QA-deep-audit | New | Phase 12.3 | Build |
-| REQ-FT-field-tests | New | Phase 13 | Build |
-| REQ-A-login | Built | Phase 13 | Verify |
-| REQ-A-logout | Built | Phase 13 | Verify |
-| REQ-A-signup | Built | Phase 13 | Verify (+ `BUG-A3-4` fix) |
-| REQ-A-profile | Built | Phase 13 | Verify |
-| REQ-A-forgot-password | Built | Phase 13 | Verify (+ `BUG-A6-2` fix) |
-| REQ-B-survey-list | Built | Phase 13 | Verify |
-| REQ-C-guided-entry | Built | Phase 13 | Verify |
-| REQ-C-save-draft | Built | Phase 13 | Verify |
-| REQ-C-photos | Built | Phase 13 | Verify |
-| REQ-C-parcel-linkage | Built | Phase 13 | Verify |
-| REQ-C-submit | Built | Phase 13 | Verify |
-| REQ-C-help | Built | Phase 13 | Verify |
-| REQ-D-offline-work | Built | Phase 13 | Verify |
-| REQ-D-auto-sync | Built | Phase 13 | Verify |
-| REQ-D-conflict-resolution | Built | Phase 13 | Verify |
+| REQ-AUD-session-data-loss | New | Phase 3 | Build |
+| REQ-AUD-rate-limit | New | Phase 3 | Build |
+| REQ-AUD-debug-surface | New | Phase 3 | Build |
+| REQ-AUD-identity | New | Phase 3 | Build |
+| REQ-AUD-mobile-quick-fixes | New | Phase 3 | Build |
+| REQ-AUD-ci-pipeline | New | Phase 4 | Build |
+| REQ-AUD-reproducible-image | New | Phase 4 | Build |
+| REQ-AUD-test-infra | New | Phase 4 | Build |
+| REQ-AUD-sync-validation | New | Phase 5 | Build |
+| REQ-AUD-transactions | New | Phase 5 | Build |
+| REQ-AUD-sync-engine | New | Phase 6 | Build |
+| REQ-AUD-local-storage | New | Phase 6 | Build |
+| REQ-AUD-photos | New | Phase 6 | Build |
+| REQ-AUD-offline-start | New | Phase 6 | Build |
+| REQ-AUD-changes-feed | New | Phase 7 | Build |
+| REQ-AUD-object-storage | New | Phase 7 | Build |
+| REQ-AUD-config | New | Phase 8 | Build |
+| REQ-AUD-surveys-split | New | Phase 8 | Build |
+| REQ-AUD-db-tuning | New | Phase 8 | Build |
+| REQ-AUD-ibp-domain | New | Phase 9 | Build |
+| REQ-AUD-test-infra-rest | New | Phase 9 | Build |
+| REQ-AUD-mobile-state | New | Phase 10 | Build |
+| REQ-AUD-i18n-a11y | New | Phase 10 | Build |
+| REQ-AUD-hygiene | New | Phase 10 | Build |
+| REQ-ML-contracts | New | Phase 14 | Build |
+| REQ-DOC-form-spec | New | Phase 14 | Build |
+| REQ-C-species-recognition | New | Phase 15 | Build |
+| REQ-B-own-surveys-map | New | Phase 11 | Build |
+| REQ-B-survey-detail | Partial | Phase 11 | Build |
+| REQ-C-versioning | Partial | Phase 11 | Build |
+| REQ-A-delete-account | Partial | Phase 11 | Build |
+| REQ-D-offline-map | New | Phase 17 | Built |
+| REQ-D-area-download | New | Phase 17 | Built |
+| REQ-D-offline-parcel-warning | New | Phase 17 | Built |
+| REQ-D-basemap-switch | New | Phase 17 | Built |
+| REQ-C-pdf-export | New | Phase 19 | Build |
+| REQ-B-manage-published | Partial | Phase 19 | Build |
+| REQ-INF-hosting-adr | New | Phase 20 | Build |
+| REQ-INF-backups | New | Phase 20 | Build |
+| REQ-INF-migrations | New | Phase 20 | Build |
+| REQ-INF-deadcode | New | Phase 20 | Build |
+| REQ-QA-ibp-version | New | Phase 2 | Build |
+| REQ-QA-sql-injection | New | Phase 20 | Build |
+| REQ-QA-indexes | New | Phase 20 | Build |
+| REQ-DOC-taxonomy | New | Phase 28 | Build |
+| REQ-DOC-epicd-ids | New | Phase 28 | Build |
+| REQ-QA-bug-a3-4 | New | Phase 28 | Build |
+| REQ-QA-bug-a6-2 | New | Phase 28 | Build |
+| REQ-QA-screen-tests | New | Phase 28 | Build |
+| REQ-QA-visual-modernisation | New | Phase 23 | Build |
+| REQ-B-nearby-parcels-home | New | Phase 23 | Build |
+| REQ-C-history-split | New | Phase 24 | Build |
+| REQ-B-global-search | New | Phase 25 | Build |
+| REQ-QA-ux-audit | New | Phase 26 | Build |
+| REQ-QA-deep-audit | New | Phase 27 | Build |
+| REQ-FT-field-tests | New | Phase 28 | Build |
+| REQ-A-login | Built | Phase 28 | Verify |
+| REQ-A-logout | Built | Phase 28 | Verify |
+| REQ-A-signup | Built | Phase 28 | Verify (+ `BUG-A3-4` fix) |
+| REQ-A-profile | Built | Phase 28 | Verify |
+| REQ-A-forgot-password | Built | Phase 28 | Verify (+ `BUG-A6-2` fix) |
+| REQ-B-survey-list | Built | Phase 28 | Verify |
+| REQ-C-guided-entry | Built | Phase 28 | Verify |
+| REQ-C-save-draft | Built | Phase 28 | Verify |
+| REQ-C-photos | Built | Phase 28 | Verify |
+| REQ-C-parcel-linkage | Built | Phase 28 | Verify |
+| REQ-C-submit | Built | Phase 28 | Verify |
+| REQ-C-help | Built | Phase 28 | Verify |
+| REQ-D-offline-work | Built | Phase 28 | Verify |
+| REQ-D-auto-sync | Built | Phase 28 | Verify |
+| REQ-D-conflict-resolution | Built | Phase 28 | Verify |
 
 **Coverage:**
 
-- MVP requirements: **67** total (`REQ-A-social-login` moved to Deferred — Next Milestone 2026-09-27, found unbuilt)
-- Mapped to phases: **67** ✓
+- MVP requirements: **71** total (`REQ-A-social-login` moved to Deferred — Next Milestone 2026-09-27, found unbuilt)
+- Mapped to phases: **71** ✓
 - Unmapped: **0** ✓
-- Of which carry build work: **52** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 2, 2026-09-27); 15 are already built and are verified in Phase 13
+- Of which carry build work: **56** (up from 47: `REQ-A-delete-account`, `REQ-B-survey-detail` and `REQ-C-versioning` corrected from "Built"/Verify-only to Partial/Build in Phase 11, 2026-09-27); 15 are already built and are verified in Phase 28
 - Deferred to next milestone: 20 · Deferred to V2: 4
 
 ---
 *Requirements defined: 2026-09-22*
-*Last updated: 2026-10-06 — added `REQ-QA-visual-modernisation` (Phase 12.2) and `REQ-QA-deep-audit` (Phase 12.3). Earlier, 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*
+*Last updated: 2026-10-07 — phases renumbered flat (1 to 28), added `REQ-B-nearby-parcels-home` (Phase 23), `REQ-C-history-split` (Phase 24) and `REQ-B-global-search` (Phase 25). Earlier the same day, added `REQ-QA-ux-audit` (Phase 26); the deep audit moved to Phase 27. Earlier, 2026-10-06 — added `REQ-QA-visual-modernisation` (Phase 23) and `REQ-QA-deep-audit` (Phase 26). Earlier, 2026-09-27 — phases renumbered to a flat sequence (2–13); social login, account deletion, survey-detail history and versioning statuses corrected against the actual code*

@@ -1,0 +1,88 @@
+---
+phase: 23-visual-modernisation
+plan: 02
+subsystem: mobile-test-tooling
+tags: [reanimated-mock, motion-gate, ibp-display, contour-paths, reduced-motion]
+requires: []
+provides:
+  - "setReducedMotion toggle and missing Reanimated APIs in the Jest mock"
+  - "motion.test.ts consistency gate over mobile/src"
+  - "factorTone, totalTone, scoreRatio, factorRatio, MAX_FACTOR_POINTS in mobile/src/app/ibp-display.ts"
+  - "buildContourPaths, CONTOUR_PATHS, CONTOUR_VIEWBOX in mobile/src/app/contour-paths.ts"
+affects: [12.2 visual plans that build motion, score ring, factor bars and header art]
+tech-stack:
+  added: []
+  patterns:
+    - "Fixture-per-rule gate test with a real-tree scan (same shape as structure.test.ts)"
+    - "Display helpers delegate band rules to @cortege/ibp-domain"
+key-files:
+  created:
+    - mobile/src/__checks__/motion.test.ts
+    - mobile/src/app/ibp-display.ts
+    - mobile/src/app/ibp-display.test.ts
+    - mobile/src/app/contour-paths.ts
+    - mobile/src/app/contour-paths.test.ts
+  modified:
+    - mobile/test/react-native-reanimated.mock.ts
+key-decisions:
+  - "Factor tone cut points (0-2 low, 3 mid, 4-5 high) live in mobile as a display convention; totals delegate to bandTone(totalBand(n))"
+  - "motion.test.ts mocks react-native locally because the Reanimated mock re-exports its host components and Jest cannot load the real package in the node environment"
+metrics:
+  tasks: 3
+  files: 6
+  completed: 2026-10-07
+status: complete
+---
+
+# Phase 12.2 Plan 02: Test tooling and pure helpers Summary
+
+Reduced-motion toggle in the Reanimated mock, a five-rule motion consistency gate over `mobile/src`, and two pure helpers (IBP display tones and a deterministic contour generator), with no visual change and no new dependency.
+
+## Tasks
+
+| Task | Name | Commit |
+|------|------|--------|
+| 1 | Extend the Reanimated test mock with a reduced-motion toggle | 8256e95 |
+| 2 | Motion consistency gate test | ce98734 |
+| 3 | Display tone helpers and deterministic contour generator | faf2c8b |
+
+## What was built
+
+- **Mock** (`mobile/test/react-native-reanimated.mock.ts`): `setReducedMotion(value)` drives the mocked `useReducedMotion()` (default false, existing tests unaffected). Added `useAnimatedProps`, `useDerivedValue`, `withDelay`, `withSequence`, `useAnimatedReaction`, `interpolateColor`, `runOnJS` and the chainable builders `FadeInDown`, `FadeInUp`, `ZoomIn`.
+- **Motion gate** (`mobile/src/__checks__/motion.test.ts`): finders for legacy layout animation, `useNativeDriver: false`, entering/exiting/layout builders without `ReduceMotion.System` or `useEntrance`, `withRepeat(` without a reduced-motion guard, and `expo-haptics` imported outside `src/ui/feedback.ts`. A passing and a failing fixture per rule, a real-tree scan (excluding `src/__checks__/`) that finds nothing on today's tree, and a toggle test. 18 tests.
+- **IBP display** (`mobile/src/app/ibp-display.ts`): `factorTone`, `totalTone` (equals `bandTone(totalBand(n))` for n = 0..50, asserted), `scoreRatio`, `factorRatio`, `MAX_FACTOR_POINTS = 5`.
+- **Contours** (`mobile/src/app/contour-paths.ts`): port of the sketch's `topo()`; sage group of 9 rings and moss group of 2 (every fourth ring), 11 closed subpaths, no randomness, `CONTOUR_PATHS` computed once.
+
+## Verification
+
+- `npm run lint` and `npm run typecheck` exit 0.
+- Mobile unit suite: 175 suites, 1900 tests pass. API and ibp-domain suites: ibp-domain 230 pass.
+- `npm run format:check` reports only `.claude/settings.local.json` (not part of this plan, see Deferred Issues); every file touched here is Prettier-clean.
+
+## Deviations from Plan
+
+### Auto-fixed Issues
+
+**1. [Rule 3 - Blocking] Local react-native mock in motion.test.ts**
+- **Found during:** Task 2
+- **Issue:** Importing `setReducedMotion` from the Reanimated mock pulls in `react-native` (the mock re-exports its host components), which Jest cannot parse in this node environment, so the suite failed to run.
+- **Fix:** Added a minimal `jest.mock("react-native", ...)` with four string stubs at the top of the test, as other tests in the repo do. The mock file itself is unchanged by this.
+- **Files modified:** mobile/src/__checks__/motion.test.ts
+- **Commit:** ce98734
+
+## Deferred Issues
+
+- `npm run test:unit` has one failing API suite, `check-env.sh agrees with the API production check` (34 tests), which exercises the `infra/vps/check-env.sh` script. It is unrelated to this plan's files (no api or infra file touched) and was left alone per the scope boundary.
+- `npm run format:check` flags `.claude/settings.local.json`, a local harness file outside this plan.
+
+## Known Stubs
+
+None.
+
+## Threat Flags
+
+None. T-12.2-02 (tones drifting from shared bands) is mitigated by the n = 0..50 equality test; T-12.2-03 (motion without reduced-motion guard) is mitigated by the motion gate.
+
+## Self-Check: PASSED
+
+All six files exist; commits 8256e95, ce98734 and faf2c8b are on the branch.

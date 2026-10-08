@@ -1,0 +1,133 @@
+# Phase 12.2: Visual Modernisation - Context
+
+**Gathered:** 2026-10-06
+**Status:** Ready for planning
+
+<domain>
+## Phase Boundary
+
+A more pleasant, modern and lively interface in light and dark mode: a written visual direction approved by the owner first (ROADMAP criterion 1), then applied to Accueil, Mes Relevés, survey form and detail, Explorer, Compte and Paramètres, with the Reanimated motion system and no regression on field ergonomics (Phase 3) or accessibility. Bugs still open from Phase 12.1 are not in scope; the 12.1 loop continues in parallel.
+
+</domain>
+
+<decisions>
+## Implementation Decisions
+
+### Direction validation
+- **D-01:** The direction is validated with throwaway HTML sketches (`/gsd-sketch`, as for the dark palette in `.planning/sketches/001-dark-palette`) before any screen is touched. The owner chooses; the choice is then written into `docs/design/` and approved.
+- **D-02:** The sketches compare **three personalities** on 2 to 3 key screens (Accueil, a survey detail score card, a list): (a) Linear-like sober with brand accents, (b) more expressive and organic (larger brand colour fields, charter typographic offset and black rectangle more visible), (c) a mix: sober working screens, expressive thresholds (Accueil, score, onboarding, auth). The owner could not choose without seeing them.
+- **D-02b (resolved 2026-10-07):** after rounds D (C + compact hero), E to H (charter, contours, rosette, notebook) and I, the owner chose **variant I**: contour lines as signature, luminous forest cards, glass, thin large score numeral, factor bars, score rings, glass tab bar. Written up in `docs/design/direction-visuelle-12-2.md`, awaiting the owner's approval of the text. Animals (variant J) kept out of 12.2 and noted as a seed.
+- **D-03:** Prior decisions carry forward: Linear is the owner's reference, Komoot the anti-reference, Graphite is the dark palette (sketch 001 winner).
+
+### Surfaces and density
+- **D-04:** Surfaces are flat with thin rules and surface tints; Liquid Glass (`GlassSurface`, Phase 12) stays limited to floating controls (tab bar, sheets, map buttons). No generalised blur, no heavy shadows.
+- **D-05:** Density stays as today for field screens (survey form A to J, parcel selection): no touch target shrinks. The owner wants **more compact Accueil, Compte and Paramètres** mainly; other screens only get refined radii, spacing between blocks and typographic hierarchy.
+
+### Typography and icons
+- **D-06:** Keep Sora (titles, body) and Jost (meta) as the loaded stand-ins for Mazzard H and Futura. Play on weights, sizes and the charter's typographic offset; the token swap to Mazzard H stays a later, reversible change.
+- **D-07:** Keep `@expo/vector-icons`; harmonise to one outline style and one stroke weight across screens. The charter's fern appears as an occasional brand motif.
+
+### Motion
+- **D-08:** Native behaviour wherever possible (iOS native transitions, sheets, tab bar), Reanimated `brandMotion` for the rest, always `ReduceMotion.System`. Four areas are in scope: score and gauges (cards, /50 gauge and progress rings filling, number counting), list and card entrances (stagger on Accueil, Mes Relevés, Explorer, animated empty states), screen transitions (list to detail, tab change, sheets), action feedback (submit and sync success, status icons, buttons and chips with spring and haptics through `ui/feedback.ts`).
+
+### Sequence
+- **D-09:** Foundations first (tokens, primitives: cards, chips, headers, motion helpers), then screens in batches with an owner check on the phone between batches: Accueil + Compte + Paramètres, then Mes Relevés + survey detail, then survey form, then Explorer.
+- **D-10:** Open 12.1 findings are out of scope; only those on a screen being rebuilt are absorbed in passing.
+
+### Defaults taken at planning time (2026-10-07, from 23-RESEARCH.md; to confirm at the first owner phone check, each is a per-scheme token or one-line change)
+- **D-11:** The owner launched `/gsd-plan-phase 12.2 --chain` right after choosing variant I; this is taken as go-ahead to plan and build from `docs/design/direction-visuelle-12-2.md`. The text stays open to correction at every owner check. (The "approuvée" marker is still set by the owner, in the closing plan.)
+- **D-12:** Cards get the glass look without blur (translucent fill and hairline); real blur stays on floating controls only, so D-04 holds. The only coloured shadow is on forest hero cards. Android uses a flat translucent fill.
+- **D-13:** No contour lines over the live MapLibre map card; contours only in forest cards and on map placeholders.
+- **D-14:** Dark-mode forest cards keep the variant I gradient but with a dimmer halo, held in a per-scheme token, so the owner can reduce the green after OA-80 without a code change.
+- **D-15:** The ten factor bars are non-interactive; the Score page keeps its 44 pt factor rows. Bar and ring tones come from `bandTone(totalBand(n))` of `@cortege/ibp-domain` for totals and a display convention in `mobile/src/app/ibp-display.ts` for single factors (0 to 2 terracotta, 3 ochre, 4 to 5 moss), not an IBP rule.
+- **D-16:** Light-mode rings and bars use a darker moss (`#728A2D`, 3.6:1) instead of brand moss, and muted text stays on the base forest, because three sketch colours fail AA (research contrast table). Colours copied from the sketch are not authoritative.
+- **D-17:** Android visuals cannot be verified here; they get graceful fallbacks and a device pass in Phase 13.
+- **D-18:** Owner phone checks between batches (D-09) are `checkpoint:human-verify` plans that must stop the pipeline; they are never auto-approved.
+
+### Owner decisions after the batch 1 and batch 2 phone checks (2026-10-07, verbatim sources in 23-10-SUMMARY.md and the chat)
+- **D-19:** The backdrop halo appears on EVERY screen (Accueil, Mes Relevés, search, survey detail and its sub-pages, Compte, Paramètres, the form, Explorer overlays), with a transparent header so there is no colour change at the top ("le halo devrait se retrouver sur l'ensemble des vues"). Supersedes the batch 1 decision that only Accueil draws it. Content must never be hidden under the header (OA-94).
+- **D-20:** Accueil: (a) the separation between the resume card's progress bar and the "Nouveau relevé" link must be strongly marked, with a real visual separator (rule or footer band) because the 24 pt gap was not enough; (b) remove the "À jour" sync note (show the sync line only when there is something to say: syncing, waiting, error, blocked); (c) add a section "Mes relevés récents" with the last three surveys (ring rows, link to Mes Relevés); (d) shrink the Outils section to leave room.
+- **D-21:** Press feedback on list items: a green wave (ripple) spreading from the touch point, clipped to the row, replaces the plain pressed opacity; with Reduce Motion a simple highlight. First for Mes Relevés rows, search rows and the recent surveys of Accueil.
+- **D-22:** Mes Relevés lacks an accent element ("terne et palote"): add one accent (a compact forest summary card with contour lines and glow in the Accueil family, one forest card per screen) and the halo of D-19.
+- **D-23:** Search: community result rows must have exactly the same size as "Mes relevés" rows.
+- **D-24:** Survey detail: the forest score card is slightly smaller; the coloured ten-factor bar chart is REMOVED from the summary and kept only on the detailed factors page (Score).
+- **D-25:** Completion workflow: when all ten factors and the information are filled in, the survey is finished with a success animation (pulse + haptic) and then marked "Terminé" and synchronised automatically and discreetly. The user has no manual "synchroniser" step and no wording asking for one. The animation must play in the flow where the owner finishes the last criterion (form/pager), not only on the survey detail.
+- **D-26 (owner choice, 2026-10-07, for plan 12.2-15 pager):** in the form pager, when the owner validates the last factor and the survey is complete and named, the last button becomes a labelled pill "Terminer le relevé" (French, from the catalogue) that finishes the survey directly: same finish action as the survey detail CTA (`handleSubmitSurvey`, which sends pending changes itself then submits), with the success haptic, halo and pop, then returns to the summary on the score card. When the survey is not complete (or not named) the last button stays the plain "Terminer" close/back as today. The finish must be deliberate (labelled pill, not the bare check icon), tolerate a double tap (one finish at a time per survey) and respect Reduce Motion. The survey detail CTA from D-25 stays.
+- **D-27 (owner, batch 2 re-check, 2026-10-07):** (a) the score rings on survey rows are not well placed: put the ring on the trailing (right) side of the row, as in the approved sketch 008 variant I, vertically centred, with the title, status and date on the left (rows of Mes Relevés, search and the Accueil recents); the green wave on press is "parfaite" and stays. (b) The photo tile on the survey detail looks "cassée": refine it (consistent aspect and radius, hairline, graceful loading and failure states, no layout jump, add-photo tile consistent). (c) Big CTAs ("Terminer le relevé" and the other large bottom action buttons across the app): the action bar must be transparent (floating, content visible behind it, no opaque fill) and the button gets the real Liquid Glass effect tinted green (existing `GlassSurface`/`expo-glass-effect`, already installed; flat translucent green fallback on Android and iOS before 26). Form screens (plans 15 and 16) and Explorer (plan 18) use the same primitive for their action bars.
+- **D-28 (owner, 2026-10-07, supersedes D-27(c)'s implementation and the phase's "no new dependency" default for this one package):** big CTAs use the NATIVE iOS 26 glass button, not a drawn pill: "Plus saturé et un reflet plus marqué. Après attention, je ne veux pas que tu recolles le bouton, il faut que tu utilises l'outil natif de iOS." Implementation (research 2026-10-07): add `@expo/ui` pinned `~57.0.x` (SDK 57 bundled version `~57.0.19`, latest 57.0.22) and render a SwiftUI `Button` with `buttonStyle("glassProminent")` and a saturated green `tint`, inside a `Host`, only on iOS 26+ built with Xcode 26 (`Platform.OS === "ios" && isLiquidGlassAvailable()`); keep the flat translucent fallback elsewhere (made more saturated with a clearer highlight too); `GlassButton`'s public API unchanged. Consequences accepted by the owner's instruction: a new native module (needs `expo prebuild --clean` and a native Release rebuild; CI `native-ios` and `native-android` jobs and `audit` run on the PR), Android must not import the SwiftUI side (platform split and autolinking exclude), `package.json` and the lockfile change for this one package only. The transparent floating bar of D-27(c) stays.
+- **D-29 (owner, batch 3 check, 2026-10-07):** the survey wizard uses the native transparent header with the system back button on iOS (owner: "Oui je préfère l'en-tête natif"); the glass back disc and the step label row go, the wizard keeps its own top bar on Android. Circular instead of continuous corners on layered surfaces is accepted (owner: "j'ai l'impression que c'est invisible"). Accueil keeps its greeting in the bar and no large title (owner: "Ok avec le titre de l'accueil"). The form pager keeps its fixed title row: asked, no explicit answer, recorded as no objection.
+- **D-30 (owner, batch 3 check, 2026-10-07):** pages whose title scrolled away get the native iOS collapsing large title (title large at rest, small and centred in the bar on scroll), with a blur behind the collapsed bar for readability (owner: "il doit y avoir un flou pour la lisibilité"). Pages: Mes Relevés, Compte, Paramètres, Cartes hors ligne, the survey summary and its three sub-pages, the community survey page. Android and Expo Go keep the in-page titles.
+- Owner approvals at the batch 2 re-check: 1 (halo everywhere) "tout ok"; 2 (Accueil) "génial"; 3 (Mes relevés, search) "top", wave "parfaite"; 4 (survey detail) "très beau"; 5 and 6 (finish workflow, dark mode, Reduce Motion etc.) "parfait". Open: the Accueil must show a piece of the map at launch and the recents section must be more compact (fix in progress, D-20 follow-up).
+- Accepted by the owner ("OK avec le reste de mes propositions"): D-12 glass without blur, D-13 nothing over the live map, D-14 dimmer dark halo, D-16 darker green in light mode, system iPhone tab bar kept, entrance replay on return from a pushed page.
+
+### Claude's Discretion
+- Exact token values, radii scale, spacing scale and animation timings, within the constraints above.
+- Which 2 to 3 screens the sketches use.
+
+</decisions>
+
+<canonical_refs>
+## Canonical References
+
+**Downstream agents MUST read these before planning or implementing.**
+
+### Brand and design
+- `docs/design/charte-graphique-etats-sauvages-spec.md` — brand charter; §12 Visual Foundations & Motion (fonts actually loaded, semantic tokens, `brandMotion`, `AppPressable`, skeleton)
+- `docs/design/ux-ui-audit-2026-09.md` — UX/UI audit, motion system and roadmap
+- `docs/design/direction-visuelle-12-2.md` — the chosen visual direction (variant I), to read before any screen work
+- `.planning/sketches/008-visual-direction/index.html` — the boards A to J, variant I is the reference
+- `.planning/sketches/MANIFEST.md` — design direction, Linear/Komoot references, sketch 001 Graphite winner
+- `.planning/sketches/themes/` — dark palette candidates (graphite chosen)
+- `.planning/phases/21-interface-finishing/21-CONTEXT.md` — dark mode, `GlassSurface`, theme provider decisions
+- `.planning/phases/13-visual-foundations-motion/` — motion and token build record
+
+### Requirements
+- `.planning/ROADMAP.md` "Phase 12.2" — goal and success criteria
+- `.planning/REQUIREMENTS.md` `REQ-QA-visual-modernisation`
+
+### Code
+- `mobile/src/app/brand-tokens.ts`, `mobile/src/app/theme.ts` — tokens and `useBrandTheme`
+- `mobile/src/ui/` — primitives (`GlassSurface`, `AppCard`, `AppPressable`, `AppText`, `feedback.ts`)
+
+</canonical_refs>
+
+<code_context>
+## Existing Code Insights
+
+### Reusable Assets
+- `brandMotion` (durations, easings, springs, stagger) and `ui/feedback.ts` haptics: base of the motion work
+- `GlassSurface` and `AppCard glass`: floating-control treatment already in place
+- `useBrandTheme()` and the static/dynamic colour split: new palette values go through the theme file
+
+### Established Patterns
+- Colours only through semantic tokens (ESLint rule enforces it); fonts through `brandTypography` roles; `AppText` for the global default font
+- Reanimated 4 with `ReduceMotion.System`; no `LayoutAnimation`
+- 400-line file-size gate: extract `*.styles.ts` siblings
+
+### Integration Points
+- Tab bar: native on iOS Release, JS on Android and Expo Go (D-08 of the navigation); both trees must receive the refresh
+- `docs/design/` charter gets a new section recording the approved direction
+
+</code_context>
+
+<specifics>
+## Specific Ideas
+
+- Owner wants to see the three personalities before choosing.
+- Owner wants native platform behaviour for motion wherever possible.
+
+</specifics>
+
+<deferred>
+## Deferred Ideas
+
+- Animals illustrations and a "Qui vit ici ?" species/factor strip (sketch 008 variant J): owner kept variant I without animals; species-factor links unvalidated against the IBP method.
+- Replacing icon library (Lucide/Phosphor) or SF Symbols: rejected for now, revisit only if the sketches show the current set cannot reach the direction.
+- Swapping in Mazzard H once licensed: separate token-file change.
+
+</deferred>
+
+---
+
+*Phase: 23-visual-modernisation*
+*Context gathered: 2026-10-06*

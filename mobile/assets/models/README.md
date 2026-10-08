@@ -5,7 +5,7 @@ promoted ADR-002 artifacts, not placeholders.
 
 ## Provenance
 
-Phase 6 (`.planning/phases/06-genus-recognition-factor-a/`) implements on-device tree-genus
+Phase 6 (`.planning/phases/15-genus-recognition-factor-a/`) implements on-device tree-genus
 recognition per ADR-002 (`docs/technical/adr-002-on-device-species-recognition-v1.md`). The
 promoted model — EfficientNet-B0, float16, 8,238,676 bytes, MD5 `87195ef82eb3dd2bb564821181f89883`
 — was copied in from `~/Projects/cortege-ml-artifacts/genus-classifier-iteration4/` (kept outside

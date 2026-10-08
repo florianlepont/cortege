@@ -1,0 +1,88 @@
+---
+phase: 09-shared-ibp-domain-package-and-test-completeness
+plan: 05
+subsystem: docs
+tags: [ibp, validation-matrix, adr, method-version]
+requires: []
+provides:
+  - docs/technical/ibp-validation-matrix-v2.md (CH-10)
+  - ADR-003 "Implementation notes (01.8)" addendum
+affects: [01.8-04, 01.8-16]
+tech-stack:
+  added: []
+  patterns: ["case ids MAT-X-NN@v3.0 / @v3.2 / @both shared with IBP_PARITY_CASES"]
+key-files:
+  created:
+    - docs/technical/ibp-validation-matrix-v2.md
+  modified:
+    - docs/technical/ibp-validation-matrix-v1.md
+    - docs/technical/adr-003-ibp-method-version-v1.md
+    - docs/technical/ibp-version-comparison-v3.0-v3.2.md
+decisions:
+  - "MAT-SUBMIT-02 (both versions) uses direct scores A=5 B=2 C=1 D=0 E=2 F=5 G=2 H=2 I=5 J=0 -> 17 / 7 / 24"
+  - "v3.2 A cases that are not about the cap use native_cover_percent=60"
+  - "Readiness and migration rows are labelled R-n / M-n (descriptive; only IBP_PARITY_CASES ids are cross-checked)"
+metrics:
+  duration: ~20 min
+  completed: 2026-09-26
+  tasks: 2
+  files: 4
+---
+
+# Phase 01.8 Plan 05: Validation matrix v2 and ADR-003 addendum Summary
+
+Matrix v2 lists every parity case: 20 v3.0 cases, 2 both-version cases, 28 v3.2 cases and 2 dispatch cases, plus 3 readiness rows and 4 migration rows. Each has its inputs, expected scores and issue codes. ADR-003 gains a six-point "Implementation notes (01.8)" addendum.
+
+## Tasks
+
+| Task | Name | Commit | Files |
+|---|---|---|---|
+| 1 | Validation matrix v2 and the v1 pointer | 913a69a | ibp-validation-matrix-v2.md (new), ibp-validation-matrix-v1.md |
+| 2 | ADR-003 addendum and comparison status line | 23078cb | adr-003-ibp-method-version-v1.md, ibp-version-comparison-v3.0-v3.2.md |
+
+## What was done
+
+- Matrix v2 has these parts:
+  - a header with the method tags and the rule "missing version = v3.0";
+  - an "Executable form" section naming `IBP_PARITY_CASES`;
+  - "Changes from v1": MAT-B-01@v3.0 B=5 (BUG-1), the new MAT-A-06@v3.0, G/H allowed {0,2,5} (BUG-2), and the split cases;
+  - one table each for v3.0, both versions, v3.2, dispatch, readiness and migration;
+  - the field-definition rows, with F-5, G-3 and CD-6 not applicable (D-09) and the documented-only rows;
+  - Notes on the allowed sets, the cover cap (exactly 50 % not capped), the `ibp_cas3_scale` rule with p. 3, 4 and 7, and the scales.
+- Matrix v1 has a "Superseded by ibp-validation-matrix-v2.md" line under its title.
+- ADR-003 addendum covers six points:
+  - the D-05 reading of v3.0, the MAT-B-01 change and replay safety;
+  - `ibp_cas` plus `ibp_cas3_scale` instead of CH-4's three fields, and the naming rule;
+  - drafts keep their version (D-08 supersedes the re-scoring), with an optional switch that runs the migration;
+  - no SQLite migration, and API migration 016;
+  - the /50 app band (10/20/30/40) and the note on mixed-version averages;
+  - the G/H = 1 count, which is not run.
+
+  The accepted text is unchanged: `git diff` shows only additions.
+- The comparison status line now says the listed changes are implemented in 01.8, per ADR-003 and matrix v2.
+
+## Verification
+
+- Task 1 greps returned: MAT-VER-01 3, MAT-B-01@v3.0 2, "not applicable" 1, ibp_cas3_scale 6, and 2 for the v2 link in v1.
+- Task 2 greps returned: addendum 1, ibp_cas3_scale 2, "01.8" in the comparison 10. No lines were removed from the ADR.
+- `npm run format:check` passes.
+
+## Deviations from Plan
+
+None: the plan was executed as written.
+
+Note for 01.8-04 and 01.8-16: 01.8-04 is written in parallel, so this matrix fixes a few concrete values that the RESEARCH list leaves open:
+- the MAT-SUBMIT-02 score set;
+- cover 60 in the non-cap v3.2 A cases;
+- MAT-C-03 given as "BMm density 0.9/ha".
+
+If the fixture chooses different values, the gate should align either the matrix or the fixture. Only the case ids are required to match.
+
+## Known Stubs
+
+None.
+
+## Self-Check: PASSED
+
+- FOUND: docs/technical/ibp-validation-matrix-v2.md
+- FOUND: 913a69a, 23078cb

@@ -39,7 +39,7 @@ Dans les cartes forêt, la brume dérive en boucle sans jamais se répéter à l
 - Cartes forêt en mode sombre : le dégradé de la variante I est gardé, avec un halo plus discret tenu dans un seul jeton par schéma de couleurs, pour pouvoir réduire le vert sans toucher au code (D-14).
 - Mode clair : anneaux et barres en moss plus foncé `#728A2D` (contraste 3,6:1), et texte atténué sur le forêt de base, car trois couleurs de la maquette échouent le seuil AA (le `text3` de la maquette, le moss sur surfaces claires, le texte de la puce de succès) et ne sont pas utilisées (D-16).
 - Aucune courbe de niveau sur la carte réelle (D-13).
-- Android reçoit des replis propres (aplat translucide), avec un passage sur appareil en phase 13 (D-17).
+- Android reçoit des replis propres (aplat translucide), avec un passage sur appareil en phase 28 (validation terrain, ancienne phase 13 ; D-17).
 - Contraintes reportées : Linear comme référence, palette sombre Graphite inchangée (D-03), Sora et Jost conservées avec Sora Light (300) comme seul nouveau fichier de police (D-06), `@expo/vector-icons` conservé avec un seul style de contour (D-07). Une seule nouvelle dépendance, `@expo/ui`, pour le bouton verre natif d'iOS 26, à la demande du propriétaire (D-28) ; elle est exclue d'Android.
 
 ## Corrections du propriétaire aux vérifications sur téléphone
@@ -55,7 +55,7 @@ Dans les cartes forêt, la brume dérive en boucle sans jamais se répéter à l
 - Contraste du texte sur les dégradés et sur la brume animée : mesuré par des tests, au pire cas de chaque couche, AA minimum (marges faibles, à remesurer à tout réglage).
 - Texte à dégradé : le chiffre du score est dessiné en texte SVG avec un dégradé (blanc vers `#C8DDA0`) ; le repli en aplat `#C8DDA0` reste commuté par une seule constante, non utilisé.
 - Maquette en HTML : les rayons, les ombres et les couleurs sont traduits en jetons (`brand-tokens.ts`, `theme.ts`, `visual-tokens.ts`, `theme-visual.ts`, `forest-aurora-tokens.ts`), pas copiés.
-- Android : aplat translucide sur les cartes et les commandes flottantes (pas de flou), coût de la brume et des courbes animées sur un téléphone milieu de gamme, vérifiés sur un appareil en phase 13 (D-17).
+- Android : aplat translucide sur les cartes et les commandes flottantes (pas de flou), coût de la brume et des courbes animées sur un téléphone milieu de gamme, vérifiés sur un appareil en phase 28 (ancienne phase 13, D-17).
 
 ## Points ouverts pour la confirmation finale (plan 12.2-23)
 
@@ -65,6 +65,6 @@ Dans les cartes forêt, la brume dérive en boucle sans jamais se répéter à l
 
 ## Hors périmètre, retenu pour plus tard
 
-- **Animaux** (variante J) : les illustrations de `mobile/assets/animals/` (martre, mésange, pic noir, sittelle, rosalie, salamandre, grenouille, bousier) et une bande « Qui vit ici ? » liant espèces et facteurs. Le propriétaire a retenu I sans les animaux pour la 12.2 ; l'idée est notée comme graine (`.planning/seeds/SEED-004-animaux-qui-vit-ici.md`). Les liens espèce-facteur n'ont pas été validés avec la méthode IBP.
+- **Animaux** (variante J) : les illustrations de `mobile/assets/animals/` (martre, mésange, pic noir, sittelle, rosalie, salamandre, grenouille, bousier) et une bande « Qui vit ici ? » liant espèces et facteurs. Le propriétaire a retenu I sans les animaux pour la 12.2 ; l'idée est notée comme graine (`.planning/seeds/SEED-005-animaux-qui-vit-ici.md`). Les liens espèce-facteur n'ont pas été validés avec la méthode IBP.
 - Variantes écartées : A sobre, B expressif, E charte et couleur, G rosette IBP, H carnet de terrain.
-- Glisser de la feuille de l'Explorer sur le fil JS et contraste de l'indicateur de chargement de Compte en mode sombre : phase 12.3.
+- Glisser de la feuille de l'Explorer sur le fil JS et contraste de l'indicateur de chargement de Compte en mode sombre : phase 26 (ancienne 12.3).

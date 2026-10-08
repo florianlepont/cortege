@@ -1,0 +1,118 @@
+---
+phase: 23-visual-modernisation
+plan: 11
+subsystem: mobile-screens-survey-list-search
+tags: [survey-list, search, score-ring, glass, entrance, empty-state, variant-i]
+requires: ["12.2-06", "12.2-07", "12.2-10"]
+provides:
+  - "SurveyRow and CommunityRow draw ScoreRing instead of the rectangular badge, as glass cards"
+  - "Mes Relevés rows enter once (first mount, rows 0 to 7) through useEntrance, virtualisation untouched"
+  - "Glass intro figures, section headers in the section header role, glass title bar buttons"
+  - "One-shot animated empty state (fade and spring scale of the marten), static under Reduce Motion"
+  - "Search page: glass segment scope switch with inverted active chip, glass field, staggered rows"
+affects: [SurveyListRoute, SurveySearchRoute, render-counts gate]
+tech-stack:
+  added: []
+  patterns:
+    - "Virtualised list rows keep first-mount useEntrance (no replay on scroll); the row memo ignores the index so list shifts do not re-render rows"
+    - "Segment container with tab-role pressables: container fill and border come from theme.visual.chip at the call site"
+key-files:
+  created:
+    - mobile/src/screens/survey-list/SurveyRow.test.tsx
+    - mobile/src/screens/survey-list/ListEmptyState.test.tsx
+    - mobile/src/screens/SurveyListScreen.test.tsx
+  modified:
+    - mobile/src/screens/survey-list/SurveyRow.tsx
+    - mobile/src/screens/survey-list/row-styles.ts
+    - mobile/src/screens/survey-list/list-chrome.tsx
+    - mobile/src/screens/survey-list/styles.ts
+    - mobile/src/screens/survey-list/ListEmptyState.tsx
+    - mobile/src/screens/SurveyListScreen.tsx
+    - mobile/src/screens/survey-search/CommunityRow.tsx
+    - mobile/src/screens/survey-search/SurveySearchScreen.tsx
+    - mobile/src/screens/survey-search/SurveySearchScreen.test.tsx
+    - mobile/src/screens/survey-search/search.styles.ts
+key-decisions:
+  - "SurveyRow's memo comparator leaves out the new index prop: it is read at mount only, and comparing it re-rendered all ten rows in the render-counts autosave scenario"
+  - "The scope switch keeps tab-role Pressables (tablist semantics, existing test) styled as chips instead of AppChoiceChip; each adds feedback.selection()"
+  - "Section headers sit 24 above and 8 below through a 12 pt list gap, 12 pt top padding and a negative 4 pt bottom margin"
+requirements-completed: []
+metrics:
+  tasks: 3
+  files: 13
+  completed: 2026-10-07
+status: complete
+---
+
+# Phase 12.2 Plan 11: Mes Relevés and search page (variant I) Summary
+
+My Surveys and the search page now follow variant I: score rings on every row (band-coloured, dashed, or a neutral completion arc), glass cards and chips, rows that slide in once on first mount, and an empty state whose marten fades and springs in once. Row heights, swipe-to-delete, tap, selection and the list's virtualisation settings are unchanged.
+
+## Tasks
+
+| Task | Name | Commit |
+|------|------|--------|
+| 1 | Score rings and glass rows | bfec888 |
+| 2 | List screen entrances, chrome and animated empty state | bfd843d |
+| 3 | Search page glass scope switch, chips and row entrances | 32dde6a |
+
+## What was built
+
+- **Rows**: `RowIndicator` renders `ScoreRing`: a submitted survey with a total gets `score` and `animationKey` `<id>:<score>`; a submitted one without a score gets `score={null}` (dashed, no key); a draft gets `score={null}`, `completion = clamped / 100` and key `<id>:draft:<n>`. `FactorProgressRing` and `IbpScoreBadge` imports are gone from both rows (the components stay in `src/ui/`). The card is glass (`cardFill`, `cardBorder`, `cardShadow`, radius 22, continuous curve, no `brandShadow`/elevation spread), padding 12 by 16, gap 8, `minHeight` 44. Title is Sora-SemiBold 16/22, meta and support lines the 13/18 footnote role. The accent bar, selected state, swipe delete and accessibility action are as before. `CommunityRow` uses `<ScoreRing score={item.ibp_total} />` in the same glass card.
+- **List screen**: `useEntrance()`; `renderItem` wraps each `SurveyRow` in `Animated.View entering={entrance(index)}` and passes `index` (headers count in the index, so rows start at 1). `windowSize={7}`, `removeClippedSubviews`, refresh control and batch sizes untouched. The list gap is 12.
+- **Chrome**: the two intro figures are glass cards (screenTitle numeral, footnote label), section titles and counts use `brandTypography.sectionHeader`, the Android and JS-tab title uses `screenTitle`, the search and "+" buttons are 44 pt glass chip circles. All spacing is on `brandSpacing4`.
+- **Empty state**: `AppCard variant="glass"`; the marten sits in an `Animated.View` with opacity 0 to 1 (`withTiming`, `durations.base`) and scale 0.9 to 1 (`withSpring`, `springs.snappy`), both with `ReduceMotion.System`, started once in an effect, no loop. With Reduce Motion on the shared values start at 1 and nothing starts. Copy and illustration unchanged.
+- **Search page**: the two scopes sit in one glass segment container (`chip.fill`, `chip.border`, pill radius, padding 4, gap 4), each `flex: 1` with `minHeight` 44; the active one is the inverted neutral (`chip.activeBg` and `activeText`), still `accessibilityRole="tab"` in a tablist, with `feedback.selection()` on change. The search field is a glass card look (`minHeight` 44, radius 22). Rows (mine and community) get `entering={entrance(index)}`, and `SurveyRow` its index. `SurveySearchScreen.tsx` is 305 lines. The filter chips already use `AppChoiceChip` (glass, inverted active, from 12.2-07).
+- **Tests**: new `SurveyRow.test.tsx` (three ring states, index, memo, glass card, 44 pt, tap, swipe and accessibility delete), `ListEmptyState.test.tsx` (glass card, start and end values, spring and timing configs, no loop, Reduce Motion), `SurveyListScreen.test.tsx` (virtualisation props, entering wrapper and index, headers unwrapped, none past row 7 or under Reduce Motion, empty state); `SurveySearchScreen.test.tsx` extended (segment container, inverted active tab, glass field, entering wrappers, ring in the community row).
+
+## Open 12.1 findings absorbed (D-10)
+
+None. `docs/user-tests/owner-acceptance.md` has no open entry about an element rewritten here: the open ones are OA-44, OA-96, OA-121 (survey detail map), OA-124 and OA-127.
+
+## Decisions and notes
+
+- **Index and memo**: the first version compared `index` in `SurveyRow`'s memo; `render-counts.test.tsx` (formKeystrokeAutosave) then showed 10 row renders instead of 1, because the draft moving into the "continue" card shifts every index. The comparator now ignores it with a comment; `ScoreRing` reads the index only at mount.
+- **Entrance timing risk (device only)**: list rows use first-mount `useEntrance`, as the plan and RESEARCH Pitfall 6 require. Mes Relevés is mounted at launch beside Accueil, so the owner may not see the row slide-in on cold start (the batch 1 finding for Accueil). Rows added later or a cold-started list shown at once will not replay it. If the owner asks for a visible stagger here, the answer is a focus-driven variant for the first eight rows only, not a replay on scroll. Left as is because it is outside this plan's contract.
+- **Hit areas**: only the scope chips and the field were below or at 44 before; every interactive element of these screens is now at least 44 pt (clear button and cancel unchanged).
+- **grep acceptance**: `visual.chip.fill` is read in `SurveySearchScreen.tsx` for the segment container colours (layout in `search.styles.ts`).
+
+## Deviations from Plan
+
+None. The plan was executed as written; the memo comparator change above is a fix inside the planned task (Rule 1), found by the existing render-counts gate.
+
+## Known Stubs
+
+None.
+
+## Threat Flags
+
+None. Restyle of existing screens reading existing context data.
+
+## Verification
+
+- `npm run lint`, `npm run typecheck` exit 0.
+- `npm run test:coverage:mobile`: 198 suites, 2137 tests pass, thresholds met. ibp-domain suite: 230 pass.
+- `npm run format:check` flags only the untracked local `.claude/settings.local.json` (ignored per instructions).
+- Not checked here (no build, simulator or phone): light and dark appearance of the rows and rings, entrance visibility on the phone, Reduce Motion on the device. These belong to the owner check after batch 2 (plan 12.2-14).
+
+## Self-Check: PASSED
+
+## Entrance on focus for list rows
+
+Added after the owner's batch 1 feedback on Accueil ("Je ne vois pas le glissement"). It supersedes the "Entrance timing risk" note above.
+
+**What was found.** Rows of Mes Relevés and of the search page used `entering={entrance(index)}` from `useEntrance` (a Reanimated builder, first mount, rows 0 to 7). A builder only plays at mount, and both screens mount at app launch under the splash and the sign-in overlay (the search page is a native tab on iOS), so the animation was over before the owner could see it. Two more mount-time animations had the same flaw: the `ScoreRing` fill (`shouldAnimateRing`, rows 0 to 7) and the marten fade and spring of `ListEmptyState`. A fourth cause: `useEntrance` decided "first mount" per list, so rows that arrived after the first render (surveys loaded from SQLite after the screen mounted) never animated at all.
+
+**What changed** (commits fb9da46, d21abc7, b891325).
+- `mobile/src/ui/useListEntrance.ts` returns a stable `canAnimate(index)`. A row is eligible when its index is below `brandMotion.staggerMax` (rows 0 to 7), Reduce Motion is off, and it mounts before the screen has been seen (not focused, or covered by an app overlay, however late) or within `LIST_ENTRANCE_GRACE_MS` (1000 ms) of the screen becoming visible. It reads `useScreenVisible`, so it follows the same focus and overlay signal as Accueil. A row the list remounts while the user scrolls mounts long after that and is never eligible.
+- `mobile/src/ui/ListEntranceRow.tsx` asks `canAnimate` once, at mount (`useState` initialiser). Eligible rows render inside `EntranceView`, so they get Accueil's exact behaviour from `useFocusEntrance`: opacity and 20 pt slide, 360 ms, 40 ms stagger, starts when the screen is focused and uncovered, replays on each focus, rewinds to hidden 600 ms after a blur, `ReduceMotion.System`. Other rows render their children as they are, with no animated wrapper.
+- `SurveyListScreen` and `SurveySearchScreen` (mine and community rows) use `ListEntranceRow` in `renderItem`. `SurveyRow` and its memo comparator are untouched (it still ignores `index`), `windowSize`, `removeClippedSubviews`, swipe, tap, 44 pt targets and testIDs are unchanged. No row re-renders because of an index change: eligibility is a mount-time decision, not a prop.
+- `ScoreRing`: the fill starts through `useScreenVisible` instead of at mount (it still plays once per survey and score key, rows 0 to 7, never under Reduce Motion).
+- `ListEmptyState`: the marten fade and spring start when the screen is visible, replay on each return, rewind 600 ms after a blur, final state under Reduce Motion, no loop.
+- `useEntrance` and its test were deleted (nothing else used it, grep first). The motion gate in `motion.test.ts` no longer has the `useEntrance` escape hatch: every `entering/exiting/layout` builder must carry `ReduceMotion.System`.
+
+**How it is tested.** `useListEntrance.test.tsx` (rows 0 to 7 eligible, 8 and beyond not, eligible while covered or unfocused however late, grace period, nothing after the grace period as a scroll remount, nothing under Reduce Motion). `ListEntranceRow.test.tsx` (wrapper only when eligible, decision made once). `SurveyListScreen.test.tsx` with the real `EntranceView`: seven rows wrapped for ten surveys, none under Reduce Motion, unfocused at mount means only the hidden rewinds are scheduled and the focus event then starts seven staggered slides (40 to 280 ms), a row added after the grace period is not wrapped. `SurveySearchScreen.test.tsx` (same eligibility through the screen, including community rows). `ScoreRing.test.tsx` and `ListEmptyState.test.tsx` (nothing plays under an overlay or unfocused, plays once visible, replay and rewind). A shared `mobile/test/fake-navigation.ts` stands in for a navigator (the real package is ESM). Motion gate and `render-counts.test.tsx` stay green (its navigation mock now exports `NavigationContext`).
+
+**Verification.** `npm run lint`, `npm run typecheck` exit 0; `npm run test:coverage:mobile`: 207 suites, 2190 tests pass, thresholds met; ibp-domain suite 230 pass; `npm run format:check` flags only the untracked `.claude/settings.local.json`. No dependency changed.
+
+**What only a device can confirm.** That the slide is actually visible on the iPhone after a cold start (splash, then sign-in, then Mes Relevés tab and the search tab), that returning from a survey detail replays it without a blank flash (the 600 ms rewind), that scrolling a long list never replays, that the ring fill and the empty-state marten play when the tab is first opened, and that Reduce Motion shows everything at once. Two known approximations: a row that mounts within one second of the screen becoming visible (typing in the search field in that first second) still joins the entrance, and the section titles ("À terminer", "Terminés") do not slide, only the survey rows do, so the stagger starts at the first row after the title.

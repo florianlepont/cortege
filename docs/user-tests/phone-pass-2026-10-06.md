@@ -58,7 +58,7 @@ de l'eau ; chaque case non cochée devient un point du journal avec une note de 
 - [x] OA-93 Le bandeau du score n'est pas cliquable ; la ligne « Score IBP » ouvre les facteurs.
 - [x] OA-94 OA-95 OA-50 Titre sans « Détail », en-tête transparent, bouton du bas visible au-dessus
       de la barre ; toucher le titre le renomme.
-- [ ] OA-44 OA-96 La carte est zoomée sur les parcelles et un toucher ouvre l'édition des parcelles. ❌ OA-121 : carte non zoomée sur les parcelles ⏳ second passage : zoomé sur « Parcelle de la source » (parcelle de démo), pas sur « Testons » (vraies parcelles IGN sans position sur le serveur) ; correctif de l'API à déployer (#239)
+- [x] OA-44 OA-96 La carte est zoomée sur les parcelles et un toucher ouvre l'édition des parcelles. ❌ OA-121 : carte non zoomée sur les parcelles ⏳ second passage : zoomé sur « Parcelle de la source » (parcelle de démo), pas sur « Testons » (vraies parcelles IGN sans position sur le serveur) ; correctif de l'API à déployer (#239) ➜ ✅ confirmé : zoomé sur « Testons » après le déploiement de l'image (#239)
 - [x] OA-59 « Voir sur la carte » ouvre Explorer centré sur le relevé, fiche ouverte. Un brouillon y ✅ ouverture et fiche ; ❌ OA-116 : les parcelles ne sont pas mises en évidence  ➜ ✅ corrigé, confirmé au second passage
       apparaît en pointillés. Le panneau descend derrière la barre d'onglets et se ferme par la croix
       ou en le glissant vers le bas.

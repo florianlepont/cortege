@@ -202,7 +202,7 @@ shipped app: real typefaces, the full semantic color token set (with an ESLint r
 skeleton. Before any of this was written, a sketchboard (an interactive HTML mock, not shipped code)
 was iterated on live with the product owner — the typeface and the IBP badge's colors below are its
 direct output, not an implementer's unilateral call. Full rationale and the batch-by-batch build
-record: `.planning/phases/04-visual-foundations-motion/`.
+record: `.planning/phases/13-visual-foundations-motion/`.
 
 ### 12.1 Typefaces actually loaded
 
@@ -345,8 +345,8 @@ Phase 12.2 ("Visual Modernisation") gave the app the look the owner chose from s
 I: calm and modern like Linear, with luminous forest cards, glass and contour lines as the
 signature. This section records what shipped after four owner phone checks (2026-10-07 and
 2026-10-08), not the first plan. The French direction text, with the owner's corrections, is
-`docs/design/direction-visuelle-12-2.md`. Build record: `.planning/phases/12.2-visual-modernisation-inserted/`
-(`12.2-UI-SPEC.md`, decisions D-01 to D-30 in `12.2-CONTEXT.md`, and the `12.2-NN-FIXES.md` logs).
+`docs/design/direction-visuelle-12-2.md`. Build record: `.planning/phases/23-visual-modernisation/`
+(`23-UI-SPEC.md`, decisions D-01 to D-30 in `23-CONTEXT.md`, and the `23-NN-FIXES.md` logs).
 
 ### 13.1 Tokens
 
@@ -544,7 +544,7 @@ guard; the confetti is only rendered when motion is allowed.
 - **Gradients and shadows**: a solid `backgroundColor` is always set; below API 28 there is no
   outset shadow, so the forest card loses its glow (accepted).
 - **Before iOS 26**: `BlurView` instead of Liquid Glass, flat button fallback.
-- **Android device pass: Phase 13** (D-17). To check there: the inset glow at the navigation layer,
+- **Android device pass: Phase 28** (Field Validation, numbered 13 before the flat renumbering; D-17). To check there: the inset glow at the navigation layer,
   the forest card SVG mask, the flat map control and sheet fills, the smoothness of the three mist
   discs and the flowing lines on an older phone (turn `ForestCard`'s `motion` off on Android if
   frames drop), and the Android header tint, which does not follow the scheme yet.
@@ -558,15 +558,15 @@ Still open after the approval:
 - Parcel colour by score on the owner's survey: needs the server fix for IGN parcel ids (migration
   `020_parcel_idu_fields.sql`), which reaches production only once merged to `main` and deployed.
   Corsican parcel ids (`2A`, `2B`) stay unmatched.
-- The basemap does not follow dark mode (MapLibre styles stay light). No phase plans it, and the
-  owner chose not to record a seed for it (2026-10-08).
+- The basemap does not follow dark mode (MapLibre styles stay light). The owner chose not to record a seed for it (2026-10-08); the
+  colourised base map added the same day as Phase 23 criterion 4 (light and dark) now covers it.
 - The iOS 26 tab bar glass and the search button are drawn by the system: their density cannot be
   changed without replacing the system bar, which D-08 rules out (13.8).
-- Asked during the phase, not answered, carried to Phase 12.3 or later: the fixed form pager title
+- Asked during the phase, not answered, carried to Phase 26 (the UX/UI audit, old 12.3) or later: the fixed form pager title
   (no native collapse); the sketch 009 elements (glowing pill on the wizard's next button and the
   counters' plus, completion ring in the header); the `GenusTargetSheet` native glass button and
   the `CasPicker` glass treatment; the wizard edge swipe on a device; the hard clip line under
   transparent headers on scroll.
-- Explorer sheet drag runs on the JS thread (`PanResponder`): candidate for Phase 12.3. The Compte
-  loading spinner is low contrast in dark: Phase 12.3.
-- Android pass: Phase 13 (13.9).
+- Explorer sheet drag runs on the JS thread (`PanResponder`): candidate for Phase 26. The Compte
+  loading spinner is low contrast in dark: Phase 26.
+- Android pass: Phase 28 (13.9).

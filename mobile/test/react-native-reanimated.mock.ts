@@ -1,7 +1,7 @@
 import { FlatList, ScrollView, Text as RNText, View as RNView } from "react-native"
 
 // Minimal Jest mock (this project's ts-jest setup has no jsdom/RN preset, so the real package's
-// native-binding initialization can't run — see 04-04-SUMMARY.md). Covers only the API surface
+// native-binding initialization can't run — see 13-04-SUMMARY.md). Covers only the API surface
 // this app actually calls: shared values resolve synchronously, `useAnimatedStyle` runs its
 // factory immediately, springs land on their target value with no animation, and the "Animated"
 // host components are the plain (or per-test mocked) `react-native` ones, like the official

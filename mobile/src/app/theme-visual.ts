@@ -24,7 +24,7 @@ import {
 } from "./visual-tokens"
 
 // Phase 12.2: the variant I visual layer, resolved per scheme and published as `BrandTheme.visual`.
-// Values are the contract of `12.2-UI-SPEC.md` ("Color", "Visual Contract"). The Graphite dark
+// Values are the contract of `23-UI-SPEC.md` ("Color", "Visual Contract"). The Graphite dark
 // neutrals of `theme.ts` are untouched (D-03); this layer only adds surfaces, tones and glows.
 
 export type BrandVisualTone = { base: string; top: string; image: string; shadow: string }

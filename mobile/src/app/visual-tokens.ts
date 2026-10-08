@@ -1,7 +1,7 @@
 // Phase 12.2 (variant I): static colour stops, gradient and shadow builders and chart geometry.
 // Hex and rgba literals are allowed here and in `theme-visual.ts` only (ESLint colour rule). The
 // per-scheme resolution of these stops lives in `theme-visual.ts` (`BrandTheme.visual`). Values come
-// from `12.2-UI-SPEC.md`, never from the sketch: the spec overrides sketch colours where contrast fails.
+// from `23-UI-SPEC.md`, never from the sketch: the spec overrides sketch colours where contrast fails.
 
 import { brandColors } from "./brand-tokens"
 

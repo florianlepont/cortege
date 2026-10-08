@@ -5,7 +5,7 @@
 // button, a shadow color). Every neutral that actually needs to invert between light and dark
 // (canvas, panel, text, field, status-soft colors, and everything derived from them) moved to
 // `lightPalette`/`darkPalette` in `theme.ts`, resolved through `useBrandTheme()` — see
-// `.planning/phases/12-interface-finishing/12-CONTEXT.md` for the full static/dynamic split.
+// `.planning/phases/21-interface-finishing/21-CONTEXT.md` for the full static/dynamic split.
 export const brandColors = {
   terracotta: "#CD5833",
   moss: "#89A33A",
@@ -26,7 +26,7 @@ export const brandColors = {
 // redistributable, absent on Android), so neither can be embedded via `expo-font`. Sora and Jost —
 // both OFL-licensed — are the stand-ins actually loaded (`mobile/assets/fonts/`, wired through the
 // `expo-font` config plugin in `app.json`), chosen and approved by the product owner over a sketched
-// alternative (2026-09-27, `.planning/phases/04-visual-foundations-motion/04-CONTEXT.md`). `preferred`
+// alternative (2026-09-27, `.planning/phases/13-visual-foundations-motion/13-CONTEXT.md`). `preferred`
 // stays the charter's real target name; `standIn` is the embedded family actually rendered today —
 // swap it out the day Mazzard H ships without touching `brandTypography`'s role mapping.
 export const brandFontFamilies = {
@@ -303,7 +303,7 @@ export const brandOnDarkColors = {
   // muted text tone, a near-black scrim for photo/map backdrops, and a light-on-saturated halo.
   // Several distinct source opacities (0.1/0.16 into surface tokens, 0.22/0.28/0.3 into
   // borderStrong) were deliberately consolidated onto one value each rather than kept as one-off
-  // magic numbers — see `.planning/phases/04-visual-foundations-motion/04-CONTEXT.md`.
+  // magic numbers — see `.planning/phases/13-visual-foundations-motion/13-CONTEXT.md`.
   heroTextMutedOnDark: "#D7E3C0",
   heroSurfaceOnDark: "rgba(255, 255, 255, 0.12)",
   heroSurfaceStrongOnDark: "rgba(255, 255, 255, 0.18)",
@@ -346,19 +346,21 @@ export const brandTranslucentPanel = {
 // Phase 4 (DS-04): dark solid backdrop behind full-screen media/map surfaces before content loads.
 export const brandMediaBackdrop = "#132434"
 
+// Phase 12.2 (DS-04 follow-up): the last colour literals found outside the tokens file by the
+// lint rule once it covered `src/ui`, `src/screens`, `src/components` and `src/navigation`.
+export const brandOverlayTokens = {
+  /** Deep forest strip under the factor letters of the survey form. */
+  factorStripBackground: "rgba(14, 34, 16, 0.92)",
+  /** Dimmed backdrop behind an action sheet. */
+  actionSheetScrim: "rgba(15, 22, 12, 0.4)",
+} as const
+
 /** The live camera screen (genus recognition): controls and hints drawn over the preview. */
 export const brandCameraTokens = {
   controlBackground: "rgba(15, 22, 12, 0.55)",
   hintBackground: "rgba(15, 22, 12, 0.62)",
   shutterRing: "rgba(255, 255, 255, 0.18)",
   guide: "#FFFFFF",
-} as const
-
-// Phase 12.2: scrims that were literal colours in `src/ui` and `src/screens` (same values, tokenised
-// when the ESLint colour rule was repaired).
-export const brandScrims = {
-  actionSheetBackdrop: "rgba(15, 22, 12, 0.4)",
-  letterBubble: "rgba(14, 34, 16, 0.92)",
 } as const
 
 // Phase 12 (DS-12): IBP score colours (`ibpScoreTokens`), the field-entry state triad

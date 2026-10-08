@@ -517,7 +517,7 @@ pair are scored: an absent or incomplete factor is not "very low".
 - `ibp_cas3_scale: boolean | null` (v3.2 only)
 - `region_version: "ACA" | "M"` (v3.0 only; required at submit)
 - `vegetation_stage: string` (v3.0 only; required at submit)
-- `status: "draft" | "submitted" | "synced" | "error" | "expired"` (shipped enum; no `deleted`
+- `status: "draft" | "submitted" | "synced" | "error"` (shipped enum; no `deleted`
   value — a deleted survey is soft-deleted via `deleted_at`, its `status` unchanged)
 - `visibility: "private" | "public"` (required, default `private`)
 - `submitted_at?: datetime`

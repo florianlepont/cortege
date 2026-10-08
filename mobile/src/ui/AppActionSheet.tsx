@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
   brandFontScaleCaps,
   brandRadius,
-  brandScrims,
+  brandOverlayTokens,
   brandShadow,
   brandSpacing,
   brandTypography,
@@ -86,7 +86,7 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     backdrop: {
       flex: 1,
-      backgroundColor: brandScrims.actionSheetBackdrop,
+      backgroundColor: brandOverlayTokens.actionSheetScrim,
     },
     sheet: {
       backgroundColor: theme.colors.panel,

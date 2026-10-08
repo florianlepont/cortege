@@ -1,0 +1,95 @@
+---
+phase: 23-visual-modernisation
+plan: 05
+subsystem: mobile-ui-primitives
+tags: [glass-card, screen-backdrop, glow-pill, halo-pulse, hit-target, reduced-motion]
+requires: ["12.2-02", "12.2-03"]
+provides:
+  - "AppCard variant glass: translucent card of variant I without blur or elevation"
+  - "ScreenBackdrop: decorative two-halo backdrop layer"
+  - "AppButton variant glow: moss gradient pill with halo shadow"
+  - "HaloPulse: opacity-only one-shot halo for success feedback"
+affects: [Home, Mes Relevés, Compte, survey detail, submit and sync success feedback in later 12.2 plans]
+tech-stack:
+  added: []
+  patterns:
+    - "Token-only styling from theme.visual (glass, backdrop, pill)"
+    - "hitSlop derived from the drawn size so the visible control stays unchanged"
+    - "Previous-trigger ref to skip the first-mount pulse"
+key-files:
+  created:
+    - mobile/src/ui/AppCard.test.tsx
+    - mobile/src/ui/ScreenBackdrop.tsx
+    - mobile/src/ui/ScreenBackdrop.test.tsx
+    - mobile/src/ui/AppButton.test.tsx
+    - mobile/src/ui/HaloPulse.tsx
+    - mobile/src/ui/HaloPulse.test.tsx
+  modified:
+    - mobile/src/ui/AppCard.tsx
+    - mobile/src/ui/AppButton.tsx
+key-decisions:
+  - "The 44 pt hit area for the small button (drawn 36) and the small and medium icon-only buttons (34 and 40) comes from hitSlop, not from a taller visible shape, so the existing call sites render exactly as before"
+status: complete
+metrics:
+  tasks: 2
+  files: 8
+  completed: 2026-10-07
+---
+
+# Phase 12.2 Plan 05: Glass and action primitives Summary
+
+AppCard `glass` variant, `ScreenBackdrop`, AppButton `glow` variant and `HaloPulse`, all driven by `theme.visual` tokens and covered by co-located tests. No dependency, token or font change.
+
+## Tasks
+
+| Task | Name | Commit |
+|------|------|--------|
+| 1 | AppCard glass variant and ScreenBackdrop | 755155c |
+| 2 | AppButton glow variant and HaloPulse | 734602a |
+
+## What was built
+
+- **AppCard `variant="glass"`**: `visual.glass.cardFill`, 1 pt `cardBorder` hairline, `boxShadow` `cardShadow` (inner highlight, plus a soft 6% shadow in light), `borderCurve: "continuous"`, radius 22 from `base`. No `brandShadow.card` spread, so no elevation or shadow* keys (asserted). The boolean `glass` prop still delegates to `GlassSurface` unchanged; `panel` output unchanged.
+- **ScreenBackdrop**: absolute-fill `View` with `experimental_backgroundImage: theme.visual.backdrop`, `pointerEvents="none"`, hidden from accessibility. Header comment records the transparent-header-only rule (RESEARCH Pitfall 3).
+- **AppButton `variant="glow"`**: fill fallback colour plus gradient image, halo `boxShadow`, pill radius, label `visual.pill.label` in Sora-SemiBold (from `brandTypography.input`), icon colour the same. Press haptic, size styles and the four existing variants untouched. Union JSDoc: forest cards only, terracotta is never a CTA.
+- **HaloPulse**: static shadow layer (`borderRadius` and `boxShadow` from props), animated `opacity` only, `withSequence(withTiming(1, 250), withTiming(0, 250))` with `ReduceMotion.System`; skips the first mount (previous-trigger ref) and does nothing when `useReducedMotion()` is true. Hidden from touch and accessibility.
+
+## Verification
+
+- `npx jest` for `src/ui/AppCard`, `ScreenBackdrop`, `AppButton`, `HaloPulse` and `src/__checks__` passes (motion, structure, fonts checks included).
+- Mobile unit suite: 185 suites, 2010 tests pass, coverage thresholds met. ibp-domain 230 pass.
+- `npm run lint` and `npm run typecheck` exit 0.
+- `npm run format:check` flags only `.claude/settings.local.json` (local file, ignored per instructions).
+- API unit suite: only `test/check-env-parity.spec.ts` fails (macOS bash 3.2), known and unrelated. Because the root `test:unit` stops there, the mobile suite was run with `npm --workspace mobile run test:unit`.
+
+## Deviations from Plan
+
+### Auto-fixed Issues
+
+**1. [Rule 2 - Missing critical functionality] Small button was drawn below 44 pt**
+- **Found during:** Task 2
+- **Issue:** the behavior block asks for a flattened `minHeight` of at least 44 for sizes sm, md and lg, but the existing `sm` size is 36 (`minHeightSmall`) and the must-have says the 37 existing call sites render exactly as before. Raising `minHeightSmall` would change two live buttons (`SummaryHeader` save, `PermissionsPrimingScreen`) and every `size="sm"` caller. The icon-only sizes (34 and 40) are also under 44.
+- **Fix:** kept every visible size and added `hitSlop` computed from the drawn size (`ceil((44 - drawn) / 2)`: 4 for sm, 0 for md and lg, 5 and 2 for icon-only sm and md). The test asserts `minHeight + 2 * hitSlop >= 44` (hit area, which is what D-05 and the threat T-12.2-08 protect) and separately asserts the visible heights 36, 44, 50 are unchanged.
+- **Files modified:** mobile/src/ui/AppButton.tsx, mobile/src/ui/AppButton.test.tsx
+- **Commit:** 734602a
+
+**2. [Process] TDD order**
+- Task 1 and 2 implementation was written before its tests in the same task (tests then run green); no separate RED commit. Tests assert each behavior line of the plan.
+
+## Deferred Issues
+
+- `npm run test:unit`: API suite `check-env-parity.spec.ts` fails locally (macOS bash 3.2), unrelated.
+- `npm run format:check` flags `.claude/settings.local.json`, a local harness file.
+- On device: glow pill gradient and halo shadow rendering on a real iPhone, and the small hitSlop next to adjacent controls, to be looked at when screens adopt the primitives.
+
+## Known Stubs
+
+None. The primitives are not yet mounted on any screen; the screen plans consume them.
+
+## Threat Flags
+
+None. T-12.2-07 mitigated (no pulse under Reduce Motion or on mount, opacity only, tested); T-12.2-08 mitigated (primary colours and visible sizes asserted unchanged, 44 pt hit area asserted for every size and variant).
+
+## Self-Check: PASSED
+
+All eight files exist; commits 755155c and 734602a are on the branch.

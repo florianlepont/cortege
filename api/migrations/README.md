@@ -39,7 +39,7 @@ then issues `ROLLBACK`. This means, for the file that failed:
   the start once the file is fixed;
 - every migration applied before it stays committed and untouched.
 
-This was verified directly (Phase 11, `.planning/phases/11-durable-backend/`): a
+This was verified directly (Phase 11, `.planning/phases/20-durable-backend/`): a
 temporary migration file with a valid `CREATE TABLE` followed by a call to a
 non-existent function was run against a database that already had migrations
 001–016 applied. The runner exited non-zero, the table from the valid first
