@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import * as reanimated from "../../../test/react-native-reanimated.mock"
-import { brandMotion, brandRadius, brandTypography } from "../../app/brand-tokens"
+import { brandMotion, brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { glowBarGeometry, numeralGeometry } from "../../app/visual-tokens"
 import { fr } from "../../i18n"
@@ -145,6 +145,50 @@ describe("ScoreCard", () => {
       fr.components.ibpFactorBars.contextGroup,
       t.outOf({ max: 15 }),
     ])
+  })
+
+  // 12.2-19 fifth round (owner): the score card carries the aurora too, with its own zones.
+  describe("aurora zones", () => {
+    const zoneOf = (tree: ReactTestRenderer) => byType(tree, "ForestCard")[0].props.zone
+    const lay = (node: ReactTestInstance, layout: Record<string, number>) =>
+      act(() => node.props.onLayout({ nativeEvent: { layout } }))
+
+    test("the darker score shield, and no zone until the text column and the band are known", () => {
+      const tree = render()
+      const card = byType(tree, "ForestCard")[0]
+      expect(card.props.shield).toBe("score")
+      expect(card.props.motion).toBeUndefined()
+      expect(zoneOf(tree)).toBeNull()
+    })
+
+    test("clear right of the caption and the numeral, above the bar, the tiles and the hint", () => {
+      const tree = render()
+      const caption = byType(tree, "Text").find((n) => n.props.children === t.caption)!
+      expect(flatten(caption.props.style).alignSelf).toBe("flex-start")
+      const numeral = byType(tree, "View").find(
+        (n) =>
+          n.props.onLayout !== undefined &&
+          n.props.testID !== "score-card-lower" &&
+          n.findAll((inner) => (inner.type as unknown) === "GradientNumeral").length === 1,
+      )!
+      const lower = byType(tree, "View").find((n) => n.props.testID === "score-card-lower")!
+      // The bar, the tiles and the hint are all in the band.
+      expect(lower.findAll((n) => (n.type as unknown) === "GlowBar")).toHaveLength(1)
+      expect(lower.findAll((n) => (n.type as unknown) === "AnimatedNumber")).toHaveLength(2)
+      expect(
+        lower.findAll(
+          (n) => (n.type as unknown) === "Text" && n.props.children === t.factorsFilled(7),
+        ),
+      ).toHaveLength(1)
+      lay(caption, { x: 16, y: 16, width: 70, height: 16 })
+      lay(numeral, { x: 16, y: 36, width: 134, height: 62 })
+      expect(zoneOf(tree)).toBeNull()
+      lay(lower, { x: 16, y: 98, width: 329, height: 110 })
+      expect(zoneOf(tree)).toEqual({ left: 16 + 134 + brandSpacing4.smd, bottom: 98 })
+      // A longer caption pushes the zone right.
+      lay(caption, { x: 16, y: 16, width: 180, height: 16 })
+      expect(zoneOf(tree).left).toBe(16 + 180 + brandSpacing4.smd)
+    })
   })
 
   test("draws the pulse layer with the card radius and shadow", () => {

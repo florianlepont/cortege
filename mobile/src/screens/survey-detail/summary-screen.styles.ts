@@ -70,7 +70,9 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     scoreContent: {
       padding: brandSpacing4.md,
     },
+    // Its own width, so the card can measure where its text column ends (the aurora's clear zone).
     scoreCaption: {
+      alignSelf: "flex-start",
       ...brandTypography.label,
       color: theme.visual.forest.body,
     },

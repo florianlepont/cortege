@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from "react"
-import { View } from "react-native"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { type LayoutChangeEvent, View } from "react-native"
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -9,7 +9,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated"
 import { IBP_MAX } from "@cortege/ibp-domain"
-import { brandMotion, brandRadius } from "../../app/brand-tokens"
+import { brandMotion, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { scoreRatio } from "../../app/ibp-display"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -30,6 +30,37 @@ const NUMERAL_TRAVEL = 8
 export const FINISH_POP_SCALE = 1.03
 // Width of one digit of the tile value (Sora-SemiBold 16): the counting text keeps its final width.
 const TILE_DIGIT_WIDTH = 11
+// Between the end of the caption and numeral column and the aurora's clear zone.
+const ZONE_GAP = brandSpacing4.smd
+
+type Measured = { caption: number | null; numeral: number | null; lower: number | null }
+
+/**
+ * The card's clear zone (12.2-19 fifth round): right of the caption and the numeral, above the bar,
+ * the tiles and the hint, which all sit in the shielded band. Null until the three are measured.
+ */
+function useScoreZone() {
+  const [measured, setMeasured] = useState<Measured>({ caption: null, numeral: null, lower: null })
+  const rightOf = (key: "caption" | "numeral") => (event: LayoutChangeEvent) => {
+    const { x, width } = event.nativeEvent.layout
+    setMeasured((previous) => ({ ...previous, [key]: x + width }))
+  }
+  const onLowerLayout = (event: LayoutChangeEvent) => {
+    const { y } = event.nativeEvent.layout
+    setMeasured((previous) => ({ ...previous, lower: y }))
+  }
+  const { caption, numeral, lower } = measured
+  const zone =
+    caption === null || numeral === null || lower === null
+      ? null
+      : { left: Math.max(caption, numeral) + ZONE_GAP, bottom: lower }
+  return {
+    zone,
+    onCaptionLayout: rightOf("caption"),
+    onNumeralLayout: rightOf("numeral"),
+    onLowerLayout,
+  }
+}
 
 type ScoreCardProps = {
   scores: DisplayedScores | null
@@ -69,7 +100,9 @@ function ScoreTile({ label, value, max, styles }: TileProps) {
  * the detail by factor and sub-score. The mount animations do not replay when returning from a
  * sub-page, because the summary stays mounted under it. One summary label reads the whole card.
  * At the finish (D-25) the halo pulses and the card pops once, on the UI thread; under Reduce
- * Motion neither moves (the success haptic, fired by the caller, stays).
+ * Motion neither moves (the success haptic, fired by the caller, stays). 12.2-19 fifth round
+ * (owner): the card carries the forest aurora like Accueil's, in place of its drifting contours,
+ * with the darker `score` shield over the numeral column and the band of the bar and tiles.
  */
 export function ScoreCard({
   scores,
@@ -110,6 +143,8 @@ export function ScoreCard({
   }, [pulseTrigger, reduced, pop])
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }))
 
+  const { zone, onCaptionLayout, onNumeralLayout, onLowerLayout } = useScoreZone()
+
   const filled = filledFactorCount ?? 0
   const caption = isDraftView ? t.draftCaption : t.caption
   const hint =
@@ -129,36 +164,40 @@ export function ScoreCard({
         radius={brandRadius.forestHero}
         shadow={theme.visual.forest.shadow}
       />
-      <ForestCard variant="hero" contentStyle={styles.scoreContent}>
-        <Text style={styles.scoreCaption}>{caption}</Text>
-        <Animated.View style={[styles.scoreNumeral, numeralStyle]}>
+      <ForestCard variant="hero" zone={zone} shield="score" contentStyle={styles.scoreContent}>
+        <Text style={styles.scoreCaption} onLayout={onCaptionLayout}>
+          {caption}
+        </Text>
+        <Animated.View style={[styles.scoreNumeral, numeralStyle]} onLayout={onNumeralLayout}>
           <GradientNumeral
             value={scores?.ibp_total ?? null}
             unit={fr.surveyDetail.metric.outOfTotal}
           />
         </Animated.View>
-        {scores ? (
-          <>
-            <View style={styles.scoreBar}>
-              <GlowBar ratio={scoreRatio(scores.ibp_total)} animate />
-            </View>
-            <View style={styles.scoreTiles}>
-              <ScoreTile
-                label={fr.components.ibpFactorBars.standGroup}
-                value={scores.ibp_peuplement_gestion}
-                max={IBP_MAX.stand}
-                styles={styles}
-              />
-              <ScoreTile
-                label={fr.components.ibpFactorBars.contextGroup}
-                value={scores.ibp_contexte}
-                max={IBP_MAX.context}
-                styles={styles}
-              />
-            </View>
-          </>
-        ) : null}
-        {hint ? <Text style={styles.scoreHint}>{hint}</Text> : null}
+        <View onLayout={onLowerLayout} testID="score-card-lower">
+          {scores ? (
+            <>
+              <View style={styles.scoreBar}>
+                <GlowBar ratio={scoreRatio(scores.ibp_total)} animate />
+              </View>
+              <View style={styles.scoreTiles}>
+                <ScoreTile
+                  label={fr.components.ibpFactorBars.standGroup}
+                  value={scores.ibp_peuplement_gestion}
+                  max={IBP_MAX.stand}
+                  styles={styles}
+                />
+                <ScoreTile
+                  label={fr.components.ibpFactorBars.contextGroup}
+                  value={scores.ibp_contexte}
+                  max={IBP_MAX.context}
+                  styles={styles}
+                />
+              </View>
+            </>
+          ) : null}
+          {hint ? <Text style={styles.scoreHint}>{hint}</Text> : null}
+        </View>
       </ForestCard>
     </Animated.View>
   )

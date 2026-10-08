@@ -64,9 +64,21 @@ describe("ListSummaryCard (D-22)", () => {
     expect(cards).toHaveLength(1)
     expect(cards[0].props.variant).toBe("resume")
     expect(cards[0].props.testID).toBe("list-summary-card")
-    // contour lines are the ForestCard default and are not switched off
-    expect(cards[0].props.contours).toBeUndefined()
-    expect(cards[0].props.animatedContours).toBeUndefined()
+    // The aurora is the ForestCard default (12.2-19 fifth round) and is not switched off.
+    expect(cards[0].props.motion).toBeUndefined()
+    expect(cards[0].props.shield).toBeUndefined()
+  })
+
+  test("the aurora's clear zone starts a gap right of the two figures, the whole height", () => {
+    const root = mount(12, 3)
+    const card = () => root.findByType("ForestCard" as never)
+    // Until the figures are measured nothing is drawn.
+    expect(card().props.zone).toBeNull()
+    const stats = root.findByProps({ testID: "list-summary-stats" })
+    act(() =>
+      stats.props.onLayout({ nativeEvent: { layout: { x: 16, y: 16, width: 180, height: 50 } } }),
+    )
+    expect(card().props.zone).toEqual({ left: 16 + 180 + brandSpacing4.md })
   })
 
   test("shows the same two figures and labels as before, nothing new, no tag pill", () => {

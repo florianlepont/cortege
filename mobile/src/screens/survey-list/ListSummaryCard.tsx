@@ -1,5 +1,5 @@
-import { useMemo } from "react"
-import { StyleSheet, View } from "react-native"
+import { useMemo, useState } from "react"
+import { type LayoutChangeEvent, StyleSheet, View } from "react-native"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -12,20 +12,33 @@ const t = fr.surveyList.intro
 type ListSummaryCardProps = { total: number; toFinish: number }
 
 /**
- * The accent of Mes Relevés (D-22): a compact forest card in the Accueil family, with contour lines,
+ * The accent of Mes Relevés (D-22): a compact forest card in the Accueil family,
  * that shows the two figures the screen already had (OA-53), how many surveys and how many are left
  * to finish. It is the one forest card of the screen. Both figures stay on the left of the card, on
  * the base forest, so no text sits under the halo at the top right (UI-SPEC); the "to finish"
  * figure takes the light green of the card title as the accent. The card slides in when the screen
- * becomes visible, like the sections of Accueil.
+ * becomes visible, like the sections of Accueil. 12.2-19 fifth round (owner): it carries the forest
+ * aurora like Accueil's card, in place of its drifting contours; its clear zone starts a gap right
+ * of the two figures, which sit under the shield.
  */
 export function ListSummaryCard({ total, toFinish }: ListSummaryCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
+  const [zoneLeft, setZoneLeft] = useState<number | null>(null)
+  const handleStatsLayout = (event: LayoutChangeEvent): void => {
+    const { x, width } = event.nativeEvent.layout
+    setZoneLeft(x + width + brandSpacing4.md)
+  }
   return (
     <EntranceView index={0}>
-      <ForestCard variant="resume" contentStyle={styles.content} testID="list-summary-card">
+      <ForestCard
+        variant="resume"
+        zone={zoneLeft === null ? null : { left: zoneLeft }}
+        contentStyle={styles.content}
+        testID="list-summary-card"
+      >
         <View
+          onLayout={handleStatsLayout}
           style={styles.stats}
           accessible
           accessibilityLabel={t.summary({ total, toFinish })}
