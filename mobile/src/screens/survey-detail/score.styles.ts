@@ -9,7 +9,6 @@ import {
 import { BrandTheme } from "../../app/theme"
 
 const BADGE = 32
-const TRACK = 8
 
 /** Styles of the "Score IBP" page: the total with its two sub-scores, then one row per factor. */
 export function createScoreStyles(theme: BrandTheme) {
@@ -52,16 +51,6 @@ export function createScoreStyles(theme: BrandTheme) {
     subScoreValue: {
       ...brandTypography.input,
       color: theme.colors.textPrimary,
-    },
-    track: {
-      height: TRACK,
-      borderRadius: brandRadius.bar,
-      overflow: "hidden",
-      backgroundColor: theme.visual.score.track,
-    },
-    fill: {
-      height: TRACK,
-      borderRadius: brandRadius.bar,
     },
     chartCard: {
       gap: brandSpacing4.smd,

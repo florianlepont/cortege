@@ -13,7 +13,7 @@ import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { AppStatusChip } from "../../ui/AppStatusChip"
+import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppText as Text } from "../../ui/AppText"
 import { EntranceView } from "../../ui/EntranceView"
 import { feedback } from "../../ui/feedback"
@@ -132,7 +132,8 @@ export function RecentSurveysSection({
                     title={title}
                     status={
                       <>
-                        <AppStatusChip
+                        <AppChoiceChip
+                          variant="status"
                           label={label}
                           tone={tone}
                           style={styles.chip}

@@ -2,9 +2,20 @@ import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { selectionAsync } from "expo-haptics"
 import { pressableLook as look } from "../../test/pressable-look"
-import { AppChoiceChip } from "./AppChoiceChip"
-import { brandComponentTokens } from "../app/brand-tokens"
-import { defaultTheme } from "../app/theme"
+import { AppChoiceChip, type AppStatusChipTone } from "./AppChoiceChip"
+import { brandColors, brandComponentTokens, brandRadius } from "../app/brand-tokens"
+import { compositeOver, contrastRatio } from "../app/contrast"
+import { buildTheme, defaultTheme, type BrandColorScheme } from "../app/theme"
+
+let mockScheme: BrandColorScheme = "light"
+
+jest.mock("../app/theme", () => {
+  const actual = jest.requireActual<typeof import("../app/theme")>("../app/theme")
+  return {
+    ...actual,
+    useBrandTheme: () => actual.buildTheme(mockScheme),
+  }
+})
 
 jest.mock("react-native", () => {
   const ReactActual = jest.requireActual<typeof import("react")>("react")
@@ -39,6 +50,10 @@ beforeEach(() => {
   ;(selectionAsync as jest.Mock).mockClear()
 })
 
+afterEach(() => {
+  mockScheme = "light"
+})
+
 function flatten(style: unknown): StyleObject {
   return ([] as unknown[])
     .concat(style)
@@ -47,7 +62,11 @@ function flatten(style: unknown): StyleObject {
     .reduce<StyleObject>((merged, next) => ({ ...merged, ...(next as StyleObject) }), {})
 }
 
-function render(props: Partial<React.ComponentProps<typeof AppChoiceChip>>) {
+function render(props: {
+  active?: boolean
+  tone?: "neutral" | "success" | "warning" | "danger"
+  onPress?: () => void
+}) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
     tree = renderer.create(<AppChoiceChip label="Oui" {...props} />)
@@ -108,5 +127,52 @@ describe("AppChoiceChip (D-05, D-08)", () => {
     )
     const active = render({ tone: "success", active: true, onPress: () => undefined })
     expect(look(active.pressable).backgroundColor).toBe(chip.activeBg)
+  })
+})
+
+function renderStatus(tone?: AppStatusChipTone) {
+  let tree: renderer.ReactTestRenderer | undefined
+  act(() => {
+    tree = renderer.create(<AppChoiceChip variant="status" label="Synchronisé" tone={tone} />)
+  })
+  const view = tree!.root.findByType("View" as unknown as React.ComponentType)
+  const text = tree!.root.findByType("Text" as unknown as React.ComponentType)
+  return { view, box: flatten(view.props.style), label: flatten(text.props.style) }
+}
+
+describe("AppChoiceChip status variant (phase 12.2)", () => {
+  test("is a plain non-interactive view with a hairline glass border and a pill radius", () => {
+    const { view, box } = renderStatus("neutral")
+    expect(view.props.accessibilityRole).toBeUndefined()
+    expect(box).toMatchObject({
+      borderWidth: 1,
+      borderColor: defaultTheme.visual.glass.cardBorder,
+      borderRadius: brandRadius.pill,
+    })
+  })
+
+  test("defaults to the neutral tone", () => {
+    expect(renderStatus().box.backgroundColor).toBe(defaultTheme.visual.chip.fill)
+  })
+
+  test("the on-dark tone keeps its own border and label", () => {
+    const { box, label } = renderStatus("onDark")
+    const { statusChip } = defaultTheme.componentColors
+    expect(box.borderColor).toBe(statusChip.onDarkBorder)
+    expect(label.color).toBe(statusChip.onDarkTextColor)
+  })
+
+  test("the success label is forest in light", () => {
+    expect(renderStatus("success").label.color).toBe(brandColors.forest)
+  })
+
+  test.each(["light", "dark"] as const)("%s: every tone label is at least 4.5:1", (scheme) => {
+    mockScheme = scheme
+    const theme = buildTheme(scheme)
+    for (const tone of ["neutral", "success", "warning", "danger"] as const) {
+      const { box, label } = renderStatus(tone)
+      const background = compositeOver(String(box.backgroundColor), theme.colors.canvas)
+      expect(contrastRatio(String(label.color), background)).toBeGreaterThanOrEqual(4.5)
+    }
   })
 })

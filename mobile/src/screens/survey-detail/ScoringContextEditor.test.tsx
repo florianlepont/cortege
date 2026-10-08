@@ -43,21 +43,19 @@ jest.mock("../../ui/AppChoiceChip", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
     AppChoiceChip: ({
+      variant,
       label,
       active,
       onPress,
     }: {
+      variant?: "status"
       label: string
       active?: boolean
       onPress?: () => void
-    }) => ReactRef.createElement("AppChoiceChip", { label, active, onPress }),
-  }
-})
-jest.mock("../../ui/AppStatusChip", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    AppStatusChip: ({ label }: { label: string }) =>
-      ReactRef.createElement("AppStatusChip", { label }),
+    }) =>
+      variant === "status"
+        ? ReactRef.createElement("AppStatusChip", { label })
+        : ReactRef.createElement("AppChoiceChip", { label, active, onPress }),
   }
 })
 jest.mock("../../ui/AppButton", () => {

@@ -37,7 +37,7 @@ jest.mock("react-native", () => {
   }
 })
 jest.mock("../../ui/ForestCard", () => ({ ForestCard: "ForestCard" }))
-jest.mock("../../ui/GlowBar", () => ({ GlowBar: "GlowBar" }))
+jest.mock("../../ui/ProgressBar", () => ({ ProgressBar: "ProgressBar" }))
 jest.mock("../../ui/HaloPulse", () => ({ HaloPulse: "HaloPulse" }))
 jest.mock("../../ui/AnimatedNumber", () => ({ AnimatedNumber: "AnimatedNumber" }))
 jest.mock("../../ui/GradientNumeral", () => {
@@ -94,7 +94,7 @@ describe("ScoreCard", () => {
     const numeral = byType(tree, "GradientNumeral")[0]
     expect(numeral.props.value).toBe(34)
     expect(numeral.props.unit).toBe(fr.surveyDetail.metric.outOfTotal)
-    const bar = byType(tree, "GlowBar")[0]
+    const bar = byType(tree, "ProgressBar")[0]
     expect(bar.props.ratio).toBeCloseTo(0.68)
     expect(bar.props.animate).toBe(true)
     expect(byType(tree, "AnimatedNumber").map((n) => n.props.value)).toEqual([24, 10])
@@ -137,7 +137,7 @@ describe("ScoreCard", () => {
   test("without a score there is no numeral, bar or tile, only the caption and the hint", () => {
     const tree = render({ scores: null, isDraftView: true, filledFactorCount: 3 })
     expect(byType(tree, "GradientNumeral")).toHaveLength(0)
-    expect(byType(tree, "GlowBar")).toHaveLength(0)
+    expect(byType(tree, "ProgressBar")).toHaveLength(0)
     expect(byType(tree, "AnimatedNumber")).toHaveLength(0)
     expect(texts(tree)).toEqual([t.draftCaption, t.factorsFilled(3)])
     const root = byType(tree, "View")[0]
@@ -184,7 +184,7 @@ describe("ScoreCard", () => {
       )!
       const lower = byType(tree, "View").find((n) => n.props.testID === "score-card-lower")!
       // The bar, the tiles and the hint are all in the band.
-      expect(lower.findAll((n) => (n.type as unknown) === "GlowBar")).toHaveLength(1)
+      expect(lower.findAll((n) => (n.type as unknown) === "ProgressBar")).toHaveLength(1)
       expect(lower.findAll((n) => (n.type as unknown) === "AnimatedNumber")).toHaveLength(2)
       expect(
         lower.findAll(

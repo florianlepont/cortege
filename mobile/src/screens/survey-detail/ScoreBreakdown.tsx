@@ -1,19 +1,22 @@
 import { useMemo } from "react"
 import { View } from "react-native"
 import { IBP_MAX, bandTone, contextBand, standBand, type ScoreTone } from "@cortege/ibp-domain"
-import { brandSpacing4 } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4 } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppCard } from "../../ui/AppCard"
 import { AppText as Text } from "../../ui/AppText"
+import { ProgressBar } from "../../ui/ProgressBar"
 import { createScoreStyles } from "./score.styles"
 import { type DisplayedScores } from "./useLocalDraftSummary"
 
 const t = fr.surveyDetail.scoreScreen
 const m = fr.surveyDetail.metric
 
-const percent = (value: number, max: number): `${number}%` =>
-  `${Math.max(0, Math.min(100, Math.round((value / max) * 100)))}%`
+const SUB_SCORE_BAR = 8
+
+const percent = (value: number, max: number): number =>
+  Math.max(0, Math.min(100, Math.round((value / max) * 100)))
 
 function SubScore({
   label,
@@ -36,15 +39,16 @@ function SubScore({
         <Text style={styles.subScoreLabel}>{label}</Text>
         <Text style={styles.subScoreValue}>{t.pointsOf({ points: value, max })}</Text>
       </View>
-      <View style={styles.track}>
-        <View
-          testID={`${testID}-fill`}
-          style={[
-            styles.fill,
-            { width: percent(value, max), backgroundColor: theme.visual.score[tone] },
-          ]}
-        />
-      </View>
+      <ProgressBar
+        variant="plain"
+        percent={percent(value, max)}
+        height={SUB_SCORE_BAR}
+        radius={brandRadius.bar}
+        fillRadius={brandRadius.bar}
+        trackColor={theme.visual.score.track}
+        fillColor={theme.visual.score[tone]}
+        fillTestID={`${testID}-fill`}
+      />
     </View>
   )
 }

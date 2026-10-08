@@ -16,7 +16,6 @@ import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { AppStatusChip } from "../../ui/AppStatusChip"
 import { CasPicker } from "../../ui/CasPicker"
 import { createContextEditorStyles } from "./context-editor.styles"
 import { createDetailStyles } from "./styles"
@@ -132,20 +131,23 @@ export function ScoringContextEditor({
       <View style={styles.methodBlock}>
         <Text style={styles.groupTitle}>{m.versionTitle}</Text>
         <View style={styles.summaryRow}>
-          <AppStatusChip
+          <AppChoiceChip
+            variant="status"
             label={versionLabel(scoringContext.ibp_method_version, resolved)}
             style={styles.summaryItem}
             labelStyle={styles.summaryItemLabel}
           />
           {!canEditSurvey && resolved === IBP_METHOD_V3_2 && ibpCas !== null ? (
-            <AppStatusChip
+            <AppChoiceChip
+              variant="status"
               label={m.casLabels[ibpCas]}
               style={styles.summaryItem}
               labelStyle={styles.summaryItemLabel}
             />
           ) : null}
           {!canEditSurvey && resolved === IBP_METHOD_V3_2 && ibpCas3Scale ? (
-            <AppStatusChip
+            <AppChoiceChip
+              variant="status"
               label={m.cas3ScaleLabel}
               style={styles.summaryItem}
               labelStyle={styles.summaryItemLabel}
@@ -153,12 +155,14 @@ export function ScoringContextEditor({
           ) : null}
           {!canEditSurvey && resolved === IBP_METHOD_V3_0 ? (
             <>
-              <AppStatusChip
+              <AppChoiceChip
+                variant="status"
                 label={t.region(activeRegionLabel)}
                 style={styles.summaryItem}
                 labelStyle={styles.summaryItemLabel}
               />
-              <AppStatusChip
+              <AppChoiceChip
+                variant="status"
                 label={t.vegetation(activeVegetationLabel)}
                 style={styles.summaryItem}
                 labelStyle={styles.summaryItemLabel}

@@ -66,7 +66,14 @@ jest.mock("../ui/AppSectionHeader", () => {
   }
 })
 
-jest.mock("../ui/AppStatusChip", () => ({ AppStatusChip: () => null }))
+// The status variant is not under test here: only the selectable chips render.
+jest.mock("../ui/AppChoiceChip", () => {
+  const actual = jest.requireActual<typeof import("../ui/AppChoiceChip")>("../ui/AppChoiceChip")
+  return {
+    AppChoiceChip: (props: { variant?: string }) =>
+      props.variant === "status" ? null : actual.AppChoiceChip(props as never),
+  }
+})
 
 jest.mock("../ui/AppField", () => {
   const ReactRef = require("react") as typeof import("react")

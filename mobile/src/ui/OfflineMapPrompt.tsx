@@ -8,6 +8,7 @@ import { fr } from "../i18n"
 import { AppButton } from "./AppButton"
 import { AppText as Text } from "./AppText"
 import { GlassSurface } from "./GlassSurface"
+import { ProgressBar } from "./ProgressBar"
 
 const t = fr.offlineMap.prompt
 
@@ -83,9 +84,15 @@ export const OfflineMapPrompt = memo(function OfflineMapPrompt({
           {prompt.state === "downloading" ? (
             <>
               <Text style={styles.bannerText}>{t.downloading(prompt.percent)}</Text>
-              <View style={styles.track}>
-                <View style={[styles.fill, { width: `${prompt.percent}%` }]} />
-              </View>
+              <ProgressBar
+                variant="plain"
+                percent={prompt.percent}
+                height={6}
+                radius={3}
+                trackColor={theme.colors.divider}
+                fillColor={theme.visual.accentText}
+                style={styles.track}
+              />
               <Text style={styles.bannerText}>{t.keepGoing}</Text>
             </>
           ) : (
@@ -140,14 +147,7 @@ function createStyles(theme: BrandTheme) {
     bannerText: { ...brandTypography.meta, color: theme.colors.textSecondary },
     bannerActions: { flexDirection: "row", gap: brandSpacing.sm },
     primary: { flex: 1 },
-    track: {
-      height: 6,
-      borderRadius: 3,
-      overflow: "hidden",
-      backgroundColor: theme.colors.divider,
-      marginVertical: brandSpacing4.xs,
-    },
-    fill: { height: 6, backgroundColor: theme.visual.accentText },
+    track: { marginVertical: brandSpacing4.xs },
     row: {
       flexDirection: "row",
       alignItems: "center",

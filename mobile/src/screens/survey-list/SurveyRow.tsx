@@ -8,7 +8,7 @@ import { formatShortDateTime, formatSyncErrorForUser } from "../../app/formatter
 import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/survey-logic"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
-import { AppStatusChip } from "../../ui/AppStatusChip"
+import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { feedback } from "../../ui/feedback"
 import { createRowStyles } from "./row-styles"
 import { RowIndicator, resolveSurveyRowTone } from "./row-indicator"
@@ -129,7 +129,8 @@ function SurveyRowComponent({
         title={survey.site_name?.trim() || fr.common.untitledSurvey}
         status={
           <>
-            <AppStatusChip
+            <AppChoiceChip
+              variant="status"
               label={uiStatusLabel}
               tone={rowTone}
               labelStyle={rowTone === "danger" ? styles.badgeTextDanger : undefined}

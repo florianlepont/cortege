@@ -481,7 +481,7 @@ their legacy roles (`heroTitle`, `sectionTitle`, `label`, `input`, `button`).
 | `ForestCard`, `ForestAurora` | forest card and its animated backdrop (13.2) |
 | `ContourLines` | static contour rings (`app/contour-paths.ts`): survey map card placeholder, behind the Accueil "Nouveau relevé" card; its drift exists but every use is still (`animated={false}`) |
 | `GradientNumeral` | SVG score numeral, white to `#C8DDA0`; `NUMERAL_RENDER_MODE` stays `"gradient"` (kept at the batch 2 check), `"solid"` is the one-line fallback |
-| `GlowBar`, `ScoreRing`, `FactorBarsChart` | glowing /50 gauge; 38 pt list ring on the trailing side of rows (D-27a), dashed when there is no score; ten non-interactive factor bars, on the Score page only (D-24) |
+| `ProgressBar` (variant `glow`), `ScoreRing`, `FactorBarsChart` | glowing /50 gauge; 38 pt list ring on the trailing side of rows (D-27a), dashed when there is no score; ten non-interactive factor bars, on the Score page only (D-24) |
 | `AnimatedNumber`, `HaloPulse` | count-up for tile values; one-shot halo on submit and sync success |
 | `useFocusEntrance` / `EntranceView`, `useListEntrance` / `ListEntranceRow` | section slide-up on each focus (360 ms, 20 pt); list row entrance, rows 0 to 7, first mount |
 | `RipplePressable` | green wave from the touch point on list rows (D-21), a highlight under Reduce Motion |

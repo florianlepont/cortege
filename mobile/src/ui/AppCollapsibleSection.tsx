@@ -14,7 +14,7 @@ import Animated, {
 import { brandMotion, brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
-import { AppStatusChip } from "./AppStatusChip"
+import { AppChoiceChip } from "./AppChoiceChip"
 import { AppPressable } from "./AppPressable"
 
 type AppCollapsibleSectionProps = {
@@ -62,7 +62,7 @@ export function AppCollapsibleSection({
         accessibilityLabel={fr.components.collapsibleSection.toggleLabel({ title, expanded })}
       >
         <Text style={styles.title}>{title}</Text>
-        {badge ? <AppStatusChip label={badge} tone="neutral" /> : null}
+        {badge ? <AppChoiceChip variant="status" label={badge} tone="neutral" /> : null}
         <Animated.View style={chevronStyle}>
           <Ionicons name="chevron-down-outline" size={14} color={theme.colors.textSecondary} />
         </Animated.View>
