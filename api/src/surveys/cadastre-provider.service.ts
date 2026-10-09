@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { LRUCache } from "lru-cache"
 import { appConfigOf } from "../config/app-config"
+import { fetchIgnJson } from "./ign-http"
 import {
   apiCartoSection,
   arrondissementCity,
@@ -28,10 +29,10 @@ export type WfsParcelFeature = {
 }
 
 /**
- * The middle of a GeoJSON geometry's bounding box, or null without a usable coordinate. A parcel
- * is small, so the box centre is a fair centroid for placing a pin and zooming a map.
+ * The bounding box of a GeoJSON geometry as [minLng, minLat, maxLng, maxLat], or null without a
+ * usable coordinate. Any nesting is read; what is not a finite [lng, lat] pair is ignored.
  */
-export function geometryCenter(geometry: unknown): { lat: number; lng: number } | null {
+export function geometryBbox(geometry: unknown): [number, number, number, number] | null {
   let minLng = Infinity
   let maxLng = -Infinity
   let minLat = Infinity
@@ -52,7 +53,17 @@ export function geometryCenter(geometry: unknown): { lat: number; lng: number } 
   }
   visit((geometry as { coordinates?: unknown } | null | undefined)?.coordinates)
   if (!Number.isFinite(minLng) || !Number.isFinite(minLat)) return null
-  return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2 }
+  return [minLng, minLat, maxLng, maxLat]
+}
+
+/**
+ * The middle of a GeoJSON geometry's bounding box, or null without a usable coordinate. A parcel
+ * is small, so the box centre is a fair centroid for placing a pin and zooming a map.
+ */
+export function geometryCenter(geometry: unknown): { lat: number; lng: number } | null {
+  const bbox = geometryBbox(geometry)
+  if (!bbox) return null
+  return { lat: (bbox[1] + bbox[3]) / 2, lng: (bbox[0] + bbox[2]) / 2 }
 }
 
 /**
@@ -261,6 +272,34 @@ export class CadastreProviderService {
     return centroid ? { centroid, geometry } : null
   }
 
+  /**
+   * A parcel by its key (INSEE commune code, section, 4-digit number), from IGN API Carto: its
+   * IDU, commune name, centre and bounding box. Null when the provider is not IGN or when API
+   * Carto has no parcel with a usable geometry. A provider failure throws (unlike the
+   * registration paths, which swallow it), so the search can tell "no such parcel" from "IGN
+   * unavailable".
+   */
+  async lookupParcelByKey(
+    communeCode: string,
+    section: string,
+    number: string,
+  ): Promise<{
+    idu: string
+    communeName: string | null
+    centroid: { lat: number; lng: number }
+    bbox: [number, number, number, number]
+  } | null> {
+    if (this.provider !== "ign") return null
+    const feature = await this.fetchApiCartoParcel(communeCode, section, number)
+    if (!feature) return null
+    const centroid = geometryCenter(feature.geometry)
+    const bbox = geometryBbox(feature.geometry)
+    const key = parseWfsParcelProperties(this.asRecord(feature.properties))
+    if (!centroid || !bbox || !key) return null
+    const name = this.readFirstString(this.asRecord(feature.properties), ["nom_com"])
+    return { idu: key.parcel_id, communeName: name, centroid, bbox }
+  }
+
   async resolveFromPoint(lat: number, lng: number): Promise<CadastreResolvedParcel | null> {
     if (this.provider === "ign") {
       try {
@@ -382,11 +421,12 @@ export class CadastreProviderService {
     }
   }
 
-  private async resolveGeometryFromApiCarto(
+  /** The first API Carto parcel of a key, or null. Throws when the call fails. */
+  private async fetchApiCartoParcel(
     communeCode: string,
     section: string,
     number: string,
-  ): Promise<JsonRecord | undefined> {
+  ): Promise<{ properties: unknown; geometry: unknown } | null> {
     const url = new URL(this.ignApiCartoParcelUrl)
     // API Carto knows Paris, Lyon and Marseille parcels by the city's code_insee and code_arr.
     const arrondissement = arrondissementCity(communeCode)
@@ -396,10 +436,16 @@ export class CadastreProviderService {
     url.searchParams.set("numero", number)
     url.searchParams.set("source_ign", "PCI")
     url.searchParams.set("_limit", "1")
+    return this.firstFeature(await this.fetchJson(url))
+  }
 
+  private async resolveGeometryFromApiCarto(
+    communeCode: string,
+    section: string,
+    number: string,
+  ): Promise<JsonRecord | undefined> {
     try {
-      const payload = await this.fetchJson(url)
-      const feature = this.firstFeature(payload)
+      const feature = await this.fetchApiCartoParcel(communeCode, section, number)
       if (!feature) {
         return undefined
       }
@@ -551,25 +597,9 @@ export class CadastreProviderService {
     )
   }
 
-  /**
-   * The single IGN HTTP call (D-08). `AbortSignal.timeout` covers the whole exchange: the
-   * body is awaited before returning, so a server that sends headers and then stalls is
-   * aborted too (the previous version cleared its timer as soon as the headers arrived).
-   */
+  /** The single IGN HTTP rule (D-08), shared with the geocoder: see `fetchIgnJson`. */
   private async fetchJson(url: URL): Promise<unknown> {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-      signal: AbortSignal.timeout(this.timeoutMs),
-    })
-
-    if (!response.ok) {
-      throw new Error(`cadastre provider returned HTTP ${response.status}`)
-    }
-
-    return await response.json()
+    return await fetchIgnJson(url, { timeoutMs: this.timeoutMs, label: "cadastre provider" })
   }
 
   private firstFeature(payload: unknown): { properties: unknown; geometry: unknown } | null {

@@ -3,6 +3,7 @@ import * as http from "http"
 import { AddressInfo, Socket } from "net"
 import {
   CadastreProviderService,
+  geometryBbox,
   geometryCenter,
   LngLatBbox,
   WfsParcelFeature,
@@ -318,6 +319,211 @@ describe("CadastreProviderService", () => {
       const service = buildService({ CADASTRE_PROVIDER: "ign" })
       await expect(service.lookupParcelById("94077000AW0066")).resolves.toBeNull()
       await expect(service.lookupParcelById("94077000AW0067")).resolves.toBeNull()
+    })
+  })
+
+  describe("a parcel looked up by its key (global search)", () => {
+    // Recorded from IGN API Carto (apicarto.ign.fr/api/cadastre/parcelle, 2026-10-09), geometry cut
+    // to a few vertices.
+    const fontainebleau = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "MultiPolygon",
+            coordinates: [
+              [
+                [
+                  [2.7001, 48.4001],
+                  [2.7003, 48.4001],
+                  [2.7003, 48.4005],
+                  [2.7001, 48.4005],
+                  [2.7001, 48.4001],
+                ],
+              ],
+            ],
+          },
+          properties: {
+            numero: "0123",
+            feuille: 1,
+            section: "AB",
+            code_dep: "77",
+            nom_com: "Fontainebleau",
+            code_com: "186",
+            com_abs: "000",
+            code_arr: "000",
+            idu: "77186000AB0123",
+            code_insee: "77186",
+          },
+        },
+      ],
+    }
+    const parisParcel = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "MultiPolygon",
+            coordinates: [
+              [
+                [
+                  [2.4001, 48.8301],
+                  [2.4003, 48.8301],
+                  [2.4003, 48.8303],
+                  [2.4001, 48.8301],
+                ],
+              ],
+            ],
+          },
+          properties: {
+            numero: "0010",
+            section: "BL",
+            code_dep: "75",
+            nom_com: "Paris 12e Arrondissement",
+            code_com: "056",
+            com_abs: "000",
+            code_arr: "112",
+            idu: "75112000BL0010",
+            code_insee: "75056",
+          },
+        },
+      ],
+    }
+    const empty = { type: "FeatureCollection", features: [] }
+
+    function fetchReturning(...payloads: unknown[]) {
+      const fetchMock = jest.fn<Promise<MockResponse>, [URL, RequestInit?]>()
+      for (const payload of payloads) fetchMock.mockResolvedValueOnce(okJson(payload))
+      global.fetch = fetchMock as unknown as typeof global.fetch
+      return fetchMock
+    }
+
+    it("asks API Carto by commune, section and number and returns idu, name, centre and box", async () => {
+      const fetchMock = fetchReturning(fontainebleau)
+
+      const found = await buildService({ CADASTRE_PROVIDER: "ign" }).lookupParcelByKey(
+        "77186",
+        "AB",
+        "0123",
+      )
+
+      expect(found).toMatchObject({
+        idu: "77186000AB0123",
+        communeName: "Fontainebleau",
+        bbox: [2.7001, 48.4001, 2.7003, 48.4005],
+      })
+      expect(found?.centroid.lat).toBeCloseTo(48.4003, 6)
+      expect(found?.centroid.lng).toBeCloseTo(2.7002, 6)
+      const url = fetchMock.mock.calls[0][0]
+      expect(url.searchParams.get("code_insee")).toBe("77186")
+      expect(url.searchParams.get("code_arr")).toBeNull()
+      expect(url.searchParams.get("section")).toBe("AB")
+      expect(url.searchParams.get("numero")).toBe("0123")
+      expect(url.searchParams.get("source_ign")).toBe("PCI")
+      expect(url.searchParams.get("_limit")).toBe("1")
+    })
+
+    it("asks for a Paris arrondissement by the city code and code_arr, a one-letter section on two", async () => {
+      const fetchMock = fetchReturning(parisParcel, parisParcel)
+      const service = buildService({ CADASTRE_PROVIDER: "ign" })
+
+      const found = await service.lookupParcelByKey("75112", "BL", "0010")
+      await service.lookupParcelByKey("75112", "A", "0010")
+
+      expect(found?.idu).toBe("75112000BL0010")
+      expect(found?.communeName).toBe("Paris 12e Arrondissement")
+      const first = fetchMock.mock.calls[0][0]
+      expect(first.searchParams.get("code_insee")).toBe("75056")
+      expect(first.searchParams.get("code_arr")).toBe("112")
+      expect(fetchMock.mock.calls[1][0].searchParams.get("section")).toBe("0A")
+    })
+
+    it("answers null for no feature, no usable geometry or no usable key", async () => {
+      const noGeometry = {
+        features: [{ properties: fontainebleau.features[0].properties, geometry: {} }],
+      }
+      const noKey = {
+        features: [{ properties: { nom_com: "X" }, geometry: fontainebleau.features[0].geometry }],
+      }
+      fetchReturning(empty, noGeometry, noKey)
+      const service = buildService({ CADASTRE_PROVIDER: "ign" })
+
+      await expect(service.lookupParcelByKey("77186", "AB", "0123")).resolves.toBeNull()
+      await expect(service.lookupParcelByKey("77186", "AB", "0123")).resolves.toBeNull()
+      await expect(service.lookupParcelByKey("77186", "AB", "0123")).resolves.toBeNull()
+    })
+
+    it("has no commune name when API Carto sends none", async () => {
+      const properties = { ...fontainebleau.features[0].properties, nom_com: "  " }
+      fetchReturning({ features: [{ ...fontainebleau.features[0], properties }] })
+
+      const found = await buildService({ CADASTRE_PROVIDER: "ign" }).lookupParcelByKey(
+        "77186",
+        "AB",
+        "0123",
+      )
+
+      expect(found?.communeName).toBeNull()
+    })
+
+    it("answers null without a call when the provider is synthetic", async () => {
+      const fetchMock = fetchReturning()
+
+      await expect(
+        buildService({ CADASTRE_PROVIDER: "synthetic" }).lookupParcelByKey("77186", "AB", "0123"),
+      ).resolves.toBeNull()
+
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it("lets a provider failure through, with the cadastre provider message", async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        json: async () => ({}),
+      }) as unknown as typeof global.fetch
+      const service = buildService({ CADASTRE_PROVIDER: "ign" })
+
+      await expect(service.lookupParcelByKey("77186", "AB", "0123")).rejects.toThrow(
+        "cadastre provider returned HTTP 503",
+      )
+
+      global.fetch = jest.fn().mockRejectedValue(new Error("network down")) as never
+      await expect(service.lookupParcelByKey("77186", "AB", "0123")).rejects.toThrow("network down")
+    })
+  })
+
+  describe("geometryBbox", () => {
+    it("is the box of any GeoJSON nesting, ignoring what is not a coordinate", () => {
+      expect(
+        geometryBbox({
+          type: "MultiPolygon",
+          coordinates: [
+            [
+              [
+                [1, 40],
+                [3, 40],
+                [3, 42],
+              ],
+            ],
+            [
+              [
+                [5, 44],
+                ["x", 1],
+                [Number.NaN, 2],
+              ],
+            ],
+          ],
+        }),
+      ).toEqual([1, 40, 5, 44])
+    })
+
+    it("is null without any coordinate", () => {
+      expect(geometryBbox(undefined)).toBeNull()
+      expect(geometryBbox({ coordinates: [] })).toBeNull()
+      expect(geometryBbox({ coordinates: "x" })).toBeNull()
     })
   })
 
