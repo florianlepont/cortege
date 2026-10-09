@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 24
-current_phase_name: survey-history-split
-status: executing
-stopped_at: Phase 24 plans 01 to 11 executed, plan 12 waiting for the owner phone check
-last_updated: "2026-10-09T10:30:00.000Z"
+current_phase: 25
+current_phase_name: Global Search
+status: ready_to_discuss
+stopped_at: Phase 24 complete (owner phone check passed 2026-10-09); next Phase 25 (global search), then 25.1 (PDF export)
+last_updated: "2026-10-09T14:10:00.000Z"
 last_activity: 2026-10-09
-last_activity_desc: Phase 24 executing (demo data with history added), main merged (Phase 25.1 inserted)
+last_activity_desc: Phase 24 closed after the owner phone check; PRs 255, 256, 257 merged
 progress:
   total_phases: 29
-  completed_phases: 23
+  completed_phases: 24
   total_plans: 194
   completed_plans: 193
-  percent: 79
+  percent: 83
 ---
 
 # Project State
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 24 — survey-history-split
+**Current focus:** Phase 25 (Global Search) is next, then Phase 25.1 (PDF export), Phase 26 (UX/UI audit), Phase 27 (quality audit) and Phase 28 (field validation). Phase 24 (survey history split) closed 2026-10-09.
 
 ## Current Position
 
-Phase: 24 (survey-history-split) — EXECUTING
-Plan: 12 of 12
-Status: Ready to execute
-Last activity: 2026-10-09 — Phase 24 execution started
+Phase: 25 (Global Search), not discussed yet
+Plan: none
+Status: Phase 24 complete; Phase 25 ready to discuss
+Last activity: 2026-10-09 — Phase 24 closed on the owner's phone check
 
-Progress: [████████░░] 23/29 phases complete
+Progress: [████████░░] 24/29 phases complete
 
 ## Performance Metrics
 
