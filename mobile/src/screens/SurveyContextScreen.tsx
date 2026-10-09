@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { ScrollView, View } from "react-native"
+import { View } from "react-native"
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
@@ -13,6 +13,7 @@ import { type SurveyContextScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
+import { TitledScrollView } from "../ui/TitledScrollView"
 
 const t = fr.surveyDetail.contextScreen
 const a11y = fr.surveyDetail.a11y
@@ -61,7 +62,8 @@ export function SurveyContextScreen({
   )
 
   return (
-    <ScrollView
+    <TitledScrollView
+      collapsingTitle={fr.navigation.headers.surveyContext}
       // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
       style={styles.scroll}
       contentContainerStyle={contentStyle}
@@ -108,6 +110,6 @@ export function SurveyContextScreen({
         onUpdateCas3Scale={onUpdateCas3Scale}
         onSwitchToV32={onSwitchToV32}
       />
-    </ScrollView>
+    </TitledScrollView>
   )
 }

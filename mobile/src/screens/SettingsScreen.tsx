@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Alert, Platform, ScrollView, StyleSheet } from "react-native"
+import { Alert, Platform, StyleSheet } from "react-native"
 import { PageTitle } from "../ui/PageTitle"
 import Constants from "expo-constants"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -15,6 +15,7 @@ import { AppField } from "../ui/AppField"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
 import { useFrameLargeTitle } from "../ui/frame-large-title"
 import { fr } from "../i18n"
+import { TitledScrollView } from "../ui/TitledScrollView"
 
 const t = fr.settings
 const actions = fr.common.actions
@@ -147,7 +148,8 @@ export function SettingsScreen({
   ]
 
   return (
-    <ScrollView
+    <TitledScrollView
+      collapsingTitle={t.title}
       style={styles.screen}
       contentContainerStyle={[
         styles.content,
@@ -192,7 +194,7 @@ export function SettingsScreen({
           />
         </AppCollapsibleSection>
       ) : null}
-    </ScrollView>
+    </TitledScrollView>
   )
 }
 

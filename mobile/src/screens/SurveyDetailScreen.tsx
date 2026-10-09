@@ -31,6 +31,7 @@ import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 import { useFinishBarHeight } from "./survey-detail/useFinishBarHeight"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useScrollTop } from "./survey-detail/useScrollTop"
+import { TitledScrollView } from "../ui/TitledScrollView"
 
 const menuText = fr.surveyDetail.menu
 const actionsText = fr.surveyDetail.actions
@@ -221,7 +222,8 @@ export function SurveyDetailScreen({
 
   return (
     <View style={styles.scroll}>
-      <ScrollView
+      <TitledScrollView
+        collapsingTitle={activeSiteName}
         ref={scrollRef}
         // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19),
         // or iOS insets it under the native large title (12.2-17).
@@ -302,7 +304,7 @@ export function SurveyDetailScreen({
             onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
           />
         ) : null}
-      </ScrollView>
+      </TitledScrollView>
 
       <FinishBar
         cta={cta}

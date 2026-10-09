@@ -1,4 +1,4 @@
-import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
+import { Alert, Platform, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { PageTitle } from "../ui/PageTitle"
 import { Ionicons } from "@expo/vector-icons"
@@ -13,6 +13,7 @@ import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList
 import { useFrameLargeTitle } from "../ui/frame-large-title"
 import { accountStyles as styles } from "./account/styles"
 import { AppPressable } from "../ui/AppPressable"
+import { TitledScrollView } from "../ui/TitledScrollView"
 
 const t = fr.offlineMap.areas
 const manage = t.manage
@@ -78,7 +79,8 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
         ]
 
   return (
-    <ScrollView
+    <TitledScrollView
+      collapsingTitle={manage.title}
       style={styles.screen}
       contentContainerStyle={[
         styles.content,
@@ -107,7 +109,7 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
       ) : (
         <AppGroupedList sections={sections} />
       )}
-    </ScrollView>
+    </TitledScrollView>
   )
 }
 

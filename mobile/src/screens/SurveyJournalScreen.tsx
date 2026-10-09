@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react"
-import { RefreshControl, ScrollView, StyleSheet } from "react-native"
+import { RefreshControl, StyleSheet } from "react-native"
 import { brandDefaultFontFamily, brandTypeScale } from "../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
@@ -11,6 +11,7 @@ import { EventsTab } from "./survey-detail/EventsTab"
 import { type SurveyJournalScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
+import { TitledScrollView } from "../ui/TitledScrollView"
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
@@ -48,7 +49,8 @@ export function SurveyJournalScreen({
   }, [selectedSurvey.id])
 
   return (
-    <ScrollView
+    <TitledScrollView
+      collapsingTitle={fr.navigation.headers.surveyJournal}
       // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
       style={styles.scroll}
       contentContainerStyle={contentStyle}
@@ -70,6 +72,6 @@ export function SurveyJournalScreen({
           isLoading={isLoading}
         />
       </EntranceView>
-    </ScrollView>
+    </TitledScrollView>
   )
 }
