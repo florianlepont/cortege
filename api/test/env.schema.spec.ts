@@ -70,6 +70,7 @@ describe("config: loadAppConfig defaults (D-02: outside production nothing chang
     expect(config.cadastre.wfsUrl).toBe("https://data.geopf.fr/wfs/ows")
     expect(config.cadastre.wfsTypename).toBe("CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle")
     expect(config.cadastre.reverseUrl).toBe("https://data.geopf.fr/geocodage/reverse")
+    expect(config.cadastre.searchUrl).toBe("https://data.geopf.fr/geocodage/search")
     expect(config.cadastre.apiCartoParcelUrl).toBe("https://apicarto.ign.fr/api/cadastre/parcelle")
     expect(config.auth0.domain).toBe("")
     expect(config.auth0.audience).toBe("")
@@ -162,6 +163,13 @@ describe("config: boolean and enum parsing (today's predicates)", () => {
     expect(loadAppConfig({ CADASTRE_PROVIDER_ALLOW_FALLBACK: "no" }).cadastre.allowFallback).toBe(
       true,
     )
+  })
+
+  it("reads GEOCODING_IGN_SEARCH_URL as the place search URL", () => {
+    expect(
+      loadAppConfig({ GEOCODING_IGN_SEARCH_URL: "http://localhost:9999/search" }).cadastre
+        .searchUrl,
+    ).toBe("http://localhost:9999/search")
   })
 
   it("normalises CADASTRE_PROVIDER and falls back to local storage outside production", () => {

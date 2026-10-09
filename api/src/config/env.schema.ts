@@ -57,6 +57,7 @@ export class EnvironmentVariables {
   @IsOptional() @IsString() CADASTRE_PROVIDER_ALLOW_FALLBACK?: string
   @IsOptional() @IsString() CADASTRE_PROVIDER_TIMEOUT_MS?: string
   @IsOptional() @IsString() CADASTRE_IGN_REVERSE_URL?: string
+  @IsOptional() @IsString() GEOCODING_IGN_SEARCH_URL?: string
   @IsOptional() @IsString() CADASTRE_IGN_APICARTO_PARCEL_URL?: string
   @IsOptional() @IsString() CADASTRE_IGN_WFS_URL?: string
   @IsOptional() @IsString() CADASTRE_IGN_WFS_TYPENAME?: string

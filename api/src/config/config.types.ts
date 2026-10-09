@@ -60,6 +60,7 @@ export type AppConfig = {
     allowFallback: boolean
     timeoutMs: number
     reverseUrl: string
+    searchUrl: string
     apiCartoParcelUrl: string
     wfsUrl: string
     wfsTypename: string

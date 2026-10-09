@@ -21,6 +21,7 @@ Auth0 configuration:
 Cadastre resolution mode:
 - `CADASTRE_PROVIDER=synthetic` (default, offline-safe).
 - `CADASTRE_PROVIDER=ign` to resolve real parcel metadata through IGN reverse geocoding (`CADASTRE_IGN_REVERSE_URL`).
+- `GEOCODING_IGN_SEARCH_URL` is the IGN geocoder behind the global search's place lookup (default `https://data.geopf.fr/geocodage/search`); it follows the same provider switch `CADASTRE_PROVIDER` (`synthetic` answers no places) and the timeout `CADASTRE_PROVIDER_TIMEOUT_MS`.
 - With `ign`, the provider also attempts parcel polygon fetch from API Carto (`CADASTRE_IGN_APICARTO_PARCEL_URL`).
 - `CADASTRE_PROVIDER_ALLOW_FALLBACK=true` keeps synthetic fallback if IGN is unavailable.
 
