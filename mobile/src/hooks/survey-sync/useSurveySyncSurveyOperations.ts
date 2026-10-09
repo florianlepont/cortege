@@ -471,6 +471,32 @@ export function useSurveySyncSurveyOperations({
     ],
   )
 
+  /**
+   * Leaving the new-survey wizard before naming the site: the draft the wizard opened is empty, so
+   * it goes at once (no alert, no status line) instead of piling up as "Relevé sans titre".
+   */
+  const handleDiscardEmptyDraft = useCallback(
+    async (surveyId: string): Promise<void> => {
+      try {
+        const result = await queueDeleteSurvey(surveyId)
+        await refreshLocalSurveys()
+        await refreshLocalAttachments()
+        if (!result.queued_delete) return
+        if (selectedSurveyId === surveyId) onCloseSurveyDetail()
+        void maybeAutoSync("survey-delete-queued")
+      } catch (error) {
+        logStatusDetail("surveyOps.discardEmptyDraft", error)
+      }
+    },
+    [
+      maybeAutoSync,
+      onCloseSurveyDetail,
+      refreshLocalAttachments,
+      refreshLocalSurveys,
+      selectedSurveyId,
+    ],
+  )
+
   const handleQueueAttachmentFromLibrary = useCallback(
     async (surveyId: string): Promise<void> => {
       const current = surveys.find((survey) => survey.id === surveyId)
@@ -615,6 +641,7 @@ export function useSurveySyncSurveyOperations({
     handleDiscardSurvey,
     handleToggleVisibility,
     confirmDeleteSurvey,
+    handleDiscardEmptyDraft,
     handleQueueAttachmentFromLibrary,
     handleQueueAttachmentFromCamera,
     handleDeleteAttachment,
