@@ -21,7 +21,7 @@ import { ListEntranceRow } from "../../ui/ListEntranceRow"
 import { useListEntrance } from "../../ui/useListEntrance"
 import { resolveRowScore } from "../survey-list/row-score"
 import { SurveyRow } from "../survey-list/SurveyRow"
-import { CommunityRow } from "./CommunityRow"
+import { CommunityRow } from "../community-survey/CommunityRow"
 import { createSearchStyles } from "./search.styles"
 import { AppPressable } from "../../ui/AppPressable"
 

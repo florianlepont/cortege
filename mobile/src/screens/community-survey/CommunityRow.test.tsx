@@ -4,6 +4,7 @@ import type { CommunitySurveyItem } from "@cortege/ibp-domain"
 import { brandInteraction } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
+import { RECENT_LAYOUT } from "../home/layout-budget"
 import { ROW_STATUS_MIN_HEIGHT } from "../survey-list/row-styles"
 import { SurveyRow } from "../survey-list/SurveyRow"
 import { CommunityRow } from "./CommunityRow"
@@ -175,5 +176,43 @@ describe("CommunityRow size (D-23)", () => {
       .map((node) => String(node.props.children))
     expect(texts).toContain(fr.common.untitledSurvey)
     expect(texts.join(" ")).toContain(fr.surveyList.community.unknownAuthor)
+  })
+
+  describe("compact density (25-04)", () => {
+    const compact = (onOpen = jest.fn()) =>
+      render(<CommunityRow item={item} onOpen={onOpen} density="compact" />)
+    const press = (tree: ReactTestRenderer) =>
+      tree.root.findAll(
+        (node: ReactTestInstance) =>
+          (node.type as unknown) === "Pressable" && node.props.testID === "community-row-c1",
+      )[0]
+
+    test("is the slim 52 pt row with the 32 pt ring", () => {
+      const tree = compact()
+      const style = Object.assign({}, ...[press(tree).props.style].flat(3))
+      expect(style.minHeight).toBe(RECENT_LAYOUT.rowHeight)
+      expect(tree.root.findByType("ScoreRing" as never).props.size).toBe(RECENT_LAYOUT.ringSize)
+      expect(RECENT_LAYOUT.ringSize).toBe(32)
+    })
+
+    test("the regular density keeps the default ring size", () => {
+      const tree = render(<CommunityRow item={item} onOpen={jest.fn()} density="regular" />)
+      expect(tree.root.findByType("ScoreRing" as never).props.size).toBeUndefined()
+    })
+
+    test("keeps the title, the author and date line, the label and the open action", () => {
+      const onOpen = jest.fn()
+      const tree = compact(onOpen)
+      const texts = tree.root
+        .findAll((node) => (node.type as unknown) === "Text")
+        .map((node) => String(node.props.children))
+      expect(texts).toContain("Forêt de Camille")
+      expect(texts.join(" ")).toContain("Camille")
+      expect(press(tree).props.accessibilityLabel).toBe(
+        fr.surveyList.community.a11y({ name: "Forêt de Camille", author: "Camille", score: 34 }),
+      )
+      act(() => press(tree).props.onPress())
+      expect(onOpen).toHaveBeenCalledWith("c1")
+    })
   })
 })
