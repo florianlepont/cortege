@@ -414,6 +414,7 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
         sectorAvgScore: null,
         loading: false,
         locationDenied: false,
+        positionUnavailable: false,
         error: false,
       },
       load: jest.fn(async () => undefined),

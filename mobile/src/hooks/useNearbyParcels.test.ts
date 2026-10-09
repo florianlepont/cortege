@@ -11,11 +11,13 @@ jest.mock("react-native", () => ({ Platform: { OS: "ios" } }))
 const mockGetForegroundPermissionsAsync = jest.fn()
 const mockRequestForegroundPermissionsAsync = jest.fn()
 const mockGetCurrentPositionAsync = jest.fn()
+const mockGetLastKnownPositionAsync = jest.fn()
 
 jest.mock("expo-location", () => ({
   getForegroundPermissionsAsync: mockGetForegroundPermissionsAsync,
   requestForegroundPermissionsAsync: mockRequestForegroundPermissionsAsync,
   getCurrentPositionAsync: mockGetCurrentPositionAsync,
+  getLastKnownPositionAsync: mockGetLastKnownPositionAsync,
   Accuracy: { Balanced: 3 },
 }))
 
@@ -131,23 +133,44 @@ describe("useNearbyParcels", () => {
     expect(result.current.locationDenied).toBe(false)
   })
 
-  test("a position that never comes ends as an error, not as an endless placeholder (OA-113)", async () => {
+  async function loadWithPositionNeverComing() {
+    mockGetForegroundPermissionsAsync.mockResolvedValue({ granted: true })
+    mockGetCurrentPositionAsync.mockReturnValue(new Promise(() => undefined))
+    const { result } = await renderHook(() => useNearbyParcels(API_URL, ACCESS_TOKEN))
+    let pending: Promise<void> | undefined
+    await act(async () => {
+      pending = result.current.load()
+      await jest.advanceTimersByTimeAsync(20000)
+      await pending
+    })
+    return result
+  }
+
+  test("a position that never comes ends as a position message, not as a network error (OA-113)", async () => {
     jest.useFakeTimers()
     try {
-      mockGetForegroundPermissionsAsync.mockResolvedValue({ granted: true })
-      mockGetCurrentPositionAsync.mockReturnValue(new Promise(() => undefined))
+      mockGetLastKnownPositionAsync.mockResolvedValue(null)
+      const result = await loadWithPositionNeverComing()
 
-      const { result } = await renderHook(() => useNearbyParcels(API_URL, ACCESS_TOKEN))
-      let pending: Promise<void> | undefined
-      await act(async () => {
-        pending = result.current.load()
-        await jest.advanceTimersByTimeAsync(20000)
-        await pending
-      })
-
-      expect(result.current.error).toBe(true)
+      expect(result.current.positionUnavailable).toBe(true)
+      expect(result.current.error).toBe(false)
       expect(result.current.loading).toBe(false)
       expect(mockFetchPublicParcelStatuses).not.toHaveBeenCalled()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  test("a position that never comes falls back on the last position the phone remembers", async () => {
+    jest.useFakeTimers()
+    try {
+      mockGetLastKnownPositionAsync.mockResolvedValue({ coords: { latitude: 47, longitude: 2 } })
+      mockFetchPublicParcelStatuses.mockResolvedValue({ items: [] })
+      const result = await loadWithPositionNeverComing()
+
+      expect(result.current.positionUnavailable).toBe(false)
+      expect(result.current.position).toEqual({ lat: 47, lng: 2 })
+      expect(mockFetchPublicParcelStatuses).toHaveBeenCalledTimes(1)
     } finally {
       jest.useRealTimers()
     }

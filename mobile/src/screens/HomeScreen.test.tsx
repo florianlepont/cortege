@@ -114,6 +114,7 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof HomeScreen>> =
       sectorAvgScore: null,
       loading: false,
       locationDenied: false,
+      positionUnavailable: false,
       error: false,
     },
     onLoadNearbyParcels: jest.fn(),
@@ -673,14 +674,16 @@ describe("pickAlertSurvey", () => {
       expect(flat(header).marginBottom).toBe(HOME_GAPS.sectionHeader)
     })
 
-    test("a denied location or a load error shows a notice instead of the map", () => {
-      mount(makeProps({ nearbyParcels: { ...makeProps().nearbyParcels, locationDenied: true } }))
+    test.each([
+      ["a denied location", { locationDenied: true }, fr.home.nearby.locationDenied],
+      ["a position not found", { positionUnavailable: true }, fr.home.nearby.positionUnavailable],
+      ["a load error", { error: true }, fr.home.nearby.loadError],
+    ])("%s shows its own notice instead of the map", (_label, patch, message) => {
+      mount(makeProps({ nearbyParcels: { ...makeProps().nearbyParcels, ...patch } }))
       expect(tree.root.findAllByType("NearbyMapCard" as never)).toHaveLength(0)
-      expect(tree.root.findAllByType("AppNotice" as never)).toHaveLength(1)
-      act(() => tree.unmount())
-      mount(makeProps({ nearbyParcels: { ...makeProps().nearbyParcels, error: true } }))
-      expect(tree.root.findAllByType("NearbyMapCard" as never)).toHaveLength(0)
-      expect(tree.root.findAllByType("AppNotice" as never)).toHaveLength(1)
+      const notices = tree.root.findAllByType("AppNotice" as never)
+      expect(notices).toHaveLength(1)
+      expect(notices[0].props.message).toBe(message)
     })
   })
 

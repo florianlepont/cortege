@@ -352,6 +352,14 @@ export function HomeScreen({
                 message={fr.home.nearby.locationDenied}
               />
             </View>
+          ) : nearbyParcels.positionUnavailable ? (
+            <View style={styles.pageInset}>
+              <AppNotice
+                tone="info"
+                icon="locate-outline"
+                message={fr.home.nearby.positionUnavailable}
+              />
+            </View>
           ) : nearbyParcels.error ? (
             <View style={styles.pageInset}>
               <AppNotice tone="warning" icon="wifi-outline" message={fr.home.nearby.loadError} />
