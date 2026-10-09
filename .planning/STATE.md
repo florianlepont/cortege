@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 24
 current_phase_name: survey-history-split
 status: executing
-stopped_at: Completed 24-03-PLAN.md
-last_updated: "2026-10-09T09:07:45.313Z"
+stopped_at: Completed 24-04-PLAN.md
+last_updated: "2026-10-09T09:13:43.938Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 24 execution started
 progress:
   total_phases: 28
   completed_phases: 14
   total_plans: 156
-  completed_plans: 185
+  completed_plans: 186
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 24 (survey-history-split) — EXECUTING
-Plan: 4 of 12
+Plan: 5 of 12
 Status: Ready to execute
 Last activity: 2026-10-09 — Phase 24 execution started
 
@@ -106,6 +106,7 @@ Progress: [████████░░] 23/28 phases complete
 | Phase 24 P01 | 15min | 2 tasks | 9 files |
 | Phase 24 P02 | 15min | 3 tasks | 7 files |
 | Phase 24 P03 | 20min | 3 tasks | 14 files |
+| Phase 24 P04 | 25min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -183,6 +184,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 24-01]: ibp_method_version added as optional nullable wire field on both history payloads (null = v3.0); no migration, filters unchanged — D-10 needs the method per history item
 - [Phase 24]: Plan 24-02: delta-text contrast pairs enforced by test without any token change; useCommunitySurvey depends on a withPhotos boolean, not the options object
 - [Phase 24]: 24-03: no error notice and no journal.loadFailed on the journal page (loadSurveyEvents swallows errors); surveyJournal only in SurveysStackParamList (D-03)
+- [Phase 24]: 24-04: delta base is the survey immediately before the current one; trend title and curve use the latest 8 surveys while the summary row uses all (pinned by test) — UI-SPEC flag 4, RESEARCH Pitfall 4 and Open Question 1
 
 ### Pending Todos
 
@@ -224,6 +226,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-09T09:07:45.308Z
-Stopped at: Completed 24-03-PLAN.md
+Last session: 2026-10-09T09:13:43.932Z
+Stopped at: Completed 24-04-PLAN.md
 Resume file: .planning/phases/24-survey-history-split/24-01-PLAN.md
