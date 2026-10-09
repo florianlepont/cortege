@@ -111,7 +111,13 @@ export function SyncStatusLine({
       ) : (
         <Animated.View style={[styles.dot, styles.dotWarning, dotAnimatedStyle]} />
       )}
-      <Text style={[styles.label, state !== "syncing" ? styles.labelWarning : null]}>{label}</Text>
+      {/* One line: on Android the native text wrapped "envoyer" onto a second line the 16 pt row clips. */}
+      <Text
+        numberOfLines={1}
+        style={[styles.label, state !== "syncing" ? styles.labelWarning : null]}
+      >
+        {label}
+      </Text>
     </AppPressable>
   )
 }

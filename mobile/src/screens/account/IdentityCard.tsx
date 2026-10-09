@@ -1,5 +1,6 @@
 import { useMemo } from "react"
-import { ActionSheetIOS, Alert, Image, Platform, View } from "react-native"
+import { ActionSheetIOS, Alert, Platform, View } from "react-native"
+import { Image } from "expo-image"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
@@ -140,6 +141,7 @@ export function IdentityCard({
               headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
             }}
             style={styles.avatarImage}
+            contentFit="cover"
             accessible={false}
           />
         ) : (

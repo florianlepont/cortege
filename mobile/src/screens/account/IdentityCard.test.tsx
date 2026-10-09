@@ -30,12 +30,18 @@ jest.mock("react-native", () => {
   return {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
-    Image: mockComponent("Image"),
     Pressable: mockComponent("Pressable"),
     Platform: { OS: "ios" },
     Alert: { alert: jest.fn() },
     ActionSheetIOS: { showActionSheetWithOptions: jest.fn() },
     StyleSheet: { create: <T extends object>(value: T): T => value },
+  }
+})
+
+jest.mock("expo-image", () => {
+  const ReactRef = jest.requireActual("react") as typeof import("react")
+  return {
+    Image: (props: object) => ReactRef.createElement("ExpoImage", props),
   }
 })
 
@@ -96,7 +102,7 @@ describe("IdentityCard", () => {
       currentUser: { ...user, profile_picture_url: "/users/me/picture" },
     })
 
-    const image = root.findByType("Image" as never)
+    const image = root.findByType("ExpoImage" as never)
     expect(image.props.source).toEqual({
       uri: "http://localhost:3000/v1/users/me/picture",
       headers: { Authorization: "Bearer t" },
@@ -109,7 +115,7 @@ describe("IdentityCard", () => {
       currentUser: { ...user, profile_picture_url: "https://cdn.example.org/p.jpg" },
     })
 
-    expect(root.findByType("Image" as never).props.source).toEqual({
+    expect(root.findByType("ExpoImage" as never).props.source).toEqual({
       uri: "https://cdn.example.org/p.jpg",
       headers: undefined,
     })
@@ -118,7 +124,7 @@ describe("IdentityCard", () => {
   it("renders initials, the name and the e-mail, and no role chip (OA-71)", async () => {
     const { root } = await renderCard()
 
-    expect(root.findAllByType("Image" as never)).toHaveLength(0)
+    expect(root.findAllByType("ExpoImage" as never)).toHaveLength(0)
     const texts = root.findAllByType("Text" as never).map((node) => node.props.children)
     expect(texts).toEqual(["MC", "Marie Curie", "marie@example.org"])
   })
