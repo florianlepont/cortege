@@ -3,6 +3,7 @@ import { getDb } from "./db"
 import { runInTransaction } from "./transaction"
 import { deleteAttachmentFile, deleteAllAttachmentFiles } from "./attachment-files"
 import { LOCAL_OWNER_SUB_KEY, LOCAL_OWNER_EMAIL_KEY } from "./local-owner"
+import { SEARCH_RECENTS_KEY } from "./search-recents"
 import {
   LocalSurvey,
   LocalAttachment,
@@ -527,9 +528,10 @@ export async function clearLocalIbpData(): Promise<void> {
     await tx.runAsync(`DELETE FROM local_attachments`)
     await tx.runAsync(`DELETE FROM local_surveys`)
     await tx.runAsync(`DELETE FROM local_meta WHERE key = 'downsync_cursor'`)
-    await tx.runAsync(`DELETE FROM local_meta WHERE key IN (?, ?)`, [
+    await tx.runAsync(`DELETE FROM local_meta WHERE key IN (?, ?, ?)`, [
       LOCAL_OWNER_SUB_KEY,
       LOCAL_OWNER_EMAIL_KEY,
+      SEARCH_RECENTS_KEY,
     ])
   })
 
