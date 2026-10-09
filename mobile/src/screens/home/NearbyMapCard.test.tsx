@@ -87,6 +87,7 @@ function render(parcels: NearbyParcel[], sectorAvgScore: number | null, onPress 
           sectorAvgScore,
           loading: false,
           locationDenied: false,
+          positionUnavailable: false,
           error: false,
         }}
         height={260}

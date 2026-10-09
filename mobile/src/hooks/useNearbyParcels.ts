@@ -21,6 +21,8 @@ export type NearbyParcelsState = {
   sectorAvgScore: number | null
   loading: boolean
   locationDenied: boolean
+  /** The phone gave no position in time and none is remembered: not a network problem. */
+  positionUnavailable: boolean
   error: boolean
 }
 
@@ -76,6 +78,7 @@ export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
     sectorAvgScore: null,
     loading: false,
     locationDenied: false,
+    positionUnavailable: false,
     error: false,
   })
 
@@ -83,7 +86,7 @@ export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
     if (!accessToken) {
       return
     }
-    setState((s) => ({ ...s, loading: true, error: false }))
+    setState((s) => ({ ...s, loading: true, error: false, positionUnavailable: false }))
 
     try {
       const permission = await Location.getForegroundPermissionsAsync()
@@ -95,14 +98,19 @@ export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
         }
       }
 
-      // A position that never comes (indoors, location services stalling) ends as an error the
-      // card can show, not as a placeholder that waits forever (OA-113).
+      // A position that never comes (indoors, location services stalling) ends as a message the
+      // card can show, not as a placeholder that waits forever (OA-113). The last position the
+      // phone remembers stands in for it; with none, the problem is the position, not the network.
       const position = await Promise.race([
         Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
         new Promise<never>((_resolve, reject) =>
           setTimeout(() => reject(new Error("position timeout")), POSITION_TIMEOUT_MS),
         ),
-      ])
+      ]).catch(async () => (await Location.getLastKnownPositionAsync()) ?? null)
+      if (!position) {
+        setState((s) => ({ ...s, loading: false, positionUnavailable: true }))
+        return
+      }
       const { latitude: lat, longitude: lng } = position.coords
       const bbox = buildBboxAroundPoint({ lat, lng }, RADIUS_DEG)
 
@@ -131,6 +139,7 @@ export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
         sectorAvgScore,
         loading: false,
         locationDenied: false,
+        positionUnavailable: false,
         error: false,
       })
     } catch {

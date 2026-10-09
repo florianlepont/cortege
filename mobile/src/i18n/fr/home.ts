@@ -75,6 +75,7 @@ export const homeFr = {
     seeMapLabel: "Voir la carte",
     locationDenied: "Activez la localisation pour voir les parcelles proches.",
     loadError: "Impossible de charger les parcelles. Vérifiez votre connexion.",
+    positionUnavailable: "Position introuvable pour le moment. Réessayez en extérieur.",
     empty: "Aucune parcelle relevée à moins de 2,5 km. Lancez-vous !",
     summary: ({ count }: { count: number }) =>
       `${count} ${plural(count, "parcelle")} ${plural(count, "relevée")}`,
