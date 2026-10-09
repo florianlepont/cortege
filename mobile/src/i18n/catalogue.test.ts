@@ -42,6 +42,10 @@ const LIST_ARGUMENTS: Record<string, unknown> = {
     { letter: "A", points: 3 },
     { letter: "B", points: null },
   ],
+  "parcelHistory.page.trend.a11y": [
+    { year: 2023, total: 21 },
+    { year: null, total: 27 },
+  ],
 }
 
 type Leaf = { path: string; value: unknown }

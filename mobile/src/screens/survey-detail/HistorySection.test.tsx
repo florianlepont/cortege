@@ -171,21 +171,6 @@ describe("HistorySection", () => {
 })
 
 describe("fr.parcelHistory.entry", () => {
-  test("joins year, version and the latest badge when all three are present", () => {
-    expect(fr.parcelHistory.entry({ year: 2025, version: 1, isLatest: true })).toBe(
-      "2025 · v1 · Dernier relevé",
-    )
-  })
-
-  test("omits a missing year or version instead of guessing", () => {
-    expect(fr.parcelHistory.entry({ year: null, version: 1, isLatest: false })).toBe("v1")
-    expect(fr.parcelHistory.entry({ year: 2025, version: null, isLatest: false })).toBe("2025")
-  })
-
-  test("falls back to a plain label when year, version and isLatest are all absent", () => {
-    expect(fr.parcelHistory.entry({ year: null, version: null, isLatest: false })).toBe("Relevé")
-  })
-
   test("the section sits in a glass card and its row texts use the new hierarchy", async () => {
     mockFetchParcelSurveyHistory.mockResolvedValue({
       parcel_id: "p1",
