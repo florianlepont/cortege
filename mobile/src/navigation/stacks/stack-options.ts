@@ -46,9 +46,13 @@ export function createBaseStackScreenOptions(theme: BrandTheme) {
  * OA-21: the screen draws its own title, so the native one is hidden. `headerTitle: () => null` is
  * not enough on iOS (the native title is still drawn from `title`, OA-109, doubled "Compte"), so it
  * is made invisible too. `title` stays for the back button and accessibility.
+ *
+ * The title is the empty string, not `() => null`: on Android a custom title component made the
+ * native header drop its back arrow, so Compte, Paramètres, the survey sub-pages and the factor
+ * pager had no way back but the system gesture.
  */
 export const hiddenNativeTitle = {
-  headerTitle: () => null,
+  headerTitle: "",
   headerTitleStyle: { color: "transparent" },
 } as const
 
