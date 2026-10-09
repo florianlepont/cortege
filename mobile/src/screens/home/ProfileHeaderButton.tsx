@@ -14,7 +14,9 @@ type ProfileHeaderButtonProps = {
 
 /**
  * OA-85: the profile photo as a native header item. iOS 26 puts the glass around it, so it is a
- * bare round photo; without a photo the header uses a plain icon button instead.
+ * bare round photo; without a photo the header uses a plain icon button instead. No spring scale or
+ * ripple (`disableScale`): the native header measures this element and wraps it in glass, and the
+ * scale wrapper view shifted the photo inside the glass circle (found on the phone).
  */
 export function ProfileHeaderButton({
   pictureUri,
@@ -27,6 +29,8 @@ export function ProfileHeaderButton({
       accessibilityLabel={fr.home.avatar}
       hitSlop={6}
       onPress={onPress}
+      disableScale
+      disableRipple
     >
       <ExpoImage
         source={{
