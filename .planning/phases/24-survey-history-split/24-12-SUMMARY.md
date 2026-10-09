@@ -11,7 +11,7 @@ requirements-completed: [REQ-C-history-split]
 ## What was done
 
 - **Task 1** (CLAUDE.md navigation note): commit 7ce5e4b3. `surveyHistory` is the parcel history, `surveyJournal` sits behind the header "…" menu, `communityHistory` is registered in the survey and Explorer stacks, and the history arithmetic lives in `mobile/src/app/parcel-history.ts` and `trend-geometry.ts`.
-- **Task 2** (owner phone check): three Release builds installed on the owner's iPhone from `~/Projects/cortege`, detached on the phase branch and restored to `main` (f7ba29d0) each time, untracked files untouched. The owner had to see the phase on server data, so the demo data was rebuilt first (1000 community surveys with 3 to 8 per parcel and 20 owner surveys; dry run on the IGN cadastre then on the VPS: 206 sites, 385 parcels, nothing dropped).
+- **Task 2** (owner phone check): two Release builds installed on the owner's iPhone from `~/Projects/cortege`, detached on the phase branch (then on the fix branch) and restored to `main` (f7ba29d0) each time, untracked files untouched. The owner needed server data with histories, so the demo seed was extended (1000 community surveys with 3 to 8 per parcel and 20 owner surveys; dry run on the IGN cadastre locally and on the VPS: 206 sites, 385 parcels, nothing dropped). The owner ran the seed on the VPS; its own output was not reported back to this session.
 - **Task 3** (record): OA-124 closed, `REQ-C-history-split` ticked, roadmap and state updated (this commit).
 
 ## Owner confirmation
@@ -28,11 +28,11 @@ Owner reply on 2026-10-09, after the rebuild with all the fixes below: "tout est
 
 ## Device assumptions
 
-The arrow "→", the curve reveal and the two-line row label were part of the phone check the owner confirmed. No switch to the fallbacks (" à ", dash reveal) was needed. The mixed-method curve was checked on the phone against the redeployed API (`ibp_method_version` in production since 3759bada).
+The owner gave one overall confirmation ("tout est bon !") and did not report the arrow "→", the curve reveal, the two-line row label or the mixed-method cut one by one. No fallback was requested (" à " for the arrow, the dash reveal), so none was applied. The API serving `ibp_method_version` has been in production since 3759bada.
 
 ## Deviations and known limits
 
-- The mixed-method case was seen on the phone only after the server deployed (merge 3759bada), not on the simulator.
+- The mixed-method case could only appear on the phone once the server deployed (merge 3759bada); it was not shown on the simulator.
 - `api/test/check-env-parity.spec.ts` fails locally on `main` too (34 tests, environment related), unrelated to this phase.
 - The API e2e specs (`parcel-history`, `community-survey-detail`, `public-map-items`) ran only in CI.
 - Both history endpoints still return the oldest 20 rows: a parcel with more than 20 surveys would lose its newest (documented, not reachable with the demo data).
