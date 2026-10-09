@@ -371,5 +371,19 @@ describe("ParcelsService", () => {
       })
       expect(db.query.mock.calls[0][1]).toEqual(["P1", 5])
     })
+
+    it("selects the method version of each survey and returns it unchanged", async () => {
+      const rows = [
+        { survey_id: "s1", ibp_method_version: null },
+        { survey_id: "s2", ibp_method_version: "cnpf_ibp_fr_v3_2_2026-02-02" },
+      ]
+      const db = buildDb({ rows })
+      await expect(buildService(db).getParcelSurveyHistory("p1", "5")).resolves.toEqual({
+        parcel_id: "P1",
+        items: rows,
+      })
+      expect(sqlOf(db)).toContain("s.ibp_method_version")
+      expect(db.query.mock.calls[0][1]).toEqual(["P1", 5])
+    })
   })
 })
