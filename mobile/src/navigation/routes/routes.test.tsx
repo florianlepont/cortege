@@ -1886,7 +1886,14 @@ describe("PublicMapRoute", () => {
     // A public survey is already on the map; the draft is not one of them.
     ;(mockExplorer as { items: unknown[] }).items = [{ survey_id: "pub-1" }]
     const navigation = makeNavigation()
-    const focus = { surveyId: "s-01", lat: 46.5, lng: 2.1, parcelIds: [], nonce: 1 }
+    const focus = {
+      kind: "survey" as const,
+      surveyId: "s-01",
+      lat: 46.5,
+      lng: 2.1,
+      parcelIds: [],
+      nonce: 1,
+    }
     await mount(
       <Providers fixture={fixture}>
         <PublicMapRoute navigation={navigation as never} route={{ params: { focus } } as never} />

@@ -3,7 +3,7 @@ import { Alert, View } from "react-native"
 import type { CameraRef } from "@maplibre/maplibre-react-native"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { buildFocusedMapRegion, type MapRegion } from "../app/map-viewport"
+import type { MapRegion } from "../app/map-viewport"
 import { isOfflineMapsEnabled } from "../app/feature-flags"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { useBrandTheme } from "../app/theme"
@@ -21,6 +21,7 @@ import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
+import { focusParcelIds, focusRegionFor } from "./public-map/focus-region"
 import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
 import { ScoreLegend } from "./public-map/ScoreLegend"
 import { createScreenContainerStyle } from "./public-map/styles"
@@ -31,12 +32,6 @@ const LOCATE_SPAN = 0.012
 const NO_DRAFTS: PublicMapItem[] = []
 // A second tap within this window (a double tap, or a tap during the push) opens nothing more.
 const OPEN_SURVEY_GUARD_MS = 800
-
-/** The region that shows a survey, centred a little north of it so its marker clears the sheet. */
-function focusRegion(focus: PublicMapFocus): MapRegion {
-  const target = buildFocusedMapRegion(focus)
-  return { ...target, latitude: target.latitude - target.latitudeDelta * 0.22 }
-}
 
 type PublicMapScreenProps = {
   apiUrl: string
@@ -162,12 +157,12 @@ export function PublicMapScreen({
   // OA-59: "Voir sur la carte" lands here with a survey to show. A screen opened for it starts the
   // camera there; one already open moves there. Its marker is drawn selected as soon as it is among
   // the markers (a public one arrives with the viewport load that the move triggers).
-  const initialRegion = useRef(focus ? focusRegion(focus) : undefined).current
+  const initialRegion = useRef(focus ? focusRegionFor(focus) : undefined).current
   const focusNonce = focus?.nonce
   useEffect(() => {
     if (!focus) return
-    setHighlightedId(focus.surveyId)
-    focusTo(focusRegion(focus), 0)
+    setHighlightedId(focus.kind === "survey" ? focus.surveyId : null)
+    focusTo(focusRegionFor(focus), 0)
     // The nonce identifies one request; the focus object itself is rebuilt by the navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusNonce, focusTo])
@@ -260,7 +255,7 @@ export function PublicMapScreen({
         items={mapItems}
         draftIds={draftIdSet}
         initialRegion={initialRegion}
-        highlightedParcelIds={focus?.parcelIds}
+        highlightedParcelIds={focusParcelIds(focus)}
         region={viewport.region}
         selectedId={highlightedId}
         parcelStatuses={parcelStatuses}
