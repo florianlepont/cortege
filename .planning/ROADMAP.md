@@ -77,6 +77,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 23: Visual Modernisation** (INSERTED) - A more pleasant, modern and lively interface: visual refresh and motion across the main screens, colourised map background with a dark variant, design spec updated, components reused and homogenised, native first (completed 2026-10-09; Android pass deferred to Phase 28, open design points to Phase 26)
 - [ ] **Phase 24: Survey History Split** (INSERTED) - The survey change log and the parcel history become two separate things (SEED-002; owner decision 2026-10-07, done before the audits so they audit the final screens)
 - [ ] **Phase 25: Global Search** (INSERTED) - One search covers the whole app: own and community surveys, places and parcels on the map, and the other items the app exposes (SEED-003; owner decision 2026-10-07)
+- [ ] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF is improved before the UX/UI audit (owner decision 2026-10-09; scope to define at planning)
 - [ ] **Phase 26: UX/UI Audit & Design System Update** (INSERTED) - Audit the interface after Phase 23, update the design system to match, check global coherence across screens and fix visual bugs (owner decision 2026-10-07)
 - [ ] **Phase 27: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed (owner decision 2026-10-06)
 - [ ] **Phase 28: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
@@ -786,6 +787,17 @@ Plans:
 
 **Plans**: TBD
 **UI hint**: yes
+
+### Phase 25.1: PDF Export Improvement (INSERTED)
+
+**Goal:** The PDF export of a survey (Phase 19) is better: content, layout and brand finish to be defined at discussion.
+**Requirements**: TBD
+**Depends on:** Phase 25
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 25.1 to break down)
 
 ### Phase 26: UX/UI Audit & Design System Update (INSERTED)
 

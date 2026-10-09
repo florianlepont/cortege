@@ -6,15 +6,15 @@ current_phase: 24
 current_phase_name: Survey History Split
 status: executing
 stopped_at: Completed 23-23-PLAN.md (Phase 23 plans 01 to 23 executed, phase verification human_needed; criteria 4 to 8 added on 2026-10-07/08 not yet planned)
-last_updated: "2026-10-08T12:56:32.000Z"
-last_activity: 2026-10-08
-last_activity_desc: Phase 23 (old 12.2) plans 01 to 23 executed, owner go on the phone
+last_updated: "2026-10-09T08:21:01.909Z"
+last_activity: 2026-10-09
+last_activity_desc: Phase 25.1 (PDF export improvement) inserted before the UX/UI audit
 progress:
-  total_phases: 28
+  total_phases: 29
   completed_phases: 23
   total_plans: 182
   completed_plans: 182
-  percent: 82
+  percent: 79
 ---
 
 # Project State
@@ -33,7 +33,7 @@ Plan: 23 of 23 (all plans executed; criteria 4 to 8 not yet planned)
 Status: Phases 1 through 23 complete (Phase 23 closed 2026-10-09); Phases 24 to 27 not yet planned, then field tests (Phase 28)
 Last activity: 2026-10-08 (Phase 23 plan 23: owner go on the phone); 2026-10-07 (roadmap renumbered flat 1 to 28; Phase 24 (SEED-002) and Phase 25 (SEED-003) added; SEED-004 done in Phase 23; UX/UI audit is Phase 26, deep audit Phase 27)
 
-Progress: [████████░░] 23/28 phases complete
+Progress: [████████░░] 23/29 phases complete
 
 ## Performance Metrics
 
@@ -206,6 +206,7 @@ Decisions table. Decisions affecting current work:
 - Phase 22 inserted after Phase 21: Owner acceptance testing: the owner still finds many display bugs and UX friction on their own phone and judged Phase 28 field tests with the association premature (owner decision 2026-09-28) (URGENT)
 - Phases 23 (Visual Modernisation, `REQ-QA-visual-modernisation`) and 27 (In-depth Quality Audit, `REQ-QA-deep-audit`) inserted after Phase 22 by owner decision 2026-10-06; on 2026-10-07 Phase 26 (UX/UI Audit & Design System Update, `REQ-QA-ux-audit`), Phase 24 (survey history split, SEED-002) and Phase 25 (global search, SEED-003) were added; SEED-004 (nearby parcels on Home) is done within Phase 23. Same day the roadmap was renumbered flat (1 to 28, no more `1.x` or `12.x`); the old-to-new table is in `ROADMAP.md`.
 - Seeds are kept in `.planning/seeds/` (SEED-001 map layers, SEED-002 scheduled in Phase 24, SEED-003 global search in Phase 25, SEED-004 done in Phase 23, SEED-005 animals dormant)
+- Phase 25.1 inserted after Phase 25: Improve the PDF survey export, before the UX/UI audit (Phase 26)
 
 ## Deferred Items
 
