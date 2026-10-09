@@ -29,4 +29,13 @@ export type {
   PublicMapItem,
   PublicParcelStatusItem,
 } from "./public-map"
+export type {
+  SearchCommunityResponse,
+  SearchMemberItem,
+  SearchParcelItem,
+  SearchParcelsResponse,
+  SearchPlaceItem,
+  SearchPlaceKind,
+  SearchPlacesResponse,
+} from "./search"
 export type { FactorAGenusInput, FactorALegacyCountInput } from "./factor-a"
