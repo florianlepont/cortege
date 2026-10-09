@@ -20,7 +20,7 @@ const mockPlatform = {
 }
 
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 44 }))
-// SurveySearchRoute reads its navigation from the hook: it is mounted by two navigators.
+// The community routes read their navigation from the hook: they are mounted by two navigators.
 const mockSearchNavigation = {
   navigate: jest.fn(),
   push: jest.fn(),
@@ -29,17 +29,6 @@ const mockSearchNavigation = {
   setOptions: jest.fn(),
 }
 jest.mock("@react-navigation/native", () => ({ useNavigation: () => mockSearchNavigation }))
-const mockCommunity = { items: [], status: "idle" }
-const mockCommunityArgs: { query?: string; active?: boolean; accessToken?: string | null } = {}
-jest.mock("../../hooks/useCommunitySurveys", () => ({
-  useCommunitySurveys: (args: { query: string; active: boolean; accessToken: string | null }) => {
-    Object.assign(mockCommunityArgs, args)
-    return mockCommunity
-  },
-}))
-jest.mock("../../screens/survey-search/SurveySearchScreen", () => ({
-  SurveySearchScreen: mockScreen("surveySearch"),
-}))
 jest.mock("../../screens/community-survey/CommunitySurveyScreen", () => ({
   CommunitySurveyScreen: mockScreen("communitySurvey"),
 }))
@@ -260,7 +249,6 @@ import { SurveyJournalRoute } from "./SurveyJournalRoute"
 import { SurveyScoreRoute } from "./SurveyScoreRoute"
 import { SurveyFormRoute } from "./SurveyFormRoute"
 import { SurveyListRoute } from "./SurveyListRoute"
-import { SurveySearchRoute } from "./SurveySearchRoute"
 import { CommunityHistoryRoute } from "./CommunityHistoryRoute"
 import { CommunitySurveyRoute } from "./CommunitySurveyRoute"
 
@@ -901,97 +889,6 @@ describe("SurveyListRoute", () => {
     const style = Object.assign({}, ...[frame.props.style].flat()) as Record<string, unknown>
     expect(style.paddingTop).toBeUndefined()
     expect(style.experimental_backgroundImage).toBeDefined()
-  })
-})
-
-describe("SurveySearchRoute", () => {
-  beforeEach(() => {
-    mockSearchNavigation.navigate.mockClear()
-    mockSearchNavigation.goBack.mockClear()
-    mockSearchNavigation.canGoBack.mockReturnValue(true)
-  })
-
-  test("feeds the screen with the shared list filters, and queries the community only in its scope", async () => {
-    const fixture = makeFixture()
-    await mount(
-      <Providers fixture={fixture}>
-        <SurveySearchRoute />
-      </Providers>,
-    )
-    const search = props("surveySearch")
-    expect(search.surveys).toBe(fixture.surveys.state.visibleSurveys)
-    expect(search.query).toBe(fixture.surveys.state.surveyQuery)
-    expect(search.scope).toBe("mine")
-    expect(search.community).toBe(mockCommunity)
-    expect(mockCommunityArgs.active).toBe(false)
-    expect(mockCommunityArgs.query).toBe(fixture.surveys.state.surveyQuery)
-
-    await act(async () => {
-      callback("surveySearch", "onScopeChange")("community")
-    })
-    expect(props("surveySearch").scope).toBe("community")
-    expect(mockCommunityArgs.active).toBe(true)
-    ;(search.onQueryChange as (value: string) => void)("chêne")
-    expect(fixture.surveys.actions.setSurveyQuery).toHaveBeenCalledWith("chêne")
-    ;(search.onStatusFilterChange as (value: string) => void)("draft")
-    expect(fixture.surveys.actions.setStatusFilter).toHaveBeenCalledWith("draft")
-    ;(search.onAttachmentFilterChange as (value: string) => void)("with")
-    expect(fixture.surveys.actions.setAttachmentFilter).toHaveBeenCalledWith("with")
-    ;(search.onSortModeChange as (value: string) => void)("site_asc")
-    expect(fixture.surveys.actions.setSortMode).toHaveBeenCalledWith("site_asc")
-  })
-
-  test("opens a survey in the Mes Relevés stack, above the list", async () => {
-    const fixture = makeFixture()
-    await mount(
-      <Providers fixture={fixture}>
-        <SurveySearchRoute />
-      </Providers>,
-    )
-    callback("surveySearch", "onOpenSurvey")("s-01")
-    expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
-    expect(mockSearchNavigation.navigate).toHaveBeenLastCalledWith("surveys", {
-      screen: "surveyDetail",
-      initial: false,
-    })
-  })
-
-  test("opens a community survey in the Mes Relevés stack, above the search", async () => {
-    await mount(
-      <Providers fixture={makeFixture()}>
-        <SurveySearchRoute />
-      </Providers>,
-    )
-    callback("surveySearch", "onOpenCommunitySurvey")("c-1")
-    expect(mockSearchNavigation.navigate).toHaveBeenLastCalledWith("surveys", {
-      screen: "communitySurvey",
-      params: { surveyId: "c-1" },
-      initial: false,
-    })
-  })
-
-  test("cancel resets the filters and goes back, or returns to Mes Relevés from the search tab", async () => {
-    const fixture = makeFixture()
-    await mount(
-      <Providers fixture={fixture}>
-        <SurveySearchRoute />
-      </Providers>,
-    )
-    await act(async () => {
-      callback("surveySearch", "onScopeChange")("community")
-    })
-    await act(async () => {
-      callback("surveySearch", "onCancel")()
-    })
-    expect(fixture.surveys.actions.resetFilters).toHaveBeenCalled()
-    expect(mockSearchNavigation.goBack).toHaveBeenCalledTimes(1)
-    expect(props("surveySearch").scope).toBe("mine")
-
-    mockSearchNavigation.canGoBack.mockReturnValue(false)
-    await act(async () => {
-      callback("surveySearch", "onCancel")()
-    })
-    expect(mockSearchNavigation.navigate).toHaveBeenLastCalledWith("surveys")
   })
 })
 
@@ -1934,7 +1831,6 @@ describe("the halo frame on every page (D-19)", () => {
   const nav = () => makeNavigation() as never
   const framedRoutes: [string, () => React.ReactElement][] = [
     ["surveyList", () => <SurveyListRoute navigation={nav()} route={{} as never} />],
-    ["surveySearch", () => <SurveySearchRoute />],
     ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
     ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
     ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
