@@ -117,7 +117,7 @@ describe("Search endpoints (e2e)", () => {
     return parcel
   }
 
-  async function searchCommunity(token: string, query: Record<string, string | number>) {
+  function searchCommunity(token: string, query: Record<string, string | number>) {
     return request(app.getHttpServer())
       .get("/v1/search/community")
       .set("Authorization", `Bearer ${token}`)
