@@ -767,7 +767,7 @@ Plans:
   2. A survey from another member keeps showing the parcel history and never the change log.
   3. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: 7/12 plans executed
+**Plans**: 8/12 plans executed
 
 **Wave 1**
 
@@ -784,7 +784,7 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [x] 24-07-PLAN.md — Summary row "Historique de la parcelle" with its derived value
-- [ ] 24-08-PLAN.md — Trend card and SVG curve (reveal spike first, fallback dash offset)
+- [x] 24-08-PLAN.md — Trend card and SVG curve (reveal spike first, fallback dash offset)
 - [ ] 24-09-PLAN.md — Per-factor delta card and parcel survey list
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -902,7 +902,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 21. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
 | 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
-| 24. Survey History Split | 7/12 | In Progress|  |
+| 24. Survey History Split | 8/12 | In Progress|  |
 | 25. Global Search | 0/TBD | Not started | - |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 27. In-depth Quality Audit | 0/TBD | Not started | - |

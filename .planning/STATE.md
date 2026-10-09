@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 24
 current_phase_name: survey-history-split
 status: executing
-stopped_at: Completed 24-07-PLAN.md
-last_updated: "2026-10-09T09:24:01.281Z"
+stopped_at: Completed 24-08-PLAN.md
+last_updated: "2026-10-09T09:31:52.141Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 24 execution started
 progress:
   total_phases: 28
   completed_phases: 14
   total_plans: 156
-  completed_plans: 189
+  completed_plans: 190
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 24 (survey-history-split) — EXECUTING
-Plan: 8 of 12
+Plan: 9 of 12
 Status: Ready to execute
 Last activity: 2026-10-09 — Phase 24 execution started
 
@@ -110,6 +110,7 @@ Progress: [████████░░] 23/28 phases complete
 | Phase 24 P05 | 15min | 2 tasks | 6 files |
 | Phase 24 P06 | 15min | 2 tasks | 7 files |
 | Phase 24 P07 | 15min | 2 tasks | 7 files |
+| Phase 24 P08 | 40min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -190,6 +191,8 @@ Decisions table. Decisions affecting current work:
 - [Phase 24]: 24-04: delta base is the survey immediately before the current one; trend title and curve use the latest 8 surveys while the summary row uses all (pinned by test) — UI-SPEC flag 4, RESEARCH Pitfall 4 and Open Question 1
 - [Phase 24]: 24-05: trend title split into string-only functions; entry says 'version N'; arrow U+2192 written as escape
 - [Phase 24]: 24-06 D-05: nothing moved; Journal du relevé added between Renommer and Supprimer, sheet entry on Android / Expo Go
+- [Phase 24-08]: TREND_REVEAL_MODE defaults to clip: the iOS 27 simulator spike showed the animated clip rectangle repainting; Android and device unverified, owner phone check in 24-12 confirms, fallback is one line (dash)
+- [Phase 24-08]: TrendCard title nested Texts spread brandTypography.screenTitle themselves because AppText places the default font first
 
 ### Pending Todos
 
@@ -231,6 +234,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-09T09:24:01.275Z
-Stopped at: Completed 24-07-PLAN.md
+Last session: 2026-10-09T09:31:52.136Z
+Stopped at: Completed 24-08-PLAN.md
 Resume file: .planning/phases/24-survey-history-split/24-01-PLAN.md
