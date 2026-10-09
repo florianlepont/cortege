@@ -84,6 +84,8 @@ export function createDetailStyles(theme: BrandTheme) {
     sheet: {
       flex: 1,
       backgroundColor: theme.semanticColors.backgroundCanvas,
+    },
+    sheetContent: {
       paddingHorizontal: 20,
       paddingTop: brandSpacing4.md,
       paddingBottom: 34,

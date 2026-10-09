@@ -19,13 +19,19 @@ type FactorHelpSheetProps = {
  * The factor's help, opened from "Que relever ?" (OA-30): what the factor counts, then the field
  * reminders. The content of the `surveyFactorHelp` route, which the stack presents as a native
  * form sheet on iOS (system grabber, swipe down, tap outside) and as a modal screen on Android
- * (`factorHelpScreenOptions`); the close button is the way out where there is no grabber.
+ * (`factorHelpScreenOptions`); the close button is the way out where there is no grabber. The title
+ * row is the first item of the one scroll view, not a header beside it: a header outside the scroll
+ * view was drawn under the scrolled text inside the native form sheet (found on the phone).
  */
 export function FactorHelpSheet({ onClose, help, hints }: FactorHelpSheetProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createDetailStyles(theme), [theme])
   return (
-    <View style={styles.sheet}>
+    <ScrollView
+      style={styles.sheet}
+      contentContainerStyle={styles.sheetContent}
+      contentInsetAdjustmentBehavior="never"
+    >
       <View style={styles.sheetHeader}>
         <Text style={styles.sheetTitle} accessibilityRole="header">
           {t.helpTitle}
@@ -39,17 +45,15 @@ export function FactorHelpSheet({ onClose, help, hints }: FactorHelpSheetProps) 
           <Ionicons name="close-outline" size={20} color={theme.semanticColors.textStrong} />
         </AppPressable>
       </View>
-      <ScrollView>
-        <View style={styles.hintsList}>
-          <Text style={styles.sheetBody}>{help}</Text>
-          {hints.map((hint) => (
-            <View key={hint} style={styles.hintRow}>
-              <View style={styles.hintDot} />
-              <Text style={styles.hintText}>{hint}</Text>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </View>
+      <View style={styles.hintsList}>
+        <Text style={styles.sheetBody}>{help}</Text>
+        {hints.map((hint) => (
+          <View key={hint} style={styles.hintRow}>
+            <View style={styles.hintDot} />
+            <Text style={styles.hintText}>{hint}</Text>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   )
 }

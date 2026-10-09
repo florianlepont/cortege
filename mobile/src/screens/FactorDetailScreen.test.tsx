@@ -323,7 +323,7 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
       styles.panel.gap,
       styles.fieldsList.gap,
       styles.hintsList.gap,
-      styles.sheet.gap,
+      styles.sheetContent.gap,
     ]) {
       expect((gap as number) % 4).toBe(0)
     }
