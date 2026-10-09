@@ -215,7 +215,8 @@ function createStyles(theme: BrandTheme) {
     },
     intro: {
       alignItems: "center",
-      paddingTop: brandSpacing4.xl,
+      // 32 pt under the field, which already leaves 12 pt above the scroll area.
+      paddingTop: brandSpacing4.xl - brandSpacing4.smd,
       paddingHorizontal: brandSpacing4.md,
       gap: brandSpacing4.smd,
     },

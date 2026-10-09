@@ -179,10 +179,11 @@ describe("SearchStartPage without recent searches (25-11, D-02b)", () => {
     expect(styleOf(body).color).toBe(defaultTheme.colors.textSecondary)
   })
 
-  test("the block sits 32 pt under the field and shows no list, header or clear link", () => {
+  test("the block sits 32 pt under the field (20 plus the 12 pt gap of the page) and shows no list, header or clear link", () => {
     mount([])
     const entrance = tree.root.findByType("EntranceView" as never)
-    expect(styleOf(entrance).paddingTop).toBe(32)
+    // 32 pt under the field, minus the 12 pt the page already leaves above its scroll area.
+    expect(styleOf(entrance).paddingTop).toBe(20)
     expect(styleOf(entrance).alignItems).toBe("center")
     expect(queryAll("search-recents-clear")).toHaveLength(0)
     expect(queryAll("search-recent-0")).toHaveLength(0)
