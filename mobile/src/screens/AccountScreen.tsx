@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { ActivityIndicator, Platform, ScrollView, View } from "react-native"
+import { ActivityIndicator, Platform, View } from "react-native"
 import { PageTitle } from "../ui/PageTitle"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { brandColors, brandSpacing } from "../app/brand-tokens"
@@ -13,6 +13,7 @@ import { useAccountConnectionRows, useLogoutRow } from "./account/AccountSetting
 import { IdentityCard } from "./account/IdentityCard"
 import { ProfileSaveBar, useProfileRows } from "./account/ProfileRows"
 import { accountStyles as styles } from "./account/styles"
+import { TitledScrollView } from "../ui/TitledScrollView"
 
 type UpdateProfileInput = {
   first_name: string
@@ -134,7 +135,8 @@ export function AccountScreen({
   return (
     <View style={styles.screen}>
       {/* ACC-04 : ScrollView pour gérer le clavier et les petits écrans */}
-      <ScrollView
+      <TitledScrollView
+        collapsingTitle={fr.account.title}
         style={styles.screen}
         contentContainerStyle={[
           styles.content,
@@ -167,7 +169,7 @@ export function AccountScreen({
         />
 
         <AppGroupedList sections={sections} />
-      </ScrollView>
+      </TitledScrollView>
 
       {isProfileDirty ? (
         <ProfileSaveBar

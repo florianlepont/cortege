@@ -2,6 +2,7 @@ import { Platform } from "react-native"
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack"
 import { brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
+import { androidHeaderTitleStyle } from "../../app/header-title-style"
 import { usesNativeLargeTitle } from "../large-title"
 
 /**
@@ -33,11 +34,7 @@ export function createBaseStackScreenOptions(theme: BrandTheme) {
       ? {}
       : {
           headerTintColor: theme.colors.forest,
-          headerTitleStyle: {
-            color: theme.colors.forest,
-            fontSize: 18,
-            fontWeight: "800" as const,
-          },
+          headerTitleStyle: androidHeaderTitleStyle(theme),
         }),
   }
 }

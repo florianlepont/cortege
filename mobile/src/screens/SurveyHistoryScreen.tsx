@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native"
+import { RefreshControl, StyleSheet, View } from "react-native"
 import {
   brandDefaultFontFamily,
   brandRadius,
@@ -21,6 +21,7 @@ import { type SurveyHistoryScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
+import { TitledScrollView } from "../ui/TitledScrollView"
 
 const page = fr.parcelHistory.page
 
@@ -112,7 +113,8 @@ export function SurveyHistoryScreen({
   }
 
   return (
-    <ScrollView
+    <TitledScrollView
+      collapsingTitle={fr.navigation.headers.surveyHistory}
       // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
       style={styles.scroll}
       contentContainerStyle={contentStyle}
@@ -128,6 +130,6 @@ export function SurveyHistoryScreen({
       <PageTitle>{fr.navigation.headers.surveyHistory}</PageTitle>
       <Text style={ownStyles.subtitle}>{page.subtitle}</Text>
       {body}
-    </ScrollView>
+    </TitledScrollView>
   )
 }

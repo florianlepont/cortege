@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native"
+import { ActivityIndicator, StyleSheet, View } from "react-native"
 import {
   brandDefaultFontFamily,
   brandSpacing4,
@@ -17,6 +17,7 @@ import { PageTitle } from "../../ui/PageTitle"
 import { ParcelHistoryView } from "../survey-detail/ParcelHistoryView"
 import { createSummaryScreenStyles } from "../survey-detail/summary-screen.styles"
 import { useSubPageContentStyle } from "../survey-detail/useSubPageContent"
+import { TitledScrollView } from "../../ui/TitledScrollView"
 
 const t = fr.communitySurvey
 
@@ -81,7 +82,8 @@ export function CommunityHistoryScreen({ state, onOpenSurvey }: CommunityHistory
   }
 
   return (
-    <ScrollView
+    <TitledScrollView
+      collapsingTitle={fr.navigation.headers.communityHistory}
       // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
       style={styles.scroll}
       contentContainerStyle={contentStyle}
@@ -90,6 +92,6 @@ export function CommunityHistoryScreen({ state, onOpenSurvey }: CommunityHistory
       <PageTitle>{fr.navigation.headers.communityHistory}</PageTitle>
       <Text style={own.subtitle}>{fr.parcelHistory.page.subtitle}</Text>
       <ParcelHistoryView entries={entries} variant="community" onOpenSurvey={onOpenSurvey} />
-    </ScrollView>
+    </TitledScrollView>
   )
 }

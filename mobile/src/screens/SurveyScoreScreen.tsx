@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { ScrollView } from "react-native"
+
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppCard } from "../ui/AppCard"
@@ -12,6 +12,7 @@ import { type SurveyScoreScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
+import { TitledScrollView } from "../ui/TitledScrollView"
 
 /**
  * "Score IBP" (OA-46): the total out of 50 with its two sub-scores and the ten factor bars, then the ten factor rows, each
@@ -36,7 +37,8 @@ export function SurveyScoreScreen({
   )
 
   return (
-    <ScrollView
+    <TitledScrollView
+      collapsingTitle={fr.navigation.headers.surveyScore}
       // The header is transparent: the route's ScreenFrame starts the scroll view below it (D-19).
       style={styles.scroll}
       contentContainerStyle={contentStyle}
@@ -53,6 +55,6 @@ export function SurveyScoreScreen({
         canEditSurvey={data.canEditSurvey}
         onOpenFactor={(factor) => void onOpenFactor(selectedSurvey.id, factor)}
       />
-    </ScrollView>
+    </TitledScrollView>
   )
 }
