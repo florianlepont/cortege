@@ -82,7 +82,7 @@ describe("Search endpoints (e2e)", () => {
     return resolved.body.parcel as ResolvedParcel
   }
 
-  /** The survey location must lie on the parcel, so one coordinate serves both calls. */
+  /** The real validation pipe forbids unknown fields, so the body has no `location`. */
   async function createSurvey(
     token: string,
     input: { id: string; siteName: string; submit: boolean },
@@ -107,7 +107,6 @@ describe("Search endpoints (e2e)", () => {
         region_version: "ACA",
         vegetation_stage: "collineen",
         factors: validDirectFactors,
-        location: { source: "gps", lat, lng },
       })
       .expect(201)
     if (input.submit) {
