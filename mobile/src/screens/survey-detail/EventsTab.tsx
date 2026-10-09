@@ -15,6 +15,8 @@ import { createTabsStyles } from "./tabs.styles"
 type EventsTabProps = {
   events: SurveyEventItem[]
   isLoading: boolean
+  /** The journal page names itself with its own title: it asks for the card without a header. */
+  hideHeader?: boolean
 }
 
 const t = fr.surveyDetail.events
@@ -28,7 +30,7 @@ const SKELETON_ROW_COUNT = 3
  * active only while this tab is selected; a loading skeleton covers the first load only, not a
  * pull-to-refresh of an already-loaded list (the RefreshControl spinner covers that case).
  */
-export function EventsTab({ events, isLoading }: EventsTabProps) {
+export function EventsTab({ events, isLoading, hideHeader = false }: EventsTabProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createTabsStyles(theme), [theme])
   const showSkeleton = isLoading && events.length === 0
@@ -36,7 +38,7 @@ export function EventsTab({ events, isLoading }: EventsTabProps) {
 
   return (
     <View style={styles.eventsCard}>
-      <AppSectionHeader title={t.title} subtitle={t.subtitle} />
+      {hideHeader ? null : <AppSectionHeader title={t.title} subtitle={t.subtitle} />}
       {showSkeleton
         ? Array.from({ length: SKELETON_ROW_COUNT }, (_, index) => (
             <SkeletonRow key={`events-skeleton-${index}`} />

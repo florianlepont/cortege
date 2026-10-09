@@ -15,6 +15,7 @@ export const navigationFr = {
     surveyContext: "Contexte et parcelles",
     surveyScore: "Score IBP",
     surveyHistory: "Historique",
+    surveyJournal: "Journal du relevé",
     newSurvey: "Nouveau relevé",
     editSurvey: "Modifier le relevé",
     factor: (factor: string) => `Facteur ${factor}`,

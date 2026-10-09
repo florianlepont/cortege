@@ -63,3 +63,11 @@ export type SurveyHistoryScreenProps = SurveyDetailBaseProps & {
   eventsLoadingSurveyId: string | null
   onLoadSurveyEvents: (surveyId: string) => Promise<void>
 }
+
+/** "Journal du relevé": the change log of this survey (own surveys only). */
+export type SurveyJournalScreenProps = {
+  selectedSurvey: LocalSurvey
+  surveyEvents: Record<string, SurveyEventItem[]>
+  eventsLoadingSurveyId: string | null
+  onLoadSurveyEvents: (surveyId: string) => Promise<void>
+}

@@ -90,6 +90,21 @@ function mount(props: React.ComponentProps<typeof EventsTab>): ReactTestRenderer
 }
 
 describe("EventsTab", () => {
+  test("shows its own header by default, with the journal title", () => {
+    const tree = mount({ events: [], isLoading: false })
+    const headers = tree.root.findAllByType("AppSectionHeader" as never)
+    expect(headers).toHaveLength(1)
+    expect(headers[0]?.props.title).toBe(t.title)
+    expect(t.title).toBe("Journal du relevé")
+  })
+
+  test("hideHeader drops the header and keeps the rows (the journal page names itself)", () => {
+    const tree = mount({ events: [makeEvent()], isLoading: false, hideHeader: true })
+    expect(tree.root.findAllByType("AppSectionHeader" as never)).toHaveLength(0)
+    const labels = tree.root.findAllByType("Text" as never).map((node) => node.props.children)
+    expect(labels).toContain(fr.surveyDetail.eventTypes.submitted)
+  })
+
   test("shows a loading skeleton on the first load (no events yet)", () => {
     const tree = mount({ events: [], isLoading: true })
     expect(tree.root.findAllByType("SkeletonRow" as never)).toHaveLength(3)

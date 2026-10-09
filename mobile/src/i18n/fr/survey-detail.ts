@@ -3,13 +3,15 @@ import { IBP_MAX } from "@cortege/ibp-domain"
 // Filled by plan 01.9-12; no other plan edits this section. Plan 01.8-14 added the method
 // version texts, the totals out of 50 (built from IBP_MAX) and the CNPF band names.
 export const surveyDetailFr = {
-  // OA-49/50: the "…" menu now only holds the destructive action (the native menu on iOS, a sheet
-  // elsewhere). Sharing is its own header button (OA-48), renaming the pencil next to the title.
+  // The "…" menu holds "Renommer" (iOS large title, editable survey), "Journal du relevé" (D-02,
+  // own survey only) and "Supprimer" (the native menu on iOS, a sheet elsewhere). Sharing is its
+  // own header button (OA-48).
   menu: {
     share: "Partager",
     // 12.2-17: on iOS the survey's name is the native large title, which is not a button: renaming
     // moves to the "…" menu.
     rename: "Renommer",
+    journal: "Journal du relevé",
     delete: "Supprimer",
     cancel: "Annuler",
   },
@@ -153,8 +155,12 @@ export const surveyDetailFr = {
     exportFailed: "L'export du PDF a échoué. Réessayez.",
     exportShareUnavailable: "Aucune application de partage n'est disponible sur cet appareil.",
   },
+  // "Journal du relevé" (D-11): the change log of the survey, a page of its own.
+  journal: {
+    subtitle: "Ce qui s'est passé sur ce relevé.",
+  },
   events: {
-    title: "Historique du relevé",
+    title: "Journal du relevé",
     subtitle: "Synchronisation et étapes de ce relevé.",
     loading: "Chargement de l'historique…",
     empty: "Aucun événement chargé pour l'instant.",
