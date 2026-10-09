@@ -40,6 +40,7 @@ function deferred<T>() {
 beforeEach(() => {
   jest.useFakeTimers()
   mockFetcher.mockReset()
+  jest.spyOn(console, "debug").mockImplementation(() => undefined)
 })
 
 afterEach(async () => {
