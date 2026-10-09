@@ -56,11 +56,17 @@ const detailRow = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-const historyRow = (id: string, version: number, total: unknown) => ({
+const historyRow = (
+  id: string,
+  version: number,
+  total: unknown,
+  ibpMethodVersion: string | null = version === 1 ? null : "cnpf_ibp_fr_v3_2_2026-02-02",
+) => ({
   id,
   site_name: `Site ${id}`,
   observation_year: 2025 + version,
   version_number: version,
+  ibp_method_version: ibpMethodVersion,
   scores: { ibp_total: total },
   submitted_at: "2026-09-28 09:41:00+00",
   author_name: version === 1 ? null : "Camille",
@@ -93,12 +99,19 @@ describe("CommunitySurveysService.getDetail", () => {
         ibp_total: 24,
         is_current: false,
         author_name: null,
+        ibp_method_version: null,
       }),
-      expect.objectContaining({ survey_id: "s-2", ibp_total: 0, is_current: true }),
+      expect.objectContaining({
+        survey_id: "s-2",
+        ibp_total: 0,
+        is_current: true,
+        ibp_method_version: "cnpf_ibp_fr_v3_2_2026-02-02",
+      }),
     ])
     expect(parcels.displayLocation).toHaveBeenCalledWith(db, "s-2", "75101AB0123")
     expect(db.query.mock.calls[0][1]).toEqual(["s-2"])
     expect(db.query.mock.calls[1][1]).toEqual(["s-2", 20])
+    expect(db.query.mock.calls[1][0]).toContain("s.ibp_method_version")
   })
 
   it("falls back to the legacy single parcel, has none without a parcel, and reads null untagged flags", async () => {

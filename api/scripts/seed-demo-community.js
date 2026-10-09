@@ -1,8 +1,11 @@
 /**
- * Fake data for owner testing (12.1, OA-105): about a hundred finished, public surveys of eight
- * fake community members spread over France, plus a dozen surveys on the owner's own account
- * (drafts and finished ones). The Communauté search, the Explorer map and parcel history and the
- * read-only survey page then have something to show.
+ * Fake data for owner testing (12.1, OA-105; history since Phase 24): by default a thousand
+ * finished, public surveys of twenty fake community members spread over France, plus twenty
+ * surveys on the owner's own account (6 drafts and 14 finished ones). Every parcel carries a
+ * history: 3 to 8 surveys on consecutive years (2018 to 2026) whose quality drifts up or down, and
+ * about a third of the parcels switch from the v3.0 to the v3.2 method on the way, so the
+ * Communauté search, the Explorer map, the parcel history page (trend curve, per-factor changes,
+ * mixed-method cut), the change log and the read-only survey page all have something to show.
  *
  * Since 2026-10-08 every demo survey sits on REAL parcels of the IGN cadastre (1 to 3 neighbouring
  * parcels per site, two sites per place), found through the IGN WFS the API already reads, so the
@@ -17,7 +20,11 @@
  *   node scripts/seed-demo-community.js --wipe-all         first delete EVERY survey of the database
  *   node scripts/seed-demo-community.js --remove           remove the demo data only
  *   --owner-email=name@example.org                         the account that gets its own surveys
- *   --count=100                                            number of community surveys
+ *   --count=1000                                           number of community surveys (up to
+ *                                                          1728; about 5 per parcel group)
+ *
+ * Sites that the IGN cannot resolve are dropped from the community data when they are at most
+ * 10% of the sites (the run says which); an owner site that fails stops the run.
  *
  * Everything it creates is marked and removed by `--remove`:
  *   - users with an email ending in @demo.cortege.invalid (auth0_sub "demo|...")
@@ -50,11 +57,21 @@ const {
   resolveSites,
   sitePoint,
 } = require("./lib/demo-parcels")
+const {
+  MAX_PER_SITE,
+  METHOD_V3_0,
+  OWNER_PLAN,
+  distributeCounts,
+  planSiteHistory,
+  siteTotalFor,
+} = require("./lib/demo-history")
 
 const DEMO_EMAIL_SUFFIX = "@demo.cortege.invalid"
 const DEMO_SURVEY_PREFIX = "demo-"
 const DEFAULT_OWNER_EMAIL = "florian.lepont@icloud.com"
-const DEFAULT_COUNT = 100
+const DEFAULT_COUNT = 1000
+// A community run uses at most this share of sites that the IGN failed to resolve.
+const MAX_DROPPED_SITES_SHARE = 0.1
 
 const MEMBERS = [
   ["camille", "Camille", "Martin"],
@@ -65,6 +82,18 @@ const MEMBERS = [
   ["noe", "Noé", "Girard"],
   ["manon", "Manon", "Roux"],
   ["theo", "Théo", "Vidal"],
+  ["clara", "Clara", "Perrin"],
+  ["louis", "Louis", "Garnier"],
+  ["jade", "Jade", "Faure"],
+  ["adam", "Adam", "Chevalier"],
+  ["lina", "Lina", "Blanc"],
+  ["jules", "Jules", "Mercier"],
+  ["zoe", "Zoé", "Dupuis"],
+  ["nathan", "Nathan", "Rey"],
+  ["alice", "Alice", "Brunet"],
+  ["raphael", "Raphaël", "Colin"],
+  ["sarah", "Sarah", "Gauthier"],
+  ["maxime", "Maxime", "Roche"],
 ]
 
 // Forests and woodlands of France: [short name, latitude, longitude].
@@ -110,8 +139,8 @@ const OWNER_PLACES = [
   ["Rambouillet", 48.64, 1.83],
   ["Sénart", 48.67, 2.5],
 ]
-// Two survey sites per community place, one per owner place.
-const SITES_PER_PLACE = 2
+// Up to eight survey sites per community place (216 sites, 1728 surveys at most).
+const SITES_PER_PLACE_MAX = 8
 // Seeds of the site points and parcel counts (per site), and of the survey contents.
 const COMMUNITY_SITE_SEED = 20261008
 const OWNER_SITE_SEED = 8000
@@ -119,22 +148,7 @@ const COMMUNITY_SURVEY_SEED = 20261006
 const OWNER_SURVEY_SEED = 7
 
 const STAND_NAMES = ["Chênaie", "Hêtraie", "Pinède", "Taillis", "Futaie", "Lisière", "Ripisylve"]
-const METHOD_V3_2 = "cnpf_ibp_fr_v3_2_2026-02-02"
-
-const OWNER_PLAN = [
-  // [name, status, visibility, quality, factors kept (drafts)]
-  ["Chênaie du Bois Joli", "draft", "private", 0.3, 3],
-  ["Lisière de la Marne", "draft", "private", 0.5, 6],
-  ["Taillis du Plateau", "draft", "private", 0.2, 2],
-  ["Parcelle de la source", "draft", "private", 0.6, 9],
-  ["Hêtraie de la Butte", "draft", "private", 0.4, 5],
-  ["Futaie des Gaillardes", "draft", "private", 0.7, 8],
-  ["Pinède des Sables", "submitted", "public", 0.8, 10],
-  ["Ripisylve de l'Yerres", "submitted", "public", 0.55, 10],
-  ["Boisement de la gare", "submitted", "private", 0.35, 10],
-  ["Chênaie de la Mare", "submitted", "private", 0.9, 10],
-  ["Taillis de l'Étang", "submitted", "public", 0.45, 10],
-]
+const METHOD_V3_2_TAG = "cnpf_ibp_fr_v3_2_2026-02-02"
 
 function connect() {
   return new Client({
@@ -170,10 +184,11 @@ function makeSite(key, label, place, seed) {
 
 /**
  * Community sites, interleaved over the places (site k is at place k mod 27), so a small
- * `--count` still spreads over France. Only the sites that get a survey are built.
+ * `--count` still spreads over France. Only the sites that get surveys are built: about one site
+ * per five surveys, up to eight per place.
  */
 function communitySites(count) {
-  const total = Math.min(count, PLACES.length * SITES_PER_PLACE)
+  const total = siteTotalFor(count, PLACES.length * SITES_PER_PLACE_MAX)
   return Array.from({ length: total }, (_, k) => {
     const place = PLACES[k % PLACES.length]
     const slot = Math.floor(k / PLACES.length) + 1
@@ -209,14 +224,14 @@ function buildFactors(quality) {
   }
 }
 
-function methodFields(random, index) {
+/** The method fields of a survey that follows `kind` ("v3.0" or "v3.2" of demo-history.js). */
+function methodFor(kind, random) {
   const {
     IBP_METHOD_V3_0,
     REGION_VERSIONS,
     VEGETATION_STAGES_BY_REGION,
   } = require("@cortege/ibp-domain")
-  // About one survey in seven follows the older method, to show both on the map.
-  if (index % 7 === 3) {
+  if (kind === METHOD_V3_0) {
     const region = REGION_VERSIONS[0]
     const stages = VEGETATION_STAGES_BY_REGION[region]
     return {
@@ -229,7 +244,7 @@ function methodFields(random, index) {
   }
   const cas = 1 + Math.floor(random() * 4)
   return {
-    ibp_method_version: METHOD_V3_2,
+    ibp_method_version: METHOD_V3_2_TAG,
     ibp_cas: cas,
     ibp_cas3_scale: false,
     region_version: null,
@@ -257,45 +272,50 @@ function evaluate(survey) {
   return evaluation
 }
 
-/** The community surveys: they go round the sites, one year after another (2023 to 2025). */
+/**
+ * The community surveys: `count` surveys shared over the sites (3 to 8 each), every site with its
+ * own history on consecutive years (demo-history.js). A site draws its contents from its own
+ * seeded random, so a site dropped later never changes the others.
+ */
 function planCommunitySurveys(count, sites) {
-  const random = makeRandom(COMMUNITY_SURVEY_SEED)
-  const years = [2023, 2024, 2025]
+  const counts = distributeCounts(count, sites.length, makeRandom(COMMUNITY_SURVEY_SEED))
   const surveys = []
-  for (let index = 0; index < count; index += 1) {
-    const site = sites[index % sites.length]
-    const year = years[Math.floor(index / sites.length) % years.length]
-    const when = new Date(
-      Date.UTC(year, 2 + Math.floor(random() * 8), 1 + Math.floor(random() * 27), 9 + (index % 8)),
-    )
-    surveys.push({
-      member: index % MEMBERS.length,
-      siteName: `${STAND_NAMES[index % STAND_NAMES.length]} de ${site.name}`,
-      status: "submitted",
-      visibility: "public",
-      method: methodFields(random, index),
-      factors: buildFactors(0.1 + random() * 0.85),
-      site,
-      when,
-      withEvents: false,
+  sites.forEach((site, k) => {
+    const random = makeRandom(COMMUNITY_SURVEY_SEED + 104729 * (k + 1))
+    const stand = STAND_NAMES[k % STAND_NAMES.length]
+    planSiteHistory(counts[k], random).forEach((step, j) => {
+      surveys.push({
+        // Two members alternate on a site, so the history shows more than one author.
+        member: (k + 7 * (j % 2)) % MEMBERS.length,
+        siteName: `${stand} de ${site.name}`,
+        status: "submitted",
+        visibility: "public",
+        method: methodFor(step.method, random),
+        factors: buildFactors(step.quality),
+        site,
+        when: new Date(Date.UTC(step.year, step.month, step.day, step.hour)),
+        withEvents: false,
+      })
     })
-  }
+  })
   return surveys
 }
 
+/** The owner's 20 surveys (OWNER_PLAN of demo-history.js): drafts and finished ones with history. */
 function planOwnerSurveys(sites) {
   const { FACTOR_KEYS } = require("@cortege/ibp-domain")
   const random = makeRandom(OWNER_SURVEY_SEED)
-  return OWNER_PLAN.map(([siteName, status, visibility, quality, kept], index) => {
-    const full = buildFactors(quality)
+  return OWNER_PLAN.map((entry) => {
+    const full = buildFactors(entry.quality)
+    const kept = entry.status === "draft" ? entry.kept : FACTOR_KEYS.length
     return {
-      siteName,
-      status,
-      visibility,
-      method: methodFields(random, index === 8 ? 3 : 0),
+      siteName: entry.name,
+      status: entry.status,
+      visibility: entry.visibility,
+      method: methodFor(entry.method, random),
       factors: Object.fromEntries(FACTOR_KEYS.slice(0, kept).map((key) => [key, full[key]])),
-      site: sites[index % sites.length],
-      when: new Date(Date.UTC(2026, 3 + (index % 6), 2 + index * 2, 10)),
+      site: sites[entry.site],
+      when: new Date(Date.UTC(entry.year, entry.month, entry.day, 10)),
       withEvents: true,
     }
   })
@@ -329,8 +349,13 @@ function printSummary(sites, resolved, surveys) {
   console.table(rows)
 }
 
-/** Resolves every site, or stops the run with the list of the sites that failed. */
-async function resolveAll(sites) {
+/**
+ * Resolves every site on the IGN. An owner site that fails stops the run; community sites that
+ * fail are dropped (and listed) while they stay under MAX_DROPPED_SITES_SHARE of the community
+ * sites. Returns the resolved parcels and the keys of the dropped sites.
+ */
+async function resolveAll(community, owner) {
+  const sites = [...community, ...owner]
   const settings = cadastreSettings()
   console.log(
     `Resolving ${sites.length} sites on the IGN cadastre (${settings.wfsUrl}, timeout ${settings.timeoutMs} ms)...`,
@@ -339,14 +364,24 @@ async function resolveAll(sites) {
     settings,
     log: (line) => console.log(line),
   })
-  if (failures.length > 0) {
+  const ownerKeys = new Set(owner.map((site) => site.key))
+  const ownerFailures = failures.filter((failure) => ownerKeys.has(failure.key))
+  const communityFailures = failures.filter((failure) => !ownerKeys.has(failure.key))
+  const tooMany = communityFailures.length > Math.floor(community.length * MAX_DROPPED_SITES_SHARE)
+  if (ownerFailures.length > 0 || tooMany) {
     const list = failures.map((failure) => `  - ${failure.label}: ${failure.reason}`).join("\n")
     throw new Error(
       `No real IGN parcel found for ${failures.length} site(s), nothing was written:\n${list}\n` +
         "Check that this machine reaches the IGN services (data.geopf.fr) and run again.",
     )
   }
-  return resolved
+  if (communityFailures.length > 0) {
+    console.warn(
+      `Dropped ${communityFailures.length} community site(s) the IGN could not resolve: ` +
+        communityFailures.map((failure) => failure.label).join(", "),
+    )
+  }
+  return { resolved, dropped: new Set(communityFailures.map((failure) => failure.key)) }
 }
 
 async function removeDemo(client) {
@@ -487,23 +522,26 @@ async function insertSurvey(client, survey, userId) {
     [id, survey.parcelIds],
   )
   if (survey.withEvents) {
-    // The phone pulls its changes from the events: without one, the survey never reaches it.
-    await client.query(
-      `INSERT INTO survey_events (id, survey_id, actor_id, event_type, payload, created_at)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6)`,
+    // The phone pulls its changes from the events: without one, the survey never reaches it. A
+    // short log (created, edited, then submitted) also gives "Journal du relevé" something to show.
+    const at = (minutesBefore) =>
+      new Date(survey.when.getTime() - minutesBefore * 60000).toISOString()
+    const events = [
+      ["created", { site_name: survey.siteName, sync_version: 1, warnings: [] }, at(150)],
       [
-        crypto.randomUUID(),
-        id,
-        userId,
-        submitted ? "submitted" : "updated",
-        JSON.stringify(
-          submitted
-            ? { scores: evaluation.scores, warnings: [] }
-            : { site_name: survey.siteName, sync_version: 1, warnings: [] },
-        ),
-        when,
+        "updated",
+        { site_name: survey.siteName, sync_version: 1, warnings: [] },
+        submitted ? at(60) : at(0),
       ],
-    )
+    ]
+    if (submitted) events.push(["submitted", { scores: evaluation.scores, warnings: [] }, at(0)])
+    for (const [eventType, payload, createdAt] of events) {
+      await client.query(
+        `INSERT INTO survey_events (id, survey_id, actor_id, event_type, payload, created_at)
+         VALUES ($1, $2, $3, $4, $5::jsonb, $6)`,
+        [crypto.randomUUID(), id, userId, eventType, JSON.stringify(payload), createdAt],
+      )
+    }
   }
 }
 
@@ -531,12 +569,20 @@ function argValue(name, fallback) {
 async function prepare(count) {
   const community = communitySites(count)
   const owner = ownerSites()
-  const resolved = await resolveAll([...community, ...owner])
-  const communitySurveys = planCommunitySurveys(count, community)
+  const { resolved, dropped } = await resolveAll(community, owner)
+  const communitySurveys = planCommunitySurveys(count, community).filter(
+    (survey) => !dropped.has(survey.site.key),
+  )
   const ownerSurveys = planOwnerSurveys(owner)
   completeSurveys(communitySurveys, resolved)
   completeSurveys(ownerSurveys, resolved)
-  return { community, owner, resolved, communitySurveys, ownerSurveys }
+  return {
+    community: community.filter((site) => !dropped.has(site.key)),
+    owner,
+    resolved,
+    communitySurveys,
+    ownerSurveys,
+  }
 }
 
 function uniqueParcels(surveys) {
@@ -589,8 +635,11 @@ async function main() {
   const dryRun = process.argv.includes("--dry-run")
   const remove = process.argv.includes("--remove")
   const count = Number(argValue("count", DEFAULT_COUNT))
-  if (!Number.isInteger(count) || count < 1) {
-    throw new Error(`--count must be a positive integer (got ${argValue("count", "")}).`)
+  const maxCount = PLACES.length * SITES_PER_PLACE_MAX * MAX_PER_SITE
+  if (!Number.isInteger(count) || count < 1 || count > maxCount) {
+    throw new Error(
+      `--count must be an integer between 1 and ${maxCount} (got ${argValue("count", "")}).`,
+    )
   }
   const ownerEmail = argValue("owner-email", DEFAULT_OWNER_EMAIL)
 

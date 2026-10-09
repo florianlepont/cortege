@@ -768,7 +768,38 @@ Plans:
   2. A survey from another member keeps showing the parcel history and never the change log.
   3. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: TBD
+**Plans**: 11/12 plans executed
+
+**Wave 1**
+
+- [x] 24-01-PLAN.md — API and wire contract: `ibp_method_version` on the two history payloads (only API touch; triggers native CI)
+- [x] 24-02-PLAN.md — Building blocks: grouped-list `multiline` row, history hook `reload`/refresh key, community hook `withPhotos`, delta-text contrast pairs
+- [x] 24-03-PLAN.md — "Journal du relevé" page and `surveyJournal` route, `EventsTab` `hideHeader`, journal strings, navigation tests
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 24-04-PLAN.md — Pure model (TDD): `app/parcel-history.ts` and `app/trend-geometry.ts`
+- [x] 24-05-PLAN.md — Catalogue: parcel history page texts, summary row texts, header titles, "version N" entry
+- [x] 24-06-PLAN.md — "Journal du relevé" entry in the summary's "…" menu (iOS native menu and sheet); export and delete unchanged (D-05)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 24-07-PLAN.md — Summary row "Historique de la parcelle" with its derived value
+- [x] 24-08-PLAN.md — Trend card and SVG curve (reveal spike first, fallback dash offset)
+- [x] 24-09-PLAN.md — Per-factor delta card and parcel survey list
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 24-10-PLAN.md — Parcel history page assembled (`surveyHistory`), old history section removed
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 24-11-PLAN.md — Another member's survey: history row and `communityHistory` page in both stacks, no change log
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 24-12-PLAN.md — CLAUDE.md note and owner phone check, light and dark (criterion 3), then OA-124 closed
+
 **UI hint**: yes
 
 ### Phase 25: Global Search (INSERTED)
@@ -883,7 +914,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 21. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
 | 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
-| 24. Survey History Split | 0/TBD | Not started | - |
+| 24. Survey History Split | 11/12 | In Progress|  |
 | 25. Global Search | 0/TBD | Not started | - |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 27. In-depth Quality Audit | 0/TBD | Not started | - |

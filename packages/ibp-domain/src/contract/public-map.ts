@@ -51,6 +51,8 @@ export type CommunitySurveyHistoryItem = {
   author_name: string | null
   observation_year: number | null
   version_number: number | null
+  /** The survey's IBP method version tag; null means v3.0. Absent on an older server. */
+  ibp_method_version?: string | null
   ibp_total: number
   submitted_at: string
   /** True for the survey the page is about. */

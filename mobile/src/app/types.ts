@@ -53,6 +53,8 @@ export type ParcelSurveyHistoryItem = {
   survey_id: string
   observation_year: number | null
   version_number: number | null
+  /** The survey's IBP method version tag; absent on an older server, null = v3.0. */
+  ibp_method_version?: string | null
   scores: IbpScores
   factor_results: Record<string, FactorCanonical>
   submitted_at: string

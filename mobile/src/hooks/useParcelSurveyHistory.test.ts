@@ -23,7 +23,13 @@ afterEach(async () => {
 describe("useParcelSurveyHistory", () => {
   test("stays idle without a parcel id", async () => {
     const { result } = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, null))
-    expect(result.current).toEqual({ items: [], loading: false, error: false, offline: false })
+    expect(result.current).toEqual({
+      items: [],
+      loading: false,
+      error: false,
+      offline: false,
+      reload: expect.any(Function),
+    })
     expect(mockFetchParcelSurveyHistory).not.toHaveBeenCalled()
   })
 
@@ -90,7 +96,13 @@ describe("useParcelSurveyHistory", () => {
     const { result } = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1", true))
 
     expect(mockFetchParcelSurveyHistory).not.toHaveBeenCalled()
-    expect(result.current).toEqual({ items: [], loading: false, error: false, offline: true })
+    expect(result.current).toEqual({
+      items: [],
+      loading: false,
+      error: false,
+      offline: true,
+      reload: expect.any(Function),
+    })
   })
 
   test("going back online after being offline fetches normally", async () => {
@@ -107,5 +119,80 @@ describe("useParcelSurveyHistory", () => {
     })
     await waitFor(() => expect(result.current.items).toEqual([{ survey_id: "s1" }]))
     expect(result.current.offline).toBe(false)
+  })
+
+  test("reload() fetches again and keeps the first items while it is in flight", async () => {
+    let resolveSecond: (value: { items: unknown[] }) => void = () => {}
+    mockFetchParcelSurveyHistory
+      .mockResolvedValueOnce({ items: [{ survey_id: "s1" }] })
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveSecond = resolve
+        }),
+      )
+    const { result } = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1"))
+    await waitFor(() => expect(result.current.items).toEqual([{ survey_id: "s1" }]))
+    const firstReload = result.current.reload
+
+    await act(async () => {
+      result.current.reload()
+    })
+    expect(mockFetchParcelSurveyHistory).toHaveBeenCalledTimes(2)
+    expect(result.current.loading).toBe(true)
+    expect(result.current.items).toEqual([{ survey_id: "s1" }])
+    expect(result.current.reload).toBe(firstReload)
+
+    await act(async () => {
+      resolveSecond({ items: [{ survey_id: "s1" }, { survey_id: "s2" }] })
+    })
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.items).toEqual([{ survey_id: "s1" }, { survey_id: "s2" }])
+  })
+
+  test("a new refreshKey refetches, the same key does not", async () => {
+    mockFetchParcelSurveyHistory.mockResolvedValue({ items: [{ survey_id: "s1" }] })
+    const { result, rerender } = await renderHook(
+      ({ refreshKey }: { refreshKey: string }) =>
+        useParcelSurveyHistory(API_URL, TOKEN, "P1", false, refreshKey),
+      { initialProps: { refreshKey: "draft" } },
+    )
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(mockFetchParcelSurveyHistory).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await rerender({ refreshKey: "draft" })
+    })
+    expect(mockFetchParcelSurveyHistory).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await rerender({ refreshKey: "submitted" })
+    })
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(mockFetchParcelSurveyHistory).toHaveBeenCalledTimes(2)
+  })
+
+  test("reload() while offline keeps the offline state and does not fetch", async () => {
+    const { result } = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1", true))
+
+    await act(async () => {
+      result.current.reload()
+    })
+    expect(mockFetchParcelSurveyHistory).not.toHaveBeenCalled()
+    expect(result.current.offline).toBe(true)
+    expect(result.current.loading).toBe(false)
+  })
+
+  test("reload() after a failure fetches again and clears the error", async () => {
+    mockFetchParcelSurveyHistory
+      .mockRejectedValueOnce(new Error("boom"))
+      .mockResolvedValueOnce({ items: [{ survey_id: "s1" }] })
+    const { result } = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1"))
+    await waitFor(() => expect(result.current.error).toBe(true))
+
+    await act(async () => {
+      result.current.reload()
+    })
+    await waitFor(() => expect(result.current.items).toEqual([{ survey_id: "s1" }]))
+    expect(result.current.error).toBe(false)
   })
 })

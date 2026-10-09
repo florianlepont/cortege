@@ -141,7 +141,10 @@ describe("Community survey page (e2e)", () => {
       author_name: string | null
       is_current: boolean
       version_number: number
+      ibp_method_version: string | null
     }>
+    expect(history[0]).toHaveProperty("ibp_method_version")
+    expect(history[1]).toHaveProperty("ibp_method_version")
     expect(history.map((item) => item.survey_id)).toEqual([firstId, secondId])
     expect(history.map((item) => item.is_current)).toEqual([false, true])
     expect(history[0].version_number).toBeLessThan(history[1].version_number)

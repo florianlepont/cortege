@@ -19,9 +19,8 @@ export const communitySurveyFr = {
     stage: "Étage de végétation",
   },
   photosFailed: "Les photos n'ont pas pu être chargées.",
+  // The author line of a parcel history row; the page and row texts live in fr.parcelHistory.
   history: {
-    title: "Historique de la parcelle",
-    current: "Ce relevé",
     row: ({
       author,
       year,
@@ -34,9 +33,6 @@ export const communitySurveyFr = {
       [author, year !== null ? String(year) : null, version !== null ? `version ${version}` : null]
         .filter((part): part is string => part !== null)
         .join(" · "),
-    total: (score: number) => `${score} / 50`,
-    open: ({ name, total }: { name: string; total: number }) =>
-      `${name}, ${total} sur 50. Ouvrir ce relevé`,
   },
   a11y: {
     photo: ({ index, total }: { index: number; total: number }) => `Photo ${index} sur ${total}`,

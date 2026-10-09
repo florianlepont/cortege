@@ -84,6 +84,22 @@ describe("useCommunitySurvey", () => {
     expect(mockFetchDownload).toHaveBeenCalledTimes(2)
   })
 
+  it("loads the survey without requesting any photo with withPhotos: false", async () => {
+    mockFetchSurvey.mockResolvedValue(detail)
+    mockFetchAttachments.mockResolvedValue({ items: [{ id: "a-1", mime_type: "image/jpeg" }] })
+    const { result } = await renderHook(() =>
+      useCommunitySurvey("http://api.test/v1", "token", "s-1", { withPhotos: false }),
+    )
+    await settle()
+
+    expect(result.current.status).toBe("ready")
+    expect(result.current.detail).toBe(detail)
+    expect(result.current.photos).toEqual([])
+    expect(result.current.photosFailed).toBe(false)
+    expect(mockFetchAttachments).not.toHaveBeenCalled()
+    expect(mockFetchDownload).not.toHaveBeenCalled()
+  })
+
   it("keeps the survey when its photos fail", async () => {
     mockFetchSurvey.mockResolvedValue(detail)
     mockFetchAttachments.mockRejectedValue(new Error("boom"))

@@ -43,11 +43,23 @@ jest.mock("../../screens/survey-search/SurveySearchScreen", () => ({
 jest.mock("../../screens/community-survey/CommunitySurveyScreen", () => ({
   CommunitySurveyScreen: mockScreen("communitySurvey"),
 }))
+jest.mock("../../screens/community-survey/CommunityHistoryScreen", () => ({
+  CommunityHistoryScreen: mockScreen("communityHistory"),
+}))
 const mockCommunitySurvey = { detail: null, photos: [], status: "loading", photosFailed: false }
-const mockCommunitySurveyArgs: { surveyId?: string; accessToken?: string | null } = {}
+const mockCommunitySurveyArgs: {
+  surveyId?: string
+  accessToken?: string | null
+  options?: { withPhotos?: boolean }
+} = {}
 jest.mock("../../hooks/useCommunitySurvey", () => ({
-  useCommunitySurvey: (_apiUrl: string, accessToken: string | null, surveyId: string) => {
-    Object.assign(mockCommunitySurveyArgs, { accessToken, surveyId })
+  useCommunitySurvey: (
+    _apiUrl: string,
+    accessToken: string | null,
+    surveyId: string,
+    options?: { withPhotos?: boolean },
+  ) => {
+    Object.assign(mockCommunitySurveyArgs, { accessToken, surveyId, options })
     return mockCommunitySurvey
   },
 }))
@@ -125,6 +137,9 @@ jest.mock("../../screens/SurveyScoreScreen", () => ({
 }))
 jest.mock("../../screens/SurveyHistoryScreen", () => ({
   SurveyHistoryScreen: mockScreen("surveyHistory"),
+}))
+jest.mock("../../screens/SurveyJournalScreen", () => ({
+  SurveyJournalScreen: mockScreen("surveyJournal"),
 }))
 jest.mock("../../screens/survey-wizard/SurveyWizardScreen", () => ({
   SurveyWizardScreen: mockScreen("surveyForm"),
@@ -243,10 +258,12 @@ import { SettingsRoute } from "./SettingsRoute"
 import { SurveyContextRoute } from "./SurveyContextRoute"
 import { SurveyDetailRoute } from "./SurveyDetailRoute"
 import { SurveyHistoryRoute } from "./SurveyHistoryRoute"
+import { SurveyJournalRoute } from "./SurveyJournalRoute"
 import { SurveyScoreRoute } from "./SurveyScoreRoute"
 import { SurveyFormRoute } from "./SurveyFormRoute"
 import { SurveyListRoute } from "./SurveyListRoute"
 import { SurveySearchRoute } from "./SurveySearchRoute"
+import { CommunityHistoryRoute } from "./CommunityHistoryRoute"
 import { CommunitySurveyRoute } from "./CommunitySurveyRoute"
 
 /** An action object whose members are jest.fn()s created on first access. */
@@ -981,7 +998,7 @@ describe("SurveySearchRoute", () => {
 })
 
 describe("CommunitySurveyRoute", () => {
-  test("loads the survey of the route and opens another one from its history", async () => {
+  test("loads the survey of the route and opens its parcel history", async () => {
     const navigation = mockSearchNavigation
     await mount(
       <Providers fixture={makeFixture()}>
@@ -993,7 +1010,25 @@ describe("CommunitySurveyRoute", () => {
     expect(screen.apiUrl).toBe("http://api.test/v1")
     expect(screen.state).toBe(mockCommunitySurvey)
 
-    callback("communitySurvey", "onOpenSurvey")("c-2")
+    callback("communitySurvey", "onOpenHistory")()
+    expect(navigation.push).toHaveBeenCalledWith("communityHistory", { surveyId: "c-1" })
+  })
+})
+
+describe("CommunityHistoryRoute", () => {
+  test("loads the survey without its photos and opens another survey read-only", async () => {
+    const navigation = mockSearchNavigation
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <CommunityHistoryRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+    const screen = props("communityHistory")
+    expect(mockCommunitySurveyArgs.surveyId).toBe("c-1")
+    expect(mockCommunitySurveyArgs.options).toEqual({ withPhotos: false })
+    expect(screen.state).toBe(mockCommunitySurvey)
+
+    callback("communityHistory", "onOpenSurvey")("c-2")
     expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-2" })
   })
 })
@@ -1105,6 +1140,10 @@ describe("SurveyDetailRoute", () => {
       callback("surveyDetail", "onOpenHistory")()
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyHistory")
+    await act(async () => {
+      callback("surveyDetail", "onOpenJournal")()
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyJournal")
 
     await act(async () => {
       await callback("surveyDetail", "onOpenFactor")("s-01", "C")
@@ -1248,7 +1287,54 @@ describe("SurveyScoreRoute", () => {
 })
 
 describe("SurveyHistoryRoute", () => {
-  test("passes the events and the loader of the selected survey", async () => {
+  function selected() {
+    const fixture = makeFixture()
+    fixture.surveys = {
+      ...fixture.surveys,
+      state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
+    } as unknown as SurveysContextValue
+    return fixture
+  }
+
+  test("passes the session, the selected survey and opens other surveys read-only", async () => {
+    const fixture = selected()
+    const navigation = { ...makeNavigation(), push: jest.fn() }
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyHistoryRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    const historyProps = props("surveyHistory")
+    expect(historyProps.apiUrl).toBe("http://api.test/v1")
+    expect(historyProps.accessToken).toBe("token-1")
+    expect(historyProps.selectedSurvey).toBe(survey)
+    expect(historyProps.surveyDetails).toBe(fixture.surveys.state.surveyDetails)
+    expect(historyProps.detailsLoadingSurveyId).toBe(fixture.surveys.state.detailsLoadingSurveyId)
+    expect(historyProps).not.toHaveProperty("onLoadSurveyEvents")
+    callback("surveyHistory", "onOpenSurvey")("s-02")
+    expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "s-02" })
+  })
+
+  test("renders nothing without a selected survey", async () => {
+    const fixture = makeFixture()
+    fixture.surveys = {
+      ...fixture.surveys,
+      state: { ...fixture.surveys.state, selectedSurveyId: null, selectedSurvey: null },
+    } as unknown as SurveysContextValue
+    const tree = await mount(
+      <Providers fixture={fixture}>
+        <SurveyHistoryRoute
+          navigation={{ ...makeNavigation(), push: jest.fn() } as never}
+          route={{} as never}
+        />
+      </Providers>,
+    )
+    expect(tree.toJSON()).toBeNull()
+  })
+})
+
+describe("SurveyJournalRoute", () => {
+  test("passes the selected survey, its events and the loader", async () => {
     const fixture = {
       ...makeFixture(),
     }
@@ -1258,10 +1344,28 @@ describe("SurveyHistoryRoute", () => {
     } as unknown as SurveysContextValue
     await mount(
       <Providers fixture={fixture}>
-        <SurveyHistoryRoute navigation={makeNavigation() as never} route={{} as never} />
+        <SurveyJournalRoute navigation={makeNavigation() as never} route={{} as never} />
       </Providers>,
     )
-    expect(props("surveyHistory").onLoadSurveyEvents).toBe(fixture.surveys.actions.loadSurveyEvents)
+    const journalProps = props("surveyJournal")
+    expect(journalProps.selectedSurvey).toBe(survey)
+    expect(journalProps.surveyEvents).toBe(fixture.surveys.state.surveyEvents)
+    expect(journalProps.eventsLoadingSurveyId).toBe(fixture.surveys.state.eventsLoadingSurveyId)
+    expect(journalProps.onLoadSurveyEvents).toBe(fixture.surveys.actions.loadSurveyEvents)
+  })
+
+  test("renders nothing without a selected survey", async () => {
+    const fixture = makeFixture()
+    fixture.surveys = {
+      ...fixture.surveys,
+      state: { ...fixture.surveys.state, selectedSurveyId: null, selectedSurvey: null },
+    } as unknown as SurveysContextValue
+    const tree = await mount(
+      <Providers fixture={fixture}>
+        <SurveyJournalRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(tree.toJSON()).toBeNull()
   })
 })
 
@@ -1770,6 +1874,7 @@ describe("the halo frame on every page (D-19)", () => {
     ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
     ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
     ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
+    ["surveyJournal", () => <SurveyJournalRoute navigation={nav()} route={{} as never} />],
     ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
     // 12.2-15: the factor pager, its page probe is the active factor's screen.
     [
@@ -1779,6 +1884,10 @@ describe("the halo frame on every page (D-19)", () => {
     [
       "communitySurvey",
       () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
+    ],
+    [
+      "communityHistory",
+      () => <CommunityHistoryRoute route={{ params: { surveyId: "c-1" } } as never} />,
     ],
     // 12.2-16: the wizard. The stack hides its header, so on a phone the inset is 0.
     ["surveyForm", () => <SurveyFormRoute navigation={nav()} route={{} as never} />],
@@ -1847,10 +1956,15 @@ describe("the native large title frame (12.2-17)", () => {
     ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
     ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
     ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
+    ["surveyJournal", () => <SurveyJournalRoute navigation={nav()} route={{} as never} />],
     ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
     [
       "communitySurvey",
       () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
+    ],
+    [
+      "communityHistory",
+      () => <CommunityHistoryRoute route={{ params: { surveyId: "c-1" } } as never} />,
     ],
     ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
     ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],

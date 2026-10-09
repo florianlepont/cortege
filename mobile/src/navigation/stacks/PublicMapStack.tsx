@@ -2,6 +2,7 @@ import { View } from "react-native"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import { CommunityHistoryRoute } from "../routes/CommunityHistoryRoute"
 import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { PublicMapRoute } from "../routes/PublicMapRoute"
 import { styles } from "../styles"
@@ -35,6 +36,15 @@ export function PublicMapTabNavigator() {
             ...pageTitleOptions(theme),
           }}
           component={CommunitySurveyRoute}
+        />
+        <PublicMapStack.Screen
+          name="communityHistory"
+          options={{
+            title: fr.navigation.headers.communityHistory,
+            headerShown: true,
+            ...pageTitleOptions(theme),
+          }}
+          component={CommunityHistoryRoute}
         />
         <PublicMapStack.Screen
           name="accountHome"

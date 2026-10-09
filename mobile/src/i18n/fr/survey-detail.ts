@@ -3,13 +3,15 @@ import { IBP_MAX } from "@cortege/ibp-domain"
 // Filled by plan 01.9-12; no other plan edits this section. Plan 01.8-14 added the method
 // version texts, the totals out of 50 (built from IBP_MAX) and the CNPF band names.
 export const surveyDetailFr = {
-  // OA-49/50: the "…" menu now only holds the destructive action (the native menu on iOS, a sheet
-  // elsewhere). Sharing is its own header button (OA-48), renaming the pencil next to the title.
+  // The "…" menu holds "Renommer" (iOS large title, editable survey), "Journal du relevé" (D-02,
+  // own survey only) and "Supprimer" (the native menu on iOS, a sheet elsewhere). Sharing is its
+  // own header button (OA-48).
   menu: {
     share: "Partager",
     // 12.2-17: on iOS the survey's name is the native large title, which is not a button: renaming
     // moves to the "…" menu.
     rename: "Renommer",
+    journal: "Journal du relevé",
     delete: "Supprimer",
     cancel: "Annuler",
   },
@@ -87,11 +89,18 @@ export const surveyDetailFr = {
   rows: {
     context: "Contexte et parcelles",
     score: "Score IBP",
-    history: "Historique",
+    history: "Historique de la parcelle",
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
     scoreValue: (filled: number) => `${filled} sur 10`,
-    historyEmpty: "Voir les étapes",
+    // Value of the parcel history row (D-01). The arrow is U+2192; the owner phone check
+    // (plan 24-12) verifies the glyph, fallback: " à ".
+    historyValue: ({ first, latest }: { first: number; latest: number }) =>
+      `${first} \u2192 ${latest}`,
+    historyCount: (count: number) => (count === 1 ? "1 relevé" : `${count} relevés`),
+    historyFirst: "Premier relevé",
+    historyUnavailable: "Indisponible",
+    historyNoParcel: "Aucune parcelle",
   },
   // The two sub-pages of the summary (OA-46).
   contextScreen: {
@@ -153,8 +162,12 @@ export const surveyDetailFr = {
     exportFailed: "L'export du PDF a échoué. Réessayez.",
     exportShareUnavailable: "Aucune application de partage n'est disponible sur cet appareil.",
   },
+  // "Journal du relevé" (D-11): the change log of the survey, a page of its own.
+  journal: {
+    subtitle: "Ce qui s'est passé sur ce relevé.",
+  },
   events: {
-    title: "Historique du relevé",
+    title: "Journal du relevé",
     subtitle: "Synchronisation et étapes de ce relevé.",
     loading: "Chargement de l'historique…",
     empty: "Aucun événement chargé pour l'instant.",
@@ -224,17 +237,8 @@ export const surveyDetailFr = {
       `Supprimer la photo ${position} sur ${total}`,
     openFactor: ({ title, value }: { title: string; value: string }) =>
       `Ouvrir le facteur ${title}, ${value}`,
-  },
-  // Previous submitted surveys on the same parcel, and the deltas of this survey against the
-  // latest one (REQ-B-survey-detail, REQ-C-versioning). Row/delta formatting is shared with the
-  // Explorer map's parcel-history panel via fr.parcelHistory.
-  versionHistory: {
-    title: "Versions précédentes",
-    subtitle: "Relevés déjà soumis sur cette même parcelle.",
-    loading: "Chargement des versions précédentes…",
-    loadFailed: "Impossible de charger les versions précédentes.",
-    none: "Premier relevé soumis sur cette parcelle.",
-    sinceLatest: "Évolution depuis la version précédente",
-    factorDelta: (factor: string, value: string) => `${factor} ${value}`,
+    historyRow: ({ label, value }: { label: string; value: string }) => `${label}. ${value}`,
+    historyRange: ({ first, latest }: { first: number; latest: number }) =>
+      `de ${first} à ${latest} sur ${IBP_MAX.total}`,
   },
 } as const

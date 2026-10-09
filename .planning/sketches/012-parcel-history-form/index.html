@@ -1,0 +1,60 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Sketch 012 : forme de l'historique de la parcelle</title><style>:root{--page:#eef0e7;--card:#fff;--forest:#334e2b;--text:#1e2b19;--muted:#6b7566;--div:#d3d8c7;--moss:#89a33a;--terra:#cd5833;--chip:#e9e7d9;--bg:#d9ddd0;--ink2:#cfd6bd;--sel:#e3ecc9}
+body.dark{--page:#16181a;--card:#222629;--forest:#8fb56a;--text:#e9ece6;--muted:#9aa39a;--div:#33393c;--moss:#9cc24a;--chip:#2c3235;--bg:#0c0d0e;--ink2:#cfd6bd;--sel:#2c3b22}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;color:var(--text);padding:24px;width:1180px}
+h1{font-size:22px;margin-bottom:4px}.sub{color:var(--muted);font-size:14px;margin-bottom:14px;max-width:1000px;line-height:1.45}
+.toggle{position:fixed;top:14px;right:18px;background:var(--forest);color:var(--page);border:0;border-radius:18px;padding:8px 14px;font-weight:700;cursor:pointer;z-index:9}
+.var{margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid var(--div)}
+.var h2{font-size:18px;margin-bottom:2px}.tag{background:var(--sel);color:var(--forest);font-size:11px;font-weight:700;padding:2px 8px;border-radius:9px;margin-left:6px}
+.vdesc{color:var(--muted);font-size:13px;line-height:1.45;margin-bottom:10px;max-width:1000px}
+.row{display:flex;gap:22px;align-items:flex-start}.tile{width:300px}
+.cap{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.phone{height:560px;border-radius:30px;overflow:hidden;background:var(--page);position:relative;box-shadow:0 5px 18px rgba(0,0,0,.2);padding:50px 16px 0}
+.big{font-size:23px;font-weight:800;color:var(--forest);line-height:1.1}.meta{font-size:12.5px;color:var(--muted);line-height:1.4}
+.score{background:#334e2b;color:#fff;border-radius:18px;padding:12px 14px;margin-top:12px}.score b{font-size:30px}
+.bars{display:flex;gap:3px;margin-top:6px}.bars i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.28)}.bars i.on{background:#9cc24a}
+.card{background:var(--card);border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.rows .r{display:flex;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--div);font-size:13.5px}.rows .r:last-child{border:0}.rows .r b{font-weight:600}.rows .r span{color:var(--muted);text-align:right}
+.map{background:linear-gradient(135deg,#cfd9b4,#e3e8cf 45%,#bccb98);height:80px;border-radius:14px;margin-top:10px}
+.h{font-size:19px;font-weight:800;color:var(--forest);margin:14px 0 6px}
+.chip{display:inline-block;background:var(--chip);border-radius:11px;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--forest);margin-right:5px}
+.ev{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--div);font-size:13px}.ev i{width:9px;height:9px;border-radius:50%;background:var(--moss);margin-top:5px;flex:none}.ev small{display:block;color:var(--muted);font-size:11.5px}
+.hy{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--div);font-size:13.5px}
+.dots{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.2);font-weight:800}
+.menu{position:absolute;top:50px;right:14px;background:var(--card);border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.3);font-size:13.5px;overflow:hidden}.menu div{padding:11px 16px;border-bottom:1px solid var(--div)}.menu div:last-child{border:0}
+.pill{display:inline-block;background:var(--sel);color:var(--forest);font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:10px}
+.hl{background:var(--sel)}
+.note{font-size:12.5px;line-height:1.45;margin-top:8px;max-width:300px;color:var(--muted)}
+.btn{position:absolute;left:16px;right:16px;bottom:18px;background:#334e2b;color:#fff;border-radius:24px;text-align:center;padding:12px;font-weight:700;font-size:14px}
+</style>
+<style>.row{gap:26px}.tile{width:310px}.bar{height:7px;border-radius:4px;background:var(--div);position:relative;margin-top:4px}.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--moss)}
+.fr{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 0}.fr b{width:16px}.fr .d{width:30px;text-align:right;font-weight:700}.up{color:#4f7a1d}.dn{color:var(--terra)}.fl{color:var(--muted)}
+.yr{padding:12px 14px;border-bottom:1px solid var(--div)}.yr:last-child{border:0}.yr .t{display:flex;justify-content:space-between;font-size:14px}</style></head><body>
+<button class="toggle" onclick="document.body.classList.toggle('dark')">Clair / sombre</button>
+<h1>Phase 24 : la forme de l'historique de la parcelle</h1>
+<div class="sub">Parcelle « Chênaie du Bois Joli », quatre relevés (2023 à 2026). Chaque variante montre la page avec des données, puis un cas limite : première année seule, ou parcelle avec un relevé d'une autre méthode (v3.0 / v3.2).</div>
+<div id="root"></div>
+<script>
+const head=(t,s)=>`<div class="big">${t}</div><div class="meta" style="margin-top:5px">${s}</div>`;
+const phone=(cap,body)=>`<div class="tile"><div class="cap">${cap}</div><div class="phone">${body}</div></div>`;
+const Y=[[2026,3,34,'+3'],[2025,2,31,'+4'],[2024,1,27,'+6'],[2023,1,21,'']];
+const pts=[[2023,21],[2024,27],[2025,31],[2026,34]];
+const curve=()=>{const w=268,h=120,x=i=>20+i*(w-40)/3,y=v=>h-10-(v-15)*(h-30)/(50-15);
+ const d=pts.map((p,i)=>`${i?'L':'M'}${x(i)},${y(p[1])}`).join(' ');
+ return `<svg width="${w}" height="${h+20}" viewBox="0 0 ${w} ${h+20}"><path d="${d}" fill="none" stroke="#89a33a" stroke-width="3"/>${pts.map((p,i)=>`<circle cx="${x(i)}" cy="${y(p[1])}" r="${i==3?6:4}" fill="${i==3?'#334e2b':'#89a33a'}"/><text x="${x(i)}" y="${y(p[1])-10}" text-anchor="middle" font-size="11" fill="var(--text)" font-weight="700">${p[1]}</text><text x="${x(i)}" y="${h+14}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${p[0]}</text>`).join('')}</svg>`};
+const listA=Y.map(([y,v,t,d])=>`<div class="hy"><b>${y} · version ${v}</b><span>${t} / 50</span></div>`).join('');
+const F=[['A',2,3],['B',3,3],['C',0,2],['D',1,1],['E',2,4],['F',3,3],['G',2,4],['H',3,5],['I',4,3],['J',3,5]];
+const rowsF=F.map(([k,a,b])=>{const d=b-a;return `<div class="fr"><b>${k}</b><div class="bar" style="flex:1"><i style="width:${b*20}%"></i></div><span class="d ${d>0?'up':d<0?'dn':'fl'}">${d>0?'+'+d:d==0?'=':d}</span></div>`}).join('');
+const V=[
+{t:'A. Liste simple',tag:'chemin le plus court',d:'Ce qu\'on a aujourd\'hui, sorti de la page : une ligne par relevé (année, version, total sur 50), la plus récente en haut. Le relevé courant est marqué. Un toucher ouvre le relevé. Zéro nouveau composant.',
+ p:[phone('Quatre relevés',head('Historique de la parcelle','Chênaie du Bois Joli')+`<div class="card" style="margin-top:12px;padding:0 14px">${listA.replace('2026 · version 3','2026 · version 3 <span class="pill">ce relevé</span>')}</div>`),
+ phone('Premier relevé',head('Historique de la parcelle','Chênaie du Bois Joli')+`<div class="card" style="margin-top:12px;padding:0 14px"><div class="hy"><b>2023 · version 1 <span class="pill">ce relevé</span></b><span>21 / 50</span></div></div><div class="meta" style="margin-top:12px">C\'est le premier relevé de cette parcelle. Les suivants apparaîtront ici.</div>`)]},
+{t:'B. Courbe d\'évolution + liste',tag:'ma proposition',d:'Le titre dit la tendance (« +13 points depuis 2023 »), une petite courbe du total par année, puis la liste en dessous. On voit d\'un coup d\'œil si la forêt progresse, ce que demande le suivi année après année. La courbe se dessine avec react-native-svg, déjà dans l\'app (anneaux et barres de score).',
+ p:[phone('Quatre relevés',head('Historique de la parcelle','Chênaie du Bois Joli')+`<div class="score" style="margin-top:12px"><b>+13</b> points depuis 2023<div style="margin-top:4px">${curve()}</div></div><div class="card" style="margin-top:10px;padding:0 14px">${listA.replace('2026 · version 3','2026 · version 3 <span class="pill">ce relevé</span>')}</div>`),
+ phone('Méthodes mélangées',head('Historique de la parcelle','Chênaie du Bois Joli')+`<div class="card" style="margin-top:12px;padding:12px 14px"><div class="meta">Les relevés de 2023 et 2024 suivent la méthode v3.0, les suivants la v3.2 : la courbe est coupée entre les deux, les totaux ne sont pas strictement comparables.</div><svg width="268" height="110" viewBox="0 0 268 110"><path d="M20,70 L96,56" stroke="#89a33a" stroke-width="3" fill="none"/><path d="M172,48 L248,40" stroke="#89a33a" stroke-width="3" fill="none"/><path d="M96,56 L172,48" stroke="#89a33a" stroke-dasharray="4 4" stroke-width="2" fill="none"/></svg></div>`)]},
+{t:'C. Écart par facteur (A à J)',tag:'',d:'Le relevé courant comparé au précédent, facteur par facteur : barre du facteur et écart (+2, =, -1). Plus riche pour un écologue, mais c\'est déjà ce que fait aujourd\'hui le calcul d\'écart (computeFactorDeltas). Peut se combiner avec B : la courbe en haut, une carte « depuis 2025 » en dessous.',
+ p:[phone('Écarts depuis 2025',head('Historique de la parcelle','Chênaie du Bois Joli')+`<div class="card" style="margin-top:12px;padding:10px 14px"><div class="meta" style="margin-bottom:4px">2026 comparé à 2025 : <b>+3</b> (34 contre 31)</div>${rowsF}</div>`),
+ phone('Liste en dessous',head('Historique de la parcelle','Chênaie du Bois Joli')+`<div class="card" style="margin-top:12px;padding:0 14px">${Y.map(([y,v,t,d])=>`<div class="yr"><div class="t"><b>${y} · version ${v}</b><span>${t} / 50</span></div><div class="meta">${d?d+' points depuis l\'année précédente':'Premier relevé'}</div></div>`).join('')}</div>`)]}
+];
+document.getElementById('root').innerHTML=V.map(v=>`<div class="var"><h2>${v.t}${v.tag?`<span class="tag">${v.tag}</span>`:''}</h2><div class="vdesc">${v.d}</div><div class="row">${v.p.join('')}</div></div>`).join('');
+</script></body></html>

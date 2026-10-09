@@ -1216,7 +1216,7 @@ The page of a finished survey of any member, read-only (phase 12.1). Requires an
   `ibp_cas3_scale`, `region_version`, `vegetation_stage`) are those of the survey.
 - `history` lists the submitted surveys that share at least one parcel with this one, this survey
   included (`is_current`), oldest first (year, then version), capped to 20. Versions are numbered
-  per parcel across all authors.
+  per parcel across all authors. In this list, each entry carries `ibp_method_version` (null = v3.0).
 
 ### GET /public/community-surveys/{survey_id}/attachments
 
@@ -1303,6 +1303,7 @@ Response `200`:
       "survey_id": "2f3d8a59-7c53-4fdf-8df4-8e2325b6172b",
       "observation_year": 2025,
       "version_number": 1,
+      "ibp_method_version": null,
       "scores": {
         "ibp_total": 24,
         "ibp_peuplement_gestion": 17,
@@ -1315,6 +1316,7 @@ Response `200`:
       "survey_id": "2f3d8a59-7c53-4fdf-8df4-8e2325b6172c",
       "observation_year": 2026,
       "version_number": 2,
+      "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02",
       "scores": {
         "ibp_total": 28,
         "ibp_peuplement_gestion": 20,
@@ -1326,6 +1328,9 @@ Response `200`:
   ]
 }
 ```
+
+Each item carries the survey's IBP method version (`ibp_method_version`, null = v3.0; an older server
+may omit it).
 
 ## 6) Analytics (V2 Addendum, Out of MVP)
 

@@ -38,6 +38,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   /** Opens a factor of the survey to fill it ("Commencer / Continuer la notation"). */
   onOpenFactor: (surveyId: string, factor: FactorKey) => void | Promise<void>
   onOpenHistory: () => void
+  /** Opens "Journal du relevé" from the "…" menu (D-02); stable, the header items capture it. */
+  onOpenJournal: () => void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
   onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
 }
@@ -57,8 +59,18 @@ export type SurveyScoreScreenProps = SurveyDetailBaseProps & {
   onOpenFactor: (surveyId: string, factor: FactorKey) => Promise<void> | void
 }
 
-/** "Historique": the steps of this survey and the earlier surveys of its parcel. */
+/**
+ * "Historique de la parcelle": the surveys of this survey's parcel, their trend and the change per
+ * factor since the survey just before.
+ */
 export type SurveyHistoryScreenProps = SurveyDetailBaseProps & {
+  /** Opens one other survey of the parcel, read-only. */
+  onOpenSurvey: (surveyId: string) => void
+}
+
+/** "Journal du relevé": the change log of this survey (own surveys only). */
+export type SurveyJournalScreenProps = {
+  selectedSurvey: LocalSurvey
   surveyEvents: Record<string, SurveyEventItem[]>
   eventsLoadingSurveyId: string | null
   onLoadSurveyEvents: (surveyId: string) => Promise<void>

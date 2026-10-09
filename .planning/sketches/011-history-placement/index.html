@@ -1,0 +1,61 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Sketch 011 : où vivent le journal et l'historique</title><style>:root{--page:#eef0e7;--card:#fff;--forest:#334e2b;--text:#1e2b19;--muted:#6b7566;--div:#d3d8c7;--moss:#89a33a;--terra:#cd5833;--chip:#e9e7d9;--bg:#d9ddd0;--ink2:#cfd6bd;--sel:#e3ecc9}
+body.dark{--page:#16181a;--card:#222629;--forest:#8fb56a;--text:#e9ece6;--muted:#9aa39a;--div:#33393c;--moss:#9cc24a;--chip:#2c3235;--bg:#0c0d0e;--ink2:#cfd6bd;--sel:#2c3b22}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;color:var(--text);padding:24px;width:1180px}
+h1{font-size:22px;margin-bottom:4px}.sub{color:var(--muted);font-size:14px;margin-bottom:14px;max-width:1000px;line-height:1.45}
+.toggle{position:fixed;top:14px;right:18px;background:var(--forest);color:var(--page);border:0;border-radius:18px;padding:8px 14px;font-weight:700;cursor:pointer;z-index:9}
+.var{margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid var(--div)}
+.var h2{font-size:18px;margin-bottom:2px}.tag{background:var(--sel);color:var(--forest);font-size:11px;font-weight:700;padding:2px 8px;border-radius:9px;margin-left:6px}
+.vdesc{color:var(--muted);font-size:13px;line-height:1.45;margin-bottom:10px;max-width:1000px}
+.row{display:flex;gap:22px;align-items:flex-start}.tile{width:300px}
+.cap{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.phone{height:560px;border-radius:30px;overflow:hidden;background:var(--page);position:relative;box-shadow:0 5px 18px rgba(0,0,0,.2);padding:50px 16px 0}
+.big{font-size:23px;font-weight:800;color:var(--forest);line-height:1.1}.meta{font-size:12.5px;color:var(--muted);line-height:1.4}
+.score{background:#334e2b;color:#fff;border-radius:18px;padding:12px 14px;margin-top:12px}.score b{font-size:30px}
+.bars{display:flex;gap:3px;margin-top:6px}.bars i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.28)}.bars i.on{background:#9cc24a}
+.card{background:var(--card);border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.rows .r{display:flex;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--div);font-size:13.5px}.rows .r:last-child{border:0}.rows .r b{font-weight:600}.rows .r span{color:var(--muted);text-align:right}
+.map{background:linear-gradient(135deg,#cfd9b4,#e3e8cf 45%,#bccb98);height:80px;border-radius:14px;margin-top:10px}
+.h{font-size:19px;font-weight:800;color:var(--forest);margin:14px 0 6px}
+.chip{display:inline-block;background:var(--chip);border-radius:11px;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--forest);margin-right:5px}
+.ev{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--div);font-size:13px}.ev i{width:9px;height:9px;border-radius:50%;background:var(--moss);margin-top:5px;flex:none}.ev small{display:block;color:var(--muted);font-size:11.5px}
+.hy{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--div);font-size:13.5px}
+.dots{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.2);font-weight:800}
+.menu{position:absolute;top:50px;right:14px;background:var(--card);border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.3);font-size:13.5px;overflow:hidden}.menu div{padding:11px 16px;border-bottom:1px solid var(--div)}.menu div:last-child{border:0}
+.pill{display:inline-block;background:var(--sel);color:var(--forest);font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:10px}
+.hl{background:var(--sel)}
+.note{font-size:12.5px;line-height:1.45;margin-top:8px;max-width:300px;color:var(--muted)}
+.btn{position:absolute;left:16px;right:16px;bottom:18px;background:#334e2b;color:#fff;border-radius:24px;text-align:center;padding:12px;font-weight:700;font-size:14px}
+</style></head><body>
+<button class="toggle" onclick="document.body.classList.toggle('dark')">Clair / sombre</button>
+<h1>Phase 24 : où vivent le journal du relevé et l'historique de la parcelle</h1>
+<div class="sub">Aujourd'hui une seule ligne « Historique » ouvre une page qui empile le journal des changements (technique) et les relevés précédents de la parcelle (information de fond). Trois façons de les séparer. Chaque variante montre la page de mon relevé, sa sous-page, et le relevé d'un autre membre.</div>
+<div id="root"></div>
+<script>
+const score=(n,on)=>`<div class="score"><b>${n}</b> / 50<div class="bars">${'<i class="on"></i>'.repeat(on)+'<i></i>'.repeat(10-on)}</div></div>`;
+const head=(t,s)=>`<div class="big">${t}</div><div class="meta" style="margin-top:5px">${s}</div>`;
+const rows=(a,hl)=>`<div class="card rows" style="margin-top:12px">${a.map(([l,v,h])=>`<div class="r ${h?'hl':''}"><b>${l}</b><span>${v}</span></div>`).join('')}</div>`;
+const mapc=`<div class="map"></div>`;
+const ev=`<div class="ev"><i></i><div>Relevé terminé<small>12 mai 2026, 14:02</small></div></div><div class="ev"><i></i><div>Synchronisé<small>12 mai 2026, 14:03</small></div></div><div class="ev"><i></i><div>Relevé modifié<small>12 mai 2026, 13:40</small></div></div><div class="ev"><i></i><div>Relevé créé<small>12 mai 2026, 11:15</small></div></div>`;
+const hist=`<div class="hy"><b>2026 · version 3</b><span>34 / 50</span></div><div class="hy"><b>2025 · version 2</b><span>31 / 50</span></div><div class="hy"><b>2024 · version 1</b><span>27 / 50</span></div><div class="hy"><b>2023 · version 1</b><span>21 / 50</span></div>`;
+const phone=(cap,body,extra='')=>`<div class="tile"><div class="cap">${cap}</div><div class="phone">${body}${extra}</div></div>`;
+const comm=(r)=>phone('Relevé d\'un autre membre',head('Ripisylve de l\'Yerres','● Terminé · Marie Lepont · 16 mai 2026')+`<div style="margin-top:7px"><span class="chip">2026</span><span class="chip">version 2</span></div>`+score(23,10)+mapc+rows(r));
+const V=[
+{t:'A. Deux lignes sur la page du relevé',tag:'chemin le plus court',d:'La ligne « Historique » se dédouble : « Journal du relevé » (étapes de ce relevé) et « Historique de la parcelle » (relevés précédents). Chacune ouvre sa page. Aucune règle cachée, tout est visible, la liste passe à quatre lignes.',
+ p:[phone('Mon relevé',head('Chênaie du Bois Joli','● Terminé · synchronisé')+score(34,10)+mapc+rows([['Contexte et parcelles','v3.2 · cas 2 ›'],['Score IBP','10 sur 10 ›'],['Journal du relevé','4 étapes ›',1],['Historique de la parcelle','4 relevés ›',1]])),
+ phone('Journal du relevé',head('Journal du relevé','Ce qui s\'est passé sur ce relevé.')+`<div style="margin-top:10px">${ev}</div>`),
+ phone('Historique de la parcelle',head('Historique de la parcelle','Les relevés faits sur cette parcelle.')+`<div style="margin-top:10px">${hist}</div>`),
+ comm([['Contexte et parcelles','v3.2 · cas 2 ›'],['Score IBP','23 sur 50 ›'],['Historique de la parcelle','2 relevés ›',1]])]},
+{t:'B. L\'historique de la parcelle rejoint « Contexte et parcelles »',tag:'',d:'L\'historique parle de la parcelle, il vit donc avec la parcelle : la page Contexte (carte, parcelles, méthode) gagne une section « Historique de la parcelle ». La ligne « Historique » ne garde que le journal. Trois lignes comme aujourd\'hui, mais l\'historique est moins visible (un niveau plus profond).',
+ p:[phone('Mon relevé',head('Chênaie du Bois Joli','● Terminé · synchronisé')+score(34,10)+mapc+rows([['Contexte et parcelles','v3.2 · cas 2 ›',1],['Score IBP','10 sur 10 ›'],['Journal du relevé','4 étapes ›',1]])),
+ phone('Contexte et parcelles',head('Contexte et parcelles','Parcelle, méthode et relevés précédents.')+mapc+`<div class="h">Parcelles · 1</div><div class="card rows"><div class="r"><b>Parcelle 1</b><span>94 AB 0123</span></div></div><div class="h hl" style="border-radius:8px;padding:2px 6px">Historique de la parcelle</div>${hist.split('</div><div class="hy">').slice(0,3).join('</div><div class="hy">')+'</div>'}`),
+ phone('Journal du relevé',head('Journal du relevé','Ce qui s\'est passé sur ce relevé.')+`<div style="margin-top:10px">${ev}</div>`),
+ comm([['Contexte et parcelles','2 relevés sur la parcelle ›',1],['Score IBP','23 sur 50 ›']])]},
+{t:'C. L\'historique de la parcelle en ligne, le journal derrière le menu',tag:'ma proposition',d:'Le journal est technique : il quitte la liste et s\'ouvre depuis le menu « … » de l\'en-tête (« Journal du relevé »). La liste garde quatre lignes parlantes, dont « Historique de la parcelle » avec le score de départ à l\'arrivée. Un relevé d\'un autre membre n\'a ni menu ni journal, ce qui rend la règle du critère 2 évidente.',
+ p:[phone('Mon relevé',head('Chênaie du Bois Joli','● Terminé · synchronisé')+score(34,10)+mapc+rows([['Contexte et parcelles','v3.2 · cas 2 ›'],['Score IBP','10 sur 10 ›'],['Historique de la parcelle','21 → 34 ›',1]]),`<div class="dots hl">…</div>`),
+ phone('Menu « … »',head('Chênaie du Bois Joli','● Terminé · synchronisé')+score(34,10)+mapc,`<div class="dots">…</div><div class="menu"><div>Exporter en PDF</div><div class="hl"><b>Journal du relevé</b></div><div>Supprimer le relevé</div></div>`),
+ phone('Journal du relevé',head('Journal du relevé','Ce qui s\'est passé sur ce relevé.')+`<div style="margin-top:10px">${ev}</div>`),
+ comm([['Contexte et parcelles','v3.2 · cas 2 ›'],['Score IBP','23 sur 50 ›'],['Historique de la parcelle','13 → 23 ›',1]])]}
+];
+document.getElementById('root').innerHTML=V.map(v=>`<div class="var"><h2>${v.t}${v.tag?`<span class="tag">${v.tag}</span>`:''}</h2><div class="vdesc">${v.d}</div><div class="row">${v.p.join('')}</div></div>`).join('');
+</script></body></html>

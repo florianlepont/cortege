@@ -26,6 +26,7 @@ import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
 import { useVisiblePulse } from "./survey-detail/useVisiblePulse"
+import { useHistoryRow } from "./survey-detail/useHistoryRow"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 import { useFinishBarHeight } from "./survey-detail/useFinishBarHeight"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
@@ -40,8 +41,9 @@ const alertsText = fr.surveyDetail.alerts
 
 /**
  * The summary of a survey (OA-46): its name and where it stands, the score, the photos, the map,
- * and three rows that open the sub-pages (context and parcels, score by factor, history). The one
- * action is the button at the bottom. The coloured chart of the ten factors is not here (D-24): it
+ * and three rows that open the sub-pages (context and parcels, score by factor, the parcel's
+ * history; the survey's own change log is in the "…" menu, never a row, D-02). The one action is
+ * the button at the bottom. The coloured chart of the ten factors is not here (D-24): it
  * lives on the score page only.
  */
 export function SurveyDetailScreen({
@@ -66,6 +68,7 @@ export function SurveyDetailScreen({
   onOpenScore,
   onOpenFactor,
   onOpenHistory,
+  onOpenJournal,
   onEnsureAttachmentPreviews,
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
@@ -156,6 +159,7 @@ export function SurveyDetailScreen({
     onRename: largeTitle && canEditSurvey ? handleRename : undefined,
     onShare: () => void handleShare(),
     onDelete: handleDelete,
+    onOpenJournal,
     onOpenMenu: handleOpenMenu,
   })
 
@@ -167,6 +171,13 @@ export function SurveyDetailScreen({
     data.filledFactorCount,
     data.nextFactor,
   )
+  const historyRow = useHistoryRow({
+    apiUrl,
+    accessToken,
+    parcelId: data.parcelIds[0] ?? null,
+    currentSurveyId: selectedSurvey.id,
+    refreshKey: selectedSurvey.status,
+  })
   const resolvedMethod = resolveMethodVersion(data.scoringContext.ibp_method_version)
   // The bottom button floats over the page on a transparent bar (D-27c), so at maximum scroll the
   // last row must end above the bar (its measured height, tab bar clearance included). Without the
@@ -199,8 +210,10 @@ export function SurveyDetailScreen({
         {
           key: "history",
           label: rowsText.history,
-          value: rowsText.historyEmpty,
-          onPress: onOpenHistory,
+          value: historyRow.value,
+          multiline: true,
+          accessibilityLabel: historyRow.accessibilityLabel,
+          onPress: historyRow.pressable ? onOpenHistory : undefined,
         },
       ],
     },
@@ -304,6 +317,7 @@ export function SurveyDetailScreen({
         onClose={() => setMenuVisible(false)}
         title={activeSiteName}
         options={[
+          { label: menuText.journal, onPress: onOpenJournal },
           {
             label: menuText.delete,
             destructive: true,

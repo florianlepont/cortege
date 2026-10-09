@@ -289,6 +289,12 @@ describe.each(schemes)("contrast pairs, %s scheme", (scheme) => {
     expect(contrastRatio(visual.pill.label, visual.pill.fallback)).toBeGreaterThanOrEqual(4.5)
   })
 
+  test("success and danger text on the glass card over the canvas (24 delta card)", () => {
+    const card = compositeOver(visual.glass.cardFill, colors.canvas)
+    expect(contrastRatio(theme.onSurface.success, card)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(theme.onSurface.danger, card)).toBeGreaterThanOrEqual(4.5)
+  })
+
   test("numeral end on the mid stop (large text)", () => {
     expect(contrastRatio(forest.numeralBottom, forestStops.b)).toBeGreaterThanOrEqual(3)
   })

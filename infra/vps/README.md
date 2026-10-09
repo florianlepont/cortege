@@ -374,11 +374,15 @@ starts being OOM-killed under load.
 ## Demo community data (owner testing, remove before launch)
 
 To see the Communauté search, the Explorer map, the parcel history and the read-only survey page
-before the app has real members, `api/scripts/seed-demo-community.js` creates eight fake members
-with about a hundred finished, public surveys spread over France, plus a dozen surveys on the
-owner's own account (drafts and finished ones, around Paris). Everything it creates is marked
-(`@demo.cortege.invalid` users, `demo-` survey ids, parcels with source `demo`) and `--remove`
-takes it all away.
+before the app has real members, `api/scripts/seed-demo-community.js` creates twenty fake members
+with a thousand finished, public surveys spread over France, plus twenty surveys on the owner's
+own account (6 drafts and 14 finished ones, around Paris). Since Phase 24 every parcel group has a
+history: about 200 sites with 3 to 8 surveys on consecutive years (2018 to 2026) whose quality
+drifts up or down, and about a third of the sites switch from the v3.0 to the v3.2 method on the
+way (the parcel history curve is cut there). The owner's surveys carry a history too (three
+parcels mixing v3.0 and v3.2, one decline, one first survey, a draft on every site) and a short
+change log each. Everything it creates is marked (`@demo.cortege.invalid` users, `demo-` survey
+ids, parcels with source `demo`) and `--remove` takes it all away.
 
 Since 2026-10-08 every demo survey sits on 1 to 3 **real IGN parcels** (two sites per place, the
 same parcels on every run), so the Explorer colours them by score at parcel zoom and the survey
@@ -423,6 +427,7 @@ docker compose -f infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.e
   exec api node api/scripts/seed-demo-community.js --remove
 ```
 
-Options: `--count=100` (community surveys), `--owner-email=...` (the account that gets its own
+Options: `--count=1000` (community surveys, up to 1728; one site per five surveys, so a run
+needs about 220 IGN lookups and several minutes), `--owner-email=...` (the account that gets its own
 surveys; a warning and no survey if no user has that email), `--dry-run`.
 

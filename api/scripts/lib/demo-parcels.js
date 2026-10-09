@@ -344,11 +344,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 /**
  * Resolves every site to real parcels, one request at a time with a pause between requests
  * (polite to the IGN). A site whose point gives no usable parcel, or whose request fails, is
- * retried at points further away; after `maxAttempts` it is listed in `failures`. Sites are
+ * retried at points further away; after `maxAttempts` it is listed in `failures` (key, label, reason). Sites are
  * resolved in order, so the same run picks the same parcels.
  *
  * `sites`: [{ key, label, point, wanted, random }]. Returns { resolved: Map key -> parcels,
- * failures: [{ label, reason }] }.
+ * failures: [{ key, label, reason }] }.
  */
 async function resolveSites(sites, options = {}) {
   const settings = options.settings ?? cadastreSettings()
@@ -400,7 +400,7 @@ async function resolveSites(sites, options = {}) {
       resolved.set(site.key, picked)
       break
     }
-    if (!resolved.has(site.key)) failures.push({ label: site.label, reason })
+    if (!resolved.has(site.key)) failures.push({ key: site.key, label: site.label, reason })
   }
   return { resolved, failures }
 }

@@ -38,6 +38,7 @@ type HistoryDbRow = {
   site_name: string
   observation_year: number | null
   version_number: number | null
+  ibp_method_version: string | null
   scores: Record<string, unknown>
   submitted_at: string
   author_name: string | null
@@ -102,6 +103,7 @@ export class CommunitySurveysService {
          s.site_name,
          s.observation_year,
          s.version_number,
+         s.ibp_method_version,
          s.scores,
          s.submitted_at::text,
          u.display_name AS author_name
@@ -150,6 +152,7 @@ export class CommunitySurveysService {
           author_name: item.author_name,
           observation_year: item.observation_year,
           version_number: item.version_number,
+          ibp_method_version: item.ibp_method_version,
           ibp_total: toFiniteNumber(item.scores?.ibp_total) ?? 0,
           submitted_at: item.submitted_at,
           is_current: item.id === row.id,

@@ -69,6 +69,7 @@ type FlatStyle = {
   minHeight?: number
   width?: number
   height?: number
+  flexShrink?: number
 }
 
 function flattenStyle(style: unknown): FlatStyle {
@@ -258,6 +259,41 @@ describe("AppGroupedList (ACC-03)", () => {
     ])
     const glyph = findGlyph(root, "trash-outline")
     expect(glyph.props.color).toBe(brandColors.terracotta)
+  })
+
+  test("a multiline nav row wraps its label to two lines and keeps its value whole", () => {
+    const { root } = render([
+      {
+        key: "s",
+        rows: [
+          {
+            key: "history",
+            label: "Historique de la parcelle",
+            value: "+3 depuis le relevé précédent",
+            multiline: true,
+            onPress: jest.fn(),
+          },
+        ],
+      },
+    ])
+    const texts = root.findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+    const label = texts.find((node) => node.props.children === "Historique de la parcelle")
+    const value = texts.find((node) => node.props.children === "+3 depuis le relevé précédent")
+    expect(label?.props.numberOfLines).toBe(2)
+    expect(value?.props.numberOfLines).toBe(1)
+    expect(flattenStyle(value?.props.style).flexShrink).toBe(0)
+  })
+
+  test("a nav row without multiline keeps one line for label and value", () => {
+    const { root } = render([
+      { key: "s", rows: [{ key: "row", label: "Email", value: "a@b.fr", onPress: jest.fn() }] },
+    ])
+    const texts = root.findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
+    const label = texts.find((node) => node.props.children === "Email")
+    const value = texts.find((node) => node.props.children === "a@b.fr")
+    expect(label?.props.numberOfLines).toBe(1)
+    expect(value?.props.numberOfLines).toBe(1)
+    expect(flattenStyle(value?.props.style).flexShrink).toBe(1)
   })
 
   test("a row without icon renders no tile", () => {

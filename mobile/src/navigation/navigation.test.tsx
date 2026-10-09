@@ -58,6 +58,8 @@ type ScreenRecord = {
 }
 
 const mockScreens: Record<string, ScreenRecord> = {}
+/** Every screen registration (a name can be registered by several stacks; `mockScreens` keeps the last). */
+const mockRegistrations: ScreenRecord[] = []
 const mockNavigators: Record<string, Record<string, unknown>[]> = {}
 const mockNavigation = { navigate: jest.fn(), setOptions: jest.fn() }
 
@@ -69,7 +71,9 @@ function mockCreateFakeNavigator(kind: string) {
     return ReactRef.createElement(NavigatorProps.Provider, { value: props }, children)
   }
   const Screen = (props: ScreenRecord) => {
-    mockScreens[props.name] = { ...props, navigator: ReactRef.useContext(NavigatorProps) }
+    const record = { ...props, navigator: ReactRef.useContext(NavigatorProps) }
+    mockScreens[props.name] = record
+    mockRegistrations.push(record)
     if (!props.component) return null
     return ReactRef.createElement(props.component, {
       navigation: mockNavigation,
@@ -126,9 +130,11 @@ jest.mock("./routes/SurveyDetailRoute", () => ({ SurveyDetailRoute: mockRoute() 
 jest.mock("./routes/SurveyContextRoute", () => ({ SurveyContextRoute: mockRoute() }))
 jest.mock("./routes/SurveyScoreRoute", () => ({ SurveyScoreRoute: mockRoute() }))
 jest.mock("./routes/SurveyHistoryRoute", () => ({ SurveyHistoryRoute: mockRoute() }))
+jest.mock("./routes/SurveyJournalRoute", () => ({ SurveyJournalRoute: mockRoute() }))
 jest.mock("./routes/SurveyFormRoute", () => ({ SurveyFormRoute: mockRoute() }))
 jest.mock("./routes/SurveySearchRoute", () => ({ SurveySearchRoute: mockRoute() }))
 jest.mock("./routes/CommunitySurveyRoute", () => ({ CommunitySurveyRoute: mockRoute() }))
+jest.mock("./routes/CommunityHistoryRoute", () => ({ CommunityHistoryRoute: mockRoute() }))
 jest.mock("./routes/FactorDetailRoute", () => ({ FactorDetailRoute: mockRoute() }))
 jest.mock("./routes/FactorHelpRoute", () => ({ FactorHelpRoute: mockRoute() }))
 jest.mock("./routes/ParcelSelectionRoute", () => ({
@@ -216,6 +222,7 @@ beforeEach(() => {
   mockConstants.appOwnership = null
   delete process.env.EXPO_PUBLIC_ENABLE_NATIVE_TABS
   for (const key of Object.keys(mockScreens)) delete mockScreens[key]
+  mockRegistrations.length = 0
   for (const key of Object.keys(mockNavigators)) delete mockNavigators[key]
   mockListConfigs.length = 0
   mockReloadSignals.length = 0
@@ -477,7 +484,14 @@ describe("stack options and listeners", () => {
 
   // Pages whose title is the native large title in the native iOS tab tree (12.2-17).
   const ACCOUNT_PAGES = ["accountHome", "settings", "offlineAreas"]
-  const SURVEY_SUB_PAGES = ["communitySurvey", "surveyContext", "surveyScore", "surveyHistory"]
+  const SURVEY_SUB_PAGES = [
+    "communitySurvey",
+    "communityHistory",
+    "surveyContext",
+    "surveyScore",
+    "surveyHistory",
+    "surveyJournal",
+  ]
   const resolveOwn = (name: string, args: Record<string, unknown> = {}) => {
     const raw = mockScreens[name].options as Options | OptionsFn
     return typeof raw === "function"
@@ -536,9 +550,11 @@ describe("stack options and listeners", () => {
     await mount(<AppNavigation />)
     const titles: Record<string, string> = {
       communitySurvey: fr.navigation.headers.communitySurvey,
+      communityHistory: fr.navigation.headers.communityHistory,
       surveyContext: fr.navigation.headers.surveyContext,
       surveyScore: fr.navigation.headers.surveyScore,
       surveyHistory: fr.navigation.headers.surveyHistory,
+      surveyJournal: fr.navigation.headers.surveyJournal,
     }
     for (const name of Object.keys(titles)) {
       const options = effectiveOptions(name)
@@ -636,9 +652,11 @@ describe("stack options and listeners", () => {
         "surveysHome",
         "surveyDetail",
         "communitySurvey",
+        "communityHistory",
         "surveyContext",
         "surveyScore",
         "surveyHistory",
+        "surveyJournal",
       ]
       for (const name of surveyPages) {
         expectHaloHeader(effectiveOptions(name))
@@ -647,6 +665,28 @@ describe("stack options and listeners", () => {
       expect((mockScreens.surveySearch.options as Options).headerShown).toBe(false)
     },
   )
+
+  test("communityHistory is registered in the survey stack and in the Explorer stack, never the journal (T-24-06)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(<AppNavigation />)
+    const explorerNavigator = mockRegistrations.filter(
+      (record) => record.name === "publicMapHome",
+    )[0].navigator
+    const inExplorer = mockRegistrations.filter((record) => record.navigator === explorerNavigator)
+    const history = inExplorer.filter((record) => record.name === "communityHistory")
+    expect(history).not.toHaveLength(0)
+    const options = history[0].options as Options
+    expect(options.headerShown).toBe(true)
+    expect(options.title).toBe(fr.navigation.headers.communityHistory)
+    // The Explorer stack mounts the community pages but neither the journal nor the owner's pages.
+    expect(inExplorer.map((record) => record.name)).not.toContain("surveyJournal")
+    expect(inExplorer.map((record) => record.name)).not.toContain("surveyHistory")
+    // The survey stack registers it too, and it is the stack that also holds the journal.
+    const inSurveys = mockRegistrations.filter(
+      (record) => record.name === "communityHistory" && record.navigator !== explorerNavigator,
+    )
+    expect(inSurveys).not.toHaveLength(0)
+  })
 
   test("the parcel map is one full-screen map: transparent header on iOS, dark opaque on Android", async () => {
     await mount(<AppNavigation />)

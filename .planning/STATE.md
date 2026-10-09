@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 24
-current_phase_name: Survey History Split
+current_phase_name: survey-history-split
 status: executing
-stopped_at: Completed 23-23-PLAN.md (Phase 23 plans 01 to 23 executed, phase verification human_needed; criteria 4 to 8 added on 2026-10-07/08 not yet planned)
-last_updated: "2026-10-09T08:21:01.909Z"
+stopped_at: Phase 24 plans 01 to 11 executed, plan 12 waiting for the owner phone check
+last_updated: "2026-10-09T10:30:00.000Z"
 last_activity: 2026-10-09
-last_activity_desc: Phase 25.1 (PDF export improvement) inserted before the UX/UI audit
+last_activity_desc: Phase 24 executing (demo data with history added), main merged (Phase 25.1 inserted)
 progress:
   total_phases: 29
   completed_phases: 23
-  total_plans: 182
-  completed_plans: 182
+  total_plans: 194
+  completed_plans: 193
   percent: 79
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phases 1 through 22 are complete (owner acceptance closed 2026-10-06). Phase 23 (Visual Modernisation, old 12.2) is in progress: plans 01 to 23 are executed and the owner gave his go on the phone (2026-10-08), phase verification is pending (human_needed), and criteria 4 to 8 (map colourisation, offline packs, design spec, component homogenisation, native components), added on 2026-10-07 and 2026-10-08, are still to plan. Then Phase 24 (survey history split, SEED-002), Phase 25 (global search, SEED-003), Phase 26 (UX/UI audit and design system update) and Phase 27 (in-depth quality audit) come before Phase 28 (Field Validation), which carries the device checks deferred from Phases 15, 17, 18 and 19 and the Android device pass of Phase 23. The roadmap was renumbered flat on 2026-10-07; see `.planning/ROADMAP.md` for the old-to-new table.
+**Current focus:** Phase 24 — survey-history-split
 
 ## Current Position
 
-Phase: 24 (Survey History Split), not planned yet
-Plan: 23 of 23 (all plans executed; criteria 4 to 8 not yet planned)
-Status: Phases 1 through 23 complete (Phase 23 closed 2026-10-09); Phases 24 to 27 not yet planned, then field tests (Phase 28)
-Last activity: 2026-10-08 (Phase 23 plan 23: owner go on the phone); 2026-10-07 (roadmap renumbered flat 1 to 28; Phase 24 (SEED-002) and Phase 25 (SEED-003) added; SEED-004 done in Phase 23; UX/UI audit is Phase 26, deep audit Phase 27)
+Phase: 24 (survey-history-split) — EXECUTING
+Plan: 12 of 12
+Status: Ready to execute
+Last activity: 2026-10-09 — Phase 24 execution started
 
 Progress: [████████░░] 23/29 phases complete
 
@@ -103,6 +103,17 @@ Progress: [████████░░] 23/29 phases complete
 | Phase 23 P21 | 22min | 3 tasks | 25 files |
 | Phase 23 P22 | 7min | 2 tasks | 5 files |
 | Phase 23 P23 | owner check | 2 tasks | 2 files |
+| Phase 24 P01 | 15min | 2 tasks | 9 files |
+| Phase 24 P02 | 15min | 3 tasks | 7 files |
+| Phase 24 P03 | 20min | 3 tasks | 14 files |
+| Phase 24 P04 | 25min | 2 tasks | 5 files |
+| Phase 24 P05 | 15min | 2 tasks | 6 files |
+| Phase 24 P06 | 15min | 2 tasks | 7 files |
+| Phase 24 P07 | 15min | 2 tasks | 7 files |
+| Phase 24 P08 | 40min | 2 tasks | 4 files |
+| Phase 24 P09 | 25min | 2 tasks | 4 files |
+| Phase 24 P10 | 40min | 3 tasks | 11 files |
+| Phase 24 P11 | 35min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -177,6 +188,17 @@ Decisions table. Decisions affecting current work:
 - [Phase 23]: 23-21: em dash gate over every string, template and JSX text under mobile/src (survey-export.ts out of scope), comments skipped through the TypeScript parser; motion gate per call (ReduceMotion.System unless the file branches on useReducedMotion()), React Native Animated confined to six allowlisted sign-in and sheet files, every endless loop gated by useScreenVisible; ExplorerSheet honours Reduce Motion; no open dark correction (no token changed); map overlays that keep theme text take theme.visual.mapPanel, map-control-like overlays the map control glass and ink
 - [Phase 23]: 23-22: charter section 13 records variant I as shipped (five token files, ForestAurora forest cards, forest native glass CTA over @expo/ui, dense map glass, gates, platform fallbacks), status pending plan 23-23; direction text carries the four phone checks without the final marker; SEED-005 animals dormant (numbered SEED-004 when planted, renumbered at the merge because main took SEED-004 for nearby parcels); Phase 28 (old 13) carries the Android device pass (ForestCard motion as the knob); CLAUDE.md has a Visual layer block and its gates
 - [Phase 23]: 23-23: owner "go" on build 39b4f005 (2026-10-08) for the whole phase; direction text "Statut : approuvée par le propriétaire le 2026-10-08" and charter 13.10 "approved by the owner on 2026-10-08"; light or dark follows the system only (in-app Apparence setting removed); dark Liquid Glass translucent and native with a glass ink; Explorer sheets native Liquid Glass on iOS 26 in both schemes; selected tab tint as DynamicColorIOS; dark basemap colouring not planned, owner declined a seed
+- [Phase 24-01]: ibp_method_version added as optional nullable wire field on both history payloads (null = v3.0); no migration, filters unchanged — D-10 needs the method per history item
+- [Phase 24]: Plan 24-02: delta-text contrast pairs enforced by test without any token change; useCommunitySurvey depends on a withPhotos boolean, not the options object
+- [Phase 24]: 24-03: no error notice and no journal.loadFailed on the journal page (loadSurveyEvents swallows errors); surveyJournal only in SurveysStackParamList (D-03)
+- [Phase 24]: 24-04: delta base is the survey immediately before the current one; trend title and curve use the latest 8 surveys while the summary row uses all (pinned by test) — UI-SPEC flag 4, RESEARCH Pitfall 4 and Open Question 1
+- [Phase 24]: 24-05: trend title split into string-only functions; entry says 'version N'; arrow U+2192 written as escape
+- [Phase 24]: 24-06 D-05: nothing moved; Journal du relevé added between Renommer and Supprimer, sheet entry on Android / Expo Go
+- [Phase 24-08]: TREND_REVEAL_MODE defaults to clip: the iOS 27 simulator spike showed the animated clip rectangle repainting; Android and device unverified, owner phone check in 24-12 confirms, fallback is one line (dash)
+- [Phase 24-08]: TrendCard title nested Texts spread brandTypography.screenTitle themselves because AppText places the default font first
+- [Phase 24]: 24-09: delta rows are display only (accessible View per row, no press, no animation); the current history row is selected, disabled, role text, other rows open that survey read-only
+- [Phase 24]: 24-10: ParcelHistoryView decides the variant itself (community never gets the delta block); the history page treats a missing access token as first load, not as first survey
+- [Phase 24]: 24-11: community history row uses historyRowState with hasParcel true, shown only when history has more than one entry; communityHistory registered in survey and Explorer stacks, journal never in Explorer
 
 ### Pending Todos
 
@@ -219,6 +241,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-08T12:56:32.000Z
-Stopped at: Completed 23-23-PLAN.md; Phase 23 verification human_needed, criteria 4 to 8 to plan, then /gsd-discuss-phase 24
-Resume file: None
+Last session: 2026-10-09T09:50:12.662Z
+Stopped at: Completed 24-11-PLAN.md
+Resume file: .planning/phases/24-survey-history-split/24-01-PLAN.md

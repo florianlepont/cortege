@@ -112,8 +112,15 @@ describe("Parcel history (e2e)", () => {
       survey_id: string
       observation_year: number
       version_number: number
+      ibp_method_version: string | null
     }>
     expect(items.some((item) => item.survey_id === surveyIdV1)).toBe(true)
     expect(items.some((item) => item.survey_id === surveyIdV2)).toBe(true)
+    for (const item of items) {
+      expect(item).toHaveProperty("ibp_method_version")
+      expect(item.ibp_method_version === null || typeof item.ibp_method_version === "string").toBe(
+        true,
+      )
+    }
   })
 })

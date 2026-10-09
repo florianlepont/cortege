@@ -26,13 +26,17 @@ export type CommunitySurveyState = {
 /**
  * The page of a finished survey of another member (OA-59): the survey, then its photos. The photos
  * load after the page so a slow or failing file never delays it; a stale answer for a survey the
- * screen has since left is dropped.
+ * screen has since left is dropped. The history page reads the survey for its `history` only and
+ * passes `{ withPhotos: false }`, which skips every attachment request.
  */
 export function useCommunitySurvey(
   apiUrl: string,
   accessToken: string | null,
   surveyId: string,
+  options: { withPhotos?: boolean } = {},
 ): CommunitySurveyState {
+  // The boolean, not the options object, is the effect dependency: an inline object never reloads.
+  const withPhotos = options.withPhotos !== false
   const [detail, setDetail] = useState<CommunitySurveyDetail | null>(null)
   const [photos, setPhotos] = useState<CommunityPhoto[]>([])
   const [phase, setPhase] = useState<CommunitySurveyState["status"]>("loading")
@@ -58,6 +62,8 @@ export function useCommunitySurvey(
         if (!cancelled) setPhase("error")
         return
       }
+
+      if (!withPhotos) return
 
       try {
         const listed = await fetchCommunitySurveyAttachments(apiUrl, accessToken, surveyId)
@@ -90,7 +96,7 @@ export function useCommunitySurvey(
     return () => {
       cancelled = true
     }
-  }, [apiUrl, accessToken, surveyId, attempt])
+  }, [apiUrl, accessToken, surveyId, attempt, withPhotos])
 
   const reload = useCallback(() => setAttempt((value) => value + 1), [])
 
