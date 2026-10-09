@@ -101,11 +101,4 @@ export const offlineMapFr = {
       later: "Ne pas télécharger la carte pour le moment",
     },
   },
-  parcelMissing: {
-    title: "Parcelle non disponible hors connexion",
-    message:
-      "Cette parcelle n'a pas été téléchargée. Elle sera récupérée automatiquement au retour du réseau.",
-    downloadAction: "Télécharger au retour du réseau",
-    queued: "Téléchargement programmé dès que la connexion revient.",
-  },
 } as const

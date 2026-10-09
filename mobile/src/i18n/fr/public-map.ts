@@ -44,7 +44,6 @@ export const publicMapFr = {
   a11y: {
     locate: "Centrer la carte sur ma position",
     closeClusterList: "Fermer la liste des relevés",
-    closeParcelHistory: "Fermer l'historique de la parcelle",
     showLegend: "Afficher la légende des scores",
     hideLegend: "Masquer la légende des scores",
     surveyMarker: (ibp: number) => `Relevé, IBP ${ibp}/50`,

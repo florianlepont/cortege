@@ -41,6 +41,20 @@ const PARCEL_ZOOM: Region = {
   latitudeDelta: 0.005,
   longitudeDelta: 0.005,
 }
+// About zoom 13.5: between the studied parcels (zoom 12) and the whole cadastre (zoom 15).
+const STUDIED_ZOOM: Region = {
+  latitude: 45.76,
+  longitude: 4.84,
+  latitudeDelta: 0.03,
+  longitudeDelta: 0.03,
+}
+// About zoom 10.8: too wide for any parcel.
+const WIDE_ZOOM: Region = {
+  latitude: 45.76,
+  longitude: 4.84,
+  latitudeDelta: 0.2,
+  longitudeDelta: 0.2,
+}
 
 type Props = Pick<UseMapViewportArgs, "items" | "showParcelLayer">
 
@@ -228,6 +242,34 @@ describe("useMapViewport", () => {
     expect(loadParcels).toHaveBeenCalledTimes(2)
     await rerender({ items: [item("a", 45.7, 4.8)], showParcelLayer: true })
     expect(loadParcels).toHaveBeenCalledTimes(2)
+  })
+
+  test("from zoom 12 the studied parcels load and draw, the cadastre still waits for zoom 15", async () => {
+    const { result, rerender, loadParcels } = await setup()
+
+    await moveTo(result, WIDE_ZOOM, true)
+    await advance(VIEWPORT_DEBOUNCE_MS)
+    expect(result.current.studiedParcelsRenderable).toBe(false)
+    expect(result.current.parcelLayerRenderable).toBe(false)
+    expect(loadParcels).not.toHaveBeenCalled()
+
+    await moveTo(result, STUDIED_ZOOM, true)
+    expect(result.current.studiedParcelsRenderable).toBe(true)
+    expect(result.current.parcelLayerRenderable).toBe(false)
+    await advance(VIEWPORT_DEBOUNCE_MS)
+    expect(loadParcels).toHaveBeenCalledTimes(1)
+    expect(loadParcels).toHaveBeenCalledWith({
+      bbox: computeRegionBbox(STUDIED_ZOOM),
+      zoom: result.current.zoom,
+    })
+
+    await moveTo(result, PARCEL_ZOOM, true)
+    expect(result.current.studiedParcelsRenderable).toBe(true)
+    expect(result.current.parcelLayerRenderable).toBe(true)
+
+    // The layer hidden (showParcelLayer false) draws and loads nothing at any zoom.
+    await rerender({ items: [], showParcelLayer: false })
+    expect(result.current.studiedParcelsRenderable).toBe(false)
   })
 
   test("moveTo animates the camera without touching the fit", async () => {

@@ -32,7 +32,10 @@ export type MapCanvasProps = {
   region: MapRegion
   selectedId: string | null
   parcelStatuses: PublicParcelStatusItem[]
+  /** From zoom 15: the cadastre, the scored parcels replacing the markers. */
   parcelLayerRenderable: boolean
+  /** From zoom 12: the studied parcels alone, filled by score, under the markers. */
+  studiedParcelsRenderable: boolean
   onRegionChangeComplete: (region: MapRegion, details?: { isGesture: boolean }) => void
   onSelectSurvey: (id: string) => void
   onSelectParcel: (parcelId: string) => void
@@ -62,6 +65,7 @@ export const MapCanvas = memo(function MapCanvas({
   selectedId,
   parcelStatuses,
   parcelLayerRenderable,
+  studiedParcelsRenderable,
   onRegionChangeComplete,
   onSelectSurvey,
   onSelectParcel,
@@ -80,6 +84,13 @@ export const MapCanvas = memo(function MapCanvas({
       parcelLayerRenderable ? markerItemsAtParcelZoom(items, parcelStatuses, draftIds) : items,
     [draftIds, items, parcelLayerRenderable, parcelStatuses],
   )
+  // Between zoom 12 and 15 only the studied parcels are drawn (the API answers only those, and a
+  // set kept from a closer view is filtered the same way); from 15 every parcel of the view is.
+  const shownParcels = useMemo(() => {
+    if (parcelLayerRenderable) return parcelStatuses
+    if (!studiedParcelsRenderable) return NO_PARCELS
+    return parcelStatuses.filter((parcel) => parcel.study_status === "studied")
+  }, [parcelLayerRenderable, parcelStatuses, studiedParcelsRenderable])
   const { clusters, resolveClusterPress } = useMapClusters({ items: markerItems, region })
 
   const clusterCenters = useMemo(() => {
@@ -126,7 +137,7 @@ export const MapCanvas = memo(function MapCanvas({
       <UserLocation />
       <CadastreLayer enabled={parcelLayerRenderable && !cadastreInStyle} />
       <ParcelPolygonsLayer
-        items={parcelLayerRenderable ? parcelStatuses : NO_PARCELS}
+        items={shownParcels}
         selectedParcelIds={highlightedParcelIds}
         byScore
         onParcelPress={onSelectParcel}

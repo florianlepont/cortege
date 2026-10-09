@@ -7,7 +7,6 @@ import { useOfflinePendingParcelDrain } from "../../hooks/useOfflinePendingParce
 import { ownDraftMapItems } from "../../map/own-drafts"
 import { usePublicMapExplorer } from "../../hooks/usePublicMapExplorer"
 import { PublicMapScreen } from "../../screens/PublicMapScreen"
-import { addPendingParcelDownload } from "../../storage/offline-map"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveyActions, useSurveys } from "../../state/surveys-context"
 import { useSyncActions } from "../../state/sync-actions-context"
@@ -42,9 +41,6 @@ export const PublicMapRoute = memo(function PublicMapRoute({
   const isOffline = useIsOffline()
   const { basemap, setBasemap } = useBasemapPreference()
   useOfflinePendingParcelDrain(session.apiUrl, accessToken, isOffline)
-  const handleQueueParcelDownload = useCallback((parcelId: string) => {
-    void addPendingParcelDownload(parcelId)
-  }, [])
 
   const explorer = usePublicMapExplorer({
     apiUrl: session.apiUrl,
@@ -102,7 +98,6 @@ export const PublicMapRoute = memo(function PublicMapRoute({
         isOffline={isOffline}
         basemap={basemap}
         onChangeBasemap={setBasemap}
-        onQueueParcelDownload={handleQueueParcelDownload}
         onOpenSurvey={handleOpenSurvey}
       />
     </View>

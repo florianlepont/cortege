@@ -17,6 +17,12 @@ export const DEFAULT_MAP_REGION: Region = {
 export const VIEWPORT_DEBOUNCE_MS = 400
 /** The cadastre layer is only drawn and loaded from this zoom. */
 export const PARCEL_MIN_ZOOM = 15
+/**
+ * The studied parcels (the ones with a public survey), filled by score, are drawn and loaded from
+ * this zoom: in a forest of large parcels they show without zooming right in. Between this zoom
+ * and PARCEL_MIN_ZOOM the API answers only those parcels, and the markers stay as they are.
+ */
+export const STUDIED_PARCEL_MIN_ZOOM = 12
 const FIT_DURATION_MS = 520
 
 /** The region that frames every item with a margin, or France without items. */
@@ -85,7 +91,7 @@ export type UseMapViewportArgs = {
  *   current one (the end of a programmatic move) is ignored.
  * - After the region has settled for 400 ms, the items of its bbox are loaded
  *   (usePublicMapExplorer also skips a request equal to the last one), and the
- *   cadastre parcels when the layer is shown at zoom 15+.
+ *   parcels: the studied ones from zoom 12, every cadastre parcel from zoom 15.
  * - The camera fits the items only after the first load and after an explicit
  *   filter apply, never after a viewport load: fitting after every load would
  *   move the camera, change the bbox and load again, forever.
@@ -110,9 +116,10 @@ export function useMapViewport({
 
   const zoom = useMemo(() => computeRegionZoom(region), [region])
   const parcelLayerRenderable = showParcelLayer && zoom >= PARCEL_MIN_ZOOM
+  const studiedParcelsRenderable = showParcelLayer && zoom >= STUDIED_PARCEL_MIN_ZOOM
   const viewportBbox = useMemo(() => computeRegionBbox(debouncedRegion), [debouncedRegion])
   const viewportZoom = useMemo(() => computeRegionZoom(debouncedRegion), [debouncedRegion])
-  const parcelsWanted = showParcelLayer && viewportZoom >= PARCEL_MIN_ZOOM
+  const parcelsWanted = showParcelLayer && viewportZoom >= STUDIED_PARCEL_MIN_ZOOM
 
   const onRegionChangeComplete = useCallback((next: Region, details?: { isGesture: boolean }) => {
     if (details?.isGesture === true) {
@@ -183,7 +190,7 @@ export function useMapViewport({
   const reload = useLatestCallback(() => {
     const bbox = computeRegionBbox(region)
     void loadItems({ bbox, force: true })
-    if (parcelLayerRenderable) {
+    if (studiedParcelsRenderable) {
       void loadParcelsLatest({ bbox, zoom })
     }
   })
@@ -198,6 +205,7 @@ export function useMapViewport({
     region,
     zoom,
     parcelLayerRenderable,
+    studiedParcelsRenderable,
     onRegionChangeComplete,
     fitOnce,
     moveTo,
