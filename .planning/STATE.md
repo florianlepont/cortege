@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 23
-current_phase_name: Visual Modernisation
+current_phase: 24
+current_phase_name: Survey History Split
 status: executing
 stopped_at: Completed 23-23-PLAN.md (Phase 23 plans 01 to 23 executed, phase verification human_needed; criteria 4 to 8 added on 2026-10-07/08 not yet planned)
 last_updated: "2026-10-08T12:56:32.000Z"
@@ -11,10 +11,10 @@ last_activity: 2026-10-08
 last_activity_desc: Phase 23 (old 12.2) plans 01 to 23 executed, owner go on the phone
 progress:
   total_phases: 28
-  completed_phases: 22
+  completed_phases: 23
   total_plans: 182
   completed_plans: 182
-  percent: 79
+  percent: 82
 ---
 
 # Project State
@@ -28,12 +28,12 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 
 ## Current Position
 
-Phase: 23 (Visual Modernisation, old 12.2) — EXECUTING
+Phase: 24 (Survey History Split), not planned yet
 Plan: 23 of 23 (all plans executed; criteria 4 to 8 not yet planned)
-Status: Plans complete, phase verification pending (human_needed); Phases 24 to 27 not yet planned, then field tests (Phase 28)
+Status: Phases 1 through 23 complete (Phase 23 closed 2026-10-09); Phases 24 to 27 not yet planned, then field tests (Phase 28)
 Last activity: 2026-10-08 (Phase 23 plan 23: owner go on the phone); 2026-10-07 (roadmap renumbered flat 1 to 28; Phase 24 (SEED-002) and Phase 25 (SEED-003) added; SEED-004 done in Phase 23; UX/UI audit is Phase 26, deep audit Phase 27)
 
-Progress: [████████░░] 22/28 phases complete
+Progress: [████████░░] 23/28 phases complete
 
 ## Performance Metrics
 

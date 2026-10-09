@@ -2,8 +2,8 @@
 phase: 23-visual-modernisation
 verified: 2026-10-08T13:06:08Z
 re_verified: 2026-10-08 (criteria 4 to 8, on HEAD 785811b3 = origin/main after PR #250)
-status: gaps_found
-score: 4/9 roadmap success criteria verified (criteria 1, 2, 3, 9 hold; 4 and 5 not started; 6, 7, 8 partial)
+status: passed
+score: 9/9 roadmap success criteria met (2026-10-09), Android pass and open design points carried to Phases 28 and 26
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
@@ -260,3 +260,9 @@ Bookkeeping: `23-VALIDATION.md` is still marked draft; STATE.md line 188 still l
 
 _Verified: 2026-10-08T13:06:08Z (criteria 1, 2, 3, 9); re-verified 2026-10-08 (criteria 4 to 8)_
 _Verifier: Claude (gsd-verifier)_
+
+## Closure (2026-10-09)
+
+Criteria 4 to 8 were built after the re-verification above and confirmed by the owner on an iPhone 15 Pro (Release build of PR #252, 2026-10-09): standard colour Plan IGN and its dark recolouring (PR #251, charter 13.11), design spec updated, 8 refactor batches (dead code and `@gorhom/bottom-sheet` removed, typography, spacing and radius tokens, `AppPressable` everywhere with a lint rule, chips, progress bars, rows and glass icon button merged, native action sheet, form sheet and gear item on iOS, native slider and picker evaluated and deferred, "why custom" register, see `docs/design/component-inventory-phase-23.md`). Two display bugs found on the phone were fixed before the merge: the factor help title overlapping the scrolled text in the form sheet, and the profile photo off-centre in its header glass.
+
+Carried over, not blockers: Android pass of the visual refresh and of the custom sheets and tab bar (Phase 28); native slider and segmented picker device spike, Explorer sheet drag off the JS thread, `AppGroupedList` and `AppCollapsibleSection` against `@expo/ui`, Compte spinner contrast in dark (Phase 26); 339 literals reduced, the 26 font weights, 2 `Jost-Medium` and the circular radii left because no token matches (Phase 26); the owner left the dark basemap beyond this recolouring and BD Forêt/relief out (SEED-001).
