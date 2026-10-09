@@ -12,6 +12,7 @@ import { ParcelSelectionRoute } from "../routes/ParcelSelectionRoute"
 import { SurveyContextRoute } from "../routes/SurveyContextRoute"
 import { SurveyDetailRoute } from "../routes/SurveyDetailRoute"
 import { SurveyHistoryRoute } from "../routes/SurveyHistoryRoute"
+import { SurveyJournalRoute } from "../routes/SurveyJournalRoute"
 import { SurveyScoreRoute } from "../routes/SurveyScoreRoute"
 import { SurveySearchRoute } from "../routes/SurveySearchRoute"
 import { SurveyFormRoute } from "../routes/SurveyFormRoute"
@@ -144,6 +145,15 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               ...pageTitleOptions(theme),
             }}
             component={SurveyHistoryRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyJournal"
+            options={{
+              title: headers.surveyJournal,
+              // 12.2-17: the native large title in the native iOS tree, else the page's own title.
+              ...pageTitleOptions(theme),
+            }}
+            component={SurveyJournalRoute}
           />
           <SurveysStack.Screen
             name="surveyForm"

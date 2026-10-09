@@ -30,6 +30,7 @@ export type SurveysStackParamList = AccountStackParamList & {
   surveyContext: undefined
   surveyScore: undefined
   surveyHistory: undefined
+  surveyJournal: undefined
   surveyForm: undefined
   surveyFactorDetail: { factor: FactorKey }
   surveyFactorHelp: { help: string; hints: string[] }
@@ -89,6 +90,7 @@ export type CommunitySurveyRouteProps = { route: { params: { surveyId: string } 
 export type SurveyContextRouteProps = StackRouteProps<SurveysStackParamList, "surveyContext">
 export type SurveyScoreRouteProps = StackRouteProps<SurveysStackParamList, "surveyScore">
 export type SurveyHistoryRouteProps = StackRouteProps<SurveysStackParamList, "surveyHistory">
+export type SurveyJournalRouteProps = StackRouteProps<SurveysStackParamList, "surveyJournal">
 export type SurveyFormRouteProps = StackRouteProps<SurveysStackParamList, "surveyForm">
 export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorDetail">
 export type FactorHelpRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorHelp">
