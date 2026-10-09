@@ -767,13 +767,13 @@ Plans:
   2. A survey from another member keeps showing the parcel history and never the change log.
   3. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: 2/12 plans executed
+**Plans**: 3/12 plans executed
 
 **Wave 1**
 
 - [x] 24-01-PLAN.md — API and wire contract: `ibp_method_version` on the two history payloads (only API touch; triggers native CI)
 - [x] 24-02-PLAN.md — Building blocks: grouped-list `multiline` row, history hook `reload`/refresh key, community hook `withPhotos`, delta-text contrast pairs
-- [ ] 24-03-PLAN.md — "Journal du relevé" page and `surveyJournal` route, `EventsTab` `hideHeader`, journal strings, navigation tests
+- [x] 24-03-PLAN.md — "Journal du relevé" page and `surveyJournal` route, `EventsTab` `hideHeader`, journal strings, navigation tests
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -902,7 +902,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 21. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
 | 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
-| 24. Survey History Split | 2/12 | In Progress|  |
+| 24. Survey History Split | 3/12 | In Progress|  |
 | 25. Global Search | 0/TBD | Not started | - |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 27. In-depth Quality Audit | 0/TBD | Not started | - |
