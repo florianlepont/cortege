@@ -510,12 +510,12 @@ describe("stack options and listeners", () => {
       await mount(<AppNavigation />)
       for (const name of [...ACCOUNT_PAGES, ...SURVEY_SUB_PAGES]) {
         const options = resolveOwn(name)
-        expect((options.headerTitle as () => null)()).toBeNull()
+        expect(options.headerTitle).toBe("")
         expect(options.headerTitleStyle).toEqual({ color: "transparent" })
         expect(options.headerLargeTitleEnabled).toBeUndefined()
       }
       const factor = resolveOwn("surveyFactorDetail", { route: { params: { factor: "A" } } })
-      expect((factor.headerTitle as () => null)()).toBeNull()
+      expect(factor.headerTitle).toBe("")
       expect(factor.headerTitleStyle).toEqual({ color: "transparent" })
     },
   )
@@ -542,7 +542,7 @@ describe("stack options and listeners", () => {
     // The factor pager keeps its own title row above the pages (no large title, see 12.2-17).
     const factor = resolveOwn("surveyFactorDetail", { route: { params: { factor: "A" } } })
     expect(factor.headerLargeTitleEnabled).toBeUndefined()
-    expect((factor.headerTitle as () => null)()).toBeNull()
+    expect(factor.headerTitle).toBe("")
   })
 
   test("native iOS tab tree: the survey summary and its sub-pages have the native large title (12.2-17)", async () => {
@@ -695,7 +695,7 @@ describe("stack options and listeners", () => {
       mockPlatform.OS = "ios"
       const ios = options({ route: { params: { mode } } })
       expect(ios.headerTransparent).toBe(true)
-      expect((ios.headerTitle as () => null)()).toBeNull()
+      expect(ios.headerTitle).toBe("")
       // The native title is still drawn from `title`, so it is invisible (OA-109).
       expect(ios.headerTitleStyle).toEqual({ color: "transparent" })
       mockPlatform.OS = "android"
@@ -742,10 +742,10 @@ describe("stack options and listeners", () => {
     await mount(<AppNavigation />)
     const settings = mockScreens.settings.options as Options
     expect(settings.title).toBe(fr.navigation.headers.settings)
-    expect((settings.headerTitle as () => null)()).toBeNull()
+    expect(settings.headerTitle).toBe("")
     const areas = mockScreens.offlineAreas.options as Options
     expect(areas.title).toBe(fr.navigation.headers.offlineAreas)
-    expect((areas.headerTitle as () => null)()).toBeNull()
+    expect(areas.headerTitle).toBe("")
   })
 
   test("the account header button opens the settings", async () => {
@@ -755,7 +755,7 @@ describe("stack options and listeners", () => {
     })
     expect(options.title).toBe(fr.navigation.headers.account)
     // The page draws its own large title (OA-69): the header keeps only its buttons.
-    expect((options.headerTitle as () => null)()).toBeNull()
+    expect(options.headerTitle).toBe("")
     const button = await mount((options.headerRight as () => React.ReactElement)())
     const pressable = button.root.findByType("Pressable" as unknown as React.ElementType)
     expect(pressable.props.accessibilityLabel).toBe(fr.navigation.a11y.openSettings)
