@@ -213,7 +213,6 @@ function useAppController() {
 
   const ops = surveySync.surveyOperations
   const surveyActions: SurveyActions = useStableActions({
-    setSurveyQuery: surveyList.setSurveyQuery,
     setSurveyFromDate: surveyList.setSurveyFromDate,
     setSurveyToDate: surveyList.setSurveyToDate,
     setStatusFilter: surveyList.setStatusFilter,
@@ -253,7 +252,6 @@ function useAppController() {
     selectedSurveyId,
     selectedSurvey,
     selectedSurveyAttachments,
-    surveyQuery,
     surveyFromDate,
     surveyToDate,
     statusFilter,
@@ -272,7 +270,6 @@ function useAppController() {
         selectedSurveyId,
         selectedSurvey,
         selectedSurveyAttachments,
-        surveyQuery,
         surveyFromDate,
         surveyToDate,
         statusFilter,
@@ -296,7 +293,6 @@ function useAppController() {
       selectedSurveyId,
       selectedSurvey,
       selectedSurveyAttachments,
-      surveyQuery,
       surveyFromDate,
       surveyToDate,
       statusFilter,

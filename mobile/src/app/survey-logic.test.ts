@@ -123,7 +123,6 @@ describe("filterAndSortSurveys", () => {
   ]
 
   const baseFilters: SurveyListFilters = {
-    surveyQuery: "",
     surveyFromDate: "",
     surveyToDate: "",
     statusFilter: "all",
@@ -134,11 +133,11 @@ describe("filterAndSortSurveys", () => {
     sortMode: "updated_desc",
   }
 
-  test("filters by query and sync state", () => {
+  test("filters by sync state", () => {
     const attachmentCounts = buildAttachmentCountBySurvey(attachments)
     const result = filterAndSortSurveys(
       surveys,
-      { ...baseFilters, surveyQuery: "gamma", syncFilter: "failed" },
+      { ...baseFilters, syncFilter: "failed" },
       attachmentCounts,
     )
     expect(result).toHaveLength(1)

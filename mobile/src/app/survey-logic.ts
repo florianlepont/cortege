@@ -130,7 +130,6 @@ export const filterAndSortSurveys = (
   filters: SurveyListFilters,
   attachmentCountBySurvey: Record<string, number>,
 ): LocalSurvey[] => {
-  const query = filters.surveyQuery.trim().toLowerCase()
   const fromBoundary = parseDateFilterBoundary(filters.surveyFromDate, "start")
   const toBoundary = parseDateFilterBoundary(filters.surveyToDate, "end")
 
@@ -155,12 +154,6 @@ export const filterAndSortSurveys = (
     const attachmentCount = attachmentCountBySurvey[survey.id] ?? 0
     if (filters.attachmentFilter === "with" && attachmentCount === 0) return false
     if (filters.attachmentFilter === "without" && attachmentCount > 0) return false
-
-    if (query.length > 0) {
-      const haystack =
-        `${survey.site_name} ${survey.id} ${survey.last_sync_error ?? ""}`.toLowerCase()
-      if (!haystack.includes(query)) return false
-    }
 
     return true
   })

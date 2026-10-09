@@ -53,7 +53,6 @@ export function useSurveyList() {
   const [surveys, setSurveys] = useState<LocalSurvey[]>([])
   const [attachments, setAttachments] = useState<LocalAttachment[]>([])
   const [selectedSurveyId, setSelectedSurveyId] = useState<string | null>(null)
-  const [surveyQuery, setSurveyQuery] = useState("")
   const [surveyFromDate, setSurveyFromDate] = useState("")
   const [surveyToDate, setSurveyToDate] = useState("")
   const [statusFilter, setStatusFilter] = useState<SurveyStatusFilter>("all")
@@ -86,7 +85,6 @@ export function useSurveyList() {
       filterAndSortSurveys(
         surveys,
         {
-          surveyQuery,
           surveyFromDate,
           surveyToDate,
           statusFilter,
@@ -100,7 +98,6 @@ export function useSurveyList() {
       ),
     [
       surveys,
-      surveyQuery,
       surveyFromDate,
       surveyToDate,
       statusFilter,
@@ -125,7 +122,6 @@ export function useSurveyList() {
   )
 
   const resetFilters = useCallback((): void => {
-    setSurveyQuery("")
     setSurveyFromDate("")
     setSurveyToDate("")
     setStatusFilter("all")
@@ -154,8 +150,6 @@ export function useSurveyList() {
     visibleSurveys,
     attachmentsBySurvey,
     attachmentCountBySurvey,
-    surveyQuery,
-    setSurveyQuery,
     surveyFromDate,
     setSurveyFromDate,
     surveyToDate,
