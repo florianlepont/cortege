@@ -816,7 +816,7 @@ Plans:
   4. The search is fast enough to feel instant on a typical phone (debounced input, bounded results per group), with empty, no-result and error states, and all texts from the French catalogue.
   5. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: 12/15 plans executed
+**Plans**: 14/15 plans executed
 
 **Wave 1**
 
@@ -841,8 +841,8 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 25-13-PLAN.md — API `SearchController` (`/v1/search/community|places|parcels`), `search` throttle, e2e spec, API contract
-- [ ] 25-14-PLAN.md — Cutover of the search stack, render-count keystroke scenario, old search page and context query removed
+- [x] 25-13-PLAN.md — API `SearchController` (`/v1/search/community|places|parcels`), `search` throttle, e2e spec, API contract
+- [x] 25-14-PLAN.md — Cutover of the search stack, render-count keystroke scenario, old search page and context query removed
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -946,7 +946,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
 | 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
-| 25. Global Search | 12/15 | In Progress|  |
+| 25. Global Search | 14/15 | In Progress|  |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 27. In-depth Quality Audit | 0/TBD | Not started | - |
 | 28. Field Validation | 0/TBD | Not started | - |
