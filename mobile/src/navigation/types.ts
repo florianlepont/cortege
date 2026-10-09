@@ -26,6 +26,7 @@ export type SurveysStackParamList = AccountStackParamList & {
   surveysHome: undefined
   surveySearch: undefined
   communitySurvey: { surveyId: string }
+  communityHistory: { surveyId: string }
   surveyDetail: undefined
   surveyContext: undefined
   surveyScore: undefined
@@ -50,6 +51,7 @@ export type PublicMapFocus = {
 export type PublicMapStackParamList = AccountStackParamList & {
   publicMapHome: { focus?: PublicMapFocus } | undefined
   communitySurvey: { surveyId: string }
+  communityHistory: { surveyId: string }
 }
 
 /** The search tab (iOS 26 shows it as its own round button next to the bar, OA-52). */
@@ -87,6 +89,8 @@ export type SurveyListRouteProps = StackRouteProps<SurveysStackParamList, "surve
 export type SurveyDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyDetail">
 /** Mounted by the Mes Relevés stack and by the Explorer stack: it reads only its own params. */
 export type CommunitySurveyRouteProps = { route: { params: { surveyId: string } } }
+/** Same shape and stacks as `communitySurvey`: the parcel history of another member's survey. */
+export type CommunityHistoryRouteProps = { route: { params: { surveyId: string } } }
 export type SurveyContextRouteProps = StackRouteProps<SurveysStackParamList, "surveyContext">
 export type SurveyScoreRouteProps = StackRouteProps<SurveysStackParamList, "surveyScore">
 export type SurveyHistoryRouteProps = StackRouteProps<SurveysStackParamList, "surveyHistory">
