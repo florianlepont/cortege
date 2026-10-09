@@ -767,7 +767,37 @@ Plans:
   2. A survey from another member keeps showing the parcel history and never the change log.
   3. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: TBD
+**Plans**: 12 plans
+
+**Wave 1**
+
+- [ ] 24-01-PLAN.md — API and wire contract: `ibp_method_version` on the two history payloads (only API touch; triggers native CI)
+- [ ] 24-02-PLAN.md — Building blocks: grouped-list `multiline` row, history hook `reload`/refresh key, community hook `withPhotos`, delta-text contrast pairs
+- [ ] 24-03-PLAN.md — "Journal du relevé" page and `surveyJournal` route, `EventsTab` `hideHeader`, journal strings, navigation tests
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 24-04-PLAN.md — Pure model (TDD): `app/parcel-history.ts` and `app/trend-geometry.ts`
+- [ ] 24-05-PLAN.md — Catalogue: parcel history page texts, summary row texts, header titles, "version N" entry
+- [ ] 24-06-PLAN.md — "Journal du relevé" entry in the summary's "…" menu (iOS native menu and sheet); export and delete unchanged (D-05)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 24-07-PLAN.md — Summary row "Historique de la parcelle" with its derived value
+- [ ] 24-08-PLAN.md — Trend card and SVG curve (reveal spike first, fallback dash offset)
+- [ ] 24-09-PLAN.md — Per-factor delta card and parcel survey list
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 24-10-PLAN.md — Parcel history page assembled (`surveyHistory`), old history section removed
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 24-11-PLAN.md — Another member's survey: history row and `communityHistory` page in both stacks, no change log
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 24-12-PLAN.md — CLAUDE.md note and owner phone check, light and dark (criterion 3), then OA-124 closed
 **UI hint**: yes
 
 ### Phase 25: Global Search (INSERTED)
