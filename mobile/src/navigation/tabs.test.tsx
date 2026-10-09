@@ -55,6 +55,7 @@ const mockTabScreens: Record<string, string[]> = {}
 const mockNativeNavigatorProps: Record<string, unknown>[] = []
 const mockJsNavigatorProps: Record<string, unknown>[] = []
 const mockJsSurveysOptions: unknown[] = []
+const mockJsSearchOptions: unknown[] = []
 const mockContainer: { onStateChange?: (state: unknown) => void } = {}
 const mockNavRef = { current: null, ready: false, resetRoot: jest.fn() }
 const mockScheme = { value: "light" as "light" | "dark" }
@@ -71,6 +72,7 @@ function mockCreateTabs(kind: "native" | "js") {
   const Screen = (props: ScreenProps) => {
     mockTabScreens[kind].push(props.name)
     if (kind === "js" && props.name === "surveys") mockJsSurveysOptions.push(props.options)
+    if (kind === "js" && props.name === "search") mockJsSearchOptions.push(props.options)
     return null
   }
   return { Navigator, Screen }
@@ -150,6 +152,8 @@ import { buildJsTabBarStyle } from "./tab-config"
 const THREE_TABS = ["home", "surveys", "publicMap"]
 // OA-52: iOS 26 draws the search role as its own button next to the bar.
 const NATIVE_TABS = [...THREE_TABS, "search"]
+// D-01: Android and the JS tree get the same search page as a fourth tab.
+const JS_TABS = [...THREE_TABS, "search"]
 
 type Options = Record<string, unknown>
 type OptionsFn = (args: Record<string, unknown>) => Options
@@ -174,6 +178,7 @@ beforeEach(() => {
   mockNativeNavigatorProps.length = 0
   mockJsNavigatorProps.length = 0
   mockJsSurveysOptions.length = 0
+  mockJsSearchOptions.length = 0
   delete mockContainer.onStateChange
   mockNavRef.ready = false
   mockNavRef.resetRoot.mockClear()
@@ -203,18 +208,26 @@ function surveysState(leaf: string) {
   }
 }
 
-describe("the three root tabs (D-08, OA-13)", () => {
+describe("the root tabs (D-08, OA-13, D-01)", () => {
   test("the native tree registers the three tabs and the search tab", async () => {
     await mount()
     expect(mockTabScreens.native).toEqual(NATIVE_TABS)
     expect(mockTabScreens.js).toBeUndefined()
   })
 
-  test("the JS tree registers exactly the three tabs", async () => {
+  test("the JS tree registers the three tabs and the search tab last", async () => {
     mockPlatform.OS = "android"
     await mount()
-    expect(mockTabScreens.js).toEqual(THREE_TABS)
+    expect(mockTabScreens.js).toEqual(JS_TABS)
     expect(mockTabScreens.native).toBeUndefined()
+  })
+
+  test("the JS search tab has no header and hides the bar while the keyboard is up", async () => {
+    mockPlatform.OS = "android"
+    await mount()
+    expect(mockJsSearchOptions.at(-1)).toEqual(
+      expect.objectContaining({ headerShown: false, tabBarHideOnKeyboard: true }),
+    )
   })
 })
 

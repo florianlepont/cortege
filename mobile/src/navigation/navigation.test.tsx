@@ -290,7 +290,9 @@ describe("AppNavigation tree choice", () => {
     )
     // OA-13: Compte is pushed onto a tab's stack, not a tab of its own.
     expect(mockScreens.account).toBeUndefined()
-    expect(mockScreens.search).toBeUndefined()
+    // D-01: the search page is the fourth JS tab, the same shared stack as the iOS search tab.
+    expect(mockScreens.search).toBeDefined()
+    expect((mockScreens.search.options as Options).tabBarHideOnKeyboard).toBe(true)
     expect(warn).toHaveBeenCalledTimes(1)
     expect(mockListConfigs).toEqual([{ useNativeNav: false }])
   })
@@ -711,7 +713,7 @@ describe("stack options and listeners", () => {
     async (os) => {
       mockPlatform.OS = os
       await mount(<AppNavigation />)
-      // Accueil, Mes Relevés, Explorer and (iOS) the search tab.
+      // Accueil, Mes Relevés, Explorer and the search tab (native search tab on iOS, fourth JS tab elsewhere).
       expect(mockNavigators.stack.length).toBeGreaterThanOrEqual(3)
       for (const props of mockNavigators.stack) {
         expect(props.screenOptions).toEqual(expect.objectContaining(HALO_HEADER))

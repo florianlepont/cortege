@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useBrandTheme } from "../../app/theme"
 import { HomeTabNavigator } from "../stacks/HomeStack"
 import { PublicMapTabNavigator } from "../stacks/PublicMapStack"
+import { SearchTabNavigator } from "../stacks/SearchStack"
 import { SurveysTabNavigator } from "../stacks/SurveysStack"
 import { shouldHideTabBar } from "../tab-bar"
 import {
@@ -23,8 +24,9 @@ const JsTab = createBottomTabNavigator<RootTabParamList>()
 
 /**
  * The JS tab bar from @react-navigation/bottom-tabs (Android, Expo Go
- * fallback). Three tabs (OA-13); the bar is hidden on parcel selection through the rule
- * shared with the native tree (D-08, D-13). DS-13: the bar's height/padding are
+ * fallback). Four tabs: Accueil, Mes Relevés, Explorer and Rechercher (D-01, the same
+ * entry as the iOS search tab); the bar is hidden on parcel selection through the rule
+ * shared with the native tree (D-08, D-13), and while the keyboard is up on the search tab. DS-13: the bar's height/padding are
  * derived from the device's own safe-area bottom inset, read here (the one
  * place in the JS tab tree that's an actual component) and passed down.
  */
@@ -58,6 +60,11 @@ export function JsRootTabs() {
         options={{ headerShown: false }}
         listeners={makePublicMapTabListeners(deps)}
         component={PublicMapTabNavigator}
+      />
+      <JsTab.Screen
+        name="search"
+        options={{ headerShown: false, tabBarHideOnKeyboard: true }}
+        component={SearchTabNavigator}
       />
     </JsTab.Navigator>
   )
