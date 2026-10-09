@@ -27,7 +27,9 @@ export function SeeOnMapAction({
       onPress={() =>
         navigation.navigate("publicMap", {
           screen: "publicMapHome",
-          params: { focus: { kind: "survey", surveyId, ...coordinates, parcelIds, nonce: Date.now() } },
+          params: {
+            focus: { kind: "survey", surveyId, ...coordinates, parcelIds, nonce: Date.now() },
+          },
         })
       }
     />
