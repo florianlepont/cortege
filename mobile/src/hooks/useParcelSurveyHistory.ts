@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { fetchParcelSurveyHistory } from "../api/ibp-api"
 import type { ParcelSurveyHistoryItem } from "../app/types"
 
@@ -9,6 +9,11 @@ export type ParcelSurveyHistoryState = {
   /** REQ-D-offline-parcel-warning (08-CONTEXT D-14): no history is cached for this phase, so
    * offline always means "not available", distinct from a real fetch failure. */
   offline: boolean
+}
+
+export type ParcelSurveyHistoryResult = ParcelSurveyHistoryState & {
+  /** Fetches the history again (pull to refresh, error action). The previous items stay. */
+  reload: () => void
 }
 
 const IDLE_STATE: ParcelSurveyHistoryState = {
@@ -30,16 +35,21 @@ const OFFLINE_STATE: ParcelSurveyHistoryState = {
  * accessToken clears the state instead of fetching (the caller is not ready yet). While offline,
  * no request is attempted at all (REQ-D-offline-parcel-warning): the state goes straight to
  * `offline: true` instead of loading, so the caller can show a plain explanation instead of a
- * spinner that would never resolve.
+ * spinner that would never resolve. `reload()` fetches again on demand, and a new `refreshKey`
+ * (for example the status of the open survey, which changes after "Terminer") refetches too; the
+ * items of the previous answer stay on screen while it refetches.
  */
 export function useParcelSurveyHistory(
   apiUrl: string,
   accessToken: string | null,
   parcelId: string | null,
   isOffline = false,
-): ParcelSurveyHistoryState {
+  refreshKey: string | number | null = null,
+): ParcelSurveyHistoryResult {
   const [state, setState] = useState<ParcelSurveyHistoryState>(IDLE_STATE)
+  const [attempt, setAttempt] = useState(0)
   const requestRef = useRef(0)
+  const reload = useCallback(() => setAttempt((value) => value + 1), [])
 
   useEffect(() => {
     if (!parcelId || !accessToken) {
@@ -71,7 +81,7 @@ export function useParcelSurveyHistory(
         if (requestRef.current !== requestId) return
         setState({ items: [], loading: false, error: true, offline: false })
       })
-  }, [apiUrl, accessToken, parcelId, isOffline])
+  }, [apiUrl, accessToken, parcelId, isOffline, attempt, refreshKey])
 
-  return state
+  return { ...state, reload }
 }
