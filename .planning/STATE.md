@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 24
 current_phase_name: survey-history-split
 status: executing
-stopped_at: Completed 24-10-PLAN.md
-last_updated: "2026-10-09T09:44:01.810Z"
+stopped_at: Completed 24-11-PLAN.md
+last_updated: "2026-10-09T09:50:12.668Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 24 execution started
 progress:
   total_phases: 28
   completed_phases: 14
   total_plans: 156
-  completed_plans: 192
+  completed_plans: 193
   percent: 50
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 24 (survey-history-split) — EXECUTING
-Plan: 11 of 12
+Plan: 12 of 12
 Status: Ready to execute
 Last activity: 2026-10-09 — Phase 24 execution started
 
@@ -113,6 +113,7 @@ Progress: [████████░░] 23/28 phases complete
 | Phase 24 P08 | 40min | 2 tasks | 4 files |
 | Phase 24 P09 | 25min | 2 tasks | 4 files |
 | Phase 24 P10 | 40min | 3 tasks | 11 files |
+| Phase 24 P11 | 35min | 3 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -197,6 +198,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 24-08]: TrendCard title nested Texts spread brandTypography.screenTitle themselves because AppText places the default font first
 - [Phase 24]: 24-09: delta rows are display only (accessible View per row, no press, no animation); the current history row is selected, disabled, role text, other rows open that survey read-only
 - [Phase 24]: 24-10: ParcelHistoryView decides the variant itself (community never gets the delta block); the history page treats a missing access token as first load, not as first survey
+- [Phase 24]: 24-11: community history row uses historyRowState with hasParcel true, shown only when history has more than one entry; communityHistory registered in survey and Explorer stacks, journal never in Explorer
 
 ### Pending Todos
 
@@ -238,6 +240,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-09T09:44:01.805Z
-Stopped at: Completed 24-10-PLAN.md
+Last session: 2026-10-09T09:50:12.662Z
+Stopped at: Completed 24-11-PLAN.md
 Resume file: .planning/phases/24-survey-history-split/24-01-PLAN.md
