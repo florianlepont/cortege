@@ -217,6 +217,10 @@ Generated columns (migration 015, `GENERATED ALWAYS AS … STORED`, never writte
 
 Indexes:
 - btree (`centroid_lat`, `centroid_lng`) // `idx_parcels_centroid_lat_lng`, bbox lookups (no PostGIS)
+- btree (`commune_code`, `section`, `number`) // `idx_parcels_commune_section_number` (migration 022), parcel search by key
+
+Migration 022 also enables the PostgreSQL `unaccent` extension (public schema) so the global search
+matches survey and member names without accents; no column changes.
 
 Parcel key (commune, section, number), shared by the parcels the app registers and the IGN polygons
 the Explorer draws (`parseParcelIdu`, `parseWfsParcelProperties`; repaired for older rows by
