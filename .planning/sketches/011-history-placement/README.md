@@ -2,7 +2,7 @@
 sketch: 011
 name: history-placement
 question: "Où vivent le journal du relevé et l'historique de la parcelle ?"
-winner: null
+winner: "C"
 tags: [phase-24, OA-124, survey-detail]
 ---
 

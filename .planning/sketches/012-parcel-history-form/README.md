@@ -2,7 +2,7 @@
 sketch: 012
 name: parcel-history-form
 question: "Quelle forme pour la page « Historique de la parcelle » ?"
-winner: null
+winner: "B+C"
 tags: [phase-24, OA-124, parcel-history]
 ---
 
