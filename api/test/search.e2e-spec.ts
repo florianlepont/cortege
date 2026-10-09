@@ -69,10 +69,11 @@ describe("Search endpoints (e2e)", () => {
     return `${prefix}${randomUUID().replace(/-/g, "").slice(0, 12)}`
   }
 
-  async function resolveFullParcel(token: string): Promise<ResolvedParcel> {
-    const seed = uniqueCoordSeed()
-    const lat = 47.2 + seed / 100000
-    const lng = 1.2 + seed / 100000
+  async function resolveFullParcel(
+    token: string,
+    lat: number,
+    lng: number,
+  ): Promise<ResolvedParcel> {
     const resolved = await request(app.getHttpServer())
       .get("/v1/parcels/resolve")
       .set("Authorization", `Bearer ${token}`)
@@ -81,14 +82,15 @@ describe("Search endpoints (e2e)", () => {
     return resolved.body.parcel as ResolvedParcel
   }
 
+  /** The survey location must lie on the parcel, so one coordinate serves both calls. */
   async function createSurvey(
     token: string,
-    input: { id: string; siteName: string; submit: boolean; parcel?: ResolvedParcel },
+    input: { id: string; siteName: string; submit: boolean },
   ): Promise<ResolvedParcel> {
     const seed = uniqueCoordSeed()
     const lat = 47.2 + seed / 100000
     const lng = 1.2 + seed / 100000
-    const parcel = input.parcel ?? (await resolveFullParcel(token))
+    const parcel = await resolveFullParcel(token, lat, lng)
     const versionNumber = await getNextVersionNumber(db, parcel.parcel_id)
     await request(app.getHttpServer())
       .post("/v1/surveys")
@@ -196,7 +198,7 @@ describe("Search endpoints (e2e)", () => {
       authorToken = await loginTestUser(app, "e2e-search-author")
       readerToken = await loginTestUser(app, "e2e-search-reader")
       await request(app.getHttpServer())
-        .patch("/v1/users/me")
+        .patch("/v1/me")
         .set("Authorization", `Bearer ${authorToken}`)
         .send({ display_name: accentedName })
         .expect(200)
