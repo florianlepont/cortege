@@ -18,12 +18,20 @@ function getJsBottomTabBarHeightContext() {
   }
 }
 
+/**
+ * How much of the screen's bottom the tab bar covers, which is what a bottom-fixed control must
+ * clear. The native iOS bar floats over the page: its height. The JS bar (Android, Expo Go) stays
+ * in the layout flow, so the screen already ends above it and nothing is covered: 0. Without a
+ * tab navigator (or before the native bar is measured) it is `fallback`.
+ */
 export function useAppBottomTabBarHeight(fallback = 0): number {
   const JsBottomTabBarHeightContext = getJsBottomTabBarHeightContext()
   const nativeHeight = useContext(NativeBottomTabBarHeightContext)
   const jsHeight = useContext(JsBottomTabBarHeightContext)
 
-  return nativeHeight ?? jsHeight ?? fallback
+  if (nativeHeight) return nativeHeight
+  if (jsHeight !== undefined) return 0
+  return fallback
 }
 
 /** The tab bar's height when neither tree has measured it yet (iOS native bar, Android JS bar). */
@@ -37,5 +45,7 @@ export const TAB_BAR_FALLBACK_HEIGHT = Platform.select({ ios: 84, default: 68 })
 export function useTabBarClearance(): number {
   const tabBarHeight = useAppBottomTabBarHeight(TAB_BAR_FALLBACK_HEIGHT)
   const insets = useSafeAreaInsets()
-  return Math.max(tabBarHeight || TAB_BAR_FALLBACK_HEIGHT, insets.bottom)
+  // An in-flow bar covers nothing, and its own padding already takes the home indicator.
+  if (tabBarHeight === 0) return 0
+  return Math.max(tabBarHeight, insets.bottom)
 }

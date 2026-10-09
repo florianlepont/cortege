@@ -87,7 +87,8 @@ export function buildJsTabBarStyle(theme: BrandTheme, insets: TabBarInsets = { b
   const paddingBottom = Math.max(insets.bottom, JS_TAB_BAR_MIN_PADDING_BOTTOM)
   return {
     // Variant I glass fill and hairline (D-08). The bar stays in the layout flow with the same
-    // height (RESEARCH Pitfall 10): no position key, so useTabBarClearance keeps working.
+    // height (RESEARCH Pitfall 10): no position key, so the screen ends above it and
+    // useTabBarClearance / useAppBottomTabBarHeight report 0 for this bar.
     backgroundColor: theme.visual.tab.background,
     borderTopColor: theme.visual.tab.border,
     borderTopWidth: 1,
