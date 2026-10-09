@@ -93,7 +93,6 @@ export const surveyDetailFr = {
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
     scoreValue: (filled: number) => `${filled} sur 10`,
-    historyEmpty: "Voir les étapes",
     // Value of the parcel history row (D-01). The arrow is U+2192; the owner phone check
     // (plan 24-12) verifies the glyph, fallback: " à ".
     historyValue: ({ first, latest }: { first: number; latest: number }) =>

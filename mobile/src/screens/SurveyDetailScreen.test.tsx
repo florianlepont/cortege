@@ -10,6 +10,7 @@ import { fr } from "../i18n"
 import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import { SurveyDetailScreen } from "./SurveyDetailScreen"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
+import { useHistoryRow } from "./survey-detail/useHistoryRow"
 import type { SurveyDetailScreenProps } from "./survey-detail/screen-props"
 import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
 
@@ -27,6 +28,11 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
+beforeEach(() => {
+  mockHistoryDisplay = RANGE_DISPLAY
+  ;(useHistoryRow as jest.Mock).mockImplementation(() => mockHistoryDisplay)
+})
+
 afterEach(() => {
   notificationAsync.mockClear()
   mockCtaKind = "hidden"
@@ -35,6 +41,16 @@ afterEach(() => {
 })
 
 const mockScrollTo = jest.fn()
+const RANGE_DISPLAY = {
+  value: "21 \u2192 34",
+  accessibilityLabel: "Historique de la parcelle. de 21 à 34 sur 50",
+  pressable: true,
+}
+let mockHistoryDisplay: {
+  value: string | undefined
+  accessibilityLabel: string
+  pressable: boolean
+} = RANGE_DISPLAY
 
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -69,6 +85,7 @@ jest.mock("./survey-detail/PhotosStrip", () => ({ PhotosStrip: "PhotosStrip" }))
 jest.mock("./survey-detail/ScoreCard", () => ({ ScoreCard: "ScoreCard" }))
 jest.mock("./survey-detail/SummaryHeader", () => ({ SummaryHeader: "SummaryHeader" }))
 jest.mock("./survey-detail/useSurveyDetailHeader", () => ({ useSurveyDetailHeader: jest.fn() }))
+jest.mock("./survey-detail/useHistoryRow", () => ({ useHistoryRow: jest.fn() }))
 let mockCtaKind: "hidden" | "next" = "hidden"
 jest.mock("./survey-detail/summary-state", () => ({
   resolveStatusLine: () => ({ status: "Brouillon", sync: "x", syncTone: "ok" }),
@@ -173,6 +190,55 @@ describe("SurveyDetailScreen summary", () => {
     const tree = mount("draft")
     expect(byType(tree, "FinishBar")).toHaveLength(1)
     expect(byType(tree, "AppGroupedList")[0].props.sections[0].rows).toHaveLength(3)
+  })
+
+  test("D-01: the third row is the parcel history, with its value, spoken label and press", () => {
+    const props = makeProps("draft")
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />, {
+        createNodeMock: (element) =>
+          (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+      })
+    })
+    const rows = byType(tree!, "AppGroupedList")[0].props.sections[0].rows
+    expect(rows.map((row: { key: string }) => row.key)).toEqual(["context", "score", "history"])
+    expect(rows[2]).toEqual({
+      key: "history",
+      label: fr.surveyDetail.rows.history,
+      value: "21 \u2192 34",
+      multiline: true,
+      accessibilityLabel: "Historique de la parcelle. de 21 à 34 sur 50",
+      onPress: props.onOpenHistory,
+    })
+    expect(useHistoryRow).toHaveBeenCalledWith({
+      apiUrl: "http://api",
+      accessToken: null,
+      parcelId: null,
+      currentSurveyId: "survey-1",
+      refreshKey: "draft",
+    })
+  })
+
+  test("D-01: without a parcel the history row has no press (and so no chevron)", () => {
+    mockHistoryDisplay = {
+      value: "Aucune parcelle",
+      accessibilityLabel: "Historique de la parcelle. Aucune parcelle",
+      pressable: false,
+    }
+    const tree = mount("draft")
+    const row = byType(tree, "AppGroupedList")[0].props.sections[0].rows[2]
+    expect(row.onPress).toBeUndefined()
+    expect(row.disabled).toBeUndefined()
+    expect(row.value).toBe("Aucune parcelle")
+  })
+
+  test("D-01: the status is the refresh key of the history row", () => {
+    const tree = mount("draft")
+    update(tree, "submitted")
+    expect(useHistoryRow).toHaveBeenLastCalledWith(
+      expect.objectContaining({ refreshKey: "submitted" }),
+    )
   })
 
   test("D-25: the finish scrolls to the top, pulses the score card and fires the haptic once", () => {
