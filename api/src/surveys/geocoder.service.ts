@@ -1,5 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
+import { LRUCache } from "lru-cache"
 import type { SearchPlaceItem, SearchPlaceKind, SearchPlacesResponse } from "@cortege/ibp-domain"
 import { appConfigOf } from "../config/app-config"
 import { fetchIgnJson } from "./ign-http"
@@ -10,6 +11,15 @@ type JsonRecord = Record<string, unknown>
 // we stop earlier and answer an empty list without a call.
 const MIN_QUERY_LENGTH = 3
 const MAX_QUERY_LENGTH = 100
+// Cache and outbound protection (D-15, T-25-14): a place answer lives 10 minutes, a commune name
+// resolution 30 minutes, at most 500 entries; at most 8 calls run at once.
+export const PLACES_CACHE_TTL_MS = 10 * 60 * 1000
+export const COMMUNES_CACHE_TTL_MS = 30 * 60 * 1000
+export const GEOCODER_CACHE_MAX_ENTRIES = 500
+export const MAX_CONCURRENT_IGN_CALLS = 8
+// A commune name candidate must score at least this to count (D-13).
+const MIN_COMMUNE_SCORE = 0.8
+const MAX_COMMUNES = 3
 // Provider limit parameter bounds (the geocoder accepts 1 to 50).
 const MIN_LIMIT = 1
 const MAX_LIMIT = 50
@@ -143,6 +153,17 @@ function normalizeQuery(raw: string): string | null {
   return query.length >= MIN_QUERY_LENGTH && query.length <= MAX_QUERY_LENGTH ? query : null
 }
 
+/** The cache key form of a query: accents and case removed (a server-side fold). */
+function foldQuery(query: string): string {
+  return query
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+}
+
+export type GeocoderCommune = { code: string; name: string }
+
 function featuresOf(payload: unknown): unknown[] {
   const features = asRecord(payload).features
   return Array.isArray(features) ? features : []
@@ -166,6 +187,11 @@ export class GeocoderService {
   private readonly enabled: boolean
   private readonly searchUrl: string
   private readonly timeoutMs: number
+  // Successful answers only: a failure is never stored. An empty answer is a valid one.
+  private readonly cache = new LRUCache<string, object>({ max: GEOCODER_CACHE_MAX_ENTRIES })
+  // Identical concurrent queries share one outbound call.
+  private readonly inFlight = new Map<string, Promise<unknown>>()
+  private running = 0
 
   constructor(config: ConfigService) {
     const cadastre = appConfigOf(config).cadastre
@@ -181,25 +207,96 @@ export class GeocoderService {
       return { items: [] }
     }
     const size = Math.min(MAX_LIMIT, Math.max(MIN_LIMIT, Math.floor(limit)))
-    const payload = await this.callProvider(query, { index: "address,poi", limit: String(size) })
-    return { items: this.toPlaces(payload, size) }
+    const key = `places|${size}|${foldQuery(query)}`
+    return await this.shared(key, PLACES_CACHE_TTL_MS, async () => {
+      const payload = await this.callProvider(query, { index: "address,poi", limit: String(size) })
+      return { items: this.toPlaces(payload, size) }
+    })
   }
 
-  /** One IGN geocoder call. Any failure is logged without the query and becomes a 503. */
+  /**
+   * INSEE codes of the communes a typed name may mean, best first, at most 3 (D-13). Used by the
+   * parcel search to turn "Fontainebleau AB 123" into a commune code.
+   */
+  async resolveCommunes(name: string): Promise<GeocoderCommune[]> {
+    const query = normalizeQuery(name)
+    if (!this.enabled || query === null) {
+      return []
+    }
+    const key = `communes|${foldQuery(query)}`
+    return await this.shared(key, COMMUNES_CACHE_TTL_MS, async () => {
+      const payload = await this.callProvider(query, {
+        index: "address",
+        type: "municipality",
+        limit: String(MAX_COMMUNES),
+      })
+      return this.toCommunes(payload)
+    })
+  }
+
+  /** Cache hit, else the call already running for this key, else a new call (then cached). */
+  private shared<T extends object>(key: string, ttlMs: number, load: () => Promise<T>): Promise<T> {
+    const cached = this.cache.get(key)
+    if (cached !== undefined) {
+      return Promise.resolve(cached as T)
+    }
+    const running = this.inFlight.get(key)
+    if (running) {
+      return running as Promise<T>
+    }
+    const call = load()
+      .then((value) => {
+        this.cache.set(key, value, { ttl: ttlMs })
+        return value
+      })
+      .finally(() => {
+        this.inFlight.delete(key)
+      })
+    this.inFlight.set(key, call)
+    return call
+  }
+
+  /**
+   * One IGN geocoder call, counted against the concurrency cap. Any failure, the cap included, is
+   * logged without the query and becomes a 503.
+   */
   private async callProvider(query: string, params: Record<string, string>): Promise<unknown> {
+    if (this.running >= MAX_CONCURRENT_IGN_CALLS) {
+      this.logger.warn("IGN geocoder failed: concurrent call cap reached")
+      throw unavailable()
+    }
     // The base comes from config; the text is one encoded q value (T-25-13).
     const url = new URL(this.searchUrl)
     url.searchParams.set("q", query)
     for (const [name, value] of Object.entries(params)) {
       url.searchParams.set(name, value)
     }
+    this.running += 1
     try {
       return await fetchIgnJson(url, { timeoutMs: this.timeoutMs, label: "geocoder" })
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error)
       this.logger.warn(`IGN geocoder failed: ${detail}`)
       throw unavailable()
+    } finally {
+      this.running -= 1
     }
+  }
+
+  private toCommunes(payload: unknown): GeocoderCommune[] {
+    const communes: GeocoderCommune[] = []
+    for (const feature of featuresOf(payload)) {
+      const properties = asRecord(asRecord(feature).properties)
+      const code = asString(properties.citycode)
+      const name = asString(properties.name)
+      if (!code || !name || scoreOf(properties.score) < MIN_COMMUNE_SCORE) {
+        continue
+      }
+      if (!communes.some((commune) => commune.code === code)) {
+        communes.push({ code, name })
+      }
+    }
+    return communes.slice(0, MAX_COMMUNES)
   }
 
   private toPlaces(payload: unknown, limit: number): SearchPlaceItem[] {

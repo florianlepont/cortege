@@ -383,3 +383,272 @@ describe("GeocoderService.searchPlaces", () => {
     expect(String(warnSpy.mock.calls[0][0])).toContain("boom")
   })
 })
+
+// lru-cache reads performance.now() for its TTLs, which jest fake timers do not move.
+// It also keeps a "now" for up to 1 ms of real time, which advance() waits out.
+function advanceableClock(): { advance: (ms: number) => Promise<void> } {
+  let offset = 0
+  const realNow = performance.now.bind(performance)
+  jest.spyOn(performance, "now").mockImplementation(() => realNow() + offset)
+  return {
+    advance: async (ms) => {
+      offset += ms
+      await new Promise((resolve) => setTimeout(resolve, 5))
+    },
+  }
+}
+
+describe("GeocoderService protection in front of IGN (D-15)", () => {
+  const originalFetch = global.fetch
+  let fetchMock: jest.Mock<Promise<FetchResponse>, [URL, RequestInit?]>
+
+  beforeEach(() => {
+    fetchMock = jest.fn<Promise<FetchResponse>, [URL, RequestInit?]>()
+    global.fetch = fetchMock as unknown as typeof fetch
+    jest.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    global.fetch = originalFetch
+    jest.restoreAllMocks()
+  })
+
+  it("serves repeated and folded queries from one call, and caches an empty answer", async () => {
+    fetchMock.mockResolvedValue(okResponse(collection(municipality)))
+    const service = buildService()
+
+    const first = await service.searchPlaces("Fontainebleau", 10)
+    const second = await service.searchPlaces("Fontainebleau", 10)
+    const third = await service.searchPlaces("fontainébleau ", 10)
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(second).toEqual(first)
+    expect(third).toEqual(first)
+
+    fetchMock.mockResolvedValue(okResponse(collection()))
+    await service.searchPlaces("Nulle part", 10)
+    await service.searchPlaces("nulle part", 10)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("keys the cache on the limit too", async () => {
+    fetchMock.mockResolvedValue(okResponse(collection(municipality)))
+    const service = buildService()
+
+    await service.searchPlaces("Fontainebleau", 10)
+    await service.searchPlaces("Fontainebleau", 5)
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("expires a cached place answer after 10 minutes", async () => {
+    const clock = advanceableClock()
+    fetchMock.mockResolvedValue(okResponse(collection(municipality)))
+    const service = buildService()
+
+    await service.searchPlaces("Fontainebleau", 10)
+    await clock.advance(9 * 60 * 1000)
+    await service.searchPlaces("Fontainebleau", 10)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    await clock.advance(2 * 60 * 1000)
+    await service.searchPlaces("Fontainebleau", 10)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("shares one call between identical concurrent queries", async () => {
+    let release: (value: FetchResponse) => void = () => undefined
+    fetchMock.mockReturnValue(new Promise<FetchResponse>((resolve) => (release = resolve)))
+    const service = buildService()
+
+    const a = service.searchPlaces("Fontainebleau", 10)
+    const b = service.searchPlaces("fontainebleau", 10)
+    release(okResponse(collection(municipality)))
+    const [first, second] = await Promise.all([a, b])
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(first.items).toHaveLength(1)
+    expect(second).toEqual(first)
+  })
+
+  it("does not cache a failure: the next call fetches again", async () => {
+    const service = buildService()
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) })
+    await expect(service.searchPlaces("Fontainebleau", 10)).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    )
+
+    fetchMock.mockResolvedValueOnce(okResponse(collection(municipality)))
+    const retry = await service.searchPlaces("Fontainebleau", 10)
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(retry.items).toHaveLength(1)
+  })
+
+  it("lets both concurrent callers fail together, then fetches again", async () => {
+    let fail: (reason: Error) => void = () => undefined
+    fetchMock.mockReturnValueOnce(new Promise<FetchResponse>((_resolve, reject) => (fail = reject)))
+    const service = buildService()
+
+    const a = service.searchPlaces("Fontainebleau", 10).catch((error: unknown) => error)
+    const b = service.searchPlaces("Fontainebleau", 10).catch((error: unknown) => error)
+    fail(new Error("socket hang up"))
+
+    expect(await a).toBeInstanceOf(ServiceUnavailableException)
+    expect(await b).toBeInstanceOf(ServiceUnavailableException)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    fetchMock.mockResolvedValueOnce(okResponse(collection(municipality)))
+    await service.searchPlaces("Fontainebleau", 10)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it("answers 503 without a call when 8 outbound calls are already pending, then recovers", async () => {
+    const releases: Array<(value: FetchResponse) => void> = []
+    fetchMock.mockImplementation(
+      () => new Promise<FetchResponse>((resolve) => releases.push(resolve)),
+    )
+    const service = buildService()
+
+    const pending = Array.from({ length: 8 }, (_unused, index) =>
+      service.searchPlaces(`requete ${index}`, 10),
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(8)
+
+    const error = await service.searchPlaces("requete neuf", 10).catch((caught: unknown) => caught)
+    expect(error).toBeInstanceOf(ServiceUnavailableException)
+    expect((error as ServiceUnavailableException).getResponse()).toMatchObject({
+      code: "search_provider_unavailable",
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(8)
+
+    releases.forEach((release) => release(okResponse(collection())))
+    await Promise.all(pending)
+
+    fetchMock.mockImplementation(async () => okResponse(collection()))
+    await expect(service.searchPlaces("requete neuf", 10)).resolves.toEqual({ items: [] })
+  })
+
+  it("still shares an in-flight call at the cap instead of refusing it", async () => {
+    const releases: Array<(value: FetchResponse) => void> = []
+    fetchMock.mockImplementation(
+      () => new Promise<FetchResponse>((resolve) => releases.push(resolve)),
+    )
+    const service = buildService()
+
+    const pending = Array.from({ length: 8 }, (_unused, index) =>
+      service.searchPlaces(`requete ${index}`, 10),
+    )
+    const duplicate = service.searchPlaces("requete 0", 10)
+
+    releases.forEach((release) => release(okResponse(collection())))
+    await expect(duplicate).resolves.toEqual({ items: [] })
+    await Promise.all(pending)
+    expect(fetchMock).toHaveBeenCalledTimes(8)
+  })
+
+  describe("resolveCommunes", () => {
+    function commune(name: string, citycode: string, score: number) {
+      return {
+        type: "Feature",
+        geometry: point(2.7, 48.4),
+        properties: { _type: "address", type: "municipality", name, citycode, score },
+      }
+    }
+
+    it("asks for municipalities and keeps at most 3 codes scoring 0.8 or more", async () => {
+      fetchMock.mockResolvedValue(
+        okResponse(
+          collection(
+            commune("Fontainebleau", "77186", 0.97),
+            commune("Fontaine", "38169", 0.85),
+            commune("Fontaines", "71200", 0.79),
+            commune("Fontainebleau-bis", "99999", 0.81),
+            commune("Fontainebleau-ter", "88888", 0.9),
+          ),
+        ),
+      )
+
+      const communes = await buildService().resolveCommunes("Fontainebleau")
+
+      const url = fetchMock.mock.calls[0][0]
+      expect(url.origin + url.pathname).toBe(SEARCH_URL)
+      expect(url.searchParams.get("q")).toBe("Fontainebleau")
+      expect(url.searchParams.get("index")).toBe("address")
+      expect(url.searchParams.get("type")).toBe("municipality")
+      expect(url.searchParams.get("limit")).toBe("3")
+      expect(communes).toEqual([
+        { code: "77186", name: "Fontainebleau" },
+        { code: "38169", name: "Fontaine" },
+        { code: "99999", name: "Fontainebleau-bis" },
+      ])
+    })
+
+    it("skips candidates without a code or a name and repeated codes", async () => {
+      const noCode = commune("Sans code", "", 0.9)
+      const noName = commune("", "11111", 0.9)
+      fetchMock.mockResolvedValue(
+        okResponse(
+          collection(
+            noCode,
+            noName,
+            commune("Une", "22222", 0.9),
+            commune("Une encore", "22222", 0.9),
+            { properties: { _type: "poi" } },
+          ),
+        ),
+      )
+
+      await expect(buildService().resolveCommunes("Une commune")).resolves.toEqual([
+        { code: "22222", name: "Une" },
+      ])
+    })
+
+    it("caches for 30 minutes", async () => {
+      const clock = advanceableClock()
+      fetchMock.mockResolvedValue(okResponse(collection(commune("Fontainebleau", "77186", 0.97))))
+      const service = buildService()
+
+      await service.resolveCommunes("Fontainebleau")
+      await clock.advance(25 * 60 * 1000)
+      await service.resolveCommunes("fontainébleau")
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+
+      await clock.advance(10 * 60 * 1000)
+      await service.resolveCommunes("Fontainebleau")
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    })
+
+    it("does not share its cache entry with the place search of the same text", async () => {
+      fetchMock.mockResolvedValue(okResponse(collection(commune("Fontainebleau", "77186", 0.97))))
+      const service = buildService()
+
+      await service.searchPlaces("Fontainebleau", 3)
+      await service.resolveCommunes("Fontainebleau")
+
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    })
+
+    it("answers [] with no call for the synthetic provider or a short query", async () => {
+      await expect(
+        buildService({ CADASTRE_PROVIDER: "synthetic" }).resolveCommunes("Fontainebleau"),
+      ).resolves.toEqual([])
+      await expect(buildService().resolveCommunes("ab")).resolves.toEqual([])
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it("answers 503 on a provider failure and does not cache it", async () => {
+      const service = buildService()
+      fetchMock.mockRejectedValueOnce(new Error("timeout"))
+      await expect(service.resolveCommunes("Fontainebleau")).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      )
+
+      fetchMock.mockResolvedValueOnce(
+        okResponse(collection(commune("Fontainebleau", "77186", 0.9))),
+      )
+      await expect(service.resolveCommunes("Fontainebleau")).resolves.toHaveLength(1)
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+    })
+  })
+})
