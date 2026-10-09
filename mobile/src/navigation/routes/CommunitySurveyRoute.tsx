@@ -12,8 +12,9 @@ import { ScreenFrame } from "../../ui/ScreenFrame"
 
 /**
  * The page of a finished survey of another member (OA-59), opened from the Communauté search, from
- * the Explorer map (a tapped parcel's history or a selected survey) or from the history of another
- * such page: the same page from every entrance. It reads nothing from the surveys context: the survey is
+ * the Explorer map (a tapped parcel's history or a selected survey) or from the history page of
+ * another member's survey: the same page from every entrance. Its "Historique de la parcelle" row
+ * opens `communityHistory` (registered in both stacks that register this page). It reads nothing from the surveys context: the survey is
  * not the user's, so it is loaded from the API by the id in the route.
  *
  * 12.2-17: in the native iOS tab tree the page is named by the native large title: the stack's
@@ -23,16 +24,20 @@ import { ScreenFrame } from "../../ui/ScreenFrame"
 export const CommunitySurveyRoute = memo(function CommunitySurveyRoute({
   route,
 }: CommunitySurveyRouteProps) {
-  // Pushed from the search, from the Explorer map or from another such page: whichever stack
-  // mounts it registers the same screen name, so the push stays in that stack.
-  const navigation =
-    useNavigation<NativeStackNavigationProp<{ communitySurvey: { surveyId: string } }>>()
+  // Pushed from the search, from the Explorer map or from the history page: whichever stack mounts
+  // it registers the same screen names, so the push stays in that stack.
+  const navigation = useNavigation<
+    NativeStackNavigationProp<{
+      communitySurvey: { surveyId: string }
+      communityHistory: { surveyId: string }
+    }>
+  >()
   const { state: session } = useSession()
   const accessToken = useAccessToken()
   const state = useCommunitySurvey(session.apiUrl, accessToken, route.params.surveyId)
 
-  const onOpenSurvey = useLatestCallback((surveyId: string) => {
-    navigation.push("communitySurvey", { surveyId })
+  const onOpenHistory = useLatestCallback(() => {
+    navigation.push("communityHistory", { surveyId: route.params.surveyId })
   })
 
   const largeTitle = usesNativeLargeTitle()
@@ -50,7 +55,7 @@ export const CommunitySurveyRoute = memo(function CommunitySurveyRoute({
         apiUrl={session.apiUrl}
         accessToken={accessToken}
         state={state}
-        onOpenSurvey={onOpenSurvey}
+        onOpenHistory={onOpenHistory}
       />
     </ScreenFrame>
   )

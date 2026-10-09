@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native"
 import { Image as ExpoImage } from "expo-image"
 import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { formatDay } from "../../app/formatters"
+import { buildEntriesFromCommunity, historyRowState } from "../../app/parcel-history"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
@@ -11,6 +12,7 @@ import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../../ui/frame-large-title"
 import { FactorsList } from "../survey-detail/FactorsList"
+import { toHistoryRow } from "../survey-detail/history-row"
 import { ParcelMapCard } from "../survey-detail/ParcelMapCard"
 import { PhotoGallery } from "../survey-detail/PhotoGallery"
 import { createPhotoStyles } from "../survey-detail/photos.styles"
@@ -18,7 +20,6 @@ import { ScoreBreakdown } from "../survey-detail/ScoreBreakdown"
 import { createSummaryScreenStyles } from "../survey-detail/summary-screen.styles"
 import { useSubPageContentStyle } from "../survey-detail/useSubPageContent"
 import { toContextRows, toDisplayedScores, toFactorEntries } from "./view-model"
-import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.communitySurvey
 
@@ -26,20 +27,21 @@ type CommunitySurveyScreenProps = {
   apiUrl: string
   accessToken: string | null
   state: CommunitySurveyState
-  /** Opens another survey of the history. */
-  onOpenSurvey: (surveyId: string) => void
+  /** Opens the parcel's history page. */
+  onOpenHistory: () => void
 }
 
 /**
  * The page of a finished survey of another member (OA-59), read-only: who made it and when, the
- * score and its ten factors, the method and station, an approximate position, the photos and the
- * other surveys of the same parcels. It reuses the survey's own score and map components.
+ * score and its ten factors, the method and station, an approximate position, the photos and, when
+ * the parcels have other surveys, one row opening the parcel history page (D-03). It reuses the
+ * survey's own score and map components and never shows the change log.
  */
 export function CommunitySurveyScreen({
   apiUrl,
   accessToken,
   state,
-  onOpenSurvey,
+  onOpenHistory,
 }: CommunitySurveyScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
@@ -77,6 +79,31 @@ export function CommunitySurveyScreen({
     ],
     [detail],
   )
+
+  const historySections = useMemo(() => {
+    if (!detail || detail.history.length <= 1) return null
+    const row = toHistoryRow(
+      historyRowState(
+        { hasParcel: true, loading: false, error: false, offline: false },
+        buildEntriesFromCommunity(detail.history),
+      ),
+    )
+    return [
+      {
+        key: "history",
+        rows: [
+          {
+            key: "history",
+            label: fr.surveyDetail.rows.history,
+            value: row.value,
+            multiline: true,
+            accessibilityLabel: row.accessibilityLabel,
+            onPress: onOpenHistory,
+          },
+        ],
+      },
+    ]
+  }, [detail, onOpenHistory])
 
   // The header is transparent: the route's ScreenFrame starts the page below it (D-19).
   const scrollStyle = styles.scroll
@@ -116,7 +143,7 @@ export function CommunitySurveyScreen({
       contentInsetAdjustmentBehavior={insetBehavior}
     >
       {/* The same skeleton as one of my surveys (OA-115): title and status line, score, photos,
-        map, then Contexte et parcelles, Score IBP and the parcel's history. */}
+        map, then Contexte et parcelles, Score IBP and the row opening the parcel's history. */}
       <View style={own.titleBlock}>
         {nativeTitle ? null : (
           <Text accessibilityRole="header" style={own.title}>
@@ -205,43 +232,7 @@ export function CommunitySurveyScreen({
         onOpenFactor={() => undefined}
       />
 
-      {detail.history.length > 1 ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t.history.title}</Text>
-          <View style={own.historyList}>
-            {detail.history.map((item) => (
-              <AppPressable
-                key={item.survey_id}
-                disabled={item.is_current}
-                onPress={() => onOpenSurvey(item.survey_id)}
-                accessibilityRole={item.is_current ? "text" : "button"}
-                accessibilityLabel={t.history.open({
-                  name: item.site_name,
-                  total: item.ibp_total,
-                })}
-                style={[own.historyRow, item.is_current ? own.historyRowCurrent : null]}
-                testID={`community-history-${item.survey_id}`}
-              >
-                <View style={own.historyCopy}>
-                  <Text numberOfLines={1} style={own.historyTitle}>
-                    {item.site_name.trim() || fr.common.untitledSurvey}
-                  </Text>
-                  <Text numberOfLines={1} style={own.meta}>
-                    {item.is_current
-                      ? t.history.current
-                      : t.history.row({
-                          author: item.author_name?.trim() || t.unknownAuthor,
-                          year: item.observation_year,
-                          version: item.version_number,
-                        })}
-                  </Text>
-                </View>
-                <Text style={own.historyTotal}>{t.history.total(item.ibp_total)}</Text>
-              </AppPressable>
-            ))}
-          </View>
-        </View>
-      ) : null}
+      {historySections ? <AppGroupedList sections={historySections} /> : null}
     </ScrollView>
   )
 }
@@ -294,36 +285,6 @@ function createOwnStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
       fontStyle: "italic",
       paddingTop: brandSpacing4.xs,
-    },
-    historyList: {
-      gap: brandSpacing4.sm,
-    },
-    historyRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.smd,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.semanticColors.surfaceElevated,
-      paddingHorizontal: 14,
-      paddingVertical: brandSpacing4.smd,
-    },
-    historyRowCurrent: {
-      borderColor: theme.colors.forest,
-    },
-    historyCopy: {
-      flex: 1,
-      gap: brandSpacing4.xxs,
-    },
-    historyTitle: {
-      ...brandTypography.input,
-      color: theme.semanticColors.textStrong,
-    },
-    historyTotal: {
-      ...brandTypography.input,
-      fontWeight: "700",
-      color: theme.colors.forest,
     },
   })
 }

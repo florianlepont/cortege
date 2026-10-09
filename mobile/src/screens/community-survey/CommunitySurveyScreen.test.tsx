@@ -1,3 +1,5 @@
+import { readFileSync } from "fs"
+import { join } from "path"
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 // The draft-summary module pulls in the whole storage layer; the view model only needs its marker.
@@ -108,7 +110,7 @@ const state = (overrides: Partial<CommunitySurveyState> = {}): CommunitySurveySt
   ...overrides,
 })
 
-function render(current: CommunitySurveyState, onOpenSurvey = jest.fn()) {
+function render(current: CommunitySurveyState, onOpenHistory = jest.fn()) {
   let tree!: renderer.ReactTestRenderer
   act(() => {
     tree = renderer.create(
@@ -116,11 +118,11 @@ function render(current: CommunitySurveyState, onOpenSurvey = jest.fn()) {
         apiUrl="http://api.test/v1"
         accessToken="token"
         state={current}
-        onOpenSurvey={onOpenSurvey}
+        onOpenHistory={onOpenHistory}
       />,
     )
   })
-  return { tree, onOpenSurvey }
+  return { tree, onOpenHistory }
 }
 
 const byType = (tree: renderer.ReactTestRenderer, type: string) =>
@@ -255,7 +257,7 @@ describe("CommunitySurveyScreen", () => {
     expect(texts(render(state({ photosFailed: true })).tree)).toContain(t.photosFailed)
   })
 
-  it("lists the other surveys of the parcels and opens one, but not the current one", () => {
+  it("shows one 'Historique de la parcelle' row when the parcels have other surveys", () => {
     const history = [
       {
         survey_id: "s-1",
@@ -278,20 +280,32 @@ describe("CommunitySurveyScreen", () => {
         is_current: true,
       },
     ]
-    const { tree, onOpenSurvey } = render(state({ detail: detail({ history }) }))
-    const all = texts(tree).join(" | ")
-    expect(all).toContain(t.history.title)
-    expect(all).toContain(t.history.current)
-    expect(all).toContain(t.history.total(24))
-
-    const previous = tree.root.findAll((n) => n.props.testID === "community-history-s-1")[0]
-    act(() => previous.props.onPress())
-    expect(onOpenSurvey).toHaveBeenCalledWith("s-1")
-    const current = tree.root.findAll((n) => n.props.testID === "community-history-s-2")[0]
-    expect(current.props.disabled).toBe(true)
+    const { tree, onOpenHistory } = render(state({ detail: detail({ history }) }))
+    const lists = byType(tree, "AppGroupedList")
+    // Context rows, parcels, then the history row, after the factors list.
+    expect(lists).toHaveLength(3)
+    const [row] = lists[2].props.sections[0].rows
+    expect(row).toMatchObject({
+      label: fr.surveyDetail.rows.history,
+      multiline: true,
+      value: "24 → 31",
+      accessibilityLabel: "Historique de la parcelle. de 24 à 31 sur 50",
+    })
+    const all = tree.root.findAll((node) => node.type !== undefined)
+    const order = all
+      .map((node) => node.type as unknown)
+      .filter((type) => type === "FactorsList" || type === "AppGroupedList")
+    expect(order[order.length - 1]).toBe("AppGroupedList")
+    expect(order[order.length - 2]).toBe("FactorsList")
+    act(() => row.onPress())
+    expect(onOpenHistory).toHaveBeenCalledTimes(1)
+    // The old inline list is gone.
+    expect(
+      tree.root.findAll((n) => String(n.props.testID ?? "").startsWith("community-history-")),
+    ).toHaveLength(0)
   })
 
-  it("shows no history when the survey is alone on its parcels", () => {
+  it("shows no history row when the survey is alone on its parcels or has no history", () => {
     const only = {
       survey_id: "s-2",
       site_name: "Bois",
@@ -302,8 +316,23 @@ describe("CommunitySurveyScreen", () => {
       submitted_at: "2026-09-28T09:41:00.000Z",
       is_current: true,
     }
-    const { tree } = render(state({ detail: detail({ history: [only] }) }))
-    expect(texts(tree)).not.toContain(t.history.title)
+    expect(
+      byType(render(state({ detail: detail({ history: [only] }) })).tree, "AppGroupedList"),
+    ).toHaveLength(2)
+    expect(byType(render(state()).tree, "AppGroupedList")).toHaveLength(2)
+  })
+
+  it("never reaches the change log of another member's survey (T-24-06)", () => {
+    const source = readFileSync(join(__dirname, "CommunitySurveyScreen.tsx"), "utf8")
+    for (const forbidden of [
+      "EventsTab",
+      "SurveyJournal",
+      "surveyJournal",
+      "useSurveyDetailHeader",
+      "surveyEvents",
+    ]) {
+      expect(source).not.toContain(forbidden)
+    }
   })
 })
 
@@ -334,7 +363,7 @@ describe("under the native large title (12.2-17)", () => {
             apiUrl="http://api.test/v1"
             accessToken="token"
             state={current}
-            onOpenSurvey={jest.fn()}
+            onOpenHistory={jest.fn()}
           />
         </FrameLargeTitleContext.Provider>,
       )

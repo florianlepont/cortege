@@ -985,7 +985,7 @@ describe("SurveySearchRoute", () => {
 })
 
 describe("CommunitySurveyRoute", () => {
-  test("loads the survey of the route and opens another one from its history", async () => {
+  test("loads the survey of the route and opens its parcel history", async () => {
     const navigation = mockSearchNavigation
     await mount(
       <Providers fixture={makeFixture()}>
@@ -997,8 +997,8 @@ describe("CommunitySurveyRoute", () => {
     expect(screen.apiUrl).toBe("http://api.test/v1")
     expect(screen.state).toBe(mockCommunitySurvey)
 
-    callback("communitySurvey", "onOpenSurvey")("c-2")
-    expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-2" })
+    callback("communitySurvey", "onOpenHistory")()
+    expect(navigation.push).toHaveBeenCalledWith("communityHistory", { surveyId: "c-1" })
   })
 })
 
