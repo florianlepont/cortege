@@ -89,11 +89,19 @@ export const surveyDetailFr = {
   rows: {
     context: "Contexte et parcelles",
     score: "Score IBP",
-    history: "Historique",
+    history: "Historique de la parcelle",
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
     scoreValue: (filled: number) => `${filled} sur 10`,
     historyEmpty: "Voir les étapes",
+    // Value of the parcel history row (D-01). The arrow is U+2192; the owner phone check
+    // (plan 24-12) verifies the glyph, fallback: " à ".
+    historyValue: ({ first, latest }: { first: number; latest: number }) =>
+      `${first} \u2192 ${latest}`,
+    historyCount: (count: number) => (count === 1 ? "1 relevé" : `${count} relevés`),
+    historyFirst: "Premier relevé",
+    historyUnavailable: "Indisponible",
+    historyNoParcel: "Aucune parcelle",
   },
   // The two sub-pages of the summary (OA-46).
   contextScreen: {
@@ -230,6 +238,9 @@ export const surveyDetailFr = {
       `Supprimer la photo ${position} sur ${total}`,
     openFactor: ({ title, value }: { title: string; value: string }) =>
       `Ouvrir le facteur ${title}, ${value}`,
+    historyRow: ({ label, value }: { label: string; value: string }) => `${label}. ${value}`,
+    historyRange: ({ first, latest }: { first: number; latest: number }) =>
+      `de ${first} à ${latest} sur ${IBP_MAX.total}`,
   },
   // Previous submitted surveys on the same parcel, and the deltas of this survey against the
   // latest one (REQ-B-survey-detail, REQ-C-versioning). Row/delta formatting is shared with the
