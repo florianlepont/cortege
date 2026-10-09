@@ -70,7 +70,14 @@ type CommunitySurveyDbRow = {
 }
 
 /** Below this map zoom the mobile shows no parcel, so the route answers without a query. */
-const MIN_PARCEL_STATUS_ZOOM = 15
+const MIN_PARCEL_STATUS_ZOOM = 12
+/**
+ * From this zoom the IGN cadastre gives every parcel of the view. Between MIN_PARCEL_STATUS_ZOOM
+ * and this zoom only the studied parcels (those with a public survey) are answered, from the
+ * database: a forest of large parcels shows its coloured parcels without zooming right in, and
+ * the IGN is not asked for a whole wide view.
+ */
+const IGN_PARCEL_ZOOM = 15
 
 /**
  * Unauthenticated public map reads (D-07): /v1/public/map-items and /v1/public/parcels/status.
@@ -143,9 +150,10 @@ export class PublicMapService {
       return { items: [] }
     }
 
+    const studiedOnly = zoom !== null && zoom < IGN_PARCEL_ZOOM
     const bbox = parseBbox(input?.bbox)
     const year = normalizeObservationYear(input?.year)
-    if (this.cadastreProvider.wfsEnabled && bbox) {
+    if (!studiedOnly && this.cadastreProvider.wfsEnabled && bbox) {
       // D-08: null (too many tiles, or IGN failed) and an empty answer both use the DB path.
       const features = await this.cadastreProvider.fetchParcelFeaturesInBbox(bbox)
       if (features && features.length > 0) {
@@ -185,6 +193,9 @@ export class PublicMapService {
         } satisfies PublicParcelStatusItemContract
       })
       .filter((item) => {
+        if (studiedOnly && item.study_status !== "studied") {
+          return false
+        }
         if (seenParcelIds.has(item.parcel_id)) {
           return false
         }

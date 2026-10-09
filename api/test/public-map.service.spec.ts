@@ -337,18 +337,53 @@ describe("PublicMapService", () => {
   })
 
   describe("getPublicParcelStatuses", () => {
-    it("answers an empty list below zoom 15 without any query or IGN call", async () => {
+    it("answers an empty list below zoom 12 without any query or IGN call", async () => {
       const db = buildDb()
       const cadastre = buildCadastre({ wfsEnabled: true, features: [feature()] })
 
       const output = await buildService(db, cadastre).getPublicParcelStatuses({
-        zoom: "14.9",
+        zoom: "11.9",
         bbox: "2,48,3,49",
       })
 
       expect(output).toEqual({ items: [] })
       expect(db.query).not.toHaveBeenCalled()
       expect(cadastre.fetchParcelFeaturesInBbox).not.toHaveBeenCalled()
+    })
+
+    it("from zoom 12 to 15 answers the studied parcels from the database, never the IGN", async () => {
+      const row = (parcelId: string, status: "studied" | "not_studied") => ({
+        parcel_id: parcelId,
+        study_status: status,
+        latest_submitted_survey_id: status === "studied" ? `s-${parcelId}` : null,
+        latest_observation_year: status === "studied" ? 2025 : null,
+        latest_ibp_total: status === "studied" ? 31 : null,
+        latest_ibp_method_version: null,
+        geometry: { type: "Polygon", coordinates: [[[2, 48]]] },
+        centroid: { lat: 48.5, lng: 2.5 },
+      })
+      const cadastre = buildCadastre({ wfsEnabled: true, features: [feature()] })
+
+      for (const zoom of ["12", "13.5", "14.9"]) {
+        const db = buildDb({
+          rows: [row("P1", "studied"), row("P2", "not_studied"), row("P3", "studied")],
+        })
+        const output = await buildService(db, cadastre).getPublicParcelStatuses({
+          zoom,
+          bbox: "2,48,3,49",
+        })
+        expect(output.items.map((item) => item.parcel_id)).toEqual(["P1", "P3"])
+        expect(output.items[0].latest_submitted_survey_id).toBe("s-P1")
+        expect(db.query).toHaveBeenCalledWith(PUBLIC_PARCEL_STATUSES_BBOX_SQL, [null, 2, 3, 48, 49])
+      }
+      expect(cadastre.fetchParcelFeaturesInBbox).not.toHaveBeenCalled()
+    })
+
+    it("keeps the IGN cadastre, not-studied parcels included, from zoom 15", async () => {
+      const db = buildDb()
+      const cadastre = buildCadastre({ wfsEnabled: true, features: [feature()] })
+      await buildService(db, cadastre).getPublicParcelStatuses({ zoom: "15", bbox: "2,48,3,49" })
+      expect(cadastre.fetchParcelFeaturesInBbox).toHaveBeenCalledTimes(1)
     })
 
     it("rejects an invalid bbox before any query", async () => {

@@ -22,7 +22,6 @@ import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
-import { ParcelHistoryCard } from "./public-map/ParcelHistoryCard"
 import { ScoreLegend } from "./public-map/ScoreLegend"
 import { createScreenContainerStyle } from "./public-map/styles"
 import { useMapViewport } from "./public-map/useMapViewport"
@@ -57,7 +56,6 @@ type PublicMapScreenProps = {
   isOffline: boolean
   basemap: BasemapKey
   onChangeBasemap: (basemap: BasemapKey) => void
-  onQueueParcelDownload: (parcelId: string) => void
   /** Opens the read-only page of a finished survey (OA-59), the same page as the search's. */
   onOpenSurvey: (surveyId: string) => void
 }
@@ -81,7 +79,6 @@ export function PublicMapScreen({
   isOffline,
   basemap,
   onChangeBasemap,
-  onQueueParcelDownload,
   onOpenSurvey,
 }: PublicMapScreenProps) {
   const theme = useBrandTheme()
@@ -98,7 +95,6 @@ export function PublicMapScreen({
   // The survey whose marker is drawn selected: the last one opened from the map or shown from its
   // page (OA-59). No panel goes with it (12.2-19).
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
-  const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null)
   const [clusterItems, setClusterItems] = useState<PublicMapItem[] | null>(null)
   const [locating, setLocating] = useState(false)
   const [showOfflineAreas, setShowOfflineAreas] = useState(false)
@@ -146,21 +142,19 @@ export function PublicMapScreen({
     setHighlightedId(id)
     onOpenSurvey(id)
   })
-  // A marker belongs to another place than an open cluster list or parcel history: those close.
+  // A marker belongs to another place than an open cluster list: the list closes.
   const handleSelectSurvey = useLatestCallback((id: string) => {
-    setSelectedParcelId(null)
     setClusterItems(null)
     openSurvey(id)
   })
+  // A studied parcel opens the page of its latest survey directly, like its marker did at lower
+  // zoom (Phase 24 owner check): the parcel history is a row of that page, not a panel of the map.
   const handleSelectParcel = useLatestCallback((parcelId: string) => {
     const status = parcelStatusById.get(parcelId)
-    if (status?.study_status === "studied") {
-      setClusterItems(null)
-      setSelectedParcelId(parcelId)
-    }
+    const surveyId = status?.study_status === "studied" ? status.latest_submitted_survey_id : null
+    if (surveyId) handleSelectSurvey(surveyId)
   })
   const handleOpenClusterList = useCallback((leaves: PublicMapItem[]) => {
-    setSelectedParcelId(null)
     setClusterItems(leaves)
   }, [])
   const { moveTo, focusTo } = viewport
@@ -184,12 +178,10 @@ export function PublicMapScreen({
   // (opening one clears the others, see handleSelectParcel and handleOpenClusterList above).
   const closeSheet = useCallback(() => {
     setShowOfflineAreas(false)
-    setSelectedParcelId(null)
     setClusterItems(null)
     clearDownloadStatus()
   }, [clearDownloadStatus])
   const openOfflineAreas = useCallback(() => {
-    setSelectedParcelId(null)
     setClusterItems(null)
     setAreaChosen(false)
     // A finished download's outcome is not shown again; a running one keeps its bar.
@@ -256,17 +248,6 @@ export function PublicMapScreen({
       onRetry={handleDownloadArea}
       onClose={closeOfflineAreas}
     />
-  ) : selectedParcelId ? (
-    <ParcelHistoryCard
-      key={selectedParcelId}
-      parcelId={selectedParcelId}
-      apiUrl={apiUrl}
-      accessToken={accessToken}
-      isOffline={isOffline}
-      onQueueDownload={onQueueParcelDownload}
-      onOpenSurvey={openSurvey}
-      onClose={closeSheet}
-    />
   ) : clusterItems ? (
     // The list stays open under the survey page, so back returns to it and its other surveys.
     <ClusterListSheet items={clusterItems} onSelect={openSurvey} onClose={closeSheet} />
@@ -284,6 +265,7 @@ export function PublicMapScreen({
         selectedId={highlightedId}
         parcelStatuses={parcelStatuses}
         parcelLayerRenderable={viewport.parcelLayerRenderable}
+        studiedParcelsRenderable={viewport.studiedParcelsRenderable}
         onRegionChangeComplete={viewport.onRegionChangeComplete}
         onSelectSurvey={handleSelectSurvey}
         onSelectParcel={handleSelectParcel}

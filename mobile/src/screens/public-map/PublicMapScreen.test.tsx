@@ -1,7 +1,7 @@
 /**
  * The split public map screen (01.9-28, D-05, D-06, D-07; Phase 2 member-only sharing): viewport
  * loading, first-load fit, clusters (zoom or list), survey selection, tapping a studied parcel to
- * see its history, locate, controls, and a role and catalogue label on every Pressable.
+ * open its latest survey, locate, controls, and a role and catalogue label on every Pressable.
  */
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
@@ -208,11 +208,12 @@ type ScreenProps = React.ComponentProps<typeof PublicMapScreen>
 function parcelStatus(
   parcelId: string,
   studyStatus: PublicParcelStatusItem["study_status"],
+  latestSurveyId: string | null = null,
 ): PublicParcelStatusItem {
   return {
     parcel_id: parcelId,
     study_status: studyStatus,
-    latest_submitted_survey_id: null,
+    latest_submitted_survey_id: latestSurveyId,
     latest_observation_year: null,
     latest_ibp_total: null,
   }
@@ -231,7 +232,6 @@ function makeProps(overrides: Partial<ScreenProps> = {}): ScreenProps {
     isOffline: false,
     basemap: "map",
     onChangeBasemap: jest.fn(),
-    onQueueParcelDownload: jest.fn(),
     onOpenSurvey: jest.fn(),
     ...overrides,
   }
@@ -374,66 +374,29 @@ describe("PublicMapScreen", () => {
     expect(props.onOpenSurvey).not.toHaveBeenCalled()
   })
 
-  test("a row of a tapped parcel's history opens that survey's page (OA-59)", async () => {
-    mockFetchParcelSurveyHistory.mockResolvedValue({
-      parcel_id: "studied-1",
-      items: [
-        {
-          survey_id: "s-old",
-          observation_year: 2025,
-          version_number: 1,
-          scores: { ibp_total: 24 },
-          factor_results: {},
-          submitted_at: "2025-06-10T09:00:00Z",
-        },
-        {
-          survey_id: "s-new",
-          observation_year: 2026,
-          version_number: 2,
-          scores: { ibp_total: 28 },
-          factor_results: {},
-          submitted_at: "2026-06-12T09:00:00Z",
-        },
-      ],
+  test("tapping a studied parcel opens the page of its latest survey directly, no panel", async () => {
+    const props = makeProps({
+      parcelStatuses: [parcelStatus("studied-1", "studied", "s-latest")],
     })
-    const props = makeProps({ parcelStatuses: [parcelStatus("studied-1", "studied")] })
     mount(props)
     const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer")
+
     await act(async () => {
       overlay.props.onParcelPress("studied-1")
     })
 
-    const rows = tree.root.findAll((node) =>
-      String(node.props.testID ?? "").startsWith("parcel-history-open-"),
-    )
-    expect(rows.length).toBeGreaterThan(0)
-    // The row is the shared survey row frame (12.2-18): its pressable carries the role.
-    const latest = tree.root.find(
-      (node) =>
-        (node.type as unknown) === "Pressable" && node.props.testID === "parcel-history-open-s-new",
-    )
-    expect(latest.props.accessibilityRole).toBe("button")
-    act(() => latest.props.onPress())
-    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-new")
-    // 12.2-18: each row carries its ring (trailing column of the shared row) and enters in order.
-    const rings = tree.root.findAll((node) => (node.type as unknown) === "ScoreRing")
-    expect(
-      rings.map((ring) => [ring.props.score, ring.props.index, ring.props.animationKey]),
-    ).toEqual([
-      [24, 0, "s-old:24"],
-      [28, 1, "s-new:28"],
-    ])
-    const entrances = tree.root.findAll((node) => (node.type as unknown) === "EntranceView")
-    expect(entrances.map((node) => node.props.index)).toEqual([0, 1])
-    expect(texts()).toContain(fr.parcelHistory.total(28))
-    expect(texts()).toContain(fr.parcelHistory.delta.total(4))
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-latest")
+    expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)
+    // The parcel history is a row of the survey page: the map opens no panel and asks nothing.
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
+    expect(mockFetchParcelSurveyHistory).not.toHaveBeenCalled()
   })
 
-  test("tapping a studied parcel opens its history; a not-studied parcel does nothing", async () => {
+  test("a not-studied parcel, or a studied one with no survey to open, does nothing", async () => {
     const props = makeProps({
       parcelStatuses: [
-        parcelStatus("studied-1", "studied"),
         parcelStatus("empty-1", "not_studied"),
+        parcelStatus("studied-1", "studied"),
       ],
     })
     mount(props)
@@ -441,34 +404,17 @@ describe("PublicMapScreen", () => {
 
     await act(async () => {
       overlay.props.onParcelPress("empty-1")
-    })
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
-      0,
-    )
-
-    await act(async () => {
       overlay.props.onParcelPress("studied-1")
+      overlay.props.onParcelPress("unknown-parcel")
     })
-    const header = tree.root.find((node) => (node.type as unknown) === "AppSectionHeader")
-    expect(header.props.title).toBe(fr.parcelHistory.title)
-    expect(mockFetchParcelSurveyHistory).toHaveBeenCalledWith(
-      "http://localhost:3000",
-      "access-token",
-      "studied-1",
-    )
 
-    act(() => byLabel(fr.publicMap.a11y.closeParcelHistory).props.onPress())
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppSectionHeader")).toHaveLength(
-      0,
-    )
+    expect(props.onOpenSurvey).not.toHaveBeenCalled()
   })
 
-  test("tapping a studied parcel while offline shows the missing-parcel warning, never the network", async () => {
-    const onQueueParcelDownload = jest.fn()
+  test("tapping a parcel while offline opens the survey page too, without any map request", async () => {
     const props = makeProps({
-      parcelStatuses: [parcelStatus("studied-1", "studied")],
+      parcelStatuses: [parcelStatus("studied-1", "studied", "s-latest")],
       isOffline: true,
-      onQueueParcelDownload,
     })
     mount(props)
     const overlay = tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer")
@@ -477,38 +423,8 @@ describe("PublicMapScreen", () => {
       overlay.props.onParcelPress("studied-1")
     })
 
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("s-latest")
     expect(mockFetchParcelSurveyHistory).not.toHaveBeenCalled()
-    const notice = tree.root.findAll(
-      (node) =>
-        (node.type as unknown) === "AppNotice" &&
-        node.props.title === fr.offlineMap.parcelMissing.title,
-    )
-    expect(notice).toHaveLength(1)
-    expect(notice[0].props.message).toBe(fr.offlineMap.parcelMissing.message)
-
-    const downloadButton = tree.root.find(
-      (node) =>
-        (node.type as unknown) === "GlassButton" &&
-        node.props.label === fr.offlineMap.parcelMissing.downloadAction,
-    )
-    await act(async () => {
-      downloadButton.props.onPress()
-    })
-
-    expect(onQueueParcelDownload).toHaveBeenCalledWith("studied-1")
-    const noticeAfterQueue = tree.root.find(
-      (node) =>
-        (node.type as unknown) === "AppNotice" &&
-        node.props.title === fr.offlineMap.parcelMissing.title,
-    )
-    expect(noticeAfterQueue.props.message).toBe(fr.offlineMap.parcelMissing.queued)
-    expect(
-      tree.root.findAll(
-        (node) =>
-          (node.type as unknown) === "GlassButton" &&
-          node.props.label === fr.offlineMap.parcelMissing.downloadAction,
-      ),
-    ).toHaveLength(0)
   })
 
   test("a cluster that cannot split opens the list, and a row opens the survey directly", () => {
@@ -588,6 +504,40 @@ describe("PublicMapScreen", () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+
+  test("between zoom 12 and 15 only the studied parcels are drawn; from 15 every parcel is", () => {
+    const parcels = [
+      parcelStatus("studied-1", "studied", "s-1"),
+      parcelStatus("empty-1", "not_studied"),
+    ]
+    mount(makeProps({ parcelStatuses: parcels }))
+    const layerItems = () =>
+      (
+        tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer").props
+          .items as PublicParcelStatusItem[]
+      ).map((parcel) => parcel.parcel_id)
+    const moveTo = (halfSpan: number) => {
+      const map = tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
+      act(() =>
+        map.props.onRegionDidChange({
+          nativeEvent: {
+            center: [4.84, 45.76],
+            bounds: [4.84 - halfSpan, 45.76 - halfSpan, 4.84 + halfSpan, 45.76 + halfSpan],
+            userInteraction: true,
+          },
+        }),
+      )
+    }
+
+    // The whole country: no parcel.
+    expect(layerItems()).toEqual([])
+    // About zoom 13.5: the studied parcel only.
+    moveTo(0.015)
+    expect(layerItems()).toEqual(["studied-1"])
+    // About zoom 16: every parcel of the view.
+    moveTo(0.002)
+    expect(layerItems()).toEqual(["studied-1", "empty-1"])
   })
 
   describe("offline areas (behind the feature flag)", () => {

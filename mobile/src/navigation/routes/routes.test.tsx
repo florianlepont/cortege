@@ -219,9 +219,7 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
 jest.mock("../../hooks/useOfflinePendingParcelDrain", () => ({
   useOfflinePendingParcelDrain: jest.fn(),
 }))
-const mockAddPendingParcelDownload = jest.fn()
 jest.mock("../../storage/offline-map", () => ({
-  addPendingParcelDownload: (...args: unknown[]) => mockAddPendingParcelDownload(...args),
   listOfflineAreas: jest.fn(async () => []),
 }))
 
@@ -1833,20 +1831,6 @@ describe("PublicMapRoute", () => {
     expect(navigation.navigate).toHaveBeenCalledWith("surveys", { screen: "surveyDetail" })
     expect(navigation.navigate).not.toHaveBeenCalledWith("communitySurvey", expect.anything())
     ;(mockExplorer as { items: unknown[] }).items = []
-  })
-
-  test("queuing a parcel download (REQ-D-offline-parcel-warning) writes to the offline queue", async () => {
-    await mount(
-      <Providers fixture={makeFixture()}>
-        <PublicMapRoute navigation={makeNavigation() as never} route={{} as never} />
-      </Providers>,
-    )
-
-    act(() => {
-      ;(props("publicMap").onQueueParcelDownload as (parcelId: string) => void)("parcel-1")
-    })
-
-    expect(mockAddPendingParcelDownload).toHaveBeenCalledWith("parcel-1")
   })
 })
 

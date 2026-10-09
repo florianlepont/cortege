@@ -1240,7 +1240,11 @@ Return parcel study status for high zoom map rendering.
 
 Rules:
 
-- Endpoint is enabled only from configured zoom threshold (for example `zoom >= 15`).
+- The endpoint answers from zoom 12 (below, `items` is empty and no query is made). From zoom 12 to 15 (not
+  included) it returns only the **studied** parcels of the bbox, from the database, with their geometry,
+  so a forest of large parcels shows its coloured parcels without zooming right in; the IGN cadastre is
+  not asked for such a wide view. From zoom 15 it returns every parcel of the bbox (IGN cadastre) with
+  its study status.
 - Output excludes personal data.
 - `study_status` is derived from submitted surveys history.
 - `latest_ibp_method_version` (phase 01.8, additive) is the method tag of the same latest public

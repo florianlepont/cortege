@@ -213,11 +213,23 @@ describe("Public map items (e2e)", () => {
     expect(parcelItem?.study_status).toBe("studied")
     expect(parcelItem?.latest_observation_year).toBe(2026)
 
-    const lowZoom = await request(app.getHttpServer())
+    // From zoom 12 to 15 only the studied parcels come back (database path, no IGN call), so a
+    // forest of large parcels shows its coloured parcels without zooming right in.
+    const midZoom = await request(app.getHttpServer())
       .get("/v1/public/parcels/status")
       .set("Authorization", `Bearer ${accessToken}`)
       .query({ bbox: "1.0,43.0,2.0,44.0", zoom: 14 })
       .expect(200)
-    expect(lowZoom.body.items).toEqual([])
+    const midItems = midZoom.body.items as Array<{ parcel_id: string; study_status: string }>
+    expect(midItems.find((item) => item.parcel_id === parcelId)?.study_status).toBe("studied")
+    expect(midItems.every((item) => item.study_status === "studied")).toBe(true)
+
+    // Below zoom 12 no parcel is drawn: the route answers empty without a query.
+    const farZoom = await request(app.getHttpServer())
+      .get("/v1/public/parcels/status")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .query({ bbox: "1.0,43.0,2.0,44.0", zoom: 11 })
+      .expect(200)
+    expect(farZoom.body.items).toEqual([])
   })
 })
