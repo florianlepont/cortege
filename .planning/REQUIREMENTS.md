@@ -97,7 +97,7 @@ every binding contract (conflict-report warning 5).
 - [x] **REQ-QA-visual-modernisation** — The interface is visibly more pleasant, modern and dynamic: a written visual direction approved by the owner, applied to the main screens and to a colourised map background in light and dark mode, with consistent Reanimated motion that respects reduced-motion, with the design specification updated, existing design components reused rather than recreated and the ones already created homogenised, native libraries and components used as much as possible, and no regression on field ergonomics or accessibility. *(New — owner decision 2026-10-06, Phase 23)*
 - [x] **REQ-B-nearby-parcels-home** — The Home lists the parcels near the user and starts a survey on the chosen one, with clear empty, offline and location-refused states. *(New — owner decision 2026-10-07, SEED-004; built within Phase 23)*
 - [x] **REQ-C-history-split** — The survey change log and the history of earlier surveys on the same parcel are two distinct entries, and another member's survey shows the parcel history only. *(New — owner decision 2026-10-07, SEED-002 / OA-124, Phase 24)*
-- [ ] **REQ-B-global-search** — One search covers the whole app: the member's own surveys, the other members' surveys, places and parcels on the map, and the other items the app exposes, with grouped results that lead straight to the item. *(New — owner decision 2026-10-07, SEED-003, Phase 25)*
+- [x] **REQ-B-global-search** — One search covers the whole app: the member's own surveys, the other members' surveys, places and parcels on the map, and the other items the app exposes, with grouped results that lead straight to the item. *(New — owner decision 2026-10-07, SEED-003, Phase 25)*
 - [ ] **REQ-QA-ux-audit** — A documented UX/UI audit of every screen (light and dark) checks global coherence, accessibility and visual bugs, the design system and charter are updated to match Phase 23, and every *blocker before field tests* finding is fixed and confirmed by the owner. *(New — owner decision 2026-10-07, Phase 26)*
 - [ ] **REQ-QA-deep-audit** — A documented in-depth audit of code quality, test coverage, architecture and security exists in `docs/audits/`, re-checks the 2026-09 audit's findings, triages every finding, and every *blocker before field tests* is fixed and verified. *(New — owner decision 2026-10-06, Phase 27)*
 
@@ -286,7 +286,7 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-QA-visual-modernisation | New | Phase 23 | Build |
 | REQ-B-nearby-parcels-home | New | Phase 23 | Build |
 | REQ-C-history-split | New | Phase 24 | Built |
-| REQ-B-global-search | New | Phase 25 | Build |
+| REQ-B-global-search | New | Phase 25 | Built |
 | REQ-QA-ux-audit | New | Phase 26 | Build |
 | REQ-QA-deep-audit | New | Phase 27 | Build |
 | REQ-FT-field-tests | New | Phase 28 | Build |
