@@ -53,7 +53,7 @@ export function foldSearchText(text: string): string {
     .replace(/Æ/g, "AE")
   const stripped = RUNTIME_DECOMPOSES
     ? withLigatures.normalize("NFD").replace(COMBINING_MARKS, "")
-    : withLigatures.replace(FALLBACK_PATTERN, (letter) => FALLBACK_TABLE[letter] ?? letter)
+    : withLigatures.replace(FALLBACK_PATTERN, (letter) => FALLBACK_TABLE[letter] as string)
   return stripped.toLowerCase()
 }
 
