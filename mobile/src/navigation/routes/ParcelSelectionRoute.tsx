@@ -15,7 +15,6 @@ export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
   const { state, actions } = useSurveyFormState()
 
   const isWizard = route.params.mode === "wizard"
-
   // Last step of a new survey: the draft is finalised, then the survey page replaces the whole
   // creation flow so back returns to the list.
   const onSave = useLatestCallback(async () => {
@@ -38,6 +37,8 @@ export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
       apiUrl={session.apiUrl}
       accessToken={accessToken}
       gpsLocation={state.gpsLocation}
+      // Editing a survey's parcels: the map starts where its page shows them, not on the phone.
+      startPoint={route.params.startPoint ?? null}
       siteName={state.siteName}
       selectedParcelIds={state.selectedParcelIds}
       onToggleParcelSelection={actions.toggleParcelSelection}

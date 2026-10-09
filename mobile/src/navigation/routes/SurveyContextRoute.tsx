@@ -1,5 +1,6 @@
 import { memo } from "react"
 import { SurveyContextScreen } from "../../screens/SurveyContextScreen"
+import { resolveDisplayCoordinates } from "../../screens/survey-screen-helpers"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -17,9 +18,13 @@ export const SurveyContextRoute = memo(function SurveyContextRoute({
 
   const onOpenParcels = useLatestCallback(async (surveyId: string) => {
     const loaded = await actions.startEditSurvey(surveyId)
-    if (loaded) {
-      navigation.navigate("surveyParcels", { surveyId, mode: "edit" })
-    }
+    if (!loaded) return
+    const startPoint = resolveDisplayCoordinates(state.surveyDetails[surveyId]?.display_location)
+    navigation.navigate("surveyParcels", {
+      surveyId,
+      mode: "edit",
+      ...(startPoint && { startPoint }),
+    })
   })
 
   if (!state.selectedSurvey) return null

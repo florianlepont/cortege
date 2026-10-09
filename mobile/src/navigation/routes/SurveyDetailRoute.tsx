@@ -4,6 +4,7 @@ import type { FactorKey } from "../../app/types"
 import { SurveyDetailScreen } from "../../screens/SurveyDetailScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
+import { resolveDisplayCoordinates } from "../../screens/survey-screen-helpers"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyDetailRouteProps } from "../types"
@@ -28,7 +29,13 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   const onOpenContext = useLatestCallback(() => navigation.navigate("surveyContext"))
   const onOpenParcels = useLatestCallback(async (surveyId: string) => {
     const loaded = await actions.startEditSurvey(surveyId)
-    if (loaded) navigation.navigate("surveyParcels", { surveyId, mode: "edit" })
+    if (!loaded) return
+    const startPoint = resolveDisplayCoordinates(state.surveyDetails[surveyId]?.display_location)
+    navigation.navigate("surveyParcels", {
+      surveyId,
+      mode: "edit",
+      ...(startPoint && { startPoint }),
+    })
   })
   const onOpenScore = useLatestCallback(() => navigation.navigate("surveyScore"))
   const onOpenFactor = useLatestCallback(async (surveyId: string, factor: FactorKey) => {

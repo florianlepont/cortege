@@ -1159,6 +1159,27 @@ describe("SurveyDetailRoute", () => {
     })
   })
 
+  test("the parcel editor starts on the survey's own position when its page knows it", async () => {
+    const base = withSelection(makeFixture())
+    base.surveys.state.surveyDetails = {
+      "s-01": { display_location: { lat: 48.656, lng: 2.503 } },
+    } as unknown as typeof base.surveys.state.surveyDetails
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={base}>
+        <SurveyDetailRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("surveyDetail", "onOpenParcels")("s-01")
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
+      surveyId: "s-01",
+      mode: "edit",
+      startPoint: { lat: 48.656, lng: 2.503 },
+    })
+  })
+
   test("the map card stays on the page when the survey cannot be loaded for editing", async () => {
     const base = withSelection(makeFixture({ startEdit: false }))
     const navigation = makeNavigation()
@@ -1225,6 +1246,27 @@ describe("SurveyContextRoute", () => {
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
       surveyId: "s-01",
       mode: "edit",
+    })
+  })
+
+  test("the context page hands the survey's position to the parcel editor too", async () => {
+    const fixture = withSelection(makeFixture())
+    fixture.surveys.state.surveyDetails = {
+      "s-01": { display_location: { lat: 48.656, lng: 2.503 } },
+    } as unknown as typeof fixture.surveys.state.surveyDetails
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyContextRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("surveyContext", "onOpenParcels")("s-01")
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
+      surveyId: "s-01",
+      mode: "edit",
+      startPoint: { lat: 48.656, lng: 2.503 },
     })
   })
 
@@ -1698,6 +1740,37 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
       await callback("parcelSelection", "onSave")()
     })
     expect(stay.reset).not.toHaveBeenCalled()
+  })
+
+  test("the map starts on the position the navigation hands over, null for a new survey", async () => {
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <ParcelSelectionRoute
+          navigation={makeNavigation() as never}
+          route={
+            {
+              params: {
+                surveyId: "s-01",
+                mode: "edit",
+                startPoint: { lat: 48.656, lng: 2.503 },
+              },
+            } as never
+          }
+        />
+      </Providers>,
+    )
+    expect(props("parcelSelection").startPoint).toEqual({ lat: 48.656, lng: 2.503 })
+
+    // A new survey (wizard), or one without a known position: no start point, the phone's is used.
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <ParcelSelectionRoute
+          navigation={makeNavigation() as never}
+          route={{ params: { surveyId: "draft", mode: "wizard" } } as never}
+        />
+      </Providers>,
+    )
+    expect(props("parcelSelection").startPoint).toBeNull()
   })
 
   test("the edit parcel step saves and goes back", async () => {
