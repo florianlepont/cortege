@@ -816,7 +816,7 @@ Plans:
   4. The search is fast enough to feel instant on a typical phone (debounced input, bounded results per group), with empty, no-result and error states, and all texts from the French catalogue.
   5. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: 4/15 plans executed
+**Plans**: 9/15 plans executed
 
 **Wave 1**
 
@@ -827,11 +827,11 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 25-05-PLAN.md — API community and members: migration 022 (`unaccent`, parcels key index), SQL builders, `SearchService.community`
-- [ ] 25-06-PLAN.md — API places: `GEOCODING_IGN_SEARCH_URL`, shared IGN HTTP helper, `GeocoderService` (cache, de-duplication, cap, 503, commune resolution)
-- [ ] 25-07-PLAN.md — Phone data layer: client functions, `useSearchGroup`, `useGlobalSearch`, `useSearchRecents`
-- [ ] 25-08-PLAN.md — Explorer focus union (survey, place, parcel), place pin layer, parcel highlight, `useExplorerFocus`
-- [ ] 25-09-PLAN.md — Group card, group notices (loading, offline, error), "Meilleur résultat" card, per-type result labels
+- [x] 25-05-PLAN.md — API community and members: migration 022 (`unaccent`, parcels key index), SQL builders, `SearchService.community`
+- [x] 25-06-PLAN.md — API places: `GEOCODING_IGN_SEARCH_URL`, shared IGN HTTP helper, `GeocoderService` (cache, de-duplication, cap, 503, commune resolution)
+- [x] 25-07-PLAN.md — Phone data layer: client functions, `useSearchGroup`, `useGlobalSearch`, `useSearchRecents`
+- [x] 25-08-PLAN.md — Explorer focus union (survey, place, parcel), place pin layer, parcel highlight, `useExplorerFocus`
+- [x] 25-09-PLAN.md — Group card, group notices (loading, offline, error), "Meilleur résultat" card, per-type result labels
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -946,7 +946,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
 | 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
-| 25. Global Search | 4/15 | In Progress|  |
+| 25. Global Search | 9/15 | In Progress|  |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 27. In-depth Quality Audit | 0/TBD | Not started | - |
 | 28. Field Validation | 0/TBD | Not started | - |
