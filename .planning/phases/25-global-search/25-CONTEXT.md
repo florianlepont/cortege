@@ -1,7 +1,7 @@
 # Phase 25: Global Search - Context
 
 **Gathered:** 2026-10-09
-**Status:** Ready for sketches, then UI contract and planning
+**Status:** Sketches chosen (013 entry decided in words, 014 C, 015 A); ready for UI contract and planning
 
 <domain>
 ## Phase Boundary
@@ -14,8 +14,10 @@ One search page, reachable from every main tab, finds: the member's own surveys 
 ## Implementation Decisions
 
 ### Entry point
-- **D-01:** A magnifier button in the header of every main tab opens the one search page. On iOS the native search tab stays and opens the same page (`SurveySearchRoute`); on Android and the JS tabs the button pushes it. There is one search page, not one per tab.
-- **D-02:** The exact placement of the button, the page layout and the grouped results are designed in sketches (013 and following) BEFORE any code (owner rule).
+- **D-01 (owner, 2026-10-09):** No header magnifier anywhere on iOS: the native iOS 26 search tab (already in the tab bar, `role: "search"`) is the only entry. On Android and the JS tab tree (Expo Go), the same search page is a fourth tab in the bottom navigation bar with a magnifier icon, so it is reachable from every tab in one tap, like on iOS. One search page, one stack (`SearchStack`). Sketch 013 variants A, B and C are not retained as drawn; the choice replaces them. No search field on Explorer.
+- **D-02:** Results page = sketch 014 variant C (owner choice): a "Meilleur résultat" card on top (rule: a valid parcel number first, then the first place, then a survey; member name gives the member card), then the groups stacked (Mes relevés, Communauté, Lieux, Parcelles), three rows each with "Voir les N". Empty groups disappear.
+- **D-02b:** States = sketch 015 variant A (owner choice): start page with recent searches (kept on the phone); no-result message; offline = one plain line per network group ("Connexion nécessaire ..."), local results always shown; one group failing shows its error and "Réessayer" inside that group only.
+- **D-02c:** The Android bottom tab icon, its label and the iOS/Android parity of the page still go through a UI contract (`/gsd-ui-phase 25`); the Android tab needs a short sketch or board update only if the owner wants to see the bar before build.
 
 ### What is searched (four result groups)
 - **D-03:** Own surveys by survey name (site name), from local data, offline.

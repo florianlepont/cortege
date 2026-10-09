@@ -2,7 +2,7 @@
 sketch: 013
 name: search-entry
 question: "Où vit le point d'entrée de la recherche ?"
-winner: null
+winner: "owner: iOS native search tab only, Android 4th bottom tab"
 tags: [phase-25, global-search]
 ---
 

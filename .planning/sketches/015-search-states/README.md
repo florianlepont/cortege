@@ -2,7 +2,7 @@
 sketch: 015
 name: search-states
 question: "Quels états : départ, rien trouvé, hors-ligne, erreur ?"
-winner: null
+winner: "A"
 tags: [phase-25, global-search]
 ---
 

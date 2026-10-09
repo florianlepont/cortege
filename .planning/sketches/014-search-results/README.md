@@ -2,7 +2,7 @@
 sketch: 014
 name: search-results
 question: "Comment présenter les résultats groupés par type ?"
-winner: null
+winner: "C"
 tags: [phase-25, global-search]
 ---
 
