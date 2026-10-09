@@ -767,7 +767,7 @@ Plans:
   2. A survey from another member keeps showing the parcel history and never the change log.
   3. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: 5/12 plans executed
+**Plans**: 6/12 plans executed
 
 **Wave 1**
 
@@ -779,7 +779,7 @@ Plans:
 
 - [x] 24-04-PLAN.md — Pure model (TDD): `app/parcel-history.ts` and `app/trend-geometry.ts`
 - [x] 24-05-PLAN.md — Catalogue: parcel history page texts, summary row texts, header titles, "version N" entry
-- [ ] 24-06-PLAN.md — "Journal du relevé" entry in the summary's "…" menu (iOS native menu and sheet); export and delete unchanged (D-05)
+- [x] 24-06-PLAN.md — "Journal du relevé" entry in the summary's "…" menu (iOS native menu and sheet); export and delete unchanged (D-05)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -902,7 +902,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 21. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
 | 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
-| 24. Survey History Split | 5/12 | In Progress|  |
+| 24. Survey History Split | 6/12 | In Progress|  |
 | 25. Global Search | 0/TBD | Not started | - |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 27. In-depth Quality Audit | 0/TBD | Not started | - |
