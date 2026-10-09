@@ -20,6 +20,7 @@ import { communitySurveyFr } from "./community-survey"
 import { parcelSelectionFr } from "./parcel-selection"
 import { profileSetupFr } from "./profile-setup"
 import { publicMapFr } from "./public-map"
+import { searchFr } from "./search"
 import { settingsFr } from "./settings"
 import { statusFr } from "./status"
 import { surveyDetailFr } from "./survey-detail"
@@ -56,6 +57,7 @@ export const fr = {
   profileSetup: profileSetupFr,
   welcome: welcomeFr,
   ownerConflict: ownerConflictFr,
+  search: searchFr,
   settings: settingsFr,
   labels: labelsFr,
   ibpMethod: ibpMethodFr,
