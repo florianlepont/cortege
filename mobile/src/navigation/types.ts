@@ -125,6 +125,8 @@ export type SurveyDetailRouteProps = StackRouteProps<SurveysStackParamList, "sur
 export type CommunitySurveyRouteProps = { route: { params: { surveyId: string } } }
 /** Same shape and stacks as `communitySurvey`: the parcel history of another member's survey. */
 export type CommunityHistoryRouteProps = { route: { params: { surveyId: string } } }
+/** The full list of one search group (25-12): it reads its own params only. */
+export type SearchGroupRouteProps = { route: { params: SearchStackParamList["searchGroup"] } }
 export type SurveyContextRouteProps = StackRouteProps<SurveysStackParamList, "surveyContext">
 export type SurveyScoreRouteProps = StackRouteProps<SurveysStackParamList, "surveyScore">
 export type SurveyHistoryRouteProps = StackRouteProps<SurveysStackParamList, "surveyHistory">

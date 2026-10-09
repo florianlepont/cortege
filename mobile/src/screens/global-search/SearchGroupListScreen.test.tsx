@@ -192,6 +192,11 @@ describe("SearchGroupListScreen header", () => {
     expect(texts()).toContain(t.list.caption("forêt"))
   })
 
+  test("the title is the group name until the count is known", () => {
+    mount({ group: "places", mine: undefined, status: "loading", count: null })
+    expect(all("PageTitle")[0].props.children).toBe(t.groups.places)
+  })
+
   test("a member list captions the member's name instead of the query", () => {
     mount({
       group: "community",

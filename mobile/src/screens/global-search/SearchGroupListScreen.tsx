@@ -61,8 +61,8 @@ export type SearchGroupListScreenProps = {
   query: string
   /** Set for the community list of one member (D-04): only that member's surveys are drawn. */
   memberName?: string
-  /** The number of results, for the title. */
-  count: number
+  /** The number of results, for the title; null until the group has answered (the title is then the group name). */
+  count: number | null
   status: SearchGroupStatus
   error?: SearchGroupError | null
   onRetry?: () => void
@@ -221,7 +221,7 @@ export function SearchGroupListScreen({
   }
 
   const groupName = t.groups[group]
-  const title = t.list.title({ group: groupName, count })
+  const title = count === null ? groupName : t.list.title({ group: groupName, count })
   const caption = memberName ? t.list.memberCaption(memberName) : t.list.caption(query)
 
   const header = (
