@@ -58,7 +58,7 @@ type DemoParcelsModule = {
     },
   ) => Promise<{
     resolved: Map<string, Parcel[]>
-    failures: Array<{ label: string; reason: string }>
+    failures: Array<{ key: string; label: string; reason: string }>
   }>
   retryPoint: (base: Point, attempt: number, random: () => number, spread?: number) => Point
   sitePoint: (place: [string, number, number, { spread?: number }?], random: () => number) => Point
@@ -492,7 +492,7 @@ describe("seed demo parcels (real IGN parcels)", () => {
       })
       expect(fetchJson).toHaveBeenCalledTimes(3)
       expect(resolved.size).toBe(0)
-      expect(failures).toEqual([{ label: "lost", reason: "fetch failed" }])
+      expect(failures).toEqual([{ key: "lost", label: "lost", reason: "fetch failed" }])
     })
   })
 })
