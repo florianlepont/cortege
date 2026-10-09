@@ -1179,7 +1179,7 @@ Rules:
   first. There is no private/public choice yet (association-only sharing): the `visibility` column
   is not read, like for the map.
 - `q` (optional, at most 100 characters) keeps the surveys whose site name or author display name
-  contains the text, ignoring case. `%`, `_` and `\` in `q` are literal characters.
+  contains the text, ignoring case and accents. `%`, `_` and `\` in `q` are literal characters.
 - `limit` is 1 to 50 (default 30); a larger value is capped to 50, and the request validation
   rejects a non-integer or out-of-range one with `400`.
 - Unlike the map, the answer carries the site name and the author's display name. `author_name`
@@ -1233,6 +1233,149 @@ storage key is never returned. `404` for a survey that is not public.
 ### GET /public/community-surveys/{survey_id}/attachments/{attachment_id}/content
 
 The file itself (local storage mode only, otherwise `404`), with its `Content-Type`.
+
+### Search (phase 25)
+
+The global search of the app is three endpoints, one per result group, so each group loads, fails
+and is limited on its own. All three require an authenticated member (`401` otherwise) and share
+these rules:
+
+- `q` is required, 2 to 100 characters; anything else is `400`. The search text is never written to
+  the API logs.
+- They are limited by the `search` throttle: 240 requests per minute per client in production. The
+  answer is `429` beyond it. The `search` bucket replaces the default per-client limit on these
+  routes, so a search never uses the default or the sync budget; the per-IP ceiling still applies.
+- A provider failure on the places and parcels routes is `503` with the business code
+  `search_provider_unavailable` (see [Standard Error Codes](#standard-error-codes)).
+
+#### GET /search/community?q=&author=&limit=
+
+Members and finished surveys of the other members (the "Communauté" group).
+
+Parameters:
+
+- `q`: the text, 2 to 100 characters.
+- `author` (optional, at most 100 characters): the display name of one author. The surveys are then
+  only that author's, `q` no longer filters them and `members` is empty.
+- `limit` (optional): 1 to 50 surveys (default 30); `0`, `51` or a non-integer is `400`. At most
+  5 members are returned.
+
+Rules:
+
+- Only **submitted**, non-deleted surveys of members other than the caller are returned, newest
+  `submitted_at` first. A draft, a deleted survey and the caller's own surveys never appear, and the
+  caller is never listed as a member.
+- `q` matches the site name or the author's display name, ignoring case and accents. `%`, `_` and
+  `\` in `q` and in `author` are literal characters. `author` is compared to the whole display
+  name, ignoring case and accents.
+- `members` has one row per display name with the number of that member's submitted surveys. It
+  carries no user id, email or first and last name.
+- `surveys` items have the shape of `GET /public/community-surveys`.
+
+Response `200`:
+
+```json
+{
+  "members": [{ "author_name": "Camille D.", "survey_count": 3 }],
+  "surveys": [
+    {
+      "survey_id": "2f3d8a59-7c53-4fdf-8df4-8e2325b6172c",
+      "site_name": "Forêt de Rambouillet",
+      "author_name": "Camille D.",
+      "submitted_at": "2026-09-28T09:41:00.000Z",
+      "ibp_total": 34,
+      "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02"
+    }
+  ]
+}
+```
+
+#### GET /search/places?q=&limit=
+
+Places and addresses resolved to a map position (the "Lieux" group).
+
+Parameters:
+
+- `q`: the text, 2 to 100 characters.
+- `limit` (optional): 1 to 10 places (default 10); `0`, `11` or a non-integer is `400`.
+
+Rules:
+
+- The search goes through the IGN Géoplateforme geocoder (`index=address,poi`): addresses, streets,
+  localities, municipalities and points of interest such as forests, summits and lieux-dits.
+- The answer is `{ "items": [] }`, with no call to IGN, when the text has fewer than 3 characters
+  once trimmed, or when the cadastre provider is `synthetic` (offline development and the e2e
+  database). IGN answers are kept for 10 minutes and identical concurrent queries share one call.
+- `kind` is one of `municipality`, `locality`, `street`, `address`, `other`; `context` is a short
+  locating line (commune and department) or `null`; `score` is the provider confidence between 0
+  and 1.
+- `503 search_provider_unavailable` when IGN fails, times out or is saturated.
+
+Response `200`:
+
+```json
+{
+  "items": [
+    {
+      "id": "77186",
+      "name": "Fontainebleau",
+      "kind": "municipality",
+      "context": "Seine-et-Marne (77)",
+      "lat": 48.4047,
+      "lng": 2.7016,
+      "score": 0.97
+    }
+  ]
+}
+```
+
+#### GET /search/parcels?q=
+
+Cadastral parcels found by number (the "Parcelles" group). The only parameter is `q`, 2 to 100
+characters.
+
+Rules:
+
+- The accepted forms are: the full parcel identifier ("77186000AB0123"), the INSEE commune code then
+  the section and the number ("77186 AB 0123"), a commune name with the section and the number in
+  either order ("Fontainebleau AB 0123"), and the section and the number alone ("AB 0123"),
+  optionally with a department ("77 AB 0123"). Case, spaces and the words "section", "parcelle" and
+  "n°" are ignored. Any other text answers `{ "items": [] }` with no call.
+- A parcel with a commune code (or a commune name resolved by the geocoder) is looked up by key on
+  IGN API Carto, which gives its centroid and bounding box. When IGN has no answer, is off or fails,
+  the parcel registered in the database under that key is returned instead, without a polygon.
+- The section and the number alone, with or without a department, read the registered parcels that
+  have a centroid, the one studied last first (at most 10), and never call IGN.
+- `survey_count` is the number of submitted, non-deleted surveys on the parcel, from any member.
+- `bbox` is `[west, south, east, north]`, `null` when the geometry is unknown (a database item);
+  `commune_name` is `null` for a database item.
+- `503 search_provider_unavailable` only when IGN failed and the database knows no such parcel.
+
+Response `200`:
+
+```json
+{
+  "items": [
+    {
+      "parcel_id": "77186000AB0123",
+      "commune_code": "77186",
+      "commune_name": "Fontainebleau",
+      "section": "AB",
+      "number": "0123",
+      "centroid": { "lat": 48.4047, "lng": 2.7016 },
+      "bbox": [2.7001, 48.4039, 2.7032, 48.4055],
+      "survey_count": 2
+    }
+  ]
+}
+```
+
+Errors of the three endpoints:
+
+- `400` validation error (`q` or `author` length, `limit` range, unknown parameter)
+- `401` no valid token
+- `429` the `search` throttle (240 per minute per client in production)
+- `503` with `{ "code": "search_provider_unavailable", "message": "..." }` (places and parcels)
 
 ### GET /public/parcels/status?bbox=&zoom=&year=
 
@@ -1405,6 +1548,7 @@ Response `200`:
 - `403` forbidden
 - `404` not found
 - `429` rate limited
+- `503` provider unavailable
 - `409` conflict/version mismatch
 - `422` business rule violation
 - `500` internal server error
@@ -1421,6 +1565,7 @@ Common business error codes (non-exhaustive):
 - `attachment_size_mismatch` (`422`) — the uploaded attachment's size differs from the declared `size_bytes`; the object is deleted (or never written) and the attachment stays unconfirmed.
 - `invalid_operation` — a deterministic PostgreSQL data/constraint error (SQLSTATE class `22`/`23`) was raised while processing the request; the message is intentionally generic and carries no SQL detail.
 - `submitted_read_only_fields` (`422`) — a `PATCH /surveys/{id}` on a submitted survey named a read-only field (since phase 01.8 including `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale`).
+- `search_provider_unavailable` (`503`): the IGN geocoder or API Carto behind `GET /search/places` or `GET /search/parcels` failed and no registered parcel could answer; the body is `{ code, message }`.
 
 IBP validation codes (phase 01.8; the `422` body carries their messages in `errors` and
 `warnings`, see [IBP factor validation](#ibp-factor-validation-phase-018)):
