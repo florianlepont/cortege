@@ -17,3 +17,6 @@ used sparingly for action. The owner points to Linear as the reference and rejec
 | 010 | forest-card-motion | Which calm, continuous motion for the forest cards (Accueil, Mes Relevés, survey detail)? | Mist (1) plus flowing diagonal contours (5), owner-tuned in round4, reference round5 | 12.2, motion, forest-card |
 | 011 | history-placement | Where do the survey change log and the parcel history live (Phase 24, OA-124)? | C (parcel history as a row, change log behind the header "…" menu), owner choice 2026-10-09 | phase-24, survey-detail |
 | 012 | parcel-history-form | Which shape for the parcel history page? | B+C (trend title and curve, per-factor deltas card, list), owner choice 2026-10-09 | phase-24, parcel-history |
+| 013 | search-entry | Where does the global search entry live (Phase 25)? | None of A/B/C: iOS native search tab only; Android search as a 4th bottom tab (owner, 2026-10-09) | phase-25, global-search |
+| 014 | search-results | How are results grouped by type? | C (best result card, then groups) | phase-25, global-search |
+| 015 | search-states | Which empty, no-result, offline and error states? | A (line per network group, recent searches) | phase-25, global-search |

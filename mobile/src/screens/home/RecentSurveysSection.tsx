@@ -6,26 +6,19 @@ import {
   brandSpacing4,
   brandTypography,
 } from "../../app/brand-tokens"
-import { formatShortDateTime } from "../../app/formatters"
-import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/survey-logic"
 import type { SurveyDetailResponse } from "../../app/types"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppText as Text } from "../../ui/AppText"
 import { EntranceView } from "../../ui/EntranceView"
 import { feedback } from "../../ui/feedback"
-import { RowIndicator, resolveSurveyRowTone } from "../survey-list/row-indicator"
-import { createRowStyles } from "../survey-list/row-styles"
-import { resolveRowScore } from "../survey-list/row-score"
 import { HOME_GAPS, RECENT_LAYOUT } from "./layout-budget"
-import { SurveyRowFrame } from "../survey-list/SurveyRowFrame"
+import { CompactSurveyRow } from "../survey-list/CompactSurveyRow"
 import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.recent
-const rowText = fr.surveyList
 
 /** How many surveys the section shows. */
 export const RECENT_SURVEYS_COUNT = 3
@@ -63,7 +56,6 @@ export function RecentSurveysSection({
 }: RecentSurveysSectionProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
-  const rowStyles = useMemo(() => createRowStyles(theme), [theme])
   const recent = pickRecentSurveys(surveys)
 
   const open = useCallback(
@@ -98,58 +90,22 @@ export function RecentSurveysSection({
       {/* The shell carries the glass and the shadow; the clip keeps the wave inside the corners. */}
       <View style={styles.card} testID="home-recent-card">
         <View style={styles.clip}>
-          {recent.map((survey, position) => {
-            const uiStatus = resolveSurveyUiStatus(survey)
-            const label = formatSurveyUiStatusLabel(uiStatus)
-            const tone = resolveSurveyRowTone(uiStatus)
-            const updatedAt = formatShortDateTime(survey.updated_at)
-            const title = survey.site_name?.trim() || fr.common.untitledSurvey
-            return (
-              <Fragment key={survey.id}>
-                {position > 0 ? (
-                  <View style={styles.separator} testID="home-recent-separator" />
-                ) : null}
-                <EntranceView index={firstIndex + 1 + position}>
-                  <SurveyRowFrame
-                    density="compact"
-                    testID={`home-recent-row-${survey.id}`}
-                    accessibilityLabel={rowText.a11y.openSurvey({
-                      name: title,
-                      status: label,
-                      updatedAt,
-                    })}
-                    onPress={() => open(survey.id)}
-                    tone={tone}
-                    indicator={
-                      <RowIndicator
-                        surveyId={survey.id}
-                        isSubmitted={survey.status === "submitted"}
-                        score={resolveRowScore(survey, surveyDetails)}
-                        completionRate={survey.completion_rate}
-                        index={position}
-                        size={RECENT_LAYOUT.ringSize}
-                      />
-                    }
-                    title={title}
-                    status={
-                      <>
-                        <AppChoiceChip
-                          variant="status"
-                          label={label}
-                          tone={tone}
-                          style={styles.chip}
-                          labelStyle={tone === "danger" ? rowStyles.badgeTextDanger : undefined}
-                        />
-                        <Text numberOfLines={1} style={[rowStyles.surveyCardMeta, styles.meta]}>
-                          {rowText.row.updatedMeta(updatedAt)}
-                        </Text>
-                      </>
-                    }
-                  />
-                </EntranceView>
-              </Fragment>
-            )
-          })}
+          {recent.map((survey, position) => (
+            <Fragment key={survey.id}>
+              {position > 0 ? (
+                <View style={styles.separator} testID="home-recent-separator" />
+              ) : null}
+              <EntranceView index={firstIndex + 1 + position}>
+                <CompactSurveyRow
+                  testID={`home-recent-row-${survey.id}`}
+                  survey={survey}
+                  surveyDetails={surveyDetails}
+                  index={position}
+                  onOpen={open}
+                />
+              </EntranceView>
+            </Fragment>
+          ))}
         </View>
       </View>
     </View>
@@ -193,13 +149,6 @@ function createStyles(theme: BrandTheme) {
     separator: {
       height: RECENT_LAYOUT.separator,
       backgroundColor: theme.colors.divider,
-    },
-    chip: {
-      flexShrink: 0,
-      paddingVertical: RECENT_LAYOUT.chipPaddingY,
-    },
-    meta: {
-      flexShrink: 1,
     },
   })
 }

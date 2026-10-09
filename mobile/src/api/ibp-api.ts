@@ -9,7 +9,9 @@ import {
 import type {
   CommunitySurveyAttachment,
   CommunitySurveyDetail,
-  CommunitySurveyItem,
+  SearchCommunityResponse,
+  SearchParcelsResponse,
+  SearchPlacesResponse,
 } from "@cortege/ibp-domain"
 import * as FileSystem from "expo-file-system/legacy"
 import { ApiError, apiRequest } from "./client"
@@ -244,20 +246,54 @@ export async function fetchPublicMapItems(
   })
 }
 
-/** The community search (OA-52): finished surveys of every member, matched on name or author. */
-export async function searchCommunitySurveys(
+/**
+ * `GET /v1/search/community` (D-15): members and finished surveys matching the text, in one
+ * group that loads and fails on its own. `author` restricts the surveys to one member name (the
+ * "Voir les N" page of a member row).
+ */
+export async function searchCommunity(
+  apiUrl: string,
+  accessToken: string,
+  input: { q: string; author?: string; limit?: number },
+): Promise<SearchCommunityResponse> {
+  const queryParts: string[] = [`q=${encodeURIComponent(input.q.trim())}`]
+  if (input.author?.trim()) queryParts.push(`author=${encodeURIComponent(input.author.trim())}`)
+  if (input.limit) queryParts.push(`limit=${encodeURIComponent(String(input.limit))}`)
+
+  return apiRequest<SearchCommunityResponse>({
+    baseUrl: apiUrl,
+    path: `/search/community?${queryParts.join("&")}`,
+    method: "GET",
+    token: accessToken,
+  })
+}
+
+/** `GET /v1/search/places` (D-05, D-15): places and addresses resolved to a map position. */
+export async function searchPlaces(
   apiUrl: string,
   accessToken: string,
   input: { q: string; limit?: number },
-): Promise<{ items: CommunitySurveyItem[] }> {
-  const queryParts: string[] = []
-  if (input.q.trim()) queryParts.push(`q=${encodeURIComponent(input.q.trim())}`)
+): Promise<SearchPlacesResponse> {
+  const queryParts: string[] = [`q=${encodeURIComponent(input.q.trim())}`]
   if (input.limit) queryParts.push(`limit=${encodeURIComponent(String(input.limit))}`)
-  const suffix = queryParts.length > 0 ? `?${queryParts.join("&")}` : ""
 
-  return apiRequest<{ items: CommunitySurveyItem[] }>({
+  return apiRequest<SearchPlacesResponse>({
     baseUrl: apiUrl,
-    path: `/public/community-surveys${suffix}`,
+    path: `/search/places?${queryParts.join("&")}`,
+    method: "GET",
+    token: accessToken,
+  })
+}
+
+/** `GET /v1/search/parcels` (D-06, D-13, D-15): cadastral parcels found by number. */
+export async function searchParcels(
+  apiUrl: string,
+  accessToken: string,
+  input: { q: string },
+): Promise<SearchParcelsResponse> {
+  return apiRequest<SearchParcelsResponse>({
+    baseUrl: apiUrl,
+    path: `/search/parcels?q=${encodeURIComponent(input.q.trim())}`,
     method: "GET",
     token: accessToken,
   })

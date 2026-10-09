@@ -132,7 +132,8 @@ jest.mock("./routes/SurveyScoreRoute", () => ({ SurveyScoreRoute: mockRoute() })
 jest.mock("./routes/SurveyHistoryRoute", () => ({ SurveyHistoryRoute: mockRoute() }))
 jest.mock("./routes/SurveyJournalRoute", () => ({ SurveyJournalRoute: mockRoute() }))
 jest.mock("./routes/SurveyFormRoute", () => ({ SurveyFormRoute: mockRoute() }))
-jest.mock("./routes/SurveySearchRoute", () => ({ SurveySearchRoute: mockRoute() }))
+jest.mock("./routes/SearchHomeRoute", () => ({ SearchHomeRoute: mockRoute() }))
+jest.mock("./routes/SearchGroupRoute", () => ({ SearchGroupRoute: mockRoute() }))
 jest.mock("./routes/CommunitySurveyRoute", () => ({ CommunitySurveyRoute: mockRoute() }))
 jest.mock("./routes/CommunityHistoryRoute", () => ({ CommunityHistoryRoute: mockRoute() }))
 jest.mock("./routes/FactorDetailRoute", () => ({ FactorDetailRoute: mockRoute() }))
@@ -290,7 +291,9 @@ describe("AppNavigation tree choice", () => {
     )
     // OA-13: Compte is pushed onto a tab's stack, not a tab of its own.
     expect(mockScreens.account).toBeUndefined()
-    expect(mockScreens.search).toBeUndefined()
+    // D-01: the search page is the fourth JS tab, the same shared stack as the iOS search tab.
+    expect(mockScreens.search).toBeDefined()
+    expect((mockScreens.search.options as Options).tabBarHideOnKeyboard).toBe(true)
     expect(warn).toHaveBeenCalledTimes(1)
     expect(mockListConfigs).toEqual([{ useNativeNav: false }])
   })
@@ -661,8 +664,34 @@ describe("stack options and listeners", () => {
       for (const name of surveyPages) {
         expectHaloHeader(effectiveOptions(name))
       }
-      // The search page draws its own top block under the status bar: no native header.
-      expect((mockScreens.surveySearch.options as Options).headerShown).toBe(false)
+      // D-01: the old pushed search page is gone, the search tab is the only entry.
+      expect(Object.keys(mockScreens).filter((name) => /search/i.test(name))).toEqual([
+        "search",
+        "searchHome",
+        "searchGroup",
+      ])
+    },
+  )
+
+  test.each([
+    ["ios", "native"],
+    ["android", "js"],
+  ] as const)(
+    "the search stack registers the search page and the group list on %s (%s tabs, D-01)",
+    async (os, _tree) => {
+      mockPlatform.OS = os
+      await mount(<AppNavigation />)
+      const home = mockRegistrations.filter((record) => record.name === "searchHome")
+      const group = mockRegistrations.filter((record) => record.name === "searchGroup")
+      expect(home).not.toHaveLength(0)
+      expect(group).not.toHaveLength(0)
+      // Both screens live in the one search stack, and the page draws its own field (no header).
+      expect(group[0].navigator).toBe(home[0].navigator)
+      expect(effectiveOptions("searchHome").headerShown).toBe(false)
+      const options = effectiveOptions("searchGroup")
+      expect(options.headerShown).toBe(true)
+      expect(options.headerBackTitle).toBe("Rechercher")
+      expect(options.title).toBe(fr.navigation.tabs.search)
     },
   )
 
@@ -711,7 +740,7 @@ describe("stack options and listeners", () => {
     async (os) => {
       mockPlatform.OS = os
       await mount(<AppNavigation />)
-      // Accueil, Mes Relevés, Explorer and (iOS) the search tab.
+      // Accueil, Mes Relevés, Explorer and the search tab (native search tab on iOS, fourth JS tab elsewhere).
       expect(mockNavigators.stack.length).toBeGreaterThanOrEqual(3)
       for (const props of mockNavigators.stack) {
         expect(props.screenOptions).toEqual(expect.objectContaining(HALO_HEADER))

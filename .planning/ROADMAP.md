@@ -816,7 +816,38 @@ Plans:
   4. The search is fast enough to feel instant on a typical phone (debounced input, bounded results per group), with empty, no-result and error states, and all texts from the French catalogue.
   5. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: TBD
+**Plans**: 14/15 plans executed
+
+**Wave 1**
+
+- [x] 25-01-PLAN.md — Search wire types in `@cortege/ibp-domain`, accent folding and the pure phone rules (own match, parcel gate, member match, D-14 best result, group order, summaries)
+- [x] 25-02-PLAN.md — Catalogue `fr.search` and recent searches in `local_meta` (cleared by `clearLocalIbpData`)
+- [x] 25-03-PLAN.md — Fourth JS tab "Rechercher" (Android, Expo Go), old Mes Relevés magnifier and `surveySearch` route removed, `searchGroup` params typed
+- [x] 25-04-PLAN.md — Result rows: shared `CompactSurveyRow` (Accueil unchanged), `CommunityRow` compact and moved, `SearchResultRow` (member, place, parcel)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 25-05-PLAN.md — API community and members: migration 022 (`unaccent`, parcels key index), SQL builders, `SearchService.community`
+- [x] 25-06-PLAN.md — API places: `GEOCODING_IGN_SEARCH_URL`, shared IGN HTTP helper, `GeocoderService` (cache, de-duplication, cap, 503, commune resolution)
+- [x] 25-07-PLAN.md — Phone data layer: client functions, `useSearchGroup`, `useGlobalSearch`, `useSearchRecents`
+- [x] 25-08-PLAN.md — Explorer focus union (survey, place, parcel), place pin layer, parcel highlight, `useExplorerFocus`
+- [x] 25-09-PLAN.md — Group card, group notices (loading, offline, error), "Meilleur résultat" card, per-type result labels
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 25-10-PLAN.md — API parcels: `parseParcelQuery`, API Carto `lookupParcelByKey`, `ParcelSearchService` with database fallback and survey count
+- [x] 25-11-PLAN.md — Search page: field, start page, results and no-result, `GlobalSearchScreen`, `SearchHomeRoute`
+- [x] 25-12-PLAN.md — "Voir les N" full list: `SearchGroupListScreen` (chips, member list), `SearchGroupRoute`
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 25-13-PLAN.md — API `SearchController` (`/v1/search/community|places|parcels`), `search` throttle, e2e spec, API contract
+- [x] 25-14-PLAN.md — Cutover of the search stack, render-count keystroke scenario, old search page and context query removed
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 25-15-PLAN.md — CLAUDE.md notes and owner phone check, light and dark (criterion 5), then REQ-B-global-search done
+
 **UI hint**: yes
 
 ### Phase 25.1: PDF Export Improvement (INSERTED)
@@ -915,7 +946,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
 | 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
-| 25. Global Search | 0/TBD | Not started | - |
+| 25. Global Search | 14/15 | In Progress|  |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 27. In-depth Quality Audit | 0/TBD | Not started | - |
 | 28. Field Validation | 0/TBD | Not started | - |

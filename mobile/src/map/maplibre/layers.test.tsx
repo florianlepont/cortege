@@ -1,7 +1,9 @@
 import renderer, { act } from "react-test-renderer"
+import { brandColors, brandMapTokens } from "../../app/brand-tokens"
 import type { PublicParcelStatusItem } from "../../app/types"
 import { CadastreLayer } from "./CadastreLayer"
 import { ParcelPolygonsLayer } from "./ParcelPolygonsLayer"
+import { PlacePinLayer } from "./PlacePinLayer"
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -83,5 +85,28 @@ describe("ParcelPolygonsLayer", () => {
     source.props.onPress({ nativeEvent: { features: [] } })
     source.props.onPress({ nativeEvent: { features: [{ properties: { parcel_id: 7 } }] } })
     expect(onParcelPress).not.toHaveBeenCalled()
+  })
+})
+
+describe("PlacePinLayer", () => {
+  test("draws nothing without a pin", () => {
+    expect(mount(<PlacePinLayer pin={null} />).toJSON()).toBeNull()
+  })
+
+  test("is one Point source with a terracotta circle and a white ring", () => {
+    const tree = mount(<PlacePinLayer pin={{ lat: 45.7, lng: 4.8 }} />)
+    const source = tree.root.findByType("GeoJSONSource" as never)
+    expect(source.props.id).toBe("search-place")
+    expect(source.props.data.features).toEqual([
+      { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [4.8, 45.7] } },
+    ])
+    const layer = tree.root.findByType("Layer" as never)
+    expect(layer.props.type).toBe("circle")
+    expect(layer.props.paint).toEqual({
+      "circle-radius": 8,
+      "circle-color": brandMapTokens.parcelSelected,
+      "circle-stroke-color": brandColors.white,
+      "circle-stroke-width": 2,
+    })
   })
 })

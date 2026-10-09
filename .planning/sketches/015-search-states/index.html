@@ -1,0 +1,56 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 25 : les états de la recherche (vide, rien trouvé, hors-ligne, erreur)</title><style>:root{--page:#eef0e7;--card:#fff;--forest:#334e2b;--text:#1e2b19;--muted:#6b7566;--div:#d3d8c7;--moss:#89a33a;--terra:#cd5833;--chip:#e9e7d9;--bg:#d9ddd0;--ink2:#cfd6bd;--sel:#e3ecc9}
+body.dark{--page:#16181a;--card:#222629;--forest:#8fb56a;--text:#e9ece6;--muted:#9aa39a;--div:#33393c;--moss:#9cc24a;--chip:#2c3235;--bg:#0c0d0e;--ink2:#cfd6bd;--sel:#2c3b22}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;color:var(--text);padding:24px;width:1330px}
+h1{font-size:22px;margin-bottom:4px}.sub{color:var(--muted);font-size:14px;margin-bottom:14px;max-width:1000px;line-height:1.45}
+.toggle{position:fixed;top:14px;right:18px;background:var(--forest);color:var(--page);border:0;border-radius:18px;padding:8px 14px;font-weight:700;cursor:pointer;z-index:9}
+.var{margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid var(--div)}
+.var h2{font-size:18px;margin-bottom:2px}.tag{background:var(--sel);color:var(--forest);font-size:11px;font-weight:700;padding:2px 8px;border-radius:9px;margin-left:6px}
+.vdesc{color:var(--muted);font-size:13px;line-height:1.45;margin-bottom:10px;max-width:1000px}
+.row{display:flex;gap:22px;align-items:flex-start}.tile{width:300px}
+.cap{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.phone{height:560px;border-radius:30px;overflow:hidden;background:var(--page);position:relative;box-shadow:0 5px 18px rgba(0,0,0,.2);padding:50px 16px 0}
+.big{font-size:23px;font-weight:800;color:var(--forest);line-height:1.1}.meta{font-size:12.5px;color:var(--muted);line-height:1.4}
+.score{background:#334e2b;color:#fff;border-radius:18px;padding:12px 14px;margin-top:12px}.score b{font-size:30px}
+.bars{display:flex;gap:3px;margin-top:6px}.bars i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.28)}.bars i.on{background:#9cc24a}
+.card{background:var(--card);border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.rows .r{display:flex;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid var(--div);font-size:13.5px}.rows .r:last-child{border:0}.rows .r b{font-weight:600}.rows .r span{color:var(--muted);text-align:right}
+.map{background:linear-gradient(135deg,#cfd9b4,#e3e8cf 45%,#bccb98);height:80px;border-radius:14px;margin-top:10px}
+.h{font-size:19px;font-weight:800;color:var(--forest);margin:14px 0 6px}
+.chip{display:inline-block;background:var(--chip);border-radius:11px;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--forest);margin-right:5px}
+.ev{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--div);font-size:13px}.ev i{width:9px;height:9px;border-radius:50%;background:var(--moss);margin-top:5px;flex:none}.ev small{display:block;color:var(--muted);font-size:11.5px}
+.hy{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--div);font-size:13.5px}
+.dots{position:absolute;top:14px;right:16px;width:30px;height:30px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.2);font-weight:800}
+.menu{position:absolute;top:50px;right:14px;background:var(--card);border-radius:14px;box-shadow:0 4px 18px rgba(0,0,0,.3);font-size:13.5px;overflow:hidden}.menu div{padding:11px 16px;border-bottom:1px solid var(--div)}.menu div:last-child{border:0}
+.pill{display:inline-block;background:var(--sel);color:var(--forest);font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:10px}
+.hl{background:var(--sel)}
+.note{font-size:12.5px;line-height:1.45;margin-top:8px;max-width:300px;color:var(--muted)}
+.btn{position:absolute;left:16px;right:16px;bottom:18px;background:#334e2b;color:#fff;border-radius:24px;text-align:center;padding:12px;font-weight:700;font-size:14px}
+.srch{display:flex;align-items:center;gap:8px;background:var(--chip);border-radius:12px;padding:9px 12px;font-size:13.5px;color:var(--muted)}.srch.on{background:var(--card);color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.15)}.ico{width:32px;height:32px;border-radius:50%;background:var(--card);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 5px rgba(0,0,0,.2);font-size:15px}.ico.hl{background:var(--sel);outline:2px solid var(--moss)}.top{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center}.top b{font-size:15px;color:var(--forest)}.tabs{position:absolute;left:0;right:0;bottom:0;height:54px;background:var(--card);border-top:1px solid var(--div);display:flex;justify-content:space-around;align-items:center;font-size:10.5px;color:var(--muted)}.tabs i{font-style:normal;text-align:center}.tabs .a{color:var(--forest);font-weight:800}.mapfull{position:absolute;inset:0;background:linear-gradient(135deg,#cfd9b4,#e3e8cf 45%,#bccb98)}.grp{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 4px;display:flex;justify-content:space-between}.grp u{text-decoration:none;color:var(--forest)}.res{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--div);font-size:13px}.res .b{width:30px;height:30px;border-radius:9px;background:var(--sel);display:flex;align-items:center;justify-content:center;font-size:14px;flex:none}.res small{display:block;color:var(--muted);font-size:11.5px}.res .sc{margin-left:auto;font-weight:800;color:var(--forest);font-size:12.5px}.off{background:var(--chip);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--muted);line-height:1.35}.ban{background:#f3e3b8;color:#5a4410;border-radius:10px;padding:8px 10px;font-size:12px;margin-top:8px}body.dark .ban{background:#3b3216;color:#e8d79b}.mid{text-align:center;color:var(--muted);font-size:13px;line-height:1.45;margin-top:60px}.mid b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}.link{color:var(--forest);font-weight:700}</style></head><body>
+<button class="toggle" onclick="document.body.classList.toggle('dark')">Clair / sombre</button>
+<h1>Phase 25 : les états de la recherche (vide, rien trouvé, hors-ligne, erreur)</h1><div class="sub">Ce que voit l'utilisateur quand il n'y a pas (encore) de résultats. Décision déjà prise : hors-ligne, mes relevés s'affichent tout de suite et les groupes réseau le disent clairement. Les variantes changent la manière de le dire et l'état de départ.</div><div id="root"></div>
+<script>
+const phone=(cap,body)=>`<div class="tile"><div class="cap">${cap}</div><div class="phone">${body}</div></div>`;
+const draw=V=>document.getElementById("root").innerHTML=V.map(v=>`<div class="var"><h2>${v.t}${v.tag?`<span class="tag">${v.tag}</span>`:""}</h2><div class="vdesc">${v.d}</div><div class="row">${v.p.join("")}</div></div>`).join("");
+const bar=(q)=>`<div class="top" style="top:44px"><div class="srch on" style="flex:1">⌕ ${q}</div><span class="link" style="margin-left:10px;font-size:13px">Annuler</span></div>`
+const r=(i,t,s,sc='')=>`<div class="res"><div class="b">${i}</div><div>${t}<small>${s}</small></div>${sc?`<span class="sc">${sc}</span>`:''}</div>`
+const g=(t)=>`<div class="grp"><span>${t}</span></div>`
+const body=x=>`<div style="position:absolute;top:96px;left:16px;right:16px;bottom:0;overflow:hidden">${x}</div>`
+const rec=`${g('Recherches récentes')}${r('🕘','Fontainebleau','')}${r('🕘','77 AB 0123','')}${r('🕘','Marie','')}`
+const hints=`<div class="grp"><span>Essayez</span></div><span class="chip">un nom de relevé</span><span class="chip">un lieu ou une adresse</span><span class="chip">un numéro de parcelle</span><span class="chip">un membre</span>`
+const none=bar('zzzx')+body(`<div class="mid"><b>Aucun résultat pour « zzzx »</b>Vérifiez l\'orthographe, ou essayez un lieu, un numéro de parcelle ou le nom d\'un membre.</div>`)
+const mine=g('Mes relevés')+r('🌳','Chênaie de Fontainebleau','Terminé','34')
+const offA=bar('Fontainebleau')+body(mine+g('Communauté')+`<div class="off">Connexion nécessaire pour chercher dans la communauté.</div>`+g('Lieux')+`<div class="off">Connexion nécessaire pour chercher un lieu.</div>`+g('Parcelles')+`<div class="off">Connexion nécessaire pour chercher une parcelle.</div>`)
+const offB=bar('Fontainebleau')+body(`<div class="ban">Hors connexion : seuls vos relevés sont cherchés.</div>`+mine)
+const offC=bar('Fontainebleau')+body(mine+g('Communauté')+`<div class="off" style="display:flex;justify-content:space-between"><span>Hors connexion</span><span class="link">Réessayer</span></div>`+g('Lieux')+`<div class="off" style="display:flex;justify-content:space-between"><span>Hors connexion</span><span class="link">Réessayer</span></div>`)
+const errA=bar('Fontainebleau')+body(mine+g('Lieux')+`<div class="off" style="display:flex;justify-content:space-between"><span>La recherche de lieux ne répond pas.</span><span class="link">Réessayer</span></div>`)
+const load=bar('Fontainebleau')+body(mine+g('Lieux')+`<div class="off">Recherche en cours...</div>`)
+draw([
+{t:'A. Une ligne par groupe qui a besoin du réseau',tag:'ma proposition (décision D-10)',d:'Hors-ligne, chaque groupe réseau garde son titre et une phrase claire. L\'état de départ montre les recherches récentes (conservées sur le téléphone). L\'erreur d\'un seul groupe reste dans ce groupe, avec « Réessayer ».',
+ p:[phone('Départ : récentes',bar('Rechercher')+body(rec)),phone('Aucun résultat',none),phone('Hors-ligne',offA),phone('Un groupe en erreur',errA)]},
+{t:'B. Une seule bannière en haut quand on est hors-ligne',tag:'',d:'Hors-ligne, un bandeau jaune unique dit que seuls les relevés sont cherchés, et les groupes réseau n\'apparaissent pas du tout. Plus léger, mais on ne voit pas ce qui manque. L\'état de départ ne montre que des conseils (pas d\'historique).',
+ p:[phone('Départ : conseils',bar('Rechercher')+body(hints)),phone('Aucun résultat',none),phone('Hors-ligne',offB),phone('Chargement',load)]},
+{t:'C. Une ligne par groupe avec « Réessayer », départ complet',tag:'',d:'Comme A, mais la ligne hors-ligne propose « Réessayer » qui relance dès que le réseau revient. Le départ combine récentes et conseils. Le plus complet, le plus chargé.',
+ p:[phone('Départ : récentes + conseils',bar('Rechercher')+body(rec+hints)),phone('Aucun résultat',none),phone('Hors-ligne',offC),phone('Chargement',load)]}
+]);
+</script></body></html>

@@ -8,13 +8,15 @@ export const THROTTLE_TTL_MS = 60_000
 /**
  * Production per-client request ceilings, sized for a full offline field day:
  * one POST /sync batch per drain with a 15s auto-sync cooldown, at most two
- * upload-route calls per photo (uploads are bandwidth-bound, well below 240/min).
+ * upload-route calls per photo (uploads are bandwidth-bound, well below 240/min). `search` covers
+ * the debounced keystrokes of the three search groups (about 4 requests per second).
  */
 export const PRODUCTION_THROTTLE_LIMITS = {
   default: 600,
   ipCeiling: 3000,
   sync: 60,
   upload: 240,
+  search: 240,
 } as const
 
 /** Outside production every limit resolves to this so existing E2E suites are unaffected. */
@@ -66,4 +68,9 @@ export const SYNC_THROTTLE = {
 /** Overrides only the "default" throttler on upload routes; the "ip" ceiling still applies. */
 export const UPLOAD_THROTTLE = {
   default: { ttl: THROTTLE_TTL_MS, limit: () => resolveThrottleLimit("upload") },
+}
+
+/** Overrides only the "default" throttler on the search routes; the "ip" ceiling still applies. */
+export const SEARCH_THROTTLE = {
+  default: { ttl: THROTTLE_TTL_MS, limit: () => resolveThrottleLimit("search") },
 }

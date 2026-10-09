@@ -1,5 +1,5 @@
 import { ReactNode, useMemo } from "react"
-import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
+import { AccessibilityRole, StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
@@ -11,6 +11,8 @@ type AppSectionHeaderProps = {
   style?: StyleProp<ViewStyle>
   copyStyle?: StyleProp<ViewStyle>
   titleStyle?: StyleProp<TextStyle>
+  /** Role of the title text alone ("header"), so a trailing link stays its own element. */
+  titleAccessibilityRole?: AccessibilityRole
   subtitleStyle?: StyleProp<TextStyle>
 }
 
@@ -21,6 +23,7 @@ export function AppSectionHeader({
   style,
   copyStyle,
   titleStyle,
+  titleAccessibilityRole,
   subtitleStyle,
 }: AppSectionHeaderProps) {
   const theme = useBrandTheme()
@@ -29,7 +32,9 @@ export function AppSectionHeader({
   return (
     <View style={[styles.header, style]}>
       <View style={[styles.copy, copyStyle]}>
-        <Text style={[styles.title, titleStyle]}>{title}</Text>
+        <Text style={[styles.title, titleStyle]} accessibilityRole={titleAccessibilityRole}>
+          {title}
+        </Text>
         {subtitle ? <Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Text> : null}
       </View>
       {trailing ? <View>{trailing}</View> : null}

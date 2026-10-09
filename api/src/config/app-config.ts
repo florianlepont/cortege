@@ -120,6 +120,7 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         (v.CADASTRE_PROVIDER_ALLOW_FALLBACK ?? "true").trim().toLowerCase() !== "false",
       timeoutMs: positiveInteger(v.CADASTRE_PROVIDER_TIMEOUT_MS, 2500),
       reverseUrl: v.CADASTRE_IGN_REVERSE_URL ?? "https://data.geopf.fr/geocodage/reverse",
+      searchUrl: v.GEOCODING_IGN_SEARCH_URL ?? "https://data.geopf.fr/geocodage/search",
       apiCartoParcelUrl:
         v.CADASTRE_IGN_APICARTO_PARCEL_URL ?? "https://apicarto.ign.fr/api/cadastre/parcelle",
       wfsUrl: v.CADASTRE_IGN_WFS_URL ?? "https://data.geopf.fr/wfs/ows",

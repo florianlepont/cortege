@@ -26,9 +26,6 @@ export const navigationFr = {
     account: "Compte",
     settings: "Paramètres",
   },
-  search: {
-    placeholder: "Rechercher des relevés",
-  },
   a11y: {
     openSettings: "Ouvrir les paramètres",
   },

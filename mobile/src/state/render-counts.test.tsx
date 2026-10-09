@@ -4,7 +4,8 @@
  * What it measures: how many times each screen and each survey-list row renders
  * when the real `mobile/App.tsx` tree reacts to five events: the initial mount,
  * one status update, one form keystroke, one form keystroke followed by the
- * autosave delay, and a list refresh where a single survey changed.
+ * autosave delay, a list refresh where a single survey changed, and three keystrokes
+ * in the search field (25-14).
  *
  * Why it replaces a React DevTools profile: ROADMAP criterion 1 asks for a
  * before/after profile, but no device or simulator is available and the owner
@@ -66,6 +67,7 @@ type ScenarioName =
   | "formKeystroke"
   | "formKeystrokeAutosave"
   | "oneSurveyRefresh"
+  | "searchKeystroke"
 
 const COUNT_KEYS: CountKey[] = [
   "home",
@@ -87,13 +89,42 @@ type ReportStatus = (scope: "session", state: "idle", message: StatusMessage) =>
 const mockCaptured: {
   reportStatus: ReportStatus | null
   setSiteName: ((value: string) => void) | null
+  changeSearchQuery: ((value: string) => void) | null
   refreshLocalSurveys: (() => Promise<void>) | null
   startEditSurvey: ((surveyId: string) => Promise<boolean>) | null
 } = {
   reportStatus: null,
   setSiteName: null,
+  changeSearchQuery: null,
   refreshLocalSurveys: null,
   startEditSurvey: null,
+}
+
+const mockIdleGroup = { data: null, status: "idle", error: null, retry: () => undefined }
+
+/** What `useGlobalSearch` returns while nothing is searched (static: one object for every render). */
+const mockIdleSearch = {
+  normalized: "",
+  active: false,
+  offline: false,
+  mine: [],
+  community: mockIdleGroup,
+  places: mockIdleGroup,
+  parcels: mockIdleGroup,
+  parcelsShown: false,
+  best: null,
+  order: [],
+  busy: false,
+  settled: true,
+  resultCount: 0,
+}
+
+const mockIdleRecents = {
+  recents: [] as string[],
+  save: async () => undefined,
+  remove: async () => undefined,
+  clear: async () => undefined,
+  reload: async () => undefined,
 }
 
 function mockCount(name: string): void {
@@ -390,7 +421,14 @@ const mockNavigation = {
 }
 
 // Union of the params that screens with required params read.
-const mockDefaultParams = { factor: "A", surveyId: "s-01", mode: "edit" }
+// `group` and `query` are the params of the search group list (a full list of "Mes relevés").
+const mockDefaultParams = {
+  factor: "A",
+  surveyId: "s-01",
+  mode: "edit",
+  group: "mine",
+  query: "fo",
+}
 
 type FakeScreenProps = {
   name: string
@@ -438,9 +476,18 @@ jest.mock("../screens/SurveyDetailScreen", () => ({
 }))
 jest.mock("../screens/SurveyContextScreen", () => ({ SurveyContextScreen: () => null }))
 jest.mock("../screens/SurveyScoreScreen", () => ({ SurveyScoreScreen: () => null }))
-// The fake stacks mount every screen, search included; its rows are not the list's.
-jest.mock("../screens/survey-search/SurveySearchScreen", () => ({
-  SurveySearchScreen: () => null,
+// The fake stacks mount every screen, search included. The search page is a probe that keeps its
+// props, so the keystroke scenario can type into the field (RESEARCH Pitfall 6); the full list of
+// a group draws nothing, its rows are not the survey list's.
+jest.mock("../screens/global-search/GlobalSearchScreen", () => ({
+  GlobalSearchScreen: (props: { onChangeText: (value: string) => void }) => {
+    mockCount("globalSearch")
+    mockCaptured.changeSearchQuery = props.onChangeText
+    return null
+  },
+}))
+jest.mock("../screens/global-search/SearchGroupListScreen", () => ({
+  SearchGroupListScreen: mockProbe("searchGroupList"),
 }))
 jest.mock("../screens/community-survey/CommunitySurveyScreen", () => ({
   CommunitySurveyScreen: () => null,
@@ -579,6 +626,15 @@ const mockLocalDataOwner = {
 
 jest.mock("../hooks/useLocalDataOwner", () => ({
   useLocalDataOwner: () => mockLocalDataOwner,
+}))
+
+// The search page's data hooks are static and idle: no network group, nothing stored. Typing then
+// costs the search route its own state and nothing else.
+jest.mock("../hooks/useGlobalSearch", () => ({
+  useGlobalSearch: () => mockIdleSearch,
+}))
+jest.mock("../hooks/useSearchRecents", () => ({
+  useSearchRecents: () => mockIdleRecents,
 }))
 
 // PublicMapRoute's offline hooks (Phase 8) touch SQLite and network state, out of scope for this
@@ -846,6 +902,20 @@ const EXPECTED: Record<ScenarioName, Counts> = {
     settings: 0,
     rows: 1,
   },
+  // 25-14 (RESEARCH Pitfall 6): the query lives in the search route's own state, so typing in the
+  // search field re-renders neither Accueil nor the Mes Relevés list.
+  searchKeystroke: {
+    home: 0,
+    surveyList: 0,
+    surveyDetail: 0,
+    surveyForm: 0,
+    factorDetail: 0,
+    parcelSelection: 0,
+    publicMap: 0,
+    account: 0,
+    settings: 0,
+    rows: 0,
+  },
 }
 
 const AUTOSAVE_DELAY_MS = 900
@@ -984,5 +1054,19 @@ describe("render counts (D-02)", () => {
     })
     const counts = record("oneSurveyRefresh")
     expect(counts).toEqual(EXPECTED.oneSurveyRefresh)
+  })
+
+  it("searchKeystroke", async () => {
+    expect(mockCaptured.changeSearchQuery).not.toBeNull()
+    resetCounts()
+    for (const text of ["f", "fo", "for"]) {
+      await act(async () => {
+        mockCaptured.changeSearchQuery?.(text)
+      })
+    }
+    const counts = record("searchKeystroke")
+    // The page itself did re-render once per keystroke: the typing reached it.
+    expect(mockCounts.globalSearch).toBe(3)
+    expect(counts).toEqual(EXPECTED.searchKeystroke)
   })
 })

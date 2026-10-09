@@ -6,6 +6,9 @@
 // visibility = 'public'. The predicate below dropped the visibility check accordingly; the
 // `visibility` column itself stays (REQ-X-visibility is restored with a future privacy-choice
 // milestone), it's just no longer read here.
+import type { CommunitySurveyItem } from "@cortege/ibp-domain"
+import { toFiniteNumber } from "./surveys-normalize.utils"
+
 export const PUBLIC_SURVEY_PREDICATE = `s.status = 'submitted' AND s.deleted_at IS NULL`
 
 /** Rows per /public/map-items answer, unchanged since before 01.7. */
@@ -238,9 +241,32 @@ export function escapeLikePattern(text: string): string {
   return text.replace(/[\\%_]/g, (char) => `\\${char}`)
 }
 
+/** A row of the community surveys queries (this file's and the search's): see the SELECT list. */
+export type CommunitySurveyDbRow = {
+  id: string
+  site_name: string
+  ibp_method_version: string | null
+  scores: Record<string, unknown>
+  submitted_at: string
+  author_name: string | null
+}
+
+/** The wire shape of a community survey row; a missing score reads as 0. */
+export function toCommunitySurveyItem(row: CommunitySurveyDbRow): CommunitySurveyItem {
+  return {
+    survey_id: row.id,
+    site_name: row.site_name,
+    author_name: row.author_name,
+    submitted_at: row.submitted_at,
+    ibp_total: toFiniteNumber(row.scores?.ibp_total) ?? 0,
+    ibp_method_version: row.ibp_method_version ?? null,
+  }
+}
+
 /**
  * /public/community-surveys: the submitted surveys of every member, newest first, optionally
- * narrowed to those whose site name or author name contains the text. Same inclusion rule as the
+ * narrowed to those whose site name or author name contains the text (case and accent insensitive,
+ * unaccent from migration 022). Same inclusion rule as the
  * map (PUBLIC_SURVEY_PREDICATE: there is no private/public choice yet). The author is a LEFT JOIN
  * because an account deletion anonymises the survey (user_id becomes NULL, migration 012).
  */
@@ -253,7 +279,8 @@ export function buildCommunitySurveysQuery(input: { q?: string | null; limit: nu
   if (input.q) {
     values.push(`%${escapeLikePattern(input.q)}%`)
     conditions.push(
-      `(s.site_name ILIKE $${values.length} OR u.display_name ILIKE $${values.length})`,
+      `(unaccent(s.site_name) ILIKE unaccent($${values.length})` +
+        ` OR unaccent(u.display_name) ILIKE unaccent($${values.length}))`,
     )
   }
   values.push(input.limit)

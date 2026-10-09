@@ -155,6 +155,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - `sync_queue` — ordered queue of pending operations (upsert, delete, etc.)
 - `local_attachments` — photo metadata and upload state
 - `local_meta` — key/value store for app-level state
+  - key `search_recents`: the 8 recent searches of the global search, cleared by `clearLocalIbpData`; the schema stays at version 5
 
 **Sync flow**:
 1. User actions write to `local_surveys` and enqueue an operation in `sync_queue`
@@ -186,13 +187,13 @@ The mobile app is designed to work without connectivity. All survey data is pers
   - `useSurveyDraftPatcher` — incremental patch accumulation
   - `useGpsCapture` — device location capture
   - `useNearbyParcels` — home screen's nearby-parcel summary, published through the narrow `useNearbyParcelsState` context
-- Hooks called directly by the screens that need them (not part of the single assembler): `usePublicMapExplorer` (public map, viewport bbox loading), `useParcelStatuses` (parcel selection and home), `useDebouncedValue` (map region debouncing)
+- Hooks called directly by the screens that need them (not part of the single assembler): `usePublicMapExplorer` (public map, viewport bbox loading), `useParcelStatuses` (parcel selection and home), `useDebouncedValue` (map region debouncing), `useGlobalSearch`, `useSearchGroup` and `useSearchRecents` (the global search; its pure rules are in `mobile/src/app/global-search.ts` and `search-text.ts`)
 
 **Navigation** (`mobile/src/navigation/`):
 - `AppNavigation.tsx` mounts the `NavigationContainer` and picks the native or JS tab tree; stacks live in `stacks/`, tab trees in `tabs/`
 - Typed through the global `ReactNavigation.RootParamList` (`navigation/types.ts`), so `useNavigation()` and `navigate` are checked without casts
 - Screens are mounted with `component={XRoute}`: memoised route components in `mobile/src/navigation/routes/` read only the contexts their screen shows. The navigator tree itself carries no data
-- Tabs: Accueil, Mes Relevés, Explorer, plus on iOS a native search tab (`role: "search"`, drawn by iOS 26 as its own button beside the bar); Compte opens from the avatar. The search page (`SurveySearchRoute`: Mes relevés / Communauté) is that tab on iOS and a screen pushed from Mes Relevés on Android and the JS tabs; there is one survey stack
+- Tabs: Accueil, Mes Relevés, Explorer, plus Rechercher: on iOS the native search tab (`role: "search"`, drawn by iOS 26 as its own button beside the bar), on Android and the JS tabs a fourth tab (`search-outline`); Compte opens from the avatar. Both mount one `SearchStack` (`navigation/stacks/SearchStack.tsx`) with `searchHome` (`SearchHomeRoute`: one field over own surveys, matched offline on the phone, community surveys and members, places and parcels; best result then grouped results) and `searchGroup` (`SearchGroupRoute`: the "Voir les N" full list, a member's surveys). The query is the route's own state, never a context. Place and parcel results open Explorer through `PublicMapFocus` kinds `place` and `parcel` (survey focus unchanged); there is one survey stack
 - Survey detail (OA-46): `surveyDetail` is the summary (title and status line, score card, photos, map, three rows, one bottom button); its sub-pages are `surveyContext` (map, parcels, method), `surveyScore` (sub-scores and the ten factors) and `surveyHistory` ("Historique de la parcelle": trend card with the curve of totals cut between methods, per-factor changes against the survey just before, the parcel's surveys); the survey's change log is `surveyJournal` ("Journal du relevé"), reached only from the header "…" menu of the owner's own survey (OA-124); all four in the one survey stack, reading the selected survey from the surveys context. Another member's survey (`communitySurvey`) opens `communityHistory` (registered in the survey stack and the Explorer stack), never the journal; the history arithmetic lives in `mobile/src/app/parcel-history.ts` and `mobile/src/app/trend-geometry.ts` (pure, tested). The data the sub-pages share comes from `useSurveyDetailData` (`mobile/src/screens/survey-detail/`)
 - Tab bar rule (D-08): on iOS the native bar (`react-native-bottom-tabs`) is always used in Release builds; the JS bar (`@react-navigation/bottom-tabs`) is used on Android and in Expo Go. `EXPO_PUBLIC_ENABLE_NATIVE_TABS=false` is only honoured in development. Both libraries stay. Tab-bar hiding (e.g. on parcel selection) goes through `shouldHideTabBar` in `navigation/tab-bar.ts` for both trees
 
@@ -225,7 +226,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 | `auth` | `api/src/auth/` | AuthGuard (JWT/JWKS), `@CurrentUser` decorator, Auth0 management calls, client-aware throttler guard |
 | `config` | `api/src/config/` | Validated typed configuration (`env.schema.ts`, `app-config.ts`), production rules, `check-config.ts` |
 | `users` | `api/src/users/` | Profile CRUD, profile picture upload, account deletion |
-| `surveys` | `api/src/surveys/` | Survey CRUD (`surveys.service.ts`, `surveys.repository.ts`), sync endpoints (`sync.controller.ts` -> `surveys-sync.service.ts`), IBP validation adapter (`ibp-rules.service.ts`), parcel linkage (`parcels.service.ts`/`parcels.controller.ts`), the cadastre provider (`cadastre-provider.service.ts`), survey events (`survey-events.service.ts`), attachments (`surveys-attachments.service.ts`), and the public map/parcel-status endpoints (`public-map.service.ts`, `public.controller.ts`) |
+| `surveys` | `api/src/surveys/` | Survey CRUD (`surveys.service.ts`, `surveys.repository.ts`), sync endpoints (`sync.controller.ts` -> `surveys-sync.service.ts`), IBP validation adapter (`ibp-rules.service.ts`), parcel linkage (`parcels.service.ts`/`parcels.controller.ts`), the cadastre provider (`cadastre-provider.service.ts`), survey events (`survey-events.service.ts`), attachments (`surveys-attachments.service.ts`), the public map/parcel-status endpoints (`public-map.service.ts`, `public.controller.ts`), and the global search (`search.controller.ts`: `GET /v1/search/community`, `/places`, `/parcels`, with its own `search` throttle; `search.service.ts`; `geocoder.service.ts`, the IGN Géoplateforme geocoder called through the API with cache, de-duplication and a 503 `search_provider_unavailable`; `parcel-search.service.ts`; `ign-http.ts`) |
 | `database` | `api/src/database/` | `DatabaseService` (pg Pool wrapper) |
 | `storage` | `api/src/storage/` | StorageService: single owner of object storage (S3/MinIO or local), key builder, size and MIME checks |
 | `reports` | `api/src/reports/` | Moderation/report endpoints |
@@ -298,7 +299,7 @@ Method version: the app implements IBP FR v3.2, with IBP Fr v3.0 available per s
 | `api/src/surveys/surveys-sync.service.ts` | Batch sync handler |
 | `api/src/database/database.service.ts` | pg pool wrapper |
 | `api/src/storage/storage.service.ts` | Single object storage owner (S3 client, keys, presign, local mode) |
-| `api/migrations/` | Ordered SQL migration files (`016_ibp_method_version.sql`: method version and cas) |
+| `api/migrations/` | Ordered SQL migration files (`016_ibp_method_version.sql`: method version and cas; `022_unaccent_search.sql`: accent-insensitive search, parcels key index) |
 | `docs/technical/technical-architecture-v1.md` | Architecture reference |
 | `docs/technical/api-contract-v1.md` | API endpoint specifications |
 | `docs/technical/sync-conflict-resolution-v1.md` | Offline sync conflict strategy |
@@ -328,7 +329,7 @@ Method version: the app implements IBP FR v3.2, with IBP Fr v3.0 available per s
 - Require a running PostgreSQL instance (Docker Compose)
 - Run with: `npm run test:e2e`
 - Config: `api/jest.config.js`
-- Notable suites: `auth-profile.e2e-spec.ts`, `surveys-idempotency.e2e-spec.ts` (replay and sync), with the survey features split into `surveys-submit`, `surveys-visibility`, `public-map-items`, `surveys-attachments` and `parcel-history`; `surveys-method-version.e2e-spec.ts` and `migration-016-ibp-method-version.e2e-spec.ts` cover the method version. Shared helpers (ids from `randomUUID()`) are in `api/test/helpers/surveys-e2e.ts`
+- Notable suites: `auth-profile.e2e-spec.ts`, `surveys-idempotency.e2e-spec.ts` (replay and sync), with the survey features split into `surveys-submit`, `surveys-visibility`, `public-map-items`, `surveys-attachments` and `parcel-history`; `surveys-method-version.e2e-spec.ts` and `migration-016-ibp-method-version.e2e-spec.ts` cover the method version; `search.e2e-spec.ts` and `migration-022-unaccent.e2e-spec.ts` cover the global search. Shared helpers (ids from `randomUUID()`) are in `api/test/helpers/surveys-e2e.ts`
 - Target a dedicated `*_test` database (`api/.env.test.example`, default `ibp_test`); globalSetup drops and re-migrates it before each run and refuses any other database name
 
 ### Before committing
@@ -356,6 +357,7 @@ npm run format:check
 | `OBJECT_STORAGE_BUCKET/ENDPOINT/REGION/ACCESS_KEY/SECRET_KEY` | S3 config |
 | `ATTACHMENTS_UPLOAD_DIR` | Local upload dir (when mode = local) |
 | `CADASTRE_PROVIDER` | `synthetic` (offline) or `ign` (real IGN parcels); `CADASTRE_PROVIDER_ALLOW_FALLBACK`, `CADASTRE_PROVIDER_TIMEOUT_MS`, `CADASTRE_IGN_REVERSE_URL`, `CADASTRE_IGN_APICARTO_PARCEL_URL`, `CADASTRE_IGN_WFS_URL/TYPENAME/COUNT` configure the `ign` provider |
+| `GEOCODING_IGN_SEARCH_URL` | Place search of the global search (default `https://data.geopf.fr/geocodage/search`); switched by `CADASTRE_PROVIDER` |
 | `DEBUG_DATA_RESET_ENABLED` | Gates `/v1/debug/reset-ibp-data` and `/v1/debug/reset-user-data` (dev-only) |
 | `TRUST_PROXY` | Express trust-proxy value (default `loopback,uniquelocal`); trusts Caddy's `X-Forwarded-For` for per-client rate limits without trusting public peers |
 | `CORS_ORIGIN` | Required in production: `none` (no browser origin) or a comma-separated origin list; startup refuses otherwise |

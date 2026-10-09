@@ -226,7 +226,7 @@ describe("SurveyRow glass card and interactions", () => {
     for (const file of [
       "SurveyRow.tsx",
       "SurveyRowFrame.tsx",
-      "../survey-search/CommunityRow.tsx",
+      "../community-survey/CommunityRow.tsx",
     ]) {
       const source = fs.readFileSync(path.join(__dirname, file), "utf8")
       expect(source).not.toMatch(/expo-image|ActivityIndicator|attachmentId|image-outline/)

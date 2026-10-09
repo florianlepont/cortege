@@ -1,6 +1,7 @@
 import {
   NON_PRODUCTION_THROTTLE_LIMIT,
   PRODUCTION_THROTTLE_LIMITS,
+  SEARCH_THROTTLE,
   THROTTLE_TTL_MS,
   buildThrottlerOptions,
   resolveThrottleLimit,
@@ -15,6 +16,7 @@ describe("rate-limit.config", () => {
       expect(resolveThrottleLimit("ipCeiling", "production")).toBe(3000)
       expect(resolveThrottleLimit("sync", "production")).toBe(60)
       expect(resolveThrottleLimit("upload", "production")).toBe(240)
+      expect(resolveThrottleLimit("search", "production")).toBe(240)
     })
 
     it("returns the non-production ceiling for every kind outside production", () => {
@@ -23,6 +25,7 @@ describe("rate-limit.config", () => {
         "ipCeiling",
         "sync",
         "upload",
+        "search",
       ]
       for (const kind of kinds) {
         expect(resolveThrottleLimit(kind, "test")).toBe(NON_PRODUCTION_THROTTLE_LIMIT)
@@ -57,6 +60,14 @@ describe("rate-limit.config", () => {
       const ipThrottler = options.throttlers.find((t) => t.name === "ip")
       expect(defaultThrottler?.limit).toBe(3)
       expect(ipThrottler?.limit).toBe(5)
+    })
+  })
+
+  describe("SEARCH_THROTTLE", () => {
+    it("overrides the default throttler with the search kind over the shared window", () => {
+      expect(Object.keys(SEARCH_THROTTLE)).toEqual(["default"])
+      expect(SEARCH_THROTTLE.default.ttl).toBe(THROTTLE_TTL_MS)
+      expect(SEARCH_THROTTLE.default.limit()).toBe(resolveThrottleLimit("search"))
     })
   })
 })

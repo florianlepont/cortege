@@ -23,7 +23,9 @@ import {
   patchMyProfile,
   resetIbpData,
   resetUserData,
-  searchCommunitySurveys,
+  searchCommunity,
+  searchParcels,
+  searchPlaces,
   uploadMyProfilePicture,
 } from "./ibp-api"
 
@@ -147,31 +149,32 @@ describe("ibp-api", () => {
     ])
   })
 
-  it("builds the community search query: a trimmed, encoded text and an optional limit", async () => {
-    await searchCommunitySurveys("https://api.example.com", "access-token", {
-      q: "  forêt & bois ",
-      limit: 20,
-    })
-    await searchCommunitySurveys("https://api.example.com", "access-token", { q: "   " })
+  it("builds the per-group search requests with trimmed, encoded parameters (T-25-20)", async () => {
+    const api = "https://api.example.com"
+    await searchCommunity(api, "access-token", { q: " Marie D ", limit: 50 })
+    await searchCommunity(api, "access-token", { q: "forêt", author: "Marie Dupont" })
+    await searchPlaces(api, "access-token", { q: "forêt & co", limit: 10 })
+    await searchPlaces(api, "access-token", { q: "Lyon" })
+    await searchParcels(api, "access-token", { q: "77186 AB 0123" })
 
-    expect(mockApiRequest.mock.calls).toEqual([
-      [
-        {
-          baseUrl: "https://api.example.com",
-          path: "/public/community-surveys?q=for%C3%AAt%20%26%20bois&limit=20",
-          method: "GET",
-          token: "access-token",
-        },
-      ],
-      [
-        {
-          baseUrl: "https://api.example.com",
-          path: "/public/community-surveys",
-          method: "GET",
-          token: "access-token",
-        },
-      ],
+    const paths = mockApiRequest.mock.calls.map(([options]) => options.path)
+    expect(paths).toEqual([
+      "/search/community?q=Marie%20D&limit=50",
+      "/search/community?q=for%C3%AAt&author=Marie%20Dupont",
+      "/search/places?q=for%C3%AAt%20%26%20co&limit=10",
+      "/search/places?q=Lyon",
+      "/search/parcels?q=77186%20AB%200123",
     ])
+    for (const [options] of mockApiRequest.mock.calls) {
+      expect(options).toMatchObject({ baseUrl: api, method: "GET", token: "access-token" })
+    }
+  })
+
+  it("returns the typed body of a search request", async () => {
+    mockApiRequest.mockResolvedValueOnce({ items: [] })
+    await expect(searchParcels("https://api.example.com", "t", { q: "x" })).resolves.toEqual({
+      items: [],
+    })
   })
 
   it("builds the community survey page, photo list and photo download requests", async () => {

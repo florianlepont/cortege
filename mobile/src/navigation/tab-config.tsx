@@ -44,7 +44,7 @@ const ANDROID_TAB_ICONS = {
   home: require("../../assets/tabs/home.png"),
   surveys: require("../../assets/tabs/surveys.png"),
   publicMap: require("../../assets/tabs/public-map.png"),
-  // Only the iOS tree has a search tab; Android's search is a button on Mes Relevés.
+  // Only read by the native-tabs options, which Android never mounts (the JS tree draws search-outline).
   search: require("../../assets/tabs/surveys.png"),
 } as const
 

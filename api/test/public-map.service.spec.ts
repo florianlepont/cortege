@@ -646,7 +646,9 @@ describe("community surveys search", () => {
 
   it("matches the site name or the author name with one escaped pattern", () => {
     const query = buildCommunitySurveysQuery({ q: "50%", limit: 5 })
-    expect(flat(query.text)).toContain("(s.site_name ILIKE $1 OR u.display_name ILIKE $1)")
+    expect(flat(query.text)).toContain(
+      "(unaccent(s.site_name) ILIKE unaccent($1) OR unaccent(u.display_name) ILIKE unaccent($1))",
+    )
     expect(flat(query.text)).toContain("LIMIT $2")
     expect(query.values).toEqual(["%50\\%%", 5])
   })

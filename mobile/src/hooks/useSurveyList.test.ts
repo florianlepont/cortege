@@ -58,7 +58,6 @@ describe("useSurveyList", () => {
       expect(hook).toHaveProperty("selectedSurvey")
       expect(hook).toHaveProperty("visibleSurveys")
       expect(hook).toHaveProperty("surveyStats")
-      expect(hook).toHaveProperty("surveyQuery")
       expect(hook).toHaveProperty("statusFilter")
       expect(hook).toHaveProperty("sortMode")
       expect(hook).toHaveProperty("refreshLocalSurveys")
@@ -242,7 +241,6 @@ describe("useSurveyList", () => {
       const { result } = await renderList()
 
       await act(async () => {
-        result.current.setSurveyQuery("chêne")
         result.current.setSurveyFromDate("2024-01-01")
         result.current.setSurveyToDate("2024-12-31")
         result.current.setStatusFilter("draft")
@@ -252,7 +250,6 @@ describe("useSurveyList", () => {
         result.current.setAttachmentFilter("with")
         result.current.setSortMode("site_asc")
       })
-      expect(result.current.surveyQuery).toBe("chêne")
       expect(result.current.statusFilter).toBe("draft")
       expect(result.current.sortMode).toBe("site_asc")
 
@@ -260,7 +257,6 @@ describe("useSurveyList", () => {
         result.current.resetFilters()
       })
 
-      expect(result.current.surveyQuery).toBe("")
       expect(result.current.surveyFromDate).toBe("")
       expect(result.current.surveyToDate).toBe("")
       expect(result.current.statusFilter).toBe("all")
@@ -336,7 +332,6 @@ describe("useSurveyList", () => {
       expect(mockFilterAndSortSurveys).toHaveBeenCalledWith(
         [],
         expect.objectContaining({
-          surveyQuery: "",
           statusFilter: "all",
           sortMode: "updated_desc",
         }),
@@ -345,11 +340,11 @@ describe("useSurveyList", () => {
       expect(result.current.visibleSurveys).toBe(visible)
 
       await act(async () => {
-        result.current.setSurveyQuery("hêtre")
+        result.current.setStatusFilter("draft")
       })
       expect(mockFilterAndSortSurveys).toHaveBeenLastCalledWith(
         [],
-        expect.objectContaining({ surveyQuery: "hêtre" }),
+        expect.objectContaining({ statusFilter: "draft" }),
         expect.anything(),
       )
     })

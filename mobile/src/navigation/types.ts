@@ -1,6 +1,7 @@
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs"
 import type { CompositeScreenProps, NavigatorScreenParams } from "@react-navigation/native"
 import type { NativeStackScreenProps } from "@react-navigation/native-stack"
+import type { SearchPlaceKind } from "@cortege/ibp-domain"
 import type { FactorKey } from "../app/types"
 
 /**
@@ -24,7 +25,6 @@ export type HomeStackParamList = AccountStackParamList & {
 
 export type SurveysStackParamList = AccountStackParamList & {
   surveysHome: undefined
-  surveySearch: undefined
   communitySurvey: { surveyId: string }
   communityHistory: { surveyId: string }
   surveyDetail: undefined
@@ -43,15 +43,32 @@ export type SurveysStackParamList = AccountStackParamList & {
   }
 }
 
-/** OA-59: where a survey page sends Explorer (the `nonce` makes the same survey re-focus). */
-export type PublicMapFocus = {
-  surveyId: string
-  lat: number
-  lng: number
-  /** The survey's parcels, drawn highlighted on the Explorer map (OA-116). */
-  parcelIds: string[]
-  nonce: number
-}
+/**
+ * Where Explorer is sent to show something (the `nonce` makes the same request re-focus).
+ * - `survey` (OA-59): a survey page asks to see its survey, centred and selected.
+ * - `place` (D-05): a search result for a place or an address, centred with one static pin.
+ * - `parcel` (D-06): a search result for a cadastral parcel, framed and drawn selected.
+ */
+export type PublicMapFocus =
+  | {
+      kind: "survey"
+      surveyId: string
+      lat: number
+      lng: number
+      /** The survey's parcels, drawn highlighted on the Explorer map (OA-116). */
+      parcelIds: string[]
+      nonce: number
+    }
+  | { kind: "place"; lat: number; lng: number; placeKind: SearchPlaceKind; nonce: number }
+  | {
+      kind: "parcel"
+      parcelId: string
+      lat: number
+      lng: number
+      /** West, south, east, north; null when the geometry is unknown. */
+      bbox: [number, number, number, number] | null
+      nonce: number
+    }
 
 export type PublicMapStackParamList = AccountStackParamList & {
   publicMapHome: { focus?: PublicMapFocus } | undefined
@@ -59,9 +76,21 @@ export type PublicMapStackParamList = AccountStackParamList & {
   communityHistory: { surveyId: string }
 }
 
-/** The search tab (iOS 26 shows it as its own round button next to the bar, OA-52). */
+/**
+ * The search tab on every platform (D-01): the native search tab on iOS (iOS 26 shows it as its
+ * own round button next to the bar, OA-52), the fourth JS tab elsewhere.
+ */
 export type SearchStackParamList = {
   searchHome: undefined
+  /**
+   * "Voir les N": the full list of one result group. `memberName` narrows the community list to
+   * one author (D-04, UI-SPEC U-11).
+   */
+  searchGroup: {
+    group: "mine" | "community" | "places" | "parcels"
+    query: string
+    memberName?: string
+  }
 }
 
 export type RootTabParamList = {
@@ -96,6 +125,8 @@ export type SurveyDetailRouteProps = StackRouteProps<SurveysStackParamList, "sur
 export type CommunitySurveyRouteProps = { route: { params: { surveyId: string } } }
 /** Same shape and stacks as `communitySurvey`: the parcel history of another member's survey. */
 export type CommunityHistoryRouteProps = { route: { params: { surveyId: string } } }
+/** The full list of one search group (25-12): it reads its own params only. */
+export type SearchGroupRouteProps = { route: { params: SearchStackParamList["searchGroup"] } }
 export type SurveyContextRouteProps = StackRouteProps<SurveysStackParamList, "surveyContext">
 export type SurveyScoreRouteProps = StackRouteProps<SurveysStackParamList, "surveyScore">
 export type SurveyHistoryRouteProps = StackRouteProps<SurveysStackParamList, "surveyHistory">

@@ -131,6 +131,9 @@ jest.mock("../../map/maplibre/CadastreLayer", () => ({ CadastreLayer: "CadastreL
 jest.mock("../../map/maplibre/ParcelPolygonsLayer", () => ({
   ParcelPolygonsLayer: "ParcelPolygonsLayer",
 }))
+// Outside a navigator the screen counts as focused (the hook itself is tested on its own).
+jest.mock("../../ui/useScreenFocus", () => ({ useScreenFocus: () => true }))
+jest.mock("../../map/maplibre/PlacePinLayer", () => ({ PlacePinLayer: "PlacePinLayer" }))
 jest.mock("../../ui/AppButton", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -359,7 +362,14 @@ describe("PublicMapScreen", () => {
   })
 
   test("a focus request centres the map and highlights the survey's marker, no panel (OA-59)", () => {
-    const focus = { surveyId: "s-7", lat: 45.7, lng: 4.8, parcelIds: ["P1"], nonce: 1 }
+    const focus = {
+      kind: "survey" as const,
+      surveyId: "s-7",
+      lat: 45.7,
+      lng: 4.8,
+      parcelIds: ["P1"],
+      nonce: 1,
+    }
     const props = makeProps({ focus })
     mount(props)
     expect(mockAnimateToRegion).toHaveBeenCalled()
@@ -372,6 +382,50 @@ describe("PublicMapScreen", () => {
     expect(marker.props.selected).toBe(true)
     expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
     expect(props.onOpenSurvey).not.toHaveBeenCalled()
+  })
+
+  test("a place focus centres the map, draws the pin and opens no panel (D-05)", () => {
+    const props = makeProps({
+      focus: { kind: "place", lat: 45.7, lng: 4.8, placeKind: "street", nonce: 1 },
+    })
+    mount(props)
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(1)
+    const pin = tree.root.find((node) => (node.type as unknown) === "PlacePinLayer")
+    expect(pin.props.pin).toEqual({ lat: 45.7, lng: 4.8 })
+    const parcels = tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer")
+    expect(parcels.props.selectedParcelIds).toBeUndefined()
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
+    expect(props.onOpenSurvey).not.toHaveBeenCalled()
+  })
+
+  test("a parcel focus draws that parcel selected and opens nothing by itself (D-06)", () => {
+    const props = makeProps({
+      focus: { kind: "parcel", parcelId: "P-42", lat: 45.7, lng: 4.8, bbox: null, nonce: 1 },
+    })
+    mount(props)
+    const parcels = tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer")
+    expect(parcels.props.selectedParcelIds).toEqual(["P-42"])
+    expect(
+      tree.root.find((node) => (node.type as unknown) === "PlacePinLayer").props.pin,
+    ).toBeNull()
+    expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
+    expect(props.onOpenSurvey).not.toHaveBeenCalled()
+  })
+
+  test("a reload after a focus (new props, same focus) does not move the camera again", () => {
+    const focus = {
+      kind: "place" as const,
+      lat: 45.7,
+      lng: 4.8,
+      placeKind: "municipality" as const,
+      nonce: 5,
+    }
+    const props = makeProps({ focus })
+    mount(props)
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(1)
+    update({ ...props, loading: true, focus: { ...focus } })
+    update({ ...props, loading: false, items: [item("a", 45.7, 4.8)], focus: { ...focus } })
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(1)
   })
 
   test("tapping a studied parcel opens the page of its latest survey directly, no panel", async () => {

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { Alert, View } from "react-native"
 import type { CameraRef } from "@maplibre/maplibre-react-native"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { buildFocusedMapRegion, type MapRegion } from "../app/map-viewport"
+import type { MapRegion } from "../app/map-viewport"
 import { isOfflineMapsEnabled } from "../app/feature-flags"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { useBrandTheme } from "../app/theme"
@@ -24,6 +24,7 @@ import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
 import { ScoreLegend } from "./public-map/ScoreLegend"
 import { createScreenContainerStyle } from "./public-map/styles"
+import { useExplorerFocus } from "./public-map/useExplorerFocus"
 import { useMapViewport } from "./public-map/useMapViewport"
 
 const t = fr.publicMap
@@ -31,12 +32,6 @@ const LOCATE_SPAN = 0.012
 const NO_DRAFTS: PublicMapItem[] = []
 // A second tap within this window (a double tap, or a tap during the push) opens nothing more.
 const OPEN_SURVEY_GUARD_MS = 800
-
-/** The region that shows a survey, centred a little north of it so its marker clears the sheet. */
-function focusRegion(focus: PublicMapFocus): MapRegion {
-  const target = buildFocusedMapRegion(focus)
-  return { ...target, latitude: target.latitude - target.latitudeDelta * 0.22 }
-}
 
 type PublicMapScreenProps = {
   apiUrl: string
@@ -159,18 +154,13 @@ export function PublicMapScreen({
   }, [])
   const { moveTo, focusTo } = viewport
 
-  // OA-59: "Voir sur la carte" lands here with a survey to show. A screen opened for it starts the
-  // camera there; one already open moves there. Its marker is drawn selected as soon as it is among
-  // the markers (a public one arrives with the viewport load that the move triggers).
-  const initialRegion = useRef(focus ? focusRegion(focus) : undefined).current
-  const focusNonce = focus?.nonce
-  useEffect(() => {
-    if (!focus) return
-    setHighlightedId(focus.surveyId)
-    focusTo(focusRegion(focus), 0)
-    // The nonce identifies one request; the focus object itself is rebuilt by the navigation.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusNonce, focusTo])
+  // OA-59 / D-05 / D-06: "Voir sur la carte" and the search land here with something to show; the
+  // hook moves the camera once per request and says what to draw (survey marker, parcel, place pin).
+  const { initialRegion, highlightedParcelIds, placePin } = useExplorerFocus({
+    focus,
+    focusTo,
+    setHighlightedId,
+  })
 
   const handleZoomTo = useCallback((target: MapRegion) => moveTo(target, 450), [moveTo])
   // MAP-01: the sheet reports a dismissal (drag-down or the content's own close button) without
@@ -260,7 +250,8 @@ export function PublicMapScreen({
         items={mapItems}
         draftIds={draftIdSet}
         initialRegion={initialRegion}
-        highlightedParcelIds={focus?.parcelIds}
+        highlightedParcelIds={highlightedParcelIds}
+        placePin={placePin}
         region={viewport.region}
         selectedId={highlightedId}
         parcelStatuses={parcelStatuses}

@@ -27,7 +27,6 @@ export type SurveysState = {
   selectedSurveyId: string | null
   selectedSurvey: SurveyList["selectedSurvey"]
   selectedSurveyAttachments: SurveyList["selectedSurveyAttachments"]
-  surveyQuery: string
   surveyFromDate: string
   surveyToDate: string
   statusFilter: SurveyList["statusFilter"]
@@ -48,7 +47,6 @@ export type SurveysState = {
 }
 
 export type SurveyActions = {
-  setSurveyQuery: SurveyList["setSurveyQuery"]
   setSurveyFromDate: SurveyList["setSurveyFromDate"]
   setSurveyToDate: SurveyList["setSurveyToDate"]
   setStatusFilter: SurveyList["setStatusFilter"]
