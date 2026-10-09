@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 25
 current_phase_name: Global Search
 status: executing
-stopped_at: Phase 25 plans 01 to 14 executed (see .planning/phases/25-global-search)
+stopped_at: Phase 25 plans 01 to 14 executed and verified (25-VERIFICATION.md); plan 15 waits for the owner phone check
 last_updated: "2026-10-09T16:01:11.700Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 25 execution started
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 25 (global-search) — EXECUTING
-Plan: 15 of 15
+Plan: 15 of 15 (owner phone check pending)
 Status: Executing Phase 25
 Last activity: 2026-10-09 — Phase 25 execution started
 

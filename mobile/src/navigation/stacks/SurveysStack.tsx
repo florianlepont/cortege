@@ -44,7 +44,7 @@ type SurveysTabNavigatorProps = { useNativeNav?: boolean }
 /**
  * The one survey stack (D-08). In the native iOS tree, Mes Relevés shows the native header with
  * its large title and the "+" (set up by SurveyListRoute, 12.2-17); elsewhere the list draws its
- * own title bar with the search and "+" buttons.
+ * own title bar with the "+" button.
  */
 export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigatorProps) {
   const surveyActions = useSurveyActions()
