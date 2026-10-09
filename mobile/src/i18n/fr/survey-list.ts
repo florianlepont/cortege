@@ -22,7 +22,6 @@ export const surveyListFr = {
     // HOME-01/LIST: the "+" in the header — Mes Relevés is a pure list now, the create
     // call-to-action moved out of the list body (see the deleted createCard section).
     createSurvey: "Créer un nouveau relevé",
-    openSearch: "Rechercher un relevé",
     sectionHeader: ({ title, count }: { title: string; count: number }) => `${title}, ${count}`,
   },
   // OA-53, OA-55: two figures under the title, then the surveys in two sections.

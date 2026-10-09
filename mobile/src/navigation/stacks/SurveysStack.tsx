@@ -15,7 +15,6 @@ import { SurveyDetailRoute } from "../routes/SurveyDetailRoute"
 import { SurveyHistoryRoute } from "../routes/SurveyHistoryRoute"
 import { SurveyJournalRoute } from "../routes/SurveyJournalRoute"
 import { SurveyScoreRoute } from "../routes/SurveyScoreRoute"
-import { SurveySearchRoute } from "../routes/SurveySearchRoute"
 import { SurveyFormRoute } from "../routes/SurveyFormRoute"
 import { SurveyListRoute } from "../routes/SurveyListRoute"
 import { styles } from "../styles"
@@ -104,11 +103,6 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               },
             }}
             component={SurveyDetailRoute}
-          />
-          <SurveysStack.Screen
-            name="surveySearch"
-            options={{ headerShown: false }}
-            component={SurveySearchRoute}
           />
           <SurveysStack.Screen
             name="communitySurvey"

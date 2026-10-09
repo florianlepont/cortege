@@ -24,7 +24,6 @@ export type HomeStackParamList = AccountStackParamList & {
 
 export type SurveysStackParamList = AccountStackParamList & {
   surveysHome: undefined
-  surveySearch: undefined
   communitySurvey: { surveyId: string }
   communityHistory: { surveyId: string }
   surveyDetail: undefined
@@ -59,9 +58,21 @@ export type PublicMapStackParamList = AccountStackParamList & {
   communityHistory: { surveyId: string }
 }
 
-/** The search tab (iOS 26 shows it as its own round button next to the bar, OA-52). */
+/**
+ * The search tab on every platform (D-01): the native search tab on iOS (iOS 26 shows it as its
+ * own round button next to the bar, OA-52), the fourth JS tab elsewhere.
+ */
 export type SearchStackParamList = {
   searchHome: undefined
+  /**
+   * "Voir les N": the full list of one result group. `memberName` narrows the community list to
+   * one author (D-04, UI-SPEC U-11).
+   */
+  searchGroup: {
+    group: "mine" | "community" | "places" | "parcels"
+    query: string
+    memberName?: string
+  }
 }
 
 export type RootTabParamList = {

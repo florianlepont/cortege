@@ -32,15 +32,14 @@ export function SectionTitle({ section, count }: { section: SectionKey; count: n
 }
 
 type TitleBarProps = {
-  onOpenSearch: () => void
   onOpenCreateSurvey: () => void
 }
 
 /**
- * Android and the JS tabs: the title with the search and "+" buttons on one row. On iOS the
- * native header carries the title and the "+", and the search is its own tab (OA-52).
+ * Android and the JS tabs: the title with the "+" button on one row. On iOS the native header
+ * carries the title and the "+". Search is its own tab on every platform (D-01).
  */
-export function ListTitleBar({ onOpenSearch, onOpenCreateSurvey }: TitleBarProps) {
+export function ListTitleBar({ onOpenCreateSurvey }: TitleBarProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   return (
@@ -48,14 +47,6 @@ export function ListTitleBar({ onOpenSearch, onOpenCreateSurvey }: TitleBarProps
       <Text accessibilityRole="header" style={styles.title}>
         {t.hero.title}
       </Text>
-      <AppPressable
-        accessibilityRole="button"
-        accessibilityLabel={t.a11y.openSearch}
-        onPress={onOpenSearch}
-        style={styles.roundButton}
-      >
-        <Ionicons name="search-outline" size={20} color={theme.colors.forest} />
-      </AppPressable>
       <AppPressable
         accessibilityRole="button"
         accessibilityLabel={t.a11y.createSurvey}

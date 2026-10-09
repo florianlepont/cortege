@@ -36,7 +36,6 @@ export function SurveyListScreen({
   onRefresh,
   onDeleteSurvey,
   onOpenCreateSurvey,
-  onOpenSearch,
   onOpenSurvey,
 }: SurveyListScreenProps) {
   const theme = useBrandTheme()
@@ -98,15 +97,13 @@ export function SurveyListScreen({
   const listHeader = useMemo(
     () => (
       <View style={styles.listHeader}>
-        {showTitleBar ? (
-          <ListTitleBar onOpenSearch={onOpenSearch} onOpenCreateSurvey={onOpenCreateSurvey} />
-        ) : null}
+        {showTitleBar ? <ListTitleBar onOpenCreateSurvey={onOpenCreateSurvey} /> : null}
         {surveys.length > 0 ? (
           <ListSummaryCard total={surveys.length} toFinish={toFinishCount} />
         ) : null}
       </View>
     ),
-    [onOpenCreateSurvey, onOpenSearch, showTitleBar, surveys.length, toFinishCount],
+    [onOpenCreateSurvey, showTitleBar, surveys.length, toFinishCount],
   )
 
   const listFooter = useMemo(

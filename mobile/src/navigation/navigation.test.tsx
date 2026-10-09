@@ -663,8 +663,11 @@ describe("stack options and listeners", () => {
       for (const name of surveyPages) {
         expectHaloHeader(effectiveOptions(name))
       }
-      // The search page draws its own top block under the status bar: no native header.
-      expect((mockScreens.surveySearch.options as Options).headerShown).toBe(false)
+      // D-01: the old pushed search page is gone, the search tab is the only entry.
+      expect(Object.keys(mockScreens).filter((name) => /search/i.test(name))).toEqual([
+        "search",
+        "searchHome",
+      ])
     },
   )
 

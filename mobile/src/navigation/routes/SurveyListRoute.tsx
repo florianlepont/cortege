@@ -19,8 +19,8 @@ import type { SurveyListRouteProps } from "../types"
  * The native-nav boolean is static navigator configuration read from
  * SurveysStackConfigContext, not data.
  *
- * Search (OA-52): on iOS it is its own tab, so the header has no search bar; on Android and in the
- * JS fallback the list draws its own title bar with a search button that opens the same page.
+ * Search (D-01): it is the search tab on every platform (native on iOS, the fourth JS tab elsewhere),
+ * so neither the header nor the list's own title bar carries a search button.
  */
 export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: SurveyListRouteProps) {
   const { useNativeNav } = useSurveysStackConfig()
@@ -38,8 +38,6 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
     actions.openSurvey(surveyId)
     navigation.navigate("surveyDetail")
   })
-
-  const onOpenSearch = useLatestCallback(() => navigation.navigate("surveySearch"))
 
   useLayoutEffect(() => {
     if (!nativeHeader) return
@@ -68,7 +66,6 @@ export const SurveyListRoute = memo(function SurveyListRoute({ navigation }: Sur
         onRefresh={syncActions.handlePullChanges}
         onDeleteSurvey={actions.confirmDeleteSurvey}
         onOpenCreateSurvey={onOpenCreateSurvey}
-        onOpenSearch={onOpenSearch}
         onOpenSurvey={onOpenSurvey}
       />
     </ScreenFrame>

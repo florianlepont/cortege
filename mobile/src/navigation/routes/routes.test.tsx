@@ -845,8 +845,8 @@ describe("SurveyListRoute", () => {
     expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyDetail")
 
-    callback("surveyList", "onOpenSearch")()
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveySearch")
+    // D-01: search is the tab, the list has no search callback any more.
+    expect(Object.keys(props("surveyList")).filter((key) => /search/i.test(key))).toEqual([])
   })
 
   test("with the native tab bar outside iOS it keeps its own title bar", async () => {

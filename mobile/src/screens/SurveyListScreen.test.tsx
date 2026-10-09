@@ -125,7 +125,6 @@ function makeProps(overrides: Partial<SurveyListScreenProps> = {}): SurveyListSc
     showTitleBar: false,
     onDeleteSurvey: jest.fn(),
     onOpenCreateSurvey: jest.fn(),
-    onOpenSearch: jest.fn(),
     onOpenSurvey: jest.fn(),
     ...overrides,
   }
