@@ -157,6 +157,7 @@ export function SurveyDetailScreen({
     onRename: largeTitle && canEditSurvey ? handleRename : undefined,
     onShare: () => void handleShare(),
     onDelete: handleDelete,
+    onOpenJournal,
     onOpenMenu: handleOpenMenu,
   })
 

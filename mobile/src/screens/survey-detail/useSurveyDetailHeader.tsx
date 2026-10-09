@@ -23,20 +23,22 @@ type UseSurveyDetailHeaderParams = {
   largeTitle?: boolean
   /** Renames the survey (stable); offered in the menu under the large title, when editable. */
   onRename?: () => void
-  /** Both callbacks must be stable (`useLatestCallback`): the header items capture them. */
+  /** The callbacks must be stable (`useLatestCallback`): the header items capture them. */
   onShare: () => void
   onDelete: () => void
-  /** Opens the sheet that holds "Supprimer" where the native menu is not available. */
+  /** Opens "Journal du relevé" (D-02); the owner's summary only. */
+  onOpenJournal: () => void
+  /** Opens the sheet that holds "Journal du relevé" and "Supprimer" where the native menu is not available. */
   onOpenMenu: () => void
 }
 
 /**
  * The summary's header actions (OA-48, OA-49): "Partager" as its own visible button, and a "…"
- * menu that only holds "Supprimer". On iOS they are native header items (the system draws the
+ * menu that holds "Journal du relevé" and "Supprimer" (D-02). On iOS they are native header items (the system draws the
  * glass and the menu); elsewhere two icon buttons, the second opening a sheet.
  *
  * 12.2-17: under the native large title the header's title is the survey's name (it shrinks into
- * the bar as the page scrolls, so the name stays on screen) and the menu offers "Renommer" first.
+ * the bar as the page scrolls, so the name stays on screen) and the menu offers "Renommer" first, then the journal.
  */
 export function useSurveyDetailHeader({
   navigation,
@@ -45,6 +47,7 @@ export function useSurveyDetailHeader({
   onRename,
   onShare,
   onDelete,
+  onOpenJournal,
   onOpenMenu,
 }: UseSurveyDetailHeaderParams): void {
   const theme = useBrandTheme()
@@ -84,6 +87,12 @@ export function useSurveyDetailHeader({
                 ...renameItems,
                 {
                   type: "action",
+                  label: menuText.journal,
+                  icon: { type: "sfSymbol", name: "clock.arrow.circlepath" },
+                  onPress: onOpenJournal,
+                },
+                {
+                  type: "action",
                   label: menuText.delete,
                   icon: { type: "sfSymbol", name: "trash" },
                   destructive: true,
@@ -118,7 +127,17 @@ export function useSurveyDetailHeader({
         </View>
       ),
     })
-  }, [navigation, siteName, largeTitle, tint, onRename, onShare, onDelete, onOpenMenu])
+  }, [
+    navigation,
+    siteName,
+    largeTitle,
+    tint,
+    onRename,
+    onShare,
+    onDelete,
+    onOpenJournal,
+    onOpenMenu,
+  ])
 }
 
 const styles = StyleSheet.create({

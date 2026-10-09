@@ -412,6 +412,7 @@ describe("SurveyDetailScreen without the large title", () => {
     const params = headerMock.mock.calls.at(-1)![0] as Parameters<typeof useSurveyDetailHeader>[0]
     expect(params.largeTitle).toBe(false)
     expect(params.onRename).toBeUndefined()
+    expect(typeof params.onOpenJournal).toBe("function")
     expect(byType(tree, "ScrollView")[0].props.contentInsetAdjustmentBehavior).toBe("never")
   })
 })

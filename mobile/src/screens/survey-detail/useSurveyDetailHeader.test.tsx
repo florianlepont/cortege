@@ -44,7 +44,15 @@ type Item = {
   type: string
   label: string
   onPress?: () => void
-  menu?: { items: { type: string; label: string; destructive?: boolean; onPress: () => void }[] }
+  menu?: {
+    items: {
+      type: string
+      label: string
+      icon?: unknown
+      destructive?: boolean
+      onPress: () => void
+    }[]
+  }
 }
 type Options = Record<string, unknown> & { unstable_headerRightItems?: () => Item[] }
 
@@ -53,6 +61,7 @@ function run(params: Partial<Parameters<typeof useSurveyDetailHeader>[0]> = {}) 
   const callbacks = {
     onShare: jest.fn(),
     onDelete: jest.fn(),
+    onOpenJournal: jest.fn(),
     onOpenMenu: jest.fn(),
   }
   function Probe() {
@@ -76,33 +85,50 @@ describe("useSurveyDetailHeader under the native large title (12.2-17)", () => {
     expect(options.title).toBe("Lisière de la Marne")
   })
 
-  test("the menu offers Renommer first, then Supprimer; Partager stays its own button", () => {
+  test("the menu offers Renommer, Journal du relevé, then Supprimer; Partager stays its own button", () => {
     const onRename = jest.fn()
     const { options, callbacks } = run({ largeTitle: true, onRename })
     const [share, menu] = options.unstable_headerRightItems!()
     expect(share.label).toBe(fr.surveyDetail.menu.share)
     const labels = menu.menu!.items.map((item) => item.label)
-    expect(labels).toEqual([fr.surveyDetail.menu.rename, fr.surveyDetail.menu.delete])
+    expect(labels).toEqual([
+      fr.surveyDetail.menu.rename,
+      fr.surveyDetail.menu.journal,
+      fr.surveyDetail.menu.delete,
+    ])
     menu.menu!.items[0].onPress()
     expect(onRename).toHaveBeenCalledTimes(1)
-    menu.menu!.items[1].onPress()
+    const journal = menu.menu!.items[1]
+    expect(journal.icon).toEqual({ type: "sfSymbol", name: "clock.arrow.circlepath" })
+    expect(journal.destructive).toBeUndefined()
+    journal.onPress()
+    expect(callbacks.onOpenJournal).toHaveBeenCalledTimes(1)
+    expect(callbacks.onDelete).not.toHaveBeenCalled()
+    menu.menu!.items[2].onPress()
     expect(callbacks.onDelete).toHaveBeenCalledTimes(1)
+    expect(menu.menu!.items[2].destructive).toBe(true)
   })
 
-  test("a finished survey (no rename offered) keeps the menu to Supprimer", () => {
+  test("a finished survey (no rename offered): Journal du relevé, then Supprimer", () => {
     const { options } = run({ largeTitle: true })
     expect(options.title).toBe("Lisière de la Marne")
     const [, menu] = options.unstable_headerRightItems!()
-    expect(menu.menu!.items.map((item) => item.label)).toEqual([fr.surveyDetail.menu.delete])
+    expect(menu.menu!.items.map((item) => item.label)).toEqual([
+      fr.surveyDetail.menu.journal,
+      fr.surveyDetail.menu.delete,
+    ])
   })
 })
 
 describe("useSurveyDetailHeader without the large title", () => {
-  test("iOS (Expo Go): no title set, the page draws the name; the menu holds Supprimer only", () => {
+  test("iOS (Expo Go): no title set, the page draws the name; the menu holds the journal and Supprimer", () => {
     const { options } = run()
     expect(options).not.toHaveProperty("title")
     const [, menu] = options.unstable_headerRightItems!()
-    expect(menu.menu!.items.map((item) => item.label)).toEqual([fr.surveyDetail.menu.delete])
+    expect(menu.menu!.items.map((item) => item.label)).toEqual([
+      fr.surveyDetail.menu.journal,
+      fr.surveyDetail.menu.delete,
+    ])
   })
 
   test("Android: the two 44 pt icon buttons, no title", () => {
