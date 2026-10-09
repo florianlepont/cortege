@@ -4,6 +4,7 @@ import {
   brandMapTokens,
   brandRadius,
   brandShadow,
+  brandSpacing,
   brandSpacing4,
   brandTypeScale,
   brandTypography,
@@ -17,7 +18,7 @@ export const markerStyles = StyleSheet.create({
     minWidth: 38,
     height: 38,
     borderRadius: 19,
-    paddingHorizontal: 8,
+    paddingHorizontal: brandSpacing4.sm,
     borderWidth: 2,
     borderColor: brandColors.white,
     backgroundColor: brandColors.forest,
@@ -101,17 +102,8 @@ export function createControlStyles(theme: BrandTheme) {
     },
     capsuleSeparator: {
       height: StyleSheet.hairlineWidth,
-      marginHorizontal: 10,
+      marginHorizontal: brandSpacing.sm,
       backgroundColor: theme.visual.mapControl.hairline,
-    },
-    locateGlass: {
-      position: "absolute",
-      right: 14,
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      borderWidth: 1,
-      borderColor: theme.visual.mapControl.hairline,
     },
   })
 }
@@ -147,13 +139,13 @@ export function createOfflineIndicatorStyles(theme: BrandTheme) {
     badge: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: brandSpacing.xs,
       borderRadius: brandRadius.pill,
       borderWidth: 1,
       borderColor: brandColors.terracotta,
       backgroundColor: theme.colors.errorSoft,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
+      paddingHorizontal: brandSpacing4.smd,
+      paddingVertical: brandSpacing.sm,
     },
     badgeText: {
       ...brandTypography.label,

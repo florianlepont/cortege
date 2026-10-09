@@ -1,5 +1,5 @@
 import { ReactNode, useMemo, useState } from "react"
-import { Pressable, StyleSheet } from "react-native"
+import { StyleSheet } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import Animated, {
@@ -14,7 +14,8 @@ import Animated, {
 import { brandMotion, brandRadius, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
-import { AppStatusChip } from "./AppStatusChip"
+import { AppChoiceChip } from "./AppChoiceChip"
+import { AppPressable } from "./AppPressable"
 
 type AppCollapsibleSectionProps = {
   title: string
@@ -51,7 +52,9 @@ export function AppCollapsibleSection({
 
   return (
     <Animated.View style={styles.root} layout={LinearTransition.reduceMotion(ReduceMotion.System)}>
-      <Pressable
+      <AppPressable
+        disableScale
+        disableRipple
         style={({ pressed }) => [styles.header, pressed && styles.headerPressed]}
         onPress={toggle}
         accessibilityRole="button"
@@ -59,11 +62,11 @@ export function AppCollapsibleSection({
         accessibilityLabel={fr.components.collapsibleSection.toggleLabel({ title, expanded })}
       >
         <Text style={styles.title}>{title}</Text>
-        {badge ? <AppStatusChip label={badge} tone="neutral" /> : null}
+        {badge ? <AppChoiceChip variant="status" label={badge} tone="neutral" /> : null}
         <Animated.View style={chevronStyle}>
           <Ionicons name="chevron-down-outline" size={14} color={theme.colors.textSecondary} />
         </Animated.View>
-      </Pressable>
+      </AppPressable>
       {expanded ? (
         <Animated.View
           style={styles.body}

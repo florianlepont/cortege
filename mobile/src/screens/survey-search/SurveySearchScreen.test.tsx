@@ -8,6 +8,7 @@ import type { LocalSurvey } from "../../storage"
 import * as reanimated from "../../../test/react-native-reanimated.mock"
 import { LIST_ENTRANCE_GRACE_MS } from "../../ui/useListEntrance"
 import { SurveySearchScreen, type SurveySearchScreenProps } from "./SurveySearchScreen"
+import { pressableLook as look } from "../../../test/pressable-look"
 
 const t = fr.surveyList.search
 
@@ -249,8 +250,8 @@ describe("SurveySearchScreen, glass look and entrances (12.2-11)", () => {
     })
     const tabs = byType(tree, "Pressable").filter((node) => node.props.accessibilityRole === "tab")
     for (const tab of tabs) {
-      expect(flat(tab.props.style)).toMatchObject({ flex: 1 })
-      expect(flat(tab.props.style).minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
+      expect(look(tab)).toMatchObject({ flex: 1 })
+      expect(look(tab).minHeight).toBeGreaterThanOrEqual(brandInteraction.hitTarget.min)
     }
   })
 
@@ -259,8 +260,8 @@ describe("SurveySearchScreen, glass look and entrances (12.2-11)", () => {
       (node) => node.props.accessibilityRole === "tab",
     )
     expect(tabs.map((tab) => tab.props.accessibilityState.selected)).toEqual([false, true])
-    expect(flat(tabs[1].props.style).backgroundColor).toBe(defaultTheme.visual.chip.activeBg)
-    expect(flat(tabs[0].props.style).backgroundColor).toBeUndefined()
+    expect(look(tabs[1]).backgroundColor).toBe(defaultTheme.visual.chip.activeBg)
+    expect(look(tabs[0]).backgroundColor).toBeUndefined()
   })
 
   it("gives the search field the glass card look and keeps its height", () => {

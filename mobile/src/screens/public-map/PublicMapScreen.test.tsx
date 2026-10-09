@@ -112,7 +112,7 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
     refresh: jest.fn(),
   }),
 }))
-jest.mock("../../ui/AppStatusChip", () => ({ AppStatusChip: "AppStatusChip" }))
+jest.mock("../../ui/AppChoiceChip", () => ({ AppChoiceChip: "AppChoiceChip" }))
 // The glow is drawn by the navigation layer (download-edge-glow.test.tsx) and its motion is tested in
 // EdgePulse.test.tsx; here only the screen's request for it is counted.
 jest.mock("../../navigation/download-edge-glow", () => ({ DownloadEdgeGlow: "DownloadEdgeGlow" }))

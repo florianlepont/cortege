@@ -1,7 +1,7 @@
 import { ReactNode, useMemo } from "react"
 import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
-import { brandSpacing, brandTypography } from "../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 
 type AppSectionHeaderProps = {
@@ -47,7 +47,7 @@ function createStyles(theme: BrandTheme) {
     },
     copy: {
       flex: 1,
-      gap: 4,
+      gap: brandSpacing4.xs,
     },
     title: {
       ...brandTypography.sectionHeader,

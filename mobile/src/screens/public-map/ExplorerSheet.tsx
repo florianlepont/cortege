@@ -1,3 +1,4 @@
+// Why custom: a non-modal map bottom sheet that keeps the map interactive behind it; formSheet and @gorhom/bottom-sheet were tried (iOS 27 sliver, OA-66).
 import { useEffect, useMemo, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import {

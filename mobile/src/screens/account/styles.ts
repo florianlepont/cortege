@@ -105,7 +105,7 @@ export function createProfileRowStyles(theme: BrandTheme) {
     },
     label: {
       ...brandTypography.sectionBody,
-      fontSize: 16,
+      fontSize: brandTypeScale.callout.fontSize,
       color: theme.colors.textPrimary,
     },
     input: {
@@ -113,7 +113,7 @@ export function createProfileRowStyles(theme: BrandTheme) {
       textAlign: "right",
       minHeight: 44,
       paddingVertical: brandSpacing4.sm,
-      fontSize: 16,
+      fontSize: brandTypeScale.callout.fontSize,
       color: theme.semanticColors.textStrong,
     },
     saveBar: {
@@ -124,9 +124,9 @@ export function createProfileRowStyles(theme: BrandTheme) {
       borderRadius: 31,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: brandSpacing4.sm,
       paddingLeft: 20,
-      paddingRight: 10,
+      paddingRight: brandSpacing.sm,
     },
     saveBarText: {
       flex: 1,
@@ -136,7 +136,7 @@ export function createProfileRowStyles(theme: BrandTheme) {
     },
     saveBarCancel: {
       minHeight: 42,
-      paddingHorizontal: 12,
+      paddingHorizontal: brandSpacing4.smd,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -165,7 +165,7 @@ export function createProfileRowStyles(theme: BrandTheme) {
 export const profileStyles = StyleSheet.create({
   // ACC-12 : styles de champ directement sur AppField
   fieldGroup: {
-    gap: 4,
+    gap: brandSpacing4.xs,
   },
   // The label colour comes from AppField's themed label style (OA-82: a static forest vanished in
   // dark mode).

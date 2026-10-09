@@ -1,21 +1,13 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react"
+import { memo, useEffect, useMemo, useRef } from "react"
 import { AccessibilityInfo, StyleSheet, View } from "react-native"
-import type { LayoutChangeEvent } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import Animated, {
-  Easing,
-  ReduceMotion,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated"
 import { brandComponentTokens, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
-import { downloadBarGeometry } from "../../app/visual-tokens"
 import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassButton } from "../../ui/GlassButton"
+import { ProgressBar } from "../../ui/ProgressBar"
 
 const t = fr.offlineMap.areas
 
@@ -30,47 +22,19 @@ export function announceStep(percent: number): number {
 type BarProps = { percent: number; name: string }
 
 /**
- * A 10 pt rounded bar filling with the pack progress. The fill is a full-width bar slid in from the
- * left (`translateX`, UI thread) inside the clipped track, so its rounded end stays round, and it
- * eases to each new report so a coarse native step still reads as a flow; Reduce Motion shows each
- * value at once. It is a progressbar for screen readers, with its value 0 to 100.
+ * The offline-download bar: the "slide" variant of `ProgressBar` (a 10 pt rounded bar easing to
+ * each new report), a progressbar for screen readers with its value 0 to 100.
  */
 export const DownloadProgressBar = memo(function DownloadProgressBar({ percent, name }: BarProps) {
-  const theme = useBrandTheme()
-  // The track's width, measured once: a state, so the fill is drawn again with it.
-  const [width, setWidth] = useState(0)
-  const shown = useSharedValue(percent)
-
-  useEffect(() => {
-    shown.value = withTiming(percent, {
-      duration: downloadBarGeometry.smoothMs,
-      easing: Easing.out(Easing.cubic),
-      reduceMotion: ReduceMotion.System,
-    })
-  }, [percent, shown])
-
-  const fillStyle = useAnimatedStyle(() => ({
-    // Hidden until the track is measured, so the fill never flashes full before its first layout.
-    opacity: width > 0 ? 1 : 0,
-    transform: [{ translateX: ((shown.value - 100) / 100) * width }],
-  }))
-  const onLayout = (event: LayoutChangeEvent): void => setWidth(event.nativeEvent.layout.width)
-
   return (
-    <View
+    <ProgressBar
+      variant="slide"
       testID="offline-download-bar"
-      accessible
-      accessibilityRole="progressbar"
+      fillTestID="offline-download-bar-fill"
+      ratio={percent / 100}
       accessibilityLabel={t.running.a11y.bar(name)}
       accessibilityValue={{ min: 0, max: 100, now: percent, text: t.running.a11y.value(percent) }}
-      onLayout={onLayout}
-      style={[styles.track, { backgroundColor: theme.visual.downloadBar.track }]}
-    >
-      <Animated.View
-        testID="offline-download-bar-fill"
-        style={[styles.fill, { backgroundColor: theme.visual.downloadBar.fill }, fillStyle]}
-      />
-    </View>
+    />
   )
 })
 
@@ -192,18 +156,6 @@ export const DownloadStatusView = memo(function DownloadStatusView({
       </View>
     </View>
   )
-})
-
-const styles = StyleSheet.create({
-  track: {
-    height: downloadBarGeometry.height,
-    borderRadius: downloadBarGeometry.height / 2,
-    overflow: "hidden",
-  },
-  fill: {
-    ...StyleSheet.absoluteFill,
-    borderRadius: downloadBarGeometry.height / 2,
-  },
 })
 
 function createStyles(theme: BrandTheme) {

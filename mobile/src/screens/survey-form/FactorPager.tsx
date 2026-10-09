@@ -3,7 +3,6 @@ import {
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  Pressable,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
@@ -11,7 +10,13 @@ import {
 } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
-import { brandRadius, brandShadow, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import {
+  brandRadius,
+  brandShadow,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { FACTOR_TITLES } from "../../app/constants"
@@ -24,6 +29,7 @@ import { FactorLetterStrip, STRIP_HEIGHT } from "./FactorLetterStrip"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { GlassButton } from "../../ui/GlassButton"
 import { Ionicons } from "@expo/vector-icons"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.factorPager
 
@@ -55,6 +61,8 @@ type FactorPagerProps = {
   onActiveFactorChange?: (factor: FactorKey) => void
   /** "Terminer" on the last factor: back to the list. */
   onFinish: () => void
+  /** "Que relever ?": opens the help sheet route with the factor's texts. */
+  onOpenHelp: (help: string, hints: readonly string[]) => void
   /**
    * D-26: on the last factor, a labelled "Terminer le relevé" pill above the bar that finishes the
    * survey; the round button then only goes back. Null (the default) keeps the plain "Terminer".
@@ -78,6 +86,7 @@ export const FactorPager = memo(function FactorPager({
   methodVersion,
   onActiveFactorChange,
   onFinish,
+  onOpenHelp,
   finishAction = null,
 }: FactorPagerProps) {
   const theme = useBrandTheme()
@@ -180,6 +189,7 @@ export const FactorPager = memo(function FactorPager({
                 fields={factorSections[factor]}
                 retainedScore={factorRetainedScores[factor]}
                 methodVersion={methodVersion}
+                onOpenHelp={onOpenHelp}
               />
             ) : null}
           </ScrollView>
@@ -207,7 +217,7 @@ export const FactorPager = memo(function FactorPager({
 
       <View pointerEvents="box-none" style={[styles.bar, { bottom: barBottom }]}>
         <FactorLetterStrip activeIndex={activeIndex} progress={progress} onSelect={scrollToIndex} />
-        <Pressable
+        <AppPressable
           accessibilityRole="button"
           accessibilityLabel={showFinish ? t.close : isLast ? t.finish : t.next}
           onPress={() => (isLast ? onFinish() : scrollToIndex(activeIndex + 1))}
@@ -221,7 +231,7 @@ export const FactorPager = memo(function FactorPager({
             size={26}
             color={theme.semanticColors.onCtaPrimary}
           />
-        </Pressable>
+        </AppPressable>
       </View>
     </View>
   )
@@ -265,9 +275,9 @@ function createStyles(theme: BrandTheme) {
       boxShadow: theme.visual.forest.ring,
     },
     totalChipText: {
-      fontSize: 15,
+      fontSize: brandTypeScale.subhead.fontSize,
       lineHeight: 20,
-      fontFamily: "Sora-Bold",
+      fontFamily: brandTypography.button.fontFamily,
       color: theme.visual.forest.title,
     },
     pages: {

@@ -13,7 +13,7 @@ export const PHOTO_LAYOUT = {
   /** The page content padding on both sides (summary `content` and sub-page `subContent`). */
   inset: brandSpacing4.md,
   radius: 20,
-  gap: 12,
+  gap: brandSpacing4.smd,
   /** One photo: the full content width, 16:10. */
   singleRatio: 16 / 10,
   /** Several photos: this share of the content width per tile, 4:3. */

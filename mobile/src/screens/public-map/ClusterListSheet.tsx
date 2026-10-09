@@ -10,7 +10,7 @@ import { ScoreRing } from "../../ui/ScoreRing"
 import { createRowStyles } from "../survey-list/row-styles"
 import { SurveyRowFrame } from "../survey-list/SurveyRowFrame"
 import { PanelRowEntrance } from "./PanelRowEntrance"
-import { SheetCloseButton } from "./SheetCloseButton"
+import { GlassIconButton } from "./GlassIconButton"
 import { createPanelStyles } from "./styles"
 
 const t = fr.publicMap
@@ -89,7 +89,11 @@ export const ClusterListSheet = memo(function ClusterListSheet({
         titleStyle={styles.title}
         subtitleStyle={styles.meta}
         trailing={
-          <SheetCloseButton accessibilityLabel={t.a11y.closeClusterList} onPress={onClose} />
+          <GlassIconButton
+            variant="close"
+            accessibilityLabel={t.a11y.closeClusterList}
+            onPress={onClose}
+          />
         }
       />
       <View style={styles.rows}>

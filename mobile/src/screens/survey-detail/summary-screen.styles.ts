@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native"
 import {
+  brandDefaultFontFamily,
   brandRadius,
   brandSpacing,
   brandSpacing4,
@@ -26,12 +27,12 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     },
     // Title block.
     titleBlock: {
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     titleRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
+      gap: brandSpacing.sm,
     },
     iconButton: {
       width: HIT_TARGET,
@@ -44,16 +45,16 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
       borderColor: hairline,
     },
     renameRow: {
-      gap: 10,
+      gap: brandSpacing.sm,
     },
     renameActions: {
       flexDirection: "row",
-      gap: 10,
+      gap: brandSpacing.sm,
     },
     statusLine: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     statusDot: {
       width: 9,
@@ -100,7 +101,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     },
     scoreTileLabel: {
       ...brandTypeScale.footnote,
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.visual.forest.body,
     },
     scoreTileValueRow: {
@@ -116,7 +117,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     // even before the mist (12.2-19), the body tint keeps 4.5:1 under it (forest-aurora tokens).
     scoreTileOutOf: {
       ...brandTypeScale.footnote,
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.visual.forest.body,
     },
     scoreHint: {
@@ -127,7 +128,7 @@ export function createSummaryScreenStyles(theme: BrandTheme) {
     // Sections. The photo block is styled in `photos.styles.ts`; `section`, `sectionHeader` and the
     // titles below are also read by the context and community pages.
     section: {
-      gap: 10,
+      gap: brandSpacing.sm,
     },
     sectionHeader: {
       flexDirection: "row",

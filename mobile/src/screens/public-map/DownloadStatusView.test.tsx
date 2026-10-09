@@ -133,7 +133,7 @@ describe("DownloadStatusView (12.2-19 third round)", () => {
   test("each report eases in on the UI thread, Reduce Motion showing it at once", () => {
     mount(running(30))
     expect(withTimingSpy).toHaveBeenCalledWith(
-      30,
+      0.3,
       expect.objectContaining({
         duration: downloadBarGeometry.smoothMs,
         reduceMotion: reanimated.ReduceMotion.System,

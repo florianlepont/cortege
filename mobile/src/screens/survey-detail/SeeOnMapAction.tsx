@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native"
 import { fr } from "../../i18n"
-import { MapActionPill } from "../public-map/MapChips"
+import { GlassIconButton } from "../public-map/GlassIconButton"
 
 const t = fr.surveyDetail.map
 const a11y = fr.surveyDetail.a11y
@@ -19,7 +19,8 @@ export function SeeOnMapAction({
 }) {
   const navigation = useNavigation()
   return (
-    <MapActionPill
+    <GlassIconButton
+      variant="map-pill"
       icon="map-outline"
       label={t.seeOnMap}
       accessibilityLabel={a11y.seeOnMap(siteName)}

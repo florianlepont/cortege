@@ -17,6 +17,9 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
+const mockPlatform = { OS: "android" as "android" | "ios" }
+const mockShowActionSheet = jest.fn()
+
 jest.mock("react-native", () => {
   const ReactRef = require("react") as typeof import("react")
   const mockComponent =
@@ -28,12 +31,28 @@ jest.mock("react-native", () => {
     View: mockComponent("View"),
     Pressable: mockComponent("Pressable"),
     Modal: mockComponent("Modal"),
+    Platform: {
+      get OS() {
+        return mockPlatform.OS
+      },
+    },
+    ActionSheetIOS: {
+      showActionSheetWithOptions: (...args: unknown[]) => mockShowActionSheet(...args),
+    },
     StyleSheet: { create: <T,>(value: T): T => value },
   }
 })
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }))
+
+jest.mock("./AppPressable", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    AppPressable: ({ children, ...props }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("Pressable", props, children),
+  }
+})
 
 import { AppActionSheet, type AppActionSheetOption } from "./AppActionSheet"
 
@@ -53,6 +72,11 @@ function render(options: AppActionSheetOption[], overrides: { onClose?: () => vo
   })
   return { tree: tree!, onClose }
 }
+
+beforeEach(() => {
+  mockPlatform.OS = "android"
+  mockShowActionSheet.mockReset()
+})
 
 describe("AppActionSheet (DET-03/04: native '…' menu)", () => {
   test("renders the title and every option's label", () => {
@@ -85,8 +109,68 @@ describe("AppActionSheet (DET-03/04: native '…' menu)", () => {
 
   test("the backdrop and the cancel row both close without running an action", () => {
     const { tree, onClose } = render([{ label: "Renommer", onPress: jest.fn() }])
-    const cancel = tree.root.findByProps({ accessibilityLabel: "Annuler" })
-    act(() => cancel.props.onPress())
-    expect(onClose).toHaveBeenCalled()
+    const cancel = tree.root.findAll(
+      (node) =>
+        (node.type as unknown) === "Pressable" && node.props.accessibilityLabel === "Annuler",
+    )
+    expect(cancel).toHaveLength(2)
+    for (const button of cancel) act(() => button.props.onPress())
+    expect(onClose).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe("AppActionSheet on iOS: the system sheet", () => {
+  beforeEach(() => {
+    mockPlatform.OS = "ios"
+  })
+
+  test("draws nothing of its own and shows the system sheet when it becomes visible", () => {
+    const { tree } = render([
+      { label: "Renommer", onPress: jest.fn() },
+      { label: "Supprimer", destructive: true, onPress: jest.fn() },
+    ])
+    expect(tree.toJSON()).toBeNull()
+    expect(mockShowActionSheet).toHaveBeenCalledTimes(1)
+    expect(mockShowActionSheet.mock.calls[0][0]).toEqual({
+      title: "Un relevé",
+      options: ["Renommer", "Supprimer", "Annuler"],
+      cancelButtonIndex: 2,
+      destructiveButtonIndex: 1,
+    })
+  })
+
+  test("has no destructive index when no option is destructive", () => {
+    render([{ label: "Renommer", onPress: jest.fn() }])
+    expect(mockShowActionSheet.mock.calls[0][0].destructiveButtonIndex).toBeUndefined()
+  })
+
+  test("choosing an option closes, then runs its action", () => {
+    const first = jest.fn()
+    const second = jest.fn()
+    const { onClose } = render([
+      { label: "Renommer", onPress: first },
+      { label: "Supprimer", destructive: true, onPress: second },
+    ])
+    mockShowActionSheet.mock.calls[0][1](1)
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(second).toHaveBeenCalledTimes(1)
+    expect(first).not.toHaveBeenCalled()
+  })
+
+  test("cancelling closes without running an action", () => {
+    const onPress = jest.fn()
+    const { onClose } = render([{ label: "Renommer", onPress }])
+    mockShowActionSheet.mock.calls[0][1](1)
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onPress).not.toHaveBeenCalled()
+  })
+
+  test("a hidden sheet shows nothing", () => {
+    act(() => {
+      renderer.create(
+        <AppActionSheet visible={false} onClose={jest.fn()} options={[]} cancelLabel="Annuler" />,
+      )
+    })
+    expect(mockShowActionSheet).not.toHaveBeenCalled()
   })
 })

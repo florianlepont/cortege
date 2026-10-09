@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native"
-import { brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 
 export function createDetailStyles(theme: BrandTheme) {
@@ -16,10 +16,10 @@ export function createDetailStyles(theme: BrandTheme) {
     filterChipsRow: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     detailSection: {
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
     rowMeta: {
       ...brandTypography.meta,

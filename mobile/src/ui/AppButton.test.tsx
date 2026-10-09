@@ -104,7 +104,7 @@ describe("AppButton", () => {
     expect(root.findByType(Ionicons).props.color).toBe(defaultTheme.semanticColors.onCtaPrimary)
   })
 
-  test.each(["primary", "secondary", "danger", "dangerSoft", "glow"] as const)(
+  test.each(["primary", "secondary", "dangerSoft", "glow"] as const)(
     "%s keeps a hit area of at least 44 pt for sizes sm, md and lg",
     (variant) => {
       for (const size of ["sm", "md", "lg"] as const) {
@@ -136,7 +136,7 @@ describe("AppButton", () => {
     expect(render({ size: "lg" }).style.minHeight).toBe(50)
   })
 
-  test.each(["primary", "secondary", "danger", "dangerSoft", "glow"] as const)(
+  test.each(["primary", "secondary", "dangerSoft", "glow"] as const)(
     "pressing %s taps once and calls onPress",
     (variant) => {
       const onPress = jest.fn()

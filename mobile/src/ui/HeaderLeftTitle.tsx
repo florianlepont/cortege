@@ -1,4 +1,5 @@
 import { StyleSheet } from "react-native"
+import { brandTypeScale } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { AppText as Text } from "./AppText"
 
@@ -22,5 +23,5 @@ export function HeaderLeftTitle({ title }: { title: string }) {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 28, fontWeight: "800" },
+  title: { fontSize: brandTypeScale.title1.fontSize, fontWeight: "800" },
 })

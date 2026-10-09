@@ -66,7 +66,14 @@ jest.mock("../ui/AppSectionHeader", () => {
   }
 })
 
-jest.mock("../ui/AppStatusChip", () => ({ AppStatusChip: () => null }))
+// The status variant is not under test here: only the selectable chips render.
+jest.mock("../ui/AppChoiceChip", () => {
+  const actual = jest.requireActual<typeof import("../ui/AppChoiceChip")>("../ui/AppChoiceChip")
+  return {
+    AppChoiceChip: (props: { variant?: string }) =>
+      props.variant === "status" ? null : actual.AppChoiceChip(props as never),
+  }
+})
 
 jest.mock("../ui/AppField", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -95,36 +102,6 @@ jest.mock("./FactorAGenusRecognitionEntry", () => {
   }
 })
 
-// The help sheet is a Modal, which this file's minimal react-native mock does not provide: a stand-in
-// that prints the help and the hints as text when visible is enough to check what it is given.
-jest.mock("./FactorHelpSheet", () => {
-  const ReactRef = require("react") as typeof import("react")
-  return {
-    FactorHelpSheet: ({
-      visible,
-      help,
-      hints,
-    }: {
-      visible: boolean
-      help: string
-      hints: readonly string[]
-    }) =>
-      visible
-        ? ReactRef.createElement(
-            "View",
-            null,
-            ReactRef.createElement("Text", null, help),
-            ...hints.map((hint) => ReactRef.createElement("Text", { key: hint }, hint)),
-          )
-        : null,
-  }
-})
-
-type Node = renderer.ReactTestInstance
-
-const textOf = (node: Node): string =>
-  node.children.map((child) => (typeof child === "string" ? child : textOf(child))).join("")
-
 const field = (label: string, overrides: Partial<FactorField> = {}): FactorField => ({
   label,
   value: "",
@@ -142,6 +119,7 @@ const renderDetail = (
   methodVersion: IbpMethodVersion | null,
 ) => {
   let tree!: renderer.ReactTestRenderer
+  const onOpenHelp = jest.fn()
   act(() => {
     tree = renderer.create(
       <FactorDetailScreen
@@ -149,10 +127,11 @@ const renderDetail = (
         fields={fields}
         retainedScore={null}
         methodVersion={methodVersion}
+        onOpenHelp={onOpenHelp}
       />,
     )
   })
-  // Open the help sheet so the input hints render.
+  // Open the help sheet: its texts go to the route, which is where they are drawn.
   act(() => {
     tree.root
       .findAll(
@@ -162,9 +141,8 @@ const renderDetail = (
       )[0]
       .props.onPress()
   })
-  const texts = tree.root
-    .findAllByType("Text" as unknown as React.ElementType)
-    .map((node) => textOf(node))
+  const [help, hints] = onOpenHelp.mock.calls[0] as [string, string[]]
+  const texts = [help, ...hints]
   const inputs = tree.root.findAllByType("AppField" as unknown as React.ElementType)
   return { tree, texts, inputs }
 }
@@ -242,6 +220,7 @@ describe("FactorDetailScreen fields", () => {
           fields={[field("strata_count")]}
           retainedScore={null}
           methodVersion={IBP_METHOD_V3_2}
+          onOpenHelp={jest.fn()}
         />,
       )
     })
@@ -289,6 +268,7 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
           fields={[field("trees_per_ha")]}
           retainedScore={retainedScore as never}
           methodVersion={IBP_METHOD_V3_2}
+          onOpenHelp={jest.fn()}
         />,
       )
     })
@@ -343,7 +323,7 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
       styles.panel.gap,
       styles.fieldsList.gap,
       styles.hintsList.gap,
-      styles.sheet.gap,
+      styles.sheetContent.gap,
     ]) {
       expect((gap as number) % 4).toBe(0)
     }

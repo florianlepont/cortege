@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import {
+  brandRadius,
+  brandSpacing,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 import { FINISH_BAR } from "../survey-detail/finish-bar-layout"
 
@@ -79,7 +85,7 @@ export function createWizardStyles(theme: BrandTheme) {
     },
     lead: {
       ...brandTypography.sectionBody,
-      fontSize: 17,
+      fontSize: brandTypeScale.headline.fontSize,
       lineHeight: 25,
       color: theme.colors.textSecondary,
     },
@@ -98,7 +104,7 @@ export function createWizardStyles(theme: BrandTheme) {
       alignItems: "flex-start",
       gap: brandSpacing4.md,
       padding: brandSpacing4.md,
-      borderRadius: 22,
+      borderRadius: brandRadius.card,
       borderWidth: 1,
       borderColor: glass.cardBorder,
       backgroundColor: glass.cardFill,
@@ -112,7 +118,7 @@ export function createWizardStyles(theme: BrandTheme) {
     radio: {
       width: 24,
       height: 24,
-      marginTop: 2,
+      marginTop: brandSpacing4.xxs,
       borderRadius: 12,
       borderWidth: 2,
       borderColor: theme.colors.textSecondary,
@@ -142,7 +148,6 @@ export function createWizardStyles(theme: BrandTheme) {
     // A plain accent word next to the title, not a tag pill.
     recommended: {
       ...brandTypography.meta,
-      fontFamily: "Jost-SemiBold",
       color: theme.visual.accentText,
     },
     choiceHint: {

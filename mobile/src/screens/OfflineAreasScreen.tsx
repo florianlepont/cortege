@@ -1,9 +1,9 @@
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { Alert, Platform, ScrollView, StyleSheet, View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { PageTitle } from "../ui/PageTitle"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { brandColors, brandSpacing } from "../app/brand-tokens"
+import { brandColors, brandSpacing, brandSpacing4, brandTypeScale } from "../app/brand-tokens"
 import { useBrandTheme } from "../app/theme"
 import { formatAreaMegabytes } from "../app/formatters"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
@@ -12,6 +12,7 @@ import type { OfflineAreaSummary } from "../storage/offline-map"
 import { AppGroupedList, type AppGroupedListSection } from "../ui/AppGroupedList"
 import { useFrameLargeTitle } from "../ui/frame-large-title"
 import { accountStyles as styles } from "./account/styles"
+import { AppPressable } from "../ui/AppPressable"
 
 const t = fr.offlineMap.areas
 const manage = t.manage
@@ -61,7 +62,7 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
                       })}
                     </Text>
                   </View>
-                  <Pressable
+                  <AppPressable
                     onPress={() => confirmDelete(area)}
                     accessibilityRole="button"
                     accessibilityLabel={t.a11y.deleteArea(area.name)}
@@ -69,7 +70,7 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
                     style={rowStyles.delete}
                   >
                     <Ionicons name="trash-outline" size={20} color={brandColors.terracotta} />
-                  </Pressable>
+                  </AppPressable>
                 </View>
               ),
             })),
@@ -111,9 +112,9 @@ export function OfflineAreasScreen({ areas, onDeleteArea }: OfflineAreasScreenPr
 }
 
 const rowStyles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 56 },
-  info: { flex: 1, gap: 2 },
-  name: { fontSize: 17, fontWeight: "600" },
+  row: { flexDirection: "row", alignItems: "center", gap: brandSpacing4.smd, minHeight: 56 },
+  info: { flex: 1, gap: brandSpacing4.xxs },
+  name: { fontSize: brandTypeScale.headline.fontSize, fontWeight: "600" },
   meta: { fontSize: 14, lineHeight: 20 },
   delete: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
 })

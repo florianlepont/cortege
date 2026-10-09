@@ -1,11 +1,13 @@
+// Why custom: four selectable cards with an explanation each (IBP CAS 1 to 4); no native card radio exists, only the scale switch is a native Switch.
 import { useMemo } from "react"
-import { Pressable, StyleSheet, Switch, View } from "react-native"
+import { StyleSheet, Switch, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { IBP_CAS_VALUES, type IbpCas } from "@cortege/ibp-domain"
-import { brandRadius, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppText as Text } from "./AppText"
+import { AppPressable } from "./AppPressable"
 
 type CasPickerProps = {
   value: IbpCas | null
@@ -29,7 +31,7 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
       {IBP_CAS_VALUES.map((cas) => {
         const selected = value === cas
         return (
-          <Pressable
+          <AppPressable
             key={cas}
             style={[styles.card, selected ? styles.cardSelected : null]}
             onPress={() => onChange(cas)}
@@ -56,7 +58,7 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
               <Text style={styles.title}>{m.casLabels[cas]}</Text>
               <Text style={styles.caption}>{m.casCaptions[cas]}</Text>
             </View>
-          </Pressable>
+          </AppPressable>
         )
       })}
       <View style={styles.switchRow}>
@@ -81,12 +83,12 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     list: {
-      gap: 10,
+      gap: brandSpacing.sm,
     },
     card: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 12,
+      gap: brandSpacing4.smd,
       minHeight: 64,
       padding: 14,
       borderRadius: brandRadius.field,
@@ -101,7 +103,7 @@ function createStyles(theme: BrandTheme) {
     radio: {
       width: 22,
       height: 22,
-      marginTop: 2,
+      marginTop: brandSpacing4.xxs,
       borderRadius: 11,
       borderWidth: 2,
       borderColor: theme.colors.textSecondary,
@@ -114,11 +116,11 @@ function createStyles(theme: BrandTheme) {
     },
     copy: {
       flex: 1,
-      gap: 2,
+      gap: brandSpacing4.xxs,
     },
     title: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost-SemiBold",
+      fontFamily: brandTypography.meta.fontFamily,
       color: theme.colors.textPrimary,
     },
     caption: {
@@ -128,9 +130,9 @@ function createStyles(theme: BrandTheme) {
     switchRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
-      paddingHorizontal: 4,
-      paddingTop: 4,
+      gap: brandSpacing4.smd,
+      paddingHorizontal: brandSpacing4.xs,
+      paddingTop: brandSpacing4.xs,
     },
     switchLabel: {
       ...brandTypography.sectionBody,

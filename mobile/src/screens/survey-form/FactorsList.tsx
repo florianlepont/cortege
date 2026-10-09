@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { Pressable, View } from "react-native"
+import { View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { FACTOR_TITLES } from "../../app/constants"
@@ -15,6 +15,7 @@ import { createFormStyles } from "./styles"
 import { fr } from "../../i18n"
 
 export type { FactorProgress } from "../../app/types"
+import { AppPressable } from "../../ui/AppPressable"
 
 export function computeFactorProgress(
   factorSections: Record<FactorKey, FactorField[]>,
@@ -72,7 +73,7 @@ export function FactorTile({
       : fr.surveyForm.factors.pending
 
   return (
-    <Pressable
+    <AppPressable
       accessibilityRole="button"
       accessibilityLabel={fr.surveyForm.a11y.factorTile({ factor, title, state: stateText })}
       onPress={onPress}
@@ -101,7 +102,7 @@ export function FactorTile({
         {fr.surveyForm.factors.fieldsProgress({ filled: progress.filled, total: progress.total })}
       </Text>
       <Text style={factorStyles.factorTileState}>{stateText}</Text>
-    </Pressable>
+    </AppPressable>
   )
 }
 

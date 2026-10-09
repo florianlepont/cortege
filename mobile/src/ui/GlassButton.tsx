@@ -8,7 +8,12 @@ import {
   ViewStyle,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandComponentTokens, brandRadius, brandTypography } from "../app/brand-tokens"
+import {
+  brandComponentTokens,
+  brandRadius,
+  brandSpacing4,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppButtonSize, hitSlopFor } from "./AppButton"
@@ -196,7 +201,7 @@ function createStyles(theme: BrandTheme) {
     base: {
       borderRadius: brandRadius.pill,
       flexDirection: "row",
-      gap: 8,
+      gap: brandSpacing4.sm,
       alignItems: "center",
       justifyContent: "center",
     },

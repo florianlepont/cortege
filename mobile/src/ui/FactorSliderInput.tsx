@@ -1,11 +1,13 @@
+// Why custom: native @expo/ui Slider is iOS only (excluded from Android autolinking) and has no +/- step buttons, brand track or glove-friendly 5% taps; evaluation in docs/design/component-inventory-phase-23.md 9.
 import { useMemo, useRef, useState } from "react"
-import { GestureResponderEvent, LayoutChangeEvent, Pressable, StyleSheet, View } from "react-native"
+import { GestureResponderEvent, LayoutChangeEvent, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { brandInteraction, brandRadius, brandSpacing4 } from "../app/brand-tokens"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
+import { AppPressable } from "./AppPressable"
 
 const t = fr.factorInput.slider
 const TRACK_HEIGHT = 8
@@ -77,7 +79,7 @@ export function FactorSliderInput({
       testID={testID}
     >
       <View style={styles.row}>
-        <Pressable
+        <AppPressable
           accessibilityRole="button"
           accessibilityLabel={t.decrease({ label })}
           hitSlop={brandInteraction.hitTarget.min}
@@ -86,7 +88,7 @@ export function FactorSliderInput({
           testID={testID ? `${testID}-decrease` : undefined}
         >
           <Ionicons name="remove-outline" size={18} color={theme.colors.forest} />
-        </Pressable>
+        </AppPressable>
 
         <View
           onLayout={handleLayout}
@@ -117,7 +119,7 @@ export function FactorSliderInput({
           <View style={[styles.thumb, { left: Math.max(0, thumbLeft - THUMB_SIZE / 2) }]} />
         </View>
 
-        <Pressable
+        <AppPressable
           accessibilityRole="button"
           accessibilityLabel={t.increase({ label })}
           hitSlop={brandInteraction.hitTarget.min}
@@ -126,7 +128,7 @@ export function FactorSliderInput({
           testID={testID ? `${testID}-increase` : undefined}
         >
           <Ionicons name="add-outline" size={18} color={theme.colors.forest} />
-        </Pressable>
+        </AppPressable>
       </View>
     </FactorInputShell>
   )

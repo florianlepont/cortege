@@ -43,7 +43,7 @@ import { brandInteraction, brandMotion } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { SURVEY_ROW_RING_COLUMN } from "../survey-list/row-styles"
 import { ClusterListSheet } from "./ClusterListSheet"
-import { SHEET_CLOSE_SIZE } from "./SheetCloseButton"
+import { SHEET_CLOSE_SIZE } from "./GlassIconButton"
 
 const t = fr.publicMap
 

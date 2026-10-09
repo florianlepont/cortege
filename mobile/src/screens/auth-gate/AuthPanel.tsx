@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View } from "react-native"
+import { KeyboardAvoidingView, Linking, Platform, ScrollView, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { LEGAL_PRIVACY_URL, LEGAL_TERMS_URL } from "../../app/auth0-config"
 import { brandSpacing } from "../../app/brand-tokens"
@@ -8,6 +8,7 @@ import { fr } from "../../i18n"
 import { feedback } from "../../ui/feedback"
 import { GlassButton } from "../../ui/GlassButton"
 import { createAuthStyles } from "./styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 const WEBSITE_URL = "https://etatssauvages.org"
 const texts = fr.authGate
@@ -76,7 +77,7 @@ export function AuthPanel({
               testID="auth-submit"
             />
 
-            <Pressable
+            <AppPressable
               onPress={onForgotPasswordPress}
               style={authStyles.forgotPasswordLink}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -85,7 +86,7 @@ export function AuthPanel({
               testID="auth-forgot-password"
             >
               <Text style={authStyles.forgotPasswordText}>{texts.panel.forgotPassword}</Text>
-            </Pressable>
+            </AppPressable>
 
             <GlassButton
               label={texts.panel.register}

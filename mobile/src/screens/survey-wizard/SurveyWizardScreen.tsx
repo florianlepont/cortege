@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Pressable, ScrollView, View } from "react-native"
+import { ScrollView, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import {
@@ -24,6 +24,7 @@ import { useFinishBarHeight } from "../survey-detail/useFinishBarHeight"
 import type { SurveyFormMethod } from "./method"
 import { createWizardStyles } from "./wizard.styles"
 import { WizardNativeHeader } from "./WizardNativeHeader"
+import { AppPressable } from "../../ui/AppPressable"
 
 const w = fr.surveyForm.wizard
 
@@ -146,7 +147,7 @@ export function SurveyWizardScreen({
       >
         {nativeHeader ? null : (
           <View style={styles.topRow}>
-            <Pressable
+            <AppPressable
               style={styles.iconButton}
               onPress={goBack}
               accessibilityRole="button"
@@ -158,7 +159,7 @@ export function SurveyWizardScreen({
                 size={22}
                 color={theme.semanticColors.textStrong}
               />
-            </Pressable>
+            </AppPressable>
             <Text style={styles.stepLabel}>{stepLabel}</Text>
             <View style={styles.topSpacer} />
           </View>
@@ -211,7 +212,7 @@ export function SurveyWizardScreen({
             ? METHOD_CHOICES.map((choice) => {
                 const selected = resolved === choice.version
                 return (
-                  <Pressable
+                  <AppPressable
                     key={choice.version}
                     style={[styles.choiceCard, selected ? styles.choiceCardSelected : null]}
                     onPress={method.locked ? undefined : () => method.setVersion(choice.version)}
@@ -243,7 +244,7 @@ export function SurveyWizardScreen({
                       </View>
                       <Text style={styles.choiceHint}>{choice.hint}</Text>
                     </View>
-                  </Pressable>
+                  </AppPressable>
                 )
               })
             : null}

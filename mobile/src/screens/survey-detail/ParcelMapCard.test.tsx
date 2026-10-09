@@ -4,6 +4,7 @@ import { brandRadius } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { ParcelMapCard } from "./ParcelMapCard"
+import { pressableLook as look } from "../../../test/pressable-look"
 
 const originalConsoleError = console.error
 
@@ -68,17 +69,16 @@ function render(props: Partial<React.ComponentProps<typeof ParcelMapCard>> = {})
 const childTypes = (card: ReactTestInstance): string[] =>
   card.children.map((child) => String((child as ReactTestInstance).type))
 
-type Style = Record<string, unknown>
-function flatten(style: unknown): Style {
-  if (Array.isArray(style)) return style.reduce<Style>((acc, s) => ({ ...acc, ...flatten(s) }), {})
-  return (style as Style | undefined | null) ?? {}
-}
-
 describe("ParcelMapCard", () => {
   test("draws the static contours first, so the live map paints over them", () => {
     const tree = render({ onPress: jest.fn() })
     const card = tree.root.findAll((n) => (n.type as unknown) === "Pressable")[0]
-    expect(childTypes(card)).toEqual(["ContourLines", "ParcelMap", "MapOverlayCorners"])
+    // The pressable card wraps its children in the scaling view of AppPressable.
+    expect(childTypes(card.findAll((n) => (n.type as unknown) === "View")[0])).toEqual([
+      "ContourLines",
+      "ParcelMap",
+      "MapOverlayCorners",
+    ])
     const contours = tree.root.findByType("ContourLines" as never)
     expect(contours.props.animated).toBe(false)
   })
@@ -86,7 +86,7 @@ describe("ParcelMapCard", () => {
   test("the card clips to its radius and carries the glass look", () => {
     const tree = render({ onPress: jest.fn() })
     const card = tree.root.findAll((n) => (n.type as unknown) === "Pressable")[0]
-    expect(flatten(card.props.style)).toMatchObject({
+    expect(look(card)).toMatchObject({
       overflow: "hidden",
       borderRadius: brandRadius.card,
       backgroundColor: defaultTheme.visual.glass.cardFill,

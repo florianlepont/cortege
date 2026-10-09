@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useRef } from "react"
-import { Pressable } from "react-native"
+import {} from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import Swipeable from "react-native-gesture-handler/Swipeable"
@@ -8,11 +8,12 @@ import { formatShortDateTime, formatSyncErrorForUser } from "../../app/formatter
 import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/survey-logic"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
-import { AppStatusChip } from "../../ui/AppStatusChip"
+import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { feedback } from "../../ui/feedback"
 import { createRowStyles } from "./row-styles"
 import { RowIndicator, resolveSurveyRowTone } from "./row-indicator"
 import { SurveyRowFrame } from "./SurveyRowFrame"
+import { AppPressable } from "../../ui/AppPressable"
 
 export type SurveyRowProps = {
   survey: LocalSurvey
@@ -64,7 +65,9 @@ function SurveyRowComponent({
   // LIST-02: destructive action on the right (iOS convention), revealed by swiping left.
   const renderRightActions = useCallback(
     () => (
-      <Pressable
+      <AppPressable
+        disableScale
+        disableRipple
         accessibilityRole="button"
         accessibilityLabel={deleteLabel}
         onPress={handleDelete}
@@ -75,7 +78,7 @@ function SurveyRowComponent({
       >
         <Ionicons name="trash-outline" size={18} color={theme.colors.white} />
         <Text style={styles.surveyDeleteActionText}>{t.row.deleteAction}</Text>
-      </Pressable>
+      </AppPressable>
     ),
     [deleteLabel, handleDelete, styles, theme],
   )
@@ -126,7 +129,8 @@ function SurveyRowComponent({
         title={survey.site_name?.trim() || fr.common.untitledSurvey}
         status={
           <>
-            <AppStatusChip
+            <AppChoiceChip
+              variant="status"
               label={uiStatusLabel}
               tone={rowTone}
               labelStyle={rowTone === "danger" ? styles.badgeTextDanger : undefined}

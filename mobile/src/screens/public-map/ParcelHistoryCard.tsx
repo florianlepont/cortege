@@ -13,7 +13,7 @@ import { ScoreRing } from "../../ui/ScoreRing"
 import { createRowStyles } from "../survey-list/row-styles"
 import { SurveyRowFrame } from "../survey-list/SurveyRowFrame"
 import { PanelRowEntrance } from "./PanelRowEntrance"
-import { SheetCloseButton } from "./SheetCloseButton"
+import { GlassIconButton } from "./GlassIconButton"
 import { createPanelStyles } from "./styles"
 
 const t = fr.parcelHistory
@@ -110,7 +110,8 @@ export const ParcelHistoryCard = memo(function ParcelHistoryCard({
       <AppSectionHeader
         title={t.title}
         trailing={
-          <SheetCloseButton
+          <GlassIconButton
+            variant="close"
             accessibilityLabel={fr.publicMap.a11y.closeParcelHistory}
             onPress={onClose}
           />

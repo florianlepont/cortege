@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useMemo } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import {
   brandInteraction,
   brandRadius,
@@ -13,7 +13,7 @@ import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
-import { AppStatusChip } from "../../ui/AppStatusChip"
+import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppText as Text } from "../../ui/AppText"
 import { EntranceView } from "../../ui/EntranceView"
 import { feedback } from "../../ui/feedback"
@@ -21,7 +21,8 @@ import { RowIndicator, resolveSurveyRowTone } from "../survey-list/row-indicator
 import { createRowStyles } from "../survey-list/row-styles"
 import { resolveRowScore } from "../survey-list/row-score"
 import { HOME_GAPS, RECENT_LAYOUT } from "./layout-budget"
-import { RecentSurveyRow } from "./RecentSurveyRow"
+import { SurveyRowFrame } from "../survey-list/SurveyRowFrame"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.recent
 const rowText = fr.surveyList
@@ -48,7 +49,7 @@ type RecentSurveysSectionProps = {
 /**
  * D-20c: "Mes relevés récents", the three latest surveys of Accueil under the resume card. Compact
  * (12.2-14, owner check: the section pushed the nearby map out of the first screen): the rows are
- * slim (`RecentSurveyRow`, 52 pt) inside one glass card and divided by hairlines, with the parts of a
+ * slim (`SurveyRowFrame density="compact"`, 52 pt) inside one glass card and divided by hairlines, with the parts of a
  * Mes Relevés row (accent bar, smaller ring, title, status chip and date, no photo, the green wave on
  * press); a press opens the survey the same way. "Tout voir" goes to the list. Nothing shows without
  * a survey. Mes Relevés and the search page keep their own, taller rows (D-23).
@@ -81,7 +82,7 @@ export function RecentSurveysSection({
         <AppSectionHeader
           title={t.title}
           trailing={
-            <Pressable
+            <AppPressable
               style={styles.seeAll}
               onPress={onSeeAll}
               accessibilityRole="button"
@@ -89,7 +90,7 @@ export function RecentSurveysSection({
               testID="home-recent-see-all"
             >
               <Text style={styles.seeAllLabel}>{t.seeAll}</Text>
-            </Pressable>
+            </AppPressable>
           }
           style={styles.header}
         />
@@ -109,7 +110,8 @@ export function RecentSurveysSection({
                   <View style={styles.separator} testID="home-recent-separator" />
                 ) : null}
                 <EntranceView index={firstIndex + 1 + position}>
-                  <RecentSurveyRow
+                  <SurveyRowFrame
+                    density="compact"
                     testID={`home-recent-row-${survey.id}`}
                     accessibilityLabel={rowText.a11y.openSurvey({
                       name: title,
@@ -131,7 +133,8 @@ export function RecentSurveysSection({
                     title={title}
                     status={
                       <>
-                        <AppStatusChip
+                        <AppChoiceChip
+                          variant="status"
                           label={label}
                           tone={tone}
                           style={styles.chip}

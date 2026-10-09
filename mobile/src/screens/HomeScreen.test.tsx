@@ -412,8 +412,6 @@ describe("HomeScreen", () => {
         marginTop: NEW_SURVEY_LAYOUT.gap,
       })
 
-      expect(tree.root.findAllByType("SurveyProgressCard" as never)).toHaveLength(0)
-
       const onOpenSurvey = jest.fn()
       act(() => tree.unmount())
       mount(makeProps({ surveys: [draft], onOpenSurvey }))

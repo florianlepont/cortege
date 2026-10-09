@@ -5,7 +5,7 @@ import * as ImagePicker from "expo-image-picker"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons"
-import { brandSpacing, brandTypography } from "../../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
@@ -178,7 +178,7 @@ function createStyles(theme: BrandTheme) {
     },
     rowCopy: {
       flex: 1,
-      gap: 2,
+      gap: brandSpacing4.xxs,
     },
     rowTitle: {
       ...brandTypography.input,
@@ -191,7 +191,7 @@ function createStyles(theme: BrandTheme) {
     rowStatus: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: brandSpacing.xs,
       flexWrap: "wrap",
     },
     rowStatusGranted: {

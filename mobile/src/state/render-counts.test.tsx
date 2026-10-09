@@ -449,6 +449,7 @@ jest.mock("../screens/SurveyHistoryScreen", () => ({ SurveyHistoryScreen: () => 
 jest.mock("../screens/survey-wizard/SurveyWizardScreen", () => ({
   SurveyWizardScreen: mockProbe("surveyForm"),
 }))
+jest.mock("../screens/FactorHelpSheet", () => ({ FactorHelpSheet: () => null }))
 jest.mock("../screens/FactorDetailScreen", () => ({
   FactorDetailScreen: mockProbe("factorDetail"),
 }))

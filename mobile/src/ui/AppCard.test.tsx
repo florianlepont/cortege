@@ -103,15 +103,26 @@ describe("AppCard", () => {
     expect(surface.props.surface).toEqual(dark.visual.mapPanel)
   })
 
-  test("variant panel is unchanged", () => {
-    const style = flatten(render({ variant: "panel" }).view.props.style)
+  test("the default variant is the elevated panel", () => {
+    const style = flatten(render().view.props.style)
     expect(style.backgroundColor).toBe(defaultTheme.colors.panel)
-    expect(style).not.toHaveProperty("boxShadow")
-    expect(style).not.toHaveProperty("borderWidth")
+    expect(style).toMatchObject({
+      borderWidth: 1,
+      borderColor: defaultTheme.componentColors.card.panelBorder,
+    })
   })
 
   test("padding and style overrides apply", () => {
     const style = flatten(render({ padding: 7, style: { margin: 3 } }).view.props.style)
     expect(style).toMatchObject({ padding: 7, margin: 3 })
+  })
+
+  test("the radius prop names the corner: card (22, default) or field", () => {
+    expect(flatten(render().view.props.style).borderRadius).toBe(brandRadius.card)
+    expect(flatten(render({ radius: "field" }).view.props.style).borderRadius).toBe(
+      brandRadius.field,
+    )
+    const glass = render({ glass: true, radius: "field" }).surface
+    expect(flatten(glass.props.style).borderRadius).toBe(brandRadius.field)
   })
 })

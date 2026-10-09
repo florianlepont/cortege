@@ -1,8 +1,12 @@
 import { memo, useMemo } from "react"
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
+import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { brandInteraction, brandRadius, brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandRadius,
+  brandSpacing4,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { GlassSurface } from "../../ui/GlassSurface"
 
@@ -27,7 +31,7 @@ type MapInfoPillProps = {
 /** A short fact about the map (a count), bottom left. */
 export const MapInfoPill = memo(function MapInfoPill({ label, style }: MapInfoPillProps) {
   const theme = useBrandTheme()
-  const styles = useMemo(() => createStyles(theme), [theme])
+  const styles = useMemo(() => createMapChipStyles(theme), [theme])
   return (
     <GlassSurface
       tone="auto"
@@ -54,7 +58,7 @@ type MapTitlePillProps = {
  */
 export const MapTitlePill = memo(function MapTitlePill({ label, top }: MapTitlePillProps) {
   const theme = useBrandTheme()
-  const styles = useMemo(() => createStyles(theme), [theme])
+  const styles = useMemo(() => createMapChipStyles(theme), [theme])
   return (
     <GlassSurface
       tone="auto"
@@ -63,44 +67,6 @@ export const MapTitlePill = memo(function MapTitlePill({ label, top }: MapTitleP
       style={[styles.titlePill, { top }]}
     >
       <Text style={styles.titleText}>{label}</Text>
-    </GlassSurface>
-  )
-})
-
-type MapActionPillProps = {
-  icon: keyof typeof Ionicons.glyphMap
-  label: string
-  accessibilityLabel: string
-  onPress: () => void
-}
-
-/** An action offered on a map (see it on the map, edit the parcels), bottom right. */
-export const MapActionPill = memo(function MapActionPill({
-  icon,
-  label,
-  accessibilityLabel,
-  onPress,
-}: MapActionPillProps) {
-  const theme = useBrandTheme()
-  const styles = useMemo(() => createStyles(theme), [theme])
-  return (
-    <GlassSurface
-      tone="auto"
-      interactive
-      surface={theme.visual.mapControl.glass}
-      style={styles.pill}
-    >
-      <Pressable
-        style={styles.actionHit}
-        hitSlop={{ top: MAP_CONTROL_HIT_SLOP, bottom: MAP_CONTROL_HIT_SLOP }}
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
-      >
-        {/* The map control glyph colour: light moss on the dark map glass (12.2-18, 12.2-19). */}
-        <Ionicons name={icon} size={18} color={theme.visual.mapControl.icon} />
-        <Text style={styles.pillText}>{label}</Text>
-      </Pressable>
     </GlassSurface>
   )
 })
@@ -138,10 +104,11 @@ const cornerStyles = StyleSheet.create({
     padding: MAP_EDGE,
   },
   left: { alignItems: "flex-start" },
-  right: { alignItems: "flex-end", gap: 8 },
+  right: { alignItems: "flex-end", gap: brandSpacing4.sm },
 })
 
-function createStyles(theme: BrandTheme) {
+/** Styles shared with `GlassIconButton` (the "map-pill" variant draws the same pill). */
+export function createMapChipStyles(theme: BrandTheme) {
   return StyleSheet.create({
     pill: {
       height: MAP_PILL_HEIGHT,
@@ -174,7 +141,7 @@ function createStyles(theme: BrandTheme) {
       height: MAP_PILL_HEIGHT,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
   })
 }

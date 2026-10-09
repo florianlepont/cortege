@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native"
 import {
+  brandDefaultFontFamily,
   brandInteraction,
   brandRadius,
   brandSpacing4,
@@ -8,7 +9,6 @@ import {
 import { BrandTheme } from "../../app/theme"
 
 const BADGE = 32
-const TRACK = 8
 
 /** Styles of the "Score IBP" page: the total with its two sub-scores, then one row per factor. */
 export function createScoreStyles(theme: BrandTheme) {
@@ -51,16 +51,6 @@ export function createScoreStyles(theme: BrandTheme) {
     subScoreValue: {
       ...brandTypography.input,
       color: theme.colors.textPrimary,
-    },
-    track: {
-      height: TRACK,
-      borderRadius: brandRadius.bar,
-      overflow: "hidden",
-      backgroundColor: theme.visual.score.track,
-    },
-    fill: {
-      height: TRACK,
-      borderRadius: brandRadius.bar,
     },
     chartCard: {
       gap: brandSpacing4.smd,
@@ -110,7 +100,7 @@ export function createScoreStyles(theme: BrandTheme) {
       backgroundColor: theme.colors.errorSoft,
     },
     badgeText: {
-      fontFamily: "Sora-Bold",
+      fontFamily: brandTypography.button.fontFamily,
       fontSize: 14,
       color: theme.semanticColors.textStrong,
     },
@@ -128,11 +118,11 @@ export function createScoreStyles(theme: BrandTheme) {
     },
     rowPoints: {
       ...brandTypography.sectionBody,
-      fontFamily: "Jost-SemiBold",
+      fontFamily: brandTypography.meta.fontFamily,
       color: theme.colors.textPrimary,
     },
     rowPointsMax: {
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
     },
     rowPending: {

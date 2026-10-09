@@ -1,7 +1,7 @@
 import { useMemo } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
-import { brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { hasMixedMethodVersions, type NearbyParcelsState } from "../../hooks/useNearbyParcels"
 import { fr } from "../../i18n"
@@ -9,6 +9,7 @@ import { ParcelMap } from "../../map/maplibre/ParcelMap"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { ScoreRing } from "../../ui/ScoreRing"
 import { MAP_EDGE } from "../public-map/MapChips"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.nearby
 const sectorT = fr.home.sector
@@ -48,7 +49,7 @@ export function NearbyMapCard({ nearby, height, onPress }: NearbyMapCardProps) {
   )
 
   return (
-    <Pressable
+    <AppPressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={t.seeMapLabel}
@@ -99,7 +100,7 @@ export function NearbyMapCard({ nearby, height, onPress }: NearbyMapCardProps) {
           </>
         )}
       </GlassSurface>
-    </Pressable>
+    </AppPressable>
   )
 }
 
@@ -118,7 +119,7 @@ function createStyles(theme: BrandTheme) {
       left: MAP_EDGE,
       borderRadius: 18,
       paddingHorizontal: 14,
-      paddingVertical: 8,
+      paddingVertical: brandSpacing4.sm,
       flexDirection: "row",
       alignItems: "center",
       gap: brandSpacing4.smd,
@@ -152,7 +153,7 @@ function createStyles(theme: BrandTheme) {
       bottom: MAP_EDGE,
       borderRadius: 20,
       paddingHorizontal: 14,
-      paddingVertical: 10,
+      paddingVertical: brandSpacing.sm,
     },
     summaryTitle: {
       ...brandTypography.button,

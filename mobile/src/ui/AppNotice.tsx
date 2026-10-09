@@ -1,9 +1,10 @@
 import { ReactNode, useMemo } from "react"
-import { Pressable, StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
+import { StyleProp, StyleSheet, TextStyle, View, ViewStyle } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
-import { brandTypography } from "../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
+import { AppPressable } from "./AppPressable"
 
 type AppNoticeTone = "info" | "success" | "warning" | "danger"
 
@@ -54,7 +55,9 @@ export function AppNotice({
         <Text style={[styles.message, textTone, messageStyle]}>{message}</Text>
       </View>
       {action ? (
-        <Pressable
+        <AppPressable
+          disableScale
+          disableRipple
           onPress={action.onPress}
           accessibilityRole="button"
           accessibilityLabel={action.accessibilityLabel ?? action.label}
@@ -62,7 +65,7 @@ export function AppNotice({
           style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
         >
           <Text style={[styles.actionText, textTone]}>{action.label}</Text>
-        </Pressable>
+        </AppPressable>
       ) : null}
     </View>
   )
@@ -73,11 +76,11 @@ function createStyles(theme: BrandTheme) {
     base: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 8,
+      gap: brandSpacing4.sm,
       borderRadius: 16,
       borderWidth: 1,
       paddingHorizontal: 14,
-      paddingVertical: 12,
+      paddingVertical: brandSpacing4.smd,
     },
     info: {
       borderColor: theme.componentColors.notice.infoBorder,
@@ -101,7 +104,7 @@ function createStyles(theme: BrandTheme) {
     },
     copy: {
       flex: 1,
-      gap: 2,
+      gap: brandSpacing4.xxs,
     },
     title: {
       ...brandTypography.label,
@@ -124,7 +127,7 @@ function createStyles(theme: BrandTheme) {
       alignSelf: "center",
       minHeight: 32,
       justifyContent: "center",
-      paddingHorizontal: 10,
+      paddingHorizontal: brandSpacing.sm,
     },
     actionPressed: {
       opacity: 0.7,

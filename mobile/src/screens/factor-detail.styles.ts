@@ -1,5 +1,11 @@
 import { StyleSheet } from "react-native"
-import { brandOnDarkColors, brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import {
+  brandRadius,
+  brandSpacing,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../app/brand-tokens"
 import { BrandTheme } from "../app/theme"
 
 // Field sizes (D-05): the score line and the help link keep their heights.
@@ -46,7 +52,7 @@ export function createDetailStyles(theme: BrandTheme) {
     },
     scoreLinePoints: {
       ...brandTypography.sectionTitle,
-      fontSize: 17,
+      fontSize: brandTypeScale.headline.fontSize,
       color: theme.semanticColors.textStrong,
     },
     helpLink: {
@@ -64,7 +70,7 @@ export function createDetailStyles(theme: BrandTheme) {
       gap: brandSpacing4.smd,
     },
     fieldBlock: {
-      gap: 6,
+      gap: brandSpacing.xs,
     },
     fieldLabel: {
       ...brandTypography.label,
@@ -72,21 +78,16 @@ export function createDetailStyles(theme: BrandTheme) {
     },
     input: {
       paddingHorizontal: 14,
-      paddingVertical: 12,
+      paddingVertical: brandSpacing4.smd,
     },
     // The help sheet.
-    sheetBackdrop: {
-      flex: 1,
-      justifyContent: "flex-end",
-      backgroundColor: brandOnDarkColors.heroScrimOnDark,
-    },
     sheet: {
-      borderTopLeftRadius: 26,
-      borderTopRightRadius: 26,
-      maxHeight: "80%",
+      flex: 1,
       backgroundColor: theme.semanticColors.backgroundCanvas,
+    },
+    sheetContent: {
       paddingHorizontal: 20,
-      paddingTop: 16,
+      paddingTop: brandSpacing4.md,
       paddingBottom: 34,
       gap: brandSpacing4.md,
     },
@@ -97,7 +98,7 @@ export function createDetailStyles(theme: BrandTheme) {
     },
     sheetTitle: {
       ...brandTypography.sectionTitle,
-      fontSize: 22,
+      fontSize: brandTypeScale.title2.fontSize,
       color: theme.semanticColors.textStrong,
     },
     sheetClose: {

@@ -39,7 +39,7 @@ function flatten(style: unknown): Style {
 
 import * as reanimated from "../../test/react-native-reanimated.mock"
 import { defaultTheme } from "../app/theme"
-import { GlowBar } from "./GlowBar"
+import { ProgressBar } from "./ProgressBar"
 
 const withDelaySpy = jest.spyOn(reanimated, "withDelay")
 const withTimingSpy = jest.spyOn(reanimated, "withTiming")
@@ -50,16 +50,16 @@ afterEach(() => {
   withTimingSpy.mockClear()
 })
 
-function render(props: Partial<React.ComponentProps<typeof GlowBar>> = {}) {
+function render(props: { ratio?: number; animate?: boolean; delayMs?: number } = {}) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<GlowBar ratio={0.5} {...props} />)
+    tree = renderer.create(<ProgressBar variant="glow" ratio={0.5} {...props} />)
   })
   const views = tree!.root.findAll((n) => (n.type as unknown) === "View")
   return { track: views[0], fill: flatten(views[1].props.style) }
 }
 
-describe("GlowBar", () => {
+describe("ProgressBar glow", () => {
   test.each([
     [0.5, "50%"],
     [1.4, "100%"],
@@ -119,5 +119,49 @@ describe("GlowBar", () => {
     expect(fill.transform).toEqual([{ scaleX: 1 }])
     expect(withTimingSpy).not.toHaveBeenCalled()
     expect(withDelaySpy).not.toHaveBeenCalled()
+  })
+})
+
+describe("ProgressBar plain", () => {
+  function renderPlain(percent: number, fillRadius?: number) {
+    let tree: renderer.ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(
+        <ProgressBar
+          variant="plain"
+          percent={percent}
+          height={6}
+          radius={3}
+          fillRadius={fillRadius}
+          trackColor="#111111"
+          fillColor="#222222"
+          testID="track"
+          fillTestID="fill"
+        />,
+      )
+    })
+    const views = tree!.root.findAll((n) => (n.type as unknown) === "View")
+    return { track: flatten(views[0].props.style), fill: flatten(views[1].props.style) }
+  }
+
+  test.each([
+    [40, "40%"],
+    [140, "100%"],
+    [-5, "0%"],
+  ])("percent %s gives a fill width of %s", (percent, width) => {
+    expect(renderPlain(percent).fill.width).toBe(width)
+  })
+
+  test("the track clips and carries the given geometry and colours, the fill is square by default", () => {
+    const { track, fill } = renderPlain(50)
+    expect(track).toMatchObject({
+      height: 6,
+      borderRadius: 3,
+      overflow: "hidden",
+      backgroundColor: "#111111",
+    })
+    expect(fill).toMatchObject({ height: 6, backgroundColor: "#222222" })
+    expect(fill.borderRadius).toBeUndefined()
+    expect(renderPlain(50, 4).fill.borderRadius).toBe(4)
   })
 })

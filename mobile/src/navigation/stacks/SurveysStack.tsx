@@ -6,6 +6,7 @@ import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
+import { FactorHelpRoute } from "../routes/FactorHelpRoute"
 import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { ParcelSelectionRoute } from "../routes/ParcelSelectionRoute"
 import { SurveyContextRoute } from "../routes/SurveyContextRoute"
@@ -20,6 +21,7 @@ import type { SurveysStackParamList } from "../types"
 import { usesNativeLargeTitle } from "../large-title"
 import {
   createBaseStackScreenOptions,
+  factorHelpScreenOptions,
   hiddenNativeTitle,
   nativeLargeTitle,
   pageTitleOptions,
@@ -163,6 +165,11 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               // D-19: the stack's transparent halo header; FactorDetailRoute draws the ScreenFrame.
             })}
             component={FactorDetailRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyFactorHelp"
+            options={factorHelpScreenOptions(theme)}
+            component={FactorHelpRoute}
           />
           <SurveysStack.Screen
             name="surveyParcels"

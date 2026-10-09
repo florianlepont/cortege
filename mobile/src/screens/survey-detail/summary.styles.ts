@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native"
 import {
+  brandDefaultFontFamily,
   brandRadius,
   brandShadow,
   brandSpacing4,
@@ -49,7 +50,7 @@ export function createSummaryStyles(theme: BrandTheme) {
     },
     historyRowMeta: {
       ...brandTypeScale.footnote,
-      fontFamily: "Jost-Regular",
+      fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
     },
     historyDeltaRow: {

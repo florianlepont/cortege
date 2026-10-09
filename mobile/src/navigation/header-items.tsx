@@ -15,7 +15,7 @@ export function titleHeaderItems(title: string): NativeStackHeaderItem[] {
 
 export function iconHeaderButton(options: {
   label: string
-  sfSymbol: "plus" | "person.crop.circle"
+  sfSymbol: "plus" | "person.crop.circle" | "gearshape"
   tintColor: string
   onPress: () => void
 }): NativeStackHeaderItem {

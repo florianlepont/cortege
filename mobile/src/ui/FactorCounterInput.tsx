@@ -1,5 +1,6 @@
+// Why custom: no native stepper with a typeable value, 56 pt glove-sized buttons and the brand look; the SwiftUI Stepper is iOS only.
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Pressable, StyleSheet, TextInput, View } from "react-native"
+import { StyleSheet, TextInput, View } from "react-native"
 import { AppText as Text } from "./AppText"
 import { Ionicons } from "@expo/vector-icons"
 import { brandInteraction, brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
@@ -7,6 +8,7 @@ import { parseFiniteNumberInput } from "../app/number-utils"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { FactorInputShell, resolveFactorInputState } from "./FactorInputShell"
+import { AppPressable } from "./AppPressable"
 
 const BUTTON_SIZE = 56
 const REPEAT_INTERVAL_MS = 120
@@ -112,7 +114,7 @@ export function FactorCounterInput({
       testID={testID}
     >
       <View style={styles.row}>
-        <Pressable
+        <AppPressable
           accessibilityRole="button"
           accessibilityLabel={t.decrease({ label })}
           hitSlop={brandInteraction.hitTarget.min}
@@ -122,7 +124,7 @@ export function FactorCounterInput({
           testID={testID ? `${testID}-decrease` : undefined}
         >
           <Ionicons name="remove-outline" size={22} color={theme.colors.forest} />
-        </Pressable>
+        </AppPressable>
 
         {editing ? (
           <TextInput
@@ -136,7 +138,7 @@ export function FactorCounterInput({
             testID={testID ? `${testID}-input` : undefined}
           />
         ) : (
-          <Pressable
+          <AppPressable
             accessibilityRole="button"
             accessibilityLabel={t.editValue({ label, value: hasValue ? value : "0" })}
             onPress={openEdit}
@@ -144,10 +146,10 @@ export function FactorCounterInput({
             testID={testID ? `${testID}-value` : undefined}
           >
             <Text style={styles.value}>{hasValue ? value : "0"}</Text>
-          </Pressable>
+          </AppPressable>
         )}
 
-        <Pressable
+        <AppPressable
           accessibilityRole="button"
           accessibilityLabel={t.increase({ label })}
           hitSlop={brandInteraction.hitTarget.min}
@@ -157,7 +159,7 @@ export function FactorCounterInput({
           testID={testID ? `${testID}-increase` : undefined}
         >
           <Ionicons name="add-outline" size={22} color={theme.colors.forest} />
-        </Pressable>
+        </AppPressable>
       </View>
     </FactorInputShell>
   )

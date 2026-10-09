@@ -38,7 +38,7 @@ jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
 jest.mock("../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("../ui/AppGroupedList", () => ({ AppGroupedList: "AppGroupedList" }))
 jest.mock("../ui/PageTitle", () => ({ PageTitle: "PageTitle" }))
-jest.mock("./public-map/MapChips", () => ({ MapActionPill: "MapActionPill" }))
+jest.mock("./public-map/GlassIconButton", () => ({ GlassIconButton: "GlassIconButton" }))
 jest.mock("./survey-detail/ParcelMapCard", () => ({ ParcelMapCard: "ParcelMapCard" }))
 jest.mock("./survey-detail/ScoringContextEditor", () => ({
   ScoringContextEditor: "ScoringContextEditor",
@@ -94,13 +94,13 @@ describe("SurveyContextScreen (variant I)", () => {
     const scroll = tree.root.findByType("ScrollView" as never)
     const order = scroll.children.map((child) => (child as { type: unknown }).type)
     expect(order).toEqual(["PageTitle", "ParcelMapCard", "AppGroupedList", "ScoringContextEditor"])
-    expect(tree.root.findByType("MapActionPill" as never).props.icon).toBe("pencil-outline")
+    expect(tree.root.findByType("GlassIconButton" as never).props.icon).toBe("pencil-outline")
   })
 
   test("a finished survey has no edit action on the map", () => {
     mockCanEdit = false
     const tree = render()
-    expect(tree.root.findAllByType("MapActionPill" as never)).toHaveLength(0)
+    expect(tree.root.findAllByType("GlassIconButton" as never)).toHaveLength(0)
   })
 
   test("without parcel it says so instead of listing", () => {

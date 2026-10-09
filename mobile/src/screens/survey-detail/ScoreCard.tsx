@@ -17,7 +17,7 @@ import { AnimatedNumber } from "../../ui/AnimatedNumber"
 import { AppText as Text } from "../../ui/AppText"
 import type { ForestTextBlock } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
-import { GlowBar } from "../../ui/GlowBar"
+import { ProgressBar } from "../../ui/ProgressBar"
 import { GradientNumeral } from "../../ui/GradientNumeral"
 import { HaloPulse } from "../../ui/HaloPulse"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
@@ -186,7 +186,7 @@ export function ScoreCard({
           {scores ? (
             <>
               <View style={styles.scoreBar}>
-                <GlowBar ratio={scoreRatio(scores.ibp_total)} animate />
+                <ProgressBar variant="glow" ratio={scoreRatio(scores.ibp_total)} animate />
               </View>
               <View style={styles.scoreTiles}>
                 <ScoreTile

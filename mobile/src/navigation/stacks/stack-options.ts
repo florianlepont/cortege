@@ -132,3 +132,19 @@ export function wizardHeaderOptions(theme: BrandTheme): NativeStackNavigationOpt
     },
   }
 }
+
+/**
+ * The factor help (OA-30) as a native sheet: a form sheet on iOS (system grabber and corner radius,
+ * medium and large detents, swipe down or tap outside to close), where the screen has no header of
+ * its own. Android has no form sheet in the stack, so it gets the stack's modal screen (slides up
+ * over the pager) with the same content and its close button.
+ */
+export function factorHelpScreenOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  return {
+    headerShown: false,
+    presentation: Platform.OS === "ios" ? "formSheet" : "modal",
+    sheetAllowedDetents: [0.5, 1],
+    sheetGrabberVisible: true,
+    contentStyle: { backgroundColor: theme.semanticColors.backgroundCanvas },
+  }
+}

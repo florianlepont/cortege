@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react"
-import { Pressable, View } from "react-native"
+import { useMemo } from "react"
+import { View } from "react-native"
 import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
@@ -10,13 +10,13 @@ import { AppCard } from "../ui/AppCard"
 import { AppField } from "../ui/AppField"
 import { createDetailStyles } from "./factor-detail.styles"
 import { FactorAGenusRecognitionEntry } from "./FactorAGenusRecognitionEntry"
-import { FactorHelpSheet } from "./FactorHelpSheet"
 import { FactorChipOption, FactorChipsInput } from "../ui/FactorChipsInput"
 import { FactorCounterInput } from "../ui/FactorCounterInput"
 import { FactorGenusListInput } from "../ui/FactorGenusListInput"
 import { FactorSegmentedOption, FactorSegmentedInput } from "../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../ui/FactorSliderInput"
 import { fr } from "../i18n"
+import { AppPressable } from "../ui/AppPressable"
 
 const t = fr.factorDetail
 
@@ -54,6 +54,8 @@ type FactorDetailScreenProps = {
   retainedScore: FactorRetainedScore | null
   /** The survey's IBP method; null is an untagged legacy draft (v3.0 help, D-09). */
   methodVersion: IbpMethodVersion | null
+  /** Opens the help sheet (a route of the survey stack) with the factor's texts. */
+  onOpenHelp: (help: string, hints: readonly string[]) => void
 }
 
 /**
@@ -66,10 +68,10 @@ export function FactorDetailScreen({
   fields,
   retainedScore,
   methodVersion,
+  onOpenHelp,
 }: FactorDetailScreenProps) {
   const theme = useBrandTheme()
   const detailStyles = useMemo(() => createDetailStyles(theme), [theme])
-  const [helpVisible, setHelpVisible] = useState(false)
   const helpTexts = helpForMethod(methodVersion)
   // Phase 6 (ADR-002 D-11): the genus-list field is always A's first field (FIELD_VARIANTS.A[0]),
   // so a confirmed suggestion can be merged straight into whatever the surveyor already picked.
@@ -101,9 +103,9 @@ export function FactorDetailScreen({
         </Text>
       </View>
 
-      <Pressable
+      <AppPressable
         style={detailStyles.helpLink}
-        onPress={() => setHelpVisible(true)}
+        onPress={() => onOpenHelp(helpTexts.help[factor], helpTexts.hints[factor])}
         accessibilityRole="button"
         accessibilityLabel={t.helpLink}
       >
@@ -113,14 +115,7 @@ export function FactorDetailScreen({
           color={theme.semanticColors.textStrong}
         />
         <Text style={detailStyles.helpLinkText}>{t.helpLink}</Text>
-      </Pressable>
-
-      <FactorHelpSheet
-        visible={helpVisible}
-        onClose={() => setHelpVisible(false)}
-        help={helpTexts.help[factor]}
-        hints={helpTexts.hints[factor]}
-      />
+      </AppPressable>
     </View>
   )
 }

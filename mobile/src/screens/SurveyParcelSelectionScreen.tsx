@@ -8,6 +8,8 @@ import {
   brandMapTokens,
   brandMediaBackdrop,
   brandShadow,
+  brandSpacing4,
+  brandTypeScale,
   brandTypography,
 } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
@@ -341,7 +343,7 @@ function createScreenStyles(theme: BrandTheme) {
     overlayLayer: {
       ...StyleSheet.absoluteFill,
       justifyContent: "flex-end",
-      paddingHorizontal: 16,
+      paddingHorizontal: brandSpacing4.md,
     },
     // The offline-map proposal sits at the top, under the header (OA-105 follow-up).
     topArea: {
@@ -350,22 +352,22 @@ function createScreenStyles(theme: BrandTheme) {
       right: 78,
     },
     bottomArea: {
-      gap: 12,
+      gap: brandSpacing4.smd,
     },
     // DS-15 (Phase 12): a real blurred glass panel (`AppCard glass`) instead of a flat
     // `brandTranslucentPanel` fill.
     bottomSheet: {
-      gap: 8,
+      gap: brandSpacing4.sm,
     },
     bottomTitle: {
       ...brandTypography.sectionTitle,
-      fontSize: 20,
+      fontSize: brandTypeScale.title3.fontSize,
       lineHeight: 24,
       color: theme.colors.textPrimary,
     },
     bottomMeta: {
       ...brandTypography.sectionBody,
-      fontSize: 13,
+      fontSize: brandTypeScale.footnote.fontSize,
       lineHeight: 18,
       color: theme.colors.textSecondary,
     },
@@ -374,7 +376,7 @@ function createScreenStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
     },
     doneButton: {
-      marginTop: 4,
+      marginTop: brandSpacing4.xs,
       ...brandShadow.card,
     },
   })

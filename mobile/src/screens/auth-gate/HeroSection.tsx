@@ -5,7 +5,6 @@ import {
   Easing,
   Image,
   ImageSourcePropType,
-  Pressable,
   View,
   useWindowDimensions,
 } from "react-native"
@@ -14,6 +13,7 @@ import { brandSpacing } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { createAuthStyles, PANEL_OVERLAP } from "./styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 const BLOB_CYCLE_MS = 10000
 const BLOB_STAGGER_MS = BLOB_CYCLE_MS / 3
@@ -195,14 +195,14 @@ export function HeroSection({
               ]}
             />
             {onLogoPress ? (
-              <Pressable
+              <AppPressable
                 onPress={onLogoPress}
                 accessible={false}
                 accessibilityRole="button"
                 accessibilityLabel={fr.authGate.hero.devConfigA11yLabel}
               >
                 {logoImage}
-              </Pressable>
+              </AppPressable>
             ) : (
               logoImage
             )}

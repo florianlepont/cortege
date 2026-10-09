@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react"
-import { Pressable, TextInput, View } from "react-native"
+import { TextInput, View } from "react-native"
 import { AppText as Text } from "../../ui/AppText"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -7,6 +7,7 @@ import type { Ionicons } from "@expo/vector-icons"
 import { AppGroupedListIconTile, type AppGroupedListRow } from "../../ui/AppGroupedList"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { createProfileRowStyles } from "./styles"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.account.profile
 
@@ -144,7 +145,9 @@ export function ProfileSaveBar({ bottom, saving, onSave, onCancel }: ProfileSave
       <Text style={styles.saveBarText} numberOfLines={2}>
         {t.unsavedBar}
       </Text>
-      <Pressable
+      <AppPressable
+        disableScale
+        disableRipple
         style={styles.saveBarCancel}
         onPress={onCancel}
         disabled={saving}
@@ -152,8 +155,10 @@ export function ProfileSaveBar({ bottom, saving, onSave, onCancel }: ProfileSave
         accessibilityLabel={t.cancel}
       >
         <Text style={styles.saveBarCancelText}>{t.cancel}</Text>
-      </Pressable>
-      <Pressable
+      </AppPressable>
+      <AppPressable
+        disableScale
+        disableRipple
         style={[styles.saveBarSave, saving ? styles.saveBarSaveDisabled : null]}
         onPress={onSave}
         disabled={saving}
@@ -162,7 +167,7 @@ export function ProfileSaveBar({ bottom, saving, onSave, onCancel }: ProfileSave
         accessibilityState={{ disabled: saving, busy: saving }}
       >
         <Text style={styles.saveBarSaveText}>{saving ? t.saving : t.save}</Text>
-      </Pressable>
+      </AppPressable>
     </GlassSurface>
   )
 }

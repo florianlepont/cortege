@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
-import { brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
@@ -12,6 +12,7 @@ import { AppText as Text } from "../../ui/AppText"
 import { GenusRecognitionModal } from "../../ui/GenusRecognitionModal"
 import { GenusTargetSheet } from "./GenusTargetSheet"
 import { HOME_GAPS, TOOL_ROW_MIN_HEIGHT } from "./layout-budget"
+import { AppPressable } from "../../ui/AppPressable"
 
 const t = fr.home.tools
 
@@ -117,7 +118,7 @@ export function ToolsSection({
         />
       ) : null}
       <View style={styles.row}>
-        <Pressable
+        <AppPressable
           style={styles.card}
           onPress={() => setIdentifying(true)}
           accessibilityRole="button"
@@ -132,7 +133,7 @@ export function ToolsSection({
             <Text style={styles.cardBody}>{t.identify.body}</Text>
           </View>
           <Ionicons name="chevron-forward-outline" size={18} color={theme.colors.textSecondary} />
-        </Pressable>
+        </AppPressable>
       </View>
 
       <GenusRecognitionModal
@@ -199,7 +200,7 @@ function createStyles(theme: BrandTheme) {
     },
     cardTitle: {
       ...brandTypography.button,
-      fontSize: 15,
+      fontSize: brandTypeScale.subhead.fontSize,
       color: theme.semanticColors.textStrong,
     },
     cardBody: {

@@ -1,9 +1,10 @@
 import { useLayoutEffect } from "react"
-import { Platform, Pressable, StyleSheet, View } from "react-native"
+import { Platform, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import type { NativeStackNavigationOptions } from "@react-navigation/native-stack"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import { AppPressable } from "../../ui/AppPressable"
 
 const menuText = fr.surveyDetail.menu
 const a11y = fr.surveyDetail.a11y
@@ -98,22 +99,22 @@ export function useSurveyDetailHeader({
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.row}>
-          <Pressable
+          <AppPressable
             style={styles.button}
             onPress={onShare}
             accessibilityRole="button"
             accessibilityLabel={a11y.shareSurvey(siteName)}
           >
             <Ionicons name="share-outline" size={22} color={tint} />
-          </Pressable>
-          <Pressable
+          </AppPressable>
+          <AppPressable
             style={styles.button}
             onPress={onOpenMenu}
             accessibilityRole="button"
             accessibilityLabel={a11y.openMenu(siteName)}
           >
             <Ionicons name="ellipsis-horizontal-outline" size={22} color={tint} />
-          </Pressable>
+          </AppPressable>
         </View>
       ),
     })

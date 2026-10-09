@@ -9,7 +9,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated"
 import { FACTOR_KEYS } from "@cortege/ibp-domain"
-import { brandMotion, brandTypography } from "../app/brand-tokens"
+import { brandMotion, brandSpacing, brandTypography } from "../app/brand-tokens"
 import { factorRatio, factorTone } from "../app/ibp-display"
 import { useBrandTheme } from "../app/theme"
 import type { FactorKey } from "../app/types"
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     alignItems: "stretch",
-    gap: 6,
+    gap: brandSpacing.xs,
   },
   barArea: {
     height: factorBarGeometry.maxHeight,

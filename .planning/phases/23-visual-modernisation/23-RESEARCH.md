@@ -313,7 +313,7 @@ Update `tab-config`, `tabs`, `tab-bar` tests (the `src/navigation/` coverage flo
 | List and card entrance | Accueil sections, Mes Relevés/Explorer rows | `FadeInDown`, `durations.base`, stagger 40 ms capped at 8, first mount only; animated empty state = one-shot fade and spring scale of the icon, no loop |
 | Screen transitions | List to detail, sub-pages | native-stack default (iOS push, Android default); no shared element: Reanimated shared transitions are experimental and "not recommended for production" [CITED: docs.swmansion.com], Expo's iOS zoom transition needs Expo Router (`Link.AppleZoom`), this app uses React Navigation |
 | | Tab change | JS tabs `animation: "fade"` (`"none"` when `useReducedMotion()`); native bar unchanged |
-| | Sheets | keep RN `Modal` `pageSheet` (`GenusTargetSheet`, `NearbyParcelsSheet`) and `@gorhom/bottom-sheet` (Explorer); no `formSheet` is in use today (the Phase 12 formSheet was replaced by a card in OA-91) |
+| | Sheets | keep RN `Modal` `pageSheet` (`GenusTargetSheet`, `NearbyParcelsSheet`) and the hand-built `ExplorerSheet` (Explorer; `@gorhom/bottom-sheet` was removed, iOS 27 sliver, OA-66); no `formSheet` is in use today (the Phase 12 formSheet was replaced by a card in OA-91) |
 | Action feedback | Press | existing `AppPressable` spring (0.97) |
 | | Chips and segments | `feedback.selection()` on change |
 | | Primary pill | `feedback.impact.light()` |
