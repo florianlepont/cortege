@@ -816,14 +816,14 @@ Plans:
   4. The search is fast enough to feel instant on a typical phone (debounced input, bounded results per group), with empty, no-result and error states, and all texts from the French catalogue.
   5. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: 15 plans
+**Plans**: 4/15 plans executed
 
 **Wave 1**
 
-- [ ] 25-01-PLAN.md — Search wire types in `@cortege/ibp-domain`, accent folding and the pure phone rules (own match, parcel gate, member match, D-14 best result, group order, summaries)
-- [ ] 25-02-PLAN.md — Catalogue `fr.search` and recent searches in `local_meta` (cleared by `clearLocalIbpData`)
-- [ ] 25-03-PLAN.md — Fourth JS tab "Rechercher" (Android, Expo Go), old Mes Relevés magnifier and `surveySearch` route removed, `searchGroup` params typed
-- [ ] 25-04-PLAN.md — Result rows: shared `CompactSurveyRow` (Accueil unchanged), `CommunityRow` compact and moved, `SearchResultRow` (member, place, parcel)
+- [x] 25-01-PLAN.md — Search wire types in `@cortege/ibp-domain`, accent folding and the pure phone rules (own match, parcel gate, member match, D-14 best result, group order, summaries)
+- [x] 25-02-PLAN.md — Catalogue `fr.search` and recent searches in `local_meta` (cleared by `clearLocalIbpData`)
+- [x] 25-03-PLAN.md — Fourth JS tab "Rechercher" (Android, Expo Go), old Mes Relevés magnifier and `surveySearch` route removed, `searchGroup` params typed
+- [x] 25-04-PLAN.md — Result rows: shared `CompactSurveyRow` (Accueil unchanged), `CommunityRow` compact and moved, `SearchResultRow` (member, place, parcel)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -946,7 +946,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
 | 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
-| 25. Global Search | 0/TBD | Not started | - |
+| 25. Global Search | 4/15 | In Progress|  |
 | 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
 | 27. In-depth Quality Audit | 0/TBD | Not started | - |
 | 28. Field Validation | 0/TBD | Not started | - |
