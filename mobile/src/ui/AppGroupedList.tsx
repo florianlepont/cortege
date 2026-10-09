@@ -19,6 +19,11 @@ type AppGroupedListNavRow = {
   accessibilityLabel?: string
   /** Leading outline glyph in a 28 pt tile (D-07: `-outline` names only). */
   icon?: keyof typeof Ionicons.glyphMap
+  /**
+   * The label may wrap to two lines and the value never shrinks (used by the "Historique de la
+   * parcelle" rows, whose label would be truncated at 375 pt).
+   */
+  multiline?: boolean
 }
 
 type AppGroupedListCustomRow = {
@@ -140,13 +145,16 @@ function NavRow({
       accessibilityState={{ disabled: row.disabled || row.loading, busy: row.loading }}
     >
       {row.icon ? <AppGroupedListIconTile name={row.icon} destructive={row.destructive} /> : null}
-      <Text style={labelStyle} numberOfLines={1}>
+      <Text style={labelStyle} numberOfLines={row.multiline ? 2 : 1}>
         {row.label}
       </Text>
       {!row.centered ? (
         <View style={styles.rowTrailing}>
           {row.value ? (
-            <Text style={styles.value} numberOfLines={1}>
+            <Text
+              style={[styles.value, row.multiline ? styles.valueFixed : null]}
+              numberOfLines={1}
+            >
               {row.value}
             </Text>
           ) : null}
@@ -253,6 +261,10 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.sectionBody,
       color: theme.colors.textSecondary,
       flexShrink: 1,
+    },
+    // multiline rows: the label wraps instead, the value stays whole.
+    valueFixed: {
+      flexShrink: 0,
     },
   })
 }
