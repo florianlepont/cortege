@@ -34,6 +34,14 @@ One search page, reachable from every main tab, finds: the member's own surveys 
 - **D-10:** Offline, own surveys are shown immediately. The community, place and parcel groups stay visible with a plain line saying they need a connection; they are never hidden and never hide the local results.
 - **D-11:** Results are grouped by type with a bounded count per group, debounced input, and empty, no-result and error states, all text from the French catalogue (`mobile/src/i18n/fr`, no em dash).
 
+### Decisions taken after research (2026-10-09, see 25-RESEARCH.md)
+- **D-12:** IGN geocoding checked live today: `https://data.geopf.fr/geocodage/search`, no key, 50 requests per second per IP, no specific terms (generic Licence Ouverte 2.0). Cost stays 0, D-08 holds. Places use `index=address,poi` (POI finds forests, summits, lieux-dits).
+- **D-13:** Parcel by number does NOT use the geocoder parcel index (it only takes a full 14 character IDU). It uses IGN API Carto (already called by the cadastre provider): accepted forms are full IDU, INSEE code + section + number, commune name + section + number (the geocoder turns the name into an INSEE code), and section + number alone (matched against parcels already in the app's database). "77 AB 0123" (department only) cannot be resolved by any IGN service.
+- **D-14:** Best-result order: parcel found, then member whose name matches the query, then place with score >= 0.85 (commune or POI), then own survey, then community survey. Same as sketch 014 C ("Marie" gives the member card).
+- **D-15:** Three per-group API endpoints (`GET /v1/search/community`, `/places`, `/parcels`) so each group loads, fails and retries on its own; community returns members and surveys; new per-handler `search` throttle; LRU cache, in-flight de-duplication and 2.5 s timeout in front of IGN.
+- **D-16:** Accents: migration 022 `CREATE EXTENSION IF NOT EXISTS unaccent` (with a `translate()` fallback); the phone folds accents the same way. Recent searches are stored in `local_meta` (`search_recents`, max 8) and cleared by `clearLocalIbpData`.
+- **D-17:** Members with the same display name appear as one row (no user id on the wire, privacy). No attribution line is added (no obligation found).
+
 ### Claude's Discretion
 - Debounce delay, per-group result limits, group order, the exact API shape (new `GET /v1/search` or per-group calls), caching details.
 
