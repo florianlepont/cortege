@@ -241,16 +241,4 @@ export const surveyDetailFr = {
     historyRange: ({ first, latest }: { first: number; latest: number }) =>
       `de ${first} à ${latest} sur ${IBP_MAX.total}`,
   },
-  // Previous submitted surveys on the same parcel, and the deltas of this survey against the
-  // latest one (REQ-B-survey-detail, REQ-C-versioning). Row/delta formatting is shared with the
-  // Explorer map's parcel-history panel via fr.parcelHistory.
-  versionHistory: {
-    title: "Versions précédentes",
-    subtitle: "Relevés déjà soumis sur cette même parcelle.",
-    loading: "Chargement des versions précédentes…",
-    loadFailed: "Impossible de charger les versions précédentes.",
-    none: "Premier relevé soumis sur cette parcelle.",
-    sinceLatest: "Évolution depuis la version précédente",
-    factorDelta: (factor: string, value: string) => `${factor} ${value}`,
-  },
 } as const

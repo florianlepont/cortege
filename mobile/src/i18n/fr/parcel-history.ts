@@ -42,8 +42,6 @@ export const parcelHistoryFr = {
   total: (points: number) => `IBP ${points}/50`,
   delta: {
     total: (value: number) => `Total ${signed(value)}`,
-    stand: (value: number) => `P/G ${signed(value)}`,
-    context: (value: number) => `C ${signed(value)}`,
     unavailable: "Pas de comparaison possible",
   },
   a11y: {
