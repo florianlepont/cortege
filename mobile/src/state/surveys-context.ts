@@ -64,6 +64,8 @@ export type SurveyActions = {
   discardSurvey: SurveyOperations["handleDiscardSurvey"]
   toggleVisibility: SurveyOperations["handleToggleVisibility"]
   confirmDeleteSurvey: SurveyOperations["confirmDeleteSurvey"]
+  /** Drops the empty draft the new-survey wizard opened, when it is left before the site is named. */
+  discardEmptyDraft: SurveyOperations["handleDiscardEmptyDraft"]
   queueAttachmentFromLibrary: SurveyOperations["handleQueueAttachmentFromLibrary"]
   queueAttachmentFromCamera: SurveyOperations["handleQueueAttachmentFromCamera"]
   deleteAttachment: SurveyOperations["handleDeleteAttachment"]

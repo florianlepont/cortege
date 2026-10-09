@@ -230,6 +230,7 @@ function useAppController() {
     discardSurvey: ops.handleDiscardSurvey,
     toggleVisibility: ops.handleToggleVisibility,
     confirmDeleteSurvey: ops.confirmDeleteSurvey,
+    discardEmptyDraft: ops.handleDiscardEmptyDraft,
     queueAttachmentFromLibrary: ops.handleQueueAttachmentFromLibrary,
     queueAttachmentFromCamera: ops.handleQueueAttachmentFromCamera,
     deleteAttachment: ops.handleDeleteAttachment,

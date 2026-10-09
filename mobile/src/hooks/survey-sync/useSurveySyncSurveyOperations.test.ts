@@ -814,6 +814,40 @@ describe("useSurveySyncSurveyOperations", () => {
     })
   })
 
+  // ─── handleDiscardEmptyDraft ──────────────────────────────────────────────
+
+  describe("handleDiscardEmptyDraft", () => {
+    beforeEach(() => {
+      mockQueueDeleteSurvey.mockReset()
+    })
+
+    test("drops the draft with no alert and no status line, then syncs the deletion", async () => {
+      mockQueueDeleteSurvey.mockResolvedValue({ queued_delete: true })
+      const { handleDiscardEmptyDraft, refreshLocalSurveys, maybeAutoSync, setStatus } =
+        await buildHook()
+      await handleDiscardEmptyDraft("survey-1")
+      expect(mockQueueDeleteSurvey).toHaveBeenCalledWith("survey-1")
+      expect(refreshLocalSurveys).toHaveBeenCalled()
+      expect(maybeAutoSync).toHaveBeenCalledWith("survey-delete-queued")
+      expect(Alert.alert).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
+    })
+
+    test("does not sync when the draft was already gone", async () => {
+      mockQueueDeleteSurvey.mockResolvedValue({ queued_delete: false })
+      const { handleDiscardEmptyDraft, maybeAutoSync } = await buildHook()
+      await handleDiscardEmptyDraft("survey-1")
+      expect(maybeAutoSync).not.toHaveBeenCalled()
+    })
+
+    test("a storage failure is only logged: leaving the wizard is never blocked", async () => {
+      mockQueueDeleteSurvey.mockRejectedValue(new Error("db"))
+      const { handleDiscardEmptyDraft, setStatus } = await buildHook()
+      await expect(handleDiscardEmptyDraft("survey-1")).resolves.toBeUndefined()
+      expect(setStatus).not.toHaveBeenCalled()
+    })
+  })
+
   // ─── handleQueueAttachmentFromLibrary ─────────────────────────────────────
 
   describe("handleQueueAttachmentFromLibrary", () => {

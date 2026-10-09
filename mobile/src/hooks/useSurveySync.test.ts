@@ -235,6 +235,7 @@ describe("useSurveySync", () => {
       handleSubmitSurvey: jest.fn(),
       handleRetrySurvey: jest.fn(),
       handleDiscardSurvey: jest.fn(),
+      handleDiscardEmptyDraft: jest.fn(),
       handleToggleVisibility: jest.fn(),
       confirmDeleteSurvey: jest.fn(),
       handleQueueAttachmentFromLibrary: jest.fn(),
@@ -303,6 +304,7 @@ describe("useSurveySync", () => {
         [
           "confirmDeleteSurvey",
           "handleDeleteAttachment",
+          "handleDiscardEmptyDraft",
           "handleDiscardSurvey",
           "handleLoadCanonicalDetails",
           "handleLoadSurveyEvents",

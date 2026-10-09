@@ -5,6 +5,7 @@ import {
   StyleProp,
   StyleSheet,
   TextStyle,
+  View,
   ViewStyle,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
@@ -180,6 +181,17 @@ export function GlassButton({
       ]}
       testID={testID}
     >
+      {/* The reflection lives on a child: as the pressable's own `experimental_backgroundImage` it
+          crashed Android's LinearGradient (IllegalArgumentException) when the button is drawn. */}
+      {!disabled && !secondary ? (
+        <View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            { borderRadius: brandRadius.pill, experimental_backgroundImage: cta.sheen },
+          ]}
+        />
+      ) : null}
       {loading ? (
         <ActivityIndicator size="small" color={ink} />
       ) : leadingIcon ? (
@@ -212,7 +224,6 @@ function createStyles(theme: BrandTheme) {
     // with a gradient shows the tiled gradient under it (12.2-17, see ForestCard).
     flat: {
       backgroundColor: cta.flat,
-      experimental_backgroundImage: cta.sheen,
       boxShadow: cta.shadow,
     },
     outline: {

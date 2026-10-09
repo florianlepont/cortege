@@ -82,10 +82,19 @@ describe("GlassButton, flat fallback (Android and iOS before 26)", () => {
     const { style, root } = render()
     expect(style).toMatchObject({
       backgroundColor: cta.flat,
-      experimental_backgroundImage: cta.sheen,
       boxShadow: cta.shadow,
       borderRadius: brandRadius.pill,
     })
+    // The reflection is a pointer-transparent child, not a background of the pressable itself: a
+    // gradient on the pressable crashed Android's LinearGradient (IllegalArgumentException).
+    expect(style.experimental_backgroundImage).toBeUndefined()
+    const sheen = root.findAll(
+      (n) =>
+        (n.type as unknown) === "View" &&
+        flatten(n.props.style)?.experimental_backgroundImage === cta.sheen,
+    )
+    expect(sheen).toHaveLength(1)
+    expect(sheen[0].props.pointerEvents).toBe("none")
     // 12.2-17: the hairline is the inset ring at the head of the shadow, never a border under the
     // sheen gradient (RN tiles the gradient into the border ring).
     expect(String(style.boxShadow).startsWith(`inset 0 0 0 1px ${cta.hairline}, `)).toBe(true)

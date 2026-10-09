@@ -1,7 +1,8 @@
-import { memo, useMemo } from "react"
+import { memo, useEffect, useMemo } from "react"
 import { SurveyWizardScreen } from "../../screens/survey-wizard/SurveyWizardScreen"
 import type { SurveyFormMethod } from "../../screens/survey-wizard/method"
 import { useSurveyFormState } from "../../state/survey-form-context"
+import { useSurveyActions } from "../../state/surveys-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { ScreenFrame } from "../../ui/ScreenFrame"
 import { wizardUsesNativeHeader } from "../stacks/stack-options"
@@ -40,6 +41,23 @@ export const SurveyFormRoute = memo(function SurveyFormRoute({ navigation }: Sur
     })
   })
   const onClose = useLatestCallback(() => navigation.goBack())
+
+  // The wizard opens a draft at once so every answer autosaves. Leaving it (the close button, the
+  // system back, the iOS back button) before the site is named, with no parcel and no factor, would
+  // leave an empty "Relevé sans titre" in the list and in the sync queue: it is dropped instead.
+  const { discardEmptyDraft } = useSurveyActions()
+  const discardIfEmpty = useLatestCallback(() => {
+    const surveyId = state.editingSurveyId
+    if (state.formMode !== "create" || surveyId === null) return
+    if (state.siteName.trim().length > 0) return
+    if (state.selectedParcelIds.length > 0) return
+    if (Object.keys(state.draftInput.factors ?? {}).length > 0) return
+    void discardEmptyDraft(surveyId)
+  })
+  useEffect(
+    () => navigation.addListener("beforeRemove", discardIfEmpty),
+    [navigation, discardIfEmpty],
+  )
 
   return (
     <ScreenFrame>
