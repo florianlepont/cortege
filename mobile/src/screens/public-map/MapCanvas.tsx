@@ -13,6 +13,7 @@ import type { BasemapKey } from "../../map/basemaps"
 import { CadastreLayer } from "../../map/maplibre/CadastreLayer"
 import { markerItemsAtParcelZoom } from "../../map/maplibre/parcel-coverage"
 import { ParcelPolygonsLayer } from "../../map/maplibre/ParcelPolygonsLayer"
+import { PlacePinLayer } from "../../map/maplibre/PlacePinLayer"
 import { boundsFromRegion, regionFromViewChange } from "../../map/maplibre/regions"
 import { useMapStyle } from "../../hooks/useMapStyle"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -45,6 +46,8 @@ export type MapCanvasProps = {
   basemap?: BasemapKey
   /** The parcels of the survey shown from its page, drawn highlighted (OA-116). */
   highlightedParcelIds?: string[]
+  /** D-05: the place a search result centred the map on, drawn as one static pin. */
+  placePin?: { lat: number; lng: number } | null
   /** Where the camera starts (a survey to show, OA-59); France by default. */
   initialRegion?: MapRegion
   /** Bumped after an offline download or delete so the style choice is re-checked. */
@@ -74,6 +77,7 @@ export const MapCanvas = memo(function MapCanvas({
   basemap = "map",
   initialRegion = DEFAULT_MAP_REGION,
   highlightedParcelIds,
+  placePin,
   styleRefreshKey = 0,
 }: MapCanvasProps) {
   const { mapStyle, cadastreInStyle } = useMapStyle(basemap, styleRefreshKey)
@@ -142,6 +146,7 @@ export const MapCanvas = memo(function MapCanvas({
         byScore
         onParcelPress={onSelectParcel}
       />
+      <PlacePinLayer pin={placePin ?? null} />
       {clusters.map((entry) => {
         if (entry.kind === "cluster") {
           return (
