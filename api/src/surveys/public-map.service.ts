@@ -9,9 +9,11 @@ import {
   buildCommunitySurveysQuery,
   buildPublicMapItemsQuery,
   COMMUNITY_SURVEYS_DEFAULT_LIMIT,
+  CommunitySurveyDbRow,
   PUBLIC_PARCEL_STATUSES_BBOX_SQL,
   PUBLIC_PARCEL_STATUSES_SQL,
   PUBLIC_STUDIED_BY_COMMUNES_SQL,
+  toCommunitySurveyItem,
 } from "./public-map.queries"
 import {
   normalizeDateInput,
@@ -58,15 +60,6 @@ type StudiedParcelDbRow = {
   latest_observation_year: number | null
   latest_ibp_total: number | null
   latest_ibp_method_version?: string | null
-}
-
-type CommunitySurveyDbRow = {
-  id: string
-  site_name: string
-  ibp_method_version: string | null
-  scores: Record<string, unknown>
-  submitted_at: string
-  author_name: string | null
 }
 
 /** Below this map zoom the mobile shows no parcel, so the route answers without a query. */
@@ -127,17 +120,7 @@ export class PublicMapService {
       limit: Math.min(Math.max(input?.limit ?? COMMUNITY_SURVEYS_DEFAULT_LIMIT, 1), 50),
     })
     const result = await this.db.query<CommunitySurveyDbRow>(query.text, query.values)
-    const items = result.rows.map(
-      (row): CommunitySurveyItem => ({
-        survey_id: row.id,
-        site_name: row.site_name,
-        author_name: row.author_name,
-        submitted_at: row.submitted_at,
-        ibp_total: toFiniteNumber(row.scores?.ibp_total) ?? 0,
-        ibp_method_version: row.ibp_method_version ?? null,
-      }),
-    )
-    return { items }
+    return { items: result.rows.map(toCommunitySurveyItem) }
   }
 
   async getPublicParcelStatuses(input?: {
