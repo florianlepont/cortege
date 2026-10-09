@@ -1256,20 +1256,49 @@ describe("SurveyScoreRoute", () => {
 })
 
 describe("SurveyHistoryRoute", () => {
-  test("passes the events and the loader of the selected survey", async () => {
-    const fixture = {
-      ...makeFixture(),
-    }
+  function selected() {
+    const fixture = makeFixture()
     fixture.surveys = {
       ...fixture.surveys,
       state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
     } as unknown as SurveysContextValue
+    return fixture
+  }
+
+  test("passes the session, the selected survey and opens other surveys read-only", async () => {
+    const fixture = selected()
+    const navigation = { ...makeNavigation(), push: jest.fn() }
     await mount(
       <Providers fixture={fixture}>
-        <SurveyHistoryRoute navigation={makeNavigation() as never} route={{} as never} />
+        <SurveyHistoryRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
-    expect(props("surveyHistory").onLoadSurveyEvents).toBe(fixture.surveys.actions.loadSurveyEvents)
+    const historyProps = props("surveyHistory")
+    expect(historyProps.apiUrl).toBe("http://api.test/v1")
+    expect(historyProps.accessToken).toBe("token-1")
+    expect(historyProps.selectedSurvey).toBe(survey)
+    expect(historyProps.surveyDetails).toBe(fixture.surveys.state.surveyDetails)
+    expect(historyProps.detailsLoadingSurveyId).toBe(fixture.surveys.state.detailsLoadingSurveyId)
+    expect(historyProps).not.toHaveProperty("onLoadSurveyEvents")
+    callback("surveyHistory", "onOpenSurvey")("s-02")
+    expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "s-02" })
+  })
+
+  test("renders nothing without a selected survey", async () => {
+    const fixture = makeFixture()
+    fixture.surveys = {
+      ...fixture.surveys,
+      state: { ...fixture.surveys.state, selectedSurveyId: null, selectedSurvey: null },
+    } as unknown as SurveysContextValue
+    const tree = await mount(
+      <Providers fixture={fixture}>
+        <SurveyHistoryRoute
+          navigation={{ ...makeNavigation(), push: jest.fn() } as never}
+          route={{} as never}
+        />
+      </Providers>,
+    )
+    expect(tree.toJSON()).toBeNull()
   })
 })
 

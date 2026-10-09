@@ -59,11 +59,13 @@ export type SurveyScoreScreenProps = SurveyDetailBaseProps & {
   onOpenFactor: (surveyId: string, factor: FactorKey) => Promise<void> | void
 }
 
-/** "Historique": the steps of this survey and the earlier surveys of its parcel. */
+/**
+ * "Historique de la parcelle": the surveys of this survey's parcel, their trend and the change per
+ * factor since the survey just before.
+ */
 export type SurveyHistoryScreenProps = SurveyDetailBaseProps & {
-  surveyEvents: Record<string, SurveyEventItem[]>
-  eventsLoadingSurveyId: string | null
-  onLoadSurveyEvents: (surveyId: string) => Promise<void>
+  /** Opens one other survey of the parcel, read-only. */
+  onOpenSurvey: (surveyId: string) => void
 }
 
 /** "Journal du relevé": the change log of this survey (own surveys only). */
