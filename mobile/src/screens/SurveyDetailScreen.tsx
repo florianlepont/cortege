@@ -66,6 +66,7 @@ export function SurveyDetailScreen({
   onOpenScore,
   onOpenFactor,
   onOpenHistory,
+  onOpenJournal,
   onEnsureAttachmentPreviews,
   onSimulateMissingAttachmentFile,
 }: SurveyDetailScreenProps) {
@@ -304,6 +305,7 @@ export function SurveyDetailScreen({
         onClose={() => setMenuVisible(false)}
         title={activeSiteName}
         options={[
+          { label: menuText.journal, onPress: onOpenJournal },
           {
             label: menuText.delete,
             destructive: true,

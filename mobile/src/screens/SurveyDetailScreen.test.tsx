@@ -128,6 +128,7 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onOpenScore: jest.fn(),
     onOpenFactor: jest.fn(),
     onOpenHistory: jest.fn(),
+    onOpenJournal: jest.fn(),
   }
 }
 
@@ -413,4 +414,38 @@ describe("SurveyDetailScreen without the large title", () => {
     expect(params.onRename).toBeUndefined()
     expect(byType(tree, "ScrollView")[0].props.contentInsetAdjustmentBehavior).toBe("never")
   })
+})
+
+describe("SurveyDetailScreen action sheet (Android / Expo Go, D-02, D-04)", () => {
+  type SheetOption = { label: string; destructive?: boolean; onPress: () => void }
+  function mountSheet(status: string) {
+    const props = { ...makeProps(status), onOpenJournal: jest.fn(), onDeleteSurvey: jest.fn() }
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />, {
+        createNodeMock: (element) =>
+          (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+      })
+    })
+    const options = byType(tree!, "AppActionSheet")[0].props.options as SheetOption[]
+    return { props, options }
+  }
+
+  test.each(["draft", "synced"])(
+    "%s survey: Journal du relevé first (not destructive), then Supprimer (destructive, last)",
+    (status) => {
+      const { props, options } = mountSheet(status)
+      expect(options.map((option) => option.label)).toEqual([
+        fr.surveyDetail.menu.journal,
+        fr.surveyDetail.menu.delete,
+      ])
+      expect(options[0].destructive).toBeUndefined()
+      expect(options[1].destructive).toBe(true)
+      options[0].onPress()
+      expect(props.onOpenJournal).toHaveBeenCalledTimes(1)
+      expect(props.onDeleteSurvey).not.toHaveBeenCalled()
+      options[1].onPress()
+      expect(props.onDeleteSurvey).toHaveBeenCalledWith("survey-1")
+    },
+  )
 })

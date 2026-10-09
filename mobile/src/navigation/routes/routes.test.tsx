@@ -1109,6 +1109,10 @@ describe("SurveyDetailRoute", () => {
       callback("surveyDetail", "onOpenHistory")()
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyHistory")
+    await act(async () => {
+      callback("surveyDetail", "onOpenJournal")()
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyJournal")
 
     await act(async () => {
       await callback("surveyDetail", "onOpenFactor")("s-01", "C")

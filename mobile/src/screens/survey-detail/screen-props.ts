@@ -38,6 +38,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   /** Opens a factor of the survey to fill it ("Commencer / Continuer la notation"). */
   onOpenFactor: (surveyId: string, factor: FactorKey) => void | Promise<void>
   onOpenHistory: () => void
+  /** Opens "Journal du relevé" from the "…" menu (D-02); stable, the header items capture it. */
+  onOpenJournal: () => void
   onEnsureAttachmentPreviews?: (attachments: LocalAttachment[]) => Promise<void> | void
   onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
 }

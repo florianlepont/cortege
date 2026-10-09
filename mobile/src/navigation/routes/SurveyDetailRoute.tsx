@@ -14,7 +14,8 @@ import { usesNativeLargeTitle } from "../large-title"
  * Survey detail route (phase 01.9-18, D-01): the selected survey and its
  * caches from the surveys context, the API URL from the session, and the sync
  * actions. Renders nothing until a survey is selected. It is the summary; its sub-pages
- * (context, score, history) are the routes next to it.
+ * (context, score, history) are the routes next to it, opened from rows, and the journal is
+ * opened from the "…" menu (D-02).
  */
 export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   navigation,
@@ -35,6 +36,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
     if (loaded) navigation.navigate("surveyFactorDetail", { factor })
   })
   const onOpenHistory = useLatestCallback(() => navigation.navigate("surveyHistory"))
+  const onOpenJournal = useLatestCallback(() => navigation.navigate("surveyJournal"))
   const onSimulateMissingAttachmentFile = useMemo(
     () => devOnlyHandler(syncActions.handleSimulateMissingAttachmentFile),
     [syncActions],
@@ -67,6 +69,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
         onOpenScore={onOpenScore}
         onOpenFactor={onOpenFactor}
         onOpenHistory={onOpenHistory}
+        onOpenJournal={onOpenJournal}
         onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
         onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
       />
