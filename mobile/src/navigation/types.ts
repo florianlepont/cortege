@@ -35,7 +35,12 @@ export type SurveysStackParamList = AccountStackParamList & {
   surveyForm: undefined
   surveyFactorDetail: { factor: FactorKey }
   surveyFactorHelp: { help: string; hints: string[] }
-  surveyParcels: { surveyId: string; mode: "wizard" | "edit" }
+  surveyParcels: {
+    surveyId: string
+    mode: "wizard" | "edit"
+    /** Edit: the survey's own position, where the map starts (the form holds none). */
+    startPoint?: { lat: number; lng: number }
+  }
 }
 
 /** OA-59: where a survey page sends Explorer (the `nonce` makes the same survey re-focus). */

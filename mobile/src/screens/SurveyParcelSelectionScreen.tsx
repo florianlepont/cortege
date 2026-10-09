@@ -60,6 +60,11 @@ type SurveyParcelSelectionScreenProps = {
     lng: string
     collected_at: string
   }
+  /**
+   * Where the map starts when the form holds no position: the survey's own, from its page. Without
+   * it (a new survey) the map opens on the phone's position (OA-117).
+   */
+  startPoint?: { lat: number; lng: number } | null
   siteName: string
   selectedParcelIds: string[]
   onToggleParcelSelection: (parcelId: string) => void
@@ -73,6 +78,7 @@ export function SurveyParcelSelectionScreen({
   apiUrl,
   accessToken,
   gpsLocation,
+  startPoint = null,
   siteName,
   selectedParcelIds,
   onToggleParcelSelection,
@@ -100,8 +106,10 @@ export function SurveyParcelSelectionScreen({
   const parsedLat = parseGpsCoordinate(gpsLocation.lat)
   const parsedLng = parseGpsCoordinate(gpsLocation.lng)
   const hasGpsCoordinates = Number.isFinite(parsedLat) && Number.isFinite(parsedLng)
-  const mapCenter = hasGpsCoordinates ? { lat: parsedLat, lng: parsedLng } : DEFAULT_FRANCE_CENTER
-  const initialRegion: Region = hasGpsCoordinates
+  // The form's position, else the survey's own: either one is a place to start from.
+  const start = hasGpsCoordinates ? { lat: parsedLat, lng: parsedLng } : startPoint
+  const mapCenter = start ?? DEFAULT_FRANCE_CENTER
+  const initialRegion: Region = start
     ? buildFocusedMapRegion(mapCenter)
     : {
         latitude: mapCenter.lat,
@@ -186,10 +194,11 @@ export function SurveyParcelSelectionScreen({
     }
   }
 
-  // OA-117: a survey without a captured position opens on the phone's, not on France.
+  // OA-117: a survey without a captured position opens on the phone's, not on France. A survey
+  // that has a position of its own (its page shows its parcels there) starts on it instead.
   const autoLocatedRef = useRef(false)
   useEffect(() => {
-    if (hasGpsCoordinates || autoLocatedRef.current) return
+    if (hasGpsCoordinates || startPoint || autoLocatedRef.current) return
     autoLocatedRef.current = true
     void handleLocate(true)
     // Once, when the screen opens.
