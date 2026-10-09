@@ -89,6 +89,9 @@ export function SurveyWizardScreen({
   // The call to action floats over the page: the scroll content ends above it.
   const { barHeight, onBarLayout } = useFinishBarHeight(true)
   const [stepIndex, setStepIndex] = useState(0)
+  // "Required" is said once the field was left or the person tried to go on, not on an untouched
+  // empty field the wizard has just focused.
+  const [nameTouched, setNameTouched] = useState(false)
   const step = STEPS[stepIndex]
   const resolved = resolveMethodVersion(method.version)
   const isV32 = resolved === IBP_METHOD_V3_2
@@ -101,7 +104,10 @@ export function SurveyWizardScreen({
         : true
 
   const goNext = (): void => {
-    if (!canContinue) return
+    if (!canContinue) {
+      setNameTouched(true)
+      return
+    }
     if (stepIndex < STEPS.length - 1) setStepIndex(stepIndex + 1)
     else onOpenParcels()
   }
@@ -201,7 +207,8 @@ export function SurveyWizardScreen({
                 autoFocus
                 returnKeyType="next"
                 onSubmitEditing={goNext}
-                error={formErrors.siteName}
+                onBlur={() => setNameTouched(true)}
+                error={nameTouched ? formErrors.siteName : null}
                 testID="wizard-name-field"
               />
               <Text style={styles.hint}>{w.name.example}</Text>

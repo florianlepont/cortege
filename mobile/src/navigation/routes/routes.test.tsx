@@ -468,6 +468,7 @@ function makeNavigation() {
     popTo: jest.fn(),
     setOptions: jest.fn(),
     reset: jest.fn(),
+    addListener: jest.fn((_event: string, _handler: () => void) => jest.fn()),
   }
 }
 
@@ -1473,6 +1474,62 @@ describe("SurveyFormRoute", () => {
       surveyId: "s-01",
       mode: "wizard",
     })
+  })
+})
+
+describe("SurveyFormRoute: the empty draft the wizard opened", () => {
+  type FormOverrides = Partial<SurveyFormContextValue["state"]>
+
+  /** Mounts the wizard route with the given form state, then removes the route like a back press. */
+  async function leave(overrides: FormOverrides) {
+    const base = makeFixture()
+    const fixture: Fixture = {
+      ...base,
+      form: { ...base.form, state: { ...base.form.state, ...overrides } },
+    }
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyFormRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    const call = navigation.addListener.mock.calls.find(([event]) => event === "beforeRemove")
+    expect(call).toBeDefined()
+    await act(async () => {
+      call?.[1]()
+    })
+    return fixture.surveys.actions.discardEmptyDraft as unknown as jest.Mock
+  }
+
+  const EMPTY: FormOverrides = {
+    formMode: "create",
+    editingSurveyId: "s-new",
+    siteName: "  ",
+    selectedParcelIds: [],
+    draftInput: { factors: {} } as unknown as FormOverrides["draftInput"],
+  }
+
+  test("is dropped when the route is left before the site is named", async () => {
+    const discard = await leave(EMPTY)
+    expect(discard).toHaveBeenCalledTimes(1)
+    expect(discard).toHaveBeenCalledWith("s-new")
+  })
+
+  test("is kept once the site is named", async () => {
+    expect(await leave({ ...EMPTY, siteName: "Forêt de Tronçais" })).not.toHaveBeenCalled()
+  })
+
+  test("is kept with a parcel chosen or a factor filled", async () => {
+    expect(await leave({ ...EMPTY, selectedParcelIds: ["p-1"] })).not.toHaveBeenCalled()
+    const withFactor = {
+      factors: { A: { native_genus_count: 2 } },
+    } as unknown as FormOverrides["draftInput"]
+    expect(await leave({ ...EMPTY, draftInput: withFactor })).not.toHaveBeenCalled()
+  })
+
+  test("does nothing when no draft was opened or a survey is being edited", async () => {
+    expect(await leave({ ...EMPTY, editingSurveyId: null })).not.toHaveBeenCalled()
+    expect(await leave({ ...EMPTY, formMode: "edit" })).not.toHaveBeenCalled()
   })
 })
 

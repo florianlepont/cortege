@@ -116,6 +116,33 @@ const next = (tree: ReactTestRenderer): void => {
   })
 }
 
+describe("SurveyWizardScreen: the required name", () => {
+  const REQUIRED = { siteName: "Nom du site : champ obligatoire" }
+  const nameField = (tree: ReactTestRenderer) => byTestID(tree, "wizard-name-field")
+
+  test("says nothing on the empty field the wizard has just opened", () => {
+    const { tree } = mount({ siteName: "", formErrors: REQUIRED })
+    expect(nameField(tree).props.error).toBeNull()
+  })
+
+  test("says it once the field is left empty", () => {
+    const { tree } = mount({ siteName: "", formErrors: REQUIRED })
+    act(() => {
+      nameField(tree).props.onBlur()
+    })
+    expect(nameField(tree).props.error).toBe(REQUIRED.siteName)
+  })
+
+  test("says it when the person tries to go on without a name", () => {
+    const { tree, onOpenParcels } = mount({ siteName: "", formErrors: REQUIRED })
+    act(() => {
+      nameField(tree).props.onSubmitEditing()
+    })
+    expect(nameField(tree).props.error).toBe(REQUIRED.siteName)
+    expect(onOpenParcels).not.toHaveBeenCalled()
+  })
+})
+
 describe("SurveyWizardScreen: variant I glass (12.2-16)", () => {
   test("draws no canvas: the route's ScreenFrame is the page and the halo (D-19)", () => {
     const { tree } = mount()
