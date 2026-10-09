@@ -6,6 +6,7 @@ describe("shouldHideTabBar (D-13, OA-28: the bar stays on every screen)", () => 
     "surveysHome",
     "surveyDetail",
     "surveyJournal",
+    "communityHistory",
     "surveyForm",
     "surveyFactorDetail",
     "homeRoot",

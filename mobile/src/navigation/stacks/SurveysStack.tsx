@@ -7,6 +7,7 @@ import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
 import { FactorHelpRoute } from "../routes/FactorHelpRoute"
+import { CommunityHistoryRoute } from "../routes/CommunityHistoryRoute"
 import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { ParcelSelectionRoute } from "../routes/ParcelSelectionRoute"
 import { SurveyContextRoute } from "../routes/SurveyContextRoute"
@@ -118,6 +119,11 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               ...pageTitleOptions(theme),
             }}
             component={CommunitySurveyRoute}
+          />
+          <SurveysStack.Screen
+            name="communityHistory"
+            options={{ title: headers.communityHistory, ...pageTitleOptions(theme) }}
+            component={CommunityHistoryRoute}
           />
           <SurveysStack.Screen
             name="surveyContext"

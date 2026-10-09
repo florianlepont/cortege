@@ -445,6 +445,9 @@ jest.mock("../screens/survey-search/SurveySearchScreen", () => ({
 jest.mock("../screens/community-survey/CommunitySurveyScreen", () => ({
   CommunitySurveyScreen: () => null,
 }))
+jest.mock("../screens/community-survey/CommunityHistoryScreen", () => ({
+  CommunityHistoryScreen: () => null,
+}))
 jest.mock("../screens/SurveyHistoryScreen", () => ({ SurveyHistoryScreen: () => null }))
 jest.mock("../screens/SurveyJournalScreen", () => ({ SurveyJournalScreen: () => null }))
 jest.mock("../screens/survey-wizard/SurveyWizardScreen", () => ({

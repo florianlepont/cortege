@@ -14,8 +14,9 @@ import { ScreenFrame } from "../../ui/ScreenFrame"
  * The page of a finished survey of another member (OA-59), opened from the Communauté search, from
  * the Explorer map (a tapped parcel's history or a selected survey) or from the history page of
  * another member's survey: the same page from every entrance. Its "Historique de la parcelle" row
- * opens `communityHistory` (registered in both stacks that register this page). It reads nothing from the surveys context: the survey is
- * not the user's, so it is loaded from the API by the id in the route.
+ * opens `communityHistory` (registered in both stacks that register this page). It reads nothing
+ * from the surveys context: the survey is not the user's, so it is loaded from the API by the id in
+ * the route.
  *
  * 12.2-17: in the native iOS tab tree the page is named by the native large title: the stack's
  * "Relevé de la communauté" while loading, then the survey's name, which stays in the bar as the

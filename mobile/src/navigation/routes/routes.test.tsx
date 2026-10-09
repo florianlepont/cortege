@@ -43,11 +43,23 @@ jest.mock("../../screens/survey-search/SurveySearchScreen", () => ({
 jest.mock("../../screens/community-survey/CommunitySurveyScreen", () => ({
   CommunitySurveyScreen: mockScreen("communitySurvey"),
 }))
+jest.mock("../../screens/community-survey/CommunityHistoryScreen", () => ({
+  CommunityHistoryScreen: mockScreen("communityHistory"),
+}))
 const mockCommunitySurvey = { detail: null, photos: [], status: "loading", photosFailed: false }
-const mockCommunitySurveyArgs: { surveyId?: string; accessToken?: string | null } = {}
+const mockCommunitySurveyArgs: {
+  surveyId?: string
+  accessToken?: string | null
+  options?: { withPhotos?: boolean }
+} = {}
 jest.mock("../../hooks/useCommunitySurvey", () => ({
-  useCommunitySurvey: (_apiUrl: string, accessToken: string | null, surveyId: string) => {
-    Object.assign(mockCommunitySurveyArgs, { accessToken, surveyId })
+  useCommunitySurvey: (
+    _apiUrl: string,
+    accessToken: string | null,
+    surveyId: string,
+    options?: { withPhotos?: boolean },
+  ) => {
+    Object.assign(mockCommunitySurveyArgs, { accessToken, surveyId, options })
     return mockCommunitySurvey
   },
 }))
@@ -251,6 +263,7 @@ import { SurveyScoreRoute } from "./SurveyScoreRoute"
 import { SurveyFormRoute } from "./SurveyFormRoute"
 import { SurveyListRoute } from "./SurveyListRoute"
 import { SurveySearchRoute } from "./SurveySearchRoute"
+import { CommunityHistoryRoute } from "./CommunityHistoryRoute"
 import { CommunitySurveyRoute } from "./CommunitySurveyRoute"
 
 /** An action object whose members are jest.fn()s created on first access. */
@@ -999,6 +1012,24 @@ describe("CommunitySurveyRoute", () => {
 
     callback("communitySurvey", "onOpenHistory")()
     expect(navigation.push).toHaveBeenCalledWith("communityHistory", { surveyId: "c-1" })
+  })
+})
+
+describe("CommunityHistoryRoute", () => {
+  test("loads the survey without its photos and opens another survey read-only", async () => {
+    const navigation = mockSearchNavigation
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <CommunityHistoryRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+    const screen = props("communityHistory")
+    expect(mockCommunitySurveyArgs.surveyId).toBe("c-1")
+    expect(mockCommunitySurveyArgs.options).toEqual({ withPhotos: false })
+    expect(screen.state).toBe(mockCommunitySurvey)
+
+    callback("communityHistory", "onOpenSurvey")("c-2")
+    expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-2" })
   })
 })
 
@@ -1854,6 +1885,10 @@ describe("the halo frame on every page (D-19)", () => {
       "communitySurvey",
       () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
     ],
+    [
+      "communityHistory",
+      () => <CommunityHistoryRoute route={{ params: { surveyId: "c-1" } } as never} />,
+    ],
     // 12.2-16: the wizard. The stack hides its header, so on a phone the inset is 0.
     ["surveyForm", () => <SurveyFormRoute navigation={nav()} route={{} as never} />],
     ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
@@ -1926,6 +1961,10 @@ describe("the native large title frame (12.2-17)", () => {
     [
       "communitySurvey",
       () => <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } } as never} />,
+    ],
+    [
+      "communityHistory",
+      () => <CommunityHistoryRoute route={{ params: { surveyId: "c-1" } } as never} />,
     ],
     ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
     ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
