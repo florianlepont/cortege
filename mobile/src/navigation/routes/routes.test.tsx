@@ -126,6 +126,9 @@ jest.mock("../../screens/SurveyScoreScreen", () => ({
 jest.mock("../../screens/SurveyHistoryScreen", () => ({
   SurveyHistoryScreen: mockScreen("surveyHistory"),
 }))
+jest.mock("../../screens/SurveyJournalScreen", () => ({
+  SurveyJournalScreen: mockScreen("surveyJournal"),
+}))
 jest.mock("../../screens/survey-wizard/SurveyWizardScreen", () => ({
   SurveyWizardScreen: mockScreen("surveyForm"),
 }))
@@ -243,6 +246,7 @@ import { SettingsRoute } from "./SettingsRoute"
 import { SurveyContextRoute } from "./SurveyContextRoute"
 import { SurveyDetailRoute } from "./SurveyDetailRoute"
 import { SurveyHistoryRoute } from "./SurveyHistoryRoute"
+import { SurveyJournalRoute } from "./SurveyJournalRoute"
 import { SurveyScoreRoute } from "./SurveyScoreRoute"
 import { SurveyFormRoute } from "./SurveyFormRoute"
 import { SurveyListRoute } from "./SurveyListRoute"
@@ -1265,6 +1269,42 @@ describe("SurveyHistoryRoute", () => {
   })
 })
 
+describe("SurveyJournalRoute", () => {
+  test("passes the selected survey, its events and the loader", async () => {
+    const fixture = {
+      ...makeFixture(),
+    }
+    fixture.surveys = {
+      ...fixture.surveys,
+      state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
+    } as unknown as SurveysContextValue
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyJournalRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    const journalProps = props("surveyJournal")
+    expect(journalProps.selectedSurvey).toBe(survey)
+    expect(journalProps.surveyEvents).toBe(fixture.surveys.state.surveyEvents)
+    expect(journalProps.eventsLoadingSurveyId).toBe(fixture.surveys.state.eventsLoadingSurveyId)
+    expect(journalProps.onLoadSurveyEvents).toBe(fixture.surveys.actions.loadSurveyEvents)
+  })
+
+  test("renders nothing without a selected survey", async () => {
+    const fixture = makeFixture()
+    fixture.surveys = {
+      ...fixture.surveys,
+      state: { ...fixture.surveys.state, selectedSurveyId: null, selectedSurvey: null },
+    } as unknown as SurveysContextValue
+    const tree = await mount(
+      <Providers fixture={fixture}>
+        <SurveyJournalRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(tree.toJSON()).toBeNull()
+  })
+})
+
 describe("SurveyFormRoute", () => {
   test("feeds the wizard, opens the parcel step and closes", async () => {
     const fixture = makeFixture()
@@ -1770,6 +1810,7 @@ describe("the halo frame on every page (D-19)", () => {
     ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
     ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
     ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
+    ["surveyJournal", () => <SurveyJournalRoute navigation={nav()} route={{} as never} />],
     ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
     // 12.2-15: the factor pager, its page probe is the active factor's screen.
     [
@@ -1847,6 +1888,7 @@ describe("the native large title frame (12.2-17)", () => {
     ["surveyDetail", () => <SurveyDetailRoute navigation={nav()} route={{} as never} />],
     ["surveyScore", () => <SurveyScoreRoute navigation={nav()} route={{} as never} />],
     ["surveyHistory", () => <SurveyHistoryRoute navigation={nav()} route={{} as never} />],
+    ["surveyJournal", () => <SurveyJournalRoute navigation={nav()} route={{} as never} />],
     ["surveyContext", () => <SurveyContextRoute navigation={nav()} route={{} as never} />],
     [
       "communitySurvey",

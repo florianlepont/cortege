@@ -126,6 +126,7 @@ jest.mock("./routes/SurveyDetailRoute", () => ({ SurveyDetailRoute: mockRoute() 
 jest.mock("./routes/SurveyContextRoute", () => ({ SurveyContextRoute: mockRoute() }))
 jest.mock("./routes/SurveyScoreRoute", () => ({ SurveyScoreRoute: mockRoute() }))
 jest.mock("./routes/SurveyHistoryRoute", () => ({ SurveyHistoryRoute: mockRoute() }))
+jest.mock("./routes/SurveyJournalRoute", () => ({ SurveyJournalRoute: mockRoute() }))
 jest.mock("./routes/SurveyFormRoute", () => ({ SurveyFormRoute: mockRoute() }))
 jest.mock("./routes/SurveySearchRoute", () => ({ SurveySearchRoute: mockRoute() }))
 jest.mock("./routes/CommunitySurveyRoute", () => ({ CommunitySurveyRoute: mockRoute() }))
@@ -477,7 +478,13 @@ describe("stack options and listeners", () => {
 
   // Pages whose title is the native large title in the native iOS tab tree (12.2-17).
   const ACCOUNT_PAGES = ["accountHome", "settings", "offlineAreas"]
-  const SURVEY_SUB_PAGES = ["communitySurvey", "surveyContext", "surveyScore", "surveyHistory"]
+  const SURVEY_SUB_PAGES = [
+    "communitySurvey",
+    "surveyContext",
+    "surveyScore",
+    "surveyHistory",
+    "surveyJournal",
+  ]
   const resolveOwn = (name: string, args: Record<string, unknown> = {}) => {
     const raw = mockScreens[name].options as Options | OptionsFn
     return typeof raw === "function"
@@ -539,6 +546,7 @@ describe("stack options and listeners", () => {
       surveyContext: fr.navigation.headers.surveyContext,
       surveyScore: fr.navigation.headers.surveyScore,
       surveyHistory: fr.navigation.headers.surveyHistory,
+      surveyJournal: fr.navigation.headers.surveyJournal,
     }
     for (const name of Object.keys(titles)) {
       const options = effectiveOptions(name)
@@ -639,6 +647,7 @@ describe("stack options and listeners", () => {
         "surveyContext",
         "surveyScore",
         "surveyHistory",
+        "surveyJournal",
       ]
       for (const name of surveyPages) {
         expectHaloHeader(effectiveOptions(name))
