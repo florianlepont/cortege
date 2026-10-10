@@ -425,7 +425,7 @@ describe("assembleSurveyExportData", () => {
       expect(data.coordinates).toEqual({ lat: 1, lng: 2 })
     })
 
-    test("frames zoom 16 around the location when there is no outline", async () => {
+    test("takes no snapshot when there is no outline, the map block would not use it", async () => {
       const deps = fakeDeps({
         getCachedParcel: async () => null,
         decideBasemap: jest.fn(async () => OFFLINE_CHOICE),
@@ -433,13 +433,11 @@ describe("assembleSurveyExportData", () => {
 
       const data = await assembleSurveyExportData(input(), deps)
 
-      expect(deps.takeBasemap).toHaveBeenCalledWith(
-        expect.objectContaining({
-          frame: { centerLng: 2.7, centerLat: 48.4, zoom: 16, width: 515, height: 340 },
-        }),
-      )
+      expect(deps.decideBasemap).not.toHaveBeenCalled()
+      expect(deps.takeBasemap).not.toHaveBeenCalled()
       expect(data.map?.polygons).toEqual([])
-      expect(data.map?.basemap).not.toBeNull()
+      expect(data.map?.basemap).toBeNull()
+      expect(data.coordinates).toEqual({ lat: 48.4, lng: 2.7 })
     })
 
     test("has no map and reads nothing when the survey has no parcel", async () => {
@@ -471,7 +469,7 @@ describe("assembleSurveyExportData", () => {
         isOnline: async () => {
           throw new Error("expo-network")
         },
-        getCachedParcel: async () => null,
+        getCachedParcel: async (id) => parcelItem(id, 2.7, 48.4),
       })
 
       await assembleSurveyExportData(input(), deps)

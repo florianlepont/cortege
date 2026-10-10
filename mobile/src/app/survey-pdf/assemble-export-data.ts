@@ -25,6 +25,7 @@ import {
   fitFrameToBounds,
   OFFLINE_ZOOM_RANGE,
   parcelPolygonsFrom,
+  type LngLatBounds,
   type MapFrame,
 } from "./map-projection"
 import {
@@ -52,8 +53,6 @@ import type { ExportMap, PdfAssets, SurveyExportData, SurveyExportInput } from "
 const GEOMETRY_RADIUS_DEG = 0.001
 /** From zoom 15 the API answers every parcel of the view, not only the studied ones. */
 const GEOMETRY_ZOOM = 16
-/** Zoom of the snapshot when no parcel outline is known and only the location is. */
-const LOCATION_ZOOM = 16
 /** Share of the frame kept free on each side around the parcels. */
 const FRAME_PADDING_RATIO = 0.12
 
@@ -232,21 +231,11 @@ async function loadPolygons(
   return parcelPolygonsFrom(items, input.parcelIds)
 }
 
-function frameFor(polygons: Polygons, coordinates: Located): MapFrame {
-  const bounds = boundsOfRings(polygons.flatMap(({ rings }) => rings))
-  if (bounds) {
-    return fitFrameToBounds(bounds, MAP_FRAME_SIZE, {
-      paddingRatio: FRAME_PADDING_RATIO,
-      zoomRange: OFFLINE_ZOOM_RANGE,
-    })
-  }
-  return {
-    centerLng: coordinates.lng,
-    centerLat: coordinates.lat,
-    zoom: LOCATION_ZOOM,
-    width: MAP_FRAME_SIZE.width,
-    height: MAP_FRAME_SIZE.height,
-  }
+function frameFor(bounds: LngLatBounds): MapFrame {
+  return fitFrameToBounds(bounds, MAP_FRAME_SIZE, {
+    paddingRatio: FRAME_PADDING_RATIO,
+    zoomRange: OFFLINE_ZOOM_RANGE,
+  })
 }
 
 /** The snapshot of the frame, decided from what the phone can serve; null on any failure. */
@@ -262,22 +251,30 @@ async function loadBasemap(
   })
 }
 
-function centreOf(polygons: Polygons): Located | null {
-  const bounds = boundsOfRings(polygons.flatMap(({ rings }) => rings))
+function boundsOf(polygons: Polygons): LngLatBounds | null {
+  return boundsOfRings(polygons.flatMap(({ rings }) => rings))
+}
+
+function centreOf(bounds: LngLatBounds | null): Located | null {
   return bounds
     ? { lat: (bounds.south + bounds.north) / 2, lng: (bounds.west + bounds.east) / 2 }
     : null
 }
 
-/** Geometry first, then the snapshot of its frame; no parcel gives no map and no read at all. */
+/**
+ * Geometry first, then the snapshot of its frame; no parcel gives no map and no read at all. With
+ * no outline there is no snapshot either: the map block prints its "no outline" note and never
+ * uses a basemap, so taking one (up to 12 s online) would be wasted.
+ */
 async function loadMapPiece(input: SurveyExportInput, deps: AssembleDeps): Promise<MapPiece> {
   const location = input.displayLocation
   if (input.parcelIds.length === 0) return { coordinates: location, map: null }
   const online = await orFallback("network", false, deps.isOnline)
   const polygons = await loadPolygons(input, online, deps)
-  const coordinates = location ?? centreOf(polygons)
+  const bounds = boundsOf(polygons)
+  const coordinates = location ?? centreOf(bounds)
   if (!coordinates) return { coordinates: null, map: null }
-  const basemap = await loadBasemap(frameFor(polygons, coordinates), online, deps)
+  const basemap = bounds ? await loadBasemap(frameFor(bounds), online, deps) : null
   return { coordinates, map: { polygons, basemap, frameSize: { ...MAP_FRAME_SIZE } } }
 }
 
