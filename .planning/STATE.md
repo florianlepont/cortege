@@ -5,10 +5,10 @@ milestone_name: milestone
 current_phase: 25.1
 current_phase_name: PDF Export Improvement
 status: ready_to_discuss
-stopped_at: Phase 29 context gathered
+stopped_at: Phase 29 planned (10 plans, 3 waves), ready to execute
 last_updated: "2026-10-10T20:29:55.155Z"
 last_activity: 2026-10-10
-last_activity_desc: Phase 25.1 closed on the owner's phone check
+last_activity_desc: Phase 29 planned, 10 plans verified by the plan checker
 progress:
   total_phases: 39
   completed_phases: 17

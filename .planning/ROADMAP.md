@@ -982,7 +982,19 @@ Plans:
   6. Offline, after a restart, the markers and clusters of the last Explorer view and every survey of the user that the phone holds, draft or submitted, are drawn from local data, not only the drafts (finding F-2 of `docs/user-tests/device-checks.md`: today `ownDraftMapItems` keeps drafts only and the markers otherwise come from the API).
   7. The two temporary files of a recognition (the camera capture and the resized JPEG) are deleted explicitly once the suggestion is shown, and the genus classifier's latency and accuracy are measured on real Android phones (median and p95 against the 3 s budget, online and in airplane mode), recorded as checks D-01 to D-03 of `docs/user-tests/device-checks.md` (carried over from Phase 15).
 
-**Plans**: TBD
+**Plans**: 10 plans
+
+Plans:
+- [ ] 29-01-PLAN.md: recognition temp-file cleanup and timings (SC-7, D-07)
+- [ ] 29-02-PLAN.md: genus order and Latin chips (D-06, D-07, D-10)
+- [ ] 29-03-PLAN.md: centred offline community survey state (D-03)
+- [ ] 29-04-PLAN.md: local own-survey map sources and builder (D-01, D-09)
+- [ ] 29-05-PLAN.md: compact parcel-selection card (D-08)
+- [ ] 29-06-PLAN.md: abbreviation registry and gate (D-05, D-11)
+- [ ] 29-07-PLAN.md: abbreviation info sheet (D-04, D-11)
+- [ ] 29-08-PLAN.md: offline Explorer wiring (D-01, D-02, D-09)
+- [ ] 29-09-PLAN.md: catalogue abbreviation rewrite (D-04, D-05, D-11)
+- [ ] 29-10-PLAN.md: docs fixes and device checks, human checkpoints (SC-1, SC-7)
 **UI hint**: yes
 
 ### Phase 30: Quick survey additions (INSERTED, V1)
