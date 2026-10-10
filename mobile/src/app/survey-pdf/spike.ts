@@ -28,7 +28,7 @@ import {
 import {
   decideBasemap,
   defaultBasemapDeps,
-  SNAPSHOT_TIMEOUT_MS,
+  snapshotTimeoutFor,
   takeBasemapJpeg,
   type BasemapChoice,
 } from "./map-snapshot"
@@ -433,9 +433,11 @@ export async function runPdfSpike(
   let basemap: SpikeFixture["map"]["basemap"] = null
   if (choice.kind !== "none") {
     const takeStart = deps.now()
-    basemap = await deps.takeBasemapJpeg({ mapStyle: choice.mapStyle, frame })
+    basemap = await deps.takeBasemapJpeg({ mapStyle: choice.mapStyle, frame, kind: choice.kind })
     if (basemap) snapshot = choice.kind
-    else snapshot = deps.now() - takeStart >= SNAPSHOT_TIMEOUT_MS - 50 ? "timeout" : "error"
+    else
+      snapshot =
+        deps.now() - takeStart >= snapshotTimeoutFor(choice.kind) - 50 ? "timeout" : "error"
   }
   const snapshotMs = deps.now() - snapshotStart
 

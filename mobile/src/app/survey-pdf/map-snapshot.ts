@@ -14,7 +14,10 @@ import type { MapFrame } from "./map-projection"
 // the phone is online, otherwise no basemap at all (the SVG outline alone). On Android the native
 // snapshotter never settles its promise on an error (RESEARCH Pitfall 6), hence the timeout.
 
+// Offline style (a pack on the phone): 8 s, so a hang on a broken pack does not cost more. Online
+// style: 12 s, because a cold first snapshot took 8 s on the iOS simulator (spike of plan 25.1-07).
 export const SNAPSHOT_TIMEOUT_MS = 8000
+export const SNAPSHOT_TIMEOUT_ONLINE_MS = 12000
 export const SNAPSHOT_JPEG_WIDTH_PX = 1100
 export const SNAPSHOT_JPEG_QUALITY = 0.8
 
@@ -22,6 +25,11 @@ export type BasemapChoice =
   | { kind: "offline"; mapStyle: string }
   | { kind: "online"; mapStyle: string }
   | { kind: "none" }
+
+/** The snapshot timeout of a basemap choice: 12 s for the online style, 8 s otherwise. */
+export function snapshotTimeoutFor(kind: BasemapChoice["kind"] | undefined): number {
+  return kind === "online" ? SNAPSHOT_TIMEOUT_ONLINE_MS : SNAPSHOT_TIMEOUT_MS
+}
 
 export type BasemapDeps = {
   isOnline: boolean
@@ -86,7 +94,13 @@ type SnapshotDeps = {
  * without a basemap.
  */
 export async function takeBasemapJpeg(
-  input: { mapStyle: string; frame: MapFrame; timeoutMs?: number },
+  input: {
+    mapStyle: string
+    frame: MapFrame
+    /** The kind of the basemap choice, which sets the default timeout (offline when omitted). */
+    kind?: BasemapChoice["kind"]
+    timeoutMs?: number
+  },
   deps: SnapshotDeps = { StaticMapImageManager, ImageManipulator },
 ): Promise<{ dataUri: string; frame: MapFrame } | null> {
   const { mapStyle, frame } = input
@@ -103,7 +117,7 @@ export async function takeBasemapJpeg(
         logo: false,
       }),
       new Promise<null>((resolve) => {
-        timer = setTimeout(() => resolve(null), input.timeoutMs ?? SNAPSHOT_TIMEOUT_MS)
+        timer = setTimeout(() => resolve(null), input.timeoutMs ?? snapshotTimeoutFor(input.kind))
       }),
     ])
     if (file === null) {

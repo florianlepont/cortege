@@ -4,6 +4,8 @@ import {
   SNAPSHOT_JPEG_QUALITY,
   SNAPSHOT_JPEG_WIDTH_PX,
   SNAPSHOT_TIMEOUT_MS,
+  SNAPSHOT_TIMEOUT_ONLINE_MS,
+  snapshotTimeoutFor,
   decideBasemap,
   defaultBasemapDeps,
   takeBasemapJpeg,
@@ -193,6 +195,43 @@ describe("takeBasemapJpeg", () => {
     await expect(pending).resolves.toBeNull()
     expect(jest.getTimerCount()).toBe(0)
     expect(manipulator.manipulate).not.toHaveBeenCalled()
+  })
+
+  test("the timeout is 8 s for the offline style and 12 s for the online style", () => {
+    expect(SNAPSHOT_TIMEOUT_MS).toBe(8000)
+    expect(SNAPSHOT_TIMEOUT_ONLINE_MS).toBe(12000)
+    expect(snapshotTimeoutFor("offline")).toBe(8000)
+    expect(snapshotTimeoutFor(undefined)).toBe(8000)
+    expect(snapshotTimeoutFor("online")).toBe(12000)
+  })
+
+  test("an online snapshot is still waited for after 8 s and given up at 12 s", async () => {
+    jest.useFakeTimers()
+    const { manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    let settled = false
+    const pending = takeBasemapJpeg({ ...input, kind: "online" }, {
+      StaticMapImageManager: { createImage: jest.fn(() => new Promise<string>(() => {})) },
+      ImageManipulator: manipulator,
+    } as never).then((result) => {
+      settled = true
+      return result
+    })
+    await jest.advanceTimersByTimeAsync(SNAPSHOT_TIMEOUT_MS)
+    expect(settled).toBe(false)
+    await jest.advanceTimersByTimeAsync(SNAPSHOT_TIMEOUT_ONLINE_MS - SNAPSHOT_TIMEOUT_MS)
+    await expect(pending).resolves.toBeNull()
+    expect(jest.getTimerCount()).toBe(0)
+  })
+
+  test("an offline snapshot is given up at 8 s", async () => {
+    jest.useFakeTimers()
+    const { manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    const pending = takeBasemapJpeg({ ...input, kind: "offline" }, {
+      StaticMapImageManager: { createImage: jest.fn(() => new Promise<string>(() => {})) },
+      ImageManipulator: manipulator,
+    } as never)
+    await jest.advanceTimersByTimeAsync(SNAPSHOT_TIMEOUT_MS)
+    await expect(pending).resolves.toBeNull()
   })
 
   test("a snapshot that settles in time clears its timer", async () => {
