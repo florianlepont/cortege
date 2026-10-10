@@ -143,8 +143,8 @@ _Verifier: Claude (gsd-verifier)_
 
 ## Update 2026-10-10
 
-The three human checks are now tracked as D-01 to D-03 in `docs/user-tests/device-checks.md`. The first has already failed in the field: on the Android phones the association's testers used, the camera stayed black and the recognition never worked, and the owner thinks the workflow must be rethought. Phase 29 reworks it, deletes the two temporary files explicitly (D-03) and measures latency and accuracy on real Android phones (D-01, D-02). Status stays `human_needed` until then.
+The three human checks are now tracked as D-01 to D-03 in `docs/user-tests/device-checks.md`. The first has already failed in the field: on the Android phones the association's testers used, the camera stayed black and the recognition never worked, and the owner thinks the workflow must be rethought. Phase 26 reworks it, deletes the two temporary files explicitly (D-03) and measures latency and accuracy on real Android phones (D-01, D-02). Status stays `human_needed` until then.
 
 ## Closed 2026-10-10
 
-The owner closed the phase: the three device checks are carried over and tracked, so they no longer hold it open. They live as D-01 to D-03 of `docs/user-tests/device-checks.md` and in the success criteria of Phase 29 (the model now loads in Android Release builds, PR #272; latency and accuracy on a real Android phone, and the explicit deletion of the two temporary recognition files, remain). Verified on 2026-10-10: the recognition returns genera on the owner's iPhone 15 Pro and, in a Release build, on the Pixel 8 emulator.
+The owner closed the phase: the three device checks are carried over and tracked, so they no longer hold it open. They live as D-01 to D-03 of `docs/user-tests/device-checks.md` and in the success criteria of Phase 26 (the model now loads in Android Release builds, PR #272; latency and accuracy on a real Android phone, and the explicit deletion of the two temporary recognition files, remain). Verified on 2026-10-10: the recognition returns genera on the owner's iPhone 15 Pro and, in a Release build, on the Pixel 8 emulator.
