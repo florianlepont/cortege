@@ -6,14 +6,14 @@ current_phase: 29
 current_phase_name: Field-feedback fixes (INSERTED
 status: executing
 stopped_at: Phase 29 planned (10 plans, 3 waves), ready to execute
-last_updated: "2026-10-10T21:39:03.537Z"
+last_updated: "2026-10-10T21:41:51.024Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 29 execution started
 progress:
   total_phases: 39
   completed_phases: 17
   total_plans: 198
-  completed_plans: 227
+  completed_plans: 228
   percent: 44
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 29 (Field-feedback fixes (INSERTED)) — EXECUTING
-Plan: 2 of 10
+Plan: 3 of 10
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 29 execution started
 
@@ -131,6 +131,7 @@ Progress: [█████████░] 26/29 phases complete
 | Phase 25.1 P15 | 40 min | 3 tasks | 6 files |
 | Phase 25.1 P16 | 35 min | 2 tasks | 14 files |
 | Phase 29 P01 | 25min | 3 tasks | 12 files |
+| Phase 29 P02 | 15min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -221,6 +222,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 25.1-07]: Snapshot timeout 12 s for the online style, 8 s for the offline style (owner change 2026-10-10)
 - [Phase 25.1-13]: PDF accent is forest green (ctaPrimary) with white ink; page margin 40 gives the 515 content column; paginateBlocks returns section.page only and the assembler wraps div.pdf-root (zoom on that class)
 - [Phase 29]: [29-01] D-07 kept: recognition suggestions render in classifier confidence order, no alphabetical sort
+- [Phase ?]: Phase 29-02: genus display order is Latin, accent-insensitive (genus-order.ts); labels 'Latin (French)'; stored factors.A.genera order untouched
 
 ### Pending Todos
 
@@ -263,6 +265,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-10T21:39:00.103Z
+Last session: 2026-10-10T21:41:48.216Z
 Stopped at: Phase 29 context gathered
 Resume file: .planning/phases/29-field-feedback-fixes-inserted/29-CONTEXT.md
