@@ -6,14 +6,14 @@ current_phase: 29
 current_phase_name: Field-feedback fixes (INSERTED
 status: executing
 stopped_at: Phase 29 planned (10 plans, 3 waves), ready to execute
-last_updated: "2026-10-10T22:03:29.337Z"
+last_updated: "2026-10-10T22:07:50.655Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 29 execution started
 progress:
   total_phases: 39
   completed_phases: 17
   total_plans: 198
-  completed_plans: 233
+  completed_plans: 234
   percent: 44
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 29 (Field-feedback fixes (INSERTED)) — EXECUTING
-Plan: 8 of 10
+Plan: 9 of 10
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 29 execution started
 
@@ -137,6 +137,7 @@ Progress: [█████████░] 26/29 phases complete
 | Phase 29 P05 | 25min | 2 tasks | 6 files |
 | Phase 29 P06 | 20min | 2 tasks | 4 files |
 | Phase 29 P07 | 10m | 2 tasks | 9 files |
+| Phase 29 P08 | 25min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -233,6 +234,7 @@ Decisions table. Decisions affecting current work:
 - [Phase 29-05]: D-08: parcel-selection card compact below window height 700 / max(1, fontScale); switch reads useWindowDimensions, never the measured card height
 - [Phase 29-06]: D-04/D-05/D-11: fr.abbreviations registry plus abbreviations.test.ts gate; 38 findings frozen in PENDING_REWRITE for plan 29-09 to empty
 - [Phase 29]: [Phase 29-07] D-11: IBP info sheet on three headers only; no anchor in the survey detail score card (accessible group hides nested buttons)
+- [Phase 29]: 29-08: any id of the local survey list opens the owner's surveys/surveyDetail from Explorer, online or offline — an own marker must never reach the community page offline
 
 ### Pending Todos
 
@@ -275,6 +277,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-10T22:03:26.277Z
+Last session: 2026-10-10T22:07:45.702Z
 Stopped at: Phase 29 context gathered
 Resume file: .planning/phases/29-field-feedback-fixes-inserted/29-CONTEXT.md
