@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 25.1
 current_phase_name: PDF Export Improvement
 status: ready_to_discuss
-stopped_at: Phase 25.1 complete (owner phone check passed 2026-10-10); next Phase 26 (UX/UI audit)
+stopped_at: Phase 25.1 complete (owner phone check passed 2026-10-10); next Phase 26 (field-feedback fixes)
 last_updated: "2026-10-10T13:11:55.168Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 25.1 closed after the owner phone check
@@ -24,11 +24,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 26 (UX/UI audit) is next, then Phase 27 (quality audit) and Phase 28 (field validation). Phase 25.1 (PDF export) closed on the owner's phone check 2026-10-10.
+**Current focus:** Phase 26 (field-feedback fixes) is next, then Phases 27 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phases 26 to 38 were renumbered in execution order on 2026-10-11. Phase 25.1 (PDF export) closed on the owner's phone check 2026-10-10.
 
 ## Current Position
 
-Phase: 25.1 (PDF Export Improvement) complete; next Phase 26 (UX/UI Audit), not discussed yet
+Phase: 25.1 (PDF Export Improvement) complete; next Phase 26 (Field-feedback fixes), not discussed yet
 Plan: 17 of 17 done
 Status: Phase 25.1 complete; Phase 26 ready to discuss
 Last activity: 2026-10-10 — Phase 25.1 closed on the owner's phone check

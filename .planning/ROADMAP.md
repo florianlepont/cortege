@@ -29,8 +29,10 @@ measured in October rather than discovered in December.
 
 **Phase Numbering:**
 
-Phases are plain integers 1 to 38 and execute in the order listed, so reading top to bottom is reading
-the execution order. Since 2026-10-10 the numbers 28 to 38 are not in numeric order: the list below, not the numbers, gives the execution order (see Progress). The roadmap was first written with `1.x` sub-phases (the 2026-09 code audit) and
+Phases are plain integers 1 to 38 (plus 25.1) and execute in numeric order, so reading top to bottom is
+reading the execution order. Phases 26 to 38 were renumbered on 2026-10-11 to follow the execution order
+(old 29 to 37 became 26 to 34, old 28 became 35, old 38 became 36, old 26 and 27 became 37 and 38); documents
+written between 2026-10-07 and 2026-10-11 may quote the previous numbers. The roadmap was first written with `1.x` sub-phases (the 2026-09 code audit) and
 `12.x` inserts; it was renumbered flat on 2026-10-07 and the phase directories under
 `.planning/phases/` were renamed to match. Phases 24 and 25 were added at the same time. Code comments, ADRs and
 the audit documents written before that date still quote the old numbers; this table maps them.
@@ -66,31 +68,31 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 12: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions (completed 2026-09-27)
 - [x] **Phase 13: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls (completed 2026-09-27)
 - [x] **Phase 14: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec (completed 2026-09-27)
-- [x] **Phase 15: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it (completed 2026-09-27; closed 2026-10-10: the Android device checks are carried over to Phase 29 and `docs/user-tests/device-checks.md`)
+- [x] **Phase 15: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it (completed 2026-09-27; closed 2026-10-10: the Android device checks are carried over to Phase 26 and `docs/user-tests/device-checks.md`)
 - [x] **Phase 16: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured (completed 2026-09-27)
-- [x] **Phase 17: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; closed 2026-10-10: the airplane-mode walkthrough was run, its two gaps F-1 and F-2 are carried over to Phase 29)
+- [x] **Phase 17: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; closed 2026-10-10: the airplane-mode walkthrough was run, its two gaps F-1 and F-2 are carried over to Phase 26)
 - [x] **Phase 18: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map (completed 2026-09-27)
 - [x] **Phase 19: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
 - [x] **Phase 20: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone (completed 2026-09-27)
 - [x] **Phase 21: Interface Finishing** (INSERTED, UX audit Lot 5) - Dark mode, Liquid Glass on floating controls, a real history timeline — the "Ma saison" gamification hook stays deferred with Epic F (completed 2026-09-28)
-- [x] **Phase 22: Owner acceptance testing** (INSERTED) - The owner tests the app on their own phone; display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready for the association's field tests (completed 2026-10-06; the owner declared the app ready for field tests, which open after Phases 23 and 26)
-- [x] **Phase 23: Visual Modernisation** (INSERTED) - A more pleasant, modern and lively interface: visual refresh and motion across the main screens, colourised map background with a dark variant, design spec updated, components reused and homogenised, native first (completed 2026-10-09; Android pass deferred to Phase 28, open design points to Phase 26)
+- [x] **Phase 22: Owner acceptance testing** (INSERTED) - The owner tests the app on their own phone; display bugs and UX friction are logged, triaged and fixed in batches until the owner judges it ready for the association's field tests (completed 2026-10-06; the owner declared the app ready for field tests, which open after Phases 23 and 37)
+- [x] **Phase 23: Visual Modernisation** (INSERTED) - A more pleasant, modern and lively interface: visual refresh and motion across the main screens, colourised map background with a dark variant, design spec updated, components reused and homogenised, native first (completed 2026-10-09; Android pass deferred to Phase 35, open design points to Phase 37)
 - [x] **Phase 24: Survey History Split** (INSERTED) - The survey change log and the parcel history become two separate things (SEED-002; owner decision 2026-10-07, done before the audits so they audit the final screens) (completed 2026-10-09)
 - [x] **Phase 25: Global Search** (INSERTED) - One search covers the whole app: own and community surveys, places and parcels on the map, and the other items the app exposes (SEED-003; owner decision 2026-10-07) (completed 2026-10-10)
 - [x] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10) (completed 2026-10-10)
-- [ ] **Phase 29: Field-feedback fixes** (INSERTED) - Android photo recognition works and its workflow is rethought; small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10)
-- [ ] **Phase 30: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, in the beta for end of November (seminar of 2026-10-10)
-- [ ] **Phase 28: Field Validation** (moved up: runs on the beta, from early December, in parallel with Phases 31 to 38) - Prove the offline survey-to-sync loop on real parcels with real observers
-- [ ] **Phase 31: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10)
-- [ ] **Phase 32: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list)
-- [ ] **Phase 33: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand
-- [ ] **Phase 34: Parcel Annotation & Remarkable Elements** (INSERTED, V1) - Annotate the parcel on a dedicated view: remarkable elements and the route trace; a large step
-- [ ] **Phase 35: Detailed DMH Information** (INSERTED, V1) - More detailed information while recording the dendromicrohabitats, in a tool or a dedicated page, for the many potential DMH
-- [ ] **Phase 36: PDF Export, Exhaustive and Simplified** (INSERTED, V1) - Rework the PDF a second time: a beautiful, exhaustive export and a simplified one, usable with patrons and partners
-- [ ] **Phase 37: Extended Photo Recognition, Factor by Factor** (INSERTED) - Decide, factor by factor, what ships in V1.0 and what waits for V1.x, then build the V1.0 share
-- [ ] **Phase 38: Association-Owned Infrastructure & Invited Accounts** (INSERTED, V1) - Stores, Auth0, server and domain in the association's name; closed accounts on invitation
-- [ ] **Phase 26: UX/UI Audit & Design System Update** (INSERTED) - Audit the interface once the V1 features are in, update the design system, close the gaps with the "États Sauvages" graphic charter, check global coherence across screens and fix visual bugs; one of the last steps before release (owner decision 2026-10-07)
-- [ ] **Phase 27: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed; the very last step before release (owner decision 2026-10-10) (owner decision 2026-10-06)
+- [ ] **Phase 26: Field-feedback fixes** (INSERTED) - Android photo recognition works and its workflow is rethought; small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10)
+- [ ] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
+- [ ] **Phase 28: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10)
+- [ ] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list)
+- [ ] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand
+- [ ] **Phase 31: Parcel Annotation & Remarkable Elements** (INSERTED, V1) - Annotate the parcel on a dedicated view: remarkable elements and the route trace; a large step
+- [ ] **Phase 32: Detailed DMH Information** (INSERTED, V1) - More detailed information while recording the dendromicrohabitats, in a tool or a dedicated page, for the many potential DMH
+- [ ] **Phase 33: PDF Export, Exhaustive and Simplified** (INSERTED, V1) - Rework the PDF a second time: a beautiful, exhaustive export and a simplified one, usable with patrons and partners
+- [ ] **Phase 34: Extended Photo Recognition, Factor by Factor** (INSERTED) - Decide, factor by factor, what ships in V1.0 and what waits for V1.x, then build the V1.0 share
+- [ ] **Phase 35: Field Validation** (moved after Phase 34, owner decision 2026-10-11: the beta holds every V1 function; this phase is the field tests on it and the corrections they call for, before Phase 36) - Prove the offline survey-to-sync loop on real parcels with real observers
+- [ ] **Phase 36: Association-Owned Infrastructure & Invited Accounts** (INSERTED, V1) - Stores, Auth0, server and domain in the association's name; closed accounts on invitation
+- [ ] **Phase 37: UX/UI Audit & Design System Update** (INSERTED) - Audit the interface once the V1 features are in, update the design system, close the gaps with the "États Sauvages" graphic charter, check global coherence across screens and fix visual bugs; one of the last steps before release (owner decision 2026-10-07)
+- [ ] **Phase 38: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed; the very last step before release (owner decision 2026-10-10) (owner decision 2026-10-06)
 
 ## Phase Details
 
@@ -143,7 +145,7 @@ Plans:
 ### Phase 3: Stop field data loss and account exposure (INSERTED)
 
 **Goal**: Nothing an ecologist records offline can be destroyed by a session error, and no account or endpoint can be taken over or opened by configuration mistake.
-**Depends on**: Nothing — independent of the species-recognition track. Must land before Phase 28.
+**Depends on**: Nothing — independent of the species-recognition track. Must land before Phase 35.
 **Requirements**: REQ-AUD-session-data-loss, REQ-AUD-rate-limit, REQ-AUD-debug-surface, REQ-AUD-identity, REQ-AUD-mobile-quick-fixes
 **Source**: audit lots L1–L4 (`docs/audits/plan-remediation-2026-09.md`), findings M-C1, A-C1, A-H1, A-H4, A-M6, M-H3, M-H5 (`docs/audits/audit-2026-09-code-complet.md`)
 **Success Criteria** (what must be TRUE):
@@ -437,7 +439,7 @@ Plans:
 **Plans**: 6 batches, executed and closed directly (no separate orchestrator/executor split for
 this phase) — see `.planning/phases/12-field-entry-ergonomics/12-CONTEXT.md` and its
 `03-0N-SUMMARY.md` files for what each batch shipped and its test evidence.
-**Outcome (2026-10-06)**: closed. Two phone passes (the second on the build of `main` 4419590), 127 entries logged in the grid and every one closed or deferred: OA-124 (split the survey change log from the parcel history, SEED-002) and OA-127 (map layers, SEED-001) are phases of their own for later, not blockers. The owner wrote in chat: "La 12.1 est terminée, prêt pour les tests terrain à partir du 7 octobre 2026", then decided the same evening to do Phases 23 and 26 first ("tant pis pour la date"): Phase 28 keeps its dependencies and the field tests do not open on 2026-10-07. The demo data (`api/scripts/seed-demo-community.js`) stays on the server for the owner's tests and must be removed before the app opens to anyone else.
+**Outcome (2026-10-06)**: closed. Two phone passes (the second on the build of `main` 4419590), 127 entries logged in the grid and every one closed or deferred: OA-124 (split the survey change log from the parcel history, SEED-002) and OA-127 (map layers, SEED-001) are phases of their own for later, not blockers. The owner wrote in chat: "La 12.1 est terminée, prêt pour les tests terrain à partir du 7 octobre 2026", then decided the same evening to do Phases 23 and 37 first ("tant pis pour la date"): Phase 35 keeps its dependencies and the field tests do not open on 2026-10-07. The demo data (`api/scripts/seed-demo-community.js`) stays on the server for the owner's tests and must be removed before the app opens to anyone else.
 **UI hint**: yes
 **Status**: Complete (2026-09-27). All 7 success criteria met; scope decisions (Factor A and F stay
 numeric, B is chips not slider, the CTA is not renamed to "Vérifier et soumettre") are recorded in
@@ -513,7 +515,7 @@ confirm entry point, per-genus calibrated confidence, bundled-model plumbing, GB
 row), plus a follow-up fix (PR #178) that swapped in the real model.
 
 **UI hint**: yes
-**Status**: Complete (2026-09-27), with one explicit gap deferred to Phase 28. Criteria 1-5 are
+**Status**: Complete (2026-09-27), with one explicit gap deferred to Phase 35. Criteria 1-5 are
 fully built: `FactorGenusListInput` (Factor A's genus-list UI, which Phase 14 had left as a stale
 numeric field), `GenusRecognitionModal`'s photograph → classify → confirm flow, per-genus
 calibrated confidence bands (`mobile/src/recognition/calibration.ts`), the bundled-model plumbing
@@ -528,7 +530,7 @@ source `SavedModel` and reading its graph — an internal `Rescaling` (1/255) pl
 accuracy spot-check, closing Phase 1's own accepted deviation) was not performed — no Android
 device was available in either container this phase ran in. Real-device recognition accuracy
 against actual tree photographs (not just the lab/GBIF figures ADR-002 already caps) was likewise
-not exercised on-device. Both are explicitly deferred to Phase 28's field validation, per the
+not exercised on-device. Both are explicitly deferred to Phase 35's field validation, per the
 owner's 2026-09-27 decision, rather than blocking this phase indefinitely.
 
 ### Phase 16: Information Architecture (INSERTED, UX audit Lot 3)
@@ -586,7 +588,7 @@ simulator or physical device is available in this cloud session (same constraint
 verification is lint/typecheck/`test:unit`/format plus full coverage-threshold runs, not an
 on-device airplane-mode walkthrough — stated explicitly rather than claimed as verified-in-app.
 That on-device check (criterion 3's "survives a force-quit and relaunch", criterion 4's airplane-
-mode walkthrough) is the one item Phase 28's field validation should confirm.
+mode walkthrough) is the one item Phase 35's field validation should confirm.
 
 ### Phase 18: Onboarding & Explorer Polish (INSERTED, UX audit Lot 4)
 
@@ -661,7 +663,7 @@ each batch shipped; `21-VALIDATION.md` maps each success criterion above to its 
 **Goal**: The app is good enough to put in front of the association's observers: the owner has used it on their own phone, every display bug and UX friction they found is logged and triaged, and the blockers are fixed.
 **Depends on**: Phase 21
 **Requirements**: none yet in `REQUIREMENTS.md` — added by the 2026-09-28 owner decision
-**Source**: owner decision 2026-09-28. Testing the app on their own phone, the owner still finds many ergonomics problems and display bugs, and judged Phase 28's field tests with the association premature until those are dealt with.
+**Source**: owner decision 2026-09-28. Testing the app on their own phone, the owner still finds many ergonomics problems and display bugs, and judged Phase 35's field tests with the association premature until those are dealt with.
 **Success Criteria** (what must be TRUE):
 
   1. The owner has used the app on their own phone across the main flows (sign-in, Home, a survey from creation to submission, Mes Relevés, survey detail, Explorer, Compte), in light and dark mode.
@@ -751,7 +753,7 @@ Plans:
 
 - [x] 23-20-PLAN.md — Outline icon harmonisation and icon gate (D-07)
 - [x] 23-21-PLAN.md — Em dash catalogue gate, motion consistency audit, dark pass
-- [x] 23-22-PLAN.md — Charter section 13, direction corrections, Phase 28 Android carry-over (planned as "Phase 13"), animals seed, CLAUDE.md note
+- [x] 23-22-PLAN.md — Charter section 13, direction corrections, Phase 35 Android carry-over (planned as "Phase 13"), animals seed, CLAUDE.md note
 
 **Wave 13** *(blocked on Wave 12 completion)*
 
@@ -817,7 +819,7 @@ Plans:
 **Goal**: One search field finds anything in the app: the member's own surveys, the other members' surveys, places and parcels on the map, and the other items the app exposes.
 **Depends on**: Phase 24 (built on the final survey screens); an API search endpoint is likely needed for the community and places parts
 **Requirements**: REQ-B-global-search
-**Source**: owner decision 2026-10-07. SEED-003. Done before Phases 26 and 27 so the audits cover the final navigation.
+**Source**: owner decision 2026-10-07. SEED-003. Done before Phases 37 and 38 so the audits cover the final navigation.
 **Success Criteria** (what must be TRUE):
 
   1. A single search entry point, reachable from every main tab, returns results grouped by item type (own surveys, community surveys, places and parcels, and the other items the owner lists when the phase is discussed), each result leading straight to the item (survey page, map centred on the place or parcel).
@@ -916,57 +918,7 @@ Plans:
 
 **UI hint**: yes
 
-### Phase 26: UX/UI Audit & Design System Update (INSERTED)
-
-**Goal**: After the visual modernisation, the interface is coherent from one screen to the next, the design system documents what the app now is, and the visual bugs are gone.
-**Depends on**: Phase 23 (audits and documents what Phase 23 produced), Phases 29 to 38 (audits the final V1 screens; moved to the end by owner decision 2026-10-10)
-**Requirements**: REQ-QA-ux-audit
-**Source**: owner decision 2026-10-07, folded into the MVP. Baseline: `docs/design/ux-ui-audit-2026-09.md` and `docs/design/charte-graphique-etats-sauvages-spec.md`.
-**Success Criteria** (what must be TRUE):
-
-  1. A UX/UI audit report in `docs/design/` covers every screen in light and dark mode on iOS (and Android where it differs): global coherence (spacing, typography, colour, iconography, components, motion, wording), accessibility (contrast, touch targets, reduced motion, Dynamic Type) and visual bugs, with the previous audit's findings re-checked.
-  2. Each finding has an ID, severity and a triage (*blocker before field tests*, *fix later*, *rejected* with a reason), logged in one grid.
-  3. The design system is updated to match Phase 23: tokens, components and motion rules are documented in the charter, stale sections are corrected, and no screen keeps a one-off style the system does not describe (the colour lint rule stays green).
-  4. A conformity pass compares the app, screen by screen, with the "États Sauvages" graphic charter and lists every gap (the owner finds the app does not fully respect it); each gap is fixed or explicitly accepted as a deviation in the charter.
-  5. Every *blocker before release* finding is fixed in batches, and the owner confirms them on their phone. (The phase now runs at the end, after the V1 features of Phases 29 to 38; its findings are "blocker before release", no longer "before field tests".)
-
-**Plans**: TBD
-**UI hint**: yes
-
-### Phase 27: In-depth Quality Audit (INSERTED)
-
-**Goal**: We know, from a documented audit, the real state of code quality, test coverage, architecture and security, and the blockers it finds are fixed before field tests.
-**Depends on**: Phase 20 (durable backend), Phases 26 and 29 to 38 (audit the code that will ship; the last step before release by owner decision 2026-10-10), and the 2026-09 audit (`docs/audits/audit-2026-09-code-complet.md`) as the baseline to compare against
-**Requirements**: REQ-QA-deep-audit
-**Source**: owner decision 2026-10-06, folded into the MVP.
-**Success Criteria** (what must be TRUE):
-
-  1. An audit report in `docs/audits/` covers four axes: code quality (duplication, dead code, complexity, lint and type debt), test coverage (measured per workspace, gaps on critical paths such as sync, auth and IBP rules), architecture (module boundaries, offline-first and sync design, shared `ibp-domain` package) and security (auth, authorisation per survey, input validation, rate limiting, storage and presigned URLs, secrets, dependencies, mobile data at rest).
-  2. Each finding has an ID, severity and a triage (*blocker before field tests*, *fix later*, *rejected* with a reason); the previous audit's findings are re-checked as closed or still open.
-  3. Every *blocker before field tests* finding is fixed and verified, in batches.
-  4. Coverage thresholds and the CI checks that guard the audited axes are recorded, so the result does not decay.
-
-**Plans**: TBD
-
-### Phase 28: Field Validation
-
-**Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
-**Depends on**: Phases 23, 25, 25.1, 29 and 30 (visual modernisation, global search, PDF export, field-feedback fixes, quick additions: the beta of end of November; the audits no longer come first, owner decision 2026-10-10), Phase 22 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 3, 5, 6, 7 (field tests must not run on the data-loss and sync defects), 4, 9 and 12, 8, 10, 11
-**Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
-**Carried over from Phase 23 (old 12.2, D-17)**: an Android device pass of the visual refresh (gradients, coloured shadows, flat glass fill on cards, map controls and sheets, the download edge glow at the navigation layer, the forest card SVG mask, and the cost of the forest card mist and flowing contours: turn `ForestCard`'s `motion` off on Android if frames drop; header tint in dark mode). See charter section 13.9.
-**Success Criteria** (what must be TRUE):
-
-  1. A field-test report exists for each of Epics B, C and D, in the form of `docs/user-tests/epic-a-access-and-security.md`, with a recorded outcome for every case.
-  2. At least one full run is recorded end to end — survey created offline on a real parcel, ten factors scored, photos attached, submitted offline, synced on reconnection — with the resulting server record checked for completeness and for the absence of duplicate surveys and attachments.
-  3. Signing up with an already-registered email shows a specific message inviting the user to log in (`BUG-A3-4`), and password-reset deliverability is closed as an Auth0 tenant configuration item with the change recorded (`BUG-A6-2`).
-  4. The survey list, survey detail, survey form and map screens have tests covering their sync-status, filter and error states, so the flows the field tests exercise are protected against regression.
-  5. Every field-test case cites a unique story ID: the six Epic D stories have six distinct IDs, and `docs/specs/user-stories.md` §4 uses the MVP / V1 / V2 taxonomy.
-  6. Each field observer's feedback is collected in one feedback grid (`docs/user-tests/field-feedback.md`): bugs, interface friction (slow entry, unclear screens, anything that gets in the way on a parcel) and suggestions, each with an ID, the screen concerned and the observer. At the end of the phase every entry is triaged as *release blocker*, *next milestone* or *rejected* (with a reason); the release blockers are fixed, in a short follow-up phase if needed, before the milestone closes.
-  7. The checks deferred from earlier phases are run on real devices and recorded in `docs/user-tests/device-checks.md` (D-01 to D-11): genus recognition on Android (latency and accuracy, after Phase 29) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, the splash and permission-refusal paths of onboarding, and the backup timer and restore on the server (owner only; repeated on the new server in Phase 38).
-
-**Plans**: TBD
-
-### Phase 29: Field-feedback fixes (INSERTED)
+### Phase 26: Field-feedback fixes (INSERTED)
 
 **Goal**: The problems reported by the Android testers are gone: photo recognition of genera works on Android (the model now loads, PR #272), the small-screen map stays readable, abbreviations are explained and genera are easy to find.
 **Depends on**: Phase 15 (genus recognition), Phase 25.1
@@ -985,12 +937,12 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 30: Quick survey additions (INSERTED, V1)
+### Phase 27: Quick survey additions (INSERTED, V1)
 
 **Goal**: A survey can carry a free note, pre-filled weather information and a certainty level on observations, without slowing the field entry.
-**Depends on**: Phase 29
+**Depends on**: Phase 26
 **Requirements**: none new yet (to be traced when the phase is planned)
-**Source**: seminar 2026-10-10: cards "Note libre sur le relevé", "Info météo préremplie", "Niveau de certitude des observations"; for the beta of end of November
+**Source**: seminar 2026-10-10: cards "Note libre sur le relevé", "Info météo préremplie", "Niveau de certitude des observations"; part of the V1 features of the beta
 **Success Criteria** (what must be TRUE):
 
   1. The observer can add a free note (context: weather, field remarks) to a survey; it syncs and appears in the survey detail and in the PDF.
@@ -1000,7 +952,7 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 31: Map Layers & Comparison (INSERTED, V1)
+### Phase 28: Map Layers & Comparison (INSERTED, V1)
 
 **Goal**: The map offers several layers (state-map, forest data, others) with a comparison option, and the Explorer tab supports both exploring and studying maps.
 **Depends on**: Phase 17 (offline map), Phase 23
@@ -1017,10 +969,10 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 32: Private or Public Before Submission (INSERTED, V1)
+### Phase 29: Private or Public Before Submission (INSERTED, V1)
 
 **Goal**: The observer chooses who sees a survey before submitting it.
-**Depends on**: Phases 11 and 38 (closed accounts)
+**Depends on**: Phases 11 and 36 (closed accounts)
 **Requirements**: none new yet (to be traced when the phase is planned)
 **Source**: seminar 2026-10-10: card "Choix privé ou public avant soumission" classed V1; `REQ-C-privacy-choice`
 **Success Criteria** (what must be TRUE):
@@ -1032,10 +984,10 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 33: Route Choice Assistant (INSERTED, V1)
+### Phase 30: Route Choice Assistant (INSERTED, V1)
 
 **Goal**: The observer is guided to choose the right route and method for the parcel, and the route followed is shown; the phase is large because the method is hard to understand.
-**Depends on**: Phase 34 (annotation view for the trace), the CNPF method documents in `docs/references/`
+**Depends on**: Phase 31 (annotation view for the trace), the CNPF method documents in `docs/references/`
 **Requirements**: none new yet (to be traced when the phase is planned)
 **Source**: seminar 2026-10-10: cards "Aide au choix du parcours" and "Parcours utilisé"; owner: a big step because the method is complicated
 **Success Criteria** (what must be TRUE):
@@ -1048,10 +1000,10 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 34: Parcel Annotation & Remarkable Elements (INSERTED, V1)
+### Phase 31: Parcel Annotation & Remarkable Elements (INSERTED, V1)
 
 **Goal**: The observer annotates the parcel on a dedicated view: remarkable trees and elements as points, and the route trace; a large step, since the view does not exist yet.
-**Depends on**: Phase 31 (map layers)
+**Depends on**: Phase 28 (map layers)
 **Requirements**: none new yet (to be traced when the phase is planned)
 **Source**: seminar 2026-10-10: card "Éléments remarquables sur la carte" and the route display
 **Success Criteria** (what must be TRUE):
@@ -1064,7 +1016,7 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 35: Detailed DMH Information (INSERTED, V1)
+### Phase 32: Detailed DMH Information (INSERTED, V1)
 
 **Goal**: While recording, the observer gets detailed information on dendromicrohabitats (many potential DMH), in a tool or a dedicated page.
 **Depends on**: Phase 25.1 (stored DMH details)
@@ -1079,10 +1031,10 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 36: PDF Export, Exhaustive and Simplified (INSERTED, V1)
+### Phase 33: PDF Export, Exhaustive and Simplified (INSERTED, V1)
 
 **Goal**: The survey PDF is beautiful and complete, with an exhaustive version and a simplified one, usable with patrons and partners.
-**Depends on**: Phase 25.1 (the previous rework), Phase 30
+**Depends on**: Phase 25.1 (the previous rework), Phase 27
 **Requirements**: none new yet (to be traced when the phase is planned)
 **Source**: seminar 2026-10-10: the "export présentable pour mécènes" is the PDF export, to rework again because it is not yet beautiful nor exhaustive enough
 **Success Criteria** (what must be TRUE):
@@ -1094,10 +1046,10 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 37: Extended Photo Recognition, Factor by Factor (INSERTED)
+### Phase 34: Extended Photo Recognition, Factor by Factor (INSERTED)
 
 **Goal**: For each IBP factor the board decides whether photo recognition ships in V1.0 or V1.x, and the V1.0 share is built.
-**Depends on**: Phase 29 (recognition working on Android), ADR-002
+**Depends on**: Phase 26 (recognition working on Android), ADR-002
 **Requirements**: none new yet (to be traced when the phase is planned)
 **Source**: seminar 2026-10-10: card "Reconnaissance par photo étendue (ou autres outils)", estimated XL; the owner wants to discuss it factor by factor
 **Success Criteria** (what must be TRUE):
@@ -1109,7 +1061,25 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 38: Association-Owned Infrastructure & Invited Accounts (INSERTED, V1)
+### Phase 35: Field Validation
+
+**Goal**: An ecologist completes a full IBP survey offline on a real parcel, and it syncs back with no data loss and no duplicates — on record.
+**Depends on**: Phases 28 to 34 (the V1 features, validated together; owner decision 2026-10-11), Phases 23, 25, 25.1, 26 and 27 (visual modernisation, global search, PDF export, field-feedback fixes, quick additions; together with Phases 28 to 34 they make up the beta, which is the build the field tests run on; the audits no longer come first, owner decision 2026-10-10), Phase 22 (the owner opens field tests to the association only once their own testing has no open blocker), Phases 3, 5, 6, 7 (field tests must not run on the data-loss and sync defects), 4, 9 and 12, 8, 10, 11
+**Requirements**: REQ-FT-field-tests, REQ-QA-bug-a3-4, REQ-QA-bug-a6-2, REQ-QA-screen-tests, REQ-DOC-taxonomy, REQ-DOC-epicd-ids
+**Carried over from Phase 23 (old 12.2, D-17)**: an Android device pass of the visual refresh (gradients, coloured shadows, flat glass fill on cards, map controls and sheets, the download edge glow at the navigation layer, the forest card SVG mask, and the cost of the forest card mist and flowing contours: turn `ForestCard`'s `motion` off on Android if frames drop; header tint in dark mode). See charter section 13.9.
+**Success Criteria** (what must be TRUE):
+
+  1. A field-test report exists for each of Epics B, C and D, in the form of `docs/user-tests/epic-a-access-and-security.md`, with a recorded outcome for every case.
+  2. At least one full run is recorded end to end — survey created offline on a real parcel, ten factors scored, photos attached, submitted offline, synced on reconnection — with the resulting server record checked for completeness and for the absence of duplicate surveys and attachments.
+  3. Signing up with an already-registered email shows a specific message inviting the user to log in (`BUG-A3-4`), and password-reset deliverability is closed as an Auth0 tenant configuration item with the change recorded (`BUG-A6-2`).
+  4. The survey list, survey detail, survey form and map screens have tests covering their sync-status, filter and error states, so the flows the field tests exercise are protected against regression.
+  5. Every field-test case cites a unique story ID: the six Epic D stories have six distinct IDs, and `docs/specs/user-stories.md` §4 uses the MVP / V1 / V2 taxonomy.
+  6. Each field observer's feedback is collected in one feedback grid (`docs/user-tests/field-feedback.md`): bugs, interface friction (slow entry, unclear screens, anything that gets in the way on a parcel) and suggestions, each with an ID, the screen concerned and the observer. At the end of the phase every entry is triaged as *release blocker*, *next milestone* or *rejected* (with a reason); the release blockers are fixed, in a short follow-up phase if needed, before the milestone closes.
+  7. The checks deferred from earlier phases are run on real devices and recorded in `docs/user-tests/device-checks.md` (D-01 to D-11): genus recognition on Android (latency and accuracy, after Phase 26) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, the splash and permission-refusal paths of onboarding, and the backup timer and restore on the server (owner only; repeated on the new server in Phase 36).
+
+**Plans**: TBD
+
+### Phase 36: Association-Owned Infrastructure & Invited Accounts (INSERTED, V1)
 
 **Goal**: The app runs on accounts and a server in the association's name, and only invited people can use it (the invitation-only access does not exist yet and is built here).
 **Depends on**: Phase 20 (durable backend)
@@ -1126,12 +1096,44 @@ Plans:
 **Plans**: TBD
 **UI hint**: no
 
+### Phase 37: UX/UI Audit & Design System Update (INSERTED)
+
+**Goal**: After the visual modernisation, the interface is coherent from one screen to the next, the design system documents what the app now is, and the visual bugs are gone.
+**Depends on**: Phase 23 (audits and documents what Phase 23 produced), Phases 26 to 36 (audits the final V1 screens; moved to the end by owner decision 2026-10-10)
+**Requirements**: REQ-QA-ux-audit
+**Source**: owner decision 2026-10-07, folded into the MVP. Baseline: `docs/design/ux-ui-audit-2026-09.md` and `docs/design/charte-graphique-etats-sauvages-spec.md`.
+**Success Criteria** (what must be TRUE):
+
+  1. A UX/UI audit report in `docs/design/` covers every screen in light and dark mode on iOS (and Android where it differs): global coherence (spacing, typography, colour, iconography, components, motion, wording), accessibility (contrast, touch targets, reduced motion, Dynamic Type) and visual bugs, with the previous audit's findings re-checked.
+  2. Each finding has an ID, severity and a triage (*blocker before field tests*, *fix later*, *rejected* with a reason), logged in one grid.
+  3. The design system is updated to match Phase 23: tokens, components and motion rules are documented in the charter, stale sections are corrected, and no screen keeps a one-off style the system does not describe (the colour lint rule stays green).
+  4. A conformity pass compares the app, screen by screen, with the "États Sauvages" graphic charter and lists every gap (the owner finds the app does not fully respect it); each gap is fixed or explicitly accepted as a deviation in the charter.
+  5. Every *blocker before release* finding is fixed in batches, and the owner confirms them on their phone. (The phase now runs at the end, after the V1 features of Phases 26 to 36; its findings are "blocker before release", no longer "before field tests".)
+
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 38: In-depth Quality Audit (INSERTED)
+
+**Goal**: We know, from a documented audit, the real state of code quality, test coverage, architecture and security, and the blockers it finds are fixed before field tests.
+**Depends on**: Phase 20 (durable backend), Phases 37 and 26 to 36 (audit the code that will ship; the last step before release by owner decision 2026-10-10), and the 2026-09 audit (`docs/audits/audit-2026-09-code-complet.md`) as the baseline to compare against
+**Requirements**: REQ-QA-deep-audit
+**Source**: owner decision 2026-10-06, folded into the MVP.
+**Success Criteria** (what must be TRUE):
+
+  1. An audit report in `docs/audits/` covers four axes: code quality (duplication, dead code, complexity, lint and type debt), test coverage (measured per workspace, gaps on critical paths such as sync, auth and IBP rules), architecture (module boundaries, offline-first and sync design, shared `ibp-domain` package) and security (auth, authorisation per survey, input validation, rate limiting, storage and presigned URLs, secrets, dependencies, mobile data at rest).
+  2. Each finding has an ID, severity and a triage (*blocker before field tests*, *fix later*, *rejected* with a reason); the previous audit's findings are re-checked as closed or still open.
+  3. Every *blocker before field tests* finding is fixed and verified, in batches.
+  4. Coverage thresholds and the CI checks that guard the audited axes are recorded, so the result does not decay.
+
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases 1 to 25.1 executed in numeric order. Since 2026-10-10 the order is: 29 → 30 (beta, end of November) → 28 (field validation from early December, in parallel with the V1 features) → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 26 (UX/UI audit) → 27 (quality audit, the very last step) → release, spring 2027.
+Phases 1 to 25.1 executed in numeric order. Since 2026-10-11 the numbers are the order: 26 (field-feedback fixes) → 27 → 28 → 29 → 30 → 31 → 32 → 33 → 34 (the beta is cut here: it holds every V1 function) → 35 (field validation on the beta, then the corrections the tests call for) → 36 (association-owned infrastructure) → 37 (UX/UI audit) → 38 (quality audit, the very last step) → release, spring 2027.
 
-Phases 3–10 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 11 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 17, whose offline-map work builds on the map Phase 11 repoints. Phases 12, 13, 16, 18 and 21 (the UX/UI audit, folded into MVP by owner decision 2026-09-27) are threaded between the phases they depend on for components (Phase 12 before Phase 14, so Factor A's genus-list UI reuses the new field components) or for a stable screen to redesign (Phase 16 after Phase 15, Phase 18 after Phase 17, Phase 21 last, right before Phase 28). Phases 19–20 do not depend on Phases 7–10 or Phase 11 either, so they can interleave if the schedule requires it.
+Phases 3–10 (audit remediation) do not depend on the species-recognition track and should run while Phase 1 waits on real devices. Phase 11 (association-only sharing & scope trim) does not depend on the species-recognition track either, and should land before Phase 17, whose offline-map work builds on the map Phase 11 repoints. Phases 12, 13, 16, 18 and 21 (the UX/UI audit, folded into MVP by owner decision 2026-09-27) are threaded between the phases they depend on for components (Phase 12 before Phase 14, so Factor A's genus-list UI reuses the new field components) or for a stable screen to redesign (Phase 16 after Phase 15, Phase 18 after Phase 17, Phase 21 last, right before Phase 35). Phases 19–20 do not depend on Phases 7–10 or Phase 11 either, so they can interleave if the schedule requires it.
 
 Phases 17, 19 and 20 declare no dependency on the species-recognition track and can be reordered ahead
 of it if Phase 1 returns a no-go, or run in parallel with it.
@@ -1152,36 +1154,36 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 12. Field-Entry Ergonomics (UX Lot 1) | 6/6 | Complete   | 2026-09-27 |
 | 13. Visual Foundations & Motion (UX Lot 2) | 5/5 | Complete   | 2026-09-27 |
 | 14. Factor A Genus List & Data-Contract Corrections | 1/1 | Complete   | 2026-09-27 |
-| 15. Genus Recognition for Factor A | 1/1 | Complete (Android device checks carried over to Phase 29) | 2026-09-27 |
+| 15. Genus Recognition for Factor A | 1/1 | Complete (Android device checks carried over to Phase 26) | 2026-09-27 |
 | 16. Information Architecture (UX Lot 3) | 6/6 | Complete   | 2026-09-27 |
-| 17. Offline Map & Own-Survey Navigation | n/a | Complete (offline gaps F-1 and F-2 carried over to Phase 29) | 2026-09-27 |
+| 17. Offline Map & Own-Survey Navigation | n/a | Complete (offline gaps F-1 and F-2 carried over to Phase 26) | 2026-09-27 |
 | 18. Onboarding & Explorer Polish (UX Lot 4) | n/a | Complete    | 2026-09-27 |
 | 19. Survey Export & Ownership | 1/1 | Complete   | 2026-09-27 |
 | 20. Durable Backend | 4/4 | Complete    | 2026-09-27 |
 | 21. Interface Finishing (UX Lot 5) | 7/7 | Complete   | 2026-09-28 |
 | 22. Owner acceptance testing | n/a | Complete | 2026-10-06 |
-| 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 28) | 2026-10-09 |
+| 23. Visual Modernisation | 23/23 | Complete (Android pass deferred to Phase 35) | 2026-10-09 |
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
-| 29. Field-feedback fixes | 0/TBD | Not started | - |
-| 30. Quick survey additions | 0/TBD | Not started | - |
-| 28. Field Validation | 0/TBD | Not started | - |
-| 31. Map Layers & Comparison | 0/TBD | Not started | - |
-| 32. Private or Public Before Submission | 0/TBD | Not started | - |
-| 33. Route Choice Assistant | 0/TBD | Not started | - |
-| 34. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
-| 35. Detailed DMH Information | 0/TBD | Not started | - |
-| 36. PDF Export, Exhaustive and Simplified | 0/TBD | Not started | - |
-| 37. Extended Photo Recognition, Factor by Factor | 0/TBD | Not started | - |
-| 38. Association-Owned Infrastructure & Invited Accounts | 0/TBD | Not started | - |
-| 26. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
-| 27. In-depth Quality Audit | 0/TBD | Not started | - |
+| 26. Field-feedback fixes | 0/TBD | Not started | - |
+| 27. Quick survey additions | 0/TBD | Not started | - |
+| 28. Map Layers & Comparison | 0/TBD | Not started | - |
+| 29. Private or Public Before Submission | 0/TBD | Not started | - |
+| 30. Route Choice Assistant | 0/TBD | Not started | - |
+| 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
+| 32. Detailed DMH Information | 0/TBD | Not started | - |
+| 33. PDF Export, Exhaustive and Simplified | 0/TBD | Not started | - |
+| 34. Extended Photo Recognition, Factor by Factor | 0/TBD | Not started | - |
+| 35. Field Validation | 0/TBD | Not started | - |
+| 36. Association-Owned Infrastructure & Invited Accounts | 0/TBD | Not started | - |
+| 37. UX/UI Audit & Design System Update | 0/TBD | Not started | - |
+| 38. In-depth Quality Audit | 0/TBD | Not started | - |
 
 ## Coverage
 
-All 66 MVP requirements map to exactly one phase. 47 carry build work across Phases 1–28 (24 of them
-from the 2026-09 code audit, Phases 3–10); the other 19 are already built and are verified in Phase 28's field tests. Full mapping in
+All 66 MVP requirements map to exactly one phase. 47 carry build work across Phases 1–35 (24 of them
+from the 2026-09 code audit, Phases 3–10); the other 19 are already built and are verified in Phase 35's field tests. Full mapping in
 `.planning/REQUIREMENTS.md` → Traceability.
 
 **UX/UI audit (Phases 12, 13, 16, 18, 21):** folded into MVP scope by owner decision 2026-09-27, on top of the
@@ -1193,11 +1195,11 @@ HOME-*, LIST-*, DET-*, SYNC-*, ONB-*, NAV-*, MAP-*, ACC-*) inside each phase's s
 
 Revised 2026-10-10 after the board seminar. Recorded in `.planning/REQUIREMENTS.md`, not dropped unless marked rejected.
 
-- **V1.x (after the spring 2027 release):** photos attached to each DMH; the V1.x share of extended photo recognition, as decided factor by factor in Phase 37.
+- **V1.x (after the spring 2027 release):** photos attached to each DMH; the V1.x share of extended photo recognition, as decided factor by factor in Phase 34.
 - **V2:** compass; GPS and route tracing with an alert when leaving the zone; two observers on the same survey ("duo relevé") and read-only guest access.
 - **V3 (owner decision 2026-10-10):** data quality and moderation (Epic E); one account per structure and opening to partners and other associations (decision D2); a deeper partnership with the CNPF and INRAE (usage agreement first, then a partnership); Epic H (regional overviews, parcel trends, factor distributions, analytics trust) and `REQ-B-explore-analysis`. The target users removed after the positioning vote (owners, public actors, scientists, the general public) stay out.
 - **Rejected by the board (2026-10-10):** gamification (Epic F, including "Ma saison" and rare-species points), information, showcase and donation (Epic G), workshops and training (Epic I; a separate, more playful app, "Ma forêt est vivante"), open data and public map (`REQ-F-france-map`, `REQ-B-parcel-status-map`). The cards "Analyses de la forêt", "Qui vit ici ?" (SEED-005) and Herbier were removed from the list; SEED-005 stays dormant.
-- **Moved into V1:** `REQ-C-privacy-choice` (Phase 32).
+- **Moved into V1:** `REQ-C-privacy-choice` (Phase 29).
 
 ---
 *Roadmap created: 2026-09-22; revised 2026-10-10 after the board seminar*

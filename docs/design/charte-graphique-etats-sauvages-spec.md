@@ -604,7 +604,7 @@ guard; the confetti is only rendered when motion is allowed.
   iOS only; Android and Expo Go keep the custom action sheet, the stack `modal` help screen and JS
   header buttons (batch 7 of the Phase 23 inventory).
 - **Before iOS 26**: `BlurView` instead of Liquid Glass, flat button fallback.
-- **Android device pass: Phase 28** (Field Validation, numbered 13 before the flat renumbering; D-17). To check there: the inset glow at the navigation layer,
+- **Android device pass: Phase 35** (Field Validation, numbered 13 before the flat renumbering; D-17). To check there: the inset glow at the navigation layer,
   the forest card SVG mask, the flat map control and sheet fills, the smoothness of the three mist
   discs and the flowing lines on an older phone (turn `ForestCard`'s `motion` off on Android if
   frames drop), and the Android header tint, which does not follow the scheme yet.
@@ -619,14 +619,14 @@ Still open after the approval:
 - Corsican parcel ids (`2A`, `2B`) stay unmatched (the parcel colour by score on the owner's survey was confirmed on the phone on 2026-10-08, after migration `020_parcel_idu_fields.sql` reached production).
 - The iOS 26 tab bar glass and the search button are drawn by the system: their density cannot be
   changed without replacing the system bar, which D-08 rules out (13.8).
-- Asked during the phase, not answered, carried to Phase 26 (the UX/UI audit, old 12.3) or later: the fixed form pager title
+- Asked during the phase, not answered, carried to Phase 37 (the UX/UI audit, old 12.3) or later: the fixed form pager title
   (no native collapse); the sketch 009 elements (glowing pill on the wizard's next button and the
   counters' plus, completion ring in the header); the `GenusTargetSheet` native glass button and
   the `CasPicker` glass treatment; the wizard edge swipe on a device; the hard clip line under
   transparent headers on scroll.
-- Explorer sheet drag runs on the JS thread (`PanResponder`): candidate for Phase 26. The Compte
-  loading spinner is low contrast in dark: Phase 26.
-- Android pass: Phase 28 (13.9).
+- Explorer sheet drag runs on the JS thread (`PanResponder`): candidate for Phase 37. The Compte
+  loading spinner is low contrast in dark: Phase 37.
+- Android pass: Phase 35 (13.9).
 
 ### 13.10b Native-first rule (Phase 23, batch 8)
 

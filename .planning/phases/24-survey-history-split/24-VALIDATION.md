@@ -96,7 +96,7 @@ No separate Wave 0 plan: every new test file is written test-first (RED, then GR
 | Arrow U+2192 renders from the system font (A2) | REQ-C-history-split (D-01) | Glyph fallback depends on the device fonts | Plan 24-12 step 1; fallback " à " in `fr.surveyDetail.rows.historyValue` |
 | "Historique de la parcelle" wraps on two lines at 375 pt and at large Dynamic Type, value never truncated (A3) | REQ-C-history-split (D-01) | Text measurement on a real screen | Plan 24-12 step 1 on a 375 pt class iPhone or simulator, plus the largest accessibility text size |
 | Reduce Motion on and off | REQ-C-history-split (criterion 3) | System setting | Plan 24-12 step 8 |
-| Android / Expo Go sheet shows "Journal du relevé" then "Supprimer" | REQ-C-history-split (D-02) | Android device pass is carried by Phase 28 | Covered by `SurveyDetailScreen.test.tsx` sheet options; device pass in Phase 28 |
+| Android / Expo Go sheet shows "Journal du relevé" then "Supprimer" | REQ-C-history-split (D-02) | Android device pass is carried by Phase 35 | Covered by `SurveyDetailScreen.test.tsx` sheet options; device pass in Phase 35 |
 | API e2e for the new field | REQ-C-history-split (D-10) | Needs PostgreSQL and `api/.env.test` | Locally when `api/.env.test` exists, else the CI `e2e` job (plan 24-01 Task 2) |
 
 ---
