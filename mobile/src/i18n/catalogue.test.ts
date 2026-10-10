@@ -76,6 +76,7 @@ describe("French catalogue", () => {
   test("exposes every section so owning plans fill their own file", () => {
     expect(Object.keys(fr).sort()).toEqual(
       [
+        "abbreviations",
         "account",
         "authGate",
         "common",

@@ -1,3 +1,4 @@
+import { abbreviationsFr } from "./abbreviations"
 import { accountFr } from "./account"
 import { authGateFr } from "./auth-gate"
 import { commonFr } from "./common"
@@ -35,6 +36,7 @@ import { welcomeFr } from "./welcome"
 // section without editing a shared one. No i18n library: property access is
 // checked by the compiler.
 export const fr = {
+  abbreviations: abbreviationsFr,
   common: commonFr,
   syncErrors: syncErrorsFr,
   navigation: navigationFr,
