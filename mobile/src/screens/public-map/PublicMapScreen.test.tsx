@@ -361,6 +361,31 @@ describe("PublicMapScreen", () => {
     expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
   })
 
+  test("an own survey from local data is a normal marker that opens directly (D-01)", () => {
+    const props = makeProps({ ownItems: [item("o-1", 45.7, 4.8, 27)] })
+    mount(props)
+    const marker = markers().find(
+      (node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27),
+    ) as ReactTestInstance
+    expect(marker).toBeDefined()
+    expect(
+      markers().some((node) => node.props.accessibilityLabel === fr.publicMap.a11y.draftMarker(27)),
+    ).toBe(false)
+    act(() => marker.props.onPress())
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("o-1")
+  })
+
+  test("offline, own surveys are counted and only the offline badge marks the state (D-02)", () => {
+    mount(
+      makeProps({
+        isOffline: true,
+        ownItems: [item("o-1", 45.7, 4.8, 27), item("o-2", 48.8, 2.3, 31)],
+      }),
+    )
+    expect(texts()).toContain(fr.publicMap.count(2))
+    expect(texts()).toContain(fr.offlineMap.indicator.offline)
+  })
+
   test("a focus request centres the map and highlights the survey's marker, no panel (OA-59)", () => {
     const focus = {
       kind: "survey" as const,

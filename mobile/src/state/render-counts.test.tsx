@@ -641,6 +641,10 @@ jest.mock("../hooks/useSearchRecents", () => ({
 // render-count harness (which asserts storage/db.getDb is never called); stubbed like the other
 // screen-owned hooks above.
 jest.mock("../hooks/useIsOffline", () => ({ useIsOffline: () => false }))
+const mockEmptyLocalMap = { sources: [], parcels: [] }
+jest.mock("../hooks/useLocalSurveyMapData", () => ({
+  useLocalSurveyMapData: () => mockEmptyLocalMap,
+}))
 jest.mock("../hooks/useBasemapPreference", () => ({
   useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
 }))

@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useBasemapPreference } from "../../hooks/useBasemapPreference"
 import { useIsOffline } from "../../hooks/useIsOffline"
 import { useOfflinePendingParcelDrain } from "../../hooks/useOfflinePendingParcelDrain"
-import { ownDraftMapItems } from "../../map/own-drafts"
+import { useLocalSurveyMapData } from "../../hooks/useLocalSurveyMapData"
+import { ownSurveyMapItems } from "../../map/own-surveys"
 import { usePublicMapExplorer } from "../../hooks/usePublicMapExplorer"
 import { PublicMapScreen } from "../../screens/PublicMapScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
@@ -49,14 +50,32 @@ export const PublicMapRoute = memo(function PublicMapRoute({
     onStatusChange: syncActions.setStatus,
   })
 
-  // OA-59: the author's drafts are drawn beside the public surveys, from the details the phone has.
-  const draftItems = useMemo(
-    () => ownDraftMapItems(surveys.surveyDetails, new Set(explorer.items.map((i) => i.survey_id))),
-    [surveys.surveyDetails, explorer.items],
+  // OA-59 and phase 29 D-01, D-09: the author's own surveys are drawn beside the public ones, from
+  // the local rows and the parcels of the downloaded areas. An id the API already returned is drawn
+  // once (the API copy wins); drafts keep the dashed marker, submitted surveys a normal one.
+  const localMap = useLocalSurveyMapData(surveys.surveys, isOffline)
+  const publishedIds = useMemo(
+    () => new Set(explorer.items.map((item) => item.survey_id)),
+    [explorer.items],
+  )
+  const ownMap = useMemo(
+    () =>
+      ownSurveyMapItems({
+        sources: localMap.sources,
+        parcels: localMap.parcels,
+        surveyDetails: surveys.surveyDetails,
+        publishedIds,
+      }),
+    [localMap, surveys.surveyDetails, publishedIds],
+  )
+  const localIds = useMemo(
+    () => new Set(surveys.surveys.map((survey) => survey.id)),
+    [surveys.surveys],
   )
   const handleOpenSurvey = useLatestCallback((surveyId: string) => {
-    if (draftItems.some((item) => item.survey_id === surveyId)) {
-      // A draft has no community page: it opens as the author's own survey.
+    if (localIds.has(surveyId)) {
+      // A survey the phone holds opens as the owner's own survey, never the community page: a draft
+      // has none, and offline an own marker must not reach it.
       surveyActions.openSurvey(surveyId)
       navigation.navigate("surveys", { screen: "surveyDetail" })
       return
@@ -89,7 +108,8 @@ export const PublicMapRoute = memo(function PublicMapRoute({
         accessToken={accessToken}
         items={explorer.items}
         parcelStatuses={explorer.parcelStatuses}
-        draftItems={draftItems}
+        draftItems={ownMap.drafts}
+        ownItems={ownMap.own}
         focus={route.params?.focus}
         loading={explorer.loading}
         onLoad={explorer.loadPublicMap}
