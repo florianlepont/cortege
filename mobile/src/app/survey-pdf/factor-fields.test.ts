@@ -162,11 +162,7 @@ describe("factor B", () => {
   })
 
   it("gives only the count for a survey saved before the details", () => {
-    const old = buildFactorObservations(
-      "B",
-      { B: { strata_count: 3 } },
-      { method: V32, points: 2 },
-    )
+    const old = buildFactorObservations("B", { B: { strata_count: 3 } }, { method: V32, points: 2 })
     expect(old).toHaveLength(1)
     noLine(old, t.strata)
   })
@@ -265,8 +261,9 @@ describe("factors H, I and J", () => {
     )
     expect(lines).toHaveLength(1)
     expect(lineOf(lines, t.continuity).value).toBe("Partielle")
-    expect(buildFactorObservations("H", { H: { class_score: 3 } }, { method: V32, points: 0 }))
-      .toEqual([])
+    expect(
+      buildFactorObservations("H", { H: { class_score: 3 } }, { method: V32, points: 0 }),
+    ).toEqual([])
   })
 
   it("gives the type count and the types by the survey's own wording", () => {
@@ -292,11 +289,7 @@ describe("factors H, I and J", () => {
   })
 
   it("prints the count only for an older survey", () => {
-    const lines = buildFactorObservations(
-      "J",
-      { J: { type_count: 0 } },
-      { method: V32, points: 0 },
-    )
+    const lines = buildFactorObservations("J", { J: { type_count: 0 } }, { method: V32, points: 0 })
     expect(lines).toHaveLength(1)
     noLine(lines, t.rockyTypes)
   })
@@ -322,11 +315,7 @@ describe("absent and broken values", () => {
         { G: { open_flowering_percent: Number.NaN } },
         { method: V32, points: null },
       ),
-      ...buildFactorObservations(
-        "F",
-        { F: { trees_per_ha: null } },
-        { method: V32, points: null },
-      ),
+      ...buildFactorObservations("F", { F: { trees_per_ha: null } }, { method: V32, points: null }),
     ]
     expect(lines).toEqual([])
     expect(JSON.stringify(lines)).not.toContain("NaN")
