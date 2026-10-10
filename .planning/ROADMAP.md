@@ -864,7 +864,7 @@ Plans:
   4. The export never needs the network and never hangs: offline it makes no call, online its two optional reads are bounded; the shared file is named `Cortege-IBP-<site>-<year>.pdf`, with `-brouillon` for a draft.
   5. The owner confirms it on their phone: a draft and a submitted survey, a v3.0 and a v3.2 survey, the share names, and the export offline with and without a downloaded area.
 
-**Plans**: 11/17 plans executed
+**Plans**: 12/17 plans executed
 
 **Wave 1**
 
@@ -885,7 +885,7 @@ Plans:
 - [x] 25.1-09-PLAN.md — Factor cards A to J: raw observations, class scale, points, scale lines, missing marker
 - [x] 25.1-10-PLAN.md — Identity, method context, score summary with CNPF bands, factor chart
 - [x] 25.1-11-PLAN.md — Map page (basemap and overlay, outline, note) and photo pages
-- [ ] 25.1-12-PLAN.md — Parcel trend from the cached history
+- [x] 25.1-12-PLAN.md — Parcel trend from the cached history
 - [ ] 25.1-13-PLAN.md — Document shell: light palette, CSP and embedded fonts, fixed A4 pages with header, footer, draft banner and watermark
 
 **Wave 4** *(blocked on Wave 3 completion)*
