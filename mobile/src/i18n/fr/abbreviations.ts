@@ -52,11 +52,6 @@ export const abbreviationsFr = {
       explanation:
         "Le système de coordonnées utilisé par les GPS pour situer un point sur la Terre.",
     },
-    dmh: {
-      long: "dendromicrohabitats",
-      explanation:
-        "Les petits abris portés par un arbre (cavités, fentes, écorce décollée) qui servent à la faune.",
-    },
   },
   sheet: {
     open: ({ term }: { term: string }) => `Que signifie ${term} ?`,
