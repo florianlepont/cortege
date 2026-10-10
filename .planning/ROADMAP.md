@@ -968,13 +968,13 @@ Plans:
 
 ### Phase 29: Field-feedback fixes (INSERTED)
 
-**Goal**: The problems reported by the Android testers are gone: photo recognition of genera works on Android, the small-screen map stays readable, abbreviations are explained and genera are easy to find.
+**Goal**: The problems reported by the Android testers are gone: photo recognition of genera works on Android (the model now loads, PR #272), the small-screen map stays readable, abbreviations are explained and genera are easy to find.
 **Depends on**: Phase 15 (genus recognition), Phase 25.1
 **Requirements**: none new yet (to be traced when the phase is planned)
 **Source**: owner feedback 2026-10-10, from the first Android phones
 **Success Criteria** (what must be TRUE):
 
-  1. Genus recognition by photo works on the Android phones tested. The model loading in Release builds is fixed by PR #272 (checked on the emulator); what remains is the black camera the testers reported, not reproduced on the Pixel 8 emulator in development or Release (candidates: a phone or Android version specific cause, the camera inside a full-screen React Native `Modal`): the camera preview is not black and a suggestion comes back; the workflow itself is reviewed (the owner thinks it must be redone) and the new one is confirmed on at least two Android phones.
+  1. Genus recognition by photo works on Android: the model loads in Release builds (fixed by PR #272, checked on the emulator, owner clarification 2026-10-10: the testers' problem was that the model did not load, not a black camera), the workflow itself is reviewed (the owner thinks it must be redone) and the new one is confirmed on at least two real Android phones;
   2. On small screens the information message asking to select parcels is smaller than the map: the map stays usable on the smallest supported screen.
   3. Every abbreviation shown in the app is either written out or explained where it appears (a glossary or an info sheet), checked against the screen inventory.
   4. The genus list is sorted alphabetically everywhere it is shown.
