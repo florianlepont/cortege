@@ -81,7 +81,11 @@ describe("paginateBlocks packing", () => {
     const first = paginateBlocks([block("a", 100, { breakBefore: true })], CHROME)
     expect(first.pageCount).toBe(1)
     const twice = paginateBlocks(
-      [block("a", 100), block("b", 100, { breakBefore: true }), block("c", 100, { breakBefore: true })],
+      [
+        block("a", 100),
+        block("b", 100, { breakBefore: true }),
+        block("c", 100, { breakBefore: true }),
+      ],
       CHROME,
     )
     expect(twice.pageCount).toBe(3)

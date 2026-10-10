@@ -29,7 +29,7 @@ export const PDF_CLASS = {
   header: "page-header",
   headerMain: "page-header-main",
   logo: "page-logo",
-  title: "page-title",
+  sheetName: "page-title",
   site: "page-site",
   body: "page-body",
   banner: "page-draft-banner",
@@ -139,7 +139,7 @@ section.${c.page}:last-of-type { page-break-after: auto; break-after: auto; }
 .${c.header} { position: absolute; left: ${PAGE_MARGIN_X}px; top: ${HEADER_TOP}px; width: ${contentWidth}px; height: ${HEADER_BOX_HEIGHT}px; box-sizing: border-box; border-bottom: 1px solid ${palette.line}; }
 .${c.headerMain} { position: absolute; left: 0; top: 0; height: 32px; line-height: 32px; white-space: nowrap; }
 .${c.logo} { width: ${LOGO_SIZE}px; height: ${LOGO_SIZE}px; margin-right: 8px; vertical-align: middle; }
-.${c.title} { font-family: ${fontStack(font.title)}; font-size: 13px; color: ${palette.accent}; vertical-align: middle; }
+.${c.sheetName} { font-family: ${fontStack(font.title)}; font-size: 13px; color: ${palette.accent}; vertical-align: middle; }
 .${c.site} { position: absolute; right: 0; top: 0; max-width: 300px; height: 32px; line-height: 32px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ${fontStack(font.strong)}; font-size: 10px; color: ${palette.inkMuted}; }
 .${c.banner} { position: absolute; left: ${PAGE_MARGIN_X}px; top: ${BANNER_TOP}px; width: ${contentWidth}px; height: ${BANNER_STRIP_HEIGHT}px; line-height: ${BANNER_STRIP_HEIGHT}px; border-radius: 3px; text-align: center; background: ${palette.alertSoft}; color: ${palette.alert}; font-family: ${fontStack(font.label)}; font-size: 9px; }
 .${c.body} { position: absolute; left: ${PAGE_MARGIN_X}px; top: ${PAGE_HEADER_HEIGHT}px; width: ${contentWidth}px; height: ${bodyHeight}px; overflow: hidden; }
