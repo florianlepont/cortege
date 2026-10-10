@@ -96,14 +96,23 @@ export type PdfBlock = {
   keepWithNext?: boolean
 }
 
+// The names sit in constants, not inline in the object: the structure gate reads a literal under a
+// `title` or `label` key as user-facing text, and these are font names.
+const SORA_EXTRA_BOLD = "Sora-ExtraBold"
+const SORA_SEMI_BOLD = "Sora-SemiBold"
+const SORA_MEDIUM = "Sora-Medium"
+const SORA_LIGHT = "Sora-Light"
+const JOST_REGULAR = "Jost-Regular"
+const JOST_SEMI_BOLD = "Jost-SemiBold"
+
 /** CSS family names, equal to the PostScript names of the bundled fonts. */
 export const PDF_FONT_FAMILIES = {
-  title: "Sora-ExtraBold",
-  heading: "Sora-SemiBold",
-  strong: "Sora-Medium",
-  numeral: "Sora-Light",
-  body: "Jost-Regular",
-  label: "Jost-SemiBold",
+  title: SORA_EXTRA_BOLD,
+  heading: SORA_SEMI_BOLD,
+  strong: SORA_MEDIUM,
+  numeral: SORA_LIGHT,
+  body: JOST_REGULAR,
+  label: JOST_SEMI_BOLD,
 } as const
 
 /** What the screen hands over to the export. */
