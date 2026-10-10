@@ -99,6 +99,23 @@ describe("classifyGenusPhoto", () => {
     expect(outcome).toEqual({ status: "unavailable", reason: "load_failed" })
   })
 
+  it("loads the model from a local file URL, never from a bare require() id", async () => {
+    // Android Release resolves a require()d asset to a bare resource name that the library's
+    // `URL(path).readBytes()` loader cannot open: the bundled model is copied to a file first.
+    loadTensorflowModel.mockResolvedValue({
+      run: jest
+        .fn()
+        .mockResolvedValue([new Float32Array(GENUS_COUNT).fill(1 / GENUS_COUNT).buffer]),
+    })
+    jpegDecode.mockReturnValue(fakeDecodedImage(224))
+
+    await classifyGenusPhoto("file:///mock/cache/photo.jpg")
+
+    const source = loadTensorflowModel.mock.calls[0][0] as { url: string }
+    expect(typeof source).toBe("object")
+    expect(source.url).toMatch(/^file:\/\//)
+  })
+
   it("does not retry loading the model once it has already failed to load", async () => {
     loadTensorflowModel.mockRejectedValue(new Error("invalid flatbuffer"))
 
