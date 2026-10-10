@@ -39,6 +39,7 @@ Other top-level directories:
 | Auth | Auth0 — RS256 JWT validated against JWKS; native Auth0 SDK on mobile |
 | Object storage | S3-compatible: MinIO (local dev), configurable for AWS S3 (prod) |
 | Maps | MapLibre (`@maplibre/maplibre-react-native` 11) |
+| Mobile PDF export | `expo-print` (HTML to PDF), `expo-sharing` (share sheet), `expo-asset` (fonts and logo inlined as data URIs), `expo-image-manipulator` (photos) |
 | Mobile visuals | `react-native-reanimated` 4 (motion), `react-native-svg`, `expo-blur` / `expo-glass-effect` (glass), `@expo/ui` (native iOS 26 glass buttons, iOS only) |
 | Testing | Jest 29 + ts-jest; Supertest for API E2E |
 | Linting | ESLint 8 + `@typescript-eslint` |
@@ -156,6 +157,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - `local_attachments` — photo metadata and upload state
 - `local_meta` — key/value store for app-level state
   - key `search_recents`: the 8 recent searches of the global search, cleared by `clearLocalIbpData`; the schema stays at version 5
+  - key `parcel_history:<PARCEL_ID>`: the last parcel history read online (all members' submitted surveys of the parcel, at most 50, with its fetch date), written by `useParcelSurveyHistory`, read by the PDF export (the trend section prints offline from it), deleted by `clearLocalIbpData`; the schema stays at version 5
 
 **Sync flow**:
 1. User actions write to `local_surveys` and enqueue an operation in `sync_queue`
@@ -200,7 +202,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 **Text and i18n** (`mobile/src/i18n/`):
 - All user-facing text comes from the typed French catalogue `fr` (`mobile/src/i18n/fr/`, one module per screen or area)
 - Status-line texts are `StatusMessage` values, built only by catalogue functions; raw technical detail goes to `logStatusDetail` (debug console, dev builds only)
-- No em dash (U+2014) in any string, template or JSX text under `mobile/src` (`survey-export.ts` excepted), enforced by `src/__checks__/catalogue-dash.test.ts`
+- No em dash (U+2014) in any string, template or JSX text under `mobile/src` (no file is exempt), enforced by `src/__checks__/catalogue-dash.test.ts`
 
 **Visual layer** (`mobile/src/app/`, `mobile/src/ui/`; reference: section 13 of `docs/design/charte-graphique-etats-sauvages-spec.md`, direction text `docs/design/direction-visuelle-12-2.md`):
 - Light or dark follows the system appearance only (`BrandThemeProvider` in `app/theme.ts`, `useColorScheme()`, live): there is no in-app theme setting (owner decision 2026-10-08), no `theme_mode` read or write and no `Appearance.setColorScheme`; `app.json` keeps `userInterfaceStyle: "automatic"`
@@ -216,6 +218,13 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - Thin wrapper over `fetch` with Bearer token injection, timeout handling, and typed `ApiError`
 - Default timeout: 15 s (overridable per-request or via `EXPO_PUBLIC_API_TIMEOUT_MS`)
 - Endpoints defined in `mobile/src/api/ibp-api.ts`
+
+**PDF export** (phase 25.1, `mobile/src/app/survey-pdf/`):
+- Pure builders: `build-html.ts` composes the identity, scores, chart, factors, map, trend and photo sections into fixed A4 page blocks (`paginate.ts`), each page with its own header, footer and page number, and for a draft a banner and a watermark. The PDF is always light, whatever the system appearance
+- Thin native wrappers: `assets.ts` (fonts and logo through `expo-asset`), `photo-prep.ts`, `map-snapshot.ts` (MapLibre `StaticMapImageManager`, 12 s timeout for the online style and 8 s for an offline one), `assemble-export-data.ts` (reads the survey, its photos, the cached parcel history and the parcel outline), `run-export.ts` (print through `expo-print`, rename to `Cortege-IBP-<site>-<year>[-brouillon].pdf` under `cache/exports/`, share through `expo-sharing`)
+- `app/survey-pdf-export.ts` is the facade (three functions and two types, pinned by a test) and `useSurveyPdfExport` (`screens/survey-detail/`) the screen hook
+- Everything is inlined as data URIs behind a content security policy that blocks every load. No network call is required: offline none is made; online, the only optional reads are the parcel outline (bounded at 4 s) and the basemap snapshot. The trend comes from the `parcel_history:` cache
+- Measured constants (page block 840 px, per-platform layout scale, photo cap and size, map frame) live in `export-settings.ts`, each with its device measurement. `survey-pdf/html.ts` holds the only HTML escape in `mobile/src`
 
 ### API (NestJS)
 
@@ -264,6 +273,8 @@ The IBP score is composed of **10 factors (A–J)**, each representing a biodive
 | J | Water/wetland types |
 
 Subscores: stand and management A–G (/35) and context H–J (/15); totals are shown out of 50. Band colours come from the package (`standBand`, `contextBand`, `totalBand`); the /50 total bands (10/20/30/40) are an app convention, the CNPF chart only bands /35 and /15.
+
+Since phase 25.1 the factor payload also stores `B.strata`, `F.dmh_groups`, `H.evidence`, `I.types` and `J.types` (catalogue codes, the CNPF typology per method for I and J, written only with their scored key and never scored; `mobile/src/app/factor-selections.ts`).
 
 Factor validation matrix: `docs/technical/ibp-validation-matrix-v2.md` (executable form: `IBP_PARITY_CASES`; v1 is the pre-01.8 baseline)
 Method version: the app implements IBP FR v3.2, with IBP Fr v3.0 available per survey (ADR-003, `docs/technical/adr-003-ibp-method-version-v1.md`; comparison: `docs/technical/ibp-version-comparison-v3.0-v3.2.md`).

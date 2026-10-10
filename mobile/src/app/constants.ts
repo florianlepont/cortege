@@ -65,13 +65,15 @@ export const DEFAULT_SURVEY_FORM = {
   // The native cover belongs to A (CH-1, BUG-1); B keeps the strata count only. `genera` is the
   // comma-joined FactorGenusListInput value (Phase 5's genus-list data contract, Phase 6's UI).
   factorA: { genera: "", native_cover_percent: "" },
-  factorB: { strata_count: "" },
+  // Phase 25.1 (D-12): B, I and J keep the options ticked next to their count (null = no selection
+  // recorded, as in a draft saved before this phase); F and H keep the optional detail lists.
+  factorB: { strata_count: "", strata: null as string[] | null },
   factorC: { bmg_count: "", bmm_count: "", surface_ha: "" },
   factorD: { bmg_count: "", bmm_count: "", surface_ha: "" },
   factorE: { tgb_count: "", gb_count: "", surface_ha: "" },
-  factorF: { trees_per_ha: "" },
+  factorF: { trees_per_ha: "", dmh_groups: [] as string[] },
   factorG: { open_flowering_percent: "" },
-  factorH: { class_score: "" },
-  factorI: { type_count: "" },
-  factorJ: { type_count: "" },
+  factorH: { class_score: "", evidence: [] as string[] },
+  factorI: { type_count: "", types: null as string[] | null },
+  factorJ: { type_count: "", types: null as string[] | null },
 }

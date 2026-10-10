@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 25.1
 current_phase_name: PDF Export Improvement
 status: ready_to_discuss
-stopped_at: Phase 25 complete (owner phone check passed 2026-10-10, PR #262 merged); next Phase 25.1 (PDF export), then 26 (UX/UI audit)
-last_updated: "2026-10-10T09:00:00.000Z"
+stopped_at: Phase 25.1 complete (owner phone check passed 2026-10-10); next Phase 26 (UX/UI audit)
+last_updated: "2026-10-10T13:11:55.168Z"
 last_activity: 2026-10-10
-last_activity_desc: Phase 25 closed after the owner phone check; PR 262 merged and deployed
+last_activity_desc: Phase 25.1 closed after the owner phone check
 progress:
   total_phases: 29
-  completed_phases: 25
-  total_plans: 209
-  completed_plans: 209
+  completed_phases: 26
+  total_plans: 226
+  completed_plans: 226
   percent: 100
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 25.1 (PDF export) is next, then Phase 26 (UX/UI audit), Phase 27 (quality audit) and Phase 28 (field validation). Phase 25 (global search) closed on the owner's phone check 2026-10-10.
+**Current focus:** Phase 26 (UX/UI audit) is next, then Phase 27 (quality audit) and Phase 28 (field validation). Phase 25.1 (PDF export) closed on the owner's phone check 2026-10-10.
 
 ## Current Position
 
-Phase: 25.1 (PDF Export Improvement), not discussed yet
-Plan: none
-Status: Phase 25 complete; Phase 25.1 ready to discuss
-Last activity: 2026-10-10 — Phase 25 closed on the owner's phone check
+Phase: 25.1 (PDF Export Improvement) complete; next Phase 26 (UX/UI Audit), not discussed yet
+Plan: 17 of 17 done
+Status: Phase 25.1 complete; Phase 26 ready to discuss
+Last activity: 2026-10-10 — Phase 25.1 closed on the owner's phone check
 
-Progress: [█████████░] 25/29 phases complete
+Progress: [█████████░] 26/29 phases complete
 
 ## Performance Metrics
 
@@ -114,6 +114,22 @@ Progress: [█████████░] 25/29 phases complete
 | Phase 24 P09 | 25min | 2 tasks | 4 files |
 | Phase 24 P10 | 40min | 3 tasks | 11 files |
 | Phase 24 P11 | 35min | 3 tasks | 14 files |
+| Phase 25.1 P01 | 25min | 3 tasks | 9 files |
+| Phase 25.1 P02 | 20min | 2 tasks | 5 files |
+| Phase 25.1 P03 | 20min | 3 tasks | 6 files |
+| Phase 25.1 P04 | 25min | 3 tasks | 9 files |
+| Phase 25.1 P05 | 35min | 2 tasks | 5 files |
+| Phase 25.1 P06 | 20min | 2 tasks | 5 files |
+| Phase 25.1 P08 | 20 min | 2 tasks | 5 files |
+| Phase 25.1 P07 | ~3h | 3 tasks | 10 files |
+| Phase 25.1 P09 | 35min | 2 tasks | 4 files |
+| Phase 25.1 P10 | 30 min | 3 tasks | 6 files |
+| Phase 25.1 P11 | 35min | 2 tasks | 6 files |
+| Phase 25.1 P12 | 25 min | 2 tasks | 2 files |
+| Phase 25.1 P13 | 35 min | 3 tasks | 6 files |
+| Phase 25.1 P14 | 35min | 2 tasks | 7 files |
+| Phase 25.1 P15 | 40 min | 3 tasks | 6 files |
+| Phase 25.1 P16 | 35 min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -199,6 +215,10 @@ Decisions table. Decisions affecting current work:
 - [Phase 24]: 24-09: delta rows are display only (accessible View per row, no press, no animation); the current history row is selected, disabled, role text, other rows open that survey read-only
 - [Phase 24]: 24-10: ParcelHistoryView decides the variant itself (community never gets the delta block); the history page treats a missing access token as first load, not as first survey
 - [Phase 24]: 24-11: community history row uses historyRowState with hasParcel true, shown only when history has more than one entry; communityHistory registered in survey and Explorer stacks, journal never in Explorer
+- [Phase 25.1]: 25.1-04: selectionLabel takes an optional method version so v3.0/v3.2 wording differences print correctly
+- [Phase 25.1-07]: PDF layout scale iOS 1.2487 / Android 4/3, page block 840, photos cap 24 at 800 px q0.65, measured on simulator and emulator, owner approved 2026-10-10
+- [Phase 25.1-07]: Snapshot timeout 12 s for the online style, 8 s for the offline style (owner change 2026-10-10)
+- [Phase 25.1-13]: PDF accent is forest green (ctaPrimary) with white ink; page margin 40 gives the 515 content column; paginateBlocks returns section.page only and the assembler wraps div.pdf-root (zoom on that class)
 
 ### Pending Todos
 
@@ -241,6 +261,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-09T09:50:12.662Z
-Stopped at: Completed 24-11-PLAN.md
-Resume file: .planning/phases/24-survey-history-split/24-01-PLAN.md
+Last session: 2026-10-10T13:11:55.162Z
+Stopped at: Completed 25.1-05-PLAN.md
+Resume file: .planning/phases/25.1-pdf-export-improvement/25.1-CONTEXT.md

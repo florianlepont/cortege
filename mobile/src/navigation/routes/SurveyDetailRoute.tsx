@@ -57,6 +57,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
       <SurveyDetailScreen
         apiUrl={session.apiUrl}
         accessToken={accessToken}
+        observerName={session.currentUser?.display_name ?? null}
         selectedSurvey={state.selectedSurvey}
         selectedSurveyAttachments={state.selectedSurveyAttachments}
         navigation={navigation}

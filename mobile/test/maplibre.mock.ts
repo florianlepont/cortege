@@ -69,3 +69,10 @@ export const OfflineManager = {
     offlineMocks.packs = offlineMocks.packs.filter((pack) => pack.id !== id)
   }),
 }
+
+// Native snapshotter: tests drive success, rejection or a never-settling promise.
+export const StaticMapImageManager = {
+  createImage: jest.fn(
+    async (_options: Record<string, unknown>) => "file:///mock/cache/snapshot.png",
+  ),
+}

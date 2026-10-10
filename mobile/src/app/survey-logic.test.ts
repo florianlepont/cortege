@@ -440,7 +440,7 @@ describe("labels read from the catalogue (D-06)", () => {
       genera: "",
       native_cover_percent: "",
     })
-    expect(DEFAULT_SURVEY_FORM.factorB).toEqual({ strata_count: "" })
+    expect(DEFAULT_SURVEY_FORM.factorB).toEqual({ strata_count: "", strata: null })
   })
 
   test("survey status labels come from the catalogue", () => {

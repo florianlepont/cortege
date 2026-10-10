@@ -11,11 +11,10 @@ import { fr } from "../i18n"
 // count, while string literals, template literals and JSX text do. The character is written here
 // as an escape so this file stays clean too.
 //
-// Out of scope: `survey-export.ts`, the PDF export's own wording (UI-SPEC, Copywriting Contract),
-// whose "unknown" cell keeps its dash.
+// No file is exempt: the PDF catalogue (`survey-export.ts`) follows the same rule since phase 25.1
+// (D-08), its "unknown" cell reads "Non renseign\u00e9".
 
 const EM_DASH = "\u2014"
-const OUT_OF_SCOPE = ["survey-export.ts"]
 
 type Finding = { file: string; line: number }
 
@@ -64,7 +63,6 @@ function sourceFiles(dir: string): string[] {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) return full === CHECKS_DIR ? [] : sourceFiles(full)
     if (!/\.(ts|tsx)$/.test(entry.name) || /\.test\.(ts|tsx)$/.test(entry.name)) return []
-    if (OUT_OF_SCOPE.includes(entry.name)) return []
     return [full]
   })
 }
@@ -137,11 +135,11 @@ describe("em dash gate on mobile/src", () => {
     expect(fr.components.ibpFactorBars.notFilled).toBe("Non renseigné")
   })
 
-  it("has no em dash in the French catalogue, survey-export out of scope", () => {
+  it("has no em dash in the French catalogue", () => {
     const files = sourceFiles(CATALOGUE_ROOT)
     expect(files.length).toBeGreaterThan(30)
     expect(files.some((file) => file.endsWith(path.join("status", "sync.ts")))).toBe(true)
-    expect(files.some((file) => file.endsWith("survey-export.ts"))).toBe(false)
+    expect(files.some((file) => file.endsWith("survey-export.ts"))).toBe(true)
     expect(findEmDash(files)).toEqual([])
   })
 

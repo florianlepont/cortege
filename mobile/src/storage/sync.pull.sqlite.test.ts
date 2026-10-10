@@ -7,6 +7,7 @@
 
 import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { initLocalDb, getDb } from "./db"
+import { getLocalSurveyDraft } from "./surveys"
 import { pullRemoteChanges } from "./sync"
 
 const NOW = "2026-01-01T00:00:00.000Z"
@@ -480,5 +481,38 @@ describe("pull keeps the server-assigned observation year and version (phase 10,
     const payload = await pulledPayload("remote-unversioned")
     expect(payload).not.toHaveProperty("observation_year")
     expect(payload).not.toHaveProperty("version_number")
+  })
+})
+
+describe("pull keeps the factor detail arrays (phase 25.1, D-12)", () => {
+  test("a survey pulled on another phone reopens with the five detail arrays", async () => {
+    const factors = {
+      A: { native_genus_count: 3, native_cover_percent: 60 },
+      B: { strata_count: 2, strata: ["low", "high"] },
+      F: { trees_per_ha: 4, dmh_groups: ["dmh_01", "dmh_12"] },
+      H: { class_score: 5, evidence: ["etat_major_map", "field_signs"] },
+      I: { type_count: 1, types: ["pool"] },
+      J: { type_count: 2, types: ["slab", "cave"] },
+    }
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-details",
+            site_name: "Distante avec details",
+            status: "submitted",
+            sync_version: 2,
+            ibp_method_version: IBP_METHOD_V3_2,
+            ibp_cas: 1,
+            factors,
+          },
+        ],
+      }),
+    )
+
+    await pullRemoteChanges("http://api", "token")
+
+    const draft = await getLocalSurveyDraft("remote-details")
+    expect(draft?.factors).toEqual(factors)
   })
 })

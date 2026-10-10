@@ -3,6 +3,7 @@ import { getDb } from "./db"
 import { runInTransaction } from "./transaction"
 import { deleteAttachmentFile, deleteAllAttachmentFiles } from "./attachment-files"
 import { LOCAL_OWNER_SUB_KEY, LOCAL_OWNER_EMAIL_KEY } from "./local-owner"
+import { PARCEL_HISTORY_KEY_PREFIX } from "./parcel-history-cache"
 import { SEARCH_RECENTS_KEY } from "./search-recents"
 import {
   LocalSurvey,
@@ -522,6 +523,22 @@ export async function listLocalAttachments(surveyId?: string): Promise<LocalAtta
   )
 }
 
+/**
+ * The image attachments of a survey in the order they were taken (phase 25.1, D-05): `created_at`
+ * ascending, the id breaking a tie. `listLocalAttachments` orders by `updated_at`, which moves with
+ * the sync state, so it is not the shooting order.
+ */
+export async function listSurveyPhotosInCaptureOrder(surveyId: string): Promise<LocalAttachment[]> {
+  const db = await getDb()
+  return db.getAllAsync<LocalAttachment>(
+    `SELECT id, survey_id, local_uri, mime_type, size_bytes, sync_state, remote_attachment_id, storage_key, upload_url, confirm_url, last_sync_error, last_sync_error_code, last_sync_error_at, updated_at, file_state
+     FROM local_attachments
+     WHERE survey_id = ? AND mime_type LIKE 'image/%'
+     ORDER BY created_at ASC, id ASC`,
+    [surveyId],
+  )
+}
+
 export async function clearLocalIbpData(): Promise<void> {
   await runInTransaction(async (tx) => {
     await tx.runAsync(`DELETE FROM sync_queue`)
@@ -533,6 +550,8 @@ export async function clearLocalIbpData(): Promise<void> {
       LOCAL_OWNER_EMAIL_KEY,
       SEARCH_RECENTS_KEY,
     ])
+    // Exact prefix match: a LIKE pattern would treat the underscore as a wildcard (D-13).
+    await tx.runAsync(`DELETE FROM local_meta WHERE instr(key, ?) = 1`, [PARCEL_HISTORY_KEY_PREFIX])
   })
 
   await deleteAllAttachmentFiles().catch(() => {})

@@ -6,6 +6,7 @@ import { notificationAsync } from "../../test/expo-haptics.mock"
 import { setReducedMotion } from "../../test/react-native-reanimated.mock"
 import type { LocalSurvey } from "../storage/types"
 import { Alert } from "react-native"
+import { exportAndShareSurveyPdf } from "../app/survey-pdf-export"
 import { fr } from "../i18n"
 import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import { SurveyDetailScreen } from "./SurveyDetailScreen"
@@ -515,4 +516,59 @@ describe("SurveyDetailScreen action sheet (Android / Expo Go, D-02, D-04)", () =
       expect(props.onDeleteSurvey).toHaveBeenCalledWith("survey-1")
     },
   )
+})
+
+describe("SurveyDetailScreen share (25.1-16)", () => {
+  const headerMock = useSurveyDetailHeader as jest.Mock
+  const exportMock = exportAndShareSurveyPdf as jest.Mock
+  type HeaderParams = Parameters<typeof useSurveyDetailHeader>[0]
+  const progressNotices = (tree: ReactTestRenderer) =>
+    byType(tree, "AppNotice").filter((node) => node.props.message === fr.surveyExport.progress)
+
+  function mountShare() {
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...makeProps("draft")} observerName="Claire" />, {
+        createNodeMock: (element) =>
+          (element.type as unknown) === "ScrollView" ? { scrollTo: mockScrollTo } : null,
+      })
+    })
+    return tree!
+  }
+
+  beforeEach(() => {
+    headerMock.mockClear()
+    exportMock.mockReset()
+  })
+
+  test("the share action exports the survey with the observer, and the progress notice shows meanwhile", async () => {
+    let finish: (value: { shared: boolean }) => void = () => undefined
+    exportMock.mockReturnValue(new Promise((resolve) => (finish = resolve)))
+    const tree = mountShare()
+    expect(progressNotices(tree)).toHaveLength(0)
+
+    const onShare = (headerMock.mock.calls.at(-1)![0] as HeaderParams).onShare
+    await act(async () => {
+      onShare?.()
+    })
+
+    expect(exportMock).toHaveBeenCalledTimes(1)
+    expect(exportMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        surveyId: "survey-1",
+        siteName: "Parcelle A",
+        isDraft: true,
+        observerName: "Claire",
+        apiUrl: "http://api",
+        accessToken: null,
+      }),
+    )
+    expect(progressNotices(tree)).toHaveLength(1)
+    expect(progressNotices(tree)[0].props.tone).toBe("info")
+
+    await act(async () => {
+      finish({ shared: true })
+    })
+    expect(progressNotices(tree)).toHaveLength(0)
+  })
 })

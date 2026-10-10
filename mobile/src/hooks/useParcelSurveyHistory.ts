@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { fetchParcelSurveyHistory } from "../api/ibp-api"
 import type { ParcelSurveyHistoryItem } from "../app/types"
+import { saveParcelHistoryCache } from "../storage/parcel-history-cache"
 
 export type ParcelSurveyHistoryState = {
   items: ParcelSurveyHistoryItem[]
   loading: boolean
   error: boolean
-  /** REQ-D-offline-parcel-warning (08-CONTEXT D-14): no history is cached for this phase, so
-   * offline always means "not available", distinct from a real fetch failure. */
+  /** REQ-D-offline-parcel-warning (08-CONTEXT D-14): the screen never reads the history copy kept
+   * for the PDF (25.1 D-13, written below, read only by the PDF loader), so offline always means
+   * "not available" on screen, distinct from a real fetch failure. */
   offline: boolean
 }
 
@@ -70,12 +72,10 @@ export function useParcelSurveyHistory(
     fetchParcelSurveyHistory(apiUrl, accessToken, parcelId)
       .then((payload) => {
         if (requestRef.current !== requestId) return
-        setState({
-          items: Array.isArray(payload.items) ? payload.items : [],
-          loading: false,
-          error: false,
-          offline: false,
-        })
+        const items = Array.isArray(payload.items) ? payload.items : []
+        // D-13: keep a copy so the PDF trend prints offline. Fire-and-forget, never blocks the screen.
+        void saveParcelHistoryCache(parcelId, items).catch(() => undefined)
+        setState({ items, loading: false, error: false, offline: false })
       })
       .catch(() => {
         if (requestRef.current !== requestId) return

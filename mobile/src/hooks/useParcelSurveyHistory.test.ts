@@ -6,6 +6,12 @@ jest.mock("../api/ibp-api", () => ({
   fetchParcelSurveyHistory: (...args: unknown[]) => mockFetchParcelSurveyHistory(...args),
 }))
 
+const mockSaveParcelHistoryCache = jest.fn()
+
+jest.mock("../storage/parcel-history-cache", () => ({
+  saveParcelHistoryCache: (...args: unknown[]) => mockSaveParcelHistoryCache(...args),
+}))
+
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react-native/pure"
 import { useParcelSurveyHistory } from "./useParcelSurveyHistory"
 
@@ -14,6 +20,7 @@ const TOKEN = "access-token"
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockSaveParcelHistoryCache.mockResolvedValue(undefined)
 })
 
 afterEach(async () => {
@@ -194,5 +201,70 @@ describe("useParcelSurveyHistory", () => {
     })
     await waitFor(() => expect(result.current.items).toEqual([{ survey_id: "s1" }]))
     expect(result.current.error).toBe(false)
+  })
+
+  test("a successful fetch writes the history cache once with the received items", async () => {
+    mockFetchParcelSurveyHistory.mockResolvedValue({ items: [{ survey_id: "s1" }] })
+    const { result } = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1"))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(mockSaveParcelHistoryCache).toHaveBeenCalledTimes(1)
+    expect(mockSaveParcelHistoryCache).toHaveBeenCalledWith("P1", [{ survey_id: "s1" }])
+  })
+
+  test("a non-array response writes an empty list", async () => {
+    mockFetchParcelSurveyHistory.mockResolvedValue({ items: undefined })
+    const { result } = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1"))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(mockSaveParcelHistoryCache).toHaveBeenCalledWith("P1", [])
+  })
+
+  test("a failed fetch, the offline branch and a missing token do not write the cache", async () => {
+    mockFetchParcelSurveyHistory.mockRejectedValue(new Error("boom"))
+    const failed = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1"))
+    await waitFor(() => expect(failed.result.current.error).toBe(true))
+    await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1", true))
+    await renderHook(() => useParcelSurveyHistory(API_URL, null, "P1"))
+
+    expect(mockSaveParcelHistoryCache).not.toHaveBeenCalled()
+  })
+
+  test("a stale response does not write the cache", async () => {
+    let resolveFirst: (value: { items: unknown[] }) => void = () => {}
+    mockFetchParcelSurveyHistory
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveFirst = resolve
+        }),
+      )
+      .mockResolvedValueOnce({ items: [{ survey_id: "second" }] })
+
+    const { result, rerender } = await renderHook(
+      ({ parcelId }: { parcelId: string }) => useParcelSurveyHistory(API_URL, TOKEN, parcelId),
+      { initialProps: { parcelId: "P1" } },
+    )
+    await act(async () => {
+      await rerender({ parcelId: "P2" })
+    })
+    await waitFor(() => expect(result.current.items).toEqual([{ survey_id: "second" }]))
+    await act(async () => {
+      resolveFirst({ items: [{ survey_id: "stale" }] })
+    })
+
+    expect(mockSaveParcelHistoryCache).toHaveBeenCalledTimes(1)
+    expect(mockSaveParcelHistoryCache).toHaveBeenCalledWith("P2", [{ survey_id: "second" }])
+  })
+
+  test("a rejected cache write changes nothing on screen and leaks no rejection", async () => {
+    mockSaveParcelHistoryCache.mockRejectedValue(new Error("disk"))
+    mockFetchParcelSurveyHistory.mockResolvedValue({ items: [{ survey_id: "s1" }] })
+    const { result } = await renderHook(() => useParcelSurveyHistory(API_URL, TOKEN, "P1"))
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(mockSaveParcelHistoryCache).toHaveBeenCalledTimes(1)
+    expect(result.current.items).toEqual([{ survey_id: "s1" }])
+    expect(result.current.error).toBe(false)
+    expect(result.current.offline).toBe(false)
   })
 })

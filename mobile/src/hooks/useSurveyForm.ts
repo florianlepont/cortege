@@ -20,6 +20,7 @@ import {
   parseGenusListValue,
   serializeGenusListValue,
 } from "../app/factor-a-genus-list"
+import { readSelection } from "../app/factor-selections"
 import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { fr } from "../i18n"
@@ -196,7 +197,9 @@ export function useSurveyForm() {
    * free here. Choosing the version the survey already follows changes nothing: a legacy draft
    * (null) stays untagged. Otherwise the other version's context fields are reset: v3.2 takes its
    * cas from the region and stage where unambiguous (else null: the observer picks), v3.0 drops the
-   * cas and flag and restores the region/stage defaults.
+   * cas and flag and restores the region/stage defaults. The B, F, H, I and J selections are not
+   * filtered on a switch (same as migrateDraftToV32, which spreads factor objects): a code of the
+   * other method stays ticked and visible until the observer unticks it.
    */
   const setIbpMethodVersion = (next: IbpMethodVersion): void => {
     if (resolveMethodVersion(ibpMethodVersion) === next) return
@@ -243,8 +246,15 @@ export function useSurveyForm() {
       }
     }
 
+    // D-12: a detail array goes out only with its scored key (a factor object without it is a
+    // blocking invalid input, even for a draft), and never alters the scored value.
     const bStrata = toFiniteNumberInRange(factorB.strata_count, { min: 0, integer: true })
-    if (bStrata !== null) payload.B = { strata_count: bStrata }
+    if (bStrata !== null) {
+      payload.B = {
+        strata_count: bStrata,
+        ...(factorB.strata !== null ? { strata: factorB.strata } : {}),
+      }
+    }
 
     const cBmg = toFiniteNumberInRange(factorC.bmg_count, { min: 0, integer: true })
     const cBmm = toFiniteNumberInRange(factorC.bmm_count, { min: 0, integer: true })
@@ -265,19 +275,33 @@ export function useSurveyForm() {
       payload.E = { tgb_count: eTgb, gb_count: eGb, surface_ha: eSurface }
 
     const f = toFiniteNumberInRange(factorF.trees_per_ha, { min: 0 })
-    if (f !== null) payload.F = { trees_per_ha: f }
+    if (f !== null) {
+      payload.F = {
+        trees_per_ha: f,
+        ...(factorF.dmh_groups.length > 0 ? { dmh_groups: factorF.dmh_groups } : {}),
+      }
+    }
 
     const g = toFiniteNumberInRange(factorG.open_flowering_percent, { min: 0, max: 100 })
     if (g !== null) payload.G = { open_flowering_percent: g }
 
     const h = toFiniteNumberInRange(factorH.class_score, { integer: true })
-    if (h !== null && H_ALLOWED_SCORES.includes(h)) payload.H = { class_score: h }
+    if (h !== null && H_ALLOWED_SCORES.includes(h)) {
+      payload.H = {
+        class_score: h,
+        ...(factorH.evidence.length > 0 ? { evidence: factorH.evidence } : {}),
+      }
+    }
 
     const i = toFiniteNumberInRange(factorI.type_count, { min: 0, integer: true })
-    if (i !== null) payload.I = { type_count: i }
+    if (i !== null) {
+      payload.I = { type_count: i, ...(factorI.types !== null ? { types: factorI.types } : {}) }
+    }
 
     const j = toFiniteNumberInRange(factorJ.type_count, { min: 0, integer: true })
-    if (j !== null) payload.J = { type_count: j }
+    if (j !== null) {
+      payload.J = { type_count: j, ...(factorJ.types !== null ? { types: factorJ.types } : {}) }
+    }
 
     return payload
   }, [factorA, factorB, factorC, factorD, factorE, factorF, factorG, factorH, factorI, factorJ])
@@ -320,7 +344,12 @@ export function useSurveyForm() {
       genera: serializeGenusListValue(parseGenusListValue(storedGenera.join(","))),
       native_cover_percent: readNativeCover(factorAObj, factorBObj),
     })
-    setFactorB({ strata_count: toTextNum(factorBObj.strata_count) })
+    // D-12: a draft saved before the detail was stored reopens with the count kept and no invented
+    // selection (null); a stored array is read through the catalogue (unknown codes are dropped).
+    setFactorB({
+      strata_count: toTextNum(factorBObj.strata_count),
+      strata: readSelection(factorBObj, "B"),
+    })
     setFactorC({
       bmg_count: toTextNum(factorCObj.bmg_count),
       bmm_count: toTextNum(factorCObj.bmm_count),
@@ -336,11 +365,23 @@ export function useSurveyForm() {
       gb_count: toTextNum(factorEObj.gb_count),
       surface_ha: toTextNum(factorEObj.surface_ha),
     })
-    setFactorF({ trees_per_ha: toTextNum(factorFObj.trees_per_ha) })
+    setFactorF({
+      trees_per_ha: toTextNum(factorFObj.trees_per_ha),
+      dmh_groups: readSelection(factorFObj, "F") ?? [],
+    })
     setFactorG({ open_flowering_percent: toTextNum(factorGObj.open_flowering_percent) })
-    setFactorH({ class_score: toTextNum(factorHObj.class_score) })
-    setFactorI({ type_count: toTextNum(factorIObj.type_count) })
-    setFactorJ({ type_count: toTextNum(factorJObj.type_count) })
+    setFactorH({
+      class_score: toTextNum(factorHObj.class_score),
+      evidence: readSelection(factorHObj, "H") ?? [],
+    })
+    setFactorI({
+      type_count: toTextNum(factorIObj.type_count),
+      types: readSelection(factorIObj, "I"),
+    })
+    setFactorJ({
+      type_count: toTextNum(factorJObj.type_count),
+      types: readSelection(factorJObj, "J"),
+    })
 
     setGpsLocation(DEFAULT_SURVEY_FORM.gpsLocation)
     setSelectedParcelIds(parsedParcelIds)
@@ -433,10 +474,14 @@ export function useSurveyForm() {
         {
           label: fields.strata_count,
           value: factorB.strata_count,
-          onChange: (value) => setFactorB((prev) => ({ ...prev, strata_count: value })),
+          onChange: (value) => setFactorB({ strata_count: value, strata: null }),
           required: true,
           error: numberError(factorB.strata_count, fields.strata_count, { min: 0, integer: true }),
           ...touchState("B", fields.strata_count),
+          selection: {
+            selected: factorB.strata,
+            onChange: (next) => setFactorB({ strata_count: String(next.length), strata: next }),
+          },
         },
       ],
       C: [
@@ -521,10 +566,14 @@ export function useSurveyForm() {
         {
           label: fields.trees_per_ha,
           value: factorF.trees_per_ha,
-          onChange: (value) => setFactorF({ trees_per_ha: value }),
+          onChange: (value) => setFactorF((prev) => ({ ...prev, trees_per_ha: value })),
           required: true,
           error: numberError(factorF.trees_per_ha, fields.trees_per_ha, { min: 0 }),
           ...touchState("F", fields.trees_per_ha),
+          selection: {
+            selected: factorF.dmh_groups,
+            onChange: (next) => setFactorF((prev) => ({ ...prev, dmh_groups: next })),
+          },
         },
       ],
       G: [
@@ -544,30 +593,42 @@ export function useSurveyForm() {
         {
           label: fields.class_score,
           value: factorH.class_score,
-          onChange: (value) => setFactorH({ class_score: value }),
+          onChange: (value) => setFactorH((prev) => ({ ...prev, class_score: value })),
           required: true,
           error: oneOfError(factorH.class_score, fields.class_score, H_ALLOWED_SCORES),
           ...touchState("H", fields.class_score),
+          selection: {
+            selected: factorH.evidence,
+            onChange: (next) => setFactorH((prev) => ({ ...prev, evidence: next })),
+          },
         },
       ],
       I: [
         {
           label: fields.type_count,
           value: factorI.type_count,
-          onChange: (value) => setFactorI({ type_count: value }),
+          onChange: (value) => setFactorI({ type_count: value, types: null }),
           required: true,
           error: numberError(factorI.type_count, fields.type_count, { min: 0, integer: true }),
           ...touchState("I", fields.type_count),
+          selection: {
+            selected: factorI.types,
+            onChange: (next) => setFactorI({ type_count: String(next.length), types: next }),
+          },
         },
       ],
       J: [
         {
           label: fields.type_count,
           value: factorJ.type_count,
-          onChange: (value) => setFactorJ({ type_count: value }),
+          onChange: (value) => setFactorJ({ type_count: value, types: null }),
           required: true,
           error: numberError(factorJ.type_count, fields.type_count, { min: 0, integer: true }),
           ...touchState("J", fields.type_count),
+          selection: {
+            selected: factorJ.types,
+            onChange: (next) => setFactorJ({ type_count: String(next.length), types: next }),
+          },
         },
       ],
     }),

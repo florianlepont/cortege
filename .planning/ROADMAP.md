@@ -77,7 +77,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 23: Visual Modernisation** (INSERTED) - A more pleasant, modern and lively interface: visual refresh and motion across the main screens, colourised map background with a dark variant, design spec updated, components reused and homogenised, native first (completed 2026-10-09; Android pass deferred to Phase 28, open design points to Phase 26)
 - [x] **Phase 24: Survey History Split** (INSERTED) - The survey change log and the parcel history become two separate things (SEED-002; owner decision 2026-10-07, done before the audits so they audit the final screens) (completed 2026-10-09)
 - [x] **Phase 25: Global Search** (INSERTED) - One search covers the whole app: own and community surveys, places and parcels on the map, and the other items the app exposes (SEED-003; owner decision 2026-10-07) (completed 2026-10-10)
-- [ ] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF is improved before the UX/UI audit (owner decision 2026-10-09; scope to define at planning)
+- [x] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10) (completed 2026-10-10)
 - [ ] **Phase 26: UX/UI Audit & Design System Update** (INSERTED) - Audit the interface after Phase 23, update the design system to match, check global coherence across screens and fix visual bugs (owner decision 2026-10-07)
 - [ ] **Phase 27: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed (owner decision 2026-10-06)
 - [ ] **Phase 28: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
@@ -852,14 +852,59 @@ Plans:
 
 ### Phase 25.1: PDF Export Improvement (INSERTED)
 
-**Goal:** The PDF export of a survey (Phase 19) is better: content, layout and brand finish to be defined at discussion.
-**Requirements**: TBD
-**Depends on:** Phase 25
-**Plans:** 0 plans
+**Goal**: The PDF of a survey carries the same information as the official CNPF IBP survey sheet, in the brand finish, with the photos, the parcel map over a basemap and the parcel trend; it is still generated on the phone, works offline, and is shared through the OS share sheet.
+**Depends on**: Phase 25
+**Requirements**: none new: it rebuilds REQ-C-pdf-export (built in Phase 19); traced by the decisions D-01 to D-13 of `25.1-CONTEXT.md`
+**Source**: owner decision 2026-10-09 ("il faut vraiment que ça contienne les mêmes infos que sur le pdf du relevé IBP initial, mais en plus beau"), decisions of 2026-10-10 (basemap, trend, stored details, history cache, photos not grouped by factor).
+**Success Criteria** (what must be TRUE):
 
-Plans:
+  1. The PDF shows, in the order of the CNPF sheet for the survey's method (v3.0 or v3.2), each factor A to J with its raw observations (including the strata, dendromicrohabitat groups, continuity sources and aquatic and rocky types the app now stores, D-12), the class scale with the retained class, the points and the scale line, then the subtotals /35 and /15 and the total /50 with their CNPF bands, and the method context (cas and cas-3 scale, or region and stage).
+  2. It follows the brand charter (logo, Sora and Jost fonts, band colours, a factor chart, a header and a footer with "Page i / N" on every page), always light, every word from the French catalogue with no em dash; a draft carries a "Brouillon, non soumis" banner and a watermark on every page and its missing factors are marked.
+  3. It includes all the survey's photos on their own pages in shooting order (capped if the device measurements require it), the parcel polygons over a basemap snapshot with scale and north arrow (the outline alone when no tiles are available offline), and the parcel trend from the history cached on the phone (a short note when there is none).
+  4. The export never needs the network and never hangs: offline it makes no call, online its two optional reads are bounded; the shared file is named `Cortege-IBP-<site>-<year>.pdf`, with `-brouillon` for a draft.
+  5. The owner confirms it on their phone: a draft and a submitted survey, a v3.0 and a v3.2 survey, the share names, and the export offline with and without a downloaded area.
 
-- [ ] TBD (run /gsd-plan-phase 25.1 to break down)
+**Plans**: 17/17 plans complete
+
+**Wave 1**
+
+- [x] 25.1-01-PLAN.md — expo-asset declared after a blocking check, Jest doubles, fonts and logo loader, photo pipeline
+- [x] 25.1-02-PLAN.md — Web Mercator projection (TDD) and bounded MapLibre basemap snapshot, offline-first
+- [x] 25.1-03-PLAN.md — Contracts: `fr.surveyExport` catalogue (dash exception removed), export data types, HTML helpers
+- [x] 25.1-04-PLAN.md — Stored details (D-12), data side: CNPF typology lists, `factor-selections.ts`, form payload and draft read
+- [x] 25.1-05-PLAN.md — Stored details round trip: API e2e (no API change), pull on another phone, specs and contracts
+- [x] 25.1-06-PLAN.md — Parcel history cache in `local_meta` (`parcel_history:<ID>`), purged by `clearLocalIbpData`
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 25.1-07-PLAN.md — Device spike on the iOS simulator and the Android emulator (worst case, measurements, approved constants)
+- [x] 25.1-08-PLAN.md — Stored details, inputs: controlled chips, F dendromicrohabitat groups, H sources, CNPF I/J types per method
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 25.1-09-PLAN.md — Factor cards A to J: raw observations, class scale, points, scale lines, missing marker
+- [x] 25.1-10-PLAN.md — Identity, method context, score summary with CNPF bands, factor chart
+- [x] 25.1-11-PLAN.md — Map page (basemap and overlay, outline, note) and photo pages
+- [x] 25.1-12-PLAN.md — Parcel trend from the cached history
+- [x] 25.1-13-PLAN.md — Document shell: light palette, CSP and embedded fonts, fixed A4 pages with header, footer, draft banner and watermark
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 25.1-14-PLAN.md — Full HTML document (end-to-end tests, both methods, both states) and the readable file name
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 25.1-15-PLAN.md — Offline-safe data loader and the print, rename and share runner
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [x] 25.1-16-PLAN.md — Survey summary on the new pipeline (facade, `useSurveyPdfExport`, observer name), spike removed
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [x] 25.1-17-PLAN.md — CLAUDE.md and charter notes, owner phone check (criterion 5), OA-131
+
+**UI hint**: yes
 
 ### Phase 26: UX/UI Audit & Design System Update (INSERTED)
 

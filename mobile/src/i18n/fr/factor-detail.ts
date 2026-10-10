@@ -12,6 +12,11 @@ export const factorDetailFr = {
   helpLink: "Que relever ?",
   helpTitle: "Que relever ?",
   helpClose: "Fermer l'aide",
+  // Phase 25.1 (D-12): labels of the optional detail lists that sit next to a scored value.
+  companionLabels: {
+    dmh_groups: "Groupes de dendromicrohabitats observés (facultatif)",
+    evidence: "Sources de la continuité (facultatif)",
+  },
   // Keyed by the factor field label the form passes in (see useSurveyForm).
   fieldLabels: {
     genera: "Genres autochtones observés",
