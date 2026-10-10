@@ -235,6 +235,19 @@ function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
 const withHistory = (items: Items, overrides: Partial<SurveyExportData> = {}) =>
   makeData({ history: { fetchedAt: FETCHED_AT, items }, ...overrides })
 
+/** The visible words of one factor row of the table, tags dropped. */
+function rowOf(html: string, factor: string): string | null {
+  const match = html.match(
+    new RegExp(`<div class="trend-delta-row" data-factor="${factor}">(.*?)</div>`),
+  )
+  return match
+    ? match[1]
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    : null
+}
+
 /** A text as it appears in the HTML (the catalogue texts hold apostrophes). */
 const printed = (text: string): string => escapeHtml(text)
 
@@ -325,12 +338,10 @@ describe("buildTrendBlock with a history", () => {
     expect(block.html).toContain(printed(pt.deltas.total({ delta: 6, current: 34, previous: 28 })))
     expect(countOf(block.html, /class="trend-delta-row"/g)).toBe(10)
     for (const factor of FACTOR_KEYS) expect(block.html).toContain(`data-factor="${factor}"`)
-    // A went from 3 to 4: four points out of five, +1.
-    expect(block.html).toMatch(/data-factor="A"[^]*?4 \/ 5[^]*?\+1/)
-    // B is unchanged.
-    expect(block.html).toMatch(/data-factor="B"[^]*?3 \/ 5[^]*?=/)
-    // F fell from 5 to 4.
-    expect(block.html).toMatch(/data-factor="F"[^]*?4 \/ 5[^]*?-1/)
+    // A went from 3 to 4 (+1), B did not move, F fell from 5 to 4.
+    expect(rowOf(block.html, "A")).toBe("A 4 / 5 +1")
+    expect(rowOf(block.html, "B")).toBe("B 3 / 5 =")
+    expect(rowOf(block.html, "F")).toBe("F 4 / 5 -1")
   })
 
   it("uses the heading without a year when the survey before has none", () => {
@@ -366,8 +377,8 @@ describe("buildTrendBlock with a history", () => {
     ]
     const block = buildTrendBlock(withHistory(sparse), palette)
     expect(countOf(block.html, /class="trend-delta-row"/g)).toBe(10)
-    expect(block.html).toContain(printed(pt.deltas.none))
-    expect(block.html).toContain(printed(fr.surveyExport.scores.notFilled))
+    expect(rowOf(block.html, "A")).toBe("A 4 / 5 +1")
+    expect(rowOf(block.html, "J")).toBe(`J ${fr.surveyExport.scores.notFilled} ${pt.deltas.none}`)
   })
 
   it("explains a method change between the two surveys instead of a factor table", () => {
