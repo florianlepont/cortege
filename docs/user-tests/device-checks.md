@@ -17,8 +17,8 @@ Phase 28's success criterion 7 points here. The Android recognition check (D-01)
 | D-07 | Phase 18 | Refuse location and camera on the permissions screen, tap "Ouvrir les réglages" | The app's Settings page opens; a later grant is reflected on return | iPhone and Android | 🔲 | |
 | D-08 | Phase 18 | Look at the launcher icon under a circular mask | The logo mark is not clipped | Android | 🔲 | |
 | D-09 | Phase 19, reworked in 25.1 | Open a submitted survey, share the PDF to Mail, Files or Drive; repeat in airplane mode after an app restart, on a survey opened once online | The share sheet opens with the PDF; offline it is still produced, with year and version filled in | iPhone and Android | 🔲 | Check the 25.1 export, and again after Phase 36 |
-| D-10 | Phase 20 | Backup timer installed on the server and one real dump produced | `cortege-postgres-<timestamp>.dump` of several tens of KiB in `/home/ubuntu/backups/postgres/`; `systemctl list-timers cortege-backup.timer` shows the next 03:17 UTC run | Production server, owner only | 🔲 | Repeat on the new server in Phase 38 |
-| D-11 | Phase 20 | One restore of a real dump into a throwaway database | "restore OK", 8 or more public tables, a surveys count equal to the live count | Production server, owner only | 🔲 | Repeat on the new server in Phase 38 |
+| D-10 | Phase 20 | Backup timer installed on the server and one real dump produced | `cortege-postgres-<timestamp>.dump` of several tens of KiB in `/home/ubuntu/backups/postgres/`; `systemctl list-timers cortege-backup.timer` shows the next 03:17 UTC run | Production server, owner only | ✅ | 2026-10-10, owner: timer next run Sun 2026-10-11 03:24 UTC (last run 2026-10-10 03:20), a dump every night since 2026-09-27 (27 KiB then 372 KiB). Repeat on the new server in Phase 38 |
+| D-11 | Phase 20 | One restore of a real dump into a throwaway database | "restore OK", 8 or more public tables, a surveys count equal to the live count | Production server, owner only | ✅ | 2026-10-10, owner: dump of 2026-10-10 03:20 restored, "restore OK", 8 tables, 1025 surveys; live count 1030 (5 created since the dump); throwaway database dropped. Repeat on the new server in Phase 38 |
 
 ## Commands for D-10 and D-11
 
@@ -36,7 +36,7 @@ ls -lh /home/ubuntu/backups/postgres/
 infra/vps/restore-postgres.sh /home/ubuntu/backups/postgres/<a real dump>
 ```
 
-The restore script prints the table and survey counts and the `dropdb` command to remove the throwaway database afterwards.
+The restore script prints the table and survey counts and the `dropdb` command to remove the throwaway database afterwards. To compare with the live count, pass the secrets file: `docker compose -f /home/ubuntu/cortege/infra/docker-compose.vps.yml --env-file /home/ubuntu/cortege.env exec postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "select count(*) from surveys"'`.
 
 ## Decisions recorded 2026-10-10
 
