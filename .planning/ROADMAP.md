@@ -68,7 +68,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 14: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec (completed 2026-09-27)
 - [x] **Phase 15: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it (completed 2026-09-27; closed 2026-10-10: the Android device checks are carried over to Phase 29 and `docs/user-tests/device-checks.md`)
 - [x] **Phase 16: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured (completed 2026-09-27)
-- [x] **Phase 17: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; on-device airplane-mode/relaunch verification deferred to Phase 28, see phase detail)
+- [x] **Phase 17: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; closed 2026-10-10: the airplane-mode walkthrough was run, its two gaps F-1 and F-2 are carried over to Phase 29)
 - [x] **Phase 18: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map (completed 2026-09-27)
 - [x] **Phase 19: Survey Export & Ownership** - Export a survey as a PDF offline and delete your own surveys (completed 2026-09-27)
 - [x] **Phase 20: Durable Backend** - Backups that restore, migrations that hold, hosting ratified, dead and unsafe code gone (completed 2026-09-27)
@@ -1154,7 +1154,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 14. Factor A Genus List & Data-Contract Corrections | 1/1 | Complete   | 2026-09-27 |
 | 15. Genus Recognition for Factor A | 1/1 | Complete (Android device checks carried over to Phase 29) | 2026-09-27 |
 | 16. Information Architecture (UX Lot 3) | 6/6 | Complete   | 2026-09-27 |
-| 17. Offline Map & Own-Survey Navigation | n/a | Complete (on-device airplane-mode check deferred to Phase 28) | 2026-09-27 |
+| 17. Offline Map & Own-Survey Navigation | n/a | Complete (offline gaps F-1 and F-2 carried over to Phase 29) | 2026-09-27 |
 | 18. Onboarding & Explorer Polish (UX Lot 4) | n/a | Complete    | 2026-09-27 |
 | 19. Survey Export & Ownership | 1/1 | Complete   | 2026-09-27 |
 | 20. Durable Backend | 4/4 | Complete    | 2026-09-27 |

@@ -4,7 +4,7 @@ Checks that could not be done in the build sessions because they need a real pho
 
 Legend: ✅ Pass · ❌ Fail · ⚠️ Pass with issue · 🔲 Not tested
 
-Phase 15 is closed (2026-10-10, owner decision): its checks D-01 to D-03 stay here and in Phase 29, they no longer hold it open. Phase 28's success criterion 7 points here. The Android recognition check (D-01) is owned by Phase 29, which reworks the workflow first.
+Phases 15 and 17 are closed (2026-10-10, owner decision): the checks D-01 to D-03 and the findings F-1 and F-2 stay here and in Phase 29, they no longer hold those phases open. Phase 28's success criterion 7 points here. The Android recognition check (D-01) is owned by Phase 29, which reworks the workflow first.
 
 | # | From | Check | Expected | Where | Status | Notes |
 |---|------|-------|----------|-------|--------|-------|
