@@ -1,8 +1,8 @@
 ---
 phase: 13-visual-foundations-motion
 verified: 2026-10-06T21:45:00Z
-status: gaps_found
-score: 5/6 must-haves verified
+status: passed
+score: 6/6 must-haves verified (re-verified 2026-10-10; was gaps_found, 5/6, on 2026-10-06)
 behavior_unverified: 0
 overrides_applied: 0
 gaps:
@@ -142,3 +142,8 @@ Root cause, for the planner: ESLint `overrides` replace, not merge, a rule's opt
 
 _Verified: 2026-10-06T21:45:00Z_
 _Verifier: Claude (gsd-verifier)_
+
+
+## Re-verification 2026-10-10
+
+The gap (the hex and rgba lint rule switched off on the screen, component, UI and navigation files, because the later ESLint overrides replaced the `no-restricted-syntax` list instead of merging it) is closed: `mobile/.eslintrc.json` now repeats the colour selectors in each of its three override blocks, and `npm run lint` passes on the whole repository (exit 0). The colour literals the first report listed were moved onto tokens by Phase 23, whose verification is `passed`.

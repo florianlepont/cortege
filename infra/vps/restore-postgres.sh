@@ -69,4 +69,8 @@ survey_count="$(compose exec -T "$POSTGRES_SERVICE" psql -U "$pg_user" -d "$targ
   "SELECT count(*) FROM surveys" | tr -d '[:space:]')"
 
 log "restore OK: '$target_db' has $table_count tables and $survey_count row(s) in surveys"
-log "drop it when done: docker compose -f $COMPOSE_FILE exec $POSTGRES_SERVICE dropdb -U $pg_user $target_db"
+if [ -f "$ENV_FILE" ]; then
+  log "drop it when done: docker compose -f $COMPOSE_FILE --env-file $ENV_FILE exec $POSTGRES_SERVICE dropdb -U $pg_user $target_db"
+else
+  log "drop it when done: docker compose -f $COMPOSE_FILE exec $POSTGRES_SERVICE dropdb -U $pg_user $target_db"
+fi
