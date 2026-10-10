@@ -28,12 +28,15 @@ jest.mock("react-native", () => {
       ReactRef.createElement(name, props, children)
   return {
     View: mockComponent("View"),
+    Pressable: mockComponent("Pressable"),
     ScrollView: mockComponent("ScrollView"),
     Text: mockComponent("Text"),
     Platform: { OS: "ios", select: (o: Record<string, unknown>) => o.ios },
     StyleSheet: { create: <T,>(styles: T) => styles },
   }
 })
+jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
+jest.mock("../ui/AppText", () => ({ AppText: "Text" }))
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
 jest.mock("../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("../ui/AppCard", () => ({ AppCard: "AppCard" }))
@@ -79,16 +82,37 @@ function render(largeTitle = false): ReactTestRenderer {
 }
 
 describe("SurveyScoreScreen (variant I)", () => {
-  test("renders title, breakdown, a glass card with the ten bars, then the factor rows, in that order", () => {
+  test("renders title, IBP info row, breakdown, a glass card with the ten bars, then the factor rows, in that order", () => {
     const tree = render()
     const scroll = tree.root.findByType("ScrollView" as never)
-    const order = scroll.children.map((child) => (child as { type: unknown }).type)
-    expect(order).toEqual(["PageTitle", "ScoreBreakdown", "AppCard", "FactorsList"])
+    const order = scroll.children.map((child) => {
+      const type = (child as { type: unknown }).type
+      return typeof type === "function" ? type.name : type
+    })
+    expect(order).toEqual([
+      "PageTitle",
+      "AbbreviationInfo",
+      "ScoreBreakdown",
+      "AppCard",
+      "FactorsList",
+    ])
     const card = tree.root.findByType("AppCard" as never)
     expect(card.props.variant).toBe("glass")
     const chart = tree.root.findByType("FactorBarsChart" as never)
     expect(chart.props.animate).toBe(true)
     expect(chart.props.entries).toEqual({ A: 3, B: null, "not-a-factor": 1 })
+  })
+
+  test("explains IBP with the info row under the title (D-11), also under the large title", () => {
+    for (const largeTitle of [false, true]) {
+      const tree = render(largeTitle)
+      const anchors = tree.root.findAll(
+        (n) => n.props.testID === "abbreviation-info-IBP" && (n.type as unknown) === "Pressable",
+      )
+      expect(anchors).toHaveLength(1)
+      expect(anchors[0].props.accessibilityLabel).toBe("Que signifie IBP ?")
+      expect(flattenStyle(anchors[0].props.style).minHeight).toBe(44)
+    }
   })
 
   test("the factor rows stay the way to open a factor", () => {

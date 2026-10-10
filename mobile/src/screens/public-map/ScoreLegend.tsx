@@ -12,6 +12,8 @@ import {
 } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import type { AbbreviationTerm } from "../../i18n/fr/abbreviations"
+import { AbbreviationInfo } from "../../ui/AbbreviationInfo"
 import { mapControlIconSize } from "../../app/visual-tokens"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { MAP_CONTROL_HIT_SLOP, MAP_EDGE, MAP_PILL_HEIGHT } from "./MapChips"
@@ -40,6 +42,8 @@ export type MapLegendProps = {
   title: string
   subtitle: string
   rows: MapLegendRow[]
+  /** An abbreviation of the title to explain with an info control beside it (D-11). */
+  infoTerm?: AbbreviationTerm
   loading?: boolean
   isOffline?: boolean
 }
@@ -56,6 +60,7 @@ export const MapLegend = memo(function MapLegend({
   title,
   subtitle,
   rows,
+  infoTerm,
   loading = false,
   isOffline = false,
 }: MapLegendProps) {
@@ -68,7 +73,12 @@ export const MapLegend = memo(function MapLegend({
     <View style={[styles.container, { bottom }]} pointerEvents="box-none">
       {expanded ? (
         <GlassSurface tone="auto" surface={glass} style={styles.panel}>
-          <Text style={styles.title}>{title}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>{title}</Text>
+            {infoTerm ? (
+              <AbbreviationInfo term={infoTerm} iconColor={theme.visual.mapControl.icon} />
+            ) : null}
+          </View>
           <Text style={styles.subtitle}>{subtitle}</Text>
           {rows.map((row) => (
             <View key={row.label} style={styles.row}>
@@ -131,6 +141,7 @@ export const ScoreLegend = memo(function ScoreLegend({ count, ...rest }: ScoreLe
       title={t.legend.title}
       subtitle={t.legend.subtitle}
       rows={SCORE_ROWS}
+      infoTerm="IBP"
     />
   )
 })
@@ -185,8 +196,14 @@ function createStyles(theme: BrandTheme) {
       padding: brandSpacing4.md,
       gap: brandSpacing4.sm,
     },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+    },
     title: {
       ...brandTypography.sectionHeader,
+      flexShrink: 1,
       color: theme.visual.mapControl.text,
     },
     subtitle: {
