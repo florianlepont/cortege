@@ -1,18 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useHeaderHeight } from "@react-navigation/elements"
-import { Platform, StyleSheet, View } from "react-native"
-import { AppText as Text } from "../ui/AppText"
+import { Platform, StyleSheet, View, useWindowDimensions } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
-import {
-  brandMapTokens,
-  brandMediaBackdrop,
-  brandShadow,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../app/brand-tokens"
-import { BrandTheme, useBrandTheme } from "../app/theme"
+import { brandMapTokens, brandMediaBackdrop, brandSpacing4 } from "../app/brand-tokens"
 import {
   DEFAULT_FRANCE_CENTER,
   areRegionsNearlyEqual,
@@ -34,16 +25,13 @@ import { ExplorerSheet } from "./public-map/ExplorerSheet"
 import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
 import { MapLegend, type MapLegendRow } from "./public-map/ScoreLegend"
-import { AppButton } from "../ui/AppButton"
-import { AppCard } from "../ui/AppCard"
-import { AppNotice } from "../ui/AppNotice"
+import { ParcelSelectionCard } from "./parcel-selection/ParcelSelectionCard"
+import { isCompactParcelCard } from "./parcel-selection/layout-budget"
 import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
 
 const t = fr.parcelSelection
 const headers = fr.navigation.headers
-const NEXT_ICON = "arrow-forward-outline"
-const DONE_ICON = "checkmark-outline"
 
 // The colours of the parcel layer (ParcelPolygonsLayer), for the legend the Explorer's look gets.
 const PARCEL_LEGEND_ROWS: MapLegendRow[] = [
@@ -86,8 +74,6 @@ export function SurveyParcelSelectionScreen({
   onSave,
   wizard = false,
 }: SurveyParcelSelectionScreenProps) {
-  const theme = useBrandTheme()
-  const screenStyles = useMemo(() => createScreenStyles(theme), [theme])
   const mapRef = useRef<ParcelMapHandle | null>(null)
   const [basemap, setBasemap] = useState<BasemapKey>("map")
   const [locating, setLocating] = useState(false)
@@ -95,6 +81,9 @@ export function SurveyParcelSelectionScreen({
   const headerHeight = useHeaderHeight()
   const tabBarHeight = useAppBottomTabBarHeight()
   const [saving, setSaving] = useState(false)
+  // The compact card reads the window, never the measured card height (no feedback loop, D-08).
+  const { height, fontScale } = useWindowDimensions()
+  const compact = isCompactParcelCard(height, fontScale)
   // The bottom card's height: the map controls sit just above it, bottom right and left like the
   // Explorer's, whatever the card holds (a notice appears when no parcel is chosen).
   const [cardHeight, setCardHeight] = useState(0)
@@ -175,6 +164,14 @@ export function SurveyParcelSelectionScreen({
 
   const cardBottomInset = Math.max(Math.max(tabBarHeight, insets.bottom), 12) + 12
   const controlsBottom = cardBottomInset + cardHeight + 12
+
+  const handleDone = (): void => {
+    if (saving) {
+      return
+    }
+    setSaving(true)
+    void onSave().finally(() => setSaving(false))
+  }
 
   const handleLocate = async (silent = false): Promise<void> => {
     if (locating) {
@@ -293,30 +290,15 @@ export function SurveyParcelSelectionScreen({
           style={screenStyles.bottomArea}
           onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
         >
-          <AppCard glass surface={theme.visual.mapPanel} style={screenStyles.bottomSheet}>
-            <Text style={screenStyles.bottomTitle}>
-              {hasParcelSelection ? parcelSelectionLabel : t.noSelection}
-            </Text>
-            <Text style={screenStyles.bottomMeta}>{parcelHelperText}</Text>
-            {!hasParcelSelection ? (
-              <AppNotice tone="danger" icon="alert-circle-outline" message={t.selectionRequired} />
-            ) : null}
-            <Text style={screenStyles.bottomHint}>{t.tapHint}</Text>
-            <AppButton
-              label={saving ? t.saving : wizard ? t.continue : t.done}
-              leadingIcon={saving ? "hourglass-outline" : wizard ? NEXT_ICON : DONE_ICON}
-              size="lg"
-              style={screenStyles.doneButton}
-              onPress={() => {
-                if (saving) {
-                  return
-                }
-                setSaving(true)
-                void onSave().finally(() => setSaving(false))
-              }}
-              disabled={saving || (wizard && !hasParcelSelection)}
-            />
-          </AppCard>
+          <ParcelSelectionCard
+            compact={compact}
+            hasSelection={hasParcelSelection}
+            selectionLabel={parcelSelectionLabel}
+            helperText={parcelHelperText}
+            saving={saving}
+            wizard={wizard}
+            onDone={handleDone}
+          />
         </View>
       </View>
 
@@ -339,54 +321,27 @@ export function SurveyParcelSelectionScreen({
   )
 }
 
-function createScreenStyles(theme: BrandTheme) {
-  return StyleSheet.create({
-    fullscreen: {
-      flex: 1,
-      backgroundColor: brandMediaBackdrop,
-    },
-    map: {
-      flex: 1,
-      backgroundColor: brandMediaBackdrop,
-    },
-    overlayLayer: {
-      ...StyleSheet.absoluteFill,
-      justifyContent: "flex-end",
-      paddingHorizontal: brandSpacing4.md,
-    },
-    // The offline-map proposal sits at the top, under the header (OA-105 follow-up).
-    topArea: {
-      position: "absolute",
-      left: 16,
-      right: 78,
-    },
-    bottomArea: {
-      gap: brandSpacing4.smd,
-    },
-    // DS-15 (Phase 12): a real blurred glass panel (`AppCard glass`) instead of a flat
-    // `brandTranslucentPanel` fill.
-    bottomSheet: {
-      gap: brandSpacing4.sm,
-    },
-    bottomTitle: {
-      ...brandTypography.sectionTitle,
-      fontSize: brandTypeScale.title3.fontSize,
-      lineHeight: 24,
-      color: theme.colors.textPrimary,
-    },
-    bottomMeta: {
-      ...brandTypography.sectionBody,
-      fontSize: brandTypeScale.footnote.fontSize,
-      lineHeight: 18,
-      color: theme.colors.textSecondary,
-    },
-    bottomHint: {
-      ...brandTypography.meta,
-      color: theme.colors.textSecondary,
-    },
-    doneButton: {
-      marginTop: brandSpacing4.xs,
-      ...brandShadow.card,
-    },
-  })
-}
+const screenStyles = StyleSheet.create({
+  fullscreen: {
+    flex: 1,
+    backgroundColor: brandMediaBackdrop,
+  },
+  map: {
+    flex: 1,
+    backgroundColor: brandMediaBackdrop,
+  },
+  overlayLayer: {
+    ...StyleSheet.absoluteFill,
+    justifyContent: "flex-end",
+    paddingHorizontal: brandSpacing4.md,
+  },
+  // The offline-map proposal sits at the top, under the header (OA-105 follow-up).
+  topArea: {
+    position: "absolute",
+    left: 16,
+    right: 78,
+  },
+  bottomArea: {
+    gap: brandSpacing4.smd,
+  },
+})
