@@ -1,4 +1,9 @@
 import { CNPF_FACTOR_A_GENUS_CODES } from "@cortege/ibp-domain"
+import {
+  __listMockFiles,
+  __resetMockFileSystem,
+  __setMockFile,
+} from "../../test/expo-file-system-legacy.mock"
 
 const loadTensorflowModel = jest.fn()
 
@@ -15,6 +20,18 @@ import {
   rankGenusSuggestions,
   validateManifest,
 } from "./genusClassifierModel"
+
+const CAPTURE_URI = "file:///mock/cache/Camera/p.jpg"
+
+function resizedFilesLeft(): string[] {
+  return __listMockFiles().filter((uri) => uri.startsWith("file:///mock/cache/manipulated-"))
+}
+
+/** A clock that returns the given values in call order. */
+function fakeClock(...values: number[]): () => number {
+  let index = 0
+  return () => values[Math.min(index++, values.length - 1)]
+}
 
 const GENUS_COUNT = CNPF_FACTOR_A_GENUS_CODES.length
 const VALID_LABELS = [...CNPF_FACTOR_A_GENUS_CODES]
@@ -84,6 +101,8 @@ describe("rankGenusSuggestions", () => {
 
 describe("classifyGenusPhoto", () => {
   beforeEach(() => {
+    __resetMockFileSystem()
+    __setMockFile(CAPTURE_URI, 400000)
     __resetGenusClassifierModelForTests()
     loadTensorflowModel.mockReset()
     jpegDecode.mockReset()
@@ -96,7 +115,7 @@ describe("classifyGenusPhoto", () => {
 
     const outcome = await classifyGenusPhoto("file:///mock/cache/photo.jpg")
 
-    expect(outcome).toEqual({ status: "unavailable", reason: "load_failed" })
+    expect(outcome).toMatchObject({ status: "unavailable", reason: "load_failed" })
   })
 
   it("loads the model from a local file URL, never from a bare require() id", async () => {
@@ -122,8 +141,8 @@ describe("classifyGenusPhoto", () => {
     const first = await classifyGenusPhoto("file:///mock/cache/photo-1.jpg")
     const second = await classifyGenusPhoto("file:///mock/cache/photo-2.jpg")
 
-    expect(first).toEqual({ status: "unavailable", reason: "load_failed" })
-    expect(second).toEqual({ status: "unavailable", reason: "load_failed" })
+    expect(first).toMatchObject({ status: "unavailable", reason: "load_failed" })
+    expect(second).toMatchObject({ status: "unavailable", reason: "load_failed" })
     expect(loadTensorflowModel).toHaveBeenCalledTimes(1)
   })
 
@@ -151,7 +170,7 @@ describe("classifyGenusPhoto", () => {
 
     const outcome = await classifyGenusPhoto("file:///mock/cache/photo.jpg")
 
-    expect(outcome).toEqual({ status: "unavailable", reason: "inference_failed" })
+    expect(outcome).toMatchObject({ status: "unavailable", reason: "inference_failed" })
   })
 
   it("caches a successfully loaded model across calls (no repeat load)", async () => {
@@ -168,6 +187,116 @@ describe("classifyGenusPhoto", () => {
     expect(loadTensorflowModel).toHaveBeenCalledTimes(1)
   })
 
+  it("deletes the resized JPEG after a successful classification (SC-7)", async () => {
+    loadTensorflowModel.mockResolvedValue({
+      run: jest
+        .fn()
+        .mockResolvedValue([new Float32Array(GENUS_COUNT).fill(1 / GENUS_COUNT).buffer]),
+    })
+    jpegDecode.mockReturnValue(fakeDecodedImage(224))
+
+    const outcome = await classifyGenusPhoto(CAPTURE_URI)
+
+    expect(outcome.status).toBe("ok")
+    expect(resizedFilesLeft()).toEqual([])
+    // the capture itself is the caller's to delete: the classifier leaves it alone
+    expect(__listMockFiles()).toContain(CAPTURE_URI)
+  })
+
+  it("deletes the resized JPEG when decoding fails", async () => {
+    loadTensorflowModel.mockResolvedValue({ run: jest.fn() })
+    jpegDecode.mockImplementation(() => {
+      throw new Error("bad jpeg")
+    })
+
+    const outcome = await classifyGenusPhoto(CAPTURE_URI)
+
+    expect(outcome).toMatchObject({ status: "unavailable", reason: "inference_failed" })
+    expect(resizedFilesLeft()).toEqual([])
+  })
+
+  it("deletes the resized JPEG when the model run rejects", async () => {
+    loadTensorflowModel.mockResolvedValue({
+      run: jest.fn().mockRejectedValue(new Error("shape mismatch")),
+    })
+    jpegDecode.mockReturnValue(fakeDecodedImage(224))
+
+    const outcome = await classifyGenusPhoto(CAPTURE_URI)
+
+    expect(outcome).toMatchObject({ status: "unavailable", reason: "inference_failed" })
+    expect(resizedFilesLeft()).toEqual([])
+  })
+
+  it("deletes the resized JPEG when reading it fails", async () => {
+    const FileSystem = jest.requireMock("expo-file-system/legacy") as {
+      readAsStringAsync: jest.Mock
+    }
+    FileSystem.readAsStringAsync.mockRejectedValueOnce(new Error("read failed"))
+    loadTensorflowModel.mockResolvedValue({ run: jest.fn() })
+
+    const outcome = await classifyGenusPhoto(CAPTURE_URI)
+
+    expect(outcome).toMatchObject({ status: "unavailable", reason: "inference_failed" })
+    expect(resizedFilesLeft()).toEqual([])
+  })
+
+  it("reports timings: load 10, preprocessing 30, inference 60, total 90 (clock 0, 10, 40, 100)", async () => {
+    loadTensorflowModel.mockResolvedValue({
+      run: jest
+        .fn()
+        .mockResolvedValue([new Float32Array(GENUS_COUNT).fill(1 / GENUS_COUNT).buffer]),
+    })
+    jpegDecode.mockReturnValue(fakeDecodedImage(224))
+
+    const outcome = await classifyGenusPhoto(CAPTURE_URI, fakeClock(0, 10, 40, 100))
+
+    expect(outcome.timings).toEqual({ loadMs: 10, preprocessMs: 30, inferenceMs: 60, totalMs: 90 })
+  })
+
+  it("books a preprocessing failure to preprocessing, none to inference", async () => {
+    loadTensorflowModel.mockResolvedValue({ run: jest.fn() })
+    jpegDecode.mockImplementation(() => {
+      throw new Error("bad jpeg")
+    })
+
+    const outcome = await classifyGenusPhoto(CAPTURE_URI, fakeClock(0, 10, 40))
+
+    expect(outcome.timings).toEqual({ loadMs: 10, preprocessMs: 30, inferenceMs: 0, totalMs: 30 })
+  })
+
+  it("books a model run failure to inference", async () => {
+    loadTensorflowModel.mockResolvedValue({
+      run: jest.fn().mockRejectedValue(new Error("shape mismatch")),
+    })
+    jpegDecode.mockReturnValue(fakeDecodedImage(224))
+
+    const outcome = await classifyGenusPhoto(CAPTURE_URI, fakeClock(0, 10, 40, 100))
+
+    expect(outcome.timings).toEqual({ loadMs: 10, preprocessMs: 30, inferenceMs: 60, totalMs: 90 })
+  })
+
+  it("reports a load failure with the load time and nothing for the later stages", async () => {
+    loadTensorflowModel.mockRejectedValue(new Error("invalid flatbuffer"))
+
+    const outcome = await classifyGenusPhoto(CAPTURE_URI, fakeClock(5, 25))
+
+    expect(outcome.timings).toEqual({ loadMs: 20, preprocessMs: 0, inferenceMs: 0, totalMs: 0 })
+  })
+
+  it("times with the real monotonic clock by default", async () => {
+    loadTensorflowModel.mockResolvedValue({
+      run: jest
+        .fn()
+        .mockResolvedValue([new Float32Array(GENUS_COUNT).fill(1 / GENUS_COUNT).buffer]),
+    })
+    jpegDecode.mockReturnValue(fakeDecodedImage(224))
+
+    const { timings } = await classifyGenusPhoto(CAPTURE_URI)
+
+    expect(timings.totalMs).toBeGreaterThanOrEqual(0)
+    expect(timings.totalMs).toBe(timings.preprocessMs + timings.inferenceMs)
+  })
+
   it("resolves 'unavailable'/invalid_manifest for a corrupt or mismatched bundled manifest", async () => {
     // A fresh module registry: the bundled manifest is a static import, so this is the only way
     // to exercise a build where it and the real .tflite have drifted out of sync (D-08's "corrupt
@@ -179,7 +308,11 @@ describe("classifyGenusPhoto", () => {
       }))
       const isolated = await import("./genusClassifierModel")
       const outcome = await isolated.classifyGenusPhoto("file:///mock/cache/photo.jpg")
-      expect(outcome).toEqual({ status: "unavailable", reason: "invalid_manifest" })
+      expect(outcome).toEqual({
+        status: "unavailable",
+        reason: "invalid_manifest",
+        timings: { loadMs: 0, preprocessMs: 0, inferenceMs: 0, totalMs: 0 },
+      })
     })
   })
 })
