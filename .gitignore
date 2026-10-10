@@ -35,3 +35,6 @@ mobile/android/
 # .planning/phases/01-species-recognition-approach-decision/. Its only durable
 # output is docs/technical/species-recognition-spike-measurements-v1.md.
 spike/
+
+# Test builds handed to testers (Android APK), never committed.
+*.apk
