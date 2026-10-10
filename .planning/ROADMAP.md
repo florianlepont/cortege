@@ -864,7 +864,7 @@ Plans:
   4. The export never needs the network and never hangs: offline it makes no call, online its two optional reads are bounded; the shared file is named `Cortege-IBP-<site>-<year>.pdf`, with `-brouillon` for a draft.
   5. The owner confirms it on their phone: a draft and a submitted survey, a v3.0 and a v3.2 survey, the share names, and the export offline with and without a downloaded area.
 
-**Plans**: 7/17 plans executed
+**Plans**: 8/17 plans executed
 
 **Wave 1**
 
@@ -877,7 +877,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 25.1-07-PLAN.md — Device spike on the iOS simulator and the Android emulator (worst case, measurements, approved constants)
+- [x] 25.1-07-PLAN.md — Device spike on the iOS simulator and the Android emulator (worst case, measurements, approved constants)
 - [x] 25.1-08-PLAN.md — Stored details, inputs: controlled chips, F dendromicrohabitat groups, H sources, CNPF I/J types per method
 
 **Wave 3** *(blocked on Wave 2 completion)*

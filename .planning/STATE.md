@@ -6,14 +6,14 @@ current_phase: 25.1
 current_phase_name: PDF Export Improvement
 status: executing
 stopped_at: Completed 25.1-05-PLAN.md
-last_updated: "2026-10-10T10:07:11.553Z"
+last_updated: "2026-10-10T12:22:34.666Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 25.1 execution started
 progress:
   total_phases: 29
   completed_phases: 16
   total_plans: 188
-  completed_plans: 216
+  completed_plans: 217
   percent: 55
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 25.1 (PDF Export Improvement) — EXECUTING
-Plan: 8 of 17
+Plan: 9 of 17
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 25.1 execution started
 
@@ -121,6 +121,7 @@ Progress: [█████████░] 25/29 phases complete
 | Phase 25.1 P05 | 35min | 2 tasks | 5 files |
 | Phase 25.1 P06 | 20min | 2 tasks | 5 files |
 | Phase 25.1 P08 | 20 min | 2 tasks | 5 files |
+| Phase 25.1 P07 | ~3h | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -207,6 +208,8 @@ Decisions table. Decisions affecting current work:
 - [Phase 24]: 24-10: ParcelHistoryView decides the variant itself (community never gets the delta block); the history page treats a missing access token as first load, not as first survey
 - [Phase 24]: 24-11: community history row uses historyRowState with hasParcel true, shown only when history has more than one entry; communityHistory registered in survey and Explorer stacks, journal never in Explorer
 - [Phase 25.1]: 25.1-04: selectionLabel takes an optional method version so v3.0/v3.2 wording differences print correctly
+- [Phase 25.1-07]: PDF layout scale iOS 1.2487 / Android 4/3, page block 840, photos cap 24 at 800 px q0.65, measured on simulator and emulator, owner approved 2026-10-10
+- [Phase 25.1-07]: Snapshot timeout 12 s for the online style, 8 s for the offline style (owner change 2026-10-10)
 
 ### Pending Todos
 
@@ -249,6 +252,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-10T10:07:11.548Z
+Last session: 2026-10-10T12:22:31.417Z
 Stopped at: Completed 25.1-05-PLAN.md
 Resume file: .planning/phases/25.1-pdf-export-improvement/25.1-CONTEXT.md
