@@ -1,11 +1,13 @@
+import { FACTOR_KEYS } from "@cortege/ibp-domain"
 import { buildEntriesFromOwn, buildParcelHistory } from "../parcel-history"
 import type { ParcelHistoryModel } from "../parcel-history"
 import { TREND_HEIGHT, TREND_YEAR_BASELINE, buildTrend } from "../trend-geometry"
 import { fr } from "../../i18n"
-import { ownItem, V30, V32 } from "../../../test/parcel-history-fixtures"
-import { TREND_PRINT_WIDTH, buildTrendSvg } from "./trend-section"
+import { factorResults, ownItem, V30, V32 } from "../../../test/parcel-history-fixtures"
+import { escapeHtml, formatDateFr } from "./html"
+import { TREND_PRINT_WIDTH, buildTrendBlock, buildTrendSvg, trendSectionCss } from "./trend-section"
 import { PDF_FONT_FAMILIES } from "./types"
-import type { PdfPalette } from "./types"
+import type { PdfPalette, SurveyExportData } from "./types"
 
 const PALETTE_KEYS = [
   "ink",
@@ -189,5 +191,263 @@ describe("buildTrendSvg", () => {
       palette,
     )
     expect(svg).toContain(">50</text>")
+  })
+})
+
+// ---- the block ------------------------------------------------------------------------------
+
+const pt = fr.parcelHistory.page
+const FETCHED_AT = "2026-10-09T08:30:00Z"
+
+type Items = ReturnType<typeof ownItem>[]
+
+function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
+  return {
+    surveyId: "c",
+    siteName: "Forêt de test",
+    parcelIds: ["940750000AB0352"],
+    observationYear: 2024,
+    versionNumber: 3,
+    dateIso: "2024-10-10T08:00:00Z",
+    isDraft: false,
+    observerName: null,
+    method: {
+      version: V32,
+      ibpCas: 1,
+      ibpCas3Scale: false,
+      regionVersion: null,
+      vegetationStage: null,
+    },
+    scores: null,
+    factorEntries: [],
+    generatedAtIso: "2026-10-10T09:00:00Z",
+    coordinates: null,
+    rawFactors: {},
+    photos: { items: [], total: 0, unavailable: 0 },
+    map: null,
+    history: null,
+    assets: { fonts: [], logoDataUri: null },
+    layout: { platform: "ios", layoutScale: 1.2487 },
+    ...overrides,
+  }
+}
+
+const withHistory = (items: Items, overrides: Partial<SurveyExportData> = {}) =>
+  makeData({ history: { fetchedAt: FETCHED_AT, items }, ...overrides })
+
+/** A text as it appears in the HTML (the catalogue texts hold apostrophes). */
+const printed = (text: string): string => escapeHtml(text)
+
+const history3: Items = [
+  ownItem("a", {
+    observation_year: 2020,
+    scores: scored(22),
+    factor_results: factorResults({ A: 2, B: 3, C: 1, D: 4, E: 0, F: 5, G: 2, H: 3, I: 1, J: 2 }),
+  }),
+  ownItem("b", {
+    observation_year: 2022,
+    scores: scored(28),
+    factor_results: factorResults({ A: 3, B: 3, C: 2, D: 4, E: 1, F: 5, G: 3, H: 3, I: 2, J: 2 }),
+  }),
+  ownItem("c", {
+    observation_year: 2024,
+    scores: scored(34),
+    factor_results: factorResults({ A: 4, B: 3, C: 2, D: 5, E: 1, F: 4, G: 3, H: 3, I: 2, J: 3 }),
+  }),
+]
+
+describe("buildTrendBlock notes", () => {
+  it("is a note when the survey has no parcel", () => {
+    const block = buildTrendBlock(withHistory(history3, { parcelIds: [] }), palette)
+    expect(block.id).toBe("trend")
+    expect(block.height).toBeGreaterThan(0)
+    expect(block.html).toContain(printed(t.heading))
+    expect(block.html).toContain(printed(t.noParcel))
+    expect(block.html).not.toContain("<svg")
+    expect(block.html).not.toContain("trend-cached")
+  })
+
+  it("is a note when no history is cached", () => {
+    const block = buildTrendBlock(makeData({ history: null }), palette)
+    expect(block.html).toContain(printed(t.unavailable))
+    expect(block.html).not.toContain("<svg")
+    expect(block.height).toBeGreaterThan(0)
+  })
+
+  it("is a note for the first survey of the parcel, with an empty or a lone current history", () => {
+    for (const items of [[], [ownItem("c")]]) {
+      const block = buildTrendBlock(withHistory(items), palette)
+      expect(block.html).toContain(printed(t.first))
+      expect(block.html).not.toContain("<svg")
+    }
+  })
+
+  it("prefers the no-parcel note over an unavailable history", () => {
+    const block = buildTrendBlock(makeData({ parcelIds: [], history: null }), palette)
+    expect(block.html).toContain(printed(t.noParcel))
+    expect(block.html).not.toContain(printed(t.unavailable))
+  })
+})
+
+describe("buildTrendBlock with a history", () => {
+  it("prints the heading, the summary line, the curve and the cache date", () => {
+    const block = buildTrendBlock(withHistory(history3), palette)
+    expect(block.html).toContain(printed(t.heading))
+    expect(block.html).toContain(printed(pt.trend.titleStrong(12)))
+    expect(block.html).toContain(printed(pt.trend.titleAccent(2020)))
+    expect(countOf(block.html, /<svg\b/g)).toBe(1)
+    expect(block.html).toContain(printed(t.cachedAt({ date: formatDateFr(FETCHED_AT, "") })))
+    expect(block.height).toBeGreaterThan(0)
+    expect(block.html).not.toMatch(/https?:/)
+  })
+
+  it("says no change when the totals are equal", () => {
+    const flat: Items = [
+      ownItem("a", { observation_year: 2022, scores: scored(30) }),
+      ownItem("c", { observation_year: 2024, scores: scored(30) }),
+    ]
+    const block = buildTrendBlock(withHistory(flat), palette)
+    expect(block.html).toContain(printed(pt.trend.titleStrong(0)))
+  })
+
+  it("words a fall in points with the minus sign of the screen", () => {
+    const fall: Items = [
+      ownItem("a", { observation_year: 2022, scores: scored(34) }),
+      ownItem("c", { observation_year: 2024, scores: scored(30) }),
+    ]
+    const block = buildTrendBlock(withHistory(fall), palette)
+    expect(block.html).toContain(printed(pt.trend.titleStrong(-4)))
+  })
+
+  it("prints the ten factors A to J against the survey just before", () => {
+    const block = buildTrendBlock(withHistory(history3), palette)
+    expect(block.html).toContain(printed(t.deltaHeading({ year: "2022" })))
+    expect(block.html).toContain(printed(pt.deltas.total({ delta: 6, current: 34, previous: 28 })))
+    expect(countOf(block.html, /class="trend-delta-row"/g)).toBe(10)
+    for (const factor of FACTOR_KEYS) expect(block.html).toContain(`data-factor="${factor}"`)
+    // A went from 3 to 4: four points out of five, +1.
+    expect(block.html).toMatch(/data-factor="A"[^]*?4 \/ 5[^]*?\+1/)
+    // B is unchanged.
+    expect(block.html).toMatch(/data-factor="B"[^]*?3 \/ 5[^]*?=/)
+    // F fell from 5 to 4.
+    expect(block.html).toMatch(/data-factor="F"[^]*?4 \/ 5[^]*?-1/)
+  })
+
+  it("uses the heading without a year when the survey before has none", () => {
+    const noYear: Items = [
+      ownItem("b", {
+        observation_year: null,
+        scores: scored(28),
+        factor_results: factorResults({ A: 3 }),
+      }),
+      ownItem("c", {
+        observation_year: 2024,
+        scores: scored(34),
+        factor_results: factorResults({ A: 4 }),
+      }),
+    ]
+    const block = buildTrendBlock(withHistory(noYear), palette)
+    expect(block.html).toContain(printed(t.deltaHeadingNoYear))
+    expect(block.html).not.toContain(printed(t.deltaHeading({ year: "2022" })))
+  })
+
+  it("prints the unfilled factors and missing deltas as such", () => {
+    const sparse: Items = [
+      ownItem("b", {
+        observation_year: 2022,
+        scores: scored(28),
+        factor_results: factorResults({ A: 3 }),
+      }),
+      ownItem("c", {
+        observation_year: 2024,
+        scores: scored(34),
+        factor_results: factorResults({ A: 4 }),
+      }),
+    ]
+    const block = buildTrendBlock(withHistory(sparse), palette)
+    expect(countOf(block.html, /class="trend-delta-row"/g)).toBe(10)
+    expect(block.html).toContain(printed(pt.deltas.none))
+    expect(block.html).toContain(printed(fr.surveyExport.scores.notFilled))
+  })
+
+  it("explains a method change between the two surveys instead of a factor table", () => {
+    const changed: Items = [
+      ownItem("b", { ibp_method_version: V30, observation_year: 2022, scores: scored(28) }),
+      ownItem("c", { ibp_method_version: V32, observation_year: 2024, scores: scored(34) }),
+    ]
+    const block = buildTrendBlock(withHistory(changed), palette)
+    expect(block.html).toContain(printed(t.differentMethod))
+    expect(block.html).not.toContain("trend-delta-row")
+    expect(block.html).toContain(printed(pt.trend.newMethodStrong("v3.2")))
+    expect(block.html).toContain(printed(pt.trend.newMethodAccent(2024)))
+    expect(block.html).toContain(printed(pt.trend.mixed))
+  })
+
+  it("adds the mixed-methods sentence on a curve that spans both methods", () => {
+    const mixed: Items = [
+      ownItem("a", { ibp_method_version: V30, observation_year: 2018, scores: scored(18) }),
+      ownItem("b", { ibp_method_version: V32, observation_year: 2020, scores: scored(22) }),
+      ownItem("c", { ibp_method_version: V32, observation_year: 2024, scores: scored(30) }),
+    ]
+    const block = buildTrendBlock(withHistory(mixed), palette)
+    expect(block.html).toContain(printed(pt.trend.mixed))
+    expect(block.html).toContain("trend-link")
+    const same = buildTrendBlock(withHistory(history3), palette)
+    expect(same.html).not.toContain(printed(pt.trend.mixed))
+  })
+
+  it("has no per-factor table when the survey before has no scores", () => {
+    const bare: Items = [
+      ownItem("b", { observation_year: 2022, scores: undefined as never }),
+      ownItem("c", { observation_year: 2024, scores: scored(34) }),
+    ]
+    const block = buildTrendBlock(withHistory(bare), palette)
+    expect(block.html).not.toContain("trend-delta-row")
+    expect(block.html).not.toContain(printed(t.differentMethod))
+    expect(block.html).toContain("<svg")
+  })
+
+  it("handles a draft that is not in the history: curve of the past, no factor table", () => {
+    const block = buildTrendBlock(
+      withHistory(history3, { surveyId: "draft-1", isDraft: true }),
+      palette,
+    )
+    expect(block.html).toContain("<svg")
+    expect(block.html).not.toContain("trend-delta-row")
+    expect(countOf(block.html, /trend-point-current/g)).toBe(0)
+  })
+
+  it("omits the cache line when the date is unreadable", () => {
+    const data = withHistory(history3)
+    const block = buildTrendBlock(
+      { ...data, history: { fetchedAt: "not a date", items: history3 } },
+      palette,
+    )
+    expect(block.html).not.toContain("trend-cached")
+    expect(block.html).toContain("<svg")
+  })
+
+  it("grows with the factor table: more height than a note", () => {
+    const full = buildTrendBlock(withHistory(history3), palette)
+    const note = buildTrendBlock(makeData(), palette)
+    expect(full.height).toBeGreaterThan(note.height)
+    expect(full.height).toBeLessThan(420)
+  })
+})
+
+describe("trendSectionCss", () => {
+  const css = trendSectionCss(palette)
+
+  it("prefixes every class with trend- and uses palette values only", () => {
+    const classes = css.match(/\.[a-z][\w-]*/g) ?? []
+    expect(classes.length).toBeGreaterThan(0)
+    for (const name of classes) expect(name.startsWith(".trend-")).toBe(true)
+    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(/)
+    expect(css).toContain("ink")
+  })
+
+  it("avoids what iOS print does not draw: column-count and 1 px filled divs", () => {
+    expect(css).not.toContain("column-count")
+    expect(css).toContain(PDF_FONT_FAMILIES.heading)
   })
 })
