@@ -20,6 +20,8 @@ type SurveyDetailBaseProps = {
 }
 
 export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
+  /** The signed-in member's display name, printed as the observer in the PDF export (D-04). */
+  observerName?: string | null
   navigation: HeaderNavigation & PulseNavigation
   selectedSurveyAttachments: LocalAttachment[]
   surveyEvents: Record<string, SurveyEventItem[]>

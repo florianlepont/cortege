@@ -3,7 +3,6 @@ import { Alert, ScrollView, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
 import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { shouldShowDevTools } from "../app/dev-tools"
-import { exportAndShareSurveyPdf, type SurveyExportData } from "../app/survey-pdf-export"
 import { runPdfSpike } from "../app/survey-pdf/spike"
 import { useBrandTheme } from "../app/theme"
 import { fr, logStatusDetail } from "../i18n"
@@ -26,6 +25,7 @@ import { resolveFinishCta, resolveStatusLine } from "./survey-detail/summary-sta
 import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
+import { useSurveyPdfExport } from "./survey-detail/useSurveyPdfExport"
 import { useVisiblePulse } from "./survey-detail/useVisiblePulse"
 import { useHistoryRow } from "./survey-detail/useHistoryRow"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
@@ -35,7 +35,6 @@ import { useScrollTop } from "./survey-detail/useScrollTop"
 import { TitledScrollView } from "../ui/TitledScrollView"
 
 const menuText = fr.surveyDetail.menu
-const actionsText = fr.surveyDetail.actions
 const rowsText = fr.surveyDetail.rows
 const summaryText = fr.surveyDetail.summary
 const headerText = fr.surveyDetail.header
@@ -51,6 +50,7 @@ const alertsText = fr.surveyDetail.alerts
 export function SurveyDetailScreen({
   apiUrl,
   accessToken,
+  observerName,
   navigation,
   selectedSurvey,
   selectedSurveyAttachments,
@@ -105,28 +105,20 @@ export function SurveyDetailScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attachmentPreviewKey, onEnsureAttachmentPreviews])
 
-  const exportData: SurveyExportData = useMemo(
-    () => ({
-      siteName: activeSiteName,
-      parcelIds: data.parcelIds,
-      observationYear: detail?.observation_year ?? data.localDraftMeta?.observation_year ?? null,
-      versionNumber: detail?.version_number ?? data.localDraftMeta?.version_number ?? null,
-      methodVersion: detail?.ibp_method_version ?? data.localDraftMeta?.ibp_method_version ?? null,
-      dateIso: detail?.submitted_at ?? data.createdAt,
-      scores: data.displayedScores,
-      factorEntries: data.displayedFactorEntries,
-    }),
-    [activeSiteName, data, detail],
-  )
-
-  const handleShare = useLatestCallback(async (): Promise<void> => {
-    try {
-      const { shared } = await exportAndShareSurveyPdf(exportData)
-      if (!shared) Alert.alert(menuText.share, actionsText.exportShareUnavailable)
-    } catch (error) {
-      logStatusDetail("surveyDetail.exportPdf", error)
-      Alert.alert(menuText.share, actionsText.exportFailed)
-    }
+  const { exporting, share } = useSurveyPdfExport({
+    surveyId: selectedSurvey.id,
+    detail,
+    canEditSurvey,
+    activeSiteName,
+    parcelIds: data.parcelIds,
+    localDraftMeta: data.localDraftMeta,
+    scoringContext: data.scoringContext,
+    displayedScores: data.displayedScores,
+    displayedFactorEntries: data.displayedFactorEntries,
+    createdAt: data.createdAt,
+    observerName: observerName ?? null,
+    apiUrl,
+    accessToken,
   })
   // Phase 25.1 device spike (dev builds only, rendered inside the shouldShowDevTools() branch).
   const handleRunPdfSpike = useLatestCallback((layoutScale: number): void => {
@@ -168,7 +160,7 @@ export function SurveyDetailScreen({
     siteName: activeSiteName,
     largeTitle,
     onRename: largeTitle && canEditSurvey ? handleRename : undefined,
-    onShare: () => void handleShare(),
+    onShare: () => void share(),
     onDelete: handleDelete,
     onOpenJournal,
     onOpenMenu: handleOpenMenu,
@@ -258,6 +250,8 @@ export function SurveyDetailScreen({
             message={summaryText.submittedMessage}
           />
         ) : null}
+
+        {exporting ? <AppNotice tone="info" message={fr.surveyExport.progress} /> : null}
 
         <ScoreCard
           scores={data.displayedScores}

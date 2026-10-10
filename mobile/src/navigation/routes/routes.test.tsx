@@ -1009,6 +1009,17 @@ describe("SurveyDetailRoute", () => {
     }
   }
 
+  test("passes the signed-in member's display name as the PDF observer (D-04)", async () => {
+    const fixture = withSelection(makeFixture())
+    fixture.session.state.currentUser = { display_name: "Marie Lepont" } as never
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").observerName).toBe("Marie Lepont")
+  })
+
   test("passes the survey and opens the three sub-pages", async () => {
     const fixture = withSelection(makeFixture())
     const navigation = makeNavigation()
@@ -1019,6 +1030,7 @@ describe("SurveyDetailRoute", () => {
     )
     expect(props("surveyDetail").apiUrl).toBe("http://api.test/v1")
     expect(props("surveyDetail").navigation).toBe(navigation)
+    expect(props("surveyDetail").observerName).toBeNull()
     expect(props("surveyDetail").onSubmitSurvey).toBe(fixture.surveys.actions.submitSurvey)
     expect(props("surveyDetail").onSimulateMissingAttachmentFile).toBe(
       fixture.syncActions.handleSimulateMissingAttachmentFile,
