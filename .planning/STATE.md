@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 25.1
-current_phase_name: PDF Export Improvement
-status: ready_to_discuss
+current_phase: 29
+current_phase_name: Field-feedback fixes (INSERTED
+status: executing
 stopped_at: Phase 29 planned (10 plans, 3 waves), ready to execute
-last_updated: "2026-10-10T20:29:55.155Z"
+last_updated: "2026-10-10T21:33:41.643Z"
 last_activity: 2026-10-10
-last_activity_desc: Phase 29 planned, 10 plans verified by the plan checker
+last_activity_desc: Phase 29 execution started
 progress:
   total_phases: 39
   completed_phases: 17
-  total_plans: 188
+  total_plans: 198
   completed_plans: 226
   percent: 44
 ---
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 26 (UX/UI audit) is next, then Phase 27 (quality audit) and Phase 28 (field validation). Phase 25.1 (PDF export) closed on the owner's phone check 2026-10-10.
+**Current focus:** Phase 29 — Field-feedback fixes (INSERTED)
 
 ## Current Position
 
-Phase: 25.1 (PDF Export Improvement) complete; next Phase 26 (UX/UI Audit), not discussed yet
-Plan: 17 of 17 done
-Status: Phase 25.1 complete; Phase 26 ready to discuss
-Last activity: 2026-10-10 — Phase 25.1 closed on the owner's phone check
+Phase: 29 (Field-feedback fixes (INSERTED)) — EXECUTING
+Plan: 1 of 10
+Status: Executing Phase 29
+Last activity: 2026-10-10 — Phase 29 execution started
 
 Progress: [█████████░] 26/29 phases complete
 
