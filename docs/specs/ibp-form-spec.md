@@ -229,6 +229,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   there (BUG-1, CH-1). A cover still stored under B by an older v3.0 draft is read for A only.
 - UI validation:
   - blocking: at least 1 stratum selected.
+- Stored as (phase 25.1, D-12): `strata_count` (scored) plus `strata`, the selected tiers, an array
+  of codes among `very_low`, `low`, `intermediate`, `high`, `herbaceous`. The array is written
+  only together with the count, the count equals its length when the tiers are picked, and the
+  array is never scored. It is kept by the server and by a pull on another phone, so the PDF
+  prints the tiers.
 - Example:
   - 5 observed strata, native cover 40% -> B score `5` (the cap applies to A).
 
@@ -329,6 +334,9 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 - UI validation:
   - blocking: at least 1 dmh group evaluated (0 allowed).
   - non-blocking: value above group cap -> auto-cap + warning.
+- Stored as (phase 25.1, D-12): `trees_per_ha` (scored) plus an optional `dmh_groups`, the dmh
+  groups observed, an array of codes `dmh_01` to `dmh_15` (the 15 groups of the IBP typology).
+  The groups are observed, not scored: the score stays derived from `trees_per_ha` alone.
 - Example:
   - total after capping = 8.4 trees/ha -> score `5`.
 
@@ -387,6 +395,10 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 - UI validation:
   - blocking: one class required.
   - blocking: `evidence_source` required (map, aerial photo, field observation).
+- Stored as (phase 25.1, D-12): `class_score` (scored) plus an optional `evidence`, an array of
+  codes among `etat_major_map`, `later_documents`, `field_signs`. The evidence is optional in the
+  app, unlike the "blocking" wording above, because the submit rules live in the domain package
+  and are unchanged. The evidence is never scored.
 - Example:
   - stand present on Etat-major map with no discontinuity signs -> score `5`.
 
@@ -406,6 +418,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   - blocking: number of types determined (0 allowed).
 - Example:
   - spring + small stream -> score `5`.
+- Stored as (phase 25.1, D-12): `type_count` (scored) plus `types`, the selected types of the
+  CNPF typology of the survey's method, as codes. v3.2 lists 11 aquatic types: `spring_seep`,
+  `rill_ditch`, `small_stream`, `river`, `oxbow`, `lake`, `pond_lagoon`, `pool`, `peat_bog`,
+  `marsh`, `sea`. v3.0 lists the same without `sea` (10 types). The count equals the length of
+  `types` when the types are picked; the array is never scored.
 
 ### Factor J - Rocky Habitats
 - Ecological objective: account for rocky/mineral habitat diversity.
@@ -423,6 +440,13 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   - blocking: number of types determined (0 allowed).
 - Example:
   - slab + outcrops (each >20 m2 cumulative area) -> score `5`.
+- Stored as (phase 25.1, D-12): `type_count` (scored) plus `types`, the selected types of the
+  CNPF typology of the survey's method, as codes. v3.2 lists 12 rocky types: `cliff_high`,
+  `rock_wall_low`, `slab`, `lapiaz`, `cave`, `unstable_scree`, `stable_blocks`, `boulder_chaos`,
+  `large_blocks`, `pebble_bank`, `fine_sediment`, `loose_bank`. v3.0 lists 9: `cliff_high`,
+  `slab`, `lapiaz`, `cave`, `stable_blocks`, `pebble_bank`, `unstable_scree`, `boulder_chaos`,
+  `lower_rock`. The count equals the length of `types` when the types are picked; the array is
+  never scored.
 
 ## 7) Edge Cases and Cross-Cutting Rules
 - Special low-fertility/low-growth taxa cases:

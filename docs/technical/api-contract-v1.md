@@ -648,6 +648,14 @@ entry (for example `"Ficus"`, not on the list — A-6) or a non-array value is a
 - `POST /v1/sync` round-trips `genera` like any other factor field: an identical replay (same
   `sync_version`, same payload) is `synced` and writes nothing new — no duplicate survey or event.
 
+### Factor detail arrays (phase 25.1, D-12)
+
+The factor objects of `factors` may carry detail arrays next to their scored value: `B.strata`,
+`F.dmh_groups`, `H.evidence`, `I.types` and `J.types` (arrays of catalogue codes). They are stored
+and returned verbatim by `POST /v1/sync`, `POST /v1/surveys`, `GET /v1/sync/changes` and
+`GET /v1/surveys/:id`, are not validated by the server, and are never scored. No endpoint, field
+or wire type is added.
+
 Example, a v3.2 survey's Factor A:
 ```json
 "A": { "genera": ["Fagus", "Quercus_deciduae", "Quercus_sempervirens"], "native_cover_percent": 60 }
