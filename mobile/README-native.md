@@ -65,7 +65,7 @@ a stale plugin fails the build instead of shipping a broken app.
 
 `Podfile.lock` is not committed, so pod versions follow the Podfile rather
 than a lockfile. That is the accepted trade-off of generated native projects:
-the versions are determined by the Expo SDK, which *is* pinned in
+the versions are determined by the Expo SDK, which _is_ pinned in
 `package.json`.
 
 ## Native builds in CI
@@ -74,12 +74,12 @@ Because nothing native is committed, two CI jobs regenerate and compile the
 projects on every relevant change (`.github/workflows/ci.yml`):
 
 - **Native build — Android** (`native-android`, Ubuntu): `npx expo prebuild -p
-  android --clean`, then `./gradlew assembleRelease` with Java 17. The Expo
+android --clean`, then `./gradlew assembleRelease` with Java 17. The Expo
   template signs the release variant with the debug keystore, so the APK is not
   publishable, but the whole release pipeline (JS bundle, R8 settings, native
   modules) is compiled.
 - **Native build — iOS** (`native-ios`, macOS 26): `npx expo prebuild -p ios
-  --clean`, which also runs `pod install`, then `xcodebuild` of the Release
+--clean`, which also runs `pod install`, then `xcodebuild` of the Release
   configuration for the iOS Simulator with `CODE_SIGNING_ALLOWED=NO`.
 
 No signing key, certificate or secret is used. The `EXPO_PUBLIC_*` variables are
@@ -118,12 +118,12 @@ Two tab bars exist:
 `src/navigation/native-tabs-availability.ts` decides once per app start and
 returns a reason code. The checks run in this order:
 
-| Code | When | Bar |
-|---|---|---|
-| `platform` | Not iOS (Android keeps the JS bar) | JS |
-| `expo-go` | Running in Expo Go (`executionEnvironment` is `StoreClient` or `appOwnership` is `"expo"`), which has no `RNCTabView` native view | JS |
-| `env-opt-out` | `EXPO_PUBLIC_ENABLE_NATIVE_TABS=false` **and** a dev build (`__DEV__`) | JS |
-| `ok` | Any other iOS native build | Native |
+| Code          | When                                                                                                                              | Bar    |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `platform`    | Not iOS (Android keeps the JS bar)                                                                                                | JS     |
+| `expo-go`     | Running in Expo Go (`executionEnvironment` is `StoreClient` or `appOwnership` is `"expo"`), which has no `RNCTabView` native view | JS     |
+| `env-opt-out` | `EXPO_PUBLIC_ENABLE_NATIVE_TABS=false` **and** a dev build (`__DEV__`)                                                            | JS     |
+| `ok`          | Any other iOS native build                                                                                                        | Native |
 
 ### Where the log appears
 
@@ -164,3 +164,47 @@ Both trees share one rule, `shouldHideTabBar(focusedRouteName)` in
 
 To hide the bar on another screen, add its route name to
 `ROUTES_WITHOUT_TAB_BAR` in `tab-bar.ts`. Both trees follow.
+
+## Genus recognition timing (Phase 29)
+
+The genus recognition can print its latency from a Release build, so that the
+Android phone measurements (device checks DC-D-01 to DC-D-03) are taken on the
+build testers get, not on a dev build.
+
+1. Set `EXPO_PUBLIC_GENUS_TIMING=true` in the untracked `mobile/.env` (or in the
+   shell) before building. Like every `EXPO_PUBLIC_*` value it is inlined into
+   the bundle at build time.
+2. Build the Release APK from `mobile/`: `npx expo run:android --variant release`.
+3. Read the lines while taking photos:
+   `adb logcat -s ReactNativeJS | grep genus-timing`.
+
+Each recognition prints one line of numbers in milliseconds, for example
+`[genus-timing] {"outcome":"ok","loadMs":61.2,"preprocessMs":35.1,"inferenceMs":28,"totalMs":63.1,"captureToSuggestionMs":190.6}`.
+
+- `outcome`: `ok`, or the reason the recognition was unavailable.
+- `loadMs`: loading the model, near 0 once it is cached (the first photo after
+  a start pays it).
+- `preprocessMs`: resizing, re-encoding and decoding the photo.
+- `inferenceMs`: the model run.
+- `totalMs`: `preprocessMs + inferenceMs`, the definition of the Phase 1 spike
+  (`docs/technical/species-recognition-spike-measurements-v1.md`, section 7).
+- `captureToSuggestionMs`: shutter to suggestions shown on screen.
+
+The line holds numbers only: no photo path, survey id or coordinate. Leave the
+variable unset (the default) for any build given to testers, otherwise they get
+the line in their log too.
+
+### Checking that no photo is left (DC-D-03)
+
+A recognition deletes its camera capture and its resized copy as soon as it is
+classified. To check it, use a debuggable build, because a Release APK is not
+debuggable and `run-as` refuses it. After a few recognitions, including one
+where the sheet was closed while classifying:
+
+```bash
+adb shell run-as fr.etatssauvages.cortege ls cache/Camera cache/ImageManipulator
+```
+
+Both folders must be empty, or missing. Do not clear the whole `cache/`
+directory by hand to check: it also holds the bundled model copy that the
+recognition needs.

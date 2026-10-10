@@ -7,3 +7,14 @@ export function isOfflineMapsEnabled(
 ): boolean {
   return value !== "false"
 }
+
+/**
+ * Genus recognition timing (Phase 29, SC-7): off by default. A measurement build sets
+ * `EXPO_PUBLIC_GENUS_TIMING=true` to print one numbers-only timing line per recognition. Inlined
+ * at build time like every `EXPO_PUBLIC_` value.
+ */
+export function isGenusTimingEnabled(
+  value: string | undefined = process.env.EXPO_PUBLIC_GENUS_TIMING,
+): boolean {
+  return value === "true"
+}
