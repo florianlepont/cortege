@@ -140,3 +140,7 @@ What remains is exactly what ROADMAP says it defers: the Android device run (cri
 
 _Verified: 2026-10-06T21:55:00Z_
 _Verifier: Claude (gsd-verifier)_
+
+## Update 2026-10-10
+
+The three human checks are now tracked as D-01 to D-03 in `docs/user-tests/device-checks.md`. The first has already failed in the field: on the Android phones the association's testers used, the camera stayed black and the recognition never worked, and the owner thinks the workflow must be rethought. Phase 29 reworks it, deletes the two temporary files explicitly (D-03) and measures latency and accuracy on real Android phones (D-01, D-02). Status stays `human_needed` until then.

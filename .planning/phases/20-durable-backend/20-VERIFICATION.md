@@ -128,3 +128,7 @@ The status is `human_needed` rather than `passed` for one reason: the criterion'
 
 _Verified: 2026-10-06_
 _Verifier: Claude (gsd-verifier)_
+
+## Update 2026-10-10
+
+The two production checks (backup timer installed and one real dump; one restore into a throwaway database) are D-10 and D-11 of `docs/user-tests/device-checks.md`, with the exact commands. Only the owner has server access, so they stay owner-only and `human_needed`. The server moves to the association's own account in Phase 38, which repeats both checks on the new server.

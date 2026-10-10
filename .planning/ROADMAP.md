@@ -778,7 +778,7 @@ Plans:
   2. A survey from another member keeps showing the parcel history and never the change log.
   3. The owner confirms it on their phone, in light and dark mode.
 
-**Plans**: 11/12 plans executed
+**Plans**: 12/12 plans complete
 
 **Wave 1**
 
@@ -962,7 +962,7 @@ Plans:
   4. The survey list, survey detail, survey form and map screens have tests covering their sync-status, filter and error states, so the flows the field tests exercise are protected against regression.
   5. Every field-test case cites a unique story ID: the six Epic D stories have six distinct IDs, and `docs/specs/user-stories.md` §4 uses the MVP / V1 / V2 taxonomy.
   6. Each field observer's feedback is collected in one feedback grid (`docs/user-tests/field-feedback.md`): bugs, interface friction (slow entry, unclear screens, anything that gets in the way on a parcel) and suggestions, each with an ID, the screen concerned and the observer. At the end of the phase every entry is triaged as *release blocker*, *next milestone* or *rejected* (with a reason); the release blockers are fixed, in a short follow-up phase if needed, before the milestone closes.
-  7. The checks deferred from earlier phases are run on real devices and recorded: genus recognition on Android (latency and accuracy) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, and the splash and permission-refusal paths of onboarding (see the `human_verification` entries of the Phase 15, 17, 18 and 19 `VERIFICATION.md`).
+  7. The checks deferred from earlier phases are run on real devices and recorded in `docs/user-tests/device-checks.md` (D-01 to D-11): genus recognition on Android (latency and accuracy, after Phase 29) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, the splash and permission-refusal paths of onboarding, and the backup timer and restore on the server (owner only; repeated on the new server in Phase 38).
 
 **Plans**: TBD
 
@@ -978,6 +978,7 @@ Plans:
   2. On small screens the information message asking to select parcels is smaller than the map: the map stays usable on the smallest supported screen.
   3. Every abbreviation shown in the app is either written out or explained where it appears (a glossary or an info sheet), checked against the screen inventory.
   4. The genus list is sorted alphabetically everywhere it is shown.
+  5. The two temporary files of a recognition (the camera capture and the resized JPEG) are deleted explicitly once the suggestion is shown, and the genus classifier's latency and accuracy are measured on real Android phones (median and p95 against the 3 s budget, online and in airplane mode), recorded as checks D-01 to D-03 of `docs/user-tests/device-checks.md` (carried over from Phase 15).
 
 **Plans**: TBD
 **UI hint**: yes
@@ -1009,6 +1010,7 @@ Plans:
   2. The observer can switch layers on and off and compare two layers on the same area.
   3. The Explorer tab shows or hides information according to the mode (explore or study), with a decided and tested UX: nothing the new functions add hides the existing explore flow.
   4. Layers behave as decided with and without a network, and their cost on offline packs is measured.
+  5. The Explorer sheet shows the percentage of an offline-area download, not only an indeterminate "Téléchargement…" button (owner decision 2026-10-10, carried over from Phase 17).
 
 **Plans**: TBD
 **UI hint**: yes
@@ -1114,7 +1116,7 @@ Plans:
 **Success Criteria** (what must be TRUE):
 
   1. The Apple and Google store accounts, the Auth0 tenant, the server (OVH recommended, with the alwaysdata contract details reviewed) and the domain belong to the association, with the cost simulations sent to the board.
-  2. The server address built into the app is the final one before the store build, and the migration of data and photos is rehearsed and verified (backups restore).
+  2. The server address built into the app is the final one before the store build, and the migration of data and photos is rehearsed and verified: the backup timer is installed on the new server, a real dump is produced and a restore into a throwaway database is checked (checks D-10 and D-11 of `docs/user-tests/device-checks.md`).
   3. A person gets access only after a request by e-mail and an invitation (token); without an account the installed app does nothing.
   4. Invitation-only access is built: neither invitations nor closed sign-up exist today, so the phase adds the request, the invitation (token), its expiry and revocation, and the API checks, with tests. One account per structure is not part of V1 (V3).
   5. The release is planned for spring 2027.
@@ -1141,7 +1143,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 5. API sync integrity | 6/6 | Complete    | 2026-09-24 |
 | 6. Mobile sync engine reliability | 12/12 | Complete    | 2026-09-25 |
 | 7. Sync feed ordering and unified object storage | 9/9 | Complete    | 2026-09-25 |
-| 8. API configuration, service split and database tuning | 13/14 | Complete    | 2026-09-26 |
+| 8. API configuration, service split and database tuning | 14/14 | Complete    | 2026-09-26 |
 | 9. Shared IBP domain package and test completeness | 16/16 | Complete    | 2026-09-27 |
 | 10. Mobile state architecture, i18n, accessibility and hygiene | 32/32 | Complete    | 2026-09-27 |
 | 11. Association-only sharing & scope trim | 5/5 | Complete (BUG-04 deferred) | 2026-09-27 |

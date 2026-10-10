@@ -128,3 +128,7 @@ Two things changed since the phase closed. The export entry point moved from a b
 
 _Verified: 2026-10-06T21:35:47Z_
 _Verifier: Claude (gsd-verifier)_
+
+## Update 2026-10-10
+
+The share-sheet check is D-09 of `docs/user-tests/device-checks.md`. The export was rebuilt in Phase 25.1 and is reworked again in Phase 36, so the check is run on the current export and repeated after Phase 36. Status stays `human_needed` until then.

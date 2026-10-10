@@ -165,3 +165,7 @@ No code gap against the Phase 8 success criteria as written. Criteria 1, 2 and 5
 
 _Verified: 2026-10-06_
 _Verifier: Claude (gsd-verifier)_
+
+## Update 2026-10-10
+
+The two decisions are settled by the owner: the deferred parcel-history download stays as it is (the fetch result is discarded, the history is read live online; Phase 24 caches the history per parcel), and an indeterminate "Téléchargement…" button is not enough: the percentage in the Explorer sheet is added in Phase 31. The airplane-mode walkthrough and the force-quit relaunch are checks D-04 and D-05 of `docs/user-tests/device-checks.md`. Status stays `human_needed` until they are run.

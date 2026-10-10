@@ -1,9 +1,9 @@
 ---
 phase: 24
 slug: survey-history-split
-status: draft
+status: approved
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-10-09
 ---
 

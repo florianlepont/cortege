@@ -140,3 +140,7 @@ The one real finding is that **success criterion 3 is satisfied differently now*
 
 _Verified: 2026-10-06T21:35:47Z_
 _Verifier: Claude (gsd-verifier)_
+
+## Update 2026-10-10
+
+The three device checks (splash on a fresh Release install, refusal of permissions then "Ouvrir les réglages", launcher icon under a circular mask) are checks D-06 to D-08 of `docs/user-tests/device-checks.md`. Status stays `human_needed` until they are run.
