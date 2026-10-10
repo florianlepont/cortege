@@ -4,15 +4,15 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 25.1
 current_phase_name: PDF Export Improvement
-status: ready_to_discuss
+status: executing
 stopped_at: Phase 25.1 context gathered
-last_updated: "2026-10-10T08:29:33.380Z"
+last_updated: "2026-10-10T09:41:01.102Z"
 last_activity: 2026-10-10
-last_activity_desc: Phase 25 closed on the owner's phone check
+last_activity_desc: Phase 25.1 execution started
 progress:
   total_phases: 29
   completed_phases: 16
-  total_plans: 171
+  total_plans: 188
   completed_plans: 209
   percent: 55
 ---
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 25.1 (PDF export) is next, then Phase 26 (UX/UI audit), Phase 27 (quality audit) and Phase 28 (field validation). Phase 25 (global search) closed on the owner's phone check 2026-10-10.
+**Current focus:** Phase 25.1 — PDF Export Improvement
 
 ## Current Position
 
-Phase: 25.1 (PDF Export Improvement), not discussed yet
-Plan: none
-Status: Phase 25 complete; Phase 25.1 ready to discuss
-Last activity: 2026-10-10 — Phase 25 closed on the owner's phone check
+Phase: 25.1 (PDF Export Improvement) — EXECUTING
+Plan: 1 of 17
+Status: Executing Phase 25.1
+Last activity: 2026-10-10 — Phase 25.1 execution started
 
 Progress: [█████████░] 25/29 phases complete
 
