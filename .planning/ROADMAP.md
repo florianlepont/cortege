@@ -982,13 +982,13 @@ Plans:
   6. Offline, after a restart, the markers and clusters of the last Explorer view and every survey of the user that the phone holds, draft or submitted, are drawn from local data, not only the drafts (finding F-2 of `docs/user-tests/device-checks.md`: today `ownDraftMapItems` keeps drafts only and the markers otherwise come from the API).
   7. The two temporary files of a recognition (the camera capture and the resized JPEG) are deleted explicitly once the suggestion is shown, and the genus classifier's latency and accuracy are measured on real Android phones (median and p95 against the 3 s budget, online and in airplane mode), recorded as checks D-01 to D-03 of `docs/user-tests/device-checks.md` (carried over from Phase 15).
 
-**Plans**: 2/10 plans executed
+**Plans**: 3/10 plans executed
 
 Plans:
 
 - [x] 29-01-PLAN.md: recognition temp-file cleanup and timings (SC-7, D-07)
 - [x] 29-02-PLAN.md: genus order and Latin chips (D-06, D-07, D-10)
-- [ ] 29-03-PLAN.md: centred offline community survey state (D-03)
+- [x] 29-03-PLAN.md: centred offline community survey state (D-03)
 - [ ] 29-04-PLAN.md: local own-survey map sources and builder (D-01, D-09)
 - [ ] 29-05-PLAN.md: compact parcel-selection card (D-08)
 - [ ] 29-06-PLAN.md: abbreviation registry and gate (D-05, D-11)
@@ -1178,7 +1178,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
-| 29. Field-feedback fixes | 2/10 | In Progress|  |
+| 29. Field-feedback fixes | 3/10 | In Progress|  |
 | 30. Quick survey additions | 0/TBD | Not started | - |
 | 28. Field Validation | 0/TBD | Not started | - |
 | 31. Map Layers & Comparison | 0/TBD | Not started | - |
