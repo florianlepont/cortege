@@ -57,20 +57,6 @@ const POLICY: Policy = {
   IP: { treatment: "dev-only", files: ["settings.ts", "auth-gate.ts"] },
 }
 
-// The findings that exist today, as `token@file` relative to the catalogue. Plan 29-09 empties this
-// list by rewriting the strings and then asserts an empty list. An entry that no longer matches
-// fails the test, so the list cannot go stale.
-const PENDING_REWRITE: string[] = [
-  "CC BY@account.ts",
-  "CC0@account.ts",
-  "IGN@public-map.ts",
-  "IGN@survey-export.ts",
-  "INSEE@survey-export.ts",
-  "JSON@survey-detail.ts",
-  "P/G@survey-detail.ts",
-  "WGS 84@survey-export.ts",
-]
-
 const WORD_CHARS = "\\p{L}\\p{N}_"
 
 // Candidates after the policy keys are masked: a run of capitals, a mixed-case short form ("BMg"),
@@ -487,7 +473,7 @@ describe("abbreviation gate on the fr catalogue", () => {
     expect(findUnusedTerms(files, POLICY)).toEqual([])
   })
 
-  it("has no abbreviation outside the registry, apart from the pending rewrites", () => {
+  it("has no abbreviation outside the registry", () => {
     const unexplained = [
       ...new Set(
         findUnexplainedAbbreviations(files, POLICY, longForms).map(
@@ -497,6 +483,6 @@ describe("abbreviation gate on the fr catalogue", () => {
       ),
     ].sort()
 
-    expect(unexplained).toEqual(PENDING_REWRITE)
+    expect(unexplained).toEqual([])
   })
 })

@@ -39,6 +39,7 @@ jest.mock("../../ui/EntranceView", () => {
   }
 })
 
+import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { brandInteraction, brandMotion } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
 import { SURVEY_ROW_RING_COLUMN } from "../survey-list/row-styles"
@@ -69,7 +70,7 @@ function makeItem(index: number, overrides: Partial<PublicMapItem> = {}): Public
     survey_id: `s-${index}`,
     display_location: { lat: 45.76, lng: 4.84 },
     survey_date: "2026-05-01",
-    region_code: "ARA",
+    region_code: "ACA",
     ibp_total: 10 + index,
     ...overrides,
   }
@@ -98,7 +99,7 @@ describe("ClusterListSheet (Explorer, 12.2-18)", () => {
     expect(rows).toHaveLength(2)
     expect(rows[1].props.accessibilityRole).toBe("button")
     expect(rows[1].props.accessibilityLabel).toBe(
-      t.a11y.clusterListItem({ ibp: 11, date: "2026-05-01", region: "ARA" }),
+      t.a11y.clusterListItem({ ibp: 11, date: "2026-05-01", region: fr.labels.regions.ACA }),
     )
     act(() => rows[1].props.onPress())
     expect(onSelect).toHaveBeenCalledWith("s-1")
@@ -110,8 +111,35 @@ describe("ClusterListSheet (Explorer, 12.2-18)", () => {
       .findAll((node) => (node.type as unknown) === "Text")
       .map((node) => [node.props.children].flat().join(""))
     expect(shown).toContain(t.clusterList.row({ ibp: 10, date: "2026-05-01" }))
-    expect(shown).toContain("ARA")
+    expect(shown).toContain(fr.labels.regions.ACA)
+    expect(shown).not.toContain("ACA")
     expect(shown).toContain(t.clusterList.title(1))
+  })
+
+  test("the place is the region name, never the raw code, and nothing for an unknown code", () => {
+    const shownOf = (items: PublicMapItem[]) =>
+      render(items)
+        .root.findAll((node) => (node.type as unknown) === "Text")
+        .map((node) => [node.props.children].flat().join(""))
+    const shown = shownOf([
+      makeItem(0, { region_code: "ACA" }),
+      makeItem(1, { region_code: "M" }),
+      makeItem(2, { region_code: "XYZ" }),
+    ])
+    expect(shown).toContain(fr.labels.regions.ACA)
+    expect(shown).toContain(fr.labels.regions.M)
+    expect(shown.filter((text) => ["ACA", "M", "XYZ"].includes(text))).toEqual([])
+  })
+
+  test("a v3.2 survey with a cas shows the cas, whatever its region", () => {
+    const tree = render([
+      makeItem(0, { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 3, region_code: "M" }),
+    ])
+    const shown = tree.root
+      .findAll((node) => (node.type as unknown) === "Text")
+      .map((node) => [node.props.children].flat().join(""))
+    expect(shown).toContain(t.cas(3))
+    expect(shown).not.toContain(fr.labels.regions.M)
   })
 
   test("each row renders a score ring with its total, index and a stable key", () => {

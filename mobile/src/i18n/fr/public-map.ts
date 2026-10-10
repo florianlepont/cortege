@@ -24,7 +24,8 @@ export const publicMapFr = {
   legend: {
     title: "Légende",
     subtitle: "Score IBP du dernier relevé terminé, sur 50.",
-    attribution: "Fonds de carte et cadastre : © IGN (Géoplateforme). Carte : MapLibre.",
+    attribution:
+      "Fonds de carte et cadastre : © Institut national de l'information géographique et forestière (IGN), Géoplateforme. Carte : MapLibre.",
     low: "Score faible",
     mid: "Score moyen",
     high: "Score élevé",

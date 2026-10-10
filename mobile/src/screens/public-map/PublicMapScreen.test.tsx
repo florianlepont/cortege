@@ -201,7 +201,7 @@ function item(id: string, lat: number, lng: number, ibp = 30): PublicMapItem {
     survey_id: id,
     display_location: { lat, lng },
     survey_date: "2026-05-01",
-    region_code: "ARA",
+    region_code: "ACA",
     ibp_total: ibp,
   }
 }
@@ -521,7 +521,11 @@ describe("PublicMapScreen", () => {
 
     act(() =>
       byLabel(
-        fr.publicMap.a11y.clusterListItem({ ibp: 20, date: "2026-05-01", region: "ARA" }),
+        fr.publicMap.a11y.clusterListItem({
+          ibp: 20,
+          date: "2026-05-01",
+          region: fr.labels.regions.ACA,
+        }),
       ).props.onPress(),
     )
     expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)

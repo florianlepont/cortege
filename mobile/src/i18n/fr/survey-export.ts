@@ -36,8 +36,9 @@ export const surveyExportFr = {
     unknown: "Non renseigné",
     observer: "Observateur",
     coordinates: "Coordonnées",
-    coordinatesValue: ({ lat, lng }: { lat: string; lng: string }) => `${lat}, ${lng} (WGS 84)`,
-    commune: "Commune (code INSEE)",
+    coordinatesValue: ({ lat, lng }: { lat: string; lng: string }) =>
+      `${lat}, ${lng} (WGS 84, système géodésique mondial)`,
+    commune: "Commune (code officiel géographique)",
     department: "Département",
     surveyMode: "Mode de relevé",
     cappedMode: "Relevé plafonné, aucun facteur déplafonné",
@@ -141,7 +142,7 @@ export const surveyExportFr = {
   },
   map: {
     heading: "Localisation",
-    source: "Fond de carte : IGN",
+    source: "Fond de carte : Institut national de l'information géographique et forestière (IGN)",
     north: "N",
     scaleValue: ({ metres }: { metres: string }) => `${metres} m`,
     scaleKm: ({ km }: { km: string }) => `${km} km`,

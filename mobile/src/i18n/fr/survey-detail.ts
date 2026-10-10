@@ -44,8 +44,6 @@ export const surveyDetailFr = {
     unknown: "Non renseigné",
     total: (points: number) => `${points} / ${IBP_MAX.total}`,
     outOfTotal: `/ ${IBP_MAX.total}`,
-    standScore: (points: number) => `P/G ${points} / ${IBP_MAX.stand}`,
-    contextScore: (points: number) => `C ${points} / ${IBP_MAX.context}`,
     withBand: ({ score, band }: { score: string; band: string }) => `${score} · ${band}`,
   },
   // OA-40: no lock and no deadline. One button at the bottom, greyed with what is missing until
@@ -196,7 +194,7 @@ export const surveyDetailFr = {
     imagesTitle: "Débogage des images",
     imagesSubtitle: "Pièces jointes locales et métadonnées de synchronisation.",
     eventsTitle: "Événements bruts",
-    eventsSubtitle: "Type et contenu JSON de chaque événement.",
+    eventsSubtitle: "Type et contenu de chaque événement.",
     noSyncError: "Aucune erreur de synchronisation.",
     noAttachment: "Aucune pièce jointe locale.",
     simulateMissingFile: "Simuler un fichier manquant",
