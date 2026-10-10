@@ -47,6 +47,10 @@ function modelOf(
   return buildParcelHistory(buildEntriesFromOwn(items, currentId))
 }
 
+// The geometry writes two decimals; the print writes one, through svgNumber.
+const oneDecimal = (d: string): string =>
+  d.replace(/-?\d+(?:\.\d+)?/g, (match) => String(Math.round(Number(match) * 10) / 10))
+
 const countOf = (html: string, pattern: RegExp): number => (html.match(pattern) ?? []).length
 
 describe("TREND_PRINT_WIDTH", () => {
@@ -78,7 +82,7 @@ describe("buildTrendSvg", () => {
     const svg = buildTrendSvg(model, palette)
     expect(geometry.segments).toHaveLength(1)
     expect(countOf(svg, /class="trend-segment"/g)).toBe(1)
-    expect(svg).toContain(`d="${geometry.segments[0].d}"`)
+    expect(svg).toContain(`d="${oneDecimal(geometry.segments[0].d)}"`)
     expect(svg).toMatch(/class="trend-segment"[^>]*stroke="accent"/)
     expect(svg).not.toContain("stroke-dasharray")
     expect(svg).not.toContain("trend-link")
@@ -129,7 +133,7 @@ describe("buildTrendSvg", () => {
     expect(geometry.links).toHaveLength(1)
     expect(countOf(svg, /class="trend-segment"/g)).toBe(2)
     expect(countOf(svg, /class="trend-link"/g)).toBe(1)
-    expect(svg).toContain(`d="${geometry.links[0].d}"`)
+    expect(svg).toContain(`d="${oneDecimal(geometry.links[0].d)}"`)
     expect(svg).toMatch(/class="trend-link"[^>]*stroke-dasharray="4 4"/)
     expect(svg).toMatch(/class="trend-link"[^>]*stroke="inkMuted"/)
   })
