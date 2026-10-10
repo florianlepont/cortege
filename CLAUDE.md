@@ -203,6 +203,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - All user-facing text comes from the typed French catalogue `fr` (`mobile/src/i18n/fr/`, one module per screen or area)
 - Status-line texts are `StatusMessage` values, built only by catalogue functions; raw technical detail goes to `logStatusDetail` (debug console, dev builds only)
 - No em dash (U+2014) in any string, template or JSX text under `mobile/src` (no file is exempt), enforced by `src/__checks__/catalogue-dash.test.ts`
+- Abbreviations are written out where they fit, else explained by `AbbreviationInfo` (`ui/AbbreviationInfo.tsx`) from `fr.abbreviations`; the allowlist is units, OK, PDF, GPS and "ex."; IBP is defined once and explained on the main headers; enforced by `src/__checks__/abbreviations.test.ts`
 
 **Visual layer** (`mobile/src/app/`, `mobile/src/ui/`; reference: section 13 of `docs/design/charte-graphique-etats-sauvages-spec.md`, direction text `docs/design/direction-visuelle-12-2.md`):
 - Light or dark follows the system appearance only (`BrandThemeProvider` in `app/theme.ts`, `useColorScheme()`, live): there is no in-app theme setting (owner decision 2026-10-08), no `theme_mode` read or write and no `Appearance.setColorScheme`; `app.json` keeps `userInterfaceStyle: "automatic"`
@@ -325,7 +326,7 @@ Method version: the app implements IBP FR v3.2, with IBP Fr v3.0 available per s
 - Run with: `npm run test:unit`
 - Config: `mobile/jest.unit.config.js`, `api/jest.unit.config.js`
 - Mocks: `mobile/test/*.mock.ts` (mapped in `mobile/jest.unit.config.js`) and `api/test/__mocks__/`
-- The Reanimated mock (`mobile/test/react-native-reanimated.mock.ts`) exports `setReducedMotion(true)` to test reduced-motion paths. Source gates in `mobile/src/__checks__/`: `motion.test.ts`, `icons.test.ts` (outline glyphs only), `catalogue-dash.test.ts`, `layers.test.ts`, `fonts.test.ts`, `structure.test.ts` (400-line cap on `src/screens` and `src/navigation`); contrast in `src/app/visual-tokens.test.ts` (both schemes) and `src/app/forest-aurora-tokens.test.ts`
+- The Reanimated mock (`mobile/test/react-native-reanimated.mock.ts`) exports `setReducedMotion(true)` to test reduced-motion paths. Source gates in `mobile/src/__checks__/`: `motion.test.ts`, `icons.test.ts` (outline glyphs only), `catalogue-dash.test.ts`, `abbreviations.test.ts`, `layers.test.ts`, `fonts.test.ts`, `structure.test.ts` (400-line cap on `src/screens` and `src/navigation`); contrast in `src/app/visual-tokens.test.ts` (both schemes) and `src/app/forest-aurora-tokens.test.ts`
 - `api/test/auth.guard.rs256.spec.ts` tests the RS256 path of `AuthGuard` with the real `jwks-rsa` client against a loopback JWKS server (no network)
 
 ### Shared package tests

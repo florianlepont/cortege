@@ -4,7 +4,7 @@ Checks that could not be done in the build sessions because they need a real pho
 
 Legend: ✅ Pass · ❌ Fail · ⚠️ Pass with issue · 🔲 Not tested
 
-Phase 28's success criterion 7 points here. The Android recognition check (D-01) is owned by Phase 29, which reworks the workflow first.
+Phase 28's success criterion 7 points here. The Android recognition check (D-01) is owned by Phase 29. Owner decision of 2026-10-10: the rethink of the recognition workflow was set aside; Phase 29 fixed the model load in Release builds (PR #272), deletes the two temporary files of a recognition and adds a timing line for the measurement.
 
 | # | From | Check | Expected | Where | Status | Notes |
 |---|------|-------|----------|-------|--------|-------|
@@ -19,6 +19,18 @@ Phase 28's success criterion 7 points here. The Android recognition check (D-01)
 | D-09 | Phase 19, reworked in 25.1 | Open a submitted survey, share the PDF to Mail, Files or Drive; repeat in airplane mode after an app restart, on a survey opened once online | The share sheet opens with the PDF; offline it is still produced, with year and version filled in | iPhone and Android | ✅ iPhone | 2026-10-10, owner: PDF of a submitted survey shared and opened online, then in airplane mode after an app restart, with site, parcels, year, version, date, ten factors and total filled in (25.1 export). Android and the check after Phase 36 remain |
 | D-10 | Phase 20 | Backup timer installed on the server and one real dump produced | `cortege-postgres-<timestamp>.dump` of several tens of KiB in `/home/ubuntu/backups/postgres/`; `systemctl list-timers cortege-backup.timer` shows the next 03:17 UTC run | Production server, owner only | ✅ | 2026-10-10, owner: timer next run Sun 2026-10-11 03:24 UTC (last run 2026-10-10 03:20), a dump every night since 2026-09-27 (27 KiB then 372 KiB). Repeat on the new server in Phase 38 |
 | D-11 | Phase 20 | One restore of a real dump into a throwaway database | "restore OK", 8 or more public tables, a surveys count equal to the live count | Production server, owner only | ✅ | 2026-10-10, owner: dump of 2026-10-10 03:20 restored, "restore OK", 8 tables, 1025 surveys; live count 1030 (5 created since the dump); throwaway database dropped. Repeat on the new server in Phase 38 |
+
+## Recognition measurement (DC-D-01 to DC-D-03, Phase 29)
+
+Protocol for the Android phone run that closes success criteria SC-1 and SC-7 of Phase 29.
+
+1. Phones: at least two real Android phones, including one low-end (2022-2023 mid-range class).
+2. Build: a Release APK built with `EXPO_PUBLIC_GENUS_TIMING=true` (see `mobile/README-native.md`, section "Genus recognition timing (Phase 29)"). Testers get the Release APK only; never hand the debuggable APK to testers.
+3. Per phone: 1 warm-up photo, then at least 10 photos of real trees, leaves and bark online, then the same in airplane mode.
+4. Read the `[genus-timing]` lines with `adb logcat -s ReactNativeJS`.
+5. Report, per phone and per network state, the median, p95 and worst of `totalMs` (preprocessing plus inference, as the Phase 1 spike) and of `captureToSuggestionMs`, against the 3 s budget.
+6. Compare the top-1 genus with the owner's iPhone on the same photos (DC-D-02: order and honesty of the suggestions).
+7. DC-D-03 (no photo left behind): on a debuggable build, run `adb shell run-as fr.etatssauvages.cortege ls cache/Camera cache/ImageManipulator`; both folders must be empty after several recognitions. On the iPhone, list the same folders through the app container.
 
 ## Commands for D-10 and D-11
 
@@ -48,4 +60,4 @@ The restore script prints the table and survey counts and the `dropdb` command t
 | ID | From | Finding | Phase |
 |----|------|---------|-------|
 | F-1 | D-04 | Offline, another member's survey opens a broken error page: the message is cut at the top, an empty capsule fills the middle, the retry button is at the bottom. Expected: a centred, readable message ("this survey needs a connection") with the retry button | 29 |
-| F-2 | D-04, D-05 | Offline, after a restart, the Explorer shows none of the owner's surveys at country zoom: no cluster, no marker ("Aucun relevé ici", "Hors connexion"). Cause found in the code: the markers come from the API (`fetchPublicMapItems`); the only local source is `ownDraftMapItems` (`mobile/src/map/own-drafts.ts`), which draws drafts only, so a submitted own survey is missing offline. Screen recording of 2026-10-10 20:25 (Bois de Boulogne): with the network on, Explorer shows "46 relevés ici" wide then clusters of 2 and 3 and "3 relevés ici"; switching to airplane mode without closing the app keeps the same clusters (they live in memory), and they are lost only after a restart. Expected: the markers and clusters of the last view, and every own survey the phone holds (draft or submitted), are kept on the phone and drawn from local data when the network is down, also after a restart | 29 |
+| F-2 | D-04, D-05 | Offline, after a restart, the Explorer shows none of the owner's surveys at country zoom: no cluster, no marker ("Aucun relevé ici", "Hors connexion"). Cause found in the code: the markers come from the API (`fetchPublicMapItems`); the only local source is `ownDraftMapItems` (`mobile/src/map/own-drafts.ts`), which draws drafts only, so a submitted own survey is missing offline. Screen recording of 2026-10-10 20:25 (Bois de Boulogne): with the network on, Explorer shows "46 relevés ici" wide then clusters of 2 and 3 and "3 relevés ici"; switching to airplane mode without closing the app keeps the same clusters (they live in memory), and they are lost only after a restart. Expected: the markers and clusters of the last view, and every own survey the phone holds (draft or submitted), are kept on the phone and drawn from local data when the network is down, also after a restart. Scope decided on 2026-10-10: other members' markers stay online only (decision D-01), and an own survey is drawn offline only when its parcels are inside a downloaded area (decision D-09) | 29 |
