@@ -77,7 +77,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 23: Visual Modernisation** (INSERTED) - A more pleasant, modern and lively interface: visual refresh and motion across the main screens, colourised map background with a dark variant, design spec updated, components reused and homogenised, native first (completed 2026-10-09; Android pass deferred to Phase 28, open design points to Phase 26)
 - [x] **Phase 24: Survey History Split** (INSERTED) - The survey change log and the parcel history become two separate things (SEED-002; owner decision 2026-10-07, done before the audits so they audit the final screens) (completed 2026-10-09)
 - [x] **Phase 25: Global Search** (INSERTED) - One search covers the whole app: own and community surveys, places and parcels on the map, and the other items the app exposes (SEED-003; owner decision 2026-10-07) (completed 2026-10-10)
-- [ ] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10)
+- [x] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10) (completed 2026-10-10)
 - [ ] **Phase 26: UX/UI Audit & Design System Update** (INSERTED) - Audit the interface after Phase 23, update the design system to match, check global coherence across screens and fix visual bugs (owner decision 2026-10-07)
 - [ ] **Phase 27: In-depth Quality Audit** (INSERTED) - Deep audit of code quality, test coverage, architecture and security, with findings triaged and the blockers fixed (owner decision 2026-10-06)
 - [ ] **Phase 28: Field Validation** - Prove the offline survey-to-sync loop on real parcels with real observers
@@ -864,7 +864,7 @@ Plans:
   4. The export never needs the network and never hangs: offline it makes no call, online its two optional reads are bounded; the shared file is named `Cortege-IBP-<site>-<year>.pdf`, with `-brouillon` for a draft.
   5. The owner confirms it on their phone: a draft and a submitted survey, a v3.0 and a v3.2 survey, the share names, and the export offline with and without a downloaded area.
 
-**Plans**: 16/17 plans executed
+**Plans**: 17/17 plans complete
 
 **Wave 1**
 
@@ -902,7 +902,7 @@ Plans:
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
-- [ ] 25.1-17-PLAN.md — CLAUDE.md and charter notes, owner phone check (criterion 5), OA-131
+- [x] 25.1-17-PLAN.md — CLAUDE.md and charter notes, owner phone check (criterion 5), OA-131
 
 **UI hint**: yes
 
