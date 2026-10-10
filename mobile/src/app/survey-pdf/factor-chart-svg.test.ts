@@ -107,6 +107,10 @@ describe("buildFactorChartSvg", () => {
     }
   })
 
+  it("carries no namespace url: inline svg needs none and the sheet holds no http (D-08)", () => {
+    expect(buildFactorChartSvg(allPoints(3), palette, SIZE)).not.toContain("http")
+  })
+
   it("draws a 5 point bar as tall as the plot and a 0 point bar with no height", () => {
     const svg = buildFactorChartSvg(entriesOf({ A: 5, B: 0, C: 2.5 }), palette, SIZE)
     expect(bar(svg, "A").height).toBe(PLOT)

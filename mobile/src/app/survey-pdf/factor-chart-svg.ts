@@ -90,7 +90,7 @@ export function buildFactorChartSvg(
     return `${bar}${value}${letter}`
   }).join("")
 
-  return `<svg class="chart-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${escapeHtml(t.scores.chartA11y)}" width="${svgNumber(size.width)}" height="${svgNumber(size.height)}" viewBox="0 0 ${svgNumber(size.width)} ${svgNumber(size.height)}">${grid}${drawn}</svg>`
+  return `<svg class="chart-svg" role="img" aria-label="${escapeHtml(t.scores.chartA11y)}" width="${svgNumber(size.width)}" height="${svgNumber(size.height)}" viewBox="0 0 ${svgNumber(size.width)} ${svgNumber(size.height)}">${grid}${drawn}</svg>`
 }
 
 /** The chart card: its heading and the SVG at the content width of the page. */
