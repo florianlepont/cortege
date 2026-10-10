@@ -51,7 +51,7 @@ their own epic documents), not V2 — they were previously filed under "V2 Backl
 
 ### V2 Backlog
 - Push notifications (new badges, ranking updates, moderation feedback).
-- PDF/Excel export.
+- Excel export (the PDF export is built on the phone: Phase 19, rebuilt to the CNPF sheet content in Phase 25.1).
 - KPI dashboards (average time, error rate, sync success rate).
 - Forest analytics and insights in Explore (regional score summaries, trends, factor distributions).
 - Multi-language support.
