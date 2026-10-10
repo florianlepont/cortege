@@ -49,7 +49,7 @@ describe("fr.surveyExport", () => {
 
   it("interpolates preformatted values", () => {
     expect(t.scores.outOf({ points: "27,5", max: "35" })).toBe("27,5 / 35")
-    expect(t.scores.band({ band: "élevé" })).toBe("Niveau élevé")
+    expect(t.scores.band({ band: "assez forte" })).toBe("Niveau : assez forte")
     expect(t.identity.coordinatesValue({ lat: "48,40491", lng: "-4,48" })).toBe(
       "48,40491, -4,48 (WGS 84)",
     )

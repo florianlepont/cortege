@@ -62,7 +62,9 @@ export const surveyExportFr = {
     standHeading: "Peuplement et gestion forestière",
     contextHeading: "Contexte",
     outOf: ({ points, max }: { points: string; max: string }) => `${points} / ${max}`,
-    band: ({ band }: { band: string }) => `Niveau ${band}`,
+    // The band names are feminine ("moyenne", "assez forte", as in "biodiversité moyenne"), so a colon
+    // keeps "Niveau" from taking their gender: "Niveau moyenne" read as a mistake.
+    band: ({ band }: { band: string }) => `Niveau : ${band}`,
     provisional: ({ count }: { count: number }) =>
       `Score provisoire : ${count} ${count === 1 ? "facteur non renseigné" : "facteurs non renseignés"}`,
     chartHeading: "Score par facteur",
