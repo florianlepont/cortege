@@ -974,7 +974,7 @@ Plans:
 **Source**: owner feedback 2026-10-10, from the first Android phones
 **Success Criteria** (what must be TRUE):
 
-  1. Genus recognition by photo works on Android: the model loads in Release builds (fixed by PR #272, checked on the emulator, owner clarification 2026-10-10: the testers' problem was that the model did not load, not a black camera), the workflow itself is reviewed (the owner thinks it must be redone) and the new one is confirmed on at least two real Android phones;
+  1. Genus recognition by photo works on Android: the model loads in Release builds (fixed by PR #272, checked on the emulator, owner clarification 2026-10-10: the testers' problem was that the model did not load, not a black camera) and the recognition is confirmed on at least two real Android phones (rethinking the recognition workflow was considered and set aside by the owner on 2026-10-10);
   2. On small screens the information message asking to select parcels is smaller than the map: the map stays usable on the smallest supported screen.
   3. Every abbreviation shown in the app is either written out or explained where it appears (a glossary or an info sheet), checked against the screen inventory.
   4. The genus list is sorted alphabetically everywhere it is shown.
