@@ -10,6 +10,8 @@ export const communitySurveyFr = {
   readOnly: "Relevé d'un autre membre : consultation seule.",
   loading: "Chargement du relevé…",
   error: "Ce relevé n'a pas pu être chargé. Vérifiez votre connexion.",
+  // D-03 (F-1): shown at once when the phone is offline and the survey is not loaded.
+  offline: "Ce relevé nécessite une connexion.",
   retry: "Réessayer",
   contextTitle: "Méthode et station",
   rows: {
