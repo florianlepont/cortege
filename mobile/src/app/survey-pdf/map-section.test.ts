@@ -392,7 +392,7 @@ describe("safety", () => {
 
   it("writes SVG coordinates from numbers only", () => {
     for (const block of blocks.slice(0, 2)) {
-      for (const path of pathsOf(block.html)) expect(path).toMatch(/^[MLZ\d\s.\-]+$/)
+      for (const path of pathsOf(block.html)) expect(path).toMatch(/^[MLZ\d\s.-]+$/)
     }
   })
 })
