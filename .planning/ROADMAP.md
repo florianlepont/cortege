@@ -974,7 +974,7 @@ Plans:
 **Source**: owner feedback 2026-10-10, from the first Android phones
 **Success Criteria** (what must be TRUE):
 
-  1. Genus recognition by photo works on the Android phones tested: the camera preview is not black and a suggestion comes back; the workflow itself is reviewed (the owner thinks it must be redone) and the new one is confirmed on at least two Android phones.
+  1. Genus recognition by photo works on the Android phones tested (first suspect: the camera preview is inside a full-screen React Native `Modal`; a screen of the stack instead of a modal is the first thing to try): the camera preview is not black and a suggestion comes back; the workflow itself is reviewed (the owner thinks it must be redone) and the new one is confirmed on at least two Android phones.
   2. On small screens the information message asking to select parcels is smaller than the map: the map stays usable on the smallest supported screen.
   3. Every abbreviation shown in the app is either written out or explained where it appears (a glossary or an info sheet), checked against the screen inventory.
   4. The genus list is sorted alphabetically everywhere it is shown.
