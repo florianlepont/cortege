@@ -1,7 +1,8 @@
 // jest.fn-based double for "expo-image-manipulator". ImageManipulator.manipulate
 // returns a chainable context (resize/rotate/... return the context itself);
 // renderAsync resolves an ImageRef whose saveAsync registers a new file in the
-// expo-file-system/legacy mock and resolves { uri, width, height }.
+// expo-file-system/legacy mock and resolves { uri, width, height }; when the save options
+// ask for base64 (`{ base64: true }`), the result also carries `base64: "QUJD"`.
 import { __setMockFile } from "./expo-file-system-legacy.mock"
 
 export enum SaveFormat {
@@ -41,11 +42,12 @@ interface MockManipulatorContext {
 }
 
 function createSaveAsync(getWidth: () => number, getHeight: () => number): jest.Mock {
-  return jest.fn(() => {
+  return jest.fn((options?: { base64?: boolean }) => {
     saveCounter += 1
     const uri = `file:///mock/cache/manipulated-${saveCounter}.jpg`
     __setMockFile(uri, 250000)
-    return Promise.resolve({ uri, width: getWidth(), height: getHeight() })
+    const result = { uri, width: getWidth(), height: getHeight() }
+    return Promise.resolve(options?.base64 === true ? { ...result, base64: "QUJD" } : result)
   })
 }
 

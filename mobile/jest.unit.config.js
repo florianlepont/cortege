@@ -19,6 +19,7 @@ module.exports = {
   moduleNameMapper: {
     "^@expo/vector-icons$": "<rootDir>/test/vector-icons.mock.ts",
     "^expo-sqlite$": "<rootDir>/test/expo-sqlite.mock.ts",
+    "^expo-asset$": "<rootDir>/test/expo-asset.mock.ts",
     "^expo-haptics$": "<rootDir>/test/expo-haptics.mock.ts",
     "^expo-crypto$": "<rootDir>/test/expo-crypto.mock.ts",
     "^expo-network$": "<rootDir>/test/expo-network.mock.ts",
@@ -33,7 +34,8 @@ module.exports = {
     "^react-native-svg$": "<rootDir>/test/react-native-svg.mock.ts",
     "^react-native-reanimated$": "<rootDir>/test/react-native-reanimated.mock.ts",
     "^@maplibre/maplibre-react-native$": "<rootDir>/test/maplibre.mock.ts",
-    "\\.(png|jpg|jpeg|gif|webp)$": "<rootDir>/test/image.mock.ts",
+    // Metro serves the .ttf fonts as assets too (numeric ids, like the PNGs), read by expo-asset.
+    "\\.(png|jpg|jpeg|gif|webp|ttf)$": "<rootDir>/test/image.mock.ts",
     // Metro resolves this to a numeric asset id (metro.config.js); the mock is the same shape.
     "\\.tflite$": "<rootDir>/test/image.mock.ts",
     // supercluster 9 is ESM-only; ts-jest runs CommonJS, so load its UMD build (hoisted to the
