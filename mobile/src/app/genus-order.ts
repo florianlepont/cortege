@@ -12,9 +12,7 @@ export function genusSortKey(code: string): string {
 type Collator = { compare(a: string, b: string): number }
 
 /** Comparator on the Latin keys: through the collator when there is one, else a plain compare. */
-export function createGenusComparator(
-  collator: Collator | null,
-): (a: string, b: string) => number {
+export function createGenusComparator(collator: Collator | null): (a: string, b: string) => number {
   return (a, b) => {
     const keyA = genusSortKey(a)
     const keyB = genusSortKey(b)

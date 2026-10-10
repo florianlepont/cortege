@@ -8,11 +8,12 @@ import {
   usesCas3Scale,
   usesSubalpineScale,
 } from "@cortege/ibp-domain"
-import type { FactorKey } from "@cortege/ibp-domain"
+import type { CnpfFactorAGenusCode, FactorKey } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
 import { readSelection, selectionLabel } from "../factor-selections"
 import type { SelectionFactor } from "../factor-selections"
+import { sortGenusCodes } from "../genus-order"
 import { formatDecimal } from "./html"
 import type { ExportMethodContext, MethodKey } from "./types"
 
@@ -104,9 +105,9 @@ function itemsLine(caption: string, items: string[]): ObservationLine[] {
   return items.length > 0 ? [{ caption, value: null, items }] : []
 }
 
-function genusName(code: string): string {
-  const display = fr.genus.displayName[code as keyof typeof fr.genus.displayName]
-  return `${display} (${code.replace(/_/g, " ")})`
+/** "Latin (French)", the same label as the picker chips. */
+function genusName(code: CnpfFactorAGenusCode): string {
+  return fr.genus.latinLabel(code)
 }
 
 /** The legacy bare genus count of a survey recorded before the genus list (domain key order). */
@@ -148,11 +149,16 @@ function factorA(factors: Raw, context: ObservationContext): ObservationLine[] {
 
   if (Array.isArray(rawA.genera)) {
     const seen = new Set<string>()
-    const items: string[] = []
-    const countedCodes = new Set<string>()
+    const codes: CnpfFactorAGenusCode[] = []
     for (const code of rawA.genera) {
       if (typeof code !== "string" || seen.has(code) || !isCnpfFactorAGenusCode(code)) continue
       seen.add(code)
+      codes.push(code)
+    }
+    const items: string[] = []
+    const countedCodes = new Set<string>()
+    // Printed in Latin order; the stored array keeps the observer's order (decision D-06).
+    for (const code of sortGenusCodes(codes)) {
       if (allowed.has(code)) {
         countedCodes.add(code)
         items.push(genusName(code))

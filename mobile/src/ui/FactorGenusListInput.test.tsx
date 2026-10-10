@@ -1,6 +1,8 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { CNPF_FACTOR_A_GENUS_CODES } from "@cortege/ibp-domain"
+import { sortGenusCodes } from "../app/genus-order"
+import { fr } from "../i18n"
 import { FactorGenusListInput } from "./FactorGenusListInput"
 
 const originalConsoleError = console.error
@@ -55,11 +57,17 @@ function render(
   return { tree: tree!, onChange, onTouch }
 }
 
+function chipLabel(chip: renderer.ReactTestInstance): string {
+  return String(chip.props.accessibilityLabel)
+}
+
 function findChips(tree: renderer.ReactTestRenderer) {
   return tree.root.findAll(
     (n) => (n.type as unknown) === "Pressable" && n.props.accessibilityState !== undefined,
   )
 }
+
+const ORDERED = sortGenusCodes(CNPF_FACTOR_A_GENUS_CODES)
 
 describe("FactorGenusListInput", () => {
   it("renders one chip per CNPF genus code, none withheld", () => {
@@ -70,8 +78,8 @@ describe("FactorGenusListInput", () => {
   it("marks chips selected/unselected from the comma-joined value", () => {
     const { tree } = render("Fagus,Quercus_deciduae")
     const chips = findChips(tree)
-    const fagusIndex = CNPF_FACTOR_A_GENUS_CODES.indexOf("Fagus")
-    const acerIndex = CNPF_FACTOR_A_GENUS_CODES.indexOf("Acer")
+    const fagusIndex = ORDERED.indexOf("Fagus")
+    const acerIndex = ORDERED.indexOf("Acer")
     expect(chips[fagusIndex].props.accessibilityState.selected).toBe(true)
     expect(chips[acerIndex].props.accessibilityState.selected).toBe(false)
   })
@@ -79,7 +87,7 @@ describe("FactorGenusListInput", () => {
   it("toggling an unselected chip adds its genus code and calls onTouch", () => {
     const { tree, onChange, onTouch } = render("Fagus")
     const chips = findChips(tree)
-    const acerIndex = CNPF_FACTOR_A_GENUS_CODES.indexOf("Acer")
+    const acerIndex = ORDERED.indexOf("Acer")
     act(() => {
       chips[acerIndex].props.onPress()
     })
@@ -90,7 +98,7 @@ describe("FactorGenusListInput", () => {
   it("toggling a selected chip removes its genus code", () => {
     const { tree, onChange } = render("Fagus,Acer")
     const chips = findChips(tree)
-    const fagusIndex = CNPF_FACTOR_A_GENUS_CODES.indexOf("Fagus")
+    const fagusIndex = ORDERED.indexOf("Fagus")
     act(() => {
       chips[fagusIndex].props.onPress()
     })
@@ -103,5 +111,24 @@ describe("FactorGenusListInput", () => {
       (n) => (n.type as unknown) === "Text" && String(n.props.children) === "2 sélectionnés",
     )
     expect(texts.length).toBeGreaterThan(0)
+  })
+
+  it("renders the chips in Latin order with Latin-first labels", () => {
+    const { tree } = render("")
+    const labels = findChips(tree).map(chipLabel)
+    expect(labels).toEqual(ORDERED.map((code) => fr.genus.latinLabel(code)))
+    expect(labels[0]).toBe("Abies (Sapin)")
+    expect(labels.indexOf("Ceratonia (Caroubier)")).toBe(labels.indexOf("Celtis (Micocoulier)") + 1)
+  })
+
+  it("keeps the click order in the stored value, whatever the display order", () => {
+    const { tree, onChange, onTouch } = render("Fagus")
+    const chips = findChips(tree)
+    const index = findChips(tree).findIndex((c) => chipLabel(c) === "Ceratonia (Caroubier)")
+    act(() => {
+      chips[index].props.onPress()
+    })
+    expect(onChange).toHaveBeenCalledWith("Fagus,Ceratonia")
+    expect(onTouch).toHaveBeenCalledTimes(1)
   })
 })

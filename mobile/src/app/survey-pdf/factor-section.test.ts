@@ -148,7 +148,7 @@ describe("buildFactorBlocks structure", () => {
     const html = blockById(blocks, "factor-A").html
     expect(html).toContain(">A<")
     expect(html).toContain(fr.labels.factorTitles.A)
-    expect(html).toContain("Hêtre (Fagus)")
+    expect(html).toContain("Fagus (Hêtre)")
     expect(html).toContain(t.factors.scale)
     expect(html).toContain(escapeHtml(t.scaleLines.v3_2.A))
     expect(html).toContain(t.factors.pointsOutOfFive({ points: "2" }))
@@ -222,7 +222,7 @@ describe("missing factors (D-10)", () => {
     })
     const html = blockById(buildFactorBlocks(data, palette), "factor-A").html
     expect(html).toContain(t.factors.missing)
-    expect(html).toContain("Hêtre (Fagus)")
+    expect(html).toContain("Fagus (Hêtre)")
   })
 
   it("draws the whole sheet when nothing was entered", () => {
