@@ -50,7 +50,9 @@ const FONTS = [
 
 describe("PDF_CSP", () => {
   test("is exactly the policy that lets the print WebView load nothing", () => {
-    expect(PDF_CSP).toBe("default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'")
+    expect(PDF_CSP).toBe(
+      "default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'",
+    )
   })
 
   test("the meta tag wraps it as an http-equiv Content-Security-Policy element", () => {
@@ -83,7 +85,7 @@ describe("fontFaceCss", () => {
 
   test("keeps only base64 characters in the data and name characters in the family", () => {
     const css = fontFaceCss([{ family: 'Evil"; } body { x: y', base64: "AA);}</style><b>==" }])
-    expect(css).toContain("src: url(data:font/ttf;base64,AAb==)")
+    expect(css).toContain("src: url(data:font/ttf;base64,AA/styleb==)")
     expect(css).not.toMatch(/<|>|\{ x|\);\}/)
     expect(css.match(/@font-face/g)).toHaveLength(1)
     expect(css).toContain('font-family: "Evilbodyxy"')
@@ -129,7 +131,9 @@ describe("buildBaseCss", () => {
       `.${PDF_CLASS.page} { position: relative; width: ${PDF_PAGE.width}px; height: ${PDF_PAGE_BLOCK_HEIGHT}px; overflow: hidden;`,
     )
     expect(ios).toMatch(/\.page \{[^}]*page-break-after: always; break-after: page;/)
-    expect(ios).toMatch(/section\.page:last-of-type \{[^}]*page-break-after: auto; break-after: auto;/)
+    expect(ios).toMatch(
+      /section\.page:last-of-type \{[^}]*page-break-after: auto; break-after: auto;/,
+    )
   })
 
   test("the page body fills exactly the space between the header and the footer", () => {
