@@ -1,7 +1,7 @@
 ---
 phase: 17-offline-map-own-survey-navigation
 verified: 2026-10-06
-status: human_needed
+status: gaps_found
 score: 3/5 success criteria verified; 2 present and wired but not exercised on a device (behavior_unverified)
 behavior_unverified: 2
 overrides_applied: 0
@@ -169,3 +169,5 @@ _Verifier: Claude (gsd-verifier)_
 ## Update 2026-10-10
 
 The two decisions are settled by the owner: the deferred parcel-history download stays as it is (the fetch result is discarded, the history is read live online; Phase 24 caches the history per parcel), and an indeterminate "Téléchargement…" button is not enough: the percentage in the Explorer sheet is added in Phase 31. The airplane-mode walkthrough and the force-quit relaunch are checks D-04 and D-05 of `docs/user-tests/device-checks.md`. Status stays `human_needed` until they are run.
+
+**Walkthrough run 2026-10-10 (iPhone, owner's recordings):** the downloaded basemap, the parcels and the scored parcels display in airplane mode, also after a force quit and relaunch (D-04, D-05). Two gaps: offline, another member's survey opens a broken error page (F-1), and after a restart the Explorer draws none of the owner's surveys, because only drafts come from local data (F-2, success criterion "see your own surveys on the map"). Both are criteria of Phase 29; the status is `gaps_found` until it closes them.
