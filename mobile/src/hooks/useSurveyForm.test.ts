@@ -26,15 +26,15 @@ jest.mock("../app/constants", () => ({
     ibpCas3Scale: false,
     gpsLocation: { lat: "", lng: "", collected_at: "" },
     factorA: { genera: "", native_cover_percent: "" },
-    factorB: { strata_count: "" },
+    factorB: { strata_count: "", strata: null },
     factorC: { bmg_count: "", bmm_count: "", surface_ha: "" },
     factorD: { bmg_count: "", bmm_count: "", surface_ha: "" },
     factorE: { tgb_count: "", gb_count: "", surface_ha: "" },
-    factorF: { trees_per_ha: "" },
+    factorF: { trees_per_ha: "", dmh_groups: [] },
     factorG: { open_flowering_percent: "" },
-    factorH: { class_score: "" },
-    factorI: { type_count: "" },
-    factorJ: { type_count: "" },
+    factorH: { class_score: "", evidence: [] },
+    factorI: { type_count: "", types: null },
+    factorJ: { type_count: "", types: null },
   },
   normalizeVegetationStageForRegion: (...args: unknown[]) => mockNormalizeVegetationStage(...args),
   defaultVegetationStageForRegion: (...args: unknown[]) => mockDefaultVegetationStage(...args),
@@ -655,6 +655,199 @@ describe("useSurveyForm", () => {
     })
   })
 
+  // ─── Factor details stored next to the scored values (phase 25.1, D-12) ───
+
+  describe("factor detail arrays (D-12)", () => {
+    const useRealRules = () => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    }
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    type DetailFactor = "B" | "F" | "H" | "I" | "J"
+    const tick = async (result: FormResult, factor: DetailFactor, next: string[]) => {
+      await act(async () => {
+        result.current.factorSections[factor][0].selection?.onChange(next)
+      })
+    }
+    const type = async (result: FormResult, factor: DetailFactor, value: string) => {
+      await act(async () => {
+        result.current.factorSections[factor][0].onChange(value)
+      })
+    }
+    const factors = (result: FormResult) =>
+      result.current.draftInput.factors as Record<string, Record<string, unknown>>
+
+    beforeEach(useRealRules)
+
+    test("ticking strata sets the count and writes both keys", async () => {
+      const result = await renderForm()
+      await tick(result, "B", ["low", "high"])
+      expect(result.current.factorSections.B[0].value).toBe("2")
+      expect(result.current.factorSections.B[0].selection?.selected).toEqual(["low", "high"])
+      expect(factors(result).B).toEqual({ strata_count: 2, strata: ["low", "high"] })
+    })
+
+    test("unticking everything records a zero for B, I and J", async () => {
+      const result = await renderForm()
+      await tick(result, "B", [])
+      await tick(result, "I", [])
+      await tick(result, "J", [])
+      expect(factors(result).B).toEqual({ strata_count: 0, strata: [] })
+      expect(factors(result).I).toEqual({ type_count: 0, types: [] })
+      expect(factors(result).J).toEqual({ type_count: 0, types: [] })
+    })
+
+    test("ticking habitat types sets type_count and types", async () => {
+      const result = await renderForm()
+      await tick(result, "I", ["spring_seep", "sea", "marsh"])
+      await tick(result, "J", ["slab"])
+      expect(factors(result).I).toEqual({ type_count: 3, types: ["spring_seep", "sea", "marsh"] })
+      expect(factors(result).J).toEqual({ type_count: 1, types: ["slab"] })
+    })
+
+    test("typing a count clears the selection", async () => {
+      const result = await renderForm()
+      await tick(result, "B", ["low"])
+      await type(result, "B", "3")
+      expect(result.current.factorSections.B[0].selection?.selected).toBeNull()
+      expect(factors(result).B).toEqual({ strata_count: 3 })
+      expect(factors(result).B).not.toHaveProperty("strata")
+      await tick(result, "I", ["marsh"])
+      await type(result, "I", "2")
+      expect(factors(result).I).toEqual({ type_count: 2 })
+    })
+
+    test("a bare-count draft reopens with the count kept and no invented selection", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          factors: { B: { strata_count: 3 }, I: { type_count: 2 }, J: { type_count: 1 } },
+        })
+      })
+      expect(result.current.factorSections.B[0].value).toBe("3")
+      expect(result.current.factorSections.B[0].selection?.selected).toBeNull()
+      expect(result.current.factorSections.I[0].selection?.selected).toBeNull()
+      expect(result.current.factorSections.J[0].selection?.selected).toBeNull()
+      expect(factors(result).B).toEqual({ strata_count: 3 })
+      expect(factors(result).I).toEqual({ type_count: 2 })
+    })
+
+    test("a stored array is read back through the catalogue", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          factors: {
+            B: { strata_count: 2, strata: ["low", "bogus", "low", "high"] },
+            F: { trees_per_ha: 4, dmh_groups: ["dmh_03", "nope"] },
+            H: { class_score: 5, evidence: ["field_signs", 7] },
+            J: { type_count: 1, types: ["lower_rock"] },
+          },
+        })
+      })
+      expect(result.current.factorSections.B[0].selection?.selected).toEqual(["low", "high"])
+      expect(result.current.factorSections.F[0].selection?.selected).toEqual(["dmh_03"])
+      expect(result.current.factorSections.H[0].selection?.selected).toEqual(["field_signs"])
+      expect(result.current.factorSections.J[0].selection?.selected).toEqual(["lower_rock"])
+    })
+
+    test("F groups need the trees per ha to be written", async () => {
+      const result = await renderForm()
+      await tick(result, "F", ["dmh_01", "dmh_12"])
+      expect(factors(result)).not.toHaveProperty("F")
+      await type(result, "F", "4")
+      expect(factors(result).F).toEqual({ trees_per_ha: 4, dmh_groups: ["dmh_01", "dmh_12"] })
+      await tick(result, "F", [])
+      expect(factors(result).F).toEqual({ trees_per_ha: 4 })
+    })
+
+    test("H evidence travels only with a valid class", async () => {
+      const result = await renderForm()
+      await tick(result, "H", ["etat_major_map"])
+      expect(factors(result)).not.toHaveProperty("H")
+      await type(result, "H", "1")
+      expect(factors(result)).not.toHaveProperty("H")
+      await type(result, "H", "5")
+      expect(factors(result).H).toEqual({ class_score: 5, evidence: ["etat_major_map"] })
+    })
+
+    test("the retained scores are the same with and without the detail arrays", async () => {
+      const { computeRetainedScoresFromRawFactors } = jest.requireActual("../app/ibp-scoring")
+      const plain = {
+        B: { strata_count: 2 },
+        F: { trees_per_ha: 4 },
+        H: { class_score: 5 },
+        I: { type_count: 2 },
+        J: { type_count: 1 },
+      }
+      const detailed = {
+        B: { strata_count: 2, strata: ["low", "high"] },
+        F: { trees_per_ha: 4, dmh_groups: ["dmh_01", "dmh_12"] },
+        H: { class_score: 5, evidence: ["etat_major_map"] },
+        I: { type_count: 2, types: ["spring_seep", "marsh"] },
+        J: { type_count: 1, types: ["slab"] },
+      }
+      for (const context of [
+        {
+          ibp_method_version: IBP_METHOD_V3_0,
+          region_version: "ACA",
+          vegetation_stage: "collineen",
+        },
+        { ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 1, ibp_cas3_scale: false },
+      ]) {
+        const withoutDetail = computeRetainedScoresFromRawFactors(plain, context)
+        expect(withoutDetail.B).not.toBeNull()
+        expect(computeRetainedScoresFromRawFactors(detailed, context)).toEqual(withoutDetail)
+      }
+    })
+
+    test("switching the method keeps the selections and their counts", async () => {
+      const result = await renderForm()
+      await tick(result, "I", ["sea", "marsh"])
+      await tick(result, "J", ["lower_rock"])
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_0)
+      })
+      expect(factors(result).I).toEqual({ type_count: 2, types: ["sea", "marsh"] })
+      expect(factors(result).J).toEqual({ type_count: 1, types: ["lower_rock"] })
+      await act(async () => {
+        result.current.setIbpMethodVersion(IBP_METHOD_V3_2)
+      })
+      expect(factors(result).I).toEqual({ type_count: 2, types: ["sea", "marsh"] })
+    })
+
+    test("resetSurveyForm restores the defaults", async () => {
+      const result = await renderForm()
+      await tick(result, "B", ["low"])
+      await tick(result, "F", ["dmh_01"])
+      await tick(result, "H", ["field_signs"])
+      await act(async () => {
+        result.current.resetSurveyForm()
+      })
+      expect(result.current.factorSections.B[0].selection?.selected).toBeNull()
+      expect(result.current.factorSections.F[0].selection?.selected).toEqual([])
+      expect(result.current.factorSections.H[0].selection?.selected).toEqual([])
+    })
+
+    test("keeps one field per factor, B, F, H, I and J carrying a selection", async () => {
+      const hook = await buildHook()
+      for (const key of ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"] as const) {
+        const withSelection = ["B", "F", "H", "I", "J"].includes(key)
+        for (const field of hook.factorSections[key]) {
+          expect(field.selection !== undefined).toBe(withSelection)
+        }
+      }
+      expect(hook.factorSections.B).toHaveLength(1)
+      expect(hook.factorSections.F).toHaveLength(1)
+      expect(hook.factorSections.H).toHaveLength(1)
+      expect(hook.factorSections.I).toHaveLength(1)
+      expect(hook.factorSections.J).toHaveLength(1)
+    })
+  })
+
   // ─── resetSurveyForm ──────────────────────────────────────────────────────
 
   describe("resetSurveyForm", () => {
@@ -919,7 +1112,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorH: { class_score: "2" },
+        factorH: { class_score: "2", evidence: [] },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved
@@ -931,7 +1124,7 @@ describe("useSurveyForm", () => {
       const saved = mockConstants.DEFAULT_SURVEY_FORM
       mockConstants.DEFAULT_SURVEY_FORM = {
         ...saved,
-        factorH: { class_score: "3" },
+        factorH: { class_score: "3", evidence: [] },
       }
       const hook = await buildHook()
       mockConstants.DEFAULT_SURVEY_FORM = saved

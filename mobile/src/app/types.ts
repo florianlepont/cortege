@@ -93,6 +93,15 @@ export type AppScreen = "list" | "create" | "edit" | "public_map" | "profile"
 /** Per-factor completion, computed by screens/survey-form/FactorsList.tsx's computeFactorProgress. */
 export type FactorProgress = { complete: boolean; filled: number; total: number; invalid: number }
 
+/**
+ * The options ticked next to a factor's scored value (phase 25.1, D-12). `selected` is null when
+ * no selection is recorded: a draft saved before this phase holds a count and nothing else.
+ */
+export type FactorFieldSelection = {
+  selected: readonly string[] | null
+  onChange: (next: string[]) => void
+}
+
 export type FactorField = {
   label: string
   value: string
@@ -102,6 +111,8 @@ export type FactorField = {
   /** FLOW-02: whether the field was left once or submission was attempted — gates error display. */
   touched: boolean
   onTouch: () => void
+  /** The details ticked next to this field's value, for B, F, H, I and J. */
+  selection?: FactorFieldSelection
 }
 
 export type SurveyListFilters = {
