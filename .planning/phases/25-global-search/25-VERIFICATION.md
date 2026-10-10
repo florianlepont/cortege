@@ -1,8 +1,8 @@
 ---
 phase: 25-global-search
 verified: 2026-10-09T00:00:00Z
-status: human_needed
-score: 4/5 roadmap criteria verified in code (criterion 5 is the owner phone check, human-needed by design)
+status: passed
+score: 5/5 roadmap criteria (criterion 5 confirmed by the owner on the phone 2026-10-10: "Approved")
 behavior_unverified: 0
 overrides_applied: 0
 gaps: []
