@@ -1,5 +1,6 @@
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator"
 import * as FileSystem from "expo-file-system/legacy"
+import { Asset } from "expo-asset"
 import { loadTensorflowModel } from "react-native-fast-tflite"
 import jpeg from "jpeg-js"
 import {
@@ -67,7 +68,14 @@ async function loadModel(): Promise<TensorflowModel | null> {
   if (cachedModel) return cachedModel
   if (modelLoadFailed) return null
   try {
-    cachedModel = await loadTensorflowModel(MODEL_ASSET, [])
+    // The Android loader of react-native-fast-tflite reads its source with `URL(path).readBytes()`:
+    // it accepts a real URL only. A `require()`d asset resolves to a bare resource name in an
+    // Android Release build ("assets_models_genus_classifier"), so the model never loaded there
+    // (found 2026-10-10 on the emulator). Copying the bundled asset to a local file first gives
+    // every platform and build type a `file://` (or dev-server) URL; still no network at runtime.
+    const asset = Asset.fromModule(MODEL_ASSET)
+    await asset.downloadAsync()
+    cachedModel = await loadTensorflowModel({ url: asset.localUri ?? asset.uri }, [])
     return cachedModel
   } catch {
     modelLoadFailed = true
