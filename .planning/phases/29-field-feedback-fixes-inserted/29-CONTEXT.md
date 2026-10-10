@@ -31,6 +31,11 @@ Fix what the first Android testers and the owner's iPhone walkthrough reported: 
 ### Small screens
 - **D-08:** Below a height threshold the parcel-selection information message is compact (shorter text, smaller type, capped height) so the map keeps a usable share of the screen (target about half) on the smallest supported screen. Exact threshold chosen by the planner from device measurements.
 
+### Planning-time decisions (owner, 2026-10-10, after research)
+- **D-09:** Offline own-survey markers take their position from the **centre of the survey's cached parcel geometry** (downloaded offline areas). Local only: no `display_location` in the sync/pull payload, no API change. A survey outside every downloaded area is not drawn offline. Refines D-01.
+- **D-10:** The genus picker chips show the **Latin genus name**, so the Latin ordering of D-06 is visible. Recognition suggestions are unchanged (D-07).
+- **D-11:** Abbreviation allowlist for the D-05 gate: units, "OK", "PDF", "GPS", "ex.". "IBP" is defined once (onboarding, sign-in, PDF) plus an info sheet (D-04) on the main headers, not on every use.
+
 ### Carried unchanged from the ROADMAP
 - Recognition workflow rethink was set aside (owner, 2026-10-10); only temp-file cleanup (criterion 7) and D-01 to D-03 device measurements (median and p95 vs 3 s, online and airplane mode) remain.
 
