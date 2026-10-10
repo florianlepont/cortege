@@ -3,6 +3,7 @@ import { getDb } from "./db"
 import { runInTransaction } from "./transaction"
 import { deleteAttachmentFile, deleteAllAttachmentFiles } from "./attachment-files"
 import { LOCAL_OWNER_SUB_KEY, LOCAL_OWNER_EMAIL_KEY } from "./local-owner"
+import { PARCEL_HISTORY_KEY_PREFIX } from "./parcel-history-cache"
 import { SEARCH_RECENTS_KEY } from "./search-recents"
 import {
   LocalSurvey,
@@ -533,6 +534,8 @@ export async function clearLocalIbpData(): Promise<void> {
       LOCAL_OWNER_EMAIL_KEY,
       SEARCH_RECENTS_KEY,
     ])
+    // Exact prefix match: a LIKE pattern would treat the underscore as a wildcard (D-13).
+    await tx.runAsync(`DELETE FROM local_meta WHERE instr(key, ?) = 1`, [PARCEL_HISTORY_KEY_PREFIX])
   })
 
   await deleteAllAttachmentFiles().catch(() => {})
