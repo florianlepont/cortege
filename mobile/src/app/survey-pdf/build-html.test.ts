@@ -152,6 +152,14 @@ describe("buildSurveyExportHtml page order", () => {
     expect(pagesOf(light.html)[0]).toContain(t.scores.chartHeading)
   })
 
+  it("gives the chart the first page of an ordinary submitted survey with a full identity", () => {
+    // Measured on iOS and Android (plan 25.1-17): identity 245 + method 93 + scores 136 + chart 206
+    // fills 680 of the 740 of the body, so the chart stays on page 1 and does not leave it 40 % empty.
+    const submitted = buildSurveyExportHtml(exportFixtureV32Submitted)
+    expect(pagesOf(submitted.html)[0]).toContain(t.scores.chartHeading)
+    expect(pagesOf(submitted.html)[0]).not.toContain(t.factors.standGroup)
+  })
+
   it("renders the worst case with every section present", () => {
     expect(countOf(body, 'class="factor-card"')).toBe(FACTOR_KEYS.length)
     expect(body).toContain("map-parcel")

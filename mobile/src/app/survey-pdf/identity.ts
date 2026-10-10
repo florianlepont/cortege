@@ -26,7 +26,11 @@ const CARD_HEADING = 24
 const CARD_MARGIN = 10
 const ROW_PADDING = 6 // 3 top and 3 bottom
 const ROW_LINE_HEIGHT = 13
-const VALUE_CHARS_PER_LINE = 62 // 515 content - 20 padding - 150 caption column, at 9 px Jost
+// 515 content - 20 padding - 150 caption column leaves 345 px at 9 px Jost, about 3.7 pt per
+// character on both platforms (device pre-check of plan 25.1-17: the 78 character v3.2 cas 1 line
+// fills 292 pt of it). 62 made every v3.2 cas row and the 64 character site name count as two
+// lines, which pushed the factor chart off page 1 of an ordinary survey.
+const VALUE_CHARS_PER_LINE = 80
 
 export type Insee = { commune: string; department: string }
 

@@ -34,7 +34,10 @@ type Entry = DisplayedFactorResult | undefined
 const CARD_PADDING = 20 // 10 top and 10 bottom
 const CARD_TITLE = 24
 const PROVISIONAL_HEIGHT = 20
-const TILE_HEIGHT = 92 // padding 16, heading 12, value 28, band 16, track 6, gaps 14
+// Padding 16, heading 12, value 28, band 16, track 4 + 6 = 82 as printed on iOS and Android (device
+// pre-check of plan 25.1-17), plus 2 spare. The 92 first written counted 14 of gaps that are not
+// there and, with the identity estimates, pushed the factor chart off page 1.
+const TILE_HEIGHT = 84
 const CARD_MARGIN = 10
 const TILE_GAP = 8
 

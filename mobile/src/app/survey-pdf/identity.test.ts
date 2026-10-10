@@ -178,6 +178,18 @@ describe("identity block", () => {
     }
   })
 
+  it("counts one line for the 78 character v3.2 cas row and the 64 character site name", () => {
+    const { method, identity } = build({
+      method: { ...V32, ibpCas: 1 },
+      siteName: "Foret domaniale des trois parcelles de la grande colline du nord",
+    })
+    const oneLineRow = 6 + 13
+    // card padding 20, heading 24, margin 10, two rows of one line (version, cas)
+    expect(method.height).toBe(20 + 24 + 10 + 2 * oneLineRow)
+    // the same card with a site name of 64 characters is not taller than with a short one
+    expect(identity.height).toBe(build({ method: { ...V32, ibpCas: 1 } }).identity.height)
+  })
+
   it("grows with long parcel lists", () => {
     const short = build({ parcelIds: ["77186000AB0123"] }).identity.height
     const many = Array.from({ length: 20 }, (_, i) => `77186000AB${String(i).padStart(4, "0")}`)
