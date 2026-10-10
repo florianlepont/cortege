@@ -1,17 +1,12 @@
 import { useMemo } from "react"
-import { ActivityIndicator, StyleSheet, View } from "react-native"
-import {
-  brandDefaultFontFamily,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../../app/brand-tokens"
+import { StyleSheet } from "react-native"
+import { brandDefaultFontFamily, brandTypeScale } from "../../app/brand-tokens"
 import { buildEntriesFromCommunity } from "../../app/parcel-history"
 import { type BrandTheme, useBrandTheme } from "../../app/theme"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
+import { CenteredState } from "../../ui/CenteredState"
 import { useFrameInsetBehavior } from "../../ui/frame-large-title"
 import { PageTitle } from "../../ui/PageTitle"
 import { ParcelHistoryView } from "../survey-detail/ParcelHistoryView"
@@ -25,22 +20,12 @@ type CommunityHistoryScreenProps = {
   state: CommunitySurveyState
   /** Opens another survey of the parcel, read-only. */
   onOpenSurvey: (surveyId: string) => void
+  /** Read from the network state by the route, never from the error (D-03). */
+  offline?: boolean
 }
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    centered: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: brandSpacing4.smd,
-      paddingHorizontal: brandSpacing4.lg,
-    },
-    message: {
-      ...brandTypography.sectionBody,
-      textAlign: "center",
-      color: theme.colors.textSecondary,
-    },
     subtitle: {
       ...brandTypeScale.footnote,
       fontFamily: brandDefaultFontFamily,
@@ -54,7 +39,11 @@ function createStyles(theme: BrandTheme) {
  * surveys of the parcel, with the loading and error states of the survey page. It never shows the
  * per-factor changes nor the change log, which belong to the survey's owner.
  */
-export function CommunityHistoryScreen({ state, onOpenSurvey }: CommunityHistoryScreenProps) {
+export function CommunityHistoryScreen({
+  state,
+  onOpenSurvey,
+  offline = false,
+}: CommunityHistoryScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const own = useMemo(() => createStyles(theme), [theme])
@@ -63,22 +52,30 @@ export function CommunityHistoryScreen({ state, onOpenSurvey }: CommunityHistory
   const { detail, status } = state
   const entries = useMemo(() => (detail ? buildEntriesFromCommunity(detail.history) : []), [detail])
 
-  if (status === "loading" || !detail) {
-    return (
-      <View style={[styles.scroll, own.centered]}>
-        {status === "error" ? (
-          <>
-            <Text style={own.message}>{t.error}</Text>
-            <AppButton label={t.retry} variant="secondary" onPress={state.reload} />
-          </>
-        ) : (
-          <>
-            <ActivityIndicator size="large" color={theme.colors.forest} />
-            <Text style={own.message}>{t.loading}</Text>
-          </>
-        )}
-      </View>
-    )
+  if (status !== "ready" || !detail) {
+    if (offline) {
+      return (
+        <CenteredState
+          icon="cloud-offline-outline"
+          message={t.offline}
+          actionLabel={t.retry}
+          onAction={state.reload}
+          testID="community-offline"
+        />
+      )
+    }
+    if (status === "error") {
+      return (
+        <CenteredState
+          icon="alert-circle-outline"
+          message={t.error}
+          actionLabel={t.retry}
+          onAction={state.reload}
+          testID="community-error"
+        />
+      )
+    }
+    return <CenteredState busy message={t.loading} testID="community-loading" />
   }
 
   return (

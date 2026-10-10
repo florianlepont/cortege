@@ -186,7 +186,8 @@ const mockNativeTabs = { value: false }
 jest.mock("../native-tabs-availability", () => ({
   getNativeTabsAvailability: () => ({ native: mockNativeTabs.value }),
 }))
-jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => false }))
+const mockIsOffline = { value: false }
+jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => mockIsOffline.value }))
 jest.mock("../../hooks/useBasemapPreference", () => ({
   useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
 }))
@@ -498,6 +499,7 @@ afterAll(() => {
 beforeEach(() => {
   for (const key of Object.keys(mockScreenProps)) delete mockScreenProps[key]
   mockPlatform.OS = "android"
+  mockIsOffline.value = false
   mockExplorer.loadPublicMap.mockClear()
 })
 
@@ -905,9 +907,20 @@ describe("CommunitySurveyRoute", () => {
     expect(mockCommunitySurveyArgs.surveyId).toBe("c-1")
     expect(screen.apiUrl).toBe("http://api.test/v1")
     expect(screen.state).toBe(mockCommunitySurvey)
+    expect(screen.offline).toBe(false)
 
     callback("communitySurvey", "onOpenHistory")()
     expect(navigation.push).toHaveBeenCalledWith("communityHistory", { surveyId: "c-1" })
+  })
+
+  test("passes the network state as offline (D-03)", async () => {
+    mockIsOffline.value = true
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+    expect(props("communitySurvey").offline).toBe(true)
   })
 })
 
@@ -923,9 +936,20 @@ describe("CommunityHistoryRoute", () => {
     expect(mockCommunitySurveyArgs.surveyId).toBe("c-1")
     expect(mockCommunitySurveyArgs.options).toEqual({ withPhotos: false })
     expect(screen.state).toBe(mockCommunitySurvey)
+    expect(screen.offline).toBe(false)
 
     callback("communityHistory", "onOpenSurvey")("c-2")
     expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-2" })
+  })
+
+  test("passes the network state as offline (D-03)", async () => {
+    mockIsOffline.value = true
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <CommunityHistoryRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+    expect(props("communityHistory").offline).toBe(true)
   })
 })
 

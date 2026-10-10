@@ -2,6 +2,7 @@ import { readFileSync } from "fs"
 import { join } from "path"
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { Ionicons } from "@expo/vector-icons"
 // The draft-summary module pulls in the whole storage layer; the view model only needs its marker.
 jest.mock("../survey-detail/useLocalDraftSummary", () => ({ NOT_FILLED_CLASS: "Not filled" }))
 
@@ -110,7 +111,7 @@ const state = (overrides: Partial<CommunitySurveyState> = {}): CommunitySurveySt
   ...overrides,
 })
 
-function render(current: CommunitySurveyState, onOpenHistory = jest.fn()) {
+function render(current: CommunitySurveyState, onOpenHistory = jest.fn(), offline = false) {
   let tree!: renderer.ReactTestRenderer
   act(() => {
     tree = renderer.create(
@@ -119,6 +120,7 @@ function render(current: CommunitySurveyState, onOpenHistory = jest.fn()) {
         accessToken="token"
         state={current}
         onOpenHistory={onOpenHistory}
+        offline={offline}
       />,
     )
   })
@@ -143,6 +145,34 @@ describe("CommunitySurveyScreen", () => {
     expect(texts(failed.tree)).toContain(t.error)
     act(() => byType(failed.tree, "AppButton")[0].props.onPress())
     expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows the offline message with a cloud icon and the retry at once, even while loading", () => {
+    const reload = jest.fn()
+    for (const status of ["loading", "error"] as const) {
+      const { tree } = render(state({ detail: null, status, reload }), jest.fn(), true)
+      expect(texts(tree)).toContain(t.offline)
+      expect(texts(tree)).not.toContain(t.error)
+      expect(byType(tree, "ActivityIndicator")).toHaveLength(0)
+      expect(tree.root.findByType(Ionicons).props.name).toBe("cloud-offline-outline")
+      expect(byType(tree, "ScrollView")[0].props.testID).toBe("community-offline")
+      const retry = byType(tree, "AppButton")
+      expect(retry).toHaveLength(1)
+      act(() => retry[0].props.onPress())
+    }
+    expect(reload).toHaveBeenCalledTimes(2)
+  })
+
+  it("shows the error with an alert icon when online and the load failed", () => {
+    const { tree } = render(state({ detail: null, status: "error" }))
+    expect(tree.root.findByType(Ionicons).props.name).toBe("alert-circle-outline")
+    expect(byType(tree, "ScrollView")[0].props.testID).toBe("community-error")
+  })
+
+  it("keeps showing the loaded survey when the phone goes offline", () => {
+    const { tree } = render(state(), jest.fn(), true)
+    expect(byType(tree, "ScoreBreakdown")).toHaveLength(1)
+    expect(texts(tree)).not.toContain(t.offline)
   })
 
   it("shows who made the survey, its score, factors, context and an approximate position", () => {

@@ -2,6 +2,7 @@ import { readFileSync } from "fs"
 import { join } from "path"
 import React from "react"
 import renderer, { act } from "react-test-renderer"
+import { Ionicons } from "@expo/vector-icons"
 import type { CommunitySurveyDetail } from "@cortege/ibp-domain"
 import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
@@ -101,13 +102,13 @@ const state = (overrides: Partial<CommunitySurveyState> = {}): CommunitySurveySt
   ...overrides,
 })
 
-function render(current: CommunitySurveyState, largeTitle = false) {
+function render(current: CommunitySurveyState, largeTitle = false, offline = false) {
   const onOpenSurvey = jest.fn()
   let tree!: renderer.ReactTestRenderer
   act(() => {
     tree = renderer.create(
       <FrameLargeTitleContext.Provider value={largeTitle}>
-        <CommunityHistoryScreen state={current} onOpenSurvey={onOpenSurvey} />
+        <CommunityHistoryScreen state={current} onOpenSurvey={onOpenSurvey} offline={offline} />
       </FrameLargeTitleContext.Provider>,
     )
   })
@@ -144,6 +145,34 @@ describe("CommunityHistoryScreen", () => {
     expect(retry.props.label).toBe(t.retry)
     act(() => retry.props.onPress())
     expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it("shows the offline message with a cloud icon and the retry at once, even while loading", () => {
+    const reload = jest.fn()
+    for (const status of ["loading", "error"] as const) {
+      const { tree } = render(state({ detail: null, status, reload }), false, true)
+      expect(texts(tree)).toContain(t.offline)
+      expect(texts(tree)).not.toContain(t.error)
+      expect(byType(tree, "ActivityIndicator")).toHaveLength(0)
+      expect(tree.root.findByType(Ionicons).props.name).toBe("cloud-offline-outline")
+      expect(byType(tree, "ScrollView")[0].props.testID).toBe("community-offline")
+      const retry = byType(tree, "AppButton")
+      expect(retry).toHaveLength(1)
+      act(() => retry[0].props.onPress())
+    }
+    expect(reload).toHaveBeenCalledTimes(2)
+  })
+
+  it("shows the error with an alert icon when online and the load failed", () => {
+    const { tree } = render(state({ detail: null, status: "error" }))
+    expect(tree.root.findByType(Ionicons).props.name).toBe("alert-circle-outline")
+    expect(byType(tree, "ScrollView")[0].props.testID).toBe("community-error")
+  })
+
+  it("keeps showing the loaded history when the phone goes offline", () => {
+    const { tree } = render(state(), false, true)
+    expect(byType(tree, "ParcelHistoryView")).toHaveLength(1)
+    expect(texts(tree)).not.toContain(t.offline)
   })
 
   it("shows the title, the subtitle and the community parcel history when ready", () => {

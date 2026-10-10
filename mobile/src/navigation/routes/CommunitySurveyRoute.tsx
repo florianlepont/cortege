@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { CommunitySurveyScreen } from "../../screens/community-survey/CommunitySurveyScreen"
 import { useCommunitySurvey } from "../../hooks/useCommunitySurvey"
+import { useIsOffline } from "../../hooks/useIsOffline"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { fr } from "../../i18n"
@@ -36,6 +37,8 @@ export const CommunitySurveyRoute = memo(function CommunitySurveyRoute({
   const { state: session } = useSession()
   const accessToken = useAccessToken()
   const state = useCommunitySurvey(session.apiUrl, accessToken, route.params.surveyId)
+  // Read from the network state, never inferred from the error class (D-03).
+  const offline = useIsOffline()
 
   const onOpenHistory = useLatestCallback(() => {
     navigation.push("communityHistory", { surveyId: route.params.surveyId })
@@ -57,6 +60,7 @@ export const CommunitySurveyRoute = memo(function CommunitySurveyRoute({
         accessToken={accessToken}
         state={state}
         onOpenHistory={onOpenHistory}
+        offline={offline}
       />
     </ScreenFrame>
   )
