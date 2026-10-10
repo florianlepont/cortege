@@ -978,7 +978,9 @@ Plans:
   2. On small screens the information message asking to select parcels is smaller than the map: the map stays usable on the smallest supported screen.
   3. Every abbreviation shown in the app is either written out or explained where it appears (a glossary or an info sheet), checked against the screen inventory.
   4. The genus list is sorted alphabetically everywhere it is shown.
-  5. The two temporary files of a recognition (the camera capture and the resized JPEG) are deleted explicitly once the suggestion is shown, and the genus classifier's latency and accuracy are measured on real Android phones (median and p95 against the 3 s budget, online and in airplane mode), recorded as checks D-01 to D-03 of `docs/user-tests/device-checks.md` (carried over from Phase 15).
+  5. Offline, opening another member's survey from the map shows a clear, centred message ("this survey needs a connection") with a retry button, not the broken error page seen on 2026-10-10 (finding F-1 of `docs/user-tests/device-checks.md`).
+  6. Offline, after a restart, every survey of the user that the phone holds, draft or submitted, is drawn on the Explorer map (clusters and markers) from local data, not only the drafts (finding F-2 of `docs/user-tests/device-checks.md`: today `ownDraftMapItems` keeps drafts only and the markers otherwise come from the API).
+  7. The two temporary files of a recognition (the camera capture and the resized JPEG) are deleted explicitly once the suggestion is shown, and the genus classifier's latency and accuracy are measured on real Android phones (median and p95 against the 3 s budget, online and in airplane mode), recorded as checks D-01 to D-03 of `docs/user-tests/device-checks.md` (carried over from Phase 15).
 
 **Plans**: TBD
 **UI hint**: yes
