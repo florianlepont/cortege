@@ -864,13 +864,13 @@ Plans:
   4. The export never needs the network and never hangs: offline it makes no call, online its two optional reads are bounded; the shared file is named `Cortege-IBP-<site>-<year>.pdf`, with `-brouillon` for a draft.
   5. The owner confirms it on their phone: a draft and a submitted survey, a v3.0 and a v3.2 survey, the share names, and the export offline with and without a downloaded area.
 
-**Plans**: 2/17 plans executed
+**Plans**: 3/17 plans executed
 
 **Wave 1**
 
 - [x] 25.1-01-PLAN.md — expo-asset declared after a blocking check, Jest doubles, fonts and logo loader, photo pipeline
 - [x] 25.1-02-PLAN.md — Web Mercator projection (TDD) and bounded MapLibre basemap snapshot, offline-first
-- [ ] 25.1-03-PLAN.md — Contracts: `fr.surveyExport` catalogue (dash exception removed), export data types, HTML helpers
+- [x] 25.1-03-PLAN.md — Contracts: `fr.surveyExport` catalogue (dash exception removed), export data types, HTML helpers
 - [ ] 25.1-04-PLAN.md — Stored details (D-12), data side: CNPF typology lists, `factor-selections.ts`, form payload and draft read
 - [ ] 25.1-05-PLAN.md — Stored details round trip: API e2e (no API change), pull on another phone, specs and contracts
 - [ ] 25.1-06-PLAN.md — Parcel history cache in `local_meta` (`parcel_history:<ID>`), purged by `clearLocalIbpData`
