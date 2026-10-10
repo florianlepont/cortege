@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandComponentTokens, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../app/theme"
 import { useTabBarClearance } from "../app/useAppBottomTabBarHeight"
 import { AppButton } from "./AppButton"
@@ -61,7 +61,12 @@ export function CenteredState({
       </View>
       {actionLabel && onAction ? (
         <View style={styles.action}>
-          <AppButton label={actionLabel} variant="secondary" onPress={onAction} />
+          <AppButton
+            label={actionLabel}
+            variant="secondary"
+            onPress={onAction}
+            style={styles.actionButton}
+          />
         </View>
       ) : null}
     </ScrollView>
@@ -90,5 +95,10 @@ function createStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
     },
     action: { alignSelf: "center" },
+    // Device finding (plan 29-10, Android 360 x 640 dp): `AppPressable` wraps its content in a view
+    // with `flexGrow: 1`, and inside this flex-grown scroll content that made an auto-height
+    // button grow to the whole page (the "tall capsule" of finding F-1). A fixed height, the
+    // size the button already has, stops it; Jest cannot see layout, so the test pins the value.
+    actionButton: { height: brandComponentTokens.button.minHeight },
   })
 }
