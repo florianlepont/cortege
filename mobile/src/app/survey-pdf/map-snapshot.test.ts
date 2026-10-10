@@ -1,6 +1,7 @@
 import { PLAN_IGN_STYLE_URL } from "../../map/maplibre/styles"
 import { offlineStyleUri } from "../../map/offline-styles"
 import {
+  withoutSprite,
   SNAPSHOT_JPEG_QUALITY,
   SNAPSHOT_JPEG_WIDTH_PX,
   SNAPSHOT_TIMEOUT_MS,
@@ -274,5 +275,117 @@ describe("takeBasemapJpeg", () => {
       ImageManipulator: manipulator,
     } as never)
     expect(result).toBeNull()
+  })
+
+  test("an offline file style is read and handed to the snapshot as JSON without its sprite", async () => {
+    const createImage = jest.fn(async () => "file:///cache/snap.png")
+    const { manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    const style = { version: 8, sprite: "https://x/PlanIgn-Gris", sources: {}, layers: [] }
+    const readStyleFile = jest.fn(async () => JSON.stringify(style))
+    await takeBasemapJpeg(input, {
+      StaticMapImageManager: { createImage },
+      ImageManipulator: manipulator,
+      readStyleFile,
+      deleteFile: jest.fn(async () => undefined),
+    } as never)
+    expect(readStyleFile).toHaveBeenCalledWith(input.mapStyle)
+    const given = (createImage.mock.calls[0] as unknown as [{ mapStyle: string }])[0].mapStyle
+    expect(typeof given).toBe("string")
+    expect(JSON.parse(given)).toEqual({ version: 8, sources: {}, layers: [] })
+  })
+
+  test("an https style URL goes through unchanged and is not read", async () => {
+    const createImage = jest.fn(async () => "file:///cache/snap.png")
+    const { manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    const readStyleFile = jest.fn()
+    await takeBasemapJpeg({ ...input, mapStyle: PLAN_IGN_STYLE_URL, kind: "online" }, {
+      StaticMapImageManager: { createImage },
+      ImageManipulator: manipulator,
+      readStyleFile,
+      deleteFile: jest.fn(async () => undefined),
+    } as never)
+    expect(readStyleFile).not.toHaveBeenCalled()
+    expect(createImage).toHaveBeenCalledWith(
+      expect.objectContaining({ mapStyle: PLAN_IGN_STYLE_URL }),
+    )
+  })
+
+  test("a style file that cannot be read falls back to its URI", async () => {
+    const createImage = jest.fn(async () => "file:///cache/snap.png")
+    const { manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    const result = await takeBasemapJpeg(input, {
+      StaticMapImageManager: { createImage },
+      ImageManipulator: manipulator,
+      readStyleFile: jest.fn(async () => "not json"),
+      deleteFile: jest.fn(async () => undefined),
+    } as never)
+    expect(createImage).toHaveBeenCalledWith(expect.objectContaining({ mapStyle: input.mapStyle }))
+    expect(result).not.toBeNull()
+  })
+
+  test("the snapshot file is deleted after the JPEG is made, and when the conversion fails", async () => {
+    for (const fails of [false, true]) {
+      const deleteFile = jest.fn(async () => undefined)
+      const { manipulator } = makeManipulator(async () => {
+        if (fails) throw new Error("save")
+        return { base64: "QUJD" }
+      })
+      await takeBasemapJpeg(input, {
+        StaticMapImageManager: { createImage: jest.fn(async () => "file:///cache/snap.png") },
+        ImageManipulator: manipulator,
+        readStyleFile: jest.fn(async () => "{}"),
+        deleteFile,
+      } as never)
+      expect(deleteFile).toHaveBeenCalledWith("file:///cache/snap.png")
+    }
+  })
+
+  test("a failing delete does not turn a good snapshot into no image", async () => {
+    const { manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    const result = await takeBasemapJpeg(input, {
+      StaticMapImageManager: { createImage: jest.fn(async () => "file:///cache/snap.png") },
+      ImageManipulator: manipulator,
+      readStyleFile: jest.fn(async () => "{}"),
+      deleteFile: jest.fn(async () => {
+        throw new Error("delete")
+      }),
+    } as never)
+    expect(result).not.toBeNull()
+  })
+
+  test("a snapshot that settles after the timeout has its file deleted", async () => {
+    jest.useFakeTimers()
+    const { manipulator } = makeManipulator(async () => ({ base64: "QUJD" }))
+    const deleteFile = jest.fn(async () => undefined)
+    let finish: (uri: string) => void = () => undefined
+    const pending = takeBasemapJpeg(input, {
+      StaticMapImageManager: {
+        createImage: jest.fn(() => new Promise<string>((resolve) => (finish = resolve))),
+      },
+      ImageManipulator: manipulator,
+      readStyleFile: jest.fn(async () => "{}"),
+      deleteFile,
+    } as never)
+    await jest.advanceTimersByTimeAsync(SNAPSHOT_TIMEOUT_MS)
+    await expect(pending).resolves.toBeNull()
+    expect(deleteFile).not.toHaveBeenCalled()
+    finish("file:///cache/late.png")
+    await jest.advanceTimersByTimeAsync(0)
+    expect(deleteFile).toHaveBeenCalledWith("file:///cache/late.png")
+  })
+})
+
+describe("withoutSprite", () => {
+  test("drops the sprite key and keeps the rest", () => {
+    const text = JSON.stringify({ version: 8, sprite: "s", glyphs: "g", layers: [{ id: "a" }] })
+    expect(JSON.parse(withoutSprite(text))).toEqual({
+      version: 8,
+      glyphs: "g",
+      layers: [{ id: "a" }],
+    })
+  })
+
+  test("a style without a sprite is unchanged", () => {
+    expect(JSON.parse(withoutSprite('{"version":8}'))).toEqual({ version: 8 })
   })
 })

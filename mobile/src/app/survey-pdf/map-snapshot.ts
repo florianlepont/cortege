@@ -1,4 +1,5 @@
 import { StaticMapImageManager } from "@maplibre/maplibre-react-native"
+import * as FileSystem from "expo-file-system/legacy"
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator"
 import { logStatusDetail } from "../../i18n"
 import { PLAN_IGN_STYLE_URL } from "../../map/maplibre/styles"
@@ -86,6 +87,49 @@ export function defaultBasemapDeps(isOnline: boolean): BasemapDeps {
 type SnapshotDeps = {
   StaticMapImageManager: Pick<typeof StaticMapImageManager, "createImage">
   ImageManipulator: Pick<typeof ImageManipulator, "manipulate">
+  /** Reads a local style file as text. */
+  readStyleFile?: (uri: string) => Promise<string>
+  /** Deletes a local file, nothing when it is already gone. */
+  deleteFile?: (uri: string) => Promise<void>
+}
+
+const readStyleFileDefault = (uri: string) => FileSystem.readAsStringAsync(uri)
+const deleteFileDefault = (uri: string) => FileSystem.deleteAsync(uri, { idempotent: true })
+
+/**
+ * The style text without its `sprite` key. The IGN publishes no `@2x` sprite for the Plan IGN
+ * style (404), and the iOS snapshotter treats that resource error as fatal ("Could not create
+ * static map image", spike of plan 25.1-07) while the live map and the pack download tolerate it.
+ * A snapshot draws no icon from the sprite that matters for the print, so it is dropped.
+ */
+export function withoutSprite(styleJson: string): string {
+  const style = JSON.parse(styleJson) as Record<string, unknown>
+  delete style.sprite
+  return JSON.stringify(style)
+}
+
+/**
+ * What `createImage` is given as a style: a `file://` composite style is read and handed over as a
+ * JSON string without its sprite; an `https` style URL goes through unchanged. A file that cannot
+ * be read or parsed falls back to the URI as it was, which is no worse than before.
+ */
+async function snapshotStyleFor(mapStyle: string, deps: SnapshotDeps): Promise<string> {
+  if (!mapStyle.startsWith("file://")) return mapStyle
+  try {
+    return withoutSprite(await (deps.readStyleFile ?? readStyleFileDefault)(mapStyle))
+  } catch (error) {
+    logStatusDetail("surveyExport.snapshot", error)
+    return mapStyle
+  }
+}
+
+/** iOS leaves each snapshot PNG in Documents (0.1 to 2.5 MB): remove it once it is read. */
+async function discardSnapshotFile(file: string, deps: SnapshotDeps): Promise<void> {
+  try {
+    await (deps.deleteFile ?? deleteFileDefault)(file)
+  } catch (error) {
+    logStatusDetail("surveyExport.snapshot", error)
+  }
 }
 
 /**
@@ -103,25 +147,33 @@ export async function takeBasemapJpeg(
   },
   deps: SnapshotDeps = { StaticMapImageManager, ImageManipulator },
 ): Promise<{ dataUri: string; frame: MapFrame } | null> {
-  const { mapStyle, frame } = input
+  const { frame } = input
   let timer: ReturnType<typeof setTimeout> | undefined
+  let file: string | null = null
   try {
-    const file = await Promise.race([
-      deps.StaticMapImageManager.createImage({
-        mapStyle,
-        center: [frame.centerLng, frame.centerLat],
-        zoom: frame.zoom,
-        width: frame.width,
-        height: frame.height,
-        output: "file",
-        logo: false,
-      }),
+    const mapStyle = await snapshotStyleFor(input.mapStyle, deps)
+    const snapshot = deps.StaticMapImageManager.createImage({
+      mapStyle,
+      center: [frame.centerLng, frame.centerLat],
+      zoom: frame.zoom,
+      width: frame.width,
+      height: frame.height,
+      output: "file",
+      logo: false,
+    })
+    file = await Promise.race([
+      snapshot,
       new Promise<null>((resolve) => {
         timer = setTimeout(() => resolve(null), input.timeoutMs ?? snapshotTimeoutFor(input.kind))
       }),
     ])
     if (file === null) {
       logStatusDetail("surveyExport.snapshot", "timeout")
+      // A snapshot that settles after the timeout still leaves its file behind: remove it then.
+      snapshot.then(
+        (late) => discardSnapshotFile(late, deps),
+        () => undefined,
+      )
       return null
     }
     // The PNG is at device pixel ratio (up to 3x): resize to the print size and compress.
@@ -142,5 +194,6 @@ export async function takeBasemapJpeg(
     return null
   } finally {
     if (timer) clearTimeout(timer)
+    if (file) await discardSnapshotFile(file, deps)
   }
 }
