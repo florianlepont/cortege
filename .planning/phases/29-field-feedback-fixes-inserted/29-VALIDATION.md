@@ -57,6 +57,22 @@ Task IDs are assigned by the planner; rows are keyed by requirement until then.
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
+### Task mapping (planner, 2026-10-10)
+
+| Requirement | Plan / task | Test file(s) |
+|-------------|-------------|--------------|
+| SC-7 | 29-01 T1, T2, T3 | `src/recognition/temp-files.test.ts`, `genusClassifierModel.test.ts`, `timing.test.ts`, `src/app/feature-flags.test.ts`, `src/ui/GenusRecognitionModal.test.tsx` |
+| D-07 | 29-01 T3 | `src/ui/GenusRecognitionModal.test.tsx` (confidence order case) |
+| D-06, D-10 | 29-02 T1, T2 | `src/app/genus-order.test.ts`, `src/ui/FactorGenusListInput.test.tsx`, `src/app/survey-pdf/factor-fields.test.ts` |
+| D-03 | 29-03 T1, T2 | `src/ui/CenteredState.test.tsx`, `src/screens/community-survey/*.test.tsx`, `src/navigation/routes/routes.test.tsx` |
+| D-01, D-09 | 29-04 T1, T2 | `src/storage/surveys.map-sources.sqlite.test.ts`, `src/map/own-surveys.test.ts` |
+| D-08 | 29-05 T1, T2 | `src/screens/parcel-selection/layout-budget.test.ts`, `ParcelSelectionCard.test.tsx` |
+| D-05, D-11 | 29-06 T1, T2 | `src/i18n/catalogue.test.ts`, `src/__checks__/abbreviations.test.ts` (pending ratchet) |
+| D-04, D-11 | 29-07 T1, T2 | `src/ui/AbbreviationInfo.test.tsx`, `SurveyScoreScreen.test.tsx`, `SurveyWizardScreen.test.tsx`, `ScoreLegend.test.tsx` |
+| D-01, D-02, D-09 | 29-08 T1, T2 | `src/hooks/useLocalSurveyMapData.test.ts`, `routes.test.tsx -t PublicMapRoute`, `PublicMapScreen.test.tsx` |
+| D-04, D-05, D-11 | 29-09 T1, T2 | `src/__checks__/abbreviations.test.ts` (asserts `[]`), `ClusterListSheet.test.tsx`, `src/i18n/fr/survey-export.test.ts` |
+| SC-1, SC-7, D-01, D-03, D-08 (manual) | 29-10 T2, T3 | device and simulator checks recorded in `docs/user-tests/device-checks.md` |
+
 ---
 
 ## Wave 0 Requirements

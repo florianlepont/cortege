@@ -970,7 +970,7 @@ Plans:
 
 **Goal**: The problems reported by the Android testers are gone: photo recognition of genera works on Android (the model now loads, PR #272), the small-screen map stays readable, abbreviations are explained and genera are easy to find.
 **Depends on**: Phase 15 (genus recognition), Phase 25.1
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: none new: it fixes `REQ-D-offline-map` and `REQ-C-species-recognition` (built in Phases 17 and 15); traced by the decisions D-01 to D-11 of `29-CONTEXT.md`, plus criteria 1 and 7 (SC-1, SC-7)
 **Source**: owner feedback 2026-10-10, from the first Android phones
 **Success Criteria** (what must be TRUE):
 
