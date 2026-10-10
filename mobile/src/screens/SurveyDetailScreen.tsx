@@ -3,15 +3,14 @@ import { Alert, ScrollView, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
 import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { shouldShowDevTools } from "../app/dev-tools"
-import { runPdfSpike } from "../app/survey-pdf/spike"
 import { useBrandTheme } from "../app/theme"
-import { fr, logStatusDetail } from "../i18n"
+import { fr } from "../i18n"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppNotice } from "../ui/AppNotice"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../ui/frame-large-title"
-import { resolveDisplayCoordinates, selectPreviewCandidates } from "./survey-screen-helpers"
+import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
 import { FinishBar } from "./survey-detail/FinishBar"
@@ -119,15 +118,6 @@ export function SurveyDetailScreen({
     observerName: observerName ?? null,
     apiUrl,
     accessToken,
-  })
-  // Phase 25.1 device spike (dev builds only, rendered inside the shouldShowDevTools() branch).
-  const handleRunPdfSpike = useLatestCallback((layoutScale: number): void => {
-    void runPdfSpike({
-      surveyId: selectedSurvey.id,
-      parcelIds: data.parcelIds,
-      displayLocation: resolveDisplayCoordinates(detail?.display_location),
-      layoutScale,
-    }).catch((error) => logStatusDetail("surveyDetail.pdfSpike", error))
   })
   const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
   const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
@@ -306,7 +296,6 @@ export function SurveyDetailScreen({
               selectedSurvey.status === "submitted" && selectedSurvey.visibility === "public"
             }
             onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
-            onRunPdfSpike={handleRunPdfSpike}
           />
         ) : null}
       </TitledScrollView>

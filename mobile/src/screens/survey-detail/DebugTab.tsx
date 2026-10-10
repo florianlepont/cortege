@@ -22,8 +22,6 @@ type DebugTabProps = {
   submittedAt: string | null
   publishableOnPublicMap: boolean
   onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
-  // Phase 25.1 device spike (plan 25.1-07), removed by plan 25.1-16.
-  onRunPdfSpike?: (layoutScale: number) => void
 }
 
 const t = fr.surveyDetail.debug
@@ -59,7 +57,6 @@ export function DebugTab({
   submittedAt,
   publishableOnPublicMap,
   onSimulateMissingAttachmentFile,
-  onRunPdfSpike,
 }: DebugTabProps) {
   const theme = useBrandTheme()
   const sharedStyles = useMemo(() => createDetailStyles(theme), [theme])
@@ -101,23 +98,6 @@ export function DebugTab({
           </View>
         ))}
       </AppCard>
-
-      {onRunPdfSpike ? (
-        <AppCard variant="panelElevated" padding={18} style={styles.debugCard}>
-          <AppButton
-            label={t.pdfSpike}
-            leadingIcon="document-outline"
-            variant="secondary"
-            onPress={() => onRunPdfSpike(1)}
-          />
-          <AppButton
-            label={t.pdfSpikeScaled}
-            leadingIcon="document-outline"
-            variant="secondary"
-            onPress={() => onRunPdfSpike(4 / 3)}
-          />
-        </AppCard>
-      ) : null}
 
       <View style={styles.debugAttachmentBlock}>
         <AppSectionHeader title={t.imagesTitle} subtitle={t.imagesSubtitle} />
