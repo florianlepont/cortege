@@ -1,7 +1,7 @@
 ---
 phase: 18-onboarding-explorer-polish
 verified: 2026-10-06T21:35:47Z
-status: human_needed
+status: passed
 score: 4/4 must-haves verified
 behavior_unverified: 0
 overrides_applied: 1
@@ -144,3 +144,5 @@ _Verifier: Claude (gsd-verifier)_
 ## Update 2026-10-10
 
 The three device checks (splash on a fresh Release install, refusal of permissions then "Ouvrir les réglages", launcher icon under a circular mask) are checks D-06 to D-08 of `docs/user-tests/device-checks.md`. Status stays `human_needed` until they are run.
+
+**Closed 2026-10-10:** the three device checks were run (D-06 to D-08 of `docs/user-tests/device-checks.md`). On the owner's iPhone (fresh Release install): the native green splash with the logo shows, then the carousel with no login flash, and refusing the camera then tapping "Ouvrir les réglages" opens the app's iOS Settings page. On the Pixel 8 emulator (fresh install): the same permission path opens the Android App info page, and the launcher logo displays whole. Status is now `passed`.
