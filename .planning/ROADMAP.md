@@ -864,7 +864,7 @@ Plans:
   4. The export never needs the network and never hangs: offline it makes no call, online its two optional reads are bounded; the shared file is named `Cortege-IBP-<site>-<year>.pdf`, with `-brouillon` for a draft.
   5. The owner confirms it on their phone: a draft and a submitted survey, a v3.0 and a v3.2 survey, the share names, and the export offline with and without a downloaded area.
 
-**Plans**: 13/17 plans executed
+**Plans**: 14/17 plans executed
 
 **Wave 1**
 
@@ -890,7 +890,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 25.1-14-PLAN.md — Full HTML document (end-to-end tests, both methods, both states) and the readable file name
+- [x] 25.1-14-PLAN.md — Full HTML document (end-to-end tests, both methods, both states) and the readable file name
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
