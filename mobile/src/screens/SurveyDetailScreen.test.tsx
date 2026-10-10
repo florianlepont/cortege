@@ -70,6 +70,7 @@ jest.mock("react-native", () => {
 jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
 jest.mock("../app/dev-tools", () => ({ shouldShowDevTools: () => false }))
 jest.mock("../app/survey-pdf-export", () => ({ exportAndShareSurveyPdf: jest.fn() }))
+jest.mock("../app/survey-pdf/spike", () => ({ runPdfSpike: jest.fn() }))
 jest.mock("./survey-screen-helpers", () => ({ selectPreviewCandidates: () => [] }))
 jest.mock("../ui/AppActionSheet", () => ({ AppActionSheet: "AppActionSheet" }))
 jest.mock("../ui/AppGroupedList", () => ({ AppGroupedList: "AppGroupedList" }))

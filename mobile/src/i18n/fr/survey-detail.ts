@@ -200,6 +200,8 @@ export const surveyDetailFr = {
     noSyncError: "Aucune erreur de synchronisation.",
     noAttachment: "Aucune pièce jointe locale.",
     simulateMissingFile: "Simuler un fichier manquant",
+    pdfSpike: "PDF d'essai (pire cas)",
+    pdfSpikeScaled: "PDF d'essai, échelle 4/3",
     yes: "oui",
     no: "non",
     none: "aucun",
