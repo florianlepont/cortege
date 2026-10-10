@@ -36,5 +36,7 @@ mobile/android/
 # output is docs/technical/species-recognition-spike-measurements-v1.md.
 spike/
 
-# Test builds handed to testers (Android APK), never committed.
+# Test builds handed to testers (Android APK) and the signature files apksigner leaves
+# beside them, never committed.
 *.apk
+*.idsig
