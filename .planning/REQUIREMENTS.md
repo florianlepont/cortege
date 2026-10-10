@@ -184,43 +184,36 @@ Active for this milestone; verified in Phase 28 alongside the field tests.
 
 ---
 
-## Deferred — Next Milestone (Community / Social)
+## Deferred and Rejected (revised 2026-10-10, board seminar)
 
-Recorded, not dropped. The code already exists for several of these.
+Recorded, not dropped unless marked rejected. The code already exists for several of these.
 
-| Requirement | Note |
-|-------------|------|
-| `REQ-A-social-login` | Sign in with Apple/Google — found unbuilt 2026-09-27 (no code anywhere in `mobile/src`, despite this document previously marking it "Built"); `docs/specs/epic-a-access-and-security.md`'s own test plan already treats it as out of this milestone |
-| `REQ-F-france-map` | Nationwide public map of `public` surveys, open to anyone unauthenticated — built, becomes unused when the map repoints to authenticated members' surveys (`REQ-B-own-surveys-map`, Phase 11) |
-| `REQ-B-parcel-status-map` | Public parcel `studied`/`not_studied` statuses |
-| `REQ-B-explore-analysis` | Explore as a parcel analysis surface |
-| `REQ-C-privacy-choice` | Private/public visibility before submission; also restores the toggle removed from `REQ-B-manage-published` |
-| `REQ-E-audit-trail`, `REQ-E-search`, `REQ-E-report` | Epic E — data quality and trust |
-| `REQ-F-points`, `REQ-F-leaderboard`, `REQ-F-badges`, `REQ-F-rare-species-points` | Epic F — gamification. `REQ-F-rare-species-points` depends on `REQ-C-species-recognition` shipping this milestone |
-| `REQ-G-ibp-info`, `REQ-G-association`, `REQ-G-donation` | Epic G — information, association visibility, donation |
-| `REQ-I-calendar`, `REQ-I-event-detail`, `REQ-I-register`, `REQ-I-my-registrations`, `REQ-I-events-on-map` | Epic I — workshops and training; uncontracted, HelloAsso dependency |
+| Requirement | Decision | Note |
+|-------------|----------|------|
+| `REQ-C-privacy-choice` | **V1** (Phase 32) | Private/public visibility before submission; also restores the toggle removed from `REQ-B-manage-published` |
+| `REQ-A-social-login` | Later, undecided | Sign in with Apple/Google, found unbuilt 2026-09-27; the board did not discuss it |
+| `REQ-E-audit-trail`, `REQ-E-search`, `REQ-E-report` | **V3** | Epic E (data quality, moderation): the "Qualité et modération" card went to Futur. Still needs a moderation surface outside the app |
+| `REQ-H-regional-overview`, `REQ-H-parcel-trends`, `REQ-H-factor-distribution`, `REQ-H-analytics-trust`, `REQ-B-explore-analysis` | **V3** | Epic H: forest insights and analytics (owner decision 2026-10-10; was V2) |
+| `REQ-F-france-map`, `REQ-B-parcel-status-map` | **Rejected** | Public map and open data: the card "Données ouvertes ou carte publique" was rejected by the board |
+| `REQ-F-points`, `REQ-F-leaderboard`, `REQ-F-badges`, `REQ-F-rare-species-points` | **Rejected** | Epic F, gamification: the card "Saison, points et badges" was rejected |
+| `REQ-G-ibp-info`, `REQ-G-association`, `REQ-G-donation` | **Rejected** | Epic G: the card "Information ES, IBP, vitrine et don" was rejected (a showcase would be another application) |
+| `REQ-I-calendar`, `REQ-I-event-detail`, `REQ-I-register`, `REQ-I-my-registrations`, `REQ-I-events-on-map` | **Rejected** | Epic I: the card "Ateliers et formations Ma forêt vivante" was rejected; "Ma forêt est vivante" is a separate, more playful application |
 
-**Prerequisite for the next milestone:** a back-office / CMS surface. `REQ-E-audit-trail` requires a
-moderation interface outside the mobile app; `REQ-G-ibp-info` and `REQ-G-association` require content
-updatable without an app release. No SPEC or architecture document defines this surface — it needs
-its own ADR, architecture block and contract before Epics E and G can be planned
-(conflict-report warning 6, moot for this milestone).
+**V1.x:** photos attached to each DMH; the V1.x share of extended photo recognition (decided factor by factor in Phase 37).
+**V2:** compass; GPS and route tracing with out-of-zone alert; two observers on one survey and read-only guest access.
+**V3:** data quality and moderation (Epic E); one account per structure and opening to partners and other associations (decision D2); a deeper CNPF and INRAE partnership; Epic H.
 
-## Deferred — V2
-
-| Requirement | Note |
-|-------------|------|
-| `REQ-H-regional-overview`, `REQ-H-parcel-trends`, `REQ-H-factor-distribution`, `REQ-H-analytics-trust` | Epic H — forest insights and analytics |
+The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I are rejected.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Hosting migration | The current VPS is ratified by ADR, not replaced. Internal-only removes the scale pressure |
-| alwaysdata + Cloudflare R2 | Named only in a stakeholder presentation, motivated by public-scale cost that no longer applies |
+| Hosting migration | Revised 2026-10-10: the server, the store accounts, Auth0 and the domain move to the association's name in Phase 38; the previous ratification of the current VPS no longer holds |
+| alwaysdata + Cloudflare R2 | Revised 2026-10-10: OVH is recommended by the board; the alwaysdata contract details are reviewed in Phase 38 to see whether it can be reused |
 | PDF export API endpoint | Export must work offline; on-device generation is the only way |
 | Direct Google Drive OAuth | The OS share sheet reaches Drive, Wimi, mail and AirDrop without integrating any of them |
-| Private/public visibility toggle | Meaningless with no community surfaces; returns with `REQ-C-privacy-choice` |
+| Private/public visibility toggle | Returns in V1 with `REQ-C-privacy-choice` (Phase 32) |
 | Back-office / CMS | Deferred with Epics E and G; a second application is out of reach for a solo milestone |
 | SMTP email sending | Auth0 owns every auth email (DEC-005); `EmailService` and `SMTP_*` are being deleted, not fixed |
 

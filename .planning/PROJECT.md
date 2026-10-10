@@ -57,27 +57,18 @@ This milestone's build scope. Detail and IDs in `.planning/REQUIREMENTS.md`:
 
 ### Out of Scope
 
-Deferred to the **next milestone** (community / social). The code already exists for several of
-these — they are deferred, not dropped:
+Revised 2026-10-10 after the board seminar (positioning: V1 is for the association's members and the volunteers trained in the IBP; later partners and other associations; not the general public). See `ROADMAP.md` "Deferred" for the full list.
 
-- Nationwide public IBP map (REQ-F-france-map) — internal-only milestone has no public audience
-- Public parcel status map (REQ-B-parcel-status-map) — same reason
-- Explore as an analysis surface (REQ-B-explore-analysis) — same reason
-- Private/public visibility choice (REQ-C-privacy-choice) — meaningless with no community surfaces
-- Epic E (data quality, reporting, moderation) — requires a back-office that no spec defines
-- Epic F (gamification: points, leaderboard, badges, rare-species points)
-- Epic G (IBP information, association visibility, donation) — requires a CMS surface
-- Epic I (workshops and training, HelloAsso registration) — uncontracted
-- A back-office / CMS web surface — **prerequisite for the next milestone**; needs its own ADR, architecture block and contract before Epics E and G can be planned
-
-Deferred to **V2**:
-
-- Epic H (regional overviews, parcel trend analytics, factor distributions, analytics trust)
+- **V1 (added):** private/public choice, route choice assistant, remarkable elements and route display, map layers and comparison, detailed DMH information, a reworked PDF (exhaustive and simplified), association-owned infrastructure, invitation-only accounts
+- **V1.x:** photos of DMH, part of the extended photo recognition
+- **V2:** compass and GPS route tracing, shared survey and guest access
+- **V3:** moderation (Epic E), multi-structure accounts and opening to partners, deeper CNPF and INRAE partnership, Epic H (forest insights and analytics)
+- **Rejected:** gamification (Epic F), information, showcase and donation (Epic G), workshops (Epic I), public map and open data
 
 Explicitly excluded from this milestone:
 
-- Hosting migration — the current VPS is ratified, not replaced
-- alwaysdata + Cloudflare R2 (from the stakeholder presentation) — internal-only removes the scale and cost constraints that motivated it
+- Hosting migration — revised 2026-10-10: it now happens, in Phase 38, to the association's own accounts and server
+- Cloudflare R2 — not retained; OVH is recommended and the alwaysdata contract is reviewed in Phase 38
 - An API endpoint or direct Google Drive OAuth for PDF export — on-device generation plus the OS share sheet covers every delivery target
 
 ## Context
