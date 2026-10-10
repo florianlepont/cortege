@@ -252,6 +252,144 @@ describe("FactorDetailScreen fields", () => {
   })
 })
 
+describe("FactorDetailScreen selections (D-12, D-09)", () => {
+  const renderPlain = (
+    factor: FactorKey,
+    fields: FactorField[],
+    methodVersion: IbpMethodVersion | null,
+  ) => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor={factor}
+          fields={fields}
+          retainedScore={null}
+          methodVersion={methodVersion}
+          onOpenHelp={jest.fn()}
+        />,
+      )
+    })
+    return tree
+  }
+  const chipsOf = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAll(
+      (node) =>
+        (node.type as unknown) === "Pressable" &&
+        node.props.accessibilityState &&
+        "selected" in node.props.accessibilityState,
+    )
+  const withSelection = (
+    label: string,
+    selected: string[] | null,
+    value = "",
+    onChange = jest.fn(),
+  ) => field(label, { value, selection: { selected, onChange } })
+  const textsOf = (tree: renderer.ReactTestRenderer): string[] =>
+    tree.root.findAll((n) => (n.type as unknown) === "Text").map((n) => String(n.props.children))
+
+  test("B ticks the stored strata and reports a tap through the selection", () => {
+    const onChange = jest.fn()
+    const tree = renderPlain(
+      "B",
+      [withSelection("strata_count", ["low", "high"], "2", onChange)],
+      IBP_METHOD_V3_2,
+    )
+    const chips = chipsOf(tree)
+    expect(chips.map((chip) => chip.props.accessibilityState.selected)).toEqual([
+      false,
+      true,
+      false,
+      true,
+      false,
+    ])
+    act(() => {
+      chips[0].props.onPress()
+    })
+    expect(onChange).toHaveBeenCalledWith(["very_low", "low", "high"])
+  })
+
+  test("B with a count and no selection shows the legacy line and no ticked chip", () => {
+    const tree = renderPlain("B", [withSelection("strata_count", null, "3")], IBP_METHOD_V3_2)
+    expect(chipsOf(tree).every((chip) => !chip.props.accessibilityState.selected)).toBe(true)
+    expect(textsOf(tree)).toContain(fr.factorInput.chips.legacyCount({ count: 3 }))
+  })
+
+  test.each<[string, FactorKey, IbpMethodVersion | null, number]>([
+    ["I v3.2", "I", IBP_METHOD_V3_2, 11],
+    ["I v3.0", "I", IBP_METHOD_V3_0, 10],
+    ["I untagged", "I", null, 10],
+    ["J v3.2", "J", IBP_METHOD_V3_2, 12],
+    ["J v3.0", "J", IBP_METHOD_V3_0, 9],
+    ["J untagged", "J", null, 9],
+  ])("%s offers the CNPF types of the method", (_name, factor, version, count) => {
+    const tree = renderPlain(factor, [withSelection("count", [])], version)
+    expect(chipsOf(tree)).toHaveLength(count)
+  })
+
+  test("I offers the sea only under v3.2, J the lower rock only under v3.0", () => {
+    const seaLabel = "Mer ou océan"
+    const lowerRock = fr.factorInput.rockyHabitatTypes.v3_0.find((o) => o.value === "lower_rock")!
+    const i32 = renderPlain("I", [withSelection("count", [])], IBP_METHOD_V3_2)
+    const i30 = renderPlain("I", [withSelection("count", [])], IBP_METHOD_V3_0)
+    const j30 = renderPlain("J", [withSelection("count", [])], IBP_METHOD_V3_0)
+    expect(textsOf(i32)).toContain(seaLabel)
+    expect(textsOf(i30)).not.toContain(seaLabel)
+    expect(textsOf(j30)).toContain(lowerRock.label)
+  })
+
+  test("J under v3.2 with lower_rock selected shows 13 chips, lower_rock ticked", () => {
+    const tree = renderPlain("J", [withSelection("count", ["lower_rock"], "1")], IBP_METHOD_V3_2)
+    const chips = chipsOf(tree)
+    expect(chips).toHaveLength(13)
+    expect(chips[12].props.accessibilityState.selected).toBe(true)
+  })
+
+  test("F renders the numeric trees field and the 15 optional group chips under it", () => {
+    const onChange = jest.fn()
+    const { tree, inputs } = renderDetail(
+      "F",
+      [withSelection("trees_per_ha", ["dmh_02"], "120", onChange)],
+      IBP_METHOD_V3_2,
+    )
+    expect(inputs).toHaveLength(1)
+    const chips = chipsOf(tree)
+    expect(chips).toHaveLength(15)
+    expect(chips[1].props.accessibilityState.selected).toBe(true)
+    expect(textsOf(tree)).toContain(fr.factorDetail.companionLabels.dmh_groups)
+    act(() => {
+      chips[0].props.onPress()
+    })
+    expect(onChange).toHaveBeenCalledWith(["dmh_01", "dmh_02"])
+  })
+
+  test("H renders the segmented class and the 3 optional source chips under it", () => {
+    const { tree } = renderDetail(
+      "H",
+      [withSelection("class_score", ["field_signs"], "5")],
+      IBP_METHOD_V3_2,
+    )
+    const chips = chipsOf(tree).filter((chip) =>
+      fr.factorInput.continuityEvidenceOptions.some(
+        (o) => o.label === chip.props.accessibilityLabel,
+      ),
+    )
+    expect(chips).toHaveLength(3)
+    expect(textsOf(tree)).toContain(fr.factorDetail.companionLabels.evidence)
+    expect(chips[2].props.accessibilityState.selected).toBe(true)
+  })
+
+  test("a companion renders without a selection, ticks nothing and does not crash", () => {
+    const tree = renderPlain("F", [field("trees_per_ha")], IBP_METHOD_V3_2)
+    const chips = chipsOf(tree)
+    expect(chips).toHaveLength(15)
+    expect(chips.every((chip) => !chip.props.accessibilityState.selected)).toBe(true)
+    act(() => {
+      chips[0].props.onPress()
+    })
+  })
+})
+
 describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15)", () => {
   type Style = Record<string, unknown>
   const flat = (style: unknown): Style =>

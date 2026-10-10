@@ -36,23 +36,6 @@ export const factorInputFr = {
     { value: "high", label: "Haute" },
     { value: "herbaceous", label: "Herbacée / semi-ligneuse" },
   ],
-  // FLOW-01: factors I and J were checkable chips with a derived count. These illustrative lists
-  // are replaced by the CNPF typology (aquaticHabitatTypes, rockyHabitatTypes below) and are
-  // removed in plan 25.1-08, once FactorDetailScreen no longer reads them.
-  aquaticHabitatOptions: [
-    { value: "spring", label: "Source" },
-    { value: "stream", label: "Ruisseau" },
-    { value: "pond", label: "Mare ou étang" },
-    { value: "temporary_wetland", label: "Zone humide temporaire" },
-    { value: "other_water", label: "Autre point d'eau" },
-  ],
-  rockyHabitatOptions: [
-    { value: "outcrop", label: "Affleurement rocheux" },
-    { value: "scree", label: "Éboulis" },
-    { value: "cliff", label: "Falaise" },
-    { value: "boulders", label: "Blocs ou blocailles" },
-    { value: "cavity", label: "Cavité ou fissure" },
-  ],
   // Phase 25.1 (D-09, D-12): the official CNPF typology of aquatic habitats (factor I) per method.
   // The stored option codes are shared across methods, so a code of the other method stays valid.
   aquaticHabitatTypes: {
