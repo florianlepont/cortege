@@ -66,7 +66,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 12: Field-Entry Ergonomics** (INSERTED, UX audit Lot 1) - Counters, segments and chips replace the numeric keyboard for factors B–J; a pager, a fixed CTA and a visible progress gauge cut a survey from ~80 to ~40 interactions (completed 2026-09-27)
 - [x] **Phase 13: Visual Foundations & Motion** (INSERTED, UX audit Lot 2) - Brand fonts actually load, colors move onto tokens with a lint rule, Reanimated 4 replaces the legacy `Animated`/`LayoutAnimation` calls (completed 2026-09-27)
 - [x] **Phase 14: Factor A Genus List & Data-Contract Corrections** - Record the observed genera as a list rather than a count, migrate existing surveys; correct the stale form spec (completed 2026-09-27)
-- [x] **Phase 15: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it (completed 2026-09-27; Android device run + real-device photo test deferred to Phase 28, see phase detail)
+- [x] **Phase 15: Genus Recognition for Factor A** - Photograph a tree, get a calibrated genus suggestion, confirm it (completed 2026-09-27; closed 2026-10-10: the Android device checks are carried over to Phase 29 and `docs/user-tests/device-checks.md`)
 - [x] **Phase 16: Information Architecture** (INSERTED, UX audit Lot 3) - Home and Mes Relevés stop duplicating each other, a sync-status indicator is visible outside Settings, survey detail and Compte are restructured (completed 2026-09-27)
 - [x] **Phase 17: Offline Map & Own-Survey Navigation** - Navigate a parcel with no network, and see your own surveys on the map (completed 2026-09-27; on-device airplane-mode/relaunch verification deferred to Phase 28, see phase detail)
 - [x] **Phase 18: Onboarding & Explorer Polish** (INSERTED, UX audit Lot 4) - A permissions-aware first launch, a tiered map sheet, chip filters and legible score markers on the now member-only map (completed 2026-09-27)
@@ -1152,7 +1152,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 12. Field-Entry Ergonomics (UX Lot 1) | 6/6 | Complete   | 2026-09-27 |
 | 13. Visual Foundations & Motion (UX Lot 2) | 5/5 | Complete   | 2026-09-27 |
 | 14. Factor A Genus List & Data-Contract Corrections | 1/1 | Complete   | 2026-09-27 |
-| 15. Genus Recognition for Factor A | 1/1 | Complete (Android device run + real-device photo test deferred to Phase 28) | 2026-09-27 |
+| 15. Genus Recognition for Factor A | 1/1 | Complete (Android device checks carried over to Phase 29) | 2026-09-27 |
 | 16. Information Architecture (UX Lot 3) | 6/6 | Complete   | 2026-09-27 |
 | 17. Offline Map & Own-Survey Navigation | n/a | Complete (on-device airplane-mode check deferred to Phase 28) | 2026-09-27 |
 | 18. Onboarding & Explorer Polish (UX Lot 4) | n/a | Complete    | 2026-09-27 |
