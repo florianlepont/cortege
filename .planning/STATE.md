@@ -6,14 +6,14 @@ current_phase: 29
 current_phase_name: Field-feedback fixes (INSERTED
 status: executing
 stopped_at: Phase 29 planned (10 plans, 3 waves), ready to execute
-last_updated: "2026-10-10T21:49:15.446Z"
+last_updated: "2026-10-10T21:53:24.820Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 29 execution started
 progress:
   total_phases: 39
   completed_phases: 17
   total_plans: 198
-  completed_plans: 230
+  completed_plans: 231
   percent: 44
 ---
 
@@ -29,7 +29,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 29 (Field-feedback fixes (INSERTED)) — EXECUTING
-Plan: 5 of 10
+Plan: 6 of 10
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 29 execution started
 
@@ -134,6 +134,7 @@ Progress: [█████████░] 26/29 phases complete
 | Phase 29 P02 | 15min | 2 tasks | 8 files |
 | Phase 29 P03 | 20min | 2 tasks | 10 files |
 | Phase 29 P04 | 20min | 2 tasks | 5 files |
+| Phase 29 P05 | 25min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -227,6 +228,7 @@ Decisions table. Decisions affecting current work:
 - [Phase ?]: Phase 29-02: genus display order is Latin, accent-insensitive (genus-order.ts); labels 'Latin (French)'; stored factors.A.genera order untouched
 - [Phase 29-03]: Offline community survey state read from useIsOffline() at the routes; CenteredState owns the sub-page bottom padding rule
 - [Phase 29-04]: Own-survey map data layer: every local_surveys row is a marker candidate (D-01), position from in-memory server location else cached parcel bounds centre (D-09), score from stored server total else ibp-scoring adapters; SCHEMA_VERSION stays 5
+- [Phase 29-05]: D-08: parcel-selection card compact below window height 700 / max(1, fontScale); switch reads useWindowDimensions, never the measured card height
 
 ### Pending Todos
 
@@ -269,6 +271,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-10T21:49:11.900Z
+Last session: 2026-10-10T21:53:21.660Z
 Stopped at: Phase 29 context gathered
 Resume file: .planning/phases/29-field-feedback-fixes-inserted/29-CONTEXT.md
