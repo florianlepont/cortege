@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 27
-current_phase_name: INSERTED, V1
+current_phase_name: Quick survey additions (INSERTED, V1)
 status: executing
 stopped_at: Phase 27 UI-SPEC approved
-last_updated: "2026-10-11T12:10:40.324Z"
+last_updated: "2026-10-11T12:13:28.677Z"
 last_activity: 2026-10-11
-last_activity_desc: Phase 26 (field-feedback fixes) complete
+last_activity_desc: Phase 27 execution started
 progress:
   total_phases: 39
   completed_phases: 18
-  total_plans: 198
-  completed_plans: 236
+  total_plans: 220
+  completed_plans: 237
   percent: 46
 ---
 
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 27 (quick survey additions) is next, then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md. Phases 26 to 38 were renumbered in execution order on 2026-10-11.
+**Current focus:** Phase 27 (quick survey additions) is executing, plan 27-01 done (Meteo-France capture script); then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md.
 
 ## Current Position
 
-Phase: 27 — Quick survey additions (INSERTED, V1), not discussed yet
-Plan: Not started
+Phase: 27 (Quick survey additions (INSERTED, V1)) — EXECUTING
+Plan: 2 of 22
 Status: Ready to execute
-Last activity: 2026-10-11 — Phase 26 (field-feedback fixes) complete
+Last activity: 2026-10-11 — Plan 27-01 complete
 
 Progress: [█████████░] 27/39 phases complete
 
@@ -140,6 +140,7 @@ Progress: [█████████░] 27/39 phases complete
 | Phase 26 P07 | 10m | 2 tasks | 9 files |
 | Phase 26 P08 | 25min | 2 tasks | 9 files |
 | Phase 26 P09 | 25min | 2 tasks | 15 files |
+| Phase 27 P01 | 10 min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -280,6 +281,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-11T09:01:30.147Z
+Last session: 2026-10-11T12:13:25.939Z
 Stopped at: Phase 27 UI-SPEC approved
 Resume file: .planning/phases/27-quick-survey-additions-inserted-v1/27-UI-SPEC.md
