@@ -45,6 +45,7 @@ jest.mock("react-native", () => {
     Keyboard: { dismiss: jest.fn() },
     Pressable: mockComponent("Pressable"),
     ScrollView: mockComponent("ScrollView"),
+    Switch: mockComponent("Switch"),
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Alert: { alert: (...args: unknown[]) => mockAlert(...args) },
@@ -125,8 +126,12 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
     downloadStatus: mockDownloadStatus.value,
     clearDownloadStatus: mockClearDownloadStatus,
     estimateForRegion: () => ({
+      policy: "all",
+      layers: [],
       totalTileCount: 120,
-      estimatedBytes: 2_400_000,
+      estimatedBytes: 84_000_000,
+      baseBytes: 53_000_000,
+      extraBytes: 31_000_000,
       exceedsCap: false,
     }),
     startDownload: (...args: unknown[]) => mockStartDownload(...args),
@@ -135,6 +140,27 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
   }),
 }))
 jest.mock("../../ui/AppChoiceChip", () => ({ AppChoiceChip: "AppChoiceChip" }))
+// The panels hook is the real one; only the options the screen hands it are recorded.
+const mockPanelsOptions: Array<{ onPanelOpen: () => void }> = []
+jest.mock("./useExplorerPanels", () => {
+  const actual = jest.requireActual("./useExplorerPanels") as typeof import("./useExplorerPanels")
+  return {
+    ...actual,
+    useExplorerPanels: (options: Parameters<typeof actual.useExplorerPanels>[0]) => {
+      mockPanelsOptions.push(options)
+      return actual.useExplorerPanels(options)
+    },
+  }
+})
+// Which layers are downloaded under the view centre is useLayerAvailability's own test; here the
+// screen is told what it wants (everything, or only the Plan and the Satellite offline).
+const mockAvailable: { all: boolean } = { all: true }
+jest.mock("./useLayerAvailability", () => ({
+  useLayerAvailability: () => ({
+    isAvailable: (key: string) => mockAvailable.all || key === "map" || key === "satellite",
+    areaAtCenter: false,
+  }),
+}))
 // The glow is drawn by the navigation layer (download-edge-glow.test.tsx) and its motion is tested in
 // EdgePulse.test.tsx; here only the screen's request for it is counted.
 jest.mock("../../navigation/download-edge-glow", () => ({ DownloadEdgeGlow: "DownloadEdgeGlow" }))
@@ -150,6 +176,7 @@ jest.mock("react-native-safe-area-context", () => ({
 jest.mock("../../app/useAppBottomTabBarHeight", () => ({ useAppBottomTabBarHeight: () => 50 }))
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../map/maplibre/CadastreLayer", () => ({ CadastreLayer: "CadastreLayer" }))
+jest.mock("../../map/maplibre/ForestTypesLayer", () => ({ ForestTypesLayer: "ForestTypesLayer" }))
 jest.mock("../../map/maplibre/ParcelPolygonsLayer", () => ({
   ParcelPolygonsLayer: "ParcelPolygonsLayer",
 }))
@@ -280,6 +307,11 @@ function byLabel(label: string): ReactTestInstance {
   return tree.root.find(
     (node) => (node.type as unknown) === "Pressable" && node.props.accessibilityLabel === label,
   )
+}
+
+// A testID sits on the composite and on the host it renders: count the host only.
+function byTestId(testID: string): ReactTestInstance[] {
+  return tree.root.findAll((node) => typeof node.type === "string" && node.props.testID === testID)
 }
 
 function markers(): ReactTestInstance[] {
@@ -688,60 +720,71 @@ describe("PublicMapScreen", () => {
     expect(layerItems()).toEqual(["studied-1", "empty-1"])
   })
 
-  describe("offline areas (behind the feature flag)", () => {
+  describe("download card and chip (behind the offline flag)", () => {
     afterEach(() => {
       mockOfflineEnabled.value = false
       mockDownloading.areaId = null
       mockDownloadStatus.value = null
       mockClearDownloadStatus.mockClear()
+      mockStartDownload.mockReset()
+      jest.useRealTimers()
     })
 
     const edgePulses = () =>
       tree.root.findAll((node) => (node.type as unknown) === "DownloadEdgeGlow").length
-
-    test("download mode: the map's edge glows while the area is chosen, and only then (12.2-19)", async () => {
-      mockOfflineEnabled.value = true
-      let finish: (outcome: { ok: boolean; reason?: string }) => void = () => undefined
-      mockStartDownload.mockReturnValue(
-        new Promise((resolve) => {
-          finish = resolve
-        }),
+    const card = () => byTestId("download-card")
+    const startButton = () =>
+      tree.root.find(
+        (node) => (node.type as unknown) === "AppButton" && node.props.label === "Télécharger",
       )
+    const chip = () => byTestId("download-chip")
+    const running = (percentage: number) => ({
+      phase: "running",
+      areaId: "area-1",
+      name: "Zone",
+      percentage,
+      downloadedTiles: 5,
+      totalTiles: 10,
+    })
+
+    test("download mode: the map's edge glows while the card is open before a download, and only then (12.2-19)", async () => {
+      mockOfflineEnabled.value = true
+      mockStartDownload.mockResolvedValue({ ok: true, areaId: "area-1" })
       const props = makeProps()
       mount(props)
       expect(edgePulses()).toBe(0)
 
       act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
       expect(edgePulses()).toBe(1)
+      expect(card()).toHaveLength(1)
 
-      // The download starts: the area is chosen, the glow goes and stays gone once it is done.
-      const download = () =>
-        tree.root.find(
-          (node) =>
-            (node.type as unknown) === "GlassButton" &&
-            node.props.label === fr.offlineMap.areas.downloadThisArea,
-        )
-      act(() => download().props.onPress())
-      expect(edgePulses()).toBe(0)
-      await act(async () => finish({ ok: true }))
+      // Télécharger: the download starts and the card closes at once, the glow with it.
+      await act(async () => startButton().props.onPress())
+      expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), expect.any(String))
+      expect(card()).toHaveLength(0)
       expect(edgePulses()).toBe(0)
 
-      // Reopened: a new choice, the glow is back; closing the panel ends the mode.
-      act(() => byLabel(fr.offlineMap.areas.a11y.closeSheet).props.onPress())
-      expect(edgePulses()).toBe(0)
+      // Reopened: a new choice, the glow is back; the close control ends it.
       act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
       expect(edgePulses()).toBe(1)
-
-      // A refused download leaves the mode on, to move the map and try again.
-      mockStartDownload.mockResolvedValue({ ok: false, reason: "too_large" })
-      await act(async () => download().props.onPress())
-      expect(mockAlert).toHaveBeenCalledWith(fr.offlineMap.areas.tooLarge)
-      expect(edgePulses()).toBe(1)
+      act(() => byLabel(fr.mapLayers.download.closeA11y).props.onPress())
+      expect(card()).toHaveLength(0)
+      expect(edgePulses()).toBe(0)
 
       // A download already running (started earlier) keeps the glow off.
       mockDownloading.areaId = "area-1"
       update({ ...props })
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
       expect(edgePulses()).toBe(0)
+    })
+
+    test("a refused download alerts and leaves the area free to move and try again", async () => {
+      mockOfflineEnabled.value = true
+      mockStartDownload.mockResolvedValue({ ok: false, reason: "too_large" })
+      mount(makeProps())
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      await act(async () => startButton().props.onPress())
+      expect(mockAlert).toHaveBeenCalledWith(fr.offlineMap.areas.tooLarge)
     })
 
     test("no glow over the map outside download mode (a cluster list open)", () => {
@@ -768,101 +811,124 @@ describe("PublicMapScreen", () => {
       ).toHaveLength(0)
     })
 
-    test("flag on: the button opens the sheet, a download starts for the viewport", async () => {
+    test("the card shows the weight of the framed area, drops a finished outcome and lifts the locate arrow", () => {
       mockOfflineEnabled.value = true
-      mockStartDownload.mockResolvedValue({ ok: false, reason: "failed" })
       mount(makeProps())
+      const locateBottom = () =>
+        tree.root.find((node) => typeof node.type !== "string" && node.props.onLocate !== undefined)
+          .props.bottom
+      const restingBottom = locateBottom()
+
       act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
-      // The panel downloads; the areas already on the phone are managed in Paramètres (OA-123).
-      expect(texts().some((text) => text.includes("tuiles"))).toBe(true)
-      expect(texts()).not.toContain(fr.offlineMap.areas.empty)
-      const download = tree.root.find(
-        (node) =>
-          (node.type as unknown) === "GlassButton" &&
-          node.props.label === fr.offlineMap.areas.downloadThisArea,
-      )
-      // 12.2-19: the call to action across the whole panel, 46 pt (md too thin, lg too big).
-      expect(download.props.minHeight).toBe(46)
-      expect(download.props.style).toMatchObject({ alignSelf: "stretch" })
-      expect(download.props.disabled).toBe(false)
-      await act(async () => {
-        download.props.onPress()
-      })
-      expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), expect.any(String))
-      // 12.2-19 third round: the open panel shows the failure itself, with its retry; no alert.
-      expect(mockAlert).not.toHaveBeenCalled()
+      // Opening the card drops a finished download's outcome.
+      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(1)
+      expect(texts()).toContain(fr.mapLayers.download.cardTitle)
+      expect(texts()).toContain(fr.mapLayers.download.estimate("84"))
+      expect(texts()).toContain(fr.mapLayers.download.estimateSplit({ base: "53", extra: "31" }))
+
+      // Once the card reports its height the arrow rises above it (tab bar 50 + 14, then 10).
+      const [host] = card()
+      act(() => host.props.onLayout({ nativeEvent: { layout: { height: 150 } } }))
+      expect(restingBottom).toBe(60)
+      expect(locateBottom()).toBe(50 + 14 + 150 + 10)
     })
 
-    const statusView = () =>
-      tree.root.findAll(
-        (node) => node.props.testID?.startsWith?.("offline-download-") === true && shown(node),
-      )
-
-    test("the panel shows the running download, then its outcome; Terminé closes it", () => {
+    test("the chip shows the percentage and the card keeps only a disabled button while it runs", () => {
       mockOfflineEnabled.value = true
-      mount(makeProps())
-      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
-      // Opening the panel drops a finished download's outcome.
-      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(1)
-
       mockDownloading.areaId = "area-1"
-      mockDownloadStatus.value = {
-        phase: "running",
-        areaId: "area-1",
-        name: "Bois du Nord",
-        percentage: 42,
-        downloadedTiles: 51,
-        totalTiles: 120,
-      }
-      update(makeProps())
-      expect(texts()).toContain("Téléchargement : 42 %")
-      expect(texts()).toContain("51 sur 120 tuiles")
+      mockDownloadStatus.value = running(42)
+      mount(makeProps())
+      expect(chip()).toHaveLength(1)
+      expect(texts()).toContain(fr.mapLayers.download.chip.running(42))
+      expect(card()).toHaveLength(0)
 
-      mockDownloading.areaId = null
+      mockDownloadStatus.value = running(60)
+      update(makeProps())
+      expect(texts()).toContain(fr.mapLayers.download.chip.running(60))
+
+      // The card hides the chip while it is open; its button is disabled, with no progress.
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      expect(chip()).toHaveLength(0)
+      expect(card()).toHaveLength(1)
+      const start = tree.root.find((node) => (node.type as unknown) === "AppButton")
+      expect(start.props.label).toBe(fr.offlineMap.areas.downloading)
+    })
+
+    test("a failed chip reopens the card on its failed view; a partial one on the partial view", () => {
+      mockOfflineEnabled.value = true
+      mockDownloadStatus.value = { phase: "failed", areaId: "area-1", name: "Lisière" }
+      mount(makeProps())
+      act(() => byLabel(fr.mapLayers.download.chip.failedA11y).props.onPress())
+      expect(card()).toHaveLength(1)
+      expect(texts()).toContain(fr.offlineMap.areas.failed.title)
+      // Closing the card keeps the failure for the chip.
+      act(() => byLabel(fr.mapLayers.download.closeA11y).props.onPress())
+      expect(card()).toHaveLength(0)
+      expect(mockClearDownloadStatus).not.toHaveBeenCalled()
+      expect(chip()).toHaveLength(1)
+
       mockDownloadStatus.value = {
         phase: "done",
         areaId: "area-1",
-        name: "Bois du Nord",
+        name: "Zone",
         percentage: 100,
-        downloadedTiles: 120,
-        totalTiles: 120,
+        downloadedTiles: 10,
+        totalTiles: 10,
+        failedLayers: ["types-foret"],
       }
       update(makeProps())
+      act(() => byLabel(fr.mapLayers.download.chip.partialA11y).props.onPress())
       expect(texts()).toContain(fr.offlineMap.areas.done.title)
-      expect(statusView().length).toBeGreaterThan(0)
+      expect(texts()).toContain(fr.mapLayers.download.partial(fr.mapLayers.layers.forestTypes.name))
+      // Terminé closes the card and clears the chip.
       const done = tree.root.find(
         (node) =>
           (node.type as unknown) === "GlassButton" &&
-          node.props.label === fr.offlineMap.areas.done.close &&
-          shown(node),
+          node.props.label === fr.offlineMap.areas.done.close,
       )
       act(() => done.props.onPress())
-      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(2)
-      expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(
-        0,
-      )
+      expect(card()).toHaveLength(0)
+      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(1)
     })
 
     test("retry after a failure downloads the area shown again, under the same name", async () => {
       mockOfflineEnabled.value = true
       mockStartDownload.mockResolvedValue({ ok: true, areaId: "area-2" })
-      mount(makeProps())
-      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
       mockDownloadStatus.value = { phase: "failed", areaId: "area-1", name: "Lisière" }
-      update(makeProps())
-      expect(texts()).toContain(fr.offlineMap.areas.failed.title)
+      mount(makeProps())
+      act(() => byLabel(fr.mapLayers.download.chip.failedA11y).props.onPress())
       const retry = tree.root.find(
         (node) =>
           (node.type as unknown) === "GlassButton" &&
-          node.props.label === fr.offlineMap.areas.failed.retry &&
-          shown(node),
+          node.props.label === fr.offlineMap.areas.failed.retry,
       )
       await act(async () => retry.props.onPress())
       expect(mockStartDownload).toHaveBeenCalledWith(expect.anything(), "Lisière")
+      expect(card()).toHaveLength(0)
       expect(mockAlert).not.toHaveBeenCalled()
     })
 
-    test("a failure once the panel is closed is still told by an alert", async () => {
+    test("a done chip is cleared after 4 s", () => {
+      jest.useFakeTimers()
+      mockOfflineEnabled.value = true
+      mockDownloadStatus.value = {
+        phase: "done",
+        areaId: "area-1",
+        name: "Zone",
+        percentage: 100,
+        downloadedTiles: 10,
+        totalTiles: 10,
+        failedLayers: [],
+      }
+      mount(makeProps())
+      expect(chip()).toHaveLength(1)
+      act(() => {
+        jest.advanceTimersByTime(4000)
+      })
+      expect(mockClearDownloadStatus).toHaveBeenCalledTimes(1)
+    })
+
+    test("a failure once the card is closed shows no alert: the chip tells it", async () => {
       mockOfflineEnabled.value = true
       let finish: (outcome: { ok: boolean; reason?: string }) => void = () => undefined
       mockStartDownload.mockReturnValue(
@@ -872,15 +938,153 @@ describe("PublicMapScreen", () => {
       )
       mount(makeProps())
       act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
-      const download = tree.root.find(
-        (node) =>
-          (node.type as unknown) === "GlassButton" &&
-          node.props.label === fr.offlineMap.areas.downloadThisArea,
-      )
-      act(() => download.props.onPress())
-      act(() => byLabel(fr.offlineMap.areas.a11y.closeSheet).props.onPress())
+      act(() => startButton().props.onPress())
       await act(async () => finish({ ok: false, reason: "failed" }))
-      expect(mockAlert).toHaveBeenCalledWith(fr.offlineMap.areas.downloadFailed)
+      expect(mockAlert).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("layers: the overlay button, its bubble and Parcelles (Phase 28)", () => {
+    const overlayButton = () => tree.root.find((node) => node.props.testID === "map-overlay-button")
+    const bubble = () => byTestId("map-overlay-bubble")
+    const backdrop = () => byTestId("overlay-bubble-backdrop")
+    const parcelsLayer = () =>
+      tree.root.find((node) => (node.type as unknown) === "ParcelPolygonsLayer")
+    const chipFor = (testID: string) => tree.root.find((node) => node.props.testID === testID)
+
+    afterEach(() => {
+      mockAvailable.all = true
+    })
+
+    test("the default render: the overlay button without a dot, Toutes, no overlay, today's legend", () => {
+      mount(makeProps({ items: [item("a", 45.76, 4.84)] }))
+      expect(overlayButton().props.accessibilityValue).toBeUndefined()
+      expect(overlayButton().props.accessibilityState).toEqual({ expanded: false })
+      expect(bubble()).toHaveLength(0)
+      expect(parcelsLayer().props.mode).toBe("all")
+      expect(texts()).toContain(fr.publicMap.count(1))
+      act(() => byLabel(fr.publicMap.a11y.showLegend).props.onPress())
+      expect(texts()).toContain(fr.publicMap.legend.attribution)
+      // No notice at rest.
+      expect(
+        tree.root.findAll((node) => String(node.props.testID ?? "").startsWith("map-notice-")),
+      ).toHaveLength(0)
+    })
+
+    test("the capsule and the locate arrow stay as they were", () => {
+      mockOfflineEnabled.value = true
+      try {
+        mount(makeProps())
+        expect(
+          byLabel(fr.offlineMap.basemap.a11y.switchTo(fr.offlineMap.basemap.satellite)),
+        ).toBeTruthy()
+        expect(byLabel(fr.offlineMap.areas.openSheet)).toBeTruthy()
+        expect(byLabel(fr.publicMap.a11y.locate)).toBeTruthy()
+      } finally {
+        mockOfflineEnabled.value = false
+      }
+    })
+
+    test("the button opens the bubble; its backdrop closes it and nothing else", () => {
+      mount(makeProps())
+      act(() => overlayButton().props.onPress())
+      expect(bubble()).toHaveLength(1)
+      expect(overlayButton().props.accessibilityState).toEqual({ expanded: true })
+      expect(backdrop()).toHaveLength(1)
+
+      act(() => backdrop()[0].props.onPress())
+      expect(bubble()).toHaveLength(0)
+      expect(backdrop()).toHaveLength(0)
+      // Nothing else changed: no overlay, no Parcelles change.
+      expect(parcelsLayer().props.mode).toBe("all")
+      expect(
+        tree.root.find((node) => (node.type as unknown) === "ForestTypesLayer").props.enabled,
+      ).toBe(false)
+
+      act(() => overlayButton().props.onPress())
+      act(() => overlayButton().props.onPress())
+      expect(bubble()).toHaveLength(0)
+    })
+
+    test("the forest switch reaches the map at once and lights the button's dot", () => {
+      const forestLayer = () =>
+        tree.root.find((node) => (node.type as unknown) === "ForestTypesLayer")
+      mount(makeProps())
+      expect(forestLayer().props.enabled).toBe(false)
+      act(() => overlayButton().props.onPress())
+      act(() => chipFor("overlay-forest-switch").props.onValueChange(true))
+      expect(forestLayer().props.enabled).toBe(true)
+      expect(overlayButton().props.accessibilityValue).toEqual({
+        text: fr.mapLayers.overlays.buttonActiveValue,
+      })
+
+      act(() => chipFor("overlay-forest-switch").props.onValueChange(false))
+      expect(forestLayer().props.enabled).toBe(false)
+      expect(overlayButton().props.accessibilityValue).toBeUndefined()
+    })
+
+    test("choosing Aucune reaches the parcels layer; Avec IBP keeps the author's parcels", () => {
+      const surveyParcelIds = new Set(["P1"])
+      mount(makeProps({ surveyParcelIds }))
+      act(() => overlayButton().props.onPress())
+      act(() => chipFor("overlay-parcels-none").props.onPress())
+      expect(parcelsLayer().props.mode).toBe("none")
+      expect(overlayButton().props.accessibilityValue).toEqual({
+        text: fr.mapLayers.overlays.buttonActiveValue,
+      })
+      act(() => chipFor("overlay-parcels-ibp").props.onPress())
+      expect(parcelsLayer().props.mode).toBe("withIbp")
+      expect(parcelsLayer().props.surveyParcelIds).toBe(surveyParcelIds)
+    })
+
+    test("the download button closes the bubble and opens the card", () => {
+      mockOfflineEnabled.value = true
+      try {
+        mount(makeProps())
+        act(() => overlayButton().props.onPress())
+        expect(bubble()).toHaveLength(1)
+        act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+        expect(bubble()).toHaveLength(0)
+        expect(byTestId("download-card")).toHaveLength(1)
+        // And the other way round: the bubble closes the card.
+        act(() => overlayButton().props.onPress())
+        expect(byTestId("download-card")).toHaveLength(0)
+        expect(bubble()).toHaveLength(1)
+      } finally {
+        mockOfflineEnabled.value = false
+      }
+    })
+
+    test("with the forest overlay on, the legend lists its source line and the common attribution", () => {
+      mount(makeProps())
+      act(() => overlayButton().props.onPress())
+      act(() => chipFor("overlay-forest-switch").props.onValueChange(true))
+      act(() => byLabel(fr.publicMap.a11y.showLegend).props.onPress())
+      expect(texts()).toContain(fr.mapLayers.layers.forestTypes.source)
+      expect(texts()).toContain(fr.mapLayers.layers.map.source)
+      expect(texts()).toContain(fr.mapLayers.sources.common)
+      expect(texts()).not.toContain(fr.publicMap.legend.attribution)
+    })
+
+    test("an unavailable layer is told by a notice column pill, offline", () => {
+      mockAvailable.all = false
+      mount(makeProps({ isOffline: true }))
+      act(() => overlayButton().props.onPress())
+      act(() => chipFor("overlay-forest-switch").props.onValueChange(true))
+      expect(texts()).toContain(
+        fr.mapLayers.notice.offlineLayer(fr.mapLayers.layers.forestTypes.name),
+      )
+    })
+
+    test("the style failing shows the error notice, and Réessayer asks the style again", () => {
+      mount(makeProps())
+      const map = () => tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
+      act(() => map().props.onDidFailLoadingMap())
+      expect(texts()).toContain(fr.mapLayers.notice.loadError(fr.mapLayers.layers.map.name))
+      const retry = tree.root.find((node) => node.props.testID === "map-notice-retry")
+      act(() => retry.props.onPress())
+      act(() => map().props.onDidFinishLoadingStyle())
+      expect(texts()).not.toContain(fr.mapLayers.notice.loadError(fr.mapLayers.layers.map.name))
     })
   })
 
@@ -942,6 +1146,22 @@ describe("PublicMapScreen", () => {
     await act(async () => {
       resolvePermission({ granted: false })
     })
+  })
+
+  test("the panels hook gets one stable swipe callback, not a fresh no-op each render (hook order)", () => {
+    mockPanelsOptions.length = 0
+    const props = makeProps()
+    mount(props)
+    update({ ...props, loading: true })
+    update({ ...props, loading: false, items: [item("a", 45.7, 4.8)] })
+    expect(mockPanelsOptions.length).toBeGreaterThanOrEqual(3)
+    const callbacks = new Set(mockPanelsOptions.map((options) => options.onPanelOpen))
+    expect(callbacks.size).toBe(1)
+    // Until the swipe plan fills the ref it is a no-op, and calling it is harmless.
+    expect(() => mockPanelsOptions[0].onPanelOpen()).not.toThrow()
+    // Opening the bubble calls it through the hook.
+    act(() => byTestId("map-overlay-button")[0].props.onPress())
+    expect(byTestId("map-overlay-bubble")).toHaveLength(1)
   })
 
   test("every Pressable has a role and a catalogue label (D-07)", () => {
