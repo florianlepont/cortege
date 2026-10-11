@@ -145,6 +145,7 @@
       handle.innerHTML = `<div class="hl"></div>${knobHTML}`;
       const A = L[S.sideA], B = L[S.sideB];
       const off = (k) => (S.offline && !avail(k) ? ic("cloudoff", 14) : "");
+      const chev = (side, txt) => (cfg.swipe && S.sw ? (side === "l" ? `<span style="opacity:.5">‹</span> ${txt} <span style="opacity:.5">›</span>` : `<span style="opacity:.5">‹</span> ${txt} <span style="opacity:.5">›</span>`) : txt);
       let t = "";
       if (cfg.tags === "mid") {
         const bot = 84 + 14;
@@ -153,7 +154,7 @@
         const topY = kt - (cfg.tags === "dates" ? 22 : 16);
         const gap = cfg.tags === "dates" ? 16 : 30; const wl = S.x - gap - 14, wr = W - S.x - gap - 14;
         const two = cfg.tags === "dates" ? " two" : "";
-        const body = (X) => (cfg.tags === "dates" ? `<span>${off(X === "l" ? S.sideA : S.sideB)}${(X === "l" ? A : B).short}</span><small>${(X === "l" ? A : B).year}</small>` : `${off(X === "l" ? S.sideA : S.sideB)}${(X === "l" ? A : B).short}`);
+        const body = (X) => (cfg.tags === "dates" ? `<span>${off(X === "l" ? S.sideA : S.sideB)}${(X === "l" ? A : B).short}</span><small>${(X === "l" ? A : B).year}</small>` : `${off(X === "l" ? S.sideA : S.sideB)}${chev(X, (X === "l" ? A : B).short)}`);
         t = `<div class="tag glass nt${two}" style="top:${topY}px;right:${W - S.x + gap}px;max-width:${Math.max(wl, 0)}px;opacity:${wl < 72 ? 0 : 1}">${body("l")}</div>
              <div class="tag glass nt${two}" style="top:${topY}px;left:${S.x + gap}px;max-width:${Math.max(wr, 0)}px;opacity:${wr < 72 ? 0 : 1}">${body("r")}</div>`;
       }
@@ -249,13 +250,16 @@
       lockui.classList.toggle("cmp", !!S.compare);
       if (!S.sw) { if (!(swg && swg.k)) lockui.innerHTML = ""; return; }
       const both = cfg.swipe.cmp === "button" || cfg.swipe.cmp === "both";
+      const hint = Date.now() - (S.hintT || 0) < 3500;
       let h = "";
       if (!S.compare) {
         const l = L[S.base];
         h += `<div class="lkp glass"><span>‹</span><b>${l.name.replace(/ \(.*\)/, "")}</b><small>${l.year}</small><span>›</span></div><div class="lkd">${BASES.map((b) => `<i class="${b === S.base ? "on" : ""}"></i>`).join("")}</div>`;
-        h += `<div class="lkh">${cfg.swipe.cmp === "button" ? "Glissez sur la carte pour changer de fond" : "Glissez. Lâchez au milieu pour comparer"}</div><div style="display:flex;gap:8px"><div class="pill glass tap lkdone" data-act="swdone">Terminé</div>${both ? `<div class="pill glass tap lkdone" data-act="swcmp">${ic("swap", 16)}Comparer</div>` : ""}</div>`;
+        h += `<div style="display:flex;gap:8px"><div class="pill glass tap lkdone" data-act="swdone">Terminé</div>${both ? `<div class="pill glass tap lkdone" data-act="swcmp">${ic("swap", 16)}Comparer</div>` : ""}</div>`;
+        if (hint) h += `<div class="lkh fade3">${cfg.swipe.cmp === "button" ? "Glissez pour changer de fond" : "Glissez · lâchez au milieu pour comparer"}</div>`;
       } else {
-        h += `<div class="lkh">Glissez sur un côté pour changer son fond</div><div class="lkh" style="margin-top:0">Tirez la ligne au bord pour quitter</div><div class="pill glass tap lkdone" data-act="swdone">Terminé</div>`;
+        h += `<div class="pill glass tap lkdone" data-act="swdone">Terminé</div>`;
+        if (hint) h += `<div class="lkh fade3">Glissez un côté pour le changer · tirez la ligne au bord pour quitter</div>`;
       }
       lockui.innerHTML = h;
       clearTimeout(swTm); swTm = setTimeout(() => { if (S.sw && !swg) { S.sw = false; render(); } }, 8000);
@@ -287,7 +291,7 @@
       if (toCmp) {
         const fx = g.fx;
         if (dx < 0) { S.sideA = S.base; S.sideB = g.k; } else { S.sideA = g.k; S.sideB = S.base; }
-        S.compare = true; S.x = fx; key = ""; clipb.classList.add("nt"); handle.classList.add("nt"); done(); render();
+        S.compare = true; S.hintT = Date.now(); S.x = fx; key = ""; clipb.classList.add("nt"); handle.classList.add("nt"); done(); render();
         requestAnimationFrame(() => { clipb.classList.remove("nt"); handle.classList.remove("nt"); }); return;
       }
       if (commit) { clipc.style.clipPath = `inset(0 ${W - b}px 0 ${a}px)`; setTimeout(() => { if (g.side === "full") setBase(g.k); else if (g.side === "left") S.sideA = g.k; else S.sideB = g.k; done(); key = ""; render(); }, 240); }
@@ -540,7 +544,7 @@
       if (act === "study") { S.panel = S.panel === "study" ? null : "study"; if (cfg.entry === "segment") S.seg = "study"; }
       else if (act === "close") S.panel = null;
       else if (act === "download") { S.panel = S.panel === "download" ? null : "download"; S.chooser = null; }
-      else if (act === "basemap" && cfg.swipe) { S.sw = !S.sw; S.chooser = null; S.panel = null; }
+      else if (act === "basemap" && cfg.swipe) { S.sw = !S.sw; S.hintT = Date.now(); S.chooser = null; S.panel = null; }
       else if (act === "swdone") S.sw = false;
       else if (act === "swcmp") { S.sideA = S.base; S.sideB = neighbor(S.base, 1); return enterCompare(); }
       else if (act === "basemap" && cfg.entry === "keep") { S.chooser = S.chooser === "base" ? null : "base"; S.panel = null; }
@@ -585,8 +589,8 @@
       defaut: () => {},
       cBase: () => { S.chooser = "base"; },
       cDlOpen: () => { S.panel = "download"; },
-      swOn: () => { S.sw = true; },
-      swCmp: () => { S.sw = true; S.base = "map"; S.sideA = "map"; S.sideB = "p1950"; setTimeout(() => enterCompare(), 20); },
+      swOn: () => { S.sw = true; S.hintT = Date.now(); },
+      swCmp: () => { S.sw = true; S.hintT = Date.now() + 1000; S.base = "map"; S.sideA = "map"; S.sideB = "p1950"; setTimeout(() => enterCompare(), 20); },
       swFree: () => { S.sw = false; S.base = "map"; S.sideA = "map"; S.sideB = "p1950"; setTimeout(() => enterCompare(), 20); },
       cSwipe: () => { S.chooser = "base"; render(); setTimeout(() => { root.querySelector('[data-act="cmp"]').click(); setTimeout(() => { root.querySelector('[data-act="lock"]') && root.querySelector('[data-act="lock"]').click(); }, 500); }, 30); },
       cOv: () => { S.chooser = "ov"; },
