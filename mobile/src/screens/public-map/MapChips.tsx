@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react"
 import { StyleSheet, View, type StyleProp, type ViewStyle } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
 import { AppText as Text } from "../../ui/AppText"
 import {
   brandInteraction,
@@ -26,10 +27,19 @@ export const MAP_CONTROL_HIT_SLOP = (brandInteraction.hitTarget.min - MAP_PILL_H
 type MapInfoPillProps = {
   label: string
   style?: StyleProp<ViewStyle>
+  /** A glyph before the label (the notices column). */
+  icon?: keyof typeof Ionicons.glyphMap
+  /** Draws the glyph in the danger ink (a load error). */
+  danger?: boolean
 }
 
-/** A short fact about the map (a count), bottom left. */
-export const MapInfoPill = memo(function MapInfoPill({ label, style }: MapInfoPillProps) {
+/** A short fact about the map (a count, a notice). One line, cut at the tail when too long. */
+export const MapInfoPill = memo(function MapInfoPill({
+  label,
+  style,
+  icon,
+  danger = false,
+}: MapInfoPillProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createMapChipStyles(theme), [theme])
   return (
@@ -39,7 +49,23 @@ export const MapInfoPill = memo(function MapInfoPill({ label, style }: MapInfoPi
       surface={theme.visual.mapControl.glass}
       style={[styles.pill, style]}
     >
-      <Text style={styles.pillText}>{label}</Text>
+      {icon ? (
+        <Ionicons
+          name={icon}
+          size={16}
+          color={danger ? theme.onSurface.danger : theme.visual.mapControl.icon}
+          style={styles.pillIcon}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+      ) : null}
+      <Text
+        style={styles.pillText}
+        numberOfLines={icon ? 1 : undefined}
+        ellipsizeMode={icon ? "tail" : undefined}
+      >
+        {label}
+      </Text>
     </GlassSurface>
   )
 })
@@ -122,6 +148,10 @@ export function createMapChipStyles(theme: BrandTheme) {
     pillText: {
       ...brandTypography.meta,
       color: theme.visual.mapControl.text,
+      flexShrink: 1,
+    },
+    pillIcon: {
+      marginRight: brandSpacing4.xs,
     },
     titlePill: {
       position: "absolute",
