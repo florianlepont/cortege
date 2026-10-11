@@ -1,7 +1,8 @@
 ---
 phase: 27
 slug: quick-survey-additions-inserted-v1
-status: draft
+status: approved
+reviewed_at: 2026-10-11
 shadcn_initialized: false
 preset: none
 created: 2026-10-11
