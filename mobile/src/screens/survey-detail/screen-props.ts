@@ -1,4 +1,4 @@
-import { IbpCas } from "@cortege/ibp-domain"
+import { IbpCas, type SurveyWeather } from "@cortege/ibp-domain"
 import {
   FactorKey,
   RegionVersion,
@@ -46,14 +46,37 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onSimulateMissingAttachmentFile?: (localAttachmentId: string) => Promise<void> | void
 }
 
-/** "Contexte et parcelles": the map, the parcels, the method and the station context. */
+/**
+ * What the weather request of the survey is doing, read by the context page to pick the one status
+ * line of the weather card (`weatherViewState`): the network, the lookup in flight, the last
+ * lookup rejected.
+ */
+export type WeatherRequestState = {
+  online: boolean
+  inFlight: boolean
+  unavailable: boolean
+}
+
+/** "Contexte et parcelles": the map, the parcels, the method, the station context and conditions. */
 export type SurveyContextScreenProps = SurveyDetailBaseProps & {
+  /** Opens the page scrolled to the Conditions section (the summary card, D-15). */
+  section?: "conditions"
+  weatherRequest: WeatherRequestState
   onOpenParcels: (surveyId: string) => Promise<void> | void
   onUpdateRegionVersion: (surveyId: string, region: RegionVersion) => Promise<void> | void
   onUpdateVegetationStage: (surveyId: string, stage: VegetationStage) => Promise<void> | void
   onUpdateIbpCas: (surveyId: string, ibpCas: IbpCas) => Promise<void> | void
   onUpdateCas3Scale: (surveyId: string, value: boolean) => Promise<void> | void
   onSwitchToV32: (surveyId: string) => Promise<void> | void
+  /** Phase 27: silent draft writes of the Conditions section (false when nothing was written). */
+  onChangeNote: (surveyId: string, text: string) => Promise<boolean> | void
+  onEditWeather: (
+    surveyId: string,
+    update: (current: SurveyWeather | null) => SurveyWeather | null,
+  ) => Promise<boolean> | void
+  /** "Réessayer" and "Remplir à nouveau" of the weather card (the weather prefill actions). */
+  onRetryWeather: (surveyId: string) => Promise<void> | void
+  onRefillWeather: (surveyId: string) => Promise<void> | void
 }
 
 /** "Score IBP": the total, the two sub-scores and the ten factors. */

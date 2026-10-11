@@ -28,7 +28,8 @@ export type SurveysStackParamList = AccountStackParamList & {
   communitySurvey: { surveyId: string }
   communityHistory: { surveyId: string }
   surveyDetail: undefined
-  surveyContext: undefined
+  // `section` opens the page scrolled to its Conditions section (summary card, D-15).
+  surveyContext: { section?: "conditions" } | undefined
   surveyScore: undefined
   surveyHistory: undefined
   surveyJournal: undefined

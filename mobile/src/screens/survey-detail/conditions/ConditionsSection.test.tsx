@@ -346,20 +346,28 @@ describe("ConditionsSection weather card", () => {
     expect(byTestId(tree, "conditions-field-temperature").props.value).toBe("12")
   })
 
-  test("a field focus reports its top inside the section", () => {
+  test("a field focus reports its top inside the section, offsets added up", () => {
     const onFieldFocus = jest.fn()
     const tree = mount(<ConditionsSection {...sectionProps({ onFieldFocus })} />)
     const layouts = tree.root.findAll(
       (node) => (node.type as unknown) === "View" && typeof node.props.onLayout === "function",
     )
-    // Weather card wrapper, the block's two measured parts, the four cells, the note wrapper.
-    const weatherWrapper = layouts[0]
-    const noteWrapper = layouts[layouts.length - 1]
-    act(() => {
-      weatherWrapper.props.onLayout({ nativeEvent: { layout: { y: 100 } } })
-      noteWrapper.props.onLayout({ nativeEvent: { layout: { y: 700 } } })
-    })
+    // Weather card wrapper, the values view and the fields view of the card, the four field
+    // cells, then the note wrapper.
+    expect(layouts).toHaveLength(8)
+    const at = (index: number, y: number) =>
+      act(() => {
+        layouts[index].props.onLayout({ nativeEvent: { layout: { y } } })
+      })
+    at(0, 100)
+    at(1, 60)
+    at(2, 30)
+    at(4, 20)
+    at(7, 700)
 
+    act(() => {
+      byTestId(tree, "conditions-field-wind").props.onFocus({})
+    })
     act(() => {
       byTestId(tree, "conditions-field-temperature").props.onFocus({})
     })
@@ -367,8 +375,9 @@ describe("ConditionsSection weather card", () => {
       byTestId(tree, "conditions-note-field").props.onFocus({})
     })
 
-    expect(onFieldFocus).toHaveBeenNthCalledWith(1, 100)
-    expect(onFieldFocus).toHaveBeenNthCalledWith(2, 700)
+    expect(onFieldFocus).toHaveBeenNthCalledWith(1, 100 + 60 + 30 + 20)
+    expect(onFieldFocus).toHaveBeenNthCalledWith(2, 100 + 60 + 30)
+    expect(onFieldFocus).toHaveBeenNthCalledWith(3, 700)
   })
 
   test("nothing is drawn under the header until the draft was read", () => {

@@ -258,6 +258,7 @@ import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
 import { OfflineAreasRoute } from "./OfflineAreasRoute"
 import { SettingsRoute } from "./SettingsRoute"
+import type { SurveysStackParamList } from "../types"
 import { SurveyContextRoute } from "./SurveyContextRoute"
 import { SurveyDetailRoute } from "./SurveyDetailRoute"
 import { SurveyHistoryRoute } from "./SurveyHistoryRoute"
@@ -1175,6 +1176,13 @@ describe("SurveyDetailRoute", () => {
 })
 
 describe("SurveyContextRoute", () => {
+  test("the route takes no param or the optional section param (compile-time check)", () => {
+    const plain: SurveysStackParamList["surveyContext"] = undefined
+    const withSection: SurveysStackParamList["surveyContext"] = { section: "conditions" }
+    const empty: SurveysStackParamList["surveyContext"] = {}
+    expect([plain, withSection, empty]).toHaveLength(3)
+  })
+
   function withSelection(fixture: Fixture): Fixture {
     return {
       ...fixture,
@@ -1233,6 +1241,86 @@ describe("SurveyContextRoute", () => {
       mode: "edit",
       startPoint: { lat: 48.656, lng: 2.503 },
     })
+  })
+
+  test("hands the Conditions the silent draft writes and the two weather links (phase 27)", async () => {
+    const fixture = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").onChangeNote).toBe(fixture.surveys.actions.updateSurveyNote)
+    expect(props("surveyContext").onEditWeather).toBe(fixture.surveys.actions.updateSurveyWeather)
+    expect(props("surveyContext").onRetryWeather).toBe(fixture.weather.actions.retry)
+    expect(props("surveyContext").onRefillWeather).toBe(fixture.weather.actions.refill)
+  })
+
+  test("tells the page what the weather request of the survey is doing", async () => {
+    const idle = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={idle}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").weatherRequest).toEqual({
+      online: true,
+      inFlight: false,
+      unavailable: false,
+    })
+
+    const busy = withSelection(makeFixture())
+    busy.weather.state = {
+      inFlightIds: new Set(["s-01"]),
+      unavailableIds: new Set(["s-01", "other"]),
+    }
+    mockIsOffline.value = true
+    await mount(
+      <Providers fixture={busy}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").weatherRequest).toEqual({
+      online: false,
+      inFlight: true,
+      unavailable: true,
+    })
+
+    const elsewhere = withSelection(makeFixture())
+    elsewhere.weather.state = {
+      inFlightIds: new Set(["another-survey"]),
+      unavailableIds: new Set<string>(),
+    }
+    mockIsOffline.value = false
+    await mount(
+      <Providers fixture={elsewhere}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").weatherRequest).toEqual({
+      online: true,
+      inFlight: false,
+      unavailable: false,
+    })
+  })
+
+  test("opens at the top, or scrolled to the Conditions with the section param", async () => {
+    await mount(
+      <Providers fixture={withSelection(makeFixture())}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").section).toBeUndefined()
+
+    await mount(
+      <Providers fixture={withSelection(makeFixture())}>
+        <SurveyContextRoute
+          navigation={makeNavigation() as never}
+          route={{ params: { section: "conditions" } } as never}
+        />
+      </Providers>,
+    )
+    expect(props("surveyContext").section).toBe("conditions")
   })
 
   test("does not navigate when the survey cannot be loaded", async () => {
