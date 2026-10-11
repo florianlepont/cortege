@@ -178,6 +178,52 @@ describe("ParcelPolygonsLayer, Parcelles states and legibility (Phase 28)", () =
   })
 })
 
+describe("ParcelPolygonsLayer keys (iPhone crash, 2026-10-11)", () => {
+  // MapLibre keys its children by position: without an explicit key a casing that appears or goes
+  // away hands the "parcels-fill" instance to "parcels-casing" and the native layer throws
+  // "`id` cannot be changed", which closes the app.
+  type TestFiber = { key: string | null; return: TestFiber | null }
+  // The mock renders each MapLibre component as a host element: the element's key sits on the
+  // closest keyed fiber at or above it.
+  const keyOf = (node: renderer.ReactTestInstance): string | null => {
+    let fiber: TestFiber | null = (node as unknown as { _fiber: TestFiber })._fiber
+    while (fiber && fiber.key === null) fiber = fiber.return
+    return fiber ? fiber.key : null
+  }
+  const layerKeys = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAllByType("Layer" as never).map((node) => [keyOf(node), node.props.id])
+
+  test("every layer is keyed by its own id, with or without the casing", () => {
+    const withCasing = mount(<ParcelPolygonsLayer items={items()} casing />)
+    expect(layerKeys(withCasing)).toEqual([
+      ["parcels-casing", "parcels-casing"],
+      ["parcels-fill", "parcels-fill"],
+      ["parcels-outline", "parcels-outline"],
+    ])
+    const without = mount(<ParcelPolygonsLayer items={items()} />)
+    expect(layerKeys(without)).toEqual([
+      ["parcels-fill", "parcels-fill"],
+      ["parcels-outline", "parcels-outline"],
+    ])
+  })
+
+  test("a casing that appears adds a layer without renaming the others", () => {
+    const tree = mount(<ParcelPolygonsLayer items={items()} />)
+    expect(tree.root.findAllByType("Layer" as never).map((node) => node.props.id)).toEqual([
+      "parcels-fill",
+      "parcels-outline",
+    ])
+    act(() => {
+      tree.update(<ParcelPolygonsLayer items={items()} casing />)
+    })
+    expect(tree.root.findAllByType("Layer" as never).map((node) => node.props.id)).toEqual([
+      "parcels-casing",
+      "parcels-fill",
+      "parcels-outline",
+    ])
+  })
+})
+
 describe("ForestTypesLayer", () => {
   test("draws nothing while disabled", () => {
     expect(mount(<ForestTypesLayer enabled={false} />).toJSON()).toBeNull()

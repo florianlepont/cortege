@@ -57,10 +57,15 @@ export function ParcelPolygonsLayer({
         }
       : undefined
 
+  // The three layers carry explicit keys: MapLibre keys its children by position, so a casing that
+  // appears or disappears (base change, forest overlay) would otherwise hand the "parcels-fill"
+  // instance to "parcels-casing" and the native layer throws "`id` cannot be changed", which closes
+  // the app (found on the owner's iPhone, 2026-10-11).
   return (
     <GeoJSONSource id="parcels" data={data} onPress={handlePress}>
       {casing ? (
         <Layer
+          key="parcels-casing"
           id="parcels-casing"
           type="line"
           filter={filter}
@@ -72,6 +77,7 @@ export function ParcelPolygonsLayer({
         />
       ) : null}
       <Layer
+        key="parcels-fill"
         id="parcels-fill"
         type="fill"
         filter={filter}
@@ -82,6 +88,7 @@ export function ParcelPolygonsLayer({
         }
       />
       <Layer
+        key="parcels-outline"
         id="parcels-outline"
         type="line"
         filter={filter}
