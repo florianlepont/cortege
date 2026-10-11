@@ -28,6 +28,8 @@ describe("Debug surface gating in production (e2e)", () => {
     AUTH0_AUDIENCE: "https://e2e.example/api",
     CORS_ORIGIN: "none",
     OBJECT_STORAGE_MODE: "local",
+    // Phase 27: test/setup-env.js sets WEATHER_PROVIDER=synthetic, which production refuses.
+    WEATHER_PROVIDER: "off",
   }
   const snapshot: Record<string, string | undefined> = {}
 
