@@ -70,6 +70,11 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [x] **REQ-D-area-download** — Contributor selects an area, sees estimated size and download progress, lists and deletes downloaded areas, and the area survives an app restart. *(New — Built, closed Phase 17: `OfflineAreasSheet` + `useOfflineAreas`, tiles and parcel cache persisted under the document directory and a new SQLite migration, so a relaunch reopens the same downloaded state. The actual force-quit/relaunch has not been run on a device in this cloud session.)*
 - [x] **REQ-D-offline-parcel-warning** — When an expected parcel is not cached, a clear message explains it and a quick action starts the download once the network returns; no infinite spinners. *(New — Built, closed Phase 17: `ParcelHistoryCard`'s offline state plus the `offline_pending_parcels` queue drained by `useOfflinePendingParcelDrain` on reconnect.)*
 - [x] **REQ-D-basemap-switch** — A basemap selector toggles at least "Satellite" and "Map"; the selection persists while navigating; the default is configurable. *(New — Built, closed Phase 17: `BasemapToggle` + `useBasemapPreference`, persisted to `local_meta`. "The default is configurable" is satisfied as a code-level constant (`DEFAULT_BASEMAP` in `storage/map-preference.ts`), not a user-facing settings toggle — no such settings surface exists elsewhere in the app either.)*
+- [ ] **REQ-D-map-layers** — The Explorer offers several map layers (bases: Plan, Satellite, état-major, 1950 map, 1950 aerial photos; overlay: forest types), each with its source, licence and attribution. *(New, V1, Phase 28)*
+- [ ] **REQ-D-layer-compare** — Two base layers compare on the same area with a sliding curtain (decided by a device spike). *(New, V1, Phase 28)*
+- [ ] **REQ-D-explorer-modes** — The Explorer both explores and studies maps; the study mode adds layers and comparison without hiding the explore flow. *(New, V1, Phase 28)*
+- [ ] **REQ-D-offline-layers** — Layers work with and without a network; a setting (default all layers) chooses what an offline area downloads; the cost per layer is measured. *(New, V1, Phase 28)*
+- [ ] **REQ-D-offline-percent** — The Explorer offline sheet shows the download percentage, weighted across layers. *(New, V1, Phase 28)*
 
 ### ML — Species Recognition Groundwork
 
@@ -106,6 +111,7 @@ every binding contract (conflict-report warning 5).
 - [x] **REQ-DOC-form-spec** — `docs/specs/ibp-form-spec.md` §4 is corrected to "one or many cadastral parcels (`parcel_ids[]`)" and §10.1 to the shipped status enum `draft | submitted | synced | error | expired` with `submitted_at` and `deleted_at`, no `deleted` value and no `published_at`. Closes conflict-report warnings 1 and 2. *(New — Built, closed Phase 14)*
 - [ ] **REQ-DOC-taxonomy** — The three-phase taxonomy (MVP / V1 / V2) is adopted and `docs/specs/user-stories.md` §4 — currently titled "Scope (V1)" for the whole first release — is retitled accordingly. Closes conflict-report warning 3. *(New)*
 - [ ] **REQ-DOC-epicd-ids** — The duplicate `US-D1` / `US-D2` / `US-D3` IDs in `docs/specs/epic-d-offline-and-synchronization.md` are renumbered so the six stories have six distinct IDs. Closes conflict-report warning 4. *(New)*
+- [ ] **REQ-DOC-layer-licences** — The map layers offered, their sources, licences, attribution, offline availability and measured weights are recorded in `docs/technical/map-layers-and-licences-v1.md`. *(New, Phase 28)*
 
 ### FT — Field Tests
 
@@ -262,6 +268,12 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-D-area-download | New | Phase 17 | Built |
 | REQ-D-offline-parcel-warning | New | Phase 17 | Built |
 | REQ-D-basemap-switch | New | Phase 17 | Built |
+| REQ-DOC-layer-licences | New | Phase 28 | Build |
+| REQ-D-map-layers | New | Phase 28 | Build |
+| REQ-D-layer-compare | New | Phase 28 | Build |
+| REQ-D-explorer-modes | New | Phase 28 | Build |
+| REQ-D-offline-layers | New | Phase 28 | Build |
+| REQ-D-offline-percent | New | Phase 28 | Build |
 | REQ-C-pdf-export | New | Phase 19 | Build |
 | REQ-B-manage-published | Partial | Phase 19 | Build |
 | REQ-INF-hosting-adr | New | Phase 20 | Build |
