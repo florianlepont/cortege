@@ -1,7 +1,7 @@
 ---
 phase: 28
 slug: map-layers-comparison-inserted-v1
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-10-11
