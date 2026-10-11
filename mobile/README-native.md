@@ -190,9 +190,10 @@ Each recognition prints one line of numbers in milliseconds, for example
   (`docs/technical/species-recognition-spike-measurements-v1.md`, section 7).
 - `captureToSuggestionMs`: shutter to suggestions shown on screen.
 
-The line holds numbers only: no photo path, survey id or coordinate. Leave the
-variable unset (the default) for any build given to testers, otherwise they get
-the line in their log too.
+The line holds numbers only: no photo path, survey id or coordinate. Set the
+variable only for the measurement build given to the testers who run the device
+checks (they send back the filtered lines); leave it unset (the default) for
+every other build, otherwise those users get the line in their log too.
 
 ### Checking that no photo is left (DC-D-03)
 

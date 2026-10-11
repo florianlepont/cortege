@@ -27,7 +27,7 @@ Protocol for the Android phone run that closes success criteria SC-1 and SC-7 of
 1. Phones: at least two real Android phones, including one low-end (2022-2023 mid-range class).
 2. Build: a Release APK built with `EXPO_PUBLIC_GENUS_TIMING=true` (see `mobile/README-native.md`, section "Genus recognition timing (Phase 29)"). Testers get the Release APK only; never hand the debuggable APK to testers.
 3. Per phone: 1 warm-up photo, then at least 10 photos of real trees, leaves and bark online, then the same in airplane mode.
-4. Read the `[genus-timing]` lines with `adb logcat -s ReactNativeJS`.
+4. Read the `[genus-timing]` lines with `adb logcat -s ReactNativeJS | grep genus-timing` (the filter keeps only the numbers line; testers send back only those lines).
 5. Report, per phone and per network state, the median, p95 and worst of `totalMs` (preprocessing plus inference, as the Phase 1 spike) and of `captureToSuggestionMs`, against the 3 s budget.
 6. Compare the top-1 genus with the owner's iPhone on the same photos (DC-D-02: order and honesty of the suggestions).
 7. DC-D-03 (no photo left behind): on a debuggable build, run `adb shell run-as fr.etatssauvages.cortege ls cache/Camera cache/ImageManipulator`; both folders must be empty after several recognitions. On the iPhone, list the same folders through the app container.
