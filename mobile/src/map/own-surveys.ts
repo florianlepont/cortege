@@ -59,6 +59,25 @@ function knownPosition(
 }
 
 /**
+ * The date a marker shows. A draft: its creation date. A submitted survey: the submission date the
+ * server sent when the detail is in memory (what the API marker shows, so the two copies agree),
+ * else the row's `updated_at`. The local row and payload carry no submission date of their own, and
+ * `updated_at` moves at each sync, so offline this is the last-sync date.
+ */
+function surveyDate(
+  source: LocalSurveyMapSource,
+  isDraft: boolean,
+  detail: SurveyDetailResponse | undefined,
+): string {
+  if (isDraft) return source.created_at.slice(0, 10)
+  const submittedAt = detail?.submitted_at
+  return (typeof submittedAt === "string" && submittedAt ? submittedAt : source.updated_at).slice(
+    0,
+    10,
+  )
+}
+
+/**
  * Splits the local surveys into drafts (dashed marker: any status other than "submitted") and own
  * submitted surveys (normal marker).
  * An id already drawn from the API (`publishedIds`) is skipped, and so is a survey with no position
@@ -74,9 +93,9 @@ export function ownSurveyMapItems(input: {
   for (const source of input.sources) {
     if (input.publishedIds.has(source.id)) continue
     const { payload } = source
+    const detail = input.surveyDetails[source.id]
     const position =
-      knownPosition(input.surveyDetails[source.id]) ??
-      cachedParcelCentre(input.parcels, resolveDraftParcelIds(payload))
+      knownPosition(detail) ?? cachedParcelCentre(input.parcels, resolveDraftParcelIds(payload))
     if (!position) continue
     // Same rule as Home, the list and the detail screen: a draft that has synced is stored as
     // "synced" (or "error"), so "not finished" is "not submitted", never `=== "draft"`.
@@ -84,7 +103,7 @@ export function ownSurveyMapItems(input: {
     const item: PublicMapItem = {
       survey_id: source.id,
       display_location: position,
-      survey_date: (isDraft ? source.created_at : source.updated_at).slice(0, 10),
+      survey_date: surveyDate(source, isDraft, detail),
       region_code: payload.region_version ?? "",
       ibp_total: localSurveyTotal(payload),
       ibp_method_version: payload.ibp_method_version ?? null,

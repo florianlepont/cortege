@@ -197,6 +197,26 @@ describe("ownSurveyMapItems", () => {
     expect(own[0]).toMatchObject({ survey_date: "2026-10-03", ibp_total: 31 })
   })
 
+  it("dates a submitted survey from the submission date of the detail in memory when there is one", () => {
+    const submitted = (submittedAt: string | null | undefined) =>
+      ownSurveyMapItems({
+        ...base,
+        sources: [source({ id: "s1", status: "submitted" })],
+        surveyDetails: {
+          s1: {
+            id: "s1",
+            submitted_at: submittedAt,
+            display_location: { lat: 47, lng: 3 },
+          } as unknown as SurveyDetailResponse,
+        },
+      }).own[0].survey_date
+
+    expect(submitted("2026-09-20T08:00:00.000Z")).toBe("2026-09-20")
+    expect(submitted(null)).toBe("2026-10-03")
+    expect(submitted(undefined)).toBe("2026-10-03")
+    expect(submitted("")).toBe("2026-10-03")
+  })
+
   it("keeps a draft that has synced or failed in drafts, dated from created_at", () => {
     const { drafts, own } = ownSurveyMapItems({
       ...base,
