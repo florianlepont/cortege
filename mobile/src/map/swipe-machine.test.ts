@@ -12,13 +12,17 @@ import {
   liveHint,
   moveGesture,
   releaseGesture,
+  releaseHaptic,
   SETTLE_MS,
   SIDE_COMMIT,
   SWIPE_SLOP,
+  swipeZone,
   tapAction,
+  ZONE_HYSTERESIS,
+  zoneHaptic,
 } from "./swipe-machine"
 import type { SideKey } from "./wipe-geometry"
-import type { WipeGesture } from "./swipe-machine"
+import type { SwipeZone, WipeGesture } from "./swipe-machine"
 
 const WIDTH = 400
 
@@ -48,9 +52,10 @@ const atRev = (rev: number, extra: Partial<MoveOptions> = {}) =>
 describe("constants", () => {
   it("are the engine numbers of the UI-SPEC list", () => {
     expect(SWIPE_SLOP).toBe(6)
-    expect(COMPARE_MIN).toBe(0.2)
-    expect(COMPARE_MAX).toBe(0.8)
-    expect(SIDE_COMMIT).toBe(0.33)
+    expect(COMPARE_MIN).toBe(1 / 3)
+    expect(COMPARE_MAX).toBe(2 / 3)
+    expect(SIDE_COMMIT).toBe(1 / 3)
+    expect(ZONE_HYSTERESIS).toBe(0.03)
     expect(EDGE_EXIT).toBe(40)
     expect(IDLE_MS).toBe(8000)
     expect(HINT_MS).toBe(3000)
@@ -73,6 +78,7 @@ describe("beginGesture", () => {
       fingerX: 300,
       incoming: null,
       rev: 0,
+      zone: null,
     })
   })
 
@@ -175,12 +181,14 @@ describe("moveGesture", () => {
 })
 
 describe("releaseGesture, full width with the comparison allowed", () => {
-  it("cancels under 0.2, compares from 0.2 to 0.8 inclusive, commits above 0.8", () => {
-    expect(releaseGesture(atRev(0.19), true).outcome).toBe("cancel")
-    expect(releaseGesture(atRev(0.2), true).outcome).toBe("compare")
+  it("cancels under a third, compares between a third and two thirds, commits above", () => {
+    expect(releaseGesture(atRev(0.1), true).outcome).toBe("cancel")
+    expect(releaseGesture(atRev(0.3), true).outcome).toBe("cancel")
+    expect(releaseGesture(atRev(0.34), true).outcome).toBe("compare")
     expect(releaseGesture(atRev(0.5), true).outcome).toBe("compare")
-    expect(releaseGesture(atRev(0.8), true).outcome).toBe("compare")
-    expect(releaseGesture(atRev(0.81), true).outcome).toBe("commit")
+    expect(releaseGesture(atRev(0.66), true).outcome).toBe("compare")
+    expect(releaseGesture(atRev(0.7), true).outcome).toBe("commit")
+    expect(releaseGesture(atRev(0.95), true).outcome).toBe("commit")
   })
 
   it("returns the incoming layer, the side and the release x", () => {
@@ -191,15 +199,44 @@ describe("releaseGesture, full width with the comparison allowed", () => {
       releaseX: 200,
     })
   })
+
+  it("a release between a boundary and its hysteresis follows the zone the finger was in", () => {
+    const just = (x: number, from: WipeGesture) => moveGesture(from, { x, y: 100 }, options())
+    // Up: from the cancel zone, 0.34 (past 1/3 by 0.007) is still cancel, 0.37 compares.
+    const cancelling = atRev(0.3)
+    expect(releaseGesture(just(264, cancelling), true).outcome).toBe("cancel")
+    expect(releaseGesture(just(252, cancelling), true).outcome).toBe("compare")
+    // Down: from the compare zone, 0.32 (under 1/3 by 0.013) still compares, 0.30 cancels.
+    const comparing = atRev(0.5)
+    expect(releaseGesture(just(272, comparing), true).outcome).toBe("compare")
+    expect(releaseGesture(just(280, comparing), true).outcome).toBe("cancel")
+    // The same at two thirds, in both directions.
+    expect(releaseGesture(just(132, comparing), true).outcome).toBe("compare")
+    expect(releaseGesture(just(120, comparing), true).outcome).toBe("commit")
+    const committing = atRev(0.9)
+    expect(releaseGesture(just(136, committing), true).outcome).toBe("commit")
+    expect(releaseGesture(just(148, committing), true).outcome).toBe("compare")
+  })
 })
 
-describe("releaseGesture, comparison not allowed (spike fallback)", () => {
-  it("commits above 0.33 and cancels otherwise, never compares", () => {
-    expect(releaseGesture(atRev(0.32), false).outcome).toBe("cancel")
-    expect(releaseGesture(atRev(0.33), false).outcome).toBe("cancel")
+describe("releaseGesture, comparison not allowed (two zones)", () => {
+  it("commits above a third and cancels otherwise, never compares", () => {
+    expect(releaseGesture(atRev(0.3), false).outcome).toBe("cancel")
     expect(releaseGesture(atRev(0.34), false).outcome).toBe("commit")
     expect(releaseGesture(atRev(0.5), false).outcome).toBe("commit")
+    expect(releaseGesture(atRev(0.66), false).outcome).toBe("commit")
     expect(releaseGesture(atRev(0.9), false).outcome).toBe("commit")
+  })
+
+  it("follows the zone the finger was in around the boundary", () => {
+    const quiet = options({ comparisonAllowed: false })
+    const cancelling = atRev(0.2, { comparisonAllowed: false })
+    const at = (x: number, from: WipeGesture) => moveGesture(from, { x, y: 100 }, quiet)
+    expect(releaseGesture(at(264, cancelling), false).outcome).toBe("cancel")
+    expect(releaseGesture(at(252, cancelling), false).outcome).toBe("commit")
+    const committing = atRev(0.6, { comparisonAllowed: false })
+    expect(releaseGesture(at(272, committing), false).outcome).toBe("commit")
+    expect(releaseGesture(at(280, committing), false).outcome).toBe("cancel")
   })
 })
 
@@ -214,9 +251,11 @@ describe("releaseGesture, a side of the comparison", () => {
     )
   }
 
-  it("commits above 0.33, cancels otherwise, and never compares", () => {
-    expect(releaseGesture(sideRev(0.32), true).outcome).toBe("cancel")
+  it("commits above a third, cancels otherwise, and never compares", () => {
+    expect(releaseGesture(sideRev(0.3), true).outcome).toBe("cancel")
     expect(releaseGesture(sideRev(0.34), true).outcome).toBe("commit")
+    expect(releaseGesture(sideRev(0.5), true).outcome).toBe("commit")
+    expect(releaseGesture(sideRev(0.7), true).outcome).toBe("commit")
     expect(releaseGesture(sideRev(0.9), true).outcome).toBe("commit")
     expect(releaseGesture(sideRev(0.5), true).side).toBe("left")
   })
@@ -253,16 +292,29 @@ describe("releaseGesture, taps and gestures that never started", () => {
 describe("liveHint", () => {
   it("full width with the comparison allowed: nothing, compare, change", () => {
     expect(liveHint(atRev(0.1), true)).toBeNull()
-    expect(liveHint(atRev(0.2), true)).toBe("compare")
+    expect(liveHint(atRev(0.3), true)).toBeNull()
+    expect(liveHint(atRev(0.34), true)).toBe("compare")
     expect(liveHint(atRev(0.5), true)).toBe("compare")
-    expect(liveHint(atRev(0.8), true)).toBe("compare")
+    expect(liveHint(atRev(0.66), true)).toBe("compare")
+    expect(liveHint(atRev(0.7), true)).toBe("change")
     expect(liveHint(atRev(0.9), true)).toBe("change")
   })
 
   it("full width with the comparison not allowed: change only where a release would commit", () => {
     expect(liveHint(atRev(0.2), false)).toBeNull()
-    expect(liveHint(atRev(0.33), false)).toBeNull()
+    expect(liveHint(atRev(0.3), false)).toBeNull()
     expect(liveHint(atRev(0.5), false)).toBe("change")
+  })
+
+  it("always agrees with the release outcome", () => {
+    for (const allowed of [true, false]) {
+      for (let rev = 0.05; rev < 1; rev += 0.05) {
+        const gesture = atRev(rev, { comparisonAllowed: allowed })
+        const hint = liveHint(gesture, allowed)
+        const outcome = releaseGesture(gesture, allowed).outcome
+        expect(hint).toBe({ cancel: null, compare: "compare", commit: "change" }[outcome as string])
+      }
+    }
   })
 
   it("a side gesture always says change once started", () => {
@@ -281,6 +333,113 @@ describe("liveHint", () => {
       "none-available",
     )
     expect(liveHint(draggedLeft(WIDTH - 3), true)).toBeNull()
+  })
+})
+
+describe("swipeZone", () => {
+  const H = ZONE_HYSTERESIS
+
+  it("has exact boundaries without a previous zone (comparison allowed)", () => {
+    expect(swipeZone(0, null, true)).toBe("cancel")
+    expect(swipeZone(1 / 3 - 0.001, null, true)).toBe("cancel")
+    expect(swipeZone(1 / 3, null, true)).toBe("compare")
+    expect(swipeZone(2 / 3, null, true)).toBe("compare")
+    expect(swipeZone(2 / 3 + 0.001, null, true)).toBe("commit")
+    expect(swipeZone(1, null, true)).toBe("commit")
+  })
+
+  it("does not flicker around one third, in both directions", () => {
+    // Rising out of cancel: stays cancel until 1/3 + H, then compare.
+    expect(swipeZone(1 / 3 + 0.001, "cancel", true)).toBe("cancel")
+    expect(swipeZone(1 / 3 + H - 0.001, "cancel", true)).toBe("cancel")
+    expect(swipeZone(1 / 3 + H, "cancel", true)).toBe("compare")
+    // Falling out of compare: stays compare until 1/3 - H, then cancel.
+    expect(swipeZone(1 / 3 - 0.001, "compare", true)).toBe("compare")
+    expect(swipeZone(1 / 3 - H, "compare", true)).toBe("compare")
+    expect(swipeZone(1 / 3 - H - 0.001, "compare", true)).toBe("cancel")
+  })
+
+  it("does not flicker around two thirds, in both directions", () => {
+    expect(swipeZone(2 / 3 + 0.001, "compare", true)).toBe("compare")
+    expect(swipeZone(2 / 3 + H, "compare", true)).toBe("compare")
+    expect(swipeZone(2 / 3 + H + 0.001, "compare", true)).toBe("commit")
+    expect(swipeZone(2 / 3 - 0.001, "commit", true)).toBe("commit")
+    expect(swipeZone(2 / 3 - H + 0.001, "commit", true)).toBe("commit")
+    expect(swipeZone(2 / 3 - H, "commit", true)).toBe("compare")
+  })
+
+  it("jumps straight across the compare zone when the finger does", () => {
+    expect(swipeZone(0.9, "cancel", true)).toBe("commit")
+    expect(swipeZone(0.1, "commit", true)).toBe("cancel")
+  })
+
+  it("has two zones when the comparison is not allowed, with the same hysteresis", () => {
+    expect(swipeZone(1 / 3, null, false)).toBe("cancel")
+    expect(swipeZone(1 / 3 + 0.001, null, false)).toBe("commit")
+    expect(swipeZone(0.9, null, false)).toBe("commit")
+    expect(swipeZone(1 / 3 + H, "cancel", false)).toBe("cancel")
+    expect(swipeZone(1 / 3 + H + 0.001, "cancel", false)).toBe("commit")
+    expect(swipeZone(1 / 3 - H, "commit", false)).toBe("commit")
+    expect(swipeZone(1 / 3 - H - 0.001, "commit", false)).toBe("cancel")
+    // A previous compare zone (from a three-zone call) counts as none.
+    expect(swipeZone(0.5, "compare", false)).toBe("commit")
+    expect(swipeZone(0.2, "compare", false)).toBe("cancel")
+  })
+
+  it("is stored on the gesture while it moves and reset by nothing but the finger", () => {
+    expect(atRev(0.1).zone).toBe("cancel")
+    expect(atRev(0.5).zone).toBe("compare")
+    expect(atRev(0.9).zone).toBe("commit")
+    expect(draggedLeft(WIDTH - 3).zone).toBeNull()
+    expect(atRev(0.5, { comparisonAllowed: false }).zone).toBe("commit")
+    // A side gesture has two zones whatever the context says.
+    const side = moveGesture(
+      beginGesture({ x: 0, y: 100, lineX: 200 }),
+      { x: 100, y: 100 },
+      options({ lineX: 200, layerOf: () => "map", otherOf: () => "satellite" }),
+    )
+    expect(side.zone).toBe("commit")
+  })
+})
+
+describe("zoneHaptic", () => {
+  const cases: [SwipeZone | null, SwipeZone, string | null][] = [
+    [null, "cancel", null],
+    [null, "compare", null],
+    [null, "commit", null],
+    ["cancel", "cancel", null],
+    ["compare", "compare", null],
+    ["commit", "commit", null],
+    ["cancel", "compare", "detent"],
+    ["commit", "compare", "detent"],
+    ["compare", "commit", "tick"],
+    ["cancel", "commit", "tick"],
+    ["compare", "cancel", "tick"],
+    ["commit", "cancel", "tick"],
+  ]
+  it.each(cases)("from %s to %s: %s", (previous, next, cue) => {
+    expect(zoneHaptic(previous, next)).toBe(cue)
+  })
+
+  it("plays one cue per crossing along a drag, none while the finger stays in a zone", () => {
+    let gesture = beginGesture({ x: WIDTH, y: 100, lineX: null })
+    const cues: (string | null)[] = []
+    for (const rev of [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.6, 0.4, 0.2]) {
+      const next = moveGesture(gesture, { x: WIDTH * (1 - rev), y: 100 }, options())
+      if (next.zone !== null) cues.push(zoneHaptic(gesture.zone, next.zone))
+      gesture = next
+    }
+    expect(cues.filter((cue) => cue !== null)).toEqual(["detent", "tick", "detent", "tick"])
+  })
+})
+
+describe("releaseHaptic", () => {
+  it("is a detent opening the comparison, a tick committing, nothing otherwise", () => {
+    expect(releaseHaptic("compare")).toBe("detent")
+    expect(releaseHaptic("commit")).toBe("tick")
+    expect(releaseHaptic("cancel")).toBeNull()
+    expect(releaseHaptic("tap")).toBeNull()
+    expect(releaseHaptic("none")).toBeNull()
   })
 })
 
