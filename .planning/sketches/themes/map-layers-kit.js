@@ -259,7 +259,7 @@
         if (hint) h += `<div class="lkh fade3">${cfg.swipe.cmp === "button" ? "Glissez pour changer de fond" : "Glissez · lâchez au milieu pour comparer"}</div>`;
       } else {
         h += `<div class="pill glass tap lkdone" data-act="swdone">Terminé</div>`;
-        if (hint) h += `<div class="lkh fade3">Glissez un côté pour le changer · tirez la ligne au bord pour quitter</div>`;
+        if (hint) h += `<div class="lkh fade3">Glissez un côté pour changer son fond · tirez la ligne au bord pour quitter la comparaison</div>`;
       }
       lockui.innerHTML = h;
       clearTimeout(swTm); swTm = setTimeout(() => { if (S.sw && !swg) { S.sw = false; render(); } }, 8000);
@@ -317,7 +317,7 @@
       const keep = cfg.entry === "keep";
       const second = cfg.entry === "capsule" || (keep && cfg.ov === "capsule"), noSw = cfg.entry === "layers";
       const sw = S.base === "map" ? "earth" : "map";
-      let btns = noSw ? "" : `<button class="cbtn ${S.compare ? "off" : ""}" data-act="basemap" title="Changer de fond">${ic(sw, 24)}</button>`;
+      let btns = noSw ? "" : `<button class="cbtn ${S.compare && !cfg.swipe ? "off" : ""}" data-act="basemap" title="Changer de fond">${ic(sw, 24)}</button>`;
       if (second) btns += `<button class="cbtn" data-act="${keep ? "ovbtn" : "study"}" title="Superposition">${ic("layers", 24)}${(keep ? ovDot() : dotOn()) ? '<i class="dot"></i>' : ""}</button>`;
       if (keep && !noSw) btns = btns.replace(`title="Changer de fond">${ic(sw, 24)}`, `title="Changer de fond">${ic(sw, 24)}${S.base !== S.saved || S.compare ? '<i class="dot"></i>' : ""}`);
       btns += `<button class="cbtn" data-act="download" title="Télécharger la zone">${ic("dl", 24)}</button>`;
@@ -334,7 +334,8 @@
       // pastille « Couches » (variante B)
       let ex = "";
       const dotI = dotOn() ? '<i style="width:8px;height:8px;border-radius:50%;background:var(--moss);display:inline-block"></i>' : "";
-      if (keep) ex = S.compare ? `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>` : "";
+      if (keep && cfg.swipe) { ex = S.compare && !S.sw ? `<div class="pill glass tap" data-act="exit">${ic("close", 16)}Quitter la comparaison</div>` : ""; exitEl.style.left = "0"; exitEl.style.right = "0"; exitEl.style.display = "flex"; exitEl.style.justifyContent = "center"; exitEl.style.pointerEvents = "none"; }
+      else if (keep) ex = S.compare ? `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>` : "";
       else if (cfg.entry === "layers") ex = `<div style="display:flex;gap:8px"><div class="pill glass tap" data-act="study">${ic("layers", 18)}Couches${dotI}</div>${S.compare ? `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>` : ""}</div>`;
       else if (S.compare) ex = `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>`;
       else if (cfg.entry === "pill") ex = `<div class="pill glass tap" data-act="study">${ic("layers", 18)}Couches${dotOn() ? '<i style="width:8px;height:8px;border-radius:50%;background:var(--moss);display:inline-block"></i>' : ""}</div>`;
