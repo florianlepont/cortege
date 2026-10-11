@@ -332,9 +332,9 @@ describe("comparison", () => {
     const tree = mount()
     const handlers = swipeMode(tree)
     wipe(handlers, 300, 300)
-    wipe(handlers, 300, 290)
+    wipe(handlers, 300, 250)
     release(handlers)
-    expect(clipOf(stacks(tree)[0])).toEqual([290, 400])
+    expect(clipOf(stacks(tree)[0])).toEqual([250, 400])
     const near = mount()
     const nearHandlers = swipeMode(near)
     wipe(nearHandlers, 380, 330)
@@ -345,11 +345,11 @@ describe("comparison", () => {
   test("a swipe from the left edge keeps the incoming layer on the left", () => {
     const tree = mount()
     const handlers = swipeMode(tree)
-    wipe(handlers, 100, 300)
+    wipe(handlers, 100, 250)
     release(handlers)
     // Photographs on the left of the line, Plan (the underlay) on the right.
     expect(stacks(tree)).toHaveLength(1)
-    expect(clipOf(stacks(tree)[0])).toEqual([0, 300])
+    expect(clipOf(stacks(tree)[0])).toEqual([0, 250])
     expect(styleOf(stacks(tree)[0])).toBe(SPIKE_PHOTOS_STYLE)
   })
 
