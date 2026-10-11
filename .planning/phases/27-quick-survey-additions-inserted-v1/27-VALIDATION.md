@@ -1,8 +1,8 @@
 ---
 phase: 27
 slug: quick-survey-additions-inserted-v1
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-10-11
 ---
@@ -49,6 +49,71 @@ Filled by the planner (one row per task, citing the plan's `<automated>` command
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
+### Per task (filled at planning, 2026-10-11)
+
+Commands are the `<automated>` of each task, shortened: `domain` = `npm --workspace @cortege/ibp-domain run`, `api-unit` = `cd api && npx jest --runInBand -c jest.unit.config.js`, `api-e2e` = `cd api && npx jest --runInBand -c jest.config.js` (Docker Postgres), `mob` = `cd mobile && npx jest -c jest.unit.config.js ... --coverage=false`.
+
+| Task | Requirement | What it proves | Automated command | Status |
+|------|-------------|----------------|-------------------|--------|
+| 27-01-T1 | SVA-04 | Spike script refuses to run without a credential, never prints it | `env -u METEOFRANCE_API_KEY node api/scripts/meteofrance-spike.mjs` exits 1; `node --check` | ⬜ |
+| 27-01-T2 | SVA-04 | Owner capture (human-action); fixtures parse and pass prettier | `node -e` JSON parse of the fixtures; `npx prettier --check api/test/fixtures/meteofrance` | ⬜ |
+| 27-01-T3 | SVA-04 | Spike findings, distance cap, D-21 decisions recorded | grep of the README headings; 6 "Spike 2026-10" rows | ⬜ |
+| 27-02-T1 | SVA-02, SVA-03 | Limits, sky codes, annotations reader/canonicaliser/validator, 100 % covered | `domain test -- conditions && domain test:coverage` | ⬜ |
+| 27-02-T2 | SVA-06 | Wire types compile in package, api and mobile | `domain typecheck && npm run typecheck` | ⬜ |
+| 27-02-T3 | SVA-03 | MAT-ANN-01..03@both: same result with and without annotations in package, API and mobile adapters | `domain test:coverage`; `api-unit test/ibp-parity.spec.ts`; `mob src/app/ibp-parity.test.ts` | ⬜ |
+| 27-03-T1 | SVA-01, SVA-05 | fr.conditions copy, gates (dash, abbreviations, structure) | `mob src/i18n/fr/conditions.test.ts src/__checks__` | ⬜ |
+| 27-03-T2 | SVA-01..03 | Strip, score rows, PDF, history, search strings | `mob src/i18n src/__checks__` | ⬜ |
+| 27-03-T3 | SVA-01, SVA-02 | NoteField counter, maxLength, blur commit; ochre contrast both schemes | `mob src/ui/NoteField.test.tsx src/app/visual-tokens.test.ts` | ⬜ |
+| 27-04-T1 | SVA-04 | Weather config defaults, synthetic refused in production, blank key warned | `api-unit test/env.schema.spec.ts test/check-config.spec.ts` | ⬜ |
+| 27-04-T2 | SVA-04 | check-env.sh parity, examples, test env synthetic | `api-unit test/check-env-parity.spec.ts test/vps-deploy-guard.spec.ts`; `bash -n` | ⬜ |
+| 27-05-T1 | SVA-06 | Migration 023 nullable, checks validated, idempotent | `api-e2e test/migration-023-survey-note-weather.e2e-spec.ts` | ⬜ |
+| 27-05-T2 | SVA-01, SVA-02, SVA-06 | DTO: note 1000, nested weather on /sync and POST, annotations validator | `api-unit test/survey-upsert.dto.spec.ts` | ⬜ |
+| 27-05-T3 | SVA-06 | Same-version and submitted compare of note and weather; 2 MB body | `api-unit test/surveys-normalize.utils.spec.ts test/app-setup.spec.ts` | ⬜ |
+| 27-06-T1 | SVA-04 | Station ranking, tolerance, merge, synthetic provider | `api-unit test/weather-stations.spec.ts test/weather-provider.spec.ts` | ⬜ |
+| 27-06-T2 | SVA-04 | too_old without call, cache, de-dup, cap, 503, no coordinates in logs | `api-unit test/weather.service.spec.ts` | ⬜ |
+| 27-06-T3 | SVA-04 | Route auth, DTO bounds, throttle, synthetic e2e | `api-unit test/weather.controller.spec.ts test/rate-limit.config.spec.ts`; `api-e2e test/weather.e2e-spec.ts` | ⬜ |
+| 27-07-T1 | SVA-06, SVA-05 | requested_at stamp, guarded conditions write, counters unchanged at the write sites | `mob src/storage/surveys.conditions.sqlite.test.ts src/storage/surveys.completion.sqlite.test.ts ...` | ⬜ |
+| 27-07-T2 | SVA-06, SVA-01 | Pull copies note and weather; own-note reader | `mob src/storage/sync.pull.sqlite.test.ts src/storage/surveys.conditions.sqlite.test.ts` | ⬜ |
+| 27-07-T3 | SVA-05 | Weather point store, candidates, clearLocalIbpData | `mob src/storage/weather.sqlite.test.ts` | ⬜ |
+| 27-08-T1 | SVA-02, SVA-03 | Form annotations canonical under factors.annotations, load and reset | `mob src/hooks/useFactorAnnotations.test.ts src/hooks/useSurveyForm.test.ts` | ⬜ |
+| 27-08-T2 | SVA-02, SVA-03 | Context exposure, no spurious autosave, render counts | `mob src/hooks/useEditingDraft.autosave.test.ts src/state src/navigation/routes/routes.test.tsx` | ⬜ |
+| 27-09-T1 | SVA-05 | Merge, edit guard, refill, 24 h window, seven states, attribution | `mob src/app/weather.test.ts` | ⬜ |
+| 27-09-T2 | SVA-05 | API client query and errors | `mob src/api/weather-api.test.ts` | ⬜ |
+| 27-10-T1 | SVA-02, SVA-03 | doubt and note on draft, submitted and community entries | `mob src/app/factor-annotations.test.ts src/screens/community-survey src/screens/survey-detail` | ⬜ |
+| 27-10-T2 | SVA-02, SVA-03 | Chip, clamped note, a11y labels, points unchanged | `mob src/screens/survey-detail/FactorsList.test.tsx src/__checks__` | ⬜ |
+| 27-11-T1 | SVA-06 | Fast-path $26/$27, CAS $28 | `api-unit test/surveys-upsert-fast-path.spec.ts test/surveys.repository.spec.ts` | ⬜ |
+| 27-11-T2 | SVA-06 | Write sites with undefined-keeps rule; owner read | `npm run build`; `api-unit` fast-path, normalize, controller specs | ⬜ |
+| 27-11-T3 | SVA-06, SVA-01, SVA-02 | Round trip on both entry points, same version, submitted, validation, no note in events | `api-e2e test/surveys-note-weather.e2e-spec.ts test/surveys-same-version.e2e-spec.ts ...` | ⬜ |
+| 27-12-T1 | SVA-04 | Authenticated helper, token refresh, redacted errors | `api-unit test/meteofrance-http.spec.ts` | ⬜ |
+| 27-12-T2 | SVA-04 | Mapping on real fixtures, D-21 sky and rain, factory, spike cap | `api-unit test/meteofrance-provider.spec.ts test/weather-provider.spec.ts test/weather.service.spec.ts test/env.schema.spec.ts` | ⬜ |
+| 27-13-T1 | SVA-01, SVA-05 | Silent guarded note and weather writes | `mob src/hooks/useSurveyDraftPatcher.test.ts src/state src/navigation/routes/routes.test.tsx` | ⬜ |
+| 27-13-T2 | SVA-05 | Lookup at parcel choice, catch-up for requested_at, settled and unavailable, single run | `mob src/hooks/useWeatherPrefill.test.ts src/state` | ⬜ |
+| 27-13-T3 | SVA-05 | Parcel centre handed to the hook | `mob src/navigation/routes/routes.test.tsx src/__checks__` | ⬜ |
+| 27-14-T1 | SVA-02, SVA-03 | Strip states, switch row a11y, debounce, Reduce Motion | `mob src/screens/factor-detail src/screens/FactorDetailScreen.test.tsx src/__checks__` | ⬜ |
+| 27-14-T2 | SVA-02 | Pager hides chrome on keyboard, dismiss on page change, route wiring | `mob src/screens/survey-form src/navigation/routes/FactorDetailRoute.test.tsx` | ⬜ |
+| 27-15-T1 | SVA-01 | Note line in history rows | `mob src/app/parcel-history.test.ts src/screens/survey-detail/HistoryList.test.tsx` | ⬜ |
+| 27-15-T2 | SVA-01 | Own match on note, "Trouvé dans la note" | `mob src/app/global-search.test.ts src/screens/global-search` | ⬜ |
+| 27-15-T3 | SVA-01 | Notes loaded while searching | `mob src/hooks/useOwnSurveyNotes.test.ts src/hooks/useGlobalSearch.test.ts src/navigation/routes/SearchGroupRoute.test.tsx` | ⬜ |
+| 27-16-T1 | SVA-01, SVA-05 | Export data and palette entries | `mob src/app/survey-pdf/palette.test.ts src/app/survey-pdf/assemble-export-data.test.ts` | ⬜ |
+| 27-16-T2 | SVA-01, SVA-05 | Conditions block: omitted when empty, escaping, clamps, heights | `mob src/app/survey-pdf/conditions-section.test.ts` | ⬜ |
+| 27-16-T3 | SVA-02, SVA-03 | Badge, factor note, block order, maximal fixture pagination | `mob src/app/survey-pdf` | ⬜ |
+| 27-17-T1 | SVA-06 | Changes feed and community reads carry the fields | `api-unit test/surveys-sync.service.spec.ts test/community-surveys.service.spec.ts` | ⬜ |
+| 27-17-T2 | SVA-01, SVA-02, SVA-06 | Parcel history field; member visibility; drafts hidden; D-24 retention | `api-unit test/parcels.service.spec.ts`; `api-e2e` note-weather, community detail, parcel history | ⬜ |
+| 27-18-T1 | SVA-05 | Conditions data hook, sky chips, fields with ranges | `mob src/screens/survey-detail/conditions` | ⬜ |
+| 27-18-T2 | SVA-01, SVA-05 | Seven states, refill confirm, attribution, note card, read-only twin | `mob src/screens/survey-detail/conditions src/__checks__` | ⬜ |
+| 27-18-T3 | SVA-01, SVA-05 | Context page wiring, section param, scrolling | `mob src/screens/SurveyContextScreen.test.tsx src/navigation src/__checks__` | ⬜ |
+| 27-19-T1 | SVA-01, SVA-05 | Summary card line, attribution, folded note, empty and loading | `mob src/screens/survey-detail/conditions/ConditionsCard.test.tsx src/__checks__` | ⬜ |
+| 27-19-T2 | SVA-01 | Summary wiring, navigation with section | `mob src/screens/SurveyDetailScreen.test.tsx src/navigation/routes/routes.test.tsx src/state/render-counts.test.tsx` | ⬜ |
+| 27-19-T3 | SVA-01 | Community Conditions section | `mob src/screens/community-survey src/__checks__` | ⬜ |
+| 27-20-T1 | all | Technical contracts updated | greps on the three docs | ⬜ |
+| 27-20-T2 | all | Form spec and stories | greps on the specs | ⬜ |
+| 27-20-T3 | all | CLAUDE.md and VPS README | greps | ⬜ |
+| 27-21-T1 | all | Full gates green, six protocol rows | `npm run lint && npm run typecheck && npm run test:unit && npm run test:e2e && npm run format:check`; grep rows | ⬜ |
+| 27-21-T2 | SVA-01..03, SVA-05 | Device checks DC-27-01..05 (human-verify) | grep of the rows; owner approval | ⬜ |
+| 27-21-T3 | SVA-04 | Real Météo-France answer, local then VPS (human-verify) | grep of DC-27-06; owner approval | ⬜ |
+
+No three consecutive tasks lack an automated command; the two human checkpoints of 27-21 and the human-action of 27-01 each carry an automated grep of their recorded outcome.
+
 ---
 
 ## Wave 0 Requirements
@@ -78,11 +143,11 @@ Filled by the planner (one row per task, citing the plan's `<automated>` command
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies (planning, 2026-10-11)
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (spike: plan 27-01; migration, weather, parity, mobile weather, strip, section, card and PDF test files are created by the tasks that build them, test first)
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s (targeted files per task; e2e only where the task changes SQL or routes)
+- [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending

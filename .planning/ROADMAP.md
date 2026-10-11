@@ -955,7 +955,7 @@ Plans:
 
 **Goal**: A survey can carry a free note, pre-filled weather information and a certainty level on observations, without slowing the field entry.
 **Depends on**: Phase 26
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: REQ-C-survey-note (SVA-01), REQ-C-factor-note (SVA-02), REQ-C-doubt-flag (SVA-03), REQ-C-weather-provider (SVA-04), REQ-C-weather-prefill (SVA-05), REQ-C-conditions-sync (SVA-06)
 **Source**: seminar 2026-10-10: cards "Note libre sur le relevé", "Info météo préremplie", "Niveau de certitude des observations"; part of the V1 features of the beta
 **Success Criteria** (what must be TRUE):
 
@@ -963,7 +963,49 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: TBD
+**Plans**: 21 plans in 6 waves
+
+Plans:
+
+**Wave 1**
+
+- [ ] 27-01-PLAN.md: Météo-France spike with the owner's key, human checkpoint (D-19, D-21, D-22)
+- [ ] 27-02-PLAN.md: shared contract in @cortege/ibp-domain, factors.annotations, MAT-ANN parity (D-14, D-23)
+- [ ] 27-03-PLAN.md: French catalogue of the phase, NoteField, ochre contrast pair (D-18, D-26)
+- [ ] 27-04-PLAN.md: weather configuration and production rules, check-env parity (D-22)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 27-05-PLAN.md: migration 023, upsert DTO, read-only compare, 2 MB body limit (D-01, D-04, D-25)
+- [ ] 27-06-PLAN.md: GET /v1/weather on the synthetic provider: cache, cap, 24 h window, 503 (D-08, D-19, D-20)
+- [ ] 27-07-PLAN.md: phone storage, requested_at stamp, guarded conditions write, pull copy (D-02, D-03)
+- [ ] 27-08-PLAN.md: form doubts and factor notes under factors.annotations (D-12, D-23)
+- [ ] 27-09-PLAN.md: app weather rules (merge, edit guard, states) and the API client (D-09, D-10, D-11)
+- [ ] 27-10-PLAN.md: doubt chip and factor note on score and community rows (D-13, D-17)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 27-11-PLAN.md: API write sites and round-trip e2e (D-01, D-03, D-04)
+- [ ] 27-12-PLAN.md: Météo-France provider on the spike fixtures (D-08, D-19, D-21)
+- [ ] 27-13-PLAN.md: app-level weather prefill and catch-up, silent note and weather writes (D-10, D-11, D-20)
+- [ ] 27-14-PLAN.md: "Douteux" strip under each factor, pager keyboard (D-12, D-16)
+- [ ] 27-15-PLAN.md: note in the parcel history and the own-survey search (D-06, D-07)
+- [ ] 27-16-PLAN.md: PDF conditions block, doubt badge and factor note (D-13, D-17, D-26)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 27-17-PLAN.md: changes feed, community and history reads, retention on account deletion (D-06, D-24)
+- [ ] 27-18-PLAN.md: Conditions section of the context page (D-03, D-09, D-11, D-15)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 27-19-PLAN.md: Conditions card on the summary and on the community survey (D-17, D-26)
+- [ ] 27-20-PLAN.md: contracts, form spec, user stories, CLAUDE.md, VPS README
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [ ] 27-21-PLAN.md: device checks and the real Météo-France answer, human checkpoints
+
 **UI hint**: yes
 
 ### Phase 28: Map Layers & Comparison (INSERTED, V1)
