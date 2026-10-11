@@ -72,6 +72,12 @@ export const conditionsFr = {
       cancel: "Annuler",
     },
     source: "Source : Météo-France",
+    // One value with its unit, for the label and value rows of the read-only card.
+    values: {
+      temperature: (value: string) => `${value}\u00a0°C`,
+      wind: (value: string) => `${value}\u00a0km/h`,
+      rain: (value: string) => `${value}\u00a0mm`,
+    },
     // Values as printed on one line (summary card, community, PDF); numbers arrive formatted.
     parts: {
       temperature: (value: string) => `${value}\u00a0°C`,

@@ -27,6 +27,8 @@ type NoteFieldProps = {
   // Called on blur with the raw text. The canonical form (CRLF to LF, trim, empty to absent) is
   // applied by the write paths through the @cortege/ibp-domain helpers, never here.
   onCommit: (text: string) => void
+  // Called when the field takes focus, so a scrolling page can bring it into view.
+  onFocus?: () => void
   minHeight: number
   maxHeight: number
   accessibilityLabel: string
@@ -48,6 +50,7 @@ export function NoteField({
   counterA11y,
   onChangeText,
   onCommit,
+  onFocus,
   minHeight,
   maxHeight,
   accessibilityLabel,
@@ -71,6 +74,7 @@ export function NoteField({
         testID={testID}
         value={value}
         onChangeText={onChangeText}
+        onFocus={onFocus}
         onBlur={() => onCommit(value)}
         multiline
         textAlignVertical="top"

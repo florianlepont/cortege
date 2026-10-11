@@ -148,6 +148,15 @@ describe("NoteField (D-05, D-06)", () => {
     expect(onCommit).toHaveBeenCalledWith("  une note \r\n")
   })
 
+  test("focus is reported so a scrolling page can bring the field into view", () => {
+    const onFocus = jest.fn()
+    const { input } = render({ onFocus })
+    act(() => {
+      input.props.onFocus({})
+    })
+    expect(onFocus).toHaveBeenCalledTimes(1)
+  })
+
   test("accessibility label and hint come from the props", () => {
     const { input } = render({
       accessibilityLabel: "Note du facteur Genres",

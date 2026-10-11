@@ -27,6 +27,13 @@ describe("fr.conditions", () => {
     expect(line).toBe("Nuageux, 14 °C, vent 12 km/h, pluie 2 mm sur 24 h")
   })
 
+  test("a value with its unit keeps the unit on the same line", () => {
+    const { values } = conditions.weather
+    expect(values.temperature("14,5")).toBe("14,5\u00a0°C")
+    expect(values.wind("12")).toBe("12\u00a0km/h")
+    expect(values.rain("2")).toBe("2\u00a0mm")
+  })
+
   test("an empty list of parts gives an empty line", () => {
     expect(conditions.weather.parts.line([])).toBe("")
   })
