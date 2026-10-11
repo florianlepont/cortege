@@ -48,6 +48,8 @@ export type DownloadCardProps = {
   onRetry: () => void
   onDone: () => void
   onClose: () => void
+  /** The card's drawn height, so the Explorer can lift the locate arrow above it. */
+  onHeight?: (height: number) => void
 }
 
 /**
@@ -66,6 +68,7 @@ export const DownloadCard = memo(function DownloadCard({
   onRetry,
   onDone,
   onClose,
+  onHeight,
 }: DownloadCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -97,6 +100,7 @@ export const DownloadCard = memo(function DownloadCard({
     <Animated.View
       testID="download-card"
       entering={FadeIn.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)}
+      onLayout={onHeight ? (event) => onHeight(event.nativeEvent.layout.height) : undefined}
       style={[styles.position, { bottom }]}
     >
       <GlassSurface surface={theme.visual.mapPanel} style={styles.card}>

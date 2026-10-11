@@ -14,6 +14,12 @@ type Options = {
   panelOpen: boolean
   onStart?: () => void
   onFailure?: () => void
+  /**
+   * Whether a failure while the panel is closed is told by an alert (the picker's default). The
+   * Explorer passes false: its chip tells it, and a tap on the chip reopens the card (Phase 28).
+   * A refused area (too large) always alerts.
+   */
+  alertOnClosedFailure?: boolean
 }
 
 /**
@@ -27,11 +33,14 @@ export function useAreaDownloadAction({
   panelOpen,
   onStart,
   onFailure,
+  alertOnClosedFailure = true,
 }: Options): (name: string) => void {
   const panelOpenRef = useRef(panelOpen)
   panelOpenRef.current = panelOpen
   const callbacksRef = useRef({ onStart, onFailure })
   callbacksRef.current = { onStart, onFailure }
+  const alertRef = useRef(alertOnClosedFailure)
+  alertRef.current = alertOnClosedFailure
 
   return useCallback(
     (name: string) => {
@@ -40,7 +49,7 @@ export function useAreaDownloadAction({
         if (outcome.ok) return
         callbacksRef.current.onFailure?.()
         if (outcome.reason === "too_large") Alert.alert(t.tooLarge)
-        else if (!panelOpenRef.current) Alert.alert(t.downloadFailed)
+        else if (alertRef.current && !panelOpenRef.current) Alert.alert(t.downloadFailed)
       })
     },
     [startDownload, region],

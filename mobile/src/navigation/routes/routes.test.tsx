@@ -1981,6 +1981,38 @@ describe("PublicMapRoute", () => {
       expect(navigation.navigate).not.toHaveBeenCalledWith("communitySurvey", expect.anything())
     })
 
+    test("hands the screen the normalised parcels of every local survey, drafts included (Avec IBP)", async () => {
+      const fixture = fixtureWithLocalSurveys()
+      const source = (id: string, status: string, parcelIds: string[]) => ({
+        ...localSource(id, status),
+        payload: { ...localSource(id, status).payload, parcel_ids: parcelIds },
+      })
+      mockLocalMapData = {
+        sources: [
+          source("s-01", "draft", [" p1 ", "P2"]),
+          source("s-02", "submitted", ["p2", "P3"]),
+        ],
+        parcels: [],
+      }
+      await mount(
+        <Providers fixture={fixture}>
+          <PublicMapRoute navigation={makeNavigation() as never} route={{} as never} />
+        </Providers>,
+      )
+      const parcelIds = props("publicMap").surveyParcelIds as ReadonlySet<string>
+      expect([...parcelIds].sort()).toEqual(["P1", "P2", "P3"])
+    })
+
+    test("hands an empty set when the phone holds no survey", async () => {
+      mockLocalMapData = EMPTY_LOCAL_MAP
+      await mount(
+        <Providers fixture={makeFixture()}>
+          <PublicMapRoute navigation={makeNavigation() as never} route={{} as never} />
+        </Providers>,
+      )
+      expect((props("publicMap").surveyParcelIds as ReadonlySet<string>).size).toBe(0)
+    })
+
     test("draws a survey the API already returned once, and still opens it as the owner's", async () => {
       const fixture = fixtureWithLocalSurveys()
       mockLocalMapData = {

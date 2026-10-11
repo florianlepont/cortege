@@ -46,6 +46,11 @@ export type MapLegendProps = {
   infoTerm?: AbbreviationTerm
   loading?: boolean
   isOffline?: boolean
+  /**
+   * Phase 28: the source lines of the layers shown (one `Text` each, in the attribution style)
+   * instead of the default attribution. Omitted in the default display.
+   */
+  attributionLines?: string[]
 }
 
 /**
@@ -63,6 +68,7 @@ export const MapLegend = memo(function MapLegend({
   infoTerm,
   loading = false,
   isOffline = false,
+  attributionLines,
 }: MapLegendProps) {
   const [expanded, setExpanded] = useState(false)
   const theme = useBrandTheme()
@@ -92,7 +98,15 @@ export const MapLegend = memo(function MapLegend({
               <Text style={styles.rowLabel}>{row.label}</Text>
             </View>
           ))}
-          <Text style={styles.attribution}>{t.legend.attribution}</Text>
+          {attributionLines ? (
+            attributionLines.map((line) => (
+              <Text key={line} style={styles.attribution}>
+                {line}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.attribution}>{t.legend.attribution}</Text>
+          )}
         </GlassSurface>
       ) : null}
       <View style={styles.line}>
@@ -130,6 +144,8 @@ export type ScoreLegendProps = {
   count: number
   loading?: boolean
   isOffline?: boolean
+  /** Phase 28: one source line per layer shown, then the common attribution (null: default text). */
+  attributionLines?: string[]
 }
 
 /** The Explorer's legend: the survey count and the score colours of its markers. */

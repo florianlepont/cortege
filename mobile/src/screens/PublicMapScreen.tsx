@@ -46,6 +46,11 @@ type PublicMapScreenProps = {
    * drawn with the normal marker and counted by the pill.
    */
   ownItems?: PublicMapItem[]
+  /**
+   * Phase 28 ("Avec IBP"): the parcels of the author's own surveys, drafts included, trimmed and
+   * upper case. Assumption to confirm with the owner (UI-SPEC open item 7).
+   */
+  surveyParcelIds?: ReadonlySet<string>
   /** OA-59: a survey page asked to see its survey here; centres the map on it and highlights it. */
   focus?: PublicMapFocus
   loading: boolean

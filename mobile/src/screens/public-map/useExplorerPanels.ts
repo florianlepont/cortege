@@ -31,6 +31,8 @@ export type ExplorerPanelsActions = {
   openClusterList: (items: PublicMapItem[]) => void
   /** A marker was chosen: only an open cluster list closes. */
   closeCluster: () => void
+  /** Closes the card (or any panel) and leaves the download's status alone: the chip keeps it. */
+  closePanel: () => void
   /** Closes whichever panel is open and drops a finished download's outcome. */
   closeAll: () => void
   /** The download of the shown area started: the area is chosen. */
@@ -93,6 +95,10 @@ export function useExplorerPanels({ clearDownloadStatus, onPanelOpen }: Options)
     closeCluster: () => {
       setClusterItems(null)
       setPanel((current) => (current === "cluster" ? null : current))
+    },
+    closePanel: () => {
+      setPanel(null)
+      setClusterItems(null)
     },
     closeAll: () => {
       setPanel(null)

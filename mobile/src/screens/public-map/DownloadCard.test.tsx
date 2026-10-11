@@ -230,6 +230,17 @@ describe("DownloadCard (28-15)", () => {
     expect(brandRadius.card).toBe(22)
   })
 
+  test("reports its drawn height when asked, and says nothing when not", () => {
+    const onHeight = jest.fn()
+    const { tree } = mount({ onHeight })
+    const [host] = byTestId(tree, "download-card")
+    act(() => host.props.onLayout({ nativeEvent: { layout: { height: 152 } } }))
+    expect(onHeight).toHaveBeenCalledWith(152)
+
+    const { tree: silent } = mount()
+    expect(byTestId(silent, "download-card")[0].props.onLayout).toBeUndefined()
+  })
+
   test("enters with a 160 ms fade that follows Reduce Motion", () => {
     const { tree } = mount()
     const [host] = byTestId(tree, "download-card")

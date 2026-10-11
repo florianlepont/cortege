@@ -115,6 +115,17 @@ describe("useExplorerPanels", () => {
     expect(clearDownloadStatus).toHaveBeenCalledTimes(1)
   })
 
+  test("closePanel closes the card and keeps the download's status for the chip", async () => {
+    const { result } = await setup()
+    await act(async () => result.current.openCardOn("failed"))
+    await act(async () => result.current.closePanel())
+    expect(result.current.panel).toBeNull()
+    expect(clearDownloadStatus).not.toHaveBeenCalled()
+    await act(async () => result.current.openClusterList(ITEMS))
+    await act(async () => result.current.closePanel())
+    expect(result.current.clusterItems).toBeNull()
+  })
+
   test("the area is chosen once a download starts and free again after a refusal", async () => {
     const { result } = await setup()
     await act(async () => result.current.chooseArea())
@@ -135,6 +146,7 @@ describe("useExplorerPanels", () => {
       "closeBubble",
       "openClusterList",
       "closeCluster",
+      "closePanel",
       "closeAll",
       "chooseArea",
       "unchooseArea",

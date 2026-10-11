@@ -105,6 +105,8 @@ export const mapLayersFr = {
     buttonHint: "Ouvre les réglages des superpositions",
     buttonActiveValue: "réglages modifiés",
     title: "Superpositions",
+    // The transparent layer behind the open bubble: a tap on the map only closes it.
+    closeA11y: "Fermer les superpositions",
     forestMeta: "Feuillus, conifères, mélangées",
     forestOffline: "Indisponible hors connexion",
     forestSwitchA11y: "Afficher les types de forêt",

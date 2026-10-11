@@ -130,6 +130,36 @@ describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
     expect(glyph.props.color).toBe(defaultTheme.visual.mapControl.icon)
   })
 
+  test("without source lines the default attribution text stays, unchanged", () => {
+    const tree = render()
+    expand(tree)
+    expect(textNode(tree, t.legend.attribution)).toBeTruthy()
+  })
+
+  test("with source lines it lists them in order in place of the default attribution (Phase 28)", () => {
+    const lines: string[] = [
+      fr.mapLayers.layers.photos1950.source,
+      fr.mapLayers.layers.cadastreSource,
+      fr.mapLayers.sources.common,
+    ]
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<ScoreLegend bottom={40} count={3} attributionLines={lines} />)
+    })
+    expand(tree)
+    const attribution = tree.root
+      .findAll(
+        (node) => (node.type as unknown) === "Text" && lines.includes(String(node.props.children)),
+      )
+      .map((node) => node.props.children)
+    expect(attribution).toEqual(lines)
+    expect(
+      tree.root.findAll(
+        (node) => (node.type as unknown) === "Text" && node.props.children === t.legend.attribution,
+      ),
+    ).toHaveLength(0)
+  })
+
   test("a MapLegend without infoTerm (the parcel picker's) draws no info control", () => {
     let tree!: renderer.ReactTestRenderer
     act(() => {
