@@ -71,6 +71,8 @@ Optional fields:
 - `ibp_method_version` (text, nullable) // phase 01.8, migration 016. `cnpf_ibp_fr_v3_0_2023-03-23` (IBP Fr v3.0) or `cnpf_ibp_fr_v3_2_2026-02-02` (IBP FR v3.2); NULL = v3.0
 - `ibp_cas` (smallint, nullable) // phase 01.8, migration 016. v3.2 station case 1-4; NULL for v3.0
 - `ibp_cas3_scale` (boolean, nullable) // phase 01.8, migration 016. v3.2 only: cas-3 scale for A and G (cas 2 in a cas-3 zone; lapiaz, dune, peat-bog or *Juniperus thurifera* stand); NULL for v3.0, and NULL equals false
+- `survey_note` (text, nullable) // phase 27, migration 023 (D-01). The free observation note of the whole survey, at most 1000 characters (CHECK `chk_surveys_survey_note_length`). NULL = no note. Stored as sent (the server does not trim)
+- `weather` (jsonb, nullable) // phase 27, migration 023 (D-01). The weather of the visit, a JSON object of at most 2048 bytes as text (CHECKs `chk_surveys_weather_object` and `chk_surveys_weather_size`). NULL = no weather. Shape below
 
 IBP method version and factor payloads (phase 01.8, ADR-003):
 - Migration 016 (`api/migrations/016_ibp_method_version.sql`) adds the three columns, nullable and with no default, so existing rows stay NULL (= v3.0) and nothing is backfilled. Constraints: `chk_surveys_ibp_method_version` (`ibp_method_version IS NULL OR ibp_method_version IN ('cnpf_ibp_fr_v3_0_2023-03-23', 'cnpf_ibp_fr_v3_2_2026-02-02')`) and `chk_surveys_ibp_cas` (`ibp_cas IS NULL OR ibp_cas IN (1, 2, 3, 4)`). The migration is additive: an API without these columns keeps serving.
@@ -80,6 +82,13 @@ IBP method version and factor payloads (phase 01.8, ADR-003):
 - Factor A carries the native cover used by the cap "A at most 2 when the native cover is below 50 %": `native_cover_percent` (0-100) or `native_cover_below_50` (boolean), next to the genus data (see "Factor A: genus list" below). It is required for v3.2 and optional for v3.0. Before phase 01.8 the cover was stored on B (`covered_autochthonous_percent` / `native_cover_percent`) and capped B (BUG-1); that legacy B cover is now read only for a v3.0 survey whose A records no cover, and B is scored from its strata count alone.
 - Allowed factor scores, both versions: A-F 0, 1, 2 or 5; G, H, I and J 0, 2 or 5 (G and H accepted 1 before phase 01.8, BUG-2).
 - Mobile: the three fields live in the schemaless `payload_json` of `local_surveys` and in the queue payload; there is no SQLite column and `SCHEMA_VERSION` stays 2.
+
+Survey note and weather (phase 27, D-01, D-09):
+- Migration 023 (`api/migrations/023_survey_note_weather.sql`) adds `survey_note` and `weather`, nullable and with no default, so existing rows stay NULL and nothing is backfilled. The three CHECK constraints are added `NOT VALID` then validated, as in migration 016, and every statement is guarded, so a second run is a no-op. The migration is additive: the previous API keeps serving while it runs.
+- Shape of `weather` (every key optional, absent or `null` = no value): `sky` (one of the 8 codes `clear`, `partly_cloudy`, `cloudy`, `overcast`, `fog`, `rain`, `thunderstorm`, `snow`), `temperature_c` (-40 to 55), `wind_kmh` (0 to 350), `rain_24h_mm` (0 to 1000, the rain of the last 24 hours), `observed_at` (ISO 8601 string, the time the values describe), `requested_at` (ISO 8601 string, the survey time the lookup is for, stamped on the phone when the parcel is first chosen), `source` (`meteo_france` or `manual`) and `edited` (the list of touched keys among `sky`, `temperature_c`, `wind_kmh`, `rain_24h_mm`, `observed_at`; it keeps the overwrite guard of the lookup after a restart). The two times are strings inside the jsonb, never timestamp columns, so they compare by string.
+- The bounds are the `WEATHER_RANGES` and `WEATHER_SKY_CODES` of `@cortege/ibp-domain` (`conditions.ts`); the API validates the nested object with `SurveyWeatherDto` and holds no copy of the bounds.
+- Factor notes and doubts (D-12, D-23): they live in the `factors` JSONB under a `factors.annotations` container beside the factor keys A to J, never inside a factor entry (a meta-only factor entry would be refused by the scorer as `factor_invalid_raw`). Keys are factor codes A to J; each value is `{ doubt?: true, note?: string }` with a note of at most 300 characters. The container needs no migration and no column; it is validated by `factorAnnotationsIssues` of the package, normalised by `canonicalFactorAnnotations`, and no scorer reads it: the same survey with and without a doubt or a note has the same scores, bands and validation result (parity cases `MAT-ANN-*`, D-14).
+- Mobile: `survey_note` and `weather` live in the schemaless `payload_json` and the queue payload, `factors.annotations` in the factors payload; there is no SQLite column and `user_version` stays 5. A pull (`storage/sync.ts`) copies the three.
 
 Factor A: genus list (phase 5, ADR-002 D-15, ADR-003 CH-12):
 - A survey records the native genera it observed as a **list**, not a bare number: `factors.A.genera` (array of genus codes, e.g. `["Fagus", "Quercus_deciduae"]`), drawn from the closed CNPF regional list of 34 classes (33 genera; `Quercus` is the one genus CNPF splits into two countable classes, `Quercus_deciduae` and `Quercus_sempervirens`, IBP FR v3.2 p. 6). The **count Factor A scores from is derived from the list** (its number of distinct valid codes), never sent or stored separately. The list is validated against the CNPF list by `@cortege/ibp-domain` (`genus.ts`); an unlisted code is a blocking `factor_a_genus_invalid` issue (see `api-contract-v1.md`).
@@ -104,6 +113,7 @@ Factor detail arrays (phase 25.1, D-12):
 
 Local-only fields (mobile SQLite `local_surveys`, never sent to the server):
 - `payload_completion` (integer 0-100, `NOT NULL DEFAULT 0`) // completion of the stored payload, computed when `payload_json` is written (draft create, draft update, and pull insert/update) and backfilled from `payload_json` by SQLite migration 2 (`PRAGMA user_version` 2); an unparsable payload stores 0. The "submitted = 100" rule is status-based and is applied at read time (`CASE WHEN status = 'submitted' THEN 100 ELSE payload_completion END`), so listing surveys never parses a payload.
+- `local_meta` key `weather_point:<SURVEY_ID>` (phase 27) // the parcel centre (latitude and longitude at 4 decimals) used for the weather lookup of that draft; deleted with the local data, never sent to the server. `PRAGMA user_version` stays 5.
 
 ### 4) Attachment
 Photo or media file linked to a survey.
@@ -307,6 +317,8 @@ Optional fields:
 - `observation_year` and `version_number` are required for `submitted` surveys
 - the station of the survey's method is required for `submitted` surveys: `region_version` and `vegetation_stage` for v3.0, `ibp_cas` (1-4) for v3.2 (`ibp_cas_required`)
 - `submitted` surveys are read-only for observation payload (`site_name`, parcel linkage, region/stage, `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, factors, scores)
+- since phase 27 (D-03) `survey_note`, `weather` and `factors.annotations` (the doubts and factor notes) are read-only after submit too, compared like `factors` (see `sync-conflict-resolution-v1.md`); there is no sync operation to edit them afterwards
+- account deletion keeps the notes of retained submitted surveys (D-24, owner decision 2026-10-11): `survey_note`, `weather` and the factor notes are not nulled; the author shows as unknown (`user_id` is nulled, the community reads give `author_name` null). A free note may name a person; no erasure of note text is done in this phase
 - `submitted` surveys may still change `visibility` (`private` <-> `public`)
 - Only `public` surveys are eligible for community surfaces
 - Switching `public -> private` must remove the survey from community surfaces
