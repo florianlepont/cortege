@@ -1,10 +1,23 @@
 ---
 phase: 29-field-feedback-fixes-inserted
 verified: 2026-10-11T00:00:00Z
-status: human_needed
+status: passed
 score: 5/7 success criteria verified (SC-2 to SC-6); SC-1 deferred, SC-7 code part verified and device part deferred; 11/11 decisions verified in code
 behavior_unverified: 0
-overrides_applied: 0
+overrides_applied: 3
+overrides:
+  - must_have: "SC-1: genus recognition confirmed on at least two real Android phones"
+    reason: "Deferred with explicit tracking: no Android phone is available to the owner; the Android testers run the measurement with a Release APK built with EXPO_PUBLIC_GENUS_TIMING=true. Tracked in 29-UAT.md test 1 and docs/user-tests/device-checks.md rows D-01 to D-03. The model-load code (PR #272) is verified in code and on the emulator."
+    accepted_by: "owner"
+    accepted_at: "2026-10-11T12:00:00Z"
+  - must_have: "SC-7 device part: latency median and p95 against 3 s, empty Camera and ImageManipulator cache folders (DC-D-01 to DC-D-03)"
+    reason: "Same deferral as SC-1 (real Android phones). The code part of SC-7 is verified: temp files deleted in finally blocks behind a strict guard, timings behind EXPO_PUBLIC_GENUS_TIMING. Tracked in 29-UAT.md test 1."
+    accepted_by: "owner"
+    accepted_at: "2026-10-11T12:00:00Z"
+  - must_have: "Full parcel-selection card at 393 x 852 and the IBP glyphs on the wizard method step and the Explorer legend on Android"
+    reason: "Visual checks not done on a device; behaviour verified by unit tests. Tracked in 29-UAT.md tests 2 and 3; the owner accepted closing the phase with them deferred."
+    accepted_by: "owner"
+    accepted_at: "2026-10-11T12:00:00Z"
 re_verification: false
 gaps: []
 deferred_human:
@@ -27,7 +40,7 @@ human_verification:
 # Phase 29: Field-feedback fixes - Verification Report
 
 **Phase Goal:** The problems reported by the Android testers are gone: photo recognition of genera works on Android (model loads, PR #272), the small-screen map stays readable, abbreviations are explained and genera are easy to find.
-**Status:** human_needed. Nothing failed in code. The only open items are the owner-deferred real-Android-phone measurements and three device checks not yet done.
+**Status:** passed with three owner-accepted overrides (deferred device checks, tracked in 29-UAT.md). Nothing failed in code. Originally reported as human_needed: on 2026-10-11 the owner decided to close the phase with the real-Android-phone measurements and two visual checks deferred.
 **Re-verification:** No, initial verification.
 
 Evidence base: files read in the worktree (HEAD 5cc44891), plus `npm run lint` (0 problems), `npm run typecheck` (0 errors) and `npm --workspace mobile run test:unit` (325 suites, 4362 tests, all passing; same as the stated gate state). `format:check` reports only the untracked-local `.claude/settings.local.json`, unrelated to the phase. No probes are declared by the phase. No TBD/FIXME/XXX marker in the 77 files changed since the merge base.
