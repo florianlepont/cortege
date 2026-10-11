@@ -87,7 +87,7 @@
     let tm = null, dlTimer = null, hideTm = null, dlDoneTm = null;
     const reset = () => {
       clearInterval(dlTimer); clearTimeout(hideTm); clearTimeout(dlDoneTm);
-      Object.assign(S, { parcels: "all", panel: null, base: "map", saved: "map", overlay: false, compare: false, sideA: "map", sideB: "p1950", target: "right", z: 15, cx: 256, cy: 384, offline: false, covered: true, err: null, hidPill: false, x: W / 2, seg: "explore", leaving: false, entering: false, dl: { st: "idle", pct: 0, scen: "ok" }, dlPanelOpened: false });
+      Object.assign(S, { chooser: null, parcels: "all", panel: null, base: "map", saved: "map", overlay: false, compare: false, sideA: "map", sideB: "p1950", target: "right", z: 15, cx: 256, cy: 384, offline: false, covered: true, err: null, hidPill: false, x: W / 2, seg: "explore", leaving: false, entering: false, dl: { st: "idle", pct: 0, scen: "ok" }, dlPanelOpened: false });
     };
     reset();
         root.innerHTML = `<div class="phone" style="width:${W}px;height:${H}px">
@@ -95,12 +95,12 @@
         <div class="handle"></div></div>
       <div class="tagl"></div>
       <div class="status"><span>9:41</span><span>5G ▮▮▮</span></div>
-      <div class="exit"></div><div class="notices"></div><div class="capsule glass"></div><div class="locate glass"></div><div class="chipw"></div><div class="barp"></div>
+      <div class="exit"></div><div class="notices"></div><div class="capsule glass"></div><div class="locate glass"></div><div class="ovbtn glass" data-act="ovbtn" style="display:none"></div><div class="chooser-w"></div><div class="chipw"></div><div class="barp"></div>
       <div class="sheet" style="display:none"></div>
       <div class="tb"><div>Accueil</div><div>Mes relevés</div><div class="on">Explorer</div><div>Rechercher</div></div><div class="homebar"></div></div>`;
     const $ = (s) => root.querySelector(s);
     const phone = $(".phone"), wa = $('[data-w="a"]'), wb = $('[data-w="b"]'), clipb = $(".clipb"), handle = $(".handle"), mks = $(".mks"), capsule = $(".capsule"), locate = $(".locate");
-    const notices = $(".notices"), exitEl = $(".exit"), chipw = $(".chipw"), sheet = $(".sheet"), tagl = $(".tagl"), barp = $(".barp");
+    const chooserW = $(".chooser-w"); const notices = $(".notices"), exitEl = $(".exit"), chipw = $(".chipw"), sheet = $(".sheet"), tagl = $(".tagl"), barp = $(".barp");
     let key = "";
 
     const avail = (k) => {
@@ -174,7 +174,7 @@
     handle.addEventListener("pointermove", (e) => { if (!dragH) return; const r = phone.getBoundingClientRect(); S.x = Math.min(Math.max(e.clientX - r.left, 22), W - 22); curtainR(); });
     handle.addEventListener("pointerup", () => { dragH = false; });
     // déplacer la carte
-    $(".mapwrap").addEventListener("pointerdown", (e) => { if (e.target.closest(".handle")) return; dragM = { x: e.clientX, y: e.clientY }; });
+    $(".mapwrap").addEventListener("pointerdown", (e) => { if (e.target.closest(".handle")) return; if (cfg.entry === "keep" && S.chooser) { S.chooser = null; chooserR(); } dragM = { x: e.clientX, y: e.clientY }; });
     window.addEventListener("pointermove", (e) => { if (!dragM) return; const s = scale(); S.cx -= (e.clientX - dragM.x) / s; S.cy -= (e.clientY - dragM.y) / s; dragM = { x: e.clientX, y: e.clientY }; place(); });
     window.addEventListener("pointerup", () => { dragM = null; });
     $(".mapwrap").addEventListener("wheel", (e) => { e.preventDefault(); zoom(e.deltaY < 0 ? 1 : -1); }, { passive: false });
@@ -197,20 +197,28 @@
 
     // ---- capsule, pastilles ----
     const capsuleR = () => {
-      const second = cfg.entry === "capsule", noSw = cfg.entry === "layers";
+      const keep = cfg.entry === "keep";
+      const second = cfg.entry === "capsule" || (keep && cfg.ov === "capsule"), noSw = cfg.entry === "layers";
       const sw = S.base === "map" ? "earth" : "map";
       let btns = noSw ? "" : `<button class="cbtn ${S.compare ? "off" : ""}" data-act="basemap" title="Changer de fond">${ic(sw, 24)}</button>`;
-      if (second) btns += `<button class="cbtn" data-act="study" title="Mode étude : couches et comparaison">${ic("layers", 24)}${dotOn() ? '<i class="dot"></i>' : ""}</button>`;
+      if (second) btns += `<button class="cbtn" data-act="${keep ? "ovbtn" : "study"}" title="Superposition">${ic("layers", 24)}${(keep ? ovDot() : dotOn()) ? '<i class="dot"></i>' : ""}</button>`;
+      if (keep && !noSw) btns = btns.replace(`title="Changer de fond">${ic(sw, 24)}`, `title="Changer de fond">${ic(sw, 24)}${S.base !== S.saved || S.compare ? '<i class="dot"></i>' : ""}`);
       btns += `<button class="cbtn" data-act="download" title="Télécharger la zone">${ic("dl", 24)}</button>`;
       capsule.innerHTML = btns;
       const n = second ? 3 : noSw ? 1 : 2;
       capsule.style.top = TOPN + "px"; capsule.style.height = n * 50 + (n - 1) + "px";
-      locate.style.top = TOPN + n * 50 + (n - 1) + 10 + "px"; locate.innerHTML = ic("locate", 24);
+      if (!keep) locate.style.top = TOPN + n * 50 + (n - 1) + 10 + "px"; locate.innerHTML = ic("locate", 24);
       capsule.dataset.dlIndex = n - 1;
+      const ovb = root.querySelector(".ovbtn");
+      if (keep) {
+        locate.style.top = "auto"; locate.style.bottom = 84 + 14 + (S.panel ? sheet.offsetHeight : 0) + "px";
+        if (cfg.ov !== "capsule") { ovb.style.display = "flex"; ovb.style.top = TOPN + n * 50 + (n - 1) + 10 + "px"; ovb.innerHTML = ic("layers", 24) + (ovDot() ? '<i class="dot"></i>' : ""); } else ovb.style.display = "none";
+      } else if (ovb) ovb.style.display = "none";
       // pastille « Couches » (variante B)
       let ex = "";
       const dotI = dotOn() ? '<i style="width:8px;height:8px;border-radius:50%;background:var(--moss);display:inline-block"></i>' : "";
-      if (cfg.entry === "layers") ex = `<div style="display:flex;gap:8px"><div class="pill glass tap" data-act="study">${ic("layers", 18)}Couches${dotI}</div>${S.compare ? `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>` : ""}</div>`;
+      if (keep) ex = S.compare ? `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>` : "";
+      else if (cfg.entry === "layers") ex = `<div style="display:flex;gap:8px"><div class="pill glass tap" data-act="study">${ic("layers", 18)}Couches${dotI}</div>${S.compare ? `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>` : ""}</div>`;
       else if (S.compare) ex = `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>`;
       else if (cfg.entry === "pill") ex = `<div class="pill glass tap" data-act="study">${ic("layers", 18)}Couches${dotOn() ? '<i style="width:8px;height:8px;border-radius:50%;background:var(--moss);display:inline-block"></i>' : ""}</div>`;
       exitEl.style.top = TOPN + "px"; exitEl.innerHTML = ex;
@@ -277,6 +285,32 @@
     };
     const packs = () => PACKS.filter((p) => shared.policy === "all" || p.base);
     const curPack = () => { const ps = packs(), tot = ps.reduce((a, p) => a + p.mb, 0); let acc = 0; const cur = (S.dl.pct / 100) * tot; for (const p of ps) { acc += p.mb; if (cur < acc) return p; } return ps[ps.length - 1]; };
+
+    const ovDot = () => S.overlay || S.parcels !== "all";
+    const th = (k) => { const [t, e] = TILE[k]; return `style="background-image:url(../map-layers-tiles/${t}-16629-11335.${e})"`; };
+    const badge = (k) => (S.compare ? (S.sideA === k ? "G" : S.sideB === k ? "D" : "") : "");
+    const isOn = (k) => (S.compare ? S.sideA === k || S.sideB === k : S.base === k);
+    const slotsLine = () => (S.compare ? `<div class="chhelp">Touchez un fond pour le placer côté ${S.target === "left" ? "gauche" : "droit"}.</div>` : "");
+    const cmpBtn = () => (S.compare ? `<div class="chbtn on" data-act="cmp">${ic("swap", 16)} Arrêter</div>` : `<div class="chbtn" data-act="cmp">${ic("swap", 16)} Comparer</div>`);
+    const chooserR = () => {
+      chooserW.innerHTML = "";
+      if (cfg.entry !== "keep" || !S.chooser) return;
+      if (S.chooser === "ov") {
+        const fok = avail("foret");
+        chooserW.innerHTML = `<div class="chooser pop ov glass" style="top:${parseFloat(root.querySelector(".ovbtn").style.top || capsule.style.top)}px"><div class="chh">Superpositions</div>
+          <div class="crow" data-act="ov"><div class="th2">${ic("leaf", 20)}</div><div class="ct"><b>Types de forêt</b><span>${fok ? "Feuillus, conifères, mélangées" : "Indisponible hors connexion"}</span></div><div class="sw ${S.overlay ? "on" : ""}" style="margin:0"></div></div>
+          <div class="chh" style="margin-top:6px">Parcelles</div><div class="seg" style="margin:0 0 4px"><div class="${S.parcels === "all" ? "on" : ""}" data-act="parc" data-m="all">Toutes</div><div class="${S.parcels === "ibp" ? "on" : ""}" data-act="parc" data-m="ibp">Avec IBP</div><div class="${S.parcels === "none" ? "on" : ""}" data-act="parc" data-m="none">Aucune</div></div></div>`;
+        return;
+      }
+      const items = BASES.map((k) => ({ k, ok: avail(k) }));
+      if (cfg.chooser === "strip") {
+        chooserW.innerHTML = `<div class="chooser strip glass"><div class="sthead"><b>Fonds de carte</b>${cmpBtn()}</div>${slotsLine()}<div class="stscroll">${items.map((i) => `<div class="sth ${isOn(i.k) ? "on" : ""} ${i.ok ? "" : "dis"}" data-act="pick" data-k="${i.k}"><div class="thb" ${th(i.k)}>${badge(i.k) ? `<em>${badge(i.k)}</em>` : ""}${i.ok ? "" : `<span class="off">${ic("cloudoff", 18)}</span>`}</div><small>${L[i.k].short}</small></div>`).join("")}</div></div>`;
+      } else if (cfg.chooser === "grid") {
+        chooserW.innerHTML = `<div class="chooser grid glass"><div class="grip"></div><div class="sthead"><b>Fonds de carte</b>${cmpBtn()}</div>${slotsLine()}<div class="gr">${items.map((i) => `<div class="sth ${isOn(i.k) ? "on" : ""} ${i.ok ? "" : "dis"}" data-act="pick" data-k="${i.k}"><div class="thb big" ${th(i.k)}>${badge(i.k) ? `<em>${badge(i.k)}</em>` : ""}${i.ok ? "" : `<span class="off">${ic("cloudoff", 18)}</span>`}</div><small>${L[i.k].short}</small></div>`).join("")}</div></div>`;
+      } else {
+        chooserW.innerHTML = `<div class="chooser pop glass" style="top:${TOPN}px"><div class="chh">Fonds de carte</div>${items.map((i) => `<div class="crow ${i.ok ? "" : "dis"}" data-act="pick" data-k="${i.k}"><div class="thb sm ${isOn(i.k) ? "on" : ""}" ${th(i.k)}>${i.ok ? "" : `<span class="off">${ic("cloudoff", 16)}</span>`}</div><div class="ct"><b>${L[i.k].short}</b><span>${L[i.k].year}</span></div><div class="bd">${badge(i.k) || (isOn(i.k) ? ic("radioOn", 20) : "")}</div></div>`).join("")}${slotsLine()}<div style="padding-top:6px">${cmpBtn()}</div></div>`;
+      }
+    };
     const sheetR = () => {
       const seg = cfg.entry === "segment";
       const open = seg ? true : !!S.panel;
@@ -299,7 +333,7 @@
     function render(skipCurtain) {
       buildMaps(); place();
       if (!skipCurtain) curtainR();
-      noticesR(); capsuleR(); chipR(); sheetR();
+      noticesR(); sheetR(); capsuleR(); chooserR(); chipR();
     }
 
     // ---- actions ----
@@ -319,7 +353,14 @@
       const a = e.target.closest("[data-act]"); if (!a) return; const act = a.dataset.act;
       if (act === "study") { S.panel = S.panel === "study" ? null : "study"; if (cfg.entry === "segment") S.seg = "study"; }
       else if (act === "close") S.panel = null;
-      else if (act === "download") { S.panel = S.panel === "download" ? null : "download"; }
+      else if (act === "download") { S.panel = S.panel === "download" ? null : "download"; S.chooser = null; }
+      else if (act === "basemap" && cfg.entry === "keep") { S.chooser = S.chooser === "base" ? null : "base"; S.panel = null; }
+      else if (act === "ovbtn") { S.chooser = S.chooser === "ov" ? null : "ov"; S.panel = null; }
+      else if (act === "pick") {
+        const k = a.dataset.k; if (!avail(k)) return;
+        if (!S.compare) { S.base = k; if (k === "map" || k === "satellite") S.saved = k; }
+        else { const side = S.target; if (side === "right") { if (S.sideA === k) S.sideA = S.sideB; S.sideB = k; } else { if (S.sideB === k) S.sideB = S.sideA; S.sideA = k; } S.target = side === "right" ? "left" : "right"; }
+      }
       else if (act === "basemap" && !S.compare) { S.base = S.base === "map" ? "satellite" : "map"; S.saved = S.base; }
       else if (act === "base") {
         const k = a.dataset.k; if (!avail(k)) return;
@@ -349,6 +390,12 @@
     // ---- états prédéfinis ----
     const P = {
       defaut: () => {},
+      cBase: () => { S.chooser = "base"; },
+      cOv: () => { S.chooser = "ov"; },
+      cCmp: () => { S.chooser = "base"; render(); setTimeout(() => root.querySelector('[data-act="cmp"]').click(), 30); },
+      cOld: () => { S.chooser = "base"; S.base = "etat"; },
+      cOff: () => { S.chooser = "base"; S.offline = true; S.covered = false; },
+      cParc: () => { S.chooser = "ov"; S.parcels = "ibp"; S.overlay = true; },
       panneau: () => { S.panel = "study"; },
       ancien: () => { S.base = "etat"; S.panel = "study"; },
       foret: () => { S.overlay = true; S.panel = "study"; },
