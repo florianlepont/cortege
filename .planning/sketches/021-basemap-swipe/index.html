@@ -17,8 +17,8 @@ LK.mountSketch(document.getElementById("app"),[
 {id:"c",tab:"C : carrousel façon filtres",title:"C : carrousel de vignettes, le fond du centre s'applique en direct",cfg:Object.assign({},base,{baseMode:"carousel"}),states:S,
  desc:"On fait défiler le bandeau de vignettes : la vignette au centre est le fond affiché, la carte change pendant le défilement (comme le choix d'un filtre dans un appareil photo). La carte reste mobile, aucun mode.",
  points:["Aucun verrouillage de la carte","Très proche de ce qu'on connaît (filtres photo)","Il faut viser le bandeau, pas la carte"]},
-{id:"d",tab:"D : bandeau à vignettes (point de départ)",title:"D : bandeau à vignettes, on touche (sketch 019 B)",cfg:Object.assign({},base,{baseMode:"tap"}),states:S,
- desc:"Le bandeau du sketch 019 B, sans glisser : on touche la vignette voulue.",
- points:["Direct pour sauter à un fond précis","Aucun geste à apprendre","Moins « moderne » que A, B ou C"]}
+{id:"d",tab:"D : B retenu, sans fenêtre du bas",win:"choix du propriétaire, 2026-10-11",title:"D : le balayage B, sans fenêtre en bas",cfg:Object.assign({},base,{baseMode:"wipe",nocard:true}),states:[["cBase","Entrer dans le mode (globe)"],["cOv","Superposition"],["cDlOpen","Télécharger"],["cOff","Hors connexion"],["dlRunClosed","Téléchargement en cours"]],
+ desc:"Choix du propriétaire : le balayage B, et la fenêtre du bas ne sert à rien. Toucher le globe fige directement la carte. En haut, une pastille donne le nom du fond et des repères en points ; en dessous une petite aide et « Terminé ». On sort par « Terminé », en touchant la carte ou le globe, ou tout seul au bout de 7 secondes. Rien d'autre à l'écran.",
+ points:["Aucune fenêtre : la carte reste entièrement visible","Le globe sert d'interrupteur du mode","Reste à décider : où se lance « Comparer »"]}
 ]);
 </script></body></html>

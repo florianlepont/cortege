@@ -192,6 +192,7 @@
           return;
         }
         if (cfg.baseMode === "swipe" && Math.abs(dx) > 36) { setBase(neighbor(S.base, dir)); render(); }
+        if (Math.abs(dx) < 6 && Math.abs(e.clientY - g.y0) < 6) { S.chooser = null; render(); }
         return;
       }
       if (Math.abs(dx) < 36 || Math.abs(e.clientY - g.y0) > 80) return;
@@ -380,7 +381,7 @@
     const bottomCardR = () => {
       let h = "", kind = null;
       if (cfg.dlcard && S.panel === "download") { kind = "dl"; h = cardDl(); }
-      else if (S.chooser === "base") { kind = "base"; h = cardBase(); }
+      else if (S.chooser === "base" && !(cfg.nocard && !S.compare)) { kind = "base"; h = cardBase(); }
       else if (S.chooser === "ov" && cfg.ovcard) { kind = "ov"; h = cardOv(); }
       chooserW.innerHTML = kind ? `<div class="chooser bcard glass" data-kind="${kind}">${h}</div>` : "";
       const c = chooserW.firstElementChild;
@@ -389,12 +390,14 @@
       return kind;
     };
 
+    let lkTm = null;
     const lockedBase = () => cfg.chooser === "card" && (cfg.baseMode === "swipe" || cfg.baseMode === "wipe") && S.chooser === "base" && !S.compare;
     const neighbor = (k, dir) => { const l = BASES.filter((b) => avail(b)); const i = Math.max(0, l.indexOf(k)); return l[(i + dir + l.length) % l.length]; };
     const lockuiR = () => {
       if (!lockedBase()) { lockui.innerHTML = ""; return; }
       const l = L[S.base];
-      lockui.innerHTML = `<div class="lkp glass"><span>‹</span><b>${l.name.replace(/ \(.*\)/, "")}</b><small>${l.year}</small><span>›</span></div><div class="lkd">${BASES.map((b) => `<i class="${b === S.base ? "on" : ""}"></i>`).join("")}</div>`;
+      lockui.innerHTML = `<div class="lkp glass"><span>‹</span><b>${l.name.replace(/ \(.*\)/, "")}</b><small>${l.year}</small><span>›</span></div><div class="lkd">${BASES.map((b) => `<i class="${b === S.base ? "on" : ""}"></i>`).join("")}</div><div class="lkh">Glissez sur la carte pour changer de fond</div><div class="pill glass tap lkdone" data-act="cclose">Terminé</div>`;
+      clearTimeout(lkTm); lkTm = setTimeout(() => { if (lockedBase()) { S.chooser = null; render(); } }, 7000);
     };
     const setBase = (k) => { S.base = k; if (k === "map" || k === "satellite") S.saved = k; };
     const carouselInit = () => {
