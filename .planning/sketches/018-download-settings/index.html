@@ -1,0 +1,20 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 28 : téléchargement et réglage hors ligne</title>
+<link rel="stylesheet" href="../themes/map-layers.css"></head><body>
+<h1>Sketch 018 : téléchargement hors ligne (pourcentage) et réglage des couches</h1>
+<div class="sub">Phase 28. À gauche l'Explorer : formulaire de téléchargement avec le poids estimé, progression pondérée avec la couche en cours, et ce qu'on voit quand la feuille est fermée. À droite, Paramètres, rubrique Cartes : la ligne « Couches hors ligne » et son choix. Changer le réglage change le poids du formulaire (84 Mo ou 53 Mo).</div>
+<div id="app"></div>
+<script src="../themes/map-layers-kit.js"></script>
+<script>
+const S=[["dlForm","Formulaire (estimation)"],["dlRun","Téléchargement dans la feuille"],["dlRunClosed","Téléchargement, feuille fermée"],["dlDoneClosed","Terminé, feuille fermée"],["dlPartial","Résultat partiel"],["dlPartialClosed","Partiel, feuille fermée"],["dlFail","Échec de la zone"],["dlFailClosed","Échec, feuille fermée"],["@settings","Réglages : ouvrir le choix"]];
+LK.mountSketch(document.getElementById("app"),[
+{id:"a",tab:"A : pastille à gauche du bouton",title:"A : pastille de progression à gauche du bouton de téléchargement (contrat actuel)",cfg:{entry:"capsule",tags:"spec",chip:"left"},settings:true,states:S,
+ desc:"Feuille fermée, une pastille en verre apparaît à gauche du bouton de téléchargement avec le pourcentage. On la touche pour rouvrir la feuille.",
+ points:["Proche du bouton qui a lancé l'action","Touchable, annonce le résultat (terminé, partiel, échoué)","Prend de la largeur sur la carte, à gauche de la capsule"]},
+{id:"b",tab:"B : pastille en haut au centre",title:"B : pastille au centre en haut, avec les autres avis de la carte",cfg:{entry:"capsule",tags:"spec",chip:"top"},settings:true,states:S,
+ desc:"La pastille rejoint la colonne des avis (hors connexion, surzoom). Une seule zone de la carte pour tout ce qui est passager.",
+ points:["Un seul endroit pour les messages passagers","Peut se coller à d'autres pastilles quand il y en a plusieurs","Moins liée au bouton de téléchargement"]},
+{id:"c",tab:"C : simple barre de progression",title:"C : fine barre de progression en haut de la carte",cfg:{entry:"capsule",tags:"spec",chip:"bar"},settings:true,states:S,
+ desc:"Une barre de 4 pt sous la barre d'état, sans texte. Très discrète. Le pourcentage et le résultat ne se lisent que dans la feuille.",
+ points:["Ne cache rien","Aucun résultat visible feuille fermée : échec ou partiel passent inaperçus","Écarte l'idée de l'indicateur touchable (critère 5 resterait tenu par la feuille)"]}
+]);
+</script></body></html>

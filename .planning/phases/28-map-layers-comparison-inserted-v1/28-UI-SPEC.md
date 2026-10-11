@@ -60,7 +60,7 @@ Declared values, all from `brandSpacing4` (4-grid):
 | Token | Value | Usage in this phase |
 |-------|-------|---------------------|
 | xs | 4 | Gap between a row title and its meta line; gap glyph to text in tags |
-| sm | 8 | Gap handle edge to side tag; gap between two map pills; gap inside a slot chip |
+| sm | 8 | Gap knob edge to side tag (the tag sits 30 pt from the line: 22 pt knob radius + 8); gap between two map pills; gap inside a slot chip |
 | smd | 12 | Panel gap between blocks (`createPanelStyles().card.gap`); tile to text in a row |
 | md | 16 | Row horizontal padding; map pill horizontal padding stays 14 (`MAP_EDGE`, inherited) |
 | lg | 24 | Gap between the last block and the bottom of the scroll |
@@ -74,7 +74,7 @@ Fixed sizes:
 - Switch row (Comparer, Types de forêt): min height 56; the native `Switch` sits in the 44 pt trailing zone.
 - Slot chip (comparison sides): height 48, two chips side by side, radius `brandRadius.field` (18), gap 8, plus a 44 x 44 swap button between them.
 - Curtain handle: pan strip 44 pt wide over the full map height; drawn line 4 pt wide (2 pt core + a 1 pt edge on each side); knob 44 x 44 circle.
-- Side tag: 32 pt high pill (non-interactive, so the 44 pt rule does not apply), horizontal padding 12, max width = visible width of its side minus 8 minus 14.
+- Side tag: 32 pt high pill (non-interactive, so the 44 pt rule does not apply), horizontal padding 12, max width = visible width of its side minus 30 minus 14.
 - Map pills (exit, hint, download chip): `MAP_PILL_HEIGHT` 40, with `MAP_CONTROL_HIT_SLOP` so the target reaches 44.
 - Entry dot (active state of the entry button): 8 pt, 6 pt from the glyph's top-right.
 - Legend image in the panel: full width of the panel, aspect 300:69 kept.
@@ -218,8 +218,8 @@ Two synchronised maps (research); the visible result is one view cut by a vertic
 - Accessibility: `accessibilityRole="adjustable"`, label "Séparation de la comparaison", hint "Faites glisser, ou balayez vers le haut ou le bas pour la déplacer", value `{ min: 0, max: 100, now: percent, text: "Plan à gauche, Photos 1950 à droite, séparation à 50 %" }`, actions `increment` / `decrement` move it by 10 points. At the start of a comparison the live region announces "Comparaison : {gauche} à gauche, {droite} à droite. Relevés masqués."
 
 **Side tags** (labels of the two sides):
-- Two non-interactive pills in `mapControl.glass`, 32 pt high, 12 SemiBold, **attached to the handle at the knob's height**: the left tag ends 8 pt before the line, the right tag starts 8 pt after it. They travel with the handle and always name what is next to them.
-- Text is the layer's short name: "Plan", "Satellite", "État-major", "Carte 1950", "Photos 1950". Each tag's max width is the visible width of its side minus 8 minus 14; when that is under 72 pt the tag fades out (160 ms; at once under Reduce Motion) and the names stay available in the handle's a11y value and in the panel.
+- Two non-interactive pills in `mapControl.glass`, 32 pt high, 12 SemiBold, **attached to the handle at the knob's height**: the left tag ends 30 pt before the line, the right tag starts 30 pt after it (22 pt knob radius + 8 pt gap; found on sketch 017: with 8 pt the tags slid under the 44 pt knob). They travel with the handle and always name what is next to them.
+- Text is the layer's short name: "Plan", "Satellite", "État-major", "Carte 1950", "Photos 1950". Each tag's max width is the visible width of its side minus 30 minus 14; when that is under 72 pt the tag fades out (160 ms; at once under Reduce Motion) and the names stay available in the handle's a11y value and in the panel.
 - A side whose layer is unavailable offline gets the glyph `cloud-offline-outline` 14 before its name.
 
 **Hidden markers:** survey markers and clusters are not drawn while comparing (a `ViewAnnotation` belongs to one map and would show twice or be cut). Parcels (casing, fill, outline) and the cadastre are drawn on both maps. The count pill stays but reads the viewport count as today. Feedback: when the comparison starts, a transient 40 pt pill under the exit pill reads "Les relevés sont masqués pendant la comparaison." for 4 s (fade 160 ms), and the same sentence is the helper line of the panel. The legend (colours of markers and parcels) stays: parcels still use score colours.
