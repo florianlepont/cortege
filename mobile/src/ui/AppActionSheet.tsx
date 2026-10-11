@@ -9,6 +9,7 @@ import {
   brandShadow,
   brandSpacing,
   brandSpacing4,
+  brandTypeScale,
   brandTypography,
 } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
@@ -24,6 +25,8 @@ type AppActionSheetProps = {
   visible: boolean
   onClose: () => void
   title?: string
+  /** A short explanation under the title: the system sheet's message on iOS, a footnote line on Android. */
+  message?: string
   options: AppActionSheetOption[]
   cancelLabel: string
 }
@@ -39,6 +42,7 @@ export function AppActionSheet({
   visible,
   onClose,
   title,
+  message,
   options,
   cancelLabel,
 }: AppActionSheetProps) {
@@ -48,8 +52,8 @@ export function AppActionSheet({
   const isIos = Platform.OS === "ios"
   // The system sheet is shown by an effect when `visible` turns true; the latest props are read
   // through a ref so a re-render of the caller does not show it again.
-  const latest = useRef({ onClose, options, title, cancelLabel })
-  latest.current = { onClose, options, title, cancelLabel }
+  const latest = useRef({ onClose, options, title, message, cancelLabel })
+  latest.current = { onClose, options, title, message, cancelLabel }
 
   useEffect(() => {
     if (!isIos || !visible) return
@@ -57,12 +61,14 @@ export function AppActionSheet({
       onClose: close,
       options: items,
       title: sheetTitle,
+      message: sheetMessage,
       cancelLabel: cancel,
     } = latest.current
     const destructiveIndex = items.findIndex((option) => option.destructive)
     ActionSheetIOS.showActionSheetWithOptions(
       {
         title: sheetTitle,
+        message: sheetMessage,
         options: [...items.map((option) => option.label), cancel],
         cancelButtonIndex: items.length,
         destructiveButtonIndex: destructiveIndex >= 0 ? destructiveIndex : undefined,
@@ -88,6 +94,15 @@ export function AppActionSheet({
       />
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, brandSpacing.md) }]}>
         {title ? <Text style={styles.title}>{title}</Text> : null}
+        {message ? (
+          <Text
+            testID="app-action-sheet-message"
+            style={styles.message}
+            maxFontSizeMultiplier={brandFontScaleCaps.body}
+          >
+            {message}
+          </Text>
+        ) : null}
         {options.map((option) => (
           <AppPressable
             key={option.label}
@@ -139,6 +154,12 @@ function createStyles(theme: BrandTheme) {
     },
     title: {
       ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+      textAlign: "center",
+      paddingBottom: brandSpacing.sm,
+    },
+    message: {
+      ...brandTypeScale.footnote,
       color: theme.colors.textSecondary,
       textAlign: "center",
       paddingBottom: brandSpacing.sm,
