@@ -24,4 +24,4 @@ used sparingly for action. The owner points to Linear as the reference and rejec
 | 017 | curtain-compare | What does the comparison curtain look like and how are its sides named? | A (owner 2026-10-11) | phase-28, map-layers |
 | 018 | download-settings | How is download progress shown with the sheet closed, and the offline layers setting? | A, sheet closes after Télécharger, chip only (owner 2026-10-11) | phase-28, offline |
 | 019 | basemap-chooser | How to choose the basemap and the overlay without a big panel, keeping the current capsule and the locate arrow (Phase 28)? | B (strip of thumbnails), owner 2026-10-11, refined in 020 | phase-28, map-layers |
-| 020 | bottom-cards | One family of bottom cards (basemaps, overlays, download) and a more direct left/right choice for the curtain | pending (A two rows, B drag onto map, C fixed ends, D tap and alternate) | phase-28, curtain |
+| 020 | bottom-cards | One family of bottom cards (basemaps, overlays, download) and a more direct left/right choice for the curtain | pending (A two rows, B drag a thumbnail onto the map, C fixed ends, D swipe on the map with the map locked) | phase-28, curtain |

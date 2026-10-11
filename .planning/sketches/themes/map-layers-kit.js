@@ -87,7 +87,7 @@
     let tm = null, dlTimer = null, hideTm = null, dlDoneTm = null;
     const reset = () => {
       clearInterval(dlTimer); clearTimeout(hideTm); clearTimeout(dlDoneTm);
-      Object.assign(S, { chooser: null, parcels: "all", panel: null, base: "map", saved: "map", overlay: false, compare: false, sideA: "map", sideB: "p1950", target: "right", z: 15, cx: 256, cy: 384, offline: false, covered: true, err: null, hidPill: false, x: W / 2, seg: "explore", leaving: false, entering: false, dl: { st: "idle", pct: 0, scen: "ok" }, dlPanelOpened: false });
+      Object.assign(S, { lock: false, chooser: null, parcels: "all", panel: null, base: "map", saved: "map", overlay: false, compare: false, sideA: "map", sideB: "p1950", target: "right", z: 15, cx: 256, cy: 384, offline: false, covered: true, err: null, hidPill: false, x: W / 2, seg: "explore", leaving: false, entering: false, dl: { st: "idle", pct: 0, scen: "ok" }, dlPanelOpened: false });
     };
     reset();
         root.innerHTML = `<div class="phone" style="width:${W}px;height:${H}px">
@@ -157,6 +157,10 @@
         t = `<div class="tag glass nt${two}" style="top:${topY}px;right:${W - S.x + gap}px;max-width:${Math.max(wl, 0)}px;opacity:${wl < 72 ? 0 : 1}">${body("l")}</div>
              <div class="tag glass nt${two}" style="top:${topY}px;left:${S.x + gap}px;max-width:${Math.max(wr, 0)}px;opacity:${wr < 72 ? 0 : 1}">${body("r")}</div>`;
       }
+      if (S.lock && cfg.cmpMode === "swipe") {
+        const pg = (cx, k) => `<div class="pager glass" style="left:${cx}px;top:${Math.round(H * 0.42)}px"><span>‹</span>${BASES.map((b) => `<i class="${b === k ? "on" : ""}"></i>`).join("")}<span>›</span></div>`;
+        t += pg(S.x / 2, S.sideA) + pg((W + S.x) / 2, S.sideB);
+      }
       tagl.innerHTML = t;
     };
     const enterCompare = () => {
@@ -174,7 +178,16 @@
     handle.addEventListener("pointermove", (e) => { if (!dragH) return; const r = phone.getBoundingClientRect(); S.x = Math.min(Math.max(e.clientX - r.left, 22), W - 22); curtainR(); });
     handle.addEventListener("pointerup", () => { dragH = false; });
     // déplacer la carte
-    $(".mapwrap").addEventListener("pointerdown", (e) => { if (e.target.closest(".handle")) return; if (cfg.entry === "keep" && S.chooser) { S.chooser = null; chooserR(); } dragM = { x: e.clientX, y: e.clientY }; });
+    $(".mapwrap").addEventListener("pointerdown", (e) => { if (e.target.closest(".handle")) return; if (S.lock && cfg.cmpMode === "swipe") { swp = { x0: e.clientX, y0: e.clientY }; return; }
+      if (cfg.entry === "keep" && S.chooser && !(cfg.chooser === "card" && S.chooser === "base" && S.compare)) { S.chooser = null; chooserR(); } dragM = { x: e.clientX, y: e.clientY }; });
+    let swp = null;
+    window.addEventListener("pointerup", (e) => {
+      if (!swp) return; const g = swp; swp = null; const dx = e.clientX - g.x0;
+      if (Math.abs(dx) < 36 || Math.abs(e.clientY - g.y0) > 80) return;
+      const r = phone.getBoundingClientRect(), side = g.x0 - r.left < S.x ? "left" : "right", other = side === "left" ? S.sideB : S.sideA, cur = side === "left" ? S.sideA : S.sideB;
+      const list = BASES.filter((k) => avail(k) && k !== other); let i = list.indexOf(cur); i = (i + (dx < 0 ? 1 : -1) + list.length) % list.length;
+      assign(list[i], side); render();
+    });
     window.addEventListener("pointermove", (e) => { if (!dragM) return; const s = scale(); S.cx -= (e.clientX - dragM.x) / s; S.cy -= (e.clientY - dragM.y) / s; dragM = { x: e.clientX, y: e.clientY }; place(); });
     window.addEventListener("pointerup", () => { dragM = null; });
     $(".mapwrap").addEventListener("wheel", (e) => { e.preventDefault(); zoom(e.deltaY < 0 ? 1 : -1); }, { passive: false });
@@ -329,6 +342,9 @@
       const m = cfg.cmpMode || "flip";
       if (m === "rows") return `${head}<div class="rws"><div class="rl">Gauche</div><div class="rr">${rowFor("left")}</div><div class="rl">Droite</div><div class="rr">${rowFor("right")}</div></div>`;
       if (m === "drag") return `${head}<div class="chhelp">Glissez un fond sur la carte, à gauche ou à droite de la ligne (ou touchez-le).</div><div class="stscroll">${BASES.map((k) => tbtn(k, "", "pick", 'data-drag="1"')).join("")}</div>`;
+      if (m === "swipe") return S.lock
+        ? `${bhead("Fonds de carte", cmpBtn())}<div class="cbody"><div class="notice" style="padding-top:0">${ic("info", 18)}<span>La carte est fixe. Glissez vers la gauche ou la droite sur chaque côté pour changer de fond.</span></div><div class="btn" data-act="lock">Terminé</div></div>`
+        : `${head}<div class="cbody"><div class="btn" data-act="lock">${ic("swap", 18)} Changer les fonds en glissant sur la carte</div><div class="chhelp" style="padding:8px 0 0">Ou touchez une vignette : elle va du côté ciblé.</div></div><div class="stscroll" style="padding-top:8px">${BASES.map((k) => tbtn(k, "sm2", "pick")).join("")}</div>`;
       if (m === "ends") return `${head}<div class="ends">${slot("left")}<div class="stscroll mid">${BASES.map((k) => tbtn(k, "sm2")).join("")}</div>${slot("right")}</div><div class="chhelp">Touchez Gauche ou Droite, puis un fond.</div>`;
       return `${head}${slotsLine()}<div class="stscroll">${BASES.map((k) => tbtn(k)).join("")}</div>`;
     };
@@ -416,6 +432,7 @@
       else if (act === "download") { S.panel = S.panel === "download" ? null : "download"; S.chooser = null; }
       else if (act === "basemap" && cfg.entry === "keep") { S.chooser = S.chooser === "base" ? null : "base"; S.panel = null; }
       else if (act === "ovbtn") { S.chooser = S.chooser === "ov" ? null : "ov"; S.panel = null; }
+      else if (act === "lock") S.lock = !S.lock;
       else if (act === "cclose") { S.chooser = null; if (S.panel === "download") S.panel = null; }
       else if (act === "pickside") { const k = a.dataset.k; if (!avail(k)) return; assign(k, a.dataset.side); }
       else if (act === "pick" && cfg.chooser === "card" && S.compare && (cfg.cmpMode === "ends")) { const k = a.dataset.k; if (!avail(k)) return; assign(k, S.target); S.target = S.target === "right" ? "left" : "right"; }
@@ -455,6 +472,7 @@
       defaut: () => {},
       cBase: () => { S.chooser = "base"; },
       cDlOpen: () => { S.panel = "download"; },
+      cSwipe: () => { S.chooser = "base"; render(); setTimeout(() => { root.querySelector('[data-act="cmp"]').click(); setTimeout(() => { root.querySelector('[data-act="lock"]') && root.querySelector('[data-act="lock"]').click(); }, 500); }, 30); },
       cOv: () => { S.chooser = "ov"; },
       cCmp: () => { S.chooser = "base"; render(); setTimeout(() => root.querySelector('[data-act="cmp"]').click(), 30); },
       cOld: () => { S.chooser = "base"; S.base = "etat"; },

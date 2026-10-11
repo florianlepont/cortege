@@ -142,3 +142,6 @@ body.dark .mk{color:#0c1208}
 .ghost{position:absolute;z-index:40;width:64px;height:64px;border-radius:14px;background-size:256px 256px;background-position:-96px -96px;box-shadow:0 6px 16px rgba(0,0,0,.4);pointer-events:none;opacity:.95}
 .dz{position:absolute;left:0;right:0;top:46px;bottom:230px;z-index:15;display:flex;pointer-events:none}.dz div{height:100%;display:flex;align-items:flex-start;justify-content:center;padding-top:80px;font-weight:800;font-size:15px;color:#fff;background:rgba(80,120,40,.28);text-shadow:0 1px 4px rgba(0,0,0,.6);transition:opacity .1s}
 .rws .sth{width:48px!important}.rr{gap:4px}.thb.xs{width:44px;height:44px}
+
+.pager{position:absolute;z-index:13;transform:translateX(-50%);height:30px;padding:0 10px;border-radius:15px;display:flex;align-items:center;gap:5px;pointer-events:none;color:var(--ink);font-weight:800;font-size:16px}
+.pager i{width:6px;height:6px;border-radius:50%;background:var(--hair);display:block}.pager i.on{background:var(--moss);width:8px;height:8px}

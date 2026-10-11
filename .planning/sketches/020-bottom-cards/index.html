@@ -17,8 +17,8 @@ LK.mountSketch(document.getElementById("app"),[
 {id:"c",tab:"C : extrémités fixes",title:"C : vignettes Gauche et Droite fixes aux extrémités",cfg:Object.assign({},base,{cmpMode:"ends"}),states:S,
  desc:"Aux deux bouts de la carte, deux vignettes affichent le fond actuel de chaque côté. On touche l'une, puis un fond dans la liste du milieu, et le côté suivant s'active.",
  points:["Toujours visible quel fond est de quel côté","Deux appuis par changement","Une seule rangée"]},
-{id:"d",tab:"D : touche et alterne (actuel)",title:"D : on touche un fond, il va au côté ciblé, le ciblage alterne",cfg:Object.assign({},base,{cmpMode:"flip"}),states:S,
- desc:"Le mécanisme du sketch 019 B : une phrase indique le côté ciblé, chaque appui remplit un côté puis passe à l'autre.",
- points:["Une seule rangée","Il faut suivre quel côté est ciblé","Moins direct que A"]}
+{id:"d",tab:"D : glisser sur la carte (carte fixe)",title:"D : on glisse sur la carte, qui devient fixe, pour changer de fond",cfg:Object.assign({},base,{cmpMode:"swipe"}),states:[["cSwipe","Comparer, carte fixe"],...S.slice(1)],
+ desc:"Votre idée. Après « Comparer », on touche « Changer les fonds en glissant sur la carte » : la carte se fige (plus de déplacement) et des repères ‹ ● ● ● ● ● › apparaissent de chaque côté de la ligne. Un glissé vers la gauche ou la droite sur un côté fait défiler les fonds de ce côté, comme un carrousel. « Terminé » rend la carte mobile.",
+ points:["Aucun geste précis : on glisse sur le côté qu'on veut changer","On voit le résultat tout de suite sur la carte, sans vignette","Un mode à quitter : la carte ne bouge plus tant qu'il est actif"]}
 ]);
 </script></body></html>
