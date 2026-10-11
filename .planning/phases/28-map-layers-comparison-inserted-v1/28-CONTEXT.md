@@ -40,6 +40,13 @@ The map offers several layers with a comparison option, and the Explorer both ex
 - The 2 km survey prompt follows the offline layers policy in force in Paramètres (no separate base-only rule); its figure is the policy's estimate.
 - The closed-sheet download chip (UI-SPEC U-14, plans 28-12 and 28-15) is kept in the phase, not cut.
 
+### Owner decisions after the sketches 016 to 018 (2026-10-11), they supersede the earlier contract where they differ
+- **Entry (016 B, reshaped):** a labeled glass pill "Couches" at the top-left replaces the third capsule button. The **basemap switch (Plan/Satellite) is removed**: the layers panel replaces it. The capsule keeps the download button only (plus the locate button below it). Choosing Plan or Satellite in the panel writes the saved basemap preference as the old switch did; an old base (état-major, 1950 map, 1950 photos) is session-only.
+- **Panel structure:** three blocks. (1) **Fonds** (the five bases). (2) A **Comparer** action (a button in the panel that starts the curtain). (3) **Superpositions**: Types de forêt (switch, both sides of the curtain) and **Parcelles**, a single three-state control covering the app's parcel polygons AND the cadastre lines: **Toutes** (cadastre lines plus all parcel polygons, today's rendering), **Avec IBP** (only the parcels that have an IBP survey, no cadastre lines), **Aucune** (neither). Default Toutes; session state like the rest of the study state (resets at cold start); the entry dot also lights when Parcelles is not Toutes.
+- **During a comparison** the top-left shows both the "Couches" pill (to reopen the panel) and the exit control.
+- **Curtain (017 A):** round knob at 32 % of the height, tags attached to the handle at 30 pt from the line (22 pt knob radius + 8). On the old bases the parcel fill is lightened (to tune on the phone) because the pale historical maps look washed out under the 38 % fill and the white casing.
+- **Download (018 A, simplified):** after "Télécharger" the area sheet **closes** and only the chip (left of the download button) shows the progress (byte-weighted percent), then the result. There is no running view in the sheet and no "En cours" line. Tapping the chip: while running nothing; failed reopens the sheet on "Réessayer"; partial reopens it on the partial message; done disappears after 4 s. ROADMAP success criterion 5 is therefore met by the chip (the percentage shows on the Explorer map, not in the sheet): owner decision 2026-10-11.
+
 ### Claude's Discretion
 - Control placement, icons (Ionicons outline), curtain handle design, layer naming in French, how the setting is worded.
 </decisions>
