@@ -38,6 +38,11 @@ The app is a public-interest project led by the association Etats-Sauvages and i
 - Post-publication survey management (delete survey, switch private/public).
 - Association visibility surfaces in-app (mission, impact, actions).
 - Donation call-to-action in key user journey moments.
+- Quick survey additions (phase 27, epic C, V1):
+  - US-C10 free note on the survey (1000 characters) and on each factor (300 characters): `REQ-C-survey-note`, `REQ-C-factor-note`.
+  - US-C11 weather pre-filled from Météo-France through the Cortege API, editable, empty without error offline: `REQ-C-weather-provider`, `REQ-C-weather-prefill`.
+  - US-C12 "Douteux" doubt flag per factor, no effect on any score: `REQ-C-doubt-flag`.
+  - All three travel with the survey without false sync conflicts: `REQ-C-conditions-sync`.
 
 ## 8) Backlog (Out of MVP Scope)
 
