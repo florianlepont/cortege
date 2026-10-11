@@ -48,6 +48,10 @@ A survey can carry a free note (for the survey and for each factor), pre-filled 
 - **D-22:** The owner creates the portal account, subscribes to "Données d'observation" and places the key in `api/.env` then `/home/ubuntu/cortege.env`. Claude never handles the key. A Wave 0 spike with the owner's key confirms field names, units (Kelvin, m/s suspected), parameters and the nearest-station lookup; the plan carries it as a human checkpoint and the weather endpoint is built behind it. `WEATHER_PROVIDER` = `meteofrance | synthetic | off`, default `off`, `synthetic` refused in production.
 - **D-23 (research, refines D-01/D-05):** the per-factor doubt and note live in **`factors.annotations`**, keyed by factor code, `{ doubt?: true, note?: string }`, **not** inside a factor entry (a meta-only entry would make `evaluateIbp` raise `factor_invalid_raw`). No column; the `factors` deep-compare and the submitted read-only check apply for free; no scorer reads it.
 
+- **D-24 (owner, 2026-10-11, O7):** On account deletion the **submitted surveys keep their notes** (survey note and factor notes); nothing new is nulled. The author already shows as "un ancien membre" (`community-survey.ts`, `survey-list.ts` `unknownAuthor`; `users.service.ts` nulls `user_id`). Risk accepted by the owner: a free note could name a person; no erasure of note text in this phase.
+- **D-25 (owner, 2026-10-11):** Raise the API JSON body limit (default 100 kB, a sync batch of about 22 maximal surveys would return 413 and be retried forever by the phone). The planner picks the new value and checks the sync batch size cap against it.
+- **D-26:** Weather values shown in the app and printed in the PDF carry the attribution "Source : Météo-France" (Etalab Open Licence 2.0 asks for the source mention). The owner reads the portal terms before the beta (O6, see the research note); until then the plan treats the attribution line as mandatory.
+
 ### Claude's Discretion
 Visual design of the strip and of the weather section (within the charter), the French labels of the sky conditions, cache durations and throttle of the weather endpoint, the exact payload key names.
 
