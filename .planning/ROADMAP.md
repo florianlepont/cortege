@@ -80,7 +80,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 24: Survey History Split** (INSERTED) - The survey change log and the parcel history become two separate things (SEED-002; owner decision 2026-10-07, done before the audits so they audit the final screens) (completed 2026-10-09)
 - [x] **Phase 25: Global Search** (INSERTED) - One search covers the whole app: own and community surveys, places and parcels on the map, and the other items the app exposes (SEED-003; owner decision 2026-10-07) (completed 2026-10-10)
 - [x] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10) (completed 2026-10-10)
-- [ ] **Phase 26: Field-feedback fixes** (INSERTED) - Android photo recognition works and its workflow is rethought; small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10)
+- [x] **Phase 26: Field-feedback fixes** (INSERTED) - Android photo recognition works (the recognition workflow rethink was set aside, owner 2026-10-10); small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10) (completed 2026-10-11)
 - [ ] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
 - [ ] **Phase 28: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10)
 - [ ] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list)
@@ -922,7 +922,7 @@ Plans:
 
 **Goal**: The problems reported by the Android testers are gone: photo recognition of genera works on Android (the model now loads, PR #272), the small-screen map stays readable, abbreviations are explained and genera are easy to find.
 **Depends on**: Phase 15 (genus recognition), Phase 25.1
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: none new: it fixes `REQ-D-offline-map` and `REQ-C-species-recognition` (built in Phases 17 and 15); traced by the decisions D-01 to D-11 of `26-CONTEXT.md`, plus criteria 1 and 7 (SC-1, SC-7)
 **Source**: owner feedback 2026-10-10, from the first Android phones
 **Success Criteria** (what must be TRUE):
 
@@ -931,10 +931,24 @@ Plans:
   3. Every abbreviation shown in the app is either written out or explained where it appears (a glossary or an info sheet), checked against the screen inventory.
   4. The genus list is sorted alphabetically everywhere it is shown.
   5. Offline, opening another member's survey from the map shows a clear, centred message ("this survey needs a connection") with a retry button, not the broken error page seen on 2026-10-10 (finding F-1 of `docs/user-tests/device-checks.md`).
-  6. Offline, after a restart, the markers and clusters of the last Explorer view and every survey of the user that the phone holds, draft or submitted, are drawn from local data, not only the drafts (finding F-2 of `docs/user-tests/device-checks.md`: today `ownDraftMapItems` keeps drafts only and the markers otherwise come from the API).
+  6. Offline, after a restart, the markers and clusters of the last Explorer view and every survey of the user that the phone holds, draft or submitted, are drawn from local data, not only the drafts (finding F-2 of `docs/user-tests/device-checks.md`: today `ownDraftMapItems` keeps drafts only and the markers otherwise come from the API). Narrowed by decision D-01 of 26-CONTEXT.md: other members' markers and clusters stay online only; own surveys are drawn from local data when their parcels are in a downloaded area (D-09).
   7. The two temporary files of a recognition (the camera capture and the resized JPEG) are deleted explicitly once the suggestion is shown, and the genus classifier's latency and accuracy are measured on real Android phones (median and p95 against the 3 s budget, online and in airplane mode), recorded as checks D-01 to D-03 of `docs/user-tests/device-checks.md` (carried over from Phase 15).
 
-**Plans**: TBD
+**Plans**: 10/10 plans complete
+
+Plans:
+
+- [x] 26-01-PLAN.md: recognition temp-file cleanup and timings (SC-7, D-07)
+- [x] 26-02-PLAN.md: genus order and Latin chips (D-06, D-07, D-10)
+- [x] 26-03-PLAN.md: centred offline community survey state (D-03)
+- [x] 26-04-PLAN.md: local own-survey map sources and builder (D-01, D-09)
+- [x] 26-05-PLAN.md: compact parcel-selection card (D-08)
+- [x] 26-06-PLAN.md: abbreviation registry and gate (D-05, D-11)
+- [x] 26-07-PLAN.md: abbreviation info sheet (D-04, D-11)
+- [x] 26-08-PLAN.md: offline Explorer wiring (D-01, D-02, D-09)
+- [x] 26-09-PLAN.md: catalogue abbreviation rewrite (D-04, D-05, D-11)
+- [x] 26-10-PLAN.md: docs fixes and device checks, human checkpoints (SC-1, SC-7)
+
 **UI hint**: yes
 
 ### Phase 27: Quick survey additions (INSERTED, V1)
@@ -1166,7 +1180,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
-| 26. Field-feedback fixes | 0/TBD | Not started | - |
+| 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
 | 27. Quick survey additions | 0/TBD | Not started | - |
 | 28. Map Layers & Comparison | 0/TBD | Not started | - |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |

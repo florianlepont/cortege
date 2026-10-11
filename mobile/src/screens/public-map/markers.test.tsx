@@ -278,7 +278,7 @@ function makeItem(overrides: Partial<PublicMapItem> = {}): PublicMapItem {
     survey_id: "s-9",
     display_location: { lat: 45.76, lng: 4.84 },
     survey_date: "2026-05-01",
-    region_code: "ARA",
+    region_code: "ACA",
     ibp_total: 12,
     ...overrides,
   }
@@ -306,7 +306,7 @@ describe("IBP totals out of 50 and the cas on the map (01.8 D-03, D-10)", () => 
     expect(markerLabel(marker)).toContain("IBP 12/50")
   })
 
-  test("the cluster list labels each row out of 50 with its cas or region", () => {
+  test("the cluster list labels each row out of 50 with its cas or region name", () => {
     const items = [
       makeItem({ survey_id: "s-1", ibp_method_version: IBP_METHOD_V3_2, ibp_cas: 2 }),
       makeItem({ survey_id: "s-2", ibp_total: 30 }),
@@ -316,7 +316,7 @@ describe("IBP totals out of 50 and the cas on the map (01.8 D-03, D-10)", () => 
         ibp_total: 18,
         ibp_method_version: IBP_METHOD_V3_0,
         ibp_cas: 4,
-        region_code: "BFC",
+        region_code: "M",
       }),
     ]
     const tree = mount(<ClusterListSheet items={items} onSelect={jest.fn()} onClose={jest.fn()} />)
@@ -327,16 +327,25 @@ describe("IBP totals out of 50 and the cas on the map (01.8 D-03, D-10)", () => 
       fr.publicMap.a11y.clusterListItem({ ibp: 12, date: "2026-05-01", region: "Cas 2" }),
     )
     expect(labels).toContain(
-      fr.publicMap.a11y.clusterListItem({ ibp: 30, date: "2026-05-01", region: "ARA" }),
+      fr.publicMap.a11y.clusterListItem({
+        ibp: 30,
+        date: "2026-05-01",
+        region: fr.labels.regions.ACA,
+      }),
     )
     expect(labels).toContain(
-      fr.publicMap.a11y.clusterListItem({ ibp: 18, date: "2026-05-01", region: "BFC" }),
+      fr.publicMap.a11y.clusterListItem({
+        ibp: 18,
+        date: "2026-05-01",
+        region: fr.labels.regions.M,
+      }),
     )
     expect(labels.filter((label) => label.includes("/50"))).toHaveLength(3)
     expect(labels.join(" ")).not.toMatch(/s-[123]/)
     const shown = texts(tree)
     expect(shown).toContain("Cas 2")
-    expect(shown).toContain("ARA")
+    expect(shown).toContain(fr.labels.regions.ACA)
+    expect(shown).toContain(fr.labels.regions.M)
   })
 })
 

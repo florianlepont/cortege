@@ -14,6 +14,7 @@ import { useBrandTheme } from "../../app/theme"
 import { RegionVersion, VegetationStage } from "../../app/types"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { fr } from "../../i18n"
+import { AbbreviationInfo } from "../../ui/AbbreviationInfo"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppField } from "../../ui/AppField"
 import { AppText as Text } from "../../ui/AppText"
@@ -191,9 +192,12 @@ export function SurveyWizardScreen({
         keyboardShouldPersistTaps="handled"
         testID="wizard-body"
       >
-        <Text style={styles.title} accessibilityRole="header">
-          {title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} accessibilityRole="header">
+            {title}
+          </Text>
+          {step === "method" ? <AbbreviationInfo term="IBP" /> : null}
+        </View>
         <Text style={styles.lead}>{body}</Text>
 
         <View style={styles.answer}>

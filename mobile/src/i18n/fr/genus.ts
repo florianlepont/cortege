@@ -42,6 +42,14 @@ export const genusDisplayNameFr: Record<CnpfFactorAGenusCode, string> = {
   Pistacia: "Pistachier",
 }
 
+/** Latin name first, French name in parentheses: "Abies (Sapin)" (decision D-10). */
+function latinLabel(code: CnpfFactorAGenusCode): string {
+  const latin = String(code).replace(/_/g, " ")
+  const french = genusDisplayNameFr[code]
+  return french ? `${latin} (${french})` : latin
+}
+
 export const genusFr = {
   displayName: genusDisplayNameFr,
+  latinLabel,
 } as const

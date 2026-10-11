@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native"
+import { ScrollView, StyleSheet, View } from "react-native"
 import { Image as ExpoImage } from "expo-image"
 import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { formatDay } from "../../app/formatters"
@@ -7,9 +7,9 @@ import { buildEntriesFromCommunity, historyRowState } from "../../app/parcel-his
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
-import { AppButton } from "../../ui/AppButton"
 import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
+import { CenteredState } from "../../ui/CenteredState"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../../ui/frame-large-title"
 import { FactorsList } from "../survey-detail/FactorsList"
 import { toHistoryRow } from "../survey-detail/history-row"
@@ -29,6 +29,8 @@ type CommunitySurveyScreenProps = {
   state: CommunitySurveyState
   /** Opens the parcel's history page. */
   onOpenHistory: () => void
+  /** Read from the network state by the route, never from the error (D-03). */
+  offline?: boolean
 }
 
 /**
@@ -42,6 +44,7 @@ export function CommunitySurveyScreen({
   accessToken,
   state,
   onOpenHistory,
+  offline = false,
 }: CommunitySurveyScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
@@ -108,22 +111,30 @@ export function CommunitySurveyScreen({
   // The header is transparent: the route's ScreenFrame starts the page below it (D-19).
   const scrollStyle = styles.scroll
 
-  if (status === "loading" || !detail) {
-    return (
-      <View style={[scrollStyle, own.centered]}>
-        {status === "error" ? (
-          <>
-            <Text style={own.message}>{t.error}</Text>
-            <AppButton label={t.retry} variant="secondary" onPress={state.reload} />
-          </>
-        ) : (
-          <>
-            <ActivityIndicator size="large" color={theme.colors.forest} />
-            <Text style={own.message}>{t.loading}</Text>
-          </>
-        )}
-      </View>
-    )
+  if (status !== "ready" || !detail) {
+    if (offline) {
+      return (
+        <CenteredState
+          icon="cloud-offline-outline"
+          message={t.offline}
+          actionLabel={t.retry}
+          onAction={state.reload}
+          testID="community-offline"
+        />
+      )
+    }
+    if (status === "error") {
+      return (
+        <CenteredState
+          icon="alert-circle-outline"
+          message={t.error}
+          actionLabel={t.retry}
+          onAction={state.reload}
+          testID="community-error"
+        />
+      )
+    }
+    return <CenteredState busy message={t.loading} testID="community-loading" />
   }
 
   const author = detail.author_name?.trim() || t.unknownAuthor
@@ -239,18 +250,6 @@ export function CommunitySurveyScreen({
 
 function createOwnStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    centered: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: brandSpacing4.smd,
-      paddingHorizontal: brandSpacing4.lg,
-    },
-    message: {
-      ...brandTypography.sectionBody,
-      textAlign: "center",
-      color: theme.colors.textSecondary,
-    },
     titleBlock: {
       gap: brandSpacing4.xs,
     },

@@ -11,6 +11,10 @@ export const parcelSelectionFr = {
     count > 1 ? `${count} parcelles visibles` : `${count} parcelle visible`,
   zoomToSelect: "Zoomez pour sélectionner des parcelles",
   selectionRequired: "Sélectionnez au moins une parcelle pour continuer.",
+  // The compact card of small screens (D-08): one meta line carries the requirement, no notice.
+  compact: {
+    selectionRequired: "Touchez au moins une parcelle pour continuer.",
+  },
   tapHint: "Touchez les parcelles pour les ajouter ou les retirer de ce relevé.",
   saving: "Enregistrement…",
   done: "Terminé",

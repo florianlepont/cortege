@@ -10,6 +10,8 @@ import {
 } from "@cortege/ibp-domain"
 import { base64ToUint8Array } from "../app/base64"
 import { classifyConfidence, type GenusSuggestion } from "./calibration"
+import { deleteTempPhoto } from "./temp-files"
+import { monotonicNow } from "./timing"
 import rawManifest from "../../assets/models/genus_classifier_manifest.json"
 // ADR-002 D-07/D-08 (bundled model, fail-closed on load failure): the model ships as a bundled
 // asset, loaded through Metro's `.tflite` asset support (metro.config.js), never downloaded or
@@ -26,9 +28,22 @@ type ClassifierManifest = {
 
 export type RecognitionUnavailableReason = "invalid_manifest" | "load_failed" | "inference_failed"
 
+/**
+ * Latency of one classification in milliseconds. `totalMs` is preprocessing plus inference, the
+ * definition of the Phase 1 spike (docs/technical/species-recognition-spike-measurements-v1.md
+ * section 7); `loadMs` is the model load, near 0 once the model is cached. A stage that was not
+ * reached reports 0.
+ */
+export type RecognitionTimings = {
+  loadMs: number
+  preprocessMs: number
+  inferenceMs: number
+  totalMs: number
+}
+
 export type RecognitionOutcome =
-  | { status: "ok"; suggestions: GenusSuggestion[] }
-  | { status: "unavailable"; reason: RecognitionUnavailableReason }
+  | { status: "ok"; suggestions: GenusSuggestion[]; timings: RecognitionTimings }
+  | { status: "unavailable"; reason: RecognitionUnavailableReason; timings: RecognitionTimings }
 
 /**
  * The manifest's `labels` must be exactly the 34 CNPF codes (D-04: none withheld) for the model's
@@ -94,9 +109,15 @@ async function preprocessPhoto(uri: string, inputSize: number): Promise<Float32A
     .resize({ width: inputSize, height: inputSize })
     .renderAsync()
   const saved = await resized.saveAsync({ format: SaveFormat.JPEG, compress: 1 })
-  const base64 = await FileSystem.readAsStringAsync(saved.uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  })
+  let base64: string
+  try {
+    base64 = await FileSystem.readAsStringAsync(saved.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    })
+  } finally {
+    // The resized JPEG is only needed for this read (SC-7): decoding works on the base64 string.
+    await deleteTempPhoto(saved.uri)
+  }
   const bytes = base64ToUint8Array(base64)
   const decoded = jpeg.decode(bytes, { useTArray: true, formatAsRGBA: true })
 
@@ -142,21 +163,53 @@ export function rankGenusSuggestions(
 /**
  * Classifies one recognition photo end to end. Never throws: any failure (missing/corrupt model,
  * bad manifest, a preprocessing or inference error) resolves to an `unavailable` outcome so the
- * caller can show ADR-002's D-08 message and fall back to manual entry.
+ * caller can show ADR-002's D-08 message and fall back to manual entry. Every outcome carries its
+ * timings; `now` is injectable so tests can drive the clock.
  */
-export async function classifyGenusPhoto(uri: string): Promise<RecognitionOutcome> {
+export async function classifyGenusPhoto(
+  uri: string,
+  now: () => number = monotonicNow,
+): Promise<RecognitionOutcome> {
   const manifest = validateManifest(rawManifest)
-  if (!manifest) return { status: "unavailable", reason: "invalid_manifest" }
+  if (!manifest) {
+    return { status: "unavailable", reason: "invalid_manifest", timings: timingsOf(0, 0, 0) }
+  }
 
+  const startedAt = now()
   const model = await loadModel()
-  if (!model) return { status: "unavailable", reason: "load_failed" }
+  const loaded = now()
+  if (!model) {
+    return {
+      status: "unavailable",
+      reason: "load_failed",
+      timings: timingsOf(loaded - startedAt, 0, 0),
+    }
+  }
 
+  let preprocessed: number | null = null
   try {
     const tensor = await preprocessPhoto(uri, manifest.inputSize)
+    const afterPreprocess = now()
+    preprocessed = afterPreprocess
     const outputs = await model.run([tensor.buffer as ArrayBuffer])
     const scores = new Float32Array(outputs[0] as ArrayBuffer)
-    return { status: "ok", suggestions: rankGenusSuggestions(scores, manifest.labels) }
+    const finished = now()
+    return {
+      status: "ok",
+      suggestions: rankGenusSuggestions(scores, manifest.labels),
+      timings: timingsOf(loaded - startedAt, afterPreprocess - loaded, finished - afterPreprocess),
+    }
   } catch {
-    return { status: "unavailable", reason: "inference_failed" }
+    const failed = now()
+    // A failure before the tensor existed spent its time in preprocessing, a later one in inference.
+    const timings =
+      preprocessed === null
+        ? timingsOf(loaded - startedAt, failed - loaded, 0)
+        : timingsOf(loaded - startedAt, preprocessed - loaded, failed - preprocessed)
+    return { status: "unavailable", reason: "inference_failed", timings }
   }
+}
+
+function timingsOf(loadMs: number, preprocessMs: number, inferenceMs: number): RecognitionTimings {
+  return { loadMs, preprocessMs, inferenceMs, totalMs: preprocessMs + inferenceMs }
 }

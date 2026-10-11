@@ -7,6 +7,7 @@ import { PARCEL_HISTORY_KEY_PREFIX } from "./parcel-history-cache"
 import { SEARCH_RECENTS_KEY } from "./search-recents"
 import {
   LocalSurvey,
+  LocalSurveyMapSource,
   LocalAttachment,
   LocalAttachmentInput,
   DraftInput,
@@ -502,6 +503,41 @@ export async function listLocalSurveys(): Promise<LocalSurvey[]> {
      FROM local_surveys
      ORDER BY updated_at DESC`,
   )
+}
+
+/**
+ * Every survey row the phone holds, draft or submitted, with its parsed payload, for the Explorer's
+ * local markers (phase 26, D-01). Unlike `listLocalSurveys` this reader parses payloads in JS, once
+ * per call, because the map needs the factors of a draft to score it; a user holds tens to low
+ * hundreds of surveys. A row whose payload is not a survey payload is skipped, never thrown. Called
+ * only by the Explorer's local-markers hook, never by the list. No schema change, no new column.
+ */
+export async function listLocalSurveyMapSources(): Promise<LocalSurveyMapSource[]> {
+  const db = await getDb()
+  const rows = await db.getAllAsync<{
+    id: string
+    status: string
+    created_at: string
+    updated_at: string
+    payload_json: string
+  }>(
+    `SELECT id, status, created_at, updated_at, payload_json
+     FROM local_surveys
+     ORDER BY updated_at DESC`,
+  )
+  const sources: LocalSurveyMapSource[] = []
+  for (const row of rows) {
+    const payload = safeParseJson(row.payload_json)
+    if (!isSurveyQueuePayload(payload)) continue
+    sources.push({
+      id: row.id,
+      status: row.status,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      payload,
+    })
+  }
+  return sources
 }
 
 export async function listLocalAttachments(surveyId?: string): Promise<LocalAttachment[]> {

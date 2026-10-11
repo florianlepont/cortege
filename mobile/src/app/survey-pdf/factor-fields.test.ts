@@ -48,13 +48,13 @@ describe("factor A", () => {
     A: { genera: ["Fagus", "Quercus_deciduae", "Ceratonia"], native_cover_percent: 40 },
   }
 
-  it("lists genera by display name and code, flags the ones not counted at the cas", () => {
+  it("lists genera in Latin order as Latin (French), flags the ones not counted at the cas", () => {
     const lines = buildFactorObservations("A", raw, { method: V32, points: 1 })
     const genera = lineOf(lines, t.genera)
     expect(genera.items).toEqual([
-      "Hêtre (Fagus)",
-      "Chêne à feuilles caduques (Quercus deciduae)",
-      `Caroubier (Ceratonia), ${t.genusNotCounted}`,
+      `Ceratonia (Caroubier), ${t.genusNotCounted}`,
+      "Fagus (Hêtre)",
+      "Quercus deciduae (Chêne à feuilles caduques)",
     ])
     expect(lines.some((line) => line.caption === t.genusCount({ count: 2 }))).toBe(true)
     expect(lineOf(lines, t.nativeCover).value).toBe("40 %")
@@ -63,7 +63,7 @@ describe("factor A", () => {
   it("counts the supplementary genus at cas 2", () => {
     const cas2 = { ...V32, ibpCas: 2 }
     const lines = buildFactorObservations("A", raw, { method: cas2, points: 2 })
-    expect(lineOf(lines, t.genera).items?.[2]).toBe("Caroubier (Ceratonia)")
+    expect(lineOf(lines, t.genera).items?.[0]).toBe("Ceratonia (Caroubier)")
     expect(lines.some((line) => line.caption === t.genusCount({ count: 3 }))).toBe(true)
   })
 
@@ -116,7 +116,7 @@ describe("factor A", () => {
 
   it("does not count a supplementary genus in v3.0", () => {
     const lines = buildFactorObservations("A", raw, { method: V30, points: 1 })
-    expect(lineOf(lines, t.genera).items?.[2]).toContain(t.genusNotCounted)
+    expect(lineOf(lines, t.genera).items?.[0]).toContain(t.genusNotCounted)
   })
 
   it("uses the subalpine scale for the v3.0 cap test", () => {
@@ -146,7 +146,7 @@ describe("factor A", () => {
       { A: { genera: ["<script>alert(1)</script>", "Fagus", 3], native_cover_percent: 80 } },
       { method: V32, points: 0 },
     )
-    expect(lineOf(hostile, t.genera).items).toEqual(["Hêtre (Fagus)"])
+    expect(lineOf(hostile, t.genera).items).toEqual(["Fagus (Hêtre)"])
   })
 })
 

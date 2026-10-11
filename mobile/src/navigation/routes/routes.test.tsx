@@ -186,7 +186,17 @@ const mockNativeTabs = { value: false }
 jest.mock("../native-tabs-availability", () => ({
   getNativeTabsAvailability: () => ({ native: mockNativeTabs.value }),
 }))
-jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => false }))
+const mockIsOffline = { value: false }
+jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => mockIsOffline.value }))
+const mockLocalMapArgs: { value: unknown[] } = { value: [] }
+const EMPTY_LOCAL_MAP = { sources: [], parcels: [] }
+let mockLocalMapData: { sources: unknown[]; parcels: unknown[] } = EMPTY_LOCAL_MAP
+jest.mock("../../hooks/useLocalSurveyMapData", () => ({
+  useLocalSurveyMapData: (...args: unknown[]) => {
+    mockLocalMapArgs.value = args
+    return mockLocalMapData
+  },
+}))
 jest.mock("../../hooks/useBasemapPreference", () => ({
   useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
 }))
@@ -498,6 +508,9 @@ afterAll(() => {
 beforeEach(() => {
   for (const key of Object.keys(mockScreenProps)) delete mockScreenProps[key]
   mockPlatform.OS = "android"
+  mockIsOffline.value = false
+  mockLocalMapData = EMPTY_LOCAL_MAP
+  mockLocalMapArgs.value = []
   mockExplorer.loadPublicMap.mockClear()
 })
 
@@ -905,9 +918,20 @@ describe("CommunitySurveyRoute", () => {
     expect(mockCommunitySurveyArgs.surveyId).toBe("c-1")
     expect(screen.apiUrl).toBe("http://api.test/v1")
     expect(screen.state).toBe(mockCommunitySurvey)
+    expect(screen.offline).toBe(false)
 
     callback("communitySurvey", "onOpenHistory")()
     expect(navigation.push).toHaveBeenCalledWith("communityHistory", { surveyId: "c-1" })
+  })
+
+  test("passes the network state as offline (D-03)", async () => {
+    mockIsOffline.value = true
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <CommunitySurveyRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+    expect(props("communitySurvey").offline).toBe(true)
   })
 })
 
@@ -923,9 +947,20 @@ describe("CommunityHistoryRoute", () => {
     expect(mockCommunitySurveyArgs.surveyId).toBe("c-1")
     expect(mockCommunitySurveyArgs.options).toEqual({ withPhotos: false })
     expect(screen.state).toBe(mockCommunitySurvey)
+    expect(screen.offline).toBe(false)
 
     callback("communityHistory", "onOpenSurvey")("c-2")
     expect(navigation.push).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-2" })
+  })
+
+  test("passes the network state as offline (D-03)", async () => {
+    mockIsOffline.value = true
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <CommunityHistoryRoute route={{ params: { surveyId: "c-1" } }} />
+      </Providers>,
+    )
+    expect(props("communityHistory").offline).toBe(true)
   })
 })
 
@@ -1837,46 +1872,112 @@ describe("PublicMapRoute", () => {
     expect(navigation.navigate).toHaveBeenCalledWith("communitySurvey", { surveyId: "c-9" })
   })
 
-  test("draws the author's located drafts and opens one as their own survey (OA-59)", async () => {
-    const fixture = makeFixture()
-    fixture.surveys.state.surveyDetails = {
-      "s-01": {
-        id: "s-01",
-        status: "draft",
-        display_location: { lat: 46.5, lng: 2.1 },
-        created_at: "2026-10-01T09:30:00.000Z",
-        factor_results: {},
-        scores: { ibp_peuplement_gestion: 10, ibp_contexte: 5, ibp_total: 15 },
-      },
-    } as never
-    // A public survey is already on the map; the draft is not one of them.
-    ;(mockExplorer as { items: unknown[] }).items = [{ survey_id: "pub-1" }]
-    const navigation = makeNavigation()
-    const focus = {
-      kind: "survey" as const,
-      surveyId: "s-01",
-      lat: 46.5,
-      lng: 2.1,
-      parcelIds: [],
-      nonce: 1,
+  describe("the author's own surveys from local data (OA-59, D-01, D-09)", () => {
+    const square = [
+      [2.0, 46.0],
+      [2.2, 46.0],
+      [2.2, 46.4],
+      [2.0, 46.4],
+      [2.0, 46.0],
+    ]
+    const cachedParcel = {
+      parcel_id: "P1",
+      study_status: "not_studied",
+      geometry: { type: "Polygon", coordinates: [square] },
     }
-    await mount(
-      <Providers fixture={fixture}>
-        <PublicMapRoute navigation={navigation as never} route={{ params: { focus } } as never} />
-      </Providers>,
-    )
-    expect(props("publicMap").focus).toBe(focus)
-    expect(
-      (props("publicMap").draftItems as Array<{ survey_id: string }>).map((i) => i.survey_id),
-    ).toEqual(["s-01"])
-
-    act(() => {
-      ;(props("publicMap").onOpenSurvey as (surveyId: string) => void)("s-01")
+    const localSource = (id: string, status: string) => ({
+      id,
+      status,
+      created_at: "2026-10-01T09:30:00.000Z",
+      updated_at: "2026-10-03T10:00:00.000Z",
+      payload: { id, sync_version: 1, site_name: "Site", parcel_ids: ["P1"], factors: {} },
     })
-    expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-01")
-    expect(navigation.navigate).toHaveBeenCalledWith("surveys", { screen: "surveyDetail" })
-    expect(navigation.navigate).not.toHaveBeenCalledWith("communitySurvey", expect.anything())
-    ;(mockExplorer as { items: unknown[] }).items = []
+    const ids = (value: unknown) => (value as Array<{ survey_id: string }>).map((i) => i.survey_id)
+
+    function fixtureWithLocalSurveys() {
+      const fixture = makeFixture()
+      fixture.surveys.state.surveys = [
+        { ...survey, id: "s-01" },
+        { ...survey, id: "s-02", status: "submitted" },
+      ] as never
+      return fixture
+    }
+
+    afterEach(() => {
+      ;(mockExplorer as { items: unknown[] }).items = []
+    })
+
+    test("passes the survey list and the offline flag to the hook", async () => {
+      const fixture = fixtureWithLocalSurveys()
+      mockIsOffline.value = true
+      await mount(
+        <Providers fixture={fixture}>
+          <PublicMapRoute navigation={makeNavigation() as never} route={{} as never} />
+        </Providers>,
+      )
+      expect(mockLocalMapArgs.value).toEqual([fixture.surveys.state.surveys, true])
+      expect(mockLocalMapArgs.value[0]).toBe(fixture.surveys.state.surveys)
+    })
+
+    test("draws a draft dashed and a submitted survey normally, and opens either as their own", async () => {
+      const fixture = fixtureWithLocalSurveys()
+      mockLocalMapData = {
+        sources: [localSource("s-01", "draft"), localSource("s-02", "submitted")],
+        parcels: [cachedParcel],
+      }
+      // A public survey is already on the map; the own ones are not among them.
+      ;(mockExplorer as { items: unknown[] }).items = [{ survey_id: "pub-1" }]
+      const navigation = makeNavigation()
+      const focus = {
+        kind: "survey" as const,
+        surveyId: "s-01",
+        lat: 46.5,
+        lng: 2.1,
+        parcelIds: [],
+        nonce: 1,
+      }
+      await mount(
+        <Providers fixture={fixture}>
+          <PublicMapRoute navigation={navigation as never} route={{ params: { focus } } as never} />
+        </Providers>,
+      )
+      expect(props("publicMap").focus).toBe(focus)
+      expect(ids(props("publicMap").draftItems)).toEqual(["s-01"])
+      expect(ids(props("publicMap").ownItems)).toEqual(["s-02"])
+
+      for (const id of ["s-01", "s-02"]) {
+        act(() => {
+          ;(props("publicMap").onOpenSurvey as (surveyId: string) => void)(id)
+        })
+        expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith(id)
+      }
+      expect(navigation.navigate).toHaveBeenCalledWith("surveys", { screen: "surveyDetail" })
+      expect(navigation.navigate).not.toHaveBeenCalledWith("communitySurvey", expect.anything())
+    })
+
+    test("draws a survey the API already returned once, and still opens it as the owner's", async () => {
+      const fixture = fixtureWithLocalSurveys()
+      mockLocalMapData = {
+        sources: [localSource("s-02", "submitted")],
+        parcels: [cachedParcel],
+      }
+      ;(mockExplorer as { items: unknown[] }).items = [{ survey_id: "s-02" }]
+      const navigation = makeNavigation()
+      await mount(
+        <Providers fixture={fixture}>
+          <PublicMapRoute navigation={navigation as never} route={{} as never} />
+        </Providers>,
+      )
+      expect(ids(props("publicMap").ownItems)).toEqual([])
+      expect(ids(props("publicMap").draftItems)).toEqual([])
+
+      act(() => {
+        ;(props("publicMap").onOpenSurvey as (surveyId: string) => void)("s-02")
+      })
+      expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-02")
+      expect(navigation.navigate).toHaveBeenCalledWith("surveys", { screen: "surveyDetail" })
+      expect(navigation.navigate).not.toHaveBeenCalledWith("communitySurvey", expect.anything())
+    })
   })
 })
 

@@ -35,6 +35,18 @@ export type LocalSurvey = {
   ibp_total?: number | null
 }
 
+/**
+ * One row per own survey for the Explorer's local markers (phase 26, D-01), draft or submitted. Read
+ * only by the map; the payload never leaves the phone.
+ */
+export type LocalSurveyMapSource = {
+  id: string
+  status: string
+  created_at: string
+  updated_at: string
+  payload: SurveyQueuePayload
+}
+
 export type QueueOpType =
   | "survey_upsert"
   | "survey_delete"

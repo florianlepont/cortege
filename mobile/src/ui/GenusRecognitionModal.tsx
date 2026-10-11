@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, View } from "react-native"
 import { Camera } from "expo-camera"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -7,7 +7,9 @@ import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
 import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { confidenceLine } from "../app/genus-recognition-text"
 import type { GenusSuggestion } from "../recognition/calibration"
-import { classifyGenusPhoto } from "../recognition/genusClassifierModel"
+import { classifyGenusPhoto, type RecognitionOutcome } from "../recognition/genusClassifierModel"
+import { deleteTempPhoto } from "../recognition/temp-files"
+import { monotonicNow, reportGenusTiming } from "../recognition/timing"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppButton } from "./AppButton"
@@ -40,9 +42,11 @@ type GenusRecognitionModalProps = {
 }
 
 /**
- * Photograph-a-tree entry point for Factor A (ADR-002 D-06/D-08/D-10/D-11/D-13). The recognition
- * photo is never persisted here or by any caller: only the classifier's in-memory result crosses
- * back out through `onConfirmGenus`, and re-entering this modal always starts a fresh capture.
+ * Photograph-a-tree entry point for Factor A (ADR-002 D-06/D-08/D-10/D-11/D-13). The camera
+ * capture and the resized JPEG the classifier makes are temporary cache files, deleted as soon as
+ * classification ends (SC-7); only the classifier's in-memory result crosses back out through
+ * `onConfirmGenus`, and re-entering this modal always starts a fresh capture. The suggestions are
+ * shown in the classifier's confidence order, best guess first (decision D-07).
  */
 export function GenusRecognitionModal({
   visible,
@@ -54,8 +58,12 @@ export function GenusRecognitionModal({
   const styles = useMemo(() => createStyles(theme), [theme])
   const insets = useSafeAreaInsets()
   const [step, setStep] = useState<Step>({ kind: "idle" })
+  // Counts photo runs and sheet closes: a classification that ends after the sheet was closed (or
+  // after a newer photo) must not reopen a results or unavailable step.
+  const runRef = useRef(0)
 
   const handleClose = (): void => {
+    runRef.current += 1
     setStep({ kind: "idle" })
     onClose()
   }
@@ -81,8 +89,21 @@ export function GenusRecognitionModal({
   }
 
   const handlePhoto = async (uri: string): Promise<void> => {
+    const run = ++runRef.current
+    const startedAt = monotonicNow()
     setStep({ kind: "classifying" })
-    const outcome = await classifyGenusPhoto(uri)
+    let outcome: RecognitionOutcome
+    try {
+      outcome = await classifyGenusPhoto(uri)
+    } finally {
+      await deleteTempPhoto(uri)
+    }
+    reportGenusTiming({
+      timings: outcome.timings,
+      captureToSuggestionMs: monotonicNow() - startedAt,
+      outcome: outcome.status === "ok" ? "ok" : outcome.reason,
+    })
+    if (runRef.current !== run) return
     if (outcome.status === "ok") {
       setStep({ kind: "results", suggestions: outcome.suggestions })
     } else {

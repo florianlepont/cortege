@@ -36,7 +36,7 @@ export const accountFr = {
     label: "Crédits photographiques",
     alertTitle: "Crédits photographiques",
     alertMessage:
-      "L'identification de genre par photo (section A) utilise un modèle entraîné sur des images de GBIF.org (Global Biodiversity Information Facility), publiées sous licence CC0 1.0 ou CC BY 4.0. Les images CC BY nécessitent de créditer leurs photographes ; voir gbif.org pour le mécanisme d'attribution complet.",
+      "L'identification de genre par photo (section A) utilise un modèle entraîné sur des images de GBIF.org (Global Biodiversity Information Facility), publiées sous licence Creative Commons CC0 1.0 ou CC BY 4.0. Les images CC BY nécessitent de créditer leurs photographes ; voir gbif.org pour le mécanisme d'attribution complet.",
   },
   logout: "Se déconnecter",
   // ACC-03: the grouped iOS-style list (Profil, Connexion, Se déconnecter). OA-75: the data and

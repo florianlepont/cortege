@@ -51,7 +51,7 @@ describe("fr.surveyExport", () => {
     expect(t.scores.outOf({ points: "27,5", max: "35" })).toBe("27,5 / 35")
     expect(t.scores.band({ band: "assez forte" })).toBe("Niveau : assez forte")
     expect(t.identity.coordinatesValue({ lat: "48,40491", lng: "-4,48" })).toBe(
-      "48,40491, -4,48 (WGS 84)",
+      "48,40491, -4,48 (WGS 84, système géodésique mondial)",
     )
     expect(t.factors.pointsOutOfFive({ points: "2" })).toBe("2 / 5")
     expect(t.factors.percent({ value: "35" })).toBe("35 %")

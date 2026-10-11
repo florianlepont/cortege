@@ -15,12 +15,16 @@ import { createPanelStyles } from "./styles"
 
 const t = fr.publicMap
 
-/** Where the survey sits in the method: "Cas N" for a v3.2 survey with a cas, else its region. */
+/**
+ * Where the survey sits in the method: "Cas N" for a v3.2 survey with a cas, else the name of its
+ * region (never the raw code of the API, an unknown code shows nothing).
+ */
 function surveyPlaceLabel(item: PublicMapItem): string {
   if (resolveMethodVersion(item.ibp_method_version) === IBP_METHOD_V3_2 && isIbpCas(item.ibp_cas)) {
     return t.cas(item.ibp_cas)
   }
-  return item.region_code
+  const code = item.region_code
+  return code === "ACA" || code === "M" ? fr.labels.regions[code] : ""
 }
 
 type ClusterRowProps = {

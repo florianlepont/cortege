@@ -202,7 +202,7 @@ function item(id: string, lat: number, lng: number, ibp = 30): PublicMapItem {
     survey_id: id,
     display_location: { lat, lng },
     survey_date: "2026-05-01",
-    region_code: "ARA",
+    region_code: "ACA",
     ibp_total: ibp,
   }
 }
@@ -362,6 +362,31 @@ describe("PublicMapScreen", () => {
     expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
   })
 
+  test("an own survey from local data is a normal marker that opens directly (D-01)", () => {
+    const props = makeProps({ ownItems: [item("o-1", 45.7, 4.8, 27)] })
+    mount(props)
+    const marker = markers().find(
+      (node) => node.props.accessibilityLabel === fr.publicMap.a11y.surveyMarker(27),
+    ) as ReactTestInstance
+    expect(marker).toBeDefined()
+    expect(
+      markers().some((node) => node.props.accessibilityLabel === fr.publicMap.a11y.draftMarker(27)),
+    ).toBe(false)
+    act(() => marker.props.onPress())
+    expect(props.onOpenSurvey).toHaveBeenCalledWith("o-1")
+  })
+
+  test("offline, own surveys are counted and only the offline badge marks the state (D-02)", () => {
+    mount(
+      makeProps({
+        isOffline: true,
+        ownItems: [item("o-1", 45.7, 4.8, 27), item("o-2", 48.8, 2.3, 31)],
+      }),
+    )
+    expect(texts()).toContain(fr.publicMap.count(2))
+    expect(texts()).toContain(fr.offlineMap.indicator.offline)
+  })
+
   test("a focus request centres the map and highlights the survey's marker, no panel (OA-59)", () => {
     const focus = {
       kind: "survey" as const,
@@ -497,7 +522,11 @@ describe("PublicMapScreen", () => {
 
     act(() =>
       byLabel(
-        fr.publicMap.a11y.clusterListItem({ ibp: 20, date: "2026-05-01", region: "ARA" }),
+        fr.publicMap.a11y.clusterListItem({
+          ibp: 20,
+          date: "2026-05-01",
+          region: fr.labels.regions.ACA,
+        }),
       ).props.onPress(),
     )
     expect(props.onOpenSurvey).toHaveBeenCalledTimes(1)

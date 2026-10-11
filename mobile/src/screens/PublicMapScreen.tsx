@@ -40,6 +40,11 @@ type PublicMapScreenProps = {
   parcelStatuses: PublicParcelStatusItem[]
   /** OA-59: the author's drafts, drawn beside the public surveys and visible to them alone. */
   draftItems?: PublicMapItem[]
+  /**
+   * D-01: the author's own non-draft surveys from local data (not already returned by the API),
+   * drawn with the normal marker and counted by the pill.
+   */
+  ownItems?: PublicMapItem[]
   /** OA-59: a survey page asked to see its survey here; centres the map on it and highlights it. */
   focus?: PublicMapFocus
   loading: boolean
@@ -66,6 +71,7 @@ export function PublicMapScreen({
   items,
   parcelStatuses,
   draftItems = NO_DRAFTS,
+  ownItems = NO_DRAFTS,
   focus,
   loading,
   onLoad,
@@ -119,8 +125,9 @@ export function PublicMapScreen({
 
   const draftIdSet = useMemo(() => new Set(draftItems.map((item) => item.survey_id)), [draftItems])
   const mapItems = useMemo(
-    () => (draftItems.length > 0 ? [...items, ...draftItems] : items),
-    [items, draftItems],
+    () =>
+      draftItems.length > 0 || ownItems.length > 0 ? [...items, ...draftItems, ...ownItems] : items,
+    [items, draftItems, ownItems],
   )
   const parcelStatusById = useMemo(
     () => new Map(parcelStatuses.map((status) => [status.parcel_id, status])),

@@ -44,7 +44,7 @@ interface MockManipulatorContext {
 function createSaveAsync(getWidth: () => number, getHeight: () => number): jest.Mock {
   return jest.fn((options?: { base64?: boolean }) => {
     saveCounter += 1
-    const uri = `file:///mock/cache/manipulated-${saveCounter}.jpg`
+    const uri = `file:///mock/cache/ImageManipulator/manipulated-${saveCounter}.jpg`
     __setMockFile(uri, 250000)
     const result = { uri, width: getWidth(), height: getHeight() }
     return Promise.resolve(options?.base64 === true ? { ...result, base64: "QUJD" } : result)

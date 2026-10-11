@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native"
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack"
 import { CommunityHistoryScreen } from "../../screens/community-survey/CommunityHistoryScreen"
 import { useCommunitySurvey } from "../../hooks/useCommunitySurvey"
+import { useIsOffline } from "../../hooks/useIsOffline"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { usesNativeLargeTitle } from "../large-title"
@@ -30,6 +31,8 @@ export const CommunityHistoryRoute = memo(function CommunityHistoryRoute({
   const state = useCommunitySurvey(session.apiUrl, accessToken, route.params.surveyId, {
     withPhotos: false,
   })
+  // Read from the network state, never inferred from the error class (D-03).
+  const offline = useIsOffline()
 
   const onOpenSurvey = useLatestCallback((surveyId: string) => {
     navigation.push("communitySurvey", { surveyId })
@@ -37,7 +40,7 @@ export const CommunityHistoryRoute = memo(function CommunityHistoryRoute({
 
   return (
     <ScreenFrame largeTitle={usesNativeLargeTitle()}>
-      <CommunityHistoryScreen state={state} onOpenSurvey={onOpenSurvey} />
+      <CommunityHistoryScreen state={state} onOpenSurvey={onOpenSurvey} offline={offline} />
     </ScreenFrame>
   )
 })

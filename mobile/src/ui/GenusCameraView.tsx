@@ -24,7 +24,10 @@ const CORNER_WIDTH = 4
 const CORNER_RADIUS = 20
 
 type GenusCameraViewProps = {
-  /** The photo was taken: its file URI, kept in memory by the caller and never saved. */
+  /**
+   * The photo was taken: the file URI of a temporary cache JPEG, which the caller deletes once the
+   * classification has ended (SC-7).
+   */
   onCapture: (uri: string) => void
   onClose: () => void
   /** The camera could not take the photo. */

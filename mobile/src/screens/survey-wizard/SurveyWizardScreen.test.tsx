@@ -331,6 +331,27 @@ describe("SurveyWizardScreen: method cards", () => {
   })
 })
 
+describe("SurveyWizardScreen: IBP info (D-11)", () => {
+  const anchors = (tree: ReactTestRenderer) =>
+    tree.root.findAll(
+      (n) => n.props.testID === "abbreviation-info-IBP" && typeof n.type === "string",
+    )
+
+  test("only the method step carries the info glyph, beside the title", () => {
+    const { tree } = mount()
+    expect(anchors(tree)).toHaveLength(0)
+    next(tree)
+    expect(anchors(tree)).toHaveLength(1)
+    expect(anchors(tree)[0].props.accessibilityLabel).toBe("Que signifie IBP ?")
+    const title = tree.root.findAll(
+      (n) => typeof n.type === "string" && n.props.accessibilityRole === "header",
+    )[0]
+    expect(title.props.children).toBe(w.method.title)
+    next(tree)
+    expect(anchors(tree)).toHaveLength(0)
+  })
+})
+
 describe("SurveyWizardScreen: v3.0 region and stage", () => {
   test("the context step shows the region and stage chips", () => {
     const { tree } = mount({}, makeMethod({ version: IBP_METHOD_V3_0 }))
