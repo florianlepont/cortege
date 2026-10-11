@@ -1178,7 +1178,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
-| 29. Field-feedback fixes | 10/10 | Complete   | 2026-10-11 |
+| 29. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
 | 30. Quick survey additions | 0/TBD | Not started | - |
 | 28. Field Validation | 0/TBD | Not started | - |
 | 31. Map Layers & Comparison | 0/TBD | Not started | - |

@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 29
-current_phase_name: Field-feedback fixes (INSERTED
-status: executing
-stopped_at: Phase 29 planned (10 plans, 3 waves), ready to execute
-last_updated: "2026-10-10T22:13:02.501Z"
-last_activity: 2026-10-10
-last_activity_desc: Phase 29 execution started
+current_phase: 30
+current_phase_name: INSERTED, V1
+status: ready_to_discuss
+stopped_at: Phase 29 complete (SC-1 and the device part of SC-7 deferred to the Android testers); Phase 30 not discussed yet
+last_updated: "2026-10-11T08:01:49.562Z"
+last_activity: 2026-10-11
+last_activity_desc: Phase 29 complete, transitioned to Phase 30
 progress:
   total_phases: 39
-  completed_phases: 17
+  completed_phases: 18
   total_plans: 198
-  completed_plans: 235
-  percent: 44
+  completed_plans: 236
+  percent: 46
 ---
 
 # Project State
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 29 — Field-feedback fixes (INSERTED)
+**Current focus:** Phase 30 — Quick survey additions (INSERTED, V1), not discussed yet. Phase 29 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred, see 29-UAT.md.
 
 ## Current Position
 
-Phase: 29 (Field-feedback fixes (INSERTED)) — EXECUTING
-Plan: 10 of 10
-Status: Ready to execute
-Last activity: 2026-10-10 — Phase 29 execution started
+Phase: 30 — Quick survey additions (INSERTED, V1)
+Plan: Not started
+Status: Ready to discuss (Phase 30 has no CONTEXT.md yet)
+Last activity: 2026-10-11 — Phase 29 complete, transitioned to Phase 30
 
 Progress: [█████████░] 26/29 phases complete
 
@@ -39,7 +39,7 @@ Progress: [█████████░] 26/29 phases complete
 
 **Velocity:**
 
-- Total plans completed: 76
+- Total plans completed: 86
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -55,6 +55,7 @@ Progress: [█████████░] 26/29 phases complete
 | 08 | 13 | - | - |
 | 02 | 4 | - | - |
 | 09 | 16 | - | - |
+| 29 | 10 | - | - |
 
 **Recent Trend:**
 
