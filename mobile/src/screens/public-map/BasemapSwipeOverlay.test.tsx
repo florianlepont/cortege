@@ -133,6 +133,27 @@ const byId = (tree: ReactTestRenderer, testID: string): ReactTestInstance[] =>
 const textsOf = (node: ReactTestInstance): string[] =>
   node.findAllByType("Text" as never).map((text) => String(text.props.children))
 
+describe("measured height", () => {
+  test("the stack reports its drawn height, so the notices can start below it", () => {
+    const onHeight = jest.fn()
+    const tree = render({ onHeight })
+    const column = tree.root.find(
+      (node) => typeof node.type === "string" && typeof node.props.onLayout === "function",
+    )
+    act(() => column.props.onLayout({ nativeEvent: { layout: { height: 132 } } }))
+    expect(onHeight).toHaveBeenCalledWith(132)
+  })
+
+  test("without a listener a layout does nothing", () => {
+    const column = render().root.find(
+      (node) => typeof node.type === "string" && typeof node.props.onLayout === "function",
+    )
+    expect(() =>
+      act(() => column.props.onLayout({ nativeEvent: { layout: { height: 90 } } })),
+    ).not.toThrow()
+  })
+})
+
 describe("indicator", () => {
   test.each(["light", "dark"] as const)(
     "%s: a centred glass pill with the chevrons, the name and the era",

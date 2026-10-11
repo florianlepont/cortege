@@ -48,6 +48,8 @@ export type BasemapSwipeOverlayProps = {
   onNext: () => void
   onPrevious: () => void
   onCompareNext: () => void
+  /** The drawn height of the whole stack, so the notices column can start below it. */
+  onHeight?: (height: number) => void
 }
 
 /**
@@ -69,6 +71,7 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   onNext,
   onPrevious,
   onCompareNext,
+  onHeight,
 }: BasemapSwipeOverlayProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -91,7 +94,11 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   const hint = fingerDown ? hintText : introHintVisible ? introHint : null
 
   return (
-    <View pointerEvents="box-none" style={[styles.column, { top }]}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.column, { top }]}
+      onLayout={(event) => onHeight?.(event.nativeEvent.layout.height)}
+    >
       {comparing ? null : (
         <>
           <Animated.View entering={enter()}>
