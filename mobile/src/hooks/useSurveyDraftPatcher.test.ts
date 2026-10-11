@@ -604,10 +604,10 @@ describe("useSurveyDraftPatcher", () => {
       }
       expect(call.survey_id).toBe(TEST_SURVEY_ID)
       expect(typeof call.weather).toBe("function")
-      // The canonical form drops the empty edited list and keeps the survey time.
+      // The canonical form rounds to one decimal, drops the empty edited list, keeps the survey time.
       expect(call.weather(current)).toEqual({
         requested_at: "2026-10-11T08:00:00.000Z",
-        temperature_c: 12.34,
+        temperature_c: 12.3,
       })
       expect(surveyList.refreshLocalSurveys).toHaveBeenCalledTimes(1)
       expect(onStatusChange).not.toHaveBeenCalled()

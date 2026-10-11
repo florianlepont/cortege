@@ -2,14 +2,22 @@ import {
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,
   isIbpCas,
+  normalizeNoteText,
   resolveMethodVersion,
+  SURVEY_NOTE_MAX_LENGTH,
   type IbpCas,
+  type SurveyWeather,
 } from "@cortege/ibp-domain"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
 import { addGenusToListValue, serializeGenusListValue } from "../app/factor-a-genus-list"
-import { getLocalSurveyDraft, updateLocalDraft } from "../storage/surveys"
+import {
+  getLocalSurveyDraft,
+  patchLocalSurveyConditions,
+  updateLocalDraft,
+} from "../storage/surveys"
 import { DEFAULT_SURVEY_FORM, normalizeVegetationStageForRegion } from "../app/constants"
 import { migrateDraftToV32 } from "../app/ibp-scoring"
+import { canonicalWeather } from "../app/weather"
 import { RegionVersion, VegetationStage } from "../app/types"
 import { fr, logStatusDetail, type StatusMessage } from "../i18n"
 import type { SurveyQueuePayload } from "../storage/types"
@@ -257,8 +265,57 @@ export function useSurveyDraftPatcher({ surveyList, onStatusChange }: UseSurveyD
       text.genusAdded({ name: currentName(surveyId) }),
     )
 
+  /**
+   * Phase 27, D-03: the survey note is written on debounced keystrokes, so it is silent (no status
+   * message, not through `patchSurveyDraftDirectly`, which rewrites the factors). A submitted survey
+   * is refused by storage (it re-reads the status inside its transaction) and resolves false.
+   */
+  const handleUpdateSurveyNote = async (surveyId: string, noteText: string): Promise<boolean> => {
+    try {
+      const written = await patchLocalSurveyConditions({
+        survey_id: surveyId,
+        survey_note: normalizeNoteText(noteText, SURVEY_NOTE_MAX_LENGTH),
+      })
+      if (written === null) {
+        return false
+      }
+      await surveyList.refreshLocalSurveys()
+      return true
+    } catch (error) {
+      logStatusDetail("editing.surveyNote", error)
+      return false
+    }
+  }
+
+  /**
+   * Phase 27, D-03, D-10: writes the weather of a draft as a function of the stored one (the late
+   * answer of a lookup merges into what the observer edited meanwhile). The result is put in the
+   * canonical form before it is stored so a replay compares equal. Silent, draft only.
+   */
+  const handleUpdateSurveyWeather = async (
+    surveyId: string,
+    update: (current: SurveyWeather | null) => SurveyWeather | null,
+  ): Promise<boolean> => {
+    try {
+      const written = await patchLocalSurveyConditions({
+        survey_id: surveyId,
+        weather: (current) => canonicalWeather(update(current)),
+      })
+      if (written === null) {
+        return false
+      }
+      await surveyList.refreshLocalSurveys()
+      return true
+    } catch (error) {
+      logStatusDetail("editing.surveyWeather", error)
+      return false
+    }
+  }
+
   return {
     patchSurveyDraftDirectly,
+    handleUpdateSurveyNote,
+    handleUpdateSurveyWeather,
     handleAddGenusToSurvey,
     handleRenameSurvey,
     handleUpdateSurveyRegionVersion,

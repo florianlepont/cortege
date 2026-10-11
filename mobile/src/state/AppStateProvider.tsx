@@ -245,6 +245,8 @@ function useAppController() {
     updateIbpCas: draftPatcher.handleUpdateSurveyIbpCas,
     updateCas3Scale: draftPatcher.handleUpdateSurveyCas3Scale,
     switchToV32: draftPatcher.handleSwitchSurveyToV32,
+    updateSurveyNote: draftPatcher.handleUpdateSurveyNote,
+    updateSurveyWeather: draftPatcher.handleUpdateSurveyWeather,
   })
 
   const {

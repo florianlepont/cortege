@@ -495,6 +495,12 @@ describe("AppStateProvider", () => {
     expect(surveys.actions.switchToV32).toEqual(expect.any(Function))
   })
 
+  test("the surveys actions expose the silent note and weather writes (phase 27, D-03)", () => {
+    const { surveys } = latest()
+    expect(surveys.actions.updateSurveyNote).toEqual(expect.any(Function))
+    expect(surveys.actions.updateSurveyWeather).toEqual(expect.any(Function))
+  })
+
   test("a doubt toggle reaches the form value only, through stable actions (phase 27)", async () => {
     const before = latest()
     expect(before.form.state.factorAnnotations).toEqual({})
