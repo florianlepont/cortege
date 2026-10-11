@@ -63,18 +63,22 @@
     ["120,300 190,330 205,396 130,380", "#5f9a34", "high"],
     ["340,312 410,330 420,392 352,372", "#d9a032", "mid"],
   ];
-  const parcels = (casing) => {
+  const parcels = (casing, mode, light) => {
+    if (mode === "none") return "";
+    const set = mode === "ibp" ? POLY.filter((p) => p[1] !== "none") : POLY;
     let h = '<svg viewBox="0 0 512 768">';
-    if (casing) POLY.forEach((p) => (h += `<polygon points="${p[0]}" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="6" vector-effect="non-scaling-stroke"/>`));
-    POLY.forEach((p) => (h += `<polygon points="${p[0]}" fill="${p[1] === "none" ? "rgba(255,255,255,.06)" : p[1]}" fill-opacity=".38" stroke="${p[3] ? "#1d2a17" : p[1] === "none" ? "#5b6a52" : p[1]}" stroke-width="${p[3] ? 3 : 1.6}" vector-effect="non-scaling-stroke"/>`));
+    if (casing) set.forEach((p) => (h += `<polygon points="${p[0]}" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="6" vector-effect="non-scaling-stroke"/>`));
+    set.forEach((p) => (h += `<polygon points="${p[0]}" fill="${p[1] === "none" ? "rgba(255,255,255,.06)" : p[1]}" fill-opacity="${light ? 0.2 : 0.38}" stroke="${p[3] ? "#1d2a17" : p[1] === "none" ? "#5b6a52" : p[1]}" stroke-width="${p[3] ? 3 : 1.6}" vector-effect="non-scaling-stroke"/>`));
     return h + "</svg>";
   };
-  const worldHTML = (base, overlay) => {
-    const casing = base === "etat" || base === "c1950" || base === "p1950" || overlay;
+  const worldHTML = (base, overlay, mode) => {
+    mode = mode || "all";
+    const old = base === "etat" || base === "c1950";
+    const casing = old || base === "p1950" || overlay;
     let h = lay(TILE[base], "base-" + base, 1);
     if (overlay) h += lay(["foret", "png"], "ov", 0.55);
-    h += lay(["cad", "png"], "cad", L[base].cad || 0.9);
-    return h + parcels(casing);
+    if (mode === "all") h += lay(["cad", "png"], "cad", L[base].cad || 0.9);
+    return h + parcels(casing, mode, old);
   };
 
   LK.createApp = function (root, cfg) {
@@ -83,7 +87,7 @@
     let tm = null, dlTimer = null, hideTm = null, dlDoneTm = null;
     const reset = () => {
       clearInterval(dlTimer); clearTimeout(hideTm); clearTimeout(dlDoneTm);
-      Object.assign(S, { panel: null, base: "map", saved: "map", overlay: false, compare: false, sideA: "map", sideB: "p1950", target: "right", z: 15, cx: 256, cy: 384, offline: false, covered: true, err: null, hidPill: false, x: W / 2, seg: "explore", leaving: false, entering: false, dl: { st: "idle", pct: 0, scen: "ok" }, dlPanelOpened: false });
+      Object.assign(S, { parcels: "all", panel: null, base: "map", saved: "map", overlay: false, compare: false, sideA: "map", sideB: "p1950", target: "right", z: 15, cx: 256, cy: 384, offline: false, covered: true, err: null, hidPill: false, x: W / 2, seg: "explore", leaving: false, entering: false, dl: { st: "idle", pct: 0, scen: "ok" }, dlPanelOpened: false });
     };
     reset();
         root.innerHTML = `<div class="phone" style="width:${W}px;height:${H}px">
@@ -105,7 +109,7 @@
       return S.covered && shared.policy === "all";
     };
     const shown = () => (S.compare ? [S.sideA, S.sideB] : [S.base]);
-    const dotOn = () => S.base !== S.saved || S.overlay || S.compare;
+    const dotOn = () => S.base !== S.saved || S.overlay || S.compare || S.parcels !== "all";
     const scale = () => 1.02 * Math.pow(2, S.z - 15);
     const clampView = () => {
       const s = scale(), hw = W / 2 / s, hh = H / 2 / s;
@@ -124,10 +128,10 @@
       mks.innerHTML = S.compare ? "" : h;
     };
     const buildMaps = () => {
-      const k = [S.compare, S.compare ? S.sideA : S.base, S.sideB, S.overlay].join("|");
+      const k = [S.compare, S.compare ? S.sideA : S.base, S.sideB, S.overlay, S.parcels].join("|");
       if (k === key) return; key = k;
-      wa.innerHTML = worldHTML(S.compare ? S.sideA : S.base, S.overlay);
-      wb.innerHTML = S.compare ? worldHTML(S.sideB, S.overlay) : "";
+      wa.innerHTML = worldHTML(S.compare ? S.sideA : S.base, S.overlay, S.parcels);
+      wb.innerHTML = S.compare ? worldHTML(S.sideB, S.overlay, S.parcels) : "";
     };
     const place2 = () => { place(); };
 
@@ -193,19 +197,21 @@
 
     // ---- capsule, pastilles ----
     const capsuleR = () => {
-      const second = cfg.entry === "capsule";
+      const second = cfg.entry === "capsule", noSw = cfg.entry === "layers";
       const sw = S.base === "map" ? "earth" : "map";
-      let btns = `<button class="cbtn ${S.compare ? "off" : ""}" data-act="basemap" title="Changer de fond">${ic(sw, 24)}</button>`;
+      let btns = noSw ? "" : `<button class="cbtn ${S.compare ? "off" : ""}" data-act="basemap" title="Changer de fond">${ic(sw, 24)}</button>`;
       if (second) btns += `<button class="cbtn" data-act="study" title="Mode étude : couches et comparaison">${ic("layers", 24)}${dotOn() ? '<i class="dot"></i>' : ""}</button>`;
       btns += `<button class="cbtn" data-act="download" title="Télécharger la zone">${ic("dl", 24)}</button>`;
       capsule.innerHTML = btns;
-      const n = second ? 3 : 2;
+      const n = second ? 3 : noSw ? 1 : 2;
       capsule.style.top = TOPN + "px"; capsule.style.height = n * 50 + (n - 1) + "px";
       locate.style.top = TOPN + n * 50 + (n - 1) + 10 + "px"; locate.innerHTML = ic("locate", 24);
       capsule.dataset.dlIndex = n - 1;
       // pastille « Couches » (variante B)
       let ex = "";
-      if (S.compare) ex = `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>`;
+      const dotI = dotOn() ? '<i style="width:8px;height:8px;border-radius:50%;background:var(--moss);display:inline-block"></i>' : "";
+      if (cfg.entry === "layers") ex = `<div style="display:flex;gap:8px"><div class="pill glass tap" data-act="study">${ic("layers", 18)}Couches${dotI}</div>${S.compare ? `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>` : ""}</div>`;
+      else if (S.compare) ex = `<div class="pill round glass tap" data-act="exit" title="Quitter la comparaison">${ic("close", 20)}</div>`;
       else if (cfg.entry === "pill") ex = `<div class="pill glass tap" data-act="study">${ic("layers", 18)}Couches${dotOn() ? '<i style="width:8px;height:8px;border-radius:50%;background:var(--moss);display:inline-block"></i>' : ""}</div>`;
       exitEl.style.top = TOPN + "px"; exitEl.innerHTML = ex;
     };
@@ -220,7 +226,7 @@
         if (d.st === "running") barp.innerHTML = `<div style="position:absolute;left:0;right:0;top:46px;height:4px;background:rgba(255,255,255,.55);z-index:19"><div style="width:${d.pct}%;height:100%;background:var(--moss)"></div></div>`;
         return;
       }
-      const pill = `<div class="pill glass tap" data-act="download" ${d.st === "failed" ? 'style="color:var(--ink)"' : ""}>${ic(g, 16)}${txt}</div>`;
+      const pill = `<div class="pill glass tap" data-act="chip" ${d.st === "failed" ? 'style="color:var(--ink)"' : ""}>${ic(g, 16)}${txt}</div>`;
       if (cfg.chip === "top") { notices.insertAdjacentHTML("afterbegin", pill); return; }
       const idx = +capsule.dataset.dlIndex; const y = TOPN + idx * 51 + 5;
       chipw.style.top = y + "px"; chipw.style.right = 14 + 50 + 8 + "px"; chipw.innerHTML = pill;
@@ -238,15 +244,18 @@
       let h = "";
       if (S.offline) h += `<div class="notice">${ic("cloudoff", 18)}<span>${S.covered ? "Hors connexion : seules les couches téléchargées pour cette zone sont disponibles." : "Aucune zone téléchargée ici : aucune couche n'est disponible hors connexion à cet endroit."}</span></div>`;
       if (S.err === "load") h += `<div class="notice err">${ic("alert", 18)}<span>Impossible d'afficher ${L[S.compare ? S.sideB : S.base].name}. Vérifiez votre connexion. <a class="lnk" data-act="retry">Réessayer</a> · <a class="lnk" data-act="toplan">Revenir au plan</a></span></div>`;
-      h += `<div class="row" style="min-height:56px;border:0;padding:0" data-act="cmp"><div class="t"><b>Comparer deux fonds</b></div><div class="sw ${S.compare ? "on" : ""}"></div></div>`;
+      if (cfg.entry === "layers") {
+        if (!S.compare) h += `<div class="btn ghost" data-act="cmp">${ic("swap", 18)} Comparer deux fonds</div>`;
+      } else h += `<div class="row" style="min-height:56px;border:0;padding:0" data-act="cmp"><div class="t"><b>Comparer deux fonds</b></div><div class="sw ${S.compare ? "on" : ""}"></div></div>`;
       if (S.compare) {
-        h += `<div class="slots"><div class="slot ${S.target === "left" ? "t" : ""}" data-act="tgt" data-s="left"><small>Côté gauche</small><b>${L[S.sideA].short}</b></div><div class="swapb" data-act="swap" title="Inverser les côtés">${ic("swap", 22)}</div><div class="slot ${S.target === "right" ? "t" : ""}" data-act="tgt" data-s="right"><small>Côté droit</small><b>${L[S.sideB].short}</b></div></div><div class="helper">Touchez un fond pour le placer côté ${S.target === "left" ? "gauche" : "droit"}. Les relevés sont masqués pendant la comparaison.</div>`;
+        h += `<div class="slots"><div class="slot ${S.target === "left" ? "t" : ""}" data-act="tgt" data-s="left"><small>Côté gauche</small><b>${L[S.sideA].short}</b></div><div class="swapb" data-act="swap" title="Inverser les côtés">${ic("swap", 22)}</div><div class="slot ${S.target === "right" ? "t" : ""}" data-act="tgt" data-s="right"><small>Côté droit</small><b>${L[S.sideB].short}</b></div></div><div class="helper">Touchez un fond pour le placer côté ${S.target === "left" ? "gauche" : "droit"}. Les relevés sont masqués pendant la comparaison.</div>${cfg.entry === "layers" ? `<div class="btn ghost" data-act="cmp">Arrêter la comparaison</div>` : ""}`;
       }
       h += `<div class="sec">Fonds de carte</div><div>${BASES.map(baseRow).join("")}</div>`;
       if (S.offline && S.covered && shared.policy === "base") h += `<div class="helper">Les couches supplémentaires ne sont pas téléchargées avec votre réglage actuel.</div>`;
       h += `<div class="sec">Superposition</div>`;
       const fok = avail("foret");
       h += `<div class="row ${fok ? "" : "dis"}" data-act="ov" style="border:0"><div class="tile">${ic("leaf", 18)}</div><div class="t"><b>${FOREST.name}</b><span>${fok ? FOREST.vintage : "Indisponible hors connexion : zone non téléchargée."}${fok ? " " + FOREST.cov : ""}${S.compare && fok ? " S'applique aux deux côtés de la comparaison." : ""}</span></div>${fok ? `<div class="sw ${S.overlay ? "on" : ""}"></div>` : `<div class="r">${ic("cloudoff", 20)}</div>`}</div>`;
+      if (cfg.entry === "layers") h += `<div class="sec" style="margin-top:6px">Parcelles</div><div class="seg" style="margin:0"><div class="${S.parcels === "all" ? "on" : ""}" data-act="parc" data-m="all">Toutes</div><div class="${S.parcels === "ibp" ? "on" : ""}" data-act="parc" data-m="ibp">Avec IBP</div><div class="${S.parcels === "none" ? "on" : ""}" data-act="parc" data-m="none">Aucune</div></div><div class="helper">${S.parcels === "all" ? "Cadastre et toutes les parcelles." : S.parcels === "ibp" ? "Seulement les parcelles qui ont un relevé IBP, sans le cadastre." : "Ni cadastre ni parcelles."}</div>`;
       if (S.overlay) h += `<div class="legend"><span><i style="background:#e0a63a"></i>Feuillus</span><span><i style="background:#2f7d32"></i>Conifères</span><span><i style="background:#7aa34a"></i>Forêts mélangées</span><span><i style="background:#9a7bb0"></i>Peupleraies</span><span><i style="background:#c9b68a"></i>Landes et forêts ouvertes</span></div>`;
       const sh = shown().filter(Boolean).map((k) => `<p>${L[k].src}</p>`).join("") + (S.overlay ? `<p>Types de forêt : ${FOREST.vintage}</p>` : "");
       h += `<div class="sec">Sources et licences</div><div class="src">${sh}<p>${SRC_COMMON}</p></div>`;
@@ -297,6 +306,7 @@
     const startDl = () => {
       clearInterval(dlTimer); const scen = S.dl.scen;
       S.dl = { st: "running", pct: 0, scen };
+      if (cfg.dlclose) S.panel = null;
       dlTimer = setInterval(() => {
         S.dl.pct += 100 / 80;
         if (scen === "fail" && S.dl.pct >= 30) { clearInterval(dlTimer); S.dl.st = "failed"; }
@@ -327,6 +337,8 @@
       else if (act === "swap") { const t = S.sideA; S.sideA = S.sideB; S.sideB = t; }
       else if (act === "reset") { if (S.compare) { leaveCompare(); } S.base = S.saved; S.overlay = false; }
       else if (act === "retry" || act === "toplan") { S.err = null; if (act === "toplan") { S.base = "map"; S.compare = false; } }
+      else if (act === "parc") S.parcels = a.dataset.m;
+      else if (act === "chip") { if (cfg.dlclose && (S.dl.st === "failed" || S.dl.st === "partial")) S.panel = "download"; else if (!cfg.dlclose) S.panel = "download"; }
       else if (act === "seg") { S.seg = a.dataset.m; S.panel = S.seg === "study" ? "study" : null; }
       else if (act === "dlstart") return startDl();
       else if (act === "dlclose") { S.panel = null; S.dl = { st: "idle", pct: 0, scen: S.dl.scen }; }

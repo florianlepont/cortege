@@ -7,6 +7,9 @@
 <script>
 const S=[["defaut","Explorer au repos"],["panneau","Panneau ouvert"],["ancien","Fond ancien choisi"],["foret","Types de forêt"],["comparer","Comparer deux fonds"],["comparerFerme","Comparaison, panneau fermé"],["horsligne","Hors connexion, zone téléchargée"],["horsZone","Hors connexion, rien ici"],["erreur","Erreur de chargement"]];
 LK.mountSketch(document.getElementById("app"),[
+{id:"d",tab:"Choix : Couches sans bascule",win:"choix du propriétaire, 2026-10-11",title:"Choix : pastille « Couches », plus de bascule plan/satellite, parcelles à 3 états",cfg:{entry:"layers",tags:"spec",chip:"left",dlclose:true},states:[["panneau","Panneau ouvert"],["ancien","Fond ancien choisi"],["foret","Types de forêt"],["comparer","Comparer deux fonds"],["comparerFerme","Comparaison, panneau fermé"],["horsligne","Hors connexion, zone téléchargée"],["horsZone","Hors connexion, rien ici"]],
+ desc:"Synthèse des choix : la pastille « Couches » (B) remplace le bouton de bascule du fond, qui disparaît. Le panneau a trois blocs : Fonds, Comparer, Superpositions (types de forêt et Parcelles : Toutes, Avec IBP, Aucune). Essayez Avec IBP et Aucune : le cadastre et les parcelles disparaissent. En comparaison, la pastille et la croix de sortie sont côte à côte.",
+ points:["Une seule porte d'entrée pour tout ce qui touche au fond de carte","Satellite en 2 appuis au lieu d'1","Parcelles : un seul contrôle pour le cadastre et les polygones"]},
 {id:"a",tab:"A : 3e bouton dans la capsule",title:"A : troisième bouton dans la capsule (contrat actuel)",cfg:{entry:"capsule",tags:"spec",chip:"left"},states:S,
  desc:"Un bouton « couches » s'ajoute aux deux boutons de la capsule (fond, couches, téléchargement). Il ouvre le panneau dans la feuille. Un point vert signale que l'état diffère de l'Explorer habituel.",
  points:["Rien d'existant ne bouge sauf la capsule, plus haute de 51 pt","Discret : l'Explorer ressemble à l'actuel","Découvrabilité moyenne : icône seule"]},

@@ -20,6 +20,6 @@ used sparingly for action. The owner points to Linear as the reference and rejec
 | 013 | search-entry | Where does the global search entry live (Phase 25)? | None of A/B/C: iOS native search tab only; Android search as a 4th bottom tab (owner, 2026-10-09) | phase-25, global-search |
 | 014 | search-results | How are results grouped by type? | C (best result card, then groups) | phase-25, global-search |
 | 015 | search-states | Which empty, no-result, offline and error states? | A (line per network group, recent searches) | phase-25, global-search |
-| 016 | study-entry-panel | How does one enter study mode and what is in the layers panel (Phase 28)? | pending (A contract, B labeled pill, C Explorer/Study tabs) | phase-28, map-layers |
-| 017 | curtain-compare | What does the comparison curtain look like and how are its sides named? | pending (A contract, B fixed bottom tags, C dated tags) | phase-28, map-layers |
-| 018 | download-settings | How is download progress shown with the sheet closed, and the offline layers setting? | pending (A contract chip, B top chip, C bar) | phase-28, offline |
+| 016 | study-entry-panel | How does one enter study mode and what is in the layers panel (Phase 28)? | Owner 2026-10-11: B reshaped (Couches pill, basemap switch removed, Parcelles 3 states) | phase-28, map-layers |
+| 017 | curtain-compare | What does the comparison curtain look like and how are its sides named? | A (owner 2026-10-11) | phase-28, map-layers |
+| 018 | download-settings | How is download progress shown with the sheet closed, and the offline layers setting? | A, sheet closes after Télécharger, chip only (owner 2026-10-11) | phase-28, offline |

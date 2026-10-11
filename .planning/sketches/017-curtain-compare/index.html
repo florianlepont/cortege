@@ -7,7 +7,7 @@
 <script>
 const S=[["comparer","Comparer (panneau ouvert)"],["comparerFerme","Comparaison, panneau fermé"],["comparForet","Avec types de forêt"],["comparZoom","État-major, zoom 16 (flou)"],["horsComp","Hors connexion, une couche absente"],["surzoom","Surzoom sans rideau"]];
 LK.mountSketch(document.getElementById("app"),[
-{id:"a",tab:"A : bouton et étiquettes sur la poignée",title:"A : bouton rond à 32 % de la hauteur, étiquettes collées à la poignée (contrat actuel)",cfg:{entry:"capsule",tags:"spec",chip:"left"},states:S,
+{id:"a",tab:"A : bouton et étiquettes sur la poignée",title:"A : bouton rond à 32 % de la hauteur, étiquettes collées à la poignée (contrat actuel)",cfg:{entry:"layers",tags:"spec",chip:"left"},states:S,
  desc:"La poignée est une ligne blanche de 4 pt avec un bouton rond en verre. Les deux étiquettes suivent la poignée et nomment toujours ce qui est à côté d'elles. Elles s'effacent quand leur côté devient trop étroit.",
  points:["On lit toujours quel fond est de quel côté, même poignée déplacée","Le bouton reste au-dessus de la feuille ouverte (32 % de la hauteur)","Étiquettes courtes : « Plan », « Photos 1950 »"]},
 {id:"b",tab:"B : étiquettes fixes en bas",title:"B : bouton au milieu, étiquettes fixes aux coins du bas",cfg:{entry:"capsule",tags:"mid",chip:"left"},states:S,

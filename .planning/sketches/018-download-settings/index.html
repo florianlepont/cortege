@@ -7,8 +7,8 @@
 <script>
 const S=[["dlForm","Formulaire (estimation)"],["dlRun","Téléchargement dans la feuille"],["dlRunClosed","Téléchargement, feuille fermée"],["dlDoneClosed","Terminé, feuille fermée"],["dlPartial","Résultat partiel"],["dlPartialClosed","Partiel, feuille fermée"],["dlFail","Échec de la zone"],["dlFailClosed","Échec, feuille fermée"],["@settings","Réglages : ouvrir le choix"]];
 LK.mountSketch(document.getElementById("app"),[
-{id:"a",tab:"A : pastille à gauche du bouton",title:"A : pastille de progression à gauche du bouton de téléchargement (contrat actuel)",cfg:{entry:"capsule",tags:"spec",chip:"left"},settings:true,states:S,
- desc:"Feuille fermée, une pastille en verre apparaît à gauche du bouton de téléchargement avec le pourcentage. On la touche pour rouvrir la feuille.",
+{id:"a",tab:"A : pastille à gauche du bouton",title:"A : pastille à gauche du bouton, la feuille se ferme après Télécharger (choix du propriétaire)",cfg:{entry:"layers",tags:"spec",chip:"left",dlclose:true},settings:true,states:S,
+ desc:"Après « Télécharger », la feuille se ferme : seule la pastille montre l'avancement. Un échec ou un résultat partiel se touche pour rouvrir la feuille. Une pastille en verre apparaît à gauche du bouton de téléchargement avec le pourcentage. On la touche pour rouvrir la feuille.",
  points:["Proche du bouton qui a lancé l'action","Touchable, annonce le résultat (terminé, partiel, échoué)","Prend de la largeur sur la carte, à gauche de la capsule"]},
 {id:"b",tab:"B : pastille en haut au centre",title:"B : pastille au centre en haut, avec les autres avis de la carte",cfg:{entry:"capsule",tags:"spec",chip:"top"},settings:true,states:S,
  desc:"La pastille rejoint la colonne des avis (hors connexion, surzoom). Une seule zone de la carte pour tout ce qui est passager.",
