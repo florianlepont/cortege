@@ -5,12 +5,14 @@ import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-to
 import { formatDay } from "../../app/formatters"
 import { buildEntriesFromCommunity, historyRowState } from "../../app/parcel-history"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
+import { formatWeatherLine } from "../../app/weather"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
 import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
 import { CenteredState } from "../../ui/CenteredState"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../../ui/frame-large-title"
+import { ConditionsReadOnly } from "../survey-detail/conditions/ConditionsReadOnly"
 import { FactorsList } from "../survey-detail/FactorsList"
 import { toHistoryRow } from "../survey-detail/history-row"
 import { ParcelMapCard } from "../survey-detail/ParcelMapCard"
@@ -232,6 +234,22 @@ export function CommunitySurveyScreen({
       </View>
       <AppGroupedList sections={contextSections} />
       {detail.parcel_ids.length > 0 ? <AppGroupedList sections={parcelSections} /> : null}
+
+      {/* D-06: the weather and the note of the survey, read-only; nothing when it has neither
+          (also an older server that does not send the fields). A value the app cannot show, such
+          as an unknown sky code, counts as absent, so the title never stands alone (T-27-63). */}
+      {formatWeatherLine(detail.weather) !== null || detail.survey_note?.trim() ? (
+        <>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{fr.conditions.title}</Text>
+          </View>
+          <ConditionsReadOnly
+            note={detail.survey_note ?? null}
+            weather={detail.weather ?? null}
+            emptyMode="hidden"
+          />
+        </>
+      ) : null}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{fr.navigation.headers.surveyScore}</Text>
