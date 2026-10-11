@@ -121,6 +121,20 @@ describe("AppGroupedList (ACC-03)", () => {
     expect(onPress).toHaveBeenCalledTimes(1)
   })
 
+  test("a row passes its accessibility hint to the pressable", () => {
+    const { root } = render([
+      {
+        key: "s",
+        rows: [
+          { key: "row", label: "Niveau", accessibilityHint: "Ouvre le choix", onPress: jest.fn() },
+        ],
+      },
+    ])
+    expect(root.findByProps({ accessibilityLabel: "Niveau" }).props.accessibilityHint).toBe(
+      "Ouvre le choix",
+    )
+  })
+
   test("a row without onPress is not interactive", () => {
     const { root } = render([
       { key: "s", rows: [{ key: "row", label: "Version", value: "1.0.0" }] },

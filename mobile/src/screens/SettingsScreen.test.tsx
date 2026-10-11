@@ -65,6 +65,12 @@ jest.mock("../ui/AppField", () => {
   const ReactRef = require("react") as typeof import("react")
   return { AppField: (props: object) => ReactRef.createElement("AppField", props) }
 })
+jest.mock("../ui/AppActionSheet", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return { AppActionSheet: (props: object) => ReactRef.createElement("AppActionSheet", props) }
+})
+const mockSelection = jest.fn()
+jest.mock("../ui/feedback", () => ({ feedback: { selection: () => mockSelection() } }))
 jest.mock("../ui/AppButton", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -102,6 +108,8 @@ type Row = {
   label?: string
   icon?: string
   value?: string
+  accessibilityLabel?: string
+  accessibilityHint?: string
   destructive?: boolean
   loading?: boolean
   onPress?: () => void
@@ -117,6 +125,9 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof SettingsScreen
     onApiUrlChange: jest.fn(),
     offlineAreas: { count: 0, bytes: 0 },
     onOpenOfflineAreas: jest.fn(),
+    offlineLayersPolicy: "all" as const,
+    onChangeOfflineLayersPolicy: jest.fn(),
+    offlineLayersBytes: { all: 84_000_000, base: 53_000_000 },
     onDeleteAccount: jest.fn(async () => undefined),
     onDebugResetIbpData: jest.fn(async () => undefined),
     onDebugResetUserData: jest.fn(async () => undefined),
@@ -139,6 +150,7 @@ const row = (sectionKey: string, rowKey: string): Row =>
 
 beforeEach(() => {
   mockAlert.mockClear()
+  mockSelection.mockClear()
   mockShouldShowDevTools.mockReturnValue(false)
   mockOfflineEnabled.mockReturnValue(true)
 })
@@ -207,6 +219,85 @@ describe("SettingsScreen", () => {
       mockOfflineEnabled.mockReturnValue(false)
       mount(makeProps())
       expect(sections().some((section) => section.key === "maps")).toBe(false)
+    })
+  })
+
+  describe("Couches hors ligne row (28-08)", () => {
+    const sheet = () => tree.root.findByType("AppActionSheet" as never)
+    const open = () => act(() => row("maps", "offline-layers").onPress?.())
+
+    test("sits under the offline zones row with the level, a glyph and a footer", () => {
+      mount(makeProps())
+      const keys = sections()
+        .find((section) => section.key === "maps")!
+        .rows.map((r) => r.key)
+      expect(keys).toEqual(["offline-areas", "offline-layers"])
+      const layers = row("maps", "offline-layers")
+      expect(layers.icon).toBe("layers-outline")
+      expect(layers.label).toBe(fr.mapLayers.policy.row)
+      expect(layers.value).toBe(fr.mapLayers.policy.valueAll)
+      expect(layers.accessibilityLabel).toBe("Couches hors ligne, Toutes les couches")
+      expect(layers.accessibilityHint).toBe(fr.mapLayers.policy.rowHint)
+      expect(sections().find((section) => section.key === "maps")!.footer).toBe(
+        fr.mapLayers.policy.footer,
+      )
+    })
+
+    test("reads the base level as Fonds de carte seulement", () => {
+      mount(makeProps({ offlineLayersPolicy: "base" }))
+      const layers = row("maps", "offline-layers")
+      expect(layers.value).toBe("Fonds de carte seulement")
+      expect(layers.accessibilityLabel).toBe("Couches hors ligne, Fonds de carte seulement")
+    })
+
+    test("the sheet is closed until the row is pressed, then shows both weights", () => {
+      mount(makeProps())
+      expect(sheet().props.visible).toBe(false)
+      open()
+      expect(sheet().props.visible).toBe(true)
+      expect(sheet().props.title).toBe("Couches hors ligne")
+      expect(sheet().props.message).toBe(fr.mapLayers.policy.sheetMessage)
+      expect(sheet().props.cancelLabel).toBe(fr.common.actions.cancel)
+      expect((sheet().props.options as { label: string }[]).map((option) => option.label)).toEqual([
+        "Toutes les couches · environ 84 Mo",
+        "Fonds de carte seulement · environ 53 Mo",
+      ])
+      act(() => sheet().props.onClose())
+      expect(sheet().props.visible).toBe(false)
+    })
+
+    test("choosing the other level saves it once with a selection haptic", () => {
+      const props = makeProps()
+      mount(props)
+      open()
+      act(() => sheet().props.options[1].onPress())
+      expect(props.onChangeOfflineLayersPolicy).toHaveBeenCalledTimes(1)
+      expect(props.onChangeOfflineLayersPolicy).toHaveBeenCalledWith("base")
+      expect(mockSelection).toHaveBeenCalledTimes(1)
+    })
+
+    test("choosing the current level does nothing", () => {
+      const props = makeProps()
+      mount(props)
+      open()
+      act(() => sheet().props.options[0].onPress())
+      expect(props.onChangeOfflineLayersPolicy).not.toHaveBeenCalled()
+      expect(mockSelection).not.toHaveBeenCalled()
+    })
+
+    test("choosing all from base works too", () => {
+      const props = makeProps({ offlineLayersPolicy: "base" })
+      mount(props)
+      open()
+      act(() => sheet().props.options[0].onPress())
+      expect(props.onChangeOfflineLayersPolicy).toHaveBeenCalledWith("all")
+    })
+
+    test("neither the row nor the footer shows when offline maps are off", () => {
+      mockOfflineEnabled.mockReturnValue(false)
+      mount(makeProps())
+      expect(sections().some((section) => section.key === "maps")).toBe(false)
+      expect(tree.root.findAllByType("AppActionSheet" as never)).toHaveLength(0)
     })
   })
 
