@@ -350,7 +350,8 @@
       return kind;
     };
     const chooserR = () => {
-      if (cfg.chooser === "card") { if (cfg.entry === "keep") bottomCardR(); return; }
+      if (cfg.chooser === "card" && !(S.chooser === "ov" && !cfg.ovcard)) { if (cfg.entry === "keep") bottomCardR(); return; }
+      if (cfg.chooser === "card") locate.style.bottom = 84 + 14 + "px";
       chooserW.innerHTML = "";
       if (cfg.entry !== "keep" || !S.chooser) return;
       if (S.chooser === "ov") {

@@ -1,18 +1,18 @@
 <!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 28 : cartes du bas et choix gauche / droite</title>
 <link rel="stylesheet" href="../themes/map-layers.css"></head><body>
 <h1>Sketch 020 : une seule famille de cartes en bas, et choisir gauche / droite plus directement</h1>
-<div class="sub">Phase 28, suite du choix B (bandeau de vignettes). Le choix du fond, la superposition et le téléchargement sont maintenant tous trois la même petite carte en bas (même position, même forme, même en-tête avec la croix). Le grand panneau de téléchargement disparaît. Les 4 onglets comparent des façons de choisir le fond gauche et le fond droit : lancez « Comparer » puis essayez chacune.</div>
+<div class="sub">Phase 28, suite du choix B (bandeau de vignettes). Le choix du fond et le téléchargement sont la même petite carte en bas (même position, même forme, même en-tête avec la croix). La superposition reste dans sa petite bulle à côté de la capsule, comme dans le 019. Le grand panneau de téléchargement disparaît. Les 4 onglets comparent des façons de choisir le fond gauche et le fond droit : lancez « Comparer » puis essayez chacune.</div>
 <div id="app"></div>
 <script src="../themes/map-layers-kit.js"></script>
 <script>
 const S=[["cBase","Fonds de carte"],["cCmp","Comparer"],["cOv","Superposition"],["cParc","Parcelles : Avec IBP"],["cDlOpen","Télécharger"],["dlRunClosed","Téléchargement en cours"],["dlFailClosed","Échec (touchez la pastille)"],["dlPartialClosed","Partiel (touchez la pastille)"],["cOff","Hors connexion"]];
-const base={entry:"keep",chooser:"card",ov:"round",chip:"left",dlclose:true,dlcard:true,ovcard:true,tags:"spec"};
+const base={entry:"keep",chooser:"card",ov:"round",chip:"left",dlclose:true,dlcard:true,ovcard:false,tags:"spec"};
 LK.mountSketch(document.getElementById("app"),[
 {id:"a",tab:"A : deux rangées",title:"A : deux rangées de vignettes, Gauche et Droite",cfg:Object.assign({},base,{cmpMode:"rows"}),states:S,
  desc:"En comparaison, la carte montre deux rangées : une pour le fond de gauche, une pour le fond de droite. On touche directement la vignette voulue dans la bonne rangée. Rien à retenir, aucun mode.",
  points:["Le plus direct : un appui, le bon côté, sans état caché","Voit les deux choix d'un coup d'œil","Carte un peu plus haute (deux rangées)"]},
 {id:"b",tab:"B : glisser sur la carte",title:"B : glisser une vignette sur la carte",cfg:Object.assign({},base,{cmpMode:"drag"}),states:S,
- desc:"On tire une vignette vers la gauche ou la droite de la ligne : la zone s'éclaire, on lâche. Un simple appui reste possible (le côté alterne).",
+ desc:"Comment ça marche : après « Comparer », on appuie sur une vignette du bandeau et on la tire avec le doigt vers la carte. Dès qu'elle est au-dessus de la carte, la moitié gauche ou la moitié droite s'éclaire selon l'endroit où on est par rapport à la ligne. On lâche : ce fond prend ce côté. Un simple appui reste possible (le côté alterne).",
  points:["Geste très parlant, on voit le résultat sous le doigt","Moins découvrable : il faut le dire","Demande un vrai test au pouce sur téléphone"]},
 {id:"c",tab:"C : extrémités fixes",title:"C : vignettes Gauche et Droite fixes aux extrémités",cfg:Object.assign({},base,{cmpMode:"ends"}),states:S,
  desc:"Aux deux bouts de la carte, deux vignettes affichent le fond actuel de chaque côté. On touche l'une, puis un fond dans la liste du milieu, et le côté suivant s'active.",
