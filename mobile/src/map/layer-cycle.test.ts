@@ -69,7 +69,9 @@ describe("neighbourLayer", () => {
     expect(neighbourLayer("map", 1, { isAvailable: onlyMap })).toBeNull()
     expect(neighbourLayer("map", -1, { isAvailable: onlyMap })).toBeNull()
     const mapAndSatellite = (key: BaseLayerKey) => key === "map" || key === "satellite"
-    expect(neighbourLayer("map", 1, { isAvailable: mapAndSatellite, exclude: "satellite" })).toBeNull()
+    expect(
+      neighbourLayer("map", 1, { isAvailable: mapAndSatellite, exclude: "satellite" }),
+    ).toBeNull()
   })
 
   it("searches from the cycle position of a current layer that is itself unavailable", () => {
