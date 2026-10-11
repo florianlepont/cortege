@@ -12,17 +12,24 @@ jest.mock("react-native", () => ({
 jest.mock("../storage/surveys", () => ({
   getLocalSurveyDraft: jest.fn(),
   updateLocalDraft: jest.fn(),
+  patchLocalSurveyConditions: jest.fn(),
 }))
 
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
-import { getLocalSurveyDraft, updateLocalDraft } from "../storage/surveys"
+import {
+  getLocalSurveyDraft,
+  patchLocalSurveyConditions,
+  updateLocalDraft,
+} from "../storage/surveys"
+import type { SurveyWeather } from "@cortege/ibp-domain"
 import type { SurveyQueuePayload } from "../storage/types"
 import { applyMethodFields } from "../storage/utils"
 import { useSurveyDraftPatcher } from "./useSurveyDraftPatcher"
 
 const mockGetLocalSurveyDraft = getLocalSurveyDraft as jest.Mock
 const mockUpdateLocalDraft = updateLocalDraft as jest.Mock
+const mockPatchConditions = patchLocalSurveyConditions as jest.Mock
 
 const TEST_SURVEY_ID = "survey-test-1"
 
@@ -59,6 +66,7 @@ describe("useSurveyDraftPatcher", () => {
       refreshLocalAttachments: jest.fn().mockResolvedValue(undefined),
     }
     mockUpdateLocalDraft.mockResolvedValue({})
+    mockPatchConditions.mockResolvedValue({ id: TEST_SURVEY_ID })
   })
 
   // ─── patchSurveyDraftDirectly ──────────────────────────────────────────────
@@ -529,6 +537,107 @@ describe("useSurveyDraftPatcher", () => {
         }),
       )
       expect(mockUpdateLocalDraft.mock.calls[0][0]).not.toHaveProperty("ibp_cas")
+    })
+  })
+
+  // ─── Silent conditions writes (phase 27, D-03) ────────────────────────────
+
+  describe("handleUpdateSurveyNote", () => {
+    test("writes the normalized note, refreshes once and posts no status", async () => {
+      const { handleUpdateSurveyNote } = useBuildHook()
+
+      const result = await handleUpdateSurveyNote(TEST_SURVEY_ID, "  Matinée fraîche\r\n  ")
+
+      expect(result).toBe(true)
+      expect(mockPatchConditions).toHaveBeenCalledWith({
+        survey_id: TEST_SURVEY_ID,
+        survey_note: "Matinée fraîche",
+      })
+      expect(surveyList.refreshLocalSurveys).toHaveBeenCalledTimes(1)
+      expect(onStatusChange).not.toHaveBeenCalled()
+    })
+
+    test("an emptied note is stored as absent", async () => {
+      const { handleUpdateSurveyNote } = useBuildHook()
+
+      await handleUpdateSurveyNote(TEST_SURVEY_ID, "   ")
+
+      expect(mockPatchConditions).toHaveBeenCalledWith({
+        survey_id: TEST_SURVEY_ID,
+        survey_note: null,
+      })
+    })
+
+    test("a submitted survey (null from storage) resolves false without a refresh", async () => {
+      mockPatchConditions.mockResolvedValue(null)
+      const { handleUpdateSurveyNote } = useBuildHook()
+
+      expect(await handleUpdateSurveyNote(TEST_SURVEY_ID, "note")).toBe(false)
+      expect(surveyList.refreshLocalSurveys).not.toHaveBeenCalled()
+      expect(onStatusChange).not.toHaveBeenCalled()
+    })
+
+    test("a storage error resolves false with no user-facing status", async () => {
+      mockPatchConditions.mockRejectedValue(new Error("DB crash"))
+      const { handleUpdateSurveyNote } = useBuildHook()
+
+      expect(await handleUpdateSurveyNote(TEST_SURVEY_ID, "note")).toBe(false)
+      expect(onStatusChange).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("handleUpdateSurveyWeather", () => {
+    test("passes the updater through the canonical form", async () => {
+      const { handleUpdateSurveyWeather } = useBuildHook()
+      const current: SurveyWeather = { requested_at: "2026-10-11T08:00:00.000Z" }
+
+      const result = await handleUpdateSurveyWeather(TEST_SURVEY_ID, (stored) => ({
+        ...(stored ?? {}),
+        temperature_c: 12.34,
+        edited: [],
+      }))
+
+      expect(result).toBe(true)
+      const call = mockPatchConditions.mock.calls[0][0] as {
+        survey_id: string
+        weather: (stored: SurveyWeather | null) => SurveyWeather | null
+      }
+      expect(call.survey_id).toBe(TEST_SURVEY_ID)
+      expect(typeof call.weather).toBe("function")
+      // The canonical form drops the empty edited list and keeps the survey time.
+      expect(call.weather(current)).toEqual({
+        requested_at: "2026-10-11T08:00:00.000Z",
+        temperature_c: 12.34,
+      })
+      expect(surveyList.refreshLocalSurveys).toHaveBeenCalledTimes(1)
+      expect(onStatusChange).not.toHaveBeenCalled()
+    })
+
+    test("an updater returning null clears the weather", async () => {
+      const { handleUpdateSurveyWeather } = useBuildHook()
+
+      await handleUpdateSurveyWeather(TEST_SURVEY_ID, () => null)
+
+      const call = mockPatchConditions.mock.calls[0][0] as {
+        weather: (stored: SurveyWeather | null) => SurveyWeather | null
+      }
+      expect(call.weather({ requested_at: "2026-10-11T08:00:00.000Z" })).toBeNull()
+    })
+
+    test("a submitted survey resolves false without a refresh", async () => {
+      mockPatchConditions.mockResolvedValue(null)
+      const { handleUpdateSurveyWeather } = useBuildHook()
+
+      expect(await handleUpdateSurveyWeather(TEST_SURVEY_ID, (c) => c)).toBe(false)
+      expect(surveyList.refreshLocalSurveys).not.toHaveBeenCalled()
+    })
+
+    test("a storage error resolves false with no user-facing status", async () => {
+      mockPatchConditions.mockRejectedValue(new Error("DB crash"))
+      const { handleUpdateSurveyWeather } = useBuildHook()
+
+      expect(await handleUpdateSurveyWeather(TEST_SURVEY_ID, (c) => c)).toBe(false)
+      expect(onStatusChange).not.toHaveBeenCalled()
     })
   })
 })
