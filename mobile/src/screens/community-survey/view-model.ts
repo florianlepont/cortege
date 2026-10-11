@@ -1,9 +1,11 @@
 import {
   FACTOR_KEYS,
   IBP_METHOD_V3_2,
+  readFactorAnnotations,
   resolveMethodVersion,
   type CommunitySurveyDetail,
 } from "@cortege/ibp-domain"
+import { attachFactorAnnotations } from "../../app/factor-annotations"
 import { fr } from "../../i18n"
 import {
   NOT_FILLED_CLASS,
@@ -28,7 +30,7 @@ export function toDisplayedScores(detail: CommunitySurveyDetail): DisplayedScore
 export function toFactorEntries(
   detail: CommunitySurveyDetail,
 ): Array<[string, DisplayedFactorResult]> {
-  return FACTOR_KEYS.map((code): [string, DisplayedFactorResult] => {
+  const entries = FACTOR_KEYS.map((code): [string, DisplayedFactorResult] => {
     const result = detail.factor_results[code] as
       | { selected_class?: string; score_points?: number }
       | undefined
@@ -41,6 +43,11 @@ export function toFactorEntries(
       },
     ]
   })
+  // The doubt and the note of the observer (phase 27, D-06, D-13), display only.
+  return attachFactorAnnotations(
+    entries,
+    readFactorAnnotations({ annotations: detail.factor_annotations }),
+  )
 }
 
 export type ContextRow = { key: string; label: string; value: string }
