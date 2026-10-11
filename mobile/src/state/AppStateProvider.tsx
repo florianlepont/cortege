@@ -12,6 +12,7 @@ import { useSurveyDraftPatcher } from "../hooks/useSurveyDraftPatcher"
 import { useSurveyForm } from "../hooks/useSurveyForm"
 import { useSurveyList } from "../hooks/useSurveyList"
 import { useSurveySync } from "../hooks/useSurveySync"
+import { useWeatherPrefill } from "../hooks/useWeatherPrefill"
 import { fr, logStatusDetail } from "../i18n"
 import { persistLegacyAttachmentFiles } from "../storage/attachments"
 import { initLocalDb } from "../storage/db"
@@ -33,6 +34,7 @@ import {
 } from "./surveys-context"
 import { SyncActionsProvider } from "./sync-actions-context"
 import { SyncStatusProvider, type SyncStatusContextValue } from "./sync-status-context"
+import { WeatherPrefillProvider, type WeatherPrefillContextValue } from "./weather-context"
 import { useLatestCallback, useStableActions } from "./useLatestCallback"
 
 /**
@@ -208,6 +210,21 @@ function useAppController() {
     refreshLocalSurveys,
     refreshLocalAttachments,
   })
+
+  // ─── Weather prefill (phase 27, D-10, D-11) ────────────────────────────────
+
+  // Called once here, not in a screen: a draft chosen offline must fill itself when the network
+  // returns, wherever the observer is in the app. The single-sync rule is about useSurveySync.
+  const weatherPrefill = useWeatherPrefill({
+    apiUrl,
+    accessToken: surveySync.accessToken,
+    surveys: surveyList.surveys,
+    updateSurveyWeather: draftPatcher.handleUpdateSurveyWeather,
+  })
+  const weather = useMemo<WeatherPrefillContextValue>(
+    () => ({ state: weatherPrefill.state, actions: weatherPrefill.actions }),
+    [weatherPrefill.state, weatherPrefill.actions],
+  )
 
   // ─── Surveys ───────────────────────────────────────────────────────────────
 
@@ -434,6 +451,7 @@ function useAppController() {
     surveyActions,
     form,
     nearby,
+    weather,
     autosaveStatus: editing.autosaveStatus,
   }
 }
@@ -449,6 +467,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     surveyActions,
     form,
     nearby,
+    weather,
     autosaveStatus,
   } = useAppController()
 
@@ -462,7 +481,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
                 <SurveyActionsProvider value={surveyActions}>
                   <SurveyFormProvider value={form}>
                     <AutosaveStatusProvider value={autosaveStatus}>
-                      <NearbyParcelsProvider value={nearby}>{children}</NearbyParcelsProvider>
+                      <NearbyParcelsProvider value={nearby}>
+                        <WeatherPrefillProvider value={weather}>{children}</WeatherPrefillProvider>
+                      </NearbyParcelsProvider>
                     </AutosaveStatusProvider>
                   </SurveyFormProvider>
                 </SurveyActionsProvider>

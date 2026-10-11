@@ -204,6 +204,23 @@ jest.mock("../storage/surveys", () => ({
   hasPendingSyncWork: jest.fn(async () => false),
 }))
 
+// Phase 27 weather prefill: no candidate unless a test sets one; the lookup is a promise a test
+// settles itself.
+const mockWeatherCandidates: Array<{
+  id: string
+  parcel_ids: string[]
+  weather: { requested_at: string }
+}> = []
+const mockWeatherRequests: Array<(value: unknown) => void> = []
+jest.mock("../storage/weather", () => ({
+  listWeatherCandidates: jest.fn(async () => [...mockWeatherCandidates]),
+  loadWeatherPoint: jest.fn(async () => ({ lat: 48.85, lng: 2.35 })),
+  saveWeatherPoint: jest.fn(async () => undefined),
+}))
+jest.mock("../api/weather-api", () => ({
+  fetchWeather: jest.fn(() => new Promise((resolve) => mockWeatherRequests.push(resolve))),
+}))
+
 jest.mock("../storage/sync", () => ({
   syncPending: jest.fn(async () => ({ synced: 0, failed: 0 })),
   pullRemoteChanges: jest.fn(async () => ({ surveys: 0, attachments: 0 })),
@@ -301,6 +318,7 @@ import {
 } from "./surveys-context"
 import { useSurveyFormState, type SurveyFormContextValue } from "./survey-form-context"
 import { useNearbyParcelsState, type NearbyParcelsContextValue } from "./nearby-parcels-context"
+import { useWeatherPrefillState, type WeatherPrefillContextValue } from "./weather-context"
 import { useAutosaveStatus } from "./autosave-status-context"
 import type { AutosaveStatus } from "../hooks/useEditingDraft"
 
@@ -314,6 +332,7 @@ type Snapshot = {
   form: SurveyFormContextValue
   surveyActions: SurveyActions
   nearby: NearbyParcelsContextValue
+  weather: WeatherPrefillContextValue
   autosaveStatus: AutosaveStatus
 }
 
@@ -330,6 +349,7 @@ function Probe() {
     form: useSurveyFormState(),
     surveyActions: useSurveyActions(),
     nearby: useNearbyParcelsState(),
+    weather: useWeatherPrefillState(),
     autosaveStatus: useAutosaveStatus(),
   })
   return null
@@ -377,6 +397,7 @@ describe("context hooks outside AppStateProvider", () => {
     ["useSurveyFormState", useSurveyFormState],
     ["useSurveyActions", useSurveyActions],
     ["useNearbyParcelsState", useNearbyParcelsState],
+    ["useWeatherPrefillState", useWeatherPrefillState],
     ["useAutosaveStatus", useAutosaveStatus],
   ] as const)("%s throws a clear error", async (name, hook) => {
     await expect(renderHook(() => hook())).rejects.toThrow(
@@ -499,6 +520,39 @@ describe("AppStateProvider", () => {
     const { surveys } = latest()
     expect(surveys.actions.updateSurveyNote).toEqual(expect.any(Function))
     expect(surveys.actions.updateSurveyWeather).toEqual(expect.any(Function))
+  })
+
+  test("a weather request in flight changes only the weather value (phase 27, D-10)", async () => {
+    const before = latest()
+    expect(before.weather.state.inFlightIds.size).toBe(0)
+    mockWeatherCandidates.push({
+      id: "s-01",
+      parcel_ids: ["P1"],
+      weather: { requested_at: new Date(Date.now() - 60 * 60 * 1000).toISOString() },
+    })
+
+    // retry resolves when the request does, so it is not awaited while the request is pending.
+    await act(async () => {
+      void before.weather.actions.retry("s-01")
+    })
+    await settle()
+
+    const during = latest()
+    expect(during.weather.state.inFlightIds.has("s-01")).toBe(true)
+    expect(during.weather).not.toBe(before.weather)
+    expect(during.weather.actions).toBe(before.weather.actions)
+    expect(during.session).toBe(before.session)
+    expect(during.status).toBe(before.status)
+    expect(during.surveys).toBe(before.surveys)
+    expect(during.form).toBe(before.form)
+    expect(during.nearby).toBe(before.nearby)
+
+    await act(async () => {
+      mockWeatherRequests.forEach((resolve) => resolve({ observation: null, reason: "no_data" }))
+    })
+    await settle()
+    expect(latest().weather.state.inFlightIds.size).toBe(0)
+    mockWeatherCandidates.length = 0
   })
 
   test("a doubt toggle reaches the form value only, through stable actions (phase 27)", async () => {

@@ -725,6 +725,13 @@ jest.mock("../storage/surveys", () => ({
   updateSurveyVisibility: jest.fn(),
 }))
 
+// Phase 27 weather prefill: the harness has no storage, so there is never a candidate to ask for.
+jest.mock("../storage/weather", () => ({
+  listWeatherCandidates: jest.fn(async () => []),
+  loadWeatherPoint: jest.fn(async () => null),
+  saveWeatherPoint: jest.fn(async () => undefined),
+}))
+
 jest.mock("../storage/sync", () => ({
   syncPending: jest.fn(async () => ({ synced: 0, failed: 0 })),
   pullRemoteChanges: jest.fn(async () => ({ surveys: 0, attachments: 0 })),
