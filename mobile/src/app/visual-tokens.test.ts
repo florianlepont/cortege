@@ -877,3 +877,45 @@ describe("offline download progress bar (12.2-19 third round)", () => {
 })
 
 // The forest card aurora's colours and readable zones: `forest-aurora-tokens.test.ts`.
+
+// Phase 28: the comparison line and the swipe dots over the three reference backdrops of the old
+// maps and photographs (cream paper of the etat-major map, grey of a 1950 photograph, the dark
+// plan). Non-text graphics need 3:1: the white core carries the dark and the grey, the graphite
+// edge carries the cream where white is near 1.2:1.
+describe.each(schemes)("curtain line and swipe dots (Phase 28), %s scheme", (scheme) => {
+  const { curtain } = themes[scheme].visual
+  const backdrops = { cream: "#EFE6CF", grey: "#8C8C8C", darkPlan: "#0E1512" }
+
+  test("both schemes hold the same values (the map does not follow the scheme)", () => {
+    expect(curtain).toEqual(themes.light.visual.curtain)
+    expect(curtain).toEqual(themes.dark.visual.curtain)
+    expect(curtain.line).toBe(brandColors.white)
+    expect(curtain.edge).toMatch(/^rgba\(\d+, \d+, \d+, 0\.\d+\)$/)
+  })
+
+  test.each(Object.entries(backdrops))(
+    "the better of the white core and the graphite edge reaches 3:1 over the %s backdrop",
+    (_name, backdrop) => {
+      const core = contrastRatio(curtain.line, backdrop)
+      const edge = contrastRatio(compositeOver(curtain.edge, backdrop), backdrop)
+      expect(Math.max(core, edge)).toBeGreaterThanOrEqual(3)
+    },
+  )
+
+  test("a swipe dot (white fill inside the edge ring) reaches 3:1 over each backdrop", () => {
+    for (const backdrop of Object.values(backdrops)) {
+      const ring = compositeOver(curtain.edge, backdrop)
+      const fill = contrastRatio(curtain.line, backdrop)
+      expect(Math.max(fill, contrastRatio(ring, backdrop))).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  test("the edge alpha is the lowest of the 0.05 steps from 0.45 that passes over the cream", () => {
+    const alpha = Number(/, (0\.\d+)\)$/.exec(curtain.edge)?.[1])
+    const rgb = /^rgba\((\d+), (\d+), (\d+),/.exec(curtain.edge)?.slice(1, 4).join(", ")
+    const ratioAt = (a: number) =>
+      contrastRatio(compositeOver(`rgba(${rgb}, ${a})`, backdrops.cream), backdrops.cream)
+    expect(ratioAt(alpha)).toBeGreaterThanOrEqual(3)
+    expect(ratioAt(Math.round((alpha - 0.05) * 100) / 100)).toBeLessThan(3)
+  })
+})

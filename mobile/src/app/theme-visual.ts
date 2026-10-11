@@ -105,6 +105,14 @@ export type BrandVisual = {
     textMuted: string
   }
   /**
+   * The two-tone comparison line and the swipe dots (Phase 28, UI-SPEC "Color"): `line` the white
+   * core, `edge` the graphite outline around it. The map does not follow the scheme, so both
+   * schemes hold the same values; they are declared per scheme because literals live only in the
+   * token files. `edge` is the lowest alpha (steps of 0.05 from 0.45) that reaches 3:1 over the
+   * cream paper of the old maps, where the white core alone is near 1.2:1.
+   */
+  curtain: { line: string; edge: string }
+  /**
    * A card or banner floating over a map that keeps the theme's own text tokens (12.2-21 dark
    * pass): the parcel picker's bottom card and its offline banner. The Explorer sheet's dense fill,
    * as a `GlassSurface` `surface`, because the default 38% glass over a basemap that does not follow
@@ -263,6 +271,7 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       text: mapControlGlass[scheme].text,
       textMuted: mapControlGlass[scheme].textMuted,
     },
+    curtain: { line: brandColors.white, edge: "rgba(30, 36, 28, 0.55)" },
     mapPanel: {
       tint: dark ? explorerSheetGlass.dark.tint : explorerSheetGlass.light.fill,
       fill: explorerSheetGlass[scheme].fill,
