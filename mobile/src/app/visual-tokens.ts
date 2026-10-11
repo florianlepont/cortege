@@ -216,6 +216,24 @@ export const tabActiveTint = {
 /** Glyph size of a map control (was 22): a heavier glyph that reads over any basemap. */
 export const mapControlIconSize = 24
 
+/**
+ * The simplified forest legend of the overlay bubble (28-CONTEXT item 10): five colour groups, the
+ * swatches read on 2026-10-11 from the official legend image of the layer
+ * (https://data.geopf.fr/annexes/ressources/legendes/LANDCOVER.FORESTINVENTORY.V2-legend.png, 37
+ * classes), one representative class each: broadleaf = "Forêt fermée à mélange de feuillus",
+ * conifer = "Forêt fermée à mélange de conifères", mixed = "Forêt fermée à mélange de feuillus
+ * prépondérants et conifères", poplar = "Peupleraie", open = "Forêt ouverte à mélange de feuillus et
+ * conifères". The same colours on both schemes: the layer is a raster, it does not follow the theme.
+ */
+export const forestTypesLegend = [
+  { key: "broadleaf", color: "#00D92F" },
+  { key: "conifer", color: "#404DFF" },
+  { key: "mixed", color: "#FF6633" },
+  { key: "poplar", color: "#FFFF00" },
+  { key: "open", color: "#FFD138" },
+] as const
+export type ForestTypesLegendKey = (typeof forestTypesLegend)[number]["key"]
+
 // The Explorer's bottom sheet (12.2-19 fix round, owner's dark screenshot of "Zones hors connexion":
 // the subtitle, the size estimate and the close glyph nearly vanished). The sheet's dark blur over
 // the light basemap gave a mid grey under the grey secondary text, so a fill now lies over the blur,

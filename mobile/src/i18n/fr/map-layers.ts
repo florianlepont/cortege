@@ -110,6 +110,14 @@ export const mapLayersFr = {
     // open forests, poplar plantations, moorland, herbaceous formations.
     legendA11y:
       "Légende des types de forêt : forêts fermées de feuillus, de conifères ou mélangées, forêts ouvertes, peupleraies, landes et formations herbacées",
+    // The five colour groups of the legend drawn in the bubble (`forestTypesLegend` in visual-tokens).
+    legend: {
+      broadleaf: "Feuillus",
+      conifer: "Conifères",
+      mixed: "Forêts mélangées",
+      poplar: "Peupleraies",
+      open: "Landes et forêts ouvertes",
+    },
     appliesBoth: "S'applique aux deux côtés de la comparaison.",
     parcelsTitle: "Parcelles",
     parcelsAll: "Toutes",
