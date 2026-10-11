@@ -1,11 +1,11 @@
 import { memo, useCallback, useMemo } from "react"
 import { StyleSheet } from "react-native"
 import { formatShortDateTime } from "../../app/formatters"
+import type { OwnSurveyMatch } from "../../app/global-search"
 import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/survey-logic"
 import type { SurveyDetailResponse } from "../../app/types"
 import { useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
-import type { LocalSurvey } from "../../storage/types"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { AppText as Text } from "../../ui/AppText"
 import { RECENT_LAYOUT } from "../home/layout-budget"
@@ -27,7 +27,8 @@ const styles = StyleSheet.create({
 })
 
 type CompactSurveyRowProps = {
-  survey: LocalSurvey
+  /** A search match carries `matchedInNote` when the survey was found through its note (27-15). */
+  survey: OwnSurveyMatch
   surveyDetails: Readonly<Record<string, SurveyDetailResponse | undefined>>
   /** Position in the list, for the ring entrance stagger. */
   index: number
@@ -56,12 +57,14 @@ function CompactSurveyRowComponent({
   const tone = resolveSurveyRowTone(uiStatus)
   const updatedAt = formatShortDateTime(survey.updated_at)
   const title = survey.site_name?.trim() || fr.common.untitledSurvey
+  const foundHint = survey.matchedInNote ? fr.search.rows.matchedInNote : null
+  const sentence = rowText.a11y.openSurvey({ name: title, status: label, updatedAt })
 
   return (
     <SurveyRowFrame
       density="compact"
       testID={testID}
-      accessibilityLabel={rowText.a11y.openSurvey({ name: title, status: label, updatedAt })}
+      accessibilityLabel={foundHint ? `${sentence}, ${foundHint}` : sentence}
       onPress={handlePress}
       tone={tone}
       indicator={
@@ -85,7 +88,9 @@ function CompactSurveyRowComponent({
             labelStyle={tone === "danger" ? rowStyles.badgeTextDanger : undefined}
           />
           <Text numberOfLines={1} style={[rowStyles.surveyCardMeta, styles.meta]}>
-            {rowText.row.updatedMeta(updatedAt)}
+            {foundHint
+              ? `${rowText.row.updatedMeta(updatedAt)} · ${foundHint}`
+              : rowText.row.updatedMeta(updatedAt)}
           </Text>
         </>
       }

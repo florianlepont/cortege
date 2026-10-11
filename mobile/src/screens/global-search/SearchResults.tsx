@@ -15,12 +15,11 @@ import {
   isCapped,
   summaryRows,
 } from "../../app/global-search"
-import type { BestResult, SearchGroupKey } from "../../app/global-search"
+import type { BestResult, OwnSurveyMatch, SearchGroupKey } from "../../app/global-search"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { SurveyDetailResponse } from "../../app/types"
 import type { SearchGroupState } from "../../hooks/useSearchGroup"
 import { fr } from "../../i18n"
-import type { LocalSurvey } from "../../storage/types"
 import { AppText as Text } from "../../ui/AppText"
 import { ScoreRing } from "../../ui/ScoreRing"
 import { CommunityRow } from "../community-survey/CommunityRow"
@@ -43,7 +42,7 @@ export type SearchResultsProps = {
   normalized: string
   offline: boolean
   /** The member's own surveys that match, from local data. */
-  mine: readonly LocalSurvey[]
+  mine: readonly OwnSurveyMatch[]
   community: SearchGroupState<SearchCommunityResponse>
   places: SearchGroupState<SearchPlacesResponse>
   parcels: SearchGroupState<SearchParcelsResponse>

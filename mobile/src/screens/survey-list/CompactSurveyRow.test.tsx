@@ -163,3 +163,21 @@ describe("CompactSurveyRow (25-04)", () => {
     ).toHaveLength(1)
   })
 })
+
+describe("CompactSurveyRow found in the note (27-15)", () => {
+  test("a note-only match adds the hint to the date line and to the sentence", () => {
+    const survey = { ...makeSurvey(), matchedInNote: true as const }
+    mount(survey)
+    const updatedAt = formatShortDateTime(survey.updated_at)
+    expect(textsOf(row())).toContain(
+      `${fr.surveyList.row.updatedMeta(updatedAt)} · Trouvé dans la note`,
+    )
+    expect(String(row().props.accessibilityLabel)).toMatch(/, Trouvé dans la note$/)
+  })
+
+  test("a row without the flag is as before", () => {
+    mount(makeSurvey())
+    expect(textsOf(row()).join("|")).not.toContain("Trouvé")
+    expect(String(row().props.accessibilityLabel)).not.toContain("Trouvé")
+  })
+})

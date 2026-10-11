@@ -15,7 +15,7 @@ import {
   matchOwnSurveys,
   pickBestResult,
 } from "../app/global-search"
-import type { BestResult, SearchGroupKey } from "../app/global-search"
+import type { BestResult, OwnSurveyMatch, SearchGroupKey } from "../app/global-search"
 import { normalizeSearchQuery } from "../app/search-text"
 import type { LocalSurvey } from "../storage/types"
 import { useIsOffline } from "./useIsOffline"
@@ -37,7 +37,7 @@ export type GlobalSearch = {
   /** True once the text is long enough to search. */
   active: boolean
   offline: boolean
-  mine: LocalSurvey[]
+  mine: OwnSurveyMatch[]
   community: SearchGroupState<SearchCommunityResponse>
   places: SearchGroupState<SearchPlacesResponse>
   parcels: SearchGroupState<SearchParcelsResponse>

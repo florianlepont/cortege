@@ -32,15 +32,38 @@ export function isSearchActive(query: string): boolean {
   return normalizeSearchQuery(query).length >= SEARCH_MIN_LENGTH
 }
 
+/** An own survey that matched; `matchedInNote` is set only when its note matched and its name did not. */
+export type OwnSurveyMatch = LocalSurvey & { matchedInNote?: true }
+
+const EMPTY_NOTES: ReadonlyMap<string, string> = new Map()
+
 /**
- * The member's own surveys whose name contains the query, ignoring case and accents, in input
- * order (D-03). Only the survey name is compared: never its id, status or sync error text.
+ * The member's own surveys whose name, or whose note, contains the query, ignoring case and
+ * accents, in input order (D-03, phase 27 D-07). Only the name and the note are compared: never the
+ * id, the status or the sync error text. The notes come from the phone (`notesById`, survey id to
+ * note, see `useOwnSurveyNotes`); the API community search does not read notes. A survey found by
+ * its note alone is returned as a copy flagged `matchedInNote`; a name match is returned as is.
  */
-export function matchOwnSurveys(surveys: readonly LocalSurvey[], query: string): LocalSurvey[] {
+export function matchOwnSurveys(
+  surveys: readonly LocalSurvey[],
+  query: string,
+  notesById: ReadonlyMap<string, string> = EMPTY_NOTES,
+): OwnSurveyMatch[] {
   const normalized = normalizeSearchQuery(query)
   if (normalized.length < SEARCH_MIN_LENGTH) return []
   const needle = foldSearchText(normalized)
-  return surveys.filter((survey) => foldSearchText(survey.site_name).includes(needle))
+  const matches: OwnSurveyMatch[] = []
+  for (const survey of surveys) {
+    if (foldSearchText(survey.site_name).includes(needle)) {
+      matches.push(survey)
+      continue
+    }
+    const note = notesById.get(survey.id)
+    if (note !== undefined && foldSearchText(note).includes(needle)) {
+      matches.push({ ...survey, matchedInNote: true })
+    }
+  }
+  return matches
 }
 
 const COMPACT_IDU = /^\d{5}[0-9A-Z]{3}[0-9A-Z]{2}\d{4}$/
@@ -78,7 +101,7 @@ export type BestResult =
   | { kind: "parcel"; item: SearchParcelItem }
   | { kind: "member"; item: SearchMemberItem }
   | { kind: "place"; item: SearchPlaceItem }
-  | { kind: "mine"; survey: LocalSurvey }
+  | { kind: "mine"; survey: OwnSurveyMatch }
   | { kind: "community"; item: CommunitySurveyItem }
 
 export type BestResultInput = {
@@ -86,7 +109,7 @@ export type BestResultInput = {
   parcels: readonly SearchParcelItem[]
   members: readonly SearchMemberItem[]
   places: readonly SearchPlaceItem[]
-  mine: readonly LocalSurvey[]
+  mine: readonly OwnSurveyMatch[]
   community: readonly CommunitySurveyItem[]
 }
 
