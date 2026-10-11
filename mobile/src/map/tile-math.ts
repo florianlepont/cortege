@@ -8,9 +8,6 @@ export type LatLngBounds = { minLat: number; minLng: number; maxLat: number; max
 export const MIN_TILE_ZOOM = 13
 export const MAX_TILE_ZOOM = 17
 
-/** A documented assumption, not a measured average (08-CONTEXT D-06). */
-export const AVERAGE_TILE_BYTES = 20_000
-
 /** Hard cap per basemap layer; a bigger request is rejected, not truncated (08-CONTEXT D-07). */
 export const MAX_TILES_PER_AREA = 3000
 
@@ -97,28 +94,6 @@ export function countTilesForBounds(
     total += countTilesForZoom(bounds, z)
   }
   return total
-}
-
-export type AreaDownloadEstimate = {
-  tileCountPerBasemap: number
-  totalTileCount: number
-  estimatedBytes: number
-  exceedsCap: boolean
-}
-
-/** The estimate shown before the surveyor confirms a download (criterion 3), no network call. */
-export function estimateAreaDownload(
-  bounds: LatLngBounds,
-  basemapCount: number,
-): AreaDownloadEstimate {
-  const tileCountPerBasemap = countTilesForBounds(bounds)
-  const totalTileCount = tileCountPerBasemap * basemapCount
-  return {
-    tileCountPerBasemap,
-    totalTileCount,
-    estimatedBytes: totalTileCount * AVERAGE_TILE_BYTES,
-    exceedsCap: tileCountPerBasemap > MAX_TILES_PER_AREA,
-  }
 }
 
 export function pointInBounds(lat: number, lng: number, bounds: LatLngBounds): boolean {

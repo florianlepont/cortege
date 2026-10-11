@@ -1,5 +1,4 @@
 import * as FileSystem from "expo-file-system/legacy"
-import type { BasemapKey } from "../map/basemaps"
 import { offlineAreaDir } from "../map/basemaps"
 import type { LatLngBounds } from "../map/tile-math"
 import { getDb } from "./db"
@@ -253,8 +252,4 @@ export async function listPendingParcelDownloads(): Promise<string[]> {
 export async function removePendingParcelDownload(parcelId: string): Promise<void> {
   const db = await getDb()
   await db.runAsync(`DELETE FROM offline_pending_parcels WHERE parcel_id = ?`, [parcelId])
-}
-
-export function basemapsForDownload(): BasemapKey[] {
-  return ["map", "satellite"]
 }

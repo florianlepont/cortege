@@ -15,7 +15,6 @@ import * as FileSystem from "expo-file-system/legacy"
 import { initLocalDb } from "./db"
 import {
   addPendingParcelDownload,
-  basemapsForDownload,
   deleteOfflineArea,
   finalizeOfflineArea,
   findReadyOfflineAreaForPoint,
@@ -31,10 +30,6 @@ import {
   tryGetOfflineDocumentDirectory,
   updateOfflineAreaProgress,
 } from "./offline-map"
-
-test("basemapsForDownload always downloads both basemaps (08-CONTEXT D-03)", () => {
-  expect(basemapsForDownload()).toEqual(["map", "satellite"])
-})
 
 const BOUNDS = { minLat: 46.0, minLng: 1.0, maxLat: 46.1, maxLng: 1.1 }
 

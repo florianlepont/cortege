@@ -3,7 +3,6 @@ import {
   type OfflinePack,
   type OfflinePackStatus,
 } from "@maplibre/maplibre-react-native"
-import type { BasemapKey } from "./basemaps"
 import { LAYER_CATALOGUE, isMapLayerKey } from "./layers"
 import type { MapLayerKey } from "./layers"
 import { writeOfflineStyle } from "./offline-styles"
@@ -15,9 +14,6 @@ export const OFFLINE_MIN_ZOOM = 13
 
 export type PackMetadata = { areaId: string; layer: MapLayerKey }
 
-/** Metadata of the packs of earlier builds: one pack per basemap, before the layers existed. */
-type LegacyPackMetadata = { areaId: string; basemap: BasemapKey }
-
 /**
  * Pitfall 3 of the research: the native downloader frees a request slot only for a 404, any other
  * tile error can leave a pack "active" at 99 %. A pack that reports no new resource for this long
@@ -27,14 +23,6 @@ export const STALL_TIMEOUT_MS = 45_000
 
 /** A stalled pack at or above this percentage is accepted (with its pause), below it fails. */
 export const STALL_ACCEPT_PERCENT = 90
-
-/** Progress of the two-basemap function (`downloadAreaPacks`), removed with it by 28-10. */
-export type BasemapPackProgress = {
-  /** 0 to 100, averaged over the basemaps of the area. */
-  percentage: number
-  completedTileCount: number
-  complete: boolean
-}
 
 /** The layer a pack holds, from its metadata: the two exact shapes, anything else is ignored. */
 function packLayer(metadata: unknown): { areaId: string; layer: MapLayerKey } | null {
@@ -61,84 +49,6 @@ export function packStyleFor(
   styleFileUri: string,
 ): string {
   return os === "android" ? `${apiUrl.replace(/\/+$/, "")}/map-styles/${layer}.json` : styleFileUri
-}
-
-/**
- * Creates one native offline pack per basemap for an area (style and cadastre included) and resolves
- * once all are complete. The native downloader owns the request concurrency and the cache; nothing
- * here touches individual tiles.
- */
-export async function downloadAreaPacks(input: {
-  documentDirectory: string
-  /** `Platform.OS`, passed in so this module never loads react-native. */
-  os: string
-  /** API base URL (`.../v1`), the source of the pack styles on Android. */
-  apiUrl: string
-  areaId: string
-  bounds: LatLngBounds
-  basemaps: BasemapKey[]
-  minZoom?: number
-  maxZoom?: number
-  onProgress: (progress: BasemapPackProgress) => void
-}): Promise<BasemapPackProgress> {
-  const { areaId, bounds, basemaps, onProgress } = input
-  const entries = basemaps.map(() => ({ percentage: 0, tiles: 0, done: false, started: false }))
-  // The native downloader reports a missing resource (a sprite the IGN does not publish, a tile
-  // outside its coverage) as an error but goes on with the rest of the pack: only a download that
-  // stops before it is complete is a failure (found on the phone: the IGN "Gris" style has no @2x
-  // sprite, its 404 aborted every download).
-  let lastError = ""
-
-  const snapshot = (): BasemapPackProgress => ({
-    percentage: entries.reduce((sum, entry) => sum + entry.percentage, 0) / entries.length,
-    completedTileCount: entries.reduce((sum, entry) => sum + entry.tiles, 0),
-    complete: entries.every((entry) => entry.done),
-  })
-
-  return new Promise<BasemapPackProgress>((resolve, reject) => {
-    let settled = false
-    const fail = (error: unknown): void => {
-      if (settled) return
-      settled = true
-      reject(error instanceof Error ? error : new Error(String(error)))
-    }
-
-    const start = async (basemap: BasemapKey, index: number): Promise<void> => {
-      const styleFileUri = await writeOfflineStyle(input.documentDirectory, basemap)
-      const mapStyle = packStyleFor(input.os, input.apiUrl, basemap, styleFileUri)
-      await OfflineManager.createPack(
-        {
-          mapStyle,
-          bounds: [bounds.minLng, bounds.minLat, bounds.maxLng, bounds.maxLat],
-          minZoom: input.minZoom ?? OFFLINE_MIN_ZOOM,
-          maxZoom: input.maxZoom ?? OFFLINE_MAX_ZOOM,
-          metadata: { areaId, basemap } satisfies LegacyPackMetadata,
-        },
-        (_pack, status) => {
-          const entry = entries[index]
-          entry.percentage = status.percentage
-          entry.tiles = status.completedTileCount
-          entry.done = status.state === "complete"
-          if (status.state === "active") entry.started = true
-          if (status.state === "inactive" && entry.started && !entry.done) {
-            fail(new Error(lastError || "offline pack stopped before it was complete"))
-            return
-          }
-          const progress = snapshot()
-          onProgress(progress)
-          if (!settled && progress.complete) {
-            settled = true
-            resolve(progress)
-          }
-        },
-        (_pack, error) => {
-          lastError = error.message
-        },
-      )
-    }
-
-    Promise.all(basemaps.map(start)).catch(fail)
-  })
 }
 
 async function packsOfArea(areaId: string): Promise<OfflinePack[]> {

@@ -1,9 +1,7 @@
 import {
-  AVERAGE_TILE_BYTES,
   MAX_TILES_PER_AREA,
   countTilesForBounds,
   countTilesForZoom,
-  estimateAreaDownload,
   latToTileY,
   lonToTileX,
   parseBbox,
@@ -88,25 +86,6 @@ describe("countTilesForZoom / countTilesForBounds", () => {
   test("stays cheap for a huge bbox at a high zoom (no array materialised)", () => {
     const huge = { minLat: -80, minLng: -179, maxLat: 80, maxLng: 179 }
     expect(countTilesForZoom(huge, 17)).toBeGreaterThan(MAX_TILES_PER_AREA)
-  })
-})
-
-describe("estimateAreaDownload", () => {
-  const bounds = { minLat: 46.0, minLng: 1.0, maxLat: 46.01, maxLng: 1.01 }
-
-  test("multiplies the per-basemap tile count by the requested basemap count", () => {
-    const estimate = estimateAreaDownload(bounds, 2)
-    expect(estimate.totalTileCount).toBe(estimate.tileCountPerBasemap * 2)
-    expect(estimate.estimatedBytes).toBe(estimate.totalTileCount * AVERAGE_TILE_BYTES)
-  })
-
-  test("flags exceedsCap only when the per-basemap count is over the limit", () => {
-    const small = estimateAreaDownload(bounds, 1)
-    expect(small.exceedsCap).toBe(false)
-
-    const huge = estimateAreaDownload({ minLat: -80, minLng: -179, maxLat: -70, maxLng: -170 }, 1)
-    expect(huge.tileCountPerBasemap).toBeGreaterThan(MAX_TILES_PER_AREA)
-    expect(huge.exceedsCap).toBe(true)
   })
 })
 
