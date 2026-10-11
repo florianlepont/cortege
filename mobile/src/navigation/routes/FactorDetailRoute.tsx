@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
 import { FactorPager, type PagerFinishAction } from "../../screens/survey-form/FactorPager"
@@ -33,6 +33,11 @@ export function FinishStatusNotice() {
  * D-26: when the survey being edited is complete and named, the last factor offers "Terminer le
  * relevé", the survey detail's finish; once the survey is finished the stack goes back to the
  * summary, which plays the success haptic, halo and pop.
+ *
+ * Phase 27 (D-16): the doubt flag and the note of each factor go through the form's setters. A
+ * doubt toggle is written at once: the form value is set first, and once the context carries it the
+ * draft is flushed one time (the flush reads the form value of the render that carries the change).
+ * A note is written by the strip (typing pause, blur, page change) through `flushDraft`.
  */
 export const FactorDetailRoute = memo(function FactorDetailRoute({
   navigation,
@@ -54,6 +59,25 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
     [navigation],
   )
   const handleFinish = useCallback(() => navigation.goBack(), [navigation])
+  const { setFactorDoubt, setFactorNote, flushDraft } = actions
+  const flushAfterDoubtRef = useRef(false)
+  const handleChangeDoubt = useCallback(
+    (changed: FactorKey, next: boolean) => {
+      flushAfterDoubtRef.current = true
+      setFactorDoubt(changed, next)
+    },
+    [setFactorDoubt],
+  )
+  // The write waits for the render that carries the new doubt, so it stores the value just set.
+  const { factorAnnotations } = state
+  useEffect(() => {
+    if (!flushAfterDoubtRef.current) return
+    flushAfterDoubtRef.current = false
+    void flushDraft()
+  }, [factorAnnotations, flushDraft])
+  const handleCommitNote = useCallback(() => {
+    void flushDraft()
+  }, [flushDraft])
   const handleOpenHelp = useCallback(
     (help: string, hints: readonly string[]) =>
       navigation.navigate("surveyFactorHelp", { help, hints: [...hints] }),
@@ -95,6 +119,10 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         onFinish={handleFinish}
         onOpenHelp={handleOpenHelp}
         finishAction={finishAction}
+        factorAnnotations={factorAnnotations}
+        onChangeDoubt={handleChangeDoubt}
+        onChangeNote={setFactorNote}
+        onCommitNote={handleCommitNote}
       />
     </ScreenFrame>
   )

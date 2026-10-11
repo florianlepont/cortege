@@ -81,6 +81,8 @@ jest.mock("react-native", () => {
     View: "View",
     ScrollView: "ScrollView",
     KeyboardAvoidingView: "KeyboardAvoidingView",
+    // Phase 27: the factor pager listens to the keyboard to step its chrome aside.
+    Keyboard: { addListener: () => ({ remove: () => undefined }), dismiss: () => undefined },
     Pressable,
     Text: "Text",
     ActivityIndicator: "ActivityIndicator",
