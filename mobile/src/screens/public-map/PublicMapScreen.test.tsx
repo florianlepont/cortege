@@ -50,6 +50,24 @@ jest.mock("react-native", () => {
     Alert: { alert: (...args: unknown[]) => mockAlert(...args) },
     StyleSheet: { create: <T,>(styles: T): T => styles, absoluteFill: {} },
     Platform: { OS: "ios" },
+    useWindowDimensions: () => ({ width: 400, height: 800 }),
+  }
+})
+
+// The Phase 28 spike driver builds its pan gestures here; its own test drives them.
+jest.mock("react-native-gesture-handler", () => {
+  const ReactRef = require("react") as typeof import("react")
+  const pan = () => {
+    const gesture: Record<string, unknown> = {}
+    for (const name of ["runOnJS", "minDistance", "onBegin", "onUpdate", "onEnd"]) {
+      gesture[name] = () => gesture
+    }
+    return gesture
+  }
+  return {
+    Gesture: { Pan: pan },
+    GestureDetector: ({ children }: { children?: React.ReactNode }) =>
+      ReactRef.createElement("GestureDetector", null, children),
   }
 })
 
@@ -89,8 +107,11 @@ jest.mock("@maplibre/maplibre-react-native", () => {
 })
 
 const mockOfflineEnabled = { value: false }
+const mockSwipeSpike = { on: false, leftView: "surface" }
 jest.mock("../../app/feature-flags", () => ({
   isOfflineMapsEnabled: () => mockOfflineEnabled.value,
+  isSwipeSpikeEnabled: () => mockSwipeSpike.on,
+  swipeSpikeLeftView: () => mockSwipeSpike.leftView,
 }))
 const mockStartDownload = jest.fn()
 const mockDeleteArea = jest.fn()
@@ -587,6 +608,49 @@ describe("PublicMapScreen", () => {
       expect(props.onLoadParcels).toHaveBeenCalledTimes(1)
     } finally {
       jest.useRealTimers()
+    }
+  })
+
+  test("without the spike flag the map and the globe button are exactly as before (Phase 28)", () => {
+    const props = makeProps()
+    mount(props)
+    const map = tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
+    for (const prop of ["dragPan", "touchZoom", "doubleTapZoom", "androidView"]) {
+      expect(map.props[prop]).toBeUndefined()
+    }
+    expect(map.props.onRegionIsChanging).toBeUndefined()
+    expect(tree.root.findAll((node) => (node.type as unknown) === "GestureDetector")).toHaveLength(
+      0,
+    )
+  })
+
+  test("with the spike flag the globe enters the swipe mode and freezes the map (Phase 28)", () => {
+    mockSwipeSpike.on = true
+    mockSwipeSpike.leftView = "texture"
+    try {
+      const props = makeProps()
+      mount(props)
+      const map = () => tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
+      expect(map().props.androidView).toBe("texture")
+      expect(map().props.dragPan).toBeUndefined()
+      expect(typeof map().props.onRegionIsChanging).toBe("function")
+
+      act(() =>
+        byLabel(
+          fr.offlineMap.basemap.a11y.switchTo(fr.offlineMap.basemap.satellite),
+        ).props.onPress(),
+      )
+      // The globe no longer switches Plan and Satellite: it enters the spike swipe mode.
+      expect(props.onChangeBasemap).not.toHaveBeenCalled()
+      for (const prop of ["dragPan", "touchZoom", "touchRotate", "touchPitch", "doubleTapZoom"]) {
+        expect(map().props[prop]).toBe(false)
+      }
+      expect(
+        tree.root.findAll((node) => (node.type as unknown) === "GestureDetector"),
+      ).toHaveLength(1)
+    } finally {
+      mockSwipeSpike.on = false
+      mockSwipeSpike.leftView = "surface"
     }
   })
 

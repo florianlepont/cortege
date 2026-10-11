@@ -1,10 +1,10 @@
 import { useCallback, useMemo, useRef, useState } from "react"
-import { Alert, View } from "react-native"
+import { Alert, View, useWindowDimensions } from "react-native"
 import type { CameraRef } from "@maplibre/maplibre-react-native"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { MapRegion } from "../app/map-viewport"
-import { isOfflineMapsEnabled } from "../app/feature-flags"
+import { isOfflineMapsEnabled, swipeSpikeLeftView } from "../app/feature-flags"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { useBrandTheme } from "../app/theme"
 import type { PublicMapItem, PublicParcelStatusItem } from "../app/types"
@@ -26,6 +26,7 @@ import { ScoreLegend } from "./public-map/ScoreLegend"
 import { createScreenContainerStyle } from "./public-map/styles"
 import { useExplorerFocus } from "./public-map/useExplorerFocus"
 import { useMapViewport } from "./public-map/useMapViewport"
+import { useSwipeSpike } from "./public-map/useSwipeSpike"
 
 const t = fr.publicMap
 const LOCATE_SPAN = 0.012
@@ -169,6 +170,16 @@ export function PublicMapScreen({
     setHighlightedId,
   })
 
+  // Phase 28 device spike (temporary, plan 28-17 deletes it): inert unless the build sets
+  // EXPO_PUBLIC_SWIPE_SPIKE; then the globe button enters a measurement swipe mode.
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions()
+  const spike = useSwipeSpike({
+    width: windowWidth,
+    height: windowHeight,
+    initialRegion,
+    basemap,
+  })
+
   const handleZoomTo = useCallback((target: MapRegion) => moveTo(target, 450), [moveTo])
   // MAP-01: the sheet reports a dismissal (drag-down or the content's own close button) without
   // saying which panel was open; closing all of them is safe since they are mutually exclusive
@@ -271,14 +282,17 @@ export function PublicMapScreen({
         onOpenClusterList={handleOpenClusterList}
         basemap={basemap}
         styleRefreshKey={readyAreaCount}
+        {...spike.mapCanvasProps}
+        androidView={spike.active ? swipeSpikeLeftView() : undefined}
       />
+      {spike.overlay}
 
       {choosingArea ? <DownloadEdgeGlow /> : null}
 
       <MapTopControls
         top={Math.max(0, insets.top + 10 - originY)}
         basemap={basemap}
-        onToggleBasemap={toggleBasemap}
+        onToggleBasemap={spike.active ? spike.toggleSwipe : toggleBasemap}
         onOpenOfflineAreas={offlineEnabled ? openOfflineAreas : undefined}
       />
 

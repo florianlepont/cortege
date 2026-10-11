@@ -209,3 +209,31 @@ adb shell run-as fr.etatssauvages.cortege ls cache/Camera cache/ImageManipulator
 Both folders must be empty, or missing. Do not clear the whole `cache/`
 directory by hand to check: it also holds the bundled model copy that the
 recognition needs.
+
+## Swipe spike (Phase 28)
+
+Plan 28-01 proves on real devices that the basemap wipe and the comparison of two
+layers work as stacked MapLibre maps (one map cannot clip a raster layer). The
+spike driver is temporary scaffolding: plan 28-17 deletes it and its flag. The
+result is device check DL-01 (`docs/user-tests/device-checks.md`).
+
+1. Set `EXPO_PUBLIC_SWIPE_SPIKE=true` in the untracked `mobile/.env` before
+   building. Like every `EXPO_PUBLIC_*` value it is inlined at build time. With
+   the variable unset the Explorer is exactly the normal one.
+2. Android: build a Release APK from `mobile/` with
+   `npx expo run:android --variant release`. A second build also sets
+   `EXPO_PUBLIC_SWIPE_SPIKE_LEFT_VIEW=texture`, which makes the Explorer's own
+   map a texture view too (the default is the faster surface view). iPhone: the
+   project's device build recipe, with the variable set in `mobile/.env`.
+3. In the Explorer, the globe button of the top-right capsule enters the spike
+   swipe mode instead of switching Plan and Satellite: the map freezes. A swipe
+   wipes the next layer (Plan, Satellite, Photos 1950-1965) in behind the finger.
+   Letting go over 20 to 80 percent of the width keeps both layers behind a white
+   line you can drag; a swipe on one side of the line changes that side with a
+   third map; letting go beyond 80 percent replaces the layer. Tap the globe
+   again to move the map: the extra maps follow it.
+4. Measure memory with `adb shell dumpsys meminfo fr.etatssauvages.cortege` with
+   one, two and three maps showing.
+
+The variables stay unset in every tester build: the globe button would stop
+switching Plan and Satellite.

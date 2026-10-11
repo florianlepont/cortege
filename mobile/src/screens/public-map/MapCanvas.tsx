@@ -24,6 +24,8 @@ import { useMapClusters } from "./useMapClusters"
 import { DEFAULT_MAP_REGION, regionForZoom } from "./useMapViewport"
 
 const NO_PARCELS: PublicParcelStatusItem[] = []
+// A frozen map (Phase 28 swipe mode) hands nothing to a marker, cluster or parcel press.
+const NOOP = () => undefined
 
 export type MapCanvasProps = {
   cameraRef: RefObject<CameraRef | null>
@@ -52,6 +54,22 @@ export type MapCanvasProps = {
   initialRegion?: MapRegion
   /** Bumped after an offline download or delete so the style choice is re-checked. */
   styleRefreshKey?: number
+  /**
+   * Phase 28 swipe mode: the map takes no pan, zoom, rotation, pitch or double tap, and markers,
+   * clusters and parcels take no press. Off by default.
+   */
+  frozen?: boolean
+  /**
+   * Phase 28: told the view while the camera moves and again when it settles, so the stacked maps
+   * of a wipe or a comparison follow this one (`useMapSync`).
+   */
+  onViewChange?: (event: NativeSyntheticEvent<ViewStateChangeEvent>) => void
+  /** Phase 28 comparison: north up and flat, so only the centre and zoom are synchronised. */
+  rotationLocked?: boolean
+  /** Phase 28 comparison: no cluster or survey marker (a marker belongs to one map only). */
+  hideMarkers?: boolean
+  /** Android only: `texture` lets a parent clip the map; the default is the faster surface. */
+  androidView?: "surface" | "texture"
 }
 
 /**
@@ -79,6 +97,11 @@ export const MapCanvas = memo(function MapCanvas({
   highlightedParcelIds,
   placePin,
   styleRefreshKey = 0,
+  frozen = false,
+  onViewChange,
+  rotationLocked = false,
+  hideMarkers = false,
+  androidView,
 }: MapCanvasProps) {
   const { mapStyle, cadastreInStyle } = useMapStyle(basemap, styleRefreshKey)
   // From zoom 15 the parcels, filled by score, replace the markers (OA-126), except the author's
@@ -125,6 +148,7 @@ export const MapCanvas = memo(function MapCanvas({
       onRegionChangeComplete(regionFromViewChange({ center, bounds }), {
         isGesture: userInteraction,
       })
+      onViewChange?.(event)
     },
   )
 
@@ -134,6 +158,13 @@ export const MapCanvas = memo(function MapCanvas({
       mapStyle={mapStyle}
       attribution={false}
       logo={false}
+      androidView={androidView}
+      dragPan={frozen ? false : undefined}
+      touchZoom={frozen ? false : undefined}
+      doubleTapZoom={frozen ? false : undefined}
+      touchRotate={frozen || rotationLocked ? false : undefined}
+      touchPitch={frozen || rotationLocked ? false : undefined}
+      onRegionIsChanging={onViewChange}
       onRegionDidChange={handleRegionDidChange}
     >
       <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(initialRegion) }} />
@@ -144,10 +175,10 @@ export const MapCanvas = memo(function MapCanvas({
         items={shownParcels}
         selectedParcelIds={highlightedParcelIds}
         byScore
-        onParcelPress={onSelectParcel}
+        onParcelPress={frozen ? undefined : onSelectParcel}
       />
       <PlacePinLayer pin={placePin ?? null} />
-      {clusters.map((entry) => {
+      {(hideMarkers ? [] : clusters).map((entry) => {
         if (entry.kind === "cluster") {
           return (
             <ClusterMarker
@@ -156,7 +187,7 @@ export const MapCanvas = memo(function MapCanvas({
               clusterId={entry.clusterId}
               coordinate={{ latitude: entry.latitude, longitude: entry.longitude }}
               count={entry.count}
-              onPress={handleClusterPress}
+              onPress={frozen ? NOOP : handleClusterPress}
             />
           )
         }
@@ -172,7 +203,7 @@ export const MapCanvas = memo(function MapCanvas({
             ibpTotal={entry.item.ibp_total}
             selected={selected}
             draft={draft}
-            onSelect={onSelectSurvey}
+            onSelect={frozen ? NOOP : onSelectSurvey}
           />
         )
       })}
