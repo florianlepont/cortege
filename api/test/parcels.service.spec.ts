@@ -385,5 +385,20 @@ describe("ParcelsService", () => {
       expect(sqlOf(db)).toContain("s.ibp_method_version")
       expect(db.query.mock.calls[0][1]).toEqual(["P1", 5])
     })
+
+    it("selects the survey note of each submitted survey and keeps the submitted-only filter", async () => {
+      const rows = [
+        { survey_id: "s1", survey_note: null },
+        { survey_id: "s2", survey_note: "Coupe recente au nord" },
+      ]
+      const db = buildDb({ rows })
+      await expect(buildService(db).getParcelSurveyHistory("p1", "5")).resolves.toEqual({
+        parcel_id: "P1",
+        items: rows,
+      })
+      expect(sqlOf(db)).toContain("s.survey_note")
+      expect(sqlOf(db)).toContain("s.status = 'submitted'")
+      expect(sqlOf(db)).toContain("s.deleted_at IS NULL")
+    })
   })
 })

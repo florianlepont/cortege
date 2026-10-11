@@ -194,6 +194,45 @@ describe("Survey note, weather and annotations (e2e)", () => {
     })
   })
 
+  describe("changes feed (D-01, SVA-06)", () => {
+    it("returns the note, the weather and the annotations on GET /v1/sync/changes", async () => {
+      const token = await login()
+      const surveyId = randomUUID()
+      const bare = randomUUID()
+      await upsert(
+        token,
+        draft(surveyId, {
+          survey_note: NOTE,
+          weather: WEATHER,
+          factors: { A: 1, B: 2, C: 1, annotations: ANNOTATIONS },
+        }),
+      ).expect(201)
+      await upsert(token, draft(bare)).expect(201)
+
+      const res = await request(app.getHttpServer())
+        .get("/v1/sync/changes")
+        .query({ limit: 50 })
+        .set("Authorization", `Bearer ${token}`)
+        .expect(200)
+
+      const surveys = res.body.surveys as Array<{
+        id: string
+        survey_note: string | null
+        weather: Record<string, unknown> | null
+        factors: { annotations?: unknown }
+      }>
+      const full = surveys.find((survey) => survey.id === surveyId)
+      expect(full?.survey_note).toBe(NOTE)
+      expect(full?.weather).toEqual(WEATHER)
+      expect(full?.factors.annotations).toEqual(ANNOTATIONS)
+
+      const empty = surveys.find((survey) => survey.id === bare)
+      expect(empty).toBeDefined()
+      expect(empty?.survey_note).toBeNull()
+      expect(empty?.weather).toBeNull()
+    })
+  })
+
   describe("higher version of a draft (D-04)", () => {
     it("keeps the stored note and weather when the keys are absent, on both entry points", async () => {
       const token = await login()
