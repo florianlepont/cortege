@@ -963,7 +963,7 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 1/22 plans executed
+**Plans**: 1/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
 
 Plans:
 
