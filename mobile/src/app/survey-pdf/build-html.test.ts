@@ -2,7 +2,7 @@
 // it, so the stub only has to exist.
 jest.mock("react-native", () => ({ useColorScheme: () => "light" }))
 
-import { FACTOR_KEYS } from "@cortege/ibp-domain"
+import { FACTOR_KEYS, type SurveyWeather } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
 import {
@@ -11,7 +11,15 @@ import {
   exportFixtureWorstCase,
 } from "../../../test/survey-export-fixtures"
 import { buildSurveyExportHtml } from "./build-html"
+import { buildConditionsBlock } from "./conditions-section"
+import { buildFactorChartBlock } from "./factor-chart-svg"
+import { buildFactorBlocks } from "./factor-section"
 import { escapeHtml, formatDateFr } from "./html"
+import { PAGE_FILL_FACTOR } from "./paginate"
+import { PDF_PAGE_BLOCK_HEIGHT } from "./export-settings"
+import { buildPdfPalette } from "./palette"
+import { buildScoreSummaryBlock } from "./score-section"
+import { DRAFT_BANNER_HEIGHT, PAGE_FOOTER_HEIGHT, PAGE_HEADER_HEIGHT } from "./styles"
 import { PDF_CSP, PDF_CLASS } from "./styles"
 import type { SurveyExportData } from "./types"
 
@@ -167,6 +175,156 @@ describe("buildSurveyExportHtml page order", () => {
     expect(body).toContain(t.photos.caption({ index: "24", total: 24 }))
     expect(body).toContain("trend-segment")
     expect(body).toContain(t.factors.genusCount({ count: 34 }))
+  })
+})
+
+// Phase 27 (D-13, D-17): the conditions block, the doubt badges and the factor notes.
+const FULL_WEATHER: SurveyWeather = {
+  sky: "cloudy",
+  temperature_c: 14,
+  wind_kmh: 12,
+  rain_24h_mm: 2,
+  observed_at: new Date(2026, 9, 10, 14, 30).toISOString(),
+  source: "meteo_france",
+  edited: [],
+}
+
+/** A note of `chars` characters: one paragraph, or two so that the line count is per paragraph. */
+function longNote(chars: number, letter: string, paragraphs = 1): string {
+  if (paragraphs === 1) return letter.repeat(chars)
+  const half = Math.floor(chars / 2)
+  return `${letter.repeat(half)}\n${letter.repeat(chars - half - 1)}`
+}
+
+const WITH_CONDITIONS: SurveyExportData = {
+  ...exportFixtureV32Submitted,
+  conditions: { note: "Sol humide près du ruisseau.", weather: { ...FULL_WEATHER } },
+}
+
+/** The maximal survey of UI-SPEC 4.4: a 1000 character note, ten 300 character notes, ten doubts. */
+function maximalSurvey(paragraphs: number): SurveyExportData {
+  return {
+    ...exportFixtureV32Submitted,
+    conditions: { note: longNote(1000, "n", paragraphs), weather: { ...FULL_WEATHER } },
+    factorEntries: exportFixtureV32Submitted.factorEntries.map(([key, entry]) => [
+      key,
+      { ...entry, doubt: true, note: longNote(300, "f", paragraphs) },
+    ]),
+  }
+}
+
+const MAXIMAL = maximalSurvey(1)
+const MAXIMAL_PARAGRAPHS = maximalSurvey(2)
+
+describe("buildSurveyExportHtml conditions block (phase 27)", () => {
+  it("sits after the identity and method blocks and before the score summary", () => {
+    const { html } = buildSurveyExportHtml(WITH_CONDITIONS)
+
+    expectInOrder(bodyOf(html), [
+      t.identity.heading,
+      t.method.heading,
+      t.conditions.heading,
+      t.scores.totalHeading,
+      t.scores.chartHeading,
+      t.factors.standGroup,
+    ])
+  })
+
+  it("is not printed when the survey has neither a weather value nor a note", () => {
+    for (const data of [exportFixtureV32Submitted, exportFixtureV30Draft]) {
+      const { html } = buildSurveyExportHtml(data)
+      expect(bodyOf(html)).not.toContain(t.conditions.heading)
+      expect(bodyOf(html)).not.toContain('class="conditions-card"')
+    }
+  })
+
+  it("carries its CSS in the document style after the identity CSS", () => {
+    const { html } = buildSurveyExportHtml(WITH_CONDITIONS)
+    const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"))
+
+    expectInOrder(css, [".identity-heading", ".conditions-card", ".score-"])
+  })
+
+  it("prints the Météo-France source and the escaped note", () => {
+    const { html } = buildSurveyExportHtml({
+      ...WITH_CONDITIONS,
+      conditions: { note: "<b>gras</b> & co", weather: { ...FULL_WEATHER } },
+    })
+
+    expect(html).toContain(">Météo-France</td>")
+    expect(html).toContain("&lt;b&gt;gras&lt;/b&gt; &amp; co")
+    expect(html).not.toContain("<b>gras")
+  })
+
+  it("prints a draft with a note, banner and watermark kept", () => {
+    const { html, pageCount } = buildSurveyExportHtml({
+      ...exportFixtureV30Draft,
+      conditions: { note: "Brouillon annoté", weather: null },
+    })
+
+    expect(html).toContain("Brouillon annoté")
+    expect(countOf(html, `<div class="${PDF_CLASS.banner}">`)).toBe(pageCount)
+  })
+
+  it("shows the doubt badge and the note on every card and leaves scores and chart alone", () => {
+    const { html } = buildSurveyExportHtml(MAXIMAL)
+    const palette = buildPdfPalette()
+
+    expect(countOf(html, `class="factor-badge"`)).toBe(FACTOR_KEYS.length)
+    expect(countOf(html, `class="factor-user-note"`)).toBe(FACTOR_KEYS.length)
+    expect(buildScoreSummaryBlock(MAXIMAL, palette)).toEqual(
+      buildScoreSummaryBlock(exportFixtureV32Submitted, palette),
+    )
+    expect(buildFactorChartBlock(MAXIMAL, palette)).toEqual(
+      buildFactorChartBlock(exportFixtureV32Submitted, palette),
+    )
+  })
+})
+
+describe("buildSurveyExportHtml page budget of the maximal survey (phase 27, UI-SPEC 4.4)", () => {
+  const base = buildSurveyExportHtml(exportFixtureV32Submitted)
+  const maximal = buildSurveyExportHtml(MAXIMAL)
+  const palette = buildPdfPalette()
+  const capacity = (draft: boolean) =>
+    (PDF_PAGE_BLOCK_HEIGHT -
+      PAGE_HEADER_HEIGHT -
+      PAGE_FOOTER_HEIGHT -
+      (draft ? DRAFT_BANNER_HEIGHT : 0)) *
+    PAGE_FILL_FACTOR
+
+  // The count is recorded in the name for the device check of plan 27-21 (real page count on iOS
+  // and Android). The estimate-level count is about one page of content (about 687 px against a capacity
+  // of 680) plus the white space left by blocks that are never split; the UI-SPEC target of "one
+  // page more" is confirmed or refuted on the devices, so the bound here is the loose one.
+  it(`never loses a page and adds a bounded number (${base.pageCount} pages without, ${maximal.pageCount} with)`, () => {
+    expect(maximal.pageCount).toBeGreaterThanOrEqual(base.pageCount)
+    expect(maximal.pageCount).toBeLessThanOrEqual(base.pageCount + 2)
+  })
+
+  it.each([
+    ["one paragraph a note", MAXIMAL],
+    ["two paragraphs a note", MAXIMAL_PARAGRAPHS],
+  ])("keeps every block whole with %s: none is taller than a page", (_label, data) => {
+    const blocks = [buildConditionsBlock(data, palette), ...buildFactorBlocks(data, palette)]
+
+    for (const block of blocks) {
+      expect(block).not.toBeNull()
+      expect(block?.height ?? 0).toBeGreaterThan(0)
+      expect(block?.height ?? 0).toBeLessThanOrEqual(capacity(true))
+    }
+  })
+
+  it.each([
+    ["one paragraph a note", MAXIMAL],
+    ["two paragraphs a note", MAXIMAL_PARAGRAPHS],
+  ])("prints each of those blocks once, whole, on a single page with %s", (_label, data) => {
+    const pages = pagesOf(buildSurveyExportHtml(data).html)
+    const blocks = [buildConditionsBlock(data, palette), ...buildFactorBlocks(data, palette)]
+
+    for (const block of blocks) {
+      const holders = pages.filter((page) => page.includes(block?.html ?? ""))
+      expect(holders).toHaveLength(1)
+    }
   })
 })
 

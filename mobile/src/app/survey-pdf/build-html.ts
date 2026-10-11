@@ -1,4 +1,5 @@
 import { fr } from "../../i18n"
+import { buildConditionsBlock, conditionsSectionCss } from "./conditions-section"
 import { buildFactorChartBlock, factorChartCss } from "./factor-chart-svg"
 import { buildFactorBlocks, factorSectionCss } from "./factor-section"
 import { escapeHtml, formatDateFr } from "./html"
@@ -19,15 +20,18 @@ import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 
 const t = fr.surveyExport
 
-/** The content blocks in the order of the sheet: identity and method, scores and chart, factors
- * A to G then H to J, map, trend, photos. */
+/** The content blocks in the order of the sheet: identity and method, the conditions (only when the
+ * survey has a weather value or a note), scores and chart, factors A to G then H to J, map, trend,
+ * photos. */
 function collectBlocks(data: SurveyExportData, palette: PdfPalette): PdfBlock[] {
   const blocks: PdfBlock[] = []
   // Hidden text in each embedded font, only when the device check asked for it.
   const warmup = fontWarmupHtml(data.assets.fonts)
   if (warmup !== "") blocks.push({ id: "font-warmup", html: warmup, height: 0 })
+  const conditions = buildConditionsBlock(data, palette)
   blocks.push(
     ...buildIdentityBlocks(data, palette),
+    ...(conditions === null ? [] : [conditions]),
     buildScoreSummaryBlock(data, palette),
     buildFactorChartBlock(data, palette),
     ...buildFactorBlocks(data, palette),
@@ -44,6 +48,7 @@ function collectCss(data: SurveyExportData, palette: PdfPalette): string {
     fontFaceCss(data.assets.fonts),
     buildBaseCss(palette, data.layout),
     identityCss(palette),
+    conditionsSectionCss(palette),
     scoreSectionCss(palette),
     factorChartCss(palette),
     factorSectionCss(palette),
