@@ -9,6 +9,7 @@ import { fr } from "../../i18n"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
 import { GlassButton } from "../../ui/GlassButton"
+import { defaultAreaName } from "./area-name"
 import { DownloadStatusView, measureStatuses } from "./DownloadStatusView"
 import { GlassIconButton } from "./GlassIconButton"
 import { createPanelStyles, offlineAreasStyles as areaStyles } from "./styles"
@@ -17,13 +18,8 @@ const t = fr.offlineMap.areas
 
 const noop = (): void => undefined
 
-const pad = (value: number): string => String(value).padStart(2, "0")
-
-function defaultAreaName(): string {
-  const now = new Date()
-  const formatted = `${pad(now.getDate())}/${pad(now.getMonth() + 1)} ${pad(now.getHours())}:${pad(now.getMinutes())}`
-  return t.defaultName(formatted)
-}
+/** "running", "done", "failed" or "partial": the measuring copy of `measureStatuses`. */
+const measureKey = (status: AreaDownloadStatus): string => status.areaId.replace("measure-", "")
 
 export type OfflineAreasSheetProps = {
   downloadingAreaId: string | null
@@ -62,7 +58,7 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
 }: OfflineAreasSheetProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createPanelStyles(theme), [theme])
-  const [name, setName] = useState(defaultAreaName)
+  const [name, setName] = useState(() => defaultAreaName())
   const downloading = downloadingAreaId !== null
   const handleDownload = (): void => {
     // The form goes under the progress: the keyboard of its name field goes with it.
@@ -145,9 +141,9 @@ export const OfflineAreasSheet = memo(function OfflineAreasSheet({
         >
           {measured.map((status) => (
             <View
-              key={status.phase}
-              testID={`offline-area-measure-${status.phase}`}
-              onLayout={(event) => measure(status.phase, event)}
+              key={status.areaId}
+              testID={`offline-area-measure-${measureKey(status)}`}
+              onLayout={(event) => measure(measureKey(status), event)}
               style={areaStyles.statusLayer}
             >
               <DownloadStatusView status={status} announce={false} onDone={noop} onRetry={noop} />

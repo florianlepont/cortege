@@ -169,6 +169,33 @@ describe("DownloadStatusView (12.2-19 third round)", () => {
     expect(handlers.onDone).toHaveBeenCalledTimes(1)
   })
 
+  test("done with failed layers: the partial notice with the layer names, no per-area message", () => {
+    const { tree, handlers } = mount({
+      phase: "done",
+      ...progress(100, 186),
+      failedLayers: ["photos-1950", "types-foret"],
+    })
+    expect(texts(tree)).toEqual([
+      t.done.title,
+      "Ces couches n'ont pas pu être téléchargées : Photos aériennes (1950-1965), Types de forêt. Les fonds de carte fonctionnent hors connexion.",
+    ])
+    const icons = tree.root.findAll((node) => (node.type as unknown) === "Ionicons")
+    const alert = icons.find((node) => node.props.name === "alert-circle-outline")
+    expect(alert?.props.size).toBe(16)
+    expect(alert?.props.color).toBe(defaultTheme.onSurface.danger)
+    const line = tree.root.find(
+      (node) =>
+        (node.type as unknown) === "Text" && String(node.props.children).startsWith("Ces couches"),
+    )
+    // Glyph only in the danger colour: the text keeps the secondary ink.
+    expect(flat(line.props.style).color).toBe(defaultTheme.colors.textSecondary)
+    expect(mockAnnounce).toHaveBeenCalledWith(t.done.title)
+    const button = tree.root.findByType("GlassButton" as never)
+    expect(button.props.label).toBe("Terminé")
+    act(() => button.props.onPress())
+    expect(handlers.onDone).toHaveBeenCalledTimes(1)
+  })
+
   test("failed: the failure in the danger text and a retry", () => {
     const { tree, handlers } = mount({ phase: "failed", areaId: "area-1", name: "Bois du Nord" })
     expect(byTestId(tree, "offline-download-failed")).toHaveLength(1)
@@ -200,7 +227,12 @@ describe("DownloadStatusView (12.2-19 third round)", () => {
 
   test("the panel's unseen measuring copies never speak, and are at their widest", () => {
     const statuses = measureStatuses("Lisière", 186)
-    expect(statuses.map((status) => status.phase)).toEqual(["running", "done", "failed"])
+    expect(statuses.map((status) => status.phase)).toEqual(["running", "done", "failed", "done"])
+    // The last one is the partial result with every extra layer, the longest line.
+    expect(statuses[3]).toMatchObject({
+      areaId: "measure-partial",
+      failedLayers: ["etat-major", "carte-1950", "types-foret", "photos-1950"],
+    })
     expect(statuses[0]).toMatchObject({
       percentage: 100,
       downloadedTiles: 10000,

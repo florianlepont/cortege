@@ -238,7 +238,12 @@ describe("OfflineAreasSheet states (12.2-19 third round)", () => {
       expect(layer.props.accessibilityElementsHidden).toBe(true)
       expect(layer.props.importantForAccessibility).toBe("no-hide-descendants")
       const copies = layer.findAll((node) => (node.type as unknown) === "DownloadStatusView")
-      expect(copies.map((copy) => copy.props.status.phase)).toEqual(["running", "done", "failed"])
+      expect(copies.map((copy) => copy.props.status.phase)).toEqual([
+        "running",
+        "done",
+        "failed",
+        "done",
+      ])
       for (const copy of copies) expect(copy.props.announce).toBe(false)
       expect(flat(body().props.style).minHeight).toBe(0)
 
@@ -251,6 +256,11 @@ describe("OfflineAreasSheet states (12.2-19 third round)", () => {
       report("running", 92)
       report("done", 128)
       report("failed", 120)
+      expect(flat(body().props.style).minHeight).toBe(128)
+      // The partial result (four layers named) can be the tallest.
+      report("partial", 150)
+      expect(flat(body().props.style).minHeight).toBe(150)
+      report("partial", 100)
       expect(flat(body().props.style).minHeight).toBe(128)
       // A larger text size makes a status taller: the floor follows.
       report("failed", 176)

@@ -5,11 +5,23 @@ import { brandComponentTokens, brandSpacing4, brandTypography } from "../../app/
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
+import { LAYER_CATALOGUE, PACK_ORDER } from "../../map/layers"
+import type { MapLayerKey } from "../../map/layers"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassButton } from "../../ui/GlassButton"
 import { ProgressBar } from "../../ui/ProgressBar"
 
 const t = fr.offlineMap.areas
+
+/** Every layer a "tous" policy adds on top of the base packs, the longest partial notice. */
+const EXTRA_LAYER_KEYS: readonly MapLayerKey[] = PACK_ORDER.filter(
+  (key) => LAYER_CATALOGUE[key].tier === "extra",
+)
+
+/** The plain French names of layers, joined for the partial notice. */
+function layerNames(keys: readonly MapLayerKey[]): string {
+  return keys.map((key) => fr.mapLayers.layers[LAYER_CATALOGUE[key].i18nKey].name).join(", ")
+}
 
 /** Steps at which VoiceOver and TalkBack hear how far the download has gone. */
 export const ANNOUNCE_STEP = 25
@@ -47,8 +59,9 @@ export type DownloadStatusViewProps = {
 }
 
 /**
- * One status of each kind for an area `name`, at their widest (a full bar, five-digit tile counts):
- * the panel lays them out unseen to reserve the tallest state's height (12.2-19).
+ * One status of each kind for an area `name`, at their widest (a full bar, five-digit tile counts,
+ * and the partial result naming every extra layer): the panel lays them out unseen to reserve the
+ * tallest state's height (12.2-19).
  */
 export function measureStatuses(name: string, totalTiles: number): AreaDownloadStatus[] {
   const progress = {
@@ -61,6 +74,12 @@ export function measureStatuses(name: string, totalTiles: number): AreaDownloadS
     { phase: "running", areaId: "measure-running", ...progress },
     { phase: "done", areaId: "measure-done", ...progress, failedLayers: [] },
     { phase: "failed", areaId: "measure-failed", name },
+    {
+      phase: "done",
+      areaId: "measure-partial",
+      ...progress,
+      failedLayers: [...EXTRA_LAYER_KEYS],
+    },
   ]
 }
 
@@ -129,7 +148,23 @@ export const DownloadStatusView = memo(function DownloadStatusView({
             {t.done.title}
           </Text>
         </View>
-        <Text style={styles.meta}>{t.done.message(status.name)}</Text>
+        {status.failedLayers.length > 0 ? (
+          <View style={styles.noticeRow}>
+            <Ionicons
+              name="alert-circle-outline"
+              size={16}
+              color={theme.onSurface.danger}
+              style={styles.noticeIcon}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+            <Text style={[styles.meta, styles.noticeText]}>
+              {fr.mapLayers.download.partial(layerNames(status.failedLayers))}
+            </Text>
+          </View>
+        ) : (
+          <Text style={styles.meta}>{t.done.message(status.name)}</Text>
+        )}
         <GlassButton
           label={t.done.close}
           size="md"
@@ -167,6 +202,9 @@ function createStyles(theme: BrandTheme) {
       flexShrink: 1,
       color: theme.semanticColors.textStrong,
     },
+    noticeRow: { flexDirection: "row", alignItems: "flex-start", gap: brandSpacing4.sm },
+    noticeIcon: { marginTop: 1 },
+    noticeText: { flex: 1 },
     danger: { color: theme.onSurface.danger },
     percent: {
       ...brandTypography.sectionBody,
