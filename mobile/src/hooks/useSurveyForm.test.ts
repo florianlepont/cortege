@@ -850,6 +850,136 @@ describe("useSurveyForm", () => {
 
   // ─── resetSurveyForm ──────────────────────────────────────────────────────
 
+  // ─── Doubt flag and note per factor (phase 27, D-12, D-23) ──────────────────
+
+  describe("factor annotations (D-23)", () => {
+    const useRealRules = () => {
+      mockParseFinite.mockImplementation(
+        jest.requireActual("../app/number-utils").parseFiniteNumberInput,
+      )
+      mockComputeRetainedScores.mockImplementation(
+        jest.requireActual("../app/ibp-scoring").computeRetainedScoresFromRawFactors,
+      )
+    }
+    type FormResult = Awaited<ReturnType<typeof renderForm>>
+    const factors = (result: FormResult) => result.current.draftInput.factors
+    const doubt = async (result: FormResult, factor: "A" | "B" | "C" | "J", value: boolean) => {
+      await act(async () => {
+        result.current.setFactorDoubt(factor, value)
+      })
+    }
+    const note = async (result: FormResult, factor: "A" | "B" | "C" | "J", value: string) => {
+      await act(async () => {
+        result.current.setFactorNote(factor, value)
+      })
+    }
+
+    beforeEach(useRealRules)
+
+    test("a doubt with no scored input writes no factor key, only an annotations entry", async () => {
+      const result = await renderForm()
+      await doubt(result, "B", true)
+      expect(factors(result)).not.toHaveProperty("B")
+      expect(factors(result)).toEqual({ annotations: { B: { doubt: true } } })
+      expect(result.current.factorAnnotations.B).toEqual({ doubt: true, note: "" })
+    })
+
+    test("a doubt on a scored factor stays beside the factor keys, never inside one", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.B[0].selection?.onChange(["low", "mid", "high"])
+      })
+      await doubt(result, "B", true)
+      expect(factors(result).B).toEqual({ strata_count: 3, strata: ["low", "mid", "high"] })
+      expect(factors(result).annotations).toEqual({ B: { doubt: true } })
+    })
+
+    test("a note is trimmed in the payload and a blank one leaves no entry", async () => {
+      const result = await renderForm()
+      await note(result, "C", "  souches  ")
+      expect(factors(result).annotations).toEqual({ C: { note: "souches" } })
+      expect(result.current.factorAnnotations.C?.note).toBe("  souches  ")
+      await note(result, "C", "   ")
+      expect(factors(result)).not.toHaveProperty("annotations")
+    })
+
+    test("a note is capped at 300 characters in the payload", async () => {
+      const result = await renderForm()
+      await note(result, "A", "x".repeat(450))
+      const stored = factors(result).annotations as Record<string, { note: string }>
+      expect(stored.A.note).toHaveLength(300)
+    })
+
+    test("no doubt and no note leave no annotations key at all", async () => {
+      const result = await renderForm()
+      await doubt(result, "J", true)
+      await doubt(result, "J", false)
+      expect(factors(result)).toEqual({})
+    })
+
+    test("applyDraftToForm puts the stored annotations back and the payload round-trips", async () => {
+      const result = await renderForm()
+      const stored = { A: { doubt: true, note: "x" }, J: { note: "nappe" } }
+      await act(async () => {
+        result.current.applyDraftToForm({ site_name: "S", factors: { annotations: stored } })
+      })
+      expect(factors(result).annotations).toEqual(stored)
+    })
+
+    test("editing another factor keeps the annotations", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.applyDraftToForm({
+          site_name: "S",
+          factors: { annotations: { A: { doubt: true, note: "x" } } },
+        })
+      })
+      await act(async () => {
+        result.current.factorSections.G[0].onChange("20")
+      })
+      expect(factors(result).G).toEqual({ open_flowering_percent: 20 })
+      expect(factors(result).annotations).toEqual({ A: { doubt: true, note: "x" } })
+    })
+
+    test("loading a draft without annotations clears the previous ones", async () => {
+      const result = await renderForm()
+      await doubt(result, "A", true)
+      await act(async () => {
+        result.current.applyDraftToForm({ site_name: "S", factors: {} })
+      })
+      expect(result.current.factorAnnotations).toEqual({})
+      expect(factors(result)).not.toHaveProperty("annotations")
+    })
+
+    test("resetSurveyForm clears the annotations", async () => {
+      const result = await renderForm()
+      await doubt(result, "A", true)
+      await note(result, "J", "marais")
+      await act(async () => {
+        result.current.resetSurveyForm()
+      })
+      expect(result.current.factorAnnotations).toEqual({})
+      expect(factors(result)).not.toHaveProperty("annotations")
+    })
+
+    test("the retained scores are the same with and without a doubt on every factor (D-14)", async () => {
+      const result = await renderForm()
+      await act(async () => {
+        result.current.factorSections.G[0].onChange("20")
+        result.current.factorSections.B[0].onChange("2")
+      })
+      const withoutDoubt = result.current.factorRetainedScores
+      expect(withoutDoubt.G).not.toBeNull()
+      for (const factor of ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"] as const) {
+        await act(async () => {
+          result.current.setFactorDoubt(factor, true)
+          result.current.setFactorNote(factor, "incertain")
+        })
+      }
+      expect(result.current.factorRetainedScores).toEqual(withoutDoubt)
+    })
+  })
+
   describe("resetSurveyForm", () => {
     test("resets siteName to default", async () => {
       const result = await renderForm()
