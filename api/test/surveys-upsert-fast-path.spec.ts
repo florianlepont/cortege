@@ -442,6 +442,8 @@ describe("SurveysRepository fast-path statements", () => {
     ibpMethodVersion: "cnpf_ibp_fr_v3_2_2026-02-02",
     ibpCas: 3,
     ibpCas3Scale: false,
+    surveyNote: null,
+    weather: null,
     factors: {},
     factorResults: {},
     scores: { ibp_total: 0 },
@@ -450,31 +452,57 @@ describe("SurveysRepository fast-path statements", () => {
     eventPayload: { sync_version: 1 },
   }
 
-  it("binds sorted, de-duplicated parcels, and the CAS token as $26 of an update only", () => {
+  it("binds sorted, de-duplicated parcels, and the CAS token as $28 of an update only", () => {
     const create = fastWriteValues(input, null)
-    expect(create).toHaveLength(25)
+    expect(create).toHaveLength(27)
     expect(create[15]).toEqual(["01001A0001", "01001B0002"])
     expect(create[16]).toEqual(["01001", "01001"])
     expect(create[17]).toEqual(["AA", "BA"])
     expect(create[18]).toEqual(["0001", "0002"])
     const update = fastWriteValues(input, "777")
-    expect(update).toHaveLength(26)
-    expect(update[25]).toBe("777")
-    // The method columns sit at the same place in both: an update only adds the token.
-    expect(update.slice(22, 25)).toEqual(create.slice(22, 25))
+    expect(update).toHaveLength(28)
+    expect(update[27]).toBe("777")
+    // The method, note and weather columns sit at the same place in both: an update only adds
+    // the token.
+    expect(update.slice(22, 27)).toEqual(create.slice(22, 27))
+  })
+
+  it("binds the survey note as $26 and the weather as $27 (a JSON string, or null)", () => {
+    expect(fastWriteValues(input, null).slice(25)).toEqual([null, null])
+    const weather = {
+      sky: "cloudy" as const,
+      temperature_c: 8.5,
+      wind_kmh: 12,
+      rain_24h_mm: 2.4,
+      observed_at: "2026-10-11T08:00:00.000Z",
+      requested_at: "2026-10-11T08:01:00.000Z",
+      source: "meteo_france" as const,
+      edited: ["sky" as const],
+    }
+    const values = fastWriteValues(
+      { ...input, surveyNote: "Une note\nsur deux lignes", weather },
+      "9",
+    )
+    expect(values[25]).toBe("Une note\nsur deux lignes")
+    expect(values[26]).toBe(JSON.stringify(weather))
+    expect(values[27]).toBe("9")
   })
 
   it("binds the method columns as $23..$25 and writes them in both statements", () => {
-    expect(fastWriteValues(input, null).slice(22)).toEqual([
+    expect(fastWriteValues(input, null).slice(22, 25)).toEqual([
       "cnpf_ibp_fr_v3_2_2026-02-02",
       3,
       false,
     ])
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain("ibp_method_version, ibp_cas, ibp_cas3_scale")
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain("$23::text, $24::smallint, $25::boolean")
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("ibp_cas3_scale, survey_note, weather")
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("$26::text, $27::jsonb")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_method_version = $23::text")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas = $24::smallint")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas3_scale = $25::boolean")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("survey_note = $26::text")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("weather = $27::jsonb")
   })
 
   it("gates parcel registration on the survey write and uses the shared event insert", () => {
@@ -483,7 +511,7 @@ describe("SurveysRepository fast-path statements", () => {
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain(
       "INSERT INTO survey_events (id, survey_id, actor_id, event_type, payload)",
     )
-    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("xmin = $26::xid")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("xmin = $28::xid")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("sync_version < $14::int")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("status <> 'submitted'")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("EXISTS (SELECT 1 FROM u)")
