@@ -239,6 +239,15 @@
     });
 
     // ---- moteur balayage (sketch 022) ----
+    // zones du balayage : annuler sous 1/3, comparer de 1/3 à 2/3, valider au-delà (hystérésis 0,03)
+    const zoneOf = (rev, prev, allowCmp) => {
+      const H = 0.03, LO = 1 / 3, HI = 2 / 3;
+      if (!allowCmp) return prev === "commit" ? (rev < LO - H ? "cancel" : "commit") : prev === "cancel" ? (rev > LO + H ? "commit" : "cancel") : (rev > LO ? "commit" : "cancel");
+      if (prev === "cancel") return rev >= LO + H ? (rev > HI + H ? "commit" : "compare") : "cancel";
+      if (prev === "commit") return rev <= HI - H ? (rev < LO - H ? "cancel" : "compare") : "commit";
+      if (prev === "compare") return rev < LO - H ? "cancel" : rev > HI + H ? "commit" : "compare";
+      return rev < LO ? "cancel" : rev > HI ? "commit" : "compare";
+    };
     let swTm = null, swg = null;
     const swBounds = (side) => (side === "left" ? [0, S.x] : side === "right" ? [S.x, W] : [0, W]);
     const swLayer = (side) => (side === "left" ? S.sideA : side === "right" ? S.sideB : S.base);
@@ -276,16 +285,20 @@
       if (swg.k !== k) { swg.k = k; wc.innerHTML = worldHTML(k, S.overlay, S.parcels); place(); }
       clipc.style.display = "block"; clipc.style.transition = "none"; clipc.style.clipPath = swClip(a, b, dx, fx);
       const rev = dx < 0 ? (b - fx) / (b - a) : (fx - a) / (b - a); swg.rev = rev;
-      let msg = "Lâchez pour changer de fond";
-      if (swg.side === "full" && cfg.swipe.cmp !== "button" && rev > 0.2 && rev < 0.8) msg = "Lâchez pour comparer";
+      const allowCmp = swg.side === "full" && cfg.swipe.cmp !== "button" && !S.compare;
+      const zone = zoneOf(rev, swg.zone || null, allowCmp);
+      if (zone !== swg.zone) { if (swg.zone && navigator.vibrate) navigator.vibrate(zone === "compare" ? 25 : 8); swg.zone = zone; }
+      const msg = zone === "cancel" ? "Lâchez pour revenir" : zone === "compare" ? "Lâchez pour comparer" : "Lâchez pour changer de fond";
       lockui.innerHTML = `<div class="lkp glass"><b>${L[k].name.replace(/ \(.*\)/, "")}</b><small>${L[k].year}</small></div><div class="lkh">${msg}</div>`;
     });
     window.addEventListener("pointerup", (e) => {
       if (!swg) return; const g = swg; swg = null;
       if (!g.k) { if (Math.abs(e.clientX - g.x0) < 6 && Math.abs(e.clientY - g.y0) < 6 && !S.compare) { S.sw = false; } render(); return; }
       const [a, b] = swBounds(g.side), dx = g.dx, rev = g.rev;
-      const toCmp = g.side === "full" && cfg.swipe.cmp !== "button" && rev >= 0.2 && rev <= 0.8;
-      const commit = !toCmp && rev > (g.side === "full" && cfg.swipe.cmp !== "button" ? 0.8 : 0.33);
+      const allowCmp = g.side === "full" && cfg.swipe.cmp !== "button" && !S.compare;
+      const zone = g.zone || zoneOf(rev, null, allowCmp);
+      const toCmp = zone === "compare";
+      const commit = zone === "commit";
       clipc.style.transition = "clip-path .22s ease";
       const done = () => { clipc.style.display = "none"; wc.innerHTML = ""; clipc.style.transition = "none"; };
       if (toCmp) {
