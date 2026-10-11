@@ -34,6 +34,10 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onDiscardSurvey: (surveyId: string) => Promise<void>
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
   onOpenContext: () => void
+  /** Opens "Contexte et parcelles" scrolled to its Conditions section (the summary card, D-15). */
+  onOpenConditions: () => void
+  /** A weather lookup is running for the selected survey (the card shows its search line). */
+  conditionsLoading: boolean
   /** Opens the parcel editor straight from the map card (OA-96). */
   onOpenParcels: (surveyId: string) => Promise<void> | void
   onOpenScore: () => void

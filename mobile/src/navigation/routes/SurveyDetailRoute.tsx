@@ -4,6 +4,7 @@ import type { FactorKey } from "../../app/types"
 import { SurveyDetailScreen } from "../../screens/SurveyDetailScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
+import { useWeatherPrefillState } from "../../state/weather-context"
 import { resolveDisplayCoordinates } from "../../screens/survey-screen-helpers"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -25,8 +26,13 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   const accessToken = useAccessToken()
   const { state, actions } = useSurveys()
   const syncActions = useSyncActions()
+  const { state: weatherState } = useWeatherPrefillState()
 
   const onOpenContext = useLatestCallback(() => navigation.navigate("surveyContext"))
+  // D-15: the summary's Conditions card opens the same page scrolled to the Conditions section.
+  const onOpenConditions = useLatestCallback(() =>
+    navigation.navigate("surveyContext", { section: "conditions" }),
+  )
   const onOpenParcels = useLatestCallback(async (surveyId: string) => {
     const loaded = await actions.startEditSurvey(surveyId)
     if (!loaded) return
@@ -73,6 +79,8 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
         onDiscardSurvey={actions.discardSurvey}
         onRenameSurvey={actions.renameSurvey}
         onOpenContext={onOpenContext}
+        onOpenConditions={onOpenConditions}
+        conditionsLoading={weatherState.inFlightIds.has(state.selectedSurvey.id)}
         onOpenParcels={onOpenParcels}
         onOpenScore={onOpenScore}
         onOpenFactor={onOpenFactor}

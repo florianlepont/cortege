@@ -11,6 +11,8 @@ import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppNotice } from "../ui/AppNotice"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../ui/frame-large-title"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
+import { ConditionsCard } from "./survey-detail/conditions/ConditionsCard"
+import { useSurveyConditions } from "./survey-detail/conditions/useSurveyConditions"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
 import { FinishBar } from "./survey-detail/FinishBar"
@@ -40,11 +42,11 @@ const headerText = fr.surveyDetail.header
 const alertsText = fr.surveyDetail.alerts
 
 /**
- * The summary of a survey (OA-46): its name and where it stands, the score, the photos, the map,
- * and three rows that open the sub-pages (context and parcels, score by factor, the parcel's
- * history; the survey's own change log is in the "…" menu, never a row, D-02). The one action is
- * the button at the bottom. The coloured chart of the ten factors is not here (D-24): it
- * lives on the score page only.
+ * The summary of a survey (OA-46): its name and where it stands, the score, the conditions of the
+ * day (D-17), the photos, the map, and three rows that open the sub-pages (context and parcels,
+ * score by factor, the parcel's history; the survey's own change log is in the "…" menu, never a
+ * row, D-02). The one action is the button at the bottom. The coloured chart of the ten factors is
+ * not here (D-24): it lives on the score page only.
  */
 export function SurveyDetailScreen({
   apiUrl,
@@ -65,6 +67,8 @@ export function SurveyDetailScreen({
   onDiscardSurvey,
   onRenameSurvey,
   onOpenContext,
+  onOpenConditions,
+  conditionsLoading,
   onOpenParcels,
   onOpenScore,
   onOpenFactor,
@@ -77,6 +81,7 @@ export function SurveyDetailScreen({
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName } = data
+  const conditions = useSurveyConditions(selectedSurvey)
   const [menuVisible, setMenuVisible] = useState(false)
   const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
   // D-26: a finish from the factor pager plays the halo and pop once the summary is seen again.
@@ -248,6 +253,14 @@ export function SurveyDetailScreen({
           isDraftView={data.useLocalDraftView}
           filledFactorCount={data.filledFactorCount}
           pulseTrigger={shownPulse}
+        />
+
+        <ConditionsCard
+          note={conditions.note}
+          weather={conditions.weather}
+          loading={conditionsLoading}
+          submitted={selectedSurvey.status === "submitted"}
+          onOpen={onOpenConditions}
         />
 
         <PhotosStrip

@@ -12,6 +12,7 @@ import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import { SurveyDetailScreen } from "./SurveyDetailScreen"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 import { useHistoryRow } from "./survey-detail/useHistoryRow"
+import { useSurveyConditions } from "./survey-detail/conditions/useSurveyConditions"
 import type { SurveyDetailScreenProps } from "./survey-detail/screen-props"
 import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
 
@@ -35,6 +36,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  mockConditions = { note: null, weather: null, parcelIds: [], loaded: true }
   notificationAsync.mockClear()
   mockCtaKind = "hidden"
   mockScrollTo.mockClear()
@@ -84,6 +86,18 @@ jest.mock("./survey-detail/SurveyOfflineMapRow", () => ({
 }))
 jest.mock("./survey-detail/PhotosStrip", () => ({ PhotosStrip: "PhotosStrip" }))
 jest.mock("./survey-detail/ScoreCard", () => ({ ScoreCard: "ScoreCard" }))
+jest.mock("./survey-detail/conditions/ConditionsCard", () => ({
+  ConditionsCard: "ConditionsCard",
+}))
+let mockConditions: {
+  note: string | null
+  weather: Record<string, unknown> | null
+  parcelIds: string[]
+  loaded: boolean
+} = { note: null, weather: null, parcelIds: [], loaded: true }
+jest.mock("./survey-detail/conditions/useSurveyConditions", () => ({
+  useSurveyConditions: jest.fn(() => mockConditions),
+}))
 jest.mock("./survey-detail/SummaryHeader", () => ({ SummaryHeader: "SummaryHeader" }))
 jest.mock("./survey-detail/useSurveyDetailHeader", () => ({ useSurveyDetailHeader: jest.fn() }))
 jest.mock("./survey-detail/useHistoryRow", () => ({ useHistoryRow: jest.fn() }))
@@ -142,6 +156,8 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onDiscardSurvey: jest.fn(),
     onRenameSurvey: jest.fn(),
     onOpenContext: jest.fn(),
+    onOpenConditions: jest.fn(),
+    conditionsLoading: false,
     onOpenParcels: jest.fn(),
     onOpenScore: jest.fn(),
     onOpenFactor: jest.fn(),
@@ -177,8 +193,53 @@ describe("SurveyDetailScreen summary", () => {
     expect(byType(tree, "AppCard")).toHaveLength(0)
     const scroll = byType(tree, "ScrollView")[0]
     const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
-    // The score card is followed straight by the photos.
-    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("ScoreCard") + 1)
+    // The score card is followed by the conditions card (D-17), then the photos.
+    expect(order.indexOf("ConditionsCard")).toBe(order.indexOf("ScoreCard") + 1)
+    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("ConditionsCard") + 1)
+  })
+
+  test("D-17: the conditions card gets the note and the weather read from the draft", () => {
+    mockConditions = {
+      note: "Sol détrempé",
+      weather: { sky: "cloudy", temperature_c: 14 },
+      parcelIds: [],
+      loaded: true,
+    }
+    const tree = mount("draft")
+    const card = byType(tree, "ConditionsCard")[0]
+    expect(card.props.note).toBe("Sol détrempé")
+    expect(card.props.weather).toEqual({ sky: "cloudy", temperature_c: 14 })
+    expect(useSurveyConditions).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "survey-1" }),
+    )
+  })
+
+  test("the card is told whether the survey is submitted and whether a lookup runs", () => {
+    const draft = byType(mount("draft"), "ConditionsCard")[0]
+    expect(draft.props.submitted).toBe(false)
+    expect(draft.props.loading).toBe(false)
+
+    const props = { ...makeProps("submitted"), conditionsLoading: true }
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    const submitted = byType(tree!, "ConditionsCard")[0]
+    expect(submitted.props.submitted).toBe(true)
+    expect(submitted.props.loading).toBe(true)
+  })
+
+  test("pressing the card opens the Conditions section, the context row opens the page as is", () => {
+    const props = makeProps("draft")
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    act(() => byType(tree!, "ConditionsCard")[0].props.onOpen())
+    expect(props.onOpenConditions).toHaveBeenCalledTimes(1)
+    expect(props.onOpenContext).not.toHaveBeenCalled()
+    const contextRow = byType(tree!, "AppGroupedList")[0].props.sections[0].rows[0]
+    expect(contextRow.onPress).toBe(props.onOpenContext)
   })
 
   test("the source of the summary no longer imports the chart", () => {

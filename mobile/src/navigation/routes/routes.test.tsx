@@ -1076,6 +1076,34 @@ describe("SurveyDetailRoute", () => {
     expect(props("surveyDetail").observerName).toBe("Marie Lepont")
   })
 
+  test("tells the summary whether a weather lookup runs for the selected survey (phase 27)", async () => {
+    const idle = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={idle}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsLoading).toBe(false)
+
+    const busy = withSelection(makeFixture())
+    busy.weather.state = { inFlightIds: new Set(["s-01"]), unavailableIds: new Set() }
+    await mount(
+      <Providers fixture={busy}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsLoading).toBe(true)
+
+    const other = withSelection(makeFixture())
+    other.weather.state = { inFlightIds: new Set(["another"]), unavailableIds: new Set() }
+    await mount(
+      <Providers fixture={other}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsLoading).toBe(false)
+  })
+
   test("passes the survey and opens the three sub-pages", async () => {
     const fixture = withSelection(makeFixture())
     const navigation = makeNavigation()
@@ -1096,6 +1124,12 @@ describe("SurveyDetailRoute", () => {
       callback("surveyDetail", "onOpenContext")()
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyContext")
+    await act(async () => {
+      callback("surveyDetail", "onOpenConditions")()
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyContext", {
+      section: "conditions",
+    })
     await act(async () => {
       callback("surveyDetail", "onOpenScore")()
     })
