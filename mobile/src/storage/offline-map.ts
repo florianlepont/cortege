@@ -118,15 +118,30 @@ export async function updateOfflineAreaProgress(
   )
 }
 
+/**
+ * Closes an area with its final status and tile counts. `measuredBytes`, the real size of the
+ * finished packs, replaces the insert-time estimate in `estimated_bytes` (no schema change: the
+ * column then holds the real size, so Paramètres shows measured megabytes); without it, or when it
+ * is not a finite number of at least 0, the estimate stays.
+ */
 export async function finalizeOfflineArea(
   id: string,
   status: OfflineAreaStatus,
   progress: { downloadedTiles: number; failedTiles: number },
+  measuredBytes?: number,
 ): Promise<void> {
   const db = await getDb()
+  const now = new Date().toISOString()
+  if (measuredBytes !== undefined && Number.isFinite(measuredBytes) && measuredBytes >= 0) {
+    await db.runAsync(
+      `UPDATE offline_areas SET status = ?, downloaded_tiles = ?, failed_tiles = ?, estimated_bytes = ?, updated_at = ? WHERE id = ?`,
+      [status, progress.downloadedTiles, progress.failedTiles, Math.round(measuredBytes), now, id],
+    )
+    return
+  }
   await db.runAsync(
     `UPDATE offline_areas SET status = ?, downloaded_tiles = ?, failed_tiles = ?, updated_at = ? WHERE id = ?`,
-    [status, progress.downloadedTiles, progress.failedTiles, new Date().toISOString(), id],
+    [status, progress.downloadedTiles, progress.failedTiles, now, id],
   )
 }
 
