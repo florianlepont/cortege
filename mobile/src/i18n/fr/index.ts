@@ -11,6 +11,7 @@ import { genusRecognitionFr } from "./genus-recognition"
 import { homeFr } from "./home"
 import { ibpMethodFr } from "./ibp-method"
 import { labelsFr } from "./labels"
+import { mapLayersFr } from "./map-layers"
 import { navigationFr } from "./navigation"
 import { nearbyParcelsSheetFr } from "./nearby-parcels-sheet"
 import { offlineMapFr } from "./offline-map"
@@ -67,6 +68,7 @@ export const fr = {
   account: accountFr,
   publicMap: publicMapFr,
   offlineMap: offlineMapFr,
+  mapLayers: mapLayersFr,
   validation: validationFr,
   status: statusFr,
 } as const

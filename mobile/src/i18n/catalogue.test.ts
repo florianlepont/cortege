@@ -90,6 +90,7 @@ describe("French catalogue", () => {
         "home",
         "ibpMethod",
         "labels",
+        "mapLayers",
         "navigation",
         "nearbyParcelsSheet",
         "offlineMap",
