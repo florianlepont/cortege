@@ -1,7 +1,7 @@
 ---
 phase: 28
 slug: map-layers-comparison-inserted-v1
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-10-11
@@ -193,7 +193,7 @@ Other colour rules:
 
 **Exits** (all return the map to free pan and zoom; none changes the base):
 1. "Terminé".
-2. A tap on the map.
+2. A tap on the map (only when no comparison exists; with a comparison a tap does nothing).
 3. A tap on the globe.
 4. **8 s of inactivity** (timer restarts after every gesture end and every action; it does not run during a gesture). **It is disabled while a screen reader is on** (`AccessibilityInfo.isScreenReaderEnabled`).
 5. Opening the overlay bubble or the download card, or leaving the Explorer tab.
@@ -245,7 +245,7 @@ There is **no Comparer button**. The comparison is created by releasing a full-w
 **Card** (`testID="download-card"`, `GlassSurface surface={visual.mapPanel}`, theme text; look of sketch 020, content of sketch 018 A): opened by the capsule's download button, 160 ms fade, `bottom` = tab bar height + 14, margins 14, radius 22. The map's edge glow (`DownloadEdgeGlowHost`) stays tied to the open card, so the framed area is the area that will be saved.
 - Header row: title "Télécharger cette zone" (17 SemiBold) and a close control (drawn 30 pt circle, hit 44, glyph `close-outline`, label "Fermer").
 - Body row: left, the estimate lines (13 Regular): line 1 **"Environ 84 Mo pour la zone encadrée en vert"** (bold weight not used: SemiBold, theme text), line 2 "Fonds de carte : 53 Mo. Autres couches : 31 Mo." (policy "all"; with policy "Fonds de carte seulement": "Fonds de carte seulement, réglable dans Paramètres."), line 3 "Réglable dans Paramètres, Cartes." (policy "all" only). Right, the button **"Télécharger"** (forest fill, white label 16 SemiBold, min height 46, pill, `testID="download-start"`). The existing size warning (`tooLarge`) replaces line 1 and disables the button. No weight cap, no confirmation (locked). The area name is automatic ("Zone du JJ/MM HH:MM", the existing `defaultName`); the name field is dropped.
-- While a download is running, opening the card shows it with the button disabled ("Téléchargement…", the existing `areas.downloading`) and the sentence "Un téléchargement est en cours. Son avancement s'affiche sur la carte." in place of lines 2 and 3.
+- While a download is running, opening the card shows it with only the button disabled ("Téléchargement…", the existing `areas.downloading`) in place of lines 2 and 3 (no sentence, no progress in the card: the chip on the map is the only progress).
 - **After "Télécharger": the keyboard is not involved (no field), the download starts and the card closes at once.** No running view, no progress bar, no percentage, no tile count, no "En cours" line in the card.
 - **Failed view** (reopened from the chip): title "Le téléchargement a échoué", line "Vérifiez votre connexion, puis réessayez.", button "Réessayer". **Partial view**: title "Zone disponible hors connexion", a notice line with `alert-circle-outline` 16 (`onSurface.danger`, glyph only): "Ces couches n'ont pas pu être téléchargées : {noms}. Les fonds de carte fonctionnent hors connexion.", a ghost button "Terminé" (clears the chip). The area is saved (`ready`) in both partial and done cases; an extra layer never deletes the area; "Réessayer" appears only when a base pack failed.
 - The card is exclusive with the overlay bubble and the swipe mode: opening it closes the bubble and ends the swipe mode (comparison kept).
@@ -485,7 +485,6 @@ export const mapLayersFr = {
       `Fonds de carte : ${base} Mo. Autres couches : ${extra} Mo.`,
     estimateBaseOnly: "Fonds de carte seulement, réglable dans Paramètres.",
     policyHint: "Réglable dans Paramètres, Cartes.",
-    runningElsewhere: "Un téléchargement est en cours. Son avancement s'affiche sur la carte.",
     start: "Télécharger",
     startA11y: "Télécharger la zone encadrée en vert",
     closeA11y: "Fermer",
