@@ -1,3 +1,4 @@
+import type { SurveyWeather } from "@cortege/ibp-domain"
 import * as Network from "expo-network"
 import { Platform } from "react-native"
 import { isOnlineNetworkState } from "../../hooks/survey-sync/utils"
@@ -63,7 +64,11 @@ export type AssembleDeps = {
   platform: "ios" | "android"
   now: () => Date
   isOnline: () => Promise<boolean>
-  loadDraft: (surveyId: string) => Promise<{ factors?: Record<string, unknown> } | null>
+  loadDraft: (surveyId: string) => Promise<{
+    factors?: Record<string, unknown>
+    survey_note?: string | null
+    weather?: SurveyWeather | null
+  } | null>
   listPhotos: (surveyId: string) => Promise<LocalAttachment[]>
   preparePhotos: (
     sources: readonly PhotoSource[],
@@ -120,12 +125,27 @@ async function orFallback<T>(piece: string, fallback: T, work: () => Promise<T>)
   }
 }
 
-async function loadRawFactors(
-  surveyId: string,
-  deps: AssembleDeps,
-): Promise<Record<string, unknown>> {
+type DraftParts = Pick<SurveyExportData, "rawFactors" | "conditions">
+
+const NO_DRAFT_PARTS: DraftParts = { rawFactors: {}, conditions: { note: null, weather: null } }
+
+/**
+ * The factors and the conditions (survey note and weather, phase 27 D-17) of the local draft, read
+ * in one go. A blank note is null; a weather that is not an object is null. The builders clamp the
+ * note again before printing.
+ */
+async function loadDraftParts(surveyId: string, deps: AssembleDeps): Promise<DraftParts> {
   const draft = await deps.loadDraft(surveyId)
-  return draft?.factors ?? {}
+  if (!draft) return NO_DRAFT_PARTS
+  const note = typeof draft.survey_note === "string" ? draft.survey_note.trim() : ""
+  const weather = draft.weather
+  return {
+    rawFactors: draft.factors ?? {},
+    conditions: {
+      note: note === "" ? null : note,
+      weather: typeof weather === "object" && weather !== null ? weather : null,
+    },
+  }
 }
 
 const NO_PHOTOS: SurveyExportData["photos"] = { items: [], total: 0, unavailable: 0 }
@@ -289,8 +309,8 @@ export async function assembleSurveyExportData(
   input: SurveyExportInput,
   deps: AssembleDeps = defaultAssembleDeps(),
 ): Promise<SurveyExportData> {
-  const [rawFactors, photos, mapPiece, history, assets] = await Promise.all([
-    orFallback("factors", {}, () => loadRawFactors(input.surveyId, deps)),
+  const [draftParts, photos, mapPiece, history, assets] = await Promise.all([
+    orFallback("factors", NO_DRAFT_PARTS, () => loadDraftParts(input.surveyId, deps)),
     orFallback("photos", NO_PHOTOS, () => loadPhotos(input.surveyId, deps)),
     orFallback<MapPiece>("map", { coordinates: input.displayLocation, map: null }, () =>
       loadMapPiece(input, deps),
@@ -313,7 +333,8 @@ export async function assembleSurveyExportData(
     factorEntries: input.factorEntries,
     generatedAtIso: deps.now().toISOString(),
     coordinates: mapPiece.coordinates,
-    rawFactors,
+    rawFactors: draftParts.rawFactors,
+    conditions: draftParts.conditions,
     photos,
     map: mapPiece.map,
     history,

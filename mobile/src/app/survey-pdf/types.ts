@@ -1,3 +1,4 @@
+import type { SurveyWeather } from "@cortege/ibp-domain"
 import type {
   DisplayedFactorResult,
   DisplayedScores,
@@ -76,6 +77,9 @@ export type PdfPalette = {
   accentSoft: string
   alert: string
   alertSoft: string
+  // The doubt badge of a factor card (phase 27, D-13): the light theme's warning ink on its soft fill.
+  warning: string
+  warningSoft: string
   bandLow: string
   bandMid: string
   bandHigh: string
@@ -141,6 +145,8 @@ export type SurveyExportData = Omit<
   generatedAtIso: string
   coordinates: { lat: number; lng: number } | null
   rawFactors: Record<string, unknown>
+  // The conditions of the survey (phase 27, D-17): its note and its weather, as stored on the phone.
+  conditions: { note: string | null; weather: SurveyWeather | null }
   photos: { items: ExportPhoto[]; total: number; unavailable: number }
   map: ExportMap | null
   history: ExportHistory | null
