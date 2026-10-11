@@ -41,6 +41,13 @@ A survey can carry a free note (for the survey and for each factor), pre-filled 
 - **D-17:** Display: survey summary shows one weather line and the folded survey note; the score page shows the "Douteux" badge and the factor note; the PDF has a "Conditions du relevé" block, with the badge and note under each factor, on the fixed A4 page blocks (`mobile/src/app/survey-pdf/`).
 - **D-18:** All text through the typed `fr` catalogue, no em dash, abbreviations as in the phase 26 gates (units allowed).
 
+### Planning-time decisions (owner, 2026-10-11, after research)
+- **D-19:** Weather comes from the **nearest Météo-France observation station**, chosen server-side, within a **distance cap** (value fixed by the Wave 0 spike). Beyond the cap the weather stays empty, with no error. The AROME model fallback is **not** retained in this phase (heavier product, modelled rather than observed values); the owner may overrule.
+- **D-20:** Offline catch-up (D-11) works for a survey **at most 24 h old** (the observation API keeps 24 h). Older: the section stays empty and editable by hand. No climatology archive.
+- **D-21:** Sky and rain over 24 h are pre-filled **only if the spike confirms** a product that gives them (SYNOP, or the sum of 24 hourly readings); otherwise those two fields stay manual. Temperature and wind first. Never blocking.
+- **D-22:** The owner creates the portal account, subscribes to "Données d'observation" and places the key in `api/.env` then `/home/ubuntu/cortege.env`. Claude never handles the key. A Wave 0 spike with the owner's key confirms field names, units (Kelvin, m/s suspected), parameters and the nearest-station lookup; the plan carries it as a human checkpoint and the weather endpoint is built behind it. `WEATHER_PROVIDER` = `meteofrance | synthetic | off`, default `off`, `synthetic` refused in production.
+- **D-23 (research, refines D-01/D-05):** the per-factor doubt and note live in **`factors.annotations`**, keyed by factor code, `{ doubt?: true, note?: string }`, **not** inside a factor entry (a meta-only entry would make `evaluateIbp` raise `factor_invalid_raw`). No column; the `factors` deep-compare and the submitted read-only check apply for free; no scorer reads it.
+
 ### Claude's Discretion
 Visual design of the strip and of the weather section (within the charter), the French labels of the sky conditions, cache durations and throttle of the weather endpoint, the exact payload key names.
 
