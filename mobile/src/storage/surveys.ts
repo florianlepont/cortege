@@ -636,6 +636,24 @@ export async function listLocalSurveys(): Promise<LocalSurvey[]> {
 }
 
 /**
+ * The own surveys that carry a survey note, `{ id, note }`, newest first (phase 27, D-07). One SQL
+ * statement: the note is pulled out of the payload with json_extract inside the engine, blank notes
+ * and invalid JSON are filtered there, and nothing is parsed in JS. Read only while the global
+ * search is active (plan 27-15), never by the list (01.9 D-03). No schema change (D-02).
+ */
+export async function listLocalSurveyNotes(): Promise<Array<{ id: string; note: string }>> {
+  const db = await getDb()
+  return db.getAllAsync<{ id: string; note: string }>(
+    `SELECT id, json_extract(payload_json, '$.survey_note') AS note
+     FROM local_surveys
+     WHERE json_valid(payload_json)
+       AND json_type(payload_json, '$.survey_note') = 'text'
+       AND trim(json_extract(payload_json, '$.survey_note')) <> ''
+     ORDER BY updated_at DESC`,
+  )
+}
+
+/**
  * Every survey row the phone holds, draft or submitted, with its parsed payload, for the Explorer's
  * local markers (phase 26, D-01). Unlike `listLocalSurveys` this reader parses payloads in JS, once
  * per call, because the map needs the factors of a draft to score it; a user holds tens to low

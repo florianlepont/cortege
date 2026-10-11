@@ -11,6 +11,7 @@ import { initLocalDb, getDb, SCHEMA_VERSION } from "./db"
 import {
   createLocalDraft,
   getLocalSurveyDraft,
+  listLocalSurveyNotes,
   patchLocalSurveyConditions,
   updateLocalDraft,
 } from "./surveys"
@@ -325,6 +326,38 @@ describe("completion counters ignore the note, the weather and the annotations (
       weather: { sky: "rain", temperature_c: 7 },
     })
     expect(await storedCounters(survey.id)).toEqual(await storedCounters(twin.id))
+  })
+})
+
+describe("listLocalSurveyNotes (D-07)", () => {
+  async function insertRaw(id: string, status: string, payloadJson: string, updatedAt: string) {
+    const db = await getDb()
+    await db.runAsync(
+      `INSERT INTO local_surveys (id, site_name, status, visibility, sync_version, sync_state, sync_blocked, payload_json, payload_completion, created_at, updated_at)
+       VALUES (?, ?, ?, 'private', 1, 'synced', 0, ?, 0, ?, ?)`,
+      [id, id, status, payloadJson, updatedAt, updatedAt],
+    )
+  }
+
+  test("returns the non-empty notes of any status, newest first, skipping bad rows", async () => {
+    await insertRaw("old", "submitted", JSON.stringify({ survey_note: "ancienne" }), "2026-01-01")
+    await insertRaw("new", "draft", JSON.stringify({ survey_note: "récente" }), "2026-03-01")
+    await insertRaw("blank", "draft", JSON.stringify({ survey_note: "   " }), "2026-02-01")
+    await insertRaw("null", "draft", JSON.stringify({ survey_note: null }), "2026-02-01")
+    await insertRaw("number", "draft", JSON.stringify({ survey_note: 4 }), "2026-02-01")
+    await insertRaw("none", "draft", JSON.stringify({ site_name: "x" }), "2026-02-01")
+    await insertRaw("broken", "draft", "{not json", "2026-02-01")
+
+    expect(await listLocalSurveyNotes()).toEqual([
+      { id: "new", note: "récente" },
+      { id: "old", note: "ancienne" },
+    ])
+  })
+
+  test("reads a note written by the conditions write", async () => {
+    const survey = await createLocalDraft({ ...BASE_INPUT, parcel_ids: [] })
+    await patchLocalSurveyConditions({ survey_id: survey.id, survey_note: "Sol humide" })
+    expect(await listLocalSurveyNotes()).toEqual([{ id: survey.id, note: "Sol humide" }])
   })
 })
 
