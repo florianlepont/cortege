@@ -93,14 +93,14 @@
         root.innerHTML = `<div class="phone" style="width:${W}px;height:${H}px">
       <div class="mapwrap"><div class="stack"><div class="world" data-w="a"></div></div><div class="clipb"><div class="stack"><div class="world" data-w="b"></div></div></div><div class="mks"></div>
         <div class="handle"></div></div>
-      <div class="tagl"></div>
+      <div class="tagl"></div><div class="lockui"></div>
       <div class="status"><span>9:41</span><span>5G ▮▮▮</span></div>
       <div class="exit"></div><div class="notices"></div><div class="capsule glass"></div><div class="locate glass"></div><div class="ovbtn glass" data-act="ovbtn" style="display:none"></div><div class="chooser-w"></div><div class="chipw"></div><div class="barp"></div>
       <div class="sheet" style="display:none"></div>
       <div class="tb"><div>Accueil</div><div>Mes relevés</div><div class="on">Explorer</div><div>Rechercher</div></div><div class="homebar"></div></div>`;
     const $ = (s) => root.querySelector(s);
     const phone = $(".phone"), wa = $('[data-w="a"]'), wb = $('[data-w="b"]'), clipb = $(".clipb"), handle = $(".handle"), mks = $(".mks"), capsule = $(".capsule"), locate = $(".locate");
-    const chooserW = $(".chooser-w"); const notices = $(".notices"), exitEl = $(".exit"), chipw = $(".chipw"), sheet = $(".sheet"), tagl = $(".tagl"), barp = $(".barp");
+    const lockui = $(".lockui"); const chooserW = $(".chooser-w"); const notices = $(".notices"), exitEl = $(".exit"), chipw = $(".chipw"), sheet = $(".sheet"), tagl = $(".tagl"), barp = $(".barp");
     let key = "";
 
     const avail = (k) => {
@@ -178,15 +178,35 @@
     handle.addEventListener("pointermove", (e) => { if (!dragH) return; const r = phone.getBoundingClientRect(); S.x = Math.min(Math.max(e.clientX - r.left, 22), W - 22); curtainR(); });
     handle.addEventListener("pointerup", () => { dragH = false; });
     // déplacer la carte
-    $(".mapwrap").addEventListener("pointerdown", (e) => { if (e.target.closest(".handle")) return; if (S.lock && cfg.cmpMode === "swipe") { swp = { x0: e.clientX, y0: e.clientY }; return; }
+    $(".mapwrap").addEventListener("pointerdown", (e) => { if (e.target.closest(".handle")) return; if ((S.lock && cfg.cmpMode === "swipe") || lockedBase()) { swp = { x0: e.clientX, y0: e.clientY, base: lockedBase() }; return; }
       if (cfg.entry === "keep" && S.chooser && !(cfg.chooser === "card" && S.chooser === "base" && S.compare)) { S.chooser = null; chooserR(); } dragM = { x: e.clientX, y: e.clientY }; });
     let swp = null;
     window.addEventListener("pointerup", (e) => {
       if (!swp) return; const g = swp; swp = null; const dx = e.clientX - g.x0;
+      if (g.base) {
+        const r0 = phone.getBoundingClientRect(); const dir = dx < 0 ? 1 : -1;
+        if (cfg.baseMode === "wipe" && g.wk) {
+          const commit = Math.abs(dx) > W * 0.28; clipb.classList.remove("nt");
+          if (commit) { clipb.style.clipPath = "inset(0 0 0 0)"; setTimeout(() => { setBase(g.wk); S.wipe = null; clipb.style.display = "none"; render(); }, 380); }
+          else { clipb.style.clipPath = dx < 0 ? `inset(0 0 0 ${W}px)` : `inset(0 ${W}px 0 0)`; setTimeout(() => { clipb.style.display = "none"; wb.innerHTML = ""; key = ""; S.wipe = null; render(); }, 380); }
+          return;
+        }
+        if (cfg.baseMode === "swipe" && Math.abs(dx) > 36) { setBase(neighbor(S.base, dir)); render(); }
+        return;
+      }
       if (Math.abs(dx) < 36 || Math.abs(e.clientY - g.y0) > 80) return;
       const r = phone.getBoundingClientRect(), side = g.x0 - r.left < S.x ? "left" : "right", other = side === "left" ? S.sideB : S.sideA, cur = side === "left" ? S.sideA : S.sideB;
       const list = BASES.filter((k) => avail(k) && k !== other); let i = list.indexOf(cur); i = (i + (dx < 0 ? 1 : -1) + list.length) % list.length;
       assign(list[i], side); render();
+    });
+    window.addEventListener("pointermove", (e) => {
+      if (!swp || !swp.base || cfg.baseMode !== "wipe") return;
+      const r = phone.getBoundingClientRect(), dx = e.clientX - swp.x0; if (Math.abs(dx) < 6) return;
+      const fx = Math.min(Math.max(e.clientX - r.left, 0), W), k = neighbor(S.base, dx < 0 ? 1 : -1); swp.wk = k; S.wipe = { k };
+      if (swp.cur !== k) { swp.cur = k; wb.innerHTML = worldHTML(k, S.overlay, S.parcels); place(); }
+      clipb.style.display = "block"; clipb.classList.add("nt");
+      clipb.style.clipPath = dx < 0 ? `inset(0 0 0 ${fx}px)` : `inset(0 ${W - fx}px 0 0)`;
+      lockui.innerHTML = `<div class="lkp glass"><b>${L[k].name.replace(/ \(.*\)/, "")}</b><small>${L[k].year}</small></div>`;
     });
     window.addEventListener("pointermove", (e) => { if (!dragM) return; const s = scale(); S.cx -= (e.clientX - dragM.x) / s; S.cy -= (e.clientY - dragM.y) / s; dragM = { x: e.clientX, y: e.clientY }; place(); });
     window.addEventListener("pointerup", () => { dragM = null; });
@@ -338,6 +358,8 @@
     const slot = (side) => { const k = side === "left" ? S.sideA : S.sideB; return `<div class="sth slotb ${S.target === side ? "tg" : ""}" data-act="tgt" data-s="${side}" style="width:70px"><div class="thb" ${th(k)} style="width:58px;height:58px;background-image:url(../map-layers-tiles/${TILE[k][0]}-16629-11335.${TILE[k][1]})"></div><small>${side === "left" ? "Gauche" : "Droite"}</small></div>`; };
     const cardBase = () => {
       const head = bhead("Fonds de carte", cmpBtn());
+      if (!S.compare && cfg.baseMode === "carousel") return `${head}<div class="carwrap"><div class="carsel"></div><div class="carscroll">${BASES.map((k) => `<div class="sth ${S.base === k ? "on" : ""} ${avail(k) ? "" : "dis"}" data-k="${k}" style="width:70px"><div class="thb" ${th(k)}>${avail(k) ? "" : `<span class="off">${ic("cloudoff", 16)}</span>`}</div></div>`).join("")}</div></div><div class="carname"><b>${L[S.base].name}</b> <small>${L[S.base].year}</small></div>`;
+      if (!S.compare && (cfg.baseMode === "swipe" || cfg.baseMode === "wipe")) return `${head}<div class="chhelp" style="padding:0 14px 6px">Glissez sur la carte pour changer de fond. La carte est fixe pendant ce choix.</div><div class="stscroll">${BASES.map((k) => tbtn(k, "sm2")).join("")}</div>`;
       if (!S.compare) return `${head}<div class="stscroll">${BASES.map((k) => tbtn(k)).join("")}</div>`;
       const m = cfg.cmpMode || "flip";
       if (m === "rows") return `${head}<div class="rws"><div class="rl">Gauche</div><div class="rr">${rowFor("left")}</div><div class="rl">Droite</div><div class="rr">${rowFor("right")}</div></div>`;
@@ -363,7 +385,35 @@
       chooserW.innerHTML = kind ? `<div class="chooser bcard glass" data-kind="${kind}">${h}</div>` : "";
       const c = chooserW.firstElementChild;
       locate.style.bottom = 84 + 14 + (c ? c.offsetHeight + 14 : 0) + "px";
+      if (kind === "base" && !S.compare && cfg.baseMode === "carousel") carouselInit();
       return kind;
+    };
+
+    const lockedBase = () => cfg.chooser === "card" && (cfg.baseMode === "swipe" || cfg.baseMode === "wipe") && S.chooser === "base" && !S.compare;
+    const neighbor = (k, dir) => { const l = BASES.filter((b) => avail(b)); const i = Math.max(0, l.indexOf(k)); return l[(i + dir + l.length) % l.length]; };
+    const lockuiR = () => {
+      if (!lockedBase()) { lockui.innerHTML = ""; return; }
+      const l = L[S.base];
+      lockui.innerHTML = `<div class="lkp glass"><span>‹</span><b>${l.name.replace(/ \(.*\)/, "")}</b><small>${l.year}</small><span>›</span></div><div class="lkd">${BASES.map((b) => `<i class="${b === S.base ? "on" : ""}"></i>`).join("")}</div>`;
+    };
+    const setBase = (k) => { S.base = k; if (k === "map" || k === "satellite") S.saved = k; };
+    const carouselInit = () => {
+      const sc = chooserW.querySelector(".carscroll"); if (!sc) return;
+      const items = [...sc.querySelectorAll(".sth")], cur = items.find((x) => x.dataset.k === S.base);
+      const nm = chooserW.querySelector(".carname");
+      const center = (el) => { sc.scrollLeft = el.offsetLeft - (sc.clientWidth - el.offsetWidth) / 2; };
+      if (cur) center(cur);
+      let tm2 = null;
+      sc.addEventListener("scroll", () => {
+        const mid = sc.scrollLeft + sc.clientWidth / 2; let best = null, bd = 1e9;
+        items.forEach((x) => { const d = Math.abs(x.offsetLeft + x.offsetWidth / 2 - mid); if (d < bd) { bd = d; best = x; } });
+        if (!best) return;
+        items.forEach((x) => x.classList.toggle("on", x === best));
+        clearTimeout(tm2);
+        tm2 = setTimeout(() => { const k = best.dataset.k; if (k !== S.base && avail(k)) { setBase(k); buildMaps(); place(); capsuleR(); } if (nm) nm.innerHTML = `<b>${L[best.dataset.k].name}</b> <small>${L[best.dataset.k].year}</small>`; }, 90);
+        if (nm) nm.innerHTML = `<b>${L[best.dataset.k].name}</b> <small>${L[best.dataset.k].year}</small>`;
+      });
+      items.forEach((x) => x.addEventListener("click", () => { if (avail(x.dataset.k)) center(x); }));
     };
     const chooserR = () => {
       if (cfg.chooser === "card" && !(S.chooser === "ov" && !cfg.ovcard)) { if (cfg.entry === "keep") bottomCardR(); return; }
@@ -408,7 +458,7 @@
     function render(skipCurtain) {
       buildMaps(); place();
       if (!skipCurtain) curtainR();
-      noticesR(); sheetR(); capsuleR(); chooserR(); chipR();
+      noticesR(); sheetR(); capsuleR(); chooserR(); chipR(); lockuiR();
     }
 
     // ---- actions ----

@@ -145,3 +145,12 @@ body.dark .mk{color:#0c1208}
 
 .pager{position:absolute;z-index:13;transform:translateX(-50%);height:30px;padding:0 10px;border-radius:15px;display:flex;align-items:center;gap:5px;pointer-events:none;color:var(--ink);font-weight:800;font-size:16px}
 .pager i{width:6px;height:6px;border-radius:50%;background:var(--hair);display:block}.pager i.on{background:var(--moss);width:8px;height:8px}
+
+/* changer le fond en glissant (sketch 021) */
+.lockui{position:absolute;left:0;right:0;top:112px;z-index:14;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.lkp{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px;border-radius:18px;font-size:14px;color:var(--ink);max-width:230px}.lkp b{font-weight:700}.lkp small{opacity:.7;font-size:12px}.lkp span{opacity:.5;font-weight:800}
+.lkd{display:flex;gap:5px}.lkd i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(0,0,0,.25)}.lkd i.on{background:#fff;width:8px;height:8px}
+.carwrap{position:relative;padding:4px 0}.carscroll{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px calc(50% - 35px);scroll-behavior:smooth}.carscroll::-webkit-scrollbar{display:none}
+.carscroll .sth{scroll-snap-align:center;transition:transform .15s}.carscroll .sth.on{transform:scale(1.14)}.carscroll .sth.on .thb{box-shadow:0 0 0 2.5px var(--moss)}
+.carsel{position:absolute;left:50%;top:50%;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:20px;box-shadow:0 0 0 2px var(--hair);pointer-events:none}
+.carname{text-align:center;padding:2px 10px 0;font-size:15px}.carname small{color:var(--muted)}

@@ -1,0 +1,24 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 28 : changer de fond en glissant</title>
+<link rel="stylesheet" href="../themes/map-layers.css"></head><body>
+<h1>Sketch 021 : changer de fond de carte en glissant</h1>
+<div class="sub">Phase 28, on commence par le simple changement de fond (la comparaison viendra après). Touchez le globe : le bandeau de fonds s'ouvre. Trois façons de passer d'un fond à l'autre en glissant, et en D le bandeau à vignettes seul comme point de départ. Essayez « Fonds de carte » puis glissez sur la carte (onglets A et B) ou sur le bandeau (C).</div>
+<div id="app"></div>
+<script src="../themes/map-layers-kit.js"></script>
+<script>
+const S=[["cBase","Fonds de carte"],["cOv","Superposition"],["cDlOpen","Télécharger"],["cOff","Hors connexion"],["dlRunClosed","Téléchargement en cours"]];
+const base={entry:"keep",chooser:"card",ov:"round",chip:"left",dlclose:true,dlcard:true,ovcard:false,tags:"spec"};
+LK.mountSketch(document.getElementById("app"),[
+{id:"a",tab:"A : glisser sur la carte (saut)",title:"A : la carte se fige, on glisse, le fond change d'un coup",cfg:Object.assign({},base,{baseMode:"swipe"}),states:S,
+ desc:"Le globe ouvre le bandeau et fige la carte. Un glissé gauche ou droite sur la carte passe au fond suivant ou précédent (le nom et des repères en points s'affichent en haut). On peut aussi toucher une vignette. Toucher la croix du bandeau ferme et rend la carte mobile.",
+ points:["Geste simple, sans viser","Le changement est instantané, sans transition","Défiler 5 fonds en séquence : parfois plusieurs glissés"]},
+{id:"b",tab:"B : glisser sur la carte (balayage)",title:"B : le nouveau fond se découvre en suivant le doigt",cfg:Object.assign({},base,{baseMode:"wipe"}),states:S,
+ desc:"Même principe, mais le nouveau fond apparaît en suivant le doigt, comme un rideau qui s'ouvre : on voit le fond voisin avant de décider. On lâche au-delà d'un tiers de l'écran pour valider, sinon il revient.",
+ points:["On voit le résultat avant de valider","Cousin direct du rideau de comparaison : même geste, cohérence","Un peu plus riche à construire (deux cartes superposées)"]},
+{id:"c",tab:"C : carrousel façon filtres",title:"C : carrousel de vignettes, le fond du centre s'applique en direct",cfg:Object.assign({},base,{baseMode:"carousel"}),states:S,
+ desc:"On fait défiler le bandeau de vignettes : la vignette au centre est le fond affiché, la carte change pendant le défilement (comme le choix d'un filtre dans un appareil photo). La carte reste mobile, aucun mode.",
+ points:["Aucun verrouillage de la carte","Très proche de ce qu'on connaît (filtres photo)","Il faut viser le bandeau, pas la carte"]},
+{id:"d",tab:"D : bandeau à vignettes (point de départ)",title:"D : bandeau à vignettes, on touche (sketch 019 B)",cfg:Object.assign({},base,{baseMode:"tap"}),states:S,
+ desc:"Le bandeau du sketch 019 B, sans glisser : on touche la vignette voulue.",
+ points:["Direct pour sauter à un fond précis","Aucun geste à apprendre","Moins « moderne » que A, B ou C"]}
+]);
+</script></body></html>
