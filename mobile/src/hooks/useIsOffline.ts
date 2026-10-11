@@ -1,36 +1,10 @@
-import { useEffect, useState } from "react"
-import * as Network from "expo-network"
-import { isOnlineNetworkState } from "./survey-sync/utils"
+import { useNetworkOnline } from "../network/network-status"
 
 /**
- * Live offline/online status (REQ-D-offline-map's indicator), backed by expo-network — the same
- * getNetworkStateAsync + addNetworkStateListener pair useSurveySyncNetwork.ts and
- * useAuth0Session.ts already use to trigger a resync, reusing their isOnlineNetworkState rule so
- * "online" means the same thing everywhere in the app.
+ * Live offline/online status (REQ-D-offline-map's indicator). It reads the single shared network
+ * status (src/network/network-status.ts), the same one the sync hook uses, so every screen and the
+ * "Hors ligne" chip always agree.
  */
 export function useIsOffline(): boolean {
-  const [offline, setOffline] = useState(false)
-
-  useEffect(() => {
-    let mounted = true
-
-    void Network.getNetworkStateAsync().then((state) => {
-      if (mounted) {
-        setOffline(!isOnlineNetworkState(state))
-      }
-    })
-
-    const subscription = Network.addNetworkStateListener((state) => {
-      if (mounted) {
-        setOffline(!isOnlineNetworkState(state))
-      }
-    })
-
-    return () => {
-      mounted = false
-      subscription.remove()
-    }
-  }, [])
-
-  return offline
+  return !useNetworkOnline()
 }

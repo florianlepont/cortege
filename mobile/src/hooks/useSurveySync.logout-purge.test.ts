@@ -10,6 +10,7 @@
 
 const mockAlert = jest.fn()
 jest.mock("react-native", () => ({
+  AppState: { addEventListener: () => ({ remove: () => undefined }) },
   Alert: { alert: (...args: unknown[]) => mockAlert(...args) },
 }))
 

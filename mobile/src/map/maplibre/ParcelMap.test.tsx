@@ -1,4 +1,5 @@
 jest.mock("react-native", () => ({
+  AppState: { addEventListener: () => ({ remove: () => undefined }) },
   StyleSheet: { create: <T,>(styles: T): T => styles },
   View: "View",
   Platform: {

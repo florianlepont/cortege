@@ -1,4 +1,6 @@
-jest.mock("react-native", () => ({}))
+jest.mock("react-native", () => ({
+  AppState: { addEventListener: () => ({ remove: () => undefined }) },
+}))
 
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react-native/pure"
 import {
