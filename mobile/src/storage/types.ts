@@ -6,6 +6,7 @@ import type {
   SyncOperation,
   SyncOperationResult,
   SyncResultError,
+  SurveyWeather,
 } from "@cortege/ibp-domain"
 
 export type LocalSurvey = {
@@ -122,6 +123,22 @@ export type SurveyQueuePayload = IbpMethodFields & {
   vegetation_stage?: string
   factors?: Record<string, unknown>
   scores?: Record<string, unknown>
+  // Phase 27 (D-02): payload only, no SQLite column (SCHEMA_VERSION stays 5). Both are read-only
+  // after submit; the factor annotations travel inside `factors`.
+  survey_note?: string | null
+  weather?: SurveyWeather | null
+}
+
+/**
+ * One write of the Conditions section (phase 27): the survey note and the weather. `undefined`
+ * keeps the stored value, `null` clears it. `weather` may be a function that receives the stored
+ * weather (or null) and returns the next one, so a late lookup answer merges into what the
+ * observer edited meanwhile instead of replacing it.
+ */
+export type ConditionsPatch = {
+  survey_id: string
+  survey_note?: string | null
+  weather?: SurveyWeather | null | ((current: SurveyWeather | null) => SurveyWeather | null)
 }
 
 export type SurveyDeleteQueuePayload = {
