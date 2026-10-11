@@ -188,9 +188,9 @@ describe("hasWeatherValues and provenance", () => {
         edited: ["sky"],
       }),
     ).toBe(true)
-    expect(
-      showsProviderAttribution({ sky: "rain", source: "meteo_france", edited: ["sky"] }),
-    ).toBe(false)
+    expect(showsProviderAttribution({ sky: "rain", source: "meteo_france", edited: ["sky"] })).toBe(
+      false,
+    )
     expect(showsProviderAttribution({ sky: "rain", source: "manual" })).toBe(false)
     expect(
       showsProviderAttribution({
@@ -316,6 +316,11 @@ describe("editWeatherValue", () => {
     expect(weather).toEqual({ observed_at: iso, source: "manual", edited: ["observed_at"] })
   })
 
+  it("clears the hour on an empty or wrong value", () => {
+    expect(editWeatherValue(null, "observed_at", "").observed_at).toBeNull()
+    expect(editWeatherValue(null, "observed_at", 5).observed_at).toBeNull()
+  })
+
   it("refuses a sky code it does not know and a text for a number", () => {
     expect(editWeatherValue(null, "sky", "hail").sky).toBeNull()
     expect(editWeatherValue(null, "temperature_c", "abc").temperature_c).toBeNull()
@@ -376,6 +381,12 @@ describe("canonicalWeather", () => {
     ).toEqual({ requested_at: ago(1), sky: null, wind_kmh: null })
   })
 
+  it("keeps the hour and the request time", () => {
+    expect(
+      canonicalWeather({ observed_at: "2026-10-11T11:00:00.000Z", requested_at: ago(2) }),
+    ).toEqual({ observed_at: "2026-10-11T11:00:00.000Z", requested_at: ago(2) })
+  })
+
   it("is idempotent", () => {
     const once = canonicalWeather({ requested_at: ago(1), wind_kmh: 4.44, edited: ["sky"] })
     expect(canonicalWeather(once)).toEqual(once)
@@ -400,9 +411,7 @@ describe("needsWeatherLookup", () => {
   it("is true for a fresh request that no provider answered", () => {
     expect(needsWeatherLookup({ requested_at: ago(2) }, NOW)).toBe(true)
     expect(needsWeatherLookup({ requested_at: ago(24) }, NOW)).toBe(true)
-    expect(needsWeatherLookup({ requested_at: ago(2), edited: ["sky"] }, NOW.getTime())).toBe(
-      true,
-    )
+    expect(needsWeatherLookup({ requested_at: ago(2), edited: ["sky"] }, NOW.getTime())).toBe(true)
   })
 
   it("is false once a provider answer was merged", () => {
@@ -440,9 +449,9 @@ describe("weatherViewState", () => {
     expect(weatherViewState({ ...base, hasParcel: false, online: false, weather: null })).toBe(
       "noParcel",
     )
-    expect(
-      weatherViewState({ ...base, inFlight: true, weather: { requested_at: ago(1) } }),
-    ).toBe("loading")
+    expect(weatherViewState({ ...base, inFlight: true, weather: { requested_at: ago(1) } })).toBe(
+      "loading",
+    )
     expect(
       weatherViewState({
         ...base,
@@ -476,7 +485,11 @@ describe("weatherViewState", () => {
 
   it("treats typed values without a parcel as manual", () => {
     expect(
-      weatherViewState({ ...base, hasParcel: false, weather: { wind_kmh: 2, edited: ["wind_kmh"] } }),
+      weatherViewState({
+        ...base,
+        hasParcel: false,
+        weather: { wind_kmh: 2, edited: ["wind_kmh"] },
+      }),
     ).toBe("manual")
   })
 
