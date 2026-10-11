@@ -589,6 +589,7 @@
       defaut: () => {},
       cBase: () => { S.chooser = "base"; },
       cDlOpen: () => { S.panel = "download"; },
+      offNone: () => { S.offline = true; S.covered = false; S.base = "etat"; },
       swOn: () => { S.sw = true; S.hintT = Date.now(); },
       swCmp: () => { S.sw = true; S.hintT = Date.now() + 1000; S.base = "map"; S.sideA = "map"; S.sideB = "p1950"; setTimeout(() => enterCompare(), 20); },
       swFree: () => { S.sw = false; S.base = "map"; S.sideA = "map"; S.sideB = "p1950"; setTimeout(() => enterCompare(), 20); },
