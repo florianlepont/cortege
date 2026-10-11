@@ -30,6 +30,12 @@ The map offers several layers with a comparison option, and the Explorer both ex
 - Policy is a setting (in the account settings), two levels: "base maps only" or "all layers". Default: all layers (owner choice). No weight cap; the estimated weight is shown before a download and the real cost per layer is measured in the phase (criterion 4).
 - Offline sheet shows the download percentage (criterion 5). The catalogue already has percent strings (`mobile/src/i18n/fr/offline-map.ts`); researcher checks what is missing in the Explorer sheet.
 
+### Decided after research (2026-10-11)
+- Photos 1950-1965: offline maxzoom 17 (online stays 18), about 84 MB per area with all layers instead of 151.
+- Overlays (BD Forêt) apply to both sides of the curtain; only bases are compared.
+- Curtain = two synchronised maps (research: one map cannot clip rasters); a device spike decides go/no-go first. Fallback if no-go: quick toggle between two layers (to confirm with the owner then).
+- Policy setting lives in Paramètres > Cartes, stored in `local_meta` (`offline_layers_policy`, default `all`); "base maps only" = Plan, Orthophoto and cadastre.
+
 ### Claude's Discretion
 - Control placement, icons (Ionicons outline), curtain handle design, layer naming in French, how the setting is worded.
 </decisions>
