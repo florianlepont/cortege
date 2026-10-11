@@ -93,7 +93,7 @@ Declared from existing roles (no new font file, no new role). Four sizes (20, 16
 
 Notes:
 - The no-result heading and the start-page intro title use the 16 SemiBold role, centred.
-- Link weight: SemiBold, not the ExtraBold `label` role of Accueil's "Tout voir", to keep two weights. The visual difference is negligible; Phase 26 may harmonise both.
+- Link weight: SemiBold, not the ExtraBold `label` role of Accueil's "Tout voir", to keep two weights. The visual difference is negligible; Phase 37 may harmonise both.
 - Dynamic Type: all text through `AppText` (default cap 2x). Row titles stay one line and truncate at the tail; the best-result title may take two lines; meta lines one line. Rows use `minHeight`, never a fixed height, so they grow with the text. Tab label is capped by the bar itself and never wraps.
 
 ---
@@ -401,7 +401,7 @@ Suggested files under `mobile/src/screens/global-search/` (each under the 400-li
 | U-13 | Debounce 350 ms for the three network groups (existing constant), local filter immediate; minimum 2 characters; summary 3 rows, places and parcels cap 10, community cap 50 | Discretion areas of CONTEXT; reuses the proven constant and API maximum. |
 | U-14 | Recent searches: 8 entries, saved on Return or on opening a result, stored in `local_meta`, cleared with local data | Sketch 015 A ("kept on the phone"); no new table, no migration beyond a key. |
 | U-15 | Offline lines have no "Réessayer"; the group re-queries on reconnection | Sketch 015 A (C's retry-on-offline variant was not chosen); error lines do have "Réessayer" (D-02b). |
-| U-16 | Typography: two weights, links in SemiBold | Template rule; the gap with Accueil's ExtraBold "Tout voir" is for Phase 26 harmonisation. |
+| U-16 | Typography: two weights, links in SemiBold | Template rule; the gap with Accueil's ExtraBold "Tout voir" is for Phase 37 harmonisation. |
 
 ## Open for owner
 

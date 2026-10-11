@@ -350,7 +350,7 @@ Sequencing notes: batches 1 to 3 are independent and can ship in any order; 4 sh
 | Tests                            | Needs a new `Slider` and `Picker` mock plus `.ios.tsx` and Android twins and a platform test; none of the native behaviour (drag, haptic, VoiceOver) can run in jest | Same                                                                                                                                       |
 | Cost of the split                | Two implementations of each control and two test sets, for 2 call sites each                                                                                         | Same                                                                                                                                       |
 
-Recommendation: keep both custom for now and defer to a device spike (Phase 26 or the Android and iOS pass of Phase 28). Reasons: no device is available to check drag feel, VoiceOver adjust gestures, haptics and the glove-sized targets, the field use case values the +/- buttons and the 5 % snap the native slider does not give alone, and the gain (system look) is small against a platform split. Nothing was implemented.
+Recommendation: keep both custom for now and defer to a device spike (Phase 37 or the Android and iOS pass of Phase 35). Reasons: no device is available to check drag feel, VoiceOver adjust gestures, haptics and the glove-sized targets, the field use case values the +/- buttons and the 5 % snap the native slider does not give alone, and the gain (system look) is small against a platform split. Nothing was implemented.
 
 ### 9.2 Why custom
 
@@ -361,16 +361,16 @@ Recommendation: keep both custom for now and defer to a device spike (Phase 26 o
 | `FactorCounterInput`                                   | SwiftUI `Stepper`                               | iOS only; value must be typeable; 56 pt glove targets        | No                               |
 | `FactorChipsInput`                                     | `Picker`, `Menu`                                | Multi-select with a score per choice                         | No                               |
 | `CasPicker`                                            | RN `Switch` (used for the scale), no card radio | Four cards with explanations                                 | No                               |
-| `ExplorerSheet`                                        | `formSheet` detents, `@gorhom/bottom-sheet`     | Non-modal over a live map; both tried (iOS 27 sliver, OA-66) | Phase 26 (drag on the JS thread) |
+| `ExplorerSheet`                                        | `formSheet` detents, `@gorhom/bottom-sheet`     | Non-modal over a live map; both tried (iOS 27 sliver, OA-66) | Phase 37 (drag on the JS thread) |
 | `ForestCard`                                           | none                                            | Brand hero surface, same on Android                          | No                               |
-| JS tab bar (`JsRootTabs`)                              | `react-native-bottom-tabs`                      | Native bar is iOS only (D-08)                                | Phase 28                         |
+| JS tab bar (`JsRootTabs`)                              | `react-native-bottom-tabs`                      | Native bar is iOS only (D-08)                                | Phase 35                         |
 | `AppActionSheet` on Android, `AppActionSheet` backdrop | `Alert.alert`                                   | At most 3 buttons, no cancel row                             | No                               |
 | Header buttons on Android                              | native header items                             | native-stack has none on Android                             | No                               |
-| `AppGroupedList`, `AppCollapsibleSection`              | `@expo/ui` `List`, `DisclosureGroup`            | iOS only and shared with Android                             | Phase 26                         |
+| `AppGroupedList`, `AppCollapsibleSection`              | `@expo/ui` `List`, `DisclosureGroup`            | iOS only and shared with Android                             | Phase 37                         |
 
-### 9.3 Moves to Phase 26 or needs a device
+### 9.3 Moves to Phase 37 or needs a device
 
 - Device spike for native `Slider` and segmented `Picker` on iOS (drag feel, VoiceOver, haptics, 5 % snap, glove targets), then a `.ios.tsx` split if kept.
-- Explorer sheet drag off the JS thread (Phase 26).
-- `AppGroupedList` and `AppCollapsibleSection` against `@expo/ui` `List` and `DisclosureGroup` (Phase 26).
-- Android pass of the JS tab bar and custom sheets (Phase 28).
+- Explorer sheet drag off the JS thread (Phase 37).
+- `AppGroupedList` and `AppCollapsibleSection` against `@expo/ui` `List` and `DisclosureGroup` (Phase 37).
+- Android pass of the JS tab bar and custom sheets (Phase 35).

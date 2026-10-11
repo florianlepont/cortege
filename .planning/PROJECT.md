@@ -34,7 +34,7 @@ Shipped and field-tested (28 manual cases, `docs/user-tests/epic-a-access-and-se
 
 ### Built but not yet field-tested
 
-Working in the codebase; their field-test evidence is the deliverable of Phase 28:
+Working in the codebase; their field-test evidence is the deliverable of Phase 35:
 
 - ✓ Survey list and survey detail with parcel history — Epic B
 - ✓ Guided ten-factor entry, draft saving, photos, parcel linkage, submission, on-demand help, versioning — Epic C
@@ -67,8 +67,8 @@ Revised 2026-10-10 after the board seminar (positioning: V1 is for the associati
 
 Explicitly excluded from this milestone:
 
-- Hosting migration — revised 2026-10-10: it now happens, in Phase 38, to the association's own accounts and server
-- Cloudflare R2 — not retained; OVH is recommended and the alwaysdata contract is reviewed in Phase 38
+- Hosting migration — revised 2026-10-10: it now happens, in Phase 36, to the association's own accounts and server
+- Cloudflare R2 — not retained; OVH is recommended and the alwaysdata contract is reviewed in Phase 36
 - An API endpoint or direct Google Drive OAuth for PDF export — on-device generation plus the OS share sheet covers every delivery target
 
 ## Context

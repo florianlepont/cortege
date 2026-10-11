@@ -8,7 +8,7 @@ import { boundsOfRings, parcelPolygonsFrom } from "../app/survey-pdf/map-project
 import type { LocalSurveyMapSource, SurveyQueuePayload } from "../storage/types"
 
 /**
- * OA-59 plus phase 29 D-01 and D-09: the author's own surveys, draft or submitted, as Explorer
+ * OA-59 plus phase 26 D-01 and D-09: the author's own surveys, draft or submitted, as Explorer
  * markers drawn from local data. D-01: every row the phone holds in `local_surveys` is a candidate,
  * with a score read from the payload or computed on the phone. D-09: the position is the centre of
  * the cached parcel geometry of the downloaded areas, or the server position already in memory for

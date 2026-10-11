@@ -165,7 +165,7 @@ Both trees share one rule, `shouldHideTabBar(focusedRouteName)` in
 To hide the bar on another screen, add its route name to
 `ROUTES_WITHOUT_TAB_BAR` in `tab-bar.ts`. Both trees follow.
 
-## Genus recognition timing (Phase 29)
+## Genus recognition timing (Phase 26)
 
 The genus recognition can print its latency from a Release build, so that the
 Android phone measurements (device checks DC-D-01 to DC-D-03) are taken on the

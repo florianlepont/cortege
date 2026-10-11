@@ -39,6 +39,7 @@ jest.mock("react-native", () => {
     ({ children, ...props }: { children?: React.ReactNode }) =>
       ReactRef.createElement(name, props, children)
   return {
+    AppState: { addEventListener: () => ({ remove: () => undefined }) },
     AccessibilityInfo: { announceForAccessibility: jest.fn() },
     ActivityIndicator: mockComponent("ActivityIndicator"),
     Keyboard: { dismiss: jest.fn() },

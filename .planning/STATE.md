@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 30
-current_phase_name: INSERTED, V1
+current_phase: 27
+current_phase_name: Quick survey additions (INSERTED, V1)
 status: ready_to_discuss
-stopped_at: Phase 29 complete (SC-1 and the device part of SC-7 deferred to the Android testers); Phase 30 not discussed yet
+stopped_at: Phase 26 (field-feedback fixes) complete, SC-1 and the device part of SC-7 deferred to the Android testers; Phase 27 not discussed yet
 last_updated: "2026-10-11T08:01:49.562Z"
 last_activity: 2026-10-11
-last_activity_desc: Phase 29 complete, transitioned to Phase 30
+last_activity_desc: Phase 26 (field-feedback fixes) complete
 progress:
   total_phases: 39
   completed_phases: 18
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 30 — Quick survey additions (INSERTED, V1), not discussed yet. Phase 29 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred, see 29-UAT.md.
+**Current focus:** Phase 27 (quick survey additions) is next, then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md. Phases 26 to 38 were renumbered in execution order on 2026-10-11.
 
 ## Current Position
 
-Phase: 30 — Quick survey additions (INSERTED, V1)
+Phase: 27 — Quick survey additions (INSERTED, V1), not discussed yet
 Plan: Not started
-Status: Ready to discuss (Phase 30 has no CONTEXT.md yet)
-Last activity: 2026-10-11 — Phase 29 complete, transitioned to Phase 30
+Status: Phase 26 complete; Phase 27 ready to discuss
+Last activity: 2026-10-11 — Phase 26 (field-feedback fixes) complete
 
-Progress: [█████████░] 26/29 phases complete
+Progress: [█████████░] 27/39 phases complete
 
 ## Performance Metrics
 
@@ -55,7 +55,7 @@ Progress: [█████████░] 26/29 phases complete
 | 08 | 13 | - | - |
 | 02 | 4 | - | - |
 | 09 | 16 | - | - |
-| 29 | 10 | - | - |
+| 26 | 10 | - | - |
 
 **Recent Trend:**
 
@@ -131,15 +131,15 @@ Progress: [█████████░] 26/29 phases complete
 | Phase 25.1 P14 | 35min | 2 tasks | 7 files |
 | Phase 25.1 P15 | 40 min | 3 tasks | 6 files |
 | Phase 25.1 P16 | 35 min | 2 tasks | 14 files |
-| Phase 29 P01 | 25min | 3 tasks | 12 files |
-| Phase 29 P02 | 15min | 2 tasks | 8 files |
-| Phase 29 P03 | 20min | 2 tasks | 10 files |
-| Phase 29 P04 | 20min | 2 tasks | 5 files |
-| Phase 29 P05 | 25min | 2 tasks | 6 files |
-| Phase 29 P06 | 20min | 2 tasks | 4 files |
-| Phase 29 P07 | 10m | 2 tasks | 9 files |
-| Phase 29 P08 | 25min | 2 tasks | 9 files |
-| Phase 29 P09 | 25min | 2 tasks | 15 files |
+| Phase 26 P01 | 25min | 3 tasks | 12 files |
+| Phase 26 P02 | 15min | 2 tasks | 8 files |
+| Phase 26 P03 | 20min | 2 tasks | 10 files |
+| Phase 26 P04 | 20min | 2 tasks | 5 files |
+| Phase 26 P05 | 25min | 2 tasks | 6 files |
+| Phase 26 P06 | 20min | 2 tasks | 4 files |
+| Phase 26 P07 | 10m | 2 tasks | 9 files |
+| Phase 26 P08 | 25min | 2 tasks | 9 files |
+| Phase 26 P09 | 25min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -229,15 +229,15 @@ Decisions table. Decisions affecting current work:
 - [Phase 25.1-07]: PDF layout scale iOS 1.2487 / Android 4/3, page block 840, photos cap 24 at 800 px q0.65, measured on simulator and emulator, owner approved 2026-10-10
 - [Phase 25.1-07]: Snapshot timeout 12 s for the online style, 8 s for the offline style (owner change 2026-10-10)
 - [Phase 25.1-13]: PDF accent is forest green (ctaPrimary) with white ink; page margin 40 gives the 515 content column; paginateBlocks returns section.page only and the assembler wraps div.pdf-root (zoom on that class)
-- [Phase 29]: [29-01] D-07 kept: recognition suggestions render in classifier confidence order, no alphabetical sort
-- [Phase ?]: Phase 29-02: genus display order is Latin, accent-insensitive (genus-order.ts); labels 'Latin (French)'; stored factors.A.genera order untouched
-- [Phase 29-03]: Offline community survey state read from useIsOffline() at the routes; CenteredState owns the sub-page bottom padding rule
-- [Phase 29-04]: Own-survey map data layer: every local_surveys row is a marker candidate (D-01), position from in-memory server location else cached parcel bounds centre (D-09), score from stored server total else ibp-scoring adapters; SCHEMA_VERSION stays 5
-- [Phase 29-05]: D-08: parcel-selection card compact below window height 700 / max(1, fontScale); switch reads useWindowDimensions, never the measured card height
-- [Phase 29-06]: D-04/D-05/D-11: fr.abbreviations registry plus abbreviations.test.ts gate; 38 findings frozen in PENDING_REWRITE for plan 29-09 to empty
-- [Phase 29]: [Phase 29-07] D-11: IBP info sheet on three headers only; no anchor in the survey detail score card (accessible group hides nested buttons)
-- [Phase 29]: 29-08: any id of the local survey list opens the owner's surveys/surveyDetail from Explorer, online or offline — an own marker must never reach the community page offline
-- [Phase 29]: 29-09: abbreviation gate asserts an empty list; dmh registry term removed; cluster list shows region names
+- [Phase 26]: [26-01] D-07 kept: recognition suggestions render in classifier confidence order, no alphabetical sort
+- [Phase ?]: Phase 26-02: genus display order is Latin, accent-insensitive (genus-order.ts); labels 'Latin (French)'; stored factors.A.genera order untouched
+- [Phase 26-03]: Offline community survey state read from useIsOffline() at the routes; CenteredState owns the sub-page bottom padding rule
+- [Phase 26-04]: Own-survey map data layer: every local_surveys row is a marker candidate (D-01), position from in-memory server location else cached parcel bounds centre (D-09), score from stored server total else ibp-scoring adapters; SCHEMA_VERSION stays 5
+- [Phase 26-05]: D-08: parcel-selection card compact below window height 700 / max(1, fontScale); switch reads useWindowDimensions, never the measured card height
+- [Phase 26-06]: D-04/D-05/D-11: fr.abbreviations registry plus abbreviations.test.ts gate; 38 findings frozen in PENDING_REWRITE for plan 26-09 to empty
+- [Phase 26]: [Phase 26-07] D-11: IBP info sheet on three headers only; no anchor in the survey detail score card (accessible group hides nested buttons)
+- [Phase 26]: 26-08: any id of the local survey list opens the owner's surveys/surveyDetail from Explorer, online or offline — an own marker must never reach the community page offline
+- [Phase 26]: 26-09: abbreviation gate asserts an empty list; dmh registry term removed; cluster list shows region names
 
 ### Pending Todos
 
@@ -281,5 +281,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-10-10T22:12:59.542Z
-Stopped at: Phase 29 context gathered
-Resume file: .planning/phases/29-field-feedback-fixes-inserted/29-CONTEXT.md
+Stopped at: Phase 26 (field-feedback fixes) complete; Phase 27 not discussed yet
+Resume file: .planning/phases/26-field-feedback-fixes-inserted/26-UAT.md

@@ -45,7 +45,7 @@ export type ParcelBudgetDevice = {
 
 /**
  * The smallest supported screens and a tall reference. Token arithmetic from the research, to be
- * confirmed on the simulator and the emulator in plan 29-10.
+ * confirmed on the simulator and the emulator in plan 26-10.
  */
 export const PARCEL_BUDGET_DEVICES: readonly ParcelBudgetDevice[] = [
   // The map is full screen under the transparent header; native tab bar 84 + 12.

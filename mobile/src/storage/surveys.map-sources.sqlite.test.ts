@@ -1,5 +1,5 @@
 /**
- * The Explorer's local markers read every own survey the phone holds (phase 29, D-01), real SQL.
+ * The Explorer's local markers read every own survey the phone holds (phase 26, D-01), real SQL.
  *
  * `listLocalSurveyMapSources` parses payloads in JS (the map scores drafts from their factors), skips
  * a row whose payload is not a survey payload, and adds no schema change.

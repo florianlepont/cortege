@@ -50,7 +50,7 @@ export const PublicMapRoute = memo(function PublicMapRoute({
     onStatusChange: syncActions.setStatus,
   })
 
-  // OA-59 and phase 29 D-01, D-09: the author's own surveys are drawn beside the public ones, from
+  // OA-59 and phase 26 D-01, D-09: the author's own surveys are drawn beside the public ones, from
   // the local rows and the parcels of the downloaded areas. An id the API already returned is drawn
   // once (the API copy wins); drafts keep the dashed marker, submitted surveys a normal one.
   const localMap = useLocalSurveyMapData(surveys.surveys, isOffline)

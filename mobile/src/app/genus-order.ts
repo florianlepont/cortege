@@ -2,7 +2,7 @@ import { foldSearchText } from "./search-text"
 
 // Display order only. Never reorder the package constant CNPF_FACTOR_A_GENUS_CODES, the
 // classifier manifest (index to label mapping) or a stored `factors.A.genera` array: they keep
-// their own order. Sort a copy at render or print time (Phase 29, decision D-06).
+// their own order. Sort a copy at render or print time (Phase 26, decision D-06).
 
 /** Latin sort key of a genus code: "Quercus_deciduae" becomes "quercus deciduae". */
 export function genusSortKey(code: string): string {

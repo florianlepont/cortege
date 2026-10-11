@@ -507,7 +507,7 @@ export async function listLocalSurveys(): Promise<LocalSurvey[]> {
 
 /**
  * Every survey row the phone holds, draft or submitted, with its parsed payload, for the Explorer's
- * local markers (phase 29, D-01). Unlike `listLocalSurveys` this reader parses payloads in JS, once
+ * local markers (phase 26, D-01). Unlike `listLocalSurveys` this reader parses payloads in JS, once
  * per call, because the map needs the factors of a draft to score it; a user holds tens to low
  * hundreds of surveys. A row whose payload is not a survey payload is skipped, never thrown. Called
  * only by the Explorer's local-markers hook, never by the list. No schema change, no new column.

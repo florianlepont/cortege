@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-The survey's change log and the parcel's history, mixed today on one "Historique" page, become two separate things. Presentation only: the data already exists on both sides (`useSurveyDetailData`, `survey_events`, `getParcelSurveyHistory`). No new capability, no API change expected. Delivered after Phase 23's screens, before the Phase 26 and 27 audits.
+The survey's change log and the parcel's history, mixed today on one "Historique" page, become two separate things. Presentation only: the data already exists on both sides (`useSurveyDetailData`, `survey_events`, `getParcelSurveyHistory`). No new capability, no API change expected. Delivered after Phase 23's screens, before the Phase 37 and 38 audits.
 
 </domain>
 

@@ -15,7 +15,7 @@ export type LocalSurveyMapData = {
 const EMPTY: LocalSurveyMapData = { sources: [], parcels: [] }
 
 /**
- * The Explorer's own markers (phase 29, D-01) from the owner's local rows and the parcels of the
+ * The Explorer's own markers (phase 26, D-01) from the owner's local rows and the parcels of the
  * downloaded areas (D-09). Called only by `PublicMapRoute`, never inside `useSurveySync` (single
  * assembler rule). The `surveys` argument is the survey list of the surveys context, whose identity
  * changes when a survey is written; a flip of `isOffline` reloads too, and nothing loads while the

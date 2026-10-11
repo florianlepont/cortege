@@ -27,6 +27,7 @@ const mockCaptured: {
 const mockUseSurveySyncCalls = { count: 0 }
 
 jest.mock("react-native", () => ({
+  AppState: { addEventListener: () => ({ remove: () => undefined }) },
   Alert: { alert: jest.fn() },
   Platform: { OS: "ios", select: (o: Record<string, unknown>) => o.ios },
   StyleSheet: {

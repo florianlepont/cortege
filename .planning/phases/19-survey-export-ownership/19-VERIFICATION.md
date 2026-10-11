@@ -131,6 +131,6 @@ _Verifier: Claude (gsd-verifier)_
 
 ## Update 2026-10-10
 
-The share-sheet check is D-09 of `docs/user-tests/device-checks.md`. The export was rebuilt in Phase 25.1 and is reworked again in Phase 36, so the check is run on the current export and repeated after Phase 36. Status stays `human_needed` until then.
+The share-sheet check is D-09 of `docs/user-tests/device-checks.md`. The export was rebuilt in Phase 25.1 and is reworked again in Phase 33, so the check is run on the current export and repeated after Phase 33. Status stays `human_needed` until then.
 
-**Closed 2026-10-10:** the owner shared the PDF of a submitted survey on their iPhone, online and then in airplane mode after an app restart, and it opened with the expected content (check D-09, run on the Phase 25.1 export that replaced this one). The Android share sheet and the export after Phase 36 are tracked in `docs/user-tests/device-checks.md`; they no longer hold this phase open. Status is now `passed`.
+**Closed 2026-10-10:** the owner shared the PDF of a submitted survey on their iPhone, online and then in airplane mode after an app restart, and it opened with the expected content (check D-09, run on the Phase 25.1 export that replaced this one). The Android share sheet and the export after Phase 33 are tracked in `docs/user-tests/device-checks.md`; they no longer hold this phase open. Status is now `passed`.

@@ -36,7 +36,7 @@ export type LocalSurvey = {
 }
 
 /**
- * One row per own survey for the Explorer's local markers (phase 29, D-01), draft or submitted. Read
+ * One row per own survey for the Explorer's local markers (phase 26, D-01), draft or submitted. Read
  * only by the map; the payload never leaves the phone.
  */
 export type LocalSurveyMapSource = {

@@ -3,7 +3,7 @@ phase: 23-visual-modernisation
 verified: 2026-10-08T13:06:08Z
 re_verified: 2026-10-08 (criteria 4 to 8, on HEAD 785811b3 = origin/main after PR #250)
 status: passed
-score: 9/9 roadmap success criteria met (2026-10-09), Android pass and open design points carried to Phases 28 and 26
+score: 9/9 roadmap success criteria met (2026-10-09), Android pass and open design points carried to Phases 35 and 37
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
@@ -73,7 +73,7 @@ gaps:
       - "Replace literal fontSize and borderRadius by brandTypography and brandRadius roles"
   - truth: "8. Native libraries and platform components used as much as possible; each remaining custom component has a stated reason"
     status: partial
-    reason: "Native parts are in place: iOS native tab bar, native header items and a native header menu (useSurveyDetailHeader.tsx:81), Liquid Glass via expo-glass-effect, the SwiftUI glass button through @expo/ui, pageSheet modals (NearbyParcelsSheet, GenusTargetSheet), ActionSheetIOS in IdentityCard, native Switch, MapLibre, Reanimated. Custom replacements without a written reason or with a weak one: AppActionSheet (RN Modal, used only for the delete confirmation in SurveyDetailScreen.tsx:302 although IdentityCard uses ActionSheetIOS and the header already has a native menu; its comment says 'no extra native dependency'), FactorHelpSheet (slide Modal, not pageSheet), GenusRecognitionModal, FactorSliderInput (hand-drawn track, no reason beyond gloves in spec 11.2), FactorSegmentedInput and AppChoiceChip (custom pills instead of a native segmented control), ExplorerSheet (JS-thread PanResponder, carried to Phase 26). Documented reasons exist for the JS tab bar (Android, D-08) and the flat glass fallbacks (spec 13.9). @gorhom/bottom-sheet is still in mobile/package.json and no file in mobile/src imports it. The spec has no list of custom components with reasons"
+    reason: "Native parts are in place: iOS native tab bar, native header items and a native header menu (useSurveyDetailHeader.tsx:81), Liquid Glass via expo-glass-effect, the SwiftUI glass button through @expo/ui, pageSheet modals (NearbyParcelsSheet, GenusTargetSheet), ActionSheetIOS in IdentityCard, native Switch, MapLibre, Reanimated. Custom replacements without a written reason or with a weak one: AppActionSheet (RN Modal, used only for the delete confirmation in SurveyDetailScreen.tsx:302 although IdentityCard uses ActionSheetIOS and the header already has a native menu; its comment says 'no extra native dependency'), FactorHelpSheet (slide Modal, not pageSheet), GenusRecognitionModal, FactorSliderInput (hand-drawn track, no reason beyond gloves in spec 11.2), FactorSegmentedInput and AppChoiceChip (custom pills instead of a native segmented control), ExplorerSheet (JS-thread PanResponder, carried to Phase 37). Documented reasons exist for the JS tab bar (Android, D-08) and the flat glass fallbacks (spec 13.9). @gorhom/bottom-sheet is still in mobile/package.json and no file in mobile/src imports it. The spec has no list of custom components with reasons"
     artifacts:
       - path: "mobile/src/ui/AppActionSheet.tsx"
         issue: "custom sheet where a native action sheet or menu exists"
@@ -85,9 +85,9 @@ gaps:
 deferred:
   - truth: "Android look of the visual refresh (gradients, coloured shadows, flat glass fills, edge glow, forest card SVG mask, aurora cost, dark header tint)"
     addressed_in: "Phase 13"
-    evidence: "ROADMAP.md:826 'Carried over from Phase 23 (old 12.2, D-17): an Android device pass of the visual refresh ...'; charter 13.9 (Phase 28, numbered 13 before the flat renumbering)"
+    evidence: "ROADMAP.md:826 'Carried over from Phase 23 (old 12.2, D-17): an Android device pass of the visual refresh ...'; charter 13.9 (Phase 35, numbered 13 before the flat renumbering)"
   - truth: "Explorer sheet drag on the JS thread (PanResponder); Compte loading spinner 2.1:1 in dark (pre-existing, AccountScreen.tsx:116); unanswered owner questions (fixed pager title, sketch 009 elements, GenusTargetSheet and CasPicker glass, wizard edge swipe, clip line under transparent headers)"
-    addressed_in: "Phase 12.3 (named only in charter 13.10 and 23-23-SUMMARY, not in the ROADMAP 12.3 section or STATE.md); the charter now says Phase 26"
+    addressed_in: "Phase 12.3 (named only in charter 13.10 and 23-23-SUMMARY, not in the ROADMAP 12.3 section or STATE.md); the charter now says Phase 37"
     evidence: "docs/design/charte-graphique-etats-sauvages-spec.md:565-571"
   - truth: "Animals illustrations, 'Qui vit ici ?' (sketch 008 variant J)"
     addressed_in: "Unplanned (dormant seed SEED-005)"
@@ -200,7 +200,7 @@ Step 7c: no probe scripts declared or present for this phase. SKIPPED.
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|----------|
-| REQ-QA-visual-modernisation | all 23 plans | Visual direction approved, applied to the main screens in light and dark, consistent Reanimated motion respecting reduced motion, no regression on ergonomics or accessibility | PARTIAL | Truths 1, 2, 3, 9 satisfy the original wording (iOS; Android pass in Phase 28). Criteria 4 to 8 were added to the phase afterwards and are open. Still `[ ]` in `REQUIREMENTS.md:97`, to be ticked when the phase closes |
+| REQ-QA-visual-modernisation | all 23 plans | Visual direction approved, applied to the main screens in light and dark, consistent Reanimated motion respecting reduced motion, no regression on ergonomics or accessibility | PARTIAL | Truths 1, 2, 3, 9 satisfy the original wording (iOS; Android pass in Phase 35). Criteria 4 to 8 were added to the phase afterwards and are open. Still `[ ]` in `REQUIREMENTS.md:97`, to be ticked when the phase closes |
 
 No orphaned requirement: REQUIREMENTS.md maps only this ID to this phase.
 
@@ -211,7 +211,7 @@ No orphaned requirement: REQUIREMENTS.md maps only this ID to this phase.
 | 371 phase-modified files | - | TBD / FIXME / XXX | none found | - |
 | `api/test/migration-020-parcel-idu-fields.e2e-spec.ts` | 59 | `PLACEHOLDER` | Info | a test constant, not a stub |
 | `mobile/src/ui/IbpTotalGauge.tsx`, `SurveyProgressCard.tsx`, `IbpFactorBars.tsx`, `IbpScoreBadge.tsx`, `BrandFern.tsx` | - | no production importer | Warning (criterion 7) | dead code and near-duplicates of `FactorBarsChart` and `ScoreRing`; the first two predate the phase, the others were superseded during it |
-| `mobile/src/screens/AccountScreen.tsx` | 116 | forest `ActivityIndicator` on the dark canvas, 2.1:1 | Warning | pre-existing (same line at merge-base), not a regression; carried to Phase 26 |
+| `mobile/src/screens/AccountScreen.tsx` | 116 | forest `ActivityIndicator` on the dark canvas, 2.1:1 | Warning | pre-existing (same line at merge-base), not a regression; carried to Phase 37 |
 | `.planning/phases/23-visual-modernisation/23-VALIDATION.md` | 4-5 | `status: draft`, `nyquist_compliant: false`, Wave 0 boxes unticked | Warning | the validation contract was never closed out, although every Wave 0 file it lists now exists and passes |
 | `mobile/package.json` | - | `@gorhom/bottom-sheet` with no import | Warning (criterion 8) | unused dependency |
 
@@ -233,10 +233,10 @@ No orphaned requirement: REQUIREMENTS.md maps only this ID to this phase.
 
 | Item | Destination | Recorded in |
 |------|-------------|-------------|
-| Android device pass (D-17) | Phase 28 | `ROADMAP.md:826`, charter 13.9 |
-| Explorer sheet drag on the JS thread | Phase 26 (charter wording; first pass said 12.3) | charter 13.10, 23-23-SUMMARY |
-| Compte spinner contrast in dark | Phase 26 | same |
-| Unanswered questions: fixed pager title, sketch 009 elements, GenusTargetSheet and CasPicker glass, wizard edge swipe, clip line under transparent headers | Phase 26 or later | charter 13.10 |
+| Android device pass (D-17) | Phase 35 | `ROADMAP.md:826`, charter 13.9 |
+| Explorer sheet drag on the JS thread | Phase 37 (charter wording; first pass said 12.3) | charter 13.10, 23-23-SUMMARY |
+| Compte spinner contrast in dark | Phase 37 | same |
+| Unanswered questions: fixed pager title, sketch 009 elements, GenusTargetSheet and CasPicker glass, wizard edge swipe, clip line under transparent headers | Phase 37 or later | charter 13.10 |
 | Split of `brand-tokens.ts` (over 400 lines, outside the structure gate) | audit candidate | 23-19-SUMMARY:208 |
 | Animals (variant J) | Unplanned, dormant seed | `.planning/seeds/SEED-005-animaux-qui-vit-ici.md` |
 | Relief, BD Forêt layers and other basemaps | Dormant (SEED-001, updated 2026-10-08) | `.planning/seeds/SEED-001-couches-de-carte.md` |
@@ -265,4 +265,4 @@ _Verifier: Claude (gsd-verifier)_
 
 Criteria 4 to 8 were built after the re-verification above and confirmed by the owner on an iPhone 15 Pro (Release build of PR #252, 2026-10-09): standard colour Plan IGN and its dark recolouring (PR #251, charter 13.11), design spec updated, 8 refactor batches (dead code and `@gorhom/bottom-sheet` removed, typography, spacing and radius tokens, `AppPressable` everywhere with a lint rule, chips, progress bars, rows and glass icon button merged, native action sheet, form sheet and gear item on iOS, native slider and picker evaluated and deferred, "why custom" register, see `docs/design/component-inventory-phase-23.md`). Two display bugs found on the phone were fixed before the merge: the factor help title overlapping the scrolled text in the form sheet, and the profile photo off-centre in its header glass.
 
-Carried over, not blockers: Android pass of the visual refresh and of the custom sheets and tab bar (Phase 28); native slider and segmented picker device spike, Explorer sheet drag off the JS thread, `AppGroupedList` and `AppCollapsibleSection` against `@expo/ui`, Compte spinner contrast in dark (Phase 26); 339 literals reduced, the 26 font weights, 2 `Jost-Medium` and the circular radii left because no token matches (Phase 26); the owner left the dark basemap beyond this recolouring and BD Forêt/relief out (SEED-001).
+Carried over, not blockers: Android pass of the visual refresh and of the custom sheets and tab bar (Phase 35); native slider and segmented picker device spike, Explorer sheet drag off the JS thread, `AppGroupedList` and `AppCollapsibleSection` against `@expo/ui`, Compte spinner contrast in dark (Phase 37); 339 literals reduced, the 26 font weights, 2 `Jost-Medium` and the circular radii left because no token matches (Phase 37); the owner left the dark basemap beyond this recolouring and BD Forêt/relief out (SEED-001).

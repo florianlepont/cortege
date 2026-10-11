@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import * as Network from "expo-network"
 import { hasPendingSyncWork, LocalSurvey, pullRemoteChanges, syncPending } from "../../storage"
 import { fr, logStatusDetail } from "../../i18n"
 import type { StatusMessage } from "../../i18n"
@@ -7,7 +6,11 @@ import { isAuthRequiredError, isAuthTemporarilyUnavailableError } from "../auth-
 import type { LocalDataOwnerStatus } from "../useLocalDataOwner"
 import { assertSyncOwner, EnsureSyncOwner, isSyncOwnerMismatchError } from "./sync-owner-guard"
 import { isSyncSuspendedError, SyncActivity } from "./sync-activity"
-import { isOnlineNetworkState } from "./utils"
+import {
+  refreshNetworkStatus,
+  subscribeNetworkStatus,
+  useNetworkOnline,
+} from "../../network/network-status"
 
 const text = fr.status.sync
 const ownerText = fr.status.owner
@@ -63,7 +66,7 @@ export function useSurveySyncNetwork({
   // SyncStatusLine. Optimistic defaults (online, not syncing) avoid a false "offline" flash before
   // the first network probe resolves; `lastOnlineStateRef` above stays the source of truth for the
   // auto-sync gating logic, which already treats "not confirmed online" as not online.
-  const [isOnline, setIsOnline] = useState(true)
+  const isOnline = useNetworkOnline()
   const [activeSyncCount, setActiveSyncCount] = useState(0)
 
   // A manual sync or a new token retries a failed owner check (WR-07).
@@ -286,35 +289,33 @@ export function useSurveySyncNetwork({
   useEffect(() => {
     let mounted = true
 
-    const handleNetworkState = (state: Network.NetworkState): void => {
-      const online = isOnlineNetworkState(state)
+    const handleOnline = (online: boolean): void => {
       const wasOnline = lastOnlineStateRef.current
       lastOnlineStateRef.current = online
-      setIsOnline(online)
 
       if (online && wasOnline === false) {
         void maybeAutoSync("reconnected")
       }
     }
 
-    void Network.getNetworkStateAsync()
-      .then((state) => {
-        if (!mounted) return
-        handleNetworkState(state)
-        if (isOnlineNetworkState(state)) {
-          void maybeAutoSync("startup")
-        }
-      })
-      .catch(() => undefined)
-
-    const subscription = Network.addNetworkStateListener((state) => {
+    const unsubscribe = subscribeNetworkStatus((online) => {
       if (!mounted) return
-      handleNetworkState(state)
+      handleOnline(online)
+    })
+
+    void refreshNetworkStatus().then((online) => {
+      if (!mounted) return
+      if (lastOnlineStateRef.current === null) {
+        lastOnlineStateRef.current = online
+      }
+      if (online) {
+        void maybeAutoSync("startup")
+      }
     })
 
     return () => {
       mounted = false
-      subscription.remove()
+      unsubscribe()
     }
   }, [maybeAutoSync])
 

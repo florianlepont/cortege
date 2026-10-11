@@ -5,7 +5,7 @@ import ts from "typescript"
 
 import { fr } from "../i18n"
 
-// Phase 29-06 abbreviation gate (D-05, D-11). Every string, template part and JSX text of the fr
+// Phase 26-06 abbreviation gate (D-05, D-11). Every string, template part and JSX text of the fr
 // catalogue is read through the TypeScript parser (comments and JSDoc never count, like the em dash
 // gate), and an abbreviation that is neither registered in POLICY below, defined once, nor written
 // out fails the test, naming the file, the line and the token. The structure gate already forces
@@ -14,7 +14,7 @@ import { fr } from "../i18n"
 // Treatments (D-11):
 //   allowlist    units (ha, cm, m, km, Mo, Ko), OK, PDF, GPS and ex.: used bare everywhere
 //   info         IBP: written out where `definedIn` says, explained by an info sheet on the main
-//                headers (plan 29-07), not on every use
+//                headers (plan 26-07), not on every use
 //   written-out  the long form must occur in the same catalogue file (case-insensitive, spaces and
 //                apostrophes normalised); the texts live in `fr.abbreviations.terms` (D-04)
 //   dev-only     shown only by `shouldShowDevTools()`: allowed in the listed files only

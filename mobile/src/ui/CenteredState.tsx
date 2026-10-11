@@ -95,7 +95,7 @@ function createStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
     },
     action: { alignSelf: "center" },
-    // Device finding (plan 29-10, Android 360 x 640 dp): `AppPressable` wraps its content in a view
+    // Device finding (plan 26-10, Android 360 x 640 dp): `AppPressable` wraps its content in a view
     // with `flexGrow: 1`, and inside this flex-grown scroll content that made an auto-height
     // button grow to the whole page (the "tall capsule" of finding F-1). A fixed height, the
     // size the button already has, stops it; Jest cannot see layout, so the test pins the value.

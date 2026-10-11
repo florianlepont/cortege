@@ -1,3 +1,4 @@
+import { onRequestOutcome, type RequestOutcome } from "../network/request-outcome"
 import { apiRequest } from "./client"
 
 type MockResponse = {
@@ -148,5 +149,53 @@ describe("apiRequest", () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+  describe("request outcomes for the network status", () => {
+    const outcomes: RequestOutcome[] = []
+    let stop: () => void
+
+    beforeEach(() => {
+      outcomes.length = 0
+      stop = onRequestOutcome((outcome) => outcomes.push(outcome))
+    })
+
+    afterEach(() => stop())
+
+    const call = () => apiRequest({ baseUrl: "https://api.example.com", path: "/x" })
+
+    it("reports ok for a 2xx and for an HTTP error status", async () => {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: async () => "{}",
+      } satisfies MockResponse) as typeof global.fetch
+      await call()
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => "",
+      } satisfies MockResponse) as typeof global.fetch
+      await expect(call()).rejects.toMatchObject({ status: 500 })
+
+      expect(outcomes).toEqual(["ok", "ok"])
+    })
+
+    it("reports a network failure when fetch itself throws", async () => {
+      global.fetch = jest
+        .fn()
+        .mockRejectedValue(new TypeError("Network request failed")) as typeof global.fetch
+
+      await expect(call()).rejects.toThrow("Network request failed")
+
+      expect(outcomes).toEqual(["network-failure"])
+    })
+
+    it("reports a timeout, not a network failure, when the request is aborted", async () => {
+      global.fetch = jest.fn().mockRejectedValue({ name: "AbortError" }) as typeof global.fetch
+
+      await expect(call()).rejects.toMatchObject({ status: 408 })
+
+      expect(outcomes).toEqual(["timeout"])
+    })
   })
 })
