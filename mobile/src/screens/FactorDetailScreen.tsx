@@ -4,7 +4,7 @@ import { AppText as Text } from "../ui/AppText"
 import { Ionicons } from "@expo/vector-icons"
 import type { IbpMethodVersion } from "@cortege/ibp-domain"
 import { useBrandTheme } from "../app/theme"
-import { helpForMethod } from "../app/constants"
+import { FACTOR_TITLES, helpForMethod } from "../app/constants"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import {
   selectionOptionsFor,
@@ -21,6 +21,7 @@ import { FactorCounterInput } from "../ui/FactorCounterInput"
 import { FactorGenusListInput } from "../ui/FactorGenusListInput"
 import { FactorSegmentedOption, FactorSegmentedInput } from "../ui/FactorSegmentedInput"
 import { FactorSliderInput } from "../ui/FactorSliderInput"
+import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
 import { fr } from "../i18n"
 import { AppPressable } from "../ui/AppPressable"
 
@@ -89,12 +90,20 @@ type FactorDetailScreenProps = {
   methodVersion: IbpMethodVersion | null
   /** Opens the help sheet (a route of the survey stack) with the factor's texts. */
   onOpenHelp: (help: string, hints: readonly string[]) => void
+  /** Phase 27 (D-12): the factor's doubt flag and note as the form holds them. */
+  doubt: boolean
+  note: string
+  onChangeDoubt: (next: boolean) => void
+  onChangeNote: (text: string) => void
+  /** The note is written to the draft (typing pause, blur, page change). */
+  onCommitNote: () => void
 }
 
 /**
  * One factor's entry (OA-30): the input first, then the factor's score on one line, then a link to
  * the help. The factor's name and the running total are in the pager's header, not here. Factor A
- * opens with the photo identification (OA-31).
+ * opens with the photo identification (OA-31). Phase 27 (D-16): the flat doubt and note strip sits
+ * between the score line and the help link; it never changes the score line.
  */
 export function FactorDetailScreen({
   factor,
@@ -102,6 +111,11 @@ export function FactorDetailScreen({
   retainedScore,
   methodVersion,
   onOpenHelp,
+  doubt,
+  note,
+  onChangeDoubt,
+  onChangeNote,
+  onCommitNote,
 }: FactorDetailScreenProps) {
   const theme = useBrandTheme()
   const detailStyles = useMemo(() => createDetailStyles(theme), [theme])
@@ -138,6 +152,16 @@ export function FactorDetailScreen({
           {retainedScore ? t.scorePoints({ scoreCount: retainedScore.score }) : t.pending}
         </Text>
       </View>
+
+      <DoubtNoteStrip
+        factor={factor}
+        title={FACTOR_TITLES[factor]}
+        doubt={doubt}
+        note={note}
+        onChangeDoubt={onChangeDoubt}
+        onChangeNote={onChangeNote}
+        onCommitNote={onCommitNote}
+      />
 
       <AppPressable
         style={detailStyles.helpLink}
