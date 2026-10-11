@@ -136,6 +136,8 @@ export const DownloadStatusView = memo(function DownloadStatusView({
   }
 
   if (status.phase === "done") {
+    // A status built without the list (an older fixture, a hand-made one) is a plain success.
+    const failedLayers = status.failedLayers ?? []
     return (
       <View testID="offline-download-done" style={styles.body}>
         <View style={styles.titleRow}>
@@ -148,7 +150,7 @@ export const DownloadStatusView = memo(function DownloadStatusView({
             {t.done.title}
           </Text>
         </View>
-        {status.failedLayers.length > 0 ? (
+        {failedLayers.length > 0 ? (
           <View style={styles.noticeRow}>
             <Ionicons
               name="alert-circle-outline"
@@ -159,7 +161,7 @@ export const DownloadStatusView = memo(function DownloadStatusView({
               importantForAccessibility="no"
             />
             <Text style={[styles.meta, styles.noticeText]}>
-              {fr.mapLayers.download.partial(layerNames(status.failedLayers))}
+              {fr.mapLayers.download.partial(layerNames(failedLayers))}
             </Text>
           </View>
         ) : (

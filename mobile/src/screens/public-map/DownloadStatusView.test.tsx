@@ -196,6 +196,12 @@ describe("DownloadStatusView (12.2-19 third round)", () => {
     expect(handlers.onDone).toHaveBeenCalledTimes(1)
   })
 
+  test("done without a list of failed layers is a plain success", () => {
+    const status = { phase: "done", ...progress(100, 186) } as unknown as AreaDownloadStatus
+    const { tree } = mount(status)
+    expect(texts(tree)).toEqual([t.done.title, "Bois du Nord est enregistrée sur ce téléphone."])
+  })
+
   test("failed: the failure in the danger text and a retry", () => {
     const { tree, handlers } = mount({ phase: "failed", areaId: "area-1", name: "Bois du Nord" })
     expect(byTestId(tree, "offline-download-failed")).toHaveLength(1)
