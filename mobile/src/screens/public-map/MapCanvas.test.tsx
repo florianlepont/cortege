@@ -2,9 +2,15 @@ import React from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
 
 jest.mock("react-native", () => ({ StyleSheet: { create: <T,>(value: T): T => value } }))
-jest.mock("../../hooks/useMapStyle", () => ({
-  useMapStyle: () => ({ mapStyle: "plan-style", cadastreInStyle: false }),
+const mockUseMapStyle = jest.fn((..._args: unknown[]) => ({
+  mapStyle: "plan-style",
+  cadastreInStyle: false,
+  cadastreOpacity: 0.9,
 }))
+jest.mock("../../hooks/useMapStyle", () => ({
+  useMapStyle: (...args: unknown[]) => mockUseMapStyle(...args),
+}))
+jest.mock("../../map/maplibre/ForestTypesLayer", () => ({ ForestTypesLayer: "ForestTypesLayer" }))
 jest.mock("../../map/maplibre/CadastreLayer", () => ({ CadastreLayer: "CadastreLayer" }))
 jest.mock("../../map/maplibre/ParcelPolygonsLayer", () => ({
   ParcelPolygonsLayer: "ParcelPolygonsLayer",
@@ -81,6 +87,8 @@ const mapOf = (tree: ReactTestRenderer) => tree.root.findByType("MapLibreMap" as
 beforeEach(() => {
   jest.clearAllMocks()
 })
+
+const parcelsOf = (tree: ReactTestRenderer) => tree.root.findByType("ParcelPolygonsLayer" as never)
 
 describe("MapCanvas (Phase 28 props)", () => {
   test("without the new props the map is exactly as before", () => {
@@ -176,5 +184,87 @@ describe("MapCanvas (Phase 28 props)", () => {
       }),
     )
     expect(onRegionChangeComplete).toHaveBeenCalledWith(expect.anything(), { isGesture: false })
+  })
+})
+
+describe("MapCanvas (Phase 28 layers)", () => {
+  test("the Plan with no overlay and Parcelles Toutes draws today's exact layers", () => {
+    const tree = render({ parcelLayerRenderable: true })
+    expect(mockUseMapStyle).toHaveBeenCalledWith("map", 0, 0)
+    expect(tree.root.findByType("CadastreLayer" as never).props).toMatchObject({
+      enabled: true,
+      opacity: 0.9,
+    })
+    expect(parcelsOf(tree).props).toMatchObject({
+      mode: "all",
+      casing: false,
+      casingOpacity: 1,
+      fillOpacity: 1,
+      byScore: true,
+      onParcelPress: onSelectParcel,
+    })
+    expect(tree.root.findByType("ForestTypesLayer" as never).props.enabled).toBe(false)
+  })
+
+  test("the Etat-major map asks its own style and lightens the parcels with a casing", () => {
+    mockUseMapStyle.mockReturnValueOnce({
+      mapStyle: "etat-major-style",
+      cadastreInStyle: false,
+      cadastreOpacity: 0.7,
+    })
+    const tree = render({ basemap: "etat-major", styleRefreshKey: 3, styleRetryKey: 2 })
+    expect(mockUseMapStyle).toHaveBeenCalledWith("etat-major", 3, 2)
+    expect(mapOf(tree).props.mapStyle).toBe("etat-major-style")
+    expect(parcelsOf(tree).props).toMatchObject({
+      casing: true,
+      fillOpacity: 0.6,
+      casingOpacity: 0.6,
+    })
+  })
+
+  test("Parcelles Aucune draws no cadastre and wires no parcel press", () => {
+    const tree = render({ parcelLayerRenderable: true, parcelsMode: "none" })
+    expect(tree.root.findByType("CadastreLayer" as never).props.enabled).toBe(false)
+    expect(parcelsOf(tree).props.mode).toBe("none")
+  })
+
+  test("Avec IBP carries the author's own survey parcels", () => {
+    const surveyParcelIds = new Set(["P1"])
+    const tree = render({ parcelsMode: "withIbp", surveyParcelIds })
+    expect(parcelsOf(tree).props).toMatchObject({ mode: "withIbp", surveyParcelIds })
+  })
+
+  test("the forest overlay is switched on from the prop", () => {
+    const tree = render({ forestOverlay: true })
+    expect(tree.root.findByType("ForestTypesLayer" as never).props.enabled).toBe(true)
+  })
+
+  test("a style already carrying the cadastre mounts no second one", () => {
+    mockUseMapStyle.mockReturnValueOnce({
+      mapStyle: "file-style",
+      cadastreInStyle: true,
+      cadastreOpacity: 0.9,
+    })
+    const tree = render({ parcelLayerRenderable: true })
+    expect(tree.root.findByType("CadastreLayer" as never).props.enabled).toBe(false)
+  })
+
+  test("the style events reach the map", () => {
+    const onStyleLoaded = jest.fn()
+    const onStyleFailed = jest.fn()
+    const map = mapOf(render({ onStyleLoaded, onStyleFailed }))
+    expect(map.props.onDidFinishLoadingStyle).toBe(onStyleLoaded)
+    expect(map.props.onDidFailLoadingMap).toBe(onStyleFailed)
+  })
+
+  test("the studied parcels alone are drawn between zoom 12 and 15", () => {
+    const tree = render({
+      studiedParcelsRenderable: true,
+      parcelStatuses: [
+        { parcel_id: "A", study_status: "studied" },
+        { parcel_id: "B", study_status: "not_studied" },
+      ] as unknown as MapCanvasProps["parcelStatuses"],
+    })
+    expect(parcelsOf(tree).props.items).toHaveLength(1)
   })
 })
