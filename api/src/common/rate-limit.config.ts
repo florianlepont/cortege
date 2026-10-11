@@ -9,7 +9,8 @@ export const THROTTLE_TTL_MS = 60_000
  * Production per-client request ceilings, sized for a full offline field day:
  * one POST /sync batch per drain with a 15s auto-sync cooldown, at most two
  * upload-route calls per photo (uploads are bandwidth-bound, well below 240/min). `search` covers
- * the debounced keystrokes of the three search groups (about 4 requests per second).
+ * the debounced keystrokes of the three search groups (about 4 requests per second). `weather` is
+ * one lookup per survey plus a few retries per client and minute (phase 27).
  */
 export const PRODUCTION_THROTTLE_LIMITS = {
   default: 600,
@@ -17,6 +18,7 @@ export const PRODUCTION_THROTTLE_LIMITS = {
   sync: 60,
   upload: 240,
   search: 240,
+  weather: 30,
 } as const
 
 /** Outside production every limit resolves to this so existing E2E suites are unaffected. */
@@ -73,4 +75,9 @@ export const UPLOAD_THROTTLE = {
 /** Overrides only the "default" throttler on the search routes; the "ip" ceiling still applies. */
 export const SEARCH_THROTTLE = {
   default: { ttl: THROTTLE_TTL_MS, limit: () => resolveThrottleLimit("search") },
+}
+
+/** Overrides only the "default" throttler on the weather route; the "ip" ceiling still applies. */
+export const WEATHER_THROTTLE = {
+  default: { ttl: THROTTLE_TTL_MS, limit: () => resolveThrottleLimit("weather") },
 }

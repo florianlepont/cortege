@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common"
+import { ConfigService } from "@nestjs/config"
 import { AuthModule } from "../auth/auth.module"
+import { appConfigOf } from "../config/app-config"
 import { StorageModule } from "../storage/storage.module"
 import { CadastreProviderService } from "./cadastre-provider.service"
 import { CommunitySurveysService } from "./community-surveys.service"
@@ -20,6 +22,9 @@ import { SurveysAttachmentsService } from "./surveys-attachments.service"
 import { SurveysSyncService } from "./surveys-sync.service"
 import { IbpRulesService } from "./ibp-rules.service"
 import { SyncController } from "./sync.controller"
+import { WeatherController } from "./weather.controller"
+import { WEATHER_PROVIDER_TOKEN, createWeatherProvider } from "./weather-provider"
+import { WeatherService } from "./weather.service"
 
 @Module({
   imports: [AuthModule, StorageModule, SurveysDataModule],
@@ -30,6 +35,7 @@ import { SyncController } from "./sync.controller"
     ParcelsController,
     SearchController,
     MapStylesController,
+    WeatherController,
   ],
   providers: [
     SurveysService,
@@ -44,6 +50,12 @@ import { SyncController } from "./sync.controller"
     GeocoderService,
     ParcelSearchService,
     MapStylesService,
+    WeatherService,
+    {
+      provide: WEATHER_PROVIDER_TOKEN,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => createWeatherProvider(appConfigOf(config).weather),
+    },
   ],
 })
 export class SurveysModule {}
