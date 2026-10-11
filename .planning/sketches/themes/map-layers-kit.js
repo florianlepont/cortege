@@ -180,6 +180,28 @@
     $(".mapwrap").addEventListener("wheel", (e) => { e.preventDefault(); zoom(e.deltaY < 0 ? 1 : -1); }, { passive: false });
     const zoom = (d) => { S.z = Math.min(17, Math.max(15, S.z + d)); render(); };
 
+
+    // glisser un fond sur la carte (mode drag)
+    let gd = null;
+    root.addEventListener("pointerdown", (e) => {
+      const t = e.target.closest('[data-drag="1"]'); if (!t || cfg.cmpMode !== "drag" || !S.compare) return;
+      gd = { k: t.dataset.k, x0: e.clientX, y0: e.clientY, on: false, el: null };
+    });
+    window.addEventListener("pointermove", (e) => {
+      if (!gd) return; const r = phone.getBoundingClientRect();
+      if (!gd.on && Math.hypot(e.clientX - gd.x0, e.clientY - gd.y0) > 8) {
+        gd.on = true; gd.el = document.createElement("div"); gd.el.className = "ghost"; const tt = TILE[gd.k]; gd.el.style.backgroundImage = `url(../map-layers-tiles/${tt[0]}-16629-11335.${tt[1]})`; phone.appendChild(gd.el);
+        gd.dz = document.createElement("div"); gd.dz.className = "dz"; gd.dz.innerHTML = `<div class="dzl">Gauche</div><div class="dzr">Droite</div>`; gd.dz.style.cssText = ""; phone.appendChild(gd.dz);
+      }
+      if (gd.on) { const px = e.clientX - r.left, py = e.clientY - r.top; gd.el.style.left = px - 32 + "px"; gd.el.style.top = py - 32 + "px"; const side = px < S.x ? "left" : "right"; gd.dz.dataset.side = side; gd.dz.style.display = py < H - 230 ? "flex" : "none"; gd.dz.children[0].style.opacity = side === "left" ? 1 : 0.35; gd.dz.children[1].style.opacity = side === "right" ? 1 : 0.35; gd.dz.children[0].style.width = S.x + "px"; gd.dz.children[1].style.width = W - S.x + "px"; }
+    });
+    window.addEventListener("pointerup", (e) => {
+      if (!gd) return; const g = gd; gd = null;
+      if (!g.on) return;
+      const r = phone.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+      g.el.remove(); g.dz.remove(); window.__dragged = true; setTimeout(() => (window.__dragged = false), 50);
+      if (py < H - 230 && avail(g.k)) { assign(g.k, px < S.x ? "left" : "right"); render(); }
+    });
     // ---- notices sur la carte ----
     const noticesR = () => {
       let h = "";
@@ -292,7 +314,43 @@
     const isOn = (k) => (S.compare ? S.sideA === k || S.sideB === k : S.base === k);
     const slotsLine = () => (S.compare ? `<div class="chhelp">Touchez un fond pour le placer côté ${S.target === "left" ? "gauche" : "droit"}.</div>` : "");
     const cmpBtn = () => (S.compare ? `<div class="chbtn on" data-act="cmp">${ic("swap", 16)} Arrêter</div>` : `<div class="chbtn" data-act="cmp">${ic("swap", 16)} Comparer</div>`);
+
+    const assign = (k, side) => {
+      if (side === "left") { if (S.sideB === k) S.sideB = S.sideA; S.sideA = k; } else { if (S.sideA === k) S.sideA = S.sideB; S.sideB = k; }
+    };
+    const xbtn = () => `<div class="xmini" data-act="cclose">${ic("close", 18)}</div>`;
+    const bhead = (title, right) => `<div class="sthead"><b>${title}</b><div style="display:flex;gap:8px;align-items:center">${right || ""}${xbtn()}</div></div>`;
+    const tbtn = (k, size, act, extra) => `<div class="sth ${isOn(k) ? "on" : ""} ${avail(k) ? "" : "dis"}" data-act="${act || "pick"}" data-k="${k}" ${extra || ""}><div class="thb ${size || ""}" ${th(k)}>${size === "xs" || !badge(k) ? "" : `<em>${badge(k)}</em>`}${avail(k) ? "" : `<span class="off">${ic("cloudoff", 16)}</span>`}</div>${size === "xs" ? "" : `<small>${L[k].short}</small>`}</div>`;
+    const rowFor = (side) => BASES.map((k) => { const on = side === "left" ? S.sideA === k : S.sideB === k; return `<div class="sth ${on ? "on" : ""} ${avail(k) ? "" : "dis"}" data-act="pickside" data-k="${k}" data-side="${side}" style="width:56px"><div class="thb xs" ${th(k)}>${avail(k) ? "" : `<span class="off">${ic("cloudoff", 14)}</span>`}</div></div>`; }).join("");
+    const slot = (side) => { const k = side === "left" ? S.sideA : S.sideB; return `<div class="sth slotb ${S.target === side ? "tg" : ""}" data-act="tgt" data-s="${side}" style="width:70px"><div class="thb" ${th(k)} style="width:58px;height:58px;background-image:url(../map-layers-tiles/${TILE[k][0]}-16629-11335.${TILE[k][1]})"></div><small>${side === "left" ? "Gauche" : "Droite"}</small></div>`; };
+    const cardBase = () => {
+      const head = bhead("Fonds de carte", cmpBtn());
+      if (!S.compare) return `${head}<div class="stscroll">${BASES.map((k) => tbtn(k)).join("")}</div>`;
+      const m = cfg.cmpMode || "flip";
+      if (m === "rows") return `${head}<div class="rws"><div class="rl">Gauche</div><div class="rr">${rowFor("left")}</div><div class="rl">Droite</div><div class="rr">${rowFor("right")}</div></div>`;
+      if (m === "drag") return `${head}<div class="chhelp">Glissez un fond sur la carte, à gauche ou à droite de la ligne (ou touchez-le).</div><div class="stscroll">${BASES.map((k) => tbtn(k, "", "pick", 'data-drag="1"')).join("")}</div>`;
+      if (m === "ends") return `${head}<div class="ends">${slot("left")}<div class="stscroll mid">${BASES.map((k) => tbtn(k, "sm2")).join("")}</div>${slot("right")}</div><div class="chhelp">Touchez Gauche ou Droite, puis un fond.</div>`;
+      return `${head}${slotsLine()}<div class="stscroll">${BASES.map((k) => tbtn(k)).join("")}</div>`;
+    };
+    const cardOv = () => `${bhead("Superpositions", "")}<div class="ovrow"><div class="ovchip ${S.overlay ? "on" : ""} ${avail("foret") ? "" : "dis"}" data-act="ov">${ic("leaf", 18)} Types de forêt <span class="sw ${S.overlay ? "on" : ""}" style="margin:0 0 0 8px;width:38px;height:22px"></span></div></div>${S.overlay ? `<div class="legend" style="margin:6px 12px 0"><span><i style="background:#e0a63a"></i>Feuillus</span><span><i style="background:#2f7d32"></i>Conifères</span><span><i style="background:#7aa34a"></i>Mélangées</span><span><i style="background:#9a7bb0"></i>Peupleraies</span></div>` : ""}<div class="chh" style="padding:10px 14px 4px">Parcelles</div><div class="seg" style="margin:0 12px"><div class="${S.parcels === "all" ? "on" : ""}" data-act="parc" data-m="all">Toutes</div><div class="${S.parcels === "ibp" ? "on" : ""}" data-act="parc" data-m="ibp">Avec IBP</div><div class="${S.parcels === "none" ? "on" : ""}" data-act="parc" data-m="none">Aucune</div></div>`;
+    const cardDl = () => {
+      const d = S.dl, e = estimate();
+      if (d.st === "failed") return `${bhead("Le téléchargement a échoué", "")}<div class="cbody"><div class="meta">Vérifiez votre connexion, puis réessayez.</div><div class="btn" data-act="dlstart" style="margin-top:10px">Réessayer</div></div>`;
+      if (d.st === "partial") return `${bhead("Zone disponible hors connexion", "")}<div class="cbody"><div class="notice err" style="padding-top:0">${ic("alert", 16)}<span>Ces couches n'ont pas pu être téléchargées : Photos aériennes (1950-1965). Les fonds de carte fonctionnent hors connexion.</span></div><div class="btn ghost" data-act="dlclose" style="margin-top:6px">Terminé</div></div>`;
+      return `${bhead("Télécharger cette zone", "")}<div class="cbody dlrow"><div><div class="meta" style="color:var(--text)"><b>Environ ${e.total} Mo</b> · 4 km sur 4 km autour de la vue</div><div class="meta">${e.line2}</div>${e.line3 ? `<div class="meta">${e.line3}</div>` : ""}</div><div class="btn" data-act="dlstart">Télécharger</div></div>`;
+    };
+    const bottomCardR = () => {
+      let h = "", kind = null;
+      if (cfg.dlcard && S.panel === "download") { kind = "dl"; h = cardDl(); }
+      else if (S.chooser === "base") { kind = "base"; h = cardBase(); }
+      else if (S.chooser === "ov" && cfg.ovcard) { kind = "ov"; h = cardOv(); }
+      chooserW.innerHTML = kind ? `<div class="chooser bcard glass" data-kind="${kind}">${h}</div>` : "";
+      const c = chooserW.firstElementChild;
+      locate.style.bottom = 84 + 14 + (c ? c.offsetHeight + 14 : 0) + "px";
+      return kind;
+    };
     const chooserR = () => {
+      if (cfg.chooser === "card") { if (cfg.entry === "keep") bottomCardR(); return; }
       chooserW.innerHTML = "";
       if (cfg.entry !== "keep" || !S.chooser) return;
       if (S.chooser === "ov") {
@@ -313,7 +371,7 @@
     };
     const sheetR = () => {
       const seg = cfg.entry === "segment";
-      const open = seg ? true : !!S.panel;
+      const open = cfg.dlcard && S.panel === "download" ? false : seg ? true : !!S.panel;
       sheet.style.display = open ? "flex" : "none";
       if (!open) return;
       const hgt = S.panel !== "download" && seg && S.seg === "explore" ? 188 : Math.round(H * 0.55) - 84;
@@ -350,12 +408,16 @@
       render();
     };
     root.addEventListener("click", (e) => {
+      if (window.__dragged) return;
       const a = e.target.closest("[data-act]"); if (!a) return; const act = a.dataset.act;
       if (act === "study") { S.panel = S.panel === "study" ? null : "study"; if (cfg.entry === "segment") S.seg = "study"; }
       else if (act === "close") S.panel = null;
       else if (act === "download") { S.panel = S.panel === "download" ? null : "download"; S.chooser = null; }
       else if (act === "basemap" && cfg.entry === "keep") { S.chooser = S.chooser === "base" ? null : "base"; S.panel = null; }
       else if (act === "ovbtn") { S.chooser = S.chooser === "ov" ? null : "ov"; S.panel = null; }
+      else if (act === "cclose") { S.chooser = null; if (S.panel === "download") S.panel = null; }
+      else if (act === "pickside") { const k = a.dataset.k; if (!avail(k)) return; assign(k, a.dataset.side); }
+      else if (act === "pick" && cfg.chooser === "card" && S.compare && (cfg.cmpMode === "ends")) { const k = a.dataset.k; if (!avail(k)) return; assign(k, S.target); S.target = S.target === "right" ? "left" : "right"; }
       else if (act === "pick") {
         const k = a.dataset.k; if (!avail(k)) return;
         if (!S.compare) { S.base = k; if (k === "map" || k === "satellite") S.saved = k; }
@@ -391,6 +453,7 @@
     const P = {
       defaut: () => {},
       cBase: () => { S.chooser = "base"; },
+      cDlOpen: () => { S.panel = "download"; },
       cOv: () => { S.chooser = "ov"; },
       cCmp: () => { S.chooser = "base"; render(); setTimeout(() => root.querySelector('[data-act="cmp"]').click(), 30); },
       cOld: () => { S.chooser = "base"; S.base = "etat"; },
