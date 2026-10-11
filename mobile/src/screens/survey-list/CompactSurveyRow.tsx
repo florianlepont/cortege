@@ -57,14 +57,15 @@ function CompactSurveyRowComponent({
   const tone = resolveSurveyRowTone(uiStatus)
   const updatedAt = formatShortDateTime(survey.updated_at)
   const title = survey.site_name?.trim() || fr.common.untitledSurvey
-  const foundHint = survey.matchedInNote ? fr.search.rows.matchedInNote : null
+  const foundInNote = survey.matchedInNote === true
   const sentence = rowText.a11y.openSurvey({ name: title, status: label, updatedAt })
+  const dateMeta = rowText.row.updatedMeta(updatedAt)
 
   return (
     <SurveyRowFrame
       density="compact"
       testID={testID}
-      accessibilityLabel={foundHint ? `${sentence}, ${foundHint}` : sentence}
+      accessibilityLabel={foundInNote ? fr.search.rows.matchedInNoteA11y(sentence) : sentence}
       onPress={handlePress}
       tone={tone}
       indicator={
@@ -88,9 +89,7 @@ function CompactSurveyRowComponent({
             labelStyle={tone === "danger" ? rowStyles.badgeTextDanger : undefined}
           />
           <Text numberOfLines={1} style={[rowStyles.surveyCardMeta, styles.meta]}>
-            {foundHint
-              ? `${rowText.row.updatedMeta(updatedAt)} · ${foundHint}`
-              : rowText.row.updatedMeta(updatedAt)}
+            {foundInNote ? fr.search.rows.matchedInNoteMeta(dateMeta) : dateMeta}
           </Text>
         </>
       }

@@ -52,7 +52,8 @@ function SurveyRowComponent({
   const updatedAt = formatShortDateTime(survey.updated_at)
   const supportText = formatSyncErrorForUser(survey.last_sync_error, survey.last_sync_error_code)
   const deleteLabel = t.a11y.deleteSurvey(survey.site_name)
-  const foundHint = survey.matchedInNote ? fr.search.rows.matchedInNote : null
+  const foundInNote = survey.matchedInNote === true
+  const dateMeta = t.row.updatedMeta(updatedAt)
   const openSentence = t.a11y.openSurvey({
     name: survey.site_name,
     status: uiStatusLabel,
@@ -113,7 +114,9 @@ function SurveyRowComponent({
     >
       <SurveyRowFrame
         accessibilityState={{ selected }}
-        accessibilityLabel={foundHint ? `${openSentence}, ${foundHint}` : openSentence}
+        accessibilityLabel={
+          foundInNote ? fr.search.rows.matchedInNoteA11y(openSentence) : openSentence
+        }
         accessibilityActions={accessibilityActions}
         onAccessibilityAction={handleAccessibilityAction}
         onPress={handleOpen}
@@ -139,9 +142,7 @@ function SurveyRowComponent({
               labelStyle={rowTone === "danger" ? styles.badgeTextDanger : undefined}
             />
             <Text numberOfLines={1} style={styles.surveyCardMeta}>
-              {foundHint
-                ? `${t.row.updatedMeta(updatedAt)} · ${foundHint}`
-                : t.row.updatedMeta(updatedAt)}
+              {foundInNote ? fr.search.rows.matchedInNoteMeta(dateMeta) : dateMeta}
             </Text>
           </>
         }

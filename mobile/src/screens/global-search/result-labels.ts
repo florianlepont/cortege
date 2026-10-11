@@ -66,8 +66,8 @@ export function ownSurveyLabels(survey: OwnSurveyMatch): ResultLabels {
   if (!survey.matchedInNote) return { title, meta, accessibilityLabel: sentence }
   return {
     title,
-    meta: `${meta} · ${t.rows.matchedInNote}`,
-    accessibilityLabel: `${sentence}, ${t.rows.matchedInNote}`,
+    meta: t.rows.matchedInNoteMeta(meta),
+    accessibilityLabel: t.rows.matchedInNoteA11y(sentence),
   }
 }
 

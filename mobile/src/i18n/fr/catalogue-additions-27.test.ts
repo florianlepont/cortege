@@ -116,5 +116,11 @@ describe("fr.parcelHistory and fr.search additions", () => {
 
   test("a search result found through its note says so", () => {
     expect(fr.search.rows.matchedInNote).toBe("Trouvé dans la note")
+    expect(fr.search.rows.matchedInNoteMeta("Brouillon · 5 oct.")).toBe(
+      "Brouillon · 5 oct. · Trouvé dans la note",
+    )
+    expect(fr.search.rows.matchedInNoteA11y("Forêt, Brouillon")).toBe(
+      "Forêt, Brouillon, Trouvé dans la note",
+    )
   })
 })
