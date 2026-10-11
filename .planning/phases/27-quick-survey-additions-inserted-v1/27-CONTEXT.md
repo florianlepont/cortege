@@ -1,0 +1,123 @@
+# Phase 27: Quick survey additions (INSERTED, V1) - Context
+
+**Gathered:** 2026-10-11
+**Status:** Ready for planning
+
+<domain>
+## Phase Boundary
+
+A survey can carry a free note (for the survey and for each factor), pre-filled weather information and a certainty flag ("Douteux") per factor A to J, without slowing the field entry. The three cards come from the seminar of 2026-10-10 and are the first V1 features of the beta. Criteria 1 to 3 of the ROADMAP entry stand. The certainty flag never changes a score, a band or a validation result.
+
+</domain>
+
+<decisions>
+## Implementation Decisions
+
+### Storage and sync
+- **D-01:** Dedicated API columns, nullable like migration 016: new migration `023` adds a survey note column (text) and a `weather` jsonb column. The per-factor doubt and per-factor note live in the `factors` payload (no column). Validated with `class-validator` in `SurveyUpsertDto`, documented in `data-contract-v1.md` and `api-contract-v1.md`.
+- **D-02:** Mobile: the fields live in the local `payload_json`; SQLite stays at `user_version` 5 (no local migration).
+- **D-03:** Everything is **read-only after submit**: survey note, weather, factor notes and doubts. No new sync operation, no new conflict case. The note was briefly planned as editable after submit and then reversed by the owner.
+- **D-04:** Compatibility: optional fields, absent or `null` = no value. An absent or `null` field never counts as a change in the "same `sync_version`" comparison (existing rule). The new fields must be added to the compared read-only fields consistently with that rule (planner to check that a note or doubt change at the same version behaves as a content change, like `factors`). Prod is test data: no two-step migration.
+
+### Free notes
+- **D-05:** Two notes: one per survey (max 1000 characters) and one per factor (max 300 characters, stored in the factor payload, `evidence.notes` of the form spec is the model; planner confirms the exact key against the current factor payload).
+- **D-06:** Visible to the members who can read the survey (follows the survey's visibility), in the survey summary, the parcel history and the PDF.
+- **D-07:** The survey note is searchable in the global search for **the user's own surveys only** (the local on-phone match in `mobile/src/app/global-search.ts`); the API community search is unchanged.
+
+### Weather
+- **D-08:** Source: **Météo-France official API**, always called through a new Cortege API endpoint (key kept server-side, cache, de-duplication, clean `503` when the provider is down, own throttle, as for the IGN geocoder in phase 25). The app never calls the provider directly. Research must check access, key, quotas and licence, and whether the API gives the observed weather for the survey time (see Risks).
+- **D-09:** Stored values: sky condition (code rendered in French by the catalogue), temperature in degrees C, wind in km/h, rain over the last 24 h in mm, and the observation time. Each value is editable.
+- **D-10:** Trigger: automatically once the parcel is chosen and the network is there, using the **centre of the parcel** and the current time. Never overwrites a value the observer edited by hand.
+- **D-11:** Offline: the section stays empty with **no error**. When the network returns, the draft fills in as long as the observer entered nothing; the weather is that of the survey time, not of the reconnection time.
+
+### Certainty
+- **D-12:** One doubt flag per factor A to J (not per genus, not per survey). Scale: **Sûr / Douteux**, default Sûr; only "Douteux" is a state the observer sets.
+- **D-13:** Shown wherever the factor is shown: survey detail (score page), the PDF, and to other members reading the survey. No effect on score, band, total or validation.
+- **D-14:** Guard rail: the score code ignores the doubt. The type may be declared with the wire types of `@cortege/ibp-domain`, but `evaluateIbp` never reads it, and a parity case in `IBP_PARITY_CASES` proves the same survey with and without a doubt gives the same result in the package, the API adapter and the mobile adapter. No rule is reimplemented in `api` or `mobile`.
+
+### Entry ergonomics
+- **D-15:** The survey note and the weather live in a **"Conditions" section of the survey context screen**, before the factors.
+- **D-16:** Per factor, a **collapsed strip under the factor**: a "Douteux" switch and an "Ajouter une note" link, closed by default, so the ~40-interaction budget of phase 12 is kept.
+- **D-17:** Display: survey summary shows one weather line and the folded survey note; the score page shows the "Douteux" badge and the factor note; the PDF has a "Conditions du relevé" block, with the badge and note under each factor, on the fixed A4 page blocks (`mobile/src/app/survey-pdf/`).
+- **D-18:** All text through the typed `fr` catalogue, no em dash, abbreviations as in the phase 26 gates (units allowed).
+
+### Claude's Discretion
+Visual design of the strip and of the weather section (within the charter), the French labels of the sky conditions, cache durations and throttle of the weather endpoint, the exact payload key names.
+
+</decisions>
+
+<canonical_refs>
+## Canonical References
+
+**Downstream agents MUST read these before planning or implementing.**
+
+### Product and contracts
+- `.planning/ROADMAP.md` Phase 27 — goal and 3 success criteria
+- `docs/specs/epic-c-ibp-survey-data-entry.md` — data entry stories (US-C1 form, US-C2 draft)
+- `docs/specs/ibp-form-spec.md` §10 (factor structure, `evidence.notes`, logical submission payload, versioning rules)
+- `docs/technical/sync-conflict-resolution-v1.md` — Case B comparison of read-only fields, the new fields must fit it
+- `docs/technical/api-contract-v1.md` — survey upsert, sync and a new weather endpoint
+- `docs/technical/data-contract-v1.md` — survey columns and payload
+- `docs/design/charte-graphique-etats-sauvages-spec.md` §13 — visual layer rules
+
+### Code
+- `api/src/surveys/dtos/survey-upsert.dto.ts` — survey payload validation
+- `api/src/surveys/surveys-sync.service.ts`, `api/src/surveys/surveys.service.ts` — upsert and sync
+- `api/src/surveys/geocoder.service.ts`, `api/src/surveys/ign-http.ts` — pattern for a proxied provider with cache and 503
+- `api/migrations/016_ibp_method_version.sql`, `api/migrations/README.md` — nullable columns pattern, migration rules
+- `packages/ibp-domain/src/contract/survey.ts`, `packages/ibp-domain/src/evaluate.ts`, `packages/ibp-domain/src/parity/cases.ts` — wire types, scoring that must ignore the doubt, parity fixture
+- `mobile/src/app/ibp-scoring.ts`, `mobile/src/app/types.ts`, `mobile/src/storage/surveys.ts` — mobile adapter, payload, writes
+- `mobile/src/screens/SurveyContextScreen.tsx`, `FactorDetailScreen.tsx`, `SurveyScoreScreen.tsx`, `SurveyDetailScreen.tsx` — screens touched
+- `mobile/src/app/survey-pdf/` and `mobile/src/app/global-search.ts` — PDF and own-survey search
+- `mobile/src/i18n/fr/` — catalogue; `mobile/src/__checks__/` — source gates
+
+No external spec: the seminar cards are summarised in the ROADMAP entry.
+
+</canonical_refs>
+
+<code_context>
+## Existing Code Insights
+
+### Reusable Assets
+- Geocoder service and `ign-http.ts`: model for the Météo-France proxy (cache, de-duplication, 503, own throttle).
+- `IBP_PARITY_CASES` and the three adapters: ready-made proof that the doubt does not move the score.
+- `useParcelStatuses`/parcel selection and the cached parcel geometry (phase 26 D-09): give the parcel centre for the weather.
+- `useSurveyDraftPatcher`: accumulates incremental patches, the place for the new draft fields.
+
+### Established Patterns
+- Read-only-after-submit fields (`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`); nullable columns plus CHECK/DTO validation.
+- All text from the typed `fr` catalogue; colours via `useBrandTheme()`; Ionicons outline only; 400-line cap on `src/screens` and `src/navigation`.
+- PDF is pure builders with fixed A4 page blocks; the `fr` text and `html.ts` escape are the only text and escape paths.
+
+### Integration Points
+- Survey context screen (Conditions), factor pager (strip), score page and survey summary (display), PDF `build-html.ts`, sync payload builder, `SurveyUpsertDto`, a new weather controller/service in `api/src/surveys/`.
+
+</code_context>
+
+<specifics>
+## Specific Ideas
+
+- The doubt is a "Douteux" pill, set only when needed; the strip stays closed otherwise.
+- Weather is a convenience: it must never block saving or submitting a survey, and an empty weather is valid.
+
+### Risks for the researcher
+- Météo-France API: key and quotas, licence for display, and whether it returns past observations by time and point; the offline catch-up (D-11) needs weather at the survey time, possibly some hours after.
+- Same-version comparison (D-04): adding the new fields must not create false `409 sync_version_conflict` for installed apps.
+- The PDF page budget with a 1000-character note and ten 300-character factor notes.
+
+</specifics>
+
+<deferred>
+## Deferred Ideas
+
+- Doubt per genus of factor A, three-level certainty scale (not chosen).
+- Editing the note after submit (reversed by the owner).
+- Searching community surveys' notes through the API search (not chosen).
+- A "reason" text on the doubt (the factor note covers it).
+
+</deferred>
+
+---
+
+*Phase: 27-quick-survey-additions-inserted-v1*
+*Context gathered: 2026-10-11*
