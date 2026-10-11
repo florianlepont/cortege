@@ -183,8 +183,8 @@ export const glassInkLight = {
 // goes from #C9CED3 to #E3E6E9, which needed a 0.72 glass. Android keeps its 0.94 flat fill.
 export const mapControlGlass = {
   light: {
-    tint: "rgba(247, 246, 240, 0.76)",
-    fill: "rgba(247, 246, 240, 0.76)",
+    tint: "rgba(247, 246, 240, 0.92)",
+    fill: "rgba(247, 246, 240, 0.92)",
     android: "rgba(247, 246, 240, 0.92)",
     icon: brandColors.forest,
     text: "#24311F",
