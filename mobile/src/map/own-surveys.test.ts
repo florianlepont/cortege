@@ -174,25 +174,42 @@ describe("ownSurveyMapItems", () => {
     })
   })
 
-  it("puts any status other than draft in own, dated from updated_at, with the server total", () => {
-    const stored = {
-      id: "s2",
-      sync_version: 2,
-      site_name: "Site",
-      parcel_ids: ["P1"],
-      scores: { ibp_total: 31 },
-    }
+  it("puts a submitted survey in own, dated from updated_at, with the server total", () => {
     const { drafts, own } = ownSurveyMapItems({
       ...base,
       sources: [
-        source({ id: "s2", status: "submitted", payload: stored }),
-        source({ id: "s3", status: "synced", payload: { ...stored, id: "s3" } }),
+        source({
+          id: "s2",
+          status: "submitted",
+          payload: {
+            id: "s2",
+            sync_version: 2,
+            site_name: "Site",
+            parcel_ids: ["P1"],
+            scores: { ibp_total: 31 },
+          },
+        }),
       ],
     })
 
     expect(drafts).toEqual([])
-    expect(own.map((item) => item.survey_id)).toEqual(["s2", "s3"])
+    expect(own.map((item) => item.survey_id)).toEqual(["s2"])
     expect(own[0]).toMatchObject({ survey_date: "2026-10-03", ibp_total: 31 })
+  })
+
+  it("keeps a draft that has synced or failed in drafts, dated from created_at", () => {
+    const { drafts, own } = ownSurveyMapItems({
+      ...base,
+      sources: [
+        source({ id: "synced", status: "synced" }),
+        source({ id: "error", status: "error" }),
+        source({ id: "draft", status: "draft" }),
+      ],
+    })
+
+    expect(own).toEqual([])
+    expect(drafts.map((item) => item.survey_id)).toEqual(["synced", "error", "draft"])
+    expect(drafts.every((item) => item.survey_date === "2026-10-01")).toBe(true)
   })
 
   it("skips a survey already drawn from the API", () => {

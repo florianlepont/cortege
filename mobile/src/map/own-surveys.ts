@@ -59,7 +59,8 @@ function knownPosition(
 }
 
 /**
- * Splits the local surveys into drafts (dashed marker) and own non-draft surveys (normal marker).
+ * Splits the local surveys into drafts (dashed marker: any status other than "submitted") and own
+ * submitted surveys (normal marker).
  * An id already drawn from the API (`publishedIds`) is skipped, and so is a survey with no position
  * (a survey outside every downloaded area is not drawn offline).
  */
@@ -77,7 +78,9 @@ export function ownSurveyMapItems(input: {
       knownPosition(input.surveyDetails[source.id]) ??
       cachedParcelCentre(input.parcels, resolveDraftParcelIds(payload))
     if (!position) continue
-    const isDraft = source.status === "draft"
+    // Same rule as Home, the list and the detail screen: a draft that has synced is stored as
+    // "synced" (or "error"), so "not finished" is "not submitted", never `=== "draft"`.
+    const isDraft = source.status !== "submitted"
     const item: PublicMapItem = {
       survey_id: source.id,
       display_location: position,
