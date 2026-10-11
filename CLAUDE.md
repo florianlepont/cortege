@@ -153,11 +153,13 @@ The mobile app is designed to work without connectivity. All survey data is pers
 
 **SQLite schema** (`mobile/src/storage/db.ts`, `PRAGMA user_version` migrations, currently at 5 — migration 2 adds `payload_completion`, precomputed at the four payload-write sites instead of parsed from JSON on every list read (a percentage of 14 slots, never a factor count); migration 4 puts a survey the old deadline rule had marked `expired` back to `draft`, OA-41; migration 5 adds `payload_factors_filled`, the factors filled out of ten by `countFilledFactors` (`mobile/src/app/ibp-scoring.ts`), written at the same four sites and read by Accueil's resume card and the survey detail alike):
 - `local_surveys` — survey drafts with sync state, payload and the precomputed `payload_completion`
+  - since phase 27 the payload also holds `survey_note` and `weather` (no new column; the schema stays at version 5)
 - `sync_queue` — ordered queue of pending operations (upsert, delete, etc.)
 - `local_attachments` — photo metadata and upload state
 - `local_meta` — key/value store for app-level state
   - key `search_recents`: the 8 recent searches of the global search, cleared by `clearLocalIbpData`; the schema stays at version 5
   - key `parcel_history:<PARCEL_ID>`: the last parcel history read online (all members' submitted surveys of the parcel, at most 50, with its fetch date), written by `useParcelSurveyHistory`, read by the PDF export (the trend section prints offline from it), deleted by `clearLocalIbpData`; the schema stays at version 5
+  - key `weather_point:<SURVEY_ID>`: the parcel centre used for the weather lookup of that draft, written by the parcel selection route (through `rememberPoint`), read by `useWeatherPrefill`, deleted by `clearLocalIbpData`; the schema stays at version 5
 
 **Sync flow**:
 1. User actions write to `local_surveys` and enqueue an operation in `sync_queue`
@@ -189,6 +191,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
   - `useSurveyDraftPatcher` — incremental patch accumulation
   - `useGpsCapture` — device location capture
   - `useNearbyParcels` — home screen's nearby-parcel summary, published through the narrow `useNearbyParcelsState` context
+  - `useWeatherPrefill`: weather lookup at parcel choice and catch-up on reconnection or return to the foreground, for the survey time within 24 h; never overwrites a hand edit; published through the narrow `useWeatherPrefillState` context
 - Hooks called directly by the screens that need them (not part of the single assembler): `usePublicMapExplorer` (public map, viewport bbox loading), `useParcelStatuses` (parcel selection and home), `useDebouncedValue` (map region debouncing), `useGlobalSearch`, `useSearchGroup` and `useSearchRecents` (the global search; its pure rules are in `mobile/src/app/global-search.ts` and `search-text.ts`)
 
 **Navigation** (`mobile/src/navigation/`):
@@ -225,6 +228,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - Thin native wrappers: `assets.ts` (fonts and logo through `expo-asset`), `photo-prep.ts`, `map-snapshot.ts` (MapLibre `StaticMapImageManager`, 12 s timeout for the online style and 8 s for an offline one), `assemble-export-data.ts` (reads the survey, its photos, the cached parcel history and the parcel outline), `run-export.ts` (print through `expo-print`, rename to `Cortege-IBP-<site>-<year>[-brouillon].pdf` under `cache/exports/`, share through `expo-sharing`)
 - `app/survey-pdf-export.ts` is the facade (three functions and two types, pinned by a test) and `useSurveyPdfExport` (`screens/survey-detail/`) the screen hook
 - Everything is inlined as data URIs behind a content security policy that blocks every load. No network call is required: offline none is made; online, the only optional reads are the parcel outline (bounded at 4 s) and the basemap snapshot. The trend comes from the `parcel_history:` cache
+- Phase 27 adds a "Conditions du relevé" block (weather sentence with the "Source : Météo-France" line, and the survey note) after the identity cards, and a "Douteux" badge plus the observer's note on each factor card
 - Measured constants (page block 840 px, per-platform layout scale, photo cap and size, map frame) live in `export-settings.ts`, each with its device measurement. `survey-pdf/html.ts` holds the only HTML escape in `mobile/src`
 
 ### API (NestJS)
@@ -236,7 +240,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 | `auth` | `api/src/auth/` | AuthGuard (JWT/JWKS), `@CurrentUser` decorator, Auth0 management calls, client-aware throttler guard |
 | `config` | `api/src/config/` | Validated typed configuration (`env.schema.ts`, `app-config.ts`), production rules, `check-config.ts` |
 | `users` | `api/src/users/` | Profile CRUD, profile picture upload, account deletion |
-| `surveys` | `api/src/surveys/` | Survey CRUD (`surveys.service.ts`, `surveys.repository.ts`), sync endpoints (`sync.controller.ts` -> `surveys-sync.service.ts`), IBP validation adapter (`ibp-rules.service.ts`), parcel linkage (`parcels.service.ts`/`parcels.controller.ts`), the cadastre provider (`cadastre-provider.service.ts`), survey events (`survey-events.service.ts`), attachments (`surveys-attachments.service.ts`), the public map/parcel-status endpoints (`public-map.service.ts`, `public.controller.ts`), and the global search (`search.controller.ts`: `GET /v1/search/community`, `/places`, `/parcels`, with its own `search` throttle; `search.service.ts`; `geocoder.service.ts`, the IGN Géoplateforme geocoder called through the API with cache, de-duplication and a 503 `search_provider_unavailable`; `parcel-search.service.ts`; `ign-http.ts`) |
+| `surveys` | `api/src/surveys/` | Survey CRUD (`surveys.service.ts`, `surveys.repository.ts`), sync endpoints (`sync.controller.ts` -> `surveys-sync.service.ts`), IBP validation adapter (`ibp-rules.service.ts`), parcel linkage (`parcels.service.ts`/`parcels.controller.ts`), the cadastre provider (`cadastre-provider.service.ts`), survey events (`survey-events.service.ts`), attachments (`surveys-attachments.service.ts`), the public map/parcel-status endpoints (`public-map.service.ts`, `public.controller.ts`), and the global search (`search.controller.ts`: `GET /v1/search/community`, `/places`, `/parcels`, with its own `search` throttle; `search.service.ts`; `geocoder.service.ts`, the IGN Géoplateforme geocoder called through the API with cache, de-duplication and a 503 `search_provider_unavailable`; `parcel-search.service.ts`; `ign-http.ts`), and the weather endpoint (`weather.controller.ts`: `GET /v1/weather`, own `weather` throttle; `weather.service.ts` with cache by station and hour, in-flight de-duplication, a concurrency cap and a 503 `weather_provider_unavailable`; `weather-provider.ts`, the provider interface with the `synthetic` and `off` modes) |
 | `database` | `api/src/database/` | `DatabaseService` (pg Pool wrapper) |
 | `storage` | `api/src/storage/` | StorageService: single owner of object storage (S3/MinIO or local), key builder, size and MIME checks |
 | `reports` | `api/src/reports/` | Moderation/report endpoints |
@@ -255,6 +259,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - Surveys carry `ibp_method_version` (`null` = v3.0; new surveys default to v3.2), and for v3.2 `ibp_cas` (1–4) and `ibp_cas3_scale`; v3.0 surveys carry `region_version` + `vegetation_stage` instead. Always write `ibp_cas`, never a bare "cas": CAS already means compare-and-swap in this codebase
 - API: migration `016_ibp_method_version.sql` (nullable columns, CHECK constraints). Mobile: the fields live in the local `payload_json`, no SQLite migration
 - `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale` are read-only after submit
+- Since phase 27 a survey also carries `survey_note` (at most 1000 characters) and `weather` (migration `023_survey_note_weather.sql`, nullable columns), and the observer's per-factor doubt and note live in the `factors.annotations` container (keys A to J, `{ doubt?: true, note?: string }`, note at most 300 characters), never inside a factor entry. No scorer reads the container: the parity cases `MAT-ANN-*` prove the same survey with and without a doubt scores and validates identically. The package owns the limits and helpers in `packages/ibp-domain/src/conditions.ts`. All three are read-only after submit; the notes of retained submitted surveys survive account deletion (D-24)
 - Package resolution: Metro, Jest (`moduleNameMapper`) and `tsc` read the package's `src`; Node at runtime reads its `dist` (`npm run build:domain`, built in the API Docker image). Do not add a `prepare` script to the package
 
 ### IBP domain
@@ -311,7 +316,7 @@ Method version: the app implements IBP FR v3.2, with IBP Fr v3.0 available per s
 | `api/src/surveys/surveys-sync.service.ts` | Batch sync handler |
 | `api/src/database/database.service.ts` | pg pool wrapper |
 | `api/src/storage/storage.service.ts` | Single object storage owner (S3 client, keys, presign, local mode) |
-| `api/migrations/` | Ordered SQL migration files (`016_ibp_method_version.sql`: method version and cas; `022_unaccent_search.sql`: accent-insensitive search, parcels key index) |
+| `api/migrations/` | Ordered SQL migration files (`016_ibp_method_version.sql`: method version and cas; `022_unaccent_search.sql`: accent-insensitive search, parcels key index; `023_survey_note_weather.sql`: `survey_note` and `weather` columns) |
 | `docs/technical/technical-architecture-v1.md` | Architecture reference |
 | `docs/technical/api-contract-v1.md` | API endpoint specifications |
 | `docs/technical/sync-conflict-resolution-v1.md` | Offline sync conflict strategy |
@@ -369,6 +374,9 @@ npm run format:check
 | `OBJECT_STORAGE_BUCKET/ENDPOINT/REGION/ACCESS_KEY/SECRET_KEY` | S3 config |
 | `ATTACHMENTS_UPLOAD_DIR` | Local upload dir (when mode = local) |
 | `CADASTRE_PROVIDER` | `synthetic` (offline) or `ign` (real IGN parcels); `CADASTRE_PROVIDER_ALLOW_FALLBACK`, `CADASTRE_PROVIDER_TIMEOUT_MS`, `CADASTRE_IGN_REVERSE_URL`, `CADASTRE_IGN_APICARTO_PARCEL_URL`, `CADASTRE_IGN_WFS_URL/TYPENAME/COUNT` configure the `ign` provider |
+| `WEATHER_PROVIDER` | `meteofrance`, `synthetic` or `off` (default `off`); `synthetic` invents weather with no network and is refused in production (startup stops, `check-env.sh` reports it) |
+| `METEOFRANCE_API_KEY` | Owner-provided Météo-France credential, only in `api/.env` and `/home/ubuntu/cortege.env`, never committed; a blank or `CHANGE_ME` value with `meteofrance` is only a warning, weather then stays empty |
+| `METEOFRANCE_OBS_URL`, `WEATHER_TIMEOUT_MS`, `WEATHER_MAX_STATION_DISTANCE_KM`, `WEATHER_TIME_TOLERANCE_MINUTES` | Optional weather settings: observation API base URL, provider timeout, the cap on the distance to the nearest station (D-19; the value measured on the provider comes with the Météo-France provider plan) and the tolerance between the survey time and a reading |
 | `GEOCODING_IGN_SEARCH_URL` | Place search of the global search (default `https://data.geopf.fr/geocodage/search`); switched by `CADASTRE_PROVIDER` |
 | `DEBUG_DATA_RESET_ENABLED` | Gates `/v1/debug/reset-ibp-data` and `/v1/debug/reset-user-data` (dev-only) |
 | `TRUST_PROXY` | Express trust-proxy value (default `loopback,uniquelocal`); trusts Caddy's `X-Forwarded-For` for per-client rate limits without trusting public peers |

@@ -290,6 +290,27 @@ anciennes lignes de jetons maison (secrets et durées des jetons d'accès et de
 rafraîchissement, options `AUTH_*`) ne servent plus : `check-env.sh` les signale
 par une ligne `INFO`, et elles peuvent être supprimées.
 
+### Météo (phase 27)
+
+La météo préremplie des relevés vient des observations Météo-France, lues par
+l'API (l'app n'appelle jamais le fournisseur). Pour l'activer, le propriétaire
+ajoute ces deux lignes à `/home/ubuntu/cortege.env` (jamais dans git, jamais
+dans une PR) :
+
+```
+WEATHER_PROVIDER=meteofrance
+METEOFRANCE_API_KEY=<la clé du portail Météo-France>
+```
+
+Puis il lance `check-env.sh` (commande ci-dessous) jusqu'à obtenir `OK`. Une clé
+vide ou restée à `CHANGE_ME` donne seulement une ligne `ATTENTION` : la pile
+démarre et la météo reste vide. `WEATHER_PROVIDER=synthetic` (météo inventée,
+pour le développement) est refusé en production ; sans la variable, la météo est
+désactivée (`off`). L'abonnement du portail a une durée limitée : le
+renouveler quand le portail le demande, sans quoi la météo s'éteint sans
+erreur visible dans l'app. Les réglages facultatifs (`WEATHER_*`,
+`METEOFRANCE_OBS_URL`) sont décrits dans `infra/vps/env.example`.
+
 ### Vérifier le fichier avant la fusion
 
 `infra/vps/check-env.sh` applique les mêmes règles à `/home/ubuntu/cortege.env`,
