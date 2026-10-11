@@ -9,10 +9,16 @@ import {
   IsOptional,
   IsString,
   Matches,
+  MaxLength,
+  Validate,
+  ValidateNested,
 } from "class-validator"
-import { IBP_CAS_VALUES, IBP_METHOD_VERSIONS } from "@cortege/ibp-domain"
+import { Type } from "class-transformer"
+import { IBP_CAS_VALUES, IBP_METHOD_VERSIONS, SURVEY_NOTE_MAX_LENGTH } from "@cortege/ibp-domain"
 import { SAFE_ID_PATTERN } from "../../common/safe-id"
+import { FactorAnnotationsConstraint } from "./factor-annotations.constraint"
 import { MAX_PARCEL_IDS, PARCEL_ID_PATTERN } from "./parcel-id.constants"
+import { SurveyWeatherDto } from "./survey-weather.dto"
 
 export class SurveyUpsertDto {
   // D-14: the id can become a storage key segment, so it must be a safe id.
@@ -83,8 +89,24 @@ export class SurveyUpsertDto {
   @IsBoolean()
   ibp_cas3_scale?: boolean | null
 
+  // Phase 27 (D-01, D-05): the free note of the whole survey, at most 1000 characters. Declared
+  // here so /v1/sync, which strips undeclared fields, keeps it (research Pitfall 3).
+  @IsOptional()
+  @IsString()
+  @MaxLength(SURVEY_NOTE_MAX_LENGTH)
+  survey_note?: string | null
+
+  // Phase 27 (D-09): the weather of the visit, a nested object with every key declared.
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SurveyWeatherDto)
+  weather?: SurveyWeatherDto | null
+
+  // Phase 27 (D-01, D-23): `factors.annotations` (doubt and note per factor) rides in the factors
+  // object; its shape is the package's (factorAnnotationsIssues), not a rule written here.
   @IsOptional()
   @IsObject()
+  @Validate(FactorAnnotationsConstraint)
   factors?: Record<string, unknown>
 
   @IsOptional()

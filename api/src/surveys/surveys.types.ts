@@ -4,6 +4,7 @@ import type {
   SurveyStatus,
   SurveyUpsertPayload,
   SurveyVisibility,
+  SurveyWeather,
   SyncChangeAttachment,
   SyncChangeEvent,
   SyncChangeSurvey,
@@ -56,6 +57,10 @@ export type SurveyRow = {
   ibp_method_version: string | null
   ibp_cas: number | null
   ibp_cas3_scale: boolean | null
+  // Migration 023 (phase 27): the survey note and the weather of the visit. Optional so row
+  // fixtures that predate the columns keep compiling; readers use `?? null`.
+  survey_note?: string | null
+  weather?: SurveyWeather | null
   factors: JsonObject
   factor_results: Record<string, FactorCanonical>
   scores: JsonObject
