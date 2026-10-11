@@ -410,6 +410,7 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
           I: null,
           J: null,
         },
+        factorAnnotations: {},
         formErrors: { siteName: null },
         draftInput: {},
         formMode: "create",

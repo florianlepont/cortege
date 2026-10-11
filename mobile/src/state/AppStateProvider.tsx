@@ -332,6 +332,8 @@ function useAppController() {
     createDraft: editing.handleCreateDraft,
     captureGpsLocation: gpsCapture.handleCaptureGpsLocation,
     markSubmitAttempted: surveyForm.markSubmitAttempted,
+    setFactorDoubt: surveyForm.setFactorDoubt,
+    setFactorNote: surveyForm.setFactorNote,
   })
 
   const {
@@ -345,6 +347,7 @@ function useAppController() {
     selectedParcelIds,
     factorSections,
     factorRetainedScores,
+    factorAnnotations,
     formErrors,
     draftInput,
   } = surveyForm
@@ -361,6 +364,7 @@ function useAppController() {
         selectedParcelIds,
         factorSections,
         factorRetainedScores,
+        factorAnnotations,
         formErrors,
         draftInput,
         formMode,
@@ -379,6 +383,7 @@ function useAppController() {
       selectedParcelIds,
       factorSections,
       factorRetainedScores,
+      factorAnnotations,
       formErrors,
       draftInput,
       formMode,

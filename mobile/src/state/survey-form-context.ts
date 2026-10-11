@@ -22,6 +22,11 @@ export type SurveyFormState = {
   selectedParcelIds: SurveyForm["selectedParcelIds"]
   factorSections: SurveyForm["factorSections"]
   factorRetainedScores: SurveyForm["factorRetainedScores"]
+  /**
+   * The doubt flag and the note of each factor (phase 27, D-12), written under
+   * factors.annotations by the form's draft payload (D-23).
+   */
+  factorAnnotations: SurveyForm["factorAnnotations"]
   formErrors: SurveyForm["formErrors"]
   draftInput: SurveyForm["draftInput"]
   /** Also in the surveys state; repeated here so the form routes read one context (01.9-18). */
@@ -48,6 +53,9 @@ export type SurveyFormActions = {
   createDraft: () => Promise<boolean>
   captureGpsLocation: (options?: { silent?: boolean }) => Promise<GpsCaptureResult | null>
   markSubmitAttempted: SurveyForm["markSubmitAttempted"]
+  /** Phase 27: the strip calls flushDraft after a doubt toggle for an immediate write. */
+  setFactorDoubt: SurveyForm["setFactorDoubt"]
+  setFactorNote: SurveyForm["setFactorNote"]
 }
 
 export type SurveyFormContextValue = {

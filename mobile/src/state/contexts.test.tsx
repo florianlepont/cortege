@@ -495,6 +495,26 @@ describe("AppStateProvider", () => {
     expect(surveys.actions.switchToV32).toEqual(expect.any(Function))
   })
 
+  test("a doubt toggle reaches the form value only, through stable actions (phase 27)", async () => {
+    const before = latest()
+    expect(before.form.state.factorAnnotations).toEqual({})
+    await act(async () => {
+      before.form.actions.setFactorDoubt("A", true)
+    })
+    const after = latest()
+    expect(after.form.state.factorAnnotations.A).toEqual({ doubt: true, note: "" })
+    expect(after.form.actions).toBe(before.form.actions)
+    expect(after.form.actions.setFactorDoubt).toBe(before.form.actions.setFactorDoubt)
+    expect(after.form.actions.setFactorNote).toBe(before.form.actions.setFactorNote)
+    expect(after.session).toBe(before.session)
+    expect(after.status).toBe(before.status)
+    expect(after.surveys).toBe(before.surveys)
+    expect(after.nearby).toBe(before.nearby)
+    await act(async () => {
+      after.form.actions.setFactorDoubt("A", false)
+    })
+  })
+
   test("changing the cas in the form changes only the form value", async () => {
     const before = latest()
     await act(async () => {
