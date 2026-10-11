@@ -24,6 +24,7 @@ describe("downloadAreaPacks", () => {
     const onProgress = jest.fn()
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      os: "ios",
       apiUrl: API,
       areaId: "area-1",
       bounds: BOUNDS,
@@ -61,6 +62,7 @@ describe("downloadAreaPacks", () => {
   test("zoom bounds are 13 to 17 and bounds go west, south, east, north", async () => {
     void downloadAreaPacks({
       documentDirectory: DOCS,
+      os: "ios",
       apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
@@ -75,6 +77,7 @@ describe("downloadAreaPacks", () => {
   test("a pack that stops before it is complete rejects with the last native error", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      os: "ios",
       apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
@@ -93,6 +96,7 @@ describe("downloadAreaPacks", () => {
   test("a stopped pack without any reported error still rejects", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      os: "ios",
       apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
@@ -110,6 +114,7 @@ describe("downloadAreaPacks", () => {
   test("a missing resource is not fatal: the download goes on and completes (IGN @2x sprite 404)", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      os: "ios",
       apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
@@ -136,6 +141,7 @@ describe("failures", () => {
     await expect(
       downloadAreaPacks({
         documentDirectory: DOCS,
+        os: "ios",
         apiUrl: API,
         areaId: "a",
         bounds: BOUNDS,
@@ -148,6 +154,7 @@ describe("failures", () => {
   test("a second pack stopping after the first one failed is ignored", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      os: "ios",
       apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,

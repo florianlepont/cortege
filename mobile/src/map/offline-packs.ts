@@ -1,5 +1,4 @@
 import { OfflineManager, type OfflinePack } from "@maplibre/maplibre-react-native"
-import { Platform } from "react-native"
 import type { BasemapKey } from "./basemaps"
 import { writeOfflineStyle } from "./offline-styles"
 import type { LatLngBounds } from "./tile-math"
@@ -48,6 +47,8 @@ export function packStyleFor(
  */
 export async function downloadAreaPacks(input: {
   documentDirectory: string
+  /** `Platform.OS`, passed in so this module never loads react-native. */
+  os: string
   /** API base URL (`.../v1`), the source of the pack styles on Android. */
   apiUrl: string
   areaId: string
@@ -81,7 +82,7 @@ export async function downloadAreaPacks(input: {
 
     const start = async (basemap: BasemapKey, index: number): Promise<void> => {
       const styleFileUri = await writeOfflineStyle(input.documentDirectory, basemap)
-      const mapStyle = packStyleFor(Platform.OS, input.apiUrl, basemap, styleFileUri)
+      const mapStyle = packStyleFor(input.os, input.apiUrl, basemap, styleFileUri)
       await OfflineManager.createPack(
         {
           mapStyle,

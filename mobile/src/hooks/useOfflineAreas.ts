@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { randomUUID } from "expo-crypto"
+import { Platform } from "react-native"
 import type { MapRegion as Region } from "../app/map-viewport"
 import { fetchPublicParcelStatuses } from "../api/ibp-api"
 import { computeRegionBbox, computeRegionBounds } from "../app/map-viewport"
@@ -132,6 +133,7 @@ export function useOfflineAreas(
         const documentDirectory = getOfflineDocumentDirectory()
         const result = await downloadAreaPacks({
           documentDirectory,
+          os: Platform.OS,
           apiUrl,
           areaId,
           bounds,
