@@ -4,6 +4,8 @@ import { StorageModule } from "../storage/storage.module"
 import { CadastreProviderService } from "./cadastre-provider.service"
 import { CommunitySurveysService } from "./community-surveys.service"
 import { GeocoderService } from "./geocoder.service"
+import { MapStylesController } from "./map-styles.controller"
+import { MapStylesService } from "./map-styles.service"
 import { ParcelSearchService } from "./parcel-search.service"
 import { ParcelsController } from "./parcels.controller"
 import { ParcelsService } from "./parcels.service"
@@ -27,6 +29,7 @@ import { SyncController } from "./sync.controller"
     PublicController,
     ParcelsController,
     SearchController,
+    MapStylesController,
   ],
   providers: [
     SurveysService,
@@ -40,6 +43,7 @@ import { SyncController } from "./sync.controller"
     SearchService,
     GeocoderService,
     ParcelSearchService,
+    MapStylesService,
   ],
 })
 export class SurveysModule {}

@@ -55,6 +55,17 @@ Response `200`:
 
 Check the deployed version: `curl -s https://cortege.algernon.ovh/v1/health`.
 
+### GET /map-styles/{map|satellite}.json
+
+No authentication; throttled like every route. The composite basemap styles (Plan IGN or IGN
+orthophoto, plus the cadastre raster) the mobile offline packs are created from. MapLibre Native on
+Android only reads a pack style from an http(s) URL (it rejects `file://` and inline JSON, device
+check F-3), so Android passes this URL to `createPack`; iOS keeps reading the style file it writes.
+The `map` style is the published Plan IGN style, fetched from IGN and kept for one hour (a stale copy
+is served if a refresh fails); `satellite` is built in the API. Responses: `200` style JSON with
+`Cache-Control: public, max-age=3600`, `404 unknown_map_style`, `503 map_style_unavailable` (no copy
+and IGN unreachable).
+
 ## 1) Authentication
 
 Authentication is fully delegated to **Auth0**. The backend does not expose login, register, refresh, or logout endpoints. All token issuance and session lifecycle (access token, refresh token, rotation, revocation) are handled by Auth0.

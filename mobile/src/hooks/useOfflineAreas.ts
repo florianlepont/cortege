@@ -132,6 +132,7 @@ export function useOfflineAreas(
         const documentDirectory = getOfflineDocumentDirectory()
         const result = await downloadAreaPacks({
           documentDirectory,
+          apiUrl,
           areaId,
           bounds,
           basemaps,

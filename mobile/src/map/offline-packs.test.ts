@@ -1,8 +1,9 @@
 import { __resetMockFileSystem } from "../../test/expo-file-system-legacy.mock"
 import { OfflineManager, offlineMocks } from "../../test/maplibre.mock"
-import { deleteAreaPacks, downloadAreaPacks, listPackAreaIds } from "./offline-packs"
+import { deleteAreaPacks, downloadAreaPacks, listPackAreaIds, packStyleFor } from "./offline-packs"
 
 const DOCS = "file:///mock/documents/"
+const API = "https://api.example.test/v1"
 const BOUNDS = { minLat: 46, minLng: 1, maxLat: 46.02, maxLng: 1.02 }
 
 jest.mock("./offline-styles", () => ({
@@ -23,6 +24,7 @@ describe("downloadAreaPacks", () => {
     const onProgress = jest.fn()
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      apiUrl: API,
       areaId: "area-1",
       bounds: BOUNDS,
       basemaps: ["map", "satellite"],
@@ -59,6 +61,7 @@ describe("downloadAreaPacks", () => {
   test("zoom bounds are 13 to 17 and bounds go west, south, east, north", async () => {
     void downloadAreaPacks({
       documentDirectory: DOCS,
+      apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
       basemaps: ["map"],
@@ -72,6 +75,7 @@ describe("downloadAreaPacks", () => {
   test("a pack that stops before it is complete rejects with the last native error", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
       basemaps: ["map"],
@@ -89,6 +93,7 @@ describe("downloadAreaPacks", () => {
   test("a stopped pack without any reported error still rejects", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
       basemaps: ["map"],
@@ -105,6 +110,7 @@ describe("downloadAreaPacks", () => {
   test("a missing resource is not fatal: the download goes on and completes (IGN @2x sprite 404)", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
       basemaps: ["map"],
@@ -130,6 +136,7 @@ describe("failures", () => {
     await expect(
       downloadAreaPacks({
         documentDirectory: DOCS,
+        apiUrl: API,
         areaId: "a",
         bounds: BOUNDS,
         basemaps: ["map"],
@@ -141,6 +148,7 @@ describe("failures", () => {
   test("a second pack stopping after the first one failed is ignored", async () => {
     const done = downloadAreaPacks({
       documentDirectory: DOCS,
+      apiUrl: API,
       areaId: "a",
       bounds: BOUNDS,
       basemaps: ["map", "satellite"],
@@ -168,5 +176,22 @@ describe("packs of an area", () => {
     expect([...(await listPackAreaIds())].sort()).toEqual(["a", "b"])
     await deleteAreaPacks("a")
     expect(offlineMocks.packs.map((pack) => pack.id)).toEqual(["p3", "p4"])
+  })
+})
+
+describe("packStyleFor", () => {
+  test("iOS keeps the composite style file", () => {
+    expect(packStyleFor("ios", API, "map", "file:///docs/offline-styles/map.json")).toBe(
+      "file:///docs/offline-styles/map.json",
+    )
+  })
+
+  test("Android uses the style the API publishes (no file:// for a pack)", () => {
+    expect(packStyleFor("android", API, "map", "file:///docs/offline-styles/map.json")).toBe(
+      "https://api.example.test/v1/map-styles/map.json",
+    )
+    expect(packStyleFor("android", `${API}/`, "satellite", "file:///x.json")).toBe(
+      "https://api.example.test/v1/map-styles/satellite.json",
+    )
   })
 })

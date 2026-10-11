@@ -1,4 +1,5 @@
 import { OfflineManager, type OfflinePack } from "@maplibre/maplibre-react-native"
+import { Platform } from "react-native"
 import type { BasemapKey } from "./basemaps"
 import { writeOfflineStyle } from "./offline-styles"
 import type { LatLngBounds } from "./tile-math"
@@ -25,12 +26,30 @@ function isPackMetadata(value: unknown): value is PackMetadata {
 }
 
 /**
+ * The style a native pack is created from. iOS reads the composite style file. MapLibre Native on
+ * Android only accepts an http(s) style for a pack (it rejects `file://` and inline JSON, so the
+ * download stayed at 0 %: device check F-3): there the API publishes the same composite style.
+ */
+export function packStyleFor(
+  os: string,
+  apiUrl: string,
+  basemap: BasemapKey,
+  styleFileUri: string,
+): string {
+  return os === "android"
+    ? `${apiUrl.replace(/\/+$/, "")}/map-styles/${basemap}.json`
+    : styleFileUri
+}
+
+/**
  * Creates one native offline pack per basemap for an area (style and cadastre included) and resolves
  * once all are complete. The native downloader owns the request concurrency and the cache; nothing
  * here touches individual tiles.
  */
 export async function downloadAreaPacks(input: {
   documentDirectory: string
+  /** API base URL (`.../v1`), the source of the pack styles on Android. */
+  apiUrl: string
   areaId: string
   bounds: LatLngBounds
   basemaps: BasemapKey[]
@@ -61,7 +80,8 @@ export async function downloadAreaPacks(input: {
     }
 
     const start = async (basemap: BasemapKey, index: number): Promise<void> => {
-      const mapStyle = await writeOfflineStyle(input.documentDirectory, basemap)
+      const styleFileUri = await writeOfflineStyle(input.documentDirectory, basemap)
+      const mapStyle = packStyleFor(Platform.OS, input.apiUrl, basemap, styleFileUri)
       await OfflineManager.createPack(
         {
           mapStyle,
