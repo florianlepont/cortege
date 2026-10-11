@@ -71,10 +71,10 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 - [x] **REQ-D-offline-parcel-warning** — When an expected parcel is not cached, a clear message explains it and a quick action starts the download once the network returns; no infinite spinners. *(New — Built, closed Phase 17: `ParcelHistoryCard`'s offline state plus the `offline_pending_parcels` queue drained by `useOfflinePendingParcelDrain` on reconnect.)*
 - [x] **REQ-D-basemap-switch** — A basemap selector toggles at least "Satellite" and "Map"; the selection persists while navigating; the default is configurable. *(New — Built, closed Phase 17: `BasemapToggle` + `useBasemapPreference`, persisted to `local_meta`. "The default is configurable" is satisfied as a code-level constant (`DEFAULT_BASEMAP` in `storage/map-preference.ts`), not a user-facing settings toggle — no such settings surface exists elsewhere in the app either.)*
 - [ ] **REQ-D-map-layers** — The Explorer offers several map layers (bases: Plan, Satellite, état-major, 1950 map, 1950 aerial photos; overlay: forest types), each with its source, licence and attribution. *(New, V1, Phase 28)*
-- [ ] **REQ-D-layer-compare** — Two base layers compare on the same area with a sliding curtain (decided by a device spike). *(New, V1, Phase 28)*
+- [ ] **REQ-D-layer-compare** — Two base layers compare on the same area with a curtain started by a swipe released in the middle (decided by a device spike). *(New, V1, Phase 28)*
 - [ ] **REQ-D-explorer-modes** — The Explorer both explores and studies maps; the study mode adds layers and comparison without hiding the explore flow. *(New, V1, Phase 28)*
 - [ ] **REQ-D-offline-layers** — Layers work with and without a network; a setting (default all layers) chooses what an offline area downloads; the cost per layer is measured. *(New, V1, Phase 28)*
-- [ ] **REQ-D-offline-percent** — The Explorer offline sheet shows the download percentage, weighted across layers. *(New, V1, Phase 28)*
+- [ ] **REQ-D-offline-percent** — The Explorer shows the download percentage, weighted across layers, in a chip beside the download button. *(New, V1, Phase 28)*
 
 ### ML — Species Recognition Groundwork
 

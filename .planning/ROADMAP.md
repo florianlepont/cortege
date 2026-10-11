@@ -978,9 +978,9 @@ Plans:
   2. The observer can switch layers on and off and compare two layers on the same area.
   3. The Explorer tab shows or hides information according to the mode (explore or study), with a decided and tested UX: nothing the new functions add hides the existing explore flow.
   4. Layers behave as decided with and without a network, and their cost on offline packs is measured.
-  5. The Explorer sheet shows the percentage of an offline-area download, not only an indeterminate "Téléchargement…" button (owner decision 2026-10-10, carried over from Phase 17).
+  5. The Explorer shows the percentage of an offline-area download, not only an indeterminate "Téléchargement…" button (owner decisions 2026-10-10 and 2026-10-11: a chip beside the download button carries it, the sheet closes after "Télécharger").
 
-**Plans**: 0/16 plans executed (28-01 curtain device spike with owner go/no-go; 28-02 to 28-16 in 7 waves, see 28-*-PLAN.md)
+**Plans**: 0/18 plans executed (28-01 device spike of the swipe wipe and comparison with owner go/no-go; 28-02 to 28-18 in 8 waves, see 28-*-PLAN.md)
 **UI hint**: yes
 
 ### Phase 29: Private or Public Before Submission (INSERTED, V1)
