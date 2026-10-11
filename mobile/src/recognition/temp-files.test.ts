@@ -7,7 +7,7 @@ import {
 import { deleteTempPhoto, isDeletableTempPhoto } from "./temp-files"
 
 describe("isDeletableTempPhoto", () => {
-  it("accepts a file under the cache directory", () => {
+  it("accepts a file in the Camera or ImageManipulator cache sub-directory", () => {
     expect(isDeletableTempPhoto("file:///mock/cache/Camera/a.jpg")).toBe(true)
     expect(isDeletableTempPhoto("file:///mock/cache/ImageManipulator/b.jpg")).toBe(true)
   })
@@ -23,8 +23,31 @@ describe("isDeletableTempPhoto", () => {
     expect(isDeletableTempPhoto("file:///other/a.jpg")).toBe(false)
   })
 
-  it("refuses a path traversal out of the cache directory", () => {
+  it("refuses the cache directory itself and a bare sub-directory", () => {
+    expect(isDeletableTempPhoto("file:///mock/cache/")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/Camera/")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/Camera")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/ImageManipulator/")).toBe(false)
+  })
+
+  it("refuses the model copy and any other file of the cache directory", () => {
+    expect(isDeletableTempPhoto("file:///mock/cache/genus-classifier.tflite")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/photo.jpg")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/Print/abc.pdf")).toBe(false)
+  })
+
+  it("refuses a sibling folder whose name only starts like an allowed one", () => {
+    expect(isDeletableTempPhoto("file:///mock/cache/CameraExtra/a.jpg")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/ImageManipulatorOld/a.jpg")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/imagepicker/a.jpg")).toBe(false)
+  })
+
+  it("refuses a path traversal, also percent-encoded", () => {
     expect(isDeletableTempPhoto("file:///mock/cache/../documents/a.jpg")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/Camera/../genus-classifier.tflite")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/Camera/%2e%2e/model.tflite")).toBe(false)
+    expect(isDeletableTempPhoto("file:///mock/cache/Camera/%2E%2E/model.tflite")).toBe(false)
   })
 
   it("refuses everything when the platform has no cache directory", () => {
@@ -58,6 +81,8 @@ describe("deleteTempPhoto", () => {
 
     await deleteTempPhoto("file:///mock/documents/attachments/a.jpg")
     await deleteTempPhoto("file:///mock/cache/../documents/a.jpg")
+    await deleteTempPhoto("file:///mock/cache/")
+    await deleteTempPhoto("file:///mock/cache/genus-classifier.tflite")
     await deleteTempPhoto(null)
     await deleteTempPhoto(undefined)
     await deleteTempPhoto("")

@@ -24,7 +24,9 @@ import {
 const CAPTURE_URI = "file:///mock/cache/Camera/p.jpg"
 
 function resizedFilesLeft(): string[] {
-  return __listMockFiles().filter((uri) => uri.startsWith("file:///mock/cache/manipulated-"))
+  return __listMockFiles().filter((uri) =>
+    uri.startsWith("file:///mock/cache/ImageManipulator/manipulated-"),
+  )
 }
 
 /** A clock that returns the given values in call order. */
