@@ -18,6 +18,14 @@ function corsOrigin(cors: AppConfig["cors"]): boolean | string[] {
 }
 
 /**
+ * D-25: maximum size of a JSON request body. Express parses JSON up to 100 kB by default. A sync
+ * batch holds at most 100 operations (`SyncBatchDto`), and a survey with a 1000-character note, ten
+ * 300-character factor notes and a weather is about 10 kB with accented text, so 100 such
+ * operations stay near 1 MB; 2 MB doubles that. Caddy allows 50 MB (`infra/vps/Caddyfile.snippet`).
+ */
+export const JSON_BODY_LIMIT = "2mb"
+
+/**
  * Shared bootstrap configuration, used by both the real server (main.ts) and
  * the rate-limit E2E spec so trust proxy and the /v1 prefix always match
  * production.
@@ -45,6 +53,9 @@ export function configureApp(app: NestExpressApplication): void {
     // Bearer tokens only, no cookies anywhere: never allow credentialed requests.
     credentials: false,
   })
+
+  // Replaces the default 100 kB JSON parser; registered before the global pipes and any route.
+  app.useBodyParser("json", { limit: JSON_BODY_LIMIT })
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,9 +1,9 @@
-import { Controller, Get, Module } from "@nestjs/common"
+import { Body, Controller, Get, Module, Post } from "@nestjs/common"
 import { ConfigModule } from "@nestjs/config"
 import { NestFactory } from "@nestjs/core"
 import { NestExpressApplication } from "@nestjs/platform-express"
 import request = require("supertest")
-import { configureApp } from "../src/app.setup"
+import { JSON_BODY_LIMIT, configureApp } from "../src/app.setup"
 import { buildTestConfig } from "./config-helper"
 
 @Controller("ping")
@@ -11,6 +11,12 @@ class PingController {
   @Get()
   ping(): { ok: true } {
     return { ok: true }
+  }
+
+  // Echoes the size of the parsed body; the global ValidationPipe passes a plain object through.
+  @Post()
+  echo(@Body() body: { blob?: string }): { size: number } {
+    return { size: body.blob?.length ?? 0 }
   }
 }
 
@@ -134,5 +140,39 @@ describe("configureApp CORS (D-03)", () => {
     const options = await preflight(app, "https://dev.example")
     expect(options.headers["access-control-allow-origin"]).toBe("https://dev.example")
     expect(options.headers["access-control-allow-credentials"]).toBeUndefined()
+  })
+})
+
+describe("configureApp JSON body limit (D-25)", () => {
+  let app: NestExpressApplication | undefined
+
+  afterEach(async () => {
+    await app?.close()
+    app = undefined
+  })
+
+  it("accepts a 1.5 MB JSON body, above the 100 kB Express default", async () => {
+    app = await buildApp({})
+
+    const response = await request(app.getHttpServer())
+      .post("/v1/ping")
+      .send({ blob: "a".repeat(1_500_000) })
+
+    expect(response.status).toBe(201)
+    expect(response.body).toEqual({ size: 1_500_000 })
+  })
+
+  it("refuses a 2.5 MB JSON body with 413", async () => {
+    app = await buildApp({})
+
+    const response = await request(app.getHttpServer())
+      .post("/v1/ping")
+      .send({ blob: "a".repeat(2_500_000) })
+
+    expect(response.status).toBe(413)
+  })
+
+  it("exports the limit as 2mb", () => {
+    expect(JSON_BODY_LIMIT).toBe("2mb")
   })
 })
