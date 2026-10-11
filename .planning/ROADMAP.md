@@ -963,14 +963,14 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 1/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
+**Plans**: 2/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
 
 Plans:
 
 **Wave 1**
 
 - [x] 27-01-PLAN.md: Météo-France capture script for the owner, no key needed (D-22)
-- [ ] 27-02-PLAN.md: shared contract in @cortege/ibp-domain, factors.annotations, MAT-ANN parity (D-14, D-23)
+- [x] 27-02-PLAN.md: shared contract in @cortege/ibp-domain, factors.annotations, MAT-ANN parity (D-14, D-23)
 - [ ] 27-03-PLAN.md: French catalogue of the phase, NoteField, ochre contrast pair (D-18, D-26)
 - [ ] 27-04-PLAN.md: weather configuration and production rules, check-env parity (D-22)
 
@@ -1230,7 +1230,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
-| 27. Quick survey additions | 1/22 | In Progress|  |
+| 27. Quick survey additions | 2/22 | In Progress|  |
 | 28. Map Layers & Comparison | 0/TBD | Not started | - |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
 | 30. Route Choice Assistant | 0/TBD | Not started | - |
