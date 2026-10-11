@@ -18,6 +18,7 @@ export const ORTHO_STYLE: StyleSpecification = {
       type: "raster",
       tiles: [ORTHO_TILES],
       tileSize: 256,
+      minzoom: 0,
       maxzoom: 19,
       attribution: "Source : IGN",
     },
