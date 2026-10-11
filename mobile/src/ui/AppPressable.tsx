@@ -39,7 +39,10 @@ type FlatStyle = ViewStyle & Record<string, unknown>
  * Keys that place or size the pressable inside its parent. With the scale, they stay on the
  * `Pressable` (the outer box), so a card with `flex: 1`, a margin or an absolute position is laid
  * out as before; everything else (padding, fill, radius, row direction...) goes to the inner view
- * that scales, which grows to fill the outer box.
+ * that scales. The inner view grows to fill the outer box only when that box has a size of its own
+ * (see `needsFill`): a `flexGrow` on an auto-sized box is read by Yoga against the space the parent
+ * offers, and inside a flex-grown scroll content it stretched an auto-height button to the whole
+ * page (Android device check, plan 29-10, finding F-1).
  */
 const OUTER_STYLE_KEYS = new Set([
   "width",
@@ -89,7 +92,26 @@ function flattenStyle(style: unknown): FlatStyle {
   return (style as FlatStyle | null | undefined | false) || {}
 }
 
-function splitStyle(style: StyleProp<ViewStyle>): { outer: ViewStyle; inner: ViewStyle } {
+/**
+ * Whether the outer box can end up taller than the inner view's own content, so that the inner view
+ * has to grow to fill it: a flex or aspect-ratio size, a percentage height, an explicit stretch, or
+ * an absolute box pinned to both edges. A fixed size is repeated on the inner view, and an
+ * auto-sized box has nothing to fill.
+ */
+function needsFill(outer: Record<string, unknown>): boolean {
+  if ("flex" in outer || "flexGrow" in outer || "flexBasis" in outer || "aspectRatio" in outer) {
+    return true
+  }
+  if (typeof outer.height === "string" || typeof outer.minHeight === "string") return true
+  if (outer.alignSelf === "stretch") return true
+  return outer.position === "absolute" && "top" in outer && "bottom" in outer
+}
+
+function splitStyle(style: StyleProp<ViewStyle>): {
+  outer: ViewStyle
+  inner: ViewStyle
+  fill: boolean
+} {
   const outer: Record<string, unknown> = {}
   const inner: Record<string, unknown> = {}
   const flat = flattenStyle(style)
@@ -104,7 +126,7 @@ function splitStyle(style: StyleProp<ViewStyle>): { outer: ViewStyle; inner: Vie
     // percentage would compound, so it stays outer only and the inner view grows to fill it.
     if (SIZE_STYLE_KEYS.has(key) && typeof value === "number") inner[key] = value
   }
-  return { outer, inner }
+  return { outer, inner, fill: needsFill(outer) }
 }
 
 /**
@@ -182,21 +204,26 @@ export const AppPressable = forwardRef<View, AppPressableProps>(function AppPres
 
   if (typeof style !== "function" && typeof children !== "function") {
     // Static style and children: no pressed-state callbacks, so the layout is computed once.
-    const { outer, inner } = splitStyle(style)
+    const { outer, inner, fill } = splitStyle(style)
     return (
       <Pressable {...common} style={outer}>
-        <Animated.View style={[styles.fill, inner, animatedStyle]}>{children}</Animated.View>
+        <Animated.View style={[fill ? styles.fill : null, inner, animatedStyle]}>
+          {children}
+        </Animated.View>
       </Pressable>
     )
   }
 
   return (
     <Pressable {...common} style={(state) => splitStyle(resolveStyle(state)).outer}>
-      {(state) => (
-        <Animated.View style={[styles.fill, splitStyle(resolveStyle(state)).inner, animatedStyle]}>
-          {typeof children === "function" ? children(state) : children}
-        </Animated.View>
-      )}
+      {(state) => {
+        const { inner, fill } = splitStyle(resolveStyle(state))
+        return (
+          <Animated.View style={[fill ? styles.fill : null, inner, animatedStyle]}>
+            {typeof children === "function" ? children(state) : children}
+          </Animated.View>
+        )
+      }}
     </Pressable>
   )
 })
