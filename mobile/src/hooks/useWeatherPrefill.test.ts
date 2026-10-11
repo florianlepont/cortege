@@ -1,0 +1,456 @@
+/**
+ * Tests for useWeatherPrefill (phase 27, D-10, D-11, D-20): the app-level weather lookup and
+ * catch-up. Storage and the API client are mocked; the online flag is driven through the mocked
+ * useIsOffline and the app foreground through the mocked AppState.
+ */
+
+type AppStateHandler = (state: string) => void
+const mockAppStateHandlers = new Set<AppStateHandler>()
+
+jest.mock("react-native", () => ({
+  AppState: {
+    addEventListener: (_type: string, handler: AppStateHandler) => {
+      mockAppStateHandlers.add(handler)
+      return { remove: () => mockAppStateHandlers.delete(handler) }
+    },
+  },
+}))
+
+let mockOffline = false
+jest.mock("./useIsOffline", () => ({ useIsOffline: () => mockOffline }))
+
+jest.mock("../storage/weather", () => ({
+  listWeatherCandidates: jest.fn(),
+  loadWeatherPoint: jest.fn(),
+  saveWeatherPoint: jest.fn(),
+}))
+
+jest.mock("../storage/offline-map", () => ({
+  getCachedParcelById: jest.fn(),
+}))
+
+jest.mock("../api/weather-api", () => ({
+  fetchWeather: jest.fn(),
+}))
+
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react-native/pure"
+import type { SurveyWeather, WeatherObservation } from "@cortege/ibp-domain"
+import { fetchWeather } from "../api/weather-api"
+import { mergeWeatherObservation } from "../app/weather"
+import { getCachedParcelById } from "../storage/offline-map"
+import type { LocalSurvey } from "../storage/types"
+import {
+  listWeatherCandidates,
+  loadWeatherPoint,
+  saveWeatherPoint,
+  type WeatherCandidate,
+} from "../storage/weather"
+import { useWeatherPrefill, WEATHER_SETTLED_RETRY_MS } from "./useWeatherPrefill"
+
+const mockList = listWeatherCandidates as jest.Mock
+const mockLoadPoint = loadWeatherPoint as jest.Mock
+const mockSavePoint = saveWeatherPoint as jest.Mock
+const mockParcel = getCachedParcelById as jest.Mock
+const mockFetch = fetchWeather as jest.Mock
+
+const HOUR = 60 * 60 * 1000
+const POINT = { lat: 48.85, lng: 2.35 }
+
+const OBSERVATION: WeatherObservation = {
+  sky: "clear",
+  temperature_c: 14.2,
+  wind_kmh: 11,
+  rain_24h_mm: 0,
+  observed_at: "2026-10-11T07:00:00.000Z",
+  source: "meteo_france",
+  station: { id: "75114001", name: "Paris-Montsouris", distance_km: 3.1 },
+}
+
+const hoursAgo = (hours: number): string => new Date(Date.now() - hours * HOUR).toISOString()
+
+const candidate = (id: string, weather: SurveyWeather, parcelIds = ["P1"]): WeatherCandidate => ({
+  id,
+  parcel_ids: parcelIds,
+  weather,
+})
+
+const localSurvey = (id: string, updatedAt = "2026-10-11T08:00:00.000Z"): LocalSurvey =>
+  ({ id, status: "draft", updated_at: updatedAt }) as LocalSurvey
+
+type Props = {
+  surveys: LocalSurvey[]
+  accessToken: string | null
+}
+
+describe("useWeatherPrefill", () => {
+  let updateSurveyWeather: jest.Mock
+  let stored: Record<string, SurveyWeather | null>
+
+  const mount = async (initial: Partial<Props> = {}) => {
+    const hook = await renderHook(
+      (props: Props) =>
+        useWeatherPrefill({
+          apiUrl: "https://api.test/v1",
+          accessToken: props.accessToken,
+          surveys: props.surveys,
+          updateSurveyWeather,
+        }),
+      { initialProps: { surveys: [localSurvey("S1")], accessToken: "tok", ...initial } },
+    )
+    return hook
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockAppStateHandlers.clear()
+    mockOffline = false
+    stored = {}
+    updateSurveyWeather = jest.fn(
+      async (
+        id: string,
+        update: (current: SurveyWeather | null) => SurveyWeather | null,
+      ): Promise<boolean> => {
+        stored[id] = update(stored[id] ?? null)
+        return true
+      },
+    )
+    mockList.mockResolvedValue([])
+    mockLoadPoint.mockResolvedValue(POINT)
+    mockSavePoint.mockResolvedValue(undefined)
+    mockParcel.mockResolvedValue(null)
+    mockFetch.mockResolvedValue({ observation: OBSERVATION })
+  })
+
+  afterEach(async () => {
+    await cleanup()
+  })
+
+  test("online with a token, a draft is fetched once for its own time and merged", async () => {
+    const requestedAt = hoursAgo(1)
+    mockList.mockResolvedValue([candidate("S1", { requested_at: requestedAt })])
+    stored.S1 = { requested_at: requestedAt }
+
+    await mount()
+
+    await waitFor(() => expect(updateSurveyWeather).toHaveBeenCalledTimes(1))
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch).toHaveBeenCalledWith("https://api.test/v1", "tok", {
+      lat: POINT.lat,
+      lng: POINT.lng,
+      at: requestedAt,
+    })
+    expect(stored.S1).toEqual(mergeWeatherObservation({ requested_at: requestedAt }, OBSERVATION))
+  })
+
+  test("inFlightIds holds the id while the request runs", async () => {
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    let release: (value: unknown) => void = () => undefined
+    mockFetch.mockReturnValue(new Promise((resolve) => (release = resolve)))
+
+    const { result } = await mount()
+
+    await waitFor(() => expect(result.current.state.inFlightIds.has("S1")).toBe(true))
+    await act(async () => {
+      release({ observation: OBSERVATION })
+    })
+    await waitFor(() => expect(result.current.state.inFlightIds.has("S1")).toBe(false))
+  })
+
+  test("offline nothing is requested; when the network returns the same draft is fetched for requested_at", async () => {
+    const requestedAt = hoursAgo(2)
+    mockOffline = true
+    mockList.mockResolvedValue([candidate("S1", { requested_at: requestedAt })])
+
+    const { rerender, result } = await mount()
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(result.current.state.unavailableIds.size).toBe(0)
+
+    mockOffline = false
+    await rerender({ surveys: [localSurvey("S1")], accessToken: "tok" })
+
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1))
+    expect(mockFetch.mock.calls[0][2]).toEqual({ lat: POINT.lat, lng: POINT.lng, at: requestedAt })
+  })
+
+  test("no request without an access token", async () => {
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+
+    await mount({ accessToken: null })
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test("never fetches a candidate older than 24 h, a provider-filled one, or an all-edited one", async () => {
+    mockList.mockResolvedValue([
+      candidate("OLD", { requested_at: hoursAgo(25) }),
+      candidate("DONE", { requested_at: hoursAgo(1), source: "meteo_france" }),
+      candidate("EDITED", {
+        requested_at: hoursAgo(1),
+        edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm", "observed_at"],
+      }),
+    ])
+
+    await mount({ surveys: [localSurvey("OLD"), localSurvey("DONE"), localSurvey("EDITED")] })
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test("the candidate list is drafts only, so a submitted survey is never fetched", async () => {
+    // The storage query keeps status = 'draft'; a submitted survey is not in the list.
+    mockList.mockResolvedValue([])
+
+    await mount({ surveys: [{ ...localSurvey("S1"), status: "submitted" } as LocalSurvey] })
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test("falls back to the centre of the cached parcel geometry, and to nothing", async () => {
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    mockLoadPoint.mockResolvedValue(null)
+    mockParcel.mockResolvedValue({
+      parcel_id: "P1",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [2.0, 48.0],
+            [2.2, 48.0],
+            [2.2, 48.2],
+            [2.0, 48.2],
+            [2.0, 48.0],
+          ],
+        ],
+      },
+    })
+
+    const { unmount } = await mount()
+
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1))
+    const sent = mockFetch.mock.calls[0][2] as { lat: number; lng: number }
+    expect(sent.lat).toBeCloseTo(48.1, 5)
+    expect(sent.lng).toBeCloseTo(2.1, 5)
+    await unmount()
+
+    mockFetch.mockClear()
+    mockParcel.mockResolvedValue(null)
+    const second = await mount()
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(second.result.current.state.unavailableIds.size).toBe(0)
+  })
+
+  test("a rejection marks the draft unavailable; retry fetches again at once and a success clears it", async () => {
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    mockFetch.mockRejectedValueOnce(new Error("503"))
+
+    const { result } = await mount()
+    await waitFor(() => expect(result.current.state.unavailableIds.has("S1")).toBe(true))
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await result.current.actions.retry("S1")
+    })
+
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+    expect(result.current.state.unavailableIds.has("S1")).toBe(false)
+    expect(updateSurveyWeather).toHaveBeenCalledTimes(1)
+  })
+
+  test("an unavailable draft is not asked again by a list change, but is on the next foreground", async () => {
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    mockFetch.mockRejectedValue(new Error("network"))
+
+    const { result, rerender } = await mount()
+    await waitFor(() => expect(result.current.state.unavailableIds.has("S1")).toBe(true))
+
+    await rerender({
+      surveys: [localSurvey("S1", "2026-10-11T09:00:00.000Z")],
+      accessToken: "tok",
+    })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    mockFetch.mockResolvedValue({ observation: OBSERVATION })
+    await act(async () => {
+      mockAppStateHandlers.forEach((handler) => handler("active"))
+    })
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.state.unavailableIds.has("S1")).toBe(false))
+  })
+
+  test("a 200 without observation settles the draft for the retry window, even on a network change", async () => {
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    mockFetch.mockResolvedValue({ observation: null, reason: "no_data" })
+
+    const { result } = await mount()
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(result.current.state.inFlightIds.size).toBe(0))
+    expect(result.current.state.unavailableIds.size).toBe(0)
+    expect(updateSurveyWeather).not.toHaveBeenCalled()
+
+    await act(async () => {
+      mockAppStateHandlers.forEach((handler) => handler("active"))
+    })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(WEATHER_SETTLED_RETRY_MS).toBe(60 * 60 * 1000)
+
+    // Once the window has passed, the next trigger asks again.
+    const realNow = Date.now
+    Date.now = () => realNow() + WEATHER_SETTLED_RETRY_MS + 1000
+    try {
+      await act(async () => {
+        mockAppStateHandlers.forEach((handler) => handler("active"))
+      })
+      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2))
+    } finally {
+      Date.now = realNow
+    }
+  })
+
+  test("rememberPoint saves the point and fetches at once when online", async () => {
+    mockList.mockResolvedValue([])
+    const { result } = await mount()
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mockFetch).not.toHaveBeenCalled()
+
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    await act(async () => {
+      await result.current.actions.rememberPoint("S1", { lat: 44.1, lng: 3.2 })
+    })
+
+    expect(mockSavePoint).toHaveBeenCalledWith("S1", { lat: 44.1, lng: 3.2 })
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  test("rememberPoint offline only saves the point", async () => {
+    mockOffline = true
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    const { result } = await mount()
+
+    await act(async () => {
+      await result.current.actions.rememberPoint("S1", { lat: 44.1, lng: 3.2 })
+    })
+
+    expect(mockSavePoint).toHaveBeenCalledTimes(1)
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test("refill resets the weather to its survey time, then fetches at once", async () => {
+    const requestedAt = hoursAgo(1)
+    const filled: SurveyWeather = {
+      requested_at: requestedAt,
+      temperature_c: 3,
+      source: "manual",
+      edited: ["temperature_c"],
+    }
+    stored.S1 = filled
+    // At mount the draft has no candidate yet (nothing to ask); the refill then exposes it.
+    mockList.mockResolvedValue([])
+    const { result } = await mount()
+    await act(async () => {
+      await Promise.resolve()
+    })
+    mockList.mockImplementation(async () => [
+      candidate("S1", stored.S1 ?? { requested_at: requestedAt }),
+    ])
+    mockFetch.mockClear()
+
+    await act(async () => {
+      await result.current.actions.refill("S1")
+    })
+
+    expect(stored.S1).toEqual(mergeWeatherObservation({ requested_at: requestedAt }, OBSERVATION))
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  test("refill on a submitted survey (write refused) does not fetch", async () => {
+    updateSurveyWeather.mockResolvedValue(false)
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    mockFetch.mockClear()
+    const { result } = await mount({ accessToken: null })
+
+    await act(async () => {
+      await result.current.actions.refill("S1")
+    })
+
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  test("requests run one at a time and a trigger during a run does not start a second run", async () => {
+    mockList.mockResolvedValue([
+      candidate("S1", { requested_at: hoursAgo(1) }),
+      candidate("S2", { requested_at: hoursAgo(1) }),
+    ])
+    const releases: Array<(value: unknown) => void> = []
+    mockFetch.mockImplementation(() => new Promise((resolve) => releases.push(resolve)))
+
+    await mount({ surveys: [localSurvey("S1"), localSurvey("S2")] })
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1))
+
+    // A trigger while the first request is in flight changes nothing yet.
+    await act(async () => {
+      mockAppStateHandlers.forEach((handler) => handler("active"))
+    })
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      releases[0]({ observation: null, reason: "no_data" })
+    })
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(2))
+    expect(mockFetch.mock.calls[1][2].at).toBeDefined()
+    await act(async () => {
+      releases[1]({ observation: null, reason: "no_data" })
+    })
+    await waitFor(() => expect(mockList).toHaveBeenCalled())
+    // Both drafts are settled now: no further request.
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  test("a storage failure while listing candidates is silent", async () => {
+    mockList.mockRejectedValue(new Error("db"))
+
+    const { result } = await mount()
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(result.current.state.unavailableIds.size).toBe(0)
+  })
+
+  test("the actions keep their identity across renders", async () => {
+    const { result, rerender } = await mount()
+    const before = result.current.actions
+
+    await rerender({
+      surveys: [localSurvey("S1", "2026-10-11T10:00:00.000Z")],
+      accessToken: "tok2",
+    })
+
+    expect(result.current.actions).toBe(before)
+  })
+})
