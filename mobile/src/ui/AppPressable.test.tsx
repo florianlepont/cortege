@@ -230,6 +230,59 @@ describe("AppPressable style", () => {
     expect(flatten(inner!.props.style).height).toBeUndefined()
   })
 
+  test("an auto-sized box does not grow its inner view (Android finding F-1)", () => {
+    // Device check, plan 29-10 (Pixel_8, 360 x 640 dp): a `flexGrow: 1` inner view stretched an
+    // auto-height button to the page (403 to 444 px instead of 132 px) inside a flex-grown scroll
+    // content or a `flex: 1` column. Jest cannot see Yoga, so the style values are pinned: an
+    // `AppButton`-shaped style (a fixed minHeight, no flex) must give the inner view no flexGrow.
+    const { pressable, inner } = render({
+      style: [
+        { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 999 },
+        { minHeight: 44, paddingHorizontal: 20 },
+        { alignSelf: "auto", marginTop: 4 },
+      ],
+    })
+    expect(flatten(pressable.props.style)).toEqual({
+      minHeight: 44,
+      alignSelf: "auto",
+      marginTop: 4,
+    })
+    expect(flatten(inner!.props.style)).not.toHaveProperty("flexGrow")
+    expect(flatten(inner!.props.style)).toMatchObject({ minHeight: 44, paddingHorizontal: 20 })
+  })
+
+  test("a fixed size alone does not grow the inner view, it is repeated on it", () => {
+    const { inner } = render({ style: { width: 120, height: 48, minHeight: 40 } })
+    expect(flatten(inner!.props.style)).toMatchObject({ width: 120, height: 48, minHeight: 40 })
+    expect(flatten(inner!.props.style)).not.toHaveProperty("flexGrow")
+  })
+
+  test.each([
+    ["flex", { flex: 1 }],
+    ["flexGrow", { flexGrow: 1 }],
+    ["flexBasis", { flexBasis: 100 }],
+    ["aspectRatio", { width: 100, aspectRatio: 1 }],
+    ["a percentage height", { height: "50%" }],
+    ["a percentage minHeight", { minHeight: "50%" }],
+    ["an explicit stretch", { alignSelf: "stretch" }],
+    ["an absolute box pinned top and bottom", { position: "absolute", top: 0, bottom: 0 }],
+  ] as const)("%s makes the inner view fill the outer box", (_name, style) => {
+    const { inner } = render({ style: style as never })
+    expect(flatten(inner!.props.style)).toMatchObject({ flexGrow: 1 })
+  })
+
+  test("an absolute box pinned to one edge only is auto-sized, so no fill", () => {
+    const { inner } = render({ style: { position: "absolute", top: 0, right: 0 } })
+    expect(flatten(inner!.props.style)).not.toHaveProperty("flexGrow")
+  })
+
+  test("the style function form follows the same rule for each pressed state", () => {
+    const { inner } = render({
+      style: ({ pressed }: { pressed: boolean }) => (pressed ? { flex: 1 } : { minHeight: 44 }),
+    })
+    expect(flatten(inner!.props.style)).not.toHaveProperty("flexGrow")
+  })
+
   test("a style function receives the pressed state, for the Pressable and the inner view", () => {
     const style = jest.fn(({ pressed }: { pressed: boolean }) => ({
       marginLeft: 2,

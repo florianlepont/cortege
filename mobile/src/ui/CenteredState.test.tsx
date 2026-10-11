@@ -1,7 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { Ionicons } from "@expo/vector-icons"
-import { brandComponentTokens, brandSpacing4 } from "../app/brand-tokens"
+import { brandSpacing4 } from "../app/brand-tokens"
 import { defaultTheme } from "../app/theme"
 import { CenteredState } from "./CenteredState"
 import { FrameLargeTitleContext } from "./frame-large-title"
@@ -114,16 +114,6 @@ describe("CenteredState", () => {
     expect(style).toEqual({ alignSelf: "center" })
     expect(style).not.toHaveProperty("flex")
     expect(style).not.toHaveProperty("flexGrow")
-  })
-
-  it("gives the button a fixed height so the pressable's scale wrapper cannot grow it", () => {
-    // Plan 29-10, device finding on the Android 360 x 640 dp emulator: without an explicit height
-    // `AppPressable`'s `flexGrow: 1` inner view stretched the button to the whole page (785 px
-    // instead of 88 px), the "tall capsule" of finding F-1. Jest cannot see layout, so the value
-    // is pinned here and the real height was measured from the native view tree.
-    const tree = render({ actionLabel: "Réessayer", onAction: jest.fn() })
-    const style = flattenStyle(byType(tree, "AppButton")[0].props.style)
-    expect(style).toEqual({ height: brandComponentTokens.button.minHeight })
   })
 
   it("shows a spinner instead of the icon when busy, and no button without an action", () => {
