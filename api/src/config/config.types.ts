@@ -9,6 +9,8 @@ export type CorsMode = "any" | "none" | "list"
 
 export type StorageMode = "local" | "minio"
 
+export type WeatherProvider = "meteofrance" | "synthetic" | "off"
+
 export type AppConfig = {
   nodeEnv: NodeEnv
   isProduction: boolean
@@ -65,6 +67,18 @@ export type AppConfig = {
     wfsUrl: string
     wfsTypename: string
     wfsCount: number
+  }
+  weather: {
+    /** Default "off": an unset production value must never store invented weather (D-22). */
+    provider: WeatherProvider
+    /** The Météo-France portal credential. Read from the environment only, never logged. */
+    credential: string
+    observationsUrl: string
+    timeoutMs: number
+    /** D-19: beyond this distance to the nearest station the weather stays empty. */
+    maxStationDistanceKm: number
+    /** Longest gap between the survey time and an observation that is still used. */
+    timeToleranceMinutes: number
   }
   debug: {
     dataResetEnabled: boolean

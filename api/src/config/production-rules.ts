@@ -42,6 +42,10 @@ function isBlank(value: string | undefined): boolean {
   return !(value ?? "").trim()
 }
 
+function weatherProvider(env: Env): string {
+  return (env.WEATHER_PROVIDER ?? "").trim().toLowerCase()
+}
+
 function corsProblem(value: string | undefined): string | null {
   const trimmed = (value ?? "").trim()
   if (!trimmed) {
@@ -107,10 +111,19 @@ export function findProductionProblems(env: Env): ConfigProblem[] {
     problems.push({ variable: "CORS_ORIGIN", reason: cors })
   }
 
+  // D-22: invented weather must never be stored as Météo-France data.
+  if (weatherProvider(env) === "synthetic") {
+    problems.push({
+      variable: "WEATHER_PROVIDER",
+      reason:
+        "valeur de développement : la météo serait inventée. Utilisez « meteofrance » ou « off ».",
+    })
+  }
+
   return problems
 }
 
-/** D-02: missing Auth0 management credentials degrade account deletion, they do not stop the API. */
+/** D-02, D-22: missing optional credentials degrade a feature, they do not stop the API. */
 export function findProductionWarnings(env: Env): ConfigProblem[] {
   const warnings: ConfigProblem[] = []
   for (const variable of ["AUTH0_MGMT_CLIENT_ID", "AUTH0_MGMT_CLIENT_SECRET"]) {
@@ -122,6 +135,18 @@ export function findProductionWarnings(env: Env): ConfigProblem[] {
           "vide ou exemple CHANGE_ME : la suppression de compte côté Auth0 ne fonctionnera pas.",
       })
     }
+  }
+  // D-22: a missing weather key never blocks a deploy (the previous API would keep serving):
+  // the weather simply stays empty.
+  const weatherKey = (env.METEOFRANCE_API_KEY ?? "").trim()
+  if (
+    weatherProvider(env) === "meteofrance" &&
+    (!weatherKey || PLACEHOLDER_PREFIX.test(weatherKey))
+  ) {
+    warnings.push({
+      variable: "METEOFRANCE_API_KEY",
+      reason: "vide ou exemple CHANGE_ME : la météo restera vide.",
+    })
   }
   return warnings
 }

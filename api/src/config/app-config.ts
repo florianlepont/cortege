@@ -1,5 +1,5 @@
 import { ConfigService, registerAs } from "@nestjs/config"
-import { AppConfig, CorsMode, NodeEnv } from "./config.types"
+import { AppConfig, CorsMode, NodeEnv, WeatherProvider } from "./config.types"
 import { validateEnv } from "./env.schema"
 
 /** Shown in pg_stat_activity (D-06). */
@@ -126,6 +126,16 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       wfsUrl: v.CADASTRE_IGN_WFS_URL ?? "https://data.geopf.fr/wfs/ows",
       wfsTypename: v.CADASTRE_IGN_WFS_TYPENAME ?? "CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle",
       wfsCount: Math.min(MAX_WFS_COUNT, positiveInteger(v.CADASTRE_IGN_WFS_COUNT, 1200)),
+    },
+    weather: {
+      // Deliberately unlike CADASTRE_PROVIDER: unset or blank is "off", never "synthetic". The
+      // schema has already refused any value other than the three providers.
+      provider: ((v.WEATHER_PROVIDER ?? "off").trim().toLowerCase() || "off") as WeatherProvider,
+      credential: (v.METEOFRANCE_API_KEY ?? "").trim(),
+      observationsUrl: v.METEOFRANCE_OBS_URL ?? "https://public-api.meteofrance.fr/public/DPObs/v2",
+      timeoutMs: positiveInteger(v.WEATHER_TIMEOUT_MS, 4000),
+      maxStationDistanceKm: positiveNumber(v.WEATHER_MAX_STATION_DISTANCE_KM, 25),
+      timeToleranceMinutes: positiveInteger(v.WEATHER_TIME_TOLERANCE_MINUTES, 90),
     },
     debug: {
       dataResetEnabled: isTrue(v.DEBUG_DATA_RESET_ENABLED),
