@@ -2,7 +2,8 @@
 // Carte de 1950, Photos 1950, wrapping around. A layer that is not available (offline, no pack for
 // the area) is skipped, and so is the layer shown on the other side of a comparison (never the same
 // layer on both sides). Reference: `swNeighbor` of the sketch engine (map-layers-kit.js).
-// Pure: no import but types and the catalogue order.
+// Pure: no import but types and the catalogue order. `neighbourLayer` is a worklet: the swipe
+// machine calls it from the pan handlers on the UI thread.
 
 import { BASE_LAYER_KEYS } from "./layers"
 import type { BaseLayerKey } from "./layers"
@@ -31,6 +32,7 @@ export function neighbourLayer(
   dir: 1 | -1,
   { isAvailable, exclude }: { isAvailable: LayerAvailability; exclude?: BaseLayerKey },
 ): BaseLayerKey | null {
+  "worklet"
   const size = BASEMAP_CYCLE.length
   const from = BASEMAP_CYCLE.indexOf(current)
   for (let step = 1; step < size; step += 1) {
