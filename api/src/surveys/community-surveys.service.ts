@@ -4,10 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common"
-import type {
-  CommunitySurveyAttachment,
+import {
+  readFactorAnnotations,
+  type CommunitySurveyAttachment,
   CommunitySurveyDetail,
   CommunitySurveyHistoryItem,
+  SurveyWeather,
 } from "@cortege/ibp-domain"
 import { DatabaseService } from "../database/database.service"
 import { DOWNLOAD_URL_TTL_SECONDS, StorageService } from "../storage/storage.service"
@@ -31,6 +33,9 @@ type DetailDbRow = {
   submitted_at: string
   author_name: string | null
   parcel_ids: string[] | null
+  survey_note: string | null
+  weather: SurveyWeather | null
+  factor_annotations: unknown
 }
 
 type HistoryDbRow = {
@@ -42,6 +47,7 @@ type HistoryDbRow = {
   scores: Record<string, unknown>
   submitted_at: string
   author_name: string | null
+  survey_note: string | null
 }
 
 type AttachmentDbRow = {
@@ -81,6 +87,9 @@ export class CommunitySurveysService {
          s.ibp_cas3_scale,
          s.scores,
          s.factor_results,
+         s.survey_note,
+         s.weather,
+         s.factors -> 'annotations' AS factor_annotations,
          s.submitted_at::text,
          u.display_name AS author_name,
          (SELECT array_agg(sp.parcel_id ORDER BY sp.parcel_id) FROM survey_parcels sp WHERE sp.survey_id = s.id) AS parcel_ids
@@ -105,6 +114,7 @@ export class CommunitySurveysService {
          s.version_number,
          s.ibp_method_version,
          s.scores,
+         s.survey_note,
          s.submitted_at::text,
          u.display_name AS author_name
        FROM surveys s
@@ -126,6 +136,8 @@ export class CommunitySurveysService {
     )
 
     const location = await this.parcels.displayLocation(this.db, row.id, row.parcel_id)
+    // Only A to J entries with a true doubt or a note leave the API (T-27-58).
+    const annotations = readFactorAnnotations({ annotations: row.factor_annotations })
 
     return {
       survey_id: row.id,
@@ -141,6 +153,9 @@ export class CommunitySurveysService {
       ibp_cas3_scale: row.ibp_cas3_scale === true,
       scores: row.scores,
       factor_results: row.factor_results,
+      survey_note: row.survey_note ?? null,
+      weather: row.weather ?? null,
+      factor_annotations: Object.keys(annotations).length > 0 ? annotations : null,
       // A legacy survey linked by `parcel_id` only still has its one parcel.
       parcel_ids: row.parcel_ids ?? (row.parcel_id ? [row.parcel_id] : []),
       // Exact, like the public map since 2026-10-08 (owner decision): internal use, to revisit.
@@ -155,6 +170,7 @@ export class CommunitySurveysService {
           ibp_method_version: item.ibp_method_version,
           ibp_total: toFiniteNumber(item.scores?.ibp_total) ?? 0,
           submitted_at: item.submitted_at,
+          survey_note: item.survey_note ?? null,
           is_current: item.id === row.id,
         }),
       ),

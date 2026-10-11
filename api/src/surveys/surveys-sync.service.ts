@@ -349,6 +349,8 @@ export class SurveysSyncService {
          s.factors,
          s.factor_results,
          s.scores,
+         s.survey_note,
+         s.weather,
          s.created_at::text,
          s.updated_at::text,
          s.submitted_at::text,
@@ -361,7 +363,12 @@ export class SurveysSyncService {
       [userId, surveyIds],
     )
 
-    return result.rows
+    // Phase 27, D-01: a survey without a note or weather reads null, never a missing key.
+    return result.rows.map((row) => ({
+      ...row,
+      survey_note: row.survey_note ?? null,
+      weather: row.weather ?? null,
+    }))
   }
 
   private async loadSyncChangeAttachmentsByIds(

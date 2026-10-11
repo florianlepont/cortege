@@ -3,6 +3,7 @@ import { DatabaseService } from "../src/database/database.service"
 import { CommunitySurveysService } from "../src/surveys/community-surveys.service"
 import { ParcelsService } from "../src/surveys/parcels.service"
 import { StorageService } from "../src/storage/storage.service"
+import { PUBLIC_SURVEY_PREDICATE } from "../src/surveys/public-map.queries"
 
 type QueryResult = { rows: unknown[] }
 
@@ -70,6 +71,7 @@ const historyRow = (
   scores: { ibp_total: total },
   submitted_at: "2026-09-28 09:41:00+00",
   author_name: version === 1 ? null : "Camille",
+  survey_note: version === 1 ? null : "Note de la version 2",
 })
 
 describe("CommunitySurveysService.getDetail", () => {
@@ -112,6 +114,74 @@ describe("CommunitySurveysService.getDetail", () => {
     expect(db.query.mock.calls[0][1]).toEqual(["s-2"])
     expect(db.query.mock.calls[1][1]).toEqual(["s-2", 20])
     expect(db.query.mock.calls[1][0]).toContain("s.ibp_method_version")
+  })
+
+  it("returns the note, the weather and the sanitised factor annotations, and the note of each history item", async () => {
+    const weather = { sky: "rain", temperature_c: 11, source: "manual" }
+    const db = buildDb(
+      {
+        rows: [
+          detailRow({
+            survey_note: "Parcelle humide",
+            weather,
+            factor_annotations: {
+              A: { doubt: true, note: "A verifier" },
+              B: { doubt: false },
+              Z: { doubt: true },
+              C: "bad",
+              D: { note: "   " },
+              E: { note: "Vieux chene", extra: 1 },
+            },
+          }),
+        ],
+      },
+      { rows: [historyRow("s-1", 1, 24), historyRow("s-2", 2, 31)] },
+    )
+    const { service } = buildService(db)
+
+    const detail = await service.getDetail("s-2")
+
+    expect(detail.survey_note).toBe("Parcelle humide")
+    expect(detail.weather).toEqual(weather)
+    expect(detail.factor_annotations).toEqual({
+      A: { doubt: true, note: "A verifier" },
+      E: { note: "Vieux chene" },
+    })
+    expect(detail.history.map((item) => item.survey_note)).toEqual([null, "Note de la version 2"])
+    const detailSql = String(db.query.mock.calls[0][0])
+    expect(detailSql).toContain("s.survey_note")
+    expect(detailSql).toContain("s.weather")
+    expect(detailSql).toContain("'annotations'")
+    expect(String(db.query.mock.calls[1][0])).toContain("s.survey_note")
+  })
+
+  it("returns null note, weather and annotations when the survey has none", async () => {
+    const db = buildDb(
+      { rows: [detailRow({ survey_note: null, weather: null, factor_annotations: null })] },
+      { rows: [] },
+      { rows: [detailRow({ factor_annotations: {} })] },
+      { rows: [] },
+      { rows: [detailRow()] },
+      { rows: [] },
+    )
+    const { service } = buildService(db)
+
+    const empty = await service.getDetail("s-2")
+    expect(empty.survey_note).toBeNull()
+    expect(empty.weather).toBeNull()
+    expect(empty.factor_annotations).toBeNull()
+    expect((await service.getDetail("s-2")).factor_annotations).toBeNull()
+    expect((await service.getDetail("s-2")).survey_note).toBeNull()
+  })
+
+  it("keeps the submitted-only predicate on the detail and the history reads", async () => {
+    const db = buildDb({ rows: [detailRow()] }, { rows: [] })
+    const { service } = buildService(db)
+    await service.getDetail("s-2")
+    for (const call of db.query.mock.calls.slice(0, 2)) {
+      expect(String(call[0])).toContain(PUBLIC_SURVEY_PREDICATE)
+      expect(String(call[0])).toContain("s.submitted_at IS NOT NULL")
+    }
   })
 
   it("falls back to the legacy single parcel, has none without a parcel, and reads null untagged flags", async () => {
