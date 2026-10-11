@@ -18,6 +18,7 @@ import { useOfflineAreas } from "../hooks/useOfflineAreas"
 import { useOfflineMapPrompt } from "../hooks/useOfflineMapPrompt"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
 import type { BasemapKey } from "../map/basemaps"
+import { cachedParcelCentre } from "../map/own-surveys"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
 import { MapTitlePill } from "./public-map/MapChips"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
@@ -29,6 +30,7 @@ import { ParcelSelectionCard } from "./parcel-selection/ParcelSelectionCard"
 import { isCompactParcelCard } from "./parcel-selection/layout-budget"
 import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
+import type { WeatherPoint } from "../storage/weather"
 
 const t = fr.parcelSelection
 const headers = fr.navigation.headers
@@ -57,7 +59,11 @@ type SurveyParcelSelectionScreenProps = {
   selectedParcelIds: string[]
   onToggleParcelSelection: (parcelId: string) => void
   onCaptureGpsLocation: (options?: { silent?: boolean }) => Promise<GpsCaptureResult | null>
-  onSave: () => Promise<void>
+  /**
+   * Phase 27, D-10: `weatherPoint` is the centre of the parcels the observer tapped (null when
+   * their geometry is not loaded), the place the weather is looked up for.
+   */
+  onSave: (weatherPoint: WeatherPoint | null) => Promise<void>
   /** New-survey flow (step 4 of 4): the button reads "Continuer" and needs a parcel. */
   wizard?: boolean
 }
@@ -170,7 +176,9 @@ export function SurveyParcelSelectionScreen({
       return
     }
     setSaving(true)
-    void onSave().finally(() => setSaving(false))
+    void onSave(cachedParcelCentre(parcelStatuses, selectedParcelIds)).finally(() =>
+      setSaving(false),
+    )
   }
 
   const handleLocate = async (silent = false): Promise<void> => {

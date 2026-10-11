@@ -242,6 +242,10 @@ import {
   NearbyParcelsProvider,
   type NearbyParcelsContextValue,
 } from "../../state/nearby-parcels-context"
+import {
+  WeatherPrefillProvider,
+  type WeatherPrefillContextValue,
+} from "../../state/weather-context"
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "../public-map-reload"
 import { SurveysStackConfigContext } from "../stacks/surveys-stack-config"
 import { AccountRoute } from "./AccountRoute"
@@ -287,6 +291,7 @@ type Fixture = {
   surveys: SurveysContextValue
   form: SurveyFormContextValue
   nearby: NearbyParcelsContextValue
+  weather: WeatherPrefillContextValue
   autosaveStatus: AutosaveStatus
 }
 
@@ -306,7 +311,9 @@ const survey = {
   completion_rate: 10,
 }
 
-function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): Fixture {
+function makeFixture(
+  overrides: { startEdit?: boolean; saved?: boolean; editingSurveyId?: string | null } = {},
+): Fixture {
   const startEdit = overrides.startEdit ?? true
   const saved = overrides.saved ?? true
   return {
@@ -414,7 +421,7 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
         formErrors: { siteName: null },
         draftInput: {},
         formMode: "create",
-        editingSurveyId: null,
+        editingSurveyId: overrides.editingSurveyId ?? null,
       } as unknown as SurveyFormContextValue["state"],
       actions: actionsProxy({ saveSurveyEdits: saved, createDraft: saved }),
     },
@@ -429,6 +436,14 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
         error: false,
       },
       load: jest.fn(async () => undefined),
+    },
+    weather: {
+      state: { inFlightIds: new Set<string>(), unavailableIds: new Set<string>() },
+      actions: {
+        rememberPoint: jest.fn(async () => undefined),
+        retry: jest.fn(async () => undefined),
+        refill: jest.fn(async () => undefined),
+      },
     },
     autosaveStatus: { state: "idle", savedAt: null },
   }
@@ -446,7 +461,9 @@ function Providers({ fixture, children }: { fixture: Fixture; children: React.Re
                   <SurveyFormProvider value={fixture.form}>
                     <AutosaveStatusProvider value={fixture.autosaveStatus}>
                       <NearbyParcelsProvider value={fixture.nearby}>
-                        {children}
+                        <WeatherPrefillProvider value={fixture.weather}>
+                          {children}
+                        </WeatherPrefillProvider>
                       </NearbyParcelsProvider>
                     </AutosaveStatusProvider>
                   </SurveyFormProvider>
@@ -1742,6 +1759,63 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
       await callback("parcelSelection", "onSave")()
     })
     expect(stay.reset).not.toHaveBeenCalled()
+  })
+
+  test("a saved parcel choice hands the centre of the parcels to the weather hook (phase 27, D-10)", async () => {
+    const point = { lat: 48.1, lng: 2.1 }
+
+    // Wizard: the draft was created when the wizard opened, so the editing id is set.
+    const wizard = makeFixture({ editingSurveyId: "s-new" })
+    await mount(
+      <Providers fixture={wizard}>
+        <ParcelSelectionRoute
+          navigation={makeNavigation() as never}
+          route={{ params: { surveyId: "draft", mode: "wizard" } } as never}
+        />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("parcelSelection", "onSave")(point)
+    })
+    expect(wizard.weather.actions.rememberPoint).toHaveBeenCalledWith("s-new", point)
+
+    // Edit: the same, after saveSurveyEdits.
+    const edit = makeFixture({ editingSurveyId: "s-01" })
+    await mount(
+      <Providers fixture={edit}>
+        <ParcelSelectionRoute
+          navigation={makeNavigation() as never}
+          route={{ params: { surveyId: "s-01", mode: "edit" } } as never}
+        />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("parcelSelection", "onSave")(point)
+    })
+    expect(edit.weather.actions.rememberPoint).toHaveBeenCalledWith("s-01", point)
+  })
+
+  test("no point, no editing id or a failed save leaves the weather hook alone", async () => {
+    const point = { lat: 48.1, lng: 2.1 }
+    const cases = [
+      { fixture: makeFixture({ editingSurveyId: "s-01" }), arg: null },
+      { fixture: makeFixture({ editingSurveyId: null }), arg: point },
+      { fixture: makeFixture({ editingSurveyId: "s-01", saved: false }), arg: point },
+    ]
+    for (const { fixture, arg } of cases) {
+      await mount(
+        <Providers fixture={fixture}>
+          <ParcelSelectionRoute
+            navigation={makeNavigation() as never}
+            route={{ params: { surveyId: "s-01", mode: "edit" } } as never}
+          />
+        </Providers>,
+      )
+      await act(async () => {
+        await callback("parcelSelection", "onSave")(arg)
+      })
+      expect(fixture.weather.actions.rememberPoint).not.toHaveBeenCalled()
+    }
   })
 
   test("the map starts on the position the navigation hands over, null for a new survey", async () => {
