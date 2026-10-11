@@ -1,6 +1,6 @@
 // Phase 27 (D-18): the text of the Conditions section (weather and survey note), the summary
 // card and the read-only views. Units are written after a no-break space (U+00A0, written
-//   so it stays visible in the source) so a value never wraps away from its unit.
+// \u00a0 so it stays visible in the source) so a value never wraps away from its unit.
 // "Source : Météo-France" is the attribution required by the data licence (D-26).
 export const conditionsFr = {
   title: "Conditions",
@@ -25,21 +25,21 @@ export const conditionsFr = {
         unit: "°C",
         placeholder: "ex. 14",
         a11y: "Température, en degrés Celsius",
-        range: "Entre -40 et 55 °C",
+        range: "Entre -40 et 55\u00a0°C",
       },
       wind: {
         label: "Vent",
         unit: "km/h",
         placeholder: "ex. 12",
         a11y: "Vent, en kilomètres par heure",
-        range: "Entre 0 et 350 km/h",
+        range: "Entre 0 et 350\u00a0km/h",
       },
       rain: {
-        label: "Pluie sur 24 h",
+        label: "Pluie sur 24\u00a0h",
         unit: "mm",
         placeholder: "ex. 2",
         a11y: "Pluie sur les 24 dernières heures, en millimètres",
-        range: "Entre 0 et 1000 mm",
+        range: "Entre 0 et 1000\u00a0mm",
       },
       time: {
         label: "Heure",
@@ -74,9 +74,9 @@ export const conditionsFr = {
     source: "Source : Météo-France",
     // Values as printed on one line (summary card, community, PDF); numbers arrive formatted.
     parts: {
-      temperature: (value: string) => `${value} °C`,
-      wind: (value: string) => `vent ${value} km/h`,
-      rain: (value: string) => `pluie ${value} mm sur 24 h`,
+      temperature: (value: string) => `${value}\u00a0°C`,
+      wind: (value: string) => `vent ${value}\u00a0km/h`,
+      rain: (value: string) => `pluie ${value}\u00a0mm sur 24\u00a0h`,
       line: (parts: readonly string[]) => parts.join(", "),
     },
   },
