@@ -2,7 +2,7 @@ import { memo, useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
-import type { BasemapKey } from "../../map/basemaps"
+import type { BaseLayerKey } from "../../map/layers"
 import { fr } from "../../i18n"
 import { mapControlIconSize } from "../../app/visual-tokens"
 import { GlassSurface } from "../../ui/GlassSurface"
@@ -12,11 +12,25 @@ import { GlassIconButton } from "./GlassIconButton"
 
 const t = fr.publicMap
 const offlineT = fr.offlineMap
+const swipeT = fr.mapLayers.basemap
+
+// The dot at the globe's top-right corner, as the overlay button's (UI-SPEC section 1).
+const DOT_SIZE = 8
+const DOT_OFFSET = 11
 
 export type MapTopControlsProps = {
   top: number
-  basemap: BasemapKey
-  /** One tap switches Plan <-> Satellite (the owner's call: no menu, no thumbnails). */
+  /** The base displayed; its kind picks the globe's glyph (Plan shows the earth). */
+  basemap: BaseLayerKey
+  /**
+   * "toggle" (the default, the parcel picker): one tap switches Plan <-> Satellite. "swipe" (the
+   * Explorer, Phase 28): the same tap enters or leaves the basemap swipe mode.
+   */
+  basemapMode?: "toggle" | "swipe"
+  /** Swipe mode only: the swipe mode is on (`expanded` for a screen reader). */
+  swipeModeOn?: boolean
+  /** Swipe mode only: the base differs from the saved one, or a comparison is on. */
+  basemapDot?: boolean
   onToggleBasemap: () => void
   /** Omitted until the offline areas are wired: the button does not render. */
   onOpenOfflineAreas?: () => void
@@ -31,12 +45,16 @@ export type MapTopControlsProps = {
 export const MapTopControls = memo(function MapTopControls({
   top,
   basemap,
+  basemapMode = "toggle",
+  swipeModeOn = false,
+  basemapDot = false,
   onToggleBasemap,
   onOpenOfflineAreas,
 }: MapTopControlsProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createControlStyles(theme), [theme])
   const target = basemap === "map" ? "satellite" : "map"
+  const swipe = basemapMode === "swipe"
   return (
     <GlassSurface
       tone="auto"
@@ -50,13 +68,26 @@ export const MapTopControls = memo(function MapTopControls({
         style={styles.capsuleButton}
         onPress={onToggleBasemap}
         accessibilityRole="button"
-        accessibilityLabel={offlineT.basemap.a11y.switchTo(offlineT.basemap[target])}
+        accessibilityLabel={
+          swipe ? swipeT.buttonA11y : offlineT.basemap.a11y.switchTo(offlineT.basemap[target])
+        }
+        accessibilityHint={swipe ? swipeT.buttonHint : undefined}
+        accessibilityState={swipe ? { expanded: swipeModeOn } : undefined}
+        accessibilityValue={swipe && basemapDot ? { text: swipeT.buttonActiveValue } : undefined}
       >
         <Ionicons
           name={target === "satellite" ? "earth-outline" : "map-outline"}
           size={mapControlIconSize}
           color={theme.visual.mapControl.icon}
         />
+        {swipe && basemapDot ? (
+          <View
+            testID="map-basemap-dot"
+            style={[dotStyles.position, { backgroundColor: theme.visual.tab.dot }]}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          />
+        ) : null}
       </AppPressable>
       {onOpenOfflineAreas ? (
         <>
@@ -106,6 +137,17 @@ export const MapBottomDock = memo(function MapBottomDock({
       style={[dockStyles.position, top !== undefined ? { top } : { bottom }]}
     />
   )
+})
+
+const dotStyles = StyleSheet.create({
+  position: {
+    position: "absolute",
+    top: DOT_OFFSET,
+    right: DOT_OFFSET,
+    width: DOT_SIZE,
+    height: DOT_SIZE,
+    borderRadius: DOT_SIZE / 2,
+  },
 })
 
 const dockStyles = StyleSheet.create({
