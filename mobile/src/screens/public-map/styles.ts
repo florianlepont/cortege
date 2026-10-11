@@ -79,6 +79,34 @@ export function createScreenContainerStyle(theme: BrandTheme) {
   })
 }
 
+/** The top-right capsule (globe, download): button size, distance from the right edge, border. */
+export const CAPSULE_BUTTON_SIZE = 50
+export const CAPSULE_RIGHT = 14
+const CAPSULE_BORDER = 1
+
+/**
+ * The vertical centre of the capsule's button number `index` (0 is the globe, 1 the download
+ * button) for a capsule whose top is `top`: the border, the buttons above and the hairlines
+ * between them. The download chip is centred on it.
+ */
+export function capsuleButtonCenterY(top: number, index: number): number {
+  return (
+    top +
+    CAPSULE_BORDER +
+    index * (CAPSULE_BUTTON_SIZE + StyleSheet.hairlineWidth) +
+    CAPSULE_BUTTON_SIZE / 2
+  )
+}
+
+/** The capsule's height with `buttonCount` buttons: buttons, hairlines between them and border. */
+export function capsuleHeight(buttonCount: number): number {
+  return (
+    buttonCount * CAPSULE_BUTTON_SIZE +
+    Math.max(0, buttonCount - 1) * StyleSheet.hairlineWidth +
+    2 * CAPSULE_BORDER
+  )
+}
+
 // DS-15 (Phase 12): `iconButton`/`iconButtonDisabled`/`filtersPanel`/`emptyDockBubble`/
 // `basemapToggle` used to carry a flat `brandTranslucentPanel`/`PANEL_BACKGROUND` fill — they now
 // carry NO `backgroundColor`, wrapped in a `<GlassSurface>` (or `<AppCard glass>`) at the call site
@@ -88,15 +116,15 @@ export function createControlStyles(theme: BrandTheme) {
   return StyleSheet.create({
     capsule: {
       position: "absolute",
-      right: 14,
-      width: 50,
-      borderRadius: 25,
-      borderWidth: 1,
+      right: CAPSULE_RIGHT,
+      width: CAPSULE_BUTTON_SIZE,
+      borderRadius: CAPSULE_BUTTON_SIZE / 2,
+      borderWidth: CAPSULE_BORDER,
       borderColor: theme.visual.mapControl.hairline,
     },
     capsuleButton: {
-      width: 50,
-      height: 50,
+      width: CAPSULE_BUTTON_SIZE,
+      height: CAPSULE_BUTTON_SIZE,
       alignItems: "center",
       justifyContent: "center",
     },
