@@ -215,6 +215,14 @@ jest.mock("../../hooks/useOfflineAreas", () => ({
     refresh: jest.fn(async () => undefined),
   }),
 }))
+const mockSetOfflineLayersPolicy = jest.fn()
+jest.mock("../../hooks/useOfflineLayersPolicy", () => ({
+  useOfflineLayersPolicy: () => ({
+    policy: "all",
+    setPolicy: mockSetOfflineLayersPolicy,
+    reload: jest.fn(),
+  }),
+}))
 jest.mock("../../hooks/useOfflinePendingParcelDrain", () => ({
   useOfflinePendingParcelDrain: jest.fn(),
 }))
@@ -251,6 +259,7 @@ import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
 import { OfflineAreasRoute } from "./OfflineAreasRoute"
+import { referenceAreaBytes } from "../../map/offline-estimate"
 import { SettingsRoute } from "./SettingsRoute"
 import { SurveyContextRoute } from "./SurveyContextRoute"
 import { SurveyDetailRoute } from "./SurveyDetailRoute"
@@ -535,6 +544,23 @@ describe("SettingsRoute", () => {
 
     callback("settings", "onOpenOfflineAreas")()
     expect(navigation.navigate).toHaveBeenLastCalledWith("offlineAreas")
+  })
+
+  test("wires the offline layers policy and the reference weights from the estimator (28-08)", async () => {
+    mockSetOfflineLayersPolicy.mockClear()
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <SettingsRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    const settings = props("settings")
+    expect(settings.offlineLayersPolicy).toBe("all")
+    expect(settings.offlineLayersBytes).toEqual({
+      all: referenceAreaBytes("all"),
+      base: referenceAreaBytes("base"),
+    })
+    callback("settings", "onChangeOfflineLayersPolicy")("base")
+    expect(mockSetOfflineLayersPolicy).toHaveBeenCalledWith("base")
   })
 
   test("reads the offline areas again each time it is shown", async () => {
