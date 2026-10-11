@@ -495,19 +495,27 @@ const percentage = layers.reduce((sum, l, i) => sum + l.weight * entries[i].perc
 | A9 | Raster source `bounds` cannot clip at pixel level | Curtain | If it could, a one-map curtain would exist; not tried |
 | A10 | Attribution wording extended from the existing legend text satisfies the Licence Ouverte mention duty | Licences | Wording adjusted; no code impact |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Photos 1950-1965 offline zoom ceiling (needs the owner).**
+   - RESOLVED: owner chose offline maxzoom 17, online 18 (28-CONTEXT.md, decided after research).
    - Known: at maxzoom 18 the layer is 96 MB per 4 x 4 km area, 63 % of "all layers"; at 17 it is 28 MB, at 16 8 MB.
    - Unclear: whether the owner accepts one level of blur offline for this layer given "no weight cap".
    - Recommendation: online 18, offline pack 17; ask in one line at plan time.
 2. **Does the 2 km survey prompt follow the policy?** Default "all" turns "environ 2 km autour, 11 Mo" into about 85 to 150 Mo before a field day. Recommendation: yes, same setting, with the honest estimate; owner may prefer "base only" for that prompt.
+   - RESOLVED: yes, same setting (28-09); the owner may still ask for base-only for that prompt.
 3. **May BD Forêt be a curtain side?** Recommendation V1: the curtain compares two bases; overlays apply to both sides. A "photo vs photo + forêt" comparison is then not available.
+   - RESOLVED: no, overlays apply to both sides (28-CONTEXT.md).
 4. **Curtain go or no-go.** The spike (Android emulator Pixel_8, then iPhone) decides; fallbacks listed under Curtain risk 1.
+   - RESOLVED: decided by the 28-01 spike with an owner checkpoint on the phone.
 5. **How to keep API and mobile layer constants in step.** Import the pure mobile file from an API spec, or a literal parity list in both suites; planner chooses.
+   - RESOLVED: parity spec reading mobile `layers.ts` plus a literal offline-zoom table in both suites (28-05).
 6. **"Account settings" is the Paramètres screen** (there is no other settings screen); confirm no new Compte entry is wanted.
+   - RESOLVED: Paramètres > Cartes (28-CONTEXT.md).
 7. **"Base maps only" meaning:** defined here as Plan IGN, Orthophoto and the cadastre (today's downloads). Confirm.
+   - RESOLVED: Plan IGN, Orthophoto and cadastre (28-CONTEXT.md).
 8. **BD Forêt legend:** the Géoplateforme publishes one (`https://data.geopf.fr/annexes/ressources/legendes/LANDCOVER.FORESTINVENTORY.V2-legend.png`, 300 x 69 px, 200 verified); offline it would have to be an app asset. Decide whether V1 shows it.
+   - RESOLVED: kept in V1; the owner may drop it at 28-16 Task 2.
 
 ## Environment Availability
 
