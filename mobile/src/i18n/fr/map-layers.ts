@@ -41,6 +41,8 @@ export const mapLayersFr = {
     hintSwipe: "Glissez · lâchez au milieu pour comparer",
     hintSwipeCompare:
       "Glissez un côté pour changer son fond · tirez la ligne au bord pour quitter la comparaison",
+    // Each zone of the swipe has its hint (CONTEXT item 11): cancel, compare, commit.
+    hintCancel: "Lâchez pour revenir",
     hintRelease: "Lâchez pour comparer",
     hintChange: "Lâchez pour changer de fond",
     hintNoneAvailable: "Aucun autre fond n'est disponible hors connexion ici.",

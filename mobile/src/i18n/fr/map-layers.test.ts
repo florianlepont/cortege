@@ -78,6 +78,7 @@ describe("fr.mapLayers", () => {
     })
 
     test("hints", () => {
+      expect(mapLayersFr.basemap.hintCancel).toBe("Lâchez pour revenir")
       expect(mapLayersFr.basemap.hintRelease).toBe("Lâchez pour comparer")
       expect(mapLayersFr.basemap.hintChange).toBe("Lâchez pour changer de fond")
       expect(mapLayersFr.basemap.hintSwipe).toBe("Glissez · lâchez au milieu pour comparer")
