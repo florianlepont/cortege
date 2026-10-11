@@ -66,6 +66,8 @@ function render(props: {
   active?: boolean
   tone?: "neutral" | "success" | "warning" | "danger"
   onPress?: () => void
+  accessibilityRole?: "button" | "radio"
+  testID?: string
 }) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
@@ -110,6 +112,28 @@ describe("AppChoiceChip (D-05, D-08)", () => {
     })
     expect(selectionAsync).toHaveBeenCalledTimes(1)
     expect(onPress).toHaveBeenCalledTimes(1)
+  })
+
+  test("a radio chip carries its role and test id; pressing it ticks and calls onPress", () => {
+    const onPress = jest.fn()
+    const { pressable } = render({ onPress, accessibilityRole: "radio", testID: "chip-a" })
+    expect(pressable.props.accessibilityRole).toBe("radio")
+    expect(pressable.props.testID).toBe("chip-a")
+    act(() => {
+      pressable.props.onPress()
+    })
+    expect(selectionAsync).toHaveBeenCalledTimes(1)
+    expect(onPress).toHaveBeenCalledTimes(1)
+  })
+
+  test("a selected radio chip ignores a press: no tick, no handler", () => {
+    const onPress = jest.fn()
+    const { pressable } = render({ active: true, onPress, accessibilityRole: "radio" })
+    act(() => {
+      pressable.props.onPress()
+    })
+    expect(selectionAsync).not.toHaveBeenCalled()
+    expect(onPress).not.toHaveBeenCalled()
   })
 
   test("a chip without onPress is disabled and fires nothing", () => {

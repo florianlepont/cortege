@@ -23,6 +23,12 @@ type AppChoiceChipProps = {
   tone?: AppChoiceChipTone
   onPress?: () => void
   accessibilityLabel?: string
+  /**
+   * "radio" for a chip of a radio group: it is announced as a radio with its `selected` state, and
+   * pressing the one already selected is a no-op (no haptic, no handler). Default "button".
+   */
+  accessibilityRole?: "button" | "radio"
+  testID?: string
   style?: StyleProp<ViewStyle>
   labelStyle?: StyleProp<TextStyle>
 }
@@ -74,6 +80,8 @@ function ChoiceChip({
   tone = "neutral",
   onPress,
   accessibilityLabel,
+  accessibilityRole = "button",
+  testID,
   style,
   labelStyle,
 }: Omit<AppChoiceChipProps, "variant">) {
@@ -83,6 +91,7 @@ function ChoiceChip({
   // Principle 7: a selection tick on every interactive press, then the caller's handler.
   const handlePress = onPress
     ? () => {
+        if (active && accessibilityRole === "radio") return
         feedback.selection()
         onPress()
       }
@@ -90,7 +99,8 @@ function ChoiceChip({
 
   return (
     <AppPressable
-      accessibilityRole="button"
+      testID={testID}
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: !isInteractive, selected: active }}
       disabled={!isInteractive}
