@@ -32,7 +32,13 @@ export const ViewAnnotation = host("ViewAnnotation")
 export const UserLocation = host("UserLocation")
 
 // Native offline packs: an in-memory manager. Tests drive a pack's progress through `offlineMocks`.
-type MockPack = { id: string; metadata: Record<string, unknown>; bounds: number[] }
+type MockPack = {
+  id: string
+  metadata: Record<string, unknown>
+  bounds: number[]
+  pause?: jest.Mock<Promise<void>, []>
+  resume?: jest.Mock<Promise<void>, []>
+}
 type ProgressListener = (pack: MockPack, status: Record<string, unknown>) => void
 type ErrorListener = (pack: MockPack, error: { id: string; message: string }) => void
 
@@ -50,7 +56,13 @@ export const offlineMocks = {
 export const OfflineManager = {
   createPack: jest.fn(
     async (
-      options: { bounds: number[]; metadata?: Record<string, unknown> },
+      options: {
+        bounds: number[]
+        metadata?: Record<string, unknown>
+        mapStyle?: string
+        minZoom?: number
+        maxZoom?: number
+      },
       progress: ProgressListener,
       error: ErrorListener,
     ) => {
@@ -58,6 +70,8 @@ export const OfflineManager = {
         id: `pack-${offlineMocks.packs.length + 1}`,
         metadata: options.metadata ?? {},
         bounds: options.bounds,
+        pause: jest.fn(async () => undefined),
+        resume: jest.fn(async () => undefined),
       }
       offlineMocks.packs.push(pack)
       offlineMocks.listeners.set(pack.id, { progress, error })
