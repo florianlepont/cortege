@@ -1,4 +1,4 @@
-jest.mock("react-native", () => ({}))
+jest.mock("react-native", () => ({ Platform: { OS: "ios" } }))
 
 const mockListOfflineAreas = jest.fn()
 const mockInsertOfflineArea = jest.fn()
