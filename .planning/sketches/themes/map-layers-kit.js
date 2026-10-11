@@ -87,11 +87,11 @@
     let tm = null, dlTimer = null, hideTm = null, dlDoneTm = null;
     const reset = () => {
       clearInterval(dlTimer); clearTimeout(hideTm); clearTimeout(dlDoneTm);
-      Object.assign(S, { lock: false, chooser: null, parcels: "all", panel: null, base: "map", saved: "map", overlay: false, compare: false, sideA: "map", sideB: "p1950", target: "right", z: 15, cx: 256, cy: 384, offline: false, covered: true, err: null, hidPill: false, x: W / 2, seg: "explore", leaving: false, entering: false, dl: { st: "idle", pct: 0, scen: "ok" }, dlPanelOpened: false });
+      Object.assign(S, { sw: false, lock: false, chooser: null, parcels: "all", panel: null, base: "map", saved: "map", overlay: false, compare: false, sideA: "map", sideB: "p1950", target: "right", z: 15, cx: 256, cy: 384, offline: false, covered: true, err: null, hidPill: false, x: W / 2, seg: "explore", leaving: false, entering: false, dl: { st: "idle", pct: 0, scen: "ok" }, dlPanelOpened: false });
     };
     reset();
         root.innerHTML = `<div class="phone" style="width:${W}px;height:${H}px">
-      <div class="mapwrap"><div class="stack"><div class="world" data-w="a"></div></div><div class="clipb"><div class="stack"><div class="world" data-w="b"></div></div></div><div class="mks"></div>
+      <div class="mapwrap"><div class="stack"><div class="world" data-w="a"></div></div><div class="clipb"><div class="stack"><div class="world" data-w="b"></div></div></div><div class="clipc" style="position:absolute;inset:0;display:none;z-index:2"><div class="stack"><div class="world" data-w="c"></div></div></div><div class="mks"></div>
         <div class="handle"></div></div>
       <div class="tagl"></div><div class="lockui"></div>
       <div class="status"><span>9:41</span><span>5G ▮▮▮</span></div>
@@ -99,8 +99,8 @@
       <div class="sheet" style="display:none"></div>
       <div class="tb"><div>Accueil</div><div>Mes relevés</div><div class="on">Explorer</div><div>Rechercher</div></div><div class="homebar"></div></div>`;
     const $ = (s) => root.querySelector(s);
-    const phone = $(".phone"), wa = $('[data-w="a"]'), wb = $('[data-w="b"]'), clipb = $(".clipb"), handle = $(".handle"), mks = $(".mks"), capsule = $(".capsule"), locate = $(".locate");
-    const lockui = $(".lockui"); const chooserW = $(".chooser-w"); const notices = $(".notices"), exitEl = $(".exit"), chipw = $(".chipw"), sheet = $(".sheet"), tagl = $(".tagl"), barp = $(".barp");
+    const phone = $(".phone"), wa = $('[data-w="a"]'), wb = $('[data-w="b"]'), wc = $('[data-w="c"]'), clipc = $(".clipc"), clipb = $(".clipb"), handle = $(".handle"), mks = $(".mks"), capsule = $(".capsule"), locate = $(".locate");
+    const mapwrapEl = () => $(".mapwrap"); const lockui = $(".lockui"); const chooserW = $(".chooser-w"); const notices = $(".notices"), exitEl = $(".exit"), chipw = $(".chipw"), sheet = $(".sheet"), tagl = $(".tagl"), barp = $(".barp");
     let key = "";
 
     const avail = (k) => {
@@ -119,7 +119,7 @@
     const place = () => {
       clampView();
       const s = scale(), tr = `translate(${W / 2 - S.cx * s}px,${H / 2 - S.cy * s}px) scale(${s})`;
-      wa.style.transform = tr; wb.style.transform = tr;
+      wa.style.transform = tr; wb.style.transform = tr; wc.style.transform = tr;
       let h = "";
       [[235, 360, "3"], [250, 425, "1"], [372, 345, "2"], [160, 345, "4"]].forEach((m) => {
         const x = W / 2 + (m[0] - S.cx) * s, y = H / 2 + (m[1] - S.cy) * s;
@@ -176,7 +176,7 @@
     let dragH = false, dragM = null;
     handle.addEventListener("pointerdown", (e) => { dragH = true; handle.setPointerCapture(e.pointerId); clipb.classList.add("nt"); handle.classList.add("nt"); e.stopPropagation(); });
     handle.addEventListener("pointermove", (e) => { if (!dragH) return; const r = phone.getBoundingClientRect(); S.x = Math.min(Math.max(e.clientX - r.left, 22), W - 22); curtainR(); });
-    handle.addEventListener("pointerup", () => { dragH = false; });
+    handle.addEventListener("pointerup", () => { dragH = false; if (cfg.swipe && S.compare) { if (S.x < 40) { S.base = S.sideB; S.compare = false; render(); } else if (S.x > W - 40) { S.base = S.sideA; S.compare = false; render(); } } });
     // déplacer la carte
     $(".mapwrap").addEventListener("pointerdown", (e) => { if (e.target.closest(".handle")) return; if ((S.lock && cfg.cmpMode === "swipe") || lockedBase()) { swp = { x0: e.clientX, y0: e.clientY, base: lockedBase() }; return; }
       if (cfg.entry === "keep" && S.chooser && !(cfg.chooser === "card" && S.chooser === "base" && S.compare)) { S.chooser = null; chooserR(); } dragM = { x: e.clientX, y: e.clientY }; });
@@ -235,6 +235,63 @@
       const r = phone.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
       g.el.remove(); g.dz.remove(); window.__dragged = true; setTimeout(() => (window.__dragged = false), 50);
       if (py < H - 230 && avail(g.k)) { assign(g.k, px < S.x ? "left" : "right"); render(); }
+    });
+
+    // ---- moteur balayage (sketch 022) ----
+    let swTm = null, swg = null;
+    const swBounds = (side) => (side === "left" ? [0, S.x] : side === "right" ? [S.x, W] : [0, W]);
+    const swLayer = (side) => (side === "left" ? S.sideA : side === "right" ? S.sideB : S.base);
+    const swOther = (side) => (side === "left" ? S.sideB : side === "right" ? S.sideA : null);
+    const swNeighbor = (side, dir) => { const other = swOther(side); const l = BASES.filter((b) => avail(b) && b !== other); const i = Math.max(0, l.indexOf(swLayer(side))); return l[(i + dir + l.length) % l.length]; };
+    const swClip = (a, b, dx, fx) => { const l = dx < 0 ? Math.max(fx, a) : a, r = dx < 0 ? b : Math.min(fx, b); return `inset(0 ${W - r}px 0 ${l}px)`; };
+    const swR = () => {
+      if (!cfg.swipe) return;
+      lockui.classList.toggle("cmp", !!S.compare);
+      if (!S.sw) { if (!(swg && swg.k)) lockui.innerHTML = ""; return; }
+      const both = cfg.swipe.cmp === "button" || cfg.swipe.cmp === "both";
+      let h = "";
+      if (!S.compare) {
+        const l = L[S.base];
+        h += `<div class="lkp glass"><span>‹</span><b>${l.name.replace(/ \(.*\)/, "")}</b><small>${l.year}</small><span>›</span></div><div class="lkd">${BASES.map((b) => `<i class="${b === S.base ? "on" : ""}"></i>`).join("")}</div>`;
+        h += `<div class="lkh">${cfg.swipe.cmp === "button" ? "Glissez sur la carte pour changer de fond" : "Glissez. Lâchez au milieu pour comparer"}</div><div style="display:flex;gap:8px"><div class="pill glass tap lkdone" data-act="swdone">Terminé</div>${both ? `<div class="pill glass tap lkdone" data-act="swcmp">${ic("swap", 16)}Comparer</div>` : ""}</div>`;
+      } else {
+        h += `<div class="lkh">Glissez sur un côté pour changer son fond</div><div class="lkh" style="margin-top:0">Tirez la ligne au bord pour quitter</div><div class="pill glass tap lkdone" data-act="swdone">Terminé</div>`;
+      }
+      lockui.innerHTML = h;
+      clearTimeout(swTm); swTm = setTimeout(() => { if (S.sw && !swg) { S.sw = false; render(); } }, 8000);
+    };
+    mapwrapEl().addEventListener("pointerdown", (e) => {
+      if (!cfg.swipe || !S.sw || e.target.closest(".handle")) return;
+      e.stopImmediatePropagation(); const r = phone.getBoundingClientRect(), x = e.clientX - r.left;
+      swg = { x0: e.clientX, y0: e.clientY, side: S.compare ? (x < S.x ? "left" : "right") : "full", k: null, dx: 0 };
+    }, true);
+    window.addEventListener("pointermove", (e) => {
+      if (!swg) return; const dx = e.clientX - swg.x0; if (Math.abs(dx) < 6) return;
+      const r = phone.getBoundingClientRect(), [a, b] = swBounds(swg.side), fx = Math.min(Math.max(e.clientX - r.left, a), b);
+      const k = swNeighbor(swg.side, dx < 0 ? 1 : -1); swg.dx = dx; swg.fx = fx;
+      if (swg.k !== k) { swg.k = k; wc.innerHTML = worldHTML(k, S.overlay, S.parcels); place(); }
+      clipc.style.display = "block"; clipc.style.transition = "none"; clipc.style.clipPath = swClip(a, b, dx, fx);
+      const rev = dx < 0 ? (b - fx) / (b - a) : (fx - a) / (b - a); swg.rev = rev;
+      let msg = "Lâchez pour changer de fond";
+      if (swg.side === "full" && cfg.swipe.cmp !== "button" && rev > 0.2 && rev < 0.8) msg = "Lâchez pour comparer";
+      lockui.innerHTML = `<div class="lkp glass"><b>${L[k].name.replace(/ \(.*\)/, "")}</b><small>${L[k].year}</small></div><div class="lkh">${msg}</div>`;
+    });
+    window.addEventListener("pointerup", (e) => {
+      if (!swg) return; const g = swg; swg = null;
+      if (!g.k) { if (Math.abs(e.clientX - g.x0) < 6 && Math.abs(e.clientY - g.y0) < 6 && !S.compare) { S.sw = false; } render(); return; }
+      const [a, b] = swBounds(g.side), dx = g.dx, rev = g.rev;
+      const toCmp = g.side === "full" && cfg.swipe.cmp !== "button" && rev >= 0.2 && rev <= 0.8;
+      const commit = !toCmp && rev > (g.side === "full" && cfg.swipe.cmp !== "button" ? 0.8 : 0.33);
+      clipc.style.transition = "clip-path .22s ease";
+      const done = () => { clipc.style.display = "none"; wc.innerHTML = ""; clipc.style.transition = "none"; };
+      if (toCmp) {
+        const fx = g.fx;
+        if (dx < 0) { S.sideA = S.base; S.sideB = g.k; } else { S.sideA = g.k; S.sideB = S.base; }
+        S.compare = true; S.x = fx; key = ""; clipb.classList.add("nt"); handle.classList.add("nt"); done(); render();
+        requestAnimationFrame(() => { clipb.classList.remove("nt"); handle.classList.remove("nt"); }); return;
+      }
+      if (commit) { clipc.style.clipPath = `inset(0 ${W - b}px 0 ${a}px)`; setTimeout(() => { if (g.side === "full") setBase(g.k); else if (g.side === "left") S.sideA = g.k; else S.sideB = g.k; done(); key = ""; render(); }, 240); }
+      else { clipc.style.clipPath = dx < 0 ? `inset(0 ${W - b}px 0 ${b}px)` : `inset(0 ${W - a}px 0 ${a}px)`; setTimeout(() => { done(); render(); }, 240); }
     });
     // ---- notices sur la carte ----
     const noticesR = () => {
@@ -391,7 +448,7 @@
     };
 
     let lkTm = null;
-    const lockedBase = () => cfg.chooser === "card" && (cfg.baseMode === "swipe" || cfg.baseMode === "wipe") && S.chooser === "base" && !S.compare;
+    const lockedBase = () => !cfg.swipe && cfg.chooser === "card" && (cfg.baseMode === "swipe" || cfg.baseMode === "wipe") && S.chooser === "base" && !S.compare;
     const neighbor = (k, dir) => { const l = BASES.filter((b) => avail(b)); const i = Math.max(0, l.indexOf(k)); return l[(i + dir + l.length) % l.length]; };
     const lockuiR = () => {
       if (!lockedBase()) { lockui.innerHTML = ""; return; }
@@ -461,7 +518,7 @@
     function render(skipCurtain) {
       buildMaps(); place();
       if (!skipCurtain) curtainR();
-      noticesR(); sheetR(); capsuleR(); chooserR(); chipR(); lockuiR();
+      noticesR(); sheetR(); capsuleR(); chooserR(); chipR(); lockuiR(); swR();
     }
 
     // ---- actions ----
@@ -483,6 +540,9 @@
       if (act === "study") { S.panel = S.panel === "study" ? null : "study"; if (cfg.entry === "segment") S.seg = "study"; }
       else if (act === "close") S.panel = null;
       else if (act === "download") { S.panel = S.panel === "download" ? null : "download"; S.chooser = null; }
+      else if (act === "basemap" && cfg.swipe) { S.sw = !S.sw; S.chooser = null; S.panel = null; }
+      else if (act === "swdone") S.sw = false;
+      else if (act === "swcmp") { S.sideA = S.base; S.sideB = neighbor(S.base, 1); return enterCompare(); }
       else if (act === "basemap" && cfg.entry === "keep") { S.chooser = S.chooser === "base" ? null : "base"; S.panel = null; }
       else if (act === "ovbtn") { S.chooser = S.chooser === "ov" ? null : "ov"; S.panel = null; }
       else if (act === "lock") S.lock = !S.lock;
@@ -525,6 +585,9 @@
       defaut: () => {},
       cBase: () => { S.chooser = "base"; },
       cDlOpen: () => { S.panel = "download"; },
+      swOn: () => { S.sw = true; },
+      swCmp: () => { S.sw = true; S.base = "map"; S.sideA = "map"; S.sideB = "p1950"; setTimeout(() => enterCompare(), 20); },
+      swFree: () => { S.sw = false; S.base = "map"; S.sideA = "map"; S.sideB = "p1950"; setTimeout(() => enterCompare(), 20); },
       cSwipe: () => { S.chooser = "base"; render(); setTimeout(() => { root.querySelector('[data-act="cmp"]').click(); setTimeout(() => { root.querySelector('[data-act="lock"]') && root.querySelector('[data-act="lock"]').click(); }, 500); }, 30); },
       cOv: () => { S.chooser = "ov"; },
       cCmp: () => { S.chooser = "base"; render(); setTimeout(() => root.querySelector('[data-act="cmp"]').click(), 30); },

@@ -1,0 +1,21 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 28 : comparer par le balayage</title>
+<link rel="stylesheet" href="../themes/map-layers.css"></head><body>
+<h1>Sketch 022 : comparer en balayant</h1>
+<div class="sub">Phase 28, suite du balayage retenu (021 B). Touchez le globe pour entrer dans le mode : la carte se fige. Quand on balaie, le fond voisin se découvre derrière le doigt. Idée : si on lâche au milieu, les deux fonds restent côte à côte et la ligne devient le rideau de comparaison. Ensuite, on balaie sur un côté pour changer le fond de ce côté seulement, et on tire la ligne jusqu'au bord pour quitter. Trois façons de lancer la comparaison.</div>
+<div id="app"></div>
+<script src="../themes/map-layers-kit.js"></script>
+<script>
+const S=[["swOn","Entrer dans le mode (globe)"],["swCmp","Déjà en comparaison, carte fixe"],["swFree","Comparaison, carte libre"],["cOv","Superposition"],["cDlOpen","Télécharger"]];
+const base={entry:"keep",chooser:"card",ov:"round",chip:"left",dlclose:true,dlcard:true,ovcard:false,tags:"spec",nocard:true};
+LK.mountSketch(document.getElementById("app"),[
+{id:"a",tab:"A : lâcher au milieu",title:"A : on lâche au milieu du balayage, ça devient une comparaison",cfg:Object.assign({},base,{swipe:{cmp:"release"}}),states:S,
+ desc:"Balayez à moitié et lâchez entre 20 % et 80 % : les deux fonds restent côte à côte. Pendant le balayage, l'aide dit « Lâchez pour comparer » ou « Lâchez pour changer de fond ». Plus loin, le fond change ; moins loin, il revient. Pas de bouton.",
+ points:["Un seul geste pour deux usages, rien de plus à l'écran","Risque : lâcher au milieu sans le vouloir lance une comparaison (on la quitte en tirant la ligne au bord)","À tester au pouce : la zone « milieu » doit être confortable"]},
+{id:"b",tab:"B : bouton Comparer",title:"B : un bouton « Comparer » à côté de « Terminé »",cfg:Object.assign({},base,{swipe:{cmp:"button"}}),states:S,
+ desc:"Le balayage ne fait que changer le fond (on valide au-delà d'un tiers). Pour comparer, on touche « Comparer » : la ligne s'ouvre à 50 %. Ensuite on balaie sur un côté pour changer son fond.",
+ points:["Explicite : aucune comparaison par accident","Un bouton de plus à l'écran dans le mode","Plus classique, moins magique"]},
+{id:"c",tab:"C : les deux",title:"C : lâcher au milieu ET bouton « Comparer »",cfg:Object.assign({},base,{swipe:{cmp:"both"}}),states:S,
+ desc:"Les deux entrées : le geste pour ceux qui le trouvent, le bouton pour ceux qui le cherchent.",
+ points:["Découvrable (bouton) et rapide (geste)","Deux chemins à expliquer","Garde le risque de lâcher au milieu"]}
+]);
+</script></body></html>
