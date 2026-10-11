@@ -56,6 +56,8 @@ export const HistoryList = memo(function HistoryList({
       {rows.map((row, index) => {
         const { entry, deltaVsPrevious, methodLabel } = row
         const title = rowTitle(row, variant)
+        const withNote = (label: string): string =>
+          entry.note ? `${label}, ${list.noteA11y(entry.note)}` : label
         const ring = (
           <ScoreRing
             score={entry.total}
@@ -75,6 +77,11 @@ export const HistoryList = memo(function HistoryList({
             {deltaVsPrevious === "unavailable" ? (
               <Text style={rowStyles.surveyCardMeta}>{t.delta.unavailable}</Text>
             ) : null}
+            {entry.note ? (
+              <Text style={rowStyles.surveyCardMeta} numberOfLines={1} ellipsizeMode="tail">
+                {entry.note}
+              </Text>
+            ) : null}
             {entry.isCurrent ? (
               <AppChoiceChip variant="status" tone="success" label={list.current} />
             ) : null}
@@ -87,7 +94,9 @@ export const HistoryList = memo(function HistoryList({
                 selected
                 disabled
                 accessibilityRole="text"
-                accessibilityLabel={list.openCurrent({ entry: title, total: entry.total })}
+                accessibilityLabel={withNote(
+                  list.openCurrent({ entry: title, total: entry.total }),
+                )}
                 indicator={ring}
                 title={title}
                 status={status}
@@ -95,7 +104,7 @@ export const HistoryList = memo(function HistoryList({
             ) : (
               <SurveyRowFrame
                 accessibilityRole="button"
-                accessibilityLabel={list.open({ entry: title, total: entry.total })}
+                accessibilityLabel={withNote(list.open({ entry: title, total: entry.total }))}
                 testID={`parcel-history-row-${entry.surveyId}`}
                 onPress={() => onOpenSurvey(entry.surveyId)}
                 indicator={ring}
