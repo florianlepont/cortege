@@ -36,6 +36,10 @@ The map offers several layers with a comparison option, and the Explorer both ex
 - Curtain = two synchronised maps (research: one map cannot clip rasters); a device spike decides go/no-go first. Fallback if no-go: quick toggle between two layers (to confirm with the owner then).
 - Policy setting lives in Paramètres > Cartes, stored in `local_meta` (`offline_layers_policy`, default `all`); "base maps only" = Plan, Orthophoto and cadastre.
 
+### Owner confirmations (2026-10-11, after planning)
+- The 2 km survey prompt follows the offline layers policy in force in Paramètres (no separate base-only rule); its figure is the policy's estimate.
+- The closed-sheet download chip (UI-SPEC U-14, plans 28-12 and 28-15) is kept in the phase, not cut.
+
 ### Claude's Discretion
 - Control placement, icons (Ionicons outline), curtain handle design, layer naming in French, how the setting is worded.
 </decisions>
