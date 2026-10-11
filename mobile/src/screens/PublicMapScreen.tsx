@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useRef, useState } from "react"
-import { Alert, View, useWindowDimensions } from "react-native"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Alert, View } from "react-native"
 import type { CameraRef } from "@maplibre/maplibre-react-native"
 import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { MapRegion } from "../app/map-viewport"
-import { isOfflineMapsEnabled, swipeSpikeLeftView } from "../app/feature-flags"
+import { isOfflineMapsEnabled } from "../app/feature-flags"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { useBrandTheme } from "../app/theme"
 import type { PublicMapItem, PublicParcelStatusItem } from "../app/types"
@@ -20,6 +20,7 @@ import { defaultAreaName } from "./public-map/area-name"
 import { ClusterListSheet } from "./public-map/ClusterListSheet"
 import { ExplorerPanelsView } from "./public-map/ExplorerPanelsView"
 import { ExplorerSheet } from "./public-map/ExplorerSheet"
+import { ExplorerSwipeLayers } from "./public-map/ExplorerSwipeLayers"
 import { MapCanvas } from "./public-map/MapCanvas"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
 import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
@@ -28,8 +29,8 @@ import { createScreenContainerStyle } from "./public-map/styles"
 import { useExplorerFocus } from "./public-map/useExplorerFocus"
 import { useExplorerLayers } from "./public-map/useExplorerLayers"
 import { useExplorerPanels } from "./public-map/useExplorerPanels"
+import { useExplorerSwipe } from "./public-map/useExplorerSwipe"
 import { useMapViewport } from "./public-map/useMapViewport"
-import { useSwipeSpike } from "./public-map/useSwipeSpike"
 
 const t = fr.publicMap
 const LOCATE_SPAN = 0.012
@@ -115,6 +116,9 @@ export function PublicMapScreen({
   const [cardHeight, setCardHeight] = useState(0)
   // Bumped by "Réessayer" of the error notice: the style is asked again.
   const [styleRetryKey, setStyleRetryKey] = useState(0)
+  // The two display-only pills the swipe hook raises (hidden surveys, skipped layers). It runs after
+  // the layers hook, so they come back through state: a ref would not render the pill.
+  const [swipeFlags, setSwipeFlags] = useState({ hidden: false, skipped: false })
   const offlineEnabled = isOfflineMapsEnabled()
   const offlineAreas = useOfflineAreas(apiUrl, accessToken, offlineEnabled)
   const { startDownload, clearDownloadStatus, downloadStatus, estimateForRegion } = offlineAreas
@@ -135,9 +139,8 @@ export function PublicMapScreen({
     onViewportBboxChange,
   })
 
-  // Hook order (no cycle, kept by plan 28-17): the swipe hook runs after the layers hook and fills
-  // this ref; the panels hook already gets the stable callback, so opening the bubble or the card
-  // ends the swipe mode.
+  // Hook order (no cycle): the swipe hook runs after the layers hook and fills this ref; the panels
+  // hook already gets the stable callback, so opening the bubble or the card ends the swipe mode.
   const swipePanelExitRef = useRef<() => void>(noop)
   const handlePanelOpen = useLatestCallback(() => swipePanelExitRef.current())
   const panels = useExplorerPanels({ clearDownloadStatus, onPanelOpen: handlePanelOpen })
@@ -153,8 +156,8 @@ export function PublicMapScreen({
     cardOpen: panels.panel === "card",
     capsuleTop,
     capsuleButtons: offlineEnabled ? 2 : 1,
-    hiddenSurveys: false,
-    showSkipped: false,
+    hiddenSurveys: swipeFlags.hidden,
+    showSkipped: swipeFlags.skipped,
   })
   const { styleLoaded, styleFailed } = layers.layers.actions
   const handleStyleFailed = useCallback(
@@ -206,15 +209,22 @@ export function PublicMapScreen({
     setHighlightedId,
   })
 
-  // Phase 28 device spike (temporary, plan 28-17 deletes it): inert unless the build sets
-  // EXPO_PUBLIC_SWIPE_SPIKE; then the globe button enters a measurement swipe mode.
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions()
-  const spike = useSwipeSpike({
-    width: windowWidth,
-    height: windowHeight,
-    initialRegion,
-    basemap,
+  const swipe = useExplorerSwipe({
+    layers,
+    cameraRef,
+    region: viewport.region,
+    closePanels: panels.closePanel,
   })
+  swipePanelExitRef.current = swipe.onPanelOpen
+  const { onBaseStyleLoaded, hiddenSurveys, skippedVisible } = swipe
+  useEffect(
+    () => setSwipeFlags({ hidden: hiddenSurveys, skipped: skippedVisible }),
+    [hiddenSurveys, skippedVisible],
+  )
+  const handleStyleLoaded = useCallback(() => {
+    styleLoaded()
+    onBaseStyleLoaded()
+  }, [styleLoaded, onBaseStyleLoaded])
 
   const handleZoomTo = useCallback((target: MapRegion) => moveTo(target, 450), [moveTo])
   const handleDownloadArea = useAreaDownloadAction({
@@ -230,10 +240,6 @@ export function PublicMapScreen({
   const estimate = useMemo(
     () => estimateForRegion(viewport.region),
     [estimateForRegion, viewport.region],
-  )
-  const toggleBasemap = useCallback(
-    () => onChangeBasemap(basemap === "map" ? "satellite" : "map"),
-    [basemap, onChangeBasemap],
   )
 
   const handleLocate = useLatestCallback(async (): Promise<void> => {
@@ -305,13 +311,24 @@ export function PublicMapScreen({
         parcelsMode={layers.layers.state.parcels}
         surveyParcelIds={layers.surveyParcelIds}
         styleRetryKey={styleRetryKey}
-        onStyleLoaded={styleLoaded}
+        onStyleLoaded={handleStyleLoaded}
         onStyleFailed={handleStyleFailed}
         styleRefreshKey={readyAreaCount}
-        {...spike.mapCanvasProps}
-        androidView={spike.active ? swipeSpikeLeftView() : undefined}
+        {...swipe.mapCanvasProps}
       />
-      {spike.overlay}
+      <ExplorerSwipeLayers
+        swipe={swipe}
+        layers={layers}
+        capsuleTop={capsuleTop}
+        contentProps={{
+          parcelStatuses,
+          parcelLayerRenderable: viewport.parcelLayerRenderable,
+          studiedParcelsRenderable: viewport.studiedParcelsRenderable,
+          selectedParcelIds: highlightedParcelIds,
+          styleRetryKey,
+          styleRefreshKey: readyAreaCount,
+        }}
+      />
 
       {choosingArea ? <DownloadEdgeGlow /> : null}
 
@@ -328,11 +345,15 @@ export function PublicMapScreen({
         onCardHeight={setCardHeight}
         forestAvailable={layers.isAvailable("types-foret")}
         cardBottom={cardBottom}
+        noticesTop={swipe.noticesTop}
       >
         <MapTopControls
           top={capsuleTop}
-          basemap={basemap}
-          onToggleBasemap={spike.active ? spike.toggleSwipe : toggleBasemap}
+          basemap={layers.layers.displayedBase}
+          basemapMode="swipe"
+          swipeModeOn={layers.layers.state.swipeMode}
+          basemapDot={layers.layers.globeDot}
+          onToggleBasemap={swipe.toggleSwipe}
           onOpenOfflineAreas={offlineEnabled ? panels.openCard : undefined}
         />
         <MapBottomDock bottom={dockLift} locating={locating} onLocate={onLocate} />

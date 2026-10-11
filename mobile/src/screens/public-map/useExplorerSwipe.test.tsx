@@ -4,6 +4,7 @@ import renderer, { act } from "react-test-renderer"
 const mockAnnounce = jest.fn()
 jest.mock("react-native", () => ({
   AccessibilityInfo: { announceForAccessibility: (text: string) => mockAnnounce(text) },
+  useWindowDimensions: () => ({ width: 400, height: 800 }),
 }))
 
 jest.mock("../../ui/feedback", () => ({
@@ -179,19 +180,22 @@ const jumpTo = jest.fn()
 const cameraRef = { current: { jumpTo } } as unknown as ExplorerSwipeInput["cameraRef"]
 const closePanels = jest.fn()
 
-function inputFor(layers: MapLayers, extra: Partial<ExplorerSwipeInput> = {}): ExplorerSwipeInput {
+type Extra = {
+  isAvailable?: (key: string) => boolean
+  noticesTop?: number
+}
+
+function inputFor(layers: MapLayers, extra: Extra = {}): ExplorerSwipeInput {
   return {
-    layers,
-    savedBasemap: "map",
-    width: WIDTH,
-    height: HEIGHT,
+    layers: {
+      layers,
+      isAvailable: extra.isAvailable ?? (() => true),
+      capsuleTop: 58,
+      noticesTop: extra.noticesTop ?? 58,
+    } as unknown as ExplorerSwipeInput["layers"],
     cameraRef,
     region: REGION,
-    isAvailable: () => true,
-    capsuleTop: 58,
-    noticesTop: 58,
     closePanels,
-    ...extra,
   }
 }
 
@@ -205,13 +209,13 @@ function Probe({ input }: { input: ExplorerSwipeInput }) {
 
 let tree: renderer.ReactTestRenderer
 
-function mount(layers: MapLayers, extra: Partial<ExplorerSwipeInput> = {}) {
+function mount(layers: MapLayers, extra: Extra = {}) {
   act(() => {
     tree = renderer.create(<Probe input={inputFor(layers, extra)} />)
   })
 }
 
-function update(layers: MapLayers, extra: Partial<ExplorerSwipeInput> = {}) {
+function update(layers: MapLayers, extra: Extra = {}) {
   act(() => {
     tree.update(<Probe input={inputFor(layers, extra)} />)
   })
@@ -260,7 +264,7 @@ describe("free map, no comparison", () => {
 
   test("the controller gets the layers, the width and the number of layers the cycle skips", () => {
     mount(makeLayers(), { isAvailable: (key) => key === "map" || key === "satellite" })
-    expect(mockControllerParams[0]).toMatchObject({ width: WIDTH, savedBasemap: "map" })
+    expect(mockControllerParams[0]).toMatchObject({ width: WIDTH })
     expect((mockControllerParams[0] as { skippedCount: number }).skippedCount).toBe(3)
   })
 

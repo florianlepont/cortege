@@ -7,6 +7,7 @@ import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { computeRegionBbox } from "../../app/map-viewport"
 import type { PublicMapItem, PublicParcelStatusItem } from "../../app/types"
+import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { fr } from "../../i18n"
 import { PublicMapScreen } from "../PublicMapScreen"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
@@ -17,6 +18,7 @@ jest.mock("../../api/ibp-api", () => ({
 }))
 
 const mockAnimateToRegion = jest.fn()
+const mockJumpTo = jest.fn()
 const mockAlert = jest.fn()
 const mockLocation = {
   requestForegroundPermissionsAsync: jest.fn(),
@@ -40,7 +42,11 @@ jest.mock("react-native", () => {
       ReactRef.createElement(name, props, children)
   return {
     AppState: { addEventListener: () => ({ remove: () => undefined }) },
-    AccessibilityInfo: { announceForAccessibility: jest.fn() },
+    AccessibilityInfo: {
+      announceForAccessibility: jest.fn(),
+      isScreenReaderEnabled: () => Promise.resolve(false),
+      addEventListener: () => ({ remove: () => undefined }),
+    },
     ActivityIndicator: mockComponent("ActivityIndicator"),
     Keyboard: { dismiss: jest.fn() },
     Pressable: mockComponent("Pressable"),
@@ -55,13 +61,21 @@ jest.mock("react-native", () => {
   }
 })
 
-// The Phase 28 spike driver builds its pan gestures here; its own test drives them.
+// The swipe mode's pan gestures are recorded with their handlers, so a test can drive the real
+// controller (`useBasemapSwipe`) like a finger would.
+type MockPan = { handlers: Record<string, (...args: unknown[]) => void> }
+const mockPans: MockPan[] = []
 jest.mock("react-native-gesture-handler", () => {
   const ReactRef = require("react") as typeof import("react")
   const pan = () => {
-    const gesture: Record<string, unknown> = {}
-    for (const name of ["runOnJS", "minDistance", "onBegin", "onUpdate", "onEnd"]) {
-      gesture[name] = () => gesture
+    const gesture: Record<string, unknown> & MockPan = { handlers: {} }
+    mockPans.push(gesture)
+    for (const name of ["runOnJS", "minDistance"]) gesture[name] = () => gesture
+    for (const name of ["onBegin", "onUpdate", "onEnd", "onFinalize"]) {
+      gesture[name] = (handler: (...args: unknown[]) => void) => {
+        gesture.handlers[name] = handler
+        return gesture
+      }
     }
     return gesture
   }
@@ -84,6 +98,7 @@ jest.mock("@maplibre/maplibre-react-native", () => {
     ReactRef.useImperativeHandle(ref, () => ({
       fitBounds: (bounds: number[], options: { duration: number }) =>
         mockAnimateToRegion(boundsToRegion(bounds), options.duration),
+      jumpTo: (...args: unknown[]) => mockJumpTo(...args),
     }))
     return ReactRef.createElement("Camera", props)
   })
@@ -108,11 +123,22 @@ jest.mock("@maplibre/maplibre-react-native", () => {
 })
 
 const mockOfflineEnabled = { value: false }
-const mockSwipeSpike = { on: false, leftView: "surface" }
 jest.mock("../../app/feature-flags", () => ({
   isOfflineMapsEnabled: () => mockOfflineEnabled.value,
-  isSwipeSpikeEnabled: () => mockSwipeSpike.on,
-  swipeSpikeLeftView: () => mockSwipeSpike.leftView,
+}))
+// The outcome of the Phase 28 device spike: all three switches on, but a test can turn one off.
+const mockStackMode = { wipe: "wipe", comparison: true, side: "wipe" }
+jest.mock("./map-stack-mode", () => ({
+  get WIPE_PRESENTATION() {
+    return mockStackMode.wipe
+  },
+  get COMPARISON_BUILT() {
+    return mockStackMode.comparison
+  },
+  get SIDE_WIPE() {
+    return mockStackMode.side
+  },
+  LEFT_MAP_ANDROID_VIEW: "texture",
 }))
 const mockStartDownload = jest.fn()
 const mockDeleteArea = jest.fn()
@@ -313,6 +339,9 @@ function byLabel(label: string): ReactTestInstance {
 function byTestId(testID: string): ReactTestInstance[] {
   return tree.root.findAll((node) => typeof node.type === "string" && node.props.testID === testID)
 }
+
+const flatStyle = (style: unknown): Record<string, unknown> =>
+  Object.assign({}, ...[style].flat(3).filter(Boolean))
 
 function markers(): ReactTestInstance[] {
   return tree.root.findAll((node) => (node.type as unknown) === "Marker")
@@ -608,17 +637,14 @@ describe("PublicMapScreen", () => {
     expect(target.longitudeDelta).toBeLessThan(DEFAULT_MAP_REGION.longitudeDelta)
   })
 
-  test("controls: one tap switches the basemap, the parcels load once zoomed in, no filters", () => {
+  test("controls: the globe no longer switches the basemap, the parcels load once zoomed in, no filters", () => {
     jest.useFakeTimers()
     try {
       const props = makeProps({ items: [item("a", 45.76, 4.84)] })
       mount(props)
-      act(() =>
-        byLabel(
-          fr.offlineMap.basemap.a11y.switchTo(fr.offlineMap.basemap.satellite),
-        ).props.onPress(),
-      )
-      expect(props.onChangeBasemap).toHaveBeenCalledWith("satellite")
+      act(() => byLabel(fr.mapLayers.basemap.buttonA11y).props.onPress())
+      // The globe enters the swipe mode (Phase 28): the saved basemap is untouched.
+      expect(props.onChangeBasemap).not.toHaveBeenCalled()
       expect(texts()).toContain(fr.publicMap.count(1))
 
       // Zoom in to parcel level: the cadastre loads after the debounce.
@@ -640,49 +666,6 @@ describe("PublicMapScreen", () => {
       expect(props.onLoadParcels).toHaveBeenCalledTimes(1)
     } finally {
       jest.useRealTimers()
-    }
-  })
-
-  test("without the spike flag the map and the globe button are exactly as before (Phase 28)", () => {
-    const props = makeProps()
-    mount(props)
-    const map = tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
-    for (const prop of ["dragPan", "touchZoom", "doubleTapZoom", "androidView"]) {
-      expect(map.props[prop]).toBeUndefined()
-    }
-    expect(map.props.onRegionIsChanging).toBeUndefined()
-    expect(tree.root.findAll((node) => (node.type as unknown) === "GestureDetector")).toHaveLength(
-      0,
-    )
-  })
-
-  test("with the spike flag the globe enters the swipe mode and freezes the map (Phase 28)", () => {
-    mockSwipeSpike.on = true
-    mockSwipeSpike.leftView = "texture"
-    try {
-      const props = makeProps()
-      mount(props)
-      const map = () => tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
-      expect(map().props.androidView).toBe("texture")
-      expect(map().props.dragPan).toBeUndefined()
-      expect(typeof map().props.onRegionIsChanging).toBe("function")
-
-      act(() =>
-        byLabel(
-          fr.offlineMap.basemap.a11y.switchTo(fr.offlineMap.basemap.satellite),
-        ).props.onPress(),
-      )
-      // The globe no longer switches Plan and Satellite: it enters the spike swipe mode.
-      expect(props.onChangeBasemap).not.toHaveBeenCalled()
-      for (const prop of ["dragPan", "touchZoom", "touchRotate", "touchPitch", "doubleTapZoom"]) {
-        expect(map().props[prop]).toBe(false)
-      }
-      expect(
-        tree.root.findAll((node) => (node.type as unknown) === "GestureDetector"),
-      ).toHaveLength(1)
-    } finally {
-      mockSwipeSpike.on = false
-      mockSwipeSpike.leftView = "surface"
     }
   })
 
@@ -975,9 +958,7 @@ describe("PublicMapScreen", () => {
       mockOfflineEnabled.value = true
       try {
         mount(makeProps())
-        expect(
-          byLabel(fr.offlineMap.basemap.a11y.switchTo(fr.offlineMap.basemap.satellite)),
-        ).toBeTruthy()
+        expect(byLabel(fr.mapLayers.basemap.buttonA11y)).toBeTruthy()
         expect(byLabel(fr.offlineMap.areas.openSheet)).toBeTruthy()
         expect(byLabel(fr.publicMap.a11y.locate)).toBeTruthy()
       } finally {
@@ -1088,6 +1069,300 @@ describe("PublicMapScreen", () => {
     })
   })
 
+  describe("the swipe mode and the comparison (Phase 28)", () => {
+    const globe = () => byLabel(fr.mapLayers.basemap.buttonA11y)
+    const maps = () => tree.root.findAll((node) => (node.type as unknown) === "MapLibreMap")
+    const explorerMap = () => maps()[0]
+    const swipePan = () => [...mockPans].reverse().find((pan) => pan.handlers.onFinalize) as MockPan
+    const drag = (fromX: number, toX: number) => {
+      act(() => swipePan().handlers.onBegin({ x: fromX, y: 400 }))
+      act(() => swipePan().handlers.onUpdate({ x: toX, y: 400 }))
+    }
+    const release = () => act(() => swipePan().handlers.onEnd({}, true))
+    const present = (testID: string) => byTestId(testID).length > 0
+    const chip = () => byTestId("download-chip")
+
+    beforeEach(() => {
+      jest.useFakeTimers()
+      mockPans.length = 0
+      mockJumpTo.mockClear()
+      mockStackMode.wipe = "wipe"
+      mockStackMode.comparison = true
+      mockStackMode.side = "wipe"
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+      mockOfflineEnabled.value = false
+      mockDownloadStatus.value = null
+      mockAvailable.all = true
+    })
+
+    // A drag left from the right edge to the middle, let go in the compare zone.
+    function startComparison(props = makeProps()) {
+      mount(props)
+      act(() => globe().props.onPress())
+      drag(380, 200)
+      release()
+      return props
+    }
+
+    test("the free map is today's Explorer: not frozen, no extra map, no swipe control", () => {
+      mount(makeProps())
+      const map = explorerMap()
+      for (const prop of ["dragPan", "touchZoom", "doubleTapZoom", "touchRotate", "touchPitch"]) {
+        expect(map.props[prop]).toBeUndefined()
+      }
+      expect(map.props.onRegionIsChanging).toBeUndefined()
+      expect(map.props.androidView).toBe("texture")
+      expect(maps()).toHaveLength(1)
+      for (const id of ["swipe-surface", "swipe-indicator", "swipe-done", "curtain-handle"]) {
+        expect(present(id)).toBe(false)
+      }
+      expect(present("compare-quit")).toBe(false)
+      expect(globe().props.accessibilityState).toEqual({ expanded: false })
+      expect(globe().props.accessibilityValue).toBeUndefined()
+    })
+
+    test("the globe enters the swipe mode: surface, indicator and Terminé, the map frozen, the chip hidden", () => {
+      mockOfflineEnabled.value = true
+      mockDownloading.areaId = "area-1"
+      mockDownloadStatus.value = {
+        phase: "running",
+        areaId: "area-1",
+        name: "Zone",
+        percentage: 42,
+        downloadedTiles: 5,
+        totalTiles: 10,
+      }
+      const props = makeProps()
+      mount(props)
+      expect(chip()).toHaveLength(1)
+      act(() => globe().props.onPress())
+      expect(props.onChangeBasemap).not.toHaveBeenCalled()
+      expect(globe().props.accessibilityState).toEqual({ expanded: true })
+      expect(present("swipe-surface")).toBe(true)
+      expect(present("swipe-indicator")).toBe(true)
+      expect(present("swipe-done")).toBe(true)
+      for (const prop of ["dragPan", "touchZoom", "touchRotate", "touchPitch", "doubleTapZoom"]) {
+        expect(explorerMap().props[prop]).toBe(false)
+      }
+      expect(chip()).toHaveLength(0)
+      mockDownloading.areaId = null
+      // The camera was put north up and flat for the stacked maps.
+      expect(mockJumpTo).toHaveBeenCalledWith(expect.objectContaining({ bearing: 0, pitch: 0 }))
+      // The globe again frees the map; the chip returns.
+      act(() => globe().props.onPress())
+      expect(present("swipe-surface")).toBe(false)
+      expect(chip()).toHaveLength(1)
+      expect(explorerMap().props.dragPan).toBeUndefined()
+    })
+
+    test("the globe closes the overlay bubble while it enters the swipe mode", () => {
+      mount(makeProps())
+      act(() => byTestId("map-overlay-button")[0].props.onPress())
+      expect(byTestId("map-overlay-bubble")).toHaveLength(1)
+      act(() => globe().props.onPress())
+      expect(byTestId("map-overlay-bubble")).toHaveLength(0)
+      expect(present("swipe-surface")).toBe(true)
+    })
+
+    test("Terminé frees the map", () => {
+      mount(makeProps())
+      act(() => globe().props.onPress())
+      act(() => byTestId("swipe-done")[0].props.onPress())
+      expect(present("swipe-surface")).toBe(false)
+      expect(explorerMap().props.dragPan).toBeUndefined()
+    })
+
+    test("a wipe draws the incoming layer on a second map; a committed base stays covered until the Explorer map has loaded it", () => {
+      const props = makeProps()
+      mount(props)
+      act(() => globe().props.onPress())
+      drag(380, 60)
+      expect(maps()).toHaveLength(2)
+      release()
+      act(() => {
+        jest.advanceTimersByTime(500)
+      })
+      // Satellite is the Plan's neighbour: it is the saved preference now.
+      expect(props.onChangeBasemap).toHaveBeenCalledWith("satellite")
+      // The stacked map keeps covering while the Explorer map loads the new style.
+      expect(maps()).toHaveLength(2)
+      act(() => explorerMap().props.onDidFinishLoadingStyle())
+      expect(maps()).toHaveLength(1)
+    })
+
+    test("a wipe let go near its start changes nothing and unmounts the extra map", () => {
+      const props = makeProps()
+      mount(props)
+      act(() => globe().props.onPress())
+      drag(380, 340)
+      release()
+      act(() => {
+        jest.advanceTimersByTime(500)
+      })
+      expect(props.onChangeBasemap).not.toHaveBeenCalled()
+      expect(maps()).toHaveLength(1)
+    })
+
+    test("a comparison: handle, tags, the second map; no indicator, Terminé only; markers hidden", () => {
+      startComparison(makeProps({ items: [item("a", 45.76, 4.84)] }))
+      expect(present("curtain-handle")).toBe(true)
+      expect(present("curtain-tag-left")).toBe(true)
+      expect(present("curtain-tag-right")).toBe(true)
+      expect(maps()).toHaveLength(2)
+      expect(present("swipe-indicator")).toBe(false)
+      expect(present("swipe-done")).toBe(true)
+      expect(present("compare-quit")).toBe(false)
+      expect(explorerMap().props.touchRotate).toBe(false)
+      expect(markers()).toHaveLength(0)
+      expect(globe().props.accessibilityValue).toEqual({
+        text: fr.mapLayers.basemap.buttonActiveValue,
+      })
+    })
+
+    test("the first notice of a comparison is the pill that says the surveys are hidden", () => {
+      startComparison()
+      const notices = tree.root.findAll(
+        (node) =>
+          typeof node.type === "string" &&
+          String(node.props.testID ?? "").startsWith("map-notice-"),
+      )
+      expect(notices[0].props.testID).toBe("map-notice-hidden")
+      expect(texts()).toContain(fr.mapLayers.compare.hiddenSurveys)
+      act(() => {
+        jest.advanceTimersByTime(4000)
+      })
+      expect(texts()).not.toContain(fr.mapLayers.compare.hiddenSurveys)
+    })
+
+    test("Terminé keeps the comparison: the free map shows Quitter la comparaison", () => {
+      startComparison()
+      act(() => byTestId("swipe-done")[0].props.onPress())
+      expect(present("swipe-surface")).toBe(false)
+      expect(present("curtain-handle")).toBe(true)
+      expect(present("compare-quit")).toBe(true)
+      expect(explorerMap().props.dragPan).toBeUndefined()
+      expect(explorerMap().props.touchRotate).toBe(false)
+      expect(present("swipe-done")).toBe(false)
+    })
+
+    test("Quitter la comparaison keeps side A: the curtain goes, one base again", () => {
+      setReducedMotion(true)
+      try {
+        const props = startComparison()
+        act(() => byTestId("swipe-done")[0].props.onPress())
+        act(() => byTestId("compare-quit")[0].props.onPress())
+        for (const id of ["curtain-handle", "curtain-tag-left", "compare-quit"]) {
+          expect(present(id)).toBe(false)
+        }
+        expect(maps()).toHaveLength(1)
+        expect(explorerMap().props.touchRotate).toBeUndefined()
+        // Side A is Plan, the saved base: it is written again, unchanged.
+        expect(props.onChangeBasemap).toHaveBeenCalledWith("map")
+      } finally {
+        setReducedMotion(false)
+      }
+    })
+
+    test("dragging the line to the left edge keeps the right layer, covered until the Explorer map has loaded it", () => {
+      const props = startComparison()
+      expect(maps()).toHaveLength(2)
+      const handlePan = [...mockPans]
+        .reverse()
+        .find((pan) => pan.handlers.onEnd && !pan.handlers.onFinalize) as MockPan
+      act(() => handlePan.handlers.onBegin())
+      act(() => handlePan.handlers.onUpdate({ translationX: -1000 }))
+      act(() => handlePan.handlers.onEnd())
+      // B was the incoming Satellite, drawn by the second map: it is the base now (and saved).
+      expect(props.onChangeBasemap).toHaveBeenCalledWith("satellite")
+      expect(present("curtain-handle")).toBe(false)
+      expect(maps()).toHaveLength(2)
+      act(() => explorerMap().props.onDidFinishLoadingStyle())
+      expect(maps()).toHaveLength(1)
+    })
+
+    test("opening the overlay bubble or the download card ends the swipe mode and keeps the comparison", () => {
+      mockOfflineEnabled.value = true
+      startComparison()
+      act(() => byTestId("map-overlay-button")[0].props.onPress())
+      expect(present("swipe-surface")).toBe(false)
+      expect(present("curtain-handle")).toBe(true)
+      expect(present("compare-quit")).toBe(true)
+      // The card does the same from the swipe mode.
+      act(() => globe().props.onPress())
+      expect(present("swipe-surface")).toBe(true)
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      expect(present("swipe-surface")).toBe(false)
+      expect(present("curtain-handle")).toBe(true)
+    })
+
+    test("the globe re-enters the swipe mode of a comparison: Terminé takes the pill's place", () => {
+      startComparison()
+      act(() => byTestId("swipe-done")[0].props.onPress())
+      expect(present("compare-quit")).toBe(true)
+      act(() => globe().props.onPress())
+      expect(present("compare-quit")).toBe(false)
+      expect(present("swipe-done")).toBe(true)
+      expect(present("swipe-surface")).toBe(true)
+    })
+
+    test("with the comparison not built a release in the middle creates none", () => {
+      mockStackMode.comparison = false
+      const props = makeProps()
+      mount(props)
+      act(() => globe().props.onPress())
+      drag(380, 200)
+      release()
+      act(() => {
+        jest.advanceTimersByTime(500)
+      })
+      for (const id of ["curtain-handle", "curtain-tag-left", "compare-quit"]) {
+        expect(present(id)).toBe(false)
+      }
+      // Two zones only: past a third of the width it is a plain change of base.
+      expect(props.onChangeBasemap).toHaveBeenCalledWith("satellite")
+      expect(explorerMap().props.touchRotate).toBe(false)
+      expect(explorerMap().props.hideMarkers).toBeUndefined()
+    })
+
+    test("with an instant presentation no extra map is mounted during a gesture", () => {
+      mockStackMode.wipe = "instant"
+      mount(makeProps())
+      act(() => globe().props.onPress())
+      drag(380, 60)
+      expect(maps()).toHaveLength(1)
+    })
+
+    test("offline, the layers the area lacks are skipped and told when the swipe mode starts", () => {
+      mockAvailable.all = false
+      mount(makeProps({ isOffline: true }))
+      act(() => globe().props.onPress())
+      expect(texts()).toContain(fr.mapLayers.basemap.skipped(3))
+    })
+
+    test("the notices start below the swipe stack and the quit pill", () => {
+      const noticeTop = () =>
+        flatStyle(
+          tree.root.find(
+            (node) =>
+              typeof node.type === "string" &&
+              node.props.pointerEvents === "box-none" &&
+              [node.props.style].flat(3).some((style) => style && style.alignItems === "center") &&
+              node.findAll((child) => child.props.testID === "map-notice-hidden").length > 0,
+          ).props.style,
+        ).top as number
+      startComparison()
+      const swipeTop = noticeTop()
+      act(() => byTestId("swipe-done")[0].props.onPress())
+      const pillTop = noticeTop()
+      // Capsule top 30 (inset 20 + 10) plus the stack's estimate, or the pill's 40 pt, plus 8.
+      expect(swipeTop).toBe(30 + 100 + 8)
+      expect(pillTop).toBe(30 + 40 + 8)
+    })
+  })
+
   test("locate: centres on the position, or explains a refusal or a failure", async () => {
     mount(makeProps())
     const press = async () => {
@@ -1157,8 +1432,8 @@ describe("PublicMapScreen", () => {
     expect(mockPanelsOptions.length).toBeGreaterThanOrEqual(3)
     const callbacks = new Set(mockPanelsOptions.map((options) => options.onPanelOpen))
     expect(callbacks.size).toBe(1)
-    // Until the swipe plan fills the ref it is a no-op, and calling it is harmless.
-    expect(() => mockPanelsOptions[0].onPanelOpen()).not.toThrow()
+    // The ref is filled after the swipe hook has run: calling it is harmless with nothing to end.
+    expect(() => act(() => mockPanelsOptions[0].onPanelOpen())).not.toThrow()
     // Opening the bubble calls it through the hook.
     act(() => byTestId("map-overlay-button")[0].props.onPress())
     expect(byTestId("map-overlay-bubble")).toHaveLength(1)

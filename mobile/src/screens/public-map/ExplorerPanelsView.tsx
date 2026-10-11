@@ -40,6 +40,11 @@ export type ExplorerPanelsViewProps = {
   /** The card's distance from the bottom of the screen (tab bar plus 14). */
   cardBottom: number
   /**
+   * The notices column's top when a swipe control holds the top (the swipe stack, the quit pill);
+   * else the layers' own.
+   */
+  noticesTop?: number
+  /**
    * The map's own controls (capsule, locate arrow, legend). They are drawn above the bubble's
    * backdrop, so a tap on them acts at once, and under the card, which covers the legend.
    */
@@ -66,6 +71,7 @@ export function ExplorerPanelsView({
   onCardHeight,
   forestAvailable,
   cardBottom,
+  noticesTop,
   children,
 }: ExplorerPanelsViewProps) {
   useDownloadAnnouncements(downloadStatus)
@@ -118,7 +124,11 @@ export function ExplorerPanelsView({
           onChangeParcels={actions.setParcels}
         />
       ) : null}
-      <MapNoticeStack notices={layers.notices} top={layers.noticesTop} onRetry={onRetryStyle} />
+      <MapNoticeStack
+        notices={layers.notices}
+        top={noticesTop ?? layers.noticesTop}
+        onRetry={onRetryStyle}
+      />
       <DownloadChip
         status={downloadStatus}
         visible={layers.chipShown}

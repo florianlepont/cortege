@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react"
-import { AccessibilityInfo, type NativeSyntheticEvent } from "react-native"
+import { AccessibilityInfo, useWindowDimensions, type NativeSyntheticEvent } from "react-native"
 import type { SharedValue } from "react-native-reanimated"
 import type { CameraRef, ViewStateChangeEvent } from "@maplibre/maplibre-react-native"
 import type { MapRegion } from "../../app/map-viewport"
 import { fr } from "../../i18n"
-import type { BasemapKey } from "../../map/basemaps"
-import { neighbourLayer, skippedCount, type LayerAvailability } from "../../map/layer-cycle"
+import { neighbourLayer, skippedCount } from "../../map/layer-cycle"
 import type { BaseLayerKey } from "../../map/layers"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { feedback } from "../../ui/feedback"
@@ -22,6 +21,7 @@ import {
 import { swipeLabel } from "./swipe-labels"
 import { useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
 import { useCurtainClip, type CurtainPhase } from "./useCurtainClip"
+import type { ExplorerLayers } from "./useExplorerLayers"
 import type { MapLayers } from "./useMapLayersState"
 import { useTransientFlag } from "./useTransientFlag"
 
@@ -126,18 +126,14 @@ export type ExplorerSwipe = {
 }
 
 export type ExplorerSwipeInput = {
-  layers: MapLayers
-  savedBasemap: BasemapKey
-  /** The window's width and height: the stacked maps and the curtain cover the map area. */
-  width: number
-  height: number
+  /**
+   * What the Explorer derives from the layers state: the layers state itself, the availability
+   * at the view centre, the capsule's top and the notices column's own top.
+   */
+  layers: ExplorerLayers
   /** The Explorer map's camera, reset to north up and flat when a stacked map needs the same view. */
   cameraRef: RefObject<CameraRef | null>
   region: MapRegion
-  isAvailable: LayerAvailability
-  capsuleTop: number
-  /** The notices column's top without any swipe control (the capsule's top, or below the chip). */
-  noticesTop: number
   /** Closes the bubble and the download card (entering the swipe mode). */
   closePanels: () => void
 }
@@ -154,17 +150,14 @@ function coverAfter(wipe: Wipe, layers: MapLayers): Cover | null {
 }
 
 export function useExplorerSwipe({
-  layers,
-  savedBasemap,
-  width,
-  height,
+  layers: explorerLayers,
   cameraRef,
   region,
-  isAvailable,
-  capsuleTop,
-  noticesTop: baseNoticesTop,
   closePanels,
 }: ExplorerSwipeInput): ExplorerSwipe {
+  // The stacked maps and the curtain cover the window: the map area is the whole screen.
+  const { width, height } = useWindowDimensions()
+  const { layers, isAvailable, capsuleTop, noticesTop: baseNoticesTop } = explorerLayers
   const { actions, state } = layers
   const swipeMode = state.swipeMode
   const compare = COMPARISON_BUILT ? state.compare : null
@@ -172,7 +165,6 @@ export function useExplorerSwipe({
 
   const controller = useBasemapSwipe({
     layers,
-    savedBasemap,
     width,
     isAvailable,
     skippedCount: skippedCount(isAvailable),

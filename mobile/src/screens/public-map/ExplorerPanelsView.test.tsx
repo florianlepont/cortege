@@ -319,4 +319,9 @@ describe("ExplorerPanelsView", () => {
     const tree = mount(props)
     expect(one(tree, "MapNoticeStack").props).toMatchObject({ notices, top: 104 })
   })
+
+  test("a swipe control that holds the top moves the notices below it", () => {
+    const props = makeProps({ layers: makeLayers({}, { noticesTop: 104 }), noticesTop: 198 })
+    expect(one(mount(props), "MapNoticeStack").props.top).toBe(198)
+  })
 })
