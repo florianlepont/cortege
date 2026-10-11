@@ -18,6 +18,9 @@ jest.mock("../api/ibp-api", () => ({
 let mockOffline = false
 jest.mock("./useIsOffline", () => ({ useIsOffline: () => mockOffline }))
 
+const mockListNotes = jest.fn()
+jest.mock("../storage/surveys", () => ({ listLocalSurveyNotes: () => mockListNotes() }))
+
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import type {
   CommunitySurveyItem,
@@ -95,6 +98,7 @@ beforeEach(() => {
   mockCommunity.mockReset().mockResolvedValue({ members: [], surveys: [] })
   mockPlaces.mockReset().mockResolvedValue({ items: [] })
   mockParcels.mockReset().mockResolvedValue({ items: [] })
+  mockListNotes.mockReset().mockResolvedValue([])
   jest.spyOn(console, "debug").mockImplementation(() => undefined)
 })
 
@@ -152,6 +156,27 @@ describe("useGlobalSearch", () => {
     expect(result.current.busy).toBe(false)
     expect(result.current.settled).toBe(true)
     expect(result.current.order).toEqual(["mine", "community", "places", "parcels"])
+  })
+
+  it("finds an own survey by its note alone, flagged, once the notes are read (D-07)", async () => {
+    mockListNotes.mockResolvedValue([{ id: "s2", note: "Sol détrempé ce matin" }])
+    const { result, rerender } = await renderHook((params: Params) => useGlobalSearch(params), {
+      initialProps: base,
+    })
+    expect(mockListNotes).not.toHaveBeenCalled()
+    await rerender({ ...base, query: "detrempe" })
+    await flush()
+    expect(mockListNotes).toHaveBeenCalledTimes(1)
+    expect(result.current.mine.map((item) => [item.id, item.matchedInNote])).toEqual([["s2", true]])
+    expect(result.current.best).toMatchObject({ kind: "mine", survey: { id: "s2" } })
+  })
+
+  it("does not read the notes under two characters", async () => {
+    await renderHook((params: Params) => useGlobalSearch(params), {
+      initialProps: { ...base, query: " f " },
+    })
+    await flush()
+    expect(mockListNotes).not.toHaveBeenCalled()
   })
 
   it("requests parcels for a parcel-looking query and puts them first", async () => {

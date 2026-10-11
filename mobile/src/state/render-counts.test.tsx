@@ -633,6 +633,11 @@ jest.mock("../hooks/useLocalDataOwner", () => ({
 jest.mock("../hooks/useGlobalSearch", () => ({
   useGlobalSearch: () => mockIdleSearch,
 }))
+// The own-note read of the full list is static and empty too (27-15): no storage in this harness.
+const mockNoOwnNotes: ReadonlyMap<string, string> = new Map()
+jest.mock("../hooks/useOwnSurveyNotes", () => ({
+  useOwnSurveyNotes: () => mockNoOwnNotes,
+}))
 jest.mock("../hooks/useSearchRecents", () => ({
   useSearchRecents: () => mockIdleRecents,
 }))
