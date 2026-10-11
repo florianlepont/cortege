@@ -52,6 +52,7 @@ jest.mock("../../app/theme", () => {
 import type { NativeSyntheticEvent } from "react-native"
 import type { ViewStateChangeEvent } from "@maplibre/maplibre-react-native"
 import { cameraMocks } from "../../../test/maplibre.mock"
+import { brandMapTokens } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { boundsFromRegion } from "../../map/maplibre/regions"
 import { MapStack } from "./MapStack"
@@ -320,7 +321,8 @@ describe("comparison", () => {
     const colours = tree.root
       .findAll((n) => (n.type as unknown) === "View" && Array.isArray(n.props.style))
       .map((n) => flat(n.props.style).backgroundColor)
-      .filter(Boolean)
+      // The stacked map shows its ground colour until its first style load (28-14).
+      .filter((colour) => colour && colour !== brandMapTokens.lightBasemapBackground)
     expect(colours).toEqual([
       defaultTheme.visual.curtain.edge,
       defaultTheme.visual.curtain.line,

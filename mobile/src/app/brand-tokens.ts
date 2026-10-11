@@ -412,6 +412,9 @@ export const brandInteraction = {
 export const brandMapTokens = {
   // Phase 23: the ground of the recoloured dark Plan IGN basemap (`map/maplibre/dark-style.ts`).
   darkBasemapBackground: "#0E1512",
+  // Phase 28 (28-14): the ground of a stacked map before its first tiles, in the light scheme (a
+  // pale neutral close to the Plan IGN paper, so an uncovered strip is not a black bar).
+  lightBasemapBackground: "#EDEAE2",
   parcelSelected: brandColors.terracotta,
   parcelSelectedFill: "rgba(205, 88, 51, 0.30)",
   parcelStudied: brandColors.moss,

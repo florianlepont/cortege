@@ -13,10 +13,21 @@ jest.mock("react-native", () => {
   }
 })
 
+const mockTheme = { scheme: "light" as "light" | "dark" }
+jest.mock("../../app/theme", () => {
+  const actual = jest.requireActual("../../app/theme") as typeof import("../../app/theme")
+  return {
+    ...actual,
+    useBrandTheme: () =>
+      mockTheme.scheme === "dark" ? actual.buildTheme("dark") : actual.defaultTheme,
+  }
+})
+
 import { Camera, type CameraRef, type ViewStateChangeEvent } from "@maplibre/maplibre-react-native"
 import type { NativeSyntheticEvent } from "react-native"
 import type { SharedValue } from "react-native-reanimated"
 import { cameraMocks } from "../../../test/maplibre.mock"
+import { brandMapTokens } from "../../app/brand-tokens"
 import { boundsFromRegion } from "../../map/maplibre/regions"
 import { MapStack, useMapSync } from "./MapStack"
 
@@ -36,6 +47,7 @@ afterAll(() => {
 
 beforeEach(() => {
   cameraMocks.jumpTo.mockClear()
+  mockTheme.scheme = "light"
 })
 
 // The Reanimated mock's shared values are plain `{ value }` records.
@@ -184,5 +196,48 @@ describe("MapStack", () => {
     const map = tree.root.findByType("MapLibreMap" as never)
     const kinds = map.children.map((child) => (typeof child === "string" ? child : child.type))
     expect(kinds).toEqual([Camera, LayerChild])
+  })
+  const clipOf = (tree: renderer.ReactTestRenderer) =>
+    tree.root.find(
+      (node) => (node.type as unknown) === "View" && flat(node.props.style).overflow === "hidden",
+    )
+  const fire = (tree: renderer.ReactTestRenderer, event: string) =>
+    act(() => {
+      tree.root.findByType("MapLibreMap" as never).props[event]()
+    })
+
+  test("shows the light map ground under the map until the first style load", () => {
+    const onStyleLoaded = jest.fn()
+    const { tree } = mount({ onStyleLoaded })
+    expect(flat(clipOf(tree).props.style).backgroundColor).toBe(
+      brandMapTokens.lightBasemapBackground,
+    )
+    fire(tree, "onDidFinishLoadingStyle")
+    expect(flat(clipOf(tree).props.style).backgroundColor).toBeUndefined()
+    expect(onStyleLoaded).toHaveBeenCalledTimes(1)
+  })
+
+  test("the ground is the dark basemap ground in the dark scheme", () => {
+    mockTheme.scheme = "dark"
+    const { tree } = mount()
+    expect(flat(clipOf(tree).props.style).backgroundColor).toBe(
+      brandMapTokens.darkBasemapBackground,
+    )
+  })
+
+  test("a failed load keeps the ground and reports the failure", () => {
+    const onStyleFailed = jest.fn()
+    const { tree } = mount({ onStyleFailed })
+    fire(tree, "onDidFailLoadingMap")
+    expect(onStyleFailed).toHaveBeenCalledTimes(1)
+    expect(flat(clipOf(tree).props.style).backgroundColor).toBe(
+      brandMapTokens.lightBasemapBackground,
+    )
+  })
+
+  test("the load callbacks are optional", () => {
+    const { tree } = mount()
+    expect(tree.root.findByType("MapLibreMap" as never).props.onDidFailLoadingMap).toBeUndefined()
+    expect(() => fire(tree, "onDidFinishLoadingStyle")).not.toThrow()
   })
 })
