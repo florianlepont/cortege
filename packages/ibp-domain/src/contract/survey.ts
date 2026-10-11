@@ -1,4 +1,5 @@
-import type { FactorClass } from "../factors"
+import type { FactorClass, FactorKey } from "../factors"
+import type { SurveyWeather } from "./weather"
 
 // Wire types of a survey, shared by the API and the app. Types only: runtime validation stays in
 // the API's class-validator DTOs.
@@ -35,6 +36,15 @@ export type IbpMethodFields = {
   ibp_cas3_scale?: boolean | null
 }
 
+/**
+ * One factor's doubt flag and short note (phase 27, D-23). They live at `factors.annotations`,
+ * keyed by factor code, beside the factor keys and never read by a scorer (D-14).
+ */
+export type FactorAnnotation = { doubt?: true; note?: string }
+
+/** The `factors.annotations` container: only factors with a doubt or a note have an entry. */
+export type FactorAnnotations = Partial<Record<FactorKey, FactorAnnotation>>
+
 /** Replaces API `SurveyUpsertBody` (surveys.types.ts) and mobile `SurveyQueuePayload` (storage/types.ts). */
 export type SurveyUpsertPayload = IbpMethodFields & {
   id?: string
@@ -51,8 +61,13 @@ export type SurveyUpsertPayload = IbpMethodFields & {
   vegetation_stage?: string
   factors?: Record<string, unknown>
   scores?: Record<string, unknown>
+  /** Phase 27, D-01: nullable column of migration 023; read-only after submit (D-03). */
+  survey_note?: string | null
+  /** Phase 27, D-01: nullable jsonb column of migration 023; read-only after submit (D-03). */
+  weather?: SurveyWeather | null
 }
 
+// SurveyPatchPayload does not take survey_note or weather: PATCH leaves them untouched (phase 27).
 /** Replaces API `SurveyPatchBody` (surveys.types.ts). */
 export type SurveyPatchPayload = IbpMethodFields & {
   site_name?: string
@@ -87,6 +102,10 @@ export type SurveyDetail = IbpMethodFields & {
   updated_at?: string
   submitted_at?: string | null
   sync_version?: number
+  /** Phase 27, D-01: null or absent means no note. */
+  survey_note?: string | null
+  /** Phase 27, D-01: null or absent means no weather. */
+  weather?: SurveyWeather | null
   factor_results: Record<string, FactorCanonical>
   scores: IbpScores
 }

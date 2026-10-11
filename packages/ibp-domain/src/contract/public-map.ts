@@ -1,3 +1,6 @@
+import type { FactorAnnotations } from "./survey"
+import type { SurveyWeather } from "./weather"
+
 // Wire types of the public map endpoints, shared by the API and the app.
 
 /**
@@ -55,6 +58,8 @@ export type CommunitySurveyHistoryItem = {
   ibp_method_version?: string | null
   ibp_total: number
   submitted_at: string
+  /** The survey's note (phase 27); null or absent when it has none or on an older server. */
+  survey_note?: string | null
   /** True for the survey the page is about. */
   is_current: boolean
 }
@@ -81,6 +86,10 @@ export type CommunitySurveyDetail = {
   factor_results: Record<string, unknown>
   parcel_ids: string[]
   display_location: { lat: number; lng: number } | null
+  /** Phase 27: absent on an older server; only submitted surveys reach other members (D-06). */
+  survey_note?: string | null
+  weather?: SurveyWeather | null
+  factor_annotations?: FactorAnnotations | null
   history: CommunitySurveyHistoryItem[]
 }
 

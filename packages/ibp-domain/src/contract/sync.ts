@@ -1,3 +1,4 @@
+import type { SurveyWeather } from "./weather"
 import type { FactorCanonical, IbpMethodFields, SurveyStatus, SurveyVisibility } from "./survey"
 
 // Wire types of `POST /v1/sync` and `GET /v1/sync/changes`, shared by the API and the app.
@@ -67,6 +68,10 @@ export type SyncChangeSurvey = IbpMethodFields & {
   factors?: Record<string, unknown>
   factor_results?: Record<string, FactorCanonical>
   scores?: Record<string, unknown>
+  /** Phase 27, D-01: null or absent means no note. */
+  survey_note?: string | null
+  /** Phase 27, D-01: null or absent means no weather. */
+  weather?: SurveyWeather | null
   created_at?: string | null
   updated_at?: string
   submitted_at?: string | null

@@ -1,4 +1,6 @@
 export type {
+  FactorAnnotation,
+  FactorAnnotations,
   FactorCanonical,
   IbpMethodFields,
   IbpScores,
@@ -39,3 +41,13 @@ export type {
   SearchPlacesResponse,
 } from "./search"
 export type { FactorAGenusInput, FactorALegacyCountInput } from "./factor-a"
+export type {
+  SurveyWeather,
+  WeatherEditableKey,
+  WeatherErrorCode,
+  WeatherNoObservationReason,
+  WeatherObservation,
+  WeatherResponse,
+  WeatherSkyCode,
+  WeatherSource,
+} from "./weather"
