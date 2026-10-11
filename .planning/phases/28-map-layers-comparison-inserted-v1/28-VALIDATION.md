@@ -28,7 +28,7 @@ Source: the current plans `28-01` to `28-18` (final UI design: swipe mode, compa
 
 - After every task commit: the task's `<automated>` command
 - After every plan wave: the full suite command
-- Before `/gsd-verify-work`: full suite and coverage green, device checks DL-01 to DL-08 recorded
+- Before `/gsd-verify-work`: full suite and coverage green, device checks DL-01 to DL-09 recorded
 - Repo gates always on: `mobile/src/__checks__/` (dash, abbreviations, icons, motion, layers, structure with the 400-line cap); `PublicMapScreen.tsx` held at or under 380 lines by 28-16 and 28-17
 
 ## Requirement-to-Plan Map
@@ -72,3 +72,5 @@ Also written test-first: `mobile/src/map/layers.test.ts` (28-02), `layer-styles.
 - [ ] All tasks have an automated verify or an explicit device checkpoint
 - [ ] No three consecutive tasks without automated verification
 - [ ] `nyquist_compliant: true` set after execution review
+
+Note: DL-09 (swipe zones and haptics: the three zones, the zone hint, the detent felt on the iPhone and on Android, no flutter at a boundary, release haptics, haptics kept under Reduce Motion; the owner confirms or tunes COMPARE_MIN, COMPARE_MAX and ZONE_HYSTERESIS) was added after the owner decision of 2026-10-11 (CONTEXT item 11). The state machine thresholds are unit tested in 28-05 (amended).
