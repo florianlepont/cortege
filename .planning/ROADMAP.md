@@ -963,7 +963,7 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 13/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
+**Plans**: 14/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
 
 Plans:
 
@@ -988,7 +988,7 @@ Plans:
 - [x] 27-11-PLAN.md: API write sites and round-trip e2e (D-01, D-03, D-04)
 - [x] 27-13-PLAN.md: app-level weather prefill and catch-up, silent note and weather writes (D-10, D-11, D-20)
 - [x] 27-14-PLAN.md: "Douteux" strip under each factor, pager keyboard (D-12, D-16)
-- [ ] 27-15-PLAN.md: note in the parcel history and the own-survey search (D-06, D-07)
+- [x] 27-15-PLAN.md: note in the parcel history and the own-survey search (D-06, D-07)
 - [ ] 27-16-PLAN.md: PDF conditions block, doubt badge and factor note (D-13, D-17, D-26)
 
 **Wave 4** *(blocked on Wave 3 completion)*
@@ -1230,7 +1230,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
-| 27. Quick survey additions | 13/22 | In Progress|  |
+| 27. Quick survey additions | 14/22 | In Progress|  |
 | 28. Map Layers & Comparison | 0/TBD | Not started | - |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
 | 30. Route Choice Assistant | 0/TBD | Not started | - |
