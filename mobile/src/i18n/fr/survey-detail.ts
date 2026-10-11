@@ -1,5 +1,11 @@
 import { IBP_MAX } from "@cortege/ibp-domain"
 
+// Phase 27: what a screen reader hears after a factor row's title and value (D-13). Nothing is
+// added for a plain row, so the spoken label of an unannotated factor is unchanged.
+function factorFlags({ doubtful, hasNote }: { doubtful?: boolean; hasNote?: boolean }): string {
+  return `${doubtful ? ", douteux" : ""}${hasNote ? ", avec une note" : ""}`
+}
+
 // Filled by plan 01.9-12; no other plan edits this section. Plan 01.8-14 added the method
 // version texts, the totals out of 50 (built from IBP_MAX) and the CNPF band names.
 export const surveyDetailFr = {
@@ -136,6 +142,12 @@ export const surveyDetailFr = {
     notFilled: "Non renseigné",
     hasWarning: "Avertissement",
     notLoaded: "Les facteurs ne sont pas encore chargés.",
+    // Phase 27 (D-13, D-17): the doubt flag and the folded note on a score row.
+    doubtBadge: "Douteux",
+    noteMore: "Lire la suite",
+    noteMoreA11y: "Lire la suite, développe la note",
+    noteLess: "Réduire",
+    noteLessA11y: "Réduire la note",
   },
   // CNPF interpretation bands of the sub-scores (D-03 amended), keyed by the package's band ids.
   bands: {
@@ -233,8 +245,29 @@ export const surveyDetailFr = {
       `Photo ${position} sur ${total}`,
     deletePhoto: ({ position, total }: { position: number; total: number }) =>
       `Supprimer la photo ${position} sur ${total}`,
-    openFactor: ({ title, value }: { title: string; value: string }) =>
-      `Ouvrir le facteur ${title}, ${value}`,
+    openFactor: ({
+      title,
+      value,
+      doubtful,
+      hasNote,
+    }: {
+      title: string
+      value: string
+      doubtful?: boolean
+      hasNote?: boolean
+    }) => `Ouvrir le facteur ${title}, ${value}${factorFlags({ doubtful, hasNote })}`,
+    // The same row on a submitted survey or another member's survey: it opens nothing.
+    factorReadOnly: ({
+      title,
+      value,
+      doubtful,
+      hasNote,
+    }: {
+      title: string
+      value: string
+      doubtful?: boolean
+      hasNote?: boolean
+    }) => `${title}, ${value}${factorFlags({ doubtful, hasNote })}`,
     historyRow: ({ label, value }: { label: string; value: string }) => `${label}. ${value}`,
     historyRange: ({ first, latest }: { first: number; latest: number }) =>
       `de ${first} à ${latest} sur ${IBP_MAX.total}`,

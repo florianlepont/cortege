@@ -42,6 +42,7 @@ const LIST_ARGUMENTS: Record<string, unknown> = {
     { letter: "A", points: 3 },
     { letter: "B", points: null },
   ],
+  "conditions.weather.parts.line": ["Nuageux", "14 °C"],
   "parcelHistory.page.trend.a11y": [
     { year: 2023, total: 21 },
     { year: null, total: 27 },
@@ -82,6 +83,7 @@ describe("French catalogue", () => {
         "common",
         "communitySurvey",
         "components",
+        "conditions",
         "factorDetail",
         "factorInput",
         "factorPager",

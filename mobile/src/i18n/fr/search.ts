@@ -64,6 +64,8 @@ export const searchFr = {
     memberMeta: ({ count }: { count: number }) =>
       `${count} ${plural(count, "relevé terminé", "relevés terminés")}`,
     memberA11y: ({ name, meta }: { name: string; meta: string }) => `Membre : ${name}, ${meta}`,
+    // Phase 27 (D-07): an own survey found through its note and not its name.
+    matchedInNote: "Trouvé dans la note",
   },
   start: {
     recentTitle: "Recherches récentes",

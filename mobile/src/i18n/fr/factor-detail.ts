@@ -33,4 +33,27 @@ export const factorDetailFr = {
     "class_score (0|2|5)": "Classe (0, 2 ou 5)",
     type_count: "Nombre de types",
   },
+  // Phase 27 (D-13, D-18): the strip under each factor, a "Douteux" flag and a short note.
+  // Neither changes the score. The note is visible to the members who can read the survey (D-06).
+  strip: {
+    doubt: {
+      label: "Douteux",
+      hint: "Signale un doute sur ce facteur. Le score ne change pas.",
+    },
+    note: {
+      add: "Ajouter une note",
+      edit: "Modifier la note",
+      close: "Fermer la note",
+      addA11y: (title: string) => `Ajouter une note au facteur ${title}`,
+      editA11y: (title: string) => `Modifier la note du facteur ${title}`,
+      closeA11y: (title: string) => `Fermer la note du facteur ${title}`,
+      fieldLabel: (title: string) => `Note du facteur ${title}`,
+      placeholder: "Ce que vous avez vu, pourquoi ce doute…",
+      visibility: "Visible par les membres qui peuvent lire le relevé.",
+      hint: "300 caractères au plus. Visible par les membres qui peuvent lire le relevé.",
+      counter: ({ count, max }: { count: number; max: number }) => `${count} / ${max}`,
+      counterA11y: ({ count, max }: { count: number; max: number }) =>
+        `${count} caractères sur ${max}`,
+    },
+  },
 } as const
