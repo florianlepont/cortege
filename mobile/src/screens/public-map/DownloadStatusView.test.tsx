@@ -157,7 +157,7 @@ describe("DownloadStatusView (12.2-19 third round)", () => {
   })
 
   test("done: a short confirmation and a 46 pt Terminé that closes", () => {
-    const { tree, handlers } = mount({ phase: "done", ...progress(100, 186) })
+    const { tree, handlers } = mount({ phase: "done", ...progress(100, 186), failedLayers: [] })
     expect(byTestId(tree, "offline-download-done")).toHaveLength(1)
     expect(texts(tree)).toEqual([t.done.title, "Bois du Nord est enregistrée sur ce téléphone."])
     expect(mockAnnounce).toHaveBeenCalledWith(t.done.title)

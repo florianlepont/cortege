@@ -59,7 +59,7 @@ export function measureStatuses(name: string, totalTiles: number): AreaDownloadS
   }
   return [
     { phase: "running", areaId: "measure-running", ...progress },
-    { phase: "done", areaId: "measure-done", ...progress },
+    { phase: "done", areaId: "measure-done", ...progress, failedLayers: [] },
     { phase: "failed", areaId: "measure-failed", name },
   ]
 }

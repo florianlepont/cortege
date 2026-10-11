@@ -7,7 +7,6 @@ const mockFinalizeOfflineArea = jest.fn()
 const mockDeleteOfflineArea = jest.fn()
 const mockGetOfflineDocumentDirectory = jest.fn()
 const mockSaveOfflineAreaParcels = jest.fn()
-const mockBasemapsForDownload = jest.fn()
 
 jest.mock("../storage/offline-map", () => ({
   listOfflineAreas: (...args: unknown[]) => mockListOfflineAreas(...args),
@@ -17,14 +16,27 @@ jest.mock("../storage/offline-map", () => ({
   deleteOfflineArea: (...args: unknown[]) => mockDeleteOfflineArea(...args),
   getOfflineDocumentDirectory: (...args: unknown[]) => mockGetOfflineDocumentDirectory(...args),
   saveOfflineAreaParcels: (...args: unknown[]) => mockSaveOfflineAreaParcels(...args),
-  basemapsForDownload: (...args: unknown[]) => mockBasemapsForDownload(...args),
 }))
 
-const mockDownloadAreaPacks = jest.fn()
+const mockPolicy: { value: "base" | "all" } = { value: "all" }
+const mockLoadPolicy = jest.fn()
+jest.mock("../storage/offline-layers-policy", () => ({
+  loadOfflineLayersPolicy: (...args: unknown[]) => mockLoadPolicy(...args),
+}))
+jest.mock("./useOfflineLayersPolicy", () => ({
+  useOfflineLayersPolicy: () => ({ policy: mockPolicy.value }),
+}))
+
+const mockLogStatusDetail = jest.fn()
+jest.mock("../i18n/status", () => ({
+  logStatusDetail: (...args: unknown[]) => mockLogStatusDetail(...args),
+}))
+
+const mockDownloadAreaLayerPacks = jest.fn()
 const mockDeleteAreaPacks = jest.fn()
 
 jest.mock("../map/offline-packs", () => ({
-  downloadAreaPacks: (...args: unknown[]) => mockDownloadAreaPacks(...args),
+  downloadAreaLayerPacks: (...args: unknown[]) => mockDownloadAreaLayerPacks(...args),
   deleteAreaPacks: (...args: unknown[]) => mockDeleteAreaPacks(...args),
 }))
 
@@ -36,7 +48,33 @@ jest.mock("../api/ibp-api", () => ({
 
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react-native/pure"
 import type { MapRegion as Region } from "../app/map-viewport"
+import { PACK_ORDER } from "../map/layers"
+import { estimateAreaLayers } from "../map/offline-estimate"
 import { useOfflineAreas } from "./useOfflineAreas"
+
+type PackProgress = {
+  percentage: number
+  completedTileCount: number
+  currentLayer: string | null
+  complete: boolean
+}
+type PackResult = {
+  percentage: number
+  layers: { key: string; outcome: string; completedResourceSize: number }[]
+  failedLayers: string[]
+  totalBytes: number
+}
+
+const doneResult = (overrides: Partial<PackResult> = {}): PackResult => ({
+  percentage: 100,
+  layers: [
+    { key: "map", outcome: "complete", completedResourceSize: 40_000_000 },
+    { key: "satellite", outcome: "complete", completedResourceSize: 12_400_000 },
+  ],
+  failedLayers: [],
+  totalBytes: 52_400_000,
+  ...overrides,
+})
 
 const REGION: Region = { latitude: 46.0, longitude: 1.0, latitudeDelta: 0.02, longitudeDelta: 0.02 }
 const API_URL = "https://api.example.test/v1"
@@ -69,13 +107,15 @@ beforeEach(() => {
   mockDeleteOfflineArea.mockResolvedValue(undefined)
   mockGetOfflineDocumentDirectory.mockReturnValue("file:///mock/documents/")
   mockSaveOfflineAreaParcels.mockResolvedValue(undefined)
-  mockBasemapsForDownload.mockReturnValue(["map", "satellite"])
+  mockPolicy.value = "all"
+  mockLoadPolicy.mockResolvedValue("all")
   mockDeleteAreaPacks.mockResolvedValue(undefined)
-  mockDownloadAreaPacks.mockImplementation(async ({ onProgress }) => {
-    const done = { percentage: 100, completedTileCount: 10, complete: true }
-    onProgress(done)
-    return done
-  })
+  mockDownloadAreaLayerPacks.mockImplementation(
+    async ({ onProgress }: { onProgress: (progress: PackProgress) => void }) => {
+      onProgress({ percentage: 100, completedTileCount: 10, currentLayer: "map", complete: true })
+      return doneResult()
+    },
+  )
   mockFetchPublicParcelStatuses.mockResolvedValue({ items: [{ parcel_id: "P1" }] })
 })
 
@@ -92,12 +132,21 @@ describe("useOfflineAreas", () => {
     expect(result.current.areas[0].id).toBe("area-1")
   })
 
-  test("estimateForRegion returns an estimate for a region", async () => {
-    const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
+  test("estimateForRegion is the covering-zoom estimate of the current policy", async () => {
+    const { result, rerender } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
     await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
 
-    const estimate = result.current.estimateForRegion(REGION)
-    expect(estimate.totalTileCount).toBeGreaterThan(0)
+    const all = result.current.estimateForRegion(REGION)
+    expect(all.policy).toBe("all")
+    expect(all.layers.map((layer) => layer.key)).toEqual([...PACK_ORDER])
+    expect(all.totalTileCount).toBeGreaterThan(0)
+
+    mockPolicy.value = "base"
+    await rerender({})
+    const base = result.current.estimateForRegion(REGION)
+    expect(base.policy).toBe("base")
+    expect(base.layers.map((layer) => layer.key)).toEqual(["map", "satellite"])
+    expect(base.estimatedBytes).toBeLessThan(all.estimatedBytes)
   })
 
   test("startDownload inserts the area, downloads tiles, caches parcels and finalizes as ready", async () => {
@@ -113,9 +162,10 @@ describe("useOfflineAreas", () => {
     expect(mockInsertOfflineArea).toHaveBeenCalledWith(
       expect.objectContaining({ name: "Bois du Nord" }),
     )
-    expect(mockDownloadAreaPacks).toHaveBeenCalledWith(
-      expect.objectContaining({ basemaps: ["map", "satellite"] }),
-    )
+    expect(mockLoadPolicy).toHaveBeenCalledTimes(1)
+    const call = mockDownloadAreaLayerPacks.mock.calls[0][0]
+    expect(call.layers.map((layer: { key: string }) => layer.key)).toEqual([...PACK_ORDER])
+    expect(call.layers.every((layer: { weight: number }) => layer.weight > 0)).toBe(true)
     expect(mockUpdateOfflineAreaProgress).toHaveBeenCalled()
     expect(mockFetchPublicParcelStatuses).toHaveBeenCalledWith(
       API_URL,
@@ -129,12 +179,119 @@ describe("useOfflineAreas", () => {
       expect.any(String),
       "ready",
       expect.objectContaining({ downloadedTiles: expect.any(Number) }),
+      52_400_000,
     )
     expect(result.current.downloadingAreaId).toBeNull()
   })
 
+  test("startDownload reads the stored policy when it starts, not the hook's", async () => {
+    mockLoadPolicy.mockResolvedValue("base")
+    mockPolicy.value = "all"
+    const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
+    await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
+
+    await act(async () => {
+      await result.current.startDownload(REGION, "Zone")
+    })
+
+    const call = mockDownloadAreaLayerPacks.mock.calls[0][0]
+    expect(call.layers.map((layer: { key: string }) => layer.key)).toEqual(["map", "satellite"])
+    const expected = estimateAreaLayers(
+      { minLat: 45.99, minLng: 0.99, maxLat: 46.01, maxLng: 1.01 },
+      "base",
+    )
+    expect(mockInsertOfflineArea).toHaveBeenCalledWith(
+      expect.objectContaining({ totalTiles: expected.totalTileCount }),
+    )
+  })
+
+  test("startDownload falls back to the hook's policy when the stored one cannot be read", async () => {
+    mockLoadPolicy.mockRejectedValue(new Error("db closed"))
+    mockPolicy.value = "base"
+    const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
+    await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
+
+    await act(async () => {
+      await result.current.startDownload(REGION, "Zone")
+    })
+
+    const call = mockDownloadAreaLayerPacks.mock.calls[0][0]
+    expect(call.layers.map((layer: { key: string }) => layer.key)).toEqual(["map", "satellite"])
+  })
+
+  test("a failed extra layer leaves the area ready, listed in the done status", async () => {
+    mockDownloadAreaLayerPacks.mockResolvedValue(
+      doneResult({
+        failedLayers: ["photos-1950"],
+        layers: [
+          { key: "map", outcome: "complete", completedResourceSize: 40_000_000 },
+          { key: "photos-1950", outcome: "failed", completedResourceSize: 0 },
+        ],
+        totalBytes: 40_000_000,
+      }),
+    )
+    const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
+    await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
+
+    let outcome: Awaited<ReturnType<typeof result.current.startDownload>> | undefined
+    await act(async () => {
+      outcome = await result.current.startDownload(REGION, "Zone")
+    })
+
+    expect(outcome).toMatchObject({ ok: true })
+    expect(mockDeleteAreaPacks).not.toHaveBeenCalled()
+    expect(mockFinalizeOfflineArea).toHaveBeenCalledWith(
+      expect.any(String),
+      "ready",
+      expect.anything(),
+      40_000_000,
+    )
+    expect(result.current.downloadStatus).toMatchObject({
+      phase: "done",
+      failedLayers: ["photos-1950"],
+    })
+  })
+
+  test("a download that measured nothing keeps the estimate", async () => {
+    mockDownloadAreaLayerPacks.mockResolvedValue(doneResult({ totalBytes: 0 }))
+    const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
+    await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
+
+    await act(async () => {
+      await result.current.startDownload(REGION, "Zone")
+    })
+
+    expect(mockFinalizeOfflineArea).toHaveBeenCalledWith(
+      expect.any(String),
+      "ready",
+      expect.anything(),
+      undefined,
+    )
+  })
+
+  test("logs one line per finished layer with its key, bytes and outcome only", async () => {
+    const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
+    await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
+
+    await act(async () => {
+      await result.current.startDownload(REGION, "Zone")
+    })
+
+    expect(mockLogStatusDetail).toHaveBeenCalledTimes(2)
+    expect(mockLogStatusDetail).toHaveBeenCalledWith("offline.layer-size", {
+      layer: "map",
+      bytes: 40_000_000,
+      outcome: "complete",
+    })
+    expect(mockLogStatusDetail).toHaveBeenCalledWith("offline.layer-size", {
+      layer: "satellite",
+      bytes: 12_400_000,
+      outcome: "complete",
+    })
+  })
+
   test("startDownload finalizes as failed and removes the packs when the download errors", async () => {
-    mockDownloadAreaPacks.mockRejectedValue(new Error("network down"))
+    mockDownloadAreaLayerPacks.mockRejectedValue(new Error("network down"))
     const { result } = await renderHook(() => useOfflineAreas(API_URL, TOKEN))
     await waitFor(() => expect(mockListOfflineAreas).toHaveBeenCalled())
 
@@ -181,6 +338,7 @@ describe("useOfflineAreas", () => {
       expect.any(String),
       "ready",
       expect.anything(),
+      expect.anything(),
     )
   })
 
@@ -218,14 +376,20 @@ describe("useOfflineAreas", () => {
   })
 
   describe("download status for the panel's progress bar (12.2-19 third round)", () => {
-    type Progress = { percentage: number; completedTileCount: number; complete: boolean }
+    type Progress = PackProgress
+    const step = (percentage: number, completedTileCount = 1): Progress => ({
+      percentage,
+      completedTileCount,
+      currentLayer: "map",
+      complete: false,
+    })
 
     async function startControlled() {
       let report: (progress: Progress) => void = () => undefined
-      let settle: { resolve: (p: Progress) => void; reject: (e: Error) => void } | undefined
-      mockDownloadAreaPacks.mockImplementation(
+      let settle: { resolve: (p: PackResult) => void; reject: (e: Error) => void } | undefined
+      mockDownloadAreaLayerPacks.mockImplementation(
         ({ onProgress }: { onProgress: (progress: Progress) => void }) =>
-          new Promise<Progress>((resolve, reject) => {
+          new Promise<PackResult>((resolve, reject) => {
             report = onProgress
             settle = { resolve, reject }
           }),
@@ -249,14 +413,14 @@ describe("useOfflineAreas", () => {
         downloadedTiles: 0,
         totalTiles: total,
       })
-      await act(async () => report({ percentage: 42, completedTileCount: 5, complete: false }))
+      await act(async () => report(step(42, 5)))
       expect(result.current.downloadStatus).toMatchObject({
         phase: "running",
         percentage: 42,
         downloadedTiles: Math.round(0.42 * total),
       })
-      // A basemap starting late would pull the average back: the bar holds where it was.
-      await act(async () => report({ percentage: 30, completedTileCount: 6, complete: false }))
+      // A layer starting late would pull the weighted mean back: the bar holds where it was.
+      await act(async () => report(step(30, 6)))
       expect(result.current.downloadStatus).toMatchObject({ percentage: 42 })
 
       // Closing the panel mid-download keeps the running status.
@@ -264,7 +428,7 @@ describe("useOfflineAreas", () => {
       expect(result.current.downloadStatus?.phase).toBe("running")
 
       await act(async () => {
-        settle().resolve({ percentage: 100, completedTileCount: 10, complete: true })
+        settle().resolve(doneResult())
         await pending
       })
       expect(result.current.downloadStatus).toMatchObject({
@@ -272,11 +436,12 @@ describe("useOfflineAreas", () => {
         name: "Bois du Nord",
         percentage: 100,
         downloadedTiles: total,
+        failedLayers: [],
       })
       expect(result.current.downloadingAreaId).toBeNull()
 
       // A late report of another pack never takes the panel back from its outcome.
-      await act(async () => report({ percentage: 80, completedTileCount: 9, complete: false }))
+      await act(async () => report(step(80, 9)))
       expect(result.current.downloadStatus?.phase).toBe("done")
 
       await act(async () => result.current.clearDownloadStatus())
@@ -285,7 +450,7 @@ describe("useOfflineAreas", () => {
 
     test("a failed download ends on the failed status, which clears", async () => {
       const { result, report, settle, pending } = await startControlled()
-      await act(async () => report({ percentage: 20, completedTileCount: 2, complete: false }))
+      await act(async () => report(step(20, 2)))
       await act(async () => {
         settle().reject(new Error("network down"))
         await pending
@@ -311,7 +476,7 @@ describe("useOfflineAreas", () => {
         outcome = await result.current.startDownload(REGION, "Zone")
       })
       expect(outcome).toEqual({ ok: false, reason: "failed" })
-      expect(mockDownloadAreaPacks).not.toHaveBeenCalled()
+      expect(mockDownloadAreaLayerPacks).not.toHaveBeenCalled()
       expect(result.current.downloadStatus?.phase).toBe("failed")
       expect(result.current.downloadingAreaId).toBeNull()
     })

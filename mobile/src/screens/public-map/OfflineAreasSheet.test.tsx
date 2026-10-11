@@ -30,6 +30,7 @@ jest.mock("./DownloadStatusView", () => ({
 
 import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
+import type { AreaLayersEstimate } from "../../map/offline-estimate"
 import { OfflineAreasSheet } from "./OfflineAreasSheet"
 
 const originalConsoleError = console.error
@@ -46,10 +47,13 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-const estimate = {
-  tileCountPerBasemap: 93,
+const estimate: AreaLayersEstimate = {
+  policy: "base",
+  layers: [],
   totalTileCount: 186,
   estimatedBytes: 2_000_000,
+  baseBytes: 2_000_000,
+  extraBytes: 0,
   exceedsCap: false,
 }
 const running: AreaDownloadStatus = {
@@ -135,7 +139,7 @@ describe("OfflineAreasSheet states (12.2-19 third round)", () => {
   test("the same form under every state, so the panel never changes height", () => {
     const states: AreaDownloadStatus[] = [
       running,
-      { ...running, phase: "done", percentage: 100, downloadedTiles: 186 },
+      { ...running, phase: "done", percentage: 100, downloadedTiles: 186, failedLayers: [] },
       { phase: "failed", areaId: "area-1", name: "Bois du Nord" },
     ]
     const shapes = [null, ...states].map((state) => {

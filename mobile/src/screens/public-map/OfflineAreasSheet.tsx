@@ -4,7 +4,7 @@ import { AppText as Text } from "../../ui/AppText"
 import { brandComponentTokens } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
-import type { AreaDownloadEstimate } from "../../map/tile-math"
+import type { AreaLayersEstimate } from "../../map/offline-estimate"
 import { fr } from "../../i18n"
 import { AppField } from "../../ui/AppField"
 import { AppSectionHeader } from "../../ui/AppSectionHeader"
@@ -29,7 +29,7 @@ export type OfflineAreasSheetProps = {
   downloadingAreaId: string | null
   /** The download started from this panel: its bar while it runs, then its outcome. */
   downloadStatus: AreaDownloadStatus | null
-  estimate: AreaDownloadEstimate
+  estimate: AreaLayersEstimate
   onDownload: (name: string) => void
   /** "Terminé" once the area is on the phone: closes the panel. */
   onDone: () => void
