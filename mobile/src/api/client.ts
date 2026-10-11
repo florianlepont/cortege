@@ -1,3 +1,5 @@
+import { reportRequestOutcome } from "../network/request-outcome"
+
 export class ApiError extends Error {
   readonly status: number
   readonly body: unknown
@@ -105,11 +107,15 @@ export async function apiRequest<T>(options: ApiRequestOptions): Promise<T> {
     } catch (error) {
       const errorName = (error as { name?: string } | null)?.name
       if (errorName === "AbortError") {
+        reportRequestOutcome("timeout")
         throw new ApiError(408, `Request timeout after ${timeoutMs}ms`, null)
       }
+      reportRequestOutcome("network-failure")
       throw error
     }
 
+    // Any HTTP answer, even an error status, proves the device reached the server.
+    reportRequestOutcome("ok")
     const parsedBody = await parseResponseBody(response)
 
     if (!response.ok) {

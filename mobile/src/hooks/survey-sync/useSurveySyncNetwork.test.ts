@@ -26,7 +26,9 @@ jest.mock("react-native-auth0", () => ({
   CredentialsManagerErrorCodes: {},
 }))
 
-jest.mock("react-native", () => ({}))
+jest.mock("react-native", () => ({
+  AppState: { addEventListener: () => ({ remove: () => undefined }) },
+}))
 
 jest.mock("expo-network", () => ({
   getNetworkStateAsync: (...args: unknown[]) => mockGetNetworkStateAsync(...args),

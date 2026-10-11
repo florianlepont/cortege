@@ -9,7 +9,9 @@
  * mocked.
  */
 
-jest.mock("react-native", () => ({}))
+jest.mock("react-native", () => ({
+  AppState: { addEventListener: () => ({ remove: () => undefined }) },
+}))
 
 const mockGetLocalDataOwner = jest.fn()
 const mockSetLocalDataOwner = jest.fn()
