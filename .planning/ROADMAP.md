@@ -963,7 +963,7 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 7/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
+**Plans**: 8/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
 
 Plans:
 
@@ -979,7 +979,7 @@ Plans:
 - [x] 27-05-PLAN.md: migration 023, upsert DTO, read-only compare, 2 MB body limit (D-01, D-04, D-25)
 - [x] 27-06-PLAN.md: GET /v1/weather on the synthetic provider: cache, cap, 24 h window, 503 (D-08, D-19, D-20)
 - [x] 27-07-PLAN.md: phone storage, requested_at stamp, guarded conditions write, pull copy (D-02, D-03)
-- [ ] 27-08-PLAN.md: form doubts and factor notes under factors.annotations (D-12, D-23)
+- [x] 27-08-PLAN.md: form doubts and factor notes under factors.annotations (D-12, D-23)
 - [ ] 27-09-PLAN.md: app weather rules (merge, edit guard, states) and the API client (D-09, D-10, D-11)
 - [ ] 27-10-PLAN.md: doubt chip and factor note on score and community rows (D-13, D-17)
 
@@ -1230,7 +1230,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
-| 27. Quick survey additions | 7/22 | In Progress|  |
+| 27. Quick survey additions | 8/22 | In Progress|  |
 | 28. Map Layers & Comparison | 0/TBD | Not started | - |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
 | 30. Route Choice Assistant | 0/TBD | Not started | - |
