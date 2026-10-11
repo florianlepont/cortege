@@ -55,16 +55,37 @@ Response `200`:
 
 Check the deployed version: `curl -s https://cortege.algernon.ovh/v1/health`.
 
-### GET /map-styles/{map|satellite}.json
+### GET /map-styles/{name}.json
 
-No authentication; throttled like every route. The composite basemap styles (Plan IGN or IGN
-orthophoto, plus the cadastre raster) the mobile offline packs are created from. MapLibre Native on
-Android only reads a pack style from an http(s) URL (it rejects `file://` and inline JSON, device
-check F-3), so Android passes this URL to `createPack`; iOS keeps reading the style file it writes.
-The `map` style is the published Plan IGN style, fetched from IGN and kept for one hour (a stale copy
-is served if a refresh fails); `satellite` is built in the API. Responses: `200` style JSON with
-`Cache-Control: public, max-age=3600`, `404 unknown_map_style`, `503 map_style_unavailable` (no copy
-and IGN unreachable).
+No authentication; throttled like every route. The styles the mobile offline packs are created from.
+`{name}` is one of six fixed names, matched against the list and never used to build a path or a URL:
+
+| Name | Holds |
+|------|-------|
+| `map` | The published Plan IGN style plus the cadastre raster. Fetched from IGN (fixed URL) and kept for one hour; a stale copy is served if a refresh fails |
+| `satellite` | One IGN orthophoto raster source, offline zoom cap 19. Built in the API, no cadastre |
+| `etat-major` | One IGN raster source (Etat-major 1820-1866), offline zoom cap 15. Built in the API |
+| `carte-1950` | One IGN raster source (map of 1950), offline zoom cap 15. Built in the API |
+| `photos-1950` | One IGN raster source (aerial photos 1950-1965), offline zoom cap 17. Built in the API |
+| `types-foret` | One IGN raster source (forest types), offline zoom cap 16. Built in the API |
+
+The five raster styles are built from constants, make no network call and carry no cadastre: the
+cadastre travels only in the `map` style, and MapLibre stores a tile once by URL, so the `map` pack
+already covers it. Their WMTS templates are copies of `mobile/src/map/layers.ts`; a unit spec reads
+that file and fails if one differs.
+
+Why: MapLibre Native on Android only reads a pack style from an http(s) URL (it rejects `file://`
+and inline JSON, device check F-3), so Android passes this URL to `createPack`, one per layer. iOS
+writes its own style file and does not call this route.
+
+Responses: `200` style JSON with `Cache-Control: public, max-age=3600`, `404 unknown_map_style` (any
+other name, including case variants and a trailing extension), `503 map_style_unavailable` (`map`
+only: no copy and IGN unreachable).
+
+Phase 28 change: `satellite` no longer includes the cadastre (it moved to the `map` pack only), and
+the four names `etat-major`, `carte-1950`, `photos-1950` and `types-foret` are new. An older API that
+answers `404` for a new name only makes that extra layer's pack fail on Android, never the area
+download.
 
 ## 1) Authentication
 
