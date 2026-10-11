@@ -55,9 +55,7 @@ Commands are the `<automated>` of each task, shortened: `domain` = `npm --worksp
 
 | Task | Requirement | What it proves | Automated command | Status |
 |------|-------------|----------------|-------------------|--------|
-| 27-01-T1 | SVA-04 | Spike script refuses to run without a credential, never prints it | `env -u METEOFRANCE_API_KEY node api/scripts/meteofrance-spike.mjs` exits 1; `node --check` | ⬜ |
-| 27-01-T2 | SVA-04 | Owner capture (human-action); fixtures parse and pass prettier | `node -e` JSON parse of the fixtures; `npx prettier --check api/test/fixtures/meteofrance` | ⬜ |
-| 27-01-T3 | SVA-04 | Spike findings, distance cap, D-21 decisions recorded | grep of the README headings; 6 "Spike 2026-10" rows | ⬜ |
+| 27-01-T1 | SVA-04 | Spike script refuses to run without a credential, never prints it (no key needed) | `env -u METEOFRANCE_API_KEY node api/scripts/meteofrance-spike.mjs` exits 1; `node --check` | ⬜ |
 | 27-02-T1 | SVA-02, SVA-03 | Limits, sky codes, annotations reader/canonicaliser/validator, 100 % covered | `domain test -- conditions && domain test:coverage` | ⬜ |
 | 27-02-T2 | SVA-06 | Wire types compile in package, api and mobile | `domain typecheck && npm run typecheck` | ⬜ |
 | 27-02-T3 | SVA-03 | MAT-ANN-01..03@both: same result with and without annotations in package, API and mobile adapters | `domain test:coverage`; `api-unit test/ibp-parity.spec.ts`; `mob src/app/ibp-parity.test.ts` | ⬜ |
@@ -86,6 +84,7 @@ Commands are the `<automated>` of each task, shortened: `domain` = `npm --worksp
 | 27-11-T3 | SVA-06, SVA-01, SVA-02 | Round trip on both entry points, same version, submitted, validation, no note in events | `api-e2e test/surveys-note-weather.e2e-spec.ts test/surveys-same-version.e2e-spec.ts ...` | ⬜ |
 | 27-12-T1 | SVA-04 | Authenticated helper, token refresh, redacted errors | `api-unit test/meteofrance-http.spec.ts` | ⬜ |
 | 27-12-T2 | SVA-04 | Mapping on real fixtures, D-21 sky and rain, factory, spike cap | `api-unit test/meteofrance-provider.spec.ts test/weather-provider.spec.ts test/weather.service.spec.ts test/env.schema.spec.ts` | ⬜ |
+| 27-12-T3 | SVA-04 | Provider files and spike cap default named in CLAUDE.md | greps on CLAUDE.md | ⬜ |
 | 27-13-T1 | SVA-01, SVA-05 | Silent guarded note and weather writes | `mob src/hooks/useSurveyDraftPatcher.test.ts src/state src/navigation/routes/routes.test.tsx` | ⬜ |
 | 27-13-T2 | SVA-05 | Lookup at parcel choice, catch-up for requested_at, settled and unavailable, single run | `mob src/hooks/useWeatherPrefill.test.ts src/state` | ⬜ |
 | 27-13-T3 | SVA-05 | Parcel centre handed to the hook | `mob src/navigation/routes/routes.test.tsx src/__checks__` | ⬜ |
@@ -111,14 +110,19 @@ Commands are the `<automated>` of each task, shortened: `domain` = `npm --worksp
 | 27-21-T1 | all | Full gates green, six protocol rows | `npm run lint && npm run typecheck && npm run test:unit && npm run test:e2e && npm run format:check`; grep rows | ⬜ |
 | 27-21-T2 | SVA-01..03, SVA-05 | Device checks DC-27-01..05 (human-verify) | grep of the rows; owner approval | ⬜ |
 | 27-21-T3 | SVA-04 | Real Météo-France answer, local then VPS (human-verify) | grep of DC-27-06; owner approval | ⬜ |
+| 27-22-T1 | SVA-04 | Owner capture with the key (human-action); fixtures parse and pass prettier | `node -e` JSON parse of the fixtures; `npx prettier --check api/test/fixtures/meteofrance` | ⬜ |
+| 27-22-T2 | SVA-04 | Spike findings, distance cap, D-21 decisions, quota against the 27-06 limits recorded | grep of the README headings; 6 "Spike 2026-10" rows | ⬜ |
+| 27-22-T3 | SVA-04 | Spike facts (cap in km, provider-filled values, units) in the `GET /weather` contract | greps on `docs/technical/api-contract-v1.md` | ⬜ |
 
-No three consecutive tasks lack an automated command; the two human checkpoints of 27-21 and the human-action of 27-01 each carry an automated grep of their recorded outcome.
+No three consecutive tasks lack an automated command; the two human checkpoints of 27-21 and the human-action of 27-22 each carry an automated grep of their recorded outcome.
+
+Key-gated tail (revision 2026-10-11): only plans 27-22 (wave 6, owner run and findings), 27-12 (wave 7, real provider) and 27-21 (wave 8, device checks) wait on the owner's Météo-France key; waves 1 to 5 hold every other plan, built on the synthetic provider, and none of them waits on the key.
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] Provider spike with the owner's Météo-France credential (human checkpoint): real station list and hourly responses captured as fixtures; units, field names, token flow, date parameter, distance cap, sky and 24 h rain availability recorded
+- [ ] Provider spike: the capture script in wave 1 (plan 27-01, no key); the owner's run with the Météo-France credential (human checkpoint, plan 27-22, wave 6, right before the real provider of plan 27-12): real station list and hourly responses captured as fixtures; units, field names, token flow, date parameter, distance cap, sky and 24 h rain availability recorded
 - [ ] `api/test/migration-023-survey-note-weather.e2e-spec.ts`
 - [ ] `api/test/surveys-note-weather.e2e-spec.ts`
 - [ ] `api/test/weather.service.spec.ts`, `meteofrance-http.spec.ts`, `weather.controller.spec.ts`, `WEATHER_PROVIDER=synthetic` in `api/test/setup-env.js`
@@ -145,7 +149,7 @@ No three consecutive tasks lack an automated command; the two human checkpoints 
 
 - [x] All tasks have `<automated>` verify or Wave 0 dependencies (planning, 2026-10-11)
 - [x] Sampling continuity: no 3 consecutive tasks without automated verify
-- [x] Wave 0 covers all MISSING references (spike: plan 27-01; migration, weather, parity, mobile weather, strip, section, card and PDF test files are created by the tasks that build them, test first)
+- [x] Wave 0 covers all MISSING references (spike: script plan 27-01, owner run and fixtures plan 27-22; migration, weather, parity, mobile weather, strip, section, card and PDF test files are created by the tasks that build them, test first)
 - [x] No watch-mode flags
 - [x] Feedback latency < 120s (targeted files per task; e2e only where the task changes SQL or routes)
 - [x] `nyquist_compliant: true` set in frontmatter

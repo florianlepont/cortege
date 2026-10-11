@@ -963,13 +963,13 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 21 plans in 6 waves
+**Plans**: 22 plans in 8 waves (only waves 6 to 8 wait on the owner's Météo-France key)
 
 Plans:
 
 **Wave 1**
 
-- [ ] 27-01-PLAN.md: Météo-France spike with the owner's key, human checkpoint (D-19, D-21, D-22)
+- [ ] 27-01-PLAN.md: Météo-France capture script for the owner, no key needed (D-22)
 - [ ] 27-02-PLAN.md: shared contract in @cortege/ibp-domain, factors.annotations, MAT-ANN parity (D-14, D-23)
 - [ ] 27-03-PLAN.md: French catalogue of the phase, NoteField, ochre contrast pair (D-18, D-26)
 - [ ] 27-04-PLAN.md: weather configuration and production rules, check-env parity (D-22)
@@ -986,7 +986,6 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 
 - [ ] 27-11-PLAN.md: API write sites and round-trip e2e (D-01, D-03, D-04)
-- [ ] 27-12-PLAN.md: Météo-France provider on the spike fixtures (D-08, D-19, D-21)
 - [ ] 27-13-PLAN.md: app-level weather prefill and catch-up, silent note and weather writes (D-10, D-11, D-20)
 - [ ] 27-14-PLAN.md: "Douteux" strip under each factor, pager keyboard (D-12, D-16)
 - [ ] 27-15-PLAN.md: note in the parcel history and the own-survey search (D-06, D-07)
@@ -1000,9 +999,17 @@ Plans:
 **Wave 5** *(blocked on Wave 4 completion)*
 
 - [ ] 27-19-PLAN.md: Conditions card on the summary and on the community survey (D-17, D-26)
-- [ ] 27-20-PLAN.md: contracts, form spec, user stories, CLAUDE.md, VPS README
+- [ ] 27-20-PLAN.md: contracts, form spec, user stories, CLAUDE.md, VPS README, weather from the synthetic contract
 
-**Wave 6** *(blocked on Wave 5 completion)*
+**Wave 6** *(blocked on Wave 5 completion; first wave that needs the owner's key)*
+
+- [ ] 27-22-PLAN.md: owner's Météo-France run and spike findings (units, distance cap, sky and 24 h rain), human checkpoint (D-19, D-21, D-22)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [ ] 27-12-PLAN.md: Météo-France provider on the spike fixtures, provider in CLAUDE.md (D-08, D-19, D-21)
+
+**Wave 8** *(blocked on Wave 7 completion)*
 
 - [ ] 27-21-PLAN.md: device checks and the real Météo-France answer, human checkpoints
 
