@@ -45,6 +45,9 @@ describe("fr.conditions", () => {
 
   test("the summary card sentence for a screen reader", () => {
     expect(conditions.summary.openWithLine("x")).toBe("Ouvrir les conditions du relevé. x")
+    expect(conditions.summary.openWithLine(conditions.summary.noWeather)).toBe(
+      "Ouvrir les conditions du relevé. Aucune météo",
+    )
   })
 
   test("the attribution of the provider (D-26) and the visibility helper (D-06)", () => {

@@ -108,6 +108,8 @@ export const conditionsFr = {
     loading: "Recherche de la météo…",
     open: "Ouvrir les conditions du relevé",
     openWithLine: (line: string) => `Ouvrir les conditions du relevé. ${line}`,
+    // A note without any weather value: the weather area says so (UI-SPEC 3.1).
+    noWeather: "Aucune météo",
     noteMore: "Lire la suite",
     noteMoreA11y: "Lire la suite, développe la note",
     noteLess: "Réduire",
