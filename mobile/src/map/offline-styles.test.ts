@@ -2,6 +2,7 @@ import * as FileSystem from "expo-file-system/legacy"
 import { __getMockFile, __resetMockFileSystem } from "../../test/expo-file-system-legacy.mock"
 import {
   CADASTRE_SOURCE_ID,
+  offlineDisplayStyleExists,
   offlineDisplayStyleUri,
   offlineStyleExists,
   offlineStyleUri,
@@ -147,5 +148,17 @@ describe("writeOfflineStyle", () => {
     expect(await offlineStyleExists(DOCS, "carte-1950")).toBe(false)
     await writeOfflineStyle(DOCS, "carte-1950", jest.fn())
     expect(await offlineStyleExists(DOCS, "carte-1950")).toBe(true)
+  })
+
+  test("offlineDisplayStyleExists reflects the two display files of the Plan", async () => {
+    expect(await offlineDisplayStyleExists(DOCS, false)).toBe(false)
+    expect(await offlineDisplayStyleExists(DOCS, true)).toBe(false)
+    const fetchImpl = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ version: 8, sources: {}, layers: [] }),
+    }))
+    await writeOfflineStyle(DOCS, "map", fetchImpl)
+    expect(await offlineDisplayStyleExists(DOCS, false)).toBe(true)
+    expect(await offlineDisplayStyleExists(DOCS, true)).toBe(true)
   })
 })

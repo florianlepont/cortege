@@ -113,6 +113,18 @@ export type BrandVisual = {
    */
   curtain: { line: string; edge: string }
   /**
+   * Raster basemaps in dark mode (Phase 28, UI-SPEC "Color"): `dimBrightnessMax` is the
+   * `raster-brightness-max` of the two pastel old maps, 0.8 in dark and 1 in light. Satellite and
+   * the 1950 photographs are never recoloured.
+   */
+  mapRaster: { dimBrightnessMax: number }
+  /**
+   * The scrim under the swipe hint over a map: graphite with a white ink. The engine uses 55 %
+   * alpha; 70 % holds the white ink at 4.5:1 over the lightest basemap (tested), same in both
+   * schemes because the basemaps do not follow the scheme.
+   */
+  mapHint: { fill: string; ink: string }
+  /**
    * A card or banner floating over a map that keeps the theme's own text tokens (12.2-21 dark
    * pass): the parcel picker's bottom card and its offline banner. The Explorer sheet's dense fill,
    * as a `GlassSurface` `surface`, because the default 38% glass over a basemap that does not follow
@@ -272,6 +284,8 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       textMuted: mapControlGlass[scheme].textMuted,
     },
     curtain: { line: brandColors.white, edge: "rgba(30, 36, 28, 0.55)" },
+    mapRaster: { dimBrightnessMax: dark ? 0.8 : 1 },
+    mapHint: { fill: "rgba(30, 36, 28, 0.7)", ink: brandColors.white },
     mapPanel: {
       tint: dark ? explorerSheetGlass.dark.tint : explorerSheetGlass.light.fill,
       fill: explorerSheetGlass[scheme].fill,
@@ -314,7 +328,10 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
     tab: {
       activeTint: tabActiveTint[scheme],
       inactiveTint: colors.textSecondary,
-      dot: "#89A33A",
+      // Phase 28 (28-11): the brand moss (#89A33A) measured 2.2:1 and 2.0:1 against the map capsule
+      // glass (light and dark), under the 3:1 of a non-text mark. One step darker in light and
+      // lighter in dark reaches it; the glow keeps the brand moss.
+      dot: dark ? "#A6CA76" : "#6C8429",
       dotShadow: dark ? "0 0 8px rgba(155, 194, 106, 0.8)" : "0 0 8px rgba(137, 163, 58, 0.8)",
       background: cardFill,
       border: cardBorder,

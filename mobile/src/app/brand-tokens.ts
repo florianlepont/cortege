@@ -443,6 +443,13 @@ export const brandMapTokens = {
   // outline keeps 3:1 against the light plan and the dark orthophoto alike.
   parcelUnscored: "#8C847A",
   parcelUnscoredFill: "rgba(140, 132, 122, 0.22)",
+  // Phase 28 (UI-SPEC U-09): the three old bases (Carte d'état-major, Carte de 1950, Photos 1950)
+  // are pale and look washed out under today's fill. On them the parcel fill alpha is multiplied
+  // by `parcelFillOldBaseFactor`, and a white casing (`parcelCasing`, drawn under the outline at
+  // `strokeWidth + 2`) keeps the outline readable; the casing also shows with the forest overlay.
+  // One number to tune on the phone.
+  parcelCasing: "rgba(255, 255, 255, 0.85)",
+  parcelFillOldBaseFactor: 0.6,
 } as const
 
 // Phase 4 (DS-06..DS-09, audit §4): the motion system. Kept as plain data (durations in ms, easing

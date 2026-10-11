@@ -124,3 +124,12 @@ export async function offlineStyleExists(
   const info = await FileSystem.getInfoAsync(offlineStyleUri(documentDirectory, layer, dark))
   return info.exists
 }
+
+/** Whether the display style of the Plan exists (an area downloaded before Phase 28 has none). */
+export async function offlineDisplayStyleExists(
+  documentDirectory: string,
+  dark: boolean,
+): Promise<boolean> {
+  const info = await FileSystem.getInfoAsync(offlineDisplayStyleUri(documentDirectory, dark))
+  return info.exists
+}
