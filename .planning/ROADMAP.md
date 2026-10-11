@@ -78,7 +78,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 24: Survey History Split** (INSERTED) - The survey change log and the parcel history become two separate things (SEED-002; owner decision 2026-10-07, done before the audits so they audit the final screens) (completed 2026-10-09)
 - [x] **Phase 25: Global Search** (INSERTED) - One search covers the whole app: own and community surveys, places and parcels on the map, and the other items the app exposes (SEED-003; owner decision 2026-10-07) (completed 2026-10-10)
 - [x] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10) (completed 2026-10-10)
-- [ ] **Phase 29: Field-feedback fixes** (INSERTED) - Android photo recognition works (the recognition workflow rethink was set aside, owner 2026-10-10); small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10)
+- [x] **Phase 29: Field-feedback fixes** (INSERTED) - Android photo recognition works (the recognition workflow rethink was set aside, owner 2026-10-10); small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10) (completed 2026-10-11)
 - [ ] **Phase 30: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, in the beta for end of November (seminar of 2026-10-10)
 - [ ] **Phase 28: Field Validation** (moved up: runs on the beta, from early December, in parallel with Phases 31 to 38) - Prove the offline survey-to-sync loop on real parcels with real observers
 - [ ] **Phase 31: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10)
@@ -982,7 +982,7 @@ Plans:
   6. Offline, after a restart, the markers and clusters of the last Explorer view and every survey of the user that the phone holds, draft or submitted, are drawn from local data, not only the drafts (finding F-2 of `docs/user-tests/device-checks.md`: today `ownDraftMapItems` keeps drafts only and the markers otherwise come from the API). Narrowed by decision D-01 of 29-CONTEXT.md: other members' markers and clusters stay online only; own surveys are drawn from local data when their parcels are in a downloaded area (D-09).
   7. The two temporary files of a recognition (the camera capture and the resized JPEG) are deleted explicitly once the suggestion is shown, and the genus classifier's latency and accuracy are measured on real Android phones (median and p95 against the 3 s budget, online and in airplane mode), recorded as checks D-01 to D-03 of `docs/user-tests/device-checks.md` (carried over from Phase 15).
 
-**Plans**: 9/10 plans executed
+**Plans**: 10/10 plans complete
 
 Plans:
 
@@ -995,7 +995,7 @@ Plans:
 - [x] 29-07-PLAN.md: abbreviation info sheet (D-04, D-11)
 - [x] 29-08-PLAN.md: offline Explorer wiring (D-01, D-02, D-09)
 - [x] 29-09-PLAN.md: catalogue abbreviation rewrite (D-04, D-05, D-11)
-- [ ] 29-10-PLAN.md: docs fixes and device checks, human checkpoints (SC-1, SC-7)
+- [x] 29-10-PLAN.md: docs fixes and device checks, human checkpoints (SC-1, SC-7)
 
 **UI hint**: yes
 
@@ -1178,7 +1178,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 24. Survey History Split | 12/12 | Complete | 2026-10-09 |
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
-| 29. Field-feedback fixes | 9/10 | In Progress|  |
+| 29. Field-feedback fixes | 10/10 | Complete   | 2026-10-11 |
 | 30. Quick survey additions | 0/TBD | Not started | - |
 | 28. Field Validation | 0/TBD | Not started | - |
 | 31. Map Layers & Comparison | 0/TBD | Not started | - |
