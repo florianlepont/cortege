@@ -1107,6 +1107,24 @@ describe("SurveyDetailRoute", () => {
     expect(props("surveyDetail").conditionsLoading).toBe(false)
   })
 
+  test("tells the summary whether the phone is offline, for the calm empty weather card (D-40)", async () => {
+    const fixture = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsOffline).toBe(false)
+
+    mockIsOffline.value = true
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsOffline).toBe(true)
+  })
+
   test("hands the summary's note card the silent draft write of the note (D-33)", async () => {
     const fixture = withSelection(makeFixture())
     await mount(

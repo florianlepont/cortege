@@ -39,6 +39,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onOpenConditions: () => void
   /** A weather lookup is running for the selected survey (the card shows its search line). */
   conditionsLoading: boolean
+  /** There is no network: the empty weather card says so calmly (D-40). */
+  conditionsOffline: boolean
   /** Phase 27 (D-33): silent draft write of the survey note, from the summary's note card. */
   onChangeNote: (surveyId: string, text: string) => Promise<boolean> | void
   /** Opens the "Parcelles" page (map, list, offline map), from the map card and its row (D-32). */

@@ -4,6 +4,7 @@ import type { FactorKey } from "../../app/types"
 import { SurveyDetailScreen } from "../../screens/SurveyDetailScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
+import { useIsOffline } from "../../hooks/useIsOffline"
 import { useWeatherPrefillState } from "../../state/weather-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -26,6 +27,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   const { state, actions } = useSurveys()
   const syncActions = useSyncActions()
   const { state: weatherState } = useWeatherPrefillState()
+  const offline = useIsOffline()
 
   const onOpenContext = useLatestCallback(() => navigation.navigate("surveyContext"))
   // D-15: the summary's weather card opens the Contexte page scrolled to the weather section.
@@ -71,6 +73,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
         onOpenContext={onOpenContext}
         onOpenConditions={onOpenConditions}
         conditionsLoading={weatherState.inFlightIds.has(state.selectedSurvey.id)}
+        conditionsOffline={offline}
         onChangeNote={actions.updateSurveyNote}
         onOpenParcelsPage={onOpenParcelsPage}
         onOpenScore={onOpenScore}

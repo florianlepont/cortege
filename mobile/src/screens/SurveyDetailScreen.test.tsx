@@ -86,8 +86,8 @@ jest.mock("./survey-detail/SurveyOfflineMapRow", () => ({
 }))
 jest.mock("./survey-detail/PhotosStrip", () => ({ PhotosStrip: "PhotosStrip" }))
 jest.mock("./survey-detail/ScoreCard", () => ({ ScoreCard: "ScoreCard" }))
-jest.mock("./survey-detail/conditions/ConditionsCard", () => ({
-  ConditionsCard: "ConditionsCard",
+jest.mock("./survey-detail/conditions/WeatherCard", () => ({
+  WeatherCard: "WeatherCard",
 }))
 jest.mock("./survey-detail/conditions/SurveyNoteCard", () => ({
   SurveyNoteCard: "SurveyNoteCard",
@@ -161,6 +161,7 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onOpenContext: jest.fn(),
     onOpenConditions: jest.fn(),
     conditionsLoading: false,
+    conditionsOffline: false,
     onChangeNote: jest.fn(),
     onOpenParcelsPage: jest.fn(),
     onOpenScore: jest.fn(),
@@ -197,10 +198,18 @@ describe("SurveyDetailScreen summary", () => {
     expect(byType(tree, "AppCard")).toHaveLength(0)
     const scroll = byType(tree, "ScrollView")[0]
     const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
-    // The score card is followed by the weather card (D-17), the note card (D-33), then the photos.
-    expect(order.indexOf("ConditionsCard")).toBe(order.indexOf("ScoreCard") + 1)
-    expect(order.indexOf("SurveyNoteCard")).toBe(order.indexOf("ConditionsCard") + 1)
-    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("SurveyNoteCard") + 1)
+    // D-40: the weather card opens the page, right under the header, before the score card.
+    expect(order.indexOf("WeatherCard")).toBeGreaterThan(order.indexOf("SummaryHeader"))
+    expect(order.indexOf("ScoreCard")).toBe(order.indexOf("WeatherCard") + 1)
+    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("ScoreCard") + 1)
+  })
+
+  test("D-38: the survey note is the last card, after the rows and the survey actions", () => {
+    const scroll = byType(mount("draft"), "ScrollView")[0]
+    const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
+    expect(order.indexOf("SurveyNoteCard")).toBeGreaterThan(order.indexOf("AppGroupedList"))
+    expect(order.indexOf("SurveyNoteCard")).toBeGreaterThan(order.indexOf("DetailActions"))
+    expect(order.indexOf("SurveyNoteCard")).toBe(order.length - 1)
   })
 
   test("D-17: the weather card gets the weather read from the draft, no note", () => {
@@ -211,7 +220,7 @@ describe("SurveyDetailScreen summary", () => {
       loaded: true,
     }
     const tree = mount("draft")
-    const card = byType(tree, "ConditionsCard")[0]
+    const card = byType(tree, "WeatherCard")[0]
     expect(card.props.note).toBeUndefined()
     expect(card.props.weather).toEqual({ sky: "cloudy", temperature_c: 14 })
     expect(useSurveyConditions).toHaveBeenLastCalledWith(
@@ -239,19 +248,21 @@ describe("SurveyDetailScreen summary", () => {
     expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true)
   })
 
-  test("the card is told whether the survey is submitted and whether a lookup runs", () => {
-    const draft = byType(mount("draft"), "ConditionsCard")[0]
+  test("the card is told whether the survey is submitted, whether a lookup runs and whether it is offline", () => {
+    const draft = byType(mount("draft"), "WeatherCard")[0]
     expect(draft.props.submitted).toBe(false)
     expect(draft.props.loading).toBe(false)
+    expect(draft.props.offline).toBe(false)
 
-    const props = { ...makeProps("submitted"), conditionsLoading: true }
+    const props = { ...makeProps("submitted"), conditionsLoading: true, conditionsOffline: true }
     let tree: ReactTestRenderer | undefined
     act(() => {
       tree = renderer.create(<SurveyDetailScreen {...props} />)
     })
-    const submitted = byType(tree!, "ConditionsCard")[0]
+    const submitted = byType(tree!, "WeatherCard")[0]
     expect(submitted.props.submitted).toBe(true)
     expect(submitted.props.loading).toBe(true)
+    expect(submitted.props.offline).toBe(true)
   })
 
   test("pressing the card opens the Conditions section, the context row opens the page as is", () => {
@@ -260,7 +271,7 @@ describe("SurveyDetailScreen summary", () => {
     act(() => {
       tree = renderer.create(<SurveyDetailScreen {...props} />)
     })
-    act(() => byType(tree!, "ConditionsCard")[0].props.onOpen())
+    act(() => byType(tree!, "WeatherCard")[0].props.onOpen())
     expect(props.onOpenConditions).toHaveBeenCalledTimes(1)
     expect(props.onOpenContext).not.toHaveBeenCalled()
     const contextRow = byType(tree!, "AppGroupedList")[0].props.sections[0].rows[0]

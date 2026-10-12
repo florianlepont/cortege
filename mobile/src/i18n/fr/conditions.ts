@@ -83,11 +83,24 @@ export const conditionsFr = {
   },
   summary: {
     emptyTitle: "Météo du relevé",
-    emptyBody: "Facultatif",
+    // The friendly invitation of a draft with no weather yet; opens the Contexte page (D-40).
+    emptyBody: "Se remplit toute seule avec la parcelle. Vous pouvez choisir le ciel.",
+    // Offline is a calm state, never an error tone.
+    offlineBody:
+      "Pas de connexion. Les mesures arriveront avec le réseau. Vous pouvez choisir le ciel.",
     loading: "Recherche de la météo…",
     open: "Ouvrir la météo du relevé",
     openWithLine: (line: string) => `Ouvrir la météo du relevé. ${line}`,
-    // D-35: the whole attribution on the card, very short; the dated sentence is in the detail.
+    openWithLineSource: (line: string, source: string) =>
+      `Ouvrir la météo du relevé. ${line}. Source : ${source}`,
+    temperatureUnit: "°C",
+    // The three compact columns under the temperature (D-40).
+    stat: {
+      wind: "Vent",
+      rain: "Pluie 24\u00a0h",
+      time: "Mesure",
+    },
+    // D-35, D-37: the whole attribution on the card, very short; the dated sentence is in the detail.
     mention: "Météo-France",
   },
 } as const
