@@ -12,6 +12,23 @@ import { fr } from "../../i18n"
 import { PublicMapScreen } from "../PublicMapScreen"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
 
+// The shared Reanimated mock hands out a fresh shared value on every render. The grabber's drag
+// re-renders the screen midway (the exit hint appears), so here a shared value lives as long as its
+// component, like the real hook, and the line keeps the position the drag gave it.
+jest.mock("react-native-reanimated", () => {
+  const ReactRef = require("react") as typeof import("react")
+  const actual = jest.requireActual("react-native-reanimated")
+  return {
+    ...actual,
+    __esModule: true,
+    useSharedValue: <T,>(initial: T) => {
+      const ref = ReactRef.useRef<{ value: T } | null>(null)
+      if (ref.current === null) ref.current = { value: initial }
+      return ref.current
+    },
+  }
+})
+
 const mockFetchParcelSurveyHistory = jest.fn()
 jest.mock("../../api/ibp-api", () => ({
   fetchParcelSurveyHistory: (...args: unknown[]) => mockFetchParcelSurveyHistory(...args),
@@ -81,8 +98,8 @@ jest.mock("react-native-gesture-handler", () => {
   }
   return {
     Gesture: { Pan: pan },
-    GestureDetector: ({ children }: { children?: React.ReactNode }) =>
-      ReactRef.createElement("GestureDetector", null, children),
+    GestureDetector: ({ gesture, children }: { gesture?: MockPan; children?: React.ReactNode }) =>
+      ReactRef.createElement("GestureDetector", { gesture }, children),
   }
 })
 
@@ -1121,7 +1138,13 @@ describe("PublicMapScreen", () => {
       expect(map.props.onRegionIsChanging).toBeUndefined()
       expect(map.props.androidView).toBe("texture")
       expect(maps()).toHaveLength(1)
-      for (const id of ["swipe-surface", "swipe-indicator", "swipe-done", "curtain-handle"]) {
+      for (const id of [
+        "swipe-surface",
+        "swipe-indicator",
+        "swipe-done",
+        "compare-line",
+        "compare-grabber",
+      ]) {
         expect(present(id)).toBe(false)
       }
       expect(present("compare-quit")).toBe(false)
@@ -1211,9 +1234,10 @@ describe("PublicMapScreen", () => {
       expect(maps()).toHaveLength(1)
     })
 
-    test("a release in the compare zone starts one single mode: free map, handle, tags, the quit pill only", () => {
+    test("a release in the compare zone starts one single mode: free map, centre line, grabber, tags, the quit pill only", () => {
       startComparison(makeProps({ items: [item("a", 45.76, 4.84)] }))
-      expect(present("curtain-handle")).toBe(true)
+      expect(present("compare-grabber")).toBe(true)
+      expect(present("compare-line")).toBe(true)
       expect(present("curtain-tag-left")).toBe(true)
       expect(present("curtain-tag-right")).toBe(true)
       expect(maps()).toHaveLength(2)
@@ -1243,7 +1267,7 @@ describe("PublicMapScreen", () => {
       act(() => globe().props.onPress())
       expect(present("swipe-surface")).toBe(false)
       expect(present("swipe-done")).toBe(false)
-      expect(present("curtain-handle")).toBe(true)
+      expect(present("compare-grabber")).toBe(true)
       expect(present("compare-quit")).toBe(true)
     })
 
@@ -1261,7 +1285,7 @@ describe("PublicMapScreen", () => {
       try {
         const props = startComparison()
         act(() => byTestId("compare-quit")[0].props.onPress())
-        for (const id of ["curtain-handle", "curtain-tag-left", "compare-quit"]) {
+        for (const id of ["compare-line", "compare-grabber", "curtain-tag-left", "compare-quit"]) {
           expect(present(id)).toBe(false)
         }
         expect(maps()).toHaveLength(1)
@@ -1278,21 +1302,96 @@ describe("PublicMapScreen", () => {
       }
     })
 
-    test("dragging the line to the left edge keeps the right layer, covered until the Explorer map has loaded it", () => {
+    // The pan of the grabber, found through the detector that wraps it (the swipe mode's own pans
+    // are not mounted in a comparison, and a re-render may build new ones).
+    const grabberPan = () => {
+      const detector = tree.root.find(
+        (node) =>
+          (node.type as unknown) === "GestureDetector" &&
+          node.findAll((child) => child.props.testID === "compare-grabber").length > 0,
+      )
+      return detector.props.gesture as MockPan
+    }
+    const grabberLineX = () =>
+      tree.root.findAll(
+        (node) => node.props.lineX && node.props.onEdgeExit && node.props.leftName !== undefined,
+      )[0].props.lineX.value as number
+    const dragGrabber = (translationX: number) => {
+      act(() => grabberPan().handlers.onUpdate({ translationX }))
+    }
+
+    test("dragging the grabber into the left fifth warns, and a release there keeps the right layer, covered until the Explorer map has loaded it", () => {
       const props = startComparison()
       expect(maps()).toHaveLength(2)
-      const handlePan = [...mockPans]
-        .reverse()
-        .find((pan) => pan.handlers.onEnd && !pan.handlers.onFinalize) as MockPan
-      act(() => handlePan.handlers.onBegin())
-      act(() => handlePan.handlers.onUpdate({ translationX: -1000 }))
-      act(() => handlePan.handlers.onEnd())
+      expect(grabberLineX()).toBe(200)
+      expect(present("compare-exit-hint")).toBe(false)
+      act(() => grabberPan().handlers.onBegin())
+      dragGrabber(-150)
+      // x 50 on a 400 pt window is in the outer fifth: the hint shows under the quit pill.
+      expect(texts()).toContain("Lâchez pour quitter la comparaison")
+      act(() => grabberPan().handlers.onEnd({}, true))
       // B was the incoming Satellite, drawn by the second map: it is the base now (and saved).
       expect(props.onChangeBasemap).toHaveBeenCalledWith("satellite")
-      expect(present("curtain-handle")).toBe(false)
+      expect(present("compare-grabber")).toBe(false)
+      expect(present("compare-line")).toBe(false)
+      expect(present("compare-exit-hint")).toBe(false)
       expect(maps()).toHaveLength(2)
       act(() => explorerMap().props.onDidFinishLoadingStyle())
       expect(maps()).toHaveLength(1)
+    })
+
+    test("dragging into the right fifth keeps the left layer", () => {
+      const props = startComparison()
+      act(() => grabberPan().handlers.onBegin())
+      dragGrabber(150)
+      expect(present("compare-exit-hint")).toBe(true)
+      act(() => grabberPan().handlers.onEnd({}, true))
+      expect(props.onChangeBasemap).toHaveBeenCalledWith("map")
+      expect(present("compare-grabber")).toBe(false)
+    })
+
+    test("a release away from the edges springs the line back to the centre: the comparison stays, no hint", () => {
+      const props = startComparison()
+      act(() => grabberPan().handlers.onBegin())
+      dragGrabber(-150)
+      expect(present("compare-exit-hint")).toBe(true)
+      // Back out of the zone: the hint goes at once; the line follows the finger.
+      dragGrabber(-50)
+      expect(present("compare-exit-hint")).toBe(false)
+      expect(grabberLineX()).toBe(150)
+      dragGrabber(-150)
+      expect(present("compare-exit-hint")).toBe(true)
+      dragGrabber(-100)
+      act(() => grabberPan().handlers.onEnd({}, true))
+      expect(grabberLineX()).toBe(200)
+      expect(present("compare-exit-hint")).toBe(false)
+      expect(present("compare-grabber")).toBe(true)
+      expect(present("compare-line")).toBe(true)
+      expect(present("compare-quit")).toBe(true)
+      expect(maps()).toHaveLength(2)
+      expect(props.onChangeBasemap).not.toHaveBeenCalled()
+    })
+
+    test("a cancelled drag in an exit zone springs back and leaves no hint", () => {
+      const props = startComparison()
+      act(() => grabberPan().handlers.onBegin())
+      dragGrabber(-150)
+      expect(present("compare-exit-hint")).toBe(true)
+      act(() => grabberPan().handlers.onEnd({}, false))
+      act(() => grabberPan().handlers.onFinalize({}, false))
+      expect(grabberLineX()).toBe(200)
+      expect(present("compare-exit-hint")).toBe(false)
+      expect(present("compare-grabber")).toBe(true)
+      expect(props.onChangeBasemap).not.toHaveBeenCalled()
+    })
+
+    test("only the grabber takes a touch on the line: the line is untouchable and the map is free across the centre", () => {
+      startComparison()
+      expect(byTestId("compare-line")[0].props.pointerEvents).toBe("none")
+      expect(explorerMap().props.dragPan).toBeUndefined()
+      expect(explorerMap().props.touchZoom).toBeUndefined()
+      // No swipe surface in a comparison: nothing else captures a pan.
+      expect(present("swipe-surface")).toBe(false)
     })
 
     test("opening the overlay bubble or the download card during a comparison keeps the comparison", () => {
@@ -1300,10 +1399,10 @@ describe("PublicMapScreen", () => {
       startComparison()
       act(() => byTestId("map-overlay-button")[0].props.onPress())
       expect(byTestId("map-overlay-bubble")).toHaveLength(1)
-      expect(present("curtain-handle")).toBe(true)
+      expect(present("compare-grabber")).toBe(true)
       expect(present("compare-quit")).toBe(true)
       act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
-      expect(present("curtain-handle")).toBe(true)
+      expect(present("compare-grabber")).toBe(true)
       expect(present("compare-quit")).toBe(true)
       expect(maps()).toHaveLength(2)
     })
@@ -1331,7 +1430,7 @@ describe("PublicMapScreen", () => {
       act(() => {
         jest.advanceTimersByTime(500)
       })
-      for (const id of ["curtain-handle", "curtain-tag-left", "compare-quit"]) {
+      for (const id of ["compare-line", "compare-grabber", "curtain-tag-left", "compare-quit"]) {
         expect(present(id)).toBe(false)
       }
       // Two zones only: past a third of the width it is a plain change of base.

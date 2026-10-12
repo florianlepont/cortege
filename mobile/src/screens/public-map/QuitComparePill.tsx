@@ -21,16 +21,21 @@ export type QuitComparePillProps = {
   /** Distance from the top of the map: level with the capsule's top. */
   top: number
   onQuit: () => void
+  /** Shown under the pill while the line is in an edge exit zone ("Lâchez pour quitter..."). */
+  hint?: string | null
 }
 
 /**
  * The one control of a free comparison (UI-SPEC section 4, U-21): a centred, labelled pill that
  * ends the comparison and keeps side A, the left layer. The screen shows it only while the map is
- * free (the swipe mode off); it hands over to "Terminé" when the swipe mode is on.
+ * free (the swipe mode off); it hands over to "Terminé" when the swipe mode is on. While the
+ * grabber is in an edge exit zone, `hint` says under the pill that a release there ends the
+ * comparison.
  */
 export const QuitComparePill = memo(function QuitComparePill({
   top,
   onQuit,
+  hint = null,
 }: QuitComparePillProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -70,6 +75,16 @@ export const QuitComparePill = memo(function QuitComparePill({
           </AppPressable>
         </GlassSurface>
       </Animated.View>
+      {hint === null ? null : (
+        <View
+          testID="compare-exit-hint"
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          style={styles.hint}
+        >
+          <Text style={styles.hintText}>{hint}</Text>
+        </View>
+      )}
     </View>
   )
 })
@@ -81,6 +96,7 @@ function createStyles(theme: BrandTheme) {
       left: SIDE_INSET,
       right: SIDE_INSET,
       alignItems: "center",
+      gap: brandSpacing4.sm,
     },
     pill: {
       height: MAP_PILL_HEIGHT,
@@ -103,6 +119,20 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       color: theme.visual.mapControl.text,
       flexShrink: 1,
+    },
+    hint: {
+      minHeight: 24,
+      maxWidth: MAX_WIDTH,
+      paddingVertical: brandSpacing4.xs,
+      paddingHorizontal: 10,
+      borderRadius: 12,
+      backgroundColor: theme.visual.mapHint.fill,
+      justifyContent: "center",
+    },
+    hintText: {
+      ...brandTypography.meta,
+      color: theme.visual.mapHint.ink,
+      textAlign: "center",
     },
   })
 }

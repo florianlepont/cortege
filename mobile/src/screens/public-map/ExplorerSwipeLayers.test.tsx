@@ -5,9 +5,12 @@ jest.mock("./WipeLayer", () => ({ WipeLayer: (props: object) => mockHost("WipeLa
 jest.mock("./SwipeSurface", () => ({
   SwipeSurface: (props: object) => mockHost("SwipeSurface", props),
 }))
-jest.mock("./CurtainHandle", () => ({
-  CurtainHandle: (props: object) => mockHost("CurtainHandle", props),
-  knobCenterY: (height: number) => Math.round(height * 0.32),
+jest.mock("./CompareGrabber", () => ({
+  CompareGrabber: (props: object) => mockHost("CompareGrabber", props),
+  grabberCenterY: (height: number) => Math.round(height * 0.32),
+}))
+jest.mock("./CompareLine", () => ({
+  CompareLine: (props: object) => mockHost("CompareLine", props),
 }))
 jest.mock("./CurtainSideTags", () => ({
   CurtainSideTags: (props: object) => mockHost("CurtainSideTags", props),
@@ -92,7 +95,8 @@ function makeView(overrides: Partial<ExplorerSwipeView> = {}): ExplorerSwipeView
     lineX,
     leftLayer: null,
     rightLayer: null,
-    onMoveLine: jest.fn(),
+    onExitZone: jest.fn(),
+    quitHint: null,
     onEdgeExit: jest.fn(),
     onSideAction: jest.fn(),
     onTopControlHeight: jest.fn(),
@@ -268,7 +272,8 @@ describe("the swipe mode", () => {
       onHeight: view.onTopControlHeight,
     })
     expect(overlay.isAvailable("map")).toBe(true)
-    expect(named(tree, "CurtainHandle")).toHaveLength(0)
+    expect(named(tree, "CompareGrabber")).toHaveLength(0)
+    expect(named(tree, "CompareLine")).toHaveLength(0)
     expect(named(tree, "QuitComparePill")).toHaveLength(0)
   })
 
@@ -296,22 +301,22 @@ describe("the comparison", () => {
       ...overrides,
     })
 
-  test("the line and its tags name both sides and follow the same line", () => {
+  test("the line, the grabber and the tags name both sides and follow the same line", () => {
     const view = comparing()
-    const { tree, swipe } = render(view)
-    const handle = named(tree, "CurtainHandle")[0].props
-    expect(handle).toMatchObject({
+    const { tree } = render(view)
+    expect(named(tree, "CompareLine")[0].props).toMatchObject({ lineX, top: 58 })
+    const grabber = named(tree, "CompareGrabber")[0].props
+    expect(grabber).toMatchObject({
       lineX,
       width: 400,
       height: 800,
-      lineTop: 58,
       leftName: "Plan",
       rightName: "Photos 1950",
-      onMoveLine: view.onMoveLine,
+      onExitZone: view.onExitZone,
       onEdgeExit: view.onEdgeExit,
-      onSideAction: view.onSideAction,
-      onQuit: swipe.quit,
     })
+    // The grabber is the only part of the line that takes a touch: it holds no quit and no line drag.
+    expect(grabber).not.toHaveProperty("onQuit")
     const tags = named(tree, "CurtainSideTags")[0].props
     expect(tags).toMatchObject({
       lineX,
@@ -338,11 +343,19 @@ describe("the comparison", () => {
     expect(named(hidden.tree, "QuitComparePill")).toHaveLength(0)
     const shown = render(comparing(), { swipe: { quitPillVisible: true } })
     const pill = named(shown.tree, "QuitComparePill")[0].props
-    expect(pill).toMatchObject({ top: 58, onQuit: shown.swipe.quit })
+    expect(pill).toMatchObject({ top: 58, onQuit: shown.swipe.quit, hint: null })
+  })
+
+  test("the exit hint reaches the quit pill while the grabber is in an exit zone", () => {
+    const { tree } = render(comparing({ quitHint: "Lâchez pour quitter la comparaison" }), {
+      swipe: { quitPillVisible: true },
+    })
+    expect(named(tree, "QuitComparePill")[0].props.hint).toBe("Lâchez pour quitter la comparaison")
   })
 
   test("a comparison without both layers draws no line", () => {
     const { tree } = render(makeView({ comparing: true }))
-    expect(named(tree, "CurtainHandle")).toHaveLength(0)
+    expect(named(tree, "CompareLine")).toHaveLength(0)
+    expect(named(tree, "CompareGrabber")).toHaveLength(0)
   })
 })

@@ -82,7 +82,10 @@ export type ExplorerSwipeView = {
   /** The layers on each side of the line, null without a comparison. */
   leftLayer: BaseLayerKey | null
   rightLayer: BaseLayerKey | null
-  onMoveLine: (x: number) => void
+  /** The grabber entered an edge exit zone (which layer a release keeps) or left it (null). */
+  onExitZone: (keeps: "A" | "B" | null) => void
+  /** The hint under the quit pill while the grabber is in an exit zone, else null. */
+  quitHint: string | null
   onEdgeExit: (keeps: "A" | "B") => void
   onSideAction: (side: "left" | "right", direction: 1 | -1) => void
   onTopControlHeight: (height: number) => void
@@ -154,6 +157,7 @@ export function useExplorerSwipe({
 
   const [cover, setCover] = useState<Cover | null>(null)
   const [leaving, setLeaving] = useState(false)
+  const [inExitZone, setInExitZone] = useState(false)
   const [topHeight, setTopHeight] = useState<number | null>(null)
 
   // A finished wipe may leave a cover (derived while rendering, so the stacked map is never
@@ -165,6 +169,8 @@ export function useExplorerSwipe({
     if (seen.comparing !== comparing) {
       if (comparing) setCover(null)
       else setLeaving(false)
+      // A comparison that ends, or starts, never keeps the hint of an exit zone.
+      setInExitZone(false)
     } else if (seen.wipe !== null && wipe === null) {
       const next = coverAfter(seen.wipe, layers)
       if (next) setCover(next)
@@ -246,7 +252,7 @@ export function useExplorerSwipe({
     feedback.selection()
     setLeaving(true)
   })
-  const onMoveLine = useLatestCallback((x: number) => actions.moveLine(x))
+  const onExitZone = useLatestCallback((keeps: "A" | "B" | null) => setInExitZone(keeps !== null))
   const onEdgeExit = useLatestCallback((keeps: "A" | "B") => {
     if (!compare) return
     feedback.selection()
@@ -298,7 +304,8 @@ export function useExplorerSwipe({
     lineX: curtain.lineX,
     leftLayer: comparing ? layers.layerOfSide("left") : null,
     rightLayer: comparing ? layers.layerOfSide("right") : null,
-    onMoveLine,
+    onExitZone,
+    quitHint: comparing && inExitZone ? fr.mapLayers.compare.hintExit : null,
     onEdgeExit,
     onSideAction,
     onTopControlHeight: setTopHeight,

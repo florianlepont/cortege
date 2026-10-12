@@ -513,13 +513,32 @@ describe("leaving a comparison by an edge", () => {
     expect(tick).not.toHaveBeenCalled()
   })
 
-  test("a line released away from the edges is just reported: no haptic", () => {
-    const layers = makeLayers({ compare: compareRight })
-    mount(layers)
-    act(() => out().layersView.onMoveLine(250))
-    expect(layers.actions.moveLine).toHaveBeenCalledWith(250)
+  test("an exit zone shows the quit hint, leaving it clears it; the hook plays no haptic for it", () => {
+    mount(makeLayers({ compare: compareRight }))
+    expect(out().layersView.quitHint).toBeNull()
+    act(() => out().layersView.onExitZone("B"))
+    expect(out().layersView.quitHint).toBe("Lâchez pour quitter la comparaison")
+    act(() => out().layersView.onExitZone("A"))
+    expect(out().layersView.quitHint).toBe("Lâchez pour quitter la comparaison")
+    act(() => out().layersView.onExitZone(null))
+    expect(out().layersView.quitHint).toBeNull()
     expect(tick).not.toHaveBeenCalled()
     expect(medium).not.toHaveBeenCalled()
+  })
+
+  test("the end of the comparison clears the hint, and a new one does not inherit it", () => {
+    mount(makeLayers({ compare: compareRight }))
+    act(() => out().layersView.onExitZone("B"))
+    update(makeLayers())
+    expect(out().layersView.quitHint).toBeNull()
+    update(makeLayers({ compare: compareRight }))
+    expect(out().layersView.quitHint).toBeNull()
+  })
+
+  test("without a comparison an exit zone shows nothing", () => {
+    mount(makeLayers())
+    act(() => out().layersView.onExitZone("A"))
+    expect(out().layersView.quitHint).toBeNull()
   })
 })
 
@@ -621,9 +640,9 @@ describe("the handle's side actions (accessibility)", () => {
 })
 
 describe("the actions after the controller", () => {
-  test("it adds no zone rule: the line and its release are the only haptics it plays", () => {
+  test("it adds no zone rule: the exit tick of a release is the only haptic it plays", () => {
     mount(makeLayers({ compare: compareRight }))
-    act(() => out().layersView.onMoveLine(100))
+    act(() => out().layersView.onExitZone("B"))
     expect(tick).not.toHaveBeenCalled()
     expect(medium).not.toHaveBeenCalled()
   })

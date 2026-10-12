@@ -4,7 +4,8 @@ import { fr } from "../../i18n"
 import { layerEntry } from "../../map/layers"
 import type { BaseLayerKey } from "../../map/layers"
 import { BasemapSwipeOverlay } from "./BasemapSwipeOverlay"
-import { CurtainHandle, knobCenterY } from "./CurtainHandle"
+import { CompareGrabber, grabberCenterY } from "./CompareGrabber"
+import { CompareLine } from "./CompareLine"
 import { CurtainSideTags } from "./CurtainSideTags"
 import { MapContentLayers, shownParcelsFor } from "./MapContentLayers"
 import { QuitComparePill } from "./QuitComparePill"
@@ -34,7 +35,7 @@ export type ExplorerSwipeLayersProps = {
   capsuleTop: number
 }
 
-/** The short name of a layer on a tag and in the handle's value ("Plan", "Photos 1950"). */
+/** The short name of a layer on a tag and in the grabber's value ("Plan", "Photos 1950"). */
 function shortName(key: BaseLayerKey): string {
   return fr.mapLayers.layers[layerEntry(key).i18nKey as ShortTextKey].short
 }
@@ -101,22 +102,20 @@ export function ExplorerSwipeLayers({
       {view.swipeMode ? <SwipeSurface gesture={controller.gesture} /> : null}
       {view.comparing && view.leftLayer && view.rightLayer ? (
         <>
-          <CurtainHandle
+          <CompareLine lineX={view.lineX} top={capsuleTop} />
+          <CompareGrabber
             lineX={view.lineX}
             width={view.width}
             height={view.height}
-            lineTop={capsuleTop}
             leftName={leftName}
             rightName={rightName}
-            onMoveLine={view.onMoveLine}
+            onExitZone={view.onExitZone}
             onEdgeExit={view.onEdgeExit}
-            onSideAction={view.onSideAction}
-            onQuit={swipe.quit}
           />
           <CurtainSideTags
             lineX={view.lineX}
             width={view.width}
-            knobTop={knobCenterY(view.height)}
+            knobTop={grabberCenterY(view.height)}
             leftName={leftName}
             rightName={rightName}
             swipeMode={view.swipeMode}
@@ -141,7 +140,9 @@ export function ExplorerSwipeLayers({
           onHeight={view.onTopControlHeight}
         />
       ) : null}
-      {swipe.quitPillVisible ? <QuitComparePill top={capsuleTop} onQuit={swipe.quit} /> : null}
+      {swipe.quitPillVisible ? (
+        <QuitComparePill top={capsuleTop} onQuit={swipe.quit} hint={view.quitHint} />
+      ) : null}
     </>
   )
 }

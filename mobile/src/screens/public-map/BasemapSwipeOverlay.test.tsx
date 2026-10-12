@@ -358,10 +358,10 @@ describe("layout", () => {
 })
 
 describe("QuitComparePill", () => {
-  function renderQuit(top = 58, onQuit = jest.fn()) {
+  function renderQuit(top = 58, onQuit = jest.fn(), hint?: string | null) {
     let tree!: ReactTestRenderer
     act(() => {
-      tree = renderer.create(<QuitComparePill top={top} onQuit={onQuit} />)
+      tree = renderer.create(<QuitComparePill top={top} onQuit={onQuit} hint={hint} />)
     })
     return { tree, onQuit, pill: byId(tree, "compare-quit")[0] }
   }
@@ -396,6 +396,29 @@ describe("QuitComparePill", () => {
     expect(pill.props.hitSlop).toBe(2)
     act(() => pill.props.onPress())
     expect(onQuit).toHaveBeenCalledTimes(1)
+  })
+
+  test("shows no hint without one, and the exit hint under the pill with one", () => {
+    expect(byId(renderQuit().tree, "compare-exit-hint")).toHaveLength(0)
+    expect(byId(renderQuit(58, jest.fn(), null).tree, "compare-exit-hint")).toHaveLength(0)
+    const { tree, pill } = renderQuit(58, jest.fn(), "Lâchez pour quitter la comparaison")
+    const hint = byId(tree, "compare-exit-hint")[0]
+    expect(textsOf(hint)).toEqual(["Lâchez pour quitter la comparaison"])
+    expect(hint.props.pointerEvents).toBe("none")
+    expect(hint.props.accessibilityLiveRegion).toBe("polite")
+    expect(flat(hint.props.style)).toMatchObject({
+      minHeight: 24,
+      maxWidth: 232,
+      backgroundColor: defaultTheme.visual.mapHint.fill,
+    })
+    const text = hint.findByType("Text" as never)
+    expect(flat(text.props.style)).toMatchObject({
+      fontSize: 12,
+      color: defaultTheme.visual.mapHint.ink,
+      textAlign: "center",
+    })
+    // The pill itself is unchanged and still takes the press.
+    expect(textsOf(pill)).toEqual(["Quitter la comparaison"])
   })
 
   test("fades in over 160 ms, following Reduce Motion", () => {
