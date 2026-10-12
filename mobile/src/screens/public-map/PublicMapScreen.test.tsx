@@ -1284,12 +1284,12 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        // 800 tall; top 20 + 8, bottom 50 (tab bar) + 8 + 70 (info row): 644 left, centre 50 up.
-        expect(scale(props)).toBeCloseTo(0.805, 5)
+        // 800 tall; top 20, bottom 50 (tab bar) + 8 + 60 (info row): 662 left, centre 49 up.
+        expect(scale(props)).toBeCloseTo(0.8275, 5)
         const moved = flatStyle(byTestId("immersive-window")[0].props.style).transform as {
           translateY?: number
         }[]
-        expect(moved.find((t) => t.translateY !== undefined)!.translateY).toBeCloseTo(-50, 5)
+        expect(moved.find((t) => t.translateY !== undefined)!.translateY).toBeCloseTo(-49, 5)
         expect(buttons().props.pointerEvents).toBe("none")
         expect(buttons().props.accessibilityElementsHidden).toBe(true)
         expect(buttons().props.importantForAccessibility).toBe("no-hide-descendants")
@@ -1325,7 +1325,7 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.805, 5)
+        expect(scale(props)).toBeCloseTo(0.8275, 5)
         drag(380, 200)
         release()
         expect(present("compare-grabber")).toBe(true)
@@ -1357,7 +1357,7 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.805, 5)
+        expect(scale(props)).toBeCloseTo(0.8275, 5)
         expect(buttons().props.pointerEvents).toBe("none")
         act(() =>
           byTestId("swipe-indicator")[0].props.onAccessibilityAction({
@@ -1704,10 +1704,10 @@ describe("PublicMapScreen", () => {
       expect(texts()).toContain(fr.mapLayers.basemap.skipped(3))
     })
 
-    test("the notices stay at the top in the swipe mode and start below the quit pill", () => {
+    test("the notices sit above the info row in the swipe mode and start below the quit pill", () => {
       // A notice that stays whatever the mode: the forest overlay, not in the offline area.
       mockAvailable.all = false
-      const noticeTop = () =>
+      const noticeStyle = () =>
         flatStyle(
           tree.root.find(
             (node) =>
@@ -1716,19 +1716,21 @@ describe("PublicMapScreen", () => {
               [node.props.style].flat(3).some((style) => style && style.alignItems === "center") &&
               node.findAll((child) => child.props.testID === "map-notice-offline").length > 0,
           ).props.style,
-        ).top as number
+        )
       mount(makeProps({ isOffline: true }))
       const byId = (testID: string) => tree.root.find((node) => node.props.testID === testID)
       act(() => byId("map-overlay-button").props.onPress())
       act(() => byId("overlay-forest-switch").props.onValueChange(true))
       act(() => globe().props.onPress())
-      const swipeTop = noticeTop()
+      const swipeStyle = noticeStyle()
       drag(380, 200)
       release()
-      const pillTop = noticeTop()
-      // The swipe mode's info row is at the bottom: the notices keep the capsule's top (inset 20 + 10).
+      const pillTop = noticeStyle().top
+      // The swipe mode puts the notices above the info row, at the bottom.
       // The quit pill of the comparison holds the top: its 40 pt plus 8.
-      expect(swipeTop).toBe(30)
+      expect(swipeStyle.top).toBeUndefined()
+      // 50 (tab bar) + 8 + 60 (info row) + 40: above the info row, inside the receded window.
+      expect(swipeStyle.bottom).toBe(50 + 8 + 60 + 40)
       expect(pillTop).toBe(30 + 40 + 8)
     })
   })

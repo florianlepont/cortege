@@ -18,6 +18,8 @@ type MapNoticeStackProps = {
   notices: readonly MapNotice[]
   /** Distance from the top of the map: the capsule's top, or below the top mode control. */
   top: number
+  /** Anchors the column to the bottom edge instead (the swipe mode, over the info row). */
+  bottom?: number
   onRetry: () => void
 }
 
@@ -30,6 +32,7 @@ type MapNoticeStackProps = {
 export const MapNoticeStack = memo(function MapNoticeStack({
   notices,
   top,
+  bottom,
   onRetry,
 }: MapNoticeStackProps) {
   const theme = useBrandTheme()
@@ -55,7 +58,10 @@ export const MapNoticeStack = memo(function MapNoticeStack({
   }
 
   return (
-    <View pointerEvents="box-none" style={[styles.column, { top }]}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.column, bottom === undefined ? { top } : { bottom }]}
+    >
       {notices.map((notice) => (
         <Animated.View
           key={notice.id}
