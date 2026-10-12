@@ -77,6 +77,19 @@ compliant enough, the source and the date of the data being one tap away in the 
   later reads condition 3 as "next to the mention on every support", restore the dated line on the
   card (one line in `ConditionsCard`).
 
+## Amendment 2026-10-12 (D-37): measurements are read-only
+
+Owner decision: the observer cannot edit temperature, wind, rain over 24 h or the observation time,
+only the sky. This removes the "modified by the observer" wording the licence note carried for
+numbers, and the "en partie modifiée" card variant.
+
+- Condition 1 (no alteration): the measurements are shown and printed exactly as the provider gave
+  them (rounded to one decimal as before); the observer's sky is never labelled Météo-France: the
+  dated sentence ends with ", ciel saisi par l'observateur" when the sky shown is theirs, and a
+  weather with only their sky carries no Météo-France mention and no observation time.
+- Conditions 2 and 3 unchanged: the card says "Météo-France" whenever provider values are shown,
+  the date is in the Contexte sentence, the read-only twin and the PDF.
+
 ## Points left for the owner
 
 - The date is the `observed_at` stored in the survey. If the observer retyped the observation time,

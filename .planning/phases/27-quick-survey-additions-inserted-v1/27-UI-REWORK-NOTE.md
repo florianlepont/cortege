@@ -36,3 +36,41 @@ This note says what the summary and its pages look like now.
 - A survey with parcels but no stored point, no cached geometry and no server position (an old draft
   chosen before plan 27-13, offline, outside every downloaded area) draws the contour placeholder
   instead of a map until the parcel request or the server answers.
+
+# Second rework after the owner's simulator check (2026-10-12, D-37 to D-40)
+
+Decisions D-37 to D-40 are in `27-CONTEXT.md`.
+
+## Survey summary (draft), new order
+
+1. Weather card (`WeatherCard`, D-40): big sky glyph, temperature numeral and unit, wind, rain over
+   24 h and measurement time as wrapping columns, "Météo-France" in small grey text, chevron to
+   Contexte. Empty: friendly invitation; offline: calm sentence; observer's sky alone: glyph and
+   label only.
+2. Score card ("Score IBP du brouillon"), photos, map card, the four rows, the survey actions.
+3. Note card ("Note du relevé"), last (D-38), then the dev-only debug area.
+
+## Contexte weather block (D-37)
+
+- Status line (measurements only), the eight sky chips (the only editable value; the chosen chip
+  again clears it), then temperature, wind, rain over 24 h and the observation time as read-only
+  rows, then the dated source sentence ("Source : Météo-France, mesure du 12/10/2026 à 12:00", with
+  ", ciel saisi par l'observateur" when the sky is theirs).
+- Gone: the four editable fields, "Remplir à nouveau" and its alert, the field-focus scrolling.
+
+## Code map
+
+- Pure: `editWeatherSky`, `isObserverSky`, `weatherSourceLine`, `weatherCardMention`,
+  `weatherRequestTime` in `mobile/src/app/weather.ts`; `stampWeatherRequest` in `storage/utils.ts`.
+- Screens: `conditions/WeatherCard.tsx`, `conditions/WeatherBlock.tsx`, `conditions/weather-rows.ts`
+  (rows shared by the block and the read-only twin).
+- Prefill: `hooks/useWeatherPrefill.ts` (safety net), `storage/weather.ts` (`listWeatherCandidates`).
+- Catalogue: `fr.conditions.weather.rows`, `fr.conditions.weather.sourceObserverSky*`,
+  `fr.conditions.summary` (`stat`, `offlineBody`, `openWithLineSource`), `fr.surveyExport.conditions.sourceValue`.
+
+## Left as is
+
+- The API, the package and the provider code are untouched; the server still accepts any key in
+  `weather.edited`.
+- The owner's seeded July draft "Parcelle de la source" is older than 24 h: it gets no weather for
+  July (never an invented time). Changing its parcels stamps it and looks up the weather of now.
