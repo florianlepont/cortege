@@ -81,6 +81,10 @@ export const conditionsFr = {
     // The same line with the date of the data (D-31: the licence asks for it).
     sourceDated: ({ date, time }: DataStamp) =>
       `Source : Météo-France, mesure du ${date} à ${time}`,
+    // Some provider values are still shown, others were modified: never presented as plain data.
+    sourceMixed: "Source : Météo-France, certaines valeurs modifiées par l'observateur",
+    sourceMixedDated: ({ date, time }: DataStamp) =>
+      `Source : Météo-France, mesure du ${date} à ${time}, certaines valeurs modifiées par l'observateur`,
     // One value with its unit, for the label and value rows of the read-only card.
     values: {
       temperature: (value: string) => `${value}\u00a0°C`,

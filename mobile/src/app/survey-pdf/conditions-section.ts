@@ -5,6 +5,7 @@ import {
   formatObservationTime,
   formatWeatherLine,
   observationStamp,
+  showsProviderAttribution,
   weatherProvenance,
 } from "../weather"
 import { escapeHtml } from "./html"
@@ -54,8 +55,13 @@ function weatherRows(data: SurveyExportData): Row[] {
   const time = formatObservationTime(weather.observed_at ?? weather.requested_at)
   // The licence asks for the date of the data next to the source (D-31); none when unreadable.
   const stamp = observationStamp(weather)
-  const source =
-    stamp && provenance === "prefilled"
+  // Provider values still shown beside edited ones are said to be mixed (D-31, no alteration).
+  const mixed = showsProviderAttribution(weather) && provenance === "edited"
+  const source = mixed
+    ? stamp
+      ? t.sourceValue.mixedDated(stamp)
+      : t.sourceValue.mixed
+    : stamp && provenance === "prefilled"
       ? t.sourceValue.prefilledDated(stamp)
       : stamp && provenance === "edited"
         ? t.sourceValue.editedDated(stamp)

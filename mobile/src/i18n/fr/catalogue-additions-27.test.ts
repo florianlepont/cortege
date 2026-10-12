@@ -116,6 +116,12 @@ describe("fr.surveyExport conditions", () => {
     expect(conditions.sourceValue.editedDated(stamp)).toBe(
       "Météo-France, mesure du 12/10/2026 à 04:00, modifiée par l'observateur",
     )
+    expect(conditions.sourceValue.mixed).toBe(
+      "Météo-France, certaines valeurs modifiées par l'observateur",
+    )
+    expect(conditions.sourceValue.mixedDated(stamp)).toBe(
+      "Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
+    )
   })
 })
 

@@ -195,6 +195,10 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
     expect(texts(edited)).toContain(
       "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00, modifiée par vous. Vos valeurs ne seront pas remplacées.",
     )
+    // Some values are still the provider's: the source line says that others were modified.
+    expect(texts(edited)).toContain(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
+    )
   })
 
   test("no state says error and no glyph takes a danger colour", () => {
@@ -664,8 +668,20 @@ describe("Conditions read only (D-03, U-04)", () => {
       />,
     )
     expect(texts(edited)).toContain(
+      "Source : Météo-France, mesure du 11/10/2026 à 14:30, certaines valeurs modifiées par l'observateur",
+    )
+
+    const allEdited = mount(
+      <ConditionsReadOnly
+        note={null}
+        weather={{ ...weather, edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"] }}
+        emptyMode="line"
+      />,
+    )
+    expect(texts(allEdited)).toContain(
       "Préremplie d'après Météo-France, mesure du 11/10/2026 à 14:30, modifiée par l'observateur.",
     )
+    expect(texts(allEdited).join(" ")).not.toContain("Source : Météo-France")
 
     const undated = mount(
       <ConditionsReadOnly

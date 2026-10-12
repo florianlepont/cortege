@@ -127,6 +127,10 @@ export const surveyExportFr = {
         `Météo-France, mesure du ${date} à ${time}`,
       editedDated: ({ date, time }: { date: string; time: string }) =>
         `Météo-France, mesure du ${date} à ${time}, modifiée par l'observateur`,
+      // Some values are still the provider's and others were modified (D-31).
+      mixed: "Météo-France, certaines valeurs modifiées par l'observateur",
+      mixedDated: ({ date, time }: { date: string; time: string }) =>
+        `Météo-France, mesure du ${date} à ${time}, certaines valeurs modifiées par l'observateur`,
       manual: "Saisie par l'observateur",
     },
   },

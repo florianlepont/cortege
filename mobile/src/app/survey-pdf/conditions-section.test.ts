@@ -154,8 +154,26 @@ describe("buildConditionsBlock weather rows", () => {
     })
 
     expect(edited).toContain(
-      "Météo-France, mesure du 10/10/2026 à 14:30, modifiée par l&#39;observateur",
+      "Météo-France, mesure du 10/10/2026 à 14:30, certaines valeurs modifiées par l&#39;observateur",
     )
+
+    const { html: partial } = required({
+      note: null,
+      weather: { ...WEATHER, observed_at: undefined, temperature_c: 15, edited: ["temperature_c"] },
+    })
+    expect(partial).toContain(">Météo-France, certaines valeurs modifiées par l&#39;observateur<")
+  })
+
+  it("keeps the plain edited wording when every provider value was edited", () => {
+    const { html: all } = required({
+      note: null,
+      weather: { ...WEATHER, edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"] },
+    })
+
+    expect(all).toContain(
+      ">Météo-France, mesure du 10/10/2026 à 14:30, modifiée par l&#39;observateur</td>",
+    )
+    expect(all).not.toContain("certaines valeurs")
   })
 
   it("names the observer when the weather was typed by hand", () => {

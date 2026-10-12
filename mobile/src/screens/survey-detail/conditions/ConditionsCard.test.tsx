@@ -190,7 +190,18 @@ describe("ConditionsCard attribution (D-26)", () => {
   test("keeps it when only some values were edited", () => {
     const { tree } = mount({ weather: { ...CLOUDY, edited: ["temperature_c"] } })
 
-    expect(texts(tree)).toContain(t.weather.source)
+    expect(texts(tree)).toContain(
+      "Source : Météo-France, certaines valeurs modifiées par l'observateur",
+    )
+    expect(texts(tree)).not.toContain(t.weather.source)
+
+    const observedAt = new Date(2026, 9, 12, 4, 0).toISOString()
+    const dated = mount({
+      weather: { ...CLOUDY, observed_at: observedAt, edited: ["temperature_c"] },
+    })
+    expect(texts(dated.tree)).toContain(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
+    )
   })
 })
 

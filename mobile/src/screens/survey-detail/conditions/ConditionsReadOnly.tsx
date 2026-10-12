@@ -6,6 +6,7 @@ import {
   formatWeatherNumber,
   observationStamp,
   weatherProvenance,
+  weatherSourceLine,
   type WeatherProvenance,
 } from "../../../app/weather"
 import {
@@ -32,6 +33,9 @@ type ConditionsReadOnlyProps = {
 
 /** The source line, with the date of the data for provider values when it is known (D-31). */
 function sourceLine(weather: SurveyWeather | null, provenance: WeatherProvenance): string {
+  // Provider values still shown beside edited ones: the one line of the card, mixed wording included.
+  const attribution = weatherSourceLine(weather)
+  if (attribution !== null && provenance === "edited") return attribution
   const stamp = observationStamp(weather)
   if (stamp && provenance === "prefilled") return t.readOnly.sourcePrefilledDated(stamp)
   if (stamp && provenance === "edited") return t.readOnly.sourceEditedDated(stamp)

@@ -559,6 +559,23 @@ describe("the date of the data next to the source (D-31)", () => {
         observed_at: MEASURED,
         edited: ["sky"],
       }),
+    ).toBe(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
+    )
+  })
+
+  it("says some values were modified when the observer edited a part of the provider's", () => {
+    expect(
+      weatherSourceLine({
+        sky: "rain",
+        temperature_c: 9,
+        source: "meteo_france",
+        edited: ["temperature_c"],
+      }),
+    ).toBe("Source : Météo-France, certaines valeurs modifiées par l'observateur")
+    // An untouched weather keeps the plain line.
+    expect(
+      weatherSourceLine({ sky: "rain", source: "meteo_france", observed_at: MEASURED, edited: [] }),
     ).toBe("Source : Météo-France, mesure du 12/10/2026 à 04:00")
   })
 

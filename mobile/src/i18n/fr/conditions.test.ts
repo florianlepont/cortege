@@ -73,6 +73,12 @@ describe("fr.conditions", () => {
     expect(conditions.readOnly.sourceEditedDated(stamp)).toBe(
       "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00, modifiée par l'observateur.",
     )
+    expect(conditions.weather.sourceMixed).toBe(
+      "Source : Météo-France, certaines valeurs modifiées par l'observateur",
+    )
+    expect(conditions.weather.sourceMixedDated(stamp)).toBe(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
+    )
   })
 
   test("range messages keep the unit glued to the number", () => {

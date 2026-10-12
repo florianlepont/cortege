@@ -180,12 +180,16 @@ export function showsProviderAttribution(weather: SurveyWeather | null | undefin
  * The attribution line under the weather values: "Source : Météo-France, mesure du dd/mm/yyyy à
  * HH:mm" (D-26, D-31: the licence asks for the source and the date of the data). Null when no
  * shown value is the provider's (`showsProviderAttribution`); without a readable `observed_at` it
- * is "Source : Météo-France" alone.
+ * is "Source : Météo-France" alone. When the observer edited some values but not all, it ends with
+ * "certaines valeurs modifiées par l'observateur" (D-31).
  */
 export function weatherSourceLine(weather: SurveyWeather | null | undefined): string | null {
   if (!showsProviderAttribution(weather)) return null
   const stamp = observationStamp(weather)
-  return stamp ? fr.conditions.weather.sourceDated(stamp) : fr.conditions.weather.source
+  const t = fr.conditions.weather
+  // Some provider values are shown beside values the observer changed: say so (D-31, no alteration).
+  if (editedOf(weather).length > 0) return stamp ? t.sourceMixedDated(stamp) : t.sourceMixed
+  return stamp ? t.sourceDated(stamp) : t.source
 }
 
 /**
