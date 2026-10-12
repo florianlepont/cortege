@@ -1,15 +1,7 @@
-import type { SurveyWeather, WeatherEditableKey, WeatherSkyCode } from "@cortege/ibp-domain"
+import type { SurveyWeather, WeatherSkyCode } from "@cortege/ibp-domain"
 import { Ionicons } from "@expo/vector-icons"
 import { useEffect, useMemo, useRef } from "react"
-import {
-  AccessibilityInfo,
-  ActivityIndicator,
-  Alert,
-  LayoutChangeEvent,
-  Platform,
-  StyleSheet,
-  View,
-} from "react-native"
+import { AccessibilityInfo, ActivityIndicator, Platform, StyleSheet, View } from "react-native"
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -17,9 +9,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated"
 import {
-  editWeatherValue,
-  hasWeatherValues,
+  editWeatherSky,
   observationStamp,
+  showsProviderAttribution,
   weatherSourceLine,
   type WeatherViewState,
 } from "../../../app/weather"
@@ -37,7 +29,7 @@ import { AppPressable } from "../../../ui/AppPressable"
 import { AppText as Text } from "../../../ui/AppText"
 import { useScreenVisible } from "../../../ui/useScreenVisible"
 import { SkyChips } from "./SkyChips"
-import { WeatherFields } from "./WeatherFields"
+import { weatherRowEntries } from "./weather-rows"
 
 const t = fr.conditions.weather
 
@@ -46,28 +38,23 @@ type WeatherBlockProps = {
   viewState: WeatherViewState
   onEditWeather: (update: (current: SurveyWeather | null) => SurveyWeather | null) => void
   onRetry: () => void
-  onRefill: () => void
-  /** Called when a field takes focus, with its top inside this block (label included). */
-  onFieldFocus?: (y: number) => void
 }
 
 type StatusGlyph = keyof typeof Ionicons.glyphMap | "spinner"
 
-// One calm line for each of the seven states (UI-SPEC 1.3): a glyph and a sentence, never the word
-// "erreur", never a danger colour.
+// One calm line for each of the five states (UI-SPEC 1.3, D-37): a glyph and a sentence, never the
+// word "erreur", never a danger colour.
 const STATUS: Record<WeatherViewState, { glyph: StatusGlyph; text: string }> = {
   noParcel: { glyph: "partly-sunny-outline", text: t.status.noParcel },
   loading: { glyph: "spinner", text: t.status.loading },
   prefilled: { glyph: "cloud-done-outline", text: t.status.prefilled },
-  edited: { glyph: "cloud-done-outline", text: t.status.edited },
-  manual: { glyph: "create-outline", text: t.status.manual },
   offline: { glyph: "cloud-offline-outline", text: t.status.offline },
   unavailable: { glyph: "cloud-offline-outline", text: t.status.unavailable },
 }
 
 /** The provider's values show with a short fade when they arrive (D-11), none under Reduce Motion. */
 function useProviderFade(weather: SurveyWeather | null) {
-  const arrived = weather?.source === "meteo_france" && hasWeatherValues(weather)
+  const arrived = showsProviderAttribution(weather)
   const wasArrived = useRef(arrived)
   const opacity = useSharedValue(1)
 
@@ -103,48 +90,30 @@ function statusFor(viewState: WeatherViewState, weather: SurveyWeather | null | 
   if (stamp && viewState === "prefilled") {
     return { ...STATUS.prefilled, text: t.status.prefilledDated(stamp) }
   }
-  if (stamp && viewState === "edited") {
-    return { ...STATUS.edited, text: t.status.editedDated(stamp) }
-  }
   return STATUS[viewState]
 }
 
 /**
- * The weather card of the Conditions section (D-15, D-09, D-10, D-11, D-26): a status line, the
- * eight sky chips, the four typed values and the attribution line. Every value is editable; an edit
- * goes through `editWeatherValue`, which protects it from a later provider answer. Nothing here
+ * The weather card of the Contexte page (D-15, D-09, D-10, D-11, D-26, D-37): a status line, the
+ * eight sky chips (the observer's own judgement, the only editable value), the provider's
+ * temperature, wind, rain and observation time as read-only rows, and the attribution line. A sky
+ * edit goes through `editWeatherSky`, which protects it from a later provider answer. Nothing here
  * blocks leaving the page, finishing or submitting.
  */
-export function WeatherBlock({
-  weather,
-  viewState,
-  onEditWeather,
-  onRetry,
-  onRefill,
-  onFieldFocus,
-}: WeatherBlockProps) {
+export function WeatherBlock({ weather, viewState, onEditWeather, onRetry }: WeatherBlockProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const fade = useProviderFade(weather)
   const status = statusFor(viewState, weather)
   const sourceLine = weatherSourceLine(weather)
-  const valuesTop = useRef(0)
-  const fieldsTop = useRef(0)
+  const rows = weatherRowEntries(weather, { sky: false })
   useAnnounceOnChange(status.text)
 
-  const edit = (key: WeatherEditableKey, value: number | string | null) =>
-    onEditWeather((current) => editWeatherValue(current, key, value))
-
-  const confirmRefill = () =>
-    Alert.alert(t.refillConfirm.title, t.refillConfirm.message, [
-      { text: t.refillConfirm.cancel, style: "cancel" },
-      { text: t.refillConfirm.confirm, style: "destructive", onPress: onRefill },
-    ])
+  const editSky = (code: WeatherSkyCode | null) =>
+    onEditWeather((current) => editWeatherSky(current, code))
 
   const glyphColor =
-    viewState === "prefilled" || viewState === "edited"
-      ? theme.visual.glass.iconTint
-      : theme.colors.textSecondary
+    viewState === "prefilled" ? theme.visual.glass.iconTint : theme.colors.textSecondary
 
   return (
     <AppCard variant="glass" padding={brandSpacing4.md} style={styles.card}>
@@ -188,48 +157,31 @@ export function WeatherBlock({
             <Text style={styles.linkText}>{t.status.retry}</Text>
           </AppPressable>
         ) : null}
-        {viewState === "edited" ? (
-          <AppPressable
-            testID="conditions-refill"
-            accessibilityRole="button"
-            accessibilityLabel={t.status.refillA11y}
-            onPress={confirmRefill}
-            style={styles.link}
-          >
-            <Text style={styles.linkText}>{t.status.refill}</Text>
-          </AppPressable>
-        ) : null}
       </View>
 
-      <Animated.View
-        style={[styles.values, fade]}
-        onLayout={(event: LayoutChangeEvent) => {
-          valuesTop.current = event.nativeEvent.layout.y
-        }}
-      >
-        <View style={styles.skyBlock}>
-          <Text style={styles.groupLabel}>{fr.conditions.sky.groupLabel}</Text>
-          <SkyChips
-            value={(weather?.sky as WeatherSkyCode | null | undefined) ?? null}
-            onChange={(code) => edit("sky", code)}
-          />
-        </View>
-        <View
-          onLayout={(event: LayoutChangeEvent) => {
-            fieldsTop.current = event.nativeEvent.layout.y
-          }}
-        >
-          <WeatherFields
-            weather={weather}
-            onEdit={edit}
-            onFieldFocus={
-              onFieldFocus
-                ? (y) => onFieldFocus(valuesTop.current + fieldsTop.current + y)
-                : undefined
-            }
-          />
-        </View>
-      </Animated.View>
+      <View style={styles.skyBlock}>
+        <Text style={styles.groupLabel}>{fr.conditions.sky.groupLabel}</Text>
+        <SkyChips
+          value={(weather?.sky as WeatherSkyCode | null | undefined) ?? null}
+          onChange={editSky}
+        />
+      </View>
+
+      {rows.length > 0 ? (
+        <Animated.View style={[styles.rows, fade]} testID="conditions-weather-rows">
+          {rows.map((row) => (
+            <View
+              key={row.key}
+              style={styles.row}
+              accessible
+              accessibilityLabel={row.accessibilityLabel}
+            >
+              <Text style={styles.rowLabel}>{row.label}</Text>
+              <Text style={styles.rowValue}>{row.value}</Text>
+            </View>
+          ))}
+        </Animated.View>
+      ) : null}
 
       {sourceLine !== null ? <Text style={styles.source}>{sourceLine}</Text> : null}
     </AppCard>
@@ -279,8 +231,25 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.sectionHeader,
       color: theme.visual.accentText,
     },
-    values: {
-      gap: brandSpacing4.smd,
+    rows: {
+      gap: brandSpacing4.sm,
+    },
+    row: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      columnGap: brandSpacing4.smd,
+    },
+    rowLabel: {
+      ...brandTypeScale.footnote,
+      fontFamily: brandDefaultFontFamily,
+      color: theme.colors.textSecondary,
+    },
+    rowValue: {
+      ...brandTypeScale.subhead,
+      fontFamily: "Jost-SemiBold",
+      color: theme.semanticColors.textStrong,
     },
     skyBlock: {
       gap: brandSpacing4.sm,

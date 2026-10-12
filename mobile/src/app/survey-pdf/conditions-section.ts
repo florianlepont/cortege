@@ -4,9 +4,9 @@ import { fr } from "../../i18n"
 import {
   formatObservationTime,
   formatWeatherLine,
+  isObserverSky,
   observationStamp,
   showsProviderAttribution,
-  weatherProvenance,
 } from "../weather"
 import { escapeHtml } from "./html"
 import { PDF_FONT_FAMILIES } from "./types"
@@ -50,22 +50,24 @@ export function conditionsBlockHeight(rows: Array<{ text: string }>): number {
 function weatherRows(data: SurveyExportData): Row[] {
   const weather = data.conditions.weather
   const line = formatWeatherLine(weather)
-  const provenance = weatherProvenance(weather)
-  if (!weather || line === null || provenance === null) return []
-  const time = formatObservationTime(weather.observed_at ?? weather.requested_at)
+  if (!weather || line === null) return []
+  // An observation time belongs to the measurements; the observer's sky alone has none.
+  const time = showsProviderAttribution(weather)
+    ? formatObservationTime(weather.observed_at ?? weather.requested_at)
+    : null
   // The licence asks for the date of the data next to the source (D-31); none when unreadable.
   const stamp = observationStamp(weather)
-  // Provider values still shown beside edited ones are said to be mixed (D-31, no alteration).
-  const mixed = showsProviderAttribution(weather) && provenance === "edited"
-  const source = mixed
-    ? stamp
-      ? t.sourceValue.mixedDated(stamp)
-      : t.sourceValue.mixed
-    : stamp && provenance === "prefilled"
-      ? t.sourceValue.prefilledDated(stamp)
-      : stamp && provenance === "edited"
-        ? t.sourceValue.editedDated(stamp)
-        : t.sourceValue[provenance]
+  // Only the observer's sky is printed beside the provider's values: say so (D-31, D-37).
+  const observerSky = isObserverSky(weather)
+  const source = !showsProviderAttribution(weather)
+    ? t.sourceValue.manual
+    : observerSky
+      ? stamp
+        ? t.sourceValue.providerObserverSkyDated(stamp)
+        : t.sourceValue.providerObserverSky
+      : stamp
+        ? t.sourceValue.providerDated(stamp)
+        : t.sourceValue.provider
   return [
     { caption: t.weather, text: t.weatherSentence({ line, time }) },
     { caption: t.source, text: source },

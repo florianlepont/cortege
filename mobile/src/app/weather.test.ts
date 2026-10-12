@@ -1,26 +1,22 @@
 import type { SurveyWeather, WeatherObservation } from "@cortege/ibp-domain"
 import {
   canonicalWeather,
-  editWeatherValue,
+  editWeatherSky,
   formatObservationDate,
   formatObservationTime,
   formatWeatherLine,
   formatWeatherNumber,
   hasWeatherValues,
+  isObserverSky,
   mergeWeatherObservation,
   needsWeatherLookup,
   observationStamp,
-  parseObservationTimeInput,
-  parseWeatherValueInput,
-  resetWeatherForRefill,
   roundWeatherCoordinate,
   weatherRequestTime,
   showsProviderAttribution,
-  weatherProvenance,
   weatherCardMention,
   weatherSourceLine,
   weatherViewState,
-  withObservationTime,
 } from "./weather"
 
 const NOW = new Date("2026-10-11T12:00:00.000Z")
@@ -74,48 +70,6 @@ describe("formatWeatherLine", () => {
 })
 
 describe("observation time", () => {
-  it("reads the common ways of writing a time", () => {
-    expect(parseObservationTimeInput("1430")).toBe("14:30")
-    expect(parseObservationTimeInput("14:30")).toBe("14:30")
-    expect(parseObservationTimeInput("14h30")).toBe("14:30")
-    expect(parseObservationTimeInput("14H30")).toBe("14:30")
-    expect(parseObservationTimeInput(" 9:05 ")).toBe("09:05")
-    expect(parseObservationTimeInput("930")).toBe("09:30")
-    expect(parseObservationTimeInput("0:00")).toBe("00:00")
-    expect(parseObservationTimeInput("23:59")).toBe("23:59")
-  })
-
-  it("refuses what is not a time of day", () => {
-    for (const text of ["2460", "25:00", "abc", "", "12:60", "14:3", "1", "14h", "12345"]) {
-      expect(parseObservationTimeInput(text)).toBeNull()
-    }
-  })
-
-  it("keeps the local calendar date of the base and sets the local time", () => {
-    const base = "2026-10-11T06:12:00.000Z"
-    const result = withObservationTime(base, "14:30")
-    expect(result).not.toBeNull()
-    const got = new Date(result as string)
-    const wanted = new Date(base)
-    expect(got.getFullYear()).toBe(wanted.getFullYear())
-    expect(got.getMonth()).toBe(wanted.getMonth())
-    expect(got.getDate()).toBe(wanted.getDate())
-    expect(got.getHours()).toBe(14)
-    expect(got.getMinutes()).toBe(30)
-    expect(got.getSeconds()).toBe(0)
-    expect(got.getMilliseconds()).toBe(0)
-  })
-
-  it("falls back to today when the base is missing or unreadable, and refuses a bad time", () => {
-    for (const base of [null, undefined, "not a date"]) {
-      const result = withObservationTime(base, "08:05")
-      const got = new Date(result as string)
-      expect(got.getHours()).toBe(8)
-      expect(got.getMinutes()).toBe(5)
-    }
-    expect(withObservationTime("2026-10-11T06:12:00.000Z", "99:99")).toBeNull()
-  })
-
   it("formats the local HH:mm of an ISO string", () => {
     const iso = "2026-10-11T08:12:41.000Z"
     const local = new Date(iso)
@@ -125,43 +79,10 @@ describe("observation time", () => {
     expect(formatObservationTime(undefined)).toBeNull()
     expect(formatObservationTime("garbage")).toBeNull()
   })
-
-  it("round-trips a typed time", () => {
-    const stored = withObservationTime("2026-10-11T06:12:00.000Z", "14:30")
-    expect(formatObservationTime(stored)).toBe("14:30")
-  })
 })
 
-describe("parseWeatherValueInput", () => {
-  it("reads a number with a comma or a point and one decimal", () => {
-    expect(parseWeatherValueInput("temperature_c", "14,5")).toEqual({ value: 14.5 })
-    expect(parseWeatherValueInput("temperature_c", "14.5")).toEqual({ value: 14.5 })
-    expect(parseWeatherValueInput("temperature_c", "-3,25")).toEqual({ value: -3.3 })
-    expect(parseWeatherValueInput("temperature_c", " 7 ")).toEqual({ value: 7 })
-    expect(parseWeatherValueInput("wind_kmh", ",5")).toEqual({ value: 0.5 })
-    expect(parseWeatherValueInput("rain_24h_mm", "1000")).toEqual({ value: 1000 })
-    expect(parseWeatherValueInput("rain_24h_mm", "0")).toEqual({ value: 0 })
-  })
-
-  it("clears on an empty text", () => {
-    expect(parseWeatherValueInput("temperature_c", "")).toEqual({ value: null })
-    expect(parseWeatherValueInput("wind_kmh", "   ")).toEqual({ value: null })
-  })
-
-  it("reports a range error for out-of-range or unreadable text", () => {
-    expect(parseWeatherValueInput("temperature_c", "80")).toEqual({ error: "range" })
-    expect(parseWeatherValueInput("temperature_c", "-41")).toEqual({ error: "range" })
-    expect(parseWeatherValueInput("temperature_c", "abc")).toEqual({ error: "range" })
-    expect(parseWeatherValueInput("temperature_c", "-")).toEqual({ error: "range" })
-    expect(parseWeatherValueInput("temperature_c", "1e2")).toEqual({ error: "range" })
-    expect(parseWeatherValueInput("wind_kmh", "-1")).toEqual({ error: "range" })
-    expect(parseWeatherValueInput("wind_kmh", "351")).toEqual({ error: "range" })
-    expect(parseWeatherValueInput("rain_24h_mm", "1000,1")).toEqual({ error: "range" })
-  })
-})
-
-describe("hasWeatherValues and provenance", () => {
-  it("counts the four displayed values", () => {
+describe("hasWeatherValues and the attribution", () => {
+  it("counts the sky and the three numbers", () => {
     expect(hasWeatherValues(null)).toBe(false)
     expect(hasWeatherValues({ requested_at: ago(1) })).toBe(false)
     expect(hasWeatherValues({ temperature_c: null, sky: null })).toBe(false)
@@ -169,22 +90,21 @@ describe("hasWeatherValues and provenance", () => {
     expect(hasWeatherValues({ sky: "fog" })).toBe(true)
   })
 
-  it("tells where the shown values come from", () => {
-    expect(weatherProvenance(null)).toBeNull()
-    expect(weatherProvenance({ requested_at: ago(1), source: "meteo_france" })).toBeNull()
-    expect(weatherProvenance({ sky: "rain", source: "meteo_france" })).toBe("prefilled")
-    expect(
-      weatherProvenance({ sky: "rain", source: "meteo_france", edited: ["temperature_c"] }),
-    ).toBe("edited")
-    expect(weatherProvenance({ wind_kmh: 4, source: "manual", edited: ["wind_kmh"] })).toBe(
-      "manual",
-    )
-    expect(weatherProvenance({ wind_kmh: 4 })).toBe("manual")
+  it("knows when the sky shown is the observer's (D-37)", () => {
+    expect(isObserverSky({ sky: "rain", edited: ["sky"], source: "manual" })).toBe(true)
+    expect(isObserverSky({ sky: "rain", edited: ["sky"], source: "meteo_france" })).toBe(true)
+    // A cleared sky shows nothing, so there is no sky to attribute.
+    expect(isObserverSky({ sky: null, edited: ["sky"] })).toBe(false)
+    expect(isObserverSky({ sky: "rain", source: "meteo_france" })).toBe(false)
+    expect(isObserverSky(null)).toBe(false)
   })
 
-  it("shows the attribution only while a shown value is still the provider's", () => {
+  it("shows the attribution while the provider's numbers or an untouched sky are shown", () => {
     expect(showsProviderAttribution(null)).toBe(false)
     expect(showsProviderAttribution({ sky: "rain", source: "meteo_france" })).toBe(true)
+    expect(showsProviderAttribution({ temperature_c: 9, source: "meteo_france" })).toBe(true)
+    expect(showsProviderAttribution({ rain_24h_mm: 0, source: "meteo_france" })).toBe(true)
+    // The observer's sky beside the provider's numbers: the numbers still are.
     expect(
       showsProviderAttribution({
         sky: "rain",
@@ -193,10 +113,11 @@ describe("hasWeatherValues and provenance", () => {
         edited: ["sky"],
       }),
     ).toBe(true)
+    // The observer's sky alone, or on a manual weather, is never Météo-France's.
     expect(showsProviderAttribution({ sky: "rain", source: "meteo_france", edited: ["sky"] })).toBe(
       false,
     )
-    expect(showsProviderAttribution({ sky: "rain", source: "manual" })).toBe(false)
+    expect(showsProviderAttribution({ sky: "rain", source: "manual", edited: ["sky"] })).toBe(false)
     expect(
       showsProviderAttribution({
         source: "meteo_france",
@@ -214,49 +135,38 @@ describe("mergeWeatherObservation", () => {
   it("fills only what is empty and untouched", () => {
     const current: SurveyWeather = {
       requested_at: requested,
-      temperature_c: 9,
-      edited: ["temperature_c"],
+      sky: "fog",
+      edited: ["sky"],
+      source: "manual",
     }
     const merged = mergeWeatherObservation(
       current,
-      observation({ temperature_c: 12.34, wind_kmh: 18, sky: null, rain_24h_mm: null }),
+      observation({ sky: "clear", temperature_c: 12.34, wind_kmh: 18, rain_24h_mm: null }),
     )
-    expect(merged.temperature_c).toBe(9)
+    expect(merged.sky).toBe("fog")
+    expect(merged.temperature_c).toBe(12.3)
     expect(merged.wind_kmh).toBe(18)
-    expect(merged.sky).toBeNull()
     expect(merged.rain_24h_mm).toBeNull()
     expect(merged.observed_at).toBe("2026-10-11T11:00:00.000Z")
     expect(merged.source).toBe("meteo_france")
     expect(merged.requested_at).toBe(requested)
-    expect(merged.edited).toEqual(["temperature_c"])
+    expect(merged.edited).toEqual(["sky"])
   })
 
-  it("keeps a present untouched value and a cleared edited value", () => {
-    const merged = mergeWeatherObservation(
-      {
-        requested_at: requested,
-        sky: "fog",
-        wind_kmh: null,
-        edited: ["wind_kmh"],
-      },
+  it("keeps a sky the observer cleared, and a present value", () => {
+    const cleared = mergeWeatherObservation(
+      { requested_at: requested, sky: null, edited: ["sky"] },
       observation({ sky: "clear", wind_kmh: 30, temperature_c: 11.26 }),
     )
-    expect(merged.sky).toBe("fog")
-    expect(merged.wind_kmh).toBeNull()
-    expect(merged.temperature_c).toBe(11.3)
-  })
+    expect(cleared.sky).toBeNull()
+    expect(cleared.wind_kmh).toBe(30)
+    expect(cleared.temperature_c).toBe(11.3)
 
-  it("keeps an hour typed by the observer", () => {
-    const merged = mergeWeatherObservation(
-      {
-        requested_at: requested,
-        observed_at: "2026-10-11T13:00:00.000Z",
-        edited: ["observed_at"],
-      },
-      observation({ temperature_c: 10 }),
+    const present = mergeWeatherObservation(
+      { requested_at: requested, wind_kmh: 5 },
+      observation({ wind_kmh: 30 }),
     )
-    expect(merged.observed_at).toBe("2026-10-11T13:00:00.000Z")
-    expect(merged.temperature_c).toBe(10)
+    expect(present.wind_kmh).toBe(5)
   })
 
   it("starts from nothing and rounds to one decimal", () => {
@@ -283,11 +193,8 @@ describe("mergeWeatherObservation", () => {
 
   it("marks the answer as merged even when every value was protected", () => {
     const merged = mergeWeatherObservation(
-      {
-        requested_at: requested,
-        edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"],
-      },
-      observation({ sky: "rain", temperature_c: 3, wind_kmh: 3, rain_24h_mm: 3 }),
+      { requested_at: requested, edited: ["sky"] },
+      observation({ sky: "rain" }),
     )
     expect(merged.source).toBe("meteo_france")
     expect(hasWeatherValues(merged)).toBe(false)
@@ -295,66 +202,63 @@ describe("mergeWeatherObservation", () => {
   })
 })
 
-describe("editWeatherValue", () => {
-  it("sets the value and marks it edited, in canonical order without duplicates", () => {
-    let weather: SurveyWeather = editWeatherValue({ requested_at: ago(1) }, "wind_kmh", 12)
-    weather = editWeatherValue(weather, "sky", "rain")
-    weather = editWeatherValue(weather, "wind_kmh", 14.26)
-    expect(weather).toMatchObject({ sky: "rain", wind_kmh: 14.3, source: "manual" })
-    expect(weather.edited).toEqual(["sky", "wind_kmh"])
+describe("editWeatherSky (D-37: the sky is the only value the observer edits)", () => {
+  it("sets the sky, lists it as edited and makes the weather manual when it was not the provider's", () => {
+    expect(editWeatherSky({ requested_at: ago(1) }, "rain")).toEqual({
+      requested_at: ago(1),
+      sky: "rain",
+      edited: ["sky"],
+      source: "manual",
+    })
+    expect(editWeatherSky(null, "fog")).toEqual({ sky: "fog", edited: ["sky"], source: "manual" })
+  })
+
+  it("keeps the provider as the source of its numbers", () => {
+    const weather = editWeatherSky(
+      { temperature_c: 9, source: "meteo_france", observed_at: ago(2) },
+      "clear",
+    )
+    expect(weather).toEqual({
+      temperature_c: 9,
+      observed_at: ago(2),
+      sky: "clear",
+      edited: ["sky"],
+      source: "meteo_france",
+    })
   })
 
   it("counts a clearing as an edit", () => {
-    const weather = editWeatherValue(
-      { sky: "rain", source: "meteo_france", requested_at: ago(1) },
-      "sky",
-      null,
-    )
+    const weather = editWeatherSky({ sky: "rain", source: "meteo_france", wind_kmh: 3 }, null)
     expect(weather.sky).toBeNull()
     expect(weather.edited).toEqual(["sky"])
     expect(weather.source).toBe("meteo_france")
   })
 
-  it("starts a weather from nothing and stores an observation time as is", () => {
-    const iso = "2026-10-11T12:30:00.000Z"
-    const weather = editWeatherValue(null, "observed_at", iso)
-    expect(weather).toEqual({ observed_at: iso, source: "manual", edited: ["observed_at"] })
+  it("never lets another key into edited, and clears on a code it does not know", () => {
+    const weather = editWeatherSky(
+      { wind_kmh: 4, edited: ["wind_kmh"] } as unknown as SurveyWeather,
+      "hail" as unknown as "rain",
+    )
+    expect(weather.sky).toBeNull()
+    expect(weather.edited).toEqual(["sky"])
   })
 
-  it("clears the hour on an empty or wrong value", () => {
-    expect(editWeatherValue(null, "observed_at", "").observed_at).toBeNull()
-    expect(editWeatherValue(null, "observed_at", 5).observed_at).toBeNull()
-  })
-
-  it("refuses a sky code it does not know and a text for a number", () => {
-    expect(editWeatherValue(null, "sky", "hail").sky).toBeNull()
-    expect(editWeatherValue(null, "temperature_c", "abc").temperature_c).toBeNull()
-  })
-})
-
-describe("resetWeatherForRefill", () => {
-  it("clears the values and the edited list, keeping requested_at", () => {
-    const requested = ago(3)
-    expect(
-      resetWeatherForRefill({
-        requested_at: requested,
-        sky: "rain",
-        temperature_c: 9,
-        edited: ["sky"],
-        source: "meteo_france",
-      }),
-    ).toEqual({ requested_at: requested, edited: [] })
-  })
-
-  it("copes with no weather", () => {
-    expect(resetWeatherForRefill(null)).toEqual({ edited: [] })
+  it("leaves the provider's numbers and observation time untouched", () => {
+    const stored: SurveyWeather = {
+      temperature_c: 16.9,
+      wind_kmh: 7.2,
+      rain_24h_mm: 0,
+      observed_at: "2026-10-12T10:00:00Z",
+      source: "meteo_france",
+    }
+    expect(editWeatherSky(stored, "overcast")).toMatchObject(stored)
   })
 })
 
 describe("canonicalWeather", () => {
   it("rounds, orders and drops undefined keys", () => {
     const canonical = canonicalWeather({
-      edited: ["wind_kmh", "sky", "wind_kmh"],
+      edited: ["wind_kmh", "sky", "sky"],
       wind_kmh: 12.34,
       temperature_c: -0.04,
       sky: "cloudy",
@@ -368,7 +272,7 @@ describe("canonicalWeather", () => {
       wind_kmh: 12.3,
       requested_at: ago(1),
       source: "manual",
-      edited: ["sky", "wind_kmh"],
+      edited: ["sky"],
     })
     expect(Object.keys(canonical as object)).toEqual([
       "sky",
@@ -401,7 +305,8 @@ describe("canonicalWeather", () => {
     expect(canonicalWeather(null)).toBeNull()
     expect(canonicalWeather(undefined)).toBeNull()
     expect(canonicalWeather({})).toBeNull()
-    expect(canonicalWeather({ sky: null, edited: ["sky"] })).toBeNull()
+    // A cleared sky is worth keeping: it protects the observer's choice from a later answer.
+    expect(canonicalWeather({ sky: null, edited: ["sky"] })).toEqual({ sky: null, edited: ["sky"] })
     expect(canonicalWeather({ requested_at: ago(1) })).toEqual({ requested_at: ago(1) })
     expect(canonicalWeather({ wind_kmh: 0 })).toEqual({ wind_kmh: 0 })
   })
@@ -427,18 +332,6 @@ describe("needsWeatherLookup", () => {
     expect(needsWeatherLookup({ requested_at: ago(25) }, NOW)).toBe(false)
   })
 
-  it("is false when every editable value was touched", () => {
-    expect(
-      needsWeatherLookup(
-        {
-          requested_at: ago(2),
-          edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm", "observed_at"],
-        },
-        NOW,
-      ),
-    ).toBe(false)
-  })
-
   it("is false without weather, without a request time, or with an unreadable one", () => {
     expect(needsWeatherLookup(null, NOW)).toBe(false)
     expect(needsWeatherLookup({ sky: "fog" }, NOW)).toBe(false)
@@ -458,23 +351,8 @@ describe("weatherViewState", () => {
       "loading",
     )
     expect(
-      weatherViewState({
-        ...base,
-        weather: { sky: "rain", source: "meteo_france", edited: [] },
-      }),
+      weatherViewState({ ...base, weather: { temperature_c: 9, source: "meteo_france" } }),
     ).toBe("prefilled")
-    expect(
-      weatherViewState({
-        ...base,
-        weather: { sky: "rain", source: "meteo_france", edited: ["wind_kmh"] },
-      }),
-    ).toBe("edited")
-    expect(
-      weatherViewState({
-        ...base,
-        weather: { wind_kmh: 3, source: "manual", edited: ["wind_kmh"] },
-      }),
-    ).toBe("manual")
     expect(weatherViewState({ ...base, online: false, weather: { requested_at: ago(1) } })).toBe(
       "offline",
     )
@@ -482,29 +360,27 @@ describe("weatherViewState", () => {
     expect(weatherViewState({ ...base, unavailable: true, weather: null })).toBe("unavailable")
   })
 
-  it("shows the values over a request in flight or a lost connection", () => {
-    const weather: SurveyWeather = { sky: "fog", source: "meteo_france" }
+  it("shows the measurements over a request in flight or a lost connection", () => {
+    const weather: SurveyWeather = { wind_kmh: 4, source: "meteo_france" }
     expect(weatherViewState({ ...base, inFlight: true, weather })).toBe("prefilled")
     expect(weatherViewState({ ...base, online: false, weather })).toBe("prefilled")
   })
 
-  it("treats typed values without a parcel as manual", () => {
-    expect(
-      weatherViewState({
-        ...base,
-        hasParcel: false,
-        weather: { wind_kmh: 2, edited: ["wind_kmh"] },
-      }),
-    ).toBe("manual")
+  it("does not let the observer's sky change the line (D-37)", () => {
+    const sky: SurveyWeather = { sky: "fog", edited: ["sky"], source: "manual" }
+    expect(weatherViewState({ ...base, hasParcel: false, weather: sky })).toBe("noParcel")
+    expect(weatherViewState({ ...base, online: false, weather: sky })).toBe("offline")
+    expect(weatherViewState({ ...base, inFlight: true, weather: sky })).toBe("loading")
+    expect(weatherViewState({ ...base, weather: sky })).toBe("unavailable")
   })
 
-  it("stays on edited when the observer cleared every provider value", () => {
+  it("stays prefilled when the observer cleared the sky of a provider weather", () => {
     expect(
       weatherViewState({
         ...base,
-        weather: { sky: null, source: "meteo_france", edited: ["sky"] },
+        weather: { sky: null, temperature_c: 16.9, source: "meteo_france", edited: ["sky"] },
       }),
-    ).toBe("edited")
+    ).toBe("prefilled")
   })
 
   it("is never an error: a provider that answered with nothing reads as unavailable", () => {
@@ -550,9 +426,12 @@ describe("the date of the data next to the source (D-31)", () => {
   })
 
   it("dates the source line of a provider weather", () => {
-    expect(weatherSourceLine({ sky: "rain", source: "meteo_france", observed_at: MEASURED })).toBe(
-      "Source : Météo-France, mesure du 12/10/2026 à 04:00",
-    )
+    expect(
+      weatherSourceLine({ temperature_c: 9, source: "meteo_france", observed_at: MEASURED }),
+    ).toBe("Source : Météo-France, mesure du 12/10/2026 à 04:00")
+  })
+
+  it("says the sky is the observer's when it is shown beside the provider's numbers (D-37)", () => {
     expect(
       weatherSourceLine({
         sky: "rain",
@@ -561,29 +440,30 @@ describe("the date of the data next to the source (D-31)", () => {
         observed_at: MEASURED,
         edited: ["sky"],
       }),
-    ).toBe(
-      "Source : Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
-    )
-  })
-
-  it("says some values were modified when the observer edited a part of the provider's", () => {
+    ).toBe("Source : Météo-France, mesure du 12/10/2026 à 04:00, ciel saisi par l'observateur")
     expect(
       weatherSourceLine({
         sky: "rain",
         temperature_c: 9,
         source: "meteo_france",
-        edited: ["temperature_c"],
+        edited: ["sky"],
       }),
-    ).toBe("Source : Météo-France, certaines valeurs modifiées par l'observateur")
-    // An untouched weather keeps the plain line.
+    ).toBe("Source : Météo-France, ciel saisi par l'observateur")
+    // A cleared sky shows nothing: no clause.
     expect(
-      weatherSourceLine({ sky: "rain", source: "meteo_france", observed_at: MEASURED, edited: [] }),
+      weatherSourceLine({
+        sky: null,
+        temperature_c: 9,
+        source: "meteo_france",
+        observed_at: MEASURED,
+        edited: ["sky"],
+      }),
     ).toBe("Source : Météo-France, mesure du 12/10/2026 à 04:00")
   })
 
   it("keeps the plain source line without a readable date", () => {
     expect(weatherSourceLine({ sky: "rain", source: "meteo_france" })).toBe("Source : Météo-France")
-    expect(weatherSourceLine({ sky: "rain", source: "meteo_france", observed_at: "garbage" })).toBe(
+    expect(weatherSourceLine({ wind_kmh: 3, source: "meteo_france", observed_at: "garbage" })).toBe(
       "Source : Météo-France",
     )
   })
@@ -602,33 +482,36 @@ describe("the date of the data next to the source (D-31)", () => {
   })
 })
 
-describe("weatherCardMention (D-35)", () => {
+describe("weatherCardMention (D-35, D-37)", () => {
   const MEASURED = new Date(2026, 9, 12, 4, 0).toISOString()
 
-  it("is the bare provider name while the provider's values are untouched, with no date", () => {
+  it("is the bare provider name while the provider's values are shown, with no date", () => {
     expect(weatherCardMention({ sky: "rain", source: "meteo_france", observed_at: MEASURED })).toBe(
       "Météo-France",
     )
-    expect(weatherCardMention({ sky: "rain", source: "meteo_france", edited: [] })).toBe(
+    expect(weatherCardMention({ wind_kmh: 3, source: "meteo_france", edited: [] })).toBe(
       "Météo-France",
     )
   })
 
-  it("says the weather is partly modified when some provider values were edited", () => {
+  it("stays the bare name when the observer set the sky, never 'en partie modifiée'", () => {
+    // The owner's survey: numbers from the provider, the sky cleared by the observer.
     expect(
       weatherCardMention({
-        sky: "rain",
-        temperature_c: 9,
+        sky: null,
+        edited: ["sky"],
         source: "meteo_france",
-        observed_at: MEASURED,
-        edited: ["temperature_c"],
+        wind_kmh: 7.2,
+        temperature_c: 16.9,
+        rain_24h_mm: 0,
+        observed_at: "2026-10-12T10:00:00Z",
       }),
-    ).toBe("Météo-France, en partie modifiée")
+    ).toBe("Météo-France")
   })
 
-  it("has no mention when every provider value was edited, for a manual weather or none", () => {
+  it("has no mention for the observer's sky alone, a manual weather or none", () => {
     expect(weatherCardMention({ sky: "rain", source: "meteo_france", edited: ["sky"] })).toBeNull()
-    expect(weatherCardMention({ sky: "rain", source: "manual" })).toBeNull()
+    expect(weatherCardMention({ sky: "rain", source: "manual", edited: ["sky"] })).toBeNull()
     expect(weatherCardMention(null)).toBeNull()
     expect(weatherCardMention(undefined)).toBeNull()
   })

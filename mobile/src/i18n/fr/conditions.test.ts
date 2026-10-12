@@ -49,7 +49,7 @@ describe("fr.conditions", () => {
 
   test("the summary card mention is very short and keeps the licence wording (D-35)", () => {
     expect(conditions.summary.mention).toBe("Météo-France")
-    expect(conditions.summary.mentionPartlyEdited).toBe("Météo-France, en partie modifiée")
+    expect("mentionPartlyEdited" in conditions.summary).toBe(false)
   })
 
   test("the Contexte section is the weather only (D-33)", () => {
@@ -59,7 +59,7 @@ describe("fr.conditions", () => {
 
   test("the attribution of the provider (D-26) and the visibility helper (D-06)", () => {
     expect(conditions.weather.source).toBe("Source : Météo-France")
-    expect(conditions.readOnly.sourcePrefilled).toBe("Source : Météo-France.")
+    expect(conditions.readOnly.sourceManual).toBe("Ciel saisi par l'observateur.")
     expect(conditions.note.visibility).toBe("Visible par les membres qui peuvent lire ce relevé.")
   })
 
@@ -69,33 +69,27 @@ describe("fr.conditions", () => {
       "Source : Météo-France, mesure du 12/10/2026 à 04:00",
     )
     expect(conditions.weather.status.prefilledDated(stamp)).toBe(
-      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00.",
-    )
-    expect(conditions.weather.status.editedDated(stamp)).toBe(
-      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00, modifiée par vous. Vos valeurs ne seront pas remplacées.",
-    )
-    expect(conditions.readOnly.sourcePrefilledDated(stamp)).toBe(
-      "Source : Météo-France, mesure du 12/10/2026 à 04:00.",
-    )
-    expect(conditions.readOnly.sourceEditedDated(stamp)).toBe(
-      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00, modifiée par l'observateur.",
-    )
-    expect(conditions.weather.sourceMixed).toBe(
-      "Source : Météo-France, certaines valeurs modifiées par l'observateur",
-    )
-    expect(conditions.weather.sourceMixedDated(stamp)).toBe(
-      "Source : Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
+      "Mesures de Météo-France, mesure du 12/10/2026 à 04:00.",
     )
   })
 
-  test("range messages keep the unit glued to the number", () => {
-    expect(conditions.weather.fields.temperature.range).toBe("Entre -40 et 55 °C")
-    expect(conditions.weather.fields.wind.range).toBe("Entre 0 et 350 km/h")
-    expect(conditions.weather.fields.rain.range).toBe("Entre 0 et 1000 mm")
+  test("a sky the observer set is never presented as the provider's (D-37)", () => {
+    const stamp = { date: "12/10/2026", time: "04:00" }
+    expect(conditions.weather.sourceObserverSky).toBe(
+      "Source : Météo-France, ciel saisi par l'observateur",
+    )
+    expect(conditions.weather.sourceObserverSkyDated(stamp)).toBe(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00, ciel saisi par l'observateur",
+    )
   })
 
-  test("the refill confirmation carries its cancel button", () => {
-    expect(conditions.weather.refillConfirm.cancel).toBe("Annuler")
-    expect(conditions.weather.refillConfirm.confirm).toBe("Remplacer")
+  test("the measurements are read-only rows and nothing of the old editing remains (D-37)", () => {
+    expect(conditions.weather.rows.temperature).toBe("Température")
+    expect(conditions.weather.rows.time).toBe("Heure de la mesure")
+    expect("fields" in conditions.weather).toBe(false)
+    expect("refillConfirm" in conditions.weather).toBe(false)
+    expect("refill" in conditions.weather.status).toBe(false)
+    expect("edited" in conditions.weather.status).toBe(false)
+    expect("manual" in conditions.weather.status).toBe(false)
   })
 })

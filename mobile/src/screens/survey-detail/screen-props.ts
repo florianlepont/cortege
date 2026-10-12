@@ -79,9 +79,8 @@ export type SurveyContextScreenProps = Omit<SurveyDetailBaseProps, "apiUrl" | "a
     surveyId: string,
     update: (current: SurveyWeather | null) => SurveyWeather | null,
   ) => Promise<boolean> | void
-  /** "Réessayer" and "Remplir à nouveau" of the weather card (the weather prefill actions). */
+  /** "Réessayer" of the weather card (the weather prefill action). */
   onRetryWeather: (surveyId: string) => Promise<void> | void
-  onRefillWeather: (surveyId: string) => Promise<void> | void
 }
 
 /** "Parcelles": the map, the list of parcels and the offline map of the survey (D-32). */

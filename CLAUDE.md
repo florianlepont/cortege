@@ -159,7 +159,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - `local_meta` — key/value store for app-level state
   - key `search_recents`: the 8 recent searches of the global search, cleared by `clearLocalIbpData`; the schema stays at version 5
   - key `parcel_history:<PARCEL_ID>`: the last parcel history read online (all members' submitted surveys of the parcel, at most 50, with its fetch date), written by `useParcelSurveyHistory`, read by the PDF export (the trend section prints offline from it), deleted by `clearLocalIbpData`; the schema stays at version 5
-  - key `weather_point:<SURVEY_ID>`: the parcel centre used for the weather lookup of that draft, written by the parcel selection route (through `rememberPoint`), read by `useWeatherPrefill`, deleted by `clearLocalIbpData`; the schema stays at version 5
+  - key `weather_point:<SURVEY_ID>`: the parcel centre used for the weather lookup of that draft, written by the parcel selection route (through `rememberPoint`) or derived by `useWeatherPrefill` from the cached parcel geometry (D-39), read by `useWeatherPrefill`, deleted by `clearLocalIbpData`; the schema stays at version 5
 
 **Sync flow**:
 1. User actions write to `local_surveys` and enqueue an operation in `sync_queue`
@@ -191,7 +191,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
   - `useSurveyDraftPatcher` — incremental patch accumulation
   - `useGpsCapture` — device location capture
   - `useNearbyParcels` — home screen's nearby-parcel summary, published through the narrow `useNearbyParcelsState` context
-  - `useWeatherPrefill`: weather lookup at parcel choice and catch-up on reconnection or return to the foreground, for the survey time within 24 h; never overwrites a hand edit; published through the narrow `useWeatherPrefillState` context
+  - `useWeatherPrefill`: weather lookup at parcel choice and catch-up on reconnection or return to the foreground, for the survey time within 24 h; never overwrites the sky the observer set; derives the survey time of a never-stamped draft from its creation date within 24 h (D-39); published through the narrow `useWeatherPrefillState` context
 - Hooks called directly by the screens that need them (not part of the single assembler): `usePublicMapExplorer` (public map, viewport bbox loading), `useParcelStatuses` (parcel selection and home), `useDebouncedValue` (map region debouncing), `useGlobalSearch`, `useSearchGroup` and `useSearchRecents` (the global search; its pure rules are in `mobile/src/app/global-search.ts` and `search-text.ts`)
 
 **Navigation** (`mobile/src/navigation/`):

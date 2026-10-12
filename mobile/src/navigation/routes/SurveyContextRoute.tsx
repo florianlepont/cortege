@@ -41,7 +41,6 @@ export const SurveyContextRoute = memo(function SurveyContextRoute({
         onSwitchToV32={actions.switchToV32}
         onEditWeather={actions.updateSurveyWeather}
         onRetryWeather={weatherActions.retry}
-        onRefillWeather={weatherActions.refill}
       />
     </ScreenFrame>
   )

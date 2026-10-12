@@ -1,42 +1,35 @@
 import {
   WEATHER_EDITABLE_KEYS,
   WEATHER_LOOKBACK_MS,
-  WEATHER_RANGES,
   isWeatherSkyCode,
   type SurveyWeather,
   type WeatherEditableKey,
   type WeatherObservation,
+  type WeatherSkyCode,
 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
 
-// The single place for the app's weather rules (phase 27: D-08 to D-11, D-20, D-21, D-26 and
-// UI-SPEC U-02, U-03, U-10). Pure: no React Native, no storage. The prefill hook, the Conditions
+// The single place for the app's weather rules (phase 27: D-08 to D-11, D-20, D-21, D-26, D-37 and
+// UI-SPEC U-02, U-03). Pure: no React Native, no storage. The prefill hook, the Conditions
 // section, the summary card and the PDF all read through these functions.
 //
 // The server never normalises (research Pitfall 4): a replayed body must compare equal to the
 // stored copy, so rounding to one decimal, ordering of `edited` and the shape of the object are
 // fixed here, before a weather is written to the draft (`canonicalWeather`).
 
-/** The seven states of the weather status line (UI-SPEC 1.3). None of them is an error. */
-export type WeatherViewState =
-  | "noParcel"
-  | "loading"
-  | "prefilled"
-  | "edited"
-  | "manual"
-  | "offline"
-  | "unavailable"
+/**
+ * The states of the weather status line (UI-SPEC 1.3, D-37). They describe the provider's
+ * measurements only: the observer's sky never changes them. None of them is an error.
+ */
+export type WeatherViewState = "noParcel" | "loading" | "prefilled" | "offline" | "unavailable"
 
-/** Where the shown values come from, for the read-only source line. */
-export type WeatherProvenance = "prefilled" | "edited" | "manual"
+/** The three provider numbers, with their wire keys (read-only for the observer, D-37). */
+const PROVIDER_NUMBER_KEYS = ["temperature_c", "wind_kmh", "rain_24h_mm"] as const
 
-/** The three numbers an observer can type, with their wire keys. */
-export type WeatherNumberKey = "temperature_c" | "wind_kmh" | "rain_24h_mm"
+/** The only value the observer may edit (D-37); the wire type still allows the others. */
+const OBSERVER_KEYS: readonly WeatherEditableKey[] = ["sky"]
 
-/** The four values shown to the reader (the observation time is shown apart). */
-const VALUE_KEYS = ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"] as const
-
-const EDITED_KEY_SET: ReadonlySet<string> = new Set<string>(WEATHER_EDITABLE_KEYS)
+const EDITED_KEY_SET: ReadonlySet<string> = new Set<string>(OBSERVER_KEYS)
 
 /** Rounds to one decimal, half away from zero (`toFixed` behaviour), never returning -0. */
 function roundOneDecimal(value: number): number {
@@ -52,9 +45,10 @@ function editedOf(weather: SurveyWeather | null | undefined): readonly WeatherEd
   return weather?.edited ?? []
 }
 
+/** Only "sky" can be listed (D-37): any other stored key is dropped on the next write. */
 function orderedEdited(edited: readonly unknown[] | undefined): WeatherEditableKey[] {
   const wanted = new Set(edited ?? [])
-  return WEATHER_EDITABLE_KEYS.filter((key) => wanted.has(key) && EDITED_KEY_SET.has(key))
+  return OBSERVER_KEYS.filter((key) => wanted.has(key) && EDITED_KEY_SET.has(key))
 }
 
 /** 14.5 gives "14,5", 12 gives "12": one decimal at most, the French comma. */
@@ -115,64 +109,32 @@ export function observationStamp(
   return date !== null && time !== null ? { date, time } : null
 }
 
-/** "1430", "14:30", "14h30", " 9:05 " read as "HH:mm" (U-10); null when it is not a time of day. */
-export function parseObservationTimeInput(text: string): string | null {
-  const match = /^(\d{1,2})[:hH]?(\d{2})$/.exec(text.trim())
-  if (!match) return null
-  const hours = Number(match[1])
-  const minutes = Number(match[2])
-  if (hours > 23 || minutes > 59) return null
-  return `${pad2(hours)}:${pad2(minutes)}`
-}
-
-/**
- * The ISO timestamp for a typed "HH:mm" on the local calendar date of `base` (the survey date).
- * Without a readable base, today. Null when the time itself is not valid.
- */
-export function withObservationTime(base: string | null | undefined, time: string): string | null {
-  const parsed = parseObservationTimeInput(time)
-  if (!parsed) return null
-  const parsedBase = base ? new Date(base) : new Date()
-  const date = Number.isNaN(parsedBase.getTime()) ? new Date() : parsedBase
-  const [hours, minutes] = parsed.split(":").map(Number)
-  date.setHours(hours, minutes, 0, 0)
-  return date.toISOString()
-}
-
-/**
- * A typed weather number: comma or point, one decimal, inside the shared range. An empty text
- * clears the value (`null`); anything else outside the range, or not a number, is a "range" error
- * and is never written to the draft.
- */
-export function parseWeatherValueInput(
-  key: WeatherNumberKey,
-  text: string,
-): { value: number | null } | { error: "range" } {
-  const trimmed = text.trim()
-  if (trimmed.length === 0) return { value: null }
-  if (!/^-?(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(trimmed)) return { error: "range" }
-  // The pattern above guarantees a finite number once the French comma is a point.
-  const value = roundOneDecimal(Number(trimmed.replace(",", ".")))
-  const { min, max } = WEATHER_RANGES[key]
-  return value >= min && value <= max ? { value } : { error: "range" }
-}
-
 /** True when the sky or at least one of the three numbers has a value. */
 export function hasWeatherValues(weather: SurveyWeather | null | undefined): boolean {
   if (!weather) return false
-  return VALUE_KEYS.some((key) => weather[key] !== null && weather[key] !== undefined)
+  return (
+    isWeatherSkyCode(weather.sky) ||
+    PROVIDER_NUMBER_KEYS.some((key) => weather[key] !== null && weather[key] !== undefined)
+  )
+}
+
+/** True when the sky shown is the observer's own: they set it, or cleared it (D-37). */
+export function isObserverSky(weather: SurveyWeather | null | undefined): boolean {
+  return editedOf(weather).includes("sky") && isWeatherSkyCode(weather?.sky)
 }
 
 /**
- * True exactly when at least one shown value is still the provider's: the source is the
- * provider and a non-empty value of the four is not listed in `edited` (D-26). The line "Source :
+ * True exactly when at least one shown value is the provider's: the source is the provider and a
+ * number, or a sky the observer did not touch, is present (D-26, D-37). The observer's own sky is
+ * never Météo-France's, so a weather with only that sky shows no attribution. The line "Source :
  * Météo-France" follows the data.
  */
 export function showsProviderAttribution(weather: SurveyWeather | null | undefined): boolean {
   if (!weather || weather.source !== "meteo_france") return false
-  const edited = editedOf(weather)
-  return VALUE_KEYS.some(
-    (key) => !edited.includes(key) && weather[key] !== null && weather[key] !== undefined,
+  const providerSky = isWeatherSkyCode(weather.sky) && !editedOf(weather).includes("sky")
+  return (
+    providerSky ||
+    PROVIDER_NUMBER_KEYS.some((key) => weather[key] !== null && weather[key] !== undefined)
   )
 }
 
@@ -180,42 +142,25 @@ export function showsProviderAttribution(weather: SurveyWeather | null | undefin
  * The attribution line under the weather values: "Source : Météo-France, mesure du dd/mm/yyyy à
  * HH:mm" (D-26, D-31: the licence asks for the source and the date of the data). Null when no
  * shown value is the provider's (`showsProviderAttribution`); without a readable `observed_at` it
- * is "Source : Météo-France" alone. When the observer edited some values but not all, it ends with
- * "certaines valeurs modifiées par l'observateur" (D-31).
+ * is "Source : Météo-France" alone. When the sky shown is the observer's it ends with "ciel saisi
+ * par l'observateur" (D-37), so no value they chose is presented as the provider's (D-31).
  */
 export function weatherSourceLine(weather: SurveyWeather | null | undefined): string | null {
   if (!showsProviderAttribution(weather)) return null
   const stamp = observationStamp(weather)
   const t = fr.conditions.weather
-  // Some provider values are shown beside values the observer changed: say so (D-31, no alteration).
-  if (editedOf(weather).length > 0) return stamp ? t.sourceMixedDated(stamp) : t.sourceMixed
+  if (isObserverSky(weather)) return stamp ? t.sourceObserverSkyDated(stamp) : t.sourceObserverSky
   return stamp ? t.sourceDated(stamp) : t.source
 }
 
 /**
- * The very short mention on the summary card (D-35): "Météo-France" while a shown value is still
- * the provider's, "Météo-France, en partie modifiée" when the observer changed some of them, and
- * null when none is (D-26, D-31: never presented as the provider's). The dated sentence stays in
+ * The very short mention on the summary card (D-35, D-37): "Météo-France" while the provider's
+ * values are shown, null otherwise. It is never qualified ("en partie modifiée" is gone: only the
+ * sky can be changed, and that is said in the dated sentence); the dated sentence stays in
  * `weatherSourceLine`, for the detail view.
  */
 export function weatherCardMention(weather: SurveyWeather | null | undefined): string | null {
-  if (!showsProviderAttribution(weather)) return null
-  const t = fr.conditions.summary
-  return editedOf(weather).length > 0 ? t.mentionPartlyEdited : t.mention
-}
-
-/**
- * Where the shown values come from. Null when there is nothing to show. A weather that the
- * provider filled and the observer then touched is "edited".
- */
-export function weatherProvenance(
-  weather: SurveyWeather | null | undefined,
-): WeatherProvenance | null {
-  if (!weather || !hasWeatherValues(weather)) return null
-  if (weather.source === "meteo_france") {
-    return editedOf(weather).length > 0 ? "edited" : "prefilled"
-  }
-  return "manual"
+  return showsProviderAttribution(weather) ? fr.conditions.summary.mention : null
 }
 
 /**
@@ -252,40 +197,19 @@ export function mergeWeatherObservation(
 }
 
 /**
- * The observer sets or clears one value: the key joins `edited` (canonical order, no duplicate),
- * numbers are rounded, an unknown sky code or a wrong type becomes a clearing. The source becomes
- * "manual" only when it was not already "meteo_france".
+ * The observer sets or clears the sky, the only value they can change (D-37): "sky" joins `edited`,
+ * which protects the choice from a later provider answer, and an unknown code becomes a clearing.
+ * The source becomes "manual" only when it was not already "meteo_france".
  */
-export function editWeatherValue(
+export function editWeatherSky(
   current: SurveyWeather | null | undefined,
-  key: WeatherEditableKey,
-  value: string | number | null,
+  sky: WeatherSkyCode | null,
 ): SurveyWeather {
   const next: SurveyWeather = { ...current }
-  switch (key) {
-    case "sky":
-      next.sky = isWeatherSkyCode(value) ? value : null
-      break
-    case "observed_at":
-      next.observed_at = typeof value === "string" && value.length > 0 ? value : null
-      break
-    default:
-      next[key] = typeof value === "number" ? finiteOrNull(value) : null
-  }
-  next.edited = orderedEdited([...editedOf(current), key])
+  next.sky = isWeatherSkyCode(sky) ? sky : null
+  next.edited = ["sky"]
   if (current?.source !== "meteo_france") next.source = "manual"
   return next
-}
-
-/**
- * "Remplir à nouveau" (U-03): every value and the edited list are cleared, `requested_at` is kept
- * so the lookup is still for the survey's time.
- */
-export function resetWeatherForRefill(current: SurveyWeather | null | undefined): SurveyWeather {
-  const reset: SurveyWeather = {}
-  if (current?.requested_at !== undefined) reset.requested_at = current.requested_at
-  reset.edited = []
-  return reset
 }
 
 /**
@@ -307,13 +231,15 @@ export function canonicalWeather(weather: SurveyWeather | null | undefined): Sur
   if (edited.length > 0) out.edited = edited
 
   const hasValue = WEATHER_EDITABLE_KEYS.some((key) => out[key] !== null && out[key] !== undefined)
-  if (!out.requested_at && !hasValue) return null
+  // A cleared sky (listed in `edited`) is kept: it protects the choice from a later answer.
+  if (!out.requested_at && !hasValue && edited.length === 0) return null
   return out
 }
 
 /**
- * Whether a draft still needs a provider lookup (D-11, D-20): no provider answer has been merged,
- * at least one editable value is untouched, and the survey time is at most 24 h old.
+ * Whether a draft still needs a provider lookup (D-11, D-20): no provider answer has been merged
+ * and the survey time is at most 24 h old. The numbers are never edited by the observer (D-37), so
+ * there is always something to fill.
  */
 export function needsWeatherLookup(
   weather: SurveyWeather | null | undefined,
@@ -324,9 +250,7 @@ export function needsWeatherLookup(
   const requestedAt = new Date(weather.requested_at).getTime()
   if (Number.isNaN(requestedAt)) return false
   const nowMs = typeof now === "number" ? now : now.getTime()
-  if (nowMs - requestedAt > WEATHER_LOOKBACK_MS) return false
-  const edited = editedOf(weather)
-  return WEATHER_EDITABLE_KEYS.some((key) => !edited.includes(key))
+  return nowMs - requestedAt <= WEATHER_LOOKBACK_MS
 }
 
 /**
@@ -368,12 +292,13 @@ export function weatherRequestTime(
 }
 
 /**
- * The one state of the weather status line (UI-SPEC 1.3). Values on screen decide first (prefilled,
- * edited, manual), because they must never be hidden by a request or a lost connection. Without
- * values: no parcel, then offline, then loading while a request is in flight, else unavailable
- * (a provider that is down, has nothing for that point and time, or a lookup still to come). The
- * `unavailable` input is the hook's last outcome; the three no-value states above it already
- * cover every case, so it does not change the result.
+ * The one state of the weather status line (UI-SPEC 1.3, D-37). The provider's measurements on
+ * screen decide first ("prefilled"), because a request or a lost connection must never hide them.
+ * Without them: no parcel, then offline, then loading while a request is in flight, else
+ * unavailable (a provider that is down, has nothing for that point and time, or a lookup still to
+ * come). The observer's sky does not change the line. The `unavailable` input is the hook's last
+ * outcome; the no-measurement states above it already cover every case, so it does not change the
+ * result.
  */
 export function weatherViewState(input: {
   hasParcel: boolean
@@ -382,12 +307,7 @@ export function weatherViewState(input: {
   unavailable: boolean
   weather: SurveyWeather | null | undefined
 }): WeatherViewState {
-  const provenance = weatherProvenance(input.weather)
-  if (provenance) return provenance
-  // The observer cleared every value the provider had given: still their weather, still refillable.
-  if (input.weather?.source === "meteo_france" && editedOf(input.weather).length > 0) {
-    return "edited"
-  }
+  if (showsProviderAttribution(input.weather)) return "prefilled"
   if (!input.hasParcel) return "noParcel"
   if (!input.online) return "offline"
   if (input.inFlight) return "loading"

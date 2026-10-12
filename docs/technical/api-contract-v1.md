@@ -339,7 +339,7 @@ that does not know them:
 | Field | Values | Meaning |
 |---|---|---|
 | `survey_note` | string of at most 1000 characters, or `null` | The free observation note of the whole survey (context, field remarks) |
-| `weather` | object, or `null` | The weather of the visit: `sky` (`clear`, `partly_cloudy`, `cloudy`, `overcast`, `fog`, `rain`, `thunderstorm`, `snow`), `temperature_c` (-40 to 55), `wind_kmh` (0 to 350), `rain_24h_mm` (0 to 1000), `observed_at` and `requested_at` (ISO 8601), `source` (`meteo_france` or `manual`), `edited` (list of touched keys). Every key is optional and nullable. At most 2048 bytes once serialised |
+| `weather` | object, or `null` | The weather of the visit: `sky` (`clear`, `partly_cloudy`, `cloudy`, `overcast`, `fog`, `rain`, `thunderstorm`, `snow`), `temperature_c` (-40 to 55), `wind_kmh` (0 to 350), `rain_24h_mm` (0 to 1000), `observed_at` and `requested_at` (ISO 8601), `source` (`meteo_france` or `manual`), `edited` (list of touched keys; since D-37 the app writes only `sky`, the measurements being read-only provider data, but the server still accepts the other keys). Every key is optional and nullable. At most 2048 bytes once serialised |
 | `factors.annotations` | object, or absent | The doubt and the note of each factor, inside `factors` (see [Factor annotations (phase 27)](#factor-annotations-phase-27)) |
 
 - **Absent keeps, `null` clears (D-04).** On a write with a higher `sync_version`, an absent

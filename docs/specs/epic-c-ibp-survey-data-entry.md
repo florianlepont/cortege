@@ -211,23 +211,25 @@ Acceptance criteria
 
 **Release:** V1 (phase 27, `REQ-C-weather-provider`, `REQ-C-weather-prefill`, `REQ-C-conditions-sync`)
 
-The weather of the visit (sky, temperature, wind, rain over the last 24 hours, observation time) is filled in from Météo-France once the parcel is chosen, so the observer only corrects it. The app reaches the provider only through the Cortege API.
+The weather of the visit (sky, temperature, wind, rain over the last 24 hours, observation time) is filled in from Météo-France once the parcel is chosen, so the observer only chooses the sky. The measurements are Météo-France data and are not editable (the licence forbids altering them); the sky is the observer's own judgement. The app reaches the provider only through the Cortege API.
 
-As a contributor, I want the weather of my survey pre-filled so I do not have to look it up or type it.
+As a contributor, I want the measurements of my survey pre-filled so I do not have to look them up or type them, and I want to say what the sky looked like.
 
 Acceptance criteria
 
 - Once the parcel is chosen and the network is there, the weather is requested for the centre of the parcel and the survey time, and the values the provider supplies appear in the "Conditions" section.
 
-- Every value can be edited by hand; a value the observer edited is never overwritten by a later lookup, and a "Remplir à nouveau" action replaces it only after a confirmation.
+- Only the sky can be set or cleared by the observer (eight choices, pressing the chosen one again clears it); temperature, wind, rain over 24 hours and the observation time are read-only values from Météo-France. A sky the observer set or cleared is never overwritten by a later lookup.
 
-- A value the provider does not supply stays empty for manual entry; an empty weather is valid.
+- A value the provider does not supply stays absent; an empty weather is valid.
 
 - Offline, or when the provider fails, the section stays empty with no error; when the network returns, the draft fills in for the survey time, not the reconnection time, as long as the survey is at most 24 hours old and the observer entered nothing there.
 
-- Older than 24 hours, the section stays empty and editable by hand.
+- Older than 24 hours, the measurements stay absent and only the sky can be chosen.
 
-- Wherever the provider values are shown or printed (Conditions section, survey summary, PDF) the line "Source : Météo-France" is shown.
+- A draft that has parcels but never got a survey time (made before phase 27, pulled, seeded) is stamped when its parcels change; as a safety net the lookup also takes its creation time as the survey time while that is within 24 hours, and never invents a time otherwise (D-39).
+
+- Wherever the provider values are shown or printed (Conditions section, survey summary, PDF) the line "Source : Météo-France" is shown; when the sky shown is the observer's it adds "ciel saisi par l'observateur", and a weather with only the observer's sky carries no Météo-France mention.
 
 - The weather syncs with the survey, is read-only once the survey is submitted, and is visible to the members who can read the survey.
 

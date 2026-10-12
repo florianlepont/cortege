@@ -148,6 +148,25 @@ describe("useWeatherPrefill", () => {
     expect(stored.S1).toEqual(mergeWeatherObservation({ requested_at: requestedAt }, OBSERVATION))
   })
 
+  test("a sky the observer set does not stop the lookup and is kept by the merge (D-37)", async () => {
+    const requestedAt = hoursAgo(1)
+    const observers: SurveyWeather = {
+      requested_at: requestedAt,
+      sky: null,
+      edited: ["sky"],
+      source: "manual",
+    }
+    mockList.mockResolvedValue([candidate("S1", observers)])
+    stored.S1 = observers
+
+    await mount()
+
+    await waitFor(() => expect(updateSurveyWeather).toHaveBeenCalledTimes(1))
+    expect(stored.S1?.sky).toBeNull()
+    expect(stored.S1?.temperature_c).toBe(OBSERVATION.temperature_c)
+    expect(stored.S1?.source).toBe("meteo_france")
+  })
+
   test("inFlightIds holds the id while the request runs", async () => {
     mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
     let release: (value: unknown) => void = () => undefined
@@ -192,17 +211,13 @@ describe("useWeatherPrefill", () => {
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
-  test("never fetches a candidate older than 24 h, a provider-filled one, or an all-edited one", async () => {
+  test("never fetches a candidate older than 24 h or a provider-filled one", async () => {
     mockList.mockResolvedValue([
       candidate("OLD", { requested_at: hoursAgo(25) }),
       candidate("DONE", { requested_at: hoursAgo(1), source: "meteo_france" }),
-      candidate("EDITED", {
-        requested_at: hoursAgo(1),
-        edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm", "observed_at"],
-      }),
     ])
 
-    await mount({ surveys: [localSurvey("OLD"), localSurvey("DONE"), localSurvey("EDITED")] })
+    await mount({ surveys: [localSurvey("OLD"), localSurvey("DONE")] })
     await act(async () => {
       await Promise.resolve()
     })
@@ -439,47 +454,6 @@ describe("useWeatherPrefill", () => {
     })
 
     expect(mockSavePoint).toHaveBeenCalledTimes(1)
-    expect(mockFetch).not.toHaveBeenCalled()
-  })
-
-  test("refill resets the weather to its survey time, then fetches at once", async () => {
-    const requestedAt = hoursAgo(1)
-    const filled: SurveyWeather = {
-      requested_at: requestedAt,
-      temperature_c: 3,
-      source: "manual",
-      edited: ["temperature_c"],
-    }
-    stored.S1 = filled
-    // At mount the draft has no candidate yet (nothing to ask); the refill then exposes it.
-    mockList.mockResolvedValue([])
-    const { result } = await mount()
-    await act(async () => {
-      await Promise.resolve()
-    })
-    mockList.mockImplementation(async () => [
-      candidate("S1", stored.S1 ?? { requested_at: requestedAt }),
-    ])
-    mockFetch.mockClear()
-
-    await act(async () => {
-      await result.current.actions.refill("S1")
-    })
-
-    expect(stored.S1).toEqual(mergeWeatherObservation({ requested_at: requestedAt }, OBSERVATION))
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-  })
-
-  test("refill on a submitted survey (write refused) does not fetch", async () => {
-    updateSurveyWeather.mockResolvedValue(false)
-    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
-    mockFetch.mockClear()
-    const { result } = await mount({ accessToken: null })
-
-    await act(async () => {
-      await result.current.actions.refill("S1")
-    })
-
     expect(mockFetch).not.toHaveBeenCalled()
   })
 

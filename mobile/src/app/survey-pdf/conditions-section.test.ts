@@ -147,50 +147,56 @@ describe("buildConditionsBlock weather rows", () => {
     expect(html).not.toContain("conditions-note")
   })
 
-  it("names the observer's edit when a provider value was edited", () => {
-    const { html: edited } = required({
+  it("says the sky is the observer's when they set it beside the provider's values (D-37)", () => {
+    const { html: observers } = required({
       note: null,
-      weather: { ...WEATHER, temperature_c: 15, edited: ["temperature_c"] },
+      weather: { ...WEATHER, sky: "fog", edited: ["sky"] },
     })
 
-    expect(edited).toContain(
-      "Météo-France, mesure du 10/10/2026 à 14:30, certaines valeurs modifiées par l&#39;observateur",
+    expect(observers).toContain(
+      "Météo-France, mesure du 10/10/2026 à 14:30, ciel saisi par l&#39;observateur",
     )
 
-    const { html: partial } = required({
+    const { html: undated } = required({
       note: null,
-      weather: { ...WEATHER, observed_at: undefined, temperature_c: 15, edited: ["temperature_c"] },
+      weather: { ...WEATHER, observed_at: undefined, sky: "fog", edited: ["sky"] },
     })
-    expect(partial).toContain(">Météo-France, certaines valeurs modifiées par l&#39;observateur<")
+    expect(undated).toContain(">Météo-France, ciel saisi par l&#39;observateur<")
+    expect(observers).not.toContain("certaines valeurs")
   })
 
-  it("keeps the plain edited wording when every provider value was edited", () => {
-    const { html: all } = required({
+  it("adds no clause when the observer cleared the sky: nothing of theirs is printed", () => {
+    const { html: cleared } = required({
       note: null,
-      weather: { ...WEATHER, edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"] },
+      weather: { ...WEATHER, sky: null, edited: ["sky"] },
     })
 
-    expect(all).toContain(
-      ">Météo-France, mesure du 10/10/2026 à 14:30, modifiée par l&#39;observateur</td>",
-    )
-    expect(all).not.toContain("certaines valeurs")
+    expect(cleared).toContain(">Météo-France, mesure du 10/10/2026 à 14:30</td>")
+    expect(cleared).not.toContain("observateur")
   })
 
-  it("names the observer when the weather was typed by hand", () => {
+  it("names the observer, and no Météo-France, when only their sky is printed", () => {
     const { html: manual } = required({
       note: null,
-      weather: { sky: "clear", source: "manual", edited: [] },
+      weather: { sky: "clear", source: "manual", edited: ["sky"] },
     })
 
-    expect(manual).toContain("Saisie par l&#39;observateur")
+    expect(manual).toContain("Ciel saisi par l&#39;observateur")
     expect(manual).not.toContain("Météo-France")
     expect(manual).not.toContain("mesure du")
+
+    // The provider answered but its numbers are empty and the sky is the observer's.
+    const { html: skyOnly } = required({
+      note: null,
+      weather: { sky: "rain", source: "meteo_france", edited: ["sky"] },
+    })
+    expect(skyOnly).not.toContain("Météo-France")
   })
 
   it("prints only the values that exist and ends without a time when none was recorded", () => {
     const { html: partial } = required({
       note: null,
-      weather: { temperature_c: 9.5, source: "manual", edited: [] },
+      weather: { temperature_c: 9.5, source: "meteo_france" },
     })
 
     expect(partial).toContain("9,5\u00a0°C.")
@@ -201,10 +207,19 @@ describe("buildConditionsBlock weather rows", () => {
   it("falls back to the survey time when the station time is absent", () => {
     const { html: fromRequest } = required({
       note: null,
-      weather: { sky: "clear", requested_at: OBSERVED_AT, source: "manual", edited: [] },
+      weather: { temperature_c: 9, requested_at: OBSERVED_AT, source: "meteo_france" },
     })
 
     expect(fromRequest).toContain("observée à 14:30.")
+  })
+
+  it("prints no observation time for the observer's sky alone", () => {
+    const { html: skyOnly } = required({
+      note: null,
+      weather: { sky: "clear", requested_at: OBSERVED_AT, source: "manual", edited: ["sky"] },
+    })
+
+    expect(skyOnly).not.toContain("observée")
   })
 })
 

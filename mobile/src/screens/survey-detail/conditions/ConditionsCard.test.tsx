@@ -147,14 +147,12 @@ describe("ConditionsCard attribution (D-26, D-35)", () => {
     expect(texts(tree).join(" ")).not.toContain("Source :")
   })
 
-  test("hides it for a manual weather and when every value was edited", () => {
+  test("hides it for a manual weather and for the observer's sky alone (D-37)", () => {
     const manual = mount({ weather: { ...CLOUDY, source: "manual" } })
     expect(texts(manual.tree).join(" ")).not.toContain("Météo-France")
 
-    const edited = mount({
-      weather: { ...CLOUDY, edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"] },
-    })
-    expect(texts(edited.tree).join(" ")).not.toContain("Météo-France")
+    const skyOnly = mount({ weather: { sky: "rain", edited: ["sky"], source: "meteo_france" } })
+    expect(texts(skyOnly.tree).join(" ")).not.toContain("Météo-France")
   })
 
   test("carries no date and no sentence, the date is in the Contexte page (D-31 detail view)", () => {
@@ -166,11 +164,11 @@ describe("ConditionsCard attribution (D-26, D-35)", () => {
     expect(texts(tree).join(" ")).not.toContain("mesure du")
   })
 
-  test("says the weather is partly modified when only some values were edited", () => {
-    const { tree } = mount({ weather: { ...CLOUDY, edited: ["temperature_c"] } })
+  test("stays the bare mention when the observer set the sky, never 'en partie modifiée' (D-37)", () => {
+    const { tree } = mount({ weather: { ...CLOUDY, sky: null, edited: ["sky"] } })
 
-    expect(texts(tree)).toContain("Météo-France, en partie modifiée")
-    expect(texts(tree)).not.toContain(t.summary.mention)
+    expect(texts(tree)).toContain(t.summary.mention)
+    expect(texts(tree).join(" ")).not.toContain("modifiée")
   })
 })
 

@@ -1,6 +1,5 @@
 import { type SurveyWeather } from "@cortege/ibp-domain"
-import { useRef } from "react"
-import { LayoutChangeEvent, StyleSheet, View } from "react-native"
+import { StyleSheet, View } from "react-native"
 import { type WeatherViewState } from "../../../app/weather"
 import { brandSpacing4 } from "../../../app/brand-tokens"
 import { fr } from "../../../i18n"
@@ -18,9 +17,6 @@ type ConditionsSectionProps = {
   viewState: WeatherViewState
   onEditWeather: (update: (current: SurveyWeather | null) => SurveyWeather | null) => void
   onRetry: () => void
-  onRefill: () => void
-  /** Called when a field takes focus, with its top inside this section (header included). */
-  onFieldFocus?: (y: number) => void
 }
 
 /**
@@ -35,11 +31,7 @@ export function ConditionsSection({
   viewState,
   onEditWeather,
   onRetry,
-  onRefill,
-  onFieldFocus,
 }: ConditionsSectionProps) {
-  const weatherTop = useRef(0)
-
   return (
     <View style={styles.section} testID="conditions-section">
       <AppSectionHeader
@@ -50,20 +42,12 @@ export function ConditionsSection({
       {!conditions.loaded ? null : !editable ? (
         <ConditionsReadOnly weather={conditions.weather} emptyMode="line" showTitle={false} />
       ) : (
-        <View
-          onLayout={(event: LayoutChangeEvent) => {
-            weatherTop.current = event.nativeEvent.layout.y
-          }}
-        >
-          <WeatherBlock
-            weather={conditions.weather}
-            viewState={viewState}
-            onEditWeather={onEditWeather}
-            onRetry={onRetry}
-            onRefill={onRefill}
-            onFieldFocus={onFieldFocus ? (y) => onFieldFocus(weatherTop.current + y) : undefined}
-          />
-        </View>
+        <WeatherBlock
+          weather={conditions.weather}
+          viewState={viewState}
+          onEditWeather={onEditWeather}
+          onRetry={onRetry}
+        />
       )}
     </View>
   )

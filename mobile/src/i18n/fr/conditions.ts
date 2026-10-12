@@ -2,7 +2,7 @@
 // card and the read-only views. Units are written after a no-break space (U+00A0, written
 // \u00a0 so it stays visible in the source) so a value never wraps away from its unit.
 // "Source : Météo-France" is the attribution required by the data licence (D-26), with the date
-// of the data (D-31): `date` is "dd/mm/yyyy" and `time` "HH:mm", both from the local clock.
+// of the data (D-31) and, when the sky is the observer's, a clause saying so (D-37): `date` is "dd/mm/yyyy" and `time` "HH:mm", both from the local clock.
 type DataStamp = { date: string; time: string }
 export const conditionsFr = {
   // The Contexte page section (D-33: the note left it, so it is the weather only).
@@ -24,70 +24,35 @@ export const conditionsFr = {
   },
   weather: {
     title: "Météo",
-    fields: {
-      temperature: {
-        label: "Température",
-        unit: "°C",
-        placeholder: "ex. 14",
-        a11y: "Température, en degrés Celsius",
-        range: "Entre -40 et 55\u00a0°C",
-      },
-      wind: {
-        label: "Vent",
-        unit: "km/h",
-        placeholder: "ex. 12",
-        a11y: "Vent, en kilomètres par heure",
-        range: "Entre 0 et 350\u00a0km/h",
-      },
-      rain: {
-        label: "Pluie sur 24\u00a0h",
-        unit: "mm",
-        placeholder: "ex. 2",
-        a11y: "Pluie sur les 24 dernières heures, en millimètres",
-        range: "Entre 0 et 1000\u00a0mm",
-      },
-      time: {
-        label: "Heure",
-        placeholder: "ex. 14:30",
-        a11y: "Heure de l'observation, heures et minutes",
-        invalid: "Écrivez l'heure ainsi : 14:30",
-      },
+    // The label and value rows of the provider's measurements (read-only, D-37).
+    rows: {
+      temperature: "Température",
+      wind: "Vent",
+      rain: "Pluie sur 24\u00a0h",
+      time: "Heure de la mesure",
     },
+    // The status line speaks of the measurements only; the sky is the observer's own choice (D-37).
     status: {
       noParcel:
-        "La météo se remplit toute seule une fois la parcelle choisie. Vous pouvez aussi la saisir.",
+        "Les mesures de Météo-France s'affichent une fois la parcelle choisie. Vous pouvez déjà indiquer le ciel.",
       loading: "Recherche de la météo…",
-      prefilled: "Préremplie d'après Météo-France pour l'heure indiquée.",
+      prefilled: "Mesures de Météo-France pour l'heure du relevé.",
       prefilledDated: ({ date, time }: DataStamp) =>
-        `Préremplie d'après Météo-France, mesure du ${date} à ${time}.`,
-      edited:
-        "Préremplie d'après Météo-France, modifiée par vous. Vos valeurs ne seront pas remplacées.",
-      editedDated: ({ date, time }: DataStamp) =>
-        `Préremplie d'après Météo-France, mesure du ${date} à ${time}, modifiée par vous. Vos valeurs ne seront pas remplacées.`,
-      manual: "Saisie par vous.",
+        `Mesures de Météo-France, mesure du ${date} à ${time}.`,
       offline:
-        "Pas de connexion. La météo se remplira quand le réseau reviendra, vous pouvez aussi la saisir.",
+        "Pas de connexion. Les mesures de Météo-France arriveront quand le réseau reviendra. Vous pouvez déjà indiquer le ciel.",
       unavailable:
-        "La météo n'est pas disponible pour le moment. Elle se remplira plus tard, vous pouvez aussi la saisir.",
+        "Les mesures de Météo-France ne sont pas disponibles pour le moment. Elles arriveront plus tard si possible. Vous pouvez indiquer le ciel.",
       retry: "Réessayer",
-      refill: "Remplir à nouveau",
-      refillA11y: "Remplir à nouveau la météo avec Météo-France",
-    },
-    refillConfirm: {
-      title: "Remplacer vos valeurs ?",
-      message:
-        "Les valeurs que vous avez modifiées seront remplacées par la météo de Météo-France.",
-      confirm: "Remplacer",
-      cancel: "Annuler",
     },
     source: "Source : Météo-France",
     // The same line with the date of the data (D-31: the licence asks for it).
     sourceDated: ({ date, time }: DataStamp) =>
       `Source : Météo-France, mesure du ${date} à ${time}`,
-    // Some provider values are still shown, others were modified: never presented as plain data.
-    sourceMixed: "Source : Météo-France, certaines valeurs modifiées par l'observateur",
-    sourceMixedDated: ({ date, time }: DataStamp) =>
-      `Source : Météo-France, mesure du ${date} à ${time}, certaines valeurs modifiées par l'observateur`,
+    // The sky shown is the observer's: it is never presented as the provider's (D-31, D-37).
+    sourceObserverSky: "Source : Météo-France, ciel saisi par l'observateur",
+    sourceObserverSkyDated: ({ date, time }: DataStamp) =>
+      `Source : Météo-France, mesure du ${date} à ${time}, ciel saisi par l'observateur`,
     // One value with its unit, for the label and value rows of the read-only card.
     values: {
       temperature: (value: string) => `${value}\u00a0°C`,
@@ -113,13 +78,8 @@ export const conditionsFr = {
   },
   readOnly: {
     empty: "Météo non renseignée.",
-    sourcePrefilled: "Source : Météo-France.",
-    sourcePrefilledDated: ({ date, time }: DataStamp) =>
-      `Source : Météo-France, mesure du ${date} à ${time}.`,
-    sourceEdited: "Préremplie d'après Météo-France, modifiée par l'observateur.",
-    sourceEditedDated: ({ date, time }: DataStamp) =>
-      `Préremplie d'après Météo-France, mesure du ${date} à ${time}, modifiée par l'observateur.`,
-    sourceManual: "Saisie par l'observateur.",
+    // Only the sky, chosen by the observer, with no measurement from the provider (D-37).
+    sourceManual: "Ciel saisi par l'observateur.",
   },
   summary: {
     emptyTitle: "Météo du relevé",
@@ -129,6 +89,5 @@ export const conditionsFr = {
     openWithLine: (line: string) => `Ouvrir la météo du relevé. ${line}`,
     // D-35: the whole attribution on the card, very short; the dated sentence is in the detail.
     mention: "Météo-France",
-    mentionPartlyEdited: "Météo-France, en partie modifiée",
   },
 } as const

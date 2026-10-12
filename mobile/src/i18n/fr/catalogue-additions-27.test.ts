@@ -102,25 +102,21 @@ describe("fr.surveyExport conditions", () => {
     expect(conditions.weatherSentence({ line: "Nuageux", time: null })).toBe("Nuageux.")
   })
 
-  test("the three source values, Météo-France first (D-26)", () => {
-    expect(conditions.sourceValue.prefilled).toBe("Météo-France")
-    expect(conditions.sourceValue.edited).toBe("Météo-France, modifiée par l'observateur")
-    expect(conditions.sourceValue.manual).toBe("Saisie par l'observateur")
+  test("the source values, Météo-France first (D-26, D-37)", () => {
+    expect(conditions.sourceValue.provider).toBe("Météo-France")
+    expect(conditions.sourceValue.providerObserverSky).toBe(
+      "Météo-France, ciel saisi par l'observateur",
+    )
+    expect(conditions.sourceValue.manual).toBe("Ciel saisi par l'observateur")
   })
 
   test("the dated source values name the measurement (D-31)", () => {
     const stamp = { date: "12/10/2026", time: "04:00" }
-    expect(conditions.sourceValue.prefilledDated(stamp)).toBe(
+    expect(conditions.sourceValue.providerDated(stamp)).toBe(
       "Météo-France, mesure du 12/10/2026 à 04:00",
     )
-    expect(conditions.sourceValue.editedDated(stamp)).toBe(
-      "Météo-France, mesure du 12/10/2026 à 04:00, modifiée par l'observateur",
-    )
-    expect(conditions.sourceValue.mixed).toBe(
-      "Météo-France, certaines valeurs modifiées par l'observateur",
-    )
-    expect(conditions.sourceValue.mixedDated(stamp)).toBe(
-      "Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
+    expect(conditions.sourceValue.providerObserverSkyDated(stamp)).toBe(
+      "Météo-France, mesure du 12/10/2026 à 04:00, ciel saisi par l'observateur",
     )
   })
 })

@@ -3,12 +3,7 @@ import { AppState } from "react-native"
 import type { SurveyWeather } from "@cortege/ibp-domain"
 import { ApiError } from "../api/client"
 import { fetchWeather } from "../api/weather-api"
-import {
-  mergeWeatherObservation,
-  needsWeatherLookup,
-  resetWeatherForRefill,
-  weatherRequestTime,
-} from "../app/weather"
+import { mergeWeatherObservation, needsWeatherLookup, weatherRequestTime } from "../app/weather"
 import type { PublicParcelStatusItem } from "../app/types"
 import { logStatusDetail } from "../i18n"
 import { cachedParcelCentre } from "../map/own-surveys"
@@ -62,8 +57,6 @@ export type WeatherPrefillActions = {
   rememberPoint(surveyId: string, point: WeatherPoint): Promise<void>
   /** "Réessayer": asks again at once. */
   retry(surveyId: string): Promise<void>
-  /** "Remplir à nouveau": clears the values and asks again at once. */
-  refill(surveyId: string): Promise<void>
 }
 
 type UseWeatherPrefillParams = {
@@ -268,14 +261,6 @@ export function useWeatherPrefill(params: UseWeatherPrefillParams): {
       await startPass({ onlyId: surveyId, force: true })
     },
     async retry(surveyId) {
-      settledAt.current.delete(surveyId)
-      await startPass({ onlyId: surveyId, force: true })
-    },
-    async refill(surveyId) {
-      const written = await latest.current.updateSurveyWeather(surveyId, (current) =>
-        resetWeatherForRefill(current),
-      )
-      if (!written) return
       settledAt.current.delete(surveyId)
       await startPass({ onlyId: surveyId, force: true })
     },

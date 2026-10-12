@@ -213,27 +213,17 @@ describe("Conditions section (phase 27, D-15)", () => {
     expect(section(render()).viewState).toBe("prefilled")
   })
 
-  test("sends the weather edits and the two weather links to the survey's actions", () => {
+  test("sends the weather edits and the retry link to the survey's actions", () => {
     const onEditWeather = jest.fn()
     const onRetryWeather = jest.fn()
-    const onRefillWeather = jest.fn()
-    const props = section(render(false, { onEditWeather, onRetryWeather, onRefillWeather }))
+    const props = section(render(false, { onEditWeather, onRetryWeather }))
     const update = (current: unknown) => current
 
     props.onEditWeather(update)
     props.onRetry()
-    props.onRefill()
 
     expect(onEditWeather).toHaveBeenCalledWith("survey-1", update)
     expect(onRetryWeather).toHaveBeenCalledWith("survey-1")
-    expect(onRefillWeather).toHaveBeenCalledWith("survey-1")
-  })
-
-  test("the page lets taps through, closes the keyboard on drag and lifts above it", () => {
-    const scroll = render().root.findByType("ScrollView" as never)
-    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled")
-    expect(scroll.props.keyboardDismissMode).toBe("on-drag")
-    expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true)
   })
 })
 
@@ -309,27 +299,6 @@ describe("section param (opens scrolled to the Conditions)", () => {
     const tree = render()
     measure(tree, 900)
     resize(tree)
-
-    expect(mockScrollTo).not.toHaveBeenCalled()
-  })
-
-  test("a field that takes focus is scrolled into view with its label", () => {
-    const tree = render()
-    measure(tree, 900)
-
-    act(() => {
-      tree.root.findByType("ConditionsSection" as never).props.onFieldFocus(120)
-    })
-
-    expect(mockScrollTo).toHaveBeenCalledWith({ y: 1012, animated: true })
-  })
-
-  test("a focus before the section was measured scrolls nowhere", () => {
-    const tree = render()
-
-    act(() => {
-      tree.root.findByType("ConditionsSection" as never).props.onFieldFocus(120)
-    })
 
     expect(mockScrollTo).not.toHaveBeenCalled()
   })

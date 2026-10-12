@@ -15,9 +15,6 @@ import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { TitledScrollView } from "../ui/TitledScrollView"
 
-/** Room kept above a field that is scrolled into view, so its label stays visible. */
-const FIELD_TOP_MARGIN = 8
-
 /**
  * "Contexte" (OA-46, D-32): the method and the station context, then the weather with its status
  * line and the full dated source sentence (phase 27 D-15). The parcels and their map are the
@@ -38,7 +35,6 @@ export function SurveyContextScreen({
   onSwitchToV32,
   onEditWeather,
   onRetryWeather,
-  onRefillWeather,
 }: SurveyContextScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
@@ -87,27 +83,11 @@ export function SurveyContextScreen({
     scrollToSection()
   }, [scrollToSection])
 
-  // A field of the Conditions that takes focus is brought into view with its label.
-  const onFieldFocus = useCallback(
-    (y: number) => {
-      if (sectionY.current === null) return
-      scrollRef.current?.scrollTo({
-        y: Math.max(0, sectionY.current + y - FIELD_TOP_MARGIN),
-        animated: !reduceMotion,
-      })
-    },
-    [reduceMotion],
-  )
-
   const editWeather = useCallback(
     (update: Parameters<typeof onEditWeather>[1]) => void onEditWeather(surveyId, update),
     [onEditWeather, surveyId],
   )
   const retryWeather = useCallback(() => void onRetryWeather(surveyId), [onRetryWeather, surveyId])
-  const refillWeather = useCallback(
-    () => void onRefillWeather(surveyId),
-    [onRefillWeather, surveyId],
-  )
 
   return (
     <TitledScrollView
@@ -117,11 +97,6 @@ export function SurveyContextScreen({
       style={styles.scroll}
       contentContainerStyle={contentStyle}
       contentInsetAdjustmentBehavior={insetBehavior}
-      // The Conditions hold text fields: taps reach buttons while the keyboard is up, dragging the
-      // page closes it, and iOS lifts the content above it (UI-SPEC 1.6).
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      automaticallyAdjustKeyboardInsets
       onContentSizeChange={onContentSizeChange}
     >
       <PageTitle>{fr.navigation.headers.surveyContext}</PageTitle>
@@ -146,8 +121,6 @@ export function SurveyContextScreen({
           viewState={conditionsViewState}
           onEditWeather={editWeather}
           onRetry={retryWeather}
-          onRefill={refillWeather}
-          onFieldFocus={onFieldFocus}
         />
       </View>
     </TitledScrollView>

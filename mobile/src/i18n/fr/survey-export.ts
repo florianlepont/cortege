@@ -120,18 +120,15 @@ export const surveyExportFr = {
     weatherSentence: ({ line, time }: { line: string; time: string | null }) =>
       time === null ? `${line}.` : `${line}, observée à ${time}.`,
     sourceValue: {
-      prefilled: "Météo-France",
-      edited: "Météo-France, modifiée par l'observateur",
+      provider: "Météo-France",
       // With the date of the data (D-31: the licence asks for it next to the source).
-      prefilledDated: ({ date, time }: { date: string; time: string }) =>
+      providerDated: ({ date, time }: { date: string; time: string }) =>
         `Météo-France, mesure du ${date} à ${time}`,
-      editedDated: ({ date, time }: { date: string; time: string }) =>
-        `Météo-France, mesure du ${date} à ${time}, modifiée par l'observateur`,
-      // Some values are still the provider's and others were modified (D-31).
-      mixed: "Météo-France, certaines valeurs modifiées par l'observateur",
-      mixedDated: ({ date, time }: { date: string; time: string }) =>
-        `Météo-France, mesure du ${date} à ${time}, certaines valeurs modifiées par l'observateur`,
-      manual: "Saisie par l'observateur",
+      // The sky is the observer's, never the provider's (D-37).
+      providerObserverSky: "Météo-France, ciel saisi par l'observateur",
+      providerObserverSkyDated: ({ date, time }: { date: string; time: string }) =>
+        `Météo-France, mesure du ${date} à ${time}, ciel saisi par l'observateur`,
+      manual: "Ciel saisi par l'observateur",
     },
   },
   // The "Score =" column of the CNPF sheet (v3.2) and the on-screen hints (v3.0), as display text.

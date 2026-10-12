@@ -449,7 +449,6 @@ function makeFixture(
       actions: {
         rememberPoint: jest.fn(async () => undefined),
         retry: jest.fn(async () => undefined),
-        refill: jest.fn(async () => undefined),
       },
     },
     autosaveStatus: { state: "idle", savedAt: null },
@@ -1234,7 +1233,6 @@ describe("SurveyContextRoute", () => {
     expect(props("surveyContext").onChangeNote).toBeUndefined()
     expect(props("surveyContext").onEditWeather).toBe(fixture.surveys.actions.updateSurveyWeather)
     expect(props("surveyContext").onRetryWeather).toBe(fixture.weather.actions.retry)
-    expect(props("surveyContext").onRefillWeather).toBe(fixture.weather.actions.refill)
   })
 
   test("tells the page what the weather request of the survey is doing", async () => {

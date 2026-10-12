@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons"
 import type { SurveyWeather } from "@cortege/ibp-domain"
 import { setReducedMotion } from "../../../../test/react-native-reanimated.mock"
 import { defaultTheme } from "../../../app/theme"
-import { editWeatherValue, type WeatherViewState } from "../../../app/weather"
+import { editWeatherSky, type WeatherViewState } from "../../../app/weather"
 import { fr } from "../../../i18n"
 import { ConditionsReadOnly } from "./ConditionsReadOnly"
 import { ConditionsSection } from "./ConditionsSection"
@@ -81,7 +81,6 @@ function sectionProps(over: Partial<SectionProps> = {}): SectionProps {
     viewState: "noParcel",
     onEditWeather: jest.fn(),
     onRetry: jest.fn(),
-    onRefill: jest.fn(),
     ...over,
   }
 }
@@ -110,12 +109,12 @@ function texts(tree: ReactTestRenderer): string[] {
 const glyphs = (tree: ReactTestRenderer): string[] =>
   tree.root.findAll((node) => node.type === Ionicons).map((node) => node.props.name as string)
 
-describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
+describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
   const CASES: {
     state: WeatherViewState
     glyph: string | null
     text: string
-    link: "retry" | "refill" | null
+    link: "retry" | null
   }[] = [
     {
       state: "noParcel",
@@ -130,13 +129,6 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
       text: t.weather.status.prefilled,
       link: null,
     },
-    {
-      state: "edited",
-      glyph: "cloud-done-outline",
-      text: t.weather.status.edited,
-      link: "refill",
-    },
-    { state: "manual", glyph: "create-outline", text: t.weather.status.manual, link: null },
     {
       state: "offline",
       glyph: "cloud-offline-outline",
@@ -164,10 +156,11 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
       expect(tree.root.findAll((n) => (n.type as unknown) === "ActivityIndicator")).toHaveLength(1)
     }
     expect(maybeByTestId(tree, "conditions-retry") !== undefined).toBe(item.link === "retry")
-    expect(maybeByTestId(tree, "conditions-refill") !== undefined).toBe(item.link === "refill")
+    // The measurements cannot be refilled or edited any more (D-37).
+    expect(maybeByTestId(tree, "conditions-refill")).toBeUndefined()
   })
 
-  test("prefilled and edited carry the date of the data when it is known (D-31)", () => {
+  test("prefilled carries the date of the data when it is known (D-31)", () => {
     const weather: SurveyWeather = {
       sky: "cloudy",
       temperature_c: 14,
@@ -178,26 +171,8 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
     const prefilled = mount(
       <ConditionsSection {...sectionProps({ viewState: "prefilled", conditions })} />,
     )
-    expect(texts(prefilled)).toContain(
-      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00.",
-    )
+    expect(texts(prefilled)).toContain("Mesures de Météo-France, mesure du 12/10/2026 à 04:00.")
     expect(texts(prefilled)).toContain("Source : Météo-France, mesure du 12/10/2026 à 04:00")
-
-    const edited = mount(
-      <ConditionsSection
-        {...sectionProps({
-          viewState: "edited",
-          conditions: { ...LOADED_EMPTY, weather: { ...weather, edited: ["temperature_c"] } },
-        })}
-      />,
-    )
-    expect(texts(edited)).toContain(
-      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00, modifiée par vous. Vos valeurs ne seront pas remplacées.",
-    )
-    // Some values are still the provider's: the source line says that others were modified.
-    expect(texts(edited)).toContain(
-      "Source : Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
-    )
   })
 
   test("no state says error and no glyph takes a danger colour", () => {
@@ -214,7 +189,7 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
     }
   })
 
-  test("the retry link asks again, the refill link asks first", () => {
+  test("the retry link asks again", () => {
     const onRetry = jest.fn()
     const retry = mount(
       <ConditionsSection {...sectionProps({ viewState: "unavailable", onRetry })} />,
@@ -223,37 +198,7 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
       byTestId(retry, "conditions-retry").props.onPress()
     })
     expect(onRetry).toHaveBeenCalledTimes(1)
-
-    const onRefill = jest.fn()
-    const refill = mount(<ConditionsSection {...sectionProps({ viewState: "edited", onRefill })} />)
-    act(() => {
-      byTestId(refill, "conditions-refill").props.onPress()
-    })
-    expect(onRefill).not.toHaveBeenCalled()
-    expect(mockAlert).toHaveBeenCalledTimes(1)
-    const [title, message, buttons] = mockAlert.mock.calls[0]
-    expect(title).toBe(t.weather.refillConfirm.title)
-    expect(message).toBe(t.weather.refillConfirm.message)
-    expect(buttons).toEqual([
-      { text: "Annuler", style: "cancel" },
-      { text: "Remplacer", style: "destructive", onPress: expect.any(Function) },
-    ])
-
-    act(() => {
-      buttons[1].onPress()
-    })
-    expect(onRefill).toHaveBeenCalledTimes(1)
-  })
-
-  test("cancelling the confirmation refills nothing", () => {
-    const onRefill = jest.fn()
-    const tree = mount(<ConditionsSection {...sectionProps({ viewState: "edited", onRefill })} />)
-    act(() => {
-      byTestId(tree, "conditions-refill").props.onPress()
-    })
-    const buttons = mockAlert.mock.calls[0][2] as { onPress?: () => void }[]
-    expect(buttons[0].onPress).toBeUndefined()
-    expect(onRefill).not.toHaveBeenCalled()
+    expect(mockAlert).not.toHaveBeenCalled()
   })
 
   test("iOS announces a change of the line once, not the first render", () => {
@@ -290,9 +235,61 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
   })
 })
 
-describe("ConditionsSection weather card", () => {
-  test("the source line shows exactly when a shown value is still the provider's", () => {
-    const provider: SurveyWeather = { sky: "cloudy", temperature_c: 14, source: "meteo_france" }
+describe("ConditionsSection weather card (D-37: only the sky is editable)", () => {
+  const OWNERS_WEATHER: SurveyWeather = {
+    sky: null,
+    edited: ["sky"],
+    source: "meteo_france",
+    wind_kmh: 7.2,
+    rain_24h_mm: 0,
+    observed_at: "2026-10-12T10:00:00Z",
+    requested_at: "2026-10-12T10:21:36.959Z",
+    temperature_c: 16.9,
+  }
+
+  test("shows the provider's measurements as read-only rows, with no text field", () => {
+    const tree = mount(
+      <ConditionsSection
+        {...sectionProps({
+          conditions: { ...LOADED_EMPTY, weather: OWNERS_WEATHER },
+          viewState: "prefilled",
+        })}
+      />,
+    )
+
+    const all = texts(tree)
+    expect(all).toEqual(
+      expect.arrayContaining([
+        t.weather.rows.temperature,
+        "16,9\u00a0°C",
+        t.weather.rows.wind,
+        "7,2\u00a0km/h",
+        t.weather.rows.rain,
+        "0\u00a0mm",
+        t.weather.rows.time,
+      ]),
+    )
+    expect(tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
+    expect(maybeByTestId(tree, "conditions-field-temperature")).toBeUndefined()
+    // The sky chips stay: eight of them.
+    expect(
+      tree.root.findAll(
+        (n) => typeof n.type === "string" && n.props.testID?.startsWith("conditions-sky-"),
+      ),
+    ).toHaveLength(8)
+  })
+
+  test("without provider data only the sky chips are offered, with the calm status line", () => {
+    for (const viewState of ["noParcel", "offline", "unavailable"] as const) {
+      const tree = mount(<ConditionsSection {...sectionProps({ viewState })} />)
+      expect(maybeByTestId(tree, "conditions-weather-rows")).toBeUndefined()
+      expect(texts(tree)).not.toContain(t.weather.rows.temperature)
+      expect(texts(tree)).toContain(t.weather.status[viewState])
+    }
+  })
+
+  test("the source line shows exactly when a shown value is the provider's, with the sky clause", () => {
+    const provider: SurveyWeather = { temperature_c: 14, source: "meteo_france" }
     const withSource = mount(
       <ConditionsSection
         {...sectionProps({
@@ -303,31 +300,35 @@ describe("ConditionsSection weather card", () => {
     )
     expect(texts(withSource)).toContain("Source : Météo-France")
 
-    const everyValueEdited = mount(
+    const observersSky = mount(
       <ConditionsSection
         {...sectionProps({
           conditions: {
             ...LOADED_EMPTY,
-            weather: { ...provider, edited: ["sky", "temperature_c"] },
+            weather: { ...provider, sky: "rain", edited: ["sky"] },
           },
-          viewState: "edited",
+          viewState: "prefilled",
         })}
       />,
     )
-    expect(texts(everyValueEdited)).not.toContain("Source : Météo-France")
+    expect(texts(observersSky)).toContain("Source : Météo-France, ciel saisi par l'observateur")
 
-    const manual = mount(
+    const skyOnly = mount(
       <ConditionsSection
         {...sectionProps({
-          conditions: { ...LOADED_EMPTY, weather: { temperature_c: 9, source: "manual" } },
-          viewState: "manual",
+          conditions: {
+            ...LOADED_EMPTY,
+            weather: { sky: "rain", edited: ["sky"], source: "manual" },
+          },
+          viewState: "noParcel",
         })}
       />,
     )
-    expect(texts(manual)).not.toContain("Source : Météo-France")
+    expect(texts(skyOnly).join(" ")).not.toContain("Météo-France,")
+    expect(texts(skyOnly)).not.toContain("Source : Météo-France")
   })
 
-  test("pressing a sky chip edits the sky through editWeatherValue", () => {
+  test("pressing a sky chip edits the sky through editWeatherSky", () => {
     const onEditWeather = jest.fn()
     const tree = mount(<ConditionsSection {...sectionProps({ onEditWeather })} />)
 
@@ -340,30 +341,34 @@ describe("ConditionsSection weather card", () => {
     const update = onEditWeather.mock.calls[0][0] as (
       current: SurveyWeather | null,
     ) => SurveyWeather | null
-    const current: SurveyWeather = { sky: "cloudy", source: "meteo_france" }
-    expect(update(current)).toEqual(editWeatherValue(current, "sky", "rain"))
-    expect(update(null)).toEqual(editWeatherValue(null, "sky", "rain"))
+    const current: SurveyWeather = { temperature_c: 9, source: "meteo_france" }
+    expect(update(current)).toEqual(editWeatherSky(current, "rain"))
+    expect(update(null)).toEqual(editWeatherSky(null, "rain"))
   })
 
-  test("typing a temperature edits it as a number through editWeatherValue", () => {
+  test("pressing the selected chip again clears the sky", () => {
     const onEditWeather = jest.fn()
-    const tree = mount(<ConditionsSection {...sectionProps({ onEditWeather })} />)
-    const field = byTestId(tree, "conditions-field-temperature")
+    const weather: SurveyWeather = { sky: "rain", edited: ["sky"], source: "manual" }
+    const tree = mount(
+      <ConditionsSection
+        {...sectionProps({ onEditWeather, conditions: { ...LOADED_EMPTY, weather } })}
+      />,
+    )
 
     act(() => {
-      field.props.onChangeText("14,5")
-    })
-    act(() => {
-      field.props.onBlur({})
+      byTestId(tree, "conditions-sky-rain")
+        .findByType("Pressable" as never)
+        .props.onPress()
     })
 
     const update = onEditWeather.mock.calls[0][0] as (
       current: SurveyWeather | null,
     ) => SurveyWeather | null
-    expect(update(null)).toEqual(editWeatherValue(null, "temperature_c", 14.5))
+    expect(update(weather)).toEqual(editWeatherSky(weather, null))
+    expect(update(weather)?.sky).toBeNull()
   })
 
-  test("a provider answer arriving fades the values in without breaking the card", () => {
+  test("a provider answer arriving fades the rows in without breaking the card", () => {
     const element = (weather: SurveyWeather | null) => (
       <ConditionsSection
         {...sectionProps({ conditions: { ...LOADED_EMPTY, weather }, viewState: "prefilled" })}
@@ -375,36 +380,7 @@ describe("ConditionsSection weather card", () => {
       tree.update(element({ sky: "clear", temperature_c: 12, source: "meteo_france" }))
     })
 
-    expect(byTestId(tree, "conditions-field-temperature").props.value).toBe("12")
-  })
-
-  test("a field focus reports its top inside the section, offsets added up", () => {
-    const onFieldFocus = jest.fn()
-    const tree = mount(<ConditionsSection {...sectionProps({ onFieldFocus })} />)
-    const layouts = tree.root.findAll(
-      (node) => (node.type as unknown) === "View" && typeof node.props.onLayout === "function",
-    )
-    // Weather card wrapper, the values view and the fields view of the card, then the four field
-    // cells (the note is not part of the section any more, D-33).
-    expect(layouts).toHaveLength(7)
-    const at = (index: number, y: number) =>
-      act(() => {
-        layouts[index].props.onLayout({ nativeEvent: { layout: { y } } })
-      })
-    at(0, 100)
-    at(1, 60)
-    at(2, 30)
-    at(4, 20)
-
-    act(() => {
-      byTestId(tree, "conditions-field-wind").props.onFocus({})
-    })
-    act(() => {
-      byTestId(tree, "conditions-field-temperature").props.onFocus({})
-    })
-
-    expect(onFieldFocus).toHaveBeenNthCalledWith(1, 100 + 60 + 30 + 20)
-    expect(onFieldFocus).toHaveBeenNthCalledWith(2, 100 + 60 + 30)
+    expect(texts(tree)).toContain("12\u00a0°C")
   })
 
   test("nothing is drawn under the header until the draft was read", () => {
@@ -424,7 +400,7 @@ describe("ConditionsSection weather card", () => {
   })
 })
 
-describe("Conditions read only (D-03, U-04)", () => {
+describe("Conditions read only (D-03, U-04, D-37)", () => {
   const weather: SurveyWeather = {
     sky: "cloudy",
     temperature_c: 14.5,
@@ -439,7 +415,7 @@ describe("Conditions read only (D-03, U-04)", () => {
       <ConditionsSection
         {...sectionProps({
           editable: false,
-          viewState: "edited",
+          viewState: "prefilled",
           conditions: { ...LOADED_EMPTY, weather, note: "Sol frais" },
         })}
       />,
@@ -451,14 +427,14 @@ describe("Conditions read only (D-03, U-04)", () => {
         "Ciel",
         "Nuageux",
         "Température",
-        "14,5 °C",
+        "14,5\u00a0°C",
         "Vent",
-        "12 km/h",
-        "Pluie sur 24 h",
-        "2 mm",
-        "Heure",
+        "12\u00a0km/h",
+        t.weather.rows.rain,
+        "2\u00a0mm",
+        "Heure de la mesure",
         "14:30",
-        "Source : Météo-France, mesure du 11/10/2026 à 14:30.",
+        "Source : Météo-France, mesure du 11/10/2026 à 14:30",
       ]),
     )
     expect(tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
@@ -479,51 +455,39 @@ describe("Conditions read only (D-03, U-04)", () => {
     expect(all).toContain("Température")
     expect(all).not.toContain("Ciel")
     expect(all).not.toContain("Vent")
-    expect(all).not.toContain("Heure")
+    expect(all).not.toContain("Heure de la mesure")
     expect(all).not.toContain(t.note.label)
   })
 
-  test("the source line follows who entered the values", () => {
-    const edited = mount(
-      <ConditionsReadOnly weather={{ ...weather, edited: ["temperature_c"] }} emptyMode="line" />,
+  test("the source line says when the sky is the observer's, and never calls it Météo-France's", () => {
+    const observersSky = mount(
+      <ConditionsReadOnly weather={{ ...weather, sky: "fog", edited: ["sky"] }} emptyMode="line" />,
     )
-    expect(texts(edited)).toContain(
-      "Source : Météo-France, mesure du 11/10/2026 à 14:30, certaines valeurs modifiées par l'observateur",
+    expect(texts(observersSky)).toContain(
+      "Source : Météo-France, mesure du 11/10/2026 à 14:30, ciel saisi par l'observateur",
     )
-
-    const allEdited = mount(
-      <ConditionsReadOnly
-        weather={{ ...weather, edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"] }}
-        emptyMode="line"
-      />,
-    )
-    expect(texts(allEdited)).toContain(
-      "Préremplie d'après Météo-France, mesure du 11/10/2026 à 14:30, modifiée par l'observateur.",
-    )
-    expect(texts(allEdited).join(" ")).not.toContain("Source : Météo-France")
 
     const undated = mount(
       <ConditionsReadOnly
-        weather={{ sky: "cloudy", source: "meteo_france", observed_at: "garbage" }}
+        weather={{ temperature_c: 9, source: "meteo_france", observed_at: "garbage" }}
         emptyMode="line"
       />,
     )
-    expect(texts(undated)).toContain(t.readOnly.sourcePrefilled)
+    expect(texts(undated)).toContain("Source : Météo-France")
 
-    const manual = mount(
+    const skyOnly = mount(
       <ConditionsReadOnly
-        weather={{ temperature_c: 9, source: "manual", edited: ["temperature_c"] }}
+        weather={{ sky: "rain", source: "manual", edited: ["sky"] }}
         emptyMode="line"
       />,
     )
-    expect(texts(manual)).toContain(t.readOnly.sourceManual)
+    expect(texts(skyOnly)).toContain(t.readOnly.sourceManual)
+    expect(texts(skyOnly).join(" ")).not.toContain("Météo-France")
 
     const timeOnly = mount(
       <ConditionsReadOnly weather={{ observed_at: weather.observed_at }} emptyMode="line" />,
     )
-    const lines = texts(timeOnly)
-    expect(lines).not.toContain(t.readOnly.sourcePrefilled)
-    expect(lines).not.toContain(t.readOnly.sourceManual)
+    expect(texts(timeOnly)).not.toContain(t.readOnly.sourceManual)
   })
 
   test("the group carries the Météo title unless a heading above says it", () => {
