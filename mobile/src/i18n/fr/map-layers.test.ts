@@ -128,7 +128,30 @@ describe("fr.mapLayers", () => {
   describe("compare and overlays", () => {
     test("the quit pill and the hints", () => {
       expect(mapLayersFr.compare.exit).toBe("Quitter la comparaison")
-      expect(mapLayersFr.compare.tagA11y("Plan")).toBe("Plan")
+      expect(mapLayersFr.compare.sideLeft).toBe("Côté gauche")
+      expect(mapLayersFr.compare.sideRight).toBe("Côté droit")
+      expect(mapLayersFr.compare.sideA11yLabel({ side: "left", name: "Plan" })).toBe(
+        "Côté gauche : Plan",
+      )
+      expect(mapLayersFr.compare.sideA11yLabel({ side: "right", name: "Plan" })).toBe(
+        "Côté droit : Plan",
+      )
+      expect(mapLayersFr.compare.sideA11yHint).toBe(
+        "Balayez vers le haut ou le bas pour changer le fond de ce côté",
+      )
+      expect(mapLayersFr.compare.sideA11yValue({ name: "Plan", era: "aujourd'hui" })).toBe(
+        "Plan, aujourd'hui",
+      )
+      expect(
+        mapLayersFr.compare.announceSide({
+          side: "right",
+          name: "Photos aériennes",
+          era: "1950-1965",
+        }),
+      ).toBe("Côté droit : Photos aériennes, 1950-1965")
+      expect(
+        mapLayersFr.compare.announceSide({ side: "left", name: "Plan", era: "aujourd'hui" }),
+      ).toBe("Côté gauche : Plan, aujourd'hui")
       expect(mapLayersFr.compare.handleA11yLabel).toBe("Séparation de la comparaison")
       expect(mapLayersFr.compare.handleA11yHint).toBe(
         "Faites glisser vers un bord pour quitter la comparaison",

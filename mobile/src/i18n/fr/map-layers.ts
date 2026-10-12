@@ -13,6 +13,9 @@ function megabytes(bytes: number): string {
   return tenths % 10 === 0 ? String(tenths / 10) : `${Math.floor(tenths / 10)},${tenths % 10}`
 }
 
+const SIDE_LEFT = "Côté gauche"
+const SIDE_RIGHT = "Côté droit"
+
 export const mapLayersFr = {
   basemap: {
     buttonA11y: "Changer de fond de carte",
@@ -136,7 +139,16 @@ export const mapLayersFr = {
   compare: {
     exit: "Quitter la comparaison",
     exitA11yHint: "Revient à un seul fond, celui de gauche",
-    tagA11y: (name: string) => `${name}`,
+    // The side tags (UI-SPEC section 5): one adjustable element each; the actions reuse
+    // `basemap.actionNext` and `basemap.actionPrevious`.
+    sideLeft: SIDE_LEFT,
+    sideRight: SIDE_RIGHT,
+    sideA11yLabel: ({ side, name }: { side: "left" | "right"; name: string }) =>
+      `${side === "left" ? SIDE_LEFT : SIDE_RIGHT} : ${name}`,
+    sideA11yHint: "Balayez vers le haut ou le bas pour changer le fond de ce côté",
+    sideA11yValue: ({ name, era }: { name: string; era: string }) => `${name}, ${era}`,
+    announceSide: ({ side, name, era }: { side: "left" | "right"; name: string; era: string }) =>
+      `${side === "left" ? SIDE_LEFT : SIDE_RIGHT} : ${name}, ${era}`,
     handleA11yLabel: "Séparation de la comparaison",
     handleA11yHint: "Faites glisser vers un bord pour quitter la comparaison",
     handleA11yValue: ({ left, right }: { left: string; right: string }) =>

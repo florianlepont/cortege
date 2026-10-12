@@ -112,12 +112,12 @@ describe("CurtainSideTags", () => {
     expect(textsOf(tag("right"))).toEqual(["Photos 1950"])
   })
 
-  test("the tags sit 30 pt from the line at the grabber height, with room for the name", () => {
+  test("the tags sit 24 pt from the line at the grabber height, with room for the name", () => {
     const { tag } = mount()
     const left = flat(tag("left").props.style)
     const right = flat(tag("right").props.style)
-    expect(left).toMatchObject({ right: 230, maxWidth: 156, opacity: 1, top: 240, height: 32 })
-    expect(right).toMatchObject({ left: 230, maxWidth: 156, opacity: 1, top: 240 })
+    expect(left).toMatchObject({ right: 224, maxWidth: 162, opacity: 1, top: 240, height: 32 })
+    expect(right).toMatchObject({ left: 224, maxWidth: 162, opacity: 1, top: 240 })
   })
 
   test("a tag with under 72 pt of room fades out in 160 ms", () => {

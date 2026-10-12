@@ -18,8 +18,11 @@ export type Strip = { left: number; right: number }
 export const LINE_MARGIN = 22
 /** The outer fifth of the width on each side: releasing the line there quits the comparison. */
 export const EDGE_EXIT_FRACTION = 1 / 5
-/** Distance between the line and a side tag (knob radius 22 plus 8). */
-export const TAG_GAP = 30
+/**
+ * Distance between the line and a side tag: the 22 pt half of the grabber's 44 pt hit area plus
+ * 2 pt of clearance (UI-SPEC U-23), so the chevron targets never overlap the grabber's.
+ */
+export const TAG_GAP = 24
 /** Under this width a side tag fades out. */
 export const TAG_MIN_WIDTH = 72
 // A tag keeps 14 pt of air on its outer edge (engine: `W - S.x - gap - 14`).
@@ -88,6 +91,15 @@ export function edgeExitKeeps(x: number, width: number): "A" | "B" | null {
   if (x < width * EDGE_EXIT_FRACTION) return "B"
   if (x > width * (1 - EDGE_EXIT_FRACTION)) return "A"
   return null
+}
+
+/**
+ * The bounds of a side around the fixed centre of the map (`width / 2`): `[0, width / 2]` on the
+ * left, `[width / 2, width]` on the right. A side change by its tag wipes inside these.
+ */
+export function halfBounds(side: "left" | "right", width: number): Bounds {
+  "worklet"
+  return sideBounds(side, width / 2, width)
 }
 
 /** The widest a side tag may be: its visible side minus the gap to the line and the outer air. */

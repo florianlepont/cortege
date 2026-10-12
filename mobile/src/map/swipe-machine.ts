@@ -46,6 +46,11 @@ export const SETTLE_MS = 240
  */
 export const SPRINGBACK_MS = 240
 
+/** A horizontal swipe on a side tag changes that side from this much travel (pt, UI-SPEC section 4). */
+export const TAG_SWIPE_MIN = 44
+/** ... or from this speed (points per second) once the travel is past the slop in the same direction. */
+export const TAG_FLICK_VELOCITY = 500
+
 /** What a release would do now: spring back, open the comparison, or switch to the new layer. */
 export type SwipeZone = "cancel" | "compare" | "commit"
 /** The haptic to play: a clear detent (medium impact) or a light tick (selection). */
@@ -156,6 +161,21 @@ export function zoneHaptic(previous: SwipeZone | null, next: SwipeZone): HapticC
 export function edgeExitCue(previous: "A" | "B" | null, next: "A" | "B" | null): HapticCue | null {
   "worklet"
   return next !== null && next !== previous ? "tick" : null
+}
+
+/**
+ * The step a horizontal swipe on a side tag asks for, at the end of its pan: dragging left is the
+ * next layer (1), right the previous one (-1), as in the wipe; null when the swipe is too short.
+ * It commits from `TAG_SWIPE_MIN` of travel, or from `TAG_FLICK_VELOCITY` once the travel passed
+ * the slop in the same direction as the flick.
+ */
+export function tagSwipeStep({ dx, velocityX }: { dx: number; velocityX: number }): 1 | -1 | null {
+  "worklet"
+  if (dx <= -TAG_SWIPE_MIN) return 1
+  if (dx >= TAG_SWIPE_MIN) return -1
+  if (velocityX <= -TAG_FLICK_VELOCITY && dx <= -SWIPE_SLOP) return 1
+  if (velocityX >= TAG_FLICK_VELOCITY && dx >= SWIPE_SLOP) return -1
+  return null
 }
 
 /** The haptic at the release: a medium impact opening the comparison, a tick committing, else none. */

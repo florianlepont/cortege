@@ -5,6 +5,7 @@ import {
   LINE_MARGIN,
   revealedFraction,
   settledStrip,
+  halfBounds,
   sideBounds,
   TAG_GAP,
   TAG_MIN_WIDTH,
@@ -17,7 +18,7 @@ describe("constants", () => {
   it("are the UI-SPEC numbers", () => {
     expect(LINE_MARGIN).toBe(22)
     expect(EDGE_EXIT_FRACTION).toBe(1 / 5)
-    expect(TAG_GAP).toBe(30)
+    expect(TAG_GAP).toBe(24)
     expect(TAG_MIN_WIDTH).toBe(72)
   })
 })
@@ -113,11 +114,19 @@ describe("edgeExitKeeps", () => {
   })
 })
 
+describe("halfBounds", () => {
+  it("cuts the map at its fixed centre", () => {
+    expect(halfBounds("left", 400)).toEqual([0, 200])
+    expect(halfBounds("right", 400)).toEqual([200, 400])
+  })
+})
+
 describe("tags", () => {
   it("get the visible side width minus the gap and 14", () => {
-    expect(tagMaxWidth("left", 200, 400)).toBe(156)
-    expect(tagMaxWidth("right", 200, 400)).toBe(156)
-    expect(tagMaxWidth("left", 60, 400)).toBe(16)
+    expect(tagMaxWidth("left", 200, 400)).toBe(162)
+    expect(tagMaxWidth("right", 200, 400)).toBe(162)
+    expect(tagMaxWidth("left", 187.5, 375)).toBe(187.5 - 24 - 14)
+    expect(tagMaxWidth("left", 60, 400)).toBe(22)
     expect(tagMaxWidth("right", 380, 400)).toBe(0)
   })
 

@@ -18,6 +18,9 @@ import {
   SETTLE_MS,
   SPRINGBACK_MS,
   SWIPE_SLOP,
+  TAG_FLICK_VELOCITY,
+  TAG_SWIPE_MIN,
+  tagSwipeStep,
   swipeZone,
   ZONE_HYSTERESIS,
   zoneHaptic,
@@ -375,6 +378,35 @@ describe("edgeExitCue", () => {
     expect(edgeExitCue("B", null)).toBeNull()
     expect(edgeExitCue("A", null)).toBeNull()
     expect(edgeExitCue(null, null)).toBeNull()
+  })
+})
+
+describe("tagSwipeStep", () => {
+  it("has the UI-SPEC numbers", () => {
+    expect(TAG_SWIPE_MIN).toBe(44)
+    expect(TAG_FLICK_VELOCITY).toBe(500)
+  })
+
+  it("commits from 44 pt of travel: left is next, right is previous", () => {
+    expect(tagSwipeStep({ dx: -44, velocityX: 0 })).toBe(1)
+    expect(tagSwipeStep({ dx: 44, velocityX: 0 })).toBe(-1)
+    expect(tagSwipeStep({ dx: -43, velocityX: 0 })).toBeNull()
+    expect(tagSwipeStep({ dx: 43, velocityX: 0 })).toBeNull()
+  })
+
+  it("commits a flick past the slop in its own direction", () => {
+    expect(tagSwipeStep({ dx: -10, velocityX: -600 })).toBe(1)
+    expect(tagSwipeStep({ dx: 10, velocityX: 600 })).toBe(-1)
+    expect(tagSwipeStep({ dx: -6, velocityX: -500 })).toBe(1)
+  })
+
+  it("ignores a flick under the slop, against its direction or too slow", () => {
+    expect(tagSwipeStep({ dx: 4, velocityX: -600 })).toBeNull()
+    expect(tagSwipeStep({ dx: -4, velocityX: 600 })).toBeNull()
+    expect(tagSwipeStep({ dx: 10, velocityX: -600 })).toBeNull()
+    expect(tagSwipeStep({ dx: -10, velocityX: 600 })).toBeNull()
+    expect(tagSwipeStep({ dx: -10, velocityX: -499 })).toBeNull()
+    expect(tagSwipeStep({ dx: 10, velocityX: 499 })).toBeNull()
   })
 })
 
