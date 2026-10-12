@@ -124,7 +124,7 @@ describe("listWeatherCandidates (D-11)", () => {
     await insertSurvey("waiting", "draft", survey("waiting", { parcel_ids: ["p1", "P2"], weather }))
 
     expect(await listWeatherCandidates()).toEqual([
-      { id: "waiting", parcel_ids: ["P1", "P2"], weather },
+      { id: "waiting", parcel_ids: ["P1", "P2"], weather, created_at: NOW },
     ])
   })
 
@@ -150,6 +150,68 @@ describe("listWeatherCandidates (D-11)", () => {
     await insertSurvey("not-a-survey", "draft", { weather: { requested_at: NOW } })
     await insertSurvey("ok", "draft", survey("ok", { weather: { requested_at: NOW } }))
 
-    expect((await listWeatherCandidates()).map((candidate) => candidate.id)).toEqual(["ok"])
+    // Ten days later: the drafts without a survey time are far too old to be given one (D-39).
+    const later = Date.parse(NOW) + 10 * 24 * 60 * 60 * 1000
+    expect((await listWeatherCandidates(later)).map((candidate) => candidate.id)).toEqual(["ok"])
+  })
+
+  // D-39 safety net: a draft that has parcels but never got a survey time (made before phase 27,
+  // seeded, pulled, or saved by a path that did not stamp it) is a candidate while it is young
+  // enough for the hook to derive its survey time from `created_at`.
+  describe("drafts with parcels and no survey time", () => {
+    const shaped = (extra: Record<string, unknown> = {}) =>
+      survey("Parcelle de la source", {
+        parcel_ids: ["a", "b", "c"],
+        weather: { sky: "partly_cloudy", edited: ["sky"], source: "manual" },
+        ...extra,
+      })
+
+    test("the draft shaped like the owner's Parcelle de la source is a candidate", async () => {
+      await insertSurvey("source", "draft", shaped())
+
+      expect(await listWeatherCandidates(Date.parse(NOW) + 60 * 60 * 1000)).toEqual([
+        {
+          id: "source",
+          parcel_ids: ["A", "B", "C"],
+          weather: { sky: "partly_cloudy", edited: ["sky"], source: "manual" },
+          created_at: NOW,
+        },
+      ])
+    })
+
+    test("a draft with no weather key at all is a candidate too, with an empty weather", async () => {
+      await insertSurvey("bare", "draft", shaped({ weather: undefined }))
+
+      const [candidate] = await listWeatherCandidates(Date.parse(NOW) + 60 * 60 * 1000)
+      expect(candidate).toMatchObject({ id: "bare", weather: {}, created_at: NOW })
+    })
+
+    test("is skipped without parcels, once the provider answered, or when created long ago", async () => {
+      await insertSurvey("no-parcel", "draft", shaped({ parcel_ids: [] }))
+      await insertSurvey(
+        "answered",
+        "draft",
+        shaped({ weather: { source: "meteo_france", temperature_c: 9 } }),
+      )
+      const db = await getDb()
+      await insertSurvey("old", "draft", shaped())
+      await db.runAsync(`UPDATE local_surveys SET created_at = ? WHERE id = 'old'`, [
+        "2026-07-08 10:00:00+00",
+      ])
+
+      expect(await listWeatherCandidates(Date.parse(NOW) + 60 * 60 * 1000)).toEqual([])
+    })
+
+    test("reads the created_at formats of both writers (local ISO and server timestamp)", async () => {
+      await insertSurvey("server-format", "draft", shaped())
+      const db = await getDb()
+      await db.runAsync(`UPDATE local_surveys SET created_at = ? WHERE id = ?`, [
+        "2026-10-11 07:30:00+00",
+        "server-format",
+      ])
+
+      const found = await listWeatherCandidates(Date.parse(NOW) + 60 * 60 * 1000)
+      expect(found.map((candidate) => candidate.id)).toEqual(["server-format"])
+    })
   })
 })

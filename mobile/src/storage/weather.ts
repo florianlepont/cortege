@@ -12,12 +12,19 @@ export const WEATHER_POINT_KEY_PREFIX = "weather_point:"
 
 export type WeatherPoint = { lat: number; lng: number }
 
-/** A draft whose weather waits for a lookup: it has a survey time (`requested_at`). */
+/**
+ * A draft whose weather waits for a lookup. Normally it has a survey time (`weather.requested_at`).
+ * A draft with parcels that was never stamped (D-39) has none: it comes with its `created_at` so the
+ * caller can derive the survey time (`weatherRequestTime`), and its weather may be empty.
+ */
 export type WeatherCandidate = {
   id: string
   parcel_ids: string[]
   weather: SurveyWeather
+  created_at?: string
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000
 
 // About 10 m: far finer than a weather station grid, so nothing useful is lost.
 const roundCoordinate = (value: number): number => Math.round(value * 10000) / 10000
@@ -70,30 +77,42 @@ export async function loadWeatherPoint(surveyId: string): Promise<WeatherPoint |
 }
 
 /**
- * The drafts that carry a survey time for the weather, `{ id, parcel_ids, weather }`, for the
- * catch-up. SQL keeps only draft rows whose payload has a text `weather.requested_at`; only those
- * rows are parsed in JS, and a row whose payload is not a survey payload is skipped, never thrown.
+ * The drafts that wait for a weather lookup, `{ id, parcel_ids, weather, created_at }`, for the
+ * catch-up. SQL keeps draft rows whose payload has a text `weather.requested_at`, plus (D-39 safety
+ * net) drafts that have parcels, no provider answer yet and no survey time but were created within
+ * two days of `now` (the exact 24 h rule is applied by the caller; `created_at` has two formats, so
+ * SQL compares only its date). Only those rows are parsed in JS, and a row whose payload is not a
+ * survey payload is skipped, never thrown.
  */
-export async function listWeatherCandidates(): Promise<WeatherCandidate[]> {
+export async function listWeatherCandidates(now: number = Date.now()): Promise<WeatherCandidate[]> {
   const db = await getDb()
-  const rows = await db.getAllAsync<{ id: string; payload_json: string }>(
-    `SELECT id, payload_json
+  const oldestCreationDay = new Date(now - 2 * DAY_MS).toISOString().slice(0, 10)
+  const rows = await db.getAllAsync<{ id: string; payload_json: string; created_at: string }>(
+    `SELECT id, payload_json, created_at
      FROM local_surveys
      WHERE status = 'draft'
        AND json_valid(payload_json)
-       AND json_type(payload_json, '$.weather.requested_at') = 'text'
+       AND (
+         json_type(payload_json, '$.weather.requested_at') = 'text'
+         OR (
+           COALESCE(json_extract(payload_json, '$.weather.source'), '') <> 'meteo_france'
+           AND COALESCE(json_array_length(payload_json, '$.parcel_ids'), 0) > 0
+           AND substr(created_at, 1, 10) >= ?
+         )
+       )
      ORDER BY updated_at DESC`,
+    [oldestCreationDay],
   )
   const candidates: WeatherCandidate[] = []
   for (const row of rows) {
     const payload = safeParseJson(row.payload_json)
     if (!isSurveyQueuePayload(payload)) continue
-    const weather = payload.weather
-    if (!weather || typeof weather.requested_at !== "string") continue
+    const weather = payload.weather ?? {}
     candidates.push({
       id: row.id,
       parcel_ids: normalizeParcelIds(payload.parcel_ids),
       weather,
+      created_at: row.created_at,
     })
   }
   return candidates

@@ -68,10 +68,16 @@ const OBSERVATION: WeatherObservation = {
 
 const hoursAgo = (hours: number): string => new Date(Date.now() - hours * HOUR).toISOString()
 
-const candidate = (id: string, weather: SurveyWeather, parcelIds = ["P1"]): WeatherCandidate => ({
+const candidate = (
+  id: string,
+  weather: SurveyWeather,
+  parcelIds = ["P1"],
+  createdAt = hoursAgo(100),
+): WeatherCandidate => ({
   id,
   parcel_ids: parcelIds,
   weather,
+  created_at: createdAt,
 })
 
 const localSurvey = (id: string, updatedAt = "2026-10-11T08:00:00.000Z"): LocalSurvey =>
@@ -251,6 +257,86 @@ describe("useWeatherPrefill", () => {
     })
     expect(mockFetch).not.toHaveBeenCalled()
     expect(second.result.current.state.unavailableIds.size).toBe(0)
+  })
+
+  // D-39: the owner's "Parcelle de la source" had parcels and the observer's sky, but no survey time
+  // and no stored point, so nothing ever asked for its weather.
+  describe("a draft with parcels that was never stamped (D-39 safety net)", () => {
+    const OWNERS_SHAPE: SurveyWeather = { sky: "partly_cloudy", edited: ["sky"], source: "manual" }
+    const GEOMETRY = {
+      parcel_id: "P1",
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [2.0, 48.0],
+            [2.2, 48.0],
+            [2.2, 48.2],
+            [2.0, 48.2],
+            [2.0, 48.0],
+          ],
+        ],
+      },
+    }
+
+    test("is fetched for its creation time, at the centre of its cached parcels, and keeps both", async () => {
+      const createdAt = hoursAgo(3)
+      mockList.mockResolvedValue([candidate("S1", OWNERS_SHAPE, ["P1", "P2", "P3"], createdAt)])
+      stored.S1 = OWNERS_SHAPE
+      mockLoadPoint.mockResolvedValue(null)
+      mockParcel.mockResolvedValue(GEOMETRY)
+
+      await mount()
+
+      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1))
+      const sent = mockFetch.mock.calls[0][2] as { lat: number; lng: number; at: string }
+      expect(sent.at).toBe(createdAt)
+      expect(sent.lat).toBeCloseTo(48.1, 5)
+      expect(sent.lng).toBeCloseTo(2.1, 5)
+      // The point is kept for the next pass and the survey time lands in the draft with the answer.
+      expect(mockSavePoint).toHaveBeenCalledWith("S1", expect.objectContaining({ lat: 48.1 }))
+      await waitFor(() => expect(updateSurveyWeather).toHaveBeenCalledTimes(1))
+      expect(stored.S1).toEqual(
+        mergeWeatherObservation({ ...OWNERS_SHAPE, requested_at: createdAt }, OBSERVATION),
+      )
+      expect(stored.S1?.sky).toBe("partly_cloudy")
+    })
+
+    test("uses the stored point when there is one and does not store it again", async () => {
+      mockList.mockResolvedValue([candidate("S1", {}, ["P1"], hoursAgo(1))])
+
+      await mount()
+
+      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1))
+      expect(mockFetch.mock.calls[0][2]).toMatchObject({ lat: POINT.lat, lng: POINT.lng })
+      expect(mockSavePoint).not.toHaveBeenCalled()
+    })
+
+    test("is left alone when created more than 24 h ago (never invents a time)", async () => {
+      mockList.mockResolvedValue([candidate("S1", OWNERS_SHAPE, ["P1"], hoursAgo(26))])
+
+      const { result } = await mount()
+      await act(async () => {
+        await Promise.resolve()
+      })
+
+      expect(mockFetch).not.toHaveBeenCalled()
+      expect(result.current.state.unavailableIds.size).toBe(0)
+    })
+
+    test("is left alone when there is no point and no cached geometry", async () => {
+      mockList.mockResolvedValue([candidate("S1", OWNERS_SHAPE, ["P1"], hoursAgo(1))])
+      mockLoadPoint.mockResolvedValue(null)
+      mockParcel.mockResolvedValue(null)
+
+      await mount()
+      await act(async () => {
+        await Promise.resolve()
+      })
+
+      expect(mockFetch).not.toHaveBeenCalled()
+      expect(mockSavePoint).not.toHaveBeenCalled()
+    })
   })
 
   test("a rejection marks the draft unavailable; retry fetches again at once and a success clears it", async () => {

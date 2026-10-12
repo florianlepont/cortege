@@ -330,6 +330,44 @@ export function needsWeatherLookup(
 }
 
 /**
+ * Reads a creation time from either writer: the phone writes ISO ("2026-10-12T10:00:55.224Z"), a
+ * pulled server row keeps the Postgres form ("2026-07-08 10:00:00+00"). Null when unreadable.
+ */
+function parseCreationTime(value: string | null | undefined): number | null {
+  if (!value) return null
+  // Fractions are cut to milliseconds: Hermes does not read the 6 digits Postgres writes.
+  const iso = value
+    .replace(" ", "T")
+    .replace(/(\.\d{3})\d+/, "$1")
+    .replace(/([+-]\d{2})$/, "$1:00")
+  const time = new Date(iso).getTime()
+  return Number.isNaN(time) ? null : time
+}
+
+/** A creation time may lead the phone clock by this much (clock skew) and still count as now. */
+const CREATION_SKEW_MS = 5 * 60 * 1000
+
+/**
+ * The survey time a draft's weather lookup is for (D-39 safety net). A stamped `requested_at` is
+ * returned as it is. A draft that has parcels but was never stamped (it got its parcels by a path
+ * that did not stamp it, or before phase 27) takes the time it was created, but only while that is
+ * inside the 24 h window: the survey time is never invented, so an older draft gets null and no
+ * lookup. The caller still applies `needsWeatherLookup` to the result.
+ */
+export function weatherRequestTime(
+  weather: SurveyWeather | null | undefined,
+  createdAt: string | null | undefined,
+  now: Date | number,
+): string | null {
+  if (typeof weather?.requested_at === "string") return weather.requested_at
+  const created = parseCreationTime(createdAt)
+  if (created === null) return null
+  const nowMs = typeof now === "number" ? now : now.getTime()
+  if (created - nowMs > CREATION_SKEW_MS || nowMs - created > WEATHER_LOOKBACK_MS) return null
+  return new Date(created).toISOString()
+}
+
+/**
  * The one state of the weather status line (UI-SPEC 1.3). Values on screen decide first (prefilled,
  * edited, manual), because they must never be hidden by a request or a lost connection. Without
  * values: no parcel, then offline, then loading while a request is in flight, else unavailable

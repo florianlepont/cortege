@@ -14,6 +14,7 @@ import {
   parseWeatherValueInput,
   resetWeatherForRefill,
   roundWeatherCoordinate,
+  weatherRequestTime,
   showsProviderAttribution,
   weatherProvenance,
   weatherCardMention,
@@ -630,5 +631,38 @@ describe("weatherCardMention (D-35)", () => {
     expect(weatherCardMention({ sky: "rain", source: "manual" })).toBeNull()
     expect(weatherCardMention(null)).toBeNull()
     expect(weatherCardMention(undefined)).toBeNull()
+  })
+})
+
+describe("weatherRequestTime (D-39: the survey time of a draft that was never stamped)", () => {
+  it("keeps a stamped survey time as it is, old or not (the 24 h rule is needsWeatherLookup's)", () => {
+    expect(weatherRequestTime({ requested_at: ago(30) }, ago(2), NOW)).toBe(ago(30))
+    expect(weatherRequestTime({ requested_at: ago(1) }, null, NOW)).toBe(ago(1))
+  })
+
+  it("derives it from the creation time of a draft created within the last 24 h", () => {
+    expect(weatherRequestTime({ sky: "clear", source: "manual" }, ago(3), NOW)).toBe(ago(3))
+    expect(weatherRequestTime(null, ago(23), NOW)).toBe(ago(23))
+    expect(weatherRequestTime({ requested_at: null }, ago(1), NOW)).toBe(ago(1))
+  })
+
+  it("never invents a time: too old, in the future, unreadable or missing gives null", () => {
+    expect(weatherRequestTime({}, ago(25), NOW)).toBeNull()
+    expect(weatherRequestTime({}, "2026-07-08 10:00:00+00", NOW)).toBeNull()
+    expect(weatherRequestTime({}, ago(-2), NOW)).toBeNull()
+    expect(weatherRequestTime({}, "not a date", NOW)).toBeNull()
+    expect(weatherRequestTime({}, null, NOW)).toBeNull()
+    expect(weatherRequestTime({}, undefined, NOW)).toBeNull()
+  })
+
+  it("reads the server timestamp format of a pulled draft (space and +00)", () => {
+    expect(weatherRequestTime({}, "2026-10-11 10:30:00+00", NOW)).toBe("2026-10-11T10:30:00.000Z")
+    expect(weatherRequestTime({}, "2026-10-11 10:30:00.123456+00", NOW)).toBe(
+      "2026-10-11T10:30:00.123Z",
+    )
+  })
+
+  it("accepts a number as now", () => {
+    expect(weatherRequestTime({}, ago(1), NOW.getTime())).toBe(ago(1))
   })
 })

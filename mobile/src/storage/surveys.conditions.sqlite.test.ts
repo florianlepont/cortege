@@ -103,10 +103,25 @@ describe("stampWeatherRequest", () => {
 
   test("returns the current value untouched for any other write", () => {
     expect(stampWeatherRequest([], [], undefined, NOW)).toBeUndefined()
-    expect(stampWeatherRequest(["P1"], ["P2"], undefined, NOW)).toBeUndefined()
     expect(stampWeatherRequest(["P1"], [], null, NOW)).toBeNull()
-    const current: SurveyWeather = { sky: "clear" }
+    // The parcels did not change (a rename, a factor autosave): no stamp, whatever the weather.
+    expect(stampWeatherRequest(["P1", "P2"], ["P2", "P1"], undefined, NOW)).toBeUndefined()
+    const current: SurveyWeather = { sky: "clear", requested_at: "2026-10-10T00:00:00.000Z" }
     expect(stampWeatherRequest(["P1"], ["P1", "P2"], current, NOW)).toBe(current)
+  })
+
+  // D-39: a draft that already had parcels before it had a weather (made before phase 27, pulled
+  // from the server, seeded) never went through "none to some", so it never got a survey time and
+  // its weather was never looked up. Choosing other parcels is the first time the observer gives
+  // it parcels in this app: that write stamps it.
+  test("stamps a draft that already had parcels but no survey time when its parcels change", () => {
+    expect(stampWeatherRequest(["P1"], ["P2"], undefined, NOW)).toEqual({ requested_at: NOW })
+    expect(stampWeatherRequest(["P1"], ["P1", "P2"], null, NOW)).toEqual({ requested_at: NOW })
+    const observersSky: SurveyWeather = { sky: "partly_cloudy", edited: ["sky"], source: "manual" }
+    expect(stampWeatherRequest(["P1", "P2", "P3"], ["P1", "P2"], observersSky, NOW)).toEqual({
+      ...observersSky,
+      requested_at: NOW,
+    })
   })
 })
 
@@ -144,6 +159,29 @@ describe("the survey time of the weather (D-10, D-11)", () => {
     await updateLocalDraft({ survey_id: survey.id, ...BASE_INPUT, parcel_ids: [] })
     await updateLocalDraft({ survey_id: survey.id, ...BASE_INPUT, parcel_ids: ["P3"] })
     expect((await storedPayload(survey.id)).weather?.requested_at).toBe(first)
+  })
+
+  test("a draft that already has parcels and no survey time is stamped when its parcels change, not by other saves", async () => {
+    const survey = await createLocalDraft({ ...BASE_INPUT, parcel_ids: ["P1", "P2", "P3"] })
+    // Back to the shape of a draft made before phase 27 (or seeded, or pulled): parcels, no weather.
+    const db = await getDb()
+    const stored = await storedPayload(survey.id)
+    const { weather: _stamp, ...withoutWeather } = stored
+    await db.runAsync(`UPDATE local_surveys SET payload_json = ? WHERE id = ?`, [
+      JSON.stringify(withoutWeather),
+      survey.id,
+    ])
+
+    await updateLocalDraft({
+      survey_id: survey.id,
+      ...BASE_INPUT,
+      site_name: "Renamed",
+      parcel_ids: ["P1", "P2", "P3"],
+    })
+    expect(await storedPayload(survey.id)).not.toHaveProperty("weather")
+
+    await updateLocalDraft({ survey_id: survey.id, ...BASE_INPUT, parcel_ids: ["P1", "P2"] })
+    expect(typeof (await storedPayload(survey.id)).weather?.requested_at).toBe("string")
   })
 
   test("a draft without parcels keeps no weather across autosaves", async () => {

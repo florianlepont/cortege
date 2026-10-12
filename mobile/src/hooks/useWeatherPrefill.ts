@@ -3,7 +3,12 @@ import { AppState } from "react-native"
 import type { SurveyWeather } from "@cortege/ibp-domain"
 import { ApiError } from "../api/client"
 import { fetchWeather } from "../api/weather-api"
-import { mergeWeatherObservation, needsWeatherLookup, resetWeatherForRefill } from "../app/weather"
+import {
+  mergeWeatherObservation,
+  needsWeatherLookup,
+  resetWeatherForRefill,
+  weatherRequestTime,
+} from "../app/weather"
 import type { PublicParcelStatusItem } from "../app/types"
 import { logStatusDetail } from "../i18n"
 import { cachedParcelCentre } from "../map/own-surveys"
@@ -163,8 +168,12 @@ export function useWeatherPrefill(params: UseWeatherPrefillParams): {
       const observation = response.observation
       if (observation) {
         settledAt.current.delete(id)
+        // A draft that was never stamped (D-39) keeps the survey time the lookup was for.
         await latest.current.updateSurveyWeather(id, (current) =>
-          mergeWeatherObservation(current, observation),
+          mergeWeatherObservation(
+            current?.requested_at ? current : { ...current, requested_at: requestedAt },
+            observation,
+          ),
         )
       } else {
         settledAt.current.set(id, Date.now())
@@ -201,7 +210,13 @@ export function useWeatherPrefill(params: UseWeatherPrefillParams): {
       // Offline or signed out meanwhile: stop the pass, the next trigger resumes it.
       if (!canAsk()) return
       if (request.onlyId !== undefined && candidate.id !== request.onlyId) continue
-      if (!needsWeatherLookup(candidate.weather, Date.now())) continue
+      // D-39 safety net: a draft with parcels that was never stamped takes the time it was created
+      // (inside the 24 h window only, never invented); a stamped one keeps its own.
+      const requestedAt = weatherRequestTime(candidate.weather, candidate.created_at, Date.now())
+      if (requestedAt === null) continue
+      if (!needsWeatherLookup({ ...candidate.weather, requested_at: requestedAt }, Date.now())) {
+        continue
+      }
       if (inFlight.current.has(candidate.id)) continue
       if (!request.force) {
         if (unavailable.current.has(candidate.id)) continue
@@ -211,16 +226,17 @@ export function useWeatherPrefill(params: UseWeatherPrefillParams): {
 
       let point: WeatherPoint | null = null
       try {
-        point =
-          (await loadWeatherPoint(candidate.id)) ??
-          (await centreFromCachedParcels(candidate.parcel_ids))
+        point = await loadWeatherPoint(candidate.id)
+        if (point === null) {
+          point = await centreFromCachedParcels(candidate.parcel_ids)
+          // Kept, so the next pass does not read the geometry again (D-39).
+          if (point !== null) await saveWeatherPoint(candidate.id, point)
+        }
       } catch (error) {
         logStatusDetail("weather.point", error instanceof Error ? error.name : "failed")
       }
       // No point and no geometry: nothing to ask, nothing to report.
       if (point === null) continue
-      const requestedAt = candidate.weather.requested_at
-      if (typeof requestedAt !== "string") continue
 
       await askOne(candidate.id, point, requestedAt)
     }

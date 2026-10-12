@@ -125,10 +125,13 @@ export function applyMethodFields(
 }
 
 /**
- * Stamps the survey time of the weather lookup (phase 27, D-10 and D-11): `requested_at` is the
- * write time of the first write that gives a draft its parcels (none to some), set once. Any other
- * write returns `current` untouched, so a later parcel change or autosave never moves the time the
- * lookup is for. Pure: the caller passes the clock.
+ * Stamps the survey time of the weather lookup (phase 27, D-10, D-11 and D-39): `requested_at` is
+ * the write time of the first write that gives a draft its parcels, set once. That is a write that
+ * takes the parcels from none to some, or, for a draft that already had parcels before it had a
+ * weather (made before phase 27, pulled from the server, seeded: it never went through "none to
+ * some" and so was never looked up), a write that changes the set of parcels. Any other write
+ * (a rename, a factor autosave, the same parcels) returns `current` untouched, so a later parcel
+ * change or autosave never moves a time already set. Pure: the caller passes the clock.
  */
 export function stampWeatherRequest(
   previousParcelIds: readonly string[],
@@ -136,8 +139,11 @@ export function stampWeatherRequest(
   current: SurveyWeather | null | undefined,
   nowIso: string,
 ): SurveyWeather | null | undefined {
-  const gainsParcels = previousParcelIds.length === 0 && nextParcelIds.length > 0
-  if (!gainsParcels || current?.requested_at) {
+  const previous = new Set(previousParcelIds)
+  const parcelsChanged =
+    previous.size !== new Set(nextParcelIds).size || nextParcelIds.some((id) => !previous.has(id))
+  const givesParcels = nextParcelIds.length > 0 && parcelsChanged
+  if (!givesParcels || current?.requested_at) {
     return current
   }
   return { ...current, requested_at: nowIso }
