@@ -29,7 +29,8 @@ import { AppPressable } from "../../../ui/AppPressable"
 import { AppText as Text } from "../../../ui/AppText"
 import { useScreenVisible } from "../../../ui/useScreenVisible"
 import { SkyChips } from "./SkyChips"
-import { weatherRowEntries } from "./weather-rows"
+import { weatherCardModel } from "./weather-card-model"
+import { WeatherHero } from "./WeatherHero"
 
 const t = fr.conditions.weather
 
@@ -94,11 +95,12 @@ function statusFor(viewState: WeatherViewState, weather: SurveyWeather | null | 
 }
 
 /**
- * The weather card of the Contexte page (D-15, D-09, D-10, D-11, D-26, D-37): a status line, the
- * eight sky chips (the observer's own judgement, the only editable value), the provider's
- * temperature, wind, rain and observation time as read-only rows, and the attribution line. A sky
- * edit goes through `editWeatherSky`, which protects it from a later provider answer. Nothing here
- * blocks leaving the page, finishing or submitting.
+ * The whole weather of the Contexte page, in one glass card at the top of the page (D-15, D-26,
+ * D-37, D-41): the big read-out (sky glyph tile, temperature numeral, wind, rain over 24 h and the
+ * time of the measurement, all read-only), the status line, the eight sky chips (the observer's own
+ * judgement, the only editable value) and the full dated source sentence. A sky edit goes through
+ * `editWeatherSky`, which protects it from a later provider answer. Nothing here blocks leaving the
+ * page, finishing or submitting.
  */
 export function WeatherBlock({ weather, viewState, onEditWeather, onRetry }: WeatherBlockProps) {
   const theme = useBrandTheme()
@@ -106,7 +108,7 @@ export function WeatherBlock({ weather, viewState, onEditWeather, onRetry }: Wea
   const fade = useProviderFade(weather)
   const status = statusFor(viewState, weather)
   const sourceLine = weatherSourceLine(weather)
-  const rows = weatherRowEntries(weather, { sky: false })
+  const model = weatherCardModel(weather)
   useAnnounceOnChange(status.text)
 
   const editSky = (code: WeatherSkyCode | null) =>
@@ -117,9 +119,11 @@ export function WeatherBlock({ weather, viewState, onEditWeather, onRetry }: Wea
 
   return (
     <AppCard variant="glass" padding={brandSpacing4.md} style={styles.card}>
-      <Text style={styles.title} accessibilityRole="header">
-        {t.title}
-      </Text>
+      {model.hasContent ? (
+        <Animated.View style={fade} testID="conditions-weather-hero">
+          <WeatherHero model={model} />
+        </Animated.View>
+      ) : null}
 
       <View style={styles.statusRow}>
         <View
@@ -167,22 +171,6 @@ export function WeatherBlock({ weather, viewState, onEditWeather, onRetry }: Wea
         />
       </View>
 
-      {rows.length > 0 ? (
-        <Animated.View style={[styles.rows, fade]} testID="conditions-weather-rows">
-          {rows.map((row) => (
-            <View
-              key={row.key}
-              style={styles.row}
-              accessible
-              accessibilityLabel={row.accessibilityLabel}
-            >
-              <Text style={styles.rowLabel}>{row.label}</Text>
-              <Text style={styles.rowValue}>{row.value}</Text>
-            </View>
-          ))}
-        </Animated.View>
-      ) : null}
-
       {sourceLine !== null ? <Text style={styles.source}>{sourceLine}</Text> : null}
     </AppCard>
   )
@@ -192,10 +180,6 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     card: {
       gap: brandSpacing4.smd,
-    },
-    title: {
-      ...brandTypography.sectionHeader,
-      color: theme.colors.textPrimary,
     },
     statusRow: {
       flexDirection: "row",
@@ -230,26 +214,6 @@ function createStyles(theme: BrandTheme) {
     linkText: {
       ...brandTypography.sectionHeader,
       color: theme.visual.accentText,
-    },
-    rows: {
-      gap: brandSpacing4.sm,
-    },
-    row: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      alignItems: "baseline",
-      justifyContent: "space-between",
-      columnGap: brandSpacing4.smd,
-    },
-    rowLabel: {
-      ...brandTypeScale.footnote,
-      fontFamily: brandDefaultFontFamily,
-      color: theme.colors.textSecondary,
-    },
-    rowValue: {
-      ...brandTypeScale.subhead,
-      fontFamily: "Jost-SemiBold",
-      color: theme.semanticColors.textStrong,
     },
     skyBlock: {
       gap: brandSpacing4.sm,

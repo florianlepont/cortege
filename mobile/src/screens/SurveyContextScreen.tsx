@@ -15,12 +15,16 @@ import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { TitledScrollView } from "../ui/TitledScrollView"
 
+/** The weather sits within this many points of the top (the page title above it): already in view. */
+const SECTION_AT_TOP_MAX_Y = 120
+
 /**
- * "Contexte" (OA-46, D-32): the method and the station context, then the weather with its status
- * line and the full dated source sentence (phase 27 D-15). The parcels and their map are the
- * "Parcelles" page; the survey note is a card of the summary (D-33). With the `conditions` section
- * param the page scrolls once to the weather after its first layout; no field takes focus by
- * itself.
+ * "Contexte" (OA-46, D-32, D-41): the weather first, in one card (read-out, status line, sky chips
+ * and the full dated source sentence, phase 27 D-15), then the method and the station context. The
+ * parcels and their map are the "Parcelles" page; the survey note is a card of the summary (D-33).
+ * With the `conditions` section param the page scrolls once to the weather after its first layout,
+ * unless the weather already sits at the top, where there is nothing to scroll to; no field takes
+ * focus by itself.
  */
 export function SurveyContextScreen({
   section,
@@ -67,6 +71,8 @@ export function SurveyContextScreen({
     if (section !== "conditions" || scrolled.current) return
     if (sectionY.current === null || !sized.current) return
     scrolled.current = true
+    // Right under the page title the weather is already in view: scrolling would only hide the title.
+    if (sectionY.current <= SECTION_AT_TOP_MAX_Y) return
     scrollRef.current?.scrollTo({ y: sectionY.current, animated: !reduceMotion })
   }, [section, reduceMotion])
 
@@ -100,6 +106,17 @@ export function SurveyContextScreen({
       onContentSizeChange={onContentSizeChange}
     >
       <PageTitle>{fr.navigation.headers.surveyContext}</PageTitle>
+      <View onLayout={onSectionLayout}>
+        <ConditionsSection
+          key={surveyId}
+          editable={canEditSurvey}
+          conditions={conditions}
+          viewState={conditionsViewState}
+          onEditWeather={editWeather}
+          onRetry={retryWeather}
+        />
+      </View>
+
       <ScoringContextEditor
         surveyId={selectedSurvey.id}
         canEditSurvey={canEditSurvey}
@@ -112,17 +129,6 @@ export function SurveyContextScreen({
         onUpdateCas3Scale={onUpdateCas3Scale}
         onSwitchToV32={onSwitchToV32}
       />
-
-      <View onLayout={onSectionLayout}>
-        <ConditionsSection
-          key={surveyId}
-          editable={canEditSurvey}
-          conditions={conditions}
-          viewState={conditionsViewState}
-          onEditWeather={editWeather}
-          onRetry={retryWeather}
-        />
-      </View>
     </TitledScrollView>
   )
 }

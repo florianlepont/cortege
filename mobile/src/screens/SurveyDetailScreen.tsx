@@ -42,10 +42,10 @@ const headerText = fr.surveyDetail.header
 const alertsText = fr.surveyDetail.alerts
 
 /**
- * The summary of a survey (OA-46): its name and where it stands, the weather of the day first
- * (D-17, D-40), the score, the photos, the map, four rows that open the sub-pages (Contexte,
- * Parcelles, the factors, the parcel's history; D-32), the survey actions and, last, the survey note
- * (D-33, D-38). The survey's own change log is in the "…" menu, never a row, D-02. The one action is
+ * The summary of a survey (OA-46): its name and where it stands, the score, the compact weather
+ * card (D-17, D-41), the photos, the map, four rows that open the sub-pages (Contexte, Parcelles,
+ * the factors, the parcel's history; D-32), the survey actions and, last, the survey note (D-33,
+ * D-38). The survey's own change log is in the "…" menu, never a row, D-02. The one action is
  * the button at the bottom. The coloured chart of the ten factors is not here (D-24): it lives on
  * the score page only.
  */
@@ -266,19 +266,19 @@ export function SurveyDetailScreen({
 
         {exporting ? <AppNotice tone="info" message={fr.surveyExport.progress} /> : null}
 
+        <ScoreCard
+          scores={data.displayedScores}
+          isDraftView={data.useLocalDraftView}
+          filledFactorCount={data.filledFactorCount}
+          pulseTrigger={shownPulse}
+        />
+
         <WeatherCard
           weather={conditions.weather}
           loading={conditionsLoading}
           offline={conditionsOffline}
           submitted={selectedSurvey.status === "submitted"}
           onOpen={onOpenConditions}
-        />
-
-        <ScoreCard
-          scores={data.displayedScores}
-          isDraftView={data.useLocalDraftView}
-          filledFactorCount={data.filledFactorCount}
-          pulseTrigger={shownPulse}
         />
 
         <PhotosStrip

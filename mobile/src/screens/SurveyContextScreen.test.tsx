@@ -125,15 +125,15 @@ afterEach(() => {
 })
 
 describe("SurveyContextScreen (variant I)", () => {
-  test("shows the method editor then the weather section: no map, no parcel list (D-32)", () => {
+  test("shows the weather first, then the method editor: no map, no parcel list (D-32, D-41)", () => {
     const tree = render()
     const scroll = tree.root.findByType("ScrollView" as never)
     const order = scroll.children.map((child) => (child as { type: unknown }).type)
-    expect(order.slice(0, 2)).toEqual(["PageTitle", "ScoringContextEditor"])
-    // The weather closes the page, inside the view that measures it.
+    // The weather opens the page, inside the view that measures it, above the method and cas.
     expect(order).toHaveLength(3)
-    const last = scroll.children[2] as ReactTestInstance
-    expect(last.findAllByType("ConditionsSection" as never)).toHaveLength(1)
+    expect([order[0], order[2]]).toEqual(["PageTitle", "ScoringContextEditor"])
+    const first = scroll.children[1] as ReactTestInstance
+    expect(first.findAllByType("ConditionsSection" as never)).toHaveLength(1)
     expect(tree.root.findAllByType("ParcelMapCard" as never)).toHaveLength(0)
     expect(tree.root.findAllByType("AppGroupedList" as never)).toHaveLength(0)
     expect(tree.root.findAllByType("GlassIconButton" as never)).toHaveLength(0)
@@ -227,7 +227,7 @@ describe("Conditions section (phase 27, D-15)", () => {
   })
 })
 
-describe("section param (opens scrolled to the Conditions)", () => {
+describe("section param (opens at the Conditions)", () => {
   const measure = (tree: ReactTestRenderer, y: number) => {
     const wrapper = tree.root
       .findAllByType("View" as never)
@@ -293,6 +293,18 @@ describe("section param (opens scrolled to the Conditions)", () => {
     resize(tree)
 
     expect(mockScrollTo).toHaveBeenCalledWith({ y: 400, animated: true })
+  })
+
+  test("does not scroll when the weather already sits at the top of the page (D-41)", () => {
+    const tree = render(false, { section: "conditions" })
+    measure(tree, 60)
+    resize(tree)
+
+    expect(mockScrollTo).not.toHaveBeenCalled()
+    // Done for good: a later, taller layout does not scroll either.
+    measure(tree, 900)
+    resize(tree)
+    expect(mockScrollTo).not.toHaveBeenCalled()
   })
 
   test("without the param the page never scrolls by itself", () => {

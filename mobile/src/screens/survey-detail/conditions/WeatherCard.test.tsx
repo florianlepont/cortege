@@ -96,8 +96,8 @@ const glyphs = (tree: ReactTestRenderer): string[] =>
 const spinners = (tree: ReactTestRenderer) =>
   tree.root.findAll((node) => (node.type as unknown) === "ActivityIndicator")
 
-describe("WeatherCard with measurements (D-40)", () => {
-  test("shows the big sky glyph, the temperature numeral with its unit and the sky label", () => {
+describe("WeatherCard with measurements (compact, D-41)", () => {
+  test("shows a small sky glyph, the temperature with its unit and the sky label on the main line", () => {
     const { tree } = mount({ weather: CLOUDY })
 
     expect(maybeByTestId(tree, "weather-card")).toBeDefined()
@@ -107,6 +107,31 @@ describe("WeatherCard with measurements (D-40)", () => {
     expect(all).toContain("14")
     expect(all).toContain(s.temperatureUnit)
     expect(all).toContain("Nuageux")
+    const main = byTestId(tree, "weather-card-main")
+    expect(main.findAll((n) => n.props.testID === "weather-card-numeral").length).toBeGreaterThan(0)
+    expect(texts(tree)).toContain("Nuageux")
+    // Wraps to a second line instead of squeezing at very large text sizes.
+    expect(main.props.style).toEqual(expect.objectContaining({ flexWrap: "wrap" }))
+  })
+
+  test("is one compact row: small tile and glyph, not the big read-out of the Contexte page", () => {
+    const { tree } = mount({ weather: CLOUDY })
+
+    expect(byTestId(tree, "weather-card-tile").props.style).toEqual(
+      expect.objectContaining({ width: 40, height: 40 }),
+    )
+    const sky = tree.root.findAll(
+      (n) => n.type === Ionicons && n.props.name === "cloudy-outline",
+    )[0]
+    expect(sky.props.size).toBeLessThanOrEqual(24)
+    const area = byTestId(tree, "weather-card-area")
+    expect(area.props.style).toEqual(
+      expect.objectContaining({ flexDirection: "row", alignItems: "center", minHeight: 44 }),
+    )
+    // No wind / rain / time columns: those live on the Contexte page.
+    expect(maybeByTestId(tree, "weather-card-stats")).toBeUndefined()
+    expect(texts(tree)).not.toContain(s.stat.time)
+    expect(texts(tree)).not.toContain("12:00")
   })
 
   test("the numeral keeps the French comma and one decimal, and shrinks instead of overflowing", () => {
@@ -119,29 +144,30 @@ describe("WeatherCard with measurements (D-40)", () => {
     expect(numeral.props.maxFontSizeMultiplier).toBeLessThanOrEqual(1.5)
   })
 
-  test("wind, rain over 24 h and the time are compact columns that wrap", () => {
+  test("wind and rain are one small secondary line that wraps", () => {
     const { tree } = mount({ weather: CLOUDY })
 
-    const stats = byTestId(tree, "weather-card-stats")
-    expect(stats.props.style).toEqual(expect.objectContaining({ flexWrap: "wrap" }))
-    expect(texts(tree)).toEqual(
-      expect.arrayContaining([s.stat.wind, "12 km/h", s.stat.rain, "2 mm", s.stat.time, "12:00"]),
+    expect(byTestId(tree, "weather-card-detail").props.children).toBe(
+      "vent 12\u00a0km/h, pluie 2\u00a0mm sur 24\u00a0h",
     )
-    for (const key of ["wind", "rain", "time"]) {
-      expect(byTestId(tree, `weather-card-stat-${key}`).props.style).toEqual(
-        expect.objectContaining({ flexGrow: 1 }),
-      )
-    }
+    expect(byTestId(tree, "weather-card-sub").props.style).toEqual(
+      expect.objectContaining({ flexWrap: "wrap" }),
+    )
+    expect(byTestId(tree, "weather-card-mention").props.children).toBe(s.mention)
   })
 
-  test("only the columns that exist are drawn, and none when only the temperature exists", () => {
+  test("only the figures that exist are written, and no line when only the temperature exists", () => {
     const wind = mount({ weather: { temperature_c: 9, wind_kmh: 3, source: "meteo_france" } })
-    expect(maybeByTestId(wind.tree, "weather-card-stat-wind")).toBeDefined()
-    expect(maybeByTestId(wind.tree, "weather-card-stat-rain")).toBeUndefined()
-    expect(maybeByTestId(wind.tree, "weather-card-stat-time")).toBeUndefined()
+    expect(byTestId(wind.tree, "weather-card-detail").props.children).toBe("vent 3\u00a0km/h")
+
+    const rain = mount({ weather: { temperature_c: 9, rain_24h_mm: 0, source: "meteo_france" } })
+    expect(byTestId(rain.tree, "weather-card-detail").props.children).toBe(
+      "pluie 0\u00a0mm sur 24\u00a0h",
+    )
 
     const only = mount({ weather: { temperature_c: 9, source: "meteo_france" } })
-    expect(maybeByTestId(only.tree, "weather-card-stats")).toBeUndefined()
+    expect(maybeByTestId(only.tree, "weather-card-detail")).toBeUndefined()
+    expect(maybeByTestId(only.tree, "weather-card-mention")).toBeDefined()
   })
 
   test("an unknown sky shows the neutral glyph, never a wrong one", () => {
@@ -160,8 +186,9 @@ describe("WeatherCard with measurements (D-40)", () => {
     expect(area.props.style).toEqual(expect.objectContaining({ minHeight: 44 }))
     act(() => area.props.onPress())
     expect(onOpen).toHaveBeenCalledTimes(1)
-    // The numeral, the columns and the mention are inside that one target.
-    expect(area.findAll((n) => n.props.testID === "weather-card-stats").length).toBeGreaterThan(0)
+    // The numeral, the detail line and the mention are inside that one target.
+    expect(area.findAll((n) => n.props.testID === "weather-card-numeral").length).toBeGreaterThan(0)
+    expect(area.findAll((n) => n.props.testID === "weather-card-detail").length).toBeGreaterThan(0)
     expect(area.findAll((n) => n.props.testID === "weather-card-mention").length).toBeGreaterThan(0)
   })
 
@@ -213,7 +240,7 @@ describe("WeatherCard attribution (D-26, D-35, D-37)", () => {
     expect(texts(tree).join(" ")).not.toContain("Météo-France")
     expect(maybeByTestId(tree, "weather-card-mention")).toBeUndefined()
     expect(maybeByTestId(tree, "weather-card-numeral")).toBeUndefined()
-    expect(maybeByTestId(tree, "weather-card-stats")).toBeUndefined()
+    expect(maybeByTestId(tree, "weather-card-detail")).toBeUndefined()
     expect(byTestId(tree, "weather-card-area").props.accessibilityLabel).toBe(
       s.openWithLine("Pluie"),
     )
@@ -228,12 +255,13 @@ describe("WeatherCard attribution (D-26, D-35, D-37)", () => {
   })
 })
 
-describe("WeatherCard states (U-11, D-40)", () => {
-  test("a draft with no weather shows the friendly invitation", () => {
+describe("WeatherCard states (U-11, D-40, D-41)", () => {
+  test("a draft with no weather shows the invitation as one slim line", () => {
     const { tree, onOpen } = mount()
 
-    expect(texts(tree)).toContain(s.emptyTitle)
-    expect(texts(tree)).toContain(s.emptyBody)
+    expect(byTestId(tree, "weather-card-slim").props.children).toBe(s.compactEmpty)
+    expect(texts(tree)).toHaveLength(1)
+    expect(maybeByTestId(tree, "weather-card-main")).toBeUndefined()
     expect(glyphs(tree)).toEqual(["cloud-outline", "chevron-forward-outline"])
     const area = byTestId(tree, "weather-card-area")
     expect(area.props.accessibilityLabel).toBe(s.openWithLine(s.emptyBody))
@@ -244,7 +272,7 @@ describe("WeatherCard states (U-11, D-40)", () => {
   test("offline with nothing yet is calm: a quiet glyph, a plain sentence, no error word", () => {
     const { tree } = mount({ offline: true })
 
-    expect(texts(tree)).toContain(s.offlineBody)
+    expect(texts(tree)).toEqual([s.compactOffline])
     expect(texts(tree).join(" ").toLowerCase()).not.toContain("erreur")
     expect(glyphs(tree)).toEqual(["cloud-offline-outline", "chevron-forward-outline"])
     expect(byTestId(tree, "weather-card-area").props.accessibilityLabel).toBe(
@@ -255,7 +283,7 @@ describe("WeatherCard states (U-11, D-40)", () => {
   test("offline with values already there keeps showing the values", () => {
     const { tree } = mount({ offline: true, weather: CLOUDY })
 
-    expect(texts(tree)).not.toContain(s.offlineBody)
+    expect(texts(tree)).not.toContain(s.compactOffline)
     expect(glyphs(tree)).toContain("cloudy-outline")
   })
 
@@ -285,8 +313,8 @@ describe("WeatherCard states (U-11, D-40)", () => {
     const { tree } = mount({ loading: true })
 
     expect(spinners(tree)).toHaveLength(1)
-    expect(texts(tree)).toContain(s.loading)
-    expect(texts(tree)).not.toContain(s.emptyTitle)
+    expect(texts(tree)).toEqual([s.loading])
+    expect(texts(tree)).not.toContain(s.compactEmpty)
     expect(byTestId(tree, "weather-card-area").props.accessibilityLabel).toBe(
       s.openWithLine(s.loading),
     )

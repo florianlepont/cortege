@@ -83,18 +83,22 @@ export const conditionsFr = {
   },
   summary: {
     emptyTitle: "Météo du relevé",
-    // The friendly invitation of a draft with no weather yet; opens the Contexte page (D-40).
+    // The friendly invitation of a draft with no weather yet; opens the Contexte page (D-40). The
+    // title is also the headline of the Contexte read-out when only a time exists.
     emptyBody: "Se remplit toute seule avec la parcelle. Vous pouvez choisir le ciel.",
     // Offline is a calm state, never an error tone.
     offlineBody:
       "Pas de connexion. Les mesures arriveront avec le réseau. Vous pouvez choisir le ciel.",
+    // The slim one-line forms of the compact card (D-41).
+    compactEmpty: "Météo : se remplit avec la parcelle, ciel au choix.",
+    compactOffline: "Météo : pas de connexion, les mesures arriveront avec le réseau.",
     loading: "Recherche de la météo…",
     open: "Ouvrir la météo du relevé",
     openWithLine: (line: string) => `Ouvrir la météo du relevé. ${line}`,
     openWithLineSource: (line: string, source: string) =>
       `Ouvrir la météo du relevé. ${line}. Source : ${source}`,
     temperatureUnit: "°C",
-    // The three compact columns under the temperature (D-40).
+    // The three columns under the temperature on the Contexte page (D-40, D-41).
     stat: {
       wind: "Vent",
       rain: "Pluie 24\u00a0h",

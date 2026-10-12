@@ -4,8 +4,9 @@ import { Ionicons } from "@expo/vector-icons"
 import type { SurveyWeather } from "@cortege/ibp-domain"
 import { setReducedMotion } from "../../../../test/react-native-reanimated.mock"
 import { defaultTheme } from "../../../app/theme"
-import { editWeatherSky, type WeatherViewState } from "../../../app/weather"
+import { editWeatherSky, weatherSourceLine, type WeatherViewState } from "../../../app/weather"
 import { fr } from "../../../i18n"
+import { AppCard } from "../../../ui/AppCard"
 import { ConditionsReadOnly } from "./ConditionsReadOnly"
 import { ConditionsSection } from "./ConditionsSection"
 import type { SurveyConditions } from "./useSurveyConditions"
@@ -247,7 +248,7 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
     temperature_c: 16.9,
   }
 
-  test("shows the provider's measurements as read-only rows, with no text field", () => {
+  test("shows the provider's measurements as the big read-out, with no text field", () => {
     const tree = mount(
       <ConditionsSection
         {...sectionProps({
@@ -260,13 +261,13 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
     const all = texts(tree)
     expect(all).toEqual(
       expect.arrayContaining([
-        t.weather.rows.temperature,
-        "16,9\u00a0°C",
-        t.weather.rows.wind,
+        "16,9",
+        t.summary.temperatureUnit,
+        t.summary.stat.wind,
         "7,2\u00a0km/h",
-        t.weather.rows.rain,
+        t.summary.stat.rain,
         "0\u00a0mm",
-        t.weather.rows.time,
+        t.summary.stat.time,
       ]),
     )
     expect(tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
@@ -279,11 +280,43 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
     ).toHaveLength(8)
   })
 
+  test("the whole weather is one card: read-out, status line, chips, then the source sentence (D-41)", () => {
+    const tree = mount(
+      <ConditionsSection
+        {...sectionProps({
+          conditions: { ...LOADED_EMPTY, weather: { ...OWNERS_WEATHER, sky: "cloudy" } },
+          viewState: "prefilled",
+        })}
+      />,
+    )
+
+    const hosts = tree.root
+      .findAll((n) => typeof n.type === "string" && typeof n.props.testID === "string")
+      .map((n) => n.props.testID as string)
+    const at = (id: string) => hosts.indexOf(id)
+    expect(at("weather-hero")).toBeGreaterThan(-1)
+    expect(at("weather-hero")).toBeLessThan(at("conditions-weather-status"))
+    expect(at("conditions-weather-status")).toBeLessThan(at("conditions-sky-clear"))
+
+    // Read-out, status line and chips share one glass card.
+    const card = tree.root.findAllByType(AppCard as never)
+    expect(card).toHaveLength(1)
+    expect(card[0].findAll((n) => n.props.testID === "weather-hero").length).toBeGreaterThan(0)
+    expect(
+      card[0].findAll((n) => n.props.testID === "conditions-sky-clear").length,
+    ).toBeGreaterThan(0)
+    // The sky of the chips shows in the read-out too, and the dated sentence closes the card.
+    const all = texts(tree)
+    expect(all).toContain("Nuageux")
+    expect(all[all.length - 1]).toBe(weatherSourceLine({ ...OWNERS_WEATHER, sky: "cloudy" }))
+    expect(all[all.length - 1]).toContain("ciel saisi par l'observateur")
+  })
+
   test("without provider data only the sky chips are offered, with the calm status line", () => {
     for (const viewState of ["noParcel", "offline", "unavailable"] as const) {
       const tree = mount(<ConditionsSection {...sectionProps({ viewState })} />)
-      expect(maybeByTestId(tree, "conditions-weather-rows")).toBeUndefined()
-      expect(texts(tree)).not.toContain(t.weather.rows.temperature)
+      expect(maybeByTestId(tree, "conditions-weather-hero")).toBeUndefined()
+      expect(maybeByTestId(tree, "weather-hero")).toBeUndefined()
       expect(texts(tree)).toContain(t.weather.status[viewState])
     }
   })
@@ -380,7 +413,7 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
       tree.update(element({ sky: "clear", temperature_c: 12, source: "meteo_france" }))
     })
 
-    expect(texts(tree)).toContain("12\u00a0°C")
+    expect(texts(tree)).toEqual(expect.arrayContaining(["12", t.summary.temperatureUnit]))
   })
 
   test("nothing is drawn under the header until the draft was read", () => {

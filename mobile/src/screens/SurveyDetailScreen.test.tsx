@@ -198,10 +198,11 @@ describe("SurveyDetailScreen summary", () => {
     expect(byType(tree, "AppCard")).toHaveLength(0)
     const scroll = byType(tree, "ScrollView")[0]
     const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
-    // D-40: the weather card opens the page, right under the header, before the score card.
-    expect(order.indexOf("WeatherCard")).toBeGreaterThan(order.indexOf("SummaryHeader"))
-    expect(order.indexOf("ScoreCard")).toBe(order.indexOf("WeatherCard") + 1)
-    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("ScoreCard") + 1)
+    // D-41: the score card comes first, the compact weather card right below it, then the photos.
+    expect(order.indexOf("ScoreCard")).toBeGreaterThan(order.indexOf("SummaryHeader"))
+    expect(order.indexOf("WeatherCard")).toBe(order.indexOf("ScoreCard") + 1)
+    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("WeatherCard") + 1)
+    expect(order.indexOf("ParcelMapCard")).toBe(order.indexOf("PhotosStrip") + 1)
   })
 
   test("D-38: the survey note is the last card, after the rows and the survey actions", () => {

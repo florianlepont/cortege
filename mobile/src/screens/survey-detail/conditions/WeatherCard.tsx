@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons"
-import { isWeatherSkyCode, type SurveyWeather, type WeatherSkyCode } from "@cortege/ibp-domain"
+import { type SurveyWeather } from "@cortege/ibp-domain"
 import { useMemo } from "react"
 import { ActivityIndicator, StyleSheet, View } from "react-native"
 import {
@@ -11,39 +11,31 @@ import {
   brandTypography,
 } from "../../../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../../../app/theme"
-import { formatWeatherLine, formatWeatherNumber, weatherCardMention } from "../../../app/weather"
+import { formatWeatherNumber } from "../../../app/weather"
 import { fr } from "../../../i18n"
 import { AppCard } from "../../../ui/AppCard"
 import { AppText as Text } from "../../../ui/AppText"
 import { EntranceView } from "../../../ui/EntranceView"
 import { RipplePressable } from "../../../ui/RipplePressable"
-import { weatherRowEntries } from "./weather-rows"
+import {
+  areaAccessibilityLabel,
+  NEUTRAL_GLYPH,
+  OFFLINE_GLYPH,
+  SKY_GLYPHS,
+  weatherCardModel,
+  weatherDetailLine,
+} from "./weather-card-model"
+
+export { SKY_GLYPHS } from "./weather-card-model"
 
 const t = fr.conditions
 const s = t.summary
 
-/** The glyph of each sky, one outline glyph per code (UI-SPEC 3.1). */
-export const SKY_GLYPHS: Record<WeatherSkyCode, keyof typeof Ionicons.glyphMap> = {
-  clear: "sunny-outline",
-  partly_cloudy: "partly-sunny-outline",
-  cloudy: "cloudy-outline",
-  overcast: "cloud-outline",
-  fog: "reorder-two-outline",
-  rain: "rainy-outline",
-  thunderstorm: "thunderstorm-outline",
-  snow: "snow-outline",
-}
-
-/** Without a sky the card still has a glyph: the neutral one of the invitation. */
-const NEUTRAL_GLYPH: keyof typeof Ionicons.glyphMap = "cloud-outline"
-const OFFLINE_GLYPH: keyof typeof Ionicons.glyphMap = "cloud-offline-outline"
-
-const TILE_SIZE = 64
-const SKY_GLYPH_SIZE = 40
+const TILE_SIZE = 40
+const SKY_GLYPH_SIZE = 24
 const CHEVRON_SIZE = 18
 const PRESS_MIN_HEIGHT = 44
-const NUMERAL_SIZE = 44
-const STAT_KEYS = ["wind", "rain", "time"] as const
+const NUMERAL_SIZE = 28
 
 type WeatherCardProps = {
   weather: SurveyWeather | null
@@ -57,40 +49,39 @@ type WeatherCardProps = {
   onOpen: () => void
 }
 
-const finite = (value: unknown): value is number =>
-  typeof value === "number" && Number.isFinite(value)
-
 /**
- * The weather at the top of the survey summary (D-17, D-40, UI-SPEC 3.1): a glass card with a big
- * sky glyph beside the temperature, then wind, rain over 24 h and the time of the measurement as
- * compact columns that wrap at large text sizes, and the short "Météo-France" mention (D-35). The
- * whole card is one press target opening the weather of the Contexte page, chevron included. With
- * only the observer's sky (D-37) it shows the glyph and the sky, no figure and no mention. A draft
- * with nothing shows a friendly invitation (calm when offline, never an error), a submitted survey
- * with nothing draws nothing. One entrance, no loop.
+ * The weather of the survey summary (D-17, D-41): a compact glass card right under the score card,
+ * one row of about 70 points. A small sky glyph, the temperature with its unit and the sky label on
+ * the main line, wind and rain as small secondary text under it with the short "Météo-France"
+ * mention (D-35), and a chevron. The whole card is one press target opening the weather of the
+ * Contexte page, where the big read-out and the sky chips live. With only the observer's sky (D-37)
+ * it shows the glyph and the label. A draft with nothing shows a slim invitation (calm when offline,
+ * never an error), a submitted survey with nothing draws nothing. At very large text the lines wrap
+ * and the card grows. One entrance, no loop.
  */
 export function WeatherCard({ weather, loading, offline, submitted, onOpen }: WeatherCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
 
-  const line = formatWeatherLine(weather)
-  const mention = weatherCardMention(weather)
-  const sky = weather && isWeatherSkyCode(weather.sky) ? weather.sky : null
-  const temperature = finite(weather?.temperature_c) ? weather.temperature_c : null
-  const stats = weatherRowEntries(weather, { sky: false }).filter((entry) =>
-    (STAT_KEYS as readonly string[]).includes(entry.key),
-  )
-  const hasContent = temperature !== null || sky !== null || stats.length > 0
+  const model = weatherCardModel(weather)
+  const { sky, temperature, mention, hasContent } = model
+  const detail = weatherDetailLine(weather)
 
   if (!hasContent && !loading && submitted) return null
 
-  const showsValues = hasContent
-  const areaLabel = areaAccessibilityLabel({ line, mention, loading, offline, hasContent })
+  const areaLabel = areaAccessibilityLabel({
+    line: model.line,
+    mention,
+    loading,
+    offline,
+    hasContent,
+  })
+  const showSpinner = !hasContent && loading
 
   return (
     <EntranceView index={0}>
       <View testID="weather-card">
-        <AppCard variant="glass" padding={brandSpacing4.md}>
+        <AppCard variant="glass" padding={brandSpacing4.smd}>
           <RipplePressable
             testID="weather-card-area"
             style={styles.area}
@@ -99,35 +90,35 @@ export function WeatherCard({ weather, loading, offline, submitted, onOpen }: We
             accessibilityRole="button"
             accessibilityLabel={areaLabel}
           >
-            <View style={styles.head}>
-              <View style={styles.tile} testID="weather-card-tile">
-                {!showsValues && loading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={theme.colors.textSecondary}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                  />
-                ) : (
-                  <Ionicons
-                    name={
-                      sky !== null
-                        ? SKY_GLYPHS[sky]
-                        : !showsValues && offline
-                          ? OFFLINE_GLYPH
-                          : NEUTRAL_GLYPH
-                    }
-                    size={SKY_GLYPH_SIZE}
-                    color={theme.visual.glass.iconTint}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                  />
-                )}
-              </View>
+            <View style={styles.tile} testID="weather-card-tile">
+              {showSpinner ? (
+                <ActivityIndicator
+                  size="small"
+                  color={theme.colors.textSecondary}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              ) : (
+                <Ionicons
+                  name={
+                    sky !== null
+                      ? SKY_GLYPHS[sky]
+                      : !hasContent && offline
+                        ? OFFLINE_GLYPH
+                        : NEUTRAL_GLYPH
+                  }
+                  size={SKY_GLYPH_SIZE}
+                  color={theme.visual.glass.iconTint}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+              )}
+            </View>
 
-              <View style={styles.copy}>
-                {temperature !== null ? (
-                  <>
+            <View style={styles.copy}>
+              {temperature !== null || sky !== null ? (
+                <View style={styles.mainLine} testID="weather-card-main">
+                  {temperature !== null ? (
                     <View style={styles.numeralRow} testID="weather-card-numeral">
                       <Text
                         style={styles.numeral}
@@ -142,53 +133,40 @@ export function WeatherCard({ weather, loading, offline, submitted, onOpen }: We
                         {s.temperatureUnit}
                       </Text>
                     </View>
-                    {sky !== null ? <Text style={styles.skyLabel}>{t.sky[sky]}</Text> : null}
-                  </>
-                ) : sky !== null ? (
-                  <Text style={styles.headline}>{t.sky[sky]}</Text>
-                ) : showsValues ? (
-                  <Text style={styles.headline}>{s.emptyTitle}</Text>
-                ) : loading ? (
-                  <Text style={styles.body}>{s.loading}</Text>
-                ) : (
-                  <>
-                    <Text style={styles.headline}>{s.emptyTitle}</Text>
-                    <Text style={styles.body}>{offline ? s.offlineBody : s.emptyBody}</Text>
-                  </>
-                )}
-              </View>
+                  ) : null}
+                  {sky !== null ? <Text style={styles.skyLabel}>{t.sky[sky]}</Text> : null}
+                </View>
+              ) : hasContent ? (
+                <Text style={styles.headline}>{s.emptyTitle}</Text>
+              ) : (
+                <Text style={styles.body} testID="weather-card-slim">
+                  {loading ? s.loading : offline ? s.compactOffline : s.compactEmpty}
+                </Text>
+              )}
 
-              <Ionicons
-                name="chevron-forward-outline"
-                size={CHEVRON_SIZE}
-                color={theme.colors.textSecondary}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              />
+              {detail !== null || mention !== null ? (
+                <View style={styles.subLine} testID="weather-card-sub">
+                  {detail !== null ? (
+                    <Text style={styles.sub} testID="weather-card-detail">
+                      {detail}
+                    </Text>
+                  ) : null}
+                  {mention !== null ? (
+                    <Text style={styles.mention} testID="weather-card-mention">
+                      {mention}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
 
-            {stats.length > 0 ? (
-              <View style={styles.stats} testID="weather-card-stats">
-                {stats.map((entry) => (
-                  <View
-                    key={entry.key}
-                    style={styles.stat}
-                    testID={`weather-card-stat-${entry.key}`}
-                  >
-                    <Text style={styles.statLabel}>
-                      {s.stat[entry.key as (typeof STAT_KEYS)[number]]}
-                    </Text>
-                    <Text style={styles.statValue}>{entry.value}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-
-            {mention !== null ? (
-              <Text style={styles.mention} testID="weather-card-mention">
-                {mention}
-              </Text>
-            ) : null}
+            <Ionicons
+              name="chevron-forward-outline"
+              size={CHEVRON_SIZE}
+              color={theme.colors.textSecondary}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
           </RipplePressable>
         </AppCard>
       </View>
@@ -196,34 +174,13 @@ export function WeatherCard({ weather, loading, offline, submitted, onOpen }: We
   )
 }
 
-/** "Ouvrir la météo du relevé. {what the card says}" (UI-SPEC 3.1, accessibility). */
-function areaAccessibilityLabel(input: {
-  line: string | null
-  mention: string | null
-  loading: boolean
-  offline: boolean
-  hasContent: boolean
-}): string {
-  if (input.line !== null) {
-    return input.mention !== null
-      ? s.openWithLineSource(input.line, input.mention)
-      : s.openWithLine(input.line)
-  }
-  if (input.hasContent) return s.open
-  if (input.loading) return s.openWithLine(s.loading)
-  return s.openWithLine(input.offline ? s.offlineBody : s.emptyBody)
-}
-
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     area: {
       minHeight: PRESS_MIN_HEIGHT,
-      gap: brandSpacing4.smd,
-    },
-    head: {
       flexDirection: "row",
       alignItems: "center",
-      gap: brandSpacing4.md,
+      gap: brandSpacing4.smd,
     },
     tile: {
       width: TILE_SIZE,
@@ -237,22 +194,32 @@ function createStyles(theme: BrandTheme) {
       flex: 1,
       flexShrink: 1,
       minWidth: 0,
+      gap: brandSpacing4.xxs,
+    },
+    // Wraps to a second line at very large text sizes instead of squeezing the numeral.
+    mainLine: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "baseline",
+      columnGap: brandSpacing4.sm,
     },
     numeralRow: {
       flexDirection: "row",
       alignItems: "baseline",
-      gap: brandSpacing4.xs,
+      gap: brandSpacing4.xxs,
+      flexShrink: 1,
     },
     numeral: {
       ...brandTypography.numeralCard,
       fontSize: NUMERAL_SIZE,
       lineHeight: NUMERAL_SIZE + 4,
-      letterSpacing: -2,
+      letterSpacing: -1.2,
       color: theme.semanticColors.textStrong,
       flexShrink: 1,
     },
     unit: {
-      ...brandTypography.numeralUnit,
+      ...brandTypeScale.subhead,
+      fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
     },
     skyLabel: {
@@ -261,7 +228,7 @@ function createStyles(theme: BrandTheme) {
       color: theme.semanticColors.textStrong,
     },
     headline: {
-      ...brandTypeScale.headline,
+      ...brandTypeScale.subhead,
       fontFamily: "Jost-SemiBold",
       color: theme.semanticColors.textStrong,
     },
@@ -270,29 +237,19 @@ function createStyles(theme: BrandTheme) {
       fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
     },
-    // Columns that grow to share the row and drop to the next line when the text is large.
-    stats: {
+    // The detail and the mention share a line; the mention drops below at large text sizes.
+    subLine: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: brandSpacing4.sm,
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      columnGap: brandSpacing4.sm,
     },
-    stat: {
-      flexGrow: 1,
-      flexBasis: 88,
-      borderRadius: brandRadius.field,
-      paddingHorizontal: brandSpacing4.smd,
-      paddingVertical: brandSpacing4.sm,
-      backgroundColor: theme.visual.glass.iconTile,
-    },
-    statLabel: {
+    sub: {
       ...brandTypeScale.footnote,
       fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
-    },
-    statValue: {
-      ...brandTypeScale.subhead,
-      fontFamily: "Jost-SemiBold",
-      color: theme.semanticColors.textStrong,
+      flexShrink: 1,
     },
     mention: {
       ...brandTypeScale.footnote,
