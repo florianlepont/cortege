@@ -76,6 +76,7 @@ export class EnvironmentVariables {
   // only, never logged.
   @IsOptional() @Matches(WEATHER_PROVIDER_PATTERN) WEATHER_PROVIDER?: string
   @IsOptional() @IsString() METEOFRANCE_API_KEY?: string
+  @IsOptional() @IsString() METEOFRANCE_AUTH_MODE?: string
   @IsOptional() @IsString() METEOFRANCE_OBS_URL?: string
   @IsOptional() @IsString() WEATHER_TIMEOUT_MS?: string
   @IsOptional() @IsString() WEATHER_MAX_STATION_DISTANCE_KM?: string

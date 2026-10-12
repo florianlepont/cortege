@@ -111,6 +111,7 @@ export function createWeatherProvider(config: AppConfig["weather"]): WeatherProv
       return new MeteoFranceWeatherProvider(
         new MeteoFranceHttp({
           credential: config.credential,
+          authMode: config.authMode,
           baseUrl: config.observationsUrl,
           timeoutMs: config.timeoutMs,
         }),

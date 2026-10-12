@@ -365,6 +365,7 @@ describe("config: weather (phase 27, D-19, D-22)", () => {
     expect(loadAppConfig({}).weather).toEqual({
       provider: "off",
       credential: "",
+      authMode: "auto",
       observationsUrl: "https://public-api.meteofrance.fr/public/DPObs/v2",
       timeoutMs: 4000,
       maxStationDistanceKm: 30,
@@ -396,6 +397,17 @@ describe("config: weather (phase 27, D-19, D-22)", () => {
     expect(weather.maxStationDistanceKm).toBe(12.5)
     expect(weather.synopMaxDistanceKm).toBe(80)
     expect(weather.timeToleranceMinutes).toBe(45)
+  })
+
+  it.each([
+    ["apikey", "apikey"],
+    [" Bearer ", "bearer"],
+    ["APPLICATION-ID", "application-id"],
+    ["", "auto"],
+    ["token", "auto"],
+  ])("reads METEOFRANCE_AUTH_MODE=%p as %s, an unknown value being auto", (value, expected) => {
+    expect(loadAppConfig({ METEOFRANCE_AUTH_MODE: value }).weather.authMode).toBe(expected)
+    expect(() => validateEnv({ METEOFRANCE_AUTH_MODE: value })).not.toThrow()
   })
 
   it("falls back to the defaults on garbage numbers", () => {

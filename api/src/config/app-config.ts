@@ -36,6 +36,19 @@ function positiveInteger(value: string | undefined, fallback: number): number {
   return truncated > 0 ? truncated : fallback
 }
 
+const WEATHER_AUTH_MODES = ["apikey", "bearer", "application-id"] as const
+
+/**
+ * METEOFRANCE_AUTH_MODE: one of the three modes, else "auto". Deliberately lenient (an unknown
+ * value is "auto", not a startup error), so check-env.sh needs no matching rule.
+ */
+function weatherAuthMode(value: string | undefined): (typeof WEATHER_AUTH_MODES)[number] | "auto" {
+  const mode = (value ?? "").trim().toLowerCase()
+  return (WEATHER_AUTH_MODES as readonly string[]).includes(mode)
+    ? (mode as (typeof WEATHER_AUTH_MODES)[number])
+    : "auto"
+}
+
 /** `(value ?? "false").toLowerCase() === "true"` (debug.service.ts). */
 function isTrue(value: string | undefined): boolean {
   return (value ?? "false").toLowerCase() === "true"
@@ -132,6 +145,7 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       // schema has already refused any value other than the three providers.
       provider: ((v.WEATHER_PROVIDER ?? "off").trim().toLowerCase() || "off") as WeatherProvider,
       credential: (v.METEOFRANCE_API_KEY ?? "").trim(),
+      authMode: weatherAuthMode(v.METEOFRANCE_AUTH_MODE),
       observationsUrl: v.METEOFRANCE_OBS_URL ?? "https://public-api.meteofrance.fr/public/DPObs/v2",
       timeoutMs: positiveInteger(v.WEATHER_TIMEOUT_MS, 4000),
       // D-19, spike 2026-10: 30 km. 25 km leaves the Landes test point (nearest station 25.13 km)

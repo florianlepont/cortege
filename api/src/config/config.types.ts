@@ -73,6 +73,8 @@ export type AppConfig = {
     provider: WeatherProvider
     /** The Météo-France portal credential. Read from the environment only, never logged. */
     credential: string
+    /** How the credential is sent; "auto" reads its shape (a JWT-shaped key is sent as `apikey`). */
+    authMode: "auto" | "apikey" | "bearer" | "application-id"
     observationsUrl: string
     timeoutMs: number
     /** D-19: beyond this distance to the nearest hourly station the weather stays empty. */

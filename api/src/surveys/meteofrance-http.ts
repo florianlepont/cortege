@@ -2,22 +2,23 @@
 // API (DPObs v2) with a whole-exchange timeout, and errors that carry a label and a status only.
 //
 // Authentication, as recorded by the spike (api/test/fixtures/meteofrance/README.md):
-//  - the `apikey` header is refused by the provider; `Authorization: Bearer <token>` works;
-//  - the credential the portal hands out directly is a JWT valid one hour: usable for local
-//    trials, not for production (mode `bearer`, the secret is the bearer token itself);
-//  - production uses the portal's application id exchanged for a token (OAuth2 client
+//  - `apikey`: the portal's "API Key" (valid three years) is sent in the `apikey` header. This is
+//    the production mode: one secret, no token to renew (D-27 as corrected on 2026-10-12);
+//  - `bearer`: the one hour JWT the portal hands out for trials is refused by the `apikey` header
+//    but works as `Authorization: Bearer <token>`; the secret is used directly as that token;
+//  - `application-id`: plan B, the portal application id exchanged for a token (OAuth2 client
 //    credentials, POST on the token endpoint with `Authorization: Basic <application id>`), the
-//    token cached in memory and renewed shortly before it expires or once after a 401 (mode
-//    `application-id`). That flow is built against a mocked token endpoint: it is unverified
-//    against the real portal until the owner holds an application id (plan 27-21).
+//    token cached in memory and renewed shortly before it expires or once after a 401. Built
+//    against a mocked token endpoint and unverified against the real portal.
 //
-// The mode is read from the shape of the one configured secret (a JWT has three dot-separated
-// parts, an application id has no dot), so no new environment variable exists.
+// The mode is the one configured (METEOFRANCE_AUTH_MODE); when it is not set, a JWT-shaped secret
+// (three dot-separated parts, which is what an API key is) is sent as `apikey` and anything else is
+// read as an application id.
 //
 // Nothing here logs. Neither the URL (it holds a station id and a time), the credential nor a
 // token appears in any error message (T-27-38).
 
-export type MeteoFranceAuthMode = "bearer" | "application-id"
+export type MeteoFranceAuthMode = "apikey" | "bearer" | "application-id"
 
 /** The OAuth2 token endpoint of the portal (D-27). A constant, never user input (T-27-39). */
 export const METEOFRANCE_TOKEN_URL = "https://portail-api.meteofrance.fr/token"
@@ -32,9 +33,15 @@ const DEFAULT_TOKEN_LIFETIME_S = 300
 
 const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$/
 
-/** `bearer` for a ready JWT, else `application-id`. */
-export function authModeOf(credential: string): MeteoFranceAuthMode {
-  return JWT_SHAPE.test(credential.trim()) ? "bearer" : "application-id"
+/** The mode to use: the requested one, else `apikey` for a JWT-shaped secret, else `application-id`. */
+export function authModeOf(
+  credential: string,
+  requested: MeteoFranceAuthMode | "auto" = "auto",
+): MeteoFranceAuthMode {
+  if (requested !== "auto") {
+    return requested
+  }
+  return JWT_SHAPE.test(credential.trim()) ? "apikey" : "application-id"
 }
 
 /**
@@ -52,8 +59,10 @@ export class MeteoFranceHttpError extends Error {
 }
 
 export type MeteoFranceHttpOptions = {
-  /** METEOFRANCE_API_KEY: an application id, or a ready one-hour JWT. */
+  /** METEOFRANCE_API_KEY: an API key, a ready one hour JWT or an application id. */
   credential: string
+  /** METEOFRANCE_AUTH_MODE; "auto" (the default) reads the shape of the credential. */
+  authMode?: MeteoFranceAuthMode | "auto"
   /** Base URL of the observation API, from configuration only (T-27-39). */
   baseUrl: string
   /** Budget of each exchange, headers and body (WEATHER_TIMEOUT_MS). */
@@ -86,7 +95,7 @@ export class MeteoFranceHttp {
     this.baseUrl = options.baseUrl.replace(/\/+$/, "")
     this.timeoutMs = options.timeoutMs
     this.tokenUrl = options.tokenUrl ?? METEOFRANCE_TOKEN_URL
-    this.mode = authModeOf(this.#credential)
+    this.mode = authModeOf(this.#credential, options.authMode)
   }
 
   /** A GET asking for JSON. An HTML page, even answered with 200, is a failure. */
@@ -130,15 +139,14 @@ export class MeteoFranceHttp {
   }
 
   private async send(url: URL, label: string): Promise<Answer> {
-    const bearer = this.mode === "bearer" ? this.#credential : await this.accessToken()
-    return await this.exchange(
-      url,
-      {
-        method: "GET",
-        headers: { Accept: "application/json", Authorization: `Bearer ${bearer}` },
-      },
-      label,
-    )
+    let headers: Record<string, string>
+    if (this.mode === "apikey") {
+      headers = { Accept: "application/json", apikey: this.#credential }
+    } else {
+      const bearer = this.mode === "bearer" ? this.#credential : await this.accessToken()
+      headers = { Accept: "application/json", Authorization: `Bearer ${bearer}` }
+    }
+    return await this.exchange(url, { method: "GET", headers }, label)
   }
 
   /** The cached token while it is valid, else one new token (concurrent callers share it). */

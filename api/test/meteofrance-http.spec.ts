@@ -1,5 +1,6 @@
 import {
   METEOFRANCE_TOKEN_URL,
+  type MeteoFranceAuthMode,
   MeteoFranceHttp,
   MeteoFranceHttpError,
   authModeOf,
@@ -35,8 +36,12 @@ function install(...responses: Array<FakeResponse | Error>): jest.Mock {
   return mock
 }
 
-function http(credential: string, timeoutMs = 1000): MeteoFranceHttp {
-  return new MeteoFranceHttp({ credential, baseUrl: BASE, timeoutMs })
+function http(
+  credential: string,
+  timeoutMs = 1000,
+  authMode?: MeteoFranceAuthMode,
+): MeteoFranceHttp {
+  return new MeteoFranceHttp({ credential, baseUrl: BASE, timeoutMs, authMode })
 }
 
 async function messageOf(call: Promise<unknown>): Promise<string> {
@@ -56,14 +61,21 @@ function expectNoSecret(message: string): void {
 }
 
 describe("authModeOf", () => {
-  it("reads a JWT-shaped secret as a ready bearer token", () => {
-    expect(authModeOf(JWT_CREDENTIAL)).toBe("bearer")
-    expect(authModeOf(`  ${JWT_CREDENTIAL}  `)).toBe("bearer")
+  it("sends a JWT-shaped secret as an API key by default (the portal API key is one)", () => {
+    expect(authModeOf(JWT_CREDENTIAL)).toBe("apikey")
+    expect(authModeOf(`  ${JWT_CREDENTIAL}  `)).toBe("apikey")
+    expect(authModeOf(JWT_CREDENTIAL, "auto")).toBe("apikey")
   })
 
-  it("reads anything else as the portal application id", () => {
+  it("reads anything else as the portal application id by default", () => {
     expect(authModeOf(APP_ID_CREDENTIAL)).toBe("application-id")
     expect(authModeOf("abc.def")).toBe("application-id")
+  })
+
+  it("obeys the configured mode whatever the shape", () => {
+    expect(authModeOf(JWT_CREDENTIAL, "bearer")).toBe("bearer")
+    expect(authModeOf(JWT_CREDENTIAL, "application-id")).toBe("application-id")
+    expect(authModeOf(APP_ID_CREDENTIAL, "apikey")).toBe("apikey")
   })
 })
 
@@ -81,8 +93,8 @@ describe("MeteoFranceHttp", () => {
     jest.restoreAllMocks()
   })
 
-  describe("bearer mode (a ready token as the credential)", () => {
-    it("issues a GET with the bearer header and the query, and returns the parsed body", async () => {
+  describe("apikey mode (the production mode)", () => {
+    it("sends the key in the apikey header only, with the query, and parses the body", async () => {
       const fetchMock = install(answer(200, [{ ok: true }]))
 
       await expect(
@@ -93,11 +105,24 @@ describe("MeteoFranceHttp", () => {
       const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit]
       expect(url.toString()).toBe(`${BASE}/station/horaire?format=json`)
       expect(init.method).toBe("GET")
-      expect(init.headers).toEqual({
-        Accept: "application/json",
-        Authorization: `Bearer ${JWT_CREDENTIAL}`,
-      })
+      expect(init.headers).toEqual({ Accept: "application/json", apikey: JWT_CREDENTIAL })
       expect(init.signal).toBeInstanceOf(AbortSignal)
+    })
+
+    it("never asks for a token and does not retry a 401", async () => {
+      const fetchMock = install(answer(401, "Invalid Credentials"))
+      const message = await messageOf(http(JWT_CREDENTIAL).getJson("synop", {}, "synop"))
+      expect(message).toBe("meteofrance synop returned HTTP 401")
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("is also used for a key that is not JWT-shaped when the mode is configured", async () => {
+      const fetchMock = install(answer(200, []))
+      await http(APP_ID_CREDENTIAL, 1000, "apikey").getJson("synop", {}, "synop")
+      expect((fetchMock.mock.calls[0] as [URL, RequestInit])[1].headers).toEqual({
+        Accept: "application/json",
+        apikey: APP_ID_CREDENTIAL,
+      })
     })
 
     it("tolerates a trailing slash on the base URL", async () => {
@@ -110,10 +135,32 @@ describe("MeteoFranceHttp", () => {
       await client.getJson("synop", { format: "json" }, "synop")
       expect((fetchMock.mock.calls[0] as [URL])[0].toString()).toBe(`${BASE}/synop?format=json`)
     })
+  })
+
+  describe("bearer mode (a ready one hour token, local trials)", () => {
+    it("sends the secret as the bearer token", async () => {
+      const fetchMock = install(answer(200, [{ ok: true }]))
+
+      await expect(
+        http(JWT_CREDENTIAL, 1000, "bearer").getJson(
+          "station/horaire",
+          { format: "json" },
+          "hourly",
+        ),
+      ).resolves.toEqual([{ ok: true }])
+
+      const [, init] = fetchMock.mock.calls[0] as [URL, RequestInit]
+      expect(init.headers).toEqual({
+        Accept: "application/json",
+        Authorization: `Bearer ${JWT_CREDENTIAL}`,
+      })
+    })
 
     it("never asks for a token and does not retry a 401", async () => {
       const fetchMock = install(answer(401, "Invalid Credentials"))
-      const message = await messageOf(http(JWT_CREDENTIAL).getJson("synop", {}, "synop"))
+      const message = await messageOf(
+        http(JWT_CREDENTIAL, 1000, "bearer").getJson("synop", {}, "synop"),
+      )
       expect(message).toBe("meteofrance synop returned HTTP 401")
       expect(fetchMock).toHaveBeenCalledTimes(1)
     })

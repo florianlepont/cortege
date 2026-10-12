@@ -87,6 +87,16 @@ describe("createWeatherProvider", () => {
     expect(JSON.stringify(provider)).not.toContain("marker-secret-value")
   })
 
+  it("passes the configured auth mode on to the provider", () => {
+    const config = buildTestConfig({
+      WEATHER_PROVIDER: "meteofrance",
+      METEOFRANCE_API_KEY: "a.b.c",
+      METEOFRANCE_AUTH_MODE: "bearer",
+    }).weather
+    expect(config.authMode).toBe("bearer")
+    expect(createWeatherProvider(config)).toBeInstanceOf(MeteoFranceWeatherProvider)
+  })
+
   it("returns null for meteofrance without a credential (the service answers disabled)", () => {
     const config = buildTestConfig({ WEATHER_PROVIDER: "meteofrance", METEOFRANCE_API_KEY: "" })
     expect(createWeatherProvider(config.weather)).toBeNull()
