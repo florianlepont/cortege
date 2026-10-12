@@ -127,6 +127,7 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
     noticesTop: 58,
     onBaseStyleLoaded: jest.fn(),
     onSecondStyleLoaded: jest.fn(),
+    onThirdReady: jest.fn(),
     onPanelOpen: jest.fn(),
     toggleSwipe: jest.fn(),
     quit: jest.fn(),
@@ -303,10 +304,29 @@ describe("the stacked maps", () => {
     expect(keys).toEqual(["second-map"])
   })
 
-  test("the second map reports its style load, so a side change cover waiting for it can go", () => {
+  test("the second map reports when it is ready, so a side change cover waiting for it can go", () => {
     const { tree, swipe } = render(makeView({ second: stacked("photos-1950") }))
-    named(tree, "WipeLayer")[0].props.onStyleLoaded()
+    named(tree, "WipeLayer")[0].props.onReady()
     expect(swipe.onSecondStyleLoaded).toHaveBeenCalledTimes(1)
+  })
+
+  test("the third map reports when it is ready, so a step applies its side", () => {
+    const { tree, swipe } = render(
+      makeView({
+        comparing: true,
+        leftLayer: "map",
+        rightLayer: "photos-1950",
+        second: stacked("photos-1950"),
+        third: {
+          layer: "etat-major",
+          clipLeft: shared(200),
+          clipRight: shared(400),
+          cameraRef: { current: null },
+        },
+      }),
+    )
+    named(tree, "WipeLayer")[1].props.onReady()
+    expect(swipe.onThirdReady).toHaveBeenCalledTimes(1)
   })
 
   test("a side change draws the third map over the second one, under its own stable key", () => {

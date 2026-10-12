@@ -69,7 +69,8 @@ import {
   type CompareState,
   type MapLayersState,
 } from "./map-layers-state"
-import { useSideStep, type SideStep } from "./useSideStep"
+import { COVER_PRESENT_MS } from "./useCoverRelease"
+import { STEP_READY_WAIT_MS, useSideStep, type SideStep } from "./useSideStep"
 import type { MapLayers } from "./useMapLayersState"
 
 const originalConsoleError = console.error
@@ -183,6 +184,19 @@ function mount(layers: MapLayers, isAvailable?: (key: BaseLayerKey) => boolean) 
 const strip = () => [out().stepping?.clipLeft.value, out().stepping?.clipRight.value]
 const finishTiming = (index = mockTimings.length - 1, finished = true) =>
   act(() => mockTimings[index].done?.(finished))
+// The wipe has ended and the third map is ready: the step applies its side.
+const finishStep = () => {
+  finishTiming()
+  act(() => out().onThirdReady())
+}
+// The Explorer map loaded its style and rendered after it.
+const baseShown = () => {
+  act(() => out().onStyleLoaded("base"))
+  act(() => out().onRendered())
+  act(() => {
+    jest.advanceTimersByTime(COVER_PRESENT_MS)
+  })
+}
 
 describe("canStep", () => {
   it("is true when another layer is available for the side", () => {
@@ -219,7 +233,10 @@ describe("step", () => {
     expect(mockTimings[0].config).toMatchObject({ duration: 240, reduceMotion: "system" })
     expect(typeof mockTimings[0].config.easing).toBe("function")
     expect(layers.actions.setSide).not.toHaveBeenCalled()
+    // The wipe has ended but the third map is not ready: the old layer stays, nothing is applied.
     finishTiming()
+    expect(layers.actions.setSide).not.toHaveBeenCalled()
+    act(() => out().onThirdReady())
     expect(layers.actions.setSide).toHaveBeenCalledTimes(1)
     expect(layers.actions.setSide).toHaveBeenCalledWith("B", "etat-major")
     expect(out().stepping).toMatchObject({ side: "right", layer: "etat-major" })
@@ -235,20 +252,20 @@ describe("step", () => {
     expect(mockAnnounce).toHaveBeenCalledWith("Côté gauche : Photos aériennes, 1950-1965")
     expect(strip()).toEqual([0, 0])
     expect(mockTimings[0].to).toBe(200)
-    finishTiming()
+    finishStep()
     expect(layers.actions.setSide).toHaveBeenCalledWith("A", "photos-1950")
   })
 
   it("never puts the other side's layer on this side and skips the unavailable layers", () => {
+    jest.useFakeTimers()
     const layers = makeLayers({ ...planSatellite, sideB: "etat-major" })
     mount(layers, (key) => key !== "carte-1950")
     act(() => out().step("left", 1))
     // Next after Plan is Satellite, then the state map: Satellite is free (the right side holds
     // the state map), so it is taken.
     expect(out().stepping?.layer).toBe("satellite")
-    finishTiming()
-    act(() => out().onStyleLoaded("second"))
-    act(() => out().onStyleLoaded("base"))
+    finishStep()
+    baseShown()
     act(() => out().step("right", 1))
     // After the state map: Carte 1950 is unavailable, Photos 1950 is taken.
     expect(out().stepping?.layer).toBe("photos-1950")
@@ -257,7 +274,7 @@ describe("step", () => {
   it("covers the half until the second map has loaded the new style", () => {
     mount(makeLayers(planSatellite))
     act(() => out().step("right", 1))
-    finishTiming()
+    finishStep()
     act(() => out().onStyleLoaded("base"))
     expect(out().stepping).not.toBeNull()
     act(() => out().onStyleLoaded("second"))
@@ -265,12 +282,23 @@ describe("step", () => {
   })
 
   it("covers the half until the Explorer map has loaded it when that map draws the side", () => {
+    jest.useFakeTimers()
     mount(makeLayers(satellitePlan))
     act(() => out().step("right", 1))
-    finishTiming()
+    finishStep()
     act(() => out().onStyleLoaded("second"))
     expect(out().stepping).not.toBeNull()
+    // Its style load alone is not enough: the half stays covered until it rendered after it.
     act(() => out().onStyleLoaded("base"))
+    expect(out().stepping).not.toBeNull()
+    act(() => out().onRendered())
+    act(() => {
+      jest.advanceTimersByTime(COVER_PRESENT_MS - 1)
+    })
+    expect(out().stepping).not.toBeNull()
+    act(() => {
+      jest.advanceTimersByTime(1)
+    })
     expect(out().stepping).toBeNull()
   })
 
@@ -286,7 +314,7 @@ describe("step", () => {
     jest.useFakeTimers()
     mount(makeLayers(planSatellite))
     act(() => out().step("right", 1))
-    finishTiming()
+    finishStep()
     act(() => {
       jest.advanceTimersByTime(7999)
     })
@@ -297,21 +325,89 @@ describe("step", () => {
     expect(out().stepping).toBeNull()
   })
 
-  it("does nothing while another step is running, then accepts a new one", () => {
-    mount(makeLayers(planSatellite))
+  it("presses made while a step runs wait for it and run in order, ending on the last", () => {
+    const layers = makeLayers(planSatellite)
+    mount(layers)
     act(() => out().step("right", 1))
-    act(() => out().step("left", 1))
+    act(() => out().step("right", 1))
     act(() => out().step("right", -1))
+    // Only the first runs now; the others wait (one haptic, one wipe).
     expect(selection).toHaveBeenCalledTimes(1)
     expect(mockTimings).toHaveLength(1)
-    finishTiming()
-    act(() => out().step("left", 1))
-    expect(mockTimings).toHaveLength(1)
+    finishStep()
+    expect(layers.actions.setSide).toHaveBeenCalledTimes(1)
     act(() => out().onStyleLoaded("second"))
-    expect(out().stepping).toBeNull()
-    act(() => out().step("left", 1))
+    // The cover went: the next press starts at once, never two wipes together.
     expect(mockTimings).toHaveLength(2)
     expect(selection).toHaveBeenCalledTimes(2)
+    finishStep()
+    act(() => out().onStyleLoaded("second"))
+    expect(mockTimings).toHaveLength(3)
+    finishStep()
+    act(() => out().onStyleLoaded("second"))
+    expect(out().stepping).toBeNull()
+    expect(layers.actions.setSide).toHaveBeenCalledTimes(3)
+    // Each applied side came from a fully shown third map.
+    expect(mockTimings).toHaveLength(3)
+  })
+
+  it("keeps at most a few waiting presses", () => {
+    mount(makeLayers(planSatellite))
+    act(() => out().step("right", 1))
+    for (let i = 0; i < 10; i += 1) act(() => out().step("right", 1))
+    for (let i = 0; i < 10; i += 1) {
+      finishStep()
+      act(() => out().onStyleLoaded("second"))
+    }
+    expect(mockTimings).toHaveLength(5)
+  })
+
+  it("a third map that never reports ready is waited for a while, then the step goes ahead", () => {
+    jest.useFakeTimers()
+    const layers = makeLayers(planSatellite)
+    mount(layers)
+    act(() => out().step("right", 1))
+    finishTiming()
+    act(() => {
+      jest.advanceTimersByTime(STEP_READY_WAIT_MS - 1)
+    })
+    expect(layers.actions.setSide).not.toHaveBeenCalled()
+    act(() => {
+      jest.advanceTimersByTime(240 + 1)
+    })
+    expect(layers.actions.setSide).toHaveBeenCalledTimes(1)
+  })
+
+  it("a third map that is ready before the wipe ends waits for the wipe", () => {
+    const layers = makeLayers(planSatellite)
+    mount(layers)
+    act(() => out().step("right", 1))
+    act(() => out().onThirdReady())
+    expect(layers.actions.setSide).not.toHaveBeenCalled()
+    finishTiming()
+    expect(layers.actions.setSide).toHaveBeenCalledTimes(1)
+  })
+
+  it("a ready report with no step under way, or after its side was applied, does nothing", () => {
+    const layers = makeLayers(planSatellite)
+    mount(layers)
+    act(() => out().onThirdReady())
+    act(() => out().step("right", 1))
+    finishStep()
+    act(() => out().onThirdReady())
+    expect(layers.actions.setSide).toHaveBeenCalledTimes(1)
+  })
+
+  it("unmounting during a step cancels its wait", () => {
+    jest.useFakeTimers()
+    const layers = makeLayers(planSatellite)
+    const { tree } = mount(layers)
+    act(() => out().step("right", 1))
+    act(() => tree.unmount())
+    act(() => {
+      jest.advanceTimersByTime(STEP_READY_WAIT_MS * 2)
+    })
+    expect(layers.actions.setSide).not.toHaveBeenCalled()
   })
 
   it("does nothing, and plays nothing, with no candidate", () => {
@@ -334,19 +430,18 @@ describe("step", () => {
     expect(layers.actions.setSide).not.toHaveBeenCalled()
   })
 
-  it("sets the side at once under Reduce Motion, with the same haptic and announcement", () => {
+  it("under Reduce Motion the half opens at once and the side is applied when the third map is ready", () => {
     setReducedMotion(true)
     const layers = makeLayers(planSatellite)
     mount(layers)
     act(() => out().step("right", 1))
-    expect(layers.actions.setSide).toHaveBeenCalledWith("B", "etat-major")
     expect(selection).toHaveBeenCalledTimes(1)
     expect(mockAnnounce).toHaveBeenCalledWith("Côté droit : Carte d'état-major, 1820-1866")
-    expect(out().stepping).toBeNull()
     expect(mockTimings).toHaveLength(0)
-    // The next one is not blocked.
-    act(() => out().step("right", 1))
-    expect(layers.actions.setSide).toHaveBeenCalledTimes(2)
+    expect(strip()).toEqual([200, 400])
+    expect(layers.actions.setSide).not.toHaveBeenCalled()
+    act(() => out().onThirdReady())
+    expect(layers.actions.setSide).toHaveBeenCalledWith("B", "etat-major")
   })
 
   it("sets the side at once when the side wipe is switched off", () => {
@@ -376,6 +471,7 @@ describe("step", () => {
     expect(out().stepping).toBeNull()
     expect(mockCancelled.length).toBeGreaterThan(0)
     finishTiming()
+    act(() => out().onThirdReady())
     expect(layers.actions.setSide).not.toHaveBeenCalled()
     expect(out().stepping).toBeNull()
   })

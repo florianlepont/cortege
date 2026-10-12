@@ -26,6 +26,16 @@ import { DEFAULT_MAP_REGION, regionForZoom } from "./useMapViewport"
 // A frozen map (Phase 28 swipe mode) hands nothing to a marker, cluster or parcel press.
 const NOOP = () => undefined
 
+/** The props the swipe mode and the comparison drive on the Explorer map (`useExplorerSwipe`). */
+export type SwipeCanvasKey =
+  | "frozen"
+  | "onViewChange"
+  | "rotationLocked"
+  | "hideMarkers"
+  | "androidView"
+  | "onRenderedFully"
+  | "bare"
+
 export type MapCanvasProps = {
   cameraRef: RefObject<CameraRef | null>
   items: PublicMapItem[]

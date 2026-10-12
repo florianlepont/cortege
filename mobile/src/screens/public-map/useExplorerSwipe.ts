@@ -10,7 +10,7 @@ import type { BaseLayerKey } from "../../map/layers"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { feedback } from "../../ui/feedback"
 import { useScreenFocus } from "../../ui/useScreenFocus"
-import type { MapCanvasProps } from "./MapCanvas"
+import type { MapCanvasProps, SwipeCanvasKey } from "./MapCanvas"
 import { useMapSync } from "./MapStack"
 import { COMPARISON_BUILT, LEFT_MAP_ANDROID_VIEW, WIPE_PRESENTATION } from "./map-stack-mode"
 import { useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
@@ -105,16 +105,7 @@ export type ExplorerImmersive = {
 
 export type ExplorerSwipe = {
   /** Props to spread on `MapCanvas`. */
-  mapCanvasProps: Pick<
-    MapCanvasProps,
-    | "frozen"
-    | "onViewChange"
-    | "rotationLocked"
-    | "hideMarkers"
-    | "androidView"
-    | "onRenderedFully"
-    | "bare"
-  >
+  mapCanvasProps: Pick<MapCanvasProps, SwipeCanvasKey>
   layersView: ExplorerSwipeView
   /** The receding window and the fading buttons: the swipe mode only, never the comparison. */
   immersive: ExplorerImmersive
@@ -124,10 +115,12 @@ export type ExplorerSwipe = {
   skippedVisible: boolean
   /** The notices column's top, below the swipe stack or the quit pill when one holds the top. */
   noticesTop: number
-  /** The Explorer map finished loading a style: a cover over it can go. */
+  /** The Explorer map finished loading a style: a cover over it can go (after it rendered). */
   onBaseStyleLoaded: () => void
-  /** The second map finished loading a style: a side change cover over it can go. */
+  /** The second map is ready with its layer: a side change cover over it can go. */
   onSecondStyleLoaded: () => void
+  /** The third map (a side change) is ready: the step may apply its side. */
+  onThirdReady: () => void
   /** A panel (the bubble or the card) opened: the swipe mode ends, a comparison stays. */
   onPanelOpen: () => void
   /** The globe: closes the panels, then enters or leaves the swipe mode. */
@@ -137,10 +130,7 @@ export type ExplorerSwipe = {
 }
 
 export type ExplorerSwipeInput = {
-  /**
-   * What the Explorer derives from the layers state: the layers state itself, the availability
-   * at the view centre, the capsule's top and the notices column's own top.
-   */
+  /** What the Explorer derives from the layers state (state, availability, capsule, notices). */
   layers: ExplorerLayers
   /** The Explorer map's camera, reset to north up and flat when a stacked map needs the same view. */
   cameraRef: RefObject<CameraRef | null>
@@ -300,7 +290,12 @@ export function useExplorerSwipe({
     swipeMode,
     release: () => setCover(null),
   })
-  const { onStyleLoaded: coverStyleLoaded, onRenderedFully } = coverRelease
+  const { onStyleLoaded: coverStyleLoaded, onRenderedFully: coverRendered } = coverRelease
+  const { onRendered: sideRendered } = sideStep
+  const onRenderedFully = useCallback(() => {
+    coverRendered()
+    sideRendered()
+  }, [coverRendered, sideRendered])
   const onBaseStyleLoaded = useLatestCallback(() => {
     // A full cover waits for the committed style's own load, not one of another style in flight.
     if (cover?.kind !== "full" || state.loadingBase === cover.layer) coverStyleLoaded()
@@ -387,6 +382,7 @@ export function useExplorerSwipe({
     noticesTop,
     onBaseStyleLoaded,
     onSecondStyleLoaded,
+    onThirdReady: sideStep.onThirdReady,
     onPanelOpen,
     toggleSwipe,
     quit,

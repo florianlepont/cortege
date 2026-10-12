@@ -36,7 +36,16 @@ const mockSideStep: {
   canStep: jest.Mock
   step: jest.Mock
   onStyleLoaded: jest.Mock
-} = { stepping: null, canStep: jest.fn(), step: jest.fn(), onStyleLoaded: jest.fn() }
+  onRendered: jest.Mock
+  onThirdReady: jest.Mock
+} = {
+  stepping: null,
+  canStep: jest.fn(),
+  step: jest.fn(),
+  onStyleLoaded: jest.fn(),
+  onRendered: jest.fn(),
+  onThirdReady: jest.fn(),
+}
 const mockSideStepParams: unknown[] = []
 jest.mock("./useSideStep", () => ({
   useSideStep: (params: unknown) => {
@@ -768,6 +777,8 @@ describe("the side change", () => {
     mockSideStep.canStep = jest.fn(() => true)
     mockSideStep.step = jest.fn()
     mockSideStep.onStyleLoaded = jest.fn()
+    mockSideStep.onRendered = jest.fn()
+    mockSideStep.onThirdReady = jest.fn()
     mockSideStepParams.length = 0
   })
 

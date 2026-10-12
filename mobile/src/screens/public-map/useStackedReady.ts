@@ -21,10 +21,13 @@ export type StackedReady = {
  * `STACKED_READY_TIMEOUT_MS` after the style load, so a missing event never blocks it. While not
  * ready `MapStack` clips the map to nothing: what shows is the map underneath, never a blank frame.
  * `styleKey` is the style actually applied to the native map (it lags the wanted one in
- * `MapStack`, so the clip reaches the UI thread before the swap).
+ * `MapStack`, so the clip reaches the UI thread before the swap). `onReady` is called each time
+ * the map becomes ready for that style (a step waits for it before it drops its cover).
  */
-export function useStackedReady(styleKey: unknown): StackedReady {
+export function useStackedReady(styleKey: unknown, onReady?: () => void): StackedReady {
   const created = useSharedValue(0)
+  const readyCallback = useRef(onReady)
+  readyCallback.current = onReady
   const keptRef = useRef(created)
   const ready = keptRef.current
   const loaded = useRef(false)
@@ -37,8 +40,10 @@ export function useStackedReady(styleKey: unknown): StackedReady {
   }, [])
   const show = useCallback(() => {
     clear()
+    const wasReady = isReady.current
     isReady.current = true
     ready.value = 1
+    if (!wasReady) readyCallback.current?.()
   }, [clear, ready])
   const hide = useCallback(() => {
     ready.value = 0

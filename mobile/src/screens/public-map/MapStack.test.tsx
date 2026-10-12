@@ -202,8 +202,29 @@ describe("MapStack", () => {
     h.rerender({ mapStyle: "https://example.test/other.json" })
     h.rerender({})
     expect(clipWidth(h.tree)).toBe(0)
+    // A render report of the old style, while the change is pending, does not reveal it.
+    fireOn(h, "onDidFinishRenderingMapFully")
+    expect(clipWidth(h.tree)).toBe(0)
+    act(() => {
+      jest.advanceTimersByTime(STYLE_SWAP_GAP_MS)
+    })
     makeReady(h)
     expect(clipWidth(h.tree)).toBe(280)
+  })
+
+  test("onReady is called each time a style becomes ready, not on later render reports", () => {
+    const onReady = jest.fn()
+    const h = mount({ onReady })
+    makeReady(h)
+    expect(onReady).toHaveBeenCalledTimes(1)
+    fireOn(h, "onDidFinishRenderingMapFully")
+    expect(onReady).toHaveBeenCalledTimes(1)
+    h.rerender({ mapStyle: "https://example.test/other.json" })
+    act(() => {
+      jest.advanceTimersByTime(STYLE_SWAP_GAP_MS)
+    })
+    makeReady(h)
+    expect(onReady).toHaveBeenCalledTimes(2)
   })
 
   const nativeStyle = (tree: renderer.ReactTestRenderer) =>

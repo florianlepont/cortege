@@ -71,6 +71,8 @@ export type MapStackProps = {
   onStyleLoaded?: () => void
   /** The map failed to load its style or its tiles. */
   onStyleFailed?: () => void
+  /** The map is loaded and rendered with its current style (and about to be revealed). */
+  onReady?: () => void
 }
 
 /** A non-interactive map clipped to the strip between `clipLeft` and `clipRight`. */
@@ -85,6 +87,7 @@ export function MapStack({
   children,
   onStyleLoaded,
   onStyleFailed,
+  onReady,
 }: MapStackProps) {
   const { scheme } = useBrandTheme()
   const [styleLoaded, setStyleLoaded] = useState(false)
@@ -92,8 +95,15 @@ export function MapStack({
   // The native style lags the wanted one by STYLE_SWAP_GAP_MS: the clip is zero (and has reached the
   // UI thread) before the swap, so the cleared map is never drawn for a frame.
   const [appliedStyle, setAppliedStyle] = useState(mapStyle)
-  const stackedReady = useStackedReady(appliedStyle)
-  const { ready, onStyleLoaded: readyStyleLoaded, onRenderedFully, hide, restore } = stackedReady
+  const stackedReady = useStackedReady(appliedStyle, onReady)
+  const { ready, onStyleLoaded: readyStyleLoaded, hide, restore } = stackedReady
+  // A render report while a style change is pending belongs to the old style: it must not reveal.
+  const changing = useRef(false)
+  changing.current = mapStyle !== appliedStyle
+  const { onRenderedFully: readyRendered } = stackedReady
+  const onRenderedFully = useCallback(() => {
+    if (!changing.current) readyRendered()
+  }, [readyRendered])
   useLayoutEffect(() => {
     if (mapStyle === appliedStyle) {
       restore()

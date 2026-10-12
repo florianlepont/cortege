@@ -1531,19 +1531,37 @@ describe("PublicMapScreen", () => {
       setReducedMotion(true)
       try {
         const props = startComparison()
+        const show = (map: ReactTestInstance) => {
+          act(() => map.props.onDidFinishLoadingStyle())
+          act(() => map.props.onDidFinishRenderingMapFully())
+        }
         expect(tagName("left")).toBe("Plan")
         expect(tagName("right")).toBe("Satellite")
         act(() => byTestId("compare-tag-right-next")[0].props.onPress())
+        // The new layer is drawn by a third map first; the tag keeps the old layer until it is shown.
+        expect(maps()).toHaveLength(3)
+        expect(tagName("right")).toBe("Satellite")
+        show(maps()[2])
         expect(tagName("right")).toBe("État-major")
         // The second map draws the right side, once the clip has had time to drop (no blank frame).
         act(() => {
           jest.advanceTimersByTime(STYLE_SWAP_GAP_MS)
         })
         expect(drawn(maps()[1])).toContain('"etat-major"')
+        show(maps()[1])
+        expect(maps()).toHaveLength(2)
         act(() => byTestId("compare-tag-left-previous")[0].props.onPress())
+        show(maps()[2])
         // Plan going back wraps to the last layer, which the right side does not show.
         expect(tagName("left")).toBe("Photos 1950")
         expect(drawn(explorerMap())).toContain('"photos-1950"')
+        // The Explorer map's half stays covered until it loaded and rendered the new style.
+        expect(maps()).toHaveLength(3)
+        act(() => explorerMap().props.onDidFinishLoadingStyle())
+        act(() => explorerMap().props.onDidFinishRenderingMapFully())
+        act(() => {
+          jest.advanceTimersByTime(COVER_PRESENT_MS)
+        })
         // The comparison goes on, with no extra map and no change to the saved preference.
         expect(maps()).toHaveLength(2)
         expect(present("compare-grabber")).toBe(true)
