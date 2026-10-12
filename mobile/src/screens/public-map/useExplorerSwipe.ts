@@ -35,9 +35,14 @@ import type { MapLayers } from "./useMapLayersState"
 
 /** A stacked map that covers a style swap is dropped after this long even if no load is reported. */
 const COVER_MAX_MS = 8000
+/**
+ * The style of the Explorer map is loaded before its raster tiles are drawn: a cover dropped at
+ * once shows a white frame. It stays this long (ms) after the style load, then goes (owner device
+ * check 2026-10-12: a micro white flash once the new map is shown).
+ */
+export const COVER_SETTLE_MS = 350
 /** The gap between the top control and the notices column (UI-SPEC section 8). */
 const NOTICES_GAP = 8
-/** The swipe stack's height before it has been measured: indicator, dots, "Terminé" and gaps. */
 
 /**
  * A stacked map kept over a style swap of the Explorer map under it, so no blank frame shows:
@@ -287,8 +292,16 @@ export function useExplorerSwipe({
     return () => clearTimeout(timer)
   }, [cover])
   const { onStyleLoaded: sideStyleLoaded } = sideStep
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (settleTimer.current) clearTimeout(settleTimer.current)
+    },
+    [],
+  )
   const onBaseStyleLoaded = useCallback(() => {
-    setCover(null)
+    if (settleTimer.current) clearTimeout(settleTimer.current)
+    settleTimer.current = setTimeout(() => setCover(null), COVER_SETTLE_MS)
     sideStyleLoaded("base")
   }, [sideStyleLoaded])
   const onSecondStyleLoaded = useCallback(() => sideStyleLoaded("second"), [sideStyleLoaded])

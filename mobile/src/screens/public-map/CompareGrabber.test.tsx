@@ -398,20 +398,20 @@ describe("CompareGrabber", () => {
       })
     })
 
-  test("the helper puts the grabber at 32 % of the window height", () => {
-    expect(grabberCenterY(800)).toBe(256)
-    expect(grabberCenterY(667)).toBe(213)
+  test("the helper puts the grabber at the vertical centre of the window", () => {
+    expect(grabberCenterY(800)).toBe(400)
+    expect(grabberCenterY(667)).toBe(334)
     expect([GRABBER_HIT, GRABBER_WIDTH, GRABBER_LENGTH]).toEqual([44, 4, 36])
   })
 
-  test("it is a 44 x 44 hit area centred on the line at 32 % of the height", () => {
+  test("it is a 44 x 44 hit area centred on the line at the vertical centre", () => {
     const { grabber } = setup()
     expect(flat(grabber().props.style)).toMatchObject({
       position: "absolute",
       width: 44,
       height: 44,
       left: 178,
-      top: 234,
+      top: 378,
     })
   })
 

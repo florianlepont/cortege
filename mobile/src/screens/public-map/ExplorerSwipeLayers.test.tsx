@@ -11,7 +11,7 @@ jest.mock("./SwipeSurface", () => ({
 }))
 jest.mock("./CompareGrabber", () => ({
   CompareGrabber: (props: object) => mockHost("CompareGrabber", props),
-  grabberCenterY: (height: number) => Math.round(height * 0.32),
+  grabberCenterY: (height: number) => Math.round(height * 0.5),
 }))
 jest.mock("./CompareLine", () => ({
   CompareLine: (props: object) => mockHost("CompareLine", props),
@@ -459,7 +459,7 @@ describe("the comparison", () => {
       era: "aujourd'hui",
       lineX,
       width: 400,
-      centerY: 256,
+      centerY: 400,
       unavailable: false,
       canStep: true,
       disabled: false,
@@ -471,7 +471,7 @@ describe("the comparison", () => {
       era: "1950-1965",
       lineX,
       width: 400,
-      centerY: 256,
+      centerY: 400,
       unavailable: false,
     })
   })

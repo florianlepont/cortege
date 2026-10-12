@@ -12,6 +12,7 @@ import { fr } from "../../i18n"
 import { PublicMapScreen } from "../PublicMapScreen"
 import { downloadButtonTopOf, overlaySlotTopOf } from "./styles"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
+import { COVER_SETTLE_MS } from "./useExplorerSwipe"
 
 // The shared Reanimated mock hands out a fresh shared value on every render. The grabber's drag
 // re-renders the screen midway (the exit hint appears), so here a shared value lives as long as its
@@ -1624,6 +1625,11 @@ describe("PublicMapScreen", () => {
       expect(present("compare-exit-hint")).toBe(false)
       expect(maps()).toHaveLength(2)
       act(() => explorerMap().props.onDidFinishLoadingStyle())
+      // The cover stays a moment more: the raster tiles are drawn after the style.
+      expect(maps()).toHaveLength(2)
+      act(() => {
+        jest.advanceTimersByTime(COVER_SETTLE_MS)
+      })
       expect(maps()).toHaveLength(1)
     })
 

@@ -24,8 +24,8 @@ export const GRABBER_HIT = 44
 export const GRABBER_WIDTH = 4
 export const GRABBER_LENGTH = 36
 const GRABBER_EDGE = 1
-/** The grabber sits at 32 % of the window height, above the area an open card could cover. */
-export const GRABBER_HEIGHT_RATIO = 0.32
+/** The grabber and the side tags sit at the vertical centre of the window (owner, 2026-10-12). */
+export const GRABBER_HEIGHT_RATIO = 0.5
 
 /** The y of the grabber's centre for a window of `height`: the side tags are centred on it too. */
 export function grabberCenterY(height: number): number {

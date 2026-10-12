@@ -103,7 +103,12 @@ import {
   type CompareState,
   type MapLayersState,
 } from "./map-layers-state"
-import { useExplorerSwipe, type ExplorerSwipe, type ExplorerSwipeInput } from "./useExplorerSwipe"
+import {
+  COVER_SETTLE_MS,
+  useExplorerSwipe,
+  type ExplorerSwipe,
+  type ExplorerSwipeInput,
+} from "./useExplorerSwipe"
 import type { MapLayers } from "./useMapLayersState"
 
 const originalConsoleError = console.error
@@ -237,6 +242,11 @@ function Probe({ input }: { input: ExplorerSwipeInput }) {
 }
 
 let tree: renderer.ReactTestRenderer
+
+const settle = (ms = COVER_SETTLE_MS) =>
+  act(() => {
+    jest.advanceTimersByTime(ms)
+  })
 
 function mount(layers: MapLayers, extra: Extra = {}) {
   act(() => {
@@ -390,6 +400,9 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     expect(second?.layer).toBe("satellite")
     expect(second?.clipLeft).toBe(controllerClip.clipLeft)
     act(() => out().onBaseStyleLoaded())
+    // The raster tiles come after the style: the cover stays for the settle time.
+    expect(out().layersView.second).not.toBeNull()
+    settle()
     expect(out().layersView.second).toBeNull()
     expect(out().mapCanvasProps.onViewChange).toBeUndefined()
   })
@@ -525,6 +538,9 @@ describe("leaving a comparison by an edge", () => {
     expect(out().layersView.second?.clipLeft).toBe(mockClip.clipLeft)
     expect(lastCurtain()).toMatchObject({ compare: null, phase: "covering" })
     act(() => out().onBaseStyleLoaded())
+    // The raster tiles come after the style: the cover stays for the settle time.
+    expect(out().layersView.second).not.toBeNull()
+    settle()
     expect(out().layersView.second).toBeNull()
     expect(lastCurtain().phase).toBe("active")
   })
@@ -638,6 +654,9 @@ describe("Quitter la comparaison", () => {
     expect(out().layersView.second?.layer).toBe("photos-1950")
     expect(lastCurtain().phase).toBe("covering")
     act(() => out().onBaseStyleLoaded())
+    // The raster tiles come after the style: the cover stays for the settle time.
+    expect(out().layersView.second).not.toBeNull()
+    settle()
     expect(out().layersView.second).toBeNull()
   })
 
@@ -726,6 +745,28 @@ describe("the side change", () => {
     mount(makeLayers({ compare: compareRight }))
     act(() => out().onBaseStyleLoaded())
     expect(mockSideStep.onStyleLoaded).toHaveBeenCalledWith("base")
+  })
+
+  test("a second style load re-arms the settle time of the cover", () => {
+    mount(makeLayers({ compare: compareLeft }))
+    act(() => out().quit())
+    act(() => (lastCurtain().onLeft as () => void)())
+    update(makeLayers({ base: "photos-1950" }))
+    act(() => out().onBaseStyleLoaded())
+    settle(COVER_SETTLE_MS - 50)
+    act(() => out().onBaseStyleLoaded())
+    settle(COVER_SETTLE_MS - 50)
+    expect(out().layersView.second).not.toBeNull()
+    settle(50)
+    expect(out().layersView.second).toBeNull()
+  })
+
+  test("unmounting before the settle time cancels it", () => {
+    mount(makeLayers({ compare: compareRight }))
+    act(() => out().onBaseStyleLoaded())
+    expect(jest.getTimerCount()).toBeGreaterThan(0)
+    act(() => tree.unmount())
+    expect(jest.getTimerCount()).toBe(0)
   })
 
   test("the second map's style load goes to the side change only", () => {
