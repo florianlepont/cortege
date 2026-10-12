@@ -7,7 +7,7 @@ no token. Plan 27-12 builds the real weather provider on these files and on the 
 Provenance tags used here: **observed** (visible in a file of this directory), **reported** (printed
 by the capture script during the owner's run or reported by the owner, but not stored in a file),
 **documented** (stated by `dpobs-v2.swagger.json` or by the research, not verified on a real answer),
-**to be confirmed by the owner** (nothing was reported yet; no number is invented).
+**read by the owner** (the owner read the portal page or licence text on 2026-10-12 and reported it).
 
 ## Authentication
 
@@ -161,11 +161,11 @@ Temperature and wind are mapped first and never block either decision.
 
 ## Quota
 
-- Rate-limit headers: **none were sent** by the provider (reported). The quota shown under "Mes API"
-  for "Données d'observation" has **not been reported by the owner yet: to be confirmed by the
-  owner**. Documented in the research (not verified): since January 2026 the observation APIs are
-  limited to 100 requests per minute as an experiment, 50 before, and a call over the quota is
-  answered `429`.
+- Rate-limit headers: **none were sent** by the provider (reported). Quota **read by the owner on
+  2026-10-12: 100 requests per minute** (per API, per account), which matches the documented
+  experimental limit in force since January 2026 (50 before). A call over the quota is answered
+  `429`. Météo-France may change or withdraw data and quotas without notice and guarantees no
+  availability.
 - Limits built by plan 27-06 (read in `api/src/surveys/weather.service.ts` and
   `api/src/common/rate-limit.config.ts`): station list cached 1 hour; a reading of a finished hour
   cached 24 hours (`WEATHER_LOOKBACK_MS`), the current hour and an empty answer 10 minutes; at most
@@ -178,19 +178,25 @@ Temperature and wind are mapped first and never block either decision.
   under 50 or 100 per minute, but **the plan 27-06 limits do not strictly guarantee it**:
   `MAX_CONCURRENT_WEATHER_CALLS` caps calls in flight, not calls per minute, and the per-client
   throttle (30 per minute) is not a global limit, so many clients at many distinct places and hours
-  could exceed it; the answer to a refusal is a clean `503`. Plan 27-12 should weigh a small global
-  limiter once the owner has reported the real quota.
+  could exceed it; the answer to a refusal is a clean `503`. The quota is now known (100 per
+  minute); a small global limiter stays a possible later hardening.
 
 ## Licence and attribution
 
-- Licence: Etalab Open Licence 2.0. The mention **"Source : Météo-France"** is mandatory in the app
-  and in the PDF next to every weather value (D-26), and nothing may suggest that Météo-France
-  endorses the app.
-- Portal terms of use (open question O6: any limit on storing the values in survey records and in
-  PDFs shared with partners): **to be confirmed by the owner**, no note was reported yet. The
-  attribution stays mandatory until then.
-- The subscription validity (about 2 years, documented) is also unconfirmed: to be confirmed by the
-  owner.
+- Licence: the licence of the Données d'observation API of Météo-France plus the Licence Ouverte
+  Etalab 2.0, **read and accepted by the owner on 2026-10-12**. Reuse is free, commercial use
+  included, in apps and in documents shared with partners (survey PDFs), on these conditions:
+  1. no alteration of the data and no distortion of its meaning;
+  2. the mention that the data come from Météo-France, on every support ("Source : Météo-France");
+  3. the date of the last update of the reused data, next to that mention (D-31: the app and the PDF
+     print "mesure du dd/mm/yyyy à HH:mm" from `observed_at`);
+  4. the reuser keeps the data up to date.
+  Nothing may suggest that Météo-France endorses the app. The documented retention of past
+  observations is 24 hours (the app window stays 24 hours, D-28). Météo-France may change or withdraw
+  data and quotas without notice and guarantees no availability. The key is strictly private: it
+  stays on the server and is never disclosed. Open question O6 is closed.
+- The subscription validity (about 2 years, documented) is still unconfirmed; the API Key itself
+  expires 2029-10-12 (reported).
 
 ## Fixture files
 

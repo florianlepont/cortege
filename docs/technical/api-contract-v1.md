@@ -1691,8 +1691,14 @@ defaults that the owner may change; each is one default in the server configurat
   provider was seen serving readings up to about 96 hours back, which is undocumented and is not
   relied upon (D-28). A reading whose own observation time is more than 90 minutes from `at` is not
   used.
-- Not yet confirmed (to be confirmed by the owner): the provider quota and the portal terms of use
-  about storing the values in survey records and in the PDF (open question O6).
+- Quota (reported by the owner, 2026-10-12): 100 requests per minute per API and account.
+- Terms (read by the owner, 2026-10-12): free reuse, commercial use included, under the Licence
+  Ouverte Etalab 2.0, in the app and in the survey PDF. The source ("Source : Météo-France") and the
+  date of the last update of the data are mandatory wherever the values are shown (the clients print
+  the date of `observed_at`), the data must not be altered or their meaning distorted, the
+  documented retention of past observations is 24 hours, the provider guarantees no availability
+  and may change data or quotas without notice, and the key stays strictly private (server side).
+  Open question O6 is closed (decision D-31 of phase 27).
 
 ## 6) Analytics (V2 Addendum, Out of MVP)
 

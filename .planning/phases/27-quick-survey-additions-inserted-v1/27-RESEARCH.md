@@ -533,7 +533,7 @@ Owner questions (product decisions, flagged not decided):
 3. **O3 Catch-up window.** The observation API keeps 24 h. A survey whose connection returns after 24 h gets no weather (stays empty, no error) unless the climatology archive is used (asynchronous orders). Recommendation: accept 24 h for V1.
 4. **O4 Rain over 24 h.** Either sum 24 hourly readings (up to 24 provider calls per cold station-hour, heavily cached), use SYNOP multi-hour precipitation where present, or relabel the value to what the station really gives (for example rain over the last hour). Recommendation: decide after the spike shows the real fields; the UI-SPEC labels say "Pluie sur 24 h".
 5. **O5 Account and key.** The owner creates the portal account, subscribes to "Données d'observation", and places the credential in `/home/ubuntu/cortege.env`. Needed before Wave 0 can finish.
-6. **O6 Portal terms.** Read the portal's terms of use for any limit on storing the values in survey records and PDFs shared with partners (Phase 33 shares the PDF with patrons).
+6. **O6 Portal terms (CLOSED 2026-10-12, D-31: the owner read the licence; free reuse including commercial, source and date of the data mandatory, 24 h retention, no availability guarantee).** Read the portal's terms of use for any limit on storing the values in survey records and PDFs shared with partners (Phase 33 shares the PDF with patrons).
 7. **O7 Free text and erasure.** Account deletion keeps submitted surveys and, with them, the notes. Accept, or null the notes of a deleted account.
 
 Planner-level questions:
