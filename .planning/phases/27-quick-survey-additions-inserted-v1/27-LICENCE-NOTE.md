@@ -22,8 +22,8 @@ disclosed. Quota reported by the owner: 100 requests per minute (per API, per ac
 - Condition 2: "Source : Météo-France" on the summary card, the Conditions section, the read-only
   view and the PDF (D-26), shown only while at least one shown value is still the provider's
   (`showsProviderAttribution`); manual values carry no Météo-France mention.
-- Condition 1 (partly): an edited weather reads "Préremplie d'après Météo-France, modifiée par ..."
-  and the PDF names the observer's edit.
+- Condition 1: an edited weather reads "Préremplie d'après Météo-France, modifiée par ..." and the
+  PDF names the observer's edit (the mixed case is tightened below).
 - 24 hour window (D-20, D-28), so the app never relies on the undocumented 96 hours.
 - The key stays server side (`METEOFRANCE_API_KEY`, `apikey` header from the API only).
 - Condition 4: values are fetched fresh at parcel choice and caught up within 24 hours; a stored
@@ -40,6 +40,15 @@ disclosed. Quota reported by the owner: 100 requests per minute (per API, per ac
   - Edited weather keeps its wording and gains the date: "Préremplie d'après Météo-France, mesure
     du 12/10/2026 à 04:00, modifiée par vous / par l'observateur" (PDF: "Météo-France, mesure du
     ..., modifiée par l'observateur").
+  - Strict rule for a mixed weather (owner decision, 2026-10-12): source Météo-France, at least one
+    value edited and at least one still the provider's. The source line then reads "Source :
+    Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur"
+    (undated: "Source : Météo-France, certaines valeurs modifiées par l'observateur") on the summary
+    card, the Conditions section source line, the read-only view and the PDF source cell ("Météo-France,
+    mesure du ..., certaines valeurs modifiées par l'observateur"). Nothing edited: the line is
+    unchanged. Every provider value edited: no attribution line, the existing "modifiée par
+    l'observateur" wording applies. `weatherSourceLine` owns the rule; the PDF and the read-only view
+    follow it.
   - Pure helpers next to `formatObservationTime` in `mobile/src/app/weather.ts`:
     `formatObservationDate`, `observationStamp`, `weatherSourceLine`. Strings in
     `mobile/src/i18n/fr/conditions.ts` and `survey-export.ts`. No change to the stored payload or to
@@ -50,9 +59,5 @@ disclosed. Quota reported by the owner: 100 requests per minute (per API, per ac
 
 ## Points left for the owner
 
-- On the summary card and in the PDF, a weather where only some values were edited still reads
-  "Source : Météo-France, mesure du ..." beside the mixed values (the D-26 rule, kept as asked). The
-  Conditions section status line says "modifiée par vous" in that case. If strict condition 1
-  wording is wanted on the card too, a "valeurs modifiées" suffix is a one-string change.
 - The date is the `observed_at` stored in the survey. If the observer retyped the observation time,
   the stored instant is theirs, not the station's.
