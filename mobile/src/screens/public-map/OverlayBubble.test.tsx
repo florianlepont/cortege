@@ -141,7 +141,10 @@ describe("OverlayBubble content", () => {
 
   test.each([
     ["withIbp", "Seulement les parcelles qui ont un relevé IBP. Pas de lignes du cadastre."],
-    ["none", "Ni lignes du cadastre ni parcelles. Les parcelles ne sont plus touchables."],
+    [
+      "none",
+      "Ni lignes du cadastre, ni parcelles, ni pastilles de relevés. Les parcelles ne sont plus touchables.",
+    ],
   ] as const)("the helper line follows Parcelles %s", (parcels, help) => {
     expect(render({ parcels }).texts()).toContain(help)
   })

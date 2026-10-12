@@ -148,6 +148,12 @@ describe("MapCanvas (Phase 28 props)", () => {
     expect(tree.root.findAllByType("ParcelPolygonsLayer" as never)).toHaveLength(1)
   })
 
+  test("Parcelles none draws no cluster and no survey marker either", () => {
+    const tree = render({ parcelsMode: "none" })
+    expect(tree.root.findAllByType("ClusterMarker" as never)).toHaveLength(0)
+    expect(tree.root.findAllByType("SurveyMarker" as never)).toHaveLength(0)
+  })
+
   test("androidView goes through to the map", () => {
     expect(mapOf(render({ androidView: "texture" })).props.androidView).toBe("texture")
   })

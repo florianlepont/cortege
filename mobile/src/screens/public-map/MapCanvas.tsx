@@ -229,7 +229,7 @@ export const MapCanvas = memo(function MapCanvas({
           added after the content so it draws over the cadastre lines and the parcels. */}
       <UserLocation key="user-location" />
       <PlacePinLayer pin={placePin ?? null} />
-      {(hideMarkers ? [] : clusters).map((entry) => {
+      {(hideMarkers || parcelsMode === "none" ? [] : clusters).map((entry) => {
         if (entry.kind === "cluster") {
           return (
             <ClusterMarker

@@ -130,7 +130,8 @@ export const mapLayersFr = {
     parcelsNone: "Aucune",
     allHelp: "Lignes du cadastre et toutes les parcelles.",
     withIbpHelp: "Seulement les parcelles qui ont un relevé IBP. Pas de lignes du cadastre.",
-    noneHelp: "Ni lignes du cadastre ni parcelles. Les parcelles ne sont plus touchables.",
+    noneHelp:
+      "Ni lignes du cadastre, ni parcelles, ni pastilles de relevés. Les parcelles ne sont plus touchables.",
     parcelsGroupA11y: "Parcelles affichées sur la carte",
     allA11y: "Toutes les parcelles et le cadastre",
     withIbpA11y: "Seulement les parcelles avec un relevé IBP, sans le cadastre",
