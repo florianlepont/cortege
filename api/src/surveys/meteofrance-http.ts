@@ -31,7 +31,9 @@ const TOKEN_MARGIN_MS = 60 * 1000
 // Lifetime assumed when the token answer gives none: short, so a wrong guess costs one refresh.
 const DEFAULT_TOKEN_LIFETIME_S = 300
 
-const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*$/
+// Three dot-separated base64url parts; the portal's 3 year key keeps the "=" padding of its last
+// part, so up to two "=" are accepted at the end of each part.
+const JWT_SHAPE = /^[A-Za-z0-9_-]+={0,2}\.[A-Za-z0-9_-]+={0,2}\.[A-Za-z0-9_-]*={0,2}$/
 
 /** The mode to use: the requested one, else `apikey` for a JWT-shaped secret, else `application-id`. */
 export function authModeOf(

@@ -67,6 +67,13 @@ describe("authModeOf", () => {
     expect(authModeOf(JWT_CREDENTIAL, "auto")).toBe("apikey")
   })
 
+  it("reads a key whose last part ends with base64 padding as an apikey too (the real 3 year key does)", () => {
+    expect(authModeOf("eyJhbGciOiJSUzI1NiJ9.MARKERPAYLOAD.MARKERSIGNATURE=")).toBe("apikey")
+    expect(authModeOf("eyJhbGciOiJSUzI1NiJ9.MARKERPAYLOAD.MARKERSIGNATURE==")).toBe("apikey")
+    // padding alone (no dots) is an application id, never a key
+    expect(authModeOf("Y2xpZW50OnNlY3JldA==")).toBe("application-id")
+  })
+
   it("reads anything else as the portal application id by default", () => {
     expect(authModeOf(APP_ID_CREDENTIAL)).toBe("application-id")
     expect(authModeOf("abc.def")).toBe("application-id")
