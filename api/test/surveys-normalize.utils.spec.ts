@@ -37,6 +37,8 @@ function makeRow(overrides: Partial<SurveyRow> = {}): SurveyRow {
     ibp_method_version: null,
     ibp_cas: null,
     ibp_cas3_scale: null,
+    survey_note: null,
+    weather: null,
     factors: { A: 1, B: 2 },
     factor_results: {},
     scores: { ibp_total: 10 },
@@ -302,6 +304,88 @@ describe("getChangedSubmittedReadOnlyFields: method fields (phase 01.8, Pattern 
 
   it("still compares region and stage on a v3.0 row", () => {
     expect(changed({ ibp_method_version: V3_0, region_version: "M" })).toEqual(["region_version"])
+  })
+})
+
+describe("getChangedSubmittedReadOnlyFields: note, weather and annotations (phase 27, D-03, D-04)", () => {
+  const WEATHER = {
+    sky: "rain" as const,
+    temperature_c: 8.5,
+    wind_kmh: 12,
+    source: "meteo_france" as const,
+    edited: ["sky" as const],
+  }
+  const changed = (body: SurveyUpsertBody, overrides: Partial<SurveyRow> = {}) => {
+    const existing = makeRow(overrides)
+    return getChangedSubmittedReadOnlyFields(body, existing, existing.parcel_ids ?? [])
+  }
+
+  it("reports a different note and ignores an equal one", () => {
+    expect(changed({ survey_note: "b" }, { survey_note: "a" })).toEqual(["survey_note"])
+    expect(changed({ survey_note: "a" }, { survey_note: "a" })).toEqual([])
+  })
+
+  it("compares the note strictly, with no trimming", () => {
+    expect(changed({ survey_note: "a " }, { survey_note: "a" })).toEqual(["survey_note"])
+  })
+
+  it("never reports a null or absent note, whatever is stored", () => {
+    expect(changed({ survey_note: null }, { survey_note: "a" })).toEqual([])
+    expect(changed({}, { survey_note: "a" })).toEqual([])
+    expect(changed({ survey_note: undefined }, { survey_note: "a" })).toEqual([])
+  })
+
+  it("reports a note sent for a row that has none", () => {
+    expect(changed({ survey_note: "a" }, { survey_note: null })).toEqual(["survey_note"])
+    expect(changed({ survey_note: "a" }, {})).toEqual(["survey_note"])
+  })
+
+  it("ignores the key order of an equal weather", () => {
+    const reordered = {
+      edited: ["sky" as const],
+      source: "meteo_france" as const,
+      wind_kmh: 12,
+      temperature_c: 8.5,
+      sky: "rain" as const,
+    }
+    expect(changed({ weather: reordered }, { weather: WEATHER })).toEqual([])
+  })
+
+  it("reports a different weather value or edited list", () => {
+    expect(changed({ weather: { ...WEATHER, temperature_c: 9 } }, { weather: WEATHER })).toEqual([
+      "weather",
+    ])
+    expect(
+      changed(
+        { weather: { ...WEATHER, edited: ["sky"] } },
+        { weather: { ...WEATHER, edited: ["sky", "wind_kmh"] } },
+      ),
+    ).toEqual(["weather"])
+  })
+
+  it("reports a weather sent for a row that has none", () => {
+    expect(changed({ weather: WEATHER }, { weather: null })).toEqual(["weather"])
+  })
+
+  it("never reports a null or absent weather, whatever is stored", () => {
+    expect(changed({ weather: null }, { weather: WEATHER })).toEqual([])
+    expect(changed({}, { weather: WEATHER })).toEqual([])
+  })
+
+  it("reports changed annotations through the factors comparison", () => {
+    const stored = { A: 1, annotations: { B: { note: "x" } } }
+    expect(
+      changed(
+        { factors: { A: 1, annotations: { B: { note: "x" }, A: { doubt: true } } } },
+        { factors: stored },
+      ),
+    ).toEqual(["factors"])
+  })
+
+  it("ignores the key order of equal annotations", () => {
+    const stored = { A: 1, annotations: { A: { doubt: true, note: "x" }, B: { doubt: true } } }
+    const body = { annotations: { B: { doubt: true }, A: { note: "x", doubt: true } }, A: 1 }
+    expect(changed({ factors: body }, { factors: stored })).toEqual([])
   })
 })
 
@@ -640,6 +724,22 @@ describe("classifySameVersionContent", () => {
       status: "draft",
     }
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("identical")
+  })
+
+  it("returns conflict when the note differs and identical on a replay with note, weather and annotations", () => {
+    const weather = { sky: "fog" as const, temperature_c: 4, edited: ["sky" as const] }
+    const factors = { A: 1, annotations: { A: { doubt: true, note: "n" } } }
+    const existing = makeRow({ survey_note: "note", weather, factors })
+    const replay: SurveyUpsertBody = {
+      ...sameBody(existing),
+      factors: { annotations: { A: { note: "n", doubt: true } }, A: 1 },
+      survey_note: "note",
+      weather: { edited: ["sky"], temperature_c: 4, sky: "fog" },
+    }
+    expect(classifySameVersionContent(replay, existing, ["12345AB0042"])).toBe("identical")
+    expect(
+      classifySameVersionContent({ ...replay, survey_note: "autre" }, existing, ["12345AB0042"]),
+    ).toBe("conflict")
   })
 
   it("does not treat absent or null fields as changes", () => {

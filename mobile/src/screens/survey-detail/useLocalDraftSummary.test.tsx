@@ -80,3 +80,50 @@ describe("useLocalDraftSummary factor count (12.2-14)", () => {
     expect(10 - (summary.missingFactorCount ?? 0)).toBe(countFilledFactors(draft))
   })
 })
+
+describe("useLocalDraftSummary annotations (phase 27, D-13, D-14)", () => {
+  test("a factor note and a doubt are read from the payload and put on their entries", async () => {
+    mockGetLocalSurveyDraft.mockResolvedValue({
+      ...DRAFT,
+      factors: {
+        ...DRAFT.factors,
+        annotations: { C: { note: "souches" }, D: { doubt: true } },
+      },
+    })
+
+    const summary = await read()
+
+    expect(summary.annotations).toEqual({ C: { note: "souches" }, D: { doubt: true } })
+    const entry = (code: string) => summary.factorEntries.find(([key]) => key === code)?.[1]
+    expect(entry("C")?.note).toBe("souches")
+    expect(entry("C")?.doubt).toBeUndefined()
+    expect(entry("D")?.doubt).toBe(true)
+    expect(entry("A")?.doubt).toBeUndefined()
+    expect(entry("A")?.note).toBeUndefined()
+  })
+
+  test("the annotations never move a score or the factor count", async () => {
+    mockGetLocalSurveyDraft.mockResolvedValue(DRAFT)
+    const plain = await read()
+    mockGetLocalSurveyDraft.mockResolvedValue({
+      ...DRAFT,
+      factors: {
+        ...DRAFT.factors,
+        annotations: { A: { doubt: true, note: "n" }, J: { doubt: true } },
+      },
+    })
+    const annotated = await read()
+
+    expect(annotated.scores).toEqual(plain.scores)
+    expect(annotated.missingFactorCount).toBe(plain.missingFactorCount)
+    expect(
+      annotated.factorEntries.map(([code, e]) => [code, e.score_points, e.selected_class]),
+    ).toEqual(plain.factorEntries.map(([code, e]) => [code, e.score_points, e.selected_class]))
+  })
+
+  test("a draft without annotations has an empty container", async () => {
+    mockGetLocalSurveyDraft.mockResolvedValue(DRAFT)
+
+    expect((await read()).annotations).toEqual({})
+  })
+})

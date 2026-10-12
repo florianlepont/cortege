@@ -3,6 +3,7 @@ import { accountFr } from "./account"
 import { authGateFr } from "./auth-gate"
 import { commonFr } from "./common"
 import { componentsFr } from "./components"
+import { conditionsFr } from "./conditions"
 import { factorDetailFr } from "./factor-detail"
 import { factorInputFr } from "./factor-input"
 import { factorPagerFr } from "./factor-pager"
@@ -56,6 +57,7 @@ export const fr = {
   parcelSelection: parcelSelectionFr,
   communitySurvey: communitySurveyFr,
   parcelHistory: parcelHistoryFr,
+  conditions: conditionsFr,
   onboarding: onboardingFr,
   profileSetup: profileSetupFr,
   welcome: welcomeFr,

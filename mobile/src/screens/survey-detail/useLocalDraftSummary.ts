@@ -1,4 +1,4 @@
-import { FACTOR_KEYS } from "@cortege/ibp-domain"
+import { FACTOR_KEYS, readFactorAnnotations, type FactorAnnotations } from "@cortege/ibp-domain"
 import { useEffect, useState } from "react"
 import {
   computeIbpTotalsFromRetainedScores,
@@ -10,6 +10,7 @@ import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
 } from "../../app/constants"
+import { attachFactorAnnotations } from "../../app/factor-annotations"
 import { RegionVersion, VegetationStage } from "../../app/types"
 import { getLocalSurveyDraft, LocalSurvey } from "../../storage"
 
@@ -23,6 +24,10 @@ export type DisplayedFactorResult = {
   warnings: string[]
   // DET-01: the factor's retained points (0-5), null when not filled.
   score_points: number | null
+  // Phase 27 (D-13, D-17), display only and never read by a scorer (D-14): the observer's doubt
+  // flag and short note on this factor.
+  doubt?: boolean
+  note?: string | null
 }
 export type LocalDraftMeta = {
   site_name: string
@@ -43,6 +48,8 @@ export type LocalDraftMeta = {
 export type LocalDraftSummary = {
   scores: DisplayedScores | null
   factorEntries: Array<[string, DisplayedFactorResult]>
+  // The draft's per-factor doubts and notes (phase 27), also carried by the entries above.
+  annotations: FactorAnnotations
   submitReady: boolean | null
   missingFactorCount: number | null
   meta: LocalDraftMeta | null
@@ -53,6 +60,7 @@ export const NOT_FILLED_CLASS = "Not filled"
 const EMPTY_SUMMARY: LocalDraftSummary = {
   scores: null,
   factorEntries: [],
+  annotations: {},
   submitReady: null,
   missingFactorCount: null,
   meta: null,
@@ -103,7 +111,8 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
         })
         // The same count the stored list column holds (Accueil's resume card reads it).
         const filledFactorCount = countFilledFactors({ ...context, factors: draft.factors })
-        const entries = FACTOR_KEYS.map<[string, DisplayedFactorResult]>((factorCode) => {
+        const annotations = readFactorAnnotations(draft.factors)
+        const scoredEntries = FACTOR_KEYS.map<[string, DisplayedFactorResult]>((factorCode) => {
           const score = retained[factorCode]
           return [
             factorCode,
@@ -114,6 +123,7 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
             },
           ]
         })
+        const entries = attachFactorAnnotations(scoredEntries, annotations)
 
         if (cancelled) return
         setSummary({
@@ -123,6 +133,7 @@ export function useLocalDraftSummary(survey: LocalSurvey): LocalDraftSummary {
             ibp_contexte: totals.ibp_contexte,
           },
           factorEntries: entries,
+          annotations,
           submitReady: readiness.ready,
           missingFactorCount: FACTOR_KEYS.length - filledFactorCount,
           meta: {

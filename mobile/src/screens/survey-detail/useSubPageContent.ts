@@ -23,16 +23,25 @@ export function pageBottomPadding(clearance: number): number {
  * 12.2-17: under the native large title (`<ScreenFrame largeTitle>`) the scroll view uses automatic
  * insets, so iOS already keeps the content above the tab bar: the padding then holds only what
  * covers the page above that (the floating bar's part over the tab bar's clearance) and the margin.
+ *
+ * `keyboardInset` (D-46) is the height of the keyboard while it is up: the content then has at least
+ * that much room at the bottom, so the last card can be scrolled to the top of the keyboard. It
+ * replaces the padding above while it is larger (the keyboard covers the bars) and is 0 otherwise.
  */
 export function useSubPageContentStyle(
   base: ViewStyle,
   barHeight: number | null = null,
+  keyboardInset = 0,
 ): StyleProp<ViewStyle> {
   const clearance = useTabBarClearance()
   const largeTitle = useFrameLargeTitle()
   return useMemo(() => {
     const covered = barHeight === null ? clearance : barHeight
     const own = largeTitle ? Math.max(0, covered - clearance) : covered
-    return [base, { paddingBottom: pageBottomPadding(own) }]
-  }, [base, clearance, barHeight, largeTitle])
+    const padding = Math.max(
+      pageBottomPadding(own),
+      keyboardInset > 0 ? pageBottomPadding(keyboardInset) : 0,
+    )
+    return [base, { paddingBottom: padding }]
+  }, [base, clearance, barHeight, largeTitle, keyboardInset])
 }

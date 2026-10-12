@@ -2,7 +2,6 @@ import { useMemo } from "react"
 
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
-import { AbbreviationInfo } from "../ui/AbbreviationInfo"
 import { AppCard } from "../ui/AppCard"
 import { FactorBarsChart, factorPointsFromEntries } from "../ui/FactorBarsChart"
 import { useFrameInsetBehavior } from "../ui/frame-large-title"
@@ -16,7 +15,7 @@ import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { TitledScrollView } from "../ui/TitledScrollView"
 
 /**
- * "Score IBP" (OA-46): the total out of 50 with its two sub-scores and the ten factor bars, then the ten factor rows, each
+ * "Facteurs IBP" (OA-46, D-34): the total out of 50 with its two sub-scores and the ten factor bars, then the ten factor rows, each
  * opening its entry screen. The only detail of the score on the survey's pages (OA-45).
  */
 export function SurveyScoreScreen({
@@ -46,7 +45,6 @@ export function SurveyScoreScreen({
       contentInsetAdjustmentBehavior={insetBehavior}
     >
       <PageTitle>{fr.navigation.headers.surveyScore}</PageTitle>
-      <AbbreviationInfo term="IBP" variant="row" />
       <ScoreBreakdown scores={data.displayedScores} />
       <AppCard variant="glass">
         <FactorBarsChart entries={factorPoints} animate />

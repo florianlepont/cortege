@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 27
-current_phase_name: INSERTED, V1
-status: ready_to_discuss
-stopped_at: "Phase 28 executed except the open device checks (27/28 plans, 28-18 partial); owner validated the Explorer layers, swipe and comparison on his iPhone 2026-10-12; open: offline pack measures, Android emulator run, airplane mode"
-last_updated: "2026-10-11T10:29:55.954Z"
-last_activity: 2026-10-11
-last_activity_desc: Phase 26 (field-feedback fixes) complete
+current_phase_name: Quick survey additions (INSERTED, V1)
+status: ready_to_plan
+stopped_at: "Phase 27 complete; Phase 28 executed except the open device checks (27/28 plans, 28-18 partial), see Session Continuity"
+last_updated: "2026-10-12T12:30:00.000Z"
+last_activity: 2026-10-12
+last_activity_desc: Phase 27 complete
 progress:
   total_phases: 39
-  completed_phases: 18
-  total_plans: 214
-  completed_plans: 236
+  completed_phases: 19
+  total_plans: 220
+  completed_plans: 257
   percent: 46
 ---
 
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 27 (quick survey additions) is next, then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md. Phases 26 to 38 were renumbered in execution order on 2026-10-11.
+**Current focus:** Phase 27 (quick survey additions) is complete (2026-10-12; its remaining device checks are reported to Phases 35 and 37, nothing stays open); then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md.
 
 ## Current Position
 
-Phase: 27 — Quick survey additions (INSERTED, V1), not discussed yet
-Plan: Not started
-Status: Phase 26 complete; Phase 27 ready to discuss
-Last activity: 2026-10-11 — Phase 26 (field-feedback fixes) complete
+Phase: 27 (Quick survey additions (INSERTED, V1)) — COMPLETE
+Plan: 22 of 22
+Status: Phase complete; next is Phase 28
+Last activity: 2026-10-12 — Phase 27 complete
 
-Progress: [█████████░] 27/39 phases complete
+Progress: [█████████░] 28/39 phases complete
 
 ## Performance Metrics
 
@@ -140,6 +140,7 @@ Progress: [█████████░] 27/39 phases complete
 | Phase 26 P07 | 10m | 2 tasks | 9 files |
 | Phase 26 P08 | 25min | 2 tasks | 9 files |
 | Phase 26 P09 | 25min | 2 tasks | 15 files |
+| Phase 27 P01 | 10 min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -280,6 +281,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-11T10:29:55.948Z
+Last session: 2026-10-12T20:00:00.000Z
 Stopped at: Phase 28 executed except the open device checks (27/28 plans, 28-18 partial); owner validated the Explorer layers, swipe and comparison on his iPhone 2026-10-12; open: offline pack measures, Android emulator run, airplane mode. Nothing merged or pushed.
 Resume file: .planning/phases/28-map-layers-comparison-inserted-v1/28-18-SUMMARY.md

@@ -237,7 +237,11 @@ export function useEditingDraft({
     })()
   }
 
-  const handleCreateDraft = async (): Promise<boolean> => {
+  /**
+   * Finalises the wizard's draft and returns its id, or null when it could not be saved. The id is
+   * returned so the caller selects the survey itself once the navigation has settled.
+   */
+  const handleCreateDraft = async (): Promise<string | null> => {
     try {
       const draftInput = surveyForm.buildDraftInput()
       if (editingSurveyId) {
@@ -256,7 +260,7 @@ export function useEditingDraft({
         setFormMode("create")
         setSelectedSurveyId(editingSurveyId)
         onStatusChange(text.draftSaved({ name: surveyName(draftInput) }))
-        return true
+        return editingSurveyId
       }
 
       const created = await createLocalDraft(draftInput)
@@ -266,11 +270,11 @@ export function useEditingDraft({
       setFormMode("create")
       setSelectedSurveyId(created.id)
       onStatusChange(text.draftCreated())
-      return true
+      return created.id
     } catch (error) {
       logStatusDetail("editing.draftSave", error)
       onStatusChange(text.draftSaveFailed())
-      return false
+      return null
     }
   }
 

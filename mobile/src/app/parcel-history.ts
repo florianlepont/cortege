@@ -30,6 +30,8 @@ export type HistoryEntry = {
   factors?: Record<string, FactorCanonical>
   /** Community history only. */
   author?: string | null
+  /** The survey's note (phase 27, D-06), trimmed; null when it has none. */
+  note: string | null
   isCurrent: boolean
 }
 
@@ -77,6 +79,10 @@ export type ParcelHistoryModel = {
 const finiteOrNull = (value: unknown): number | null =>
   typeof value === "number" && Number.isFinite(value) ? value : null
 
+/** A note from the wire is untrusted: only a non-blank text is kept, trimmed. */
+const noteOrNull = (value: unknown): string | null =>
+  typeof value === "string" && value.trim().length > 0 ? value.trim() : null
+
 /** A total from the wire is untrusted: anything but a finite number becomes 0. */
 const safeTotal = (value: unknown): number => finiteOrNull(value) ?? 0
 
@@ -106,6 +112,7 @@ export function buildEntriesFromOwn(
     method: item.ibp_method_version,
     scores: safeScores(item.scores),
     factors: isRecord(item.factor_results) ? item.factor_results : undefined,
+    note: noteOrNull(item.survey_note),
     isCurrent: item.survey_id === currentSurveyId,
   }))
 }
@@ -121,6 +128,7 @@ export function buildEntriesFromCommunity(
     total: safeTotal(item.ibp_total),
     method: item.ibp_method_version,
     author: item.author_name,
+    note: noteOrNull(item.survey_note),
     isCurrent: item.is_current,
   }))
 }

@@ -182,3 +182,71 @@ Acceptance criteria:
 - The selected species are saved with the survey and can be reviewed later.
 
 - The feature works offline once the model is available on-device, or clearly indicates when connectivity is required.
+
+### US-C10 - Free Note on the Survey and on Each Factor
+
+**Release:** V1 (phase 27, `REQ-C-survey-note`, `REQ-C-factor-note`)
+
+The observer can write down what the form does not capture: the conditions of the visit and field remarks for the whole survey, and a short remark on any single factor. The notes are optional and never block saving or submitting.
+
+As a contributor, I want to add a free note to my survey and to each factor so the context of my observations is kept with them.
+
+Acceptance criteria
+
+- A survey note of at most 1000 characters can be written in the "Conditions" section of the survey context page, before the factors.
+
+- Each factor A to J has a collapsed strip with an "Ajouter une note" link; a factor note is at most 300 characters and is written without leaving the factor page, so the entry budget of the form is kept.
+
+- Both fields show a character counter, and the counter warns near the limit.
+
+- A note syncs with the survey (upsert, `/sync`, `/sync/changes`) and returns on a reinstall or a second device.
+
+- A note is read-only once the survey is submitted.
+
+- The note is visible to the members who can read the survey: in the survey summary (folded, with a link to read the rest), in the parcel history and in the exported PDF; the factor note shows under its factor on the score page and in the PDF.
+
+- The survey note of the observer's own surveys is searchable in the global search, on the phone and offline; the community search is unchanged.
+
+### US-C11 - Pre-filled Weather
+
+**Release:** V1 (phase 27, `REQ-C-weather-provider`, `REQ-C-weather-prefill`, `REQ-C-conditions-sync`)
+
+The weather of the visit (sky, temperature, wind, rain over the last 24 hours, observation time) is filled in from Météo-France once the parcel is chosen, so the observer only chooses the sky. The measurements are Météo-France data and are not editable (the licence forbids altering them); the sky is the observer's own judgement. The app reaches the provider only through the Cortege API.
+
+As a contributor, I want the measurements of my survey pre-filled so I do not have to look them up or type them, and I want to say what the sky looked like.
+
+Acceptance criteria
+
+- Once the parcel is chosen and the network is there, the weather is requested for the centre of the parcel and the survey time, and the values the provider supplies appear in the "Conditions" section.
+
+- Only the sky can be set or cleared by the observer (eight choices, pressing the chosen one again clears it); temperature, wind, rain over 24 hours and the observation time are read-only values from Météo-France. A sky the observer set or cleared is never overwritten by a later lookup.
+
+- A value the provider does not supply stays absent; an empty weather is valid.
+
+- Offline, or when the provider fails, the section stays empty with no error; when the network returns, the draft fills in for the survey time, not the reconnection time, as long as the survey is at most 24 hours old and the observer entered nothing there.
+
+- Older than 24 hours, the measurements stay absent and only the sky can be chosen.
+
+- A draft that has parcels but never got a survey time (made before phase 27, pulled, seeded) is stamped when its parcels change; as a safety net the lookup also takes its creation time as the survey time while that is within 24 hours, and never invents a time otherwise (D-39).
+
+- Wherever the provider values are shown or printed (Conditions section, survey summary, PDF) the line "Source : Météo-France" is shown; when the sky shown is the observer's it adds "conditions saisies par l'observateur", and a weather with only the observer's sky carries no Météo-France mention.
+
+- The weather syncs with the survey, is read-only once the survey is submitted, and is visible to the members who can read the survey.
+
+### US-C12 - Doubt Flag per Factor
+
+**Release:** V1 (phase 27, `REQ-C-doubt-flag`)
+
+When the observer is not sure of an observation, they can say so without changing the data they entered. The doubt is information for the readers of the survey; it is not a score input.
+
+As a contributor, I want to flag a factor as "Douteux" so the readers of my survey know how much to trust it.
+
+Acceptance criteria
+
+- Each factor A to J has a "Douteux" switch in its strip, off ("Sûr") by default; only "Douteux" is set by the observer.
+
+- The doubt is shown wherever the factor is shown: the score page, another member's view of the submitted survey, and the PDF.
+
+- The doubt never changes a score, a band, a total or a validation result, proved by parity cases run in the shared package, the API adapter and the mobile adapter.
+
+- The doubt syncs with the survey and is read-only once the survey is submitted.

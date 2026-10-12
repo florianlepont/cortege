@@ -168,6 +168,22 @@ equal the v3.0 totals: the aggregation is unchanged (GS-1).
 MAT-VER-01 has an API E2E part as well: an identical replay of a submitted survey recorded
 without a method version returns `synced`, not 422.
 
+## Annotation cases (phase 27)
+
+The per-factor doubt flag and short note live in `factors.annotations`, keyed by factor code A to
+J, each entry `{ doubt?: true, note?: string }`. The container sits beside the factor keys and is
+never read by a scorer (`evaluateIbp` iterates the ten factor keys only), so it cannot change a
+score, a total, a band or an issue (D-14, D-23). Each case runs under both versions, and expects
+exactly what the same factors give without the container.
+
+| Case ID | Mode | Context | Input | Expected | Issues |
+|---|---|---|---|---|---|
+| MAT-ANN-01@both | submit | ACA, collineen (v3.0); cas 1 (v3.2) | MAT-SUBMIT-02 direct scores plus `annotations`: `A` doubt and note, `F` note | same scores and totals as MAT-SUBMIT-02; `ok=true` | none |
+| MAT-ANN-02@both | draft | any | `C.bmg_count=1`, `C.bmm_count=1`, `C.surface_ha=2` plus `annotations.C` doubt and note | same `C` as MAT-VER-01: v3.0 `C=0`; v3.2 `C=1` | none |
+| MAT-ANN-03@both | draft | any | `annotations` only (`B` doubt, `J` note), no scored factor | no factor scored; `ok=true` | none (no `factor_invalid_raw`) |
+
+MAT-ANN-01@both totals: `ibp_peuplement_gestion=17`, `ibp_contexte=7`, `ibp_total=24`.
+
 ## Submit readiness (mobile)
 
 Run by the mobile adapter test from `IBP_READINESS_CASES`. The row labels are descriptive; the

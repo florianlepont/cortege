@@ -1,0 +1,398 @@
+{
+  "captured_at": "2026-10-12T06:19:41Z",
+  "format": "csv",
+  "total_station_count": 2151,
+  "columns": [
+    "Id_station",
+    "Id_omm",
+    "Nom_usuel",
+    "Latitude",
+    "Longitude",
+    "Altitude",
+    "Date_ouverture",
+    "Pack"
+  ],
+  "points": [
+    {
+      "label": "Fontainebleau",
+      "lat": 48.4,
+      "lng": 2.7,
+      "nearest": [
+        {
+          "id": "77186002",
+          "name": "FONTAINEBLEAU_SAPC",
+          "latitude": 48.406,
+          "longitude": 2.6785,
+          "altitude": 84,
+          "distance_km": 1.72
+        },
+        {
+          "id": "77333003",
+          "name": "NEMOURS",
+          "latitude": 48.27,
+          "longitude": 2.715,
+          "altitude": 73,
+          "distance_km": 14.5
+        },
+        {
+          "id": "91405002",
+          "name": "MILLY-LA-FORET",
+          "latitude": 48.382167,
+          "longitude": 2.431833,
+          "altitude": 109,
+          "distance_km": 19.9
+        },
+        {
+          "id": "77306001",
+          "name": "MELUN",
+          "latitude": 48.610333,
+          "longitude": 2.6795,
+          "altitude": 91,
+          "distance_km": 23.44
+        },
+        {
+          "id": "91184001",
+          "name": "COURDIMANCHE",
+          "latitude": 48.421833,
+          "longitude": 2.374333,
+          "altitude": 71,
+          "distance_km": 24.16
+        },
+        {
+          "id": "77054001",
+          "name": "LA BROSSE-MX",
+          "latitude": 48.351667,
+          "longitude": 3.023333,
+          "altitude": 77,
+          "distance_km": 24.48
+        },
+        {
+          "id": "77489001",
+          "name": "VAUX-SUR-LUNAIN",
+          "latitude": 48.221833,
+          "longitude": 2.934667,
+          "altitude": 136,
+          "distance_km": 26.34
+        },
+        {
+          "id": "77211001",
+          "name": "NANGIS",
+          "latitude": 48.595333,
+          "longitude": 3.007667,
+          "altitude": 128,
+          "distance_km": 31.4
+        },
+        {
+          "id": "77159001",
+          "name": "DONNEMARIE",
+          "latitude": 48.474667,
+          "longitude": 3.1265,
+          "altitude": 97,
+          "distance_km": 32.54
+        },
+        {
+          "id": "45145001",
+          "name": "FERRIERES",
+          "latitude": 48.113167,
+          "longitude": 2.857833,
+          "altitude": 107,
+          "distance_km": 33.97
+        },
+        {
+          "id": "91103001",
+          "name": "BRETIGNY_SAPC",
+          "latitude": 48.6005,
+          "longitude": 2.326,
+          "altitude": 78,
+          "distance_km": 35.45
+        },
+        {
+          "id": "77418001",
+          "name": "ST-LOUP-DE-NAUD",
+          "latitude": 48.536167,
+          "longitude": 3.210167,
+          "altitude": 99,
+          "distance_km": 40.55
+        },
+        {
+          "id": "91027002",
+          "name": "ORLY",
+          "latitude": 48.718,
+          "longitude": 2.397,
+          "altitude": 86,
+          "distance_km": 41.8
+        },
+        {
+          "id": "45253001",
+          "name": "PITHIVIERS-LE-V",
+          "latitude": 48.166333,
+          "longitude": 2.228333,
+          "altitude": 120,
+          "distance_km": 43.51
+        },
+        {
+          "id": "77239001",
+          "name": "JOUY-LE-CHATEL",
+          "latitude": 48.6895,
+          "longitude": 3.125167,
+          "altitude": 135,
+          "distance_km": 44.9
+        }
+      ]
+    },
+    {
+      "label": "Vosges (Gerardmer)",
+      "lat": 48.07,
+      "lng": 6.87,
+      "nearest": [
+        {
+          "id": "88196009",
+          "name": "GERARDMER",
+          "latitude": 48.072167,
+          "longitude": 6.834,
+          "altitude": 669,
+          "distance_km": 2.69
+        },
+        {
+          "id": "88075005",
+          "name": "LA_BRESSE_SAPC",
+          "latitude": 48.007667,
+          "longitude": 6.9415,
+          "altitude": 772,
+          "distance_km": 8.73
+        },
+        {
+          "id": "88486003",
+          "name": "VAGNEY",
+          "latitude": 48.042333,
+          "longitude": 6.750333,
+          "altitude": 805,
+          "distance_km": 9.41
+        },
+        {
+          "id": "68171002",
+          "name": "KRUTH_SAPC",
+          "latitude": 47.944167,
+          "longitude": 6.955,
+          "altitude": 512,
+          "distance_km": 15.35
+        },
+        {
+          "id": "68226005",
+          "name": "MUNSTER_SAPC",
+          "latitude": 48.047167,
+          "longitude": 7.117333,
+          "altitude": 420,
+          "distance_km": 18.56
+        },
+        {
+          "id": "68249002",
+          "name": "ORBEY LAC BLANC_SAPC",
+          "latitude": 48.135833,
+          "longitude": 7.103833,
+          "altitude": 1080,
+          "distance_km": 18.84
+        },
+        {
+          "id": "68247001",
+          "name": "ODEREN - VALLEE",
+          "latitude": 47.909667,
+          "longitude": 6.970333,
+          "altitude": 457,
+          "distance_km": 19.33
+        },
+        {
+          "id": "88081004",
+          "name": "BUSSANG",
+          "latitude": 47.892167,
+          "longitude": 6.868,
+          "altitude": 615,
+          "distance_km": 19.77
+        },
+        {
+          "id": "68247003",
+          "name": "MARKSTEIN CRETE",
+          "latitude": 47.923,
+          "longitude": 7.031667,
+          "altitude": 1184,
+          "distance_km": 20.3
+        },
+        {
+          "id": "88383001",
+          "name": "REMIREMONT",
+          "latitude": 48.019667,
+          "longitude": 6.596667,
+          "altitude": 384,
+          "distance_km": 21.08
+        },
+        {
+          "id": "88399001",
+          "name": "LE ROULIER_SAPC",
+          "latitude": 48.168,
+          "longitude": 6.6255,
+          "altitude": 449,
+          "distance_km": 21.17
+        },
+        {
+          "id": "88408002",
+          "name": "RUPT-SUR-MOSELLE",
+          "latitude": 47.918167,
+          "longitude": 6.663,
+          "altitude": 427,
+          "distance_km": 22.85
+        },
+        {
+          "id": "68188002",
+          "name": "LINTHAL_SAPC",
+          "latitude": 47.9415,
+          "longitude": 7.114,
+          "altitude": 488,
+          "distance_km": 23.1
+        },
+        {
+          "id": "68102001",
+          "name": "GEISHOUSE_SAPC",
+          "latitude": 47.875333,
+          "longitude": 7.056833,
+          "altitude": 618,
+          "distance_km": 25.73
+        },
+        {
+          "id": "68338001",
+          "name": "TROIS-EPIS_SAPC",
+          "latitude": 48.1015,
+          "longitude": 7.231,
+          "altitude": 656,
+          "distance_km": 27.04
+        }
+      ]
+    },
+    {
+      "label": "Landes (Mimizan)",
+      "lat": 44.2,
+      "lng": -1.23,
+      "nearest": [
+        {
+          "id": "40134001",
+          "name": "LABOUHEYRE DFCI",
+          "latitude": 44.213333,
+          "longitude": -0.915333,
+          "altitude": 72,
+          "distance_km": 25.13
+        },
+        {
+          "id": "40046001",
+          "name": "BISCARROSSE",
+          "latitude": 44.431667,
+          "longitude": -1.2475,
+          "altitude": 35,
+          "distance_km": 25.8
+        },
+        {
+          "id": "40246003",
+          "name": "SABRES",
+          "latitude": 44.153667,
+          "longitude": -0.859,
+          "altitude": 81,
+          "distance_km": 30.03
+        },
+        {
+          "id": "40227001",
+          "name": "PISSOS",
+          "latitude": 44.313667,
+          "longitude": -0.787333,
+          "altitude": 56,
+          "distance_km": 37.45
+        },
+        {
+          "id": "33529001",
+          "name": "CAZAUX",
+          "latitude": 44.534667,
+          "longitude": -1.132,
+          "altitude": 23,
+          "distance_km": 38.02
+        },
+        {
+          "id": "40243001",
+          "name": "RION-DES-LANDES",
+          "latitude": 43.916333,
+          "longitude": -0.950833,
+          "altitude": 77,
+          "distance_km": 38.63
+        },
+        {
+          "id": "33042005",
+          "name": "BELIN BELIET",
+          "latitude": 44.448,
+          "longitude": -0.882,
+          "altitude": 45,
+          "distance_km": 39.07
+        },
+        {
+          "id": "33042001",
+          "name": "BELIN-BELIET",
+          "latitude": 44.4935,
+          "longitude": -0.7905,
+          "altitude": 36,
+          "distance_km": 47.82
+        },
+        {
+          "id": "33236002",
+          "name": "CAP-FERRET",
+          "latitude": 44.6305,
+          "longitude": -1.251667,
+          "altitude": 8,
+          "distance_km": 47.9
+        },
+        {
+          "id": "40031001",
+          "name": "BEGAAR",
+          "latitude": 43.833167,
+          "longitude": -0.836,
+          "altitude": 19,
+          "distance_km": 51.54
+        },
+        {
+          "id": "40088001",
+          "name": "DAX",
+          "latitude": 43.689833,
+          "longitude": -1.07,
+          "altitude": 31,
+          "distance_km": 58.16
+        },
+        {
+          "id": "40304001",
+          "name": "SOORTS-HOSSEGOR",
+          "latitude": 43.669833,
+          "longitude": -1.426333,
+          "altitude": 10,
+          "distance_km": 61.01
+        },
+        {
+          "id": "40033001",
+          "name": "BELIS",
+          "latitude": 44.063833,
+          "longitude": -0.453833,
+          "altitude": 85,
+          "distance_km": 63.77
+        },
+        {
+          "id": "33484001",
+          "name": "ST-SYMPHORIEN",
+          "latitude": 44.426833,
+          "longitude": -0.489,
+          "altitude": 54,
+          "distance_km": 64.12
+        },
+        {
+          "id": "40065002",
+          "name": "CAPBRETON",
+          "latitude": 43.627333,
+          "longitude": -1.453333,
+          "altitude": 11,
+          "distance_km": 66.14
+        }
+      ]
+    }
+  ]
+}

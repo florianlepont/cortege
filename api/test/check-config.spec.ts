@@ -55,6 +55,33 @@ describe("runConfigCheck (D-05 pre-flight)", () => {
     expect(result.lines.filter((line) => line.startsWith("ERREUR : "))).toEqual([])
   })
 
+  it("refuses WEATHER_PROVIDER=synthetic with one ERREUR line that names no value", () => {
+    const result = runConfigCheck({ ...validProdEnv, WEATHER_PROVIDER: "synthetic" }, [])
+    expect(result.exitCode).toBe(1)
+    expect(result.lines).toEqual([expect.stringMatching(/^ERREUR : WEATHER_PROVIDER : /)])
+  })
+
+  it("exits 0 with one ATTENTION line when meteofrance has no usable key", () => {
+    const marker = "CHANGE_ME_WEATHER_MARKER_8c2"
+    for (const key of [undefined, "", marker]) {
+      const result = runConfigCheck(
+        { ...validProdEnv, WEATHER_PROVIDER: "meteofrance", METEOFRANCE_API_KEY: key },
+        [],
+      )
+      expect(result.exitCode).toBe(0)
+      expect(result.lines.filter((line) => line.startsWith("ATTENTION : "))).toEqual([
+        expect.stringMatching(/^ATTENTION : METEOFRANCE_API_KEY : /),
+      ])
+      expect(result.lines.join("\n")).not.toContain("WEATHER_MARKER")
+    }
+  })
+
+  it("reports an unknown WEATHER_PROVIDER as a schema error", () => {
+    const result = runConfigCheck({ ...validProdEnv, WEATHER_PROVIDER: "meteo" }, [])
+    expect(result.exitCode).toBe(1)
+    expect(result.lines).toContainEqual(expect.stringMatching(/^ERREUR : WEATHER_PROVIDER : /))
+  })
+
   it("reports schema errors as ERREUR lines", () => {
     const result = runConfigCheck({ ...validProdEnv, NODE_ENV: "staging" }, ["--production"])
     expect(result.exitCode).toBe(1)
@@ -77,8 +104,13 @@ describe("test config helper", () => {
     expect(appConfigOf(service).isProduction).toBe(false)
   })
 
+  it("defaults the test weather provider to synthetic (api/test/setup-env.js)", () => {
+    expect(buildTestConfig().weather.provider).toBe("synthetic")
+  })
+
   it("applies overrides on top of NODE_ENV=test", () => {
     expect(buildTestConfig({ PG_POOL_MAX: "3" }).database.poolMax).toBe(3)
+    expect(buildTestConfig({ WEATHER_PROVIDER: "off" }).weather.provider).toBe("off")
     expect(appConfigOf(buildTestConfigService({ CORS_ORIGIN: "none" })).cors.mode).toBe("none")
   })
 })

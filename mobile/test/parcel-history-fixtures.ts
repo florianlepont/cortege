@@ -80,6 +80,7 @@ export function entry(id: string, overrides: Partial<HistoryEntry> = {}): Histor
     version: 1,
     total: 30,
     method: null,
+    note: null,
     isCurrent: false,
     ...overrides,
   }

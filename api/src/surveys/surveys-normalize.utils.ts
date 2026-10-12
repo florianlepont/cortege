@@ -155,6 +155,10 @@ function parcelIdSetEqual(a: string[], b: string[]): boolean {
   return true
 }
 
+// The PATCH body does not take the phase 27 fields (research Pitfall 8), so the upsert-only
+// ones are added here instead of widening SurveyPatchBody.
+type SubmittedReadOnlyField = Exclude<keyof SurveyPatchBody, "scores"> | "survey_note" | "weather"
+
 /**
  * Value comparison of the read-only fields of a submitted survey, for the
  * upsert path (D-04, D-13). Unlike getSubmittedReadOnlyFields (key-presence
@@ -169,13 +173,19 @@ function parcelIdSetEqual(a: string[], b: string[]): boolean {
  * unchanged; the cas fields only under v3.2 and region/stage only under v3.0,
  * because the other method's fields are never stored. A missing cas-3 flag
  * equals false.
+ *
+ * Phase 27 (D-03, D-04): survey_note (strict string equality) and weather
+ * (deep equality, so key order never matters) are read-only after submit and
+ * compared like the other fields; an absent or null value is never a change.
+ * factors.annotations rides on the factors deep comparison, so a changed
+ * doubt or factor note is reported as "factors".
  */
 export function getChangedSubmittedReadOnlyFields(
   body: SurveyUpsertBody,
   existing: SurveyRow,
   existingParcelIds: string[],
 ): string[] {
-  const readonlyFields: Array<Exclude<keyof SurveyPatchBody, "scores">> = [
+  const readonlyFields: SubmittedReadOnlyField[] = [
     "site_name",
     "parcel_id",
     "parcel_ids",
@@ -185,6 +195,8 @@ export function getChangedSubmittedReadOnlyFields(
     "region_version",
     "vegetation_stage",
     "factors",
+    "survey_note",
+    "weather",
   ]
 
   const changed: string[] = []
@@ -261,6 +273,19 @@ export function getChangedSubmittedReadOnlyFields(
         }
         break
       }
+      case "survey_note": {
+        // Strict string equality, no trimming or normalisation on the server (Pitfall 4).
+        if (bodyValue !== (existing.survey_note ?? null)) {
+          changed.push(field)
+        }
+        break
+      }
+      case "weather": {
+        if (!jsonDeepEqual(bodyValue, existing.weather ?? null)) {
+          changed.push(field)
+        }
+        break
+      }
       default:
         break
     }
@@ -306,7 +331,8 @@ export type SameVersionContent = "identical" | "visibility_only" | "conflict"
  * The comparison is by value and computed on the fly (no stored hash): JSONB
  * reorders object keys, so hashing raw JSON would report false conflicts.
  * scores, status and expires_at are excluded, and absent or null body fields
- * are never treated as changes.
+ * are never treated as changes. The phase 27 survey_note, weather and
+ * factors.annotations are part of the compared content (D-04).
  */
 export function classifySameVersionContent(
   body: SurveyUpsertBody,

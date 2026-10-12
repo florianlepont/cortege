@@ -459,6 +459,10 @@ function buildSurveyPayloadFromRemote(survey: RemoteSurvey): SurveyQueuePayload 
     ibp_method_version: survey.ibp_method_version ?? undefined,
     ibp_cas: survey.ibp_cas ?? undefined,
     ibp_cas3_scale: survey.ibp_cas3_scale ?? undefined,
+    // Phase 27 (Pitfall 5): copied so a pulled survey keeps its note and weather; without it a later
+    // local edit would lose them. A null or missing value stays absent.
+    survey_note: survey.survey_note ?? undefined,
+    weather: survey.weather ?? undefined,
   }
 }
 

@@ -574,6 +574,33 @@ describe("buildEntriesFromOwn", () => {
   })
 })
 
+describe("buildEntriesFromOwn note", () => {
+  test("the survey note is kept, trimmed; blank, missing or not text gives null", () => {
+    const entries = buildEntriesFromOwn(
+      [
+        ownItem("a", { survey_note: "  Sol détrempé  " }),
+        ownItem("b"),
+        ownItem("c", { survey_note: null }),
+        ownItem("d", { survey_note: "   " }),
+        ownItem("e", { survey_note: 12 as unknown as string }),
+      ],
+      null,
+    )
+    expect(entries.map((item) => item.note)).toEqual(["Sol détrempé", null, null, null, null])
+  })
+})
+
+describe("buildEntriesFromCommunity note", () => {
+  test("the survey note is kept, trimmed; blank or missing gives null", () => {
+    const entries = buildEntriesFromCommunity([
+      communityItem("a", { survey_note: "Coupe récente" }),
+      communityItem("b"),
+      communityItem("c", { survey_note: " " }),
+    ])
+    expect(entries.map((item) => item.note)).toEqual(["Coupe récente", null, null])
+  })
+})
+
 describe("buildEntriesFromCommunity", () => {
   test("maps the wire items without scores or factors", () => {
     const entries = buildEntriesFromCommunity([
@@ -593,6 +620,7 @@ describe("buildEntriesFromCommunity", () => {
       version: 1,
       total: 22,
       method: null,
+      note: null,
       author: "Marie",
       isCurrent: false,
     })

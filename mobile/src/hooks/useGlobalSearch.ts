@@ -15,10 +15,11 @@ import {
   matchOwnSurveys,
   pickBestResult,
 } from "../app/global-search"
-import type { BestResult, SearchGroupKey } from "../app/global-search"
+import type { BestResult, OwnSurveyMatch, SearchGroupKey } from "../app/global-search"
 import { normalizeSearchQuery } from "../app/search-text"
 import type { LocalSurvey } from "../storage/types"
 import { useIsOffline } from "./useIsOffline"
+import { useOwnSurveyNotes } from "./useOwnSurveyNotes"
 import { useSearchGroup } from "./useSearchGroup"
 import type { SearchGroupState, SearchGroupStatus } from "./useSearchGroup"
 
@@ -37,7 +38,7 @@ export type GlobalSearch = {
   /** True once the text is long enough to search. */
   active: boolean
   offline: boolean
-  mine: LocalSurvey[]
+  mine: OwnSurveyMatch[]
   community: SearchGroupState<SearchCommunityResponse>
   places: SearchGroupState<SearchPlacesResponse>
   parcels: SearchGroupState<SearchParcelsResponse>
@@ -57,7 +58,7 @@ const isBusy = (status: SearchGroupStatus) => status === "waiting" || status ===
 
 /**
  * The four groups of the global search for one query (D-02, D-10, D-14, U-09): the member's own
- * surveys matched on every keystroke from local data, and the community, places and parcels
+ * surveys matched on every keystroke from local data (by name and by note), and the community, places and parcels
  * groups, each requested, failed and retried on its own. The best result and the group order come
  * from the pure rules of `app/global-search`.
  */
@@ -75,7 +76,12 @@ export function useGlobalSearch({
   const token = accessToken ?? ""
   const parcelsShown = active && (offline || looksLikeParcelQuery(normalized))
 
-  const mine = useMemo(() => matchOwnSurveys(surveys, normalized), [surveys, normalized])
+  // The own notes are read from the phone only while a search is active (D-07).
+  const ownNotes = useOwnSurveyNotes(active, surveys)
+  const mine = useMemo(
+    () => matchOwnSurveys(surveys, normalized, ownNotes),
+    [surveys, normalized, ownNotes],
+  )
 
   const community = useSearchGroup<SearchCommunityResponse>({
     query: normalized,

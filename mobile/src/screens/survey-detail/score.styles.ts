@@ -10,7 +10,7 @@ import { BrandTheme } from "../../app/theme"
 
 const BADGE = 32
 
-/** Styles of the "Score IBP" page: the total with its two sub-scores, then one row per factor. */
+/** Styles of the "Facteurs IBP" page: the total with its two sub-scores, then one row per factor. */
 export function createScoreStyles(theme: BrandTheme) {
   const hairline = theme.visual.glass.cardBorder
   return StyleSheet.create({
@@ -115,6 +115,11 @@ export function createScoreStyles(theme: BrandTheme) {
     rowWarning: {
       ...brandTypography.meta,
       color: theme.colors.ochre,
+    },
+    // Phase 27: the "Douteux" chip sits left aligned under the title, 4 pt below it.
+    rowChip: {
+      alignSelf: "flex-start",
+      marginTop: brandSpacing4.xs,
     },
     rowPoints: {
       ...brandTypography.sectionBody,

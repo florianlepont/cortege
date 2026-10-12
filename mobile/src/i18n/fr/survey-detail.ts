@@ -1,5 +1,11 @@
 import { IBP_MAX } from "@cortege/ibp-domain"
 
+// Phase 27: what a screen reader hears after a factor row's title and value (D-13). Nothing is
+// added for a plain row, so the spoken label of an unannotated factor is unchanged.
+function factorFlags({ doubtful, hasNote }: { doubtful?: boolean; hasNote?: boolean }): string {
+  return `${doubtful ? ", douteux" : ""}${hasNote ? ", avec une note" : ""}`
+}
+
 // Filled by plan 01.9-12; no other plan edits this section. Plan 01.8-14 added the method
 // version texts, the totals out of 50 (built from IBP_MAX) and the CNPF band names.
 export const surveyDetailFr = {
@@ -85,12 +91,19 @@ export const surveyDetailFr = {
     seeOnMap: "Voir sur la carte",
   },
   rows: {
-    context: "Contexte et parcelles",
-    score: "Score IBP",
+    // D-32: "Contexte et parcelles" is split into "Contexte" (method, cas, weather) and "Parcelles"
+    // (map, list, offline map).
+    context: "Contexte",
+    parcels: "Parcelles",
+    // D-34: the row and its page are named for what they hold, the ten factors. The score card
+    // above keeps "Score IBP".
+    score: "Facteurs IBP",
     history: "Historique de la parcelle",
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
     scoreValue: (filled: number) => `${filled} sur 10`,
+    parcelsValue: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),
+    parcelsNone: "Aucune",
     // Value of the parcel history row (D-01). The arrow is U+2192; the owner phone check
     // (plan 24-12) verifies the glyph, fallback: " à ".
     historyValue: ({ first, latest }: { first: number; latest: number }) =>
@@ -100,8 +113,9 @@ export const surveyDetailFr = {
     historyUnavailable: "Indisponible",
     historyNoParcel: "Aucune parcelle",
   },
-  // The two sub-pages of the summary (OA-46).
-  contextScreen: {
+  // The sub-pages of the summary (OA-46, D-32): "Parcelles" holds the map, the list and the editing
+  // button.
+  parcelsScreen: {
     parcelsHeading: (count: number) => `Parcelles · ${count}`,
     noParcel: "Aucune parcelle choisie pour ce relevé.",
     editParcels: "Modifier les parcelles",
@@ -128,7 +142,7 @@ export const surveyDetailFr = {
     casMissing: "Choisissez le cas IBP de la station : il est requis pour soumettre le relevé.",
   },
   factors: {
-    title: "Score IBP",
+    title: "Facteurs IBP",
     subtitle: "Ouvrez un facteur pour modifier les observations et le score.",
     loading: "Chargement des facteurs…",
     localDraftHint: "Score du brouillon local, d'après les dernières modifications.",
@@ -136,6 +150,12 @@ export const surveyDetailFr = {
     notFilled: "Non renseigné",
     hasWarning: "Avertissement",
     notLoaded: "Les facteurs ne sont pas encore chargés.",
+    // Phase 27 (D-13, D-17): the doubt flag and the folded note on a score row.
+    doubtBadge: "Douteux",
+    noteMore: "Lire la suite",
+    noteMoreA11y: "Lire la suite, développe la note",
+    noteLess: "Réduire",
+    noteLessA11y: "Réduire la note",
   },
   // CNPF interpretation bands of the sub-scores (D-03 amended), keyed by the package's band ids.
   bands: {
@@ -225,6 +245,8 @@ export const surveyDetailFr = {
     renameSurvey: (name: string) => `Renommer le relevé ${name}`,
     finishSurvey: (name: string) => `Terminer le relevé ${name}`,
     editParcels: (name: string) => `Modifier les parcelles du relevé ${name}`,
+    // The map card of the summary opens the Parcelles page (D-32).
+    openParcels: (name: string) => `Ouvrir les parcelles du relevé ${name}`,
     mapPreview: (name: string) => `Carte du relevé ${name}`,
     seeOnMap: (name: string) => `Voir le relevé ${name} sur la carte`,
     scoreSummary: (value: string) => `Score IBP, ${value}`,
@@ -233,8 +255,29 @@ export const surveyDetailFr = {
       `Photo ${position} sur ${total}`,
     deletePhoto: ({ position, total }: { position: number; total: number }) =>
       `Supprimer la photo ${position} sur ${total}`,
-    openFactor: ({ title, value }: { title: string; value: string }) =>
-      `Ouvrir le facteur ${title}, ${value}`,
+    openFactor: ({
+      title,
+      value,
+      doubtful,
+      hasNote,
+    }: {
+      title: string
+      value: string
+      doubtful?: boolean
+      hasNote?: boolean
+    }) => `Ouvrir le facteur ${title}, ${value}${factorFlags({ doubtful, hasNote })}`,
+    // The same row on a submitted survey or another member's survey: it opens nothing.
+    factorReadOnly: ({
+      title,
+      value,
+      doubtful,
+      hasNote,
+    }: {
+      title: string
+      value: string
+      doubtful?: boolean
+      hasNote?: boolean
+    }) => `${title}, ${value}${factorFlags({ doubtful, hasNote })}`,
     historyRow: ({ label, value }: { label: string; value: string }) => `${label}. ${value}`,
     historyRange: ({ first, latest }: { first: number; latest: number }) =>
       `de ${first} à ${latest} sur ${IBP_MAX.total}`,

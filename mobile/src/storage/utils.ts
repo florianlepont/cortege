@@ -1,5 +1,5 @@
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
-import type { IbpMethodFields } from "@cortege/ibp-domain"
+import type { IbpMethodFields, SurveyWeather } from "@cortege/ibp-domain"
 import {
   SurveyQueuePayload,
   SurveyDeleteQueuePayload,
@@ -122,6 +122,31 @@ export function applyMethodFields(
     delete next.ibp_cas3_scale
   }
   return next
+}
+
+/**
+ * Stamps the survey time of the weather lookup (phase 27, D-10, D-11, D-39 and D-44):
+ * `requested_at` is the write time of the first write that gives a draft its parcels, set once.
+ * That is a write that takes the parcels from none to some, and nothing else: the weather is
+ * filled at the FIRST selection of parcels of a survey (D-44). Any other write (a rename, a
+ * factor autosave, a later parcel edit from the Parcelles pencil or the wizard) returns `current`
+ * untouched, so a parcel change never moves a visit time already set and never gives an old draft
+ * that has no visit time the time of the edit. A draft that already had parcels before it had a
+ * weather (made before phase 27, pulled from the server, seeded) is not stamped here either: only
+ * the safety net of `weatherRequestTime` can look it up, from its creation time, inside the 24 h
+ * window. Pure: the caller passes the clock.
+ */
+export function stampWeatherRequest(
+  previousParcelIds: readonly string[],
+  nextParcelIds: readonly string[],
+  current: SurveyWeather | null | undefined,
+  nowIso: string,
+): SurveyWeather | null | undefined {
+  const firstSelection = previousParcelIds.length === 0 && nextParcelIds.length > 0
+  if (!firstSelection || current?.requested_at) {
+    return current
+  }
+  return { ...current, requested_at: nowIso }
 }
 
 /**

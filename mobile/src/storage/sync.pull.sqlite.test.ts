@@ -516,3 +516,144 @@ describe("pull keeps the factor detail arrays (phase 25.1, D-12)", () => {
     expect(draft?.factors).toEqual(factors)
   })
 })
+
+describe("pull keeps the survey note, the weather and the annotations (phase 27, Pitfall 5)", () => {
+  const weather = {
+    temperature_c: 8,
+    requested_at: "2026-10-11T07:00:00.000Z",
+    source: "meteo_france",
+    edited: [],
+  }
+  const annotations = { annotations: { A: { doubt: true, note: "À revoir" } } }
+  const factors = { A: { native_genus_count: 3 }, ...annotations }
+
+  async function storedColumns(id: string): Promise<{ c: number; f: number }> {
+    const db = await getDb()
+    const row = await db.getFirstAsync<{ c: number; f: number }>(
+      `SELECT payload_completion AS c, payload_factors_filled AS f FROM local_surveys WHERE id = ?`,
+      [id],
+    )
+    return { c: Number(row?.c), f: Number(row?.f) }
+  }
+
+  test("insert and update both store the note, the weather and the annotations", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-note",
+            site_name: "Avec note",
+            status: "draft",
+            sync_version: 1,
+            survey_note: "n",
+            weather,
+            factors,
+          },
+        ],
+      }),
+    )
+    await pullRemoteChanges("http://api", "token")
+    let draft = await getLocalSurveyDraft("remote-note")
+    expect(draft).toMatchObject({ survey_note: "n", weather })
+    expect(draft?.factors).toEqual(factors)
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-note",
+            site_name: "Avec note",
+            status: "draft",
+            sync_version: 2,
+            survey_note: "n2",
+            weather: { ...weather, temperature_c: 9 },
+            factors,
+          },
+        ],
+      }),
+    )
+    await pullRemoteChanges("http://api", "token")
+    draft = await getLocalSurveyDraft("remote-note")
+    expect(draft).toMatchObject({ survey_note: "n2", weather: { temperature_c: 9 } })
+    expect(draft?.factors).toEqual(factors)
+  })
+
+  test("a survey pulled with a null note and no weather stores neither", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-bare",
+            site_name: "Sans note",
+            status: "draft",
+            sync_version: 1,
+            survey_note: null,
+            weather: null,
+          },
+        ],
+      }),
+    )
+    await pullRemoteChanges("http://api", "token")
+
+    const draft = await getLocalSurveyDraft("remote-bare")
+    expect(draft).not.toHaveProperty("survey_note")
+    expect(draft).not.toHaveProperty("weather")
+  })
+
+  test("a pull never overwrites a local draft with pending work, note included", async () => {
+    await insertSurvey("local-note", { site_name: "Local" })
+    await insertQueueRow("local-note", "survey_upsert", {
+      id: "local-note",
+      sync_version: 2,
+      site_name: "Local",
+      survey_note: "locale",
+    })
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "local-note",
+            site_name: "Distante",
+            status: "draft",
+            sync_version: 3,
+            survey_note: "distante",
+          },
+        ],
+      }),
+    )
+
+    await pullRemoteChanges("http://api", "token")
+
+    expect((await getSurvey("local-note"))?.site_name).toBe("Local")
+    expect(await getLocalSurveyDraft("local-note")).not.toHaveProperty("survey_note", "distante")
+  })
+
+  test("the stored counters equal those of the same pull without the new fields", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "with",
+            site_name: "Avec",
+            status: "draft",
+            sync_version: 1,
+            parcel_ids: ["P1"],
+            survey_note: "n",
+            weather,
+            factors,
+          },
+          {
+            id: "without",
+            site_name: "Avec",
+            status: "draft",
+            sync_version: 1,
+            parcel_ids: ["P1"],
+            factors: { A: { native_genus_count: 3 } },
+          },
+        ],
+      }),
+    )
+    await pullRemoteChanges("http://api", "token")
+
+    expect(await storedColumns("with")).toEqual(await storedColumns("without"))
+  })
+})

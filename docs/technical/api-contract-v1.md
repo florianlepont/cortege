@@ -6,7 +6,9 @@ Accepted for V1 baseline (validated on 2026-03-08, non-exhaustive by design). V1
 (`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`) to the survey bodies, the survey reads, the
 sync feed and the public map reads; every change is additive. Phase 5 (2026-09-27) replaces Factor
 A's bare `native_genus_count` with a genus list (`factors.A.genera`), validated against the CNPF
-regional list; no new endpoint (recognition is on-device, Phase 6).
+regional list; no new endpoint (recognition is on-device, Phase 6). Phase 27 (2026-10-11) adds
+`survey_note`, `weather` and the `factors.annotations` container to the survey bodies and reads, the
+endpoint `GET /weather` and a 2 MB JSON body limit; every change is additive.
 
 Base path: `/v1`
 
@@ -27,6 +29,7 @@ Base path: `/v1`
 - `Sync Operation`: covered via `/sync` payload
 - `Report`: covered
 - `Public Map Item` (optional V1 read model): covered
+- `Weather observation` (phase 27, read-only, not stored by itself): covered by `GET /weather`
 
 ## 0) Health
 
@@ -350,6 +353,39 @@ method version, chosen when the survey is created. Three optional fields on `POS
   `region_version`/`vegetation_stage` only for a v3.0 survey, and a missing `ibp_cas3_scale`
   equals `false`.
 
+**Survey note, weather and factor annotations (phase 27):** three optional additions on
+`POST /surveys` and on the `survey.upsert` payloads of `POST /sync`, all absent on an installed app
+that does not know them:
+
+| Field | Values | Meaning |
+|---|---|---|
+| `survey_note` | string of at most 1000 characters, or `null` | The free observation note of the whole survey (context, field remarks) |
+| `weather` | object, or `null` | The weather of the visit: `sky` (`clear`, `partly_cloudy`, `cloudy`, `overcast`, `fog`, `rain`, `thunderstorm`, `snow`), `temperature_c` (-40 to 55), `wind_kmh` (0 to 350), `rain_24h_mm` (0 to 1000), `observed_at` and `requested_at` (ISO 8601), `source` (`meteo_france` or `manual`), `edited` (list of touched keys; since D-37 the app writes only `sky`, the measurements being read-only provider data, but the server still accepts the other keys). Every key is optional and nullable. At most 2048 bytes once serialised |
+| `factors.annotations` | object, or absent | The doubt and the note of each factor, inside `factors` (see [Factor annotations (phase 27)](#factor-annotations-phase-27)) |
+
+- **Absent keeps, `null` clears (D-04).** On a write with a higher `sync_version`, an absent
+  `survey_note` or `weather` keeps the stored value and an explicit `null` clears it. An installed app
+  that does not send the fields therefore never erases a note or a weather. An absent or `null`
+  field is never a change in the same-version comparison below.
+- **Validation.** `survey_note` longer than 1000 characters, a `weather` value outside its range, an
+  unknown sky code or source, or a malformed annotations container is a `400` validation error on
+  the REST routes and a per-operation `fatal_error` `invalid_sync_operation` (`details.fields`
+  naming the fields, never the text) on `POST /sync`. Nested keys of `weather` that the DTO does
+  not declare are rejected with `400` on `POST /surveys` and silently stripped on `POST /sync`
+  (the general strip rule below); every key of the weather object is declared, so the overwrite
+  guard keys `edited` and `requested_at` survive a round trip.
+- **Fixed after submit (D-03).** All three are read-only once the survey is submitted: `survey_note`
+  is compared by strict string equality (no trimming server side), `weather` by value (key order
+  does not matter), and `factors.annotations` rides on `factors`, which is already compared by
+  value. A submitted survey whose body changes one of them answers `409 survey_submitted_read_only`
+  with `survey_note`, `weather` or `factors` in `details.fields`; an identical resend is accepted.
+- **Visibility.** The note, the weather and the annotations follow the survey: another member reads
+  them only on a submitted survey (see `GET /public/community-surveys/{survey_id}`). They never
+  enter the survey event journal.
+- **JSON body limit (D-25).** The API accepts JSON bodies up to 2 MB (the Express default of 100 kB
+  would refuse a sync batch of large surveys with `413`, which the phone would retry forever).
+  `POST /sync` stays capped at 100 operations.
+
 **`status` and `expires_at` (V1.2 hardening):** both fields are accepted for backward
 compatibility with installed apps but are always ignored by the server. A survey is always
 created with `status: "draft"`; status changes only through `POST /surveys/{id}/submit`
@@ -360,7 +396,7 @@ exists on a survey, is not returned, and an `expires_at` sent by an older build 
 **Submitted surveys are read-only by value (V1.2 hardening):** an upsert that changes the
 *value* of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
 `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`,
-`ibp_cas` or `ibp_cas3_scale` (phase 01.8) on a survey whose
+`ibp_cas`, `ibp_cas3_scale` (phase 01.8), `survey_note` or `weather` (phase 27) on a survey whose
 status is `submitted` is rejected with `409 survey_submitted_read_only` and
 `details.fields` listing the changed field names. Resending identical values (including a
 resync of a pulled survey) is accepted and only refreshes `visibility`/`sync_version`;
@@ -370,8 +406,8 @@ resync of a pulled survey) is accepted and only refreshes `visibility`/`sync_ver
 already stored is compared by value with the stored survey on the same read-only fields
 (`site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
 `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, and since phase 01.8
-`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`) plus `visibility`;
-`scores`, `status` and `expires_at` are excluded. Identical values are an idempotent replay
+`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, and since phase 27 `survey_note` and
+`weather`) plus `visibility`; `scores`, `status` and `expires_at` are excluded. Identical values are an idempotent replay
 (`synced`, nothing written). When only `visibility` differs, it is applied last-writer-wins
 like `PATCH /surveys/{id}/visibility` (new `updated_at`, one `visibility_changed` event) and
 the answer is `synced`. Any read-only difference is rejected with `409 sync_version_conflict`
@@ -478,6 +514,17 @@ Response `200`:
   "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02",
   "ibp_cas": 2,
   "ibp_cas3_scale": false,
+  "survey_note": "Sol sec, chablis récent au nord de la parcelle.",
+  "weather": {
+    "sky": "partly_cloudy",
+    "temperature_c": 17.5,
+    "wind_kmh": 12,
+    "rain_24h_mm": 0,
+    "observed_at": "2026-03-08T10:00:00Z",
+    "requested_at": "2026-03-08T10:20:00Z",
+    "source": "meteo_france",
+    "edited": []
+  },
   "factors": {},
   "factor_results": {},
   "scores": {
@@ -496,6 +543,9 @@ Response `200`:
 The detail always carries `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale` (phase 01.8):
 `null` for a survey recorded before the method version existed (v3.0). The example is a v3.2
 survey, so its `region_version` and `vegetation_stage` are `null`.
+
+The detail also carries `survey_note` and `weather` (phase 27): `null` when the observer entered
+none. The factor notes and doubts are inside `factors.annotations`.
 
 ### PATCH /surveys/{id}
 
@@ -692,6 +742,39 @@ Example, a v3.2 survey's Factor A:
 ```json
 "A": { "genera": ["Fagus", "Quercus_deciduae", "Quercus_sempervirens"], "native_cover_percent": 60 }
 ```
+
+### Factor annotations (phase 27)
+
+The observer can flag a doubt ("Douteux") and write a short note on each factor. Both live in one
+container, `factors.annotations`, next to the factor keys and never inside a factor object:
+
+```json
+"factors": {
+  "A": { "genera": ["Fagus"], "native_cover_percent": 60 },
+  "annotations": {
+    "A": { "doubt": true, "note": "Deux genres difficiles à séparer au sol." },
+    "E": { "note": "Un gros chêne, à revoir à la montée de sève." }
+  }
+}
+```
+
+- Keys of `annotations` are the factor codes `A` to `J`. Each value is `{ doubt?: true, note?: string }`:
+  `doubt` is only ever `true` (the default, "Sûr", is the absence of the key) and `note` is at most
+  300 characters. An entry with neither is not written.
+- The container is validated on `POST /surveys` and on `survey.upsert` payloads by the shared
+  package (`factorAnnotationsIssues` in `@cortege/ibp-domain`): an unknown key, a `doubt` other than
+  `true`, a non-string or over-long note is a `400` (`invalid_sync_operation` on `POST /sync`). The
+  error never echoes the note text.
+- **A doubt or a note never changes a score, a band or a validation result (D-14).** The scorer
+  iterates the ten factor keys only, so `factor_results`, `scores` and the `422` `errors` and
+  `warnings` of a survey are identical with and without the container. A survey whose `factors`
+  holds only `annotations` is a valid draft. The parity cases `MAT-ANN-01` to `MAT-ANN-03` prove it
+  in the package, the API adapter and the mobile adapter.
+- It is stored and returned verbatim inside `factors` by `POST /sync`, `POST /surveys`,
+  `GET /sync/changes` and `GET /surveys/{id}`, and is read-only after submit like `factors`.
+- Other members read it through `factor_annotations` on
+  `GET /public/community-surveys/{survey_id}`, sanitised (factor codes A to J, `doubt: true` or a
+  non-blank note only; `null` when nothing remains).
 
 ### DELETE /surveys/{id}
 
@@ -982,8 +1065,10 @@ Rules:
 - For idempotency in sync path, deleting a missing attachment can still return `synced` with `missing=true`.
 - `parcel_ids` (on `survey.upsert` payloads, and on the REST `POST /surveys` / `PATCH /surveys/{id}` bodies) is bounded at `50` entries; each entry must match `^[0-9A-Z]{1,32}$` (case-insensitive) — the pattern accepts both synthetic cadastral IDs and the 14-character IGN `idu` values the server itself generates. A batch entry over the limit or containing a malformed ID is rejected the same way as any other invalid payload (`invalid_sync_operation`, `400`); on the REST routes it is a normal `400` validation error.
 - `status` and `expires_at` on a `survey.upsert` payload are accepted for compatibility with installed apps and always ignored: status changes only through `POST /surveys/{id}/submit`, and `expires_at` is computed server-side at creation (`created_at` + 7 days), never moved by an upsert (D-03).
+- `survey.upsert` payloads carry `survey_note`, `weather` and `factors.annotations` (phase 27) with the rules of [POST /surveys](#post-surveys): absent keeps the stored value, `null` clears it on a higher `sync_version`, all three are read-only after submit and compared by value at the same `sync_version`. The nested `weather` object is validated key by key; a nested key the DTO does not declare is stripped (every key of the object is declared). A bound violation fails that operation alone with `invalid_sync_operation`.
+- The JSON body of a batch may be up to 2 MB (D-25); the cap of 100 operations is unchanged.
 - `survey.upsert` payloads carry the method fields of `POST /surveys` (`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, phase 01.8) with the same values, storage rule and effective-version rule. They are declared on the payload DTO, so they are kept, not stripped; an invalid value fails that operation with `invalid_sync_operation` and `details.fields` naming the fields (for example `["ibp_method_version","ibp_cas"]`), and nothing is stored.
-- An upsert on a `submitted` survey that changes the value of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`, `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`, `ibp_cas` or `ibp_cas3_scale` returns `fatal_error` with `error.code: "survey_submitted_read_only"`, `error.http_status: 409` and `error.details.fields` listing the changed field names. Resending identical values (a pulled-survey replay) is `synced` and only refreshes `visibility`/`sync_version`; `scores` is excluded from the comparison since it is recomputed server-side (D-04, D-13). The method fields are compared as described under `POST /surveys`: an installed app that replays an untagged survey with the explicit v3.0 tag is an identical replay (`synced`), and the stored column stays `NULL`.
+- An upsert on a `submitted` survey that changes the value of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`, `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, `survey_note` or `weather` returns `fatal_error` with `error.code: "survey_submitted_read_only"`, `error.http_status: 409` and `error.details.fields` listing the changed field names. Resending identical values (a pulled-survey replay) is `synced` and only refreshes `visibility`/`sync_version`; `scores` is excluded from the comparison since it is recomputed server-side (D-04, D-13). The method fields are compared as described under `POST /surveys`: an installed app that replays an untagged survey with the explicit v3.0 tag is an identical replay (`synced`), and the stored column stays `NULL`.
 - An upsert with the same `sync_version` the server already stored follows the same-version rule of `POST /surveys`: identical read-only fields and visibility are `synced`; a visibility-only difference is applied last-writer-wins like `survey.visibility_update` and answered `synced`; any read-only difference returns `fatal_error` with `error.code: "sync_version_conflict"`, `error.http_status: 409`, `error.message: "Same sync_version with different content"` and `server_sync_version`/`client_sync_version` in `error.details`. The client keeps its local data (Case B in `sync-conflict-resolution-v1.md`).
 - `survey_id`, the `survey.delete` payload `id`, the `survey.upsert` payload `id` and the `attachment.delete` payload `attachment_id` must match `^[A-Za-z0-9_-]{1,128}$`; otherwise that operation alone fails with `invalid_sync_operation` (`400`).
 - `attachment.create` results carry the same presigned `upload_url` as the REST route: it signs `Content-Length = size_bytes`, and confirming an object of another size answers `422 attachment_size_mismatch`.
@@ -1004,6 +1089,7 @@ Rules:
 - `cursor_out` is the cursor of the last returned event. With no new event it echoes the incoming cursor (or its `v2:` translation), and it is `null` when no cursor was sent.
 - A malformed cursor, or a `v2:` cursor with out-of-range values, gets `400 Invalid sync cursor`. A `v2:` cursor ahead of the server's current transaction id (after a database restore) restarts the feed from the beginning.
 - Surveys that never had an event are not re-sent on every poll any more; every survey has at least one event.
+- `surveys` items carry `survey_note` and `weather` (phase 27; `null` when the survey has none) and their `factors`, which hold `annotations`. A client that rebuilds an upsert payload from a pulled survey must copy them, or a reinstall or a second device would lose the note and the weather. The feed stays scoped to the caller's own surveys.
 - `surveys` items carry `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale` (phase 01.8; `null` for a survey without a version, which is v3.0). A client that rebuilds an upsert payload from a pulled survey must copy them, or it would show a pulled v3.2 survey as v3.0 (the server keeps such an untagged replay in v3.2, from the stored row).
 
 Response `200`:
@@ -1032,6 +1118,8 @@ Response `200`:
       "ibp_method_version": "cnpf_ibp_fr_v3_2_2026-02-02",
       "ibp_cas": 1,
       "ibp_cas3_scale": false,
+      "survey_note": null,
+      "weather": null,
       "sync_version": 3,
       "updated_at": "2026-03-09T10:20:00.002+00",
       "deleted_at": null
@@ -1256,7 +1344,16 @@ The page of a finished survey of any member, read-only (phase 12.1). Requires an
   `ibp_cas3_scale`, `region_version`, `vegetation_stage`) are those of the survey.
 - `history` lists the submitted surveys that share at least one parcel with this one, this survey
   included (`is_current`), oldest first (year, then version), capped to 20. Versions are numbered
-  per parcel across all authors. In this list, each entry carries `ibp_method_version` (null = v3.0).
+  per parcel across all authors. In this list, each entry carries `ibp_method_version` (null = v3.0)
+  and, since phase 27, `survey_note` (null when there is none).
+- Since phase 27 the detail carries `survey_note` and `weather` (the survey's own, `null` when
+  absent) and `factor_annotations`: the doubts and factor notes, keyed `A` to `J`, as
+  `{ doubt?: true, note?: string }`, sanitised by the server and `null` when nothing remains. They
+  are on the same rows as the rest of the detail: only a submitted, non-deleted survey answers (a
+  draft stays `404`), so a note never leaves a draft. No predicate of the community or map reads
+  changed.
+- The notes of a submitted survey stay readable after its author deletes the account; `author_name`
+  then reads `null` (D-24).
 
 ### GET /public/community-surveys/{survey_id}/attachments
 
@@ -1517,7 +1614,116 @@ Response `200`:
 ```
 
 Each item carries the survey's IBP method version (`ibp_method_version`, null = v3.0; an older server
-may omit it).
+may omit it) and, since phase 27, its free note (`survey_note`, `null` when there is none). The list
+still holds submitted, non-deleted surveys only.
+
+### GET /weather?lat=&lng=&at=
+
+The observed weather at a point and a time (phase 27, D-08). It pre-fills the weather of a survey. The
+app never calls the weather provider: this route is the only door, so the provider key stays on the
+server. Requires an authenticated member.
+
+Query:
+
+- `lat` (required): latitude in degrees, -90 to 90. The app sends the centre of the chosen parcels,
+  rounded to 4 decimals (about 10 m).
+- `lng` (required): longitude in degrees, -180 to 180, rounded the same way.
+- `at` (optional): ISO 8601 time the weather is wanted for, at most 40 characters; absent means now.
+  A time in the future or one that cannot be read is clamped to now.
+
+Rules:
+
+- The answer comes from the nearest Météo-France observation stations, picked on the server within
+  the configured distance cap (`WEATHER_MAX_STATION_DISTANCE_KM`, D-19). Beyond the cap there is no
+  station and no weather, with no error.
+- A reading counts only when its own observation time is within the configured tolerance of `at`
+  (`WEATHER_TIME_TOLERANCE_MINUTES`, 90 minutes by default). A reading farther away is ignored.
+- The lookup uses the last published hour: the provider inserts an hour's readings about 2 minutes
+  after the hour, so the hour asked is never later than the last full hour already elapsed. When
+  that hour has no reading yet, the lookup falls back one hour, and never returns a reading outside
+  the tolerance of the requested time.
+- No answer for a time older than 24 hours (D-20): the provider keeps only the last day, so a survey
+  older than that stays empty and editable by hand. This is checked before any provider call.
+- Each value of the observation (`sky`, `temperature_c`, `wind_kmh`, `rain_24h_mm`) may be `null`
+  when the provider does not supply it; the app then keeps that field for manual entry (D-21).
+  The API answers in the units of the survey `weather` object (degrees Celsius, kilometres per hour,
+  millimetres) and inside its ranges, whatever the provider sends.
+- The server shares a cache by station and hour, merges concurrent identical lookups into one
+  provider call and caps the calls in flight, so many members at the same place cost one call.
+- The route has its own `weather` throttle, 30 per minute per client in production (`429`
+  beyond it); outside production the limit is set so high that it never applies.
+- Attribution is mandatory: every client that shows or prints these values shows "Source :
+  Météo-France" (D-26, Etalab Open Licence 2.0). The app prints it in the Conditions section, the
+  survey summary and the PDF.
+- The weather is a convenience: a failure never blocks saving or submitting a survey, and an empty
+  weather is valid.
+
+Response `200`, an observation (the values are illustrative):
+
+```json
+{
+  "observation": {
+    "sky": "partly_cloudy",
+    "temperature_c": 17.5,
+    "wind_kmh": 12,
+    "rain_24h_mm": 0,
+    "observed_at": "2026-03-08T10:00:00.000Z",
+    "source": "meteo_france",
+    "station": { "id": "77333001", "name": "FONTAINEBLEAU", "distance_km": 4.2 }
+  }
+}
+```
+
+Response `200`, no observation: `{ "observation": null, "reason": "too_old" }`. `reason` is one of:
+
+| `reason` | Meaning |
+|---|---|
+| `too_old` | `at` is more than 24 hours in the past |
+| `no_station` | no observation station within the distance cap |
+| `no_data` | stations exist but none has a usable reading within the time tolerance |
+| `disabled` | the server runs with `WEATHER_PROVIDER=off` (or the Météo-France provider is not set up) |
+
+Errors:
+
+- `400` a missing or out-of-range `lat` or `lng`, or an `at` that is not an ISO 8601 time
+- `401` no valid token
+- `429` the `weather` throttle
+- `503` `{ "code": "weather_provider_unavailable", "message": "..." }` when the provider fails, times
+  out or refuses the call. Every provider failure, a quota refusal included, gives this same answer.
+
+**Météo-France observations (spike 2026-10)**: facts measured on the real provider on 2026-10-12
+(details in `api/test/fixtures/meteofrance/README.md`). The distance caps below are proposed
+defaults that the owner may change; each is one default in the server configuration.
+
+- Two station lookups (D-29). `temperature_c`, `wind_kmh` and the hourly rain come from the nearest
+  hourly station. The default distance cap is 30 km (`WEATHER_MAX_STATION_DISTANCE_KM`, D-19): at the
+  three forest test points the nearest hourly station was 1.7 km, 2.7 km and 25.1 km away, so the
+  25 km first written would have left the Landes point empty by 0.13 km. Beyond the cap the answer is
+  `reason: no_station`, with no error. The model fallback (AROME) is not used.
+- `sky` is filled by the provider, from the nearest SYNOP station (the synoptic network, about 190
+  stations in France, one report every 3 hours): present weather first (fog, rain, snow,
+  thunderstorm), else the total cloud cover. `rain_24h_mm` is filled by the provider, from the same
+  station (its 24 hour rain). The SYNOP station has its own cap, 50 km by default
+  (`WEATHER_SYNOP_MAX_DISTANCE_KM`); it is not yet
+  verified against the real density of that network. Beyond it, or when the station reports no cloud
+  cover, `sky` and `rain_24h_mm` come back `null` and stay for manual entry (D-21). Because that
+  network is sparse, these two values will often be `null`; this is expected, not a failure.
+- Units. The provider serves the temperature in Kelvin, the wind in m/s and the rain in mm. The
+  server converts them: the API answers `temperature_c` in degrees Celsius, `wind_kmh` in
+  kilometres per hour and `rain_24h_mm` in millimetres, and `observed_at` as a UTC instant. The
+  hourly station often reports no wind; `wind_kmh` is then `null`.
+- Retention. D-20 stays: a time older than 24 hours answers `too_old` without a provider call. The
+  provider was seen serving readings up to about 96 hours back, which is undocumented and is not
+  relied upon (D-28). A reading whose own observation time is more than 90 minutes from `at` is not
+  used.
+- Quota (reported by the owner, 2026-10-12): 100 requests per minute per API and account.
+- Terms (read by the owner, 2026-10-12): free reuse, commercial use included, under the Licence
+  Ouverte Etalab 2.0, in the app and in the survey PDF. The source ("Source : Météo-France") and the
+  date of the last update of the data are mandatory wherever the values are shown (the clients print
+  the date of `observed_at`), the data must not be altered or their meaning distorted, the
+  documented retention of past observations is 24 hours, the provider guarantees no availability
+  and may change data or quotas without notice, and the key stays strictly private (server side).
+  Open question O6 is closed (decision D-31 of phase 27).
 
 ## 6) Analytics (V2 Addendum, Out of MVP)
 
@@ -1605,6 +1811,7 @@ Common business error codes (non-exhaustive):
 - `attachment_size_mismatch` (`422`) — the uploaded attachment's size differs from the declared `size_bytes`; the object is deleted (or never written) and the attachment stays unconfirmed.
 - `invalid_operation` — a deterministic PostgreSQL data/constraint error (SQLSTATE class `22`/`23`) was raised while processing the request; the message is intentionally generic and carries no SQL detail.
 - `submitted_read_only_fields` (`422`) — a `PATCH /surveys/{id}` on a submitted survey named a read-only field (since phase 01.8 including `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale`).
+- `weather_provider_unavailable` (`503`): the weather provider behind `GET /weather` failed, timed out or refused the call; the body is `{ code, message }` and the app treats it as "no weather yet", never as an error to show.
 - `search_provider_unavailable` (`503`): the IGN geocoder or API Carto behind `GET /search/places` or `GET /search/parcels` failed and no registered parcel could answer; the body is `{ code, message }`.
 
 IBP validation codes (phase 01.8; the `422` body carries their messages in `errors` and

@@ -128,6 +128,7 @@ function mockRoute() {
 jest.mock("./routes/HomeRoute", () => ({ HomeRoute: mockRoute() }))
 jest.mock("./routes/SurveyDetailRoute", () => ({ SurveyDetailRoute: mockRoute() }))
 jest.mock("./routes/SurveyContextRoute", () => ({ SurveyContextRoute: mockRoute() }))
+jest.mock("./routes/SurveyParcelsPageRoute", () => ({ SurveyParcelsPageRoute: mockRoute() }))
 jest.mock("./routes/SurveyScoreRoute", () => ({ SurveyScoreRoute: mockRoute() }))
 jest.mock("./routes/SurveyHistoryRoute", () => ({ SurveyHistoryRoute: mockRoute() }))
 jest.mock("./routes/SurveyJournalRoute", () => ({ SurveyJournalRoute: mockRoute() }))
@@ -475,8 +476,14 @@ describe("tab options", () => {
 describe("stack options and listeners", () => {
   test("the surveys stack closes the detail selection before the detail is removed", async () => {
     await mount(<AppNavigation />)
-    mockScreens.surveyDetail.listeners?.beforeRemove()
+    mockScreens.surveyDetail.listeners?.beforeRemove({ data: { action: { type: "POP" } } })
     expect(mockSurveyActions.closeSurveyDetailSelection).toHaveBeenCalledTimes(1)
+  })
+
+  test("the surveys stack keeps the selection when a reset removes the detail (D-45)", async () => {
+    await mount(<AppNavigation />)
+    mockScreens.surveyDetail.listeners?.beforeRemove({ data: { action: { type: "RESET" } } })
+    expect(mockSurveyActions.closeSurveyDetailSelection).not.toHaveBeenCalled()
   })
 
   test("the factor detail title names the factor", async () => {
@@ -491,6 +498,7 @@ describe("stack options and listeners", () => {
     "communitySurvey",
     "communityHistory",
     "surveyContext",
+    "surveyParcelsPage",
     "surveyScore",
     "surveyHistory",
     "surveyJournal",
@@ -555,6 +563,7 @@ describe("stack options and listeners", () => {
       communitySurvey: fr.navigation.headers.communitySurvey,
       communityHistory: fr.navigation.headers.communityHistory,
       surveyContext: fr.navigation.headers.surveyContext,
+      surveyParcelsPage: fr.navigation.headers.surveyParcelsPage,
       surveyScore: fr.navigation.headers.surveyScore,
       surveyHistory: fr.navigation.headers.surveyHistory,
       surveyJournal: fr.navigation.headers.surveyJournal,
@@ -657,6 +666,7 @@ describe("stack options and listeners", () => {
         "communitySurvey",
         "communityHistory",
         "surveyContext",
+        "surveyParcelsPage",
         "surveyScore",
         "surveyHistory",
         "surveyJournal",

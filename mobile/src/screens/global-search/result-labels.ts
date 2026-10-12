@@ -5,10 +5,9 @@ import type {
   SearchPlaceItem,
 } from "@cortege/ibp-domain"
 import { formatDay, formatShortDateTime } from "../../app/formatters"
-import type { BestResult } from "../../app/global-search"
+import type { BestResult, OwnSurveyMatch } from "../../app/global-search"
 import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/survey-logic"
 import { fr } from "../../i18n"
-import type { LocalSurvey } from "../../storage/types"
 
 // What every search result says about itself (25-09, UI-SPEC 3a and 3b): the title, the meta line
 // and the accessibility sentence of the five result types. Pure: the summary page, the best-result
@@ -54,15 +53,21 @@ export function parcelLabels(item: SearchParcelItem): ResultLabels {
   return { title, meta, accessibilityLabel: t.rows.parcelA11y({ title, meta }) }
 }
 
-/** One of the member's own surveys: the sentence is the one of the Mes Relevés rows. */
-export function ownSurveyLabels(survey: LocalSurvey): ResultLabels {
+/**
+ * One of the member's own surveys: the sentence is the one of the Mes Relevés rows. A survey found
+ * through its note and not its name says so, after the date (27-15, D-07, UI-SPEC 3.5).
+ */
+export function ownSurveyLabels(survey: OwnSurveyMatch): ResultLabels {
   const title = survey.site_name?.trim() || fr.common.untitledSurvey
   const status = formatSurveyUiStatusLabel(resolveSurveyUiStatus(survey))
   const updatedAt = formatShortDateTime(survey.updated_at)
+  const meta = `${status} ${surveyText.row.updatedMeta(updatedAt)}`
+  const sentence = surveyText.a11y.openSurvey({ name: title, status, updatedAt })
+  if (!survey.matchedInNote) return { title, meta, accessibilityLabel: sentence }
   return {
     title,
-    meta: `${status} ${surveyText.row.updatedMeta(updatedAt)}`,
-    accessibilityLabel: surveyText.a11y.openSurvey({ name: title, status, updatedAt }),
+    meta: t.rows.matchedInNoteMeta(meta),
+    accessibilityLabel: t.rows.matchedInNoteA11y(sentence),
   }
 }
 

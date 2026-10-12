@@ -547,6 +547,13 @@ pair are scored: an absent or incomplete factor is not "very low".
 - `submitted_at?: datetime`
 - `deleted_at?: datetime` (soft delete; no `published_at` field exists)
 - `factors: array[10]` (required)
+- `survey_note?: string | null` (phase 27: free note of the whole survey, at most 1000
+  characters; absent or null = no note)
+- `weather?: object | null` (phase 27: the weather of the visit. Keys, all optional: `sky` (one of
+  `clear`, `partly_cloudy`, `cloudy`, `overcast`, `fog`, `rain`, `thunderstorm`, `snow`),
+  `temperature_c` (-40 to 55), `wind_kmh` (0 to 350), `rain_24h_mm` (0 to 1000), `observed_at`,
+  `requested_at`, `source` (`meteo_france` or `manual`) and `edited` (touched keys); absent or null
+  = no weather. It is a convenience: an empty weather is valid and never blocks a submit)
 
 ### 10.2 Factor Structure
 - `factor_id: "factor_a" | ... | "factor_j"`
@@ -554,6 +561,12 @@ pair are scored: an absent or incomplete factor is not "very low".
 - `selected_class: "S0" | "S1" | "S2" | "S5"` (G/H/I/J: `S0|S2|S5`)
 - `score_points: number` (A-F: 0|1|2|5; G-J: 0|2|5)
 - `evidence: { notes?: string, photos?: string[], gps?: {lat:number,lng:number,accuracy_m?:number} }`
+- `factors.annotations` (phase 27, D-23): the observer's doubt and note per factor, in one container
+  next to the factor entries, keyed by factor code `A` to `J`: `{ doubt?: true, note?: string }`,
+  `doubt` only ever `true` (the default "Sûr" is the absence of the key) and `note` at most 300
+  characters. `evidence.notes` stays the shape of the canonical factor result above; the observer's
+  own factor note lives in this container, not in `evidence.notes` and not inside the factor's raw
+  value (a factor entry holding only meta would be refused by the scorer as `factor_invalid_raw`).
 
 ### 10.3 Logical Submission Payload
 ```json
@@ -567,6 +580,17 @@ pair are scored: an absent or incomplete factor is not "very low".
   "status": "submitted",
   "visibility": "public",
   "submitted_at": "2026-03-04T10:35:00Z",
+  "survey_note": "Sol sec, chablis récent au nord.",
+  "weather": {
+    "sky": "partly_cloudy",
+    "temperature_c": 17.5,
+    "wind_kmh": 12,
+    "rain_24h_mm": 0,
+    "observed_at": "2026-03-04T10:00:00Z",
+    "requested_at": "2026-03-04T10:20:00Z",
+    "source": "meteo_france",
+    "edited": []
+  },
   "factors": [
     {
       "factor_id": "factor_a",
@@ -579,12 +603,18 @@ pair are scored: an absent or incomplete factor is not "very low".
       "evidence": { "notes": "Taxon validated in field" }
     }
   ],
+  "factor_annotations": {
+    "A": { "doubt": true, "note": "Deux genres difficiles à séparer au sol." }
+  },
   "ibp_peuplement_gestion": 23,
   "ibp_contexte": 7,
   "ibp_total": 30,
   "validation_errors": []
 }
 ```
+
+The logical payload above is a description; on the wire the annotations travel inside `factors`
+(`factors.annotations`) and the survey fields beside it (see `api-contract-v1.md`).
 
 ### 10.4 Versioning Rules
 - The mobile form sets `ibp_method_version` at draft creation (v3.2 by default). The API does not
@@ -599,6 +629,16 @@ pair are scored: an absent or incomplete factor is not "very low".
 - Class enums and thresholds are fixed per version.
 - The version, cas and cas-3 flag are read-only after submit (§5.1). The explicit v3.0 tag and a
   missing value are the same method in this comparison.
+- `survey_note`, `weather` and `factors.annotations` (phase 27) are read-only after submit too
+  (D-03): the note is compared by exact string, the weather by value, the annotations with
+  `factors`. Absent or null is never a change, so an app that does not send them creates no
+  conflict. A user can still write them freely while the survey is a draft.
+- **The doubt never changes a score (D-14).** A doubt or a factor note is not an input of any rule:
+  the scorer reads the ten factor keys only, so the score, the class, the band, the total and every
+  validation result are identical with and without the annotations. The parity cases `MAT-ANN-01`
+  to `MAT-ANN-03` (`IBP_PARITY_CASES`, validation matrix v2) prove it in the shared package, the API
+  adapter and the mobile adapter. The doubt is shown wherever the factor is shown (score page,
+  other members' view of a submitted survey, PDF).
 
 ## 11) Acceptance Test Scenarios
 1. Correct factor classification:

@@ -51,7 +51,7 @@ afterEach(() => {
 function mount(props: Partial<AbbreviationInfoProps> = {}) {
   let tree!: renderer.ReactTestRenderer
   act(() => {
-    tree = renderer.create(<AbbreviationInfo term="IBP" {...props} />)
+    tree = renderer.create(<AbbreviationInfo term="TGB" {...props} />)
   })
   const byType = (type: string) => tree.root.findAll((node) => (node.type as unknown) === type)
   const trigger = () => tree.root.findAll((node) => node.props.testID !== undefined)[0]
@@ -64,9 +64,9 @@ describe("AbbreviationInfo, icon variant", () => {
   it("is one 44 pt button with the outline info glyph", () => {
     const { byType, trigger } = mount()
     const button = trigger()
-    expect(button.props.testID).toBe("abbreviation-info-IBP")
+    expect(button.props.testID).toBe("abbreviation-info-TGB")
     expect(button.props.accessibilityRole).toBe("button")
-    expect(button.props.accessibilityLabel).toBe("Que signifie IBP ?")
+    expect(button.props.accessibilityLabel).toBe("Que signifie TGB ?")
     const slop = button.props.hitSlop
     for (const side of ["top", "bottom", "left", "right"]) {
       expect(slop[side]).toBe(12)
@@ -85,9 +85,9 @@ describe("AbbreviationInfo, icon variant", () => {
     const modal = byType("Modal")[0]
     expect(modal.props.presentationStyle).toBe("pageSheet")
     expect(modal.props.animationType).toBe("slide")
-    const entry = fr.abbreviations.terms.IBP
-    expect(texts()).toEqual(expect.arrayContaining([entry.long, "IBP", entry.explanation]))
-    expect(entry.long).toBe("Indice de Biodiversité Potentielle")
+    const entry = fr.abbreviations.terms.TGB
+    expect(texts()).toEqual(expect.arrayContaining([entry.long, "TGB", entry.explanation]))
+    expect(entry.long).toBe("très gros bois")
     const header = byType("Text").find((node) => node.props.accessibilityRole === "header")
     expect(header?.props.children).toBe(entry.long)
   })
@@ -125,9 +125,9 @@ describe("AbbreviationInfo, row variant", () => {
   it("is a 44 pt row with a visible label next to the glyph", () => {
     const { byType, trigger, texts } = mount({ variant: "row" })
     const row = trigger()
-    expect(row.props.testID).toBe("abbreviation-info-IBP")
+    expect(row.props.testID).toBe("abbreviation-info-TGB")
     expect(row.props.style.minHeight).toBe(44)
-    expect(texts()).toContain("Que signifie IBP ?")
+    expect(texts()).toContain("Que signifie TGB ?")
     expect(byType("Ionicons")[0].props.name).toBe("information-circle-outline")
   })
 

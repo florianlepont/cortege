@@ -77,6 +77,15 @@ jest.mock("../../hooks/useSearchGroup", () => ({
   useSearchGroup: (params: GroupParams) => mockUseSearchGroup(params),
 }))
 
+let mockOwnNotes: ReadonlyMap<string, string> = new Map()
+const mockUseOwnSurveyNotes = jest.fn(
+  (_active: boolean, _surveys: readonly unknown[]) => mockOwnNotes,
+)
+jest.mock("../../hooks/useOwnSurveyNotes", () => ({
+  useOwnSurveyNotes: (active: boolean, surveys: readonly unknown[]) =>
+    mockUseOwnSurveyNotes(active, surveys),
+}))
+
 const survey = (id: string, name: string) => ({ id, site_name: name })
 const mockSurveys = {
   state: {
@@ -164,6 +173,37 @@ afterEach(() => {
 })
 
 describe("SearchGroupRoute: Mes relevés", () => {
+  beforeEach(() => {
+    mockOwnNotes = new Map()
+    mockUseOwnSurveyNotes.mockClear()
+  })
+
+  test("the list and its count include the surveys found by their note (D-07)", () => {
+    mockOwnNotes = new Map([
+      ["a", "Forêt humide"],
+      ["b", "Sol détrempé"],
+      ["c", "Sol détrempé"],
+    ])
+    mount({ group: "mine", query: "detrempe" })
+    // The chips keep a and c visible: b is filtered out but still counted.
+    expect(screenProps.mine.surveys.map((s: { id: string }) => s.id)).toEqual(["c"])
+    expect(screenProps.mine.surveys[0].matchedInNote).toBe(true)
+    expect(screenProps.mine.matchCount).toBe(2)
+    expect(screenProps.count).toBe(1)
+  })
+
+  test("reads the notes of all the surveys for this query only on the mine list", () => {
+    mount({ group: "mine", query: "foret" })
+    expect(mockUseOwnSurveyNotes).toHaveBeenLastCalledWith(true, mockSurveys.state.surveys)
+    act(() => tree.unmount())
+    mockUseOwnSurveyNotes.mockClear()
+    mount({ group: "mine", query: "f" })
+    expect(mockUseOwnSurveyNotes).toHaveBeenLastCalledWith(false, mockSurveys.state.surveys)
+    act(() => tree.unmount())
+    mount({ group: "community", query: "foret" })
+    expect(mockUseOwnSurveyNotes).toHaveBeenLastCalledWith(false, mockSurveys.state.surveys)
+  })
+
   test("lists the matches among the chip-filtered surveys, never asking the API", () => {
     mount({ group: "mine", query: "foret" })
     expect(lastGroupParams().enabled).toBe(false)

@@ -1,5 +1,7 @@
 import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from "react"
+import Animated from "react-native-reanimated"
 import {
+  Keyboard,
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -18,6 +20,7 @@ import {
   brandTypography,
 } from "../../app/brand-tokens"
 import { computeIbpTotalsFromRetainedScores } from "../../app/ibp-scoring"
+import type { FactorAnnotationDraft } from "../../hooks/useFactorAnnotations"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { FACTOR_TITLES } from "../../app/constants"
 import type { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
@@ -30,6 +33,7 @@ import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { GlassButton } from "../../ui/GlassButton"
 import { Ionicons } from "@expo/vector-icons"
 import { AppPressable } from "../../ui/AppPressable"
+import { usePagerChromeStyle, usePagerKeyboard } from "./usePagerKeyboard"
 
 const t = fr.factorPager
 
@@ -68,6 +72,12 @@ type FactorPagerProps = {
    * survey; the round button then only goes back. Null (the default) keeps the plain "Terminer".
    */
   finishAction?: PagerFinishAction | null
+  /** Phase 27 (D-12): the doubt flag and the note of each factor, as the form holds them. */
+  factorAnnotations: FactorAnnotationDraft
+  onChangeDoubt: (factor: FactorKey, next: boolean) => void
+  onChangeNote: (factor: FactorKey, text: string) => void
+  /** The note is written to the draft (typing pause, blur, page change). */
+  onCommitNote: () => void
 }
 
 /**
@@ -77,7 +87,9 @@ type FactorPagerProps = {
  * or a slide of the finger along the strip goes to a factor, a bubble names it) and a round button
  * for the next factor ("Terminer" on the last). Going back is a letter or a swipe. D-26: on the
  * last factor of a complete, named survey a "Terminer le relevé" glass pill floats above the bar
- * (no control of the bar moves or shrinks). Memoised: the route also reads the surveys list.
+ * (no control of the bar moves or shrinks). Phase 27 (U-07): while the keyboard is up the bar and the
+ * pill row fade out and take no touches, so the note field of a factor has the room it needs; every
+ * page change dismisses the keyboard first. Memoised: the route also reads the surveys list.
  */
 export const FactorPager = memo(function FactorPager({
   initialFactor,
@@ -88,6 +100,10 @@ export const FactorPager = memo(function FactorPager({
   onFinish,
   onOpenHelp,
   finishAction = null,
+  factorAnnotations,
+  onChangeDoubt,
+  onChangeNote,
+  onCommitNote,
 }: FactorPagerProps) {
   const theme = useBrandTheme()
   const tabBarClearance = useTabBarClearance()
@@ -101,6 +117,8 @@ export const FactorPager = memo(function FactorPager({
   const [activeIndex, setActiveIndex] = useState(initialIndex)
   const progress = useMemo(() => computeFactorProgress(factorSections), [factorSections])
   const lastIndex = FACTOR_ORDER.length - 1
+  const keyboardVisible = usePagerKeyboard()
+  const chromeStyle = usePagerChromeStyle(keyboardVisible)
 
   const handleContainerLayout = (event: LayoutChangeEvent): void => {
     setPageWidth(event.nativeEvent.layout.width)
@@ -113,6 +131,8 @@ export const FactorPager = memo(function FactorPager({
   }, [initialIndex, pageWidth])
 
   const scrollToIndex = (index: number, animated = true): void => {
+    // The page about to go away flushes its note as it unmounts; the keyboard goes first.
+    Keyboard.dismiss()
     const clamped = Math.max(0, Math.min(lastIndex, index))
     if (pageWidth > 0) {
       scrollRef.current?.scrollTo({ x: clamped * pageWidth, animated })
@@ -124,6 +144,7 @@ export const FactorPager = memo(function FactorPager({
     if (pageWidth <= 0) return
     const index = Math.round(event.nativeEvent.contentOffset.x / pageWidth)
     const clamped = Math.max(0, Math.min(lastIndex, index))
+    if (clamped !== activeIndex) Keyboard.dismiss()
     setActiveIndex(clamped)
   }
 
@@ -139,11 +160,13 @@ export const FactorPager = memo(function FactorPager({
   const showFinish = isLast && finishAction !== null
   const barBottom = tabBarClearance + brandSpacing4.sm
   // The page ends above the bar, and above the pill row when it shows (it floats, no fill).
-  const pageBottom =
-    tabBarClearance +
-    BAR_HEIGHT +
-    2 * brandSpacing4.md +
-    (showFinish ? Math.max(FINISH_ROW_MIN_HEIGHT, finishRowHeight) + brandSpacing4.smd : 0)
+  // While the keyboard is up the bar and the pill are hidden, so the page only keeps a margin.
+  const pageBottom = keyboardVisible
+    ? brandSpacing4.md
+    : tabBarClearance +
+      BAR_HEIGHT +
+      2 * brandSpacing4.md +
+      (showFinish ? Math.max(FINISH_ROW_MIN_HEIGHT, finishRowHeight) + brandSpacing4.smd : 0)
   return (
     <View style={styles.container} onLayout={handleContainerLayout} testID="factor-pager">
       <View style={styles.header}>
@@ -180,6 +203,11 @@ export const FactorPager = memo(function FactorPager({
             // texts are measured on one line and the score line runs off the edge (OA-110).
             style={{ width: pageWidth || windowWidth }}
             contentContainerStyle={[styles.pageContent, { paddingBottom: pageBottom }]}
+            // A tap on the strip or on a chip works with the keyboard up; dragging the page puts the
+            // keyboard away; the page makes room for it (UI-SPEC 2.4).
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets
           >
             {/* Only the active page mounts real content: ten factor screens' worth of hint state
              * and validation running at once is wasted work the surveyor never sees. */}
@@ -190,6 +218,11 @@ export const FactorPager = memo(function FactorPager({
                 retainedScore={factorRetainedScores[factor]}
                 methodVersion={methodVersion}
                 onOpenHelp={onOpenHelp}
+                doubt={factorAnnotations[factor]?.doubt === true}
+                note={factorAnnotations[factor]?.note ?? ""}
+                onChangeDoubt={(next) => onChangeDoubt(factor, next)}
+                onChangeNote={(text) => onChangeNote(factor, text)}
+                onCommitNote={onCommitNote}
               />
             ) : null}
           </ScrollView>
@@ -197,10 +230,14 @@ export const FactorPager = memo(function FactorPager({
       </ScrollView>
 
       {showFinish ? (
-        <View
-          pointerEvents="box-none"
+        <Animated.View
+          pointerEvents={keyboardVisible ? "none" : "box-none"}
           onLayout={(event) => setFinishRowHeight(event.nativeEvent.layout.height)}
-          style={[styles.finishRow, { bottom: barBottom + BAR_HEIGHT + brandSpacing4.smd }]}
+          style={[
+            styles.finishRow,
+            { bottom: barBottom + BAR_HEIGHT + brandSpacing4.smd },
+            chromeStyle,
+          ]}
           testID="pager-finish-row"
         >
           {finishAction.notice}
@@ -212,10 +249,13 @@ export const FactorPager = memo(function FactorPager({
             onPress={finishAction.onPress}
             testID="pager-finish-survey"
           />
-        </View>
+        </Animated.View>
       ) : null}
 
-      <View pointerEvents="box-none" style={[styles.bar, { bottom: barBottom }]}>
+      <Animated.View
+        pointerEvents={keyboardVisible ? "none" : "box-none"}
+        style={[styles.bar, { bottom: barBottom }, chromeStyle]}
+      >
         <FactorLetterStrip activeIndex={activeIndex} progress={progress} onSelect={scrollToIndex} />
         <AppPressable
           accessibilityRole="button"
@@ -232,7 +272,7 @@ export const FactorPager = memo(function FactorPager({
             color={theme.semanticColors.onCtaPrimary}
           />
         </AppPressable>
-      </View>
+      </Animated.View>
     </View>
   )
 })

@@ -360,6 +360,159 @@ describe("config: production warnings (AUTH0_MGMT_* degrade, never refuse)", () 
   })
 })
 
+describe("config: weather (phase 27, D-19, D-22)", () => {
+  it("defaults to no weather: provider off, no credential, caps 30 km and 50 km, tolerance 90 minutes", () => {
+    expect(loadAppConfig({}).weather).toEqual({
+      provider: "off",
+      credential: "",
+      authMode: "auto",
+      observationsUrl: "https://public-api.meteofrance.fr/public/DPObs/v2",
+      timeoutMs: 4000,
+      maxStationDistanceKm: 30,
+      synopMaxDistanceKm: 50,
+      timeToleranceMinutes: 90,
+    })
+  })
+
+  it("trims and lowercases WEATHER_PROVIDER, and reads a blank value as off", () => {
+    expect(loadAppConfig({ WEATHER_PROVIDER: "Synthetic " }).weather.provider).toBe("synthetic")
+    expect(loadAppConfig({ WEATHER_PROVIDER: "meteofrance" }).weather.provider).toBe("meteofrance")
+    expect(loadAppConfig({ WEATHER_PROVIDER: " OFF" }).weather.provider).toBe("off")
+    expect(loadAppConfig({ WEATHER_PROVIDER: "" }).weather.provider).toBe("off")
+    expect(loadAppConfig({ WEATHER_PROVIDER: "  " }).weather.provider).toBe("off")
+  })
+
+  it("reads the credential, the URL and the numbers from the environment", () => {
+    const weather = loadAppConfig({
+      METEOFRANCE_API_KEY: "  a-key  ",
+      METEOFRANCE_OBS_URL: "http://localhost:9998/obs",
+      WEATHER_TIMEOUT_MS: "1500",
+      WEATHER_MAX_STATION_DISTANCE_KM: "12.5",
+      WEATHER_SYNOP_MAX_DISTANCE_KM: "80",
+      WEATHER_TIME_TOLERANCE_MINUTES: "45",
+    }).weather
+    expect(weather.credential).toBe("a-key")
+    expect(weather.observationsUrl).toBe("http://localhost:9998/obs")
+    expect(weather.timeoutMs).toBe(1500)
+    expect(weather.maxStationDistanceKm).toBe(12.5)
+    expect(weather.synopMaxDistanceKm).toBe(80)
+    expect(weather.timeToleranceMinutes).toBe(45)
+  })
+
+  it.each([
+    ["apikey", "apikey"],
+    [" Bearer ", "bearer"],
+    ["APPLICATION-ID", "application-id"],
+    ["", "auto"],
+    ["token", "auto"],
+  ])("reads METEOFRANCE_AUTH_MODE=%p as %s, an unknown value being auto", (value, expected) => {
+    expect(loadAppConfig({ METEOFRANCE_AUTH_MODE: value }).weather.authMode).toBe(expected)
+    expect(() => validateEnv({ METEOFRANCE_AUTH_MODE: value })).not.toThrow()
+  })
+
+  it("falls back to the defaults on garbage numbers", () => {
+    const weather = loadAppConfig({
+      WEATHER_TIMEOUT_MS: "x",
+      WEATHER_MAX_STATION_DISTANCE_KM: "-3",
+      WEATHER_SYNOP_MAX_DISTANCE_KM: "far",
+      WEATHER_TIME_TOLERANCE_MINUTES: "0",
+    }).weather
+    expect(weather.timeoutMs).toBe(4000)
+    expect(weather.maxStationDistanceKm).toBe(30)
+    expect(weather.synopMaxDistanceKm).toBe(50)
+    expect(weather.timeToleranceMinutes).toBe(90)
+  })
+
+  it("falls back when a whole number truncates to zero, but keeps a fractional distance", () => {
+    const weather = loadAppConfig({
+      WEATHER_TIMEOUT_MS: "0.5",
+      WEATHER_TIME_TOLERANCE_MINUTES: "0.9",
+      WEATHER_MAX_STATION_DISTANCE_KM: "0.5",
+    }).weather
+    expect(weather.timeoutMs).toBe(4000)
+    expect(weather.timeToleranceMinutes).toBe(90)
+    expect(weather.maxStationDistanceKm).toBe(0.5)
+  })
+
+  it.each(["meteofrance", "synthetic", "off", "METEOFRANCE", " Off "])(
+    "accepts WEATHER_PROVIDER=%p",
+    (value) => {
+      expect(() => validateEnv({ WEATHER_PROVIDER: value })).not.toThrow()
+    },
+  )
+
+  it.each(["meteo", "meteo-france", "ign", "on"])(
+    "rejects WEATHER_PROVIDER=%p and names the variable",
+    (value) => {
+      expect(() => validateEnv({ WEATHER_PROVIDER: value })).toThrow(/WEATHER_PROVIDER/)
+      expect(() => validateEnv({ WEATHER_PROVIDER: value })).toThrow(/^Configuration invalide : /)
+    },
+  )
+
+  it("refuses synthetic weather in production (invented weather must never be stored)", () => {
+    const env = validProductionEnv({ WEATHER_PROVIDER: "Synthetic " })
+    expect(findProductionProblems(env)).toContainEqual(
+      expect.objectContaining({ variable: "WEATHER_PROVIDER" }),
+    )
+    expect(productionError(env)).toContain("WEATHER_PROVIDER")
+  })
+
+  it.each([undefined, "", "off", "meteofrance"])(
+    "accepts WEATHER_PROVIDER=%p in production",
+    (value) => {
+      const env = validProductionEnv({ WEATHER_PROVIDER: value, METEOFRANCE_API_KEY: "k" })
+      expect(findProductionProblems(env).map((p) => p.variable)).not.toContain("WEATHER_PROVIDER")
+      expect(() => validateEnv(env)).not.toThrow()
+    },
+  )
+
+  it.each([undefined, "", "  ", "CHANGE_ME", "change-me-later"])(
+    "warns, never refuses, for meteofrance with METEOFRANCE_API_KEY=%p",
+    (value) => {
+      const env = validProductionEnv({
+        WEATHER_PROVIDER: "meteofrance",
+        METEOFRANCE_API_KEY: value,
+      })
+      expect(findProductionWarnings(env).map((w) => w.variable)).toEqual(["METEOFRANCE_API_KEY"])
+      expect(findProductionProblems(env)).toEqual([])
+      expect(() => validateEnv(env)).not.toThrow()
+    },
+  )
+
+  it("does not warn about the key when meteofrance has a real key, or when weather is off", () => {
+    expect(
+      findProductionWarnings(
+        validProductionEnv({ WEATHER_PROVIDER: "meteofrance", METEOFRANCE_API_KEY: "real-key" }),
+      ),
+    ).toEqual([])
+    expect(findProductionWarnings(validProductionEnv({ METEOFRANCE_API_KEY: "" }))).toEqual([])
+    expect(
+      findProductionWarnings(
+        validProductionEnv({ WEATHER_PROVIDER: "off", METEOFRANCE_API_KEY: "" }),
+      ),
+    ).toEqual([])
+  })
+
+  it("never echoes the credential in a problem, a warning or an error", () => {
+    const marker = "change-me-WEATHER-MARKER-5d1e"
+    const env = validProductionEnv({
+      WEATHER_PROVIDER: "synthetic",
+      METEOFRANCE_API_KEY: marker,
+    })
+    expect(productionError(env)).not.toContain("WEATHER-MARKER")
+    for (const item of [...findProductionProblems(env), ...findProductionWarnings(env)]) {
+      expect(item.reason).not.toContain("WEATHER-MARKER")
+    }
+    const warned = validProductionEnv({
+      WEATHER_PROVIDER: "meteofrance",
+      METEOFRANCE_API_KEY: marker,
+    })
+    for (const warning of findProductionWarnings(warned)) {
+      expect(warning.reason).not.toContain("WEATHER-MARKER")
+    }
+  })
+})
+
 describe("config: isKnownDefaultSecret (D-18)", () => {
   it.each([
     [undefined, true],

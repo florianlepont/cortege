@@ -15,7 +15,14 @@ module.exports = {
   coverageReporters: ["text", "text-summary", "json-summary", "lcov"],
   transform: {
     "^.+\\.tsx?$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.jest.json" }],
+    // React Navigation core and routers ship ES modules only. The navigation-flow test mounts the
+    // real routers (not a fake), so these two packages are compiled to CommonJS like the sources.
+    "node_modules/@react-navigation/(core|routers)/.+\\.js$": [
+      "ts-jest",
+      { tsconfig: "<rootDir>/tsconfig.jest.json", diagnostics: false, isolatedModules: true },
+    ],
   },
+  transformIgnorePatterns: ["/node_modules/(?!@react-navigation/(core|routers)/)"],
   moduleNameMapper: {
     "^@expo/vector-icons$": "<rootDir>/test/vector-icons.mock.ts",
     "^expo-sqlite$": "<rootDir>/test/expo-sqlite.mock.ts",

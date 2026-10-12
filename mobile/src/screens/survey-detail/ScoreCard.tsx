@@ -104,7 +104,7 @@ function ScoreTile({ label, value, max, styles }: TileProps) {
 /**
  * The one place the score shows on the summary (OA-45, OA-39): the forest hero card with the thin
  * gradient numeral out of 50, a glow bar filling once per mount, and two glass tiles (stand out of
- * 35, context out of 15) counting up. Not tappable (owner, OA-93): the "Score IBP" row below opens
+ * 35, context out of 15) counting up. Not tappable (owner, OA-93): the "Facteurs IBP" row below opens
  * the detail by factor and sub-score. The mount animations do not replay when returning from a
  * sub-page, because the summary stays mounted under it. One summary label reads the whole card.
  * At the finish (D-25) the halo pulses and the card pops once, on the UI thread; under Reduce

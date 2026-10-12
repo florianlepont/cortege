@@ -81,7 +81,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 25: Global Search** (INSERTED) - One search covers the whole app: own and community surveys, places and parcels on the map, and the other items the app exposes (SEED-003; owner decision 2026-10-07) (completed 2026-10-10)
 - [x] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10) (completed 2026-10-10)
 - [x] **Phase 26: Field-feedback fixes** (INSERTED) - Android photo recognition works (the recognition workflow rethink was set aside, owner 2026-10-10); small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10) (completed 2026-10-11)
-- [ ] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
+- [x] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
 - [ ] **Phase 28: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10)
 - [ ] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list)
 - [ ] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand
@@ -955,7 +955,7 @@ Plans:
 
 **Goal**: A survey can carry a free note, pre-filled weather information and a certainty level on observations, without slowing the field entry.
 **Depends on**: Phase 26
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: REQ-C-survey-note (SVA-01), REQ-C-factor-note (SVA-02), REQ-C-doubt-flag (SVA-03), REQ-C-weather-provider (SVA-04), REQ-C-weather-prefill (SVA-05), REQ-C-conditions-sync (SVA-06)
 **Source**: seminar 2026-10-10: cards "Note libre sur le relevé", "Info météo préremplie", "Niveau de certitude des observations"; part of the V1 features of the beta
 **Success Criteria** (what must be TRUE):
 
@@ -963,7 +963,56 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: TBD
+**Plans**: 22/22 plans executed (22 plans in 8 waves). Closed 2026-10-12; nothing stays open in this phase: the device checks DC-27-02 to DC-27-05 are reported to Phases 35 and 37 (owner decision 2026-10-12), see `docs/user-tests/device-checks.md`
+
+Plans:
+
+**Wave 1**
+
+- [x] 27-01-PLAN.md: Météo-France capture script for the owner, no key needed (D-22)
+- [x] 27-02-PLAN.md: shared contract in @cortege/ibp-domain, factors.annotations, MAT-ANN parity (D-14, D-23)
+- [x] 27-03-PLAN.md: French catalogue of the phase, NoteField, ochre contrast pair (D-18, D-26)
+- [x] 27-04-PLAN.md: weather configuration and production rules, check-env parity (D-22)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 27-05-PLAN.md: migration 023, upsert DTO, read-only compare, 2 MB body limit (D-01, D-04, D-25)
+- [x] 27-06-PLAN.md: GET /v1/weather on the synthetic provider: cache, cap, 24 h window, 503 (D-08, D-19, D-20)
+- [x] 27-07-PLAN.md: phone storage, requested_at stamp, guarded conditions write, pull copy (D-02, D-03)
+- [x] 27-08-PLAN.md: form doubts and factor notes under factors.annotations (D-12, D-23)
+- [x] 27-09-PLAN.md: app weather rules (merge, edit guard, states) and the API client (D-09, D-10, D-11)
+- [x] 27-10-PLAN.md: doubt chip and factor note on score and community rows (D-13, D-17)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 27-11-PLAN.md: API write sites and round-trip e2e (D-01, D-03, D-04)
+- [x] 27-13-PLAN.md: app-level weather prefill and catch-up, silent note and weather writes (D-10, D-11, D-20)
+- [x] 27-14-PLAN.md: "Douteux" strip under each factor, pager keyboard (D-12, D-16)
+- [x] 27-15-PLAN.md: note in the parcel history and the own-survey search (D-06, D-07)
+- [x] 27-16-PLAN.md: PDF conditions block, doubt badge and factor note (D-13, D-17, D-26)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 27-17-PLAN.md: changes feed, community and history reads, retention on account deletion (D-06, D-24)
+- [x] 27-18-PLAN.md: Conditions section of the context page (D-03, D-09, D-11, D-15)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 27-19-PLAN.md: Conditions card on the summary and on the community survey (D-17, D-26)
+- [x] 27-20-PLAN.md: contracts, form spec, user stories, CLAUDE.md, VPS README, weather from the synthetic contract
+
+**Wave 6** *(blocked on Wave 5 completion; first wave that needs the owner's key)*
+
+- [x] 27-22-PLAN.md: owner's Météo-France run and spike findings (units, distance cap, sky and 24 h rain), human checkpoint (D-19, D-21, D-22)
+
+**Wave 7** *(blocked on Wave 6 completion)*
+
+- [x] 27-12-PLAN.md: Météo-France provider on the spike fixtures, provider in CLAUDE.md (D-08, D-19, D-21)
+
+**Wave 8** *(blocked on Wave 7 completion)*
+
+- [x] 27-21-PLAN.md: device checks and the real Météo-France answer, human checkpoints (real answer done, emulator rows open)
+
 **UI hint**: yes
 
 ### Phase 28: Map Layers & Comparison (INSERTED, V1)
@@ -1089,7 +1138,7 @@ Plans:
   4. The survey list, survey detail, survey form and map screens have tests covering their sync-status, filter and error states, so the flows the field tests exercise are protected against regression.
   5. Every field-test case cites a unique story ID: the six Epic D stories have six distinct IDs, and `docs/specs/user-stories.md` §4 uses the MVP / V1 / V2 taxonomy.
   6. Each field observer's feedback is collected in one feedback grid (`docs/user-tests/field-feedback.md`): bugs, interface friction (slow entry, unclear screens, anything that gets in the way on a parcel) and suggestions, each with an ID, the screen concerned and the observer. At the end of the phase every entry is triaged as *release blocker*, *next milestone* or *rejected* (with a reason); the release blockers are fixed, in a short follow-up phase if needed, before the milestone closes.
-  7. The checks deferred from earlier phases are run on real devices and recorded in `docs/user-tests/device-checks.md` (D-01 to D-11): genus recognition on Android (latency and accuracy, after Phase 26) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, the splash and permission-refusal paths of onboarding, and the backup timer and restore on the server (owner only; repeated on the new server in Phase 36).
+  7. The checks deferred from earlier phases are run on real devices and recorded in `docs/user-tests/device-checks.md` (D-01 to D-11, and DC-27-02 to DC-27-04 reported from Phase 27 on 2026-10-12: the factor note above the keyboard on a small screen, the offline weather catch-up after a network drop following the parcel choice, and the tap count of a full survey against about 40): genus recognition on Android (latency and accuracy, after Phase 26) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, the splash and permission-refusal paths of onboarding, and the backup timer and restore on the server (owner only; repeated on the new server in Phase 36).
 
 **Plans**: TBD
 
@@ -1118,7 +1167,7 @@ Plans:
 **Source**: owner decision 2026-10-07, folded into the MVP. Baseline: `docs/design/ux-ui-audit-2026-09.md` and `docs/design/charte-graphique-etats-sauvages-spec.md`.
 **Success Criteria** (what must be TRUE):
 
-  1. A UX/UI audit report in `docs/design/` covers every screen in light and dark mode on iOS (and Android where it differs): global coherence (spacing, typography, colour, iconography, components, motion, wording), accessibility (contrast, touch targets, reduced motion, Dynamic Type) and visual bugs, with the previous audit's findings re-checked.
+  1. A UX/UI audit report in `docs/design/` covers every screen in light and dark mode on iOS (and Android where it differs): global coherence (spacing, typography, colour, iconography, components, motion, wording), accessibility (contrast, touch targets, reduced motion, Dynamic Type, and VoiceOver / TalkBack on the Phase 27 additions, DC-27-05 reported from Phase 27) and visual bugs, with the previous audit's findings re-checked. SEED-007 (creating a survey without network) is examined as a workflow finding.
   2. Each finding has an ID, severity and a triage (*blocker before field tests*, *fix later*, *rejected* with a reason), logged in one grid.
   3. The design system is updated to match Phase 23: tokens, components and motion rules are documented in the charter, stale sections are corrected, and no screen keeps a one-off style the system does not describe (the colour lint rule stays green).
   4. A conformity pass compares the app, screen by screen, with the "États Sauvages" graphic charter and lists every gap (the owner finds the app does not fully respect it); each gap is fixed or explicitly accepted as a deviation in the charter.
@@ -1181,7 +1230,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
-| 27. Quick survey additions | 0/TBD | Not started | - |
+| 27. Quick survey additions | 22/22 | Complete | 2026-10-12 |
 | 28. Map Layers & Comparison | 27/28 | In progress (owner iPhone validation 2026-10-12; offline measures and Android run open) | - |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
 | 30. Route Choice Assistant | 0/TBD | Not started | - |

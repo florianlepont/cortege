@@ -7,6 +7,7 @@ import { LocalAttachment, LocalSurvey } from "../../storage"
 import { AppText as Text } from "../../ui/AppText"
 import { isPhotoAttachment } from "../survey-screen-helpers"
 import { GlassSurface } from "../../ui/GlassSurface"
+import { OptionalEntrance } from "./OptionalEntrance"
 import { PhotoGallery } from "./PhotoGallery"
 import { PhotoTile, photoTileStatusText } from "./PhotoTile"
 import { createPhotoStyles } from "./photos.styles"
@@ -24,6 +25,8 @@ type PhotosStripProps = {
   onTakePhoto: (surveyId: string) => Promise<void> | void
   onPickPhoto: (surveyId: string) => Promise<void> | void
   onDeleteAttachment: (surveyId: string, localAttachmentId: string) => Promise<void> | void
+  /** Slot of the section in the summary's entrance stagger (D-46); no entrance without it. */
+  entranceIndex?: number
 }
 
 /**
@@ -40,6 +43,7 @@ export function PhotosStrip({
   onTakePhoto,
   onPickPhoto,
   onDeleteAttachment,
+  entranceIndex,
 }: PhotosStripProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
@@ -70,56 +74,58 @@ export function PhotosStrip({
   if (photos.length === 0 && !canEdit) return null
 
   return (
-    <View style={photoStyles.block}>
-      <View style={photoStyles.header}>
-        <Text style={styles.cardTitle} accessibilityRole="header">
-          {t.title}
-          {photos.length > 0 ? (
-            <Text style={styles.cardTitleCount}>{t.countSuffix(photos.length)}</Text>
+    <OptionalEntrance index={entranceIndex}>
+      <View style={photoStyles.block}>
+        <View style={photoStyles.header}>
+          <Text style={styles.cardTitle} accessibilityRole="header">
+            {t.title}
+            {photos.length > 0 ? (
+              <Text style={styles.cardTitleCount}>{t.countSuffix(photos.length)}</Text>
+            ) : null}
+          </Text>
+          {canEdit ? (
+            <AppPressable
+              style={photoStyles.addHit}
+              onPress={handleAdd}
+              accessibilityRole="button"
+              accessibilityLabel={a11y.addPhoto}
+            >
+              <GlassSurface tone="auto" pointerEvents="none" style={photoStyles.addPill}>
+                <Ionicons name="add-outline" size={18} color={theme.semanticColors.textStrong} />
+                <Text style={photoStyles.addPillText}>{t.add}</Text>
+              </GlassSurface>
+            </AppPressable>
           ) : null}
-        </Text>
-        {canEdit ? (
+        </View>
+        {photos.length === 0 ? (
           <AppPressable
-            style={photoStyles.addHit}
+            style={photoStyles.emptyTile}
             onPress={handleAdd}
             accessibilityRole="button"
             accessibilityLabel={a11y.addPhoto}
+            testID="photos-empty-tile"
           >
-            <GlassSurface tone="auto" pointerEvents="none" style={photoStyles.addPill}>
-              <Ionicons name="add-outline" size={18} color={theme.semanticColors.textStrong} />
-              <Text style={photoStyles.addPillText}>{t.add}</Text>
-            </GlassSurface>
+            <Ionicons name="camera-outline" size={28} color={theme.colors.textSecondary} />
+            <Text style={photoStyles.emptyText}>{t.emptyAdd}</Text>
           </AppPressable>
-        ) : null}
+        ) : (
+          <PhotoGallery
+            ids={photos.map((attachment) => attachment.id)}
+            renderPhoto={(id, index, size) => (
+              <AppPressable
+                style={[photoStyles.photoPress, { width: size.width, height: size.height }]}
+                onPress={() => handlePhotoPress(id)}
+                accessibilityRole={canEdit ? "button" : "image"}
+                accessibilityLabel={a11y.photo({ position: index + 1, total: photos.length })}
+                accessibilityHint={canEdit ? alerts.deletePhotoTitle : undefined}
+                accessibilityValue={{ text: photoTileStatusText(photos[index]) }}
+              >
+                <PhotoTile attachment={photos[index]} size={size} />
+              </AppPressable>
+            )}
+          />
+        )}
       </View>
-      {photos.length === 0 ? (
-        <AppPressable
-          style={photoStyles.emptyTile}
-          onPress={handleAdd}
-          accessibilityRole="button"
-          accessibilityLabel={a11y.addPhoto}
-          testID="photos-empty-tile"
-        >
-          <Ionicons name="camera-outline" size={28} color={theme.colors.textSecondary} />
-          <Text style={photoStyles.emptyText}>{t.emptyAdd}</Text>
-        </AppPressable>
-      ) : (
-        <PhotoGallery
-          ids={photos.map((attachment) => attachment.id)}
-          renderPhoto={(id, index, size) => (
-            <AppPressable
-              style={[photoStyles.photoPress, { width: size.width, height: size.height }]}
-              onPress={() => handlePhotoPress(id)}
-              accessibilityRole={canEdit ? "button" : "image"}
-              accessibilityLabel={a11y.photo({ position: index + 1, total: photos.length })}
-              accessibilityHint={canEdit ? alerts.deletePhotoTitle : undefined}
-              accessibilityValue={{ text: photoTileStatusText(photos[index]) }}
-            >
-              <PhotoTile attachment={photos[index]} size={size} />
-            </AppPressable>
-          )}
-        />
-      )}
-    </View>
+    </OptionalEntrance>
   )
 }

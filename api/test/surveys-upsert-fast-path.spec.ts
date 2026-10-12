@@ -426,6 +426,182 @@ describe("SurveysService upsert fast path", () => {
   })
 })
 
+// Phase 27 (D-01, D-04): the note and the weather reach every write site, and an absent key keeps
+// the stored value while an explicit null clears it.
+describe("SurveysService note and weather at the write sites", () => {
+  const user = { id: "11111111-1111-4111-8111-111111111111" } as AuthenticatedUser
+  const weather = {
+    sky: "cloudy" as const,
+    temperature_c: 8.5,
+    wind_kmh: null,
+    rain_24h_mm: null,
+    observed_at: "2026-10-11T07:00:00.000Z",
+    requested_at: "2026-10-11T07:05:00.000Z",
+    source: "meteo_france" as const,
+    edited: [],
+  }
+  const stored = {
+    id: "survey-1",
+    user_id: user.id,
+    site_name: "Stored",
+    status: "draft",
+    visibility: "private",
+    parcel_id: null,
+    observation_year: null,
+    version_number: null,
+    previous_survey_id: null,
+    region_version: null,
+    vegetation_stage: null,
+    ibp_method_version: null,
+    ibp_cas: null,
+    ibp_cas3_scale: null,
+    survey_note: "Stored note",
+    weather,
+    factors: {},
+    factor_results: {},
+    scores: {},
+    created_at: "2026-01-01 00:00:00+00",
+    updated_at: "2026-01-01 00:00:00+00",
+    submitted_at: null,
+    sync_version: 1,
+    last_sync_error: null,
+    deleted_at: null,
+  }
+
+  function setup(row: Record<string, unknown> | null) {
+    const txQuery = jest
+      .fn()
+      .mockResolvedValue({ rows: [{ id: "survey-1", updated_at: "locked-t" }] })
+    const db = {
+      query: jest.fn(),
+      transaction: jest.fn((callback: (tx: unknown) => Promise<unknown>) =>
+        callback({ query: txQuery }),
+      ),
+    }
+    const repository = {
+      readForUpsert: jest
+        .fn()
+        .mockResolvedValue(row === null ? null : { ...row, cas_token: "1", parcel_ids: [] }),
+      createSurveyAtomic: jest.fn().mockResolvedValue(null),
+      updateSurveyIfUnchanged: jest.fn().mockResolvedValue(null),
+      findOwned: jest.fn().mockResolvedValue(row),
+      getSurveyParcelIds: jest.fn().mockResolvedValue([]),
+      syncSurveyParcels: jest.fn().mockResolvedValue(undefined),
+    }
+    const ibpRules = {
+      validateDraft: jest.fn().mockReturnValue({
+        ok: true,
+        errors: [],
+        warnings: [],
+        issues: [],
+        factor_scores: null,
+        factor_results: null,
+        scores: null,
+      }),
+    }
+    const events = { insert: jest.fn().mockResolvedValue(undefined) }
+    const parcels = {
+      ensureParcelIds: jest.fn().mockResolvedValue([]),
+      getDefaultVersionNumber: jest.fn().mockResolvedValue(1),
+    }
+    const service = new SurveysService(
+      db as unknown as DatabaseService,
+      ibpRules as unknown as IbpRulesService,
+      {} as StorageService,
+      repository as unknown as SurveysRepository,
+      events as unknown as SurveyEventsService,
+      parcels as unknown as ParcelsService,
+    )
+    return { service, repository, txQuery, events }
+  }
+
+  const body = (overrides: Partial<SurveyUpsertBody> = {}): SurveyUpsertBody => ({
+    id: "survey-1",
+    sync_version: 2,
+    site_name: "Forest",
+    factors: {},
+    ...overrides,
+  })
+
+  it("hands the body's note and weather to the fast create, null when absent", async () => {
+    const { service, repository } = setup(null)
+    await service.upsertForUser(user, body({ sync_version: 1, survey_note: "Note", weather }))
+    await service.upsertForUser(user, body({ sync_version: 1 }))
+
+    const [first, second] = repository.createSurveyAtomic.mock.calls.map(
+      (call) => call[1] as SurveyFastWriteInput,
+    )
+    expect(first).toMatchObject({ surveyNote: "Note", weather })
+    expect(second).toMatchObject({ surveyNote: null, weather: null })
+  })
+
+  it("keeps the stored note and weather on the fast update when the keys are absent", async () => {
+    const { service, repository } = setup(stored)
+    await service.upsertForUser(user, body())
+
+    const input = repository.updateSurveyIfUnchanged.mock.calls[0][1] as SurveyFastWriteInput
+    expect(input).toMatchObject({ surveyNote: "Stored note", weather })
+  })
+
+  it("clears and replaces them on the fast update when the keys are present", async () => {
+    const { service, repository } = setup(stored)
+    await service.upsertForUser(user, body({ survey_note: null, weather: null }))
+    await service.upsertForUser(
+      user,
+      body({ survey_note: "New", weather: { ...weather, sky: "fog" } }),
+    )
+
+    const [cleared, replaced] = repository.updateSurveyIfUnchanged.mock.calls.map(
+      (call) => call[1] as SurveyFastWriteInput,
+    )
+    expect(cleared).toMatchObject({ surveyNote: null, weather: null })
+    expect(replaced).toMatchObject({ surveyNote: "New", weather: { sky: "fog" } })
+  })
+
+  it("writes the note and weather in the locked insert", async () => {
+    const { service, txQuery } = setup(null)
+    // The fast create answers 0 rows (see setup), so the locked path inserts.
+    await service.upsertForUser(user, body({ sync_version: 1, survey_note: "Note", weather }))
+
+    const [sql, values] = txQuery.mock.calls[0] as [string, unknown[]]
+    expect(sql).toContain("survey_note, weather")
+    expect(sql).toContain("$23::text, $24::jsonb")
+    expect(values).toHaveLength(24)
+    expect(values[22]).toBe("Note")
+    expect(values[23]).toBe(JSON.stringify(weather))
+  })
+
+  it("writes the keep, clear and replace rules in the locked draft update", async () => {
+    const { service, txQuery } = setup(stored)
+    await service.upsertForUser(user, body())
+    await service.upsertForUser(user, body({ survey_note: null, weather: null }))
+    await service.upsertForUser(user, body({ survey_note: "New" }))
+
+    const updates = txQuery.mock.calls
+      .map((call) => call as [string, unknown[]])
+      .filter(([sql]) => sql.includes("UPDATE surveys"))
+    expect(updates).toHaveLength(3)
+    expect(updates[0][0]).toContain("survey_note = $20::text")
+    expect(updates[0][0]).toContain("weather = $21::jsonb")
+    expect(updates[0][1].slice(19)).toEqual(["Stored note", JSON.stringify(weather)])
+    expect(updates[1][1].slice(19)).toEqual([null, null])
+    expect(updates[2][1].slice(19)).toEqual(["New", JSON.stringify(weather)])
+  })
+
+  it("does not write them in the restricted update of a submitted survey", async () => {
+    const { service, txQuery } = setup({ ...stored, status: "submitted" })
+    await service.upsertForUser(
+      user,
+      body({ site_name: "Stored", survey_note: "Stored note", weather }),
+    )
+
+    const [sql] = txQuery.mock.calls[0] as [string, unknown[]]
+    expect(sql).toContain("UPDATE surveys")
+    expect(sql).not.toContain("survey_note")
+    expect(sql).not.toContain("weather")
+  })
+})
+
 describe("SurveysRepository fast-path statements", () => {
   const input: SurveyFastWriteInput = {
     surveyId: "survey-1",
@@ -442,6 +618,8 @@ describe("SurveysRepository fast-path statements", () => {
     ibpMethodVersion: "cnpf_ibp_fr_v3_2_2026-02-02",
     ibpCas: 3,
     ibpCas3Scale: false,
+    surveyNote: null,
+    weather: null,
     factors: {},
     factorResults: {},
     scores: { ibp_total: 0 },
@@ -450,31 +628,57 @@ describe("SurveysRepository fast-path statements", () => {
     eventPayload: { sync_version: 1 },
   }
 
-  it("binds sorted, de-duplicated parcels, and the CAS token as $26 of an update only", () => {
+  it("binds sorted, de-duplicated parcels, and the CAS token as $28 of an update only", () => {
     const create = fastWriteValues(input, null)
-    expect(create).toHaveLength(25)
+    expect(create).toHaveLength(27)
     expect(create[15]).toEqual(["01001A0001", "01001B0002"])
     expect(create[16]).toEqual(["01001", "01001"])
     expect(create[17]).toEqual(["AA", "BA"])
     expect(create[18]).toEqual(["0001", "0002"])
     const update = fastWriteValues(input, "777")
-    expect(update).toHaveLength(26)
-    expect(update[25]).toBe("777")
-    // The method columns sit at the same place in both: an update only adds the token.
-    expect(update.slice(22, 25)).toEqual(create.slice(22, 25))
+    expect(update).toHaveLength(28)
+    expect(update[27]).toBe("777")
+    // The method, note and weather columns sit at the same place in both: an update only adds
+    // the token.
+    expect(update.slice(22, 27)).toEqual(create.slice(22, 27))
+  })
+
+  it("binds the survey note as $26 and the weather as $27 (a JSON string, or null)", () => {
+    expect(fastWriteValues(input, null).slice(25)).toEqual([null, null])
+    const weather = {
+      sky: "cloudy" as const,
+      temperature_c: 8.5,
+      wind_kmh: 12,
+      rain_24h_mm: 2.4,
+      observed_at: "2026-10-11T08:00:00.000Z",
+      requested_at: "2026-10-11T08:01:00.000Z",
+      source: "meteo_france" as const,
+      edited: ["sky" as const],
+    }
+    const values = fastWriteValues(
+      { ...input, surveyNote: "Une note\nsur deux lignes", weather },
+      "9",
+    )
+    expect(values[25]).toBe("Une note\nsur deux lignes")
+    expect(values[26]).toBe(JSON.stringify(weather))
+    expect(values[27]).toBe("9")
   })
 
   it("binds the method columns as $23..$25 and writes them in both statements", () => {
-    expect(fastWriteValues(input, null).slice(22)).toEqual([
+    expect(fastWriteValues(input, null).slice(22, 25)).toEqual([
       "cnpf_ibp_fr_v3_2_2026-02-02",
       3,
       false,
     ])
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain("ibp_method_version, ibp_cas, ibp_cas3_scale")
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain("$23::text, $24::smallint, $25::boolean")
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("ibp_cas3_scale, survey_note, weather")
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("$26::text, $27::jsonb")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_method_version = $23::text")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas = $24::smallint")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("ibp_cas3_scale = $25::boolean")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("survey_note = $26::text")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("weather = $27::jsonb")
   })
 
   it("gates parcel registration on the survey write and uses the shared event insert", () => {
@@ -483,7 +687,7 @@ describe("SurveysRepository fast-path statements", () => {
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain(
       "INSERT INTO survey_events (id, survey_id, actor_id, event_type, payload)",
     )
-    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("xmin = $26::xid")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("xmin = $28::xid")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("sync_version < $14::int")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("status <> 'submitted'")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("EXISTS (SELECT 1 FROM u)")

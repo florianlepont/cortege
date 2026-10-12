@@ -617,12 +617,54 @@ const DISPATCH_CASES: IbpParityCase[] = [
   },
 ]
 
-/** Every parity case: v3.0, both versions, v3.2, dispatch (matrix v2 order). */
+/**
+ * Phase 27, D-14: the per-factor doubt and note live in `factors.annotations`, never read by a
+ * scorer. Each case expects exactly what the same factors give without the container.
+ */
+const ANNOTATION_CASES: IbpParityCase[] = [
+  // MAT-SUBMIT-02 with a doubt and a note on A and a note on F: same scores, same totals.
+  ...bothVersions((suffix) => ({
+    id: `MAT-ANN-01@both#${suffix}`,
+    matrixId: "MAT-ANN-01@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: {
+      ...COMPLETE_DIRECT,
+      annotations: {
+        A: { doubt: true, note: "Chêne sessile ou pédonculé ?" },
+        F: { note: "Zone dense au nord" },
+      },
+    },
+    expect: { ok: true, scores: COMPLETE_DIRECT, totals: COMPLETE_DIRECT_TOTALS, issueCodes: [] },
+  })),
+  // MAT-VER-01 (C scores 0 under v3.0 and 1 under v3.2) with a doubt and a note on C.
+  ...bothVersions((suffix) => ({
+    id: `MAT-ANN-02@both#${suffix}`,
+    matrixId: "MAT-ANN-02@both",
+    mode: "draft",
+    factors: {
+      C: C_BMG1_BMM1_2HA,
+      annotations: { C: { doubt: true, note: "souches comptées" } },
+    },
+    expect: { ok: true, scores: { C: suffix === "v3.2" ? 1 : 0 }, issueCodes: [] },
+  })),
+  // Annotations alone, no scored input: never a factor_invalid_raw (research Pitfall 1).
+  ...bothVersions((suffix) => ({
+    id: `MAT-ANN-03@both#${suffix}`,
+    matrixId: "MAT-ANN-03@both",
+    mode: "draft",
+    factors: { annotations: { B: { doubt: true }, J: { note: "mare asséchée" } } },
+    expect: { ok: true, scores: { B: null, J: null }, issueCodes: [] },
+  })),
+]
+
+/** Every parity case: v3.0, both versions, v3.2, dispatch, annotations (matrix v2 order). */
 export const IBP_PARITY_CASES: readonly IbpParityCase[] = [
   ...V30_CASES,
   ...BOTH_CASES,
   ...V32_CASES,
   ...DISPATCH_CASES,
+  ...ANNOTATION_CASES,
 ]
 
 /** Submit readiness per version (matrix v2 "Submit readiness", rows R-n). */

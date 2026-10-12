@@ -37,6 +37,8 @@ export function buildPdfPalette(): PdfPalette {
     accentSoft: semanticColors.successSurface,
     alert: onSurface.danger,
     alertSoft: semanticColors.errorSurface,
+    warning: onSurface.warning,
+    warningSoft: colors.warningSoft,
     bandLow: visual.score.low,
     bandMid: visual.score.mid,
     bandHigh: visual.score.high,

@@ -3,8 +3,10 @@ import path from "path"
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { brandInteraction, brandRadius, brandSpacing4 } from "../../app/brand-tokens"
+import { formatShortDateTime } from "../../app/formatters"
 import { defaultTheme } from "../../app/theme"
 import { scoreRingGeometry } from "../../app/visual-tokens"
+import { fr } from "../../i18n"
 import type { LocalSurvey } from "../../storage/types"
 import { SurveyRow, type SurveyRowProps } from "./SurveyRow"
 
@@ -255,5 +257,28 @@ describe("SurveyRow glass card and interactions", () => {
     }>
     act(() => deleteAction.props.onPress())
     expect(props.onDelete).toHaveBeenCalledWith("s1")
+  })
+})
+
+describe("SurveyRow found in the note (27-15)", () => {
+  const textsOf = (node: ReactTestInstance) =>
+    node
+      .findAll((child) => (child.type as unknown) === "Text")
+      .map((child) => String([child.props.children].flat().join("")))
+
+  test("a note-only match adds the hint after the date and to the sentence", () => {
+    const survey = { ...makeSurvey(), matchedInNote: true as const }
+    const { card } = mount({ survey })
+    const updatedAt = formatShortDateTime(survey.updated_at)
+    expect(textsOf(card)).toContain(
+      `${fr.surveyList.row.updatedMeta(updatedAt)} · Trouvé dans la note`,
+    )
+    expect(String(card.props.accessibilityLabel)).toMatch(/, Trouvé dans la note$/)
+  })
+
+  test("a row without the flag is as before", () => {
+    const { card } = mount()
+    expect(textsOf(card).join("|")).not.toContain("Trouvé")
+    expect(String(card.props.accessibilityLabel)).not.toContain("Trouvé")
   })
 })

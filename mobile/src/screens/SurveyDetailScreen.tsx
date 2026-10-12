@@ -1,25 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Alert, ScrollView, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
-import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { shouldShowDevTools } from "../app/dev-tools"
 import { useBrandTheme } from "../app/theme"
+import { weatherVisitTooOld } from "../app/weather"
 import { fr } from "../i18n"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
 import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppNotice } from "../ui/AppNotice"
+import { EntranceView } from "../ui/EntranceView"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../ui/frame-large-title"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
+import { SurveyNoteCard } from "./survey-detail/conditions/SurveyNoteCard"
+import { useSurveyConditions } from "./survey-detail/conditions/useSurveyConditions"
+import { WeatherCard } from "./survey-detail/conditions/WeatherCard"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
 import { FinishBar } from "./survey-detail/FinishBar"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
-import { SurveyOfflineMapRow } from "./survey-detail/SurveyOfflineMapRow"
 import { PhotosStrip } from "./survey-detail/PhotosStrip"
 import { ScoreCard } from "./survey-detail/ScoreCard"
 import { type SurveyDetailScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
+import { buildSummaryRowSections } from "./survey-detail/summary-rows"
 import { resolveFinishCta, resolveStatusLine } from "./survey-detail/summary-state"
 import { SummaryHeader } from "./survey-detail/SummaryHeader"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
@@ -32,19 +36,37 @@ import { useFinishBarHeight } from "./survey-detail/useFinishBarHeight"
 import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useScrollTop } from "./survey-detail/useScrollTop"
 import { TitledScrollView } from "../ui/TitledScrollView"
+import { useScrollIntoViewOnKeyboard } from "../ui/useScrollIntoViewOnKeyboard"
 
 const menuText = fr.surveyDetail.menu
-const rowsText = fr.surveyDetail.rows
 const summaryText = fr.surveyDetail.summary
 const headerText = fr.surveyDetail.header
 const alertsText = fr.surveyDetail.alerts
 
 /**
- * The summary of a survey (OA-46): its name and where it stands, the score, the photos, the map,
- * and three rows that open the sub-pages (context and parcels, score by factor, the parcel's
- * history; the survey's own change log is in the "…" menu, never a row, D-02). The one action is
- * the button at the bottom. The coloured chart of the ten factors is not here (D-24): it
- * lives on the score page only.
+ * D-46: every section of the summary slides up with the same entrance, one after the other in
+ * reading order (40 ms apart, `brandMotion.staggerMax` slots). A fixed slot per section, so a
+ * section that is not drawn (no photos, no sync problem) only leaves a short pause.
+ */
+const ENTRANCE = {
+  header: 0,
+  submittedNotice: 1,
+  score: 2,
+  weather: 3,
+  photos: 4,
+  map: 5,
+  rows: 6,
+  actions: 7,
+  note: 8,
+} as const
+
+/**
+ * The summary of a survey (OA-46): its name and where it stands, the score, the compact weather
+ * card (D-17, D-41), the photos, the map, four rows that open the sub-pages (Contexte, Parcelles,
+ * the factors, the parcel's history; D-32), the survey actions and, last, the survey note (D-33,
+ * D-38). The survey's own change log is in the "…" menu, never a row, D-02. The one action is
+ * the button at the bottom. The coloured chart of the ten factors is not here (D-24): it lives on
+ * the score page only.
  */
 export function SurveyDetailScreen({
   apiUrl,
@@ -65,7 +87,11 @@ export function SurveyDetailScreen({
   onDiscardSurvey,
   onRenameSurvey,
   onOpenContext,
-  onOpenParcels,
+  onOpenConditions,
+  conditionsLoading,
+  conditionsOffline,
+  onChangeNote,
+  onOpenParcelsPage,
   onOpenScore,
   onOpenFactor,
   onOpenHistory,
@@ -77,6 +103,7 @@ export function SurveyDetailScreen({
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName } = data
+  const conditions = useSurveyConditions(selectedSurvey)
   const [menuVisible, setMenuVisible] = useState(false)
   const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
   // D-26: a finish from the factor pager plays the halo and pop once the summary is seen again.
@@ -85,6 +112,8 @@ export function SurveyDetailScreen({
   // (without animation under Reduce Motion, where only the haptic plays).
   const scrollRef = useRef<ScrollView>(null)
   const { onScrollBeginDrag, scrollToTop } = useScrollTop(scrollRef)
+  // D-46: the note is the last card; once the keyboard is up the page scrolls it above the keyboard.
+  const noteKeyboard = useScrollIntoViewOnKeyboard(scrollRef)
   const reduceMotion = useReducedMotion()
   const scrolledPulse = useRef(pulseTrigger)
   useEffect(() => {
@@ -119,6 +148,7 @@ export function SurveyDetailScreen({
     apiUrl,
     accessToken,
   })
+  const changeNote = useLatestCallback((text: string) => void onChangeNote(selectedSurvey.id, text))
   const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
   const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
   // 12.2-17: the native large title is not a button, so the name is edited from the "…" menu in
@@ -171,46 +201,17 @@ export function SurveyDetailScreen({
     currentSurveyId: selectedSurvey.id,
     refreshKey: selectedSurvey.status,
   })
-  const resolvedMethod = resolveMethodVersion(data.scoringContext.ibp_method_version)
   // The bottom button floats over the page on a transparent bar (D-27c), so at maximum scroll the
   // last row must end above the bar (its measured height, tab bar clearance included). Without the
   // bar (a finished survey) the page runs under the floating tab bar: the last row needs that room.
   const { barHeight, onBarLayout } = useFinishBarHeight(cta.kind !== "hidden")
-  const contentStyle = useSubPageContentStyle(styles.content, barHeight)
-  const methodLabel = resolvedMethod === IBP_METHOD_V3_2 ? "v3.2" : "v3.0"
-  const rowSections = [
-    {
-      key: "pages",
-      rows: [
-        {
-          key: "context",
-          label: rowsText.context,
-          value: rowsText.contextValue({
-            method: methodLabel,
-            cas: data.scoringContext.ibp_cas !== null ? String(data.scoringContext.ibp_cas) : null,
-          }),
-          onPress: onOpenContext,
-        },
-        {
-          key: "score",
-          label: rowsText.score,
-          value:
-            data.filledFactorCount !== null
-              ? rowsText.scoreValue(data.filledFactorCount)
-              : undefined,
-          onPress: onOpenScore,
-        },
-        {
-          key: "history",
-          label: rowsText.history,
-          value: historyRow.value,
-          multiline: true,
-          accessibilityLabel: historyRow.accessibilityLabel,
-          onPress: historyRow.pressable ? onOpenHistory : undefined,
-        },
-      ],
-    },
-  ]
+  const contentStyle = useSubPageContentStyle(styles.content, barHeight, noteKeyboard.keyboardInset)
+  const rowSections = buildSummaryRowSections(data, historyRow, {
+    onOpenContext,
+    onOpenParcelsPage,
+    onOpenScore,
+    onOpenHistory,
+  })
 
   return (
     <View style={styles.scroll}>
@@ -222,32 +223,60 @@ export function SurveyDetailScreen({
         style={styles.scroll}
         contentContainerStyle={contentStyle}
         contentInsetAdjustmentBehavior={insetBehavior}
+        // The note is a text field: taps reach buttons while the keyboard is up, dragging the page
+        // closes it, and iOS lifts the content above it (D-33). That lift does not reach the last
+        // card in a Release build, so `useScrollIntoViewOnKeyboard` scrolls it above the keyboard
+        // by hand and gives the content its room (D-46).
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
         onScrollBeginDrag={onScrollBeginDrag}
+        onScroll={noteKeyboard.onScroll}
       >
-        <SummaryHeader
-          surveyId={selectedSurvey.id}
-          siteName={activeSiteName}
-          canEdit={canEditSurvey}
-          statusLine={statusLine}
-          onRenameSurvey={onRenameSurvey}
-        />
+        <EntranceView index={ENTRANCE.header}>
+          <SummaryHeader
+            surveyId={selectedSurvey.id}
+            siteName={activeSiteName}
+            canEdit={canEditSurvey}
+            statusLine={statusLine}
+            onRenameSurvey={onRenameSurvey}
+          />
+        </EntranceView>
 
         {!canEditSurvey ? (
-          <AppNotice
-            tone="success"
-            icon="checkmark-done-circle-outline"
-            title={summaryText.submittedTitle}
-            message={summaryText.submittedMessage}
-          />
+          <EntranceView index={ENTRANCE.submittedNotice}>
+            <AppNotice
+              tone="success"
+              icon="checkmark-done-circle-outline"
+              title={summaryText.submittedTitle}
+              message={summaryText.submittedMessage}
+            />
+          </EntranceView>
         ) : null}
 
         {exporting ? <AppNotice tone="info" message={fr.surveyExport.progress} /> : null}
 
-        <ScoreCard
-          scores={data.displayedScores}
-          isDraftView={data.useLocalDraftView}
-          filledFactorCount={data.filledFactorCount}
-          pulseTrigger={shownPulse}
+        <EntranceView index={ENTRANCE.score}>
+          <ScoreCard
+            scores={data.displayedScores}
+            isDraftView={data.useLocalDraftView}
+            filledFactorCount={data.filledFactorCount}
+            pulseTrigger={shownPulse}
+          />
+        </EntranceView>
+
+        <WeatherCard
+          weather={conditions.weather}
+          loading={conditionsLoading}
+          offline={conditionsOffline}
+          visitTooOld={weatherVisitTooOld(
+            conditions.weather,
+            selectedSurvey.created_at,
+            Date.now(),
+          )}
+          submitted={selectedSurvey.status === "submitted"}
+          onOpen={onOpenConditions}
+          entranceIndex={ENTRANCE.weather}
         />
 
         <PhotosStrip
@@ -257,31 +286,42 @@ export function SurveyDetailScreen({
           onTakePhoto={onTakePhoto}
           onPickPhoto={onPickPhoto}
           onDeleteAttachment={onDeleteAttachment}
+          entranceIndex={ENTRANCE.photos}
         />
 
-        <ParcelMapCard
-          apiUrl={apiUrl}
-          accessToken={accessToken}
-          siteName={activeSiteName}
-          displayLocation={detail?.display_location}
-          parcelIds={data.parcelIds}
-          surveyId={selectedSurvey.id}
-          onPress={() => (canEditSurvey ? void onOpenParcels(selectedSurvey.id) : onOpenContext())}
-        />
+        <EntranceView index={ENTRANCE.map}>
+          <ParcelMapCard
+            apiUrl={apiUrl}
+            accessToken={accessToken}
+            siteName={activeSiteName}
+            displayLocation={detail?.display_location}
+            parcelIds={data.parcelIds}
+            surveyId={selectedSurvey.id}
+            refreshKey={selectedSurvey.updated_at}
+            onPress={onOpenParcelsPage}
+          />
+        </EntranceView>
 
-        <SurveyOfflineMapRow
-          apiUrl={apiUrl}
-          accessToken={accessToken}
-          siteName={activeSiteName}
-          displayLocation={detail?.display_location}
-        />
-
-        <AppGroupedList sections={rowSections} />
+        <EntranceView index={ENTRANCE.rows}>
+          <AppGroupedList sections={rowSections} />
+        </EntranceView>
 
         <DetailActions
           survey={selectedSurvey}
           onRetrySurvey={onRetrySurvey}
           onDiscardSurvey={onDiscardSurvey}
+          entranceIndex={ENTRANCE.actions}
+        />
+
+        {/* D-38: the survey note is the last card of the page, after the rows and the actions. */}
+        <SurveyNoteCard
+          editable={canEditSurvey}
+          loaded={conditions.loaded}
+          stored={conditions.note}
+          onChangeNote={changeNote}
+          entranceIndex={ENTRANCE.note}
+          cardRef={noteKeyboard.targetRef}
+          onFieldFocus={noteKeyboard.onFieldFocus}
         />
 
         {/* The debug view shows ids, error codes and raw payloads: dev builds only (D-06). */}

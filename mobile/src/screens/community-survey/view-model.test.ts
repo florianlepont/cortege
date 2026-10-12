@@ -46,6 +46,32 @@ describe("toDisplayedScores", () => {
 })
 
 describe("toFactorEntries", () => {
+  it("carries the doubt and the note of factor_annotations, scores untouched (D-06, D-13)", () => {
+    const plain = toFactorEntries(survey())
+    const entries = toFactorEntries(
+      survey({ factor_annotations: { J: { doubt: true }, A: { note: "lisière", doubt: true } } }),
+    )
+    const byCode = Object.fromEntries(entries)
+
+    expect(byCode.J.doubt).toBe(true)
+    expect(byCode.J.note).toBeUndefined()
+    expect(byCode.A.doubt).toBe(true)
+    expect(byCode.A.note).toBe("lisière")
+    expect(byCode.B.doubt).toBeUndefined()
+    expect(entries.map(([code, e]) => [code, e.score_points, e.selected_class])).toEqual(
+      plain.map(([code, e]) => [code, e.score_points, e.selected_class]),
+    )
+  })
+
+  it("shows no doubt when factor_annotations is null or absent", () => {
+    for (const entries of [
+      toFactorEntries(survey({ factor_annotations: null })),
+      toFactorEntries(survey()),
+    ]) {
+      expect(entries.some(([, e]) => e.doubt || e.note)).toBe(false)
+    }
+  })
+
   it("lists the ten factors in order, with the points of those the survey has", () => {
     const entries = toFactorEntries(survey())
     expect(entries.map(([code]) => code)).toEqual([
