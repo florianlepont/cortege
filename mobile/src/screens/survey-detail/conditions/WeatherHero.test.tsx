@@ -144,6 +144,6 @@ describe("WeatherHero, the big read-out of the Contexte page (D-41)", () => {
     const tree = mount({ ...CLOUDY, sky: "hail" as never })
 
     expect(glyphs(tree)).toEqual(["cloud-outline"])
-    expect(texts(tree)).not.toContain("Ciel")
+    expect(texts(tree)).not.toContain("Conditions")
   })
 })

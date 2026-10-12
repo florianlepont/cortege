@@ -6,9 +6,11 @@ import { notificationAsync } from "../../test/expo-haptics.mock"
 import { setReducedMotion } from "../../test/react-native-reanimated.mock"
 import type { LocalSurvey } from "../storage/types"
 import { Alert } from "react-native"
+import { brandMotion } from "../app/brand-tokens"
 import { exportAndShareSurveyPdf } from "../app/survey-pdf-export"
 import { fr } from "../i18n"
 import { FrameLargeTitleContext } from "../ui/frame-large-title"
+import { TitledScrollView } from "../ui/TitledScrollView"
 import { SurveyDetailScreen } from "./SurveyDetailScreen"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 import { useHistoryRow } from "./survey-detail/useHistoryRow"
@@ -74,6 +76,17 @@ jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
 jest.mock("../app/dev-tools", () => ({ shouldShowDevTools: () => false }))
 jest.mock("../app/survey-pdf-export", () => ({ exportAndShareSurveyPdf: jest.fn() }))
 jest.mock("./survey-screen-helpers", () => ({ selectPreviewCandidates: () => [] }))
+jest.mock("../ui/EntranceView", () => ({ EntranceView: "EntranceView" }))
+let mockKeyboardInset = 0
+let mockCanEdit = true
+const mockKeyboard = {
+  targetRef: { current: null },
+  onFieldFocus: jest.fn(),
+  onScroll: jest.fn(),
+}
+jest.mock("../ui/useScrollIntoViewOnKeyboard", () => ({
+  useScrollIntoViewOnKeyboard: () => ({ ...mockKeyboard, keyboardInset: mockKeyboardInset }),
+}))
 jest.mock("../ui/AppActionSheet", () => ({ AppActionSheet: "AppActionSheet" }))
 jest.mock("../ui/AppGroupedList", () => ({ AppGroupedList: "AppGroupedList" }))
 jest.mock("../ui/AppNotice", () => ({ AppNotice: "AppNotice" }))
@@ -123,7 +136,7 @@ jest.mock("./survey-detail/useSurveyDetailData", () => ({
       ["not-a-factor", { score_points: 1 }],
     ],
     useLocalDraftView: true,
-    canEditSurvey: true,
+    canEditSurvey: mockCanEdit,
     canFinishNow: false,
     isComplete: false,
     filledFactorCount: 2,
@@ -191,13 +204,22 @@ function update(tree: ReactTestRenderer, status: string): void {
 const byType = (tree: ReactTestRenderer, type: string): ReactTestInstance[] =>
   tree.root.findAll((n) => (n.type as unknown) === type)
 
+/** The sections of the page in order: an `EntranceView` wrapper stands for the section inside it. */
+function sectionOrder(scroll: ReactTestInstance): string[] {
+  return scroll.children.map((child) => {
+    const node = child as ReactTestInstance
+    if ((node.type as unknown) !== "EntranceView") return String(node.type)
+    return String((node.children[0] as ReactTestInstance).type)
+  })
+}
+
 describe("SurveyDetailScreen summary", () => {
   test("has no factor bar chart and no glass card: the chart lives on the score page only (D-24)", () => {
     const tree = mount("draft")
     expect(byType(tree, "FactorBarsChart")).toHaveLength(0)
     expect(byType(tree, "AppCard")).toHaveLength(0)
     const scroll = byType(tree, "ScrollView")[0]
-    const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
+    const order = sectionOrder(scroll)
     // D-41: the score card comes first, the compact weather card right below it, then the photos.
     expect(order.indexOf("ScoreCard")).toBeGreaterThan(order.indexOf("SummaryHeader"))
     expect(order.indexOf("WeatherCard")).toBe(order.indexOf("ScoreCard") + 1)
@@ -207,7 +229,7 @@ describe("SurveyDetailScreen summary", () => {
 
   test("D-38: the survey note is the last card, after the rows and the survey actions", () => {
     const scroll = byType(mount("draft"), "ScrollView")[0]
-    const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
+    const order = sectionOrder(scroll)
     expect(order.indexOf("SurveyNoteCard")).toBeGreaterThan(order.indexOf("AppGroupedList"))
     expect(order.indexOf("SurveyNoteCard")).toBeGreaterThan(order.indexOf("DetailActions"))
     expect(order.indexOf("SurveyNoteCard")).toBe(order.length - 1)
@@ -247,6 +269,91 @@ describe("SurveyDetailScreen summary", () => {
     expect(scroll.props.keyboardShouldPersistTaps).toBe("handled")
     expect(scroll.props.keyboardDismissMode).toBe("on-drag")
     expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true)
+  })
+
+  test("D-46: every section enters in reading order, the weather card in its place like the others", () => {
+    const tree = mount("draft")
+    const scroll = byType(tree, "ScrollView")[0]
+    // The always-drawn sections are wrapped by the page, in this order.
+    const wrapped = scroll.children
+      .filter((child) => (child as ReactTestInstance).type === ("EntranceView" as never))
+      .map((child) => ({
+        index: (child as ReactTestInstance).props.index as number,
+        section: String(((child as ReactTestInstance).children[0] as ReactTestInstance).type),
+      }))
+    expect(wrapped.map((item) => item.section)).toEqual([
+      "SummaryHeader",
+      "ScoreCard",
+      "ParcelMapCard",
+      "AppGroupedList",
+    ])
+    // The sections that can draw nothing get their slot as a prop and wrap their own content.
+    const slots = {
+      WeatherCard: byType(tree, "WeatherCard")[0].props.entranceIndex,
+      PhotosStrip: byType(tree, "PhotosStrip")[0].props.entranceIndex,
+      DetailActions: byType(tree, "DetailActions")[0].props.entranceIndex,
+      SurveyNoteCard: byType(tree, "SurveyNoteCard")[0].props.entranceIndex,
+    }
+    const bySection = new Map<string, number>([
+      ...wrapped.map((item) => [item.section, item.index] as [string, number]),
+      ...Object.entries(slots),
+    ])
+    const readingOrder = [
+      "SummaryHeader",
+      "ScoreCard",
+      "WeatherCard",
+      "PhotosStrip",
+      "ParcelMapCard",
+      "AppGroupedList",
+      "DetailActions",
+      "SurveyNoteCard",
+    ]
+    const indices = readingOrder.map((section) => bySection.get(section))
+    expect(indices.every((index) => typeof index === "number")).toBe(true)
+    // Strictly increasing, and inside the stagger the motion tokens allow (no two at once).
+    expect(indices).toEqual([...indices].sort((a, b) => (a as number) - (b as number)))
+    expect(new Set(indices).size).toBe(indices.length)
+    expect(Math.max(...(indices as number[]))).toBeLessThanOrEqual(brandMotion.staggerMax)
+  })
+
+  test("D-46: a submitted survey also enters its confirmation notice, before the score card", () => {
+    mockCanEdit = false
+    const scroll = byType(mount("submitted"), "ScrollView")[0]
+    mockCanEdit = true
+    expect(sectionOrder(scroll).slice(0, 3)).toEqual(["SummaryHeader", "AppNotice", "ScoreCard"])
+    const entrances = scroll.children.filter(
+      (child) => (child as ReactTestInstance).type === ("EntranceView" as never),
+    ) as ReactTestInstance[]
+    const indices = entrances.map((entrance) => entrance.props.index as number)
+    expect(indices.slice(0, 3)).toEqual([...indices.slice(0, 3)].sort((a, b) => a - b))
+  })
+
+  test("D-46: the note card is measured and told about the focus, and the page tracks its scroll", () => {
+    const tree = mount("draft")
+    const note = byType(tree, "SurveyNoteCard")[0]
+    expect(note.props.cardRef).toBe(mockKeyboard.targetRef)
+    expect(note.props.onFieldFocus).toBe(mockKeyboard.onFieldFocus)
+    expect(tree.root.findByType(TitledScrollView).props.onScroll).toBe(mockKeyboard.onScroll)
+  })
+
+  test("D-46: the content gets the keyboard's room at the bottom while it is up, and loses it after", () => {
+    const paddingBottom = (tree: ReactTestRenderer) => {
+      const style = byType(tree, "ScrollView")[0].props.contentContainerStyle as unknown[]
+      return style.reduce<number>(
+        (found, item) =>
+          typeof (item as { paddingBottom?: number } | null)?.paddingBottom === "number"
+            ? (item as { paddingBottom: number }).paddingBottom
+            : found,
+        0,
+      )
+    }
+    const closed = paddingBottom(mount("draft"))
+    mockKeyboardInset = 336
+    const open = paddingBottom(mount("draft"))
+    expect(open).toBe(336 + PAGE_END_MARGIN)
+    expect(open).toBeGreaterThan(closed)
+    mockKeyboardInset = 0
+    expect(paddingBottom(mount("draft"))).toBe(closed)
   })
 
   test("the card is told whether the survey is submitted, whether a lookup runs and whether it is offline", () => {

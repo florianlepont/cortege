@@ -154,14 +154,14 @@ describe("buildConditionsBlock weather rows", () => {
     })
 
     expect(observers).toContain(
-      "Météo-France, mesure du 10/10/2026 à 14:30, ciel saisi par l&#39;observateur",
+      "Météo-France, mesure du 10/10/2026 à 14:30, conditions saisies par l&#39;observateur",
     )
 
     const { html: undated } = required({
       note: null,
       weather: { ...WEATHER, observed_at: undefined, sky: "fog", edited: ["sky"] },
     })
-    expect(undated).toContain(">Météo-France, ciel saisi par l&#39;observateur<")
+    expect(undated).toContain(">Météo-France, conditions saisies par l&#39;observateur<")
     expect(observers).not.toContain("certaines valeurs")
   })
 
@@ -181,7 +181,7 @@ describe("buildConditionsBlock weather rows", () => {
       weather: { sky: "clear", source: "manual", edited: ["sky"] },
     })
 
-    expect(manual).toContain("Ciel saisi par l&#39;observateur")
+    expect(manual).toContain("Conditions saisies par l&#39;observateur")
     expect(manual).not.toContain("Météo-France")
     expect(manual).not.toContain("mesure du")
 

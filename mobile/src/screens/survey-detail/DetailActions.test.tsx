@@ -33,6 +33,7 @@ jest.mock("react-native", () => {
   }
 })
 
+jest.mock("../../ui/EntranceView", () => ({ EntranceView: "EntranceView" }))
 jest.mock("../../ui/AppCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -72,6 +73,7 @@ const render = (
   surveyOverrides: Partial<LocalSurvey> = {},
   onRetrySurvey = jest.fn(),
   onDiscardSurvey = jest.fn(),
+  entranceIndex?: number,
 ): ReactTestRenderer => {
   let tree: ReactTestRenderer | undefined
   act(() => {
@@ -80,6 +82,7 @@ const render = (
         survey={{ ...survey, ...surveyOverrides } as LocalSurvey}
         onRetrySurvey={onRetrySurvey}
         onDiscardSurvey={onDiscardSurvey}
+        entranceIndex={entranceIndex}
       />,
     )
   })
@@ -93,6 +96,31 @@ const findDiscardLink = (tree: ReactTestRenderer): ReactTestInstance | undefined
   tree.root.findAll(
     (node) => (node.type as unknown) === "Text" && node.props.children === t.discardLocalChange,
   )[0]
+
+describe("DetailActions entrance (D-46)", () => {
+  const entrances = (tree: ReactTestRenderer) =>
+    tree.root.findAll((n) => (n.type as unknown) === "EntranceView")
+
+  test("the notice enters at the slot the page gives it; nothing to report draws no wrapper", () => {
+    const withError = render(
+      { last_sync_error: "HTTP 500 Internal Server Error" },
+      undefined,
+      undefined,
+      7,
+    )
+    expect(entrances(withError)).toHaveLength(1)
+    expect(entrances(withError)[0].props.index).toBe(7)
+    expect(entrances(render({ last_sync_error: "HTTP 500 Internal Server Error" }))).toHaveLength(0)
+    expect(
+      render(
+        { last_sync_error: null, last_sync_error_code: null },
+        undefined,
+        undefined,
+        7,
+      ).toJSON(),
+    ).toBeNull()
+  })
+})
 
 describe("DetailActions", () => {
   test("renders nothing when there is no sync error to report", () => {

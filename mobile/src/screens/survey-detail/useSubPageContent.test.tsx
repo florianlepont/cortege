@@ -24,10 +24,10 @@ afterAll(() => {
 
 const base = { padding: 16, gap: 24, paddingBottom: 48 }
 
-function readStyle(barHeight?: number | null): unknown {
+function readStyle(barHeight?: number | null, keyboardInset?: number): unknown {
   let result: unknown
   function Probe() {
-    result = useSubPageContentStyle(base, barHeight)
+    result = useSubPageContentStyle(base, barHeight, keyboardInset)
     return null
   }
   act(() => {
@@ -59,6 +59,14 @@ describe("useSubPageContentStyle", () => {
     expect(readStyle(158)).toEqual([base, { paddingBottom: 158 + PAGE_END_MARGIN }])
     const [, extra] = readStyle(158) as [unknown, { paddingBottom: number }]
     expect(extra.paddingBottom).toBeGreaterThan(mockClearance + PAGE_END_MARGIN)
+  })
+
+  test("while the keyboard is up the bottom room is its height plus the margin, never less than the bars need (D-46)", () => {
+    // 300 + 16 beats the 116 of the tab bar: the last card can reach the top of the keyboard.
+    expect(readStyle(null, 300)).toEqual([base, { paddingBottom: 300 + PAGE_END_MARGIN }])
+    // A small inset leaves the bar padding alone; no keyboard is the same as before.
+    expect(readStyle(null, 40)).toEqual([base, { paddingBottom: 100 + PAGE_END_MARGIN }])
+    expect(readStyle(null, 0)).toEqual(readStyle(null))
   })
 
   test("no bar (null) means the tab bar clearance alone", () => {

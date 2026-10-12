@@ -73,12 +73,6 @@ export function createWizardStyles(theme: BrandTheme) {
       paddingTop: brandSpacing4.xl + brandSpacing4.xs,
       gap: brandSpacing4.md,
     },
-    // The question and, on the method step, the IBP info glyph beside it (D-11).
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.sm,
-    },
     // The question keeps its 30 on 35 size so the step layout does not move (D-05); only the
     // family follows the screen title role.
     title: {

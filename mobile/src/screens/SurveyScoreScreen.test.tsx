@@ -82,20 +82,14 @@ function render(largeTitle = false): ReactTestRenderer {
 }
 
 describe("SurveyScoreScreen (variant I)", () => {
-  test("renders title, IBP info row, breakdown, a glass card with the ten bars, then the factor rows, in that order", () => {
+  test("renders title, breakdown, a glass card with the ten bars, then the factor rows, in that order", () => {
     const tree = render()
     const scroll = tree.root.findByType("ScrollView" as never)
     const order = scroll.children.map((child) => {
       const type = (child as { type: unknown }).type
       return typeof type === "function" ? type.name : type
     })
-    expect(order).toEqual([
-      "PageTitle",
-      "AbbreviationInfo",
-      "ScoreBreakdown",
-      "AppCard",
-      "FactorsList",
-    ])
+    expect(order).toEqual(["PageTitle", "ScoreBreakdown", "AppCard", "FactorsList"])
     const card = tree.root.findByType("AppCard" as never)
     expect(card.props.variant).toBe("glass")
     const chart = tree.root.findByType("FactorBarsChart" as never)
@@ -103,15 +97,11 @@ describe("SurveyScoreScreen (variant I)", () => {
     expect(chart.props.entries).toEqual({ A: 3, B: null, "not-a-factor": 1 })
   })
 
-  test("explains IBP with the info row under the title (D-11), also under the large title", () => {
+  test("draws no IBP info control under the title (D-47), also under the large title", () => {
     for (const largeTitle of [false, true]) {
       const tree = render(largeTitle)
-      const anchors = tree.root.findAll(
-        (n) => n.props.testID === "abbreviation-info-IBP" && (n.type as unknown) === "Pressable",
-      )
-      expect(anchors).toHaveLength(1)
-      expect(anchors[0].props.accessibilityLabel).toBe("Que signifie IBP ?")
-      expect(flattenStyle(anchors[0].props.style).minHeight).toBe(44)
+      expect(tree.root.findAll((n) => n.props.testID === "abbreviation-info-IBP")).toHaveLength(0)
+      expect(tree.root.findAll((n) => (n.type as unknown) === "AbbreviationInfo")).toHaveLength(0)
     }
   })
 

@@ -105,9 +105,9 @@ describe("fr.surveyExport conditions", () => {
   test("the source values, Météo-France first (D-26, D-37)", () => {
     expect(conditions.sourceValue.provider).toBe("Météo-France")
     expect(conditions.sourceValue.providerObserverSky).toBe(
-      "Météo-France, ciel saisi par l'observateur",
+      "Météo-France, conditions saisies par l'observateur",
     )
-    expect(conditions.sourceValue.manual).toBe("Ciel saisi par l'observateur")
+    expect(conditions.sourceValue.manual).toBe("Conditions saisies par l'observateur")
   })
 
   test("the dated source values name the measurement (D-31)", () => {
@@ -116,7 +116,7 @@ describe("fr.surveyExport conditions", () => {
       "Météo-France, mesure du 12/10/2026 à 04:00",
     )
     expect(conditions.sourceValue.providerObserverSkyDated(stamp)).toBe(
-      "Météo-France, mesure du 12/10/2026 à 04:00, ciel saisi par l'observateur",
+      "Météo-France, mesure du 12/10/2026 à 04:00, conditions saisies par l'observateur",
     )
   })
 })

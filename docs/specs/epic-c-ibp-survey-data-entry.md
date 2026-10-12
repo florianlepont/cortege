@@ -229,7 +229,7 @@ Acceptance criteria
 
 - A draft that has parcels but never got a survey time (made before phase 27, pulled, seeded) is stamped when its parcels change; as a safety net the lookup also takes its creation time as the survey time while that is within 24 hours, and never invents a time otherwise (D-39).
 
-- Wherever the provider values are shown or printed (Conditions section, survey summary, PDF) the line "Source : Météo-France" is shown; when the sky shown is the observer's it adds "ciel saisi par l'observateur", and a weather with only the observer's sky carries no Météo-France mention.
+- Wherever the provider values are shown or printed (Conditions section, survey summary, PDF) the line "Source : Météo-France" is shown; when the sky shown is the observer's it adds "conditions saisies par l'observateur", and a weather with only the observer's sky carries no Météo-France mention.
 
 - The weather syncs with the survey, is read-only once the survey is submitted, and is visible to the members who can read the survey.
 

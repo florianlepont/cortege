@@ -1,6 +1,6 @@
 import { normalizeNoteText, SURVEY_NOTE_MAX_LENGTH } from "@cortege/ibp-domain"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { StyleSheet } from "react-native"
+import { useCallback, useEffect, useMemo, useRef, useState, type Ref } from "react"
+import { StyleSheet, View } from "react-native"
 import {
   brandDefaultFontFamily,
   brandSpacing4,
@@ -11,6 +11,7 @@ import { type BrandTheme, useBrandTheme } from "../../../app/theme"
 import { fr } from "../../../i18n"
 import { AppCard } from "../../../ui/AppCard"
 import { AppText as Text } from "../../../ui/AppText"
+import { OptionalEntrance } from "../OptionalEntrance"
 import { NoteField } from "../../../ui/NoteField"
 
 const t = fr.conditions
@@ -26,6 +27,12 @@ type SurveyNoteCardProps = {
   /** The note as stored in the draft. */
   stored: string | null
   onChangeNote: (text: string) => void
+  /** Slot of the card in the page's entrance stagger (D-46); no entrance without it. */
+  entranceIndex?: number
+  /** The editable card's outer view, for the page to measure when the keyboard comes up (D-46). */
+  cardRef?: Ref<View>
+  /** The note field took focus: the page scrolls it above the keyboard (D-46). */
+  onFieldFocus?: () => void
 }
 
 /**
@@ -34,26 +41,50 @@ type SurveyNoteCardProps = {
  * typing stops, on blur and when the card goes away. After submit, or for someone else's survey: the
  * note as plain selectable text, and no card at all when it is empty.
  */
-export function SurveyNoteCard({ editable, loaded, stored, onChangeNote }: SurveyNoteCardProps) {
+export function SurveyNoteCard({
+  editable,
+  loaded,
+  stored,
+  onChangeNote,
+  entranceIndex,
+  cardRef,
+  onFieldFocus,
+}: SurveyNoteCardProps) {
   if (!loaded) return null
-  if (!editable) return <ReadOnlyNote stored={stored} />
-  return <EditableNote stored={stored} onChangeNote={onChangeNote} />
+  if (!editable) return <ReadOnlyNote stored={stored} entranceIndex={entranceIndex} />
+  return (
+    <EditableNote
+      stored={stored}
+      onChangeNote={onChangeNote}
+      entranceIndex={entranceIndex}
+      cardRef={cardRef}
+      onFieldFocus={onFieldFocus}
+    />
+  )
 }
 
-function ReadOnlyNote({ stored }: { stored: string | null }) {
+function ReadOnlyNote({
+  stored,
+  entranceIndex,
+}: {
+  stored: string | null
+  entranceIndex: number | undefined
+}) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const text = stored !== null && stored.trim().length > 0 ? stored : null
   if (text === null) return null
   return (
-    <AppCard variant="glass" padding={brandSpacing4.md} style={styles.card}>
-      <Text style={styles.label} accessibilityRole="header">
-        {t.note.label}
-      </Text>
-      <Text style={styles.text} selectable testID="survey-note-text">
-        {text}
-      </Text>
-    </AppCard>
+    <OptionalEntrance index={entranceIndex}>
+      <AppCard variant="glass" padding={brandSpacing4.md} style={styles.card}>
+        <Text style={styles.label} accessibilityRole="header">
+          {t.note.label}
+        </Text>
+        <Text style={styles.text} selectable testID="survey-note-text">
+          {text}
+        </Text>
+      </AppCard>
+    </OptionalEntrance>
   )
 }
 
@@ -65,9 +96,15 @@ function ReadOnlyNote({ stored }: { stored: string | null }) {
 function EditableNote({
   stored,
   onChangeNote,
+  entranceIndex,
+  cardRef,
+  onFieldFocus,
 }: {
   stored: string | null
   onChangeNote: (text: string) => void
+  entranceIndex: number | undefined
+  cardRef: Ref<View> | undefined
+  onFieldFocus: (() => void) | undefined
 }) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -109,30 +146,35 @@ function EditableNote({
   }
 
   return (
-    <AppCard variant="glass" padding={brandSpacing4.md} style={styles.card}>
-      <NoteField
-        testID="survey-note-field"
-        label={t.note.label}
-        value={text}
-        maxLength={SURVEY_NOTE_MAX_LENGTH}
-        placeholder={t.note.placeholder}
-        helper={t.note.visibility}
-        counterLabel={(count) => t.note.counter({ count, max: SURVEY_NOTE_MAX_LENGTH })}
-        counterA11y={(count) => t.note.counterA11y({ count, max: SURVEY_NOTE_MAX_LENGTH })}
-        onChangeText={change}
-        onFocus={() => {
-          focused.current = true
-        }}
-        onCommit={() => {
-          focused.current = false
-          flush()
-        }}
-        minHeight={112}
-        maxHeight={240}
-        accessibilityLabel={t.note.label}
-        accessibilityHint={t.note.a11yHint}
-      />
-    </AppCard>
+    <OptionalEntrance index={entranceIndex}>
+      <View ref={cardRef} collapsable={false}>
+        <AppCard variant="glass" padding={brandSpacing4.md} style={styles.card}>
+          <NoteField
+            testID="survey-note-field"
+            label={t.note.label}
+            value={text}
+            maxLength={SURVEY_NOTE_MAX_LENGTH}
+            placeholder={t.note.placeholder}
+            helper={t.note.visibility}
+            counterLabel={(count) => t.note.counter({ count, max: SURVEY_NOTE_MAX_LENGTH })}
+            counterA11y={(count) => t.note.counterA11y({ count, max: SURVEY_NOTE_MAX_LENGTH })}
+            onChangeText={change}
+            onFocus={() => {
+              focused.current = true
+              onFieldFocus?.()
+            }}
+            onCommit={() => {
+              focused.current = false
+              flush()
+            }}
+            minHeight={112}
+            maxHeight={240}
+            accessibilityLabel={t.note.label}
+            accessibilityHint={t.note.a11yHint}
+          />
+        </AppCard>
+      </View>
+    </OptionalEntrance>
   )
 }
 

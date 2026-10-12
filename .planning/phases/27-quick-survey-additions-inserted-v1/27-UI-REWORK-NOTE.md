@@ -55,7 +55,7 @@ Decisions D-37 to D-40 are in `27-CONTEXT.md`.
 - Status line (measurements only), the eight sky chips (the only editable value; the chosen chip
   again clears it), then temperature, wind, rain over 24 h and the observation time as read-only
   rows, then the dated source sentence ("Source : Météo-France, mesure du 12/10/2026 à 12:00", with
-  ", ciel saisi par l'observateur" when the sky is theirs).
+  ", conditions saisies par l'observateur" when the sky is theirs).
 - Gone: the four editable fields, "Remplir à nouveau" and its alert, the field-focus scrolling.
 
 ## Code map
@@ -90,11 +90,11 @@ Decision D-41 (amends D-40) is in `27-CONTEXT.md`. The big weather card was mean
 
 ## Contexte, order
 
-1. One weather card (`WeatherBlock`) under the "Météo" section header: big read-out (`WeatherHero`:
-   glyph tile, temperature numeral, sky label, wind / rain over 24 h / time columns), status line,
-   the eight sky chips (folded behind a small "Modifier le ciel" button while Météo-France's values
+1. One weather card (`WeatherBlock`) with the "Météo" title inside its tile (D-46): big read-out (`WeatherHero`:
+   glyph tile, temperature numeral, sky label, wind / rain over 24 h / time columns), status line (none while Météo-France's values show),
+   the eight sky chips (folded behind a small "Modifier les conditions" button while Météo-France's values
    show, open with no button otherwise, D-43), the dated source sentence ("Source : Météo-France, mesure du 12/10/2026 à
-   12:00", with ", ciel saisi par l'observateur" when the sky is theirs).
+   12:00", with ", conditions saisies par l'observateur" when the sky is theirs).
 2. Then the IBP method and cas editor.
 3. `section: "conditions"` no longer scrolls (the weather is at the top).
 
@@ -104,7 +104,7 @@ Decision D-41 (amends D-40) is in `27-CONTEXT.md`. The big weather card was mean
   `areaAccessibilityLabel`).
 - Components: `WeatherCard.tsx` (compact), `WeatherHero.tsx` (big read-out), `WeatherBlock.tsx`.
 - Catalogue: `fr.conditions.summary.compactEmpty`, `compactOffline`, `compactTooOld`,
-  `fr.conditions.weather.status.tooOld`, `fr.conditions.sky.edit` / `close`.
+  `fr.conditions.weather.status.tooOld`, `fr.conditions.skyRow.edit` / `close`.
 - A draft whose visit is older than 24 h gets an explanation instead of "Réessayer" (D-42,
   `weatherVisitTooOld`, the same window rule as the prefill hook).
 - The weather is filled at the first selection of parcels only (D-44): a later parcel edit changes
@@ -114,3 +114,20 @@ Decision D-41 (amends D-40) is in `27-CONTEXT.md`. The big weather card was mean
 
 - The read-only Contexte of a submitted survey keeps its grouped rows and source line.
 - The API, the package, the PDF and the provider code are untouched.
+
+## Polish round (D-46, iPhone Release build)
+
+Six findings, all in the mobile app; the API, the package and the provider code are untouched.
+
+- Source once: the status line is gone while the provider's values show, only the final
+  "Source : Météo-France, mesure du ... à ..." line stays.
+- Wording: "ciel" is "conditions" in everything a person reads (Conditions, Non indiquées, Modifier les
+  conditions, ", conditions saisies par l'observateur", status and summary sentences, PDF block).
+- Title inside the tile, no subtitle: "Météo" is the header of the weather card like "Méthode et station"
+  is of its card; "Météo du jour. Facultatif." is removed.
+- One entrance for the whole summary: every section slides up in reading order (slots 0 to 8 in
+  `SurveyDetailScreen`), the weather card has no entrance of its own any more; sections that can be empty
+  take `entranceIndex` and wrap themselves (`survey-detail/OptionalEntrance.tsx`).
+- Note above the keyboard: `ui/useScrollIntoViewOnKeyboard.ts` (reusable: `targetRef`, `onFieldFocus`,
+  `onScroll`, `keyboardInset`), wired to the summary's scroll view and the note card.
+- Also D-47: the "Que signifie IBP ?" help is removed (see `27-CONTEXT.md`).

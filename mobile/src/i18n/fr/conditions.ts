@@ -8,11 +8,10 @@ export const conditionsFr = {
   // The Contexte page section (D-33: the note left it, so it is the weather only).
   section: {
     title: "Météo",
-    subtitle: "Météo du jour. Facultatif.",
   },
   sky: {
-    groupLabel: "Ciel",
-    groupA11y: "Ciel du jour",
+    groupLabel: "Conditions",
+    groupA11y: "Conditions météo du jour",
     clear: "Dégagé",
     partly_cloudy: "Peu nuageux",
     cloudy: "Nuageux",
@@ -25,11 +24,11 @@ export const conditionsFr = {
   // The sky row of the Contexte card while Météo-France's values are shown (D-43): the chips are
   // folded away behind a small button, the current sky stays readable.
   skyRow: {
-    none: "Non indiqué",
-    edit: "Modifier le ciel",
-    editA11y: "Modifier le ciel du relevé",
+    none: "Non indiquées",
+    edit: "Modifier les conditions",
+    editA11y: "Modifier les conditions météo du relevé",
     close: "Fermer",
-    closeA11y: "Fermer le choix du ciel",
+    closeA11y: "Fermer le choix des conditions",
   },
   weather: {
     title: "Météo",
@@ -41,20 +40,18 @@ export const conditionsFr = {
       time: "Heure de la mesure",
     },
     // The status line speaks of the measurements only; the sky is the observer's own choice (D-37).
+    // There is none while the provider's values are shown: the read-out and the source line say it (D-46).
     status: {
       noParcel:
-        "Les mesures de Météo-France s'affichent une fois la parcelle choisie. Vous pouvez déjà indiquer le ciel.",
+        "Les mesures de Météo-France s'affichent une fois la parcelle choisie. Vous pouvez déjà indiquer les conditions.",
       loading: "Recherche de la météo…",
-      prefilled: "Mesures de Météo-France pour l'heure du relevé.",
-      prefilledDated: ({ date, time }: DataStamp) =>
-        `Mesures de Météo-France, mesure du ${date} à ${time}.`,
       offline:
-        "Pas de connexion. Les mesures de Météo-France arriveront quand le réseau reviendra. Vous pouvez déjà indiquer le ciel.",
+        "Pas de connexion. Les mesures de Météo-France arriveront quand le réseau reviendra. Vous pouvez déjà indiquer les conditions.",
       unavailable:
-        "Les mesures de Météo-France ne sont pas disponibles pour le moment. Elles arriveront plus tard si possible. Vous pouvez indiquer le ciel.",
+        "Les mesures de Météo-France ne sont pas disponibles pour le moment. Elles arriveront plus tard si possible. Vous pouvez indiquer les conditions.",
       // D-42: a visit older than 24 h is never looked up, so no retry and no promise of a fill.
       tooOld:
-        "Cette visite date de plus de 24\u00a0h : Météo-France ne garde pas d'historique plus ancien. Vous pouvez choisir le ciel.",
+        "Cette visite date de plus de 24\u00a0h : Météo-France ne garde pas d'historique plus ancien. Vous pouvez choisir les conditions.",
       retry: "Réessayer",
     },
     source: "Source : Météo-France",
@@ -62,9 +59,9 @@ export const conditionsFr = {
     sourceDated: ({ date, time }: DataStamp) =>
       `Source : Météo-France, mesure du ${date} à ${time}`,
     // The sky shown is the observer's: it is never presented as the provider's (D-31, D-37).
-    sourceObserverSky: "Source : Météo-France, ciel saisi par l'observateur",
+    sourceObserverSky: "Source : Météo-France, conditions saisies par l'observateur",
     sourceObserverSkyDated: ({ date, time }: DataStamp) =>
-      `Source : Météo-France, mesure du ${date} à ${time}, ciel saisi par l'observateur`,
+      `Source : Météo-France, mesure du ${date} à ${time}, conditions saisies par l'observateur`,
     // One value with its unit, for the label and value rows of the read-only card.
     values: {
       temperature: (value: string) => `${value}\u00a0°C`,
@@ -91,21 +88,21 @@ export const conditionsFr = {
   readOnly: {
     empty: "Météo non renseignée.",
     // Only the sky, chosen by the observer, with no measurement from the provider (D-37).
-    sourceManual: "Ciel saisi par l'observateur.",
+    sourceManual: "Conditions saisies par l'observateur.",
   },
   summary: {
     emptyTitle: "Météo du relevé",
     // The friendly invitation of a draft with no weather yet; opens the Contexte page (D-40). The
     // title is also the headline of the Contexte read-out when only a time exists.
-    emptyBody: "Se remplit toute seule avec la parcelle. Vous pouvez choisir le ciel.",
+    emptyBody: "Se remplit toute seule avec la parcelle. Vous pouvez choisir les conditions.",
     // Offline is a calm state, never an error tone.
     offlineBody:
-      "Pas de connexion. Les mesures arriveront avec le réseau. Vous pouvez choisir le ciel.",
+      "Pas de connexion. Les mesures arriveront avec le réseau. Vous pouvez choisir les conditions.",
     // The slim one-line forms of the compact card (D-41).
-    compactEmpty: "Météo : se remplit avec la parcelle, ciel au choix.",
+    compactEmpty: "Météo : se remplit avec la parcelle, conditions au choix.",
     compactOffline: "Météo : pas de connexion, les mesures arriveront avec le réseau.",
     // D-42: calm, no mention of an automatic fill.
-    compactTooOld: "Visite de plus de 24\u00a0h : météo non disponible, ciel au choix.",
+    compactTooOld: "Visite de plus de 24\u00a0h : météo non disponible, conditions au choix.",
     loading: "Recherche de la météo…",
     open: "Ouvrir la météo du relevé",
     openWithLine: (line: string) => `Ouvrir la météo du relevé. ${line}`,

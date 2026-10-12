@@ -175,7 +175,7 @@ describe("WeatherCard with measurements (compact, D-41)", () => {
     const { tree } = mount({ weather: { ...CLOUDY, sky: "hail" as never } })
 
     expect(glyphs(tree)).toContain("cloud-outline")
-    expect(texts(tree)).not.toContain("Ciel")
+    expect(texts(tree)).not.toContain("Conditions")
   })
 
   test("the whole card is one button that opens the section, with the weather in its label", () => {
@@ -193,12 +193,16 @@ describe("WeatherCard with measurements (compact, D-41)", () => {
     expect(area.findAll((n) => n.props.testID === "weather-card-mention").length).toBeGreaterThan(0)
   })
 
-  test("enters once, at the top of the screen, and draws no note", () => {
-    const { tree } = mount({ weather: CLOUDY })
+  test("enters once, at the slot the summary gives it (D-46), and draws no note", () => {
+    const { tree } = mount({ weather: CLOUDY, entranceIndex: 3 })
 
-    const entrance = tree.root.findAll((n) => (n.type as unknown) === "EntranceView")[0]
-    expect(entrance.props.index).toBe(0)
+    const entrances = tree.root.findAll((n) => (n.type as unknown) === "EntranceView")
+    expect(entrances).toHaveLength(1)
+    expect(entrances[0].props.index).toBe(3)
     expect(maybeByTestId(tree, "conditions-card-note")).toBeUndefined()
+    // Without a slot the card plays no entrance of its own.
+    const bare = mount({ weather: CLOUDY }).tree
+    expect(bare.root.findAll((n) => (n.type as unknown) === "EntranceView")).toHaveLength(0)
   })
 })
 

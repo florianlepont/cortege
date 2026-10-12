@@ -59,7 +59,7 @@ describe("fr.conditions", () => {
 
   test("the attribution of the provider (D-26) and the visibility helper (D-06)", () => {
     expect(conditions.weather.source).toBe("Source : Météo-France")
-    expect(conditions.readOnly.sourceManual).toBe("Ciel saisi par l'observateur.")
+    expect(conditions.readOnly.sourceManual).toBe("Conditions saisies par l'observateur.")
     expect(conditions.note.visibility).toBe("Visible par les membres qui peuvent lire ce relevé.")
   })
 
@@ -68,18 +68,15 @@ describe("fr.conditions", () => {
     expect(conditions.weather.sourceDated(stamp)).toBe(
       "Source : Météo-France, mesure du 12/10/2026 à 04:00",
     )
-    expect(conditions.weather.status.prefilledDated(stamp)).toBe(
-      "Mesures de Météo-France, mesure du 12/10/2026 à 04:00.",
-    )
   })
 
   test("a sky the observer set is never presented as the provider's (D-37)", () => {
     const stamp = { date: "12/10/2026", time: "04:00" }
     expect(conditions.weather.sourceObserverSky).toBe(
-      "Source : Météo-France, ciel saisi par l'observateur",
+      "Source : Météo-France, conditions saisies par l'observateur",
     )
     expect(conditions.weather.sourceObserverSkyDated(stamp)).toBe(
-      "Source : Météo-France, mesure du 12/10/2026 à 04:00, ciel saisi par l'observateur",
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00, conditions saisies par l'observateur",
     )
   })
 

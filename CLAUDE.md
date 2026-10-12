@@ -206,7 +206,7 @@ The mobile app is designed to work without connectivity. All survey data is pers
 - All user-facing text comes from the typed French catalogue `fr` (`mobile/src/i18n/fr/`, one module per screen or area)
 - Status-line texts are `StatusMessage` values, built only by catalogue functions; raw technical detail goes to `logStatusDetail` (debug console, dev builds only)
 - No em dash (U+2014) in any string, template or JSX text under `mobile/src` (no file is exempt), enforced by `src/__checks__/catalogue-dash.test.ts`
-- Abbreviations are written out where they fit, else explained by `AbbreviationInfo` (`ui/AbbreviationInfo.tsx`) from `fr.abbreviations`; the allowlist is units, OK, PDF, GPS and "ex."; IBP is defined once and explained on the main headers; enforced by `src/__checks__/abbreviations.test.ts`
+- Abbreviations are written out where they fit, else explained by `AbbreviationInfo` (`ui/AbbreviationInfo.tsx`) from `fr.abbreviations`; the allowlist is units, OK, PDF, GPS, IBP and "ex." (IBP has no info button: the people who use the app know it, 27 D-47); enforced by `src/__checks__/abbreviations.test.ts`
 
 **Visual layer** (`mobile/src/app/`, `mobile/src/ui/`; reference: section 13 of `docs/design/charte-graphique-etats-sauvages-spec.md`, direction text `docs/design/direction-visuelle-12-2.md`):
 - Light or dark follows the system appearance only (`BrandThemeProvider` in `app/theme.ts`, `useColorScheme()`, live): there is no in-app theme setting (owner decision 2026-10-08), no `theme_mode` read or write and no `Appearance.setColorScheme`; `app.json` keeps `userInterfaceStyle: "automatic"`
