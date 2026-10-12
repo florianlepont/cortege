@@ -24,7 +24,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 27 (quick survey additions) is complete (2026-10-12; emulator rows DC-27-02 to DC-27-05 open in device-checks.md, PDF page budget F-27-1 accepted at +2 pages); then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md.
+**Current focus:** Phase 27 (quick survey additions) is complete (2026-10-12; its remaining device checks are reported to Phases 35 and 37, nothing stays open); then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md.
 
 ## Current Position
 

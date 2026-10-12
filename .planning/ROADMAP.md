@@ -963,7 +963,7 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 22/22 plans executed (22 plans in 8 waves). Closed 2026-10-12; the emulator checks DC-27-02 to DC-27-05 stay open in `docs/user-tests/device-checks.md`
+**Plans**: 22/22 plans executed (22 plans in 8 waves). Closed 2026-10-12; nothing stays open in this phase: the device checks DC-27-02 to DC-27-05 are reported to Phases 35 and 37 (owner decision 2026-10-12), see `docs/user-tests/device-checks.md`
 
 Plans:
 
@@ -1138,7 +1138,7 @@ Plans:
   4. The survey list, survey detail, survey form and map screens have tests covering their sync-status, filter and error states, so the flows the field tests exercise are protected against regression.
   5. Every field-test case cites a unique story ID: the six Epic D stories have six distinct IDs, and `docs/specs/user-stories.md` §4 uses the MVP / V1 / V2 taxonomy.
   6. Each field observer's feedback is collected in one feedback grid (`docs/user-tests/field-feedback.md`): bugs, interface friction (slow entry, unclear screens, anything that gets in the way on a parcel) and suggestions, each with an ID, the screen concerned and the observer. At the end of the phase every entry is triaged as *release blocker*, *next milestone* or *rejected* (with a reason); the release blockers are fixed, in a short follow-up phase if needed, before the milestone closes.
-  7. The checks deferred from earlier phases are run on real devices and recorded in `docs/user-tests/device-checks.md` (D-01 to D-11): genus recognition on Android (latency and accuracy, after Phase 26) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, the splash and permission-refusal paths of onboarding, and the backup timer and restore on the server (owner only; repeated on the new server in Phase 36).
+  7. The checks deferred from earlier phases are run on real devices and recorded in `docs/user-tests/device-checks.md` (D-01 to D-11, and DC-27-02 to DC-27-04 reported from Phase 27 on 2026-10-12: the factor note above the keyboard on a small screen, the offline weather catch-up after a network drop following the parcel choice, and the tap count of a full survey against about 40): genus recognition on Android (latency and accuracy, after Phase 26) and with real photos, the offline map in airplane mode and after a relaunch, the PDF share sheet, the splash and permission-refusal paths of onboarding, and the backup timer and restore on the server (owner only; repeated on the new server in Phase 36).
 
 **Plans**: TBD
 
@@ -1167,7 +1167,7 @@ Plans:
 **Source**: owner decision 2026-10-07, folded into the MVP. Baseline: `docs/design/ux-ui-audit-2026-09.md` and `docs/design/charte-graphique-etats-sauvages-spec.md`.
 **Success Criteria** (what must be TRUE):
 
-  1. A UX/UI audit report in `docs/design/` covers every screen in light and dark mode on iOS (and Android where it differs): global coherence (spacing, typography, colour, iconography, components, motion, wording), accessibility (contrast, touch targets, reduced motion, Dynamic Type) and visual bugs, with the previous audit's findings re-checked.
+  1. A UX/UI audit report in `docs/design/` covers every screen in light and dark mode on iOS (and Android where it differs): global coherence (spacing, typography, colour, iconography, components, motion, wording), accessibility (contrast, touch targets, reduced motion, Dynamic Type, and VoiceOver / TalkBack on the Phase 27 additions, DC-27-05 reported from Phase 27) and visual bugs, with the previous audit's findings re-checked. SEED-007 (creating a survey without network) is examined as a workflow finding.
   2. Each finding has an ID, severity and a triage (*blocker before field tests*, *fix later*, *rejected* with a reason), logged in one grid.
   3. The design system is updated to match Phase 23: tokens, components and motion rules are documented in the charter, stale sections are corrected, and no screen keeps a one-off style the system does not describe (the colour lint rule stays green).
   4. A conformity pass compares the app, screen by screen, with the "États Sauvages" graphic charter and lists every gap (the owner finds the app does not fully respect it); each gap is fixed or explicitly accepted as a deviation in the charter.
