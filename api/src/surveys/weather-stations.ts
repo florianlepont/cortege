@@ -59,6 +59,11 @@ export function nearestUtcHour(at: Date): Date {
   return new Date(Math.round(at.getTime() / HOUR_MS) * HOUR_MS)
 }
 
+/** The UTC hour containing `at` (the last full hour already elapsed at `at`). */
+export function floorUtcHour(at: Date): Date {
+  return new Date(Math.floor(at.getTime() / HOUR_MS) * HOUR_MS)
+}
+
 /**
  * True when the reading's own time (`validityIso`) is within `toleranceMinutes` of `at`. A reading
  * farther away, or with an unreadable time, must be ignored, never stored as the weather of the
