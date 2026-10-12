@@ -710,9 +710,10 @@ describe("PublicMapScreen", () => {
       expect(props.onChangeBasemap).not.toHaveBeenCalled()
 
       // Zoom in to parcel level: the cadastre loads after the debounce.
-      const map = tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
+      const map = tree.root.findAll((node) => (node.type as unknown) === "MapLibreMap")[0]
       // MAP-04: the device's position is the native halo, not a custom marker.
-      expect(tree.root.findAll((node) => (node.type as unknown) === "UserLocation")).toHaveLength(1)
+      // (the Explorer map's, and the preloaded second map's in the swipe mode)
+      expect(tree.root.findAll((node) => (node.type as unknown) === "UserLocation")).toHaveLength(2)
       act(() =>
         map.props.onRegionDidChange({
           nativeEvent: {
@@ -1339,7 +1340,8 @@ describe("PublicMapScreen", () => {
           byTestId("immersive-window")[0].findAll(
             (node) => (node.type as unknown) === "MapLibreMap",
           ),
-        ).toHaveLength(1)
+          // The Explorer map and the preloaded second map (clipped to nothing) are both in it.
+        ).toHaveLength(2)
         // The capsule (with the globe), the locate arrow and the legend are in the faded layer.
         const fading = (testID: string) =>
           buttons().findAll((node) => node.props.testID === testID).length > 0
@@ -1445,6 +1447,8 @@ describe("PublicMapScreen", () => {
       const props = makeProps()
       mount(props)
       act(() => globe().props.onPress())
+      // The swipe mode already holds the second map, preloaded and clipped to nothing.
+      expect(maps()).toHaveLength(2)
       drag(380, 60)
       expect(maps()).toHaveLength(2)
       release()
@@ -1456,10 +1460,15 @@ describe("PublicMapScreen", () => {
       // The stacked map keeps covering while the Explorer map loads the new style.
       expect(maps()).toHaveLength(2)
       act(() => explorerMap().props.onDidFinishLoadingStyle())
-      expect(maps()).toHaveLength(1)
+      act(() => explorerMap().props.onDidFinishRenderingMapFully())
+      act(() => {
+        jest.advanceTimersByTime(500)
+      })
+      // The cover is down; the preloaded map stays for the next swipe.
+      expect(maps()).toHaveLength(2)
     })
 
-    test("a wipe let go near its start changes nothing and unmounts the extra map", () => {
+    test("a wipe let go near its start changes nothing and keeps only the preloaded map", () => {
       const props = makeProps()
       mount(props)
       act(() => globe().props.onPress())
@@ -1469,7 +1478,7 @@ describe("PublicMapScreen", () => {
         jest.advanceTimersByTime(500)
       })
       expect(props.onChangeBasemap).not.toHaveBeenCalled()
-      expect(maps()).toHaveLength(1)
+      expect(maps()).toHaveLength(2)
     })
 
     test("a release in the compare zone starts one single mode: free map, centre line, grabber, tags, the quit pill only", () => {

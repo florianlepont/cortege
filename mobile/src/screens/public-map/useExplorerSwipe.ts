@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react"
 import { useWindowDimensions, type NativeSyntheticEvent } from "react-native"
-import type { SharedValue } from "react-native-reanimated"
+import { useSharedValue, type SharedValue } from "react-native-reanimated"
 import type { CameraRef, ViewStateChangeEvent } from "@maplibre/maplibre-react-native"
 import type { MapRegion } from "../../app/map-viewport"
 import { fr } from "../../i18n"
-import { skippedCount } from "../../map/layer-cycle"
+import { neighbourLayer, skippedCount } from "../../map/layer-cycle"
 import { immersiveTarget } from "../../map/wipe-geometry"
 import type { BaseLayerKey } from "../../map/layers"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -27,11 +27,9 @@ import type { MapLayers } from "./useMapLayersState"
 // the UI-SPEC "other actions" row, calls only the `layers.actions` signatures of the layers state,
 // and decides which stacked maps are mounted, with which layer and strip.
 //
-// One single comparison mode (owner feedback, CONTEXT item 13 d): the swipe mode and the comparison
-// never coexist. The swipe surface is not active in a comparison, so the map is free there (native
-// pan and zoom) and the line is decorative. The side tags change a side (`useSideStep`): a wipe
-// inside that side's half, drawn by a third map stacked over the half until the map that draws the
-// side has loaded its new style.
+// The swipe mode and the comparison never coexist (CONTEXT item 13 d): the map is free in a
+// comparison and the line is decorative. The side tags change a side (`useSideStep`): a wipe inside
+// that side's half, drawn by a third map stacked over it until the other map has loaded its style.
 
 /** A stacked map that covers a style swap is dropped after this long even if no event is reported. */
 const COVER_MAX_MS = 8000
@@ -224,9 +222,8 @@ export function useExplorerSwipe({
     }
   }
 
-  // The layer the second map draws. A wipe takes it; a comparison keeps the second map the wipe
-  // used; a cover keeps one over the style swap of the map under it. A cover is valid only while
-  // what it covers is still true.
+  // The layer the second map draws: a wipe's, the curtain's, or a cover over the style swap of the
+  // map under it (valid only while what it covers is still true).
   const fullWipeLayer =
     wipe !== null && WIPE_PRESENTATION === "wipe" && !comparing ? wipe.incoming : null
   const fullCoverLayer =
@@ -245,11 +242,22 @@ export function useExplorerSwipe({
   const sideStep = useSideStep({ layers, isAvailable, width })
   const secondSync = useMapSync()
   const thirdSync = useMapSync()
+  // The swipe mode preloads the next layer in the second map (zero-width strip): no blank reveal.
+  const preloadLayer =
+    swipeMode && !comparing && WIPE_PRESENTATION === "wipe"
+      ? neighbourLayer(layers.displayedBase, 1, { isAvailable })
+      : null
   const secondLayer = comparing
     ? layers.secondMapLayer
-    : (fullWipeLayer ?? fullCoverLayer ?? keepLayer)
-  // The wipe and its cover are cut by the controller's strip; the curtain and its keep cover by the line.
-  const secondStrip = comparing || keepLayer !== null ? curtain : controller
+    : (fullWipeLayer ?? fullCoverLayer ?? keepLayer ?? preloadLayer)
+  // The wipe and its cover are cut by the controller's strip, the curtain by the line.
+  const idleClip = useSharedValue(0)
+  const secondStrip =
+    comparing || keepLayer !== null
+      ? curtain
+      : (fullWipeLayer ?? fullCoverLayer)
+        ? controller
+        : { clipLeft: idleClip, clipRight: idleClip }
   const second: StackedMapView | null = secondLayer
     ? { layer: secondLayer, ...strip(secondStrip), cameraRef: secondSync.cameraRef }
     : null

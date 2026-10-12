@@ -140,6 +140,7 @@ describe("WipeLayer", () => {
     )
     const style = Object.assign({}, ...[clip.props.style].flat(3).filter(Boolean))
     expect(style.left).toBe(120)
-    expect(style.width).toBe(280)
+    // Not revealed before its style is loaded and rendered (MapStack.test.tsx covers the reveal).
+    expect(style.width).toBe(0)
   })
 })

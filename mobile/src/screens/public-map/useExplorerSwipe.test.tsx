@@ -103,6 +103,7 @@ import {
   type CompareState,
   type MapLayersState,
 } from "./map-layers-state"
+import { neighbourLayer } from "../../map/layer-cycle"
 import { COVER_PRESENT_MS } from "./useCoverRelease"
 import { useExplorerSwipe, type ExplorerSwipe, type ExplorerSwipeInput } from "./useExplorerSwipe"
 import type { MapLayers } from "./useMapLayersState"
@@ -240,6 +241,12 @@ function Probe({ input }: { input: ExplorerSwipeInput }) {
 let tree: renderer.ReactTestRenderer
 
 // The Explorer map reports it rendered after its style load; the cover then goes after a short time.
+// What stays mounted at rest in the swipe mode: at most the preloaded map, with a zero-width strip.
+const preloadOnly = () => {
+  const second = out().layersView.second
+  expect(second === null || second.clipLeft === second.clipRight).toBe(true)
+}
+
 const settle = () => {
   act(() => out().mapCanvasProps.onRenderedFully?.())
   act(() => {
@@ -404,8 +411,7 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     // The raster tiles come after the style: the cover stays for the settle time.
     expect(out().layersView.second).not.toBeNull()
     settle()
-    expect(out().layersView.second).toBeNull()
-    expect(out().mapCanvasProps.onViewChange).toBeUndefined()
+    preloadOnly()
   })
 
   test("the cover also goes when the layers state says the Explorer map is done", () => {
@@ -415,7 +421,7 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: "satellite" }))
     expect(out().layersView.second).not.toBeNull()
     update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: null }))
-    expect(out().layersView.second).toBeNull()
+    preloadOnly()
   })
 
   test("a cover nobody reports on is dropped after a while", () => {
@@ -431,13 +437,38 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     act(() => {
       jest.advanceTimersByTime(1)
     })
-    expect(out().layersView.second).toBeNull()
+    preloadOnly()
   })
 
-  test("a cancelled wipe leaves nothing mounted", () => {
+  test("a cancelled wipe leaves only the preloaded map, clipped to nothing", () => {
     setController({ side: "full", incoming: "satellite" })
     mount(makeLayers({ swipeMode: true }))
     setController(null)
+    update(makeLayers({ swipeMode: true }))
+    preloadOnly()
+  })
+
+  test("the swipe mode preloads the next layer in the second map, clipped to nothing", () => {
+    mount(makeLayers({ swipeMode: true }))
+    const second = out().layersView.second
+    expect(second?.layer).toBe(neighbourLayer("map", 1, { isAvailable: () => true }))
+    expect(second?.clipLeft).toBe(second?.clipRight)
+    expect(second?.clipLeft).not.toBe(controllerClip.clipLeft)
+    // The wipe takes the controller's strip over the same map.
+    setController({ side: "full", incoming: "satellite" })
+    update(makeLayers({ swipeMode: true }))
+    expect(out().layersView.second?.layer).toBe("satellite")
+    expect(out().layersView.second?.clipLeft).toBe(controllerClip.clipLeft)
+  })
+
+  test("no preloaded map outside the swipe mode, in a comparison or with an instant presentation", () => {
+    mount(makeLayers())
+    expect(out().layersView.second).toBeNull()
+    update(makeLayers({ swipeMode: true }))
+    expect(out().layersView.second).not.toBeNull()
+    update(makeLayers())
+    expect(out().layersView.second).toBeNull()
+    mockStack.wipe = "instant"
     update(makeLayers({ swipeMode: true }))
     expect(out().layersView.second).toBeNull()
   })

@@ -121,23 +121,30 @@ describe("MapStack", () => {
     const clipLeft = shared(120)
     const clipRight = shared(400)
     const cameraRef = React.createRef<CameraRef | null>() as React.RefObject<CameraRef | null>
+    const element = (over: Partial<React.ComponentProps<typeof MapStack>> = {}) => (
+      <MapStack
+        mapStyle="https://tiles.example/style.json"
+        clipLeft={clipLeft}
+        clipRight={clipRight}
+        width={400}
+        initialRegion={REGION}
+        cameraRef={cameraRef}
+        {...props}
+        {...over}
+      >
+        <LayerChild />
+      </MapStack>
+    )
     let tree!: renderer.ReactTestRenderer
     act(() => {
-      tree = renderer.create(
-        <MapStack
-          mapStyle="https://tiles.example/style.json"
-          clipLeft={clipLeft}
-          clipRight={clipRight}
-          width={400}
-          initialRegion={REGION}
-          cameraRef={cameraRef}
-          {...props}
-        >
-          <LayerChild />
-        </MapStack>,
-      )
+      tree = renderer.create(element())
     })
-    return { tree, clipLeft, clipRight, cameraRef }
+    let current: Partial<React.ComponentProps<typeof MapStack>> = {}
+    const rerender = (over: Partial<React.ComponentProps<typeof MapStack>>) => {
+      current = { ...current, ...over }
+      act(() => tree.update(element(current)))
+    }
+    return { tree, clipLeft, clipRight, cameraRef, rerender }
   }
 
   test("renders one non-interactive texture map with the given style", () => {
@@ -159,8 +166,49 @@ describe("MapStack", () => {
     expect(tree.root.findByType("MapLibreMap" as never).props.androidView).toBe("surface")
   })
 
+  // The mocked shared values do not re-render by themselves: a re-render reads the new value.
+  const fireOn = (h: ReturnType<typeof mount>, event: string) => {
+    act(() => h.tree.root.findByType("MapLibreMap" as never).props[event]())
+    h.rerender({})
+  }
+  const makeReady = (h: ReturnType<typeof mount>) => {
+    fireOn(h, "onDidFinishLoadingStyle")
+    fireOn(h, "onDidFinishRenderingMapFully")
+  }
+  const clipWidth = (tree: renderer.ReactTestRenderer) =>
+    flat(
+      tree.root.find(
+        (node) => (node.type as unknown) === "View" && flat(node.props.style).overflow === "hidden",
+      ).props.style,
+    ).width
+
+  test("is clipped to nothing until its style is loaded and rendered, then follows the strip", () => {
+    const h = mount()
+    expect(clipWidth(h.tree)).toBe(0)
+    // A rendered-fully before the style load belongs to nothing: still hidden.
+    fireOn(h, "onDidFinishRenderingMapFully")
+    expect(clipWidth(h.tree)).toBe(0)
+    fireOn(h, "onDidFinishLoadingStyle")
+    expect(clipWidth(h.tree)).toBe(0)
+    fireOn(h, "onDidFinishRenderingMapFully")
+    expect(clipWidth(h.tree)).toBe(280)
+  })
+
+  test("a new style hides it again until that style is rendered", () => {
+    const h = mount()
+    makeReady(h)
+    expect(clipWidth(h.tree)).toBe(280)
+    h.rerender({ mapStyle: "https://example.test/other.json" })
+    h.rerender({})
+    expect(clipWidth(h.tree)).toBe(0)
+    makeReady(h)
+    expect(clipWidth(h.tree)).toBe(280)
+  })
+
   test("clips to the strip between clipLeft and clipRight and takes no touch", () => {
-    const { tree } = mount()
+    const h = mount()
+    makeReady(h)
+    const { tree } = h
     const hosts = tree.root.findAll(
       (node) => (node.type as unknown) === "View" && node.props.pointerEvents === "none",
     )

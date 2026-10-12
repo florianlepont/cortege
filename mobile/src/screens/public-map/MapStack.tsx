@@ -12,6 +12,7 @@ import { brandMapTokens } from "../../app/brand-tokens"
 import type { MapRegion } from "../../app/map-viewport"
 import { useBrandTheme } from "../../app/theme"
 import { boundsFromRegion } from "../../map/maplibre/regions"
+import { useStackedReady } from "./useStackedReady"
 
 // Why stacked maps (Phase 28, research "Curtain"): one MapLibre map has one style and cannot clip a
 // raster layer by screen position (raster paint properties are not data-driven, the style spec has
@@ -76,15 +77,19 @@ export function MapStack({
 }: MapStackProps) {
   const { scheme } = useBrandTheme()
   const [styleLoaded, setStyleLoaded] = useState(false)
+  // Not revealed until the current style is loaded and rendered (no blank or half-tiled strip).
+  const stackedReady = useStackedReady(mapStyle)
+  const { ready, onStyleLoaded: readyStyleLoaded, onRenderedFully } = stackedReady
   const handleStyleLoaded = useCallback(() => {
     setStyleLoaded(true)
+    readyStyleLoaded()
     onStyleLoaded?.()
-  }, [onStyleLoaded])
+  }, [onStyleLoaded, readyStyleLoaded])
   const ground =
     scheme === "dark" ? brandMapTokens.darkBasemapBackground : brandMapTokens.lightBasemapBackground
   const clipStyle = useAnimatedStyle(() => ({
     left: clipLeft.value,
-    width: Math.max(clipRight.value - clipLeft.value, 0),
+    width: ready.value === 0 ? 0 : Math.max(clipRight.value - clipLeft.value, 0),
   }))
   const innerStyle = useAnimatedStyle(() => ({ left: -clipLeft.value, width }))
   return (
@@ -107,6 +112,7 @@ export function MapStack({
             attribution={false}
             logo={false}
             onDidFinishLoadingStyle={handleStyleLoaded}
+            onDidFinishRenderingMapFully={onRenderedFully}
             onDidFailLoadingMap={onStyleFailed}
           >
             <Camera
