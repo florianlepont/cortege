@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Alert, View } from "react-native"
+import { View } from "react-native"
 import type { CameraRef } from "@maplibre/maplibre-react-native"
-import * as Location from "expo-location"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import type { MapRegion } from "../app/map-viewport"
 import { isOfflineMapsEnabled } from "../app/feature-flags"
@@ -11,7 +10,6 @@ import type { PublicMapItem, PublicParcelStatusItem } from "../app/types"
 import { DownloadEdgeGlow } from "../navigation/download-edge-glow"
 import type { PublicMapFocus } from "../navigation/types"
 import type { LoadPublicMapOptions } from "../hooks/usePublicMapExplorer"
-import { fr } from "../i18n"
 import type { BasemapKey } from "../map/basemaps"
 import { boundsFromRegion } from "../map/maplibre/regions"
 import { useOfflineAreas } from "../hooks/useOfflineAreas"
@@ -30,10 +28,9 @@ import { useExplorerFocus } from "./public-map/useExplorerFocus"
 import { useExplorerLayers } from "./public-map/useExplorerLayers"
 import { useExplorerPanels } from "./public-map/useExplorerPanels"
 import { useExplorerSwipe } from "./public-map/useExplorerSwipe"
+import { useLocateAction } from "./public-map/useLocateAction"
 import { useMapViewport } from "./public-map/useMapViewport"
 
-const t = fr.publicMap
-const LOCATE_SPAN = 0.012
 const NO_DRAFTS: PublicMapItem[] = []
 const NO_SURVEY_PARCELS: ReadonlySet<string> = new Set()
 const noop = () => undefined
@@ -112,7 +109,6 @@ export function PublicMapScreen({
   // The survey whose marker is drawn selected: the last one opened from the map or shown from its
   // page (OA-59). No panel goes with it (12.2-19).
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
-  const [locating, setLocating] = useState(false)
   const [cardHeight, setCardHeight] = useState(0)
   // Bumped by "Réessayer" of the error notice: the style is asked again.
   const [styleRetryKey, setStyleRetryKey] = useState(0)
@@ -238,29 +234,7 @@ export function PublicMapScreen({
     [estimateForRegion, viewport.region],
   )
 
-  const handleLocate = useLatestCallback(async (): Promise<void> => {
-    if (locating) {
-      return
-    }
-    try {
-      setLocating(true)
-      const permission = await Location.requestForegroundPermissionsAsync()
-      if (!permission.granted) {
-        Alert.alert(t.alerts.locationDisabled.title, t.alerts.locationDisabled.message)
-        return
-      }
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      })
-      const { latitude, longitude } = position.coords
-      moveTo({ latitude, longitude, latitudeDelta: LOCATE_SPAN, longitudeDelta: LOCATE_SPAN }, 450)
-    } catch (_error) {
-      Alert.alert(t.alerts.locationUnavailable.title, t.alerts.locationUnavailable.message)
-    } finally {
-      setLocating(false)
-    }
-  })
-  const onLocate = useCallback(() => void handleLocate(), [handleLocate])
+  const { locating, onLocate } = useLocateAction({ moveTo })
 
   const dockBottom = Math.max(tabBarHeight, insets.bottom)
   const cardOpen = panels.panel === "card"
