@@ -230,22 +230,17 @@ describe("Conditions section (phase 27, D-15)", () => {
     expect(section(render()).viewState).toBe("prefilled")
   })
 
-  test("sends the note, the weather edits and the two weather links to the survey's actions", () => {
-    const onChangeNote = jest.fn()
+  test("sends the weather edits and the two weather links to the survey's actions", () => {
     const onEditWeather = jest.fn()
     const onRetryWeather = jest.fn()
     const onRefillWeather = jest.fn()
-    const props = section(
-      render(false, { onChangeNote, onEditWeather, onRetryWeather, onRefillWeather }),
-    )
+    const props = section(render(false, { onEditWeather, onRetryWeather, onRefillWeather }))
     const update = (current: unknown) => current
 
-    props.onChangeNote("Une note")
     props.onEditWeather(update)
     props.onRetry()
     props.onRefill()
 
-    expect(onChangeNote).toHaveBeenCalledWith("survey-1", "Une note")
     expect(onEditWeather).toHaveBeenCalledWith("survey-1", update)
     expect(onRetryWeather).toHaveBeenCalledWith("survey-1")
     expect(onRefillWeather).toHaveBeenCalledWith("survey-1")

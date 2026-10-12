@@ -44,10 +44,17 @@ describe("fr.conditions", () => {
   })
 
   test("the summary card sentence for a screen reader", () => {
-    expect(conditions.summary.openWithLine("x")).toBe("Ouvrir les conditions du relevé. x")
-    expect(conditions.summary.openWithLine(conditions.summary.noWeather)).toBe(
-      "Ouvrir les conditions du relevé. Aucune météo",
-    )
+    expect(conditions.summary.openWithLine("x")).toBe("Ouvrir la météo du relevé. x")
+  })
+
+  test("the summary card mention is very short and keeps the licence wording (D-35)", () => {
+    expect(conditions.summary.mention).toBe("Météo-France")
+    expect(conditions.summary.mentionPartlyEdited).toBe("Météo-France, en partie modifiée")
+  })
+
+  test("the Contexte section is the weather only (D-33)", () => {
+    expect(conditions.section.title).toBe("Météo")
+    expect(conditions.readOnly.empty).toBe("Météo non renseignée.")
   })
 
   test("the attribution of the provider (D-26) and the visibility helper (D-06)", () => {

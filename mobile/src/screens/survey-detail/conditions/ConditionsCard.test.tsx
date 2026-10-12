@@ -59,14 +59,7 @@ function mount(over: Partial<CardProps> = {}): { tree: ReactTestRenderer; onOpen
   let tree!: ReactTestRenderer
   act(() => {
     tree = renderer.create(
-      <ConditionsCard
-        note={null}
-        weather={null}
-        loading={false}
-        submitted={false}
-        onOpen={onOpen}
-        {...over}
-      />,
+      <ConditionsCard weather={null} loading={false} submitted={false} onOpen={onOpen} {...over} />,
     )
   })
   return { tree, onOpen }
@@ -92,16 +85,6 @@ const glyphs = (tree: ReactTestRenderer): string[] =>
 
 const spinners = (tree: ReactTestRenderer) =>
   tree.root.findAll((node) => (node.type as unknown) === "ActivityIndicator")
-
-const noteNode = (tree: ReactTestRenderer) => byTestId(tree, "conditions-card-note")
-
-function reportLines(tree: ReactTestRenderer, count: number) {
-  act(() => {
-    noteNode(tree).props.onTextLayout({
-      nativeEvent: { lines: Array.from({ length: count }, () => ({})) },
-    })
-  })
-}
 
 describe("ConditionsCard weather line (D-17)", () => {
   test("shows the sky glyph and the values that exist on one line", () => {
@@ -137,13 +120,11 @@ describe("ConditionsCard weather line (D-17)", () => {
     expect(onOpen).toHaveBeenCalledTimes(1)
   })
 
-  test("a note without weather says so in the area and in its label", () => {
-    const { tree } = mount({ note: "Sol détrempé" })
+  test("the card carries the weather only: no note, no fold link (D-33)", () => {
+    const { tree } = mount({ weather: CLOUDY })
 
-    const area = byTestId(tree, "conditions-card-weather")
-    expect(texts(tree)).toContain(t.summary.noWeather)
-    expect(area.props.accessibilityLabel).toBe(t.summary.openWithLine(t.summary.noWeather))
-    expect(texts(tree)).toContain("Sol détrempé")
+    expect(maybeByTestId(tree, "conditions-card-note")).toBeUndefined()
+    expect(maybeByTestId(tree, "conditions-card-more")).toBeUndefined()
   })
 
   test("a weather with only an unknown sky counts as no weather", () => {
@@ -193,72 +174,8 @@ describe("ConditionsCard attribution (D-26, D-35)", () => {
   })
 })
 
-describe("ConditionsCard note fold (UI-SPEC 3.1)", () => {
-  const NOTE = "Une très longue note de terrain ".repeat(10)
-
-  test("folds the note to 2 lines and carries the full text", () => {
-    const { tree } = mount({ weather: CLOUDY, note: NOTE })
-
-    const note = noteNode(tree)
-    expect(note.props.numberOfLines).toBe(2)
-    expect([note.props.children].flat().join("")).toBe(NOTE)
-    expect(maybeByTestId(tree, "conditions-card-more")).toBeUndefined()
-  })
-
-  test("a note that fits shows no link", () => {
-    const { tree } = mount({ note: "Courte" })
-
-    reportLines(tree, 2)
-    expect(maybeByTestId(tree, "conditions-card-more")).toBeUndefined()
-  })
-
-  test("a note cut after 2 lines gets a link that expands it in place and folds it back", () => {
-    const { tree, onOpen } = mount({ weather: CLOUDY, note: NOTE })
-
-    reportLines(tree, 3)
-    const more = byTestId(tree, "conditions-card-more")
-    expect(more.props.accessibilityLabel).toBe(t.summary.noteMoreA11y)
-    expect(texts(tree)).toContain(t.summary.noteMore)
-
-    act(() => more.props.onPress())
-    expect(noteNode(tree).props.numberOfLines).toBeUndefined()
-    const less = byTestId(tree, "conditions-card-more")
-    expect(less.props.accessibilityLabel).toBe(t.summary.noteLessA11y)
-    expect(less.props.accessibilityState).toEqual({ expanded: true })
-    expect(texts(tree)).toContain(t.summary.noteLess)
-
-    act(() => less.props.onPress())
-    expect(noteNode(tree).props.numberOfLines).toBe(2)
-    expect(texts(tree)).toContain(t.summary.noteMore)
-    expect(onOpen).not.toHaveBeenCalled()
-  })
-
-  test("layout reports while expanded do not change the link", () => {
-    const { tree } = mount({ note: NOTE })
-
-    reportLines(tree, 3)
-    act(() => byTestId(tree, "conditions-card-more").props.onPress())
-    reportLines(tree, 1)
-    expect(maybeByTestId(tree, "conditions-card-more")).toBeDefined()
-  })
-
-  test("the note and the weather work under Reduce Motion", () => {
-    setReducedMotion(true)
-    const { tree } = mount({ weather: CLOUDY, note: NOTE })
-
-    reportLines(tree, 3)
-    expect(maybeByTestId(tree, "conditions-card-more")).toBeDefined()
-  })
-
-  test("a blank note is no note", () => {
-    const { tree } = mount({ weather: CLOUDY, note: "   " })
-
-    expect(maybeByTestId(tree, "conditions-card-note")).toBeUndefined()
-  })
-})
-
 describe("ConditionsCard states (U-11)", () => {
-  test("a draft with neither shows the invitation row", () => {
+  test("a draft with no weather shows the invitation row", () => {
     const { tree, onOpen } = mount()
 
     expect(texts(tree)).toContain(t.summary.emptyTitle)
@@ -270,16 +187,15 @@ describe("ConditionsCard states (U-11)", () => {
     expect(onOpen).toHaveBeenCalledTimes(1)
   })
 
-  test("a submitted survey with neither draws nothing", () => {
+  test("a submitted survey with no weather draws nothing", () => {
     const { tree } = mount({ submitted: true })
 
     expect(tree.toJSON()).toBeNull()
   })
 
-  test("an empty weather object and an empty note count as neither", () => {
+  test("an empty weather object counts as no weather", () => {
     const { tree } = mount({
       submitted: true,
-      note: "",
       weather: { requested_at: "2026-10-11T08:00:00.000Z" },
     })
 
@@ -302,13 +218,6 @@ describe("ConditionsCard states (U-11)", () => {
 
     expect(spinners(tree)).toHaveLength(0)
     expect(texts(tree)).toContain(LINE)
-  })
-
-  test("a lookup with a note only keeps the spinner and the note", () => {
-    const { tree } = mount({ loading: true, note: "Brume au lever" })
-
-    expect(spinners(tree)).toHaveLength(1)
-    expect(texts(tree)).toContain("Brume au lever")
   })
 
   test("a submitted survey with a weather opens the same card", () => {

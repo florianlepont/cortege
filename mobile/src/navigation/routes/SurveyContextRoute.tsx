@@ -59,7 +59,6 @@ export const SurveyContextRoute = memo(function SurveyContextRoute({
         onUpdateIbpCas={actions.updateIbpCas}
         onUpdateCas3Scale={actions.updateCas3Scale}
         onSwitchToV32={actions.switchToV32}
-        onChangeNote={actions.updateSurveyNote}
         onEditWeather={actions.updateSurveyWeather}
         onRetryWeather={weatherActions.retry}
         onRefillWeather={weatherActions.refill}

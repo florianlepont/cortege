@@ -83,6 +83,10 @@ jest.mock("../survey-detail/conditions/ConditionsReadOnly", () => {
     ConditionsReadOnly: (props: object) => ReactRef.createElement("ConditionsReadOnly", props),
   }
 })
+jest.mock("../survey-detail/conditions/SurveyNoteCard", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return { SurveyNoteCard: (props: object) => ReactRef.createElement("SurveyNoteCard", props) }
+})
 jest.mock("../survey-detail/ParcelMapCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return { ParcelMapCard: (props: object) => ReactRef.createElement("ParcelMapCard", props) }
@@ -358,59 +362,57 @@ describe("CommunitySurveyScreen", () => {
     expect(byType(render(state()).tree, "AppGroupedList")).toHaveLength(2)
   })
 
-  describe("Conditions (D-06)", () => {
+  describe("Weather and note (D-06, D-33)", () => {
     const WEATHER = {
       sky: "cloudy",
       temperature_c: 14,
       source: "meteo_france",
     } as const
 
-    it("shows a Conditions section between the parcels and the score, with the read-only cards", () => {
+    it("shows the weather and the note, read-only, between the parcels and the factors", () => {
       const { tree } = render(
         state({ detail: detail({ weather: WEATHER, survey_note: "Sol détrempé" }) }),
       )
-      const card = byType(tree, "ConditionsReadOnly")
-      expect(card).toHaveLength(1)
-      expect(card[0].props).toEqual({
-        note: "Sol détrempé",
-        weather: WEATHER,
-        emptyMode: "hidden",
+      const weather = byType(tree, "ConditionsReadOnly")
+      expect(weather).toHaveLength(1)
+      expect(weather[0].props).toEqual({ weather: WEATHER, emptyMode: "hidden" })
+      const note = byType(tree, "SurveyNoteCard")
+      expect(note).toHaveLength(1)
+      expect(note[0].props).toMatchObject({
+        editable: false,
+        loaded: true,
+        stored: "Sol détrempé",
       })
-      expect(texts(tree)).toContain(fr.conditions.title)
 
-      // Document order: context rows, parcels, Conditions, the factors.
+      // Document order: context rows, parcels, weather, note, the factors.
       const sequence = tree.root
         .findAll((node) =>
-          ["AppGroupedList", "ConditionsReadOnly", "FactorsList"].includes(node.type as string),
+          ["AppGroupedList", "ConditionsReadOnly", "SurveyNoteCard", "FactorsList"].includes(
+            node.type as string,
+          ),
         )
         .map((node) => node.type as string)
       expect(sequence).toEqual([
         "AppGroupedList",
         "AppGroupedList",
         "ConditionsReadOnly",
+        "SurveyNoteCard",
         "FactorsList",
       ])
-      const all = texts(tree)
-      expect(all.indexOf(fr.conditions.title)).toBeGreaterThan(-1)
-      expect(all.indexOf(fr.conditions.title)).toBeLessThan(
-        all.indexOf(fr.navigation.headers.surveyScore),
-      )
     })
 
-    it("shows the section for a note alone and for a weather alone", () => {
+    it("shows the weather block for a weather alone and the note for a note alone", () => {
       const note = render(state({ detail: detail({ survey_note: "Brume au lever" }) }))
-      expect(byType(note.tree, "ConditionsReadOnly")[0].props).toMatchObject({
-        note: "Brume au lever",
-        weather: null,
-      })
+      expect(byType(note.tree, "ConditionsReadOnly")).toHaveLength(0)
+      expect(byType(note.tree, "SurveyNoteCard")[0].props.stored).toBe("Brume au lever")
       const weather = render(state({ detail: detail({ weather: WEATHER }) }))
       expect(byType(weather.tree, "ConditionsReadOnly")[0].props).toMatchObject({
-        note: null,
         weather: WEATHER,
       })
+      expect(byType(weather.tree, "SurveyNoteCard")[0].props.stored).toBeNull()
     })
 
-    it("draws no title and no card without weather and note, as on an older server", () => {
+    it("draws no weather block for a weather the app cannot show, as on an older server", () => {
       for (const over of [
         {},
         { weather: null, survey_note: null },
@@ -419,13 +421,13 @@ describe("CommunitySurveyScreen", () => {
       ]) {
         const { tree } = render(state({ detail: detail(over) }))
         expect(byType(tree, "ConditionsReadOnly")).toHaveLength(0)
-        expect(texts(tree)).not.toContain(fr.conditions.title)
       }
     })
 
     it("leaves the loading, error and offline states of the page alone", () => {
       const { tree } = render(state({ detail: null, status: "loading" }))
       expect(byType(tree, "ConditionsReadOnly")).toHaveLength(0)
+      expect(byType(tree, "SurveyNoteCard")).toHaveLength(0)
       expect(texts(tree)).toContain(t.loading)
     })
   })

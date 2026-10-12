@@ -81,6 +81,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
         onOpenContext={onOpenContext}
         onOpenConditions={onOpenConditions}
         conditionsLoading={weatherState.inFlightIds.has(state.selectedSurvey.id)}
+        onChangeNote={actions.updateSurveyNote}
         onOpenParcels={onOpenParcels}
         onOpenScore={onOpenScore}
         onOpenFactor={onOpenFactor}

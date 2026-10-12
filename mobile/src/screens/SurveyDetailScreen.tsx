@@ -12,6 +12,7 @@ import { AppNotice } from "../ui/AppNotice"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../ui/frame-large-title"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
 import { ConditionsCard } from "./survey-detail/conditions/ConditionsCard"
+import { SurveyNoteCard } from "./survey-detail/conditions/SurveyNoteCard"
 import { useSurveyConditions } from "./survey-detail/conditions/useSurveyConditions"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
@@ -42,8 +43,8 @@ const headerText = fr.surveyDetail.header
 const alertsText = fr.surveyDetail.alerts
 
 /**
- * The summary of a survey (OA-46): its name and where it stands, the score, the conditions of the
- * day (D-17), the photos, the map, and three rows that open the sub-pages (context and parcels,
+ * The summary of a survey (OA-46): its name and where it stands, the score, the weather of the
+ * day (D-17) and the survey note (D-33), the photos, the map, and three rows that open the sub-pages (context and parcels,
  * score by factor, the parcel's history; the survey's own change log is in the "…" menu, never a
  * row, D-02). The one action is the button at the bottom. The coloured chart of the ten factors is
  * not here (D-24): it lives on the score page only.
@@ -69,6 +70,7 @@ export function SurveyDetailScreen({
   onOpenContext,
   onOpenConditions,
   conditionsLoading,
+  onChangeNote,
   onOpenParcels,
   onOpenScore,
   onOpenFactor,
@@ -124,6 +126,7 @@ export function SurveyDetailScreen({
     apiUrl,
     accessToken,
   })
+  const changeNote = useLatestCallback((text: string) => void onChangeNote(selectedSurvey.id, text))
   const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
   const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
   // 12.2-17: the native large title is not a button, so the name is edited from the "…" menu in
@@ -227,6 +230,11 @@ export function SurveyDetailScreen({
         style={styles.scroll}
         contentContainerStyle={contentStyle}
         contentInsetAdjustmentBehavior={insetBehavior}
+        // The note is a text field: taps reach buttons while the keyboard is up, dragging the page
+        // closes it, and iOS lifts the content above it (D-33).
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
         onScrollBeginDrag={onScrollBeginDrag}
       >
         <SummaryHeader
@@ -256,11 +264,17 @@ export function SurveyDetailScreen({
         />
 
         <ConditionsCard
-          note={conditions.note}
           weather={conditions.weather}
           loading={conditionsLoading}
           submitted={selectedSurvey.status === "submitted"}
           onOpen={onOpenConditions}
+        />
+
+        <SurveyNoteCard
+          editable={canEditSurvey}
+          loaded={conditions.loaded}
+          stored={conditions.note}
+          onChangeNote={changeNote}
         />
 
         <PhotosStrip

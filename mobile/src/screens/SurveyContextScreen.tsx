@@ -45,7 +45,6 @@ export function SurveyContextScreen({
   onUpdateIbpCas,
   onUpdateCas3Scale,
   onSwitchToV32,
-  onChangeNote,
   onEditWeather,
   onRetryWeather,
   onRefillWeather,
@@ -109,10 +108,6 @@ export function SurveyContextScreen({
     [reduceMotion],
   )
 
-  const changeNote = useCallback(
-    (text: string) => void onChangeNote(surveyId, text),
-    [onChangeNote, surveyId],
-  )
   const editWeather = useCallback(
     (update: Parameters<typeof onEditWeather>[1]) => void onEditWeather(surveyId, update),
     [onEditWeather, surveyId],
@@ -206,7 +201,6 @@ export function SurveyContextScreen({
           conditions={conditions}
           viewState={conditionsViewState}
           onEditWeather={editWeather}
-          onChangeNote={changeNote}
           onRetry={retryWeather}
           onRefill={refillWeather}
           onFieldFocus={onFieldFocus}

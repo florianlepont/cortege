@@ -5,8 +5,11 @@
 // of the data (D-31): `date` is "dd/mm/yyyy" and `time` "HH:mm", both from the local clock.
 type DataStamp = { date: string; time: string }
 export const conditionsFr = {
-  title: "Conditions",
-  subtitle: "Météo du jour et remarques de terrain. Facultatif.",
+  // The Contexte page section (D-33: the note left it, so it is the weather only).
+  section: {
+    title: "Météo",
+    subtitle: "Météo du jour. Facultatif.",
+  },
   sky: {
     groupLabel: "Ciel",
     groupA11y: "Ciel du jour",
@@ -109,8 +112,7 @@ export const conditionsFr = {
       `${count} caractères sur ${max}`,
   },
   readOnly: {
-    empty: "Aucune condition renseignée.",
-    noWeather: "Météo non renseignée.",
+    empty: "Météo non renseignée.",
     sourcePrefilled: "Source : Météo-France.",
     sourcePrefilledDated: ({ date, time }: DataStamp) =>
       `Source : Météo-France, mesure du ${date} à ${time}.`,
@@ -120,19 +122,13 @@ export const conditionsFr = {
     sourceManual: "Saisie par l'observateur.",
   },
   summary: {
-    emptyTitle: "Conditions du relevé",
-    emptyBody: "Météo et note, facultatif",
+    emptyTitle: "Météo du relevé",
+    emptyBody: "Facultatif",
     loading: "Recherche de la météo…",
-    open: "Ouvrir les conditions du relevé",
-    openWithLine: (line: string) => `Ouvrir les conditions du relevé. ${line}`,
-    // A note without any weather value: the weather area says so (UI-SPEC 3.1).
-    noWeather: "Aucune météo",
+    open: "Ouvrir la météo du relevé",
+    openWithLine: (line: string) => `Ouvrir la météo du relevé. ${line}`,
     // D-35: the whole attribution on the card, very short; the dated sentence is in the detail.
     mention: "Météo-France",
     mentionPartlyEdited: "Météo-France, en partie modifiée",
-    noteMore: "Lire la suite",
-    noteMoreA11y: "Lire la suite, développe la note",
-    noteLess: "Réduire",
-    noteLessA11y: "Réduire la note",
   },
 } as const

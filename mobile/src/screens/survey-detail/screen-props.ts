@@ -38,6 +38,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onOpenConditions: () => void
   /** A weather lookup is running for the selected survey (the card shows its search line). */
   conditionsLoading: boolean
+  /** Phase 27 (D-33): silent draft write of the survey note, from the summary's note card. */
+  onChangeNote: (surveyId: string, text: string) => Promise<boolean> | void
   /** Opens the parcel editor straight from the map card (OA-96). */
   onOpenParcels: (surveyId: string) => Promise<void> | void
   onOpenScore: () => void
@@ -72,8 +74,7 @@ export type SurveyContextScreenProps = SurveyDetailBaseProps & {
   onUpdateIbpCas: (surveyId: string, ibpCas: IbpCas) => Promise<void> | void
   onUpdateCas3Scale: (surveyId: string, value: boolean) => Promise<void> | void
   onSwitchToV32: (surveyId: string) => Promise<void> | void
-  /** Phase 27: silent draft writes of the Conditions section (false when nothing was written). */
-  onChangeNote: (surveyId: string, text: string) => Promise<boolean> | void
+  /** Phase 27: silent draft write of the weather section (false when nothing was written). */
   onEditWeather: (
     surveyId: string,
     update: (current: SurveyWeather | null) => SurveyWeather | null,

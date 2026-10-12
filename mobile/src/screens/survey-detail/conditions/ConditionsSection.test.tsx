@@ -80,7 +80,6 @@ function sectionProps(over: Partial<SectionProps> = {}): SectionProps {
     conditions: LOADED_EMPTY,
     viewState: "noParcel",
     onEditWeather: jest.fn(),
-    onChangeNote: jest.fn(),
     onRetry: jest.fn(),
     onRefill: jest.fn(),
     ...over,
@@ -385,9 +384,9 @@ describe("ConditionsSection weather card", () => {
     const layouts = tree.root.findAll(
       (node) => (node.type as unknown) === "View" && typeof node.props.onLayout === "function",
     )
-    // Weather card wrapper, the values view and the fields view of the card, the four field
-    // cells, then the note wrapper.
-    expect(layouts).toHaveLength(8)
+    // Weather card wrapper, the values view and the fields view of the card, then the four field
+    // cells (the note is not part of the section any more, D-33).
+    expect(layouts).toHaveLength(7)
     const at = (index: number, y: number) =>
       act(() => {
         layouts[index].props.onLayout({ nativeEvent: { layout: { y } } })
@@ -396,7 +395,6 @@ describe("ConditionsSection weather card", () => {
     at(1, 60)
     at(2, 30)
     at(4, 20)
-    at(7, 700)
 
     act(() => {
       byTestId(tree, "conditions-field-wind").props.onFocus({})
@@ -404,13 +402,9 @@ describe("ConditionsSection weather card", () => {
     act(() => {
       byTestId(tree, "conditions-field-temperature").props.onFocus({})
     })
-    act(() => {
-      byTestId(tree, "conditions-note-field").props.onFocus({})
-    })
 
     expect(onFieldFocus).toHaveBeenNthCalledWith(1, 100 + 60 + 30 + 20)
     expect(onFieldFocus).toHaveBeenNthCalledWith(2, 100 + 60 + 30)
-    expect(onFieldFocus).toHaveBeenNthCalledWith(3, 700)
   })
 
   test("nothing is drawn under the header until the draft was read", () => {
@@ -418,186 +412,15 @@ describe("ConditionsSection weather card", () => {
       <ConditionsSection {...sectionProps({ conditions: { ...LOADED_EMPTY, loaded: false } })} />,
     )
 
-    expect(texts(tree)).toEqual([t.title, t.subtitle])
-    expect(maybeByTestId(tree, "conditions-note-field")).toBeUndefined()
+    expect(texts(tree)).toEqual([t.section.title, t.section.subtitle])
+    expect(maybeByTestId(tree, "survey-note-field")).toBeUndefined()
 
     const readOnly = mount(
       <ConditionsSection
         {...sectionProps({ editable: false, conditions: { ...LOADED_EMPTY, loaded: false } })}
       />,
     )
-    expect(texts(readOnly)).toEqual([t.title, t.subtitle])
-  })
-})
-
-describe("ConditionsSection note card (D-05, D-06)", () => {
-  const note = (tree: ReactTestRenderer) => byTestId(tree, "conditions-note-field")
-
-  test("shows the stored note with a 1000 character field, the helper and the counter", () => {
-    const tree = mount(
-      <ConditionsSection
-        {...sectionProps({ conditions: { ...LOADED_EMPTY, note: "Sol frais" } })}
-      />,
-    )
-
-    expect(note(tree).props.value).toBe("Sol frais")
-    expect(note(tree).props.maxLength).toBe(1000)
-    expect(note(tree).props.accessibilityHint).toBe(t.note.a11yHint)
-    expect(texts(tree)).toContain(t.note.visibility)
-    expect(texts(tree)).toContain("9 / 1000")
-    expect(texts(tree)).toContain(t.note.label)
-  })
-
-  test("writes the note 400 ms after typing stops, once", () => {
-    jest.useFakeTimers()
-    const onChangeNote = jest.fn()
-    const tree = mount(<ConditionsSection {...sectionProps({ onChangeNote })} />)
-
-    act(() => {
-      note(tree).props.onChangeText("So")
-    })
-    act(() => {
-      jest.advanceTimersByTime(300)
-    })
-    act(() => {
-      note(tree).props.onChangeText("Sol")
-    })
-    act(() => {
-      jest.advanceTimersByTime(300)
-    })
-    expect(onChangeNote).not.toHaveBeenCalled()
-
-    act(() => {
-      jest.advanceTimersByTime(100)
-    })
-    expect(onChangeNote).toHaveBeenCalledTimes(1)
-    expect(onChangeNote).toHaveBeenCalledWith("Sol")
-    expect(note(tree).props.value).toBe("Sol")
-  })
-
-  test("blur writes at once and the debounce does not write it twice", () => {
-    jest.useFakeTimers()
-    const onChangeNote = jest.fn()
-    const tree = mount(<ConditionsSection {...sectionProps({ onChangeNote })} />)
-
-    act(() => {
-      note(tree).props.onFocus({})
-      note(tree).props.onChangeText("Sol frais")
-    })
-    act(() => {
-      note(tree).props.onBlur({})
-    })
-    expect(onChangeNote).toHaveBeenCalledWith("Sol frais")
-
-    act(() => {
-      jest.advanceTimersByTime(1000)
-    })
-    expect(onChangeNote).toHaveBeenCalledTimes(1)
-  })
-
-  test("leaving the page writes what is still waiting", () => {
-    jest.useFakeTimers()
-    const onChangeNote = jest.fn()
-    const tree = mount(<ConditionsSection {...sectionProps({ onChangeNote })} />)
-
-    act(() => {
-      note(tree).props.onChangeText("À finir")
-    })
-    act(() => {
-      tree.unmount()
-    })
-
-    expect(onChangeNote).toHaveBeenCalledWith("À finir")
-  })
-
-  test("leaving the page with nothing new writes nothing", () => {
-    const onChangeNote = jest.fn()
-    const tree = mount(
-      <ConditionsSection
-        {...sectionProps({ onChangeNote, conditions: { ...LOADED_EMPTY, note: "Déjà là" } })}
-      />,
-    )
-
-    act(() => {
-      tree.unmount()
-    })
-
-    expect(onChangeNote).not.toHaveBeenCalled()
-  })
-
-  test("an emptied note is sent as an empty text", () => {
-    jest.useFakeTimers()
-    const onChangeNote = jest.fn()
-    const tree = mount(
-      <ConditionsSection
-        {...sectionProps({ onChangeNote, conditions: { ...LOADED_EMPTY, note: "Sol frais" } })}
-      />,
-    )
-
-    act(() => {
-      note(tree).props.onChangeText("")
-    })
-    act(() => {
-      jest.advanceTimersByTime(400)
-    })
-
-    expect(onChangeNote).toHaveBeenCalledWith("")
-  })
-
-  test("the stored note is adopted when the field is not being typed in", () => {
-    const element = (stored: string | null) => (
-      <ConditionsSection {...sectionProps({ conditions: { ...LOADED_EMPTY, note: stored } })} />
-    )
-    const tree = mount(element("avant"))
-
-    act(() => {
-      tree.update(element("après"))
-    })
-
-    expect(note(tree).props.value).toBe("après")
-  })
-
-  test("the stored note never replaces the text being typed, nor a note already written", () => {
-    jest.useFakeTimers()
-    const element = (stored: string | null) => (
-      <ConditionsSection {...sectionProps({ conditions: { ...LOADED_EMPTY, note: stored } })} />
-    )
-    const tree = mount(element(null))
-
-    act(() => {
-      note(tree).props.onFocus({})
-      note(tree).props.onChangeText("en cours ")
-    })
-    act(() => {
-      tree.update(element("ancien"))
-    })
-    expect(note(tree).props.value).toBe("en cours ")
-
-    act(() => {
-      note(tree).props.onBlur({})
-    })
-    // The write path trims: the stored copy equal to the trimmed text changes nothing.
-    act(() => {
-      tree.update(element("en cours"))
-    })
-    expect(note(tree).props.value).toBe("en cours ")
-  })
-
-  test("a text waiting for its debounce is not replaced either", () => {
-    jest.useFakeTimers()
-    const element = (stored: string | null) => (
-      <ConditionsSection {...sectionProps({ conditions: { ...LOADED_EMPTY, note: stored } })} />
-    )
-    const tree = mount(element(null))
-
-    act(() => {
-      note(tree).props.onChangeText("attente")
-    })
-    act(() => {
-      tree.update(element("autre"))
-    })
-
-    expect(note(tree).props.value).toBe("attente")
+    expect(texts(readOnly)).toEqual([t.section.title, t.section.subtitle])
   })
 })
 
@@ -617,7 +440,7 @@ describe("Conditions read only (D-03, U-04)", () => {
         {...sectionProps({
           editable: false,
           viewState: "edited",
-          conditions: { ...LOADED_EMPTY, weather, note: "Sol frais\nPas de vent" },
+          conditions: { ...LOADED_EMPTY, weather, note: "Sol frais" },
         })}
       />,
     )
@@ -636,20 +459,21 @@ describe("Conditions read only (D-03, U-04)", () => {
         "Heure",
         "14:30",
         "Source : Météo-France, mesure du 11/10/2026 à 14:30.",
-        "Sol frais\nPas de vent",
       ]),
     )
     expect(tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
     expect(tree.root.findAll((n) => n.props.testID === "conditions-refill")).toHaveLength(0)
     expect(tree.root.findAll((n) => n.props.testID?.startsWith("conditions-sky-"))).toHaveLength(0)
     expect(all.some((text) => /\d+ \/ 1000/.test(text))).toBe(false)
-    expect(byTestId(tree, "conditions-note-text").props.selectable).toBe(true)
+    // The note is a card of its own on the summary now (D-33): not part of this section.
+    expect(all).not.toContain("Sol frais")
+    expect(all).not.toContain(t.note.label)
+    // The heading above says Météo: the group does not repeat it.
+    expect(all.filter((text) => text === t.weather.title)).toHaveLength(1)
   })
 
   test("rows exist only for the values that exist", () => {
-    const tree = mount(
-      <ConditionsReadOnly note={null} weather={{ temperature_c: 9 }} emptyMode="line" />,
-    )
+    const tree = mount(<ConditionsReadOnly weather={{ temperature_c: 9 }} emptyMode="line" />)
 
     const all = texts(tree)
     expect(all).toContain("Température")
@@ -661,11 +485,7 @@ describe("Conditions read only (D-03, U-04)", () => {
 
   test("the source line follows who entered the values", () => {
     const edited = mount(
-      <ConditionsReadOnly
-        note={null}
-        weather={{ ...weather, edited: ["temperature_c"] }}
-        emptyMode="line"
-      />,
+      <ConditionsReadOnly weather={{ ...weather, edited: ["temperature_c"] }} emptyMode="line" />,
     )
     expect(texts(edited)).toContain(
       "Source : Météo-France, mesure du 11/10/2026 à 14:30, certaines valeurs modifiées par l'observateur",
@@ -673,7 +493,6 @@ describe("Conditions read only (D-03, U-04)", () => {
 
     const allEdited = mount(
       <ConditionsReadOnly
-        note={null}
         weather={{ ...weather, edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"] }}
         emptyMode="line"
       />,
@@ -685,7 +504,6 @@ describe("Conditions read only (D-03, U-04)", () => {
 
     const undated = mount(
       <ConditionsReadOnly
-        note={null}
         weather={{ sky: "cloudy", source: "meteo_france", observed_at: "garbage" }}
         emptyMode="line"
       />,
@@ -694,7 +512,6 @@ describe("Conditions read only (D-03, U-04)", () => {
 
     const manual = mount(
       <ConditionsReadOnly
-        note={null}
         weather={{ temperature_c: 9, source: "manual", edited: ["temperature_c"] }}
         emptyMode="line"
       />,
@@ -702,31 +519,25 @@ describe("Conditions read only (D-03, U-04)", () => {
     expect(texts(manual)).toContain(t.readOnly.sourceManual)
 
     const timeOnly = mount(
-      <ConditionsReadOnly
-        note={null}
-        weather={{ observed_at: weather.observed_at }}
-        emptyMode="line"
-      />,
+      <ConditionsReadOnly weather={{ observed_at: weather.observed_at }} emptyMode="line" />,
     )
     const lines = texts(timeOnly)
     expect(lines).not.toContain(t.readOnly.sourcePrefilled)
     expect(lines).not.toContain(t.readOnly.sourceManual)
   })
 
-  test("a note without weather says the weather is not entered", () => {
-    const tree = mount(
-      <ConditionsReadOnly note="Seulement une note" weather={null} emptyMode="hidden" />,
+  test("the group carries the Météo title unless a heading above says it", () => {
+    const titled = mount(<ConditionsReadOnly weather={{ temperature_c: 9 }} emptyMode="line" />)
+    expect(texts(titled)).toContain(t.weather.title)
+    const bare = mount(
+      <ConditionsReadOnly weather={{ temperature_c: 9 }} emptyMode="line" showTitle={false} />,
     )
-
-    const all = texts(tree)
-    expect(all).toContain(t.readOnly.noWeather)
-    expect(all).toContain("Seulement une note")
+    expect(texts(bare)).not.toContain(t.weather.title)
   })
 
-  test("neither: one line, or nothing when hidden", () => {
+  test("no weather: one line, or nothing when hidden", () => {
     const line = mount(
       <ConditionsReadOnly
-        note="  "
         weather={{ requested_at: "2026-10-11T08:00:00.000Z" }}
         emptyMode="line"
       />,
@@ -736,16 +547,15 @@ describe("Conditions read only (D-03, U-04)", () => {
     const section = mount(
       <ConditionsSection {...sectionProps({ editable: false, conditions: LOADED_EMPTY })} />,
     )
-    expect(texts(section)).toEqual([t.title, t.subtitle, t.readOnly.empty])
+    expect(texts(section)).toEqual([t.section.title, t.section.subtitle, t.readOnly.empty])
 
-    const hidden = mount(<ConditionsReadOnly note={null} weather={null} emptyMode="hidden" />)
+    const hidden = mount(<ConditionsReadOnly weather={null} emptyMode="hidden" />)
     expect(hidden.toJSON()).toBeNull()
   })
 
   test("non finite numbers and unknown skies are not drawn", () => {
     const tree = mount(
       <ConditionsReadOnly
-        note={null}
         weather={{ sky: "hail" as never, temperature_c: Number.NaN, wind_kmh: 3 }}
         emptyMode="line"
       />,

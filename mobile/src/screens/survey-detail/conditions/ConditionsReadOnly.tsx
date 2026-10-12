@@ -9,15 +9,9 @@ import {
   weatherSourceLine,
   type WeatherProvenance,
 } from "../../../app/weather"
-import {
-  brandDefaultFontFamily,
-  brandSpacing4,
-  brandTypeScale,
-  brandTypography,
-} from "../../../app/brand-tokens"
+import { brandDefaultFontFamily, brandSpacing4, brandTypeScale } from "../../../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../../../app/theme"
 import { fr } from "../../../i18n"
-import { AppCard } from "../../../ui/AppCard"
 import { AppGroupedList, type AppGroupedListRow } from "../../../ui/AppGroupedList"
 import { AppText as Text } from "../../../ui/AppText"
 
@@ -25,10 +19,11 @@ const t = fr.conditions
 const fields = t.weather.fields
 
 type ConditionsReadOnlyProps = {
-  note: string | null
   weather: SurveyWeather | null
-  /** "line": a single "nothing entered" line when both are empty; "hidden": draw nothing. */
+  /** "line": a single "nothing entered" line when there is no weather; "hidden": draw nothing. */
   emptyMode: "line" | "hidden"
+  /** False under a heading that already says "Météo" (the Contexte page); default true. */
+  showTitle?: boolean
 }
 
 /** The source line, with the date of the data for provider values when it is known (D-31). */
@@ -97,54 +92,36 @@ function weatherRows(weather: SurveyWeather | null): AppGroupedListRow[] {
 }
 
 /**
- * The Conditions after submit, or for someone else's survey: the same two cards as plain text
- * (D-03, UI-SPEC 1.5, U-04). Label and value rows for the weather values that exist, the source
- * line in the third person, the note as selectable text. Nothing can be edited here.
+ * The weather after submit, or for someone else's survey, as plain text (D-03, UI-SPEC 1.5, U-04):
+ * label and value rows for the values that exist and the full dated source line in the third
+ * person. The survey note is no longer part of it (D-33): it is `SurveyNoteCard`. Nothing can be
+ * edited here.
  */
-export function ConditionsReadOnly({ note, weather, emptyMode }: ConditionsReadOnlyProps) {
+export function ConditionsReadOnly({
+  weather,
+  emptyMode,
+  showTitle = true,
+}: ConditionsReadOnlyProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const rows = weatherRows(weather)
-  const noteText = note !== null && note.trim().length > 0 ? note : null
 
-  if (rows.length === 0 && noteText === null) {
-    return emptyMode === "line" ? <Text style={styles.empty}>{t.readOnly.empty}</Text> : null
-  }
+  if (rows.length === 0 && emptyMode === "hidden") return null
+  if (rows.length === 0) return <Text style={styles.empty}>{t.readOnly.empty}</Text>
 
   const provenance = weatherProvenance(weather)
-  const weatherRowsOrNone: AppGroupedListRow[] =
-    rows.length > 0
-      ? rows
-      : [
-          {
-            key: "none",
-            kind: "custom",
-            content: <Text style={styles.empty}>{t.readOnly.noWeather}</Text>,
-          },
-        ]
-
   return (
     <View style={styles.container} testID="conditions-read-only">
       <AppGroupedList
         sections={[
           {
             key: "weather",
-            title: t.weather.title,
-            rows: weatherRowsOrNone,
+            title: showTitle ? t.weather.title : undefined,
+            rows,
             footer: provenance ? sourceLine(weather, provenance) : undefined,
           },
         ]}
       />
-      {noteText !== null ? (
-        <AppCard variant="glass" padding={brandSpacing4.md} style={styles.noteCard}>
-          <Text style={styles.noteLabel} accessibilityRole="header">
-            {t.note.label}
-          </Text>
-          <Text style={styles.noteText} selectable testID="conditions-note-text">
-            {noteText}
-          </Text>
-        </AppCard>
-      ) : null}
     </View>
   )
 }
@@ -158,18 +135,6 @@ function createStyles(theme: BrandTheme) {
       ...brandTypeScale.footnote,
       fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
-    },
-    noteCard: {
-      gap: brandSpacing4.sm,
-    },
-    noteLabel: {
-      ...brandTypography.sectionHeader,
-      color: theme.colors.textPrimary,
-    },
-    noteText: {
-      ...brandTypeScale.subhead,
-      fontFamily: brandDefaultFontFamily,
-      color: theme.colors.textPrimary,
     },
   })
 }

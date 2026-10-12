@@ -1104,6 +1104,16 @@ describe("SurveyDetailRoute", () => {
     expect(props("surveyDetail").conditionsLoading).toBe(false)
   })
 
+  test("hands the summary's note card the silent draft write of the note (D-33)", async () => {
+    const fixture = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").onChangeNote).toBe(fixture.surveys.actions.updateSurveyNote)
+  })
+
   test("passes the survey and opens the three sub-pages", async () => {
     const fixture = withSelection(makeFixture())
     const navigation = makeNavigation()
@@ -1277,14 +1287,14 @@ describe("SurveyContextRoute", () => {
     })
   })
 
-  test("hands the Conditions the silent draft writes and the two weather links (phase 27)", async () => {
+  test("hands the weather section its silent draft write and the two weather links (phase 27)", async () => {
     const fixture = withSelection(makeFixture())
     await mount(
       <Providers fixture={fixture}>
         <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
       </Providers>,
     )
-    expect(props("surveyContext").onChangeNote).toBe(fixture.surveys.actions.updateSurveyNote)
+    expect(props("surveyContext").onChangeNote).toBeUndefined()
     expect(props("surveyContext").onEditWeather).toBe(fixture.surveys.actions.updateSurveyWeather)
     expect(props("surveyContext").onRetryWeather).toBe(fixture.weather.actions.retry)
     expect(props("surveyContext").onRefillWeather).toBe(fixture.weather.actions.refill)

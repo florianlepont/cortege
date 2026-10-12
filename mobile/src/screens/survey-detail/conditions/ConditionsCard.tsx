@@ -1,17 +1,10 @@
 import { Ionicons } from "@expo/vector-icons"
 import { isWeatherSkyCode, type SurveyWeather, type WeatherSkyCode } from "@cortege/ibp-domain"
-import { useMemo, useState } from "react"
-import {
-  ActivityIndicator,
-  NativeSyntheticEvent,
-  StyleSheet,
-  TextLayoutEventData,
-  View,
-} from "react-native"
+import { useMemo } from "react"
+import { ActivityIndicator, StyleSheet, View } from "react-native"
 import Animated, { LinearTransition, ReduceMotion } from "react-native-reanimated"
 import {
   brandDefaultFontFamily,
-  brandInteraction,
   brandMotion,
   brandRadius,
   brandSpacing4,
@@ -21,7 +14,6 @@ import { type BrandTheme, useBrandTheme } from "../../../app/theme"
 import { formatWeatherLine, weatherCardMention } from "../../../app/weather"
 import { fr } from "../../../i18n"
 import { AppCard } from "../../../ui/AppCard"
-import { AppPressable } from "../../../ui/AppPressable"
 import { AppText as Text } from "../../../ui/AppText"
 import { RipplePressable } from "../../../ui/RipplePressable"
 
@@ -43,7 +35,6 @@ export const SKY_GLYPHS: Record<WeatherSkyCode, keyof typeof Ionicons.glyphMap> 
 /** Without a sky the line still has a glyph: the neutral one of the invitation. */
 const NEUTRAL_GLYPH: keyof typeof Ionicons.glyphMap = "partly-sunny-outline"
 
-const FOLDED_LINES = 2
 const WEATHER_AREA_MIN_HEIGHT = 52
 const GLYPH_SIZE = 24
 const CHEVRON_SIZE = 18
@@ -51,45 +42,35 @@ const INVITATION_TILE = 32
 const TILE_GLYPH_SIZE = 20
 
 type ConditionsCardProps = {
-  note: string | null
   weather: SurveyWeather | null
   /** A weather lookup is running for this survey. */
   loading: boolean
   /** A submitted survey: with nothing to show the card is not drawn. */
   submitted: boolean
-  /** Opens the context page at its Conditions section. */
+  /** Opens the Contexte page at its weather section. */
   onOpen: () => void
 }
 
 /**
- * The conditions on the survey summary (D-17, UI-SPEC 3.1): one weather line (sky, temperature,
- * wind, rain, the values that exist), the very short mention "Météo-France" while a shown value is
- * still the provider's (D-26, D-35; the dated source sentence is in the Contexte page), and the survey note folded to two lines with an in-place "Lire la suite". The
- * weather area is the one press target: it opens the Conditions section of the context page. A
- * draft with nothing shows a calm invitation, a submitted survey with nothing shows no card.
+ * The weather on the survey summary (D-17, UI-SPEC 3.1, D-33, D-35): one weather line (sky,
+ * temperature, wind, rain, the values that exist) and, in small secondary text on the same card,
+ * the very short mention "Météo-France" while a shown value is still the provider's (D-26; the
+ * dated source sentence is in the Contexte page). The weather area is the one press target: it opens
+ * the weather section of the Contexte page. A draft with nothing shows a calm invitation, a
+ * submitted survey with nothing shows no card. The survey note is a card of its own below.
  */
-export function ConditionsCard({ note, weather, loading, submitted, onOpen }: ConditionsCardProps) {
+export function ConditionsCard({ weather, loading, submitted, onOpen }: ConditionsCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
-  const [expanded, setExpanded] = useState(false)
-  // Once the text has been seen cut, the link stays: expanded, the lines are no longer cut.
-  const [truncated, setTruncated] = useState(false)
 
   const line = formatWeatherLine(weather)
   const mention = weatherCardMention(weather)
-  const noteText = note !== null && note.trim().length > 0 ? note : null
 
-  if (line === null && noteText === null && !loading && submitted) return null
+  if (line === null && !loading && submitted) return null
 
-  const onTextLayout = (event: NativeSyntheticEvent<TextLayoutEventData>) => {
-    if (expanded) return
-    if (event.nativeEvent.lines.length > FOLDED_LINES) setTruncated(true)
-  }
-
-  const areaLabel = areaAccessibilityLabel(line, loading, noteText !== null)
-  const showLink = noteText !== null && (truncated || expanded)
+  const areaLabel = areaAccessibilityLabel(line, loading)
   const glyph = weather && isWeatherSkyCode(weather.sky) ? SKY_GLYPHS[weather.sky] : NEUTRAL_GLYPH
-  const invitation = line === null && noteText === null && !loading
+  const invitation = line === null && !loading
 
   return (
     <View testID="conditions-card">
@@ -148,10 +129,8 @@ export function ConditionsCard({ note, weather, loading, submitted, onOpen }: Co
                 <Text style={styles.title} numberOfLines={2}>
                   {line}
                 </Text>
-              ) : loading ? (
-                <Text style={styles.meta}>{s.loading}</Text>
               ) : (
-                <Text style={styles.title}>{s.noWeather}</Text>
+                <Text style={styles.meta}>{s.loading}</Text>
               )}
             </View>
             <Ionicons
@@ -168,41 +147,16 @@ export function ConditionsCard({ note, weather, loading, submitted, onOpen }: Co
               {mention}
             </Text>
           ) : null}
-
-          {noteText !== null ? (
-            <Text
-              testID="conditions-card-note"
-              style={styles.note}
-              numberOfLines={expanded ? undefined : FOLDED_LINES}
-              onTextLayout={onTextLayout}
-            >
-              {noteText}
-            </Text>
-          ) : null}
-
-          {showLink ? (
-            <AppPressable
-              testID="conditions-card-more"
-              onPress={() => setExpanded((value) => !value)}
-              accessibilityRole="button"
-              accessibilityLabel={expanded ? s.noteLessA11y : s.noteMoreA11y}
-              accessibilityState={{ expanded }}
-              style={styles.link}
-            >
-              <Text style={styles.linkText}>{expanded ? s.noteLess : s.noteMore}</Text>
-            </AppPressable>
-          ) : null}
         </Animated.View>
       </AppCard>
     </View>
   )
 }
 
-/** "Ouvrir les conditions du relevé. {what the area says}" (UI-SPEC 3.1, accessibility). */
-function areaAccessibilityLabel(line: string | null, loading: boolean, hasNote: boolean): string {
+/** "Ouvrir la météo du relevé. {what the area says}" (UI-SPEC 3.1, accessibility). */
+function areaAccessibilityLabel(line: string | null, loading: boolean): string {
   if (line !== null) return s.openWithLine(line)
-  if (loading) return s.openWithLine(s.loading)
-  return s.openWithLine(hasNote ? s.noWeather : s.emptyBody)
+  return s.openWithLine(loading ? s.loading : s.emptyBody)
 }
 
 function createStyles(theme: BrandTheme) {
@@ -251,22 +205,6 @@ function createStyles(theme: BrandTheme) {
       fontFamily: brandDefaultFontFamily,
       color: theme.colors.textSecondary,
       paddingLeft: GLYPH_SIZE + brandSpacing4.smd,
-    },
-    note: {
-      ...brandTypeScale.footnote,
-      fontFamily: brandDefaultFontFamily,
-      color: theme.colors.textSecondary,
-      marginTop: brandSpacing4.xs,
-    },
-    link: {
-      minHeight: brandInteraction.hitTarget.min,
-      alignSelf: "flex-start",
-      justifyContent: "center",
-    },
-    linkText: {
-      ...brandTypeScale.footnote,
-      fontFamily: "Jost-SemiBold",
-      color: theme.visual.accentText,
     },
   })
 }

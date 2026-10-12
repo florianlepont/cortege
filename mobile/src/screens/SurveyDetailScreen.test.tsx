@@ -89,6 +89,9 @@ jest.mock("./survey-detail/ScoreCard", () => ({ ScoreCard: "ScoreCard" }))
 jest.mock("./survey-detail/conditions/ConditionsCard", () => ({
   ConditionsCard: "ConditionsCard",
 }))
+jest.mock("./survey-detail/conditions/SurveyNoteCard", () => ({
+  SurveyNoteCard: "SurveyNoteCard",
+}))
 let mockConditions: {
   note: string | null
   weather: Record<string, unknown> | null
@@ -158,6 +161,7 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onOpenContext: jest.fn(),
     onOpenConditions: jest.fn(),
     conditionsLoading: false,
+    onChangeNote: jest.fn(),
     onOpenParcels: jest.fn(),
     onOpenScore: jest.fn(),
     onOpenFactor: jest.fn(),
@@ -193,12 +197,13 @@ describe("SurveyDetailScreen summary", () => {
     expect(byType(tree, "AppCard")).toHaveLength(0)
     const scroll = byType(tree, "ScrollView")[0]
     const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
-    // The score card is followed by the conditions card (D-17), then the photos.
+    // The score card is followed by the weather card (D-17), the note card (D-33), then the photos.
     expect(order.indexOf("ConditionsCard")).toBe(order.indexOf("ScoreCard") + 1)
-    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("ConditionsCard") + 1)
+    expect(order.indexOf("SurveyNoteCard")).toBe(order.indexOf("ConditionsCard") + 1)
+    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("SurveyNoteCard") + 1)
   })
 
-  test("D-17: the conditions card gets the note and the weather read from the draft", () => {
+  test("D-17: the weather card gets the weather read from the draft, no note", () => {
     mockConditions = {
       note: "Sol détrempé",
       weather: { sky: "cloudy", temperature_c: 14 },
@@ -207,11 +212,31 @@ describe("SurveyDetailScreen summary", () => {
     }
     const tree = mount("draft")
     const card = byType(tree, "ConditionsCard")[0]
-    expect(card.props.note).toBe("Sol détrempé")
+    expect(card.props.note).toBeUndefined()
     expect(card.props.weather).toEqual({ sky: "cloudy", temperature_c: 14 })
     expect(useSurveyConditions).toHaveBeenLastCalledWith(
       expect.objectContaining({ id: "survey-1" }),
     )
+  })
+
+  test("D-33: the note card gets the stored note, editable while the survey can be edited", () => {
+    mockConditions = { note: "Sol détrempé", weather: null, parcelIds: [], loaded: true }
+    const draftProps = makeProps("draft")
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...draftProps} />)
+    })
+    const draft = byType(tree!, "SurveyNoteCard")[0]
+    expect(draft.props).toMatchObject({ editable: true, loaded: true, stored: "Sol détrempé" })
+    act(() => draft.props.onChangeNote("Nouvelle note"))
+    expect(draftProps.onChangeNote).toHaveBeenCalledWith("survey-1", "Nouvelle note")
+  })
+
+  test("D-33: the page lets the keyboard lift the note and closes it on drag", () => {
+    const scroll = byType(mount("draft"), "ScrollView")[0]
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled")
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag")
+    expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true)
   })
 
   test("the card is told whether the survey is submitted and whether a lookup runs", () => {
