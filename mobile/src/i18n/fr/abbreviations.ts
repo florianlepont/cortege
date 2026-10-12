@@ -3,11 +3,6 @@
 // dev-only) lives in the gate `src/__checks__/abbreviations.test.ts` (D-05, D-11).
 export const abbreviationsFr = {
   terms: {
-    IBP: {
-      long: "Indice de Biodiversité Potentielle",
-      explanation:
-        "Un score sur 50 qui estime à quel point une forêt peut accueillir une biodiversité riche. Il additionne dix facteurs observés sur le terrain, sept sur le peuplement et sa gestion (sur 35) et trois sur le contexte (sur 15).",
-    },
     BMg: {
       long: "bois morts de grosse dimension",
       explanation:

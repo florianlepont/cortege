@@ -54,7 +54,7 @@ import {
 } from "../../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../../app/theme"
 import { GlassSurface } from "../../ui/GlassSurface"
-import { MapLegend, ScoreLegend } from "./ScoreLegend"
+import { ScoreLegend } from "./ScoreLegend"
 
 const darkTheme = buildTheme("dark")
 
@@ -116,35 +116,15 @@ describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
     expect(tree.root.findByProps({ accessibilityLabel: t.a11y.hideLegend })).toBeTruthy()
   })
 
-  test("explains IBP beside the panel title with the map-control ink, only when expanded (D-11)", () => {
-    const anchors = (tree: renderer.ReactTestRenderer) =>
-      tree.root.findAll(
-        (n) => n.props.testID === "abbreviation-info-IBP" && (n.type as unknown) === "Pressable",
-      )
+  test("the expanded panel carries no IBP info control, only its title (D-47)", () => {
     const tree = render()
-    expect(anchors(tree)).toHaveLength(0)
-    act(() => tree.root.findByProps({ accessibilityLabel: t.a11y.showLegend }).props.onPress())
-    expect(anchors(tree)).toHaveLength(1)
-    const glyph = anchors(tree)[0].findAll((n) => (n.type as unknown) === "Ionicons")[0]
-    expect(glyph.props.name).toBe("information-circle-outline")
-    expect(glyph.props.color).toBe(defaultTheme.visual.mapControl.icon)
-  })
-
-  test("a MapLegend without infoTerm (the parcel picker's) draws no info control", () => {
-    let tree!: renderer.ReactTestRenderer
-    act(() => {
-      tree = renderer.create(
-        <MapLegend
-          bottom={0}
-          countLabel="3 parcelles"
-          title="Titre"
-          subtitle="Sous-titre"
-          rows={[]}
-        />,
-      )
-    })
     act(() => tree.root.findByProps({ accessibilityLabel: t.a11y.showLegend }).props.onPress())
     expect(tree.root.findAll((n) => n.props.testID === "abbreviation-info-IBP")).toHaveLength(0)
+    expect(
+      tree.root.findAll(
+        (n) => (n.type as unknown) === "Text" && n.props.children === t.legend.title,
+      ),
+    ).toHaveLength(1)
   })
 
   test("also explains the dashed marker of the author's own draft (OA-59)", () => {

@@ -12,9 +12,11 @@ import { fr } from "../i18n"
 // every user-facing string into `src/i18n`, so scanning the catalogue covers every screen.
 //
 // Treatments (D-11):
-//   allowlist    units (ha, cm, m, km, Mo, Ko), OK, PDF, GPS and ex.: used bare everywhere
-//   info         IBP: written out where `definedIn` says, explained by an info sheet on the main
-//                headers (plan 26-07), not on every use
+//   allowlist    units (ha, cm, m, km, Mo, Ko), OK, PDF, GPS, IBP and ex.: used bare everywhere
+//                (IBP joined in 27 D-47: the people who use the app know it, so it is no longer
+//                explained by an info sheet)
+//   info         a term written out where `definedIn` says and explained by an info sheet; no
+//                term uses it today, the mechanism stays for the fixtures
 //   written-out  the long form must occur in the same catalogue file (case-insensitive, spaces and
 //                apostrophes normalised); the texts live in `fr.abbreviations.terms` (D-04)
 //   dev-only     shown only by `shouldShowDevTools()`: allowed in the listed files only
@@ -41,7 +43,7 @@ const POLICY: Policy = {
   PDF: { treatment: "allowlist" },
   GPS: { treatment: "allowlist" },
   "ex.": { treatment: "allowlist" },
-  IBP: { treatment: "info", definedIn: ["onboarding.ts", "auth-gate.ts", "survey-export.ts"] },
+  IBP: { treatment: "allowlist" },
   BMg: { treatment: "written-out" },
   BMm: { treatment: "written-out" },
   TGB: { treatment: "written-out" },
@@ -462,10 +464,13 @@ describe("abbreviation gate on the fr catalogue", () => {
       .sort()
 
     expect(explained).toEqual(Object.keys(fr.abbreviations.terms).sort())
-    expect(allowed).toEqual(["GPS", "Ko", "Mo", "OK", "PDF", "cm", "ex.", "ha", "km", "m"].sort())
+    expect(allowed).toEqual(
+      ["GPS", "IBP", "Ko", "Mo", "OK", "PDF", "cm", "ex.", "ha", "km", "m"].sort(),
+    )
   })
 
-  it("keeps IBP written out where the owner wants it", () => {
+  it("has no info term left (IBP is bare, D-47), so no definition is owed", () => {
+    expect(Object.values(POLICY).filter((rule) => rule.treatment === "info")).toEqual([])
     expect(findMissingDefinitions(files, POLICY, longForms)).toEqual([])
   })
 

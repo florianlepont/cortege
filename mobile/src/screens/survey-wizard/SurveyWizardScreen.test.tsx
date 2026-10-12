@@ -331,24 +331,20 @@ describe("SurveyWizardScreen: method cards", () => {
   })
 })
 
-describe("SurveyWizardScreen: IBP info (D-11)", () => {
-  const anchors = (tree: ReactTestRenderer) =>
-    tree.root.findAll(
-      (n) => n.props.testID === "abbreviation-info-IBP" && typeof n.type === "string",
-    )
-
-  test("only the method step carries the info glyph, beside the title", () => {
+describe("SurveyWizardScreen: no IBP info control (D-47)", () => {
+  test("no step carries the info glyph, and the question is the only header", () => {
     const { tree } = mount()
-    expect(anchors(tree)).toHaveLength(0)
+    const anchors = () =>
+      tree.root.findAll((n) => String(n.props.testID ?? "").startsWith("abbreviation-info"))
+    expect(anchors()).toHaveLength(0)
     next(tree)
-    expect(anchors(tree)).toHaveLength(1)
-    expect(anchors(tree)[0].props.accessibilityLabel).toBe("Que signifie IBP ?")
+    expect(anchors()).toHaveLength(0)
     const title = tree.root.findAll(
       (n) => typeof n.type === "string" && n.props.accessibilityRole === "header",
     )[0]
     expect(title.props.children).toBe(w.method.title)
     next(tree)
-    expect(anchors(tree)).toHaveLength(0)
+    expect(anchors()).toHaveLength(0)
   })
 })
 

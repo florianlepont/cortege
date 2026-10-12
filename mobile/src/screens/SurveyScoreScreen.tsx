@@ -2,7 +2,6 @@ import { useMemo } from "react"
 
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
-import { AbbreviationInfo } from "../ui/AbbreviationInfo"
 import { AppCard } from "../ui/AppCard"
 import { FactorBarsChart, factorPointsFromEntries } from "../ui/FactorBarsChart"
 import { useFrameInsetBehavior } from "../ui/frame-large-title"
@@ -46,7 +45,6 @@ export function SurveyScoreScreen({
       contentInsetAdjustmentBehavior={insetBehavior}
     >
       <PageTitle>{fr.navigation.headers.surveyScore}</PageTitle>
-      <AbbreviationInfo term="IBP" variant="row" />
       <ScoreBreakdown scores={data.displayedScores} />
       <AppCard variant="glass">
         <FactorBarsChart entries={factorPoints} animate />
