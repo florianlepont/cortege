@@ -114,7 +114,6 @@ function render(props: Partial<BasemapSwipeOverlayProps> = {}): ReactTestRendere
       <BasemapSwipeOverlay
         top={58}
         layer="map"
-        comparing={false}
         isAvailable={() => true}
         hintText={null}
         fingerDown={false}
@@ -326,27 +325,6 @@ describe("hint", () => {
       reduceMotion: "system",
     })
     expect(wrapper?.props.exiting.calls).toEqual({ durationMs: 1000, reduceMotion: "system" })
-  })
-})
-
-describe("in a comparison", () => {
-  test("no indicator and no dots, only Terminé and the comparison hint", () => {
-    const tree = render({ comparing: true, introHintVisible: true })
-    expect(byId(tree, "swipe-indicator")).toHaveLength(0)
-    expect(byId(tree, "swipe-dots")).toHaveLength(0)
-    expect(byId(tree, "swipe-done")).toHaveLength(1)
-    expect(textsOf(byId(tree, "swipe-hint")[0])).toEqual([
-      "Glissez un côté pour changer son fond · tirez la ligne au bord pour quitter la comparaison",
-    ])
-  })
-
-  test("the side hint shows while a finger is down", () => {
-    const tree = render({
-      comparing: true,
-      fingerDown: true,
-      hintText: "Lâchez pour changer de fond",
-    })
-    expect(textsOf(byId(tree, "swipe-hint")[0])).toEqual(["Lâchez pour changer de fond"])
   })
 })
 

@@ -40,12 +40,6 @@ export function sideBounds(side: SideKey, lineX: number, width: number): Bounds 
   return [0, width]
 }
 
-/** Which side of the line a touch at `x` is on. */
-export function sideOf(x: number, lineX: number): "left" | "right" {
-  "worklet"
-  return x < lineX ? "left" : "right"
-}
-
 /**
  * The strip of the incoming layer between the finger and the edge it comes from, inside the side:
  * dragging left (`dx` < 0) uncovers it from the right edge, dragging right from the left edge.

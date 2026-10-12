@@ -22,7 +22,6 @@ import {
   moveGesture,
   releaseGesture,
   releaseHaptic,
-  tapAction,
   zoneHaptic,
   type HapticCue,
   type ReleaseResult,
@@ -39,7 +38,7 @@ import {
 } from "../../map/wipe-geometry"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { feedback } from "../../ui/feedback"
-import { COMPARISON_BUILT, SIDE_WIPE, WIPE_PRESENTATION } from "./map-stack-mode"
+import { COMPARISON_BUILT, WIPE_PRESENTATION } from "./map-stack-mode"
 import { swipeLabel } from "./swipe-labels"
 import { useSwipeModeTimers } from "./useSwipeModeTimers"
 import type { MapLayers } from "./useMapLayersState"
@@ -49,6 +48,10 @@ import type { MapLayers } from "./useMapLayersState"
 // cues all live in `map/swipe-machine.ts`; this hook only feeds the machine with the pan events,
 // plays the cues it returns, animates the strip and applies the outcome to the layers state. It
 // never compares the revealed fraction with a number.
+//
+// The swipe mode and the comparison never coexist (CONTEXT item 13 d): the swipe surface is not
+// active in a comparison, so every gesture here is full width and a compare release starts the
+// comparison, which ends the swipe mode in the layers state.
 //
 // Like the 28-01 spike driver, the pan handlers run on the JS thread (`runOnJS(true)`): the layer
 // context is JS state and the strip reaches the stacked maps through shared values. The settle
@@ -91,7 +94,7 @@ export type BasemapSwipe = {
   indicatorLayer: BaseLayerKey
   introHintVisible: boolean
   skippedVisible: boolean
-  /** The "Comparer avec le fond suivant" action exists (built, no comparison yet, a next layer). */
+  /** The "Comparer avec le fond suivant" action exists (built and a next layer). */
   compareAvailable: boolean
   next: () => void
   previous: () => void
@@ -141,7 +144,6 @@ export function useBasemapSwipe({
   const pendingRef = useRef<(() => void) | null>(null)
 
   const swipeMode = layers.state.swipeMode
-  const comparing = layers.state.compare !== null
   const displayed = layers.displayedBase
 
   const publishLive = (next: Live | null) => {
@@ -180,18 +182,13 @@ export function useBasemapSwipe({
   )
 
   // The machine's context from the layers state at the time of the event.
-  const moveContext = (comparisonAllowed: boolean) => ({
+  const moveContext = () => ({
     width,
-    lineX: layers.state.compare?.x ?? null,
-    layerOf: (side: SideKey) => (side === "full" ? displayed : layers.layerOfSide(side)),
-    otherOf: (side: SideKey) =>
-      side === "full" ? null : layers.layerOfSide(side === "left" ? "right" : "left"),
+    layerOf: () => displayed,
     isAvailable,
-    comparisonAllowed,
+    comparisonAllowed: COMPARISON_BUILT,
   })
-  const comparisonOpen = () => COMPARISON_BUILT && layers.state.compare === null
-  const isInstant = (side: SideKey) =>
-    reduced || (side === "full" ? WIPE_PRESENTATION === "instant" : SIDE_WIPE === "instant")
+  const isInstant = () => reduced || WIPE_PRESENTATION === "instant"
 
   // Applies a pending settle at once (a new touch must not find the old outcome half applied).
   const flushPending = () => pendingRef.current?.()
@@ -224,11 +221,7 @@ export function useBasemapSwipe({
     flushPending()
     clearIdle()
     setFingerDown(true)
-    gestureRef.current = beginGesture({
-      x: event.x ?? 0,
-      y: event.y ?? 0,
-      lineX: layers.state.compare?.x ?? null,
-    })
+    gestureRef.current = beginGesture({ x: event.x ?? 0, y: event.y ?? 0 })
   })
 
   const handleUpdate = useLatestCallback((event: PanEvent) => {
@@ -237,7 +230,7 @@ export function useBasemapSwipe({
     const next = moveGesture(
       gesture,
       { x: event.x ?? gesture.fingerX, y: event.y ?? gesture.y0 },
-      moveContext(comparisonOpen()),
+      moveContext(),
     )
     gestureRef.current = next
     if (next.zone !== null) playHapticCue(zoneHaptic(gesture.zone, next.zone))
@@ -247,12 +240,8 @@ export function useBasemapSwipe({
         ? { zone: next.zone, blocked: next.blocked, incoming: next.incoming }
         : null,
     )
-    if (!wiping || isInstant(next.side)) return
-    const strip = wipeStrip(
-      sideBounds(next.side, layers.state.compare?.x ?? 0, width),
-      next.dx,
-      next.fingerX,
-    )
+    if (!wiping || isInstant()) return
+    const strip = wipeStrip(sideBounds("full", 0, width), next.dx, next.fingerX)
     clipLeft.value = strip.left
     clipRight.value = strip.right
     publishWipe({ side: next.side, incoming: next.incoming as BaseLayerKey })
@@ -260,10 +249,10 @@ export function useBasemapSwipe({
 
   const applyRelease = (gesture: WipeGesture, result: ReleaseResult) => {
     const { incoming } = result
-    const bounds = sideBounds(gesture.side, layers.state.compare?.x ?? 0, width)
-    const instant = isInstant(gesture.side)
+    const bounds = sideBounds("full", 0, width)
+    const instant = isInstant()
     if (result.outcome === "tap") {
-      if (tapAction(comparing) === "exit-swipe") layers.actions.exitSwipe()
+      layers.actions.exitSwipe()
       return
     }
     if (incoming === null) return
@@ -282,8 +271,7 @@ export function useBasemapSwipe({
     }
     if (result.outcome === "commit") {
       const apply = () => {
-        if (gesture.side === "full") layers.actions.commitBase(incoming)
-        else layers.actions.setSide(gesture.side === "left" ? "A" : "B", incoming)
+        layers.actions.commitBase(incoming)
         announce(t.announceChanged(swipeLabel(incoming)))
       }
       if (instant) {
@@ -307,7 +295,7 @@ export function useBasemapSwipe({
     if (!gesture) return
     const result: ReleaseResult =
       success || !gesture.started
-        ? releaseGesture(gesture, comparisonOpen())
+        ? releaseGesture(gesture, COMPARISON_BUILT)
         : {
             outcome: "cancel",
             incoming: gesture.incoming,
@@ -342,7 +330,6 @@ export function useBasemapSwipe({
 
   // The non-gesture path (UI-SPEC accessibility alternative): the same rules as a commit.
   const step = (dir: 1 | -1) => {
-    if (comparing) return
     const target = neighbourLayer(displayed, dir, { isAvailable })
     if (target === null) return
     playHapticCue("tick")
@@ -352,8 +339,7 @@ export function useBasemapSwipe({
   }
   const next = useLatestCallback(() => step(1))
   const previous = useLatestCallback(() => step(-1))
-  const compareTarget =
-    COMPARISON_BUILT && !comparing ? neighbourLayer(displayed, 1, { isAvailable }) : null
+  const compareTarget = COMPARISON_BUILT ? neighbourLayer(displayed, 1, { isAvailable }) : null
   const compareNext = useLatestCallback(() => {
     if (compareTarget === null) return
     playHapticCue("detent")

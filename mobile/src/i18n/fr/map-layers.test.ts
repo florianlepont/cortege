@@ -133,7 +133,7 @@ describe("fr.mapLayers", () => {
         mapLayersFr.compare.handleA11yValue({ left: "Plan", right: "Photos 1950", percent: 50 }),
       ).toBe("Plan à gauche, Photos 1950 à droite, séparation à 50 %")
       expect(mapLayersFr.compare.announceStart({ left: "Plan", right: "Satellite" })).toBe(
-        "Comparaison : Plan à gauche, Satellite à droite. Relevés masqués.",
+        "Comparaison : Plan à gauche, Satellite à droite.",
       )
     })
 

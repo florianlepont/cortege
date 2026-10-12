@@ -8,7 +8,6 @@ import {
   revealedFraction,
   settledStrip,
   sideBounds,
-  sideOf,
   stepLinePercent,
   TAG_GAP,
   TAG_MIN_WIDTH,
@@ -26,17 +25,11 @@ describe("constants", () => {
   })
 })
 
-describe("sideBounds and sideOf", () => {
+describe("sideBounds", () => {
   it("gives the x range a gesture acts in", () => {
     expect(sideBounds("full", 200, 400)).toEqual([0, 400])
     expect(sideBounds("left", 200, 400)).toEqual([0, 200])
     expect(sideBounds("right", 200, 400)).toEqual([200, 400])
-  })
-
-  it("tells which side of the line a touch is on", () => {
-    expect(sideOf(150, 200)).toBe("left")
-    expect(sideOf(250, 200)).toBe("right")
-    expect(sideOf(200, 200)).toBe("right")
   })
 })
 

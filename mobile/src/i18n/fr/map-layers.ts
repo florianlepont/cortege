@@ -39,8 +39,6 @@ export const mapLayersFr = {
       `Changement de fond. ${name}, ${era}.`,
     announceChanged: ({ name, era }: { name: string; era: string }) => `${name}, ${era}`,
     hintSwipe: "Glissez · lâchez au milieu pour comparer",
-    hintSwipeCompare:
-      "Glissez un côté pour changer son fond · tirez la ligne au bord pour quitter la comparaison",
     // Each zone of the swipe has its hint (CONTEXT item 11): cancel, compare, commit.
     hintCancel: "Lâchez pour revenir",
     hintRelease: "Lâchez pour comparer",
@@ -148,7 +146,7 @@ export const mapLayersFr = {
     actionRightNext: "Fond suivant à droite",
     actionRightPrevious: "Fond précédent à droite",
     announceStart: ({ left, right }: { left: string; right: string }) =>
-      `Comparaison : ${left} à gauche, ${right} à droite. Relevés masqués.`,
+      `Comparaison : ${left} à gauche, ${right} à droite.`,
   },
   sources: {
     common:

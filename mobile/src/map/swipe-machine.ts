@@ -6,17 +6,21 @@
 //
 // Zones (owner decision 2026-10-11, CONTEXT item 11, superseding the 0.2 / 0.8 window): the revealed
 // fraction is cut in thirds. Cancel below 1/3, compare between 1/3 and 2/3, commit above 2/3. Where
-// no comparison is allowed there are two zones, cancel below 1/3 and commit above. The zone is kept
+// the comparison is not built there are two zones, cancel below 1/3 and commit above. The zone is kept
 // in the gesture and moves only after crossing a boundary by ZONE_HYSTERESIS, so the live hint, the
 // haptic cue and the release outcome all read the same zone and never disagree.
 //
 // A gesture is a plain object the pan handler keeps (a shared value on the UI thread) and replaces
 // on every move; nothing here keeps state. Every function carries the `"worklet"` directive.
 // No React, no i18n: hints are keys, the screens turn them into text.
+//
+// The swipe mode and the comparison never coexist (owner feedback, CONTEXT item 13 d): every gesture
+// is full width. The swipe surface is not active in a comparison, so the machine knows no line, no
+// side of a line and no tap rule (a tap always exits the swipe mode).
 
 import { neighbourLayer } from "./layer-cycle"
 import type { BaseLayerKey } from "./layers"
-import { revealedFraction, sideBounds, sideOf } from "./wipe-geometry"
+import { revealedFraction, sideBounds } from "./wipe-geometry"
 import type { SideKey } from "./wipe-geometry"
 
 // One definition each, in wipe-geometry.ts; this module exports the whole UI-SPEC list.
@@ -28,8 +32,6 @@ export const SWIPE_SLOP = 6
 export const COMPARE_MIN = 1 / 3
 /** A full-width release above this revealed fraction (two thirds) commits. */
 export const COMPARE_MAX = 2 / 3
-/** A side wipe, or a full wipe when the comparison is not allowed, commits above one third. */
-export const SIDE_COMMIT = 1 / 3
 /** A zone changes only after the finger crossed its boundary by this revealed fraction. */
 export const ZONE_HYSTERESIS = 0.03
 /** The swipe mode quits after this long without a gesture or an action (ms). */
@@ -45,7 +47,7 @@ export type SwipeZone = "cancel" | "compare" | "commit"
 export type HapticCue = "detent" | "tick"
 
 export type WipeGesture = {
-  /** Where the gesture acts, decided by the first touch. */
+  /** Where the gesture acts: always the whole map ("full"). */
   side: SideKey
   x0: number
   y0: number
@@ -65,14 +67,10 @@ export type WipeGesture = {
 
 export type MoveContext = {
   width: number
-  /** The comparison line, null without a comparison. */
-  lineX: number | null
   /** The layer shown on a side (the base for "full"). */
   layerOf: (side: SideKey) => BaseLayerKey
-  /** The layer shown on the other side of the comparison, null for "full". */
-  otherOf: (side: SideKey) => BaseLayerKey | null
   isAvailable: (key: BaseLayerKey) => boolean
-  /** False when only two zones exist for a full-width wipe; defaults to true. Side wipes ignore it. */
+  /** False when only two zones exist; defaults to true. */
   comparisonAllowed?: boolean
 }
 
@@ -86,11 +84,11 @@ export type ReleaseResult = {
   releaseX: number
 }
 
-/** A gesture starts at the first touch: on a side of the line when there is one, else full width. */
-export function beginGesture(touch: { x: number; y: number; lineX: number | null }): WipeGesture {
+/** A gesture starts at the first touch and always acts on the whole map. */
+export function beginGesture(touch: { x: number; y: number }): WipeGesture {
   "worklet"
   return {
-    side: touch.lineX === null ? "full" : sideOf(touch.x, touch.lineX),
+    side: "full",
     x0: touch.x,
     y0: touch.y,
     started: false,
@@ -121,8 +119,8 @@ export function swipeZone(
 ): SwipeZone {
   "worklet"
   if (!comparisonAllowed) {
-    if (previous === "commit") return rev < SIDE_COMMIT - ZONE_HYSTERESIS ? "cancel" : "commit"
-    const toCommit = previous === "cancel" ? SIDE_COMMIT + ZONE_HYSTERESIS : SIDE_COMMIT
+    if (previous === "commit") return rev < COMPARE_MIN - ZONE_HYSTERESIS ? "cancel" : "commit"
+    const toCommit = previous === "cancel" ? COMPARE_MIN + ZONE_HYSTERESIS : COMPARE_MIN
     return rev > toCommit ? "commit" : "cancel"
   }
   let lower = COMPARE_MIN
@@ -156,13 +154,13 @@ export function releaseHaptic(outcome: ReleaseOutcome): HapticCue | null {
 /** The zone a gesture is in now, for a given permission; idempotent on the stored zone. */
 function zoneOf(gesture: WipeGesture, comparisonAllowed: boolean): SwipeZone {
   "worklet"
-  return swipeZone(gesture.rev, gesture.zone, gesture.side === "full" && comparisonAllowed)
+  return swipeZone(gesture.rev, gesture.zone, comparisonAllowed)
 }
 
 /**
  * The gesture after the finger moved to `point`. Past the slop it starts with the incoming layer
- * (next when dragging left, previous when dragging right, skipping unavailable layers and the other
- * side's layer); when no layer qualifies it is blocked and never starts.
+ * (next when dragging left, previous when dragging right, skipping unavailable layers); when no
+ * layer qualifies it is blocked and never starts.
  */
 export function moveGesture(
   gesture: WipeGesture,
@@ -177,29 +175,22 @@ export function moveGesture(
   if (!gesture.started && Math.abs(dx) < SWIPE_SLOP) return moved
   const incoming = neighbourLayer(context.layerOf(gesture.side), dx < 0 ? 1 : -1, {
     isAvailable: context.isAvailable,
-    exclude: context.otherOf(gesture.side) ?? undefined,
   })
   if (incoming === null) return { ...moved, blocked: true, started: false, incoming: null }
-  const bounds = sideBounds(gesture.side, context.lineX ?? 0, context.width)
+  const bounds = sideBounds("full", 0, context.width)
   const rev = revealedFraction(bounds, dx, point.x)
-  const zone = swipeZone(
-    rev,
-    gesture.zone,
-    gesture.side === "full" && (context.comparisonAllowed ?? true),
-  )
+  const zone = swipeZone(rev, gesture.zone, context.comparisonAllowed ?? true)
   return { ...moved, started: true, incoming, rev, zone }
 }
 
 /**
  * The hint to show while the finger is down, null for none. It follows the zone: nothing in the
- * cancel zone (a release cancels), "compare" in the compare zone, "change" in the commit zone; a
- * side wipe always says "change".
+ * cancel zone (a release cancels), "compare" in the compare zone, "change" in the commit zone.
  */
 export function liveHint(gesture: WipeGesture, comparisonAllowed: boolean): LiveHint | null {
   "worklet"
   if (gesture.blocked) return "none-available"
   if (!gesture.started) return null
-  if (gesture.side !== "full") return "change"
   const zone = zoneOf(gesture, comparisonAllowed)
   if (zone === "cancel") return null
   return zone === "compare" ? "compare" : "change"
@@ -208,8 +199,8 @@ export function liveHint(gesture: WipeGesture, comparisonAllowed: boolean): Live
 /**
  * What the release does. A gesture that never started is a tap (under 6 pt in both axes) or nothing.
  * A started gesture releases in the zone it is in, hysteresis included, so a release exactly on a
- * boundary follows the zone the finger was in: a full-width wipe cancels, compares or commits by
- * thirds; a side wipe, or a full wipe when the comparison is not allowed, cancels or commits at 1/3.
+ * boundary follows the zone the finger was in: the wipe cancels, compares or commits by thirds, or
+ * cancels or commits at 1/3 when the comparison is not allowed.
  */
 export function releaseGesture(gesture: WipeGesture, comparisonAllowed: boolean): ReleaseResult {
   "worklet"
@@ -240,12 +231,6 @@ export function compareSidesFor(
   return dx < 0
     ? { sideA: shown, sideB: incoming, secondSide: "right" }
     : { sideA: incoming, sideB: shown, secondSide: "left" }
-}
-
-/** A tap on the map exits the swipe mode, except in a comparison (the user aims at a side). */
-export function tapAction(comparing: boolean): "exit-swipe" | "nothing" {
-  "worklet"
-  return comparing ? "nothing" : "exit-swipe"
 }
 
 /** The 8 s idle exit is off while a screen reader is on, so nobody is ejected mid-action. */

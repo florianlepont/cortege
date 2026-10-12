@@ -271,7 +271,6 @@ describe("the swipe mode", () => {
     expect(overlay).toMatchObject({
       top: 58,
       layer: "satellite",
-      comparing: false,
       hintText: "Lâchez pour revenir",
       fingerDown: true,
       introHintVisible: false,
@@ -360,12 +359,6 @@ describe("the comparison", () => {
       leftUnavailable: true,
       rightUnavailable: true,
     })
-  })
-
-  test("with the swipe mode on the tags wear their chevrons and there is no indicator, only Terminé", () => {
-    const { tree } = render(comparing({ swipeMode: true }))
-    expect(named(tree, "CurtainSideTags")[0].props.swipeMode).toBe(true)
-    expect(named(tree, "BasemapSwipeOverlay")[0].props.comparing).toBe(true)
   })
 
   test("the quit pill shows only when the hook says so, level with the capsule", () => {

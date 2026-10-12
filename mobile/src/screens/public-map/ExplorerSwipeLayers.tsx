@@ -137,7 +137,6 @@ export function ExplorerSwipeLayers({
         <BasemapSwipeOverlay
           top={capsuleTop}
           layer={controller.indicatorLayer}
-          comparing={view.comparing}
           isAvailable={layers.isAvailable}
           hintText={controller.hintText}
           fingerDown={controller.fingerDown}

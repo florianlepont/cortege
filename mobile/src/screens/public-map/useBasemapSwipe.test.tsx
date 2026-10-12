@@ -63,16 +63,13 @@ jest.mock("react-native-reanimated", () => ({
   },
 }))
 
-const mockStack = { wipe: "wipe", comparison: true, side: "wipe" }
+const mockStack = { wipe: "wipe", comparison: true }
 jest.mock("./map-stack-mode", () => ({
   get WIPE_PRESENTATION() {
     return mockStack.wipe
   },
   get COMPARISON_BUILT() {
     return mockStack.comparison
-  },
-  get SIDE_WIPE() {
-    return mockStack.side
   },
 }))
 
@@ -87,7 +84,7 @@ import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { feedback } from "../../ui/feedback"
 import type { BaseLayerKey } from "../../map/layers"
 import { HINT_MS, IDLE_MS, SETTLE_MS } from "../../map/swipe-machine"
-import { INITIAL_MAP_LAYERS_STATE, type CompareState } from "./map-layers-state"
+import { INITIAL_MAP_LAYERS_STATE } from "./map-layers-state"
 import { SwipeSurface } from "./SwipeSurface"
 import { playHapticCue, useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
 import type { MapLayers } from "./useMapLayersState"
@@ -113,7 +110,6 @@ beforeEach(() => {
   mockCompletions.length = 0
   mockStack.wipe = "wipe"
   mockStack.comparison = true
-  mockStack.side = "wipe"
   mockScreenReader.enabled = false
   mockScreenReader.listener = null
   setReducedMotion(false)
@@ -130,18 +126,17 @@ const tick = feedback.selection as jest.Mock
 type Setup = {
   base?: BaseLayerKey
   swipeMode?: boolean
-  compare?: CompareState | null
 }
 
-function makeLayers({ base = "map", swipeMode = true, compare = null }: Setup = {}): MapLayers {
+function makeLayers({ base = "map", swipeMode = true }: Setup = {}): MapLayers {
   return {
-    state: { ...INITIAL_MAP_LAYERS_STATE, swipeMode, compare },
+    state: { ...INITIAL_MAP_LAYERS_STATE, swipeMode },
     displayedBase: base,
     secondMapLayer: null,
     shownBases: [base],
     globeDot: false,
     overlayDot: false,
-    layerOfSide: (side) => (compare ? (side === "left" ? compare.sideA : compare.sideB) : base),
+    layerOfSide: () => base,
     actions: {
       enterSwipe: jest.fn(),
       exitSwipe: jest.fn(),
@@ -158,8 +153,6 @@ function makeLayers({ base = "map", swipeMode = true, compare = null }: Setup = 
     },
   }
 }
-
-const COMPARE: CompareState = { sideA: "map", sideB: "satellite", secondSide: "right", x: 200 }
 
 type Handlers = Record<
   "onBegin" | "onUpdate" | "onEnd" | "onFinalize",
@@ -256,11 +249,6 @@ describe("entering", () => {
     mount()
     expect(latest.introHintVisible).toBe(true)
     expect(latest.skippedVisible).toBe(false)
-  })
-
-  test("in a comparison the announcement names the left layer", () => {
-    mount({ compare: COMPARE, base: "satellite" })
-    expect(mockScreenReader.announce).toHaveBeenCalledWith("Changement de fond. Plan, aujourd'hui.")
   })
 
   test("leaving the mode drops the gesture and everything drawn", () => {
@@ -362,7 +350,7 @@ describe("the release", () => {
     expect(medium).toHaveBeenCalledTimes(1)
     expect(tick).not.toHaveBeenCalled()
     expect(mockScreenReader.announce).toHaveBeenLastCalledWith(
-      "Comparaison : Plan à gauche, Satellite à droite. Relevés masqués.",
+      "Comparaison : Plan à gauche, Satellite à droite.",
     )
     expect(latest.wipe).toBeNull()
     expect(latest.fingerDown).toBe(false)
@@ -380,7 +368,7 @@ describe("the release", () => {
       x: 160,
     })
     expect(mockScreenReader.announce).toHaveBeenLastCalledWith(
-      "Comparaison : Photos aériennes à gauche, Plan à droite. Relevés masqués.",
+      "Comparaison : Photos aériennes à gauche, Plan à droite.",
     )
   })
 
@@ -562,67 +550,6 @@ describe("Reduce Motion and instant presentations", () => {
     expect(layers.actions.commitBase).toHaveBeenCalledWith("satellite")
     expect(mockTimings).toHaveLength(0)
   })
-
-  test("the instant side wipe only affects side gestures", () => {
-    mockStack.side = "instant"
-    mount()
-    begin(380)
-    move(330)
-    expect(latest.wipe).not.toBeNull()
-    act(() => handlers().onFinalize({}, false))
-    finishSettle()
-    mount({ compare: COMPARE, base: "map" })
-    begin(380)
-    move(300)
-    expect(latest.wipe).toBeNull()
-    expect(latest.hintText).toBe("Lâchez pour changer de fond")
-    lift()
-    expect(layers.actions.setSide).toHaveBeenCalledWith("B", "etat-major")
-  })
-})
-
-describe("side wipes in a comparison", () => {
-  test("two zones measured on the side, skipping the other side's layer", () => {
-    mount({ compare: COMPARE })
-    begin(380)
-    move(360)
-    expect(latest.wipe).toEqual({ side: "right", incoming: "etat-major" })
-    expect(latest.hintText).toBe("Lâchez pour revenir")
-    expect(latest.clipLeft.value).toBe(360)
-    move(300)
-    expect(latest.hintText).toBe("Lâchez pour changer de fond")
-    expect(tick).toHaveBeenCalledTimes(1)
-    lift()
-    expect(tick).toHaveBeenCalledTimes(2)
-    finishSettle()
-    expect(layers.actions.setSide).toHaveBeenCalledWith("B", "etat-major")
-    expect(layers.actions.commitBase).not.toHaveBeenCalled()
-    expect(layers.actions.startCompare).not.toHaveBeenCalled()
-  })
-
-  test("returning to the cancel zone ticks, and a release there changes nothing", () => {
-    mount({ compare: COMPARE })
-    begin(380)
-    move(360)
-    move(300)
-    move(360)
-    expect(tick).toHaveBeenCalledTimes(2)
-    tick.mockClear()
-    lift()
-    expect(tick).not.toHaveBeenCalled()
-    finishSettle()
-    expect(layers.actions.setSide).not.toHaveBeenCalled()
-  })
-
-  test("a swipe on the left side changes side A", () => {
-    mount({ compare: COMPARE })
-    begin(20)
-    move(150)
-    expect(latest.wipe).toEqual({ side: "left", incoming: "photos-1950" })
-    lift()
-    finishSettle()
-    expect(layers.actions.setSide).toHaveBeenCalledWith("A", "photos-1950")
-  })
 })
 
 describe("taps", () => {
@@ -640,13 +567,6 @@ describe("taps", () => {
     act(() => handlers().onFinalize({}, false))
     expect(layers.actions.exitSwipe).toHaveBeenCalledTimes(1)
   })
-
-  test("a tap in a comparison does nothing", () => {
-    mount({ compare: COMPARE })
-    begin(100)
-    lift()
-    expect(layers.actions.exitSwipe).not.toHaveBeenCalled()
-  })
 })
 
 describe("the idle exit", () => {
@@ -663,7 +583,7 @@ describe("the idle exit", () => {
   })
 
   test("does not fire while a finger is down, and restarts at the gesture end", () => {
-    mount({ compare: COMPARE })
+    mount()
     act(() => {
       jest.advanceTimersByTime(IDLE_MS - 1000)
     })
@@ -763,14 +683,6 @@ describe("the accessibility actions", () => {
     expect(latest.compareAvailable).toBe(false)
   })
 
-  test("next and previous do nothing in a comparison", () => {
-    mount({ compare: COMPARE })
-    act(() => latest.next())
-    act(() => latest.previous())
-    expect(layers.actions.commitBase).not.toHaveBeenCalled()
-    expect(latest.compareAvailable).toBe(false)
-  })
-
   test("compareNext starts a comparison with the next layer, line at the middle", () => {
     mount()
     expect(latest.compareAvailable).toBe(true)
@@ -782,7 +694,7 @@ describe("the accessibility actions", () => {
     })
     expect(medium).toHaveBeenCalledTimes(1)
     expect(mockScreenReader.announce).toHaveBeenLastCalledWith(
-      "Comparaison : Plan à gauche, Satellite à droite. Relevés masqués.",
+      "Comparaison : Plan à gauche, Satellite à droite.",
     )
   })
 

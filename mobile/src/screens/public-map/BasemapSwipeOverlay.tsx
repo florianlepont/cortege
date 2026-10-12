@@ -35,8 +35,6 @@ export type BasemapSwipeOverlayProps = {
   top: number
   /** The layer the indicator names: the incoming one while a wipe is under way. */
   layer: BaseLayerKey
-  /** A comparison exists: no indicator and no dots, only "Terminé" and the hint. */
-  comparing: boolean
   isAvailable: (key: BaseLayerKey) => boolean
   /** The live hint of the zone the finger is in. */
   hintText: string | null
@@ -54,14 +52,13 @@ export type BasemapSwipeOverlayProps = {
 
 /**
  * The centred top stack of the swipe mode (UI-SPEC section 3 and 4, U-21): the indicator pill, the
- * five dots, the single labelled "Terminé" pill and the transient hint. In a comparison only
- * "Terminé" and the hint remain. The indicator is the non-gesture path: adjustable, with the
- * actions next, previous and compare with the next layer.
+ * five dots, the single labelled "Terminé" pill and the transient hint. It exists only in the swipe
+ * mode, which never coexists with a comparison. The indicator is the non-gesture path: adjustable,
+ * with the actions next, previous and compare with the next layer.
  */
 export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   top,
   layer,
-  comparing,
   isAvailable,
   hintText,
   fingerDown,
@@ -90,8 +87,7 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
     else if (name === "decrement") onPrevious()
     else if (name === "compareNext") onCompareNext()
   }
-  const introHint = comparing ? t.hintSwipeCompare : t.hintSwipe
-  const hint = fingerDown ? hintText : introHintVisible ? introHint : null
+  const hint = fingerDown ? hintText : introHintVisible ? t.hintSwipe : null
 
   return (
     <View
@@ -99,68 +95,64 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
       style={[styles.column, { top }]}
       onLayout={(event) => onHeight?.(event.nativeEvent.layout.height)}
     >
-      {comparing ? null : (
-        <>
-          <Animated.View entering={enter()}>
+      <Animated.View entering={enter()}>
+        <View
+          testID="swipe-indicator"
+          accessible
+          accessibilityRole="adjustable"
+          accessibilityLabel={t.buttonA11y}
+          accessibilityHint={t.indicatorHint}
+          accessibilityValue={{ text: indicatorValue(layer) }}
+          accessibilityActions={actions}
+          onAccessibilityAction={onAction}
+        >
+          <GlassSurface
+            tone="auto"
+            surface={theme.visual.mapControl.glass}
+            style={styles.indicator}
+          >
+            <Ionicons
+              name="chevron-back-outline"
+              size={CHEVRON_SIZE}
+              color={theme.visual.mapControl.icon}
+            />
+            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+              {label.name}
+            </Text>
+            <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
+              {label.era}
+            </Text>
+            <Ionicons
+              name="chevron-forward-outline"
+              size={CHEVRON_SIZE}
+              color={theme.visual.mapControl.icon}
+            />
+          </GlassSurface>
+        </View>
+      </Animated.View>
+      <Animated.View entering={enter()}>
+        <View
+          testID="swipe-dots"
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.dots}
+        >
+          {BASEMAP_CYCLE.map((key) => (
             <View
-              testID="swipe-indicator"
-              accessible
-              accessibilityRole="adjustable"
-              accessibilityLabel={t.buttonA11y}
-              accessibilityHint={t.indicatorHint}
-              accessibilityValue={{ text: indicatorValue(layer) }}
-              accessibilityActions={actions}
-              onAccessibilityAction={onAction}
-            >
-              <GlassSurface
-                tone="auto"
-                surface={theme.visual.mapControl.glass}
-                style={styles.indicator}
-              >
-                <Ionicons
-                  name="chevron-back-outline"
-                  size={CHEVRON_SIZE}
-                  color={theme.visual.mapControl.icon}
-                />
-                <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-                  {label.name}
-                </Text>
-                <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
-                  {label.era}
-                </Text>
-                <Ionicons
-                  name="chevron-forward-outline"
-                  size={CHEVRON_SIZE}
-                  color={theme.visual.mapControl.icon}
-                />
-              </GlassSurface>
-            </View>
-          </Animated.View>
-          <Animated.View entering={enter()}>
-            <View
-              testID="swipe-dots"
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={styles.dots}
-            >
-              {BASEMAP_CYCLE.map((key) => (
-                <View
-                  key={key}
-                  testID={`swipe-dot-${key}`}
-                  style={[
-                    styles.dot,
-                    key === layer && styles.dotCurrent,
-                    key !== layer && {
-                      opacity: isAvailable(key) ? DOT_OPACITY : DOT_OPACITY_UNAVAILABLE,
-                    },
-                  ]}
-                />
-              ))}
-            </View>
-          </Animated.View>
-        </>
-      )}
+              key={key}
+              testID={`swipe-dot-${key}`}
+              style={[
+                styles.dot,
+                key === layer && styles.dotCurrent,
+                key !== layer && {
+                  opacity: isAvailable(key) ? DOT_OPACITY : DOT_OPACITY_UNAVAILABLE,
+                },
+              ]}
+            />
+          ))}
+        </View>
+      </Animated.View>
       <Animated.View entering={enter()}>
         <GlassSurface
           tone="auto"

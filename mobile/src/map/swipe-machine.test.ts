@@ -14,14 +14,11 @@ import {
   releaseGesture,
   releaseHaptic,
   SETTLE_MS,
-  SIDE_COMMIT,
   SWIPE_SLOP,
   swipeZone,
-  tapAction,
   ZONE_HYSTERESIS,
   zoneHaptic,
 } from "./swipe-machine"
-import type { SideKey } from "./wipe-geometry"
 import type { SwipeZone, WipeGesture } from "./swipe-machine"
 
 const WIDTH = 400
@@ -30,20 +27,14 @@ type MoveOptions = Parameters<typeof moveGesture>[2]
 
 const options = (overrides: Partial<MoveOptions> = {}): MoveOptions => ({
   width: WIDTH,
-  lineX: null,
   layerOf: () => "map",
-  otherOf: () => null,
   isAvailable: () => true,
   ...overrides,
 })
 
 /** A full-width gesture dragged left from the right edge until the finger is at `fingerX`. */
 const draggedLeft = (fingerX: number, extra: Partial<MoveOptions> = {}): WipeGesture =>
-  moveGesture(
-    beginGesture({ x: WIDTH, y: 100, lineX: null }),
-    { x: fingerX, y: 100 },
-    options(extra),
-  )
+  moveGesture(beginGesture({ x: WIDTH, y: 100 }), { x: fingerX, y: 100 }, options(extra))
 
 /** The same gesture at a revealed fraction `rev` of the width. */
 const atRev = (rev: number, extra: Partial<MoveOptions> = {}) =>
@@ -54,7 +45,6 @@ describe("constants", () => {
     expect(SWIPE_SLOP).toBe(6)
     expect(COMPARE_MIN).toBe(1 / 3)
     expect(COMPARE_MAX).toBe(2 / 3)
-    expect(SIDE_COMMIT).toBe(1 / 3)
     expect(ZONE_HYSTERESIS).toBe(0.03)
     expect(EDGE_EXIT).toBe(40)
     expect(IDLE_MS).toBe(8000)
@@ -65,8 +55,8 @@ describe("constants", () => {
 })
 
 describe("beginGesture", () => {
-  it("acts on the whole map when there is no comparison line", () => {
-    const gesture = beginGesture({ x: 300, y: 100, lineX: null })
+  it("always acts on the whole map", () => {
+    const gesture = beginGesture({ x: 300, y: 100 })
     expect(gesture).toEqual({
       side: "full",
       x0: 300,
@@ -80,11 +70,6 @@ describe("beginGesture", () => {
       rev: 0,
       zone: null,
     })
-  })
-
-  it("acts on the side the touch is on when there is a comparison line", () => {
-    expect(beginGesture({ x: 300, y: 100, lineX: 200 }).side).toBe("right")
-    expect(beginGesture({ x: 100, y: 100, lineX: 200 }).side).toBe("left")
   })
 })
 
@@ -101,11 +86,7 @@ describe("moveGesture", () => {
     const left = draggedLeft(WIDTH - 6)
     expect(left.started).toBe(true)
     expect(left.incoming).toBe("satellite")
-    const right = moveGesture(
-      beginGesture({ x: 100, y: 100, lineX: null }),
-      { x: 106, y: 100 },
-      options(),
-    )
+    const right = moveGesture(beginGesture({ x: 100, y: 100 }), { x: 106, y: 100 }, options())
     expect(right.started).toBe(true)
     expect(right.incoming).toBe("photos-1950")
   })
@@ -120,45 +101,28 @@ describe("moveGesture", () => {
     expect(flipped.incoming).toBe("photos-1950")
   })
 
-  it("skips the unavailable layers and, in a comparison side, the other side's layer", () => {
+  it("skips the unavailable layers", () => {
     expect(draggedLeft(300, { isAvailable: (key) => key !== "satellite" }).incoming).toBe(
       "etat-major",
     )
-    const side = moveGesture(
-      beginGesture({ x: 100, y: 100, lineX: 200 }),
-      { x: 60, y: 100 },
-      options({
-        lineX: 200,
-        layerOf: () => "map",
-        otherOf: () => "satellite",
-      }),
-    )
-    expect(side.side).toBe("left")
-    expect(side.incoming).toBe("etat-major")
   })
 
-  it("stays inside its side when it acts on a side of the comparison", () => {
-    const rightSide = moveGesture(
-      beginGesture({ x: 300, y: 100, lineX: 200 }),
+  it("asks the layer of the whole map and stays inside the full width", () => {
+    const asked: string[] = []
+    const gesture = moveGesture(
+      beginGesture({ x: 300, y: 100 }),
       { x: 100, y: 100 },
-      options({ lineX: 200, layerOf: () => "satellite", otherOf: () => "map" }),
-    )
-    // Dragged past the line: the strip stops at the line, the whole right side is revealed.
-    expect(rightSide.rev).toBe(1)
-    const asked: SideKey[] = []
-    moveGesture(
-      beginGesture({ x: 100, y: 100, lineX: 200 }),
-      { x: 60, y: 100 },
       options({
-        lineX: 200,
         layerOf: (side) => {
           asked.push(side)
           return "map"
         },
-        otherOf: () => null,
       }),
     )
-    expect(asked).toEqual(["left"])
+    expect(asked).toEqual(["full"])
+    expect(gesture.rev).toBe(0.75)
+    // Dragged past the left edge: the whole map is revealed, no more.
+    expect(moveGesture(gesture, { x: -50, y: 100 }, options()).rev).toBe(1)
   })
 
   it("is blocked, and nothing starts, when no other layer is available", () => {
@@ -173,7 +137,7 @@ describe("moveGesture", () => {
   })
 
   it("does not mutate the gesture it is given", () => {
-    const begun = beginGesture({ x: WIDTH, y: 100, lineX: null })
+    const begun = beginGesture({ x: WIDTH, y: 100 })
     moveGesture(begun, { x: 200, y: 100 }, options())
     expect(begun.started).toBe(false)
     expect(begun.dx).toBe(0)
@@ -240,30 +204,9 @@ describe("releaseGesture, comparison not allowed (two zones)", () => {
   })
 })
 
-describe("releaseGesture, a side of the comparison", () => {
-  const sideRev = (rev: number) => {
-    // The left side spans 0 to 200; dragged right from x 0 it reveals `rev` of it.
-    const start = beginGesture({ x: 0, y: 100, lineX: 200 })
-    return moveGesture(
-      start,
-      { x: 200 * rev, y: 100 },
-      options({ lineX: 200, layerOf: () => "map", otherOf: () => "satellite" }),
-    )
-  }
-
-  it("commits above a third, cancels otherwise, and never compares", () => {
-    expect(releaseGesture(sideRev(0.3), true).outcome).toBe("cancel")
-    expect(releaseGesture(sideRev(0.34), true).outcome).toBe("commit")
-    expect(releaseGesture(sideRev(0.5), true).outcome).toBe("commit")
-    expect(releaseGesture(sideRev(0.7), true).outcome).toBe("commit")
-    expect(releaseGesture(sideRev(0.9), true).outcome).toBe("commit")
-    expect(releaseGesture(sideRev(0.5), true).side).toBe("left")
-  })
-})
-
 describe("releaseGesture, taps and gestures that never started", () => {
   it("is a tap under 6 pt in both axes", () => {
-    const begun = beginGesture({ x: 200, y: 100, lineX: null })
+    const begun = beginGesture({ x: 200, y: 100 })
     const moved = moveGesture(begun, { x: 203, y: 104 }, options())
     expect(releaseGesture(moved, true)).toEqual({
       outcome: "tap",
@@ -275,7 +218,7 @@ describe("releaseGesture, taps and gestures that never started", () => {
   })
 
   it("is none for 5 pt horizontal and 20 pt vertical", () => {
-    const begun = beginGesture({ x: 200, y: 100, lineX: null })
+    const begun = beginGesture({ x: 200, y: 100 })
     const moved = moveGesture(begun, { x: 205, y: 120 }, options())
     expect(releaseGesture(moved, true).outcome).toBe("none")
     expect(releaseGesture(moved, true).incoming).toBeNull()
@@ -315,17 +258,6 @@ describe("liveHint", () => {
         expect(hint).toBe({ cancel: null, compare: "compare", commit: "change" }[outcome as string])
       }
     }
-  })
-
-  it("a side gesture always says change once started", () => {
-    const side = (x: number) =>
-      moveGesture(
-        beginGesture({ x: 0, y: 100, lineX: 200 }),
-        { x, y: 100 },
-        options({ lineX: 200, layerOf: () => "map", otherOf: () => "satellite" }),
-      )
-    expect(liveHint(side(20), true)).toBe("change")
-    expect(liveHint(side(150), true)).toBe("change")
   })
 
   it("a blocked gesture says none available, a gesture not started says nothing", () => {
@@ -392,13 +324,6 @@ describe("swipeZone", () => {
     expect(atRev(0.9).zone).toBe("commit")
     expect(draggedLeft(WIDTH - 3).zone).toBeNull()
     expect(atRev(0.5, { comparisonAllowed: false }).zone).toBe("commit")
-    // A side gesture has two zones whatever the context says.
-    const side = moveGesture(
-      beginGesture({ x: 0, y: 100, lineX: 200 }),
-      { x: 100, y: 100 },
-      options({ lineX: 200, layerOf: () => "map", otherOf: () => "satellite" }),
-    )
-    expect(side.zone).toBe("commit")
   })
 })
 
@@ -422,7 +347,7 @@ describe("zoneHaptic", () => {
   })
 
   it("plays one cue per crossing along a drag, none while the finger stays in a zone", () => {
-    let gesture = beginGesture({ x: WIDTH, y: 100, lineX: null })
+    let gesture = beginGesture({ x: WIDTH, y: 100 })
     const cues: (string | null)[] = []
     for (const rev of [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.6, 0.4, 0.2]) {
       const next = moveGesture(gesture, { x: WIDTH * (1 - rev), y: 100 }, options())
@@ -462,11 +387,6 @@ describe("compareSidesFor", () => {
 })
 
 describe("modes", () => {
-  it("a tap exits the swipe mode only when no comparison exists", () => {
-    expect(tapAction(false)).toBe("exit-swipe")
-    expect(tapAction(true)).toBe("nothing")
-  })
-
   it("the idle exit is off while a screen reader is on", () => {
     expect(idleExitEnabled(false)).toBe(true)
     expect(idleExitEnabled(true)).toBe(false)
