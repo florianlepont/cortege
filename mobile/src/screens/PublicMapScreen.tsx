@@ -11,6 +11,7 @@ import { DownloadEdgeGlow } from "../navigation/download-edge-glow"
 import type { PublicMapFocus } from "../navigation/types"
 import type { LoadPublicMapOptions } from "../hooks/usePublicMapExplorer"
 import type { BasemapKey } from "../map/basemaps"
+import { skippedCount } from "../map/layer-cycle"
 import { boundsFromRegion } from "../map/maplibre/regions"
 import { useOfflineAreas } from "../hooks/useOfflineAreas"
 import { useLatestCallback } from "../state/useLatestCallback"
@@ -29,6 +30,7 @@ import { useExplorerLayers } from "./public-map/useExplorerLayers"
 import { useExplorerPanels } from "./public-map/useExplorerPanels"
 import { useExplorerSwipe } from "./public-map/useExplorerSwipe"
 import { useInitialLocationCentre } from "./public-map/useInitialLocationCentre"
+import { useSwipeWindowBottom } from "./public-map/useSwipeWindowBottom"
 import { useLocateAction } from "./public-map/useLocateAction"
 import { useMapViewport } from "./public-map/useMapViewport"
 
@@ -216,14 +218,19 @@ export function PublicMapScreen({
     setHighlightedId,
   })
 
+  const windowBottom = useSwipeWindowBottom(
+    layers.layers.state.swipeMode,
+    layers.notices.length > 0 || skippedCount(layers.isAvailable) > 0,
+    dockBottom + SWIPE_HINT_BOTTOM + SWIPE_HINT_ZONE + SWIPE_ZONE_GAP,
+    SWIPE_NOTICES_ZONE,
+  )
   const swipe = useExplorerSwipe({
     layers,
     cameraRef,
     region: viewport.region,
     closePanels: panels.closePanel,
     windowTop: capsuleTop + SWIPE_TOP_STACK_HEIGHT + SWIPE_TOP_MARGIN,
-    windowBottom:
-      dockBottom + SWIPE_HINT_BOTTOM + SWIPE_HINT_ZONE + SWIPE_NOTICES_ZONE + SWIPE_ZONE_GAP,
+    windowBottom,
   })
   swipePanelExitRef.current = swipe.onPanelOpen
   const { onBaseStyleLoaded, skippedVisible } = swipe

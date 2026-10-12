@@ -34,15 +34,10 @@ import type { MapLayers } from "./useMapLayersState"
 /** A stacked map that covers a style swap is dropped after this long even if no event is reported. */
 const COVER_MAX_MS = 8000
 
-/**
- * A stacked map kept over a style swap of the Explorer map under it, so no blank frame shows:
- * - `full`: a full-width wipe committed a base; the Explorer map is loading it.
- * - `keep`: a comparison ended keeping the layer the second map draws.
- */
+/** A stacked map kept over a style swap of the Explorer map: after a committed wipe, or a comparison kept. */
 type Cover = { kind: "full" | "keep"; layer: BaseLayerKey }
 
 type Wipe = NonNullable<BasemapSwipe["wipe"]>
-
 export type StackedMapView = {
   layer: BaseLayerKey
   clipLeft: SharedValue<number>
@@ -204,9 +199,8 @@ export function useExplorerSwipe({
   const [inExitZone, setInExitZone] = useState(false)
   const [lineDragging, setLineDragging] = useState(false)
 
-  // A finished wipe may leave a cover (derived while rendering, so the stacked map is never
-  // unmounted for a frame between the wipe and its cover). A new comparison drops every cover; the
-  // end of one drops the slide that was under way.
+  // A finished wipe may leave a cover, derived while rendering (never unmounted for a frame). A new
+  // comparison drops every cover; the end of one drops the slide under way.
   const [seen, setSeen] = useState({ wipe, comparing })
   if (seen.wipe !== wipe || seen.comparing !== comparing) {
     setSeen({ wipe, comparing })
@@ -226,8 +220,12 @@ export function useExplorerSwipe({
   // map under it (valid only while what it covers is still true).
   const fullWipeLayer =
     wipe !== null && WIPE_PRESENTATION === "wipe" && !comparing ? wipe.incoming : null
+  // A full cover lives until `useCoverRelease` drops it: the state clearing `loadingBase` at the
+  // style load must not uncover an Explorer map that has not rendered its tiles yet.
+  const coversBase = (layer: BaseLayerKey) =>
+    state.loadingBase === layer || layers.displayedBase === layer
   const fullCoverLayer =
-    cover?.kind === "full" && !comparing && state.loadingBase === cover.layer ? cover.layer : null
+    cover?.kind === "full" && !comparing && coversBase(cover.layer) ? cover.layer : null
   const keepLayer = cover?.kind === "keep" && !comparing ? cover.layer : null
 
   // The curtain: the line follows the state; the quit slide and the keep cover come from here.
@@ -275,8 +273,7 @@ export function useExplorerSwipe({
     [secondSync, thirdSync],
   )
 
-  // The stacked maps are north up and flat, so the Explorer map is too whenever one of them has to
-  // match it: when the swipe mode starts (a wipe) and when a comparison starts.
+  // The stacked maps are north up and flat: the Explorer map too, when the swipe mode or a comparison starts.
   const regionRef = useRef(region)
   regionRef.current = region
   const northUp = useCallback(() => {
@@ -304,10 +301,11 @@ export function useExplorerSwipe({
     release: () => setCover(null),
   })
   const { onStyleLoaded: coverStyleLoaded, onRenderedFully } = coverRelease
-  const onBaseStyleLoaded = useCallback(() => {
-    coverStyleLoaded()
+  const onBaseStyleLoaded = useLatestCallback(() => {
+    // A full cover waits for the committed style's own load, not one of another style in flight.
+    if (cover?.kind !== "full" || state.loadingBase === cover.layer) coverStyleLoaded()
     sideStyleLoaded("base")
-  }, [coverStyleLoaded, sideStyleLoaded])
+  })
   const onSecondStyleLoaded = useCallback(() => sideStyleLoaded("second"), [sideStyleLoaded])
 
   // Leaving the Explorer tab ends the swipe mode (a comparison stays).

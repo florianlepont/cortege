@@ -414,14 +414,61 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     preloadOnly()
   })
 
-  test("the cover also goes when the layers state says the Explorer map is done", () => {
+  test("the layers state saying the style loaded does not uncover a map that has not rendered yet", () => {
     setController({ side: "full", incoming: "satellite" })
     mount(makeLayers({ swipeMode: true }))
     setController(null)
     update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: "satellite" }))
-    expect(out().layersView.second).not.toBeNull()
     update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: null }))
+    expect(out().layersView.second?.layer).toBe("satellite")
+    expect(out().layersView.second?.clipLeft).toBe(controllerClip.clipLeft)
+  })
+
+  test("a commit: the cover stays open on the committed layer until the new style is rendered", () => {
+    const onCover = () => {
+      const second = out().layersView.second
+      expect(second?.layer).toBe("satellite")
+      expect(second?.clipLeft).toBe(controllerClip.clipLeft)
+      expect(second?.clipRight).toBe(controllerClip.clipRight)
+    }
+    // Wipe to satellite (the preloaded layer is the neighbour of the base).
+    setController({ side: "full", incoming: "satellite" })
+    mount(makeLayers({ swipeMode: true }))
+    onCover()
+    // Release past the threshold: the wipe goes and the Explorer base changes in the same render.
+    setController(null)
+    update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: "satellite" }))
+    onCover()
+    // A rendered-fully of the old style, before any style load: ignored.
+    act(() => out().mapCanvasProps.onRenderedFully?.())
+    act(() => {
+      jest.advanceTimersByTime(1000)
+    })
+    onCover()
+    // A style load of another style in flight is not the committed one: ignored.
+    update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: "photos-1950" }))
+    act(() => out().onBaseStyleLoaded())
+    act(() => out().mapCanvasProps.onRenderedFully?.())
+    act(() => {
+      jest.advanceTimersByTime(1000)
+    })
+    expect(out().layersView.second?.layer).toBe("satellite")
+    update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: "satellite" }))
+    // The committed style loads: the state clears loadingBase, the cover still stays.
+    act(() => out().onBaseStyleLoaded())
+    update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: null }))
+    onCover()
+    act(() => out().mapCanvasProps.onRenderedFully?.())
+    act(() => {
+      jest.advanceTimersByTime(COVER_PRESENT_MS - 1)
+    })
+    onCover()
+    act(() => {
+      jest.advanceTimersByTime(1)
+    })
+    // Only now the stacked map goes back to the preload (next layer, clipped to nothing).
     preloadOnly()
+    expect(out().layersView.second?.layer).not.toBe("satellite")
   })
 
   test("a cover nobody reports on is dropped after a while", () => {
