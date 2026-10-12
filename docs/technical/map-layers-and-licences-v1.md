@@ -107,11 +107,27 @@ Reading: the three small additions together weigh about 2.5 MB; the 1950 photogr
 
 ### Measured
 
-Pending. No device measurement of the per-layer pack sizes (`completedResourceSize`) has been taken yet; the figures above are estimates only. The table is filled after a run on the Android emulator (three runs on one area, policy "Toutes les couches", reading the `offline.layer-size` lines) and a read of the total on an iPhone (device check DL-06).
+Measured on 2026-10-12 on the Android emulator (Pixel_8, API 36, development build of the Phase 28 branch, the Phase 28 API deployed so that all six `/v1/map-styles/<name>.json` answer), policy "Toutes les couches", reading the `offline.layer-size` lines (`completedResourceSize` of each layer's pack). Each run saved the visible screen of Explorer after two double-tap zooms from the 15 km view, about 4 km wide (the Explorer window is taller than wide, so the area is about 4 km by 9 km; the card announced "Environ 86 Mo" for run A only). The size shown in Paramètres, Cartes is the sum of the six layers in Mo of 10^6 bytes, to the digit (97.0, 107.6 and 86.1 Mo).
 
-| Layer | Tiles | Bytes | Date | Device | Area |
-|-------|-------|-------|------|--------|------|
-|  |  |  |  |  |  |
+Three cold runs, on three different areas of the same size (an area already downloaded and deleted is not cold, see below). Tile counts are not logged (only bytes), so the Tiles column holds the estimate of the table above, not a measure.
+
+| Layer | Tiles (estimate) | Bytes, mean of 3 (range) | Run A, Fontainebleau | Run B, Thomery and By | Run C, Vernou-la-Celle | Date | Device |
+|-------|------------------|--------------------------|----------------------|-----------------------|------------------------|------|--------|
+| Plan with cadastre (`map`) | 549 plus 2136 | 21.3 MB (18.6 to 25.7) | 19,607,446 | 25,687,165 | 18,581,094 | 2026-10-12 | Pixel_8 API 36 emulator |
+| Satellite | 2145 | 44.1 MB (38.3 to 48.3) | 45,533,194 | 48,317,438 | 38,317,304 | 2026-10-12 | same |
+| Carte d'état-major | 45 | 0.56 MB (0.52 to 0.58) | 571,397 | 581,712 | 515,705 | 2026-10-12 | same |
+| Carte de 1950 | 45 | 0.76 MB (0.67 to 0.83) | 790,961 | 832,851 | 669,257 | 2026-10-12 | same |
+| Types de forêt | 145 | 0.80 MB (0.69 to 0.86) | 855,625 | 855,322 | 694,434 | 2026-10-12 | same |
+| Photos 1950 (cap 17) | 545 | 29.4 MB (27.4 to 31.3) | 29,636,940 | 31,312,198 | 27,371,707 | 2026-10-12 | same |
+| Total of the area | | 96.9 MB (86.1 to 107.6) | 96,995,563 (97.0 Mo) | 107,586,686 (107.6 Mo) | 86,149,501 (86.1 Mo) | 2026-10-12 | same |
+
+Reading:
+
+- Against the estimate above (about 84 MB for the same layers over 4 km by 4 km, 86 Mo announced by the card for this window), the measured total of run A is 13% above the card (97.0 against 86 Mo); the card was not read for runs B and C. Satellite and the 1950 photographs are 90% of the weight; the three small additions (état-major, carte de 1950, types de forêt) weigh 2.1 MB together (estimate 2.5 MB), the Plan with cadastre 21 MB (estimate about 24).
+- The area weighs differently by place (86 to 108 MB, plus or minus 11% around the mean), as the estimate said.
+- A second and third download of the same area (deleted in between) is not a repeat measure: the packs share tiles by URL in MapLibre's database, and the same area downloaded again after a deletion reported 15.2 Mo and then 3.0 Mo (21:30 and 21:31) instead of 97.0 Mo. Only the first download of an area gives its real weight; do not average repeated downloads of one area.
+- No layer stalled and none failed in these runs (no "not found" line). The chip percentage never went down (sampled every 2 to 5 s, with plateaus of up to 7 s, for example 38% then 40%, 66% held for about 15 s while the last layer finished); the first run showed 63% at the first sample on a warm cache.
+- Not measured: the total on an iPhone (device check DL-06, owner). Before the API was deployed (the production API answered only `map` and `satellite`, 404 `unknown_map_style` for the four others), a first run saved only those two layers and the four others failed one after another after the 45 s watchdog each, ending on "Zone enregistrée, sauf certaines couches" (19,607,446 and 45,520,183 bytes for the two, 0 for the rest); this is the expected behaviour of the partial path, not a stall of a layer.
 
 ## 6. Changing and comparing bases, as built
 
