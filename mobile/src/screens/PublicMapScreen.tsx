@@ -36,14 +36,12 @@ const NO_SURVEY_PARCELS: ReadonlySet<string> = new Set()
 const noop = () => undefined
 // The card sits one margin above the tab bar (UI-SPEC section 6); the locate arrow above the card.
 const CARD_MARGIN = 14
-const SWIPE_INFO_GAP = 8
-// Room the swipe mode's info row takes above the gap: indicator pill 36 + gap 4 + dots 8 + the
-// air under the receded map window (about 60 pt in all, with the intro hint floating over the map).
-const SWIPE_INFO_HEIGHT = 60
-// The notices stay inside the window, above the transient hint that rises over its bottom edge.
-const SWIPE_NOTICES_LIFT = 40
-// The receded window keeps this far under the top safe area.
-const SWIPE_WINDOW_TOP_GAP = 0
+// The swipe mode's white zones around the receded window (owner layout): the notices sit under it,
+// just above the tab bar; the carousel (indicator pill 36 + gap 8 + dots 8) sits over it, under the
+// status bar. Neither is drawn over the map.
+const SWIPE_ZONE_GAP = 8
+const SWIPE_NOTICES_ZONE = 44
+const SWIPE_TOP_STACK_HEIGHT = 52
 const DOCK_GAP = 10
 // A second tap within this window (a double tap, or a tap during the push) opens nothing more.
 const OPEN_SURVEY_GUARD_MS = 800
@@ -218,8 +216,8 @@ export function PublicMapScreen({
     cameraRef,
     region: viewport.region,
     closePanels: panels.closePanel,
-    windowTop: insets.top + SWIPE_WINDOW_TOP_GAP,
-    windowBottom: dockBottom + SWIPE_INFO_GAP + SWIPE_INFO_HEIGHT,
+    windowTop: capsuleTop + SWIPE_TOP_STACK_HEIGHT + SWIPE_ZONE_GAP,
+    windowBottom: dockBottom + SWIPE_ZONE_GAP + SWIPE_NOTICES_ZONE + SWIPE_ZONE_GAP,
   })
   swipePanelExitRef.current = swipe.onPanelOpen
   const { onBaseStyleLoaded, skippedVisible } = swipe
@@ -282,7 +280,6 @@ export function PublicMapScreen({
         swipe={swipe}
         layers={layers}
         capsuleTop={capsuleTop}
-        infoBottom={dockBottom + SWIPE_INFO_GAP}
         contentProps={{
           parcelStatuses,
           parcelLayerRenderable: viewport.parcelLayerRenderable,
@@ -338,11 +335,7 @@ export function PublicMapScreen({
         forestAvailable={layers.isAvailable("types-foret")}
         cardBottom={cardBottom}
         noticesTop={swipe.noticesTop}
-        noticesBottom={
-          swipe.immersive.buttonsHidden
-            ? dockBottom + SWIPE_INFO_GAP + SWIPE_INFO_HEIGHT + SWIPE_NOTICES_LIFT
-            : undefined
-        }
+        noticesBottom={swipe.immersive.buttonsHidden ? dockBottom + SWIPE_ZONE_GAP : undefined}
         buttons={{ opacity: swipe.immersive.buttons, hidden: swipe.immersive.buttonsHidden }}
       >
         <MapTopControls

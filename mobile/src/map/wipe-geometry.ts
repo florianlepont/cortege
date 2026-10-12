@@ -129,12 +129,17 @@ export function windowX(x: number, width: number, scale: number): number {
 
 /** The receded window never grows past this share of the screen height (UI-SPEC section 3c). */
 export const IMMERSIVE_MAX_SCALE = 0.94
+/**
+ * The window is this much wider, relatively, than tall: the owner accepts a slightly wider window
+ * than the screen's proportions (non-uniform scale), capped at `IMMERSIVE_MAX_SCALE`.
+ */
+export const IMMERSIVE_ASPECT_STRETCH = 1.1
 /** ...nor shrinks under this one, whatever the margins. */
 export const IMMERSIVE_MIN_SCALE = 0.5
 
 /**
  * Fits the receded window between a top margin and a bottom reserve of a `height` tall screen:
- * `scale` is the share of the height left (clamped to `[0.5, maxScale]`) and `shiftY` (points,
+ * `scaleY` is the share of the height left (clamped to `[0.5, maxScale]`), `scaleX` is that stretched by `IMMERSIVE_ASPECT_STRETCH` and `shiftY` (points,
  * negative is up) moves the window's centre from `height / 2` to the middle of the free band.
  * A NaN input gives the full-size window.
  */
@@ -143,10 +148,16 @@ export function immersiveTarget(
   top: number,
   bottom: number,
   maxScale: number = IMMERSIVE_MAX_SCALE,
-): { scale: number; shiftY: number } {
+): { scaleX: number; scaleY: number; shiftY: number } {
   "worklet"
-  if (!(height > 0) || Number.isNaN(top) || Number.isNaN(bottom)) return { scale: 1, shiftY: 0 }
+  if (!(height > 0) || Number.isNaN(top) || Number.isNaN(bottom)) {
+    return { scaleX: 1, scaleY: 1, shiftY: 0 }
+  }
   const avail = height - top - bottom
-  const scale = clampTo(avail / height, IMMERSIVE_MIN_SCALE, maxScale)
-  return { scale, shiftY: top + avail / 2 - height / 2 }
+  const scaleY = clampTo(avail / height, IMMERSIVE_MIN_SCALE, maxScale)
+  return {
+    scaleX: clampTo(scaleY * IMMERSIVE_ASPECT_STRETCH, scaleY, IMMERSIVE_MAX_SCALE),
+    scaleY,
+    shiftY: top + avail / 2 - height / 2,
+  }
 }

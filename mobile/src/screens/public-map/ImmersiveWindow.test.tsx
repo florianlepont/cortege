@@ -53,12 +53,12 @@ function render(element: React.ReactElement) {
   })
   return tree
 }
-const TARGET = { scale: 0.76, shiftY: -48 }
+const TARGET = { scaleX: 0.8, scaleY: 0.76, shiftY: -48 }
 const byTestId = (tree: renderer.ReactTestRenderer, id: string): ReactTestInstance =>
   tree.root.findByProps({ testID: id })
 
 describe("ImmersiveWindow, light", () => {
-  it("receded: scale 0.76 moved up 48 pt, radius 22, canvas background and the soft shadow", () => {
+  it("receded: scales 0.8 by 0.76 moved up 48 pt, radius 22, canvas background and the soft shadow", () => {
     const tree = render(
       <ImmersiveWindow progress={shared(1)} applied target={TARGET}>
         <></>
@@ -66,7 +66,7 @@ describe("ImmersiveWindow, light", () => {
     )
     const outer = flat(byTestId(tree, "immersive-window").props.style)
     const { shadow } = buildTheme("light").visual.immersive
-    expect(outer.transform).toEqual([{ translateY: -48 }, { scale: 0.76 }])
+    expect(outer.transform).toEqual([{ translateY: -48 }, { scaleX: 0.8 }, { scaleY: 0.76 }])
     expect(outer.borderRadius).toBe(brandRadius.card)
     expect(outer.backgroundColor).toBe(defaultTheme.colors.canvas)
     expect(outer.shadowColor).toBe(shadow.color)
@@ -93,9 +93,14 @@ describe("ImmersiveWindow, light", () => {
     const tree = render(<ImmersiveWindow progress={shared(0.5)} applied target={TARGET} />)
     const outer = flat(byTestId(tree, "immersive-window").props.style)
     const { shadow } = buildTheme("light").visual.immersive
-    const [shift, zoom] = outer.transform as [{ translateY: number }, { scale: number }]
+    const [shift, zoomX, zoomY] = outer.transform as [
+      { translateY: number },
+      { scaleX: number },
+      { scaleY: number },
+    ]
     expect(shift.translateY).toBe(-24)
-    expect(zoom.scale).toBeCloseTo(0.88, 5)
+    expect(zoomX.scaleX).toBeCloseTo(0.9, 5)
+    expect(zoomY.scaleY).toBeCloseTo(0.88, 5)
     expect(outer.borderRadius).toBe(brandRadius.card / 2)
     expect(outer.shadowOpacity).toBeCloseTo(shadow.opacity / 2, 5)
     expect(outer.elevation).toBe(brandElevation.level3.elevation / 2)
@@ -110,9 +115,14 @@ describe("ImmersiveWindow, light", () => {
     const root = byTestId(tree, "immersive-window")
     const outer = flat(root.props.style)
     // 0 * -48 is -0, so the shift is compared by magnitude.
-    const [shift, zoom] = outer.transform as [{ translateY: number }, { scale: number }]
+    const [shift, zoomX, zoomY] = outer.transform as [
+      { translateY: number },
+      { scaleX: number },
+      { scaleY: number },
+    ]
     expect(Math.abs(shift.translateY)).toBe(0)
-    expect(zoom.scale).toBe(1)
+    expect(zoomX.scaleX).toBe(1)
+    expect(zoomY.scaleY).toBe(1)
     expect(outer.borderRadius).toBe(0)
     expect(outer.shadowOpacity).toBe(0)
     expect(outer.elevation).toBe(0)

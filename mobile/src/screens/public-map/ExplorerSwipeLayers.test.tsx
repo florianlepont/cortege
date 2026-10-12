@@ -119,7 +119,7 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
       window: { value: 0 } as ExplorerSwipe["immersive"]["window"],
       buttons: { value: 1 } as ExplorerSwipe["immersive"]["buttons"],
       applied: true,
-      target: { scale: 0.75, shiftY: -40 },
+      target: { scaleX: 0.825, scaleY: 0.75, shiftY: -40 },
       buttonsHidden: view.swipeMode,
     },
     quitPillVisible: false,
@@ -184,7 +184,6 @@ function render(
         layers={options.layers ?? makeLayers()}
         contentProps={contentProps}
         capsuleTop={58}
-        infoBottom={103}
         {...options.props}
       />,
     )
@@ -215,7 +214,7 @@ describe("the receding window (swipe mode only)", () => {
     expect(named(tree, "ImmersiveWindow")[0].props).toMatchObject({
       progress: swipe.immersive.window,
       applied: true,
-      target: { scale: 0.75, shiftY: -40 },
+      target: { scaleX: 0.825, scaleY: 0.75, shiftY: -40 },
     })
     const { tree: off } = render(makeView(), {
       swipe: {
@@ -223,7 +222,7 @@ describe("the receding window (swipe mode only)", () => {
           window: shared(0),
           buttons: shared(1),
           applied: false,
-          target: { scale: 1, shiftY: 0 },
+          target: { scaleX: 1, scaleY: 1, shiftY: 0 },
           buttonsHidden: false,
         },
       },
@@ -392,7 +391,7 @@ describe("the swipe mode", () => {
     expect(named(tree, "SwipeSurface")[0].props.gesture).toBe(view.controller.gesture)
     const overlay = named(tree, "BasemapSwipeOverlay")[0].props
     expect(overlay).toMatchObject({
-      bottom: 103,
+      top: 58,
       layer: "satellite",
       hintText: "Lâchez pour revenir",
       fingerDown: true,

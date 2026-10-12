@@ -108,7 +108,7 @@ export type ExplorerImmersive = {
   /** The window transform applies on this platform (`immersiveApplies()`). */
   applied: boolean
   /** Where the receded window ends: its scale and vertical shift in points (`immersiveTarget`). */
-  target: { scale: number; shiftY: number }
+  target: { scaleX: number; scaleY: number; shiftY: number }
   /** The map buttons take no touch and are out of the accessibility tree: the swipe mode is on. */
   buttonsHidden: boolean
 }
@@ -194,7 +194,7 @@ export function useExplorerSwipe({
     skippedCount: skippedCount(isAvailable),
     windowProgress: immersive.window,
     windowApplied,
-    windowScale: target.scale,
+    windowScale: target.scaleX,
   })
   const { wipe } = controller
 

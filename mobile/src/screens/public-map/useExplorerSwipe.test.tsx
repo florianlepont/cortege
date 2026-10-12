@@ -760,13 +760,13 @@ describe("the immersive effect", () => {
       buttons: mockImmersive.buttons,
       applied: true,
       // 800 tall, 60 from the top, 140 from the bottom: 600 left, so 0.75, centred 40 up.
-      target: { scale: 0.75, shiftY: -40 },
+      target: { scaleX: expect.closeTo(0.825, 6), scaleY: 0.75, shiftY: -40 },
       buttonsHidden: false,
     })
     expect(mockControllerParams[0]).toMatchObject({
       windowProgress: mockImmersive.window,
       windowApplied: true,
-      windowScale: 0.75,
+      windowScale: expect.closeTo(0.825, 6),
     })
   })
 

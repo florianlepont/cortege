@@ -9,8 +9,8 @@ export type ImmersiveWindowProps = {
   progress: SharedValue<number>
   /** `immersiveApplies()`: false keeps the window at full size (no scale, corners, shadow, ring). */
   applied: boolean
-  /** Where the receded window ends: its scale and its vertical shift in points (`immersiveTarget`). */
-  target: { scale: number; shiftY: number }
+  /** Where the receded window ends: its scales and its vertical shift in points (`immersiveTarget`). */
+  target: { scaleX: number; scaleY: number; shiftY: number }
   children?: ReactNode
 }
 
@@ -24,7 +24,7 @@ export type ImmersiveButtonsProps = {
 
 /**
  * The map window of the Explorer that recedes in the swipe mode (Phase 28, UI-SPEC section 3c,
- * owner item 13 c): it scales to `target.scale` about its centre and moves by `target.shiftY` points (it fits between the top margin and the info row), rounds its corners to `brandRadius.card`
+ * owner item 13 c): it scales to `target.scaleX` by `target.scaleY` about its centre and moves by `target.shiftY` points (it fits between the top margin and the info row), rounds its corners to `brandRadius.card`
  * and shows the shadow (light) or the hairline ring (dark) of `visual.immersive` over the
  * `colors.canvas` behind it. Rendering notes:
  *
@@ -45,14 +45,18 @@ export function ImmersiveWindow({ progress, applied, target, children }: Immersi
   const { shadow, ring } = theme.visual.immersive
   // Plain values for the UI-thread worklets below, not the whole theme.
   const canvas = theme.colors.canvas
-  const { scale, shiftY } = target
+  const { scaleX, scaleY, shiftY } = target
 
   const outer = useAnimatedStyle(() => {
     if (!applied) return {}
     const p = progress.value
     return {
       // Moved first, so the window ends between the top margin and the info row.
-      transform: [{ translateY: shiftY * p }, { scale: 1 - (1 - scale) * p }],
+      transform: [
+        { translateY: shiftY * p },
+        { scaleX: 1 - (1 - scaleX) * p },
+        { scaleY: 1 - (1 - scaleY) * p },
+      ],
       borderRadius: brandRadius.card * p,
       backgroundColor: canvas,
       shadowColor: shadow.color,

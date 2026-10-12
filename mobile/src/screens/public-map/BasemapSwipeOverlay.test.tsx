@@ -114,7 +114,7 @@ function render(props: Partial<BasemapSwipeOverlayProps> = {}): ReactTestRendere
   act(() => {
     tree = renderer.create(
       <BasemapSwipeOverlay
-        bottom={103}
+        top={58}
         layer="map"
         isAvailable={() => true}
         hintText={null}
@@ -297,8 +297,8 @@ describe("hint", () => {
 })
 
 describe("layout", () => {
-  test("a centred column from the given bottom, with a small side inset", () => {
-    const tree = render({ bottom: 91 })
+  test("a centred column from the given top, with a small side inset", () => {
+    const tree = render({ top: 91 })
     const column = tree.root.findAll(
       (node) => typeof node.type === "string" && node.props.pointerEvents === "box-none",
     )[0]
@@ -306,7 +306,7 @@ describe("layout", () => {
       position: "absolute",
       left: 16,
       right: 16,
-      bottom: 91,
+      top: 91,
       alignItems: "center",
       gap: 8,
     })

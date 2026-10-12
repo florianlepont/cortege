@@ -7,6 +7,7 @@ import {
   settledStrip,
   halfBounds,
   immersiveTarget,
+  IMMERSIVE_ASPECT_STRETCH,
   IMMERSIVE_MAX_SCALE,
   IMMERSIVE_MIN_SCALE,
   sideBounds,
@@ -175,26 +176,31 @@ describe("windowX", () => {
 })
 
 describe("immersiveTarget", () => {
-  it("fits the window between the top margin and the bottom reserve", () => {
-    // 800 tall, 60 top, 140 bottom: 600 left, scale 0.75, centre from 400 to 60 + 300 = 360.
+  it("fits the window between the top margin and the bottom reserve, a little wider than tall", () => {
+    // 800 tall, 60 top, 140 bottom: 600 left, scaleY 0.75, centre from 400 to 60 + 300 = 360.
     const target = immersiveTarget(800, 60, 140)
-    expect(target.scale).toBeCloseTo(0.75, 6)
+    expect(IMMERSIVE_ASPECT_STRETCH).toBe(1.1)
+    expect(target.scaleY).toBeCloseTo(0.75, 6)
+    expect(target.scaleX).toBeCloseTo(0.825, 6)
     expect(target.shiftY).toBeCloseTo(-40, 6)
   })
 
   it("never grows past the maximum scale, 0.94 by default", () => {
     expect(IMMERSIVE_MAX_SCALE).toBe(0.94)
-    expect(immersiveTarget(800, 0, 0).scale).toBe(0.94)
-    expect(immersiveTarget(800, 0, 0, 0.8).scale).toBe(0.8)
+    expect(immersiveTarget(800, 0, 0)).toMatchObject({ scaleX: 0.94, scaleY: 0.94 })
+    expect(immersiveTarget(800, 0, 0, 0.8)).toMatchObject({ scaleY: 0.8 })
+    expect(immersiveTarget(800, 0, 0, 0.8).scaleX).toBeCloseTo(0.88, 6)
+    // The width stops at the maximum even when the height is under it.
+    expect(immersiveTarget(800, 40, 0).scaleX).toBe(0.94)
   })
 
   it("never shrinks under half the height", () => {
     expect(IMMERSIVE_MIN_SCALE).toBe(0.5)
-    expect(immersiveTarget(800, 300, 300).scale).toBe(0.5)
+    expect(immersiveTarget(800, 300, 300).scaleY).toBe(0.5)
   })
 
   it("keeps the window full size on a height or margin that is not a number", () => {
-    const full = { scale: 1, shiftY: 0 }
+    const full = { scaleX: 1, scaleY: 1, shiftY: 0 }
     expect(immersiveTarget(0, 10, 10)).toEqual(full)
     expect(immersiveTarget(Number.NaN, 10, 10)).toEqual(full)
     expect(immersiveTarget(800, Number.NaN, 10)).toEqual(full)

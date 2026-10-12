@@ -34,8 +34,8 @@ const stackEnter = () =>
 const stackExit = () => FadeOut.duration(BUTTON_FADE_MS).reduceMotion(ReduceMotion.System)
 
 export type BasemapSwipeOverlayProps = {
-  /** Distance from the bottom edge: the info row sits just above the tab bar, under the receded map. */
-  bottom: number
+  /** Distance from the top of the map: the capsule's top, in the white zone above the receded map. */
+  top: number
   /** The layer the indicator names: the incoming one while a wipe is under way. */
   layer: BaseLayerKey
   isAvailable: (key: BaseLayerKey) => boolean
@@ -58,7 +58,7 @@ export type BasemapSwipeOverlayProps = {
  * with the actions next, previous, done and compare with the next layer.
  */
 export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
-  bottom,
+  top,
   layer,
   isAvailable,
   hintText,
@@ -94,20 +94,10 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   return (
     <Animated.View
       pointerEvents="box-none"
-      style={[styles.column, { bottom }]}
+      style={[styles.column, { top }]}
       entering={stackEnter()}
       exiting={stackExit()}
     >
-      {hint === null ? null : (
-        <Animated.View
-          entering={enter()}
-          exiting={FadeOut.duration(HINT_FADE_MS).reduceMotion(ReduceMotion.System)}
-        >
-          <View testID="swipe-hint" pointerEvents="none" style={styles.hint}>
-            <Text style={styles.hintText}>{hint}</Text>
-          </View>
-        </Animated.View>
-      )}
       <View
         testID="swipe-indicator"
         accessible
@@ -158,6 +148,16 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
           />
         ))}
       </View>
+      {hint === null ? null : (
+        <Animated.View
+          entering={enter()}
+          exiting={FadeOut.duration(HINT_FADE_MS).reduceMotion(ReduceMotion.System)}
+        >
+          <View testID="swipe-hint" pointerEvents="none" style={styles.hint}>
+            <Text style={styles.hintText}>{hint}</Text>
+          </View>
+        </Animated.View>
+      )}
     </Animated.View>
   )
 })
