@@ -164,8 +164,8 @@ Temperature and wind are mapped first and never block either decision.
   `api/src/common/rate-limit.config.ts`): station list cached 1 hour; a reading of a finished hour
   cached 24 hours (`WEATHER_LOOKBACK_MS`), the current hour and an empty answer 10 minutes; at most
   3 stations merged per answer; `MAX_CONCURRENT_WEATHER_CALLS = 4` calls in flight; `weather`
-  throttle 30 requests per minute per client; any provider failure, a `429` included, becomes `503
-weather_provider_unavailable`.
+  throttle 30 requests per minute per client; any provider failure, a `429` included, becomes
+  `503 weather_provider_unavailable`.
 - Comparison, in one sentence: with a shared cache by station and hour, one cold lookup costs at
   most about 5 provider calls (stations 1 per hour, up to 3 hourly readings, plus with D-29 the
   SYNOP list and one SYNOP report) and a warm one costs none, which keeps ordinary beta traffic far
