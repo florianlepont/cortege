@@ -306,15 +306,13 @@ describe("free map, no comparison", () => {
 })
 
 describe("the swipe mode", () => {
-  test("freezes the map, puts it north up once, and moves the notices below the swipe stack", () => {
+  test("freezes the map, puts it north up once, and leaves the notices at the top", () => {
     mount(makeLayers({ swipeMode: true }))
     expect(out().mapCanvasProps.frozen).toBe(true)
     expect(jumpTo).toHaveBeenCalledTimes(1)
     expect(jumpTo).toHaveBeenCalledWith({ center: [2.7, 48.4], bearing: 0, pitch: 0 })
-    // Before the stack is measured: an estimate; then the drawn height.
-    expect(out().noticesTop).toBe(58 + 100 + 8)
-    act(() => out().layersView.onTopControlHeight(132))
-    expect(out().noticesTop).toBe(58 + 132 + 8)
+    // The swipe mode's info row is at the bottom: the notices keep their own top.
+    expect(out().noticesTop).toBe(58)
   })
 
   test("never lifts the notices above their own top (a chip row lower than the stack)", () => {

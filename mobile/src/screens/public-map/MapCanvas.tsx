@@ -189,8 +189,6 @@ export const MapCanvas = memo(function MapCanvas({
       onDidFailLoadingMap={onStyleFailed}
     >
       <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(initialRegion) }} />
-      {/* MAP-04: the device's own position is the native halo, not a marker kept by the app. */}
-      <UserLocation />
       <MapContentLayers
         base={basemap}
         forestOverlay={forestOverlay}
@@ -204,6 +202,9 @@ export const MapCanvas = memo(function MapCanvas({
         interactive={!frozen}
         onParcelPress={onSelectParcel}
       />
+      {/* MAP-04: the device's own position is the native halo, not a marker kept by the app. It is
+          added after the content so it draws over the cadastre lines and the parcels. */}
+      <UserLocation key="user-location" />
       <PlacePinLayer pin={placePin ?? null} />
       {(hideMarkers ? [] : clusters).map((entry) => {
         if (entry.kind === "cluster") {

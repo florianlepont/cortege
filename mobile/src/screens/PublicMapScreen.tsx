@@ -36,6 +36,7 @@ const NO_SURVEY_PARCELS: ReadonlySet<string> = new Set()
 const noop = () => undefined
 // The card sits one margin above the tab bar (UI-SPEC section 6); the locate arrow above the card.
 const CARD_MARGIN = 14
+const SWIPE_INFO_GAP = 8
 const DOCK_GAP = 10
 // A second tap within this window (a double tap, or a tap during the push) opens nothing more.
 const OPEN_SURVEY_GUARD_MS = 800
@@ -272,6 +273,7 @@ export function PublicMapScreen({
         swipe={swipe}
         layers={layers}
         capsuleTop={capsuleTop}
+        infoBottom={dockBottom + SWIPE_INFO_GAP}
         contentProps={{
           parcelStatuses,
           parcelLayerRenderable: viewport.parcelLayerRenderable,

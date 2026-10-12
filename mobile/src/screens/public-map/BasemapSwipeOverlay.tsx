@@ -17,8 +17,7 @@ import { indicatorValue, swipeLabel } from "./swipe-labels"
 
 const t = fr.mapLayers.basemap
 
-/** Kept clear on both sides: the capsule and the overlay button sit within 72 pt of the right edge. */
-const SIDE_INSET = 72
+const SIDE_INSET = 16
 const MAX_WIDTH = 232
 const INDICATOR_HEIGHT = 36
 const CHEVRON_SIZE = 14
@@ -37,8 +36,8 @@ const stackEnter = () =>
 const stackExit = () => FadeOut.duration(BUTTON_FADE_MS).reduceMotion(ReduceMotion.System)
 
 export type BasemapSwipeOverlayProps = {
-  /** Distance from the top of the map: the capsule's top. */
-  top: number
+  /** Distance from the bottom edge: the info row sits just above the tab bar, under the receded map. */
+  bottom: number
   /** The layer the indicator names: the incoming one while a wipe is under way. */
   layer: BaseLayerKey
   isAvailable: (key: BaseLayerKey) => boolean
@@ -52,8 +51,6 @@ export type BasemapSwipeOverlayProps = {
   onNext: () => void
   onPrevious: () => void
   onCompareNext: () => void
-  /** The drawn height of the whole stack, so the notices column can start below it. */
-  onHeight?: (height: number) => void
 }
 
 /**
@@ -63,7 +60,7 @@ export type BasemapSwipeOverlayProps = {
  * with the actions next, previous and compare with the next layer.
  */
 export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
-  top,
+  bottom,
   layer,
   isAvailable,
   hintText,
@@ -74,7 +71,6 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   onNext,
   onPrevious,
   onCompareNext,
-  onHeight,
 }: BasemapSwipeOverlayProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -98,38 +94,74 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   return (
     <Animated.View
       pointerEvents="box-none"
-      style={[styles.column, { top }]}
+      style={[styles.column, { bottom }]}
       entering={stackEnter()}
       exiting={stackExit()}
-      onLayout={(event) => onHeight?.(event.nativeEvent.layout.height)}
     >
-      <View
-        testID="swipe-indicator"
-        accessible
-        accessibilityRole="adjustable"
-        accessibilityLabel={t.buttonA11y}
-        accessibilityHint={t.indicatorHint}
-        accessibilityValue={{ text: indicatorValue(layer) }}
-        accessibilityActions={actions}
-        onAccessibilityAction={onAction}
-      >
-        <GlassSurface tone="auto" surface={theme.visual.mapControl.glass} style={styles.indicator}>
-          <Ionicons
-            name="chevron-back-outline"
-            size={CHEVRON_SIZE}
-            color={theme.visual.mapControl.icon}
-          />
-          <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-            {label.name}
-          </Text>
-          <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
-            {label.era}
-          </Text>
-          <Ionicons
-            name="chevron-forward-outline"
-            size={CHEVRON_SIZE}
-            color={theme.visual.mapControl.icon}
-          />
+      {hint === null ? null : (
+        <Animated.View
+          entering={enter()}
+          exiting={FadeOut.duration(HINT_FADE_MS).reduceMotion(ReduceMotion.System)}
+        >
+          <View testID="swipe-hint" pointerEvents="none" style={styles.hint}>
+            <Text style={styles.hintText}>{hint}</Text>
+          </View>
+        </Animated.View>
+      )}
+      <View style={styles.row}>
+        <View
+          testID="swipe-indicator"
+          accessible
+          accessibilityRole="adjustable"
+          accessibilityLabel={t.buttonA11y}
+          accessibilityHint={t.indicatorHint}
+          accessibilityValue={{ text: indicatorValue(layer) }}
+          accessibilityActions={actions}
+          onAccessibilityAction={onAction}
+        >
+          <GlassSurface
+            tone="auto"
+            surface={theme.visual.mapControl.glass}
+            style={styles.indicator}
+          >
+            <Ionicons
+              name="chevron-back-outline"
+              size={CHEVRON_SIZE}
+              color={theme.visual.mapControl.icon}
+            />
+            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+              {label.name}
+            </Text>
+            <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
+              {label.era}
+            </Text>
+            <Ionicons
+              name="chevron-forward-outline"
+              size={CHEVRON_SIZE}
+              color={theme.visual.mapControl.icon}
+            />
+          </GlassSurface>
+        </View>
+        <GlassSurface
+          tone="auto"
+          interactive
+          surface={theme.visual.mapControl.glass}
+          style={styles.done}
+        >
+          <AppPressable
+            testID="swipe-done"
+            disableScale
+            disableRipple
+            hitSlop={MAP_CONTROL_HIT_SLOP}
+            accessibilityRole="button"
+            accessibilityLabel={t.doneA11y}
+            onPress={onDone}
+            style={styles.doneHit}
+          >
+            <Text style={styles.doneText} numberOfLines={1}>
+              {t.done}
+            </Text>
+          </AppPressable>
         </GlassSurface>
       </View>
       <View
@@ -153,37 +185,6 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
           />
         ))}
       </View>
-      <GlassSurface
-        tone="auto"
-        interactive
-        surface={theme.visual.mapControl.glass}
-        style={styles.done}
-      >
-        <AppPressable
-          testID="swipe-done"
-          disableScale
-          disableRipple
-          hitSlop={MAP_CONTROL_HIT_SLOP}
-          accessibilityRole="button"
-          accessibilityLabel={t.doneA11y}
-          onPress={onDone}
-          style={styles.doneHit}
-        >
-          <Text style={styles.doneText} numberOfLines={1}>
-            {t.done}
-          </Text>
-        </AppPressable>
-      </GlassSurface>
-      {hint === null ? null : (
-        <Animated.View
-          entering={enter()}
-          exiting={FadeOut.duration(HINT_FADE_MS).reduceMotion(ReduceMotion.System)}
-        >
-          <View testID="swipe-hint" pointerEvents="none" style={styles.hint}>
-            <Text style={styles.hintText}>{hint}</Text>
-          </View>
-        </Animated.View>
-      )}
     </Animated.View>
   )
 })
@@ -195,6 +196,12 @@ function createStyles(theme: BrandTheme) {
       left: SIDE_INSET,
       right: SIDE_INSET,
       alignItems: "center",
+      gap: brandSpacing4.sm,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
       gap: brandSpacing4.sm,
     },
     indicator: {

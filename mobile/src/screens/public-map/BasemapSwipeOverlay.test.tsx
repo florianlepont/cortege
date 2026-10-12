@@ -114,7 +114,7 @@ function render(props: Partial<BasemapSwipeOverlayProps> = {}): ReactTestRendere
   act(() => {
     tree = renderer.create(
       <BasemapSwipeOverlay
-        top={58}
+        bottom={103}
         layer="map"
         isAvailable={() => true}
         hintText={null}
@@ -133,27 +133,6 @@ const byId = (tree: ReactTestRenderer, testID: string): ReactTestInstance[] =>
   tree.root.findAll((node) => node.props.testID === testID && typeof node.type === "string")
 const textsOf = (node: ReactTestInstance): string[] =>
   node.findAllByType("Text" as never).map((text) => String(text.props.children))
-
-describe("measured height", () => {
-  test("the stack reports its drawn height, so the notices can start below it", () => {
-    const onHeight = jest.fn()
-    const tree = render({ onHeight })
-    const column = tree.root.find(
-      (node) => typeof node.type === "string" && typeof node.props.onLayout === "function",
-    )
-    act(() => column.props.onLayout({ nativeEvent: { layout: { height: 132 } } }))
-    expect(onHeight).toHaveBeenCalledWith(132)
-  })
-
-  test("without a listener a layout does nothing", () => {
-    const column = render().root.find(
-      (node) => typeof node.type === "string" && typeof node.props.onLayout === "function",
-    )
-    expect(() =>
-      act(() => column.props.onLayout({ nativeEvent: { layout: { height: 90 } } })),
-    ).not.toThrow()
-  })
-})
 
 describe("indicator", () => {
   test.each(["light", "dark"] as const)(
@@ -333,16 +312,16 @@ describe("hint", () => {
 })
 
 describe("layout", () => {
-  test("a centred column from the given top, clear of the capsule on both sides", () => {
-    const tree = render({ top: 91 })
+  test("a centred column from the given bottom, with a small side inset", () => {
+    const tree = render({ bottom: 91 })
     const column = tree.root.findAll(
       (node) => typeof node.type === "string" && node.props.pointerEvents === "box-none",
     )[0]
     expect(flat(column.props.style)).toMatchObject({
       position: "absolute",
-      left: 72,
-      right: 72,
-      top: 91,
+      left: 16,
+      right: 16,
+      bottom: 91,
       alignItems: "center",
       gap: 8,
     })

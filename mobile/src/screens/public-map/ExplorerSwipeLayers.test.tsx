@@ -107,7 +107,6 @@ function makeView(overrides: Partial<ExplorerSwipeView> = {}): ExplorerSwipeView
     onLineDragging: jest.fn(),
     canStep: jest.fn(() => true),
     onStep: jest.fn(),
-    onTopControlHeight: jest.fn(),
     ...overrides,
   }
 }
@@ -184,6 +183,7 @@ function render(
         layers={options.layers ?? makeLayers()}
         contentProps={contentProps}
         capsuleTop={58}
+        infoBottom={103}
         {...options.props}
       />,
     )
@@ -384,7 +384,7 @@ describe("the swipe mode", () => {
     expect(named(tree, "SwipeSurface")[0].props.gesture).toBe(view.controller.gesture)
     const overlay = named(tree, "BasemapSwipeOverlay")[0].props
     expect(overlay).toMatchObject({
-      top: 58,
+      bottom: 103,
       layer: "satellite",
       hintText: "Lâchez pour revenir",
       fingerDown: true,
@@ -394,7 +394,6 @@ describe("the swipe mode", () => {
       onNext: view.controller.next,
       onPrevious: view.controller.previous,
       onCompareNext: view.controller.compareNext,
-      onHeight: view.onTopControlHeight,
     })
     expect(overlay.isAvailable("map")).toBe(true)
     expect(named(tree, "CompareGrabber")).toHaveLength(0)

@@ -797,16 +797,16 @@ describe("the receded window (immersive effect)", () => {
     const progress = { value: 0.5 }
     windowInputs = { windowProgress: progress, windowApplied: true }
     mount()
-    // Scale 0.97: screen x 394 maps to the window's edge 400, screen x 200 stays at 200.
+    // Scale 0.88: screen x 394 maps past the window's edge (clamped to 400), x 200 stays at 200.
     begin(394)
     move(340)
     expect(latest.wipe).not.toBeNull()
     move(297)
-    expect(latest.clipLeft.value).toBeCloseTo(300, 5)
+    expect(latest.clipLeft.value).toBeCloseTo((297 - 200) / 0.88 + 200, 5)
     // The entrance finishes: the same screen x now maps with the final scale.
     progress.value = 1
     move(297)
-    expect(latest.clipLeft.value).toBeCloseTo((297 - 200) / 0.94 + 200, 5)
+    expect(latest.clipLeft.value).toBeCloseTo((297 - 200) / 0.76 + 200, 5)
   })
 
   test("a touch in the margin counts as the nearest edge", () => {

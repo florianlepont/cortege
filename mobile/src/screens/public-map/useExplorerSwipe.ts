@@ -37,7 +37,6 @@ const COVER_MAX_MS = 8000
 /** The gap between the top control and the notices column (UI-SPEC section 8). */
 const NOTICES_GAP = 8
 /** The swipe stack's height before it has been measured: indicator, dots, "Terminé" and gaps. */
-const SWIPE_STACK_ESTIMATE = 100
 
 /**
  * A stacked map kept over a style swap of the Explorer map under it, so no blank frame shows:
@@ -97,7 +96,6 @@ export type ExplorerSwipeView = {
   canStep: (side: "left" | "right") => boolean
   /** A tag asked for the next (1) or the previous (-1) layer of its side. */
   onStep: (side: "left" | "right", direction: 1 | -1) => void
-  onTopControlHeight: (height: number) => void
 }
 
 /** The immersive effect of the swipe mode (UI-SPEC section 3c), for the window and the buttons. */
@@ -190,7 +188,6 @@ export function useExplorerSwipe({
   const [leaving, setLeaving] = useState(false)
   const [inExitZone, setInExitZone] = useState(false)
   const [lineDragging, setLineDragging] = useState(false)
-  const [topHeight, setTopHeight] = useState<number | null>(null)
 
   // A finished wipe may leave a cover (derived while rendering, so the stacked map is never
   // unmounted for a frame between the wipe and its cover). A new comparison drops every cover; the
@@ -311,8 +308,9 @@ export function useExplorerSwipe({
     actions.quitCompare(keeps)
   })
   const quitPillVisible = comparing
-  const topHeld = swipeMode || quitPillVisible
-  const heldHeight = swipeMode ? (topHeight ?? SWIPE_STACK_ESTIMATE) : MAP_PILL_HEIGHT
+  // The swipe mode's info row sits at the bottom, so only the quit pill holds the top.
+  const topHeld = quitPillVisible
+  const heldHeight = MAP_PILL_HEIGHT
   const noticesTop = topHeld
     ? Math.max(baseNoticesTop, capsuleTop + heldHeight + NOTICES_GAP)
     : baseNoticesTop
@@ -347,7 +345,6 @@ export function useExplorerSwipe({
     onLineDragging: setLineDragging,
     canStep: sideStep.canStep,
     onStep: sideStep.step,
-    onTopControlHeight: setTopHeight,
   }
 
   return {

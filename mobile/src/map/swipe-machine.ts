@@ -47,7 +47,9 @@ export const SETTLE_MS = 240
 export const SPRINGBACK_MS = 240
 
 /** The receded map window of the swipe mode scales to this about its centre (UI-SPEC section 3c). */
-export const IMMERSIVE_SCALE = 0.94
+export const IMMERSIVE_SCALE = 0.76
+/** The receded window rises by this share of its height, so the info row fits under it (UI-SPEC 3c). */
+export const IMMERSIVE_SHIFT_PERCENT = 6
 /** Entering the immersive effect (ms, `brandMotion.durations.slow`, decelerate easing). */
 export const IMMERSIVE_IN_MS = 360
 /** Leaving the immersive effect (ms, `brandMotion.durations.base`, standard easing). */

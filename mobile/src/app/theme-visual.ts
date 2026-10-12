@@ -298,11 +298,11 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
     curtain: { line: brandColors.white, edge: "rgba(30, 36, 28, 0.55)" },
     immersive: dark
       ? {
-          shadow: { color: brandColors.black, opacity: 0.4, radius: 16, offsetY: 6 },
+          shadow: { color: brandColors.black, opacity: 0.6, radius: 20, offsetY: 8 },
           ring: "#5E5F5F",
         }
       : {
-          shadow: { color: brandColors.black, opacity: 0.18, radius: 24, offsetY: 8 },
+          shadow: { color: brandColors.black, opacity: 0.32, radius: 28, offsetY: 12 },
           ring: null,
         },
     mapRaster: { dimBrightnessMax: dark ? 0.8 : 1 },

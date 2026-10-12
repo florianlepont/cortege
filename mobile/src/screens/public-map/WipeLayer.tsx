@@ -1,6 +1,6 @@
 import type { ReactNode, RefObject } from "react"
 import type { SharedValue } from "react-native-reanimated"
-import type { CameraRef } from "@maplibre/maplibre-react-native"
+import { UserLocation, type CameraRef } from "@maplibre/maplibre-react-native"
 import type { MapRegion } from "../../app/map-viewport"
 import { useMapStyle, type MapStyleChoice } from "../../hooks/useMapStyle"
 import type { BaseLayerKey } from "../../map/layers"
@@ -74,6 +74,8 @@ export function WipeLayer({
       onStyleFailed={onStyleFailed}
     >
       {content({ cadastreInStyle, cadastreOpacity })}
+      {/* The device's position, over the cadastre and the parcels of this stacked map too. */}
+      <UserLocation key="user-location" />
     </MapStack>
   )
 }

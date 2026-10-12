@@ -57,7 +57,7 @@ const byTestId = (tree: renderer.ReactTestRenderer, id: string): ReactTestInstan
   tree.root.findByProps({ testID: id })
 
 describe("ImmersiveWindow, light", () => {
-  it("receded: scale 0.94, radius 22, canvas background and the soft shadow", () => {
+  it("receded: scale 0.76 raised by 6 %, radius 22, canvas background and the soft shadow", () => {
     const tree = render(
       <ImmersiveWindow progress={shared(1)} applied>
         <></>
@@ -65,7 +65,7 @@ describe("ImmersiveWindow, light", () => {
     )
     const outer = flat(byTestId(tree, "immersive-window").props.style)
     const { shadow } = buildTheme("light").visual.immersive
-    expect(outer.transform).toEqual([{ scale: 0.94 }])
+    expect(outer.transform).toEqual([{ translateY: "-6%" }, { scale: 0.76 }])
     expect(outer.borderRadius).toBe(brandRadius.card)
     expect(outer.backgroundColor).toBe(defaultTheme.colors.canvas)
     expect(outer.shadowColor).toBe(shadow.color)
@@ -92,7 +92,9 @@ describe("ImmersiveWindow, light", () => {
     const tree = render(<ImmersiveWindow progress={shared(0.5)} applied />)
     const outer = flat(byTestId(tree, "immersive-window").props.style)
     const { shadow } = buildTheme("light").visual.immersive
-    expect((outer.transform as { scale: number }[])[0].scale).toBeCloseTo(0.97, 5)
+    const [shift, zoom] = outer.transform as [{ translateY: string }, { scale: number }]
+    expect(shift.translateY).toBe("-3%")
+    expect(zoom.scale).toBeCloseTo(0.88, 5)
     expect(outer.borderRadius).toBe(brandRadius.card / 2)
     expect(outer.shadowOpacity).toBeCloseTo(shadow.opacity / 2, 5)
     expect(outer.elevation).toBe(brandElevation.level3.elevation / 2)
@@ -106,7 +108,7 @@ describe("ImmersiveWindow, light", () => {
     )
     const root = byTestId(tree, "immersive-window")
     const outer = flat(root.props.style)
-    expect(outer.transform).toEqual([{ scale: 1 }])
+    expect(outer.transform).toEqual([{ translateY: "0%" }, { scale: 1 }])
     expect(outer.borderRadius).toBe(0)
     expect(outer.shadowOpacity).toBe(0)
     expect(outer.elevation).toBe(0)

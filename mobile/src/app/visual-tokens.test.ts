@@ -930,18 +930,18 @@ describe.each(schemes)("immersive window tokens (Phase 28), %s scheme", (scheme)
   test("the shadow is a black shadow with a radius and an offset", () => {
     expect(immersive.shadow.color).toBe(brandColors.black)
     expect(immersive.shadow.opacity).toBeGreaterThan(0)
-    expect(immersive.shadow.opacity).toBeLessThanOrEqual(0.4)
+    expect(immersive.shadow.opacity).toBeLessThanOrEqual(0.65)
     expect(immersive.shadow.radius).toBeGreaterThan(0)
     expect(immersive.shadow.offsetY).toBeGreaterThan(0)
   })
 
   if (scheme === "light") {
-    test("light is a soft shadow (0.18, 24, 8) with no ring", () => {
+    test("light is a soft shadow (0.32, 28, 12) with no ring", () => {
       expect(immersive.shadow).toEqual({
         color: brandColors.black,
-        opacity: 0.18,
-        radius: 24,
-        offsetY: 8,
+        opacity: 0.32,
+        radius: 28,
+        offsetY: 12,
       })
       expect(immersive.ring).toBeNull()
     })
