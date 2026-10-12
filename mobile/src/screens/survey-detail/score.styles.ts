@@ -10,7 +10,7 @@ import { BrandTheme } from "../../app/theme"
 
 const BADGE = 32
 
-/** Styles of the "Score IBP" page: the total with its two sub-scores, then one row per factor. */
+/** Styles of the "Facteurs IBP" page: the total with its two sub-scores, then one row per factor. */
 export function createScoreStyles(theme: BrandTheme) {
   const hairline = theme.visual.glass.cardBorder
   return StyleSheet.create({

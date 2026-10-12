@@ -83,7 +83,7 @@ export type SurveyContextScreenProps = SurveyDetailBaseProps & {
   onRefillWeather: (surveyId: string) => Promise<void> | void
 }
 
-/** "Score IBP": the total, the two sub-scores and the ten factors. */
+/** "Facteurs IBP": the total, the two sub-scores and the ten factors. */
 export type SurveyScoreScreenProps = SurveyDetailBaseProps & {
   onOpenFactor: (surveyId: string, factor: FactorKey) => Promise<void> | void
 }

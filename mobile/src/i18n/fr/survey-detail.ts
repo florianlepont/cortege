@@ -92,7 +92,9 @@ export const surveyDetailFr = {
   },
   rows: {
     context: "Contexte et parcelles",
-    score: "Score IBP",
+    // D-34: the row and its page are named for what they hold, the ten factors. The score card
+    // above keeps "Score IBP".
+    score: "Facteurs IBP",
     history: "Historique de la parcelle",
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
@@ -134,7 +136,7 @@ export const surveyDetailFr = {
     casMissing: "Choisissez le cas IBP de la station : il est requis pour soumettre le relevé.",
   },
   factors: {
-    title: "Score IBP",
+    title: "Facteurs IBP",
     subtitle: "Ouvrez un facteur pour modifier les observations et le score.",
     loading: "Chargement des facteurs…",
     localDraftHint: "Score du brouillon local, d'après les dernières modifications.",

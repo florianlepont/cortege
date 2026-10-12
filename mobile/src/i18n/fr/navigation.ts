@@ -13,7 +13,7 @@ export const navigationFr = {
     surveys: "Mes Relevés",
     communitySurvey: "Relevé de la communauté",
     surveyContext: "Contexte et parcelles",
-    surveyScore: "Score IBP",
+    surveyScore: "Facteurs IBP",
     surveyHistory: "Historique de la parcelle",
     communityHistory: "Historique de la parcelle",
     surveyJournal: "Journal du relevé",
