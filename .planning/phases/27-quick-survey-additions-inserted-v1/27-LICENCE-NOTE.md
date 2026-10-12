@@ -19,7 +19,7 @@ disclosed. Quota reported by the owner: 100 requests per minute (per API, per ac
 
 ## Already satisfied before this change
 
-- Condition 2: "Source : Météo-France" on the summary card, the Conditions section, the read-only
+- Condition 2: "Source : Météo-France" on the summary card (shortened to "Météo-France" by D-35, see the amendment below), the Conditions section, the read-only
   view and the PDF (D-26), shown only while at least one shown value is still the provider's
   (`showsProviderAttribution`); manual values carry no Météo-France mention.
 - Condition 1: an edited weather reads "Préremplie d'après Météo-France, modifiée par ..." and the
@@ -56,6 +56,26 @@ disclosed. Quota reported by the owner: 100 requests per minute (per API, per ac
 - Docs: quota and terms recorded in `api/test/fixtures/meteofrance/README.md` and in the weather
   paragraph of `docs/technical/api-contract-v1.md`; D-31 added to `27-CONTEXT.md`; open question O6
   closed in `27-RESEARCH.md`; one line in `CLAUDE.md`.
+
+## Amendment 2026-10-12 (D-35): short mention on the summary card
+
+Owner decision after the simulator check: the summary weather card shows the weather line and a very
+short mention only, no date and no sentence. The owner accepted that the short mention on the card is
+compliant enough, the source and the date of the data being one tap away in the detail view.
+
+- Summary card (`ConditionsCard`, helper `weatherCardMention` in `mobile/src/app/weather.ts`, strings
+  `fr.conditions.summary.mention*`): "Météo-France" while a shown value is still the provider's and
+  nothing was edited; "Météo-France, en partie modifiée" when the observer changed some of those
+  values (the strict mixed rule of D-31 keeps its intent: the data is never presented as plain
+  Météo-France data); no Météo-France mention when every provider value was edited or the weather is
+  manual.
+- The full dated sentence ("Source : Météo-France, mesure du 12/10/2026 à 04:00", with the mixed
+  wording) stays in the weather block of the Contexte page, in the read-only twin used by the
+  community survey view, and in the PDF. `weatherSourceLine` is unchanged and owns that rule.
+- Conditions 2 and 3 are therefore met on the summary by the short mention plus the date in the
+  detail view one tap away, not by a dated line on the card itself. If the owner or Météo-France
+  later reads condition 3 as "next to the mention on every support", restore the dated line on the
+  card (one line in `ConditionsCard`).
 
 ## Points left for the owner
 

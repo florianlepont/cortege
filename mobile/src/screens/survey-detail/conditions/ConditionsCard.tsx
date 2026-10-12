@@ -18,7 +18,7 @@ import {
   brandTypeScale,
 } from "../../../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../../../app/theme"
-import { formatWeatherLine, weatherSourceLine } from "../../../app/weather"
+import { formatWeatherLine, weatherCardMention } from "../../../app/weather"
 import { fr } from "../../../i18n"
 import { AppCard } from "../../../ui/AppCard"
 import { AppPressable } from "../../../ui/AppPressable"
@@ -63,8 +63,8 @@ type ConditionsCardProps = {
 
 /**
  * The conditions on the survey summary (D-17, UI-SPEC 3.1): one weather line (sky, temperature,
- * wind, rain, the values that exist), "Source : Météo-France" while a shown value is still the
- * provider's (D-26), and the survey note folded to two lines with an in-place "Lire la suite". The
+ * wind, rain, the values that exist), the very short mention "Météo-France" while a shown value is
+ * still the provider's (D-26, D-35; the dated source sentence is in the Contexte page), and the survey note folded to two lines with an in-place "Lire la suite". The
  * weather area is the one press target: it opens the Conditions section of the context page. A
  * draft with nothing shows a calm invitation, a submitted survey with nothing shows no card.
  */
@@ -76,7 +76,7 @@ export function ConditionsCard({ note, weather, loading, submitted, onOpen }: Co
   const [truncated, setTruncated] = useState(false)
 
   const line = formatWeatherLine(weather)
-  const sourceLine = weatherSourceLine(weather)
+  const mention = weatherCardMention(weather)
   const noteText = note !== null && note.trim().length > 0 ? note : null
 
   if (line === null && noteText === null && !loading && submitted) return null
@@ -163,9 +163,9 @@ export function ConditionsCard({ note, weather, loading, submitted, onOpen }: Co
             />
           </RipplePressable>
 
-          {line !== null && sourceLine !== null ? (
-            <Text style={styles.attribution} testID="conditions-card-source">
-              {sourceLine}
+          {line !== null && mention !== null ? (
+            <Text style={styles.attribution} testID="conditions-card-mention">
+              {mention}
             </Text>
           ) : null}
 

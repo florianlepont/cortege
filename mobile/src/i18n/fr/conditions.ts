@@ -127,6 +127,9 @@ export const conditionsFr = {
     openWithLine: (line: string) => `Ouvrir les conditions du relevé. ${line}`,
     // A note without any weather value: the weather area says so (UI-SPEC 3.1).
     noWeather: "Aucune météo",
+    // D-35: the whole attribution on the card, very short; the dated sentence is in the detail.
+    mention: "Météo-France",
+    mentionPartlyEdited: "Météo-France, en partie modifiée",
     noteMore: "Lire la suite",
     noteMoreA11y: "Lire la suite, développe la note",
     noteLess: "Réduire",

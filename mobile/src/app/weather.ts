@@ -193,6 +193,18 @@ export function weatherSourceLine(weather: SurveyWeather | null | undefined): st
 }
 
 /**
+ * The very short mention on the summary card (D-35): "Météo-France" while a shown value is still
+ * the provider's, "Météo-France, en partie modifiée" when the observer changed some of them, and
+ * null when none is (D-26, D-31: never presented as the provider's). The dated sentence stays in
+ * `weatherSourceLine`, for the detail view.
+ */
+export function weatherCardMention(weather: SurveyWeather | null | undefined): string | null {
+  if (!showsProviderAttribution(weather)) return null
+  const t = fr.conditions.summary
+  return editedOf(weather).length > 0 ? t.mentionPartlyEdited : t.mention
+}
+
+/**
  * Where the shown values come from. Null when there is nothing to show. A weather that the
  * provider filled and the observer then touched is "edited".
  */

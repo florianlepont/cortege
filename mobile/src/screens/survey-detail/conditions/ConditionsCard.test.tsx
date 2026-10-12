@@ -157,51 +157,39 @@ describe("ConditionsCard weather line (D-17)", () => {
   })
 })
 
-describe("ConditionsCard attribution (D-26)", () => {
-  test("shows the provider source under the line while a value is still the provider's", () => {
+describe("ConditionsCard attribution (D-26, D-35)", () => {
+  test("shows the short provider mention under the line while a value is still the provider's", () => {
     const { tree } = mount({ weather: CLOUDY })
 
-    expect(texts(tree)).toContain(t.weather.source)
+    expect(texts(tree)).toContain(t.summary.mention)
+    expect(texts(tree)).toContain("Météo-France")
+    expect(texts(tree).join(" ")).not.toContain("Source :")
   })
 
   test("hides it for a manual weather and when every value was edited", () => {
     const manual = mount({ weather: { ...CLOUDY, source: "manual" } })
-    expect(texts(manual.tree)).not.toContain(t.weather.source)
+    expect(texts(manual.tree).join(" ")).not.toContain("Météo-France")
 
     const edited = mount({
       weather: { ...CLOUDY, edited: ["sky", "temperature_c", "wind_kmh", "rain_24h_mm"] },
     })
-    expect(texts(edited.tree)).not.toContain(t.weather.source)
+    expect(texts(edited.tree).join(" ")).not.toContain("Météo-France")
   })
 
-  test("carries the date and time of the measurement when it is known (D-31)", () => {
+  test("carries no date and no sentence, the date is in the Contexte page (D-31 detail view)", () => {
     const observedAt = new Date(2026, 9, 12, 4, 0).toISOString()
     const { tree } = mount({ weather: { ...CLOUDY, observed_at: observedAt } })
 
-    expect(texts(tree)).toContain("Source : Météo-France, mesure du 12/10/2026 à 04:00")
-    expect(texts(tree)).not.toContain(t.weather.source)
-
-    const manual = mount({
-      weather: { ...CLOUDY, source: "manual", observed_at: observedAt },
-    })
-    expect(texts(manual.tree).join(" ")).not.toContain("Météo-France")
+    expect(texts(tree)).toContain("Météo-France")
+    expect(texts(tree).join(" ")).not.toContain("12/10/2026")
+    expect(texts(tree).join(" ")).not.toContain("mesure du")
   })
 
-  test("keeps it when only some values were edited", () => {
+  test("says the weather is partly modified when only some values were edited", () => {
     const { tree } = mount({ weather: { ...CLOUDY, edited: ["temperature_c"] } })
 
-    expect(texts(tree)).toContain(
-      "Source : Météo-France, certaines valeurs modifiées par l'observateur",
-    )
-    expect(texts(tree)).not.toContain(t.weather.source)
-
-    const observedAt = new Date(2026, 9, 12, 4, 0).toISOString()
-    const dated = mount({
-      weather: { ...CLOUDY, observed_at: observedAt, edited: ["temperature_c"] },
-    })
-    expect(texts(dated.tree)).toContain(
-      "Source : Météo-France, mesure du 12/10/2026 à 04:00, certaines valeurs modifiées par l'observateur",
-    )
+    expect(texts(tree)).toContain("Météo-France, en partie modifiée")
+    expect(texts(tree)).not.toContain(t.summary.mention)
   })
 })
 

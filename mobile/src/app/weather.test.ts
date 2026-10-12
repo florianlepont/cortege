@@ -16,6 +16,7 @@ import {
   roundWeatherCoordinate,
   showsProviderAttribution,
   weatherProvenance,
+  weatherCardMention,
   weatherSourceLine,
   weatherViewState,
   withObservationTime,
@@ -597,5 +598,37 @@ describe("the date of the data next to the source (D-31)", () => {
         edited: ["sky"],
       }),
     ).toBeNull()
+  })
+})
+
+describe("weatherCardMention (D-35)", () => {
+  const MEASURED = new Date(2026, 9, 12, 4, 0).toISOString()
+
+  it("is the bare provider name while the provider's values are untouched, with no date", () => {
+    expect(weatherCardMention({ sky: "rain", source: "meteo_france", observed_at: MEASURED })).toBe(
+      "Météo-France",
+    )
+    expect(weatherCardMention({ sky: "rain", source: "meteo_france", edited: [] })).toBe(
+      "Météo-France",
+    )
+  })
+
+  it("says the weather is partly modified when some provider values were edited", () => {
+    expect(
+      weatherCardMention({
+        sky: "rain",
+        temperature_c: 9,
+        source: "meteo_france",
+        observed_at: MEASURED,
+        edited: ["temperature_c"],
+      }),
+    ).toBe("Météo-France, en partie modifiée")
+  })
+
+  it("has no mention when every provider value was edited, for a manual weather or none", () => {
+    expect(weatherCardMention({ sky: "rain", source: "meteo_france", edited: ["sky"] })).toBeNull()
+    expect(weatherCardMention({ sky: "rain", source: "manual" })).toBeNull()
+    expect(weatherCardMention(null)).toBeNull()
+    expect(weatherCardMention(undefined)).toBeNull()
   })
 })
