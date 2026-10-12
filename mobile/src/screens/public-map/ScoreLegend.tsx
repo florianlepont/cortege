@@ -154,12 +154,7 @@ export type ScoreLegendProps = {
 /** The Explorer's legend: the score colours of its markers, no count pill. */
 export const ScoreLegend = memo(function ScoreLegend(props: ScoreLegendProps) {
   return (
-    <MapLegend
-      {...props}
-      title={t.legend.title}
-      subtitle={t.legend.subtitle}
-      rows={SCORE_ROWS}
-    />
+    <MapLegend {...props} title={t.legend.title} subtitle={t.legend.subtitle} rows={SCORE_ROWS} />
   )
 })
 
