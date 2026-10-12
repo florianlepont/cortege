@@ -43,6 +43,8 @@ type Input = {
 }
 
 export type ExplorerLayers = LayerAvailability & {
+  /** No network: the labels carry downloaded markers and the comparison cards appear. */
+  isOffline: boolean
   layers: MapLayers
   surveyParcelIds: ReadonlySet<string>
   capsuleTop: number
@@ -133,6 +135,7 @@ export function useExplorerLayers({
 
   return {
     ...availability,
+    isOffline,
     layers,
     surveyParcelIds,
     capsuleTop,

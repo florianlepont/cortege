@@ -247,6 +247,31 @@ describe("dots", () => {
   })
 })
 
+describe("offline markers", () => {
+  const glyphs = (tree: ReactTestRenderer) =>
+    byId(tree, "swipe-indicator")[0]
+      .findAllByType("Ionicons" as never)
+      .map((node) => node.props.name)
+
+  test("online the pill has no marker", () => {
+    expect(glyphs(render())).toEqual(["chevron-back-outline", "chevron-forward-outline"])
+    expect(byId(render(), "swipe-indicator")[0].props.accessibilityValue.text).not.toMatch(
+      /téléchargé/,
+    )
+  })
+
+  test("offline the pill says if its layer is downloaded for the view, visually and aloud", () => {
+    const here = render({ offline: true, isAvailable: () => true })
+    expect(glyphs(here)).toContain("cloud-done-outline")
+    expect(byId(here, "swipe-indicator")[0].props.accessibilityValue.text).toMatch(/, téléchargé$/)
+    const missing = render({ offline: true, isAvailable: () => false })
+    expect(glyphs(missing)).toContain("cloud-offline-outline")
+    expect(byId(missing, "swipe-indicator")[0].props.accessibilityValue.text).toMatch(
+      /, non téléchargé ici$/,
+    )
+  })
+})
+
 describe("hint", () => {
   test("sits in the bottom white zone, apart from the top stack", () => {
     const tree = render({ introHintVisible: true, hintBottom: 91 })

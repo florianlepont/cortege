@@ -200,6 +200,20 @@ describe("CompareSideTag", () => {
     ])
   })
 
+  test("offline, a downloaded layer wears the downloaded glyph and both states reach a screen reader", () => {
+    const here = mount({ downloaded: true })
+    expect(glyphsOf(here.tag())).toEqual([
+      "chevron-back-outline",
+      "cloud-done-outline",
+      "chevron-forward-outline",
+    ])
+    expect(here.tag().props.accessibilityValue.text).toMatch(/, téléchargé$/)
+    const missing = mount({ unavailable: true })
+    expect(missing.tag().props.accessibilityValue.text).toMatch(/, non téléchargé ici$/)
+    const online = mount()
+    expect(online.tag().props.accessibilityValue.text).not.toMatch(/téléchargé/)
+  })
+
   test("the back chevron asks for the previous layer, the forward chevron for the next", () => {
     const { chevron, props } = mount()
     act(() => (chevron("previous").props.onPress as () => void)())

@@ -6,6 +6,7 @@ import type { BaseLayerKey } from "../../map/layers"
 import { BasemapSwipeOverlay } from "./BasemapSwipeOverlay"
 import { CompareGrabber, grabberCenterY } from "./CompareGrabber"
 import { CompareLine } from "./CompareLine"
+import { CompareUnavailableCard } from "./CompareUnavailableCard"
 import { CompareSideTag } from "./CompareSideTag"
 import { ImmersiveWindow } from "./ImmersiveWindow"
 import { MapContentLayers, shownParcelsFor } from "./MapContentLayers"
@@ -118,6 +119,11 @@ export function ExplorerSwipeLayers({
   }
   const leftName = view.leftLayer ? shortName(view.leftLayer) : ""
   const rightName = view.rightLayer ? shortName(view.rightLayer) : ""
+  // A half whose layer has no tiles for the view (offline) gets a neutral card, never raw black.
+  function unavailableCard(side: "left" | "right", layer: BaseLayerKey) {
+    if (!layers.isOffline || layers.isAvailable(layer)) return null
+    return <CompareUnavailableCard side={side} lineX={view.lineX} width={view.width} />
+  }
   // One side tag: the short name on the tag, the long name and the era for a screen reader.
   function sideTag(side: "left" | "right", layer: BaseLayerKey) {
     const { name: label, era } = swipeLabel(layer)
@@ -130,7 +136,8 @@ export function ExplorerSwipeLayers({
         lineX={view.lineX}
         width={view.width}
         centerY={grabberCenterY(view.height)}
-        unavailable={!layers.isAvailable(layer)}
+        unavailable={layers.isOffline && !layers.isAvailable(layer)}
+        downloaded={layers.isOffline && layers.isAvailable(layer)}
         canStep={view.canStep(side)}
         disabled={view.lineDragging}
         onStep={(direction) => view.onStep(side, direction)}
@@ -151,6 +158,8 @@ export function ExplorerSwipeLayers({
         {view.third ? stackedMap("third-map", view.third, "third", swipe.onThirdReady) : null}
         {view.comparing && view.leftLayer && view.rightLayer ? (
           <>
+            {unavailableCard("left", view.leftLayer)}
+            {unavailableCard("right", view.rightLayer)}
             <CompareLine lineX={view.lineX} top={capsuleTop} />
             <CompareGrabber
               lineX={view.lineX}
@@ -174,6 +183,7 @@ export function ExplorerSwipeLayers({
           hintBottom={hintBottom}
           layer={controller.indicatorLayer}
           isAvailable={layers.isAvailable}
+          offline={layers.isOffline}
           hintText={controller.hintText}
           fingerDown={controller.fingerDown}
           introHintVisible={controller.introHintVisible}

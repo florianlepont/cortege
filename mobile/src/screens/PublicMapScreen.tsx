@@ -364,7 +364,7 @@ export function PublicMapScreen({
         <ScoreLegend
           bottom={controlsBottom}
           loading={loading}
-          isOffline={isOffline}
+          isOffline={isOffline && layers.layers.state.compare === null}
           attributionLines={layers.legendLines ?? undefined}
         />
       </ExplorerPanelsView>

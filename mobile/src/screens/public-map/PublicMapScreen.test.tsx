@@ -1270,6 +1270,17 @@ describe("PublicMapScreen", () => {
       return props
     }
 
+    test("offline, the Hors connexion badge never shares the bottom with the quit pill", () => {
+      mount(makeProps({ isOffline: true }))
+      expect(texts()).toContain(fr.offlineMap.indicator.offline)
+      act(() => globe().props.onPress())
+      drag(380, 200)
+      release()
+      // The comparison's labels carry the offline state; the badge leaves the pill's row.
+      expect(present("compare-quit")).toBe(true)
+      expect(texts()).not.toContain(fr.offlineMap.indicator.offline)
+    })
+
     test("the free map is today's Explorer: not frozen, no extra map, no swipe control", () => {
       mount(makeProps())
       const map = explorerMap()
