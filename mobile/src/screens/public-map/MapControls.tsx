@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
+import { brandInteraction } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import type { BaseLayerKey } from "../../map/layers"
 import { fr } from "../../i18n"
@@ -31,6 +32,12 @@ export type MapTopControlsProps = {
   swipeModeOn?: boolean
   /** Swipe mode only: the base differs from the saved one, or a comparison is on. */
   basemapDot?: boolean
+  /**
+   * Swipe mode only: a comparison exists, so the globe cannot start the swipe mode. It ignores
+   * presses, says `disabled` to a screen reader and its glyph is dimmed (UI-SPEC section 1); the dot
+   * stays.
+   */
+  basemapDisabled?: boolean
   onToggleBasemap: () => void
   /** Omitted until the offline areas are wired: the button does not render. */
   onOpenOfflineAreas?: () => void
@@ -48,6 +55,7 @@ export const MapTopControls = memo(function MapTopControls({
   basemapMode = "toggle",
   swipeModeOn = false,
   basemapDot = false,
+  basemapDisabled = false,
   onToggleBasemap,
   onOpenOfflineAreas,
 }: MapTopControlsProps) {
@@ -55,6 +63,7 @@ export const MapTopControls = memo(function MapTopControls({
   const styles = useMemo(() => createControlStyles(theme), [theme])
   const target = basemap === "map" ? "satellite" : "map"
   const swipe = basemapMode === "swipe"
+  const globeDisabled = swipe && basemapDisabled
   return (
     <GlassSurface
       tone="auto"
@@ -63,22 +72,25 @@ export const MapTopControls = memo(function MapTopControls({
       style={[styles.capsule, { top }]}
     >
       <AppPressable
+        testID="map-globe-button"
         disableScale
         disableRipple
         style={styles.capsuleButton}
         onPress={onToggleBasemap}
+        disabled={globeDisabled}
         accessibilityRole="button"
         accessibilityLabel={
           swipe ? swipeT.buttonA11y : offlineT.basemap.a11y.switchTo(offlineT.basemap[target])
         }
         accessibilityHint={swipe ? swipeT.buttonHint : undefined}
-        accessibilityState={swipe ? { expanded: swipeModeOn } : undefined}
+        accessibilityState={swipe ? { expanded: swipeModeOn, disabled: globeDisabled } : undefined}
         accessibilityValue={swipe && basemapDot ? { text: swipeT.buttonActiveValue } : undefined}
       >
         <Ionicons
           name={target === "satellite" ? "earth-outline" : "map-outline"}
           size={mapControlIconSize}
           color={theme.visual.mapControl.icon}
+          style={globeDisabled ? { opacity: brandInteraction.disabledOpacity } : undefined}
         />
         {swipe && basemapDot ? (
           <View

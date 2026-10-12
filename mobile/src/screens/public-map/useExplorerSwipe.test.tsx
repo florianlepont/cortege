@@ -18,7 +18,7 @@ const mockFocus = { value: true }
 jest.mock("../../ui/useScreenFocus", () => ({ useScreenFocus: () => mockFocus.value }))
 jest.mock("./MapChips", () => ({ MAP_PILL_HEIGHT: 40 }))
 
-const mockStack = { wipe: "wipe", comparison: true, side: "wipe" }
+const mockStack = { wipe: "wipe", comparison: true }
 jest.mock("./map-stack-mode", () => ({
   get WIPE_PRESENTATION() {
     return mockStack.wipe
@@ -26,13 +26,10 @@ jest.mock("./map-stack-mode", () => ({
   get COMPARISON_BUILT() {
     return mockStack.comparison
   },
-  get SIDE_WIPE() {
-    return mockStack.side
-  },
   LEFT_MAP_ANDROID_VIEW: "texture",
 }))
 
-// Two stacked-map syncs per render, the second map's first. They keep their identity.
+// The second map's camera sync. It keeps its identity.
 const mockSyncs: { cameraRef: { current: null }; syncFrom: jest.Mock }[] = []
 jest.mock("./MapStack", () => {
   const ReactRef = require("react") as typeof import("react")
@@ -100,7 +97,7 @@ const HEIGHT = 800
 const REGION = { latitude: 48.4, longitude: 2.7, latitudeDelta: 0.02, longitudeDelta: 0.01 }
 const controllerClip = { clipLeft: { value: 1 }, clipRight: { value: 2 } }
 
-type Wipe = { side: "full" | "left" | "right"; incoming: BaseLayerKey } | null
+type Wipe = { side: "full"; incoming: BaseLayerKey } | null
 
 function setController(wipe: Wipe = null, overrides: Record<string, unknown> = {}) {
   mockController.current = {
@@ -226,7 +223,6 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockStack.wipe = "wipe"
   mockStack.comparison = true
-  mockStack.side = "wipe"
   mockFocus.value = true
   mockSyncs.length = 0
   mockControllerParams.length = 0
@@ -253,7 +249,6 @@ describe("free map, no comparison", () => {
       androidView: "texture",
     })
     expect(out().layersView.second).toBeNull()
-    expect(out().layersView.third).toBeNull()
     expect(out().layersView.comparing).toBe(false)
     expect(out().layersView.leftLayer).toBeNull()
     expect(out().quitPillVisible).toBe(false)
@@ -333,7 +328,6 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     expect(second?.clipLeft).toBe(controllerClip.clipLeft)
     expect(second?.clipRight).toBe(controllerClip.clipRight)
     expect(second?.cameraRef).toBe(mockSyncs[0].cameraRef)
-    expect(out().layersView.third).toBeNull()
     expect(typeof out().mapCanvasProps.onViewChange).toBe("function")
   })
 
@@ -342,8 +336,8 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     mount(makeLayers({ swipeMode: true }))
     const event = { nativeEvent: { center: [1, 2], zoom: 12 } }
     act(() => out().mapCanvasProps.onViewChange?.(event as never))
+    expect(mockSyncs).toHaveLength(1)
     expect(mockSyncs[0].syncFrom).toHaveBeenCalledWith(event)
-    expect(mockSyncs[1].syncFrom).toHaveBeenCalledWith(event)
   })
 
   test("with an instant presentation no stacked map is mounted during a gesture", () => {
@@ -362,9 +356,6 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     const second = out().layersView.second
     expect(second?.layer).toBe("satellite")
     expect(second?.clipLeft).toBe(controllerClip.clipLeft)
-    // Another style loading does not matter; the Explorer's own does.
-    act(() => out().onSecondStyleLoaded())
-    expect(out().layersView.second).not.toBeNull()
     act(() => out().onBaseStyleLoaded())
     expect(out().layersView.second).toBeNull()
     expect(out().mapCanvasProps.onViewChange).toBeUndefined()
@@ -409,7 +400,7 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     const free = makeLayers({ swipeMode: true })
     mount(free)
     setController(null)
-    update(makeLayers({ swipeMode: true, compare: compareRight }))
+    update(makeLayers({ compare: compareRight }))
     const second = out().layersView.second
     expect(second?.layer).toBe("photos-1950")
     expect(second?.clipLeft).toBe(mockClip.clipLeft)
@@ -433,17 +424,20 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     expect(typeof lastCurtain().onLeft).toBe("function")
   })
 
-  test("a comparison started on a finger release: north up again, markers hidden, silently", () => {
+  test("a comparison started on a finger release: north up again, markers hidden, map free", () => {
     mount(makeLayers({ swipeMode: true }))
     expect(jumpTo).toHaveBeenCalledTimes(1)
-    update(makeLayers({ swipeMode: true, compare: compareRight }))
+    expect(out().mapCanvasProps.frozen).toBe(true)
+    // The layers state ends the swipe mode in the same change as it starts the comparison.
+    update(makeLayers({ compare: compareRight }))
     expect(jumpTo).toHaveBeenCalledTimes(2)
     expect(jumpTo).toHaveBeenLastCalledWith({ center: [2.7, 48.4], bearing: 0, pitch: 0 })
     expect(out().mapCanvasProps).toMatchObject({
-      frozen: true,
+      frozen: false,
       rotationLocked: true,
       hideMarkers: true,
     })
+    expect(out().layersView.swipeMode).toBe(false)
   })
 
   test("a new comparison drops a cover left over from before", () => {
@@ -451,8 +445,8 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     mount(makeLayers({ swipeMode: true }))
     setController(null)
     update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: "satellite" }))
-    update(makeLayers({ swipeMode: true, base: "satellite", compare: compareRight }))
-    update(makeLayers({ swipeMode: true, base: "satellite" }))
+    update(makeLayers({ base: "satellite", compare: compareRight }))
+    update(makeLayers({ base: "satellite" }))
     expect(out().layersView.second).toBeNull()
   })
 
@@ -464,70 +458,6 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     expect(out().quitPillVisible).toBe(false)
     expect(out().mapCanvasProps).toMatchObject({ rotationLocked: false, hideMarkers: false })
     expect(lastCurtain().compare).toBeNull()
-  })
-})
-
-describe("a side wipe", () => {
-  test("mounts the third map, cut by the controller's strip, over the curtain's second map", () => {
-    setController({ side: "left", incoming: "etat-major" })
-    mount(makeLayers({ swipeMode: true, compare: compareRight }))
-    expect(out().layersView.second?.layer).toBe("photos-1950")
-    expect(out().layersView.second?.clipLeft).toBe(mockClip.clipLeft)
-    const third = out().layersView.third
-    expect(third?.layer).toBe("etat-major")
-    expect(third?.clipLeft).toBe(controllerClip.clipLeft)
-    expect(third?.cameraRef).toBe(mockSyncs[1].cameraRef)
-  })
-
-  test("with an instant side presentation no third map is mounted", () => {
-    mockStack.side = "instant"
-    setController({ side: "left", incoming: "etat-major" })
-    mount(makeLayers({ swipeMode: true, compare: compareRight }))
-    expect(out().layersView.third).toBeNull()
-    expect(out().layersView.second).not.toBeNull()
-  })
-
-  test("a committed side the Explorer map draws stays covered until the Explorer map has loaded it", () => {
-    setController({ side: "left", incoming: "etat-major" })
-    mount(makeLayers({ swipeMode: true, compare: compareRight }))
-    setController(null)
-    update(makeLayers({ swipeMode: true, compare: { ...compareRight, sideA: "etat-major" } }))
-    expect(out().layersView.third?.layer).toBe("etat-major")
-    // The second map loading is not what this side waits for.
-    act(() => out().onSecondStyleLoaded())
-    expect(out().layersView.third).not.toBeNull()
-    act(() => out().onBaseStyleLoaded())
-    expect(out().layersView.third).toBeNull()
-  })
-
-  test("a committed side the second map draws stays covered until the second map has loaded it", () => {
-    setController({ side: "right", incoming: "carte-1950" })
-    mount(makeLayers({ swipeMode: true, compare: compareRight }))
-    setController(null)
-    update(makeLayers({ swipeMode: true, compare: { ...compareRight, sideB: "carte-1950" } }))
-    expect(out().layersView.third?.layer).toBe("carte-1950")
-    act(() => out().onBaseStyleLoaded())
-    expect(out().layersView.third).not.toBeNull()
-    act(() => out().onSecondStyleLoaded())
-    expect(out().layersView.third).toBeNull()
-  })
-
-  test("a cancelled side wipe, or a side that changed back, leaves no third map", () => {
-    setController({ side: "left", incoming: "etat-major" })
-    mount(makeLayers({ swipeMode: true, compare: compareRight }))
-    setController(null)
-    update(makeLayers({ swipeMode: true, compare: compareRight }))
-    expect(out().layersView.third).toBeNull()
-  })
-
-  test("a side cover is not kept once the comparison is gone", () => {
-    setController({ side: "left", incoming: "etat-major" })
-    mount(makeLayers({ swipeMode: true, compare: compareRight }))
-    setController(null)
-    update(makeLayers({ swipeMode: true, compare: { ...compareRight, sideA: "etat-major" } }))
-    expect(out().layersView.third).not.toBeNull()
-    update(makeLayers({ swipeMode: true }))
-    expect(out().layersView.third).toBeNull()
   })
 })
 
@@ -594,14 +524,24 @@ describe("leaving a comparison by an edge", () => {
 })
 
 describe("Quitter la comparaison", () => {
-  test("shows only while comparing with the swipe mode off, level with the capsule", () => {
+  test("shows exactly while comparing, level with the capsule", () => {
     mount(makeLayers({ compare: compareRight }))
     expect(out().quitPillVisible).toBe(true)
     expect(out().noticesTop).toBe(58 + 40 + 8)
-    update(makeLayers({ compare: compareRight, swipeMode: true }))
-    expect(out().quitPillVisible).toBe(false)
     update(makeLayers())
     expect(out().quitPillVisible).toBe(false)
+    update(makeLayers({ swipeMode: true }))
+    expect(out().quitPillVisible).toBe(false)
+  })
+
+  test("the map is free in a comparison: not frozen, rotation locked, markers hidden", () => {
+    mount(makeLayers({ compare: compareRight }))
+    expect(out().mapCanvasProps).toMatchObject({
+      frozen: false,
+      rotationLocked: true,
+      hideMarkers: true,
+    })
+    expect(typeof out().mapCanvasProps.onViewChange).toBe("function")
   })
 
   test("slides the line to the right edge, then keeps side A; one tick", () => {
@@ -682,7 +622,7 @@ describe("the handle's side actions (accessibility)", () => {
 
 describe("the actions after the controller", () => {
   test("it adds no zone rule: the line and its release are the only haptics it plays", () => {
-    mount(makeLayers({ swipeMode: true, compare: compareRight }))
+    mount(makeLayers({ compare: compareRight }))
     act(() => out().layersView.onMoveLine(100))
     expect(tick).not.toHaveBeenCalled()
     expect(medium).not.toHaveBeenCalled()

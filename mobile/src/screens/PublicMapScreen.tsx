@@ -349,6 +349,7 @@ export function PublicMapScreen({
           basemapMode="swipe"
           swipeModeOn={layers.layers.state.swipeMode}
           basemapDot={layers.layers.globeDot}
+          basemapDisabled={layers.layers.state.compare !== null}
           onToggleBasemap={swipe.toggleSwipe}
           onOpenOfflineAreas={offlineEnabled ? panels.openCard : undefined}
         />

@@ -10,7 +10,7 @@ import { MapContentLayers, shownParcelsFor } from "./MapContentLayers"
 import { QuitComparePill } from "./QuitComparePill"
 import { SwipeSurface } from "./SwipeSurface"
 import { WipeLayer } from "./WipeLayer"
-import type { StackedMapView, ExplorerSwipe } from "./useExplorerSwipe"
+import type { ExplorerSwipe } from "./useExplorerSwipe"
 import type { ExplorerLayers } from "./useExplorerLayers"
 
 type ShortTextKey = Exclude<ReturnType<typeof layerEntry>["i18nKey"], "forestTypes">
@@ -41,10 +41,10 @@ function shortName(key: BaseLayerKey): string {
 
 /**
  * Everything of the swipe mode and the comparison that is drawn, in z-order (UI-SPEC sections 3 to
- * 5): the second and third stacked maps (stable keys, so a wipe released in the middle becomes the
- * curtain without reloading a tile), the gesture surface while the swipe mode is on, the line and
- * its tags while comparing, the top stack of the swipe mode and the quit pill of a free
- * comparison. It renders only; `useExplorerSwipe` owns the state and the haptics.
+ * 5): the second stacked map (stable key, so a wipe released in the middle becomes the curtain
+ * without reloading a tile), the gesture surface while the swipe mode is on, the line and its tags
+ * while comparing, the top stack of the swipe mode and the quit pill of the comparison. The two
+ * modes never coexist. It renders only; `useExplorerSwipe` owns the state and the haptics.
  */
 export function ExplorerSwipeLayers({
   swipe,
@@ -78,34 +78,26 @@ export function ExplorerSwipeLayers({
       )
     }
   }
-  const stackedMap = (
-    key: "second-map" | "third-map",
-    map: StackedMapView,
-    onStyleLoaded?: () => void,
-  ) => (
-    <WipeLayer
-      key={key}
-      layer={map.layer}
-      clipLeft={map.clipLeft}
-      clipRight={map.clipRight}
-      width={view.width}
-      initialRegion={view.initialRegion}
-      cameraRef={map.cameraRef}
-      content={contentFor(map.layer)}
-      styleRefreshKey={contentProps.styleRefreshKey}
-      styleRetryKey={contentProps.styleRetryKey}
-      onStyleLoaded={onStyleLoaded}
-      onStyleFailed={() => actions.styleFailed(map.layer)}
-    />
-  )
-
-  const { controller } = view
+  const { controller, second } = view
   const leftName = view.leftLayer ? shortName(view.leftLayer) : ""
   const rightName = view.rightLayer ? shortName(view.rightLayer) : ""
   return (
     <>
-      {view.second ? stackedMap("second-map", view.second, swipe.onSecondStyleLoaded) : null}
-      {view.third ? stackedMap("third-map", view.third) : null}
+      {second ? (
+        <WipeLayer
+          key="second-map"
+          layer={second.layer}
+          clipLeft={second.clipLeft}
+          clipRight={second.clipRight}
+          width={view.width}
+          initialRegion={view.initialRegion}
+          cameraRef={second.cameraRef}
+          content={contentFor(second.layer)}
+          styleRefreshKey={contentProps.styleRefreshKey}
+          styleRetryKey={contentProps.styleRetryKey}
+          onStyleFailed={() => actions.styleFailed(second.layer)}
+        />
+      ) : null}
       {view.swipeMode ? <SwipeSurface gesture={controller.gesture} /> : null}
       {view.comparing && view.leftLayer && view.rightLayer ? (
         <>

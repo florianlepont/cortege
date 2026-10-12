@@ -60,7 +60,12 @@ const flat = (style: unknown): Record<string, unknown> =>
   Object.assign({}, ...[style].flat(3).filter(Boolean))
 
 function renderSwipeControls(
-  options: { swipeModeOn?: boolean; basemapDot?: boolean; basemap?: "map" | "satellite" } = {},
+  options: {
+    swipeModeOn?: boolean
+    basemapDot?: boolean
+    basemapDisabled?: boolean
+    basemap?: "map" | "satellite"
+  } = {},
   onToggleBasemap = jest.fn(),
 ): renderer.ReactTestRenderer {
   let tree!: renderer.ReactTestRenderer
@@ -72,6 +77,7 @@ function renderSwipeControls(
         basemapMode="swipe"
         swipeModeOn={options.swipeModeOn}
         basemapDot={options.basemapDot}
+        basemapDisabled={options.basemapDisabled}
         onToggleBasemap={onToggleBasemap}
         onOpenOfflineAreas={jest.fn()}
       />,
@@ -183,10 +189,10 @@ describe("the globe of the Explorer: the basemap swipe mode (Phase 28, UI-SPEC s
     expect(off.props.accessibilityLabel).toBe(fr.mapLayers.basemap.buttonA11y)
     expect(off.props.accessibilityLabel).toBe("Changer de fond de carte")
     expect(off.props.accessibilityHint).toBe(fr.mapLayers.basemap.buttonHint)
-    expect(off.props.accessibilityState).toEqual({ expanded: false })
+    expect(off.props.accessibilityState).toEqual({ expanded: false, disabled: false })
     expect(off.props.accessibilityValue).toBeUndefined()
     const on = globe(renderSwipeControls({ swipeModeOn: true }))
-    expect(on.props.accessibilityState).toEqual({ expanded: true })
+    expect(on.props.accessibilityState).toEqual({ expanded: true, disabled: false })
   })
 
   test("swipe mode: earth-outline while Plan is displayed, map-outline for every other base", () => {
@@ -220,6 +226,37 @@ describe("the globe of the Explorer: the basemap swipe mode (Phase 28, UI-SPEC s
     act(() => globe(tree).props.onPress())
     expect(onToggle).toHaveBeenCalledTimes(1)
     expect(globe(tree).props.disabled).toBeFalsy()
+  })
+
+  test("disabled while comparing: ignores presses, says disabled, glyph at 40 %, dot kept", () => {
+    const tree = renderSwipeControls({ basemapDisabled: true, basemapDot: true })
+    const button = globe(tree)
+    expect(button.props.testID).toBe("map-globe-button")
+    expect(button.props.disabled).toBe(true)
+    expect(button.props.accessibilityState).toEqual({ expanded: false, disabled: true })
+    const glyph = tree.root.findAllByType("Ionicons" as never)[0]
+    expect(flat(glyph.props.style).opacity).toBe(brandInteraction.disabledOpacity)
+    expect(brandInteraction.disabledOpacity).toBe(0.4)
+    expect(dots(tree)).toHaveLength(1)
+  })
+
+  test("enabled, the globe has its test id, is not disabled and its glyph is not dimmed", () => {
+    const tree = renderSwipeControls({ swipeModeOn: true })
+    expect(globe(tree).props.testID).toBe("map-globe-button")
+    expect(globe(tree).props.disabled).toBe(false)
+    expect(tree.root.findAllByType("Ionicons" as never)[0].props.style).toBeUndefined()
+  })
+
+  test("the picker's globe ignores basemapDisabled", () => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <MapTopControls top={60} basemap="map" basemapDisabled onToggleBasemap={jest.fn()} />,
+      )
+    })
+    expect(globe(tree).props.disabled).toBe(false)
+    expect(globe(tree).props.accessibilityState).toBeUndefined()
+    expect(tree.root.findAllByType("Ionicons" as never)[0].props.style).toBeUndefined()
   })
 
   test("the capsule keeps the map control glass in both schemes, whatever the mode", () => {

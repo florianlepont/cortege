@@ -126,17 +126,14 @@ const mockOfflineEnabled = { value: false }
 jest.mock("../../app/feature-flags", () => ({
   isOfflineMapsEnabled: () => mockOfflineEnabled.value,
 }))
-// The outcome of the Phase 28 device spike: all three switches on, but a test can turn one off.
-const mockStackMode = { wipe: "wipe", comparison: true, side: "wipe" }
+// The outcome of the Phase 28 device spike: both switches on, but a test can turn one off.
+const mockStackMode = { wipe: "wipe", comparison: true }
 jest.mock("./map-stack-mode", () => ({
   get WIPE_PRESENTATION() {
     return mockStackMode.wipe
   },
   get COMPARISON_BUILT() {
     return mockStackMode.comparison
-  },
-  get SIDE_WIPE() {
-    return mockStackMode.side
   },
   LEFT_MAP_ANDROID_VIEW: "texture",
 }))
@@ -1097,7 +1094,6 @@ describe("PublicMapScreen", () => {
       mockJumpTo.mockClear()
       mockStackMode.wipe = "wipe"
       mockStackMode.comparison = true
-      mockStackMode.side = "wipe"
     })
 
     afterEach(() => {
@@ -1129,7 +1125,7 @@ describe("PublicMapScreen", () => {
         expect(present(id)).toBe(false)
       }
       expect(present("compare-quit")).toBe(false)
-      expect(globe().props.accessibilityState).toEqual({ expanded: false })
+      expect(globe().props.accessibilityState).toEqual({ expanded: false, disabled: false })
       expect(globe().props.accessibilityValue).toBeUndefined()
     })
 
@@ -1149,7 +1145,7 @@ describe("PublicMapScreen", () => {
       expect(chip()).toHaveLength(1)
       act(() => globe().props.onPress())
       expect(props.onChangeBasemap).not.toHaveBeenCalled()
-      expect(globe().props.accessibilityState).toEqual({ expanded: true })
+      expect(globe().props.accessibilityState).toEqual({ expanded: true, disabled: false })
       expect(present("swipe-surface")).toBe(true)
       expect(present("swipe-indicator")).toBe(true)
       expect(present("swipe-done")).toBe(true)
@@ -1215,20 +1211,40 @@ describe("PublicMapScreen", () => {
       expect(maps()).toHaveLength(1)
     })
 
-    test("a comparison: handle, tags, the second map; no indicator, Terminé only; markers hidden", () => {
+    test("a release in the compare zone starts one single mode: free map, handle, tags, the quit pill only", () => {
       startComparison(makeProps({ items: [item("a", 45.76, 4.84)] }))
       expect(present("curtain-handle")).toBe(true)
       expect(present("curtain-tag-left")).toBe(true)
       expect(present("curtain-tag-right")).toBe(true)
       expect(maps()).toHaveLength(2)
-      expect(present("swipe-indicator")).toBe(false)
-      expect(present("swipe-done")).toBe(true)
-      expect(present("compare-quit")).toBe(false)
+      // The swipe mode ended in the same change: no surface, no indicator, no Terminé.
+      for (const id of ["swipe-surface", "swipe-indicator", "swipe-dots", "swipe-done"]) {
+        expect(present(id)).toBe(false)
+      }
+      expect(present("compare-quit")).toBe(true)
+      // The map is free: native pan and zoom; rotation and pitch stay locked; markers hidden.
+      for (const prop of ["dragPan", "touchZoom", "doubleTapZoom"]) {
+        expect(explorerMap().props[prop]).toBeUndefined()
+      }
       expect(explorerMap().props.touchRotate).toBe(false)
+      expect(explorerMap().props.touchPitch).toBe(false)
       expect(markers()).toHaveLength(0)
       expect(globe().props.accessibilityValue).toEqual({
         text: fr.mapLayers.basemap.buttonActiveValue,
       })
+    })
+
+    test("the globe is disabled and dimmed while comparing, and a press changes nothing", () => {
+      startComparison()
+      expect(globe().props.disabled).toBe(true)
+      expect(globe().props.accessibilityState).toEqual({ expanded: false, disabled: true })
+      const glyph = globe().findByType("Ionicons" as never)
+      expect(flatStyle(glyph.props.style).opacity).toBe(0.4)
+      act(() => globe().props.onPress())
+      expect(present("swipe-surface")).toBe(false)
+      expect(present("swipe-done")).toBe(false)
+      expect(present("curtain-handle")).toBe(true)
+      expect(present("compare-quit")).toBe(true)
     })
 
     test("a comparison starts with no notice pill: the markers hide silently (item 13 e)", () => {
@@ -1240,22 +1256,10 @@ describe("PublicMapScreen", () => {
       expect(explorerMap().props.hideMarkers).toBeUndefined()
     })
 
-    test("Terminé keeps the comparison: the free map shows Quitter la comparaison", () => {
-      startComparison()
-      act(() => byTestId("swipe-done")[0].props.onPress())
-      expect(present("swipe-surface")).toBe(false)
-      expect(present("curtain-handle")).toBe(true)
-      expect(present("compare-quit")).toBe(true)
-      expect(explorerMap().props.dragPan).toBeUndefined()
-      expect(explorerMap().props.touchRotate).toBe(false)
-      expect(present("swipe-done")).toBe(false)
-    })
-
     test("Quitter la comparaison keeps side A: the curtain goes, one base again", () => {
       setReducedMotion(true)
       try {
         const props = startComparison()
-        act(() => byTestId("swipe-done")[0].props.onPress())
         act(() => byTestId("compare-quit")[0].props.onPress())
         for (const id of ["curtain-handle", "curtain-tag-left", "compare-quit"]) {
           expect(present(id)).toBe(false)
@@ -1264,6 +1268,11 @@ describe("PublicMapScreen", () => {
         expect(explorerMap().props.touchRotate).toBeUndefined()
         // Side A is Plan, the saved base: it is written again, unchanged.
         expect(props.onChangeBasemap).toHaveBeenCalledWith("map")
+        // The comparison is gone: the globe works again and enters the swipe mode.
+        expect(globe().props.disabled).toBe(false)
+        act(() => globe().props.onPress())
+        expect(present("swipe-surface")).toBe(true)
+        expect(present("swipe-indicator")).toBe(true)
       } finally {
         setReducedMotion(false)
       }
@@ -1286,29 +1295,30 @@ describe("PublicMapScreen", () => {
       expect(maps()).toHaveLength(1)
     })
 
-    test("opening the overlay bubble or the download card ends the swipe mode and keeps the comparison", () => {
+    test("opening the overlay bubble or the download card during a comparison keeps the comparison", () => {
       mockOfflineEnabled.value = true
       startComparison()
       act(() => byTestId("map-overlay-button")[0].props.onPress())
-      expect(present("swipe-surface")).toBe(false)
+      expect(byTestId("map-overlay-bubble")).toHaveLength(1)
       expect(present("curtain-handle")).toBe(true)
       expect(present("compare-quit")).toBe(true)
-      // The card does the same from the swipe mode.
+      act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
+      expect(present("curtain-handle")).toBe(true)
+      expect(present("compare-quit")).toBe(true)
+      expect(maps()).toHaveLength(2)
+    })
+
+    test("opening a panel from the swipe mode ends it", () => {
+      mockOfflineEnabled.value = true
+      mount(makeProps())
+      act(() => globe().props.onPress())
+      expect(present("swipe-surface")).toBe(true)
+      act(() => byTestId("map-overlay-button")[0].props.onPress())
+      expect(present("swipe-surface")).toBe(false)
       act(() => globe().props.onPress())
       expect(present("swipe-surface")).toBe(true)
       act(() => byLabel(fr.offlineMap.areas.openSheet).props.onPress())
       expect(present("swipe-surface")).toBe(false)
-      expect(present("curtain-handle")).toBe(true)
-    })
-
-    test("the globe re-enters the swipe mode of a comparison: Terminé takes the pill's place", () => {
-      startComparison()
-      act(() => byTestId("swipe-done")[0].props.onPress())
-      expect(present("compare-quit")).toBe(true)
-      act(() => globe().props.onPress())
-      expect(present("compare-quit")).toBe(false)
-      expect(present("swipe-done")).toBe(true)
-      expect(present("swipe-surface")).toBe(true)
     })
 
     test("with the comparison not built a release in the middle creates none", () => {
@@ -1363,10 +1373,9 @@ describe("PublicMapScreen", () => {
       act(() => byId("map-overlay-button").props.onPress())
       act(() => byId("overlay-forest-switch").props.onValueChange(true))
       act(() => globe().props.onPress())
+      const swipeTop = noticeTop()
       drag(380, 200)
       release()
-      const swipeTop = noticeTop()
-      act(() => byTestId("swipe-done")[0].props.onPress())
       const pillTop = noticeTop()
       // Capsule top 30 (inset 20 + 10) plus the stack's estimate, or the pill's 40 pt, plus 8.
       expect(swipeTop).toBe(30 + 100 + 8)

@@ -75,7 +75,6 @@ function makeView(overrides: Partial<ExplorerSwipeView> = {}): ExplorerSwipeView
     height: 800,
     initialRegion: REGION,
     second: null,
-    third: null,
     swipeMode: false,
     comparing: false,
     controller: {
@@ -109,7 +108,6 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
     skippedVisible: false,
     noticesTop: 58,
     onBaseStyleLoaded: jest.fn(),
-    onSecondStyleLoaded: jest.fn(),
     onPanelOpen: jest.fn(),
     toggleSwipe: jest.fn(),
     quit: jest.fn(),
@@ -185,43 +183,31 @@ describe("nothing active", () => {
 })
 
 describe("the stacked maps", () => {
-  test("the second and third map keep stable keys and take their layer, strip and sizes", () => {
-    const { tree, swipe } = render(
+  test("the second map keeps a stable key and takes its layer, strip and sizes", () => {
+    const { tree } = render(
       makeView({
         comparing: true,
         leftLayer: "map",
         rightLayer: "photos-1950",
         second: stacked("photos-1950"),
-        third: stacked("etat-major"),
       }),
     )
     const maps = named(tree, "WipeLayer")
-    expect(maps.map((map) => map.props.layer)).toEqual(["photos-1950", "etat-major"])
-    for (const map of maps) {
-      expect(map.props).toMatchObject({
-        clipLeft,
-        clipRight,
-        width: 400,
-        initialRegion: REGION,
-        styleRefreshKey: 2,
-        styleRetryKey: 3,
-      })
-    }
-    // Only the second map reports its style loading (a side cover waits for it).
-    maps[0].props.onStyleLoaded()
-    expect(swipe.onSecondStyleLoaded).toHaveBeenCalledTimes(1)
-    expect(maps[1].props.onStyleLoaded).toBeUndefined()
-  })
-
-  test("the keys are the second-map and third-map ones, so a wipe becomes the curtain in place", () => {
-    const { tree } = render(
-      makeView({ second: stacked("satellite"), third: stacked("etat-major"), comparing: true }),
-    )
-    // `key` lives on the fibre of the mocked component, not in its props.
+    expect(maps.map((map) => map.props.layer)).toEqual(["photos-1950"])
+    expect(maps[0].props).toMatchObject({
+      clipLeft,
+      clipRight,
+      width: 400,
+      initialRegion: REGION,
+      styleRefreshKey: 2,
+      styleRetryKey: 3,
+    })
+    // `key` lives on the fibre of the mocked component, not in its props. A fixed key makes a wipe
+    // released in the middle become the curtain in place.
     const keys = tree.root
       .findAll((node) => typeof node.type === "function" && "clipLeft" in node.props)
       .map((node) => (node as unknown as { _fiber: { key: string } })._fiber.key)
-    expect(keys).toEqual(["second-map", "third-map"])
+    expect(keys).toEqual(["second-map"])
   })
 
   test("a map that fails to load tells the layers state which layer failed", () => {
@@ -293,24 +279,10 @@ describe("the swipe mode", () => {
     expect(named(tree, "BasemapSwipeOverlay")[0].props.hintText).toBe("Lâchez pour comparer")
   })
 
-  test("the surface is under the handle and the stack is over it", () => {
-    const { tree } = render(
-      makeView({
-        swipeMode: true,
-        comparing: true,
-        leftLayer: "map",
-        rightLayer: "satellite",
-        second: stacked("satellite"),
-      }),
-    )
+  test("the surface is under the stack, over the second map", () => {
+    const { tree } = render(makeView({ swipeMode: true, second: stacked("satellite") }))
     const order = (tree.toJSON() as { type: string }[]).map((child) => child.type)
-    expect(order).toEqual([
-      "WipeLayer",
-      "SwipeSurface",
-      "CurtainHandle",
-      "CurtainSideTags",
-      "BasemapSwipeOverlay",
-    ])
+    expect(order).toEqual(["WipeLayer", "SwipeSurface", "BasemapSwipeOverlay"])
   })
 })
 
