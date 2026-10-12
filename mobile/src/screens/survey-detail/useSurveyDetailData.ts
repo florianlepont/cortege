@@ -1,4 +1,6 @@
+import { readFactorAnnotations } from "@cortege/ibp-domain"
 import { useMemo } from "react"
+import { attachFactorAnnotations } from "../../app/factor-annotations"
 import {
   defaultVegetationStageForRegion,
   normalizeVegetationStageForRegion,
@@ -54,13 +56,17 @@ export function useSurveyDetailData(
   const canEditSurvey = selectedSurvey.status !== "submitted"
   const createdAt = detail?.created_at ?? selectedSurvey.created_at
 
-  const canonicalFactorEntries = useMemo(
-    () =>
-      detail
-        ? Object.entries(detail.factor_results).sort(([left], [right]) => left.localeCompare(right))
-        : [],
-    [detail],
-  )
+  const canonicalFactorEntries = useMemo(() => {
+    if (!detail) return []
+    const entries = Object.entries(detail.factor_results).sort(([left], [right]) =>
+      left.localeCompare(right),
+    ) as Array<[string, DisplayedFactorResult]>
+    // The server's annotations first, else the ones cached in the local payload (phase 27, D-13).
+    const serverAnnotations = readFactorAnnotations(detail.factors)
+    const annotations =
+      Object.keys(serverAnnotations).length > 0 ? serverAnnotations : localDraft.annotations
+    return attachFactorAnnotations(entries, annotations)
+  }, [detail, localDraft.annotations])
 
   const useLocalDraftView = canEditSurvey && localDraft.scores !== null
   const displayedScores: DisplayedScores | null = useMemo(() => {
@@ -71,7 +77,7 @@ export function useSurveyDetailData(
   const displayedFactorEntries = useMemo<Array<[string, DisplayedFactorResult]>>(() => {
     if (useLocalDraftView && localDraft.factorEntries.length > 0) return localDraft.factorEntries
     if (canonicalFactorEntries.length > 0) {
-      return canonicalFactorEntries as Array<[string, DisplayedFactorResult]>
+      return canonicalFactorEntries
     }
     return localDraft.factorEntries
   }, [useLocalDraftView, localDraft.factorEntries, canonicalFactorEntries])

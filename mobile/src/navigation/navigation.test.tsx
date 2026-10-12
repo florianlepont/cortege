@@ -128,6 +128,7 @@ function mockRoute() {
 jest.mock("./routes/HomeRoute", () => ({ HomeRoute: mockRoute() }))
 jest.mock("./routes/SurveyDetailRoute", () => ({ SurveyDetailRoute: mockRoute() }))
 jest.mock("./routes/SurveyContextRoute", () => ({ SurveyContextRoute: mockRoute() }))
+jest.mock("./routes/SurveyParcelsPageRoute", () => ({ SurveyParcelsPageRoute: mockRoute() }))
 jest.mock("./routes/SurveyScoreRoute", () => ({ SurveyScoreRoute: mockRoute() }))
 jest.mock("./routes/SurveyHistoryRoute", () => ({ SurveyHistoryRoute: mockRoute() }))
 jest.mock("./routes/SurveyJournalRoute", () => ({ SurveyJournalRoute: mockRoute() }))
@@ -491,6 +492,7 @@ describe("stack options and listeners", () => {
     "communitySurvey",
     "communityHistory",
     "surveyContext",
+    "surveyParcelsPage",
     "surveyScore",
     "surveyHistory",
     "surveyJournal",
@@ -555,6 +557,7 @@ describe("stack options and listeners", () => {
       communitySurvey: fr.navigation.headers.communitySurvey,
       communityHistory: fr.navigation.headers.communityHistory,
       surveyContext: fr.navigation.headers.surveyContext,
+      surveyParcelsPage: fr.navigation.headers.surveyParcelsPage,
       surveyScore: fr.navigation.headers.surveyScore,
       surveyHistory: fr.navigation.headers.surveyHistory,
       surveyJournal: fr.navigation.headers.surveyJournal,
@@ -657,6 +660,7 @@ describe("stack options and listeners", () => {
         "communitySurvey",
         "communityHistory",
         "surveyContext",
+        "surveyParcelsPage",
         "surveyScore",
         "surveyHistory",
         "surveyJournal",

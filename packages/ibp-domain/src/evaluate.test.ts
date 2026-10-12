@@ -1,5 +1,7 @@
+import { withFactorAnnotations } from "./conditions"
 import { computeRetainedScores, computeTotals, evaluateIbp } from "./evaluate"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "./method-version"
+import { IBP_PARITY_CASES } from "./parity/cases"
 
 const PAST = "2026-01-01T00:00:00.000Z"
 const codes = (result: { issues: Array<{ code: string }> }) => result.issues.map((i) => i.code)
@@ -408,4 +410,26 @@ describe("computeRetainedScores and computeTotals", () => {
       completed_factors: 0,
     })
   })
+})
+
+describe("evaluateIbp: factor annotations never move a result (D-14)", () => {
+  const annotationCases = IBP_PARITY_CASES.filter((c) => c.id.startsWith("MAT-ANN"))
+
+  it("covers the three annotation pairs under both versions", () => {
+    expect(annotationCases).toHaveLength(6)
+  })
+
+  it.each(annotationCases.map((c) => [c.id, c] as const))(
+    "%s: same result with and without the container",
+    (_id, parityCase) => {
+      const input = { ...parityCase.context, ibp_method_version: parityCase.method }
+      expect(Object.keys(parityCase.factors).includes("annotations")).toBe(true)
+      const withContainer = evaluateIbp({ ...input, factors: parityCase.factors }, parityCase.mode)
+      const without = evaluateIbp(
+        { ...input, factors: withFactorAnnotations(parityCase.factors, undefined) },
+        parityCase.mode,
+      )
+      expect(withContainer).toEqual(without)
+    },
+  )
 })

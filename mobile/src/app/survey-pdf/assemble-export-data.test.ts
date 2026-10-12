@@ -157,6 +157,53 @@ describe("assembleSurveyExportData", () => {
       expect(broken.rawFactors).toEqual({})
     })
 
+    test("reads the survey note and the weather of the local draft as the conditions", async () => {
+      const weather = { sky: "cloudy", temperature_c: 14, source: "meteo_france", edited: [] }
+      const data = await assembleSurveyExportData(
+        input(),
+        fakeDeps({
+          loadDraft: async () => ({
+            factors: {},
+            survey_note: "  Sol humide\nprès du ruisseau  ",
+            weather: weather as never,
+          }),
+        }),
+      )
+
+      expect(data.conditions).toEqual({ note: "Sol humide\nprès du ruisseau", weather })
+    })
+
+    test("the conditions are empty for a blank note, a missing weather, a missing or unreadable draft", async () => {
+      const blank = await assembleSurveyExportData(
+        input(),
+        fakeDeps({ loadDraft: async () => ({ survey_note: "  \n ", weather: null }) }),
+      )
+      const absent = await assembleSurveyExportData(
+        input(),
+        fakeDeps({ loadDraft: async () => ({ factors: {} }) }),
+      )
+      const notAnObject = await assembleSurveyExportData(
+        input(),
+        fakeDeps({ loadDraft: async () => ({ survey_note: 12 as never, weather: "x" as never }) }),
+      )
+      const missing = await assembleSurveyExportData(
+        input(),
+        fakeDeps({ loadDraft: async () => null }),
+      )
+      const broken = await assembleSurveyExportData(
+        input(),
+        fakeDeps({
+          loadDraft: async () => {
+            throw new Error("sqlite")
+          },
+        }),
+      )
+
+      for (const data of [blank, absent, notAnObject, missing, broken]) {
+        expect(data.conditions).toEqual({ note: null, weather: null })
+      }
+    })
+
     test("takes the layout from the platform and the date from the injected clock", async () => {
       const ios = await assembleSurveyExportData(input(), fakeDeps({ platform: "ios" }))
       const android = await assembleSurveyExportData(input(), fakeDeps({ platform: "android" }))
@@ -655,6 +702,7 @@ describe("assembleSurveyExportData", () => {
     const data = await assembleSurveyExportData(input(), deps)
 
     expect(data.rawFactors).toEqual({})
+    expect(data.conditions).toEqual({ note: null, weather: null })
     expect(data.photos).toEqual({ items: [], total: 0, unavailable: 0 })
     expect(data.history).toBeNull()
     expect(data.assets).toEqual({ fonts: [], logoDataUri: null })

@@ -5,7 +5,10 @@ import { deleteAttachmentFile, deleteAllAttachmentFiles } from "./attachment-fil
 import { LOCAL_OWNER_SUB_KEY, LOCAL_OWNER_EMAIL_KEY } from "./local-owner"
 import { PARCEL_HISTORY_KEY_PREFIX } from "./parcel-history-cache"
 import { SEARCH_RECENTS_KEY } from "./search-recents"
+import { WEATHER_POINT_KEY_PREFIX } from "./weather"
+import type { DbExecutor } from "./transaction"
 import {
+  ConditionsPatch,
   LocalSurvey,
   LocalSurveyMapSource,
   LocalAttachment,
@@ -28,11 +31,13 @@ import {
   isAttachmentDeleteQueuePayload,
   safeParseJson,
   deleteQueuedSurveyUpserts,
+  stampWeatherRequest,
 } from "./utils"
 
 export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> {
   const id = randomUUID()
   const now = new Date().toISOString()
+  const parcelIds = normalizeParcelIds(input.parcel_ids)
   // The method fields are written only when the input has them: no stamping (01.8, D-10 amended).
   const payload = applyMethodFields(
     {
@@ -41,11 +46,16 @@ export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> 
       site_name: input.site_name,
       status: "draft",
       visibility: "private",
-      parcel_ids: normalizeParcelIds(input.parcel_ids),
+      parcel_ids: parcelIds,
       factors: input.factors,
     },
     input,
   )
+  // Phase 27 (D-10, D-11): a draft created with its parcels already has its survey time.
+  const stampedWeather = stampWeatherRequest([], parcelIds, undefined, now)
+  if (stampedWeather !== undefined) {
+    payload.weather = stampedWeather
+  }
 
   await runInTransaction(async (tx) => {
     await tx.runAsync(
@@ -367,6 +377,55 @@ export async function cacheSurveyCanonicalFields(
   })
 }
 
+/**
+ * The one write of a draft payload shared by the form autosave and the Conditions write: replaces
+ * the queued upsert with the new payload and updates the row, recomputing both stored counters
+ * (payload_completion and payload_factors_filled) in one place so neither can drift (01.9 D-03).
+ */
+async function writeDraftPayload(
+  tx: DbExecutor,
+  surveyId: string,
+  nextPayload: SurveyQueuePayload,
+  now: string,
+): Promise<void> {
+  await deleteQueuedSurveyUpserts(tx, surveyId)
+
+  await tx.runAsync(
+    `INSERT INTO sync_queue (survey_id, op_type, payload, status, retry_count, next_retry_at, created_at, updated_at)
+     VALUES (?, 'survey_upsert', ?, 'pending', 0, NULL, ?, ?)`,
+    [surveyId, JSON.stringify(nextPayload), now, now],
+  )
+
+  await tx.runAsync(
+    `UPDATE local_surveys
+     SET site_name = ?,
+         status = 'draft',
+         visibility = ?,
+         sync_version = ?,
+         sync_state = 'pending',
+         last_sync_error = NULL,
+         last_sync_error_code = NULL,
+         last_sync_error_at = NULL,
+         sync_blocked = 0,
+         payload_json = ?,
+         payload_completion = ?,
+         payload_factors_filled = ?,
+         updated_at = ?
+     WHERE id = ?`,
+    [
+      nextPayload.site_name ?? "",
+      nextPayload.visibility === "public" ? "public" : "private",
+      nextPayload.sync_version ?? 1,
+      JSON.stringify(nextPayload),
+      // Precomputed so the list never parses payloads (01.9 D-03).
+      computePayloadCompletion(nextPayload),
+      computePayloadFactorsFilled(nextPayload),
+      now,
+      surveyId,
+    ],
+  )
+}
+
 export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSurvey> {
   const now = new Date().toISOString()
 
@@ -407,6 +466,7 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
       1,
       Number(basePayload.sync_version ?? existing.sync_version ?? 0) + 1,
     )
+    const nextParcelIds = normalizeParcelIds(input.parcel_ids)
     const nextPayload: SurveyQueuePayload = applyMethodFields(
       {
         ...basePayload,
@@ -418,48 +478,26 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
           input.visibility ??
           (basePayload.visibility as "private" | "public" | undefined) ??
           "private",
-        parcel_ids: normalizeParcelIds(input.parcel_ids),
+        parcel_ids: nextParcelIds,
         factors: input.factors,
       },
       input,
     )
-
-    await deleteQueuedSurveyUpserts(tx, input.survey_id)
-
-    await tx.runAsync(
-      `INSERT INTO sync_queue (survey_id, op_type, payload, status, retry_count, next_retry_at, created_at, updated_at)
-       VALUES (?, 'survey_upsert', ?, 'pending', 0, NULL, ?, ?)`,
-      [input.survey_id, JSON.stringify(nextPayload), now, now],
+    // Phase 27 (Pitfall 5): the form never carries the survey note or the weather, so the spread of
+    // the stored payload above keeps them. The survey time of the weather is stamped once, by the
+    // first write that gives the draft its parcels (D-10, D-11); a payload without weather stays
+    // without the key.
+    const stampedWeather = stampWeatherRequest(
+      normalizeParcelIds(basePayload.parcel_ids),
+      nextParcelIds,
+      basePayload.weather,
+      now,
     )
+    if (stampedWeather !== undefined) {
+      nextPayload.weather = stampedWeather
+    }
 
-    await tx.runAsync(
-      `UPDATE local_surveys
-       SET site_name = ?,
-           status = 'draft',
-           visibility = ?,
-           sync_version = ?,
-           sync_state = 'pending',
-           last_sync_error = NULL,
-           last_sync_error_code = NULL,
-           last_sync_error_at = NULL,
-           sync_blocked = 0,
-           payload_json = ?,
-           payload_completion = ?,
-           payload_factors_filled = ?,
-           updated_at = ?
-       WHERE id = ?`,
-      [
-        input.site_name,
-        nextPayload.visibility === "public" ? "public" : "private",
-        nextSyncVersion,
-        JSON.stringify(nextPayload),
-        // Precomputed so the list never parses payloads (01.9 D-03).
-        computePayloadCompletion(nextPayload),
-        computePayloadFactorsFilled(nextPayload),
-        now,
-        input.survey_id,
-      ],
-    )
+    await writeDraftPayload(tx, input.survey_id, nextPayload, now)
 
     return { nextPayload, nextSyncVersion, createdAt: existing.created_at }
   })
@@ -476,6 +514,99 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
     last_sync_error_at: null,
     sync_blocked: 0,
     created_at: createdAt ?? now,
+    updated_at: now,
+    completion_rate: computeCompletionRate("draft", nextPayload),
+    factors_filled: computePayloadFactorsFilled(nextPayload),
+  }
+}
+
+/**
+ * The only write path for the Conditions section (survey note) and the weather merge (phase 27,
+ * D-03). Works on a draft only: it re-reads the row inside the transaction, so a late weather answer
+ * can never write into a survey submitted meanwhile (Pitfall 11), and returns null for a missing or
+ * non-draft survey, changing nothing. `undefined` keeps a value, `null` clears it, and a weather
+ * function receives the stored weather (or null) so the merge sees what the observer edited. Bumps
+ * sync_version and re-queues the upsert exactly like the form autosave.
+ */
+export async function patchLocalSurveyConditions(
+  input: ConditionsPatch,
+): Promise<LocalSurvey | null> {
+  const now = new Date().toISOString()
+
+  const written = await runInTransaction(async (tx) => {
+    const existing = await tx.getFirstAsync<{
+      id: string
+      site_name: string
+      status: string
+      visibility: string | null
+      sync_version: number
+      created_at: string | null
+      payload_json: string | null
+    }>(
+      `SELECT id, site_name, status, visibility, sync_version, created_at, payload_json
+       FROM local_surveys
+       WHERE id = ?`,
+      [input.survey_id],
+    )
+
+    if (!existing?.id || existing.status !== "draft") {
+      return null
+    }
+
+    const parsedPayload = existing.payload_json ? safeParseJson(existing.payload_json) : null
+    const basePayload: SurveyQueuePayload = isSurveyQueuePayload(parsedPayload)
+      ? parsedPayload
+      : {
+          id: existing.id,
+          sync_version: existing.sync_version,
+          site_name: existing.site_name,
+          status: "draft",
+          visibility: existing.visibility === "public" ? "public" : "private",
+          parcel_ids: [],
+          factors: {},
+        }
+
+    const nextSyncVersion = Math.max(
+      1,
+      Number(basePayload.sync_version ?? existing.sync_version ?? 0) + 1,
+    )
+    const nextPayload: SurveyQueuePayload = {
+      ...basePayload,
+      sync_version: nextSyncVersion,
+      status: "draft",
+    }
+    if (input.survey_note !== undefined) {
+      nextPayload.survey_note = input.survey_note
+    }
+    if (input.weather !== undefined) {
+      nextPayload.weather =
+        typeof input.weather === "function"
+          ? input.weather(basePayload.weather ?? null)
+          : input.weather
+    }
+
+    await writeDraftPayload(tx, input.survey_id, nextPayload, now)
+
+    return { nextPayload, nextSyncVersion, existing }
+  })
+
+  if (!written) {
+    return null
+  }
+
+  const { nextPayload, nextSyncVersion, existing } = written
+  return {
+    id: input.survey_id,
+    site_name: nextPayload.site_name ?? existing.site_name,
+    status: "draft",
+    visibility: nextPayload.visibility === "public" ? "public" : "private",
+    sync_version: nextSyncVersion,
+    sync_state: "pending",
+    last_sync_error: null,
+    last_sync_error_code: null,
+    last_sync_error_at: null,
+    sync_blocked: 0,
+    created_at: existing.created_at ?? now,
     updated_at: now,
     completion_rate: computeCompletionRate("draft", nextPayload),
     factors_filled: computePayloadFactorsFilled(nextPayload),
@@ -501,6 +632,24 @@ export async function listLocalSurveys(): Promise<LocalSurvey[]> {
            THEN json_extract(payload_json, '$.scores.ibp_total') END
        END AS ibp_total
      FROM local_surveys
+     ORDER BY updated_at DESC`,
+  )
+}
+
+/**
+ * The own surveys that carry a survey note, `{ id, note }`, newest first (phase 27, D-07). One SQL
+ * statement: the note is pulled out of the payload with json_extract inside the engine, blank notes
+ * and invalid JSON are filtered there, and nothing is parsed in JS. Read only while the global
+ * search is active (plan 27-15), never by the list (01.9 D-03). No schema change (D-02).
+ */
+export async function listLocalSurveyNotes(): Promise<Array<{ id: string; note: string }>> {
+  const db = await getDb()
+  return db.getAllAsync<{ id: string; note: string }>(
+    `SELECT id, json_extract(payload_json, '$.survey_note') AS note
+     FROM local_surveys
+     WHERE json_valid(payload_json)
+       AND json_type(payload_json, '$.survey_note') = 'text'
+       AND trim(json_extract(payload_json, '$.survey_note')) <> ''
      ORDER BY updated_at DESC`,
   )
 }
@@ -588,6 +737,8 @@ export async function clearLocalIbpData(): Promise<void> {
     ])
     // Exact prefix match: a LIKE pattern would treat the underscore as a wildcard (D-13).
     await tx.runAsync(`DELETE FROM local_meta WHERE instr(key, ?) = 1`, [PARCEL_HISTORY_KEY_PREFIX])
+    // Phase 27 (D-10): the weather lookup points of the previous account's surveys.
+    await tx.runAsync(`DELETE FROM local_meta WHERE instr(key, ?) = 1`, [WEATHER_POINT_KEY_PREFIX])
   })
 
   await deleteAllAttachmentFiles().catch(() => {})

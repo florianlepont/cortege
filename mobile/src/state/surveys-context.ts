@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react"
-import type { CnpfFactorAGenusCode, IbpCas } from "@cortege/ibp-domain"
+import type { CnpfFactorAGenusCode, IbpCas, SurveyWeather } from "@cortege/ibp-domain"
 import type {
   RegionVersion,
   SurveyDetailResponse,
@@ -84,6 +84,19 @@ export type SurveyActions = {
   updateCas3Scale: (surveyId: string, value: boolean) => Promise<void>
   /** Unsubmitted v3.0 or untagged drafts only (D-08). */
   switchToV32: (surveyId: string) => Promise<void>
+  /**
+   * Phase 27, D-03: the survey note of a draft. Silent (no status message, written on debounced
+   * keystrokes), read-only after submit: false when nothing was written.
+   */
+  updateSurveyNote: (surveyId: string, text: string) => Promise<boolean>
+  /**
+   * Phase 27, D-03: the weather of a draft as a function of the stored one (hand edit, refill, late
+   * lookup answer). Silent, read-only after submit: false when nothing was written.
+   */
+  updateSurveyWeather: (
+    surveyId: string,
+    update: (current: SurveyWeather | null) => SurveyWeather | null,
+  ) => Promise<boolean>
 }
 
 export type SurveysContextValue = {

@@ -1,5 +1,5 @@
 import { ConfigService, registerAs } from "@nestjs/config"
-import { AppConfig, CorsMode, NodeEnv } from "./config.types"
+import { AppConfig, CorsMode, NodeEnv, WeatherProvider } from "./config.types"
 import { validateEnv } from "./env.schema"
 
 /** Shown in pg_stat_activity (D-06). */
@@ -34,6 +34,19 @@ function positiveInteger(value: string | undefined, fallback: number): number {
   const parsed = positiveNumber(value, fallback)
   const truncated = Math.trunc(parsed)
   return truncated > 0 ? truncated : fallback
+}
+
+const WEATHER_AUTH_MODES = ["apikey", "bearer", "application-id"] as const
+
+/**
+ * METEOFRANCE_AUTH_MODE: one of the three modes, else "auto". Deliberately lenient (an unknown
+ * value is "auto", not a startup error), so check-env.sh needs no matching rule.
+ */
+function weatherAuthMode(value: string | undefined): (typeof WEATHER_AUTH_MODES)[number] | "auto" {
+  const mode = (value ?? "").trim().toLowerCase()
+  return (WEATHER_AUTH_MODES as readonly string[]).includes(mode)
+    ? (mode as (typeof WEATHER_AUTH_MODES)[number])
+    : "auto"
 }
 
 /** `(value ?? "false").toLowerCase() === "true"` (debug.service.ts). */
@@ -126,6 +139,22 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       wfsUrl: v.CADASTRE_IGN_WFS_URL ?? "https://data.geopf.fr/wfs/ows",
       wfsTypename: v.CADASTRE_IGN_WFS_TYPENAME ?? "CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle",
       wfsCount: Math.min(MAX_WFS_COUNT, positiveInteger(v.CADASTRE_IGN_WFS_COUNT, 1200)),
+    },
+    weather: {
+      // Deliberately unlike CADASTRE_PROVIDER: unset or blank is "off", never "synthetic". The
+      // schema has already refused any value other than the three providers.
+      provider: ((v.WEATHER_PROVIDER ?? "off").trim().toLowerCase() || "off") as WeatherProvider,
+      credential: (v.METEOFRANCE_API_KEY ?? "").trim(),
+      authMode: weatherAuthMode(v.METEOFRANCE_AUTH_MODE),
+      observationsUrl: v.METEOFRANCE_OBS_URL ?? "https://public-api.meteofrance.fr/public/DPObs/v2",
+      timeoutMs: positiveInteger(v.WEATHER_TIMEOUT_MS, 4000),
+      // D-19, spike 2026-10: 30 km. 25 km leaves the Landes test point (nearest station 25.13 km)
+      // empty; 40 km would start to give coastal values to inland sites.
+      maxStationDistanceKm: positiveNumber(v.WEATHER_MAX_STATION_DISTANCE_KM, 30),
+      // D-29: the SYNOP stations (sky and rain over 24 h) are about 190 over France, so their cap
+      // is its own and wider.
+      synopMaxDistanceKm: positiveNumber(v.WEATHER_SYNOP_MAX_DISTANCE_KM, 50),
+      timeToleranceMinutes: positiveInteger(v.WEATHER_TIME_TOLERANCE_MINUTES, 90),
     },
     debug: {
       dataResetEnabled: isTrue(v.DEBUG_DATA_RESET_ENABLED),

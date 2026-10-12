@@ -16,7 +16,7 @@ import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { TitledScrollView } from "../ui/TitledScrollView"
 
 /**
- * "Score IBP" (OA-46): the total out of 50 with its two sub-scores and the ten factor bars, then the ten factor rows, each
+ * "Facteurs IBP" (OA-46, D-34): the total out of 50 with its two sub-scores and the ten factor bars, then the ten factor rows, each
  * opening its entry screen. The only detail of the score on the survey's pages (OA-45).
  */
 export function SurveyScoreScreen({

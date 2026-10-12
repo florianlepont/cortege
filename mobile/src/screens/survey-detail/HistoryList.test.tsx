@@ -208,6 +208,53 @@ describe("HistoryList other rows", () => {
   })
 })
 
+describe("HistoryList survey note", () => {
+  const WITH_NOTE = [
+    entry("n1", { year: 2023, version: 1, total: 28 }),
+    entry("n2", { year: 2024, version: 2, total: 31, note: "Sol détrempé ce matin" }),
+    entry("n3", { year: 2025, version: 3, total: 36, isCurrent: true, note: "Coupe récente" }),
+  ]
+
+  test("a note is one extra meta line, one line with a tail ellipsis, after the others", () => {
+    const { frames } = render(listRows(WITH_NOTE))
+    const current = frames[0].pressable
+    expect(textOf(current)).toBe("2025 · version 3|IBP 36/50|Total +5|Coupe récente")
+    const noteText = all(current, "Text").find((n) => n.props.children === "Coupe récente")
+    expect(noteText?.props.numberOfLines).toBe(1)
+    expect(noteText?.props.ellipsizeMode).toBe("tail")
+    expect(textOf(frames[1].pressable)).toBe(
+      "2024 · version 2|IBP 31/50|Total +3|Sol détrempé ce matin",
+    )
+  })
+
+  test("the note is appended to the row label, current row and other rows alike", () => {
+    const { frames } = render(listRows(WITH_NOTE))
+    expect(frames[0].pressable.props.accessibilityLabel).toBe(
+      "2025 · version 3, 36 sur 50. Ce relevé, note : Coupe récente",
+    )
+    expect(frames[1].pressable.props.accessibilityLabel).toBe(
+      "2024 · version 2, 31 sur 50. Ouvrir ce relevé, note : Sol détrempé ce matin",
+    )
+  })
+
+  test("a row without a note is exactly as before and stays one press target", () => {
+    const onOpenSurvey = jest.fn()
+    const { frames } = render(listRows(WITH_NOTE), "own", onOpenSurvey)
+    const plain = frames[2].pressable
+    expect(textOf(plain)).toBe("2023 · version 1|IBP 28/50")
+    expect(plain.props.accessibilityLabel).toBe("2023 · version 1, 28 sur 50. Ouvrir ce relevé")
+    act(() => frames[1].pressable.props.onPress())
+    expect(onOpenSurvey).toHaveBeenCalledWith("n2")
+  })
+
+  test("community rows show the note too", () => {
+    const rows = listRows([entry("c1", { author: "Marie", note: "Humide" })])
+    const { frames } = render(rows, "community")
+    expect(textOf(frames[0].pressable)).toContain("Humide")
+    expect(frames[0].pressable.props.accessibilityLabel).toMatch(/, note : Humide$/)
+  })
+})
+
 describe("HistoryList methods", () => {
   const MIXED = [
     entry("m1", { year: 2022, version: 1, total: 20, method: null }),

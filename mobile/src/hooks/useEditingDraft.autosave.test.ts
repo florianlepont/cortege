@@ -20,9 +20,12 @@ jest.mock("../storage/surveys", () => ({
   updateLocalDraft: (...args: unknown[]) => mockUpdateLocalDraft(...args),
 }))
 
+import { useState } from "react"
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
+import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import { fr } from "../i18n"
 import { useEditingDraft } from "./useEditingDraft"
+import { useSurveyForm } from "./useSurveyForm"
 
 afterEach(async () => {
   await cleanup()
@@ -456,5 +459,93 @@ describe("useEditingDraft handleFlushDraft (D-26)", () => {
     })
     expect(flushed).toBe(true)
     expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+  })
+})
+
+// Phase 27 (D-12, D-23, Pitfall 5): a stored draft with factor annotations reopens in the real
+// form, and the form's draft signature equals the stored one, so opening it writes nothing.
+describe("useEditingDraft with factor annotations (phase 27)", () => {
+  const STORED_ANNOTATIONS = { A: { doubt: true, note: "x" }, J: { note: "nappe" } }
+
+  const storedDraft = {
+    id: TEST_SURVEY_ID,
+    site_name: "Site",
+    ibp_method_version: IBP_METHOD_V3_2,
+    ibp_cas: 1,
+    ibp_cas3_scale: false,
+    parcel_ids: [] as string[],
+    factors: { G: { open_flowering_percent: 20 }, annotations: STORED_ANNOTATIONS },
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    mockCreateLocalDraft.mockReset()
+    mockGetLocalSurveyDraft.mockReset()
+    mockUpdateLocalDraft.mockReset()
+    mockGetLocalSurveyDraft.mockResolvedValue(storedDraft)
+    mockUpdateLocalDraft.mockResolvedValue({})
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  const renderRealForm = () =>
+    renderHook(() => {
+      const [editingSurveyId, setEditingSurveyId] = useState<string | null>(null)
+      const surveyForm = useSurveyForm()
+      const editing = useEditingDraft({
+        editingSurveyId,
+        setEditingSurveyId,
+        editingSurveyVisibility: "private",
+        setFormMode: jest.fn(),
+        surveyForm,
+        surveyList: {
+          surveys: [],
+          refreshLocalSurveys: jest.fn().mockResolvedValue(undefined),
+          refreshLocalAttachments: jest.fn().mockResolvedValue(undefined),
+          setSelectedSurveyId: jest.fn(),
+        } as never,
+        onStatusChange: jest.fn(),
+        onCloseSurveyDetail: jest.fn(),
+      })
+      return { surveyForm, editing }
+    })
+
+  test("opening a stored draft with annotations and changing nothing schedules no autosave", async () => {
+    const { result } = await renderRealForm()
+    await act(async () => {
+      await result.current.editing.handleStartEditSurvey(TEST_SURVEY_ID)
+    })
+    expect(result.current.surveyForm.draftInput.factors).toEqual(storedDraft.factors)
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(2000)
+    })
+    expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+  })
+
+  test("a doubt toggle writes one autosave that keeps the other annotations", async () => {
+    const { result } = await renderRealForm()
+    await act(async () => {
+      await result.current.editing.handleStartEditSurvey(TEST_SURVEY_ID)
+    })
+    await act(async () => {
+      result.current.surveyForm.setFactorDoubt("B", true)
+    })
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(900)
+    })
+
+    expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
+    expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        survey_id: TEST_SURVEY_ID,
+        factors: {
+          G: { open_flowering_percent: 20 },
+          annotations: { A: { doubt: true, note: "x" }, B: { doubt: true }, J: { note: "nappe" } },
+        },
+      }),
+    )
   })
 })

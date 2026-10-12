@@ -3,9 +3,12 @@ import {
   IBP_METHOD_V3_0,
   IBP_METHOD_V3_2,
   allowedScoresFor,
+  canonicalFactorAnnotations,
   casFromRegionStage,
   isIbpCas,
+  readFactorAnnotations,
   resolveMethodVersion,
+  withFactorAnnotations,
   type CnpfFactorAGenusCode,
   type IbpCas,
   type IbpMethodVersion,
@@ -24,6 +27,7 @@ import { readSelection } from "../app/factor-selections"
 import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { fr } from "../i18n"
+import { useFactorAnnotations } from "./useFactorAnnotations"
 import {
   FactorField,
   FactorRetainedScore,
@@ -175,6 +179,10 @@ export function useSurveyForm() {
     setSubmitAttempted(true)
   }, [])
 
+  // Phase 27, D-12: the doubt flag and the note of each factor.
+  const { annotations, setFactorDoubt, setFactorNote, loadAnnotations, resetAnnotations } =
+    useFactorAnnotations()
+
   const [factorA, setFactorA] = useState(DEFAULT_SURVEY_FORM.factorA)
   const [factorB, setFactorB] = useState(DEFAULT_SURVEY_FORM.factorB)
   const [factorC, setFactorC] = useState(DEFAULT_SURVEY_FORM.factorC)
@@ -303,8 +311,23 @@ export function useSurveyForm() {
       payload.J = { type_count: j, ...(factorJ.types !== null ? { types: factorJ.types } : {}) }
     }
 
-    return payload
-  }, [factorA, factorB, factorC, factorD, factorE, factorF, factorG, factorH, factorI, factorJ])
+    // Phase 27, D-23: the annotations container sits beside the factor keys, never inside one, so
+    // no scorer reads it and a factor with a doubt but no scored input writes no factor key and
+    // stays "À remplir" (Pitfall 1).
+    return withFactorAnnotations(payload, canonicalFactorAnnotations(annotations))
+  }, [
+    factorA,
+    factorB,
+    factorC,
+    factorD,
+    factorE,
+    factorF,
+    factorG,
+    factorH,
+    factorI,
+    factorJ,
+    annotations,
+  ])
 
   const applyDraftToForm = (draftValue: unknown): void => {
     const draft = asObject(draftValue)
@@ -383,6 +406,8 @@ export function useSurveyForm() {
       types: readSelection(factorJObj, "J"),
     })
 
+    loadAnnotations(readFactorAnnotations(factors))
+
     setGpsLocation(DEFAULT_SURVEY_FORM.gpsLocation)
     setSelectedParcelIds(parsedParcelIds)
     setTouchedFields(new Set())
@@ -436,6 +461,7 @@ export function useSurveyForm() {
     setFactorH(DEFAULT_SURVEY_FORM.factorH)
     setFactorI(DEFAULT_SURVEY_FORM.factorI)
     setFactorJ(DEFAULT_SURVEY_FORM.factorJ)
+    resetAnnotations()
   }
 
   // FLOW-02: touched state per field, keyed by "factor:label"; submission-attempted forces every
@@ -695,6 +721,9 @@ export function useSurveyForm() {
     setIbpCas3Scale,
     factorSections,
     factorRetainedScores,
+    factorAnnotations: annotations,
+    setFactorDoubt,
+    setFactorNote,
     formErrors,
     draftInput,
     applyDraftToForm,

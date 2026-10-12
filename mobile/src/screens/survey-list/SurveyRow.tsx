@@ -5,9 +5,9 @@ import { Ionicons } from "@expo/vector-icons"
 import Swipeable from "react-native-gesture-handler/Swipeable"
 import { useBrandTheme } from "../../app/theme"
 import { formatShortDateTime, formatSyncErrorForUser } from "../../app/formatters"
+import type { OwnSurveyMatch } from "../../app/global-search"
 import { formatSurveyUiStatusLabel, resolveSurveyUiStatus } from "../../app/survey-logic"
 import { fr } from "../../i18n"
-import type { LocalSurvey } from "../../storage/types"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { feedback } from "../../ui/feedback"
 import { createRowStyles } from "./row-styles"
@@ -16,7 +16,8 @@ import { SurveyRowFrame } from "./SurveyRowFrame"
 import { AppPressable } from "../../ui/AppPressable"
 
 export type SurveyRowProps = {
-  survey: LocalSurvey
+  /** A search match carries `matchedInNote` when the survey was found through its note (27-15). */
+  survey: OwnSurveyMatch
   /** LIST-01: the submitted survey's IBP total, once known — null shows a plain "submitted" ring. */
   score: number | null
   selected: boolean
@@ -51,6 +52,13 @@ function SurveyRowComponent({
   const updatedAt = formatShortDateTime(survey.updated_at)
   const supportText = formatSyncErrorForUser(survey.last_sync_error, survey.last_sync_error_code)
   const deleteLabel = t.a11y.deleteSurvey(survey.site_name)
+  const foundInNote = survey.matchedInNote === true
+  const dateMeta = t.row.updatedMeta(updatedAt)
+  const openSentence = t.a11y.openSurvey({
+    name: survey.site_name,
+    status: uiStatusLabel,
+    updatedAt,
+  })
 
   const handleDelete = useCallback(() => {
     swipeableRef.current?.close()
@@ -106,11 +114,9 @@ function SurveyRowComponent({
     >
       <SurveyRowFrame
         accessibilityState={{ selected }}
-        accessibilityLabel={t.a11y.openSurvey({
-          name: survey.site_name,
-          status: uiStatusLabel,
-          updatedAt,
-        })}
+        accessibilityLabel={
+          foundInNote ? fr.search.rows.matchedInNoteA11y(openSentence) : openSentence
+        }
         accessibilityActions={accessibilityActions}
         onAccessibilityAction={handleAccessibilityAction}
         onPress={handleOpen}
@@ -136,7 +142,7 @@ function SurveyRowComponent({
               labelStyle={rowTone === "danger" ? styles.badgeTextDanger : undefined}
             />
             <Text numberOfLines={1} style={styles.surveyCardMeta}>
-              {t.row.updatedMeta(updatedAt)}
+              {foundInNote ? fr.search.rows.matchedInNoteMeta(dateMeta) : dateMeta}
             </Text>
           </>
         }

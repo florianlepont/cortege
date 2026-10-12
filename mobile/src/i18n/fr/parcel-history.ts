@@ -118,6 +118,8 @@ export const parcelHistoryFr = {
         `${entry}, ${total} sur ${IBP_MAX.total}. Ouvrir ce relevé`,
       openCurrent: ({ entry, total }: { entry: string; total: number }) =>
         `${entry}, ${total} sur ${IBP_MAX.total}. Ce relevé`,
+      // Phase 27 (D-06): appended to a row label when the survey carries a note.
+      noteA11y: (text: string) => `note : ${text}`,
     },
   },
 } as const

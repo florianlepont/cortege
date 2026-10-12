@@ -29,6 +29,8 @@ const PALETTE_KEYS = [
   "accentSoft",
   "alert",
   "alertSoft",
+  "warning",
+  "warningSoft",
   "bandLow",
   "bandMid",
   "bandHigh",

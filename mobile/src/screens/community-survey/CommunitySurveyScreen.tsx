@@ -5,12 +5,15 @@ import { brandSpacing, brandSpacing4, brandTypography } from "../../app/brand-to
 import { formatDay } from "../../app/formatters"
 import { buildEntriesFromCommunity, historyRowState } from "../../app/parcel-history"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
+import { formatWeatherLine } from "../../app/weather"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
 import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
 import { CenteredState } from "../../ui/CenteredState"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../../ui/frame-large-title"
+import { ConditionsReadOnly } from "../survey-detail/conditions/ConditionsReadOnly"
+import { SurveyNoteCard } from "../survey-detail/conditions/SurveyNoteCard"
 import { FactorsList } from "../survey-detail/FactorsList"
 import { toHistoryRow } from "../survey-detail/history-row"
 import { ParcelMapCard } from "../survey-detail/ParcelMapCard"
@@ -22,6 +25,8 @@ import { useSubPageContentStyle } from "../survey-detail/useSubPageContent"
 import { toContextRows, toDisplayedScores, toFactorEntries } from "./view-model"
 
 const t = fr.communitySurvey
+
+const noop = (): void => undefined
 
 type CommunitySurveyScreenProps = {
   apiUrl: string
@@ -62,10 +67,10 @@ export function CommunitySurveyScreen({
     () => [
       {
         key: "parcels",
-        title: fr.surveyDetail.contextScreen.parcelsHeading(detail?.parcel_ids.length ?? 0),
+        title: fr.surveyDetail.parcelsScreen.parcelsHeading(detail?.parcel_ids.length ?? 0),
         rows: (detail?.parcel_ids ?? []).map((parcelId, index) => ({
           key: parcelId,
-          label: fr.surveyDetail.contextScreen.parcelLabel(index + 1),
+          label: fr.surveyDetail.parcelsScreen.parcelLabel(index + 1),
           value: parcelId,
         })),
       },
@@ -232,6 +237,20 @@ export function CommunitySurveyScreen({
       </View>
       <AppGroupedList sections={contextSections} />
       {detail.parcel_ids.length > 0 ? <AppGroupedList sections={parcelSections} /> : null}
+
+      {/* D-06, D-33: the weather and the note of the survey, read-only, as two blocks; nothing
+          when it has neither (also an older server that does not send the fields). A value the
+          app cannot show, such as an unknown sky code, counts as absent, so a title never stands
+          alone (T-27-63). */}
+      {formatWeatherLine(detail.weather) !== null ? (
+        <ConditionsReadOnly weather={detail.weather ?? null} emptyMode="hidden" />
+      ) : null}
+      <SurveyNoteCard
+        editable={false}
+        loaded
+        stored={detail.survey_note ?? null}
+        onChangeNote={noop}
+      />
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{fr.navigation.headers.surveyScore}</Text>

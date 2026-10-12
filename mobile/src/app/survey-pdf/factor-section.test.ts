@@ -22,6 +22,8 @@ const PALETTE_KEYS = [
   "accentSoft",
   "alert",
   "alertSoft",
+  "warning",
+  "warningSoft",
   "bandLow",
   "bandMid",
   "bandHigh",
@@ -102,6 +104,7 @@ function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
       I: { type_count: 1, types: ["spring_seep"] },
       J: { type_count: 0 },
     },
+    conditions: { note: null, weather: null },
     photos: { items: [], total: 0, unavailable: 0 },
     map: null,
     history: null,
@@ -293,6 +296,155 @@ describe("height estimate", () => {
     expect(blockById(buildFactorBlocks(full, palette), "factor-B").height).toBeGreaterThan(
       blockById(buildFactorBlocks(bare, palette), "factor-B").height,
     )
+  })
+})
+
+type Annotated = { doubt?: boolean; note?: string | null }
+
+/** The ten entries with the doubt and the note of some factors, as the screen hands them over. */
+function annotatedEntries(annotations: Partial<Record<FactorKey, Annotated>>) {
+  return entries().map(([key, entry]) => [key, { ...entry, ...annotations[key as FactorKey] }]) as [
+    string,
+    SurveyExportData["factorEntries"][number][1],
+  ][]
+}
+
+const BADGE = `<span class="factor-badge">${t.factors.doubt}</span>`
+
+describe("doubt badge and factor note (phase 27, D-13, D-17)", () => {
+  const plain = buildFactorBlocks(makeData(), palette)
+
+  it("a card with neither keeps the exact markup of before", () => {
+    for (const factor of FACTOR_KEYS) {
+      const html = blockById(plain, `factor-${factor}`).html
+      expect(html).not.toContain("factor-badge")
+      expect(html).not.toContain("factor-user-note")
+      expect(html).toContain('</span></div>\n<div class="factor-body">')
+      expect(html).toContain('</div>\n</div>\n<p class="factor-scale">')
+    }
+  })
+
+  it("a doubt puts the Douteux badge at the end of the head and nowhere else", () => {
+    const blocks = buildFactorBlocks(
+      makeData({ factorEntries: annotatedEntries({ B: { doubt: true } }) }),
+      palette,
+    )
+    const html = blockById(blocks, "factor-B").html
+
+    expect(html).toContain(`${BADGE}</div>\n<div class="factor-body">`)
+    expect(html.indexOf("factor-badge")).toBeGreaterThan(html.indexOf("factor-title"))
+    expect(html).not.toContain("factor-user-note")
+    expect(blockById(blocks, "factor-A").html).not.toContain("factor-badge")
+  })
+
+  it("the badge leaves the card height unchanged", () => {
+    const doubtful = buildFactorBlocks(
+      makeData({ factorEntries: annotatedEntries({ B: { doubt: true } }) }),
+      palette,
+    )
+
+    expect(blockById(doubtful, "factor-B").height).toBe(blockById(plain, "factor-B").height)
+  })
+
+  it("a note sits between the body and the scale, apart from the cap explanation", () => {
+    const blocks = buildFactorBlocks(
+      makeData({ factorEntries: annotatedEntries({ C: { note: "x\ny" } }) }),
+      palette,
+    )
+    const html = blockById(blocks, "factor-C").html
+
+    expect(html).toContain(
+      `<p class="factor-user-note"><span class="factor-user-note-caption">${t.factors.note}</span> x\ny</p>`,
+    )
+    expect(html.indexOf("factor-body")).toBeLessThan(html.indexOf("factor-user-note"))
+    expect(html.indexOf("factor-user-note")).toBeLessThan(html.indexOf("factor-scale"))
+    expect(html).not.toContain("factor-badge")
+  })
+
+  it("the note grows the card by 6 + 12 per line, paragraph by paragraph at 112 characters", () => {
+    const base = blockById(plain, "factor-C").height
+    const grown = (note: string) =>
+      blockById(
+        buildFactorBlocks(makeData({ factorEntries: annotatedEntries({ C: { note } }) }), palette),
+        "factor-C",
+      ).height
+
+    expect(grown("x\ny")).toBe(base + 6 + 12 * 2)
+    expect(grown("a".repeat(112))).toBe(base + 6 + 12)
+    expect(grown("a".repeat(113))).toBe(base + 6 + 12 * 2)
+    expect(grown(`${"a".repeat(113)}\n${"b".repeat(50)}`)).toBe(base + 6 + 12 * 3)
+  })
+
+  it("clamps a 400 character note to 300", () => {
+    const blocks = buildFactorBlocks(
+      makeData({ factorEntries: annotatedEntries({ D: { note: "z".repeat(400) } }) }),
+      palette,
+    )
+    const html = blockById(blocks, "factor-D").html
+
+    expect(html).toContain("z".repeat(300))
+    expect(html).not.toContain("z".repeat(301))
+    expect(blockById(blocks, "factor-D").height).toBe(
+      blockById(plain, "factor-D").height + 6 + 12 * 3,
+    )
+  })
+
+  it("a blank or missing note prints nothing", () => {
+    const blocks = buildFactorBlocks(
+      makeData({ factorEntries: annotatedEntries({ E: { note: "  \n " }, F: { note: null } }) }),
+      palette,
+    )
+
+    expect(blockById(blocks, "factor-E").html).not.toContain("factor-user-note")
+    expect(blockById(blocks, "factor-F").height).toBe(blockById(plain, "factor-F").height)
+  })
+
+  it("escapes the note and cannot inject markup", () => {
+    const blocks = buildFactorBlocks(
+      makeData({
+        factorEntries: annotatedEntries({
+          A: { note: '<img src=x onerror=alert(1)> & "q"', doubt: true },
+        }),
+      }),
+      palette,
+    )
+    const html = blockById(blocks, "factor-A").html
+
+    expect(html).not.toContain("<img")
+    expect(html).toContain("&lt;img src=x onerror=alert(1)&gt; &amp; &quot;q&quot;")
+  })
+
+  it("changes no class, no points and no chip", () => {
+    const annotated = buildFactorBlocks(
+      makeData({
+        factorEntries: annotatedEntries(
+          Object.fromEntries(
+            FACTOR_KEYS.map((key) => [key, { doubt: true, note: `note ${key}` }]),
+          ) as Record<FactorKey, Annotated>,
+        ),
+      }),
+      palette,
+    )
+    const strip = (html: string) =>
+      html.replace(BADGE, "").replace(/<p class="factor-user-note">.*?<\/p>\n/g, "")
+
+    for (const factor of FACTOR_KEYS) {
+      expect(strip(blockById(annotated, `factor-${factor}`).html)).toBe(
+        blockById(plain, `factor-${factor}`).html,
+      )
+    }
+  })
+
+  it("styles the badge and the note from the palette, print safe and unable to overflow", () => {
+    const css = factorSectionCss(palette)
+
+    expect(css).toContain(`border: 1px solid ${palette.warning}`)
+    expect(css).toContain(`background: ${palette.warningSoft}`)
+    expect(css).toContain("margin-left: auto")
+    expect(css).toMatch(/\.factor-user-note \{[^}]*white-space: pre-wrap/)
+    expect(css).toMatch(/\.factor-user-note \{[^}]*overflow-wrap: anywhere/)
+    expect(css).toMatch(/\.factor-user-note \{[^}]*margin: 6px 0 0/)
+    expect(css).toMatch(/\.factor-badge \{[^}]*line-height: 14px/)
   })
 })
 

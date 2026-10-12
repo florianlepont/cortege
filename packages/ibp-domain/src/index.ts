@@ -17,6 +17,23 @@ export { IBP_CAS_VALUES, casFromRegionStage, isIbpCas, usesCas3Scale } from "./c
 export type { IbpCas } from "./context/cas"
 
 export {
+  FACTOR_ANNOTATIONS_KEY,
+  FACTOR_NOTE_MAX_LENGTH,
+  SURVEY_NOTE_MAX_LENGTH,
+  WEATHER_EDITABLE_KEYS,
+  WEATHER_LOOKBACK_MS,
+  WEATHER_RANGES,
+  WEATHER_SKY_CODES,
+  WEATHER_SOURCES,
+  canonicalFactorAnnotations,
+  factorAnnotationsIssues,
+  isWeatherSkyCode,
+  normalizeNoteText,
+  readFactorAnnotations,
+  withFactorAnnotations,
+} from "./conditions"
+
+export {
   allowedFactorAGenusCodes,
   CNPF_FACTOR_A_GENUS_CODES,
   CNPF_FACTOR_A_MAIN_GENERA,

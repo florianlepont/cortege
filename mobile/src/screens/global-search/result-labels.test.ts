@@ -164,6 +164,36 @@ describe("ownSurveyLabels (25-09)", () => {
   })
 })
 
+describe("ownSurveyLabels found in the note (27-15)", () => {
+  test("a note-only match ends its meta and its sentence with the hint", () => {
+    const survey = ownSurvey()
+    const updatedAt = formatShortDateTime(survey.updated_at)
+    const labels = ownSurveyLabels({ ...survey, matchedInNote: true })
+    expect(labels.meta).toBe(`Brouillon · ${updatedAt} · Trouvé dans la note`)
+    expect(labels.accessibilityLabel).toBe(
+      `${fr.surveyList.a11y.openSurvey({
+        name: "Forêt de la Reine",
+        status: "Brouillon",
+        updatedAt,
+      })}, Trouvé dans la note`,
+    )
+  })
+
+  test("without the flag the labels are unchanged", () => {
+    const survey = ownSurvey()
+    expect(ownSurveyLabels(survey)).toEqual(ownSurveyLabels({ ...survey }))
+    expect(ownSurveyLabels(survey).meta).not.toContain("Trouvé")
+  })
+
+  test("the best-result card carries the hint too", () => {
+    const labels = bestResultLabels({
+      kind: "mine",
+      survey: { ...ownSurvey(), matchedInNote: true },
+    })
+    expect(labels.meta).toMatch(/ · Trouvé dans la note$/)
+  })
+})
+
 describe("communitySurveyLabels (25-09)", () => {
   test("gives the site name, 'par {author} · Terminé le {date}' and the score sentence", () => {
     const item = communitySurvey()

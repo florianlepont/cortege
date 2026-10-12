@@ -3,6 +3,7 @@ import { randomUUID } from "crypto"
 import { Queryable } from "../database/database.service"
 import { SURVEY_EVENT_INSERT_SQL } from "./survey-events.sql"
 import { SurveyRow } from "./surveys.types"
+import type { SurveyWeather } from "@cortege/ibp-domain"
 import {
   normalizeParcelIds,
   normalizeSurveyStatusFilter,
@@ -161,6 +162,9 @@ export type SurveyFastWriteInput = {
   ibpMethodVersion: string | null
   ibpCas: number | null
   ibpCas3Scale: boolean | null
+  // Migration 023: the free-text note and the weather snapshot (null when absent or cleared).
+  surveyNote: string | null
+  weather: SurveyWeather | null
   factors: unknown
   factorResults: unknown
   scores: unknown
@@ -202,8 +206,9 @@ const FAST_PATH_ENSURED_PARCELS_SELECT_SQL = `INSERT INTO parcels (id, parcel_id
                 '{}'::jsonb, '{}'::jsonb, 'manual'
          FROM input_parcels ip`
 
-// Bound parameters of both fast-path statements. $23..$25 are the method columns of migration 016;
-// an update adds the xmin CAS token as $26 (a create binds 25 parameters, an update 26).
+// Bound parameters of both fast-path statements. $23..$25 are the method columns of migration 016,
+// $26 and $27 the survey note and the weather of migration 023; an update adds the xmin CAS token
+// as $28 (a create binds 27 parameters, an update 28).
 export function fastWriteValues(input: SurveyFastWriteInput, casToken: string | null): unknown[] {
   const parcels = normalizeParcelIds(input.parcelIds)
     .sort()
@@ -234,6 +239,8 @@ export function fastWriteValues(input: SurveyFastWriteInput, casToken: string | 
     input.ibpMethodVersion,
     input.ibpCas,
     input.ibpCas3Scale,
+    input.surveyNote,
+    input.weather === null ? null : JSON.stringify(input.weather),
     ...(casToken === null ? [] : [casToken]),
   ]
 }
@@ -252,13 +259,13 @@ export const CREATE_SURVEY_ATOMIC_SQL = `WITH ${FAST_PATH_INPUT_PARCELS_SQL},
            id, user_id, site_name, status, visibility, parcel_id, observation_year, version_number,
            previous_survey_id, region_version, vegetation_stage, factors, factor_results, scores,
            location, created_at, updated_at, submitted_at, sync_version,
-           ibp_method_version, ibp_cas, ibp_cas3_scale
+           ibp_method_version, ibp_cas, ibp_cas3_scale, survey_note, weather
          ) VALUES (
            $1::text, $2::uuid, $3, 'draft', $4, $5::text, $6::int,
            ${FAST_PATH_VERSION_NUMBER_SQL},
            $8, $9, $10, $11::jsonb, $12::jsonb, $13::jsonb,
            '{}'::jsonb, $22::timestamptz, $22::timestamptz, NULL, $14::int,
-           $23::text, $24::smallint, $25::boolean
+           $23::text, $24::smallint, $25::boolean, $26::text, $27::jsonb
          )
          ON CONFLICT (id) DO NOTHING
          RETURNING id, updated_at::text AS updated_at
@@ -309,10 +316,12 @@ export const UPDATE_SURVEY_IF_UNCHANGED_SQL = `WITH u AS (
              updated_at = $22::timestamptz,
              ibp_method_version = $23::text,
              ibp_cas = $24::smallint,
-             ibp_cas3_scale = $25::boolean
+             ibp_cas3_scale = $25::boolean,
+             survey_note = $26::text,
+             weather = $27::jsonb
          WHERE id = $1::text
            AND user_id = $2::uuid
-           AND xmin = $26::xid
+           AND xmin = $28::xid
            AND sync_version < $14::int
            AND status <> 'submitted'
          RETURNING id, updated_at::text AS updated_at

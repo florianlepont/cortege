@@ -476,6 +476,7 @@ jest.mock("../screens/SurveyDetailScreen", () => ({
 }))
 jest.mock("../screens/SurveyContextScreen", () => ({ SurveyContextScreen: () => null }))
 jest.mock("../screens/SurveyScoreScreen", () => ({ SurveyScoreScreen: () => null }))
+jest.mock("../screens/SurveyParcelsScreen", () => ({ SurveyParcelsScreen: () => null }))
 // The fake stacks mount every screen, search included. The search page is a probe that keeps its
 // props, so the keystroke scenario can type into the field (RESEARCH Pitfall 6); the full list of
 // a group draws nothing, its rows are not the survey list's.
@@ -633,6 +634,11 @@ jest.mock("../hooks/useLocalDataOwner", () => ({
 jest.mock("../hooks/useGlobalSearch", () => ({
   useGlobalSearch: () => mockIdleSearch,
 }))
+// The own-note read of the full list is static and empty too (27-15): no storage in this harness.
+const mockNoOwnNotes: ReadonlyMap<string, string> = new Map()
+jest.mock("../hooks/useOwnSurveyNotes", () => ({
+  useOwnSurveyNotes: () => mockNoOwnNotes,
+}))
 jest.mock("../hooks/useSearchRecents", () => ({
   useSearchRecents: () => mockIdleRecents,
 }))
@@ -723,6 +729,13 @@ jest.mock("../storage/surveys", () => ({
   discardSurveyLocalChanges: jest.fn(),
   submitSurvey: jest.fn(),
   updateSurveyVisibility: jest.fn(),
+}))
+
+// Phase 27 weather prefill: the harness has no storage, so there is never a candidate to ask for.
+jest.mock("../storage/weather", () => ({
+  listWeatherCandidates: jest.fn(async () => []),
+  loadWeatherPoint: jest.fn(async () => null),
+  saveWeatherPoint: jest.fn(async () => undefined),
 }))
 
 jest.mock("../storage/sync", () => ({

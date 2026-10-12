@@ -11,11 +11,13 @@ import { AppGroupedList } from "../ui/AppGroupedList"
 import { AppNotice } from "../ui/AppNotice"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../ui/frame-large-title"
 import { selectPreviewCandidates } from "./survey-screen-helpers"
+import { SurveyNoteCard } from "./survey-detail/conditions/SurveyNoteCard"
+import { useSurveyConditions } from "./survey-detail/conditions/useSurveyConditions"
+import { WeatherCard } from "./survey-detail/conditions/WeatherCard"
 import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
 import { FinishBar } from "./survey-detail/FinishBar"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
-import { SurveyOfflineMapRow } from "./survey-detail/SurveyOfflineMapRow"
 import { PhotosStrip } from "./survey-detail/PhotosStrip"
 import { ScoreCard } from "./survey-detail/ScoreCard"
 import { type SurveyDetailScreenProps } from "./survey-detail/screen-props"
@@ -40,11 +42,12 @@ const headerText = fr.surveyDetail.header
 const alertsText = fr.surveyDetail.alerts
 
 /**
- * The summary of a survey (OA-46): its name and where it stands, the score, the photos, the map,
- * and three rows that open the sub-pages (context and parcels, score by factor, the parcel's
- * history; the survey's own change log is in the "…" menu, never a row, D-02). The one action is
- * the button at the bottom. The coloured chart of the ten factors is not here (D-24): it
- * lives on the score page only.
+ * The summary of a survey (OA-46): its name and where it stands, the score, the compact weather
+ * card (D-17, D-41), the photos, the map, four rows that open the sub-pages (Contexte, Parcelles,
+ * the factors, the parcel's history; D-32), the survey actions and, last, the survey note (D-33,
+ * D-38). The survey's own change log is in the "…" menu, never a row, D-02. The one action is
+ * the button at the bottom. The coloured chart of the ten factors is not here (D-24): it lives on
+ * the score page only.
  */
 export function SurveyDetailScreen({
   apiUrl,
@@ -65,7 +68,11 @@ export function SurveyDetailScreen({
   onDiscardSurvey,
   onRenameSurvey,
   onOpenContext,
-  onOpenParcels,
+  onOpenConditions,
+  conditionsLoading,
+  conditionsOffline,
+  onChangeNote,
+  onOpenParcelsPage,
   onOpenScore,
   onOpenFactor,
   onOpenHistory,
@@ -77,6 +84,7 @@ export function SurveyDetailScreen({
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName } = data
+  const conditions = useSurveyConditions(selectedSurvey)
   const [menuVisible, setMenuVisible] = useState(false)
   const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
   // D-26: a finish from the factor pager plays the halo and pop once the summary is seen again.
@@ -119,6 +127,7 @@ export function SurveyDetailScreen({
     apiUrl,
     accessToken,
   })
+  const changeNote = useLatestCallback((text: string) => void onChangeNote(selectedSurvey.id, text))
   const handleDelete = useLatestCallback(() => onDeleteSurvey(selectedSurvey.id))
   const handleOpenMenu = useLatestCallback(() => setMenuVisible(true))
   // 12.2-17: the native large title is not a button, so the name is edited from the "…" menu in
@@ -192,6 +201,15 @@ export function SurveyDetailScreen({
           onPress: onOpenContext,
         },
         {
+          key: "parcels",
+          label: rowsText.parcels,
+          value:
+            data.parcelIds.length > 0
+              ? rowsText.parcelsValue(data.parcelIds.length)
+              : rowsText.parcelsNone,
+          onPress: onOpenParcelsPage,
+        },
+        {
           key: "score",
           label: rowsText.score,
           value:
@@ -222,6 +240,11 @@ export function SurveyDetailScreen({
         style={styles.scroll}
         contentContainerStyle={contentStyle}
         contentInsetAdjustmentBehavior={insetBehavior}
+        // The note is a text field: taps reach buttons while the keyboard is up, dragging the page
+        // closes it, and iOS lifts the content above it (D-33).
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
         onScrollBeginDrag={onScrollBeginDrag}
       >
         <SummaryHeader
@@ -250,6 +273,14 @@ export function SurveyDetailScreen({
           pulseTrigger={shownPulse}
         />
 
+        <WeatherCard
+          weather={conditions.weather}
+          loading={conditionsLoading}
+          offline={conditionsOffline}
+          submitted={selectedSurvey.status === "submitted"}
+          onOpen={onOpenConditions}
+        />
+
         <PhotosStrip
           survey={selectedSurvey}
           attachments={selectedSurveyAttachments}
@@ -266,14 +297,8 @@ export function SurveyDetailScreen({
           displayLocation={detail?.display_location}
           parcelIds={data.parcelIds}
           surveyId={selectedSurvey.id}
-          onPress={() => (canEditSurvey ? void onOpenParcels(selectedSurvey.id) : onOpenContext())}
-        />
-
-        <SurveyOfflineMapRow
-          apiUrl={apiUrl}
-          accessToken={accessToken}
-          siteName={activeSiteName}
-          displayLocation={detail?.display_location}
+          refreshKey={selectedSurvey.updated_at}
+          onPress={onOpenParcelsPage}
         />
 
         <AppGroupedList sections={rowSections} />
@@ -282,6 +307,14 @@ export function SurveyDetailScreen({
           survey={selectedSurvey}
           onRetrySurvey={onRetrySurvey}
           onDiscardSurvey={onDiscardSurvey}
+        />
+
+        {/* D-38: the survey note is the last card of the page, after the rows and the actions. */}
+        <SurveyNoteCard
+          editable={canEditSurvey}
+          loaded={conditions.loaded}
+          stored={conditions.note}
+          onChangeNote={changeNote}
         />
 
         {/* The debug view shows ids, error codes and raw payloads: dev builds only (D-06). */}

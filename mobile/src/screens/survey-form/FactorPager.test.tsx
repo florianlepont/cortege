@@ -1,6 +1,7 @@
 import React from "react"
 import renderer, { act } from "react-test-renderer"
 import type { FactorField, FactorKey } from "../../app/types"
+import type { FactorAnnotationDraft } from "../../hooks/useFactorAnnotations"
 import { FACTOR_TITLES } from "../../app/constants"
 import { fr } from "../../i18n"
 import { defaultTheme } from "../../app/theme"
@@ -22,6 +23,12 @@ jest.mock("../../app/useAppBottomTabBarHeight", () => ({
   useTabBarClearance: () => 68,
   useAppBottomTabBarHeight: () => 68,
 }))
+
+// Phase 27: the keyboard the pager listens to (listeners by event name) and the dismiss it calls.
+const mockKeyboard = {
+  listeners: {} as Record<string, (() => void) | undefined>,
+  dismiss: jest.fn(),
+}
 
 const originalConsoleError = console.error
 
@@ -46,6 +53,14 @@ jest.mock("react-native", () => {
   return {
     Pressable: mockComponent("Pressable"),
     ScrollView: mockComponent("ScrollView"),
+    FlatList: mockComponent("FlatList"),
+    Keyboard: {
+      addListener: (event: string, listener: () => void) => {
+        mockKeyboard.listeners[event] = listener
+        return { remove: () => undefined }
+      },
+      dismiss: () => mockKeyboard.dismiss(),
+    },
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Platform: { OS: "ios", select: (options: { ios?: unknown; default?: unknown }) => options.ios },
@@ -80,8 +95,8 @@ jest.mock("@expo/vector-icons", () => {
 jest.mock("../FactorDetailScreen", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
-    FactorDetailScreen: ({ factor }: { factor: string }) =>
-      ReactRef.createElement("FactorDetailScreenProbe", { factor }),
+    FactorDetailScreen: (props: Record<string, unknown>) =>
+      ReactRef.createElement("FactorDetailScreenProbe", props),
   }
 })
 
@@ -116,9 +131,13 @@ function render(
   initialFactor: FactorKey,
   sectionOverrides: Partial<Record<FactorKey, FactorField[]>> = {},
   finishAction: PagerFinishAction | null = null,
+  factorAnnotations: FactorAnnotationDraft = {},
 ) {
   const onFinish = jest.fn()
   const onActiveFactorChange = jest.fn()
+  const onChangeDoubt = jest.fn()
+  const onChangeNote = jest.fn()
+  const onCommitNote = jest.fn()
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
     tree = renderer.create(
@@ -131,6 +150,10 @@ function render(
         onFinish={onFinish}
         onOpenHelp={jest.fn()}
         finishAction={finishAction}
+        factorAnnotations={factorAnnotations}
+        onChangeDoubt={onChangeDoubt}
+        onChangeNote={onChangeNote}
+        onCommitNote={onCommitNote}
       />,
     )
   })
@@ -153,6 +176,9 @@ function render(
     tree: tree!,
     onFinish,
     onActiveFactorChange,
+    onChangeDoubt,
+    onChangeNote,
+    onCommitNote,
     texts,
     byTestID: (id: string) => root.findAll((n) => n.props.testID === id)[0],
     maybeByTestID: (id: string) => root.findAll((n) => n.props.testID === id)[0],
@@ -578,5 +604,139 @@ describe("FactorPager D-26: Terminer le relevé on the last factor", () => {
     expect(glassButtons(tree)[0].props.loading).toBe(true)
     const row = byTestID("pager-finish-row")
     expect(row.findAll((n) => (n.type as unknown) === "NoticeProbe")).toHaveLength(1)
+  })
+})
+
+describe("FactorPager keyboard and notes (phase 27, UI-SPEC 2.4, U-07)", () => {
+  beforeEach(() => {
+    mockKeyboard.dismiss.mockClear()
+    mockKeyboard.listeners = {}
+  })
+
+  const action = (): PagerFinishAction => ({
+    label: fr.surveyDetail.cta.finish,
+    accessibilityLabel: fr.surveyDetail.a11y.finishSurvey("Lisière"),
+    loading: false,
+    onPress: jest.fn(),
+    notice: null,
+  })
+  const showKeyboard = () => act(() => mockKeyboard.listeners.keyboardWillShow?.())
+  const hideKeyboard = () => act(() => mockKeyboard.listeners.keyboardWillHide?.())
+  const barOf = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAll(
+      (n) =>
+        (n.type as unknown) === "View" &&
+        n.props.testID === undefined &&
+        n.findAll((c) => c.props.testID === "pager-next").length > 0 &&
+        flat(n.props.style).position === "absolute",
+    )[0]
+  const pages = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAll(
+      (n) => (n.type as unknown) === "ScrollView" && n.props.contentContainerStyle !== undefined,
+    )
+  const probe = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findByType("FactorDetailScreenProbe" as unknown as React.ElementType)
+
+  test("with the keyboard up the bar and the pill row are transparent and take no touches", () => {
+    const { tree, byTestID } = render("J", {}, action())
+    expect(flat(barOf(tree).props.style).opacity).toBe(1)
+    expect(barOf(tree).props.pointerEvents).toBe("box-none")
+    expect(flat(byTestID("pager-finish-row").props.style).opacity).toBe(1)
+    const barFrame = { ...flat(barOf(tree).props.style) }
+    delete barFrame.opacity
+
+    showKeyboard()
+    expect(flat(barOf(tree).props.style).opacity).toBe(0)
+    expect(barOf(tree).props.pointerEvents).toBe("none")
+    expect(byTestID("pager-finish-row").props.pointerEvents).toBe("none")
+    expect(flat(byTestID("pager-finish-row").props.style).opacity).toBe(0)
+    // Same frame: only the opacity changes, nothing re-lays out.
+    const hiddenFrame = { ...flat(barOf(tree).props.style) }
+    delete hiddenFrame.opacity
+    expect(hiddenFrame).toEqual(barFrame)
+
+    hideKeyboard()
+    expect(flat(barOf(tree).props.style).opacity).toBe(1)
+    expect(barOf(tree).props.pointerEvents).toBe("box-none")
+    expect(byTestID("pager-finish-row").props.pointerEvents).toBe("box-none")
+  })
+
+  test("the page bottom padding drops to 16 while the keyboard is up and comes back", () => {
+    const { tree } = render("J", {}, action())
+    const bottom = () => flat(pages(tree)[0].props.contentContainerStyle).paddingBottom
+    expect(bottom()).toBe(208)
+    showKeyboard()
+    expect(bottom()).toBe(16)
+    hideKeyboard()
+    expect(bottom()).toBe(208)
+  })
+
+  test("a letter tap, the next button and a swipe that changes the page dismiss the keyboard", () => {
+    const { byTestID } = render("C")
+    act(() => {
+      byTestID("pager-strip").props.onResponderGrant(touch(165))
+    })
+    expect(mockKeyboard.dismiss).toHaveBeenCalled()
+    mockKeyboard.dismiss.mockClear()
+    act(() => {
+      byTestID("pager-next").props.onPress()
+    })
+    expect(mockKeyboard.dismiss).toHaveBeenCalledTimes(1)
+    mockKeyboard.dismiss.mockClear()
+    // Swipe end on another page than the one shown.
+    act(() => {
+      byTestID("factor-pager-scroll").props.onMomentumScrollEnd({
+        nativeEvent: { contentOffset: { x: 900, y: 0 } },
+      })
+    })
+    expect(mockKeyboard.dismiss).toHaveBeenCalledTimes(1)
+  })
+
+  test("a swipe that settles on the same page leaves the keyboard alone", () => {
+    const { byTestID } = render("D")
+    act(() => {
+      byTestID("factor-pager-scroll").props.onMomentumScrollEnd({
+        nativeEvent: { contentOffset: { x: 900, y: 0 } },
+      })
+    })
+    expect(mockKeyboard.dismiss).not.toHaveBeenCalled()
+  })
+
+  test("each page scroll view keeps taps, dismisses the keyboard on drag and adjusts its insets", () => {
+    const { tree } = render("A")
+    const all = pages(tree)
+    expect(all).toHaveLength(10)
+    for (const page of all) {
+      expect(page.props.keyboardShouldPersistTaps).toBe("handled")
+      expect(page.props.keyboardDismissMode).toBe("on-drag")
+      expect(page.props.automaticallyAdjustKeyboardInsets).toBe(true)
+    }
+  })
+
+  test("the active page gets its doubt, its note and the three callbacks", () => {
+    const { tree, onChangeDoubt, onChangeNote, onCommitNote } = render("C", {}, null, {
+      C: { doubt: true, note: "Vu en mai" },
+      D: { doubt: false, note: "Autre" },
+    })
+    const active = probe(tree)
+    expect(active.props.factor).toBe("C")
+    expect(active.props.doubt).toBe(true)
+    expect(active.props.note).toBe("Vu en mai")
+    active.props.onChangeDoubt(false)
+    expect(onChangeDoubt).toHaveBeenCalledWith("C", false)
+    active.props.onChangeNote("Texte")
+    expect(onChangeNote).toHaveBeenCalledWith("C", "Texte")
+    active.props.onCommitNote()
+    expect(onCommitNote).toHaveBeenCalledTimes(1)
+  })
+
+  test("a factor with no annotation reads as no doubt and no note; one page mounts", () => {
+    const { tree } = render("A")
+    const active = probe(tree)
+    expect(active.props.doubt).toBe(false)
+    expect(active.props.note).toBe("")
+    expect(
+      tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe"),
+    ).toHaveLength(1)
   })
 })

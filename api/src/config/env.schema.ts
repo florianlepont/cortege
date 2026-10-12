@@ -1,8 +1,17 @@
 import { plainToInstance } from "class-transformer"
-import { IsIn, IsOptional, IsString, validateSync } from "class-validator"
+import { IsIn, IsOptional, IsString, Matches, validateSync } from "class-validator"
 import { assertProductionSafety } from "./production-rules"
 
 export const NODE_ENVS = ["development", "test", "production"] as const
+
+export const WEATHER_PROVIDERS = ["meteofrance", "synthetic", "off"] as const
+
+/**
+ * WEATHER_PROVIDER, case-insensitive and trimmed like `loadAppConfig` reads it; a blank value
+ * means "off". An unknown value (a typo such as "meteo") fails the startup instead of silently
+ * turning the weather off.
+ */
+const WEATHER_PROVIDER_PATTERN = new RegExp(`^\\s*(${WEATHER_PROVIDERS.join("|")})?\\s*$`, "i")
 
 /**
  * Environment schema (D-01: class-validator only). Every variable is
@@ -62,6 +71,17 @@ export class EnvironmentVariables {
   @IsOptional() @IsString() CADASTRE_IGN_WFS_URL?: string
   @IsOptional() @IsString() CADASTRE_IGN_WFS_TYPENAME?: string
   @IsOptional() @IsString() CADASTRE_IGN_WFS_COUNT?: string
+
+  // Weather (phase 27, D-19, D-22). METEOFRANCE_API_KEY is a credential: read by app-config.ts
+  // only, never logged.
+  @IsOptional() @Matches(WEATHER_PROVIDER_PATTERN) WEATHER_PROVIDER?: string
+  @IsOptional() @IsString() METEOFRANCE_API_KEY?: string
+  @IsOptional() @IsString() METEOFRANCE_AUTH_MODE?: string
+  @IsOptional() @IsString() METEOFRANCE_OBS_URL?: string
+  @IsOptional() @IsString() WEATHER_TIMEOUT_MS?: string
+  @IsOptional() @IsString() WEATHER_MAX_STATION_DISTANCE_KM?: string
+  @IsOptional() @IsString() WEATHER_SYNOP_MAX_DISTANCE_KM?: string
+  @IsOptional() @IsString() WEATHER_TIME_TOLERANCE_MINUTES?: string
 
   // Debug
   @IsOptional() @IsString() DEBUG_DATA_RESET_ENABLED?: string

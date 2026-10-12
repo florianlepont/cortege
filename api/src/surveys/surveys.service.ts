@@ -75,6 +75,11 @@ function olderSyncVersionConflict(
   })
 }
 
+// The jsonb parameter of a weather value: a bound JSON string, or null when there is none.
+function weatherParameter(weather: SurveyRow["weather"]): string | null {
+  return weather ? JSON.stringify(weather) : null
+}
+
 @Injectable()
 export class SurveysService {
   constructor(
@@ -137,6 +142,8 @@ export class SurveysService {
         ibpMethodVersion: columns.ibp_method_version,
         ibpCas: columns.ibp_cas,
         ibpCas3Scale: columns.ibp_cas3_scale,
+        surveyNote: body.survey_note ?? null,
+        weather: body.weather ?? null,
         factors: body.factors ?? {},
         factorResults: draftValidation.factor_results ?? {},
         scores: prepared.computedScores,
@@ -199,6 +206,10 @@ export class SurveysService {
         ibpMethodVersion: rowPrepared.columns.ibp_method_version,
         ibpCas: rowPrepared.columns.ibp_cas,
         ibpCas3Scale: rowPrepared.columns.ibp_cas3_scale,
+        // D-04: an absent key keeps the stored value, an explicit null clears it.
+        surveyNote:
+          body.survey_note === undefined ? (existing.survey_note ?? null) : body.survey_note,
+        weather: body.weather === undefined ? (existing.weather ?? null) : body.weather,
         factors: body.factors ?? existing.factors ?? {},
         factorResults: rowPrepared.draftValidation.factor_results ?? existing.factor_results ?? {},
         scores: rowPrepared.computedScores,
@@ -347,11 +358,11 @@ export class SurveysService {
           `INSERT INTO surveys (
             id, user_id, site_name, status, visibility, parcel_id, observation_year, version_number, previous_survey_id, region_version, vegetation_stage,
             factors, factor_results, scores, location, created_at, updated_at, submitted_at, sync_version,
-            ibp_method_version, ibp_cas, ibp_cas3_scale
+            ibp_method_version, ibp_cas, ibp_cas3_scale, survey_note, weather
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
             $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19,
-            $20, $21, $22
+            $20, $21, $22, $23::text, $24::jsonb
           )
           ON CONFLICT (id) DO NOTHING
           RETURNING id, updated_at::text`,
@@ -380,6 +391,8 @@ export class SurveysService {
             columns.ibp_method_version,
             columns.ibp_cas,
             columns.ibp_cas3_scale,
+            body.survey_note ?? null,
+            weatherParameter(body.weather),
           ],
         )
 
@@ -512,7 +525,9 @@ export class SurveysService {
              updated_at = $16,
              ibp_method_version = $17,
              ibp_cas = $18,
-             ibp_cas3_scale = $19
+             ibp_cas3_scale = $19,
+             survey_note = $20::text,
+             weather = $21::jsonb
          WHERE id = $1 AND user_id = $2 AND sync_version < $15
          RETURNING id, updated_at::text`,
         [
@@ -537,6 +552,9 @@ export class SurveysService {
           rowPrepared.columns.ibp_method_version,
           rowPrepared.columns.ibp_cas,
           rowPrepared.columns.ibp_cas3_scale,
+          // D-04: an absent key keeps the stored value, an explicit null clears it.
+          body.survey_note === undefined ? (existing.survey_note ?? null) : body.survey_note,
+          weatherParameter(body.weather === undefined ? existing.weather : body.weather),
         ],
       )
 
@@ -971,6 +989,8 @@ export class SurveysService {
       | "ibp_method_version"
       | "ibp_cas"
       | "ibp_cas3_scale"
+      | "survey_note"
+      | "weather"
       | "factors"
       | "factor_results"
       | "scores"
@@ -1002,6 +1022,8 @@ export class SurveysService {
       ibp_method_version: survey.ibp_method_version,
       ibp_cas: survey.ibp_cas,
       ibp_cas3_scale: survey.ibp_cas3_scale,
+      survey_note: survey.survey_note ?? null,
+      weather: survey.weather ?? null,
       factors: survey.factors,
       factor_results: survey.factor_results,
       scores: survey.scores,

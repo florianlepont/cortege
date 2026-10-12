@@ -26,6 +26,7 @@ const DB_SECRET = "Pq7-db-secret-parity-marker"
 const STORAGE_SECRET = "Zx9-storage-secret-parity-marker"
 const MGMT_SECRET = "Mg3-mgmt-secret-parity-marker"
 const SMTP_SECRET = "Sm5-smtp-secret-parity-marker"
+const WEATHER_SECRET = "Wx4-weather-secret-parity-marker"
 
 const VALID_LINES: Record<string, string> = {
   POSTGRES_DB: "cortege",
@@ -41,6 +42,8 @@ const VALID_LINES: Record<string, string> = {
   AUTH0_MGMT_CLIENT_ID: "mgmt-client",
   AUTH0_MGMT_CLIENT_SECRET: MGMT_SECRET,
   CORS_ORIGIN: "none",
+  WEATHER_PROVIDER: "meteofrance",
+  METEOFRANCE_API_KEY: WEATHER_SECRET,
 }
 
 function render(lines: Record<string, string | null>): string {
@@ -116,6 +119,14 @@ function erreurVariables(lines: string[]): string[] {
   return [...new Set(names)].sort()
 }
 
+function attentionVariables(lines: string[]): string[] {
+  const names = lines
+    .map((line) => /^ATTENTION : ([A-Z0-9_]+) :/.exec(line.trim()))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => match[1])
+  return [...new Set(names)].sort()
+}
+
 let workDir: string
 
 beforeAll(() => {
@@ -140,8 +151,13 @@ function runBoth(content: string) {
       status: shell.status,
       output: shellOutput,
       variables: erreurVariables(shellOutput.split("\n")),
+      warnings: attentionVariables(shellOutput.split("\n")),
     },
-    api: { status: api.exitCode, variables: erreurVariables(api.lines) },
+    api: {
+      status: api.exitCode,
+      variables: erreurVariables(api.lines),
+      warnings: attentionVariables(api.lines),
+    },
   }
 }
 
@@ -198,6 +214,37 @@ const FIXTURES: Array<[string, string]> = [
     }),
   ],
   ["empty file", ""],
+  // Weather (phase 27, D-22)
+  ["WEATHER_PROVIDER synthetic is refused", withChanges({ WEATHER_PROVIDER: "synthetic" })],
+  [
+    "WEATHER_PROVIDER Synthetic in mixed case is refused",
+    withChanges({ WEATHER_PROVIDER: "Synthetic" }),
+  ],
+  [
+    "WEATHER_PROVIDER quoted synthetic is refused",
+    withChanges({ WEATHER_PROVIDER: '"synthetic"' }),
+  ],
+  [
+    "WEATHER_PROVIDER off passes",
+    withChanges({ WEATHER_PROVIDER: "off", METEOFRANCE_API_KEY: null }),
+  ],
+  [
+    "WEATHER_PROVIDER absent passes",
+    withChanges({ WEATHER_PROVIDER: null, METEOFRANCE_API_KEY: null }),
+  ],
+  ["WEATHER_PROVIDER empty passes", withChanges({ WEATHER_PROVIDER: "" })],
+  ["WEATHER_PROVIDER unknown value is refused", withChanges({ WEATHER_PROVIDER: "meteo" })],
+  ["meteofrance with a blank key passes", withChanges({ METEOFRANCE_API_KEY: "" })],
+  ["meteofrance with an absent key passes", withChanges({ METEOFRANCE_API_KEY: null })],
+  ["meteofrance with the CHANGE_ME key passes", withChanges({ METEOFRANCE_API_KEY: "CHANGE_ME" })],
+  [
+    "meteofrance with a quoted change-me key passes",
+    withChanges({ METEOFRANCE_API_KEY: '"change-me-later"' }),
+  ],
+  [
+    "synthetic with a blank key is refused",
+    withChanges({ WEATHER_PROVIDER: "synthetic", METEOFRANCE_API_KEY: "" }),
+  ],
 ]
 
 describeIfBash("check-env.sh agrees with the API production check", () => {
@@ -206,12 +253,13 @@ describeIfBash("check-env.sh agrees with the API production check", () => {
 
     expect(shell.status).toBe(api.status)
     expect(shell.variables).toEqual(api.variables)
+    expect(shell.warnings).toEqual(api.warnings)
     if (api.status === 0) {
       expect(shell.output).toMatch(/^OK : /m)
     } else {
       expect(shell.output).toContain("À corriger avant la fusion :")
     }
-    for (const secret of [DB_SECRET, STORAGE_SECRET, MGMT_SECRET, SMTP_SECRET]) {
+    for (const secret of [DB_SECRET, STORAGE_SECRET, MGMT_SECRET, SMTP_SECRET, WEATHER_SECRET]) {
       expect(shell.output).not.toContain(secret)
     }
   })
@@ -226,6 +274,41 @@ describeIfBash("check-env.sh agrees with the API production check", () => {
     const { shell } = runBoth(withChanges({ AUTH0_MGMT_CLIENT_ID: "CHANGE_ME" }))
     expect(shell.status).toBe(0)
     expect(shell.output).toContain("ATTENTION : AUTH0_MGMT_CLIENT_ID :")
+  })
+
+  it("refuses synthetic weather with the same variable in both checks (D-22)", () => {
+    const { shell, api } = runBoth(withChanges({ WEATHER_PROVIDER: "synthetic" }))
+    expect(api.status).toBe(1)
+    expect(shell.status).toBe(1)
+    expect(shell.variables).toEqual(["WEATHER_PROVIDER"])
+    expect(api.variables).toEqual(["WEATHER_PROVIDER"])
+    expect(shell.output).not.toContain(WEATHER_SECRET)
+  })
+
+  it.each([
+    ["blank", ""],
+    ["CHANGE_ME", "CHANGE_ME"],
+    ["absent", null],
+  ])("warns about a %s METEOFRANCE_API_KEY without failing, in both checks", (_name, key) => {
+    const { shell, api } = runBoth(withChanges({ METEOFRANCE_API_KEY: key }))
+    expect(api.status).toBe(0)
+    expect(shell.status).toBe(0)
+    expect(shell.output).toContain("ATTENTION : METEOFRANCE_API_KEY :")
+    expect(api.warnings).toEqual(["METEOFRANCE_API_KEY"])
+    expect(shell.warnings).toEqual(["METEOFRANCE_API_KEY"])
+  })
+
+  it("does not warn about the weather key when the key is set or the weather is off", () => {
+    const variants: Array<Record<string, string | null>> = [
+      {},
+      { WEATHER_PROVIDER: "off", METEOFRANCE_API_KEY: "" },
+    ]
+    for (const changes of variants) {
+      const { shell, api } = runBoth(withChanges(changes))
+      expect(shell.warnings).toEqual([])
+      expect(api.warnings).toEqual([])
+      expect(shell.output).not.toContain(WEATHER_SECRET)
+    }
   })
 
   it("flags dead variables as removable lines, never as errors", () => {
@@ -289,6 +372,11 @@ describeIfBash("check-env.sh agrees with the API production check", () => {
       expect(shell.variables).toEqual(
         expect.arrayContaining(["POSTGRES_PASSWORD", "OBJECT_STORAGE_SECRET_KEY"]),
       )
+      // The weather lines of the example parse: meteofrance with the CHANGE_ME key is a
+      // warning in both checks, never an error.
+      expect(shell.variables).not.toContain("WEATHER_PROVIDER")
+      expect(shell.warnings).toContain("METEOFRANCE_API_KEY")
+      expect(api.warnings).toContain("METEOFRANCE_API_KEY")
     })
 
     it("with only its CHANGE_ME placeholders replaced passes both checks", () => {
@@ -306,6 +394,7 @@ describeIfBash("check-env.sh agrees with the API production check", () => {
       const { shell } = runBoth(filled)
       expect(shell.status).toBe(0)
       expect(shell.output).toMatch(/^OK : /m)
+      expect(shell.warnings).not.toContain("METEOFRANCE_API_KEY")
     })
   })
 })

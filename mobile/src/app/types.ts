@@ -58,6 +58,8 @@ export type ParcelSurveyHistoryItem = {
   scores: IbpScores
   factor_results: Record<string, FactorCanonical>
   submitted_at: string
+  /** The survey's note (phase 27); absent on an older server, null when it has none. */
+  survey_note?: string | null
 }
 
 export type ParcelSurveyHistoryResponse = {

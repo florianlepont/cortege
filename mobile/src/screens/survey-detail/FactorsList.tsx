@@ -10,6 +10,8 @@ import { isFactorKey } from "../survey-screen-helpers"
 import { createScoreStyles } from "./score.styles"
 import { DisplayedFactorResult, NOT_FILLED_CLASS } from "./useLocalDraftSummary"
 import { AppPressable } from "../../ui/AppPressable"
+import { AppChoiceChip } from "../../ui/AppChoiceChip"
+import { FactorNote } from "./FactorNote"
 
 const f = fr.surveyDetail.factors
 const s = fr.surveyDetail.scoreScreen
@@ -58,6 +60,9 @@ export function FactorsList({
             const valueLabel = filled
               ? s.pointsOf({ points: factor.score_points ?? 0, max: FACTOR_MAX_POINTS })
               : s.toFill
+            const doubtful = factor.doubt === true
+            const note = typeof factor.note === "string" && factor.note !== "" ? factor.note : null
+            const label = { title, value: valueLabel, doubtful, hasNote: note !== null }
             return (
               <AppPressable
                 disableScale
@@ -73,7 +78,7 @@ export function FactorsList({
                   if (isFactorKey(factorCode)) onOpenFactor(factorCode)
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={a11y.openFactor({ title, value: valueLabel })}
+                accessibilityLabel={canOpen ? a11y.openFactor(label) : a11y.factorReadOnly(label)}
                 accessibilityState={{ disabled: !canOpen }}
               >
                 <View style={[styles.badge, filled ? styles.badgeFilled : styles.badgePending]}>
@@ -85,6 +90,20 @@ export function FactorsList({
                   </Text>
                   {factor.warnings.length > 0 ? (
                     <Text style={styles.rowWarning}>{f.hasWarning}</Text>
+                  ) : null}
+                  {doubtful ? (
+                    // Phase 27 (D-13): a word on a chip, never a change of the points or the tone.
+                    // Part of the row label, so it is not a separate node for a screen reader.
+                    <View
+                      accessible={false}
+                      testID={`factor-doubt-badge-${factorCode}`}
+                      style={styles.rowChip}
+                    >
+                      <AppChoiceChip variant="status" tone="warning" label={f.doubtBadge} />
+                    </View>
+                  ) : null}
+                  {note !== null ? (
+                    <FactorNote code={factorCode} note={note} readOnly={!canOpen} />
                   ) : null}
                 </View>
                 {filled ? (

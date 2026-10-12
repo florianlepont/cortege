@@ -3,6 +3,7 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "dark" }))
 
 import { brandColors, brandMapTokens } from "../brand-tokens"
+import { contrastRatio } from "../contrast"
 import { buildTheme } from "../theme"
 import { withAlpha } from "../visual-tokens"
 import { buildPdfPalette } from "./palette"
@@ -21,6 +22,8 @@ const KEYS: Array<keyof PdfPalette> = [
   "accentSoft",
   "alert",
   "alertSoft",
+  "warning",
+  "warningSoft",
   "bandLow",
   "bandMid",
   "bandHigh",
@@ -66,6 +69,13 @@ describe("buildPdfPalette", () => {
     expect(palette.panelStrong).toBe(light.colors.panelMuted)
     expect(palette.alert).toBe(light.onSurface.danger)
     expect(palette.alertSoft).toBe(light.semanticColors.errorSurface)
+  })
+
+  test("the doubt colours are the light theme's warning ink and soft fill, readable on both grounds", () => {
+    expect(palette.warning).toBe(light.onSurface.warning)
+    expect(palette.warningSoft).toBe(light.colors.warningSoft)
+    expect(contrastRatio(palette.warning, palette.paper)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(palette.warning, palette.warningSoft)).toBeGreaterThanOrEqual(4.5)
   })
 
   test("the accent is the forest green with a white ink (print contrast), not the dark scheme's", () => {

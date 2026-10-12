@@ -180,6 +180,21 @@ done
 
 check_cors "$(get CORS_ORIGIN)"
 
+# Météo (phase 27, D-22). Même règle que findProductionProblems et le schéma
+# d'environnement de l'API : « synthetic » inventerait la météo, une valeur
+# inconnue empêcherait l'API de démarrer.
+weather_provider="$(trim "$(get WEATHER_PROVIDER)")"
+weather_provider="${weather_provider,,}"
+case "$weather_provider" in
+  "" | off | meteofrance) ;;
+  synthetic)
+    error WEATHER_PROVIDER "valeur de développement : la météo serait inventée. Utilisez « meteofrance » ou « off »."
+    ;;
+  *)
+    error WEATHER_PROVIDER "valeur de type invalide."
+    ;;
+esac
+
 if [ "$problems" -eq 0 ]; then
   printf 'OK : le fichier %s respecte les règles de production de l’API.\n' "$ENV_FILE"
 fi
@@ -190,6 +205,15 @@ for variable in AUTH0_MGMT_CLIENT_ID AUTH0_MGMT_CLIENT_SECRET; do
     printf 'ATTENTION : %s : vide ou exemple CHANGE_ME : la suppression de compte côté Auth0 ne fonctionnera pas.\n' "$variable"
   fi
 done
+
+# Une clé absente n'empêche jamais un déploiement : la météo reste vide (D-22).
+# La valeur de la clé n'est jamais affichée.
+if [ "$weather_provider" = "meteofrance" ]; then
+  weather_key="$(trim "$(get METEOFRANCE_API_KEY)")"
+  if [ -z "$weather_key" ] || [[ "${weather_key,,}" =~ ^change[-_]?me ]]; then
+    printf 'ATTENTION : METEOFRANCE_API_KEY : vide ou exemple CHANGE_ME : la météo restera vide.\n'
+  fi
+fi
 
 for variable in "${DEAD_VARIABLES[@]}"; do
   if [ -n "${ENV[$variable]+set}" ]; then

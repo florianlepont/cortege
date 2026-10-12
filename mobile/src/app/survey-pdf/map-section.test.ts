@@ -27,6 +27,8 @@ const PALETTE_KEYS = [
   "accentSoft",
   "alert",
   "alertSoft",
+  "warning",
+  "warningSoft",
   "bandLow",
   "bandMid",
   "bandHigh",
@@ -123,6 +125,7 @@ function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
     generatedAtIso: "2026-10-10T09:00:00Z",
     coordinates: null,
     rawFactors: {},
+    conditions: { note: null, weather: null },
     photos: { items: [], total: 0, unavailable: 0 },
     map: {
       polygons: POLYGONS,

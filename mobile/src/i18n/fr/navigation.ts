@@ -12,8 +12,10 @@ export const navigationFr = {
   headers: {
     surveys: "Mes Relevés",
     communitySurvey: "Relevé de la communauté",
-    surveyContext: "Contexte et parcelles",
-    surveyScore: "Score IBP",
+    // D-32: the old "Contexte et parcelles" page is two pages.
+    surveyContext: "Contexte",
+    surveyParcelsPage: "Parcelles",
+    surveyScore: "Facteurs IBP",
     surveyHistory: "Historique de la parcelle",
     communityHistory: "Historique de la parcelle",
     surveyJournal: "Journal du relevé",

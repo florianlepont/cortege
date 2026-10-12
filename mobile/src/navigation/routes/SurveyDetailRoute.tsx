@@ -4,7 +4,8 @@ import type { FactorKey } from "../../app/types"
 import { SurveyDetailScreen } from "../../screens/SurveyDetailScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
 import { useSurveys } from "../../state/surveys-context"
-import { resolveDisplayCoordinates } from "../../screens/survey-screen-helpers"
+import { useIsOffline } from "../../hooks/useIsOffline"
+import { useWeatherPrefillState } from "../../state/weather-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyDetailRouteProps } from "../types"
@@ -15,7 +16,7 @@ import { usesNativeLargeTitle } from "../large-title"
  * Survey detail route (phase 01.9-18, D-01): the selected survey and its
  * caches from the surveys context, the API URL from the session, and the sync
  * actions. Renders nothing until a survey is selected. It is the summary; its sub-pages
- * (context, score, history) are the routes next to it, opened from rows, and the journal is
+ * (context, parcels, factors, history) are the routes next to it, opened from rows, and the journal is
  * opened from the "…" menu (D-02).
  */
 export const SurveyDetailRoute = memo(function SurveyDetailRoute({
@@ -25,18 +26,15 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
   const accessToken = useAccessToken()
   const { state, actions } = useSurveys()
   const syncActions = useSyncActions()
+  const { state: weatherState } = useWeatherPrefillState()
+  const offline = useIsOffline()
 
   const onOpenContext = useLatestCallback(() => navigation.navigate("surveyContext"))
-  const onOpenParcels = useLatestCallback(async (surveyId: string) => {
-    const loaded = await actions.startEditSurvey(surveyId)
-    if (!loaded) return
-    const startPoint = resolveDisplayCoordinates(state.surveyDetails[surveyId]?.display_location)
-    navigation.navigate("surveyParcels", {
-      surveyId,
-      mode: "edit",
-      ...(startPoint && { startPoint }),
-    })
-  })
+  // D-15: the summary's weather card opens the Contexte page scrolled to the weather section.
+  const onOpenConditions = useLatestCallback(() =>
+    navigation.navigate("surveyContext", { section: "conditions" }),
+  )
+  const onOpenParcelsPage = useLatestCallback(() => navigation.navigate("surveyParcelsPage"))
   const onOpenScore = useLatestCallback(() => navigation.navigate("surveyScore"))
   const onOpenFactor = useLatestCallback(async (surveyId: string, factor: FactorKey) => {
     const loaded = await actions.startEditSurvey(surveyId)
@@ -73,7 +71,11 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
         onDiscardSurvey={actions.discardSurvey}
         onRenameSurvey={actions.renameSurvey}
         onOpenContext={onOpenContext}
-        onOpenParcels={onOpenParcels}
+        onOpenConditions={onOpenConditions}
+        conditionsLoading={weatherState.inFlightIds.has(state.selectedSurvey.id)}
+        conditionsOffline={offline}
+        onChangeNote={actions.updateSurveyNote}
+        onOpenParcelsPage={onOpenParcelsPage}
         onOpenScore={onOpenScore}
         onOpenFactor={onOpenFactor}
         onOpenHistory={onOpenHistory}

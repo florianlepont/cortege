@@ -8,7 +8,7 @@ import type {
   SearchPlaceItem,
 } from "@cortege/ibp-domain"
 import { brandSpacing4, brandTypeScale } from "../../app/brand-tokens"
-import type { SearchGroupKey } from "../../app/global-search"
+import type { OwnSurveyMatch, SearchGroupKey } from "../../app/global-search"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import type {
   SurveyAttachmentFilter,
@@ -19,7 +19,6 @@ import type {
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import type { SearchGroupError, SearchGroupStatus } from "../../hooks/useSearchGroup"
 import { fr } from "../../i18n"
-import type { LocalSurvey } from "../../storage/types"
 import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../../ui/frame-large-title"
@@ -41,7 +40,7 @@ const SKELETON_ROWS = 3
 
 /** The member's own surveys of a "Mes relevés" list, after the query and the chips. */
 export type MineListProps = {
-  surveys: readonly LocalSurvey[]
+  surveys: readonly OwnSurveyMatch[]
   /** Surveys whose name matches the query before the chips filter: 0 tells "no result" from "filtered out". */
   matchCount: number
   surveyDetails: Readonly<Record<string, SurveyDetailResponse | undefined>>
@@ -78,7 +77,7 @@ export type SearchGroupListScreenProps = {
 }
 
 type ListItem =
-  | { kind: "mine"; survey: LocalSurvey }
+  | { kind: "mine"; survey: OwnSurveyMatch }
   | { kind: "member"; item: SearchMemberItem }
   | { kind: "community"; item: CommunitySurveyItem }
   | { kind: "place"; item: SearchPlaceItem }
@@ -102,7 +101,7 @@ function keyOf(row: ListItem): string {
 function buildItems(
   group: SearchGroupKey,
   memberName: string | undefined,
-  mine: readonly LocalSurvey[] | undefined,
+  mine: readonly OwnSurveyMatch[] | undefined,
   community: SearchCommunityResponse | null | undefined,
   places: readonly SearchPlaceItem[] | undefined,
   parcels: readonly SearchParcelItem[] | undefined,

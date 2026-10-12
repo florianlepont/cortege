@@ -152,6 +152,178 @@ describe("Community survey page (e2e)", () => {
     expect(history[0].author_name).not.toBe(history[1].author_name)
   })
 
+  describe("note, weather and factor annotations (phase 27)", () => {
+    const NOTE = "Placette humide au nord, chênaie claire."
+    const WEATHER = {
+      sky: "cloudy",
+      temperature_c: 8.5,
+      wind_kmh: 12,
+      rain_24h_mm: 2.4,
+      observed_at: "2026-10-11T07:00:00.000Z",
+      requested_at: "2026-10-11T07:05:00.000Z",
+      source: "meteo_france",
+      edited: ["sky"],
+    }
+    const ANNOTATIONS = { A: { doubt: true, note: "Chêne sessile ou pédonculé ?" } }
+
+    async function createNotedSurvey(
+      token: string,
+      id: string,
+      parcelId: string,
+      submit: boolean,
+      note: string,
+    ) {
+      const versionNumber = await getNextVersionNumber(db, parcelId)
+      await request(app.getHttpServer())
+        .post("/v1/surveys")
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          id,
+          sync_version: 1,
+          site_name: "Bois annoté",
+          status: "draft",
+          visibility: "private",
+          parcel_id: parcelId,
+          observation_year: 2025,
+          version_number: versionNumber,
+          region_version: "ACA",
+          vegetation_stage: "collineen",
+          factors: { ...validDirectFactors, annotations: ANNOTATIONS },
+          survey_note: note,
+          weather: WEATHER,
+          location: { source: "gps", lat: 47.2, lng: 1.2 },
+        })
+        .expect(201)
+      if (submit) {
+        await request(app.getHttpServer())
+          .post(`/v1/surveys/${id}/submit`)
+          .set("Authorization", `Bearer ${token}`)
+          .expect(201)
+      }
+    }
+
+    it("shows another member the note, the weather and the doubt of a finished survey", async () => {
+      const authorToken = await loginTestUser(app, "e2e-community-note-author")
+      const readerToken = await loginTestUser(app, "e2e-community-note-reader")
+      const seed = uniqueCoordSeed()
+      const parcelId = await resolveParcel(
+        app,
+        authorToken,
+        47.6 + seed / 100000,
+        1.6 + seed / 100000,
+      )
+      const firstId = uniqueId("e2e-community-note-1")
+      const secondId = uniqueId("e2e-community-note-2")
+      await createNotedSurvey(authorToken, firstId, parcelId, true, `${NOTE} (premier)`)
+      await createNotedSurvey(authorToken, secondId, parcelId, true, NOTE)
+
+      const response = await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${secondId}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(200)
+
+      expect(response.body.survey_note).toBe(NOTE)
+      expect(response.body.weather).toEqual(WEATHER)
+      expect(response.body.factor_annotations).toEqual(ANNOTATIONS)
+      const history = response.body.history as Array<{
+        survey_id: string
+        survey_note: string | null
+      }>
+      expect(history.map((item) => [item.survey_id, item.survey_note])).toEqual([
+        [firstId, `${NOTE} (premier)`],
+        [secondId, NOTE],
+      ])
+    })
+
+    it("returns null fields for a finished survey that has no note", async () => {
+      const token = await loginTestUser(app, "e2e-community-note-none")
+      const readerToken = await loginTestUser(app, "e2e-community-note-none-reader")
+      const parcelId = await resolveParcel(
+        app,
+        token,
+        47.65 + uniqueCoordSeed() / 100000,
+        1.65 + uniqueCoordSeed() / 100000,
+      )
+      const surveyId = uniqueId("e2e-community-note-null")
+      await createSurvey(token, surveyId, "Sans note", parcelId, true)
+
+      const response = await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${surveyId}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(200)
+      expect(response.body.survey_note).toBeNull()
+      expect(response.body.weather).toBeNull()
+      expect(response.body.factor_annotations).toBeNull()
+    })
+
+    it("never shows a draft's note, weather or doubt to another member (404, absent from the history)", async () => {
+      const authorToken = await loginTestUser(app, "e2e-community-note-draft-author")
+      const readerToken = await loginTestUser(app, "e2e-community-note-draft-reader")
+      const parcelId = await resolveParcel(
+        app,
+        authorToken,
+        47.7 + uniqueCoordSeed() / 100000,
+        1.7 + uniqueCoordSeed() / 100000,
+      )
+      const submittedId = uniqueId("e2e-community-note-sub")
+      const draftId = uniqueId("e2e-community-note-draft")
+      await createNotedSurvey(authorToken, submittedId, parcelId, true, "Note publiee")
+      await createNotedSurvey(authorToken, draftId, parcelId, false, "Note de brouillon secrete")
+
+      await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${draftId}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(404)
+
+      const detail = await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${submittedId}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(200)
+      expect(JSON.stringify(detail.body)).not.toContain("brouillon secrete")
+      expect(
+        (detail.body.history as Array<{ survey_id: string }>).map((item) => item.survey_id),
+      ).toEqual([submittedId])
+    })
+
+    it("keeps the note and the factor notes after the author deletes the account (D-24)", async () => {
+      const authorToken = await loginTestUser(app, "e2e-community-note-delete-author")
+      const readerToken = await loginTestUser(app, "e2e-community-note-delete-reader")
+      const parcelId = await resolveParcel(
+        app,
+        authorToken,
+        47.75 + uniqueCoordSeed() / 100000,
+        1.75 + uniqueCoordSeed() / 100000,
+      )
+      const surveyId = uniqueId("e2e-community-note-retained")
+      await createNotedSurvey(authorToken, surveyId, parcelId, true, NOTE)
+
+      const before = await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${surveyId}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(200)
+      expect(typeof before.body.author_name).toBe("string")
+
+      await request(app.getHttpServer())
+        .delete("/v1/me")
+        .set("Authorization", `Bearer ${authorToken}`)
+        .expect(204)
+
+      const after = await request(app.getHttpServer())
+        .get(`/v1/public/community-surveys/${surveyId}`)
+        .set("Authorization", `Bearer ${readerToken}`)
+        .expect(200)
+      expect(after.body.author_name).toBeNull()
+      expect(after.body.survey_note).toBe(NOTE)
+      expect(after.body.weather).toEqual(WEATHER)
+      expect(after.body.factor_annotations).toEqual(ANNOTATIONS)
+      expect(
+        (after.body.history as Array<{ survey_id: string; survey_note: string | null }>).map(
+          (item) => [item.survey_id, item.survey_note],
+        ),
+      ).toEqual([[surveyId, NOTE]])
+    })
+  })
+
   it("answers 404 for a draft, an unknown survey and a deleted one", async () => {
     const token = await loginTestUser(app, "e2e-community-detail-404")
     const parcelId = await resolveParcel(app, token, 47.4 + uniqueCoordSeed() / 100000, 1.4)

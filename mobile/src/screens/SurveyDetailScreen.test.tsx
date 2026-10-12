@@ -12,6 +12,7 @@ import { FrameLargeTitleContext } from "../ui/frame-large-title"
 import { SurveyDetailScreen } from "./SurveyDetailScreen"
 import { useSurveyDetailHeader } from "./survey-detail/useSurveyDetailHeader"
 import { useHistoryRow } from "./survey-detail/useHistoryRow"
+import { useSurveyConditions } from "./survey-detail/conditions/useSurveyConditions"
 import type { SurveyDetailScreenProps } from "./survey-detail/screen-props"
 import { PAGE_END_MARGIN } from "./survey-detail/useSubPageContent"
 
@@ -35,6 +36,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  mockConditions = { note: null, weather: null, parcelIds: [], loaded: true }
   notificationAsync.mockClear()
   mockCtaKind = "hidden"
   mockScrollTo.mockClear()
@@ -84,6 +86,21 @@ jest.mock("./survey-detail/SurveyOfflineMapRow", () => ({
 }))
 jest.mock("./survey-detail/PhotosStrip", () => ({ PhotosStrip: "PhotosStrip" }))
 jest.mock("./survey-detail/ScoreCard", () => ({ ScoreCard: "ScoreCard" }))
+jest.mock("./survey-detail/conditions/WeatherCard", () => ({
+  WeatherCard: "WeatherCard",
+}))
+jest.mock("./survey-detail/conditions/SurveyNoteCard", () => ({
+  SurveyNoteCard: "SurveyNoteCard",
+}))
+let mockConditions: {
+  note: string | null
+  weather: Record<string, unknown> | null
+  parcelIds: string[]
+  loaded: boolean
+} = { note: null, weather: null, parcelIds: [], loaded: true }
+jest.mock("./survey-detail/conditions/useSurveyConditions", () => ({
+  useSurveyConditions: jest.fn(() => mockConditions),
+}))
 jest.mock("./survey-detail/SummaryHeader", () => ({ SummaryHeader: "SummaryHeader" }))
 jest.mock("./survey-detail/useSurveyDetailHeader", () => ({ useSurveyDetailHeader: jest.fn() }))
 jest.mock("./survey-detail/useHistoryRow", () => ({ useHistoryRow: jest.fn() }))
@@ -142,7 +159,11 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onDiscardSurvey: jest.fn(),
     onRenameSurvey: jest.fn(),
     onOpenContext: jest.fn(),
-    onOpenParcels: jest.fn(),
+    onOpenConditions: jest.fn(),
+    conditionsLoading: false,
+    conditionsOffline: false,
+    onChangeNote: jest.fn(),
+    onOpenParcelsPage: jest.fn(),
     onOpenScore: jest.fn(),
     onOpenFactor: jest.fn(),
     onOpenHistory: jest.fn(),
@@ -177,8 +198,85 @@ describe("SurveyDetailScreen summary", () => {
     expect(byType(tree, "AppCard")).toHaveLength(0)
     const scroll = byType(tree, "ScrollView")[0]
     const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
-    // The score card is followed straight by the photos.
-    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("ScoreCard") + 1)
+    // D-41: the score card comes first, the compact weather card right below it, then the photos.
+    expect(order.indexOf("ScoreCard")).toBeGreaterThan(order.indexOf("SummaryHeader"))
+    expect(order.indexOf("WeatherCard")).toBe(order.indexOf("ScoreCard") + 1)
+    expect(order.indexOf("PhotosStrip")).toBe(order.indexOf("WeatherCard") + 1)
+    expect(order.indexOf("ParcelMapCard")).toBe(order.indexOf("PhotosStrip") + 1)
+  })
+
+  test("D-38: the survey note is the last card, after the rows and the survey actions", () => {
+    const scroll = byType(mount("draft"), "ScrollView")[0]
+    const order = scroll.children.map((child) => String((child as ReactTestInstance).type))
+    expect(order.indexOf("SurveyNoteCard")).toBeGreaterThan(order.indexOf("AppGroupedList"))
+    expect(order.indexOf("SurveyNoteCard")).toBeGreaterThan(order.indexOf("DetailActions"))
+    expect(order.indexOf("SurveyNoteCard")).toBe(order.length - 1)
+  })
+
+  test("D-17: the weather card gets the weather read from the draft, no note", () => {
+    mockConditions = {
+      note: "Sol détrempé",
+      weather: { sky: "cloudy", temperature_c: 14 },
+      parcelIds: [],
+      loaded: true,
+    }
+    const tree = mount("draft")
+    const card = byType(tree, "WeatherCard")[0]
+    expect(card.props.note).toBeUndefined()
+    expect(card.props.weather).toEqual({ sky: "cloudy", temperature_c: 14 })
+    expect(useSurveyConditions).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: "survey-1" }),
+    )
+  })
+
+  test("D-33: the note card gets the stored note, editable while the survey can be edited", () => {
+    mockConditions = { note: "Sol détrempé", weather: null, parcelIds: [], loaded: true }
+    const draftProps = makeProps("draft")
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...draftProps} />)
+    })
+    const draft = byType(tree!, "SurveyNoteCard")[0]
+    expect(draft.props).toMatchObject({ editable: true, loaded: true, stored: "Sol détrempé" })
+    act(() => draft.props.onChangeNote("Nouvelle note"))
+    expect(draftProps.onChangeNote).toHaveBeenCalledWith("survey-1", "Nouvelle note")
+  })
+
+  test("D-33: the page lets the keyboard lift the note and closes it on drag", () => {
+    const scroll = byType(mount("draft"), "ScrollView")[0]
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled")
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag")
+    expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true)
+  })
+
+  test("the card is told whether the survey is submitted, whether a lookup runs and whether it is offline", () => {
+    const draft = byType(mount("draft"), "WeatherCard")[0]
+    expect(draft.props.submitted).toBe(false)
+    expect(draft.props.loading).toBe(false)
+    expect(draft.props.offline).toBe(false)
+
+    const props = { ...makeProps("submitted"), conditionsLoading: true, conditionsOffline: true }
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    const submitted = byType(tree!, "WeatherCard")[0]
+    expect(submitted.props.submitted).toBe(true)
+    expect(submitted.props.loading).toBe(true)
+    expect(submitted.props.offline).toBe(true)
+  })
+
+  test("pressing the card opens the Conditions section, the context row opens the page as is", () => {
+    const props = makeProps("draft")
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    act(() => byType(tree!, "WeatherCard")[0].props.onOpen())
+    expect(props.onOpenConditions).toHaveBeenCalledTimes(1)
+    expect(props.onOpenContext).not.toHaveBeenCalled()
+    const contextRow = byType(tree!, "AppGroupedList")[0].props.sections[0].rows[0]
+    expect(contextRow.onPress).toBe(props.onOpenContext)
   })
 
   test("the source of the summary no longer imports the chart", () => {
@@ -187,13 +285,35 @@ describe("SurveyDetailScreen summary", () => {
     expect(source).not.toContain("factorPointsFromEntries")
   })
 
-  test("keeps the one bottom button and the three rows", () => {
+  test("keeps the one bottom button and the four rows (D-32)", () => {
     const tree = mount("draft")
     expect(byType(tree, "FinishBar")).toHaveLength(1)
-    expect(byType(tree, "AppGroupedList")[0].props.sections[0].rows).toHaveLength(3)
+    const rows = byType(tree, "AppGroupedList")[0].props.sections[0].rows
+    expect(rows).toHaveLength(4)
+    expect(rows.map((row: { label: string }) => row.label)).toEqual([
+      "Contexte",
+      "Parcelles",
+      "Facteurs IBP",
+      fr.surveyDetail.rows.history,
+    ])
   })
 
-  test("D-01: the third row is the parcel history, with its value, spoken label and press", () => {
+  test("D-32: the map card and the Parcelles row open the Parcelles page, the offline row moved there", () => {
+    const props = makeProps("draft")
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    expect(byType(tree!, "ParcelMapCard")[0].props.onPress).toBe(props.onOpenParcelsPage)
+    expect(byType(tree!, "SurveyOfflineMapRow")).toHaveLength(0)
+    const rows = byType(tree!, "AppGroupedList")[0].props.sections[0].rows
+    expect(rows[1].key).toBe("parcels")
+    expect(rows[1].onPress).toBe(props.onOpenParcelsPage)
+    expect(rows[1].value).toBe("Aucune")
+    expect(rows[2].onPress).toBe(props.onOpenScore)
+  })
+
+  test("D-01: the last row is the parcel history, with its value, spoken label and press", () => {
     const props = makeProps("draft")
     let tree: ReactTestRenderer | undefined
     act(() => {
@@ -203,8 +323,13 @@ describe("SurveyDetailScreen summary", () => {
       })
     })
     const rows = byType(tree!, "AppGroupedList")[0].props.sections[0].rows
-    expect(rows.map((row: { key: string }) => row.key)).toEqual(["context", "score", "history"])
-    expect(rows[2]).toEqual({
+    expect(rows.map((row: { key: string }) => row.key)).toEqual([
+      "context",
+      "parcels",
+      "score",
+      "history",
+    ])
+    expect(rows[3]).toEqual({
       key: "history",
       label: fr.surveyDetail.rows.history,
       value: "21 \u2192 34",
@@ -228,7 +353,7 @@ describe("SurveyDetailScreen summary", () => {
       pressable: false,
     }
     const tree = mount("draft")
-    const row = byType(tree, "AppGroupedList")[0].props.sections[0].rows[2]
+    const row = byType(tree, "AppGroupedList")[0].props.sections[0].rows[3]
     expect(row.onPress).toBeUndefined()
     expect(row.disabled).toBeUndefined()
     expect(row.value).toBe("Aucune parcelle")

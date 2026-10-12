@@ -64,6 +64,11 @@ export const searchFr = {
     memberMeta: ({ count }: { count: number }) =>
       `${count} ${plural(count, "relevé terminé", "relevés terminés")}`,
     memberA11y: ({ name, meta }: { name: string; meta: string }) => `Membre : ${name}, ${meta}`,
+    // Phase 27 (D-07): an own survey found through its note and not its name.
+    matchedInNote: "Trouvé dans la note",
+    // 27-15: the hint follows the row's date line, and ends the spoken sentence.
+    matchedInNoteMeta: (meta: string) => `${meta} · Trouvé dans la note`,
+    matchedInNoteA11y: (sentence: string) => `${sentence}, Trouvé dans la note`,
   },
   start: {
     recentTitle: "Recherches récentes",

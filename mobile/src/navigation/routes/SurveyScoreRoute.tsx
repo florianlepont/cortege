@@ -8,7 +8,7 @@ import type { SurveyScoreRouteProps } from "../types"
 import { ScreenFrame } from "../../ui/ScreenFrame"
 import { usesNativeLargeTitle } from "../large-title"
 
-/** "Score IBP": the total, the sub-scores and the factors of the selected survey. */
+/** "Facteurs IBP": the total, the sub-scores and the factors of the selected survey. */
 export const SurveyScoreRoute = memo(function SurveyScoreRoute({
   navigation,
 }: SurveyScoreRouteProps) {

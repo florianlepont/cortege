@@ -81,6 +81,8 @@ jest.mock("react-native", () => {
     View: "View",
     ScrollView: "ScrollView",
     KeyboardAvoidingView: "KeyboardAvoidingView",
+    // Phase 27: the factor pager listens to the keyboard to step its chrome aside.
+    Keyboard: { addListener: () => ({ remove: () => undefined }), dismiss: () => undefined },
     Pressable,
     Text: "Text",
     ActivityIndicator: "ActivityIndicator",
@@ -120,6 +122,9 @@ jest.mock("../../screens/SurveyDetailScreen", () => ({
 }))
 jest.mock("../../screens/SurveyContextScreen", () => ({
   SurveyContextScreen: mockScreen("surveyContext"),
+}))
+jest.mock("../../screens/SurveyParcelsScreen", () => ({
+  SurveyParcelsScreen: mockScreen("surveyParcelsPage"),
 }))
 jest.mock("../../screens/SurveyScoreScreen", () => ({
   SurveyScoreScreen: mockScreen("surveyScore"),
@@ -242,6 +247,10 @@ import {
   NearbyParcelsProvider,
   type NearbyParcelsContextValue,
 } from "../../state/nearby-parcels-context"
+import {
+  WeatherPrefillProvider,
+  type WeatherPrefillContextValue,
+} from "../../state/weather-context"
 import { PublicMapReloadContext, createPublicMapReloadSignal } from "../public-map-reload"
 import { SurveysStackConfigContext } from "../stacks/surveys-stack-config"
 import { AccountRoute } from "./AccountRoute"
@@ -252,7 +261,9 @@ import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
 import { OfflineAreasRoute } from "./OfflineAreasRoute"
 import { SettingsRoute } from "./SettingsRoute"
+import type { SurveysStackParamList } from "../types"
 import { SurveyContextRoute } from "./SurveyContextRoute"
+import { SurveyParcelsPageRoute } from "./SurveyParcelsPageRoute"
 import { SurveyDetailRoute } from "./SurveyDetailRoute"
 import { SurveyHistoryRoute } from "./SurveyHistoryRoute"
 import { SurveyJournalRoute } from "./SurveyJournalRoute"
@@ -287,6 +298,7 @@ type Fixture = {
   surveys: SurveysContextValue
   form: SurveyFormContextValue
   nearby: NearbyParcelsContextValue
+  weather: WeatherPrefillContextValue
   autosaveStatus: AutosaveStatus
 }
 
@@ -306,7 +318,9 @@ const survey = {
   completion_rate: 10,
 }
 
-function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): Fixture {
+function makeFixture(
+  overrides: { startEdit?: boolean; saved?: boolean; editingSurveyId?: string | null } = {},
+): Fixture {
   const startEdit = overrides.startEdit ?? true
   const saved = overrides.saved ?? true
   return {
@@ -410,10 +424,11 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
           I: null,
           J: null,
         },
+        factorAnnotations: {},
         formErrors: { siteName: null },
         draftInput: {},
         formMode: "create",
-        editingSurveyId: null,
+        editingSurveyId: overrides.editingSurveyId ?? null,
       } as unknown as SurveyFormContextValue["state"],
       actions: actionsProxy({ saveSurveyEdits: saved, createDraft: saved }),
     },
@@ -428,6 +443,13 @@ function makeFixture(overrides: { startEdit?: boolean; saved?: boolean } = {}): 
         error: false,
       },
       load: jest.fn(async () => undefined),
+    },
+    weather: {
+      state: { inFlightIds: new Set<string>(), unavailableIds: new Set<string>() },
+      actions: {
+        rememberPoint: jest.fn(async () => undefined),
+        retry: jest.fn(async () => undefined),
+      },
     },
     autosaveStatus: { state: "idle", savedAt: null },
   }
@@ -445,7 +467,9 @@ function Providers({ fixture, children }: { fixture: Fixture; children: React.Re
                   <SurveyFormProvider value={fixture.form}>
                     <AutosaveStatusProvider value={fixture.autosaveStatus}>
                       <NearbyParcelsProvider value={fixture.nearby}>
-                        {children}
+                        <WeatherPrefillProvider value={fixture.weather}>
+                          {children}
+                        </WeatherPrefillProvider>
                       </NearbyParcelsProvider>
                     </AutosaveStatusProvider>
                   </SurveyFormProvider>
@@ -1055,7 +1079,63 @@ describe("SurveyDetailRoute", () => {
     expect(props("surveyDetail").observerName).toBe("Marie Lepont")
   })
 
-  test("passes the survey and opens the three sub-pages", async () => {
+  test("tells the summary whether a weather lookup runs for the selected survey (phase 27)", async () => {
+    const idle = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={idle}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsLoading).toBe(false)
+
+    const busy = withSelection(makeFixture())
+    busy.weather.state = { inFlightIds: new Set(["s-01"]), unavailableIds: new Set() }
+    await mount(
+      <Providers fixture={busy}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsLoading).toBe(true)
+
+    const other = withSelection(makeFixture())
+    other.weather.state = { inFlightIds: new Set(["another"]), unavailableIds: new Set() }
+    await mount(
+      <Providers fixture={other}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsLoading).toBe(false)
+  })
+
+  test("tells the summary whether the phone is offline, for the calm empty weather card (D-40)", async () => {
+    const fixture = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsOffline).toBe(false)
+
+    mockIsOffline.value = true
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").conditionsOffline).toBe(true)
+  })
+
+  test("hands the summary's note card the silent draft write of the note (D-33)", async () => {
+    const fixture = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyDetailRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyDetail").onChangeNote).toBe(fixture.surveys.actions.updateSurveyNote)
+  })
+
+  test("passes the survey and opens the sub-pages", async () => {
     const fixture = withSelection(makeFixture())
     const navigation = makeNavigation()
     await mount(
@@ -1076,6 +1156,12 @@ describe("SurveyDetailRoute", () => {
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyContext")
     await act(async () => {
+      callback("surveyDetail", "onOpenConditions")()
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyContext", {
+      section: "conditions",
+    })
+    await act(async () => {
       callback("surveyDetail", "onOpenScore")()
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyScore")
@@ -1094,49 +1180,12 @@ describe("SurveyDetailRoute", () => {
     expect(fixture.surveys.actions.startEditSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFactorDetail", { factor: "C" })
 
-    // The map card opens the parcel editor directly (OA-96).
+    // D-32: the map card and the Parcelles row open the Parcelles page, not the editor.
     await act(async () => {
-      await callback("surveyDetail", "onOpenParcels")("s-01")
+      callback("surveyDetail", "onOpenParcelsPage")()
     })
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
-      surveyId: "s-01",
-      mode: "edit",
-    })
-  })
-
-  test("the parcel editor starts on the survey's own position when its page knows it", async () => {
-    const base = withSelection(makeFixture())
-    base.surveys.state.surveyDetails = {
-      "s-01": { display_location: { lat: 48.656, lng: 2.503 } },
-    } as unknown as typeof base.surveys.state.surveyDetails
-    const navigation = makeNavigation()
-    await mount(
-      <Providers fixture={base}>
-        <SurveyDetailRoute navigation={navigation as never} route={{} as never} />
-      </Providers>,
-    )
-    await act(async () => {
-      await callback("surveyDetail", "onOpenParcels")("s-01")
-    })
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
-      surveyId: "s-01",
-      mode: "edit",
-      startPoint: { lat: 48.656, lng: 2.503 },
-    })
-  })
-
-  test("the map card stays on the page when the survey cannot be loaded for editing", async () => {
-    const base = withSelection(makeFixture({ startEdit: false }))
-    const navigation = makeNavigation()
-    await mount(
-      <Providers fixture={base}>
-        <SurveyDetailRoute navigation={navigation as never} route={{} as never} />
-      </Providers>,
-    )
-    await act(async () => {
-      await callback("surveyDetail", "onOpenParcels")("s-01")
-    })
-    expect(navigation.navigate).not.toHaveBeenCalled()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcelsPage")
+    expect(props("surveyDetail").onOpenParcels).toBeUndefined()
   })
 
   test("the next-factor button stays on the page when the survey cannot be loaded", async () => {
@@ -1155,6 +1204,13 @@ describe("SurveyDetailRoute", () => {
 })
 
 describe("SurveyContextRoute", () => {
+  test("the route takes no param or the optional section param (compile-time check)", () => {
+    const plain: SurveysStackParamList["surveyContext"] = undefined
+    const withSection: SurveysStackParamList["surveyContext"] = { section: "conditions" }
+    const empty: SurveysStackParamList["surveyContext"] = {}
+    expect([plain, withSection, empty]).toHaveLength(3)
+  })
+
   function withSelection(fixture: Fixture): Fixture {
     return {
       ...fixture,
@@ -1174,18 +1230,129 @@ describe("SurveyContextRoute", () => {
     expect(mockScreenProps.surveyContext).toBeUndefined()
   })
 
+  test("hands the page the method updates and no parcel editing (D-32)", async () => {
+    const fixture = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").onUpdateIbpCas).toBe(fixture.surveys.actions.updateIbpCas)
+    expect(props("surveyContext").onOpenParcels).toBeUndefined()
+  })
+
+  test("hands the weather section its silent draft write and the two weather links (phase 27)", async () => {
+    const fixture = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").onChangeNote).toBeUndefined()
+    expect(props("surveyContext").onEditWeather).toBe(fixture.surveys.actions.updateSurveyWeather)
+    expect(props("surveyContext").onRetryWeather).toBe(fixture.weather.actions.retry)
+  })
+
+  test("tells the page what the weather request of the survey is doing", async () => {
+    const idle = withSelection(makeFixture())
+    await mount(
+      <Providers fixture={idle}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").weatherRequest).toEqual({
+      online: true,
+      inFlight: false,
+      unavailable: false,
+    })
+
+    const busy = withSelection(makeFixture())
+    busy.weather.state = {
+      inFlightIds: new Set(["s-01"]),
+      unavailableIds: new Set(["s-01", "other"]),
+    }
+    mockIsOffline.value = true
+    await mount(
+      <Providers fixture={busy}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").weatherRequest).toEqual({
+      online: false,
+      inFlight: true,
+      unavailable: true,
+    })
+
+    const elsewhere = withSelection(makeFixture())
+    elsewhere.weather.state = {
+      inFlightIds: new Set(["another-survey"]),
+      unavailableIds: new Set<string>(),
+    }
+    mockIsOffline.value = false
+    await mount(
+      <Providers fixture={elsewhere}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").weatherRequest).toEqual({
+      online: true,
+      inFlight: false,
+      unavailable: false,
+    })
+  })
+
+  test("opens at the top, or scrolled to the Conditions with the section param", async () => {
+    await mount(
+      <Providers fixture={withSelection(makeFixture())}>
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyContext").section).toBeUndefined()
+
+    await mount(
+      <Providers fixture={withSelection(makeFixture())}>
+        <SurveyContextRoute
+          navigation={makeNavigation() as never}
+          route={{ params: { section: "conditions" } } as never}
+        />
+      </Providers>,
+    )
+    expect(props("surveyContext").section).toBe("conditions")
+  })
+})
+
+describe("SurveyParcelsPageRoute", () => {
+  function withSelection(fixture: Fixture): Fixture {
+    return {
+      ...fixture,
+      surveys: {
+        ...fixture.surveys,
+        state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
+      } as unknown as SurveysContextValue,
+    }
+  }
+
+  test("renders nothing until a survey is selected", async () => {
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <SurveyParcelsPageRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(mockScreenProps.surveyParcelsPage).toBeUndefined()
+  })
+
   test("opens the parcel editing once the survey is loaded for editing", async () => {
     const fixture = withSelection(makeFixture())
     const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
-        <SurveyContextRoute navigation={navigation as never} route={{} as never} />
+        <SurveyParcelsPageRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
-    expect(props("surveyContext").onUpdateIbpCas).toBe(fixture.surveys.actions.updateIbpCas)
+    expect(props("surveyParcelsPage").apiUrl).toBe("http://api.test/v1")
 
     await act(async () => {
-      await callback("surveyContext", "onOpenParcels")("s-01")
+      await callback("surveyParcelsPage", "onOpenParcels")("s-01")
     })
     expect(fixture.surveys.actions.startEditSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
@@ -1194,7 +1361,7 @@ describe("SurveyContextRoute", () => {
     })
   })
 
-  test("the context page hands the survey's position to the parcel editor too", async () => {
+  test("the editor starts on the survey's own position when its page knows it", async () => {
     const fixture = withSelection(makeFixture())
     fixture.surveys.state.surveyDetails = {
       "s-01": { display_location: { lat: 48.656, lng: 2.503 } },
@@ -1202,11 +1369,11 @@ describe("SurveyContextRoute", () => {
     const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
-        <SurveyContextRoute navigation={navigation as never} route={{} as never} />
+        <SurveyParcelsPageRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
     await act(async () => {
-      await callback("surveyContext", "onOpenParcels")("s-01")
+      await callback("surveyParcelsPage", "onOpenParcels")("s-01")
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
       surveyId: "s-01",
@@ -1215,16 +1382,16 @@ describe("SurveyContextRoute", () => {
     })
   })
 
-  test("does not navigate when the survey cannot be loaded", async () => {
+  test("does not navigate when the survey cannot be loaded for editing", async () => {
     const fixture = withSelection(makeFixture({ startEdit: false }))
     const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
-        <SurveyContextRoute navigation={navigation as never} route={{} as never} />
+        <SurveyParcelsPageRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
     await act(async () => {
-      await callback("surveyContext", "onOpenParcels")("s-01")
+      await callback("surveyParcelsPage", "onOpenParcels")("s-01")
     })
     expect(navigation.navigate).not.toHaveBeenCalled()
   })
@@ -1741,6 +1908,63 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
       await callback("parcelSelection", "onSave")()
     })
     expect(stay.reset).not.toHaveBeenCalled()
+  })
+
+  test("a saved parcel choice hands the centre of the parcels to the weather hook (phase 27, D-10)", async () => {
+    const point = { lat: 48.1, lng: 2.1 }
+
+    // Wizard: the draft was created when the wizard opened, so the editing id is set.
+    const wizard = makeFixture({ editingSurveyId: "s-new" })
+    await mount(
+      <Providers fixture={wizard}>
+        <ParcelSelectionRoute
+          navigation={makeNavigation() as never}
+          route={{ params: { surveyId: "draft", mode: "wizard" } } as never}
+        />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("parcelSelection", "onSave")(point)
+    })
+    expect(wizard.weather.actions.rememberPoint).toHaveBeenCalledWith("s-new", point)
+
+    // Edit: the same, after saveSurveyEdits.
+    const edit = makeFixture({ editingSurveyId: "s-01" })
+    await mount(
+      <Providers fixture={edit}>
+        <ParcelSelectionRoute
+          navigation={makeNavigation() as never}
+          route={{ params: { surveyId: "s-01", mode: "edit" } } as never}
+        />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("parcelSelection", "onSave")(point)
+    })
+    expect(edit.weather.actions.rememberPoint).toHaveBeenCalledWith("s-01", point)
+  })
+
+  test("no point, no editing id or a failed save leaves the weather hook alone", async () => {
+    const point = { lat: 48.1, lng: 2.1 }
+    const cases = [
+      { fixture: makeFixture({ editingSurveyId: "s-01" }), arg: null },
+      { fixture: makeFixture({ editingSurveyId: null }), arg: point },
+      { fixture: makeFixture({ editingSurveyId: "s-01", saved: false }), arg: point },
+    ]
+    for (const { fixture, arg } of cases) {
+      await mount(
+        <Providers fixture={fixture}>
+          <ParcelSelectionRoute
+            navigation={makeNavigation() as never}
+            route={{ params: { surveyId: "s-01", mode: "edit" } } as never}
+          />
+        </Providers>,
+      )
+      await act(async () => {
+        await callback("parcelSelection", "onSave")(arg)
+      })
+      expect(fixture.weather.actions.rememberPoint).not.toHaveBeenCalled()
+    }
   })
 
   test("the map starts on the position the navigation hands over, null for a new survey", async () => {

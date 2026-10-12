@@ -65,6 +65,7 @@ describe("Parcel history (e2e)", () => {
         region_version: "ACA",
         vegetation_stage: "collineen",
         factors: validDirectFactors,
+        survey_note: "Premier passage, sol tres sec",
         location: { source: "gps", lat: baseLat, lng: baseLng },
       })
       .expect(201)
@@ -113,10 +114,17 @@ describe("Parcel history (e2e)", () => {
       observation_year: number
       version_number: number
       ibp_method_version: string | null
+      survey_note: string | null
     }>
     expect(items.some((item) => item.survey_id === surveyIdV1)).toBe(true)
     expect(items.some((item) => item.survey_id === surveyIdV2)).toBe(true)
+    // Phase 27 (D-06): the note of a submitted survey is on its history item, null when it has none.
+    expect(items.find((item) => item.survey_id === surveyIdV1)?.survey_note).toBe(
+      "Premier passage, sol tres sec",
+    )
+    expect(items.find((item) => item.survey_id === surveyIdV2)?.survey_note).toBeNull()
     for (const item of items) {
+      expect(item).toHaveProperty("survey_note")
       expect(item).toHaveProperty("ibp_method_version")
       expect(item.ibp_method_version === null || typeof item.ibp_method_version === "string").toBe(
         true,

@@ -85,6 +85,7 @@ export class ParcelsService {
       scores: Record<string, unknown>
       factor_results: Record<string, unknown>
       ibp_method_version: string | null
+      survey_note: string | null
       submitted_at: string
     }>
   }> {
@@ -101,6 +102,7 @@ export class ParcelsService {
       scores: Record<string, unknown>
       factor_results: Record<string, unknown>
       ibp_method_version: string | null
+      survey_note: string | null
       submitted_at: string
     }>(
       `SELECT
@@ -110,6 +112,7 @@ export class ParcelsService {
          s.scores,
          s.factor_results,
          s.ibp_method_version,
+         s.survey_note,
          s.submitted_at::text
        FROM surveys s
        JOIN survey_parcels sp

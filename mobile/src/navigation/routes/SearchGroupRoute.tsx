@@ -15,11 +15,13 @@ import {
   COMMUNITY_RESULT_LIMIT,
   PLACES_MIN_LENGTH,
   PLACES_RESULT_LIMIT,
+  SEARCH_MIN_LENGTH,
   isSearchActive,
   matchOwnSurveys,
 } from "../../app/global-search"
 import { normalizeSearchQuery } from "../../app/search-text"
 import { useIsOffline } from "../../hooks/useIsOffline"
+import { useOwnSurveyNotes } from "../../hooks/useOwnSurveyNotes"
 import { useSearchGroup } from "../../hooks/useSearchGroup"
 import { fr } from "../../i18n"
 import { SearchGroupListScreen } from "../../screens/global-search/SearchGroupListScreen"
@@ -92,14 +94,19 @@ export const SearchGroupRoute = memo(function SearchGroupRoute({ route }: Search
     },
   })
 
-  const ownRows = useMemo(
-    () => (group === "mine" ? matchOwnSurveys(state.visibleSurveys, normalized) : []),
-    [group, state.visibleSurveys, normalized],
+  // The notes of the own surveys, read from the phone only for this list and this query (D-07).
+  const ownNotes = useOwnSurveyNotes(
+    group === "mine" && normalized.length >= SEARCH_MIN_LENGTH,
+    state.surveys,
   )
-  // Before the chips: tells "no survey carries this name" from "the chips filter them all out".
+  const ownRows = useMemo(
+    () => (group === "mine" ? matchOwnSurveys(state.visibleSurveys, normalized, ownNotes) : []),
+    [group, state.visibleSurveys, normalized, ownNotes],
+  )
+  // Before the chips: tells "no survey carries this text" from "the chips filter them all out".
   const ownMatchCount = useMemo(
-    () => (group === "mine" ? matchOwnSurveys(state.surveys, normalized).length : 0),
-    [group, state.surveys, normalized],
+    () => (group === "mine" ? matchOwnSurveys(state.surveys, normalized, ownNotes).length : 0),
+    [group, state.surveys, normalized, ownNotes],
   )
 
   const community = group === "community" ? (network.data as SearchCommunityResponse | null) : null

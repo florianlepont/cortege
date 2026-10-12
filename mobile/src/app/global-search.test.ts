@@ -137,6 +137,62 @@ describe("matchOwnSurveys", () => {
   })
 })
 
+describe("matchOwnSurveys with notes (D-07)", () => {
+  const surveys = [
+    survey("s1", "Forêt de Rambouillet"),
+    survey("s2", "Prairie du Nord"),
+    survey("s3", "Lisière sud"),
+  ]
+  const notes = new Map([
+    ["s1", "Sol détrempé ce matin"],
+    ["s2", "Sol détrempé ce matin"],
+    ["s3", "Chablis récent"],
+  ])
+
+  it("finds a survey by its note, accent and case folded, flagged as note-only", () => {
+    const found = matchOwnSurveys(surveys, "SOL detrempe", notes)
+    expect(found.map((s) => s.id)).toEqual(["s1", "s2"])
+    expect(found.every((s) => s.matchedInNote === true)).toBe(true)
+  })
+
+  it("a name match keeps no flag even when its note matches too", () => {
+    const found = matchOwnSurveys(surveys, "foret", new Map([["s1", "Forêt très sèche"]]))
+    expect(found).toHaveLength(1)
+    expect(found[0].id).toBe("s1")
+    expect(found[0].matchedInNote).toBeUndefined()
+    expect(found[0]).toBe(surveys[0])
+  })
+
+  it("keeps the input order across name and note matches", () => {
+    const found = matchOwnSurveys(surveys, "nord", new Map([["s1", "Vent du nord"]]))
+    expect(found.map((s) => [s.id, s.matchedInNote])).toEqual([
+      ["s1", true],
+      ["s2", undefined],
+    ])
+  })
+
+  it("does not mutate the input surveys", () => {
+    matchOwnSurveys(surveys, "chablis", notes)
+    expect("matchedInNote" in surveys[2]).toBe(false)
+  })
+
+  it("without the notes argument the result is exactly the name match", () => {
+    expect(matchOwnSurveys(surveys, "chablis")).toEqual([])
+    expect(matchOwnSurveys(surveys, "prairie").map((s) => s.id)).toEqual(["s2"])
+  })
+
+  it("returns nothing under the minimum length, even with a note", () => {
+    expect(matchOwnSurveys(surveys, "s", new Map([["s1", "sol"]]))).toEqual([])
+  })
+
+  it("never matches the id or a survey that has no note", () => {
+    expect(matchOwnSurveys(surveys, "s3", notes)).toEqual([])
+    expect(
+      matchOwnSurveys(surveys, "chablis", new Map([["s1", "Chablis"]])).map((s) => s.id),
+    ).toEqual(["s1"])
+  })
+})
+
 describe("looksLikeParcelQuery", () => {
   it.each([
     "77186 AB 0123",

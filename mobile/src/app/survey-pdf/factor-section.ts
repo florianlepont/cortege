@@ -1,4 +1,10 @@
-import { FACTOR_KEYS, STAND_FACTOR_KEYS, allowedScoresFor } from "@cortege/ibp-domain"
+import {
+  FACTOR_KEYS,
+  FACTOR_NOTE_MAX_LENGTH,
+  STAND_FACTOR_KEYS,
+  allowedScoresFor,
+  normalizeNoteText,
+} from "@cortege/ibp-domain"
 import type { FactorKey } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
@@ -14,7 +20,8 @@ import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
 // method, A to G under the stand heading and H to J under the context heading, as CNPF orders them.
 // Pure: the class and the points come from `factorEntries` (the app's single result), the chips
 // from the domain's `allowedScoresFor`. No CSS column and no 1 px filled div (the iOS print engine
-// ignores both, measured in plan 25.1-07); borders and flex rows only.
+// ignores both, measured in plan 25.1-07); borders and flex rows only. Phase 27 (D-13, D-17) adds the
+// "Douteux" badge at the end of the head and the observer's own note under the body, display only.
 
 const t = fr.surveyExport
 
@@ -43,6 +50,12 @@ const ITEM_PADDING = 14 // 5 + 5 padding, 2 border, 2 gap
 const SCALE_LINE_HEIGHT = 11
 const SCALE_CHARS_PER_LINE = 110
 const HEADING_HEIGHT = 34
+// The observer's note under the body (phase 27, UI-SPEC 4.3): 8.5 px text on 12 px lines, 6 px
+// above. It runs the full card width (515 - 20 padding - 2 border = 493 px, 4.4 px a character),
+// which is 112 characters a line.
+const USER_NOTE_MARGIN = 6
+const USER_NOTE_LINE_HEIGHT = 12
+const USER_NOTE_CHARS_PER_LINE = 112
 
 type Entry = DisplayedFactorResult | undefined
 
@@ -80,6 +93,17 @@ function observationHeight(lines: ObservationLine[]): number {
 function scaleHeight(scale: string): number {
   const chars = t.factors.scale.length + 1 + scale.length
   return CARD_GAP + wrappedRows(chars, 1, SCALE_CHARS_PER_LINE) * SCALE_LINE_HEIGHT
+}
+
+/** Height of the observer's note: 6 + 12 per line, the lines counted paragraph by paragraph. */
+function userNoteHeight(note: string): number {
+  const lines = note
+    .split("\n")
+    .reduce(
+      (sum, paragraph) => sum + Math.max(1, Math.ceil(paragraph.length / USER_NOTE_CHARS_PER_LINE)),
+      0,
+    )
+  return USER_NOTE_MARGIN + lines * USER_NOTE_LINE_HEIGHT
 }
 
 function observationHtml(line: ObservationLine): string {
@@ -138,19 +162,28 @@ function cardBlock(factor: FactorKey, data: SurveyExportData, palette: PdfPalett
   const result = resultHtml(entry, palette)
   const scale = t.scaleLines[methodKeyOf(data.method.version)][factor]
   const title = fr.labels.factorTitles[factor]
+  // Display only (D-14): the badge and the note never touch the class, the points or the chart.
+  const badge =
+    entry?.doubt === true ? `<span class="factor-badge">${escapeHtml(t.factors.doubt)}</span>` : ""
+  const userNote = normalizeNoteText(entry?.note, FACTOR_NOTE_MAX_LENGTH)
+  const userNoteHtml =
+    userNote === null
+      ? ""
+      : `<p class="factor-user-note"><span class="factor-user-note-caption">${escapeHtml(t.factors.note)}</span> ${escapeHtml(userNote)}</p>\n`
   const html = `<section class="factor-card">
-<div class="factor-head"><span class="factor-letter">${factor}</span><span class="factor-title">${escapeHtml(title)}</span></div>
+<div class="factor-head"><span class="factor-letter">${factor}</span><span class="factor-title">${escapeHtml(title)}</span>${badge}</div>
 <div class="factor-body">
 <div class="factor-obs">${lines.map(observationHtml).join("")}</div>
 <div class="factor-result"><div class="factor-chips">${chipsHtml(factor, result.points)}</div>${result.html}</div>
 </div>
-<p class="factor-scale"><span class="factor-scale-label">${escapeHtml(t.factors.scale)}</span> ${escapeHtml(scale)}</p>
+${userNoteHtml}<p class="factor-scale"><span class="factor-scale-label">${escapeHtml(t.factors.scale)}</span> ${escapeHtml(scale)}</p>
 </section>`
   const height =
     CARD_PADDING +
     CARD_HEAD +
     CARD_GAP +
     Math.max(observationHeight(lines), RESULT_MIN_HEIGHT) +
+    (userNote === null ? 0 : userNoteHeight(userNote)) +
     scaleHeight(scale) +
     CARD_MARGIN
   return { id: `factor-${factor}`, html, height }
@@ -188,6 +221,7 @@ export function factorSectionCss(palette: PdfPalette): string {
 .factor-head { display: flex; align-items: center; height: ${CARD_HEAD}px; }
 .factor-letter { display: block; width: 20px; height: 20px; border-radius: 10px; background: ${palette.accent}; color: ${palette.accentInk}; font-family: ${font.title}; font-size: 11px; line-height: 20px; text-align: center; }
 .factor-title { margin-left: 8px; font-family: ${font.heading}; font-size: 11px; color: ${palette.ink}; }
+.factor-badge { flex: none; box-sizing: border-box; margin-left: auto; padding: 0 6px; border: 1px solid ${palette.warning}; border-radius: 6px; background: ${palette.warningSoft}; font-family: ${font.label}; font-size: 8px; line-height: 14px; color: ${palette.warning}; }
 .factor-body { display: flex; margin-top: ${CARD_GAP}px; }
 .factor-obs { flex: 1; padding-right: 12px; }
 .factor-result { flex: none; width: 170px; }
@@ -203,6 +237,8 @@ export function factorSectionCss(palette: PdfPalette): string {
 .factor-chip-on { border-color: ${palette.accent}; background: ${palette.accent}; color: ${palette.accentInk}; }
 .factor-class { margin-top: 4px; font-family: ${font.body}; font-size: 8.5px; line-height: 12px; color: ${palette.ink}; }
 .factor-missing { font-family: ${font.label}; color: ${palette.alert}; }
+.factor-user-note { margin: ${USER_NOTE_MARGIN}px 0 0; font-family: ${font.body}; font-size: 8.5px; line-height: ${USER_NOTE_LINE_HEIGHT}px; color: ${palette.ink}; white-space: pre-wrap; overflow-wrap: anywhere; }
+.factor-user-note-caption { font-family: ${font.label}; color: ${palette.inkMuted}; }
 .factor-scale { margin: ${CARD_GAP}px 0 0; font-family: ${font.body}; font-size: 7.5px; line-height: ${SCALE_LINE_HEIGHT}px; color: ${palette.inkMuted}; }
 .factor-scale-label { font-family: ${font.label}; color: ${palette.ink}; }
 `

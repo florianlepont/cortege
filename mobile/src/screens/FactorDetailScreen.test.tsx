@@ -2,6 +2,7 @@ import React from "react"
 import renderer, { act } from "react-test-renderer"
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2, type IbpMethodVersion } from "@cortege/ibp-domain"
 import type { FactorField, FactorKey } from "../app/types"
+import { FACTOR_TITLES } from "../app/constants"
 import { fr } from "../i18n"
 import { defaultTheme } from "../app/theme"
 import { FactorDetailScreen } from "./FactorDetailScreen"
@@ -102,6 +103,23 @@ jest.mock("./FactorAGenusRecognitionEntry", () => {
   }
 })
 
+// Phase 27: the strip is under test in factor-detail/DoubtNoteStrip.test.tsx; here it is a probe.
+jest.mock("./factor-detail/DoubtNoteStrip", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return {
+    DoubtNoteStrip: (props: Record<string, unknown>) =>
+      ReactRef.createElement("DoubtNoteStrip", props),
+  }
+})
+
+const STRIP_PROPS = {
+  doubt: false,
+  note: "",
+  onChangeDoubt: jest.fn(),
+  onChangeNote: jest.fn(),
+  onCommitNote: jest.fn(),
+}
+
 const field = (label: string, overrides: Partial<FactorField> = {}): FactorField => ({
   label,
   value: "",
@@ -128,6 +146,7 @@ const renderDetail = (
         retainedScore={null}
         methodVersion={methodVersion}
         onOpenHelp={onOpenHelp}
+        {...STRIP_PROPS}
       />,
     )
   })
@@ -221,6 +240,7 @@ describe("FactorDetailScreen fields", () => {
           retainedScore={null}
           methodVersion={IBP_METHOD_V3_2}
           onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
         />,
       )
     })
@@ -267,6 +287,7 @@ describe("FactorDetailScreen selections (D-12, D-09)", () => {
           retainedScore={null}
           methodVersion={methodVersion}
           onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
         />,
       )
     })
@@ -407,6 +428,7 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
           retainedScore={retainedScore as never}
           methodVersion={IBP_METHOD_V3_2}
           onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
         />,
       )
     })
@@ -470,5 +492,84 @@ describe("FactorDetailScreen variant I hierarchy, field sizes unchanged (12.2-15
     expect(styles.input).toEqual({ paddingHorizontal: 14, paddingVertical: 12 })
     expect(styles.sheetClose.width).toBe(44)
     expect(styles.sheetClose.height).toBe(44)
+  })
+})
+
+describe("FactorDetailScreen strip (phase 27, D-16)", () => {
+  const renderWith = (
+    overrides: Partial<typeof STRIP_PROPS> = {},
+    retainedScore: { selected_class: string; score: number } | null = null,
+  ) => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <FactorDetailScreen
+          factor="C"
+          fields={[field("bmg_count"), field("bmm_count"), field("surface_ha")]}
+          retainedScore={retainedScore as never}
+          methodVersion={IBP_METHOD_V3_2}
+          onOpenHelp={jest.fn()}
+          {...STRIP_PROPS}
+          {...overrides}
+        />,
+      )
+    })
+    return tree
+  }
+  const stripOf = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findByType("DoubtNoteStrip" as unknown as React.ElementType)
+  const scoreText = (tree: renderer.ReactTestRenderer) =>
+    JSON.stringify(
+      tree.root
+        .findAll((n) => (n.type as unknown) === "View" && n.props.testID === "factor-score-line")[0]
+        .findAll((n) => (n.type as unknown) === "Text")
+        .map((n) => n.props.children),
+    )
+
+  test("sits between the score line and the help link", () => {
+    const tree = renderWith()
+    const screen = tree.root
+      .findByType(FactorDetailScreen)
+      .findAll((n) => (n.type as unknown) === "View")[0]
+    // Each child of the root View is a mocked composite (View, AppPressable, the probe): the
+    // host node under it carries the identity.
+    const names = screen.children
+      .filter((child): child is renderer.ReactTestInstance => typeof child !== "string")
+      .map((child) =>
+        child.props.onCommitNote
+          ? "strip"
+          : (child.props.testID ?? child.props.accessibilityLabel ?? "other"),
+      )
+    const scoreIndex = names.indexOf("factor-score-line")
+    const helpIndex = names.indexOf(fr.factorDetail.helpLink)
+    const stripIndex = names.indexOf("strip")
+    expect(scoreIndex).toBeGreaterThanOrEqual(0)
+    expect(stripIndex).toBe(scoreIndex + 1)
+    expect(helpIndex).toBe(stripIndex + 1)
+  })
+
+  test("hands the factor, its title, the doubt, the note and the callbacks to the strip", () => {
+    const callbacks = {
+      onChangeDoubt: jest.fn(),
+      onChangeNote: jest.fn(),
+      onCommitNote: jest.fn(),
+    }
+    const strip = stripOf(renderWith({ doubt: true, note: "Vu en mai", ...callbacks }))
+    expect(strip.props.factor).toBe("C")
+    expect(strip.props.title).toBe(FACTOR_TITLES.C)
+    expect(strip.props.doubt).toBe(true)
+    expect(strip.props.note).toBe("Vu en mai")
+    expect(strip.props.onChangeDoubt).toBe(callbacks.onChangeDoubt)
+    expect(strip.props.onChangeNote).toBe(callbacks.onChangeNote)
+    expect(strip.props.onCommitNote).toBe(callbacks.onCommitNote)
+  })
+
+  test("the score line reads the same with and without a doubt or a note (D-14)", () => {
+    const plain = scoreText(renderWith())
+    const doubtful = scoreText(renderWith({ doubt: true, note: "Un doute" }))
+    expect(doubtful).toBe(plain)
+    expect(plain).toContain(fr.factorDetail.pending)
+    const scored = { selected_class: "S2", score: 2 }
+    expect(scoreText(renderWith({ doubt: true }, scored))).toBe(scoreText(renderWith({}, scored)))
   })
 })

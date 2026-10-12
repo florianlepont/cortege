@@ -107,6 +107,29 @@ export const surveyExportFr = {
     typeCount: "Nombre de types",
     aquaticTypes: "Types de milieux aquatiques",
     rockyTypes: "Types de milieux rocheux",
+    // Phase 27 (D-13): the doubt badge and the observer's note under a factor card.
+    doubt: "Douteux",
+    note: "Note",
+  },
+  // Phase 27 (D-18, D-26): the conditions block, printed only when there is a weather or a note.
+  conditions: {
+    heading: "Conditions du relevé",
+    weather: "Météo",
+    source: "Source de la météo",
+    note: "Note du relevé",
+    weatherSentence: ({ line, time }: { line: string; time: string | null }) =>
+      time === null ? `${line}.` : `${line}, observée à ${time}.`,
+    sourceValue: {
+      provider: "Météo-France",
+      // With the date of the data (D-31: the licence asks for it next to the source).
+      providerDated: ({ date, time }: { date: string; time: string }) =>
+        `Météo-France, mesure du ${date} à ${time}`,
+      // The sky is the observer's, never the provider's (D-37).
+      providerObserverSky: "Météo-France, ciel saisi par l'observateur",
+      providerObserverSkyDated: ({ date, time }: { date: string; time: string }) =>
+        `Météo-France, mesure du ${date} à ${time}, ciel saisi par l'observateur`,
+      manual: "Ciel saisi par l'observateur",
+    },
   },
   // The "Score =" column of the CNPF sheet (v3.2) and the on-screen hints (v3.0), as display text.
   // The retained class and points printed next to them always come from the domain result.
