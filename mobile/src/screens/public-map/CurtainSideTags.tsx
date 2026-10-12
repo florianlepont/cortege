@@ -18,11 +18,11 @@ const TAG_GLYPH_SIZE = 14
 const CHEVRON_OPACITY = 0.5
 
 export type CurtainSideTagsProps = {
-  /** The line's x, in points from the left edge (UI-thread value, shared with the handle). */
+  /** The line's x, in points from the left edge (UI-thread value, shared with the grabber). */
   lineX: SharedValue<number>
   /** The width of the map area. */
   width: number
-  /** The y of the knob's centre (`knobCenterY(height)`): the tags are centred on it. */
+  /** The y of the grabber's centre (`grabberCenterY(height)`): the tags are centred on it. */
   knobTop: number
   /** Short names of the layers on each side ("Plan", "Photos 1950"). */
   leftName: string

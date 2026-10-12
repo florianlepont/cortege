@@ -30,7 +30,6 @@ export type MapLayersActions = {
   /** The second map's side is derived: the side whose layer the Explorer map does not show. */
   startCompare: (compare: { sideA: BaseLayerKey; sideB: BaseLayerKey; x: number }) => void
   setSide: (side: "A" | "B", key: BaseLayerKey) => void
-  moveLine: (x: number) => void
   /** Ends the comparison; the kept side becomes the base (and the saved preference when it can). */
   quitCompare: (keep: "A" | "B") => void
   toggleOverlay: () => void
@@ -83,7 +82,6 @@ export function useMapLayersState({
         secondSide: secondSideFor(sideA, sideB, displayed),
       }),
     setSide: (side, key) => dispatch({ type: "setSide", side, key }),
-    moveLine: (x) => dispatch({ type: "moveLine", x }),
     quitCompare: (keep) => {
       if (!state.compare) return
       const kept = keep === "A" ? state.compare.sideA : state.compare.sideB

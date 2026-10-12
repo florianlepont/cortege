@@ -23,7 +23,7 @@ export type CompareState = {
   sideB: BaseLayerKey
   /** The side drawn by the second map; the Explorer map draws the other one. */
   secondSide: "left" | "right"
-  /** The line's x position, in points from the map's left edge. */
+  /** The start of the line's ease (points from the map's left edge); the line then rests at the centre. */
   x: number
 }
 
@@ -53,7 +53,6 @@ export type MapLayersAction =
       x: number
     }
   | { type: "setSide"; side: "A" | "B"; key: BaseLayerKey }
-  | { type: "moveLine"; x: number }
   | { type: "quitCompare"; keep: "A" | "B" }
   | { type: "toggleOverlay" }
   | { type: "setParcels"; mode: ParcelsMode }
@@ -116,9 +115,6 @@ export function mapLayersReducer(state: MapLayersState, action: MapLayersAction)
             ? { ...state.compare, sideA: action.key }
             : { ...state.compare, sideB: action.key },
       }
-    case "moveLine":
-      if (!state.compare) return state
-      return { ...state, compare: { ...state.compare, x: action.x } }
     case "quitCompare": {
       if (!state.compare) return state
       const kept = action.keep === "A" ? state.compare.sideA : state.compare.sideB

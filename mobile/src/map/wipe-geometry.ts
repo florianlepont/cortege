@@ -90,25 +90,6 @@ export function edgeExitKeeps(x: number, width: number): "A" | "B" | null {
   return null
 }
 
-/** The line position as a percent of the width (the screen reader value), 0 to 100. */
-export function linePercent(x: number, width: number): number {
-  "worklet"
-  if (width <= 0) return 0
-  return clampTo((x / width) * 100, 0, 100)
-}
-
-/** The clamped line position for a percent of the width. */
-export function lineFromPercent(percent: number, width: number): number {
-  "worklet"
-  return clampLine((clampTo(percent, 0, 100) / 100) * width, width)
-}
-
-/** A percent moved by `delta` points, kept within 0 and 100 (the increment and decrement actions). */
-export function stepLinePercent(percent: number, delta: number): number {
-  "worklet"
-  return clampTo(percent + delta, 0, 100)
-}
-
 /** The widest a side tag may be: its visible side minus the gap to the line and the outer air. */
 export function tagMaxWidth(side: "left" | "right", lineX: number, width: number): number {
   "worklet"

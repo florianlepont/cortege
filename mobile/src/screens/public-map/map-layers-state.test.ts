@@ -132,17 +132,15 @@ describe("comparison", () => {
     expect(layerOfSide(INITIAL_MAP_LAYERS_STATE, "map", "right")).toBe("map")
   })
 
-  test("setSide changes one side only and moveLine the position", () => {
+  test("setSide changes one side only and leaves the start of the line alone", () => {
     const b = run([{ type: "setSide", side: "B", key: "carte-1950" }], right)
     expect(b.compare).toMatchObject({ sideA: "map", sideB: "carte-1950", x: 200 })
     const a = run([{ type: "setSide", side: "A", key: "etat-major" }], right)
     expect(a.compare).toMatchObject({ sideA: "etat-major", sideB: "photos-1950" })
-    expect(run([{ type: "moveLine", x: 120 }], right).compare?.x).toBe(120)
   })
 
-  test("setSide and moveLine do nothing without a comparison", () => {
+  test("setSide does nothing without a comparison", () => {
     expect(run([{ type: "setSide", side: "A", key: "map" }])).toBe(INITIAL_MAP_LAYERS_STATE)
-    expect(run([{ type: "moveLine", x: 10 }])).toBe(INITIAL_MAP_LAYERS_STATE)
   })
 
   test("quitting keeps a side as the base: an old base is the override", () => {

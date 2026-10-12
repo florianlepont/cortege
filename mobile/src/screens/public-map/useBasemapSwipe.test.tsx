@@ -144,7 +144,6 @@ function makeLayers({ base = "map", swipeMode = true }: Setup = {}): MapLayers {
       commitBase: jest.fn(),
       startCompare: jest.fn(),
       setSide: jest.fn(),
-      moveLine: jest.fn(),
       quitCompare: jest.fn(),
       toggleOverlay: jest.fn(),
       setParcels: jest.fn(),

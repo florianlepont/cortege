@@ -3,12 +3,9 @@ import {
   EDGE_EXIT_FRACTION,
   edgeExitKeeps,
   LINE_MARGIN,
-  lineFromPercent,
-  linePercent,
   revealedFraction,
   settledStrip,
   sideBounds,
-  stepLinePercent,
   TAG_GAP,
   TAG_MIN_WIDTH,
   tagMaxWidth,
@@ -43,6 +40,10 @@ describe("wipeStrip", () => {
     expect(wipeStrip([200, 400], -30, 100)).toEqual({ left: 200, right: 400 })
     expect(wipeStrip([0, 200], 30, 350)).toEqual({ left: 0, right: 200 })
     expect(wipeStrip([0, 400], -50, -20)).toEqual({ left: 0, right: 400 })
+  })
+
+  it("falls back to the start of the side for a finger that is not a number", () => {
+    expect(wipeStrip([100, 400], 50, Number.NaN)).toEqual({ left: 100, right: 100 })
   })
 })
 
@@ -109,25 +110,6 @@ describe("edgeExitKeeps", () => {
     expect(edgeExitKeeps(99, 500)).toBe("B")
     expect(edgeExitKeeps(100, 500)).toBeNull()
     expect(edgeExitKeeps(401, 500)).toBe("A")
-  })
-})
-
-describe("line percent helpers", () => {
-  it("convert between points and percent", () => {
-    expect(linePercent(200, 400)).toBe(50)
-    expect(linePercent(0, 400)).toBe(0)
-    expect(linePercent(500, 400)).toBe(100)
-    expect(linePercent(10, 0)).toBe(0)
-    expect(linePercent(Number.NaN, 400)).toBe(0)
-    expect(lineFromPercent(50, 400)).toBe(200)
-    expect(lineFromPercent(0, 400)).toBe(22)
-    expect(lineFromPercent(100, 400)).toBe(378)
-  })
-
-  it("step the line by a number of percent points within 0 and 100", () => {
-    expect(stepLinePercent(50, 10)).toBe(60)
-    expect(stepLinePercent(95, 10)).toBe(100)
-    expect(stepLinePercent(5, -10)).toBe(0)
   })
 })
 

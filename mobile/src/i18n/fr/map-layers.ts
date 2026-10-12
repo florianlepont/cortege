@@ -145,10 +145,6 @@ export const mapLayersFr = {
     hintExit: "Lâchez pour quitter la comparaison",
     actionKeepLeft: "Quitter en gardant le fond de gauche",
     actionKeepRight: "Quitter en gardant le fond de droite",
-    actionLeftNext: "Fond suivant à gauche",
-    actionLeftPrevious: "Fond précédent à gauche",
-    actionRightNext: "Fond suivant à droite",
-    actionRightPrevious: "Fond précédent à droite",
     announceStart: ({ left, right }: { left: string; right: string }) =>
       `Comparaison : ${left} à gauche, ${right} à droite.`,
   },

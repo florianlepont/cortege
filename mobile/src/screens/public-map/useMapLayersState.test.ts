@@ -90,7 +90,7 @@ describe("useMapLayersState", () => {
     expect(left.result.current.secondMapLayer).toBe("satellite")
   })
 
-  test("setSide changes one side and never writes the preference; moveLine sets x", async () => {
+  test("setSide changes one side and never writes the preference", async () => {
     const { result } = await setup()
     await act(async () =>
       result.current.actions.startCompare({ sideA: "map", sideB: "photos-1950", x: 200 }),
@@ -99,8 +99,7 @@ describe("useMapLayersState", () => {
     expect(result.current.state.compare).toMatchObject({ sideA: "map", sideB: "carte-1950" })
     await act(async () => result.current.actions.setSide("A", "satellite"))
     expect(result.current.state.compare).toMatchObject({ sideA: "satellite", sideB: "carte-1950" })
-    await act(async () => result.current.actions.moveLine(120))
-    expect(result.current.state.compare?.x).toBe(120)
+    expect(result.current.state.compare?.x).toBe(200)
     expect(saveBasemap).not.toHaveBeenCalled()
   })
 
@@ -172,7 +171,6 @@ describe("useMapLayersState", () => {
       actions.commitBase("map")
       actions.startCompare({ sideA: "map", sideB: "satellite", x: 1 })
       actions.setSide("A", "map")
-      actions.moveLine(1)
       actions.quitCompare("B")
       actions.toggleOverlay()
       actions.setParcels("none")
