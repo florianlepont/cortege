@@ -1632,9 +1632,6 @@ Rules:
   survey summary and the PDF.
 - The weather is a convenience: a failure never blocks saving or submitting a survey, and an empty
   weather is valid.
-- The measured station distance cap, which values the provider fills and its units are added to this
-  section once the provider has been checked with the owner's key (plan 27-22); this section states
-  only the contract that does not depend on it.
 
 Response `200`, an observation (the values are illustrative):
 
@@ -1668,6 +1665,33 @@ Errors:
 - `429` the `weather` throttle
 - `503` `{ "code": "weather_provider_unavailable", "message": "..." }` when the provider fails, times
   out or refuses the call. Every provider failure, a quota refusal included, gives this same answer.
+
+**Météo-France observations (spike 2026-10)**: facts measured on the real provider on 2026-10-12
+(details in `api/test/fixtures/meteofrance/README.md`). The distance caps below are proposed
+defaults that the owner may change; each is one default in the server configuration.
+
+- Two station lookups (D-29). `temperature_c`, `wind_kmh` and the hourly rain come from the nearest
+  hourly station. The default distance cap is 30 km (`WEATHER_MAX_STATION_DISTANCE_KM`, D-19): at the
+  three forest test points the nearest hourly station was 1.7 km, 2.7 km and 25.1 km away, so the
+  25 km first written would have left the Landes point empty by 0.13 km. Beyond the cap the answer is
+  `reason: no_station`, with no error. The model fallback (AROME) is not used.
+- `sky` is filled by the provider, from the nearest SYNOP station (the synoptic network, about 190
+  stations in France, one report every 3 hours): present weather first (fog, rain, snow,
+  thunderstorm), else the total cloud cover. `rain_24h_mm` is filled by the provider, from the same
+  station (its 24 hour rain). The SYNOP station has its own cap, 50 km by default; it is not yet
+  verified against the real density of that network. Beyond it, or when the station reports no cloud
+  cover, `sky` and `rain_24h_mm` come back `null` and stay for manual entry (D-21). Because that
+  network is sparse, these two values will often be `null`; this is expected, not a failure.
+- Units. The provider serves the temperature in Kelvin, the wind in m/s and the rain in mm. The
+  server converts them: the API answers `temperature_c` in degrees Celsius, `wind_kmh` in
+  kilometres per hour and `rain_24h_mm` in millimetres, and `observed_at` as a UTC instant. The
+  hourly station often reports no wind; `wind_kmh` is then `null`.
+- Retention. D-20 stays: a time older than 24 hours answers `too_old` without a provider call. The
+  provider was seen serving readings up to about 96 hours back, which is undocumented and is not
+  relied upon (D-28). A reading whose own observation time is more than 90 minutes from `at` is not
+  used.
+- Not yet confirmed (to be confirmed by the owner): the provider quota and the portal terms of use
+  about storing the values in survey records and in the PDF (open question O6).
 
 ## 6) Analytics (V2 Addendum, Out of MVP)
 
