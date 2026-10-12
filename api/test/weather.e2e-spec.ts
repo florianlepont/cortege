@@ -76,6 +76,24 @@ describe("Weather endpoint (e2e)", () => {
     expect(observation.rain_24h_mm).toBeLessThanOrEqual(WEATHER_RANGES.rain_24h_mm.max)
   })
 
+  it("answers a time in the second half of an hour with the elapsed hour, never a later one", async () => {
+    // Three hours ago, forced to minute 40: the nearest hour is the next one, still in the past.
+    const at = new Date(Date.now() - 3 * HOUR_MS)
+    at.setUTCMinutes(40, 0, 0)
+    const response = await get({ lat: "48.40", lng: "2.70", at: at.toISOString() }).expect(200)
+    const observation = response.body.observation as Observation
+    expect(Date.parse(observation.observed_at)).toBeLessThanOrEqual(Date.now())
+    expect(Math.abs(Date.parse(observation.observed_at) - at.getTime())).toBeLessThanOrEqual(
+      90 * 60 * 1000,
+    )
+  })
+
+  it("answers now with a reading that is not later than now", async () => {
+    const response = await get({ lat: "48.40", lng: "2.70" }).expect(200)
+    const observation = response.body.observation as Observation
+    expect(Date.parse(observation.observed_at)).toBeLessThanOrEqual(Date.now())
+  })
+
   it("answers the same body twice for the same request", async () => {
     const at = new Date(Date.now() - 2 * HOUR_MS).toISOString()
     const first = await get({ lat: "48.40", lng: "2.70", at }).expect(200)

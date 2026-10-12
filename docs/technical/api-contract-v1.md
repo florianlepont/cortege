@@ -1617,6 +1617,10 @@ Rules:
   station and no weather, with no error.
 - A reading counts only when its own observation time is within the configured tolerance of `at`
   (`WEATHER_TIME_TOLERANCE_MINUTES`, 90 minutes by default). A reading farther away is ignored.
+- The lookup uses the last published hour: the provider inserts an hour's readings about 2 minutes
+  after the hour, so the hour asked is never later than the last full hour already elapsed. When
+  that hour has no reading yet, the lookup falls back one hour, and never returns a reading outside
+  the tolerance of the requested time.
 - No answer for a time older than 24 hours (D-20): the provider keeps only the last day, so a survey
   older than that stays empty and editable by hand. This is checked before any provider call.
 - Each value of the observation (`sky`, `temperature_c`, `wind_kmh`, `rain_24h_mm`) may be `null`

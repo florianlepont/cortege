@@ -3,6 +3,7 @@ import {
   haversineKm,
   isWithinTolerance,
   mergeStationReadings,
+  floorUtcHour,
   nearestUtcHour,
   rankStations,
   roundOneDecimal,
@@ -98,6 +99,29 @@ describe("nearestUtcHour", () => {
   it("does not mutate its argument", () => {
     const at = new Date("2026-10-11T08:40:00Z")
     nearestUtcHour(at)
+    expect(at.toISOString()).toBe("2026-10-11T08:40:00.000Z")
+  })
+})
+
+describe("floorUtcHour", () => {
+  it("keeps an exact UTC hour", () => {
+    expect(floorUtcHour(new Date("2026-10-11T14:00:00.000Z")).toISOString()).toBe(
+      "2026-10-11T14:00:00.000Z",
+    )
+  })
+
+  it("rounds down, even at the very end of the hour", () => {
+    expect(floorUtcHour(new Date("2026-10-11T14:59:59.999Z")).toISOString()).toBe(
+      "2026-10-11T14:00:00.000Z",
+    )
+    expect(floorUtcHour(new Date("2026-10-11T14:34:00Z")).toISOString()).toBe(
+      "2026-10-11T14:00:00.000Z",
+    )
+  })
+
+  it("does not mutate its argument", () => {
+    const at = new Date("2026-10-11T08:40:00Z")
+    floorUtcHour(at)
     expect(at.toISOString()).toBe("2026-10-11T08:40:00.000Z")
   })
 })

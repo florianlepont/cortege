@@ -1,7 +1,11 @@
 import { Inject, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { LRUCache } from "lru-cache"
-import { WEATHER_LOOKBACK_MS, type WeatherResponse } from "@cortege/ibp-domain"
+import {
+  WEATHER_LOOKBACK_MS,
+  type WeatherObservation,
+  type WeatherResponse,
+} from "@cortege/ibp-domain"
 import { appConfigOf } from "../config/app-config"
 import type { AppConfig } from "../config/config.types"
 import {
@@ -12,6 +16,7 @@ import {
   type WeatherStation,
 } from "./weather-provider"
 import {
+  floorUtcHour,
   isWithinTolerance,
   mergeStationReadings,
   nearestUtcHour,
@@ -21,22 +26,29 @@ import {
 
 // Cache and outbound protection (D-08, T-27-18). Stations change rarely: one hour. A reading of a
 // finished hour is final for the whole 24 h window the provider keeps; the current hour may still
-// be refined, so it lives 10 minutes; an hour with no reading is asked again after 10 minutes.
+// be refined, so it lives 10 minutes; an hour with no reading is asked again after 2 minutes,
+// because the provider inserts an hour's readings about 2 minutes after the hour (a not yet
+// published hour must not stay cached as empty).
 // The cache is keyed by station id and UTC hour, never by coordinates, so every member shares it.
 export const WEATHER_STATIONS_TTL_MS = 60 * 60 * 1000
 export const WEATHER_PAST_HOUR_TTL_MS = WEATHER_LOOKBACK_MS
 export const WEATHER_CURRENT_HOUR_TTL_MS = 10 * 60 * 1000
-export const WEATHER_EMPTY_TTL_MS = 10 * 60 * 1000
+export const WEATHER_EMPTY_TTL_MS = 2 * 60 * 1000
 export const WEATHER_CACHE_MAX_ENTRIES = 2000
 export const MAX_CONCURRENT_WEATHER_CALLS = 4
 // D-19: the answer merges at most the three nearest stations.
 const MAX_STATIONS = 3
+const HOUR_MS = 60 * 60 * 1000
 
 /** The SYNOP station chosen for a lookup, as a station reading for the merge (D-29). */
 type SynopLookup = {
   entry: { station: RankedStation; reading: WeatherReading } | null
   anyInCap: boolean
 }
+
+/** One hour's answer: an observation, or why there is none. */
+type HourAnswer = { observation: WeatherObservation } | { observation: null; reason: NoDataReason }
+type NoDataReason = "no_station" | "no_data"
 
 /** What the cache stores: boxed, because a null reading is a valid, cacheable answer. */
 type Boxed = { value: unknown }
@@ -115,9 +127,51 @@ export class WeatherService {
     }
 
     const requested = new Date(at)
-    const hour = nearestUtcHour(requested)
+    // The provider inserts an hour's readings about 2 minutes after the hour, so an hour that has
+    // not fully elapsed is never asked: the nearest hour is capped at the last full hour (the
+    // second half of an hour would otherwise round up to an unpublished one).
+    const lastElapsed = floorUtcHour(new Date(now))
+    const nearest = nearestUtcHour(requested)
+    const hour = nearest.getTime() > lastElapsed.getTime() ? lastElapsed : nearest
+    const hours = [hour]
+    if (hour.getTime() === lastElapsed.getTime()) {
+      // The last elapsed hour may not be published yet (:00 to about :05): try the one before,
+      // which still has to be inside the time tolerance of the requested time.
+      hours.push(new Date(hour.getTime() - HOUR_MS))
+    }
+
+    let reason: NoDataReason | null = null
+    for (const candidate of hours) {
+      const answer = await this.lookupHour({
+        provider,
+        ranked,
+        readSynop,
+        point,
+        requested,
+        hour: candidate,
+        isCurrentHour: candidate.getTime() >= lastElapsed.getTime(),
+      })
+      if (answer.observation !== null) {
+        return { observation: answer.observation }
+      }
+      // no_data wins over no_station: an empty (unpublished) hour hides the SYNOP stations.
+      reason = reason === "no_data" ? reason : answer.reason
+    }
+    return { observation: null, reason: reason ?? "no_data" }
+  }
+
+  /** The answer of one UTC hour: the readings of the ranked stations and the SYNOP report. */
+  private async lookupHour(input: {
+    provider: WeatherProvider
+    ranked: RankedStation[]
+    readSynop: WeatherProvider["readSynopReports"]
+    point: { lat: number; lng: number }
+    requested: Date
+    hour: Date
+    isCurrentHour: boolean
+  }): Promise<HourAnswer> {
+    const { provider, ranked, readSynop, point, requested, hour, isCurrentHour } = input
     const hourIso = hour.toISOString()
-    const isCurrentHour = hour.getTime() >= nearestUtcHour(new Date(now)).getTime()
     const ttlOf = (empty: boolean): number =>
       empty
         ? WEATHER_EMPTY_TTL_MS

@@ -1,13 +1,17 @@
 import { Logger, ServiceUnavailableException } from "@nestjs/common"
 import { WEATHER_LOOKBACK_MS } from "@cortege/ibp-domain"
-import { MAX_CONCURRENT_WEATHER_CALLS, WeatherService } from "../src/surveys/weather.service"
+import {
+  MAX_CONCURRENT_WEATHER_CALLS,
+  WEATHER_EMPTY_TTL_MS,
+  WeatherService,
+} from "../src/surveys/weather.service"
 import type {
   SynopReport,
   WeatherProvider,
   WeatherReading,
   WeatherStation,
 } from "../src/surveys/weather-provider"
-import { nearestUtcHour } from "../src/surveys/weather-stations"
+import { floorUtcHour, nearestUtcHour } from "../src/surveys/weather-stations"
 import { buildTestConfigService } from "./config-helper"
 
 const HOUR_MS = 60 * 60 * 1000
@@ -109,12 +113,12 @@ describe("WeatherService", () => {
     it("treats a future time as now", async () => {
       const provider = fakeProvider()
       const service = build(provider)
-      const before = nearestUtcHour(new Date()).toISOString()
+      const before = floorUtcHour(new Date()).toISOString()
       const result = await service.lookup({
         ...POINT,
         at: new Date(Date.now() + 3 * HOUR_MS).toISOString(),
       })
-      const after = nearestUtcHour(new Date()).toISOString()
+      const after = floorUtcHour(new Date()).toISOString()
       const requested = provider.readHourly.mock.calls[0][1].toISOString()
       expect([before, after]).toContain(requested)
       expect(result.observation).not.toBeNull()
@@ -223,6 +227,117 @@ describe("WeatherService", () => {
       expect(provider.readHourly.mock.calls[0][1].toISOString()).toBe(
         nearestUtcHour(at).toISOString(),
       )
+    })
+  })
+
+  describe("published hour (the provider inserts a reading about 2 minutes after its hour)", () => {
+    const NOW = Date.parse("2026-10-12T14:34:00.000Z")
+
+    /** A provider that has published the hours up to `lastPublished` (inclusive) and nothing later. */
+    function publishedUpTo(lastPublished: string, stations: WeatherStation[] = [NEAR]) {
+      const provider = fakeProvider(stations)
+      provider.readHourly.mockImplementation(async (_id: string, hour: Date) =>
+        hour.getTime() <= Date.parse(lastPublished) ? full(hour) : null,
+      )
+      return provider
+    }
+
+    beforeEach(() => {
+      jest.spyOn(Date, "now").mockReturnValue(NOW)
+    })
+
+    it("never asks an hour that is not yet elapsed: 14:34Z is answered by the 14:00Z reading", async () => {
+      const provider = publishedUpTo("2026-10-12T14:00:00.000Z")
+      const service = build(provider)
+      const result = await service.lookup({ ...POINT, at: new Date(NOW).toISOString() })
+      expect(result.observation?.observed_at).toBe("2026-10-12T14:00:00.000Z")
+      expect(provider.readHourly.mock.calls.map((call) => call[1].toISOString())).toEqual([
+        "2026-10-12T14:00:00.000Z",
+      ])
+    })
+
+    it("treats an absent time (now) the same way", async () => {
+      const provider = publishedUpTo("2026-10-12T14:00:00.000Z")
+      const service = build(provider)
+      const result = await service.lookup(POINT)
+      expect(result.observation?.observed_at).toBe("2026-10-12T14:00:00.000Z")
+    })
+
+    it("falls back to the previous hour when the last elapsed hour is not published yet", async () => {
+      jest.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T14:01:00.000Z"))
+      const provider = publishedUpTo("2026-10-12T13:00:00.000Z")
+      const service = build(provider)
+      const result = await service.lookup({ ...POINT, at: "2026-10-12T14:01:00.000Z" })
+      expect(result.observation?.observed_at).toBe("2026-10-12T13:00:00.000Z")
+      expect(provider.readHourly.mock.calls.map((call) => call[1].toISOString())).toEqual([
+        "2026-10-12T14:00:00.000Z",
+        "2026-10-12T13:00:00.000Z",
+      ])
+    })
+
+    it("does not return a fallback reading outside the time tolerance", async () => {
+      // 14:34Z with the 14:00Z reading missing: 13:00Z is 94 minutes away, beyond the 90.
+      const provider = publishedUpTo("2026-10-12T13:00:00.000Z")
+      const service = build(provider)
+      await expect(service.lookup({ ...POINT, at: new Date(NOW).toISOString() })).resolves.toEqual({
+        observation: null,
+        reason: "no_data",
+      })
+    })
+
+    it("does not fall back for a past survey time: its own nearest hour is the only one asked", async () => {
+      const provider = fakeProvider([NEAR])
+      provider.readHourly.mockResolvedValue(null)
+      const service = build(provider)
+      const at = new Date(NOW - 10 * HOUR_MS)
+      await expect(service.lookup({ ...POINT, at: at.toISOString() })).resolves.toEqual({
+        observation: null,
+        reason: "no_data",
+      })
+      expect(provider.readHourly.mock.calls.map((call) => call[1].toISOString())).toEqual([
+        nearestUtcHour(at).toISOString(),
+      ])
+    })
+
+    it("keeps the nearest hour of a past survey time, even in the second half of the hour", async () => {
+      const provider = fakeProvider([NEAR])
+      const service = build(provider)
+      const at = new Date(NOW - 10 * HOUR_MS) // 04:34Z, nearest hour 05:00Z, already elapsed
+      const result = await service.lookup({ ...POINT, at: at.toISOString() })
+      expect(provider.readHourly.mock.calls[0][1].toISOString()).toBe("2026-10-12T05:00:00.000Z")
+      expect(result.observation?.observed_at).toBe("2026-10-12T05:00:00.000Z")
+    })
+
+    it("falls back when the SYNOP reports of the last elapsed hour are not published either", async () => {
+      jest.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-12T14:01:00.000Z"))
+      const provider = fakeProvider([]) as FakeProvider & {
+        readSynopReports: jest.Mock<Promise<SynopReport[]>, [Date]>
+      }
+      const synopStation: WeatherStation = { id: "07100", name: "Syn near", lat: 48.5, lng: 2.7 }
+      provider.readSynopReports = jest.fn(
+        async (hour: Date): Promise<SynopReport[]> =>
+          hour.getTime() <= Date.parse("2026-10-12T13:00:00.000Z")
+            ? [
+                {
+                  station: synopStation,
+                  observed_at: hour.toISOString(),
+                  rain_24h_mm: 2,
+                  sky: "fog",
+                },
+              ]
+            : [],
+      )
+      const service = build(provider)
+      const result = await service.lookup({ ...POINT, at: "2026-10-12T14:01:00.000Z" })
+      expect(result.observation).toMatchObject({
+        observed_at: "2026-10-12T13:00:00.000Z",
+        sky: "fog",
+        rain_24h_mm: 2,
+      })
+    })
+
+    it("keeps the empty-answer TTL short, so an hour published a minute later is asked again soon", () => {
+      expect(WEATHER_EMPTY_TTL_MS).toBeLessThanOrEqual(5 * 60 * 1000)
     })
   })
 
