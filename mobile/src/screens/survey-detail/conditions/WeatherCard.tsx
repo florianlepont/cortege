@@ -15,8 +15,8 @@ import { formatWeatherNumber } from "../../../app/weather"
 import { fr } from "../../../i18n"
 import { AppCard } from "../../../ui/AppCard"
 import { AppText as Text } from "../../../ui/AppText"
-import { EntranceView } from "../../../ui/EntranceView"
 import { RipplePressable } from "../../../ui/RipplePressable"
+import { OptionalEntrance } from "../OptionalEntrance"
 import {
   areaAccessibilityLabel,
   NEUTRAL_GLYPH,
@@ -49,6 +49,8 @@ type WeatherCardProps = {
   submitted: boolean
   /** Opens the Contexte page at its weather section. */
   onOpen: () => void
+  /** Slot of the card in the summary's entrance stagger (D-46); no entrance without it. */
+  entranceIndex?: number
 }
 
 /**
@@ -59,7 +61,7 @@ type WeatherCardProps = {
  * Contexte page, where the big read-out and the sky chips live. With only the observer's sky (D-37)
  * it shows the glyph and the label. A draft with nothing shows a slim invitation (calm when offline,
  * calm and without a promise when the visit is older than 24 h, never an error), a submitted survey with nothing draws nothing. At very large text the lines wrap
- * and the card grows. One entrance, no loop.
+ * and the card grows. One entrance when the page gives it a slot (D-46), no loop.
  */
 export function WeatherCard({
   weather,
@@ -68,6 +70,7 @@ export function WeatherCard({
   visitTooOld,
   submitted,
   onOpen,
+  entranceIndex,
 }: WeatherCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -89,7 +92,7 @@ export function WeatherCard({
   const showSpinner = !hasContent && loading && !visitTooOld
 
   return (
-    <EntranceView index={0}>
+    <OptionalEntrance index={entranceIndex}>
       <View testID="weather-card">
         <AppCard variant="glass" padding={brandSpacing4.smd}>
           <RipplePressable
@@ -186,7 +189,7 @@ export function WeatherCard({
           </RipplePressable>
         </AppCard>
       </View>
-    </EntranceView>
+    </OptionalEntrance>
   )
 }
 

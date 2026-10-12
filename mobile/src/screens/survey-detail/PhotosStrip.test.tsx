@@ -37,6 +37,7 @@ jest.mock("react-native", () => {
     StyleSheet: { create: <T,>(styles: T) => styles, absoluteFill: {} },
   }
 })
+jest.mock("../../ui/EntranceView", () => ({ EntranceView: "EntranceView" }))
 jest.mock("../../ui/GlassSurface", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
@@ -70,7 +71,12 @@ function flatten(style: unknown): Style {
   return (style as Style | undefined | null) ?? {}
 }
 
-function render(photoCount: number, fileState = "local", canEdit = true): ReactTestRenderer {
+function render(
+  photoCount: number,
+  fileState = "local",
+  canEdit = true,
+  entranceIndex?: number,
+): ReactTestRenderer {
   const attachments = Array.from({ length: photoCount }, (_, index) => ({
     id: `a${index}`,
     mime_type: "image/jpeg",
@@ -86,6 +92,7 @@ function render(photoCount: number, fileState = "local", canEdit = true): ReactT
         onTakePhoto={jest.fn()}
         onPickPhoto={jest.fn()}
         onDeleteAttachment={jest.fn()}
+        entranceIndex={entranceIndex}
       />,
     )
   })
@@ -96,6 +103,24 @@ const heading = (tree: ReactTestRenderer): ReactTestInstance =>
   tree.root.findAll(
     (n) => (n.type as unknown) === "Text" && n.props.accessibilityRole === "header",
   )[0]
+
+describe("PhotosStrip entrance (D-46)", () => {
+  const entrances = (tree: ReactTestRenderer) =>
+    tree.root.findAll((n) => (n.type as unknown) === "EntranceView")
+
+  test("the section enters at the slot the page gives it, once", () => {
+    const tree = render(2, "local", true, 4)
+    expect(entrances(tree)).toHaveLength(1)
+    expect(entrances(tree)[0].props.index).toBe(4)
+    expect(entrances(tree)[0].findAllByType("View" as never).length).toBeGreaterThan(0)
+  })
+
+  test("without a slot it draws no wrapper, and a hidden section draws no empty wrapper", () => {
+    expect(entrances(render(2))).toHaveLength(0)
+    const hidden = render(0, "local", false, 4)
+    expect(hidden.toJSON()).toBeNull()
+  })
+})
 
 describe("PhotosStrip heading (D-24)", () => {
   test("is a header with the card title role, the one of AppSectionHeader", () => {

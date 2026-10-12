@@ -3,6 +3,8 @@ import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "r
 import { fr } from "../../../i18n"
 import { SurveyNoteCard } from "./SurveyNoteCard"
 
+jest.mock("../../../ui/EntranceView", () => ({ EntranceView: "EntranceView" }))
+
 jest.mock("react-native", () => {
   const ReactActual = jest.requireActual<typeof import("react")>("react")
   const mockComponent =
@@ -61,6 +63,55 @@ function texts(tree: ReactTestRenderer): string[] {
     .findAll((node) => (node.type as unknown) === "Text")
     .map((node) => [node.props.children].flat(Infinity).join(""))
 }
+
+describe("SurveyNoteCard entrance and keyboard (D-46)", () => {
+  const entrances = (tree: ReactTestRenderer) =>
+    tree.root.findAll((node) => (node.type as unknown) === "EntranceView")
+
+  test("the editable card enters at the slot the page gives it, and not without one", () => {
+    const tree = mount(<SurveyNoteCard {...noteProps({ entranceIndex: 8 })} />)
+    expect(entrances(tree)).toHaveLength(1)
+    expect(entrances(tree)[0].props.index).toBe(8)
+    expect(entrances(mount(<SurveyNoteCard {...noteProps()} />))).toHaveLength(0)
+  })
+
+  test("the read-only card enters too, and an empty one draws no wrapper", () => {
+    const filled = mount(
+      <SurveyNoteCard {...noteProps({ editable: false, stored: "Sol frais", entranceIndex: 8 })} />,
+    )
+    expect(entrances(filled)).toHaveLength(1)
+    const empty = mount(
+      <SurveyNoteCard {...noteProps({ editable: false, stored: "  ", entranceIndex: 8 })} />,
+    )
+    expect(empty.toJSON()).toBeNull()
+    const unloaded = mount(<SurveyNoteCard {...noteProps({ loaded: false, entranceIndex: 8 })} />)
+    expect(unloaded.toJSON()).toBeNull()
+  })
+
+  test("the card is an uncollapsed view the page can measure, and the field tells the page about its focus", () => {
+    const cardRef = jest.fn()
+    const onFieldFocus = jest.fn()
+    let tree!: ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<SurveyNoteCard {...noteProps({ cardRef, onFieldFocus })} />, {
+        createNodeMock: () => ({ measured: true }),
+      })
+    })
+    expect(cardRef).toHaveBeenCalledWith({ measured: true })
+    const card = tree.root.find(
+      (node) => (node.type as unknown) === "View" && node.props.collapsable === false,
+    )
+    expect(
+      card.findAll((node) => node.props.testID === "survey-note-field").length,
+    ).toBeGreaterThan(0)
+
+    expect(onFieldFocus).not.toHaveBeenCalled()
+    act(() => {
+      byTestId(tree, "survey-note-field").props.onFocus({})
+    })
+    expect(onFieldFocus).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe("SurveyNoteCard editable (D-05, D-06, D-33)", () => {
   const note = (tree: ReactTestRenderer) => byTestId(tree, "survey-note-field")
