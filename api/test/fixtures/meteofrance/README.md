@@ -11,23 +11,29 @@ by the capture script during the owner's run or reported by the owner, but not s
 
 ## Authentication
 
-- Mode that worked (reported, script line `auth mode: bearer`): `Authorization: Bearer <token>`. The
-  `apikey` header was refused by the provider ("Invalid Credentials").
-- The credential the owner generated on the portal is a JWT valid **one hour** (reported, decision
-  D-27), not a long-lived key. It is enough for captures and local trials, not for production.
-- Production mode (D-27): the portal's **application id** exchanged for a bearer token (OAuth2 client
-  credentials) at `https://portail-api.meteofrance.fr/token`, the token cached in memory and renewed
-  before it expires, with one renewal on a `401`. The swagger declares an OAuth2 scheme (documented,
-  authorization URL under `public-api.meteofrance.fr/authorize`) and no API-key scheme.
-- The application id has **not been obtained yet**, so the application-id flow is **unverified against
-  the real portal**. What was observed on the token endpoint (reported): a made-up id was answered
-  `401` with the JSON body `{"error":"invalid_client"}`, and no firewall page when the request
-  carries a normal `User-Agent`; a "Request Rejected" firewall page came back when the Basic value
-  was a truncated JWT. Plan 27-12 builds this mode against a mocked token endpoint (D-27); the real
-  end-to-end check waits for the application id (plan 27-21).
-- The variable `METEOFRANCE_API_KEY` is the only credential variable. In production it holds the
-  application id; in a local trial it may hold a ready one-hour token (bearer mode of the script).
-  Its value never appears in a file, a log line or a fixture.
+- **Production mode (reported by the owner, 2026-10-12, corrects D-27): the portal "API Key"** (type
+  API Key, valid 94672800 s = 3 years, expires 2029-10-12) works in the **`apikey` header** (script
+  line `auth mode: apikey`, HTTP 200). One secret in the configuration, no token to renew. Plan
+  27-12 sends it that way (`MeteoFranceHttp` mode `apikey`).
+- The first credential the owner generated was a JWT valid **one hour** (reported, D-27): the
+  `apikey` header refused it ("Invalid Credentials") and `Authorization: Bearer <token>` worked
+  (script line `auth mode: bearer`). It is enough for captures and local trials only; the provider
+  supports it as mode `bearer`.
+- Plan B, mode `application-id`: the portal's **application id** exchanged for a bearer token (OAuth2
+  client credentials) at `https://portail-api.meteofrance.fr/token`, the token cached in memory and
+  renewed before it expires, with one renewal on a `401`. The swagger declares an OAuth2 scheme
+  (documented, authorization URL under `public-api.meteofrance.fr/authorize`) and no API-key scheme,
+  yet the API key was accepted. The application id has **not been obtained**, so this flow is built
+  against a mocked token endpoint and is **unverified against the real portal**. What was observed
+  on the token endpoint (reported): a made-up id was answered `401` with the JSON body
+  `{"error":"invalid_client"}`, and no firewall page when the request carries a normal
+  `User-Agent`; a "Request Rejected" firewall page came back when the Basic value was a truncated
+  JWT.
+- The variable `METEOFRANCE_API_KEY` is the only credential variable. The optional
+  `METEOFRANCE_AUTH_MODE` (`apikey`, `bearer`, `application-id`) chooses how it is sent; when unset,
+  a JWT-shaped value (an API key or a one hour token has three dot-separated parts) is sent as
+  `apikey` and anything else is read as an application id. A one hour token therefore needs
+  `METEOFRANCE_AUTH_MODE=bearer`. Its value never appears in a file, a log line or a fixture.
 
 ## Base URL and endpoints
 

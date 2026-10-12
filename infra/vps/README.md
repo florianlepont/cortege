@@ -299,8 +299,12 @@ dans une PR) :
 
 ```
 WEATHER_PROVIDER=meteofrance
-METEOFRANCE_API_KEY=<la clé du portail Météo-France>
+METEOFRANCE_API_KEY=<la clé d'API du portail Météo-France>
 ```
+
+C'est la clé d'API du portail (type « API Key », valable trois ans) : l'API
+l'envoie dans l'en-tête `apikey`, sans jeton à renouveler. Pas besoin de
+l'identifiant d'application ni du jeton d'une heure (essais locaux seulement).
 
 Puis il lance `check-env.sh` (commande ci-dessous) jusqu'à obtenir `OK`. Une clé
 vide ou restée à `CHANGE_ME` donne seulement une ligne `ATTENTION` : la pile

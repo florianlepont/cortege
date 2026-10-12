@@ -1678,7 +1678,8 @@ defaults that the owner may change; each is one default in the server configurat
 - `sky` is filled by the provider, from the nearest SYNOP station (the synoptic network, about 190
   stations in France, one report every 3 hours): present weather first (fog, rain, snow,
   thunderstorm), else the total cloud cover. `rain_24h_mm` is filled by the provider, from the same
-  station (its 24 hour rain). The SYNOP station has its own cap, 50 km by default; it is not yet
+  station (its 24 hour rain). The SYNOP station has its own cap, 50 km by default
+  (`WEATHER_SYNOP_MAX_DISTANCE_KM`); it is not yet
   verified against the real density of that network. Beyond it, or when the station reports no cloud
   cover, `sky` and `rain_24h_mm` come back `null` and stay for manual entry (D-21). Because that
   network is sparse, these two values will often be `null`; this is expected, not a failure.
