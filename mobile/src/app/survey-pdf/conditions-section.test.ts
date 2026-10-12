@@ -130,7 +130,16 @@ describe("buildConditionsBlock weather rows", () => {
       "Nuageux, 14\u00a0°C, vent 12\u00a0km/h, pluie 2\u00a0mm sur 24\u00a0h, observée à 14:30.",
     )
     expect(html).toContain(">Source de la météo</th>")
-    expect(html).toContain(">Météo-France</td>")
+    // The licence asks for the date of the data next to the source (D-31).
+    expect(html).toContain(">Météo-France, mesure du 10/10/2026 à 14:30</td>")
+  })
+
+  it("prints the source without a date when the measurement time is missing or unreadable", () => {
+    for (const observed_at of [undefined, "garbage"]) {
+      const { html: undated } = required({ note: null, weather: { ...WEATHER, observed_at } })
+      expect(undated).toContain(">Météo-France</td>")
+      expect(undated).not.toContain("mesure du")
+    }
   })
 
   it("prints no note row without a note", () => {
@@ -144,7 +153,9 @@ describe("buildConditionsBlock weather rows", () => {
       weather: { ...WEATHER, temperature_c: 15, edited: ["temperature_c"] },
     })
 
-    expect(edited).toContain("Météo-France, modifiée par l&#39;observateur")
+    expect(edited).toContain(
+      "Météo-France, mesure du 10/10/2026 à 14:30, modifiée par l&#39;observateur",
+    )
   })
 
   it("names the observer when the weather was typed by hand", () => {
@@ -155,6 +166,7 @@ describe("buildConditionsBlock weather rows", () => {
 
     expect(manual).toContain("Saisie par l&#39;observateur")
     expect(manual).not.toContain("Météo-France")
+    expect(manual).not.toContain("mesure du")
   })
 
   it("prints only the values that exist and ends without a time when none was recorded", () => {

@@ -107,6 +107,16 @@ describe("fr.surveyExport conditions", () => {
     expect(conditions.sourceValue.edited).toBe("Météo-France, modifiée par l'observateur")
     expect(conditions.sourceValue.manual).toBe("Saisie par l'observateur")
   })
+
+  test("the dated source values name the measurement (D-31)", () => {
+    const stamp = { date: "12/10/2026", time: "04:00" }
+    expect(conditions.sourceValue.prefilledDated(stamp)).toBe(
+      "Météo-France, mesure du 12/10/2026 à 04:00",
+    )
+    expect(conditions.sourceValue.editedDated(stamp)).toBe(
+      "Météo-France, mesure du 12/10/2026 à 04:00, modifiée par l'observateur",
+    )
+  })
 })
 
 describe("fr.parcelHistory and fr.search additions", () => {

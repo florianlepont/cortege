@@ -91,6 +91,30 @@ export function formatObservationTime(iso: string | null | undefined): string | 
   return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`
 }
 
+/** The local "dd/mm/yyyy" of an ISO timestamp, null for null or an unreadable value. */
+export function formatObservationDate(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return null
+  return `${pad2(date.getDate())}/${pad2(date.getMonth() + 1)}/${date.getFullYear()}`
+}
+
+/** The date and time of a measurement, as the data licence asks them next to the source (D-31). */
+export type ObservationStamp = { date: string; time: string }
+
+/**
+ * The local date and time of the provider's measurement, read from `observed_at` only (the
+ * survey's request time is not the date of the data). Null when it is missing or unreadable: the
+ * source line then stays without a date.
+ */
+export function observationStamp(
+  weather: SurveyWeather | null | undefined,
+): ObservationStamp | null {
+  const date = formatObservationDate(weather?.observed_at)
+  const time = formatObservationTime(weather?.observed_at)
+  return date !== null && time !== null ? { date, time } : null
+}
+
 /** "1430", "14:30", "14h30", " 9:05 " read as "HH:mm" (U-10); null when it is not a time of day. */
 export function parseObservationTimeInput(text: string): string | null {
   const match = /^(\d{1,2})[:hH]?(\d{2})$/.exec(text.trim())
@@ -150,6 +174,18 @@ export function showsProviderAttribution(weather: SurveyWeather | null | undefin
   return VALUE_KEYS.some(
     (key) => !edited.includes(key) && weather[key] !== null && weather[key] !== undefined,
   )
+}
+
+/**
+ * The attribution line under the weather values: "Source : Météo-France, mesure du dd/mm/yyyy à
+ * HH:mm" (D-26, D-31: the licence asks for the source and the date of the data). Null when no
+ * shown value is the provider's (`showsProviderAttribution`); without a readable `observed_at` it
+ * is "Source : Météo-France" alone.
+ */
+export function weatherSourceLine(weather: SurveyWeather | null | undefined): string | null {
+  if (!showsProviderAttribution(weather)) return null
+  const stamp = observationStamp(weather)
+  return stamp ? fr.conditions.weather.sourceDated(stamp) : fr.conditions.weather.source
 }
 
 /**

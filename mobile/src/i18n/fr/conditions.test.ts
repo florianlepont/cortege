@@ -56,6 +56,25 @@ describe("fr.conditions", () => {
     expect(conditions.note.visibility).toBe("Visible par les membres qui peuvent lire ce relevé.")
   })
 
+  test("the attribution carries the date of the data when there is one (D-31)", () => {
+    const stamp = { date: "12/10/2026", time: "04:00" }
+    expect(conditions.weather.sourceDated(stamp)).toBe(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00",
+    )
+    expect(conditions.weather.status.prefilledDated(stamp)).toBe(
+      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00.",
+    )
+    expect(conditions.weather.status.editedDated(stamp)).toBe(
+      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00, modifiée par vous. Vos valeurs ne seront pas remplacées.",
+    )
+    expect(conditions.readOnly.sourcePrefilledDated(stamp)).toBe(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00.",
+    )
+    expect(conditions.readOnly.sourceEditedDated(stamp)).toBe(
+      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00, modifiée par l'observateur.",
+    )
+  })
+
   test("range messages keep the unit glued to the number", () => {
     expect(conditions.weather.fields.temperature.range).toBe("Entre -40 et 55 °C")
     expect(conditions.weather.fields.wind.range).toBe("Entre 0 et 350 km/h")

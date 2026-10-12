@@ -19,7 +19,8 @@ import Animated, {
 import {
   editWeatherValue,
   hasWeatherValues,
-  showsProviderAttribution,
+  observationStamp,
+  weatherSourceLine,
   type WeatherViewState,
 } from "../../../app/weather"
 import {
@@ -96,6 +97,18 @@ function useAnnounceOnChange(text: string) {
   }, [text, visible])
 }
 
+/** The status of a state; the provider states carry the date of the data when it is known (D-31). */
+function statusFor(viewState: WeatherViewState, weather: SurveyWeather | null | undefined) {
+  const stamp = observationStamp(weather)
+  if (stamp && viewState === "prefilled") {
+    return { ...STATUS.prefilled, text: t.status.prefilledDated(stamp) }
+  }
+  if (stamp && viewState === "edited") {
+    return { ...STATUS.edited, text: t.status.editedDated(stamp) }
+  }
+  return STATUS[viewState]
+}
+
 /**
  * The weather card of the Conditions section (D-15, D-09, D-10, D-11, D-26): a status line, the
  * eight sky chips, the four typed values and the attribution line. Every value is editable; an edit
@@ -113,7 +126,8 @@ export function WeatherBlock({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const fade = useProviderFade(weather)
-  const status = STATUS[viewState]
+  const status = statusFor(viewState, weather)
+  const sourceLine = weatherSourceLine(weather)
   const valuesTop = useRef(0)
   const fieldsTop = useRef(0)
   useAnnounceOnChange(status.text)
@@ -217,7 +231,7 @@ export function WeatherBlock({
         </View>
       </Animated.View>
 
-      {showsProviderAttribution(weather) ? <Text style={styles.source}>{t.source}</Text> : null}
+      {sourceLine !== null ? <Text style={styles.source}>{sourceLine}</Text> : null}
     </AppCard>
   )
 }

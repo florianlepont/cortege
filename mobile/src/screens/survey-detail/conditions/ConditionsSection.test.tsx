@@ -168,6 +168,35 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3)", () => {
     expect(maybeByTestId(tree, "conditions-refill") !== undefined).toBe(item.link === "refill")
   })
 
+  test("prefilled and edited carry the date of the data when it is known (D-31)", () => {
+    const weather: SurveyWeather = {
+      sky: "cloudy",
+      temperature_c: 14,
+      observed_at: new Date(2026, 9, 12, 4, 0).toISOString(),
+      source: "meteo_france",
+    }
+    const conditions = { ...LOADED_EMPTY, weather }
+    const prefilled = mount(
+      <ConditionsSection {...sectionProps({ viewState: "prefilled", conditions })} />,
+    )
+    expect(texts(prefilled)).toContain(
+      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00.",
+    )
+    expect(texts(prefilled)).toContain("Source : Météo-France, mesure du 12/10/2026 à 04:00")
+
+    const edited = mount(
+      <ConditionsSection
+        {...sectionProps({
+          viewState: "edited",
+          conditions: { ...LOADED_EMPTY, weather: { ...weather, edited: ["temperature_c"] } },
+        })}
+      />,
+    )
+    expect(texts(edited)).toContain(
+      "Préremplie d'après Météo-France, mesure du 12/10/2026 à 04:00, modifiée par vous. Vos valeurs ne seront pas remplacées.",
+    )
+  })
+
   test("no state says error and no glyph takes a danger colour", () => {
     for (const item of CASES) {
       const tree = mount(<ConditionsSection {...sectionProps({ viewState: item.state })} />)
@@ -602,7 +631,7 @@ describe("Conditions read only (D-03, U-04)", () => {
         "2 mm",
         "Heure",
         "14:30",
-        t.readOnly.sourcePrefilled,
+        "Source : Météo-France, mesure du 11/10/2026 à 14:30.",
         "Sol frais\nPas de vent",
       ]),
     )
@@ -634,7 +663,18 @@ describe("Conditions read only (D-03, U-04)", () => {
         emptyMode="line"
       />,
     )
-    expect(texts(edited)).toContain(t.readOnly.sourceEdited)
+    expect(texts(edited)).toContain(
+      "Préremplie d'après Météo-France, mesure du 11/10/2026 à 14:30, modifiée par l'observateur.",
+    )
+
+    const undated = mount(
+      <ConditionsReadOnly
+        note={null}
+        weather={{ sky: "cloudy", source: "meteo_france", observed_at: "garbage" }}
+        emptyMode="line"
+      />,
+    )
+    expect(texts(undated)).toContain(t.readOnly.sourcePrefilled)
 
     const manual = mount(
       <ConditionsReadOnly

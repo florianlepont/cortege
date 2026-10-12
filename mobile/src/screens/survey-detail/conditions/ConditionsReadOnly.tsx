@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native"
 import {
   formatObservationTime,
   formatWeatherNumber,
+  observationStamp,
   weatherProvenance,
   type WeatherProvenance,
 } from "../../../app/weather"
@@ -29,10 +30,13 @@ type ConditionsReadOnlyProps = {
   emptyMode: "line" | "hidden"
 }
 
-const SOURCE_LINE: Record<WeatherProvenance, string> = {
-  prefilled: t.readOnly.sourcePrefilled,
-  edited: t.readOnly.sourceEdited,
-  manual: t.readOnly.sourceManual,
+/** The source line, with the date of the data for provider values when it is known (D-31). */
+function sourceLine(weather: SurveyWeather | null, provenance: WeatherProvenance): string {
+  const stamp = observationStamp(weather)
+  if (stamp && provenance === "prefilled") return t.readOnly.sourcePrefilledDated(stamp)
+  if (stamp && provenance === "edited") return t.readOnly.sourceEditedDated(stamp)
+  if (provenance === "prefilled") return t.readOnly.sourcePrefilled
+  return provenance === "edited" ? t.readOnly.sourceEdited : t.readOnly.sourceManual
 }
 
 const finite = (value: unknown): value is number =>
@@ -123,7 +127,7 @@ export function ConditionsReadOnly({ note, weather, emptyMode }: ConditionsReadO
             key: "weather",
             title: t.weather.title,
             rows: weatherRowsOrNone,
-            footer: provenance ? SOURCE_LINE[provenance] : undefined,
+            footer: provenance ? sourceLine(weather, provenance) : undefined,
           },
         ]}
       />

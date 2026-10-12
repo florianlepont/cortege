@@ -122,6 +122,11 @@ export const surveyExportFr = {
     sourceValue: {
       prefilled: "Météo-France",
       edited: "Météo-France, modifiée par l'observateur",
+      // With the date of the data (D-31: the licence asks for it next to the source).
+      prefilledDated: ({ date, time }: { date: string; time: string }) =>
+        `Météo-France, mesure du ${date} à ${time}`,
+      editedDated: ({ date, time }: { date: string; time: string }) =>
+        `Météo-France, mesure du ${date} à ${time}, modifiée par l'observateur`,
       manual: "Saisie par l'observateur",
     },
   },

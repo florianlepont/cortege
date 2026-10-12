@@ -1,7 +1,9 @@
 // Phase 27 (D-18): the text of the Conditions section (weather and survey note), the summary
 // card and the read-only views. Units are written after a no-break space (U+00A0, written
 // \u00a0 so it stays visible in the source) so a value never wraps away from its unit.
-// "Source : Météo-France" is the attribution required by the data licence (D-26).
+// "Source : Météo-France" is the attribution required by the data licence (D-26), with the date
+// of the data (D-31): `date` is "dd/mm/yyyy" and `time` "HH:mm", both from the local clock.
+type DataStamp = { date: string; time: string }
 export const conditionsFr = {
   title: "Conditions",
   subtitle: "Météo du jour et remarques de terrain. Facultatif.",
@@ -53,8 +55,12 @@ export const conditionsFr = {
         "La météo se remplit toute seule une fois la parcelle choisie. Vous pouvez aussi la saisir.",
       loading: "Recherche de la météo…",
       prefilled: "Préremplie d'après Météo-France pour l'heure indiquée.",
+      prefilledDated: ({ date, time }: DataStamp) =>
+        `Préremplie d'après Météo-France, mesure du ${date} à ${time}.`,
       edited:
         "Préremplie d'après Météo-France, modifiée par vous. Vos valeurs ne seront pas remplacées.",
+      editedDated: ({ date, time }: DataStamp) =>
+        `Préremplie d'après Météo-France, mesure du ${date} à ${time}, modifiée par vous. Vos valeurs ne seront pas remplacées.`,
       manual: "Saisie par vous.",
       offline:
         "Pas de connexion. La météo se remplira quand le réseau reviendra, vous pouvez aussi la saisir.",
@@ -72,6 +78,9 @@ export const conditionsFr = {
       cancel: "Annuler",
     },
     source: "Source : Météo-France",
+    // The same line with the date of the data (D-31: the licence asks for it).
+    sourceDated: ({ date, time }: DataStamp) =>
+      `Source : Météo-France, mesure du ${date} à ${time}`,
     // One value with its unit, for the label and value rows of the read-only card.
     values: {
       temperature: (value: string) => `${value}\u00a0°C`,
@@ -99,7 +108,11 @@ export const conditionsFr = {
     empty: "Aucune condition renseignée.",
     noWeather: "Météo non renseignée.",
     sourcePrefilled: "Source : Météo-France.",
+    sourcePrefilledDated: ({ date, time }: DataStamp) =>
+      `Source : Météo-France, mesure du ${date} à ${time}.`,
     sourceEdited: "Préremplie d'après Météo-France, modifiée par l'observateur.",
+    sourceEditedDated: ({ date, time }: DataStamp) =>
+      `Préremplie d'après Météo-France, mesure du ${date} à ${time}, modifiée par l'observateur.`,
     sourceManual: "Saisie par l'observateur.",
   },
   summary: {

@@ -1,7 +1,12 @@
 import { SURVEY_NOTE_MAX_LENGTH, normalizeNoteText } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
-import { formatObservationTime, formatWeatherLine, weatherProvenance } from "../weather"
+import {
+  formatObservationTime,
+  formatWeatherLine,
+  observationStamp,
+  weatherProvenance,
+} from "../weather"
 import { escapeHtml } from "./html"
 import { PDF_FONT_FAMILIES } from "./types"
 import type { PdfBlock, PdfPalette, SurveyExportData } from "./types"
@@ -47,9 +52,17 @@ function weatherRows(data: SurveyExportData): Row[] {
   const provenance = weatherProvenance(weather)
   if (!weather || line === null || provenance === null) return []
   const time = formatObservationTime(weather.observed_at ?? weather.requested_at)
+  // The licence asks for the date of the data next to the source (D-31); none when unreadable.
+  const stamp = observationStamp(weather)
+  const source =
+    stamp && provenance === "prefilled"
+      ? t.sourceValue.prefilledDated(stamp)
+      : stamp && provenance === "edited"
+        ? t.sourceValue.editedDated(stamp)
+        : t.sourceValue[provenance]
   return [
     { caption: t.weather, text: t.weatherSentence({ line, time }) },
-    { caption: t.source, text: t.sourceValue[provenance] },
+    { caption: t.source, text: source },
   ]
 }
 

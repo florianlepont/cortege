@@ -18,7 +18,7 @@ import {
   brandTypeScale,
 } from "../../../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../../../app/theme"
-import { formatWeatherLine, showsProviderAttribution } from "../../../app/weather"
+import { formatWeatherLine, weatherSourceLine } from "../../../app/weather"
 import { fr } from "../../../i18n"
 import { AppCard } from "../../../ui/AppCard"
 import { AppPressable } from "../../../ui/AppPressable"
@@ -76,6 +76,7 @@ export function ConditionsCard({ note, weather, loading, submitted, onOpen }: Co
   const [truncated, setTruncated] = useState(false)
 
   const line = formatWeatherLine(weather)
+  const sourceLine = weatherSourceLine(weather)
   const noteText = note !== null && note.trim().length > 0 ? note : null
 
   if (line === null && noteText === null && !loading && submitted) return null
@@ -162,9 +163,9 @@ export function ConditionsCard({ note, weather, loading, submitted, onOpen }: Co
             />
           </RipplePressable>
 
-          {line !== null && showsProviderAttribution(weather) ? (
+          {line !== null && sourceLine !== null ? (
             <Text style={styles.attribution} testID="conditions-card-source">
-              {t.weather.source}
+              {sourceLine}
             </Text>
           ) : null}
 

@@ -2,18 +2,21 @@ import type { SurveyWeather, WeatherObservation } from "@cortege/ibp-domain"
 import {
   canonicalWeather,
   editWeatherValue,
+  formatObservationDate,
   formatObservationTime,
   formatWeatherLine,
   formatWeatherNumber,
   hasWeatherValues,
   mergeWeatherObservation,
   needsWeatherLookup,
+  observationStamp,
   parseObservationTimeInput,
   parseWeatherValueInput,
   resetWeatherForRefill,
   roundWeatherCoordinate,
   showsProviderAttribution,
   weatherProvenance,
+  weatherSourceLine,
   weatherViewState,
   withObservationTime,
 } from "./weather"
@@ -517,5 +520,65 @@ describe("roundWeatherCoordinate", () => {
     expect(roundWeatherCoordinate(48.400049)).toBe(48.4)
     expect(roundWeatherCoordinate(2.73456789)).toBe(2.7346)
     expect(roundWeatherCoordinate(-1.23456)).toBe(-1.2346)
+  })
+})
+
+describe("the date of the data next to the source (D-31)", () => {
+  // 04:00 on 12 October 2026 on the phone's own clock, whatever the time zone of the machine.
+  const MEASURED = new Date(2026, 9, 12, 4, 0).toISOString()
+
+  it("formats the local dd/mm/yyyy of an ISO string, null when there is none", () => {
+    expect(formatObservationDate(MEASURED)).toBe("12/10/2026")
+    expect(formatObservationDate(new Date(2026, 0, 5, 23, 59).toISOString())).toBe("05/01/2026")
+    expect(formatObservationDate(null)).toBeNull()
+    expect(formatObservationDate(undefined)).toBeNull()
+    expect(formatObservationDate("")).toBeNull()
+    expect(formatObservationDate("garbage")).toBeNull()
+  })
+
+  it("reads the stamp from observed_at only", () => {
+    expect(observationStamp({ observed_at: MEASURED })).toEqual({
+      date: "12/10/2026",
+      time: "04:00",
+    })
+    expect(observationStamp({ requested_at: MEASURED })).toBeNull()
+    expect(observationStamp({ observed_at: "garbage" })).toBeNull()
+    expect(observationStamp({ observed_at: null })).toBeNull()
+    expect(observationStamp(null)).toBeNull()
+  })
+
+  it("dates the source line of a provider weather", () => {
+    expect(weatherSourceLine({ sky: "rain", source: "meteo_france", observed_at: MEASURED })).toBe(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00",
+    )
+    expect(
+      weatherSourceLine({
+        sky: "rain",
+        temperature_c: 9,
+        source: "meteo_france",
+        observed_at: MEASURED,
+        edited: ["sky"],
+      }),
+    ).toBe("Source : Météo-France, mesure du 12/10/2026 à 04:00")
+  })
+
+  it("keeps the plain source line without a readable date", () => {
+    expect(weatherSourceLine({ sky: "rain", source: "meteo_france" })).toBe("Source : Météo-France")
+    expect(weatherSourceLine({ sky: "rain", source: "meteo_france", observed_at: "garbage" })).toBe(
+      "Source : Météo-France",
+    )
+  })
+
+  it("has no line when no shown value is the provider's, never a Météo-France mention", () => {
+    expect(weatherSourceLine(null)).toBeNull()
+    expect(weatherSourceLine({ sky: "rain", source: "manual", observed_at: MEASURED })).toBeNull()
+    expect(
+      weatherSourceLine({
+        sky: "rain",
+        source: "meteo_france",
+        observed_at: MEASURED,
+        edited: ["sky"],
+      }),
+    ).toBeNull()
   })
 })
