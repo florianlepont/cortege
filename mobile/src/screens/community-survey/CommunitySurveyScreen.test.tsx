@@ -211,12 +211,12 @@ describe("CommunitySurveyScreen", () => {
     expect(lists[1].props.sections[0].rows).toEqual([
       {
         key: "75101AB0123",
-        label: fr.surveyDetail.contextScreen.parcelLabel(1),
+        label: fr.surveyDetail.parcelsScreen.parcelLabel(1),
         value: "75101AB0123",
       },
       {
         key: "75101AB0124",
-        label: fr.surveyDetail.contextScreen.parcelLabel(2),
+        label: fr.surveyDetail.parcelsScreen.parcelLabel(2),
         value: "75101AB0124",
       },
     ])

@@ -67,10 +67,10 @@ export function CommunitySurveyScreen({
     () => [
       {
         key: "parcels",
-        title: fr.surveyDetail.contextScreen.parcelsHeading(detail?.parcel_ids.length ?? 0),
+        title: fr.surveyDetail.parcelsScreen.parcelsHeading(detail?.parcel_ids.length ?? 0),
         rows: (detail?.parcel_ids ?? []).map((parcelId, index) => ({
           key: parcelId,
-          label: fr.surveyDetail.contextScreen.parcelLabel(index + 1),
+          label: fr.surveyDetail.parcelsScreen.parcelLabel(index + 1),
           value: parcelId,
         })),
       },

@@ -162,7 +162,7 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onOpenConditions: jest.fn(),
     conditionsLoading: false,
     onChangeNote: jest.fn(),
-    onOpenParcels: jest.fn(),
+    onOpenParcelsPage: jest.fn(),
     onOpenScore: jest.fn(),
     onOpenFactor: jest.fn(),
     onOpenHistory: jest.fn(),
@@ -273,13 +273,35 @@ describe("SurveyDetailScreen summary", () => {
     expect(source).not.toContain("factorPointsFromEntries")
   })
 
-  test("keeps the one bottom button and the three rows", () => {
+  test("keeps the one bottom button and the four rows (D-32)", () => {
     const tree = mount("draft")
     expect(byType(tree, "FinishBar")).toHaveLength(1)
-    expect(byType(tree, "AppGroupedList")[0].props.sections[0].rows).toHaveLength(3)
+    const rows = byType(tree, "AppGroupedList")[0].props.sections[0].rows
+    expect(rows).toHaveLength(4)
+    expect(rows.map((row: { label: string }) => row.label)).toEqual([
+      "Contexte",
+      "Parcelles",
+      "Facteurs IBP",
+      fr.surveyDetail.rows.history,
+    ])
   })
 
-  test("D-01: the third row is the parcel history, with its value, spoken label and press", () => {
+  test("D-32: the map card and the Parcelles row open the Parcelles page, the offline row moved there", () => {
+    const props = makeProps("draft")
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    expect(byType(tree!, "ParcelMapCard")[0].props.onPress).toBe(props.onOpenParcelsPage)
+    expect(byType(tree!, "SurveyOfflineMapRow")).toHaveLength(0)
+    const rows = byType(tree!, "AppGroupedList")[0].props.sections[0].rows
+    expect(rows[1].key).toBe("parcels")
+    expect(rows[1].onPress).toBe(props.onOpenParcelsPage)
+    expect(rows[1].value).toBe("Aucune")
+    expect(rows[2].onPress).toBe(props.onOpenScore)
+  })
+
+  test("D-01: the last row is the parcel history, with its value, spoken label and press", () => {
     const props = makeProps("draft")
     let tree: ReactTestRenderer | undefined
     act(() => {
@@ -289,8 +311,13 @@ describe("SurveyDetailScreen summary", () => {
       })
     })
     const rows = byType(tree!, "AppGroupedList")[0].props.sections[0].rows
-    expect(rows.map((row: { key: string }) => row.key)).toEqual(["context", "score", "history"])
-    expect(rows[2]).toEqual({
+    expect(rows.map((row: { key: string }) => row.key)).toEqual([
+      "context",
+      "parcels",
+      "score",
+      "history",
+    ])
+    expect(rows[3]).toEqual({
       key: "history",
       label: fr.surveyDetail.rows.history,
       value: "21 \u2192 34",
@@ -314,7 +341,7 @@ describe("SurveyDetailScreen summary", () => {
       pressable: false,
     }
     const tree = mount("draft")
-    const row = byType(tree, "AppGroupedList")[0].props.sections[0].rows[2]
+    const row = byType(tree, "AppGroupedList")[0].props.sections[0].rows[3]
     expect(row.onPress).toBeUndefined()
     expect(row.disabled).toBeUndefined()
     expect(row.value).toBe("Aucune parcelle")

@@ -50,8 +50,6 @@ jest.mock("@react-navigation/elements", () => ({ useHeaderHeight: () => 0 }))
 jest.mock("../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 90 }))
 jest.mock("../ui/AppGroupedList", () => ({ AppGroupedList: "AppGroupedList" }))
 jest.mock("../ui/PageTitle", () => ({ PageTitle: "PageTitle" }))
-jest.mock("./public-map/GlassIconButton", () => ({ GlassIconButton: "GlassIconButton" }))
-jest.mock("./survey-detail/ParcelMapCard", () => ({ ParcelMapCard: "ParcelMapCard" }))
 jest.mock("./survey-detail/ScoringContextEditor", () => ({
   ScoringContextEditor: "ScoringContextEditor",
 }))
@@ -88,18 +86,14 @@ type Over = Partial<SurveyContextScreenProps>
 function makeProps(over: Over = {}): SurveyContextScreenProps {
   return {
     weatherRequest: { online: true, inFlight: false, unavailable: false },
-    apiUrl: "http://api",
-    accessToken: null,
     selectedSurvey: { id: "survey-1" } as unknown as LocalSurvey,
     surveyDetails: {},
     detailsLoadingSurveyId: null,
-    onOpenParcels: jest.fn(),
     onUpdateRegionVersion: jest.fn(),
     onUpdateVegetationStage: jest.fn(),
     onUpdateIbpCas: jest.fn(),
     onUpdateCas3Scale: jest.fn(),
     onSwitchToV32: jest.fn(),
-    onChangeNote: jest.fn(),
     onEditWeather: jest.fn(),
     onRetryWeather: jest.fn(),
     onRefillWeather: jest.fn(),
@@ -131,34 +125,23 @@ afterEach(() => {
 })
 
 describe("SurveyContextScreen (variant I)", () => {
-  test("shows the map card, the parcels then the editor, with the outline pencil on the map", () => {
+  test("shows the method editor then the weather section: no map, no parcel list (D-32)", () => {
     const tree = render()
     const scroll = tree.root.findByType("ScrollView" as never)
     const order = scroll.children.map((child) => (child as { type: unknown }).type)
-    expect(order.slice(0, 4)).toEqual([
-      "PageTitle",
-      "ParcelMapCard",
-      "AppGroupedList",
-      "ScoringContextEditor",
-    ])
-    // The Conditions close the page, inside the view that measures them.
-    expect(order).toHaveLength(5)
-    const last = scroll.children[4] as ReactTestInstance
+    expect(order.slice(0, 2)).toEqual(["PageTitle", "ScoringContextEditor"])
+    // The weather closes the page, inside the view that measures it.
+    expect(order).toHaveLength(3)
+    const last = scroll.children[2] as ReactTestInstance
     expect(last.findAllByType("ConditionsSection" as never)).toHaveLength(1)
-    expect(tree.root.findByType("GlassIconButton" as never).props.icon).toBe("pencil-outline")
-  })
-
-  test("a finished survey has no edit action on the map", () => {
-    mockCanEdit = false
-    const tree = render()
+    expect(tree.root.findAllByType("ParcelMapCard" as never)).toHaveLength(0)
+    expect(tree.root.findAllByType("AppGroupedList" as never)).toHaveLength(0)
     expect(tree.root.findAllByType("GlassIconButton" as never)).toHaveLength(0)
   })
 
-  test("without parcel it says so instead of listing", () => {
-    mockParcelIds = []
+  test("the page is named Contexte", () => {
     const tree = render()
-    expect(tree.root.findAllByType("AppGroupedList" as never)).toHaveLength(0)
-    expect(JSON.stringify(tree.toJSON())).toContain("Aucune parcelle choisie")
+    expect(tree.root.findByType("PageTitle" as never).props.children).toBe("Contexte")
   })
 })
 

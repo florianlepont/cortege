@@ -123,6 +123,9 @@ jest.mock("../../screens/SurveyDetailScreen", () => ({
 jest.mock("../../screens/SurveyContextScreen", () => ({
   SurveyContextScreen: mockScreen("surveyContext"),
 }))
+jest.mock("../../screens/SurveyParcelsScreen", () => ({
+  SurveyParcelsScreen: mockScreen("surveyParcelsPage"),
+}))
 jest.mock("../../screens/SurveyScoreScreen", () => ({
   SurveyScoreScreen: mockScreen("surveyScore"),
 }))
@@ -260,6 +263,7 @@ import { OfflineAreasRoute } from "./OfflineAreasRoute"
 import { SettingsRoute } from "./SettingsRoute"
 import type { SurveysStackParamList } from "../types"
 import { SurveyContextRoute } from "./SurveyContextRoute"
+import { SurveyParcelsPageRoute } from "./SurveyParcelsPageRoute"
 import { SurveyDetailRoute } from "./SurveyDetailRoute"
 import { SurveyHistoryRoute } from "./SurveyHistoryRoute"
 import { SurveyJournalRoute } from "./SurveyJournalRoute"
@@ -1114,7 +1118,7 @@ describe("SurveyDetailRoute", () => {
     expect(props("surveyDetail").onChangeNote).toBe(fixture.surveys.actions.updateSurveyNote)
   })
 
-  test("passes the survey and opens the three sub-pages", async () => {
+  test("passes the survey and opens the sub-pages", async () => {
     const fixture = withSelection(makeFixture())
     const navigation = makeNavigation()
     await mount(
@@ -1159,49 +1163,12 @@ describe("SurveyDetailRoute", () => {
     expect(fixture.surveys.actions.startEditSurvey).toHaveBeenCalledWith("s-01")
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFactorDetail", { factor: "C" })
 
-    // The map card opens the parcel editor directly (OA-96).
+    // D-32: the map card and the Parcelles row open the Parcelles page, not the editor.
     await act(async () => {
-      await callback("surveyDetail", "onOpenParcels")("s-01")
+      callback("surveyDetail", "onOpenParcelsPage")()
     })
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
-      surveyId: "s-01",
-      mode: "edit",
-    })
-  })
-
-  test("the parcel editor starts on the survey's own position when its page knows it", async () => {
-    const base = withSelection(makeFixture())
-    base.surveys.state.surveyDetails = {
-      "s-01": { display_location: { lat: 48.656, lng: 2.503 } },
-    } as unknown as typeof base.surveys.state.surveyDetails
-    const navigation = makeNavigation()
-    await mount(
-      <Providers fixture={base}>
-        <SurveyDetailRoute navigation={navigation as never} route={{} as never} />
-      </Providers>,
-    )
-    await act(async () => {
-      await callback("surveyDetail", "onOpenParcels")("s-01")
-    })
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
-      surveyId: "s-01",
-      mode: "edit",
-      startPoint: { lat: 48.656, lng: 2.503 },
-    })
-  })
-
-  test("the map card stays on the page when the survey cannot be loaded for editing", async () => {
-    const base = withSelection(makeFixture({ startEdit: false }))
-    const navigation = makeNavigation()
-    await mount(
-      <Providers fixture={base}>
-        <SurveyDetailRoute navigation={navigation as never} route={{} as never} />
-      </Providers>,
-    )
-    await act(async () => {
-      await callback("surveyDetail", "onOpenParcels")("s-01")
-    })
-    expect(navigation.navigate).not.toHaveBeenCalled()
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcelsPage")
+    expect(props("surveyDetail").onOpenParcels).toBeUndefined()
   })
 
   test("the next-factor button stays on the page when the survey cannot be loaded", async () => {
@@ -1246,45 +1213,15 @@ describe("SurveyContextRoute", () => {
     expect(mockScreenProps.surveyContext).toBeUndefined()
   })
 
-  test("opens the parcel editing once the survey is loaded for editing", async () => {
+  test("hands the page the method updates and no parcel editing (D-32)", async () => {
     const fixture = withSelection(makeFixture())
-    const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
-        <SurveyContextRoute navigation={navigation as never} route={{} as never} />
+        <SurveyContextRoute navigation={makeNavigation() as never} route={{} as never} />
       </Providers>,
     )
     expect(props("surveyContext").onUpdateIbpCas).toBe(fixture.surveys.actions.updateIbpCas)
-
-    await act(async () => {
-      await callback("surveyContext", "onOpenParcels")("s-01")
-    })
-    expect(fixture.surveys.actions.startEditSurvey).toHaveBeenCalledWith("s-01")
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
-      surveyId: "s-01",
-      mode: "edit",
-    })
-  })
-
-  test("the context page hands the survey's position to the parcel editor too", async () => {
-    const fixture = withSelection(makeFixture())
-    fixture.surveys.state.surveyDetails = {
-      "s-01": { display_location: { lat: 48.656, lng: 2.503 } },
-    } as unknown as typeof fixture.surveys.state.surveyDetails
-    const navigation = makeNavigation()
-    await mount(
-      <Providers fixture={fixture}>
-        <SurveyContextRoute navigation={navigation as never} route={{} as never} />
-      </Providers>,
-    )
-    await act(async () => {
-      await callback("surveyContext", "onOpenParcels")("s-01")
-    })
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
-      surveyId: "s-01",
-      mode: "edit",
-      startPoint: { lat: 48.656, lng: 2.503 },
-    })
+    expect(props("surveyContext").onOpenParcels).toBeUndefined()
   })
 
   test("hands the weather section its silent draft write and the two weather links (phase 27)", async () => {
@@ -1366,17 +1303,79 @@ describe("SurveyContextRoute", () => {
     )
     expect(props("surveyContext").section).toBe("conditions")
   })
+})
 
-  test("does not navigate when the survey cannot be loaded", async () => {
+describe("SurveyParcelsPageRoute", () => {
+  function withSelection(fixture: Fixture): Fixture {
+    return {
+      ...fixture,
+      surveys: {
+        ...fixture.surveys,
+        state: { ...fixture.surveys.state, selectedSurveyId: "s-01", selectedSurvey: survey },
+      } as unknown as SurveysContextValue,
+    }
+  }
+
+  test("renders nothing until a survey is selected", async () => {
+    await mount(
+      <Providers fixture={makeFixture()}>
+        <SurveyParcelsPageRoute navigation={makeNavigation() as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(mockScreenProps.surveyParcelsPage).toBeUndefined()
+  })
+
+  test("opens the parcel editing once the survey is loaded for editing", async () => {
+    const fixture = withSelection(makeFixture())
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyParcelsPageRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    expect(props("surveyParcelsPage").apiUrl).toBe("http://api.test/v1")
+
+    await act(async () => {
+      await callback("surveyParcelsPage", "onOpenParcels")("s-01")
+    })
+    expect(fixture.surveys.actions.startEditSurvey).toHaveBeenCalledWith("s-01")
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
+      surveyId: "s-01",
+      mode: "edit",
+    })
+  })
+
+  test("the editor starts on the survey's own position when its page knows it", async () => {
+    const fixture = withSelection(makeFixture())
+    fixture.surveys.state.surveyDetails = {
+      "s-01": { display_location: { lat: 48.656, lng: 2.503 } },
+    } as unknown as typeof fixture.surveys.state.surveyDetails
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={fixture}>
+        <SurveyParcelsPageRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    await act(async () => {
+      await callback("surveyParcelsPage", "onOpenParcels")("s-01")
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
+      surveyId: "s-01",
+      mode: "edit",
+      startPoint: { lat: 48.656, lng: 2.503 },
+    })
+  })
+
+  test("does not navigate when the survey cannot be loaded for editing", async () => {
     const fixture = withSelection(makeFixture({ startEdit: false }))
     const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
-        <SurveyContextRoute navigation={navigation as never} route={{} as never} />
+        <SurveyParcelsPageRoute navigation={navigation as never} route={{} as never} />
       </Providers>,
     )
     await act(async () => {
-      await callback("surveyContext", "onOpenParcels")("s-01")
+      await callback("surveyParcelsPage", "onOpenParcels")("s-01")
     })
     expect(navigation.navigate).not.toHaveBeenCalled()
   })

@@ -476,6 +476,7 @@ jest.mock("../screens/SurveyDetailScreen", () => ({
 }))
 jest.mock("../screens/SurveyContextScreen", () => ({ SurveyContextScreen: () => null }))
 jest.mock("../screens/SurveyScoreScreen", () => ({ SurveyScoreScreen: () => null }))
+jest.mock("../screens/SurveyParcelsScreen", () => ({ SurveyParcelsScreen: () => null }))
 // The fake stacks mount every screen, search included. The search page is a probe that keeps its
 // props, so the keystroke scenario can type into the field (RESEARCH Pitfall 6); the full list of
 // a group draws nothing, its rows are not the survey list's.

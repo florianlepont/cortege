@@ -28,8 +28,10 @@ export type SurveysStackParamList = AccountStackParamList & {
   communitySurvey: { surveyId: string }
   communityHistory: { surveyId: string }
   surveyDetail: undefined
-  // `section` opens the page scrolled to its Conditions section (summary card, D-15).
+  // `section` opens the page scrolled to its weather section (summary card, D-15).
   surveyContext: { section?: "conditions" } | undefined
+  // D-32: the parcels of the survey (map, list, offline map), opened from the summary's map card.
+  surveyParcelsPage: undefined
   surveyScore: undefined
   surveyHistory: undefined
   surveyJournal: undefined
@@ -129,6 +131,10 @@ export type CommunityHistoryRouteProps = { route: { params: { surveyId: string }
 /** The full list of one search group (25-12): it reads its own params only. */
 export type SearchGroupRouteProps = { route: { params: SearchStackParamList["searchGroup"] } }
 export type SurveyContextRouteProps = StackRouteProps<SurveysStackParamList, "surveyContext">
+export type SurveyParcelsPageRouteProps = StackRouteProps<
+  SurveysStackParamList,
+  "surveyParcelsPage"
+>
 export type SurveyScoreRouteProps = StackRouteProps<SurveysStackParamList, "surveyScore">
 export type SurveyHistoryRouteProps = StackRouteProps<SurveysStackParamList, "surveyHistory">
 export type SurveyJournalRouteProps = StackRouteProps<SurveysStackParamList, "surveyJournal">

@@ -42,7 +42,7 @@ type ParcelMapCardProps = {
   displayLocation: SurveyDetailResponse["display_location"] | undefined
   parcelIds: string[]
   style?: StyleProp<ViewStyle>
-  /** Opens the survey's context and parcels; absent, the card is a plain picture. */
+  /** Opens the survey's Parcelles page; absent, the card is a plain picture. */
   onPress?: () => void
   /** OA-59: the survey whose position the "Voir sur la carte" action opens in Explorer. */
   surveyId?: string
@@ -54,7 +54,7 @@ type ParcelMapCardProps = {
 
 /**
  * The survey's parcels on a still map: the card of the summary (OA-43) and the head of the
- * context page. Zoomed on the survey's position, its parcels highlighted.
+ * Parcelles page. Zoomed on the survey's position, its parcels highlighted.
  */
 export function ParcelMapCard({
   apiUrl,
@@ -161,7 +161,7 @@ export function ParcelMapCard({
         style={[styles.mapCard, style]}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={a11y.editParcels(siteName)}
+        accessibilityLabel={a11y.openParcels(siteName)}
       >
         {placeholder}
         {map}

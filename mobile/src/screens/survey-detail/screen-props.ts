@@ -33,15 +33,16 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onRetrySurvey: (surveyId: string) => Promise<void>
   onDiscardSurvey: (surveyId: string) => Promise<void>
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
+  /** Opens the "Contexte" page (method, cas, weather). */
   onOpenContext: () => void
-  /** Opens "Contexte et parcelles" scrolled to its Conditions section (the summary card, D-15). */
+  /** Opens "Contexte" scrolled to its weather section (the summary card, D-15). */
   onOpenConditions: () => void
   /** A weather lookup is running for the selected survey (the card shows its search line). */
   conditionsLoading: boolean
   /** Phase 27 (D-33): silent draft write of the survey note, from the summary's note card. */
   onChangeNote: (surveyId: string, text: string) => Promise<boolean> | void
-  /** Opens the parcel editor straight from the map card (OA-96). */
-  onOpenParcels: (surveyId: string) => Promise<void> | void
+  /** Opens the "Parcelles" page (map, list, offline map), from the map card and its row (D-32). */
+  onOpenParcelsPage: () => void
   onOpenScore: () => void
   /** Opens a factor of the survey to fill it ("Commencer / Continuer la notation"). */
   onOpenFactor: (surveyId: string, factor: FactorKey) => void | Promise<void>
@@ -63,12 +64,11 @@ export type WeatherRequestState = {
   unavailable: boolean
 }
 
-/** "Contexte et parcelles": the map, the parcels, the method, the station context and conditions. */
-export type SurveyContextScreenProps = SurveyDetailBaseProps & {
-  /** Opens the page scrolled to the Conditions section (the summary card, D-15). */
+/** "Contexte": the method, the station context and the weather (D-32). */
+export type SurveyContextScreenProps = Omit<SurveyDetailBaseProps, "apiUrl" | "accessToken"> & {
+  /** Opens the page scrolled to the weather section (the summary card, D-15). */
   section?: "conditions"
   weatherRequest: WeatherRequestState
-  onOpenParcels: (surveyId: string) => Promise<void> | void
   onUpdateRegionVersion: (surveyId: string, region: RegionVersion) => Promise<void> | void
   onUpdateVegetationStage: (surveyId: string, stage: VegetationStage) => Promise<void> | void
   onUpdateIbpCas: (surveyId: string, ibpCas: IbpCas) => Promise<void> | void
@@ -82,6 +82,12 @@ export type SurveyContextScreenProps = SurveyDetailBaseProps & {
   /** "Réessayer" and "Remplir à nouveau" of the weather card (the weather prefill actions). */
   onRetryWeather: (surveyId: string) => Promise<void> | void
   onRefillWeather: (surveyId: string) => Promise<void> | void
+}
+
+/** "Parcelles": the map, the list of parcels and the offline map of the survey (D-32). */
+export type SurveyParcelsScreenProps = SurveyDetailBaseProps & {
+  /** Opens the parcel editor (the pencil on the map). */
+  onOpenParcels: (surveyId: string) => Promise<void> | void
 }
 
 /** "Facteurs IBP": the total, the two sub-scores and the ten factors. */

@@ -110,7 +110,7 @@ describe("ParcelMapCard", () => {
       (n) => (n.type as unknown) === "Pressable",
     )[0]
     expect(card.props.accessibilityRole).toBe("button")
-    expect(card.props.accessibilityLabel).toBe(fr.surveyDetail.a11y.editParcels("Parcelle A"))
+    expect(card.props.accessibilityLabel).toBe(fr.surveyDetail.a11y.openParcels("Parcelle A"))
   })
 
   test("the plain card keeps its image role and label, contours first too", () => {

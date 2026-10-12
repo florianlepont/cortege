@@ -4,14 +4,10 @@ import { useReducedMotion } from "react-native-reanimated"
 import { useBrandTheme } from "../app/theme"
 import { weatherViewState } from "../app/weather"
 import { fr } from "../i18n"
-import { AppGroupedList } from "../ui/AppGroupedList"
-import { AppText as Text } from "../ui/AppText"
 import { useFrameInsetBehavior } from "../ui/frame-large-title"
 import { PageTitle } from "../ui/PageTitle"
-import { GlassIconButton } from "./public-map/GlassIconButton"
 import { ConditionsSection } from "./survey-detail/conditions/ConditionsSection"
 import { useSurveyConditions } from "./survey-detail/conditions/useSurveyConditions"
-import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
 import { ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
 import { type SurveyContextScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
@@ -19,27 +15,22 @@ import { useSubPageContentStyle } from "./survey-detail/useSubPageContent"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { TitledScrollView } from "../ui/TitledScrollView"
 
-const t = fr.surveyDetail.contextScreen
-const a11y = fr.surveyDetail.a11y
-
 /** Room kept above a field that is scrolled into view, so its label stays visible. */
 const FIELD_TOP_MARGIN = 8
 
 /**
- * "Contexte et parcelles" (OA-46): the survey's parcels on a large map with the editing button on
- * the map itself (OA-44), the list of parcels, then the method and the station context, and last
- * the Conditions (weather and survey note, phase 27 D-15). With the `conditions` section param the
- * page scrolls once to the Conditions after its first layout; no field takes focus by itself.
+ * "Contexte" (OA-46, D-32): the method and the station context, then the weather with its status
+ * line and the full dated source sentence (phase 27 D-15). The parcels and their map are the
+ * "Parcelles" page; the survey note is a card of the summary (D-33). With the `conditions` section
+ * param the page scrolls once to the weather after its first layout; no field takes focus by
+ * itself.
  */
 export function SurveyContextScreen({
   section,
   weatherRequest,
-  apiUrl,
-  accessToken,
   selectedSurvey,
   surveyDetails,
   detailsLoadingSurveyId,
-  onOpenParcels,
   onUpdateRegionVersion,
   onUpdateVegetationStage,
   onUpdateIbpCas,
@@ -55,7 +46,7 @@ export function SurveyContextScreen({
   // 12.2-17: iOS insets the page under the native large title (PageTitle then draws nothing).
   const insetBehavior = useFrameInsetBehavior()
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
-  const { detail, canEditSurvey, activeSiteName, parcelIds } = data
+  const { canEditSurvey, parcelIds } = data
   const surveyId = selectedSurvey.id
   const conditions = useSurveyConditions(selectedSurvey)
   const conditionsViewState = weatherViewState({
@@ -118,24 +109,6 @@ export function SurveyContextScreen({
     [onRefillWeather, surveyId],
   )
 
-  const parcelSections = useMemo(
-    () =>
-      parcelIds.length > 0
-        ? [
-            {
-              key: "parcels",
-              title: t.parcelsHeading(parcelIds.length),
-              rows: parcelIds.map((parcelId, index) => ({
-                key: parcelId,
-                label: t.parcelLabel(index + 1),
-                value: parcelId,
-              })),
-            },
-          ]
-        : [],
-    [parcelIds],
-  )
-
   return (
     <TitledScrollView
       ref={scrollRef}
@@ -152,35 +125,6 @@ export function SurveyContextScreen({
       onContentSizeChange={onContentSizeChange}
     >
       <PageTitle>{fr.navigation.headers.surveyContext}</PageTitle>
-      <ParcelMapCard
-        apiUrl={apiUrl}
-        accessToken={accessToken}
-        siteName={activeSiteName}
-        displayLocation={detail?.display_location}
-        parcelIds={parcelIds}
-        surveyId={selectedSurvey.id}
-        refreshKey={selectedSurvey.updated_at}
-        style={styles.mapTall}
-      >
-        {canEditSurvey ? (
-          <GlassIconButton
-            variant="map-pill"
-            icon="pencil-outline"
-            label={t.editParcels}
-            accessibilityLabel={a11y.editParcels(activeSiteName)}
-            onPress={() => void onOpenParcels(selectedSurvey.id)}
-          />
-        ) : null}
-      </ParcelMapCard>
-
-      {parcelSections.length > 0 ? (
-        <AppGroupedList sections={parcelSections} />
-      ) : (
-        <View style={styles.section}>
-          <Text style={styles.photoEmpty}>{t.noParcel}</Text>
-        </View>
-      )}
-
       <ScoringContextEditor
         surveyId={selectedSurvey.id}
         canEditSurvey={canEditSurvey}

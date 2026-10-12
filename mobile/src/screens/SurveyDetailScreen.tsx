@@ -18,7 +18,6 @@ import { DebugTab } from "./survey-detail/DebugTab"
 import { DetailActions } from "./survey-detail/DetailActions"
 import { FinishBar } from "./survey-detail/FinishBar"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
-import { SurveyOfflineMapRow } from "./survey-detail/SurveyOfflineMapRow"
 import { PhotosStrip } from "./survey-detail/PhotosStrip"
 import { ScoreCard } from "./survey-detail/ScoreCard"
 import { type SurveyDetailScreenProps } from "./survey-detail/screen-props"
@@ -44,9 +43,9 @@ const alertsText = fr.surveyDetail.alerts
 
 /**
  * The summary of a survey (OA-46): its name and where it stands, the score, the weather of the
- * day (D-17) and the survey note (D-33), the photos, the map, and three rows that open the sub-pages (context and parcels,
- * score by factor, the parcel's history; the survey's own change log is in the "…" menu, never a
- * row, D-02). The one action is the button at the bottom. The coloured chart of the ten factors is
+ * day (D-17) and the survey note (D-33), the photos, the map, and four rows that open the sub-pages
+ * (Contexte, Parcelles, the factors, the parcel's history; D-32); the survey's own change log is
+ * in the "…" menu, never a row, D-02. The one action is the button at the bottom. The coloured chart of the ten factors is
  * not here (D-24): it lives on the score page only.
  */
 export function SurveyDetailScreen({
@@ -71,7 +70,7 @@ export function SurveyDetailScreen({
   onOpenConditions,
   conditionsLoading,
   onChangeNote,
-  onOpenParcels,
+  onOpenParcelsPage,
   onOpenScore,
   onOpenFactor,
   onOpenHistory,
@@ -200,6 +199,15 @@ export function SurveyDetailScreen({
           onPress: onOpenContext,
         },
         {
+          key: "parcels",
+          label: rowsText.parcels,
+          value:
+            data.parcelIds.length > 0
+              ? rowsText.parcelsValue(data.parcelIds.length)
+              : rowsText.parcelsNone,
+          onPress: onOpenParcelsPage,
+        },
+        {
           key: "score",
           label: rowsText.score,
           value:
@@ -294,14 +302,7 @@ export function SurveyDetailScreen({
           parcelIds={data.parcelIds}
           surveyId={selectedSurvey.id}
           refreshKey={selectedSurvey.updated_at}
-          onPress={() => (canEditSurvey ? void onOpenParcels(selectedSurvey.id) : onOpenContext())}
-        />
-
-        <SurveyOfflineMapRow
-          apiUrl={apiUrl}
-          accessToken={accessToken}
-          siteName={activeSiteName}
-          displayLocation={detail?.display_location}
+          onPress={onOpenParcelsPage}
         />
 
         <AppGroupedList sections={rowSections} />

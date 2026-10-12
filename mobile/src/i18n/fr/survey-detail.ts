@@ -91,7 +91,10 @@ export const surveyDetailFr = {
     seeOnMap: "Voir sur la carte",
   },
   rows: {
-    context: "Contexte et parcelles",
+    // D-32: "Contexte et parcelles" is split into "Contexte" (method, cas, weather) and "Parcelles"
+    // (map, list, offline map).
+    context: "Contexte",
+    parcels: "Parcelles",
     // D-34: the row and its page are named for what they hold, the ten factors. The score card
     // above keeps "Score IBP".
     score: "Facteurs IBP",
@@ -99,6 +102,8 @@ export const surveyDetailFr = {
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
     scoreValue: (filled: number) => `${filled} sur 10`,
+    parcelsValue: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),
+    parcelsNone: "Aucune",
     // Value of the parcel history row (D-01). The arrow is U+2192; the owner phone check
     // (plan 24-12) verifies the glyph, fallback: " à ".
     historyValue: ({ first, latest }: { first: number; latest: number }) =>
@@ -108,8 +113,9 @@ export const surveyDetailFr = {
     historyUnavailable: "Indisponible",
     historyNoParcel: "Aucune parcelle",
   },
-  // The two sub-pages of the summary (OA-46).
-  contextScreen: {
+  // The sub-pages of the summary (OA-46, D-32): "Parcelles" holds the map, the list and the editing
+  // button.
+  parcelsScreen: {
     parcelsHeading: (count: number) => `Parcelles · ${count}`,
     noParcel: "Aucune parcelle choisie pour ce relevé.",
     editParcels: "Modifier les parcelles",
@@ -239,6 +245,8 @@ export const surveyDetailFr = {
     renameSurvey: (name: string) => `Renommer le relevé ${name}`,
     finishSurvey: (name: string) => `Terminer le relevé ${name}`,
     editParcels: (name: string) => `Modifier les parcelles du relevé ${name}`,
+    // The map card of the summary opens the Parcelles page (D-32).
+    openParcels: (name: string) => `Ouvrir les parcelles du relevé ${name}`,
     mapPreview: (name: string) => `Carte du relevé ${name}`,
     seeOnMap: (name: string) => `Voir le relevé ${name} sur la carte`,
     scoreSummary: (value: string) => `Score IBP, ${value}`,
