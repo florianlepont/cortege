@@ -33,15 +33,39 @@ describe("initial state", () => {
 })
 
 describe("swipe mode", () => {
-  test("enter, exit and toggle set swipeMode and leave the comparison alone", () => {
+  test("enter, exit and toggle set swipeMode without a comparison", () => {
+    expect(run([{ type: "enterSwipe" }]).swipeMode).toBe(true)
+    expect(run([{ type: "enterSwipe" }, { type: "exitSwipe" }]).swipeMode).toBe(false)
+    expect(run([{ type: "toggleSwipe" }]).swipeMode).toBe(true)
+    expect(run([{ type: "toggleSwipe" }, { type: "toggleSwipe" }]).swipeMode).toBe(false)
+  })
+
+  test("startCompare ends the swipe mode in the same state change", () => {
+    const state = run([
+      { type: "enterSwipe" },
+      { type: "startCompare", sideA: "map", sideB: "photos-1950", secondSide: "right", x: 200 },
+    ])
+    expect(state.swipeMode).toBe(false)
+    expect(state.compare).toMatchObject({ sideA: "map", sideB: "photos-1950", x: 200 })
+  })
+
+  test("no swipe mode while comparing: enterSwipe and toggleSwipe change nothing", () => {
     const comparing = run([
       { type: "startCompare", sideA: "map", sideB: "photos-1950", secondSide: "right", x: 200 },
     ])
-    expect(run([{ type: "enterSwipe" }], comparing)).toMatchObject({ swipeMode: true })
-    expect(run([{ type: "enterSwipe" }, { type: "exitSwipe" }], comparing).swipeMode).toBe(false)
-    expect(run([{ type: "toggleSwipe" }], comparing).swipeMode).toBe(true)
-    expect(run([{ type: "toggleSwipe" }, { type: "toggleSwipe" }], comparing).swipeMode).toBe(false)
-    expect(run([{ type: "enterSwipe" }], comparing).compare).toEqual(comparing.compare)
+    expect(mapLayersReducer(comparing, { type: "enterSwipe" })).toBe(comparing)
+    expect(mapLayersReducer(comparing, { type: "toggleSwipe" })).toBe(comparing)
+    expect(mapLayersReducer(comparing, { type: "exitSwipe" })).toMatchObject({ swipeMode: false })
+  })
+
+  test("quitCompare then enterSwipe turns the swipe mode on again", () => {
+    const state = run([
+      { type: "startCompare", sideA: "map", sideB: "photos-1950", secondSide: "right", x: 200 },
+      { type: "quitCompare", keep: "A" },
+      { type: "enterSwipe" },
+    ])
+    expect(state.compare).toBeNull()
+    expect(state.swipeMode).toBe(true)
   })
 })
 

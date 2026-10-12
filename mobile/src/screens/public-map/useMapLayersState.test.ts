@@ -39,6 +39,24 @@ describe("useMapLayersState", () => {
     expect(result.current.state.swipeMode).toBe(true)
   })
 
+  test("a comparison started from the swipe mode ends it; the swipe mode cannot start while comparing", async () => {
+    const { result } = await setup()
+    await act(async () => result.current.actions.enterSwipe())
+    expect(result.current.state.swipeMode).toBe(true)
+    await act(async () =>
+      result.current.actions.startCompare({ sideA: "map", sideB: "photos-1950", x: 200 }),
+    )
+    expect(result.current.state.swipeMode).toBe(false)
+    expect(result.current.state.compare).not.toBeNull()
+    await act(async () => result.current.actions.toggleSwipe())
+    expect(result.current.state.swipeMode).toBe(false)
+    await act(async () => result.current.actions.enterSwipe())
+    expect(result.current.state.swipeMode).toBe(false)
+    await act(async () => result.current.actions.quitCompare("A"))
+    await act(async () => result.current.actions.enterSwipe())
+    expect(result.current.state.swipeMode).toBe(true)
+  })
+
   test("commitBase writes the preference for Plan and Satellite only", async () => {
     const { result } = await setup()
     await act(async () => result.current.actions.commitBase("satellite"))

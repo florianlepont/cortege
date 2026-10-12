@@ -10,6 +10,10 @@
 // Comparison: the Explorer's own map keeps one side and a second map draws `secondSide`, so a
 // comparison created by dragging right needs no style swap of the Explorer map (UI-SPEC section 4,
 // "Created layers").
+//
+// One single comparison mode (owner feedback, CONTEXT item 13 d): the swipe mode and the comparison
+// never coexist. `startCompare` ends the swipe mode in the same state change, and the swipe mode
+// cannot start again until the comparison is quit.
 
 import type { BaseLayerKey, MapLayerKey } from "../../map/layers"
 import type { ParcelsMode } from "../../map/parcels-visibility"
@@ -79,11 +83,12 @@ function overrideFor(key: BaseLayerKey): BaseLayerKey | null {
 export function mapLayersReducer(state: MapLayersState, action: MapLayersAction): MapLayersState {
   switch (action.type) {
     case "enterSwipe":
-      return { ...state, swipeMode: true }
+      // The swipe mode and the comparison never coexist (UI-SPEC "Scope of the contract").
+      return state.compare ? state : { ...state, swipeMode: true }
     case "exitSwipe":
       return { ...state, swipeMode: false }
     case "toggleSwipe":
-      return { ...state, swipeMode: !state.swipeMode }
+      return state.compare ? state : { ...state, swipeMode: !state.swipeMode }
     case "commitBase":
       return {
         ...state,
@@ -94,6 +99,7 @@ export function mapLayersReducer(state: MapLayersState, action: MapLayersAction)
     case "startCompare":
       return {
         ...state,
+        swipeMode: false,
         compare: {
           sideA: action.sideA,
           sideB: action.sideB,
