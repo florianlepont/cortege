@@ -1,6 +1,7 @@
 import { memo } from "react"
 import { SurveyParcelSelectionScreen } from "../../screens/SurveyParcelSelectionScreen"
 import { useAccessToken, useSession } from "../../state/session-context"
+import { useSurveyActions } from "../../state/surveys-context"
 import { useSurveyFormState } from "../../state/survey-form-context"
 import { useWeatherPrefillState } from "../../state/weather-context"
 import type { WeatherPoint } from "../../storage/weather"
@@ -20,6 +21,7 @@ export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
   const accessToken = useAccessToken()
   const { state, actions } = useSurveyFormState()
   const weather = useWeatherPrefillState()
+  const surveyActions = useSurveyActions()
 
   const isWizard = route.params.mode === "wizard"
   // Last step of a new survey: the draft is finalised, then the survey page replaces the whole
@@ -35,13 +37,17 @@ export const ParcelSelectionRoute = memo(function ParcelSelectionRoute({
       }
     }
     if (isWizard) {
-      const created = await actions.createDraft()
-      if (created) {
+      const createdId = await actions.createDraft()
+      if (createdId !== null) {
         rememberPoint()
         navigation.reset({
           index: 1,
           routes: [{ name: "surveysHome" }, { name: "surveyDetail" }],
         })
+        // Selected after the reset: removing an older summary screen (the wizard launched from
+        // Accueil, a search or Explorer keeps the stack) clears the selection while the reset
+        // runs, and the new summary would open on no survey (D-45).
+        surveyActions.openSurvey(createdId)
       }
       return
     }

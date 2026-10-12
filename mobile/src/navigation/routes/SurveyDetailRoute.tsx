@@ -11,11 +11,12 @@ import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyDetailRouteProps } from "../types"
 import { ScreenFrame } from "../../ui/ScreenFrame"
 import { usesNativeLargeTitle } from "../large-title"
+import { SelectedSurveyGate } from "./SelectedSurveyGate"
 
 /**
  * Survey detail route (phase 01.9-18, D-01): the selected survey and its
  * caches from the surveys context, the API URL from the session, and the sync
- * actions. Renders nothing until a survey is selected. It is the summary; its sub-pages
+ * actions. Until a survey is selected it shows the shared loading state (SelectedSurveyGate). It is the summary; its sub-pages
  * (context, parcels, factors, history) are the routes next to it, opened from rows, and the journal is
  * opened from the "…" menu (D-02).
  */
@@ -47,42 +48,44 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
     [syncActions],
   )
 
-  if (!state.selectedSurvey) return null
-
   return (
-    // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
-    <ScreenFrame largeTitle={usesNativeLargeTitle()}>
-      <SurveyDetailScreen
-        apiUrl={session.apiUrl}
-        accessToken={accessToken}
-        observerName={session.currentUser?.display_name ?? null}
-        selectedSurvey={state.selectedSurvey}
-        selectedSurveyAttachments={state.selectedSurveyAttachments}
-        navigation={navigation}
-        surveyDetails={state.surveyDetails}
-        detailsLoadingSurveyId={state.detailsLoadingSurveyId}
-        surveyEvents={state.surveyEvents}
-        onTakePhoto={actions.queueAttachmentFromCamera}
-        onPickPhoto={actions.queueAttachmentFromLibrary}
-        onDeleteAttachment={actions.deleteAttachment}
-        onDeleteSurvey={actions.confirmDeleteSurvey}
-        onSubmitSurvey={actions.submitSurvey}
-        onRetrySurvey={actions.retrySurvey}
-        onDiscardSurvey={actions.discardSurvey}
-        onRenameSurvey={actions.renameSurvey}
-        onOpenContext={onOpenContext}
-        onOpenConditions={onOpenConditions}
-        conditionsLoading={weatherState.inFlightIds.has(state.selectedSurvey.id)}
-        conditionsOffline={offline}
-        onChangeNote={actions.updateSurveyNote}
-        onOpenParcelsPage={onOpenParcelsPage}
-        onOpenScore={onOpenScore}
-        onOpenFactor={onOpenFactor}
-        onOpenHistory={onOpenHistory}
-        onOpenJournal={onOpenJournal}
-        onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
-        onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
-      />
-    </ScreenFrame>
+    <SelectedSurveyGate navigation={navigation}>
+      {(survey) => (
+        // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
+        <ScreenFrame largeTitle={usesNativeLargeTitle()}>
+          <SurveyDetailScreen
+            apiUrl={session.apiUrl}
+            accessToken={accessToken}
+            observerName={session.currentUser?.display_name ?? null}
+            selectedSurvey={survey}
+            selectedSurveyAttachments={state.selectedSurveyAttachments}
+            navigation={navigation}
+            surveyDetails={state.surveyDetails}
+            detailsLoadingSurveyId={state.detailsLoadingSurveyId}
+            surveyEvents={state.surveyEvents}
+            onTakePhoto={actions.queueAttachmentFromCamera}
+            onPickPhoto={actions.queueAttachmentFromLibrary}
+            onDeleteAttachment={actions.deleteAttachment}
+            onDeleteSurvey={actions.confirmDeleteSurvey}
+            onSubmitSurvey={actions.submitSurvey}
+            onRetrySurvey={actions.retrySurvey}
+            onDiscardSurvey={actions.discardSurvey}
+            onRenameSurvey={actions.renameSurvey}
+            onOpenContext={onOpenContext}
+            onOpenConditions={onOpenConditions}
+            conditionsLoading={weatherState.inFlightIds.has(survey.id)}
+            conditionsOffline={offline}
+            onChangeNote={actions.updateSurveyNote}
+            onOpenParcelsPage={onOpenParcelsPage}
+            onOpenScore={onOpenScore}
+            onOpenFactor={onOpenFactor}
+            onOpenHistory={onOpenHistory}
+            onOpenJournal={onOpenJournal}
+            onEnsureAttachmentPreviews={syncActions.handleEnsureAttachmentPreviews}
+            onSimulateMissingAttachmentFile={onSimulateMissingAttachmentFile}
+          />
+        </ScreenFrame>
+      )}
+    </SelectedSurveyGate>
   )
 })

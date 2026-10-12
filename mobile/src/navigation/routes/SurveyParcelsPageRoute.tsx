@@ -7,6 +7,7 @@ import { useLatestCallback } from "../../state/useLatestCallback"
 import type { SurveyParcelsPageRouteProps } from "../types"
 import { ScreenFrame } from "../../ui/ScreenFrame"
 import { usesNativeLargeTitle } from "../large-title"
+import { SelectedSurveyGate } from "./SelectedSurveyGate"
 
 /**
  * "Parcelles" (D-32): the map, the list of parcels and the offline map of the selected survey. The
@@ -30,19 +31,21 @@ export const SurveyParcelsPageRoute = memo(function SurveyParcelsPageRoute({
     })
   })
 
-  if (!state.selectedSurvey) return null
-
   return (
-    // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
-    <ScreenFrame largeTitle={usesNativeLargeTitle()}>
-      <SurveyParcelsScreen
-        apiUrl={session.apiUrl}
-        accessToken={accessToken}
-        selectedSurvey={state.selectedSurvey}
-        surveyDetails={state.surveyDetails}
-        detailsLoadingSurveyId={state.detailsLoadingSurveyId}
-        onOpenParcels={onOpenParcels}
-      />
-    </ScreenFrame>
+    <SelectedSurveyGate navigation={navigation}>
+      {(survey) => (
+        // 12.2-17: the native large title in the native iOS tab tree (the stack sets the header).
+        <ScreenFrame largeTitle={usesNativeLargeTitle()}>
+          <SurveyParcelsScreen
+            apiUrl={session.apiUrl}
+            accessToken={accessToken}
+            selectedSurvey={survey}
+            surveyDetails={state.surveyDetails}
+            detailsLoadingSurveyId={state.detailsLoadingSurveyId}
+            onOpenParcels={onOpenParcels}
+          />
+        </ScreenFrame>
+      )}
+    </SelectedSurveyGate>
   )
 })

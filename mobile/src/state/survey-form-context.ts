@@ -50,7 +50,8 @@ export type SurveyFormActions = {
   saveSurveyEdits: () => Promise<boolean>
   /** D-26: writes the pending form edits now and keeps editing; false when the write failed. */
   flushDraft: () => Promise<boolean>
-  createDraft: () => Promise<boolean>
+  /** Finalises the new-survey draft: the survey id, or null when it could not be saved. */
+  createDraft: () => Promise<string | null>
   captureGpsLocation: (options?: { silent?: boolean }) => Promise<GpsCaptureResult | null>
   markSubmitAttempted: SurveyForm["markSubmitAttempted"]
   /** Phase 27: the strip calls flushDraft after a doubt toggle for an immediate write. */
