@@ -78,6 +78,7 @@ function makeView(overrides: Partial<ExplorerSwipeView> = {}): ExplorerSwipeView
     height: 800,
     initialRegion: REGION,
     second: null,
+    third: null,
     swipeMode: false,
     comparing: false,
     controller: {
@@ -100,7 +101,8 @@ function makeView(overrides: Partial<ExplorerSwipeView> = {}): ExplorerSwipeView
     onEdgeExit: jest.fn(),
     lineDragging: false,
     onLineDragging: jest.fn(),
-    onSideAction: jest.fn(),
+    canStep: jest.fn(() => true),
+    onStep: jest.fn(),
     onTopControlHeight: jest.fn(),
     ...overrides,
   }
@@ -114,6 +116,7 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
     skippedVisible: false,
     noticesTop: 58,
     onBaseStyleLoaded: jest.fn(),
+    onSecondStyleLoaded: jest.fn(),
     onPanelOpen: jest.fn(),
     toggleSwipe: jest.fn(),
     quit: jest.fn(),
@@ -214,6 +217,50 @@ describe("the stacked maps", () => {
       .findAll((node) => typeof node.type === "function" && "clipLeft" in node.props)
       .map((node) => (node as unknown as { _fiber: { key: string } })._fiber.key)
     expect(keys).toEqual(["second-map"])
+  })
+
+  test("the second map reports its style load, so a side change cover waiting for it can go", () => {
+    const { tree, swipe } = render(makeView({ second: stacked("photos-1950") }))
+    named(tree, "WipeLayer")[0].props.onStyleLoaded()
+    expect(swipe.onSecondStyleLoaded).toHaveBeenCalledTimes(1)
+  })
+
+  test("a side change draws the third map over the second one, under its own stable key", () => {
+    const thirdClipLeft = shared(200)
+    const thirdClipRight = shared(400)
+    const { tree } = render(
+      makeView({
+        comparing: true,
+        leftLayer: "map",
+        rightLayer: "photos-1950",
+        second: stacked("photos-1950"),
+        third: {
+          layer: "etat-major",
+          clipLeft: thirdClipLeft,
+          clipRight: thirdClipRight,
+          cameraRef: { current: null },
+        },
+      }),
+    )
+    const maps = named(tree, "WipeLayer")
+    expect(maps.map((map) => map.props.layer)).toEqual(["photos-1950", "etat-major"])
+    expect(maps[1].props).toMatchObject({
+      clipLeft: thirdClipLeft,
+      clipRight: thirdClipRight,
+      width: 400,
+      initialRegion: REGION,
+      styleRefreshKey: 2,
+      styleRetryKey: 3,
+    })
+    // The third map has no style-load callback: the hook waits for the second or Explorer map.
+    expect(maps[1].props.onStyleLoaded).toBeUndefined()
+    const keys = tree.root
+      .findAll((node) => typeof node.type === "function" && "clipLeft" in node.props)
+      .map((node) => (node as unknown as { _fiber: { key: string } })._fiber.key)
+    expect(keys).toEqual(["second-map", "third-map"])
+    styleFailed.mockClear()
+    maps[1].props.onStyleFailed()
+    expect(styleFailed).toHaveBeenCalledWith("etat-major")
   })
 
   test("a map that fails to load tells the layers state which layer failed", () => {
@@ -350,9 +397,19 @@ describe("the comparison", () => {
     const { tree } = render(view)
     const [left, right] = named(tree, "CompareSideTag").map((tag) => tag.props)
     act(() => left.onStep(1))
-    expect(view.onSideAction).toHaveBeenLastCalledWith("left", 1)
+    expect(view.onStep).toHaveBeenLastCalledWith("left", 1)
     act(() => right.onStep(-1))
-    expect(view.onSideAction).toHaveBeenLastCalledWith("right", -1)
+    expect(view.onStep).toHaveBeenLastCalledWith("right", -1)
+  })
+
+  test("a tag with no other layer to go to is told it cannot step", () => {
+    const canStep = jest.fn((side: "left" | "right") => side === "right")
+    const { tree } = render(comparing({ canStep }))
+    const [left, right] = named(tree, "CompareSideTag").map((tag) => tag.props)
+    expect(left.canStep).toBe(false)
+    expect(right.canStep).toBe(true)
+    expect(canStep).toHaveBeenCalledWith("left")
+    expect(canStep).toHaveBeenCalledWith("right")
   })
 
   test("the tags take no touch while the line is dragged", () => {

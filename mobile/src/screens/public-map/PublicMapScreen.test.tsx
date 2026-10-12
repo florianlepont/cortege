@@ -1272,6 +1272,58 @@ describe("PublicMapScreen", () => {
       expect(present("compare-quit")).toBe(true)
     })
 
+    // The text of a side tag, and the source the layer drawn by a map comes from.
+    const tagName = (side: "left" | "right") =>
+      byTestId(`compare-tag-${side}`)[0]
+        .findAllByType("Text" as never)
+        .map((text) => text.props.children)
+        .join("")
+    const drawn = (map: ReactTestInstance) => JSON.stringify(map.props.mapStyle)
+
+    test("a tag's chevrons change its side: the right one to the next layer, the left one to the previous", () => {
+      setReducedMotion(true)
+      try {
+        const props = startComparison()
+        expect(tagName("left")).toBe("Plan")
+        expect(tagName("right")).toBe("Satellite")
+        act(() => byTestId("compare-tag-right-next")[0].props.onPress())
+        expect(tagName("right")).toBe("État-major")
+        // The second map draws the right side.
+        expect(drawn(maps()[1])).toContain('"etat-major"')
+        act(() => byTestId("compare-tag-left-previous")[0].props.onPress())
+        // Plan going back wraps to the last layer, which the right side does not show.
+        expect(tagName("left")).toBe("Photos 1950")
+        expect(drawn(explorerMap())).toContain('"photos-1950"')
+        // The comparison goes on, with no extra map and no change to the saved preference.
+        expect(maps()).toHaveLength(2)
+        expect(present("compare-grabber")).toBe(true)
+        expect(props.onChangeBasemap).not.toHaveBeenCalled()
+      } finally {
+        setReducedMotion(false)
+      }
+    })
+
+    test("a side change plays as a wipe on a third map over that side's half, and the line stays", () => {
+      startComparison()
+      act(() => byTestId("compare-tag-right-next")[0].props.onPress())
+      expect(maps()).toHaveLength(3)
+      expect(drawn(maps()[2])).toContain('"etat-major"')
+      // The tag keeps its layer until the wipe has ended; the line did not move.
+      expect(tagName("right")).toBe("Satellite")
+      expect(present("compare-line")).toBe(true)
+      expect(present("compare-grabber")).toBe(true)
+    })
+
+    test("the tags take no touch while the grabber is dragged, and again after", () => {
+      startComparison()
+      const pointerEvents = () => byTestId("compare-tag-right")[0].props.pointerEvents
+      expect(pointerEvents()).toBe("auto")
+      act(() => grabberPan().handlers.onBegin())
+      expect(pointerEvents()).toBe("none")
+      act(() => grabberPan().handlers.onFinalize({}, false))
+      expect(pointerEvents()).toBe("auto")
+    })
+
     test("a comparison starts with no notice pill: the markers hide silently (item 13 e)", () => {
       startComparison(makeProps({ items: [item("a", 45.76, 4.84)] }))
       expect(

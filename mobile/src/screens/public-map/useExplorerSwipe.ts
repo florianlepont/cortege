@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react"
-import { AccessibilityInfo, useWindowDimensions, type NativeSyntheticEvent } from "react-native"
+import { useWindowDimensions, type NativeSyntheticEvent } from "react-native"
 import type { SharedValue } from "react-native-reanimated"
 import type { CameraRef, ViewStateChangeEvent } from "@maplibre/maplibre-react-native"
 import type { MapRegion } from "../../app/map-viewport"
 import { fr } from "../../i18n"
-import { neighbourLayer, skippedCount } from "../../map/layer-cycle"
+import { skippedCount } from "../../map/layer-cycle"
 import type { BaseLayerKey } from "../../map/layers"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { feedback } from "../../ui/feedback"
@@ -13,10 +13,10 @@ import type { MapCanvasProps } from "./MapCanvas"
 import { MAP_PILL_HEIGHT } from "./MapChips"
 import { useMapSync } from "./MapStack"
 import { COMPARISON_BUILT, LEFT_MAP_ANDROID_VIEW, WIPE_PRESENTATION } from "./map-stack-mode"
-import { swipeLabel } from "./swipe-labels"
 import { useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
 import { useCurtainClip, type CurtainPhase } from "./useCurtainClip"
 import type { ExplorerLayers } from "./useExplorerLayers"
+import { useSideStep } from "./useSideStep"
 import type { MapLayers } from "./useMapLayersState"
 
 // The swipe mode and the comparison of the Explorer (Phase 28, UI-SPEC sections 3 and 4): one
@@ -27,7 +27,9 @@ import type { MapLayers } from "./useMapLayersState"
 //
 // One single comparison mode (owner feedback, CONTEXT item 13 d): the swipe mode and the comparison
 // never coexist. The swipe surface is not active in a comparison, so the map is free there (native
-// pan and zoom), there is no side wipe and only the second map is stacked.
+// pan and zoom) and the line is decorative. The side tags change a side (`useSideStep`): a wipe
+// inside that side's half, drawn by a third map stacked over the half until the map that draws the
+// side has loaded its new style.
 
 /** A stacked map that covers a style swap is dropped after this long even if no load is reported. */
 const COVER_MAX_MS = 8000
@@ -35,8 +37,6 @@ const COVER_MAX_MS = 8000
 const NOTICES_GAP = 8
 /** The swipe stack's height before it has been measured: indicator, dots, "Terminé" and gaps. */
 const SWIPE_STACK_ESTIMATE = 100
-
-const announce = (text: string) => AccessibilityInfo.announceForAccessibility(text)
 
 /**
  * A stacked map kept over a style swap of the Explorer map under it, so no blank frame shows:
@@ -61,6 +61,8 @@ export type ExplorerSwipeView = {
   initialRegion: MapRegion
   /** The second map: the wipe's incoming layer, the curtain's second side, or a cover. */
   second: StackedMapView | null
+  /** The third map: the layer entering a side of the comparison by its tag, then its cover. */
+  third: StackedMapView | null
   swipeMode: boolean
   comparing: boolean
   /** The controller's outputs for the gesture surface and the top stack, passed as they are. */
@@ -90,7 +92,10 @@ export type ExplorerSwipeView = {
   /** The grabber is being dragged: the side tags take no touch meanwhile. */
   lineDragging: boolean
   onLineDragging: (dragging: boolean) => void
-  onSideAction: (side: "left" | "right", direction: 1 | -1) => void
+  /** Another layer exists for that side: false dims and disables its tag. */
+  canStep: (side: "left" | "right") => boolean
+  /** A tag asked for the next (1) or the previous (-1) layer of its side. */
+  onStep: (side: "left" | "right", direction: 1 | -1) => void
   onTopControlHeight: (height: number) => void
 }
 
@@ -109,6 +114,8 @@ export type ExplorerSwipe = {
   noticesTop: number
   /** The Explorer map finished loading a style: a cover over it can go. */
   onBaseStyleLoaded: () => void
+  /** The second map finished loading a style: a side change cover over it can go. */
+  onSecondStyleLoaded: () => void
   /** A panel (the bubble or the card) opened: the swipe mode ends, a comparison stays. */
   onPanelOpen: () => void
   /** The globe: closes the panels, then enters or leaves the swipe mode. */
@@ -200,7 +207,9 @@ export function useExplorerSwipe({
   const phase: CurtainPhase = leaving ? "leaving" : keepLayer !== null ? "covering" : "active"
   const curtain = useCurtainClip({ compare, width, phase, leaveTo: "right", onLeft: handleLeft })
 
+  const sideStep = useSideStep({ layers, isAvailable, width })
   const secondSync = useMapSync()
+  const thirdSync = useMapSync()
   const secondLayer = comparing
     ? layers.secondMapLayer
     : (fullWipeLayer ?? fullCoverLayer ?? keepLayer)
@@ -209,11 +218,18 @@ export function useExplorerSwipe({
   const second: StackedMapView | null = secondLayer
     ? { layer: secondLayer, ...strip(secondStrip), cameraRef: secondSync.cameraRef }
     : null
-  const stacked = second !== null
+  const { stepping } = sideStep
+  const third: StackedMapView | null = stepping
+    ? { ...stepping, cameraRef: thirdSync.cameraRef }
+    : null
+  const stacked = second !== null || third !== null
 
   const onViewChange = useCallback(
-    (event: NativeSyntheticEvent<ViewStateChangeEvent>) => secondSync.syncFrom(event),
-    [secondSync],
+    (event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+      secondSync.syncFrom(event)
+      thirdSync.syncFrom(event)
+    },
+    [secondSync, thirdSync],
   )
 
   // The stacked maps are north up and flat, so the Explorer map is too whenever one of them has to
@@ -238,7 +254,12 @@ export function useExplorerSwipe({
     const timer = setTimeout(() => setCover(null), COVER_MAX_MS)
     return () => clearTimeout(timer)
   }, [cover])
-  const onBaseStyleLoaded = useCallback(() => setCover(null), [])
+  const { onStyleLoaded: sideStyleLoaded } = sideStep
+  const onBaseStyleLoaded = useCallback(() => {
+    setCover(null)
+    sideStyleLoaded("base")
+  }, [sideStyleLoaded])
+  const onSecondStyleLoaded = useCallback(() => sideStyleLoaded("second"), [sideStyleLoaded])
 
   // Leaving the Explorer tab ends the swipe mode (a comparison stays).
   const focused = useScreenFocus()
@@ -268,18 +289,6 @@ export function useExplorerSwipe({
     }
     actions.quitCompare(keeps)
   })
-  const onSideAction = useLatestCallback((side: "left" | "right", direction: 1 | -1) => {
-    const other = layers.layerOfSide(side === "left" ? "right" : "left")
-    const target = neighbourLayer(layers.layerOfSide(side), direction, {
-      isAvailable,
-      exclude: other,
-    })
-    if (target === null) return
-    feedback.selection()
-    actions.setSide(side === "left" ? "A" : "B", target)
-    announce(fr.mapLayers.basemap.announceChanged(swipeLabel(target)))
-  })
-
   const quitPillVisible = comparing
   const topHeld = swipeMode || quitPillVisible
   const heldHeight = swipeMode ? (topHeight ?? SWIPE_STACK_ESTIMATE) : MAP_PILL_HEIGHT
@@ -303,6 +312,7 @@ export function useExplorerSwipe({
     height,
     initialRegion: region,
     second,
+    third,
     swipeMode,
     comparing,
     controller,
@@ -314,7 +324,8 @@ export function useExplorerSwipe({
     onEdgeExit,
     lineDragging,
     onLineDragging: setLineDragging,
-    onSideAction,
+    canStep: sideStep.canStep,
+    onStep: sideStep.step,
     onTopControlHeight: setTopHeight,
   }
 
@@ -325,6 +336,7 @@ export function useExplorerSwipe({
     skippedVisible: controller.skippedVisible,
     noticesTop,
     onBaseStyleLoaded,
+    onSecondStyleLoaded,
     onPanelOpen,
     toggleSwipe,
     quit,

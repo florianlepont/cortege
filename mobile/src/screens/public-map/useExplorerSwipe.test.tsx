@@ -27,6 +27,22 @@ jest.mock("./map-stack-mode", () => ({
     return mockStack.comparison
   },
   LEFT_MAP_ANDROID_VIEW: "texture",
+  SIDE_WIPE: "wipe",
+}))
+
+// The side change (neighbour search, wipe, cover) is useSideStep's own test: here it is scripted.
+const mockSideStep: {
+  stepping: unknown
+  canStep: jest.Mock
+  step: jest.Mock
+  onStyleLoaded: jest.Mock
+} = { stepping: null, canStep: jest.fn(), step: jest.fn(), onStyleLoaded: jest.fn() }
+const mockSideStepParams: unknown[] = []
+jest.mock("./useSideStep", () => ({
+  useSideStep: (params: unknown) => {
+    mockSideStepParams.push(params)
+    return mockSideStep
+  },
 }))
 
 // The second map's camera sync. It keeps its identity.
@@ -335,8 +351,9 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     mount(makeLayers({ swipeMode: true }))
     const event = { nativeEvent: { center: [1, 2], zoom: 12 } }
     act(() => out().mapCanvasProps.onViewChange?.(event as never))
-    expect(mockSyncs).toHaveLength(1)
-    expect(mockSyncs[0].syncFrom).toHaveBeenCalledWith(event)
+    // The second and the third map each have a sync; both follow the Explorer map.
+    expect(mockSyncs).toHaveLength(2)
+    for (const sync of mockSyncs) expect(sync.syncFrom).toHaveBeenCalledWith(event)
   })
 
   test("with an instant presentation no stacked map is mounted during a gesture", () => {
@@ -623,28 +640,86 @@ describe("Quitter la comparaison", () => {
   })
 })
 
-describe("the handle's side actions (accessibility)", () => {
-  test("change one side to its neighbour, never the other side's layer, with one tick", () => {
-    const layers = makeLayers({ compare: compareRight })
-    mount(layers)
-    act(() => out().layersView.onSideAction("left", 1))
-    // Left is Plan: the next is Satellite.
-    expect(layers.actions.setSide).toHaveBeenCalledWith("A", "satellite")
-    expect(tick).toHaveBeenCalledTimes(1)
-    expect(mockAnnounce).toHaveBeenCalledWith("Satellite, aujourd'hui")
-    act(() => out().layersView.onSideAction("right", -1))
-    // Right is Photos 1950: the previous is Carte de 1950.
-    expect(layers.actions.setSide).toHaveBeenLastCalledWith("B", "carte-1950")
-    act(() => out().layersView.onSideAction("left", -1))
-    // Left is Plan: the previous wraps to Photos 1950, which the right side shows: skipped.
-    expect(layers.actions.setSide).toHaveBeenLastCalledWith("A", "carte-1950")
+describe("the side change", () => {
+  const stepping = {
+    side: "right",
+    layer: "etat-major",
+    clipLeft: { value: 200 },
+    clipRight: { value: 400 },
+  }
+
+  beforeEach(() => {
+    mockSideStep.stepping = null
+    mockSideStep.canStep = jest.fn(() => true)
+    mockSideStep.step = jest.fn()
+    mockSideStep.onStyleLoaded = jest.fn()
+    mockSideStepParams.length = 0
   })
 
-  test("a side with no other layer to go to is left alone", () => {
+  test("it is given the layers state, the availability and the width", () => {
     const layers = makeLayers({ compare: compareRight })
-    mount(layers, { isAvailable: (key) => key === "map" || key === "photos-1950" })
-    act(() => out().layersView.onSideAction("left", 1))
-    expect(layers.actions.setSide).not.toHaveBeenCalled()
+    const isAvailable = (key: string) => key !== "etat-major"
+    mount(layers, { isAvailable })
+    expect(mockSideStepParams.at(-1)).toMatchObject({ layers, isAvailable, width: WIDTH })
+  })
+
+  test("the tags get the step rule and the step action of the side change", () => {
+    mount(makeLayers({ compare: compareRight }))
+    expect(out().layersView.canStep).toBe(mockSideStep.canStep)
+    expect(out().layersView.onStep).toBe(mockSideStep.step)
+  })
+
+  test("there is no third map without a side change", () => {
+    mount(makeLayers({ compare: compareRight }))
+    expect(out().layersView.third).toBeNull()
+  })
+
+  test("a side change under way mounts the third map with its strip and its own camera sync", () => {
+    mockSideStep.stepping = stepping
+    mount(makeLayers({ compare: compareRight }))
+    const { second, third } = out().layersView
+    expect(third).toMatchObject({
+      layer: "etat-major",
+      clipLeft: stepping.clipLeft,
+      clipRight: stepping.clipRight,
+    })
+    // Neither stacked map shares the camera ref of the other.
+    expect(third?.cameraRef).not.toBe(second?.cameraRef)
+    expect(third?.cameraRef).toBe(mockSyncs[mockSyncs.length - 1].cameraRef)
+  })
+
+  test("both stacked maps follow the Explorer map while a side change shows the third", () => {
+    mockSideStep.stepping = stepping
+    mount(makeLayers({ compare: compareRight }))
+    const onViewChange = out().mapCanvasProps.onViewChange as (event: unknown) => void
+    const event = { nativeEvent: { center: [2.7, 48.4], zoom: 12 } }
+    onViewChange(event)
+    const used = mockSyncs.filter((sync) => sync.syncFrom.mock.calls.length > 0)
+    expect(used).toHaveLength(2)
+    for (const sync of used) expect(sync.syncFrom).toHaveBeenCalledWith(event)
+  })
+
+  test("the third map alone is enough to follow the Explorer map", () => {
+    mockSideStep.stepping = stepping
+    mount(makeLayers())
+    expect(out().mapCanvasProps.onViewChange).toBeDefined()
+  })
+
+  test("the Explorer map's style load goes to the side change and drops a cover", () => {
+    mount(makeLayers({ compare: compareRight }))
+    act(() => out().onBaseStyleLoaded())
+    expect(mockSideStep.onStyleLoaded).toHaveBeenCalledWith("base")
+  })
+
+  test("the second map's style load goes to the side change only", () => {
+    mount(makeLayers({ compare: compareRight }))
+    act(() => out().onSecondStyleLoaded())
+    expect(mockSideStep.onStyleLoaded).toHaveBeenCalledWith("second")
+    expect(mockSideStep.onStyleLoaded).toHaveBeenCalledTimes(1)
+  })
+
+  test("a side change plays no haptic here: the side step owns it", () => {
+    mount(makeLayers({ compare: compareRight }))
     expect(tick).not.toHaveBeenCalled()
     expect(mockAnnounce).not.toHaveBeenCalled()
   })

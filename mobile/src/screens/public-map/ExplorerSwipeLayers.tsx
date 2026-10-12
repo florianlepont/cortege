@@ -12,7 +12,7 @@ import { QuitComparePill } from "./QuitComparePill"
 import { SwipeSurface } from "./SwipeSurface"
 import { swipeLabel } from "./swipe-labels"
 import { WipeLayer } from "./WipeLayer"
-import type { ExplorerSwipe } from "./useExplorerSwipe"
+import type { ExplorerSwipe, StackedMapView } from "./useExplorerSwipe"
 import type { ExplorerLayers } from "./useExplorerLayers"
 
 type ShortTextKey = Exclude<ReturnType<typeof layerEntry>["i18nKey"], "forestTypes">
@@ -80,7 +80,26 @@ export function ExplorerSwipeLayers({
       )
     }
   }
-  const { controller, second } = view
+  const { controller } = view
+  // A stacked map (the second one, or the third one of a side change), kept under a stable key.
+  function stackedMap(key: string, map: StackedMapView, onStyleLoaded?: () => void) {
+    return (
+      <WipeLayer
+        key={key}
+        layer={map.layer}
+        clipLeft={map.clipLeft}
+        clipRight={map.clipRight}
+        width={view.width}
+        initialRegion={view.initialRegion}
+        cameraRef={map.cameraRef}
+        content={contentFor(map.layer)}
+        styleRefreshKey={contentProps.styleRefreshKey}
+        styleRetryKey={contentProps.styleRetryKey}
+        onStyleLoaded={onStyleLoaded}
+        onStyleFailed={() => actions.styleFailed(map.layer)}
+      />
+    )
+  }
   const leftName = view.leftLayer ? shortName(view.leftLayer) : ""
   const rightName = view.rightLayer ? shortName(view.rightLayer) : ""
   // One side tag: the short name on the tag, the long name and the era for a screen reader.
@@ -96,29 +115,16 @@ export function ExplorerSwipeLayers({
         width={view.width}
         centerY={grabberCenterY(view.height)}
         unavailable={!layers.isAvailable(layer)}
-        canStep
+        canStep={view.canStep(side)}
         disabled={view.lineDragging}
-        onStep={(direction) => view.onSideAction(side, direction)}
+        onStep={(direction) => view.onStep(side, direction)}
       />
     )
   }
   return (
     <>
-      {second ? (
-        <WipeLayer
-          key="second-map"
-          layer={second.layer}
-          clipLeft={second.clipLeft}
-          clipRight={second.clipRight}
-          width={view.width}
-          initialRegion={view.initialRegion}
-          cameraRef={second.cameraRef}
-          content={contentFor(second.layer)}
-          styleRefreshKey={contentProps.styleRefreshKey}
-          styleRetryKey={contentProps.styleRetryKey}
-          onStyleFailed={() => actions.styleFailed(second.layer)}
-        />
-      ) : null}
+      {view.second ? stackedMap("second-map", view.second, swipe.onSecondStyleLoaded) : null}
+      {view.third ? stackedMap("third-map", view.third) : null}
       {view.swipeMode ? <SwipeSurface gesture={controller.gesture} /> : null}
       {view.comparing && view.leftLayer && view.rightLayer ? (
         <>
