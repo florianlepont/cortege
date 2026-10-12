@@ -57,7 +57,22 @@ function requestHeaders() {
   if (authMode === "application-id") {
     return { Authorization: `Bearer ${bearerToken}` }
   }
+  if (authMode === "bearer") {
+    // The credential is already a ready-to-use token (the portal can hand one out directly).
+    return { Authorization: `Bearer ${credential.trim()}` }
+  }
   return { apikey: credential.trim() }
+}
+
+/** A short excerpt of a provider error body, with every known secret masked. Auth failures only. */
+function safeExcerpt(text) {
+  let excerpt = String(text).replace(/\s+/g, " ").trim().slice(0, 240)
+  for (const secret of secrets) {
+    if (secret) {
+      excerpt = excerpt.split(secret).join("[masked]")
+    }
+  }
+  return excerpt
 }
 
 function recordRateLimit(headers) {
@@ -91,6 +106,9 @@ async function call(label, endpoint, params) {
   recordRateLimit(response.headers)
   const bytes = Buffer.byteLength(text)
   console.log(`${label}: HTTP ${response.status}, ${bytes} bytes`)
+  if (response.status === 401 || response.status === 403) {
+    console.log(`  provider message: ${safeExcerpt(text)}`)
+  }
   return { status: response.status, text, bytes }
 }
 
@@ -111,9 +129,16 @@ async function requestToken() {
     const raw = await response.text()
     console.log(`token request: HTTP ${response.status}, ${Buffer.byteLength(raw)} bytes`)
     if (!response.ok) {
+      console.log(`  provider message: ${safeExcerpt(raw)}`)
       return false
     }
-    const parsed = JSON.parse(raw)
+    const contentType = response.headers.get("content-type") ?? "unknown"
+    const parsed = tryJson(raw)
+    if (parsed === null) {
+      console.log(`token request: answer is not JSON (content-type ${contentType})`)
+      console.log(`  provider message: ${safeExcerpt(raw)}`)
+      return false
+    }
     if (typeof parsed?.access_token !== "string" || parsed.access_token === "") {
       console.log("token request: the answer carries no access token")
       return false
@@ -257,9 +282,14 @@ async function main() {
   authMode = "apikey"
   let listing = await call("liste-stations (format=json)", "liste-stations", { format: "json" })
   if (listing.status === 401 || listing.status === 403) {
-    console.log("apikey header refused, trying the application-id token flow")
+    console.log("apikey header refused, trying the credential as a ready bearer token")
+    authMode = "bearer"
+    listing = await call("liste-stations (bearer)", "liste-stations", { format: "json" })
+  }
+  if (listing.status === 401 || listing.status === 403) {
+    console.log("bearer token refused, trying the application-id token flow")
     if (!(await requestToken())) {
-      console.error("Authentication failed in both modes. Check the credential in api/.env")
+      console.error("Authentication failed in the three modes. Check the credential in api/.env")
       process.exit(1)
     }
     authMode = "application-id"
