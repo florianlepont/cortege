@@ -74,3 +74,37 @@ Decisions D-37 to D-40 are in `27-CONTEXT.md`.
   `weather.edited`.
 - The owner's seeded July draft "Parcelle de la source" is older than 24 h: it gets no weather for
   July (never an invented time). Changing its parcels stamps it and looks up the weather of now.
+
+# Third rework after the owner's iPhone check (2026-10-12, D-41)
+
+Decision D-41 (amends D-40) is in `27-CONTEXT.md`. The big weather card was meant for Contexte.
+
+## Survey summary (draft), order
+
+1. Header and status line, then the score card ("Score IBP du brouillon").
+2. Compact weather card (`WeatherCard`): one row of about 70 points, small sky glyph, temperature
+   with its unit and the sky label, "vent ..., pluie ..." as small text, "Météo-France", chevron to
+   Contexte. Empty draft and offline are one slim line; a submitted survey without weather shows
+   nothing.
+3. Photos, map card, the four rows, the survey actions, the note card, then the dev-only debug area.
+
+## Contexte, order
+
+1. One weather card (`WeatherBlock`) under the "Météo" section header: big read-out (`WeatherHero`:
+   glyph tile, temperature numeral, sky label, wind / rain over 24 h / time columns), status line,
+   the eight sky chips, the dated source sentence ("Source : Météo-France, mesure du 12/10/2026 à
+   12:00", with ", ciel saisi par l'observateur" when the sky is theirs).
+2. Then the IBP method and cas editor.
+3. `section: "conditions"` no longer scrolls (the weather is at the top).
+
+## Code map
+
+- Shared: `conditions/weather-card-model.ts` (`SKY_GLYPHS`, `weatherCardModel`, `weatherDetailLine`,
+  `areaAccessibilityLabel`).
+- Components: `WeatherCard.tsx` (compact), `WeatherHero.tsx` (big read-out), `WeatherBlock.tsx`.
+- Catalogue: `fr.conditions.summary.compactEmpty`, `compactOffline`.
+
+## Left as is
+
+- The read-only Contexte of a submitted survey keeps its grouped rows and source line.
+- The API, the package, the PDF and the provider code are untouched.
