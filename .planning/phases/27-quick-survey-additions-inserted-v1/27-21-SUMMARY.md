@@ -29,6 +29,10 @@ completed: 2026-10-12
 
 Maximal fixture: 6 pages against 4 (builder pagination and headless Chrome), +2. Owner decision 2026-10-12: accepted, no tightening (F-27-1).
 
-## Not done (open, carried in device-checks.md)
+## Reported to other phases (owner decision 2026-10-12)
+
+Phase 27 is closed with nothing open. DC-27-02 (factor note above the keyboard on a small screen), DC-27-03 (offline weather catch-up) and DC-27-04 (tap count) go to Phase 35 (criterion 7); DC-27-05 (VoiceOver, TalkBack, largest text) and SEED-007 (survey without network) go to Phase 37.
+
+## Not done before the report (open, carried in device-checks.md)
 
 DC-27-02 at 320 x 568 and 360 x 640, DC-27-03 as an airplane-mode protocol, DC-27-04 tap count, DC-27-05 VoiceOver / TalkBack / largest text. No screenshots or PDF page counts were produced, and `export-settings.ts` has no measurement line.
