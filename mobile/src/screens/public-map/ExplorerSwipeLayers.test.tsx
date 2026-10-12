@@ -119,6 +119,7 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
       window: { value: 0 } as ExplorerSwipe["immersive"]["window"],
       buttons: { value: 1 } as ExplorerSwipe["immersive"]["buttons"],
       applied: true,
+      target: { scale: 0.75, shiftY: -40 },
       buttonsHidden: view.swipeMode,
     },
     quitPillVisible: false,
@@ -214,10 +215,17 @@ describe("the receding window (swipe mode only)", () => {
     expect(named(tree, "ImmersiveWindow")[0].props).toMatchObject({
       progress: swipe.immersive.window,
       applied: true,
+      target: { scale: 0.75, shiftY: -40 },
     })
     const { tree: off } = render(makeView(), {
       swipe: {
-        immersive: { window: shared(0), buttons: shared(1), applied: false, buttonsHidden: false },
+        immersive: {
+          window: shared(0),
+          buttons: shared(1),
+          applied: false,
+          target: { scale: 1, shiftY: 0 },
+          buttonsHidden: false,
+        },
       },
     })
     expect(named(off, "ImmersiveWindow")[0].props.applied).toBe(false)

@@ -1217,13 +1217,7 @@ describe("PublicMapScreen", () => {
       expect(map.props.onRegionIsChanging).toBeUndefined()
       expect(map.props.androidView).toBe("texture")
       expect(maps()).toHaveLength(1)
-      for (const id of [
-        "swipe-surface",
-        "swipe-indicator",
-        "swipe-done",
-        "compare-line",
-        "compare-grabber",
-      ]) {
+      for (const id of ["swipe-surface", "swipe-indicator", "compare-line", "compare-grabber"]) {
         expect(present(id)).toBe(false)
       }
       expect(present("compare-quit")).toBe(false)
@@ -1250,7 +1244,6 @@ describe("PublicMapScreen", () => {
       expect(globe().props.accessibilityState).toEqual({ expanded: true, disabled: false })
       expect(present("swipe-surface")).toBe(true)
       expect(present("swipe-indicator")).toBe(true)
-      expect(present("swipe-done")).toBe(true)
       for (const prop of ["dragPan", "touchZoom", "touchRotate", "touchPitch", "doubleTapZoom"]) {
         expect(explorerMap().props[prop]).toBe(false)
       }
@@ -1291,14 +1284,18 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.76, 5)
+        // 800 tall; top 20 + 8, bottom 50 (tab bar) + 8 + 70 (info row): 644 left, centre 50 up.
+        expect(scale(props)).toBeCloseTo(0.805, 5)
+        const moved = flatStyle(byTestId("immersive-window")[0].props.style).transform as {
+          translateY?: number
+        }[]
+        expect(moved.find((t) => t.translateY !== undefined)!.translateY).toBeCloseTo(-50, 5)
         expect(buttons().props.pointerEvents).toBe("none")
         expect(buttons().props.accessibilityElementsHidden).toBe(true)
         expect(buttons().props.importantForAccessibility).toBe("no-hide-descendants")
         // The map is in the window; the surface and the top stack are in screen coordinates.
         expect(insideWindow("swipe-surface")).toBe(false)
         expect(insideWindow("swipe-indicator")).toBe(false)
-        expect(insideWindow("swipe-done")).toBe(false)
         expect(
           byTestId("immersive-window")[0].findAll(
             (node) => (node.type as unknown) === "MapLibreMap",
@@ -1310,11 +1307,15 @@ describe("PublicMapScreen", () => {
         expect(fading("map-overlay-button")).toBe(true)
       })
 
-      test("Terminé returns the window to full size and the buttons", () => {
+      test("done returns the window to full size and the buttons", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        act(() => byTestId("swipe-done")[0].props.onPress())
+        act(() =>
+          byTestId("swipe-indicator")[0].props.onAccessibilityAction({
+            nativeEvent: { actionName: "done" },
+          }),
+        )
         expect(scale(props)).toBe(1)
         expect(buttons().props.pointerEvents).toBe("box-none")
         expect(buttons().props.accessibilityElementsHidden).toBe(false)
@@ -1324,7 +1325,7 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.76, 5)
+        expect(scale(props)).toBeCloseTo(0.805, 5)
         drag(380, 200)
         release()
         expect(present("compare-grabber")).toBe(true)
@@ -1356,9 +1357,13 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.76, 5)
+        expect(scale(props)).toBeCloseTo(0.805, 5)
         expect(buttons().props.pointerEvents).toBe("none")
-        act(() => byTestId("swipe-done")[0].props.onPress())
+        act(() =>
+          byTestId("swipe-indicator")[0].props.onAccessibilityAction({
+            nativeEvent: { actionName: "done" },
+          }),
+        )
         expect(scale(props)).toBe(1)
         expect(buttons().props.pointerEvents).toBe("box-none")
       })
@@ -1385,10 +1390,14 @@ describe("PublicMapScreen", () => {
       expect(present("swipe-surface")).toBe(true)
     })
 
-    test("Terminé frees the map", () => {
+    test("done frees the map", () => {
       mount(makeProps())
       act(() => globe().props.onPress())
-      act(() => byTestId("swipe-done")[0].props.onPress())
+      act(() =>
+        byTestId("swipe-indicator")[0].props.onAccessibilityAction({
+          nativeEvent: { actionName: "done" },
+        }),
+      )
       expect(present("swipe-surface")).toBe(false)
       expect(explorerMap().props.dragPan).toBeUndefined()
     })
@@ -1431,8 +1440,8 @@ describe("PublicMapScreen", () => {
       expect(present("compare-tag-left")).toBe(true)
       expect(present("compare-tag-right")).toBe(true)
       expect(maps()).toHaveLength(2)
-      // The swipe mode ended in the same change: no surface, no indicator, no Terminé.
-      for (const id of ["swipe-surface", "swipe-indicator", "swipe-dots", "swipe-done"]) {
+      // The swipe mode ended in the same change: no surface, no indicator.
+      for (const id of ["swipe-surface", "swipe-indicator", "swipe-dots"]) {
         expect(present(id)).toBe(false)
       }
       expect(present("compare-quit")).toBe(true)
@@ -1456,7 +1465,6 @@ describe("PublicMapScreen", () => {
       expect(flatStyle(glyph.props.style).opacity).toBe(0.4)
       act(() => globe().props.onPress())
       expect(present("swipe-surface")).toBe(false)
-      expect(present("swipe-done")).toBe(false)
       expect(present("compare-grabber")).toBe(true)
       expect(present("compare-quit")).toBe(true)
     })

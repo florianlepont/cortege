@@ -3,16 +3,14 @@ import { StyleSheet, View } from "react-native"
 import type { AccessibilityActionEvent } from "react-native"
 import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated"
 import { Ionicons } from "@expo/vector-icons"
-import { brandMotion, brandRadius, brandSpacing4, brandTypography } from "../../app/brand-tokens"
+import { brandMotion, brandSpacing4, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { BASEMAP_CYCLE } from "../../map/layer-cycle"
 import type { BaseLayerKey } from "../../map/layers"
 import { BUTTON_FADE_IN_DELAY_MS, BUTTON_FADE_MS } from "../../map/swipe-machine"
-import { AppPressable } from "../../ui/AppPressable"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassSurface } from "../../ui/GlassSurface"
-import { MAP_CONTROL_HIT_SLOP, MAP_PILL_HEIGHT } from "./MapChips"
 import { indicatorValue, swipeLabel } from "./swipe-labels"
 
 const t = fr.mapLayers.basemap
@@ -55,9 +53,9 @@ export type BasemapSwipeOverlayProps = {
 
 /**
  * The centred top stack of the swipe mode (UI-SPEC section 3 and 4, U-21): the indicator pill, the
- * five dots, the single labelled "Terminé" pill and the transient hint. It exists only in the swipe
- * mode, which never coexists with a comparison. The indicator is the non-gesture path: adjustable,
- * with the actions next, previous and compare with the next layer.
+ * five dots and the transient hint. There is no "done" button: a tap on the map ends the mode, and
+ * "done" is an accessibility action of the indicator. It exists only in the swipe mode, which never coexists with a comparison. The indicator is the non-gesture path: adjustable,
+ * with the actions next, previous, done and compare with the next layer.
  */
 export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   bottom,
@@ -79,6 +77,7 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
     () => [
       { name: "increment", label: t.actionNext },
       { name: "decrement", label: t.actionPrevious },
+      { name: "done", label: t.doneA11y },
       ...(compareAvailable ? [{ name: "compareNext", label: t.actionCompareNext }] : []),
     ],
     [compareAvailable],
@@ -88,6 +87,7 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
     if (name === "increment") onNext()
     else if (name === "decrement") onPrevious()
     else if (name === "compareNext") onCompareNext()
+    else if (name === "done") onDone()
   }
   const hint = fingerDown ? hintText : introHintVisible ? t.hintSwipe : null
 
@@ -108,60 +108,33 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
           </View>
         </Animated.View>
       )}
-      <View style={styles.row}>
-        <View
-          testID="swipe-indicator"
-          accessible
-          accessibilityRole="adjustable"
-          accessibilityLabel={t.buttonA11y}
-          accessibilityHint={t.indicatorHint}
-          accessibilityValue={{ text: indicatorValue(layer) }}
-          accessibilityActions={actions}
-          onAccessibilityAction={onAction}
-        >
-          <GlassSurface
-            tone="auto"
-            surface={theme.visual.mapControl.glass}
-            style={styles.indicator}
-          >
-            <Ionicons
-              name="chevron-back-outline"
-              size={CHEVRON_SIZE}
-              color={theme.visual.mapControl.icon}
-            />
-            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-              {label.name}
-            </Text>
-            <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
-              {label.era}
-            </Text>
-            <Ionicons
-              name="chevron-forward-outline"
-              size={CHEVRON_SIZE}
-              color={theme.visual.mapControl.icon}
-            />
-          </GlassSurface>
-        </View>
-        <GlassSurface
-          tone="auto"
-          interactive
-          surface={theme.visual.mapControl.glass}
-          style={styles.done}
-        >
-          <AppPressable
-            testID="swipe-done"
-            disableScale
-            disableRipple
-            hitSlop={MAP_CONTROL_HIT_SLOP}
-            accessibilityRole="button"
-            accessibilityLabel={t.doneA11y}
-            onPress={onDone}
-            style={styles.doneHit}
-          >
-            <Text style={styles.doneText} numberOfLines={1}>
-              {t.done}
-            </Text>
-          </AppPressable>
+      <View
+        testID="swipe-indicator"
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel={t.buttonA11y}
+        accessibilityHint={t.indicatorHint}
+        accessibilityValue={{ text: indicatorValue(layer) }}
+        accessibilityActions={actions}
+        onAccessibilityAction={onAction}
+      >
+        <GlassSurface tone="auto" surface={theme.visual.mapControl.glass} style={styles.indicator}>
+          <Ionicons
+            name="chevron-back-outline"
+            size={CHEVRON_SIZE}
+            color={theme.visual.mapControl.icon}
+          />
+          <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+            {label.name}
+          </Text>
+          <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
+            {label.era}
+          </Text>
+          <Ionicons
+            name="chevron-forward-outline"
+            size={CHEVRON_SIZE}
+            color={theme.visual.mapControl.icon}
+          />
         </GlassSurface>
       </View>
       <View
@@ -196,12 +169,6 @@ function createStyles(theme: BrandTheme) {
       left: SIDE_INSET,
       right: SIDE_INSET,
       alignItems: "center",
-      gap: brandSpacing4.sm,
-    },
-    row: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
       gap: brandSpacing4.sm,
     },
     indicator: {
@@ -243,23 +210,6 @@ function createStyles(theme: BrandTheme) {
       width: DOT_CURRENT,
       height: DOT_CURRENT,
       borderRadius: DOT_CURRENT / 2,
-    },
-    done: {
-      height: MAP_PILL_HEIGHT,
-      maxWidth: MAX_WIDTH,
-      borderRadius: brandRadius.pill,
-      borderWidth: 1,
-      borderColor: theme.visual.mapControl.hairline,
-      justifyContent: "center",
-    },
-    doneHit: {
-      minHeight: MAP_PILL_HEIGHT,
-      paddingHorizontal: 18,
-      justifyContent: "center",
-    },
-    doneText: {
-      ...brandTypography.meta,
-      color: theme.visual.mapControl.text,
     },
     hint: {
       minHeight: 24,

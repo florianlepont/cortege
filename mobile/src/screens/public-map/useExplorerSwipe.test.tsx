@@ -223,6 +223,8 @@ function inputFor(layers: MapLayers, extra: Extra = {}): ExplorerSwipeInput {
     cameraRef,
     region: REGION,
     closePanels,
+    windowTop: 60,
+    windowBottom: 140,
   }
 }
 
@@ -757,11 +759,14 @@ describe("the immersive effect", () => {
       window: mockImmersive.window,
       buttons: mockImmersive.buttons,
       applied: true,
+      // 800 tall, 60 from the top, 140 from the bottom: 600 left, so 0.75, centred 40 up.
+      target: { scale: 0.75, shiftY: -40 },
       buttonsHidden: false,
     })
     expect(mockControllerParams[0]).toMatchObject({
       windowProgress: mockImmersive.window,
       windowApplied: true,
+      windowScale: 0.75,
     })
   })
 

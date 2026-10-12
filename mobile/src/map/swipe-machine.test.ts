@@ -14,8 +14,6 @@ import {
   IDLE_MS,
   IMMERSIVE_IN_MS,
   IMMERSIVE_OUT_MS,
-  IMMERSIVE_SCALE,
-  IMMERSIVE_SHIFT_PERCENT,
   LINE_MARGIN,
   liveHint,
   moveGesture,
@@ -446,8 +444,6 @@ describe("compareSidesFor", () => {
 
 describe("immersive constants", () => {
   it("are the UI-SPEC section 3c numbers, tied to the motion tokens", () => {
-    expect(IMMERSIVE_SCALE).toBe(0.76)
-    expect(IMMERSIVE_SHIFT_PERCENT).toBe(6)
     expect(IMMERSIVE_IN_MS).toBe(brandMotion.durations.slow)
     expect(IMMERSIVE_OUT_MS).toBe(brandMotion.durations.base)
     expect(BUTTON_FADE_MS).toBe(brandMotion.durations.fast)

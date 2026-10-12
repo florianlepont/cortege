@@ -5,6 +5,7 @@ import type { CameraRef, ViewStateChangeEvent } from "@maplibre/maplibre-react-n
 import type { MapRegion } from "../../app/map-viewport"
 import { fr } from "../../i18n"
 import { skippedCount } from "../../map/layer-cycle"
+import { immersiveTarget } from "../../map/wipe-geometry"
 import type { BaseLayerKey } from "../../map/layers"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { feedback } from "../../ui/feedback"
@@ -106,6 +107,8 @@ export type ExplorerImmersive = {
   buttons: SharedValue<number>
   /** The window transform applies on this platform (`immersiveApplies()`). */
   applied: boolean
+  /** Where the receded window ends: its scale and vertical shift in points (`immersiveTarget`). */
+  target: { scale: number; shiftY: number }
   /** The map buttons take no touch and are out of the accessibility tree: the swipe mode is on. */
   buttonsHidden: boolean
 }
@@ -148,6 +151,10 @@ export type ExplorerSwipeInput = {
   region: MapRegion
   /** Closes the bubble and the download card (entering the swipe mode). */
   closePanels: () => void
+  /** The receded window keeps this far from the top of the screen (safe area plus a margin). */
+  windowTop: number
+  /** The receded window keeps this far from the bottom: the tab bar and the info row. */
+  windowBottom: number
 }
 
 /** The cover a finished wipe leaves behind, or null when it cancelled or changed nothing. */
@@ -161,6 +168,8 @@ export function useExplorerSwipe({
   cameraRef,
   region,
   closePanels,
+  windowTop,
+  windowBottom,
 }: ExplorerSwipeInput): ExplorerSwipe {
   // The stacked maps and the curtain cover the window: the map area is the whole screen.
   const { width, height } = useWindowDimensions()
@@ -173,6 +182,10 @@ export function useExplorerSwipe({
   // The effect belongs to the swipe mode only; the comparison is full size with every button.
   const immersive = useImmersive(swipeMode)
   const windowApplied = immersiveApplies()
+  const target = useMemo(
+    () => immersiveTarget(height, windowTop, windowBottom),
+    [height, windowTop, windowBottom],
+  )
 
   const controller = useBasemapSwipe({
     layers,
@@ -181,6 +194,7 @@ export function useExplorerSwipe({
     skippedCount: skippedCount(isAvailable),
     windowProgress: immersive.window,
     windowApplied,
+    windowScale: target.scale,
   })
   const { wipe } = controller
 
@@ -354,6 +368,7 @@ export function useExplorerSwipe({
       window: immersive.window,
       buttons: immersive.buttons,
       applied: windowApplied,
+      target,
       buttonsHidden: swipeMode,
     },
     quitPillVisible,

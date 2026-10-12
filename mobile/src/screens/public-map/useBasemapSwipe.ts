@@ -16,7 +16,6 @@ import { neighbourLayer, type LayerAvailability } from "../../map/layer-cycle"
 import type { BasemapKey } from "../../map/basemaps"
 import type { BaseLayerKey } from "../../map/layers"
 import {
-  IMMERSIVE_SCALE,
   SETTLE_MS,
   beginGesture,
   compareSidesFor,
@@ -81,6 +80,8 @@ export type BasemapSwipeParams = {
   windowProgress?: SharedValue<number>
   /** `immersiveApplies()`: false keeps the window at full size, so touches are not mapped. */
   windowApplied?: boolean
+  /** The scale the receded window ends at (`immersiveTarget`), 1 when it does not recede. */
+  windowScale?: number
 }
 
 export type BasemapSwipe = {
@@ -138,6 +139,7 @@ export function useBasemapSwipe({
   skippedCount,
   windowProgress,
   windowApplied = false,
+  windowScale = 1,
 }: BasemapSwipeParams): BasemapSwipe {
   const reduced = useReducedMotion()
   const clipLeft = useStableShared(0)
@@ -201,7 +203,7 @@ export function useBasemapSwipe({
   // shown at that frame; a touch in the margin counts as the nearest edge. No window, no mapping.
   const toWindow = (x: number) => {
     if (!windowApplied || !windowProgress) return x
-    return windowX(x, width, 1 - (1 - IMMERSIVE_SCALE) * windowProgress.value)
+    return windowX(x, width, 1 - (1 - windowScale) * windowProgress.value)
   }
 
   // Applies a pending settle at once (a new touch must not find the old outcome half applied).

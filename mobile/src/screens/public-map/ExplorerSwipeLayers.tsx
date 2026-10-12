@@ -132,7 +132,11 @@ export function ExplorerSwipeLayers({
   }
   return (
     <>
-      <ImmersiveWindow progress={swipe.immersive.window} applied={swipe.immersive.applied}>
+      <ImmersiveWindow
+        progress={swipe.immersive.window}
+        applied={swipe.immersive.applied}
+        target={swipe.immersive.target}
+      >
         {children}
         {view.second ? stackedMap("second-map", view.second, swipe.onSecondStyleLoaded) : null}
         {view.third ? stackedMap("third-map", view.third) : null}

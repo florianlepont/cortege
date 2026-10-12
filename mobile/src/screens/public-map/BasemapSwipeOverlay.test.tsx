@@ -177,7 +177,7 @@ describe("indicator", () => {
     expect(textsOf(byId(tree, "swipe-indicator")[0])).toEqual(["Carte d'état-major", "1820-1866"])
   })
 
-  test("is adjustable, with the value text and the three actions", () => {
+  test("is adjustable, with the value text and the actions", () => {
     const indicator = byId(render(), "swipe-indicator")[0]
     expect(indicator.props.accessible).toBe(true)
     expect(indicator.props.accessibilityRole).toBe("adjustable")
@@ -185,6 +185,7 @@ describe("indicator", () => {
     expect(indicator.props.accessibilityActions).toEqual([
       { name: "increment", label: "Fond suivant" },
       { name: "decrement", label: "Fond précédent" },
+      { name: "done", label: "Terminé : libérer la carte" },
       { name: "compareNext", label: "Comparer avec le fond suivant" },
     ])
     const fire = (actionName: string) =>
@@ -192,17 +193,19 @@ describe("indicator", () => {
     fire("increment")
     fire("decrement")
     fire("compareNext")
+    fire("done")
     fire("activate")
     expect(handlers.onNext).toHaveBeenCalledTimes(1)
     expect(handlers.onPrevious).toHaveBeenCalledTimes(1)
     expect(handlers.onCompareNext).toHaveBeenCalledTimes(1)
+    expect(handlers.onDone).toHaveBeenCalledTimes(1)
   })
 
   test("offers no compare action when comparing is not available", () => {
     const indicator = byId(render({ compareAvailable: false }), "swipe-indicator")[0]
     expect(
       indicator.props.accessibilityActions.map((action: { name: string }) => action.name),
-    ).toEqual(["increment", "decrement"])
+    ).toEqual(["increment", "decrement", "done"])
   })
 
   test("the label helpers read the catalogue", () => {
@@ -240,24 +243,6 @@ describe("dots", () => {
     const tree = render({ isAvailable: (key) => key !== "carte-1950" })
     expect(flat(byId(tree, "swipe-dot-carte-1950")[0].props.style).opacity).toBe(0.4)
     expect(flat(byId(tree, "swipe-dot-satellite")[0].props.style).opacity).toBe(0.7)
-  })
-})
-
-describe("Terminé", () => {
-  test("a labelled 40 pt pill with a 44 pt target that calls onDone", () => {
-    const tree = render()
-    const done = byId(tree, "swipe-done")[0]
-    expect(done.props.accessibilityRole).toBe("button")
-    expect(done.props.accessibilityLabel).toBe("Terminé : libérer la carte")
-    expect(done.props.hitSlop).toBe(2)
-    expect(textsOf(done)).toEqual(["Terminé"])
-    const surface = tree.root
-      .findAllByType("GlassSurface" as never)
-      .find((node) => node.findAll((child) => child.props.testID === "swipe-done").length > 0)
-    expect(flat(surface?.props.style)).toMatchObject({ height: 40, maxWidth: 232 })
-    expect(surface?.props.surface).toEqual(defaultTheme.visual.mapControl.glass)
-    act(() => done.props.onPress())
-    expect(handlers.onDone).toHaveBeenCalledTimes(1)
   })
 })
 

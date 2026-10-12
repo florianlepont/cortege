@@ -37,6 +37,11 @@ const noop = () => undefined
 // The card sits one margin above the tab bar (UI-SPEC section 6); the locate arrow above the card.
 const CARD_MARGIN = 14
 const SWIPE_INFO_GAP = 8
+// Room the swipe mode's info row takes above the gap: indicator pill 36 + gap 4 + dots 8 + the
+// air under the receded map window (about 70 pt in all, with the intro hint floating over the map).
+const SWIPE_INFO_HEIGHT = 70
+// The receded window keeps this far under the top safe area.
+const SWIPE_WINDOW_TOP_GAP = 8
 const DOCK_GAP = 10
 // A second tap within this window (a double tap, or a tap during the push) opens nothing more.
 const OPEN_SURVEY_GUARD_MS = 800
@@ -122,6 +127,7 @@ export function PublicMapScreen({
   const readyAreaCount = offlineAreas.areas.filter((area) => area.status === "ready").length
   const insets = useSafeAreaInsets()
   const tabBarHeight = useAppBottomTabBarHeight()
+  const dockBottom = Math.max(tabBarHeight, insets.bottom)
 
   const animateToRegion = useCallback((target: MapRegion, durationMs: number) => {
     cameraRef.current?.fitBounds(boundsFromRegion(target), { duration: durationMs })
@@ -210,6 +216,8 @@ export function PublicMapScreen({
     cameraRef,
     region: viewport.region,
     closePanels: panels.closePanel,
+    windowTop: insets.top + SWIPE_WINDOW_TOP_GAP,
+    windowBottom: dockBottom + SWIPE_INFO_GAP + SWIPE_INFO_HEIGHT,
   })
   swipePanelExitRef.current = swipe.onPanelOpen
   const { onBaseStyleLoaded, skippedVisible } = swipe
@@ -246,7 +254,6 @@ export function PublicMapScreen({
     [overlayDot, bubbleOpen, toggleBubble],
   )
 
-  const dockBottom = Math.max(tabBarHeight, insets.bottom)
   const cardOpen = panels.panel === "card"
   // 12.2-19: download mode is the open download card before a download starts. The screen's edge
   // glows green then, since the area shown is the one the download takes. The glow goes round the

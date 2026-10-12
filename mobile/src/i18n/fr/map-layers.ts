@@ -21,7 +21,6 @@ export const mapLayersFr = {
     buttonA11y: "Changer de fond de carte",
     buttonHint: "Active le mode de changement de fond : glissez sur la carte",
     buttonActiveValue: "fond modifié",
-    done: "Terminé",
     doneA11y: "Terminé : libérer la carte",
     indicatorA11y: ({
       name,

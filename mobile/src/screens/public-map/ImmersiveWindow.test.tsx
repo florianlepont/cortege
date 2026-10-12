@@ -53,19 +53,20 @@ function render(element: React.ReactElement) {
   })
   return tree
 }
+const TARGET = { scale: 0.76, shiftY: -48 }
 const byTestId = (tree: renderer.ReactTestRenderer, id: string): ReactTestInstance =>
   tree.root.findByProps({ testID: id })
 
 describe("ImmersiveWindow, light", () => {
-  it("receded: scale 0.76 raised by 6 %, radius 22, canvas background and the soft shadow", () => {
+  it("receded: scale 0.76 moved up 48 pt, radius 22, canvas background and the soft shadow", () => {
     const tree = render(
-      <ImmersiveWindow progress={shared(1)} applied>
+      <ImmersiveWindow progress={shared(1)} applied target={TARGET}>
         <></>
       </ImmersiveWindow>,
     )
     const outer = flat(byTestId(tree, "immersive-window").props.style)
     const { shadow } = buildTheme("light").visual.immersive
-    expect(outer.transform).toEqual([{ translateY: "-6%" }, { scale: 0.76 }])
+    expect(outer.transform).toEqual([{ translateY: -48 }, { scale: 0.76 }])
     expect(outer.borderRadius).toBe(brandRadius.card)
     expect(outer.backgroundColor).toBe(defaultTheme.colors.canvas)
     expect(outer.shadowColor).toBe(shadow.color)
@@ -78,7 +79,7 @@ describe("ImmersiveWindow, light", () => {
 
   it("the clip rounds the same radius and clips its children, which it renders", () => {
     const tree = render(
-      <ImmersiveWindow progress={shared(1)} applied>
+      <ImmersiveWindow progress={shared(1)} applied target={TARGET}>
         <ChildProbe />
       </ImmersiveWindow>,
     )
@@ -89,11 +90,11 @@ describe("ImmersiveWindow, light", () => {
   })
 
   it("halfway: the values follow the progress", () => {
-    const tree = render(<ImmersiveWindow progress={shared(0.5)} applied />)
+    const tree = render(<ImmersiveWindow progress={shared(0.5)} applied target={TARGET} />)
     const outer = flat(byTestId(tree, "immersive-window").props.style)
     const { shadow } = buildTheme("light").visual.immersive
-    const [shift, zoom] = outer.transform as [{ translateY: string }, { scale: number }]
-    expect(shift.translateY).toBe("-3%")
+    const [shift, zoom] = outer.transform as [{ translateY: number }, { scale: number }]
+    expect(shift.translateY).toBe(-24)
     expect(zoom.scale).toBeCloseTo(0.88, 5)
     expect(outer.borderRadius).toBe(brandRadius.card / 2)
     expect(outer.shadowOpacity).toBeCloseTo(shadow.opacity / 2, 5)
@@ -102,13 +103,16 @@ describe("ImmersiveWindow, light", () => {
 
   it("at rest: full size, no radius, no shadow, and a plain full-size clip", () => {
     const tree = render(
-      <ImmersiveWindow progress={shared(0)} applied>
+      <ImmersiveWindow progress={shared(0)} applied target={TARGET}>
         <ChildProbe />
       </ImmersiveWindow>,
     )
     const root = byTestId(tree, "immersive-window")
     const outer = flat(root.props.style)
-    expect(outer.transform).toEqual([{ translateY: "0%" }, { scale: 1 }])
+    // 0 * -48 is -0, so the shift is compared by magnitude.
+    const [shift, zoom] = outer.transform as [{ translateY: number }, { scale: number }]
+    expect(Math.abs(shift.translateY)).toBe(0)
+    expect(zoom.scale).toBe(1)
     expect(outer.borderRadius).toBe(0)
     expect(outer.shadowOpacity).toBe(0)
     expect(outer.elevation).toBe(0)
@@ -124,7 +128,7 @@ describe("ImmersiveWindow, light", () => {
   it("not applied: no scale, no radius, no shadow and no ring at any progress", () => {
     for (const progress of [0, 0.5, 1]) {
       const tree = render(
-        <ImmersiveWindow progress={shared(progress)} applied={false}>
+        <ImmersiveWindow progress={shared(progress)} applied={false} target={TARGET}>
           <ChildProbe />
         </ImmersiveWindow>,
       )
@@ -146,7 +150,7 @@ describe("ImmersiveWindow, dark", () => {
   })
 
   it("receded: the canvas background, the faint shadow and the 1 pt ring", () => {
-    const tree = render(<ImmersiveWindow progress={shared(1)} applied />)
+    const tree = render(<ImmersiveWindow progress={shared(1)} applied target={TARGET} />)
     const { shadow, ring } = buildTheme("dark").visual.immersive
     const outer = flat(byTestId(tree, "immersive-window").props.style)
     expect(outer.backgroundColor).toBe(buildTheme("dark").colors.canvas)
@@ -161,14 +165,14 @@ describe("ImmersiveWindow, dark", () => {
   })
 
   it("the ring shows at the progress' opacity and is invisible at rest", () => {
-    const half = render(<ImmersiveWindow progress={shared(0.5)} applied />)
+    const half = render(<ImmersiveWindow progress={shared(0.5)} applied target={TARGET} />)
     expect(flat(byTestId(half, "immersive-window-ring").props.style).opacity).toBe(0.5)
-    const rest = render(<ImmersiveWindow progress={shared(0)} applied />)
+    const rest = render(<ImmersiveWindow progress={shared(0)} applied target={TARGET} />)
     expect(flat(byTestId(rest, "immersive-window-ring").props.style).opacity).toBe(0)
   })
 
   it("not applied: no ring", () => {
-    const tree = render(<ImmersiveWindow progress={shared(1)} applied={false} />)
+    const tree = render(<ImmersiveWindow progress={shared(1)} applied={false} target={TARGET} />)
     expect(tree.root.findAllByProps({ testID: "immersive-window-ring" })).toHaveLength(0)
   })
 })

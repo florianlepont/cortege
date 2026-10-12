@@ -3,13 +3,14 @@ import { StyleSheet } from "react-native"
 import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 import { brandElevation, brandRadius } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
-import { IMMERSIVE_SCALE, IMMERSIVE_SHIFT_PERCENT } from "../../map/swipe-machine"
 
 export type ImmersiveWindowProps = {
   /** The window's progress from `useImmersive`: 0 full size, 1 receded. */
   progress: SharedValue<number>
   /** `immersiveApplies()`: false keeps the window at full size (no scale, corners, shadow, ring). */
   applied: boolean
+  /** Where the receded window ends: its scale and its vertical shift in points (`immersiveTarget`). */
+  target: { scale: number; shiftY: number }
   children?: ReactNode
 }
 
@@ -23,7 +24,7 @@ export type ImmersiveButtonsProps = {
 
 /**
  * The map window of the Explorer that recedes in the swipe mode (Phase 28, UI-SPEC section 3c,
- * owner item 13 c): it scales to `IMMERSIVE_SCALE` about its centre and rises by `IMMERSIVE_SHIFT_PERCENT`, rounds its corners to `brandRadius.card`
+ * owner item 13 c): it scales to `target.scale` about its centre and moves by `target.shiftY` points (it fits between the top margin and the info row), rounds its corners to `brandRadius.card`
  * and shows the shadow (light) or the hairline ring (dark) of `visual.immersive` over the
  * `colors.canvas` behind it. Rendering notes:
  *
@@ -39,21 +40,19 @@ export type ImmersiveButtonsProps = {
  *
  * A touch on the receded window is measured in its own coordinates with `windowX` (`wipe-geometry`).
  */
-export function ImmersiveWindow({ progress, applied, children }: ImmersiveWindowProps) {
+export function ImmersiveWindow({ progress, applied, target, children }: ImmersiveWindowProps) {
   const theme = useBrandTheme()
   const { shadow, ring } = theme.visual.immersive
   // Plain values for the UI-thread worklets below, not the whole theme.
   const canvas = theme.colors.canvas
+  const { scale, shiftY } = target
 
   const outer = useAnimatedStyle(() => {
     if (!applied) return {}
     const p = progress.value
     return {
-      // Up first, so the window ends above the info row that takes the bottom of the screen.
-      transform: [
-        { translateY: `${-IMMERSIVE_SHIFT_PERCENT * p}%` },
-        { scale: 1 - (1 - IMMERSIVE_SCALE) * p },
-      ],
+      // Moved first, so the window ends between the top margin and the info row.
+      transform: [{ translateY: shiftY * p }, { scale: 1 - (1 - scale) * p }],
       borderRadius: brandRadius.card * p,
       backgroundColor: canvas,
       shadowColor: shadow.color,

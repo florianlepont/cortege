@@ -164,7 +164,11 @@ let available: (key: BaseLayerKey) => boolean
 let skipped = 0
 let latest!: BasemapSwipe
 // The receded window of the immersive effect: absent unless a test sets it.
-let windowInputs: { windowProgress?: { value: number }; windowApplied?: boolean } = {}
+let windowInputs: {
+  windowProgress?: { value: number }
+  windowApplied?: boolean
+  windowScale?: number
+} = {}
 
 function Harness() {
   latest = useBasemapSwipe({
@@ -776,7 +780,7 @@ describe("SwipeSurface", () => {
 
 describe("the receded window (immersive effect)", () => {
   test("a drag measured on the window at full progress reveals 0.5 and is in the compare zone", () => {
-    windowInputs = { windowProgress: { value: 1 }, windowApplied: true }
+    windowInputs = { windowProgress: { value: 1 }, windowApplied: true, windowScale: 0.76 }
     mount()
     // Screen x 388 is the window's right edge (window x 400), screen x 200 its centre.
     begin(388)
@@ -795,7 +799,7 @@ describe("the receded window (immersive effect)", () => {
 
   test("mid-entrance the touch is measured with the scale shown at that frame", () => {
     const progress = { value: 0.5 }
-    windowInputs = { windowProgress: progress, windowApplied: true }
+    windowInputs = { windowProgress: progress, windowApplied: true, windowScale: 0.76 }
     mount()
     // Scale 0.88: screen x 394 maps past the window's edge (clamped to 400), x 200 stays at 200.
     begin(394)
@@ -810,7 +814,7 @@ describe("the receded window (immersive effect)", () => {
   })
 
   test("a touch in the margin counts as the nearest edge", () => {
-    windowInputs = { windowProgress: { value: 1 }, windowApplied: true }
+    windowInputs = { windowProgress: { value: 1 }, windowApplied: true, windowScale: 0.76 }
     mount()
     begin(399)
     move(100)

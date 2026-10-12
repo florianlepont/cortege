@@ -6,6 +6,9 @@ import {
   revealedFraction,
   settledStrip,
   halfBounds,
+  immersiveTarget,
+  IMMERSIVE_MAX_SCALE,
+  IMMERSIVE_MIN_SCALE,
   sideBounds,
   TAG_GAP,
   TAG_MIN_WIDTH,
@@ -168,5 +171,33 @@ describe("windowX", () => {
   it("falls back to the left edge for a NaN x", () => {
     expect(windowX(Number.NaN, 400, 0.94)).toBe(0)
     expect(windowX(Number.NaN, 400, 0)).toBe(0)
+  })
+})
+
+describe("immersiveTarget", () => {
+  it("fits the window between the top margin and the bottom reserve", () => {
+    // 800 tall, 60 top, 140 bottom: 600 left, scale 0.75, centre from 400 to 60 + 300 = 360.
+    const target = immersiveTarget(800, 60, 140)
+    expect(target.scale).toBeCloseTo(0.75, 6)
+    expect(target.shiftY).toBeCloseTo(-40, 6)
+  })
+
+  it("never grows past the maximum scale, 0.94 by default", () => {
+    expect(IMMERSIVE_MAX_SCALE).toBe(0.94)
+    expect(immersiveTarget(800, 0, 0).scale).toBe(0.94)
+    expect(immersiveTarget(800, 0, 0, 0.8).scale).toBe(0.8)
+  })
+
+  it("never shrinks under half the height", () => {
+    expect(IMMERSIVE_MIN_SCALE).toBe(0.5)
+    expect(immersiveTarget(800, 300, 300).scale).toBe(0.5)
+  })
+
+  it("keeps the window full size on a height or margin that is not a number", () => {
+    const full = { scale: 1, shiftY: 0 }
+    expect(immersiveTarget(0, 10, 10)).toEqual(full)
+    expect(immersiveTarget(Number.NaN, 10, 10)).toEqual(full)
+    expect(immersiveTarget(800, Number.NaN, 10)).toEqual(full)
+    expect(immersiveTarget(800, 10, Number.NaN)).toEqual(full)
   })
 })
