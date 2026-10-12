@@ -17,6 +17,7 @@ import {
   weatherCardMention,
   weatherSourceLine,
   weatherViewState,
+  weatherVisitTooOld,
 } from "./weather"
 
 const NOW = new Date("2026-10-11T12:00:00.000Z")
@@ -383,6 +384,38 @@ describe("weatherViewState", () => {
     ).toBe("prefilled")
   })
 
+  it("says the visit is too old, over the network and the lookup, once there is a parcel (D-42)", () => {
+    const tooOld = { ...base, visitTooOld: true }
+    expect(weatherViewState({ ...tooOld, weather: { requested_at: ago(30) } })).toBe("tooOld")
+    expect(weatherViewState({ ...tooOld, online: false, weather: null })).toBe("tooOld")
+    expect(weatherViewState({ ...tooOld, inFlight: true, weather: null })).toBe("tooOld")
+    expect(weatherViewState({ ...tooOld, unavailable: true, weather: null })).toBe("tooOld")
+    // The observer's sky changes nothing (D-37).
+    expect(
+      weatherViewState({ ...tooOld, weather: { sky: "fog", edited: ["sky"], source: "manual" } }),
+    ).toBe("tooOld")
+  })
+
+  it("lets no parcel and the provider's values win over a too old visit", () => {
+    expect(weatherViewState({ ...base, hasParcel: false, visitTooOld: true, weather: null })).toBe(
+      "noParcel",
+    )
+    expect(
+      weatherViewState({
+        ...base,
+        visitTooOld: true,
+        weather: { temperature_c: 9, source: "meteo_france", requested_at: ago(30) },
+      }),
+    ).toBe("prefilled")
+  })
+
+  it("keeps offering the retry inside the window: unavailable stays unavailable", () => {
+    expect(
+      weatherViewState({ ...base, visitTooOld: false, weather: { requested_at: ago(23) } }),
+    ).toBe("unavailable")
+    expect(weatherViewState({ ...base, weather: { requested_at: ago(23) } })).toBe("unavailable")
+  })
+
   it("is never an error: a provider that answered with nothing reads as unavailable", () => {
     expect(
       weatherViewState({
@@ -547,5 +580,82 @@ describe("weatherRequestTime (D-39: the survey time of a draft that was never st
 
   it("accepts a number as now", () => {
     expect(weatherRequestTime({}, ago(1), NOW.getTime())).toBe(ago(1))
+  })
+})
+
+describe("weatherVisitTooOld (D-42: the view and the prefill hook agree on the 24 h window)", () => {
+  const MINUTE = 60 * 1000
+
+  it("is false inside the window, whichever clock stamped the draft", () => {
+    expect(weatherVisitTooOld({ requested_at: ago(2) }, ago(40), NOW)).toBe(false)
+    expect(weatherVisitTooOld({ sky: "clear", source: "manual" }, ago(3), NOW)).toBe(false)
+    expect(weatherVisitTooOld(null, ago(23), NOW)).toBe(false)
+  })
+
+  it("is true past the window, from the stamped time", () => {
+    expect(weatherVisitTooOld({ requested_at: ago(30) }, ago(1), NOW)).toBe(true)
+    expect(
+      weatherVisitTooOld({ requested_at: ago(48), edited: ["sky"], sky: "fog" }, null, NOW),
+    ).toBe(true)
+  })
+
+  it("is true for an unstamped draft whose creation time is old, in both formats", () => {
+    expect(weatherVisitTooOld(null, ago(30), NOW)).toBe(true)
+    expect(weatherVisitTooOld({}, "2026-07-08 10:00:00+00", NOW)).toBe(true)
+    expect(weatherVisitTooOld({ requested_at: null }, ago(25), NOW.getTime())).toBe(true)
+  })
+
+  it("is false for an unstamped recent draft", () => {
+    expect(weatherVisitTooOld({}, ago(1), NOW)).toBe(false)
+    expect(weatherVisitTooOld({ requested_at: null }, ago(0), NOW)).toBe(false)
+  })
+
+  it("is false when the survey time cannot be read or lies in the future (nothing to claim)", () => {
+    expect(weatherVisitTooOld({}, null, NOW)).toBe(false)
+    expect(weatherVisitTooOld({}, undefined, NOW)).toBe(false)
+    expect(weatherVisitTooOld({}, "not a date", NOW)).toBe(false)
+    expect(weatherVisitTooOld({}, ago(-2), NOW)).toBe(false)
+    expect(weatherVisitTooOld({ requested_at: "never" }, ago(40), NOW)).toBe(false)
+    expect(weatherVisitTooOld({ requested_at: ago(-3) }, ago(40), NOW)).toBe(false)
+  })
+
+  it("is false once a provider answer was merged: the usual display wins", () => {
+    expect(
+      weatherVisitTooOld(
+        { temperature_c: 9, source: "meteo_france", requested_at: ago(30) },
+        null,
+        NOW,
+      ),
+    ).toBe(false)
+    expect(
+      weatherVisitTooOld({ source: "meteo_france", requested_at: ago(30) }, ago(30), NOW),
+    ).toBe(false)
+  })
+
+  it("flips exactly after 24 h: at 24 h the lookup is still allowed, 24 h and a minute is too old", () => {
+    const at = (offsetMs: number) => new Date(NOW.getTime() - 24 * HOUR - offsetMs).toISOString()
+    // Stamped survey time.
+    expect(weatherVisitTooOld({ requested_at: at(0) }, null, NOW)).toBe(false)
+    expect(weatherVisitTooOld({ requested_at: at(MINUTE) }, null, NOW)).toBe(true)
+    // Unstamped draft, creation time.
+    expect(weatherVisitTooOld({}, at(0), NOW)).toBe(false)
+    expect(weatherVisitTooOld({}, at(MINUTE), NOW)).toBe(true)
+  })
+
+  it("agrees with the prefill hook's skip rule at every age", () => {
+    // The hook skips a draft when its request time is null or needsWeatherLookup is false.
+    const hookSkips = (weather: SurveyWeather | null, createdAt: string | null) => {
+      const requestedAt = weatherRequestTime(weather, createdAt, NOW)
+      return (
+        requestedAt === null || !needsWeatherLookup({ ...weather, requested_at: requestedAt }, NOW)
+      )
+    }
+    for (const minutes of [0, 30, 23 * 60, 24 * 60 - 1, 24 * 60, 24 * 60 + 1, 25 * 60, 72 * 60]) {
+      const stamp = new Date(NOW.getTime() - minutes * MINUTE).toISOString()
+      expect(weatherVisitTooOld({ requested_at: stamp }, null, NOW)).toBe(
+        hookSkips({ requested_at: stamp }, null),
+      )
+      expect(weatherVisitTooOld({}, stamp, NOW)).toBe(hookSkips({}, stamp))
+    }
   })
 })

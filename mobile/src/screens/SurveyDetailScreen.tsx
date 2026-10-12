@@ -4,6 +4,7 @@ import { useReducedMotion } from "react-native-reanimated"
 import { IBP_METHOD_V3_2, resolveMethodVersion } from "@cortege/ibp-domain"
 import { shouldShowDevTools } from "../app/dev-tools"
 import { useBrandTheme } from "../app/theme"
+import { weatherVisitTooOld } from "../app/weather"
 import { fr } from "../i18n"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
@@ -277,6 +278,11 @@ export function SurveyDetailScreen({
           weather={conditions.weather}
           loading={conditionsLoading}
           offline={conditionsOffline}
+          visitTooOld={weatherVisitTooOld(
+            conditions.weather,
+            selectedSurvey.created_at,
+            Date.now(),
+          )}
           submitted={selectedSurvey.status === "submitted"}
           onOpen={onOpenConditions}
         />

@@ -125,13 +125,16 @@ export function applyMethodFields(
 }
 
 /**
- * Stamps the survey time of the weather lookup (phase 27, D-10, D-11 and D-39): `requested_at` is
- * the write time of the first write that gives a draft its parcels, set once. That is a write that
- * takes the parcels from none to some, or, for a draft that already had parcels before it had a
- * weather (made before phase 27, pulled from the server, seeded: it never went through "none to
- * some" and so was never looked up), a write that changes the set of parcels. Any other write
- * (a rename, a factor autosave, the same parcels) returns `current` untouched, so a later parcel
- * change or autosave never moves a time already set. Pure: the caller passes the clock.
+ * Stamps the survey time of the weather lookup (phase 27, D-10, D-11, D-39 and D-44):
+ * `requested_at` is the write time of the first write that gives a draft its parcels, set once.
+ * That is a write that takes the parcels from none to some, and nothing else: the weather is
+ * filled at the FIRST selection of parcels of a survey (D-44). Any other write (a rename, a
+ * factor autosave, a later parcel edit from the Parcelles pencil or the wizard) returns `current`
+ * untouched, so a parcel change never moves a visit time already set and never gives an old draft
+ * that has no visit time the time of the edit. A draft that already had parcels before it had a
+ * weather (made before phase 27, pulled from the server, seeded) is not stamped here either: only
+ * the safety net of `weatherRequestTime` can look it up, from its creation time, inside the 24 h
+ * window. Pure: the caller passes the clock.
  */
 export function stampWeatherRequest(
   previousParcelIds: readonly string[],
@@ -139,11 +142,8 @@ export function stampWeatherRequest(
   current: SurveyWeather | null | undefined,
   nowIso: string,
 ): SurveyWeather | null | undefined {
-  const previous = new Set(previousParcelIds)
-  const parcelsChanged =
-    previous.size !== new Set(nextParcelIds).size || nextParcelIds.some((id) => !previous.has(id))
-  const givesParcels = nextParcelIds.length > 0 && parcelsChanged
-  if (!givesParcels || current?.requested_at) {
+  const firstSelection = previousParcelIds.length === 0 && nextParcelIds.length > 0
+  if (!firstSelection || current?.requested_at) {
     return current
   }
   return { ...current, requested_at: nowIso }

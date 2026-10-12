@@ -2,7 +2,7 @@ import { useCallback, useMemo, useRef } from "react"
 import { LayoutChangeEvent, ScrollView, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
 import { useBrandTheme } from "../app/theme"
-import { weatherViewState } from "../app/weather"
+import { weatherViewState, weatherVisitTooOld } from "../app/weather"
 import { fr } from "../i18n"
 import { useFrameInsetBehavior } from "../ui/frame-large-title"
 import { PageTitle } from "../ui/PageTitle"
@@ -54,6 +54,7 @@ export function SurveyContextScreen({
     online: weatherRequest.online,
     inFlight: weatherRequest.inFlight,
     unavailable: weatherRequest.unavailable,
+    visitTooOld: weatherVisitTooOld(conditions.weather, selectedSurvey.created_at, Date.now()),
     weather: conditions.weather,
   })
   const reduceMotion = useReducedMotion()

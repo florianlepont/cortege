@@ -43,6 +43,8 @@ type WeatherCardProps = {
   loading: boolean
   /** There is no network: an empty card says so calmly. */
   offline: boolean
+  /** The visit is older than 24 h and nothing was fetched: no fill will come (D-42). */
+  visitTooOld: boolean
   /** A submitted survey: with nothing to show the card is not drawn. */
   submitted: boolean
   /** Opens the Contexte page at its weather section. */
@@ -56,10 +58,17 @@ type WeatherCardProps = {
  * mention (D-35), and a chevron. The whole card is one press target opening the weather of the
  * Contexte page, where the big read-out and the sky chips live. With only the observer's sky (D-37)
  * it shows the glyph and the label. A draft with nothing shows a slim invitation (calm when offline,
- * never an error), a submitted survey with nothing draws nothing. At very large text the lines wrap
+ * calm and without a promise when the visit is older than 24 h, never an error), a submitted survey with nothing draws nothing. At very large text the lines wrap
  * and the card grows. One entrance, no loop.
  */
-export function WeatherCard({ weather, loading, offline, submitted, onOpen }: WeatherCardProps) {
+export function WeatherCard({
+  weather,
+  loading,
+  offline,
+  visitTooOld,
+  submitted,
+  onOpen,
+}: WeatherCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
 
@@ -74,9 +83,10 @@ export function WeatherCard({ weather, loading, offline, submitted, onOpen }: We
     mention,
     loading,
     offline,
+    tooOld: visitTooOld,
     hasContent,
   })
-  const showSpinner = !hasContent && loading
+  const showSpinner = !hasContent && loading && !visitTooOld
 
   return (
     <EntranceView index={0}>
@@ -103,7 +113,7 @@ export function WeatherCard({ weather, loading, offline, submitted, onOpen }: We
                   name={
                     sky !== null
                       ? SKY_GLYPHS[sky]
-                      : !hasContent && offline
+                      : !hasContent && offline && !visitTooOld
                         ? OFFLINE_GLYPH
                         : NEUTRAL_GLYPH
                   }
@@ -140,7 +150,13 @@ export function WeatherCard({ weather, loading, offline, submitted, onOpen }: We
                 <Text style={styles.headline}>{s.emptyTitle}</Text>
               ) : (
                 <Text style={styles.body} testID="weather-card-slim">
-                  {loading ? s.loading : offline ? s.compactOffline : s.compactEmpty}
+                  {visitTooOld
+                    ? s.compactTooOld
+                    : loading
+                      ? s.loading
+                      : offline
+                        ? s.compactOffline
+                        : s.compactEmpty}
                 </Text>
               )}
 

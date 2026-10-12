@@ -66,6 +66,7 @@ function mount(over: Partial<CardProps> = {}): { tree: ReactTestRenderer; onOpen
         weather={null}
         loading={false}
         offline={false}
+        visitTooOld={false}
         submitted={false}
         onOpen={onOpen}
         {...over}
@@ -278,6 +279,37 @@ describe("WeatherCard states (U-11, D-40, D-41)", () => {
     expect(byTestId(tree, "weather-card-area").props.accessibilityLabel).toBe(
       s.openWithLine(s.offlineBody),
     )
+  })
+
+  test("a visit older than 24 h with nothing says so calmly, without promising a fill (D-42)", () => {
+    const { tree } = mount({ visitTooOld: true })
+
+    expect(byTestId(tree, "weather-card-slim").props.children).toBe(s.compactTooOld)
+    expect(texts(tree)).toEqual([s.compactTooOld])
+    expect(texts(tree)).not.toContain(s.compactEmpty)
+    expect(s.compactTooOld).toContain("plus de 24\u00a0h")
+    expect(s.compactTooOld.toLowerCase()).not.toContain("remplit")
+    expect(s.compactTooOld.toLowerCase()).not.toContain("erreur")
+    expect(spinners(tree)).toHaveLength(0)
+    expect(byTestId(tree, "weather-card-area").props.accessibilityLabel).toBe(
+      s.openWithLine(s.compactTooOld),
+    )
+  })
+
+  test("a too old visit wins over the offline line, the invitation never comes back", () => {
+    const { tree } = mount({ visitTooOld: true, offline: true })
+    expect(texts(tree)).toEqual([s.compactTooOld])
+  })
+
+  test("a too old visit with the observer's sky keeps the glyph and the label", () => {
+    const { tree } = mount({
+      visitTooOld: true,
+      weather: { sky: "fog", edited: ["sky"], source: "manual" },
+    })
+
+    expect(texts(tree)).toEqual([t.sky.fog])
+    expect(glyphs(tree)).toContain(SKY_GLYPHS.fog)
+    expect(texts(tree)).not.toContain(s.compactTooOld)
   })
 
   test("offline with values already there keeps showing the values", () => {

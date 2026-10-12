@@ -142,6 +142,12 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
       text: t.weather.status.unavailable,
       link: "retry",
     },
+    {
+      state: "tooOld",
+      glyph: "time-outline",
+      text: t.weather.status.tooOld,
+      link: null,
+    },
   ]
 
   test.each(CASES)("$state shows its glyph, its sentence and its link", (item) => {
@@ -159,6 +165,36 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
     expect(maybeByTestId(tree, "conditions-retry") !== undefined).toBe(item.link === "retry")
     // The measurements cannot be refilled or edited any more (D-37).
     expect(maybeByTestId(tree, "conditions-refill")).toBeUndefined()
+  })
+
+  test("a visit older than 24 h explains why, offers no retry and keeps the sky chips (D-42)", () => {
+    const sky: SurveyWeather = { sky: "fog", edited: ["sky"], source: "manual" }
+    const onEditWeather = jest.fn()
+    const tree = mount(
+      <ConditionsSection
+        {...sectionProps({
+          viewState: "tooOld",
+          conditions: { ...LOADED_EMPTY, weather: sky },
+          onEditWeather,
+        })}
+      />,
+    )
+
+    const line = texts(tree)
+    expect(line).toContain(t.weather.status.tooOld)
+    expect(t.weather.status.tooOld).toContain("plus de 24\u00a0h")
+    expect(t.weather.status.tooOld).toContain("Vous pouvez choisir le ciel")
+    // Nothing promises a later fill, nothing can be retried or waited for.
+    expect(maybeByTestId(tree, "conditions-retry")).toBeUndefined()
+    expect(line).not.toContain(t.weather.status.retry)
+    expect(tree.root.findAll((n) => (n.type as unknown) === "ActivityIndicator")).toHaveLength(0)
+    expect(line.join(" ")).not.toContain("arriveront")
+    // The sky chips stay and still write the observer's sky.
+    const chips = tree.root.findAll(
+      (n) => typeof n.type === "string" && n.props.testID?.startsWith("conditions-sky-"),
+    )
+    expect(chips).toHaveLength(8)
+    expect(maybeByTestId(tree, "conditions-skyrow-toggle")).toBeUndefined()
   })
 
   test("prefilled carries the date of the data when it is known (D-31)", () => {
@@ -272,12 +308,14 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
     )
     expect(tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
     expect(maybeByTestId(tree, "conditions-field-temperature")).toBeUndefined()
-    // The sky chips stay: eight of them.
-    expect(
+    // The sky chips are folded behind "Modifier le ciel" (D-43): eight of them once it is pressed.
+    const chipHosts = () =>
       tree.root.findAll(
         (n) => typeof n.type === "string" && n.props.testID?.startsWith("conditions-sky-"),
-      ),
-    ).toHaveLength(8)
+      )
+    expect(chipHosts()).toHaveLength(0)
+    act(() => byTestId(tree, "conditions-skyrow-toggle").props.onPress())
+    expect(chipHosts()).toHaveLength(8)
   })
 
   test("the whole weather is one card: read-out, status line, chips, then the source sentence (D-41)", () => {
@@ -290,6 +328,7 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
       />,
     )
 
+    act(() => byTestId(tree, "conditions-skyrow-toggle").props.onPress())
     const hosts = tree.root
       .findAll((n) => typeof n.type === "string" && typeof n.props.testID === "string")
       .map((n) => n.props.testID as string)
@@ -562,5 +601,121 @@ describe("Conditions read only (D-03, U-04, D-37)", () => {
     expect(all).toContain("Vent")
     expect(all).not.toContain("Ciel")
     expect(all).not.toContain("Température")
+  })
+})
+
+describe("ConditionsSection sky row (D-43: the chips fold behind a button while Météo-France's values show)", () => {
+  const PROVIDER: SurveyWeather = {
+    sky: "cloudy",
+    temperature_c: 14,
+    wind_kmh: 12,
+    rain_24h_mm: 2,
+    source: "meteo_france",
+  }
+  const chipCount = (tree: ReactTestRenderer) =>
+    tree.root.findAll(
+      (n) => typeof n.type === "string" && n.props.testID?.startsWith("conditions-sky-"),
+    ).length
+
+  function mountProvider(over: Partial<SectionProps> = {}) {
+    return mount(
+      <ConditionsSection
+        {...sectionProps({
+          viewState: "prefilled",
+          conditions: { ...LOADED_EMPTY, weather: PROVIDER },
+          ...over,
+        })}
+      />,
+    )
+  }
+
+  test("with provider values the chips are absent by default, the current sky stays readable", () => {
+    const tree = mountProvider()
+
+    expect(chipCount(tree)).toBe(0)
+    expect(maybeByTestId(tree, "conditions-skypicker")).toBeUndefined()
+    expect(byTestId(tree, "conditions-skyrow-current").props.children).toBe(t.sky.cloudy)
+    // The glyph and the label of the read-out are still there.
+    expect(maybeByTestId(tree, "weather-hero")).toBeDefined()
+    expect(glyphs(tree)).toContain("cloudy-outline")
+  })
+
+  test("a provider weather without a sky says so on the row", () => {
+    const tree = mountProvider({
+      conditions: { ...LOADED_EMPTY, weather: { ...PROVIDER, sky: null } },
+    })
+    expect(byTestId(tree, "conditions-skyrow-current").props.children).toBe(t.skyRow.none)
+  })
+
+  test("the button is discreet, at least 44 points high and named for a screen reader", () => {
+    const tree = mountProvider()
+    const toggle = byTestId(tree, "conditions-skyrow-toggle")
+
+    expect(texts(tree)).toContain(t.skyRow.edit)
+    expect(toggle.props.accessibilityRole).toBe("button")
+    expect(toggle.props.accessibilityLabel).toBe(t.skyRow.editA11y)
+    expect(toggle.props.accessibilityState).toEqual({ expanded: false })
+    const flat = ([] as Record<string, unknown>[])
+      .concat(toggle.props.style)
+      .reduce((acc, item) => ({ ...acc, ...item }), {})
+    expect(flat.minHeight).toBeGreaterThanOrEqual(44)
+  })
+
+  test("pressing it shows the eight chips and turns the button into Fermer, pressing again folds them", () => {
+    const tree = mountProvider()
+
+    act(() => byTestId(tree, "conditions-skyrow-toggle").props.onPress())
+    expect(chipCount(tree)).toBe(8)
+    expect(texts(tree)).toContain(t.skyRow.close)
+    expect(texts(tree)).not.toContain(t.skyRow.edit)
+    const open = byTestId(tree, "conditions-skyrow-toggle")
+    expect(open.props.accessibilityLabel).toBe(t.skyRow.closeA11y)
+    expect(open.props.accessibilityState).toEqual({ expanded: true })
+
+    act(() => byTestId(tree, "conditions-skyrow-toggle").props.onPress())
+    expect(chipCount(tree)).toBe(0)
+    expect(texts(tree)).toContain(t.skyRow.edit)
+  })
+
+  test("a sky chosen in the open chips is written at once and survives the fold", () => {
+    const onEditWeather = jest.fn()
+    const tree = mountProvider({ onEditWeather })
+
+    act(() => byTestId(tree, "conditions-skyrow-toggle").props.onPress())
+    act(
+      () =>
+        byTestId(tree, "conditions-sky-rain").children[0] &&
+        (
+          byTestId(tree, "conditions-sky-rain").findAll(
+            (n) => typeof n.props.onPress === "function",
+          )[0] as ReactTestInstance
+        ).props.onPress(),
+    )
+    expect(onEditWeather).toHaveBeenCalledTimes(1)
+    const update = onEditWeather.mock.calls[0][0] as (c: SurveyWeather | null) => SurveyWeather
+    expect(update(PROVIDER).sky).toBe("rain")
+
+    act(() => byTestId(tree, "conditions-skyrow-toggle").props.onPress())
+    expect(chipCount(tree)).toBe(0)
+    expect(onEditWeather).toHaveBeenCalledTimes(1)
+  })
+
+  test("without provider values the chips are open from the start, with no button (D-37)", () => {
+    for (const viewState of ["noParcel", "loading", "offline", "unavailable", "tooOld"] as const) {
+      const tree = mount(<ConditionsSection {...sectionProps({ viewState })} />)
+      expect(chipCount(tree)).toBe(8)
+      expect(maybeByTestId(tree, "conditions-skyrow-toggle")).toBeUndefined()
+      expect(maybeByTestId(tree, "conditions-skyrow-current")).toBeUndefined()
+      expect(texts(tree)).not.toContain(t.skyRow.edit)
+    }
+  })
+
+  test("the open state is local: a new section for another survey starts folded", () => {
+    const tree = mountProvider()
+    act(() => byTestId(tree, "conditions-skyrow-toggle").props.onPress())
+    expect(chipCount(tree)).toBe(8)
+
+    const fresh = mountProvider()
+    expect(chipCount(fresh)).toBe(0)
   })
 })
