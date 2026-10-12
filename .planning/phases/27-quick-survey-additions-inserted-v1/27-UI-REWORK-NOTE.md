@@ -92,7 +92,8 @@ Decision D-41 (amends D-40) is in `27-CONTEXT.md`. The big weather card was mean
 
 1. One weather card (`WeatherBlock`) under the "Météo" section header: big read-out (`WeatherHero`:
    glyph tile, temperature numeral, sky label, wind / rain over 24 h / time columns), status line,
-   the eight sky chips, the dated source sentence ("Source : Météo-France, mesure du 12/10/2026 à
+   the eight sky chips (folded behind a small "Modifier le ciel" button while Météo-France's values
+   show, open with no button otherwise, D-43), the dated source sentence ("Source : Météo-France, mesure du 12/10/2026 à
    12:00", with ", ciel saisi par l'observateur" when the sky is theirs).
 2. Then the IBP method and cas editor.
 3. `section: "conditions"` no longer scrolls (the weather is at the top).
@@ -102,7 +103,12 @@ Decision D-41 (amends D-40) is in `27-CONTEXT.md`. The big weather card was mean
 - Shared: `conditions/weather-card-model.ts` (`SKY_GLYPHS`, `weatherCardModel`, `weatherDetailLine`,
   `areaAccessibilityLabel`).
 - Components: `WeatherCard.tsx` (compact), `WeatherHero.tsx` (big read-out), `WeatherBlock.tsx`.
-- Catalogue: `fr.conditions.summary.compactEmpty`, `compactOffline`.
+- Catalogue: `fr.conditions.summary.compactEmpty`, `compactOffline`, `compactTooOld`,
+  `fr.conditions.weather.status.tooOld`, `fr.conditions.sky.edit` / `close`.
+- A draft whose visit is older than 24 h gets an explanation instead of "Réessayer" (D-42,
+  `weatherVisitTooOld`, the same window rule as the prefill hook).
+- The weather is filled at the first selection of parcels only (D-44): a later parcel edit changes
+  neither the weather nor the visit time, so an old draft without weather ends in that state.
 
 ## Left as is
 

@@ -22,6 +22,15 @@ export const conditionsFr = {
     thunderstorm: "Orage",
     snow: "Neige",
   },
+  // The sky row of the Contexte card while Météo-France's values are shown (D-43): the chips are
+  // folded away behind a small button, the current sky stays readable.
+  skyRow: {
+    none: "Non indiqué",
+    edit: "Modifier le ciel",
+    editA11y: "Modifier le ciel du relevé",
+    close: "Fermer",
+    closeA11y: "Fermer le choix du ciel",
+  },
   weather: {
     title: "Météo",
     // The label and value rows of the provider's measurements (read-only, D-37).
@@ -43,6 +52,9 @@ export const conditionsFr = {
         "Pas de connexion. Les mesures de Météo-France arriveront quand le réseau reviendra. Vous pouvez déjà indiquer le ciel.",
       unavailable:
         "Les mesures de Météo-France ne sont pas disponibles pour le moment. Elles arriveront plus tard si possible. Vous pouvez indiquer le ciel.",
+      // D-42: a visit older than 24 h is never looked up, so no retry and no promise of a fill.
+      tooOld:
+        "Cette visite date de plus de 24\u00a0h : Météo-France ne garde pas d'historique plus ancien. Vous pouvez choisir le ciel.",
       retry: "Réessayer",
     },
     source: "Source : Météo-France",
@@ -92,6 +104,8 @@ export const conditionsFr = {
     // The slim one-line forms of the compact card (D-41).
     compactEmpty: "Météo : se remplit avec la parcelle, ciel au choix.",
     compactOffline: "Météo : pas de connexion, les mesures arriveront avec le réseau.",
+    // D-42: calm, no mention of an automatic fill.
+    compactTooOld: "Visite de plus de 24\u00a0h : météo non disponible, ciel au choix.",
     loading: "Recherche de la météo…",
     open: "Ouvrir la météo du relevé",
     openWithLine: (line: string) => `Ouvrir la météo du relevé. ${line}`,

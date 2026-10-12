@@ -53,7 +53,11 @@ export type WeatherPrefillState = {
 }
 
 export type WeatherPrefillActions = {
-  /** Keeps the parcel centre of a survey and asks for its weather at once when online. */
+  /**
+   * Keeps the parcel centre of a survey after a parcel selection or edit and lets the catch-up ask
+   * for its weather. D-44: the weather is filled at the first selection only, so a weather that is
+   * already there is left alone (nothing saved, nothing asked), and the visit time is never touched.
+   */
   rememberPoint(surveyId: string, point: WeatherPoint): Promise<void>
   /** "Réessayer": asks again at once. */
   retry(surveyId: string): Promise<void>
@@ -255,10 +259,19 @@ export function useWeatherPrefill(params: UseWeatherPrefillParams): {
 
   const actions = useStableActions<WeatherPrefillActions>({
     async rememberPoint(surveyId, point) {
+      // D-44: a parcel edit after the weather was filled changes nothing, neither the values nor
+      // the visit time. A weather still empty (the first lookup was offline or failed) only gets
+      // the point of the current parcels; the normal catch-up asks for the same visit time.
+      try {
+        const known = (await listWeatherCandidates()).find((entry) => entry.id === surveyId)
+        if (known?.weather.source === "meteo_france") return
+      } catch (error) {
+        logStatusDetail("weather.candidates", error instanceof Error ? error.name : "failed")
+      }
       await saveWeatherPoint(surveyId, point)
-      // A new parcel choice: a past "nothing exists" answer is for another place.
+      // The point changed: a past "nothing exists" answer was for another place.
       settledAt.current.delete(surveyId)
-      await startPass({ onlyId: surveyId, force: true })
+      await startPass({ onlyId: surveyId })
     },
     async retry(surveyId) {
       settledAt.current.delete(surveyId)
