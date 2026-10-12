@@ -220,7 +220,7 @@ describe("useEditingDraft", () => {
 
       const result = await handleCreateDraft()
 
-      expect(result).toBe(true)
+      expect(result).toBe(TEST_SURVEY_ID)
       expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
         expect.objectContaining({ survey_id: TEST_SURVEY_ID, visibility: "public" }),
       )
@@ -243,18 +243,18 @@ describe("useEditingDraft", () => {
 
       const result = await handleCreateDraft()
 
-      expect(result).toBe(true)
+      expect(result).toBe("draft-new")
       expect(mockCreateLocalDraft).toHaveBeenCalled()
       expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
     })
 
-    test("returns false and reports error on exception", async () => {
+    test("returns null and reports error on exception", async () => {
       mockCreateLocalDraft.mockRejectedValue(new Error("Write failed"))
       const { handleCreateDraft } = await buildHook(null)
 
       const result = await handleCreateDraft()
 
-      expect(result).toBe(false)
+      expect(result).toBeNull()
       expect(onStatusChange).toHaveBeenCalledWith(fr.status.editing.draftSaveFailed())
     })
   })

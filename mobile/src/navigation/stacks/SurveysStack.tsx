@@ -35,6 +35,7 @@ import {
   makeOfflineAreasScreenOptions,
   makeSettingsScreenOptions,
 } from "./AccountStack"
+import { closeSelectionUnlessReset } from "./survey-detail-listeners"
 import { SurveysStackConfigContext, type SurveysStackConfig } from "./surveys-stack-config"
 
 const SurveysStack = createNativeStackNavigator<SurveysStackParamList>()
@@ -52,6 +53,11 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
   const theme = useBrandTheme()
   const nativeListHeader = useNativeNav && Platform.OS === "ios"
   const config = useMemo<SurveysStackConfig>(() => ({ useNativeNav }), [useNativeNav])
+  const { closeSurveyDetailSelection } = surveyActions
+  const onSummaryRemoved = useMemo(
+    () => closeSelectionUnlessReset(closeSurveyDetailSelection),
+    [closeSurveyDetailSelection],
+  )
 
   return (
     <SurveysStackConfigContext.Provider value={config}>
@@ -99,9 +105,7 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               ...(usesNativeLargeTitle() ? nativeLargeTitle(theme) : {}),
             }}
             listeners={{
-              beforeRemove: () => {
-                surveyActions.closeSurveyDetailSelection()
-              },
+              beforeRemove: onSummaryRemoved,
             }}
             component={SurveyDetailRoute}
           />

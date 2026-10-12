@@ -476,8 +476,14 @@ describe("tab options", () => {
 describe("stack options and listeners", () => {
   test("the surveys stack closes the detail selection before the detail is removed", async () => {
     await mount(<AppNavigation />)
-    mockScreens.surveyDetail.listeners?.beforeRemove()
+    mockScreens.surveyDetail.listeners?.beforeRemove({ data: { action: { type: "POP" } } })
     expect(mockSurveyActions.closeSurveyDetailSelection).toHaveBeenCalledTimes(1)
+  })
+
+  test("the surveys stack keeps the selection when a reset removes the detail (D-45)", async () => {
+    await mount(<AppNavigation />)
+    mockScreens.surveyDetail.listeners?.beforeRemove({ data: { action: { type: "RESET" } } })
+    expect(mockSurveyActions.closeSurveyDetailSelection).not.toHaveBeenCalled()
   })
 
   test("the factor detail title names the factor", async () => {

@@ -28,6 +28,8 @@ export const navigationFr = {
     account: "Compte",
     settings: "Paramètres",
   },
+  // The survey pages wait for the selected survey (SelectedSurveyGate).
+  surveyLoading: "Chargement du relevé…",
   a11y: {
     openSettings: "Ouvrir les paramètres",
   },
