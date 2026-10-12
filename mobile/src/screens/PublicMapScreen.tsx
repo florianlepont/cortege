@@ -268,33 +268,6 @@ export function PublicMapScreen({
 
   return (
     <View ref={rootRef} onLayout={handleRootLayout} style={screenStyles.container}>
-      <MapCanvas
-        cameraRef={cameraRef}
-        items={mapItems}
-        draftIds={draftIdSet}
-        initialRegion={initialRegion}
-        highlightedParcelIds={highlightedParcelIds}
-        placePin={placePin}
-        region={viewport.region}
-        selectedId={highlightedId}
-        parcelStatuses={parcelStatuses}
-        parcelLayerRenderable={viewport.parcelLayerRenderable}
-        studiedParcelsRenderable={viewport.studiedParcelsRenderable}
-        onRegionChangeComplete={viewport.onRegionChangeComplete}
-        onSelectSurvey={handleSelectSurvey}
-        onSelectParcel={handleSelectParcel}
-        onZoomTo={handleZoomTo}
-        onOpenClusterList={panels.openClusterList}
-        basemap={layers.layers.displayedBase}
-        forestOverlay={layers.layers.state.overlay}
-        parcelsMode={layers.layers.state.parcels}
-        surveyParcelIds={layers.surveyParcelIds}
-        styleRetryKey={styleRetryKey}
-        onStyleLoaded={handleStyleLoaded}
-        onStyleFailed={handleStyleFailed}
-        styleRefreshKey={readyAreaCount}
-        {...swipe.mapCanvasProps}
-      />
       <ExplorerSwipeLayers
         swipe={swipe}
         layers={layers}
@@ -307,7 +280,35 @@ export function PublicMapScreen({
           styleRetryKey,
           styleRefreshKey: readyAreaCount,
         }}
-      />
+      >
+        <MapCanvas
+          cameraRef={cameraRef}
+          items={mapItems}
+          draftIds={draftIdSet}
+          initialRegion={initialRegion}
+          highlightedParcelIds={highlightedParcelIds}
+          placePin={placePin}
+          region={viewport.region}
+          selectedId={highlightedId}
+          parcelStatuses={parcelStatuses}
+          parcelLayerRenderable={viewport.parcelLayerRenderable}
+          studiedParcelsRenderable={viewport.studiedParcelsRenderable}
+          onRegionChangeComplete={viewport.onRegionChangeComplete}
+          onSelectSurvey={handleSelectSurvey}
+          onSelectParcel={handleSelectParcel}
+          onZoomTo={handleZoomTo}
+          onOpenClusterList={panels.openClusterList}
+          basemap={layers.layers.displayedBase}
+          forestOverlay={layers.layers.state.overlay}
+          parcelsMode={layers.layers.state.parcels}
+          surveyParcelIds={layers.surveyParcelIds}
+          styleRetryKey={styleRetryKey}
+          onStyleLoaded={handleStyleLoaded}
+          onStyleFailed={handleStyleFailed}
+          styleRefreshKey={readyAreaCount}
+          {...swipe.mapCanvasProps}
+        />
+      </ExplorerSwipeLayers>
 
       {choosingArea ? <DownloadEdgeGlow /> : null}
 
@@ -326,6 +327,7 @@ export function PublicMapScreen({
         forestAvailable={layers.isAvailable("types-foret")}
         cardBottom={cardBottom}
         noticesTop={swipe.noticesTop}
+        buttons={{ opacity: swipe.immersive.buttons, hidden: swipe.immersive.buttonsHidden }}
       >
         <MapTopControls
           top={capsuleTop}

@@ -23,6 +23,7 @@ jest.mock("react-native-reanimated", () => {
   }
   const builder = (calls: Record<string, unknown>) => ({
     duration: (ms: number) => builder({ ...calls, durationMs: ms }),
+    delay: (ms: number) => builder({ ...calls, delayMs: ms }),
     reduceMotion: (mode: string) => builder({ ...calls, reduceMotion: mode }),
     calls,
   })
@@ -71,6 +72,7 @@ jest.mock("../../app/theme", () => {
 import { brandMotion } from "../../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../../app/theme"
 import type { BaseLayerKey } from "../../map/layers"
+import { BUTTON_FADE_IN_DELAY_MS, BUTTON_FADE_MS } from "../../map/swipe-machine"
 import { BasemapSwipeOverlay, type BasemapSwipeOverlayProps } from "./BasemapSwipeOverlay"
 import { QuitComparePill } from "./QuitComparePill"
 import { indicatorValue, swipeLabel } from "./swipe-labels"
@@ -317,9 +319,11 @@ describe("hint", () => {
 
   test("it fades in over 160 ms and out over about 1 s, both following Reduce Motion", () => {
     const tree = render({ introHintVisible: true })
+    // The innermost wrapper that holds the hint (the root holds it too).
     const wrapper = tree.root
       .findAllByType("AnimatedView" as never)
-      .find((node) => node.findAll((child) => child.props.testID === "swipe-hint").length > 0)
+      .filter((node) => node.findAll((child) => child.props.testID === "swipe-hint").length > 0)
+      .at(-1)
     expect(wrapper?.props.entering.calls).toEqual({
       durationMs: brandMotion.durations.fast,
       reduceMotion: "system",
@@ -344,16 +348,22 @@ describe("layout", () => {
     })
   })
 
-  test("the indicator and the dots fade in over 160 ms (none under Reduce Motion)", () => {
+  test("the whole stack fades in over 160 ms after 80 ms and out over 160 ms, both following Reduce Motion", () => {
     const tree = render()
+    // The stack is one fading root; the hint (absent here) is the only other animated wrapper.
     const wrappers = tree.root.findAllByType("AnimatedView" as never)
-    expect(wrappers).toHaveLength(3)
-    wrappers.forEach((wrapper) =>
-      expect(wrapper.props.entering.calls).toEqual({
-        durationMs: brandMotion.durations.fast,
-        reduceMotion: "system",
-      }),
-    )
+    expect(wrappers).toHaveLength(1)
+    expect(wrappers[0].props.entering.calls).toEqual({
+      durationMs: BUTTON_FADE_MS,
+      delayMs: BUTTON_FADE_IN_DELAY_MS,
+      reduceMotion: "system",
+    })
+    expect(wrappers[0].props.exiting.calls).toEqual({
+      durationMs: BUTTON_FADE_MS,
+      reduceMotion: "system",
+    })
+    expect(BUTTON_FADE_MS).toBe(160)
+    expect(BUTTON_FADE_IN_DELAY_MS).toBe(80)
   })
 })
 

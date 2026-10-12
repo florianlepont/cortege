@@ -8,6 +8,7 @@ import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { BASEMAP_CYCLE } from "../../map/layer-cycle"
 import type { BaseLayerKey } from "../../map/layers"
+import { BUTTON_FADE_IN_DELAY_MS, BUTTON_FADE_MS } from "../../map/swipe-machine"
 import { AppPressable } from "../../ui/AppPressable"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassSurface } from "../../ui/GlassSurface"
@@ -29,6 +30,11 @@ const DOT_OPACITY = 0.7
 const DOT_OPACITY_UNAVAILABLE = 0.4
 
 const enter = () => FadeIn.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)
+// The whole stack fades in after the map buttons have started to fade out, and out with them
+// (UI-SPEC section 3c): 160 ms after 80 ms in, 160 ms out.
+const stackEnter = () =>
+  FadeIn.duration(BUTTON_FADE_MS).delay(BUTTON_FADE_IN_DELAY_MS).reduceMotion(ReduceMotion.System)
+const stackExit = () => FadeOut.duration(BUTTON_FADE_MS).reduceMotion(ReduceMotion.System)
 
 export type BasemapSwipeOverlayProps = {
   /** Distance from the top of the map: the capsule's top. */
@@ -90,92 +96,84 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   const hint = fingerDown ? hintText : introHintVisible ? t.hintSwipe : null
 
   return (
-    <View
+    <Animated.View
       pointerEvents="box-none"
       style={[styles.column, { top }]}
+      entering={stackEnter()}
+      exiting={stackExit()}
       onLayout={(event) => onHeight?.(event.nativeEvent.layout.height)}
     >
-      <Animated.View entering={enter()}>
-        <View
-          testID="swipe-indicator"
-          accessible
-          accessibilityRole="adjustable"
-          accessibilityLabel={t.buttonA11y}
-          accessibilityHint={t.indicatorHint}
-          accessibilityValue={{ text: indicatorValue(layer) }}
-          accessibilityActions={actions}
-          onAccessibilityAction={onAction}
-        >
-          <GlassSurface
-            tone="auto"
-            surface={theme.visual.mapControl.glass}
-            style={styles.indicator}
-          >
-            <Ionicons
-              name="chevron-back-outline"
-              size={CHEVRON_SIZE}
-              color={theme.visual.mapControl.icon}
-            />
-            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-              {label.name}
-            </Text>
-            <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
-              {label.era}
-            </Text>
-            <Ionicons
-              name="chevron-forward-outline"
-              size={CHEVRON_SIZE}
-              color={theme.visual.mapControl.icon}
-            />
-          </GlassSurface>
-        </View>
-      </Animated.View>
-      <Animated.View entering={enter()}>
-        <View
-          testID="swipe-dots"
-          pointerEvents="none"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={styles.dots}
-        >
-          {BASEMAP_CYCLE.map((key) => (
-            <View
-              key={key}
-              testID={`swipe-dot-${key}`}
-              style={[
-                styles.dot,
-                key === layer && styles.dotCurrent,
-                key !== layer && {
-                  opacity: isAvailable(key) ? DOT_OPACITY : DOT_OPACITY_UNAVAILABLE,
-                },
-              ]}
-            />
-          ))}
-        </View>
-      </Animated.View>
-      <Animated.View entering={enter()}>
-        <GlassSurface
-          tone="auto"
-          interactive
-          surface={theme.visual.mapControl.glass}
-          style={styles.done}
-        >
-          <AppPressable
-            testID="swipe-done"
-            disableScale
-            disableRipple
-            hitSlop={MAP_CONTROL_HIT_SLOP}
-            accessibilityRole="button"
-            accessibilityLabel={t.doneA11y}
-            onPress={onDone}
-            style={styles.doneHit}
-          >
-            <Text style={styles.doneText} numberOfLines={1}>
-              {t.done}
-            </Text>
-          </AppPressable>
+      <View
+        testID="swipe-indicator"
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel={t.buttonA11y}
+        accessibilityHint={t.indicatorHint}
+        accessibilityValue={{ text: indicatorValue(layer) }}
+        accessibilityActions={actions}
+        onAccessibilityAction={onAction}
+      >
+        <GlassSurface tone="auto" surface={theme.visual.mapControl.glass} style={styles.indicator}>
+          <Ionicons
+            name="chevron-back-outline"
+            size={CHEVRON_SIZE}
+            color={theme.visual.mapControl.icon}
+          />
+          <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+            {label.name}
+          </Text>
+          <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
+            {label.era}
+          </Text>
+          <Ionicons
+            name="chevron-forward-outline"
+            size={CHEVRON_SIZE}
+            color={theme.visual.mapControl.icon}
+          />
         </GlassSurface>
-      </Animated.View>
+      </View>
+      <View
+        testID="swipe-dots"
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={styles.dots}
+      >
+        {BASEMAP_CYCLE.map((key) => (
+          <View
+            key={key}
+            testID={`swipe-dot-${key}`}
+            style={[
+              styles.dot,
+              key === layer && styles.dotCurrent,
+              key !== layer && {
+                opacity: isAvailable(key) ? DOT_OPACITY : DOT_OPACITY_UNAVAILABLE,
+              },
+            ]}
+          />
+        ))}
+      </View>
+      <GlassSurface
+        tone="auto"
+        interactive
+        surface={theme.visual.mapControl.glass}
+        style={styles.done}
+      >
+        <AppPressable
+          testID="swipe-done"
+          disableScale
+          disableRipple
+          hitSlop={MAP_CONTROL_HIT_SLOP}
+          accessibilityRole="button"
+          accessibilityLabel={t.doneA11y}
+          onPress={onDone}
+          style={styles.doneHit}
+        >
+          <Text style={styles.doneText} numberOfLines={1}>
+            {t.done}
+          </Text>
+        </AppPressable>
+      </GlassSurface>
       {hint === null ? null : (
         <Animated.View
           entering={enter()}
@@ -186,7 +184,7 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
           </View>
         </Animated.View>
       )}
-    </View>
+    </Animated.View>
   )
 })
 

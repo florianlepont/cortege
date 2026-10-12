@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useMemo, type ReactNode } from "react"
 import type { PublicParcelStatusItem } from "../../app/types"
 import { fr } from "../../i18n"
 import { layerEntry } from "../../map/layers"
@@ -7,6 +7,7 @@ import { BasemapSwipeOverlay } from "./BasemapSwipeOverlay"
 import { CompareGrabber, grabberCenterY } from "./CompareGrabber"
 import { CompareLine } from "./CompareLine"
 import { CompareSideTag } from "./CompareSideTag"
+import { ImmersiveWindow } from "./ImmersiveWindow"
 import { MapContentLayers, shownParcelsFor } from "./MapContentLayers"
 import { QuitComparePill } from "./QuitComparePill"
 import { SwipeSurface } from "./SwipeSurface"
@@ -34,6 +35,8 @@ export type ExplorerSwipeLayersProps = {
   contentProps: StackedContentProps
   /** The top of the capsule: the top controls and the line start there. */
   capsuleTop: number
+  /** The Explorer map: it sits in the receding window with the stacked maps and the line. */
+  children?: ReactNode
 }
 
 /** The short name of a layer on a tag and in the grabber's value ("Plan", "Photos 1950"). */
@@ -43,16 +46,19 @@ function shortName(key: BaseLayerKey): string {
 
 /**
  * Everything of the swipe mode and the comparison that is drawn, in z-order (UI-SPEC sections 3 to
- * 5): the second stacked map (stable key, so a wipe released in the middle becomes the curtain
- * without reloading a tile), the gesture surface while the swipe mode is on, the line and its tags
- * while comparing, the top stack of the swipe mode and the quit pill of the comparison. The two
- * modes never coexist. It renders only; `useExplorerSwipe` owns the state and the haptics.
+ * 5). In the receding window (3c, swipe mode only): the Explorer map, the second stacked map
+ * (stable key, so a wipe released in the middle becomes the curtain without reloading a tile), the
+ * third one, and the line, grabber and side tags while comparing. Above the window, in screen
+ * coordinates: the gesture surface while the swipe mode is on (it maps its touches onto the window,
+ * see `useBasemapSwipe`), the top stack of the swipe mode and the quit pill of the comparison. The
+ * two modes never coexist. It renders only; `useExplorerSwipe` owns the state and the haptics.
  */
 export function ExplorerSwipeLayers({
   swipe,
   layers,
   contentProps,
   capsuleTop,
+  children,
 }: ExplorerSwipeLayersProps) {
   const view = swipe.layersView
   const { actions, state } = layers.layers
@@ -123,26 +129,29 @@ export function ExplorerSwipeLayers({
   }
   return (
     <>
-      {view.second ? stackedMap("second-map", view.second, swipe.onSecondStyleLoaded) : null}
-      {view.third ? stackedMap("third-map", view.third) : null}
+      <ImmersiveWindow progress={swipe.immersive.window} applied={swipe.immersive.applied}>
+        {children}
+        {view.second ? stackedMap("second-map", view.second, swipe.onSecondStyleLoaded) : null}
+        {view.third ? stackedMap("third-map", view.third) : null}
+        {view.comparing && view.leftLayer && view.rightLayer ? (
+          <>
+            <CompareLine lineX={view.lineX} top={capsuleTop} />
+            <CompareGrabber
+              lineX={view.lineX}
+              width={view.width}
+              height={view.height}
+              leftName={leftName}
+              rightName={rightName}
+              onExitZone={view.onExitZone}
+              onEdgeExit={view.onEdgeExit}
+              onDragging={view.onLineDragging}
+            />
+            {sideTag("left", view.leftLayer)}
+            {sideTag("right", view.rightLayer)}
+          </>
+        ) : null}
+      </ImmersiveWindow>
       {view.swipeMode ? <SwipeSurface gesture={controller.gesture} /> : null}
-      {view.comparing && view.leftLayer && view.rightLayer ? (
-        <>
-          <CompareLine lineX={view.lineX} top={capsuleTop} />
-          <CompareGrabber
-            lineX={view.lineX}
-            width={view.width}
-            height={view.height}
-            leftName={leftName}
-            rightName={rightName}
-            onExitZone={view.onExitZone}
-            onEdgeExit={view.onEdgeExit}
-            onDragging={view.onLineDragging}
-          />
-          {sideTag("left", view.leftLayer)}
-          {sideTag("right", view.rightLayer)}
-        </>
-      ) : null}
       {view.swipeMode ? (
         <BasemapSwipeOverlay
           top={capsuleTop}

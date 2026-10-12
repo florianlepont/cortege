@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { StyleSheet } from "react-native"
+import type { SharedValue } from "react-native-reanimated"
 import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
 import type { MapLayerKey } from "../../map/layers"
@@ -7,6 +8,7 @@ import type { AreaLayersEstimate } from "../../map/offline-estimate"
 import { AppPressable } from "../../ui/AppPressable"
 import { DownloadCard } from "./DownloadCard"
 import { DownloadChip } from "./DownloadChip"
+import { ImmersiveButtons } from "./ImmersiveWindow"
 import { MapDownloadButton } from "./MapControls"
 import { MapNoticeStack } from "./MapNoticeStack"
 import { OverlayBubble } from "./OverlayBubble"
@@ -47,6 +49,12 @@ export type ExplorerPanelsViewProps = {
    */
   noticesTop?: number
   /**
+   * The fade of the map buttons in the swipe mode (UI-SPEC section 3c): the download button, the
+   * children and the chip fade out together and take no touch while `hidden`. The bubble, the
+   * notices column and the card are not buttons of the map and stay.
+   */
+  buttons: { opacity: SharedValue<number>; hidden: boolean }
+  /**
    * The map's own controls (capsule, locate arrow, legend). They are drawn above the bubble's
    * backdrop, so a tap on them acts at once, and under the card, which covers the legend.
    */
@@ -75,6 +83,7 @@ export function ExplorerPanelsView({
   forestAvailable,
   cardBottom,
   noticesTop,
+  buttons,
   children,
 }: ExplorerPanelsViewProps) {
   useDownloadAnnouncements(downloadStatus)
@@ -109,10 +118,19 @@ export function ExplorerPanelsView({
           accessibilityLabel={fr.mapLayers.overlays.closeA11y}
         />
       ) : null}
-      {downloadEnabled ? (
-        <MapDownloadButton top={layers.downloadButtonTop} onPress={panels.openCard} />
-      ) : null}
-      {children}
+      <ImmersiveButtons opacity={buttons.opacity} hidden={buttons.hidden}>
+        {downloadEnabled ? (
+          <MapDownloadButton top={layers.downloadButtonTop} onPress={panels.openCard} />
+        ) : null}
+        {children}
+        <DownloadChip
+          status={downloadStatus}
+          visible={layers.chipShown}
+          buttonTop={layers.downloadButtonTop}
+          onPress={reopenResult}
+          onExpire={onClearStatus}
+        />
+      </ImmersiveButtons>
       {bubbleOpen ? (
         <OverlayBubble
           top={layers.overlayBubbleTop}
@@ -128,13 +146,6 @@ export function ExplorerPanelsView({
         notices={layers.notices}
         top={noticesTop ?? layers.noticesTop}
         onRetry={onRetryStyle}
-      />
-      <DownloadChip
-        status={downloadStatus}
-        visible={layers.chipShown}
-        buttonTop={layers.downloadButtonTop}
-        onPress={reopenResult}
-        onExpire={onClearStatus}
       />
       {panels.panel === "card" ? (
         <DownloadCard

@@ -1,5 +1,6 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
+import type { SharedValue } from "react-native-reanimated"
 import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
 import type { AreaLayersEstimate } from "../../map/offline-estimate"
@@ -12,14 +13,17 @@ jest.mock("react-native", () => ({ StyleSheet: { absoluteFill: { position: "abso
 jest.mock("../../ui/AppPressable", () => ({ AppPressable: "AppPressable" }))
 jest.mock("./MapControls", () => ({ MapDownloadButton: "MapDownloadButton" }))
 jest.mock("./OverlayBubble", () => ({ OverlayBubble: "OverlayBubble" }))
+const MapControlsProbe = "MapControlsProbe" as unknown as React.ComponentType
 jest.mock("./DownloadCard", () => ({ DownloadCard: "DownloadCard" }))
 jest.mock("./DownloadChip", () => ({ DownloadChip: "DownloadChip" }))
+jest.mock("./ImmersiveWindow", () => ({ ImmersiveButtons: "ImmersiveButtons" }))
 jest.mock("./MapNoticeStack", () => ({ MapNoticeStack: "MapNoticeStack" }))
 const mockAnnouncements = jest.fn()
 jest.mock("./useDownloadAnnouncements", () => ({
   useDownloadAnnouncements: (status: unknown) => mockAnnouncements(status),
 }))
 
+const mockOpacity = { value: 1 } as SharedValue<number>
 const originalConsoleError = console.error
 
 beforeAll(() => {
@@ -123,6 +127,7 @@ function makeProps(overrides: Partial<ExplorerPanelsViewProps> = {}): ExplorerPa
     downloadEnabled: true,
     forestAvailable: true,
     cardBottom: 64,
+    buttons: { opacity: mockOpacity, hidden: false },
     ...overrides,
   }
 }
@@ -147,6 +152,34 @@ beforeEach(() => {
 })
 
 describe("ExplorerPanelsView", () => {
+  test("the download button, the children and the chip are the map buttons that fade; the rest stays", () => {
+    const props = makeProps({
+      panels: makePanels({ panel: "bubble" }),
+      buttons: { opacity: mockOpacity, hidden: true },
+    })
+    const tree = mount(props, <MapControlsProbe />)
+    const wrapper = one(tree, "ImmersiveButtons")
+    expect(wrapper.props).toMatchObject({ opacity: mockOpacity, hidden: true })
+    const inside = (type: string) =>
+      wrapper.findAll((node) => (node.type as unknown) === type).length
+    expect(inside("MapDownloadButton")).toBe(1)
+    expect(inside("MapControlsProbe")).toBe(1)
+    expect(inside("DownloadChip")).toBe(1)
+    // The bubble and its backdrop, the notices column and the card are not map buttons.
+    expect(inside("OverlayBubble")).toBe(0)
+    expect(inside("MapNoticeStack")).toBe(0)
+    expect(all(tree, "OverlayBubble")).toHaveLength(1)
+    expect(all(tree, "MapNoticeStack")).toHaveLength(1)
+  })
+
+  test("the card stays outside the fading buttons", () => {
+    const tree = mount(makeProps({ panels: makePanels({ panel: "card" }) }))
+    const wrapper = one(tree, "ImmersiveButtons")
+    expect(wrapper.findAll((node) => (node.type as unknown) === "DownloadCard")).toHaveLength(0)
+    expect(all(tree, "DownloadCard")).toHaveLength(1)
+    expect(wrapper.props.hidden).toBe(false)
+  })
+
   test("at rest: the download button, the notices column and the idle chip; no bubble, card or backdrop", () => {
     const props = makeProps()
     const tree = mount(props)
@@ -206,11 +239,24 @@ describe("ExplorerPanelsView", () => {
   })
 
   test("the map controls sit above the backdrop and under the bubble and the card", () => {
+    // Pre-order list of the host types, so the fading wrapper's children count in place.
+    const flat = (tree: renderer.ReactTestRenderer): string[] => {
+      const out: string[] = []
+      const walk = (node: unknown) => {
+        if (node === null || typeof node !== "object") return
+        if (Array.isArray(node)) return node.forEach(walk)
+        const { type, children } = node as { type: string; children: unknown }
+        out.push(type)
+        walk(children)
+      }
+      walk(tree.toJSON())
+      return out
+    }
     const props = makeProps({
       panels: makePanels({ panel: "card" }),
     })
     const tree = mount(props, <React.Fragment>{React.createElement("MapControls")}</React.Fragment>)
-    const order = (tree.toJSON() as { type: string }[]).map((node) => node.type)
+    const order = flat(tree)
     expect(order.indexOf("MapDownloadButton")).toBeLessThan(order.indexOf("MapControls"))
     expect(order.indexOf("MapControls")).toBeLessThan(order.indexOf("DownloadCard"))
 
@@ -218,7 +264,7 @@ describe("ExplorerPanelsView", () => {
       makeProps({ panels: makePanels({ panel: "bubble" }) }),
       React.createElement("MapControls"),
     )
-    const bubbleOrder = (bubbleTree.toJSON() as { type: string }[]).map((node) => node.type)
+    const bubbleOrder = flat(bubbleTree)
     expect(bubbleOrder.indexOf("AppPressable")).toBeLessThan(bubbleOrder.indexOf("MapControls"))
     expect(bubbleOrder.indexOf("MapControls")).toBeLessThan(bubbleOrder.indexOf("OverlayBubble"))
   })

@@ -2,6 +2,10 @@ import React from "react"
 import renderer, { act, type ReactTestInstance } from "react-test-renderer"
 
 jest.mock("./WipeLayer", () => ({ WipeLayer: (props: object) => mockHost("WipeLayer", props) }))
+jest.mock("./ImmersiveWindow", () => ({
+  ImmersiveWindow: ({ children, ...props }: { children?: React.ReactNode }) =>
+    (require("react") as typeof import("react")).createElement("ImmersiveWindow", props, children),
+}))
 jest.mock("./SwipeSurface", () => ({
   SwipeSurface: (props: object) => mockHost("SwipeSurface", props),
 }))
@@ -191,9 +195,75 @@ const named = (tree: renderer.ReactTestRenderer, type: string): ReactTestInstanc
   tree.root.findAll((node) => (node.type as unknown) === type)
 
 describe("nothing active", () => {
-  test("renders nothing", () => {
+  test("renders only the empty window", () => {
     const { tree } = render(makeView())
-    expect(tree.toJSON()).toBeNull()
+    expect(tree.toJSON()).toEqual({
+      type: "ImmersiveWindow",
+      props: expect.any(Object),
+      children: null,
+    })
+  })
+})
+
+describe("the receding window (swipe mode only)", () => {
+  const inside = (tree: renderer.ReactTestRenderer, type: string) =>
+    named(tree, "ImmersiveWindow")[0].findAll((node) => (node.type as unknown) === type)
+
+  test("it gets the immersive progress and the platform rule", () => {
+    const { tree, swipe } = render(makeView())
+    expect(named(tree, "ImmersiveWindow")[0].props).toMatchObject({
+      progress: swipe.immersive.window,
+      applied: true,
+    })
+    const { tree: off } = render(makeView(), {
+      swipe: {
+        immersive: { window: shared(0), buttons: shared(1), applied: false, buttonsHidden: false },
+      },
+    })
+    expect(named(off, "ImmersiveWindow")[0].props.applied).toBe(false)
+  })
+
+  test("the Explorer map, the stacked maps, the line, the grabber and the tags are in the window", () => {
+    const { tree } = render(
+      makeView({
+        comparing: true,
+        leftLayer: "map",
+        rightLayer: "photos-1950",
+        second: stacked("photos-1950"),
+        third: stacked("etat-major"),
+      }),
+      { props: { children: React.createElement("ExplorerMap") } },
+    )
+    expect(inside(tree, "ExplorerMap")).toHaveLength(1)
+    expect(inside(tree, "WipeLayer")).toHaveLength(2)
+    expect(inside(tree, "CompareLine")).toHaveLength(1)
+    expect(inside(tree, "CompareGrabber")).toHaveLength(1)
+    expect(inside(tree, "CompareSideTag")).toHaveLength(2)
+  })
+
+  test("the map comes first in the window, under the stacked maps", () => {
+    const { tree } = render(makeView({ second: stacked("photos-1950") }), {
+      props: { children: React.createElement("ExplorerMap") },
+    })
+    const order = named(tree, "ImmersiveWindow")[0].children.map((child) =>
+      typeof child === "string" ? child : (child.type as unknown),
+    )
+    expect(order).toEqual(["ExplorerMap", expect.any(Function)])
+  })
+
+  test("the gesture surface, the top stack and the quit pill stay outside the window", () => {
+    const swipeMode = render(makeView({ swipeMode: true }))
+    expect(named(swipeMode.tree, "SwipeSurface")).toHaveLength(1)
+    expect(named(swipeMode.tree, "BasemapSwipeOverlay")).toHaveLength(1)
+    expect(inside(swipeMode.tree, "SwipeSurface")).toHaveLength(0)
+    expect(inside(swipeMode.tree, "BasemapSwipeOverlay")).toHaveLength(0)
+
+    const comparing = render(
+      makeView({ comparing: true, leftLayer: "map", rightLayer: "photos-1950" }),
+      { swipe: { quitPillVisible: true } },
+    )
+    expect(named(comparing.tree, "QuitComparePill")).toHaveLength(1)
+    expect(inside(comparing.tree, "QuitComparePill")).toHaveLength(0)
   })
 })
 
@@ -339,10 +409,10 @@ describe("the swipe mode", () => {
     expect(named(tree, "BasemapSwipeOverlay")[0].props.hintText).toBe("Lâchez pour comparer")
   })
 
-  test("the surface is under the stack, over the second map", () => {
+  test("the surface is under the stack, over the window with the second map", () => {
     const { tree } = render(makeView({ swipeMode: true, second: stacked("satellite") }))
     const order = (tree.toJSON() as { type: string }[]).map((child) => child.type)
-    expect(order).toEqual(["WipeLayer", "SwipeSurface", "BasemapSwipeOverlay"])
+    expect(order).toEqual(["ImmersiveWindow", "SwipeSurface", "BasemapSwipeOverlay"])
   })
 })
 

@@ -1265,6 +1265,117 @@ describe("PublicMapScreen", () => {
       expect(explorerMap().props.dragPan).toBeUndefined()
     })
 
+    describe("the immersive effect (UI-SPEC section 3c)", () => {
+      // The shared values are read when a style is built: a render shows what the effect set.
+      const scale = (props: ScreenProps) => {
+        update(props)
+        const style = flatStyle(byTestId("immersive-window")[0].props.style)
+        return (style.transform as { scale: number }[])[0].scale
+      }
+      const buttons = () => byTestId("immersive-buttons")[0]
+      const insideWindow = (testID: string) =>
+        byTestId("immersive-window")[0].findAll((node) => node.props.testID === testID).length > 0
+
+      afterEach(() => setReducedMotion(false))
+
+      test("at rest the window is full size and the map buttons are shown and touchable", () => {
+        const props = makeProps()
+        mount(props)
+        expect(scale(props)).toBe(1)
+        expect(buttons().props.pointerEvents).toBe("box-none")
+        expect(buttons().props.accessibilityElementsHidden).toBe(false)
+        expect(insideWindow("compare-line")).toBe(false)
+      })
+
+      test("the swipe mode recedes the window and fades the buttons out of touch and of the tree", () => {
+        const props = makeProps()
+        mount(props)
+        act(() => globe().props.onPress())
+        expect(scale(props)).toBeCloseTo(0.94, 5)
+        expect(buttons().props.pointerEvents).toBe("none")
+        expect(buttons().props.accessibilityElementsHidden).toBe(true)
+        expect(buttons().props.importantForAccessibility).toBe("no-hide-descendants")
+        // The map is in the window; the surface and the top stack are in screen coordinates.
+        expect(insideWindow("swipe-surface")).toBe(false)
+        expect(insideWindow("swipe-indicator")).toBe(false)
+        expect(insideWindow("swipe-done")).toBe(false)
+        expect(
+          byTestId("immersive-window")[0].findAll(
+            (node) => (node.type as unknown) === "MapLibreMap",
+          ),
+        ).toHaveLength(1)
+        // The capsule (with the globe), the locate arrow and the legend are in the faded layer.
+        const fading = (testID: string) =>
+          buttons().findAll((node) => node.props.testID === testID).length > 0
+        expect(fading("map-overlay-button")).toBe(true)
+      })
+
+      test("Terminé returns the window to full size and the buttons", () => {
+        const props = makeProps()
+        mount(props)
+        act(() => globe().props.onPress())
+        act(() => byTestId("swipe-done")[0].props.onPress())
+        expect(scale(props)).toBe(1)
+        expect(buttons().props.pointerEvents).toBe("box-none")
+        expect(buttons().props.accessibilityElementsHidden).toBe(false)
+      })
+
+      test("a release in the compare zone returns the window and the buttons while the comparison shows", () => {
+        const props = makeProps()
+        mount(props)
+        act(() => globe().props.onPress())
+        expect(scale(props)).toBeCloseTo(0.94, 5)
+        drag(380, 200)
+        release()
+        expect(present("compare-grabber")).toBe(true)
+        expect(scale(props)).toBe(1)
+        expect(buttons().props.pointerEvents).toBe("box-none")
+        expect(buttons().props.accessibilityElementsHidden).toBe(false)
+        // The line, the grabber and the tags are drawn in the window.
+        for (const id of ["compare-line", "compare-grabber", "compare-tag-left"]) {
+          expect(insideWindow(id)).toBe(true)
+        }
+        expect(insideWindow("compare-quit")).toBe(false)
+      })
+
+      test("the comparison itself is never immersive", () => {
+        const props = makeProps()
+        mount(props)
+        act(() => globe().props.onPress())
+        drag(380, 200)
+        release()
+        act(() => {
+          jest.advanceTimersByTime(2000)
+        })
+        expect(scale(props)).toBe(1)
+        expect(buttons().props.pointerEvents).toBe("box-none")
+      })
+
+      test("under Reduce Motion the same states come at once", () => {
+        setReducedMotion(true)
+        const props = makeProps()
+        mount(props)
+        act(() => globe().props.onPress())
+        expect(scale(props)).toBeCloseTo(0.94, 5)
+        expect(buttons().props.pointerEvents).toBe("none")
+        act(() => byTestId("swipe-done")[0].props.onPress())
+        expect(scale(props)).toBe(1)
+        expect(buttons().props.pointerEvents).toBe("box-none")
+      })
+
+      test("a wipe measured on the receded window: a touch in the margin counts as the nearest edge", () => {
+        const props = makeProps()
+        mount(props)
+        act(() => globe().props.onPress())
+        update(props)
+        // Screen x 399 is in the margin (window x 400); screen x 200 is the window's centre.
+        drag(399, 200)
+        release()
+        expect(present("compare-grabber")).toBe(true)
+        expect(scale(props)).toBe(1)
+      })
+    })
+
     test("the globe closes the overlay bubble while it enters the swipe mode", () => {
       mount(makeProps())
       act(() => byTestId("map-overlay-button")[0].props.onPress())
