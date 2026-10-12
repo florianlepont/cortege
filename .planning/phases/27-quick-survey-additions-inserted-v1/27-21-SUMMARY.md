@@ -25,6 +25,10 @@ completed: 2026-10-12
 - DC-27-06 closed: real Météo-France values seen on the simulator against the local API (2026-10-11) and on the owner's iPhone against the production API (2026-10-12, VPS runs the provider, the route answers 401 without a token).
 - Owner passes on the iPhone (Release builds of PRs #281 to #285), quoted: "tout est bon" (2026-10-12): weather card and Conditions page, note above the keyboard, entrance, wording, IBP help removed.
 
+## PDF page budget (DC-27-01)
+
+Maximal fixture: 6 pages against 4 (builder pagination and headless Chrome), +2. Owner decision 2026-10-12: accepted, no tightening (F-27-1).
+
 ## Not done (open, carried in device-checks.md)
 
-DC-27-01 (PDF page budget, estimated 6 pages against 4, see F-27-1), DC-27-02 at 320 x 568 and 360 x 640, DC-27-03 as an airplane-mode protocol, DC-27-04 tap count, DC-27-05 VoiceOver / TalkBack / largest text. No screenshots or PDF page counts were produced, and `export-settings.ts` has no measurement line.
+DC-27-02 at 320 x 568 and 360 x 640, DC-27-03 as an airplane-mode protocol, DC-27-04 tap count, DC-27-05 VoiceOver / TalkBack / largest text. No screenshots or PDF page counts were produced, and `export-settings.ts` has no measurement line.

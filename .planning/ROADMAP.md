@@ -963,7 +963,7 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 22/22 plans executed (22 plans in 8 waves). Closed 2026-10-12; the emulator checks DC-27-01 to DC-27-05 stay open in `docs/user-tests/device-checks.md`
+**Plans**: 22/22 plans executed (22 plans in 8 waves). Closed 2026-10-12; the emulator checks DC-27-02 to DC-27-05 stay open in `docs/user-tests/device-checks.md`
 
 Plans:
 
