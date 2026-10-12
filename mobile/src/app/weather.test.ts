@@ -473,7 +473,9 @@ describe("the date of the data next to the source (D-31)", () => {
         observed_at: MEASURED,
         edited: ["sky"],
       }),
-    ).toBe("Source : Météo-France, mesure du 12/10/2026 à 04:00, conditions saisies par l'observateur")
+    ).toBe(
+      "Source : Météo-France, mesure du 12/10/2026 à 04:00, conditions saisies par l'observateur",
+    )
     expect(
       weatherSourceLine({
         sky: "rain",

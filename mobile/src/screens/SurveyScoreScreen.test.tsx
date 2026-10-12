@@ -89,12 +89,7 @@ describe("SurveyScoreScreen (variant I)", () => {
       const type = (child as { type: unknown }).type
       return typeof type === "function" ? type.name : type
     })
-    expect(order).toEqual([
-      "PageTitle",
-      "ScoreBreakdown",
-      "AppCard",
-      "FactorsList",
-    ])
+    expect(order).toEqual(["PageTitle", "ScoreBreakdown", "AppCard", "FactorsList"])
     const card = tree.root.findByType("AppCard" as never)
     expect(card.props.variant).toBe("glass")
     const chart = tree.root.findByType("FactorBarsChart" as never)
