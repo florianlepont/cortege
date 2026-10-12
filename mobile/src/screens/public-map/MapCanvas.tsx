@@ -55,6 +55,8 @@ export type MapCanvasProps = {
   styleRetryKey?: number
   /** The style finished loading (a base, an offline file). */
   onStyleLoaded?: () => void
+  /** The map finished rendering what it shows (`onDidFinishRenderingMapFully`). */
+  onRenderedFully?: () => void
   /** The style failed to load (offline without a pack, a refused tile server). */
   onStyleFailed?: () => void
   /** The parcels of the survey shown from its page, drawn highlighted (OA-116). */
@@ -109,6 +111,7 @@ export const MapCanvas = memo(function MapCanvas({
   surveyParcelIds,
   styleRetryKey = 0,
   onStyleLoaded,
+  onRenderedFully,
   onStyleFailed,
   initialRegion = DEFAULT_MAP_REGION,
   highlightedParcelIds,
@@ -186,6 +189,7 @@ export const MapCanvas = memo(function MapCanvas({
       onRegionIsChanging={onViewChange}
       onRegionDidChange={handleRegionDidChange}
       onDidFinishLoadingStyle={onStyleLoaded}
+      onDidFinishRenderingMapFully={onRenderedFully}
       onDidFailLoadingMap={onStyleFailed}
     >
       <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(initialRegion) }} />

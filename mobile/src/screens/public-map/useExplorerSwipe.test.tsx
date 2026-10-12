@@ -103,12 +103,8 @@ import {
   type CompareState,
   type MapLayersState,
 } from "./map-layers-state"
-import {
-  COVER_SETTLE_MS,
-  useExplorerSwipe,
-  type ExplorerSwipe,
-  type ExplorerSwipeInput,
-} from "./useExplorerSwipe"
+import { COVER_PRESENT_MS } from "./useCoverRelease"
+import { useExplorerSwipe, type ExplorerSwipe, type ExplorerSwipeInput } from "./useExplorerSwipe"
 import type { MapLayers } from "./useMapLayersState"
 
 const originalConsoleError = console.error
@@ -243,10 +239,13 @@ function Probe({ input }: { input: ExplorerSwipeInput }) {
 
 let tree: renderer.ReactTestRenderer
 
-const settle = (ms = COVER_SETTLE_MS) =>
+// The Explorer map reports it rendered after its style load; the cover then goes after a short time.
+const settle = () => {
+  act(() => out().mapCanvasProps.onRenderedFully?.())
   act(() => {
-    jest.advanceTimersByTime(ms)
+    jest.advanceTimersByTime(COVER_PRESENT_MS)
   })
+}
 
 function mount(layers: MapLayers, extra: Extra = {}) {
   act(() => {
@@ -286,6 +285,7 @@ describe("free map, no comparison", () => {
   test("the map is the Explorer's own: nothing frozen, locked or hidden, no stacked map", () => {
     mount(makeLayers())
     expect(out().mapCanvasProps).toEqual({
+      onRenderedFully: expect.any(Function),
       frozen: false,
       onViewChange: undefined,
       rotationLocked: false,
@@ -747,26 +747,19 @@ describe("the side change", () => {
     expect(mockSideStep.onStyleLoaded).toHaveBeenCalledWith("base")
   })
 
-  test("a second style load re-arms the settle time of the cover", () => {
+  test("a rendered-fully that came before the style load does not release the cover", () => {
     mount(makeLayers({ compare: compareLeft }))
     act(() => out().quit())
     act(() => (lastCurtain().onLeft as () => void)())
     update(makeLayers({ base: "photos-1950" }))
+    act(() => out().mapCanvasProps.onRenderedFully?.())
     act(() => out().onBaseStyleLoaded())
-    settle(COVER_SETTLE_MS - 50)
-    act(() => out().onBaseStyleLoaded())
-    settle(COVER_SETTLE_MS - 50)
+    act(() => {
+      jest.advanceTimersByTime(1000)
+    })
     expect(out().layersView.second).not.toBeNull()
-    settle(50)
+    settle()
     expect(out().layersView.second).toBeNull()
-  })
-
-  test("unmounting before the settle time cancels it", () => {
-    mount(makeLayers({ compare: compareRight }))
-    act(() => out().onBaseStyleLoaded())
-    expect(jest.getTimerCount()).toBeGreaterThan(0)
-    act(() => tree.unmount())
-    expect(jest.getTimerCount()).toBe(0)
   })
 
   test("the second map's style load goes to the side change only", () => {

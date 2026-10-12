@@ -12,7 +12,8 @@ import { fr } from "../../i18n"
 import { PublicMapScreen } from "../PublicMapScreen"
 import { downloadButtonTopOf, overlaySlotTopOf } from "./styles"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
-import { COVER_SETTLE_MS } from "./useExplorerSwipe"
+import { IMMERSIVE_OUT_MS } from "../../map/swipe-machine"
+import { COVER_PRESENT_MS } from "./useCoverRelease"
 
 // The shared Reanimated mock hands out a fresh shared value on every render. The grabber's drag
 // re-renders the screen midway (the exit hint appears), so here a shared value lives as long as its
@@ -1625,10 +1626,12 @@ describe("PublicMapScreen", () => {
       expect(present("compare-exit-hint")).toBe(false)
       expect(maps()).toHaveLength(2)
       act(() => explorerMap().props.onDidFinishLoadingStyle())
-      // The cover stays a moment more: the raster tiles are drawn after the style.
+      // The cover stays until the map reports it rendered what it shows, and a moment more.
       expect(maps()).toHaveLength(2)
+      act(() => explorerMap().props.onDidFinishRenderingMapFully())
+      // The swipe mode just ended: the cover also waits for the receded window to be back.
       act(() => {
-        jest.advanceTimersByTime(COVER_SETTLE_MS)
+        jest.advanceTimersByTime(Math.max(COVER_PRESENT_MS, IMMERSIVE_OUT_MS))
       })
       expect(maps()).toHaveLength(1)
     })
