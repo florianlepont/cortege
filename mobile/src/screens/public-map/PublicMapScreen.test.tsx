@@ -1807,41 +1807,33 @@ describe("PublicMapScreen", () => {
       expect(maps()).toHaveLength(1)
     })
 
-    test("offline, the layers the area lacks are skipped and told when the swipe mode starts", () => {
+    test("offline, the skipped layers are not told on the map during the swipe mode", () => {
       mockAvailable.all = false
       mount(makeProps({ isOffline: true }))
       act(() => globe().props.onPress())
-      expect(texts()).toContain(fr.mapLayers.basemap.skipped(3))
+      expect(texts()).not.toContain(fr.mapLayers.basemap.skipped(3))
     })
 
-    test("the notices sit under the window, above the tab bar, in the swipe mode and keep their own top in a comparison", () => {
+    test("the notices are hidden in the swipe mode, come back when it ends, and keep their own top in a comparison", () => {
       // A notice that stays whatever the mode: the forest overlay, not in the offline area.
       mockAvailable.all = false
-      const noticeStyle = () =>
-        flatStyle(
-          tree.root.find(
-            (node) =>
-              typeof node.type === "string" &&
-              node.props.pointerEvents === "box-none" &&
-              [node.props.style].flat(3).some((style) => style && style.alignItems === "center") &&
-              node.findAll((child) => child.props.testID === "map-notice-offline").length > 0,
-          ).props.style,
-        )
+      const notice = () => tree.root.findAll((child) => child.props.testID === "map-notice-offline")
       mount(makeProps({ isOffline: true }))
       const byId = (testID: string) => tree.root.find((node) => node.props.testID === testID)
       act(() => byId("map-overlay-button").props.onPress())
       act(() => byId("overlay-forest-switch").props.onValueChange(true))
+      expect(notice().length).toBeGreaterThan(0)
+      // The swipe mode: no notice at all (nor any room reserved for one).
       act(() => globe().props.onPress())
-      const swipeStyle = noticeStyle()
+      expect(notice()).toHaveLength(0)
+      // Leaving the mode brings it back.
+      act(() => globe().props.onPress())
+      expect(notice().length).toBeGreaterThan(0)
+      act(() => globe().props.onPress())
       drag(380, 200)
       release()
-      const pillTop = noticeStyle().top
-      // The swipe mode puts the notices at the bottom.
-      // The quit pill of the comparison is at the bottom: the notices keep their own top.
-      expect(swipeStyle.top).toBeUndefined()
-      // 50 (tab bar) + 8 + 14 + 40 (hint): in the white zone under the window, over the hint.
-      expect(swipeStyle.bottom).toBe(50 + 8 + 14 + 40)
-      expect(pillTop).toBe(30)
+      // The comparison is not the swipe mode: the notice is back, at its own top.
+      expect(notice().length).toBeGreaterThan(0)
     })
   })
 

@@ -11,7 +11,6 @@ import { DownloadEdgeGlow } from "../navigation/download-edge-glow"
 import type { PublicMapFocus } from "../navigation/types"
 import type { LoadPublicMapOptions } from "../hooks/usePublicMapExplorer"
 import type { BasemapKey } from "../map/basemaps"
-import { skippedCount } from "../map/layer-cycle"
 import { boundsFromRegion } from "../map/maplibre/regions"
 import { useOfflineAreas } from "../hooks/useOfflineAreas"
 import { useLatestCallback } from "../state/useLatestCallback"
@@ -30,7 +29,6 @@ import { useExplorerLayers } from "./public-map/useExplorerLayers"
 import { useExplorerPanels } from "./public-map/useExplorerPanels"
 import { useExplorerSwipe } from "./public-map/useExplorerSwipe"
 import { cachedStartRegion, useInitialLocationCentre } from "./public-map/useInitialLocationCentre"
-import { useSwipeWindowBottom } from "./public-map/useSwipeWindowBottom"
 import { useLocateAction } from "./public-map/useLocateAction"
 import { useMapViewport } from "./public-map/useMapViewport"
 
@@ -41,14 +39,13 @@ const noop = () => undefined
 const CARD_MARGIN = 14
 // Swipe mode white zones (none over the map): carousel (pill 36 + gap 8 + dots 8) under the status
 // bar, then SWIPE_TOP_MARGIN; from the tab bar up: gap, hint bubble lifted by SWIPE_HINT_LIFT (two
-// lines, SWIPE_HINT_ZONE), one notice pill (SWIPE_NOTICES_ZONE), a last gap.
+// lines, SWIPE_HINT_ZONE), a last gap. The notices are hidden in the swipe mode.
 const SWIPE_ZONE_GAP = 8
 const SWIPE_TOP_STACK_HEIGHT = 52
 const SWIPE_TOP_MARGIN = 16
 const SWIPE_HINT_LIFT = 14
 const SWIPE_HINT_BOTTOM = SWIPE_ZONE_GAP + SWIPE_HINT_LIFT
 const SWIPE_HINT_ZONE = 40
-const SWIPE_NOTICES_ZONE = 28
 const DOCK_GAP = 10
 // A second tap within this window (a double tap, or a tap during the push) opens nothing more.
 const OPEN_SURVEY_GUARD_MS = 800
@@ -221,12 +218,7 @@ export function PublicMapScreen({
     setHighlightedId,
   })
 
-  const windowBottom = useSwipeWindowBottom(
-    layers.layers.state.swipeMode,
-    layers.notices.length > 0 || skippedCount(layers.isAvailable) > 0,
-    dockBottom + SWIPE_HINT_BOTTOM + SWIPE_HINT_ZONE + SWIPE_ZONE_GAP,
-    SWIPE_NOTICES_ZONE,
-  )
+  const windowBottom = dockBottom + SWIPE_HINT_BOTTOM + SWIPE_HINT_ZONE + SWIPE_ZONE_GAP
   const swipe = useExplorerSwipe({
     layers,
     cameraRef,
@@ -358,11 +350,7 @@ export function PublicMapScreen({
         forestAvailable={layers.isAvailable("types-foret")}
         cardBottom={cardBottom}
         noticesTop={swipe.noticesTop}
-        noticesBottom={
-          swipe.immersive.buttonsHidden
-            ? dockBottom + SWIPE_HINT_BOTTOM + SWIPE_HINT_ZONE
-            : undefined
-        }
+        noticesHidden={swipe.immersive.buttonsHidden}
         buttons={{ opacity: swipe.immersive.buttons, hidden: swipe.immersive.buttonsHidden }}
       >
         <MapTopControls

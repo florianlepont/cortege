@@ -223,7 +223,7 @@ Haptics fire at the moment the zone changes (after hysteresis), never repeatedly
 
 **3b. Offline behaviour:** a layer is available offline only if the area at the view centre has its pack (Plan and Satellite are always listed; extra layers need a pack and a policy that downloaded them). In the swipe mode:
 - Unavailable layers are **skipped** by the cycle and by the neighbour search, and their dot is dimmed.
-- On entering swipe mode, if at least one layer is skipped, a short notice joins the stack for 3 s: "1 fond non téléchargé pour cette zone est ignoré." / "N fonds non téléchargés pour cette zone sont ignorés." (`accessibilityLiveRegion="polite"`).
+- On entering swipe mode, if at least one layer is skipped, a short notice would join the stack for 3 s, but **the notices are hidden in the swipe mode, so it is not drawn there**: "1 fond non téléchargé pour cette zone est ignoré." / "N fonds non téléchargés pour cette zone sont ignorés." (`accessibilityLiveRegion="polite"`).
 - If no other layer is available, the wipe does not start and the hint reads "Aucun autre fond n'est disponible hors connexion ici."
 - The current base never switches by itself when the connection drops: the notices of section 8 say so.
 
@@ -317,7 +317,7 @@ There is **no Comparer button**. The comparison is created by releasing a full-w
 
 **Online load error.** "Impossible d'afficher {name}." with a trailing "Réessayer" link (13 SemiBold, 44 pt target; reloads the style).
 
-**Position.** The notices form one column, top-centre (centred on the screen like the mode controls, between x 71 and x 303 on a 375 pt screen, never reaching the right column of buttons at x 311), starting at **`capsuleTop`**. They stack **below the top mode control** when there is one: the swipe stack when the swipe mode is on (indicator, dots, "Terminé", hint, then notices), the "Quitter la comparaison" pill in a comparison, and **below the download chip's row** (`capsuleTop + 154 + 8 = capsuleTop + 162`) while a chip is shown (the chip occupies x 72 to ~300 from the right, in the same horizontal range). Order: skipped-layers pill, coverage / offline / error pills, over-zoom pill. They never overlap the capsule, the download button, the bubble (right of 72), nor the top mode controls. There is no hidden-markers notice (owner item 13 e).
+**Position.** The notices form one column, top-centre (centred on the screen like the mode controls, between x 71 and x 303 on a 375 pt screen, never reaching the right column of buttons at x 311), starting at **`capsuleTop`**. They stack **below the top mode control** when there is one: the swipe stack when the swipe mode is on (indicator, dots, "Terminé", hint); **the notices are hidden while the swipe mode is on (owner, 2026-10-12) and come back when it ends**, the "Quitter la comparaison" pill in a comparison, and **below the download chip's row** (`capsuleTop + 154 + 8 = capsuleTop + 162`) while a chip is shown (the chip occupies x 72 to ~300 from the right, in the same horizontal range). Order: skipped-layers pill, coverage / offline / error pills, over-zoom pill. They never overlap the capsule, the download button, the bubble (right of 72), nor the top mode controls. There is no hidden-markers notice (owner item 13 e).
 
 ### 9. Legend and attribution
 
@@ -694,7 +694,7 @@ export const mapLayersFr = {
 
 None blocks planning or building. To review on the phone (each can be vetoed and changed cheaply):
 1. The zone haptics (medium detent into the compare zone, light ticks), the wording "Lâchez pour revenir" / "Lâchez pour comparer" / "Lâchez pour changer de fond" and the 0.03 hysteresis (U-03).
-2. The immersive values: scale 0.94, corner radius 22, the shadow in light and the ring in dark, the timings (360 ms in, 240 ms out), and that the notices column stays visible in the swipe mode while the chip is hidden (U-22).
+2. The immersive values: scale 0.94, corner radius 22, the shadow in light and the ring in dark, the timings (360 ms in, 240 ms out), and that the notices column is hidden in the swipe mode (owner, 2026-10-12; was U-22).
 3. On Android the rounded corners of the receded window depend on the map clipping (`texture` view or square corners): decided by the device spike.
 4. The slim grabber (4 x 36 pt, white with a graphite edge) and the tags 24 pt from the line at the vertical centre of the window, the outer-fifth exit zones with their tick and the hint "Lâchez pour quitter la comparaison", and the swipe on a tag (44 pt of travel or a flick) as an alternative to the chevrons (U-09, U-23).
 5. "Quitter la comparaison" keeps side A (the left layer) and the right half wipes out with the line; a Plan or Satellite layer kept is written as the saved basemap (U-05, U-08).
