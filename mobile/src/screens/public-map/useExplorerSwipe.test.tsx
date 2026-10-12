@@ -534,6 +534,18 @@ describe("leaving a comparison by an edge", () => {
     expect(out().layersView.quitHint).toBeNull()
   })
 
+  test("the drag of the grabber is reported to the tags, and the comparison ending clears it", () => {
+    mount(makeLayers({ compare: compareRight }))
+    expect(out().layersView.lineDragging).toBe(false)
+    act(() => out().layersView.onLineDragging(true))
+    expect(out().layersView.lineDragging).toBe(true)
+    act(() => out().layersView.onLineDragging(false))
+    expect(out().layersView.lineDragging).toBe(false)
+    act(() => out().layersView.onLineDragging(true))
+    update(makeLayers())
+    expect(out().layersView.lineDragging).toBe(false)
+  })
+
   test("without a comparison an exit zone shows nothing", () => {
     mount(makeLayers())
     act(() => out().layersView.onExitZone("A"))

@@ -87,7 +87,8 @@ jest.mock("react-native-gesture-handler", () => {
   const pan = () => {
     const gesture: Record<string, unknown> & MockPan = { handlers: {} }
     mockPans.push(gesture)
-    for (const name of ["runOnJS", "minDistance"]) gesture[name] = () => gesture
+    for (const name of ["runOnJS", "minDistance", "activeOffsetX", "failOffsetY"])
+      gesture[name] = () => gesture
     for (const name of ["onBegin", "onUpdate", "onEnd", "onFinalize"]) {
       gesture[name] = (handler: (...args: unknown[]) => void) => {
         gesture.handlers[name] = handler
@@ -1238,8 +1239,8 @@ describe("PublicMapScreen", () => {
       startComparison(makeProps({ items: [item("a", 45.76, 4.84)] }))
       expect(present("compare-grabber")).toBe(true)
       expect(present("compare-line")).toBe(true)
-      expect(present("curtain-tag-left")).toBe(true)
-      expect(present("curtain-tag-right")).toBe(true)
+      expect(present("compare-tag-left")).toBe(true)
+      expect(present("compare-tag-right")).toBe(true)
       expect(maps()).toHaveLength(2)
       // The swipe mode ended in the same change: no surface, no indicator, no Terminé.
       for (const id of ["swipe-surface", "swipe-indicator", "swipe-dots", "swipe-done"]) {
@@ -1285,7 +1286,7 @@ describe("PublicMapScreen", () => {
       try {
         const props = startComparison()
         act(() => byTestId("compare-quit")[0].props.onPress())
-        for (const id of ["compare-line", "compare-grabber", "curtain-tag-left", "compare-quit"]) {
+        for (const id of ["compare-line", "compare-grabber", "compare-tag-left", "compare-quit"]) {
           expect(present(id)).toBe(false)
         }
         expect(maps()).toHaveLength(1)
@@ -1430,7 +1431,7 @@ describe("PublicMapScreen", () => {
       act(() => {
         jest.advanceTimersByTime(500)
       })
-      for (const id of ["compare-line", "compare-grabber", "curtain-tag-left", "compare-quit"]) {
+      for (const id of ["compare-line", "compare-grabber", "compare-tag-left", "compare-quit"]) {
         expect(present(id)).toBe(false)
       }
       // Two zones only: past a third of the width it is a plain change of base.

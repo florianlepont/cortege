@@ -6,10 +6,11 @@ import type { BaseLayerKey } from "../../map/layers"
 import { BasemapSwipeOverlay } from "./BasemapSwipeOverlay"
 import { CompareGrabber, grabberCenterY } from "./CompareGrabber"
 import { CompareLine } from "./CompareLine"
-import { CurtainSideTags } from "./CurtainSideTags"
+import { CompareSideTag } from "./CompareSideTag"
 import { MapContentLayers, shownParcelsFor } from "./MapContentLayers"
 import { QuitComparePill } from "./QuitComparePill"
 import { SwipeSurface } from "./SwipeSurface"
+import { swipeLabel } from "./swipe-labels"
 import { WipeLayer } from "./WipeLayer"
 import type { ExplorerSwipe } from "./useExplorerSwipe"
 import type { ExplorerLayers } from "./useExplorerLayers"
@@ -82,6 +83,25 @@ export function ExplorerSwipeLayers({
   const { controller, second } = view
   const leftName = view.leftLayer ? shortName(view.leftLayer) : ""
   const rightName = view.rightLayer ? shortName(view.rightLayer) : ""
+  // One side tag: the short name on the tag, the long name and the era for a screen reader.
+  function sideTag(side: "left" | "right", layer: BaseLayerKey) {
+    const { name: label, era } = swipeLabel(layer)
+    return (
+      <CompareSideTag
+        side={side}
+        name={shortName(layer)}
+        label={label}
+        era={era}
+        lineX={view.lineX}
+        width={view.width}
+        centerY={grabberCenterY(view.height)}
+        unavailable={!layers.isAvailable(layer)}
+        canStep
+        disabled={view.lineDragging}
+        onStep={(direction) => view.onSideAction(side, direction)}
+      />
+    )
+  }
   return (
     <>
       {second ? (
@@ -111,17 +131,10 @@ export function ExplorerSwipeLayers({
             rightName={rightName}
             onExitZone={view.onExitZone}
             onEdgeExit={view.onEdgeExit}
+            onDragging={view.onLineDragging}
           />
-          <CurtainSideTags
-            lineX={view.lineX}
-            width={view.width}
-            knobTop={grabberCenterY(view.height)}
-            leftName={leftName}
-            rightName={rightName}
-            swipeMode={view.swipeMode}
-            leftUnavailable={!layers.isAvailable(view.leftLayer)}
-            rightUnavailable={!layers.isAvailable(view.rightLayer)}
-          />
+          {sideTag("left", view.leftLayer)}
+          {sideTag("right", view.rightLayer)}
         </>
       ) : null}
       {view.swipeMode ? (

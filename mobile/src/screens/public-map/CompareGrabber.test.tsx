@@ -374,6 +374,7 @@ describe("CompareGrabber", () => {
       rightName: "Photos 1950",
       onExitZone: jest.fn(),
       onEdgeExit: jest.fn(),
+      onDragging: jest.fn(),
       ...over,
     }
     let tree!: ReactTestRenderer
@@ -558,6 +559,26 @@ describe("CompareGrabber", () => {
     expect(lineX.value).toBe(200)
     expect(mockTimings.map((timing) => timing.to)).toEqual([200])
     expect(props.onEdgeExit).not.toHaveBeenCalled()
+  })
+
+  test("it reports a drag from the touch down until the gesture ends, whatever the outcome", () => {
+    const { handlers, props } = setup()
+    expect(props.onDragging).not.toHaveBeenCalled()
+    begin(handlers)
+    expect(props.onDragging).toHaveBeenCalledTimes(1)
+    expect(props.onDragging).toHaveBeenLastCalledWith(true)
+    update(handlers, 20)
+    act(() => handlers.onEnd({}, true))
+    act(() => handlers.onFinalize({}, true))
+    expect(props.onDragging).toHaveBeenCalledTimes(2)
+    expect(props.onDragging).toHaveBeenLastCalledWith(false)
+  })
+
+  test("a cancelled gesture also ends the drag", () => {
+    const { handlers, props } = setup()
+    begin(handlers)
+    act(() => handlers.onFinalize({}, false))
+    expect(props.onDragging).toHaveBeenLastCalledWith(false)
   })
 
   test("the grabber is adjustable with a label, a hint, a value and two exit actions", () => {

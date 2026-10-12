@@ -12,8 +12,8 @@ jest.mock("./CompareGrabber", () => ({
 jest.mock("./CompareLine", () => ({
   CompareLine: (props: object) => mockHost("CompareLine", props),
 }))
-jest.mock("./CurtainSideTags", () => ({
-  CurtainSideTags: (props: object) => mockHost("CurtainSideTags", props),
+jest.mock("./CompareSideTag", () => ({
+  CompareSideTag: (props: object) => mockHost("CompareSideTag", props),
 }))
 jest.mock("./BasemapSwipeOverlay", () => ({
   BasemapSwipeOverlay: (props: object) => mockHost("BasemapSwipeOverlay", props),
@@ -98,6 +98,8 @@ function makeView(overrides: Partial<ExplorerSwipeView> = {}): ExplorerSwipeView
     onExitZone: jest.fn(),
     quitHint: null,
     onEdgeExit: jest.fn(),
+    lineDragging: false,
+    onLineDragging: jest.fn(),
     onSideAction: jest.fn(),
     onTopControlHeight: jest.fn(),
     ...overrides,
@@ -314,28 +316,55 @@ describe("the comparison", () => {
       rightName: "Photos 1950",
       onExitZone: view.onExitZone,
       onEdgeExit: view.onEdgeExit,
+      onDragging: view.onLineDragging,
     })
     // The grabber is the only part of the line that takes a touch: it holds no quit and no line drag.
     expect(grabber).not.toHaveProperty("onQuit")
-    const tags = named(tree, "CurtainSideTags")[0].props
-    expect(tags).toMatchObject({
+    const [left, right] = named(tree, "CompareSideTag").map((tag) => tag.props)
+    expect(left).toMatchObject({
+      side: "left",
+      name: "Plan",
+      label: "Plan",
+      era: "aujourd'hui",
       lineX,
       width: 400,
-      knobTop: 256,
-      leftName: "Plan",
-      rightName: "Photos 1950",
-      swipeMode: false,
-      leftUnavailable: false,
-      rightUnavailable: false,
+      centerY: 256,
+      unavailable: false,
+      canStep: true,
+      disabled: false,
     })
+    expect(right).toMatchObject({
+      side: "right",
+      name: "Photos 1950",
+      label: "Photos aériennes",
+      era: "1950-1965",
+      lineX,
+      width: 400,
+      centerY: 256,
+      unavailable: false,
+    })
+  })
+
+  test("a tag asks the hook to step its own side", () => {
+    const view = comparing()
+    const { tree } = render(view)
+    const [left, right] = named(tree, "CompareSideTag").map((tag) => tag.props)
+    act(() => left.onStep(1))
+    expect(view.onSideAction).toHaveBeenLastCalledWith("left", 1)
+    act(() => right.onStep(-1))
+    expect(view.onSideAction).toHaveBeenLastCalledWith("right", -1)
+  })
+
+  test("the tags take no touch while the line is dragged", () => {
+    const { tree } = render(comparing({ lineDragging: true }))
+    for (const tag of named(tree, "CompareSideTag")) expect(tag.props.disabled).toBe(true)
   })
 
   test("a side whose layer is not downloaded is told offline", () => {
     const { tree } = render(comparing(), { layers: makeLayers({ available: false }) })
-    expect(named(tree, "CurtainSideTags")[0].props).toMatchObject({
-      leftUnavailable: true,
-      rightUnavailable: true,
-    })
+    for (const tag of named(tree, "CompareSideTag")) {
+      expect(tag.props).toMatchObject({ unavailable: true })
+    }
   })
 
   test("the quit pill shows only when the hook says so, level with the capsule", () => {

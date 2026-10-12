@@ -87,6 +87,9 @@ export type ExplorerSwipeView = {
   /** The hint under the quit pill while the grabber is in an exit zone, else null. */
   quitHint: string | null
   onEdgeExit: (keeps: "A" | "B") => void
+  /** The grabber is being dragged: the side tags take no touch meanwhile. */
+  lineDragging: boolean
+  onLineDragging: (dragging: boolean) => void
   onSideAction: (side: "left" | "right", direction: 1 | -1) => void
   onTopControlHeight: (height: number) => void
 }
@@ -158,6 +161,7 @@ export function useExplorerSwipe({
   const [cover, setCover] = useState<Cover | null>(null)
   const [leaving, setLeaving] = useState(false)
   const [inExitZone, setInExitZone] = useState(false)
+  const [lineDragging, setLineDragging] = useState(false)
   const [topHeight, setTopHeight] = useState<number | null>(null)
 
   // A finished wipe may leave a cover (derived while rendering, so the stacked map is never
@@ -169,8 +173,9 @@ export function useExplorerSwipe({
     if (seen.comparing !== comparing) {
       if (comparing) setCover(null)
       else setLeaving(false)
-      // A comparison that ends, or starts, never keeps the hint of an exit zone.
+      // A comparison that ends, or starts, never keeps the hint of an exit zone or a drag.
       setInExitZone(false)
+      setLineDragging(false)
     } else if (seen.wipe !== null && wipe === null) {
       const next = coverAfter(seen.wipe, layers)
       if (next) setCover(next)
@@ -307,6 +312,8 @@ export function useExplorerSwipe({
     onExitZone,
     quitHint: comparing && inExitZone ? fr.mapLayers.compare.hintExit : null,
     onEdgeExit,
+    lineDragging,
+    onLineDragging: setLineDragging,
     onSideAction,
     onTopControlHeight: setTopHeight,
   }

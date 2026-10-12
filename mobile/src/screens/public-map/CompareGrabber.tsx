@@ -49,6 +49,8 @@ export type CompareGrabberProps = {
   onExitZone: (keeps: "A" | "B" | null) => void
   /** The line was let go in an edge zone, or an accessibility action: quit keeping side A or B. */
   onEdgeExit: (keeps: "A" | "B") => void
+  /** A drag of the grabber began (true) or ended, whatever its outcome (false): the tags take no touch. */
+  onDragging: (dragging: boolean) => void
 }
 
 const ACTIONS = [
@@ -78,6 +80,7 @@ export const CompareGrabber = memo(function CompareGrabber({
   rightName,
   onExitZone,
   onEdgeExit,
+  onDragging,
 }: CompareGrabberProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
@@ -104,6 +107,7 @@ export const CompareGrabber = memo(function CompareGrabber({
         cancelAnimation(lineX)
         startX.value = lineX.value
         zone.value = null
+        runOnJS(onDragging)(true)
       })
       .onUpdate((event) => {
         const x = clampLine(startX.value + event.translationX, width)
@@ -128,9 +132,10 @@ export const CompareGrabber = memo(function CompareGrabber({
         runOnJS(onEdgeExit)(keeps)
       })
       .onFinalize((_event, success) => {
+        runOnJS(onDragging)(false)
         if (!success) springBack()
       })
-  }, [lineX, onEdgeExit, onExitZone, startX, width, zone])
+  }, [lineX, onDragging, onEdgeExit, onExitZone, startX, width, zone])
 
   const onAccessibilityAction = useCallback(
     (event: AccessibilityActionEvent) => {
