@@ -1,6 +1,6 @@
 import {
   clampLine,
-  EDGE_EXIT,
+  EDGE_EXIT_FRACTION,
   edgeExitKeeps,
   LINE_MARGIN,
   lineFromPercent,
@@ -19,7 +19,7 @@ import {
 describe("constants", () => {
   it("are the UI-SPEC numbers", () => {
     expect(LINE_MARGIN).toBe(22)
-    expect(EDGE_EXIT).toBe(40)
+    expect(EDGE_EXIT_FRACTION).toBe(1 / 5)
     expect(TAG_GAP).toBe(30)
     expect(TAG_MIN_WIDTH).toBe(72)
   })
@@ -92,15 +92,23 @@ describe("clampLine", () => {
 })
 
 describe("edgeExitKeeps", () => {
-  it("near the left edge keeps B, near the right edge keeps A", () => {
-    expect(edgeExitKeeps(39, 400)).toBe("B")
-    expect(edgeExitKeeps(361, 400)).toBe("A")
+  it("in the outer fifth on the left keeps B, in the outer fifth on the right keeps A", () => {
+    expect(edgeExitKeeps(22, 400)).toBe("B")
+    expect(edgeExitKeeps(79, 400)).toBe("B")
+    expect(edgeExitKeeps(321, 400)).toBe("A")
+    expect(edgeExitKeeps(378, 400)).toBe("A")
   })
 
-  it("does nothing from 40 pt in", () => {
-    expect(edgeExitKeeps(40, 400)).toBeNull()
-    expect(edgeExitKeeps(360, 400)).toBeNull()
+  it("does nothing from a fifth of the width in", () => {
+    expect(edgeExitKeeps(80, 400)).toBeNull()
+    expect(edgeExitKeeps(320, 400)).toBeNull()
     expect(edgeExitKeeps(200, 400)).toBeNull()
+  })
+
+  it("follows the width", () => {
+    expect(edgeExitKeeps(99, 500)).toBe("B")
+    expect(edgeExitKeeps(100, 500)).toBeNull()
+    expect(edgeExitKeeps(401, 500)).toBe("A")
   })
 })
 

@@ -1,10 +1,12 @@
+import { brandMotion } from "../app/brand-tokens"
 import type { BaseLayerKey } from "./layers"
 import {
   beginGesture,
   COMPARE_MAX,
   COMPARE_MIN,
   compareSidesFor,
-  EDGE_EXIT,
+  EDGE_EXIT_FRACTION,
+  edgeExitCue,
   HINT_MS,
   idleExitEnabled,
   IDLE_MS,
@@ -14,6 +16,7 @@ import {
   releaseGesture,
   releaseHaptic,
   SETTLE_MS,
+  SPRINGBACK_MS,
   SWIPE_SLOP,
   swipeZone,
   ZONE_HYSTERESIS,
@@ -46,10 +49,12 @@ describe("constants", () => {
     expect(COMPARE_MIN).toBe(1 / 3)
     expect(COMPARE_MAX).toBe(2 / 3)
     expect(ZONE_HYSTERESIS).toBe(0.03)
-    expect(EDGE_EXIT).toBe(40)
+    expect(EDGE_EXIT_FRACTION).toBe(1 / 5)
     expect(IDLE_MS).toBe(8000)
     expect(HINT_MS).toBe(3000)
     expect(SETTLE_MS).toBe(240)
+    expect(SPRINGBACK_MS).toBe(240)
+    expect(SPRINGBACK_MS).toBe(brandMotion.durations.base)
     expect(LINE_MARGIN).toBe(22)
   })
 })
@@ -355,6 +360,21 @@ describe("zoneHaptic", () => {
       gesture = next
     }
     expect(cues.filter((cue) => cue !== null)).toEqual(["detent", "tick", "detent", "tick"])
+  })
+})
+
+describe("edgeExitCue", () => {
+  it("ticks on entering a zone, from outside or from the other zone", () => {
+    expect(edgeExitCue(null, "B")).toBe("tick")
+    expect(edgeExitCue(null, "A")).toBe("tick")
+    expect(edgeExitCue("A", "B")).toBe("tick")
+  })
+
+  it("plays nothing while staying in a zone, on leaving it or outside", () => {
+    expect(edgeExitCue("B", "B")).toBeNull()
+    expect(edgeExitCue("B", null)).toBeNull()
+    expect(edgeExitCue("A", null)).toBeNull()
+    expect(edgeExitCue(null, null)).toBeNull()
   })
 })
 

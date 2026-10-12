@@ -313,17 +313,17 @@ describe("CurtainHandle", () => {
     expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite, séparation à 75 %")
   })
 
-  test("a release within 40 pt of the left edge quits keeping the right layer", () => {
+  test("a release in the outer fifth on the left quits keeping the right layer", () => {
     const { handlers, props } = setup()
-    drag(handlers, -170)
+    drag(handlers, -150)
     act(() => handlers.onEnd())
     expect(props.onEdgeExit).toHaveBeenCalledWith("B")
     expect(props.onMoveLine).not.toHaveBeenCalled()
   })
 
-  test("a release within 40 pt of the right edge quits keeping the left layer", () => {
+  test("a release in the outer fifth on the right quits keeping the left layer", () => {
     const { handlers, props } = setup()
-    drag(handlers, 175)
+    drag(handlers, 150)
     act(() => handlers.onEnd())
     expect(props.onEdgeExit).toHaveBeenCalledWith("A")
     expect(props.onMoveLine).not.toHaveBeenCalled()

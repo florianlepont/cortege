@@ -71,7 +71,7 @@ const ACTIONS = [
  * The comparison line (UI-SPEC sections 4 and 5, sketch 017 A): a 44 pt strip over the full map
  * height that owns the pan, with the 4 pt line (a white core between two graphite edges) and a
  * round glass knob. Dragging writes the clamped position straight to `lineX` on the UI thread (22 pt
- * from each edge, no snap, no haptic); on release within 40 pt of an edge the comparison ends
+ * from each edge, no snap, no haptic); on release in the outer fifth of the width the comparison ends
  * (`onEdgeExit`), else `onMoveLine` reports the position. The strip is `adjustable`: increment
  * and decrement move the line by 10 points of the width, and custom actions change either side's
  * layer or quit, the screen reader alternative to swiping a side.

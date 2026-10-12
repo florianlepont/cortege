@@ -16,8 +16,8 @@ export type Strip = { left: number; right: number }
 
 /** The comparison line stays this far from each edge of the map. */
 export const LINE_MARGIN = 22
-/** Releasing the line closer than this to an edge quits the comparison. */
-export const EDGE_EXIT = 40
+/** The outer fifth of the width on each side: releasing the line there quits the comparison. */
+export const EDGE_EXIT_FRACTION = 1 / 5
 /** Distance between the line and a side tag (knob radius 22 plus 8). */
 export const TAG_GAP = 30
 /** Under this width a side tag fades out. */
@@ -79,13 +79,14 @@ export function clampLine(x: number, width: number): number {
 }
 
 /**
- * What quitting by the edge keeps: a line released within 40 pt of the left edge keeps the right
- * layer B, within 40 pt of the right edge the left layer A, elsewhere nothing (the comparison stays).
+ * What quitting by the edge keeps (owner item 13 b, corrected): a line in the outer fifth on the
+ * left (`x < width / 5`) keeps the right layer B, in the outer fifth on the right
+ * (`x > 4 width / 5`) the left layer A, elsewhere nothing (the line springs back to the centre).
  */
 export function edgeExitKeeps(x: number, width: number): "A" | "B" | null {
   "worklet"
-  if (x < EDGE_EXIT) return "B"
-  if (x > width - EDGE_EXIT) return "A"
+  if (x < width * EDGE_EXIT_FRACTION) return "B"
+  if (x > width * (1 - EDGE_EXIT_FRACTION)) return "A"
   return null
 }
 

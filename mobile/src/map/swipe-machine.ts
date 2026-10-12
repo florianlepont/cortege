@@ -24,7 +24,7 @@ import { revealedFraction, sideBounds } from "./wipe-geometry"
 import type { SideKey } from "./wipe-geometry"
 
 // One definition each, in wipe-geometry.ts; this module exports the whole UI-SPEC list.
-export { EDGE_EXIT, LINE_MARGIN } from "./wipe-geometry"
+export { EDGE_EXIT_FRACTION, LINE_MARGIN } from "./wipe-geometry"
 
 /** A touch becomes a wipe after this much horizontal movement (pt); under it, a tap candidate. */
 export const SWIPE_SLOP = 6
@@ -40,6 +40,11 @@ export const IDLE_MS = 8000
 export const HINT_MS = 3000
 /** Duration of the commit and the spring-back (ms, `brandMotion.durations.base`). */
 export const SETTLE_MS = 240
+/**
+ * Duration of the comparison line's spring-back to the centre after a drag released outside an
+ * exit zone (ms, `brandMotion.durations.base`; UI-SPEC "Line spring-back to the centre").
+ */
+export const SPRINGBACK_MS = 240
 
 /** What a release would do now: spring back, open the comparison, or switch to the new layer. */
 export type SwipeZone = "cancel" | "compare" | "commit"
@@ -142,6 +147,15 @@ export function zoneHaptic(previous: SwipeZone | null, next: SwipeZone): HapticC
   "worklet"
   if (previous === null || previous === next) return null
   return next === "compare" ? "detent" : "tick"
+}
+
+/**
+ * The haptic for the comparison line crossing into an edge exit zone (UI-SPEC section 4): a light
+ * tick when `next` is a side the line was not in, nothing on leaving a zone or while it stays in it.
+ */
+export function edgeExitCue(previous: "A" | "B" | null, next: "A" | "B" | null): HapticCue | null {
+  "worklet"
+  return next !== null && next !== previous ? "tick" : null
 }
 
 /** The haptic at the release: a medium impact opening the comparison, a tick committing, else none. */
