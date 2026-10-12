@@ -11,6 +11,7 @@ The repository documentation is grouped under `docs/`:
   The IBP method version decision is [ADR-003](technical/adr-003-ibp-method-version-v1.md), based on the factor-by-factor [v3.0/v3.2 comparison](technical/ibp-version-comparison-v3.0-v3.2.md). Since phase 01.8 the app implements IBP FR v3.2, with IBP Fr v3.0 available per survey (`ibp_method_version`, null = v3.0; migration 016).
   The hosting and infrastructure target is ratified in [ADR-004](technical/adr-004-hosting-and-infrastructure-v1.md): Docker + Caddy + GHCR + a systemd timer + MinIO on the VPS (`infra/vps/README.md`), superseding the unratified alwaysdata + Cloudflare R2 note in `docs/project/presentation-association.md`.
   The scoring rules and their test cases are in [ibp-validation-matrix-v2.md](technical/ibp-validation-matrix-v2.md) (the pre-01.8 baseline is [ibp-validation-matrix-v1.md](technical/ibp-validation-matrix-v1.md)). Its executable form is the parity fixture of the shared package `packages/ibp-domain`, which the API and the app both use; see block 8 of [technical-architecture-v1.md](technical/technical-architecture-v1.md).
+  The map layers (Plan, Satellite, three historical bases, the forest-types overlay), their Géoplateforme sources, licences and attribution, the offline policy and the estimated and measured download cost, and the swipe mode and comparison as built are recorded in [map-layers-and-licences-v1.md](technical/map-layers-and-licences-v1.md) (Phase 28).
 
 - `docs/design/`
   Design and brand-system documents.
