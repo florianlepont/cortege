@@ -963,7 +963,7 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 19/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
+**Plans**: 20/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
 
 Plans:
 
@@ -1003,7 +1003,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion; first wave that needs the owner's key)*
 
-- [ ] 27-22-PLAN.md: owner's Météo-France run and spike findings (units, distance cap, sky and 24 h rain), human checkpoint (D-19, D-21, D-22)
+- [x] 27-22-PLAN.md: owner's Météo-France run and spike findings (units, distance cap, sky and 24 h rain), human checkpoint (D-19, D-21, D-22)
 
 **Wave 7** *(blocked on Wave 6 completion)*
 
@@ -1230,7 +1230,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
-| 27. Quick survey additions | 19/22 | In Progress|  |
+| 27. Quick survey additions | 20/22 | In Progress|  |
 | 28. Map Layers & Comparison | 0/TBD | Not started | - |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
 | 30. Route Choice Assistant | 0/TBD | Not started | - |
