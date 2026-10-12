@@ -251,7 +251,7 @@ describe("buildSurveyExportHtml conditions block (phase 27)", () => {
       conditions: { note: "<b>gras</b> & co", weather: { ...FULL_WEATHER } },
     })
 
-    expect(html).toContain(">Météo-France</td>")
+    expect(html).toContain(">Météo-France, mesure du 10/10/2026 à 14:30</td>")
     expect(html).toContain("&lt;b&gt;gras&lt;/b&gt; &amp; co")
     expect(html).not.toContain("<b>gras")
   })
