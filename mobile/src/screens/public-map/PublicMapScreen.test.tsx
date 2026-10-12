@@ -1231,19 +1231,13 @@ describe("PublicMapScreen", () => {
       })
     })
 
-    test("the first notice of a comparison is the pill that says the surveys are hidden", () => {
-      startComparison()
-      const notices = tree.root.findAll(
-        (node) =>
-          typeof node.type === "string" &&
-          String(node.props.testID ?? "").startsWith("map-notice-"),
-      )
-      expect(notices[0].props.testID).toBe("map-notice-hidden")
-      expect(texts()).toContain(fr.mapLayers.compare.hiddenSurveys)
-      act(() => {
-        jest.advanceTimersByTime(4000)
-      })
-      expect(texts()).not.toContain(fr.mapLayers.compare.hiddenSurveys)
+    test("a comparison starts with no notice pill: the markers hide silently (item 13 e)", () => {
+      startComparison(makeProps({ items: [item("a", 45.76, 4.84)] }))
+      expect(
+        tree.root.findAll((node) => String(node.props.testID ?? "").startsWith("map-notice-")),
+      ).toHaveLength(0)
+      expect(markers()).toHaveLength(0)
+      expect(explorerMap().props.hideMarkers).toBeUndefined()
     })
 
     test("Terminé keeps the comparison: the free map shows Quitter la comparaison", () => {
@@ -1352,6 +1346,8 @@ describe("PublicMapScreen", () => {
     })
 
     test("the notices start below the swipe stack and the quit pill", () => {
+      // A notice that stays whatever the mode: the forest overlay, not in the offline area.
+      mockAvailable.all = false
       const noticeTop = () =>
         flatStyle(
           tree.root.find(
@@ -1359,10 +1355,16 @@ describe("PublicMapScreen", () => {
               typeof node.type === "string" &&
               node.props.pointerEvents === "box-none" &&
               [node.props.style].flat(3).some((style) => style && style.alignItems === "center") &&
-              node.findAll((child) => child.props.testID === "map-notice-hidden").length > 0,
+              node.findAll((child) => child.props.testID === "map-notice-offline").length > 0,
           ).props.style,
         ).top as number
-      startComparison()
+      mount(makeProps({ isOffline: true }))
+      const byId = (testID: string) => tree.root.find((node) => node.props.testID === testID)
+      act(() => byId("map-overlay-button").props.onPress())
+      act(() => byId("overlay-forest-switch").props.onValueChange(true))
+      act(() => globe().props.onPress())
+      drag(380, 200)
+      release()
       const swipeTop = noticeTop()
       act(() => byTestId("swipe-done")[0].props.onPress())
       const pillTop = noticeTop()

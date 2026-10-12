@@ -13,7 +13,6 @@ const base = (overrides: Partial<MapNoticeInput> = {}): MapNoticeInput => ({
   isOffline: false,
   isAvailable: () => true,
   failedLayer: null,
-  hiddenSurveys: false,
   skippedCount: 0,
   ...overrides,
 })
@@ -144,10 +143,9 @@ describe("buildMapNotices", () => {
     ])
   })
 
-  test("hidden surveys, then the skipped layers, singular and plural", () => {
-    const one = buildMapNotices(base({ hiddenSurveys: true, skippedCount: 1 }))
+  test("the skipped layers, singular and plural", () => {
+    const one = buildMapNotices(base({ skippedCount: 1 }))
     expect(one.map((n) => [n.id, n.kind, n.text, n.icon])).toEqual([
-      ["hidden", "hidden", "Les relevés sont masqués pendant la comparaison.", "eye-off-outline"],
       ["skipped", "skipped", "1 fond non téléchargé pour cette zone est ignoré.", "layers-outline"],
     ])
     const two = buildMapNotices(base({ skippedCount: 2 }))
@@ -156,7 +154,7 @@ describe("buildMapNotices", () => {
     ])
   })
 
-  test("order: hidden, skipped, outside, offline, error, over-zoom", () => {
+  test("order: skipped, outside, offline, error, over-zoom", () => {
     const notices = buildMapNotices(
       base({
         shownBases: ["etat-major"],
@@ -166,12 +164,10 @@ describe("buildMapNotices", () => {
         isOffline: true,
         isAvailable: unavailable("etat-major"),
         failedLayer: "types-foret",
-        hiddenSurveys: true,
         skippedCount: 3,
       }),
     )
     expect(notices.map((n) => n.kind)).toEqual([
-      "hidden",
       "skipped",
       "outside",
       "outside",

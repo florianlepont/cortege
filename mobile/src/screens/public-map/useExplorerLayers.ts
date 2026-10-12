@@ -41,8 +41,6 @@ type Input = {
   capsuleTop: number
   /** How many buttons the capsule has (the download button needs offline maps). */
   capsuleButtons: number
-  /** A comparison hides the surveys: the notice says so. False until the swipe plan passes it. */
-  hiddenSurveys: boolean
   /** The swipe mode is on: the cycle's skipped layers get their notice. */
   showSkipped: boolean
 }
@@ -70,8 +68,8 @@ export type ExplorerLayers = LayerAvailability & {
 /**
  * Everything the Explorer derives from the layers state: availability at the view centre, the
  * chip's visibility, the notices column and its position, the overlay button's position and the
- * legend's source lines. It never calls the swipe hook (`hiddenSurveys` and `showSkipped` are its
- * inputs), so the render order has no cycle.
+ * legend's source lines. It never calls the swipe hook (`showSkipped` is its
+ * input), so the render order has no cycle.
  */
 export function useExplorerLayers({
   savedBasemap,
@@ -84,7 +82,6 @@ export function useExplorerLayers({
   cardOpen,
   capsuleTop,
   capsuleButtons,
-  hiddenSurveys,
   showSkipped,
 }: Input): ExplorerLayers {
   const layers = useMapLayersState({ savedBasemap, saveBasemap })
@@ -110,7 +107,6 @@ export function useExplorerLayers({
         isOffline,
         isAvailable,
         failedLayer,
-        hiddenSurveys,
         skippedCount: skipped,
       }),
     [
@@ -121,7 +117,6 @@ export function useExplorerLayers({
       isOffline,
       isAvailable,
       failedLayer,
-      hiddenSurveys,
       skipped,
     ],
   )

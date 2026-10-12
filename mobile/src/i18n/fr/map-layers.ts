@@ -138,7 +138,6 @@ export const mapLayersFr = {
   compare: {
     exit: "Quitter la comparaison",
     exitA11yHint: "Revient à un seul fond, celui de gauche",
-    hiddenSurveys: "Les relevés sont masqués pendant la comparaison.",
     tagA11y: (name: string) => `${name}`,
     handleA11yLabel: "Séparation de la comparaison",
     handleA11yHint: "Faites glisser, ou balayez vers le haut ou le bas pour la déplacer",

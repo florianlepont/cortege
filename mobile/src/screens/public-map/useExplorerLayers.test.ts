@@ -60,7 +60,6 @@ const setup = (overrides: Overrides = {}) =>
         cardOpen: false,
         capsuleTop: 60,
         capsuleButtons: 2,
-        hiddenSurveys: false,
         showSkipped: false,
         ...props,
       }),
@@ -150,11 +149,6 @@ describe("useExplorerLayers", () => {
     const swiping = await setup({ ...offline, showSkipped: true })
     expect(swiping.result.current.skipped).toBe(3)
     expect(swiping.result.current.notices.map((notice) => notice.kind)).toContain("skipped")
-  })
-
-  test("the hidden surveys notice is an input", async () => {
-    const { result } = await setup({ hiddenSurveys: true })
-    expect(result.current.notices.map((notice) => notice.kind)).toContain("hidden")
   })
 
   test("over-zoom shows at a close zoom on an old base; the whole country shows none", async () => {

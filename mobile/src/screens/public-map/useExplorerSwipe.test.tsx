@@ -257,7 +257,6 @@ describe("free map, no comparison", () => {
     expect(out().layersView.comparing).toBe(false)
     expect(out().layersView.leftLayer).toBeNull()
     expect(out().quitPillVisible).toBe(false)
-    expect(out().hiddenSurveys).toBe(false)
     expect(out().noticesTop).toBe(58)
     expect(jumpTo).not.toHaveBeenCalled()
   })
@@ -434,7 +433,7 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
     expect(typeof lastCurtain().onLeft).toBe("function")
   })
 
-  test("a comparison started on a finger release: north up again, markers hidden, pill for 4 s", () => {
+  test("a comparison started on a finger release: north up again, markers hidden, silently", () => {
     mount(makeLayers({ swipeMode: true }))
     expect(jumpTo).toHaveBeenCalledTimes(1)
     update(makeLayers({ swipeMode: true, compare: compareRight }))
@@ -445,35 +444,6 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
       rotationLocked: true,
       hideMarkers: true,
     })
-    expect(out().hiddenSurveys).toBe(true)
-    act(() => {
-      jest.advanceTimersByTime(3999)
-    })
-    expect(out().hiddenSurveys).toBe(true)
-    act(() => {
-      jest.advanceTimersByTime(1)
-    })
-    expect(out().hiddenSurveys).toBe(false)
-  })
-
-  test("a second comparison shows the pill again", () => {
-    mount(makeLayers({ swipeMode: true }))
-    update(makeLayers({ swipeMode: true, compare: compareRight }))
-    act(() => {
-      jest.advanceTimersByTime(4000)
-    })
-    expect(out().hiddenSurveys).toBe(false)
-    update(makeLayers({ swipeMode: true }))
-    update(makeLayers({ swipeMode: true, compare: compareRight }))
-    expect(out().hiddenSurveys).toBe(true)
-  })
-
-  test("a comparison that ends before the 4 s is over takes the pill with it", () => {
-    mount(makeLayers({ swipeMode: true }))
-    update(makeLayers({ swipeMode: true, compare: compareRight }))
-    expect(out().hiddenSurveys).toBe(true)
-    update(makeLayers({ swipeMode: true }))
-    expect(out().hiddenSurveys).toBe(false)
   })
 
   test("a new comparison drops a cover left over from before", () => {

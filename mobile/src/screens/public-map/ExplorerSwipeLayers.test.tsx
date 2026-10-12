@@ -106,7 +106,6 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
     mapCanvasProps: {},
     layersView: view,
     quitPillVisible: false,
-    hiddenSurveys: false,
     skippedVisible: false,
     noticesTop: 58,
     onBaseStyleLoaded: jest.fn(),

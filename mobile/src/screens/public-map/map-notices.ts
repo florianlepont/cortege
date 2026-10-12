@@ -6,7 +6,7 @@ import type { BaseLayerKey, MapLayerKey } from "../../map/layers"
 import { isOutsideCoverage, overzoomNotice } from "../../map/layer-notices"
 
 /** The kinds double as the test ids (`map-notice-<kind>`). */
-export type MapNoticeKind = "hidden" | "skipped" | "outside" | "offline" | "error" | "overzoom"
+export type MapNoticeKind = "skipped" | "outside" | "offline" | "error" | "overzoom"
 
 export type MapNotice = {
   /** Stable per kind and layer, so a notice is announced once while it stays. */
@@ -14,7 +14,6 @@ export type MapNotice = {
   kind: MapNoticeKind
   text: string
   icon:
-    | "eye-off-outline"
     | "layers-outline"
     | "alert-circle-outline"
     | "cloud-offline-outline"
@@ -33,7 +32,6 @@ export type MapNoticeInput = {
   isAvailable: (key: MapLayerKey) => boolean
   /** The layer whose tiles failed to load online, if any. */
   failedLayer: MapLayerKey | null
-  hiddenSurveys: boolean
   skippedCount: number
 }
 
@@ -51,14 +49,6 @@ export function buildMapNotices(input: MapNoticeInput): MapNotice[] {
   }
   const notices: MapNotice[] = []
 
-  if (input.hiddenSurveys) {
-    notices.push({
-      id: "hidden",
-      kind: "hidden",
-      text: fr.mapLayers.compare.hiddenSurveys,
-      icon: "eye-off-outline",
-    })
-  }
   if (input.skippedCount > 0) {
     notices.push({
       id: "skipped",

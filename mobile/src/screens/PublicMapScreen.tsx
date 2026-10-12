@@ -116,9 +116,9 @@ export function PublicMapScreen({
   const [cardHeight, setCardHeight] = useState(0)
   // Bumped by "Réessayer" of the error notice: the style is asked again.
   const [styleRetryKey, setStyleRetryKey] = useState(0)
-  // The two display-only pills the swipe hook raises (hidden surveys, skipped layers). It runs after
-  // the layers hook, so they come back through state: a ref would not render the pill.
-  const [swipeFlags, setSwipeFlags] = useState({ hidden: false, skipped: false })
+  // The display-only pill the swipe hook raises (skipped layers). It runs after the layers hook, so
+  // it comes back through state: a ref would not render the pill.
+  const [skippedPill, setSkippedPill] = useState(false)
   const offlineEnabled = isOfflineMapsEnabled()
   const offlineAreas = useOfflineAreas(apiUrl, accessToken, offlineEnabled)
   const { startDownload, clearDownloadStatus, downloadStatus, estimateForRegion } = offlineAreas
@@ -156,8 +156,7 @@ export function PublicMapScreen({
     cardOpen: panels.panel === "card",
     capsuleTop,
     capsuleButtons: offlineEnabled ? 2 : 1,
-    hiddenSurveys: swipeFlags.hidden,
-    showSkipped: swipeFlags.skipped,
+    showSkipped: skippedPill,
   })
   const { styleLoaded, styleFailed } = layers.layers.actions
   const handleStyleFailed = useCallback(
@@ -216,11 +215,8 @@ export function PublicMapScreen({
     closePanels: panels.closePanel,
   })
   swipePanelExitRef.current = swipe.onPanelOpen
-  const { onBaseStyleLoaded, hiddenSurveys, skippedVisible } = swipe
-  useEffect(
-    () => setSwipeFlags({ hidden: hiddenSurveys, skipped: skippedVisible }),
-    [hiddenSurveys, skippedVisible],
-  )
+  const { onBaseStyleLoaded, skippedVisible } = swipe
+  useEffect(() => setSkippedPill(skippedVisible), [skippedVisible])
   const handleStyleLoaded = useCallback(() => {
     styleLoaded()
     onBaseStyleLoaded()

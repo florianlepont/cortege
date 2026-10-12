@@ -23,7 +23,6 @@ import { useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
 import { useCurtainClip, type CurtainPhase } from "./useCurtainClip"
 import type { ExplorerLayers } from "./useExplorerLayers"
 import type { MapLayers } from "./useMapLayersState"
-import { useTransientFlag } from "./useTransientFlag"
 
 // The swipe mode and the comparison of the Explorer (Phase 28, UI-SPEC sections 3 and 4): one
 // lifecycle hook above the controller (`useBasemapSwipe`, which owns every zone, hint and zone
@@ -31,8 +30,6 @@ import { useTransientFlag } from "./useTransientFlag"
 // the UI-SPEC "other actions" row, calls only the `layers.actions` signatures of the layers state,
 // and decides which stacked maps are mounted, with which layer and strip.
 
-/** How long the "surveys are hidden" pill stays after a comparison starts (UI-SPEC section 4). */
-const HIDDEN_PILL_MS = 4000
 /** A stacked map that covers a style swap is dropped after this long even if no load is reported. */
 const COVER_MAX_MS = 8000
 /** The gap between the top control and the notices column (UI-SPEC section 8). */
@@ -107,8 +104,6 @@ export type ExplorerSwipe = {
   layersView: ExplorerSwipeView
   /** "Quitter la comparaison" shows: a comparison and the map free. */
   quitPillVisible: boolean
-  /** The 4 s pill: the surveys are hidden while comparing. */
-  hiddenSurveys: boolean
   /** The "N fonds non téléchargés sont ignorés" pill (entry of the swipe mode). */
   skippedVisible: boolean
   /** The notices column's top, below the swipe stack or the quit pill when one holds the top. */
@@ -174,7 +169,6 @@ export function useExplorerSwipe({
   const [cover, setCover] = useState<Cover | null>(null)
   const [leaving, setLeaving] = useState(false)
   const [topHeight, setTopHeight] = useState<number | null>(null)
-  const [hiddenNonce, setHiddenNonce] = useState<number | null>(null)
 
   // A finished wipe may leave a cover (derived while rendering, so the stacked map is never
   // unmounted for a frame between the wipe and its cover). A new comparison drops every cover; the
@@ -258,9 +252,7 @@ export function useExplorerSwipe({
   useEffect(() => {
     if (!comparing) return
     northUp()
-    setHiddenNonce((nonce) => (nonce ?? 0) + 1)
   }, [comparing, northUp])
-  const hiddenSurveys = useTransientFlag(hiddenNonce, HIDDEN_PILL_MS) && comparing
 
   // A cover is dropped when the map under it has loaded, or after a while if it never says so.
   useEffect(() => {
@@ -357,7 +349,6 @@ export function useExplorerSwipe({
     mapCanvasProps,
     layersView,
     quitPillVisible,
-    hiddenSurveys,
     skippedVisible: controller.skippedVisible,
     noticesTop,
     onBaseStyleLoaded,
