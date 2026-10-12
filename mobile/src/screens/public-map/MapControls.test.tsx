@@ -36,7 +36,14 @@ import { brandInteraction } from "../../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { mapControlIconSize } from "../../app/visual-tokens"
-import { MapBottomDock, MapTopControls } from "./MapControls"
+import { MapBottomDock, MapDownloadButton, MapTopControls } from "./MapControls"
+import {
+  MAP_BUTTON_GAP,
+  capsuleButtonCenterY,
+  capsuleHeight,
+  downloadButtonTopOf,
+  overlaySlotTopOf,
+} from "./styles"
 
 const originalConsoleError = console.error
 
@@ -268,5 +275,176 @@ describe("the globe of the Explorer: the basemap swipe mode (Phase 28, UI-SPEC s
       )
       expect(surface.props.surface).toEqual(theme.visual.mapControl.glass)
     }
+  })
+})
+
+describe("the Explorer's capsule: the globe and the overlay button (Phase 28, owner item 13 a)", () => {
+  function renderOverlay(
+    overlay: Partial<{ active: boolean; expanded: boolean; onPress: () => void }> = {},
+    extra: { onOpenOfflineAreas?: () => void } = {},
+  ) {
+    const onPress = overlay.onPress ?? jest.fn()
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <MapTopControls
+          top={60}
+          basemap="map"
+          basemapMode="swipe"
+          onToggleBasemap={jest.fn()}
+          overlay={{ active: false, expanded: false, ...overlay, onPress }}
+          {...extra}
+        />,
+      )
+    })
+    const button = tree.root.findByProps({ testID: "map-overlay-button" })
+    return { tree, button, onPress }
+  }
+
+  test("the capsule holds the globe, a hairline and the overlay button with the layers glyph", () => {
+    const { tree } = renderOverlay()
+    const pressables = tree.root.findAllByType("Pressable" as never)
+    expect(pressables.map((node) => node.props.testID)).toEqual([
+      "map-globe-button",
+      "map-overlay-button",
+    ])
+    const icons = tree.root.findAllByType("Ionicons" as never)
+    expect(icons.map((icon) => icon.props.name)).toEqual(["earth-outline", "layers-outline"])
+    for (const icon of icons) {
+      expect(icon.props.size).toBe(mapControlIconSize)
+      expect(icon.props.color).toBe(buildTheme("dark").visual.mapControl.icon)
+    }
+    const style = flat(pressables[1].props.style)
+    expect(style).toMatchObject({ width: 50, height: 50 })
+    expect(tree.root.findAllByType("GlassSurface" as never)).toHaveLength(1)
+  })
+
+  test("the overlay slot replaces the picker's download button", () => {
+    const { tree } = renderOverlay({}, { onOpenOfflineAreas: jest.fn() })
+    expect(tree.root.findAllByType("Pressable" as never)).toHaveLength(2)
+    const icons = tree.root.findAllByType("Ionicons" as never)
+    expect(icons.map((icon) => icon.props.name)).not.toContain("download-outline")
+  })
+
+  test("names itself for a screen reader and reports the bubble state", () => {
+    const closed = renderOverlay().button
+    expect(closed.props.accessibilityRole).toBe("button")
+    expect(closed.props.accessibilityLabel).toBe("Superpositions : types de forêt et parcelles")
+    expect(closed.props.accessibilityHint).toBe("Ouvre les réglages des superpositions")
+    expect(closed.props.accessibilityState).toEqual({ expanded: false })
+    expect(renderOverlay({ expanded: true }).button.props.accessibilityState).toEqual({
+      expanded: true,
+    })
+  })
+
+  test("pressing calls onPress", () => {
+    const { button, onPress } = renderOverlay()
+    act(() => {
+      button.props.onPress()
+    })
+    expect(onPress).toHaveBeenCalledTimes(1)
+  })
+
+  test("without the active flag: no dot and no accessibility value", () => {
+    const { tree, button } = renderOverlay({ active: false })
+    expect(tree.root.findAllByProps({ testID: "map-overlay-dot" })).toHaveLength(0)
+    expect(button.props.accessibilityValue).toBeUndefined()
+  })
+
+  test("with the active flag: an 8 pt dot 11 pt from the top-right, hidden from accessibility", () => {
+    const { tree, button } = renderOverlay({ active: true })
+    const dot = tree.root.findByProps({ testID: "map-overlay-dot" })
+    expect(flat(dot.props.style)).toMatchObject({
+      position: "absolute",
+      top: 11,
+      right: 11,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: buildTheme("dark").visual.tab.dot,
+    })
+    expect(dot.props.accessibilityElementsHidden).toBe(true)
+    expect(dot.props.importantForAccessibility).toBe("no-hide-descendants")
+    expect(button.props.accessibilityValue).toEqual({ text: "réglages modifiés" })
+  })
+
+  test("without overlay and without the download callback the capsule is the globe alone", () => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<MapTopControls top={60} basemap="map" onToggleBasemap={jest.fn()} />)
+    })
+    expect(tree.root.findAllByType("Pressable" as never)).toHaveLength(1)
+  })
+
+  test("the picker keeps its download button as the second button", () => {
+    const onOpen = jest.fn()
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(
+        <MapTopControls
+          top={60}
+          basemap="map"
+          onToggleBasemap={jest.fn()}
+          onOpenOfflineAreas={onOpen}
+        />,
+      )
+    })
+    const second = tree.root.findAllByType("Pressable" as never)[1]
+    expect(second.props.accessibilityLabel).toBe(fr.offlineMap.areas.openSheet)
+    expect(tree.root.findAllByProps({ testID: "map-overlay-button" })).toHaveLength(0)
+    act(() => second.props.onPress())
+    expect(onOpen).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("MapDownloadButton: the round download button under the capsule", () => {
+  test.each(["light", "dark"] as const)(
+    "%s: a round 50 pt glass button at the given top, 14 pt from the right edge",
+    (scheme) => {
+      mockScheme.current = scheme
+      const theme = scheme === "dark" ? buildTheme("dark") : defaultTheme
+      const onPress = jest.fn()
+      let tree!: renderer.ReactTestRenderer
+      act(() => {
+        tree = renderer.create(<MapDownloadButton top={171} onPress={onPress} />)
+      })
+      const button = tree.root.findByProps({ testID: "map-download-button" })
+      expect(flat(button.props.style)).toMatchObject({
+        position: "absolute",
+        right: 14,
+        top: 171,
+        width: 50,
+        height: 50,
+      })
+      expect(button.props.accessibilityRole).toBe("button")
+      expect(button.props.accessibilityLabel).toBe(fr.offlineMap.areas.openSheet)
+      const surface = tree.root.findByType("GlassSurface" as never)
+      expect(surface.props.surface).toEqual(theme.visual.mapControl.glass)
+      expect(flat(surface.props.style)).toMatchObject({
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        borderWidth: 1,
+        borderColor: theme.visual.mapControl.hairline,
+      })
+      const icon = tree.root.findByType("Ionicons" as never)
+      expect(icon.props).toMatchObject({
+        name: "download-outline",
+        size: mapControlIconSize,
+        color: theme.visual.mapControl.icon,
+      })
+      act(() => button.props.onPress())
+      expect(onPress).toHaveBeenCalledTimes(1)
+    },
+  )
+})
+
+describe("the capsule helpers of the new layout", () => {
+  test("the overlay slot is the capsule's second button, the download button sits 8 pt under", () => {
+    expect(MAP_BUTTON_GAP).toBe(8)
+    expect(overlaySlotTopOf(60)).toBe(capsuleButtonCenterY(60, 1) - 25)
+    expect(overlaySlotTopOf(60)).toBe(60 + 1 + 50 + 0.5)
+    expect(downloadButtonTopOf(60)).toBe(60 + capsuleHeight(2) + 8)
+    expect(downloadButtonTopOf(60)).toBe(60 + 102.5 + 8)
   })
 })
