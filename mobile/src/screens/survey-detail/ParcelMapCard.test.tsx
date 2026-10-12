@@ -4,6 +4,8 @@ import { brandRadius } from "../../app/brand-tokens"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { ParcelMapCard } from "./ParcelMapCard"
+import { regionForBounds, windowRegion } from "../../app/parcel-frame"
+import { DEFAULT_FRANCE_CENTER } from "../../app/map-viewport"
 import { pressableLook as look } from "../../../test/pressable-look"
 
 const originalConsoleError = console.error
@@ -38,6 +40,10 @@ jest.mock("react-native", () => {
 jest.mock("../../hooks/useParcelStatuses", () => ({
   useParcelStatuses: () => ({ items: [] }),
 }))
+const mockLocalGeometry = jest.fn()
+jest.mock("./useLocalParcelGeometry", () => ({
+  useLocalParcelGeometry: (...args: unknown[]) => mockLocalGeometry(...args),
+}))
 jest.mock("../../map/maplibre/ParcelMap", () => ({ ParcelMap: "ParcelMap" }))
 jest.mock("../../ui/ContourLines", () => ({ ContourLines: "ContourLines" }))
 jest.mock("../public-map/MapChips", () => ({
@@ -54,9 +60,14 @@ const baseProps = {
   apiUrl: "http://api",
   accessToken: null,
   siteName: "Parcelle A",
-  displayLocation: undefined,
+  displayLocation: { lat: 46.2, lng: 2.1 },
   parcelIds: ["p1"],
 }
+
+beforeEach(() => {
+  mockLocalGeometry.mockReset()
+  mockLocalGeometry.mockReturnValue({ point: null, bounds: null })
+})
 
 function render(props: Partial<React.ComponentProps<typeof ParcelMapCard>> = {}) {
   let tree: ReactTestRenderer | undefined
@@ -108,5 +119,40 @@ describe("ParcelMapCard", () => {
     expect(card.props.accessibilityRole).toBe("image")
     expect(card.props.accessibilityLabel).toBe(fr.surveyDetail.a11y.mapPreview("Parcelle A"))
     expect(childTypes(card)).toEqual(["ContourLines", "ParcelMap", "MapOverlayCorners"])
+  })
+
+  describe("framing (D-36)", () => {
+    const mapRegion = (tree: ReactTestRenderer) =>
+      tree.root.findByType("ParcelMap" as never).props.initialRegion
+
+    test("a synced survey is framed on its server position in the 0.01 window", () => {
+      const tree = render()
+      expect(mapRegion(tree)).toEqual(windowRegion({ lat: 46.2, lng: 2.1 }))
+    })
+
+    test("a draft without server position is framed on the point kept at the selection", () => {
+      mockLocalGeometry.mockReturnValue({ point: { lat: 45.5, lng: 3.5 }, bounds: null })
+      const tree = render({ displayLocation: undefined, surveyId: "s1" })
+      expect(mapRegion(tree)).toEqual(windowRegion({ lat: 45.5, lng: 3.5 }))
+      expect(mockLocalGeometry).toHaveBeenCalledWith("s1", ["p1"], undefined)
+    })
+
+    test("the parcels' bounding box wins over every position", () => {
+      const bounds = { west: 2.0, south: 46.0, east: 2.2, north: 46.4 }
+      mockLocalGeometry.mockReturnValue({ point: { lat: 45.5, lng: 3.5 }, bounds })
+      const tree = render({ displayLocation: undefined })
+      expect(mapRegion(tree)).toEqual(regionForBounds(bounds))
+    })
+
+    test("a survey with parcels but no known position draws no live map, never France", () => {
+      const tree = render({ displayLocation: undefined })
+      expect(tree.root.findAllByType("ParcelMap" as never)).toHaveLength(0)
+      expect(tree.root.findAllByType("ContourLines" as never)).toHaveLength(1)
+    })
+
+    test("a survey without any parcel keeps the whole-country map", () => {
+      const tree = render({ displayLocation: undefined, parcelIds: [] })
+      expect(mapRegion(tree)).toEqual(windowRegion(DEFAULT_FRANCE_CENTER, 3.8))
+    })
   })
 })

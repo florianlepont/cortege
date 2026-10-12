@@ -164,6 +164,7 @@ export function SurveyContextScreen({
         displayLocation={detail?.display_location}
         parcelIds={parcelIds}
         surveyId={selectedSurvey.id}
+        refreshKey={selectedSurvey.updated_at}
         style={styles.mapTall}
       >
         {canEditSurvey ? (
