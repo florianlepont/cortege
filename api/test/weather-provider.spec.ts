@@ -1,10 +1,10 @@
-import { Logger } from "@nestjs/common"
 import { WEATHER_RANGES, WEATHER_SKY_CODES } from "@cortege/ibp-domain"
 import {
   SyntheticWeatherProvider,
   WEATHER_PROVIDER_TOKEN,
   createWeatherProvider,
 } from "../src/surveys/weather-provider"
+import { MeteoFranceWeatherProvider } from "../src/surveys/meteofrance-provider"
 import { buildTestConfig } from "./config-helper"
 
 describe("SyntheticWeatherProvider", () => {
@@ -76,22 +76,20 @@ describe("createWeatherProvider", () => {
     expect(provider).toBeInstanceOf(SyntheticWeatherProvider)
   })
 
-  it("returns null for meteofrance until plan 27-12 and warns once, without the credential", () => {
-    const warn = jest.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined)
-    try {
-      const config = buildTestConfig({
-        WEATHER_PROVIDER: "meteofrance",
-        METEOFRANCE_API_KEY: "marker-secret-value",
-      }).weather
-      expect(createWeatherProvider(config)).toBeNull()
-      expect(createWeatherProvider(config)).toBeNull()
-      expect(warn.mock.calls.length).toBeLessThanOrEqual(1)
-      for (const call of warn.mock.calls) {
-        expect(String(call[0])).not.toContain("marker-secret-value")
-      }
-    } finally {
-      warn.mockRestore()
-    }
+  it("returns the Météo-France provider for meteofrance with a credential", () => {
+    const config = buildTestConfig({
+      WEATHER_PROVIDER: "meteofrance",
+      METEOFRANCE_API_KEY: "marker-secret-value",
+    }).weather
+    const provider = createWeatherProvider(config)
+    expect(provider).toBeInstanceOf(MeteoFranceWeatherProvider)
+    // The credential is held in private fields: serialising the provider never shows it.
+    expect(JSON.stringify(provider)).not.toContain("marker-secret-value")
+  })
+
+  it("returns null for meteofrance without a credential (the service answers disabled)", () => {
+    const config = buildTestConfig({ WEATHER_PROVIDER: "meteofrance", METEOFRANCE_API_KEY: "" })
+    expect(createWeatherProvider(config.weather)).toBeNull()
   })
 
   it("exposes a DI token", () => {

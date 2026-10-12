@@ -2,6 +2,7 @@ import { Logger, ServiceUnavailableException } from "@nestjs/common"
 import { WEATHER_LOOKBACK_MS } from "@cortege/ibp-domain"
 import { MAX_CONCURRENT_WEATHER_CALLS, WeatherService } from "../src/surveys/weather.service"
 import type {
+  SynopReport,
   WeatherProvider,
   WeatherReading,
   WeatherStation,
@@ -417,5 +418,177 @@ describe("WeatherService", () => {
       const retry = await service.lookup({ ...POINT, at })
       expect(retry.observation).not.toBeNull()
     })
+  })
+})
+
+describe("WeatherService with a SYNOP lookup (D-29)", () => {
+  // POINT is about 1 km from NEAR. SYN_NEAR is about 11 km away, SYN_MID about 33 km.
+  const SYN_NEAR: WeatherStation = { id: "07100", name: "Syn near", lat: 48.5, lng: 2.7 }
+  const SYN_MID: WeatherStation = { id: "07200", name: "Syn mid", lat: 48.7, lng: 2.7 }
+  const SYN_FAR: WeatherStation = { id: "07300", name: "Syn far", lat: 49.5, lng: 2.7 }
+
+  function report(
+    station: WeatherStation,
+    hour: Date,
+    patch: Partial<SynopReport> = {},
+  ): SynopReport {
+    return { station, observed_at: hour.toISOString(), rain_24h_mm: 1.5, sky: "cloudy", ...patch }
+  }
+
+  /** Hourly stations give temperature and wind only, like the Météo-France hourly product. */
+  function hourlyOnly(hour: Date, patch: Partial<WeatherReading> = {}): WeatherReading {
+    return {
+      observed_at: hour.toISOString(),
+      temperature_c: 11.2,
+      wind_kmh: 9.4,
+      rain_24h_mm: null,
+      sky: null,
+      ...patch,
+    }
+  }
+
+  type SynopProvider = FakeProvider & {
+    readSynopReports: jest.Mock<Promise<SynopReport[]>, [Date]>
+  }
+
+  function synopProvider(
+    reports: (hour: Date) => SynopReport[],
+    stations: WeatherStation[] = [NEAR, MID, FAR],
+  ): SynopProvider {
+    const provider = fakeProvider(stations) as SynopProvider
+    provider.readHourly.mockImplementation(async (_id: string, hour: Date) => hourlyOnly(hour))
+    provider.readSynopReports = jest.fn(async (hour: Date) => reports(hour))
+    return provider
+  }
+
+  beforeEach(() => {
+    jest.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it("takes sky and rain over 24 h from the nearest SYNOP station and the rest from the hourly one", async () => {
+    const provider = synopProvider((hour) => [
+      report(SYN_MID, hour, { sky: "fog" }),
+      report(SYN_NEAR, hour),
+    ])
+    const result = await build(provider).lookup({ ...POINT, at: minutesAgo(120) })
+
+    expect(result.observation).toMatchObject({
+      sky: "cloudy",
+      rain_24h_mm: 1.5,
+      temperature_c: 11.2,
+      wind_kmh: 9.4,
+      source: "meteo_france",
+      station: { id: "N" },
+    })
+    // Temperature and wind are known after the nearest hourly station: no further hourly call.
+    expect(provider.readHourly).toHaveBeenCalledTimes(1)
+    expect(provider.readSynopReports).toHaveBeenCalledTimes(1)
+  })
+
+  it("asks further hourly stations (at most three) while the wind is missing", async () => {
+    const provider = synopProvider((hour) => [report(SYN_NEAR, hour)])
+    provider.readHourly.mockImplementation(async (_id: string, hour: Date) =>
+      hourlyOnly(hour, { wind_kmh: null }),
+    )
+    const result = await build(provider).lookup({ ...POINT, at: minutesAgo(120) })
+
+    expect(provider.readHourly).toHaveBeenCalledTimes(3)
+    expect(result.observation).toMatchObject({ temperature_c: 11.2, wind_kmh: null, sky: "cloudy" })
+  })
+
+  it("keeps null where the nearest SYNOP station has nothing: no farther station replaces it", async () => {
+    const provider = synopProvider((hour) => [
+      report(SYN_NEAR, hour, { sky: null, rain_24h_mm: null }),
+      report(SYN_MID, hour, { sky: "snow", rain_24h_mm: 8 }),
+    ])
+    const result = await build(provider, { WEATHER_SYNOP_MAX_DISTANCE_KM: "50" }).lookup({
+      ...POINT,
+      at: minutesAgo(120),
+    })
+    expect(result.observation).toMatchObject({ sky: null, rain_24h_mm: null, temperature_c: 11.2 })
+  })
+
+  it("skips a SYNOP report outside the time tolerance and uses the next station in tolerance", async () => {
+    const provider = synopProvider((hour) => [
+      report(SYN_NEAR, new Date(hour.getTime() - 5 * HOUR_MS), { sky: "snow" }),
+      report(SYN_MID, hour, { sky: "rain", rain_24h_mm: 4 }),
+    ])
+    const result = await build(provider, { WEATHER_SYNOP_MAX_DISTANCE_KM: "50" }).lookup({
+      ...POINT,
+      at: minutesAgo(120),
+    })
+    expect(result.observation).toMatchObject({ sky: "rain", rain_24h_mm: 4 })
+  })
+
+  it("follows the SYNOP cap, which is its own (default 50 km) and not the hourly one", async () => {
+    const provider = synopProvider((hour) => [report(SYN_MID, hour), report(SYN_FAR, hour)])
+    const inside = await build(provider, { WEATHER_SYNOP_MAX_DISTANCE_KM: "40" }).lookup({
+      ...POINT,
+      at: minutesAgo(120),
+    })
+    expect(inside.observation).toMatchObject({ sky: "cloudy" })
+
+    const outside = await build(
+      synopProvider((hour) => [report(SYN_MID, hour)]),
+      {
+        WEATHER_SYNOP_MAX_DISTANCE_KM: "20",
+      },
+    ).lookup({ ...POINT, at: minutesAgo(120) })
+    expect(outside.observation).toMatchObject({ sky: null, rain_24h_mm: null, temperature_c: 11.2 })
+  })
+
+  it("answers from the SYNOP station alone when no hourly station is within its cap", async () => {
+    const provider = synopProvider((hour) => [report(SYN_NEAR, hour)], [OUTSIDE])
+    const result = await build(provider).lookup({ ...POINT, at: minutesAgo(120) })
+    expect(result.observation).toMatchObject({
+      sky: "cloudy",
+      rain_24h_mm: 1.5,
+      temperature_c: null,
+      wind_kmh: null,
+      station: { id: "07100", name: "Syn near" },
+    })
+    expect(provider.readHourly).not.toHaveBeenCalled()
+  })
+
+  it("answers no_station when no station of either kind is within its cap", async () => {
+    const provider = synopProvider((hour) => [report(SYN_FAR, hour)], [OUTSIDE])
+    await expect(build(provider).lookup({ ...POINT, at: minutesAgo(120) })).resolves.toEqual({
+      observation: null,
+      reason: "no_station",
+    })
+  })
+
+  it("answers no_data when a SYNOP station is in range but its report is outside the tolerance", async () => {
+    const provider = synopProvider(
+      (hour) => [report(SYN_NEAR, new Date(hour.getTime() - 6 * HOUR_MS))],
+      [OUTSIDE],
+    )
+    await expect(build(provider).lookup({ ...POINT, at: minutesAgo(120) })).resolves.toEqual({
+      observation: null,
+      reason: "no_data",
+    })
+  })
+
+  it("caches the SYNOP reports by hour, an empty answer included", async () => {
+    const provider = synopProvider(() => [])
+    const service = build(provider)
+    const at = minutesAgo(120)
+    await service.lookup({ ...POINT, at })
+    await service.lookup({ lat: POINT.lat + 0.01, lng: POINT.lng, at })
+    expect(provider.readSynopReports).toHaveBeenCalledTimes(1)
+  })
+
+  it("maps a SYNOP failure to the same 503 and does not cache it", async () => {
+    const provider = synopProvider((hour) => [report(SYN_NEAR, hour)])
+    provider.readSynopReports.mockRejectedValueOnce(Object.assign(new Error("x"), { status: 429 }))
+    const service = build(provider)
+    const failure = await failureOf(service.lookup({ ...POINT, at: minutesAgo(120) }))
+    expect(failure.getResponse()).toMatchObject({ code: "weather_provider_unavailable" })
+    const retry = await service.lookup({ ...POINT, at: minutesAgo(120) })
+    expect(retry.observation).not.toBeNull()
   })
 })

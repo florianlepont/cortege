@@ -6,6 +6,7 @@ import { appConfigOf } from "../config/app-config"
 import type { AppConfig } from "../config/config.types"
 import {
   WEATHER_PROVIDER_TOKEN,
+  type SynopReport,
   type WeatherProvider,
   type WeatherReading,
   type WeatherStation,
@@ -30,6 +31,12 @@ export const WEATHER_CACHE_MAX_ENTRIES = 2000
 export const MAX_CONCURRENT_WEATHER_CALLS = 4
 // D-19: the answer merges at most the three nearest stations.
 const MAX_STATIONS = 3
+
+/** The SYNOP station chosen for a lookup, as a station reading for the merge (D-29). */
+type SynopLookup = {
+  entry: { station: RankedStation; reading: WeatherReading } | null
+  anyInCap: boolean
+}
 
 /** What the cache stores: boxed, because a null reading is a valid, cacheable answer. */
 type Boxed = { value: unknown }
@@ -98,13 +105,12 @@ export class WeatherService {
       () => WEATHER_STATIONS_TTL_MS,
       () => this.callProvider("stations", () => provider.listStations()),
     )
-    const ranked = rankStations(
-      stations,
-      { lat: input.lat, lng: input.lng },
-      this.settings.maxStationDistanceKm,
-      MAX_STATIONS,
-    )
-    if (ranked.length === 0) {
+    const point = { lat: input.lat, lng: input.lng }
+    const ranked = rankStations(stations, point, this.settings.maxStationDistanceKm, MAX_STATIONS)
+    // D-29: a provider with a SYNOP lookup also gives the sky and the rain over 24 h, from the
+    // nearest SYNOP station within its own cap. Without one, the hourly readings give all four.
+    const readSynop = provider.readSynopReports?.bind(provider)
+    if (ranked.length === 0 && readSynop === undefined) {
       return { observation: null, reason: "no_station" }
     }
 
@@ -112,16 +118,32 @@ export class WeatherService {
     const hour = nearestUtcHour(requested)
     const hourIso = hour.toISOString()
     const isCurrentHour = hour.getTime() >= nearestUtcHour(new Date(now)).getTime()
+    const ttlOf = (empty: boolean): number =>
+      empty
+        ? WEATHER_EMPTY_TTL_MS
+        : isCurrentHour
+          ? WEATHER_CURRENT_HOUR_TTL_MS
+          : WEATHER_PAST_HOUR_TTL_MS
+
+    let synop: SynopLookup = { entry: null, anyInCap: false }
+    if (readSynop !== undefined) {
+      const reports = await this.shared<SynopReport[]>(
+        `synop:${hourIso}`,
+        (value) => ttlOf(value.length === 0),
+        () => this.callProvider("synop", () => readSynop(hour)),
+      )
+      synop = this.nearestSynop(reports, point, requested)
+      if (ranked.length === 0 && !synop.anyInCap) {
+        return { observation: null, reason: "no_station" }
+      }
+    }
+    const synopEntries = synop.entry === null ? [] : [synop.entry]
+
     const entries: Array<{ station: RankedStation; reading: WeatherReading }> = []
     for (const station of ranked) {
       const reading = await this.shared<WeatherReading | null>(
         `reading:${station.id}:${hourIso}`,
-        (value) =>
-          value === null
-            ? WEATHER_EMPTY_TTL_MS
-            : isCurrentHour
-              ? WEATHER_CURRENT_HOUR_TTL_MS
-              : WEATHER_PAST_HOUR_TTL_MS,
+        (value) => ttlOf(value === null),
         () => this.callProvider("reading", () => provider.readHourly(station.id, hour)),
       )
       // Pitfall 6: a reading whose own time is too far from the survey time is not its weather.
@@ -130,21 +152,70 @@ export class WeatherService {
         isWithinTolerance(reading.observed_at, requested, this.settings.timeToleranceMinutes)
       ) {
         entries.push({ station, reading })
-        const merged = mergeStationReadings(entries)
+        const merged = mergeStationReadings([...entries, ...synopEntries])
+        // With a SYNOP lookup the hourly readings can only add temperature and wind (they never
+        // carry sky or 24 h rain), so more stations are asked only while one of those is missing.
         if (
           merged !== null &&
-          merged.sky !== null &&
           merged.temperature_c !== null &&
           merged.wind_kmh !== null &&
-          merged.rain_24h_mm !== null
+          (readSynop !== undefined || (merged.sky !== null && merged.rain_24h_mm !== null))
         ) {
           return { observation: merged }
         }
       }
     }
 
-    const observation = mergeStationReadings(entries)
+    const observation = mergeStationReadings([...entries, ...synopEntries])
     return observation === null ? { observation: null, reason: "no_data" } : { observation }
+  }
+
+  /**
+   * The SYNOP report to use (D-29): the nearest SYNOP station within its own cap whose report is
+   * inside the time tolerance. `anyInCap` tells whether any SYNOP station is within the cap at all
+   * (the difference between `no_station` and `no_data`). Nulls stay null: a nearer station that
+   * lacks the sky is not replaced by a farther one.
+   */
+  private nearestSynop(
+    reports: readonly SynopReport[],
+    point: { lat: number; lng: number },
+    requested: Date,
+  ): SynopLookup {
+    const cap = this.settings.synopMaxDistanceKm
+    const anyInCap =
+      rankStations(
+        reports.map((report) => report.station),
+        point,
+        cap,
+        1,
+      ).length > 0
+    const usable = reports.filter((report) =>
+      isWithinTolerance(report.observed_at, requested, this.settings.timeToleranceMinutes),
+    )
+    const nearest = rankStations(
+      usable.map((report) => report.station),
+      point,
+      cap,
+      1,
+    )[0]
+    const report =
+      nearest === undefined ? undefined : usable.find((r) => r.station.id === nearest.id)
+    if (nearest === undefined || report === undefined) {
+      return { entry: null, anyInCap }
+    }
+    return {
+      anyInCap,
+      entry: {
+        station: nearest,
+        reading: {
+          observed_at: report.observed_at,
+          temperature_c: null,
+          wind_kmh: null,
+          rain_24h_mm: report.rain_24h_mm,
+          sky: report.sky,
+        },
+      },
+    }
   }
 
   /** Cache hit, else the call already running for this key, else a new call (then cached). */

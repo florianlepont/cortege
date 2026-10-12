@@ -72,20 +72,21 @@ function looksLikeHtml(text: string): boolean {
 }
 
 export class MeteoFranceHttp {
-  private readonly credential: string
+  // ES private fields: they do not show up when the object is serialised or inspected.
+  readonly #credential: string
   private readonly baseUrl: string
   private readonly timeoutMs: number
   private readonly tokenUrl: string
   private readonly mode: MeteoFranceAuthMode
-  private token: CachedToken | null = null
-  private tokenRequest: Promise<string> | null = null
+  #token: CachedToken | null = null
+  #tokenRequest: Promise<string> | null = null
 
   constructor(options: MeteoFranceHttpOptions) {
-    this.credential = options.credential.trim()
+    this.#credential = options.credential.trim()
     this.baseUrl = options.baseUrl.replace(/\/+$/, "")
     this.timeoutMs = options.timeoutMs
     this.tokenUrl = options.tokenUrl ?? METEOFRANCE_TOKEN_URL
-    this.mode = authModeOf(this.credential)
+    this.mode = authModeOf(this.#credential)
   }
 
   /** A GET asking for JSON. An HTML page, even answered with 200, is a failure. */
@@ -116,7 +117,7 @@ export class MeteoFranceHttp {
     let answer = await this.send(url, label)
     if (answer.status === 401 && this.mode === "application-id") {
       // The token was refused (expired or revoked): drop it and retry once with a new one.
-      this.token = null
+      this.#token = null
       answer = await this.send(url, label)
     }
     if (!answer.ok) {
@@ -129,7 +130,7 @@ export class MeteoFranceHttp {
   }
 
   private async send(url: URL, label: string): Promise<Answer> {
-    const bearer = this.mode === "bearer" ? this.credential : await this.accessToken()
+    const bearer = this.mode === "bearer" ? this.#credential : await this.accessToken()
     return await this.exchange(
       url,
       {
@@ -142,16 +143,16 @@ export class MeteoFranceHttp {
 
   /** The cached token while it is valid, else one new token (concurrent callers share it). */
   private accessToken(): Promise<string> {
-    if (this.token !== null && Date.now() < this.token.expiresAt - TOKEN_MARGIN_MS) {
-      return Promise.resolve(this.token.value)
+    if (this.#token !== null && Date.now() < this.#token.expiresAt - TOKEN_MARGIN_MS) {
+      return Promise.resolve(this.#token.value)
     }
-    if (this.tokenRequest !== null) {
-      return this.tokenRequest
+    if (this.#tokenRequest !== null) {
+      return this.#tokenRequest
     }
     const request = this.requestToken().finally(() => {
-      this.tokenRequest = null
+      this.#tokenRequest = null
     })
-    this.tokenRequest = request
+    this.#tokenRequest = request
     return request
   }
 
@@ -161,7 +162,7 @@ export class MeteoFranceHttp {
       {
         method: "POST",
         headers: {
-          Authorization: `Basic ${this.credential}`,
+          Authorization: `Basic ${this.#credential}`,
           "Content-Type": "application/x-www-form-urlencoded",
           Accept: "application/json",
         },
@@ -188,7 +189,7 @@ export class MeteoFranceHttp {
       typeof record.expires_in === "number" && Number.isFinite(record.expires_in)
         ? Math.max(0, record.expires_in)
         : DEFAULT_TOKEN_LIFETIME_S
-    this.token = { value, expiresAt: Date.now() + lifetime * 1000 }
+    this.#token = { value, expiresAt: Date.now() + lifetime * 1000 }
     return value
   }
 

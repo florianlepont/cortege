@@ -76,10 +76,10 @@ export function isWithinTolerance(
   return Math.abs(validity - at.getTime()) <= toleranceMinutes * MINUTE_MS
 }
 
-type Range = { min: number; max: number }
+export type Range = { min: number; max: number }
 
 /** A finite number inside its range, rounded to one decimal; anything else is no value. */
-function inRange(value: number | null, range: Range): number | null {
+export function inRange(value: number | null, range: Range): number | null {
   if (value === null || !Number.isFinite(value)) {
     return null
   }

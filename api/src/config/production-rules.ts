@@ -18,7 +18,7 @@ const KNOWN_DEFAULT_SECRETS = new Set(["ibp", "minio", "minio123"])
  * change-me-access-secret and similar placeholders, so match the prefix
  * case-insensitively, not only the exact "change-me".
  */
-const PLACEHOLDER_PREFIX = /^change[-_]?me/i
+export const PLACEHOLDER_PREFIX = /^change[-_]?me/i
 
 /** D-03: a CORS entry that still carries the example placeholder. */
 const CORS_PLACEHOLDER = /change[-_]me/i

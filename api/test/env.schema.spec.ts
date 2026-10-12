@@ -361,13 +361,14 @@ describe("config: production warnings (AUTH0_MGMT_* degrade, never refuse)", () 
 })
 
 describe("config: weather (phase 27, D-19, D-22)", () => {
-  it("defaults to no weather: provider off, no credential, cap 25 km, tolerance 90 minutes", () => {
+  it("defaults to no weather: provider off, no credential, caps 30 km and 50 km, tolerance 90 minutes", () => {
     expect(loadAppConfig({}).weather).toEqual({
       provider: "off",
       credential: "",
       observationsUrl: "https://public-api.meteofrance.fr/public/DPObs/v2",
       timeoutMs: 4000,
-      maxStationDistanceKm: 25,
+      maxStationDistanceKm: 30,
+      synopMaxDistanceKm: 50,
       timeToleranceMinutes: 90,
     })
   })
@@ -386,12 +387,14 @@ describe("config: weather (phase 27, D-19, D-22)", () => {
       METEOFRANCE_OBS_URL: "http://localhost:9998/obs",
       WEATHER_TIMEOUT_MS: "1500",
       WEATHER_MAX_STATION_DISTANCE_KM: "12.5",
+      WEATHER_SYNOP_MAX_DISTANCE_KM: "80",
       WEATHER_TIME_TOLERANCE_MINUTES: "45",
     }).weather
     expect(weather.credential).toBe("a-key")
     expect(weather.observationsUrl).toBe("http://localhost:9998/obs")
     expect(weather.timeoutMs).toBe(1500)
     expect(weather.maxStationDistanceKm).toBe(12.5)
+    expect(weather.synopMaxDistanceKm).toBe(80)
     expect(weather.timeToleranceMinutes).toBe(45)
   })
 
@@ -399,10 +402,12 @@ describe("config: weather (phase 27, D-19, D-22)", () => {
     const weather = loadAppConfig({
       WEATHER_TIMEOUT_MS: "x",
       WEATHER_MAX_STATION_DISTANCE_KM: "-3",
+      WEATHER_SYNOP_MAX_DISTANCE_KM: "far",
       WEATHER_TIME_TOLERANCE_MINUTES: "0",
     }).weather
     expect(weather.timeoutMs).toBe(4000)
-    expect(weather.maxStationDistanceKm).toBe(25)
+    expect(weather.maxStationDistanceKm).toBe(30)
+    expect(weather.synopMaxDistanceKm).toBe(50)
     expect(weather.timeToleranceMinutes).toBe(90)
   })
 

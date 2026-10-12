@@ -75,8 +75,10 @@ export type AppConfig = {
     credential: string
     observationsUrl: string
     timeoutMs: number
-    /** D-19: beyond this distance to the nearest station the weather stays empty. */
+    /** D-19: beyond this distance to the nearest hourly station the weather stays empty. */
     maxStationDistanceKm: number
+    /** D-29: the same for the nearest SYNOP station, the source of sky and rain over 24 h. */
+    synopMaxDistanceKm: number
     /** Longest gap between the survey time and an observation that is still used. */
     timeToleranceMinutes: number
   }

@@ -134,7 +134,12 @@ export function loadAppConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       credential: (v.METEOFRANCE_API_KEY ?? "").trim(),
       observationsUrl: v.METEOFRANCE_OBS_URL ?? "https://public-api.meteofrance.fr/public/DPObs/v2",
       timeoutMs: positiveInteger(v.WEATHER_TIMEOUT_MS, 4000),
-      maxStationDistanceKm: positiveNumber(v.WEATHER_MAX_STATION_DISTANCE_KM, 25),
+      // D-19, spike 2026-10: 30 km. 25 km leaves the Landes test point (nearest station 25.13 km)
+      // empty; 40 km would start to give coastal values to inland sites.
+      maxStationDistanceKm: positiveNumber(v.WEATHER_MAX_STATION_DISTANCE_KM, 30),
+      // D-29: the SYNOP stations (sky and rain over 24 h) are about 190 over France, so their cap
+      // is its own and wider.
+      synopMaxDistanceKm: positiveNumber(v.WEATHER_SYNOP_MAX_DISTANCE_KM, 50),
       timeToleranceMinutes: positiveInteger(v.WEATHER_TIME_TOLERANCE_MINUTES, 90),
     },
     debug: {

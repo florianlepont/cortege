@@ -79,6 +79,7 @@ export class EnvironmentVariables {
   @IsOptional() @IsString() METEOFRANCE_OBS_URL?: string
   @IsOptional() @IsString() WEATHER_TIMEOUT_MS?: string
   @IsOptional() @IsString() WEATHER_MAX_STATION_DISTANCE_KM?: string
+  @IsOptional() @IsString() WEATHER_SYNOP_MAX_DISTANCE_KM?: string
   @IsOptional() @IsString() WEATHER_TIME_TOLERANCE_MINUTES?: string
 
   // Debug

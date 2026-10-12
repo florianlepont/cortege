@@ -1,10 +1,12 @@
-import { Logger } from "@nestjs/common"
 import { WEATHER_SKY_CODES, type WeatherSkyCode } from "@cortege/ibp-domain"
 import type { AppConfig } from "../config/config.types"
+import { PLACEHOLDER_PREFIX } from "../config/production-rules"
+import { MeteoFranceHttp } from "./meteofrance-http"
+import { MeteoFranceWeatherProvider } from "./meteofrance-provider"
 
 // The weather provider seam (D-08, D-19, D-22). The service only knows this interface; the
-// Météo-France implementation plugs in through `createWeatherProvider` in plan 27-12, once the
-// owner's spike has fixed the real field names and units. Providers convert to app units.
+// Météo-France implementation (meteofrance-provider.ts, built on the owner's spike fixtures) plugs
+// in through `createWeatherProvider`. Providers convert to app units.
 
 export type WeatherStation = { id: string; name: string | null; lat: number; lng: number }
 
@@ -17,9 +19,25 @@ export type WeatherReading = {
   sky: WeatherSkyCode | null
 }
 
+/**
+ * One report of a SYNOP station (D-29): the sky and the rain over 24 h, which the hourly stations
+ * do not give. The station carries its own position because the SYNOP answer does.
+ */
+export type SynopReport = {
+  station: WeatherStation
+  observed_at: string
+  rain_24h_mm: number | null
+  sky: WeatherSkyCode | null
+}
+
 export interface WeatherProvider {
   listStations(): Promise<WeatherStation[]>
   readHourly(stationId: string, hourUtc: Date): Promise<WeatherReading | null>
+  /**
+   * Optional second lookup (D-29): the reports of every SYNOP station around `hourUtc`, one per
+   * station. A provider without it (synthetic) gives all four values from `readHourly`.
+   */
+  readSynopReports?(hourUtc: Date): Promise<SynopReport[]>
 }
 
 export const WEATHER_PROVIDER_TOKEN = Symbol("WEATHER_PROVIDER")
@@ -77,24 +95,26 @@ export class SyntheticWeatherProvider implements WeatherProvider {
   }
 }
 
-const logger = new Logger("WeatherProvider")
-let meteoFranceNoticeLogged = false
-
 /**
- * The provider for the configured mode: null for `off`, the synthetic provider for `synthetic`.
- * The `meteofrance` case is filled by plan 27-12, built on the spike's fixtures (D-22); until
- * then it returns null (the service answers `disabled`) and says so once.
+ * The provider for the configured mode: null for `off`, the synthetic provider for `synthetic`,
+ * the Météo-France provider for `meteofrance`. A blank or `CHANGE_ME` credential gives null (the
+ * service answers `disabled`, the weather stays empty; production only warns, plan 27-04).
  */
 export function createWeatherProvider(config: AppConfig["weather"]): WeatherProvider | null {
   switch (config.provider) {
     case "synthetic":
       return new SyntheticWeatherProvider()
     case "meteofrance":
-      if (!meteoFranceNoticeLogged) {
-        meteoFranceNoticeLogged = true
-        logger.warn("WEATHER_PROVIDER=meteofrance needs the Météo-France provider of plan 27-12")
+      if (config.credential === "" || PLACEHOLDER_PREFIX.test(config.credential)) {
+        return null
       }
-      return null
+      return new MeteoFranceWeatherProvider(
+        new MeteoFranceHttp({
+          credential: config.credential,
+          baseUrl: config.observationsUrl,
+          timeoutMs: config.timeoutMs,
+        }),
+      )
     case "off":
     default:
       return null
