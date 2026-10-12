@@ -151,12 +151,12 @@ The V1 features that make up the beta (Phases 27 to 34). Same `REQ-{epic}-{slug}
 
 ### C — IBP Survey Data Entry (V1)
 
-- [ ] **REQ-C-survey-note** (SVA-01) — The observer can add a free note (at most 1000 characters) to a survey; it is stored locally, syncs, is read-only after submit, and is shown in the survey summary, the parcel history and the PDF; it is searchable among the observer's own surveys on the phone. *(New — Phase 27, seminar card "Note libre sur le relevé")*
-- [ ] **REQ-C-factor-note** (SVA-02) — The observer can add a free note (at most 300 characters) to each factor A to J without leaving the factor page; it syncs, is read-only after submit, and is shown on the score page, to other members and in the PDF. *(New — Phase 27)*
-- [ ] **REQ-C-doubt-flag** (SVA-03) — The observer can flag a doubt ("Douteux") on each factor A to J; it is shown wherever the factor is shown and never changes a score, a band, a total or a validation result, proved by a parity case run in the shared package, the API adapter and the mobile adapter. *(New — Phase 27, seminar card "Niveau de certitude des observations")*
-- [ ] **REQ-C-weather-provider** (SVA-04) — A Cortege API endpoint answers the observed weather at a point and a past time from Météo-France (nearest station within a distance cap, last 24 h), key kept server-side, with cache, de-duplication, its own throttle, a clean 503, and synthetic and off modes. *(New — Phase 27, seminar card "Info météo préremplie")*
-- [ ] **REQ-C-weather-prefill** (SVA-05) — The survey weather (sky, temperature, wind, rain over 24 h, observation time) is pre-filled once the parcel is chosen and the network is there, each value editable, never overwriting a hand edit, empty without error offline and filled later for the survey time (within 24 h), with the attribution "Source : Météo-France". *(New — Phase 27)*
-- [ ] **REQ-C-conditions-sync** (SVA-06) — The note, the weather and the per-factor annotations travel through upsert, `/sync`, `/sync/changes`, `GET /surveys/:id` and the community and history reads without false `409 sync_version_conflict` for installed apps and without silent loss. *(New — Phase 27)*
+- [x] **REQ-C-survey-note** (SVA-01) — The observer can add a free note (at most 1000 characters) to a survey; it is stored locally, syncs, is read-only after submit, and is shown in the survey summary, the parcel history and the PDF; it is searchable among the observer's own surveys on the phone. *(New — Phase 27, seminar card "Note libre sur le relevé")*
+- [x] **REQ-C-factor-note** (SVA-02) — The observer can add a free note (at most 300 characters) to each factor A to J without leaving the factor page; it syncs, is read-only after submit, and is shown on the score page, to other members and in the PDF. *(New — Phase 27)*
+- [x] **REQ-C-doubt-flag** (SVA-03) — The observer can flag a doubt ("Douteux") on each factor A to J; it is shown wherever the factor is shown and never changes a score, a band, a total or a validation result, proved by a parity case run in the shared package, the API adapter and the mobile adapter. *(New — Phase 27, seminar card "Niveau de certitude des observations")*
+- [x] **REQ-C-weather-provider** (SVA-04) — A Cortege API endpoint answers the observed weather at a point and a past time from Météo-France (nearest station within a distance cap, last 24 h), key kept server-side, with cache, de-duplication, its own throttle, a clean 503, and synthetic and off modes. *(New — Phase 27, seminar card "Info météo préremplie")*
+- [x] **REQ-C-weather-prefill** (SVA-05) — The survey weather (sky, temperature, wind, rain over 24 h, observation time) is pre-filled once the parcel is chosen and the network is there, each value editable, never overwriting a hand edit, empty without error offline and filled later for the survey time (within 24 h), with the attribution "Source : Météo-France". *(New — Phase 27)*
+- [x] **REQ-C-conditions-sync** (SVA-06) — The note, the weather and the per-factor annotations travel through upsert, `/sync`, `/sync/changes`, `GET /surveys/:id` and the community and history reads without false `409 sync_version_conflict` for installed apps and without silent loss. *(New — Phase 27)*
 
 ## Cross-Cutting Business Rules
 
@@ -311,12 +311,12 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-D-offline-work | Built | Phase 35 | Verify |
 | REQ-D-auto-sync | Built | Phase 35 | Verify |
 | REQ-D-conflict-resolution | Built | Phase 35 | Verify |
-| REQ-C-survey-note | Pending | Phase 27 | Build |
-| REQ-C-factor-note | Pending | Phase 27 | Build |
-| REQ-C-doubt-flag | Pending | Phase 27 | Build |
-| REQ-C-weather-provider | Pending | Phase 27 | Build |
-| REQ-C-weather-prefill | Pending | Phase 27 | Build |
-| REQ-C-conditions-sync | Pending | Phase 27 | Build |
+| REQ-C-survey-note | Built | Phase 27 | Build |
+| REQ-C-factor-note | Built | Phase 27 | Build |
+| REQ-C-doubt-flag | Built | Phase 27 | Build |
+| REQ-C-weather-provider | Built | Phase 27 | Build |
+| REQ-C-weather-prefill | Built | Phase 27 | Build |
+| REQ-C-conditions-sync | Built | Phase 27 | Build |
 
 **Coverage:**
 

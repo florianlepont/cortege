@@ -81,7 +81,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 25: Global Search** (INSERTED) - One search covers the whole app: own and community surveys, places and parcels on the map, and the other items the app exposes (SEED-003; owner decision 2026-10-07) (completed 2026-10-10)
 - [x] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10) (completed 2026-10-10)
 - [x] **Phase 26: Field-feedback fixes** (INSERTED) - Android photo recognition works (the recognition workflow rethink was set aside, owner 2026-10-10); small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10) (completed 2026-10-11)
-- [ ] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
+- [x] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
 - [ ] **Phase 28: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10)
 - [ ] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list)
 - [ ] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand
@@ -963,7 +963,7 @@ Plans:
   2. The weather of the survey is pre-filled from an external source when online, editable, and absent without error when offline.
   3. The observer can flag a doubt on an observation, and the doubt is visible in the detail and the PDF without changing the score.
 
-**Plans**: 21/22 plans executed (22 plans in 8 waves; only waves 6 to 8 wait on the owner's Météo-France key)
+**Plans**: 22/22 plans executed (22 plans in 8 waves). Closed 2026-10-12; the emulator checks DC-27-02 to DC-27-05 stay open in `docs/user-tests/device-checks.md`
 
 Plans:
 
@@ -1011,7 +1011,7 @@ Plans:
 
 **Wave 8** *(blocked on Wave 7 completion)*
 
-- [ ] 27-21-PLAN.md: device checks and the real Météo-France answer, human checkpoints
+- [x] 27-21-PLAN.md: device checks and the real Météo-France answer, human checkpoints (real answer done, emulator rows open)
 
 **UI hint**: yes
 
@@ -1230,7 +1230,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 25. Global Search | 15/15 | Complete | 2026-10-10 |
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
-| 27. Quick survey additions | 21/22 | In Progress|  |
+| 27. Quick survey additions | 22/22 | Complete | 2026-10-12 |
 | 28. Map Layers & Comparison | 0/TBD | Not started | - |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
 | 30. Route Choice Assistant | 0/TBD | Not started | - |
