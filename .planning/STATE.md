@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 27
 current_phase_name: INSERTED, V1
 status: ready_to_discuss
-stopped_at: "Phase 28 planned (16 plans, 7 waves); next: execute, 28-01 curtain spike needs owner go/no-go on phone"
+stopped_at: "Phase 28 executed except the open device checks (27/28 plans, 28-18 partial); owner validated the Explorer layers, swipe and comparison on his iPhone 2026-10-12; open: offline pack measures, Android emulator run, airplane mode"
 last_updated: "2026-10-11T10:29:55.954Z"
 last_activity: 2026-10-11
 last_activity_desc: Phase 26 (field-feedback fixes) complete
@@ -281,5 +281,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-10-11T10:29:55.948Z
-Stopped at: Phase 28 planned (16 plans, 7 waves); next: execute, 28-01 curtain spike needs owner go/no-go on phone
-Resume file: .planning/phases/28-map-layers-comparison-inserted-v1/28-01-PLAN.md
+Stopped at: Phase 28 executed except the open device checks (27/28 plans, 28-18 partial); owner validated the Explorer layers, swipe and comparison on his iPhone 2026-10-12; open: offline pack measures, Android emulator run, airplane mode. Nothing merged or pushed.
+Resume file: .planning/phases/28-map-layers-comparison-inserted-v1/28-18-SUMMARY.md
