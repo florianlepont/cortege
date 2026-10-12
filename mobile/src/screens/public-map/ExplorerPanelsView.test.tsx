@@ -10,7 +10,7 @@ import type { ExplorerPanels } from "./useExplorerPanels"
 
 jest.mock("react-native", () => ({ StyleSheet: { absoluteFill: { position: "absolute" } } }))
 jest.mock("../../ui/AppPressable", () => ({ AppPressable: "AppPressable" }))
-jest.mock("./OverlayButton", () => ({ OverlayButton: "OverlayButton" }))
+jest.mock("./MapControls", () => ({ MapDownloadButton: "MapDownloadButton" }))
 jest.mock("./OverlayBubble", () => ({ OverlayBubble: "OverlayBubble" }))
 jest.mock("./DownloadCard", () => ({ DownloadCard: "DownloadCard" }))
 jest.mock("./DownloadChip", () => ({ DownloadChip: "DownloadChip" }))
@@ -102,7 +102,8 @@ function makeLayers(
     chipShown: false,
     notices: [],
     noticesTop: 60,
-    overlayButtonTop: 130,
+    downloadButtonTop: 170,
+    overlayBubbleTop: 111,
     ...overrides,
   } as unknown as ExplorerLayers
 }
@@ -119,6 +120,7 @@ function makeProps(overrides: Partial<ExplorerPanelsViewProps> = {}): ExplorerPa
     onClearStatus: jest.fn(),
     onRetryStyle: jest.fn(),
     onCardHeight: jest.fn(),
+    downloadEnabled: true,
     forestAvailable: true,
     cardBottom: 64,
     ...overrides,
@@ -145,12 +147,12 @@ beforeEach(() => {
 })
 
 describe("ExplorerPanelsView", () => {
-  test("at rest: the overlay button, the notices column and the idle chip; no bubble, card or backdrop", () => {
+  test("at rest: the download button, the notices column and the idle chip; no bubble, card or backdrop", () => {
     const props = makeProps()
     const tree = mount(props)
-    const button = one(tree, "OverlayButton")
-    expect(button.props).toMatchObject({ top: 130, active: false, expanded: false })
-    expect(button.props.onPress).toBe(props.panels.toggleBubble)
+    const button = one(tree, "MapDownloadButton")
+    expect(button.props).toMatchObject({ top: 170 })
+    expect(button.props.onPress).toBe(props.panels.openCard)
     expect(all(tree, "OverlayBubble")).toHaveLength(0)
     expect(all(tree, "DownloadCard")).toHaveLength(0)
     expect(all(tree, "AppPressable")).toHaveLength(0)
@@ -162,19 +164,18 @@ describe("ExplorerPanelsView", () => {
     expect(one(tree, "DownloadChip").props).toMatchObject({
       status: null,
       visible: false,
-      top: 60,
+      buttonTop: 170,
       onExpire: props.onClearStatus,
     })
   })
 
-  test("the button lights its dot and says it is expanded while the bubble is open", () => {
-    const tree = mount(
-      makeProps({
-        panels: makePanels({ panel: "bubble" }),
-        layers: makeLayers({}, { layers: { ...makeLayers().layers, overlayDot: true } }),
-      }),
-    )
-    expect(one(tree, "OverlayButton").props).toMatchObject({ active: true, expanded: true })
+  test("the download button renders only when offline maps are on, and opens the card", () => {
+    const off = mount(makeProps({ downloadEnabled: false }))
+    expect(all(off, "MapDownloadButton")).toHaveLength(0)
+    const props = makeProps()
+    const on = mount(props)
+    act(() => one(on, "MapDownloadButton").props.onPress())
+    expect(props.panels.openCard).toHaveBeenCalledTimes(1)
   })
 
   test("the bubble carries the layers state, with a backdrop that only closes it", () => {
@@ -186,7 +187,7 @@ describe("ExplorerPanelsView", () => {
     const tree = mount(props)
     const bubble = one(tree, "OverlayBubble")
     expect(bubble.props).toMatchObject({
-      top: 130,
+      top: 111,
       forest: true,
       forestAvailable: false,
       parcels: "withIbp",
@@ -210,7 +211,7 @@ describe("ExplorerPanelsView", () => {
     })
     const tree = mount(props, <React.Fragment>{React.createElement("MapControls")}</React.Fragment>)
     const order = (tree.toJSON() as { type: string }[]).map((node) => node.type)
-    expect(order.indexOf("OverlayButton")).toBeLessThan(order.indexOf("MapControls"))
+    expect(order.indexOf("MapDownloadButton")).toBeLessThan(order.indexOf("MapControls"))
     expect(order.indexOf("MapControls")).toBeLessThan(order.indexOf("DownloadCard"))
 
     const bubbleTree = mount(

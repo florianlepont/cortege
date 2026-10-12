@@ -71,6 +71,7 @@ import {
   capsuleButtonCenterY,
   capsuleHeight,
   createControlStyles,
+  downloadButtonTopOf,
 } from "./styles"
 
 const originalConsoleError = console.error
@@ -117,7 +118,7 @@ const failed: AreaDownloadStatus = { phase: "failed", areaId: "a1", name: "Zone"
 
 function mount(props: Partial<DownloadChipProps> = {}) {
   const handlers = { onPress: jest.fn(), onExpire: jest.fn() }
-  const base = { status: running(42), visible: true, top: 100, ...handlers }
+  const base = { status: running(42), visible: true, buttonTop: 100, ...handlers }
   let tree!: renderer.ReactTestRenderer
   act(() => {
     tree = renderer.create(<DownloadChip {...base} {...props} />)
@@ -241,12 +242,13 @@ describe("DownloadChip (28-15)", () => {
     expect(handlers.onExpire).not.toHaveBeenCalled()
   })
 
-  test("sits 8 pt left of the capsule, centred on its download button, 40 high, 160 ms fade", () => {
-    const { tree } = mount({ top: 120 })
+  test("sits 8 pt left of the download button, centred on it, 40 high, 160 ms fade", () => {
+    const { tree } = mount({ buttonTop: downloadButtonTopOf(120) })
     const position = tree.root.find((node) => node.props.testID === "download-chip-position")
     expect(flat(position.props.style).right).toBe(72)
     expect(CAPSULE_RIGHT + CAPSULE_BUTTON_SIZE + 8).toBe(72)
-    expect(flat(position.props.style).top).toBe(capsuleButtonCenterY(120, 1) - 20)
+    expect(flat(position.props.style).top).toBe(downloadButtonTopOf(120) + 25 - 20)
+    expect(flat(position.props.style).top).toBe(120 + capsuleHeight(2) + 8 + 5)
     expect(position.props.entering.calls).toEqual({
       durationMs: brandMotion.durations.fast,
       reduceMotion: "system",

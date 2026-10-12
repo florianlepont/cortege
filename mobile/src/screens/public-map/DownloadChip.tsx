@@ -11,16 +11,13 @@ import { AppText as Text } from "../../ui/AppText"
 import { GlassSurface } from "../../ui/GlassSurface"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { MAP_CONTROL_HIT_SLOP, MAP_PILL_HEIGHT } from "./MapChips"
-import { CAPSULE_BUTTON_SIZE, CAPSULE_RIGHT, capsuleButtonCenterY } from "./styles"
+import { CAPSULE_BUTTON_SIZE, CAPSULE_RIGHT, MAP_BUTTON_GAP } from "./styles"
 
 const t = fr.mapLayers.download.chip
 
 /** How long "Zone disponible hors connexion" stays before the chip goes (UI-SPEC section 6). */
 export const DONE_CHIP_DURATION_MS = 4000
-const GAP_TO_CAPSULE = 8
 const GLYPH_SIZE = 16
-/** The index of the download button in the capsule (the globe is 0). */
-const DOWNLOAD_BUTTON_INDEX = 1
 
 type ChipKind = "running" | "done" | "partial" | "failed"
 
@@ -35,8 +32,8 @@ export type DownloadChipProps = {
   status: AreaDownloadStatus | null
   /** False while the swipe mode owns the band under the capsule; the download goes on. */
   visible: boolean
-  /** The capsule's top, from the top of the map. */
-  top: number
+  /** The top of the round download button, from the top of the map: the chip is centred on it. */
+  buttonTop: number
   /** Failed and partial only: reopens the card on the matching view. */
   onPress: () => void
   /** The finished chip has been shown for its 4 s: clear the status. */
@@ -44,15 +41,15 @@ export type DownloadChipProps = {
 }
 
 /**
- * The offline download on the map (UI-SPEC section 6): a glass pill left of the capsule's download
- * button carrying the byte-weighted percentage while it runs, then its outcome. It is how the
- * Explorer shows the percentage of an area download (success criterion 5, owner decision
- * 2026-10-11). Running and done are not pressable; failed and partial reopen the card.
+ * The offline download on the map (UI-SPEC section 6): a glass pill left of the round download
+ * button, centred on it, carrying the byte-weighted percentage while it runs, then its outcome. It
+ * is how the Explorer shows the percentage of an area download (success criterion 5, owner
+ * decision 2026-10-11). Running and done are not pressable; failed and partial reopen the card.
  */
 export const DownloadChip = memo(function DownloadChip({
   status,
   visible,
-  top,
+  buttonTop,
   onPress,
   onExpire,
 }: DownloadChipProps) {
@@ -105,10 +102,7 @@ export const DownloadChip = memo(function DownloadChip({
       testID="download-chip-position"
       entering={FadeIn.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)}
       pointerEvents="box-none"
-      style={[
-        styles.position,
-        { top: capsuleButtonCenterY(top, DOWNLOAD_BUTTON_INDEX) - MAP_PILL_HEIGHT / 2 },
-      ]}
+      style={[styles.position, { top: buttonTop + CAPSULE_BUTTON_SIZE / 2 - MAP_PILL_HEIGHT / 2 }]}
     >
       <GlassSurface
         tone="auto"
@@ -154,7 +148,7 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     position: {
       position: "absolute",
-      right: CAPSULE_RIGHT + CAPSULE_BUTTON_SIZE + GAP_TO_CAPSULE,
+      right: CAPSULE_RIGHT + CAPSULE_BUTTON_SIZE + MAP_BUTTON_GAP,
     },
     pill: {
       height: MAP_PILL_HEIGHT,

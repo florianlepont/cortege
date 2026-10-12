@@ -7,9 +7,9 @@ import type { AreaLayersEstimate } from "../../map/offline-estimate"
 import { AppPressable } from "../../ui/AppPressable"
 import { DownloadCard } from "./DownloadCard"
 import { DownloadChip } from "./DownloadChip"
+import { MapDownloadButton } from "./MapControls"
 import { MapNoticeStack } from "./MapNoticeStack"
 import { OverlayBubble } from "./OverlayBubble"
-import { OverlayButton } from "./OverlayButton"
 import type { ExplorerLayers } from "./useExplorerLayers"
 import { useDownloadAnnouncements } from "./useDownloadAnnouncements"
 import type { ExplorerPanels } from "./useExplorerPanels"
@@ -35,6 +35,8 @@ export type ExplorerPanelsViewProps = {
   onRetryStyle: () => void
   /** The card's drawn height, for the locate arrow's lift. */
   onCardHeight: (height: number) => void
+  /** Offline maps are on: the round download button shows under the capsule. */
+  downloadEnabled: boolean
   /** False offline when Types de forêt is not downloaded for the view. */
   forestAvailable: boolean
   /** The card's distance from the bottom of the screen (tab bar plus 14). */
@@ -52,9 +54,9 @@ export type ExplorerPanelsViewProps = {
 }
 
 /**
- * Every floating panel of the Explorer in one element (UI-SPEC sections 2, 6 and 8): the overlay
- * button, the bubble with the transparent layer behind it, the compact download card, the chip and
- * the notices column. It renders only: the state lives in `useExplorerPanels` and
+ * Every floating panel of the Explorer in one element (UI-SPEC sections 1, 2, 6 and 8): the round
+ * download button under the capsule, the bubble with the transparent layer behind it, the compact
+ * download card, the chip and the notices column. (The overlay button is in the capsule.) It renders only: the state lives in `useExplorerPanels` and
  * `useExplorerLayers`, the screen wires them. It also hosts the screen-level announcements of a
  * download, which go on while the chip is hidden.
  */
@@ -69,6 +71,7 @@ export function ExplorerPanelsView({
   onClearStatus,
   onRetryStyle,
   onCardHeight,
+  downloadEnabled,
   forestAvailable,
   cardBottom,
   noticesTop,
@@ -106,16 +109,13 @@ export function ExplorerPanelsView({
           accessibilityLabel={fr.mapLayers.overlays.closeA11y}
         />
       ) : null}
-      <OverlayButton
-        top={layers.overlayButtonTop}
-        active={layers.layers.overlayDot}
-        expanded={bubbleOpen}
-        onPress={panels.toggleBubble}
-      />
+      {downloadEnabled ? (
+        <MapDownloadButton top={layers.downloadButtonTop} onPress={panels.openCard} />
+      ) : null}
       {children}
       {bubbleOpen ? (
         <OverlayBubble
-          top={layers.overlayButtonTop}
+          top={layers.overlayBubbleTop}
           forest={state.overlay}
           forestAvailable={forestAvailable}
           parcels={state.parcels}
@@ -132,7 +132,7 @@ export function ExplorerPanelsView({
       <DownloadChip
         status={downloadStatus}
         visible={layers.chipShown}
-        top={layers.capsuleTop}
+        buttonTop={layers.downloadButtonTop}
         onPress={reopenResult}
         onExpire={onClearStatus}
       />

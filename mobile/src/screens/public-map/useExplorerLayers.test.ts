@@ -11,7 +11,12 @@ import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
 import type { MapLayerKey } from "../../map/layers"
 import { MAP_PILL_HEIGHT } from "./MapChips"
-import { capsuleButtonCenterY, capsuleHeight } from "./styles"
+import {
+  capsuleButtonCenterY,
+  capsuleHeight,
+  downloadButtonTopOf,
+  overlaySlotTopOf,
+} from "./styles"
 import { useExplorerLayers } from "./useExplorerLayers"
 import type { ExplorerLayers } from "./useExplorerLayers"
 
@@ -58,8 +63,8 @@ const setup = (overrides: Overrides = {}) =>
         surveyParcelIds: SURVEY_PARCELS,
         downloadStatus: null,
         cardOpen: false,
+        bubbleOpen: false,
         capsuleTop: 60,
-        capsuleButtons: 2,
         showSkipped: false,
         ...props,
       }),
@@ -105,17 +110,34 @@ describe("useExplorerLayers", () => {
     expect(result.current.chipShown).toBe(true)
   })
 
-  test("the notices column and the overlay button are placed from the capsule", async () => {
+  test("the chip hides while the overlay bubble is open and comes back when it closes", async () => {
+    const { result, rerender } = await setup({ downloadStatus: RUNNING })
+    expect(result.current.chipShown).toBe(true)
+    await rerender({ downloadStatus: RUNNING, bubbleOpen: true })
+    expect(result.current.chipShown).toBe(false)
+    expect(result.current.noticesTop).toBe(60)
+    await rerender({ downloadStatus: RUNNING, bubbleOpen: false })
+    expect(result.current.chipShown).toBe(true)
+  })
+
+  test("the download button and the bubble are placed from the capsule's helpers", async () => {
+    const { result } = await setup()
+    expect(result.current.downloadButtonTop).toBe(downloadButtonTopOf(60))
+    expect(result.current.downloadButtonTop).toBe(60 + capsuleHeight(2) + 8)
+    expect(result.current.overlayBubbleTop).toBe(overlaySlotTopOf(60))
+    expect(result.current.overlayBubbleTop).toBe(capsuleButtonCenterY(60, 1) - 25)
+  })
+
+  test("the notices column starts at the capsule, or below the chip's row while a chip shows", async () => {
     const free = await setup()
     expect(free.result.current.noticesTop).toBe(60)
-    expect(free.result.current.overlayButtonTop).toBe(60 + capsuleHeight(2) + 8)
     await cleanup()
 
-    const withChip = await setup({ downloadStatus: RUNNING, capsuleButtons: 1 })
+    const withChip = await setup({ downloadStatus: RUNNING })
     expect(withChip.result.current.noticesTop).toBe(
-      capsuleButtonCenterY(60, 1) + MAP_PILL_HEIGHT / 2 + 8,
+      downloadButtonTopOf(60) + 25 + MAP_PILL_HEIGHT / 2 + 8,
     )
-    expect(withChip.result.current.overlayButtonTop).toBe(60 + capsuleHeight(1) + 8)
+    expect(withChip.result.current.noticesTop).toBe(60 + capsuleHeight(2) + 8 + 25 + 20 + 8)
   })
 
   test("the over-zoom, coverage and offline notices come from the shown layers", async () => {

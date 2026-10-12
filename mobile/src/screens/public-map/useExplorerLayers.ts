@@ -12,7 +12,12 @@ import type { OfflineAreaSummary } from "../../storage/offline-map"
 import { MAP_PILL_HEIGHT } from "./MapChips"
 import { buildMapNotices } from "./map-notices"
 import type { MapNotice } from "./map-notices"
-import { capsuleButtonCenterY, capsuleHeight } from "./styles"
+import {
+  CAPSULE_BUTTON_SIZE,
+  MAP_BUTTON_GAP,
+  downloadButtonTopOf,
+  overlaySlotTopOf,
+} from "./styles"
 import { useLayerAvailability } from "./useLayerAvailability"
 import type { LayerAvailability } from "./useLayerAvailability"
 import { useMapLayersState } from "./useMapLayersState"
@@ -20,11 +25,6 @@ import type { MapLayers } from "./useMapLayersState"
 
 const sources = fr.mapLayers.sources
 const layerTexts = fr.mapLayers.layers
-
-/** Gap between the capsule and the overlay button (UI-SPEC section 2), and under the chip's row. */
-const BELOW_GAP = 8
-/** The download button's index in the capsule (the globe is 0). */
-const DOWNLOAD_BUTTON_INDEX = 1
 
 type Input = {
   savedBasemap: BasemapKey
@@ -37,10 +37,10 @@ type Input = {
   downloadStatus: AreaDownloadStatus | null
   /** The download card is open (the chip is then not shown, the card says it). */
   cardOpen: boolean
+  /** The overlay bubble is open (the chip is then not shown, the bubble covers its band). */
+  bubbleOpen: boolean
   /** The capsule's top, from the top of the map. */
   capsuleTop: number
-  /** How many buttons the capsule has (the download button needs offline maps). */
-  capsuleButtons: number
   /** The swipe mode is on: the cycle's skipped layers get their notice. */
   showSkipped: boolean
 }
@@ -52,23 +52,26 @@ export type ExplorerLayers = LayerAvailability & {
   /** Layers with no pack at the view centre that the swipe cycle skips. */
   skipped: number
   /**
-   * The chip of the offline download is on screen: a status exists, the card is not open and the
-   * swipe mode is off. Derived here from the layers state, never from a later hook.
+   * The chip of the offline download is on screen: a status exists, the card and the bubble are
+   * not open and the swipe mode is off. Derived here from the layers state, never from a later
+   * hook.
    */
   chipShown: boolean
   notices: MapNotice[]
   /** The notices column's top: the capsule's top, or below the chip's row while a chip shows. */
   noticesTop: number
-  /** The overlay button's top: under the capsule. */
-  overlayButtonTop: number
+  /** The round download button's top: 8 pt under the capsule (UI-SPEC section 1). */
+  downloadButtonTop: number
+  /** The overlay bubble's top: level with the overlay button, the capsule's second button. */
+  overlayBubbleTop: number
   /** The source lines of the legend, or null in the default display (the existing text stays). */
   legendLines: string[] | null
 }
 
 /**
  * Everything the Explorer derives from the layers state: availability at the view centre, the
- * chip's visibility, the notices column and its position, the overlay button's position and the
- * legend's source lines. It never calls the swipe hook (`showSkipped` is its
+ * chip's visibility, the notices column and its position, the download button's and the bubble's
+ * positions and the legend's source lines. It never calls the swipe hook (`showSkipped` is its
  * input), so the render order has no cycle.
  */
 export function useExplorerLayers({
@@ -80,8 +83,8 @@ export function useExplorerLayers({
   surveyParcelIds,
   downloadStatus,
   cardOpen,
+  bubbleOpen,
   capsuleTop,
-  capsuleButtons,
   showSkipped,
 }: Input): ExplorerLayers {
   const layers = useMapLayersState({ savedBasemap, saveBasemap })
@@ -121,11 +124,13 @@ export function useExplorerLayers({
     ],
   )
 
-  const chipShown = downloadStatus !== null && !cardOpen && !state.swipeMode
+  const chipShown = downloadStatus !== null && !cardOpen && !bubbleOpen && !state.swipeMode
+  // The chip is centred on the download button; the notices start under its row.
+  const downloadButtonTop = downloadButtonTopOf(capsuleTop)
   const noticesTop = chipShown
-    ? capsuleButtonCenterY(capsuleTop, DOWNLOAD_BUTTON_INDEX) + MAP_PILL_HEIGHT / 2 + BELOW_GAP
+    ? downloadButtonTop + CAPSULE_BUTTON_SIZE / 2 + MAP_PILL_HEIGHT / 2 + MAP_BUTTON_GAP
     : capsuleTop
-  const overlayButtonTop = capsuleTop + capsuleHeight(capsuleButtons) + BELOW_GAP
+  const overlayBubbleTop = overlaySlotTopOf(capsuleTop)
 
   const displayed = layers.displayedBase
   const second = comparing ? layers.layerOfSide("right") : null
@@ -152,7 +157,8 @@ export function useExplorerLayers({
     chipShown,
     notices,
     noticesTop,
-    overlayButtonTop,
+    downloadButtonTop,
+    overlayBubbleTop,
     legendLines,
   }
 }

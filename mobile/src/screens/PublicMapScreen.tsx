@@ -150,8 +150,8 @@ export function PublicMapScreen({
     surveyParcelIds,
     downloadStatus,
     cardOpen: panels.panel === "card",
+    bubbleOpen: panels.panel === "bubble",
     capsuleTop,
-    capsuleButtons: offlineEnabled ? 2 : 1,
     showSkipped: skippedPill,
   })
   const { styleLoaded, styleFailed } = layers.layers.actions
@@ -236,6 +236,15 @@ export function PublicMapScreen({
 
   const { locating, onLocate } = useLocateAction({ moveTo })
 
+  // The capsule's second button; memoised so the capsule does not redraw on every render.
+  const { overlayDot } = layers.layers
+  const { toggleBubble } = panels
+  const bubbleOpen = panels.panel === "bubble"
+  const overlaySlot = useMemo(
+    () => ({ active: overlayDot, expanded: bubbleOpen, onPress: toggleBubble }),
+    [overlayDot, bubbleOpen, toggleBubble],
+  )
+
   const dockBottom = Math.max(tabBarHeight, insets.bottom)
   const cardOpen = panels.panel === "card"
   // 12.2-19: download mode is the open download card before a download starts. The screen's edge
@@ -313,6 +322,7 @@ export function PublicMapScreen({
         onClearStatus={clearDownloadStatus}
         onRetryStyle={retryStyle}
         onCardHeight={setCardHeight}
+        downloadEnabled={offlineEnabled}
         forestAvailable={layers.isAvailable("types-foret")}
         cardBottom={cardBottom}
         noticesTop={swipe.noticesTop}
@@ -325,7 +335,7 @@ export function PublicMapScreen({
           basemapDot={layers.layers.globeDot}
           basemapDisabled={layers.layers.state.compare !== null}
           onToggleBasemap={swipe.toggleSwipe}
-          onOpenOfflineAreas={offlineEnabled ? panels.openCard : undefined}
+          overlay={overlaySlot}
         />
         <MapBottomDock bottom={dockLift} locating={locating} onLocate={onLocate} />
         <ScoreLegend

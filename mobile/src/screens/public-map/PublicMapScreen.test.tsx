@@ -10,6 +10,7 @@ import type { PublicMapItem, PublicParcelStatusItem } from "../../app/types"
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { fr } from "../../i18n"
 import { PublicMapScreen } from "../PublicMapScreen"
+import { downloadButtonTopOf, overlaySlotTopOf } from "./styles"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
 
 // The shared Reanimated mock hands out a fresh shared value on every render. The grabber's drag
@@ -72,7 +73,7 @@ jest.mock("react-native", () => {
     Text: mockComponent("Text"),
     View: mockComponent("View"),
     Alert: { alert: (...args: unknown[]) => mockAlert(...args) },
-    StyleSheet: { create: <T,>(styles: T): T => styles, absoluteFill: {} },
+    StyleSheet: { create: <T,>(styles: T): T => styles, absoluteFill: {}, hairlineWidth: 0.5 },
     Platform: { OS: "ios" },
     useWindowDimensions: () => ({ width: 400, height: 800 }),
   }
@@ -1058,6 +1059,83 @@ describe("PublicMapScreen", () => {
       } finally {
         mockOfflineEnabled.value = false
       }
+    })
+
+    describe("the capsule layout (owner item 13 a)", () => {
+      // The safe area top is 20 and the container starts at 0: the capsule's top is 30.
+      const CAPSULE_TOP = 30
+      const topOf = (node: ReactTestInstance): unknown => {
+        for (let current: ReactTestInstance | null = node; current; current = current.parent) {
+          const top = flatStyle(current.props.style).top
+          if (top !== undefined) return top
+        }
+        return undefined
+      }
+      const runningStatus = {
+        phase: "running",
+        areaId: "area-1",
+        name: "Zone",
+        percentage: 42,
+        downloadedTiles: 5,
+        totalTiles: 10,
+      }
+
+      afterEach(() => {
+        mockOfflineEnabled.value = false
+        mockDownloading.areaId = null
+        mockDownloadStatus.value = null
+      })
+
+      test("the capsule holds the globe and the overlay button; the download button is absent with offline maps off", () => {
+        mount(makeProps())
+        expect(byTestId("map-globe-button")).toHaveLength(1)
+        expect(byTestId("map-overlay-button")).toHaveLength(1)
+        expect(byTestId("map-download-button")).toHaveLength(0)
+      })
+
+      test("with offline maps on, the download button sits 8 pt under the capsule and opens the card", () => {
+        mockOfflineEnabled.value = true
+        mount(makeProps())
+        const [button] = byTestId("map-download-button")
+        expect(flatStyle(button.props.style).top).toBe(downloadButtonTopOf(CAPSULE_TOP))
+        // The overlay button is the capsule's second button, the bubble level with it.
+        act(() => overlayButton().props.onPress())
+        const [bubbleNode] = bubble()
+        expect(topOf(bubbleNode)).toBe(overlaySlotTopOf(CAPSULE_TOP))
+        act(() => byTestId("map-download-button")[0].props.onPress())
+        expect(byTestId("download-card")).toHaveLength(1)
+      })
+
+      test("a running download: the chip is centred on the download button, hidden while the bubble is open", () => {
+        mockOfflineEnabled.value = true
+        mockDownloading.areaId = "area-1"
+        mockDownloadStatus.value = runningStatus
+        mount(makeProps())
+        const position = () => byTestId("download-chip-position")
+        expect(position()).toHaveLength(1)
+        expect(flatStyle(position()[0].props.style).top).toBe(downloadButtonTopOf(CAPSULE_TOP) + 5)
+        expect(flatStyle(position()[0].props.style).right).toBe(72)
+        act(() => overlayButton().props.onPress())
+        expect(position()).toHaveLength(0)
+        act(() => backdrop()[0].props.onPress())
+        expect(position()).toHaveLength(1)
+      })
+
+      test("the notices start below the chip's row while it shows, else at the capsule", () => {
+        mockAvailable.all = false
+        mockOfflineEnabled.value = true
+        mockDownloading.areaId = "area-1"
+        mockDownloadStatus.value = runningStatus
+        mount(makeProps({ isOffline: true }))
+        const notice = () => byTestId("map-notice-offline")
+        act(() => overlayButton().props.onPress())
+        act(() => chipFor("overlay-forest-switch").props.onValueChange(true))
+        // The bubble is open: no chip, the notices start at the capsule.
+        expect(notice()).toHaveLength(1)
+        expect(topOf(notice()[0])).toBe(CAPSULE_TOP)
+        act(() => backdrop()[0].props.onPress())
+        expect(topOf(notice()[0])).toBe(downloadButtonTopOf(CAPSULE_TOP) + 25 + 20 + 8)
+      })
     })
 
     test("with the forest overlay on, the legend lists its source line and the common attribution", () => {
