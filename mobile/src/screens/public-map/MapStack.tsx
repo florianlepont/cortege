@@ -1,4 +1,12 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode, type RefObject } from "react"
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react"
 import { StyleSheet, View, type NativeSyntheticEvent } from "react-native"
 import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 import {
@@ -29,6 +37,9 @@ import { useStackedReady } from "./useStackedReady"
 // It takes a style, not a layer key, so the wipe, the curtain and the side wipe all use it.
 // Until its first style load it shows the map ground colour under the (still empty) map: the spike
 // found the uncovered strip black before the first tiles arrive (28-01, DL-01).
+
+/** How long (ms) a new style waits after the map was hidden: over two frames, the clip is on the UI thread. */
+export const STYLE_SWAP_GAP_MS = 50
 
 /** A stacked map's camera: the ref to pass to `MapStack` and the handler to feed from the Explorer map. */
 export function useMapSync(): {
@@ -78,8 +89,20 @@ export function MapStack({
   const { scheme } = useBrandTheme()
   const [styleLoaded, setStyleLoaded] = useState(false)
   // Not revealed until the current style is loaded and rendered (no blank or half-tiled strip).
-  const stackedReady = useStackedReady(mapStyle)
-  const { ready, onStyleLoaded: readyStyleLoaded, onRenderedFully } = stackedReady
+  // The native style lags the wanted one by STYLE_SWAP_GAP_MS: the clip is zero (and has reached the
+  // UI thread) before the swap, so the cleared map is never drawn for a frame.
+  const [appliedStyle, setAppliedStyle] = useState(mapStyle)
+  const stackedReady = useStackedReady(appliedStyle)
+  const { ready, onStyleLoaded: readyStyleLoaded, onRenderedFully, hide, restore } = stackedReady
+  useLayoutEffect(() => {
+    if (mapStyle === appliedStyle) {
+      restore()
+      return undefined
+    }
+    hide()
+    const timer = setTimeout(() => setAppliedStyle(mapStyle), STYLE_SWAP_GAP_MS)
+    return () => clearTimeout(timer)
+  }, [mapStyle, appliedStyle, hide, restore])
   const handleStyleLoaded = useCallback(() => {
     setStyleLoaded(true)
     readyStyleLoaded()
@@ -102,7 +125,7 @@ export function MapStack({
         <Animated.View pointerEvents="none" collapsable={false} style={[styles.inner, innerStyle]}>
           <MapLibreMap
             style={styles.map}
-            mapStyle={mapStyle}
+            mapStyle={appliedStyle}
             androidView={androidView}
             dragPan={false}
             touchZoom={false}

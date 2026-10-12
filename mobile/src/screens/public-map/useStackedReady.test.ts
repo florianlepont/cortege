@@ -79,3 +79,19 @@ describe("useStackedReady", () => {
     expect(ready.value).toBe(0)
   })
 })
+
+describe("useStackedReady hide and restore", () => {
+  test("hide drops the map at once; restore brings it back only if it was ready for this style", async () => {
+    const { api } = await setup()
+    await act(async () => api().hide())
+    await act(async () => api().restore())
+    expect(api().ready.value).toBe(0)
+    await act(async () => api().onStyleLoaded())
+    await act(async () => api().onRenderedFully())
+    expect(api().ready.value).toBe(1)
+    await act(async () => api().hide())
+    expect(api().ready.value).toBe(0)
+    await act(async () => api().restore())
+    expect(api().ready.value).toBe(1)
+  })
+})

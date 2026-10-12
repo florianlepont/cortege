@@ -5,6 +5,9 @@ import { useSharedValue, type SharedValue } from "react-native-reanimated"
 export const STACKED_READY_TIMEOUT_MS = 1500
 
 export type StackedReady = {
+  /** Hides the map at once (a style change is coming); `restore` undoes it if none is applied. */
+  hide: () => void
+  restore: () => void
   /** 0 until the current style has loaded and been rendered, then 1 (a UI-thread value). */
   ready: SharedValue<number>
   onStyleLoaded: () => void
@@ -17,12 +20,15 @@ export type StackedReady = {
  * that style's `onDidFinishLoadingStyle` (an earlier one belongs to the old style), or
  * `STACKED_READY_TIMEOUT_MS` after the style load, so a missing event never blocks it. While not
  * ready `MapStack` clips the map to nothing: what shows is the map underneath, never a blank frame.
+ * `styleKey` is the style actually applied to the native map (it lags the wanted one in
+ * `MapStack`, so the clip reaches the UI thread before the swap).
  */
 export function useStackedReady(styleKey: unknown): StackedReady {
   const created = useSharedValue(0)
   const keptRef = useRef(created)
   const ready = keptRef.current
   const loaded = useRef(false)
+  const isReady = useRef(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const clear = useCallback(() => {
@@ -31,11 +37,19 @@ export function useStackedReady(styleKey: unknown): StackedReady {
   }, [])
   const show = useCallback(() => {
     clear()
+    isReady.current = true
     ready.value = 1
   }, [clear, ready])
+  const hide = useCallback(() => {
+    ready.value = 0
+  }, [ready])
+  const restore = useCallback(() => {
+    ready.value = isReady.current ? 1 : 0
+  }, [ready])
 
   useLayoutEffect(() => {
     ready.value = 0
+    isReady.current = false
     loaded.current = false
     clear()
   }, [styleKey, ready, clear])
@@ -50,5 +64,5 @@ export function useStackedReady(styleKey: unknown): StackedReady {
     if (loaded.current) show()
   }, [show])
 
-  return { ready, onStyleLoaded, onRenderedFully }
+  return { ready, onStyleLoaded, onRenderedFully, hide, restore }
 }

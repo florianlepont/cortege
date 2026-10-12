@@ -31,6 +31,7 @@ jest.mock("../../hooks/useMapStyle", () => ({
 import type { CameraRef } from "@maplibre/maplibre-react-native"
 import type { SharedValue } from "react-native-reanimated"
 import type { BaseLayerKey } from "../../map/layers"
+import { STYLE_SWAP_GAP_MS } from "./MapStack"
 import { WipeLayer, type WipeLayerProps } from "./WipeLayer"
 
 const originalConsoleError = console.error
@@ -48,6 +49,7 @@ afterAll(() => {
 })
 
 beforeEach(() => {
+  jest.useFakeTimers()
   mockUseMapStyle.mockClear()
 })
 
@@ -124,6 +126,10 @@ describe("WipeLayer", () => {
     expect(before.props.mapStyle).toBe("style-of-satellite")
     act(() => {
       tree.update(layerElement("photos-1950"))
+    })
+    // The native style follows once the map has been hidden (MapStack.test.tsx).
+    act(() => {
+      jest.advanceTimersByTime(STYLE_SWAP_GAP_MS)
     })
     const after = tree.root.findByType("MapLibreMap" as never)
     expect(after).toBe(before)

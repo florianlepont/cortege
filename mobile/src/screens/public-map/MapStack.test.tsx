@@ -29,7 +29,7 @@ import type { SharedValue } from "react-native-reanimated"
 import { cameraMocks } from "../../../test/maplibre.mock"
 import { brandMapTokens } from "../../app/brand-tokens"
 import { boundsFromRegion } from "../../map/maplibre/regions"
-import { MapStack, useMapSync } from "./MapStack"
+import { MapStack, STYLE_SWAP_GAP_MS, useMapSync } from "./MapStack"
 
 const originalConsoleError = console.error
 
@@ -46,6 +46,7 @@ afterAll(() => {
 })
 
 beforeEach(() => {
+  jest.useFakeTimers()
   cameraMocks.jumpTo.mockClear()
   mockTheme.scheme = "light"
 })
@@ -203,6 +204,78 @@ describe("MapStack", () => {
     expect(clipWidth(h.tree)).toBe(0)
     makeReady(h)
     expect(clipWidth(h.tree)).toBe(280)
+  })
+
+  const nativeStyle = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findByType("MapLibreMap" as never).props.mapStyle
+  const advance = (ms: number) =>
+    act(() => {
+      jest.advanceTimersByTime(ms)
+    })
+  const OTHER = "https://example.test/other.json"
+  const THIRD = "https://example.test/third.json"
+
+  test("a new style is applied to the native map only after the clip dropped to zero", () => {
+    const h = mount()
+    makeReady(h)
+    h.rerender({ mapStyle: OTHER })
+    // The old style is still on the native map while the clip is already zero.
+    expect(nativeStyle(h.tree)).toBe("https://tiles.example/style.json")
+    h.rerender({})
+    expect(clipWidth(h.tree)).toBe(0)
+    advance(STYLE_SWAP_GAP_MS - 1)
+    expect(nativeStyle(h.tree)).toBe("https://tiles.example/style.json")
+    advance(1)
+    expect(nativeStyle(h.tree)).toBe(OTHER)
+    // The readiness events count against the applied style.
+    fireOn(h, "onDidFinishRenderingMapFully")
+    expect(clipWidth(h.tree)).toBe(0)
+    makeReady(h)
+    expect(clipWidth(h.tree)).toBe(280)
+  })
+
+  test("the first style of a fresh map is not delayed", () => {
+    const h = mount()
+    expect(nativeStyle(h.tree)).toBe("https://tiles.example/style.json")
+  })
+
+  test("rapid changes end on the last style", () => {
+    const h = mount()
+    makeReady(h)
+    h.rerender({ mapStyle: OTHER })
+    advance(STYLE_SWAP_GAP_MS - 10)
+    h.rerender({ mapStyle: THIRD })
+    advance(STYLE_SWAP_GAP_MS - 10)
+    expect(nativeStyle(h.tree)).toBe("https://tiles.example/style.json")
+    advance(10)
+    expect(nativeStyle(h.tree)).toBe(THIRD)
+  })
+
+  test("going back to the applied style before the swap cancels it and shows the map again", () => {
+    const h = mount()
+    makeReady(h)
+    h.rerender({ mapStyle: OTHER })
+    h.rerender({ mapStyle: "https://tiles.example/style.json" })
+    h.rerender({})
+    advance(STYLE_SWAP_GAP_MS * 2)
+    expect(nativeStyle(h.tree)).toBe("https://tiles.example/style.json")
+    expect(clipWidth(h.tree)).toBe(280)
+  })
+
+  test("going back before the first render of the style leaves it hidden", () => {
+    const h = mount()
+    h.rerender({ mapStyle: OTHER })
+    h.rerender({ mapStyle: "https://tiles.example/style.json" })
+    h.rerender({})
+    expect(clipWidth(h.tree)).toBe(0)
+  })
+
+  test("an unmount in the gap cancels the swap", () => {
+    const h = mount()
+    makeReady(h)
+    h.rerender({ mapStyle: OTHER })
+    act(() => h.tree.unmount())
+    expect(() => advance(STYLE_SWAP_GAP_MS * 2)).not.toThrow()
   })
 
   test("clips to the strip between clipLeft and clipRight and takes no touch", () => {

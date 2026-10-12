@@ -13,6 +13,7 @@ import { PublicMapScreen } from "../PublicMapScreen"
 import { downloadButtonTopOf, overlaySlotTopOf } from "./styles"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
 import { IMMERSIVE_OUT_MS } from "../../map/swipe-machine"
+import { STYLE_SWAP_GAP_MS } from "./MapStack"
 import { COVER_PRESENT_MS } from "./useCoverRelease"
 
 // The shared Reanimated mock hands out a fresh shared value on every render. The grabber's drag
@@ -1534,7 +1535,10 @@ describe("PublicMapScreen", () => {
         expect(tagName("right")).toBe("Satellite")
         act(() => byTestId("compare-tag-right-next")[0].props.onPress())
         expect(tagName("right")).toBe("État-major")
-        // The second map draws the right side.
+        // The second map draws the right side, once the clip has had time to drop (no blank frame).
+        act(() => {
+          jest.advanceTimersByTime(STYLE_SWAP_GAP_MS)
+        })
         expect(drawn(maps()[1])).toContain('"etat-major"')
         act(() => byTestId("compare-tag-left-previous")[0].props.onPress())
         // Plan going back wraps to the last layer, which the right side does not show.
