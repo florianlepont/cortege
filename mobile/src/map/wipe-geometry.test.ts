@@ -11,6 +11,7 @@ import {
   TAG_MIN_WIDTH,
   tagMaxWidth,
   tagVisible,
+  windowX,
   wipeStrip,
 } from "./wipe-geometry"
 
@@ -134,5 +135,38 @@ describe("tags", () => {
     expect(tagVisible(16)).toBe(false)
     expect(tagVisible(71)).toBe(false)
     expect(tagVisible(72)).toBe(true)
+  })
+})
+
+describe("windowX", () => {
+  it("maps a screen x about the centre of the receded window", () => {
+    expect(windowX(200, 400, 0.94)).toBe(200)
+    expect(windowX(106, 400, 0.94)).toBeCloseTo(100, 3)
+    expect(windowX(294, 400, 0.94)).toBeCloseTo(300, 3)
+  })
+
+  it("counts a touch in the margin as the nearest edge", () => {
+    expect(windowX(12, 400, 0.94)).toBe(0)
+    expect(windowX(388, 400, 0.94)).toBe(400)
+    expect(windowX(-50, 400, 0.94)).toBe(0)
+    expect(windowX(900, 400, 0.94)).toBe(400)
+  })
+
+  it("is the clamped x at full size", () => {
+    expect(windowX(123, 400, 1)).toBe(123)
+    expect(windowX(-5, 400, 1)).toBe(0)
+    expect(windowX(405, 400, 1)).toBe(400)
+  })
+
+  it("returns the clamped x for a scale of 0, a negative scale or NaN", () => {
+    expect(windowX(123, 400, 0)).toBe(123)
+    expect(windowX(500, 400, 0)).toBe(400)
+    expect(windowX(123, 400, -1)).toBe(123)
+    expect(windowX(123, 400, Number.NaN)).toBe(123)
+  })
+
+  it("falls back to the left edge for a NaN x", () => {
+    expect(windowX(Number.NaN, 400, 0.94)).toBe(0)
+    expect(windowX(Number.NaN, 400, 0)).toBe(0)
   })
 })

@@ -2,6 +2,8 @@ import { brandMotion } from "../app/brand-tokens"
 import type { BaseLayerKey } from "./layers"
 import {
   beginGesture,
+  BUTTON_FADE_IN_DELAY_MS,
+  BUTTON_FADE_MS,
   COMPARE_MAX,
   COMPARE_MIN,
   compareSidesFor,
@@ -10,6 +12,9 @@ import {
   HINT_MS,
   idleExitEnabled,
   IDLE_MS,
+  IMMERSIVE_IN_MS,
+  IMMERSIVE_OUT_MS,
+  IMMERSIVE_SCALE,
   LINE_MARGIN,
   liveHint,
   moveGesture,
@@ -435,6 +440,17 @@ describe("compareSidesFor", () => {
       sideB: "map",
       secondSide: "left",
     })
+  })
+})
+
+describe("immersive constants", () => {
+  it("are the UI-SPEC section 3c numbers, tied to the motion tokens", () => {
+    expect(IMMERSIVE_SCALE).toBe(0.94)
+    expect(IMMERSIVE_IN_MS).toBe(brandMotion.durations.slow)
+    expect(IMMERSIVE_OUT_MS).toBe(brandMotion.durations.base)
+    expect(BUTTON_FADE_MS).toBe(brandMotion.durations.fast)
+    expect(BUTTON_FADE_IN_DELAY_MS).toBe(80)
+    expect([IMMERSIVE_IN_MS, IMMERSIVE_OUT_MS, BUTTON_FADE_MS]).toEqual([360, 240, 160])
   })
 })
 

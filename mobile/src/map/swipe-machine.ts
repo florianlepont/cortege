@@ -46,6 +46,17 @@ export const SETTLE_MS = 240
  */
 export const SPRINGBACK_MS = 240
 
+/** The receded map window of the swipe mode scales to this about its centre (UI-SPEC section 3c). */
+export const IMMERSIVE_SCALE = 0.94
+/** Entering the immersive effect (ms, `brandMotion.durations.slow`, decelerate easing). */
+export const IMMERSIVE_IN_MS = 360
+/** Leaving the immersive effect (ms, `brandMotion.durations.base`, standard easing). */
+export const IMMERSIVE_OUT_MS = 240
+/** The map buttons fade out, and back in, over this long (ms, `brandMotion.durations.fast`). */
+export const BUTTON_FADE_MS = 160
+/** The buttons start fading back in this long after the exit begins (ms). */
+export const BUTTON_FADE_IN_DELAY_MS = 80
+
 /** A horizontal swipe on a side tag changes that side from this much travel (pt, UI-SPEC section 4). */
 export const TAG_SWIPE_MIN = 44
 /** ... or from this speed (points per second) once the travel is past the slop in the same direction. */

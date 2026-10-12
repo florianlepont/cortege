@@ -114,3 +114,15 @@ export function tagVisible(maxWidth: number): boolean {
   "worklet"
   return maxWidth >= TAG_MIN_WIDTH
 }
+
+/**
+ * Maps a screen x to the receded window's own coordinates. The window is scaled about its centre
+ * (`scale` 0.94 in the swipe mode), so `(x - width / 2) / scale + width / 2`, clamped to
+ * `[0, width]`: a touch in the margin around the window counts as its nearest edge. A scale of 0 or
+ * NaN (or a NaN x) leaves the x as it is, clamped.
+ */
+export function windowX(x: number, width: number, scale: number): number {
+  "worklet"
+  if (!(scale > 0)) return clampTo(x, 0, width)
+  return clampTo((x - width / 2) / scale + width / 2, 0, width)
+}

@@ -920,6 +920,46 @@ describe.each(schemes)("curtain line and swipe dots (Phase 28), %s scheme", (sch
   })
 })
 
+// Phase 28, plan 28-25 (owner item 13 c): the receded map window of the swipe mode. Light draws a
+// soft shadow and no ring (a shadow cannot be measured as 3:1); dark draws a 1 pt opaque ring that
+// must reach 3:1 against the dark canvas, plus a faint shadow.
+describe.each(schemes)("immersive window tokens (Phase 28), %s scheme", (scheme) => {
+  const { immersive } = themes[scheme].visual
+  const { canvas } = themes[scheme].colors
+
+  test("the shadow is a black shadow with a radius and an offset", () => {
+    expect(immersive.shadow.color).toBe(brandColors.black)
+    expect(immersive.shadow.opacity).toBeGreaterThan(0)
+    expect(immersive.shadow.opacity).toBeLessThanOrEqual(0.4)
+    expect(immersive.shadow.radius).toBeGreaterThan(0)
+    expect(immersive.shadow.offsetY).toBeGreaterThan(0)
+  })
+
+  if (scheme === "light") {
+    test("light is a soft shadow (0.18, 24, 8) with no ring", () => {
+      expect(immersive.shadow).toEqual({
+        color: brandColors.black,
+        opacity: 0.18,
+        radius: 24,
+        offsetY: 8,
+      })
+      expect(immersive.ring).toBeNull()
+    })
+  } else {
+    test("dark ring is an opaque #RRGGBB reaching 3:1 against the canvas", () => {
+      expect(immersive.ring).toMatch(/^#[0-9A-F]{6}$/i)
+      expect(contrastRatio(immersive.ring as string, canvas)).toBeGreaterThanOrEqual(3)
+    })
+
+    test("dark ring is not dimmer than the map control hairline over the canvas", () => {
+      const hairline = compositeOver(themes.dark.visual.mapControl.hairline, canvas)
+      expect(contrastRatio(immersive.ring as string, canvas)).toBeGreaterThanOrEqual(
+        contrastRatio(hairline, canvas),
+      )
+    })
+  }
+})
+
 // Phase 28 (28-11): the hint scrim, the accent dots and the parcels on the old bases, measured over
 // the backdrops the basemaps really have.
 describe.each(schemes)(

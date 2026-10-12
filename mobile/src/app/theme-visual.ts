@@ -113,6 +113,18 @@ export type BrandVisual = {
    */
   curtain: { line: string; edge: string }
   /**
+   * The receded map window of the swipe mode (Phase 28, UI-SPEC "Color", owner item 13 c): the
+   * window scales to 0.94 over `colors.canvas` like a card. Light draws a soft `shadow` and no
+   * `ring`. Dark has no usable shadow on the dark canvas, so it draws a faint `shadow` plus a 1 pt
+   * `ring`, an opaque `#RRGGBB` (no alpha, so it can be measured): the `mapControl.hairline` level
+   * composited over the dark canvas and raised until it reaches 3:1 against `colors.canvas`
+   * (tested). A shadow cannot be measured as 3:1, so only the dark ring is.
+   */
+  immersive: {
+    shadow: { color: string; opacity: number; radius: number; offsetY: number }
+    ring: string | null
+  }
+  /**
    * Raster basemaps in dark mode (Phase 28, UI-SPEC "Color"): `dimBrightnessMax` is the
    * `raster-brightness-max` of the two pastel old maps, 0.8 in dark and 1 in light. Satellite and
    * the 1950 photographs are never recoloured.
@@ -284,6 +296,15 @@ export function makeVisualColors(scheme: BrandColorScheme, colors: BrandColors):
       textMuted: mapControlGlass[scheme].textMuted,
     },
     curtain: { line: brandColors.white, edge: "rgba(30, 36, 28, 0.55)" },
+    immersive: dark
+      ? {
+          shadow: { color: brandColors.black, opacity: 0.4, radius: 16, offsetY: 6 },
+          ring: "#5E5F5F",
+        }
+      : {
+          shadow: { color: brandColors.black, opacity: 0.18, radius: 24, offsetY: 8 },
+          ring: null,
+        },
     mapRaster: { dimBrightnessMax: dark ? 0.8 : 1 },
     mapHint: { fill: "rgba(30, 36, 28, 0.7)", ink: brandColors.white },
     mapPanel: {
