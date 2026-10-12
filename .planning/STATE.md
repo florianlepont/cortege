@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 27
 current_phase_name: Quick survey additions (INSERTED, V1)
-status: executing
-stopped_at: Phase 27 UI-SPEC approved
+status: ready_to_plan
+stopped_at: Phase 27 complete
 last_updated: "2026-10-12T12:30:00.000Z"
 last_activity: 2026-10-12
-last_activity_desc: Plan 27-12 complete
+last_activity_desc: Phase 27 complete
 progress:
   total_phases: 39
-  completed_phases: 18
+  completed_phases: 19
   total_plans: 220
   completed_plans: 257
   percent: 46
@@ -24,16 +24,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 27 (quick survey additions) is executing, plan 27-01 done (Meteo-France capture script); then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md.
+**Current focus:** Phase 27 (quick survey additions) is complete (2026-10-12; emulator rows DC-27-01 to DC-27-05 open in device-checks.md, PDF page budget F-27-1); then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md.
 
 ## Current Position
 
-Phase: 27 (Quick survey additions (INSERTED, V1)) — EXECUTING
-Plan: 12 of 22
-Status: Ready to execute
-Last activity: 2026-10-12 — Plan 27-12 complete
+Phase: 27 (Quick survey additions (INSERTED, V1)) — COMPLETE
+Plan: 22 of 22
+Status: Phase complete; next is Phase 28
+Last activity: 2026-10-12 — Phase 27 complete
 
-Progress: [█████████░] 27/39 phases complete
+Progress: [█████████░] 28/39 phases complete
 
 ## Performance Metrics
 
@@ -282,5 +282,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-10-11T12:13:25.939Z
-Stopped at: Phase 27 UI-SPEC approved
-Resume file: .planning/phases/27-quick-survey-additions-inserted-v1/27-UI-SPEC.md
+Stopped at: Phase 27 complete
+Resume file: None
