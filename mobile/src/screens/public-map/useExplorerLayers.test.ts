@@ -65,7 +65,6 @@ const setup = (overrides: Overrides = {}) =>
         cardOpen: false,
         bubbleOpen: false,
         capsuleTop: 60,
-        showSkipped: false,
         ...props,
       }),
     { initialProps: overrides },
@@ -86,8 +85,7 @@ describe("useExplorerLayers", () => {
     expect(result.current.capsuleTop).toBe(60)
     expect(result.current.chipShown).toBe(false)
     expect(result.current.isAvailable("types-foret")).toBe(true)
-    expect(result.current.areaAtCenter).toBe(false)
-    expect(result.current.skipped).toBe(0)
+    expect(result.current.areaAtView).toBe(false)
   })
 
   test("the chip shows for a status while the card is closed and the swipe mode is off", async () => {
@@ -140,16 +138,14 @@ describe("useExplorerLayers", () => {
     expect(withChip.result.current.noticesTop).toBe(60 + capsuleHeight(2) + 8 + 25 + 20 + 8)
   })
 
-  test("the over-zoom, coverage and offline notices come from the shown layers", async () => {
+  test("offline, a single pill says a shown layer is not downloaded for the view", async () => {
     const { result } = await setup({ isOffline: true })
-    expect(result.current.notices).toEqual([])
-
-    await run(result, (l) => l.layers.actions.toggleOverlay())
     const kinds = () => result.current.notices.map((notice) => notice.kind)
-    expect(kinds()).toContain("offline")
-    expect(result.current.notices.find((notice) => notice.kind === "offline")?.text).toBe(
-      fr.mapLayers.notice.offlineLayer(fr.mapLayers.layers.forestTypes.name),
-    )
+    // No area: even the Plan is not downloaded for this view.
+    expect(kinds()).toEqual(["offline"])
+    await run(result, (l) => l.layers.actions.toggleOverlay())
+    expect(kinds()).toEqual(["offline"])
+    expect(result.current.notices[0].text).toBe(fr.mapLayers.notice.offlineHere)
   })
 
   test("an error notice offers a retry and a coverage notice follows the view centre", async () => {
@@ -160,17 +156,6 @@ describe("useExplorerLayers", () => {
     await run(result, (l) => l.layers.actions.styleFailed("satellite"))
     const error = result.current.notices.find((notice) => notice.kind === "error")
     expect(error?.retry).toBe(true)
-  })
-
-  test("the skipped layers are counted for the swipe cycle only when asked", async () => {
-    const offline = { isOffline: true }
-    const quiet = await setup(offline)
-    expect(quiet.result.current.skipped).toBe(0)
-    await cleanup()
-
-    const swiping = await setup({ ...offline, showSkipped: true })
-    expect(swiping.result.current.skipped).toBe(3)
-    expect(swiping.result.current.notices.map((notice) => notice.kind)).toContain("skipped")
   })
 
   test("over-zoom shows at a close zoom on an old base; the whole country shows none", async () => {

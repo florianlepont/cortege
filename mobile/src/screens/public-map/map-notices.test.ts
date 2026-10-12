@@ -13,7 +13,6 @@ const base = (overrides: Partial<MapNoticeInput> = {}): MapNoticeInput => ({
   isOffline: false,
   isAvailable: () => true,
   failedLayer: null,
-  skippedCount: 0,
   ...overrides,
 })
 
@@ -46,33 +45,18 @@ describe("buildMapNotices", () => {
     expect(notices.map((n) => n.text)).toEqual(["Superposition peu détaillée à cette échelle"])
   })
 
-  test("offline, two unavailable layers give one pill each, with the cloud glyph", () => {
-    const notices = buildMapNotices(
+  test("offline, one or several unavailable layers give a single pill, with the cloud glyph", () => {
+    const one = buildMapNotices(
       base({
         shownBases: ["photos-1950"],
-        overlay: true,
         isOffline: true,
-        isAvailable: unavailable("photos-1950", "types-foret"),
+        isAvailable: unavailable("photos-1950"),
       }),
     )
-    expect(notices.map((n) => [n.id, n.kind, n.text, n.icon])).toEqual([
-      [
-        "offline-photos-1950",
-        "offline",
-        "Photos aériennes (1950-1965) n'est pas téléchargée pour cette zone.",
-        "cloud-offline-outline",
-      ],
-      [
-        "offline-types-foret",
-        "offline",
-        "Types de forêt n'est pas téléchargée pour cette zone.",
-        "cloud-offline-outline",
-      ],
+    expect(one.map((n) => [n.id, n.kind, n.text, n.icon])).toEqual([
+      ["offline", "offline", "Zone non téléchargée pour un fond affiché.", "cloud-offline-outline"],
     ])
-  })
-
-  test("offline, three unavailable layers give one pill for all", () => {
-    const notices = buildMapNotices(
+    const several = buildMapNotices(
       base({
         shownBases: ["etat-major", "carte-1950"],
         overlay: true,
@@ -80,14 +64,7 @@ describe("buildMapNotices", () => {
         isAvailable: unavailable("etat-major", "carte-1950", "types-foret"),
       }),
     )
-    expect(notices).toEqual([
-      {
-        id: "offline-several",
-        kind: "offline",
-        text: "Plusieurs couches ne sont pas téléchargées pour cette zone.",
-        icon: "cloud-offline-outline",
-      },
-    ])
+    expect(several.map((n) => n.id)).toEqual(["offline"])
   })
 
   test("online, availability is not asked: nothing says offline", () => {
@@ -109,7 +86,7 @@ describe("buildMapNotices", () => {
         isAvailable: unavailable("etat-major"),
       }),
     )
-    expect(notices.map((n) => n.id)).toEqual(["offline-etat-major"])
+    expect(notices.map((n) => n.id)).toEqual(["offline"])
   })
 
   test("a centre outside the coverage of a shown layer names the layer", () => {
@@ -143,18 +120,7 @@ describe("buildMapNotices", () => {
     ])
   })
 
-  test("the skipped layers, singular and plural", () => {
-    const one = buildMapNotices(base({ skippedCount: 1 }))
-    expect(one.map((n) => [n.id, n.kind, n.text, n.icon])).toEqual([
-      ["skipped", "skipped", "1 fond non téléchargé pour cette zone est ignoré.", "layers-outline"],
-    ])
-    const two = buildMapNotices(base({ skippedCount: 2 }))
-    expect(two.map((n) => n.text)).toEqual([
-      "2 fonds non téléchargés pour cette zone sont ignorés.",
-    ])
-  })
-
-  test("order: skipped, outside, offline, error, over-zoom", () => {
+  test("order: outside, offline, error, over-zoom", () => {
     const notices = buildMapNotices(
       base({
         shownBases: ["etat-major"],
@@ -164,11 +130,9 @@ describe("buildMapNotices", () => {
         isOffline: true,
         isAvailable: unavailable("etat-major"),
         failedLayer: "types-foret",
-        skippedCount: 3,
       }),
     )
     expect(notices.map((n) => n.kind)).toEqual([
-      "skipped",
       "outside",
       "outside",
       "offline",

@@ -124,7 +124,6 @@ export function PublicMapScreen({
   const [styleRetryKey, setStyleRetryKey] = useState(0)
   // The display-only pill the swipe hook raises (skipped layers). It runs after the layers hook, so
   // it comes back through state: a ref would not render the pill.
-  const [skippedPill, setSkippedPill] = useState(false)
   const offlineEnabled = isOfflineMapsEnabled()
   const offlineAreas = useOfflineAreas(apiUrl, accessToken, offlineEnabled)
   const { startDownload, clearDownloadStatus, downloadStatus, estimateForRegion } = offlineAreas
@@ -166,7 +165,6 @@ export function PublicMapScreen({
     cardOpen: panels.panel === "card",
     bubbleOpen: panels.panel === "bubble",
     capsuleTop,
-    showSkipped: skippedPill,
   })
   const { styleLoaded, styleFailed } = layers.layers.actions
   const handleStyleFailed = useCallback(
@@ -228,8 +226,7 @@ export function PublicMapScreen({
     windowBottom,
   })
   swipePanelExitRef.current = swipe.onPanelOpen
-  const { onBaseStyleLoaded, skippedVisible } = swipe
-  useEffect(() => setSkippedPill(skippedVisible), [skippedVisible])
+  const { onBaseStyleLoaded } = swipe
   const handleStyleLoaded = useCallback(() => {
     styleLoaded()
     onBaseStyleLoaded()

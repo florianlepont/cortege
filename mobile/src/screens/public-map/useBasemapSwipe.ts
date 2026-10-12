@@ -12,7 +12,7 @@ import {
 } from "react-native-reanimated"
 import { brandMotion } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
-import { neighbourLayer, type LayerAvailability } from "../../map/layer-cycle"
+import { canCompare, neighbourLayer, type LayerAvailability } from "../../map/layer-cycle"
 import type { BasemapKey } from "../../map/basemaps"
 import type { BaseLayerKey } from "../../map/layers"
 import {
@@ -189,13 +189,13 @@ export function useBasemapSwipe({
     },
     [],
   )
-
-  // The machine's context from the layers state at the time of the event.
+  // A comparison needs two layers available for the view (offline: fewer and it cannot open).
+  const compareOk = COMPARISON_BUILT && canCompare(isAvailable)
   const moveContext = () => ({
     width,
     layerOf: () => displayed,
     isAvailable,
-    comparisonAllowed: COMPARISON_BUILT,
+    comparisonAllowed: compareOk,
   })
   const isInstant = () => reduced || WIPE_PRESENTATION === "instant"
   // The gesture is measured on the receded window (UI-SPEC section 3): `windowX` with the scale
@@ -311,7 +311,7 @@ export function useBasemapSwipe({
     if (!gesture) return
     const result: ReleaseResult =
       success || !gesture.started
-        ? releaseGesture(gesture, COMPARISON_BUILT)
+        ? releaseGesture(gesture, compareOk)
         : {
             outcome: "cancel",
             incoming: gesture.incoming,
@@ -355,7 +355,7 @@ export function useBasemapSwipe({
   }
   const next = useLatestCallback(() => step(1))
   const previous = useLatestCallback(() => step(-1))
-  const compareTarget = COMPARISON_BUILT ? neighbourLayer(displayed, 1, { isAvailable }) : null
+  const compareTarget = compareOk ? neighbourLayer(displayed, 1, { isAvailable }) : null
   const compareNext = useLatestCallback(() => {
     if (compareTarget === null) return
     playHapticCue("detent")

@@ -206,7 +206,7 @@ const mockAvailable: { all: boolean } = { all: true }
 jest.mock("./useLayerAvailability", () => ({
   useLayerAvailability: () => ({
     isAvailable: (key: string) => mockAvailable.all || key === "map" || key === "satellite",
-    areaAtCenter: false,
+    areaAtView: false,
   }),
 }))
 // The glow is drawn by the navigation layer (download-edge-glow.test.tsx) and its motion is tested in
@@ -1218,9 +1218,7 @@ describe("PublicMapScreen", () => {
       mount(makeProps({ isOffline: true }))
       act(() => overlayButton().props.onPress())
       act(() => chipFor("overlay-forest-switch").props.onValueChange(true))
-      expect(texts()).toContain(
-        fr.mapLayers.notice.offlineLayer(fr.mapLayers.layers.forestTypes.name),
-      )
+      expect(texts()).toContain(fr.mapLayers.notice.offlineHere)
     })
 
     test("the style failing shows the error notice, and Réessayer asks the style again", () => {
@@ -1807,11 +1805,11 @@ describe("PublicMapScreen", () => {
       expect(maps()).toHaveLength(1)
     })
 
-    test("offline, the skipped layers are not told on the map during the swipe mode", () => {
+    test("offline, no pill about skipped layers is told on the map during the swipe mode", () => {
       mockAvailable.all = false
       mount(makeProps({ isOffline: true }))
       act(() => globe().props.onPress())
-      expect(texts()).not.toContain(fr.mapLayers.basemap.skipped(3))
+      expect(texts()).not.toContain(fr.mapLayers.notice.offlineHere)
     })
 
     test("the notices are hidden in the swipe mode, come back when it ends, and keep their own top in a comparison", () => {

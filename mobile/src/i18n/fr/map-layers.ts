@@ -47,10 +47,9 @@ export const mapLayersFr = {
     hintRelease: "Lâchez pour comparer",
     hintChange: "Lâchez pour changer de fond",
     hintNoneAvailable: "Aucun autre fond n'est disponible hors connexion ici.",
-    skipped: (count: number) =>
-      count > 1
-        ? `${count} fonds non téléchargés pour cette zone sont ignorés.`
-        : "1 fond non téléchargé pour cette zone est ignoré.",
+    // Offline, the carousel pill and the side tags say if a layer is downloaded for the view.
+    downloaded: "téléchargé",
+    notDownloaded: "non téléchargé ici",
   },
   layers: {
     map: {
@@ -139,6 +138,8 @@ export const mapLayersFr = {
   },
   compare: {
     exit: "Quitter la comparaison",
+    // A half whose layer is not downloaded for the view (offline): a neutral card, never raw black.
+    unavailableCard: "Non téléchargé ici",
     exitA11yHint: "Revient à un seul fond, celui de gauche",
     // The side tags (UI-SPEC section 5): one adjustable element each; the actions reuse
     // `basemap.actionNext` and `basemap.actionPrevious`.
@@ -169,8 +170,7 @@ export const mapLayersFr = {
     overzoomBase: "Fond peu détaillé à cette échelle",
     overzoomOverlay: "Superposition peu détaillée à cette échelle",
     outside: (name: string) => `${name} ne couvre pas cette zone.`,
-    offlineLayer: (name: string) => `${name} n'est pas téléchargée pour cette zone.`,
-    offlineSeveral: "Plusieurs couches ne sont pas téléchargées pour cette zone.",
+    offlineHere: "Zone non téléchargée pour un fond affiché.",
     loadError: (name: string) => `Impossible d'afficher ${name}.`,
     retry: "Réessayer",
   },

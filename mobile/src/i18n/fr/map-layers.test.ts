@@ -51,13 +51,10 @@ describe("fr.mapLayers", () => {
   })
 
   describe("basemap texts", () => {
-    test("skipped agrees in number", () => {
-      expect(mapLayersFr.basemap.skipped(1)).toBe(
-        "1 fond non téléchargé pour cette zone est ignoré.",
-      )
-      expect(mapLayersFr.basemap.skipped(3)).toBe(
-        "3 fonds non téléchargés pour cette zone sont ignorés.",
-      )
+    test("the offline markers say downloaded or not", () => {
+      expect(mapLayersFr.basemap.downloaded).toBe("téléchargé")
+      expect(mapLayersFr.basemap.notDownloaded).toBe("non téléchargé ici")
+      expect(mapLayersFr.compare.unavailableCard).toBe("Non téléchargé ici")
     })
 
     test("indicator and announcements", () => {
@@ -180,9 +177,7 @@ describe("fr.mapLayers", () => {
       expect(mapLayersFr.notice.outside("Carte de 1950")).toBe(
         "Carte de 1950 ne couvre pas cette zone.",
       )
-      expect(mapLayersFr.notice.offlineLayer("Types de forêt")).toBe(
-        "Types de forêt n'est pas téléchargée pour cette zone.",
-      )
+      expect(mapLayersFr.notice.offlineHere).toBe("Zone non téléchargée pour un fond affiché.")
       expect(mapLayersFr.notice.loadError("Plan")).toBe("Impossible d'afficher Plan.")
     })
 

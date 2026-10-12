@@ -7,7 +7,7 @@ jest.mock("../../map/offline-packs", () => ({
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import type { MapLayerKey } from "../../map/layers"
 import type { OfflineAreaSummary } from "../../storage/offline-map"
-import { useLayerAvailability } from "./useLayerAvailability"
+import { VIEW_AVAILABILITY_DEBOUNCE_MS, useLayerAvailability } from "./useLayerAvailability"
 
 const area = (id: string, overrides: Partial<OfflineAreaSummary> = {}): OfflineAreaSummary => ({
   id,
@@ -25,8 +25,8 @@ const area = (id: string, overrides: Partial<OfflineAreaSummary> = {}): OfflineA
   ...overrides,
 })
 
-const INSIDE = { lat: 48.4, lng: 2.7 }
-const OUTSIDE = { lat: 45, lng: 5 }
+const INSIDE = { latitude: 48.4, longitude: 2.7, latitudeDelta: 0.1, longitudeDelta: 0.1 }
+const OUTSIDE = { latitude: 45, longitude: 5, latitudeDelta: 0.1, longitudeDelta: 0.1 }
 const ALL: MapLayerKey[] = [
   "map",
   "satellite",
@@ -55,42 +55,42 @@ const availableKeys = (isAvailable: (key: MapLayerKey) => boolean) =>
 describe("useLayerAvailability", () => {
   test("online everything is available", async () => {
     const { result } = await renderHook(() =>
-      useLayerAvailability({ areas: [], center: INSIDE, isOffline: false }),
+      useLayerAvailability({ areas: [], region: INSIDE, isOffline: false }),
     )
     expect(availableKeys(result.current.isAvailable)).toEqual(ALL)
-    expect(result.current.areaAtCenter).toBe(false)
+    expect(result.current.areaAtView).toBe(false)
   })
 
-  test("offline, the packs of the ready area at the centre decide", async () => {
+  test("offline, the packs of the ready area around the view decide", async () => {
     const areas = [area("a1")]
     const { result } = await renderHook(() =>
-      useLayerAvailability({ areas, center: INSIDE, isOffline: true }),
+      useLayerAvailability({ areas, region: INSIDE, isOffline: true }),
     )
-    expect(result.current.areaAtCenter).toBe(true)
+    expect(result.current.areaAtView).toBe(true)
     expect(availableKeys(result.current.isAvailable)).toEqual(["map", "satellite", "carte-1950"])
   })
 
-  test("offline with no area at the centre, only the Plan and the Satellite", async () => {
+  test("offline with no area around the view, nothing is available", async () => {
     const areas = [area("a1")]
     const { result } = await renderHook(() =>
-      useLayerAvailability({ areas, center: OUTSIDE, isOffline: true }),
+      useLayerAvailability({ areas, region: OUTSIDE, isOffline: true }),
     )
-    expect(result.current.areaAtCenter).toBe(false)
-    expect(availableKeys(result.current.isAvailable)).toEqual(["map", "satellite"])
+    expect(result.current.areaAtView).toBe(false)
+    expect(availableKeys(result.current.isAvailable)).toEqual([])
   })
 
   test("an area still downloading does not count", async () => {
     const areas = [area("a1", { status: "downloading" })]
     const { result } = await renderHook(() =>
-      useLayerAvailability({ areas, center: INSIDE, isOffline: true }),
+      useLayerAvailability({ areas, region: INSIDE, isOffline: true }),
     )
-    expect(result.current.areaAtCenter).toBe(false)
+    expect(result.current.areaAtView).toBe(false)
   })
 
   test("reloads the pack layers when the set of ready areas changes", async () => {
     const { result, rerender } = await renderHook(
       ({ areas }: { areas: OfflineAreaSummary[] }) =>
-        useLayerAvailability({ areas, center: INSIDE, isOffline: true }),
+        useLayerAvailability({ areas, region: INSIDE, isOffline: true }),
       { initialProps: { areas: [area("a1")] } },
     )
     expect(mockListAreaLayers).toHaveBeenCalledTimes(1)
@@ -106,13 +106,36 @@ describe("useLayerAvailability", () => {
     expect(result.current.isAvailable("carte-1950")).toBe(false)
   })
 
-  test("unreadable pack metadata leaves only the Plan and the Satellite", async () => {
+  test("unreadable pack metadata leaves nothing available", async () => {
     mockListAreaLayers.mockRejectedValue(new Error("native"))
     const areas = [area("a1")]
     const { result } = await renderHook(() =>
-      useLayerAvailability({ areas, center: INSIDE, isOffline: true }),
+      useLayerAvailability({ areas, region: INSIDE, isOffline: true }),
     )
-    expect(availableKeys(result.current.isAvailable)).toEqual(["map", "satellite"])
+    expect(availableKeys(result.current.isAvailable)).toEqual([])
+  })
+
+  test("follows the settled view only: a pan out of the area changes it after the debounce", async () => {
+    jest.useFakeTimers()
+    try {
+      const areas = [area("a1")]
+      const { result, rerender } = await renderHook(
+        ({ view }: { view: typeof INSIDE }) =>
+          useLayerAvailability({ areas, region: view, isOffline: true }),
+        { initialProps: { view: INSIDE } },
+      )
+      await act(async () => undefined)
+      expect(result.current.isAvailable("map")).toBe(true)
+      await rerender({ view: OUTSIDE })
+      expect(result.current.isAvailable("map")).toBe(true)
+      await act(async () => {
+        jest.advanceTimersByTime(VIEW_AVAILABILITY_DEBOUNCE_MS)
+      })
+      expect(result.current.isAvailable("map")).toBe(false)
+      expect(result.current.areaAtView).toBe(false)
+    } finally {
+      jest.useRealTimers()
+    }
   })
 
   test("a late answer after unmount is ignored", async () => {
@@ -120,7 +143,7 @@ describe("useLayerAvailability", () => {
     mockListAreaLayers.mockReturnValue(new Promise((r) => (resolve = r)))
     let rejectLater!: (error: Error) => void
     const { unmount } = await renderHook(() =>
-      useLayerAvailability({ areas: [area("a1")], center: INSIDE, isOffline: true }),
+      useLayerAvailability({ areas: [area("a1")], region: INSIDE, isOffline: true }),
     )
     await unmount()
     await act(async () => resolve(new Map()))
@@ -128,7 +151,7 @@ describe("useLayerAvailability", () => {
       new Promise((_r, reject) => (rejectLater = reject as (error: Error) => void)),
     )
     const second = await renderHook(() =>
-      useLayerAvailability({ areas: [area("a9")], center: INSIDE, isOffline: true }),
+      useLayerAvailability({ areas: [area("a9")], region: INSIDE, isOffline: true }),
     )
     await second.unmount()
     await act(async () => rejectLater(new Error("late")))

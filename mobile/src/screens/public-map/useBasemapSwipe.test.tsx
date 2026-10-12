@@ -355,6 +355,18 @@ describe("the wipe and its zones", () => {
 })
 
 describe("the release", () => {
+  test("with fewer than two layers available for the view the comparison cannot open", () => {
+    mount()
+    available = (key) => key === "satellite"
+    rerender(mountedTree(), {})
+    begin(380)
+    move(240)
+    lift()
+    expect(layers.actions.startCompare).not.toHaveBeenCalled()
+    // The compare action is not offered either.
+    expect(latest.compareAvailable).toBe(false)
+  })
+
   test("in the compare zone it opens the comparison at the release x", () => {
     mount()
     begin(380)

@@ -3,6 +3,7 @@ import {
   BASEMAP_CYCLE,
   cycleIndex,
   neighbourLayer,
+  canCompare,
   skippedCount,
 } from "./layer-cycle"
 import { BASE_LAYER_KEYS } from "./layers"
@@ -94,5 +95,14 @@ describe("cycleIndex", () => {
     expect(cycleIndex("map")).toBe(1)
     expect(cycleIndex("etat-major")).toBe(3)
     expect(cycleIndex("photos-1950")).toBe(5)
+  })
+})
+
+describe("canCompare", () => {
+  test("needs two available bases", () => {
+    expect(canCompare(() => true)).toBe(true)
+    expect(canCompare((key) => key === "map" || key === "satellite")).toBe(true)
+    expect(canCompare((key) => key === "map")).toBe(false)
+    expect(canCompare(() => false)).toBe(false)
   })
 })

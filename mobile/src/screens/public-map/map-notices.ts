@@ -6,18 +6,14 @@ import type { BaseLayerKey, MapLayerKey } from "../../map/layers"
 import { isOutsideCoverage, overzoomNotice } from "../../map/layer-notices"
 
 /** The kinds double as the test ids (`map-notice-<kind>`). */
-export type MapNoticeKind = "skipped" | "outside" | "offline" | "error" | "overzoom"
+export type MapNoticeKind = "outside" | "offline" | "error" | "overzoom"
 
 export type MapNotice = {
   /** Stable per kind and layer, so a notice is announced once while it stays. */
   id: string
   kind: MapNoticeKind
   text: string
-  icon:
-    | "layers-outline"
-    | "alert-circle-outline"
-    | "cloud-offline-outline"
-    | "information-circle-outline"
+  icon: "alert-circle-outline" | "cloud-offline-outline" | "information-circle-outline"
   danger?: boolean
   retry?: boolean
 }
@@ -32,11 +28,7 @@ export type MapNoticeInput = {
   isAvailable: (key: MapLayerKey) => boolean
   /** The layer whose tiles failed to load online, if any. */
   failedLayer: MapLayerKey | null
-  skippedCount: number
 }
-
-/** At most this many layers get a pill of their own offline, then one pill for all. */
-const MAX_OFFLINE_PILLS = 2
 
 const layerName = (key: MapLayerKey): string =>
   fr.mapLayers.layers[LAYER_CATALOGUE[key].i18nKey].name
@@ -49,14 +41,6 @@ export function buildMapNotices(input: MapNoticeInput): MapNotice[] {
   }
   const notices: MapNotice[] = []
 
-  if (input.skippedCount > 0) {
-    notices.push({
-      id: "skipped",
-      kind: "skipped",
-      text: fr.mapLayers.basemap.skipped(input.skippedCount),
-      icon: "layers-outline",
-    })
-  }
   for (const key of shown) {
     if (isOutsideCoverage(key, center)) {
       notices.push({
@@ -67,25 +51,15 @@ export function buildMapNotices(input: MapNoticeInput): MapNotice[] {
       })
     }
   }
-  if (isOffline) {
-    const missing = shown.filter((key) => !isAvailable(key))
-    if (missing.length > MAX_OFFLINE_PILLS) {
-      notices.push({
-        id: "offline-several",
-        kind: "offline",
-        text: fr.mapLayers.notice.offlineSeveral,
-        icon: "cloud-offline-outline",
-      })
-    } else {
-      for (const key of missing) {
-        notices.push({
-          id: `offline-${key}`,
-          kind: "offline",
-          text: fr.mapLayers.notice.offlineLayer(layerName(key)),
-          icon: "cloud-offline-outline",
-        })
-      }
-    }
+  // Offline, a layer that is not downloaded for this view says so on its label; the column keeps
+  // a single pill for the whole view.
+  if (isOffline && shown.some((key) => !isAvailable(key))) {
+    notices.push({
+      id: "offline",
+      kind: "offline",
+      text: fr.mapLayers.notice.offlineHere,
+      icon: "cloud-offline-outline",
+    })
   }
   if (failedLayer !== null) {
     notices.push({
