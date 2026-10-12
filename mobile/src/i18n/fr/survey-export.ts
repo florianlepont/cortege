@@ -125,10 +125,10 @@ export const surveyExportFr = {
       providerDated: ({ date, time }: { date: string; time: string }) =>
         `Météo-France, mesure du ${date} à ${time}`,
       // The sky is the observer's, never the provider's (D-37).
-      providerObserverSky: "Météo-France, ciel saisi par l'observateur",
+      providerObserverSky: "Météo-France, conditions saisies par l'observateur",
       providerObserverSkyDated: ({ date, time }: { date: string; time: string }) =>
-        `Météo-France, mesure du ${date} à ${time}, ciel saisi par l'observateur`,
-      manual: "Ciel saisi par l'observateur",
+        `Météo-France, mesure du ${date} à ${time}, conditions saisies par l'observateur`,
+      manual: "Conditions saisies par l'observateur",
     },
   },
   // The "Score =" column of the CNPF sheet (v3.2) and the on-screen hints (v3.0), as display text.

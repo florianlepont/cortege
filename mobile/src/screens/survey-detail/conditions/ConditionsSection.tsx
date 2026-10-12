@@ -20,9 +20,9 @@ type ConditionsSectionProps = {
 }
 
 /**
- * The "Météo" section of the Contexte page (D-15, D-32): the weather card with its status line and
- * the full dated source sentence; the same as plain text once the survey cannot be edited (D-03,
- * U-04). The survey note is not here any more (D-33). Optional from end to end: nothing here
+ * The "Météo" section of the Contexte page (D-15, D-32): the weather card, its title inside the
+ * tile (D-46), with its status line and the full dated source sentence; the same as plain text
+ * under a plain title once the survey cannot be edited (D-03, U-04). The survey note is not here any more (D-33). Optional from end to end: nothing here
  * blocks finishing or submitting.
  */
 export function ConditionsSection({
@@ -34,20 +34,21 @@ export function ConditionsSection({
 }: ConditionsSectionProps) {
   return (
     <View style={styles.section} testID="conditions-section">
-      <AppSectionHeader
-        title={t.section.title}
-        subtitle={t.section.subtitle}
-        titleAccessibilityRole="header"
-      />
-      {!conditions.loaded ? null : !editable ? (
-        <ConditionsReadOnly weather={conditions.weather} emptyMode="line" showTitle={false} />
-      ) : (
+      {conditions.loaded && editable ? (
+        // D-46: the editable card carries the "Météo" title inside its tile, like "Méthode et station".
         <WeatherBlock
           weather={conditions.weather}
           viewState={viewState}
           onEditWeather={onEditWeather}
           onRetry={onRetry}
         />
+      ) : (
+        <>
+          <AppSectionHeader title={t.section.title} titleAccessibilityRole="header" />
+          {conditions.loaded ? (
+            <ConditionsReadOnly weather={conditions.weather} emptyMode="line" showTitle={false} />
+          ) : null}
+        </>
       )}
     </View>
   )

@@ -112,7 +112,7 @@ const glyphs = (tree: ReactTestRenderer): string[] =>
 
 describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
   const CASES: {
-    state: WeatherViewState
+    state: Exclude<WeatherViewState, "prefilled">
     glyph: string | null
     text: string
     link: "retry" | null
@@ -124,12 +124,6 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
       link: null,
     },
     { state: "loading", glyph: null, text: t.weather.status.loading, link: null },
-    {
-      state: "prefilled",
-      glyph: "cloud-done-outline",
-      text: t.weather.status.prefilled,
-      link: null,
-    },
     {
       state: "offline",
       glyph: "cloud-offline-outline",
@@ -183,7 +177,7 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
     const line = texts(tree)
     expect(line).toContain(t.weather.status.tooOld)
     expect(t.weather.status.tooOld).toContain("plus de 24\u00a0h")
-    expect(t.weather.status.tooOld).toContain("Vous pouvez choisir le ciel")
+    expect(t.weather.status.tooOld).toContain("Vous pouvez choisir les conditions")
     // Nothing promises a later fill, nothing can be retried or waited for.
     expect(maybeByTestId(tree, "conditions-retry")).toBeUndefined()
     expect(line).not.toContain(t.weather.status.retry)
@@ -197,7 +191,7 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
     expect(maybeByTestId(tree, "conditions-skyrow-toggle")).toBeUndefined()
   })
 
-  test("prefilled carries the date of the data when it is known (D-31)", () => {
+  test("prefilled has no status line: the source is said once, by the source line (D-46)", () => {
     const weather: SurveyWeather = {
       sky: "cloudy",
       temperature_c: 14,
@@ -208,8 +202,13 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
     const prefilled = mount(
       <ConditionsSection {...sectionProps({ viewState: "prefilled", conditions })} />,
     )
-    expect(texts(prefilled)).toContain("Mesures de Météo-France, mesure du 12/10/2026 à 04:00.")
-    expect(texts(prefilled)).toContain("Source : Météo-France, mesure du 12/10/2026 à 04:00")
+    expect(maybeByTestId(prefilled, "conditions-weather-status")).toBeUndefined()
+    const all = texts(prefilled)
+    expect(all).toContain("Source : Météo-France, mesure du 12/10/2026 à 04:00")
+    // The source and the date appear in exactly one line.
+    expect(all.filter((text) => text.includes("Météo-France"))).toHaveLength(1)
+    expect(all.filter((text) => text.includes("12/10/2026"))).toHaveLength(1)
+    expect(glyphs(prefilled)).not.toContain("cloud-done-outline")
   })
 
   test("no state says error and no glyph takes a danger colour", () => {
@@ -248,11 +247,17 @@ describe("ConditionsSection weather status line (UI-SPEC 1.3, D-37)", () => {
     act(() => {
       tree.update(element("prefilled"))
     })
-    expect(mockAnnounce).toHaveBeenCalledTimes(1)
-    expect(mockAnnounce).toHaveBeenCalledWith(t.weather.status.prefilled)
+    // The filled state has no line to read out (D-46).
+    expect(mockAnnounce).not.toHaveBeenCalled()
 
     act(() => {
-      tree.update(element("prefilled"))
+      tree.update(element("offline"))
+    })
+    expect(mockAnnounce).toHaveBeenCalledTimes(1)
+    expect(mockAnnounce).toHaveBeenCalledWith(t.weather.status.offline)
+
+    act(() => {
+      tree.update(element("offline"))
     })
     expect(mockAnnounce).toHaveBeenCalledTimes(1)
   })
@@ -308,7 +313,7 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
     )
     expect(tree.root.findAll((n) => (n.type as unknown) === "TextInput")).toHaveLength(0)
     expect(maybeByTestId(tree, "conditions-field-temperature")).toBeUndefined()
-    // The sky chips are folded behind "Modifier le ciel" (D-43): eight of them once it is pressed.
+    // The sky chips are folded behind "Modifier les conditions" (D-43): eight of them once it is pressed.
     const chipHosts = () =>
       tree.root.findAll(
         (n) => typeof n.type === "string" && n.props.testID?.startsWith("conditions-sky-"),
@@ -318,7 +323,7 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
     expect(chipHosts()).toHaveLength(8)
   })
 
-  test("the whole weather is one card: read-out, status line, chips, then the source sentence (D-41)", () => {
+  test("the whole weather is one card: title, read-out, chips, then the source sentence (D-41, D-46)", () => {
     const tree = mount(
       <ConditionsSection
         {...sectionProps({
@@ -334,8 +339,9 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
       .map((n) => n.props.testID as string)
     const at = (id: string) => hosts.indexOf(id)
     expect(at("weather-hero")).toBeGreaterThan(-1)
-    expect(at("weather-hero")).toBeLessThan(at("conditions-weather-status"))
-    expect(at("conditions-weather-status")).toBeLessThan(at("conditions-sky-clear"))
+    expect(at("weather-hero")).toBeLessThan(at("conditions-sky-clear"))
+    // The filled state has no status line (D-46).
+    expect(at("conditions-weather-status")).toBe(-1)
 
     // Read-out, status line and chips share one glass card.
     const card = tree.root.findAllByType(AppCard as never)
@@ -346,9 +352,17 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
     ).toBeGreaterThan(0)
     // The sky of the chips shows in the read-out too, and the dated sentence closes the card.
     const all = texts(tree)
+    // D-46: the title opens the tile, with no subtitle.
+    expect(
+      card[0].findAll(
+        (n) => (n.type as unknown) === "Text" && n.props.children === t.section.title,
+      ),
+    ).toHaveLength(1)
+    expect(all[0]).toBe(t.section.title)
+    expect(all).not.toContain("Météo du jour. Facultatif.")
     expect(all).toContain("Nuageux")
     expect(all[all.length - 1]).toBe(weatherSourceLine({ ...OWNERS_WEATHER, sky: "cloudy" }))
-    expect(all[all.length - 1]).toContain("ciel saisi par l'observateur")
+    expect(all[all.length - 1]).toContain("conditions saisies par l'observateur")
   })
 
   test("without provider data only the sky chips are offered, with the calm status line", () => {
@@ -383,7 +397,9 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
         })}
       />,
     )
-    expect(texts(observersSky)).toContain("Source : Météo-France, ciel saisi par l'observateur")
+    expect(texts(observersSky)).toContain(
+      "Source : Météo-France, conditions saisies par l'observateur",
+    )
 
     const skyOnly = mount(
       <ConditionsSection
@@ -460,7 +476,7 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
       <ConditionsSection {...sectionProps({ conditions: { ...LOADED_EMPTY, loaded: false } })} />,
     )
 
-    expect(texts(tree)).toEqual([t.section.title, t.section.subtitle])
+    expect(texts(tree)).toEqual([t.section.title])
     expect(maybeByTestId(tree, "survey-note-field")).toBeUndefined()
 
     const readOnly = mount(
@@ -468,7 +484,7 @@ describe("ConditionsSection weather card (D-37: only the sky is editable)", () =
         {...sectionProps({ editable: false, conditions: { ...LOADED_EMPTY, loaded: false } })}
       />,
     )
-    expect(texts(readOnly)).toEqual([t.section.title, t.section.subtitle])
+    expect(texts(readOnly)).toEqual([t.section.title])
   })
 })
 
@@ -496,7 +512,7 @@ describe("Conditions read only (D-03, U-04, D-37)", () => {
     const all = texts(tree)
     expect(all).toEqual(
       expect.arrayContaining([
-        "Ciel",
+        "Conditions",
         "Nuageux",
         "Température",
         "14,5\u00a0°C",
@@ -525,7 +541,7 @@ describe("Conditions read only (D-03, U-04, D-37)", () => {
 
     const all = texts(tree)
     expect(all).toContain("Température")
-    expect(all).not.toContain("Ciel")
+    expect(all).not.toContain("Conditions")
     expect(all).not.toContain("Vent")
     expect(all).not.toContain("Heure de la mesure")
     expect(all).not.toContain(t.note.label)
@@ -536,7 +552,7 @@ describe("Conditions read only (D-03, U-04, D-37)", () => {
       <ConditionsReadOnly weather={{ ...weather, sky: "fog", edited: ["sky"] }} emptyMode="line" />,
     )
     expect(texts(observersSky)).toContain(
-      "Source : Météo-France, mesure du 11/10/2026 à 14:30, ciel saisi par l'observateur",
+      "Source : Météo-France, mesure du 11/10/2026 à 14:30, conditions saisies par l'observateur",
     )
 
     const undated = mount(
@@ -583,7 +599,7 @@ describe("Conditions read only (D-03, U-04, D-37)", () => {
     const section = mount(
       <ConditionsSection {...sectionProps({ editable: false, conditions: LOADED_EMPTY })} />,
     )
-    expect(texts(section)).toEqual([t.section.title, t.section.subtitle, t.readOnly.empty])
+    expect(texts(section)).toEqual([t.section.title, t.readOnly.empty])
 
     const hidden = mount(<ConditionsReadOnly weather={null} emptyMode="hidden" />)
     expect(hidden.toJSON()).toBeNull()
@@ -599,8 +615,78 @@ describe("Conditions read only (D-03, U-04, D-37)", () => {
 
     const all = texts(tree)
     expect(all).toContain("Vent")
-    expect(all).not.toContain("Ciel")
+    expect(all).not.toContain("Conditions")
     expect(all).not.toContain("Température")
+  })
+})
+
+describe("ConditionsSection wording and tile (D-46)", () => {
+  const PROVIDER: SurveyWeather = {
+    sky: null,
+    temperature_c: 14,
+    source: "meteo_france",
+    observed_at: new Date(2026, 9, 12, 16, 0).toISOString(),
+  }
+
+  test("the title and the status sit inside the tile of the editable section, in every state", () => {
+    for (const viewState of ["noParcel", "loading", "offline", "unavailable", "tooOld"] as const) {
+      const tree = mount(<ConditionsSection {...sectionProps({ viewState })} />)
+      const cards = tree.root.findAllByType(AppCard as never)
+      expect(cards).toHaveLength(1)
+      const headings = cards[0].findAll(
+        (n) => (n.type as unknown) === "Text" && n.props.accessibilityRole === "header",
+      )
+      expect(headings.map((n) => n.props.children)).toEqual([t.section.title])
+      // Nothing about the title is drawn outside the tile.
+      expect(texts(tree).filter((text) => text === t.section.title)).toHaveLength(1)
+    }
+  })
+
+  test("the sky is called conditions: label, empty value, button and clause", () => {
+    expect(t.sky.groupLabel).toBe("Conditions")
+    expect(t.skyRow.none).toBe("Non indiquées")
+    expect(t.skyRow.edit).toBe("Modifier les conditions")
+    expect(t.skyRow.close).toBe("Fermer")
+
+    const tree = mount(
+      <ConditionsSection
+        {...sectionProps({
+          viewState: "prefilled",
+          conditions: { ...LOADED_EMPTY, weather: PROVIDER },
+        })}
+      />,
+    )
+    const all = texts(tree)
+    expect(all).toEqual(
+      expect.arrayContaining(["Conditions", "Non indiquées", "Modifier les conditions"]),
+    )
+    expect(all.join(" ")).not.toMatch(/ciel/i)
+    // The source line, once, with the date.
+    expect(all.filter((text) => text.startsWith("Source"))).toEqual([
+      "Source : Météo-France, mesure du 12/10/2026 à 16:00",
+    ])
+  })
+
+  test("no user-facing weather string of the catalogue still says ciel", () => {
+    // Text functions take a stamp, a count or a list: one hybrid argument serves them all.
+    const arg = Object.assign(["x"], { date: "d", time: "t", count: 1, max: 2, line: "l" })
+    const strings = JSON.stringify(t, (_key, value) =>
+      typeof value === "function" ? value(arg, arg) : value,
+    )
+    expect(strings.toLowerCase()).not.toContain("ciel")
+  })
+
+  test("the read-only section keeps a plain title above the rows, with no subtitle", () => {
+    const tree = mount(
+      <ConditionsSection
+        {...sectionProps({
+          editable: false,
+          conditions: { ...LOADED_EMPTY, weather: { temperature_c: 9 } },
+        })}
+      />,
+    )
+    expect(texts(tree)[0]).toBe(t.section.title)
+    expect(texts(tree)).not.toContain("Météo du jour. Facultatif.")
   })
 })
 

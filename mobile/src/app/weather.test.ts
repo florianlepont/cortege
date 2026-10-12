@@ -473,7 +473,7 @@ describe("the date of the data next to the source (D-31)", () => {
         observed_at: MEASURED,
         edited: ["sky"],
       }),
-    ).toBe("Source : Météo-France, mesure du 12/10/2026 à 04:00, ciel saisi par l'observateur")
+    ).toBe("Source : Météo-France, mesure du 12/10/2026 à 04:00, conditions saisies par l'observateur")
     expect(
       weatherSourceLine({
         sky: "rain",
@@ -481,7 +481,7 @@ describe("the date of the data next to the source (D-31)", () => {
         source: "meteo_france",
         edited: ["sky"],
       }),
-    ).toBe("Source : Météo-France, ciel saisi par l'observateur")
+    ).toBe("Source : Météo-France, conditions saisies par l'observateur")
     // A cleared sky shows nothing: no clause.
     expect(
       weatherSourceLine({

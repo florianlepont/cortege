@@ -148,8 +148,8 @@ export function showsProviderAttribution(weather: SurveyWeather | null | undefin
  * The attribution line under the weather values: "Source : Météo-France, mesure du dd/mm/yyyy à
  * HH:mm" (D-26, D-31: the licence asks for the source and the date of the data). Null when no
  * shown value is the provider's (`showsProviderAttribution`); without a readable `observed_at` it
- * is "Source : Météo-France" alone. When the sky shown is the observer's it ends with "ciel saisi
- * par l'observateur" (D-37), so no value they chose is presented as the provider's (D-31).
+ * is "Source : Météo-France" alone. When the sky shown is the observer's it ends with
+ * "conditions saisies par l'observateur" (D-37), so no value they chose is presented as the provider's (D-31).
  */
 export function weatherSourceLine(weather: SurveyWeather | null | undefined): string | null {
   if (!showsProviderAttribution(weather)) return null

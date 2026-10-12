@@ -175,7 +175,7 @@ describe("WeatherCard with measurements (compact, D-41)", () => {
     const { tree } = mount({ weather: { ...CLOUDY, sky: "hail" as never } })
 
     expect(glyphs(tree)).toContain("cloud-outline")
-    expect(texts(tree)).not.toContain("Ciel")
+    expect(texts(tree)).not.toContain("Conditions")
   })
 
   test("the whole card is one button that opens the section, with the weather in its label", () => {
