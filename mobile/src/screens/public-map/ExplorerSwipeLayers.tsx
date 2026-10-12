@@ -177,7 +177,7 @@ export function ExplorerSwipeLayers({
         />
       ) : null}
       {swipe.quitPillVisible ? (
-        <QuitComparePill top={capsuleTop} onQuit={swipe.quit} hint={view.quitHint} />
+        <QuitComparePill bottom={hintBottom} onQuit={swipe.quit} hint={view.quitHint} />
       ) : null}
     </>
   )

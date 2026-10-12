@@ -11,7 +11,6 @@ import { useLatestCallback } from "../../state/useLatestCallback"
 import { feedback } from "../../ui/feedback"
 import { useScreenFocus } from "../../ui/useScreenFocus"
 import type { MapCanvasProps } from "./MapCanvas"
-import { MAP_PILL_HEIGHT } from "./MapChips"
 import { useMapSync } from "./MapStack"
 import { COMPARISON_BUILT, LEFT_MAP_ANDROID_VIEW, WIPE_PRESENTATION } from "./map-stack-mode"
 import { useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
@@ -36,8 +35,6 @@ import type { MapLayers } from "./useMapLayersState"
 
 /** A stacked map that covers a style swap is dropped after this long even if no event is reported. */
 const COVER_MAX_MS = 8000
-/** The gap between the top control and the notices column (UI-SPEC section 8). */
-const NOTICES_GAP = 8
 
 /**
  * A stacked map kept over a style swap of the Explorer map under it, so no blank frame shows:
@@ -179,7 +176,7 @@ export function useExplorerSwipe({
 }: ExplorerSwipeInput): ExplorerSwipe {
   // The stacked maps and the curtain cover the window: the map area is the whole screen.
   const { width, height } = useWindowDimensions()
-  const { layers, isAvailable, capsuleTop, noticesTop: baseNoticesTop } = explorerLayers
+  const { layers, isAvailable, noticesTop } = explorerLayers
   const { actions, state } = layers
   const swipeMode = state.swipeMode
   const compare = COMPARISON_BUILT ? state.compare : null
@@ -334,12 +331,6 @@ export function useExplorerSwipe({
     actions.quitCompare(keeps)
   })
   const quitPillVisible = comparing
-  // The swipe mode's info row sits at the bottom, so only the quit pill holds the top.
-  const topHeld = quitPillVisible
-  const heldHeight = MAP_PILL_HEIGHT
-  const noticesTop = topHeld
-    ? Math.max(baseNoticesTop, capsuleTop + heldHeight + NOTICES_GAP)
-    : baseNoticesTop
 
   const mapCanvasProps = useMemo<ExplorerSwipe["mapCanvasProps"]>(
     () => ({

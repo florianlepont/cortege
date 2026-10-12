@@ -12,16 +12,15 @@ import { MAP_CONTROL_HIT_SLOP, MAP_PILL_HEIGHT } from "./MapChips"
 
 const t = fr.mapLayers.compare
 
-/** Kept clear on both sides: the capsule and the overlay button sit within 72 pt of the right edge. */
-const SIDE_INSET = 72
+const SIDE_INSET = 16
 const MAX_WIDTH = 232
 const GLYPH_SIZE = 16
 
 export type QuitComparePillProps = {
-  /** Distance from the top of the map: level with the capsule's top. */
-  top: number
+  /** Distance from the bottom edge: the pill sits just above the tab bar, centred. */
+  bottom: number
   onQuit: () => void
-  /** Shown under the pill while the line is in an edge exit zone ("Lâchez pour quitter..."). */
+  /** Shown above the pill while the line is in an edge exit zone ("Lâchez pour quitter..."). */
   hint?: string | null
 }
 
@@ -29,18 +28,28 @@ export type QuitComparePillProps = {
  * The one control of a free comparison (UI-SPEC section 4, U-21): a centred, labelled pill that
  * ends the comparison and keeps side A, the left layer. The screen shows it only while the map is
  * free (the swipe mode off); it hands over to "Terminé" when the swipe mode is on. While the
- * grabber is in an edge exit zone, `hint` says under the pill that a release there ends the
+ * grabber is in an edge exit zone, `hint` says above the pill that a release there ends the
  * comparison.
  */
 export const QuitComparePill = memo(function QuitComparePill({
-  top,
+  bottom,
   onQuit,
   hint = null,
 }: QuitComparePillProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   return (
-    <View pointerEvents="box-none" style={[styles.row, { top }]}>
+    <View pointerEvents="box-none" style={[styles.row, { bottom }]}>
+      {hint === null ? null : (
+        <View
+          testID="compare-exit-hint"
+          pointerEvents="none"
+          accessibilityLiveRegion="polite"
+          style={styles.hint}
+        >
+          <Text style={styles.hintText}>{hint}</Text>
+        </View>
+      )}
       <Animated.View
         entering={FadeIn.duration(brandMotion.durations.fast).reduceMotion(ReduceMotion.System)}
       >
@@ -75,16 +84,6 @@ export const QuitComparePill = memo(function QuitComparePill({
           </AppPressable>
         </GlassSurface>
       </Animated.View>
-      {hint === null ? null : (
-        <View
-          testID="compare-exit-hint"
-          pointerEvents="none"
-          accessibilityLiveRegion="polite"
-          style={styles.hint}
-        >
-          <Text style={styles.hintText}>{hint}</Text>
-        </View>
-      )}
     </View>
   )
 })

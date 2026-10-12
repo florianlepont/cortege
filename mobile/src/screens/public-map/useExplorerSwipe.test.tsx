@@ -605,10 +605,10 @@ describe("leaving a comparison by an edge", () => {
 })
 
 describe("Quitter la comparaison", () => {
-  test("shows exactly while comparing, level with the capsule", () => {
+  test("shows exactly while comparing, and leaves the notices at their own top", () => {
     mount(makeLayers({ compare: compareRight }))
     expect(out().quitPillVisible).toBe(true)
-    expect(out().noticesTop).toBe(58 + 40 + 8)
+    expect(out().noticesTop).toBe(58)
     update(makeLayers())
     expect(out().quitPillVisible).toBe(false)
     update(makeLayers({ swipeMode: true }))

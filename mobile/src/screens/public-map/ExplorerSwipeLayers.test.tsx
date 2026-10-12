@@ -523,12 +523,12 @@ describe("the comparison", () => {
     }
   })
 
-  test("the quit pill shows only when the hook says so, level with the capsule", () => {
+  test("the quit pill shows only when the hook says so, just above the tab bar", () => {
     const hidden = render(comparing())
     expect(named(hidden.tree, "QuitComparePill")).toHaveLength(0)
     const shown = render(comparing(), { swipe: { quitPillVisible: true } })
     const pill = named(shown.tree, "QuitComparePill")[0].props
-    expect(pill).toMatchObject({ top: 58, onQuit: shown.swipe.quit, hint: null })
+    expect(pill).toMatchObject({ bottom: 66, onQuit: shown.swipe.quit, hint: null })
   })
 
   test("the exit hint reaches the quit pill while the grabber is in an exit zone", () => {

@@ -1750,7 +1750,7 @@ describe("PublicMapScreen", () => {
       expect(texts()).toContain(fr.mapLayers.basemap.skipped(3))
     })
 
-    test("the notices sit under the window, above the tab bar, in the swipe mode and start below the quit pill", () => {
+    test("the notices sit under the window, above the tab bar, in the swipe mode and keep their own top in a comparison", () => {
       // A notice that stays whatever the mode: the forest overlay, not in the offline area.
       mockAvailable.all = false
       const noticeStyle = () =>
@@ -1773,11 +1773,11 @@ describe("PublicMapScreen", () => {
       release()
       const pillTop = noticeStyle().top
       // The swipe mode puts the notices at the bottom.
-      // The quit pill of the comparison holds the top: its 40 pt plus 8.
+      // The quit pill of the comparison is at the bottom: the notices keep their own top.
       expect(swipeStyle.top).toBeUndefined()
       // 50 (tab bar) + 8 + 14 + 40 (hint): in the white zone under the window, over the hint.
       expect(swipeStyle.bottom).toBe(50 + 8 + 14 + 40)
-      expect(pillTop).toBe(30 + 40 + 8)
+      expect(pillTop).toBe(30)
     })
   })
 

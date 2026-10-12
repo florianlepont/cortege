@@ -358,10 +358,10 @@ describe("layout", () => {
 })
 
 describe("QuitComparePill", () => {
-  function renderQuit(top = 58, onQuit = jest.fn(), hint?: string | null) {
+  function renderQuit(bottom = 58, onQuit = jest.fn(), hint?: string | null) {
     let tree!: ReactTestRenderer
     act(() => {
-      tree = renderer.create(<QuitComparePill top={top} onQuit={onQuit} hint={hint} />)
+      tree = renderer.create(<QuitComparePill bottom={bottom} onQuit={onQuit} hint={hint} />)
     })
     return { tree, onQuit, pill: byId(tree, "compare-quit")[0] }
   }
@@ -375,9 +375,9 @@ describe("QuitComparePill", () => {
     )[0]
     expect(flat(row.props.style)).toMatchObject({
       position: "absolute",
-      left: 72,
-      right: 72,
-      top: 120,
+      left: 16,
+      right: 16,
+      bottom: 120,
       alignItems: "center",
     })
     const surface = tree.root.findByType("GlassSurface" as never)
@@ -398,7 +398,7 @@ describe("QuitComparePill", () => {
     expect(onQuit).toHaveBeenCalledTimes(1)
   })
 
-  test("shows no hint without one, and the exit hint under the pill with one", () => {
+  test("shows no hint without one, and the exit hint above the pill with one", () => {
     expect(byId(renderQuit().tree, "compare-exit-hint")).toHaveLength(0)
     expect(byId(renderQuit(58, jest.fn(), null).tree, "compare-exit-hint")).toHaveLength(0)
     const { tree, pill } = renderQuit(58, jest.fn(), "Lâchez pour quitter la comparaison")

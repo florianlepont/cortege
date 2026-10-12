@@ -18,7 +18,7 @@ afterEach(async () => {
 })
 
 const advance = (ms: number) =>
-  act(() => {
+  act(async () => {
     jest.advanceTimersByTime(ms)
   })
 
@@ -35,85 +35,85 @@ async function setup(initial = { covered: true, swipeMode: true }) {
 describe("useCoverRelease", () => {
   test("the style load alone does not release: it waits for a rendered-fully after it", async () => {
     const { release, api } = await setup()
-    act(() => api().onStyleLoaded())
-    advance(COVER_RENDER_TIMEOUT_MS - 1)
+    await act(async () => api().onStyleLoaded())
+    await advance(COVER_RENDER_TIMEOUT_MS - 1)
     expect(release).not.toHaveBeenCalled()
   })
 
   test("a rendered-fully before the style load is ignored", async () => {
     const { release, api } = await setup()
-    act(() => api().onRenderedFully())
-    advance(5000)
+    await act(async () => api().onRenderedFully())
+    await advance(5000)
     expect(release).not.toHaveBeenCalled()
   })
 
   test("style load then rendered-fully releases COVER_PRESENT_MS after the style load", async () => {
     const { release, api } = await setup()
-    act(() => api().onStyleLoaded())
-    advance(COVER_PRESENT_MS - 20)
-    act(() => api().onRenderedFully())
-    advance(19)
+    await act(async () => api().onStyleLoaded())
+    await advance(COVER_PRESENT_MS - 20)
+    await act(async () => api().onRenderedFully())
+    await advance(19)
     expect(release).not.toHaveBeenCalled()
-    advance(1)
+    await advance(1)
     expect(release).toHaveBeenCalledTimes(1)
   })
 
-  test("a late rendered-fully still waits the present time after it is reported", async () => {
+  test("a rendered-fully long after the style load releases at once", async () => {
     const { release, api } = await setup()
-    act(() => api().onStyleLoaded())
-    advance(500)
-    act(() => api().onRenderedFully())
-    advance(0)
+    await act(async () => api().onStyleLoaded())
+    await advance(500)
+    await act(async () => api().onRenderedFully())
+    await advance(0)
     expect(release).toHaveBeenCalledTimes(1)
   })
 
   test("without a rendered-fully the cover goes after the timeout", async () => {
     const { release, api } = await setup()
-    act(() => api().onStyleLoaded())
-    advance(COVER_RENDER_TIMEOUT_MS)
+    await act(async () => api().onStyleLoaded())
+    await advance(COVER_RENDER_TIMEOUT_MS)
     expect(release).toHaveBeenCalledTimes(1)
   })
 
   test("a second style load re-arms the wait", async () => {
     const { release, api } = await setup()
-    act(() => api().onStyleLoaded())
-    advance(2000)
-    act(() => api().onStyleLoaded())
-    advance(COVER_RENDER_TIMEOUT_MS - 1)
+    await act(async () => api().onStyleLoaded())
+    await advance(2000)
+    await act(async () => api().onStyleLoaded())
+    await advance(COVER_RENDER_TIMEOUT_MS - 1)
     expect(release).not.toHaveBeenCalled()
-    advance(1)
+    await advance(1)
     expect(release).toHaveBeenCalledTimes(1)
   })
 
   test("events with no cover do nothing", async () => {
     const { release, api } = await setup({ covered: false, swipeMode: true })
-    act(() => api().onStyleLoaded())
-    act(() => api().onRenderedFully())
-    advance(5000)
+    await act(async () => api().onStyleLoaded())
+    await act(async () => api().onRenderedFully())
+    await advance(5000)
     expect(release).not.toHaveBeenCalled()
   })
 
   test("a cover that ends cancels the pending release; unmounting too", async () => {
     const { release, hook, api } = await setup()
-    act(() => api().onStyleLoaded())
+    await act(async () => api().onStyleLoaded())
     await hook.rerender({ covered: false, swipeMode: true })
-    advance(5000)
+    await advance(5000)
     expect(release).not.toHaveBeenCalled()
     await hook.rerender({ covered: true, swipeMode: true })
-    act(() => api().onStyleLoaded())
+    await act(async () => api().onStyleLoaded())
     await hook.unmount()
-    advance(5000)
+    await advance(5000)
     expect(release).not.toHaveBeenCalled()
   })
 
   test("after the swipe mode ends the cover waits for the window to be back", async () => {
     const { release, hook, api } = await setup()
-    act(() => api().onStyleLoaded())
+    await act(async () => api().onStyleLoaded())
     await hook.rerender({ covered: true, swipeMode: false })
-    act(() => api().onRenderedFully())
-    advance(COVER_PRESENT_MS)
+    await act(async () => api().onRenderedFully())
+    await advance(COVER_PRESENT_MS)
     expect(release).not.toHaveBeenCalled()
-    advance(IMMERSIVE_OUT_MS - COVER_PRESENT_MS)
+    await advance(IMMERSIVE_OUT_MS - COVER_PRESENT_MS)
     expect(release).toHaveBeenCalledTimes(1)
   })
 })
