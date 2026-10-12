@@ -855,14 +855,17 @@ describe("the side change", () => {
     expect(out().layersView.second).toBeNull()
   })
 
-  test("the Explorer map's settled camera is tracked, and a stacked map aligns to it before it is revealed", () => {
+  test("the Explorer map's settled camera is tracked, and a stacked map aligns to it when ready", () => {
     mount(makeLayers({ compare: compareRight }))
     expect(out().mapCanvasProps.onViewSettled).toBe(mockView.track)
-    act(() => out().onSecondStyleLoaded())
+    act(() => out().onStackedReady("second"))
     expect(mockView.alignTo).toHaveBeenLastCalledWith(mockSyncs[0].cameraRef)
-    act(() => out().onThirdReady())
+    act(() => out().onStackedReady("third"))
     expect(mockView.alignTo).toHaveBeenLastCalledWith(mockSyncs[1].cameraRef)
-    expect(mockSideStep.onThirdReady).toHaveBeenCalledTimes(1)
+    // Ready only aligns: covers and steps wait for the visible report.
+    expect(mockSideStep.onThirdReady).not.toHaveBeenCalled()
+    expect(mockSideStep.onStyleLoaded).not.toHaveBeenCalledWith("second")
+    expect(out().onThirdReady).toBe(mockSideStep.onThirdReady)
   })
 
   test("the second map's style load goes to the side change only", () => {

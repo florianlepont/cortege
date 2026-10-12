@@ -92,7 +92,12 @@ export function ExplorerSwipeLayers({
   }
   const { controller } = view
   // A stacked map (the second one, or the third one of a side change), kept under a stable key.
-  function stackedMap(key: string, map: StackedMapView, onReady: () => void) {
+  function stackedMap(
+    key: string,
+    map: StackedMapView,
+    which: "second" | "third",
+    onRevealed: () => void,
+  ) {
     return (
       <WipeLayer
         key={key}
@@ -105,7 +110,8 @@ export function ExplorerSwipeLayers({
         content={contentFor(map.layer)}
         styleRefreshKey={contentProps.styleRefreshKey}
         styleRetryKey={contentProps.styleRetryKey}
-        onReady={onReady}
+        onReady={() => swipe.onStackedReady(which)}
+        onRevealed={onRevealed}
         onStyleFailed={() => actions.styleFailed(map.layer)}
       />
     )
@@ -139,8 +145,10 @@ export function ExplorerSwipeLayers({
         target={swipe.immersive.target}
       >
         {children}
-        {view.second ? stackedMap("second-map", view.second, swipe.onSecondStyleLoaded) : null}
-        {view.third ? stackedMap("third-map", view.third, swipe.onThirdReady) : null}
+        {view.second
+          ? stackedMap("second-map", view.second, "second", swipe.onSecondStyleLoaded)
+          : null}
+        {view.third ? stackedMap("third-map", view.third, "third", swipe.onThirdReady) : null}
         {view.comparing && view.leftLayer && view.rightLayer ? (
           <>
             <CompareLine lineX={view.lineX} top={capsuleTop} />

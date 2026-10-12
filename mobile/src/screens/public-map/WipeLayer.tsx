@@ -32,6 +32,8 @@ export type WipeLayerProps = {
   onStyleFailed?: () => void
   /** The map is loaded and rendered with its layer's style, about to be revealed. */
   onReady?: () => void
+  /** The map is visible (see `MapStack`): a cover over it can go. */
+  onRevealed?: () => void
 }
 
 /**
@@ -59,6 +61,7 @@ export function WipeLayer({
   onStyleLoaded,
   onStyleFailed,
   onReady,
+  onRevealed,
 }: WipeLayerProps) {
   const { mapStyle, cadastreInStyle, cadastreOpacity } = useMapStyle(
     layer,
@@ -76,6 +79,7 @@ export function WipeLayer({
       onStyleLoaded={onStyleLoaded}
       onStyleFailed={onStyleFailed}
       onReady={onReady}
+      onRevealed={onRevealed}
     >
       {content({ cadastreInStyle, cadastreOpacity })}
       {/* The device's position, over the cadastre and the parcels of this stacked map too. */}

@@ -127,6 +127,7 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
     noticesTop: 58,
     onBaseStyleLoaded: jest.fn(),
     onSecondStyleLoaded: jest.fn(),
+    onStackedReady: jest.fn(),
     onThirdReady: jest.fn(),
     onPanelOpen: jest.fn(),
     toggleSwipe: jest.fn(),
@@ -304,13 +305,17 @@ describe("the stacked maps", () => {
     expect(keys).toEqual(["second-map"])
   })
 
-  test("the second map reports when it is ready, so a side change cover waiting for it can go", () => {
+  test("the second map reports when it is visible, so a side change cover waiting for it can go", () => {
     const { tree, swipe } = render(makeView({ second: stacked("photos-1950") }))
+    // Ready: only the camera alignment; the cover goes when the map is visible.
     named(tree, "WipeLayer")[0].props.onReady()
+    expect(swipe.onStackedReady).toHaveBeenCalledWith("second")
+    expect(swipe.onSecondStyleLoaded).not.toHaveBeenCalled()
+    named(tree, "WipeLayer")[0].props.onRevealed()
     expect(swipe.onSecondStyleLoaded).toHaveBeenCalledTimes(1)
   })
 
-  test("the third map reports when it is ready, so a step applies its side", () => {
+  test("the third map reports when it is visible, so a step applies its side", () => {
     const { tree, swipe } = render(
       makeView({
         comparing: true,
@@ -326,6 +331,9 @@ describe("the stacked maps", () => {
       }),
     )
     named(tree, "WipeLayer")[1].props.onReady()
+    expect(swipe.onStackedReady).toHaveBeenCalledWith("third")
+    expect(swipe.onThirdReady).not.toHaveBeenCalled()
+    named(tree, "WipeLayer")[1].props.onRevealed()
     expect(swipe.onThirdReady).toHaveBeenCalledTimes(1)
   })
 

@@ -14,7 +14,7 @@ import { downloadButtonTopOf, overlaySlotTopOf } from "./styles"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
 import { forgetPosition, lastPosition, rememberPosition } from "../../app/last-position"
 import { IMMERSIVE_OUT_MS } from "../../map/swipe-machine"
-import { STYLE_SWAP_GAP_MS } from "./MapStack"
+import { PRESENT_DELAY_MS, REVEAL_DELAY_MS, STYLE_SWAP_GAP_MS } from "./MapStack"
 import { COVER_PRESENT_MS } from "./useCoverRelease"
 
 // The shared Reanimated mock hands out a fresh shared value on every render. The grabber's drag
@@ -1559,6 +1559,13 @@ describe("PublicMapScreen", () => {
         const show = (map: ReactTestInstance) => {
           act(() => map.props.onDidFinishLoadingStyle())
           act(() => map.props.onDidFinishRenderingMapFully())
+          // Ready, then visible (opacity applied and presented): only then does a step go on.
+          act(() => {
+            jest.advanceTimersByTime(REVEAL_DELAY_MS)
+          })
+          act(() => {
+            jest.advanceTimersByTime(PRESENT_DELAY_MS)
+          })
         }
         expect(tagName("left")).toBe("Plan")
         expect(tagName("right")).toBe("Satellite")

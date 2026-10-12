@@ -31,6 +31,7 @@ import { brandMapTokens } from "../../app/brand-tokens"
 import { boundsFromRegion } from "../../map/maplibre/regions"
 import {
   MapStack,
+  PRESENT_DELAY_MS,
   REVEAL_DELAY_MS,
   STYLE_SWAP_GAP_MS,
   useMapSync,
@@ -295,6 +296,44 @@ describe("MapStack", () => {
       jest.advanceTimersByTime(1)
     })
     expect(opacityOf(h.tree)).toBe(1)
+  })
+
+  test("onRevealed comes after the opacity is applied and presented, never at ready", () => {
+    const events: string[] = []
+    const h = mount({
+      onReady: () => events.push("ready"),
+      onRevealed: () => events.push(`revealed:${opacityOf(h.tree)}`),
+    })
+    makeReady(h)
+    expect(events).toEqual(["ready"])
+    act(() => {
+      jest.advanceTimersByTime(REVEAL_DELAY_MS)
+    })
+    expect(opacityOf(h.tree)).toBe(1)
+    // Visible in the tree, but the native view has not presented it yet.
+    expect(events).toEqual(["ready"])
+    act(() => {
+      jest.advanceTimersByTime(PRESENT_DELAY_MS - 1)
+    })
+    expect(events).toEqual(["ready"])
+    act(() => {
+      jest.advanceTimersByTime(1)
+    })
+    expect(events).toEqual(["ready", "revealed:1"])
+  })
+
+  test("a style change before the present delay cancels onRevealed", () => {
+    const onRevealed = jest.fn()
+    const h = mount({ onRevealed })
+    makeReady(h)
+    act(() => {
+      jest.advanceTimersByTime(REVEAL_DELAY_MS)
+    })
+    h.rerender({ mapStyle: OTHER })
+    act(() => {
+      jest.advanceTimersByTime(PRESENT_DELAY_MS * 2)
+    })
+    expect(onRevealed).not.toHaveBeenCalled()
   })
 
   test("a style change hides it at once, and going back to the shown style shows it again", () => {

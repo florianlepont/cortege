@@ -117,9 +117,11 @@ export type ExplorerSwipe = {
   noticesTop: number
   /** The Explorer map finished loading a style: a cover over it can go (after it rendered). */
   onBaseStyleLoaded: () => void
-  /** The second map is ready with its layer: a side change cover over it can go. */
+  /** A stacked map is ready and about to show: it aligns to the Explorer camera first. */
+  onStackedReady: (map: "second" | "third") => void
+  /** The second map is visible with its layer: a side change cover over it can go. */
   onSecondStyleLoaded: () => void
-  /** The third map (a side change) is ready: the step may apply its side. */
+  /** The third map (a side change) is visible: the step may apply its side. */
   onThirdReady: () => void
   /** A panel (the bubble or the card) opened: the swipe mode ends, a comparison stays. */
   onPanelOpen: () => void
@@ -298,15 +300,11 @@ export function useExplorerSwipe({
     if (cover?.kind !== "full" || state.loadingBase === cover.layer) coverRelease.onStyleLoaded()
     sideStep.onStyleLoaded("base")
   })
-  // A stacked map about to be revealed first jumps to the Explorer map's settled camera.
-  const onSecondStyleLoaded = useLatestCallback(() => {
-    view.alignTo(secondSync.cameraRef)
-    sideStep.onStyleLoaded("second")
-  })
-  const onThirdReady = useLatestCallback(() => {
-    view.alignTo(thirdSync.cameraRef)
-    sideStep.onThirdReady()
-  })
+  const onStackedReady = useLatestCallback((map: "second" | "third") =>
+    view.alignTo((map === "second" ? secondSync : thirdSync).cameraRef),
+  )
+  // Covers go (and the step applies its side) only once the map is visible, never at "ready".
+  const onSecondStyleLoaded = useLatestCallback(() => sideStep.onStyleLoaded("second"))
 
   // Leaving the Explorer tab ends the swipe mode (a comparison stays).
   const focused = useScreenFocus()
@@ -387,8 +385,9 @@ export function useExplorerSwipe({
     skippedVisible: controller.skippedVisible,
     noticesTop,
     onBaseStyleLoaded,
+    onStackedReady,
     onSecondStyleLoaded,
-    onThirdReady,
+    onThirdReady: sideStep.onThirdReady,
     onPanelOpen,
     toggleSwipe,
     quit,

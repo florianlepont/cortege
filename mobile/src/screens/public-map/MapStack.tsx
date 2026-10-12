@@ -43,6 +43,8 @@ import { useStackedReady } from "./useStackedReady"
 export const STYLE_SWAP_GAP_MS = 50
 /** A map turns visible this long (ms) after its clip opened and its camera was aligned: one frame or two. */
 export const REVEAL_DELAY_MS = 34
+/** `onRevealed` comes this long (ms) after the opacity was applied: the native view presented it. */
+export const PRESENT_DELAY_MS = 34
 
 /** A stacked map's camera: the ref to pass to `MapStack` and the handler to feed from the Explorer map. */
 export function useMapSync(): {
@@ -95,6 +97,8 @@ export type MapStackProps = {
   onStyleFailed?: () => void
   /** The map is loaded and rendered with its current style (and about to be revealed). */
   onReady?: () => void
+  /** The map is actually visible: its opacity was applied and presented. Covers may go now. */
+  onRevealed?: () => void
 }
 
 /** A non-interactive map clipped to the strip between `clipLeft` and `clipRight`. */
@@ -110,6 +114,7 @@ export function MapStack({
   onStyleLoaded,
   onStyleFailed,
   onReady,
+  onRevealed,
 }: MapStackProps) {
   const { scheme } = useBrandTheme()
   const [styleLoaded, setStyleLoaded] = useState(false)
@@ -127,6 +132,13 @@ export function MapStack({
     revealTimer.current = null
   }, [])
   useEffect(() => clearReveal, [clearReveal])
+  const onRevealedLatest = useRef(onRevealed)
+  onRevealedLatest.current = onRevealed
+  useEffect(() => {
+    if (!revealed) return undefined
+    const timer = setTimeout(() => onRevealedLatest.current?.(), PRESENT_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [revealed])
   const handleReady = useCallback(() => {
     onReady?.()
     wasReady.current = true
