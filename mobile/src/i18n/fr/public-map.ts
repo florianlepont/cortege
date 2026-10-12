@@ -6,8 +6,6 @@
 const plural = (count: number, one: string, many: string) => (count > 1 ? many : one)
 
 export const publicMapFr = {
-  count: (count: number) =>
-    count === 0 ? "Aucun relevé ici" : `${count} ${plural(count, "relevé", "relevés")} ici`,
   clusterList: {
     title: (count: number) => `${count} ${plural(count, "relevé", "relevés")} à cet endroit`,
     // Positions are exact since 2026-10-08: only surveys of the same parcels, or too close to
@@ -20,7 +18,7 @@ export const publicMapFr = {
   cluster: {
     count: (count: number) => (count > 99 ? "99+" : String(count)),
   },
-  // MAP-03: the score-band pastille legend, opened by the (i) button beside the count.
+  // MAP-03: the score-band pastille legend, opened by the (i) button.
   legend: {
     title: "Légende",
     subtitle: "Score IBP du dernier relevé terminé, sur 50.",

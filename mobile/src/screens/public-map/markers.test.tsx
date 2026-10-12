@@ -351,9 +351,6 @@ describe("IBP totals out of 50 and the cas on the map (01.8 D-03, D-10)", () => 
 
 describe("fr.publicMap", () => {
   test("uses singular and plural forms", () => {
-    expect(fr.publicMap.count(0)).toBe("Aucun relevé ici")
-    expect(fr.publicMap.count(1)).toBe("1 relevé ici")
-    expect(fr.publicMap.count(3)).toBe("3 relevés ici")
     expect(fr.publicMap.a11y.cluster(1)).toBe("Groupe de 1 relevé")
     expect(fr.publicMap.clusterList.title(1)).toBe("1 relevé à cet endroit")
     expect(fr.publicMap.clusterList.title(4)).toBe("4 relevés à cet endroit")

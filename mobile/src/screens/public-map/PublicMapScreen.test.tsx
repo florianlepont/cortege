@@ -388,7 +388,7 @@ describe("PublicMapScreen", () => {
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1)
     update({ ...props, items: [item("c", 45.7, 4.8)] })
     expect(mockAnimateToRegion).toHaveBeenCalledTimes(1)
-    expect(texts()).toContain(fr.publicMap.count(1))
+    expect(markers()).toHaveLength(1)
   })
 
   test("a marker press opens the survey's page at once, with no card in between (12.2-19)", () => {
@@ -465,8 +465,18 @@ describe("PublicMapScreen", () => {
         ownItems: [item("o-1", 45.7, 4.8, 27), item("o-2", 48.8, 2.3, 31)],
       }),
     )
-    expect(texts()).toContain(fr.publicMap.count(2))
+    expect(markers()).toHaveLength(2)
     expect(texts()).toContain(fr.offlineMap.indicator.offline)
+  })
+
+  test("the Explorer draws no survey count and shows a bare spinner while the surveys load (item 13 e)", () => {
+    const props = makeProps({ items: [item("a", 45.7, 4.8), item("b", 48.8, 2.3)] })
+    mount(props)
+    expect(texts().filter((text) => /relev[ée]s? ici/.test(text))).toEqual([])
+    expect(byTestId("map-legend-loading")).toHaveLength(0)
+    update({ ...props, loading: true })
+    expect(texts().filter((text) => /relev[ée]s? ici/.test(text))).toEqual([])
+    expect(byTestId("map-legend-loading")).toHaveLength(1)
   })
 
   test("a focus request centres the map and highlights the survey's marker, no panel (OA-59)", () => {
@@ -645,7 +655,6 @@ describe("PublicMapScreen", () => {
       act(() => byLabel(fr.mapLayers.basemap.buttonA11y).props.onPress())
       // The globe enters the swipe mode (Phase 28): the saved basemap is untouched.
       expect(props.onChangeBasemap).not.toHaveBeenCalled()
-      expect(texts()).toContain(fr.publicMap.count(1))
 
       // Zoom in to parcel level: the cadastre loads after the debounce.
       const map = tree.root.find((node) => (node.type as unknown) === "MapLibreMap")
@@ -945,7 +954,7 @@ describe("PublicMapScreen", () => {
       expect(overlayButton().props.accessibilityState).toEqual({ expanded: false })
       expect(bubble()).toHaveLength(0)
       expect(parcelsLayer().props.mode).toBe("all")
-      expect(texts()).toContain(fr.publicMap.count(1))
+      expect(texts().filter((text) => /relev[ée]s? ici/.test(text))).toEqual([])
       act(() => byLabel(fr.publicMap.a11y.showLegend).props.onPress())
       expect(texts()).toContain(fr.publicMap.legend.attribution)
       // No notice at rest.

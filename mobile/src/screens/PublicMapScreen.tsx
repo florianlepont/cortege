@@ -359,7 +359,6 @@ export function PublicMapScreen({
         <MapBottomDock bottom={dockLift} locating={locating} onLocate={onLocate} />
         <ScoreLegend
           bottom={controlsBottom}
-          count={mapItems.length}
           loading={loading}
           isOffline={isOffline}
           attributionLines={layers.legendLines ?? undefined}

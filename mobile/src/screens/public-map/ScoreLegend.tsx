@@ -37,8 +37,11 @@ const SCORE_ROWS: MapLegendRow[] = [
 
 export type MapLegendProps = {
   bottom: number
-  /** The count pill's text ("12 relevés ici"). */
-  countLabel: string
+  /**
+   * The count pill's text (the parcel picker's "3 parcelles"). The Explorer gives none: it has no
+   * count pill (UI-SPEC section 1, CONTEXT item 13 e).
+   */
+  countLabel?: string
   title: string
   subtitle: string
   rows: MapLegendRow[]
@@ -54,8 +57,9 @@ export type MapLegendProps = {
 }
 
 /**
- * Bottom-left of every interactive map: a count with the (i) button beside it, which opens the
- * legend of the map's colours (MAP-03). Liquid Glass on iOS 26, on the map control glass
+ * Bottom-left of every interactive map: the (i) button, which opens the legend of the map's
+ * colours (MAP-03), with a count pill before it when a label is given (the parcel picker). Without
+ * a count a bare spinner right of the (i) button shows that the data is loading. Liquid Glass on iOS 26, on the map control glass
  * (`theme.visual.mapControl`, near opaque in dark: the map stays light, 12.2-19 fix round). The
  * Explorer and the parcel picker both draw it, with their own rows.
  */
@@ -110,10 +114,14 @@ export const MapLegend = memo(function MapLegend({
         </GlassSurface>
       ) : null}
       <View style={styles.line}>
-        <GlassSurface tone="auto" surface={glass} style={styles.countPill}>
-          {loading ? <ActivityIndicator size="small" color={theme.visual.mapControl.icon} /> : null}
-          <Text style={styles.countText}>{countLabel}</Text>
-        </GlassSurface>
+        {countLabel !== undefined ? (
+          <GlassSurface tone="auto" surface={glass} style={styles.countPill}>
+            {loading ? (
+              <ActivityIndicator size="small" color={theme.visual.mapControl.icon} />
+            ) : null}
+            <Text style={styles.countText}>{countLabel}</Text>
+          </GlassSurface>
+        ) : null}
         <GlassSurface tone="auto" interactive surface={glass} style={styles.toggle}>
           <AppPressable
             disableScale
@@ -132,6 +140,13 @@ export const MapLegend = memo(function MapLegend({
             />
           </AppPressable>
         </GlassSurface>
+        {countLabel === undefined && loading ? (
+          <ActivityIndicator
+            size="small"
+            color={theme.visual.mapControl.icon}
+            testID="map-legend-loading"
+          />
+        ) : null}
         {isOffline ? <OfflineIndicatorBadge /> : null}
       </View>
     </View>
@@ -140,20 +155,17 @@ export const MapLegend = memo(function MapLegend({
 
 export type ScoreLegendProps = {
   bottom: number
-  /** Surveys in the loaded viewport (the "12 relevés ici" pill). */
-  count: number
   loading?: boolean
   isOffline?: boolean
   /** Phase 28: one source line per layer shown, then the common attribution (null: default text). */
   attributionLines?: string[]
 }
 
-/** The Explorer's legend: the survey count and the score colours of its markers. */
-export const ScoreLegend = memo(function ScoreLegend({ count, ...rest }: ScoreLegendProps) {
+/** The Explorer's legend: the score colours of its markers, no count pill. */
+export const ScoreLegend = memo(function ScoreLegend(props: ScoreLegendProps) {
   return (
     <MapLegend
-      {...rest}
-      countLabel={t.count(count)}
+      {...props}
       title={t.legend.title}
       subtitle={t.legend.subtitle}
       rows={SCORE_ROWS}
