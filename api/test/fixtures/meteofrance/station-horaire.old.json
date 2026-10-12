@@ -1,0 +1,47 @@
+{
+  "captured_at": "2026-10-12T06:19:41Z",
+  "date_parameter": "date",
+  "requested_at": "2026-10-11T00:00:00Z",
+  "http_status": 200,
+  "responses": [
+    {
+      "station_id": "77186002",
+      "body": [
+        {
+          "lat": 48.406,
+          "lon": 2.6785,
+          "geo_id_insee": "77186002",
+          "reference_time": "2026-10-11T00:10:06Z",
+          "insert_time": "2026-10-11T00:02:09Z",
+          "validity_time": "2026-10-11T00:00:00Z",
+          "t": 282.75,
+          "td": null,
+          "tx": 282.75,
+          "tn": 280.75,
+          "u": null,
+          "ux": null,
+          "un": null,
+          "dd": null,
+          "ff": null,
+          "dxy": null,
+          "fxy": null,
+          "ddraf": null,
+          "raf": null,
+          "rr1": 0,
+          "t_10": null,
+          "t_20": null,
+          "t_50": null,
+          "t_100": null,
+          "vv": null,
+          "etat_sol": null,
+          "sss": null,
+          "n": null,
+          "insolh": null,
+          "ray_glo01": null,
+          "pres": null,
+          "pmer": null
+        }
+      ]
+    }
+  ]
+}
