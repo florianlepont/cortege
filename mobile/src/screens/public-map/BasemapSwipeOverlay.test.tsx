@@ -270,11 +270,16 @@ describe("hint", () => {
 
   test("the intro hint shows while no finger is down", () => {
     const hint = byId(render({ introHintVisible: true }), "swipe-hint")[0]
-    expect(textsOf(hint)).toEqual(["Glissez · lâchez au milieu pour comparer"])
+    expect(textsOf(hint)).toEqual([
+      "Faites glisser votre doigt sur la carte pour changer de fond. Relâchez au milieu pour comparer.",
+    ])
     expect(hint.props.pointerEvents).toBe("none")
+    // Decorative: the indicator carries the adjustable actions for a screen reader.
+    expect(hint.props.accessibilityElementsHidden).toBe(true)
+    expect(hint.props.importantForAccessibility).toBe("no-hide-descendants")
     expect(flat(hint.props.style)).toMatchObject({
       minHeight: 24,
-      maxWidth: 232,
+      maxWidth: 300,
       backgroundColor: defaultTheme.visual.mapHint.fill,
     })
     const text = hint.findByType("Text" as never)

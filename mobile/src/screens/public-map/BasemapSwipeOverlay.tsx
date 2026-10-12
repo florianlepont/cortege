@@ -17,6 +17,8 @@ const t = fr.mapLayers.basemap
 
 const SIDE_INSET = 16
 const MAX_WIDTH = 232
+// The intro hint is two short sentences: wide enough for two lines.
+const HINT_MAX_WIDTH = 300
 const INDICATOR_HEIGHT = 36
 const CHEVRON_SIZE = 14
 const DOT = 6
@@ -164,7 +166,13 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
           entering={enter()}
           exiting={FadeOut.duration(HINT_FADE_MS).reduceMotion(ReduceMotion.System)}
         >
-          <View testID="swipe-hint" pointerEvents="none" style={styles.hint}>
+          <View
+            testID="swipe-hint"
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.hint}
+          >
             <Text style={styles.hintText}>{hint}</Text>
           </View>
         </Animated.View>
@@ -230,7 +238,7 @@ function createStyles(theme: BrandTheme) {
     },
     hint: {
       minHeight: 24,
-      maxWidth: MAX_WIDTH,
+      maxWidth: HINT_MAX_WIDTH,
       paddingVertical: brandSpacing4.xs,
       paddingHorizontal: 10,
       borderRadius: 12,

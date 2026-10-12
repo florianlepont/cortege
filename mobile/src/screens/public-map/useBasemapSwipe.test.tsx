@@ -231,7 +231,7 @@ describe("playHapticCue", () => {
 })
 
 describe("entering", () => {
-  test("announces the layer, shows the intro hint for HINT_MS and the skipped notice", async () => {
+  test("announces the layer, keeps the intro hint until the first touch and shows the skipped notice for HINT_MS", async () => {
     layers = makeLayers({ swipeMode: false })
     available = () => true
     skipped = 2
@@ -249,12 +249,20 @@ describe("entering", () => {
     act(() => {
       jest.advanceTimersByTime(HINT_MS - 1)
     })
-    expect(latest.introHintVisible).toBe(true)
+    expect(latest.skippedVisible).toBe(true)
     act(() => {
       jest.advanceTimersByTime(1)
     })
-    expect(latest.introHintVisible).toBe(false)
     expect(latest.skippedVisible).toBe(false)
+    // The intro hint outlives the notice: it goes with the first touch of the map.
+    act(() => {
+      jest.advanceTimersByTime(IDLE_MS - 1000)
+    })
+    expect(latest.introHintVisible).toBe(true)
+    begin(380)
+    expect(latest.introHintVisible).toBe(false)
+    lift()
+    expect(latest.introHintVisible).toBe(false)
   })
 
   test("no skipped notice when every layer is available", () => {

@@ -17,8 +17,8 @@ type Params = {
 }
 
 /**
- * The clocks of the swipe mode (UI-SPEC section 3): the entry hint and the skipped-layers notice
- * for HINT_MS, and the idle exit after IDLE_MS without a gesture or an action. The idle timer is
+ * The clocks of the swipe mode (UI-SPEC section 3): the skipped-layers notice for HINT_MS (the entry
+ * hint stays until `dismissIntro`, the first touch of the map), and the idle exit after IDLE_MS without a gesture or an action. The idle timer is
  * restarted by `armIdle` (after every gesture end and action), paused during a gesture and off
  * while a screen reader is on, so nobody is ejected mid-action.
  */
@@ -54,10 +54,10 @@ export function useSwipeModeTimers({
     setSkippedVisible(skippedCount > 0)
     onEnter()
     return setTimeout(() => {
-      setIntroHintVisible(false)
       setSkippedVisible(false)
     }, HINT_MS)
   })
+  const dismissIntro = useCallback(() => setIntroHintVisible(false), [])
   const leave = useLatestCallback(() => {
     setIntroHintVisible(false)
     setSkippedVisible(false)
@@ -91,5 +91,5 @@ export function useSwipeModeTimers({
     }
   }, [])
 
-  return { introHintVisible, skippedVisible, armIdle, clearIdle }
+  return { introHintVisible, skippedVisible, armIdle, clearIdle, dismissIntro }
 }

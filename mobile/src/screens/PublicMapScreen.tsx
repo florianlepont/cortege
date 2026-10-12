@@ -37,14 +37,16 @@ const NO_SURVEY_PARCELS: ReadonlySet<string> = new Set()
 const noop = () => undefined
 // The card sits one margin above the tab bar (UI-SPEC section 6); the locate arrow above the card.
 const CARD_MARGIN = 14
-// The swipe mode's white zones around the receded window (owner layout): the notices sit under it,
-// just above the tab bar; the carousel (indicator pill 36 + gap 8 + dots 8) sits over it, under the
-// status bar. Neither is drawn over the map.
+// Swipe mode white zones (none over the map): carousel (pill 36 + gap 8 + dots 8) under the status
+// bar, then SWIPE_TOP_MARGIN; from the tab bar up: gap, hint bubble lifted by SWIPE_HINT_LIFT (two
+// lines, SWIPE_HINT_ZONE), one notice pill (SWIPE_NOTICES_ZONE), a last gap.
 const SWIPE_ZONE_GAP = 8
-// The transient hint (a 24 pt pill) sits just above the tab bar, the notices above it.
-const SWIPE_HINT_ZONE = 36
-const SWIPE_NOTICES_ZONE = 44
 const SWIPE_TOP_STACK_HEIGHT = 52
+const SWIPE_TOP_MARGIN = 16
+const SWIPE_HINT_LIFT = 14
+const SWIPE_HINT_BOTTOM = SWIPE_ZONE_GAP + SWIPE_HINT_LIFT
+const SWIPE_HINT_ZONE = 40
+const SWIPE_NOTICES_ZONE = 28
 const DOCK_GAP = 10
 // A second tap within this window (a double tap, or a tap during the push) opens nothing more.
 const OPEN_SURVEY_GUARD_MS = 800
@@ -219,9 +221,9 @@ export function PublicMapScreen({
     cameraRef,
     region: viewport.region,
     closePanels: panels.closePanel,
-    windowTop: capsuleTop + SWIPE_TOP_STACK_HEIGHT + SWIPE_ZONE_GAP,
+    windowTop: capsuleTop + SWIPE_TOP_STACK_HEIGHT + SWIPE_TOP_MARGIN,
     windowBottom:
-      dockBottom + SWIPE_ZONE_GAP + SWIPE_HINT_ZONE + SWIPE_NOTICES_ZONE + SWIPE_ZONE_GAP,
+      dockBottom + SWIPE_HINT_BOTTOM + SWIPE_HINT_ZONE + SWIPE_NOTICES_ZONE + SWIPE_ZONE_GAP,
   })
   swipePanelExitRef.current = swipe.onPanelOpen
   const { onBaseStyleLoaded, skippedVisible } = swipe
@@ -286,7 +288,7 @@ export function PublicMapScreen({
         swipe={swipe}
         layers={layers}
         capsuleTop={capsuleTop}
-        hintBottom={dockBottom + SWIPE_ZONE_GAP}
+        hintBottom={dockBottom + SWIPE_HINT_BOTTOM}
         contentProps={{
           parcelStatuses,
           parcelLayerRenderable: viewport.parcelLayerRenderable,
@@ -343,7 +345,9 @@ export function PublicMapScreen({
         cardBottom={cardBottom}
         noticesTop={swipe.noticesTop}
         noticesBottom={
-          swipe.immersive.buttonsHidden ? dockBottom + SWIPE_ZONE_GAP + SWIPE_HINT_ZONE : undefined
+          swipe.immersive.buttonsHidden
+            ? dockBottom + SWIPE_HINT_BOTTOM + SWIPE_HINT_ZONE
+            : undefined
         }
         buttons={{ opacity: swipe.immersive.buttons, hidden: swipe.immersive.buttonsHidden }}
       >

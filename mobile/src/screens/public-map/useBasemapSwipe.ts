@@ -147,7 +147,6 @@ export function useBasemapSwipe({
   const [wipe, setWipe] = useState<WipeState>(null)
   const [live, setLive] = useState<Live | null>(null)
   const [fingerDown, setFingerDown] = useState(false)
-
   const gestureRef = useRef<WipeGesture | null>(null)
   const liveRef = useRef<Live | null>(null)
   const wipeRef = useRef<WipeState>(null)
@@ -168,7 +167,7 @@ export function useBasemapSwipe({
   }
 
   const announce = (text: string) => AccessibilityInfo.announceForAccessibility(text)
-  const { introHintVisible, skippedVisible, armIdle, clearIdle } = useSwipeModeTimers({
+  const timers = useSwipeModeTimers({
     swipeMode,
     skippedCount,
     gestureActive: () => gestureRef.current !== null,
@@ -235,7 +234,8 @@ export function useBasemapSwipe({
   const handleBegin = useLatestCallback((event: PanEvent) => {
     if (!layers.state.swipeMode) return
     flushPending()
-    clearIdle()
+    timers.clearIdle()
+    timers.dismissIntro()
     setFingerDown(true)
     gestureRef.current = beginGesture({ x: toWindow(event.x ?? 0), y: event.y ?? 0 })
   })
@@ -320,7 +320,7 @@ export function useBasemapSwipe({
           }
     playHapticCue(releaseHaptic(result.outcome))
     applyRelease(gesture, result)
-    armIdle()
+    timers.armIdle()
   }
 
   const handleEnd = useLatestCallback((_event: PanEvent, success?: boolean) => {
@@ -351,7 +351,7 @@ export function useBasemapSwipe({
     playHapticCue("tick")
     layers.actions.commitBase(target)
     announce(t.announceChanged(swipeLabel(target)))
-    armIdle()
+    timers.armIdle()
   }
   const next = useLatestCallback(() => step(1))
   const previous = useLatestCallback(() => step(-1))
@@ -370,7 +370,7 @@ export function useBasemapSwipe({
         right: swipeLabel(compareTarget).name,
       }),
     )
-    armIdle()
+    timers.armIdle()
   })
   const done = useLatestCallback(() => layers.actions.exitSwipe())
 
@@ -384,8 +384,8 @@ export function useBasemapSwipe({
     hintText,
     fingerDown,
     indicatorLayer: live?.incoming ?? displayed,
-    introHintVisible,
-    skippedVisible,
+    introHintVisible: timers.introHintVisible,
+    skippedVisible: timers.skippedVisible,
     compareAvailable: compareTarget !== null,
     next,
     previous,

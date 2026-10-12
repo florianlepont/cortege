@@ -1320,13 +1320,13 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        // 800 tall; top: capsule 30 + 52 (carousel) + 8; bottom: 50 (tab bar) + 8 + 36 (hint) + 44
-        // (notices) + 8. 564 left: scaleY 0.705, scaleX 0.7755, the centre 28 up.
-        expect(scale(props)).toBeCloseTo(0.7755, 5)
+        // 800 tall; top: capsule 30 + 52 (carousel) + 16; bottom: 50 (tab bar) + 8 + 14 (hint lift) +
+        // 40 (hint) + 28 (notices) + 8. 554 left: scaleY 0.6925, scaleX 0.76175, the centre 25 up.
+        expect(scale(props)).toBeCloseTo(0.76175, 5)
         const moved = flatStyle(byTestId("immersive-window")[0].props.style).transform as {
           translateY?: number
         }[]
-        expect(moved.find((t) => t.translateY !== undefined)!.translateY).toBeCloseTo(-28, 5)
+        expect(moved.find((t) => t.translateY !== undefined)!.translateY).toBeCloseTo(-25, 5)
         expect(buttons().props.pointerEvents).toBe("none")
         expect(buttons().props.accessibilityElementsHidden).toBe(true)
         expect(buttons().props.importantForAccessibility).toBe("no-hide-descendants")
@@ -1362,7 +1362,7 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.7755, 5)
+        expect(scale(props)).toBeCloseTo(0.76175, 5)
         drag(380, 200)
         release()
         expect(present("compare-grabber")).toBe(true)
@@ -1394,7 +1394,7 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.7755, 5)
+        expect(scale(props)).toBeCloseTo(0.76175, 5)
         expect(buttons().props.pointerEvents).toBe("none")
         act(() =>
           byTestId("swipe-indicator")[0].props.onAccessibilityAction({
@@ -1766,8 +1766,8 @@ describe("PublicMapScreen", () => {
       // The swipe mode puts the notices at the bottom.
       // The quit pill of the comparison holds the top: its 40 pt plus 8.
       expect(swipeStyle.top).toBeUndefined()
-      // 50 (tab bar) + 8 + 36 (hint): in the white zone under the receded window, over the hint.
-      expect(swipeStyle.bottom).toBe(50 + 8 + 36)
+      // 50 (tab bar) + 8 + 14 + 40 (hint): in the white zone under the window, over the hint.
+      expect(swipeStyle.bottom).toBe(50 + 8 + 14 + 40)
       expect(pillTop).toBe(30 + 40 + 8)
     })
   })

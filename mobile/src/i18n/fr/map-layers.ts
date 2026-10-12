@@ -40,7 +40,8 @@ export const mapLayersFr = {
     announceEnter: ({ name, era }: { name: string; era: string }) =>
       `Changement de fond. ${name}, ${era}.`,
     announceChanged: ({ name, era }: { name: string; era: string }) => `${name}, ${era}`,
-    hintSwipe: "Glissez · lâchez au milieu pour comparer",
+    hintSwipe:
+      "Faites glisser votre doigt sur la carte pour changer de fond. Relâchez au milieu pour comparer.",
     // Each zone of the swipe has its hint (CONTEXT item 11): cancel, compare, commit.
     hintCancel: "Lâchez pour revenir",
     hintRelease: "Lâchez pour comparer",
