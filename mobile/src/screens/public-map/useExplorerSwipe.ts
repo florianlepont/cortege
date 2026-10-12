@@ -16,6 +16,7 @@ import { COMPARISON_BUILT, LEFT_MAP_ANDROID_VIEW, WIPE_PRESENTATION } from "./ma
 import { useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
 import { useCurtainClip, type CurtainPhase } from "./useCurtainClip"
 import type { ExplorerLayers } from "./useExplorerLayers"
+import { immersiveApplies, useImmersive } from "./useImmersive"
 import { useSideStep } from "./useSideStep"
 import type { MapLayers } from "./useMapLayersState"
 
@@ -99,6 +100,18 @@ export type ExplorerSwipeView = {
   onTopControlHeight: (height: number) => void
 }
 
+/** The immersive effect of the swipe mode (UI-SPEC section 3c), for the window and the buttons. */
+export type ExplorerImmersive = {
+  /** The window's progress: 0 full size, 1 receded. */
+  window: SharedValue<number>
+  /** The map buttons' opacity: 1 shown, 0 faded out. */
+  buttons: SharedValue<number>
+  /** The window transform applies on this platform (`immersiveApplies()`). */
+  applied: boolean
+  /** The map buttons take no touch and are out of the accessibility tree: the swipe mode is on. */
+  buttonsHidden: boolean
+}
+
 export type ExplorerSwipe = {
   /** Props to spread on `MapCanvas`. */
   mapCanvasProps: Pick<
@@ -106,6 +119,8 @@ export type ExplorerSwipe = {
     "frozen" | "onViewChange" | "rotationLocked" | "hideMarkers" | "androidView"
   >
   layersView: ExplorerSwipeView
+  /** The receding window and the fading buttons: the swipe mode only, never the comparison. */
+  immersive: ExplorerImmersive
   /** "Quitter la comparaison" shows: a comparison exists (the map is free in it). */
   quitPillVisible: boolean
   /** The "N fonds non téléchargés sont ignorés" pill (entry of the swipe mode). */
@@ -157,11 +172,17 @@ export function useExplorerSwipe({
   const compare = COMPARISON_BUILT ? state.compare : null
   const comparing = compare !== null
 
+  // The effect belongs to the swipe mode only; the comparison is full size with every button.
+  const immersive = useImmersive(swipeMode)
+  const windowApplied = immersiveApplies()
+
   const controller = useBasemapSwipe({
     layers,
     width,
     isAvailable,
     skippedCount: skippedCount(isAvailable),
+    windowProgress: immersive.window,
+    windowApplied,
   })
   const { wipe } = controller
 
@@ -332,6 +353,12 @@ export function useExplorerSwipe({
   return {
     mapCanvasProps,
     layersView,
+    immersive: {
+      window: immersive.window,
+      buttons: immersive.buttons,
+      applied: windowApplied,
+      buttonsHidden: swipeMode,
+    },
     quitPillVisible,
     skippedVisible: controller.skippedVisible,
     noticesTop,

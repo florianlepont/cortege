@@ -112,6 +112,12 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
   return {
     mapCanvasProps: {},
     layersView: view,
+    immersive: {
+      window: { value: 0 } as ExplorerSwipe["immersive"]["window"],
+      buttons: { value: 1 } as ExplorerSwipe["immersive"]["buttons"],
+      applied: true,
+      buttonsHidden: view.swipeMode,
+    },
     quitPillVisible: false,
     skippedVisible: false,
     noticesTop: 58,

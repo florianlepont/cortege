@@ -16,6 +16,7 @@ import { neighbourLayer, type LayerAvailability } from "../../map/layer-cycle"
 import type { BasemapKey } from "../../map/basemaps"
 import type { BaseLayerKey } from "../../map/layers"
 import {
+  IMMERSIVE_SCALE,
   SETTLE_MS,
   beginGesture,
   compareSidesFor,
@@ -32,6 +33,7 @@ import {
   clampLine,
   settledStrip,
   sideBounds,
+  windowX,
   wipeStrip,
   type SideKey,
   type Strip,
@@ -75,6 +77,10 @@ export type BasemapSwipeParams = {
   isAvailable: LayerAvailability
   /** How many layers of the cycle are skipped here (the entry notice). */
   skippedCount: number
+  /** The receded window's progress from `useImmersive` (0 full size, 1 receded). */
+  windowProgress?: SharedValue<number>
+  /** `immersiveApplies()`: false keeps the window at full size, so touches are not mapped. */
+  windowApplied?: boolean
 }
 
 export type BasemapSwipe = {
@@ -130,6 +136,8 @@ export function useBasemapSwipe({
   width,
   isAvailable,
   skippedCount,
+  windowProgress,
+  windowApplied = false,
 }: BasemapSwipeParams): BasemapSwipe {
   const reduced = useReducedMotion()
   const clipLeft = useStableShared(0)
@@ -189,6 +197,12 @@ export function useBasemapSwipe({
     comparisonAllowed: COMPARISON_BUILT,
   })
   const isInstant = () => reduced || WIPE_PRESENTATION === "instant"
+  // The gesture is measured on the receded window (UI-SPEC section 3): `windowX` with the scale
+  // shown at that frame; a touch in the margin counts as the nearest edge. No window, no mapping.
+  const toWindow = (x: number) => {
+    if (!windowApplied || !windowProgress) return x
+    return windowX(x, width, 1 - (1 - IMMERSIVE_SCALE) * windowProgress.value)
+  }
 
   // Applies a pending settle at once (a new touch must not find the old outcome half applied).
   const flushPending = () => pendingRef.current?.()
@@ -221,7 +235,7 @@ export function useBasemapSwipe({
     flushPending()
     clearIdle()
     setFingerDown(true)
-    gestureRef.current = beginGesture({ x: event.x ?? 0, y: event.y ?? 0 })
+    gestureRef.current = beginGesture({ x: toWindow(event.x ?? 0), y: event.y ?? 0 })
   })
 
   const handleUpdate = useLatestCallback((event: PanEvent) => {
@@ -229,7 +243,7 @@ export function useBasemapSwipe({
     if (!gesture) return
     const next = moveGesture(
       gesture,
-      { x: event.x ?? gesture.fingerX, y: event.y ?? gesture.y0 },
+      { x: event.x === undefined ? gesture.fingerX : toWindow(event.x), y: event.y ?? gesture.y0 },
       moveContext(),
     )
     gestureRef.current = next

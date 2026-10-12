@@ -69,6 +69,21 @@ jest.mock("./useBasemapSwipe", () => ({
 }))
 const mockControllerParams: unknown[] = []
 
+// The immersive progress values and the platform rule are useImmersive's own test: here they are scripted.
+const mockImmersive = {
+  window: { value: 0 },
+  buttons: { value: 1 },
+  applies: true,
+  onCalls: [] as boolean[],
+}
+jest.mock("./useImmersive", () => ({
+  useImmersive: (on: boolean) => {
+    mockImmersive.onCalls.push(on)
+    return { window: mockImmersive.window, buttons: mockImmersive.buttons }
+  },
+  immersiveApplies: () => mockImmersive.applies,
+}))
+
 const mockClip = { lineX: { value: 0 }, clipLeft: { value: 0 }, clipRight: { value: 0 } }
 const mockCurtainOptions: Record<string, unknown>[] = []
 jest.mock("./useCurtainClip", () => ({
@@ -242,6 +257,8 @@ beforeEach(() => {
   mockSyncs.length = 0
   mockControllerParams.length = 0
   mockCurtainOptions.length = 0
+  mockImmersive.onCalls.length = 0
+  mockImmersive.applies = true
   result.current = null
   setController()
 })
@@ -731,5 +748,49 @@ describe("the actions after the controller", () => {
     act(() => out().layersView.onExitZone("B"))
     expect(tick).not.toHaveBeenCalled()
     expect(medium).not.toHaveBeenCalled()
+  })
+})
+
+describe("the immersive effect", () => {
+  test("is off at rest: the buttons are not hidden and the controller gets the window", () => {
+    mount(makeLayers())
+    expect(mockImmersive.onCalls.every((on) => on === false)).toBe(true)
+    expect(out().immersive).toEqual({
+      window: mockImmersive.window,
+      buttons: mockImmersive.buttons,
+      applied: true,
+      buttonsHidden: false,
+    })
+    expect(mockControllerParams[0]).toMatchObject({
+      windowProgress: mockImmersive.window,
+      windowApplied: true,
+    })
+  })
+
+  test("the swipe mode turns it on and hides the buttons", () => {
+    mount(makeLayers({ swipeMode: true }))
+    expect(mockImmersive.onCalls.every((on) => on === true)).toBe(true)
+    expect(out().immersive.buttonsHidden).toBe(true)
+  })
+
+  test("the comparison never turns it on", () => {
+    mount(makeLayers({ compare: compareRight }))
+    expect(mockImmersive.onCalls.every((on) => on === false)).toBe(true)
+    expect(out().immersive.buttonsHidden).toBe(false)
+  })
+
+  test("the swipe mode ending (a compare release, Terminé) turns it off", () => {
+    mount(makeLayers({ swipeMode: true }))
+    update(makeLayers({ swipeMode: false, compare: compareRight }))
+    expect(mockImmersive.onCalls.at(-1)).toBe(false)
+    expect(out().immersive.buttonsHidden).toBe(false)
+  })
+
+  test("a platform that cannot clip the map keeps the window at full size (applied false)", () => {
+    mockImmersive.applies = false
+    mount(makeLayers({ swipeMode: true }))
+    expect(out().immersive.applied).toBe(false)
+    expect(out().immersive.buttonsHidden).toBe(true)
+    expect(mockControllerParams[0]).toMatchObject({ windowApplied: false })
   })
 })

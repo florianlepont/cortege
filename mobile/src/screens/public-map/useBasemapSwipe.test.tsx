@@ -112,6 +112,7 @@ beforeEach(() => {
   mockStack.comparison = true
   mockScreenReader.enabled = false
   mockScreenReader.listener = null
+  windowInputs = {}
   setReducedMotion(false)
 })
 
@@ -162,9 +163,17 @@ let layers: MapLayers
 let available: (key: BaseLayerKey) => boolean
 let skipped = 0
 let latest!: BasemapSwipe
+// The receded window of the immersive effect: absent unless a test sets it.
+let windowInputs: { windowProgress?: { value: number }; windowApplied?: boolean } = {}
 
 function Harness() {
-  latest = useBasemapSwipe({ layers, width: WIDTH, isAvailable: available, skippedCount: skipped })
+  latest = useBasemapSwipe({
+    layers,
+    width: WIDTH,
+    isAvailable: available,
+    skippedCount: skipped,
+    ...windowInputs,
+  } as Parameters<typeof useBasemapSwipe>[0])
   return null
 }
 
@@ -762,5 +771,68 @@ describe("SwipeSurface", () => {
     expect(detector.props.gesture).toBe(latest.gesture)
     const surface = tree.root.findByProps({ testID: "swipe-surface" })
     expect(surface.props.style).toEqual({ position: "absolute" })
+  })
+})
+
+describe("the receded window (immersive effect)", () => {
+  test("a drag measured on the window at full progress reveals 0.5 and is in the compare zone", () => {
+    windowInputs = { windowProgress: { value: 1 }, windowApplied: true }
+    mount()
+    // Screen x 388 is the window's right edge (window x 400), screen x 200 its centre.
+    begin(388)
+    move(330)
+    expect(latest.wipe).toEqual({ side: "full", incoming: "satellite" })
+    move(200)
+    expect(latest.zone).toBe("compare")
+    // The strip is cut in the window's own coordinates.
+    expect(latest.clipLeft.value).toBeCloseTo(200, 5)
+    expect(latest.clipRight.value).toBe(WIDTH)
+    lift()
+    expect(layers.actions.startCompare).toHaveBeenCalledTimes(1)
+    const call = (layers.actions.startCompare as jest.Mock).mock.calls[0][0]
+    expect(call.x).toBeCloseTo(200, 5)
+  })
+
+  test("mid-entrance the touch is measured with the scale shown at that frame", () => {
+    const progress = { value: 0.5 }
+    windowInputs = { windowProgress: progress, windowApplied: true }
+    mount()
+    // Scale 0.97: screen x 394 maps to the window's edge 400, screen x 200 stays at 200.
+    begin(394)
+    move(340)
+    expect(latest.wipe).not.toBeNull()
+    move(297)
+    expect(latest.clipLeft.value).toBeCloseTo(300, 5)
+    // The entrance finishes: the same screen x now maps with the final scale.
+    progress.value = 1
+    move(297)
+    expect(latest.clipLeft.value).toBeCloseTo((297 - 200) / 0.94 + 200, 5)
+  })
+
+  test("a touch in the margin counts as the nearest edge", () => {
+    windowInputs = { windowProgress: { value: 1 }, windowApplied: true }
+    mount()
+    begin(399)
+    move(100)
+    // Screen 399 is beyond the window (clamped to 400): the drag runs from the right edge.
+    expect(latest.wipe).toEqual({ side: "full", incoming: "satellite" })
+    move(1)
+    expect(latest.clipLeft.value).toBe(0)
+  })
+
+  test("a window that is not applied leaves every x as it is", () => {
+    windowInputs = { windowProgress: { value: 1 }, windowApplied: false }
+    mount()
+    begin(380)
+    move(330)
+    expect(latest.clipLeft.value).toBe(330)
+  })
+
+  test("without a progress value every x is untouched", () => {
+    windowInputs = { windowApplied: true }
+    mount()
+    begin(380)
+    move(330)
+    expect(latest.clipLeft.value).toBe(330)
   })
 })
