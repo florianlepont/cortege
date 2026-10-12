@@ -1,8 +1,9 @@
-import type { SurveyWeather, WeatherSkyCode } from "@cortege/ibp-domain"
+import { isWeatherSkyCode, type SurveyWeather, type WeatherSkyCode } from "@cortege/ibp-domain"
 import { Ionicons } from "@expo/vector-icons"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { AccessibilityInfo, ActivityIndicator, Platform, StyleSheet, View } from "react-native"
 import Animated, {
+  FadeIn,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
@@ -51,6 +52,8 @@ const STATUS: Record<WeatherViewState, { glyph: StatusGlyph; text: string }> = {
   prefilled: { glyph: "cloud-done-outline", text: t.status.prefilled },
   offline: { glyph: "cloud-offline-outline", text: t.status.offline },
   unavailable: { glyph: "cloud-offline-outline", text: t.status.unavailable },
+  // D-42: an explanation, not a state to wait out: a clock, no spinner, no retry.
+  tooOld: { glyph: "time-outline", text: t.status.tooOld },
 }
 
 /** The provider's values show with a short fade when they arrive (D-11), none under Reduce Motion. */
@@ -99,8 +102,12 @@ function statusFor(viewState: WeatherViewState, weather: SurveyWeather | null | 
  * D-37, D-41): the big read-out (sky glyph tile, temperature numeral, wind, rain over 24 h and the
  * time of the measurement, all read-only), the status line, the eight sky chips (the observer's own
  * judgement, the only editable value) and the full dated source sentence. A sky edit goes through
- * `editWeatherSky`, which protects it from a later provider answer. Nothing here blocks leaving the
- * page, finishing or submitting.
+ * `editWeatherSky`, which protects it from a later provider answer. While Météo-France's values are
+ * shown the chips are folded away behind a small "Modifier le ciel" button (D-43, local state only,
+ * never in the payload) and the current sky stays readable on its row; with no provider value the
+ * chips are the only thing to edit and stay open, without a button. A visit older than 24 h shows
+ * an explanation instead of a retry (D-42). Nothing here blocks leaving the page, finishing or
+ * submitting.
  */
 export function WeatherBlock({ weather, viewState, onEditWeather, onRetry }: WeatherBlockProps) {
   const theme = useBrandTheme()
@@ -110,6 +117,10 @@ export function WeatherBlock({ weather, viewState, onEditWeather, onRetry }: Wea
   const sourceLine = weatherSourceLine(weather)
   const model = weatherCardModel(weather)
   useAnnounceOnChange(status.text)
+  const [skyOpen, setSkyOpen] = useState(false)
+  const folded = viewState === "prefilled"
+  const chipsShown = !folded || skyOpen
+  const currentSky = isWeatherSkyCode(weather?.sky) ? weather.sky : null
 
   const editSky = (code: WeatherSkyCode | null) =>
     onEditWeather((current) => editWeatherSky(current, code))
@@ -164,11 +175,44 @@ export function WeatherBlock({ weather, viewState, onEditWeather, onRetry }: Wea
       </View>
 
       <View style={styles.skyBlock}>
-        <Text style={styles.groupLabel}>{fr.conditions.sky.groupLabel}</Text>
-        <SkyChips
-          value={(weather?.sky as WeatherSkyCode | null | undefined) ?? null}
-          onChange={editSky}
-        />
+        <View style={styles.skyRow}>
+          <View style={styles.skyHeading}>
+            <Text style={styles.groupLabel}>{fr.conditions.sky.groupLabel}</Text>
+            {folded ? (
+              <Text style={styles.skyValue} testID="conditions-skyrow-current">
+                {currentSky !== null ? fr.conditions.sky[currentSky] : fr.conditions.skyRow.none}
+              </Text>
+            ) : null}
+          </View>
+          {folded ? (
+            <AppPressable
+              testID="conditions-skyrow-toggle"
+              accessibilityRole="button"
+              accessibilityLabel={
+                skyOpen ? fr.conditions.skyRow.closeA11y : fr.conditions.skyRow.editA11y
+              }
+              accessibilityState={{ expanded: skyOpen }}
+              onPress={() => setSkyOpen((open) => !open)}
+              style={styles.link}
+            >
+              <Text style={styles.linkText}>
+                {skyOpen ? fr.conditions.skyRow.close : fr.conditions.skyRow.edit}
+              </Text>
+            </AppPressable>
+          ) : null}
+        </View>
+        {chipsShown ? (
+          <Animated.View
+            testID="conditions-skypicker"
+            entering={
+              folded
+                ? FadeIn.duration(brandMotion.durations.base).reduceMotion(ReduceMotion.System)
+                : undefined
+            }
+          >
+            <SkyChips value={currentSky} onChange={editSky} />
+          </Animated.View>
+        ) : null}
       </View>
 
       {sourceLine !== null ? <Text style={styles.source}>{sourceLine}</Text> : null}
@@ -217,6 +261,25 @@ function createStyles(theme: BrandTheme) {
     },
     skyBlock: {
       gap: brandSpacing4.sm,
+    },
+    skyRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      justifyContent: "space-between",
+      columnGap: brandSpacing4.smd,
+    },
+    skyHeading: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      flexShrink: 1,
+      gap: brandSpacing4.sm,
+    },
+    skyValue: {
+      ...brandTypeScale.footnote,
+      fontFamily: brandDefaultFontFamily,
+      color: theme.colors.textSecondary,
+      flexShrink: 1,
     },
     groupLabel: {
       ...brandTypography.sectionHeader,

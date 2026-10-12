@@ -83,6 +83,7 @@ export function areaAccessibilityLabel(input: {
   mention: string | null
   loading: boolean
   offline: boolean
+  tooOld?: boolean
   hasContent: boolean
 }): string {
   if (input.line !== null) {
@@ -91,6 +92,7 @@ export function areaAccessibilityLabel(input: {
       : s.openWithLine(input.line)
   }
   if (input.hasContent) return s.open
+  if (input.tooOld) return s.openWithLine(s.compactTooOld)
   if (input.loading) return s.openWithLine(s.loading)
   return s.openWithLine(input.offline ? s.offlineBody : s.emptyBody)
 }

@@ -457,6 +457,52 @@ describe("useWeatherPrefill", () => {
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
+  // D-44: the weather is filled at the first selection of parcels only. A later parcel edit never
+  // refills or completes a weather that is already there, and never moves the visit time.
+  test("rememberPoint after a parcel edit leaves a filled weather alone (D-44)", async () => {
+    mockList.mockResolvedValue([])
+    const { result } = await mount()
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    mockList.mockResolvedValue([
+      candidate("S1", { requested_at: hoursAgo(1), source: "meteo_france", temperature_c: 12 }),
+    ])
+    await act(async () => {
+      await result.current.actions.rememberPoint("S1", { lat: 44.1, lng: 3.2 })
+    })
+
+    expect(mockSavePoint).not.toHaveBeenCalled()
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(updateSurveyWeather).not.toHaveBeenCalled()
+  })
+
+  test("rememberPoint after a parcel edit of a weather still empty only updates the point (D-44)", async () => {
+    mockList.mockResolvedValue([candidate("S1", { requested_at: hoursAgo(1) })])
+    mockFetch.mockRejectedValueOnce(new Error("provider down"))
+    const { result } = await mount()
+    // The first lookup failed: the survey is unavailable until the next normal trigger.
+    await waitFor(() => expect(result.current.state.unavailableIds.has("S1")).toBe(true))
+    mockFetch.mockClear()
+
+    await act(async () => {
+      await result.current.actions.rememberPoint("S1", { lat: 44.1, lng: 3.2 })
+    })
+
+    // The point follows the current parcels; nothing is forced and the visit time is untouched.
+    expect(mockSavePoint).toHaveBeenCalledWith("S1", { lat: 44.1, lng: 3.2 })
+    expect(mockFetch).not.toHaveBeenCalled()
+    expect(updateSurveyWeather).not.toHaveBeenCalled()
+
+    // The normal catch-up then fetches for the point it holds, for the same visit time.
+    mockFetch.mockResolvedValue({ observation: OBSERVATION })
+    await act(async () => {
+      mockAppStateHandlers.forEach((handler) => handler("active"))
+    })
+    await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1))
+  })
+
   test("requests run one at a time and a trigger during a run does not start a second run", async () => {
     mockList.mockResolvedValue([
       candidate("S1", { requested_at: hoursAgo(1) }),

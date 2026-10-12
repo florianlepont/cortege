@@ -21,7 +21,13 @@ import { fr } from "../i18n"
  * The states of the weather status line (UI-SPEC 1.3, D-37). They describe the provider's
  * measurements only: the observer's sky never changes them. None of them is an error.
  */
-export type WeatherViewState = "noParcel" | "loading" | "prefilled" | "offline" | "unavailable"
+export type WeatherViewState =
+  | "noParcel"
+  | "loading"
+  | "prefilled"
+  | "offline"
+  | "unavailable"
+  | "tooOld"
 
 /** The three provider numbers, with their wire keys (read-only for the observer, D-37). */
 const PROVIDER_NUMBER_KEYS = ["temperature_c", "wind_kmh", "rain_24h_mm"] as const
@@ -292,23 +298,57 @@ export function weatherRequestTime(
 }
 
 /**
+ * True when the draft has no provider weather and its visit is older than the 24 h window, so no
+ * lookup will ever be made for it (D-42). It is the exact complement of the prefill hook's skip
+ * rule for age: the hook asks `weatherRequestTime` for the survey time and `needsWeatherLookup`
+ * for the window, and this function reads the same two rules. The hook and the view must agree,
+ * or the view would offer a "Réessayer" that does nothing: change the window or the survey time
+ * rule in those two functions only, never here. False when a provider answer was merged, when the
+ * survey time is unreadable or lies ahead of the clock (nothing can be claimed about its age), and
+ * at exactly 24 h (the lookup is still allowed).
+ */
+export function weatherVisitTooOld(
+  weather: SurveyWeather | null | undefined,
+  createdAt: string | null | undefined,
+  now: Date | number,
+): boolean {
+  if (weather?.source === "meteo_france") return false
+  const requestedAt = weatherRequestTime(weather, createdAt, now)
+  if (requestedAt !== null) {
+    // Stamped (or derived inside the window): old only when the window rule says no more lookup.
+    // An unreadable stamp is not "old", it is unknown.
+    if (Number.isNaN(new Date(requestedAt).getTime())) return false
+    return !needsWeatherLookup({ ...weather, requested_at: requestedAt }, now)
+  }
+  // No request time: either the creation time is outside the window (old) or it cannot be read or
+  // leads the clock (unknown). Only a readable creation time older than the window is "too old".
+  const created = parseCreationTime(createdAt)
+  const nowMs = typeof now === "number" ? now : now.getTime()
+  return created !== null && nowMs - created > WEATHER_LOOKBACK_MS
+}
+
+/**
  * The one state of the weather status line (UI-SPEC 1.3, D-37). The provider's measurements on
  * screen decide first ("prefilled"), because a request or a lost connection must never hide them.
  * Without them: no parcel, then offline, then loading while a request is in flight, else
  * unavailable (a provider that is down, has nothing for that point and time, or a lookup still to
  * come). The observer's sky does not change the line. The `unavailable` input is the hook's last
  * outcome; the no-measurement states above it already cover every case, so it does not change the
- * result.
+ * result. `visitTooOld` (`weatherVisitTooOld`, D-42) comes right after "no parcel": a visit older
+ * than 24 h will never be looked up, so neither a lost connection, a request nor a retry is worth
+ * announcing.
  */
 export function weatherViewState(input: {
   hasParcel: boolean
   online: boolean
   inFlight: boolean
   unavailable: boolean
+  visitTooOld?: boolean
   weather: SurveyWeather | null | undefined
 }): WeatherViewState {
   if (showsProviderAttribution(input.weather)) return "prefilled"
   if (!input.hasParcel) return "noParcel"
+  if (input.visitTooOld) return "tooOld"
   if (!input.online) return "offline"
   if (input.inFlight) return "loading"
   return "unavailable"

@@ -266,6 +266,30 @@ describe("SurveyDetailScreen summary", () => {
     expect(submitted.props.offline).toBe(true)
   })
 
+  test("D-42: the card is told when the visit is older than 24 h and nothing was fetched", () => {
+    const hoursAgo = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString()
+    const render = (createdAt: string) => {
+      const props = makeProps("draft")
+      props.selectedSurvey = { ...props.selectedSurvey, created_at: createdAt }
+      let tree: ReactTestRenderer | undefined
+      act(() => {
+        tree = renderer.create(<SurveyDetailScreen {...props} />)
+      })
+      return byType(tree!, "WeatherCard")[0]
+    }
+
+    expect(render(hoursAgo(30)).props.visitTooOld).toBe(true)
+    expect(render(hoursAgo(2)).props.visitTooOld).toBe(false)
+
+    mockConditions = {
+      note: null,
+      weather: { temperature_c: 14, source: "meteo_france", requested_at: hoursAgo(30) },
+      parcelIds: [],
+      loaded: true,
+    }
+    expect(render(hoursAgo(30)).props.visitTooOld).toBe(false)
+  })
+
   test("pressing the card opens the Conditions section, the context row opens the page as is", () => {
     const props = makeProps("draft")
     let tree: ReactTestRenderer | undefined

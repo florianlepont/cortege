@@ -191,6 +191,44 @@ describe("Conditions section (phase 27, D-15)", () => {
     expect(props.conditions).toBe(mockConditions)
   })
 
+  test("says the visit is too old, with no retry state, for a draft past the 24 h window (D-42)", () => {
+    const old = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString()
+    const survey = (createdAt: string) => ({ id: "survey-1", created_at: createdAt }) as LocalSurvey
+
+    mockConditions = { ...EMPTY_CONDITIONS, weather: { requested_at: old(30) } }
+    expect(section(render(false, { selectedSurvey: survey(old(31)) })).viewState).toBe("tooOld")
+    expect(
+      section(
+        render(false, {
+          selectedSurvey: survey(old(31)),
+          weatherRequest: { online: false, inFlight: false, unavailable: true },
+        }),
+      ).viewState,
+    ).toBe("tooOld")
+
+    // An unstamped draft is judged on its creation time.
+    mockConditions = EMPTY_CONDITIONS
+    expect(section(render(false, { selectedSurvey: survey(old(30)) })).viewState).toBe("tooOld")
+
+    // Inside the window the retry stays offered.
+    mockConditions = { ...EMPTY_CONDITIONS, weather: { requested_at: old(23) } }
+    expect(section(render(false, { selectedSurvey: survey(old(24)) })).viewState).toBe(
+      "unavailable",
+    )
+
+    // The provider's values win, however old the visit.
+    mockConditions = {
+      ...EMPTY_CONDITIONS,
+      weather: { temperature_c: 14, source: "meteo_france", requested_at: old(30) },
+    }
+    expect(section(render(false, { selectedSurvey: survey(old(31)) })).viewState).toBe("prefilled")
+
+    // No parcel yet: the first line stays.
+    mockParcelIds = []
+    mockConditions = { ...EMPTY_CONDITIONS, weather: { requested_at: old(30) } }
+    expect(section(render(false, { selectedSurvey: survey(old(31)) })).viewState).toBe("noParcel")
+  })
+
   test("picks the one status line from the parcels, the network and the lookup", () => {
     expect(section(render()).viewState).toBe("unavailable")
     expect(
