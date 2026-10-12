@@ -138,9 +138,13 @@ export const mapLayersFr = {
     exitA11yHint: "Revient à un seul fond, celui de gauche",
     tagA11y: (name: string) => `${name}`,
     handleA11yLabel: "Séparation de la comparaison",
-    handleA11yHint: "Faites glisser, ou balayez vers le haut ou le bas pour la déplacer",
-    handleA11yValue: ({ left, right, percent }: { left: string; right: string; percent: number }) =>
-      `${left} à gauche, ${right} à droite, séparation à ${percent} %`,
+    handleA11yHint: "Faites glisser vers un bord pour quitter la comparaison",
+    handleA11yValue: ({ left, right }: { left: string; right: string }) =>
+      `${left} à gauche, ${right} à droite`,
+    // Shown under the "Quitter la comparaison" pill while the line is in an edge exit zone.
+    hintExit: "Lâchez pour quitter la comparaison",
+    actionKeepLeft: "Quitter en gardant le fond de gauche",
+    actionKeepRight: "Quitter en gardant le fond de droite",
     actionLeftNext: "Fond suivant à gauche",
     actionLeftPrevious: "Fond précédent à gauche",
     actionRightNext: "Fond suivant à droite",

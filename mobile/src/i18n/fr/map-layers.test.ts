@@ -129,9 +129,16 @@ describe("fr.mapLayers", () => {
     test("the quit pill and the hints", () => {
       expect(mapLayersFr.compare.exit).toBe("Quitter la comparaison")
       expect(mapLayersFr.compare.tagA11y("Plan")).toBe("Plan")
-      expect(
-        mapLayersFr.compare.handleA11yValue({ left: "Plan", right: "Photos 1950", percent: 50 }),
-      ).toBe("Plan à gauche, Photos 1950 à droite, séparation à 50 %")
+      expect(mapLayersFr.compare.handleA11yLabel).toBe("Séparation de la comparaison")
+      expect(mapLayersFr.compare.handleA11yHint).toBe(
+        "Faites glisser vers un bord pour quitter la comparaison",
+      )
+      expect(mapLayersFr.compare.handleA11yValue({ left: "Plan", right: "Photos 1950" })).toBe(
+        "Plan à gauche, Photos 1950 à droite",
+      )
+      expect(mapLayersFr.compare.hintExit).toBe("Lâchez pour quitter la comparaison")
+      expect(mapLayersFr.compare.actionKeepLeft).toBe("Quitter en gardant le fond de gauche")
+      expect(mapLayersFr.compare.actionKeepRight).toBe("Quitter en gardant le fond de droite")
       expect(mapLayersFr.compare.announceStart({ left: "Plan", right: "Satellite" })).toBe(
         "Comparaison : Plan à gauche, Satellite à droite.",
       )

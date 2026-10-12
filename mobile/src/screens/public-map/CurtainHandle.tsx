@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react"
+import { memo, useCallback, useMemo } from "react"
 import { StyleSheet, View, type AccessibilityActionEvent } from "react-native"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, {
@@ -91,13 +91,6 @@ export const CurtainHandle = memo(function CurtainHandle({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const startX = useSharedValue(0)
-  // The JS-side copy of the line position, for the screen reader value only.
-  const [percent, setPercent] = useState(() => linePercent(lineX.value, width))
-
-  useEffect(() => {
-    setPercent(linePercent(lineX.value, width))
-  }, [lineX, width])
-
   const position = useAnimatedStyle(() => ({ left: lineX.value - HANDLE_WIDTH / 2 }))
 
   const pan = useMemo(
@@ -117,7 +110,6 @@ export const CurtainHandle = memo(function CurtainHandle({
           } else {
             runOnJS(onEdgeExit)(keeps)
           }
-          runOnJS(setPercent)(linePercent(x, width))
         }),
     [lineX, onEdgeExit, onMoveLine, startX, width],
   )
@@ -126,7 +118,6 @@ export const CurtainHandle = memo(function CurtainHandle({
     (delta: number) => {
       const next = lineFromPercent(stepLinePercent(linePercent(lineX.value, width), delta), width)
       lineX.value = next
-      setPercent(linePercent(next, width))
       onMoveLine(next)
     },
     [lineX, onMoveLine, width],
@@ -177,7 +168,6 @@ export const CurtainHandle = memo(function CurtainHandle({
           text: fr.mapLayers.compare.handleA11yValue({
             left: leftName,
             right: rightName,
-            percent: Math.round(percent),
           }),
         }}
         accessibilityActions={ACTIONS}

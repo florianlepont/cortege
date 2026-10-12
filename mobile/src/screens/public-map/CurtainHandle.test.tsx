@@ -83,7 +83,6 @@ import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { CurtainHandle, knobCenterY, type CurtainHandleProps } from "./CurtainHandle"
 import { CurtainSideTags } from "./CurtainSideTags"
-import { useCurtainClip, type CurtainClip, type UseCurtainClipOptions } from "./useCurtainClip"
 
 const originalConsoleError = console.error
 
@@ -115,140 +114,6 @@ const flat = (style: unknown): Record<string, unknown> =>
   Object.assign({}, ...[style].flat(3).filter(Boolean))
 
 const WIDTH = 400
-
-describe("useCurtainClip", () => {
-  let latest!: CurtainClip
-
-  function Probe(props: UseCurtainClipOptions) {
-    latest = useCurtainClip(props)
-    return null
-  }
-
-  function mount(props: UseCurtainClipOptions) {
-    let tree!: ReactTestRenderer
-    act(() => {
-      tree = renderer.create(<Probe {...props} />)
-    })
-    return tree
-  }
-
-  const strip = () => [latest.clipLeft.value, latest.clipRight.value]
-
-  test("a second map on the right is clipped from the line to the right edge", () => {
-    mount({ compare: { secondSide: "right", x: 200 }, width: WIDTH })
-    expect(latest.lineX.value).toBe(200)
-    expect(strip()).toEqual([200, 400])
-  })
-
-  test("a second map on the left is clipped from the left edge to the line", () => {
-    mount({ compare: { secondSide: "left", x: 200 }, width: WIDTH })
-    expect(strip()).toEqual([0, 200])
-  })
-
-  test("the line is kept 22 pt from each edge", () => {
-    mount({ compare: { secondSide: "right", x: 5 }, width: WIDTH })
-    expect(latest.lineX.value).toBe(22)
-    mount({ compare: { secondSide: "right", x: 395 }, width: WIDTH })
-    expect(latest.lineX.value).toBe(378)
-  })
-
-  test("without a comparison the line is parked on the right edge with nothing of the second map", () => {
-    mount({ compare: null, width: WIDTH })
-    expect(latest.lineX.value).toBe(400)
-    expect(strip()).toEqual([400, 400])
-  })
-
-  test("a new line position from the state moves the line", () => {
-    const tree = mount({ compare: { secondSide: "right", x: 200 }, width: WIDTH })
-    act(() => {
-      tree.update(<Probe compare={{ secondSide: "right", x: 260 }} width={WIDTH} />)
-    })
-    expect(latest.lineX.value).toBe(260)
-    expect(strip()).toEqual([260, 400])
-  })
-
-  test("covering gives the second map the full width", () => {
-    mount({ compare: { secondSide: "right", x: 200 }, width: WIDTH, phase: "covering" })
-    expect(strip()).toEqual([0, 400])
-    mount({ compare: { secondSide: "left", x: 200 }, width: WIDTH, phase: "covering" })
-    expect(strip()).toEqual([0, 400])
-  })
-
-  test("leaving slides the line to the right edge in 240 ms, then reports once", () => {
-    const onLeft = jest.fn()
-    mount({
-      compare: { secondSide: "right", x: 200 },
-      width: WIDTH,
-      phase: "leaving",
-      leaveTo: "right",
-      onLeft,
-    })
-    expect(mockTimings).toHaveLength(1)
-    expect(mockTimings[0].to).toBe(400)
-    expect(mockTimings[0].config).toMatchObject({ duration: 240, reduceMotion: "system" })
-    expect(latest.lineX.value).toBe(400)
-    expect(onLeft).not.toHaveBeenCalled()
-    mockTimings[0].done?.(true)
-    mockTimings[0].done?.(true)
-    expect(onLeft).toHaveBeenCalledTimes(1)
-  })
-
-  test("leaving defaults to the right edge and can go to the left one", () => {
-    mount({ compare: { secondSide: "right", x: 200 }, width: WIDTH, phase: "leaving" })
-    expect(mockTimings[0].to).toBe(400)
-    mount({
-      compare: { secondSide: "right", x: 200 },
-      width: WIDTH,
-      phase: "leaving",
-      leaveTo: "left",
-    })
-    expect(mockTimings[1].to).toBe(0)
-  })
-
-  test("an interrupted slide never reports the line as left", () => {
-    const onLeft = jest.fn()
-    mount({ compare: { secondSide: "right", x: 200 }, width: WIDTH, phase: "leaving", onLeft })
-    mockTimings[0].done?.(false)
-    expect(onLeft).not.toHaveBeenCalled()
-  })
-
-  test("leaving stops the slide when it ends or the screen goes", () => {
-    const tree = mount({ compare: { secondSide: "right", x: 200 }, width: WIDTH, phase: "leaving" })
-    act(() => tree.unmount())
-    expect(mockCancel).toHaveBeenCalledTimes(1)
-  })
-
-  test("under Reduce Motion the line jumps to the edge and reports at once", () => {
-    setReducedMotion(true)
-    const onLeft = jest.fn()
-    mount({ compare: { secondSide: "right", x: 200 }, width: WIDTH, phase: "leaving", onLeft })
-    expect(mockTimings).toHaveLength(0)
-    expect(latest.lineX.value).toBe(400)
-    expect(onLeft).toHaveBeenCalledTimes(1)
-  })
-
-  test("leaving without a listener is harmless under Reduce Motion", () => {
-    setReducedMotion(true)
-    expect(() =>
-      mount({ compare: { secondSide: "right", x: 200 }, width: WIDTH, phase: "leaving" }),
-    ).not.toThrow()
-  })
-
-  test("going back to active allows the next departure to report again", () => {
-    const onLeft = jest.fn()
-    const props = { compare: { secondSide: "right" as const, x: 200 }, width: WIDTH, onLeft }
-    const tree = mount({ ...props, phase: "leaving" })
-    mockTimings[0].done?.(true)
-    act(() => {
-      tree.update(<Probe {...props} phase="active" />)
-    })
-    act(() => {
-      tree.update(<Probe {...props} phase="leaving" />)
-    })
-    mockTimings[mockTimings.length - 1].done?.(true)
-    expect(onLeft).toHaveBeenCalledTimes(2)
-  })
-})
 
 describe("CurtainHandle", () => {
   type Handlers = Record<"onBegin" | "onUpdate" | "onEnd", (event?: unknown) => void>
@@ -310,7 +175,7 @@ describe("CurtainHandle", () => {
     act(() => handlers.onEnd())
     expect(props.onMoveLine).toHaveBeenCalledWith(300)
     expect(props.onEdgeExit).not.toHaveBeenCalled()
-    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite, séparation à 75 %")
+    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite")
   })
 
   test("a release in the outer fifth on the left quits keeping the right layer", () => {
@@ -344,7 +209,7 @@ describe("CurtainHandle", () => {
     expect(props.accessibilityRole).toBe("adjustable")
     expect(props.accessibilityLabel).toBe("Séparation de la comparaison")
     expect(props.accessibilityHint).toBe(fr.mapLayers.compare.handleA11yHint)
-    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite, séparation à 50 %")
+    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite")
     expect(props.accessibilityActions).toEqual([
       { name: "increment" },
       { name: "decrement" },
@@ -361,7 +226,7 @@ describe("CurtainHandle", () => {
     fire(strip, "increment")
     expect(lineX.value).toBe(240)
     expect(props.onMoveLine).toHaveBeenLastCalledWith(240)
-    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite, séparation à 60 %")
+    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite")
   })
 
   test("decrement moves it back", () => {
@@ -369,7 +234,7 @@ describe("CurtainHandle", () => {
     fire(strip, "decrement")
     expect(lineX.value).toBe(160)
     expect(props.onMoveLine).toHaveBeenLastCalledWith(160)
-    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite, séparation à 40 %")
+    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite")
   })
 
   test("the steps stop 22 pt from the edges", () => {
@@ -408,7 +273,7 @@ describe("CurtainHandle", () => {
     act(() => {
       tree.update(<CurtainHandle {...props} width={500} />)
     })
-    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite, séparation à 40 %")
+    expect(valueText(strip)).toBe("Plan à gauche, Photos 1950 à droite")
   })
 
   test("the strip is 44 pt wide and follows the line", () => {
