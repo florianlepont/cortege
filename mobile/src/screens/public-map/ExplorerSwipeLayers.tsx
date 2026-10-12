@@ -35,6 +35,8 @@ export type ExplorerSwipeLayersProps = {
   contentProps: StackedContentProps
   /** The top of the capsule: the top controls and the line start there. */
   capsuleTop: number
+  /** Distance of the swipe hint from the bottom edge: just above the tab bar. */
+  hintBottom: number
   /** The Explorer map: it sits in the receding window with the stacked maps and the line. */
   children?: ReactNode
 }
@@ -58,6 +60,7 @@ export function ExplorerSwipeLayers({
   layers,
   contentProps,
   capsuleTop,
+  hintBottom,
   children,
 }: ExplorerSwipeLayersProps) {
   const view = swipe.layersView
@@ -159,6 +162,7 @@ export function ExplorerSwipeLayers({
       {view.swipeMode ? (
         <BasemapSwipeOverlay
           top={capsuleTop}
+          hintBottom={hintBottom}
           layer={controller.indicatorLayer}
           isAvailable={layers.isAvailable}
           hintText={controller.hintText}

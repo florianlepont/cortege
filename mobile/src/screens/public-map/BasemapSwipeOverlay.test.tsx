@@ -115,6 +115,7 @@ function render(props: Partial<BasemapSwipeOverlayProps> = {}): ReactTestRendere
     tree = renderer.create(
       <BasemapSwipeOverlay
         top={58}
+        hintBottom={66}
         layer="map"
         isAvailable={() => true}
         hintText={null}
@@ -247,6 +248,26 @@ describe("dots", () => {
 })
 
 describe("hint", () => {
+  test("sits in the bottom white zone, apart from the top stack", () => {
+    const tree = render({ introHintVisible: true, hintBottom: 91 })
+    const hint = byId(tree, "swipe-hint")[0]
+    const zone = tree.root.findAll(
+      (node) =>
+        node.props.pointerEvents === "none" &&
+        node.findAll((child) => child === hint).length > 0 &&
+        flat(node.props.style).bottom === 91,
+    )[0]
+    expect(flat(zone.props.style)).toMatchObject({
+      position: "absolute",
+      left: 16,
+      right: 16,
+      bottom: 91,
+      alignItems: "center",
+    })
+    const stack = byId(tree, "swipe-indicator")[0]
+    expect(stack.findAll((node) => node.props.testID === "swipe-hint")).toHaveLength(0)
+  })
+
   test("the intro hint shows while no finger is down", () => {
     const hint = byId(render({ introHintVisible: true }), "swipe-hint")[0]
     expect(textsOf(hint)).toEqual(["Glissez · lâchez au milieu pour comparer"])

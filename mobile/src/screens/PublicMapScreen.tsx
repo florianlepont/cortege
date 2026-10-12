@@ -28,6 +28,7 @@ import { useExplorerFocus } from "./public-map/useExplorerFocus"
 import { useExplorerLayers } from "./public-map/useExplorerLayers"
 import { useExplorerPanels } from "./public-map/useExplorerPanels"
 import { useExplorerSwipe } from "./public-map/useExplorerSwipe"
+import { useInitialLocationCentre } from "./public-map/useInitialLocationCentre"
 import { useLocateAction } from "./public-map/useLocateAction"
 import { useMapViewport } from "./public-map/useMapViewport"
 
@@ -40,6 +41,8 @@ const CARD_MARGIN = 14
 // just above the tab bar; the carousel (indicator pill 36 + gap 8 + dots 8) sits over it, under the
 // status bar. Neither is drawn over the map.
 const SWIPE_ZONE_GAP = 8
+// The transient hint (a 24 pt pill) sits just above the tab bar, the notices above it.
+const SWIPE_HINT_ZONE = 36
 const SWIPE_NOTICES_ZONE = 44
 const SWIPE_TOP_STACK_HEIGHT = 52
 const DOCK_GAP = 10
@@ -217,7 +220,8 @@ export function PublicMapScreen({
     region: viewport.region,
     closePanels: panels.closePanel,
     windowTop: capsuleTop + SWIPE_TOP_STACK_HEIGHT + SWIPE_ZONE_GAP,
-    windowBottom: dockBottom + SWIPE_ZONE_GAP + SWIPE_NOTICES_ZONE + SWIPE_ZONE_GAP,
+    windowBottom:
+      dockBottom + SWIPE_ZONE_GAP + SWIPE_HINT_ZONE + SWIPE_NOTICES_ZONE + SWIPE_ZONE_GAP,
   })
   swipePanelExitRef.current = swipe.onPanelOpen
   const { onBaseStyleLoaded, skippedVisible } = swipe
@@ -244,6 +248,8 @@ export function PublicMapScreen({
   )
 
   const { locating, onLocate } = useLocateAction({ moveTo })
+  // Without a focus request the Explorer opens on the user's position when it is already allowed.
+  useInitialLocationCentre({ hasFocus: focus !== undefined, moveTo: focusTo })
 
   // The capsule's second button; memoised so the capsule does not redraw on every render.
   const { overlayDot } = layers.layers
@@ -280,6 +286,7 @@ export function PublicMapScreen({
         swipe={swipe}
         layers={layers}
         capsuleTop={capsuleTop}
+        hintBottom={dockBottom + SWIPE_ZONE_GAP}
         contentProps={{
           parcelStatuses,
           parcelLayerRenderable: viewport.parcelLayerRenderable,
@@ -335,7 +342,9 @@ export function PublicMapScreen({
         forestAvailable={layers.isAvailable("types-foret")}
         cardBottom={cardBottom}
         noticesTop={swipe.noticesTop}
-        noticesBottom={swipe.immersive.buttonsHidden ? dockBottom + SWIPE_ZONE_GAP : undefined}
+        noticesBottom={
+          swipe.immersive.buttonsHidden ? dockBottom + SWIPE_ZONE_GAP + SWIPE_HINT_ZONE : undefined
+        }
         buttons={{ opacity: swipe.immersive.buttons, hidden: swipe.immersive.buttonsHidden }}
       >
         <MapTopControls

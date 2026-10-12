@@ -41,6 +41,8 @@ const mockAlert = jest.fn()
 const mockLocation = {
   requestForegroundPermissionsAsync: jest.fn(),
   getCurrentPositionAsync: jest.fn(),
+  getForegroundPermissionsAsync: jest.fn(),
+  getLastKnownPositionAsync: jest.fn(),
 }
 
 // The panel's own animation and gestures are tested in ExplorerSheet.test.tsx.
@@ -210,6 +212,8 @@ jest.mock("../../navigation/download-edge-glow", () => ({ DownloadEdgeGlow: "Dow
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: () => mockLocation.requestForegroundPermissionsAsync(),
   getCurrentPositionAsync: () => mockLocation.getCurrentPositionAsync(),
+  getForegroundPermissionsAsync: () => mockLocation.getForegroundPermissionsAsync(),
+  getLastKnownPositionAsync: () => mockLocation.getLastKnownPositionAsync(),
   Accuracy: { Balanced: 3 },
 }))
 jest.mock("react-native-safe-area-context", () => ({
@@ -383,6 +387,10 @@ beforeEach(() => {
   mockAlert.mockClear()
   mockLocation.requestForegroundPermissionsAsync.mockReset()
   mockLocation.getCurrentPositionAsync.mockReset()
+  // The opening centre never prompts: by default the permission is not granted, so the view stays.
+  mockLocation.getForegroundPermissionsAsync.mockReset()
+  mockLocation.getForegroundPermissionsAsync.mockResolvedValue({ granted: false })
+  mockLocation.getLastKnownPositionAsync.mockReset()
   mockFetchParcelSurveyHistory.mockReset()
   mockFetchParcelSurveyHistory.mockResolvedValue({ parcel_id: "p1", items: [] })
 })
@@ -516,6 +524,33 @@ describe("PublicMapScreen", () => {
     expect(marker.props.selected).toBe(true)
     expect(tree.root.findAll((node) => (node.type as unknown) === "ExplorerSheet")).toHaveLength(0)
     expect(props.onOpenSurvey).not.toHaveBeenCalled()
+  })
+
+  test("without a focus the map opens on the position when the permission is already granted", async () => {
+    mockLocation.getForegroundPermissionsAsync.mockResolvedValue({ granted: true })
+    mockLocation.getLastKnownPositionAsync.mockResolvedValue({
+      coords: { latitude: 45.7, longitude: 4.8 },
+    })
+    mount(makeProps())
+    await act(async () => undefined)
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(1)
+    const [region, duration] = mockAnimateToRegion.mock.calls[0]
+    expect(region.latitude).toBeCloseTo(45.7, 3)
+    expect(region.longitude).toBeCloseTo(4.8, 3)
+    expect(duration).toBe(0)
+  })
+
+  test("a focus request keeps the position out of it", async () => {
+    mockLocation.getForegroundPermissionsAsync.mockResolvedValue({ granted: true })
+    mockLocation.getLastKnownPositionAsync.mockResolvedValue({
+      coords: { latitude: 10, longitude: 10 },
+    })
+    mount(
+      makeProps({ focus: { kind: "place", lat: 45.7, lng: 4.8, placeKind: "street", nonce: 1 } }),
+    )
+    await act(async () => undefined)
+    expect(mockAnimateToRegion).toHaveBeenCalledTimes(1)
+    expect(mockLocation.getForegroundPermissionsAsync).not.toHaveBeenCalled()
   })
 
   test("a place focus centres the map, draws the pin and opens no panel (D-05)", () => {
@@ -1285,13 +1320,13 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        // 800 tall; top: capsule 30 + 52 (carousel) + 8; bottom: 50 (tab bar) + 8 + 44 (notices) + 8.
-        // 600 left: scaleY 0.75, scaleX 0.825, the centre 10 up.
-        expect(scale(props)).toBeCloseTo(0.825, 5)
+        // 800 tall; top: capsule 30 + 52 (carousel) + 8; bottom: 50 (tab bar) + 8 + 36 (hint) + 44
+        // (notices) + 8. 564 left: scaleY 0.705, scaleX 0.7755, the centre 28 up.
+        expect(scale(props)).toBeCloseTo(0.7755, 5)
         const moved = flatStyle(byTestId("immersive-window")[0].props.style).transform as {
           translateY?: number
         }[]
-        expect(moved.find((t) => t.translateY !== undefined)!.translateY).toBeCloseTo(-10, 5)
+        expect(moved.find((t) => t.translateY !== undefined)!.translateY).toBeCloseTo(-28, 5)
         expect(buttons().props.pointerEvents).toBe("none")
         expect(buttons().props.accessibilityElementsHidden).toBe(true)
         expect(buttons().props.importantForAccessibility).toBe("no-hide-descendants")
@@ -1327,7 +1362,7 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.825, 5)
+        expect(scale(props)).toBeCloseTo(0.7755, 5)
         drag(380, 200)
         release()
         expect(present("compare-grabber")).toBe(true)
@@ -1359,7 +1394,7 @@ describe("PublicMapScreen", () => {
         const props = makeProps()
         mount(props)
         act(() => globe().props.onPress())
-        expect(scale(props)).toBeCloseTo(0.825, 5)
+        expect(scale(props)).toBeCloseTo(0.7755, 5)
         expect(buttons().props.pointerEvents).toBe("none")
         act(() =>
           byTestId("swipe-indicator")[0].props.onAccessibilityAction({
@@ -1731,8 +1766,8 @@ describe("PublicMapScreen", () => {
       // The swipe mode puts the notices at the bottom.
       // The quit pill of the comparison holds the top: its 40 pt plus 8.
       expect(swipeStyle.top).toBeUndefined()
-      // 50 (tab bar) + 8: in the white zone under the receded window, just above the tab bar.
-      expect(swipeStyle.bottom).toBe(50 + 8)
+      // 50 (tab bar) + 8 + 36 (hint): in the white zone under the receded window, over the hint.
+      expect(swipeStyle.bottom).toBe(50 + 8 + 36)
       expect(pillTop).toBe(30 + 40 + 8)
     })
   })

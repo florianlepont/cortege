@@ -36,6 +36,8 @@ const stackExit = () => FadeOut.duration(BUTTON_FADE_MS).reduceMotion(ReduceMoti
 export type BasemapSwipeOverlayProps = {
   /** Distance from the top of the map: the capsule's top, in the white zone above the receded map. */
   top: number
+  /** Distance from the bottom edge: the transient hint sits in the white zone just above the tab bar. */
+  hintBottom: number
   /** The layer the indicator names: the incoming one while a wipe is under way. */
   layer: BaseLayerKey
   isAvailable: (key: BaseLayerKey) => boolean
@@ -53,12 +55,13 @@ export type BasemapSwipeOverlayProps = {
 
 /**
  * The centred top stack of the swipe mode (UI-SPEC section 3 and 4, U-21): the indicator pill, the
- * five dots and the transient hint. There is no "done" button: a tap on the map ends the mode, and
+ * five dots. The transient hint is a separate element in the white zone at the bottom. There is no "done" button: a tap on the map ends the mode, and
  * "done" is an accessibility action of the indicator. It exists only in the swipe mode, which never coexists with a comparison. The indicator is the non-gesture path: adjustable,
  * with the actions next, previous, done and compare with the next layer.
  */
 export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   top,
+  hintBottom,
   layer,
   isAvailable,
   hintText,
@@ -92,64 +95,72 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   const hint = fingerDown ? hintText : introHintVisible ? t.hintSwipe : null
 
   return (
-    <Animated.View
-      pointerEvents="box-none"
-      style={[styles.column, { top }]}
-      entering={stackEnter()}
-      exiting={stackExit()}
-    >
-      <View
-        testID="swipe-indicator"
-        accessible
-        accessibilityRole="adjustable"
-        accessibilityLabel={t.buttonA11y}
-        accessibilityHint={t.indicatorHint}
-        accessibilityValue={{ text: indicatorValue(layer) }}
-        accessibilityActions={actions}
-        onAccessibilityAction={onAction}
+    <>
+      <Animated.View
+        pointerEvents="box-none"
+        style={[styles.column, { top }]}
+        entering={stackEnter()}
+        exiting={stackExit()}
       >
-        <GlassSurface tone="auto" surface={theme.visual.mapControl.glass} style={styles.indicator}>
-          <Ionicons
-            name="chevron-back-outline"
-            size={CHEVRON_SIZE}
-            color={theme.visual.mapControl.icon}
-          />
-          <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-            {label.name}
-          </Text>
-          <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
-            {label.era}
-          </Text>
-          <Ionicons
-            name="chevron-forward-outline"
-            size={CHEVRON_SIZE}
-            color={theme.visual.mapControl.icon}
-          />
-        </GlassSurface>
-      </View>
-      <View
-        testID="swipe-dots"
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={styles.dots}
-      >
-        {BASEMAP_CYCLE.map((key) => (
-          <View
-            key={key}
-            testID={`swipe-dot-${key}`}
-            style={[
-              styles.dot,
-              key === layer && styles.dotCurrent,
-              key !== layer && {
-                opacity: isAvailable(key) ? DOT_OPACITY : DOT_OPACITY_UNAVAILABLE,
-              },
-            ]}
-          />
-        ))}
-      </View>
+        <View
+          testID="swipe-indicator"
+          accessible
+          accessibilityRole="adjustable"
+          accessibilityLabel={t.buttonA11y}
+          accessibilityHint={t.indicatorHint}
+          accessibilityValue={{ text: indicatorValue(layer) }}
+          accessibilityActions={actions}
+          onAccessibilityAction={onAction}
+        >
+          <GlassSurface
+            tone="auto"
+            surface={theme.visual.mapControl.glass}
+            style={styles.indicator}
+          >
+            <Ionicons
+              name="chevron-back-outline"
+              size={CHEVRON_SIZE}
+              color={theme.visual.mapControl.icon}
+            />
+            <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
+              {label.name}
+            </Text>
+            <Text style={styles.era} numberOfLines={1} ellipsizeMode="tail">
+              {label.era}
+            </Text>
+            <Ionicons
+              name="chevron-forward-outline"
+              size={CHEVRON_SIZE}
+              color={theme.visual.mapControl.icon}
+            />
+          </GlassSurface>
+        </View>
+        <View
+          testID="swipe-dots"
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.dots}
+        >
+          {BASEMAP_CYCLE.map((key) => (
+            <View
+              key={key}
+              testID={`swipe-dot-${key}`}
+              style={[
+                styles.dot,
+                key === layer && styles.dotCurrent,
+                key !== layer && {
+                  opacity: isAvailable(key) ? DOT_OPACITY : DOT_OPACITY_UNAVAILABLE,
+                },
+              ]}
+            />
+          ))}
+        </View>
+      </Animated.View>
       {hint === null ? null : (
         <Animated.View
+          pointerEvents="none"
+          style={[styles.hintZone, { bottom: hintBottom }]}
           entering={enter()}
           exiting={FadeOut.duration(HINT_FADE_MS).reduceMotion(ReduceMotion.System)}
         >
@@ -158,7 +169,7 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
           </View>
         </Animated.View>
       )}
-    </Animated.View>
+    </>
   )
 })
 
@@ -210,6 +221,12 @@ function createStyles(theme: BrandTheme) {
       width: DOT_CURRENT,
       height: DOT_CURRENT,
       borderRadius: DOT_CURRENT / 2,
+    },
+    hintZone: {
+      position: "absolute",
+      left: SIDE_INSET,
+      right: SIDE_INSET,
+      alignItems: "center",
     },
     hint: {
       minHeight: 24,

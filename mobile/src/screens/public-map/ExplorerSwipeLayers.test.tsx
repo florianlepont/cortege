@@ -184,6 +184,7 @@ function render(
         layers={options.layers ?? makeLayers()}
         contentProps={contentProps}
         capsuleTop={58}
+        hintBottom={66}
         {...options.props}
       />,
     )
@@ -392,6 +393,7 @@ describe("the swipe mode", () => {
     const overlay = named(tree, "BasemapSwipeOverlay")[0].props
     expect(overlay).toMatchObject({
       top: 58,
+      hintBottom: 66,
       layer: "satellite",
       hintText: "Lâchez pour revenir",
       fingerDown: true,
