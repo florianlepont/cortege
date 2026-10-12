@@ -17,6 +17,7 @@ type AppGroupedListNavRow = {
   loading?: boolean
   disabled?: boolean
   accessibilityLabel?: string
+  accessibilityHint?: string
   /** Leading outline glyph in a 28 pt tile (D-07: `-outline` names only). */
   icon?: keyof typeof Ionicons.glyphMap
   /**
@@ -142,6 +143,7 @@ function NavRow({
       disabled={!isInteractive}
       accessibilityRole={row.onPress ? "button" : "none"}
       accessibilityLabel={row.accessibilityLabel ?? row.label}
+      accessibilityHint={row.accessibilityHint}
       accessibilityState={{ disabled: row.disabled || row.loading, busy: row.loading }}
     >
       {row.icon ? <AppGroupedListIconTile name={row.icon} destructive={row.destructive} /> : null}

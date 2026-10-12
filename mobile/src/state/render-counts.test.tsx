@@ -654,6 +654,11 @@ jest.mock("../hooks/useLocalSurveyMapData", () => ({
 jest.mock("../hooks/useBasemapPreference", () => ({
   useBasemapPreference: () => ({ basemap: "map", setBasemap: jest.fn() }),
 }))
+// 28-08: SettingsRoute reads the offline layers policy; the harness has no database.
+jest.mock("../hooks/useOfflineLayersPolicy", () => {
+  const result = { policy: "all", setPolicy: jest.fn(), reload: jest.fn() }
+  return { useOfflineLayersPolicy: () => result }
+})
 jest.mock("../hooks/useOfflineAreas", () => ({
   useOfflineAreas: () => ({
     areas: [],

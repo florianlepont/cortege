@@ -1,0 +1,23 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 28 : choisir le fond de carte, sans gros panneau</title>
+<link rel="stylesheet" href="../themes/map-layers.css"></head><body>
+<h1>Sketch 019 : choisir le fond de carte et la superposition, sans gros panneau</h1>
+<div class="sub">Phase 28, reprise après vos retours. On garde le design actuel : la capsule avec le fond et le téléchargement ensemble, et la flèche de position en bas à droite. Le bouton du fond ouvre un petit sélecteur léger avec des vignettes (trois formes à comparer). Un bouton séparé ouvre la superposition (types de forêt, parcelles Toutes / Avec IBP / Aucune). « Comparer » vit dans le sélecteur de fonds. Appuyez sur le globe, puis sur la carte pour fermer.</div>
+<div id="app"></div>
+<script src="../themes/map-layers-kit.js"></script>
+<script>
+const S=[["cBase","Choisir un fond"],["cOv","Superposition"],["cParc","Parcelles : Avec IBP"],["cCmp","Comparer"],["cOld","Fond ancien choisi"],["cOff","Hors connexion"],["dlForm","Télécharger"],["dlRunClosed","Téléchargement en cours"]];
+LK.mountSketch(document.getElementById("app"),[
+{id:"a",tab:"A : bulle à vignettes",title:"A : petite bulle à côté de la capsule",cfg:{entry:"keep",chooser:"pop",ov:"round",chip:"left",dlclose:true,tags:"spec"},states:S,
+ desc:"Le globe ouvre une bulle en verre collée à la capsule : une liste de 5 fonds avec une petite vignette, le nom et l'époque, et un bouton « Comparer » en bas. Le bouton de superposition est un rond séparé sous la capsule.",
+ points:["Très compacte, ne cache presque pas la carte","Tout se lit : vignette, nom, époque","La liste est verticale : à 5 fonds, c'est la limite"]},
+{id:"b",tab:"B : bandeau de vignettes",title:"B : bandeau horizontal de vignettes en bas",cfg:{entry:"keep",chooser:"strip",ov:"round",chip:"left",dlclose:true,tags:"spec"},states:S,
+ desc:"Un bandeau de grosses vignettes défilant à l'horizontale, au-dessus de la barre d'onglets. Style carte Apple ou Google. « Comparer » en tête du bandeau.",
+ points:["Geste naturel : on voit le fond avant de le choisir","Extensible : on peut ajouter des fonds sans changer la forme","Prend une bande en bas de la carte pendant le choix"]},
+{id:"c",tab:"C : petite grille",title:"C : mini feuille avec une grille de vignettes",cfg:{entry:"keep",chooser:"grid",ov:"round",chip:"left",dlclose:true,tags:"spec"},states:S,
+ desc:"Une petite feuille basse avec les 5 fonds en grille de 3, plus grandes vignettes. Plus visuelle que la bulle, plus haute que le bandeau.",
+ points:["Vignettes plus grandes, plus parlantes","Recouvre un peu plus la carte","Fait penser à un panneau, ce que vous vouliez éviter"]},
+{id:"d",tab:"D : bulle, superposition dans la capsule",title:"D : comme A, mais la superposition est un 2e bouton dans la capsule",cfg:{entry:"keep",chooser:"pop",ov:"capsule",chip:"left",dlclose:true,tags:"spec"},states:S,
+ desc:"Même bulle que A. Le bouton de superposition rejoint la capsule : fond, superposition, téléchargement, ensemble. Pas de bouton rond séparé.",
+ points:["Un seul groupe de boutons à droite","Change la capsule actuelle (3 boutons au lieu de 2)","La capsule monte à environ 152 pt"]}
+]);
+</script></body></html>

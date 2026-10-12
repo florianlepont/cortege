@@ -20,3 +20,11 @@ used sparingly for action. The owner points to Linear as the reference and rejec
 | 013 | search-entry | Where does the global search entry live (Phase 25)? | None of A/B/C: iOS native search tab only; Android search as a 4th bottom tab (owner, 2026-10-09) | phase-25, global-search |
 | 014 | search-results | How are results grouped by type? | C (best result card, then groups) | phase-25, global-search |
 | 015 | search-states | Which empty, no-result, offline and error states? | A (line per network group, recent searches) | phase-25, global-search |
+| 016 | study-entry-panel | How does one enter study mode and what is in the layers panel (Phase 28)? | Superseded by 019 (owner 2026-10-11: keep the current capsule and the locate arrow, no Couches pill, no big panel) | phase-28, map-layers |
+| 017 | curtain-compare | What does the comparison curtain look like and how are its sides named? | A (owner 2026-10-11) | phase-28, map-layers |
+| 018 | download-settings | How is download progress shown with the sheet closed, and the offline layers setting? | A, sheet closes after Télécharger, chip only (owner 2026-10-11) | phase-28, offline |
+| 019 | basemap-chooser | How to choose the basemap and the overlay without a big panel, keeping the current capsule and the locate arrow (Phase 28)? | B (strip of thumbnails), owner 2026-10-11, refined in 020 | phase-28, map-layers |
+| 020 | bottom-cards | One family of bottom cards (basemaps, overlays, download) and a more direct left/right choice for the curtain | pending (A two rows, B drag a thumbnail onto the map, C fixed ends, D swipe on the map with the map locked) | phase-28, curtain |
+| 021 | basemap-swipe | How to change the basemap by swiping (before the comparison)? | B (wipe following the finger), no bottom card, owner 2026-10-11; indicator pill at the top level with the capsule | phase-28, map-layers, swipe |
+| 022 | swipe-compare | How is the comparison started and driven with the swipe gesture? | A (release in the middle), owner 2026-10-11, top display lightened | phase-28, curtain, swipe |
+| 023 | final-mockup | The whole validated Phase 28 design in one Explorer | validated by the owner (synthesis of 016 to 022) | phase-28, final |

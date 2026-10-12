@@ -1,5 +1,6 @@
 import type { StyleSpecification } from "@maplibre/maplibre-react-native"
 import type { BasemapKey } from "../basemaps"
+import { CADASTRE_TILES, ORTHO_TILES } from "../layers"
 
 const GEOPF = "https://data.geopf.fr"
 
@@ -9,8 +10,6 @@ const GEOPF = "https://data.geopf.fr"
  */
 export const PLAN_IGN_STYLE_URL = `${GEOPF}/annexes/ressources/vectorTiles/styles/PLAN.IGN/standard.json`
 
-const ORTHO_TILES = `${GEOPF}/wmts?SERVICE=WMTS&VERSION=1.0.0&REQUEST=GetTile&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&FORMAT=image/jpeg&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}`
-
 /** The IGN aerial photographs as a one-layer style. */
 export const ORTHO_STYLE: StyleSpecification = {
   version: 8,
@@ -19,6 +18,7 @@ export const ORTHO_STYLE: StyleSpecification = {
       type: "raster",
       tiles: [ORTHO_TILES],
       tileSize: 256,
+      minzoom: 0,
       maxzoom: 19,
       attribution: "Source : IGN",
     },
@@ -26,8 +26,8 @@ export const ORTHO_STYLE: StyleSpecification = {
   layers: [{ id: "ortho", type: "raster", source: "ortho" }],
 }
 
-/** The cadastre parcels, a transparent raster laid over either basemap from zoom 15. */
-export const CADASTRE_TILES = `${GEOPF}/tms/1.0.0/CADASTRALPARCELS.PARCELS/{z}/{x}/{y}.png`
+// The tile templates live in the layer catalogue (`../layers`); the cadastre stays importable here.
+export { CADASTRE_TILES }
 
 export function mapStyleFor(basemap: BasemapKey): string | StyleSpecification {
   return basemap === "satellite" ? ORTHO_STYLE : PLAN_IGN_STYLE_URL

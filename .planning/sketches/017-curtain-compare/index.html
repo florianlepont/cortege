@@ -1,0 +1,20 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 28 : le rideau de comparaison</title>
+<link rel="stylesheet" href="../themes/map-layers.css"></head><body>
+<h1>Sketch 017 : à quoi ressemble le rideau de comparaison ?</h1>
+<div class="sub">Phase 28. Deux fonds sur la même zone, séparés par une ligne que l'on glisse au doigt (faites-le : tirez la poignée, la carte reste synchronisée). Les relevés sont masqués pendant la comparaison. On compare trois façons de nommer les deux côtés et de dessiner la poignée. Le vrai rideau demande un test sur téléphone (plan 28-01) : ici c'est le rendu cherché.</div>
+<div id="app"></div>
+<script src="../themes/map-layers-kit.js"></script>
+<script>
+const S=[["comparer","Comparer (panneau ouvert)"],["comparerFerme","Comparaison, panneau fermé"],["comparForet","Avec types de forêt"],["comparZoom","État-major, zoom 16 (flou)"],["horsComp","Hors connexion, une couche absente"],["surzoom","Surzoom sans rideau"]];
+LK.mountSketch(document.getElementById("app"),[
+{id:"a",tab:"A : bouton et étiquettes sur la poignée",title:"A : bouton rond à 32 % de la hauteur, étiquettes collées à la poignée (contrat actuel)",cfg:{entry:"layers",tags:"spec",chip:"left"},states:S,
+ desc:"La poignée est une ligne blanche de 4 pt avec un bouton rond en verre. Les deux étiquettes suivent la poignée et nomment toujours ce qui est à côté d'elles. Elles s'effacent quand leur côté devient trop étroit.",
+ points:["On lit toujours quel fond est de quel côté, même poignée déplacée","Le bouton reste au-dessus de la feuille ouverte (32 % de la hauteur)","Étiquettes courtes : « Plan », « Photos 1950 »"]},
+{id:"b",tab:"B : étiquettes fixes en bas",title:"B : bouton au milieu, étiquettes fixes aux coins du bas",cfg:{entry:"capsule",tags:"mid",chip:"left"},states:S,
+ desc:"Le bouton est au milieu de la carte, les deux noms restent dans les coins du bas, comme une légende de la comparaison.",
+ points:["Étiquettes stables : elles ne bougent pas avec le doigt","Cachées par la feuille dès qu'elle est ouverte (essayez « Comparer (panneau ouvert) »)","Un bouton au milieu passe sous la feuille ouverte"]},
+{id:"c",tab:"C : étiquettes avec les dates",title:"C : poignée fine, étiquettes à deux lignes avec l'époque",cfg:{entry:"capsule",tags:"dates",chip:"left"},states:S,
+ desc:"Pas de bouton rond : une poignée fine à rainures. Les étiquettes ont deux lignes, le nom du fond et son époque (« Aujourd'hui », « 1950-1965 »), ce qui sert l'étude de l'ancienneté de la forêt.",
+ points:["Le temps est visible d'un coup d'œil","Poignée moins évidente au pouce qu'un bouton de 44 pt","Étiquettes plus hautes (44 pt), plus de place prise"]}
+]);
+</script></body></html>

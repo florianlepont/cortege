@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 27
 current_phase_name: Quick survey additions (INSERTED, V1)
 status: ready_to_plan
-stopped_at: Phase 27 complete
+stopped_at: "Phase 27 complete; Phase 28 executed except the open device checks (27/28 plans, 28-18 partial), see Session Continuity"
 last_updated: "2026-10-12T12:30:00.000Z"
 last_activity: 2026-10-12
 last_activity_desc: Phase 27 complete
@@ -281,6 +281,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-11T12:13:25.939Z
-Stopped at: Phase 27 complete
-Resume file: None
+Last session: 2026-10-12T20:00:00.000Z
+Stopped at: Phase 28 executed except the open device checks (27/28 plans, 28-18 partial); owner validated the Explorer layers, swipe and comparison on his iPhone 2026-10-12; open: offline pack measures, Android emulator run, airplane mode. Nothing merged or pushed.
+Resume file: .planning/phases/28-map-layers-comparison-inserted-v1/28-18-SUMMARY.md

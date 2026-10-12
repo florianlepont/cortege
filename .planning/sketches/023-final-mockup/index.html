@@ -1,0 +1,15 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 28 : maquette de tout ce qui est validé</title>
+<link rel="stylesheet" href="../themes/map-layers.css"></head><body>
+<h1>Sketch 023 : la maquette de tout ce qu'on a validé (Phase 28)</h1>
+<div class="sub">Un seul Explorer avec tous les choix du propriétaire, et l'écran Paramètres à côté. Capsule actuelle (globe + téléchargement) et flèche de position en bas à droite ; bouton rond de superposition sous la capsule ; changement de fond en balayant (globe) ; comparaison en lâchant au milieu ; téléchargement en petite carte puis pastille seule. Tout est cliquable : suivez le parcours à gauche. Bouton « Clair / sombre » en haut à droite.</div>
+<div id="app"></div>
+<script src="../themes/map-layers-kit.js"></script>
+<script>
+LK.mountSketch(document.getElementById("app"),[
+{id:"a",tab:"Explorer complet",title:"Explorer, couches et comparaison (tout est validé)",
+ cfg:{entry:"keep",chooser:"card",ov:"round",chip:"left",dlclose:true,dlcard:true,ovcard:false,tags:"spec",nocard:true,swipe:{cmp:"release"}},settings:true,
+ desc:"Parcours : 1) Touchez le globe, puis balayez la carte : le fond voisin se découvre derrière le doigt. 2) Balayez à moitié et lâchez au milieu : les deux fonds restent côte à côte (comparaison). 3) Balayez un côté pour changer son fond, tirez la ligne au bord pour quitter. 4) Le bouton rond sous la capsule ouvre la superposition. 5) Le nuage ouvre le téléchargement. 6) À droite : Paramètres, rubrique Cartes.",
+ points:["Capsule et flèche de position : comme aujourd'hui","Aucune fenêtre pour changer de fond ni comparer","Le téléchargement tient dans une petite carte, puis une pastille"],
+ states:[["swOn","1. Changer de fond (globe)"],["swCmp","2. Comparaison en cours (carte fixe)"],["swFree","3. Comparaison, carte libre"],["cOv","4. Superposition"],["cParc","4b. Parcelles : Avec IBP + forêt"],["cDlOpen","5. Télécharger (carte)"],["dlRunClosed","5b. Téléchargement en cours"],["dlFailClosed","5c. Échec (touchez la pastille)"],["dlPartialClosed","5d. Partiel (touchez la pastille)"],["dlDoneClosed","5e. Terminé"],["surzoom","6. Fond ancien, zoom 17 (peu détaillé)"],["offNone","7. Hors connexion, couche absente"],["@settings","8. Paramètres : choix des couches hors ligne"]]}
+]);
+</script></body></html>

@@ -1,6 +1,7 @@
 import { bandTone, totalBand } from "@cortege/ibp-domain"
 import { brandMapTokens } from "../../app/brand-tokens"
 import type { PublicParcelStatusItem } from "../../app/types"
+import { hasIbpSurvey } from "../parcels-visibility"
 
 type Position = [number, number]
 type Ring = Position[]
@@ -10,12 +11,18 @@ export type ParcelFeatureProperties = {
   fill: string
   stroke: string
   strokeWidth: number
+  /** Phase 28: the parcel has an IBP survey (Parcelles "Avec IBP" draws only those). */
+  hasSurvey: boolean
+  /** Phase 28: the parcel is a focus (search result, survey shown): drawn in every Parcelles state. */
+  selected: boolean
 }
 
 export type ParcelFeatureCollection = GeoJSON.FeatureCollection<
   GeoJSON.Polygon | GeoJSON.MultiPolygon,
   ParcelFeatureProperties
 >
+
+const NO_SURVEY_PARCELS: ReadonlySet<string> = new Set()
 
 const isFinitePosition = (value: unknown): value is Position => {
   if (!Array.isArray(value) || value.length < 2) return false
@@ -102,9 +109,17 @@ const paint = (studied: boolean, selected: boolean, score: number | null, byScor
 export function buildParcelFeatureCollection(
   items: PublicParcelStatusItem[],
   selectedParcelIds: string[] = [],
-  options: { byScore?: boolean } = {},
+  options: {
+    byScore?: boolean
+    /**
+     * Phase 28: the parcels of the author's own surveys, drafts included, trimmed and upper case.
+     * With the Explorer data's own "studied" status they make `hasSurvey`.
+     */
+    surveyParcelIds?: ReadonlySet<string>
+  } = {},
 ): ParcelFeatureCollection {
   const selectedIds = new Set(selectedParcelIds.map((id) => id.trim().toUpperCase()))
+  const surveyParcelIds = options.surveyParcelIds ?? NO_SURVEY_PARCELS
   const features: ParcelFeatureCollection["features"] = []
 
   for (const item of items) {
@@ -114,6 +129,8 @@ export function buildParcelFeatureCollection(
     const selected = selectedIds.has(item.parcel_id.trim().toUpperCase())
     const properties: ParcelFeatureProperties = {
       parcel_id: item.parcel_id,
+      hasSurvey: hasIbpSurvey(item, surveyParcelIds),
+      selected,
       ...paint(
         item.study_status === "studied",
         selected,

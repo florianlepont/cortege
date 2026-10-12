@@ -92,6 +92,41 @@ describe("map chips (the overlays every map shares)", () => {
     expect(texts(tree)).toEqual(["2 parcelles"])
   })
 
+  test("an info pill with an icon draws the glyph at 16 before the label, cut at the tail", () => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<MapInfoPill label="Hors ligne" icon="cloud-offline-outline" />)
+    })
+    const glyph = tree.root.findByType("Ionicons" as never)
+    expect(glyph.props.name).toBe("cloud-offline-outline")
+    expect(glyph.props.size).toBe(16)
+    expect(glyph.props.color).toBe(defaultTheme.visual.mapControl.icon)
+    const label = tree.root.findAllByType("Text" as never)[0]
+    expect(label.props.numberOfLines).toBe(1)
+    expect(label.props.ellipsizeMode).toBe("tail")
+    expect(texts(tree)).toEqual(["Hors ligne"])
+  })
+
+  test("a danger info pill draws its glyph in the danger ink", () => {
+    mockScheme.current = "dark"
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<MapInfoPill label="Erreur" icon="alert-circle-outline" danger />)
+    })
+    expect(tree.root.findByType("Ionicons" as never).props.color).toBe(
+      buildTheme("dark").onSurface.danger,
+    )
+  })
+
+  test("an info pill without an icon draws no glyph and keeps its text free", () => {
+    let tree!: renderer.ReactTestRenderer
+    act(() => {
+      tree = renderer.create(<MapInfoPill label="2 parcelles" />)
+    })
+    expect(tree.root.findAllByType("Ionicons" as never)).toHaveLength(0)
+    expect(tree.root.findAllByType("Text" as never)[0].props.numberOfLines).toBeUndefined()
+  })
+
   test("an action pill is one button that reports its press", () => {
     const onPress = jest.fn()
     let tree!: renderer.ReactTestRenderer

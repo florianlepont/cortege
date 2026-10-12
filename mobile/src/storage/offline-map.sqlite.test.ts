@@ -15,7 +15,6 @@ import * as FileSystem from "expo-file-system/legacy"
 import { initLocalDb } from "./db"
 import {
   addPendingParcelDownload,
-  basemapsForDownload,
   deleteOfflineArea,
   finalizeOfflineArea,
   findReadyOfflineAreaForPoint,
@@ -31,10 +30,6 @@ import {
   tryGetOfflineDocumentDirectory,
   updateOfflineAreaProgress,
 } from "./offline-map"
-
-test("basemapsForDownload always downloads both basemaps (08-CONTEXT D-03)", () => {
-  expect(basemapsForDownload()).toEqual(["map", "satellite"])
-})
 
 const BOUNDS = { minLat: 46.0, minLng: 1.0, maxLat: 46.1, maxLng: 1.1 }
 
@@ -112,6 +107,51 @@ describe("offline areas", () => {
 
     const area = await getOfflineArea("area-1")
     expect(area).toMatchObject({ status: "ready", downloadedTiles: 9, failedTiles: 1 })
+  })
+
+  test("finalizeOfflineArea stores the measured size in estimated_bytes when given", async () => {
+    await insertOfflineArea({
+      id: "area-1",
+      name: "Zone",
+      bounds: BOUNDS,
+      minZoom: 13,
+      maxZoom: 17,
+      totalTiles: 10,
+      estimatedBytes: 1000,
+    })
+
+    await finalizeOfflineArea(
+      "area-1",
+      "ready",
+      { downloadedTiles: 10, failedTiles: 0 },
+      52_400_000,
+    )
+
+    expect(await getOfflineArea("area-1")).toMatchObject({
+      status: "ready",
+      estimatedBytes: 52_400_000,
+    })
+  })
+
+  test("finalizeOfflineArea keeps the estimate without a usable measured size", async () => {
+    await insertOfflineArea({
+      id: "area-1",
+      name: "Zone",
+      bounds: BOUNDS,
+      minZoom: 13,
+      maxZoom: 17,
+      totalTiles: 10,
+      estimatedBytes: 1000,
+    })
+    const progress = { downloadedTiles: 10, failedTiles: 0 }
+
+    await finalizeOfflineArea("area-1", "ready", progress)
+    expect(await getOfflineArea("area-1")).toMatchObject({ estimatedBytes: 1000 })
+    await finalizeOfflineArea("area-1", "ready", progress, Number.NaN)
+    await finalizeOfflineArea("area-1", "ready", progress, -5)
+    expect(await getOfflineArea("area-1")).toMatchObject({ estimatedBytes: 1000 })
+    await finalizeOfflineArea("area-1", "ready", progress, 0)
+    expect(await getOfflineArea("area-1")).toMatchObject({ estimatedBytes: 0 })
   })
 
   test("findReadyOfflineAreaForPoint only matches a ready area covering the point", async () => {

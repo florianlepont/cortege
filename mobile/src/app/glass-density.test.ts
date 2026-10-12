@@ -245,8 +245,8 @@ describe("the rest of the light glass is unchanged (12.2-23)", () => {
 
   test("the same control tints, sheet fallback fill and map panel as before", () => {
     expect(visual.mapControl.glass).toEqual({
-      tint: "rgba(247, 246, 240, 0.76)",
-      fill: "rgba(247, 246, 240, 0.76)",
+      tint: "rgba(247, 246, 240, 0.92)",
+      fill: "rgba(247, 246, 240, 0.92)",
       android: "rgba(247, 246, 240, 0.92)",
     })
     expect(visual.sheet.fill).toBe("rgba(247, 246, 240, 0.88)")

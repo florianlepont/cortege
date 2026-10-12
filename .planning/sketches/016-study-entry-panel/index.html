@@ -1,0 +1,23 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Phase 28 : entrée du mode étude et panneau des couches</title>
+<link rel="stylesheet" href="../themes/map-layers.css"></head><body>
+<h1>Sketch 016 : comment entre-t-on dans le mode « étudier », et que contient le panneau ?</h1>
+<div class="sub">Phase 28. L'Explorer reste le mode par défaut et inchangé (décision 28-CONTEXT). Ici on compare trois façons d'ouvrir les couches et la comparaison. Essayez les états à gauche : fond ancien (le point apparaît), superposition forêt, comparaison, hors connexion. Bouton « Clair / sombre » en haut à droite.</div>
+<div id="app"></div>
+<script src="../themes/map-layers-kit.js"></script>
+<script>
+const S=[["defaut","Explorer au repos"],["panneau","Panneau ouvert"],["ancien","Fond ancien choisi"],["foret","Types de forêt"],["comparer","Comparer deux fonds"],["comparerFerme","Comparaison, panneau fermé"],["horsligne","Hors connexion, zone téléchargée"],["horsZone","Hors connexion, rien ici"],["erreur","Erreur de chargement"]];
+LK.mountSketch(document.getElementById("app"),[
+{id:"d",tab:"Choix : Couches sans bascule",win:"choix du propriétaire, 2026-10-11",title:"Choix : pastille « Couches », plus de bascule plan/satellite, parcelles à 3 états",cfg:{entry:"layers",tags:"spec",chip:"left",dlclose:true},states:[["panneau","Panneau ouvert"],["ancien","Fond ancien choisi"],["foret","Types de forêt"],["comparer","Comparer deux fonds"],["comparerFerme","Comparaison, panneau fermé"],["horsligne","Hors connexion, zone téléchargée"],["horsZone","Hors connexion, rien ici"]],
+ desc:"Synthèse des choix : la pastille « Couches » (B) remplace le bouton de bascule du fond, qui disparaît. Le panneau a trois blocs : Fonds, Comparer, Superpositions (types de forêt et Parcelles : Toutes, Avec IBP, Aucune). Essayez Avec IBP et Aucune : le cadastre et les parcelles disparaissent. En comparaison, la pastille et la croix de sortie sont côte à côte.",
+ points:["Une seule porte d'entrée pour tout ce qui touche au fond de carte","Satellite en 2 appuis au lieu d'1","Parcelles : un seul contrôle pour le cadastre et les polygones"]},
+{id:"a",tab:"A : 3e bouton dans la capsule",title:"A : troisième bouton dans la capsule (contrat actuel)",cfg:{entry:"capsule",tags:"spec",chip:"left"},states:S,
+ desc:"Un bouton « couches » s'ajoute aux deux boutons de la capsule (fond, couches, téléchargement). Il ouvre le panneau dans la feuille. Un point vert signale que l'état diffère de l'Explorer habituel.",
+ points:["Rien d'existant ne bouge sauf la capsule, plus haute de 51 pt","Discret : l'Explorer ressemble à l'actuel","Découvrabilité moyenne : icône seule"]},
+{id:"b",tab:"B : pastille « Couches »",title:"B : pastille avec le mot « Couches »",cfg:{entry:"pill",tags:"spec",chip:"left"},states:S,
+ desc:"La capsule garde ses deux boutons. Une pastille en verre avec l'icône et le mot « Couches » est posée en haut à gauche, à l'endroit où apparaît la croix de sortie en comparaison.",
+ points:["Plus facile à trouver pour un nouvel utilisateur","Occupe l'angle haut gauche, libre aujourd'hui","Le texte demande de la place sur petit écran"]},
+{id:"c",tab:"C : onglets Explorer | Étudier",title:"C : sélecteur Explorer | Étudier dans la feuille",cfg:{entry:"segment",tags:"spec",chip:"left"},states:S,
+ desc:"La feuille est toujours présente, avec un sélecteur à deux onglets. « Étudier » déploie le panneau, « Explorer » revient à la liste actuelle. Le mode est explicite.",
+ points:["Le plus clair : on sait dans quel mode on est","Ajoute une feuille permanente sur la carte, donc touche l'Explorer actuel","Écarte la décision « discret, Explorer par défaut »"]}
+]);
+</script></body></html>

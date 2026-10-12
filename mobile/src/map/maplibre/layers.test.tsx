@@ -1,7 +1,13 @@
+const mockOffline = { value: false }
+jest.mock("../../hooks/useIsOffline", () => ({ useIsOffline: () => mockOffline.value }))
+
 import renderer, { act } from "react-test-renderer"
 import { brandColors, brandMapTokens } from "../../app/brand-tokens"
 import type { PublicParcelStatusItem } from "../../app/types"
-import { CadastreLayer } from "./CadastreLayer"
+import { FOREST_TYPES_OPACITY } from "../layer-styles"
+import { CADASTRE_SOURCE_ID } from "../offline-styles"
+import { CADASTRE_LAYER_ID, CadastreLayer } from "./CadastreLayer"
+import { ForestTypesLayer } from "./ForestTypesLayer"
 import { ParcelPolygonsLayer } from "./ParcelPolygonsLayer"
 import { PlacePinLayer } from "./PlacePinLayer"
 
@@ -11,6 +17,10 @@ beforeAll(() => {
 })
 
 afterAll(() => jest.restoreAllMocks())
+
+beforeEach(() => {
+  mockOffline.value = false
+})
 
 function mount(element: React.ReactElement) {
   let tree!: renderer.ReactTestRenderer
@@ -85,6 +95,165 @@ describe("ParcelPolygonsLayer", () => {
     source.props.onPress({ nativeEvent: { features: [] } })
     source.props.onPress({ nativeEvent: { features: [{ properties: { parcel_id: 7 } }] } })
     expect(onParcelPress).not.toHaveBeenCalled()
+  })
+})
+
+describe("ParcelPolygonsLayer, Parcelles states and legibility (Phase 28)", () => {
+  const WITH_SURVEY = ["any", ["==", ["get", "hasSurvey"], true], ["==", ["get", "selected"], true]]
+  const SELECTED_ONLY = ["==", ["get", "selected"], true]
+
+  test("default props: today's two layers, no filter, no fill-opacity", () => {
+    const tree = mount(<ParcelPolygonsLayer items={items()} />)
+    const layers = tree.root.findAllByType("Layer" as never)
+    expect(layers.map((layer) => layer.props.id)).toEqual(["parcels-fill", "parcels-outline"])
+    for (const layer of layers) expect(layer.props.filter).toBeUndefined()
+    expect(layers[0].props.paint).toEqual({ "fill-color": ["get", "fill"] })
+  })
+
+  test("Avec IBP: the same filter on the casing, the fill and the outline", () => {
+    const tree = mount(<ParcelPolygonsLayer items={items()} mode="withIbp" casing />)
+    const layers = tree.root.findAllByType("Layer" as never)
+    expect(layers).toHaveLength(3)
+    for (const layer of layers) expect(layer.props.filter).toEqual(WITH_SURVEY)
+  })
+
+  test("Aucune: only the focused parcel passes the filter and no press is wired", () => {
+    const onParcelPress = jest.fn()
+    const tree = mount(
+      <ParcelPolygonsLayer items={items()} mode="none" onParcelPress={onParcelPress} />,
+    )
+    for (const layer of tree.root.findAllByType("Layer" as never)) {
+      expect(layer.props.filter).toEqual(SELECTED_ONLY)
+    }
+    expect(tree.root.findByType("GeoJSONSource" as never).props.onPress).toBeUndefined()
+  })
+
+  test("Avec IBP keeps the press", () => {
+    const tree = mount(
+      <ParcelPolygonsLayer items={items()} mode="withIbp" onParcelPress={jest.fn()} />,
+    )
+    expect(tree.root.findByType("GeoJSONSource" as never).props.onPress).toEqual(
+      expect.any(Function),
+    )
+  })
+
+  test("the casing is the first line layer, white and two points wider than the outline", () => {
+    const tree = mount(<ParcelPolygonsLayer items={items()} casing casingOpacity={0.6} />)
+    const layers = tree.root.findAllByType("Layer" as never)
+    expect(layers.map((layer) => layer.props.id)).toEqual([
+      "parcels-casing",
+      "parcels-fill",
+      "parcels-outline",
+    ])
+    expect(layers[0].props.type).toBe("line")
+    expect(layers[0].props.paint).toEqual({
+      "line-color": brandMapTokens.parcelCasing,
+      "line-width": ["+", ["get", "strokeWidth"], 2],
+      "line-opacity": 0.6,
+    })
+  })
+
+  test("the casing opacity defaults to 1", () => {
+    const tree = mount(<ParcelPolygonsLayer items={items()} casing />)
+    expect(tree.root.findAllByType("Layer" as never)[0].props.paint["line-opacity"]).toBe(1)
+  })
+
+  test("a fill opacity below 1 lightens the fill", () => {
+    const tree = mount(<ParcelPolygonsLayer items={items()} fillOpacity={0.6} />)
+    expect(tree.root.findAllByType("Layer" as never)[0].props.paint).toEqual({
+      "fill-color": ["get", "fill"],
+      "fill-opacity": 0.6,
+    })
+  })
+
+  test("the survey parcel ids reach the features", () => {
+    const tree = mount(
+      <ParcelPolygonsLayer
+        items={[{ ...items()[0], study_status: "not_studied" } as PublicParcelStatusItem]}
+        surveyParcelIds={new Set(["P1"])}
+      />,
+    )
+    const source = tree.root.findByType("GeoJSONSource" as never)
+    expect(source.props.data.features[0].properties.hasSurvey).toBe(true)
+  })
+})
+
+describe("ParcelPolygonsLayer keys (iPhone crash, 2026-10-11)", () => {
+  // MapLibre keys its children by position: without an explicit key a casing that appears or goes
+  // away hands the "parcels-fill" instance to "parcels-casing" and the native layer throws
+  // "`id` cannot be changed", which closes the app.
+  type TestFiber = { key: string | null; return: TestFiber | null }
+  // The mock renders each MapLibre component as a host element: the element's key sits on the
+  // closest keyed fiber at or above it.
+  const keyOf = (node: renderer.ReactTestInstance): string | null => {
+    let fiber: TestFiber | null = (node as unknown as { _fiber: TestFiber })._fiber
+    while (fiber && fiber.key === null) fiber = fiber.return
+    return fiber ? fiber.key : null
+  }
+  const layerKeys = (tree: renderer.ReactTestRenderer) =>
+    tree.root.findAllByType("Layer" as never).map((node) => [keyOf(node), node.props.id])
+
+  test("every layer is keyed by its own id, with or without the casing", () => {
+    const withCasing = mount(<ParcelPolygonsLayer items={items()} casing />)
+    expect(layerKeys(withCasing)).toEqual([
+      ["parcels-casing", "parcels-casing"],
+      ["parcels-fill", "parcels-fill"],
+      ["parcels-outline", "parcels-outline"],
+    ])
+    const without = mount(<ParcelPolygonsLayer items={items()} />)
+    expect(layerKeys(without)).toEqual([
+      ["parcels-fill", "parcels-fill"],
+      ["parcels-outline", "parcels-outline"],
+    ])
+  })
+
+  test("a casing that appears adds a layer without renaming the others", () => {
+    const tree = mount(<ParcelPolygonsLayer items={items()} />)
+    expect(tree.root.findAllByType("Layer" as never).map((node) => node.props.id)).toEqual([
+      "parcels-fill",
+      "parcels-outline",
+    ])
+    act(() => {
+      tree.update(<ParcelPolygonsLayer items={items()} casing />)
+    })
+    expect(tree.root.findAllByType("Layer" as never).map((node) => node.props.id)).toEqual([
+      "parcels-casing",
+      "parcels-fill",
+      "parcels-outline",
+    ])
+  })
+})
+
+describe("ForestTypesLayer", () => {
+  test("draws nothing while disabled", () => {
+    expect(mount(<ForestTypesLayer enabled={false} />).toJSON()).toBeNull()
+  })
+
+  test("is one raster source of the catalogue tiles with one translucent raster layer", () => {
+    const tree = mount(<ForestTypesLayer enabled />)
+    const source = tree.root.findByType("RasterSource" as never)
+    expect(source.props.id).toBe("types-foret")
+    expect(source.props.tileSize).toBe(256)
+    expect(source.props.maxzoom).toBe(16)
+    expect(source.props.scheme).toBe("xyz")
+    expect(source.props.tiles[0]).toContain("LANDCOVER.FORESTINVENTORY.V2")
+    const layer = tree.root.findByType("Layer" as never)
+    expect(layer.props.type).toBe("raster")
+    expect(layer.props.paint).toEqual({ "raster-opacity": 0.55 })
+    expect(FOREST_TYPES_OPACITY).toBe(0.55)
+    expect(layer.props.beforeId).toBeUndefined()
+  })
+
+  test("sits under the cadastre layer when the style already carries it", () => {
+    const tree = mount(<ForestTypesLayer enabled belowCadastre />)
+    expect(tree.root.findByType("Layer" as never).props.beforeId).toBe("ign-cadastre")
+    expect(CADASTRE_LAYER_ID).toBe(CADASTRE_SOURCE_ID)
+  })
+
+  test("offline it asks for the offline zoom caps", () => {
+    mockOffline.value = true
+    const tree = mount(<ForestTypesLayer enabled />)
+    expect(tree.root.findByType("RasterSource" as never).props.maxzoom).toBe(16)
   })
 })
 

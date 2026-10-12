@@ -9,21 +9,33 @@ import {
 import type { NativeSyntheticEvent } from "react-native"
 import type { MapCoordinate, MapRegion } from "../../app/map-viewport"
 import type { PublicMapItem, PublicParcelStatusItem } from "../../app/types"
-import type { BasemapKey } from "../../map/basemaps"
-import { CadastreLayer } from "../../map/maplibre/CadastreLayer"
+import type { BaseLayerKey } from "../../map/layers"
 import { markerItemsAtParcelZoom } from "../../map/maplibre/parcel-coverage"
-import { ParcelPolygonsLayer } from "../../map/maplibre/ParcelPolygonsLayer"
+import type { ParcelsMode } from "../../map/parcels-visibility"
 import { PlacePinLayer } from "../../map/maplibre/PlacePinLayer"
 import { boundsFromRegion, regionFromViewChange } from "../../map/maplibre/regions"
 import { useMapStyle } from "../../hooks/useMapStyle"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { ClusterMarker } from "./ClusterMarker"
+import { MapContentLayers, shownParcelsFor } from "./MapContentLayers"
 import { screenStyles } from "./styles"
 import { SurveyMarker } from "./SurveyMarker"
 import { useMapClusters } from "./useMapClusters"
 import { DEFAULT_MAP_REGION, regionForZoom } from "./useMapViewport"
 
-const NO_PARCELS: PublicParcelStatusItem[] = []
+// A frozen map (Phase 28 swipe mode) hands nothing to a marker, cluster or parcel press.
+const NOOP = () => undefined
+
+/** The props the swipe mode and the comparison drive on the Explorer map (`useExplorerSwipe`). */
+export type SwipeCanvasKey =
+  | "frozen"
+  | "onViewChange"
+  | "rotationLocked"
+  | "hideMarkers"
+  | "androidView"
+  | "onRenderedFully"
+  | "onViewSettled"
+  | "bare"
 
 export type MapCanvasProps = {
   cameraRef: RefObject<CameraRef | null>
@@ -42,8 +54,26 @@ export type MapCanvasProps = {
   onSelectParcel: (parcelId: string) => void
   onZoomTo: (region: MapRegion) => void
   onOpenClusterList: (items: PublicMapItem[]) => void
-  /** REQ-D-basemap-switch (08-CONTEXT D-01). */
-  basemap?: BasemapKey
+  /** REQ-D-basemap-switch (08-CONTEXT D-01), widened to the five bases of Phase 28. */
+  basemap?: BaseLayerKey
+  /** Phase 28: the forest types overlay, drawn over the base and under the cadastre and parcels. */
+  forestOverlay?: boolean
+  /** Phase 28 Parcelles state: cadastre lines and parcel polygons (default "all", as before). */
+  parcelsMode?: ParcelsMode
+  /** The parcels of the author's own surveys (trimmed, upper case): "Avec IBP" keeps them. */
+  surveyParcelIds?: ReadonlySet<string>
+  /** Bumped by a "Réessayer": the style is asked again (`useMapStyle`). */
+  styleRetryKey?: number
+  /** The style finished loading (a base, an offline file). */
+  onStyleLoaded?: () => void
+  /** The camera settled (`onRegionDidChange`): the stacked maps align to it before they show. */
+  onViewSettled?: (event: NativeSyntheticEvent<ViewStateChangeEvent>) => void
+  /** The map finished rendering what it shows (`onDidFinishRenderingMapFully`). */
+  onRenderedFully?: () => void
+  /** The basemap change mode: bare basemaps, with no forest types, cadastre or parcels. */
+  bare?: boolean
+  /** The style failed to load (offline without a pack, a refused tile server). */
+  onStyleFailed?: () => void
   /** The parcels of the survey shown from its page, drawn highlighted (OA-116). */
   highlightedParcelIds?: string[]
   /** D-05: the place a search result centred the map on, drawn as one static pin. */
@@ -52,6 +82,22 @@ export type MapCanvasProps = {
   initialRegion?: MapRegion
   /** Bumped after an offline download or delete so the style choice is re-checked. */
   styleRefreshKey?: number
+  /**
+   * Phase 28 swipe mode: the map takes no pan, zoom, rotation, pitch or double tap, and markers,
+   * clusters and parcels take no press. Off by default.
+   */
+  frozen?: boolean
+  /**
+   * Phase 28: told the view while the camera moves and again when it settles, so the stacked maps
+   * of a wipe or a comparison follow this one (`useMapSync`).
+   */
+  onViewChange?: (event: NativeSyntheticEvent<ViewStateChangeEvent>) => void
+  /** Phase 28 comparison: north up and flat, so only the centre and zoom are synchronised. */
+  rotationLocked?: boolean
+  /** Phase 28 comparison: no cluster or survey marker (a marker belongs to one map only). */
+  hideMarkers?: boolean
+  /** Android only: `texture` lets a parent clip the map; the default is the faster surface. */
+  androidView?: "surface" | "texture"
 }
 
 /**
@@ -75,12 +121,30 @@ export const MapCanvas = memo(function MapCanvas({
   onZoomTo,
   onOpenClusterList,
   basemap = "map",
+  forestOverlay = false,
+  parcelsMode = "all",
+  surveyParcelIds,
+  styleRetryKey = 0,
+  onStyleLoaded,
+  onRenderedFully,
+  onViewSettled,
+  bare,
+  onStyleFailed,
   initialRegion = DEFAULT_MAP_REGION,
   highlightedParcelIds,
   placePin,
   styleRefreshKey = 0,
+  frozen = false,
+  onViewChange,
+  rotationLocked = false,
+  hideMarkers = false,
+  androidView,
 }: MapCanvasProps) {
-  const { mapStyle, cadastreInStyle } = useMapStyle(basemap, styleRefreshKey)
+  const { mapStyle, cadastreInStyle, cadastreOpacity } = useMapStyle(
+    basemap,
+    styleRefreshKey,
+    styleRetryKey,
+  )
   // From zoom 15 the parcels, filled by score, replace the markers (OA-126), except the author's
   // own drafts and any survey no scored parcel shows yet: its score never vanishes (12.2-19).
   const markerItems = useMemo(
@@ -88,13 +152,11 @@ export const MapCanvas = memo(function MapCanvas({
       parcelLayerRenderable ? markerItemsAtParcelZoom(items, parcelStatuses, draftIds) : items,
     [draftIds, items, parcelLayerRenderable, parcelStatuses],
   )
-  // Between zoom 12 and 15 only the studied parcels are drawn (the API answers only those, and a
-  // set kept from a closer view is filtered the same way); from 15 every parcel of the view is.
-  const shownParcels = useMemo(() => {
-    if (parcelLayerRenderable) return parcelStatuses
-    if (!studiedParcelsRenderable) return NO_PARCELS
-    return parcelStatuses.filter((parcel) => parcel.study_status === "studied")
-  }, [parcelLayerRenderable, parcelStatuses, studiedParcelsRenderable])
+  // Between zoom 12 and 15 only the studied parcels are drawn, from 15 every parcel of the view.
+  const shownParcels = useMemo(
+    () => shownParcelsFor(parcelStatuses, parcelLayerRenderable, studiedParcelsRenderable),
+    [parcelLayerRenderable, parcelStatuses, studiedParcelsRenderable],
+  )
   const { clusters, resolveClusterPress } = useMapClusters({ items: markerItems, region })
 
   const clusterCenters = useMemo(() => {
@@ -125,6 +187,8 @@ export const MapCanvas = memo(function MapCanvas({
       onRegionChangeComplete(regionFromViewChange({ center, bounds }), {
         isGesture: userInteraction,
       })
+      onViewChange?.(event)
+      onViewSettled?.(event)
     },
   )
 
@@ -134,20 +198,38 @@ export const MapCanvas = memo(function MapCanvas({
       mapStyle={mapStyle}
       attribution={false}
       logo={false}
+      androidView={androidView}
+      dragPan={frozen ? false : undefined}
+      touchZoom={frozen ? false : undefined}
+      doubleTapZoom={frozen ? false : undefined}
+      touchRotate={frozen || rotationLocked ? false : undefined}
+      touchPitch={frozen || rotationLocked ? false : undefined}
+      onRegionIsChanging={onViewChange}
       onRegionDidChange={handleRegionDidChange}
+      onDidFinishLoadingStyle={onStyleLoaded}
+      onDidFinishRenderingMapFully={onRenderedFully}
+      onDidFailLoadingMap={onStyleFailed}
     >
       <Camera ref={cameraRef} initialViewState={{ bounds: boundsFromRegion(initialRegion) }} />
-      {/* MAP-04: the device's own position is the native halo, not a marker kept by the app. */}
-      <UserLocation />
-      <CadastreLayer enabled={parcelLayerRenderable && !cadastreInStyle} />
-      <ParcelPolygonsLayer
-        items={shownParcels}
+      <MapContentLayers
+        base={basemap}
+        forestOverlay={forestOverlay}
+        parcelsMode={parcelsMode}
+        cadastreEnabled={parcelLayerRenderable}
+        cadastreInStyle={cadastreInStyle}
+        cadastreOpacity={cadastreOpacity}
+        parcels={shownParcels}
         selectedParcelIds={highlightedParcelIds}
-        byScore
+        surveyParcelIds={surveyParcelIds}
+        interactive={!frozen}
         onParcelPress={onSelectParcel}
+        bare={bare}
       />
+      {/* MAP-04: the device's own position is the native halo, not a marker kept by the app. It is
+          added after the content so it draws over the cadastre lines and the parcels. */}
+      <UserLocation key="user-location" />
       <PlacePinLayer pin={placePin ?? null} />
-      {clusters.map((entry) => {
+      {(hideMarkers || parcelsMode === "none" ? [] : clusters).map((entry) => {
         if (entry.kind === "cluster") {
           return (
             <ClusterMarker
@@ -156,7 +238,7 @@ export const MapCanvas = memo(function MapCanvas({
               clusterId={entry.clusterId}
               coordinate={{ latitude: entry.latitude, longitude: entry.longitude }}
               count={entry.count}
-              onPress={handleClusterPress}
+              onPress={frozen ? NOOP : handleClusterPress}
             />
           )
         }
@@ -172,7 +254,7 @@ export const MapCanvas = memo(function MapCanvas({
             ibpTotal={entry.item.ibp_total}
             selected={selected}
             draft={draft}
-            onSelect={onSelectSurvey}
+            onSelect={frozen ? NOOP : onSelectSurvey}
           />
         )
       })}

@@ -209,3 +209,7 @@ adb shell run-as fr.etatssauvages.cortege ls cache/Camera cache/ImageManipulator
 Both folders must be empty, or missing. Do not clear the whole `cache/`
 directory by hand to check: it also holds the bundled model copy that the
 recognition needs.
+
+## Swipe spike (Phase 28)
+
+The Phase 28 swipe and comparison spike is finished and its scaffolding removed: its measurements and the open iPhone judgement are device check DL-01 in `docs/user-tests/device-checks.md`.

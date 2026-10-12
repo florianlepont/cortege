@@ -30,6 +30,7 @@ jest.mock("./DownloadStatusView", () => ({
 
 import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
+import type { AreaLayersEstimate } from "../../map/offline-estimate"
 import { OfflineAreasSheet } from "./OfflineAreasSheet"
 
 const originalConsoleError = console.error
@@ -46,10 +47,13 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-const estimate = {
-  tileCountPerBasemap: 93,
+const estimate: AreaLayersEstimate = {
+  policy: "base",
+  layers: [],
   totalTileCount: 186,
   estimatedBytes: 2_000_000,
+  baseBytes: 2_000_000,
+  extraBytes: 0,
   exceedsCap: false,
 }
 const running: AreaDownloadStatus = {
@@ -135,7 +139,7 @@ describe("OfflineAreasSheet states (12.2-19 third round)", () => {
   test("the same form under every state, so the panel never changes height", () => {
     const states: AreaDownloadStatus[] = [
       running,
-      { ...running, phase: "done", percentage: 100, downloadedTiles: 186 },
+      { ...running, phase: "done", percentage: 100, downloadedTiles: 186, failedLayers: [] },
       { phase: "failed", areaId: "area-1", name: "Bois du Nord" },
     ]
     const shapes = [null, ...states].map((state) => {
@@ -234,7 +238,12 @@ describe("OfflineAreasSheet states (12.2-19 third round)", () => {
       expect(layer.props.accessibilityElementsHidden).toBe(true)
       expect(layer.props.importantForAccessibility).toBe("no-hide-descendants")
       const copies = layer.findAll((node) => (node.type as unknown) === "DownloadStatusView")
-      expect(copies.map((copy) => copy.props.status.phase)).toEqual(["running", "done", "failed"])
+      expect(copies.map((copy) => copy.props.status.phase)).toEqual([
+        "running",
+        "done",
+        "failed",
+        "done",
+      ])
       for (const copy of copies) expect(copy.props.announce).toBe(false)
       expect(flat(body().props.style).minHeight).toBe(0)
 
@@ -247,6 +256,11 @@ describe("OfflineAreasSheet states (12.2-19 third round)", () => {
       report("running", 92)
       report("done", 128)
       report("failed", 120)
+      expect(flat(body().props.style).minHeight).toBe(128)
+      // The partial result (four layers named) can be the tallest.
+      report("partial", 150)
+      expect(flat(body().props.style).minHeight).toBe(150)
+      report("partial", 100)
       expect(flat(body().props.style).minHeight).toBe(128)
       // A larger text size makes a status taller: the floor follows.
       report("failed", 176)

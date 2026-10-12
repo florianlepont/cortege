@@ -56,7 +56,7 @@ const WIDE_ZOOM: Region = {
   longitudeDelta: 0.2,
 }
 
-type Props = Pick<UseMapViewportArgs, "items" | "showParcelLayer">
+type Props = Pick<UseMapViewportArgs, "items" | "showParcelLayer" | "initialRegion">
 
 async function setup(initial: Partial<Props> = {}) {
   const loadPublicMap = jest.fn(async () => undefined)
@@ -64,10 +64,11 @@ async function setup(initial: Partial<Props> = {}) {
   const animateToRegion = jest.fn()
   const onViewportBboxChange = jest.fn()
   const view = await renderHook(
-    ({ items, showParcelLayer }: Props) =>
+    ({ items, showParcelLayer, initialRegion }: Props) =>
       useMapViewport({
         items,
         showParcelLayer,
+        initialRegion,
         loadPublicMap,
         loadParcels,
         animateToRegion,
@@ -321,5 +322,22 @@ describe("regionForZoom", () => {
     expect(region.longitude).toBe(4)
     expect(region.longitudeDelta).toBeCloseTo(360 / 1024)
     expect(region.latitudeDelta).toBeCloseTo((360 / 1024) * 2)
+  })
+
+  test("starts on a given region and does not fit the items afterwards", async () => {
+    const { result, rerender, animateToRegion, loadPublicMap } = await setup({
+      initialRegion: LYON,
+    })
+    expect(result.current.region).toEqual(LYON)
+    expect(loadPublicMap).toHaveBeenCalledWith({ bbox: computeRegionBbox(LYON) })
+    await rerender({ items: [item("a", 48.1, 2.3)], showParcelLayer: true, initialRegion: LYON })
+    expect(animateToRegion).not.toHaveBeenCalled()
+  })
+
+  test("without a given region it starts on the default one and fits the first items", async () => {
+    const { result, rerender, animateToRegion } = await setup()
+    expect(result.current.region).toEqual(DEFAULT_MAP_REGION)
+    await rerender({ items: [item("a", 48.1, 2.3)], showParcelLayer: true })
+    expect(animateToRegion).toHaveBeenCalledTimes(1)
   })
 })

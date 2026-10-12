@@ -50,6 +50,7 @@ jest.mock("../../app/theme", () => {
 import { brandComponentTokens, brandInteraction } from "../../app/brand-tokens"
 import { buildTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import type { AreaLayersEstimate } from "../../map/offline-estimate"
 import { OfflineAreasSheet } from "./OfflineAreasSheet"
 import { GlassIconButton, SHEET_CLOSE_ICON_SIZE, SHEET_CLOSE_SIZE } from "./GlassIconButton"
 
@@ -108,10 +109,13 @@ describe("GlassIconButton close variant (12.2-19 fix round)", () => {
 })
 
 describe("OfflineAreasSheet text in dark mode (12.2-19 fix round)", () => {
-  const estimate = {
-    tileCountPerBasemap: 10,
+  const estimate: AreaLayersEstimate = {
+    policy: "base",
+    layers: [],
     totalTileCount: 20,
     estimatedBytes: 2_000_000,
+    baseBytes: 2_000_000,
+    extraBytes: 0,
     exceedsCap: false,
   }
 

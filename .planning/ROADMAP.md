@@ -1019,7 +1019,7 @@ Plans:
 
 **Goal**: The map offers several layers (state-map, forest data, others) with a comparison option, and the Explorer tab supports both exploring and studying maps.
 **Depends on**: Phase 17 (offline map), Phase 23
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Requirements**: REQ-DOC-layer-licences, REQ-D-map-layers, REQ-D-layer-compare, REQ-D-explorer-modes, REQ-D-offline-layers, REQ-D-offline-percent
 **Source**: seminar 2026-10-10: "Différents layers sur la carte" with the note "comparaison"; SEED-001
 **Success Criteria** (what must be TRUE):
 
@@ -1027,9 +1027,9 @@ Plans:
   2. The observer can switch layers on and off and compare two layers on the same area.
   3. The Explorer tab shows or hides information according to the mode (explore or study), with a decided and tested UX: nothing the new functions add hides the existing explore flow.
   4. Layers behave as decided with and without a network, and their cost on offline packs is measured.
-  5. The Explorer sheet shows the percentage of an offline-area download, not only an indeterminate "Téléchargement…" button (owner decision 2026-10-10, carried over from Phase 17).
+  5. The Explorer shows the percentage of an offline-area download, not only an indeterminate "Téléchargement…" button (owner decisions 2026-10-10 and 2026-10-11: a chip beside the download button carries it, the sheet closes after "Télécharger").
 
-**Plans**: TBD
+**Plans**: 27/28 plans executed, 28-18 partial (28-01 to 28-17 and the owner-feedback plans 28-19 to 28-27 done and validated informally on the owner's iPhone 2026-10-12; 28-18 wrote docs/technical/map-layers-and-licences-v1.md, still open: measured offline pack sizes, airplane-mode and Android emulator device checks DL-06 to DL-08; see 28-18-SUMMARY.md)
 **UI hint**: yes
 
 ### Phase 29: Private or Public Before Submission (INSERTED, V1)
@@ -1231,7 +1231,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
 | 27. Quick survey additions | 22/22 | Complete | 2026-10-12 |
-| 28. Map Layers & Comparison | 0/TBD | Not started | - |
+| 28. Map Layers & Comparison | 27/28 | In progress (owner iPhone validation 2026-10-12; offline measures and Android run open) | - |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
 | 30. Route Choice Assistant | 0/TBD | Not started | - |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |

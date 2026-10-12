@@ -73,6 +73,37 @@ describe("buildParcelFeatureCollection", () => {
     })
   })
 
+  test("hasSurvey: studied by the Explorer data, or a survey of the author's own on it", () => {
+    const geometry = { type: "Polygon", coordinates: [RING] }
+    const { features } = buildParcelFeatureCollection(
+      [parcel("STU", geometry, "studied"), parcel("OWN", geometry), parcel("NONE", geometry)],
+      [],
+      { surveyParcelIds: new Set(["OWN"]) },
+    )
+    const flags = Object.fromEntries(
+      features.map((feature) => [feature.properties.parcel_id, feature.properties.hasSurvey]),
+    )
+    expect(flags).toEqual({ STU: true, OWN: true, NONE: false })
+  })
+
+  test("hasSurvey without a set of own surveys follows the studied status alone", () => {
+    const geometry = { type: "Polygon", coordinates: [RING] }
+    const { features } = buildParcelFeatureCollection([
+      parcel("STU", geometry, "studied"),
+      parcel("NONE", geometry),
+    ])
+    expect(features.map((feature) => feature.properties.hasSurvey)).toEqual([true, false])
+  })
+
+  test("selected marks the focused parcels, ids compared trimmed and upper case", () => {
+    const geometry = { type: "Polygon", coordinates: [RING] }
+    const { features } = buildParcelFeatureCollection(
+      [parcel("SEL", geometry), parcel("OTHER", geometry)],
+      [" sel "],
+    )
+    expect(features.map((feature) => feature.properties.selected)).toEqual([true, false])
+  })
+
   test("unusable geometries are dropped without breaking the rest", () => {
     const { features } = buildParcelFeatureCollection([
       parcel("NONE", null),

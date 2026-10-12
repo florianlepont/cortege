@@ -1,6 +1,7 @@
 import { memo, useCallback, useContext, useEffect, useMemo, useRef } from "react"
 import { View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { resolveDraftParcelIds } from "../../app/ibp-scoring"
 import { useBasemapPreference } from "../../hooks/useBasemapPreference"
 import { useIsOffline } from "../../hooks/useIsOffline"
 import { useOfflinePendingParcelDrain } from "../../hooks/useOfflinePendingParcelDrain"
@@ -68,6 +69,16 @@ export const PublicMapRoute = memo(function PublicMapRoute({
       }),
     [localMap, surveys.surveyDetails, publishedIds],
   )
+  // Phase 28 ("Avec IBP", UI-SPEC open item 7, an assumption to confirm with the owner): a parcel
+  // counts as having a survey when one of the author's own surveys, drafts included, is on it. The
+  // ids are normalised like `parcel-features.ts` compares them (trimmed, upper case).
+  const surveyParcelIds = useMemo(() => {
+    const parcelIds = new Set<string>()
+    for (const source of localMap.sources) {
+      for (const id of resolveDraftParcelIds(source.payload)) parcelIds.add(id)
+    }
+    return parcelIds
+  }, [localMap.sources])
   const localIds = useMemo(
     () => new Set(surveys.surveys.map((survey) => survey.id)),
     [surveys.surveys],
@@ -110,6 +121,7 @@ export const PublicMapRoute = memo(function PublicMapRoute({
         parcelStatuses={explorer.parcelStatuses}
         draftItems={ownMap.drafts}
         ownItems={ownMap.own}
+        surveyParcelIds={surveyParcelIds}
         focus={route.params?.focus}
         loading={explorer.loading}
         onLoad={explorer.loadPublicMap}

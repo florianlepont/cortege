@@ -1,6 +1,8 @@
-import { memo, useEffect } from "react"
+import { memo, useEffect, useMemo } from "react"
 import { SettingsScreen } from "../../screens/SettingsScreen"
 import { useOfflineAreasSummary } from "../../hooks/useOfflineAreasSummary"
+import { useOfflineLayersPolicy } from "../../hooks/useOfflineLayersPolicy"
+import { referenceAreaBytes } from "../../map/offline-estimate"
 import { useSession } from "../../state/session-context"
 import { useSyncActions } from "../../state/sync-actions-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -16,6 +18,12 @@ export const SettingsRoute = memo(function SettingsRoute({ navigation }: Setting
   const { state: session, actions: sessionActions } = useSession()
   const syncActions = useSyncActions()
   const { summary, refresh } = useOfflineAreasSummary()
+  const { policy, setPolicy } = useOfflineLayersPolicy()
+  // The weight of the reference area for each level, from the catalogue estimator (never typed).
+  const offlineLayersBytes = useMemo(
+    () => ({ all: referenceAreaBytes("all"), base: referenceAreaBytes("base") }),
+    [],
+  )
 
   useEffect(() => navigation.addListener?.("focus", () => void refresh()), [navigation, refresh])
   useEffect(() => {
@@ -32,6 +40,9 @@ export const SettingsRoute = memo(function SettingsRoute({ navigation }: Setting
         onApiUrlChange={sessionActions.setApiUrl}
         offlineAreas={summary}
         onOpenOfflineAreas={onOpenOfflineAreas}
+        offlineLayersPolicy={policy}
+        onChangeOfflineLayersPolicy={setPolicy}
+        offlineLayersBytes={offlineLayersBytes}
         onDeleteAccount={sessionActions.handleDeleteAccount}
         onDebugResetIbpData={syncActions.handleDebugResetIbpData}
         onDebugResetUserData={syncActions.handleDebugResetUserData}

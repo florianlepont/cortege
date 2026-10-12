@@ -1,4 +1,5 @@
 import * as Location from "expo-location"
+import { rememberPosition } from "../app/last-position"
 import { GpsCaptureResult } from "../app/types"
 import { fr, logStatusDetail, type StatusMessage } from "../i18n"
 import { useSurveyForm } from "./useSurveyForm"
@@ -58,6 +59,7 @@ export function useGpsCapture({ surveyForm, onStatusChange, onAlert }: UseGpsCap
           accuracy: Location.Accuracy.Balanced,
         })
 
+        rememberPosition(position.coords.latitude, position.coords.longitude)
         const currentLocation: GpsCaptureResult = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,

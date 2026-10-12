@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react"
 import * as Location from "expo-location"
+import { rememberPosition } from "../app/last-position"
 import { resolveMethodVersion } from "@cortege/ibp-domain"
 import { fetchPublicParcelStatuses } from "../api/ibp-api"
 import { buildBboxAroundPoint } from "../app/map-viewport"
@@ -112,6 +113,7 @@ export function useNearbyParcels(apiUrl: string, accessToken: string | null) {
         return
       }
       const { latitude: lat, longitude: lng } = position.coords
+      rememberPosition(lat, lng)
       const bbox = buildBboxAroundPoint({ lat, lng }, RADIUS_DEG)
 
       const { items } = await fetchPublicParcelStatuses(apiUrl, accessToken, { bbox, zoom: ZOOM })

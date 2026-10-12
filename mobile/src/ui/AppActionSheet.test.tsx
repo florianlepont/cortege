@@ -56,7 +56,10 @@ jest.mock("./AppPressable", () => {
 
 import { AppActionSheet, type AppActionSheetOption } from "./AppActionSheet"
 
-function render(options: AppActionSheetOption[], overrides: { onClose?: () => void } = {}) {
+function render(
+  options: AppActionSheetOption[],
+  overrides: { onClose?: () => void; message?: string } = {},
+) {
   const onClose = overrides.onClose ?? jest.fn()
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
@@ -65,6 +68,7 @@ function render(options: AppActionSheetOption[], overrides: { onClose?: () => vo
         visible
         onClose={onClose}
         title="Un relevé"
+        message={overrides.message}
         options={options}
         cancelLabel="Annuler"
       />,
@@ -88,6 +92,19 @@ describe("AppActionSheet (DET-03/04: native '…' menu)", () => {
       .findAll((node) => (node.type as unknown) === "Text")
       .map((node) => node.props.children)
     expect(texts).toEqual(expect.arrayContaining(["Un relevé", "Renommer", "Partager", "Annuler"]))
+  })
+
+  test("draws the message under the title when there is one", () => {
+    const { tree } = render([{ label: "Renommer", onPress: jest.fn() }], {
+      message: "Ce choix s'applique aux prochains téléchargements.",
+    })
+    const message = tree.root.findByProps({ testID: "app-action-sheet-message" })
+    expect(message.props.children).toBe("Ce choix s'applique aux prochains téléchargements.")
+  })
+
+  test("draws no message element without a message", () => {
+    const { tree } = render([{ label: "Renommer", onPress: jest.fn() }])
+    expect(tree.root.findAllByProps({ testID: "app-action-sheet-message" })).toHaveLength(0)
   })
 
   test("pressing an option closes the sheet and runs its action", () => {
@@ -137,6 +154,19 @@ describe("AppActionSheet on iOS: the system sheet", () => {
       cancelButtonIndex: 2,
       destructiveButtonIndex: 1,
     })
+  })
+
+  test("passes the message to the system sheet next to the title", () => {
+    render([{ label: "Renommer", onPress: jest.fn() }], { message: "Une explication." })
+    expect(mockShowActionSheet.mock.calls[0][0]).toMatchObject({
+      title: "Un relevé",
+      message: "Une explication.",
+    })
+  })
+
+  test("sends no message to the system sheet without one", () => {
+    render([{ label: "Renommer", onPress: jest.fn() }])
+    expect(mockShowActionSheet.mock.calls[0][0].message).toBeUndefined()
   })
 
   test("has no destructive index when no option is destructive", () => {

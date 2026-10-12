@@ -1,6 +1,6 @@
 jest.mock("react-native", () => ({ useColorScheme: () => "light" }))
 
-import { brandColors } from "./brand-tokens"
+import { brandColors, brandMapTokens } from "./brand-tokens"
 import { compositeOver, contrastRatio, relativeLuminance } from "./contrast"
 import { buildTheme, defaultTheme, withGlassInk, type BrandTheme } from "./theme"
 import {
@@ -894,3 +894,191 @@ describe("offline download progress bar (12.2-19 third round)", () => {
 })
 
 // The forest card aurora's colours and readable zones: `forest-aurora-tokens.test.ts`.
+
+// Phase 28: the comparison line and the swipe dots over the three reference backdrops of the old
+// maps and photographs (cream paper of the etat-major map, grey of a 1950 photograph, the dark
+// plan). Non-text graphics need 3:1: the white core carries the dark and the grey, the graphite
+// edge carries the cream where white is near 1.2:1.
+describe.each(schemes)("curtain line and swipe dots (Phase 28), %s scheme", (scheme) => {
+  const { curtain } = themes[scheme].visual
+  const backdrops = { cream: "#EFE6CF", grey: "#8C8C8C", darkPlan: "#0E1512" }
+
+  test("both schemes hold the same values (the map does not follow the scheme)", () => {
+    expect(curtain).toEqual(themes.light.visual.curtain)
+    expect(curtain).toEqual(themes.dark.visual.curtain)
+    expect(curtain.line).toBe(brandColors.white)
+    expect(curtain.edge).toMatch(/^rgba\(\d+, \d+, \d+, 0\.\d+\)$/)
+  })
+
+  test.each(Object.entries(backdrops))(
+    "the better of the white core and the graphite edge reaches 3:1 over the %s backdrop",
+    (_name, backdrop) => {
+      const core = contrastRatio(curtain.line, backdrop)
+      const edge = contrastRatio(compositeOver(curtain.edge, backdrop), backdrop)
+      expect(Math.max(core, edge)).toBeGreaterThanOrEqual(3)
+    },
+  )
+
+  test("a swipe dot (white fill inside the edge ring) reaches 3:1 over each backdrop", () => {
+    for (const backdrop of Object.values(backdrops)) {
+      const ring = compositeOver(curtain.edge, backdrop)
+      const fill = contrastRatio(curtain.line, backdrop)
+      expect(Math.max(fill, contrastRatio(ring, backdrop))).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  test("the edge alpha is the lowest of the 0.05 steps from 0.45 that passes over the cream", () => {
+    const alpha = Number(/, (0\.\d+)\)$/.exec(curtain.edge)?.[1])
+    const rgb = /^rgba\((\d+), (\d+), (\d+),/.exec(curtain.edge)?.slice(1, 4).join(", ")
+    const ratioAt = (a: number) =>
+      contrastRatio(compositeOver(`rgba(${rgb}, ${a})`, backdrops.cream), backdrops.cream)
+    expect(ratioAt(alpha)).toBeGreaterThanOrEqual(3)
+    expect(ratioAt(Math.round((alpha - 0.05) * 100) / 100)).toBeLessThan(3)
+  })
+})
+
+// Phase 28, plan 28-25 (owner item 13 c): the receded map window of the swipe mode. Light draws a
+// soft shadow and no ring (a shadow cannot be measured as 3:1); dark draws a 1 pt opaque ring that
+// must reach 3:1 against the dark canvas, plus a faint shadow.
+describe.each(schemes)("immersive window tokens (Phase 28), %s scheme", (scheme) => {
+  const { immersive } = themes[scheme].visual
+  const { canvas } = themes[scheme].colors
+
+  test("the shadow is a black shadow with a radius and an offset", () => {
+    expect(immersive.shadow.color).toBe(brandColors.black)
+    expect(immersive.shadow.opacity).toBeGreaterThan(0)
+    expect(immersive.shadow.opacity).toBeLessThanOrEqual(0.65)
+    expect(immersive.shadow.radius).toBeGreaterThan(0)
+    expect(immersive.shadow.offsetY).toBeGreaterThan(0)
+  })
+
+  if (scheme === "light") {
+    test("light is a soft shadow (0.32, 28, 12) with no ring", () => {
+      expect(immersive.shadow).toEqual({
+        color: brandColors.black,
+        opacity: 0.32,
+        radius: 28,
+        offsetY: 12,
+      })
+      expect(immersive.ring).toBeNull()
+    })
+  } else {
+    test("dark ring is an opaque #RRGGBB reaching 3:1 against the canvas", () => {
+      expect(immersive.ring).toMatch(/^#[0-9A-F]{6}$/i)
+      expect(contrastRatio(immersive.ring as string, canvas)).toBeGreaterThanOrEqual(3)
+    })
+
+    test("dark ring is not dimmer than the map control hairline over the canvas", () => {
+      const hairline = compositeOver(themes.dark.visual.mapControl.hairline, canvas)
+      expect(contrastRatio(immersive.ring as string, canvas)).toBeGreaterThanOrEqual(
+        contrastRatio(hairline, canvas),
+      )
+    })
+  }
+})
+
+// Phase 28 (28-11): the hint scrim, the accent dots and the parcels on the old bases, measured over
+// the backdrops the basemaps really have.
+describe.each(schemes)(
+  "map hint, accent dots and old-base parcels (Phase 28), %s scheme",
+  (scheme) => {
+    const { visual } = themes[scheme]
+    const paper = "#EFE6CF"
+    const photograph = "#8C8C8C"
+
+    test("the raster dimming is 0.8 in dark and 1 in light", () => {
+      expect(visual.mapRaster.dimBrightnessMax).toBe(scheme === "dark" ? 0.8 : 1)
+    })
+
+    test("the hint scrim is graphite at 70 % alpha or more with a white ink", () => {
+      expect(visual.mapHint.ink).toBe(brandColors.white)
+      const alpha = Number(/, ([\d.]+)\)$/.exec(visual.mapHint.fill)?.[1])
+      expect(alpha).toBeGreaterThanOrEqual(0.7)
+    })
+
+    test("the hint ink holds 4.5:1 on its scrim over the lightest basemap and every other backdrop", () => {
+      for (const backdrop of ["#FFFFFF", paper, photograph, "#6B7356", "#1C2618", "#000000"]) {
+        const surface = compositeOver(visual.mapHint.fill, backdrop)
+        expect(contrastRatio(visual.mapHint.ink, surface)).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+
+    test("the accent dot reaches 3:1 against the capsule glass over light and dark maps", () => {
+      for (const backdrop of mapBackdrops) {
+        for (const key of ["fill", "android"] as const) {
+          const surface = compositeOver(visual.mapControl.glass[key], backdrop)
+          expect(contrastRatio(visual.tab.dot, surface)).toBeGreaterThanOrEqual(3)
+        }
+      }
+    })
+
+    test("the casing token is white at about 85 % alpha and the old-base factor is 0.6", () => {
+      expect(brandMapTokens.parcelCasing).toBe("rgba(255, 255, 255, 0.85)")
+      expect(brandMapTokens.parcelFillOldBaseFactor).toBe(0.6)
+    })
+
+    // Outline tones of the Explorer (byScore): the three score bands, the warm grey and the heavy
+    // outline of the survey shown from its page. The plain selected tone is the terracotta.
+    const tones = {
+      low: { stroke: brandMapTokens.scoreMarker.low, fill: brandMapTokens.scoreParcelFill.low },
+      mid: { stroke: brandMapTokens.scoreMarker.mid, fill: brandMapTokens.scoreParcelFill.mid },
+      high: { stroke: brandMapTokens.scoreMarker.high, fill: brandMapTokens.scoreParcelFill.high },
+      unscored: { stroke: brandMapTokens.parcelUnscored, fill: brandMapTokens.parcelUnscoredFill },
+      selected: { stroke: brandMapTokens.parcelSelected, fill: brandMapTokens.parcelSelectedFill },
+      selectedScored: {
+        stroke: brandMapTokens.scoreMarkerSelectedBorder,
+        fill: brandMapTokens.scoreParcelFill.high,
+      },
+    }
+    const factors = [0.4, 0.5, 0.6, 0.7, 0.8]
+    const withFactor = (fill: string, factor: number) => {
+      const match = /^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/.exec(fill)
+      if (!match) throw new Error(fill)
+      return `rgba(${match[1]}, ${match[2]}, ${match[3]}, ${Number(match[4]) * factor})`
+    }
+
+    test("the measured contrast of an outline against its own lightened fill (owner question)", () => {
+      // 28-11 finding: a hue outline over a tint of the same hue never reaches 3:1, whatever factor
+      // between 0.4 and 0.8 is chosen (the fill is a quiet tint by design). What separates the
+      // outline from the pale old map is the white casing under it, measured in the next test. The
+      // best measured ratio over the factors is pinned here so a token change shows up.
+      const best = Object.fromEntries(
+        Object.entries(tones).map(([name, tone]) => {
+          const worstBackdrop = Math.min(
+            ...[paper, photograph].map((backdrop) =>
+              Math.max(
+                ...factors.map((factor) =>
+                  contrastRatio(
+                    tone.stroke,
+                    compositeOver(withFactor(tone.fill, factor), backdrop),
+                  ),
+                ),
+              ),
+            ),
+          )
+          return [name, Math.round(worstBackdrop * 10) / 10]
+        }),
+      )
+      expect(best).toEqual({
+        low: 1.1,
+        mid: 1,
+        high: 1.1,
+        unscored: 1.1,
+        selected: 1.2,
+        selectedScored: 2.9,
+      })
+    })
+
+    test("the white casing under the outline gives the outline 3:1 on the old bases (moss excepted)", () => {
+      const casing = (backdrop: string) => compositeOver(brandMapTokens.parcelCasing, backdrop)
+      const worst = (stroke: string) =>
+        Math.min(...[paper, photograph].map((backdrop) => contrastRatio(stroke, casing(backdrop))))
+      for (const name of ["low", "mid", "unscored", "selected", "selectedScored"] as const) {
+        expect(worst(tones[name].stroke)).toBeGreaterThanOrEqual(3)
+      }
+      // The high-band moss outline (the same moss as the marker) measures 2.5 against the casing:
+      // below 3:1, recorded as an owner question in the 28-11 summary.
+      expect(Math.round(worst(tones.high.stroke) * 10) / 10).toBe(2.5)
+    })
+  },
+)

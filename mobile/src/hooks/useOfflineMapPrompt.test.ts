@@ -8,15 +8,12 @@ jest.mock("./useIsOffline", () => ({ useIsOffline: () => mockOffline.value }))
 const mockAreas: { value: unknown[] } = { value: [] }
 const mockDownloading: { value: string | null } = { value: null }
 const mockStartDownload = jest.fn()
+const mockEstimateForRegion = jest.fn()
 jest.mock("./useOfflineAreas", () => ({
   useOfflineAreas: () => ({
     areas: mockAreas.value,
     downloadingAreaId: mockDownloading.value,
-    estimateForRegion: () => ({
-      totalTileCount: 100,
-      estimatedBytes: 24_000_000,
-      exceedsCap: false,
-    }),
+    estimateForRegion: (...args: unknown[]) => mockEstimateForRegion(...args),
     startDownload: (...args: unknown[]) => mockStartDownload(...args),
   }),
 }))
@@ -44,6 +41,15 @@ beforeEach(() => {
   mockAreas.value = []
   mockDownloading.value = null
   mockStartDownload.mockReset().mockResolvedValue({ ok: true, areaId: "a1" })
+  mockEstimateForRegion.mockReset().mockReturnValue({
+    policy: "all",
+    layers: [],
+    totalTileCount: 100,
+    estimatedBytes: 83_910_000,
+    baseBytes: 53_050_000,
+    extraBytes: 30_860_000,
+    exceedsCap: false,
+  })
 })
 afterEach(async () => {
   await cleanup()
@@ -56,7 +62,11 @@ describe("useOfflineMapPrompt", () => {
   test("online and not covered: missing, with the size of the 2 km area", async () => {
     const { result } = await run()
     expect(result.current.state).toBe("missing")
-    expect(result.current.megabytes).toBe("24.0")
+    // The megabytes are the policy estimate of the 2 km area, not a flat per-tile figure.
+    expect(result.current.megabytes).toBe("83.9")
+    expect(mockEstimateForRegion).toHaveBeenCalledWith(
+      expect.objectContaining({ latitude: 46.5, longitude: 1.5 }),
+    )
   })
 
   test("covered by a ready area: covered", async () => {

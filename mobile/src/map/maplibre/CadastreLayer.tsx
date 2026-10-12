@@ -1,6 +1,9 @@
 import { Layer, RasterSource } from "@maplibre/maplibre-react-native"
 import { CADASTRE_TILES } from "./styles"
 
+/** The id of the cadastre layer, also the one the offline pack file gives it (`offline-styles`). */
+export const CADASTRE_LAYER_ID = "ign-cadastre"
+
 type CadastreLayerProps = {
   enabled: boolean
   opacity?: number
@@ -11,7 +14,7 @@ export function CadastreLayer({ enabled, opacity = 0.9 }: CadastreLayerProps) {
   if (!enabled) return null
   return (
     <RasterSource
-      id="ign-cadastre"
+      id={CADASTRE_LAYER_ID}
       tiles={[CADASTRE_TILES]}
       tileSize={256}
       minzoom={15}
@@ -19,7 +22,7 @@ export function CadastreLayer({ enabled, opacity = 0.9 }: CadastreLayerProps) {
       scheme="xyz"
       attribution="Source : IGN"
     >
-      <Layer id="ign-cadastre" type="raster" paint={{ "raster-opacity": opacity }} />
+      <Layer id={CADASTRE_LAYER_ID} type="raster" paint={{ "raster-opacity": opacity }} />
     </RasterSource>
   )
 }

@@ -412,6 +412,9 @@ export const brandInteraction = {
 export const brandMapTokens = {
   // Phase 23: the ground of the recoloured dark Plan IGN basemap (`map/maplibre/dark-style.ts`).
   darkBasemapBackground: "#0E1512",
+  // Phase 28 (28-14): the ground of a stacked map before its first tiles, in the light scheme (a
+  // pale neutral close to the Plan IGN paper, so an uncovered strip is not a black bar).
+  lightBasemapBackground: "#EDEAE2",
   parcelSelected: brandColors.terracotta,
   parcelSelectedFill: "rgba(205, 88, 51, 0.30)",
   parcelStudied: brandColors.moss,
@@ -443,6 +446,13 @@ export const brandMapTokens = {
   // outline keeps 3:1 against the light plan and the dark orthophoto alike.
   parcelUnscored: "#8C847A",
   parcelUnscoredFill: "rgba(140, 132, 122, 0.22)",
+  // Phase 28 (UI-SPEC U-09): the three old bases (Carte d'état-major, Carte de 1950, Photos 1950)
+  // are pale and look washed out under today's fill. On them the parcel fill alpha is multiplied
+  // by `parcelFillOldBaseFactor`, and a white casing (`parcelCasing`, drawn under the outline at
+  // `strokeWidth + 2`) keeps the outline readable; the casing also shows with the forest overlay.
+  // One number to tune on the phone.
+  parcelCasing: "rgba(255, 255, 255, 0.85)",
+  parcelFillOldBaseFactor: 0.6,
 } as const
 
 // Phase 4 (DS-06..DS-09, audit §4): the motion system. Kept as plain data (durations in ms, easing

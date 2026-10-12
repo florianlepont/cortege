@@ -54,9 +54,10 @@ import {
 } from "../../app/brand-tokens"
 import { buildTheme, defaultTheme } from "../../app/theme"
 import { GlassSurface } from "../../ui/GlassSurface"
-import { ScoreLegend } from "./ScoreLegend"
+import { MapLegend, ScoreLegend } from "./ScoreLegend"
 
 const darkTheme = buildTheme("dark")
+const Pressable = "Pressable" as never
 
 afterEach(() => {
   mockScheme.current = "light"
@@ -76,7 +77,7 @@ const t = fr.publicMap
 function render(loading = false) {
   let tree: renderer.ReactTestRenderer | undefined
   act(() => {
-    tree = renderer.create(<ScoreLegend bottom={40} count={12} loading={loading} />)
+    tree = renderer.create(<ScoreLegend bottom={40} loading={loading} />)
   })
   return tree!
 }
@@ -204,18 +205,80 @@ describe("ScoreLegend (MAP-03: collapsible score-band legend)", () => {
     expect(darkTheme.visual.mapControl.icon).not.toBe(brandColors.forest)
   })
 
-  test("count pill, toggle and panel sit on the map control glass with its hairline (12.2-19)", () => {
+  test("toggle and panel sit on the map control glass with its hairline (12.2-19)", () => {
     mockScheme.current = "dark"
     const tree = render()
     expand(tree)
     const surfaces = tree.root.findAllByType(GlassSurface)
-    expect(surfaces).toHaveLength(3)
+    expect(surfaces).toHaveLength(2)
     for (const surface of surfaces) {
       expect(surface.props.surface).toEqual(darkTheme.visual.mapControl.glass)
       expect(flat(surface.props.style).borderColor).toBe(darkTheme.visual.mapControl.hairline)
     }
-    const count = flat(textNode(tree, t.count(12)).props.style)
-    expect(count.color).toBe(darkTheme.visual.mapControl.text)
+  })
+
+  describe("the count pill (Phase 28, item 13 e)", () => {
+    const renderPicker = (loading: boolean) => {
+      let tree!: renderer.ReactTestRenderer
+      act(() => {
+        tree = renderer.create(
+          <MapLegend
+            bottom={0}
+            countLabel="3 parcelles"
+            title="Titre"
+            subtitle="Sous-titre"
+            rows={[]}
+            loading={loading}
+          />,
+        )
+      })
+      return tree
+    }
+
+    test("the Explorer legend draws no count pill: only the toggle button on the glass", () => {
+      const tree = render()
+      expect(tree.root.findAllByType(GlassSurface)).toHaveLength(1)
+      expect(
+        tree.root.findAll(
+          (node) =>
+            (node.type as unknown) === "Text" &&
+            /relev[ée]s? ici/.test(String(node.props.children)),
+        ),
+      ).toHaveLength(0)
+    })
+
+    test("a MapLegend with a count label (the parcel picker) keeps its pill, the spinner inside", () => {
+      const tree = renderPicker(true)
+      expect(tree.root.findAllByType(GlassSurface)).toHaveLength(2)
+      expect(textNode(tree, "3 parcelles")).toBeTruthy()
+      expect(tree.root.findAllByType("ActivityIndicator" as never)).toHaveLength(1)
+      expect(tree.root.findAll((node) => node.props.testID === "map-legend-loading")).toHaveLength(
+        0,
+      )
+      expect(renderPicker(false).root.findAllByType("ActivityIndicator" as never)).toHaveLength(0)
+    })
+
+    test("without a count a bare spinner shows right of the (i) button while loading", () => {
+      const tree = render(true)
+      const spinner = tree.root.find((node) => node.props.testID === "map-legend-loading")
+      expect(spinner.props.size).toBe("small")
+      expect(spinner.props.color).toBe(defaultTheme.visual.mapControl.icon)
+      const row = tree.root.findAll(
+        (node) =>
+          (node.type as unknown) === "View" &&
+          node.findAll((child) => child === spinner || (child.type as unknown) === Pressable)
+            .length === 2,
+      )
+      // The row that holds both the toggle and the spinner lists the toggle first.
+      const kinds = row[row.length - 1].children
+        .map((child) => (typeof child === "string" ? "text" : (child.type as unknown)))
+        .filter((kind) => kind === GlassSurface || kind === spinner.type)
+      expect(kinds).toEqual([GlassSurface, spinner.type])
+    })
+
+    test("without a count and not loading there is no spinner at all", () => {
+      expect(render(false).root.findAllByType("ActivityIndicator" as never)).toHaveLength(0)
+    })
   })
 
   test("the panel title is a section header and the row labels a muted footnote", () => {
