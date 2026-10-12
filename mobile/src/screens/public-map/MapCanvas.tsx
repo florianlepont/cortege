@@ -57,6 +57,8 @@ export type MapCanvasProps = {
   onStyleLoaded?: () => void
   /** The map finished rendering what it shows (`onDidFinishRenderingMapFully`). */
   onRenderedFully?: () => void
+  /** The basemap change mode: bare basemaps, with no forest types, cadastre or parcels. */
+  bare?: boolean
   /** The style failed to load (offline without a pack, a refused tile server). */
   onStyleFailed?: () => void
   /** The parcels of the survey shown from its page, drawn highlighted (OA-116). */
@@ -112,6 +114,7 @@ export const MapCanvas = memo(function MapCanvas({
   styleRetryKey = 0,
   onStyleLoaded,
   onRenderedFully,
+  bare,
   onStyleFailed,
   initialRegion = DEFAULT_MAP_REGION,
   highlightedParcelIds,
@@ -205,6 +208,7 @@ export const MapCanvas = memo(function MapCanvas({
         surveyParcelIds={surveyParcelIds}
         interactive={!frozen}
         onParcelPress={onSelectParcel}
+        bare={bare}
       />
       {/* MAP-04: the device's own position is the native halo, not a marker kept by the app. It is
           added after the content so it draws over the cadastre lines and the parcels. */}

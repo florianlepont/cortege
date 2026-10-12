@@ -85,6 +85,7 @@ export function ExplorerSwipeLayers({
           selectedParcelIds={contentProps.selectedParcelIds}
           surveyParcelIds={layers.surveyParcelIds}
           interactive={false}
+          bare={view.swipeMode}
         />
       )
     }

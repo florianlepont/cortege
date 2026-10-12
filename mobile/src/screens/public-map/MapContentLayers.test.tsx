@@ -66,6 +66,27 @@ const forest = (tree: ReactTestRenderer) => tree.root.findByType("ForestTypesLay
 
 beforeEach(() => jest.clearAllMocks())
 
+describe("MapContentLayers, bare", () => {
+  test("the basemap change mode draws none of forest, cadastre or parcels, with the same children", () => {
+    const tree = render({ bare: true, forestOverlay: true, parcels: PARCELS })
+    const kinds = (tree.toJSON() as { type: string }[]).map((node) => node.type)
+    expect(kinds).toEqual(["ForestTypesLayer", "CadastreLayer", "ParcelPolygonsLayer"])
+    expect(forest(tree).props.enabled).toBe(false)
+    expect(cadastre(tree).props.enabled).toBe(false)
+    expect(parcels(tree).props.items).toEqual([])
+    expect(parcels(tree).props.casing).toBe(false)
+  })
+
+  test("not bare, or bare false, draws them as before", () => {
+    for (const props of [{}, { bare: false }]) {
+      const tree = render({ ...props, forestOverlay: true })
+      expect(forest(tree).props.enabled).toBe(true)
+      expect(cadastre(tree).props.enabled).toBe(true)
+      expect(parcels(tree).props.items).toBe(PARCELS)
+    }
+  })
+})
+
 describe("MapContentLayers", () => {
   test("draws in z-order the forest overlay, the cadastre, then the parcels", () => {
     const tree = render()

@@ -117,7 +117,13 @@ export type ExplorerSwipe = {
   /** Props to spread on `MapCanvas`. */
   mapCanvasProps: Pick<
     MapCanvasProps,
-    "frozen" | "onViewChange" | "rotationLocked" | "hideMarkers" | "androidView" | "onRenderedFully"
+    | "frozen"
+    | "onViewChange"
+    | "rotationLocked"
+    | "hideMarkers"
+    | "androidView"
+    | "onRenderedFully"
+    | "bare"
   >
   layersView: ExplorerSwipeView
   /** The receding window and the fading buttons: the swipe mode only, never the comparison. */
@@ -343,6 +349,7 @@ export function useExplorerSwipe({
       hideMarkers: comparing,
       androidView: LEFT_MAP_ANDROID_VIEW,
       onRenderedFully,
+      bare: swipeMode,
     }),
     [comparing, onRenderedFully, onViewChange, stacked, swipeMode],
   )

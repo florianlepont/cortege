@@ -291,6 +291,7 @@ describe("free map, no comparison", () => {
       rotationLocked: false,
       hideMarkers: false,
       androidView: "texture",
+      bare: false,
     })
     expect(out().layersView.second).toBeNull()
     expect(out().layersView.comparing).toBe(false)

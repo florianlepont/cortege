@@ -45,6 +45,11 @@ export type MapContentLayersProps = {
   /** False on a frozen map: parcels take no press. */
   interactive: boolean
   onParcelPress?: (parcelId: string) => void
+  /**
+   * The basemap change mode shows the bare basemaps: no forest types, cadastre lines or parcels.
+   * The same components stay mounted (disabled or empty), so no layer child comes or goes.
+   */
+  bare?: boolean
 }
 
 /**
@@ -65,23 +70,25 @@ export function MapContentLayers({
   surveyParcelIds,
   interactive,
   onParcelPress,
+  bare = false,
 }: MapContentLayersProps) {
+  const forest = forestOverlay && !bare
   const rendering = parcelsRendering(parcelsMode)
   const factor = parcelFillFactor(base, brandMapTokens.parcelFillOldBaseFactor)
   return (
     <>
-      <ForestTypesLayer enabled={forestOverlay} belowCadastre={cadastreInStyle} />
+      <ForestTypesLayer enabled={forest} belowCadastre={cadastreInStyle} />
       <CadastreLayer
-        enabled={cadastreEnabled && rendering.cadastre && !cadastreInStyle}
+        enabled={cadastreEnabled && rendering.cadastre && !cadastreInStyle && !bare}
         opacity={cadastreOpacity}
       />
       <ParcelPolygonsLayer
-        items={parcels}
+        items={bare ? NO_PARCELS : parcels}
         selectedParcelIds={selectedParcelIds}
         surveyParcelIds={surveyParcelIds}
         byScore
         mode={parcelsMode}
-        casing={parcelCasingVisible(base, forestOverlay)}
+        casing={parcelCasingVisible(base, forest)}
         casingOpacity={factor}
         fillOpacity={factor}
         onParcelPress={interactive ? onParcelPress : undefined}

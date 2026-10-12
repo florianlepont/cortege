@@ -354,6 +354,21 @@ describe("the stacked maps", () => {
     expect(styleFailed).toHaveBeenCalledWith("photos-1950")
   })
 
+  test("a stacked map draws bare basemaps in the swipe mode, and keeps the overlays otherwise", () => {
+    const bareOf = (swipeMode: boolean) => {
+      const { tree } = render(makeView({ second: stacked("photos-1950"), swipeMode }), {
+        layers: makeLayers({ overlay: true }),
+      })
+      const content = named(tree, "WipeLayer")[0].props.content as (style: {
+        cadastreInStyle: boolean
+        cadastreOpacity: number
+      }) => React.ReactElement<Record<string, unknown>>
+      return content({ cadastreInStyle: false, cadastreOpacity: 1 }).props.bare
+    }
+    expect(bareOf(true)).toBe(true)
+    expect(bareOf(false)).toBe(false)
+  })
+
   test("what a stacked map draws is the Explorer map's content, not interactive", () => {
     const { tree } = render(makeView({ second: stacked("photos-1950") }), {
       layers: makeLayers({ overlay: true, parcels: "ibp" }),
