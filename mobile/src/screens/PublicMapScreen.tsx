@@ -29,7 +29,7 @@ import { useExplorerFocus } from "./public-map/useExplorerFocus"
 import { useExplorerLayers } from "./public-map/useExplorerLayers"
 import { useExplorerPanels } from "./public-map/useExplorerPanels"
 import { useExplorerSwipe } from "./public-map/useExplorerSwipe"
-import { useInitialLocationCentre } from "./public-map/useInitialLocationCentre"
+import { cachedStartRegion, useInitialLocationCentre } from "./public-map/useInitialLocationCentre"
 import { useSwipeWindowBottom } from "./public-map/useSwipeWindowBottom"
 import { useLocateAction } from "./public-map/useLocateAction"
 import { useMapViewport } from "./public-map/useMapViewport"
@@ -140,7 +140,10 @@ export function PublicMapScreen({
     cameraRef.current?.fitBounds(boundsFromRegion(target), { duration: durationMs })
   }, [])
 
+  // A position read earlier in the session: the map opens on the user, with no jump afterwards.
+  const cachedStart = useRef(cachedStartRegion(focus !== undefined)).current
   const viewport = useMapViewport({
+    initialRegion: cachedStart,
     items,
     showParcelLayer: true,
     loadPublicMap: onLoad,
@@ -258,7 +261,11 @@ export function PublicMapScreen({
 
   const { locating, onLocate } = useLocateAction({ moveTo })
   // Without a focus request the Explorer opens on the user's position when it is already allowed.
-  useInitialLocationCentre({ hasFocus: focus !== undefined, moveTo: focusTo })
+  useInitialLocationCentre({
+    hasFocus: focus !== undefined,
+    startedOnPosition: cachedStart !== undefined,
+    moveTo: focusTo,
+  })
 
   // The capsule's second button; memoised so the capsule does not redraw on every render.
   const { overlayDot } = layers.layers
@@ -309,7 +316,7 @@ export function PublicMapScreen({
           cameraRef={cameraRef}
           items={mapItems}
           draftIds={draftIdSet}
-          initialRegion={initialRegion}
+          initialRegion={initialRegion ?? cachedStart}
           highlightedParcelIds={highlightedParcelIds}
           placePin={placePin}
           region={viewport.region}

@@ -29,7 +29,13 @@ import type { SharedValue } from "react-native-reanimated"
 import { cameraMocks } from "../../../test/maplibre.mock"
 import { brandMapTokens } from "../../app/brand-tokens"
 import { boundsFromRegion } from "../../map/maplibre/regions"
-import { MapStack, STYLE_SWAP_GAP_MS, useMapSync } from "./MapStack"
+import {
+  MapStack,
+  REVEAL_DELAY_MS,
+  STYLE_SWAP_GAP_MS,
+  useMapSync,
+  useViewTracker,
+} from "./MapStack"
 
 const originalConsoleError = console.error
 
@@ -255,6 +261,55 @@ describe("MapStack", () => {
     expect(clipWidth(h.tree)).toBe(280)
   })
 
+  const opacityOf = (tree: renderer.ReactTestRenderer) =>
+    flat(
+      tree.root.find(
+        (node) => (node.type as unknown) === "View" && flat(node.props.style).overflow === "hidden",
+      ).props.style,
+    ).opacity
+
+  test("a fresh map is hidden by its plain style: no width, no opacity, whatever the animated clip says", () => {
+    const h = mount()
+    expect(opacityOf(h.tree)).toBe(0)
+    const clipStyles = (
+      h.tree.root.findAll(
+        (node) => (node.type as unknown) === "View" && flat(node.props.style).overflow === "hidden",
+      )[0].props.style as unknown[]
+    ).flat(3)
+    // The first entry is the static style: width 0 and opacity 0 before any animated value.
+    expect(clipStyles[0]).toMatchObject({ width: 0, opacity: 0, overflow: "hidden" })
+  })
+
+  test("reveal order: the clip opens and the camera is aligned first, the opacity comes after", () => {
+    const calls: string[] = []
+    const h = mount({ onReady: () => calls.push(`ready:${opacityOf(h.tree)}`) })
+    makeReady(h)
+    expect(calls).toEqual(["ready:0"])
+    expect(opacityOf(h.tree)).toBe(0)
+    act(() => {
+      jest.advanceTimersByTime(REVEAL_DELAY_MS - 1)
+    })
+    h.rerender({})
+    expect(opacityOf(h.tree)).toBe(0)
+    act(() => {
+      jest.advanceTimersByTime(1)
+    })
+    expect(opacityOf(h.tree)).toBe(1)
+  })
+
+  test("a style change hides it at once, and going back to the shown style shows it again", () => {
+    const h = mount()
+    makeReady(h)
+    act(() => {
+      jest.advanceTimersByTime(REVEAL_DELAY_MS)
+    })
+    expect(opacityOf(h.tree)).toBe(1)
+    h.rerender({ mapStyle: OTHER })
+    expect(opacityOf(h.tree)).toBe(0)
+    h.rerender({ mapStyle: "https://tiles.example/style.json" })
+    expect(opacityOf(h.tree)).toBe(1)
+  })
+
   test("the first style of a fresh map is not delayed", () => {
     const h = mount()
     expect(nativeStyle(h.tree)).toBe("https://tiles.example/style.json")
@@ -381,5 +436,40 @@ describe("MapStack", () => {
     const { tree } = mount()
     expect(tree.root.findByType("MapLibreMap" as never).props.onDidFailLoadingMap).toBeUndefined()
     expect(() => fire(tree, "onDidFinishLoadingStyle")).not.toThrow()
+  })
+})
+
+describe("useViewTracker", () => {
+  function Probe({ onReady }: { onReady: (v: ReturnType<typeof useViewTracker>) => void }) {
+    onReady(useViewTracker())
+    return null
+  }
+  function mountProbe() {
+    let latest!: ReturnType<typeof useViewTracker>
+    act(() => {
+      renderer.create(<Probe onReady={(v) => (latest = v)} />)
+    })
+    return () => latest
+  }
+
+  test("a stacked map jumps to the last settled Explorer camera, north up and flat", () => {
+    const view = mountProbe()
+    const camera = { current: cameraMocks as unknown as CameraRef }
+    view().alignTo(camera)
+    expect(cameraMocks.jumpTo).not.toHaveBeenCalled()
+    view().track(changeEvent({ center: [4.8, 45.7], zoom: 12.5, bearing: 30 }))
+    view().alignTo(camera)
+    expect(cameraMocks.jumpTo).toHaveBeenCalledWith({
+      center: [4.8, 45.7],
+      zoom: 12.5,
+      bearing: 0,
+      pitch: 0,
+    })
+  })
+
+  test("does nothing before the camera exists", () => {
+    const view = mountProbe()
+    view().track(changeEvent())
+    expect(() => view().alignTo({ current: null })).not.toThrow()
   })
 })

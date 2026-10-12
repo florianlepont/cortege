@@ -12,6 +12,7 @@ import { fr } from "../../i18n"
 import { PublicMapScreen } from "../PublicMapScreen"
 import { downloadButtonTopOf, overlaySlotTopOf } from "./styles"
 import { DEFAULT_MAP_REGION, VIEWPORT_DEBOUNCE_MS } from "./useMapViewport"
+import { forgetPosition, lastPosition, rememberPosition } from "../../app/last-position"
 import { IMMERSIVE_OUT_MS } from "../../map/swipe-machine"
 import { STYLE_SWAP_GAP_MS } from "./MapStack"
 import { COVER_PRESENT_MS } from "./useCoverRelease"
@@ -386,6 +387,7 @@ function texts(): string[] {
 }
 
 beforeEach(() => {
+  forgetPosition()
   mockAnimateToRegion.mockClear()
   mockAlert.mockClear()
   mockLocation.requestForegroundPermissionsAsync.mockReset()
@@ -541,6 +543,29 @@ describe("PublicMapScreen", () => {
     expect(region.latitude).toBeCloseTo(45.7, 3)
     expect(region.longitude).toBeCloseTo(4.8, 3)
     expect(duration).toBe(0)
+  })
+
+  test("a position read earlier starts the map on the user, with no read and no move afterwards", async () => {
+    rememberPosition(45.7, 4.8)
+    mount(makeProps({ items: [item("a", 48.1, 2.3)] }))
+    await act(async () => undefined)
+    expect(mockLocation.getForegroundPermissionsAsync).not.toHaveBeenCalled()
+    const camera = tree.root.find((node) => (node.type as unknown) === "Camera")
+    const bounds = camera.props.initialViewState.bounds as number[]
+    expect((bounds[0] + bounds[2]) / 2).toBeCloseTo(4.8, 2)
+    expect((bounds[1] + bounds[3]) / 2).toBeCloseTo(45.7, 2)
+    // The first load of items does not fit the camera away from the user.
+    expect(mockAnimateToRegion).not.toHaveBeenCalled()
+  })
+
+  test("a position read by the async centre is remembered for the next arrival", async () => {
+    mockLocation.getForegroundPermissionsAsync.mockResolvedValue({ granted: true })
+    mockLocation.getLastKnownPositionAsync.mockResolvedValue({
+      coords: { latitude: 44.1, longitude: 3.2 },
+    })
+    mount(makeProps())
+    await act(async () => undefined)
+    expect(lastPosition()).toEqual({ latitude: 44.1, longitude: 3.2 })
   })
 
   test("a focus request keeps the position out of it", async () => {

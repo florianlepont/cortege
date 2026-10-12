@@ -56,9 +56,11 @@ jest.mock("./useSideStep", () => ({
 
 // The second map's camera sync. It keeps its identity.
 const mockSyncs: { cameraRef: { current: null }; syncFrom: jest.Mock }[] = []
+const mockView = { track: jest.fn(), alignTo: jest.fn() }
 jest.mock("./MapStack", () => {
   const ReactRef = require("react") as typeof import("react")
   return {
+    useViewTracker: () => mockView,
     useMapSync: () =>
       ReactRef.useMemo(() => {
         const sync = { cameraRef: { current: null }, syncFrom: jest.fn() }
@@ -302,6 +304,7 @@ describe("free map, no comparison", () => {
     mount(makeLayers())
     expect(out().mapCanvasProps).toEqual({
       onRenderedFully: expect.any(Function),
+      onViewSettled: mockView.track,
       frozen: false,
       onViewChange: undefined,
       rotationLocked: false,
@@ -850,6 +853,16 @@ describe("the side change", () => {
     expect(out().layersView.second).not.toBeNull()
     settle()
     expect(out().layersView.second).toBeNull()
+  })
+
+  test("the Explorer map's settled camera is tracked, and a stacked map aligns to it before it is revealed", () => {
+    mount(makeLayers({ compare: compareRight }))
+    expect(out().mapCanvasProps.onViewSettled).toBe(mockView.track)
+    act(() => out().onSecondStyleLoaded())
+    expect(mockView.alignTo).toHaveBeenLastCalledWith(mockSyncs[0].cameraRef)
+    act(() => out().onThirdReady())
+    expect(mockView.alignTo).toHaveBeenLastCalledWith(mockSyncs[1].cameraRef)
+    expect(mockSideStep.onThirdReady).toHaveBeenCalledTimes(1)
   })
 
   test("the second map's style load goes to the side change only", () => {

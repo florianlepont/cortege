@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react"
 import { Alert } from "react-native"
 import * as Location from "expo-location"
+import { rememberPosition } from "../../app/last-position"
 import type { MapRegion } from "../../app/map-viewport"
 import { fr } from "../../i18n"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -41,6 +42,7 @@ export function useLocateAction({ moveTo }: Input): LocateAction {
         accuracy: Location.Accuracy.Balanced,
       })
       const { latitude, longitude } = position.coords
+      rememberPosition(latitude, longitude)
       moveTo(
         { latitude, longitude, latitudeDelta: LOCATE_SPAN, longitudeDelta: LOCATE_SPAN },
         LOCATE_DURATION_MS,

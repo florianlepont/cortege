@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -40,6 +41,8 @@ import { useStackedReady } from "./useStackedReady"
 
 /** How long (ms) a new style waits after the map was hidden: over two frames, the clip is on the UI thread. */
 export const STYLE_SWAP_GAP_MS = 50
+/** A map turns visible this long (ms) after its clip opened and its camera was aligned: one frame or two. */
+export const REVEAL_DELAY_MS = 34
 
 /** A stacked map's camera: the ref to pass to `MapStack` and the handler to feed from the Explorer map. */
 export function useMapSync(): {
@@ -52,6 +55,25 @@ export function useMapSync(): {
     cameraRef.current?.jumpTo({ center, zoom, bearing: 0, pitch: 0 })
   }, [])
   return useMemo(() => ({ cameraRef, syncFrom }), [syncFrom])
+}
+
+/**
+ * The Explorer map's last settled camera. A stacked map that is about to be revealed jumps to it
+ * (`alignTo`), so it shows exactly the Explorer view and not the one it mounted with.
+ */
+export function useViewTracker(): {
+  track: (event: NativeSyntheticEvent<ViewStateChangeEvent>) => void
+  alignTo: (cameraRef: RefObject<CameraRef | null>) => void
+} {
+  const last = useRef<{ center: [number, number]; zoom: number } | null>(null)
+  const track = useCallback((event: NativeSyntheticEvent<ViewStateChangeEvent>) => {
+    const { center, zoom } = event.nativeEvent
+    last.current = { center, zoom }
+  }, [])
+  const alignTo = useCallback((cameraRef: RefObject<CameraRef | null>) => {
+    if (last.current) cameraRef.current?.jumpTo({ ...last.current, bearing: 0, pitch: 0 })
+  }, [])
+  return useMemo(() => ({ track, alignTo }), [track, alignTo])
 }
 
 export type MapStackProps = {
@@ -95,7 +117,23 @@ export function MapStack({
   // The native style lags the wanted one by STYLE_SWAP_GAP_MS: the clip is zero (and has reached the
   // UI thread) before the swap, so the cleared map is never drawn for a frame.
   const [appliedStyle, setAppliedStyle] = useState(mapStyle)
-  const stackedReady = useStackedReady(appliedStyle, onReady)
+  // Plain (non-animated) visibility, so a first or late frame can never show the map unclipped: it
+  // turns on REVEAL_DELAY_MS after the clip is open and the owner of the map aligned its camera.
+  const [revealed, setRevealed] = useState(false)
+  const wasReady = useRef(false)
+  const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const clearReveal = useCallback(() => {
+    if (revealTimer.current) clearTimeout(revealTimer.current)
+    revealTimer.current = null
+  }, [])
+  useEffect(() => clearReveal, [clearReveal])
+  const handleReady = useCallback(() => {
+    onReady?.()
+    wasReady.current = true
+    clearReveal()
+    revealTimer.current = setTimeout(() => setRevealed(true), REVEAL_DELAY_MS)
+  }, [onReady, clearReveal])
+  const stackedReady = useStackedReady(appliedStyle, handleReady)
   const { ready, onStyleLoaded: readyStyleLoaded, hide, restore } = stackedReady
   // A render report while a style change is pending belongs to the old style: it must not reveal.
   const changing = useRef(false)
@@ -104,15 +142,22 @@ export function MapStack({
   const onRenderedFully = useCallback(() => {
     if (!changing.current) readyRendered()
   }, [readyRendered])
+  // Readiness belongs to the applied style: a new one starts not ready.
+  useLayoutEffect(() => {
+    wasReady.current = false
+  }, [appliedStyle])
   useLayoutEffect(() => {
     if (mapStyle === appliedStyle) {
       restore()
+      setRevealed(wasReady.current)
       return undefined
     }
     hide()
+    clearReveal()
+    setRevealed(false)
     const timer = setTimeout(() => setAppliedStyle(mapStyle), STYLE_SWAP_GAP_MS)
     return () => clearTimeout(timer)
-  }, [mapStyle, appliedStyle, hide, restore])
+  }, [mapStyle, appliedStyle, hide, restore, clearReveal])
   const handleStyleLoaded = useCallback(() => {
     setStyleLoaded(true)
     readyStyleLoaded()
@@ -130,7 +175,12 @@ export function MapStack({
       <Animated.View
         pointerEvents="none"
         collapsable={false}
-        style={[styles.clip, clipStyle, styleLoaded ? null : { backgroundColor: ground }]}
+        style={[
+          styles.clip,
+          clipStyle,
+          { opacity: revealed ? 1 : 0 },
+          styleLoaded ? null : { backgroundColor: ground },
+        ]}
       >
         <Animated.View pointerEvents="none" collapsable={false} style={[styles.inner, innerStyle]}>
           <MapLibreMap
@@ -162,7 +212,8 @@ export function MapStack({
 
 const styles = StyleSheet.create({
   host: StyleSheet.absoluteFill,
-  clip: { position: "absolute", top: 0, bottom: 0, overflow: "hidden" },
+  // Hidden by default (no width, no opacity): the animated clip and `revealed` open it.
+  clip: { position: "absolute", top: 0, bottom: 0, width: 0, opacity: 0, overflow: "hidden" },
   inner: { position: "absolute", top: 0, bottom: 0 },
   map: { flex: 1 },
 })

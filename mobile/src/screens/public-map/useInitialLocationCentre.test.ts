@@ -11,9 +11,15 @@ jest.mock("expo-location", () => ({
 }))
 
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
-import { INITIAL_CENTRE_SPAN, useInitialLocationCentre } from "./useInitialLocationCentre"
+import { forgetPosition, rememberPosition } from "../../app/last-position"
+import {
+  INITIAL_CENTRE_SPAN,
+  cachedStartRegion,
+  useInitialLocationCentre,
+} from "./useInitialLocationCentre"
 
 beforeEach(() => {
+  forgetPosition()
   mockPermission.mockReset()
   mockLast.mockReset()
   mockCurrent.mockReset()
@@ -111,5 +117,39 @@ describe("useInitialLocationCentre", () => {
     resolve({ coords: { latitude: 1, longitude: 2 } })
     await flush()
     expect(moveTo).not.toHaveBeenCalled()
+  })
+})
+
+describe("cachedStartRegion and the position cache", () => {
+  afterEach(forgetPosition)
+
+  test("is the 15 km region around the cached position, none without one or with a focus", () => {
+    expect(cachedStartRegion(false)).toBeUndefined()
+    rememberPosition(48.1, 2.3)
+    expect(cachedStartRegion(false)).toEqual({
+      latitude: 48.1,
+      longitude: 2.3,
+      latitudeDelta: INITIAL_CENTRE_SPAN,
+      longitudeDelta: INITIAL_CENTRE_SPAN,
+    })
+    expect(cachedStartRegion(true)).toBeUndefined()
+  })
+
+  test("a map that started on the position reads nothing", async () => {
+    const moveTo = jest.fn()
+    await renderHook(() =>
+      useInitialLocationCentre({ hasFocus: false, startedOnPosition: true, moveTo }),
+    )
+    await flush()
+    expect(mockPermission).not.toHaveBeenCalled()
+    expect(moveTo).not.toHaveBeenCalled()
+  })
+
+  test("a position read is remembered", async () => {
+    mockPermission.mockResolvedValue({ granted: true })
+    mockLast.mockResolvedValue({ coords: { latitude: 45, longitude: 5 } })
+    await renderHook(() => useInitialLocationCentre({ hasFocus: false, moveTo: jest.fn() }))
+    await flush()
+    expect(cachedStartRegion(false)).toMatchObject({ latitude: 45, longitude: 5 })
   })
 })

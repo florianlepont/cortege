@@ -34,6 +34,7 @@ export type SwipeCanvasKey =
   | "hideMarkers"
   | "androidView"
   | "onRenderedFully"
+  | "onViewSettled"
   | "bare"
 
 export type MapCanvasProps = {
@@ -65,6 +66,8 @@ export type MapCanvasProps = {
   styleRetryKey?: number
   /** The style finished loading (a base, an offline file). */
   onStyleLoaded?: () => void
+  /** The camera settled (`onRegionDidChange`): the stacked maps align to it before they show. */
+  onViewSettled?: (event: NativeSyntheticEvent<ViewStateChangeEvent>) => void
   /** The map finished rendering what it shows (`onDidFinishRenderingMapFully`). */
   onRenderedFully?: () => void
   /** The basemap change mode: bare basemaps, with no forest types, cadastre or parcels. */
@@ -124,6 +127,7 @@ export const MapCanvas = memo(function MapCanvas({
   styleRetryKey = 0,
   onStyleLoaded,
   onRenderedFully,
+  onViewSettled,
   bare,
   onStyleFailed,
   initialRegion = DEFAULT_MAP_REGION,
@@ -184,6 +188,7 @@ export const MapCanvas = memo(function MapCanvas({
         isGesture: userInteraction,
       })
       onViewChange?.(event)
+      onViewSettled?.(event)
     },
   )
 

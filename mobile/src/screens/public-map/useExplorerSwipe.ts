@@ -11,7 +11,7 @@ import { useLatestCallback } from "../../state/useLatestCallback"
 import { feedback } from "../../ui/feedback"
 import { useScreenFocus } from "../../ui/useScreenFocus"
 import type { MapCanvasProps, SwipeCanvasKey } from "./MapCanvas"
-import { useMapSync } from "./MapStack"
+import { useMapSync, useViewTracker } from "./MapStack"
 import { COMPARISON_BUILT, LEFT_MAP_ANDROID_VIEW, WIPE_PRESENTATION } from "./map-stack-mode"
 import { useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
 import { useCurtainClip, type CurtainPhase } from "./useCurtainClip"
@@ -230,6 +230,7 @@ export function useExplorerSwipe({
   const sideStep = useSideStep({ layers, isAvailable, width })
   const secondSync = useMapSync()
   const thirdSync = useMapSync()
+  const view = useViewTracker()
   // The swipe mode preloads the next layer in the second map (zero-width strip): no blank reveal.
   const preloadLayer =
     swipeMode && !comparing && WIPE_PRESENTATION === "wipe"
@@ -278,30 +279,34 @@ export function useExplorerSwipe({
     northUp()
   }, [comparing, northUp])
 
-  // A cover is dropped when the map under it has loaded, or after a while if it never says so.
+  // A cover goes when the map under it rendered (`useCoverRelease`), or after a while at most.
   useEffect(() => {
     if (cover === null) return undefined
     const timer = setTimeout(() => setCover(null), COVER_MAX_MS)
     return () => clearTimeout(timer)
   }, [cover])
-  const { onStyleLoaded: sideStyleLoaded } = sideStep
   const coverRelease = useCoverRelease({
     covered: cover !== null,
     swipeMode,
     release: () => setCover(null),
   })
-  const { onStyleLoaded: coverStyleLoaded, onRenderedFully: coverRendered } = coverRelease
-  const { onRendered: sideRendered } = sideStep
-  const onRenderedFully = useCallback(() => {
-    coverRendered()
-    sideRendered()
-  }, [coverRendered, sideRendered])
+  const onRenderedFully = useLatestCallback(
+    () => (coverRelease.onRenderedFully(), sideStep.onRendered()),
+  )
   const onBaseStyleLoaded = useLatestCallback(() => {
     // A full cover waits for the committed style's own load, not one of another style in flight.
-    if (cover?.kind !== "full" || state.loadingBase === cover.layer) coverStyleLoaded()
-    sideStyleLoaded("base")
+    if (cover?.kind !== "full" || state.loadingBase === cover.layer) coverRelease.onStyleLoaded()
+    sideStep.onStyleLoaded("base")
   })
-  const onSecondStyleLoaded = useCallback(() => sideStyleLoaded("second"), [sideStyleLoaded])
+  // A stacked map about to be revealed first jumps to the Explorer map's settled camera.
+  const onSecondStyleLoaded = useLatestCallback(() => {
+    view.alignTo(secondSync.cameraRef)
+    sideStep.onStyleLoaded("second")
+  })
+  const onThirdReady = useLatestCallback(() => {
+    view.alignTo(thirdSync.cameraRef)
+    sideStep.onThirdReady()
+  })
 
   // Leaving the Explorer tab ends the swipe mode (a comparison stays).
   const focused = useScreenFocus()
@@ -341,9 +346,10 @@ export function useExplorerSwipe({
       hideMarkers: comparing,
       androidView: LEFT_MAP_ANDROID_VIEW,
       onRenderedFully,
+      onViewSettled: view.track,
       bare: swipeMode,
     }),
-    [comparing, onRenderedFully, onViewChange, stacked, swipeMode],
+    [comparing, onRenderedFully, view.track, onViewChange, stacked, swipeMode],
   )
 
   const layersView: ExplorerSwipeView = {
@@ -382,7 +388,7 @@ export function useExplorerSwipe({
     noticesTop,
     onBaseStyleLoaded,
     onSecondStyleLoaded,
-    onThirdReady: sideStep.onThirdReady,
+    onThirdReady,
     onPanelOpen,
     toggleSwipe,
     quit,

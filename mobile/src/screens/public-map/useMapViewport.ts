@@ -82,6 +82,8 @@ export type UseMapViewportArgs = {
   animateToRegion: (region: Region, durationMs: number) => void
   /** Told the bbox of each viewport load, so a tab-press reload can reuse it. */
   onViewportBboxChange?: (bbox: string) => void
+  /** Where the map starts when it is not the default view (the user's cached position). */
+  initialRegion?: Region
 }
 
 /**
@@ -103,10 +105,12 @@ export function useMapViewport({
   loadParcels,
   animateToRegion,
   onViewportBboxChange,
+  initialRegion,
 }: UseMapViewportArgs) {
-  const [region, setRegion] = useState<Region>(DEFAULT_MAP_REGION)
+  const [region, setRegion] = useState<Region>(initialRegion ?? DEFAULT_MAP_REGION)
   const debouncedRegion = useDebouncedValue(region, VIEWPORT_DEBOUNCE_MS)
-  const fitRef = useRef({ armed: true, baseline: items })
+  // A map that starts on the user does not fit the items afterwards (no move after arrival).
+  const fitRef = useRef({ armed: initialRegion === undefined, baseline: items })
   const lastParcelsKeyRef = useRef("")
 
   const loadItems = useLatestCallback(loadPublicMap)

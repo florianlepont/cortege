@@ -172,6 +172,25 @@ describe("MapCanvas (Phase 28 props)", () => {
     expect(onRegionChangeComplete).toHaveBeenCalledTimes(1)
   })
 
+  test("the settled camera is reported to onViewSettled, not while it moves", () => {
+    const onViewSettled = jest.fn()
+    const map = mapOf(render({ onViewSettled }))
+    expect(map.props.onRegionIsChanging).toBeUndefined()
+    const event = {
+      nativeEvent: {
+        center: [2.69, 48.4],
+        zoom: 14,
+        bearing: 0,
+        pitch: 0,
+        bounds: [2.68, 48.39, 2.7, 48.41],
+        userInteraction: false,
+        animated: false,
+      },
+    } as unknown as NativeSyntheticEvent<ViewStateChangeEvent>
+    act(() => map.props.onRegionDidChange(event))
+    expect(onViewSettled).toHaveBeenCalledWith(event)
+  })
+
   test("a settled camera works without an onViewChange handler", () => {
     const map = mapOf(render())
     act(() =>
