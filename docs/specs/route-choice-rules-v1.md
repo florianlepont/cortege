@@ -76,7 +76,7 @@ est donnée avec sa raison.
 
 | # | Écart | Lecture retenue par la spécification | Raison |
 |---|---|---|---|
-| 1 | Temps d'apprentissage d'un débutant : « une demi-journée » (S p. 19) ou « une journée » (M p. 17 et p. 19) | l'application n'écrit aucune durée d'apprentissage ; elle dit seulement de prévoir du temps (conseil `beginner`) | les deux documents ne s'accordent pas, aucun seuil n'est nécessaire au calcul |
+| 1 | Temps d'apprentissage d'un débutant : « une demi-journée » (S p. 19 et le résumé de M p. 2) ou « une journée » (M p. 17 et p. 19) | l'application n'écrit aucune durée d'apprentissage ; elle dit seulement de prévoir du temps (conseil `beginner`) | les textes ne s'accordent pas, même à l'intérieur de M, et aucun seuil n'est nécessaire au calcul |
 | 2 | Limite du parcours en plein : « < 5 ha » (S p. 18, M p. 6, M p. 4) contre « petite : < dizaine d'ha » (M tableau 2, p. 5) | 5 ha (`ROUTE_FULL_MAX_HA`, décision O-05) | cité trois fois, et le tableau 1 (M p. 4) utilise 1 ha et 5 ha |
 | 3 | Demi-largeur de bande : 10 à 20 m de chaque côté (S p. 18), 10 à 25 m selon la visibilité (M p. 15), 10 à 15 m sur la fiche 2021 (comparaison v3.0 et v3.2, ligne GS-3) | conseil de terrain tiré de M p. 15 : 10 à 15 m (faible visibilité ou terrain très accidenté), 15 à 20 m (visibilité moyenne), 20 à 25 m (bonne visibilité) | M est plus détaillé ; ce n'est pas une entrée de règle, seulement un conseil |
 | 4 | Les tableaux 4, 5 et 7 de M sont étiquetés « IBP v3.0 » ; les seuils des facteurs C, D, E diffèrent entre v3.0 et v3.2, et le facteur H n'a plus de score 1 | la spécification reprend de M la **structure** de calcul (quelles données, quelle somme, quelle division) ; les seuils de score viennent toujours du paquet, par version | le paquet sait déjà noter chaque version (`rules/v3-0.ts`, `rules/v3-2.ts`) |
@@ -152,3 +152,377 @@ sont pas conservées ; l'enregistrement se fait une seule fois, à l'acceptation
 renvoie la liste ordonnée des questions à afficher (nom proposé : `routeQuestionsFor`), puis la
 recommandation complète quand toutes les réponses nécessaires sont données (nom proposé :
 `recommendRoute`). Les réponses non nécessaires sont ignorées par `recommendRoute`.
+
+## 5. Règles de choix du parcours
+
+### Constantes
+
+Chaque seuil est une constante nommée du paquet, avec sa source. Aucun seuil n'est écrit ailleurs.
+
+| Constante | Valeur | Source | Rôle |
+|---|---|---|---|
+| `ROUTE_TINY_STAND_HA` | 0,5 ha | M p. 4 | en dessous, avertissement `small_stand` |
+| `ROUTE_SMALL_STAND_HA` | 1 ha | M p. 4 | jusqu'à cette surface : parcours en plein |
+| `ROUTE_FULL_MAX_HA` | 5 ha | M p. 4, p. 6 ; S p. 18 | limite du parcours en plein (décision O-05) |
+| `ROUTE_SUBDIVIDE_HETEROGENEOUS_HA` | 10 ha | M p. 4 (« 10-20 ha selon l'hétérogénéité ») | au-dessus : trois options, pour un peuplement `heterogeneous` (décision O-02) |
+| `ROUTE_SUBDIVIDE_HOMOGENEOUS_HA` | 20 ha | M p. 4 | idem pour un peuplement `homogeneous` (décision O-02) |
+| `ROUTE_TYPOLOGICAL_LARGE_TYPE_HA` | 40 ha | M p. 11 | à partir de cette surface, 5 à 8 placettes de 1 ha au lieu d'une part en pourcentage |
+| `TYPOLOGICAL_PLOT_HA` | 1 ha | M p. 10 | placette typologique conseillée |
+| `TYPOLOGICAL_PLOT_MIN_HA` | 0,5 ha | M p. 10 | en dessous, le score ne se calcule pas sur la placette seule |
+| `TYPOLOGICAL_LARGE_PLOTS_MIN` et `TYPOLOGICAL_LARGE_PLOTS_MAX` | 5 et 8 placettes de 1 ha | M p. 11 | type de peuplement de 40 ha et plus |
+| `SYSTEMATIC_PLOT_HA` et `SYSTEMATIC_PLOT_LARGE_HA` | 0,20 ha et 0,33 ha | M p. 13 | placette systématique (0,33 ha si le taux d'échantillonnage serait inférieur à 10 %) |
+| `SYSTEMATIC_GROUP_MIN_HA` | 1 ha | M p. 14 | surface minimale d'un groupe pour un score pertinent (avertissement, jamais un blocage) |
+| `PARTIAL_SAMPLE_MIN_HA` | 1 ha | M p. 7 | surface minimale échantillonnée d'un parcours partiel |
+| `PARTIAL_SAMPLE_SHARE_HOMOGENEOUS` et `PARTIAL_SAMPLE_SHARE_HETEROGENEOUS` | 0,10 et 0,20 | M p. 7 | part échantillonnée : 10 % (plantation pure) à 20 % (futaie irrégulière mélangée) |
+| `PARTIAL_OVER_HALF_SHARE` | 0,5 | M p. 7 | au-delà, avertissement `partial_over_half` |
+| `ROUTE_NARROW_WIDTH_M` | 100 m | M p. 8 (tableau 3) | un peuplement plus étroit se décrit mieux en bandes |
+| `ROUTE_MINUTES_PER_HA_EASY` et `ROUTE_MINUTES_PER_HA_HARD` | 15 à 20 et 25 à 30 minutes par hectare et par personne | S p. 19 ; M p. 17 | durée estimée d'un opérateur habitué à l'IBP |
+| `ROUTE_SURFACE_MAX_HA` | 5000 ha | valeur par défaut de la décision U-O11 | borne de saisie d'une surface (erreur `surface_invalid`, `zone_too_large`) |
+| `ROUTE_HOURS_MAX` | 24 h | choix de l'application | borne du temps disponible |
+| `STRATUM_MIN_COVER_PERCENT` | 20 % | S p. 20 | une strate compte à partir de ce couvert (section 7) |
+| `DMH_GROUP_DENSITY_CAP_PER_HA` | 2 arbres par hectare | M p. 9, p. 17 | plafond par groupe de dendromicrohabitats (section 7) |
+| `GROUP_NAME_MAX_LENGTH` | 60 caractères | choix de l'application | longueur du nom de groupe (section 8) |
+| `ROUTE_RECORD_MAX_BYTES` | 4096 octets | choix de l'application | taille maximale de l'enregistrement (section 8) |
+
+### Table des règles
+
+Lecture : « S » est la surface du peuplement (réponse `surface_ha`), « T » le seuil de découpage
+(10 ha pour un peuplement `heterogeneous`, 20 ha pour un peuplement `homogeneous`, décision O-02).
+Chaque règle a un identifiant, une source (document et page), une nature (T, J ou H, voir
+l'en-tête) et **un cas de test** écrit « réponses → résultat attendu ». Le paquet porte les mêmes
+identifiants dans son jeu de cas (`ROUTE_RULE_CASES`) : une règle de la table sans cas, ou un cas
+sans règle, est une erreur détectée par un test.
+
+Ordre des raisons renvoyées (au plus quatre) : la raison tirée des réponses d'abord, puis, pour un
+parcours partiel, la raison du type (bande ou placette) et la raison du relevé complémentaire,
+et la raison du comptage en dernier.
+
+**Étape 0 : préconditions et avertissements (aucun changement de parcours)**
+
+| Id | Condition | Résultat | Source | Nature | Cas de test |
+|---|---|---|---|---|---|
+| R-01 | S absente, nulle, négative, ou supérieure à `ROUTE_SURFACE_MAX_HA` | aucun parcours ni comptage ; la question `surface` reste ouverte ; code d'erreur `surface_missing` (absente) ou `surface_invalid` (hors plage) | S p. 18 ; M p. 2 | T | `purpose=whole_stand`, `surface_ha` absente → aucune proposition, `surface_missing` |
+| R-02 | 0 < S < `ROUTE_TINY_STAND_HA` (0,5 ha) | la proposition est inchangée ; avertissement `small_stand` en plus | M p. 4 | T | `purpose=whole_stand`, `surface_ha=0.4` → `full`, `capped`, zone 0.4, raisons `whole_stand_small` puis `capped_default`, avertissement `small_stand` |
+| R-03 | peuplement linéaire (largeur inférieure à 15 m : haie, ripisylve) | hors champ de l'application (décision O-10) : aucune question, aucun code ; les seuils restent par hectare ; une phrase fixe sous la question de surface l'explique | S p. 6 | T (règle officielle, non prise en charge) | `purpose=whole_stand`, `surface_ha=0.8` pour une haie → même résultat que R-07 ; le code `linear_stand_unsupported` n'existe pas |
+
+**Étape 1 : l'objectif choisit la famille de parcours**
+
+| Id | Condition | Résultat | Source | Nature | Cas de test |
+|---|---|---|---|---|---|
+| R-04 | `purpose=systematic_planned` | parcours `systematic`, comptage `uncapped` avec les neuf éléments de `UNCAPPABLE_FACTORS` (A B C D E F G I J) ; raisons `systematic_planned` puis `uncapped_group` ; conseils `uncapped_longer` et `group_pending` ; zone conseillée `SYSTEMATIC_PLOT_HA` | M p. 4 (cas 2), p. 5, p. 13 | T | `purpose=systematic_planned`, `surface_ha=120` → `systematic`, `uncapped` [A,B,C,D,E,F,G,I,J], zone 0.2, raisons [`systematic_planned`, `uncapped_group`], conseils [`uncapped_longer`, `group_pending`] |
+| R-05 | `purpose=rapid_diagnosis` ou `purpose=study` | parcours `typological` ; avec `rapid_diagnosis` : comptage `capped`, raisons `typological_rapid` puis `capped_default` ; avec `study` : comptage `uncapped` (préréglage `study`, voir R-17), raisons `typological_study` puis `uncapped_study`, conseil `uncapped_longer` ; zone par fiche `TYPOLOGICAL_PLOT_HA` sans dépasser S ; surface totale à échantillonner `sample_total_ha` (voir « Surface décrite conseillée ») ; conseil `group_pending` | M p. 4 (cas 1 et 3), p. 5, p. 10 | T | `purpose=rapid_diagnosis`, `surface_ha=30`, `homogeneity=homogeneous` → `typological`, `capped`, zone 1, `sample_total_ha` 3, raisons [`typological_rapid`, `capped_default`], conseil [`group_pending`] |
+| R-06 | `purpose=whole_stand` | passe à l'étape 2 (R-07 à R-11b) | M p. 4 | T | `purpose=whole_stand`, `surface_ha=3`, `homogeneity=heterogeneous`, `difficulty=false` → le résultat est celui de R-10 (`full`) |
+
+**Étape 2 : diagnostic exhaustif d'un peuplement, par surface, homogénéité et difficulté**
+
+| Id | Condition | Résultat | Source | Nature | Cas de test |
+|---|---|---|---|---|---|
+| R-07 | S ≤ `ROUTE_SMALL_STAND_HA` (1 ha) | `full`, `capped`, zone = S ; raisons `whole_stand_small` puis `capped_default` ; ni `homogeneity` ni `difficulty` n'est posée | M p. 4 | T | `purpose=whole_stand`, `surface_ha=0.8` → `full`, `capped`, zone 0.8, raisons [`whole_stand_small`, `capped_default`], aucune autre question |
+| R-08 | 1 < S ≤ `ROUTE_FULL_MAX_HA` (5 ha) et `difficulty=true` | `partial` (bande par R-12a), `capped` ; raisons `partial_hard_to_observe`, `partial_strip_why`, `complement_advised`, `capped_default` | M p. 4 | T | `purpose=whole_stand`, `surface_ha=3`, `homogeneity=heterogeneous`, `difficulty=true` → `partial_strip`, `capped`, zone 1, complément fait, surface totale évaluée 3 |
+| R-09 | 1 < S ≤ 5 ha, `difficulty=false`, `homogeneity=homogeneous` | `partial` (bande si `narrow=true`, sinon placette, R-12a et R-12b), `capped` ; raison de tête `partial_homogeneous` | M p. 4 | T | `purpose=whole_stand`, `surface_ha=2`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, `capped`, zone 1, raisons [`partial_homogeneous`, `partial_plot_why`, `complement_advised`, `capped_default`], aucun avertissement |
+| R-10 | 1 < S ≤ 5 ha, `difficulty=false`, `homogeneity=heterogeneous` | `full`, `capped`, zone = S ; raisons `whole_stand_heterogeneous` puis `capped_default` | M p. 4 ; S p. 18 | T | `purpose=whole_stand`, `surface_ha=4.5`, `homogeneity=heterogeneous`, `difficulty=false` → `full`, `capped`, zone 4.5 |
+| R-11 | 5 < S ≤ T | `partial`, `capped` ; raison de tête `partial_medium_stand` ; la forme (bande ou placette) suit R-12a et R-12b ; `difficulty` n'est posée que si le peuplement est `homogeneous` | M p. 4 | T (le seuil 10 ou 20 selon l'hétérogénéité est J, décision O-02) | `purpose=whole_stand`, `surface_ha=15`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, `capped`, zone 1.5, raisons [`partial_medium_stand`, `partial_plot_why`, `complement_advised`, `capped_default`] |
+| R-11b | S > T | aucun parcours tant que l'observateur n'a pas choisi ; trois options, dans l'ordre : `subdivide` (préselectionnée, décision O-03), `typological`, `partial` ; raison `large_stand` ; `subdivide` n'est pas un parcours : l'assistant redemande la surface d'un morceau et enregistre `subdivided=true` ; `typological` renvoie le résultat de R-05 avec les raisons `large_stand` et `typological_large` ; `partial` renvoie le résultat de R-12a ou R-12b avec les raisons `large_stand` et `partial_medium_stand` | M p. 4 | J (décision O-03) | `purpose=whole_stand`, `surface_ha=12`, `homogeneity=heterogeneous` → options [`subdivide`, `typological`, `partial`], `subdivide` préselectionnée, raison [`large_stand`], aucun parcours |
+
+**Étape 3 : paramètres d'un parcours partiel**
+
+| Id | Condition | Résultat | Source | Nature | Cas de test |
+|---|---|---|---|---|---|
+| R-12a | parcours partiel et (`homogeneity=heterogeneous` ou `difficulty=true` ou `narrow=true`) | `partial_strip` ; raison `partial_strip_why` ; conseil de terrain : bandes de 20 à 50 m de large (demi-largeur de 10 à 25 m selon la visibilité) | M p. 7, p. 8, p. 15 | T | `purpose=whole_stand`, `surface_ha=8`, `homogeneity=heterogeneous` → `partial_strip`, zone 1.6, raisons [`partial_medium_stand`, `partial_strip_why`, `complement_advised`, `capped_default`] |
+| R-12b | parcours partiel dans tous les autres cas | `partial_plot` ; raison `partial_plot_why` ; conseil de terrain : placettes de 1 ha préférées (rayon horizontal de 56,4 m), 0,5 ha (39,9 m) ou 0,33 ha (32,6 m) possibles | M p. 7, p. 8 | T | `purpose=whole_stand`, `surface_ha=8`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, zone 1, raisons [`partial_medium_stand`, `partial_plot_why`, `complement_advised`, `capped_default`] |
+| R-13 | parcours partiel | zone conseillée = min(S, max(`PARTIAL_SAMPLE_MIN_HA`, part × S)) arrondie à 2 décimales, part = 0,10 (`homogeneous`) ou 0,20 (`heterogeneous`) ; contrôles de la section « Contrôles de la surface décrite » (`partial_over_half` quand zone > 0,5 × S, `partial_below_minimum` quand zone < 1 ha) | M p. 7 | T (la correspondance entre homogénéité et 10 ou 20 % est J : le texte donne les deux extrêmes, une plantation pure et une futaie irrégulière mélangée) | `surface_ha=8`, `homogeneity=heterogeneous` → zone 1.6 ; l'observateur saisit 4.5 → `partial_over_half` (4.5 > 4) |
+| R-14 | parcours partiel | relevé complémentaire conseillé pour quatre éléments (A, G, I, J), proposé par défaut : `complement` = `done` vrai, surface totale évaluée = S ; raison `complement_advised` | M p. 8 ; S p. 20 | T | tout parcours partiel avec `surface_ha=8` → `complement.done=true`, `complement.total_surface_ha=8` |
+| R-15 | parcours partiel par placettes, plusieurs placettes | par défaut une seule fiche continue : la zone est la somme des placettes et le comptage est rapide ; l'alternative « une fiche par placette » se choisit dans le sélecteur (comptage complet et nom de groupe), pas par une question ; le calcul du groupe est renvoyé à la phase 30.1 (conseil `group_pending` dès qu'un nom de groupe est donné) | M p. 7 ; M p. 5 | T | proposition `partial_plot` → enregistrement sans `group_name`, `capped` ; l'observateur choisit « Comptage complet » et le nom « Chênaie nord » → `partial_plot`, `uncapped`, `group_name="Chênaie nord"`, conseil `group_pending` |
+
+**Étape 4 : comptage et éléments comptés en entier**
+
+| Id | Condition | Résultat | Source | Nature | Cas de test |
+|---|---|---|---|---|---|
+| R-16 | comptage par défaut selon le parcours | `full` : `capped` ; `partial_strip` : `capped` (relevé continu) ; `partial_plot` : `capped` (une fiche continue) ou `uncapped` (une fiche par placette, voir R-15) ; `typological` : `capped` ; `systematic` : `uncapped` | M p. 5 (tableau 2) | T | `full` → `capped` ; `partial_plot` avec nom de groupe → `uncapped` ; `typological` → `capped` ; `systematic` → `uncapped` avec A B C D E F G I J |
+| R-17 | comptage `uncapped` choisi (objectif `study`, parcours `systematic`, ou choix dans le sélecteur) | le comptage est complet pour une liste d'éléments, jamais pour H ; préréglages : `study` = A B C D E F G I J ; `mature` = A C D E F ; `always_max` = un sous-ensemble choisi de A C D E F I J (tous proposés au départ) ; `minimum` = C D E ; `custom` = au choix, au moins un élément. Conseil pour `mature` et `always_max` : garder le plafond de 1 arbre par hectare pour les bois morts de dimension moyenne et les gros bois, sauf besoin de l'étude | M p. 23, p. 24 ; S p. 20, p. 21 (note 1) | T (les listes) ; les offrir en préréglages est J (décision O-01) | préréglage `mature` → [A,C,D,E,F] ; `minimum` → [C,D,E] ; `study` → [A,B,C,D,E,F,G,I,J] ; `custom` sans aucun élément → refusé (au moins un élément) |
+| R-18 | tout comptage `uncapped` | conseil `uncapped_longer` : le comptage complet demande plus de temps | S p. 19 ; M p. 17 | T | `systematic` → conseils contiennent `uncapped_longer` ; `full` et `capped` → absent |
+
+**Étape 5 : durée et conseils (jamais un changement de parcours)**
+
+| Id | Condition | Résultat | Source | Nature | Cas de test |
+|---|---|---|---|---|---|
+| R-19 | surface échantillonnée A connue (parcours `full` : S ; `partial_*` : la zone ; `typological` : `sample_total_ha` ; pas d'estimation pour `systematic`) | conseil `duration` avec une plage `estimated_minutes` : minimum et maximum = A × (15 et 20) minutes, ou A × (25 et 30) si `difficulty=true`, arrondis à la minute | S p. 19 ; M p. 17 | T pour les nombres ; H pour la bande difficile choisie par `difficulty=true` | `full`, `surface_ha=4`, `difficulty` non posée → 60 à 80 minutes ; `partial_strip`, zone 1, `difficulty=true` → 25 à 30 minutes ; `typological`, `surface_ha=100` → de 5 × 15 = 75 à 8 × 20 = 160 minutes |
+| R-20 | `hours_available` donné et inférieur à la durée minimale estimée | conseil `time_short` ; le parcours ne change jamais (décision O-04) | S p. 19 ; M p. 17 (les durées seulement : comparer au temps disponible n'est pas écrit) | H (décision O-04) | `full`, `surface_ha=4`, `hours_available=0.5` → conseil `time_short` ; le parcours reste `full` |
+| R-21 | `experience=beginner` | conseil `beginner` ; le parcours ne change jamais (décision O-04) | M p. 4 (point 4) ; S p. 19 | J et H (décision O-04) | `experience=beginner` avec `surface_ha=8`, `homogeneity=heterogeneous` → même parcours que sans la réponse (`partial_strip`), conseil `beginner` en plus |
+
+### Cas limites
+
+Les cas ci-dessous fixent le comportement aux seuils 0,5, 1, 5, 10, 20 et 40 ha et aux autres
+bornes. Chaque identifiant `R-nn#étiquette` désigne la règle `R-nn` dont il fixe une borne.
+
+| Id | Règle | Source | Cas (réponses → résultat attendu) |
+|---|---|---|---|
+| R-01#zero | R-01 | S p. 18 | `surface_ha=0` → `surface_invalid`, aucune proposition |
+| R-01#at-max | R-01 | S p. 18 | `purpose=whole_stand`, `surface_ha=5000`, `homogeneity=homogeneous` → proposition calculée (options de R-11b), pas d'erreur |
+| R-01#above-max | R-01 | S p. 18 | `surface_ha=5000.01` → `surface_invalid`, aucune proposition |
+| R-02#at-half-ha | R-02 | M p. 4 | `purpose=whole_stand`, `surface_ha=0.5` → `full`, zone 0.5, aucun avertissement `small_stand` |
+| R-05#below-40ha | R-05 | M p. 11 | `purpose=rapid_diagnosis`, `surface_ha=39.99`, `homogeneity=homogeneous` → `typological`, `sample_total_ha` 4 (10 %) ; avec `heterogeneous` → 8 (20 %) |
+| R-05#at-40ha | R-05 | M p. 11 | `purpose=rapid_diagnosis`, `surface_ha=40` → `typological`, `sample_total_ha` de 5 à 8 (plan des 5 à 8 placettes), `homogeneity` non posée |
+| R-05#study | R-05 | M p. 4 | `purpose=study`, `surface_ha=300` → `typological`, `uncapped` [A,B,C,D,E,F,G,I,J], raisons [`typological_study`, `uncapped_study`] |
+| R-07#at-1ha | R-07 | M p. 4 | `purpose=whole_stand`, `surface_ha=1` → `full`, zone 1, `homogeneity` non posée |
+| R-08#just-above-1ha | R-08 | M p. 4 | `surface_ha=1.01`, `homogeneity=heterogeneous`, `difficulty=true` → `partial_strip`, zone 1 |
+| R-10#at-5ha | R-10 | M p. 4 | `surface_ha=5`, `homogeneity=heterogeneous`, `difficulty=false` → `full`, zone 5 |
+| R-11#just-above-5ha | R-11 | M p. 4 | `surface_ha=5.01`, `homogeneity=heterogeneous` → `partial_strip`, zone 1 (0,2 × 5,01 arrondi à 1,00) |
+| R-11#hetero-at-10ha | R-11 | M p. 4 | `surface_ha=10`, `homogeneity=heterogeneous` → `partial_strip`, zone 2, pas d'options |
+| R-11#homo-between-10-and-20ha | R-11 | M p. 4 | `surface_ha=12`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, zone 1.2, pas d'options |
+| R-11#homo-at-20ha | R-11 | M p. 4 | `surface_ha=20`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → `partial_plot`, zone 2, pas d'options |
+| R-11b#hetero-above-10ha | R-11b | M p. 4 | `surface_ha=10.01`, `homogeneity=heterogeneous` → options [`subdivide`, `typological`, `partial`], aucun parcours |
+| R-11b#homo-above-20ha | R-11b | M p. 4 | `surface_ha=20.01`, `homogeneity=homogeneous` → options [`subdivide`, `typological`, `partial`], aucun parcours |
+| R-12a#narrow | R-12a | M p. 8 | `surface_ha=8`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=true` → `partial_strip` |
+| R-13#at-half | R-13 | M p. 7 | `surface_ha=2`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → zone 1 (exactement la moitié), aucun avertissement `partial_over_half` |
+| R-13#above-half | R-13 | M p. 7 | `surface_ha=1.5`, `homogeneity=homogeneous`, `difficulty=false`, `narrow=false` → zone 1 (plus de la moitié), avertissement `partial_over_half` |
+| R-13#below-minimum | R-13 | M p. 7 | `surface_ha=8`, zone saisie 0.9 → avertissement `partial_below_minimum` |
+| R-14#complement-below-zone | R-14 | M p. 8 | zone 2, surface totale évaluée saisie 1.5 → erreur `complement_below_zone` |
+| R-20#at-minimum | R-20 | S p. 19 | `full`, `surface_ha=4`, `hours_available=1` (60 minutes, égal au minimum estimé) → aucun conseil `time_short` |
+
+### Surface décrite conseillée
+
+Pour chaque parcours, la proposition renvoie la surface que le relevé décrit (la « zone de relevé
+IBP » de la fiche, S p. 20), arrondie à 2 décimales :
+
+| Parcours | Surface décrite conseillée (clé `zone_surface_ha`) | Source |
+|---|---|---|
+| `full` | la surface du peuplement S | M p. 6 |
+| `partial_strip`, `partial_plot` | min(S, max(1 ha, part × S)), part 0,10 ou 0,20 selon l'homogénéité (R-13) ; pour des placettes plusieurs, la somme de leurs surfaces | M p. 7 |
+| `typological` | **la surface de cette fiche** : `TYPOLOGICAL_PLOT_HA` (1 ha), sans dépasser S ; 0,5 ha possible. Le paquet renvoie en plus une aide, `sample_total_ha`, la surface totale à échantillonner dans le type : si S < 40 ha, max(1 ha, part × S) ; si S ≥ 40 ha, de 5 à 8 ha (5 à 8 placettes de 1 ha) | M p. 10, p. 11 |
+| `systematic` | **la surface de cette fiche** : `SYSTEMATIC_PLOT_HA` (0,20 ha, ou 0,33 ha au choix de l'observateur) | M p. 13 |
+
+La valeur retenue pour `typological` et `systematic` (la surface de la fiche, non la surface totale
+des placettes) est la décision O-17 (section 11) : elle correspond à la fiche officielle, qui est
+une fiche par placette (M p. 5, tableau 2), et elle permet à la phase 30.1 de regrouper les fiches
+sans migration.
+
+### Contrôles de la surface décrite
+
+Le paquet expose ces contrôles ; l'écran n'en contient aucun. Une **erreur** empêche
+l'enregistrement, un **avertissement** ne l'empêche pas.
+
+| Code | Gravité | Condition | Cas de test |
+|---|---|---|---|
+| `zone_not_positive` | erreur | surface décrite absente ou inférieure ou égale à 0 | zone 0 → `zone_not_positive` |
+| `zone_too_large` | erreur | surface décrite supérieure à `ROUTE_SURFACE_MAX_HA` | zone 5000.01 → `zone_too_large` |
+| `zone_above_stand` | erreur | surface décrite supérieure à S (la surface totale évaluée du relevé complémentaire n'est pas concernée) | S 2, zone 2.5 → `zone_above_stand` |
+| `partial_over_half` | avertissement | parcours partiel et surface décrite supérieure à 0,5 × S | S 8, zone 4.5 → `partial_over_half` ; zone 4 → aucun |
+| `partial_below_minimum` | avertissement | parcours partiel et surface décrite inférieure à `PARTIAL_SAMPLE_MIN_HA` | zone 0.9 → `partial_below_minimum` ; zone 1 → aucun |
+| `complement_below_zone` | erreur | relevé complémentaire fait et surface totale évaluée inférieure à la surface décrite | zone 2, totale 1.5 → `complement_below_zone` ; totale 2 → aucun |
+
+### Codes ajoutés par rapport à la recherche préliminaire
+
+Pour que chaque phrase de l'assistant corresponde à une règle, la rédaction de cette spécification
+ajoute les codes suivants, absents de la liste préliminaire (à relire avec les phrases au plan
+30-13) : raisons `typological_study` (R-05 avec `study`), `typological_large` et `large_stand`
+(R-11b) ; codes d'erreur de la surface `surface_missing` et `surface_invalid` (R-01) ; conseil
+`group_pending` (R-04, R-05, R-15, décision O-06) ; champ de résultat `sample_total_ha`. Le code
+`linear_stand_unsupported` de la liste préliminaire n'est pas créé (décision O-10).
+
+## 6. Comptage : rapide ou complet
+
+**Deux modes (S p. 18, M p. 16).** En **comptage rapide** (relevé plafonné), on arrête les
+observations d'un facteur dès que son score définitif est sûr (exemple officiel : arrêt à 5 très
+gros bois par hectare pour le facteur E) ; il suppose de connaître la surface du relevé pour
+calculer les seuils. En **comptage complet** (relevé déplafonné), tous les éléments sont comptés et
+notés en détail, notamment le couvert des essences autochtones (A) et des strates (B) en
+pourcentage. Le comptage rapide est « la méthode la plus rapide, utilisée dans la majorité des
+cas » ; le comptage complet est réservé à quelques cas : regroupement de placettes, étude,
+peuplement mal discriminé par l'IBP (forêt mature, scores toujours maximaux ou minimaux).
+
+**Le comptage par défaut de chaque parcours (R-16, M p. 5 tableau 2).**
+
+| Parcours | Comptage par défaut | Remarque |
+|---|---|---|
+| `full` | `capped` | plafonné selon la surface du peuplement (M p. 6) |
+| `partial_strip` | `capped` | relevé en continu |
+| `partial_plot` | `capped` (une fiche continue) ou `uncapped` (une fiche par placette) | R-15 |
+| `typological` | `capped` | un score par placette, puis moyenne et dispersion (section 10) |
+| `systematic` | `uncapped` | le score se calcule sur le groupe de placettes (section 10) |
+
+**Les éléments comptés en entier (R-17).** L'enregistrement porte la liste des facteurs du champ
+« Facteurs déplafonnés » de la fiche (S p. 20). Cinq préréglages sont proposés ; toucher un facteur
+bascule le préréglage sur `custom`.
+
+| Préréglage | Éléments comptés en entier | Cas visé | Source |
+|---|---|---|---|
+| `study` | A B C D E F G I J | étude ou travail de recherche | M p. 24 |
+| `mature` | A C D E F | peuplement à forte maturité | M p. 23 |
+| `always_max` | sous-ensemble choisi de A C D E F I J (tous proposés au départ) | peuplement dont certains scores sont toujours maximaux | M p. 23 |
+| `minimum` | C D E | peuplement dont certains scores sont toujours nuls (jeune plantation, garrigue) | M p. 24 |
+| `custom` | au choix, au moins un élément | tout autre besoin | S p. 21 (note 1) |
+
+Le facteur H n'est jamais compté en entier (c'est une classe, pas un comptage). La liste complète
+des facteurs liftables est `UNCAPPABLE_FACTORS` = A, B, C, D, E, F, G, I, J. Plus la liste est
+longue, plus le relevé l'est : le texte officiel demande de choisir les facteurs selon l'objectif
+(M p. 23).
+
+**Différences par facteur** (tableau 7 de M p. 17, chapitre 8 de M p. 23-24, fiche S p. 20-21).
+
+| Facteur | Comptage rapide | Comptage complet | Ce que l'application change |
+|---|---|---|---|
+| A | genres comptés jusqu'à 5 (3 en cas 3) ; couvert des autochtones : moins ou plus de 50 % | tous les genres ; couvert en pourcentage | rien de plus : le couvert est déjà saisi en pourcentage ; les essences exotiques et les noms d'espèce restent hors champ |
+| B | nombre de strates présentes (couvrant au moins 20 % de la surface échantillonnée) | couvert de chaque strate, en pourcentage de la surface échantillonnée | **nouvelle saisie** `strata_cover` (section 7) |
+| C et D | au plus 3 bois morts de grosse dimension et 1 de dimension moyenne par hectare | tous les bois morts | rien de plus : les comptes sont déjà sans plafond ; textes et indices changent |
+| E | au plus 5 très gros bois et 1 gros bois par hectare | tous les très gros bois et gros bois | idem |
+| F | au plus 2 arbres par hectare et par groupe de dendromicrohabitats, au plus 8 au total | tous les arbres porteurs, groupe par groupe | **nouvelle saisie** `dmh_counts` (section 7) |
+| G | pourcentage de milieux ouverts, avec arrêt à 5 % (score maximal) | pourcentage sans arrêt à 5 % (M p. 24) | rien de plus : le pourcentage est déjà saisi sans plafond |
+| H | classe | sans objet | rien |
+| I et J | au plus 2 types comptés | tous les types observés | rien de plus : le nombre de types est déjà saisi sans plafond |
+
+**Les plafonds de comptage d'un groupe** (3, 1, 5, 1, 2 et 8 fois la surface totale du groupe) ne
+changent jamais un score : ils servent à arrêter de compter quand le score maximal est certain (S
+p. 18, M p. 17). Ils ne sont pas appliqués par l'application (section 10).
+
+## 7. Saisie en comptage complet
+
+**Principe (D-07, D-09).** En comptage complet, deux facteurs reçoivent des champs de détail
+nouveaux : B (couvert de chaque strate) et F (arbres par groupe de dendromicrohabitats). Aucun
+autre facteur n'en reçoit : A, C, D, E, G, I, J gardent leur saisie actuelle, seuls les textes
+d'aide changent. Pour un relevé isolé, les deux modes donnent **le même score pour les mêmes
+données** : le comptage complet ajoute de la donnée, il ne change aucun calcul.
+
+**B : `strata_cover`.** Un objet dont les cinq clés sont les codes de strate `very_low`, `low`,
+`intermediate`, `high`, `herbaceous` (ceux de la saisie actuelle de B) et dont les valeurs sont des
+nombres de 0 à 100 (un pourcentage de la surface échantillonnée, arrondi à 1 décimale). Une strate
+compte à partir de `STRATUM_MIN_COVER_PERCENT` (20 %) (S p. 20) ; les strates se superposent, la
+somme peut dépasser 100 %. Le nombre de strates est calculé par un utilitaire pur du paquet
+(`strataCountFromCover`). Cas : 19 % ne compte pas, 20 % compte.
+
+**F : `dmh_counts` et la surface.** Un objet dont les clés sont les quinze groupes de
+dendromicrohabitats `dmh_01` à `dmh_15` et dont les valeurs sont des nombres entiers d'arbres
+(0 et plus). La densité d'un groupe est son nombre d'arbres divisé par la surface décrite de la
+saisie du facteur F (clé `surface_ha` de F, préremplie depuis la surface décrite du parcours comme
+pour C, D et E) ; elle est plafonnée à `DMH_GROUP_DENSITY_CAP_PER_HA` (2 arbres par hectare), puis
+les groupes sont additionnés (M p. 9 et p. 17). Le calcul est un utilitaire pur du paquet
+(`dmhDensityPerHa`). La nouvelle clé n'est **pas** `dmh_group_counts` : cette clé existe déjà,
+c'est un tableau de nombres que le calculateur actuel plafonne à 2 sans jamais diviser par une
+surface ; lui donner un autre sens changerait le score de relevés existants.
+
+**Règle U-O10 (valeur proposée).** Une clé de détail n'est jamais lue par un calculateur de score.
+Tant qu'un facteur est compté en entier, l'application écrit sa clé notée (`strata_count`,
+`trees_per_ha`) à partir du détail, avec les utilitaires du paquet. Quand le facteur sort de la
+liste des facteurs comptés en entier, les détails sont **conservés et masqués** (jamais effacés),
+la clé notée garde sa dernière valeur et redevient modifiable. Une clé de détail n'est enregistrée
+qu'avec sa clé notée (règle de la phase 25.1). Conséquence : les calculateurs, le jeu de cas de
+parité et la matrice de validation ne changent pas.
+
+**Autres entrées.** Pour C, D et E, les trois champs de surface préremplis depuis la surface
+décrite du parcours restent modifiables jusqu'à ce que l'observateur y touche ; un seul
+enregistrement de surface fait foi pour l'ensemble.
+
+## 8. Données enregistrées (Parcours utilisé)
+
+Une seule structure JSON versionnée, `survey_route`, rangée à côté de `survey_note` et `weather`
+(même schéma que la phase 27 : colonne nullable côté API, clé du `payload_json` local côté
+téléphone, aucune migration SQLite). Elle est **hors de `factors`** : aucun calculateur ne la voit.
+
+| Clé | Sens | Type | Valeurs permises, bornes | Présente quand |
+|---|---|---|---|---|
+| `version` | version de la structure | nombre | `1` | toujours |
+| `method` | le parcours | texte | `full`, `partial_strip`, `partial_plot`, `typological`, `systematic` | toujours |
+| `counting` | le comptage | texte | `capped`, `uncapped` | toujours |
+| `uncapped_factors` | « Facteurs déplafonnés » de la fiche | liste de lettres | sous-ensemble non vide de A B C D E F G I J, sans doublon, **triée** | seulement si `counting` vaut `uncapped` |
+| `zone_surface_ha` | « zone de relevé IBP, surface (ha) » de la fiche | nombre | strictement supérieur à 0, au plus `ROUTE_SURFACE_MAX_HA`, 2 décimales | toujours (obligatoire) |
+| `complement` | relevé complémentaire dans la zone non échantillonnée | objet | `done` (vrai ou faux) ; `total_surface_ha` (nombre, au moins `zone_surface_ha`, au plus `ROUTE_SURFACE_MAX_HA`, 2 décimales) présent seulement si `done` est vrai | parcours partiel seulement |
+| `group_name` | « Nom groupe de relevés si plusieurs placettes » | texte | au plus `GROUP_NAME_MAX_LENGTH` (60) caractères, sans espace en tête ou en fin | facultatif |
+| `guide` | ce qui a conduit au choix | objet | voir ci-dessous | si l'assistant a été utilisé ou le parcours choisi à la main |
+
+Contenu de `guide` :
+
+| Clé | Sens | Valeurs |
+|---|---|---|
+| `chosen_by` | qui a choisi | `guide` (le parcours, le comptage et les éléments enregistrés sont ceux que l'assistant avait proposés) ou `observer` (l'observateur a changé la proposition ou a choisi directement) |
+| `suggested` | la dernière proposition de l'assistant | objet `method` et `counting` (mêmes valeurs que ci-dessus) ; absent si l'observateur a choisi directement sans réponses complètes |
+| `answers` | les réponses nécessaires de la section 4 | `purpose`, `surface_ha`, `homogeneity`, `difficulty`, `narrow`, `experience`, `hours_available`, `subdivided` ; chaque clé n'est présente que si la question était nécessaire et répondue ; `hours_available` entre 0 (exclu) et `ROUTE_HOURS_MAX`, 2 décimales |
+
+**Règles.**
+
+- Aucun texte libre sauf `group_name` (donc rien à effacer pour la suppression de compte au-delà
+  de ce que la décision D-24 prévoit déjà pour les notes). Voir la décision O-08.
+- **Forme canonique, établie sur le téléphone** : nombres arrondis comme indiqué, liste des
+  facteurs triée sans doublon, nom de groupe sans espaces en tête et en fin. Le serveur stocke tel
+  quel et compare sans reformater ; sinon un rejeu du même relevé produirait un faux conflit.
+- **Un relevé sans enregistrement est valide** : assistant passé, ou relevé créé avant cette phase.
+  Rien n'est inventé, la clé est absente.
+- **Brouillon seulement** : le parcours se modifie tant que le relevé est un brouillon et devient
+  en lecture seule à la soumission, comme `ibp_method_version` (décision D-09). La décision O-08
+  tranche si `group_name` fait exception.
+- **Taille** : au plus `ROUTE_RECORD_MAX_BYTES` (4096 octets) une fois sérialisé.
+- **Place pour la phase 31** : elle lit `method` et `zone_surface_ha` pour savoir quoi dessiner
+  (bandes ou placettes). Une référence au tracé sera ajoutée par la phase 31 ; rien n'est
+  enregistré pour cela maintenant.
+- **Ce que la phase 30.1 lira** (sans migration) : `group_name`, `method`, `counting`,
+  `zone_surface_ha` de chaque fiche, et les données de détail des facteurs (section 10).
+
+Exemple (parcours partiel par placettes, une fiche continue, assistant accepté) :
+
+```json
+{
+  "version": 1,
+  "method": "partial_plot",
+  "counting": "capped",
+  "zone_surface_ha": 1.5,
+  "complement": { "done": true, "total_surface_ha": 15 },
+  "guide": {
+    "chosen_by": "guide",
+    "suggested": { "method": "partial_plot", "counting": "capped" },
+    "answers": {
+      "purpose": "whole_stand",
+      "surface_ha": 15,
+      "homogeneity": "homogeneous",
+      "difficulty": false,
+      "narrow": false
+    }
+  }
+}
+```
+
+## 9. Affichage
+
+Textes proposés, relus au plan 30-13. Les libellés sont des légendes courtes ; les valeurs
+viennent du catalogue.
+
+**Page « Contexte » du relevé** (nouvelle section « Parcours utilisé », après « Méthode et
+station »).
+
+| Ligne | Exemple de valeur | Affichée quand |
+|---|---|---|
+| Parcours | Parcours partiel par placettes | enregistrement présent |
+| Comptage | Comptage rapide (relevé plafonné) ou Comptage complet (relevé déplafonné) | enregistrement présent |
+| Éléments comptés en entier | A Genres d'arbres, B Strates, F Dendromicrohabitats | comptage complet |
+| Surface décrite | 1,2 ha | enregistrement présent |
+| Reste du peuplement | Regardé rapidement, surface totale évaluée 8 ha, ou Non regardé | parcours partiel |
+| Groupe de relevés | le nom | un nom a été donné |
+| Choix | Conseillé par l'app d'après vos réponses, ou Choisi par vous | enregistrement présent |
+| Vos réponses | Peuplement de 8 ha, homogène, facile à observer (réponses fermées uniquement) | `guide.answers` présent |
+
+Brouillon : un lien « Modifier le parcours » ouvre le sélecteur ; sans enregistrement : « Parcours
+non choisi » avec un lien « Choisir le parcours ». Relevé soumis ou relevé d'un autre membre :
+les mêmes lignes en texte, sans lien (lecture seule, D-09). Valeur proposée pour un relevé soumis
+sans enregistrement (décision O-07) : une ligne discrète « Parcours : non renseigné » et la phrase
+« Ce relevé a été fait avant l'assistant de choix du parcours ».
+
+**Bloc du PDF** (nouveau bloc « Parcours utilisé », juste après « Conditions du relevé », ou après
+les cartes d'identité s'il n'y a pas de bloc de conditions). Lignes (légende à gauche) :
+« Parcours », « Comptage », « Éléments comptés en entier » (comptage complet seulement), « Surface
+décrite », « Reste du peuplement » (parcours partiel seulement), « Groupe de relevés » (si un nom
+existe), « Choix ». La valeur de « Choix » est une phrase : « Conseillé par l'application d'après
+vos réponses : peuplement de 8 ha, homogène, facile à observer. » ou « Choisi directement par
+l'observateur. ». Tout texte variable (le nom de groupe) est échappé. Le bloc s'imprime aussi pour
+un brouillon.
+
+**La ligne « Mode de relevé » des cartes d'identité du PDF** (« Relevé plafonné, aucun facteur
+déplafonné ») est supprimée **uniquement quand le bloc « Parcours utilisé » s'imprime**, car il
+répéterait la ligne de comptage. Pour un relevé sans enregistrement, rien de nouveau ne s'imprime
+et la ligne reste exactement comme aujourd'hui (valeur proposée de la décision O-07 : pas de
+régression sur les exports passés).
+
+**Écrans de facteurs.** Un facteur compté en entier porte une pastille « Comptage complet » dans
+l'en-tête du pager, une étiquette dans la liste des facteurs et une phrase d'explication au-dessus
+de son premier champ ; un facteur compté en rapide n'affiche rien de plus. Le PDF imprime pour B
+le couvert de chaque strate et pour F le nombre d'arbres par groupe quand ces détails existent.
+
+**Résumé de la page de détail.** La ligne « Contexte » peut ajouter l'étiquette courte du parcours
+après le cas (« v3.2 · cas 2 · Parcours en plein »), tronquée sur une ligne (décision U-O9).
