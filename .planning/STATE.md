@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 27
-current_phase_name: Quick survey additions (INSERTED, V1)
+current_phase: 28
+current_phase_name: Map Layers & Comparison (INSERTED, V1)
 status: ready_to_plan
-stopped_at: "Phase 27 complete; Phase 28 executed except the open device checks (27/28 plans, 28-18 partial), see Session Continuity"
-last_updated: "2026-10-12T12:30:00.000Z"
-last_activity: 2026-10-12
-last_activity_desc: Phase 27 complete
+stopped_at: Phase 28 complete
+last_updated: "2026-10-13T12:00:00.000Z"
+last_activity: 2026-10-13
+last_activity_desc: Phase 28 complete
 progress:
   total_phases: 39
-  completed_phases: 19
+  completed_phases: 20
   total_plans: 220
-  completed_plans: 257
+  completed_plans: 285
   percent: 46
 ---
 
@@ -281,6 +281,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-12T20:00:00.000Z
-Stopped at: Phase 28 executed except the open device checks (27/28 plans, 28-18 partial); owner validated the Explorer layers, swipe and comparison on his iPhone 2026-10-12; open: offline pack measures, Android emulator run, airplane mode. Nothing merged or pushed.
-Resume file: .planning/phases/28-map-layers-comparison-inserted-v1/28-18-SUMMARY.md
+Last session: 2026-10-13T12:00:00.000Z
+Stopped at: Phase 28 complete (28/28 plans); merged in main by PRs 294 to 297; owner validated on his iPhone 2026-10-13, Android emulator run done; the Android phone pass (fluidity, felt haptics, TalkBack, LEFT_MAP_ANDROID_VIEW kept at texture) is deferred to Phase 35
+Resume file: None
