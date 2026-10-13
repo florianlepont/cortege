@@ -30,7 +30,7 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 
 Phase: 27 (Quick survey additions (INSERTED, V1)) — COMPLETE
 Plan: 22 of 22
-Status: Phase complete; next is Phase 28
+Status: Phase 28 complete; Phase 29 planned (10 plans), awaiting owner review before execution
 Last activity: 2026-10-12 — Phase 27 complete
 
 Progress: [█████████░] 28/39 phases complete
