@@ -1,8 +1,8 @@
 ---
 phase: 29
 slug: private-or-public-before-submission-inserted-v1
-status: draft
-reviewed_at: null
+status: approved
+reviewed_at: 2026-10-13
 shadcn_initialized: false
 preset: none
 platform: react-native (Expo 57, RN 0.86.3, iOS first with a native form sheet, Android modal fallback, JS tabs graceful)
