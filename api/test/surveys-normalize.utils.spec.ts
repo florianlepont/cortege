@@ -403,8 +403,8 @@ describe("getSubmittedReadOnlyFields (PATCH key presence)", () => {
   it("lists visibility by key presence (phase 29, D-07)", () => {
     expect(getSubmittedReadOnlyFields({ visibility: "public" })).toEqual(["visibility"])
     expect(getSubmittedReadOnlyFields({ visibility: "private", ibp_cas: 2 })).toEqual([
-      "visibility",
       "ibp_cas",
+      "visibility",
     ])
   })
 })
