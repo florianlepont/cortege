@@ -681,14 +681,15 @@ async function handleAttachmentDeleteSyncFailure(
 async function queueSurveyVisibilityChange(
   surveyId: string,
   visibility: "private" | "public",
-): Promise<{ changed: boolean }> {
+): Promise<{ changed: boolean; frozen: boolean }> {
   return runInTransaction(async (tx) => {
     const survey = await tx.getFirstAsync<{
       id: string
+      status: string | null
       visibility: string | null
       payload_json: string | null
     }>(
-      `SELECT id, visibility, payload_json
+      `SELECT id, status, visibility, payload_json
        FROM local_surveys
        WHERE id = ?`,
       [surveyId],
@@ -698,9 +699,15 @@ async function queueSurveyVisibilityChange(
       throw new Error(`Unknown local survey: ${surveyId}`)
     }
 
+    // A submitted survey is read-only for visibility (phase 29 D-07): refuse
+    // before reading or writing the queue, the server would refuse it anyway.
+    if (survey.status === "submitted") {
+      return { changed: false, frozen: true }
+    }
+
     const currentVisibility = survey.visibility === "public" ? "public" : "private"
     if (currentVisibility === visibility) {
-      return { changed: false }
+      return { changed: false, frozen: false }
     }
 
     const now = new Date().toISOString()
@@ -792,7 +799,7 @@ async function queueSurveyVisibilityChange(
       [visibility, payloadJson, now, surveyId],
     )
 
-    return { changed: true }
+    return { changed: true, frozen: false }
   })
 }
 
@@ -1412,6 +1419,7 @@ export async function updateSurveyVisibility(
   visibility?: "private" | "public"
   queued: boolean
   synced: boolean
+  frozen: boolean
 }> {
   const queued = await queueSurveyVisibilityChange(surveyId, visibility)
   if (!queued.changed) {
@@ -1420,6 +1428,7 @@ export async function updateSurveyVisibility(
       visibility,
       queued: false,
       synced: false,
+      frozen: queued.frozen,
     }
   }
 
@@ -1429,6 +1438,7 @@ export async function updateSurveyVisibility(
       visibility,
       queued: true,
       synced: false,
+      frozen: false,
     }
   }
 
@@ -1442,6 +1452,7 @@ export async function updateSurveyVisibility(
         visibility,
         queued: true,
         synced: false,
+        frozen: false,
       }
     }
 
@@ -1450,6 +1461,7 @@ export async function updateSurveyVisibility(
       visibility,
       queued: true,
       synced: true,
+      frozen: false,
     }
   } catch {
     return {
@@ -1457,6 +1469,7 @@ export async function updateSurveyVisibility(
       visibility,
       queued: true,
       synced: false,
+      frozen: false,
     }
   }
 }
