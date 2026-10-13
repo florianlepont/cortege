@@ -27,6 +27,7 @@ jest.mock("../../app/theme", () => ({
   useBrandTheme: () => mockTheme,
 }))
 
+import { BUTTON_FADE_IN_DELAY_MS, BUTTON_FADE_MS } from "../../map/swipe-machine"
 import { ImmersiveButtons, ImmersiveWindow } from "./ImmersiveWindow"
 
 beforeAll(() => {
@@ -114,15 +115,10 @@ describe("ImmersiveWindow, light", () => {
     )
     const root = byTestId(tree, "immersive-window")
     const outer = flat(root.props.style)
-    // 0 * -48 is -0, so the shift is compared by magnitude.
-    const [shift, zoomX, zoomY] = outer.transform as [
-      { translateY: number },
-      { scaleX: number },
-      { scaleY: number },
-    ]
-    expect(Math.abs(shift.translateY)).toBe(0)
-    expect(zoomX.scaleX).toBe(1)
-    expect(zoomY.scaleY).toBe(1)
+    // At rest the tree is the plain full-size view of before the effect: no transform, no
+    // background, no shadow, and no clipping (native glass below samples a plain tree).
+    expect(outer.transform).toEqual([])
+    expect(outer.backgroundColor).toBe("transparent")
     expect(outer.borderRadius).toBe(0)
     expect(outer.shadowOpacity).toBe(0)
     expect(outer.elevation).toBe(0)
@@ -131,6 +127,7 @@ describe("ImmersiveWindow, light", () => {
     // Same frame as the parent (absolute fill), no radius, and no touch of its own.
     expect(style).toMatchObject({ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 })
     expect(style.borderRadius).toBe(0)
+    expect(style.overflow).toBe("visible")
     expect(clip.props.pointerEvents).toBe("box-none")
     expect(root.props.pointerEvents).toBe("box-none")
   })
@@ -198,8 +195,33 @@ describe("ImmersiveButtons", () => {
     expect(node.props.pointerEvents).toBe("box-none")
     expect(node.props.accessibilityElementsHidden).toBe(false)
     expect(node.props.importantForAccessibility).toBe("auto")
-    expect(flat(node.props.style)).toMatchObject({ position: "absolute", opacity: 1 })
+    // At rest the wrapper carries no opacity property at all.
+    expect(flat(node.props.style)).toMatchObject({ position: "absolute" })
+    expect(flat(node.props.style)).not.toHaveProperty("opacity")
     expect(tree.root.findAllByType("Child" as never)).toHaveLength(1)
+  })
+
+  it("the fade exists only while the buttons are hidden or coming back, then the opacity is dropped", () => {
+    jest.useFakeTimers()
+    try {
+      const make = (hidden: boolean) => (
+        <ImmersiveButtons opacity={shared(hidden ? 0 : 1)} hidden={hidden}>
+          <ChildProbe />
+        </ImmersiveButtons>
+      )
+      const tree = render(make(false))
+      act(() => tree.update(make(true)))
+      expect(flat(byTestId(tree, "immersive-buttons").props.style).opacity).toBe(0)
+      act(() => tree.update(make(false)))
+      // Fading back in: the animated opacity is still there.
+      expect(flat(byTestId(tree, "immersive-buttons").props.style)).toHaveProperty("opacity")
+      act(() => {
+        jest.advanceTimersByTime(BUTTON_FADE_IN_DELAY_MS + BUTTON_FADE_MS + 40)
+      })
+      expect(flat(byTestId(tree, "immersive-buttons").props.style)).not.toHaveProperty("opacity")
+    } finally {
+      jest.useRealTimers()
+    }
   })
 
   it("hidden: no touch, out of the accessibility tree, at the given opacity", () => {

@@ -210,4 +210,33 @@ describe("MapNoticeStack", () => {
     act(() => tree.update(<MapNoticeStack notices={[overzoom]} top={0} onRetry={onRetry} />))
     expect(mockAnnounce).toHaveBeenCalledTimes(3)
   })
+
+  test("hidden draws nothing and announces nothing; on return only new notices are announced", () => {
+    const onRetry = jest.fn()
+    let tree!: renderer.ReactTestRenderer
+    const show = (notices: readonly MapNotice[], hidden: boolean) =>
+      act(() =>
+        tree.update(<MapNoticeStack notices={notices} top={0} hidden={hidden} onRetry={onRetry} />),
+      )
+    act(() => {
+      tree = renderer.create(
+        <MapNoticeStack notices={[overzoom]} top={0} hidden={false} onRetry={onRetry} />,
+      )
+    })
+    expect(mockAnnounce.mock.calls).toEqual([[overzoom.text]])
+    show([overzoom], true)
+    expect(tree.toJSON()).toBeNull()
+    // A notice that appears while hidden is not announced yet.
+    show([offline, overzoom], true)
+    expect(mockAnnounce).toHaveBeenCalledTimes(1)
+    // Back: the one already announced is not announced twice, the new one is.
+    show([offline, overzoom], false)
+    expect(mockAnnounce.mock.calls).toEqual([[overzoom.text], [offline.text]])
+    expect(tree.toJSON()).not.toBeNull()
+    // One that left while hidden may be announced again if it comes back.
+    show([offline, overzoom], true)
+    show([offline], true)
+    show([offline, overzoom], false)
+    expect(mockAnnounce).toHaveBeenCalledTimes(3)
+  })
 })

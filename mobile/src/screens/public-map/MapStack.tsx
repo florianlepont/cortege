@@ -9,7 +9,11 @@ import {
   type RefObject,
 } from "react"
 import { StyleSheet, View, type NativeSyntheticEvent } from "react-native"
-import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated"
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  type SharedValue,
+} from "react-native-reanimated"
 import {
   Camera,
   Map as MapLibreMap,
@@ -99,6 +103,8 @@ export type MapStackProps = {
   onReady?: () => void
   /** The map is actually visible: its opacity was applied and presented. Covers may go now. */
   onRevealed?: () => void
+  /** Offline (local tiles): ready a short while after the style load, not after the full render. */
+  quickReady?: boolean
 }
 
 /** A non-interactive map clipped to the strip between `clipLeft` and `clipRight`. */
@@ -115,6 +121,7 @@ export function MapStack({
   onStyleFailed,
   onReady,
   onRevealed,
+  quickReady = false,
 }: MapStackProps) {
   const { scheme } = useBrandTheme()
   const [styleLoaded, setStyleLoaded] = useState(false)
@@ -122,9 +129,16 @@ export function MapStack({
   // The native style lags the wanted one by STYLE_SWAP_GAP_MS: the clip is zero (and has reached the
   // UI thread) before the swap, so the cleared map is never drawn for a frame.
   const [appliedStyle, setAppliedStyle] = useState(mapStyle)
-  // Plain (non-animated) visibility, so a first or late frame can never show the map unclipped: it
-  // turns on REVEAL_DELAY_MS after the clip is open and the owner of the map aligned its camera.
+  // A second gate on the clip, after `ready`: it opens REVEAL_DELAY_MS after the clip is open and
+  // the owner of the map aligned its camera. No `opacity` is ever set on the container (native
+  // glass above it must sample a plain tree); the static width 0 hides a fresh map.
   const [revealed, setRevealed] = useState(false)
+  const shownCreated = useSharedValue(0)
+  const shownRef = useRef(shownCreated)
+  const shown = shownRef.current
+  useLayoutEffect(() => {
+    shown.value = revealed ? 1 : 0
+  }, [revealed, shown])
   const wasReady = useRef(false)
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const clearReveal = useCallback(() => {
@@ -145,7 +159,7 @@ export function MapStack({
     clearReveal()
     revealTimer.current = setTimeout(() => setRevealed(true), REVEAL_DELAY_MS)
   }, [onReady, clearReveal])
-  const stackedReady = useStackedReady(appliedStyle, handleReady)
+  const stackedReady = useStackedReady(appliedStyle, handleReady, quickReady)
   const { ready, onStyleLoaded: readyStyleLoaded, hide, restore } = stackedReady
   // A render report while a style change is pending belongs to the old style: it must not reveal.
   const changing = useRef(false)
@@ -179,7 +193,8 @@ export function MapStack({
     scheme === "dark" ? brandMapTokens.darkBasemapBackground : brandMapTokens.lightBasemapBackground
   const clipStyle = useAnimatedStyle(() => ({
     left: clipLeft.value,
-    width: ready.value === 0 ? 0 : Math.max(clipRight.value - clipLeft.value, 0),
+    width:
+      ready.value === 0 || shown.value === 0 ? 0 : Math.max(clipRight.value - clipLeft.value, 0),
   }))
   const innerStyle = useAnimatedStyle(() => ({ left: -clipLeft.value, width }))
   return (
@@ -187,12 +202,7 @@ export function MapStack({
       <Animated.View
         pointerEvents="none"
         collapsable={false}
-        style={[
-          styles.clip,
-          clipStyle,
-          { opacity: revealed ? 1 : 0 },
-          styleLoaded ? null : { backgroundColor: ground },
-        ]}
+        style={[styles.clip, clipStyle, styleLoaded ? null : { backgroundColor: ground }]}
       >
         <Animated.View pointerEvents="none" collapsable={false} style={[styles.inner, innerStyle]}>
           <MapLibreMap
@@ -224,8 +234,8 @@ export function MapStack({
 
 const styles = StyleSheet.create({
   host: StyleSheet.absoluteFill,
-  // Hidden by default (no width, no opacity): the animated clip and `revealed` open it.
-  clip: { position: "absolute", top: 0, bottom: 0, width: 0, opacity: 0, overflow: "hidden" },
+  // Hidden by default (no width): the animated clip, `ready` and `shown` open it.
+  clip: { position: "absolute", top: 0, bottom: 0, width: 0, overflow: "hidden" },
   inner: { position: "absolute", top: 0, bottom: 0 },
   map: { flex: 1 },
 })

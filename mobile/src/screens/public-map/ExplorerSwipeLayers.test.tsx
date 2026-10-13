@@ -123,7 +123,6 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
       buttonsHidden: view.swipeMode,
     },
     quitPillVisible: false,
-    skippedVisible: false,
     noticesTop: 58,
     onBaseStyleLoaded: jest.fn(),
     onSecondStyleLoaded: jest.fn(),
@@ -140,10 +139,16 @@ const styleFailed = jest.fn()
 const surveyParcelIds = new Set(["AB1234"])
 
 function makeLayers(
-  overrides: { overlay?: boolean; parcels?: "all" | "ibp" | "none"; available?: boolean } = {},
+  overrides: {
+    overlay?: boolean
+    parcels?: "all" | "ibp" | "none"
+    available?: boolean
+    offline?: boolean
+  } = {},
 ): ExplorerLayers {
   return {
     surveyParcelIds,
+    isOffline: overrides.offline ?? false,
     isAvailable: () => overrides.available ?? true,
     layers: {
       state: { overlay: overrides.overlay ?? false, parcels: overrides.parcels ?? "all" },
@@ -313,6 +318,18 @@ describe("the stacked maps", () => {
     expect(swipe.onSecondStyleLoaded).not.toHaveBeenCalled()
     named(tree, "WipeLayer")[0].props.onRevealed()
     expect(swipe.onSecondStyleLoaded).toHaveBeenCalledTimes(1)
+  })
+
+  test("offline the stacked maps do not wait for the full render, online they do", () => {
+    const quick = (offline: boolean) =>
+      named(
+        render(makeView({ second: stacked("photos-1950") }), {
+          layers: makeLayers({ offline }),
+        }).tree,
+        "WipeLayer",
+      )[0].props.quickReady
+    expect(quick(true)).toBe(true)
+    expect(quick(false)).toBe(false)
   })
 
   test("the third map reports when it is visible, so a step applies its side", () => {
@@ -503,7 +520,6 @@ describe("the comparison", () => {
       lineX,
       width: 400,
       centerY: 400,
-      unavailable: false,
       canStep: true,
       disabled: false,
     })
@@ -515,7 +531,6 @@ describe("the comparison", () => {
       lineX,
       width: 400,
       centerY: 400,
-      unavailable: false,
     })
   })
 
@@ -542,13 +557,6 @@ describe("the comparison", () => {
   test("the tags take no touch while the line is dragged", () => {
     const { tree } = render(comparing({ lineDragging: true }))
     for (const tag of named(tree, "CompareSideTag")) expect(tag.props.disabled).toBe(true)
-  })
-
-  test("a side whose layer is not downloaded is told offline", () => {
-    const { tree } = render(comparing(), { layers: makeLayers({ available: false }) })
-    for (const tag of named(tree, "CompareSideTag")) {
-      expect(tag.props).toMatchObject({ unavailable: true })
-    }
   })
 
   test("the quit pill shows only when the hook says so, just above the tab bar", () => {

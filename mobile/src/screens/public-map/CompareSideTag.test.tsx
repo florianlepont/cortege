@@ -123,7 +123,6 @@ describe("CompareSideTag", () => {
       lineX: shared(200),
       width: WIDTH,
       centerY: 256,
-      unavailable: false,
       canStep: true,
       disabled: false,
       onStep: jest.fn(),
@@ -189,15 +188,6 @@ describe("CompareSideTag", () => {
     expect(flat(tag().props.style).opacity).toBe(0)
     expect(mockTimings[0].to).toBe(0)
     expect(mockTimings[0].config).toMatchObject({ duration: 160, reduceMotion: "system" })
-  })
-
-  test("a side whose layer is unavailable wears the offline glyph before its name", () => {
-    const { tag } = mount({ unavailable: true })
-    expect(glyphsOf(tag())).toEqual([
-      "chevron-back-outline",
-      "cloud-offline-outline",
-      "chevron-forward-outline",
-    ])
   })
 
   test("the back chevron asks for the previous layer, the forward chevron for the next", () => {

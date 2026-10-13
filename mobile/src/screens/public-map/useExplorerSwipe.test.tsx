@@ -115,7 +115,7 @@ import {
   type MapLayersState,
 } from "./map-layers-state"
 import { neighbourLayer } from "../../map/layer-cycle"
-import { COVER_PRESENT_MS } from "./useCoverRelease"
+import { COVER_PRESENT_MS, COVER_QUICK_RENDER_TIMEOUT_MS } from "./useCoverRelease"
 import { useExplorerSwipe, type ExplorerSwipe, type ExplorerSwipeInput } from "./useExplorerSwipe"
 import type { MapLayers } from "./useMapLayersState"
 
@@ -153,7 +153,6 @@ function setController(wipe: Wipe = null, overrides: Record<string, unknown> = {
     fingerDown: false,
     indicatorLayer: "map",
     introHintVisible: false,
-    skippedVisible: false,
     compareAvailable: true,
     next: jest.fn(),
     previous: jest.fn(),
@@ -223,6 +222,7 @@ const closePanels = jest.fn()
 type Extra = {
   isAvailable?: (key: string) => boolean
   noticesTop?: number
+  isOffline?: boolean
 }
 
 function inputFor(layers: MapLayers, extra: Extra = {}): ExplorerSwipeInput {
@@ -231,6 +231,7 @@ function inputFor(layers: MapLayers, extra: Extra = {}): ExplorerSwipeInput {
       layers,
       isAvailable: extra.isAvailable ?? (() => true),
       capsuleTop: 58,
+      isOffline: extra.isOffline ?? false,
       noticesTop: extra.noticesTop ?? 58,
     } as unknown as ExplorerSwipeInput["layers"],
     cameraRef,
@@ -320,19 +321,17 @@ describe("free map, no comparison", () => {
     expect(jumpTo).not.toHaveBeenCalled()
   })
 
-  test("the controller gets the layers, the width and the number of layers the cycle skips", () => {
-    mount(makeLayers(), { isAvailable: (key) => key === "map" || key === "satellite" })
+  test("the controller gets the layers and the width", () => {
+    mount(makeLayers())
     expect(mockControllerParams[0]).toMatchObject({ width: WIDTH })
-    expect((mockControllerParams[0] as { skippedCount: number }).skippedCount).toBe(3)
   })
 
-  test("the controller's outputs reach the view untouched, and the skipped pill flag too", () => {
-    setController(null, { hintText: "Lâchez pour comparer", skippedVisible: true })
+  test("the controller's outputs reach the view untouched", () => {
+    setController(null, { hintText: "Lâchez pour comparer" })
     mount(makeLayers({ swipeMode: true }))
     const { controller } = out().layersView
     expect(controller).toBe(mockController.current)
     expect(controller.hintText).toBe("Lâchez pour comparer")
-    expect(out().skippedVisible).toBe(true)
     expect(out().layersView).toMatchObject({ width: WIDTH, height: HEIGHT, initialRegion: REGION })
   })
 })
@@ -479,6 +478,22 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
       jest.advanceTimersByTime(1)
     })
     // Only now the stacked map goes back to the preload (next layer, clipped to nothing).
+    preloadOnly()
+    expect(out().layersView.second?.layer).not.toBe("satellite")
+  })
+
+  test("offline a committed cover is dropped shortly after the style load, with no render report", () => {
+    setController({ side: "full", incoming: "satellite" })
+    mount(makeLayers({ swipeMode: true }), { isOffline: true })
+    expect(mockSideStepParams.at(-1)).toMatchObject({ offline: true })
+    setController(null)
+    update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: "satellite" }), {
+      isOffline: true,
+    })
+    act(() => out().onBaseStyleLoaded())
+    act(() => {
+      jest.advanceTimersByTime(COVER_QUICK_RENDER_TIMEOUT_MS)
+    })
     preloadOnly()
     expect(out().layersView.second?.layer).not.toBe("satellite")
   })
@@ -703,6 +718,19 @@ describe("Quitter la comparaison", () => {
     expect(out().quitPillVisible).toBe(false)
     update(makeLayers({ swipeMode: true }))
     expect(out().quitPillVisible).toBe(false)
+  })
+
+  test("a comparison on while offline ends at once, keeping the left layer", () => {
+    const layers = makeLayers({ compare: compareRight })
+    mount(layers, { isOffline: true })
+    expect(mockControllerParams.at(-1)).toMatchObject({ isOffline: true })
+    expect(layers.actions.quitCompare).toHaveBeenCalledWith("A")
+  })
+
+  test("online a comparison is left alone", () => {
+    const layers = makeLayers({ compare: compareRight })
+    mount(layers)
+    expect(layers.actions.quitCompare).not.toHaveBeenCalled()
   })
 
   test("the map is free in a comparison: not frozen, rotation locked, markers hidden", () => {

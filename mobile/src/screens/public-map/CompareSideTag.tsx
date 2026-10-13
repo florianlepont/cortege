@@ -43,8 +43,6 @@ export type CompareSideTagProps = {
   width: number
   /** The y of the grabber's centre (`grabberCenterY(height)`): the tag is centred on it. */
   centerY: number
-  /** The layer of this side is not downloaded for this area while offline. */
-  unavailable: boolean
   /** Another layer exists for this side; false dims and disables the chevrons and the swipe. */
   canStep: boolean
   /** The line is being dragged: the tag takes no touch. */
@@ -70,7 +68,6 @@ export const CompareSideTag = memo(function CompareSideTag({
   lineX,
   width,
   centerY,
-  unavailable,
   canStep,
   disabled,
   onStep,
@@ -145,9 +142,6 @@ export const CompareSideTag = memo(function CompareSideTag({
         </AppPressable>
         <GestureDetector gesture={pan}>
           <View style={styles.middle}>
-            {unavailable ? (
-              <Ionicons name="cloud-offline-outline" size={TAG_GLYPH_SIZE} color={glyph} />
-            ) : null}
             <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
               {name}
             </Text>

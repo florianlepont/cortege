@@ -4,7 +4,7 @@ import { useSharedValue, type SharedValue } from "react-native-reanimated"
 import type { CameraRef, ViewStateChangeEvent } from "@maplibre/maplibre-react-native"
 import type { MapRegion } from "../../app/map-viewport"
 import { fr } from "../../i18n"
-import { neighbourLayer, skippedCount } from "../../map/layer-cycle"
+import { neighbourLayer } from "../../map/layer-cycle"
 import { immersiveTarget } from "../../map/wipe-geometry"
 import type { BaseLayerKey } from "../../map/layers"
 import { useLatestCallback } from "../../state/useLatestCallback"
@@ -17,6 +17,7 @@ import { useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
 import { useCurtainClip, type CurtainPhase } from "./useCurtainClip"
 import type { ExplorerLayers } from "./useExplorerLayers"
 import { useCoverRelease } from "./useCoverRelease"
+import { useOfflineCompareExit } from "./useOfflineCompareExit"
 import { immersiveApplies, useImmersive } from "./useImmersive"
 import { useSideStep } from "./useSideStep"
 import type { MapLayers } from "./useMapLayersState"
@@ -111,8 +112,6 @@ export type ExplorerSwipe = {
   immersive: ExplorerImmersive
   /** "Quitter la comparaison" shows: a comparison exists (the map is free in it). */
   quitPillVisible: boolean
-  /** The "N fonds non téléchargés sont ignorés" pill (entry of the swipe mode). */
-  skippedVisible: boolean
   /** The notices column's top, below the swipe stack or the quit pill when one holds the top. */
   noticesTop: number
   /** The Explorer map finished loading a style: a cover over it can go (after it rendered). */
@@ -179,7 +178,7 @@ export function useExplorerSwipe({
     layers,
     width,
     isAvailable,
-    skippedCount: skippedCount(isAvailable),
+    isOffline: explorerLayers.isOffline,
     windowProgress: immersive.window,
     windowApplied,
     windowScale: target.scaleX,
@@ -229,7 +228,7 @@ export function useExplorerSwipe({
   const phase: CurtainPhase = leaving ? "leaving" : keepLayer !== null ? "covering" : "active"
   const curtain = useCurtainClip({ compare, width, phase, leaveTo: "right", onLeft: handleLeft })
 
-  const sideStep = useSideStep({ layers, isAvailable, width })
+  const sideStep = useSideStep({ layers, isAvailable, width, offline: explorerLayers.isOffline })
   const secondSync = useMapSync()
   const thirdSync = useMapSync()
   const view = useViewTracker()
@@ -291,6 +290,7 @@ export function useExplorerSwipe({
     covered: cover !== null,
     swipeMode,
     release: () => setCover(null),
+    quick: explorerLayers.isOffline,
   })
   const onRenderedFully = useLatestCallback(
     () => (coverRelease.onRenderedFully(), sideStep.onRendered()),
@@ -334,6 +334,8 @@ export function useExplorerSwipe({
     }
     actions.quitCompare(keeps)
   })
+  // No connection during a comparison: it ends, as the quit pill does (see `offlineKeep`).
+  useOfflineCompareExit(comparing && explorerLayers.isOffline, compare, isAvailable, onEdgeExit)
   const quitPillVisible = comparing
 
   const mapCanvasProps = useMemo<ExplorerSwipe["mapCanvasProps"]>(
@@ -382,7 +384,6 @@ export function useExplorerSwipe({
       buttonsHidden: swipeMode,
     },
     quitPillVisible,
-    skippedVisible: controller.skippedVisible,
     noticesTop,
     onBaseStyleLoaded,
     onStackedReady,

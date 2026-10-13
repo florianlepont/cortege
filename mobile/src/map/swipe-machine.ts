@@ -36,8 +36,6 @@ export const COMPARE_MAX = 2 / 3
 export const ZONE_HYSTERESIS = 0.03
 /** The swipe mode quits after this long without a gesture or an action (ms). */
 export const IDLE_MS = 8000
-/** The entry hint stays visible this long before it fades (ms). */
-export const HINT_MS = 3000
 /** Duration of the commit and the spring-back (ms, `brandMotion.durations.base`). */
 export const SETTLE_MS = 240
 /**

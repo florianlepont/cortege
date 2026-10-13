@@ -6,6 +6,8 @@ import { useLatestCallback } from "../../state/useLatestCallback"
 export const COVER_PRESENT_MS = 120
 /** No "rendered fully" event this long (ms) after the style load: the cover goes anyway. */
 export const COVER_RENDER_TIMEOUT_MS = 2500
+/** Offline the tiles are local: a map that cannot report rendered-fully is not waited for long. */
+export const COVER_QUICK_RENDER_TIMEOUT_MS = 350
 
 type Input = {
   /** A cover (a stacked map over the Explorer map) is up. */
@@ -14,6 +16,8 @@ type Input = {
   swipeMode: boolean
   /** Drops the cover. */
   release: () => void
+  /** Offline: wait `COVER_QUICK_RENDER_TIMEOUT_MS` for the render report, not the online cap. */
+  quick?: boolean
 }
 
 export type CoverRelease = {
@@ -30,7 +34,12 @@ export type CoverRelease = {
  * receded window has finished growing back when the swipe mode just ended. If no rendered-fully
  * event comes within `COVER_RENDER_TIMEOUT_MS` of the style load, the cover goes anyway.
  */
-export function useCoverRelease({ covered, swipeMode, release }: Input): CoverRelease {
+export function useCoverRelease({
+  covered,
+  swipeMode,
+  release,
+  quick = false,
+}: Input): CoverRelease {
   const coveredRef = useRef(covered)
   coveredRef.current = covered
   const styleAt = useRef<number | null>(null)
@@ -72,8 +81,8 @@ export function useCoverRelease({ covered, swipeMode, release }: Input): CoverRe
   const onStyleLoaded = useCallback(() => {
     if (!coveredRef.current) return
     styleAt.current = Date.now()
-    schedule(COVER_RENDER_TIMEOUT_MS)
-  }, [schedule])
+    schedule(quick ? COVER_QUICK_RENDER_TIMEOUT_MS : COVER_RENDER_TIMEOUT_MS)
+  }, [schedule, quick])
   const onRenderedFully = useCallback(() => {
     const at = styleAt.current
     if (!coveredRef.current || at === null) return

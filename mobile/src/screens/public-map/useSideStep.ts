@@ -74,9 +74,16 @@ export type SideStepInput = {
   isAvailable: LayerAvailability
   /** The width of the map area. */
   width: number
+  /** No network: a side change is not offered (the comparison needs a connection). */
+  offline?: boolean
 }
 
-export function useSideStep({ layers, isAvailable, width }: SideStepInput): SideStep {
+export function useSideStep({
+  layers,
+  isAvailable,
+  width,
+  offline = false,
+}: SideStepInput): SideStep {
   const reduceMotion = useReducedMotion()
   const { actions } = layers
   const comparing = layers.state.compare !== null
@@ -101,7 +108,7 @@ export function useSideStep({ layers, isAvailable, width }: SideStepInput): Side
       isAvailable,
       exclude: layers.layerOfSide(other(side)),
     })
-  const canStep = (side: Side) => comparing && candidate(side, 1) !== null
+  const canStep = (side: Side) => comparing && !offline && candidate(side, 1) !== null
 
   const finish = useLatestCallback((id: number) => {
     const step = pending.current
@@ -130,7 +137,7 @@ export function useSideStep({ layers, isAvailable, width }: SideStepInput): Side
   })
 
   const step = useLatestCallback((side: Side, direction: 1 | -1) => {
-    if (!comparing) return
+    if (!comparing || offline) return
     if (busy.current) {
       if (queued.current.length < MAX_QUEUED) queued.current.push({ side, direction })
       return

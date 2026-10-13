@@ -145,6 +145,7 @@ const satellitePlan: CompareState = {
   x: 200,
 }
 
+let offlineFlag = false
 const result: { current: SideStep | null } = { current: null }
 const out = () => result.current as SideStep
 
@@ -157,6 +158,7 @@ function Probe(props: {
     layers: props.layers,
     isAvailable: props.isAvailable ?? (() => true),
     width: props.width ?? WIDTH,
+    offline: offlineFlag,
   })
   return null
 }
@@ -300,6 +302,23 @@ describe("step", () => {
       jest.advanceTimersByTime(1)
     })
     expect(out().stepping).toBeNull()
+  })
+
+  it("offline no side change is offered or run: the comparison needs a connection", () => {
+    offlineFlag = true
+    try {
+      const layers = makeLayers(planSatellite)
+      mount(layers)
+      expect(out().canStep("left")).toBe(false)
+      expect(out().canStep("right")).toBe(false)
+      act(() => out().step("right", 1))
+      expect(selection).not.toHaveBeenCalled()
+      expect(mockTimings).toHaveLength(0)
+      expect(out().stepping).toBeNull()
+      expect(layers.actions.setSide).not.toHaveBeenCalled()
+    } finally {
+      offlineFlag = false
+    }
   })
 
   it("ignores a style load while the wipe is still running", () => {

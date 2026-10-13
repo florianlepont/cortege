@@ -18,8 +18,8 @@ type MapNoticeStackProps = {
   notices: readonly MapNotice[]
   /** Distance from the top of the map: the capsule's top, or below the top mode control. */
   top: number
-  /** Anchors the column to the bottom edge instead (the swipe mode, over the info row). */
-  bottom?: number
+  /** Drawn and announced nothing (the swipe mode); what was announced is not announced again. */
+  hidden?: boolean
   onRetry: () => void
 }
 
@@ -32,7 +32,7 @@ type MapNoticeStackProps = {
 export const MapNoticeStack = memo(function MapNoticeStack({
   notices,
   top,
-  bottom,
+  hidden = false,
   onRetry,
 }: MapNoticeStackProps) {
   const theme = useBrandTheme()
@@ -45,23 +45,21 @@ export const MapNoticeStack = memo(function MapNoticeStack({
       // A notice that went away may be announced again if it comes back.
       if (!present.has(id)) announced.current.delete(id)
     }
+    if (hidden) return
     for (const notice of notices) {
       if (!announced.current.has(notice.id)) {
         announced.current.add(notice.id)
         AccessibilityInfo.announceForAccessibility(notice.text)
       }
     }
-  }, [notices])
+  }, [notices, hidden])
 
-  if (notices.length === 0) {
+  if (hidden || notices.length === 0) {
     return null
   }
 
   return (
-    <View
-      pointerEvents="box-none"
-      style={[styles.column, bottom === undefined ? { top } : { bottom }]}
-    >
+    <View pointerEvents="box-none" style={[styles.column, { top }]}>
       {notices.map((notice) => (
         <Animated.View
           key={notice.id}

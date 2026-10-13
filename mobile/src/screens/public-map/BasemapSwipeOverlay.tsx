@@ -43,6 +43,8 @@ export type BasemapSwipeOverlayProps = {
   /** The layer the indicator names: the incoming one while a wipe is under way. */
   layer: BaseLayerKey
   isAvailable: (key: BaseLayerKey) => boolean
+  /** No network: the pill says if the layer is downloaded for the view. */
+  offline?: boolean
   /** The live hint of the zone the finger is in. */
   hintText: string | null
   fingerDown: boolean
@@ -66,6 +68,7 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
   hintBottom,
   layer,
   isAvailable,
+  offline = false,
   hintText,
   fingerDown,
   introHintVisible,
@@ -94,7 +97,18 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
     else if (name === "compareNext") onCompareNext()
     else if (name === "done") onDone()
   }
-  const hint = fingerDown ? hintText : introHintVisible ? t.hintSwipe : null
+  const stateSuffix = !offline
+    ? ""
+    : isAvailable(layer)
+      ? `, ${t.downloaded}`
+      : `, ${t.notDownloaded}`
+  const hint = fingerDown
+    ? hintText
+    : introHintVisible
+      ? offline
+        ? t.hintSwipeOffline
+        : t.hintSwipe
+      : null
 
   return (
     <>
@@ -110,7 +124,7 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
           accessibilityRole="adjustable"
           accessibilityLabel={t.buttonA11y}
           accessibilityHint={t.indicatorHint}
-          accessibilityValue={{ text: indicatorValue(layer) }}
+          accessibilityValue={{ text: `${indicatorValue(layer)}${stateSuffix}` }}
           accessibilityActions={actions}
           onAccessibilityAction={onAction}
         >
@@ -124,6 +138,13 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
               size={CHEVRON_SIZE}
               color={theme.visual.mapControl.icon}
             />
+            {offline ? (
+              <Ionicons
+                name={isAvailable(layer) ? "cloud-done-outline" : "cloud-offline-outline"}
+                size={CHEVRON_SIZE}
+                color={theme.visual.mapControl.icon}
+              />
+            ) : null}
             <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
               {label.name}
             </Text>

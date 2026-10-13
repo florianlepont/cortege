@@ -42,9 +42,9 @@ export function neighbourLayer(
   return null
 }
 
-/** How many layers the cycle skips (the "N fonds non téléchargés sont ignorés" notice). */
-export function skippedCount(isAvailable: LayerAvailability): number {
-  return BASEMAP_CYCLE.filter((key) => !isAvailable(key)).length
+/** A comparison needs two bases to show: fewer available in the view and it cannot open. */
+export function canCompare(isAvailable: LayerAvailability): boolean {
+  return BASEMAP_CYCLE.filter((key) => isAvailable(key)).length >= 2
 }
 
 /** The 1 based position of a layer in the cycle ("fond n sur 5"). */

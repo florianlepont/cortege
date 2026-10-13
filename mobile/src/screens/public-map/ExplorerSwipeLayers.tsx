@@ -112,6 +112,7 @@ export function ExplorerSwipeLayers({
         styleRetryKey={contentProps.styleRetryKey}
         onReady={() => swipe.onStackedReady(which)}
         onRevealed={onRevealed}
+        quickReady={layers.isOffline}
         onStyleFailed={() => actions.styleFailed(map.layer)}
       />
     )
@@ -130,7 +131,6 @@ export function ExplorerSwipeLayers({
         lineX={view.lineX}
         width={view.width}
         centerY={grabberCenterY(view.height)}
-        unavailable={!layers.isAvailable(layer)}
         canStep={view.canStep(side)}
         disabled={view.lineDragging}
         onStep={(direction) => view.onStep(side, direction)}
@@ -174,6 +174,7 @@ export function ExplorerSwipeLayers({
           hintBottom={hintBottom}
           layer={controller.indicatorLayer}
           isAvailable={layers.isAvailable}
+          offline={layers.isOffline}
           hintText={controller.hintText}
           fingerDown={controller.fingerDown}
           introHintVisible={controller.introHintVisible}

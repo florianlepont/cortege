@@ -4,7 +4,6 @@ import type { MapRegion } from "../../app/map-viewport"
 import type { AreaDownloadStatus } from "../../hooks/useOfflineAreas"
 import { fr } from "../../i18n"
 import type { BasemapKey } from "../../map/basemaps"
-import { skippedCount } from "../../map/layer-cycle"
 import { attributionLayerKeys } from "../../map/layer-notices"
 import { LAYER_CATALOGUE } from "../../map/layers"
 import type { MapLayerKey } from "../../map/layers"
@@ -41,16 +40,14 @@ type Input = {
   bubbleOpen: boolean
   /** The capsule's top, from the top of the map. */
   capsuleTop: number
-  /** The swipe mode is on: the cycle's skipped layers get their notice. */
-  showSkipped: boolean
 }
 
 export type ExplorerLayers = LayerAvailability & {
+  /** No network: the labels carry downloaded markers and the comparison cards appear. */
+  isOffline: boolean
   layers: MapLayers
   surveyParcelIds: ReadonlySet<string>
   capsuleTop: number
-  /** Layers with no pack at the view centre that the swipe cycle skips. */
-  skipped: number
   /**
    * The chip of the offline download is on screen: a status exists, the card and the bubble are
    * not open and the swipe mode is off. Derived here from the layers state, never from a later
@@ -71,8 +68,8 @@ export type ExplorerLayers = LayerAvailability & {
 /**
  * Everything the Explorer derives from the layers state: availability at the view centre, the
  * chip's visibility, the notices column and its position, the download button's and the bubble's
- * positions and the legend's source lines. It never calls the swipe hook (`showSkipped` is its
- * input), so the render order has no cycle.
+ * positions and the legend's source lines. It never calls the swipe hook, so the render order has
+ * no cycle.
  */
 export function useExplorerLayers({
   savedBasemap,
@@ -85,18 +82,16 @@ export function useExplorerLayers({
   cardOpen,
   bubbleOpen,
   capsuleTop,
-  showSkipped,
 }: Input): ExplorerLayers {
   const layers = useMapLayersState({ savedBasemap, saveBasemap })
   const center = useMemo(
     () => ({ lat: region.latitude, lng: region.longitude }),
     [region.latitude, region.longitude],
   )
-  const availability = useLayerAvailability({ areas, center, isOffline })
+  const availability = useLayerAvailability({ areas, region, isOffline })
   const { isAvailable } = availability
   const { state } = layers
 
-  const skipped = showSkipped ? skippedCount(isAvailable) : 0
   const mapZoom = computeRegionZoom(region)
   const comparing = state.compare !== null
   const failedLayer = state.failedLayer
@@ -110,18 +105,8 @@ export function useExplorerLayers({
         isOffline,
         isAvailable,
         failedLayer,
-        skippedCount: skipped,
       }),
-    [
-      layers.shownBases,
-      state.overlay,
-      mapZoom,
-      center,
-      isOffline,
-      isAvailable,
-      failedLayer,
-      skipped,
-    ],
+    [layers.shownBases, state.overlay, mapZoom, center, isOffline, isAvailable, failedLayer],
   )
 
   const chipShown = downloadStatus !== null && !cardOpen && !bubbleOpen && !state.swipeMode
@@ -150,10 +135,10 @@ export function useExplorerLayers({
 
   return {
     ...availability,
+    isOffline,
     layers,
     surveyParcelIds,
     capsuleTop,
-    skipped,
     chipShown,
     notices,
     noticesTop,

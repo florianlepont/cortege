@@ -48,8 +48,8 @@ export type ExplorerPanelsViewProps = {
    * else the layers' own.
    */
   noticesTop?: number
-  /** In the swipe mode the notices sit above the info row, not at the top. */
-  noticesBottom?: number
+  /** In the swipe mode (basemap change) the notices are hidden; they come back when it ends. */
+  noticesHidden?: boolean
   /**
    * The fade of the map buttons in the swipe mode (UI-SPEC section 3c): the download button, the
    * children and the chip fade out together and take no touch while `hidden`. The bubble, the
@@ -85,7 +85,7 @@ export function ExplorerPanelsView({
   forestAvailable,
   cardBottom,
   noticesTop,
-  noticesBottom,
+  noticesHidden,
   buttons,
   children,
 }: ExplorerPanelsViewProps) {
@@ -148,7 +148,7 @@ export function ExplorerPanelsView({
       <MapNoticeStack
         notices={layers.notices}
         top={noticesTop ?? layers.noticesTop}
-        bottom={noticesBottom}
+        hidden={noticesHidden}
         onRetry={onRetryStyle}
       />
       {panels.panel === "card" ? (

@@ -12,7 +12,7 @@ import {
 } from "react-native-reanimated"
 import { brandMotion } from "../../app/brand-tokens"
 import { fr } from "../../i18n"
-import { neighbourLayer, type LayerAvailability } from "../../map/layer-cycle"
+import { canCompare, neighbourLayer, type LayerAvailability } from "../../map/layer-cycle"
 import type { BasemapKey } from "../../map/basemaps"
 import type { BaseLayerKey } from "../../map/layers"
 import {
@@ -74,8 +74,8 @@ export type BasemapSwipeParams = {
   /** The width of the map area in points. */
   width: number
   isAvailable: LayerAvailability
-  /** How many layers of the cycle are skipped here (the entry notice). */
-  skippedCount: number
+  /** No network: the middle zone does not exist (two zones) and no comparison is offered. */
+  isOffline?: boolean
   /** The receded window's progress from `useImmersive` (0 full size, 1 receded). */
   windowProgress?: SharedValue<number>
   /** `immersiveApplies()`: false keeps the window at full size, so touches are not mapped. */
@@ -100,7 +100,6 @@ export type BasemapSwipe = {
   /** The incoming layer while a wipe is under way, else the displayed base. */
   indicatorLayer: BaseLayerKey
   introHintVisible: boolean
-  skippedVisible: boolean
   /** The "Comparer avec le fond suivant" action exists (built and a next layer). */
   compareAvailable: boolean
   next: () => void
@@ -136,7 +135,7 @@ export function useBasemapSwipe({
   layers,
   width,
   isAvailable,
-  skippedCount,
+  isOffline = false,
   windowProgress,
   windowApplied = false,
   windowScale = 1,
@@ -169,7 +168,6 @@ export function useBasemapSwipe({
   const announce = (text: string) => AccessibilityInfo.announceForAccessibility(text)
   const timers = useSwipeModeTimers({
     swipeMode,
-    skippedCount,
     gestureActive: () => gestureRef.current !== null,
     exitSwipe: layers.actions.exitSwipe,
     onEnter: () => announce(t.announceEnter(swipeLabel(layers.layerOfSide("left")))),
@@ -189,13 +187,13 @@ export function useBasemapSwipe({
     },
     [],
   )
-
-  // The machine's context from the layers state at the time of the event.
+  // A comparison needs a connection and two layers available for the view.
+  const compareOk = COMPARISON_BUILT && !isOffline && canCompare(isAvailable)
   const moveContext = () => ({
     width,
     layerOf: () => displayed,
     isAvailable,
-    comparisonAllowed: COMPARISON_BUILT,
+    comparisonAllowed: compareOk,
   })
   const isInstant = () => reduced || WIPE_PRESENTATION === "instant"
   // The gesture is measured on the receded window (UI-SPEC section 3): `windowX` with the scale
@@ -311,7 +309,7 @@ export function useBasemapSwipe({
     if (!gesture) return
     const result: ReleaseResult =
       success || !gesture.started
-        ? releaseGesture(gesture, COMPARISON_BUILT)
+        ? releaseGesture(gesture, compareOk)
         : {
             outcome: "cancel",
             incoming: gesture.incoming,
@@ -355,7 +353,7 @@ export function useBasemapSwipe({
   }
   const next = useLatestCallback(() => step(1))
   const previous = useLatestCallback(() => step(-1))
-  const compareTarget = COMPARISON_BUILT ? neighbourLayer(displayed, 1, { isAvailable }) : null
+  const compareTarget = compareOk ? neighbourLayer(displayed, 1, { isAvailable }) : null
   const compareNext = useLatestCallback(() => {
     if (compareTarget === null) return
     playHapticCue("detent")
@@ -385,7 +383,6 @@ export function useBasemapSwipe({
     fingerDown,
     indicatorLayer: live?.incoming ?? displayed,
     introHintVisible: timers.introHintVisible,
-    skippedVisible: timers.skippedVisible,
     compareAvailable: compareTarget !== null,
     next,
     previous,

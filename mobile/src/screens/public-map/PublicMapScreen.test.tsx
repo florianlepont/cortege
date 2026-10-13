@@ -206,7 +206,7 @@ const mockAvailable: { all: boolean } = { all: true }
 jest.mock("./useLayerAvailability", () => ({
   useLayerAvailability: () => ({
     isAvailable: (key: string) => mockAvailable.all || key === "map" || key === "satellite",
-    areaAtCenter: false,
+    areaAtView: false,
   }),
 }))
 // The glow is drawn by the navigation layer (download-edge-glow.test.tsx) and its motion is tested in
@@ -1218,9 +1218,7 @@ describe("PublicMapScreen", () => {
       mount(makeProps({ isOffline: true }))
       act(() => overlayButton().props.onPress())
       act(() => chipFor("overlay-forest-switch").props.onValueChange(true))
-      expect(texts()).toContain(
-        fr.mapLayers.notice.offlineLayer(fr.mapLayers.layers.forestTypes.name),
-      )
+      expect(texts()).toContain(fr.mapLayers.notice.offlineHere)
     })
 
     test("the style failing shows the error notice, and Réessayer asks the style again", () => {
@@ -1271,6 +1269,20 @@ describe("PublicMapScreen", () => {
       release()
       return props
     }
+
+    test("offline the comparison cannot open: a release in the middle changes the base instead", () => {
+      const props = makeProps({ isOffline: true })
+      mount(props)
+      expect(texts()).toContain(fr.offlineMap.indicator.offline)
+      act(() => globe().props.onPress())
+      drag(380, 200)
+      release()
+      act(() => {
+        jest.advanceTimersByTime(500)
+      })
+      expect(present("compare-quit")).toBe(false)
+      expect(present("compare-line")).toBe(false)
+    })
 
     test("the free map is today's Explorer: not frozen, no extra map, no swipe control", () => {
       mount(makeProps())
@@ -1327,8 +1339,11 @@ describe("PublicMapScreen", () => {
       const scale = (props: ScreenProps) => {
         update(props)
         const style = flatStyle(byTestId("immersive-window")[0].props.style)
-        return (style.transform as { scaleX?: number }[]).find((t) => t.scaleX !== undefined)!
-          .scaleX!
+        // At rest the transform is empty: full size.
+        return (
+          (style.transform as { scaleX?: number }[]).find((t) => t.scaleX !== undefined)?.scaleX ??
+          1
+        )
       }
       const buttons = () => byTestId("immersive-buttons")[0]
       const insideWindow = (testID: string) =>
@@ -1807,41 +1822,28 @@ describe("PublicMapScreen", () => {
       expect(maps()).toHaveLength(1)
     })
 
-    test("offline, the layers the area lacks are skipped and told when the swipe mode starts", () => {
+    test("offline, no pill about skipped layers is told on the map during the swipe mode", () => {
       mockAvailable.all = false
       mount(makeProps({ isOffline: true }))
       act(() => globe().props.onPress())
-      expect(texts()).toContain(fr.mapLayers.basemap.skipped(3))
+      expect(texts()).not.toContain(fr.mapLayers.notice.offlineHere)
     })
 
-    test("the notices sit under the window, above the tab bar, in the swipe mode and keep their own top in a comparison", () => {
+    test("the notices are hidden in the swipe mode and come back when it ends", () => {
       // A notice that stays whatever the mode: the forest overlay, not in the offline area.
       mockAvailable.all = false
-      const noticeStyle = () =>
-        flatStyle(
-          tree.root.find(
-            (node) =>
-              typeof node.type === "string" &&
-              node.props.pointerEvents === "box-none" &&
-              [node.props.style].flat(3).some((style) => style && style.alignItems === "center") &&
-              node.findAll((child) => child.props.testID === "map-notice-offline").length > 0,
-          ).props.style,
-        )
+      const notice = () => tree.root.findAll((child) => child.props.testID === "map-notice-offline")
       mount(makeProps({ isOffline: true }))
       const byId = (testID: string) => tree.root.find((node) => node.props.testID === testID)
       act(() => byId("map-overlay-button").props.onPress())
       act(() => byId("overlay-forest-switch").props.onValueChange(true))
+      expect(notice().length).toBeGreaterThan(0)
+      // The swipe mode: no notice at all (nor any room reserved for one).
       act(() => globe().props.onPress())
-      const swipeStyle = noticeStyle()
-      drag(380, 200)
-      release()
-      const pillTop = noticeStyle().top
-      // The swipe mode puts the notices at the bottom.
-      // The quit pill of the comparison is at the bottom: the notices keep their own top.
-      expect(swipeStyle.top).toBeUndefined()
-      // 50 (tab bar) + 8 + 14 + 40 (hint): in the white zone under the window, over the hint.
-      expect(swipeStyle.bottom).toBe(50 + 8 + 14 + 40)
-      expect(pillTop).toBe(30)
+      expect(notice()).toHaveLength(0)
+      // Leaving the mode brings it back.
+      act(() => globe().props.onPress())
+      expect(notice().length).toBeGreaterThan(0)
     })
   })
 

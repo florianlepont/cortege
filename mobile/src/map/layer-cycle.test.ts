@@ -3,7 +3,7 @@ import {
   BASEMAP_CYCLE,
   cycleIndex,
   neighbourLayer,
-  skippedCount,
+  canCompare,
 } from "./layer-cycle"
 import { BASE_LAYER_KEYS } from "./layers"
 import type { BaseLayerKey } from "./layers"
@@ -81,18 +81,19 @@ describe("neighbourLayer", () => {
   })
 })
 
-describe("skippedCount", () => {
-  it("counts the layers the cycle skips", () => {
-    expect(skippedCount(all)).toBe(0)
-    expect(skippedCount(without("etat-major"))).toBe(1)
-    expect(skippedCount(without("etat-major", "photos-1950"))).toBe(2)
-  })
-})
-
 describe("cycleIndex", () => {
   it("is the 1 based position, for 'fond n sur 5'", () => {
     expect(cycleIndex("map")).toBe(1)
     expect(cycleIndex("etat-major")).toBe(3)
     expect(cycleIndex("photos-1950")).toBe(5)
+  })
+})
+
+describe("canCompare", () => {
+  test("needs two available bases", () => {
+    expect(canCompare(() => true)).toBe(true)
+    expect(canCompare((key) => key === "map" || key === "satellite")).toBe(true)
+    expect(canCompare((key) => key === "map")).toBe(false)
+    expect(canCompare(() => false)).toBe(false)
   })
 })
