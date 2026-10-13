@@ -1049,24 +1049,24 @@ Plans:
 
 ### Phase 30: Route Choice Assistant (INSERTED, V1)
 
-**Goal**: The observer is guided to choose the right route and method for the parcel, and the route followed is shown; the phase is large because the method is hard to understand.
-**Depends on**: Phase 31 (annotation view for the trace), the CNPF method documents in `docs/references/`
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Goal**: The observer is guided to choose the right route and method for the parcel, and the route followed is recorded and shown as text; the phase is large because the method is hard to understand. The trace on the map belongs to Phase 31 (split decided 2026-10-13).
+**Depends on**: the CNPF method documents in `docs/references/` (no longer Phase 31: Phase 31 now depends on this phase)
+**Requirements**: REQ-DOC-route-rules, REQ-C-route-guide, REQ-C-route-record, REQ-C-route-display, REQ-C-uncapped-entry, REQ-FT-route-test
 **Source**: seminar 2026-10-10: cards "Aide au choix du parcours" and "Parcours utilisé"; owner: a big step because the method is complicated
 **Success Criteria** (what must be TRUE):
 
   1. The method's rules for choosing a route are written down and validated with the owner before any screen is built (a short spec in `docs/`).
   2. A guided flow suggests the route from the parcel's characteristics, and explains each choice in plain French.
-  3. The route actually followed is recorded with the survey and displayed on the parcel map.
+  3. The route actually used is recorded with the survey and shown as text in the survey detail and the PDF (the display on the parcel map moves to Phase 31).
   4. A tester who does not know the method completes the choice without help, in a recorded test.
 
-**Plans**: TBD
+**Plans**: 23 plans in 13 waves (30-01 spec, 30-02 owner validation gate, then package, API, mobile, docs, owner wording review, tester test and the second D-04 decision point). The pooled group calculation is planned as Phase 30.1 unless the owner keeps it in the phase at a decision point.
 **UI hint**: yes
 
 ### Phase 31: Parcel Annotation & Remarkable Elements (INSERTED, V1)
 
 **Goal**: The observer annotates the parcel on a dedicated view: remarkable trees and elements as points, and the route trace; a large step, since the view does not exist yet.
-**Depends on**: Phase 28 (map layers)
+**Depends on**: Phase 28 (map layers), Phase 30 (the recorded route that the trace completes)
 **Requirements**: none new yet (to be traced when the phase is planned)
 **Source**: seminar 2026-10-10: card "Éléments remarquables sur la carte" and the route display
 **Success Criteria** (what must be TRUE):

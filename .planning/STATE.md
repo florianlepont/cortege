@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 28
-current_phase_name: Map Layers & Comparison (INSERTED, V1)
+current_phase: 27
+current_phase_name: Quick survey additions (INSERTED, V1
 status: ready_to_plan
-stopped_at: Phase 28 complete
-last_updated: "2026-10-13T12:00:00.000Z"
-last_activity: 2026-10-13
-last_activity_desc: Phase 28 complete
+stopped_at: "Phase 30 planned (23 plans); next: execute 30-01 then owner gate 30-02"
+last_updated: "2026-10-13T17:49:24.132Z"
+last_activity: 2026-10-12
+last_activity_desc: Phase 27 complete
 progress:
   total_phases: 39
   completed_phases: 20
-  total_plans: 220
+  total_plans: 270
   completed_plans: 285
-  percent: 46
+  percent: 51
 ---
 
 # Project State
@@ -281,6 +281,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-13T12:00:00.000Z
-Stopped at: Phase 28 complete (28/28 plans); merged in main by PRs 294 to 297; owner validated on his iPhone 2026-10-13, Android emulator run done; the Android phone pass (fluidity, felt haptics, TalkBack, LEFT_MAP_ANDROID_VIEW kept at texture) is deferred to Phase 35
-Resume file: None
+Last session: 2026-10-13T17:49:24.125Z
+Stopped at: Phase 30 planned (23 plans); next: execute 30-01 then owner gate 30-02
+Resume file: .planning/phases/30-route-choice-assistant-inserted-v1/30-01-PLAN.md
