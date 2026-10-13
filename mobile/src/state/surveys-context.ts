@@ -30,7 +30,6 @@ export type SurveysState = {
   surveyFromDate: string
   surveyToDate: string
   statusFilter: SurveyList["statusFilter"]
-  visibilityFilter: SurveyList["visibilityFilter"]
   syncFilter: SurveyList["syncFilter"]
   blockedFilter: SurveyList["blockedFilter"]
   attachmentFilter: SurveyList["attachmentFilter"]
@@ -50,7 +49,6 @@ export type SurveyActions = {
   setSurveyFromDate: SurveyList["setSurveyFromDate"]
   setSurveyToDate: SurveyList["setSurveyToDate"]
   setStatusFilter: SurveyList["setStatusFilter"]
-  setVisibilityFilter: SurveyList["setVisibilityFilter"]
   setSyncFilter: SurveyList["setSyncFilter"]
   setBlockedFilter: SurveyList["setBlockedFilter"]
   setAttachmentFilter: SurveyList["setAttachmentFilter"]

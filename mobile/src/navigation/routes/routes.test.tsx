@@ -363,7 +363,6 @@ function makeFixture(
         surveyFromDate: "",
         surveyToDate: "",
         statusFilter: "all",
-        visibilityFilter: "all",
         syncFilter: "all",
         blockedFilter: "all",
         attachmentFilter: "all",

@@ -10,7 +10,6 @@ import {
   SurveyBlockedFilter,
   SurveySort,
   SurveyStatusFilter,
-  SurveyVisibilityFilter,
   SurveySyncFilter,
 } from "../app/types"
 import { listLocalAttachments, listLocalSurveys } from "../storage/surveys"
@@ -56,7 +55,6 @@ export function useSurveyList() {
   const [surveyFromDate, setSurveyFromDate] = useState("")
   const [surveyToDate, setSurveyToDate] = useState("")
   const [statusFilter, setStatusFilter] = useState<SurveyStatusFilter>("all")
-  const [visibilityFilter, setVisibilityFilter] = useState<SurveyVisibilityFilter>("all")
   const [syncFilter, setSyncFilter] = useState<SurveySyncFilter>("all")
   const [blockedFilter, setBlockedFilter] = useState<SurveyBlockedFilter>("all")
   const [attachmentFilter, setAttachmentFilter] = useState<SurveyAttachmentFilter>("all")
@@ -88,7 +86,6 @@ export function useSurveyList() {
           surveyFromDate,
           surveyToDate,
           statusFilter,
-          visibilityFilter,
           syncFilter,
           blockedFilter,
           attachmentFilter,
@@ -101,7 +98,6 @@ export function useSurveyList() {
       surveyFromDate,
       surveyToDate,
       statusFilter,
-      visibilityFilter,
       syncFilter,
       blockedFilter,
       attachmentFilter,
@@ -125,7 +121,6 @@ export function useSurveyList() {
     setSurveyFromDate("")
     setSurveyToDate("")
     setStatusFilter("all")
-    setVisibilityFilter("all")
     setSyncFilter("all")
     setBlockedFilter("all")
     setAttachmentFilter("all")
@@ -156,8 +151,6 @@ export function useSurveyList() {
     setSurveyToDate,
     statusFilter,
     setStatusFilter,
-    visibilityFilter,
-    setVisibilityFilter,
     syncFilter,
     setSyncFilter,
     blockedFilter,
