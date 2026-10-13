@@ -1,15 +1,28 @@
 // SQL of the two "public" map routes (D-13), shared by PublicMapService, the EXPLAIN script
 // (scripts/explain-public-routes.js, through the compiled dist copy) and the EXPLAIN spec.
 //
-// Phase 2 (association-only sharing): both routes require an authenticated member (AuthGuard on
-// PublicController) and show every submitted survey to every member, not just ones marked
-// visibility = 'public'. The predicate below dropped the visibility check accordingly; the
-// `visibility` column itself stays (REQ-X-visibility is restored with a future privacy-choice
-// milestone), it's just no longer read here.
+// Phase 29 (private or public before submission): these routes need an authenticated member
+// (AuthGuard on PublicController) and show only submitted, live surveys shared with the
+// association (`visibility = 'public'`, which means "shared with the association", never the open
+// internet). PUBLIC_SURVEY_PREDICATE below is the only definition of that rule: nothing else may
+// re-derive "visible to another member" by hand. The caller-aware variant further down exists only
+// for the parcel history.
 import type { CommunitySurveyItem } from "@cortege/ibp-domain"
 import { toFiniteNumber } from "./surveys-normalize.utils"
 
-export const PUBLIC_SURVEY_PREDICATE = `s.status = 'submitted' AND s.deleted_at IS NULL`
+const SUBMITTED_ACTIVE_SURVEY = `s.status = 'submitted' AND s.deleted_at IS NULL`
+
+export const PUBLIC_SURVEY_PREDICATE = `${SUBMITTED_ACTIVE_SURVEY} AND s.visibility = 'public'`
+
+/**
+ * D-10: the surveys a given caller may read on the parcel history: their own submitted surveys
+ * whatever their visibility, plus the shared ones of other members. `callerParam` is the
+ * placeholder of the caller id (for example "$3"). Equality on purpose, so a retained survey with
+ * a NULL author never matches.
+ */
+export function submittedVisibleToCallerSql(callerParam: string): string {
+  return `((${PUBLIC_SURVEY_PREDICATE}) OR (${SUBMITTED_ACTIVE_SURVEY} AND s.user_id = ${callerParam}::uuid))`
+}
 
 /** Rows per /public/map-items answer, unchanged since before 01.7. */
 export const PUBLIC_MAP_ITEMS_LIMIT = 500
@@ -264,10 +277,10 @@ export function toCommunitySurveyItem(row: CommunitySurveyDbRow): CommunitySurve
 }
 
 /**
- * /public/community-surveys: the submitted surveys of every member, newest first, optionally
- * narrowed to those whose site name or author name contains the text (case and accent insensitive,
- * unaccent from migration 022). Same inclusion rule as the
- * map (PUBLIC_SURVEY_PREDICATE: there is no private/public choice yet). The author is a LEFT JOIN
+ * /public/community-surveys: the shared submitted surveys of every member, newest first,
+ * optionally narrowed to those whose site name or author name contains the text (case and accent
+ * insensitive, unaccent from migration 022). Same inclusion rule as the map
+ * (PUBLIC_SURVEY_PREDICATE: shared surveys only). The author is a LEFT JOIN
  * because an account deletion anonymises the survey (user_id becomes NULL, migration 012).
  */
 export function buildCommunitySurveysQuery(input: { q?: string | null; limit: number }): {

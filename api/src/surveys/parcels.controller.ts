@@ -1,5 +1,7 @@
 import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common"
 import { AuthGuard } from "../auth/auth.guard"
+import { CurrentUser } from "../auth/current-user.decorator"
+import { AuthenticatedUser } from "../auth/auth.types"
 import { ParcelsService } from "./parcels.service"
 
 @Controller("parcels")
@@ -13,7 +15,11 @@ export class ParcelsController {
   }
 
   @Get(":parcelId/surveys/history")
-  async history(@Param("parcelId") parcelId: string, @Query("limit") limit?: string) {
-    return this.parcelsService.getParcelSurveyHistory(parcelId, limit)
+  async history(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("parcelId") parcelId: string,
+    @Query("limit") limit?: string,
+  ) {
+    return this.parcelsService.getParcelSurveyHistory(user.id, parcelId, limit)
   }
 }
