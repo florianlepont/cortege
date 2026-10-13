@@ -82,7 +82,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 25.1: PDF Export Improvement** (INSERTED) - The exported survey PDF carries the content of the CNPF survey sheet in the brand finish, with photos, the parcel map and the trend, before the UX/UI audit (owner decisions 2026-10-09 and 2026-10-10) (completed 2026-10-10)
 - [x] **Phase 26: Field-feedback fixes** (INSERTED) - Android photo recognition works (the recognition workflow rethink was set aside, owner 2026-10-10); small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10) (completed 2026-10-11)
 - [x] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
-- [ ] **Phase 28: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10)
+- [x] **Phase 28: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10) (completed 2026-10-13; the Android phone pass is deferred to Phase 35)
 - [ ] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list)
 - [ ] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand
 - [ ] **Phase 31: Parcel Annotation & Remarkable Elements** (INSERTED, V1) - Annotate the parcel on a dedicated view: remarkable elements and the route trace; a large step
@@ -1029,7 +1029,7 @@ Plans:
   4. Layers behave as decided with and without a network, and their cost on offline packs is measured.
   5. The Explorer shows the percentage of an offline-area download, not only an indeterminate "Téléchargement…" button (owner decisions 2026-10-10 and 2026-10-11: a chip beside the download button carries it, the sheet closes after "Télécharger").
 
-**Plans**: 27/28 plans executed, 28-18 partial (28-01 to 28-17 and the owner-feedback plans 28-19 to 28-27 done and validated informally on the owner's iPhone 2026-10-12; 28-18 wrote docs/technical/map-layers-and-licences-v1.md, still open: measured offline pack sizes, airplane-mode and Android emulator device checks DL-06 to DL-08; see 28-18-SUMMARY.md)
+**Plans**: 28/28 plans executed (28-01 to 28-27 and 28-18; PRs 294 to 297 merged 2026-10-12 and 2026-10-13; owner iPhone validation and Android emulator run recorded in docs/user-tests/device-checks.md; the Android phone pass (fluidity, felt haptics, TalkBack) is deferred to Phase 35)
 **UI hint**: yes
 
 ### Phase 29: Private or Public Before Submission (INSERTED, V1)
@@ -1231,7 +1231,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 25.1. PDF Export Improvement | 17/17 | Complete | 2026-10-10 |
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
 | 27. Quick survey additions | 22/22 | Complete | 2026-10-12 |
-| 28. Map Layers & Comparison | 27/28 | In progress (owner iPhone validation 2026-10-12; offline measures and Android run open) | - |
+| 28. Map Layers & Comparison | 28/28 | Complete (Android phone pass deferred to Phase 35) | 2026-10-13 |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
 | 30. Route Choice Assistant | 0/TBD | Not started | - |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
