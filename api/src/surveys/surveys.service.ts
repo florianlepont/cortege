@@ -431,8 +431,9 @@ export class SurveysService {
 
       if (syncVersion === existing.sync_version) {
         // D-04/D-16: same version is an idempotent replay only when the
-        // content matches by value; a visibility-only difference is applied
-        // last-writer-wins, any read-only difference is a 409.
+        // content matches by value; a visibility-only difference on a draft is
+        // applied last-writer-wins, any read-only difference (a submitted
+        // row's visibility included, phase 29 D-07) is a 409.
         const content = classifySameVersionContent(body, existing, existingParcelIds)
         return this.syncedResult(
           rowPrepared,
@@ -443,10 +444,12 @@ export class SurveysService {
 
       // D-04/D-13: a submitted survey's observation fields are read-only by
       // value. Identical resends (including today's installed apps replaying
-      // status/expires_at) are accepted and only touch visibility/sync_version;
-      // any actual change to a read-only field is rejected — never falls
-      // through to ensureParcelIds/syncSurveyParcels or rewrites factors,
-      // factor_results or scores.
+      // status/expires_at) are accepted and only touch sync_version; any
+      // actual change to a read-only field is rejected — never falls through
+      // to ensureParcelIds/syncSurveyParcels or rewrites factors,
+      // factor_results or scores. Phase 29 (D-07): visibility is one of those
+      // fields, so a different value has been refused above and the UPDATE
+      // writes the stored value back (an absent value keeps it too).
       if (existing.status === "submitted") {
         const changedFields = getChangedSubmittedReadOnlyFields(body, existing, existingParcelIds)
         if (changedFields.length > 0) {
@@ -464,13 +467,7 @@ export class SurveysService {
                updated_at = $5
            WHERE id = $1 AND user_id = $2 AND sync_version < $4
            RETURNING id, updated_at::text`,
-          [
-            surveyId,
-            user.id,
-            body.visibility ?? existing.visibility,
-            syncVersion,
-            now.toISOString(),
-          ],
+          [surveyId, user.id, existing.visibility, syncVersion, now.toISOString()],
         )
 
         if (!restrictedUpdateResult.rows[0]) {
@@ -719,9 +716,12 @@ export class SurveysService {
     body: SurveyPatchBody,
   ): Promise<{ id: string; updated_at: string }> {
     return this.db.transaction(async (db) => {
+      // FOR UPDATE: submit locks the row too, so a PATCH racing a submit either commits first
+      // or sees the submitted status and is refused (phase 29, D-07).
       const existing = await this.repository.findOwnedOrThrow(db, surveyId, user.id, {
         activeOnly: true,
         columns: "full",
+        forUpdate: true,
       })
       const forbiddenPostSubmitFields = getSubmittedReadOnlyFields(body)
 
@@ -730,6 +730,7 @@ export class SurveysService {
           code: "submitted_read_only_fields",
           message: "submitted survey is read-only for observation fields",
           forbidden_fields: forbiddenPostSubmitFields,
+          details: { survey_id: surveyId, fields: forbiddenPostSubmitFields },
         })
       }
 
@@ -870,11 +871,15 @@ export class SurveysService {
 
     return this.db.transaction(async (db) => {
       // "full", not "ownership": the no-op answer returns updated_at, which is not an
-      // ownership column (D-07).
+      // ownership column (D-07). FOR UPDATE serialises this write with submit, which locks the
+      // row too (phase 29, D-07).
       const existing = await this.repository.findOwnedOrThrow(db, surveyId, user.id, {
         activeOnly: true,
         columns: "full",
+        forUpdate: true,
       })
+      // The stored value first: an idempotent replay answers 200 even after submit, so a lost
+      // response never turns into a blocked sync operation.
       if (existing.visibility === visibility) {
         return {
           id: existing.id,
@@ -883,15 +888,35 @@ export class SurveysService {
         }
       }
 
+      this.assertVisibilityWritable(existing)
       return this.applyVisibilityChange(db, user.id, surveyId, existing.visibility, visibility)
     })
   }
 
   /**
+   * Phase 29 (D-07): a submitted survey's visibility is read-only. The 422 keeps the PATCH
+   * policy (submitted_read_only_fields with forbidden_fields) and carries
+   * details { survey_id, fields } because mapSyncError keeps `details` only: without it the
+   * sync visibility_update result would lose the field name.
+   */
+  private assertVisibilityWritable(existing: { id: string; status: string }): void {
+    if (existing.status === "submitted") {
+      throw new UnprocessableEntityException({
+        code: "submitted_read_only_fields",
+        message: "submitted survey visibility is read-only",
+        forbidden_fields: ["visibility"],
+        details: { survey_id: existing.id, fields: ["visibility"] },
+      })
+    }
+  }
+
+  /**
    * The visibility_update write: new visibility, updated_at = NOW() and a
-   * visibility_changed event, in the caller's transaction. sync_version is not
+   * visibility_changed event (D-08), in the caller's transaction. sync_version is not
    * touched. Shared by patchSurveyVisibility and the same-version upsert path
-   * so both apply visibility the same way (D-16 amended 2026-09-25).
+   * so both apply visibility the same way (D-16 amended 2026-09-25). Phase 29 (D-07): the
+   * UPDATE never touches a submitted row; when it affects no row, a re-read tells a row
+   * submitted in between (422) from a missing one (404).
    */
   private async applyVisibilityChange(
     db: Queryable,
@@ -910,11 +935,20 @@ export class SurveysService {
            updated_at = NOW()
        WHERE id = $1
          AND user_id = $2
+         AND status <> 'submitted'
        RETURNING id, visibility, updated_at::text`,
       [surveyId, userId, to],
     )
 
     if (!result.rows[0]) {
+      // No lock needed: the caller's transaction already holds it, or the row is gone.
+      const current = await this.repository.findOwned(db, surveyId, userId, {
+        activeOnly: false,
+        columns: "full",
+      })
+      if (current) {
+        this.assertVisibilityWritable(current)
+      }
       throw new NotFoundException("Survey not found")
     }
 
@@ -929,10 +963,11 @@ export class SurveysService {
   /**
    * Resolve an upsert whose sync_version equals the stored one (D-04, D-16
    * amended 2026-09-25) and return the updated_at to answer with.
-   * - conflict: 409 sync_version_conflict, nothing written.
-   * - visibility_only: applied like visibility_update. A soft-deleted row is
-   *   left untouched (patchSurveyVisibility refuses deleted surveys) and the
-   *   replay is still answered synced, never 404.
+   * - conflict: 409 sync_version_conflict, nothing written. Since phase 29 (D-07)
+   *   this includes a submitted row whose visibility differs.
+   * - visibility_only (drafts only, phase 29): applied like visibility_update. A
+   *   soft-deleted row is left untouched (patchSurveyVisibility refuses deleted
+   *   surveys) and the replay is still answered synced, never 404.
    * - identical: idempotent replay, nothing written.
    */
   private async resolveSameVersionUpsert(
