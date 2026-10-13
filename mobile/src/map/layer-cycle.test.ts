@@ -4,7 +4,6 @@ import {
   cycleIndex,
   neighbourLayer,
   canCompare,
-  skippedCount,
 } from "./layer-cycle"
 import { BASE_LAYER_KEYS } from "./layers"
 import type { BaseLayerKey } from "./layers"
@@ -79,14 +78,6 @@ describe("neighbourLayer", () => {
     const isAvailable = without("etat-major")
     expect(neighbourLayer("etat-major", 1, { isAvailable })).toBe("carte-1950")
     expect(neighbourLayer("etat-major", -1, { isAvailable })).toBe("satellite")
-  })
-})
-
-describe("skippedCount", () => {
-  it("counts the layers the cycle skips", () => {
-    expect(skippedCount(all)).toBe(0)
-    expect(skippedCount(without("etat-major"))).toBe(1)
-    expect(skippedCount(without("etat-major", "photos-1950"))).toBe(2)
   })
 })
 

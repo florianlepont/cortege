@@ -43,6 +43,9 @@ export const mapLayersFr = {
     hintSwipe:
       "Faites glisser votre doigt sur la carte pour changer de fond. Relâchez au milieu pour comparer.",
     // Each zone of the swipe has its hint (CONTEXT item 11): cancel, compare, commit.
+    // Offline, the intro hint says once why there is no middle zone (no comparison).
+    hintSwipeOffline:
+      "Faites glisser votre doigt sur la carte pour changer de fond. La comparaison demande une connexion.",
     hintCancel: "Lâchez pour revenir",
     hintRelease: "Lâchez pour comparer",
     hintChange: "Lâchez pour changer de fond",
@@ -138,8 +141,6 @@ export const mapLayersFr = {
   },
   compare: {
     exit: "Quitter la comparaison",
-    // A half whose layer is not downloaded for the view (offline): a neutral card, never raw black.
-    unavailableCard: "Non téléchargé ici",
     exitA11yHint: "Revient à un seul fond, celui de gauche",
     // The side tags (UI-SPEC section 5): one adjustable element each; the actions reuse
     // `basemap.actionNext` and `basemap.actionPrevious`.

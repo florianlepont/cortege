@@ -122,8 +122,6 @@ export function PublicMapScreen({
   const [cardHeight, setCardHeight] = useState(0)
   // Bumped by "Réessayer" of the error notice: the style is asked again.
   const [styleRetryKey, setStyleRetryKey] = useState(0)
-  // The display-only pill the swipe hook raises (skipped layers). It runs after the layers hook, so
-  // it comes back through state: a ref would not render the pill.
   const offlineEnabled = isOfflineMapsEnabled()
   const offlineAreas = useOfflineAreas(apiUrl, accessToken, offlineEnabled)
   const { startDownload, clearDownloadStatus, downloadStatus, estimateForRegion } = offlineAreas
@@ -364,7 +362,7 @@ export function PublicMapScreen({
         <ScoreLegend
           bottom={controlsBottom}
           loading={loading}
-          isOffline={isOffline && layers.layers.state.compare === null}
+          isOffline={isOffline}
           attributionLines={layers.legendLines ?? undefined}
         />
       </ExplorerPanelsView>

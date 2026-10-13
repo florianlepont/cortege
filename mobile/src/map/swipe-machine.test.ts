@@ -9,7 +9,6 @@ import {
   compareSidesFor,
   EDGE_EXIT_FRACTION,
   edgeExitCue,
-  HINT_MS,
   idleExitEnabled,
   IDLE_MS,
   IMMERSIVE_IN_MS,
@@ -58,7 +57,6 @@ describe("constants", () => {
     expect(ZONE_HYSTERESIS).toBe(0.03)
     expect(EDGE_EXIT_FRACTION).toBe(1 / 5)
     expect(IDLE_MS).toBe(8000)
-    expect(HINT_MS).toBe(3000)
     expect(SETTLE_MS).toBe(240)
     expect(SPRINGBACK_MS).toBe(240)
     expect(SPRINGBACK_MS).toBe(brandMotion.durations.base)

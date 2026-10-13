@@ -43,10 +43,6 @@ export type CompareSideTagProps = {
   width: number
   /** The y of the grabber's centre (`grabberCenterY(height)`): the tag is centred on it. */
   centerY: number
-  /** The layer of this side is not downloaded for this area while offline. */
-  unavailable: boolean
-  /** Offline and the layer is downloaded for the view: a small marker says so (cloud, outline). */
-  downloaded?: boolean
   /** Another layer exists for this side; false dims and disables the chevrons and the swipe. */
   canStep: boolean
   /** The line is being dragged: the tag takes no touch. */
@@ -72,8 +68,6 @@ export const CompareSideTag = memo(function CompareSideTag({
   lineX,
   width,
   centerY,
-  unavailable,
-  downloaded = false,
   canStep,
   disabled,
   onStep,
@@ -116,12 +110,6 @@ export const CompareSideTag = memo(function CompareSideTag({
   )
 
   const glyph = theme.visual.mapControl.icon
-  const basemapT = fr.mapLayers.basemap
-  const stateSuffix = unavailable
-    ? `, ${basemapT.notDownloaded}`
-    : downloaded
-      ? `, ${basemapT.downloaded}`
-      : ""
   const chevronStyle = canStep ? styles.chevron : styles.chevronDimmed
   return (
     <Animated.View
@@ -132,7 +120,7 @@ export const CompareSideTag = memo(function CompareSideTag({
       accessibilityRole="adjustable"
       accessibilityLabel={t.sideA11yLabel({ side, name: label })}
       accessibilityHint={t.sideA11yHint}
-      accessibilityValue={{ text: `${t.sideA11yValue({ name: label, era })}${stateSuffix}` }}
+      accessibilityValue={{ text: t.sideA11yValue({ name: label, era }) }}
       accessibilityActions={ACTIONS}
       onAccessibilityAction={onAccessibilityAction}
       style={[styles.tag, { top: centerY - TAG_HEIGHT / 2 }, animated]}
@@ -154,13 +142,6 @@ export const CompareSideTag = memo(function CompareSideTag({
         </AppPressable>
         <GestureDetector gesture={pan}>
           <View style={styles.middle}>
-            {unavailable || downloaded ? (
-              <Ionicons
-                name={unavailable ? "cloud-offline-outline" : "cloud-done-outline"}
-                size={TAG_GLYPH_SIZE}
-                color={glyph}
-              />
-            ) : null}
             <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
               {name}
             </Text>

@@ -69,7 +69,7 @@ import {
   type CompareState,
   type MapLayersState,
 } from "./map-layers-state"
-import { COVER_QUICK_RENDER_TIMEOUT_MS, COVER_PRESENT_MS } from "./useCoverRelease"
+import { COVER_PRESENT_MS } from "./useCoverRelease"
 import { STEP_READY_WAIT_MS, useSideStep, type SideStep } from "./useSideStep"
 import type { MapLayers } from "./useMapLayersState"
 
@@ -145,7 +145,7 @@ const satellitePlan: CompareState = {
   x: 200,
 }
 
-let quickFlag = false
+let offlineFlag = false
 const result: { current: SideStep | null } = { current: null }
 const out = () => result.current as SideStep
 
@@ -158,7 +158,7 @@ function Probe(props: {
     layers: props.layers,
     isAvailable: props.isAvailable ?? (() => true),
     width: props.width ?? WIDTH,
-    quick: quickFlag,
+    offline: offlineFlag,
   })
   return null
 }
@@ -304,24 +304,20 @@ describe("step", () => {
     expect(out().stepping).toBeNull()
   })
 
-  it("offline the Explorer map's half is uncovered shortly after its style load, even without a render report", () => {
-    jest.useFakeTimers()
-    quickFlag = true
+  it("offline no side change is offered or run: the comparison needs a connection", () => {
+    offlineFlag = true
     try {
-      mount(makeLayers(satellitePlan))
+      const layers = makeLayers(planSatellite)
+      mount(layers)
+      expect(out().canStep("left")).toBe(false)
+      expect(out().canStep("right")).toBe(false)
       act(() => out().step("right", 1))
-      finishStep()
-      act(() => out().onStyleLoaded("base"))
-      act(() => {
-        jest.advanceTimersByTime(COVER_QUICK_RENDER_TIMEOUT_MS - 1)
-      })
-      expect(out().stepping).not.toBeNull()
-      act(() => {
-        jest.advanceTimersByTime(1)
-      })
+      expect(selection).not.toHaveBeenCalled()
+      expect(mockTimings).toHaveLength(0)
       expect(out().stepping).toBeNull()
+      expect(layers.actions.setSide).not.toHaveBeenCalled()
     } finally {
-      quickFlag = false
+      offlineFlag = false
     }
   })
 

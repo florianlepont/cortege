@@ -1270,15 +1270,18 @@ describe("PublicMapScreen", () => {
       return props
     }
 
-    test("offline, the Hors connexion badge never shares the bottom with the quit pill", () => {
-      mount(makeProps({ isOffline: true }))
+    test("offline the comparison cannot open: a release in the middle changes the base instead", () => {
+      const props = makeProps({ isOffline: true })
+      mount(props)
       expect(texts()).toContain(fr.offlineMap.indicator.offline)
       act(() => globe().props.onPress())
       drag(380, 200)
       release()
-      // The comparison's labels carry the offline state; the badge leaves the pill's row.
-      expect(present("compare-quit")).toBe(true)
-      expect(texts()).not.toContain(fr.offlineMap.indicator.offline)
+      act(() => {
+        jest.advanceTimersByTime(500)
+      })
+      expect(present("compare-quit")).toBe(false)
+      expect(present("compare-line")).toBe(false)
     })
 
     test("the free map is today's Explorer: not frozen, no extra map, no swipe control", () => {
@@ -1826,7 +1829,7 @@ describe("PublicMapScreen", () => {
       expect(texts()).not.toContain(fr.mapLayers.notice.offlineHere)
     })
 
-    test("the notices are hidden in the swipe mode, come back when it ends, and keep their own top in a comparison", () => {
+    test("the notices are hidden in the swipe mode and come back when it ends", () => {
       // A notice that stays whatever the mode: the forest overlay, not in the offline area.
       mockAvailable.all = false
       const notice = () => tree.root.findAll((child) => child.props.testID === "map-notice-offline")
@@ -1840,11 +1843,6 @@ describe("PublicMapScreen", () => {
       expect(notice()).toHaveLength(0)
       // Leaving the mode brings it back.
       act(() => globe().props.onPress())
-      expect(notice().length).toBeGreaterThan(0)
-      act(() => globe().props.onPress())
-      drag(380, 200)
-      release()
-      // The comparison is not the swipe mode: the notice is back, at its own top.
       expect(notice().length).toBeGreaterThan(0)
     })
   })

@@ -102,7 +102,13 @@ export const BasemapSwipeOverlay = memo(function BasemapSwipeOverlay({
     : isAvailable(layer)
       ? `, ${t.downloaded}`
       : `, ${t.notDownloaded}`
-  const hint = fingerDown ? hintText : introHintVisible ? t.hintSwipe : null
+  const hint = fingerDown
+    ? hintText
+    : introHintVisible
+      ? offline
+        ? t.hintSwipeOffline
+        : t.hintSwipe
+      : null
 
   return (
     <>

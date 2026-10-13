@@ -47,11 +47,6 @@ export function canCompare(isAvailable: LayerAvailability): boolean {
   return BASEMAP_CYCLE.filter((key) => isAvailable(key)).length >= 2
 }
 
-/** How many layers the cycle skips (the "N fonds non téléchargés sont ignorés" notice). */
-export function skippedCount(isAvailable: LayerAvailability): number {
-  return BASEMAP_CYCLE.filter((key) => !isAvailable(key)).length
-}
-
 /** The 1 based position of a layer in the cycle ("fond n sur 5"). */
 export function cycleIndex(key: BaseLayerKey): number {
   return BASEMAP_CYCLE.indexOf(key) + 1

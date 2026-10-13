@@ -22,9 +22,6 @@ jest.mock("./CompareSideTag", () => ({
 jest.mock("./BasemapSwipeOverlay", () => ({
   BasemapSwipeOverlay: (props: object) => mockHost("BasemapSwipeOverlay", props),
 }))
-jest.mock("./CompareUnavailableCard", () => ({
-  CompareUnavailableCard: (props: object) => mockHost("CompareUnavailableCard", props),
-}))
 jest.mock("./QuitComparePill", () => ({
   QuitComparePill: (props: object) => mockHost("QuitComparePill", props),
 }))
@@ -126,7 +123,6 @@ function makeSwipe(view: ExplorerSwipeView, extra: Partial<ExplorerSwipe> = {}):
       buttonsHidden: view.swipeMode,
     },
     quitPillVisible: false,
-    skippedVisible: false,
     noticesTop: 58,
     onBaseStyleLoaded: jest.fn(),
     onSecondStyleLoaded: jest.fn(),
@@ -524,7 +520,6 @@ describe("the comparison", () => {
       lineX,
       width: 400,
       centerY: 400,
-      unavailable: false,
       canStep: true,
       disabled: false,
     })
@@ -536,7 +531,6 @@ describe("the comparison", () => {
       lineX,
       width: 400,
       centerY: 400,
-      unavailable: false,
     })
   })
 
@@ -563,35 +557,6 @@ describe("the comparison", () => {
   test("the tags take no touch while the line is dragged", () => {
     const { tree } = render(comparing({ lineDragging: true }))
     for (const tag of named(tree, "CompareSideTag")) expect(tag.props.disabled).toBe(true)
-  })
-
-  test("offline, a side whose layer is not downloaded is told so, and a downloaded one too", () => {
-    const missing = render(comparing(), { layers: makeLayers({ available: false, offline: true }) })
-    for (const tag of named(missing.tree, "CompareSideTag")) {
-      expect(tag.props).toMatchObject({ unavailable: true, downloaded: false })
-    }
-    const here = render(comparing(), { layers: makeLayers({ available: true, offline: true }) })
-    for (const tag of named(here.tree, "CompareSideTag")) {
-      expect(tag.props).toMatchObject({ unavailable: false, downloaded: true })
-    }
-  })
-
-  test("online, the tags carry no offline marker", () => {
-    const { tree } = render(comparing(), { layers: makeLayers({ available: false }) })
-    for (const tag of named(tree, "CompareSideTag")) {
-      expect(tag.props).toMatchObject({ unavailable: false, downloaded: false })
-    }
-  })
-
-  test("offline, a half without tiles for the view gets the neutral card, never raw black", () => {
-    const cards = (offline: boolean, available: boolean) =>
-      named(
-        render(comparing(), { layers: makeLayers({ offline, available }) }).tree,
-        "CompareUnavailableCard",
-      )
-    expect(cards(true, false).map((card) => card.props.side)).toEqual(["left", "right"])
-    expect(cards(true, true)).toHaveLength(0)
-    expect(cards(false, false)).toHaveLength(0)
   })
 
   test("the quit pill shows only when the hook says so, just above the tab bar", () => {

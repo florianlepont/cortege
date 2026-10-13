@@ -83,7 +83,7 @@ jest.mock("../../ui/feedback", () => ({
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { feedback } from "../../ui/feedback"
 import type { BaseLayerKey } from "../../map/layers"
-import { HINT_MS, IDLE_MS, SETTLE_MS } from "../../map/swipe-machine"
+import { IDLE_MS, SETTLE_MS } from "../../map/swipe-machine"
 import { INITIAL_MAP_LAYERS_STATE } from "./map-layers-state"
 import { SwipeSurface } from "./SwipeSurface"
 import { playHapticCue, useBasemapSwipe, type BasemapSwipe } from "./useBasemapSwipe"
@@ -161,13 +161,13 @@ type Handlers = Record<
 
 let layers: MapLayers
 let available: (key: BaseLayerKey) => boolean
-let skipped = 0
 let latest!: BasemapSwipe
 // The receded window of the immersive effect: absent unless a test sets it.
 let windowInputs: {
   windowProgress?: { value: number }
   windowApplied?: boolean
   windowScale?: number
+  isOffline?: boolean
 } = {}
 
 function Harness() {
@@ -175,7 +175,6 @@ function Harness() {
     layers,
     width: WIDTH,
     isAvailable: available,
-    skippedCount: skipped,
     ...windowInputs,
   } as Parameters<typeof useBasemapSwipe>[0])
   return null
@@ -191,7 +190,6 @@ function mountedTree(): ReactTestRenderer {
 function mount(setup: Setup = {}): ReactTestRenderer {
   layers = makeLayers(setup)
   available = () => true
-  skipped = 0
   let tree!: ReactTestRenderer
   act(() => {
     tree = renderer.create(<Harness />)
@@ -231,30 +229,19 @@ describe("playHapticCue", () => {
 })
 
 describe("entering", () => {
-  test("announces the layer, keeps the intro hint until the first touch and shows the skipped notice for HINT_MS", async () => {
+  test("announces the layer and keeps the intro hint until the first touch", async () => {
     layers = makeLayers({ swipeMode: false })
     available = () => true
-    skipped = 2
     let tree!: ReactTestRenderer
     act(() => {
       tree = renderer.create(<Harness />)
     })
     expect(latest.introHintVisible).toBe(false)
-    expect(latest.skippedVisible).toBe(false)
     expect(mockScreenReader.announce).not.toHaveBeenCalled()
     rerender(tree, { swipeMode: true })
     expect(mockScreenReader.announce).toHaveBeenCalledWith("Changement de fond. Plan, aujourd'hui.")
     expect(latest.introHintVisible).toBe(true)
-    expect(latest.skippedVisible).toBe(true)
-    act(() => {
-      jest.advanceTimersByTime(HINT_MS - 1)
-    })
-    expect(latest.skippedVisible).toBe(true)
-    act(() => {
-      jest.advanceTimersByTime(1)
-    })
-    expect(latest.skippedVisible).toBe(false)
-    // The intro hint outlives the notice: it goes with the first touch of the map.
+    // The intro hint outlives any timer: it goes with the first touch of the map.
     act(() => {
       jest.advanceTimersByTime(IDLE_MS - 1000)
     })
@@ -263,12 +250,6 @@ describe("entering", () => {
     expect(latest.introHintVisible).toBe(false)
     lift()
     expect(latest.introHintVisible).toBe(false)
-  })
-
-  test("no skipped notice when every layer is available", () => {
-    mount()
-    expect(latest.introHintVisible).toBe(true)
-    expect(latest.skippedVisible).toBe(false)
   })
 
   test("leaving the mode drops the gesture and everything drawn", () => {
@@ -355,6 +336,17 @@ describe("the wipe and its zones", () => {
 })
 
 describe("the release", () => {
+  test("offline the middle zone does not exist: no comparison, no compare action, a release there commits", () => {
+    windowInputs = { isOffline: true }
+    mount()
+    expect(latest.compareAvailable).toBe(false)
+    begin(380)
+    move(240)
+    expect(latest.zone).toBe("commit")
+    lift()
+    expect(layers.actions.startCompare).not.toHaveBeenCalled()
+  })
+
   test("with fewer than two layers available for the view the comparison cannot open", () => {
     mount()
     available = (key) => key === "satellite"

@@ -54,7 +54,6 @@ describe("fr.mapLayers", () => {
     test("the offline markers say downloaded or not", () => {
       expect(mapLayersFr.basemap.downloaded).toBe("téléchargé")
       expect(mapLayersFr.basemap.notDownloaded).toBe("non téléchargé ici")
-      expect(mapLayersFr.compare.unavailableCard).toBe("Non téléchargé ici")
     })
 
     test("indicator and announcements", () => {

@@ -293,6 +293,13 @@ describe("hint", () => {
     expect(stack.findAll((node) => node.props.testID === "swipe-hint")).toHaveLength(0)
   })
 
+  test("offline the intro hint says once that the comparison needs a connection", () => {
+    const hint = byId(render({ introHintVisible: true, offline: true }), "swipe-hint")[0]
+    expect(textsOf(hint)).toEqual([
+      "Faites glisser votre doigt sur la carte pour changer de fond. La comparaison demande une connexion.",
+    ])
+  })
+
   test("the intro hint shows while no finger is down", () => {
     const hint = byId(render({ introHintVisible: true }), "swipe-hint")[0]
     expect(textsOf(hint)).toEqual([
