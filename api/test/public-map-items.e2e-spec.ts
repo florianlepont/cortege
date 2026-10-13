@@ -15,8 +15,9 @@ import {
 // Phase 01.8 D-12: split out of the former catch-all surveys-idempotency suite. This file covers
 // /v1/public/map-items inclusion rules and /v1/public/parcels/status.
 //
-// Phase 2 (association-only sharing): both routes require an authenticated member and show every
-// submitted survey to every member, regardless of the (now unused for reads) visibility column.
+// Phase 29 (private or public before submission): both routes require an authenticated member and
+// show the shared submitted surveys (visibility "public", chosen before submit) to every member,
+// never a private survey or a draft. A parcel whose only survey is private is not studied.
 
 describe("Public map items (e2e)", () => {
   let app: INestApplication
@@ -42,7 +43,7 @@ describe("Public map items (e2e)", () => {
       .expect(401)
   })
 
-  it("exposes every submitted survey to any member regardless of visibility, never a draft", async () => {
+  it("exposes shared submitted surveys to any member, never a private one or a draft", async () => {
     const accessToken = await loginTestUser(app, "e2e-public-map")
     const otherMemberToken = await loginTestUser(app, "e2e-public-map-other")
     const submittedPublicId = uniqueId("e2e-public-map-pub")
@@ -74,7 +75,7 @@ describe("Public map items (e2e)", () => {
         sync_version: 1,
         site_name: "Public Submitted Forest",
         status: "draft",
-        visibility: "private",
+        visibility: "public",
         parcel_id: parcelPubId,
         observation_year: 2025,
         version_number: submittedPublicVersionNumber,
@@ -89,12 +90,6 @@ describe("Public map items (e2e)", () => {
       .post(`/v1/surveys/${submittedPublicId}/submit`)
       .set("Authorization", `Bearer ${accessToken}`)
       .expect(201)
-
-    await request(app.getHttpServer())
-      .patch(`/v1/surveys/${submittedPublicId}/visibility`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({ visibility: "public" })
-      .expect(200)
 
     await request(app.getHttpServer())
       .post("/v1/surveys")
@@ -136,8 +131,8 @@ describe("Public map items (e2e)", () => {
       })
       .expect(201)
 
-    // A different member than the one who submitted the surveys: they still see both submitted
-    // ones, public or private (association-only sharing, not per-survey visibility).
+    // A different member than the one who submitted the surveys: they see the shared one and
+    // never the private one.
     const mapForOtherMember = await request(app.getHttpServer())
       .get("/v1/public/map-items")
       .set("Authorization", `Bearer ${otherMemberToken}`)
@@ -150,7 +145,7 @@ describe("Public map items (e2e)", () => {
       ibp_total: number
     }>
     expect(items.some((item) => item.survey_id === submittedPublicId)).toBe(true)
-    expect(items.some((item) => item.survey_id === submittedPrivateId)).toBe(true)
+    expect(items.some((item) => item.survey_id === submittedPrivateId)).toBe(false)
     expect(items.some((item) => item.survey_id === draftPublicId)).toBe(false)
 
     const included = items.find((item) => item.survey_id === submittedPublicId)
@@ -158,45 +153,63 @@ describe("Public map items (e2e)", () => {
     expect(typeof included?.ibp_total).toBe("number")
   })
 
-  it("exposes parcel study status on /v1/public/parcels/status to any member, private survey included", async () => {
+  it("a parcel whose only survey is private shows as not studied to another member", async () => {
     const runSeed = uniqueCoordSeed()
     const baseLat = 43.6045 + (runSeed % 80000) / 10000000
     const baseLng = 1.444 + (runSeed % 80000) / 10000000
     const accessToken = await loginTestUser(app, "e2e-parcel-status")
     const otherMemberToken = await loginTestUser(app, "e2e-parcel-status-other")
-    const surveyId = uniqueId("e2e-parcel-status")
 
-    const parcelId = await resolveParcel(app, accessToken, baseLat, baseLng)
-    const versionNumber = await getNextVersionNumber(db, parcelId)
+    const createAndSubmit = async (
+      label: string,
+      visibility: "private" | "public",
+      lat: number,
+      lng: number,
+    ) => {
+      const surveyId = uniqueId(label)
+      const parcelId = await resolveParcel(app, accessToken, lat, lng)
+      const versionNumber = await getNextVersionNumber(db, parcelId)
+      const upsert = await request(app.getHttpServer())
+        .post("/v1/surveys")
+        .set("Authorization", `Bearer ${accessToken}`)
+        .send({
+          id: surveyId,
+          sync_version: 1,
+          site_name: "Parcel Status Forest",
+          status: "draft",
+          visibility,
+          parcel_id: parcelId,
+          observation_year: 2026,
+          version_number: versionNumber,
+          region_version: "ACA",
+          vegetation_stage: "collineen",
+          factors: validDirectFactors,
+          location: { source: "gps", lat, lng },
+        })
+        .expect(201)
+      expect(upsert.body.id).toBe(surveyId)
 
-    const upsert = await request(app.getHttpServer())
-      .post("/v1/surveys")
-      .set("Authorization", `Bearer ${accessToken}`)
-      .send({
-        id: surveyId,
-        sync_version: 1,
-        site_name: "Parcel Status Forest",
-        status: "draft",
-        visibility: "private",
-        parcel_id: parcelId,
-        observation_year: 2026,
-        version_number: versionNumber,
-        region_version: "ACA",
-        vegetation_stage: "collineen",
-        factors: validDirectFactors,
-        location: { source: "gps", lat: baseLat, lng: baseLng },
-      })
-      .expect(201)
+      await request(app.getHttpServer())
+        .post(`/v1/surveys/${surveyId}/submit`)
+        .set("Authorization", `Bearer ${accessToken}`)
+        .expect(201)
+      return parcelId
+    }
 
-    expect(upsert.body.id).toBe(surveyId)
+    const sharedParcelId = await createAndSubmit(
+      "e2e-parcel-status-shared",
+      "public",
+      baseLat,
+      baseLng,
+    )
+    const privateParcelId = await createAndSubmit(
+      "e2e-parcel-status-private",
+      "private",
+      baseLat + 0.002,
+      baseLng + 0.002,
+    )
+    expect(privateParcelId).not.toBe(sharedParcelId)
 
-    await request(app.getHttpServer())
-      .post(`/v1/surveys/${surveyId}/submit`)
-      .set("Authorization", `Bearer ${accessToken}`)
-      .expect(201)
-
-    // Never patched to public: a different member still sees it as "studied" (association-only
-    // sharing has no per-survey visibility gate on this route).
     const statuses = await request(app.getHttpServer())
       .get("/v1/public/parcels/status")
       .set("Authorization", `Bearer ${otherMemberToken}`)
@@ -208,20 +221,24 @@ describe("Public map items (e2e)", () => {
       study_status: string
       latest_observation_year: number
     }>
-    const parcelItem = items.find((item) => item.parcel_id === parcelId)
-    expect(parcelItem).toBeTruthy()
-    expect(parcelItem?.study_status).toBe("studied")
-    expect(parcelItem?.latest_observation_year).toBe(2026)
+    const sharedItem = items.find((item) => item.parcel_id === sharedParcelId)
+    expect(sharedItem).toBeTruthy()
+    expect(sharedItem?.study_status).toBe("studied")
+    expect(sharedItem?.latest_observation_year).toBe(2026)
+    // D-11: a parcel with only private surveys is not studied for another member.
+    const privateItem = items.find((item) => item.parcel_id === privateParcelId)
+    expect(privateItem?.study_status ?? "not_studied").not.toBe("studied")
 
     // From zoom 12 to 15 only the studied parcels come back (database path, no IGN call), so a
     // forest of large parcels shows its coloured parcels without zooming right in.
     const midZoom = await request(app.getHttpServer())
       .get("/v1/public/parcels/status")
-      .set("Authorization", `Bearer ${accessToken}`)
+      .set("Authorization", `Bearer ${otherMemberToken}`)
       .query({ bbox: "1.0,43.0,2.0,44.0", zoom: 14 })
       .expect(200)
     const midItems = midZoom.body.items as Array<{ parcel_id: string; study_status: string }>
-    expect(midItems.find((item) => item.parcel_id === parcelId)?.study_status).toBe("studied")
+    expect(midItems.find((item) => item.parcel_id === sharedParcelId)?.study_status).toBe("studied")
+    expect(midItems.find((item) => item.parcel_id === privateParcelId)).toBeUndefined()
     expect(midItems.every((item) => item.study_status === "studied")).toBe(true)
 
     // Below zoom 12 no parcel is drawn: the route answers empty without a query.

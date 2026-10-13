@@ -20,8 +20,8 @@ import { loginTestUser } from "./helpers/surveys-e2e"
 // ValidationPipe's 400 (T-01.9-11). The bbox predicate walks idx_parcels_centroid_lat_lng
 // (migration 015, 01.7 D-13): EXPLAIN on 10 000 seeded surveys shows no seq scan (T-01.9-12).
 //
-// Phase 2 (association-only sharing): the route requires an authenticated member, and a private
-// survey inside the box shows up exactly like a public one — visibility no longer gates this read.
+// Phase 29 (private or public before submission): the route requires an authenticated member and
+// shows only the shared surveys; a private survey inside the box never appears.
 //
 // This spec is new on purpose: 01.8 splits surveys-idempotency.e2e-spec.ts, so the bbox cases
 // do not go there.
@@ -199,19 +199,18 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
 
     expect(items).toEqual(expected)
     expect(items.length).toBeLessThanOrEqual(PUBLIC_MAP_ITEMS_LIMIT)
-    expect(ids(items)).toEqual(
-      expect.arrayContaining([insidePublicId, outsidePublicId, insidePrivateId]),
-    )
+    expect(ids(items)).toEqual(expect.arrayContaining([insidePublicId, outsidePublicId]))
+    expect(ids(items)).not.toContain(insidePrivateId)
   })
 
-  it("with bbox keeps both surveys inside (public and private alike) and drops the one outside", async () => {
+  it("with bbox keeps the shared survey inside, drops the one outside and the private one", async () => {
     const items = await getItems({ bbox: BOX_PARAM })
 
     expect(ids(items)).toContain(insidePublicId)
     expect(ids(items)).not.toContain(outsidePublicId)
-    expect(ids(items)).toContain(insidePrivateId)
+    expect(ids(items)).not.toContain(insidePrivateId)
     // Owner decision 2026-10-08: display_location is the exact parcel centre, no longer rounded.
-    expect(items.find((item) => item.survey_id === insidePrivateId)?.display_location).toEqual(
+    expect(items.find((item) => item.survey_id === insidePublicId)?.display_location).toEqual(
       INSIDE,
     )
     expect(items.find((item) => item.survey_id === insidePublicId)).toEqual({
@@ -389,6 +388,7 @@ describe("public map items by bbox (e2e, 01.9 D-05)", () => {
              JOIN survey_parcels sp ON sp.survey_id = s.id
              JOIN parcels p ON p.parcel_id = sp.parcel_id
              WHERE s.status = 'submitted' AND s.deleted_at IS NULL
+               AND s.visibility = 'public'
                AND s.submitted_at IS NOT NULL
                AND p.centroid_lng BETWEEN $1 AND $2
                AND p.centroid_lat BETWEEN $3 AND $4
