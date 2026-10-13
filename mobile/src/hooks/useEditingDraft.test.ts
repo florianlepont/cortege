@@ -66,7 +66,6 @@ describe("useEditingDraft", () => {
     const params = {
       editingSurveyId,
       setEditingSurveyId,
-      editingSurveyVisibility: "private" as const,
       setFormMode,
       surveyForm: surveyForm as never,
       surveyList: surveyList as never,
@@ -222,20 +221,10 @@ describe("useEditingDraft", () => {
 
       expect(result).toBe(TEST_SURVEY_ID)
       expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
-        expect.objectContaining({ survey_id: TEST_SURVEY_ID, visibility: "public" }),
+        expect.objectContaining({ survey_id: TEST_SURVEY_ID }),
       )
+      expect(mockUpdateLocalDraft.mock.calls[0][0]).not.toHaveProperty("visibility")
       expect(setEditingSurveyId).toHaveBeenCalledWith(null)
-    })
-
-    test("falls back to private visibility when survey not in list", async () => {
-      surveyList.surveys = []
-      const { handleCreateDraft } = await buildHook(TEST_SURVEY_ID)
-
-      await handleCreateDraft()
-
-      expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
-        expect.objectContaining({ visibility: "private" }),
-      )
     })
 
     test("calls createLocalDraft when no editingSurveyId", async () => {
@@ -322,7 +311,6 @@ describe("useEditingDraft", () => {
       const params = (editingSurveyId: string | null) => ({
         editingSurveyId,
         setEditingSurveyId,
-        editingSurveyVisibility: "private" as const,
         setFormMode,
         surveyForm: surveyForm as never,
         surveyList: surveyList as never,
@@ -418,7 +406,6 @@ describe("useEditingDraft", () => {
       expect(mockUpdateLocalDraft).toHaveBeenCalledWith({
         survey_id: TEST_SURVEY_ID,
         ...formInput,
-        visibility: "private",
       })
       const saved = mockUpdateLocalDraft.mock.calls[0][0]
       expect(saved).not.toHaveProperty("region_version")
@@ -447,6 +434,7 @@ describe("useEditingDraft", () => {
       expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
         expect.objectContaining({ survey_id: TEST_SURVEY_ID }),
       )
+      expect(mockUpdateLocalDraft.mock.calls[0][0]).not.toHaveProperty("visibility")
       expect(setEditingSurveyId).toHaveBeenCalledWith(null)
       expect(setFormMode).toHaveBeenCalledWith("create")
     })

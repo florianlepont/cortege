@@ -150,7 +150,6 @@ export function useSurveyDraftPatcher({ surveyList, onStatusChange }: UseSurveyD
         ...methodFieldsToWrite(next),
         parcel_ids: next.parcel_ids,
         factors: next.factors,
-        visibility: current?.visibility ?? "private",
       })
 
       await surveyList.refreshLocalSurveys()

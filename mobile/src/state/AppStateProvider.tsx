@@ -74,14 +74,6 @@ function useAppController() {
     () => surveyList.surveys.map((survey) => survey.id),
     [surveyList.surveys],
   )
-  const editingSurveyVisibility = useMemo(
-    () =>
-      editingSurveyId
-        ? (surveyList.surveys.find((survey) => survey.id === editingSurveyId)?.visibility ??
-          "private")
-        : "private",
-    [editingSurveyId, surveyList.surveys],
-  )
 
   const closeSurveyDetailSelection = useCallback((): void => {
     closeSurvey()
@@ -124,7 +116,6 @@ function useAppController() {
   const editing = useEditingDraft({
     editingSurveyId,
     setEditingSurveyId,
-    editingSurveyVisibility,
     setFormMode,
     surveyForm,
     surveyList,
