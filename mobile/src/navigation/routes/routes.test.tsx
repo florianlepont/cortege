@@ -263,7 +263,7 @@ import { PublicMapReloadContext, createPublicMapReloadSignal } from "../public-m
 import { SurveysStackConfigContext } from "../stacks/surveys-stack-config"
 import { SELECTION_GRACE_MS } from "./SelectedSurveyGate"
 import { AccountRoute } from "./AccountRoute"
-import { FactorDetailRoute, FinishStatusNotice } from "./FactorDetailRoute"
+import { FactorDetailRoute } from "./FactorDetailRoute"
 import { FactorHelpRoute } from "./FactorHelpRoute"
 import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
@@ -1846,7 +1846,7 @@ describe("FactorDetailRoute: Terminer le relevé from the pager (D-26)", () => {
     expect(pill(tree).props.loading).toBe(false)
   })
 
-  test("press: the edits are written, the finish runs once, success goes back to the summary", async () => {
+  test("press: the submission step opens for the editing survey, success goes back to the summary", async () => {
     const base = makeFixture()
     const formActions = actionsProxy<SurveyFormContextValue["actions"]>({ flushDraft: true })
     const fixture = editing({ ...base, form: { ...base.form, actions: formActions } })
@@ -1855,12 +1855,14 @@ describe("FactorDetailRoute: Terminer le relevé from the pager (D-26)", () => {
     await act(async () => {
       pill(tree).props.onPress()
     })
-    expect(formActions.flushDraft).toHaveBeenCalledTimes(1)
-    expect(fixture.surveys.actions.submitSurvey).toHaveBeenCalledTimes(1)
-    expect(fixture.surveys.actions.submitSurvey).toHaveBeenCalledWith("s-01")
+    expect(navigation.navigate).toHaveBeenCalledTimes(1)
+    expect(navigation.navigate).toHaveBeenCalledWith("surveyFinish", { surveyId: "s-01" })
+    // The sheet owns the write and the send (D-04): nothing is written or submitted from the pager.
+    expect(formActions.flushDraft).not.toHaveBeenCalled()
+    expect(fixture.surveys.actions.submitSurvey).not.toHaveBeenCalled()
     expect(navigation.popTo).not.toHaveBeenCalled()
 
-    // The finish wrote "submitted": the list refresh reaches the route.
+    // The sheet finished the survey: the list refresh reaches the route.
     await act(async () => {
       tree.update(element(editing(fixture, { surveyStatus: "submitted" })))
     })
@@ -1870,30 +1872,18 @@ describe("FactorDetailRoute: Terminer le relevé from the pager (D-26)", () => {
     expect(pill(tree)).toBeUndefined()
   })
 
-  test("a calm failure stays on the pager and shows the status message the finish set", async () => {
-    const base = makeFixture()
-    const postponed = fr.status.surveyOps.submitPostponed({ name: "Site 01" })
-    const fixture = editing({
-      ...base,
-      form: { ...base.form, actions: actionsProxy({ flushDraft: true }) },
-    })
+  test("a sheet closed without finishing leaves the pager as it was, with no notice", async () => {
+    const fixture = editing(makeFixture())
     const { element, navigation } = renderRoute(fixture)
     const tree = await mount(element(fixture))
-    expect(tree.root.findAll((n) => n.props.testID === "pager-finish-notice")).toHaveLength(0)
-    await act(async () => {
-      tree.update(element({ ...fixture, status: postponed }))
-    })
     await act(async () => {
       pill(tree).props.onPress()
     })
+    await act(async () => {
+      tree.update(element(editing(fixture)))
+    })
     expect(navigation.popTo).not.toHaveBeenCalled()
     expect(navigation.goBack).not.toHaveBeenCalled()
-    const notices = tree.root.findAll(
-      (n) => (n.type as unknown) === "Text" && n.props.testID === "pager-finish-notice",
-    )
-    expect(notices).toHaveLength(1)
-    expect(notices[0].props.children).toBe(postponed)
-    expect(postponed).not.toContain("\u2014")
     expect(pill(tree).props.loading).toBe(false)
   })
 
@@ -1909,27 +1899,6 @@ describe("FactorDetailRoute: Terminer le relevé from the pager (D-26)", () => {
     })
     expect(navigation.goBack).toHaveBeenCalledTimes(1)
     expect(fixture.surveys.actions.submitSurvey).not.toHaveBeenCalled()
-  })
-
-  test("the notice keeps the message of its finish, not a later status", async () => {
-    const first = fr.status.surveyOps.submitPostponed({ name: "Site 01" })
-    const fixture = { ...makeFixture(), status: first }
-    const tree = await mount(
-      <Providers fixture={fixture}>
-        <FinishStatusNotice />
-      </Providers>,
-    )
-    await act(async () => {
-      tree.update(
-        <Providers fixture={{ ...fixture, status: fr.status.session.ready() }}>
-          <FinishStatusNotice />
-        </Providers>,
-      )
-    })
-    const text = tree.root.findAll(
-      (n) => (n.type as unknown) === "Text" && n.props.testID === "pager-finish-notice",
-    )[0]
-    expect(text.props.children).toBe(first)
   })
 })
 
