@@ -1164,7 +1164,6 @@ describe("SurveyDetailRoute", () => {
     expect(props("surveyDetail").apiUrl).toBe("http://api.test/v1")
     expect(props("surveyDetail").navigation).toBe(navigation)
     expect(props("surveyDetail").observerName).toBeNull()
-    expect(props("surveyDetail").onSubmitSurvey).toBe(fixture.surveys.actions.submitSurvey)
     expect(props("surveyDetail").onSimulateMissingAttachmentFile).toBe(
       fixture.syncActions.handleSimulateMissingAttachmentFile,
     )
@@ -1173,6 +1172,12 @@ describe("SurveyDetailRoute", () => {
       callback("surveyDetail", "onOpenContext")()
     })
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyContext")
+
+    await act(async () => {
+      callback("surveyDetail", "onOpenFinish")("survey-9")
+    })
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyFinish", { surveyId: "survey-9" })
+    expect(fixture.surveys.actions.submitSurvey).not.toHaveBeenCalled()
     await act(async () => {
       callback("surveyDetail", "onOpenConditions")()
     })

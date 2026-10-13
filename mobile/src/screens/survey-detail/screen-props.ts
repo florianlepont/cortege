@@ -29,7 +29,8 @@ export type SurveyDetailScreenProps = SurveyDetailBaseProps & {
   onPickPhoto: (surveyId: string) => Promise<void> | void
   onDeleteAttachment: (surveyId: string, localAttachmentId: string) => Promise<void> | void
   onDeleteSurvey: (surveyId: string) => void
-  onSubmitSurvey: (surveyId: string) => Promise<unknown>
+  /** Opens the submission step (the finish sheet: visibility choice, then the send), Phase 29. */
+  onOpenFinish: (surveyId: string) => void
   onRetrySurvey: (surveyId: string) => Promise<void>
   onDiscardSurvey: (surveyId: string) => Promise<void>
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void

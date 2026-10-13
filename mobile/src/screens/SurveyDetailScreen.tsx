@@ -26,6 +26,7 @@ import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles
 import { buildSummaryRowSections } from "./survey-detail/summary-rows"
 import { resolveFinishCta, resolveStatusLine } from "./survey-detail/summary-state"
 import { SummaryHeader } from "./survey-detail/SummaryHeader"
+import { resolveVisibilityLine } from "./survey-detail/visibility-line"
 import { useSurveyDetailData } from "./survey-detail/useSurveyDetailData"
 import { useSubmitSuccessPulse } from "./survey-detail/useSubmitSuccessPulse"
 import { useSurveyPdfExport } from "./survey-detail/useSurveyPdfExport"
@@ -82,7 +83,7 @@ export function SurveyDetailScreen({
   onPickPhoto,
   onDeleteAttachment,
   onDeleteSurvey,
-  onSubmitSurvey,
+  onOpenFinish,
   onRetrySurvey,
   onDiscardSurvey,
   onRenameSurvey,
@@ -239,6 +240,7 @@ export function SurveyDetailScreen({
             siteName={activeSiteName}
             canEdit={canEditSurvey}
             statusLine={statusLine}
+            visibilityLine={resolveVisibilityLine(selectedSurvey)}
             onRenameSurvey={onRenameSurvey}
           />
         </EntranceView>
@@ -343,7 +345,7 @@ export function SurveyDetailScreen({
       <FinishBar
         cta={cta}
         accessibilityLabel={fr.surveyDetail.a11y.finishSurvey(activeSiteName)}
-        onFinish={() => void onSubmitSurvey(selectedSurvey.id)}
+        onFinish={() => onOpenFinish(selectedSurvey.id)}
         onOpenFactor={(factor) => void onOpenFactor(selectedSurvey.id, factor)}
         onLayout={onBarLayout}
       />
