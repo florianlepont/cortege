@@ -19,6 +19,9 @@ import {
 } from "../../map/swipe-machine"
 import { LEFT_MAP_ANDROID_VIEW } from "./map-stack-mode"
 
+/** Extra time (ms) after the timings should be over before the final state is written. */
+export const FINAL_STATE_SLACK_MS = 300
+
 export type Immersive = {
   /** The receded window's progress: 0 full size, 1 receded (scale, corner radius and shadow). */
   window: SharedValue<number>
@@ -56,9 +59,9 @@ export function useImmersive(on: boolean): Immersive {
     if (reduceMotion) {
       window.value = on ? 1 : 0
       buttons.value = on ? 0 : 1
-      return
+      return undefined
     }
-    if (!changed) return
+    if (!changed) return undefined
     const fade = { duration: BUTTON_FADE_MS, reduceMotion: ReduceMotion.System }
     if (on) {
       window.value = withTiming(1, {
@@ -75,6 +78,16 @@ export function useImmersive(on: boolean): Immersive {
       })
       buttons.value = withDelay(BUTTON_FADE_IN_DELAY_MS, withTiming(1, fade))
     }
+    // A timing on the UI thread can lag or be lost (a busy thread, a detached view): once it should
+    // be over the final state is written, so the window and the buttons never stay half way.
+    const settle = setTimeout(
+      () => {
+        window.value = on ? 1 : 0
+        buttons.value = on ? 0 : 1
+      },
+      (on ? IMMERSIVE_IN_MS : IMMERSIVE_OUT_MS) + BUTTON_FADE_IN_DELAY_MS + FINAL_STATE_SLACK_MS,
+    )
+    return () => clearTimeout(settle)
   }, [buttons, on, reduceMotion, window])
 
   useEffect(
