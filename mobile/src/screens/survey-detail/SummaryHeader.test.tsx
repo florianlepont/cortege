@@ -4,6 +4,7 @@ import { fr } from "../../i18n"
 import { FrameLargeTitleContext } from "../../ui/frame-large-title"
 import { SummaryHeader } from "./SummaryHeader"
 import type { StatusLine } from "./summary-state"
+import { resolveVisibilityLine, type VisibilityLine } from "./visibility-line"
 
 const originalConsoleError = console.error
 
@@ -33,6 +34,7 @@ jest.mock("react-native", () => {
     StyleSheet: { create: <T,>(styles: T) => styles },
   }
 })
+jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../ui/AppText", () => ({ AppText: "Text" }))
 jest.mock("../../ui/AppButton", () => ({ AppButton: "AppButton" }))
 jest.mock("../../ui/AppField", () => ({ AppField: "AppField" }))
@@ -105,4 +107,68 @@ describe("SummaryHeader under the native large title (12.2-17)", () => {
       expect(tree.root.findAll((n) => (n.type as unknown) === "Pressable")).toHaveLength(0)
     },
   )
+})
+
+describe("SummaryHeader visibility line (D-15)", () => {
+  const line = resolveVisibilityLine({ status: "submitted", visibility: "public" })
+  const statusLine: StatusLine = {
+    status: h.status.finished,
+    sync: null,
+    syncTone: "ok",
+  }
+
+  function renderWithLine(visibilityLine: VisibilityLine | null | undefined, largeTitle: boolean) {
+    let tree: ReactTestRenderer | undefined
+    const header = (
+      <SummaryHeader
+        surveyId="survey-1"
+        siteName="Parcelle A"
+        canEdit={false}
+        statusLine={statusLine}
+        visibilityLine={visibilityLine}
+        onRenameSurvey={jest.fn()}
+      />
+    )
+    act(() => {
+      tree = renderer.create(
+        <FrameLargeTitleContext.Provider value={largeTitle}>
+          {header}
+        </FrameLargeTitleContext.Provider>,
+      )
+    })
+    return tree!
+  }
+
+  const find = (tree: ReactTestRenderer) =>
+    tree.root.findAll(
+      (n) => (n.type as unknown) === "View" && n.props.testID === "summary-visibility-line",
+    )
+
+  test.each([true, false])(
+    "is one readable element under the status line, not pressable (native title %s)",
+    (largeTitle) => {
+      const tree = renderWithLine(line, largeTitle)
+      const nodes = find(tree)
+      expect(nodes).toHaveLength(1)
+      const node = nodes[0]
+      expect(node.props.accessible).toBe(true)
+      expect(node.props.accessibilityRole).toBe("text")
+      expect(node.props.accessibilityLabel).toBe(
+        "Visibilité : partagé avec l'association. Ne peut plus être modifiée.",
+      )
+      expect(node.props.onPress).toBeUndefined()
+      expect(texts(tree)).toContain("Partagé avec l'association")
+      // Last child of the title block, after the status line.
+      expect(texts(tree).slice(-1)).toEqual(["Partagé avec l'association"])
+      const glyph = node.findByType("Ionicons" as never)
+      expect(glyph.props.name).toBe("people-outline")
+      expect(glyph.props.size).toBe(14)
+      expect(glyph.props.accessible).toBe(false)
+    },
+  )
+
+  test.each([undefined, null])("without the prop (%s) no such element is drawn", (value) => {
+    expect(find(renderWithLine(value, false))).toHaveLength(0)
+    expect(find(renderWithLine(value, true))).toHaveLength(0)
+  })
 })

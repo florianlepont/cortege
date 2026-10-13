@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react"
 import { Alert, StyleSheet, View } from "react-native"
-import { brandDefaultFontFamily, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import { Ionicons } from "@expo/vector-icons"
+import {
+  brandDefaultFontFamily,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { type BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppButton } from "../../ui/AppButton"
@@ -8,6 +14,7 @@ import { AppField } from "../../ui/AppField"
 import { AppText as Text } from "../../ui/AppText"
 import { useFrameLargeTitle } from "../../ui/frame-large-title"
 import { type StatusLine } from "./summary-state"
+import { type VisibilityLine } from "./visibility-line"
 import { createSummaryScreenStyles } from "./summary-screen.styles"
 import { AppPressable } from "../../ui/AppPressable"
 
@@ -20,12 +27,15 @@ type SummaryHeaderProps = {
   siteName: string
   canEdit: boolean
   statusLine: StatusLine
+  /** Read-only: who can read the survey (D-15). Absent: no line (every other screen). */
+  visibilityLine?: VisibilityLine | null
   onRenameSurvey: (surveyId: string, nextSiteName: string) => Promise<void> | void
 }
 
 /**
  * The title block of the summary: the survey's name, tapped to rename it (OA-50, OA-95), and one
- * line in words saying where the survey stands (OA-37).
+ * line in words saying where the survey stands (OA-37). Phase 29 adds, under it, the read-only
+ * line saying who can read the survey (not pressable: the choice is made in the finish sheet).
  *
  * 12.2-17: under the native iOS large title the header shows the name (and keeps it on screen while
  * the page scrolls), so only the status line is drawn here; renaming is in the header's "…" menu.
@@ -35,6 +45,7 @@ export function SummaryHeader({
   siteName,
   canEdit,
   statusLine,
+  visibilityLine,
   onRenameSurvey,
 }: SummaryHeaderProps) {
   const theme = useBrandTheme()
@@ -116,6 +127,24 @@ export function SummaryHeader({
           <Text style={headerStyles.statusMuted}>{h.syncSuffix(statusLine.sync)}</Text>
         ) : null}
       </View>
+      {visibilityLine ? (
+        <View
+          style={headerStyles.visibilityLine}
+          accessible
+          accessibilityRole="text"
+          accessibilityLabel={visibilityLine.accessibilityLabel}
+          testID="summary-visibility-line"
+        >
+          <Ionicons
+            name={visibilityLine.icon}
+            size={14}
+            color={theme.colors.textSecondary}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+          <Text style={headerStyles.visibilityText}>{visibilityLine.text}</Text>
+        </View>
+      ) : null}
     </View>
   )
 }
@@ -131,6 +160,19 @@ function createHeaderStyles(theme: BrandTheme) {
       ...brandTypeScale.footnote,
       fontFamily: brandTypography.meta.fontFamily,
       color: theme.colors.textSecondary,
+    },
+    // The title block spaces its children by 8; the line sits 4 under the status line.
+    visibilityLine: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+      marginTop: -brandSpacing4.xs,
+    },
+    visibilityText: {
+      ...brandTypeScale.footnote,
+      fontFamily: brandDefaultFontFamily,
+      color: theme.colors.textSecondary,
+      flexShrink: 1,
     },
     statusMuted: {
       ...brandTypeScale.footnote,
