@@ -11,3 +11,4 @@ Project specifications index.
 - [Epic F - Participatory Experience and Gamification](epic-f-participatory-experience-and-gamification.md) — 5 US *(V1)*
 - [Epic D - Offline and Synchronization](epic-d-offline-and-synchronization.md) — 7 US *(MVP)*
 - [Epic I - Workshops & Training "Ma Forêt Vivante"](epic-i-workshops-training-ma-foret-vivante.md) — 5 US *(V1)*
+- [Règles de choix du parcours et du comptage](route-choice-rules-v1.md) (route-choice-rules-v1.md), Phase 30 *(V1)*, brouillon à valider par le propriétaire

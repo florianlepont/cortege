@@ -526,3 +526,217 @@ le couvert de chaque strate et pour F le nombre d'arbres par groupe quand ces d�
 
 **Résumé de la page de détail.** La ligne « Contexte » peut ajouter l'étiquette courte du parcours
 après le cas (« v3.2 · cas 2 · Parcours en plein »), tronquée sur une ligne (décision U-O9).
+
+## 10. Groupe de placettes
+
+### Définition
+
+Un **groupe de relevés** (ou groupe de placettes) est un ensemble de placettes installées dans le
+même peuplement ou type de peuplement, chaque placette faisant l'objet d'un relevé IBP sur sa
+propre fiche, avec un **nom de groupe commun** (« Nom groupe de relevés si plusieurs placettes »,
+S p. 20). Une placette peut être rattachée au groupe **avant** le relevé (la surface totale du
+groupe est alors connue) ou **après** (par exemple le classement des placettes d'un inventaire
+systématique à la fin de l'inventaire ; la surface totale n'est connue qu'à l'issue des relevés)
+(S p. 18, M p. 2, M p. 14).
+
+L'IBP du groupe est calculé **sur les données brutes regroupées, comme si elles ne formaient qu'un
+seul relevé**, et non en faisant la moyenne des scores des placettes (M p. 9). Cela exige le
+comptage complet, sinon les nombres sont sous-estimés (S p. 18). Le calcul est « plus complexe et
+doit être réservé aux situations qui le nécessitent vraiment » (S p. 18).
+
+### Calcul par facteur (tableau 5 de M, p. 9)
+
+Notations : `s_i` est la surface de la placette `i` et `Sg` la surface totale du groupe, somme des
+`s_i`. Les seuils de score appliqués ensuite sont ceux de la version du relevé (section 2, écart 4).
+
+| Facteur | Données par placette | Règle de regroupement | État de la saisie actuelle |
+|---|---|---|---|
+| A | liste des genres ; couvert des essences autochtones (%) | union des genres de toutes les placettes et du relevé complémentaire ; couvert = moyenne des couverts des placettes **pondérée par les surfaces** `s_i` (note 1 du tableau) ; puis seuils et plafond de couvert habituels | la liste de genres et `native_cover_percent` existent déjà |
+| B | couvert (%) de chacune des cinq strates | par strate, moyenne pondérée par les surfaces ; une strate compte à partir de 20 % ; puis seuils | **nouvelle saisie** `strata_cover` (section 7) |
+| C et D | nombre de bois morts de grosse dimension (BMg) et de dimension moyenne (BMm) | pour chaque catégorie : somme des nombres des placettes divisée par `Sg` = densité par hectare ; puis seuils de la version | les nombres et la surface de la saisie existent déjà ; appel groupé avec `surface_ha = Sg` |
+| E | nombre de très gros bois (TGB) et de gros bois (GB) | idem | idem |
+| F | nombre d'arbres porteurs par groupe de dendromicrohabitats | par groupe : somme divisée par `Sg`, **plafonnée à 2 arbres par hectare**, puis somme des groupes ; puis seuils | **nouvelle saisie** `dmh_counts` et `surface_ha` (section 7) |
+| G | surfaces de trouées (`sT`), de lisières florifères converties en surface avec 2 m de large (`sL`) et de peuplement peu dense (`sPC`) | `%MOpl = (sT + sL + sPC) / Sg` ; avec un relevé complémentaire, on ajoute le pourcentage des lisières qui ne recoupent pas les placettes, rapporté à la surface du peuplement (ambiguïté G-11) ; puis seuils | le pourcentage par placette existe ; la moyenne pondérée des pourcentages équivaut quand chacun est rapporté à sa propre placette |
+| H | le score de H | scores identiques : ce score ; scores différents : score 1 si le maximum est 1, sinon 2 (rédigé pour la version v3.0 ; ambiguïté G-1) | la classe H existe déjà |
+| I et J | types de milieux aquatiques et rocheux trouvés | union des types trouvés sur les placettes et dans le relevé complémentaire ; puis seuils ; pour J, un type ne compte que s'il couvre plus de 20 m² cumulés (M p. 17 ; ambiguïté G-2) | `type_count` et `types` existent déjà, sans surface par type |
+
+### Plafonds de comptage avec la surface totale connue d'avance
+
+Quand `Sg` est connue au moment des relevés, on peut arrêter de compter à : BMg 3 × `Sg` et BMm
+1 × `Sg` (C et D) ; TGB 5 × `Sg` et GB 1 × `Sg` (E) ; 2 × `Sg` par groupe de dendromicrohabitats et
+8 × `Sg` au total (F) (S p. 18, M p. 2, M p. 17). **Ces plafonds ne changent jamais un score** : ils
+servent à arrêter de compter quand le score maximal est certain. Le calcul regroupé peut donc les
+ignorer et appliquer les seuils aux densités regroupées. Seul le plafond de 2 arbres par hectare
+et par groupe de dendromicrohabitats est une vraie règle de score (déjà dans le paquet).
+
+### Placettes en limite
+
+Pour les placettes de faible surface à rayon mesuré avec précision, les éléments situés en limite
+se notent ainsi (M p. 17) : un nouveau genre est compté pour A ; les bois morts sur pied (C), les
+très gros bois (E) et les arbres porteurs de dendromicrohabitats (F) comptent pour la moitié ; un
+bois mort au sol (D) compte si la partie du tronc dans la placette respecte les seuils ; les
+milieux ouverts (G) comptent pour la surface ou la longueur de lisière incluse ; les milieux
+aquatiques (I) sont comptés ; les milieux rocheux (J) comptent au-delà de 20 m². C'est une règle de
+**saisie** (consigne à l'observateur), sans effet sur le calcul.
+
+### Échantillonnage typologique : une autre agrégation
+
+L'échantillonnage typologique ne regroupe pas les données : un score est calculé **par placette**
+(placettes d'au moins `TYPOLOGICAL_PLOT_MIN_HA`), puis on calcule, par type de peuplement, la
+**moyenne** et la **dispersion** des scores « peuplement et gestion » (facteurs A à G) (M p. 10,
+p. 12, annexe p. 27). La dispersion est l'écart entre les valeurs adjacentes supérieure et
+inférieure de la boîte à moustaches ; ces valeurs sont définies en annexe (M p. 27 : plus petite
+valeur supérieure ou égale à Q1 moins 1,5 fois l'écart interquartile, et plus grande valeur
+inférieure ou égale à Q3 plus 1,5 fois l'écart interquartile). Échelle d'interprétation de la
+dispersion (en pourcentage du score maximal, M p. 27) : très faible moins de 10 % ; faible de 10 à
+19 % ; moyenne de 20 à 39 % ; élevée de 40 à 49 % ; très élevée 50 % et plus. Une typologie des
+peuplements est « indispensable » avant de relever (M p. 10) : chaque placette est rattachée à un
+type (ambiguïté G-9).
+
+### Ambiguïtés trouvées
+
+Chaque ligne demande une ligne de décision ou une décision du propriétaire avant la phase 30.1.
+
+| # | Ambiguïté | Pourquoi elle compte | Traitement proposé |
+|---|---|---|---|
+| G-1 | Les tableaux 4, 5 et 7 sont étiquetés « IBP v3.0 ». La règle de H du tableau 5 utilise le score 1, qui n'existe plus (la v3.2 et la v3.0 de l'application n'admettent que 0, 2 et 5) | que vaut H quand les placettes diffèrent (par exemple 0 et 5) ? | scores identiques : ce score ; sinon 2 (proposition à confirmer) |
+| G-2 | Pour J, un type ne compte que s'il dépasse 20 m² cumulés (M p. 17), alors que le tableau 5 dit « faire la liste complète des types » | l'application ne stocke aucune surface par type | compter l'union des types qualifiant déjà dans leur propre placette ; lecture prudente à confirmer |
+| G-3 | Couvert de A quand il existe un relevé complémentaire | la fiche n'ajoute que des genres pour le complément | le complément ajoute des genres, jamais du couvert |
+| G-4 | Pondération par la surface quand les placettes n'ont pas la même taille (sous-placettes, placettes en limite) | moyennes de A et de B | toujours pondérer par la surface (à surfaces égales, c'est la moyenne simple) |
+| G-5 | Les membres d'un groupe doivent partager la version et le cas, sinon les seuils et les hauteurs de strates diffèrent | le calcul regroupé exige un seul jeu de règles | refuser ou avertir quand `ibp_method_version`, `ibp_cas` ou `ibp_cas3_scale` diffèrent (le texte officiel est muet) |
+| G-6 | Surface minimale d'un groupe de 1 ha, « analyser avec plus de prudence » en dessous (M p. 14) | bloquer ou avertir ? | avertir, ne jamais bloquer |
+| G-7 | Quelle fiche porte le résultat du groupe ? Le texte officiel travaille avec un tableur, il n'existe aucun score « officiel » par placette ; une placette de moins de 0,5 ha n'a pas de score propre (M p. 7) | modèle du produit | le résultat du groupe est une vue calculée sur les fiches membres, jamais écrite dans les scores d'une fiche |
+| G-8 | Une placette peut rejoindre un groupe après l'inventaire (M p. 14), alors que l'enregistrement du parcours est en lecture seule après soumission (D-09) | le nom de groupe ne pourrait pas être posé tardivement | soit `group_name` reste modifiable après soumission (exception à D-09), soit le regroupement vit dans une table locale séparée ; décision O-08 |
+| G-9 | L'échantillonnage typologique exige un nom de type de peuplement par placette ; les valeurs adjacentes sont définies (M p. 27) mais pas la méthode de calcul des quartiles | second agrégateur ; le résultat dépend de la méthode des quartiles | reporter avec le lot de groupe ; proposer la méthode des quartiles du tableur officiel (interpolation inclusive) à confirmer avec une feuille d'exemple |
+| G-10 | `group_name` est un texte libre (même risque que les notes, D-24) | un nom pourrait désigner une personne | au plus 60 caractères ; consigne « n'écrivez pas de nom de personne » ; risque accepté par le propriétaire ou suggestions génériques (décision O-08) |
+| G-11 | Le relevé complémentaire d'un groupe exprime son pourcentage de lisières par rapport à la surface du peuplement, qui n'est pas `Sg` | G regroupé | hors du premier lot de groupe (proposition à confirmer) |
+
+À ces ambiguïtés s'ajoute une vérification de saisie, sans ambiguïté de règle : une fiche membre
+en comptage rapide n'a pas les détails nécessaires (nombres par groupe de dendromicrohabitats,
+couverts de strates) ; le résultat de groupe doit le signaler comme « données manquantes ».
+
+### Taille estimée du lot de groupe
+
+| Partie | Travail | Taille |
+|---|---|---|
+| Paquet | un module de regroupement (surfaces, genres, couverts, nombres, nombres par groupe de dendromicrohabitats) qui construit un jeu de facteurs fusionné avec `surface_ha = Sg` et appelle les calculateurs de la version ; règles de H et de J ; contrôle de version et de cas ; moyenne et dispersion typologiques ; 15 à 20 cas de parité (`MAT-GRP-*`, deux versions) dans les trois suites ; couverture à 100 % | 2 plans |
+| API | rien d'obligatoire si le résultat de groupe est une vue calculée sur le téléphone (`group_name` est déjà dans l'enregistrement) ; un point d'accès seulement pour montrer le groupe aux autres membres | 0 plan (1 si partagé) |
+| Synchronisation | aucune | 0 plan |
+| Application | créer la placette suivante d'un groupe depuis un relevé ; lister les membres ; écran du résultat regroupé avec avertissements (1 ha minimum, cas mélangés, données manquantes) ; `Sg` déclarée avant ou calculée après ; le groupe dans la liste et le détail ; une page PDF de groupe ; soumission de chaque membre séparément | 3 à 4 plans |
+| Documents et tests | lignes de la matrice v2 ; une vérification enregistrée avec de vraies données de placettes | 1 plan |
+| **Total** | | **6 à 8 plans**, soit environ la taille du reste de la phase 30 |
+
+### Décision D-04
+
+**Recommandation : le calcul regroupé devient une phase 30.1.** La spécification (cette section)
+définit le modèle de groupe et le calcul complet, comme l'exige D-04. La phase 30 les écrit mais ne
+les implémente pas.
+
+Raisons :
+
+1. le lot de groupe est aussi gros que tout le reste de la phase (6 à 8 plans, tableau ci-dessus) ;
+2. il dépend de la saisie en comptage complet et de l'enregistrement du parcours, que la phase 30
+   livre d'abord ;
+3. les questions de modèle G-5, G-7 et G-8 demandent un usage réel sur le terrain pour être
+   tranchées ;
+4. rien n'est perdu à attendre : la phase 30 enregistre tout ce que le calcul regroupé lira, et ce
+   calcul est une fonction pure sur des données déjà enregistrées, donc **sans migration** ;
+5. l'agrégation typologique (G-9) est un second agrégateur qui appartient au même lot.
+
+**Ce que la phase 30 enregistre pour la phase 30.1** : le nom de groupe (`group_name`), le
+parcours et le comptage (`method`, `counting`) et la surface décrite de chaque fiche
+(`zone_surface_ha`, décision O-17), les détails nouveaux de B (`strata_cover`) et de F
+(`dmh_counts` et `surface_ha`), ainsi que les données déjà saisies : genres et couvert des
+autochtones (A), nombres et surface de C, D et E, pourcentage de G, classe de H, types de I et J.
+Tant que le calcul regroupé n'existe pas, l'application dit que le résultat du groupe est « à
+calculer avec la feuille de calcul de la méthode officielle » (décision O-06).
+
+**Critères pour garder le calcul regroupé dans la phase 30** (il faut les trois) : le propriétaire
+tranche par écrit G-1, G-2, G-5, G-7 et G-8 ; il accepte le budget de 6 à 8 plans de plus (la phase
+est alors replanifiée avant tout code) ; il dispose de vraies données de placettes pour vérifier le
+résultat.
+
+Décision du propriétaire (plan 30-02) : à remplir au plan 30-02. Confirmation de clôture (plan
+30-23) : à remplir au plan 30-23.
+
+## 11. Décisions du propriétaire
+
+Chaque ligne donne la question, le **défaut conseillé** (recommandation de la recherche ou de la
+maquette de l'interface), la cellule « Décision validée » **laissée vide** (le propriétaire la
+remplit au plan 30-02, jamais Claude) et l'effet si la décision diffère du défaut. Répondre à une
+décision `O-nn` répond aussi à la décision `U-O` qui lui est liée (notée dans la question). Un
+changement structurel (D-04 gardé dans la phase 30, nom de groupe modifiable après soumission,
+détails qui comptent dans le score, étape numérotée de l'assistant) arrête la phase pour une
+replanification.
+
+| Id | Question | Défaut conseillé | Décision validée | Effet si différent |
+|---|---|---|---|---|
+| O-01 | Comptage par facteur ou un seul indicateur ? Offrir les préréglages ? (lié à U-O12) | enregistrer `counting` et `uncapped_factors` ; cinq préréglages (`study`, `mature`, `always_max`, `minimum`, `custom`) et une puce par facteur ; l'étude sur un petit peuplement n'a pas de règle propre (l'objectif `study` mène à `typological`, M p. 4 cas 3), l'observateur qui veut un parcours en plein complet le choisit directement | | un seul indicateur : `uncapped_factors` disparaît (enregistrement 30-03, règle R-17 en 30-05, sélecteur 30-19, écrans de facteurs 30-14 et 30-17) ; l'objectif `study` vers `full` : R-05 change (30-05) |
+| O-02 | Où se place la limite de 10 à 20 ha, et comment l'hétérogénéité la déplace-t-elle ? | 10 ha pour un peuplement varié, 20 ha pour un peuplement homogène | | constantes `ROUTE_SUBDIVIDE_*` et cas de R-11 et R-11b (30-05) |
+| O-03 | Au-dessus de la limite, quelle option est préselectionnée ? (lié à U-O5) | « Découper en sous-peuplements » préselectionnée ; les deux autres à un contact | | préselection de R-11b (30-05, 30-16) |
+| O-04 | L'expérience et le temps disponible changent-ils la proposition ? (lié à U-O4) | non : conseils seulement (R-20 et R-21) | | R-20 et R-21 deviennent des règles de parcours, la question `refine` change (30-05, 30-15) |
+| O-05 | Limite du parcours en plein | 5 ha (M p. 4 et p. 6) plutôt que « dizaine d'ha » (M p. 5) | | constante `ROUTE_FULL_MAX_HA` et cas limites (30-05) |
+| O-06 | Que dit l'application sur les groupes de placettes (typologique, systématique) tant que le calcul regroupé n'existe pas ? (lié à U-O6) | un avis d'information « à calculer avec la feuille de calcul de la méthode officielle » (conseil `group_pending`) ; l'alternative est de masquer ces deux parcours de la proposition et de les garder dans le sélecteur | | règles R-04 et R-05 (30-05), carte de conseils (30-16) |
+| O-07 | Relevés sans parcours enregistré (lié à U-O7) | PDF inchangé (la ligne « Mode de relevé : Relevé plafonné, aucun facteur déplafonné » reste) ; page Contexte : « Parcours non choisi » pour un brouillon, « Parcours : non renseigné » pour un relevé soumis | | PDF et tests épinglés (30-13), page Contexte (30-20) |
+| O-08 | Nom de groupe : texte libre accepté ? Modifiable après soumission ? (lié à U-O8, ambiguïtés G-8 et G-10) | texte libre de 60 caractères au plus, aucun nom de personne demandé, lecture seule après soumission comme le reste du parcours | | modifiable après soumission : exception à la lecture seule côté API (30-07, 30-09), page Contexte (30-20) ; changement structurel |
+| O-09 | L'assistant s'applique-t-il aux relevés v3.0 ? | oui, pour la v3.0 et la v3.2 (les règles de parcours ne dépendent pas de la version) | | condition d'entrée de l'assistant (30-18) |
+| O-10 | Peuplements linéaires de moins de 15 m de large | hors champ : aucune question, aucun code ; une phrase fixe d'aide sous la question de surface | | seuils par kilomètre à ajouter au paquet (hors phase 30), question de largeur (30-05, 30-15) |
+| O-11 | Peuplement de moins de 0,5 ha | avertir (`small_stand`), ne jamais bloquer | | règle R-02 (30-05) |
+| O-12 | Vocabulaire (lié à U-O1) | « Parcours » pour la route, « Comptage » pour le mode, « Méthode IBP » reste la version | | tout le catalogue (30-10) et le test avec des utilisateurs (30-23) |
+| O-13 | Test enregistré avec des utilisateurs | trois à cinq testeurs qui ne connaissent pas la méthode, dont le testeur du propriétaire ; chacun réussit seul le scénario (a) ; au moins deux sur trois réussissent (b) ou (c) | | protocole (30-21) et clôture (30-23) |
+| O-14 | D-04 : où va le calcul regroupé des placettes ? | scinder vers une phase 30.1 (section 10) | | gardé dans la phase 30 : replanification de 6 à 8 plans de plus avant tout code ; changement structurel |
+| O-15 | Relevé d'un autre membre : montrer le parcours en lecture seule ? (lié à U-O15) | oui (peu coûteux, aide à juger la comparabilité d'un score) | | lecture communautaire de l'API (30-09), page communautaire (30-20) |
+| O-16 | Enregistrer `systematic` comme parcours alors que la case « Méthode » de la fiche officielle ne le liste pas | oui (M p. 13 lui donne sa propre fiche) | | valeurs de `method` (30-03, 30-05, 30-07) |
+| O-17 | Surface décrite d'un échantillonnage typologique ou systématique : surface de cette fiche ou surface totale des placettes ? (question soulevée par la rédaction de cette spécification) | la surface de cette fiche (1 ha, 0,20 ha), qui est la « zone de relevé IBP » de la fiche officielle ; la surface totale à échantillonner n'est qu'une aide (`sample_total_ha`). Le texte actuel de la maquette (carte « Détails du parcours », « Surface totale des placettes ») est à corriger en conséquence | | libellé et aide de la carte de détails (30-16, 30-19), zones conseillées de R-04 et R-05 (30-05), regroupement de la phase 30.1 |
+| U-O1 | Vocabulaire du comptage (O-12) | « Comptage rapide (relevé plafonné) » et « Comptage complet (relevé déplafonné) » ; les mots officiels seuls uniquement entre parenthèses | | catalogue (30-10) |
+| U-O2 | L'assistant est-il une étape numérotée de la création ? | non : sans numéro, étiquette « Facultatif », sans retour vers la carte des parcelles (la création doit rester courte, SEED-007) | | changement structurel : navigation et création (30-18) |
+| U-O3 | La réponse par défaut de la question d'objectif (« Décrire un peuplement en entier ») est-elle préselectionnée, avec un bouton « Suivant » ? | oui ; l'alternative est aucune préselection et un clic de plus dans le cas courant | | questionnaire (30-15) |
+| U-O4 | Expérience et temps : conseils seulement (O-04) | conseils seulement, section repliée | | idem O-04 |
+| U-O5 | Au-dessus de la limite de découpage : option préselectionnée et rôle de « Découper en sous-peuplements » (O-03) | préselectionnée et étiquetée « Conseillé » ; ce n'est pas un parcours : elle rouvre la question de surface pour un morceau | | idem O-03 |
+| U-O6 | Ce que dit l'application sur les groupes avant la phase 30.1 (O-06, O-14) | un avis d'information ; l'alternative est de masquer les deux parcours de la proposition | | idem O-06 |
+| U-O7 | Relevés sans parcours (O-07) | PDF inchangé ; « Parcours non choisi » (brouillon) ou « Parcours : non renseigné » (soumis) | | idem O-07 |
+| U-O8 | Nom de groupe : texte libre de 60 caractères, affiché dans Contexte et le PDF ; modifiable après soumission ? (O-08) | accepté en texte libre, lecture seule après soumission | | idem O-08 |
+| U-O9 | La ligne « Contexte » du résumé du relevé porte-t-elle l'étiquette courte du parcours ? | oui, tronquée sur une ligne (retrait peu coûteux) | | résumé du relevé (30-20) |
+| U-O10 | Détails de B et de F quand un facteur sort de la liste des éléments comptés en entier : conservés et masqués, jamais lus par un calculateur ; la clé notée garde sa dernière valeur (section 7) | règle de la section 7 | | si les détails comptent tant qu'ils sont présents : calculateurs et cas de parité `MAT-B-*` et `MAT-F-*` changés (30-06, 30-11, 30-17) ; changement structurel |
+| U-O11 | Surface maximale acceptée et phrase d'erreur | 5000 ha ; « Cette surface semble trop grande. Vérifiez-la. » | | constante `ROUTE_SURFACE_MAX_HA` (30-03) |
+| U-O12 | Offrir les cinq préréglages de comptage complet et les puces par facteur (O-01) | oui | | idem O-01 |
+| U-O13 | Relecture de chaque phrase française (questions, légendes, raisons, avertissements, conseils, glossaire, phrases des facteurs) | plan 30-22 ; la structure et le ton sont fixés | | calendrier du plan 30-22 |
+| U-O14 | Les réponses partielles d'un assistant abandonné ne sont pas conservées | non conservées : l'enregistrement se fait une seule fois, à l'acceptation | | questionnaire et écran (30-15, 30-18) |
+| U-O15 | Parcours en lecture seule sur le relevé d'un autre membre (O-15) | pas conçu dans la maquette ; si oui, réutiliser les lignes de Contexte dans la page communautaire | | idem O-15 |
+
+## 12. Exigences proposées
+
+Identifiants proposés, au format `REQ-{épopée}-{nom}` de `.planning/REQUIREMENTS.md`. Ils sont
+ajoutés à `.planning/REQUIREMENTS.md` par l'orchestrateur à la fin de la planification, pas par
+cette spécification.
+
+- **REQ-DOC-route-rules** : les règles de parcours et de comptage de la méthode officielle sont
+  écrites en français dans `docs/specs/route-choice-rules-v1.md`, avec un cas de test par règle et
+  la page citée, et validées par écrit par le propriétaire, avec la date, avant tout écran
+  (critère 1, D-10).
+- **REQ-C-route-guide** : une étape guidée facultative, utilisable hors connexion, après le choix
+  des parcelles, pose les questions, propose le parcours et le comptage, les explique en français
+  courant, permet de les changer ou de choisir directement (critère 2, D-05, D-06).
+- **REQ-C-route-record** : le parcours utilisé (parcours, comptage et éléments comptés en entier,
+  surface décrite, relevé complémentaire, nom de groupe, réponses) est enregistré avec le relevé,
+  synchronisé et en lecture seule après soumission (critère 3, D-08, D-09).
+- **REQ-C-route-display** : le parcours utilisé s'affiche en texte dans le détail du relevé et dans
+  le PDF, à la place de la ligne fixe « Relevé plafonné, aucun facteur déplafonné » (critère 3,
+  D-09).
+- **REQ-C-uncapped-entry** : en comptage complet, le formulaire ajoute le couvert de chaque strate
+  (B) et les nombres par groupe de dendromicrohabitats (F) ; la saisie et les scores du comptage
+  rapide ne changent pas (D-07, D-09).
+- **REQ-FT-route-test** : un testeur qui ne connaît pas la méthode choisit son parcours sans aide,
+  dans un test enregistré dont le compte rendu est dans `docs/user-tests/` (critère 4, D-10).
+- **REQ-C-route-group** : *phase 30.1 si la décision D-04 confirme la scission* : l'IBP d'un groupe
+  de placettes se calcule en regroupant leurs données brutes, uniquement dans le paquet (D-03).
+
+## 13. Validation
+
+Validé par le propriétaire le :
+
+Réponse du propriétaire :
+
+Ces deux lignes sont remplies au plan 30-02, avec la date et la réponse écrite du propriétaire.
+**Aucun plan n'encode une règle et aucun plan ne construit un écran tant qu'elles ne sont pas
+remplies.**
