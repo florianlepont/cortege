@@ -1060,7 +1060,32 @@ Plans:
   3. The route actually used is recorded with the survey and shown as text in the survey detail and the PDF (the display on the parcel map moves to Phase 31).
   4. A tester who does not know the method completes the choice without help, in a recorded test.
 
-**Plans**: 23 plans in 13 waves (30-01 spec, 30-02 owner validation gate, then package, API, mobile, docs, owner wording review, tester test and the second D-04 decision point). The pooled group calculation is planned as Phase 30.1 unless the owner keeps it in the phase at a decision point.
+**Plans**: 1/23 plans executed (the pooled group calculation is planned as Phase 30.1 unless the owner keeps it in the phase at a decision point; 30-02 is the owner validation gate)
+
+- [x] 30-01-PLAN.md
+- [ ] 30-02-PLAN.md
+- [ ] 30-03-PLAN.md
+- [ ] 30-04-PLAN.md
+- [ ] 30-05-PLAN.md
+- [ ] 30-06-PLAN.md
+- [ ] 30-07-PLAN.md
+- [ ] 30-08-PLAN.md
+- [ ] 30-09-PLAN.md
+- [ ] 30-10-PLAN.md
+- [ ] 30-11-PLAN.md
+- [ ] 30-12-PLAN.md
+- [ ] 30-13-PLAN.md
+- [ ] 30-14-PLAN.md
+- [ ] 30-15-PLAN.md
+- [ ] 30-16-PLAN.md
+- [ ] 30-17-PLAN.md
+- [ ] 30-18-PLAN.md
+- [ ] 30-19-PLAN.md
+- [ ] 30-20-PLAN.md
+- [ ] 30-21-PLAN.md
+- [ ] 30-22-PLAN.md
+- [ ] 30-23-PLAN.md
+
 **UI hint**: yes
 
 ### Phase 31: Parcel Annotation & Remarkable Elements (INSERTED, V1)
@@ -1233,7 +1258,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 27. Quick survey additions | 22/22 | Complete | 2026-10-12 |
 | 28. Map Layers & Comparison | 28/28 | Complete (Android phone pass deferred to Phase 35) | 2026-10-13 |
 | 29. Private or Public Before Submission | 0/TBD | Not started | - |
-| 30. Route Choice Assistant | 0/TBD | Not started | - |
+| 30. Route Choice Assistant | 1/23 | In Progress|  |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
 | 32. Detailed DMH Information | 0/TBD | Not started | - |
 | 33. PDF Export, Exhaustive and Simplified | 0/TBD | Not started | - |

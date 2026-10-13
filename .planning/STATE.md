@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 28
-current_phase_name: Map Layers & Comparison (INSERTED, V1)
-status: ready_to_plan
+current_phase: 30
+current_phase_name: Route Choice Assistant (INSERTED, V1)
+status: executing
 stopped_at: "Phase 30 planned (23 plans); next: execute 30-01 then owner gate 30-02"
-last_updated: "2026-10-13T17:49:24.132Z"
+last_updated: "2026-10-13T17:56:49.177Z"
 last_activity: 2026-10-13
-last_activity_desc: Phase 30 planned (23 plans)
+last_activity_desc: Phase 30 execution started
 progress:
   total_phases: 39
   completed_phases: 20
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 27 (quick survey additions) is complete (2026-10-12; its remaining device checks are reported to Phases 35 and 37, nothing stays open); then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md.
+**Current focus:** Phase 30 — Route Choice Assistant (INSERTED, V1)
 
 ## Current Position
 
-Phase: 27 (Quick survey additions (INSERTED, V1)) — COMPLETE
-Plan: 22 of 22
-Status: Phase complete; next is Phase 28
-Last activity: 2026-10-12 — Phase 27 complete
+Phase: 30 (Route Choice Assistant (INSERTED, V1)) — EXECUTING
+Plan: 1 of 23
+Status: Executing Phase 30
+Last activity: 2026-10-13 — Phase 30 execution started
 
 Progress: [█████████░] 28/39 phases complete
 
