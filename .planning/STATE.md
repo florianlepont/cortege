@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 27
-current_phase_name: Quick survey additions (INSERTED, V1
+current_phase: 28
+current_phase_name: Map Layers & Comparison (INSERTED, V1)
 status: ready_to_plan
 stopped_at: "Phase 30 planned (23 plans); next: execute 30-01 then owner gate 30-02"
 last_updated: "2026-10-13T17:49:24.132Z"
-last_activity: 2026-10-12
-last_activity_desc: Phase 27 complete
+last_activity: 2026-10-13
+last_activity_desc: Phase 30 planned (23 plans)
 progress:
   total_phases: 39
   completed_phases: 20
-  total_plans: 270
+  total_plans: 220
   completed_plans: 285
-  percent: 51
+  percent: 46
 ---
 
 # Project State
