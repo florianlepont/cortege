@@ -34,6 +34,8 @@ export type WipeLayerProps = {
   onReady?: () => void
   /** The map is visible (see `MapStack`): a cover over it can go. */
   onRevealed?: () => void
+  /** Offline: readiness does not wait for the full render (see `MapStack`). */
+  quickReady?: boolean
 }
 
 /**
@@ -62,6 +64,7 @@ export function WipeLayer({
   onStyleFailed,
   onReady,
   onRevealed,
+  quickReady,
 }: WipeLayerProps) {
   const { mapStyle, cadastreInStyle, cadastreOpacity } = useMapStyle(
     layer,
@@ -80,6 +83,7 @@ export function WipeLayer({
       onStyleFailed={onStyleFailed}
       onReady={onReady}
       onRevealed={onRevealed}
+      quickReady={quickReady}
     >
       {content({ cadastreInStyle, cadastreOpacity })}
       {/* The device's position, over the cadastre and the parcels of this stacked map too. */}

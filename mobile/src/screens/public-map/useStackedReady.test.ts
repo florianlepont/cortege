@@ -1,7 +1,11 @@
 jest.mock("react-native", () => ({}))
 
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
-import { STACKED_READY_TIMEOUT_MS, useStackedReady } from "./useStackedReady"
+import {
+  STACKED_QUICK_READY_MS,
+  STACKED_READY_TIMEOUT_MS,
+  useStackedReady,
+} from "./useStackedReady"
 
 beforeEach(() => {
   jest.useFakeTimers()
@@ -11,10 +15,11 @@ afterEach(async () => {
   jest.useRealTimers()
 })
 
-async function setup(style = "a") {
-  const hook = await renderHook((props: { style: string }) => useStackedReady(props.style), {
-    initialProps: { style },
-  })
+async function setup(style = "a", quick = false) {
+  const hook = await renderHook(
+    (props: { style: string }) => useStackedReady(props.style, undefined, quick),
+    { initialProps: { style } },
+  )
   const api = () => hook.result.current
   return { hook, api }
 }
@@ -93,5 +98,39 @@ describe("useStackedReady hide and restore", () => {
     expect(api().ready.value).toBe(0)
     await act(async () => api().restore())
     expect(api().ready.value).toBe(1)
+  })
+})
+
+describe("useStackedReady offline (quick)", () => {
+  test("a map that cannot report rendered-fully is ready a short while after its style load", async () => {
+    const { api } = await setup("a", true)
+    await act(async () => api().onStyleLoaded())
+    await act(async () => {
+      jest.advanceTimersByTime(STACKED_QUICK_READY_MS - 1)
+    })
+    expect(api().ready.value).toBe(0)
+    await act(async () => {
+      jest.advanceTimersByTime(1)
+    })
+    expect(api().ready.value).toBe(1)
+    expect(STACKED_QUICK_READY_MS).toBeLessThan(STACKED_READY_TIMEOUT_MS)
+  })
+
+  test("a rendered-fully after the style load still ends the wait at once, one before does not", async () => {
+    const { api } = await setup("a", true)
+    await act(async () => api().onRenderedFully())
+    expect(api().ready.value).toBe(0)
+    await act(async () => api().onStyleLoaded())
+    await act(async () => api().onRenderedFully())
+    expect(api().ready.value).toBe(1)
+  })
+
+  test("online keeps the strict wait", async () => {
+    const { api } = await setup("a", false)
+    await act(async () => api().onStyleLoaded())
+    await act(async () => {
+      jest.advanceTimersByTime(STACKED_QUICK_READY_MS * 2)
+    })
+    expect(api().ready.value).toBe(0)
   })
 })

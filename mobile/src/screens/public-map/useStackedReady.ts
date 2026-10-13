@@ -3,6 +3,8 @@ import { useSharedValue, type SharedValue } from "react-native-reanimated"
 
 /** No rendered-fully event this long (ms) after a style load: the stacked map shows anyway. */
 export const STACKED_READY_TIMEOUT_MS = 1500
+/** Offline (local tiles) the wait after the style load is this short, whether or not it reports. */
+export const STACKED_QUICK_READY_MS = 350
 
 export type StackedReady = {
   /** Hides the map at once (a style change is coming); `restore` undoes it if none is applied. */
@@ -24,7 +26,11 @@ export type StackedReady = {
  * `MapStack`, so the clip reaches the UI thread before the swap). `onReady` is called each time
  * the map becomes ready for that style (a step waits for it before it drops its cover).
  */
-export function useStackedReady(styleKey: unknown, onReady?: () => void): StackedReady {
+export function useStackedReady(
+  styleKey: unknown,
+  onReady?: () => void,
+  quick = false,
+): StackedReady {
   const created = useSharedValue(0)
   const readyCallback = useRef(onReady)
   readyCallback.current = onReady
@@ -63,8 +69,8 @@ export function useStackedReady(styleKey: unknown, onReady?: () => void): Stacke
   const onStyleLoaded = useCallback(() => {
     loaded.current = true
     clear()
-    timer.current = setTimeout(show, STACKED_READY_TIMEOUT_MS)
-  }, [clear, show])
+    timer.current = setTimeout(show, quick ? STACKED_QUICK_READY_MS : STACKED_READY_TIMEOUT_MS)
+  }, [clear, show, quick])
   const onRenderedFully = useCallback(() => {
     if (loaded.current) show()
   }, [show])

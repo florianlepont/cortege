@@ -1,8 +1,9 @@
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { StyleSheet } from "react-native"
 import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated"
 import { brandElevation, brandRadius } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
+import { BUTTON_FADE_IN_DELAY_MS, BUTTON_FADE_MS } from "../../map/swipe-machine"
 
 export type ImmersiveWindowProps = {
   /** The window's progress from `useImmersive`: 0 full size, 1 receded. */
@@ -50,6 +51,17 @@ export function ImmersiveWindow({ progress, applied, target, children }: Immersi
   const outer = useAnimatedStyle(() => {
     if (!applied) return {}
     const p = progress.value
+    // At rest the window is the plain full-size view it was before the effect existed: no
+    // transform, background, shadow or radius (native glass below this tree samples a plain tree).
+    if (p === 0) {
+      return {
+        transform: [],
+        borderRadius: 0,
+        backgroundColor: "transparent",
+        shadowOpacity: 0,
+        elevation: 0,
+      }
+    }
     return {
       // Moved first, so the window ends between the top margin and the info row.
       transform: [
@@ -67,7 +79,12 @@ export function ImmersiveWindow({ progress, applied, target, children }: Immersi
     }
   })
   const clip = useAnimatedStyle(() =>
-    applied ? { borderRadius: brandRadius.card * progress.value } : {},
+    applied
+      ? {
+          borderRadius: brandRadius.card * progress.value,
+          overflow: progress.value === 0 ? "visible" : "hidden",
+        }
+      : {},
   )
   const ringStyle = useAnimatedStyle(() => ({
     borderRadius: brandRadius.card * progress.value,
@@ -80,7 +97,7 @@ export function ImmersiveWindow({ progress, applied, target, children }: Immersi
       pointerEvents="box-none"
       style={[StyleSheet.absoluteFill, outer]}
     >
-      <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, styles.clip, clip]}>
+      <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, clip]}>
         {children}
       </Animated.View>
       {applied && ring ? (
@@ -101,13 +118,24 @@ export function ImmersiveWindow({ progress, applied, target, children }: Immersi
  */
 export function ImmersiveButtons({ opacity, hidden, children }: ImmersiveButtonsProps) {
   const fade = useAnimatedStyle(() => ({ opacity: opacity.value }))
+  // The fade only exists while the buttons fade: at rest the wrapper carries no opacity property
+  // at all (native glass inside a group with an animated opacity loses its effect).
+  const [atRest, setAtRest] = useState(!hidden)
+  useEffect(() => {
+    if (hidden) {
+      setAtRest(false)
+      return undefined
+    }
+    const timer = setTimeout(() => setAtRest(true), BUTTON_FADE_IN_DELAY_MS + BUTTON_FADE_MS + 40)
+    return () => clearTimeout(timer)
+  }, [hidden])
   return (
     <Animated.View
       testID="immersive-buttons"
       pointerEvents={hidden ? "none" : "box-none"}
       accessibilityElementsHidden={hidden}
       importantForAccessibility={hidden ? "no-hide-descendants" : "auto"}
-      style={[StyleSheet.absoluteFill, fade]}
+      style={atRest ? StyleSheet.absoluteFill : [StyleSheet.absoluteFill, fade]}
     >
       {children}
     </Animated.View>
@@ -115,6 +143,5 @@ export function ImmersiveButtons({ opacity, hidden, children }: ImmersiveButtons
 }
 
 const styles = StyleSheet.create({
-  clip: { overflow: "hidden" },
   ring: { borderWidth: 1 },
 })

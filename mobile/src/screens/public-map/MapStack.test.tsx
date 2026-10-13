@@ -37,6 +37,7 @@ import {
   useMapSync,
   useViewTracker,
 } from "./MapStack"
+import { STACKED_QUICK_READY_MS } from "./useStackedReady"
 
 const originalConsoleError = console.error
 
@@ -179,9 +180,18 @@ describe("MapStack", () => {
     act(() => h.tree.root.findByType("MapLibreMap" as never).props[event]())
     h.rerender({})
   }
+  // Ready, then revealed REVEAL_DELAY_MS later (the second re-render reads the `shown` value).
+  const reveal = (h: ReturnType<typeof mount>) => {
+    act(() => {
+      jest.advanceTimersByTime(REVEAL_DELAY_MS)
+    })
+    h.rerender({})
+    h.rerender({})
+  }
   const makeReady = (h: ReturnType<typeof mount>) => {
     fireOn(h, "onDidFinishLoadingStyle")
     fireOn(h, "onDidFinishRenderingMapFully")
+    reveal(h)
   }
   const clipWidth = (tree: renderer.ReactTestRenderer) =>
     flat(
@@ -199,6 +209,9 @@ describe("MapStack", () => {
     fireOn(h, "onDidFinishLoadingStyle")
     expect(clipWidth(h.tree)).toBe(0)
     fireOn(h, "onDidFinishRenderingMapFully")
+    // Ready, but only revealed a moment later.
+    expect(clipWidth(h.tree)).toBe(0)
+    reveal(h)
     expect(clipWidth(h.tree)).toBe(280)
   })
 
@@ -262,54 +275,57 @@ describe("MapStack", () => {
     expect(clipWidth(h.tree)).toBe(280)
   })
 
-  const opacityOf = (tree: renderer.ReactTestRenderer) =>
-    flat(
-      tree.root.find(
-        (node) => (node.type as unknown) === "View" && flat(node.props.style).overflow === "hidden",
-      ).props.style,
-    ).opacity
-
-  test("a fresh map is hidden by its plain style: no width, no opacity, whatever the animated clip says", () => {
-    const h = mount()
-    expect(opacityOf(h.tree)).toBe(0)
-    const clipStyles = (
-      h.tree.root.findAll(
+  const clipStyles = (tree: renderer.ReactTestRenderer) =>
+    (
+      tree.root.findAll(
         (node) => (node.type as unknown) === "View" && flat(node.props.style).overflow === "hidden",
       )[0].props.style as unknown[]
     ).flat(3)
-    // The first entry is the static style: width 0 and opacity 0 before any animated value.
-    expect(clipStyles[0]).toMatchObject({ width: 0, opacity: 0, overflow: "hidden" })
+
+  test("a fresh map is hidden by its plain style, and no opacity is ever set on the container", () => {
+    const h = mount()
+    expect(clipWidth(h.tree)).toBe(0)
+    // The first entry is the static style: width 0 before any animated value; nothing sets opacity.
+    expect(clipStyles(h.tree)[0]).toMatchObject({ width: 0, overflow: "hidden" })
+    for (const style of clipStyles(h.tree).filter(Boolean))
+      expect(style).not.toHaveProperty("opacity")
+    makeReady(h)
+    expect(clipWidth(h.tree)).toBe(280)
+    for (const style of clipStyles(h.tree).filter(Boolean))
+      expect(style).not.toHaveProperty("opacity")
   })
 
-  test("reveal order: the clip opens and the camera is aligned first, the opacity comes after", () => {
+  test("reveal order: the clip opens and the camera is aligned first, the reveal comes after", () => {
     const calls: string[] = []
-    const h = mount({ onReady: () => calls.push(`ready:${opacityOf(h.tree)}`) })
-    makeReady(h)
+    const h = mount({ onReady: () => calls.push(`ready:${clipWidth(h.tree)}`) })
+    fireOn(h, "onDidFinishLoadingStyle")
+    fireOn(h, "onDidFinishRenderingMapFully")
     expect(calls).toEqual(["ready:0"])
-    expect(opacityOf(h.tree)).toBe(0)
     act(() => {
       jest.advanceTimersByTime(REVEAL_DELAY_MS - 1)
     })
     h.rerender({})
-    expect(opacityOf(h.tree)).toBe(0)
+    h.rerender({})
+    expect(clipWidth(h.tree)).toBe(0)
     act(() => {
       jest.advanceTimersByTime(1)
     })
-    expect(opacityOf(h.tree)).toBe(1)
+    h.rerender({})
+    h.rerender({})
+    expect(clipWidth(h.tree)).toBe(280)
   })
 
-  test("onRevealed comes after the opacity is applied and presented, never at ready", () => {
+  test("onRevealed comes after the reveal is applied and presented, never at ready", () => {
     const events: string[] = []
     const h = mount({
       onReady: () => events.push("ready"),
-      onRevealed: () => events.push(`revealed:${opacityOf(h.tree)}`),
+      onRevealed: () => events.push(`revealed:${clipWidth(h.tree)}`),
     })
-    makeReady(h)
+    fireOn(h, "onDidFinishLoadingStyle")
+    fireOn(h, "onDidFinishRenderingMapFully")
     expect(events).toEqual(["ready"])
-    act(() => {
-      jest.advanceTimersByTime(REVEAL_DELAY_MS)
-    })
-    expect(opacityOf(h.tree)).toBe(1)
+    reveal(h)
+    expect(clipWidth(h.tree)).toBe(280)
     // Visible in the tree, but the native view has not presented it yet.
     expect(events).toEqual(["ready"])
     act(() => {
@@ -319,16 +335,13 @@ describe("MapStack", () => {
     act(() => {
       jest.advanceTimersByTime(1)
     })
-    expect(events).toEqual(["ready", "revealed:1"])
+    expect(events).toEqual(["ready", "revealed:280"])
   })
 
   test("a style change before the present delay cancels onRevealed", () => {
     const onRevealed = jest.fn()
     const h = mount({ onRevealed })
     makeReady(h)
-    act(() => {
-      jest.advanceTimersByTime(REVEAL_DELAY_MS)
-    })
     h.rerender({ mapStyle: OTHER })
     act(() => {
       jest.advanceTimersByTime(PRESENT_DELAY_MS * 2)
@@ -339,14 +352,35 @@ describe("MapStack", () => {
   test("a style change hides it at once, and going back to the shown style shows it again", () => {
     const h = mount()
     makeReady(h)
-    act(() => {
-      jest.advanceTimersByTime(REVEAL_DELAY_MS)
-    })
-    expect(opacityOf(h.tree)).toBe(1)
+    expect(clipWidth(h.tree)).toBe(280)
     h.rerender({ mapStyle: OTHER })
-    expect(opacityOf(h.tree)).toBe(0)
+    h.rerender({})
+    expect(clipWidth(h.tree)).toBe(0)
     h.rerender({ mapStyle: "https://tiles.example/style.json" })
-    expect(opacityOf(h.tree)).toBe(1)
+    h.rerender({})
+    h.rerender({})
+    expect(clipWidth(h.tree)).toBe(280)
+  })
+
+  test("offline (quickReady) a map that never reports rendered-fully is revealed shortly after its style load", () => {
+    const h = mount({ quickReady: true })
+    fireOn(h, "onDidFinishLoadingStyle")
+    expect(clipWidth(h.tree)).toBe(0)
+    act(() => {
+      jest.advanceTimersByTime(STACKED_QUICK_READY_MS)
+    })
+    reveal(h)
+    expect(clipWidth(h.tree)).toBe(280)
+  })
+
+  test("online the same map keeps waiting for its render report", () => {
+    const h = mount()
+    fireOn(h, "onDidFinishLoadingStyle")
+    act(() => {
+      jest.advanceTimersByTime(STACKED_QUICK_READY_MS * 2)
+    })
+    reveal(h)
+    expect(clipWidth(h.tree)).toBe(0)
   })
 
   test("the first style of a fresh map is not delayed", () => {

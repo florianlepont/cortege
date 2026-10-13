@@ -4,6 +4,7 @@ import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import { IMMERSIVE_OUT_MS } from "../../map/swipe-machine"
 import {
   COVER_PRESENT_MS,
+  COVER_QUICK_RENDER_TIMEOUT_MS,
   COVER_RENDER_TIMEOUT_MS,
   useCoverRelease,
   type CoverRelease,
@@ -22,10 +23,11 @@ const advance = (ms: number) =>
     jest.advanceTimersByTime(ms)
   })
 
-async function setup(initial = { covered: true, swipeMode: true }) {
+async function setup(initial = { covered: true, swipeMode: true }, quick = false) {
   const release = jest.fn()
   const hook = await renderHook(
-    (props: { covered: boolean; swipeMode: boolean }) => useCoverRelease({ ...props, release }),
+    (props: { covered: boolean; swipeMode: boolean }) =>
+      useCoverRelease({ ...props, release, quick }),
     { initialProps: initial },
   )
   const api = () => hook.result.current as CoverRelease
@@ -114,6 +116,26 @@ describe("useCoverRelease", () => {
     await advance(COVER_PRESENT_MS)
     expect(release).not.toHaveBeenCalled()
     await advance(IMMERSIVE_OUT_MS - COVER_PRESENT_MS)
+    expect(release).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("useCoverRelease offline (quick)", () => {
+  test("a map that never reports rendered-fully is not waited for the online cap", async () => {
+    const { release, api } = await setup(undefined, true)
+    await act(async () => api().onStyleLoaded())
+    await advance(COVER_QUICK_RENDER_TIMEOUT_MS - 1)
+    expect(release).not.toHaveBeenCalled()
+    await advance(1)
+    expect(release).toHaveBeenCalledTimes(1)
+    expect(COVER_QUICK_RENDER_TIMEOUT_MS).toBeLessThan(COVER_RENDER_TIMEOUT_MS)
+  })
+
+  test("a rendered-fully still releases after the present time", async () => {
+    const { release, api } = await setup(undefined, true)
+    await act(async () => api().onStyleLoaded())
+    await act(async () => api().onRenderedFully())
+    await advance(COVER_PRESENT_MS)
     expect(release).toHaveBeenCalledTimes(1)
   })
 })

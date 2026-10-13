@@ -324,6 +324,18 @@ describe("the stacked maps", () => {
     expect(swipe.onSecondStyleLoaded).toHaveBeenCalledTimes(1)
   })
 
+  test("offline the stacked maps do not wait for the full render, online they do", () => {
+    const quick = (offline: boolean) =>
+      named(
+        render(makeView({ second: stacked("photos-1950") }), {
+          layers: makeLayers({ offline }),
+        }).tree,
+        "WipeLayer",
+      )[0].props.quickReady
+    expect(quick(true)).toBe(true)
+    expect(quick(false)).toBe(false)
+  })
+
   test("the third map reports when it is visible, so a step applies its side", () => {
     const { tree, swipe } = render(
       makeView({

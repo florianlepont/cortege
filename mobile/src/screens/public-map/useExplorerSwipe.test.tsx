@@ -115,7 +115,7 @@ import {
   type MapLayersState,
 } from "./map-layers-state"
 import { neighbourLayer } from "../../map/layer-cycle"
-import { COVER_PRESENT_MS } from "./useCoverRelease"
+import { COVER_PRESENT_MS, COVER_QUICK_RENDER_TIMEOUT_MS } from "./useCoverRelease"
 import { useExplorerSwipe, type ExplorerSwipe, type ExplorerSwipeInput } from "./useExplorerSwipe"
 import type { MapLayers } from "./useMapLayersState"
 
@@ -223,6 +223,7 @@ const closePanels = jest.fn()
 type Extra = {
   isAvailable?: (key: string) => boolean
   noticesTop?: number
+  isOffline?: boolean
 }
 
 function inputFor(layers: MapLayers, extra: Extra = {}): ExplorerSwipeInput {
@@ -231,6 +232,7 @@ function inputFor(layers: MapLayers, extra: Extra = {}): ExplorerSwipeInput {
       layers,
       isAvailable: extra.isAvailable ?? (() => true),
       capsuleTop: 58,
+      isOffline: extra.isOffline ?? false,
       noticesTop: extra.noticesTop ?? 58,
     } as unknown as ExplorerSwipeInput["layers"],
     cameraRef,
@@ -479,6 +481,22 @@ describe("a full wipe, its cover and the comparison it turns into", () => {
       jest.advanceTimersByTime(1)
     })
     // Only now the stacked map goes back to the preload (next layer, clipped to nothing).
+    preloadOnly()
+    expect(out().layersView.second?.layer).not.toBe("satellite")
+  })
+
+  test("offline a committed cover is dropped shortly after the style load, with no render report", () => {
+    setController({ side: "full", incoming: "satellite" })
+    mount(makeLayers({ swipeMode: true }), { isOffline: true })
+    expect(mockSideStepParams.at(-1)).toMatchObject({ quick: true })
+    setController(null)
+    update(makeLayers({ swipeMode: true, base: "satellite", loadingBase: "satellite" }), {
+      isOffline: true,
+    })
+    act(() => out().onBaseStyleLoaded())
+    act(() => {
+      jest.advanceTimersByTime(COVER_QUICK_RENDER_TIMEOUT_MS)
+    })
     preloadOnly()
     expect(out().layersView.second?.layer).not.toBe("satellite")
   })

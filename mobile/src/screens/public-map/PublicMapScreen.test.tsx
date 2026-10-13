@@ -1336,8 +1336,11 @@ describe("PublicMapScreen", () => {
       const scale = (props: ScreenProps) => {
         update(props)
         const style = flatStyle(byTestId("immersive-window")[0].props.style)
-        return (style.transform as { scaleX?: number }[]).find((t) => t.scaleX !== undefined)!
-          .scaleX!
+        // At rest the transform is empty: full size.
+        return (
+          (style.transform as { scaleX?: number }[]).find((t) => t.scaleX !== undefined)?.scaleX ??
+          1
+        )
       }
       const buttons = () => byTestId("immersive-buttons")[0]
       const insideWindow = (testID: string) =>

@@ -113,6 +113,7 @@ export function ExplorerSwipeLayers({
         styleRetryKey={contentProps.styleRetryKey}
         onReady={() => swipe.onStackedReady(which)}
         onRevealed={onRevealed}
+        quickReady={layers.isOffline}
         onStyleFailed={() => actions.styleFailed(map.layer)}
       />
     )

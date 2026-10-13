@@ -69,7 +69,7 @@ import {
   type CompareState,
   type MapLayersState,
 } from "./map-layers-state"
-import { COVER_PRESENT_MS } from "./useCoverRelease"
+import { COVER_QUICK_RENDER_TIMEOUT_MS, COVER_PRESENT_MS } from "./useCoverRelease"
 import { STEP_READY_WAIT_MS, useSideStep, type SideStep } from "./useSideStep"
 import type { MapLayers } from "./useMapLayersState"
 
@@ -145,6 +145,7 @@ const satellitePlan: CompareState = {
   x: 200,
 }
 
+let quickFlag = false
 const result: { current: SideStep | null } = { current: null }
 const out = () => result.current as SideStep
 
@@ -157,6 +158,7 @@ function Probe(props: {
     layers: props.layers,
     isAvailable: props.isAvailable ?? (() => true),
     width: props.width ?? WIDTH,
+    quick: quickFlag,
   })
   return null
 }
@@ -300,6 +302,27 @@ describe("step", () => {
       jest.advanceTimersByTime(1)
     })
     expect(out().stepping).toBeNull()
+  })
+
+  it("offline the Explorer map's half is uncovered shortly after its style load, even without a render report", () => {
+    jest.useFakeTimers()
+    quickFlag = true
+    try {
+      mount(makeLayers(satellitePlan))
+      act(() => out().step("right", 1))
+      finishStep()
+      act(() => out().onStyleLoaded("base"))
+      act(() => {
+        jest.advanceTimersByTime(COVER_QUICK_RENDER_TIMEOUT_MS - 1)
+      })
+      expect(out().stepping).not.toBeNull()
+      act(() => {
+        jest.advanceTimersByTime(1)
+      })
+      expect(out().stepping).toBeNull()
+    } finally {
+      quickFlag = false
+    }
   })
 
   it("ignores a style load while the wipe is still running", () => {

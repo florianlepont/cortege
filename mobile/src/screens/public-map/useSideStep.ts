@@ -74,9 +74,16 @@ export type SideStepInput = {
   isAvailable: LayerAvailability
   /** The width of the map area. */
   width: number
+  /** Offline: the Explorer map's cover waits for its render report only briefly. */
+  quick?: boolean
 }
 
-export function useSideStep({ layers, isAvailable, width }: SideStepInput): SideStep {
+export function useSideStep({
+  layers,
+  isAvailable,
+  width,
+  quick = false,
+}: SideStepInput): SideStep {
   const reduceMotion = useReducedMotion()
   const { actions } = layers
   const comparing = layers.state.compare !== null
@@ -191,6 +198,7 @@ export function useSideStep({ layers, isAvailable, width }: SideStepInput): Side
     covered: current?.waitsFor === "base",
     swipeMode: false,
     release: () => dropCover("base"),
+    quick,
   })
   const { onStyleLoaded: baseStyleLoaded, onRenderedFully: onRendered } = baseRelease
   const onStyleLoaded = useCallback(

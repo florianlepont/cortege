@@ -229,7 +229,7 @@ export function useExplorerSwipe({
   const phase: CurtainPhase = leaving ? "leaving" : keepLayer !== null ? "covering" : "active"
   const curtain = useCurtainClip({ compare, width, phase, leaveTo: "right", onLeft: handleLeft })
 
-  const sideStep = useSideStep({ layers, isAvailable, width })
+  const sideStep = useSideStep({ layers, isAvailable, width, quick: explorerLayers.isOffline })
   const secondSync = useMapSync()
   const thirdSync = useMapSync()
   const view = useViewTracker()
@@ -291,6 +291,7 @@ export function useExplorerSwipe({
     covered: cover !== null,
     swipeMode,
     release: () => setCover(null),
+    quick: explorerLayers.isOffline,
   })
   const onRenderedFully = useLatestCallback(
     () => (coverRelease.onRenderedFully(), sideStep.onRendered()),
