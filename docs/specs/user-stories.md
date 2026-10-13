@@ -34,8 +34,8 @@ The app is a public-interest project led by the association Etats-Sauvages and i
 - Survey statuses (draft, expired, submitted, synced, error).
 - Personal point counter based on completed IBP surveys.
 - Explore map focused on parcel analysis in France (parcel status, latest IBP score, and access to parcel history). The map loads the public surveys of the visible area once the user stops moving it, and groups nearby surveys into clusters; tapping a cluster zooms in, or lists its surveys when zooming cannot separate them (surveys of the same parcels share one point).
-- User-controlled survey visibility: private (default) or public (shared with community).
-- Post-publication survey management (delete survey, switch private/public).
+- User-controlled survey visibility, chosen in the submission step: "Partagé avec l'association" (pre-selected) or "Privé"; frozen once submitted.
+- Post-publication survey management (delete survey; the visibility is read-only after submit).
 - Association visibility surfaces in-app (mission, impact, actions).
 - Donation call-to-action in key user journey moments.
 - Quick survey additions (phase 27, epic C, V1):
@@ -76,9 +76,8 @@ their own epic documents), not V2 — they were previously filed under "V2 Backl
 - Surveys on the same parcel are tracked longitudinally by observation year and version number.
 - Historical comparison must be available at parcel level (IBP total trend + factor-by-factor trend).
 - Explore is a parcel intelligence surface (parcel status + parcel scores), not a generic point-only map.
-- Each submitted survey has a visibility setting: `private` or `public`.
-- Only `public` surveys are eligible for community surfaces (public map, community feeds, public stats).
-- Changing a survey from `public` to `private` must remove it from community surfaces.
+- Each survey has a visibility setting: `private` or `public` (shown to users as "Privé" and "Partagé avec l'association", never "public"). The observer chooses it in the submission step, with "Partagé avec l'association" pre-selected, and it cannot change after submit.
+- Only `public` (shared) surveys are eligible for community surfaces (public map, community feeds, public stats). A private survey is invisible to every other member; no moderator read path exists (deferred to V3).
 - Deleting a survey must remove it from community surfaces.
 - Pedagogical content must be accessible on demand during survey entry without interrupting form completion.
 - ~~A draft survey expires 7 days after creation; after that, it becomes expired ("caduc") and cannot be submitted.~~ Removed (OA-41 2026-10-06): there is no submission deadline.
