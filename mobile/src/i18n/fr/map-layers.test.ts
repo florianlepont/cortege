@@ -137,9 +137,7 @@ describe("fr.mapLayers", () => {
       expect(mapLayersFr.compare.sideA11yHint).toBe(
         "Balayez vers le haut ou le bas pour changer le fond de ce côté",
       )
-      expect(mapLayersFr.compare.sideA11yValue({ name: "Plan", era: "aujourd'hui" })).toBe(
-        "Plan, aujourd'hui",
-      )
+      expect(mapLayersFr.compare.sideA11yValue({ era: "aujourd'hui" })).toBe("aujourd'hui")
       expect(
         mapLayersFr.compare.announceSide({
           side: "right",

@@ -262,13 +262,13 @@ describe("CompareSideTag", () => {
     expect(props.accessibilityHint).toBe(
       "Balayez vers le haut ou le bas pour changer le fond de ce côté",
     )
-    expect(props.accessibilityValue).toEqual({ text: "Photos aériennes, 1950-1965" })
+    expect(props.accessibilityValue).toEqual({ text: "1950-1965" })
   })
 
   test("the left tag says its own side", () => {
     const { tag } = mount({ side: "left", label: "Plan", era: "aujourd'hui" })
     expect(tag().props.accessibilityLabel).toBe("Côté gauche : Plan")
-    expect(tag().props.accessibilityValue).toEqual({ text: "Plan, aujourd'hui" })
+    expect(tag().props.accessibilityValue).toEqual({ text: "aujourd'hui" })
   })
 
   test("the increment and decrement actions step the layer", () => {
