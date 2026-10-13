@@ -178,7 +178,7 @@ describe("Surveys submit (e2e)", () => {
     })
   })
 
-  it("rejects non-visibility PATCH fields after submit", async () => {
+  it("rejects observation and visibility PATCH fields after submit", async () => {
     const accessToken = await loginTestUser(app, "e2e-submit-readonly")
     const surveyId = uniqueId("e2e-submit-readonly")
     const seed = uniqueCoordSeed()
@@ -222,6 +222,23 @@ describe("Surveys submit (e2e)", () => {
 
     expect(patch.body.code).toBe("submitted_read_only_fields")
     expect(patch.body.forbidden_fields).toContain("factors")
+
+    // Phase 29 (D-07): visibility is frozen at submit on the general PATCH route too.
+    const visibilityPatch = await request(app.getHttpServer())
+      .patch(`/v1/surveys/${surveyId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({ visibility: "public" })
+      .expect(422)
+
+    expect(visibilityPatch.body.code).toBe("submitted_read_only_fields")
+    expect(visibilityPatch.body.forbidden_fields).toContain("visibility")
+    expect(visibilityPatch.body.details.fields).toContain("visibility")
+
+    const detail = await request(app.getHttpServer())
+      .get(`/v1/surveys/${surveyId}`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200)
+    expect(detail.body.visibility).toBe("private")
   })
 
   it("submits a full raw-observation payload A..J and computes exact scores", async () => {
