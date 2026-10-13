@@ -38,6 +38,8 @@ export type SurveysStackParamList = AccountStackParamList & {
   surveyForm: undefined
   surveyFactorDetail: { factor: FactorKey }
   surveyFactorHelp: { help: string; hints: string[] }
+  // Phase 29, D-04: the submission step (a native form sheet: who can see the survey, then finish).
+  surveyFinish: { surveyId: string }
   surveyParcels: {
     surveyId: string
     mode: "wizard" | "edit"
@@ -141,6 +143,7 @@ export type SurveyJournalRouteProps = StackRouteProps<SurveysStackParamList, "su
 export type SurveyFormRouteProps = StackRouteProps<SurveysStackParamList, "surveyForm">
 export type FactorDetailRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorDetail">
 export type FactorHelpRouteProps = StackRouteProps<SurveysStackParamList, "surveyFactorHelp">
+export type FinishSheetRouteProps = StackRouteProps<SurveysStackParamList, "surveyFinish">
 export type ParcelSelectionRouteProps = StackRouteProps<SurveysStackParamList, "surveyParcels">
 export type PublicMapRouteProps = StackRouteProps<PublicMapStackParamList, "publicMapHome">
 export type AccountRouteProps = StackRouteProps<AccountStackParamList, "accountHome">
