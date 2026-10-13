@@ -1082,3 +1082,29 @@ describe.each(schemes)(
     })
   },
 )
+
+// Phase 29 (UI-SPEC Color): the radio cards sit on surfaceElevated in both schemes. Text pairs
+// need 4.5, the graphic ones (border, ring, glyph) 3. A failing pair is fixed at the call site
+// (textStrong), never in a token.
+describe.each(schemes)("Phase 29 radio cards, %s scheme", (scheme) => {
+  const { colors, semanticColors } = themes[scheme]
+  const card = semanticColors.surfaceElevated
+
+  test.each([
+    ["title", colors.textPrimary],
+    ["caption", colors.textSecondary],
+  ] as const)("the %s text reads on the card (4.5)", (_name, ink) => {
+    expect(contrastRatio(ink, card)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  test("the selected border and fill, and the unselected ring and glyph, read on the card (3)", () => {
+    expect(contrastRatio(semanticColors.ctaPrimary, card)).toBeGreaterThanOrEqual(3)
+    expect(contrastRatio(colors.textSecondary, card)).toBeGreaterThanOrEqual(3)
+  })
+
+  test("the check reads on the filled radio (4.5)", () => {
+    expect(
+      contrastRatio(semanticColors.onCtaPrimary, semanticColors.ctaPrimary),
+    ).toBeGreaterThanOrEqual(4.5)
+  })
+})
