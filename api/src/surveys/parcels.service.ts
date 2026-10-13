@@ -12,6 +12,9 @@ import {
   toFiniteNumber,
 } from "./surveys-normalize.utils"
 
+// D-10: the caller is the third parameter of the history query.
+const PARCEL_HISTORY_VISIBLE_SQL = submittedVisibleToCallerSql("$3")
+
 export type ParcelSubmitValidation = {
   code?: "parcel_required" | "parcel_invalid"
   errors: string[]
@@ -119,7 +122,7 @@ export class ParcelsService {
        JOIN survey_parcels sp
          ON sp.survey_id = s.id
        WHERE sp.parcel_id = $1
-         AND ${submittedVisibleToCallerSql("$3")}
+         AND ${PARCEL_HISTORY_VISIBLE_SQL}
          AND s.submitted_at IS NOT NULL
        ORDER BY s.observation_year ASC NULLS LAST, s.version_number ASC NULLS LAST, s.submitted_at ASC
        LIMIT $2`,
