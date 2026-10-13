@@ -5,6 +5,9 @@ import { brandElevation, brandRadius } from "../../app/brand-tokens"
 import { useBrandTheme } from "../../app/theme"
 import { BUTTON_FADE_IN_DELAY_MS, BUTTON_FADE_MS } from "../../map/swipe-machine"
 
+/** The forced opacity 1 needs this long (ms) to reach the view before the animated style is dropped. */
+export const BUTTON_RESET_SETTLE_MS = 100
+
 export type ImmersiveWindowProps = {
   /** The window's progress from `useImmersive`: 0 full size, 1 receded. */
   progress: SharedValue<number>
@@ -126,9 +129,19 @@ export function ImmersiveButtons({ opacity, hidden, children }: ImmersiveButtons
       setAtRest(false)
       return undefined
     }
-    const timer = setTimeout(() => setAtRest(true), BUTTON_FADE_IN_DELAY_MS + BUTTON_FADE_MS + 40)
-    return () => clearTimeout(timer)
-  }, [hidden])
+    // The fade-in runs on the UI thread and can lag or never finish (a busy JS thread, a view
+    // detached meanwhile). Once it should be done the value is forced to 1, so the buttons are never
+    // left invisible but touchable; only a moment later is the animated style dropped.
+    const done = BUTTON_FADE_IN_DELAY_MS + BUTTON_FADE_MS + 40
+    const force = setTimeout(() => {
+      opacity.value = 1
+    }, done)
+    const drop = setTimeout(() => setAtRest(true), done + BUTTON_RESET_SETTLE_MS)
+    return () => {
+      clearTimeout(force)
+      clearTimeout(drop)
+    }
+  }, [hidden, opacity])
   return (
     <Animated.View
       testID="immersive-buttons"

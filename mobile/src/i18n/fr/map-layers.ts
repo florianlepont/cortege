@@ -149,7 +149,8 @@ export const mapLayersFr = {
     sideA11yLabel: ({ side, name }: { side: "left" | "right"; name: string }) =>
       `${side === "left" ? SIDE_LEFT : SIDE_RIGHT} : ${name}`,
     sideA11yHint: "Balayez vers le haut ou le bas pour changer le fond de ce côté",
-    sideA11yValue: ({ name, era }: { name: string; era: string }) => `${name}, ${era}`,
+    // The label already names the layer: the value is only its era, so it is said once.
+    sideA11yValue: ({ era }: { era: string }) => era,
     announceSide: ({ side, name, era }: { side: "left" | "right"; name: string; era: string }) =>
       `${side === "left" ? SIDE_LEFT : SIDE_RIGHT} : ${name}, ${era}`,
     handleA11yLabel: "Séparation de la comparaison",

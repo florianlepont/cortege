@@ -47,7 +47,13 @@ jest.mock("react-native-reanimated", () => {
 
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { brandMotion } from "../../app/brand-tokens"
-import { immersiveApplies, useImmersive, type Immersive } from "./useImmersive"
+import {
+  FINAL_STATE_SLACK_MS,
+  immersiveApplies,
+  useImmersive,
+  type Immersive,
+} from "./useImmersive"
+import { BUTTON_FADE_IN_DELAY_MS, IMMERSIVE_IN_MS, IMMERSIVE_OUT_MS } from "../../map/swipe-machine"
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -103,6 +109,54 @@ describe("immersiveApplies", () => {
     expect(immersiveApplies()).toBe(false)
     mockPlatform.OS = "ios"
     expect(immersiveApplies()).toBe(true)
+  })
+})
+
+describe("useImmersive, a lost timing", () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => jest.useRealTimers())
+
+  it("leaving: if the fade-in never lands, the final state is written after the timings' time", () => {
+    const tree = mount(true)
+    act(() => tree.update(<Probe on={false} />))
+    // The animation was lost: the value is left at the receded state.
+    latest.window.value = 1
+    latest.buttons.value = 0
+    act(() => {
+      jest.advanceTimersByTime(
+        IMMERSIVE_OUT_MS + BUTTON_FADE_IN_DELAY_MS + FINAL_STATE_SLACK_MS - 1,
+      )
+    })
+    expect(latest.buttons.value).toBe(0)
+    act(() => {
+      jest.advanceTimersByTime(1)
+    })
+    expect(latest.window.value).toBe(0)
+    expect(latest.buttons.value).toBe(1)
+  })
+
+  it("entering: the final receded state is written after the timings' time", () => {
+    const tree = mount(false)
+    act(() => tree.update(<Probe on />))
+    latest.window.value = 0.2
+    latest.buttons.value = 0.8
+    act(() => {
+      jest.advanceTimersByTime(IMMERSIVE_IN_MS + BUTTON_FADE_IN_DELAY_MS + FINAL_STATE_SLACK_MS)
+    })
+    expect(latest.window.value).toBe(1)
+    expect(latest.buttons.value).toBe(0)
+  })
+
+  it("a quick on/off/on keeps only the last settle: no write for a state that was left", () => {
+    const tree = mount(false)
+    act(() => tree.update(<Probe on />))
+    act(() => tree.update(<Probe on={false} />))
+    act(() => tree.update(<Probe on />))
+    act(() => {
+      jest.advanceTimersByTime(10_000)
+    })
+    expect(latest.window.value).toBe(1)
+    expect(latest.buttons.value).toBe(0)
   })
 })
 

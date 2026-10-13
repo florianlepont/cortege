@@ -28,7 +28,7 @@ jest.mock("../../app/theme", () => ({
 }))
 
 import { BUTTON_FADE_IN_DELAY_MS, BUTTON_FADE_MS } from "../../map/swipe-machine"
-import { ImmersiveButtons, ImmersiveWindow } from "./ImmersiveWindow"
+import { BUTTON_RESET_SETTLE_MS, ImmersiveButtons, ImmersiveWindow } from "./ImmersiveWindow"
 
 beforeAll(() => {
   ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -201,6 +201,59 @@ describe("ImmersiveButtons", () => {
     expect(tree.root.findAllByType("Child" as never)).toHaveLength(1)
   })
 
+  it("stuck faded out with the mode off (the animation never finished): the value is forced back to 1, then the opacity is dropped", () => {
+    jest.useFakeTimers()
+    try {
+      const stuck = shared(0)
+      const make = (hidden: boolean) => (
+        <ImmersiveButtons opacity={stuck} hidden={hidden}>
+          <ChildProbe />
+        </ImmersiveButtons>
+      )
+      const tree = render(make(true))
+      act(() => tree.update(make(false)))
+      // The fade-in was meant to run; here it never moved the value.
+      expect(stuck.value).toBe(0)
+      act(() => {
+        jest.advanceTimersByTime(BUTTON_FADE_IN_DELAY_MS + BUTTON_FADE_MS + 40)
+      })
+      expect(stuck.value).toBe(1)
+      // The animated style stays until the forced value had a moment to reach the view.
+      expect(flat(byTestId(tree, "immersive-buttons").props.style)).toHaveProperty("opacity")
+      act(() => {
+        jest.advanceTimersByTime(BUTTON_RESET_SETTLE_MS)
+      })
+      expect(flat(byTestId(tree, "immersive-buttons").props.style)).not.toHaveProperty("opacity")
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  it("hiding again during the fade-in cancels the reset: the buttons fade out as asked", () => {
+    jest.useFakeTimers()
+    try {
+      const value = shared(0)
+      const make = (hidden: boolean) => (
+        <ImmersiveButtons opacity={value} hidden={hidden}>
+          <ChildProbe />
+        </ImmersiveButtons>
+      )
+      const tree = render(make(true))
+      act(() => tree.update(make(false)))
+      act(() => {
+        jest.advanceTimersByTime(BUTTON_FADE_IN_DELAY_MS)
+      })
+      act(() => tree.update(make(true)))
+      act(() => {
+        jest.advanceTimersByTime(5000)
+      })
+      expect(value.value).toBe(0)
+      expect(byTestId(tree, "immersive-buttons").props.pointerEvents).toBe("none")
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
   it("the fade exists only while the buttons are hidden or coming back, then the opacity is dropped", () => {
     jest.useFakeTimers()
     try {
@@ -216,7 +269,9 @@ describe("ImmersiveButtons", () => {
       // Fading back in: the animated opacity is still there.
       expect(flat(byTestId(tree, "immersive-buttons").props.style)).toHaveProperty("opacity")
       act(() => {
-        jest.advanceTimersByTime(BUTTON_FADE_IN_DELAY_MS + BUTTON_FADE_MS + 40)
+        jest.advanceTimersByTime(
+          BUTTON_FADE_IN_DELAY_MS + BUTTON_FADE_MS + 40 + BUTTON_RESET_SETTLE_MS,
+        )
       })
       expect(flat(byTestId(tree, "immersive-buttons").props.style)).not.toHaveProperty("opacity")
     } finally {
