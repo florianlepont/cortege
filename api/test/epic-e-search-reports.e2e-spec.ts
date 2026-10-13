@@ -249,12 +249,6 @@ describe("Epic E - Search and Reports (e2e)", () => {
       .send({ survey_id: publicSurveyId, reason: "" })
       .expect(400)
 
-    await request(app.getHttpServer())
-      .post("/v1/reports")
-      .set("Authorization", `Bearer ${reporterToken}`)
-      .send({ survey_id: privateSurveyId, reason: "Suspicious values" })
-      .expect(403)
-
     const created = await request(app.getHttpServer())
       .post("/v1/reports")
       .set("Authorization", `Bearer ${reporterToken}`)
@@ -338,6 +332,73 @@ describe("Epic E - Search and Reports (e2e)", () => {
       .send({ survey_id: privateSurveyId, reason: "Owner can still flag own survey for review" })
       .expect(403)
     expect(ownerId).toBeTruthy()
+  })
+
+  it("answers 404, like an unknown id, when a member reports another member's private survey (D-12)", async () => {
+    const stamp = Date.now()
+    const ownerLogin = await request(app.getHttpServer())
+      .post("/v1/debug/test-token")
+      .send({ email: `e2e-epic-e3b-owner-${stamp}@ibp.local`, password: "demo1234" })
+      .expect(201)
+    const ownerToken = ownerLogin.body.access_token as string
+    const reporterLogin = await request(app.getHttpServer())
+      .post("/v1/debug/test-token")
+      .send({ email: `e2e-epic-e3b-reporter-${stamp}@ibp.local`, password: "demo1234" })
+      .expect(201)
+    const reporterToken = reporterLogin.body.access_token as string
+
+    const requiredFactors = { A: 1, B: 1, C: 1, D: 1, E: 1, F: 1, G: 2, H: 2, I: 2, J: 2 }
+    const privateSurveyId = `e2e-epic-e3b-private-${stamp}`
+    const draftSurveyId = `e2e-epic-e3b-draft-${stamp}`
+    for (const [id, visibility] of [
+      [privateSurveyId, "private"],
+      [draftSurveyId, "public"],
+    ]) {
+      await request(app.getHttpServer())
+        .post("/v1/surveys")
+        .set("Authorization", `Bearer ${ownerToken}`)
+        .send({
+          id,
+          sync_version: 1,
+          site_name: "Hidden Forest",
+          visibility,
+          region_version: "ACA",
+          vegetation_stage: "collineen",
+          factors: requiredFactors,
+          scores: {},
+          location: { source: "gps", lat: 48.643, lng: 1.829 },
+        })
+        .expect(201)
+    }
+    // Only the private one is submitted; the other stays a draft (shared draft, still hidden).
+    await db.query(`UPDATE surveys SET status = 'submitted', submitted_at = NOW() WHERE id = $1`, [
+      privateSurveyId,
+    ])
+
+    const unknown = await request(app.getHttpServer())
+      .post("/v1/reports")
+      .set("Authorization", `Bearer ${reporterToken}`)
+      .send({ survey_id: `e2e-epic-e3b-unknown-${randomUUID()}`, reason: "Suspicious values" })
+      .expect(404)
+
+    const hiddenPrivate = await request(app.getHttpServer())
+      .post("/v1/reports")
+      .set("Authorization", `Bearer ${reporterToken}`)
+      .send({ survey_id: privateSurveyId, reason: "Suspicious values" })
+      .expect(404)
+    expect(hiddenPrivate.body).toEqual(unknown.body)
+
+    const hiddenDraft = await request(app.getHttpServer())
+      .post("/v1/reports")
+      .set("Authorization", `Bearer ${reporterToken}`)
+      .send({ survey_id: draftSurveyId, reason: "Suspicious values" })
+      .expect(404)
+    expect(hiddenDraft.body).toEqual(unknown.body)
+
+    const stored = await db.query(`SELECT 1 FROM reports WHERE survey_id = ANY($1::text[])`, [
+      [privateSurveyId, draftSurveyId],
+    ])
+    expect(stored.rows).toHaveLength(0)
   })
 
   it("bounds report reason length and scrubs legacy reported-event identity via migration 013", async () => {
