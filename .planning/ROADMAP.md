@@ -1035,8 +1035,8 @@ Plans:
 ### Phase 29: Private or Public Before Submission (INSERTED, V1)
 
 **Goal**: The observer chooses who sees a survey before submitting it.
-**Depends on**: Phases 11 and 36 (closed accounts)
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Depends on**: Phase 11 (association-only sharing: "member" = any authenticated user). Not Phase 36: private or shared only decides owner-only versus every authenticated user, whatever the way accounts are created (29-CONTEXT D-01)
+**Requirements**: REQ-C-privacy-choice
 **Source**: seminar 2026-10-10: card "Choix privé ou public avant soumission" classed V1; `REQ-C-privacy-choice`
 **Success Criteria** (what must be TRUE):
 
@@ -1044,7 +1044,7 @@ Plans:
   2. A private survey never appears to another member in the map, search or lists, enforced on the server, with API tests.
   3. The toggle removed in Phase 11 is restored with the right wording, and existing surveys keep their current visibility.
 
-**Plans**: TBD
+**Plans**: 0/10 plans executed (29-01 to 29-10, planned 2026-10-13; 29-10 ends with the owner device checkpoint)
 **UI hint**: yes
 
 ### Phase 30: Route Choice Assistant (INSERTED, V1)

@@ -78,3 +78,9 @@ Not in scope: invitations or closed sign-up (Phase 36), moderation, sharing with
 - Showing others that "a private survey exists" on a parcel (rejected, D-11).
 
 </deferred>
+
+## Amendments made while planning (2026-10-13)
+
+- **D-07 refined:** the read-only refusal keeps the per-channel codes of `api-contract-v1.md` (422 `submitted_read_only_fields` on the PATCH channels and on sync `visibility_update`, 409 `survey_submitted_read_only` on upserts of a submitted survey, 409 `sync_version_conflict` for a same-version upsert), with the forbidden field names in `details.fields`. Same guarantee, no client change (the mobile client already maps these codes).
+- **D-01 applied early:** the ROADMAP "Depends on" line was corrected to Phase 11 when the plans were written (plan 29-10 task 4 only has to verify it).
+- Accepted consequences: an owner's private-only parcel shows as not studied in server-coloured layers (own markers come from the local overlay); drafts created before this phase open the sheet on "Privé".
