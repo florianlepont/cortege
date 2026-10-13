@@ -4,6 +4,7 @@ import request = require("supertest")
 import { DatabaseService } from "../src/database/database.service"
 import {
   createE2eApp,
+  createSubmittedSurvey,
   getNextVersionNumber,
   loginTestUser,
   uniqueCoordSeed,
@@ -130,5 +131,44 @@ describe("Parcel history (e2e)", () => {
         true,
       )
     }
+  })
+
+  describe("Phase 29 visibility (D-10)", () => {
+    it("shows each caller their own private surveys and the shared ones, never another member's private survey", async () => {
+      const seed = uniqueCoordSeed()
+      const at = { lat: 48.903 + seed / 100000, lng: 2.391 + seed / 100000 }
+      const tokenA = await loginTestUser(app, "e2e-history-vis-a")
+      const tokenB = await loginTestUser(app, "e2e-history-vis-b")
+
+      const aPrivate = await createSubmittedSurvey(app, db, tokenA, { visibility: "private", at })
+      const aShared = await createSubmittedSurvey(app, db, tokenA, { visibility: "public", at })
+      const bShared = await createSubmittedSurvey(app, db, tokenB, { visibility: "public", at })
+      const bPrivate = await createSubmittedSurvey(app, db, tokenB, { visibility: "private", at })
+      const parcelId = aPrivate.parcelId
+      expect(new Set([aShared, bShared, bPrivate].map((s) => s.parcelId))).toEqual(
+        new Set([parcelId]),
+      )
+
+      const historyIds = async (token: string): Promise<string[]> => {
+        const res = await request(app.getHttpServer())
+          .get(`/v1/parcels/${encodeURIComponent(parcelId)}/surveys/history`)
+          .set("Authorization", `Bearer ${token}`)
+          .query({ limit: 10 })
+          .expect(200)
+        return (res.body.items as Array<{ survey_id: string }>).map((item) => item.survey_id)
+      }
+
+      const idsA = await historyIds(tokenA)
+      expect(idsA).toEqual([aPrivate.surveyId, aShared.surveyId, bShared.surveyId])
+      expect(idsA).not.toContain(bPrivate.surveyId)
+
+      const idsB = await historyIds(tokenB)
+      expect(idsB).toEqual([aShared.surveyId, bShared.surveyId, bPrivate.surveyId])
+      expect(idsB).not.toContain(aPrivate.surveyId)
+
+      await request(app.getHttpServer())
+        .get(`/v1/parcels/${encodeURIComponent(parcelId)}/surveys/history`)
+        .expect(401)
+    })
   })
 })
