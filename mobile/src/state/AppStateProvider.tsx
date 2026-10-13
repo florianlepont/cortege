@@ -236,7 +236,7 @@ function useAppController() {
     submitSurvey: ops.handleSubmitSurvey,
     retrySurvey: ops.handleRetrySurvey,
     discardSurvey: ops.handleDiscardSurvey,
-    toggleVisibility: ops.handleToggleVisibility,
+    setDraftVisibility: ops.handleSetDraftVisibility,
     confirmDeleteSurvey: ops.confirmDeleteSurvey,
     discardEmptyDraft: ops.handleDiscardEmptyDraft,
     queueAttachmentFromLibrary: ops.handleQueueAttachmentFromLibrary,

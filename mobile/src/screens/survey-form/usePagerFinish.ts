@@ -34,7 +34,7 @@ type UsePagerFinishParams = {
   flushDraft: () => Promise<boolean>
   /** The survey actions' `submitSurvey` (`handleSubmitSurvey`): sends the pending changes itself,
    * then submits, one finish at a time per survey (D-25). */
-  submitSurvey: (surveyId: string) => Promise<void>
+  submitSurvey: (surveyId: string) => Promise<unknown>
   /** Called once when the survey has become "submitted" after a finish from here. */
   onFinished: () => void
 }

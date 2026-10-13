@@ -62,7 +62,12 @@ export type SurveyActions = {
   submitSurvey: SurveyOperations["handleSubmitSurvey"]
   retrySurvey: SurveyOperations["handleRetrySurvey"]
   discardSurvey: SurveyOperations["handleDiscardSurvey"]
-  toggleVisibility: SurveyOperations["handleToggleVisibility"]
+  /**
+   * Phase 29, D-05: stores the shared or private choice of a draft in the queue, silently and without
+   * a sync (the finish sends it). Resolves "frozen" for a submitted survey (D-07), rejects when the
+   * local write fails.
+   */
+  setDraftVisibility: SurveyOperations["handleSetDraftVisibility"]
   confirmDeleteSurvey: SurveyOperations["confirmDeleteSurvey"]
   /** Drops the empty draft the new-survey wizard opened, when it is left before the site is named. */
   discardEmptyDraft: SurveyOperations["handleDiscardEmptyDraft"]
