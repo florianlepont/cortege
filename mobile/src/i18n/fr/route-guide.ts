@@ -33,7 +33,7 @@ const TERM = {
   },
   parPlacette: {
     term: "Parcours partiel par placette",
-    text: "Vous relevez tout dans une surface de forme simple et de taille connue, par exemple un cercle d'un hectare (rayon de 56,4 mètres).",
+    text: "Vous relevez tout dans une surface de forme simple et de taille connue, un cercle par exemple.",
   },
   relevePlafonne: {
     term: "Relevé plafonné",
