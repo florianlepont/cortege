@@ -16,22 +16,12 @@ import { AppPressable } from "../../ui/AppPressable"
 import { AppText as Text } from "../../ui/AppText"
 import type { ForestTextBlock } from "../../ui/ForestAurora"
 import { ForestCard } from "../../ui/ForestCard"
-import { GlossaryInfo, type GlossaryTermId } from "../../ui/GlossaryInfo"
+import { GlossaryInfo } from "../../ui/GlossaryInfo"
 import { RESUME_LAYOUT } from "../home/layout-budget"
+import { COUNTING_TERM, METHOD_TERM } from "./glossary-terms"
 import { SuggestionEntrance } from "./SuggestionEntrance"
 
 const guide = fr.routeGuide
-
-/** The glossary term of each parcours and of each mode de relevé (spec section 3). */
-const METHOD_TERM: Readonly<Record<RouteMethod, GlossaryTermId>> = {
-  full: "parcoursEnPlein",
-  partial_strip: "parBande",
-  partial_plot: "parPlacette",
-}
-const COUNTING_TERM: Readonly<Record<CountingMode, GlossaryTermId>> = {
-  capped: "relevePlafonne",
-  uncapped: "releveDeplafonne",
-}
 
 export type SuggestionCardProps = {
   method: RouteMethod
