@@ -17,7 +17,7 @@ const spokenDelta = (delta: number | null): string => {
 }
 
 export const parcelHistoryFr = {
-  title: "Historique de la parcelle",
+  title: "Historique",
   loading: "Chargement de l'historique…",
   loadFailed: "Impossible de charger l'historique de cette parcelle.",
   empty: "Aucun relevé précédent sur cette parcelle.",

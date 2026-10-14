@@ -3,7 +3,7 @@ import { fr } from "../../i18n"
 import type { HistoryRowDisplay } from "./history-row"
 import { buildSummaryRowSections } from "./summary-rows"
 
-// Phase 30 (plan 30-22, U-O9): the short route label sits on the "Parcelles et parcours" row
+// Phase 30 (plan 30-22, U-O9): the short route label sits on the "Parcelles" row
 // (moved from the Contexte row on 2026-10-14).
 
 const HISTORY: HistoryRowDisplay = { value: "", accessibilityLabel: "", pressable: false }
@@ -53,9 +53,9 @@ describe("buildSummaryRowSections context row", () => {
   })
 })
 
-describe("buildSummaryRowSections parcels row (Parcelles et parcours)", () => {
-  test("is named Parcelles et parcours", () => {
-    expect(parcelsRow(data()).label).toBe("Parcelles et parcours")
+describe("buildSummaryRowSections parcels row (Parcelles)", () => {
+  test("is named Parcelles", () => {
+    expect(parcelsRow(data()).label).toBe("Parcelles")
   })
 
   test("without a route it shows the parcel count alone", () => {

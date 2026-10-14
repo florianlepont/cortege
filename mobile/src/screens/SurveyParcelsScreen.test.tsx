@@ -114,7 +114,7 @@ describe("SurveyParcelsScreen (D-32)", () => {
       "RouteSection",
       "SurveyOfflineMapRow",
     ])
-    expect(tree.root.findByType("PageTitle" as never).props.children).toBe("Parcelles et parcours")
+    expect(tree.root.findByType("PageTitle" as never).props.children).toBe("Parcelles")
   })
 
   test("lists one row per parcel under its heading", () => {

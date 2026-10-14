@@ -282,7 +282,7 @@ describe("AppGroupedList (ACC-03)", () => {
         rows: [
           {
             key: "history",
-            label: "Historique de la parcelle",
+            label: "Historique",
             value: "+3 depuis le relevé précédent",
             multiline: true,
             onPress: jest.fn(),
@@ -291,7 +291,7 @@ describe("AppGroupedList (ACC-03)", () => {
       },
     ])
     const texts = root.findAll((node: ReactTestInstance) => (node.type as unknown) === "Text")
-    const label = texts.find((node) => node.props.children === "Historique de la parcelle")
+    const label = texts.find((node) => node.props.children === "Historique")
     const value = texts.find((node) => node.props.children === "+3 depuis le relevé précédent")
     expect(label?.props.numberOfLines).toBe(2)
     expect(value?.props.numberOfLines).toBe(1)

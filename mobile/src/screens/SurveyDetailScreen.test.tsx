@@ -49,7 +49,7 @@ afterEach(() => {
 const mockScrollTo = jest.fn()
 const RANGE_DISPLAY = {
   value: "21 \u2192 34",
-  accessibilityLabel: "Historique de la parcelle. de 21 à 34 sur 50",
+  accessibilityLabel: "Historique. de 21 à 34 sur 50",
   pressable: true,
 }
 let mockHistoryDisplay: {
@@ -415,7 +415,7 @@ describe("SurveyDetailScreen summary", () => {
     expect(contextRow.onPress).toBe(props.onOpenContext)
   })
 
-  test("the Parcelles et parcours row carries the short route label after the parcel count (U-O9)", () => {
+  test("the Parcelles row carries the short route label after the parcel count (U-O9)", () => {
     mockRoute = {
       version: 1,
       method: "full",
@@ -426,7 +426,7 @@ describe("SurveyDetailScreen summary", () => {
     const tree = mount("draft")
     const rows = byType(tree, "AppGroupedList")[0].props.sections[0].rows
     expect(rows[0].value).toBe("v3.0")
-    expect(rows[1].label).toBe("Parcelles et parcours")
+    expect(rows[1].label).toBe("Parcelles")
     expect(rows[1].value).toMatch(/ · Parcours en plein$/)
   })
 
@@ -449,7 +449,7 @@ describe("SurveyDetailScreen summary", () => {
     expect(rows).toHaveLength(4)
     expect(rows.map((row: { label: string }) => row.label)).toEqual([
       "Contexte",
-      "Parcelles et parcours",
+      "Parcelles",
       "Facteurs IBP",
       fr.surveyDetail.rows.history,
     ])
@@ -491,7 +491,7 @@ describe("SurveyDetailScreen summary", () => {
       label: fr.surveyDetail.rows.history,
       value: "21 \u2192 34",
       multiline: true,
-      accessibilityLabel: "Historique de la parcelle. de 21 à 34 sur 50",
+      accessibilityLabel: "Historique. de 21 à 34 sur 50",
       onPress: props.onOpenHistory,
     })
     expect(useHistoryRow).toHaveBeenCalledWith({
@@ -506,7 +506,7 @@ describe("SurveyDetailScreen summary", () => {
   test("D-01: without a parcel the history row has no press (and so no chevron)", () => {
     mockHistoryDisplay = {
       value: "Aucune parcelle",
-      accessibilityLabel: "Historique de la parcelle. Aucune parcelle",
+      accessibilityLabel: "Historique. Aucune parcelle",
       pressable: false,
     }
     const tree = mount("draft")

@@ -14,10 +14,10 @@ export const navigationFr = {
     communitySurvey: "Relevé de la communauté",
     // D-32: the old "Contexte et parcelles" page is two pages.
     surveyContext: "Contexte",
-    surveyParcelsPage: "Parcelles et parcours",
+    surveyParcelsPage: "Parcelles",
     surveyScore: "Facteurs IBP",
-    surveyHistory: "Historique de la parcelle",
-    communityHistory: "Historique de la parcelle",
+    surveyHistory: "Historique",
+    communityHistory: "Historique",
     surveyJournal: "Journal du relevé",
     newSurvey: "Nouveau relevé",
     editSurvey: "Modifier le relevé",

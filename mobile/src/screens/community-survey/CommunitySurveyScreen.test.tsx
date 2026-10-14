@@ -348,7 +348,7 @@ describe("CommunitySurveyScreen", () => {
     expect(texts(render(state({ photosFailed: true })).tree)).toContain(t.photosFailed)
   })
 
-  it("shows one 'Historique de la parcelle' row when the parcels have other surveys", () => {
+  it("shows one 'Historique' row when the parcels have other surveys", () => {
     const history = [
       {
         survey_id: "s-1",
@@ -380,7 +380,7 @@ describe("CommunitySurveyScreen", () => {
       label: fr.surveyDetail.rows.history,
       multiline: true,
       value: "24 → 31",
-      accessibilityLabel: "Historique de la parcelle. de 24 à 31 sur 50",
+      accessibilityLabel: "Historique. de 24 à 31 sur 50",
     })
     const all = tree.root.findAll((node) => node.type !== undefined)
     const order = all

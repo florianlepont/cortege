@@ -120,7 +120,7 @@ describe("fr.surveyDetail summary row texts", () => {
   const { rows, a11y } = fr.surveyDetail
 
   test("row label and values", () => {
-    expect(rows.history).toBe("Historique de la parcelle")
+    expect(rows.history).toBe("Historique")
     expect(rows.historyValue({ first: 21, latest: 34 })).toBe("21 → 34")
     expect(rows.historyCount(1)).toBe("1 relevé")
     expect(rows.historyCount(2)).toBe("2 relevés")
@@ -130,14 +130,14 @@ describe("fr.surveyDetail summary row texts", () => {
   })
 
   test("spoken row and range", () => {
-    expect(a11y.historyRow({ label: "Historique de la parcelle", value: "Indisponible" })).toBe(
-      "Historique de la parcelle. Indisponible",
+    expect(a11y.historyRow({ label: "Historique", value: "Indisponible" })).toBe(
+      "Historique. Indisponible",
     )
     expect(a11y.historyRange({ first: 21, latest: 34 })).toBe("de 21 à 34 sur 50")
   })
 
   test("both history page headers carry the owner label", () => {
-    expect(fr.navigation.headers.surveyHistory).toBe("Historique de la parcelle")
-    expect(fr.navigation.headers.communityHistory).toBe("Historique de la parcelle")
+    expect(fr.navigation.headers.surveyHistory).toBe("Historique")
+    expect(fr.navigation.headers.communityHistory).toBe("Historique")
   })
 })
