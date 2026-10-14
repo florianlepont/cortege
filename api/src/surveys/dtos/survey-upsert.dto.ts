@@ -18,6 +18,8 @@ import { IBP_CAS_VALUES, IBP_METHOD_VERSIONS, SURVEY_NOTE_MAX_LENGTH } from "@co
 import { SAFE_ID_PATTERN } from "../../common/safe-id"
 import { FactorAnnotationsConstraint } from "./factor-annotations.constraint"
 import { MAX_PARCEL_IDS, PARCEL_ID_PATTERN } from "./parcel-id.constants"
+import { SurveyRouteConstraint } from "./survey-route.constraint"
+import { SurveyRouteDto } from "./survey-route.dto"
 import { SurveyWeatherDto } from "./survey-weather.dto"
 
 export class SurveyUpsertDto {
@@ -101,6 +103,15 @@ export class SurveyUpsertDto {
   @ValidateNested()
   @Type(() => SurveyWeatherDto)
   weather?: SurveyWeatherDto | null
+
+  // Phase 30 (D-08, D-09): the recorded route ("Parcours utilise"), a nested object with every key
+  // declared; the cross-field rules are the package's (validateSurveyRoute). Absent or null passes
+  // here: whether a route is required is decided by the service (plan 30-10).
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SurveyRouteDto)
+  @Validate(SurveyRouteConstraint)
+  survey_route?: SurveyRouteDto | null
 
   // Phase 27 (D-01, D-23): `factors.annotations` (doubt and note per factor) rides in the factors
   // object; its shape is the package's (factorAnnotationsIssues), not a rule written here.
