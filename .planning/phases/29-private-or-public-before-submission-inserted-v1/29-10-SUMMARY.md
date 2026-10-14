@@ -3,7 +3,7 @@ phase: 29-private-or-public-before-submission-inserted-v1
 plan: 10
 subsystem: docs
 tags: [documentation, visibility, privacy, contracts, gate]
-status: partial
+status: complete
 requires:
   - phase: 29-01 to 29-09
     provides: "the built behaviour the documents describe (predicate, migration 024, frozen visibility, finish sheet, guarantee suite)"
@@ -36,9 +36,9 @@ requirements-completed: []
 completed: 2026-10-13
 ---
 
-# Phase 29 Plan 10: Documentation and full gate (Tasks 1 and 2 only) Summary
+# Phase 29 Plan 10: Documentation, full gate, device checks and tracking Summary
 
-**PARTIAL: Tasks 1 and 2 are done. Tasks 3 and 4 are pending: owner device checks and tracking (REQUIREMENTS, ROADMAP, STATE, device-checks rows).** The contracts, sync rules, specs and CLAUDE.md now describe the built private or shared choice, and the full gate shows no failure caused by this phase.
+**All four tasks are done.** Tasks 1 and 2 (documents, specs, CLAUDE.md, full gate) were done by the executor. Tasks 3 and 4 were done afterwards by the orchestrator: the owner approved the device checks DV-29-01 to DV-29-04 on 2026-10-13 (one global approval, no per-check detail) and validated DV-29-04 on the production server on 2026-10-14; the device-check rows, the REQUIREMENTS trace, the ROADMAP (dependency corrected to Phase 11) and STATE were written then. The contracts, sync rules, specs and CLAUDE.md now describe the built private or shared choice, and the full gate shows no failure caused by this phase.
 
 ## Accomplishments
 
@@ -99,12 +99,10 @@ None.
 
 None. T-29-34 (stale docs re-deriving visibility by hand) is mitigated: contract and CLAUDE.md name `PUBLIC_SURVEY_PREDICATE` and `survey-read-paths.spec.ts`.
 
-## Pending
+## Tasks 3 and 4 (closed 2026-10-14)
 
-- Task 3: owner device checks DV-29-01 to DV-29-05 (checkpoint, orchestrator).
-- Task 4: device-check records, REQUIREMENTS trace, ROADMAP dependency (D-01) and STATE (orchestrator).
-
-Tasks 3 and 4 pending: owner device checks and tracking.
+- Task 3: owner device checks approved on 2026-10-13 (DV-29-01 to DV-29-04, one global approval). DV-29-04 was validated by the owner on the production server on 2026-10-14, after the server updated to commit `647699d9`. DV-29-05 (Android emulator) was not run and moves to Phase 35.
+- Task 4: done in commit `633ac20f` (rows DV-29-01 to DV-29-05 in `docs/user-tests/device-checks.md`, `REQ-C-privacy-choice` traced, ROADMAP Depends on Phase 11, STATE). The follow-up fix #301 removed the visibility line of a draft (owner decision 2026-10-14).
 
 ## Self-Check: PASSED
 

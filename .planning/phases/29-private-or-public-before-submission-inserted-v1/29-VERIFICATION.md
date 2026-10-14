@@ -1,8 +1,8 @@
 ---
 phase: 29-private-or-public-before-submission-inserted-v1
 verified: 2026-10-13T00:00:00Z
-status: human_needed
-score: 20/20 must-haves verified (3 success criteria, 17 decisions); 5 device-only items pending
+status: passed
+score: 20/20 must-haves verified (3 success criteria, 17 decisions); device checks DV-29-01 to DV-29-04 approved by the owner, DV-29-05 (Android) moved to Phase 35
 behavior_unverified: 0
 overrides_applied: 0
 gaps: []
@@ -117,6 +117,13 @@ Intentionally pending (plan 29-10 Task 3, owner device checks; Task 4 tracking f
 3. **DV-29-03** second account against a Phase 29 API: private survey absent from Explorer, search, parcel history, community pages; shared one visible; draft lines Restera privé / Sera partagé.
 4. **DV-29-04** after migration 024 on the phone's server: old submitted survey reads Partagé avec l'association after one pull.
 5. **DV-29-05** (optional) Android emulator: full-screen modal, status bar clearance, back closes.
+
+## Closure (2026-10-14)
+
+- DV-29-01 to DV-29-03: approved by the owner on 2026-10-13, one global approval without per-check detail.
+- DV-29-04: validated by the owner on the production server on 2026-10-14 (production runs the merge commit `647699d9`, migration 024 included).
+- DV-29-05 (Android emulator, optional): not run, reported to Phase 35 with the Android phone pass.
+- Follow-up #301 (2026-10-14): a draft no longer shows a visibility line (draft strings removed from the catalogue), so the draft wording named in item 3 above no longer exists; a finished survey keeps its line.
 
 ## Gaps Summary
 

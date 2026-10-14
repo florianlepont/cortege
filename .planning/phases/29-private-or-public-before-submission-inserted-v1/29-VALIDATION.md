@@ -1,9 +1,9 @@
 ---
 phase: 29
 slug: private-or-public-before-submission-inserted-v1
-status: draft
+status: approved
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-10-13
 ---
 
@@ -93,9 +93,9 @@ Results go to `docs/user-tests/device-checks.md` (plan 29-10, task 4). Device ch
 
 - [x] All tasks have an `<automated>` verify or a Wave 0 dependency (the checkpoint task 29-10-3 is manual by design)
 - [x] Sampling continuity: no 3 consecutive tasks without an automated verify
-- [ ] Wave 0 files exist (set when executed)
+- [x] Wave 0 files exist (all created by plans 29-01 to 29-09)
 - [x] No watch-mode flags
 - [x] Feedback latency under 60 s per task
 - [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending execution
+**Approval:** approved 2026-10-14 (all plans executed, full gate run, device checks closed)

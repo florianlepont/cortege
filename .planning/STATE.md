@@ -6,14 +6,14 @@ current_phase: 29
 current_phase_name: Private or Public Before Submission (INSERTED, V1)
 status: ready_to_plan
 stopped_at: Phase 29 complete
-last_updated: "2026-10-13T12:00:00.000Z"
-last_activity: 2026-10-13
-last_activity_desc: Phase 29 complete
+last_updated: "2026-10-14T05:30:00.000Z"
+last_activity: 2026-10-14
+last_activity_desc: Phase 29 complete and closed (PRs 300 and 301 merged, device checks validated)
 progress:
   total_phases: 39
-  completed_phases: 20
+  completed_phases: 21
   total_plans: 220
-  completed_plans: 285
+  completed_plans: 295
   percent: 46
 ---
 
