@@ -14,6 +14,10 @@ export const PDF_PAGE = { width: 595, height: 842 } as const
  * Height of one fixed page block. A block of 842 px spilled a second page for every block on iOS
  * (13 pages for 7 blocks, measured 2026-10-10); 840 gives exactly 7 pages on iOS and Android.
  */
+// Phase 30 (2026-10-14): a draft with a "Parcours utilisé" block prints 5 pages on the Android emulator
+// (parcours en plein, plafonné, no factor filled; page 1 holds the identity, the method, the conditions
+// and the route block). The maximal fixture with a route (unit estimate 10 pages) was not printed on
+// a device yet (RC-05 in docs/user-tests/device-checks.md).
 export const PDF_PAGE_BLOCK_HEIGHT = 840
 
 /** Share of a page block that the greedy packer of `paginate.ts` may fill (RESEARCH, not measured). */
