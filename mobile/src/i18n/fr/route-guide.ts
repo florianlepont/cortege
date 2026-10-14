@@ -347,6 +347,8 @@ export const routeGuideFr = {
     counting: "Mode de relevé",
     details: "Détails",
     recommended: "Conseillé",
+    // One help line under the intro, edit mode only: "Pas sûr ?" then the accent link.
+    adviseLead: "Pas sûr ?",
     advise: "Être conseillé",
     // Read by a screen reader on the disabled button of the chooser: its name, then why.
     useDisabledA11y:

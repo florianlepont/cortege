@@ -291,7 +291,18 @@ describe("RouteChooseScreen: footer, link and sections", () => {
 
   test("the link Être conseillé shows in edit mode only", () => {
     const edit = mount({ standHa: 8 }, { mode: "edit" })
+    expect(edit.texts()).toContain("Pas sûr ?")
     expect(edit.texts()).toContain("Être conseillé")
+    // One line at the top of the scroll content: under the intro, above the Parcours cards.
+    const scroll = edit.one("route-choose-scroll")
+    const order = scroll.children.map((child) =>
+      typeof child === "string" ? child : (child.props.testID as string | undefined),
+    )
+    expect(order.indexOf("route-advise-line")).toBe(1)
+    expect(edit.one("route-advise-link").props.accessibilityRole).toBe("button")
+    expect(
+      edit.byId("route-advise-line")[0].findAll((n) => n.props.testID === "route-advise-link"),
+    ).not.toHaveLength(0)
     edit.press("route-advise-link")
     expect(edit.onAdvise).toHaveBeenCalledTimes(1)
     expect(mount({ standHa: 8 }).byId("route-advise-link")).toHaveLength(0)

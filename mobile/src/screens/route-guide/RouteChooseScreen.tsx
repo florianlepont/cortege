@@ -110,6 +110,21 @@ export function RouteChooseScreen({
       >
         <Text style={styles.lead}>{chooser.lead}</Text>
 
+        {mode === "edit" ? (
+          <View style={styles.adviseLine} testID="route-advise-line">
+            <Text style={styles.adviseLead}>{chooser.adviseLead}</Text>
+            <AppPressable
+              style={styles.link}
+              onPress={onAdvise}
+              accessibilityRole="button"
+              accessibilityLabel={chooser.advise}
+              testID="route-advise-link"
+            >
+              <Text style={styles.linkLabel}>{chooser.advise}</Text>
+            </AppPressable>
+          </View>
+        ) : null}
+
         <View style={styles.section}>
           <AppSectionHeader title={chooser.parcours} titleAccessibilityRole="header" />
           <View style={styles.cards} accessibilityRole="radiogroup">
@@ -171,18 +186,6 @@ export function RouteChooseScreen({
             onChange={onChangeDetails}
           />
         )}
-
-        {mode === "edit" ? (
-          <AppPressable
-            style={styles.link}
-            onPress={onAdvise}
-            accessibilityRole="button"
-            accessibilityLabel={chooser.advise}
-            testID="route-advise-link"
-          >
-            <Text style={styles.linkLabel}>{chooser.advise}</Text>
-          </AppPressable>
-        ) : null}
       </ScrollView>
 
       <View
@@ -238,8 +241,17 @@ function createStyles(theme: BrandTheme) {
     cards: {
       gap: brandSpacing4.sm,
     },
+    adviseLine: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      columnGap: brandSpacing4.xs,
+    },
+    adviseLead: {
+      ...brandTypeScale.subhead,
+      color: theme.colors.textSecondary,
+    },
     link: {
-      alignSelf: "flex-start",
       minHeight: 44,
       justifyContent: "center",
     },
