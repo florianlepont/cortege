@@ -105,6 +105,7 @@ function makeData(overrides: Partial<SurveyExportData> = {}): SurveyExportData {
       J: { type_count: 0 },
     },
     conditions: { note: null, weather: null },
+    route: null,
     photos: { items: [], total: 0, unavailable: 0 },
     map: null,
     history: null,

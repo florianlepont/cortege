@@ -6,6 +6,7 @@ import { FACTOR_KEYS, type SurveyWeather } from "@cortege/ibp-domain"
 
 import { fr } from "../../i18n"
 import {
+  WORST_ROUTE,
   exportFixtureV30Draft,
   exportFixtureV32Submitted,
   exportFixtureWorstCase,
@@ -16,6 +17,7 @@ import { buildFactorChartBlock } from "./factor-chart-svg"
 import { buildFactorBlocks } from "./factor-section"
 import { escapeHtml, formatDateFr } from "./html"
 import { PAGE_FILL_FACTOR } from "./paginate"
+import { buildRouteBlock } from "./route-section"
 import { PDF_PAGE_BLOCK_HEIGHT } from "./export-settings"
 import { buildPdfPalette } from "./palette"
 import { buildScoreSummaryBlock } from "./score-section"
@@ -448,5 +450,121 @@ describe("buildSurveyExportHtml font warm-up", () => {
     const pages = bodyOf(html).split(`<section class="${PDF_CLASS.page}`).slice(1)
     expect(countOf(html, `<div class="${PDF_CLASS.warmup}"`)).toBe(1)
     expect(pages[0]).toContain(`<div class="${PDF_CLASS.warmup}"`)
+  })
+})
+
+// Phase 30 (D-09, spec section 9, U-11, P-3): the "Parcours utilisé" block, right after the
+// conditions, and the identity row "Mode de relevé" that goes only when the block prints.
+describe("buildSurveyExportHtml route block (phase 30)", () => {
+  const rt = t.route
+  const WITH_ROUTE: SurveyExportData = { ...exportFixtureV32Submitted, route: WORST_ROUTE }
+  const WITH_BOTH: SurveyExportData = { ...WITH_CONDITIONS, route: WORST_ROUTE }
+
+  it("sits right after the conditions block and before the score summary", () => {
+    const { html } = buildSurveyExportHtml(WITH_BOTH)
+
+    expectInOrder(bodyOf(html), [
+      t.identity.heading,
+      t.method.heading,
+      t.conditions.heading,
+      rt.heading,
+      t.scores.totalHeading,
+      t.scores.chartHeading,
+      t.factors.standGroup,
+    ])
+  })
+
+  it("sits right after the identity and method blocks when there is no conditions block", () => {
+    const { html } = buildSurveyExportHtml(WITH_ROUTE)
+
+    expect(bodyOf(html)).not.toContain(t.conditions.heading)
+    expectInOrder(bodyOf(html), [
+      t.identity.heading,
+      t.method.heading,
+      rt.heading,
+      t.scores.totalHeading,
+    ])
+  })
+
+  it("carries its CSS in the document style after the conditions CSS", () => {
+    const { html } = buildSurveyExportHtml(WITH_BOTH)
+    const css = html.slice(html.indexOf("<style>"), html.indexOf("</style>"))
+
+    expectInOrder(css, [".identity-heading", ".conditions-card", ".route-card", ".score-"])
+  })
+
+  it("removes the identity row Mode de relevé when the block prints, and only then", () => {
+    const withRoute = bodyOf(buildSurveyExportHtml(WITH_ROUTE).html)
+    const without = bodyOf(buildSurveyExportHtml(exportFixtureV32Submitted).html)
+
+    expect(withRoute).not.toContain(t.identity.cappedMode)
+    // The route block carries the same caption "Mode de relevé" (spec section 9): one row only, and
+    // it is the block's, after the "Parcours utilisé" heading, not the identity card's.
+    expect(t.identity.surveyMode).toBe(rt.counting)
+    expect(countOf(withRoute, `>${t.identity.surveyMode}</th>`)).toBe(1)
+    expect(withRoute.indexOf(`>${t.identity.surveyMode}</th>`)).toBeGreaterThan(
+      withRoute.indexOf(rt.heading),
+    )
+    expect(without).toContain(t.identity.cappedMode)
+    expect(countOf(without, `>${t.identity.surveyMode}</th>`)).toBe(1)
+  })
+
+  it("prints nothing about the route for a survey without one, draft or submitted", () => {
+    for (const data of [exportFixtureV32Submitted, exportFixtureV30Draft]) {
+      const { html } = buildSurveyExportHtml(data)
+      expect(bodyOf(html)).not.toContain(rt.heading)
+      expect(bodyOf(html)).not.toContain('class="route-card"')
+      expect(bodyOf(html)).toContain(t.identity.cappedMode)
+    }
+  })
+
+  it("prints a draft with its route, banner and watermark kept", () => {
+    const { html, pageCount } = buildSurveyExportHtml({
+      ...exportFixtureV30Draft,
+      route: WORST_ROUTE,
+    })
+
+    expect(bodyOf(html)).toContain(rt.heading)
+    expect(countOf(html, `<div class="${PDF_CLASS.banner}">`)).toBe(pageCount)
+    expect(countOf(html, `<div class="${PDF_CLASS.watermark}">`)).toBe(pageCount)
+  })
+
+  it("prints the Choix sentence and the factors counted in full, escaped", () => {
+    const { html } = buildSurveyExportHtml(WITH_ROUTE)
+
+    expect(html).toContain("Conseillé par l&#39;application d&#39;après vos réponses")
+    expect(html).toContain(`>${rt.countedFactors}</th>`)
+    expect(html).toContain(`>${rt.complement}</th>`)
+  })
+
+  // The page counts are those of the jsdom-free estimate (block heights against the page capacity),
+  // not a device measurement: plan 30-24 measures the real page count on iOS and Android. A survey
+  // without a route keeps its old count; with the block, an ordinary survey loses the room for the
+  // chart on page 1 (identity 226 + method 93 + route 181 + scores 136 leaves 44 of 680), which
+  // costs one page.
+  it.each([
+    ["a v3.0 draft without a route", exportFixtureV30Draft, 4],
+    ["a v3.2 submitted survey without a route", exportFixtureV32Submitted, 4],
+    ["a v3.2 submitted survey with the fullest route", WITH_ROUTE, 5],
+    ["the worst case sheet (fullest route, 24 photos)", exportFixtureWorstCase, 10],
+    ["the worst case sheet without its route", { ...exportFixtureWorstCase, route: null }, 10],
+  ])("pins the page count of %s at %i", (_label, data, expected) => {
+    expect(buildSurveyExportHtml(data).pageCount).toBe(expected)
+  })
+
+  it("keeps the route block whole, once, on a single page, never taller than a page", () => {
+    const block = buildRouteBlock(exportFixtureWorstCase, buildPdfPalette())
+    const capacity =
+      (PDF_PAGE_BLOCK_HEIGHT - PAGE_HEADER_HEIGHT - PAGE_FOOTER_HEIGHT - DRAFT_BANNER_HEIGHT) *
+      PAGE_FILL_FACTOR
+
+    expect(block).not.toBeNull()
+    expect(block?.height ?? 0).toBeLessThanOrEqual(capacity)
+    const pages = pagesOf(buildSurveyExportHtml(exportFixtureWorstCase).html)
+    expect(pages.filter((page) => page.includes(block?.html ?? ""))).toHaveLength(1)
+  })
+
+  it("never prints an em dash in the block", () => {
+    expect(buildRouteBlock(exportFixtureWorstCase, buildPdfPalette())?.html).not.toContain(EM_DASH)
   })
 })

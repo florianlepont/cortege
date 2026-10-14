@@ -118,8 +118,12 @@ function identityRows(data: SurveyExportData): Row[] {
       ),
     )
   }
-  // The app only knows the capped survey mode: no factor is lifted above its cap.
-  rows.push(textRow(t.identity.surveyMode, t.identity.cappedMode))
+  // Phase 30 (spec section 9, U-11, P-3): the "Parcours utilisé" block states the mode of the
+  // survey (capped, or the factors counted in full), so the row would repeat it, and the capped
+  // sentence would be wrong for an uncapped survey. It goes only when that block prints. A survey
+  // with no route (submitted before the phase) keeps the row exactly as it was: the app then
+  // only knew the capped mode and no factor was lifted above its cap.
+  if (data.route === null) rows.push(textRow(t.identity.surveyMode, t.identity.cappedMode))
   return rows
 }
 

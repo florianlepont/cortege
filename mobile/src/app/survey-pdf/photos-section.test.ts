@@ -67,6 +67,7 @@ function makeData(photosField: Partial<SurveyExportData["photos"]> = {}): Survey
     coordinates: null,
     rawFactors: {},
     conditions: { note: null, weather: null },
+    route: null,
     photos: { items, total: items.length, unavailable: 0, ...photosField },
     map: null,
     history: null,
