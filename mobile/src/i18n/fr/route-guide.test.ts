@@ -72,6 +72,13 @@ const SAMPLES: Record<string, () => string> = {
       counting: "Relevé plafonné",
       hectares: "2,4",
     }),
+  "routeGuide.details.countedLine": () => fr.routeGuide.details.countedLine("A, B"),
+  "routeGuide.a11y.suggestionCardNoZone": () =>
+    fr.routeGuide.a11y.suggestionCardNoZone({
+      eyebrow: "Parcours choisi par vous",
+      route: "Parcours en plein",
+      counting: "Relevé plafonné",
+    }),
   "routeGuide.a11y.suggestionChanged": () =>
     fr.routeGuide.a11y.suggestionChanged({
       route: "Parcours en plein",

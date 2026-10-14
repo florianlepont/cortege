@@ -340,6 +340,8 @@ export const routeGuideFr = {
       "Un coup d'œil rapide à ce que vous n'avez pas parcouru : genres d'arbres, milieux ouverts et lisières, milieux aquatiques et rocheux. Cela améliore la précision.",
     totalLabel: "Surface totale évaluée",
     countedLead: "Facteurs comptés en entier",
+    countedLine: (factors: string) => `Facteurs comptés en entier : ${factors}`,
+    editCountingA11y: "Modifier les facteurs comptés en entier",
     issues: ZONE_ISSUES,
   },
   chooser: {
@@ -386,6 +388,15 @@ export const routeGuideFr = {
       counting: string
       hectares: string
     }) => `${eyebrow} : ${route}. ${counting}. Surface décrite ${hectares} hectares.`,
+    suggestionCardNoZone: ({
+      eyebrow,
+      route,
+      counting,
+    }: {
+      eyebrow: string
+      route: string
+      counting: string
+    }) => `${eyebrow} : ${route}. ${counting}.`,
     suggestionChanged: ({ route, counting }: { route: string; counting: string }) =>
       `Parcours conseillé : ${route}. ${counting}.`,
     surfaceField: "Surface du peuplement en hectares",

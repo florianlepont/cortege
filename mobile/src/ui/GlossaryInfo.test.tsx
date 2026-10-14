@@ -39,10 +39,10 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-function mount(term: GlossaryTermId = "parPlacette", testID?: string) {
+function mount(term: GlossaryTermId = "parPlacette", testID?: string, color?: string) {
   let tree!: renderer.ReactTestRenderer
   act(() => {
-    tree = renderer.create(<GlossaryInfo term={term} testID={testID} />)
+    tree = renderer.create(<GlossaryInfo term={term} testID={testID} color={color} />)
   })
   const byType = (type: string) => tree.root.findAll((node) => (node.type as unknown) === type)
   const trigger = () => tree.root.findAll((node) => node.props.testID !== undefined)[0]
@@ -68,6 +68,11 @@ describe("GlossaryInfo", () => {
     expect(glyph.props.name).toBe("information-circle-outline")
     expect(glyph.props.size).toBe(20)
     expect(glyph.props.color).toBe(defaultTheme.semanticColors.accent)
+  })
+
+  it("takes the ink of a dark surface when given one (the suggestion's forest card)", () => {
+    const { byType } = mount("parPlacette", undefined, defaultTheme.visual.forest.titleAccent)
+    expect(byType("Ionicons")[0].props.color).toBe(defaultTheme.visual.forest.titleAccent)
   })
 
   it("mounts no Modal until pressed, then shows the term and its plain-French sentence", () => {

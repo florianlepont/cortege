@@ -40,7 +40,9 @@ const mockAnnounce = jest.fn()
 
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { formatHectares } from "../../app/route-text"
+import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
+import { AppChoiceChip } from "../../ui/AppChoiceChip"
 import { LargeStandOptions } from "./LargeStandOptions"
 import { ReasonsCard } from "./ReasonsCard"
 import { SuggestionCard } from "./SuggestionCard"
@@ -132,8 +134,11 @@ describe("SuggestionCard: what it shows", () => {
     const { one } = mount(card({ method: "partial_plot", counting: "capped" }))
     const parcours = one("glossary-info-parPlacette")
     const mode = one("glossary-info-relevePlafonne")
-    expect(parcours).toBeDefined()
-    expect(mode).toBeDefined()
+    const ink = defaultTheme.visual.forest.titleAccent
+    for (const trigger of [parcours, mode]) {
+      const glyph = trigger.findAll((node) => (node.type as unknown) === "Ionicons")[0]
+      expect(glyph.props.color).toBe(ink)
+    }
   })
 
   it("uses the words of each parcours and of the mode déplafonné", () => {
@@ -160,7 +165,7 @@ describe("SuggestionCard: what it shows", () => {
     const uncapped = mount(card({ counting: "uncapped", uncappedFactors: ["A", "F"] }))
     const chips = uncapped.one("route-counted-factors")
     const labels = chips
-      .findAll((node) => node.props.variant === "status")
+      .findAll((node) => node.type === AppChoiceChip)
       .map((node) => node.props.label)
     expect(labels).toEqual([
       fr.surveyDetail.route.factorItem({ letter: "A", title: fr.labels.factorTitles.A }),
@@ -331,7 +336,9 @@ describe("LargeStandOptions", () => {
     expect(radios[0]).toHaveLength(1)
     expect(radios[1]).toHaveLength(1)
     expect(
-      one("route-large-stand").findAll((node) => node.props.accessibilityRole === "radio"),
+      one("route-large-stand").findAll(
+        (node) => typeof node.type === "string" && node.props.accessibilityRole === "radio",
+      ),
     ).toHaveLength(2)
     expect(one("route-large-option-subdivide").props.accessibilityLabel).toBe(
       guide.a11y.optionLabelTagged({
@@ -367,7 +374,10 @@ describe("LargeStandOptions", () => {
 
   it("is a radio group with the title of the large stand", () => {
     const { one, texts } = mount(options("subdivide"))
-    expect(one("route-large-stand").props.accessibilityRole).toBe("radiogroup")
+    const groups = one("route-large-stand").findAll(
+      (node) => typeof node.type === "string" && node.props.accessibilityRole === "radiogroup",
+    )
+    expect(groups).toHaveLength(1)
     expect(texts()).toContain(guide.largeStand.title)
   })
 })

@@ -11,6 +11,11 @@ export type GlossaryTermId = keyof typeof fr.routeGuide.glossary.terms
 
 export type GlossaryInfoProps = {
   term: GlossaryTermId
+  /**
+   * The glyph's ink, for a glyph on a dark surface (the suggestion's forest card, `forest.titleAccent`);
+   * the accent of the theme by default, which is for the glass cards.
+   */
+  color?: string
   testID?: string
 }
 
@@ -21,7 +26,7 @@ export type GlossaryInfoProps = {
  * `fr.routeGuide.glossary.terms`. Same glyph size and hit slop as `AbbreviationInfo`. The sheet is
  * mounted only while open.
  */
-export function GlossaryInfo({ term, testID }: GlossaryInfoProps) {
+export function GlossaryInfo({ term, color, testID }: GlossaryInfoProps) {
   const theme = useBrandTheme()
   const [open, setOpen] = useState(false)
   const entry = fr.routeGuide.glossary.terms[term]
@@ -40,7 +45,7 @@ export function GlossaryInfo({ term, testID }: GlossaryInfoProps) {
         <Ionicons
           name="information-circle-outline"
           size={ABBREVIATION_INFO_ICON_SIZE}
-          color={theme.semanticColors.accent}
+          color={color ?? theme.semanticColors.accent}
         />
       </AppPressable>
       <InfoSheet
