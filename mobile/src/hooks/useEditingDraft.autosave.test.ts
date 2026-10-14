@@ -66,7 +66,6 @@ function buildProps(
   return {
     editingSurveyId,
     setEditingSurveyId: jest.fn(),
-    editingSurveyVisibility: "private" as const,
     setFormMode: jest.fn(),
     surveyForm: {
       draftInput: draftInput(siteName),
@@ -115,6 +114,8 @@ describe("useEditingDraft autosave reschedule", () => {
       1,
       expect.objectContaining({ site_name: "A" }),
     )
+    // The autosave write never carries visibility: the finish step owns the choice.
+    expect(mockUpdateLocalDraft.mock.calls[0][0]).not.toHaveProperty("visibility")
 
     await rerender(buildProps("B"))
     await act(async () => {
@@ -374,8 +375,9 @@ describe("useEditingDraft handleFlushDraft (D-26)", () => {
     expect(flushed).toBe(true)
     expect(mockUpdateLocalDraft).toHaveBeenCalledTimes(1)
     expect(mockUpdateLocalDraft).toHaveBeenCalledWith(
-      expect.objectContaining({ survey_id: TEST_SURVEY_ID, site_name: "A", visibility: "private" }),
+      expect.objectContaining({ survey_id: TEST_SURVEY_ID, site_name: "A" }),
     )
+    expect(mockUpdateLocalDraft.mock.calls[0][0]).not.toHaveProperty("visibility")
     expect(result.current.autosaveStatus.state).toBe("saved")
     // Unlike handleSaveSurveyEdits, the edit mode stays.
     expect(props.setEditingSurveyId).not.toHaveBeenCalled()
@@ -497,7 +499,6 @@ describe("useEditingDraft with factor annotations (phase 27)", () => {
       const editing = useEditingDraft({
         editingSurveyId,
         setEditingSurveyId,
-        editingSurveyVisibility: "private",
         setFormMode: jest.fn(),
         surveyForm,
         surveyList: {

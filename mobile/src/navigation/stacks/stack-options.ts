@@ -149,3 +149,20 @@ export function factorHelpScreenOptions(theme: BrandTheme): NativeStackNavigatio
     contentStyle: { backgroundColor: theme.semanticColors.backgroundCanvas },
   }
 }
+
+/**
+ * The submission step (phase 29, D-04) as a native sheet: a form sheet on iOS (system grabber and
+ * corner radius, swipe down or tap outside to close, which the route switches off while the finish
+ * runs), the stack's modal screen on Android. No header: the sheet draws its own title. The 0.65
+ * detent shows both cards, the footnote and the buttons at the default text size on a 6.1 inch
+ * phone; it is verified on the owner iPhone at plan 29-10, and only the number is adjusted.
+ */
+export function finishSheetScreenOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  return {
+    headerShown: false,
+    presentation: Platform.OS === "ios" ? "formSheet" : "modal",
+    sheetAllowedDetents: [0.65, 1],
+    sheetGrabberVisible: true,
+    contentStyle: { backgroundColor: theme.semanticColors.backgroundCanvas },
+  }
+}

@@ -121,6 +121,7 @@ Define a simple, scalable, and pragmatic architecture to deliver a reliable IBP 
 1. User fills in the form
 2. Mobile stores survey locally (SQLite)
 3. Local status remains `draft`
+4. A new draft is stored shared with the association (`visibility = public` on the wire); the observer chooses between shared and private in the submission step (Phase 29): both "Terminer le relevé" entries (summary and last factor page) open the `surveyFinish` native sheet, which stores the choice on the draft through the offline queue (`setDraftVisibility`, no SQLite schema change) and then runs the finish. The choice is frozen once the survey is submitted.
 
 ### C) Synchronization
 1. Connectivity is detected
@@ -148,7 +149,7 @@ Define a simple, scalable, and pragmatic architecture to deliver a reliable IBP 
 ### G) Public Map Read
 1. Client requests public items (`GET /public/map-items`), optionally limited to a viewport with `bbox=minLng,minLat,maxLng,maxLat`; without `bbox` the response is unchanged
 2. API returns anonymized items from read model
-3. Only surveys with `visibility=public` and not deleted are exposed
+3. Only submitted surveys with `visibility=public` (shared with the association) and not deleted are exposed (`PUBLIC_SURVEY_PREDICATE`, true again since Phase 29 after migration 024). One exception, by design: the parcel history (`GET /parcels/{parcel_id}/surveys/history`) is caller-aware and also lists the caller's own private submitted surveys. A private survey never reaches another member on any read route; `api/test/survey-read-paths.spec.ts` enforces it.
 4. Mobile viewport loading (phase 01.9, D-05):
    - The map loads the items of the visible `bbox` once the region has settled for 400 ms (`useMapViewport`, `useDebouncedValue`). `usePublicMapExplorer` skips a request equal to the one in flight or the last completed one, and drops stale responses.
    - The camera fits the items only after the first load and after an explicit filter apply (which loads every matching item, without `bbox`). It never re-fits after a viewport load: moving the camera would change the `bbox` and trigger another load, in a loop.
@@ -165,7 +166,7 @@ Define a simple, scalable, and pragmatic architecture to deliver a reliable IBP 
 
 ### I) Parcel History Comparison
 1. Mobile requests parcel survey history
-2. API returns chronological submitted surveys with totals and factor results
+2. API returns chronological submitted surveys with totals and factor results: the caller's own surveys whatever their visibility, plus the shared ones of other members (Phase 29)
 3. Detail screen renders trend and deltas for comparison
 
 ### J) High Zoom Parcel Map Status

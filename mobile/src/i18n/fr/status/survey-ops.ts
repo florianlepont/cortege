@@ -9,12 +9,6 @@ const items = (count: number) => `${count} élément${count > 1 ? "s" : ""}`
 const operations = (count: number) => `${count} opération${count > 1 ? "s" : ""} en échec`
 
 export const surveyOpsStatusFr = {
-  // Words shown in place of the "private" / "public" visibility values.
-  visibility: {
-    private: "privé",
-    public: "public",
-  },
-
   // Attachments
   photoQueued: ({ name }: { name: string }) =>
     statusText(`Photo ajoutée à « ${name} », en attente d'envoi`),
@@ -94,28 +88,6 @@ export const surveyOpsStatusFr = {
   discarded: ({ count }: { count: number }) =>
     statusText(`Modifications locales annulées (${items(count)} retiré${count > 1 ? "s" : ""})`),
   discardFailed: () => statusText("Impossible d'annuler les modifications locales, réessayez"),
-
-  // Visibility
-  visibilityUnchanged: ({ visibility }: { visibility: string }) =>
-    statusText(`Le relevé est déjà ${visibility}`),
-  visibilityQueuedLoginRequired: ({ visibility }: { visibility: string }) =>
-    statusText(
-      `Visibilité « ${visibility} » enregistrée sur cet appareil. Connectez-vous et synchronisez pour l'envoyer.`,
-    ),
-  visibilityQueuedOwnerPending: ({ visibility }: { visibility: string }) =>
-    statusText(`Visibilité « ${visibility} » enregistrée sur cet appareil ; ${OWNER_PENDING}`),
-  visibilityQueuedSyncPending: ({ visibility }: { visibility: string }) =>
-    statusText(
-      `Visibilité « ${visibility} » enregistrée sur cet appareil ; synchronisation en attente`,
-    ),
-  visibilitySyncWarning: ({ failed }: { failed: number }) =>
-    statusText(
-      `Visibilité enregistrée sur cet appareil, mais la synchronisation signale ${operations(failed)}`,
-    ),
-  visibilitySynced: ({ visibility }: { visibility: string }) =>
-    statusText(`Visibilité « ${visibility} » enregistrée et synchronisée`),
-  visibilityLoginRequired: () => statusText("Connectez-vous pour changer la visibilité"),
-  visibilityFailed: () => statusText("Impossible de changer la visibilité, réessayez"),
 
   // Survey deletion
   deletionQueued: () => statusText("Relevé supprimé, suppression en attente d'envoi"),

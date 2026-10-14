@@ -190,7 +190,7 @@ describe("createLocalDraft", () => {
     )
     expect(result.site_name).toBe("My forest")
     expect(result.status).toBe("draft")
-    expect(result.visibility).toBe("private")
+    expect(result.visibility).toBe("public")
     expect(result.sync_state).toBe("pending")
     expect(result.sync_version).toBe(1)
     expect(result.last_sync_error).toBeNull()
@@ -254,7 +254,6 @@ describe("updateLocalDraft", () => {
     vegetation_stage: "adult",
     parcel_ids: ["XY123"],
     factors: { A: { native_genus_count: 3 } },
-    visibility: "private" as const,
   }
 
   test("throws if survey not found", async () => {

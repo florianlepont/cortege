@@ -36,7 +36,12 @@ function changesResponse(body: Record<string, unknown>): MockResponse {
 
 async function insertSurvey(
   id: string,
-  overrides: { sync_blocked?: number; site_name?: string; status?: string } = {},
+  overrides: {
+    sync_blocked?: number
+    site_name?: string
+    status?: string
+    visibility?: "private" | "public"
+  } = {},
 ): Promise<void> {
   const db = await getDb()
   await db.runAsync(
@@ -46,7 +51,7 @@ async function insertSurvey(
       id,
       overrides.site_name ?? "Local site",
       overrides.status ?? "draft",
-      "private",
+      overrides.visibility ?? "private",
       1,
       "pending",
       null,
@@ -177,6 +182,33 @@ describe("pull guard for survey updates", () => {
 
     const survey = await getSurvey("survey-clean")
     expect(survey?.site_name).toBe("Remote name")
+  })
+})
+
+describe("pull of the 024 visibility backfill", () => {
+  test("a submitted row pulled as public replaces a local private one when nothing is pending", async () => {
+    await insertSurvey("survey-backfilled", { status: "submitted", visibility: "private" })
+    ;(global.fetch as jest.Mock).mockResolvedValue(
+      changesResponse({
+        surveys: [
+          {
+            id: "survey-backfilled",
+            site_name: "Local site",
+            status: "submitted",
+            visibility: "public",
+            sync_version: 1,
+          },
+        ],
+      }),
+    )
+
+    const result = await pullRemoteChanges("http://api", "token")
+    expect(result.surveys).toBe(1)
+
+    const survey = await getSurvey("survey-backfilled")
+    expect(survey?.visibility).toBe("public")
+    const payload = JSON.parse(String(survey?.payload_json)) as { visibility?: string }
+    expect(payload.visibility).toBe("public")
   })
 })
 

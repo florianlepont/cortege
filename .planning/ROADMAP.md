@@ -15,8 +15,8 @@ identity and information architecture before that field test happens, so it vali
 the association will actually use.
 
 **Milestone framing:** internal-only, shared within the association. Every authenticated member sees
-every member's submitted surveys — there is no per-user private/public choice and no anonymous public
-surface. The wider community and social dimension (an anonymous public map, gamification, moderation,
+every member's shared surveys (since Phase 29 an observer may keep a survey private before submitting it),
+and there is no anonymous public surface. The wider community and social dimension (an anonymous public map, gamification, moderation,
 association section, donation) is deferred to the next milestone. See `.planning/REQUIREMENTS.md` for
 what is deferred and why, and Phase 11 for where this milestone's own scope was trimmed to match.
 
@@ -83,7 +83,7 @@ old Phase 1.1 (IBP method version). When a document predates 2026-10-07, read it
 - [x] **Phase 26: Field-feedback fixes** (INSERTED) - Android photo recognition works (the recognition workflow rethink was set aside, owner 2026-10-10); small screens keep the map readable; abbreviations are explained; genera are sorted alphabetically (feedback from the Android testers, owner decision 2026-10-10) (completed 2026-10-11)
 - [x] **Phase 27: Quick survey additions** (INSERTED) - A free note on the survey, pre-filled weather information and an observation certainty level, first of the V1 features that make up the beta (seminar of 2026-10-10)
 - [x] **Phase 28: Map Layers & Comparison** (INSERTED, V1) - Several layers on the map and a comparison option, and an Explorer that both explores and studies maps (SEED-001; seminar of 2026-10-10) (completed 2026-10-13; the Android phone pass is deferred to Phase 35)
-- [ ] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list)
+- [x] **Phase 29: Private or Public Before Submission** (INSERTED, V1) - The observer chooses who sees a survey before submitting it (`REQ-C-privacy-choice`, moved up from the deferred list; completed 2026-10-13)
 - [ ] **Phase 30: Route Choice Assistant** (INSERTED, V1) - An aid to choose the survey route and the method, and display of the route followed; a large step because the method is hard to understand
 - [ ] **Phase 31: Parcel Annotation & Remarkable Elements** (INSERTED, V1) - Annotate the parcel on a dedicated view: remarkable elements and the route trace; a large step
 - [ ] **Phase 32: Detailed DMH Information** (INSERTED, V1) - More detailed information while recording the dendromicrohabitats, in a tool or a dedicated page, for the many potential DMH
@@ -1035,8 +1035,8 @@ Plans:
 ### Phase 29: Private or Public Before Submission (INSERTED, V1)
 
 **Goal**: The observer chooses who sees a survey before submitting it.
-**Depends on**: Phases 11 and 36 (closed accounts)
-**Requirements**: none new yet (to be traced when the phase is planned)
+**Depends on**: Phase 11 (D-01: the closed-accounts phase only narrows who can authenticate)
+**Requirements**: REQ-C-privacy-choice
 **Source**: seminar 2026-10-10: card "Choix privé ou public avant soumission" classed V1; `REQ-C-privacy-choice`
 **Success Criteria** (what must be TRUE):
 
@@ -1044,7 +1044,7 @@ Plans:
   2. A private survey never appears to another member in the map, search or lists, enforced on the server, with API tests.
   3. The toggle removed in Phase 11 is restored with the right wording, and existing surveys keep their current visibility.
 
-**Plans**: TBD
+**Plans**: 10/10 plans executed (29-01 to 29-10; owner device checks approved 2026-10-13, DV-29-05 on Android is left to Phase 35)
 **UI hint**: yes
 
 ### Phase 30: Route Choice Assistant (INSERTED, V1)
@@ -1259,7 +1259,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 26. Field-feedback fixes | 10/10 | Complete    | 2026-10-11 |
 | 27. Quick survey additions | 22/22 | Complete | 2026-10-12 |
 | 28. Map Layers & Comparison | 28/28 | Complete (Android phone pass deferred to Phase 35) | 2026-10-13 |
-| 29. Private or Public Before Submission | 0/TBD | Not started | - |
+| 29. Private or Public Before Submission | 10/10 | Complete (owner device checks approved 2026-10-13; DV-29-05 Android pending) | 2026-10-13 |
 | 30. Route Choice Assistant | 2/25 | In Progress|  |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
 | 32. Detailed DMH Information | 0/TBD | Not started | - |

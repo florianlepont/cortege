@@ -1,4 +1,5 @@
 import { IBP_MAX } from "@cortege/ibp-domain"
+import { surveyFinishFr } from "./survey-finish"
 
 // Phase 27: what a screen reader hears after a factor row's title and value (D-13). Nothing is
 // added for a plain row, so the spoken label of an unannotated factor is unchanged.
@@ -239,6 +240,17 @@ export const surveyDetailFr = {
     invalidNameTitle: "Nom invalide",
     invalidNameMessage: "Le nom du relevé ne peut pas être vide.",
   },
+  // Phase 29 (D-15): the read-only line under the status line of the owner's finished survey. A
+  // draft has none, the finish sheet shows the choice. "Partagé" is the wire value "public",
+  // never shown (D-02).
+  visibility: {
+    line: {
+      finished: {
+        shared: surveyFinishFr.options.shared.label,
+        private: surveyFinishFr.options.private.label,
+      },
+    },
+  },
   a11y: {
     openMenu: (name: string) => `Actions du relevé ${name}`,
     shareSurvey: (name: string) => `Partager le relevé ${name} en PDF`,
@@ -278,6 +290,9 @@ export const surveyDetailFr = {
       doubtful?: boolean
       hasNote?: boolean
     }) => `${title}, ${value}${factorFlags({ doubtful, hasNote })}`,
+    // `text` is the state phrase in lower case, without its parenthesis.
+    visibilityLine: ({ text }: { text: string }) =>
+      `Visibilité : ${text}. Ne peut plus être modifiée.`,
     historyRow: ({ label, value }: { label: string; value: string }) => `${label}. ${value}`,
     historyRange: ({ first, latest }: { first: number; latest: number }) =>
       `de ${first} à ${latest} sur ${IBP_MAX.total}`,

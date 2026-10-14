@@ -28,6 +28,12 @@ import { guessMimeType, isUnauthorizedResultMessage } from "./utils"
 // useSurveySyncNetwork — the change stays queued locally until then.
 const text = fr.status.surveyOps
 
+/** Phase 29: what a finish ended with, for the finish sheet ("submitted" only on a server accept). */
+export type FinishOutcome = "submitted" | "not_submitted" | "busy"
+
+/** Phase 29, D-05 and D-07: what storing the visibility choice did. */
+export type DraftVisibilityResult = "stored" | "unchanged" | "frozen"
+
 type SubmitReadiness = ReturnType<typeof evaluateSubmitReadinessFromDraft>
 
 const surveyName = (survey: Pick<LocalSurvey, "site_name"> | undefined): string =>
@@ -60,7 +66,6 @@ const describeReadiness = (name: string, readiness: SubmitReadiness) => {
 
 type UseSurveySyncSurveyOperationsParams = {
   apiUrl: string
-  accessToken: string
   selectedSurveyId: string | null
   editingSurveyId: string | null
   surveys: LocalSurvey[]
@@ -87,7 +92,6 @@ const readLocalSurvey = async (surveyId: string): Promise<LocalSurvey | undefine
 
 export function useSurveySyncSurveyOperations({
   apiUrl,
-  accessToken,
   selectedSurveyId,
   editingSurveyId,
   surveys,
@@ -182,31 +186,31 @@ export function useSurveySyncSurveyOperations({
   )
 
   const finishSurvey = useCallback(
-    async (surveyId: string): Promise<void> => {
+    async (surveyId: string): Promise<FinishOutcome> => {
       const name = surveyName(surveys.find((survey) => survey.id === surveyId))
       const blockReason = getSubmitBlockReason(surveyId, surveys)
       if (blockReason === "not_found") {
         setStatus(text.notFound())
-        return
+        return "not_submitted"
       }
       if (blockReason === "already_submitted") {
         setStatus(text.alreadySubmitted({ name }))
-        return
+        return "not_submitted"
       }
       if (blockReason === "survey_blocked") {
         setStatus(text.surveyConflict({ name }))
-        return
+        return "not_submitted"
       }
       if (blockReason === "name_required") {
         setStatus(text.nameRequired())
-        return
+        return "not_submitted"
       }
 
       try {
         const draft = await getLocalSurveyDraft(surveyId)
         if (!draft) {
           setStatus(text.notFound())
-          return
+          return "not_submitted"
         }
 
         const readiness = evaluateSubmitReadinessFromDraft({
@@ -221,17 +225,17 @@ export function useSurveySyncSurveyOperations({
 
         if (!readiness.ready) {
           setStatus(describeReadiness(name, readiness))
-          return
+          return "not_submitted"
         }
       } catch (error) {
         logStatusDetail("surveyOps.submitCheck", error)
         setStatus(text.submitCheckFailed({ name }))
-        return
+        return "not_submitted"
       }
 
       if (!syncAllowed || !isOnline) {
         setStatus(text.submitPostponed({ name }))
-        return
+        return "not_submitted"
       }
 
       try {
@@ -242,15 +246,15 @@ export function useSurveySyncSurveyOperations({
         }
         if (!local) {
           setStatus(text.notFound())
-          return
+          return "not_submitted"
         }
         if (local.sync_blocked === 1) {
           setStatus(text.surveyConflict({ name }))
-          return
+          return "not_submitted"
         }
         if (local.sync_state !== "synced") {
           setStatus(text.finishNotSentYet({ name }))
-          return
+          return "not_submitted"
         }
       } catch (error) {
         await refreshLocalSurveys()
@@ -258,15 +262,15 @@ export function useSurveySyncSurveyOperations({
         if (isAuthRequiredError(error)) {
           await clearSession()
           setStatus(text.submitLoginRequired())
-          return
+          return "not_submitted"
         }
         if (isSyncOwnerMismatchError(error) || isSyncSuspendedError(error)) {
           setStatus(text.submitPostponed({ name }))
-          return
+          return "not_submitted"
         }
         logStatusDetail("surveyOps.submitPendingChanges", error)
         setStatus(text.finishNotSentYet({ name }))
-        return
+        return "not_submitted"
       }
 
       try {
@@ -289,18 +293,20 @@ export function useSurveySyncSurveyOperations({
         }
         if (!result.ok) logStatusDetail("surveyOps.submit", result.message)
         setStatus(result.ok ? text.submitted({ name }) : text.submitRejected({ name }))
+        return result.ok ? "submitted" : "not_submitted"
       } catch (error) {
         if (isAuthRequiredError(error)) {
           await clearSession()
           setStatus(text.submitLoginRequired())
-          return
+          return "not_submitted"
         }
         if (isSyncOwnerMismatchError(error)) {
           setStatus(text.submitPostponed({ name }))
-          return
+          return "not_submitted"
         }
         logStatusDetail("surveyOps.submit", error)
         setStatus(text.submitFailed({ name }))
+        return "not_submitted"
       }
     },
     [
@@ -325,11 +331,11 @@ export function useSurveySyncSurveyOperations({
   // ignored, so the server never gets two submits for the same survey from this phone.
   const finishingSurveyIds = useRef(new Set<string>())
   const handleSubmitSurvey = useCallback(
-    async (surveyId: string): Promise<void> => {
-      if (finishingSurveyIds.current.has(surveyId)) return
+    async (surveyId: string): Promise<FinishOutcome> => {
+      if (finishingSurveyIds.current.has(surveyId)) return "busy"
       finishingSurveyIds.current.add(surveyId)
       try {
-        await finishSurvey(surveyId)
+        return await finishSurvey(surveyId)
       } finally {
         finishingSurveyIds.current.delete(surveyId)
       }
@@ -367,70 +373,20 @@ export function useSurveySyncSurveyOperations({
     [refreshLocalAttachments, refreshLocalSurveys, setStatus],
   )
 
-  const handleToggleVisibility = useCallback(
-    async (surveyId: string, visibility: "private" | "public"): Promise<void> => {
-      const label = text.visibility[visibility]
-      try {
-        // An empty token makes updateSurveyVisibility queue the change without
-        // draining the queue itself; the owner-guarded sync below sends it.
-        const queued = await updateSurveyVisibility(apiUrl, "", surveyId, visibility)
-        if (!queued.queued || !accessToken) {
-          await refreshLocalSurveys()
-          setStatus(
-            queued.queued
-              ? text.visibilityQueuedLoginRequired({ visibility: label })
-              : text.visibilityUnchanged({ visibility: label }),
-          )
-          return
-        }
-
-        if (!syncAllowed) {
-          await refreshLocalSurveys()
-          setStatus(text.visibilityQueuedOwnerPending({ visibility: label }))
-          return
-        }
-
-        try {
-          const result = await runOwnerGuardedSync()
-          await refreshLocalSurveys()
-          await refreshLocalAttachments()
-          if (result.failed > 0) {
-            setStatus(text.visibilitySyncWarning({ failed: result.failed }))
-            return
-          }
-          void handleLoadCanonicalDetails(surveyId, { silent: true })
-          setStatus(text.visibilitySynced({ visibility: label }))
-        } catch (error) {
-          await refreshLocalSurveys()
-          await refreshLocalAttachments()
-          if (isAuthRequiredError(error)) {
-            await clearSession()
-            setStatus(text.visibilityLoginRequired())
-            return
-          }
-          if (isSyncOwnerMismatchError(error) || isSyncSuspendedError(error)) {
-            setStatus(text.visibilityQueuedOwnerPending({ visibility: label }))
-            return
-          }
-          logStatusDetail("surveyOps.visibilitySync", error)
-          setStatus(text.visibilityQueuedSyncPending({ visibility: label }))
-        }
-      } catch (error) {
-        logStatusDetail("surveyOps.visibility", error)
-        setStatus(text.visibilityFailed())
-      }
+  // Phase 29, D-05: the finish step stores the observer's choice here. Silent on purpose (the finish
+  // step speaks, not the status line): an empty token makes the storage queue the change without
+  // draining anything, the finish's own drain sends it before the submit call. D-07: a submitted
+  // survey answers "frozen" and nothing is written. A failed local write rejects, the caller
+  // shows the save error.
+  const handleSetDraftVisibility = useCallback(
+    async (surveyId: string, visibility: "private" | "public"): Promise<DraftVisibilityResult> => {
+      const result = await updateSurveyVisibility(apiUrl, "", surveyId, visibility)
+      if (result.frozen) return "frozen"
+      if (!result.queued) return "unchanged"
+      await refreshLocalSurveys()
+      return "stored"
     },
-    [
-      accessToken,
-      apiUrl,
-      clearSession,
-      handleLoadCanonicalDetails,
-      refreshLocalAttachments,
-      refreshLocalSurveys,
-      runOwnerGuardedSync,
-      setStatus,
-      syncAllowed,
-    ],
+    [apiUrl, refreshLocalSurveys],
   )
 
   const confirmDeleteSurvey = useCallback(
@@ -639,7 +595,7 @@ export function useSurveySyncSurveyOperations({
     handleSubmitSurvey,
     handleRetrySurvey,
     handleDiscardSurvey,
-    handleToggleVisibility,
+    handleSetDraftVisibility,
     confirmDeleteSurvey,
     handleDiscardEmptyDraft,
     handleQueueAttachmentFromLibrary,

@@ -48,7 +48,7 @@ Required fields:
 - `parcel_id` (string, nullable compatibility field = primary parcel)
 - `parcel_ids` (string[], nullable in early draft, required for submit)
 - `status` (enum: `draft` | `submitted` | `synced` | `error`; `expired` was removed with the deadline, OA-41, migration 019)
-- `visibility` (enum: `private` | `public`)
+- `visibility` (enum: `private` | `public`) // `private` = only the author reads the survey; `public` = shared with the association (every authenticated member, never the open internet). Chosen on the draft (the app defaults a new draft to `public`), read-only after submit (Phase 29)
 - `observation_year` (integer)
 - `version_number` (integer, starts at 1 per parcel history context)
 - `region_version` (enum: `ACA` | `M`) // v3.0 only (IBP Fr v3.0 regions); stored NULL for a v3.2 survey
@@ -281,7 +281,12 @@ Rules:
 - Lookups by `survey_id` use the primary key (`survey_id`, `parcel_id`); lookups by `parcel_id` use `idx_survey_parcels_parcel_id`.
 
 ### 10.2) Index notes (migration 015)
-- `idx_surveys_public_submitted` on `surveys (submitted_at DESC)` where `status = 'submitted' AND visibility = 'public' AND deleted_at IS NULL` serves the public community routes.
+- `idx_surveys_public_submitted` on `surveys (submitted_at DESC)` where `status = 'submitted' AND visibility = 'public' AND deleted_at IS NULL` serves the public community routes. Migration 017 (Phase 11) had dropped the `visibility` clause while every submitted survey was visible to all members; migration 024 (Phase 29) restores it, matching `PUBLIC_SURVEY_PREDICATE` again.
+
+### 10.3) Visibility backfill (migration 024, Phase 29)
+- `024_private_or_public_visibility.sql` sets `visibility = 'public'` on every submitted survey that is not yet public (deleted and anonymised ones included; `updated_at` is left untouched, drafts keep their value), so nothing that Phase 11 made visible disappears on deploy. Until then every survey carried the column default `private` while all submitted surveys were readable by every member.
+- It inserts one `backfilled` survey event per backfilled survey that still has an author (`actor_id` NULL, payload `{"reason":"migration_024","visibility":"public"}`), so the owner's phone sees the new value on its next pull.
+- It then recreates `idx_surveys_public_submitted` with the `visibility` clause. The migration is idempotent.
 - Dropped as redundant: `idx_users_auth0_sub` (duplicate of the unique constraint `users_auth0_sub_key`), `idx_surveys_parcel_id` (prefix of `idx_surveys_parcel_year_version`) and `idx_survey_parcels_survey_id` (prefix of `survey_parcels_pkey`).
 - `auth_sessions` is dropped again with `DROP TABLE IF EXISTS … CASCADE` as a safety net (migration 011 already removed it).
 
@@ -312,16 +317,17 @@ Optional fields:
 
 ## Consistency Rules
 - ~~`expires_at = created_at + 7 days`~~ (removed, OA-41 2026-10-06: there is no submission deadline, the column is dropped by migration 019)
-- `visibility` default is `private`
+- `visibility` default is `private` in the database (fail-closed for a create that sends none); the mobile app writes `public` (shared with the association) for a new draft
 - at least one parcel is required for `submitted` surveys (`parcel_ids.length >= 1`)
 - `observation_year` and `version_number` are required for `submitted` surveys
 - the station of the survey's method is required for `submitted` surveys: `region_version` and `vegetation_stage` for v3.0, `ibp_cas` (1-4) for v3.2 (`ibp_cas_required`)
 - `submitted` surveys are read-only for observation payload (`site_name`, parcel linkage, region/stage, `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, factors, scores)
 - since phase 27 (D-03) `survey_note`, `weather` and `factors.annotations` (the doubts and factor notes) are read-only after submit too, compared like `factors` (see `sync-conflict-resolution-v1.md`); there is no sync operation to edit them afterwards
 - account deletion keeps the notes of retained submitted surveys (D-24, owner decision 2026-10-11): `survey_note`, `weather` and the factor notes are not nulled; the author shows as unknown (`user_id` is nulled, the community reads give `author_name` null). A free note may name a person; no erasure of note text is done in this phase
-- `submitted` surveys may still change `visibility` (`private` <-> `public`)
-- Only `public` surveys are eligible for community surfaces
-- Switching `public -> private` must remove the survey from community surfaces
+- `visibility` is read-only after submit (Phase 29): it can change while the survey is a draft, never once it is `submitted`, on any channel (see `api-contract-v1.md`, "Lifecycle rule in V1")
+- Only submitted, non-deleted `public` surveys are eligible for community surfaces (map, parcel statuses, community routes, search, community attachments); the parcel history of the caller also lists their own private surveys
+- the next `version_number` of a parcel counts private surveys too (only the number is visible to other members, never content)
+- account deletion keeps `visibility` as it is (D-13): a retained private survey stays private (author nulled, still hidden), a retained shared one stays shared
 - Deleted surveys must be excluded from user list and community surfaces
 - Server recomputes/validates scores before final accept, under the survey's method version (NULL = v3.0)
 - Server validates that all selected parcels exist

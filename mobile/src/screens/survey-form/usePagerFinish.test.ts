@@ -45,23 +45,13 @@ const WITHOUT_J: SurveyFormDraftInput = {
   factors: { ...COMPLETE.factors, J: {} },
 }
 
-type Deferred<T> = { promise: Promise<T>; resolve: (value: T) => void }
-function deferred<T>(): Deferred<T> {
-  let resolve!: (value: T) => void
-  const promise = new Promise<T>((res) => {
-    resolve = res
-  })
-  return { promise, resolve }
-}
-
 type Params = Parameters<typeof usePagerFinish>[0]
 
 function params(overrides: Partial<Params> = {}): Params {
   return {
     survey: survey(),
     draft: COMPLETE,
-    flushDraft: jest.fn().mockResolvedValue(true),
-    submitSurvey: jest.fn().mockResolvedValue(undefined),
+    openFinish: jest.fn(),
     onFinished: jest.fn(),
     ...overrides,
   }
@@ -100,46 +90,15 @@ describe("usePagerFinish (D-26)", () => {
     }
   })
 
-  test("a press writes the pending edits, then calls the finish action once for this survey", async () => {
+  test("a press opens the submission step once for this survey and submits nothing itself", async () => {
     const props = params()
     const { result } = await renderFinish(props)
     await act(async () => {
       result.current.finish()
     })
-    expect(props.flushDraft).toHaveBeenCalledTimes(1)
-    expect(props.submitSurvey).toHaveBeenCalledTimes(1)
-    expect(props.submitSurvey).toHaveBeenCalledWith("s-01")
-    expect(jest.mocked(props.flushDraft).mock.invocationCallOrder[0]).toBeLessThan(
-      jest.mocked(props.submitSurvey).mock.invocationCallOrder[0],
-    )
-    expect(result.current.attempts).toBe(1)
-    expect(result.current.busy).toBe(false)
-  })
-
-  test("a second press while the finish runs does nothing; busy until it ends", async () => {
-    const held = deferred<void>()
-    const props = params({ submitSurvey: jest.fn().mockReturnValue(held.promise) })
-    const { result } = await renderFinish(props)
-    await act(async () => {
-      result.current.finish()
-    })
-    expect(result.current.busy).toBe(true)
-    await act(async () => {
-      result.current.finish()
-      result.current.finish()
-    })
-    expect(props.flushDraft).toHaveBeenCalledTimes(1)
-    expect(props.submitSurvey).toHaveBeenCalledTimes(1)
-    await act(async () => {
-      held.resolve()
-    })
-    expect(result.current.busy).toBe(false)
-    expect(result.current.attempts).toBe(1)
-    // Settled: it can be pressed again.
-    await act(async () => {
-      result.current.finish()
-    })
-    expect(props.submitSurvey).toHaveBeenCalledTimes(2)
+    expect(props.openFinish).toHaveBeenCalledTimes(1)
+    expect(props.openFinish).toHaveBeenCalledWith("s-01")
+    expect(props.onFinished).not.toHaveBeenCalled()
   })
 
   test("success: the survey turns submitted, onFinished is called once", async () => {
@@ -157,7 +116,7 @@ describe("usePagerFinish (D-26)", () => {
     expect(props.onFinished).toHaveBeenCalledTimes(1)
   })
 
-  test("a calm failure (still a draft after the finish) stays: no onFinished, an attempt counted", async () => {
+  test("a sheet closed without finishing (still a draft) stays: no onFinished, still offered", async () => {
     const props = params()
     const { result, rerender } = await renderFinish(props)
     await act(async () => {
@@ -166,7 +125,6 @@ describe("usePagerFinish (D-26)", () => {
     await rerender({ ...props, survey: survey({ sync_state: "pending" }) })
     expect(props.onFinished).not.toHaveBeenCalled()
     expect(result.current.offered).toBe(true)
-    expect(result.current.attempts).toBe(1)
   })
 
   test("a survey finished without a press from here does not navigate", async () => {
@@ -176,37 +134,12 @@ describe("usePagerFinish (D-26)", () => {
     expect(props.onFinished).not.toHaveBeenCalled()
   })
 
-  test("a failed write of the edits does not submit", async () => {
-    const props = params({ flushDraft: jest.fn().mockResolvedValue(false) })
-    const { result } = await renderFinish(props)
-    await act(async () => {
-      result.current.finish()
-    })
-    expect(props.submitSurvey).not.toHaveBeenCalled()
-    expect(result.current.attempts).toBe(1)
-    expect(result.current.busy).toBe(false)
-  })
-
-  test("an unexpected error ends the finish quietly (debug log only)", async () => {
-    const debug = jest.spyOn(console, "debug").mockImplementation(() => undefined)
-    const props = params({ submitSurvey: jest.fn().mockRejectedValue(new Error("boom")) })
-    const { result } = await renderFinish(props)
-    await act(async () => {
-      result.current.finish()
-    })
-    expect(result.current.busy).toBe(false)
-    expect(result.current.attempts).toBe(1)
-    expect(props.onFinished).not.toHaveBeenCalled()
-    debug.mockRestore()
-  })
-
   test("no survey: a press does nothing", async () => {
     const props = params({ survey: null })
     const { result } = await renderFinish(props)
     await act(async () => {
       result.current.finish()
     })
-    expect(props.flushDraft).not.toHaveBeenCalled()
-    expect(result.current.attempts).toBe(0)
+    expect(props.openFinish).not.toHaveBeenCalled()
   })
 })

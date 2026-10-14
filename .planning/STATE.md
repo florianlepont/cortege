@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 30
 current_phase_name: Route Choice Assistant (INSERTED, V1)
 status: executing
-stopped_at: "Phase 30 replanned (25 plans); spec revised, waiting for the owner's written validation (gate 30-02)"
-last_updated: "2026-10-13T17:56:49.177Z"
-last_activity: 2026-10-13
-last_activity_desc: Phase 30 execution started
+stopped_at: "Phase 30: gate 30-02 passed (spec validated 2026-10-14); next: wave 3 (30-03, 30-04)"
+last_updated: "2026-10-14T08:00:00.000Z"
+last_activity: 2026-10-14
+last_activity_desc: Phase 30 spec validated by the owner (gate 30-02 passed); phase 29 merged into the branch
 progress:
   total_phases: 39
-  completed_phases: 20
+  completed_phases: 21
   total_plans: 220
-  completed_plans: 285
+  completed_plans: 295
   percent: 46
 ---
 
@@ -29,11 +29,11 @@ See: .planning/PROJECT.md (updated 2026-09-22)
 ## Current Position
 
 Phase: 30 (Route Choice Assistant (INSERTED, V1)) — EXECUTING
-Plan: 1 of 23
-Status: Executing Phase 30
-Last activity: 2026-10-13 — Phase 30 execution started
+Plan: 2 of 25
+Status: Executing Phase 30 (gate 30-02 passed; next wave 3)
+Last activity: 2026-10-14 — owner validated the route-choice spec
 
-Progress: [█████████░] 28/39 phases complete
+Progress: [█████████░] 29/39 phases complete
 
 ## Performance Metrics
 

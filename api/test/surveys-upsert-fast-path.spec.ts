@@ -394,12 +394,30 @@ describe("SurveysService upsert fast path", () => {
       expect(repository.updateSurveyIfUnchanged).not.toHaveBeenCalled()
     })
 
-    it("sends a visibility-only replay to the locked path", async () => {
+    it("sends a visibility-only replay on a draft to the locked path", async () => {
       const { service, db, repository } = setup()
-      repository.readForUpsert.mockResolvedValue(storedRow({ visibility: "private" }))
+      repository.readForUpsert.mockResolvedValue(
+        storedRow({ status: "draft", visibility: "private" }),
+      )
 
       await expect(service.upsertForUser(user, same())).resolves.toBe(lockedResult)
       expect(db.transaction).toHaveBeenCalledTimes(1)
+    })
+
+    it("refuses a visibility-only replay on a submitted survey without writing (phase 29, D-07)", async () => {
+      const { service, db, repository } = setup()
+      repository.readForUpsert.mockResolvedValue(
+        storedRow({
+          status: "submitted",
+          visibility: "private",
+          submitted_at: "2026-01-01 00:00:00+00",
+        }),
+      )
+
+      await expect(service.upsertForUser(user, same())).rejects.toBeInstanceOf(ConflictException)
+      expect(db.transaction).not.toHaveBeenCalled()
+      expect(db.query).not.toHaveBeenCalled()
+      expect(repository.updateSurveyIfUnchanged).not.toHaveBeenCalled()
     })
 
     it("answers a visibility-only replay on a deleted survey without writing", async () => {

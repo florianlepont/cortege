@@ -83,13 +83,13 @@ Method version status (phase 01.8, 2026-09-26):
     review. The nearby-parcel badge and the home sector card colour totals with it; the survey
     detail colours only the /35 and /15 sub-scores, with their CNPF bands.
 - Privacy:
-  - each survey has a visibility status: `private` or `public`.
-  - default value: `private`.
-  - only `public` surveys can be displayed in community surfaces.
+  - each survey has a visibility status: `private` or `public`; the UI says "Privé" and "Partagé avec l'association" (the wire value `public` means shared with the association) and never "public".
+  - the observer chooses it in the submission step (the sheet "Qui peut voir ce relevé ?" opened by "Terminer le relevé"), with "Partagé avec l'association" pre-selected; the draft stores the choice, offline included.
+  - the choice is frozen after submit (read-only line on the survey summary).
+  - only `public` surveys can be displayed in community surfaces; no moderator read path to private surveys exists.
 - Post-publication management:
-  - users can switch visibility (`public` <-> `private`) after submission.
   - users can delete a submitted survey (with confirmation).
-  - switching to `private` or deleting removes survey from community surfaces.
+  - deleting removes survey from community surfaces.
 
 ## 5) Method Version and Scoring Context
 
@@ -482,11 +482,12 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 
 ### 8.3 Visibility Validations
 - `visibility` is required at submission (`private` or `public`).
-- Default value at draft creation: `private`.
+- Default value at draft creation in the app: `public` ("Partagé avec l'association", pre-selected in the submission step); the database default stays `private` for a create that sends no value.
+- `visibility` is read-only after submit (`422 submitted_read_only_fields` on the PATCH channels, `409 survey_submitted_read_only` on upserts).
 - If `visibility = public`, verify exposed data complies with anonymization/pseudonymization rules.
 
 ### 8.4 Post-Publication Action Validations
-- Visibility change action is allowed only for survey owner (or authorized moderator/admin role).
+- The visibility cannot be changed after submit; before submit only the survey owner sets it (no moderator or admin role reads or changes it).
 - Deletion requires explicit user confirmation.
 - After deletion, `deleted_at` is set (soft delete; `status` is unchanged — there is no `deleted`
   status value, see §10.1) and the survey is excluded from list/map/community feeds.
@@ -543,7 +544,7 @@ pair are scored: an absent or incomplete factor is not "very low".
 - `vegetation_stage: string` (v3.0 only; required at submit)
 - `status: "draft" | "submitted" | "synced" | "error"` (shipped enum; no `deleted`
   value — a deleted survey is soft-deleted via `deleted_at`, its `status` unchanged)
-- `visibility: "private" | "public"` (required, default `private`)
+- `visibility: "private" | "public"` (required; the app writes `public` for a new draft, the database default is `private`; read-only after submit)
 - `submitted_at?: datetime`
 - `deleted_at?: datetime` (soft delete; no `published_at` field exists)
 - `factors: array[10]` (required)
@@ -656,10 +657,9 @@ The logical payload above is a description; on the wire the annotations travel i
 5. ~~Expired draft: draft > 7 days -> status `expired`, submission denied.~~ Removed (OA-41 2026-10-06): an old draft is submitted like any other.
 
 6. Visibility:
-- `private` not published in map/community surfaces, `public` eligible for publication.
+- `private` not published in map/community surfaces, `public` (shared with the association) eligible for publication; the choice is made before submit and cannot change afterwards.
 
 7. Post-publication management:
-- switching `public` -> `private` removes survey from map/community surfaces.
 - deletion sets `deleted_at` (soft delete, `status` unchanged) and removes the survey from user/community lists.
 
 8. Versioning:

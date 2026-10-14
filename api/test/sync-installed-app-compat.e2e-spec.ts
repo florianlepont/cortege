@@ -540,6 +540,99 @@ describe("Installed-app sync payload compatibility (e2e)", () => {
     })
   })
 
+  // Phase 29 (D-07, per-channel codes of api-contract-v1.md): a submitted survey's visibility is
+  // frozen. A sync upsert with a newer version whose only change is visibility is refused with
+  // 409 survey_submitted_read_only, a visibility_update with 422 submitted_read_only_fields, both
+  // naming the field in details.fields; replays carrying the stored value keep syncing.
+  it("refuses a post-submit visibility change on sync upsert and visibility_update, replays stay synced", async () => {
+    const accessToken = await login(`e2e-vis-frozen-${randomUUID()}@ibp.local`)
+    const parcelId = await resolveParcel(accessToken, 45.4, 2.4)
+    const surveyId = `e2e-vis-frozen-${randomUUID()}`
+    const payload = (syncVersion: number, visibility: "private" | "public") => ({
+      id: surveyId,
+      sync_version: syncVersion,
+      site_name: "Frozen Visibility Forest",
+      status: "draft",
+      visibility,
+      parcel_ids: [parcelId],
+      region_version: "ACA",
+      vegetation_stage: "collineen",
+      factors: validFactors,
+    })
+    const sync = (ops: MobileOp[]) =>
+      request(app.getHttpServer())
+        .post("/v1/sync")
+        .set("Authorization", `Bearer ${accessToken}`)
+        .send(mobileOps(ops))
+        .expect(200)
+    const stored = async () =>
+      (
+        await db.query<{ visibility: string; sync_version: number }>(
+          `SELECT visibility, sync_version FROM surveys WHERE id = $1`,
+          [surveyId],
+        )
+      ).rows[0]
+
+    const created = await sync([
+      { client_ref: "1", entity: "survey", action: "upsert", payload: payload(1, "private") },
+    ])
+    expect(created.body.results[0].status).toBe("synced")
+    await request(app.getHttpServer())
+      .post(`/v1/surveys/${surveyId}/submit`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(201)
+    const before = await stored()
+
+    // (i) A newer version whose only change is visibility: 409 survey_submitted_read_only.
+    const next = before.sync_version + 1
+    const refusedUpsert = await sync([
+      { client_ref: "2", entity: "survey", action: "upsert", payload: payload(next, "public") },
+    ])
+    expect(refusedUpsert.body.results[0]).toMatchObject({
+      client_ref: "2",
+      status: "fatal_error",
+      error: { code: "survey_submitted_read_only", http_status: 409 },
+    })
+    expect(refusedUpsert.body.results[0].error.details.fields).toContain("visibility")
+    expect(await stored()).toEqual(before)
+
+    // (ii) The identical replay at that newer version stays synced and keeps the value.
+    const replay = await sync([
+      { client_ref: "3", entity: "survey", action: "upsert", payload: payload(next, "private") },
+    ])
+    expect(replay.body.results[0].status).toBe("synced")
+    expect(await stored()).toEqual({ visibility: "private", sync_version: next })
+
+    // (iii) visibility_update: the other value is a 422 naming the field, the stored one syncs.
+    const updates = await sync([
+      {
+        client_ref: "4",
+        entity: "survey",
+        action: "visibility_update",
+        survey_id: surveyId,
+        payload: { visibility: "public" },
+      },
+      {
+        client_ref: "5",
+        entity: "survey",
+        action: "visibility_update",
+        survey_id: surveyId,
+        payload: { visibility: "private" },
+      },
+    ])
+    expect(updates.body.results[0]).toMatchObject({
+      client_ref: "4",
+      status: "fatal_error",
+      error: {
+        code: "submitted_read_only_fields",
+        http_status: 422,
+        details: { survey_id: surveyId, fields: ["visibility"] },
+      },
+    })
+    expect(updates.body.results[1]).toMatchObject({ client_ref: "5", status: "synced" })
+    expect((await stored()).visibility).toBe("private")
+  })
+
   // Installed apps persist the changes cursor verbatim (mobile/src/storage/sync.ts:1141-1152)
   // and replay it on the next pull. Before this phase the server emitted
   // `<created_at::text>|<event id>`, and the removed event-less fallback emitted

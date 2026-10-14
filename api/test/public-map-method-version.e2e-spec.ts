@@ -23,9 +23,9 @@ import {
 // a v3.2 survey stores no region. Named "method-version", never "*-cas*": CAS means
 // compare-and-swap in this suite.
 //
-// Phase 2 (association-only sharing): both routes require an authenticated member and show every
-// submitted survey regardless of visibility, so "v32Private" (never patched to public) now shows
-// up exactly like the public ones.
+// Phase 29 (private or public before submission): both routes require an authenticated member and
+// show the shared submitted surveys only. The shared surveys are created public before submit;
+// "v32Private" stays private, so it is absent from the map and its parcel is not studied.
 //
 // Owner decision 2026-10-08: the map items no longer round the location; each sits at the exact
 // centre of its linked parcels.
@@ -95,7 +95,7 @@ describe("Public map method version (e2e)", () => {
         sync_version: 1,
         site_name: "Public method version forest",
         status: "draft",
-        visibility: "private",
+        visibility,
         parcel_id: parcelId,
         observation_year: 2026,
         version_number: await getNextVersionNumber(db, parcelId),
@@ -107,13 +107,6 @@ describe("Public map method version (e2e)", () => {
       .post(`/v1/surveys/${ids[key]}/submit`)
       .set("Authorization", `Bearer ${accessToken}`)
       .expect(201)
-    if (visibility === "public") {
-      await request(server())
-        .patch(`/v1/surveys/${ids[key]}/visibility`)
-        .set("Authorization", `Bearer ${accessToken}`)
-        .send({ visibility: "public" })
-        .expect(200)
-    }
   }
 
   async function mapItems(query: Record<string, string> = {}): Promise<MapItem[]> {
@@ -184,11 +177,11 @@ describe("Public map method version (e2e)", () => {
     expect(untagged).toHaveProperty("ibp_cas", null)
   })
 
-  it("shows a never-published private survey to any member too, at its exact parcel centre", async () => {
+  it("hides a private survey from the map and places the shared ones at their exact parcel centre", async () => {
     const items = await mapItems()
 
-    expect(items.some((item) => item.survey_id === ids.v32Private)).toBe(true)
-    for (const key of Object.keys(ids) as Array<keyof typeof ids>) {
+    expect(items.some((item) => item.survey_id === ids.v32Private)).toBe(false)
+    for (const key of ["v32Public", "untaggedPublic"] as const) {
       const stored = await db.query<{ centroid_lat: number; centroid_lng: number }>(
         `SELECT centroid_lat, centroid_lng FROM parcels WHERE parcel_id = $1`,
         [parcels[key]],
@@ -253,13 +246,8 @@ describe("Public map method version (e2e)", () => {
       latest_ibp_method_version: null,
     })
     expect(byParcel(parcels.untaggedPublic)).toHaveProperty("latest_ibp_method_version", null)
-    // A parcel whose only survey is private (never published) is studied too: association-only
-    // sharing shows every submitted survey to every member, regardless of visibility.
-    expect(byParcel(parcels.v32Private)).toMatchObject({
-      study_status: "studied",
-      latest_submitted_survey_id: ids.v32Private,
-      latest_ibp_total: 14,
-      latest_ibp_method_version: V3_2,
-    })
+    // A parcel whose only survey is private is not studied for another member (D-11).
+    expect(byParcel(parcels.v32Private)?.study_status ?? "not_studied").toBe("not_studied")
+    expect(byParcel(parcels.v32Private)?.latest_submitted_survey_id ?? null).toBeNull()
   })
 })

@@ -46,7 +46,7 @@ document previously marking it "Built") and is moved to **Deferred — Next Mile
 
 - [x] **REQ-B-survey-list** — Contributor sees their surveys with parcel ids, name, last update, version, status and completion rate; filterable by status and date; visible offline. *(Built)*
 - [x] **REQ-B-survey-detail** — Contributor sees survey detail with submission deadline, completion rate, previous surveys on the same parcel, and IBP total + factor-level deltas against previous versions. *(Partial — the parcel-history API (`GET /parcels/:parcelId/surveys/history`) exists but no mobile screen calls it. Corrected 2026-09-27, was wrongly marked "Built". Build in Phase 11)*
-- [x] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone — every submitted survey is visible by default to every authenticated association member.** *(Built — Phase 19 verified the delete/confirmation flow was already complete; corrected from "Partial", which described the Phase 11 visibility-toggle removal, not this flow)*
+- [x] **REQ-B-manage-published** — Contributor deletes their **own** survey with a confirmation step; the deleted survey leaves their list. **Scope reduced: the private/public visibility toggle is removed for this milestone — every submitted survey is visible by default to every authenticated association member.** *(Phase 29 restored a private or shared choice before submission with `REQ-C-privacy-choice`, frozen after submit, so no toggle exists on a published survey.)* *(Built — Phase 19 verified the delete/confirmation flow was already complete; corrected from "Partial", which described the Phase 11 visibility-toggle removal, not this flow)*
 - [x] **REQ-B-own-surveys-map** — The map screen requires authentication and shows the surveys submitted by any association member — not an anonymous public set, and not only the contributor's own. `PublicMapScreen` and its navigation are kept; only the data source and the auth requirement change. `GET /public/map-items` and `GET /public/parcels/status` require authentication instead of staying open. *(New — redefined 2026-09-27 from "own surveys" to "members' surveys"; created by this milestone)*
 
 ### C — IBP Survey Data Entry
@@ -179,7 +179,7 @@ are verified within the phases that touch them and in the Phase 35 field tests.
 | `REQ-X-submit-gate` — submission allowed only when required fields are complete and cadastral linkage is valid | Active |
 | `REQ-X-longitudinal` — surveys on a parcel are tracked by observation year and version, with historical comparison | Active |
 | `REQ-X-explore-parcel-first` — Explore is a parcel intelligence surface | Deferred with `REQ-B-explore-analysis` |
-| `REQ-X-visibility` — each submitted survey has `private`\|`public` | **Overridden** — no private/public state this milestone; every submitted survey is visible by default to every authenticated association member. Restored with `REQ-C-privacy-choice` |
+| `REQ-X-visibility` — each submitted survey has `private`\|`public` | **Overridden**, then restored by `REQ-C-privacy-choice` (Phase 29): each survey is `private` or `public` (= shared with the association), chosen before submit, frozen after |
 | `REQ-X-pedagogy-on-demand` — pedagogical content on demand without interrupting entry | Active |
 | `REQ-X-draft-expiry` — a draft expires 7 days after creation | Active |
 | `REQ-X-public-anonymized` — public map data is anonymized | Deferred — no public surface this milestone |
@@ -209,7 +209,7 @@ Recorded, not dropped unless marked rejected. The code already exists for severa
 
 | Requirement | Decision | Note |
 |-------------|----------|------|
-| `REQ-C-privacy-choice` | **V1** (Phase 29) | Private/public visibility before submission; also restores the toggle removed from `REQ-B-manage-published` |
+| `REQ-C-privacy-choice` | **V1** (Phase 29, built 2026-10-13) | Private/shared visibility chosen before submission, stored, synced, read-only after submit on every channel, private surveys hidden from other members on the server (API tests), existing submitted surveys backfilled to shared, wording "Privé" / "Partagé avec l'association", read-only line for the owner; replaces the toggle removed from `REQ-B-manage-published` |
 | `REQ-A-social-login` | Later, undecided | Sign in with Apple/Google, found unbuilt 2026-09-27; the board did not discuss it |
 | `REQ-E-audit-trail`, `REQ-E-search`, `REQ-E-report` | **V3** | Epic E (data quality, moderation): the "Qualité et modération" card went to Futur. Still needs a moderation surface outside the app |
 | `REQ-H-regional-overview`, `REQ-H-parcel-trends`, `REQ-H-factor-distribution`, `REQ-H-analytics-trust`, `REQ-B-explore-analysis` | **V3** | Epic H: forest insights and analytics (owner decision 2026-10-10; was V2) |
@@ -232,7 +232,7 @@ The back-office / CMS prerequisite only concerns Epic E now (V3); Epics G and I 
 | alwaysdata + Cloudflare R2 | Revised 2026-10-10: OVH is recommended by the board; the alwaysdata contract details are reviewed in Phase 36 to see whether it can be reused |
 | PDF export API endpoint | Export must work offline; on-device generation is the only way |
 | Direct Google Drive OAuth | The OS share sheet reaches Drive, Wimi, mail and AirDrop without integrating any of them |
-| Private/public visibility toggle | Returns in V1 with `REQ-C-privacy-choice` (Phase 29) |
+| Private/public visibility toggle | Returned in Phase 29 as a choice before submission (`REQ-C-privacy-choice`), read-only after submit |
 | Back-office / CMS | Deferred with Epics E and G; a second application is out of reach for a solo milestone |
 | SMTP email sending | Auth0 owns every auth email (DEC-005); `EmailService` and `SMTP_*` are being deleted, not fixed |
 
@@ -294,6 +294,7 @@ Every MVP requirement maps to exactly one phase. **Build** = the phase delivers 
 | REQ-D-explorer-modes | New | Phase 28 | Build |
 | REQ-D-offline-layers | New | Phase 28 | Build |
 | REQ-D-offline-percent | New | Phase 28 | Build |
+| REQ-C-privacy-choice | New | Phase 29 | Build |
 | REQ-C-pdf-export | New | Phase 19 | Build |
 | REQ-B-manage-published | Partial | Phase 19 | Build |
 | REQ-INF-hosting-adr | New | Phase 20 | Build |

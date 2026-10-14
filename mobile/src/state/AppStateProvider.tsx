@@ -74,14 +74,6 @@ function useAppController() {
     () => surveyList.surveys.map((survey) => survey.id),
     [surveyList.surveys],
   )
-  const editingSurveyVisibility = useMemo(
-    () =>
-      editingSurveyId
-        ? (surveyList.surveys.find((survey) => survey.id === editingSurveyId)?.visibility ??
-          "private")
-        : "private",
-    [editingSurveyId, surveyList.surveys],
-  )
 
   const closeSurveyDetailSelection = useCallback((): void => {
     closeSurvey()
@@ -124,7 +116,6 @@ function useAppController() {
   const editing = useEditingDraft({
     editingSurveyId,
     setEditingSurveyId,
-    editingSurveyVisibility,
     setFormMode,
     surveyForm,
     surveyList,
@@ -233,7 +224,6 @@ function useAppController() {
     setSurveyFromDate: surveyList.setSurveyFromDate,
     setSurveyToDate: surveyList.setSurveyToDate,
     setStatusFilter: surveyList.setStatusFilter,
-    setVisibilityFilter: surveyList.setVisibilityFilter,
     setSyncFilter: surveyList.setSyncFilter,
     setBlockedFilter: surveyList.setBlockedFilter,
     setAttachmentFilter: surveyList.setAttachmentFilter,
@@ -245,7 +235,7 @@ function useAppController() {
     submitSurvey: ops.handleSubmitSurvey,
     retrySurvey: ops.handleRetrySurvey,
     discardSurvey: ops.handleDiscardSurvey,
-    toggleVisibility: ops.handleToggleVisibility,
+    setDraftVisibility: ops.handleSetDraftVisibility,
     confirmDeleteSurvey: ops.confirmDeleteSurvey,
     discardEmptyDraft: ops.handleDiscardEmptyDraft,
     queueAttachmentFromLibrary: ops.handleQueueAttachmentFromLibrary,
@@ -275,7 +265,6 @@ function useAppController() {
     surveyFromDate,
     surveyToDate,
     statusFilter,
-    visibilityFilter,
     syncFilter,
     blockedFilter,
     attachmentFilter,
@@ -293,7 +282,6 @@ function useAppController() {
         surveyFromDate,
         surveyToDate,
         statusFilter,
-        visibilityFilter,
         syncFilter,
         blockedFilter,
         attachmentFilter,
@@ -316,7 +304,6 @@ function useAppController() {
       surveyFromDate,
       surveyToDate,
       statusFilter,
-      visibilityFilter,
       syncFilter,
       blockedFilter,
       attachmentFilter,

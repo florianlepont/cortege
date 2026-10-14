@@ -167,7 +167,7 @@ function makeProps(status: string): SurveyDetailScreenProps {
     onPickPhoto: jest.fn(),
     onDeleteAttachment: jest.fn(),
     onDeleteSurvey: jest.fn(),
-    onSubmitSurvey: jest.fn(),
+    onOpenFinish: jest.fn(),
     onRetrySurvey: jest.fn(),
     onDiscardSurvey: jest.fn(),
     onRenameSurvey: jest.fn(),
@@ -575,7 +575,7 @@ describe("SurveyDetailScreen summary", () => {
     expect(mockScrollTo).not.toHaveBeenCalled()
   })
 
-  test("the bottom button finishes the survey through onSubmitSurvey", () => {
+  test("the bottom button opens the submission step and submits nothing (D-04)", () => {
     const props = makeProps("draft")
     let tree: ReactTestRenderer | undefined
     act(() => {
@@ -584,7 +584,31 @@ describe("SurveyDetailScreen summary", () => {
     act(() => {
       byType(tree!, "FinishBar")[0].props.onFinish()
     })
-    expect(props.onSubmitSurvey).toHaveBeenCalledWith("survey-1")
+    expect(props.onOpenFinish).toHaveBeenCalledTimes(1)
+    expect(props.onOpenFinish).toHaveBeenCalledWith("survey-1")
+  })
+})
+
+describe("SurveyDetailScreen visibility line (D-15)", () => {
+  const lineOf = (survey: Partial<LocalSurvey>): { text: string } | null => {
+    const props = makeProps(String(survey.status))
+    props.selectedSurvey = { ...props.selectedSurvey, ...survey } as LocalSurvey
+    let tree: ReactTestRenderer | undefined
+    act(() => {
+      tree = renderer.create(<SurveyDetailScreen {...props} />)
+    })
+    return byType(tree!, "SummaryHeader")[0].props.visibilityLine
+  }
+
+  test("a submitted shared survey says it is shared with the association", () => {
+    expect(lineOf({ status: "submitted", visibility: "public" })?.text).toBe(
+      "Partagé avec l'association",
+    )
+  })
+
+  test("a draft has no visibility line, the choice being made in the finish sheet", () => {
+    expect(lineOf({ status: "draft", visibility: "private" })).toBeNull()
+    expect(lineOf({ status: "draft", visibility: "public" })).toBeNull()
   })
 })
 

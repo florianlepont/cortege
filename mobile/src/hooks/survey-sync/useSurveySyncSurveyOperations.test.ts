@@ -73,7 +73,6 @@ const name = fr.common.untitledSurvey
 async function buildHook(overrides: Record<string, unknown> = {}) {
   const params = {
     apiUrl: "http://localhost:3000",
-    accessToken: "access-token",
     selectedSurveyId: null,
     editingSurveyId: null,
     surveys: [],
@@ -639,6 +638,124 @@ describe("useSurveySyncSurveyOperations", () => {
     })
   })
 
+  describe("handleSubmitSurvey outcome (Phase 29, FinishOutcome)", () => {
+    function readyDraft() {
+      mockGetSubmitBlockReason.mockReturnValue(null)
+      mockGetLocalSurveyDraft.mockResolvedValue({ parcel_ids: ["p1"] })
+      mockEvaluateSubmitReadiness.mockReturnValue({ ready: true })
+    }
+
+    test("is submitted only when the server accepted the submit", async () => {
+      readyDraft()
+      mockSubmitSurvey.mockResolvedValue({ ok: true })
+      const { handleSubmitSurvey } = await buildHook()
+      await expect(handleSubmitSurvey("survey-1")).resolves.toBe("submitted")
+    })
+
+    test("is not_submitted when the server refused the submit", async () => {
+      readyDraft()
+      mockSubmitSurvey.mockResolvedValue({ ok: false, message: "factor A invalid" })
+      const { handleSubmitSurvey } = await buildHook()
+      await expect(handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+    })
+
+    test("is not_submitted when the finish is postponed offline", async () => {
+      readyDraft()
+      const { handleSubmitSurvey } = await buildHook({ isOnline: false })
+      await expect(handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+    })
+
+    test("is not_submitted when the survey is not found, submitted, blocked or unnamed", async () => {
+      for (const reason of ["not_found", "already_submitted", "survey_blocked", "name_required"]) {
+        mockGetSubmitBlockReason.mockReturnValue(reason)
+        const { handleSubmitSurvey } = await buildHook()
+        await expect(handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+      }
+    })
+
+    test("is not_submitted when the draft is missing, not ready or its check fails", async () => {
+      mockGetSubmitBlockReason.mockReturnValue(null)
+      mockGetLocalSurveyDraft.mockResolvedValueOnce(null)
+      const missing = await buildHook()
+      await expect(missing.handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+
+      mockGetLocalSurveyDraft.mockResolvedValueOnce({ parcel_ids: [] })
+      mockEvaluateSubmitReadiness.mockReturnValueOnce({
+        ready: false,
+        missing_factors: ["A"],
+        missing_fields: [],
+      })
+      const notReady = await buildHook()
+      await expect(notReady.handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+
+      mockGetLocalSurveyDraft.mockRejectedValueOnce(new Error("db locked"))
+      const failing = await buildHook()
+      await expect(failing.handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+    })
+
+    test("is not_submitted when the survey is blocked or not synced after the drain", async () => {
+      readyDraft()
+      mockListLocalSurveys.mockResolvedValue([
+        { id: "survey-1", sync_state: "synced", sync_blocked: 1 },
+      ])
+      const blocked = await buildHook()
+      await expect(blocked.handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+
+      mockListLocalSurveys.mockResolvedValue([
+        { id: "survey-1", sync_state: "blocked_other", sync_blocked: 0 },
+      ])
+      const unsynced = await buildHook()
+      await expect(unsynced.handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+      expect(mockSubmitSurvey).not.toHaveBeenCalled()
+    })
+
+    test("is not_submitted when the survey vanished locally", async () => {
+      readyDraft()
+      mockListLocalSurveys.mockResolvedValue([])
+      const { handleSubmitSurvey } = await buildHook()
+      await expect(handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+    })
+
+    test("is not_submitted when the login is required or the submit call fails", async () => {
+      readyDraft()
+      const login = await buildHook({
+        withAuthRetry: jest.fn().mockRejectedValue(new Error("AUTH_REQUIRED")),
+      })
+      await expect(login.handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+
+      const failing = await buildHook({
+        withAuthRetry: jest.fn().mockRejectedValue(new Error("Network error")),
+      })
+      await expect(failing.handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+    })
+
+    test("is not_submitted when the owner check postpones the submit", async () => {
+      readyDraft()
+      const { handleSubmitSurvey } = await buildHook({
+        ensureSyncOwner: jest.fn().mockResolvedValue(false),
+      })
+      await expect(handleSubmitSurvey("survey-1")).resolves.toBe("not_submitted")
+    })
+
+    test("is busy for a second call while the first finish is running", async () => {
+      readyDraft()
+      let release: (value: { ok: boolean }) => void = () => undefined
+      mockSubmitSurvey.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            release = resolve
+          }),
+      )
+      const { handleSubmitSurvey } = await buildHook()
+      const first = handleSubmitSurvey("survey-1")
+      await new Promise((resolve) => setImmediate(resolve))
+      await expect(handleSubmitSurvey("survey-1")).resolves.toBe("busy")
+      release({ ok: true })
+      await expect(first).resolves.toBe("submitted")
+    })
+  })
+
   // ─── handleRetrySurvey ────────────────────────────────────────────────────
 
   describe("handleRetrySurvey", () => {
@@ -676,124 +793,68 @@ describe("useSurveySyncSurveyOperations", () => {
     })
   })
 
-  // ─── handleToggleVisibility ───────────────────────────────────────────────
+  // ─── handleSetDraftVisibility ─────────────────────────────────────────────
 
-  describe("handleToggleVisibility", () => {
-    const QUEUED = {
-      ok: true,
-      visibility: "public",
-      queued: true,
-      synced: false,
-    }
-
-    test("queues locally, then syncs through the owner-guarded withAuthRetry", async () => {
-      mockUpdateSurveyVisibility.mockResolvedValue(QUEUED)
-      mockSyncPending.mockResolvedValue({ synced: 1, failed: 0 })
-      const { handleToggleVisibility, setStatus, handleLoadCanonicalDetails, ensureSyncOwner } =
-        await buildHook()
-      await handleToggleVisibility("survey-1", "public")
-      // Queue-only call: updateSurveyVisibility never drains the queue itself.
-      expect(mockUpdateSurveyVisibility).toHaveBeenCalledWith(
-        "http://localhost:3000",
-        "",
-        "survey-1",
-        "public",
-      )
-      expect(ensureSyncOwner).toHaveBeenCalledWith("auth0|owner")
-      expect(mockSyncPending).toHaveBeenCalledWith("http://localhost:3000", "token")
-      expect(handleLoadCanonicalDetails).toHaveBeenCalledWith("survey-1", { silent: true })
-      expect(setStatus).toHaveBeenCalledWith(
-        text.visibilitySynced({ visibility: text.visibility.public }),
-      )
-    })
-
-    test("reports the unchanged visibility without syncing", async () => {
+  describe("handleSetDraftVisibility (Phase 29, D-05, D-07)", () => {
+    test("stores the choice in the queue only, refreshes the list and stays silent", async () => {
       mockUpdateSurveyVisibility.mockResolvedValue({
         ok: true,
-        message: "Visibility already public",
-        queued: false,
+        visibility: "private",
+        queued: true,
         synced: false,
+        frozen: false,
       })
-      const { handleToggleVisibility, setStatus } = await buildHook()
-      await handleToggleVisibility("survey-1", "public")
-      expect(mockSyncPending).not.toHaveBeenCalled()
-      expect(setStatus).toHaveBeenCalledWith(
-        text.visibilityUnchanged({ visibility: text.visibility.public }),
-      )
-    })
-
-    test("keeps the change queued and asks for login when signed out", async () => {
-      mockUpdateSurveyVisibility.mockResolvedValue(QUEUED)
-      const { handleToggleVisibility, setStatus } = await buildHook({ accessToken: "" })
-      await handleToggleVisibility("survey-1", "private")
-      expect(mockSyncPending).not.toHaveBeenCalled()
-      expect(setStatus).toHaveBeenCalledWith(
-        text.visibilityQueuedLoginRequired({ visibility: text.visibility.private }),
-      )
-    })
-
-    test("sets warning status when sync reports failures", async () => {
-      mockUpdateSurveyVisibility.mockResolvedValue(QUEUED)
-      mockSyncPending.mockResolvedValue({ synced: 0, failed: 2 })
-      const { handleToggleVisibility, setStatus } = await buildHook()
-      await handleToggleVisibility("survey-1", "public")
-      expect(setStatus).toHaveBeenCalledWith(text.visibilitySyncWarning({ failed: 2 }))
-    })
-
-    test("calls clearSession when the session ended (AUTH_REQUIRED)", async () => {
-      mockUpdateSurveyVisibility.mockResolvedValue(QUEUED)
-      const { handleToggleVisibility, clearSession, setStatus } = await buildHook({
-        withAuthRetry: jest.fn().mockRejectedValue(new Error("AUTH_REQUIRED")),
-      })
-      await handleToggleVisibility("survey-1", "public")
-      expect(clearSession).toHaveBeenCalled()
-      expect(setStatus).toHaveBeenCalledWith(text.visibilityLoginRequired())
-    })
-
-    test("keeps the change queued when sync fails", async () => {
-      mockUpdateSurveyVisibility.mockResolvedValue(QUEUED)
-      const { handleToggleVisibility, setStatus } = await buildHook({
-        withAuthRetry: jest.fn().mockRejectedValue(new Error("Network down")),
-      })
-      await handleToggleVisibility("survey-1", "public")
-      expect(setStatus).toHaveBeenCalledWith(
-        text.visibilityQueuedSyncPending({ visibility: text.visibility.public }),
-      )
-    })
-
-    test("sets error status on exception", async () => {
-      mockUpdateSurveyVisibility.mockRejectedValue(new Error("Visibility error"))
-      const { handleToggleVisibility, setStatus } = await buildHook()
-      await handleToggleVisibility("survey-1", "public")
-      expect(setStatus).toHaveBeenCalledWith(text.visibilityFailed())
-    })
-
-    test("WR-01: queues only and never drains the queue when syncAllowed is false", async () => {
-      mockUpdateSurveyVisibility.mockResolvedValue(QUEUED)
-      const { handleToggleVisibility, withAuthRetry, setStatus } = await buildHook({
-        syncAllowed: false,
-      })
-      await handleToggleVisibility("survey-1", "public")
+      const { handleSetDraftVisibility, setStatus, refreshLocalSurveys, withAuthRetry } =
+        await buildHook()
+      await expect(handleSetDraftVisibility("survey-1", "private")).resolves.toBe("stored")
+      // Empty token: updateSurveyVisibility never drains the queue itself.
+      expect(mockUpdateSurveyVisibility).toHaveBeenCalledTimes(1)
       expect(mockUpdateSurveyVisibility).toHaveBeenCalledWith(
         "http://localhost:3000",
         "",
         "survey-1",
-        "public",
+        "private",
       )
       expect(withAuthRetry).not.toHaveBeenCalled()
       expect(mockSyncPending).not.toHaveBeenCalled()
-      expect(setStatus).toHaveBeenCalledWith(
-        text.visibilityQueuedOwnerPending({ visibility: text.visibility.public }),
-      )
+      expect(refreshLocalSurveys).toHaveBeenCalledTimes(1)
+      expect(setStatus).not.toHaveBeenCalled()
     })
 
-    test("WR-01: the execution-time owner check blocks syncPending", async () => {
-      mockUpdateSurveyVisibility.mockResolvedValue(QUEUED)
-      const { handleToggleVisibility } = await buildHook({
-        ensureSyncOwner: jest.fn().mockResolvedValue(false),
+    test("resolves unchanged, without a refresh, when nothing was queued", async () => {
+      mockUpdateSurveyVisibility.mockResolvedValue({
+        ok: true,
+        visibility: "public",
+        queued: false,
+        synced: false,
+        frozen: false,
       })
-      await handleToggleVisibility("survey-1", "public")
-      expect(mockSyncPending).not.toHaveBeenCalled()
+      const { handleSetDraftVisibility, setStatus, refreshLocalSurveys } = await buildHook()
+      await expect(handleSetDraftVisibility("survey-1", "public")).resolves.toBe("unchanged")
+      expect(refreshLocalSurveys).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
+    })
+
+    test("resolves frozen for a submitted survey and writes nothing more", async () => {
+      mockUpdateSurveyVisibility.mockResolvedValue({
+        ok: true,
+        visibility: "private",
+        queued: false,
+        synced: false,
+        frozen: true,
+      })
+      const { handleSetDraftVisibility, setStatus, refreshLocalSurveys } = await buildHook()
+      await expect(handleSetDraftVisibility("survey-1", "private")).resolves.toBe("frozen")
+      expect(refreshLocalSurveys).not.toHaveBeenCalled()
+      expect(setStatus).not.toHaveBeenCalled()
+    })
+
+    test("rejects with the storage error and sets no status", async () => {
+      const failure = new Error("disk full")
+      mockUpdateSurveyVisibility.mockRejectedValue(failure)
+      const { handleSetDraftVisibility, setStatus } = await buildHook()
+      await expect(handleSetDraftVisibility("survey-1", "private")).rejects.toBe(failure)
+      expect(setStatus).not.toHaveBeenCalled()
     })
   })
 
