@@ -104,6 +104,16 @@ export const surveyDetailFr = {
     history: "Historique de la parcelle",
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
+    // Phase 30 (U-O9): the short name of the parcours follows the cas, on the same line.
+    contextValueWithRoute: ({
+      method,
+      cas,
+      route,
+    }: {
+      method: string
+      cas: string | null
+      route: string
+    }) => (cas ? `${method} · cas ${cas} · ${route}` : `${method} · ${route}`),
     scoreValue: (filled: number) => `${filled} sur 10`,
     parcelsValue: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),
     parcelsNone: "Aucune",

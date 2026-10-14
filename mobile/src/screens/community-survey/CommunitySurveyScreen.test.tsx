@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons"
 // The draft-summary module pulls in the whole storage layer; the view model only needs its marker.
 jest.mock("../survey-detail/useLocalDraftSummary", () => ({ NOT_FILLED_CLASS: "Not filled" }))
 
-import type { CommunitySurveyDetail } from "@cortege/ibp-domain"
+import type { CommunitySurveyDetail, SurveyRoute } from "@cortege/ibp-domain"
 import { IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
 import type { CommunitySurveyState } from "../../hooks/useCommunitySurvey"
 import { fr } from "../../i18n"
@@ -87,6 +87,10 @@ jest.mock("../survey-detail/conditions/SurveyNoteCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return { SurveyNoteCard: (props: object) => ReactRef.createElement("SurveyNoteCard", props) }
 })
+jest.mock("../survey-detail/route/RouteSection", () => {
+  const ReactRef = require("react") as typeof import("react")
+  return { RouteSection: (props: object) => ReactRef.createElement("RouteSection", props) }
+})
 jest.mock("../survey-detail/ParcelMapCard", () => {
   const ReactRef = require("react") as typeof import("react")
   return { ParcelMapCard: (props: object) => ReactRef.createElement("ParcelMapCard", props) }
@@ -143,6 +147,53 @@ const texts = (tree: renderer.ReactTestRenderer): string[] =>
   byType(tree, "Text")
     .flatMap((node) => React.Children.toArray(node.props.children))
     .filter((child): child is string => typeof child === "string")
+
+const ROUTE: SurveyRoute = {
+  version: 1,
+  method: "partial_strip",
+  counting: "capped",
+  zone_surface_ha: 1.6,
+  complement: { done: false },
+  guide: { chosen_by: "observer" },
+}
+
+describe("CommunitySurveyScreen route (phase 30, O-15)", () => {
+  it("shows the route read-only, as the community variant, after the conditions block", () => {
+    const { tree } = render(state({ detail: detail({ survey_route: ROUTE }) }))
+    const card = byType(tree, "RouteSection")
+    expect(card).toHaveLength(1)
+    expect(card[0].props).toMatchObject({
+      route: ROUTE,
+      loaded: true,
+      status: "readonly",
+      editable: false,
+      variant: "community",
+    })
+    expect(card[0].props.onEdit).toBeUndefined()
+    // Host elements in document order: the note card, then the route card, then the factors.
+    const names = tree.root
+      .findAll((node) => typeof node.type === "string")
+      .map((node) => node.type as string)
+    expect(names.indexOf("RouteSection")).toBeGreaterThan(names.indexOf("SurveyNoteCard"))
+    expect(names.indexOf("RouteSection")).toBeLessThan(names.indexOf("FactorsList"))
+  })
+
+  it("hands the card nothing when the survey has no route (it then draws nothing)", () => {
+    const { tree } = render(state({ detail: detail({ survey_route: null }) }))
+    expect(byType(tree, "RouteSection")[0].props.route).toBeNull()
+  })
+
+  it("reads the route through the tolerant reader: a damaged one counts as absent (T-30-49)", () => {
+    const damaged = { ...ROUTE, method: "somewhere_else" } as unknown as SurveyRoute
+    const { tree } = render(state({ detail: detail({ survey_route: damaged }) }))
+    expect(byType(tree, "RouteSection")[0].props.route).toBeNull()
+  })
+
+  it("an older server that sends no field gives the card no route", () => {
+    const { tree } = render(state())
+    expect(byType(tree, "RouteSection")[0].props.route).toBeNull()
+  })
+})
 
 describe("CommunitySurveyScreen", () => {
   it("shows a spinner while loading and an error with a retry when it failed", () => {

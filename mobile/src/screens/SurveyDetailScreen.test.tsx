@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import React from "react"
+import type { SurveyRoute } from "@cortege/ibp-domain"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
 import { notificationAsync } from "../../test/expo-haptics.mock"
 import { setReducedMotion } from "../../test/react-native-reanimated.mock"
@@ -113,6 +114,10 @@ let mockConditions: {
 } = { note: null, weather: null, parcelIds: [], loaded: true }
 jest.mock("./survey-detail/conditions/useSurveyConditions", () => ({
   useSurveyConditions: jest.fn(() => mockConditions),
+}))
+let mockRoute: SurveyRoute | null = null
+jest.mock("../hooks/useSurveyRoute", () => ({
+  useSurveyRoute: jest.fn(() => ({ route: mockRoute, loaded: true })),
 }))
 jest.mock("./survey-detail/SummaryHeader", () => ({ SummaryHeader: "SummaryHeader" }))
 jest.mock("./survey-detail/useSurveyDetailHeader", () => ({ useSurveyDetailHeader: jest.fn() }))
@@ -408,6 +413,25 @@ describe("SurveyDetailScreen summary", () => {
     expect(props.onOpenContext).not.toHaveBeenCalled()
     const contextRow = byType(tree!, "AppGroupedList")[0].props.sections[0].rows[0]
     expect(contextRow.onPress).toBe(props.onOpenContext)
+  })
+
+  test("the Contexte row carries the short route label after the method (U-O9)", () => {
+    mockRoute = {
+      version: 1,
+      method: "full",
+      counting: "capped",
+      zone_surface_ha: 2,
+      guide: { chosen_by: "observer" },
+    }
+    const tree = mount("draft")
+    const rows = byType(tree, "AppGroupedList")[0].props.sections[0].rows
+    expect(rows[0].value).toBe("v3.0 · Parcours en plein")
+  })
+
+  test("the Contexte row is what it was without a recorded route", () => {
+    mockRoute = null
+    const tree = mount("draft")
+    expect(byType(tree, "AppGroupedList")[0].props.sections[0].rows[0].value).toBe("v3.0")
   })
 
   test("the source of the summary no longer imports the chart", () => {

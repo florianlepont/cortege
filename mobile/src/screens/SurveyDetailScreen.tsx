@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { Alert, ScrollView, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
 import { shouldShowDevTools } from "../app/dev-tools"
+import { routeShortLabel } from "../app/route-display"
 import { useBrandTheme } from "../app/theme"
 import { weatherVisitTooOld } from "../app/weather"
+import { useSurveyRoute } from "../hooks/useSurveyRoute"
 import { fr } from "../i18n"
 import { useLatestCallback } from "../state/useLatestCallback"
 import { AppActionSheet } from "../ui/AppActionSheet"
@@ -105,6 +107,7 @@ export function SurveyDetailScreen({
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName } = data
   const conditions = useSurveyConditions(selectedSurvey)
+  const { route } = useSurveyRoute(selectedSurvey)
   const [menuVisible, setMenuVisible] = useState(false)
   const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
   // D-26: a finish from the factor pager plays the halo and pop once the summary is seen again.
@@ -207,7 +210,9 @@ export function SurveyDetailScreen({
   // bar (a finished survey) the page runs under the floating tab bar: the last row needs that room.
   const { barHeight, onBarLayout } = useFinishBarHeight(cta.kind !== "hidden")
   const contentStyle = useSubPageContentStyle(styles.content, barHeight, noteKeyboard.keyboardInset)
-  const rowSections = buildSummaryRowSections(data, historyRow, {
+  // Phase 30 (U-O9): the Contexte row carries the short route label after the cas.
+  const routeLabel = route !== null ? routeShortLabel(route) : null
+  const rowSections = buildSummaryRowSections({ ...data, routeLabel }, historyRow, {
     onOpenContext,
     onOpenParcelsPage,
     onOpenScore,

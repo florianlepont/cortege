@@ -13,9 +13,15 @@ type SummaryRowHandlers = {
   onOpenHistory: () => void
 }
 
-/** The four rows of the summary that open its sub-pages: Contexte, Parcelles, factors, history (D-32). */
+/**
+ * The four rows of the summary that open its sub-pages: Contexte, Parcelles, factors, history (D-32).
+ * With a `routeLabel` (the short name of the recorded parcours, phase 30, U-O9) the Contexte value
+ * carries it after the cas; without one the value is what it was before the phase.
+ */
 export function buildSummaryRowSections(
-  data: Pick<SurveyDetailData, "scoringContext" | "parcelIds" | "filledFactorCount">,
+  data: Pick<SurveyDetailData, "scoringContext" | "parcelIds" | "filledFactorCount"> & {
+    routeLabel?: string | null
+  },
   historyRow: HistoryRowDisplay,
   handlers: SummaryRowHandlers,
 ): AppGroupedListSection[] {
@@ -23,6 +29,10 @@ export function buildSummaryRowSections(
     resolveMethodVersion(data.scoringContext.ibp_method_version) === IBP_METHOD_V3_2
       ? "v3.2"
       : "v3.0"
+  const cas = data.scoringContext.ibp_cas !== null ? String(data.scoringContext.ibp_cas) : null
+  const contextValue = data.routeLabel
+    ? rowsText.contextValueWithRoute({ method: methodLabel, cas, route: data.routeLabel })
+    : rowsText.contextValue({ method: methodLabel, cas })
   return [
     {
       key: "pages",
@@ -30,10 +40,7 @@ export function buildSummaryRowSections(
         {
           key: "context",
           label: rowsText.context,
-          value: rowsText.contextValue({
-            method: methodLabel,
-            cas: data.scoringContext.ibp_cas !== null ? String(data.scoringContext.ibp_cas) : null,
-          }),
+          value: contextValue,
           onPress: handlers.onOpenContext,
         },
         {
