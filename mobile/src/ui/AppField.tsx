@@ -25,6 +25,8 @@ type AppFieldProps = {
   containerStyle?: StyleProp<ViewStyle>
   labelStyle?: StyleProp<TextStyle>
   inputStyle?: StyleProp<TextStyle>
+  /** A unit drawn inside the field at its end ("ha"); decorative, the label says the unit. */
+  suffix?: string
   testID?: string
 } & TextInputProps
 
@@ -35,6 +37,7 @@ export function AppField({
   containerStyle,
   labelStyle,
   inputStyle,
+  suffix,
   testID,
   placeholderTextColor,
   onFocus,
@@ -45,29 +48,45 @@ export function AppField({
   const styles = useMemo(() => createStyles(theme), [theme])
   const [focused, setFocused] = useState(false)
 
+  const input = (
+    <TextInput
+      ref={inputRef}
+      style={[
+        styles.input,
+        focused ? styles.inputFocused : null,
+        error ? styles.inputError : null,
+        suffix ? styles.inputWithSuffix : null,
+        inputStyle,
+      ]}
+      placeholderTextColor={placeholderTextColor ?? theme.colors.textSecondary}
+      testID={testID}
+      onFocus={(event) => {
+        setFocused(true)
+        onFocus?.(event)
+      }}
+      onBlur={(event) => {
+        setFocused(false)
+        onBlur?.(event)
+      }}
+      {...inputProps}
+    />
+  )
+
   return (
     <View style={[styles.container, containerStyle]}>
       <Text style={[styles.label, labelStyle]}>{label}</Text>
-      <TextInput
-        ref={inputRef}
-        style={[
-          styles.input,
-          focused ? styles.inputFocused : null,
-          error ? styles.inputError : null,
-          inputStyle,
-        ]}
-        placeholderTextColor={placeholderTextColor ?? theme.colors.textSecondary}
-        testID={testID}
-        onFocus={(event) => {
-          setFocused(true)
-          onFocus?.(event)
-        }}
-        onBlur={(event) => {
-          setFocused(false)
-          onBlur?.(event)
-        }}
-        {...inputProps}
-      />
+      {suffix ? (
+        <View>
+          {input}
+          <View style={styles.suffixBox} pointerEvents="none">
+            <Text style={styles.suffix} accessible={false} importantForAccessibility="no">
+              {suffix}
+            </Text>
+          </View>
+        </View>
+      ) : (
+        input
+      )}
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   )
@@ -112,6 +131,20 @@ function createStyles(theme: BrandTheme) {
     error: {
       ...brandTypography.meta,
       color: theme.componentColors.field.borderError,
+    },
+    inputWithSuffix: {
+      paddingRight: brandComponentTokens.field.horizontalPadding + 40,
+    },
+    suffixBox: {
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      right: brandComponentTokens.field.horizontalPadding,
+      justifyContent: "center",
+    },
+    suffix: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
     },
   })
 }

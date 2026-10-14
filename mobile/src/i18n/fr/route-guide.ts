@@ -186,6 +186,7 @@ export const routeGuideFr = {
       hoursLabel: "Temps disponible, en heures",
       hoursShort: "Temps disponible",
       hoursSuffix: "heures",
+      hoursInvalid: "Indiquez un nombre d'heures supérieur à 0 et au plus 24, ou laissez vide.",
       hoursValue: ({ hours, text }: { hours: number; text: string }) =>
         hours < 2 ? `${text} heure` : `${text} heures`,
     },
@@ -258,6 +259,7 @@ export const routeGuideFr = {
   },
   largeStand: {
     title: "Votre peuplement est grand. Deux façons de faire",
+    short: "Grand peuplement",
     recommended: "Conseillé",
     subdivide: {
       title: "Découper en sous-peuplements",
@@ -368,6 +370,8 @@ export const routeGuideFr = {
   },
   a11y: {
     optionLabel: ({ label, caption }: { label: string; caption: string }) => `${label}. ${caption}`,
+    optionLabelTagged: ({ label, tag, caption }: { label: string; tag: string; caption: string }) =>
+      `${label}, ${tag}. ${caption}`,
     answerRow: ({ question, answer }: { question: string; answer: string }) =>
       `${question}. ${answer}. Modifier`,
     answerRowHint: "Rouvre la question",

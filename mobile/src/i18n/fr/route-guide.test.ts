@@ -57,6 +57,12 @@ const SAMPLES: Record<string, () => string> = {
   "routeGuide.details.fullLine": () => fr.routeGuide.details.fullLine("2,4"),
   "routeGuide.a11y.optionLabel": () =>
     fr.routeGuide.a11y.optionLabel({ label: "Oui", caption: "Une légende" }),
+  "routeGuide.a11y.optionLabelTagged": () =>
+    fr.routeGuide.a11y.optionLabelTagged({
+      label: "Découper",
+      tag: "Conseillé",
+      caption: "Une légende",
+    }),
   "routeGuide.a11y.answerRow": () =>
     fr.routeGuide.a11y.answerRow({ question: "Surface", answer: "2,4 ha" }),
   "routeGuide.a11y.suggestionCard": () =>
