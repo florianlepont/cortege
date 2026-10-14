@@ -21,8 +21,7 @@ import { GlossaryInfo } from "../../ui/GlossaryInfo"
 import { RadioCard } from "../../ui/RadioCard"
 import { feedback } from "../../ui/feedback"
 import { CountingPicker } from "./CountingPicker"
-import { GlossarySection } from "./GlossarySection"
-import { METHOD_TERM, termsOfSelection } from "./glossary-terms"
+import { METHOD_TERM } from "./glossary-terms"
 import { RouteDetailsCard, type RouteDetailsValue } from "./RouteDetailsCard"
 import { RouteAdvice } from "./RouteNotices"
 import type { ChooseView } from "./route-choose-model"
@@ -53,7 +52,7 @@ export type RouteChooseScreenProps = {
  * "Choisir le parcours" (phase 30, spec sections 4 and 6, O-14, O-01): the direct choice of the
  * route step and the change of its suggestion, and the later edit of a draft. The three parcours of
  * the app with their explanations (the suggested one tagged "Conseillé"), the mode de relevé with
- * the factors counted in full, the shared details card, the glossary and the footer "Utiliser ce
+ * the factors counted in full, the shared details card, the footer "Utiliser ce
  * parcours". It shows what the model derives from the package and decides nothing itself; it needs
  * no network, a surface that is unknown is typed in the details card.
  */
@@ -160,10 +159,6 @@ export function RouteChooseScreen({
             onChange={onChangeDetails}
           />
         )}
-
-        <GlossarySection
-          highlight={view.method === null ? [] : termsOfSelection(view.method, view.counting)}
-        />
 
         {mode === "edit" ? (
           <AppPressable

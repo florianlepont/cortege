@@ -135,7 +135,7 @@ describe("RouteChooseScreen: content", () => {
     expect(byId("route-parcours-systematic")).toHaveLength(0)
     expect(byId("route-counting-capped")).toHaveLength(1)
     expect(byId("route-counting-uncapped")).toHaveLength(1)
-    expect(byId("route-glossary")).toHaveLength(1)
+    expect(byId("route-glossary")).toHaveLength(0)
     expect(byId("glossary-info-parcoursEnPlein")).toHaveLength(1)
   })
 

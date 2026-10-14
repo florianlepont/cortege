@@ -14,8 +14,6 @@ import { TitledScrollView } from "../../ui/TitledScrollView"
 import { useFrameInsetBehavior } from "../../ui/frame-large-title"
 import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
 import { usePagerChromeStyle, usePagerKeyboard } from "../survey-form/usePagerKeyboard"
-import { termsOfSelection } from "./glossary-terms"
-import { GlossarySection } from "./GlossarySection"
 import { LargeStandOptions } from "./LargeStandOptions"
 import { QuestionStack } from "./QuestionStack"
 import { ReasonsCard } from "./ReasonsCard"
@@ -51,7 +49,7 @@ export type RouteGuideScreenProps = {
  * control and no optional tag; the only way forward is "Utiliser ce parcours"). One scrolling page
  * (simplified 2026-10-14 after the owner's review): the title, the step, the lead and the one open
  * question, then once a route exists the suggestion, its reasons, details, warnings and the folded
- * "Pour affiner", or the two options above the subdivision bound, the glossary, the text link
+ * "Pour affiner", or the two options above the subdivision bound, the text link
  * "Je connais déjà mon parcours" (the chooser) and, only when a route is ready, the footer row. The page shows
  * what the model derives from the package (`RouteGuideState`) and decides nothing itself; it needs no
  * network, an unknown surface only opens the surface card empty (spec section 1).
@@ -173,13 +171,6 @@ export function RouteGuideScreen({
           </>
         )}
 
-        <View style={styles.glossary}>
-          <GlossarySection
-            highlight={
-              selection === null ? [] : termsOfSelection(selection.method, selection.counting)
-            }
-          />
-        </View>
         <AppPressable
           onPress={() => onOpenChooser("pick")}
           accessibilityRole="button"
@@ -258,9 +249,6 @@ function createStyles(theme: BrandTheme) {
       ...brandTypeScale.subhead,
       color: theme.semanticColors.accent,
       textDecorationLine: "underline",
-    },
-    glossary: {
-      marginTop: brandSpacing4.lg,
     },
     // The footer takes its own row under the scroll area (never over the content), so the last
     // element and the open question's "Suivant" can never sit under it. While the keyboard is up it

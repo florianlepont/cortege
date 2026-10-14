@@ -141,6 +141,8 @@ Other colour rules:
 
 > 2026-10-14 simplification after owner review: the first view holds only the title, "Étape 5 sur 5", the one-sentence lead and the open question (its field or choices and its "Suivant"). Every secondary help (reason it is asked, hectare comparison, hedge and tree-line limit, estimate explanation) sits in one information sheet opened by the (i) beside the question title. "Pour affiner" shows only once a suggestion exists. "Je connais déjà mon parcours" is a small text link at the end of the scroll content. The "Utiliser ce parcours" footer row is not rendered while questions are open (no disabled button). Result order: suggestion, "Changer de parcours", reasons, details, notices, "Pour affiner", glossary, link. Where the text below says otherwise, this note wins.
 
+> 2026-10-14 (second note): the "Comprendre les mots" section is removed from the route step and the chooser (sections 2 item 6 and 7, `GlossarySection.tsx`, testID `route-glossary`); the (i) glyphs beside the technical words stay and open the same sentences, from `fr.routeGuide.glossary.terms`. Result order is now: suggestion, "Changer de parcours", reasons, details, notices, "Pour affiner", link.
+
 
 `ScreenFrame` + `TitledScrollView`, horizontal padding 24, gap 16, `keyboardShouldPersistTaps="handled"`, `automaticallyAdjustKeyboardInsets`, content bottom padding = footer height + 16 (`useFinishBarHeight`).
 

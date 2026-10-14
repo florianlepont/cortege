@@ -169,8 +169,8 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
     ]) {
       expect(m.texts()).not.toContain(text)
     }
-    // The shortcut closes the page, after the question zone and the glossary.
-    const order = ["route-question-stack", "route-glossary", "route-know-link"]
+    // The shortcut closes the page, after the question zone.
+    const order = ["route-question-stack", "route-know-link"]
     const flat = JSON.stringify(m.tree.toJSON())
     const positions = order.map((id) => flat.indexOf(`"testID":"${id}"`))
     expect(positions.every((position) => position >= 0)).toBe(true)
@@ -255,7 +255,7 @@ describe("RouteGuideScreen: the suggestion", () => {
     m.one("route-suggestion")
     m.one("route-reasons")
     m.one("route-details")
-    m.one("route-glossary")
+    expect(m.byId("route-glossary")).toHaveLength(0)
     expect(m.byId("route-large-stand")).toHaveLength(0)
     const use = m.one("route-use")
     expect(use.props.disabled).toBeUndefined()
@@ -272,7 +272,7 @@ describe("RouteGuideScreen: the suggestion", () => {
     expect(m.byId("route-guide-footer")).toHaveLength(0)
   })
 
-  it("orders the result zone: suggestion, reasons, details, Pour affiner, glossary, shortcut", () => {
+  it("orders the result zone: suggestion, reasons, details, Pour affiner, shortcut", () => {
     const m = mount({ prefill: 2.4 })
     reachRoute(m)
     const order = [
@@ -280,7 +280,6 @@ describe("RouteGuideScreen: the suggestion", () => {
       "route-reasons",
       "route-details",
       "route-refine",
-      "route-glossary",
       "route-know-link",
     ]
     const flat = JSON.stringify(m.tree.toJSON())

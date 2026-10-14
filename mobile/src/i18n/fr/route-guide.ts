@@ -354,7 +354,6 @@ export const routeGuideFr = {
       "Utiliser ce parcours. Choisissez d'abord un parcours et vérifiez les détails.",
   },
   glossary: {
-    title: "Comprendre les mots",
     close: "Fermer",
     terms: {
       peuplement: TERM.peuplement,

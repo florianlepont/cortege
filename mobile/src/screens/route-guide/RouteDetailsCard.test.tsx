@@ -38,8 +38,6 @@ import { formatHectares } from "../../app/route-text"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppField } from "../../ui/AppField"
-import { termsOfSelection } from "./glossary-terms"
-import { GlossarySection } from "./GlossarySection"
 import { RouteDetailsCard, type RouteDetailsValue } from "./RouteDetailsCard"
 
 const originalConsoleError = console.error
@@ -278,89 +276,5 @@ describe("RouteDetailsCard: relevé déplafonné", () => {
     expect(capped.texts().join("|")).not.toContain(guide.details.countedLead)
     const noLink = mountCard({ counting: "uncapped", uncappedFactors: ["A"] })
     expect(noLink.byId("route-edit-counting")).toHaveLength(0)
-  })
-})
-
-describe("GlossarySection", () => {
-  const entries = (tree: renderer.ReactTestRenderer) =>
-    tree.root
-      .findAll((node) => typeof node.type === "string" && node.props.accessibilityRole === "header")
-      .map((node) => node.props.children as string)
-
-  it("is folded: no term shows until the section is opened", () => {
-    const { one, texts } = mountElement(React.createElement(GlossarySection))
-    expect(one("route-glossary")).toBeDefined()
-    expect(texts()).toContain(guide.glossary.title)
-    expect(texts()).not.toContain(guide.glossary.terms.peuplement.text)
-  })
-
-  it("lists the ten terms of the spec when opened, each with its sentence", () => {
-    const { tree, one, texts } = mountElement(React.createElement(GlossarySection))
-    const toggle = one("route-glossary").findAll(
-      (node) => typeof node.type === "string" && node.props.accessibilityRole === "button",
-    )[0]
-    expect(toggle.props.accessibilityState).toEqual({ expanded: false })
-    act(() => toggle.props.onPress())
-    const terms = Object.values(guide.glossary.terms)
-    expect(terms).toHaveLength(10)
-    expect(entries(tree)).toEqual(terms.map((entry) => entry.term))
-    for (const entry of terms) expect(texts()).toContain(entry.text)
-  })
-
-  it("lists the terms of the current suggestion first", () => {
-    const { tree, one } = mountElement(
-      React.createElement(GlossarySection, { highlight: ["parPlacette", "relevePlafonne"] }),
-    )
-    act(() =>
-      one("route-glossary")
-        .findAll(
-          (node) => typeof node.type === "string" && node.props.accessibilityRole === "button",
-        )[0]
-        .props.onPress(),
-    )
-    const listed = entries(tree)
-    expect(listed.slice(0, 2)).toEqual([
-      guide.glossary.terms.parPlacette.term,
-      guide.glossary.terms.relevePlafonne.term,
-    ])
-    expect(listed).toHaveLength(10)
-    expect(new Set(listed).size).toBe(10)
-  })
-
-  it("ignores a repeated term", () => {
-    const { tree, one } = mountElement(
-      React.createElement(GlossarySection, { highlight: ["peuplement", "peuplement"] }),
-    )
-    act(() =>
-      one("route-glossary")
-        .findAll(
-          (node) => typeof node.type === "string" && node.props.accessibilityRole === "button",
-        )[0]
-        .props.onPress(),
-    )
-    expect(entries(tree)).toHaveLength(10)
-  })
-})
-
-describe("termsOfSelection", () => {
-  it("names the words a full parcours uses", () => {
-    expect(termsOfSelection("full", "capped")).toEqual([
-      "parcoursEnPlein",
-      "relevePlafonne",
-      "surfaceDecrite",
-      "peuplement",
-    ])
-  })
-
-  it("adds the partial parcours and the rest of the stand for a partial one", () => {
-    expect(termsOfSelection("partial_plot", "uncapped")).toEqual([
-      "parPlacette",
-      "parcoursPartiel",
-      "releveDeplafonne",
-      "surfaceDecrite",
-      "resteDuPeuplement",
-      "peuplement",
-    ])
-    expect(termsOfSelection("partial_strip", "capped")[0]).toBe("parBande")
   })
 })
