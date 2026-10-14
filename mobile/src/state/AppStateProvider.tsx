@@ -254,6 +254,7 @@ function useAppController() {
     switchToV32: draftPatcher.handleSwitchSurveyToV32,
     updateSurveyNote: draftPatcher.handleUpdateSurveyNote,
     updateSurveyWeather: draftPatcher.handleUpdateSurveyWeather,
+    updateSurveyRoute: draftPatcher.handleUpdateSurveyRoute,
   })
 
   const {

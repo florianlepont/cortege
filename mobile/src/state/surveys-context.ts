@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react"
-import type { CnpfFactorAGenusCode, IbpCas, SurveyWeather } from "@cortege/ibp-domain"
+import type { CnpfFactorAGenusCode, IbpCas, SurveyRoute, SurveyWeather } from "@cortege/ibp-domain"
 import type {
   RegionVersion,
   SurveyDetailResponse,
@@ -100,6 +100,11 @@ export type SurveyActions = {
     surveyId: string,
     update: (current: SurveyWeather | null) => SurveyWeather | null,
   ) => Promise<boolean>
+  /**
+   * Phase 30, D-08, D-09: the recorded route of a draft. Silent, changed on a draft and never
+   * deleted: false when nothing was written (submitted survey, or a record the package refuses).
+   */
+  updateSurveyRoute: (surveyId: string, route: SurveyRoute) => Promise<boolean>
 }
 
 export type SurveysContextValue = {
