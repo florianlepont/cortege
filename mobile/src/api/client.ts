@@ -1,3 +1,4 @@
+import { CLIENT_FEATURES_HEADER, SURVEY_ROUTE_CLIENT_FEATURE } from "@cortege/ibp-domain"
 import { reportRequestOutcome } from "../network/request-outcome"
 
 export class ApiError extends Error {
@@ -72,6 +73,14 @@ export async function apiRequest<T>(options: ApiRequestOptions): Promise<T> {
 
   if (options.token) {
     headers.Authorization = `Bearer ${options.token}`
+  }
+
+  // Phase 30, open point P-2: the phone identifies itself as a client that records a route. The API
+  // applies the mandatory route (O-19) only to requests carrying this header, so an installed older
+  // build, which never sends it, keeps working. A header the caller set (any letter case) wins.
+  const markerHeader = CLIENT_FEATURES_HEADER.toLowerCase()
+  if (!Object.keys(headers).some((name) => name.toLowerCase() === markerHeader)) {
+    headers[CLIENT_FEATURES_HEADER] = SURVEY_ROUTE_CLIENT_FEATURE
   }
 
   let body: BodyInit | null | undefined = options.body

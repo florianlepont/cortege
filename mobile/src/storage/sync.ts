@@ -1,3 +1,4 @@
+import { readSurveyRoute, ROUTE_REQUIRED_CODE } from "@cortege/ibp-domain"
 import { getDb, SYNC_BATCH_SIZE, MAX_RETRY_COUNT } from "./db"
 import { runInTransaction, DbExecutor } from "./transaction"
 import { createSyncFlight } from "./sync-flight"
@@ -869,6 +870,91 @@ async function recoverSiteNameBlockedDrafts(db: DbExecutor, nowIso: string): Pro
   }
 }
 
+// Phase 30 (O-19, open point P-1): the API refuses a new survey without its route (422
+// route_required, for a client that sends the marker). The creation assistant's working draft exists
+// on the phone from its first step, so the draft stays on the phone until it has a route, exactly as
+// a draft without a name does (OA-18): the server first sees a new survey with its route.
+const ROUTE_REQUIRED_PATTERN = /survey_route.*required|required.*survey_route/i
+
+function payloadHasRoute(payloadJson: string | null): boolean {
+  const parsed = payloadJson ? safeParseJson(payloadJson) : null
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return false
+  return readSurveyRoute((parsed as { survey_route?: unknown }).survey_route) !== null
+}
+
+/**
+ * Phase 30 (O-19, P-1): unblocks the drafts an earlier drain blocked only because the server
+ * refused them without a route (OA-18 recovery model). A draft that has a route now goes back to
+ * 'draft' and 'pending' and its upsert is queued again with the current payload (the blocking
+ * failure deleted its queue row); a draft still without route stays blocked.
+ */
+async function recoverRouteBlockedDrafts(db: DbExecutor, nowIso: string): Promise<void> {
+  const blocked = await db.getAllAsync<{
+    id: string
+    payload_json: string | null
+    last_sync_error: string | null
+    last_sync_error_code: string | null
+  }>(
+    `SELECT id, payload_json, last_sync_error, last_sync_error_code
+     FROM local_surveys
+     WHERE sync_blocked = 1 AND status IN ('draft', 'error')`,
+  )
+
+  for (const survey of blocked) {
+    const refusedForRoute =
+      survey.last_sync_error_code === ROUTE_REQUIRED_CODE ||
+      ROUTE_REQUIRED_PATTERN.test(survey.last_sync_error ?? "")
+    if (!refusedForRoute || !payloadHasRoute(survey.payload_json)) continue
+
+    await runInTransaction(async (tx) => {
+      await tx.runAsync(
+        `UPDATE local_surveys
+         SET status = 'draft',
+             sync_state = 'pending',
+             last_sync_error = NULL,
+             last_sync_error_code = NULL,
+             last_sync_error_at = NULL,
+             sync_blocked = 0,
+             updated_at = ?
+         WHERE id = ?`,
+        [nowIso, survey.id],
+      )
+
+      const pendingUpsert = await tx.getFirstAsync<{ id: number }>(
+        `SELECT id FROM sync_queue
+         WHERE survey_id = ? AND op_type = 'survey_upsert' AND status IN ('pending', 'failed')`,
+        [survey.id],
+      )
+      if (!pendingUpsert) {
+        await tx.runAsync(
+          `INSERT INTO sync_queue (survey_id, op_type, payload, status, retry_count, next_retry_at, created_at, updated_at)
+           VALUES (?, 'survey_upsert', ?, 'pending', 0, NULL, ?, ?)`,
+          [survey.id, survey.payload_json, nowIso, nowIso],
+        )
+      }
+    })
+  }
+}
+
+/**
+ * Phase 30 (O-19, P-1): the ids of the drafts that have rows to send but no valid route. Only the
+ * drafts with a pending upsert or photo row are read, and each payload is parsed once per drain. A
+ * submitted survey is never held (it is already on the server; an older one has no route, P-3).
+ */
+async function findRoutelessSurveyIds(db: DbExecutor): Promise<Set<string>> {
+  const candidates = await db.getAllAsync<{ id: string; payload_json: string | null }>(
+    `SELECT id, payload_json FROM local_surveys
+     WHERE status <> 'submitted'
+       AND id IN (
+         SELECT survey_id FROM sync_queue
+         WHERE status IN ('pending', 'failed') AND op_type IN ('survey_upsert', 'attachment_upload')
+       )`,
+  )
+  return new Set(
+    candidates.filter((survey) => !payloadHasRoute(survey.payload_json)).map((survey) => survey.id),
+  )
+}
+
 async function drainQueue(
   apiUrl: string,
   accessToken: string,
@@ -877,9 +963,11 @@ async function drainQueue(
   const nowIso = new Date().toISOString()
 
   await recoverSiteNameBlockedDrafts(db, nowIso)
+  await recoverRouteBlockedDrafts(db, nowIso)
 
   // OA-18: a draft stays on the phone until it has a site name. Its upsert and photo rows are
-  // left pending, untouched, and go out on the first drain after it is named.
+  // left pending, untouched, and go out on the first drain after it is named. Phase 30 (O-19, P-1)
+  // holds a draft without route the same way: nothing is sent, nothing is counted as a retry.
   const unnamedSurveyIds = new Set(
     (
       await db.getAllAsync<{ id: string }>(
@@ -887,6 +975,8 @@ async function drainQueue(
       )
     ).map((survey) => survey.id),
   )
+
+  const routelessSurveyIds = await findRoutelessSurveyIds(db)
 
   const queueRows = (
     await db.getAllAsync<QueueRow>(
@@ -900,7 +990,7 @@ async function drainQueue(
   ).filter(
     (row) =>
       !(
-        unnamedSurveyIds.has(row.survey_id) &&
+        (unnamedSurveyIds.has(row.survey_id) || routelessSurveyIds.has(row.survey_id)) &&
         (row.op_type === "survey_upsert" || row.op_type === "attachment_upload")
       ),
   )
@@ -1350,7 +1440,7 @@ export async function submitSurvey(
       throw error
     }
 
-    const body = error.body as { errors?: string[]; message?: string } | null
+    const body = error.body as { errors?: string[]; message?: string; code?: string } | null
     const message =
       (Array.isArray(body?.errors) && body.errors.length > 0
         ? body.errors.join(" | ")
@@ -1359,6 +1449,11 @@ export async function submitSurvey(
       error.message
     const nowIso = new Date().toISOString()
     const isValidationSubmit = error.status === 422
+    // Phase 30 (O-19): the API refuses a submit without a route with the constant code
+    // route_required. It is stored as its own code so the catalogue says "choose the parcours"
+    // instead of a generic validation error.
+    const submitErrorCode =
+      body?.code === ROUTE_REQUIRED_CODE ? ROUTE_REQUIRED_CODE : "submit_validation"
 
     if (isValidationSubmit) {
       await db.runAsync(
@@ -1366,12 +1461,12 @@ export async function submitSurvey(
          SET status = 'draft',
              sync_state = 'synced',
              last_sync_error = ?,
-             last_sync_error_code = 'submit_validation',
+             last_sync_error_code = ?,
              last_sync_error_at = ?,
              sync_blocked = 0,
              updated_at = ?
          WHERE id = ?`,
-        [message, nowIso, nowIso, surveyId],
+        [message, submitErrorCode, nowIso, nowIso, surveyId],
       )
     } else {
       await db.runAsync(

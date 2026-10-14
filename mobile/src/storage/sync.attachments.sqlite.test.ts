@@ -12,9 +12,14 @@
  * are simulated in-memory via __setMockFile/__getMockFile.
  */
 
+import type { SurveyRoute } from "@cortege/ibp-domain"
 import { initLocalDb, getDb } from "./db"
 import { syncPending } from "./sync"
-import { createLocalDraft, queueLocalAttachment } from "./surveys"
+import {
+  createLocalDraft as createLocalDraftWithoutRoute,
+  patchLocalSurveyRoute,
+  queueLocalAttachment,
+} from "./surveys"
 import {
   __resetMockFileSystem,
   __setMockFile,
@@ -24,6 +29,22 @@ import {
 
 const NOW = "2026-01-01T00:00:00.000Z"
 const ATTACHMENTS_DIR = "file:///mock/documents/attachments/"
+
+// Phase 30 (O-19, P-1): a draft without route stays on the phone, so a draft that must be sent
+// carries a valid route.
+const ROUTE: SurveyRoute = {
+  version: 1,
+  method: "full",
+  counting: "capped",
+  zone_surface_ha: 2.5,
+  guide: { chosen_by: "observer" },
+}
+
+async function createLocalDraft(input: Parameters<typeof createLocalDraftWithoutRoute>[0]) {
+  const draft = await createLocalDraftWithoutRoute(input)
+  await patchLocalSurveyRoute({ survey_id: draft.id, survey_route: ROUTE })
+  return draft
+}
 
 type MockResponse = {
   ok: boolean

@@ -17,10 +17,25 @@
  * surveys.transactions.sqlite.test.ts.
  */
 
+import type { SurveyRoute } from "@cortege/ibp-domain"
 import { initLocalDb, getDb } from "./db"
 import { syncPending, pullRemoteChanges, updateSurveyVisibility } from "./sync"
 
 const NOW = "2026-01-01T00:00:00.000Z"
+
+// Phase 30 (O-19, P-1): a draft without route stays on the phone, so a draft that must be sent
+// carries a valid route.
+const ROUTE: SurveyRoute = {
+  version: 1,
+  method: "full",
+  counting: "capped",
+  zone_surface_ha: 2.5,
+  guide: { chosen_by: "observer" },
+}
+
+function routedPayload(id: string, siteName: string): string {
+  return JSON.stringify({ id, sync_version: 1, site_name: siteName, survey_route: ROUTE })
+}
 
 type MockResponse = {
   ok: boolean
@@ -77,7 +92,7 @@ async function insertSurvey(
       null,
       null,
       0,
-      null,
+      routedPayload(id, overrides.site_name ?? "Site"),
       NOW,
       NOW,
     ],
@@ -86,7 +101,7 @@ async function insertSurvey(
 
 async function insertSurveyUpsertQueueRow(surveyId: string): Promise<number> {
   const db = await getDb()
-  const payload = { id: surveyId, sync_version: 1, site_name: "Site" }
+  const payload = { id: surveyId, sync_version: 1, site_name: "Site", survey_route: ROUTE }
   const result = await db.runAsync(
     `INSERT INTO sync_queue (survey_id, op_type, payload, status, retry_count, next_retry_at, created_at, updated_at)
      VALUES (?, 'survey_upsert', ?, 'pending', 0, NULL, ?, ?)`,

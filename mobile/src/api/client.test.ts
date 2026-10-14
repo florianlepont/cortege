@@ -44,10 +44,41 @@ describe("apiRequest", () => {
         headers: {
           Authorization: "Bearer access-token",
           "Content-Type": "application/json",
+          "X-Cortege-Features": "survey_route",
         },
         body: JSON.stringify({ email: "user@example.com" }),
       }),
     )
+  })
+
+  it("sends the client marker of the route feature, without a token too (phase 30, P-2)", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => "{}",
+    } satisfies MockResponse) as typeof global.fetch
+
+    await apiRequest({ baseUrl: "https://api.example.com", path: "/health" })
+
+    const init = (global.fetch as jest.Mock).mock.calls[0][1] as { headers: Record<string, string> }
+    expect(init.headers).toEqual({ "X-Cortege-Features": "survey_route" })
+  })
+
+  it("does not override a marker header passed by the caller", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => "{}",
+    } satisfies MockResponse) as typeof global.fetch
+
+    await apiRequest({
+      baseUrl: "https://api.example.com",
+      path: "/health",
+      headers: { "x-cortege-features": "other" },
+    })
+
+    const init = (global.fetch as jest.Mock).mock.calls[0][1] as { headers: Record<string, string> }
+    expect(init.headers).toEqual({ "x-cortege-features": "other" })
   })
 
   it("throws an ApiError with the parsed server message on HTTP errors", async () => {
