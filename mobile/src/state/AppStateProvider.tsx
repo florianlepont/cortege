@@ -341,6 +341,9 @@ function useAppController() {
     markSubmitAttempted: surveyForm.markSubmitAttempted,
     setFactorDoubt: surveyForm.setFactorDoubt,
     setFactorNote: surveyForm.setFactorNote,
+    setStratumCover: surveyForm.setStratumCover,
+    setDmhCount: surveyForm.setDmhCount,
+    setFSurface: surveyForm.setFSurface,
   })
 
   const {
@@ -355,6 +358,7 @@ function useAppController() {
     factorSections,
     factorRetainedScores,
     factorAnnotations,
+    uncapped,
     formErrors,
     draftInput,
   } = surveyForm
@@ -372,6 +376,7 @@ function useAppController() {
         factorSections,
         factorRetainedScores,
         factorAnnotations,
+        uncapped,
         formErrors,
         draftInput,
         formMode,
@@ -391,6 +396,7 @@ function useAppController() {
       factorSections,
       factorRetainedScores,
       factorAnnotations,
+      uncapped,
       formErrors,
       draftInput,
       formMode,

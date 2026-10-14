@@ -9,7 +9,9 @@ import {
   readFactorAnnotations,
   resolveMethodVersion,
   withFactorAnnotations,
+  type BStratumCode,
   type CnpfFactorAGenusCode,
+  type DmhGroupCode,
   type IbpCas,
   type IbpMethodVersion,
 } from "@cortege/ibp-domain"
@@ -28,6 +30,7 @@ import { computeRetainedScoresFromRawFactors } from "../app/ibp-scoring"
 import { parseFiniteNumberInput } from "../app/number-utils"
 import { fr } from "../i18n"
 import { useFactorAnnotations } from "./useFactorAnnotations"
+import { useUncappedEntry } from "./useUncappedEntry"
 import {
   FactorField,
   FactorRetainedScore,
@@ -183,6 +186,27 @@ export function useSurveyForm() {
   const { annotations, setFactorDoubt, setFactorNote, loadAnnotations, resetAnnotations } =
     useFactorAnnotations()
 
+  // Phase 30, D-07: the detail inputs of the relevé déplafonné (B cover per stratum, F counts per
+  // dendromicrohabitat group and F's surface). The sub-hook derives the scored values with the
+  // package helpers; this hook only writes them in the factor fields.
+  const {
+    strataCoverText,
+    dmhCounts,
+    fSurfaceText,
+    setStratumCover: storeStratumCover,
+    setDmhCount: storeDmhCount,
+    setFSurface: storeFSurface,
+    loadUncapped,
+    resetUncapped,
+    uncappedPayload,
+  } = useUncappedEntry()
+
+  // One object per change, so the form context does not renew on an unrelated keystroke.
+  const uncapped = useMemo(
+    () => ({ strataCoverText, dmhCounts, fSurfaceText }),
+    [strataCoverText, dmhCounts, fSurfaceText],
+  )
+
   const [factorA, setFactorA] = useState(DEFAULT_SURVEY_FORM.factorA)
   const [factorB, setFactorB] = useState(DEFAULT_SURVEY_FORM.factorB)
   const [factorC, setFactorC] = useState(DEFAULT_SURVEY_FORM.factorC)
@@ -255,12 +279,15 @@ export function useSurveyForm() {
     }
 
     // D-12: a detail array goes out only with its scored key (a factor object without it is a
-    // blocking invalid input, even for a draft), and never alters the scored value.
+    // blocking invalid input, even for a draft), and never alters the scored value. Phase 30
+    // (D-07, spec section 7): the same rule for `strata_cover`, `dmh_counts` and F's `surface_ha`.
+    const uncapped = uncappedPayload()
     const bStrata = toFiniteNumberInRange(factorB.strata_count, { min: 0, integer: true })
     if (bStrata !== null) {
       payload.B = {
         strata_count: bStrata,
         ...(factorB.strata !== null ? { strata: factorB.strata } : {}),
+        ...(uncapped.strata_cover !== undefined ? { strata_cover: uncapped.strata_cover } : {}),
       }
     }
 
@@ -287,6 +314,8 @@ export function useSurveyForm() {
       payload.F = {
         trees_per_ha: f,
         ...(factorF.dmh_groups.length > 0 ? { dmh_groups: factorF.dmh_groups } : {}),
+        ...(uncapped.dmh_counts !== undefined ? { dmh_counts: uncapped.dmh_counts } : {}),
+        ...(uncapped.f_surface_ha !== undefined ? { surface_ha: uncapped.f_surface_ha } : {}),
       }
     }
 
@@ -327,6 +356,7 @@ export function useSurveyForm() {
     factorI,
     factorJ,
     annotations,
+    uncappedPayload,
   ])
 
   const applyDraftToForm = (draftValue: unknown): void => {
@@ -407,6 +437,7 @@ export function useSurveyForm() {
     })
 
     loadAnnotations(readFactorAnnotations(factors))
+    loadUncapped(factors)
 
     setGpsLocation(DEFAULT_SURVEY_FORM.gpsLocation)
     setSelectedParcelIds(parsedParcelIds)
@@ -462,6 +493,33 @@ export function useSurveyForm() {
     setFactorI(DEFAULT_SURVEY_FORM.factorI)
     setFactorJ(DEFAULT_SURVEY_FORM.factorJ)
     resetAnnotations()
+    resetUncapped()
+  }
+
+  /**
+   * Phase 30, D-07 and U-O10: the observer types the cover of a stratum; the strata count is
+   * derived by the package and written in B's scored field (the ticked strata no longer match it,
+   * as when the count is typed). Nothing is written while no cover is valid. The field stays
+   * editable and the details are kept when the factor leaves the full count.
+   */
+  const setStratumCover = (code: BStratumCode, text: string): void => {
+    const derived = storeStratumCover(code, text)
+    if (derived !== null) setFactorB({ strata_count: String(derived), strata: null })
+  }
+
+  /** Writes F's derived trees per hectare in its scored field; the ticked groups are kept. */
+  const writeTreesPerHa = (derived: number | null): void => {
+    if (derived !== null) setFactorF((prev) => ({ ...prev, trees_per_ha: String(derived) }))
+  }
+
+  /** A group count (0 or more); the density needs F's own surface, else nothing is written. */
+  const setDmhCount = (code: DmhGroupCode, count: number): void => {
+    writeTreesPerHa(storeDmhCount(code, count))
+  }
+
+  /** F's own surface (prefilled from the route's surface décrite by the F page, editable). */
+  const setFSurface = (text: string): void => {
+    writeTreesPerHa(storeFSurface(text))
   }
 
   // FLOW-02: touched state per field, keyed by "factor:label"; submission-attempted forces every
@@ -724,6 +782,10 @@ export function useSurveyForm() {
     factorAnnotations: annotations,
     setFactorDoubt,
     setFactorNote,
+    uncapped,
+    setStratumCover,
+    setDmhCount,
+    setFSurface,
     formErrors,
     draftInput,
     applyDraftToForm,
