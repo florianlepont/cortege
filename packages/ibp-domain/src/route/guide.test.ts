@@ -514,7 +514,12 @@ describe("recommendRoute", () => {
   })
 
   it("keeps the same proposal whatever the experience and the hours (R-21#no-effect)", () => {
-    const answers = { surface_ha: 15, homogeneity: "homogeneous", difficulty: false, narrow: false }
+    const answers = {
+      surface_ha: 15,
+      homogeneity: "homogeneous",
+      difficulty: false,
+      narrow: false,
+    } as const
     const reference = route(recommendRoute(answers))
     for (const experience of [undefined, "regular", "beginner"] as const) {
       for (const hours_available of [undefined, 0.1, 1, 24, 99]) {

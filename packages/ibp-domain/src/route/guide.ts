@@ -1,11 +1,18 @@
 import type { RouteAnswers, RouteComplement } from "../contract/route"
 import {
+  ROUTE_HOMOGENEITY_VALUES,
   ROUTE_HOURS_MAX,
   ROUTE_SURFACE_DECIMALS,
   ROUTE_SURFACE_MAX_HA,
   UNCAPPABLE_FACTORS,
 } from "./record"
-import type { CountingMode, RouteHomogeneity, RouteMethod, UncappableFactor } from "./record"
+import type {
+  CountingMode,
+  PartialRouteMethod,
+  RouteHomogeneity,
+  RouteMethod,
+  UncappableFactor,
+} from "./record"
 
 // Phase 30: the route-choice rules of docs/specs/route-choice-rules-v1.md, validated by the owner
 // on 2026-10-14 (section 13). Pure functions that return codes only: the app's French catalogue
@@ -336,4 +343,302 @@ export function routeAdviceFor(input: RouteAdviceInput): RouteAdvice {
   if (counting === "uncapped") advice.push("uncapped_longer")
 
   return { advice, estimated_minutes: minutes }
+}
+
+/** The observer's choice above the subdivision bound (R-11b). */
+export type RouteChoice = { largeStandOption?: LargeStandOption }
+
+/**
+ * What the guide says for a set of answers. `route` is a proposal: the observer can still change
+ * it, and the app records `chosen_by` accordingly. Every field is a code or a number.
+ */
+export type RouteRecommendation =
+  | {
+      /** R-01: the surface is absent or out of range; the question `surface` stays open. */
+      status: "needs_surface"
+      error: RouteSurfaceErrorCode
+    }
+  | {
+      /** A needed answer is missing. `questions` is the display list, `missing` the open ones. */
+      status: "incomplete"
+      questions: RouteQuestionId[]
+      missing: RouteQuestionId[]
+    }
+  | {
+      /** R-11b: no parcours until the observer chooses; `subdivide` is pre-selected (O-03). */
+      status: "options"
+      options: LargeStandOption[]
+      preselected_option: LargeStandOption
+      reasons: RouteReasonCode[]
+    }
+  | {
+      status: "route"
+      method: RouteMethod
+      counting: CountingMode
+      /** Always empty: the guide never proposes the uncapped counting (R-16, O-01). */
+      uncapped_factors: UncappableFactor[]
+      zone_surface_ha: number
+      /** Only for a partial parcours (R-14). */
+      complement: RouteComplement | null
+      /** At most four, in the order of the spec (section 5). */
+      reasons: RouteReasonCode[]
+      warnings: RouteWarningCode[]
+      advice: RouteAdviceCode[]
+      estimated_minutes: { min: number; max: number } | null
+      /** The rules that produced the proposal, in order, for traceability and tests. */
+      applied_rules: RouteRuleId[]
+    }
+
+/** The most reasons returned (spec section 5, order of the reasons). */
+const MAX_REASONS = 4
+
+type ShownQuestion = Exclude<RouteQuestionId, "refine">
+
+type RouteOutcome =
+  | { kind: "options" }
+  | {
+      kind: "route"
+      method: RouteMethod
+      stand: number
+      zone: number
+      head: RouteReasonCode[]
+      rules: RouteRuleId[]
+    }
+
+type Walk = {
+  /** The questions to display, in order, answered or not (the refine section excluded). */
+  shown: ShownQuestion[]
+  /** The shown questions without a usable answer. */
+  missing: ShownQuestion[]
+  error: RouteSurfaceErrorCode | null
+  /** Null while an answer is missing. */
+  outcome: RouteOutcome | null
+}
+
+function surfaceErrorFor(value: unknown): RouteSurfaceErrorCode {
+  return value === undefined || value === null ? "surface_missing" : "surface_invalid"
+}
+
+function flag(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined
+}
+
+function fullOutcome(stand: number, head: RouteReasonCode[], rules: RouteRuleId[]): RouteOutcome {
+  return { kind: "route", method: "full", stand, zone: fullZoneHa(stand), head, rules }
+}
+
+function partialOutcome(
+  method: PartialRouteMethod,
+  stand: number,
+  homogeneity: RouteHomogeneity,
+  head: RouteReasonCode[],
+  rules: RouteRuleId[],
+): RouteOutcome {
+  return {
+    kind: "route",
+    method,
+    stand,
+    zone: partialZoneHa(stand, homogeneity),
+    head,
+    rules,
+  }
+}
+
+/**
+ * Walks the questions of spec section 4 with the decision table of section 5 (steps 0 to 2), once,
+ * so the question list and the proposal cannot disagree. A question is shown only when its answer
+ * can change the parcours, the counting or the suggested zone (D-05); an answer that is not needed
+ * is ignored.
+ */
+function walk(answers: Partial<RouteAnswers>, choice: RouteChoice | undefined): Walk {
+  const stand = answers.surface_ha
+  // R-01 (S p. 18; M p. 2): no usable surface, no proposal.
+  if (!isValidSurface(stand)) {
+    return {
+      shown: ["surface"],
+      missing: ["surface"],
+      error: surfaceErrorFor(stand),
+      outcome: null,
+    }
+  }
+  const homogeneity = ROUTE_HOMOGENEITY_VALUES.find((value) => value === answers.homogeneity)
+  const difficulty = flag(answers.difficulty)
+  const narrow = flag(answers.narrow)
+  const answered: Record<ShownQuestion, boolean> = {
+    surface: true,
+    homogeneity: homogeneity !== undefined,
+    difficulty: difficulty !== undefined,
+    narrow: narrow !== undefined,
+  }
+  const shown: ShownQuestion[] = ["surface"]
+  const finish = (outcome: RouteOutcome | null): Walk => ({
+    shown,
+    missing: shown.filter((question) => !answered[question]),
+    error: null,
+    outcome,
+  })
+
+  // R-07 (M p. 4): up to 1 ha the whole stand is described, and nothing else is asked.
+  if (stand <= ROUTE_SMALL_STAND_HA) {
+    return finish(fullOutcome(stand, ["whole_stand_small"], ["R-07"]))
+  }
+
+  shown.push("homogeneity")
+  const upToFullMax = stand <= ROUTE_FULL_MAX_HA
+  if (upToFullMax) shown.push("difficulty")
+  if (homogeneity === undefined || (upToFullMax && difficulty === undefined)) return finish(null)
+
+  // Homogeneous and easy to observe: the strip or the plot depends on the width (R-12a, R-12b).
+  const byWidth = (head: RouteReasonCode[], rules: RouteRuleId[]): Walk => {
+    shown.push("narrow")
+    if (narrow === undefined) return finish(null)
+    const method = narrow ? "partial_strip" : "partial_plot"
+    return finish(partialOutcome(method, stand, homogeneity, head, rules))
+  }
+
+  if (upToFullMax) {
+    // R-08 (M p. 4): hard to observe, a partial parcours in strips (R-12a).
+    if (difficulty) {
+      const head: RouteReasonCode[] = ["partial_hard_to_observe"]
+      return finish(partialOutcome("partial_strip", stand, homogeneity, head, ["R-08"]))
+    }
+    // R-10 (M p. 4; S p. 18): a heterogeneous, easy stand is walked in full.
+    if (homogeneity === "heterogeneous") {
+      return finish(fullOutcome(stand, ["whole_stand_heterogeneous"], ["R-10"]))
+    }
+    // R-09 (M p. 4): a homogeneous, easy stand is sampled.
+    return byWidth(["partial_homogeneous"], ["R-09"])
+  }
+
+  // R-11 and R-11b (M p. 4): above 5 ha, 10 ha (heterogeneous) or 20 ha (homogeneous) is the bound
+  // of the partial parcours; above it the observer chooses (decisions O-02, O-03).
+  const bound =
+    homogeneity === "homogeneous"
+      ? ROUTE_SUBDIVIDE_HOMOGENEOUS_HA
+      : ROUTE_SUBDIVIDE_HETEROGENEOUS_HA
+  const large = stand > bound
+  if (large && choice?.largeStandOption !== "partial") return finish({ kind: "options" })
+  const head: RouteReasonCode[] = large
+    ? ["large_stand", "partial_medium_stand"]
+    : ["partial_medium_stand"]
+  const rules: RouteRuleId[] = large ? ["R-11b", "R-11"] : ["R-11"]
+
+  // R-12a (M p. 7, p. 8): a heterogeneous stand is walked in strips; difficulty is not asked.
+  if (homogeneity === "heterogeneous") {
+    return finish(partialOutcome("partial_strip", stand, homogeneity, head, rules))
+  }
+  shown.push("difficulty")
+  if (difficulty === undefined) return finish(null)
+  if (difficulty) return finish(partialOutcome("partial_strip", stand, homogeneity, head, rules))
+  return byWidth(head, rules)
+}
+
+/**
+ * The questions to display for a set of answers, in order, the optional "refine" section last
+ * (spec section 4). A question is listed only when its answer can change the result; experience and
+ * hours never add one (O-04).
+ */
+export function routeQuestionsFor(
+  answers: Partial<RouteAnswers>,
+  choice?: RouteChoice,
+): RouteQuestionId[] {
+  return [...walk(answers, choice).shown, "refine"]
+}
+
+function routeResult(
+  answers: Partial<RouteAnswers>,
+  shown: readonly ShownQuestion[],
+  outcome: Extract<RouteOutcome, { kind: "route" }>,
+): Extract<RouteRecommendation, { status: "route" }> {
+  const { method, stand, zone } = outcome
+  const counting = defaultCountingFor(method)
+  const reasons = [...outcome.head]
+  const rules = [...outcome.rules]
+  const warnings: RouteWarningCode[] = []
+  let complement: RouteComplement | null = null
+
+  // R-02 (M p. 4, O-11): a stand under 0.5 ha is warned about, never blocked.
+  if (stand < ROUTE_TINY_STAND_HA) {
+    warnings.push("small_stand")
+    rules.unshift("R-02")
+  }
+
+  if (method !== "full") {
+    // R-12a, R-12b: the reason of the type, then R-13 and R-14 (M p. 7, p. 8): the zone, and the
+    // complement advised for the rest of the stand, proposed done with the whole stand evaluated.
+    reasons.push(method === "partial_strip" ? "partial_strip_why" : "partial_plot_why")
+    rules.push(method === "partial_strip" ? "R-12a" : "R-12b")
+    reasons.push("complement_advised")
+    complement = { done: true, total_surface_ha: roundHa(stand) }
+    rules.push("R-13", "R-14")
+    if (isOverHalf(zone, stand)) warnings.push("partial_over_half")
+  }
+
+  // R-16 (M p. 5, table 2): the counting is capped for the three parcours, so the last reason is
+  // always `capped_default`.
+  reasons.push("capped_default")
+  rules.push("R-16")
+
+  // R-19 to R-21 (S p. 19; M p. 17): information only. The difficulty counts only when it was a
+  // needed question. R-18 never applies: the guide does not propose the uncapped counting.
+  const { advice, estimated_minutes } = routeAdviceFor({
+    method,
+    counting,
+    zoneHa: zone,
+    answers: {
+      difficulty: shown.includes("difficulty") ? answers.difficulty : undefined,
+      experience: answers.experience,
+      hours_available: answers.hours_available,
+    },
+  })
+  // The zone is always usable here, so the duration (R-19) is always given.
+  rules.push("R-19")
+  if (advice.includes("time_short")) rules.push("R-20")
+  if (advice.includes("beginner")) rules.push("R-21")
+
+  return {
+    status: "route",
+    method,
+    counting,
+    uncapped_factors: [],
+    zone_surface_ha: zone,
+    complement,
+    reasons: reasons.slice(0, MAX_REASONS),
+    warnings,
+    advice,
+    estimated_minutes,
+    applied_rules: rules,
+  }
+}
+
+/**
+ * The route the guide proposes for the answers given (spec sections 4 and 5), or what is still
+ * needed: a usable surface, an answer, or the choice above the subdivision bound. Only the stand
+ * chooses the parcours; experience and hours are read by the advice alone (O-04). Subdividing is
+ * expressed by the answers: `subdivided` with the surface of one piece gives the result of that
+ * surface (R-11b).
+ */
+export function recommendRoute(
+  answers: Partial<RouteAnswers>,
+  choice?: RouteChoice,
+): RouteRecommendation {
+  const walked = walk(answers, choice)
+  if (walked.error !== null) return { status: "needs_surface", error: walked.error }
+  const { outcome } = walked
+  if (outcome === null) {
+    return {
+      status: "incomplete",
+      questions: [...walked.shown, "refine"],
+      missing: walked.missing,
+    }
+  }
+  if (outcome.kind === "options") {
+    return {
+      status: "options",
+      options: [...LARGE_STAND_OPTIONS],
+      preselected_option: "subdivide",
+      reasons: ["large_stand"],
+    }
+  }
+  return routeResult(answers, walked.shown, outcome)
 }
