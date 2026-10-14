@@ -27,7 +27,14 @@ function data(over: { ibp_method_version?: string | null; ibp_cas?: 1 | 2 | 3 | 
   }
 }
 
-type Row = { key: string; label: string; value?: string; multiline?: boolean; onPress?: unknown }
+type Row = {
+  key: string
+  label: string
+  value?: string
+  multiline?: boolean
+  valueLines?: number
+  onPress?: unknown
+}
 
 type Extra = { routeLabel?: string | null; routePending?: boolean }
 
@@ -74,7 +81,7 @@ describe("buildSummaryRowSections parcels row (Parcelles)", () => {
     expect(value).toBe("2 parcelles · Parcours en plein")
     expect(value).not.toContain("\n")
     expect(value).not.toContain("\u2014")
-    expect(parcelsRow(data(), { routeLabel: "Parcours en plein" }).multiline).toBe(true)
+    expect(parcelsRow(data(), { routeLabel: "Parcours en plein" }).valueLines).toBe(2)
   })
 
   test("a draft with no route says the parcours is still to choose", () => {

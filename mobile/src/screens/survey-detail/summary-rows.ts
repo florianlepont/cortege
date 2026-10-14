@@ -53,7 +53,8 @@ export function buildSummaryRowSections(
           key: "parcels",
           label: rowsText.parcels,
           value: parcelsValue,
-          multiline: true,
+          // The label stays whole ("Parcell/es" at 390 pt), the long value wraps to two lines.
+          valueLines: 2,
           onPress: handlers.onOpenParcelsPage,
         },
         {
