@@ -256,3 +256,54 @@ Acceptance criteria
 - The doubt never changes a score, a band, a total or a validation result, proved by parity cases run in the shared package, the API adapter and the mobile adapter.
 
 - The doubt syncs with the survey and is read-only once the survey is submitted.
+
+### US-C13 - Aide au choix du parcours
+
+**Release:** V1 (phase 30, `REQ-C-route-guide`, `REQ-DOC-route-rules`)
+
+After the parcels are chosen, a mandatory step of the survey creation helps the observer choose how to walk the stand: the **parcours** (in full, or partial by strip or by plot) and the **mode de relevé** (capped or uncapped). It asks a few closed questions, only the ones whose answer can change the result, proposes a route with the reasons in plain French, and lets the observer change it or choose directly. It uses the words of the official method, each with a one-sentence explanation, and works offline. The rules are in [`route-choice-rules-v1.md`](route-choice-rules-v1.md) (validated 2026-10-14); the proposal depends on the stand only (surface, homogeneity, difficulty to observe, width), never on the observer's experience or time.
+
+As a contributor who does not know the method, I want the app to propose how to walk my stand and tell me why, so I do not have to read the official methodology.
+
+Acceptance criteria
+
+- The step comes after the parcel map and before the survey exists; it cannot be skipped, and going back returns to the parcel map without writing anything.
+
+- The surface is estimated from the chosen parcels and can be corrected; when it cannot be computed it is typed by hand, with no connection needed.
+
+- Each question is closed, appears only if its answer can change the result, and is shown one at a time with a one-line reason; an answered question folds into one line and can be reopened.
+
+- The proposal shows the parcours, the mode de relevé, the surface described and up to four reasons in plain French; the mode is capped by default and the uncapped mode is never suggested.
+
+- Above 10 ha for a varied stand, or 20 ha for a homogeneous one, the app offers two options, "Découper en sous-peuplements" (pre-selected, marked "Conseillé") and "Parcours partiel".
+
+- Experience and time available are in a folded optional section "Pour affiner": they give only a duration range and notes, and never change the route.
+
+- "Je connais déjà mon parcours" opens the chooser directly: the parcours, the mode de relevé (five presets and one chip per factor for the uncapped mode) and the surface described, without answering any question.
+
+- Each term of the method ("parcours en plein", "parcours partiel", "relevé plafonné", "relevé déplafonné", "peuplement") carries its explanation, and the word "méthode" is never used for the parcours ("Méthode IBP" stays the version).
+
+- A tester who does not know the method completes the choice unaided, in a recorded test whose report is in [`../user-tests/route-choice-assistant.md`](../user-tests/route-choice-assistant.md) (`REQ-FT-route-test`).
+
+### US-C14 - Parcours utilisé
+
+**Release:** V1 (phase 30, `REQ-C-route-record`, `REQ-C-route-display`, `REQ-C-uncapped-entry`)
+
+The route accepted in the step above is recorded with the survey, so that the way it was made is kept and two scores can be compared. It never changes a score.
+
+As a contributor, I want the route of my survey kept and shown, so my readers know how the survey was made.
+
+Acceptance criteria
+
+- The route (`survey_route`: parcours, mode de relevé, factors counted in full, surface described, rest of the stand, how it was chosen) is saved with the survey, syncs (upsert, `/sync`, `/sync/changes`) and returns on a reinstall or a second device.
+
+- It is shown as text in a "Parcours utilisé" card on the Contexte page of the survey, as a short label on the summary row, on another member's survey (read-only) and as a block of the PDF after "Conditions du relevé".
+
+- A draft can change its route (link "Modifier le parcours") but never remove it; the route is read-only once the survey is submitted.
+
+- A draft without a route (made before the phase) shows "Parcours à choisir" and cannot be finished or sent until a route is chosen; it stays on the phone meanwhile. The server refuses to create or submit a survey without a route when the request comes from the current app (`route_required`).
+
+- A survey submitted before the phase shows "Parcours : non renseigné" with a short sentence, and its PDF is unchanged.
+
+- When a factor is counted in full, B asks the cover of each stratum and F the number of trees per dendromicrohabitat group and its own surface; capped factors and all scores are unchanged, proved by the parity cases `MAT-B-UNC-*` and `MAT-F-UNC-*`.
+

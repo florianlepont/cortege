@@ -5,6 +5,7 @@ The repository documentation is grouped under `docs/`:
 - `docs/specs/`
   Product and functional specifications.
   Includes the epic files plus support documents such as `ibp-form-spec.md` and `user-stories.md`.
+  The rules of the route choice assistant (parcours en plein or partiel, relevé plafonné or déplafonné, the recorded "Parcours utilisé") are in [route-choice-rules-v1.md](specs/route-choice-rules-v1.md) (Phase 30, validated by the owner on 2026-10-14).
 
 - `docs/technical/`
   Technical contracts, ADRs, validation rules, architecture and sync behavior.
@@ -12,6 +13,9 @@ The repository documentation is grouped under `docs/`:
   The hosting and infrastructure target is ratified in [ADR-004](technical/adr-004-hosting-and-infrastructure-v1.md): Docker + Caddy + GHCR + a systemd timer + MinIO on the VPS (`infra/vps/README.md`), superseding the unratified alwaysdata + Cloudflare R2 note in `docs/project/presentation-association.md`.
   The scoring rules and their test cases are in [ibp-validation-matrix-v2.md](technical/ibp-validation-matrix-v2.md) (the pre-01.8 baseline is [ibp-validation-matrix-v1.md](technical/ibp-validation-matrix-v1.md)). Its executable form is the parity fixture of the shared package `packages/ibp-domain`, which the API and the app both use; see block 8 of [technical-architecture-v1.md](technical/technical-architecture-v1.md).
   The map layers (Plan, Satellite, three historical bases, the forest-types overlay), their Géoplateforme sources, licences and attribution, the offline policy and the estimated and measured download cost, and the swipe mode and comparison as built are recorded in [map-layers-and-licences-v1.md](technical/map-layers-and-licences-v1.md) (Phase 28).
+
+- `docs/user-tests/`
+  Test plans and reports with real people or devices. The protocol of the recorded unaided tester test of the route choice assistant (Phase 30), then its report, is [route-choice-assistant.md](user-tests/route-choice-assistant.md).
 
 - `docs/design/`
   Design and brand-system documents.

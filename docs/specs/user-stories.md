@@ -43,6 +43,9 @@ The app is a public-interest project led by the association Etats-Sauvages and i
   - US-C11 weather pre-filled from Météo-France through the Cortege API, read-only except the sky the observer chooses, empty without error offline: `REQ-C-weather-provider`, `REQ-C-weather-prefill`.
   - US-C12 "Douteux" doubt flag per factor, no effect on any score: `REQ-C-doubt-flag`.
   - All three travel with the survey without false sync conflicts: `REQ-C-conditions-sync`.
+- Route choice assistant (phase 30, epic C, V1):
+  - US-C13 "Aide au choix du parcours": a mandatory step after the parcel choice proposes the parcours (in full or partial) and the mode de relevé (capped or uncapped) with plain-French reasons, offline, with the quick path "Je connais déjà mon parcours": `REQ-C-route-guide`, `REQ-DOC-route-rules`, `REQ-FT-route-test`.
+  - US-C14 "Parcours utilisé": the route is recorded with the survey, shown in the survey detail and the PDF, read-only after submit, and a draft without a route cannot be finished; the uncapped mode adds detail inputs to B and F, never scored: `REQ-C-route-record`, `REQ-C-route-display`, `REQ-C-uncapped-entry`.
 
 ## 8) Backlog (Out of MVP Scope)
 

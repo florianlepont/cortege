@@ -17,7 +17,11 @@ Included:
     scale flag (`ibp_cas3_scale`).
   - IBP Fr v3.0: biogeographic versions ACA (Atlantic / Continental / Alpine) and M (Mediterranean:
     thermo, meso, supra-mediterranean), with a vegetation stage.
-- Standard full/partial transect workflows.
+- The way the stand is walked, recorded with each survey (phase 30): the **parcours** (in full, or
+  partial by strip or by plot) and the **mode de relevé** (capped or uncapped), chosen in a mandatory
+  step of the survey creation (§5.4; rules in
+  [`route-choice-rules-v1.md`](route-choice-rules-v1.md)). Sampling several plots across a massif
+  (rapid diagnosis, study, planned inventory) is not covered.
 - Mobile entry and validation rules.
 
 Excluded:
@@ -139,6 +143,33 @@ Compatibility rule:
 
 v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 
+### 5.4 Route: parcours and mode de relevé (phase 30)
+- Every survey records the **parcours utilisé** (`survey_route`): how the stand was walked. It
+  matches the "Méthode" box of the official survey sheet (S p. 20) and the "Facteurs déplafonnés"
+  field. The rules that propose a route (surface, homogeneity, difficulty, width) are in
+  [`route-choice-rules-v1.md`](route-choice-rules-v1.md) (validated 2026-10-14) and are implemented
+  once, in `packages/ibp-domain/src/route/`.
+- Words of the method, as written in the app: **parcours en plein** (the whole stand is walked),
+  **parcours partiel** (by strip or by plot, at least 1 ha and 10 to 20 % of the stand, with a quick
+  look at the rest), **relevé plafonné** (counting stops as soon as a score is sure) and **relevé
+  déplafonné** (everything is counted, for the factors chosen). "Méthode IBP" stays the version
+  (v3.2 or v3.0); the route does not change the version nor the cas.
+- **The route is mandatory.** The step comes after the parcel choice; a survey does not exist
+  without a valid route (the "Je connais déjà mon parcours" path opens the chooser directly), and a
+  draft without a route cannot be finished or sent. A survey submitted before the phase has none
+  and reads "Parcours : non renseigné".
+- **The score never depends on the route.** Capped and uncapped surveys of the same data score
+  identically; the route records how the survey was made and lets two scores be compared. It is not
+  an input of any rule.
+- The route is read-only after submit, like the method version (§10.4). It is shown in the survey
+  detail ("Parcours utilisé" card on the Contexte page, short label on the summary), on another
+  member's survey and in the PDF export.
+- Uncapped detail (D-07): a factor counted in full gets extra detail inputs, only for **B**
+  (`strata_cover`, the percent of cover of each stratum; a stratum counts from 20 %) and **F**
+  (`dmh_counts`, the trees per dendromicrohabitat group, and F's own `surface_ha`; at most 2 trees
+  per hectare per group). Other factors keep their input. These keys are never scored: the scored
+  keys `strata_count` and `trees_per_ha` stay the only inputs of the rules (see Factors B and F).
+
 ## 6) IBP Factors (Detailed Model)
 
 ### Factor A - Native Tree Taxa
@@ -234,6 +265,11 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
   only together with the count, the count equals its length when the tiers are picked, and the
   array is never scored. It is kept by the server and by a pull on another phone, so the PDF
   prints the tiers.
+- Uncapped count (phase 30, §5.4): when the survey route counts B in full, the form also stores
+  `strata_cover`, an object keyed by the same five codes with the percent of cover (0-100) of the
+  sampled surface. A stratum counts from 20 %; `strata_count` is then derived from the cover with
+  the package helper `strataCountFromCover`. `strata_cover` is never read by a scorer, is written
+  only with `strata_count`, and is kept (hidden) if B leaves the full count.
 - Example:
   - 5 observed strata, native cover 40% -> B score `5` (the cap applies to A).
 
@@ -337,6 +373,12 @@ v3.0 surveys carry no `ibp_cas` or `ibp_cas3_scale`.
 - Stored as (phase 25.1, D-12): `trees_per_ha` (scored) plus an optional `dmh_groups`, the dmh
   groups observed, an array of codes `dmh_01` to `dmh_15` (the 15 groups of the IBP typology).
   The groups are observed, not scored: the score stays derived from `trees_per_ha` alone.
+- Uncapped count (phase 30, §5.4): when the survey route counts F in full, the form also stores
+  `dmh_counts` (an object keyed `dmh_01` to `dmh_15`, whole numbers of trees) and F's own
+  `surface_ha` (prefilled from the surface described by the route, editable). `trees_per_ha` is
+  then derived by `dmhDensityPerHa` (each group's count divided by `surface_ha`, capped at 2 per
+  hectare, then summed). `dmh_counts` is not the `dmh_group_counts` array of the scorer, is never
+  scored and is written only with `trees_per_ha`.
 - Example:
   - total after capping = 8.4 trees/ha -> score `5`.
 
@@ -550,6 +592,12 @@ pair are scored: an absent or incomplete factor is not "very low".
 - `factors: array[10]` (required)
 - `survey_note?: string | null` (phase 27: free note of the whole survey, at most 1000
   characters; absent or null = no note)
+- `survey_route?: object | null` (phase 30: the route used, §5.4. Keys: `version` (1), `method`
+  (`full`, `partial_strip`, `partial_plot`), `counting` (`capped`, `uncapped`), `uncapped_factors`
+  (sorted letters among A B C D E F G I J, only when uncapped), `zone_surface_ha` (the surface
+  described, above 0), `complement` (partial routes: `done` and `total_surface_ha`) and `guide`
+  (`chosen_by`, `suggested`, `answers`). Closed codes and numbers, no free text. Mandatory for a
+  new survey of the current app; null or absent for a survey stored before the phase)
 - `weather?: object | null` (phase 27: the weather of the visit. Keys, all optional: `sky` (one of
   `clear`, `partly_cloudy`, `cloudy`, `overcast`, `fog`, `rain`, `thunderstorm`, `snow`),
   `temperature_c` (-40 to 55), `wind_kmh` (0 to 350), `rain_24h_mm` (0 to 1000), `observed_at`,
@@ -634,6 +682,11 @@ The logical payload above is a description; on the wire the annotations travel i
   (D-03): the note is compared by exact string, the weather by value, the annotations with
   `factors`. Absent or null is never a change, so an app that does not send them creates no
   conflict. A user can still write them freely while the survey is a draft.
+- `survey_route` (phase 30) is read-only after submit as well, compared by value. Before submit it
+  can be replaced but never deleted (absent or null keeps the stored route). The API refuses to
+  create or submit a survey without a valid route when the request carries the marker header
+  `X-Cortege-Features: survey_route` (`route_required`, `422`; see `api-contract-v1.md`). It never
+  changes a score or a validation result of the factors.
 - **The doubt never changes a score (D-14).** A doubt or a factor note is not an input of any rule:
   the scorer reads the ten factor keys only, so the score, the class, the band, the total and every
   validation result are identical with and without the annotations. The parity cases `MAT-ANN-01`
@@ -676,8 +729,14 @@ The logical payload above is a description; on the wire the annotations travel i
   - IBP Fr v3.0 survey sheets (updated 2023-03-23), v3.0, available per survey: https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/5cf710f876f8e4ddfd4007df318f71f5/ibp_rel_fr_v3_0_230323_0.pdf
   - IBP survey methods (updated 2022-10-10): https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/e5f7f1ea0f6f4f63a2ef41a58ecab8e0/ibp_methodes_de_releve_v221010_0.pdf (v3.2 now includes the survey instructions, p. 18-19)
 
+9. Route (phase 30):
+- a new survey cannot be created without a route; the same factor data scores identically whether
+  the route is capped or uncapped; a submitted survey's route cannot change; a survey submitted
+  before the phase reads "Parcours : non renseigné".
+
 ## 13) Change Log
 - 2026-03-04: moved from template to full operational specification (factors, thresholds, scoring, validations, data contract, CNPF references).
 - 2026-09-26: phase 01.1: method version status (implemented v3.0, target v3.2 per ADR-003), dead v3.0 links marked, v3.2 reference added, known divergences flagged (BUG-1, BUG-4, region/stage vs cas).
 - 2026-09-26: phase 01.8: implemented: v3.2 (v3.0 available per survey). Method version chosen per survey (`ibp_method_version`, BUG-4 closed), cas model (`ibp_cas`, `ibp_cas3_scale`), native cover and cap moved to Factor A (BUG-1), G/H allowed scores 0/2/5 (BUG-2), v3.2 C/D/E sum rule, totals shown out of 50 with the band convention, validation codes `ibp_method_version_unsupported`, `ibp_cas_required`, `factor_incomplete`.
 - 2026-09-27: phase 5 (`REQ-ML-contracts`, `REQ-DOC-form-spec`): Factor A carries a genus list (`genera`) instead of a bare count, with the count derived from it (§6, §10.1/§10.3); new validation code `factor_a_genus_invalid` (§8.1). §4 corrected to multi-parcel `parcel_ids[]` (conflict-report warning 1). §8.4/§10.1/§11 corrected to the shipped status enum (`draft | submitted | synced | error | expired`, `submitted_at`, `deleted_at`, no `deleted` value, no `published_at`; conflict-report warning 2). Contracts and migration only — the genus-entry UI is phase 6.
+- 2026-10-14: phase 30: the route of each survey (`survey_route`, §5.4): parcours en plein or partiel (by strip or by plot) and relevé plafonné or déplafonné, mandatory for a new survey, read-only after submit, never an input of a score; uncapped detail keys `strata_cover` (B), `dmh_counts` and `surface_ha` (F), never scored (§6, §10). The vague "full/partial transect" scope line is replaced. Rules: [`route-choice-rules-v1.md`](route-choice-rules-v1.md).
