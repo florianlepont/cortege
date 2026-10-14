@@ -137,7 +137,7 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
 
   const onOpenChooser = useLatestCallback(
     (chooserMode: "pick" | "edit", section?: RouteChooserSection) => {
-      const { selection, rows, zoneFieldText, totalFieldText } = guide.view
+      const { selection, rows, zoneFieldText, totalFieldText, recommendation } = guide.view
       const stand = rows.find((row) => row.id === "surface")
       const preselect: RoutePick | undefined =
         selection === null
@@ -158,6 +158,10 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
         surfaceHa: stand?.id === "surface" ? stand.hectares : surfaceHa,
         ...(preselect === undefined ? null : { preselect }),
         ...(section === undefined ? null : { section }),
+        // The parcours the guide advised carries "Conseillé" in the chooser.
+        ...(recommendation.status === "route"
+          ? { suggested: { method: recommendation.method, counting: recommendation.counting } }
+          : null),
       })
     },
   )

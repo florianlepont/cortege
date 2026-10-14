@@ -476,9 +476,12 @@ describe("presetOfFactors and hasUncappedDetailData", () => {
   })
 })
 
-describe("load", () => {
-  test("replaces the whole model", () => {
+describe("load and detailData", () => {
+  test("load replaces the model but keeps what the phone said about the detail values", () => {
     const loaded = initialChooseModel({ record: guideRecord, standHa: 8 })
-    expect(chooseReducer(blank(), { type: "load", model: loaded })).toBe(loaded)
+    const before = run(blank(), { type: "detailData", has: true })
+    const after = chooseReducer(before, { type: "load", model: loaded })
+    expect(after).toEqual({ ...loaded, hasDetailData: true })
+    expect(after.method).toBe("partial_strip")
   })
 })

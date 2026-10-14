@@ -141,6 +141,9 @@ jest.mock("../../screens/survey-wizard/SurveyWizardScreen", () => ({
 jest.mock("../../screens/route-guide/RouteGuideScreen", () => ({
   RouteGuideScreen: mockScreen("routeGuide"),
 }))
+jest.mock("../../screens/route-guide/RouteChooseScreen", () => ({
+  RouteChooseScreen: mockScreen("routeChoose"),
+}))
 jest.mock("../../screens/FactorHelpSheet", () => ({
   FactorHelpSheet: mockScreen("factorHelp"),
 }))
@@ -236,17 +239,22 @@ jest.mock("../../hooks/useOfflinePendingParcelDrain", () => ({
 }))
 // Phase 30 (O-19): the pager's finish pill needs the draft's route; these route tests have a routed
 // draft (the route gate itself is proved in usePagerFinish.test.ts).
+const mockRoutedDraft = {
+  version: 1,
+  method: "full",
+  counting: "capped",
+  zone_surface_ha: 2.5,
+  guide: { chosen_by: "observer" },
+}
+const mockRecordedRoute: { value: unknown } = { value: mockRoutedDraft }
 jest.mock("../../hooks/useSurveyRoute", () => ({
-  useSurveyRoute: () => ({
-    route: {
-      version: 1,
-      method: "full",
-      counting: "capped",
-      zone_surface_ha: 2.5,
-      guide: { chosen_by: "observer" },
-    },
-    loaded: true,
-  }),
+  useSurveyRoute: () => ({ route: mockRecordedRoute.value, loaded: true }),
+}))
+// The chooser reads the draft once to know whether B cover or F counts are stored (U-O10).
+const mockGetLocalSurveyDraft = jest.fn(async (_id: string): Promise<unknown> => null)
+jest.mock("../../storage/surveys", () => ({
+  ...jest.requireActual("../../storage/surveys"),
+  getLocalSurveyDraft: (id: string) => mockGetLocalSurveyDraft(id),
 }))
 jest.mock("../../storage/offline-map", () => ({
   listOfflineAreas: jest.fn(async () => []),
@@ -284,6 +292,7 @@ import { FactorDetailRoute } from "./FactorDetailRoute"
 import { FactorHelpRoute } from "./FactorHelpRoute"
 import { HomeRoute } from "./HomeRoute"
 import { ParcelSelectionRoute } from "./ParcelSelectionRoute"
+import { RouteChooseRoute } from "./RouteChooseRoute"
 import { RouteGuideRoute } from "./RouteGuideRoute"
 import { PublicMapRoute } from "./PublicMapRoute"
 import { OfflineAreasRoute } from "./OfflineAreasRoute"
@@ -564,6 +573,9 @@ beforeEach(() => {
   mockLocalMapData = EMPTY_LOCAL_MAP
   mockLocalMapArgs.value = []
   mockExplorer.loadPublicMap.mockClear()
+  mockRecordedRoute.value = mockRoutedDraft
+  mockGetLocalSurveyDraft.mockReset()
+  mockGetLocalSurveyDraft.mockResolvedValue(null)
 })
 
 describe("SettingsRoute", () => {
@@ -2418,6 +2430,8 @@ describe("RouteGuideRoute (phase 30, O-19, P-1)", () => {
         uncapped_factors: [],
         details: { zoneText: "2,4", complementDone: false, totalText: "" },
       },
+      // What the guide advised, for the tag "Conseillé" of the chooser.
+      suggested: { method: "full", counting: "capped" },
     })
   })
 
@@ -2530,6 +2544,387 @@ describe("RouteGuideRoute (phase 30, O-19, P-1)", () => {
       expect(props("routeGuide").saveError).toBe(true)
       expect(navigation.goBack).not.toHaveBeenCalled()
     })
+  })
+})
+
+describe("RouteChooseRoute (phase 30, O-19, O-14)", () => {
+  type ChooseView = {
+    method: string | null
+    counting: string
+    preset: string
+    factors: string[]
+    canUse: boolean
+    suggested: unknown
+    keptValuesNotice: boolean
+    details: { zoneText: string; complementDone: boolean; totalText: string }
+  }
+  const view = (): ChooseView => props("routeChoose").view as ChooseView
+  const act2 = async (fn: () => unknown) => {
+    await act(async () => {
+      await fn()
+    })
+  }
+  const select = (method: string) => act2(() => callback("routeChoose", "onSelectMethod")(method))
+  const counting = (mode: string) => act2(() => callback("routeChoose", "onSelectCounting")(mode))
+  const use = () => act2(() => callback("routeChoose", "onUse")())
+
+  function chooseRoute(
+    mode: "pick" | "edit",
+    extra: Record<string, unknown> = {},
+  ): { params: Record<string, unknown> } {
+    return { params: { surveyId: "s-01", mode, surfaceHa: 8, ...extra } }
+  }
+
+  async function mountChoose(
+    fixture: Fixture,
+    routeValue: { params: Record<string, unknown> },
+    navigation = makeNavigation(),
+  ) {
+    const tree = await mount(
+      <Providers fixture={fixture}>
+        <RouteChooseRoute navigation={navigation as never} route={routeValue as never} />
+      </Providers>,
+    )
+    return { tree, navigation }
+  }
+
+  const writer = (fixture: Fixture) =>
+    fixture.surveys.actions.updateSurveyRoute as unknown as jest.Mock
+
+  describe("pick mode (from the route step)", () => {
+    const preselect = {
+      method: "partial_strip",
+      counting: "capped",
+      uncapped_factors: [],
+      details: { zoneText: "1,6", complementDone: true, totalText: "8" },
+    }
+
+    test("starts on the route step's selection and the guide's suggestion", async () => {
+      await mountChoose(
+        makeFixture(),
+        chooseRoute("pick", {
+          preselect,
+          suggested: { method: "partial_strip", counting: "capped" },
+        }),
+      )
+      expect(props("routeChoose").mode).toBe("pick")
+      expect(view()).toMatchObject({
+        method: "partial_strip",
+        counting: "capped",
+        canUse: true,
+        suggested: { method: "partial_strip", counting: "capped" },
+        details: { zoneText: "1,6", complementDone: true, totalText: "8" },
+      })
+    })
+
+    test("sets the title, the Annuler item, and cancels without writing", async () => {
+      const fixture = makeFixture()
+      const { navigation } = await mountChoose(fixture, chooseRoute("pick", { preselect }))
+      const options = navigation.setOptions.mock.calls.at(-1)?.[0] as {
+        title: string
+        headerLeft: () => React.ReactElement
+      }
+      expect(options.title).toBe("Choisir le parcours")
+      const tree = await mount(options.headerLeft())
+      const cancel = tree.root.findAll((node) => node.props.testID === "route-choose-cancel")[0]
+      expect(cancel.props.accessibilityLabel).toBe("Annuler")
+      act(() => cancel.props.onPress())
+      expect(navigation.goBack).toHaveBeenCalledTimes(1)
+      expect(writer(fixture)).not.toHaveBeenCalled()
+      expect(navigation.popTo).not.toHaveBeenCalled()
+    })
+
+    test("Utiliser ce parcours hands the pick back to the route step with a fresh nonce", async () => {
+      const fixture = makeFixture()
+      const now = jest.spyOn(Date, "now")
+      now.mockReturnValueOnce(1000).mockReturnValueOnce(2000)
+      const { navigation } = await mountChoose(fixture, chooseRoute("pick", { preselect }))
+      await select("partial_plot")
+      await counting("uncapped")
+      await act2(() => callback("routeChoose", "onSelectPreset")("minimum"))
+      await use()
+      await use()
+      now.mockRestore()
+
+      const picked = {
+        method: "partial_plot",
+        counting: "uncapped",
+        uncapped_factors: ["C", "D", "E"],
+        details: { zoneText: "1,6", complementDone: true, totalText: "8" },
+      }
+      expect(navigation.popTo).toHaveBeenNthCalledWith(
+        1,
+        "surveyRouteGuide",
+        { picked, pickNonce: 1000 },
+        { merge: true },
+      )
+      expect(navigation.popTo).toHaveBeenNthCalledWith(
+        2,
+        "surveyRouteGuide",
+        { picked, pickNonce: 2000 },
+        { merge: true },
+      )
+      expect(writer(fixture)).not.toHaveBeenCalled()
+    })
+
+    test("a selection that cannot be used goes nowhere", async () => {
+      const { navigation } = await mountChoose(makeFixture(), chooseRoute("pick"))
+      expect(view().method).toBeNull()
+      expect(view().canUse).toBe(false)
+      await use()
+      expect(navigation.popTo).not.toHaveBeenCalled()
+    })
+
+    test("the quick path from a blank route step starts with nothing chosen", async () => {
+      await mountChoose(makeFixture(), chooseRoute("pick", { surfaceHa: null }))
+      await select("full")
+      expect(view().details.zoneText).toBe("")
+      expect(view().canUse).toBe(false)
+      await act2(() =>
+        callback(
+          "routeChoose",
+          "onChangeDetails",
+        )({
+          zoneText: "3",
+          complementDone: false,
+          totalText: "",
+        }),
+      )
+      expect(view().canUse).toBe(true)
+    })
+
+    test("the details of the draft say the values are kept when going back to plafonné", async () => {
+      mockGetLocalSurveyDraft.mockResolvedValue({ factors: { B: { strata_cover: { low: 40 } } } })
+      await mountChoose(makeFixture(), chooseRoute("pick", { preselect }))
+      expect(mockGetLocalSurveyDraft).toHaveBeenCalledWith("s-01")
+      await counting("uncapped")
+      expect(view().keptValuesNotice).toBe(false)
+      await counting("capped")
+      expect(view().keptValuesNotice).toBe(true)
+    })
+
+    test("no draft read for a chooser without a survey, and a failed read is ignored", async () => {
+      await mountChoose(makeFixture(), chooseRoute("pick", { surveyId: null }))
+      expect(mockGetLocalSurveyDraft).not.toHaveBeenCalled()
+      mockGetLocalSurveyDraft.mockRejectedValue(new Error("db"))
+      await mountChoose(makeFixture(), chooseRoute("pick"))
+      expect(view().keptValuesNotice).toBe(false)
+    })
+
+    test("opens at the counting when asked", async () => {
+      await mountChoose(makeFixture(), chooseRoute("pick", { preselect, section: "counting" }))
+      expect(props("routeChoose").section).toBe("counting")
+    })
+  })
+
+  describe("edit mode (a draft, from Contexte)", () => {
+    test("loads the recorded route and titles the sheet Modifier le parcours", async () => {
+      const { navigation } = await mountChoose(
+        makeFixture(),
+        chooseRoute("edit", { surfaceHa: null }),
+      )
+      expect(props("routeChoose").mode).toBe("edit")
+      expect(view()).toMatchObject({
+        method: "full",
+        counting: "capped",
+        canUse: true,
+        details: { zoneText: "2,5" },
+      })
+      const options = navigation.setOptions.mock.calls.at(-1)?.[0] as { title: string }
+      expect(options.title).toBe("Modifier le parcours")
+    })
+
+    test("saves the edited record on the draft, as the observer's choice, and closes", async () => {
+      const fixture = makeFixture()
+      writer(fixture).mockResolvedValue(true)
+      const { navigation } = await mountChoose(fixture, chooseRoute("edit", { surfaceHa: null }))
+      await counting("uncapped")
+      await use()
+      expect(writer(fixture)).toHaveBeenCalledWith("s-01", {
+        version: 1,
+        method: "full",
+        counting: "uncapped",
+        uncapped_factors: ["A", "B", "C", "D", "E", "F", "G", "I", "J"],
+        zone_surface_ha: 2.5,
+        guide: { chosen_by: "observer" },
+      })
+      expect(navigation.goBack).toHaveBeenCalledTimes(1)
+      expect(props("routeChoose").saveError).toBe(false)
+    })
+
+    test("keeps the guide's suggestion and answers of a recorded guide route", async () => {
+      mockRecordedRoute.value = {
+        version: 1,
+        method: "partial_strip",
+        counting: "capped",
+        zone_surface_ha: 1.6,
+        complement: { done: true, total_surface_ha: 8 },
+        guide: {
+          chosen_by: "guide",
+          suggested: { method: "partial_strip", counting: "capped" },
+          answers: { surface_ha: 8, homogeneity: "heterogeneous" },
+        },
+      }
+      const fixture = makeFixture()
+      writer(fixture).mockResolvedValue(true)
+      await mountChoose(fixture, chooseRoute("edit", { surfaceHa: null }))
+      expect(view().suggested).toEqual({ method: "partial_strip", counting: "capped" })
+      await use()
+      expect(writer(fixture)).toHaveBeenCalledWith("s-01", mockRecordedRoute.value)
+      await select("partial_plot")
+      await use()
+      expect(writer(fixture).mock.calls.at(-1)?.[1]).toMatchObject({
+        method: "partial_plot",
+        guide: {
+          chosen_by: "observer",
+          suggested: { method: "partial_strip", counting: "capped" },
+          answers: { surface_ha: 8, homogeneity: "heterogeneous" },
+        },
+      })
+    })
+
+    test("a save that says the survey is no longer a draft closes silently", async () => {
+      const fixture = makeFixture()
+      writer(fixture).mockResolvedValue(false)
+      const { navigation } = await mountChoose(fixture, chooseRoute("edit"))
+      await use()
+      expect(navigation.goBack).toHaveBeenCalledTimes(1)
+      expect(props("routeChoose").saveError).toBe(false)
+    })
+
+    test("a failed save keeps the sheet open with the error, and a retry saves", async () => {
+      const fixture = makeFixture()
+      writer(fixture).mockRejectedValueOnce(new Error("disk")).mockResolvedValue(true)
+      const { navigation } = await mountChoose(fixture, chooseRoute("edit"))
+      await use()
+      expect(props("routeChoose").saveError).toBe(true)
+      expect(props("routeChoose").saving).toBe(false)
+      expect(navigation.goBack).not.toHaveBeenCalled()
+      await use()
+      expect(props("routeChoose").saveError).toBe(false)
+      expect(navigation.goBack).toHaveBeenCalledTimes(1)
+    })
+
+    test("a double press saves once", async () => {
+      const fixture = makeFixture()
+      let release: (value: boolean) => void = () => undefined
+      writer(fixture).mockReturnValue(new Promise<boolean>((resolve) => (release = resolve)))
+      await mountChoose(fixture, chooseRoute("edit"))
+      await act(async () => {
+        void callback("routeChoose", "onUse")()
+        void callback("routeChoose", "onUse")()
+      })
+      expect(props("routeChoose").saving).toBe(true)
+      expect(writer(fixture)).toHaveBeenCalledTimes(1)
+      await act(async () => release(true))
+    })
+
+    test("a draft without a route opens with nothing chosen: Choisir le parcours", async () => {
+      mockRecordedRoute.value = null
+      const fixture = makeFixture()
+      writer(fixture).mockResolvedValue(true)
+      const { navigation } = await mountChoose(fixture, chooseRoute("edit", { surfaceHa: null }))
+      expect(view()).toMatchObject({ method: null, canUse: false })
+      expect((navigation.setOptions.mock.calls.at(-1)?.[0] as { title: string }).title).toBe(
+        "Choisir le parcours",
+      )
+      await use()
+      expect(writer(fixture)).not.toHaveBeenCalled()
+
+      await select("full")
+      await act2(() =>
+        callback(
+          "routeChoose",
+          "onChangeDetails",
+        )({
+          zoneText: "4",
+          complementDone: false,
+          totalText: "",
+        }),
+      )
+      expect(view().canUse).toBe(true)
+      await use()
+      expect(writer(fixture)).toHaveBeenCalledWith("s-01", {
+        version: 1,
+        method: "full",
+        counting: "capped",
+        zone_surface_ha: 4,
+        guide: { chosen_by: "observer" },
+      })
+      expect(navigation.goBack).toHaveBeenCalledTimes(1)
+    })
+
+    test("a chooser without a survey id has nothing to save", async () => {
+      const fixture = makeFixture()
+      const { navigation } = await mountChoose(
+        fixture,
+        chooseRoute("edit", { surveyId: null, surfaceHa: 4 }),
+      )
+      await select("full")
+      await use()
+      expect(writer(fixture)).not.toHaveBeenCalled()
+      expect(navigation.goBack).not.toHaveBeenCalled()
+    })
+
+    test("Être conseillé opens the guide in edit mode with the recorded surface", async () => {
+      const { navigation } = await mountChoose(
+        makeFixture(),
+        chooseRoute("edit", { surfaceHa: null }),
+      )
+      callback("routeChoose", "onAdvise")()
+      // The recorded full route's zone is the stand.
+      expect(navigation.navigate).toHaveBeenCalledWith("surveyRouteGuide", {
+        mode: "edit",
+        surveyId: "s-01",
+        surfaceHa: 2.5,
+      })
+    })
+
+    test("Être conseillé passes the given surface, or null when nothing tells it", async () => {
+      const given = await mountChoose(makeFixture(), chooseRoute("edit", { surfaceHa: 6 }))
+      callback("routeChoose", "onAdvise")()
+      expect(given.navigation.navigate).toHaveBeenCalledWith("surveyRouteGuide", {
+        mode: "edit",
+        surveyId: "s-01",
+        surfaceHa: 6,
+      })
+      mockRecordedRoute.value = null
+      const none = await mountChoose(makeFixture(), chooseRoute("edit", { surfaceHa: null }))
+      callback("routeChoose", "onAdvise")()
+      expect(none.navigation.navigate).toHaveBeenCalledWith("surveyRouteGuide", {
+        mode: "edit",
+        surveyId: "s-01",
+        surfaceHa: null,
+      })
+    })
+  })
+
+  test("the guide opens the chooser with what it advised", async () => {
+    const guideFixture = makeFixture({ editingSurveyId: "s-wiz" })
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={guideFixture}>
+        <RouteGuideRoute
+          navigation={navigation as never}
+          route={
+            {
+              params: { surveyId: "s-wiz", mode: "create", surfaceHa: 2.4 },
+            } as never
+          }
+        />
+      </Providers>,
+    )
+    await act(async () => {
+      const { actions } = props("routeGuide").state as { actions: Record<string, AnyFn> }
+      actions.setSurfaceText("2,4")
+      actions.commitSurface()
+      actions.answerHomogeneity("heterogeneous")
+      actions.answerDifficulty(false)
+    })
+    callback("routeGuide", "onOpenChooser")("pick")
+    const params = navigation.navigate.mock.calls.at(-1)?.[1] as Record<string, unknown>
+    expect(params.suggested).toEqual({ method: "full", counting: "capped" })
+    expect(params.mode).toBe("pick")
   })
 })
 

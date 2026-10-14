@@ -144,6 +144,7 @@ jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),
 }))
 jest.mock("./routes/RouteGuideRoute", () => ({ RouteGuideRoute: mockRoute() }))
+jest.mock("./routes/RouteChooseRoute", () => ({ RouteChooseRoute: mockRoute() }))
 jest.mock("./routes/AccountRoute", () => ({ AccountRoute: mockRoute() }))
 jest.mock("./routes/SettingsRoute", () => ({ SettingsRoute: mockRoute() }))
 jest.mock("./routes/OfflineAreasRoute", () => ({ OfflineAreasRoute: mockRoute() }))
@@ -879,6 +880,27 @@ describe("stack options and listeners", () => {
     expect(ios.presentation).toBe("formSheet")
     expect(ios.sheetGrabberVisible).toBe(true)
     expect(ios.sheetAllowedDetents).toEqual([0.65, 1])
+  })
+
+  test("the chooser Choisir le parcours is a modal on Android and a form sheet on iOS, with its own header", async () => {
+    await mount(<AppNavigation />)
+    expect(mockScreens.surveyRouteChoose).toBeDefined()
+    const android = mockScreens.surveyRouteChoose.options as Options
+    expect(android.presentation).toBe("modal")
+    // A solid header carries the title and the Annuler item the route sets: no halo frame.
+    expect(android.headerShown).toBe(true)
+    expect(android.headerTransparent).toBe(false)
+    expect(android.title).toBe(fr.routeGuide.chooser.title)
+    expect(android.headerBackVisible).toBe(false)
+    expect(shouldHideTabBar("surveyRouteChoose")).toBe(false)
+    mockPlatform.OS = "ios"
+    const { routeChooseScreenOptions } = jest.requireActual("./stacks/stack-options") as {
+      routeChooseScreenOptions: (theme: unknown) => Options
+    }
+    const ios = routeChooseScreenOptions(defaultTheme)
+    expect(ios.presentation).toBe("formSheet")
+    expect(ios.sheetGrabberVisible).toBe(true)
+    expect(ios.sheetAllowedDetents).toEqual([0.75, 1])
   })
 
   test("the shared stack options follow the platform at load time", () => {

@@ -11,6 +11,7 @@ import { FinishSheetRoute } from "../routes/FinishSheetRoute"
 import { CommunityHistoryRoute } from "../routes/CommunityHistoryRoute"
 import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { ParcelSelectionRoute } from "../routes/ParcelSelectionRoute"
+import { RouteChooseRoute } from "../routes/RouteChooseRoute"
 import { RouteGuideRoute } from "../routes/RouteGuideRoute"
 import { SurveyContextRoute } from "../routes/SurveyContextRoute"
 import { SurveyDetailRoute } from "../routes/SurveyDetailRoute"
@@ -30,6 +31,7 @@ import {
   hiddenNativeTitle,
   nativeLargeTitle,
   pageTitleOptions,
+  routeChooseScreenOptions,
   wizardHeaderOptions,
 } from "./stack-options"
 import {
@@ -248,6 +250,13 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
               ...pageTitleOptions(theme),
             }}
             component={RouteGuideRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyRouteChoose"
+            // Phase 30: the chooser, a form sheet on iOS and a modal screen on Android (like the
+            // factor help and the finish sheet). It writes nothing until "Utiliser ce parcours".
+            options={routeChooseScreenOptions(theme)}
+            component={RouteChooseRoute}
           />
           <SurveysStack.Screen
             name="accountHome"

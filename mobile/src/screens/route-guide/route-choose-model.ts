@@ -82,6 +82,8 @@ export type ChooseAction =
   | { type: "setDetails"; value: RouteDetailsValue }
   /** Edit mode: the recorded route arrived after the first render. */
   | { type: "load"; model: RouteChooseModel }
+  /** The draft holds B cover or F counts (read from the phone after the first render). */
+  | { type: "detailData"; has: boolean }
 
 // ---- Start ------------------------------------------------------------------------------------
 
@@ -275,7 +277,10 @@ export function chooseReducer(model: RouteChooseModel, action: ChooseAction): Ro
         detailsTouched: true,
       }
     case "load":
-      return action.model
+      // What the phone said about the draft's detail values is not part of the recorded route.
+      return { ...action.model, hasDetailData: model.hasDetailData }
+    case "detailData":
+      return { ...model, hasDetailData: action.has }
   }
 }
 

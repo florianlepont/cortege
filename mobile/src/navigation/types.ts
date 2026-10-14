@@ -91,6 +91,8 @@ export type SurveysStackParamList = AccountStackParamList & {
     surfaceHa?: number | null
     preselect?: RoutePick
     section?: "counting"
+    /** What the guide advised, to mark that parcours "Conseillé" (pick mode). */
+    suggested?: { method: RouteMethod; counting: CountingMode }
   }
 }
 

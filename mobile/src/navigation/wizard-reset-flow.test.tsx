@@ -93,6 +93,14 @@ jest.mock("../screens/SurveyParcelSelectionScreen", () => ({
 jest.mock("../screens/route-guide/RouteGuideScreen", () => ({
   RouteGuideScreen: mockScreen("routeGuide"),
 }))
+jest.mock("../screens/route-guide/RouteChooseScreen", () => ({
+  RouteChooseScreen: mockScreen("routeChoose"),
+}))
+// The chooser reads the draft once for its stored detail values; nothing is stored here.
+jest.mock("../storage/surveys", () => ({
+  ...jest.requireActual("../storage/surveys"),
+  getLocalSurveyDraft: async () => null,
+}))
 // Routes that play no part in the flow: not rendered, and not loaded (camera, maps, native modules).
 jest.mock("./routes/SurveyListRoute", () => ({ SurveyListRoute: () => null }))
 jest.mock("./routes/SurveyFormRoute", () => ({ SurveyFormRoute: () => null }))
@@ -443,5 +451,86 @@ describe("the summary's removal listener on the real router (D-45)", () => {
     })
     expect(routeNames()).toEqual(["surveysHome"])
     expect(observed.selectedSurveyId).toBeNull()
+  })
+})
+
+describe("the chooser over the route step (phase 30, real router)", () => {
+  const CREATION = [
+    { name: "surveysHome" },
+    { name: "surveyForm" },
+    { name: "surveyParcels", params: WIZARD_PARAMS },
+  ]
+
+  type Chosen = {
+    onSelectMethod: (method: string) => void
+    onUse: () => void
+  }
+  const chooser = () => mockScreenProps.routeChoose as unknown as Chosen
+  const lastParams = (ref: { getRootState: () => unknown }) =>
+    (ref.getRootState() as { routes: Array<{ params?: object }> }).routes.at(-1)?.params as Record<
+      string,
+      unknown
+    >
+
+  async function openChooser(): Promise<void> {
+    await act(async () => {
+      ;(mockScreenProps.routeGuide.onOpenChooser as (mode: "pick") => void)("pick")
+    })
+  }
+
+  test("opens as a screen of the stack on top of the route step, carrying the stand surface", async () => {
+    const { routeNames, ref } = await mountStack(CREATION)
+    await leaveParcelMap()
+    await openChooser()
+    expect(routeNames().slice(-2)).toEqual(["surveyRouteGuide", "surveyRouteChoose"])
+    expect(lastParams(ref)).toMatchObject({ surveyId: NEW_ID, mode: "pick", surfaceHa: 2.4 })
+    expect(mockScreenProps.routeChoose.mode).toBe("pick")
+  })
+
+  test("Utiliser ce parcours returns to the route step with the pick merged into its params", async () => {
+    const now = jest.spyOn(Date, "now")
+    now.mockReturnValueOnce(111).mockReturnValueOnce(222)
+    const { routeNames, ref } = await mountStack(CREATION)
+    await leaveParcelMap()
+    await openChooser()
+    await act(async () => chooser().onSelectMethod("full"))
+    await act(async () => chooser().onUse())
+
+    expect(routeNames().slice(-2)).toEqual(["surveyParcels", "surveyRouteGuide"])
+    expect(lastParams(ref)).toMatchObject({
+      surveyId: NEW_ID,
+      mode: "create",
+      surfaceHa: 2.4,
+      picked: { method: "full", counting: "capped", uncapped_factors: [] },
+      pickNonce: 111,
+    })
+    // The route step applied it: "Parcours choisi par vous", ready to use.
+    const view = (
+      mockScreenProps.routeGuide.state as {
+        view: { selection: { source: string; method: string } | null; canUse: boolean }
+      }
+    ).view
+    expect(view.selection).toMatchObject({ source: "pick", method: "full" })
+    expect(view.canUse).toBe(true)
+    expect(observed.writes).toEqual([])
+
+    // The same selection chosen again carries a fresh nonce.
+    await openChooser()
+    await act(async () => chooser().onSelectMethod("full"))
+    await act(async () => chooser().onUse())
+    expect(lastParams(ref).pickNonce).toBe(222)
+    now.mockRestore()
+  })
+
+  test("Annuler leaves the route step as it was", async () => {
+    const { routeNames, ref } = await mountStack(CREATION)
+    await leaveParcelMap()
+    await openChooser()
+    await act(async () => {
+      ref.goBack()
+    })
+    expect(routeNames().at(-1)).toBe("surveyRouteGuide")
+    expect(lastParams(ref).picked).toBeUndefined()
+    expect(observed.writes).toEqual([])
   })
 })
