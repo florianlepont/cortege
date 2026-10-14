@@ -26,11 +26,11 @@ Hors périmètre depuis les décisions O-14 et O-18 : l'inventaire prévu, l'ét
 
 Le facilitateur pose trois questions, sans rien expliquer. **Le testeur doit échouer à définir ces trois mots**. S'il définit correctement l'un d'eux, il n'est pas retenu pour ce test.
 
-| # | Question | Définition correcte (le facilitateur la garde pour lui) |
-|---|----------|----------------------------------------------------------|
-| P-1 | Que veut dire « relevé plafonné » ? | On arrête de compter un élément dès que son score est sûr. |
-| P-2 | Qu'est-ce qu'une « placette » ? | Une surface de forme simple et de taille connue (par exemple un cercle d'un hectare) dans laquelle on relève tout. |
-| P-3 | Qu'est-ce qu'un « parcours partiel » ? | On ne décrit qu'une partie du peuplement, bien choisie, et on jette un coup d'œil rapide au reste. |
+| #   | Question                               | Définition correcte (le facilitateur la garde pour lui)                                                            |
+| --- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| P-1 | Que veut dire « relevé plafonné » ?    | On arrête de compter un élément dès que son score est sûr.                                                         |
+| P-2 | Qu'est-ce qu'une « placette » ?        | Une surface de forme simple et de taille connue (par exemple un cercle d'un hectare) dans laquelle on relève tout. |
+| P-3 | Qu'est-ce qu'un « parcours partiel » ? | On ne décrit qu'une partie du peuplement, bien choisie, et on jette un coup d'œil rapide au reste.                 |
 
 Résultat du pré-contrôle par testeur : voir le tableau 6.1.
 
@@ -73,13 +73,13 @@ Chaque fiche est écrite comme le testeur la lit : sans les mots de la méthode.
 
 **Attendu** (calculé avec `recommendRoute`, réponses : surface 2 ha, homogène, facile à observer, large)
 
-| # | Élément | Résultat attendu | Règle |
-|---|---------|------------------|-------|
-| RC-A-1 | Questions posées | surface, homogène ou non, difficile à observer ou non, moins de 100 m de large ou non | R-09 |
-| RC-A-2 | Parcours proposé | Parcours partiel par placette | R-09, R-12b |
-| RC-A-3 | Mode de relevé | Relevé plafonné | R-16 |
-| RC-A-4 | Surface décrite | 1 ha (reste du peuplement regardé rapidement, surface totale évaluée 2 ha) | R-13, R-14 |
-| RC-A-5 | Première raison affichée | le peuplement est homogène, une partie bien choisie le représente | R-09 |
+| #      | Élément                  | Résultat attendu                                                                      | Règle       |
+| ------ | ------------------------ | ------------------------------------------------------------------------------------- | ----------- |
+| RC-A-1 | Questions posées         | surface, homogène ou non, difficile à observer ou non, moins de 100 m de large ou non | R-09        |
+| RC-A-2 | Parcours proposé         | Parcours partiel par placette                                                         | R-09, R-12b |
+| RC-A-3 | Mode de relevé           | Relevé plafonné                                                                       | R-16        |
+| RC-A-4 | Surface décrite          | 1 ha (reste du peuplement regardé rapidement, surface totale évaluée 2 ha)            | R-13, R-14  |
+| RC-A-5 | Première raison affichée | le peuplement est homogène, une partie bien choisie le représente                     | R-09        |
 
 ### Scénario (b) : forêt mélangée de 12 hectares
 
@@ -92,12 +92,12 @@ Chaque fiche est écrite comme le testeur la lit : sans les mots de la méthode.
 
 **Attendu** (réponses : surface 12 ha, varié)
 
-| # | Élément | Résultat attendu | Règle |
-|---|---------|------------------|-------|
-| RC-B-1 | Questions posées | surface, homogène ou non | R-11b |
-| RC-B-2 | Écran « Grand peuplement » | deux options seulement : « Découper en sous-peuplements » (présélectionnée, marquée « Conseillé ») et « Parcours partiel, sans découper » ; aucun parcours proposé avant le choix | R-11b |
-| RC-B-3 | Réussite, voie 1 : le testeur découpe | l'application demande la surface d'un morceau (3 ha), puis si c'est difficile à observer (non) : Parcours en plein, Relevé plafonné, surface décrite 3 ha | R-11b puis R-10 |
-| RC-B-4 | Réussite, voie 2 : le testeur choisit le parcours partiel | Parcours partiel par bande, Relevé plafonné, surface décrite 2,4 ha (reste du peuplement : surface totale évaluée 12 ha) | R-11b#choose-partial, R-11, R-12a |
+| #      | Élément                                                   | Résultat attendu                                                                                                                                                                  | Règle                             |
+| ------ | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| RC-B-1 | Questions posées                                          | surface, homogène ou non                                                                                                                                                          | R-11b                             |
+| RC-B-2 | Écran « Grand peuplement »                                | deux options seulement : « Découper en sous-peuplements » (présélectionnée, marquée « Conseillé ») et « Parcours partiel, sans découper » ; aucun parcours proposé avant le choix | R-11b                             |
+| RC-B-3 | Réussite, voie 1 : le testeur découpe                     | l'application demande la surface d'un morceau (3 ha), puis si c'est difficile à observer (non) : Parcours en plein, Relevé plafonné, surface décrite 3 ha                         | R-11b puis R-10                   |
+| RC-B-4 | Réussite, voie 2 : le testeur choisit le parcours partiel | Parcours partiel par bande, Relevé plafonné, surface décrite 2,4 ha (reste du peuplement : surface totale évaluée 12 ha)                                                          | R-11b#choose-partial, R-11, R-12a |
 
 Les deux voies sont une réussite. Le facilitateur ne dit jamais laquelle est conseillée ; il note laquelle est choisie et pourquoi.
 
@@ -113,13 +113,13 @@ Les deux voies sont une réussite. Le facilitateur ne dit jamais laquelle est co
 
 **Attendu** (réponses : surface 3 ha, homogène, difficile à observer)
 
-| # | Élément | Résultat attendu | Règle |
-|---|---------|------------------|-------|
-| RC-C-1 | Questions posées | surface, homogène ou non, difficile à observer ou non (la question sur la largeur n'est pas posée) | R-08 |
-| RC-C-2 | Parcours proposé | Parcours partiel par bande | R-08, R-12a |
-| RC-C-3 | Mode de relevé | Relevé plafonné | R-16 |
-| RC-C-4 | Surface décrite | 1 ha (reste du peuplement regardé rapidement, surface totale évaluée 3 ha) | R-13, R-14 |
-| RC-C-5 | Hors connexion | l'étape fonctionne entièrement, sans message d'erreur lié au réseau | section 1 de la spécification |
+| #      | Élément          | Résultat attendu                                                                                   | Règle                         |
+| ------ | ---------------- | -------------------------------------------------------------------------------------------------- | ----------------------------- |
+| RC-C-1 | Questions posées | surface, homogène ou non, difficile à observer ou non (la question sur la largeur n'est pas posée) | R-08                          |
+| RC-C-2 | Parcours proposé | Parcours partiel par bande                                                                         | R-08, R-12a                   |
+| RC-C-3 | Mode de relevé   | Relevé plafonné                                                                                    | R-16                          |
+| RC-C-4 | Surface décrite  | 1 ha (reste du peuplement regardé rapidement, surface totale évaluée 3 ha)                         | R-13, R-14                    |
+| RC-C-5 | Hors connexion   | l'étape fonctionne entièrement, sans message d'erreur lié au réseau                                | section 1 de la spécification |
 
 À la fin du scénario (c), le facilitateur désactive le mode avion.
 
@@ -127,13 +127,13 @@ Les deux voies sont une réussite. Le facilitateur ne dit jamais laquelle est co
 
 Appel du paquet `@cortege/ibp-domain` le 2026-10-14, avant la séance :
 
-| Scénario | Réponses | `recommendRoute` donne |
-|----------|----------|------------------------|
-| (a) | `surface_ha` 2, `homogeneous`, `difficulty` faux, `narrow` faux | route `partial_plot`, `capped`, zone 1, complément fait sur 2 ha, règles R-09, R-12b, R-13, R-14, R-16 |
-| (b) | `surface_ha` 12, `heterogeneous` | options `subdivide` (présélectionnée) et `partial`, raison `large_stand`, aucun parcours |
-| (b), voie 1 | `surface_ha` 3, `heterogeneous`, `difficulty` faux, `subdivided` vrai | route `full`, `capped`, zone 3, règles R-10, R-16 |
-| (b), voie 2 | `surface_ha` 12, `heterogeneous`, option `partial` | route `partial_strip`, `capped`, zone 2,4, complément fait sur 12 ha, règles R-11b, R-11, R-12a |
-| (c) | `surface_ha` 3, `homogeneous`, `difficulty` vrai | route `partial_strip`, `capped`, zone 1, complément fait sur 3 ha, règles R-08, R-12a, R-13, R-14, R-16 |
+| Scénario    | Réponses                                                              | `recommendRoute` donne                                                                                  |
+| ----------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| (a)         | `surface_ha` 2, `homogeneous`, `difficulty` faux, `narrow` faux       | route `partial_plot`, `capped`, zone 1, complément fait sur 2 ha, règles R-09, R-12b, R-13, R-14, R-16  |
+| (b)         | `surface_ha` 12, `heterogeneous`                                      | options `subdivide` (présélectionnée) et `partial`, raison `large_stand`, aucun parcours                |
+| (b), voie 1 | `surface_ha` 3, `heterogeneous`, `difficulty` faux, `subdivided` vrai | route `full`, `capped`, zone 3, règles R-10, R-16                                                       |
+| (b), voie 2 | `surface_ha` 12, `heterogeneous`, option `partial`                    | route `partial_strip`, `capped`, zone 2,4, complément fait sur 12 ha, règles R-11b, R-11, R-12a         |
+| (c)         | `surface_ha` 3, `homogeneous`, `difficulty` vrai                      | route `partial_strip`, `capped`, zone 1, complément fait sur 3 ha, règles R-08, R-12a, R-13, R-14, R-16 |
 
 Si la table de décision change avant la séance, ces attentes sont recalculées et la date ci-dessus est mise à jour.
 
@@ -142,12 +142,12 @@ Si la table de décision change avant la séance, ces attentes sont recalculées
 ### 6.1 Pré-contrôle
 
 | Testeur | P-1 plafonné | P-2 placette | P-3 parcours partiel | Retenu |
-|---------|:------------:|:------------:|:--------------------:|:------:|
-| T1 | 🔲 | 🔲 | 🔲 | 🔲 |
-| T2 | 🔲 | 🔲 | 🔲 | 🔲 |
-| T3 | 🔲 | 🔲 | 🔲 | 🔲 |
-| T4 | 🔲 | 🔲 | 🔲 | 🔲 |
-| T5 | 🔲 | 🔲 | 🔲 | 🔲 |
+| ------- | :----------: | :----------: | :------------------: | :----: |
+| T1      |      🔲      |      🔲      |          🔲          |   🔲   |
+| T2      |      🔲      |      🔲      |          🔲          |   🔲   |
+| T3      |      🔲      |      🔲      |          🔲          |   🔲   |
+| T4      |      🔲      |      🔲      |          🔲          |   🔲   |
+| T5      |      🔲      |      🔲      |          🔲          |   🔲   |
 
 Un mot défini correctement par le testeur : ✅ à la place de 🔲 et le testeur n'est pas retenu. Un mot que le testeur ne sait pas définir : ❌.
 
@@ -162,13 +162,13 @@ Pour chaque scénario, le facilitateur renseigne :
 
 ### 6.3 Questions de fin de séance (une fois, après les trois scénarios)
 
-| # | Question | Réussi si |
-|---|----------|-----------|
-| Q-1 | « Quelle différence faites-vous entre "Méthode IBP v3.2" et "Parcours" ? » | le testeur distingue la version de la méthode de la façon de parcourir le peuplement |
-| Q-2 | « Que veut dire "relevé plafonné" ? » | « on arrête de compter dès que le score est sûr » ou équivalent |
-| Q-3 | « "Plafonné" a-t-il un rapport avec le score du facteur A ? » (si le testeur l'a vu) | le testeur ne confond pas : le plafond de comptage n'est pas un score limité à 2 |
-| Q-4 | « Que feriez-vous si vous connaissiez déjà votre parcours ? » | le testeur repère « Je connais déjà mon parcours » ou le sélecteur « Choisir le parcours » |
-| Q-5 | « Y a-t-il un mot que vous n'avez pas compris ? » | réponse notée telle quelle, sans note de réussite |
+| #   | Question                                                                             | Réussi si                                                                                  |
+| --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Q-1 | « Quelle différence faites-vous entre "Méthode IBP v3.2" et "Parcours" ? »           | le testeur distingue la version de la méthode de la façon de parcourir le peuplement       |
+| Q-2 | « Que veut dire "relevé plafonné" ? »                                                | « on arrête de compter dès que le score est sûr » ou équivalent                            |
+| Q-3 | « "Plafonné" a-t-il un rapport avec le score du facteur A ? » (si le testeur l'a vu) | le testeur ne confond pas : le plafond de comptage n'est pas un score limité à 2           |
+| Q-4 | « Que feriez-vous si vous connaissiez déjà votre parcours ? »                        | le testeur repère « Je connais déjà mon parcours » ou le sélecteur « Choisir le parcours » |
+| Q-5 | « Y a-t-il un mot que vous n'avez pas compris ? »                                    | réponse notée telle quelle, sans note de réussite                                          |
 
 Une confusion entre « plafonné » et le plafond du score du facteur A (Q-2, Q-3) est un point critique : voir la règle de passage.
 
@@ -188,42 +188,42 @@ Toute confusion qui revient chez deux testeurs ou plus, ou tout mot qu'au moins 
 ### 7.1 Scénario (a)
 
 | Testeur | Terminé sans aide | Parcours et mode obtenus | Conforme ou alternative justifiée | Redit pourquoi | Durée | Questions et hésitations | Statut |
-|---------|:-----------------:|--------------------------|:---------------------------------:|:--------------:|:-----:|--------------------------|:------:|
-| T1 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T2 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T3 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T4 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T5 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
+| ------- | :---------------: | ------------------------ | :-------------------------------: | :------------: | :---: | ------------------------ | :----: |
+| T1      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
+| T2      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
+| T3      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
+| T4      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
+| T5      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
 
 ### 7.2 Scénario (b)
 
 | Testeur | Terminé sans aide | Voie (découpe ou partiel) et résultat obtenu | Conforme ou alternative justifiée | Redit pourquoi | Durée | Questions et hésitations | Statut |
-|---------|:-----------------:|----------------------------------------------|:---------------------------------:|:--------------:|:-----:|--------------------------|:------:|
-| T1 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T2 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T3 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T4 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T5 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
+| ------- | :---------------: | -------------------------------------------- | :-------------------------------: | :------------: | :---: | ------------------------ | :----: |
+| T1      |        🔲         |                                              |                🔲                 |       🔲       |       |                          |   🔲   |
+| T2      |        🔲         |                                              |                🔲                 |       🔲       |       |                          |   🔲   |
+| T3      |        🔲         |                                              |                🔲                 |       🔲       |       |                          |   🔲   |
+| T4      |        🔲         |                                              |                🔲                 |       🔲       |       |                          |   🔲   |
+| T5      |        🔲         |                                              |                🔲                 |       🔲       |       |                          |   🔲   |
 
 ### 7.3 Scénario (c), en mode avion
 
 | Testeur | Terminé sans aide | Parcours et mode obtenus | Conforme ou alternative justifiée | Redit pourquoi | Durée | Questions et hésitations | Statut |
-|---------|:-----------------:|--------------------------|:---------------------------------:|:--------------:|:-----:|--------------------------|:------:|
-| T1 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T2 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T3 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T4 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
-| T5 | 🔲 | | 🔲 | 🔲 | | | 🔲 |
+| ------- | :---------------: | ------------------------ | :-------------------------------: | :------------: | :---: | ------------------------ | :----: |
+| T1      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
+| T2      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
+| T3      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
+| T4      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
+| T5      |        🔲         |                          |                🔲                 |       🔲       |       |                          |   🔲   |
 
 ### 7.4 Questions de fin de séance
 
 | Testeur | Q-1 version et parcours | Q-2 plafonné | Q-3 pas de confusion avec le score de A | Q-4 chemin rapide | Q-5 mot non compris (texte) |
-|---------|:-----------------------:|:------------:|:---------------------------------------:|:-----------------:|-----------------------------|
-| T1 | 🔲 | 🔲 | 🔲 | 🔲 | |
-| T2 | 🔲 | 🔲 | 🔲 | 🔲 | |
-| T3 | 🔲 | 🔲 | 🔲 | 🔲 | |
-| T4 | 🔲 | 🔲 | 🔲 | 🔲 | |
-| T5 | 🔲 | 🔲 | 🔲 | 🔲 | |
+| ------- | :---------------------: | :----------: | :-------------------------------------: | :---------------: | --------------------------- |
+| T1      |           🔲            |      🔲      |                   🔲                    |        🔲         |                             |
+| T2      |           🔲            |      🔲      |                   🔲                    |        🔲         |                             |
+| T3      |           🔲            |      🔲      |                   🔲                    |        🔲         |                             |
+| T4      |           🔲            |      🔲      |                   🔲                    |        🔲         |                             |
+| T5      |           🔲            |      🔲      |                   🔲                    |        🔲         |                             |
 
 ## 8. Enregistrement et consentement
 
@@ -267,9 +267,9 @@ Toute confusion qui revient chez deux testeurs ou plus, ou tout mot qu'au moins 
 
 ### Corrections décidées
 
-| # | Problème | Décision (correction, report, refus) | Nouveau test |
-|---|----------|--------------------------------------|--------------|
-| | | | |
+| #   | Problème | Décision (correction, report, refus) | Nouveau test |
+| --- | -------- | ------------------------------------ | ------------ |
+|     |          |                                      |              |
 
 ### Verdict
 
