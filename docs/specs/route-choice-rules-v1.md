@@ -530,7 +530,7 @@ Exemple (parcours partiel par placette, une fiche continue, assistant accepté) 
 Textes proposés, relus avant la clôture de la phase. Les libellés sont des légendes courtes ; les
 valeurs viennent du catalogue, avec le vocabulaire de la méthode (section 1).
 
-**Page « Parcelles et parcours » du relevé** (section « Parcours utilisé », après la carte et la liste
+**Page « Parcelles » du relevé** (section « Parcours utilisé », après la carte et la liste
 des parcelles ; déplacée de la page « Contexte » le 2026-10-14, voir le journal des révisions).
 
 | Ligne | Exemple de valeur | Affichée quand |
@@ -570,7 +570,7 @@ l'en-tête du pager, une étiquette dans la liste des facteurs et une phrase d'e
 de son premier champ ; un facteur en relevé plafonné n'affiche rien de plus. Le PDF imprime pour B
 le couvert de chaque strate et pour F le nombre d'arbres par groupe quand ces détails existent.
 
-**Résumé de la page de détail.** La ligne « Parcelles et parcours » ajoute l'étiquette courte du
+**Résumé de la page de détail.** La ligne « Parcelles » ajoute l'étiquette courte du
 parcours après le nombre de parcelles (« 2 parcelles · Parcours en plein », « Parcours à choisir » pour
 un brouillon sans parcours), sur une ligne (décision U-O9, ligne déplacée de « Contexte » le 2026-10-14).
 
@@ -678,6 +678,11 @@ Ces deux lignes sont remplies : les plans de code et d'écran peuvent démarrer.
 ultérieure d'une règle passe par une révision de cette spécification, datée dans le journal.
 
 ## Journal des révisions
+
+### 2026-10-14, renommage à la demande du propriétaire
+
+La page et la ligne « Parcelles et parcours » reprennent le nom « Parcelles », et « Historique de la
+parcelle » devient « Historique ». Aucune règle ni donnée ne change.
 
 ### 2026-10-14, déplacé à la demande du propriétaire de Contexte vers Parcelles et parcours
 
