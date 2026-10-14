@@ -44,7 +44,7 @@ describe("IBP_PARITY_CASES (matrix v2)", () => {
     expect(new Set(ids).size).toBe(ids.length)
     for (const c of IBP_PARITY_CASES) {
       expect(c.id === c.matrixId || c.id.startsWith(`${c.matrixId}#`)).toBe(true)
-      expect(c.matrixId).toMatch(/^MAT-[A-Z]+-\d{2}(@v3\.0|@v3\.2|@both)?$/)
+      expect(c.matrixId).toMatch(/^MAT-[A-Z]+(-[A-Z]+)?-\d{2}(@v3\.0|@v3\.2|@both)?$/)
     }
   })
 

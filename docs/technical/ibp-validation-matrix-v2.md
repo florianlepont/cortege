@@ -184,6 +184,29 @@ exactly what the same factors give without the container.
 
 MAT-ANN-01@both totals: `ibp_peuplement_gestion=17`, `ibp_contexte=7`, `ibp_total=24`.
 
+## Phase 30: déplafonné detail keys
+
+A relevé déplafonné adds detail inputs for two factors (spec `docs/specs/route-choice-rules-v1.md`
+section 7): `B.strata_cover` (cover in percent per stratum code) and, for F, `F.dmh_counts` (whole
+numbers of trees per group `dmh_01` to `dmh_15`) with F's own `F.surface_ha`. No scorer reads them
+(U-O10, kept as default by the owner on 2026-10-13): the scored keys stay `B.strata_count` and
+`F.trees_per_ha`, which the app derives with `strataCountFromCover` and `dmhDensityPerHa` while the
+factor is counted in full. The F key is `dmh_counts`, never the `dmh_group_counts` array the F
+scorer already reads. Each case runs under both versions; the valid ones also run in submit mode,
+inside the MAT-SUBMIT-02 set, and expect what the same factors give without the detail keys (D-09).
+
+| Case ID | Mode | Context | Input | Expected | Issues |
+|---|---|---|---|---|---|
+| MAT-B-UNC-01@both | draft; submit (v3.0 ACA collineen, v3.2 cas 1) | any | `B.strata_count=3` plus `B.strata_cover` of three strata at 20 % or more | same as `B.strata_count=3` alone: `B=2`; in the MAT-SUBMIT-02 set, totals 17 / 7 / 24 | none |
+| MAT-B-UNC-02@both | draft; submit (same contexts) | any | `B.strata_count=2` plus a `B.strata_cover` that would count 4 strata | `B=1`: the cover is not read; in the MAT-SUBMIT-02 set with `B=1`, totals 16 / 7 / 23 | none |
+| MAT-B-UNC-03@both | draft | any | `B.strata_cover` only, no `B.strata_count` | `B` not scored, `ok=false` (a detail key without its scored key is unreadable input, as an empty B) | B `factor_invalid_raw` |
+| MAT-F-UNC-01@both | draft; submit (same contexts) | any | `F.trees_per_ha=2.5` plus `F.dmh_counts` (`dmh_01=5`, `dmh_02=1`) and `F.surface_ha=2` | same as `F.trees_per_ha=2.5` alone: `F=1`; in the MAT-SUBMIT-02 set with `F=1`, totals 13 / 7 / 20 | none |
+| MAT-F-UNC-02@both | draft | any | `F.dmh_counts` and `F.surface_ha` only, no `F.trees_per_ha` | `F` not scored, `ok=false` | B `factor_invalid_raw` |
+
+The derivation helpers of the package are covered by their own unit tests (`factor-details.test.ts`):
+a stratum counts from 20 % (19 does not, 20 does); each group's density is capped at 2 trees per
+hectare, then summed, with no rounding (2.5 for 5 and 1 trees over 2 ha).
+
 ## Submit readiness (mobile)
 
 Run by the mobile adapter test from `IBP_READINESS_CASES`. The row labels are descriptive; the
