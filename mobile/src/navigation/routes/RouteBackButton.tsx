@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react"
-import { StyleSheet } from "react-native"
+import { Platform, StyleSheet } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useBrandTheme } from "../../app/theme"
 import type { BrandTheme } from "../../app/theme"
@@ -22,7 +22,7 @@ export const RouteBackButton = memo(function RouteBackButton({ onPress }: RouteB
   const styles = useMemo(() => createStyles(theme), [theme])
   return (
     <AppPressable
-      style={styles.button}
+      style={[styles.button, Platform.OS === "ios" ? styles.buttonOnSystemGlass : null]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={fr.surveyForm.a11y.back}
@@ -35,6 +35,12 @@ export const RouteBackButton = memo(function RouteBackButton({ onPress }: RouteB
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
+    // iOS 26 draws every header button in its own glass capsule: a disc of ours inside it showed as
+    // a ring in a ring (found on the simulator), so only the glyph is ours there.
+    buttonOnSystemGlass: {
+      backgroundColor: "transparent",
+      borderWidth: 0,
+    },
     button: {
       width: SIZE,
       height: SIZE,
