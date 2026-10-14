@@ -1060,7 +1060,7 @@ Plans:
   3. The route actually used is recorded with the survey and shown as text in the survey detail and the PDF (the display on the parcel map moves to Phase 31).
   4. A tester who does not know the method completes the choice without help, in a recorded test.
 
-**Plans**: 19/25 plans executed
+**Plans**: 20/25 plans executed
 
 - [x] 30-01-PLAN.md
 - [x] 30-02-PLAN.md
@@ -1081,7 +1081,7 @@ Plans:
 - [x] 30-17-PLAN.md
 - [x] 30-18-PLAN.md
 - [x] 30-19-PLAN.md
-- [ ] 30-20-PLAN.md
+- [x] 30-20-PLAN.md
 - [ ] 30-21-PLAN.md
 - [ ] 30-22-PLAN.md
 - [ ] 30-23-PLAN.md
@@ -1260,7 +1260,7 @@ of it if Phase 1 returns a no-go, or run in parallel with it.
 | 27. Quick survey additions | 22/22 | Complete | 2026-10-12 |
 | 28. Map Layers & Comparison | 28/28 | Complete (Android phone pass deferred to Phase 35) | 2026-10-13 |
 | 29. Private or Public Before Submission | 10/10 | Complete (owner device checks approved 2026-10-13; DV-29-05 Android pending) | 2026-10-13 |
-| 30. Route Choice Assistant | 19/25 | In Progress|  |
+| 30. Route Choice Assistant | 20/25 | In Progress|  |
 | 31. Parcel Annotation & Remarkable Elements | 0/TBD | Not started | - |
 | 32. Detailed DMH Information | 0/TBD | Not started | - |
 | 33. PDF Export, Exhaustive and Simplified | 0/TBD | Not started | - |
