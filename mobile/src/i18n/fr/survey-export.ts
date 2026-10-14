@@ -92,6 +92,12 @@ export const surveyExportFr = {
     percent: ({ value }: { value: string }) => `${value} %`,
     strataCount: "Nombre de strates",
     strata: "Strates présentes",
+    // Phase 30 (spec section 7): the details of a relevé déplafonné, printed only when stored.
+    strataCover: "Couvert par strate",
+    strataCoverItem: ({ label, value }: { label: string; value: string }) =>
+      `${label} : ${value} %`,
+    dmhCounts: "Arbres par groupe de dendromicrohabitats",
+    dmhCountItem: ({ label, count }: { label: string; count: string }) => `${label} : ${count}`,
     bmg: "Bois morts de grosse dimension (BMg)",
     bmm: "Bois morts de dimension moyenne (BMm)",
     tgb: "Très gros bois (TGB)",

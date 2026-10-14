@@ -298,6 +298,41 @@ describe("height estimate", () => {
       blockById(buildFactorBlocks(bare, palette), "factor-B").height,
     )
   })
+
+  it("counts the cover and count lines of a relevé déplafonné (phase 30)", () => {
+    const heightOf = (factor: "B" | "F", raw: Record<string, unknown>) =>
+      blockById(
+        buildFactorBlocks(makeData({ rawFactors: { [factor]: raw } }), palette),
+        `factor-${factor}`,
+      ).height
+    expect(heightOf("B", { strata_count: 2, strata_cover: { low: 30, high: 40 } })).toBeGreaterThan(
+      heightOf("B", { strata_count: 2 }),
+    )
+    expect(
+      heightOf("F", {
+        trees_per_ha: 3,
+        dmh_counts: { dmh_01: 2 },
+        surface_ha: 1.2,
+      }),
+    ).toBeGreaterThan(heightOf("F", { trees_per_ha: 3 }))
+  })
+
+  it("prints the new lines in the card", () => {
+    const html = blockById(
+      buildFactorBlocks(
+        makeData({
+          rawFactors: {
+            B: { strata_count: 1, strata_cover: { low: 30 } },
+            F: { trees_per_ha: 3, dmh_counts: { dmh_01: 2 }, surface_ha: 1.2 },
+          },
+        }),
+        palette,
+      ),
+      "factor-B",
+    ).html
+    expect(html).toContain("Couvert par strate")
+    expect(html).toContain("Basse : 30 %")
+  })
 })
 
 type Annotated = { doubt?: boolean; note?: string | null }
