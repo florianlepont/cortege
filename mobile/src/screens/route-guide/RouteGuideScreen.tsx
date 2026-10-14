@@ -1,15 +1,14 @@
 import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
 import Animated from "react-native-reanimated"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { fr } from "../../i18n"
 import { AppNotice } from "../../ui/AppNotice"
-import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassButton } from "../../ui/GlassButton"
+import { AppPressable } from "../../ui/AppPressable"
 import { PageTitle } from "../../ui/PageTitle"
 import { TitledScrollView } from "../../ui/TitledScrollView"
 import { useFrameInsetBehavior } from "../../ui/frame-large-title"
@@ -20,6 +19,7 @@ import { GlossarySection } from "./GlossarySection"
 import { LargeStandOptions } from "./LargeStandOptions"
 import { QuestionStack } from "./QuestionStack"
 import { ReasonsCard } from "./ReasonsCard"
+import { RefineSection } from "./RefineSection"
 import { RouteDetailsCard, type RouteDetailsValue } from "./RouteDetailsCard"
 import { RouteAdvice, RouteNotices } from "./RouteNotices"
 import { SuggestionCard } from "./SuggestionCard"
@@ -48,10 +48,11 @@ export type RouteGuideScreenProps = {
 
 /**
  * The route step, "Choix du parcours" (phase 30, O-19: mandatory from creation, so there is no skip
- * control and no optional tag; the only way forward is "Utiliser ce parcours"). One scrolling page:
- * the lead, the quick path "Je connais déjà mon parcours" (the chooser), the question stack with the
- * advice folded in "Pour affiner", then the suggestion with its reasons, warnings and details, or the
- * two options above the subdivision bound, the glossary, and the floating footer. The page shows
+ * control and no optional tag; the only way forward is "Utiliser ce parcours"). One scrolling page
+ * (simplified 2026-10-14 after the owner's review): the title, the step, the lead and the one open
+ * question, then once a route exists the suggestion, its reasons, details, warnings and the folded
+ * "Pour affiner", or the two options above the subdivision bound, the glossary, the text link
+ * "Je connais déjà mon parcours" (the chooser) and, only when a route is ready, the footer row. The page shows
  * what the model derives from the package (`RouteGuideState`) and decides nothing itself; it needs no
  * network, an unknown surface only opens the surface card empty (spec section 1).
  */
@@ -97,12 +98,6 @@ export function RouteGuideScreen({
     if (next.totalText !== details.totalText) actions.setTotalText(next.totalText)
   }
 
-  const waitingText =
-    open?.id === "surface"
-      ? surfaceUnknown
-        ? screen.missingSurface
-        : screen.waitingSurface
-      : screen.waiting
   const suggested = selection?.source === "suggestion"
   const warnings =
     recommendation.status === "route" && suggested
@@ -110,13 +105,15 @@ export function RouteGuideScreen({
         recommendation.warnings.filter((code) => code !== "partial_over_half")
       : []
 
+  // The footer exists only when something can be done with it: no disabled button while questions are open.
   const cta = choosingLargeStand
     ? {
         label: fr.routeGuide.largeStand.subdivideCta,
-        disabled: false,
         onPress: () => actions.chooseLargeStandOption("subdivide"),
       }
-    : { label: screen.use, disabled: !view.canUse, onPress: onUse }
+    : view.canUse
+      ? { label: screen.use, onPress: onUse }
+      : null
 
   return (
     <View style={styles.root} testID="route-guide-screen">
@@ -133,20 +130,7 @@ export function RouteGuideScreen({
         <PageTitle>{screen.title}</PageTitle>
         {stepLabel ? <Text style={styles.step}>{stepLabel}</Text> : null}
         <Text style={styles.leadText}>{screen.lead}</Text>
-        <AppButton
-          label={screen.know}
-          variant="secondary"
-          leadingIcon="trail-sign-outline"
-          onPress={() => onOpenChooser("pick")}
-          accessibilityLabel={screen.know}
-          style={styles.know}
-          testID="route-know-link"
-        />
-
-        <QuestionStack
-          state={stackState}
-          refineFooter={view.advice === null ? null : <RouteAdvice advice={view.advice} />}
-        />
+        <QuestionStack state={stackState} />
 
         {showLargeStand && open?.id === "largeStand" ? (
           <LargeStandOptions
@@ -157,19 +141,7 @@ export function RouteGuideScreen({
           />
         ) : null}
 
-        {selection === null ? (
-          showLargeStand ? null : (
-            <View style={styles.waiting} testID="route-waiting">
-              <Ionicons
-                name="trail-sign-outline"
-                size={18}
-                color={theme.colors.textSecondary}
-                accessible={false}
-              />
-              <Text style={styles.waitingText}>{waitingText}</Text>
-            </View>
-          )
-        ) : (
+        {selection === null ? null : (
           <>
             <SuggestionCard
               method={selection.method}
@@ -183,7 +155,6 @@ export function RouteGuideScreen({
             {recommendation.status === "route" && suggested ? (
               <ReasonsCard reasons={recommendation.reasons} />
             ) : null}
-            <RouteNotices warnings={warnings} />
             <RouteDetailsCard
               method={selection.method}
               counting={selection.counting}
@@ -192,6 +163,12 @@ export function RouteGuideScreen({
               value={details}
               onChange={changeDetails}
               onEditCounting={() => onOpenChooser("pick", "counting")}
+            />
+            <RouteNotices warnings={warnings} />
+            <RefineSection
+              refine={view.refine}
+              actions={actions}
+              footer={view.advice === null ? null : <RouteAdvice advice={view.advice} />}
             />
           </>
         )}
@@ -203,36 +180,47 @@ export function RouteGuideScreen({
             }
           />
         </View>
+        <AppPressable
+          onPress={() => onOpenChooser("pick")}
+          accessibilityRole="button"
+          accessibilityLabel={screen.know}
+          style={styles.know}
+          testID="route-know-link"
+        >
+          <Text style={styles.knowText}>{screen.know}</Text>
+        </AppPressable>
       </TitledScrollView>
 
-      <Animated.View
-        pointerEvents={keyboardUp ? "none" : "box-none"}
-        style={[
-          styles.footer,
-          { paddingBottom: finishBarBottomPadding(clearance) },
-          keyboardUp ? styles.footerHidden : null,
-          chromeStyle,
-        ]}
-        testID="route-guide-footer"
-      >
-        {saveError ? (
-          <AppNotice
-            tone="danger"
-            icon="alert-circle-outline"
-            message={screen.saveError}
-            action={{ label: screen.retry, onPress: onRetry }}
-          />
-        ) : null}
-        <GlassButton
-          label={cta.label}
-          size="lg"
-          disabled={cta.disabled}
-          loading={saving}
-          accessibilityLabel={cta.disabled ? screen.useDisabledA11y : undefined}
-          onPress={cta.onPress}
-          testID="route-use"
-        />
-      </Animated.View>
+      {cta !== null || saveError ? (
+        <Animated.View
+          pointerEvents={keyboardUp ? "none" : "box-none"}
+          style={[
+            styles.footer,
+            { paddingBottom: finishBarBottomPadding(clearance) },
+            keyboardUp ? styles.footerHidden : null,
+            chromeStyle,
+          ]}
+          testID="route-guide-footer"
+        >
+          {saveError ? (
+            <AppNotice
+              tone="danger"
+              icon="alert-circle-outline"
+              message={screen.saveError}
+              action={{ label: screen.retry, onPress: onRetry }}
+            />
+          ) : null}
+          {cta !== null ? (
+            <GlassButton
+              label={cta.label}
+              size="lg"
+              loading={saving}
+              onPress={cta.onPress}
+              testID="route-use"
+            />
+          ) : null}
+        </Animated.View>
+      ) : null}
     </View>
   )
 }
@@ -259,19 +247,17 @@ function createStyles(theme: BrandTheme) {
       ...brandTypeScale.subhead,
       color: theme.colors.textSecondary,
     },
+    // A tertiary text link at the very end of the page: no outline, no icon, a 44 pt hit area.
     know: {
-      alignSelf: "stretch",
+      alignSelf: "center",
       minHeight: 44,
+      justifyContent: "center",
+      paddingHorizontal: brandSpacing4.md,
     },
-    waiting: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: brandSpacing4.sm,
-    },
-    waitingText: {
-      flex: 1,
+    knowText: {
       ...brandTypeScale.subhead,
-      color: theme.colors.textSecondary,
+      color: theme.semanticColors.accent,
+      textDecorationLine: "underline",
     },
     glossary: {
       marginTop: brandSpacing4.lg,

@@ -1,16 +1,13 @@
-import { useEffect, useRef, type ReactNode } from "react"
+import { useEffect, useRef } from "react"
 import { StyleSheet } from "react-native"
 import Animated, { LinearTransition, ReduceMotion } from "react-native-reanimated"
 import { brandSpacing4 } from "../../app/brand-tokens"
 import { AnswerRow } from "./AnswerRow"
 import { QuestionCard } from "./QuestionCard"
-import { RefineSection } from "./RefineSection"
 import type { RouteGuideState } from "./useRouteGuideState"
 
 type QuestionStackProps = {
   state: RouteGuideState
-  /** Drawn at the end of the unfolded "Pour affiner" section (the advice block, 30-20). */
-  refineFooter?: ReactNode
 }
 
 /**
@@ -19,7 +16,7 @@ type QuestionStackProps = {
  * drawn: the model takes that from the package. The cards close and open with the layout
  * transition of `AppCollapsibleSection` (instant under Reduce Motion).
  */
-export function QuestionStack({ state, refineFooter }: QuestionStackProps) {
+export function QuestionStack({ state }: QuestionStackProps) {
   const { view, actions } = state
   // The first card is on screen when the page opens: only a later card takes the focus.
   const mounted = useRef(false)
@@ -44,7 +41,6 @@ export function QuestionStack({ state, refineFooter }: QuestionStackProps) {
           focusOnMount={mounted.current}
         />
       ) : null}
-      <RefineSection refine={view.refine} actions={actions} footer={refineFooter} />
     </Animated.View>
   )
 }

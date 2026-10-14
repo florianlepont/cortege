@@ -43,6 +43,7 @@ function walk(): { texts: Leaf[]; functions: FunctionLeaf[] } {
 // Sample arguments of every function leaf. A function leaf with no entry here fails the test, so a
 // new one cannot ship unrendered.
 const SAMPLES: Record<string, () => string> = {
+  "routeGuide.a11y.questionInfo": () => fr.routeGuide.a11y.questionInfo("La surface ?"),
   "routeGuide.questions.surface.value": () => fr.routeGuide.questions.surface.value("2,4"),
   "routeGuide.questions.surface.valueEstimated": () =>
     fr.routeGuide.questions.surface.valueEstimated("2,4"),

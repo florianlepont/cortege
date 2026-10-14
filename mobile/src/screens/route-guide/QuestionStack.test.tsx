@@ -61,15 +61,12 @@ afterEach(() => {
 
 const guide = fr.routeGuide
 
-function mount(prefill: number | null, withFooter = false) {
+function mount(prefill: number | null) {
   let latest!: RouteGuideState
   function Harness() {
     const state = useRouteGuideState({ surfaceHaPrefill: prefill })
     latest = state
-    return React.createElement(QuestionStack, {
-      state,
-      refineFooter: withFooter ? React.createElement("Text", { testID: "footer" }, "pied") : null,
-    })
+    return React.createElement(QuestionStack, { state })
   }
   let tree!: renderer.ReactTestRenderer
   act(() => {
@@ -91,7 +88,7 @@ function mount(prefill: number | null, withFooter = false) {
 }
 
 describe("QuestionStack: the open card", () => {
-  it("opens on the surface card with the estimate, its explanation, the aid and the way out", () => {
+  it("opens on the surface card with only the question, the field and Suivant", () => {
     const { one, byId, texts } = mount(2.4)
     expect(byId("route-answer-surface")).toHaveLength(0)
     const title = one("route-question-surface")
@@ -104,14 +101,19 @@ describe("QuestionStack: the open card", () => {
     expect(texts()).toEqual(
       expect.arrayContaining([
         guide.questions.surface.title,
-        guide.questions.surface.why,
-        guide.questions.surface.estimated,
-        guide.questions.surface.aid,
-        guide.questions.surface.linearHelp,
         guide.questions.surface.label,
         guide.questions.surface.suffix,
       ]),
     )
+    // The helper sentences live in the information sheet, not on the card.
+    for (const text of [
+      guide.questions.surface.why,
+      guide.questions.surface.estimated,
+      guide.questions.surface.aid,
+      guide.questions.surface.linearHelp,
+    ]) {
+      expect(texts()).not.toContain(text)
+    }
     expect(one("route-next-surface").props.accessibilityState).toMatchObject({ disabled: false })
     expect(one("route-next-surface").props.accessibilityRole).toBe("button")
     const nextStyle = ([] as Record<string, unknown>[])
@@ -123,13 +125,25 @@ describe("QuestionStack: the open card", () => {
     expect(byId("route-question-stack")).toHaveLength(1)
   })
 
-  it("titles are headers and the surface title carries the glossary glyph for the stand", () => {
-    const { tree, one } = mount(2.4)
+  it("titles are headers; one information sheet holds the helper, the hectare and the hedge limit", () => {
+    const { tree, one, byId, texts, press } = mount(2.4)
     const headers = tree.root.findAll(
       (node) => (node.type as unknown) === "Text" && node.props.accessibilityRole === "header",
     )
     expect(headers.map((node) => node.props.children)).toEqual([guide.questions.surface.title])
-    expect(one("glossary-info-peuplement")).toBeDefined()
+    const info = one("route-question-info-surface")
+    expect(info.props.accessibilityLabel).toBe(
+      guide.a11y.questionInfo(guide.questions.surface.title),
+    )
+    expect(byId("route-question-info-homogeneity")).toHaveLength(0)
+    press("route-question-info-surface")
+    const body = [
+      guide.questions.surface.why,
+      guide.questions.surface.estimated,
+      guide.questions.surface.aid,
+      guide.questions.surface.linearHelp,
+    ].join("\n\n")
+    expect(texts()).toContain(body)
   })
 
   it("opens empty with its explanation when no surface could be estimated", () => {
@@ -175,11 +189,14 @@ describe("QuestionStack: answering and rows", () => {
     expect(texts()).toEqual(
       expect.arrayContaining([
         guide.questions.homogeneity.title,
-        guide.questions.homogeneity.why,
         guide.questions.homogeneity.options.homogeneous.caption,
         guide.questions.homogeneity.options.heterogeneous.caption,
       ]),
     )
+    // The reason it is asked is in the question's information sheet only.
+    expect(texts()).not.toContain(guide.questions.homogeneity.why)
+    press("route-question-info-homogeneity")
+    expect(texts()).toContain(guide.questions.homogeneity.why)
     const homogeneous = one("route-choice-homogeneity-homogeneous")
     expect(homogeneous.props.accessibilityRole).toBe("radio")
     expect(homogeneous.props.accessibilityLabel).toBe(
@@ -265,12 +282,12 @@ describe("QuestionStack: answering and rows", () => {
     expect(texts()).toEqual(
       expect.arrayContaining([
         guide.largeStand.title,
-        guide.reasons.largeStand,
         guide.largeStand.subdivide.caption,
         guide.largeStand.partial.caption,
         guide.largeStand.recommended,
       ]),
     )
+    expect(texts()).not.toContain(guide.reasons.largeStand)
     expect(one("route-choice-largeStand-subdivide").props.accessibilityState.selected).toBe(true)
     expect(one("route-choice-largeStand-subdivide").props.accessibilityLabel).toContain(
       guide.largeStand.recommended,
@@ -292,70 +309,16 @@ describe("QuestionStack: answering and rows", () => {
     press("route-next-surface")
     press("route-choice-homogeneity-heterogeneous")
     press("route-choice-largeStand-subdivide")
-    expect(texts()).toEqual(
-      expect.arrayContaining([
-        guide.questions.surface.subStand,
+    expect(texts()).toContain(guide.questions.surface.subStand)
+    press("route-question-info-surface")
+    expect(texts()).toContain(
+      [
         guide.questions.surface.subStandWhy,
-      ]),
+        guide.questions.surface.aid,
+        guide.questions.surface.linearHelp,
+      ].join("\n\n"),
     )
-    expect(texts()).not.toContain(guide.questions.surface.estimated)
     expect(one("route-surface-field").props.value).toBe("")
-  })
-})
-
-describe("QuestionStack: Pour affiner", () => {
-  const toggle = (tree: renderer.ReactTestRenderer) =>
-    act(() => {
-      const header = tree.root.findAll(
-        (node) =>
-          (node.type as unknown) === "Pressable" &&
-          typeof node.props.accessibilityState?.expanded === "boolean",
-      )[0]
-      header.props.onPress()
-    })
-
-  it("is folded by default: no chip, no hours field, never an answered row", () => {
-    const { byId, one } = mount(2.4)
-    expect(one("route-refine")).toBeDefined()
-    expect(byId("route-hours-field")).toHaveLength(0)
-    expect(byId("route-experience-regular")).toHaveLength(0)
-    expect(byId("route-answer-refine")).toHaveLength(0)
-  })
-
-  it("unfolds to the experience chips, the hours field and the footer, and only feeds the advice", () => {
-    const { tree, byId, one, press, state, texts } = mount(12, true)
-    expect(byId("footer")).toHaveLength(0)
-    toggle(tree)
-    expect(texts()).toEqual(
-      expect.arrayContaining([
-        guide.questions.refine.lead,
-        guide.questions.refine.experienceLabel,
-        guide.questions.refine.experienceRegular,
-        guide.questions.refine.experienceBeginner,
-      ]),
-    )
-    expect(byId("footer")).toHaveLength(1)
-    const before = state().view.open
-    press("route-experience-beginner")
-    expect(state().view.refine.experience).toBe("beginner")
-    expect(state().view.open).toEqual(before)
-    press("route-experience-beginner")
-    expect(state().view.refine.experience).toBeUndefined()
-    act(() => one("route-hours-field").props.onChangeText("3"))
-    expect(state().view.refine.filled).toBe(true)
-    expect(one("route-hours-field").props.accessibilityLabel).toBe(guide.a11y.hoursField)
-    act(() => one("route-hours-field").props.onChangeText("40"))
-    expect(texts()).toContain(guide.questions.refine.hoursInvalid)
-  })
-
-  it("a folded section that holds an answer says so in its badge", () => {
-    const { tree, state, press, texts } = mount(12)
-    toggle(tree)
-    press("route-experience-regular")
-    act(() => tree.root.findByProps({ testID: "route-hours-field" }).props.onChangeText("1"))
-    expect(state().view.refine.filled).toBe(true)
-    toggle(tree)
-    expect(texts()).toContain(`${guide.questions.refine.experienceShort} · 1 heure`)
   })
 })
 

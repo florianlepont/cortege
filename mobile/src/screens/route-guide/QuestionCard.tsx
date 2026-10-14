@@ -1,14 +1,22 @@
-import { memo, useEffect, useMemo, useRef } from "react"
+import { memo, useEffect, useMemo, useRef, useState } from "react"
 import { AccessibilityInfo, StyleSheet, View, findNodeHandle } from "react-native"
 import type { Text as NativeText } from "react-native"
-import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import {
+  brandInteraction,
+  brandSpacing4,
+  brandTypeScale,
+  brandTypography,
+} from "../../app/brand-tokens"
 import { ROUTE_SURFACE_ERROR_TEXT } from "../../app/route-text"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppField } from "../../ui/AppField"
 import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
-import { GlossaryInfo } from "../../ui/GlossaryInfo"
+import { AppPressable } from "../../ui/AppPressable"
+import { InfoSheet } from "../../ui/InfoSheet"
+import { ABBREVIATION_INFO_ICON_SIZE } from "../../ui/AbbreviationInfo"
+import { Ionicons } from "@expo/vector-icons"
 import { RadioCard } from "../../ui/RadioCard"
 import { feedback } from "../../ui/feedback"
 import type { OpenQuestion } from "./route-guide-model"
@@ -51,9 +59,8 @@ export const QuestionCard = memo(function QuestionCard({
         <Text ref={titleRef} style={styles.title} accessibilityRole="header">
           {title}
         </Text>
-        {question.id === "surface" ? <GlossaryInfo term="peuplement" /> : null}
+        <QuestionInfo question={question} title={title} />
       </View>
-      <Text style={styles.why}>{questionWhy(question)}</Text>
       {question.id === "surface" ? (
         <SurfaceBody question={question} actions={actions} />
       ) : (
@@ -90,6 +97,49 @@ export const QuestionCard = memo(function QuestionCard({
   )
 })
 
+/**
+ * The one information sheet of a question (simplified 2026-10-14): its short helper sentence and,
+ * for the surface, what an hectare is and the limit on hedges and tree lines. Opened by the glyph
+ * beside the title, so the card itself shows only the question and its answer.
+ */
+function QuestionInfo({ question, title }: { question: OpenQuestion; title: string }) {
+  const theme = useBrandTheme()
+  const [open, setOpen] = useState(false)
+  const slop = (brandInteraction.hitTarget.min - ABBREVIATION_INFO_ICON_SIZE) / 2
+  const texts = fr.routeGuide.questions.surface
+  const parts = [questionWhy(question)]
+  if (question.id === "surface") {
+    if (!question.subStand && question.estimated) parts.push(texts.estimated)
+    parts.push(texts.aid, texts.linearHelp)
+  }
+
+  return (
+    <>
+      <AppPressable
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={fr.routeGuide.a11y.questionInfo(title)}
+        testID={`route-question-info-${question.id}`}
+        disableScale
+        hitSlop={{ top: slop, bottom: slop, left: slop, right: slop }}
+      >
+        <Ionicons
+          name="information-circle-outline"
+          size={ABBREVIATION_INFO_ICON_SIZE}
+          color={theme.semanticColors.accent}
+        />
+      </AppPressable>
+      <InfoSheet
+        open={open}
+        title={title}
+        body={parts.join("\n\n")}
+        closeLabel={fr.routeGuide.glossary.close}
+        onClose={() => setOpen(false)}
+      />
+    </>
+  )
+}
+
 function SurfaceBody({
   question,
   actions,
@@ -101,13 +151,9 @@ function SurfaceBody({
   const styles = useMemo(() => createStyles(theme), [theme])
   const texts = fr.routeGuide.questions.surface
   // The estimate and its absence describe the whole stand, not one piece of a cut stand.
-  const caption = question.subStand
-    ? null
-    : question.estimated
-      ? texts.estimated
-      : question.unknown
-        ? texts.unknown
-        : null
+  // Only the absence of an estimate stays on the card (the field is empty and the observer must
+  // know why); the estimate itself is explained in the question's information sheet.
+  const caption = question.subStand ? null : question.unknown ? texts.unknown : null
 
   return (
     <View style={styles.choices}>
@@ -125,8 +171,6 @@ function SurfaceBody({
         testID="route-surface-field"
       />
       {caption !== null ? <Text style={styles.helper}>{caption}</Text> : null}
-      <Text style={styles.helper}>{texts.aid}</Text>
-      <Text style={styles.helperSmall}>{texts.linearHelp}</Text>
       <AppButton
         label={fr.routeGuide.screen.next}
         variant="secondary"
@@ -156,19 +200,11 @@ function createStyles(theme: BrandTheme) {
       fontFamily: brandTypography.navTitle.fontFamily,
       color: theme.colors.textPrimary,
     },
-    why: {
-      ...brandTypeScale.subhead,
-      color: theme.colors.textSecondary,
-    },
     choices: {
       gap: brandSpacing4.sm,
     },
     helper: {
       ...brandTypeScale.subhead,
-      color: theme.colors.textSecondary,
-    },
-    helperSmall: {
-      ...brandTypography.meta,
       color: theme.colors.textSecondary,
     },
     next: {

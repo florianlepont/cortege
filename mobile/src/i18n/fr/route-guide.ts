@@ -82,14 +82,7 @@ export const routeGuideFr = {
     title: "Choix du parcours",
     lead: "Ce choix est nécessaire pour créer le relevé. Quelques questions courtes vous guident.",
     know: "Je connais déjà mon parcours",
-    waiting: "Répondez aux questions pour voir le parcours conseillé.",
-    waitingSurface: "Indiquez la surface pour voir le parcours conseillé.",
-    missingSurface:
-      "La surface n'a pas pu être calculée d'après les parcelles. Indiquez-la pour voir le parcours conseillé.",
     use: "Utiliser ce parcours",
-    useDisabledHint: "Répondez d'abord aux questions",
-    // Read by a screen reader on the disabled button: its name, then why it cannot be pressed.
-    useDisabledA11y: "Utiliser ce parcours. Répondez d'abord aux questions.",
     saveError: "Le parcours n'a pas pu être enregistré.",
     retry: "Réessayer",
     next: "Suivant",
@@ -410,5 +403,6 @@ export const routeGuideFr = {
     zoneField: "Surface que vous allez décrire en hectares",
     totalField: "Surface totale évaluée en hectares",
     glossaryInfo: (term: string) => `Comprendre : ${term}`,
+    questionInfo: (title: string) => `Aide : ${title}`,
   },
 } as const

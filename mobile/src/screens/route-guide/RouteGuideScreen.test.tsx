@@ -152,18 +152,29 @@ function reachRoute(m: Mounted): void {
 }
 
 describe("RouteGuideScreen: the mandatory step before an answer", () => {
-  it("renders the lead, the shortcut, the question and the waiting line, in this order", () => {
-    const m = mount({ prefill: 2.4 })
+  it("shows only the title, the step, the lead and the open question above the fold", () => {
+    const m = mount({ prefill: 2.4, stepLabel: "Étape 5 sur 5" })
     m.one("route-guide-screen")
-    const order = ["route-know-link", "route-question-stack"]
+    expect(m.texts()).toEqual(
+      expect.arrayContaining([screen.lead, "Étape 5 sur 5", guide.questions.surface.title]),
+    )
+    m.one("route-question-surface")
+    expect(m.byId("route-refine")).toHaveLength(0)
+    expect(m.byId("route-waiting")).toHaveLength(0)
+    expect(m.byId("route-suggestion")).toHaveLength(0)
+    for (const text of [
+      guide.questions.surface.why,
+      guide.questions.surface.aid,
+      guide.questions.surface.linearHelp,
+    ]) {
+      expect(m.texts()).not.toContain(text)
+    }
+    // The shortcut closes the page, after the question zone and the glossary.
+    const order = ["route-question-stack", "route-glossary", "route-know-link"]
     const flat = JSON.stringify(m.tree.toJSON())
     const positions = order.map((id) => flat.indexOf(`"testID":"${id}"`))
     expect(positions.every((position) => position >= 0)).toBe(true)
     expect([...positions].sort((a, b) => a - b)).toEqual(positions)
-    expect(m.texts()).toEqual(
-      expect.arrayContaining([screen.lead, screen.know, screen.waitingSurface]),
-    )
-    expect(m.one("route-question-surface")).toBeDefined()
   })
 
   it("has no skip control and no optional tag (O-19)", () => {
@@ -174,27 +185,23 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
     expect(m.byId("route-skip")).toHaveLength(0)
   })
 
-  it("disables the one way forward with its hint, and presses do nothing", () => {
+  it("draws no footer at all while a question is open", () => {
     const m = mount({ prefill: 2.4 })
-    const use = m.one("route-use")
-    expect(use.props.label).toBe(screen.use)
-    expect(use.props.disabled).toBe(true)
-    expect(use.props.accessibilityLabel).toBe(screen.useDisabledA11y)
-    expect(use.props.size).toBe("lg")
+    expect(m.byId("route-guide-footer")).toHaveLength(0)
+    expect(m.byId("route-use")).toHaveLength(0)
   })
 
   it("opens the surface card empty with the unknown line when no surface could be computed", () => {
     const m = mount({ prefill: null })
     expect(m.one("route-surface-field").props.value).toBe("")
-    expect(m.texts()).toContain(screen.missingSurface)
-    expect(m.texts()).not.toContain(screen.waitingSurface)
+    expect(m.texts()).toContain(guide.questions.surface.unknown)
     expect(m.byId("route-suggestion")).toHaveLength(0)
   })
 
   it("needs no network: the whole route is reachable from the typed surface alone", () => {
     const m = mount({ prefill: null })
     reachRoute(m)
-    expect(m.one("route-use").props.disabled).toBe(false)
+    expect(m.one("route-use").props.disabled).toBeUndefined()
   })
 
   it("shows the step label of the creation when given, and the page title on Android", () => {
@@ -208,7 +215,7 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
     expect(m.texts()).not.toContain(screen.title)
   })
 
-  it("shows the lead as one short sentence and the shortcut as a real button", () => {
+  it("shows the lead as one short sentence and the shortcut as a text link of 44 pt", () => {
     const m = mount({ prefill: 2.4 })
     expect(screen.lead.length).toBeLessThanOrEqual(110)
     expect(screen.lead).not.toMatch(/peuplement/i)
@@ -223,6 +230,7 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
 
   it("keeps the footer in its own row so nothing sits under it, and keyboard taps working", () => {
     const m = mount({ prefill: 2.4 })
+    reachRoute(m)
     const scroll = m.one("route-guide-scroll")
     expect(scroll.props.keyboardShouldPersistTaps).toBe("handled")
     expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true)
@@ -249,20 +257,36 @@ describe("RouteGuideScreen: the suggestion", () => {
     m.one("route-details")
     m.one("route-glossary")
     expect(m.byId("route-large-stand")).toHaveLength(0)
-    expect(m.texts()).not.toContain(screen.waiting)
-    expect(m.texts()).not.toContain(screen.waitingSurface)
     const use = m.one("route-use")
-    expect(use.props.disabled).toBe(false)
+    expect(use.props.disabled).toBeUndefined()
     expect(use.props.accessibilityLabel).toBeUndefined()
     act(() => use.props.onPress())
     expect(m.onUse).toHaveBeenCalledTimes(1)
   })
 
-  it("asks to answer the questions while a question is open", () => {
+  it("keeps Pour affiner and the footer out while a question is open", () => {
     const m = mount({ prefill: 2.4 })
     act(() => m.actions().commitSurface())
-    expect(m.texts()).toContain(screen.waiting)
     expect(m.byId("route-suggestion")).toHaveLength(0)
+    expect(m.byId("route-refine")).toHaveLength(0)
+    expect(m.byId("route-guide-footer")).toHaveLength(0)
+  })
+
+  it("orders the result zone: suggestion, reasons, details, Pour affiner, glossary, shortcut", () => {
+    const m = mount({ prefill: 2.4 })
+    reachRoute(m)
+    const order = [
+      "route-suggestion",
+      "route-reasons",
+      "route-details",
+      "route-refine",
+      "route-glossary",
+      "route-know-link",
+    ]
+    const flat = JSON.stringify(m.tree.toJSON())
+    const positions = order.map((id) => flat.indexOf(`"testID":"${id}"`))
+    expect(positions.every((position) => position >= 0)).toBe(true)
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions)
   })
 
   it("puts the advice in the folded Pour affiner footer, information only", () => {
@@ -349,11 +373,11 @@ describe("RouteGuideScreen: above the subdivision bound", () => {
     expect(m.byId("route-suggestion")).toHaveLength(0)
     const use = m.one("route-use")
     expect(use.props.label).toBe(guide.largeStand.subdivideCta)
-    expect(use.props.disabled).toBe(false)
+    expect(use.props.disabled).toBeUndefined()
     act(() => use.props.onPress())
     expect(m.onUse).not.toHaveBeenCalled()
     expect(m.state().view.open).toMatchObject({ id: "surface", subStand: true })
-    expect(m.one("route-use").props.label).toBe(screen.use)
+    expect(m.byId("route-use")).toHaveLength(0)
   })
 
   it("goes on with a partial parcours when the observer chooses not to cut", () => {
@@ -362,7 +386,7 @@ describe("RouteGuideScreen: above the subdivision bound", () => {
     act(() => m.actions().answerDifficulty(false))
     expect(m.state().view.recommendation.status).toBe("route")
     expect(m.one("route-use").props.label).toBe(screen.use)
-    expect(m.one("route-use").props.disabled).toBe(false)
+    expect(m.one("route-use").props.disabled).toBeUndefined()
   })
 })
 
@@ -389,9 +413,14 @@ describe("RouteGuideScreen: the footer", () => {
       ([] as Record<string, unknown>[])
         .concat(m.one("route-guide-footer").props.style)
         .reduce((acc, style) => ({ ...acc, ...style }), {})
-    expect(flat(mount({ prefill: 2.4 })).opacity).toBe(1)
+    const ready = () => {
+      const m = mount({ prefill: 2.4 })
+      reachRoute(m)
+      return m
+    }
+    expect(flat(ready()).opacity).toBe(1)
     mockKeyboardUp = true
-    expect(flat(mount({ prefill: 2.4 })).opacity).toBe(0)
+    expect(flat(ready()).opacity).toBe(0)
   })
 
   it("shows the button busy while the route is being saved", () => {
