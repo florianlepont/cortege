@@ -137,14 +137,22 @@ export function defaultBlocks(box: Box): ForestTextBlock[] {
   return [{ x: 0, y: 0, width: box.width * forestAurora.textReach, height: box.height }]
 }
 
+/** Smallest radius a gradient may get: Android's RadialGradient throws on a radius of 0 or less. */
+const MIN_RADIUS = 1
+
+/** A radius that is always finite and above zero, whatever the measure (0, negative, NaN). */
+function positiveRadius(radius: number): number {
+  return Number.isFinite(radius) ? Math.max(MIN_RADIUS, radius) : MIN_RADIUS
+}
+
 /**
  * The soft ellipse of shield a text block gets: the ellipse through the block's corners (radii its
  * sides over root 2), scaled so its feather is `forestShield.feather` points on its short side.
  * `inner` is the share of the radius at the corners: inside it lies the whole block.
  */
 export function textEllipse(block: ForestTextBlock) {
-  const rx = block.width / Math.SQRT2
-  const ry = block.height / Math.SQRT2
+  const rx = positiveRadius(block.width / Math.SQRT2)
+  const ry = positiveRadius(block.height / Math.SQRT2)
   const scale = 1 + forestShield.feather / Math.max(1, Math.min(rx, ry))
   return {
     cx: block.x + block.width / 2,
