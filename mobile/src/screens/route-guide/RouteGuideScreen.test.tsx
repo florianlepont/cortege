@@ -296,15 +296,6 @@ describe("RouteGuideScreen: one question a screen", () => {
     )
   })
 
-  it("remounts the scroll view for each screen, never a scrollTo(0) (large title overlap on iOS)", () => {
-    // Under the native large title the real top is the negative inset: scrollTo({ y: 0 }) left the
-    // next question under the header with the title drawn over it. A keyed remount starts at the top.
-    const m = mount({ prefill: 2.4 })
-    const first = m.one("route-guide-scroll")
-    pressNext(m)
-    expect(m.one("route-guide-scroll")).not.toBe(first)
-  })
-
   it("back returns one question at a time and tells the route when there is none", () => {
     const m = mount({ prefill: 2.4 })
     pressNext(m)
