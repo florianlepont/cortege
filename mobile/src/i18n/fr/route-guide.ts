@@ -187,6 +187,9 @@ export const routeGuideFr = {
   routes: {
     full: {
       name: TERM.parcoursEnPlein.term,
+      // The one short line of the cards; the full words (explanation, does, suits) are the sheet of
+      // the card's information glyph.
+      short: "Tout le peuplement, par bandes régulières.",
       explanation: TERM.parcoursEnPlein.text,
       does: "Vous décrivez la surface entière du peuplement : la surface décrite est celle du peuplement.",
       suits:
@@ -194,12 +197,14 @@ export const routeGuideFr = {
     },
     partialStrip: {
       name: TERM.parBande.term,
+      short: "Une partie du peuplement, en bande.",
       explanation: TERM.parcoursPartiel.text,
       does: `${TERM.parBande.text} ${STRIP_ADVICE}`,
       suits: "Convient aux peuplements variés, difficiles à observer ou étroits.",
     },
     partialPlot: {
       name: TERM.parPlacette.term,
+      short: "Une partie du peuplement, en placette de 1 ha.",
       explanation: TERM.parcoursPartiel.text,
       does: `${TERM.parPlacette.text} ${PLOT_ADVICE}`,
       suits: "Convient aux peuplements homogènes, faciles à observer et assez larges.",
@@ -209,10 +214,12 @@ export const routeGuideFr = {
     caption: "Mode de relevé",
     capped: {
       name: TERM.relevePlafonne.term,
+      short: "On arrête de compter quand le score est sûr.",
       explanation: TERM.relevePlafonne.text,
     },
     uncapped: {
       name: TERM.releveDeplafonne.term,
+      short: "On compte tout, facteur par facteur.",
       explanation: TERM.releveDeplafonne.text,
     },
     factorsLead: "Quels facteurs comptez-vous en entier ? Plus il y en a, plus le relevé est long.",

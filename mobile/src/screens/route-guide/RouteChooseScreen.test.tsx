@@ -44,7 +44,7 @@ jest.mock("../../ui/GlassButton", () => {
   }
 })
 
-import { ROUTE_METHOD_TEXT } from "../../app/route-text"
+import { ROUTE_METHOD_TEXT, routeSheetText } from "../../app/route-text"
 import { fr } from "../../i18n"
 import {
   chooseReducer,
@@ -156,13 +156,18 @@ describe("RouteChooseScreen: content", () => {
     expect(byId("glossary-info-parcoursEnPlein")).toHaveLength(1)
   })
 
-  test("each parcours card carries its explanation, what it does and who it suits", () => {
-    const { one } = mount({ standHa: 8 })
+  test("each parcours card shows its title and one short line, the full words are in its glyph sheet", () => {
+    const { one, tree, texts } = mount({ standHa: 8 })
     const label = one("route-parcours-partial_plot").props.accessibilityLabel as string
     const text = ROUTE_METHOD_TEXT.partial_plot
     expect(label).toContain(text.name)
-    expect(label).toContain(text.does)
-    expect(label).toContain(text.suits)
+    expect(label).toContain(text.short)
+    expect(label).not.toContain(text.does)
+    expect(texts()).not.toContain(text.suits)
+    const glyph = tree.root.findAll((node) => node.props.term === "parPlacette")[0]
+    expect(glyph.props.text).toBe(routeSheetText("partial_plot"))
+    expect(glyph.props.text).toContain(text.does)
+    expect(glyph.props.text).toContain(text.suits)
   })
 
   test("tags the suggested parcours Conseillé, and none without a suggestion", () => {

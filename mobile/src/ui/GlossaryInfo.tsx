@@ -16,6 +16,8 @@ export type GlossaryInfoProps = {
    * the accent of the theme by default, which is for the glass cards.
    */
   color?: string
+  /** Replaces the term's sentence in the sheet (a parcours card shows its full explanation there). */
+  text?: string
   testID?: string
 }
 
@@ -26,7 +28,7 @@ export type GlossaryInfoProps = {
  * `fr.routeGuide.glossary.terms`. Same glyph size and hit slop as `AbbreviationInfo`. The sheet is
  * mounted only while open.
  */
-export function GlossaryInfo({ term, color, testID }: GlossaryInfoProps) {
+export function GlossaryInfo({ term, color, text, testID }: GlossaryInfoProps) {
   const theme = useBrandTheme()
   const [open, setOpen] = useState(false)
   const entry = fr.routeGuide.glossary.terms[term]
@@ -51,7 +53,7 @@ export function GlossaryInfo({ term, color, testID }: GlossaryInfoProps) {
       <InfoSheet
         open={open}
         title={entry.term}
-        body={entry.text}
+        body={text ?? entry.text}
         closeLabel={fr.routeGuide.glossary.close}
         onClose={() => setOpen(false)}
       />

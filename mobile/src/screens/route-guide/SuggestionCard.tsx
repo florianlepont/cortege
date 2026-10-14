@@ -8,7 +8,12 @@ import type {
   UncappableFactor,
 } from "@cortege/ibp-domain"
 import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
-import { COUNTING_TEXT, ROUTE_METHOD_TEXT, formatHectares } from "../../app/route-text"
+import {
+  COUNTING_TEXT,
+  ROUTE_METHOD_TEXT,
+  formatHectares,
+  routeSheetText,
+} from "../../app/route-text"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
@@ -126,10 +131,13 @@ export function SuggestionCard({
               <Text style={styles.eyebrow}>{eyebrow}</Text>
               <View style={styles.nameRow}>
                 <Text style={styles.name}>{methodText.name}</Text>
-                <GlossaryInfo term={METHOD_TERM[method]} color={forest.titleAccent} />
+                <GlossaryInfo
+                  term={METHOD_TERM[method]}
+                  text={routeSheetText(method)}
+                  color={forest.titleAccent}
+                />
               </View>
-              <Text style={styles.sentence}>{methodText.explanation}</Text>
-              <Text style={styles.sentence}>{methodText.does}</Text>
+              <Text style={styles.sentence}>{methodText.short}</Text>
             </View>
             <View style={styles.block} onLayout={measure("mode")} testID="route-suggestion-mode">
               <Text style={styles.caption}>{guide.counting.caption}</Text>
@@ -137,7 +145,7 @@ export function SuggestionCard({
                 <Text style={styles.modeName}>{countingText.name}</Text>
                 <GlossaryInfo term={COUNTING_TERM[counting]} color={forest.titleAccent} />
               </View>
-              <Text style={styles.sentence}>{countingText.explanation}</Text>
+              <Text style={styles.sentence}>{countingText.short}</Text>
               {counting === "uncapped" ? (
                 <View style={styles.chips} testID="route-counted-factors">
                   {uncappedFactors.map((letter) => (

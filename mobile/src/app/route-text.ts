@@ -53,7 +53,13 @@ export const ROUTE_SURFACE_ERROR_TEXT: Readonly<Record<RouteSurfaceErrorCode, st
   surface_invalid: guide.surfaceErrors.invalid,
 }
 
-type RouteMethodText = { name: string; explanation: string; does: string; suits: string }
+type RouteMethodText = {
+  name: string
+  short: string
+  explanation: string
+  does: string
+  suits: string
+}
 
 /** The three parcours: the name, its explanation, what to do on the ground, who it suits. */
 export const ROUTE_METHOD_TEXT: Readonly<Record<RouteMethod, RouteMethodText>> = {
@@ -62,7 +68,16 @@ export const ROUTE_METHOD_TEXT: Readonly<Record<RouteMethod, RouteMethodText>> =
   partial_plot: guide.routes.partialPlot,
 }
 
-type CountingText = { name: string; explanation: string }
+/**
+ * The full words of a parcours, for the sheet of its information glyph: the explanation, what to do
+ * on the ground and who it suits, one per line. The cards themselves show only `short`.
+ */
+export function routeSheetText(method: RouteMethod): string {
+  const text = ROUTE_METHOD_TEXT[method]
+  return [text.explanation, text.does, text.suits].join("\n")
+}
+
+type CountingText = { name: string; short: string; explanation: string }
 
 /** "Relevé plafonné" and "Relevé déplafonné", each with its one-sentence explanation. */
 export const COUNTING_TEXT: Readonly<Record<CountingMode, CountingText>> = {

@@ -77,11 +77,11 @@ export function CountingPicker({
                 onSelectCounting(id)
               }}
               title={text.name}
-              caption={text.explanation}
+              caption={text.short}
               trailing={<GlossaryInfo term={COUNTING_TERM[id]} />}
               accessibilityLabel={guide.a11y.optionLabel({
                 label: text.name,
-                caption: text.explanation,
+                caption: text.short,
               })}
               testID={`route-counting-${id}`}
             />

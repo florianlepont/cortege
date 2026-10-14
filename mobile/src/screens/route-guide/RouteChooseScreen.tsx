@@ -9,7 +9,7 @@ import type {
   UncappedPresetId,
 } from "@cortege/ibp-domain"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
-import { ROUTE_METHOD_TEXT } from "../../app/route-text"
+import { ROUTE_METHOD_TEXT, routeSheetText } from "../../app/route-text"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppNotice } from "../../ui/AppNotice"
@@ -131,7 +131,7 @@ export function RouteChooseScreen({
             {ROUTE_METHODS.map((method) => {
               const text = ROUTE_METHOD_TEXT[method]
               const tag = view.suggested?.method === method ? chooser.recommended : undefined
-              const caption = [text.explanation, text.does, text.suits].join("\n")
+              const caption = text.short
               return (
                 <RadioCard
                   key={method}
@@ -143,7 +143,9 @@ export function RouteChooseScreen({
                   title={text.name}
                   caption={caption}
                   tag={tag}
-                  trailing={<GlossaryInfo term={METHOD_TERM[method]} />}
+                  trailing={
+                    <GlossaryInfo term={METHOD_TERM[method]} text={routeSheetText(method)} />
+                  }
                   accessibilityLabel={
                     tag
                       ? guide.a11y.optionLabelTagged({ label: text.name, tag, caption })

@@ -220,6 +220,28 @@ describe("route catalogue text rules", () => {
     }
   })
 
+  test("each parcours and mode card has one short line of at most 9 words, the long words stay", () => {
+    const { routes, counting } = fr.routeGuide
+    const shorts = [
+      routes.full.short,
+      routes.partialStrip.short,
+      routes.partialPlot.short,
+      counting.capped.short,
+      counting.uncapped.short,
+    ]
+    for (const line of shorts) {
+      expect(line.split(" ").length).toBeLessThanOrEqual(9)
+      expect(line.endsWith(".")).toBe(true)
+      expect(line).not.toContain("\u2014")
+    }
+    // The numbers the spec fixes are kept in the long text behind the glyph.
+    const strip = `${routes.partialStrip.explanation} ${routes.partialStrip.does}`
+    expect(strip).toContain("20 à 50 mètres")
+    expect(strip).toContain("10 à 20 %")
+    expect(`${routes.full.explanation} ${routes.full.suits}`).toContain("5 hectares")
+    expect(routes.full.suits).toContain("1 hectare")
+  })
+
   test("the words are those of the official method (O-12)", () => {
     const { routes, counting, glossary, questions, screen } = fr.routeGuide
     expect(routes.full.name).toBe("Parcours en plein")

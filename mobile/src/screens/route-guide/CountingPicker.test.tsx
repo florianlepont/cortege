@@ -91,9 +91,10 @@ describe("CountingPicker: the two modes", () => {
     const { one, texts, byId } = mount(baseProps())
     expect(texts()).toContain("Mode de relevé")
     expect(texts()).toContain(guide.counting.capped.name)
-    expect(texts()).toContain(guide.counting.capped.explanation)
+    expect(texts()).toContain(guide.counting.capped.short)
+    expect(texts()).not.toContain(guide.counting.capped.explanation)
     expect(texts()).toContain(guide.counting.uncapped.name)
-    expect(texts()).toContain(guide.counting.uncapped.explanation)
+    expect(texts()).toContain(guide.counting.uncapped.short)
     expect(one("route-counting-capped").props.accessibilityState).toMatchObject({ selected: true })
     expect(one("route-counting-uncapped").props.accessibilityState).toMatchObject({
       selected: false,

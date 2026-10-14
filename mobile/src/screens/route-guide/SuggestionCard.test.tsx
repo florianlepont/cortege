@@ -39,7 +39,7 @@ jest.mock("../../ui/AppCard", () => ({ AppCard: "AppCard" }))
 const mockAnnounce = jest.fn()
 
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
-import { formatHectares } from "../../app/route-text"
+import { formatHectares, routeSheetText } from "../../app/route-text"
 import { defaultTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppChoiceChip } from "../../ui/AppChoiceChip"
@@ -119,15 +119,23 @@ describe("SuggestionCard: what it shows", () => {
       expect.arrayContaining([
         guide.suggestion.eyebrowSuggested,
         guide.routes.full.name,
-        guide.routes.full.explanation,
-        guide.routes.full.does,
+        guide.routes.full.short,
         guide.counting.caption,
         guide.counting.capped.name,
-        guide.counting.capped.explanation,
+        guide.counting.capped.short,
         guide.suggestion.surfaceLine(formatHectares(2.4)),
         guide.suggestion.change,
       ]),
     )
+  })
+
+  it("shows one short line per parcours and mode, the full words stay behind the glyphs", () => {
+    const { texts, tree } = mount(card())
+    expect(texts()).not.toContain(guide.routes.full.explanation)
+    expect(texts()).not.toContain(guide.routes.full.does)
+    expect(texts()).not.toContain(guide.counting.capped.explanation)
+    const glyphs = tree.root.findAll((node) => node.props.term === "parcoursEnPlein")
+    expect(glyphs[0].props.text).toBe(routeSheetText("full"))
   })
 
   it("puts a glossary glyph after the parcours and after the mode, in the forest ink", () => {
@@ -148,10 +156,9 @@ describe("SuggestionCard: what it shows", () => {
     expect(strip.texts()).toEqual(
       expect.arrayContaining([
         guide.routes.partialStrip.name,
-        guide.routes.partialStrip.explanation,
-        guide.routes.partialStrip.does,
+        guide.routes.partialStrip.short,
         guide.counting.uncapped.name,
-        guide.counting.uncapped.explanation,
+        guide.counting.uncapped.short,
       ]),
     )
     expect(strip.byId("glossary-info-parBande")).toHaveLength(1)
