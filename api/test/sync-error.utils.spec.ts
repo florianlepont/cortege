@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, HttpException } from "@nestjs/common"
+import {
+  BadRequestException,
+  ConflictException,
+  HttpException,
+  UnprocessableEntityException,
+} from "@nestjs/common"
 import { mapSyncError } from "../src/surveys/sync-error.utils"
 
 describe("mapSyncError", () => {
@@ -94,6 +99,27 @@ describe("mapSyncError", () => {
         message: "Invalid sync operation",
         http_status: 400,
         details: { fields: ["parcel_ids"] },
+      },
+    })
+  })
+
+  it("keeps the field names of a 422 submitted_read_only_fields in details (phase 29, D-07)", () => {
+    const error = new UnprocessableEntityException({
+      code: "submitted_read_only_fields",
+      message: "submitted survey visibility is read-only",
+      forbidden_fields: ["visibility"],
+      details: { survey_id: "s1", fields: ["visibility"] },
+    })
+
+    const result = mapSyncError(error)
+
+    expect(result).toEqual({
+      status: "fatal_error",
+      error: {
+        code: "submitted_read_only_fields",
+        message: "submitted survey visibility is read-only",
+        http_status: 422,
+        details: { survey_id: "s1", fields: ["visibility"] },
       },
     })
   })

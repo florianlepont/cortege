@@ -335,6 +335,53 @@ describe("Same sync_version content rule (e2e)", () => {
     expect(after.sync_version).toBe(before.sync_version)
   })
 
+  it("(6b) submitted survey: same version differing only by visibility is a 409 sync_version_conflict, row unchanged (phase 29, D-07)", async () => {
+    const accessToken = await loginAsNewUser()
+    const surveyId = randomUUID()
+    const seed = Date.now() % 90000
+    const parcelId = await resolveParcel(accessToken, 48.66 + seed / 100000, 1.66 + seed / 100000)
+    const versionResult = await db.query<{ next_version: number }>(
+      `SELECT COALESCE(MAX(s.version_number), 0) + 1 AS next_version
+       FROM surveys s
+       JOIN survey_parcels sp ON sp.survey_id = s.id
+       WHERE sp.parcel_id = $1 AND s.deleted_at IS NULL AND s.status = 'submitted'`,
+      [parcelId],
+    )
+    const validFactors = { A: 1, B: 1, C: 1, D: 1, E: 1, F: 1, G: 2, H: 2, I: 2, J: 2 }
+    const payload = draftPayload(surveyId, {
+      parcel_id: parcelId,
+      observation_year: 2025,
+      version_number: versionResult.rows[0]?.next_version ?? 1,
+      factors: validFactors,
+    })
+
+    await upsert(accessToken, payload).expect(201)
+    await request(app.getHttpServer())
+      .post(`/v1/surveys/${surveyId}/submit`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(201)
+    const before = await readSurvey(surveyId)
+    const sameVersion = { ...payload, sync_version: before.sync_version }
+
+    // The identical replay (stored visibility) stays synced.
+    const replay = await upsert(accessToken, sameVersion).expect(201)
+    expect(replay.body.server_status).toBe("synced")
+
+    const conflict = await upsert(accessToken, { ...sameVersion, visibility: "public" }).expect(409)
+
+    expect(conflict.body.code).toBe("sync_version_conflict")
+    expect(conflict.body.details).toMatchObject({
+      survey_id: surveyId,
+      server_sync_version: before.sync_version,
+      client_sync_version: before.sync_version,
+    })
+    const after = await readSurvey(surveyId)
+    expect(after.visibility).toBe("private")
+    expect(after.updated_at).toBe(before.updated_at)
+    expect(after.sync_version).toBe(before.sync_version)
+    expect(await countVisibilityEvents(surveyId)).toBe(0)
+  })
+
   it("(7) survey deletion removes attachment objects through StorageService", async () => {
     const accessToken = await loginAsNewUser()
     const surveyId = randomUUID()

@@ -1,4 +1,4 @@
-import { BadRequestException, Logger } from "@nestjs/common"
+import { BadRequestException, Logger, UnprocessableEntityException } from "@nestjs/common"
 import { SurveysSyncService } from "../src/surveys/surveys-sync.service"
 
 const AUTH_USER = {
@@ -344,6 +344,40 @@ describe("SurveysSyncService.syncBatch", () => {
     })
 
     expect(result.results[0]).toMatchObject({ status: "fatal_error", error: { http_status: 400 } })
+  })
+
+  it("answers a visibility_update refused after submit with a 422 fatal_error naming the field (phase 29, D-07)", async () => {
+    const { service, surveysService } = buildService()
+    surveysService.patchSurveyVisibility.mockRejectedValueOnce(
+      new UnprocessableEntityException({
+        code: "submitted_read_only_fields",
+        message: "submitted survey visibility is read-only",
+        forbidden_fields: ["visibility"],
+        details: { survey_id: "survey-1", fields: ["visibility"] },
+      }),
+    )
+
+    const result = await service.syncBatch(AUTH_USER as never, {
+      operations: [
+        {
+          client_ref: "op-vis",
+          entity: "survey",
+          action: "visibility_update",
+          survey_id: "survey-1",
+          payload: { visibility: "public" },
+        },
+      ],
+    })
+
+    expect(result.results[0]).toMatchObject({
+      client_ref: "op-vis",
+      status: "fatal_error",
+      error: {
+        code: "submitted_read_only_fields",
+        http_status: 422,
+        details: { fields: ["visibility"] },
+      },
+    })
   })
 
   it("maps a deterministic pg error from upsertForUser to fatal_error invalid_operation", async () => {

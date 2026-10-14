@@ -7,6 +7,7 @@ import { fr } from "../../i18n"
 import { useSurveyActions } from "../../state/surveys-context"
 import { FactorDetailRoute } from "../routes/FactorDetailRoute"
 import { FactorHelpRoute } from "../routes/FactorHelpRoute"
+import { FinishSheetRoute } from "../routes/FinishSheetRoute"
 import { CommunityHistoryRoute } from "../routes/CommunityHistoryRoute"
 import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { ParcelSelectionRoute } from "../routes/ParcelSelectionRoute"
@@ -24,6 +25,7 @@ import { usesNativeLargeTitle } from "../large-title"
 import {
   createBaseStackScreenOptions,
   factorHelpScreenOptions,
+  finishSheetScreenOptions,
   hiddenNativeTitle,
   nativeLargeTitle,
   pageTitleOptions,
@@ -194,6 +196,12 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             name="surveyFactorHelp"
             options={factorHelpScreenOptions(theme)}
             component={FactorHelpRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyFinish"
+            // Phase 29, D-04: the submission step (who can see the survey, then finish).
+            options={finishSheetScreenOptions(theme)}
+            component={FinishSheetRoute}
           />
           <SurveysStack.Screen
             name="surveyParcels"

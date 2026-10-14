@@ -16,19 +16,22 @@ jest.mock("../../screens/survey-form/FactorPager", () => ({
     return null
   },
 }))
-jest.mock("../../screens/survey-form/PagerFinishNotice", () => ({ PagerFinishNotice: () => null }))
+const mockFinish = jest.fn()
+const mockPagerFinish: { offered: boolean; openFinish: ((surveyId: string) => void) | null } = {
+  offered: false,
+  openFinish: null,
+}
 jest.mock("../../screens/survey-form/usePagerFinish", () => ({
-  usePagerFinish: () => ({ offered: false, busy: false, attempts: 0, finish: jest.fn() }),
+  usePagerFinish: (params: { openFinish: (surveyId: string) => void }) => {
+    mockPagerFinish.openFinish = params.openFinish
+    return { offered: mockPagerFinish.offered, finish: mockFinish }
+  },
 }))
 jest.mock("../../ui/ScreenFrame", () => ({
   ScreenFrame: ({ children }: { children?: React.ReactNode }) => children,
 }))
-jest.mock("../../state/status-context", () => ({ useStatus: () => ({ status: null }) }))
 jest.mock("../../state/surveys-context", () => ({
-  useSurveys: () => ({
-    state: { surveys: [] },
-    actions: { submitSurvey: jest.fn(async () => undefined) },
-  }),
+  useSurveys: () => ({ state: { surveys: [] }, actions: {} }),
 }))
 
 const mockForm = {
@@ -164,5 +167,41 @@ describe("FactorDetailRoute doubt and note (D-16)", () => {
       pager().onCommitNote()
     })
     expect(mockForm.actions.flushDraft).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("FactorDetailRoute finish pill (Phase 29, D-04)", () => {
+  beforeEach(() => {
+    navigation.navigate.mockClear()
+    mockFinish.mockClear()
+    mockPagerFinish.offered = true
+  })
+  afterAll(() => {
+    mockPagerFinish.offered = false
+  })
+
+  test("the pill is idle, has no notice and opens the pager's finish", () => {
+    mount()
+    const action = mockPagerProps.value.finishAction as {
+      loading: boolean
+      notice: unknown
+      onPress: () => void
+    }
+    expect(action.loading).toBe(false)
+    expect(action.notice).toBeNull()
+    action.onPress()
+    expect(mockFinish).toHaveBeenCalledTimes(1)
+  })
+
+  test("the finish opens the surveyFinish sheet with the survey id", () => {
+    mount()
+    mockPagerFinish.openFinish?.("s-01")
+    expect(navigation.navigate).toHaveBeenCalledWith("surveyFinish", { surveyId: "s-01" })
+  })
+
+  test("no pill when the finish is not offered", () => {
+    mockPagerFinish.offered = false
+    mount()
+    expect(mockPagerProps.value.finishAction).toBeNull()
   })
 })

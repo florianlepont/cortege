@@ -133,19 +133,25 @@ Acceptance criteria
 
 **Release:** MVP
 
-Users can choose the visibility of their survey as either private or public before submission, with the default set to private. Visibility can be changed later, and public surveys can be shared with the community, while private surveys are only visible to the contributor and authorized moderators/admins.
+Users choose who can read their survey in the submission step, the sheet "Qui peut voir ce relevé ?" opened by "Terminer le relevé": "Partagé avec l'association" (every member of the association, with the author's name) or "Privé" (only the contributor). "Partagé avec l'association" is pre-selected. The choice is stored on the draft, offline included, and it cannot be changed once the survey is submitted. (Phase 29; it replaces the earlier rule "default private, changeable later".)
 
-As a contributor, I want to choose whether my survey is private or public so I control what is shared with the community.
+As a contributor, I want to choose whether my survey is shared with the association or private so I control what the other members can read.
 
 Acceptance criteria
 
-- Before submission, I can set survey visibility to `private` or `public`.
+- In the submission step I can choose "Partagé avec l'association" or "Privé". The sheet explains each choice: "Les membres de l'association peuvent le consulter, avec votre nom." and "Vous seul le voyez : il reste invisible pour les autres membres.". The app never says "public".
 
-- Default visibility is `private`.
+- "Partagé avec l'association" is pre-selected for a new draft. In the data the two values are `public` (shared with the association) and `private`.
 
-- I can change visibility later from survey detail.
+- Both "Terminer le relevé" entries (the survey summary and the last factor page) open the same sheet. The footnote says "Ce choix ne pourra plus être modifié une fois le relevé terminé."
 
-- `Public` surveys are shareable to community surfaces; `private` surveys remain visible only to the contributor and authorized moderators/admins.
+- Offline, the sheet shows the offline notice and the button "Enregistrer le choix": the choice is kept on the draft and the survey is finished once back online.
+
+- The choice cannot change after submit: the survey summary shows it as a read-only line ("Partagé avec l'association" or "Privé").
+
+- A shared survey appears on community surfaces (map, parcel colours, community pages, search, parcel history); a private survey is invisible to every other member on all of them, and its id answers the same "not found" as an unknown one. The contributor always sees their own surveys.
+
+- No moderator or administrator read path to private surveys exists in the app or the API; one is deferred to V3.
 
 ### US-C8 - Survey Versioning and Historical Context
 

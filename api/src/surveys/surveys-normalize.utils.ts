@@ -40,6 +40,8 @@ export function getSubmittedReadOnlyFields(body: SurveyPatchBody): string[] {
     "ibp_cas3_scale",
     "factors",
     "scores",
+    // Phase 29 (D-07): the visibility is chosen on the draft and frozen at submit.
+    "visibility",
   ]
 
   return readonlyFields.filter((field) => Object.prototype.hasOwnProperty.call(body, field))
@@ -179,6 +181,11 @@ type SubmittedReadOnlyField = Exclude<keyof SurveyPatchBody, "scores"> | "survey
  * compared like the other fields; an absent or null value is never a change.
  * factors.annotations rides on the factors deep comparison, so a changed
  * doubt or factor note is reported as "factors".
+ *
+ * Phase 29 (D-07): visibility is read-only after submit. It is reported only
+ * when the stored row is submitted and the body carries a different value; a
+ * draft's visibility stays free (its changes are applied, not refused), and an
+ * absent or null value is never a change.
  */
 export function getChangedSubmittedReadOnlyFields(
   body: SurveyUpsertBody,
@@ -311,6 +318,15 @@ export function getChangedSubmittedReadOnlyFields(
     }
   }
 
+  if (
+    existing.status === "submitted" &&
+    body.visibility !== undefined &&
+    body.visibility !== null &&
+    body.visibility !== existing.visibility
+  ) {
+    changed.push("visibility")
+  }
+
   return changed
 }
 
@@ -322,10 +338,13 @@ export type SameVersionContent = "identical" | "visibility_only" | "conflict"
  *
  * - "conflict": a read-only field differs by value. Racing writers on the same
  *   version must not overwrite each other silently, so the caller answers 409.
- * - "visibility_only": only visibility differs. Visibility is last-writer-wins,
- *   like the version-less visibility_update action: installed apps rewrite a
- *   pending upsert's visibility without bumping sync_version, so a retry after
- *   a lost response must be applied, not blocked.
+ * - "visibility_only": only visibility differs, on a draft. A draft's
+ *   visibility is last-writer-wins, like the version-less visibility_update
+ *   action: installed apps rewrite a pending upsert's visibility without
+ *   bumping sync_version, so a retry after a lost response must be applied,
+ *   not blocked. Phase 29 (D-07): on a submitted row a different visibility is
+ *   a read-only change reported by getChangedSubmittedReadOnlyFields, so the
+ *   answer is "conflict" (409 sync_version_conflict, nothing written).
  * - "identical": an idempotent replay.
  *
  * The comparison is by value and computed on the fly (no stored hash): JSONB

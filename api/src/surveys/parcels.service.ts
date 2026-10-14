@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, UnprocessableEntityException } from "@
 import { randomUUID } from "crypto"
 import { DatabaseService, Queryable } from "../database/database.service"
 import { CadastreProviderService } from "./cadastre-provider.service"
-import { LINKED_PARCELS_CENTRE_SQL } from "./public-map.queries"
+import { LINKED_PARCELS_CENTRE_SQL, submittedVisibleToCallerSql } from "./public-map.queries"
 import { ParcelRow, SurveyRow } from "./surveys.types"
 import {
   normalizeCentroid,
@@ -11,6 +11,9 @@ import {
   parseParcelIdentifier,
   toFiniteNumber,
 } from "./surveys-normalize.utils"
+
+// D-10: the caller is the third parameter of the history query.
+const PARCEL_HISTORY_VISIBLE_SQL = submittedVisibleToCallerSql("$3")
 
 export type ParcelSubmitValidation = {
   code?: "parcel_required" | "parcel_invalid"
@@ -74,6 +77,7 @@ export class ParcelsService {
   }
 
   async getParcelSurveyHistory(
+    callerId: string,
     parcelIdRaw: string,
     limitRaw?: string,
   ): Promise<{
@@ -118,12 +122,11 @@ export class ParcelsService {
        JOIN survey_parcels sp
          ON sp.survey_id = s.id
        WHERE sp.parcel_id = $1
-         AND s.deleted_at IS NULL
-         AND s.status = 'submitted'
+         AND ${PARCEL_HISTORY_VISIBLE_SQL}
          AND s.submitted_at IS NOT NULL
        ORDER BY s.observation_year ASC NULLS LAST, s.version_number ASC NULLS LAST, s.submitted_at ASC
        LIMIT $2`,
-      [parcelId, limit],
+      [parcelId, limit, callerId],
     )
 
     return {
@@ -276,6 +279,8 @@ export class ParcelsService {
     return output
   }
 
+  // D-11 (Phase 29): counts every submitted survey, private ones included, so the author's
+  // numbering stays coherent; only the number is visible to others.
   async getDefaultVersionNumber(
     db: Queryable,
     parcelId: string,
@@ -331,6 +336,8 @@ export class ParcelsService {
       }
     }
 
+    // D-11 (Phase 29): counts every submitted survey, private ones included, so the author's
+    // numbering stays coherent; only the number is visible to others.
     const result = await db.query<{ parcel_id: string; next_version: number }>(
       `SELECT p.parcel_id, COALESCE(MAX(s.version_number), 0) + 1 AS next_version
        FROM parcels p

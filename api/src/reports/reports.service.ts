@@ -8,6 +8,7 @@ import { randomUUID } from "crypto"
 import { AuthenticatedUser } from "../auth/auth.types"
 import { DatabaseService } from "../database/database.service"
 import { SurveyEventsService } from "../surveys/survey-events.service"
+import { PUBLIC_SURVEY_PREDICATE } from "../surveys/public-map.queries"
 import { encodeListCursor } from "../surveys/list-cursor"
 import { ListPage } from "../surveys/surveys.repository"
 import { CreateReportBody, PatchReportBody, ReportRow, ReportStatus } from "./reports.types"
@@ -64,9 +65,10 @@ export function buildReportListQuery(
 
 type ReportedSurveyRow = {
   id: string
-  user_id: string
-  visibility: "private" | "public"
+  user_id: string | null
   deleted_at: string | null
+  // PUBLIC_SURVEY_PREDICATE: submitted, live and shared with the association.
+  shared: boolean
 }
 
 @Injectable()
@@ -98,9 +100,7 @@ export class ReportsService {
     if (survey.deleted_at) {
       throw new NotFoundException("Survey not found")
     }
-    if (!this.canReportSurvey(user, survey)) {
-      throw new ForbiddenException("Survey is not reportable by this user")
-    }
+    this.assertCanReportSurvey(user, survey)
 
     const reportId = randomUUID()
     const report = await this.db.transaction(async (db) => {
@@ -180,22 +180,27 @@ export class ReportsService {
 
   private async findSurveyForReport(surveyId: string): Promise<ReportedSurveyRow | null> {
     const result = await this.db.query<ReportedSurveyRow>(
-      `SELECT id, user_id, visibility, deleted_at::text
-       FROM surveys
-       WHERE id = $1`,
+      `SELECT s.id, s.user_id, s.deleted_at::text, (${PUBLIC_SURVEY_PREDICATE}) AS shared
+       FROM surveys s
+       WHERE s.id = $1`,
       [surveyId],
     )
     return result.rows[0] ?? null
   }
 
-  private canReportSurvey(user: AuthenticatedUser, survey: ReportedSurveyRow): boolean {
+  // Phase 29, D-12: a hidden survey (private, or a draft of another member) answers like an
+  // unknown one, so this route is not an existence oracle. Moderators and admins keep reporting
+  // any live survey; the author keeps the 403 on their own survey.
+  private assertCanReportSurvey(user: AuthenticatedUser, survey: ReportedSurveyRow): void {
     if (user.role === "moderator" || user.role === "admin") {
-      return true
+      return
     }
     if (survey.user_id === user.id) {
-      return false
+      throw new ForbiddenException("Survey is not reportable by this user")
     }
-    return survey.visibility === "public"
+    if (!survey.shared) {
+      throw new NotFoundException("Survey not found")
+    }
   }
 
   private assertCanReviewReports(user: AuthenticatedUser): void {

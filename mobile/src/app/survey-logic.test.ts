@@ -126,7 +126,6 @@ describe("filterAndSortSurveys", () => {
     surveyFromDate: "",
     surveyToDate: "",
     statusFilter: "all",
-    visibilityFilter: "all",
     syncFilter: "all",
     blockedFilter: "all",
     attachmentFilter: "all",
@@ -152,20 +151,6 @@ describe("filterAndSortSurveys", () => {
       attachmentCounts,
     )
     expect(result.map((survey) => survey.id)).toEqual(["s-b", "s-d"])
-  })
-
-  test("filters by visibility", () => {
-    const attachmentCounts = buildAttachmentCountBySurvey(attachments)
-    const withVisibility = surveys.map((survey) =>
-      survey.id === "s-b" ? { ...survey, visibility: "public" as const } : survey,
-    )
-    const result = filterAndSortSurveys(
-      withVisibility,
-      { ...baseFilters, visibilityFilter: "public" },
-      attachmentCounts,
-    )
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe("s-b")
   })
 
   test("sorts by site name ascending", () => {

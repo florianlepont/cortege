@@ -1,26 +1,13 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef } from "react"
 import type { FactorKey } from "../../app/types"
 import { fr } from "../../i18n"
 import { FactorPager, type PagerFinishAction } from "../../screens/survey-form/FactorPager"
-import { PagerFinishNotice } from "../../screens/survey-form/PagerFinishNotice"
 import { usePagerFinish } from "../../screens/survey-form/usePagerFinish"
-import { useStatus } from "../../state/status-context"
 import { useSurveyFormState } from "../../state/survey-form-context"
 import { useSurveys } from "../../state/surveys-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { ScreenFrame } from "../../ui/ScreenFrame"
 import type { FactorDetailRouteProps } from "../types"
-
-/**
- * The status message at the moment a pager finish ended without finishing, kept as it was: a later
- * status (a background sync) does not replace it. Mounted only then (keyed by the attempt), so the
- * status context still re-renders nothing on the pager otherwise.
- */
-export function FinishStatusNotice() {
-  const { status } = useStatus()
-  const [message] = useState(status)
-  return <PagerFinishNotice message={message} />
-}
 
 /**
  * Factor detail route (phase 01.9-18, D-01; FLOW-04 pager since phase 3): the form context, and
@@ -31,8 +18,9 @@ export function FinishStatusNotice() {
  * header, so the halo runs on behind the header and the pager starts below it.
  *
  * D-26: when the survey being edited is complete and named, the last factor offers "Terminer le
- * relevé", the survey detail's finish; once the survey is finished the stack goes back to the
- * summary, which plays the success haptic, halo and pop.
+ * relevé", which opens the submission step (the `surveyFinish` sheet, Phase 29 D-04); once the
+ * survey is finished the stack goes back to the summary, which plays the success haptic, halo and
+ * pop.
  *
  * Phase 27 (D-16): the doubt flag and the note of each factor go through the form's setters. A
  * doubt toggle is written at once: the form value is set first, and once the context carries it the
@@ -44,7 +32,7 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
   route,
 }: FactorDetailRouteProps) {
   const { state, actions } = useSurveyFormState()
-  const { state: surveysState, actions: surveyActions } = useSurveys()
+  const { state: surveysState } = useSurveys()
   const { factor } = route.params
   const { editingSurveyId } = state
   const survey = useMemo(
@@ -86,11 +74,13 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
   // Back to the summary, also when the pager was opened from the Score page.
   const handleFinished = useLatestCallback(() => navigation.popTo("surveyDetail"))
 
-  const { offered, busy, attempts, finish } = usePagerFinish({
+  const openFinish = useLatestCallback((surveyId: string) =>
+    navigation.navigate("surveyFinish", { surveyId }),
+  )
+  const { offered, finish } = usePagerFinish({
     survey,
     draft: state.draftInput,
-    flushDraft: actions.flushDraft,
-    submitSurvey: surveyActions.submitSurvey,
+    openFinish,
     onFinished: handleFinished,
   })
   const siteName = survey?.site_name ?? ""
@@ -100,12 +90,12 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         ? {
             label: fr.surveyDetail.cta.finish,
             accessibilityLabel: fr.surveyDetail.a11y.finishSurvey(siteName),
-            loading: busy,
+            loading: false,
             onPress: finish,
-            notice: attempts > 0 && !busy ? <FinishStatusNotice key={attempts} /> : null,
+            notice: null,
           }
         : null,
-    [offered, busy, attempts, finish, siteName],
+    [offered, finish, siteName],
   )
 
   return (

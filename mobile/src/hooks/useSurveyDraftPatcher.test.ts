@@ -120,9 +120,9 @@ describe("useSurveyDraftPatcher", () => {
         expect.objectContaining({
           survey_id: TEST_SURVEY_ID,
           site_name: "New name",
-          visibility: "public",
         }),
       )
+      expect(mockUpdateLocalDraft.mock.calls[0][0]).not.toHaveProperty("visibility")
       expect(onStatusChange).toHaveBeenCalledWith(fr.status.editing.renamed({ name: "New name" }))
     })
 

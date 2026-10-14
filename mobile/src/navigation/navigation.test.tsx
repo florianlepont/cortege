@@ -139,6 +139,7 @@ jest.mock("./routes/CommunitySurveyRoute", () => ({ CommunitySurveyRoute: mockRo
 jest.mock("./routes/CommunityHistoryRoute", () => ({ CommunityHistoryRoute: mockRoute() }))
 jest.mock("./routes/FactorDetailRoute", () => ({ FactorDetailRoute: mockRoute() }))
 jest.mock("./routes/FactorHelpRoute", () => ({ FactorHelpRoute: mockRoute() }))
+jest.mock("./routes/FinishSheetRoute", () => ({ FinishSheetRoute: mockRoute() }))
 jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),
 }))
@@ -834,6 +835,21 @@ describe("stack options and listeners", () => {
     expect(ios.presentation).toBe("formSheet")
     expect(ios.sheetGrabberVisible).toBe(true)
     expect(ios.sheetAllowedDetents).toEqual([0.5, 1])
+  })
+
+  test("the finish sheet (phase 29) is registered, a modal on Android and a form sheet on iOS", async () => {
+    await mount(<AppNavigation />)
+    const android = mockScreens.surveyFinish.options as Options
+    expect(android.presentation).toBe("modal")
+    expect(android.headerShown).toBe(false)
+    mockPlatform.OS = "ios"
+    const { finishSheetScreenOptions } = jest.requireActual("./stacks/stack-options") as {
+      finishSheetScreenOptions: (theme: unknown) => Options
+    }
+    const ios = finishSheetScreenOptions(defaultTheme)
+    expect(ios.presentation).toBe("formSheet")
+    expect(ios.sheetGrabberVisible).toBe(true)
+    expect(ios.sheetAllowedDetents).toEqual([0.65, 1])
   })
 
   test("the shared stack options follow the platform at load time", () => {

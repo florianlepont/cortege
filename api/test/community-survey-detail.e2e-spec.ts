@@ -12,8 +12,8 @@ import {
   validDirectFactors,
 } from "./helpers/surveys-e2e"
 
-// /v1/public/community-surveys/:id and its attachments: a finished survey of any member, read-only
-// (association-only sharing), with the author, the exact centre of its parcels and the history of its parcel.
+// /v1/public/community-surveys/:id and its attachments: a shared finished survey of any member,
+// read-only (association-only sharing), with the author, the exact centre of its parcels and the history of its parcel.
 
 describe("Community survey page (e2e)", () => {
   let app: INestApplication
@@ -47,7 +47,7 @@ describe("Community survey page (e2e)", () => {
         sync_version: 1,
         site_name: siteName,
         status: "draft",
-        visibility: "private",
+        visibility: "public",
         parcel_id: parcelId,
         observation_year: 2025,
         version_number: versionNumber,
@@ -182,7 +182,7 @@ describe("Community survey page (e2e)", () => {
           sync_version: 1,
           site_name: "Bois annoté",
           status: "draft",
-          visibility: "private",
+          visibility: "public",
           parcel_id: parcelId,
           observation_year: 2025,
           version_number: versionNumber,

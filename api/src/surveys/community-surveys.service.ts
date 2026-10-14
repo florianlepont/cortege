@@ -60,9 +60,10 @@ type AttachmentDbRow = {
 }
 
 /**
- * Read-only access to the finished surveys of every member (association-only sharing, like the
- * map and the community search): the survey page, its photos and the history of its parcels.
- * Nothing here writes, and a draft or deleted survey answers 404 as if it did not exist.
+ * Read-only access to the shared finished surveys of every member (association-only sharing, like
+ * the map and the community search): the survey page, its photos and the history of its parcels.
+ * PUBLIC_SURVEY_PREDICATE is the single rule. Nothing here writes, and a draft, deleted or private
+ * survey answers 404 as if it did not exist.
  */
 @Injectable()
 export class CommunitySurveysService {

@@ -5,9 +5,11 @@ import {
   buildCommunitySurveysQuery,
   buildPublicMapItemsQuery,
   escapeLikePattern,
+  PUBLIC_SURVEY_PREDICATE,
   PUBLIC_PARCEL_STATUSES_BBOX_SQL,
   PUBLIC_PARCEL_STATUSES_SQL,
   PUBLIC_STUDIED_BY_COMMUNES_SQL,
+  submittedVisibleToCallerSql,
 } from "../src/surveys/public-map.queries"
 import { PublicMapService } from "../src/surveys/public-map.service"
 import { PublicMapDbRow, toPublicMapItem } from "../src/surveys/public-map.utils"
@@ -75,7 +77,7 @@ const PRE_BBOX_MAP_ITEMS_SQL = [
   " FROM (",
   "   SELECT s.id, s.region_version, s.ibp_method_version, s.ibp_cas, s.scores, s.submitted_at",
   "   FROM surveys s",
-  "   WHERE s.status = 'submitted' AND s.deleted_at IS NULL",
+  "   WHERE s.status = 'submitted' AND s.deleted_at IS NULL AND s.visibility = 'public'",
   "     AND s.submitted_at IS NOT NULL",
   "%FILTERS%   ORDER BY s.submitted_at DESC",
   "   LIMIT 500",
@@ -95,6 +97,23 @@ const PRE_BBOX_MAP_ITEMS_SQL = [
 const preBboxSql = (filters: string[] = []): string =>
   PRE_BBOX_MAP_ITEMS_SQL.replace("%FILTERS%", filters.map((line) => `     AND ${line}\n`).join(""))
 
+describe("Phase 29 predicate", () => {
+  it("shows only submitted, live and shared surveys (D-09)", () => {
+    expect(PUBLIC_SURVEY_PREDICATE).toBe(
+      "s.status = 'submitted' AND s.deleted_at IS NULL AND s.visibility = 'public'",
+    )
+  })
+
+  it("adds the caller's own submitted surveys on the parcel history only (D-10)", () => {
+    const sql = submittedVisibleToCallerSql("$3")
+    expect(sql).toBe(
+      "((s.status = 'submitted' AND s.deleted_at IS NULL AND s.visibility = 'public') OR " +
+        "(s.status = 'submitted' AND s.deleted_at IS NULL AND s.user_id = $3::uuid))",
+    )
+    expect(sql).toContain(PUBLIC_SURVEY_PREDICATE)
+  })
+})
+
 describe("public map queries (D-13)", () => {
   it("map items: limits the public surveys first, then aggregates their parcels in a LATERAL", () => {
     const { text, values } = buildPublicMapItemsQuery()
@@ -102,7 +121,7 @@ describe("public map queries (D-13)", () => {
 
     expect(values).toEqual([])
     expect(sql).toContain(
-      "WHERE s.status = 'submitted' AND s.deleted_at IS NULL AND s.submitted_at IS NOT NULL",
+      "WHERE s.status = 'submitted' AND s.deleted_at IS NULL AND s.visibility = 'public' AND s.submitted_at IS NOT NULL",
     )
     expect(sql.indexOf("LIMIT 500")).toBeGreaterThan(-1)
     expect(sql.indexOf("LIMIT 500")).toBeLessThan(sql.indexOf("LATERAL"))
@@ -166,7 +185,7 @@ describe("public map queries (D-13)", () => {
     )
     expect(sql.indexOf("EXISTS")).toBeLessThan(sql.indexOf("LIMIT 500"))
     expect(sql).toContain(
-      "WHERE s.status = 'submitted' AND s.deleted_at IS NULL AND s.submitted_at IS NOT NULL",
+      "WHERE s.status = 'submitted' AND s.deleted_at IS NULL AND s.visibility = 'public' AND s.submitted_at IS NOT NULL",
     )
 
     const alone = buildPublicMapItemsQuery({ bbox })

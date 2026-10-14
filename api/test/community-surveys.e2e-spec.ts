@@ -13,7 +13,7 @@ import {
 } from "./helpers/surveys-e2e"
 
 // /v1/public/community-surveys: the community search of Mes Relevés. Every member sees every
-// submitted survey (association-only sharing), with its site name and its author's name.
+// shared submitted survey (association-only sharing), with its site name and its author's name.
 
 type CommunityItem = {
   survey_id: string
@@ -53,7 +53,7 @@ describe("Community surveys (e2e)", () => {
         sync_version: 1,
         site_name: siteName,
         status: "draft",
-        visibility: "private",
+        visibility: "public",
         parcel_id: parcelId,
         observation_year: 2025,
         version_number: versionNumber,

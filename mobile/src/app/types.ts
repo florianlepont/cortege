@@ -86,7 +86,6 @@ export type PublicParcelStatusItem = Omit<DomainPublicParcelStatusItem, "geometr
 }
 
 export type SurveyStatusFilter = "all" | "draft" | "submitted"
-export type SurveyVisibilityFilter = "all" | "private" | "public"
 export type SurveySyncFilter = "all" | "pending" | "synced" | "failed"
 export type SurveyBlockedFilter = "all" | "blocked" | "unblocked"
 export type SurveyAttachmentFilter = "all" | "with" | "without"
@@ -121,7 +120,6 @@ export type SurveyListFilters = {
   surveyFromDate: string
   surveyToDate: string
   statusFilter: SurveyStatusFilter
-  visibilityFilter: SurveyVisibilityFilter
   syncFilter: SurveySyncFilter
   blockedFilter: SurveyBlockedFilter
   attachmentFilter: SurveyAttachmentFilter

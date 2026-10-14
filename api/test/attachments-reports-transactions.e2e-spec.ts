@@ -280,6 +280,11 @@ describe("Attachments and reports transactions (e2e)", () => {
       const reporterToken = await loginAsNewUser()
       const surveyId = `e2e-atx-report-${Date.now()}`
       await createDraftSurvey(ownerToken, surveyId, "public")
+      // Phase 29: a non-moderator may only report a submitted, shared survey (D-12).
+      await db.query(
+        `UPDATE surveys SET status = 'submitted', submitted_at = NOW() WHERE id = $1`,
+        [surveyId],
+      )
 
       await installEventInsertFailure(db, { surveyId, eventType: "reported" })
 

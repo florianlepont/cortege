@@ -393,12 +393,46 @@ describe("getSubmittedReadOnlyFields (PATCH key presence)", () => {
   it("lists the three method fields when present, even when null", () => {
     expect(
       getSubmittedReadOnlyFields({
-        visibility: "public",
         ibp_method_version: null,
         ibp_cas: 2,
         ibp_cas3_scale: false,
       }),
     ).toEqual(["ibp_method_version", "ibp_cas", "ibp_cas3_scale"])
+  })
+
+  it("lists visibility by key presence (phase 29, D-07)", () => {
+    expect(getSubmittedReadOnlyFields({ visibility: "public" })).toEqual(["visibility"])
+    expect(getSubmittedReadOnlyFields({ visibility: "private", ibp_cas: 2 })).toEqual([
+      "ibp_cas",
+      "visibility",
+    ])
+  })
+})
+
+describe("getChangedSubmittedReadOnlyFields visibility (phase 29, D-07)", () => {
+  it("reports visibility when a submitted row's value differs", () => {
+    const existing = makeRow({ status: "submitted", visibility: "private" })
+    expect(getChangedSubmittedReadOnlyFields({ visibility: "public" }, existing, [])).toEqual([
+      "visibility",
+    ])
+  })
+
+  it("does not report an equal, absent or null visibility on a submitted row", () => {
+    const existing = makeRow({ status: "submitted", visibility: "private" })
+    expect(getChangedSubmittedReadOnlyFields({ visibility: "private" }, existing, [])).toEqual([])
+    expect(getChangedSubmittedReadOnlyFields({}, existing, [])).toEqual([])
+    expect(
+      getChangedSubmittedReadOnlyFields(
+        { visibility: null } as unknown as SurveyUpsertBody,
+        existing,
+        [],
+      ),
+    ).toEqual([])
+  })
+
+  it("never reports visibility on a draft row", () => {
+    const existing = makeRow({ status: "draft", visibility: "private", submitted_at: null })
+    expect(getChangedSubmittedReadOnlyFields({ visibility: "public" }, existing, [])).toEqual([])
   })
 })
 
@@ -693,10 +727,16 @@ describe("classifySameVersionContent", () => {
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("conflict")
   })
 
-  it("returns visibility_only when only visibility differs", () => {
-    const existing = makeRow({ visibility: "private" })
+  it("returns visibility_only when only visibility differs on a draft", () => {
+    const existing = makeRow({ status: "draft", visibility: "private", submitted_at: null })
     const body: SurveyUpsertBody = { ...sameBody(existing), visibility: "public" }
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("visibility_only")
+  })
+
+  it("returns conflict when only visibility differs on a submitted row (phase 29, D-07)", () => {
+    const existing = makeRow({ status: "submitted", visibility: "private" })
+    const body: SurveyUpsertBody = { ...sameBody(existing), visibility: "public" }
+    expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("conflict")
   })
 
   it("returns identical when visibility is absent from the body", () => {
@@ -706,8 +746,8 @@ describe("classifySameVersionContent", () => {
     expect(classifySameVersionContent(body, existing, ["12345AB0042"])).toBe("identical")
   })
 
-  it("returns conflict when site_name and visibility both differ", () => {
-    const existing = makeRow({ visibility: "private" })
+  it("returns conflict when site_name and visibility both differ on a draft", () => {
+    const existing = makeRow({ status: "draft", visibility: "private", submitted_at: null })
     const body: SurveyUpsertBody = {
       ...sameBody(existing),
       site_name: "Autre parcelle",

@@ -52,15 +52,13 @@ Acceptance criteria
 
 **Release:** MVP
 
-Contributors can manage submitted surveys by changing visibility between private and public, with public surveys removed from community surfaces when switched to private. Surveys can also be deleted with a confirmation step, after which they will no longer appear in the user's list or community surfaces.
+Contributors can delete a survey with a confirmation step, after which it no longer appears in the user's list or community surfaces. The visibility ("Partagé avec l'association" or "Privé") is chosen before submission (US-C7) and is read-only afterwards (Phase 29): there is no switch on a submitted survey.
 
-As a contributor, I want to manage a submitted survey (delete it or change its visibility) so I stay in control of my data.
+As a contributor, I want to manage a submitted survey (delete it) and see who can read it so I stay in control of my data.
 
 Acceptance criteria
 
-- From survey detail, I can change visibility between `private` and `public`.
-
-- If I switch a survey from `public` to `private`, it is removed from community surfaces.
+- The survey detail shows the visibility as a read-only line; it has no control to change it once the survey is submitted (the choice is made in the submission step, US-C7).
 
 - I can delete a survey with a confirmation step.
 

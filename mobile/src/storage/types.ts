@@ -200,7 +200,6 @@ export type UpdateDraftInput = IbpMethodFields & {
   vegetation_stage?: string
   parcel_ids: string[]
   factors: Record<string, unknown>
-  visibility?: "private" | "public"
 }
 
 export type LocalAttachmentInput = {

@@ -34,7 +34,7 @@ export type PublicParcelStatusItem = {
 
 /**
  * One finished survey in the community search (`GET /public/community-surveys`): every member sees
- * every submitted survey (association-only sharing), with its site name and its author's name.
+ * every shared submitted survey (association-only sharing), with its site name and its author's name.
  */
 export type CommunitySurveyItem = {
   survey_id: string

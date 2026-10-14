@@ -45,7 +45,9 @@ export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> 
       sync_version: 1,
       site_name: input.site_name,
       status: "draft",
-      visibility: "private",
+      // Shared with the association by default (phase 29 D-04); the finish step
+      // lets the observer switch to private before anything is submitted.
+      visibility: "public",
       parcel_ids: parcelIds,
       factors: input.factors,
     },
@@ -65,7 +67,7 @@ export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> 
         id,
         input.site_name,
         "draft",
-        "private",
+        "public",
         1,
         "pending",
         null,
@@ -92,7 +94,7 @@ export async function createLocalDraft(input: DraftInput): Promise<LocalSurvey> 
     id,
     site_name: input.site_name,
     status: "draft",
-    visibility: "private",
+    visibility: "public",
     sync_version: 1,
     sync_state: "pending",
     last_sync_error: null,
@@ -474,10 +476,10 @@ export async function updateLocalDraft(input: UpdateDraftInput): Promise<LocalSu
         sync_version: nextSyncVersion,
         site_name: input.site_name,
         status: "draft",
-        visibility:
-          input.visibility ??
-          (basePayload.visibility as "private" | "public" | undefined) ??
-          "private",
+        // The draft write path never carries visibility: only the finish step
+        // owns the choice (phase 29 D-05), so the stored value is kept. Unknown
+        // values stay fail-closed.
+        visibility: basePayload.visibility === "public" ? "public" : "private",
         parcel_ids: nextParcelIds,
         factors: input.factors,
       },

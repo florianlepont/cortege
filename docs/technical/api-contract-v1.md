@@ -380,7 +380,8 @@ that does not know them:
   value. A submitted survey whose body changes one of them answers `409 survey_submitted_read_only`
   with `survey_note`, `weather` or `factors` in `details.fields`; an identical resend is accepted.
 - **Visibility.** The note, the weather and the annotations follow the survey: another member reads
-  them only on a submitted survey (see `GET /public/community-surveys/{survey_id}`). They never
+  them only on a submitted survey that is shared with the association (see
+  `GET /public/community-surveys/{survey_id}` and "Survey visibility (Phase 29)" below). They never
   enter the survey event journal.
 - **JSON body limit (D-25).** The API accepts JSON bodies up to 2 MB (the Express default of 100 kB
   would refuse a sync batch of large surveys with `413`, which the phone would retry forever).
@@ -396,11 +397,29 @@ exists on a survey, is not returned, and an `expires_at` sent by an older build 
 **Submitted surveys are read-only by value (V1.2 hardening):** an upsert that changes the
 *value* of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
 `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`,
-`ibp_cas`, `ibp_cas3_scale` (phase 01.8), `survey_note` or `weather` (phase 27) on a survey whose
-status is `submitted` is rejected with `409 survey_submitted_read_only` and
-`details.fields` listing the changed field names. Resending identical values (including a
-resync of a pulled survey) is accepted and only refreshes `visibility`/`sync_version`;
-`scores` is excluded from this comparison (it is recomputed server-side).
+`ibp_cas`, `ibp_cas3_scale` (phase 01.8), `survey_note` or `weather` (phase 27), or the value of
+`visibility` (phase 29), on a survey whose status is `submitted` is rejected with
+`409 survey_submitted_read_only` and `details.fields` listing the changed field names. Resending
+identical values (including a resync of a pulled survey) is accepted and only refreshes
+`sync_version`; `scores` is excluded from this comparison (it is recomputed server-side).
+
+**Survey visibility (Phase 29):** a survey is `private` (only its author reads it) or `public`,
+which means **shared with the association**: every authenticated member can read it, never the open
+internet, and the app never shows the word "public". The observer chooses on the draft, in the
+submission step of the app (`surveyFinish`); the mobile app always sends the value and its default
+for a new draft is `public` (shared, pre-selected). A create that carries no `visibility` stays
+`private` on the server (fail-closed). The choice is frozen at submit: after submit `visibility` is
+read-only on every channel (error table under "Lifecycle rule in V1" below). Another member can read
+a survey only when it is submitted, not deleted and shared. `PUBLIC_SURVEY_PREDICATE`
+(`api/src/surveys/public-map.queries.ts`) is the only definition of that rule; it is enforced by
+`api/test/survey-read-paths.spec.ts`, which fails on an unclassified route or on a query reading
+`surveys` without the predicate. A private, draft, deleted or unknown survey id answers the same
+`404` on every community route, so the answer never reveals that a private survey exists. Per D-11
+the next `version_number` of a parcel counts the private surveys too: another member can see the
+number move, or get `409 parcel_version_conflict` at submit, but only the number is visible, never
+any content. A parcel whose only surveys are private is not studied for the other members (status,
+counts, search). `POST /surveys` with another member's `id` still answers `409 survey_id_conflict`
+(pre-existing; ids are random, out of scope).
 
 **Same `sync_version` (phase 01.6):** an upsert that carries the `sync_version` the server
 already stored is compared by value with the stored survey on the same read-only fields
@@ -408,9 +427,11 @@ already stored is compared by value with the stored survey on the same read-only
 `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, and since phase 01.8
 `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, and since phase 27 `survey_note` and
 `weather`) plus `visibility`; `scores`, `status` and `expires_at` are excluded. Identical values are an idempotent replay
-(`synced`, nothing written). When only `visibility` differs, it is applied last-writer-wins
-like `PATCH /surveys/{id}/visibility` (new `updated_at`, one `visibility_changed` event) and
-the answer is `synced`. Any read-only difference is rejected with `409 sync_version_conflict`
+(`synced`, nothing written). On a **draft**, when only `visibility` differs, it is applied
+last-writer-wins like `PATCH /surveys/{id}/visibility` (new `updated_at`, one `visibility_changed`
+event) and the answer is `synced`. On a **submitted** survey visibility is read-only (Phase 29), so
+a same-version difference of `visibility` is a `409 sync_version_conflict` and nothing is written.
+Any read-only difference is rejected with `409 sync_version_conflict`
 ("Same sync_version with different content", `details.server_sync_version` /
 `client_sync_version`) and nothing is written. This check runs before the submitted-survey
 rule above, so a same-version resend that changes a submitted survey also gets
@@ -554,8 +575,23 @@ Partially update survey fields.
 Lifecycle rule in V1:
 
 - While `status=draft`, business fields are editable (`site_name`, parcel linkage, region/stage, factors, visibility).
-- While `status=submitted`, observation payload is read-only.
-- For `submitted`, only publication visibility changes are allowed (use dedicated endpoint below).
+- While `status=submitted`, nothing is editable any more: the observation payload and, since Phase 29,
+  the visibility (private or shared with the association, chosen before submit) are read-only.
+
+Refusals of a change to a submitted survey, per channel (Phase 29; this keeps the existing policy of
+the contract and refines CONTEXT D-07's "422 everywhere" so that no client change is needed):
+
+| Channel | Different `visibility` on a submitted survey | Same value (replay) |
+|---------|----------------------------------------------|---------------------|
+| `PATCH /surveys/{id}` | `422 submitted_read_only_fields`, `forbidden_fields` and `details.fields` contain `visibility` (key presence: an equal value is refused too, like every other read-only key) | `422` (key present) |
+| `PATCH /surveys/{id}/visibility` | `422 submitted_read_only_fields`, `forbidden_fields: ["visibility"]`, `details.fields: ["visibility"]` | `200` no-op |
+| `POST /surveys` upsert, higher `sync_version` | `409 survey_submitted_read_only`, `details.fields` contains `visibility` | `synced` (only `sync_version` moves) |
+| `POST /surveys` upsert, same `sync_version` | `409 sync_version_conflict`, nothing written | `synced` (identical replay) |
+| `POST /sync` `survey.visibility_update` | per-operation `fatal_error`, `error.http_status: 422`, `error.code: "submitted_read_only_fields"`, `details.fields: ["visibility"]` | `synced` no-op |
+
+A write that races `POST /surveys/{id}/submit` is serialised by a row lock (`FOR UPDATE` on the PATCH
+lookups and `AND status <> 'submitted'` on the visibility `UPDATE`): the change either commits
+before the submit, and the submit publishes it, or it is refused as above.
 
 Request:
 
@@ -583,7 +619,7 @@ Response `200`:
 }
 ```
 
-For submitted surveys, patching non-publication fields must return `422`
+For submitted surveys, patching any field (visibility included, since Phase 29) must return `422`
 with a business error (example: `submitted_read_only_fields`).
 
 Phase 01.8: the body also accepts `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale` (same
@@ -595,7 +631,9 @@ in the body. On a submitted survey any of the three keys is rejected with
 
 ### PATCH /surveys/{id}/visibility
 
-Toggle publication visibility for a survey (`private` <-> `public`).
+Set the visibility of a **draft** survey (`private` <-> `public`, where `public` means shared with
+the association). Since Phase 29 the observer chooses in the submission step; the app stores the
+choice through the offline queue (`survey.visibility_update`) and this route is its online twin.
 
 Request:
 
@@ -617,9 +655,10 @@ Response `200`:
 
 Rules:
 
-- Allowed for survey owner (and moderators/admins where applicable by auth policy).
-- Allowed in both `draft` and `submitted` states.
-- Must write an audit event: `visibility_changed` with `{ from, to }`.
+- Allowed for the survey owner, on a `draft` only.
+- Refused after submit: `422 submitted_read_only_fields` (table above). A request with the stored
+  value is a no-op and still answers `200`, so a replay stays idempotent.
+- On a draft, a change writes an audit event: `visibility_changed` with `{ from, to }`.
 - No-op requests (same visibility) return `200` unchanged.
 - Mobile offline mode may queue this as `survey.visibility_update` inside `POST /sync`.
 
@@ -1058,6 +1097,7 @@ Rules:
   - `network_gateway_error`
   - `transient_upstream_error`
 - Database data/constraint errors (PostgreSQL SQLSTATE classes `22` and `23`, e.g. a check-constraint or foreign-key violation) always return `fatal_error` with `error.code: "invalid_operation"` and a fixed generic message — never retried, and no SQL detail (constraint names, column values) ever reaches the client.
+- `survey.visibility_update` on a submitted survey (Phase 29) is a `fatal_error` with `error.http_status: 422`, `error.code: "submitted_read_only_fields"` and `error.details.fields: ["visibility"]`; the stored value sent again is `synced`. The app writes the choice of the submission step through this queue, then the finish drains it before `POST /surveys/{id}/submit`, so no legitimate flow changes visibility after submit.
 - `client_ref` is echoed back for local queue reconciliation.
 - `attachment.delete` requires:
   - `survey_id` in operation envelope
@@ -1068,8 +1108,8 @@ Rules:
 - `survey.upsert` payloads carry `survey_note`, `weather` and `factors.annotations` (phase 27) with the rules of [POST /surveys](#post-surveys): absent keeps the stored value, `null` clears it on a higher `sync_version`, all three are read-only after submit and compared by value at the same `sync_version`. The nested `weather` object is validated key by key; a nested key the DTO does not declare is stripped (every key of the object is declared). A bound violation fails that operation alone with `invalid_sync_operation`.
 - The JSON body of a batch may be up to 2 MB (D-25); the cap of 100 operations is unchanged.
 - `survey.upsert` payloads carry the method fields of `POST /surveys` (`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, phase 01.8) with the same values, storage rule and effective-version rule. They are declared on the payload DTO, so they are kept, not stripped; an invalid value fails that operation with `invalid_sync_operation` and `details.fields` naming the fields (for example `["ibp_method_version","ibp_cas"]`), and nothing is stored.
-- An upsert on a `submitted` survey that changes the value of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`, `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, `survey_note` or `weather` returns `fatal_error` with `error.code: "survey_submitted_read_only"`, `error.http_status: 409` and `error.details.fields` listing the changed field names. Resending identical values (a pulled-survey replay) is `synced` and only refreshes `visibility`/`sync_version`; `scores` is excluded from the comparison since it is recomputed server-side (D-04, D-13). The method fields are compared as described under `POST /surveys`: an installed app that replays an untagged survey with the explicit v3.0 tag is an identical replay (`synced`), and the stored column stays `NULL`.
-- An upsert with the same `sync_version` the server already stored follows the same-version rule of `POST /surveys`: identical read-only fields and visibility are `synced`; a visibility-only difference is applied last-writer-wins like `survey.visibility_update` and answered `synced`; any read-only difference returns `fatal_error` with `error.code: "sync_version_conflict"`, `error.http_status: 409`, `error.message: "Same sync_version with different content"` and `server_sync_version`/`client_sync_version` in `error.details`. The client keeps its local data (Case B in `sync-conflict-resolution-v1.md`).
+- An upsert on a `submitted` survey that changes the value of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`, `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, `survey_note`, `weather` or `visibility` (Phase 29) returns `fatal_error` with `error.code: "survey_submitted_read_only"`, `error.http_status: 409` and `error.details.fields` listing the changed field names. Resending identical values (a pulled-survey replay) is `synced` and only refreshes `sync_version`; `scores` is excluded from the comparison since it is recomputed server-side (D-04, D-13). The method fields are compared as described under `POST /surveys`: an installed app that replays an untagged survey with the explicit v3.0 tag is an identical replay (`synced`), and the stored column stays `NULL`.
+- An upsert with the same `sync_version` the server already stored follows the same-version rule of `POST /surveys`: identical read-only fields and visibility are `synced`; on a draft a visibility-only difference is applied last-writer-wins like `survey.visibility_update` and answered `synced`, on a submitted survey it is a `sync_version_conflict`; any read-only difference returns `fatal_error` with `error.code: "sync_version_conflict"`, `error.http_status: 409`, `error.message: "Same sync_version with different content"` and `server_sync_version`/`client_sync_version` in `error.details`. The client keeps its local data (Case B in `sync-conflict-resolution-v1.md`).
 - `survey_id`, the `survey.delete` payload `id`, the `survey.upsert` payload `id` and the `attachment.delete` payload `attachment_id` must match `^[A-Za-z0-9_-]{1,128}$`; otherwise that operation alone fails with `invalid_sync_operation` (`400`).
 - `attachment.create` results carry the same presigned `upload_url` as the REST route: it signs `Content-Length = size_bytes`, and confirming an object of another size answers `422 attachment_size_mismatch`.
 
@@ -1168,6 +1208,12 @@ Response `201`:
 `GET /surveys/{id}/events` feed shows a `reported` event without the reporter's identity or reason;
 that data is kept only in the `reports` table, visible to moderators/admins.
 
+Phase 29: a member can report only a survey they may read. A survey that is private, a draft or
+deleted, belonging to another member, answers the same `404` ("Survey not found") as an unknown id,
+so reporting never reveals that it exists (the `survey_id` check uses `PUBLIC_SURVEY_PREDICATE`).
+The author of the survey still gets `403` on their own survey, and moderators/admins keep reporting
+any live survey.
+
 ### GET /reports?status=open&limit=&cursor=
 
 List reports (moderator/admin), newest first (`created_at` descending, then `id` descending).
@@ -1226,9 +1272,12 @@ Return anonymized public survey map items.
 
 Inclusion rules in V1:
 
-- `visibility = public`
+- `visibility = public` (Phase 29: shared with the association; a `private` survey never appears)
 - survey is not deleted
 - survey is considered publishable (recommended policy: `status=submitted`)
+
+These three rules are `PUBLIC_SURVEY_PREDICATE`, shared by the map items, the parcel statuses, the
+community routes, the global search and the parcel search.
 
 Query + formatting rules in V1:
 
@@ -1303,9 +1352,10 @@ The community search of Mes Relevés (phase 12.1). Requires an authenticated mem
 
 Rules:
 
-- Returns the **submitted** surveys of every member, deleted ones excluded, newest `submitted_at`
-  first. There is no private/public choice yet (association-only sharing): the `visibility` column
-  is not read, like for the map.
+- Returns the **submitted** surveys of every member that are **shared with the association**
+  (`visibility = 'public'`, Phase 29), deleted ones excluded, newest `submitted_at` first. A private
+  survey is never listed, not even for its author (the author reads their own surveys through
+  `GET /surveys`). The choice is made by the observer before submit and is frozen after it.
 - `q` (optional, at most 100 characters) keeps the surveys whose site name or author display name
   contains the text, ignoring case and accents. `%`, `_` and `\` in `q` are literal characters.
 - `limit` is 1 to 50 (default 30); a larger value is capped to 50, and the request validation
@@ -1334,7 +1384,9 @@ Response `200`:
 
 The page of a finished survey of any member, read-only (phase 12.1). Requires an authenticated member.
 
-- Only a **submitted**, non-deleted survey answers; a draft, a deleted or an unknown id is `404`.
+- Only a **submitted**, non-deleted survey **shared with the association** answers; a draft, a
+  deleted, a private or an unknown id is the same `404` (Phase 29), so the answer never tells that a
+  private survey exists.
 - `author_name` is the author's display name, `null` once they deleted their account.
 - `parcel_ids` lists the linked parcels and `display_location` is their exact centre: **nothing is
   rounded**. This is an owner decision for internal use by the association (2026-10-05); to revisit
@@ -1343,29 +1395,32 @@ The page of a finished survey of any member, read-only (phase 12.1). Requires an
 - `scores`, `factor_results` and the method fields (`ibp_method_version`, `ibp_cas`,
   `ibp_cas3_scale`, `region_version`, `vegetation_stage`) are those of the survey.
 - `history` lists the submitted surveys that share at least one parcel with this one, this survey
-  included (`is_current`), oldest first (year, then version), capped to 20. Versions are numbered
-  per parcel across all authors. In this list, each entry carries `ibp_method_version` (null = v3.0)
+  included (`is_current`), oldest first (year, then version), capped to 20. Only shared surveys
+  appear in it (private ones are left out). Versions are numbered per parcel across all authors
+  and private surveys, so a gap in the numbers can mean a private survey (D-11). In this list, each entry carries `ibp_method_version` (null = v3.0)
   and, since phase 27, `survey_note` (null when there is none).
 - Since phase 27 the detail carries `survey_note` and `weather` (the survey's own, `null` when
   absent) and `factor_annotations`: the doubts and factor notes, keyed `A` to `J`, as
   `{ doubt?: true, note?: string }`, sanitised by the server and `null` when nothing remains. They
-  are on the same rows as the rest of the detail: only a submitted, non-deleted survey answers (a
-  draft stays `404`), so a note never leaves a draft. No predicate of the community or map reads
-  changed.
+  are on the same rows as the rest of the detail: only a submitted, non-deleted, shared survey
+  answers (a draft or a private survey stays `404`), so a note never leaves a draft or a private
+  survey.
 - The notes of a submitted survey stay readable after its author deletes the account; `author_name`
   then reads `null` (D-24).
 
 ### GET /public/community-surveys/{survey_id}/attachments
 
 The uploaded files of that survey: `{ items: [{ id, mime_type, size_bytes, created_at }] }`. The
-storage key is never returned. `404` for a survey that is not public.
+storage key is never returned. `404` for a survey that is not shared (private, draft, deleted or
+unknown: one and the same answer).
 
 ### GET /public/community-surveys/{survey_id}/attachments/{attachment_id}/download-url
 
 `{ url, expires_at, requires_auth }`, like the owner's route. With MinIO the URL is presigned and
 `requires_auth` is `false`; in local storage mode it is
 `/public/community-surveys/{survey_id}/attachments/{attachment_id}/content` and `requires_auth` is
-`true`. `404` for an unknown attachment, `409` for one not uploaded yet.
+`true`. `404` for an unknown attachment or a survey that is not shared, `409` for one not uploaded
+yet.
 
 ### GET /public/community-surveys/{survey_id}/attachments/{attachment_id}/content
 
@@ -1399,13 +1454,14 @@ Parameters:
 
 Rules:
 
-- Only **submitted**, non-deleted surveys of members other than the caller are returned, newest
-  `submitted_at` first. A draft, a deleted survey and the caller's own surveys never appear, and the
-  caller is never listed as a member.
+- Only **submitted**, non-deleted surveys of members other than the caller that are shared with the
+  association are returned, newest `submitted_at` first. A draft, a deleted survey, a private survey
+  (Phase 29) and the caller's own surveys never appear, and the caller is never listed as a member.
 - `q` matches the site name or the author's display name, ignoring case and accents. `%`, `_` and
   `\` in `q` and in `author` are literal characters. `author` is compared to the whole display
   name, ignoring case and accents.
-- `members` has one row per display name with the number of that member's submitted surveys. It
+- `members` has one row per display name with the number of that member's shared submitted surveys
+  (private ones are not counted). It
   carries no user id, email or first and last name.
 - `surveys` items have the shape of `GET /public/community-surveys`.
 
@@ -1526,7 +1582,8 @@ Rules:
   not asked for such a wide view. From zoom 15 it returns every parcel of the bbox (IGN cadastre) with
   its study status.
 - Output excludes personal data.
-- `study_status` is derived from submitted surveys history.
+- `study_status` is derived from the history of submitted, shared surveys (Phase 29): a parcel
+  whose only surveys are private is `not_studied` for the other members.
 - `latest_ibp_method_version` (phase 01.8, additive) is the method tag of the same latest public
   submitted survey that gives `latest_ibp_total` and `latest_observation_year`; `null` when that
   survey has no version (v3.0) or the parcel is `not_studied`. Readers that average totals over
@@ -1575,7 +1632,12 @@ polygons the same way, so a studied parcel always matches its polygon.
 
 ### GET /parcels/{parcel_id}/surveys/history?limit=
 
-Return longitudinal survey history for one parcel.
+Return longitudinal survey history for one parcel. The route is caller-aware (Phase 29, D-10): the
+caller comes from the token and the list holds **the caller's own submitted surveys of the parcel,
+whatever their visibility, plus the shared submitted surveys of the other members**. A private survey
+of another member never appears. The rule is `submittedVisibleToCallerSql`
+(`api/src/surveys/public-map.queries.ts`), the one caller-aware sibling of `PUBLIC_SURVEY_PREDICATE`;
+equality is on `user_id`, so a survey whose author deleted the account matches no caller.
 
 Response `200`:
 
@@ -1615,7 +1677,8 @@ Response `200`:
 
 Each item carries the survey's IBP method version (`ibp_method_version`, null = v3.0; an older server
 may omit it) and, since phase 27, its free note (`survey_note`, `null` when there is none). The list
-still holds submitted, non-deleted surveys only.
+still holds submitted, non-deleted surveys only. In the app, an item that belongs to the caller opens
+the caller's own summary; the others open the community page.
 
 ### GET /weather?lat=&lng=&at=
 
@@ -1804,13 +1867,13 @@ Common business error codes (non-exhaustive):
 - `parcel_required`
 - `parcel_invalid`
 - `parcel_version_conflict` — a submit lost a race against another submit on the same parcel; `error.details.parcel_id`/`expected_version_number` identify the conflict.
-- `survey_submitted_read_only` — an upsert changed the value of a read-only field on a `submitted` survey; `error.details.fields` lists the changed field names (identical values and `scores` are always accepted).
+- `survey_submitted_read_only`: an upsert changed the value of a read-only field (since Phase 29 including `visibility`) on a `submitted` survey; `error.details.fields` lists the changed field names (identical values and `scores` are always accepted).
 - `survey_id_conflict` — an upsert's `id` already exists and is owned by another user.
 - `invalid_sync_operation` — a `/v1/sync` operation's envelope or payload failed class DTO validation; `error.details.fields` lists the offending property names.
 - `sync_version_conflict` (`409`) — an upsert carried an older `sync_version` than the stored one, or the same `sync_version` with different read-only content; `error.details` carries `survey_id`, `server_sync_version` and `client_sync_version`.
 - `attachment_size_mismatch` (`422`) — the uploaded attachment's size differs from the declared `size_bytes`; the object is deleted (or never written) and the attachment stays unconfirmed.
 - `invalid_operation` — a deterministic PostgreSQL data/constraint error (SQLSTATE class `22`/`23`) was raised while processing the request; the message is intentionally generic and carries no SQL detail.
-- `submitted_read_only_fields` (`422`) — a `PATCH /surveys/{id}` on a submitted survey named a read-only field (since phase 01.8 including `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale`).
+- `submitted_read_only_fields` (`422`): a `PATCH /surveys/{id}` on a submitted survey named a read-only field (since phase 01.8 including `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale`, since Phase 29 `visibility`), or a `PATCH /surveys/{id}/visibility` or a sync `survey.visibility_update` tried to change the visibility of a submitted survey; `error.details.fields` lists the field names.
 - `weather_provider_unavailable` (`503`): the weather provider behind `GET /weather` failed, timed out or refused the call; the body is `{ code, message }` and the app treats it as "no weather yet", never as an error to show.
 - `search_provider_unavailable` (`503`): the IGN geocoder or API Carto behind `GET /search/places` or `GET /search/parcels` failed and no registered parcel could answer; the body is `{ code, message }`.
 

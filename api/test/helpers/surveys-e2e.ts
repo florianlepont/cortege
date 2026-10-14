@@ -1,4 +1,5 @@
 import { INestApplication } from "@nestjs/common"
+import type { SurveyVisibility } from "@cortege/ibp-domain"
 import { Test, TestingModule } from "@nestjs/testing"
 import { randomUUID } from "crypto"
 import request = require("supertest")
@@ -101,3 +102,53 @@ export const validDirectFactors = {
   I: 2,
   J: 2,
 } as const
+
+/**
+ * Creates a survey with the given visibility and submits it, both expected to answer 201.
+ * `visibility` is required on purpose: every fixture says what it wants. A shared fixture is
+ * created `public` BEFORE the submit, because visibility cannot change after submit
+ * (Phase 29, D-07). Coordinates come from `options.at` or from a random seed (the
+ * community-surveys scheme); pass the same `at` to put several surveys on one parcel.
+ */
+export async function createSubmittedSurvey(
+  app: INestApplication,
+  db: DatabaseService,
+  accessToken: string,
+  options: {
+    visibility: SurveyVisibility
+    siteName?: string
+    id?: string
+    at?: { lat: number; lng: number }
+    observationYear?: number
+  },
+): Promise<{ surveyId: string; parcelId: string; versionNumber: number }> {
+  const seed = uniqueCoordSeed()
+  const lat = options.at?.lat ?? 47.2 + seed / 100000
+  const lng = options.at?.lng ?? 1.2 + seed / 100000
+  const surveyId = options.id ?? uniqueId("e2e-submitted")
+  const parcelId = await resolveParcel(app, accessToken, lat, lng)
+  const versionNumber = await getNextVersionNumber(db, parcelId)
+  await request(app.getHttpServer())
+    .post("/v1/surveys")
+    .set("Authorization", `Bearer ${accessToken}`)
+    .send({
+      id: surveyId,
+      sync_version: 1,
+      site_name: options.siteName ?? "Submitted fixture",
+      status: "draft",
+      visibility: options.visibility,
+      parcel_id: parcelId,
+      observation_year: options.observationYear ?? 2025,
+      version_number: versionNumber,
+      region_version: "ACA",
+      vegetation_stage: "collineen",
+      factors: validDirectFactors,
+      location: { source: "gps", lat, lng },
+    })
+    .expect(201)
+  await request(app.getHttpServer())
+    .post(`/v1/surveys/${surveyId}/submit`)
+    .set("Authorization", `Bearer ${accessToken}`)
+    .expect(201)
+  return { surveyId, parcelId, versionNumber }
+}

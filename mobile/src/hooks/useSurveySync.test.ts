@@ -236,7 +236,7 @@ describe("useSurveySync", () => {
       handleRetrySurvey: jest.fn(),
       handleDiscardSurvey: jest.fn(),
       handleDiscardEmptyDraft: jest.fn(),
-      handleToggleVisibility: jest.fn(),
+      handleSetDraftVisibility: jest.fn(),
       confirmDeleteSurvey: jest.fn(),
       handleQueueAttachmentFromLibrary: jest.fn(),
       handleQueueAttachmentFromCamera: jest.fn(),
@@ -312,7 +312,7 @@ describe("useSurveySync", () => {
           "handleQueueAttachmentFromLibrary",
           "handleRetrySurvey",
           "handleSubmitSurvey",
-          "handleToggleVisibility",
+          "handleSetDraftVisibility",
         ].sort(),
       )
     })

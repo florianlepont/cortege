@@ -5,6 +5,7 @@ import { ParcelsService } from "../src/surveys/parcels.service"
 import {
   buildPublicMapItemsQuery,
   LINKED_PARCELS_CENTRE_SQL,
+  submittedVisibleToCallerSql,
 } from "../src/surveys/public-map.queries"
 import { SurveyRow } from "../src/surveys/surveys.types"
 
@@ -360,16 +361,18 @@ describe("ParcelsService", () => {
 
   describe("getParcelSurveyHistory", () => {
     it("requires a parcel id and passes the limit", async () => {
-      await expect(buildService().getParcelSurveyHistory("  ")).rejects.toBeInstanceOf(
+      await expect(buildService().getParcelSurveyHistory("caller-1", "  ")).rejects.toBeInstanceOf(
         BadRequestException,
       )
 
       const db = buildDb({ rows: [{ survey_id: "s1" }] })
-      await expect(buildService(db).getParcelSurveyHistory("p1", "5")).resolves.toEqual({
-        parcel_id: "P1",
-        items: [{ survey_id: "s1" }],
-      })
-      expect(db.query.mock.calls[0][1]).toEqual(["P1", 5])
+      await expect(buildService(db).getParcelSurveyHistory("caller-1", "p1", "5")).resolves.toEqual(
+        {
+          parcel_id: "P1",
+          items: [{ survey_id: "s1" }],
+        },
+      )
+      expect(db.query.mock.calls[0][1]).toEqual(["P1", 5, "caller-1"])
     })
 
     it("selects the method version of each survey and returns it unchanged", async () => {
@@ -378,12 +381,14 @@ describe("ParcelsService", () => {
         { survey_id: "s2", ibp_method_version: "cnpf_ibp_fr_v3_2_2026-02-02" },
       ]
       const db = buildDb({ rows })
-      await expect(buildService(db).getParcelSurveyHistory("p1", "5")).resolves.toEqual({
-        parcel_id: "P1",
-        items: rows,
-      })
+      await expect(buildService(db).getParcelSurveyHistory("caller-1", "p1", "5")).resolves.toEqual(
+        {
+          parcel_id: "P1",
+          items: rows,
+        },
+      )
       expect(sqlOf(db)).toContain("s.ibp_method_version")
-      expect(db.query.mock.calls[0][1]).toEqual(["P1", 5])
+      expect(db.query.mock.calls[0][1]).toEqual(["P1", 5, "caller-1"])
     })
 
     it("selects the survey note of each submitted survey and keeps the submitted-only filter", async () => {
@@ -392,13 +397,33 @@ describe("ParcelsService", () => {
         { survey_id: "s2", survey_note: "Coupe recente au nord" },
       ]
       const db = buildDb({ rows })
-      await expect(buildService(db).getParcelSurveyHistory("p1", "5")).resolves.toEqual({
-        parcel_id: "P1",
-        items: rows,
-      })
+      await expect(buildService(db).getParcelSurveyHistory("caller-1", "p1", "5")).resolves.toEqual(
+        {
+          parcel_id: "P1",
+          items: rows,
+        },
+      )
       expect(sqlOf(db)).toContain("s.survey_note")
       expect(sqlOf(db)).toContain("s.status = 'submitted'")
       expect(sqlOf(db)).toContain("s.deleted_at IS NULL")
+    })
+
+    it("reads the caller's own surveys and the shared ones of others (D-10)", async () => {
+      const db = buildDb({ rows: [] })
+      await buildService(db).getParcelSurveyHistory("caller-1", "p1", "5")
+      const sql = sqlOf(db)
+      expect(sql).toContain(submittedVisibleToCallerSql("$3"))
+      expect(sql).toContain("s.submitted_at IS NOT NULL")
+      expect(sql).not.toContain("IS NOT DISTINCT FROM")
+      expect(db.query.mock.calls[0][1]).toEqual(["P1", 5, "caller-1"])
+    })
+  })
+
+  describe("next version numbering (D-11)", () => {
+    it("counts every submitted survey, private ones included", async () => {
+      const db = buildDb({ rows: [{ next_version: 4 }] })
+      await expect(buildService(db).getDefaultVersionNumber(db, "P1")).resolves.toBe(4)
+      expect(sqlOf(db)).not.toContain("visibility")
     })
   })
 })

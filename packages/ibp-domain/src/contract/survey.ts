@@ -7,7 +7,10 @@ import type { SurveyWeather } from "./weather"
 /** Survey lifecycle status, as the API stores and sends it. */
 export type SurveyStatus = "draft" | "submitted" | "synced" | "error"
 
-/** Survey visibility on the public map. */
+/**
+ * Who reads a submitted survey: 'private' = its author only; 'public' = shared with the
+ * association (every authenticated member), never the open internet. Frozen at submit (Phase 29).
+ */
 export type SurveyVisibility = "private" | "public"
 
 /** Replaces API `FactorCanonical` (surveys.types.ts) and mobile `FactorCanonical` (app/types.ts). */

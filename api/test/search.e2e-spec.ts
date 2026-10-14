@@ -100,7 +100,7 @@ describe("Search endpoints (e2e)", () => {
         sync_version: 1,
         site_name: input.siteName,
         status: "draft",
-        visibility: "private",
+        visibility: "public",
         parcel_id: parcel.parcel_id,
         observation_year: 2025,
         version_number: versionNumber,

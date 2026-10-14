@@ -1,13 +1,12 @@
-// Why custom: four selectable cards with an explanation each (IBP CAS 1 to 4); no native card radio exists, only the scale switch is a native Switch.
+// Why custom: the four cas cards are RadioCard (no native card radio exists); only the scale switch is a native Switch.
 import { useMemo } from "react"
 import { StyleSheet, Switch, View } from "react-native"
-import { Ionicons } from "@expo/vector-icons"
 import { IBP_CAS_VALUES, type IbpCas } from "@cortege/ibp-domain"
-import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppText as Text } from "./AppText"
-import { AppPressable } from "./AppPressable"
+import { RadioCard } from "./RadioCard"
 
 type CasPickerProps = {
   value: IbpCas | null
@@ -31,34 +30,18 @@ export function CasPicker({ value, onChange, cas3Scale, onCas3ScaleChange }: Cas
       {IBP_CAS_VALUES.map((cas) => {
         const selected = value === cas
         return (
-          <AppPressable
+          <RadioCard
             key={cas}
-            style={[styles.card, selected ? styles.cardSelected : null]}
+            selected={selected}
             onPress={() => onChange(cas)}
-            accessibilityRole="radio"
+            title={m.casLabels[cas]}
+            caption={m.casCaptions[cas]}
             accessibilityLabel={fr.surveyForm.wizard.optionA11y({
               label: m.casLabels[cas],
               caption: m.casCaptions[cas],
             })}
-            accessibilityState={{ selected }}
             testID={`cas-option-${cas}`}
-          >
-            <View style={[styles.radio, selected ? styles.radioSelected : null]}>
-              {selected ? (
-                // The ink of the filled radio (12.2-21 dark pass): white on the forest, dark on the
-                // dark scheme's light green, where white was 2:1.
-                <Ionicons
-                  name="checkmark-outline"
-                  size={14}
-                  color={theme.semanticColors.onCtaPrimary}
-                />
-              ) : null}
-            </View>
-            <View style={styles.copy}>
-              <Text style={styles.title}>{m.casLabels[cas]}</Text>
-              <Text style={styles.caption}>{m.casCaptions[cas]}</Text>
-            </View>
-          </AppPressable>
+          />
         )
       })}
       <View style={styles.switchRow}>
@@ -85,43 +68,9 @@ function createStyles(theme: BrandTheme) {
     list: {
       gap: brandSpacing.sm,
     },
-    card: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: brandSpacing4.smd,
-      minHeight: 64,
-      padding: 14,
-      borderRadius: brandRadius.field,
-      borderWidth: 1,
-      borderColor: theme.colors.divider,
-      backgroundColor: theme.semanticColors.surfaceElevated,
-    },
-    cardSelected: {
-      borderWidth: 2,
-      borderColor: theme.semanticColors.ctaPrimary,
-    },
-    radio: {
-      width: 22,
-      height: 22,
-      marginTop: brandSpacing4.xxs,
-      borderRadius: 11,
-      borderWidth: 2,
-      borderColor: theme.colors.textSecondary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    radioSelected: {
-      borderColor: theme.semanticColors.ctaPrimary,
-      backgroundColor: theme.semanticColors.ctaPrimary,
-    },
     copy: {
       flex: 1,
       gap: brandSpacing4.xxs,
-    },
-    title: {
-      ...brandTypography.sectionBody,
-      fontFamily: brandTypography.meta.fontFamily,
-      color: theme.colors.textPrimary,
     },
     caption: {
       ...brandTypography.meta,

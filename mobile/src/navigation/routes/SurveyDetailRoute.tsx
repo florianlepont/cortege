@@ -41,6 +41,10 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
     const loaded = await actions.startEditSurvey(surveyId)
     if (loaded) navigation.navigate("surveyFactorDetail", { factor })
   })
+  // D-04: the finish button opens the submission step, the only place a survey gets submitted.
+  const onOpenFinish = useLatestCallback((surveyId: string) =>
+    navigation.navigate("surveyFinish", { surveyId }),
+  )
   const onOpenHistory = useLatestCallback(() => navigation.navigate("surveyHistory"))
   const onOpenJournal = useLatestCallback(() => navigation.navigate("surveyJournal"))
   const onSimulateMissingAttachmentFile = useMemo(
@@ -67,7 +71,7 @@ export const SurveyDetailRoute = memo(function SurveyDetailRoute({
             onPickPhoto={actions.queueAttachmentFromLibrary}
             onDeleteAttachment={actions.deleteAttachment}
             onDeleteSurvey={actions.confirmDeleteSurvey}
-            onSubmitSurvey={actions.submitSurvey}
+            onOpenFinish={onOpenFinish}
             onRetrySurvey={actions.retrySurvey}
             onDiscardSurvey={actions.discardSurvey}
             onRenameSurvey={actions.renameSurvey}

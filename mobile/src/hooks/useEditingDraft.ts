@@ -14,7 +14,6 @@ import { useSurveyList } from "./useSurveyList"
 type UseEditingDraftParams = {
   editingSurveyId: string | null
   setEditingSurveyId: (id: string | null) => void
-  editingSurveyVisibility: "private" | "public"
   setFormMode: (mode: FormMode) => void
   surveyForm: ReturnType<typeof useSurveyForm>
   surveyList: ReturnType<typeof useSurveyList>
@@ -70,14 +69,12 @@ const storedDraftSignature = (draft: {
 type PendingAutosaveRequest = {
   surveyId: string
   input: UseEditingDraftParams["surveyForm"]["draftInput"]
-  visibility: "private" | "public"
   signature: string
 }
 
 export function useEditingDraft({
   editingSurveyId,
   setEditingSurveyId,
-  editingSurveyVisibility,
   setFormMode,
   surveyForm,
   surveyList,
@@ -119,10 +116,10 @@ export function useEditingDraft({
     setAutosaveStatus((current) => ({ ...current, state: "saving" }))
 
     try {
+      // The finish step owns the choice of who sees the survey: no draft write carries it.
       await updateLocalDraft({
         survey_id: request.surveyId,
         ...request.input,
-        visibility: request.visibility,
       })
       await refreshLocalSurveys()
       autosaveSignatureRef.current = request.signature
@@ -171,7 +168,6 @@ export function useEditingDraft({
       void runAutosaveRef.current?.({
         surveyId: editingSurveyId,
         input: surveyForm.draftInput,
-        visibility: editingSurveyVisibility,
         signature: draftSignature,
       })
     }, 900)
@@ -182,7 +178,7 @@ export function useEditingDraft({
         autosaveTimerRef.current = null
       }
     }
-  }, [editingSurveyId, editingSurveyVisibility, surveyForm.draftInput])
+  }, [editingSurveyId, surveyForm.draftInput])
 
   // OA-107: `genus` starts the survey with that genus already in factor A (the photo tool's
   // "commencer un relevé avec ce genre").
@@ -245,11 +241,9 @@ export function useEditingDraft({
     try {
       const draftInput = surveyForm.buildDraftInput()
       if (editingSurveyId) {
-        const current = surveys.find((survey) => survey.id === editingSurveyId)
         await updateLocalDraft({
           survey_id: editingSurveyId,
           ...draftInput,
-          visibility: current?.visibility ?? "private",
         })
 
         await refreshLocalSurveys()
@@ -313,12 +307,10 @@ export function useEditingDraft({
     }
 
     try {
-      const current = surveys.find((survey) => survey.id === editingSurveyId)
       const draftInput = surveyForm.buildDraftInput()
       await updateLocalDraft({
         survey_id: editingSurveyId,
         ...draftInput,
-        visibility: current?.visibility ?? "private",
       })
 
       await refreshLocalSurveys()
@@ -358,7 +350,6 @@ export function useEditingDraft({
     await runAutosaveRef.current?.({
       surveyId,
       input,
-      visibility: editingSurveyVisibility,
       signature,
     })
     return autosaveSignatureRef.current === signature

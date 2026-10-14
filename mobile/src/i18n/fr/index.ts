@@ -28,6 +28,7 @@ import { settingsFr } from "./settings"
 import { statusFr } from "./status"
 import { surveyDetailFr } from "./survey-detail"
 import { surveyExportFr } from "./survey-export"
+import { surveyFinishFr } from "./survey-finish"
 import { surveyFormFr } from "./survey-form"
 import { surveyListFr } from "./survey-list"
 import { syncErrorsFr } from "./sync-errors"
@@ -48,6 +49,7 @@ export const fr = {
   surveyList: surveyListFr,
   surveyDetail: surveyDetailFr,
   surveyExport: surveyExportFr,
+  surveyFinish: surveyFinishFr,
   surveyForm: surveyFormFr,
   factorDetail: factorDetailFr,
   factorInput: factorInputFr,
