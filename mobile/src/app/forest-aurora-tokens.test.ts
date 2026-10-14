@@ -434,9 +434,10 @@ describe("the shield: soft ellipses only, never an edge or a flat zone", () => {
         expect(e.ry - block.height / 2).toBeGreaterThanOrEqual(forestShield.feather - 0.01)
       }
     }
-    // A block of no size still gets a soft round shield.
+    // A block of no size still gets a soft round shield, with a radius above zero (Android's
+    // RadialGradient throws on 0).
     const dot = textEllipse({ x: 10, y: 10, width: 0, height: 0 })
-    expect(dot.rx).toBe(0)
+    expect(dot.rx).toBeGreaterThan(0)
     expect(dot.inner).toBeGreaterThan(0)
   })
 })
