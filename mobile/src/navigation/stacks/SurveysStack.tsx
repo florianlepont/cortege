@@ -11,6 +11,7 @@ import { FinishSheetRoute } from "../routes/FinishSheetRoute"
 import { CommunityHistoryRoute } from "../routes/CommunityHistoryRoute"
 import { CommunitySurveyRoute } from "../routes/CommunitySurveyRoute"
 import { ParcelSelectionRoute } from "../routes/ParcelSelectionRoute"
+import { RouteGuideRoute } from "../routes/RouteGuideRoute"
 import { SurveyContextRoute } from "../routes/SurveyContextRoute"
 import { SurveyDetailRoute } from "../routes/SurveyDetailRoute"
 import { SurveyHistoryRoute } from "../routes/SurveyHistoryRoute"
@@ -235,6 +236,18 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
                   }),
             })}
             component={ParcelSelectionRoute}
+          />
+          <SurveysStack.Screen
+            name="surveyRouteGuide"
+            options={{
+              // Phase 30 (O-19): the mandatory fifth step of a new survey. Back and the swipe stay
+              // on: going back returns to the parcel map and writes nothing (U-O14). The native
+              // large title in the native iOS tree, else the page's own title (the tab bar rule is
+              // unchanged, OA-28).
+              title: fr.routeGuide.screen.title,
+              ...pageTitleOptions(theme),
+            }}
+            component={RouteGuideRoute}
           />
           <SurveysStack.Screen
             name="accountHome"

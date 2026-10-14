@@ -143,6 +143,7 @@ jest.mock("./routes/FinishSheetRoute", () => ({ FinishSheetRoute: mockRoute() })
 jest.mock("./routes/ParcelSelectionRoute", () => ({
   ParcelSelectionRoute: mockRoute(),
 }))
+jest.mock("./routes/RouteGuideRoute", () => ({ RouteGuideRoute: mockRoute() }))
 jest.mock("./routes/AccountRoute", () => ({ AccountRoute: mockRoute() }))
 jest.mock("./routes/SettingsRoute", () => ({ SettingsRoute: mockRoute() }))
 jest.mock("./routes/OfflineAreasRoute", () => ({ OfflineAreasRoute: mockRoute() }))
@@ -196,6 +197,7 @@ import {
 import { JsRootTabs } from "./tabs/JsRootTabs"
 import { NativeRootTabs } from "./tabs/NativeRootTabs"
 import { nativeLargeTitle } from "./stacks/stack-options"
+import { shouldHideTabBar } from "./tab-bar"
 
 type Options = Record<string, unknown>
 type OptionsFn = (args: Record<string, unknown>) => Options
@@ -629,6 +631,33 @@ describe("stack options and listeners", () => {
     })
     // D-19: the transparent halo header, no blur (the page starts below the bar).
     expectHaloHeader(wizard)
+  })
+
+  test("the route step is a stack screen with back and swipe on, and the native large title on iOS (phase 30, O-19)", async () => {
+    mockPlatform.OS = "ios"
+    await mount(<AppNavigation />)
+    expect(mockScreens.surveyRouteGuide).toBeDefined()
+    const options = effectiveOptions("surveyRouteGuide")
+    expect(options).toEqual(expect.objectContaining(nativeLargeTitle(defaultTheme)))
+    expect(options.title).toBe(fr.routeGuide.screen.title)
+    // Going back returns to the parcel map and writes nothing: nothing hides the way back.
+    expect(options.gestureEnabled).not.toBe(false)
+    expect(options.headerBackVisible).not.toBe(false)
+    expect(options.headerShown).not.toBe(false)
+    expectHaloHeader(options)
+  })
+
+  test("Android: the route step names itself with its own title and keeps the way back", async () => {
+    await mount(<AppNavigation />)
+    const options = effectiveOptions("surveyRouteGuide")
+    expect(options.title).toBe(fr.routeGuide.screen.title)
+    expect(options.headerLargeTitleEnabled).toBeUndefined()
+    expect(options.gestureEnabled).not.toBe(false)
+    expect(options.headerBackVisible).not.toBe(false)
+  })
+
+  test("the route step does not change the tab bar rule (OA-28)", () => {
+    expect(shouldHideTabBar("surveyRouteGuide")).toBe(false)
   })
 
   test("the JS surveys stack shows its own header; the native one shows the halo header", async () => {
