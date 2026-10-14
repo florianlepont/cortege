@@ -102,6 +102,7 @@ describe("French catalogue", () => {
         "parcelSelection",
         "profileSetup",
         "publicMap",
+        "routeGuide",
         "search",
         "settings",
         "status",
