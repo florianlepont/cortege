@@ -23,6 +23,7 @@ import { communitySurveyFr } from "./community-survey"
 import { parcelSelectionFr } from "./parcel-selection"
 import { profileSetupFr } from "./profile-setup"
 import { publicMapFr } from "./public-map"
+import { routeGuideFr } from "./route-guide"
 import { searchFr } from "./search"
 import { settingsFr } from "./settings"
 import { statusFr } from "./status"
@@ -73,6 +74,7 @@ export const fr = {
   publicMap: publicMapFr,
   offlineMap: offlineMapFr,
   mapLayers: mapLayersFr,
+  routeGuide: routeGuideFr,
   validation: validationFr,
   status: statusFr,
 } as const

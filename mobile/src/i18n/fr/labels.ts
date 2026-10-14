@@ -68,7 +68,7 @@ export const labelsFr = {
     ],
     F: [
       "Compter les arbres vivants porteurs de dendromicrohabitats (typologie IBP, groupes de dendromicrohabitats).",
-      "Renseignez le nombre d'arbres par hectare. En protocole détaillé, le comptage est plafonné à 2 arbres/ha par groupe de dendromicrohabitats.",
+      "Renseignez le nombre d'arbres par hectare. Pour le score, l'app garde au plus 2 arbres par hectare et par groupe de dendromicrohabitats.",
       "Seuils IBP : < 2 = 0 ; [2,3[ = 1 ; [3,8[ = 2 ; >= 8 = 5.",
     ],
     G: [

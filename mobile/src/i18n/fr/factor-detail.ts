@@ -33,6 +33,36 @@ export const factorDetailFr = {
     "class_score (0|2|5)": "Classe (0, 2 ou 5)",
     type_count: "Nombre de types",
   },
+  // Phase 30 (spec sections 6, 7 and 9, O-12): a factor counted in full ("relevé déplafonné") gets a
+  // status chip, a one-line caption above its first field and, for B and F, a detail input. A factor
+  // in "relevé plafonné" shows nothing more. H is never counted in full, so it has no caption. The
+  // captions avoid the abbreviations of the factor help (BMg, TGB, GB) on purpose.
+  countingMode: {
+    chip: "Relevé déplafonné",
+    A: "Relevé déplafonné : notez tous les genres d'arbres et le couvert des essences autochtones en pourcentage.",
+    B: "Relevé déplafonné : notez le couvert de chaque strate en pourcentage de la surface décrite.",
+    C: "Relevé déplafonné : comptez tous les bois morts sur pied, sans vous arrêter à un maximum par hectare.",
+    D: "Relevé déplafonné : comptez tous les bois morts au sol, sans vous arrêter à un maximum par hectare.",
+    E: "Relevé déplafonné : comptez tous les très gros bois et les gros bois vivants, sans vous arrêter à un maximum par hectare.",
+    F: "Relevé déplafonné : comptez les arbres porteurs de dendromicrohabitats, groupe par groupe. Pour le score, l'app garde au plus 2 arbres par hectare et par groupe.",
+    G: "Relevé déplafonné : notez le pourcentage de milieux ouverts fleuris, sans vous arrêter à 5 %.",
+    I: "Relevé déplafonné : notez tous les types observés, sans vous arrêter à deux.",
+    J: "Relevé déplafonné : notez tous les types observés, sans vous arrêter à deux.",
+    strataTitle: "Couvert de chaque strate",
+    strataHelper:
+      "Une strate compte à partir de 20 % de couvert. Les strates se superposent : le total peut dépasser 100 %.",
+    strataCoverUnit: "%",
+    strataCoverPlaceholder: "0",
+    strataCounted: ({ count }: { count: number }) =>
+      count === 1 ? "1 strate comptée" : `${count} strates comptées`,
+    strataFieldA11y: ({ label }: { label: string }) =>
+      `Couvert de la strate ${label}, en pourcentage`,
+    dmhTitle: "Arbres par groupe de dendromicrohabitats",
+    dmhHelper: "Pour le score, l'app garde au plus 2 arbres par hectare et par groupe.",
+    dmhSurfaceLabel: "Surface décrite pour ce comptage (ha)",
+    zoneLine: ({ hectares }: { hectares: string }) => `Surface décrite : ${hectares} ha`,
+    fromRoute: "D'après le parcours",
+  },
   // Phase 27 (D-13, D-18): the strip under each factor, a "Douteux" flag and a short note.
   // Neither changes the score. The note is visible to the members who can read the survey (D-06).
   strip: {

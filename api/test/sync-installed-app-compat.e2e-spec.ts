@@ -633,6 +633,92 @@ describe("Installed-app sync payload compatibility (e2e)", () => {
     expect((await stored()).visibility).toBe("private")
   })
 
+  // Phase 30 (D-08, spec section 8: a route is never deleted): an installed app builds its payloads
+  // from a pulled survey without knowing survey_route, so every payload it sends lacks the key. It
+  // creates and updates surveys exactly as before and never clears a route stored by the new
+  // client, on a draft and on a submitted survey. No request carries the client marker.
+  it("keeps a stored survey_route when an installed app syncs payloads without the key", async () => {
+    const accessToken = await login(`e2e-route-compat-${randomUUID()}@ibp.local`)
+    const parcelId = await resolveParcel(accessToken, 45.5, 2.5)
+    const surveyId = `e2e-route-compat-${randomUUID()}`
+    const route = {
+      version: 1,
+      method: "partial_plot",
+      counting: "capped",
+      zone_surface_ha: 8.5,
+      complement: { done: false },
+      guide: { chosen_by: "observer" },
+    }
+    const payload = (syncVersion: number, extra: Record<string, unknown> = {}) => ({
+      id: surveyId,
+      sync_version: syncVersion,
+      site_name: "Route Compat Forest",
+      status: "draft",
+      visibility: "private",
+      parcel_ids: [parcelId],
+      region_version: "ACA",
+      vegetation_stage: "collineen",
+      factors: validFactors,
+      ...extra,
+    })
+    const sync = (ops: MobileOp[]) =>
+      request(app.getHttpServer())
+        .post("/v1/sync")
+        .set("Authorization", `Bearer ${accessToken}`)
+        .send(mobileOps(ops))
+        .expect(200)
+    const storedRoute = async () =>
+      (
+        await db.query<{ survey_route: unknown }>(
+          `SELECT survey_route FROM surveys WHERE id = $1`,
+          [surveyId],
+        )
+      ).rows[0].survey_route
+
+    // A new client stores the route; an installed app then updates the draft without the key.
+    const created = await sync([
+      {
+        client_ref: "1",
+        entity: "survey",
+        action: "upsert",
+        payload: payload(1, { survey_route: route }),
+      },
+    ])
+    expect(created.body.results[0].status).toBe("synced")
+    const updated = await sync([
+      { client_ref: "2", entity: "survey", action: "upsert", payload: payload(2) },
+    ])
+    expect(updated.body.results[0].status).toBe("synced")
+    expect(await storedRoute()).toEqual(route)
+
+    // The installed app also submits and replays the submitted survey without the key.
+    await request(app.getHttpServer())
+      .post(`/v1/surveys/${surveyId}/submit`)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(201)
+    const next = (
+      await db.query<{ sync_version: number }>(`SELECT sync_version FROM surveys WHERE id = $1`, [
+        surveyId,
+      ])
+    ).rows[0].sync_version
+    const replayed = await sync([
+      { client_ref: "3", entity: "survey", action: "upsert", payload: payload(next + 1) },
+    ])
+    expect(replayed.body.results[0].status).toBe("synced")
+    expect(await storedRoute()).toEqual(route)
+
+    // The pulled shape carries the route for the new client and null for a survey without one.
+    const changes = await request(app.getHttpServer())
+      .get("/v1/sync/changes")
+      .query({ limit: 50 })
+      .set("Authorization", `Bearer ${accessToken}`)
+      .expect(200)
+    const pulled = (changes.body.surveys as Array<{ id: string; survey_route: unknown }>).find(
+      (survey) => survey.id === surveyId,
+    )
+    expect(pulled?.survey_route).toEqual(route)
+  })
+
   // Installed apps persist the changes cursor verbatim (mobile/src/storage/sync.ts:1141-1152)
   // and replay it on the next pull. Before this phase the server emitted
   // `<created_at::text>|<event id>`, and the removed event-less fallback emitted

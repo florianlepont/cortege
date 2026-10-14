@@ -23,6 +23,10 @@ export function useParcelStatuses({
 }: UseParcelStatusesInput) {
   const [items, setItems] = useState<PublicParcelStatusItem[]>([])
   const [loading, setLoading] = useState(false)
+  // True when no read is pending for the current region: neither waiting out the debounce nor in
+  // flight (a failed read, offline, also settles). Lets a caller wait for the list of the region it
+  // is looking at without waiting on a network that will not answer.
+  const [settled, setSettled] = useState(false)
   const requestRef = useRef(0)
   const bbox = useMemo(() => computeRegionBbox(region), [region])
   const zoom = useMemo(() => computeRegionZoom(region), [region])
@@ -31,8 +35,11 @@ export function useParcelStatuses({
     if (!enabled || !accessToken) {
       setItems([])
       setLoading(false)
+      setSettled(true)
       return
     }
+
+    setSettled(false)
 
     const timer = setTimeout(() => {
       const requestId = requestRef.current + 1
@@ -59,6 +66,7 @@ export function useParcelStatuses({
         .finally(() => {
           if (requestRef.current === requestId) {
             setLoading(false)
+            setSettled(true)
           }
         })
     }, debounceMs)
@@ -71,5 +79,6 @@ export function useParcelStatuses({
   return {
     items,
     loading,
+    settled,
   }
 }

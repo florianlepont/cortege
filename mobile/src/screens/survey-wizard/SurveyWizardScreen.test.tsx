@@ -160,10 +160,11 @@ describe("SurveyWizardScreen: variant I glass (12.2-16)", () => {
     const segments = tree.root.findAll(
       (n) => typeof n.type === "string" && flatten(n.props.style).height === 4,
     )
-    expect(segments).toHaveLength(4)
+    expect(segments).toHaveLength(5)
     const colours = segments.map((segment) => flatten(segment.props.style).backgroundColor)
     expect(colours).toEqual([
       defaultTheme.visual.score.high,
+      defaultTheme.visual.score.track,
       defaultTheme.visual.score.track,
       defaultTheme.visual.score.track,
       defaultTheme.visual.score.track,
@@ -370,9 +371,9 @@ describe("SurveyWizardScreen under the native iOS header (12.2-17)", () => {
     const { tree } = mount({ nativeHeader: true })
     expect(byTestID(tree, "wizard-back")).toBeUndefined()
     expect(
-      tree.root.findAll((n) => typeof n.type === "string" && n.props.children === "Étape 1 sur 4"),
+      tree.root.findAll((n) => typeof n.type === "string" && n.props.children === "Étape 1 sur 5"),
     ).toHaveLength(0)
-    expect(header(tree).props.title).toBe(w.stepLabel({ step: 1, total: 4 }))
+    expect(header(tree).props.title).toBe(w.stepLabel({ step: 1, total: 5 }))
     expect(header(tree).props.canStepBack).toBe(false)
   })
 
@@ -381,7 +382,7 @@ describe("SurveyWizardScreen under the native iOS header (12.2-17)", () => {
     const segments = tree.root.findAll(
       (n) => typeof n.type === "string" && flatten(n.props.style).height === 4,
     )
-    expect(segments).toHaveLength(4)
+    expect(segments).toHaveLength(5)
     expect(button(tree)).toBeDefined()
     // The route's ScreenFrame already starts below the bar: no status bar gap here (47 + 8).
     const topBar = tree.root.findAll(
@@ -393,14 +394,14 @@ describe("SurveyWizardScreen under the native iOS header (12.2-17)", () => {
   test("the bar follows the step; back steps back inside the wizard past the first question", () => {
     const { tree, onClose } = mount({ nativeHeader: true })
     next(tree)
-    expect(header(tree).props.title).toBe(w.stepLabel({ step: 2, total: 4 }))
+    expect(header(tree).props.title).toBe(w.stepLabel({ step: 2, total: 5 }))
     expect(header(tree).props.canStepBack).toBe(true)
     next(tree)
-    expect(header(tree).props.title).toBe(w.stepLabel({ step: 3, total: 4 }))
+    expect(header(tree).props.title).toBe(w.stepLabel({ step: 3, total: 5 }))
     act(() => {
       header(tree).props.onStepBack()
     })
-    expect(header(tree).props.title).toBe(w.stepLabel({ step: 2, total: 4 }))
+    expect(header(tree).props.title).toBe(w.stepLabel({ step: 2, total: 5 }))
     act(() => {
       header(tree).props.onStepBack()
     })

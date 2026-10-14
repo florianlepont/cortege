@@ -689,3 +689,99 @@ describe("pull keeps the survey note, the weather and the annotations (phase 27,
     expect(await storedColumns("with")).toEqual(await storedColumns("without"))
   })
 })
+
+describe("pull keeps the recorded route (phase 30, D-08)", () => {
+  const route = {
+    version: 1,
+    method: "partial_strip",
+    counting: "uncapped",
+    uncapped_factors: ["A", "C"],
+    zone_surface_ha: 12,
+    complement: { done: true, total_surface_ha: 14.5 },
+    guide: { chosen_by: "guide", suggested: { method: "partial_strip", counting: "uncapped" } },
+  }
+
+  test("insert and update both store survey_route in the local payload", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-route",
+            site_name: "Avec parcours",
+            status: "draft",
+            sync_version: 1,
+            survey_route: route,
+          },
+        ],
+      }),
+    )
+    await pullRemoteChanges("http://api", "token")
+    expect((await getLocalSurveyDraft("remote-route"))?.survey_route).toEqual(route)
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-route",
+            site_name: "Avec parcours",
+            status: "draft",
+            sync_version: 2,
+            survey_route: { ...route, zone_surface_ha: 13 },
+          },
+        ],
+      }),
+    )
+    await pullRemoteChanges("http://api", "token")
+    expect((await getLocalSurveyDraft("remote-route"))?.survey_route).toMatchObject({
+      zone_surface_ha: 13,
+    })
+  })
+
+  test("a null or missing remote route leaves the key absent", async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "remote-null-route",
+            site_name: "Sans parcours",
+            status: "draft",
+            sync_version: 1,
+            survey_route: null,
+          },
+          { id: "remote-no-route", site_name: "Ancien", status: "draft", sync_version: 1 },
+        ],
+      }),
+    )
+    await pullRemoteChanges("http://api", "token")
+
+    expect(await getLocalSurveyDraft("remote-null-route")).not.toHaveProperty("survey_route")
+    expect(await getLocalSurveyDraft("remote-no-route")).not.toHaveProperty("survey_route")
+  })
+
+  test("a pull never overwrites a local draft with pending work, route included", async () => {
+    await insertSurvey("local-route", { site_name: "Local" })
+    await insertQueueRow("local-route", "survey_upsert", {
+      id: "local-route",
+      sync_version: 2,
+      site_name: "Local",
+      survey_route: { ...route, zone_surface_ha: 7 },
+    })
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      changesResponse({
+        surveys: [
+          {
+            id: "local-route",
+            site_name: "Distante",
+            status: "draft",
+            sync_version: 3,
+            survey_route: route,
+          },
+        ],
+      }),
+    )
+
+    await pullRemoteChanges("http://api", "token")
+
+    expect((await getSurvey("local-route"))?.site_name).toBe("Local")
+    expect((await getLocalSurveyDraft("local-route"))?.survey_route).not.toEqual(route)
+  })
+})

@@ -10,8 +10,10 @@ import { usesNativeLargeTitle } from "../large-title"
 import { SelectedSurveyGate } from "./SelectedSurveyGate"
 
 /**
- * "Parcelles" (D-32): the map, the list of parcels and the offline map of the selected survey. The
- * pencil on the map opens the parcel editor.
+ * "Parcelles et parcours" (D-32): the map, the list of parcels, the "Parcours utilisé" card and the
+ * offline map of the selected survey. The pencil on the map opens the parcel editor; the route card
+ * opens the chooser in edit mode (a draft of the observer only; moved here from "Contexte" on
+ * 2026-10-14).
  */
 export const SurveyParcelsPageRoute = memo(function SurveyParcelsPageRoute({
   navigation,
@@ -31,6 +33,11 @@ export const SurveyParcelsPageRoute = memo(function SurveyParcelsPageRoute({
     })
   })
 
+  // The chooser reads the recorded answers itself, so only the survey travels (phase 30, D-09).
+  const onEditRoute = useLatestCallback((surveyId: string) =>
+    navigation.navigate("surveyRouteChoose", { surveyId, mode: "edit", surfaceHa: null }),
+  )
+
   return (
     <SelectedSurveyGate navigation={navigation}>
       {(survey) => (
@@ -43,6 +50,7 @@ export const SurveyParcelsPageRoute = memo(function SurveyParcelsPageRoute({
             surveyDetails={state.surveyDetails}
             detailsLoadingSurveyId={state.detailsLoadingSurveyId}
             onOpenParcels={onOpenParcels}
+            onEditRoute={onEditRoute}
           />
         </ScreenFrame>
       )}

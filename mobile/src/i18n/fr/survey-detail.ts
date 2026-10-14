@@ -35,6 +35,8 @@ export const surveyDetailFr = {
     sync: {
       synced: "synchronisé",
       pending: "pas encore synchronisé",
+      // Phase 30: the draft has no parcours yet, so it is held on the phone.
+      routePending: "parcours à choisir",
       // D-25: a finished survey whose last changes are still being sent, said discreetly.
       sending: "synchronisation en cours",
       error: "échec de la synchronisation",
@@ -63,6 +65,8 @@ export const surveyDetailFr = {
     contextMissing: "Complétez le contexte pour terminer",
     remainingUnknown: "Remplissez les 10 facteurs pour terminer",
     nameRequired: "Nommez le relevé pour le terminer",
+    // Phase 30 (O-19): a draft with no route cannot be finished until its parcours is chosen.
+    routeRequired: "Choisissez le parcours pour terminer",
     blocked: "Synchronisation bloquée",
   },
   scoreCard: {
@@ -92,19 +96,24 @@ export const surveyDetailFr = {
     seeOnMap: "Voir sur la carte",
   },
   rows: {
-    // D-32: "Contexte et parcelles" is split into "Contexte" (method, cas, weather) and "Parcelles"
-    // (map, list, offline map).
+    // D-32: "Contexte et parcelles" is split into "Contexte" (method, cas, weather) and "Parcelles".
+    // 2026-10-14 (owner decision): the parcels page also holds the "Parcours utilisé" card, so it is
+    // "Parcelles et parcours" (map, list, route, offline map).
     context: "Contexte",
     parcels: "Parcelles",
     // D-34: the row and its page are named for what they hold, the ten factors. The score card
     // above keeps "Score IBP".
     score: "Facteurs IBP",
-    history: "Historique de la parcelle",
+    history: "Historique",
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
     scoreValue: (filled: number) => `${filled} sur 10`,
     parcelsValue: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),
     parcelsNone: "Aucune",
+    // Phase 30 (U-O9, moved from Contexte on 2026-10-14): the short name of the parcours follows
+    // the parcel count, on the same line ("2 parcelles · Parcours en plein").
+    parcelsValueWithRoute: ({ parcels, route }: { parcels: string; route: string }) =>
+      `${parcels} · ${route}`,
     // Value of the parcel history row (D-01). The arrow is U+2192; the owner phone check
     // (plan 24-12) verifies the glyph, fallback: " à ".
     historyValue: ({ first, latest }: { first: number; latest: number }) =>
@@ -114,8 +123,8 @@ export const surveyDetailFr = {
     historyUnavailable: "Indisponible",
     historyNoParcel: "Aucune parcelle",
   },
-  // The sub-pages of the summary (OA-46, D-32): "Parcelles" holds the map, the list and the editing
-  // button.
+  // The sub-pages of the summary (OA-46, D-32): "Parcelles et parcours" holds the map, the list, the
+  // editing button, the "Parcours utilisé" card and the offline map.
   parcelsScreen: {
     parcelsHeading: (count: number) => `Parcelles · ${count}`,
     noParcel: "Aucune parcelle choisie pour ce relevé.",
@@ -141,6 +150,52 @@ export const surveyDetailFr = {
     // Filled by plan 01.8-14: the method version on the detail (D-02, D-08).
     unknownMethod: "Méthode IBP non reconnue",
     casMissing: "Choisissez le cas IBP de la station : il est requis pour soumettre le relevé.",
+  },
+  // Phase 30 (spec section 9, O-12): the "Parcours utilisé" card of the Contexte page, after "Méthode
+  // et station". The words are those of the official method; the values of the parcours and of the
+  // mode de relevé come from `fr.routeGuide` through `app/route-text.ts`. Read-only text after the
+  // submit, with the "Modifier le parcours" link on a draft only.
+  route: {
+    title: "Parcours utilisé",
+    parcours: "Parcours",
+    counting: "Mode de relevé",
+    countedFactors: "Facteurs comptés en entier",
+    // "A Essences autochtones": the letter, then the title of the factor.
+    factorItem: ({ letter, title }: { letter: string; title: string }) => `${letter} ${title}`,
+    zone: "Surface décrite",
+    zoneValue: (hectares: string) => `${hectares} ha`,
+    complement: "Reste du peuplement",
+    complementDone: (total: string) => `Regardé rapidement, surface totale évaluée ${total} ha`,
+    complementNo: "Non regardé",
+    choice: "Choix",
+    choiceGuide: "Conseillé par l'app d'après vos réponses",
+    choiceObserver: "Choisi par vous",
+    answers: "Vos réponses",
+    // The pieces of the "Vos réponses" sentence: "Peuplement de 8 ha, homogène, facile à observer".
+    answerParts: {
+      standSurface: (hectares: string) => `Peuplement de ${hectares} ha`,
+      pieceSurface: (hectares: string) => `Morceau de ${hectares} ha`,
+      subdivided: "peuplement découpé en sous-peuplements",
+      homogeneous: "homogène",
+      heterogeneous: "varié",
+      easy: "facile à observer",
+      hard: "difficile à observer",
+      narrow: "étroit",
+      wide: "large",
+      beginner: "IBP nouveau pour vous",
+      hoursAvailable: ({ hours, text }: { hours: number; text: string }) =>
+        hours < 2 ? `${text} heure disponible` : `${text} heures disponibles`,
+    },
+    edit: "Modifier le parcours",
+    editA11y: "Modifier le parcours de ce relevé",
+    // A draft that has no route yet (an older draft): the parcours must be chosen to finish it.
+    none: "Parcours à choisir",
+    noneBody: "Choisissez le parcours pour pouvoir terminer ce relevé.",
+    choose: "Choisir le parcours",
+    chooseA11y: "Choisir le parcours de ce relevé",
+    // A survey finished before this phase has no route: nothing is invented (P-3).
+    legacyRow: "Parcours : non renseigné",
+    legacyBody: "Ce relevé a été fait avant l'assistant de choix du parcours.",
   },
   factors: {
     title: "Facteurs IBP",

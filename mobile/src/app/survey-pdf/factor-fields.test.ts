@@ -161,6 +161,36 @@ describe("factor B", () => {
     expect(lineOf(stored, t.strata).items).toEqual(["Très basse", "Haute"])
   })
 
+  it("prints the cover per stratum of a relevé déplafonné in code order", () => {
+    const lines = buildFactorObservations(
+      "B",
+      {
+        B: {
+          strata_count: 2,
+          strata_cover: { herbaceous: 12.5, very_low: 25, high: 40, ghost: 9, low: 120 },
+        },
+      },
+      { method: V32, points: 2 },
+    )
+    expect(lineOf(lines, t.strataCover).items).toEqual([
+      "Très basse : 25 %",
+      "Haute : 40 %",
+      "Herbacée / semi-ligneuse : 12,5 %",
+    ])
+    expect(lineOf(lines, t.strataCount).value).toBe("2")
+  })
+
+  it("prints no cover line without a valid cover", () => {
+    for (const strata_cover of [undefined, {}, { low: 200 }, "x", null]) {
+      const lines = buildFactorObservations(
+        "B",
+        { B: { strata_count: 2, strata_cover } },
+        { method: V32, points: 2 },
+      )
+      noLine(lines, t.strataCover)
+    }
+  })
+
   it("gives only the count for a survey saved before the details", () => {
     const old = buildFactorObservations("B", { B: { strata_count: 3 } }, { method: V32, points: 2 })
     expect(old).toHaveLength(1)
@@ -220,6 +250,40 @@ describe("factors F and G", () => {
     )
     expect(lineOf(lines, t.treesPerHa).value).toBe("4 arbres / ha")
     expect(lineOf(lines, t.dmhGroups).items).toEqual(["1. Loges de pic"])
+  })
+
+  it("prints the counts per group and the surface of a relevé déplafonné", () => {
+    const lines = buildFactorObservations(
+      "F",
+      {
+        F: {
+          trees_per_ha: 3,
+          dmh_groups: ["dmh_01", "dmh_13"],
+          dmh_counts: { dmh_13: 2, dmh_01: 4, dmh_02: 0, bogus: 3, dmh_03: -1 },
+          surface_ha: 1.2,
+        },
+      },
+      { method: V32, points: 2 },
+    )
+    expect(lineOf(lines, t.dmhCounts).items).toEqual([
+      "1. Loges de pic : 4",
+      "2. Cavités à terreau : 0",
+      "13. Nids : 2",
+    ])
+    expect(lineOf(lines, t.surface).value).toBe("1,2 ha")
+    expect(lineOf(lines, t.treesPerHa).value).toBe("3 arbres / ha")
+  })
+
+  it("prints neither the counts nor the surface without valid counts", () => {
+    for (const dmh_counts of [undefined, {}, { dmh_01: 1.5 }, 4]) {
+      const lines = buildFactorObservations(
+        "F",
+        { F: { trees_per_ha: 3, dmh_counts, surface_ha: 1.2 } },
+        { method: V32, points: 2 },
+      )
+      noLine(lines, t.dmhCounts)
+      noLine(lines, t.surface)
+    }
   })
 
   it("gives only the density for an older survey", () => {

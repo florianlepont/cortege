@@ -6,6 +6,7 @@ import {
   resolveMethodVersion,
   SURVEY_NOTE_MAX_LENGTH,
   type IbpCas,
+  type SurveyRoute,
   type SurveyWeather,
 } from "@cortege/ibp-domain"
 import type { CnpfFactorAGenusCode } from "@cortege/ibp-domain"
@@ -13,6 +14,7 @@ import { addGenusToListValue, serializeGenusListValue } from "../app/factor-a-ge
 import {
   getLocalSurveyDraft,
   patchLocalSurveyConditions,
+  patchLocalSurveyRoute,
   updateLocalDraft,
 } from "../storage/surveys"
 import { DEFAULT_SURVEY_FORM, normalizeVegetationStageForRegion } from "../app/constants"
@@ -311,10 +313,34 @@ export function useSurveyDraftPatcher({ surveyList, onStatusChange }: UseSurveyD
     }
   }
 
+  /**
+   * Phase 30, D-08, D-09: saves the recorded route of a draft. Silent like the note (no status
+   * message, not through `patchSurveyDraftDirectly`, which rewrites the factors). Storage refuses a
+   * submitted survey and a record the package validator refuses (it returns null), which resolves
+   * false; there is no way to clear a route.
+   */
+  const handleUpdateSurveyRoute = async (
+    surveyId: string,
+    route: SurveyRoute,
+  ): Promise<boolean> => {
+    try {
+      const written = await patchLocalSurveyRoute({ survey_id: surveyId, survey_route: route })
+      if (written === null) {
+        return false
+      }
+      await surveyList.refreshLocalSurveys()
+      return true
+    } catch (error) {
+      logStatusDetail("editing.surveyRoute", error)
+      return false
+    }
+  }
+
   return {
     patchSurveyDraftDirectly,
     handleUpdateSurveyNote,
     handleUpdateSurveyWeather,
+    handleUpdateSurveyRoute,
     handleAddGenusToSurvey,
     handleRenameSurvey,
     handleUpdateSurveyRegionVersion,

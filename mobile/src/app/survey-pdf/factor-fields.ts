@@ -1,8 +1,12 @@
 import {
+  B_STRATUM_CODES,
+  DMH_GROUP_CODES,
   IBP_METHOD_V3_2,
   allowedFactorAGenusCodes,
   isCnpfFactorAGenusCode,
   isIbpCas,
+  readDmhCounts,
+  readStrataCover,
   resolveMethodVersion,
   scoreGenusCount,
   usesCas3Scale,
@@ -200,11 +204,29 @@ function factorA(factors: Raw, context: ObservationContext): ObservationLine[] {
   return lines
 }
 
+/**
+ * Phase 30 (spec section 7): the cover of each stratum of a relevé déplafonné, in code order and the
+ * survey's wording, read through the package (an unknown stratum or a cover out of range is dropped).
+ */
+function strataCoverItems(rawB: Raw | null, method: ExportMethodContext): string[] {
+  const cover = readStrataCover(rawB?.strata_cover)
+  const items: string[] = []
+  for (const code of B_STRATUM_CODES) {
+    const value = cover?.[code]
+    const label = selectionLabel("B", code, method.version)
+    if (value !== undefined && label !== null) {
+      items.push(t.strataCoverItem({ label, value: formatDecimal(value) }))
+    }
+  }
+  return items
+}
+
 function factorB(factors: Raw, method: ExportMethodContext): ObservationLine[] {
   const rawB = asRecord(factors.B)
   return [
     ...numberLine(rawB, "strata_count", t.strataCount),
     ...itemsLine(t.strata, selectionItems(rawB, "B", method)),
+    ...itemsLine(t.strataCover, strataCoverItems(rawB, method)),
   ]
 }
 
@@ -222,15 +244,33 @@ function densityPair(
   ]
 }
 
+/** The trees counted per dendromicrohabitat group (relevé déplafonné), in code order. */
+function dmhCountItems(rawF: Raw | null, method: ExportMethodContext): string[] {
+  const counts = readDmhCounts(rawF?.dmh_counts)
+  const items: string[] = []
+  for (const code of DMH_GROUP_CODES) {
+    const count = counts?.[code]
+    const label = selectionLabel("F", code, method.version)
+    if (count !== undefined && label !== null) {
+      items.push(t.dmhCountItem({ label, count: formatDecimal(count) }))
+    }
+  }
+  return items
+}
+
 function factorF(factors: Raw, method: ExportMethodContext): ObservationLine[] {
   const rawF = asRecord(factors.F)
   const trees = finite(rawF, "trees_per_ha")
+  const counts = dmhCountItems(rawF, method)
   return [
     ...valueLine(
       t.treesPerHa,
       trees === null ? null : t.treesPerHaValue({ value: formatDecimal(trees) }),
     ),
     ...itemsLine(t.dmhGroups, selectionItems(rawF, "F", method)),
+    ...itemsLine(t.dmhCounts, counts),
+    // The surface the counts were divided by, shown only beside the counts.
+    ...(counts.length > 0 ? surfaceLine(rawF) : []),
   ]
 }
 

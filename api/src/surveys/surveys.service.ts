@@ -10,6 +10,7 @@ import { DatabaseService, Queryable } from "../database/database.service"
 import { StorageService } from "../storage/storage.service"
 import { IbpRulesService, IbpValidationResult } from "./ibp-rules.service"
 import { ParcelsService } from "./parcels.service"
+import { assertRouteForCreate, assertRouteForSubmit } from "./route-required"
 import { SurveyEventsService } from "./survey-events.service"
 import {
   ListPage,
@@ -80,6 +81,13 @@ function weatherParameter(weather: SurveyRow["weather"]): string | null {
   return weather ? JSON.stringify(weather) : null
 }
 
+// Phase 30 (D-08): the jsonb parameter of a recorded route, a bound JSON string, or null when there
+// is none. Spec section 8: a route is never deleted, so a body without the key or with null keeps
+// the stored route (the caller passes the stored one), and only a value replaces it.
+function routeParameter(route: SurveyRow["survey_route"]): string | null {
+  return route ? JSON.stringify(route) : null
+}
+
 @Injectable()
 export class SurveysService {
   constructor(
@@ -117,13 +125,20 @@ export class SurveysService {
    * at all. The fallback runs only when a statement affected 0 rows, never on an error (C-5):
    * an error has written nothing and propagates.
    */
-  async upsertForUser(user: AuthenticatedUser, body: SurveyUpsertBody): Promise<UpsertResult> {
+  async upsertForUser(
+    user: AuthenticatedUser,
+    body: SurveyUpsertBody,
+    requireRoute = false,
+  ): Promise<UpsertResult> {
     const prepared = this.prepareUpsert(body)
     const { surveyId, syncVersion, draftValidation, columns } = prepared
 
     const current = await this.repository.readForUpsert(this.db, surveyId, user.id)
 
     if (!current) {
+      // Phase 30 (O-07, O-19): a new survey from the new client carries its route. Updates never
+      // reach this check, so a draft stored before the phase keeps syncing without one.
+      assertRouteForCreate(body, requireRoute)
       const selectedParcelIds = this.selectParcelIds(body, null, [])
       const parcelId = selectedParcelIds[0] ?? null
       const version = this.versionDefaults(body, null, parcelId, prepared.now)
@@ -144,6 +159,7 @@ export class SurveysService {
         ibpCas3Scale: columns.ibp_cas3_scale,
         surveyNote: body.survey_note ?? null,
         weather: body.weather ?? null,
+        surveyRoute: body.survey_route ?? null,
         factors: body.factors ?? {},
         factorResults: draftValidation.factor_results ?? {},
         scores: prepared.computedScores,
@@ -155,7 +171,7 @@ export class SurveysService {
         return this.syncedResult(prepared, created.id, created.updated_at)
       }
       // 0 rows: the id exists (a concurrent create, or another user's survey id).
-      return this.upsertLocked(user, body, prepared)
+      return this.upsertLocked(user, body, prepared, requireRoute)
     }
 
     const { cas_token: casToken, parcel_ids: existingParcelIds, ...existing } = current
@@ -171,7 +187,7 @@ export class SurveysService {
       const content = classifySameVersionContent(body, existing, existingParcelIds)
       if (content === "visibility_only" && !existing.deleted_at && body.visibility) {
         // The visibility write keeps its transaction (applyVisibilityChange + event).
-        return this.upsertLocked(user, body, prepared)
+        return this.upsertLocked(user, body, prepared, requireRoute)
       }
       // Identical, conflict, or visibility-only on a deleted row: nothing is written.
       return this.syncedResult(
@@ -183,7 +199,7 @@ export class SurveysService {
 
     if (existing.status === "submitted") {
       // The read-only rule and the restricted update keep the locked transaction.
-      return this.upsertLocked(user, body, prepared)
+      return this.upsertLocked(user, body, prepared, requireRoute)
     }
 
     const selectedParcelIds = this.selectParcelIds(body, existing, existingParcelIds)
@@ -210,6 +226,8 @@ export class SurveysService {
         surveyNote:
           body.survey_note === undefined ? (existing.survey_note ?? null) : body.survey_note,
         weather: body.weather === undefined ? (existing.weather ?? null) : body.weather,
+        // Phase 30 (D-08): absent or null keeps the stored route (never deleted), a value replaces.
+        surveyRoute: body.survey_route ?? existing.survey_route ?? null,
         factors: body.factors ?? existing.factors ?? {},
         factorResults: rowPrepared.draftValidation.factor_results ?? existing.factor_results ?? {},
         scores: rowPrepared.computedScores,
@@ -224,7 +242,7 @@ export class SurveysService {
     }
     // 0 rows: the row changed since statement A (xmin), or was submitted, or another request
     // already stored this sync_version. The locked path decides on the fresh row.
-    return this.upsertLocked(user, body, prepared)
+    return this.upsertLocked(user, body, prepared, requireRoute)
   }
 
   // Request validation and scoring, before any statement (unchanged from the pre-D-09 upsert).
@@ -331,6 +349,7 @@ export class SurveysService {
     user: AuthenticatedUser,
     body: SurveyUpsertBody,
     prepared: PreparedUpsert,
+    requireRoute = false,
   ): Promise<UpsertResult> {
     const { surveyId, syncVersion, siteName, draftValidation, computedScores, now, columns } =
       prepared
@@ -343,6 +362,7 @@ export class SurveysService {
       })
 
       if (!existing) {
+        assertRouteForCreate(body, requireRoute)
         const selectedParcelIds = await this.resolveSelectedParcelIds(db, body, null, [])
         const parcelId = selectedParcelIds[0] ?? null
         const { observationYear, versionNumber, previousSurveyId } = await this.resolveVersionInfo(
@@ -358,11 +378,11 @@ export class SurveysService {
           `INSERT INTO surveys (
             id, user_id, site_name, status, visibility, parcel_id, observation_year, version_number, previous_survey_id, region_version, vegetation_stage,
             factors, factor_results, scores, location, created_at, updated_at, submitted_at, sync_version,
-            ibp_method_version, ibp_cas, ibp_cas3_scale, survey_note, weather
+            ibp_method_version, ibp_cas, ibp_cas3_scale, survey_note, weather, survey_route
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
             $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19,
-            $20, $21, $22, $23::text, $24::jsonb
+            $20, $21, $22, $23::text, $24::jsonb, $25::jsonb
           )
           ON CONFLICT (id) DO NOTHING
           RETURNING id, updated_at::text`,
@@ -393,6 +413,7 @@ export class SurveysService {
             columns.ibp_cas3_scale,
             body.survey_note ?? null,
             weatherParameter(body.weather),
+            routeParameter(body.survey_route),
           ],
         )
 
@@ -460,6 +481,8 @@ export class SurveysService {
           })
         }
 
+        // Phase 30 (D-09): the recorded route is read-only after submit, so this UPDATE never
+        // lists survey_route (research Pitfall 6); a different value was refused above.
         const restrictedUpdateResult = await db.query<{ id: string; updated_at: string }>(
           `UPDATE surveys
            SET visibility = $3,
@@ -524,7 +547,8 @@ export class SurveysService {
              ibp_cas = $18,
              ibp_cas3_scale = $19,
              survey_note = $20::text,
-             weather = $21::jsonb
+             weather = $21::jsonb,
+             survey_route = $22::jsonb
          WHERE id = $1 AND user_id = $2 AND sync_version < $15
          RETURNING id, updated_at::text`,
         [
@@ -552,6 +576,8 @@ export class SurveysService {
           // D-04: an absent key keeps the stored value, an explicit null clears it.
           body.survey_note === undefined ? (existing.survey_note ?? null) : body.survey_note,
           weatherParameter(body.weather === undefined ? existing.weather : body.weather),
+          // Phase 30 (D-08): absent or null keeps the stored route, a value replaces it.
+          routeParameter(body.survey_route ?? existing.survey_route),
         ],
       )
 
@@ -1026,6 +1052,7 @@ export class SurveysService {
       | "ibp_cas3_scale"
       | "survey_note"
       | "weather"
+      | "survey_route"
       | "factors"
       | "factor_results"
       | "scores"
@@ -1059,6 +1086,8 @@ export class SurveysService {
       ibp_cas3_scale: survey.ibp_cas3_scale,
       survey_note: survey.survey_note ?? null,
       weather: survey.weather ?? null,
+      // Phase 30 (D-08): null when none, never a missing key.
+      survey_route: survey.survey_route ?? null,
       factors: survey.factors,
       factor_results: survey.factor_results,
       scores: survey.scores,
@@ -1073,6 +1102,7 @@ export class SurveysService {
   async submitSurvey(
     user: AuthenticatedUser,
     surveyId: string,
+    requireRoute = false,
   ): Promise<{
     id: string
     status: "submitted"
@@ -1100,6 +1130,9 @@ export class SurveysService {
           forUpdate: true,
           columns: "full",
         })
+
+        // Phase 30 (O-07, O-19): one clear code, before the IBP and parcel validation.
+        assertRouteForSubmit(existing.survey_route, requireRoute)
 
         // The stored row's method fields: submit scores under the survey's own version.
         const validation = this.ibpRules.validateSubmit({

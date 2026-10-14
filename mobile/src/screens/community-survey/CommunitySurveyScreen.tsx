@@ -1,3 +1,4 @@
+import { readSurveyRoute } from "@cortege/ibp-domain"
 import { useMemo } from "react"
 import { ScrollView, StyleSheet, View } from "react-native"
 import { Image as ExpoImage } from "expo-image"
@@ -12,6 +13,7 @@ import { AppGroupedList } from "../../ui/AppGroupedList"
 import { AppText as Text } from "../../ui/AppText"
 import { CenteredState } from "../../ui/CenteredState"
 import { useFrameInsetBehavior, useFrameLargeTitle } from "../../ui/frame-large-title"
+import { RouteSection } from "../survey-detail/route/RouteSection"
 import { ConditionsReadOnly } from "../survey-detail/conditions/ConditionsReadOnly"
 import { SurveyNoteCard } from "../survey-detail/conditions/SurveyNoteCard"
 import { FactorsList } from "../survey-detail/FactorsList"
@@ -250,6 +252,16 @@ export function CommunitySurveyScreen({
         loaded
         stored={detail.survey_note ?? null}
         onChangeNote={noop}
+      />
+      {/* Phase 30 (O-15): the parcours used, read-only and without the rows that speak to the
+          observer; nothing when the survey has no route or an older one the app cannot read
+          (T-30-49). */}
+      <RouteSection
+        route={readSurveyRoute(detail.survey_route)}
+        loaded
+        status="readonly"
+        editable={false}
+        variant="community"
       />
 
       <View style={styles.section}>

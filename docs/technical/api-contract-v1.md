@@ -8,7 +8,11 @@ sync feed and the public map reads; every change is additive. Phase 5 (2026-09-2
 A's bare `native_genus_count` with a genus list (`factors.A.genera`), validated against the CNPF
 regional list; no new endpoint (recognition is on-device, Phase 6). Phase 27 (2026-10-11) adds
 `survey_note`, `weather` and the `factors.annotations` container to the survey bodies and reads, the
-endpoint `GET /weather` and a 2 MB JSON body limit; every change is additive.
+endpoint `GET /weather` and a 2 MB JSON body limit; every change is additive. Phase 30 (2026-10-14)
+adds the recorded route `survey_route` to the survey bodies and reads, the client marker header
+`X-Cortege-Features: survey_route` and the `422` code `route_required` (see
+[Survey route (phase 30)](#survey-route-phase-30)); every change is additive, and a request without
+the marker behaves as before.
 
 Base path: `/v1`
 
@@ -30,6 +34,7 @@ Base path: `/v1`
 - `Report`: covered
 - `Public Map Item` (optional V1 read model): covered
 - `Weather observation` (phase 27, read-only, not stored by itself): covered by `GET /weather`
+- `Survey route` (phase 30, one nullable JSON column of `Survey`): covered by the survey writes and reads, see [Survey route (phase 30)](#survey-route-phase-30)
 
 ## 0) Health
 
@@ -387,6 +392,12 @@ that does not know them:
   would refuse a sync batch of large surveys with `413`, which the phone would retry forever).
   `POST /sync` stays capped at 100 operations.
 
+**Survey route (phase 30):** one optional addition on `POST /surveys` and on the `survey.upsert`
+payloads of `POST /sync`, `survey_route` (an object, or `null`/absent): how the survey was made, the
+parcours and the mode de relevé. It is described, with its keys, its rules and the mandatory route
+of the new client, under [Survey route (phase 30)](#survey-route-phase-30). `PATCH /surveys/{id}`
+does not carry it.
+
 **`status` and `expires_at` (V1.2 hardening):** both fields are accepted for backward
 compatibility with installed apps but are always ignored by the server. A survey is always
 created with `status: "draft"`; status changes only through `POST /surveys/{id}/submit`
@@ -397,8 +408,9 @@ exists on a survey, is not returned, and an `expires_at` sent by an older build 
 **Submitted surveys are read-only by value (V1.2 hardening):** an upsert that changes the
 *value* of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
 `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`,
-`ibp_cas`, `ibp_cas3_scale` (phase 01.8), `survey_note` or `weather` (phase 27), or the value of
-`visibility` (phase 29), on a survey whose status is `submitted` is rejected with
+`ibp_cas`, `ibp_cas3_scale` (phase 01.8), `survey_note` or `weather` (phase 27), `survey_route`
+(phase 30), or the value of `visibility` (phase 29), on a survey whose status is `submitted` is
+rejected with
 `409 survey_submitted_read_only` and `details.fields` listing the changed field names. Resending
 identical values (including a resync of a pulled survey) is accepted and only refreshes
 `sync_version`; `scores` is excluded from this comparison (it is recomputed server-side).
@@ -425,8 +437,8 @@ counts, search). `POST /surveys` with another member's `id` still answers `409 s
 already stored is compared by value with the stored survey on the same read-only fields
 (`site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`,
 `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, and since phase 01.8
-`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, and since phase 27 `survey_note` and
-`weather`) plus `visibility`; `scores`, `status` and `expires_at` are excluded. Identical values are an idempotent replay
+`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, since phase 27 `survey_note` and
+`weather`, and since phase 30 `survey_route`) plus `visibility`; `scores`, `status` and `expires_at` are excluded. Identical values are an idempotent replay
 (`synced`, nothing written). On a **draft**, when only `visibility` differs, it is applied
 last-writer-wins like `PATCH /surveys/{id}/visibility` (new `updated_at`, one `visibility_changed`
 event) and the answer is `synced`. On a **submitted** survey visibility is read-only (Phase 29), so
@@ -568,6 +580,10 @@ survey, so its `region_version` and `vegetation_stage` are `null`.
 The detail also carries `survey_note` and `weather` (phase 27): `null` when the observer entered
 none. The factor notes and doubts are inside `factors.annotations`.
 
+The detail also carries `survey_route` (phase 30): the recorded route, or `null` for a survey that
+has none (a draft or a submitted survey stored before the phase). The key is always present, never
+missing.
+
 ### PATCH /surveys/{id}
 
 Partially update survey fields.
@@ -694,10 +710,125 @@ Response `200`:
 
 If parcel linkage is missing/invalid, API returns `422` with error code `parcel_required` or `parcel_invalid`.
 
+For a request that carries the client marker `X-Cortege-Features: survey_route` (phase 30), a survey
+whose stored `survey_route` is absent or invalid answers `422` with the code `route_required`. The
+check runs first in the submit transaction, before the IBP and parcel validation; without the
+marker nothing changes. See [Survey route (phase 30)](#survey-route-phase-30).
+
 **Concurrent submits (V1.2 hardening):** submits on the same parcel are serialised by a
 row lock; the loser of a race gets `409 parcel_version_conflict` with
 `details.parcel_id`/`details.expected_version_number` instead of a duplicate version or a
 `500`.
+
+### Survey route (phase 30)
+
+The recorded route ("Parcours utilisé") says how a survey was made: the parcours (in full, or partial
+by strip or by plot), the mode de relevé (capped or uncapped), the surface described and what led to
+the choice. It is stored in the nullable JSONB column `surveys.survey_route` (migration
+`025_survey_route.sql`, see `data-contract-v1.md`) beside `survey_note` and `weather`, outside
+`factors`. **No scorer reads it and the score never depends on it**: it serves traceability and the
+comparison of two scores. The shape, the bounds, the canonical form and the validator
+(`validateSurveyRoute`) are owned by `@cortege/ibp-domain` (`packages/ibp-domain/src/route/record.ts`,
+wire type `SurveyRoute`); the rules of choice are in
+[`../specs/route-choice-rules-v1.md`](../specs/route-choice-rules-v1.md) (section 8 for the record).
+The record holds closed codes and numbers, never free text.
+
+| Key | Type and values | Presence |
+|---|---|---|
+| `version` | `1` (`SURVEY_ROUTE_VERSION`) | always |
+| `method` | `full`, `partial_strip`, `partial_plot` (`ROUTE_METHODS`) | always |
+| `counting` | `capped`, `uncapped` (`COUNTING_MODES`) | always |
+| `uncapped_factors` | non-empty, sorted, no duplicate subset of `A B C D E F G I J` (`UNCAPPABLE_FACTORS`, never `H`) | only when `counting` is `uncapped` |
+| `zone_surface_ha` | number above 0, at most `ROUTE_SURFACE_MAX_HA` (5000), 2 decimals; the surface the survey describes (for several plots, their sum) | always |
+| `complement` | object `{ done: boolean, total_surface_ha?: number }`; `total_surface_ha` is at least `zone_surface_ha`, at most 5000, 2 decimals, present only when `done` is true | only for a partial route |
+| `guide.chosen_by` | `guide` (the record is the proposal of the guide) or `observer` (changed or chosen directly) (`ROUTE_CHOSEN_BY_VALUES`) | always |
+| `guide.suggested` | `{ method, counting }`, the last proposal | absent when the observer chose directly without complete answers |
+| `guide.answers` | `surface_ha` (required in the object), and only for the questions that were needed and answered: `homogeneity` (`homogeneous`, `heterogeneous`), `difficulty`, `narrow`, `subdivided` (booleans), `experience` (`regular`, `beginner`), `hours_available` (above 0, at most `ROUTE_HOURS_MAX` = 24, 2 decimals) | optional |
+
+The serialised record is at most `ROUTE_RECORD_MAX_BYTES` (4096) bytes; the database enforces the same
+bound. The canonical form (rounding, sorted factors) is established on the phone: the server stores
+the value as received and compares it by value, so a replay of the same survey never produces a false
+conflict.
+
+Example body fragment (partial route by plot, one continuous sheet, guide accepted):
+
+```json
+"survey_route": {
+  "version": 1,
+  "method": "partial_plot",
+  "counting": "capped",
+  "zone_surface_ha": 1.5,
+  "complement": { "done": true, "total_surface_ha": 15 },
+  "guide": {
+    "chosen_by": "guide",
+    "suggested": { "method": "partial_plot", "counting": "capped" },
+    "answers": { "surface_ha": 15, "homogeneity": "homogeneous", "difficulty": false, "narrow": false }
+  }
+}
+```
+
+Rules:
+
+- **Absent or `null` keeps the stored route, a route is never deleted.** This differs from
+  `survey_note` and `weather`, where `null` clears. On a write with a higher `sync_version` only a
+  present value replaces the stored one, and only on a draft. An installed app that does not send the
+  field therefore never erases a route. An absent or `null` field is never a change in the
+  same-version or read-only comparison.
+- **Validation.** A value is checked by the nested DTOs (every key of the record is declared) and
+  then by the package validator `validateSurveyRoute` (cross-field rules, bounds, canonical form,
+  size). A violation is a `400` validation error on `POST /surveys` and a per-operation `fatal_error`
+  `invalid_sync_operation` (`details.fields` naming `survey_route`) on `POST /sync`. The message is
+  constant (`survey_route is invalid`) and never echoes the value.
+- **Undeclared nested keys.** A nested key the DTOs do not declare is rejected with `400` on
+  `POST /surveys` and silently stripped on `POST /sync` (the general strip rule). Every key above is
+  declared, so a valid record survives a round trip.
+- **Fixed after submit (D-09).** `survey_route` is read-only once the survey is submitted, like
+  `ibp_method_version`: it is compared by value (key order does not matter). A submitted survey whose
+  body carries a different route answers `409 survey_submitted_read_only` with `survey_route` in
+  `details.fields`; an identical resend is accepted, and so is a resend with the key absent or
+  `null` (the stored route is unchanged). A route added to a survey that was submitted without one is
+  refused the same way. The restricted update used for submitted surveys never lists the column.
+- **Same `sync_version`.** The route is part of the same-version comparison: identical is an
+  idempotent replay (`synced`, nothing written, no new event), a different route is
+  `409 sync_version_conflict`.
+- **No other write path.** `PATCH /surveys/{id}` does not carry the field. The route enters only
+  through `POST /surveys` and `survey.upsert`. It never enters the survey event journal.
+- **Reads.** `GET /surveys/{id}` (the key is always present, `null` when none),
+  `GET /sync/changes` (`surveys` items, `null` when none; a client that rebuilds an upsert payload
+  from a pulled survey must copy it) and `GET /public/community-surveys/{survey_id}` (the survey's own
+  route, `null` when none, read-only, owner decision O-15). The community detail keeps the visibility
+  rule of Phase 29: only a submitted, non-deleted, shared survey answers, so a route never leaves a
+  draft or a private survey. The `history` items of the community detail carry no route.
+
+**Mandatory route (new client).** The route is mandatory for any new survey (owner decisions O-07 and
+O-19), enforced as follows without breaking the app builds already installed:
+
+- The new client sends the fixed header `X-Cortege-Features: survey_route` on every request
+  (`CLIENT_FEATURES_HEADER` and `SURVEY_ROUTE_CLIENT_FEATURE` of the package). The value is a
+  comma-separated list, each entry trimmed and compared case-insensitively as a whole; a header that
+  does not list `survey_route` is ignored. It is a data-quality rule, not an access control.
+- With the header, a **create** (a survey with no stored row) whose `survey_route` is absent, `null`
+  or not a valid record answers `422` with `{ "code": "route_required", "message": "survey_route is required" }`
+  and nothing is stored. The code and the message are constant; nothing of the body is echoed.
+- With the header, `POST /surveys/{id}/submit` of a survey whose stored route is absent or invalid
+  answers the same `422 route_required`, checked first in the submit transaction.
+- On `POST /sync` the check is per operation: a `survey.upsert` that would create a survey without a
+  route is a `fatal_error` with `error.code: "route_required"` and `error.http_status: 422`, and the
+  other operations of the batch proceed.
+- **Updates never run the check**, so a draft stored before the phase keeps syncing from either
+  client. Such a draft stays valid but cannot be submitted by the new client until it has a route; the
+  phone also keeps it local until a route is chosen (see `sync-conflict-resolution-v1.md`).
+- **Without the header the behaviour is exactly the one before the phase** (create, update, sync and
+  submit), so installed older builds and the existing API tests are unaffected. A survey submitted
+  before the phase keeps no route (`null`) and stays valid.
+
+**Deploy order.** Merge and deploy the API before installing any app build that sends `survey_route`
+or the header. The API image is pulled within minutes of a merge to `main`, while app builds are
+installed by hand. Against an API that does not know the field, `POST /surveys` rejects the unknown
+key with `400` and `POST /sync` strips it silently, so a later pull of the server row (without the
+route) could overwrite the local payload. The header alone is harmless to an older API (an unknown
+header is ignored). The end-to-end suites `sync-installed-app-compat`, `surveys-route` and
+`surveys-route-required` cover the installed-app, replay and marker cases.
 
 ### IBP factor validation (phase 01.8)
 
@@ -772,7 +903,11 @@ entry (for example `"Ficus"`, not on the list — A-6) or a non-array value is a
 ### Factor detail arrays (phase 25.1, D-12)
 
 The factor objects of `factors` may carry detail arrays next to their scored value: `B.strata`,
-`F.dmh_groups`, `H.evidence`, `I.types` and `J.types` (arrays of catalogue codes). They are stored
+`F.dmh_groups`, `H.evidence`, `I.types` and `J.types` (arrays of catalogue codes). Since phase 30
+they may also carry the detail of an uncapped count (relevé déplafonné): `B.strata_cover` (object,
+stratum code to percent of cover), `F.dmh_counts` (object, group code `dmh_01` to `dmh_15` to a
+whole number of trees) and `F.surface_ha`; these three are objects or numbers, not arrays, and
+follow the same rules (see `data-contract-v1.md`). They are stored
 and returned verbatim by `POST /v1/sync`, `POST /v1/surveys`, `GET /v1/sync/changes` and
 `GET /v1/surveys/:id`, are not validated by the server, and are never scored. No endpoint, field
 or wire type is added.
@@ -1106,9 +1241,10 @@ Rules:
 - `parcel_ids` (on `survey.upsert` payloads, and on the REST `POST /surveys` / `PATCH /surveys/{id}` bodies) is bounded at `50` entries; each entry must match `^[0-9A-Z]{1,32}$` (case-insensitive) — the pattern accepts both synthetic cadastral IDs and the 14-character IGN `idu` values the server itself generates. A batch entry over the limit or containing a malformed ID is rejected the same way as any other invalid payload (`invalid_sync_operation`, `400`); on the REST routes it is a normal `400` validation error.
 - `status` and `expires_at` on a `survey.upsert` payload are accepted for compatibility with installed apps and always ignored: status changes only through `POST /surveys/{id}/submit`, and `expires_at` is computed server-side at creation (`created_at` + 7 days), never moved by an upsert (D-03).
 - `survey.upsert` payloads carry `survey_note`, `weather` and `factors.annotations` (phase 27) with the rules of [POST /surveys](#post-surveys): absent keeps the stored value, `null` clears it on a higher `sync_version`, all three are read-only after submit and compared by value at the same `sync_version`. The nested `weather` object is validated key by key; a nested key the DTO does not declare is stripped (every key of the object is declared). A bound violation fails that operation alone with `invalid_sync_operation`.
+- `survey.upsert` payloads carry `survey_route` (phase 30) with the rules of [Survey route (phase 30)](#survey-route-phase-30): absent or `null` keeps the stored route (a route is never deleted), it is read-only after submit and compared by value at the same `sync_version`. The nested object is validated key by key and then by the package validator; a nested key the DTOs do not declare is stripped (every key of the record is declared). For a client that sends `X-Cortege-Features: survey_route`, an operation that would create a survey without a valid route fails alone with `route_required` (`422`) and the rest of the batch proceeds.
 - The JSON body of a batch may be up to 2 MB (D-25); the cap of 100 operations is unchanged.
 - `survey.upsert` payloads carry the method fields of `POST /surveys` (`ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, phase 01.8) with the same values, storage rule and effective-version rule. They are declared on the payload DTO, so they are kept, not stripped; an invalid value fails that operation with `invalid_sync_operation` and `details.fields` naming the fields (for example `["ibp_method_version","ibp_cas"]`), and nothing is stored.
-- An upsert on a `submitted` survey that changes the value of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`, `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, `survey_note`, `weather` or `visibility` (Phase 29) returns `fatal_error` with `error.code: "survey_submitted_read_only"`, `error.http_status: 409` and `error.details.fields` listing the changed field names. Resending identical values (a pulled-survey replay) is `synced` and only refreshes `sync_version`; `scores` is excluded from the comparison since it is recomputed server-side (D-04, D-13). The method fields are compared as described under `POST /surveys`: an installed app that replays an untagged survey with the explicit v3.0 tag is an identical replay (`synced`), and the stored column stays `NULL`.
+- An upsert on a `submitted` survey that changes the value of `site_name`, `parcel_id`/`parcel_ids`, `observation_year`, `version_number`, `previous_survey_id`, `region_version`, `vegetation_stage`, `factors`, `ibp_method_version`, `ibp_cas`, `ibp_cas3_scale`, `survey_note`, `weather`, `survey_route` (phase 30) or `visibility` (Phase 29) returns `fatal_error` with `error.code: "survey_submitted_read_only"`, `error.http_status: 409` and `error.details.fields` listing the changed field names. Resending identical values (a pulled-survey replay) is `synced` and only refreshes `sync_version`; `scores` is excluded from the comparison since it is recomputed server-side (D-04, D-13). The method fields are compared as described under `POST /surveys`: an installed app that replays an untagged survey with the explicit v3.0 tag is an identical replay (`synced`), and the stored column stays `NULL`.
 - An upsert with the same `sync_version` the server already stored follows the same-version rule of `POST /surveys`: identical read-only fields and visibility are `synced`; on a draft a visibility-only difference is applied last-writer-wins like `survey.visibility_update` and answered `synced`, on a submitted survey it is a `sync_version_conflict`; any read-only difference returns `fatal_error` with `error.code: "sync_version_conflict"`, `error.http_status: 409`, `error.message: "Same sync_version with different content"` and `server_sync_version`/`client_sync_version` in `error.details`. The client keeps its local data (Case B in `sync-conflict-resolution-v1.md`).
 - `survey_id`, the `survey.delete` payload `id`, the `survey.upsert` payload `id` and the `attachment.delete` payload `attachment_id` must match `^[A-Za-z0-9_-]{1,128}$`; otherwise that operation alone fails with `invalid_sync_operation` (`400`).
 - `attachment.create` results carry the same presigned `upload_url` as the REST route: it signs `Content-Length = size_bytes`, and confirming an object of another size answers `422 attachment_size_mismatch`.
@@ -1130,6 +1266,7 @@ Rules:
 - A malformed cursor, or a `v2:` cursor with out-of-range values, gets `400 Invalid sync cursor`. A `v2:` cursor ahead of the server's current transaction id (after a database restore) restarts the feed from the beginning.
 - Surveys that never had an event are not re-sent on every poll any more; every survey has at least one event.
 - `surveys` items carry `survey_note` and `weather` (phase 27; `null` when the survey has none) and their `factors`, which hold `annotations`. A client that rebuilds an upsert payload from a pulled survey must copy them, or a reinstall or a second device would lose the note and the weather. The feed stays scoped to the caller's own surveys.
+- `surveys` items carry `survey_route` (phase 30; `null` when the survey has none, never a missing key). A client that rebuilds an upsert payload from a pulled survey must copy it, or a reinstall or a second device would lose the recorded route.
 - `surveys` items carry `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale` (phase 01.8; `null` for a survey without a version, which is v3.0). A client that rebuilds an upsert payload from a pulled survey must copy them, or it would show a pulled v3.2 survey as v3.0 (the server keeps such an untagged replay in v3.2, from the stored row).
 
 Response `200`:
@@ -1160,6 +1297,7 @@ Response `200`:
       "ibp_cas3_scale": false,
       "survey_note": null,
       "weather": null,
+      "survey_route": null,
       "sync_version": 3,
       "updated_at": "2026-03-09T10:20:00.002+00",
       "deleted_at": null
@@ -1407,6 +1545,10 @@ The page of a finished survey of any member, read-only (phase 12.1). Requires an
   survey.
 - The notes of a submitted survey stay readable after its author deletes the account; `author_name`
   then reads `null` (D-24).
+- Since phase 30 the detail carries `survey_route`: the survey's own recorded route, read-only (owner
+  decision O-15), `null` when the survey was submitted without one. It is on the same row as the rest
+  of the detail, so the visibility rule above applies unchanged (a draft or a private survey stays
+  `404`). The `history` items carry no route.
 
 ### GET /public/community-surveys/{survey_id}/attachments
 
@@ -1874,6 +2016,7 @@ Common business error codes (non-exhaustive):
 - `attachment_size_mismatch` (`422`) — the uploaded attachment's size differs from the declared `size_bytes`; the object is deleted (or never written) and the attachment stays unconfirmed.
 - `invalid_operation` — a deterministic PostgreSQL data/constraint error (SQLSTATE class `22`/`23`) was raised while processing the request; the message is intentionally generic and carries no SQL detail.
 - `submitted_read_only_fields` (`422`): a `PATCH /surveys/{id}` on a submitted survey named a read-only field (since phase 01.8 including `ibp_method_version`, `ibp_cas` and `ibp_cas3_scale`, since Phase 29 `visibility`), or a `PATCH /surveys/{id}/visibility` or a sync `survey.visibility_update` tried to change the visibility of a submitted survey; `error.details.fields` lists the field names.
+- `route_required` (`422`): a request carrying `X-Cortege-Features: survey_route` creates a survey without a valid `survey_route`, or submits a survey whose stored route is absent or invalid; on `POST /sync` it is the `error.code` of the refused operation. Without the header the rule does not apply. See [Survey route (phase 30)](#survey-route-phase-30).
 - `weather_provider_unavailable` (`503`): the weather provider behind `GET /weather` failed, timed out or refused the call; the body is `{ code, message }` and the app treats it as "no weather yet", never as an error to show.
 - `search_provider_unavailable` (`503`): the IGN geocoder or API Carto behind `GET /search/places` or `GET /search/parcels` failed and no registered parcel could answer; the body is `{ code, message }`.
 

@@ -17,6 +17,8 @@ import { fr } from "../../i18n"
 export type { FactorProgress } from "../../app/types"
 import { AppPressable } from "../../ui/AppPressable"
 
+const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
+
 export function computeFactorProgress(
   factorSections: Record<FactorKey, FactorField[]>,
 ): Record<FactorKey, FactorProgress> {
@@ -46,6 +48,7 @@ export function FactorTile({
   title,
   progress,
   retainedScore,
+  countedInFull = false,
   onPress,
 }: {
   factor: FactorKey
@@ -53,6 +56,8 @@ export function FactorTile({
   title: string
   progress: FactorProgress
   retainedScore: FactorRetainedScore | null
+  /** Phase 30 (D-07): the recorded route counts this factor in full. */
+  countedInFull?: boolean
   onPress: () => void
 }) {
   const theme = useBrandTheme()
@@ -98,6 +103,16 @@ export function FactorTile({
       <Text numberOfLines={2} style={factorStyles.factorTileTitle}>
         {title}
       </Text>
+      {countedInFull ? (
+        <Text
+          style={factorStyles.factorTileMode}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          testID={`factor-tile-mode-${factor}`}
+        >
+          {fr.factorDetail.countingMode.chip}
+        </Text>
+      ) : null}
       <Text style={factorStyles.factorTileMeta}>
         {fr.surveyForm.factors.fieldsProgress({ filled: progress.filled, total: progress.total })}
       </Text>
@@ -112,11 +127,14 @@ export function FactorsList({
   factorRetainedScores,
   scoreTotals,
   onOpenFactor,
+  uncappedFactors = NO_UNCAPPED_FACTORS,
 }: {
   factorProgress: Record<FactorKey, FactorProgress>
   factorRetainedScores: Record<FactorKey, FactorRetainedScore | null>
   scoreTotals: ReturnType<typeof computeIbpTotalsFromRetainedScores>
   onOpenFactor: (factor: FactorKey) => void
+  /** Phase 30 (D-07): the factors the recorded route counts in full; they carry a tag. */
+  uncappedFactors?: readonly FactorKey[]
 }) {
   const theme = useBrandTheme()
   const factorStyles = useMemo(() => createFactorStyles(theme), [theme])
@@ -156,6 +174,7 @@ export function FactorsList({
               title={FACTOR_TITLES[factor]}
               progress={factorProgress[factor]}
               retainedScore={factorRetainedScores[factor]}
+              countedInFull={uncappedFactors.includes(factor)}
               onPress={() => onOpenFactor(factor)}
             />
           ))}

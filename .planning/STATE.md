@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 29
-current_phase_name: Private or Public Before Submission (INSERTED, V1)
-status: ready_to_plan
-stopped_at: Phase 29 complete
-last_updated: "2026-10-14T05:30:00.000Z"
+current_phase: 30
+current_phase_name: Route Choice Assistant (INSERTED, V1)
+status: executing
+stopped_at: "Phase 30: waves 1 to 11 done (23/25 plans); remaining: 30-24 (device checks and owner wording review), 30-25 (recorded tester session)"
+last_updated: "2026-10-14T08:00:00.000Z"
 last_activity: 2026-10-14
-last_activity_desc: Phase 29 complete and closed (PRs 300 and 301 merged, device checks validated)
+last_activity_desc: Phase 30 spec validated by the owner (gate 30-02 passed); phase 29 merged into the branch
 progress:
   total_phases: 39
   completed_phases: 21
@@ -24,14 +24,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-22)
 
 **Core value:** An ecologist can complete a full IBP survey offline on a real parcel and have it reach the server intact on reconnection — no data loss, no duplicates.
-**Current focus:** Phase 27 (quick survey additions) is complete (2026-10-12; its remaining device checks are reported to Phases 35 and 37, nothing stays open); then Phases 28 to 34 (the V1 features, which make up the beta), Phase 35 (field validation on the beta), Phase 36, and the audits 37 and 38. Phase 26 (field-feedback fixes) is complete; its device checks for Android recognition (SC-1, SC-7) are deferred to the Android testers, see 26-UAT.md.
+**Current focus:** Phase 30 — Route Choice Assistant (INSERTED, V1)
 
 ## Current Position
 
-Phase: 29 (Private or Public Before Submission (INSERTED, V1)) — COMPLETE
-Plan: 10 of 10
-Status: Phase complete; next is Phase 30
-Last activity: 2026-10-13 — Phase 29 complete
+Phase: 30 (Route Choice Assistant (INSERTED, V1)) — EXECUTING
+Plan: 2 of 25
+Status: Executing Phase 30 (gate 30-02 passed; next wave 3)
+Last activity: 2026-10-14 — owner validated the route-choice spec
 
 Progress: [█████████░] 29/39 phases complete
 
@@ -281,6 +281,6 @@ Decisions table. Decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-10-13T12:00:00.000Z
-Stopped at: Phase 28 complete (28/28 plans); merged in main by PRs 294 to 297; owner validated on his iPhone 2026-10-13, Android emulator run done; the Android phone pass (fluidity, felt haptics, TalkBack, LEFT_MAP_ANDROID_VIEW kept at texture) is deferred to Phase 35
-Resume file: None
+Last session: 2026-10-13T17:49:24.125Z
+Stopped at: Phase 30 replanned (25 plans); spec revised, waiting for the owner's written validation (gate 30-02)
+Resume file: .planning/phases/30-route-choice-assistant-inserted-v1/30-01-PLAN.md

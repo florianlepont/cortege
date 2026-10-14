@@ -4,6 +4,7 @@ import { validate } from "class-validator"
 import { validateSyncDto } from "../src/surveys/sync-operation-validation"
 import { SurveyUpsertDto } from "../src/surveys/dtos/survey-upsert.dto"
 import { SurveyWeatherDto } from "../src/surveys/dtos/survey-weather.dto"
+import { SurveyRouteDto } from "../src/surveys/dtos/survey-route.dto"
 
 // Phase 27 (D-01, D-05, D-09, D-23): survey_note, the nested weather and the factors.annotations
 // container are validated on both entry points. /v1/sync goes through validateSyncDto (whitelist
@@ -147,5 +148,179 @@ describe("SurveyUpsertDto factors.annotations", () => {
     const messages = errors.flatMap((error) => Object.values(error.constraints ?? {}))
     expect(messages).toContain("factors.annotations is invalid")
     expect(JSON.stringify(messages)).not.toContain("aaaa")
+  })
+})
+
+// Phase 30 (D-08, D-09): the recorded route, a nested object with every key declared, validated by
+// the package on both entry points. Whether a route is required is decided elsewhere (plan 30-10),
+// so null and absent both pass here.
+describe("SurveyUpsertDto survey_route", () => {
+  const fullRoute = {
+    version: 1,
+    method: "full",
+    counting: "capped",
+    zone_surface_ha: 2.5,
+    guide: { chosen_by: "observer" },
+  }
+  const guidedPartialRoute = {
+    version: 1,
+    method: "partial_strip",
+    counting: "uncapped",
+    uncapped_factors: ["A", "B", "E"],
+    zone_surface_ha: 12,
+    complement: { done: true, total_surface_ha: 14.5 },
+    guide: {
+      chosen_by: "guide",
+      suggested: { method: "partial_strip", counting: "uncapped" },
+      answers: {
+        surface_ha: 12,
+        homogeneity: "homogeneous",
+        difficulty: false,
+        narrow: true,
+        experience: "regular",
+        hours_available: 3.5,
+        subdivided: false,
+      },
+    },
+  }
+  const notDoneComplementRoute = {
+    version: 1,
+    method: "partial_plot",
+    counting: "capped",
+    zone_surface_ha: 40,
+    complement: { done: false },
+    guide: { chosen_by: "guide", suggested: { method: "partial_plot", counting: "capped" } },
+  }
+
+  it.each([
+    ["a full capped route chosen by the observer", fullRoute],
+    ["a guided partial route with answers and a done complement", guidedPartialRoute],
+    ["a partial route with a complement not done", notDoneComplementRoute],
+  ])("accepts %s and keeps every key on the instance", async (_label, route) => {
+    const instance = await validateSyncDto(SurveyUpsertDto, { survey_route: route })
+    expect(instance.survey_route).toBeInstanceOf(SurveyRouteDto)
+    expect(JSON.parse(JSON.stringify(instance.survey_route))).toEqual(route)
+  })
+
+  it("accepts survey_route null and an absent key", async () => {
+    await expect(validateSyncDto(SurveyUpsertDto, { survey_route: null })).resolves.toBeDefined()
+    await expect(validateSyncDto(SurveyUpsertDto, {})).resolves.toBeDefined()
+  })
+
+  it.each([
+    ["the retired typological method", { ...fullRoute, method: "typological" }],
+    ["the retired systematic method", { ...fullRoute, method: "systematic" }],
+    ["an unknown method", { ...fullRoute, method: "random" }],
+    ["an unknown counting", { ...fullRoute, counting: "half" }],
+    ["a version other than 1", { ...fullRoute, version: 2 }],
+    ["a missing version", { ...fullRoute, version: undefined }],
+    ["a zone of 0", { ...fullRoute, zone_surface_ha: 0 }],
+    ["a zone above the maximum", { ...fullRoute, zone_surface_ha: 5001 }],
+    ["a text zone", { ...fullRoute, zone_surface_ha: "2" }],
+    ["a missing guide", { ...fullRoute, guide: undefined }],
+    ["an unknown chosen_by", { ...fullRoute, guide: { chosen_by: "robot" } }],
+    [
+      "an unknown homogeneity",
+      { ...fullRoute, guide: { chosen_by: "guide", answers: { surface_ha: 2, homogeneity: "x" } } },
+    ],
+    [
+      "an unknown experience",
+      { ...fullRoute, guide: { chosen_by: "guide", answers: { surface_ha: 2, experience: "x" } } },
+    ],
+    [
+      "hours above the maximum",
+      {
+        ...fullRoute,
+        guide: { chosen_by: "guide", answers: { surface_ha: 2, hours_available: 25 } },
+      },
+    ],
+    [
+      "a text flag",
+      { ...fullRoute, guide: { chosen_by: "guide", answers: { surface_ha: 2, narrow: "yes" } } },
+    ],
+    [
+      "an unknown suggested method",
+      {
+        ...fullRoute,
+        guide: { chosen_by: "guide", suggested: { method: "x", counting: "capped" } },
+      },
+    ],
+    ["an uncapped route with no factor", { ...fullRoute, counting: "uncapped" }],
+    [
+      "an uncapped route with an empty factor list",
+      { ...fullRoute, counting: "uncapped", uncapped_factors: [] },
+    ],
+    [
+      "an uncapped route with factor H",
+      { ...fullRoute, counting: "uncapped", uncapped_factors: ["A", "H"] },
+    ],
+    [
+      "an uncapped route with unsorted factors",
+      { ...fullRoute, counting: "uncapped", uncapped_factors: ["B", "A"] },
+    ],
+    ["a capped route with factors", { ...fullRoute, uncapped_factors: ["A"] }],
+    ["a complement on a full route", { ...fullRoute, complement: { done: false } }],
+    ["a partial route without complement", { ...fullRoute, method: "partial_strip" }],
+    ["a done complement without total", { ...notDoneComplementRoute, complement: { done: true } }],
+    [
+      "a complement total below the zone",
+      { ...notDoneComplementRoute, complement: { done: true, total_surface_ha: 10 } },
+    ],
+    ["a route that is a string", "full"],
+    ["a route that is an array", [fullRoute]],
+  ])("rejects %s", async (_label, survey_route) => {
+    expect(await rejectedFields({ survey_route })).toEqual(["survey_route"])
+  })
+
+  it("reports a constant message that echoes no value", async () => {
+    const errors = await pipeErrors({ survey_route: { ...fullRoute, method: "SECRET-VALUE" } })
+    const messages = errors.flatMap((error) => Object.values(error.constraints ?? {}))
+    expect(messages).toContain("survey_route is invalid")
+    expect(JSON.stringify(messages)).not.toContain("SECRET-VALUE")
+  })
+
+  it.each([
+    ["the route", (route: Record<string, unknown>) => ({ ...route, extra: 1 })],
+    [
+      "the complement",
+      (route: Record<string, unknown>) => ({
+        ...route,
+        complement: { done: false, extra: 1 },
+      }),
+    ],
+    [
+      "the guide",
+      (route: Record<string, unknown>) => ({
+        ...route,
+        guide: { ...(route.guide as object), extra: 1 },
+      }),
+    ],
+    [
+      "the suggestion",
+      (route: Record<string, unknown>) => ({
+        ...route,
+        guide: { chosen_by: "guide", suggested: { method: "full", counting: "capped", extra: 1 } },
+      }),
+    ],
+    [
+      "the answers",
+      (route: Record<string, unknown>) => ({
+        ...route,
+        guide: { chosen_by: "guide", answers: { surface_ha: 2, extra: 1 } },
+      }),
+    ],
+  ])("handles an undeclared key in %s", async (_label, build) => {
+    const route = build(notDoneComplementRoute)
+    // /v1/sync: the whitelist strips it and the rest still validates.
+    const instance = await validateSyncDto(SurveyUpsertDto, { survey_route: route })
+    expect(JSON.stringify(instance.survey_route)).not.toContain("extra")
+    // POST /v1/surveys: forbidNonWhitelisted rejects it.
+    const errors = await pipeErrors({ survey_route: route })
+    expect(errors.map((error) => error.property)).toEqual(["survey_route"])
+  })
+
+  it("accepts a valid route under the POST /v1/surveys pipe settings", async () => {
+    expect(await pipeErrors({ survey_route: guidedPartialRoute })).toEqual([])
+    expect(await pipeErrors({ survey_route: fullRoute })).toEqual([])
   })
 })

@@ -50,15 +50,16 @@ function localDraft(annotations: FactorAnnotations): LocalDraftSummary {
     factorEntries: [],
     annotations,
     submitReady: null,
+    hasRoute: false,
     missingFactorCount: null,
     meta: null,
   }
 }
 
-function read(detail: SurveyDetailResponse): SurveyDetailData {
+function read(detail: SurveyDetailResponse, survey: LocalSurvey = SURVEY): SurveyDetailData {
   let result!: SurveyDetailData
   function Probe() {
-    result = useSurveyDetailData(SURVEY, { s1: detail }, null)
+    result = useSurveyDetailData(survey, { s1: detail }, null)
     return null
   }
   act(() => {
@@ -99,5 +100,23 @@ describe("useSurveyDetailData factor annotations (phase 27, D-13)", () => {
     expect(annotated.map(([c, e]) => [c, e.score_points, e.selected_class])).toEqual(
       plain.map(([c, e]) => [c, e.score_points, e.selected_class]),
     )
+  })
+})
+
+describe("useSurveyDetailData finish gate (phase 30, O-19)", () => {
+  const DRAFT_SURVEY = {
+    id: "s1",
+    site_name: "Bois",
+    status: "draft",
+    sync_blocked: 0,
+    created_at: "t",
+  } as LocalSurvey
+
+  test("a complete draft can be finished only with a route", () => {
+    mockLocalDraft = { ...localDraft({}), submitReady: true, hasRoute: true }
+    expect(read(detailWith(undefined), DRAFT_SURVEY).canFinishNow).toBe(true)
+
+    mockLocalDraft = { ...localDraft({}), submitReady: true, hasRoute: false }
+    expect(read(detailWith(undefined), DRAFT_SURVEY).canFinishNow).toBe(false)
   })
 })

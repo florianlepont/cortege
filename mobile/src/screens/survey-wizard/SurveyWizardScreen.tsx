@@ -28,8 +28,11 @@ import { AppPressable } from "../../ui/AppPressable"
 
 const w = fr.surveyForm.wizard
 
-/** The three questions here and the parcel map. */
-const TOTAL_STEPS = 4
+/**
+ * The three questions here, the parcel map and the route step. Phase 30, O-19: the route step is the
+ * mandatory fifth step of a new survey, so the creation counts five steps (it was four).
+ */
+const TOTAL_STEPS = 5
 
 type WizardStep = "name" | "method" | "context"
 const STEPS: readonly WizardStep[] = ["name", "method", "context"]
@@ -43,7 +46,7 @@ type SurveyWizardScreenProps = {
   vegetationStage: VegetationStage
   setVegetationStage: (value: VegetationStage) => void
   onRegionChange: (nextRegion: RegionVersion) => void
-  /** Step 4, the full-screen parcel map, is its own screen. */
+  /** Step 4, the full-screen parcel map, is its own screen (then the route step, step 5). */
   onOpenParcels: () => void
   /** Leaving from the first step. */
   onClose: () => void

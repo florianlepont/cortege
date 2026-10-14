@@ -35,6 +35,16 @@ Official documents are published on the CNPF website:
   <https://www.cnpf.fr/sites/socle/files/2026-04/IBP_FR_v3_2_260202.pdf>
   (retrieved 2026-09-26, SHA-256
   `f130b3d66522ec0f5692e87e361b628b4941ce9748d1ed5519a49734854bd001`)
+- IBP survey methods, "Méthodes de relevé de l'Indice de Biodiversité Potentielle (IBP)", dated
+  09/09/25, 28 pp. (Gonin P., Larrieu L.): the current methods document that IBP FR v3.2 cites
+  (p. 18) as "Gonin, Larrieu, 2025". It is the source of the route-choice and counting rules of
+  [`../specs/route-choice-rules-v1.md`](../specs/route-choice-rules-v1.md) (Phase 30) and replaces
+  the 2022 methods document below for this purpose:
+  <https://www.cnpf.fr/sites/socle/files/2026-04/IBP_met_fr_250909.pdf>
+  (retrieved 2026-10-13, SHA-256
+  `3954746756b770f338055310973ada871ea5bdd768cb6be1ce60581a7a87d7f2`). Its tables 4, 5 and 7 are
+  labelled "IBP v3.0" by the authors. Page numbers cited in the specs are the footers printed in
+  the document ("Méthodes de relevé IBP (09/09/25) - p. N"). The PDF is not part of the repository.
 - IBP Fr v3.0 (available per survey): definition, no longer online (HTTP 404, checked 2026-09-26);
   CNPF no longer publishes v3.0:
   <https://www.cnpf.fr/sites/socle/files/cnpf-old/medias/documents/9a66d6016d0a99f576f35f53df4e73f3/ibp_def_fr_v3_0_230323_0.pdf>
@@ -51,6 +61,8 @@ Cite as:
   Miozzo M., Palero N., 2026 — *Indice de Biodiversité Potentielle pour les forêts de France
   métropolitaine (IBP FR v3.2) : définition et fiches de relevé*. CNPF, INRAE Dynafor, 02/02/26,
   28 p.
+- Survey methods (route choice and counting, Phase 30): Gonin P., Larrieu L., 2025 - *Méthodes de
+  relevé de l'Indice de Biodiversité Potentielle (IBP)*. CNPF, INRAE Dynafor, 09/09/25, 28 p.
 - Method still available per survey: Gonin P., Larrieu L., 2022 — *Indice de Biodiversité
   Potentielle (IBP Fr v3.0)*. CNPF, INRAE Dynafor.
 
@@ -71,4 +83,5 @@ brand markers) live in
 
 If you need the source PDFs, download the v3.2 PDF from the link above and keep it outside the
 repository — `*.pdf` is gitignored in this directory. Check its SHA-256 against the value above.
+The methods document (09/09/25) is downloaded and checked the same way.
 The v3.0 PDFs can no longer be downloaded: CNPF no longer publishes them.

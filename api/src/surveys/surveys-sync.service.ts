@@ -42,6 +42,7 @@ export class SurveysSyncService {
   async syncBatch(
     user: AuthenticatedUser,
     body: SyncBatchDto,
+    requireRoute = false,
   ): Promise<{ results: SyncOperationResult[] }> {
     const operations = body.operations
 
@@ -70,7 +71,7 @@ export class SurveysSyncService {
 
         if (envelope.entity === "survey" && envelope.action === "upsert") {
           const payload = await validateSyncDto(SurveyUpsertDto, envelope.payload)
-          const data = await this.surveysService.upsertForUser(user, payload)
+          const data = await this.surveysService.upsertForUser(user, payload, requireRoute)
           results.push({
             client_ref: clientRef,
             entity: envelope.entity,
@@ -351,6 +352,7 @@ export class SurveysSyncService {
          s.scores,
          s.survey_note,
          s.weather,
+         s.survey_route,
          s.created_at::text,
          s.updated_at::text,
          s.submitted_at::text,
@@ -368,6 +370,8 @@ export class SurveysSyncService {
       ...row,
       survey_note: row.survey_note ?? null,
       weather: row.weather ?? null,
+      // Phase 30, D-08: a survey without a recorded route reads null, never a missing key.
+      survey_route: row.survey_route ?? null,
     }))
   }
 

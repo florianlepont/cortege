@@ -9,6 +9,7 @@ import {
   type CommunitySurveyAttachment,
   CommunitySurveyDetail,
   CommunitySurveyHistoryItem,
+  SurveyRoute,
   SurveyWeather,
 } from "@cortege/ibp-domain"
 import { DatabaseService } from "../database/database.service"
@@ -35,6 +36,7 @@ type DetailDbRow = {
   parcel_ids: string[] | null
   survey_note: string | null
   weather: SurveyWeather | null
+  survey_route: SurveyRoute | null
   factor_annotations: unknown
 }
 
@@ -90,6 +92,7 @@ export class CommunitySurveysService {
          s.factor_results,
          s.survey_note,
          s.weather,
+         s.survey_route,
          s.factors -> 'annotations' AS factor_annotations,
          s.submitted_at::text,
          u.display_name AS author_name,
@@ -156,6 +159,9 @@ export class CommunitySurveysService {
       factor_results: row.factor_results,
       survey_note: row.survey_note ?? null,
       weather: row.weather ?? null,
+      // Phase 30, O-15: read-only, null when none. The detail query only reaches submitted surveys
+      // the reader may see (PUBLIC_SURVEY_PREDICATE), so a draft's or private survey's route never leaves.
+      survey_route: row.survey_route ?? null,
       factor_annotations: Object.keys(annotations).length > 0 ? annotations : null,
       // A legacy survey linked by `parcel_id` only still has its one parcel.
       parcel_ids: row.parcel_ids ?? (row.parcel_id ? [row.parcel_id] : []),

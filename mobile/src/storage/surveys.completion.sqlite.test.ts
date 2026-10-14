@@ -13,6 +13,7 @@ import {
   createLocalDraft,
   getLocalSurveyDraft,
   listLocalSurveys,
+  patchLocalSurveyRoute,
   updateLocalDraft,
 } from "./surveys"
 import { pullRemoteChanges } from "./sync"
@@ -530,5 +531,118 @@ describe("factors filled, one definition for the list and the detail (12.2-14)",
 
   test("computePayloadFactorsFilled of no payload is 0", () => {
     expect(computePayloadFactorsFilled(null)).toBe(0)
+  })
+})
+
+describe("a route is not a factor (phase 30)", () => {
+  const SIX_FACTORS = {
+    A: { native_genus_count: 5 },
+    B: { strata_count: 3, covered_autochthonous_percent: 60 },
+    C: { bmg_count: 2, bmm_count: 2, surface_ha: 1 },
+    D: { bmg_count: 0, bmm_count: 2, surface_ha: 1 },
+    E: { tgb_count: 6, gb_count: 0, surface_ha: 1 },
+    F: { trees_per_ha: 9 },
+  }
+  const MISMATCH_INPUT = {
+    site_name: "Lisière de la Marne",
+    region_version: "ACA" as const,
+    vegetation_stage: "collineen",
+    parcel_ids: ["ab1"],
+    factors: SIX_FACTORS,
+  }
+  const ROUTE = {
+    version: 1 as const,
+    method: "full" as const,
+    counting: "capped" as const,
+    zone_surface_ha: 2.5,
+    guide: { chosen_by: "observer" as const },
+  }
+
+  test("the counters ignore survey_route and a route write leaves the stored ones unchanged", async () => {
+    const plain: SurveyQueuePayload = {
+      id: "p",
+      sync_version: 1,
+      site_name: "Parcelle",
+      region_version: "ACA",
+      vegetation_stage: "mature",
+      parcel_ids: ["P1"],
+      factors: SIX_FACTORS,
+    }
+    expect(computePayloadCompletion({ ...plain, survey_route: ROUTE })).toBe(
+      computePayloadCompletion(plain),
+    )
+    expect(computePayloadFactorsFilled({ ...plain, survey_route: ROUTE })).toBe(
+      computePayloadFactorsFilled(plain),
+    )
+
+    const survey = await createLocalDraft(MISMATCH_INPUT)
+    const before = { completion: await storedCompletion(survey.id), filled: survey.factors_filled }
+    const patched = await patchLocalSurveyRoute({ survey_id: survey.id, survey_route: ROUTE })
+
+    expect(await storedCompletion(survey.id)).toBe(before.completion)
+    expect(patched?.factors_filled).toBe(before.filled)
+    expect(patched?.completion_rate).toBe(survey.completion_rate)
+  })
+})
+
+describe("detail keys of the releve deplafonne are not factors (phase 30, D-09)", () => {
+  const BASE_FACTORS = {
+    A: { native_genus_count: 5 },
+    B: { strata_count: 3 },
+    C: { bmg_count: 2, bmm_count: 2, surface_ha: 1 },
+    D: { bmg_count: 0, bmm_count: 2, surface_ha: 1 },
+    E: { tgb_count: 6, gb_count: 0, surface_ha: 1 },
+    F: { trees_per_ha: 9 },
+  }
+  const DETAILED_FACTORS = {
+    ...BASE_FACTORS,
+    B: {
+      strata_count: 3,
+      strata_cover: { very_low: 25, low: 40, high: 21.5, herbaceous: 5 },
+    },
+    F: {
+      trees_per_ha: 9,
+      dmh_counts: { dmh_01: 8, dmh_04: 3 },
+      surface_ha: 1,
+    },
+  }
+  const INPUT = {
+    site_name: "Lisière de la Marne",
+    region_version: "ACA" as const,
+    vegetation_stage: "collineen",
+    parcel_ids: ["ab1"],
+  }
+
+  test("the same draft with and without detail keys has the same stored counters", async () => {
+    const plain = await createLocalDraft({ ...INPUT, factors: BASE_FACTORS })
+    const detailed = await createLocalDraft({ ...INPUT, factors: DETAILED_FACTORS })
+
+    expect(await storedCompletion(detailed.id)).toBe(await storedCompletion(plain.id))
+    expect(await storedFactorsFilled(detailed.id)).toBe(await storedFactorsFilled(plain.id))
+    expect(detailed.completion_rate).toBe(plain.completion_rate)
+    expect(detailed.factors_filled).toBe(plain.factors_filled)
+    // The detail keys are stored as written, beside the scored keys.
+    const stored = (await storedPayload(detailed.id)).factors as typeof DETAILED_FACTORS
+    expect(stored.B.strata_cover).toEqual(DETAILED_FACTORS.B.strata_cover)
+    expect(stored.F.dmh_counts).toEqual(DETAILED_FACTORS.F.dmh_counts)
+    expect(stored.F.surface_ha).toBe(1)
+  })
+
+  test("an update that adds the detail keys leaves the stored counters unchanged", async () => {
+    const survey = await createLocalDraft({ ...INPUT, factors: BASE_FACTORS })
+    const before = {
+      completion: await storedCompletion(survey.id),
+      filled: await storedFactorsFilled(survey.id),
+    }
+    const updated = await updateLocalDraft({
+      survey_id: survey.id,
+      ...INPUT,
+      factors: DETAILED_FACTORS,
+    })
+
+    expect(await storedCompletion(survey.id)).toBe(before.completion)
+    expect(await storedFactorsFilled(survey.id)).toBe(before.filled)
+    expect(updated.factors_filled).toBe(before.filled)
+    expect(computePayloadCompletion(await storedPayload(survey.id))).toBe(before.completion)
   })
 })

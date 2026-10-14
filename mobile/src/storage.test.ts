@@ -12,6 +12,7 @@
 import {
   initLocalDb,
   createLocalDraft,
+  patchLocalSurveyRoute,
   updateLocalDraft,
   getLocalSurveyDraft,
   listLocalSurveys,
@@ -741,12 +742,23 @@ describe("syncPending", () => {
   })
 
   test("increments failed count on HTTP error", async () => {
-    await createLocalDraft({
+    const draft = await createLocalDraft({
       site_name: "Test",
       region_version: "ACA",
       vegetation_stage: "adult",
       parcel_ids: [],
       factors: {},
+    })
+    // Phase 30 (O-19, P-1): a draft without route stays on the phone and is not sent.
+    await patchLocalSurveyRoute({
+      survey_id: draft.id,
+      survey_route: {
+        version: 1,
+        method: "full",
+        counting: "capped",
+        zone_surface_ha: 2.5,
+        guide: { chosen_by: "observer" },
+      },
     })
     ;(global.fetch as jest.Mock).mockRejectedValue(new Error("Network error"))
 

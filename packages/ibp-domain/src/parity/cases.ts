@@ -658,13 +658,107 @@ const ANNOTATION_CASES: IbpParityCase[] = [
   })),
 ]
 
-/** Every parity case: v3.0, both versions, v3.2, dispatch, annotations (matrix v2 order). */
+/**
+ * Phase 30, D-09 and U-O10: the detail keys of a relevé déplafonné (`B.strata_cover`,
+ * `F.dmh_counts`, `F.surface_ha`) are never read by a scorer. Each case expects what the same
+ * factors give without the detail keys. Scores come from the matrix thresholds: B 3 strata is 2, 2
+ * strata is 1; F 2.5 trees per hectare is 1. Under v3.2 the submit variants carry the cas.
+ */
+const STRATA_COVER_3 = { very_low: 25, low: 30, high: 40 }
+const STRATA_COVER_4 = { very_low: 25, low: 30, intermediate: 20, high: 40 }
+const DMH_COUNTS_2_5 = { dmh_01: 5, dmh_02: 1 }
+
+const UNCAPPED_DETAIL_CASES: IbpParityCase[] = [
+  // B: 3 strata give B = 2, with or without the cover.
+  ...bothVersions((suffix) => ({
+    id: `MAT-B-UNC-01@both#${suffix}-draft`,
+    matrixId: "MAT-B-UNC-01@both",
+    mode: "draft",
+    factors: { B: { strata_count: 3, strata_cover: STRATA_COVER_3 } },
+    expect: { ok: true, scores: { B: 2 }, issueCodes: [] },
+  })),
+  ...bothVersions((suffix) => ({
+    id: `MAT-B-UNC-01@both#${suffix}-submit`,
+    matrixId: "MAT-B-UNC-01@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { ...COMPLETE_DIRECT, B: { strata_count: 3, strata_cover: STRATA_COVER_3 } },
+    expect: { ok: true, scores: COMPLETE_DIRECT, totals: COMPLETE_DIRECT_TOTALS, issueCodes: [] },
+  })),
+  // B: the cover would give 4 strata (B = 2) but strata_count 2 is the scored key: B = 1.
+  ...bothVersions((suffix) => ({
+    id: `MAT-B-UNC-02@both#${suffix}-draft`,
+    matrixId: "MAT-B-UNC-02@both",
+    mode: "draft",
+    factors: { B: { strata_count: 2, strata_cover: STRATA_COVER_4 } },
+    expect: { ok: true, scores: { B: 1 }, issueCodes: [] },
+  })),
+  // The same with B = 1 in the complete set: stand 5+1+1+0+2+5+2 = 16, total 16 + 7 = 23.
+  ...bothVersions((suffix) => ({
+    id: `MAT-B-UNC-02@both#${suffix}-submit`,
+    matrixId: "MAT-B-UNC-02@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: { ...COMPLETE_DIRECT, B: { strata_count: 2, strata_cover: STRATA_COVER_4 } },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, B: 1 },
+      totals: { ibp_peuplement_gestion: 16, ibp_contexte: 7, ibp_total: 23 },
+      issueCodes: [],
+    },
+  })),
+  // B: a cover without strata_count is an unreadable B, like an empty B object.
+  ...bothVersions((suffix) => ({
+    id: `MAT-B-UNC-03@both#${suffix}`,
+    matrixId: "MAT-B-UNC-03@both",
+    mode: "draft",
+    factors: { B: { strata_cover: STRATA_COVER_3 } },
+    expect: { ok: false, scores: { B: null }, issueCodes: ["factor_invalid_raw"] },
+  })),
+  // F: 2.5 trees per hectare give F = 1, with or without the counts and the surface.
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-UNC-01@both#${suffix}-draft`,
+    matrixId: "MAT-F-UNC-01@both",
+    mode: "draft",
+    factors: { F: { trees_per_ha: 2.5, dmh_counts: DMH_COUNTS_2_5, surface_ha: 2 } },
+    expect: { ok: true, scores: { F: 1 }, issueCodes: [] },
+  })),
+  // The same with F = 1 in the complete set: stand 5+2+1+0+2+1+2 = 13, total 13 + 7 = 20.
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-UNC-01@both#${suffix}-submit`,
+    matrixId: "MAT-F-UNC-01@both",
+    mode: "submit",
+    context: suffix === "v3.2" ? CAS_1 : ACA_COLLINEEN,
+    factors: {
+      ...COMPLETE_DIRECT,
+      F: { trees_per_ha: 2.5, dmh_counts: DMH_COUNTS_2_5, surface_ha: 2 },
+    },
+    expect: {
+      ok: true,
+      scores: { ...COMPLETE_DIRECT, F: 1 },
+      totals: { ibp_peuplement_gestion: 13, ibp_contexte: 7, ibp_total: 20 },
+      issueCodes: [],
+    },
+  })),
+  // F: counts and surface without trees_per_ha are an unreadable F (dmh_counts is not the
+  // dmh_group_counts array the scorer reads).
+  ...bothVersions((suffix) => ({
+    id: `MAT-F-UNC-02@both#${suffix}`,
+    matrixId: "MAT-F-UNC-02@both",
+    mode: "draft",
+    factors: { F: { dmh_counts: DMH_COUNTS_2_5, surface_ha: 2 } },
+    expect: { ok: false, scores: { F: null }, issueCodes: ["factor_invalid_raw"] },
+  })),
+]
+
+/** Every parity case: v3.0, both versions, v3.2, dispatch, annotations, détail keys (matrix v2 order). */
 export const IBP_PARITY_CASES: readonly IbpParityCase[] = [
   ...V30_CASES,
   ...BOTH_CASES,
   ...V32_CASES,
   ...DISPATCH_CASES,
   ...ANNOTATION_CASES,
+  ...UNCAPPED_DETAIL_CASES,
 ]
 
 /** Submit readiness per version (matrix v2 "Submit readiness", rows R-n). */

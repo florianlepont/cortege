@@ -13,6 +13,7 @@ jest.mock("../storage/surveys", () => ({
   getLocalSurveyDraft: jest.fn(),
   updateLocalDraft: jest.fn(),
   patchLocalSurveyConditions: jest.fn(),
+  patchLocalSurveyRoute: jest.fn(),
 }))
 
 import { IBP_METHOD_V3_0, IBP_METHOD_V3_2 } from "@cortege/ibp-domain"
@@ -20,9 +21,10 @@ import { fr } from "../i18n"
 import {
   getLocalSurveyDraft,
   patchLocalSurveyConditions,
+  patchLocalSurveyRoute,
   updateLocalDraft,
 } from "../storage/surveys"
-import type { SurveyWeather } from "@cortege/ibp-domain"
+import type { SurveyRoute, SurveyWeather } from "@cortege/ibp-domain"
 import type { SurveyQueuePayload } from "../storage/types"
 import { applyMethodFields } from "../storage/utils"
 import { useSurveyDraftPatcher } from "./useSurveyDraftPatcher"
@@ -30,6 +32,7 @@ import { useSurveyDraftPatcher } from "./useSurveyDraftPatcher"
 const mockGetLocalSurveyDraft = getLocalSurveyDraft as jest.Mock
 const mockUpdateLocalDraft = updateLocalDraft as jest.Mock
 const mockPatchConditions = patchLocalSurveyConditions as jest.Mock
+const mockPatchRoute = patchLocalSurveyRoute as jest.Mock
 
 const TEST_SURVEY_ID = "survey-test-1"
 
@@ -67,6 +70,7 @@ describe("useSurveyDraftPatcher", () => {
     }
     mockUpdateLocalDraft.mockResolvedValue({})
     mockPatchConditions.mockResolvedValue({ id: TEST_SURVEY_ID })
+    mockPatchRoute.mockResolvedValue({ id: TEST_SURVEY_ID })
   })
 
   // ─── patchSurveyDraftDirectly ──────────────────────────────────────────────
@@ -582,6 +586,48 @@ describe("useSurveyDraftPatcher", () => {
       const { handleUpdateSurveyNote } = useBuildHook()
 
       expect(await handleUpdateSurveyNote(TEST_SURVEY_ID, "note")).toBe(false)
+      expect(onStatusChange).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("handleUpdateSurveyRoute (phase 30, D-08, D-09)", () => {
+    const route: SurveyRoute = {
+      version: 1,
+      method: "full",
+      counting: "capped",
+      zone_surface_ha: 2.5,
+      guide: { chosen_by: "observer" },
+    }
+
+    test("writes the route, refreshes once and posts no status", async () => {
+      const { handleUpdateSurveyRoute } = useBuildHook()
+
+      expect(await handleUpdateSurveyRoute(TEST_SURVEY_ID, route)).toBe(true)
+
+      expect(mockPatchRoute).toHaveBeenCalledWith({
+        survey_id: TEST_SURVEY_ID,
+        survey_route: route,
+      })
+      expect(surveyList.refreshLocalSurveys).toHaveBeenCalledTimes(1)
+      expect(onStatusChange).not.toHaveBeenCalled()
+      expect(mockUpdateLocalDraft).not.toHaveBeenCalled()
+    })
+
+    test("a submitted survey or a refused record (null from storage) resolves false", async () => {
+      mockPatchRoute.mockResolvedValue(null)
+      const { handleUpdateSurveyRoute } = useBuildHook()
+
+      expect(await handleUpdateSurveyRoute(TEST_SURVEY_ID, route)).toBe(false)
+      expect(surveyList.refreshLocalSurveys).not.toHaveBeenCalled()
+      expect(onStatusChange).not.toHaveBeenCalled()
+    })
+
+    test("a storage error resolves false with no user-facing status", async () => {
+      mockPatchRoute.mockRejectedValue(new Error("DB crash"))
+      const { handleUpdateSurveyRoute } = useBuildHook()
+
+      expect(await handleUpdateSurveyRoute(TEST_SURVEY_ID, route)).toBe(false)
+      expect(surveyList.refreshLocalSurveys).not.toHaveBeenCalled()
       expect(onStatusChange).not.toHaveBeenCalled()
     })
   })

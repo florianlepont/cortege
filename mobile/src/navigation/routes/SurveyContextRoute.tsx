@@ -19,7 +19,6 @@ export const SurveyContextRoute = memo(function SurveyContextRoute({
   const { state, actions } = useSurveys()
   const { state: weather, actions: weatherActions } = useWeatherPrefillState()
   const offline = useIsOffline()
-
   return (
     <SelectedSurveyGate navigation={navigation}>
       {(survey) => (

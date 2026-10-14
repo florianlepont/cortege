@@ -8,7 +8,7 @@ import type { SurveyRowTone } from "./SurveyRowFrame"
 export function resolveSurveyRowTone(uiStatus: SurveyUiStatus): SurveyRowTone {
   if (uiStatus === "sync_error" || uiStatus === "sync_blocked") return "danger"
   if (uiStatus === "submitted") return "success"
-  if (uiStatus === "sync_pending") return "warning"
+  if (uiStatus === "sync_pending" || uiStatus === "route_pending") return "warning"
   return "neutral"
 }
 

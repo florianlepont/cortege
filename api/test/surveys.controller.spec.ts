@@ -79,7 +79,11 @@ describe("SurveysController", () => {
     const body = { id: "survey-1", sync_version: 1, site_name: "Forest" }
 
     await expect(controller.upsert(user, body)).resolves.toBe("upserted")
-    expect(surveys.upsertForUser).toHaveBeenCalledWith(user, body)
+    expect(surveys.upsertForUser).toHaveBeenCalledWith(user, body, false)
+
+    // Phase 30 (P-2): the client marker header turns the mandatory route on.
+    await controller.upsert(user, body, "survey_route")
+    expect(surveys.upsertForUser).toHaveBeenLastCalledWith(user, body, true)
 
     await expect(controller.getById(user, "survey-1")).resolves.toBe("survey")
     expect(surveys.getSurveyById).toHaveBeenCalledWith(user, "survey-1")
@@ -95,7 +99,10 @@ describe("SurveysController", () => {
     })
 
     await expect(controller.submit(user, "survey-1")).resolves.toBe("submitted")
-    expect(surveys.submitSurvey).toHaveBeenCalledWith(user, "survey-1")
+    expect(surveys.submitSurvey).toHaveBeenCalledWith(user, "survey-1", false)
+
+    await controller.submit(user, "survey-1", "survey_route")
+    expect(surveys.submitSurvey).toHaveBeenLastCalledWith(user, "survey-1", true)
 
     await expect(controller.deleteSurvey(user, "survey-1")).resolves.toBeUndefined()
     expect(surveys.deleteSurvey).toHaveBeenCalledWith(user, "survey-1", { allowMissing: true })

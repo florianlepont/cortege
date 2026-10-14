@@ -584,7 +584,8 @@ describe("SurveysService note and weather at the write sites", () => {
     const [sql, values] = txQuery.mock.calls[0] as [string, unknown[]]
     expect(sql).toContain("survey_note, weather")
     expect(sql).toContain("$23::text, $24::jsonb")
-    expect(values).toHaveLength(24)
+    // Phase 30: the recorded route is the 25th parameter.
+    expect(values).toHaveLength(25)
     expect(values[22]).toBe("Note")
     expect(values[23]).toBe(JSON.stringify(weather))
   })
@@ -601,9 +602,10 @@ describe("SurveysService note and weather at the write sites", () => {
     expect(updates).toHaveLength(3)
     expect(updates[0][0]).toContain("survey_note = $20::text")
     expect(updates[0][0]).toContain("weather = $21::jsonb")
-    expect(updates[0][1].slice(19)).toEqual(["Stored note", JSON.stringify(weather)])
-    expect(updates[1][1].slice(19)).toEqual([null, null])
-    expect(updates[2][1].slice(19)).toEqual(["New", JSON.stringify(weather)])
+    // Phase 30: the recorded route is the 22nd parameter, after the weather.
+    expect(updates[0][1].slice(19, 21)).toEqual(["Stored note", JSON.stringify(weather)])
+    expect(updates[1][1].slice(19, 21)).toEqual([null, null])
+    expect(updates[2][1].slice(19, 21)).toEqual(["New", JSON.stringify(weather)])
   })
 
   it("does not write them in the restricted update of a submitted survey", async () => {
@@ -617,6 +619,213 @@ describe("SurveysService note and weather at the write sites", () => {
     expect(sql).toContain("UPDATE surveys")
     expect(sql).not.toContain("survey_note")
     expect(sql).not.toContain("weather")
+  })
+})
+
+// Phase 30 (D-08, D-09): the recorded route reaches every write site. An absent or null body value
+// keeps the stored route (spec section 8: a route is never deleted), a value replaces it, and the
+// restricted update of a submitted survey never gains the column.
+describe("SurveysService survey_route at the write sites", () => {
+  const user = { id: "11111111-1111-4111-8111-111111111111" } as AuthenticatedUser
+  const route = {
+    version: 1 as const,
+    method: "full" as const,
+    counting: "capped" as const,
+    zone_surface_ha: 2.5,
+    guide: { chosen_by: "observer" as const },
+  }
+  const newRoute = { ...route, method: "partial_plot" as const, complement: { done: false } }
+  const stored = {
+    id: "survey-1",
+    user_id: user.id,
+    site_name: "Stored",
+    status: "draft",
+    visibility: "private",
+    parcel_id: null,
+    observation_year: null,
+    version_number: null,
+    previous_survey_id: null,
+    region_version: null,
+    vegetation_stage: null,
+    ibp_method_version: null,
+    ibp_cas: null,
+    ibp_cas3_scale: null,
+    survey_note: null,
+    weather: null,
+    survey_route: route,
+    factors: {},
+    factor_results: {},
+    scores: {},
+    created_at: "2026-01-01 00:00:00+00",
+    updated_at: "2026-01-01 00:00:00+00",
+    submitted_at: null,
+    sync_version: 1,
+    last_sync_error: null,
+    deleted_at: null,
+  }
+
+  function setup(row: Record<string, unknown> | null) {
+    const txQuery = jest
+      .fn()
+      .mockResolvedValue({ rows: [{ id: "survey-1", updated_at: "locked-t" }] })
+    const db = {
+      query: jest.fn(),
+      transaction: jest.fn((callback: (tx: unknown) => Promise<unknown>) =>
+        callback({ query: txQuery }),
+      ),
+    }
+    const repository = {
+      readForUpsert: jest
+        .fn()
+        .mockResolvedValue(row === null ? null : { ...row, cas_token: "1", parcel_ids: [] }),
+      createSurveyAtomic: jest.fn().mockResolvedValue(null),
+      updateSurveyIfUnchanged: jest.fn().mockResolvedValue(null),
+      findOwned: jest.fn().mockResolvedValue(row),
+      getSurveyParcelIds: jest.fn().mockResolvedValue([]),
+      syncSurveyParcels: jest.fn().mockResolvedValue(undefined),
+    }
+    const ibpRules = {
+      validateDraft: jest.fn().mockReturnValue({
+        ok: true,
+        errors: [],
+        warnings: [],
+        issues: [],
+        factor_scores: null,
+        factor_results: null,
+        scores: null,
+      }),
+    }
+    const events = { insert: jest.fn().mockResolvedValue(undefined) }
+    const parcels = {
+      ensureParcelIds: jest.fn().mockResolvedValue([]),
+      getDefaultVersionNumber: jest.fn().mockResolvedValue(1),
+    }
+    const service = new SurveysService(
+      db as unknown as DatabaseService,
+      ibpRules as unknown as IbpRulesService,
+      {} as StorageService,
+      repository as unknown as SurveysRepository,
+      events as unknown as SurveyEventsService,
+      parcels as unknown as ParcelsService,
+    )
+    return { service, repository, txQuery }
+  }
+
+  const body = (overrides: Partial<SurveyUpsertBody> = {}): SurveyUpsertBody => ({
+    id: "survey-1",
+    sync_version: 2,
+    site_name: "Forest",
+    factors: {},
+    ...overrides,
+  })
+
+  it("hands the body's route to the fast create, null when absent or null", async () => {
+    const { service, repository } = setup(null)
+    await service.upsertForUser(user, body({ sync_version: 1, survey_route: route }))
+    await service.upsertForUser(user, body({ sync_version: 1 }))
+    await service.upsertForUser(user, body({ sync_version: 1, survey_route: null }))
+
+    const inputs = repository.createSurveyAtomic.mock.calls.map(
+      (call) => call[1] as SurveyFastWriteInput,
+    )
+    expect(inputs[0].surveyRoute).toEqual(route)
+    expect(inputs[1].surveyRoute).toBeNull()
+    expect(inputs[2].surveyRoute).toBeNull()
+  })
+
+  it("keeps the stored route on the fast update when the key is absent or null", async () => {
+    const { service, repository } = setup(stored)
+    await service.upsertForUser(user, body())
+    await service.upsertForUser(user, body({ survey_route: null }))
+
+    const inputs = repository.updateSurveyIfUnchanged.mock.calls.map(
+      (call) => call[1] as SurveyFastWriteInput,
+    )
+    expect(inputs[0].surveyRoute).toEqual(route)
+    expect(inputs[1].surveyRoute).toEqual(route)
+  })
+
+  it("replaces the stored route on the fast update when the body carries one", async () => {
+    const { service, repository } = setup(stored)
+    await service.upsertForUser(user, body({ survey_route: newRoute }))
+
+    const input = repository.updateSurveyIfUnchanged.mock.calls[0][1] as SurveyFastWriteInput
+    expect(input.surveyRoute).toEqual(newRoute)
+  })
+
+  it("keeps a missing route missing: a stored null stays null when the key is absent", async () => {
+    const { service, repository } = setup({ ...stored, survey_route: null })
+    await service.upsertForUser(user, body())
+
+    const input = repository.updateSurveyIfUnchanged.mock.calls[0][1] as SurveyFastWriteInput
+    expect(input.surveyRoute).toBeNull()
+  })
+
+  it("writes the route as one more bound parameter of the locked insert", async () => {
+    const { service, txQuery } = setup(null)
+    await service.upsertForUser(user, body({ sync_version: 1, survey_route: route }))
+
+    const [sql, values] = txQuery.mock.calls[0] as [string, unknown[]]
+    expect(sql).toContain("survey_note, weather, survey_route")
+    expect(sql).toContain("$23::text, $24::jsonb, $25::jsonb")
+    expect(values).toHaveLength(25)
+    expect(values[24]).toBe(JSON.stringify(route))
+  })
+
+  it("binds null in the locked insert when the body has no route", async () => {
+    const { service, txQuery } = setup(null)
+    await service.upsertForUser(user, body({ sync_version: 1 }))
+
+    const [, values] = txQuery.mock.calls[0] as [string, unknown[]]
+    expect(values[24]).toBeNull()
+  })
+
+  it("writes the keep and replace rules in the locked draft update", async () => {
+    const { service, txQuery } = setup(stored)
+    await service.upsertForUser(user, body())
+    await service.upsertForUser(user, body({ survey_route: null }))
+    await service.upsertForUser(user, body({ survey_route: newRoute }))
+
+    const updates = txQuery.mock.calls
+      .map((call) => call as [string, unknown[]])
+      .filter(([sql]) => sql.includes("UPDATE surveys"))
+    expect(updates).toHaveLength(3)
+    expect(updates[0][0]).toContain("survey_route = $22::jsonb")
+    expect(updates[0][1]).toHaveLength(21 + 1)
+    expect(updates[0][1][21]).toBe(JSON.stringify(route))
+    expect(updates[1][1][21]).toBe(JSON.stringify(route))
+    expect(updates[2][1][21]).toBe(JSON.stringify(newRoute))
+  })
+
+  it("returns the route in the survey read, null when the survey has none", async () => {
+    const reads = [stored, { ...stored, survey_route: undefined }]
+    const repository = {
+      findOwnedOrThrow: jest.fn().mockImplementation(async () => reads.shift()),
+      getSurveyParcelIds: jest.fn().mockResolvedValue([]),
+    }
+    const parcels = { displayLocation: jest.fn().mockResolvedValue(null) }
+    const service = new SurveysService(
+      {} as DatabaseService,
+      {} as IbpRulesService,
+      {} as StorageService,
+      repository as unknown as SurveysRepository,
+      {} as SurveyEventsService,
+      parcels as unknown as ParcelsService,
+    )
+
+    expect((await service.getSurveyById(user, "survey-1")).survey_route).toEqual(route)
+    const legacy = await service.getSurveyById(user, "survey-1")
+    expect(legacy.survey_route).toBeNull()
+    expect(Object.keys(legacy)).toContain("survey_route")
+  })
+
+  it("does not write the route in the restricted update of a submitted survey", async () => {
+    const { service, txQuery } = setup({ ...stored, status: "submitted" })
+    await service.upsertForUser(user, body({ site_name: "Stored", survey_route: route }))
+
+    const [sql] = txQuery.mock.calls[0] as [string, unknown[]]
+    expect(sql).toContain("UPDATE surveys")
+    expect(sql).not.toContain("survey_route")
   })
 })
 
@@ -638,6 +847,7 @@ describe("SurveysRepository fast-path statements", () => {
     ibpCas3Scale: false,
     surveyNote: null,
     weather: null,
+    surveyRoute: null,
     factors: {},
     factorResults: {},
     scores: { ibp_total: 0 },
@@ -646,23 +856,23 @@ describe("SurveysRepository fast-path statements", () => {
     eventPayload: { sync_version: 1 },
   }
 
-  it("binds sorted, de-duplicated parcels, and the CAS token as $28 of an update only", () => {
+  it("binds sorted, de-duplicated parcels, and the CAS token as $29 of an update only", () => {
     const create = fastWriteValues(input, null)
-    expect(create).toHaveLength(27)
+    expect(create).toHaveLength(28)
     expect(create[15]).toEqual(["01001A0001", "01001B0002"])
     expect(create[16]).toEqual(["01001", "01001"])
     expect(create[17]).toEqual(["AA", "BA"])
     expect(create[18]).toEqual(["0001", "0002"])
     const update = fastWriteValues(input, "777")
-    expect(update).toHaveLength(28)
-    expect(update[27]).toBe("777")
-    // The method, note and weather columns sit at the same place in both: an update only adds
-    // the token.
-    expect(update.slice(22, 27)).toEqual(create.slice(22, 27))
+    expect(update).toHaveLength(29)
+    expect(update[28]).toBe("777")
+    // The method, note, weather and route columns sit at the same place in both: an update only
+    // adds the token.
+    expect(update.slice(22, 28)).toEqual(create.slice(22, 28))
   })
 
   it("binds the survey note as $26 and the weather as $27 (a JSON string, or null)", () => {
-    expect(fastWriteValues(input, null).slice(25)).toEqual([null, null])
+    expect(fastWriteValues(input, null).slice(25)).toEqual([null, null, null])
     const weather = {
       sky: "cloudy" as const,
       temperature_c: 8.5,
@@ -679,7 +889,27 @@ describe("SurveysRepository fast-path statements", () => {
     )
     expect(values[25]).toBe("Une note\nsur deux lignes")
     expect(values[26]).toBe(JSON.stringify(weather))
-    expect(values[27]).toBe("9")
+    expect(values[28]).toBe("9")
+  })
+
+  // Phase 30 (D-08): the recorded route is $28, right after the weather, and the CAS token moved
+  // one position later to $29.
+  it("binds the survey route as $28 (a JSON string, or null) and the CAS token as $29", () => {
+    const route = {
+      version: 1 as const,
+      method: "partial_strip" as const,
+      counting: "capped" as const,
+      zone_surface_ha: 12.5,
+      complement: { done: false },
+      guide: { chosen_by: "observer" as const },
+    }
+    expect(fastWriteValues(input, null)[27]).toBeNull()
+    const values = fastWriteValues({ ...input, surveyRoute: route }, "9")
+    expect(values[27]).toBe(JSON.stringify(route))
+    expect(values[28]).toBe("9")
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("survey_note, weather, survey_route")
+    expect(CREATE_SURVEY_ATOMIC_SQL).toContain("$26::text, $27::jsonb, $28::jsonb")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("survey_route = $28::jsonb")
   })
 
   it("binds the method columns as $23..$25 and writes them in both statements", () => {
@@ -705,7 +935,7 @@ describe("SurveysRepository fast-path statements", () => {
     expect(CREATE_SURVEY_ATOMIC_SQL).toContain(
       "INSERT INTO survey_events (id, survey_id, actor_id, event_type, payload)",
     )
-    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("xmin = $28::xid")
+    expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("xmin = $29::xid")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("sync_version < $14::int")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("status <> 'submitted'")
     expect(UPDATE_SURVEY_IF_UNCHANGED_SQL).toContain("EXISTS (SELECT 1 FROM u)")

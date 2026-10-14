@@ -159,7 +159,11 @@ function parcelIdSetEqual(a: string[], b: string[]): boolean {
 
 // The PATCH body does not take the phase 27 fields (research Pitfall 8), so the upsert-only
 // ones are added here instead of widening SurveyPatchBody.
-type SubmittedReadOnlyField = Exclude<keyof SurveyPatchBody, "scores"> | "survey_note" | "weather"
+type SubmittedReadOnlyField =
+  | Exclude<keyof SurveyPatchBody, "scores">
+  | "survey_note"
+  | "weather"
+  | "survey_route"
 
 /**
  * Value comparison of the read-only fields of a submitted survey, for the
@@ -181,6 +185,10 @@ type SubmittedReadOnlyField = Exclude<keyof SurveyPatchBody, "scores"> | "survey
  * compared like the other fields; an absent or null value is never a change.
  * factors.annotations rides on the factors deep comparison, so a changed
  * doubt or factor note is reported as "factors".
+ *
+ * Phase 30 (D-09): survey_route is read-only after submit like ibp_method_version,
+ * compared by deep equality so key order never matters. An absent or null value
+ * is never a change: a route is never deleted (spec section 8).
  *
  * Phase 29 (D-07): visibility is read-only after submit. It is reported only
  * when the stored row is submitted and the body carries a different value; a
@@ -204,6 +212,7 @@ export function getChangedSubmittedReadOnlyFields(
     "factors",
     "survey_note",
     "weather",
+    "survey_route",
   ]
 
   const changed: string[] = []
@@ -293,6 +302,12 @@ export function getChangedSubmittedReadOnlyFields(
         }
         break
       }
+      case "survey_route": {
+        if (!jsonDeepEqual(bodyValue, existing.survey_route ?? null)) {
+          changed.push(field)
+        }
+        break
+      }
       default:
         break
     }
@@ -351,7 +366,8 @@ export type SameVersionContent = "identical" | "visibility_only" | "conflict"
  * reorders object keys, so hashing raw JSON would report false conflicts.
  * scores, status and expires_at are excluded, and absent or null body fields
  * are never treated as changes. The phase 27 survey_note, weather and
- * factors.annotations are part of the compared content (D-04).
+ * factors.annotations are part of the compared content (D-04), and so is the
+ * phase 30 survey_route (D-09).
  */
 export function classifySameVersionContent(
   body: SurveyUpsertBody,

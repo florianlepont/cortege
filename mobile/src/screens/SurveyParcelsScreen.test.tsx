@@ -1,5 +1,6 @@
 import React from "react"
 import renderer, { act, type ReactTestRenderer } from "react-test-renderer"
+import type { SurveyRouteState } from "../hooks/useSurveyRoute"
 import { fr } from "../i18n"
 import type { LocalSurvey } from "../storage/types"
 import { SurveyParcelsScreen } from "./SurveyParcelsScreen"
@@ -48,6 +49,12 @@ jest.mock("./survey-detail/ParcelMapCard", () => ({ ParcelMapCard: "ParcelMapCar
 jest.mock("./survey-detail/SurveyOfflineMapRow", () => ({
   SurveyOfflineMapRow: "SurveyOfflineMapRow",
 }))
+jest.mock("./survey-detail/route/RouteSection", () => ({ RouteSection: "RouteSection" }))
+let mockRouteState: SurveyRouteState = { route: null, loaded: true }
+const mockUseSurveyRoute = jest.fn((_survey: unknown) => mockRouteState)
+jest.mock("../hooks/useSurveyRoute", () => ({
+  useSurveyRoute: (survey: unknown) => mockUseSurveyRoute(survey),
+}))
 let mockLocal: {
   point: { lat: number; lng: number } | null
   bounds: { west: number; south: number; east: number; north: number } | null
@@ -76,6 +83,7 @@ function render(over: Partial<SurveyParcelsScreenProps> = {}): ReactTestRenderer
     surveyDetails: {},
     detailsLoadingSurveyId: null,
     onOpenParcels: jest.fn(),
+    onEditRoute: jest.fn(),
     ...over,
   } as SurveyParcelsScreenProps
   let tree: ReactTestRenderer | undefined
@@ -90,14 +98,22 @@ afterEach(() => {
   mockParcelIds = ["75056000AB0001", "75056000AB0002"]
   mockDetail = undefined
   mockLocal = { point: null, bounds: null }
+  mockRouteState = { route: null, loaded: true }
+  mockUseSurveyRoute.mockClear()
 })
 
 describe("SurveyParcelsScreen (D-32)", () => {
-  test("shows the map, the offline map row, then the list of parcels", () => {
+  test("shows the map, the list of parcels, the route card, then the offline map row", () => {
     const tree = render()
     const scroll = tree.root.findByType("ScrollView" as never)
     const order = scroll.children.map((child) => (child as { type: unknown }).type)
-    expect(order).toEqual(["PageTitle", "ParcelMapCard", "SurveyOfflineMapRow", "AppGroupedList"])
+    expect(order).toEqual([
+      "PageTitle",
+      "ParcelMapCard",
+      "AppGroupedList",
+      "RouteSection",
+      "SurveyOfflineMapRow",
+    ])
     expect(tree.root.findByType("PageTitle" as never).props.children).toBe("Parcelles")
   })
 
@@ -149,5 +165,48 @@ describe("SurveyParcelsScreen (D-32)", () => {
 
     mockLocal = { point: null, bounds: null }
     expect(row(render()).props.displayLocation).toBeUndefined()
+  })
+})
+
+describe("Parcours utilisé card (phase 30, D-09, moved here on 2026-10-14)", () => {
+  const card = (tree: ReactTestRenderer) => tree.root.findByType("RouteSection" as never).props
+  const ROUTE = {
+    version: 1,
+    method: "full",
+    counting: "capped",
+    zone_surface_ha: 2,
+    guide: { chosen_by: "observer" },
+  } as const
+
+  test("reads the route of the selected survey and hands it to the card", () => {
+    mockRouteState = { route: ROUTE, loaded: true }
+    const survey = { id: "survey-9" } as unknown as LocalSurvey
+    const props = card(render({ selectedSurvey: survey }))
+    expect(mockUseSurveyRoute).toHaveBeenCalledWith(survey)
+    expect(props.route).toBe(ROUTE)
+    expect(props.loaded).toBe(true)
+    expect(props.variant).toBe("detail")
+  })
+
+  test("is a draft and editable while the survey can be edited", () => {
+    const props = card(render())
+    expect([props.status, props.editable]).toEqual(["draft", true])
+  })
+
+  test("is read-only once the survey is submitted", () => {
+    mockCanEdit = false
+    const props = card(render())
+    expect([props.status, props.editable]).toEqual(["readonly", false])
+  })
+
+  test("its link opens the chooser for this survey", () => {
+    const onEditRoute = jest.fn()
+    card(render({ onEditRoute })).onEdit()
+    expect(onEditRoute).toHaveBeenCalledWith("survey-1")
+  })
+
+  test("is told the route is not read yet", () => {
+    mockRouteState = { route: null, loaded: false }
+    expect(card(render()).loaded).toBe(false)
   })
 })

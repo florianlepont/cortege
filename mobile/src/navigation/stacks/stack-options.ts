@@ -3,6 +3,7 @@ import type { NativeStackNavigationOptions } from "@react-navigation/native-stac
 import { brandTypography } from "../../app/brand-tokens"
 import { BrandTheme } from "../../app/theme"
 import { androidHeaderTitleStyle } from "../../app/header-title-style"
+import { fr } from "../../i18n"
 import { usesNativeLargeTitle } from "../large-title"
 
 /**
@@ -124,7 +125,7 @@ export function wizardHeaderOptions(theme: BrandTheme): NativeStackNavigationOpt
   return {
     headerShown: true,
     headerLargeTitleEnabled: false,
-    // The wizard puts "Étape 1 sur 4" here once mounted; nothing is shown before that.
+    // The wizard puts "Étape 1 sur 5" here once mounted; nothing is shown before that.
     title: "",
     headerTitleStyle: {
       ...brandTypography.navTitle,
@@ -162,6 +163,34 @@ export function finishSheetScreenOptions(theme: BrandTheme): NativeStackNavigati
     headerShown: false,
     presentation: Platform.OS === "ios" ? "formSheet" : "modal",
     sheetAllowedDetents: [0.65, 1],
+    sheetGrabberVisible: true,
+    contentStyle: { backgroundColor: theme.semanticColors.backgroundCanvas },
+  }
+}
+
+/**
+ * "Choisir le parcours" (phase 30, O-19) as a native sheet, like the factor help and the finish
+ * sheet: a form sheet on iOS (system grabber and corner radius, medium and large detents, swipe
+ * down or tap outside to close, which writes nothing), the stack's modal screen on Android. Unlike
+ * them it keeps a solid header: the route sets its title and the "Annuler" item (`headerLeft`),
+ * and the page starts below it, so it needs no ScreenFrame.
+ */
+export function routeChooseScreenOptions(theme: BrandTheme): NativeStackNavigationOptions {
+  return {
+    headerShown: true,
+    headerTransparent: false,
+    headerShadowVisible: false,
+    headerLargeTitleEnabled: false,
+    headerBackVisible: false,
+    headerStyle: { backgroundColor: theme.semanticColors.backgroundCanvas },
+    headerTitleStyle: {
+      ...brandTypography.navTitle,
+      fontWeight: "600",
+      color: theme.semanticColors.textStrong,
+    },
+    title: fr.routeGuide.chooser.title,
+    presentation: Platform.OS === "ios" ? "formSheet" : "modal",
+    sheetAllowedDetents: [0.75, 1],
     sheetGrabberVisible: true,
     contentStyle: { backgroundColor: theme.semanticColors.backgroundCanvas },
   }

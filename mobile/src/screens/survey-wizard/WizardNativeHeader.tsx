@@ -2,7 +2,7 @@ import { useLayoutEffect } from "react"
 import { useNavigation, usePreventRemove } from "@react-navigation/native"
 
 type WizardNativeHeaderProps = {
-  /** The step counter ("Étape 2 sur 4"), shown as the small centred title of the native bar. */
+  /** The step counter ("Étape 2 sur 5"), shown as the small centred title of the native bar. */
   title: string
   /** Past the first question: the system back button returns to the previous question. */
   canStepBack: boolean

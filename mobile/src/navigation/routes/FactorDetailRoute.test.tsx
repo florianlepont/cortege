@@ -33,6 +33,11 @@ jest.mock("../../ui/ScreenFrame", () => ({
 jest.mock("../../state/surveys-context", () => ({
   useSurveys: () => ({ state: { surveys: [] }, actions: {} }),
 }))
+// Phase 30 (plan 30-15): the recorded route is read through useSurveyRoute; here a settable value.
+const mockRoute: { value: Record<string, unknown> | null } = { value: null }
+jest.mock("../../hooks/useSurveyRoute", () => ({
+  useSurveyRoute: () => ({ route: mockRoute.value, loaded: true }),
+}))
 
 const mockForm = {
   state: {
@@ -42,11 +47,19 @@ const mockForm = {
     factorRetainedScores: {},
     ibpMethodVersion: null,
     factorAnnotations: {} as FactorAnnotationDraft,
+    uncapped: {
+      strataCoverText: { very_low: "25" },
+      dmhCounts: { dmh_01: 2 },
+      fSurfaceText: "1,2",
+    },
   },
   actions: {
     flushDraft: jest.fn(async () => true),
     setFactorDoubt: jest.fn(),
     setFactorNote: jest.fn(),
+    setStratumCover: jest.fn(),
+    setDmhCount: jest.fn(),
+    setFSurface: jest.fn(),
   },
 }
 jest.mock("../../state/survey-form-context", () => ({ useSurveyFormState: () => mockForm }))
@@ -66,6 +79,7 @@ afterAll(() => {
 })
 
 beforeEach(() => {
+  mockRoute.value = null
   mockForm.state.factorAnnotations = {}
   mockForm.actions.flushDraft.mockClear()
   mockForm.actions.setFactorDoubt.mockClear()
@@ -203,5 +217,64 @@ describe("FactorDetailRoute finish pill (Phase 29, D-04)", () => {
     mockPagerFinish.offered = false
     mount()
     expect(mockPagerProps.value.finishAction).toBeNull()
+  })
+})
+
+describe("FactorDetailRoute counting mode (Phase 30, D-07)", () => {
+  const props = () =>
+    mockPagerProps.value as { uncappedFactors: string[]; zoneSurfaceHa: number | null }
+
+  test("a survey without a route hands the pager nothing new", () => {
+    mount()
+    expect(props().uncappedFactors).toEqual([])
+    expect(props().zoneSurfaceHa).toBeNull()
+  })
+
+  test("a route counting B and F in full gives their letters and the zone", () => {
+    mockRoute.value = {
+      version: 1,
+      method: "full",
+      counting: "uncapped",
+      uncapped_factors: ["B", "F"],
+      zone_surface_ha: 1.2,
+    }
+    mount()
+    expect(props().uncappedFactors).toEqual(["B", "F"])
+    expect(props().zoneSurfaceHa).toBe(1.2)
+  })
+
+  test("a capped route gives no factor but still the zone", () => {
+    mockRoute.value = {
+      version: 1,
+      method: "partial_strip",
+      counting: "capped",
+      zone_surface_ha: 0.8,
+    }
+    mount()
+    expect(props().uncappedFactors).toEqual([])
+    expect(props().zoneSurfaceHa).toBe(0.8)
+  })
+})
+
+describe("FactorDetailRoute detail inputs of the relevé déplafonné (plan 30-19)", () => {
+  test("hands the pager the form's typed details and the three setters as one object", () => {
+    mount()
+    const entry = mockPagerProps.value.uncappedEntry as {
+      state: unknown
+      setStratumCover: unknown
+      setDmhCount: unknown
+      setFSurface: unknown
+    }
+    expect(entry.state).toBe(mockForm.state.uncapped)
+    expect(entry.setStratumCover).toBe(mockForm.actions.setStratumCover)
+    expect(entry.setDmhCount).toBe(mockForm.actions.setDmhCount)
+    expect(entry.setFSurface).toBe(mockForm.actions.setFSurface)
+  })
+
+  test("the object is stable while the form's details do not change", () => {
+    const { update } = mount()
+    const first = mockPagerProps.value.uncappedEntry
+    update()
+    expect(mockPagerProps.value.uncappedEntry).toBe(first)
   })
 })

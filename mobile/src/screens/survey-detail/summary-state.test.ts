@@ -103,7 +103,7 @@ describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {
   test("D-25: a complete draft not synced yet can be finished too, with no sync wording", () => {
     for (const sync_state of ["pending", "failed"] as const) {
       const pending = survey({ sync_state })
-      const cta = resolveFinishCta(pending, canFinishSurvey(pending, true), true, 10, null)
+      const cta = resolveFinishCta(pending, canFinishSurvey(pending, true, true), true, 10, null)
       expect(cta).toEqual({ kind: "ready", label: c.finish })
     }
     expect(c.finish.toLowerCase()).not.toContain("synchronis")
@@ -111,19 +111,45 @@ describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {
 
   test("a complete draft whose sync is blocked says it is blocked", () => {
     const blocked = survey({ sync_state: "failed", sync_blocked: 1 })
-    expect(resolveFinishCta(blocked, canFinishSurvey(blocked, true), true, 10, null)).toEqual({
-      kind: "disabled",
-      label: c.blocked,
-    })
+    expect(resolveFinishCta(blocked, canFinishSurvey(blocked, true, true), true, 10, null)).toEqual(
+      {
+        kind: "disabled",
+        label: c.blocked,
+      },
+    )
   })
 
   test("D-25: a complete but unnamed draft asks for a name instead of a sync", () => {
     for (const site_name of ["", "  "]) {
       const unnamed = survey({ site_name, sync_state: "pending" })
-      const cta = resolveFinishCta(unnamed, canFinishSurvey(unnamed, true), true, 10, null)
+      const cta = resolveFinishCta(unnamed, canFinishSurvey(unnamed, true, true), true, 10, null)
       expect(cta).toEqual({ kind: "disabled", label: c.nameRequired })
     }
     expect(c.nameRequired).not.toMatch(/synchronis|—/i)
+  })
+
+  test("phase 30 (O-19): a complete named draft without route asks for the parcours", () => {
+    const routeless = survey()
+    const cta = resolveFinishCta(routeless, canFinishSurvey(routeless, true, false), true, 10, null)
+    expect(cta).toEqual({ kind: "disabled", label: c.routeRequired })
+    expect(c.routeRequired).toBe("Choisissez le parcours pour terminer")
+  })
+
+  test("phase 30: a complete draft with a route stays ready; the name label comes first", () => {
+    expect(
+      resolveFinishCta(survey(), canFinishSurvey(survey(), true, true), true, 10, null),
+    ).toEqual({ kind: "ready", label: c.finish })
+    const unnamed = survey({ site_name: "" })
+    expect(
+      resolveFinishCta(unnamed, canFinishSurvey(unnamed, true, false), true, 10, null),
+    ).toEqual({ kind: "disabled", label: c.nameRequired })
+  })
+
+  test("phase 30: a finished survey stays without a button", () => {
+    const done = survey({ status: "submitted" })
+    expect(resolveFinishCta(done, canFinishSurvey(done, true, false), true, 10, null)).toEqual({
+      kind: "hidden",
+    })
   })
 
   test("an incomplete draft opens the next factor: Commencer with none filled, then Continuer", () => {
@@ -157,17 +183,23 @@ describe("resolveFinishCta (OA-40: one button, no lock, no deadline)", () => {
 describe("canFinishSurvey (D-25: complete, named, not blocked, not finished)", () => {
   test("a complete named draft can be finished whatever its sync state", () => {
     for (const sync_state of ["synced", "pending", "failed"] as const) {
-      expect(canFinishSurvey(survey({ sync_state }), true)).toBe(true)
+      expect(canFinishSurvey(survey({ sync_state }), true, true)).toBe(true)
     }
   })
 
   test("not while incomplete, unread, finished, blocked or unnamed", () => {
-    expect(canFinishSurvey(survey(), false)).toBe(false)
-    expect(canFinishSurvey(survey(), null)).toBe(false)
-    expect(canFinishSurvey(survey({ status: "submitted" }), true)).toBe(false)
-    expect(canFinishSurvey(survey({ sync_blocked: 1 }), true)).toBe(false)
-    expect(canFinishSurvey(survey({ site_name: " " }), true)).toBe(false)
-    expect(canFinishSurvey(survey({ site_name: undefined }), true)).toBe(false)
+    expect(canFinishSurvey(survey(), false, true)).toBe(false)
+    expect(canFinishSurvey(survey(), null, true)).toBe(false)
+    expect(canFinishSurvey(survey({ status: "submitted" }), true, true)).toBe(false)
+    expect(canFinishSurvey(survey({ sync_blocked: 1 }), true, true)).toBe(false)
+    expect(canFinishSurvey(survey({ site_name: " " }), true, true)).toBe(false)
+    expect(canFinishSurvey(survey({ site_name: undefined }), true, true)).toBe(false)
+  })
+
+  test("phase 30 (O-19, spec section 8): not without a route, whatever the rest", () => {
+    expect(canFinishSurvey(survey(), true, false)).toBe(false)
+    expect(canFinishSurvey(survey({ sync_state: "synced" }), true, false)).toBe(false)
+    expect(canFinishSurvey(survey(), true, true)).toBe(true)
   })
 })
 
