@@ -119,6 +119,23 @@ function mount(
 }
 
 describe("RouteChooseScreen: content", () => {
+  test("keeps the ScrollView off the first-child path of the iOS form sheet (it opened empty)", () => {
+    // react-native-screens forces the frame of the first ScrollView found along first children of a
+    // form sheet to the sheet's own frame, which hid the list. The root is not flattened and its first
+    // child is an empty guard, so the scroll comes after it and flex gives it the room above the footer.
+    const { one } = mount({ standHa: 8 })
+    const root = one("route-choose-screen")
+    expect(root.props.collapsable).toBe(false)
+    const ids = root.children.map((child) =>
+      typeof child === "string" ? child : (child.props.testID as string | undefined),
+    )
+    expect(ids.slice(0, 2)).toEqual(["route-choose-sheet-guard", "route-choose-scroll"])
+    expect(one("route-choose-sheet-guard").props.collapsable).toBe(false)
+    expect(one("route-choose-sheet-guard").children).toHaveLength(0)
+    const scroll = one("route-choose-scroll")
+    expect(scroll.props.style).toEqual(expect.objectContaining({ flex: 1 }))
+  })
+
   test("shows the lead, the three parcours with their words, the mode and the glossary", () => {
     const { one, byId, texts } = mount({ standHa: 8 })
     expect(one("route-choose-screen")).toBeDefined()

@@ -85,7 +85,19 @@ export function RouteChooseScreen({
   }
 
   return (
-    <View style={styles.root} testID="route-choose-screen">
+    <View style={styles.root} collapsable={false} testID="route-choose-screen">
+      {/*
+        iOS form sheet: react-native-screens looks for a ScrollView along the first-child path of the
+        sheet content and forces its frame to the sheet's own frame, which moves it out of view when
+        it sits beside a footer (the sheet opened empty). An empty first child that is not
+        flattened keeps the ScrollView off that path, so the flex layout (scroll then footer) holds.
+      */}
+      <View
+        style={styles.sheetGuard}
+        collapsable={false}
+        importantForAccessibility="no"
+        testID="route-choose-sheet-guard"
+      />
       <ScrollView
         ref={scrollRef}
         style={styles.scroll}
@@ -203,6 +215,9 @@ function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
     root: {
       flex: 1,
+    },
+    sheetGuard: {
+      height: 0,
     },
     scroll: {
       flex: 1,
