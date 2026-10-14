@@ -1,3 +1,4 @@
+import type { RouteRecommendation, RouteRuleCase, RouteRuleExample } from "./index"
 import {
   LARGE_STAND_OPTIONS,
   PARTIAL_OVER_HALF_SHARE,
@@ -9,6 +10,8 @@ import {
   ROUTE_MINUTES_PER_HA_EASY,
   ROUTE_MINUTES_PER_HA_HARD,
   ROUTE_NARROW_WIDTH_M,
+  ROUTE_RULE_CASES,
+  ROUTE_RULE_IDS,
   ROUTE_QUESTION_IDS,
   ROUTE_REASON_CODES,
   ROUTE_SMALL_STAND_HA,
@@ -24,7 +27,9 @@ import {
   UNCAPPED_PRESET_IDS,
   defaultCountingFor,
   isUncappedSelectionValid,
+  recommendRoute,
   routeAdviceFor,
+  routeQuestionsFor,
   routeZoneIssues,
   suggestedZoneHa,
   sumPlotSurfacesHa,
@@ -355,5 +360,319 @@ describe("routeAdviceFor (R-18 to R-21)", () => {
         answers: { hours_available: 0.5, experience: "beginner" },
       }).advice,
     ).toEqual([...ROUTE_ADVICE_CODES])
+  })
+})
+
+describe("routeQuestionsFor (spec section 4, D-05)", () => {
+  it("asks the surface first and offers the refine section last", () => {
+    expect(routeQuestionsFor({})).toEqual(["surface", "refine"])
+    expect(routeQuestionsFor({ surface_ha: 0 })).toEqual(["surface", "refine"])
+    expect(routeQuestionsFor({ surface_ha: 6000 })).toEqual(["surface", "refine"])
+  })
+
+  it("asks nothing more for a stand of 1 ha or less (R-07)", () => {
+    expect(routeQuestionsFor({ surface_ha: 0.8 })).toEqual(["surface", "refine"])
+    expect(routeQuestionsFor({ surface_ha: 1 })).toEqual(["surface", "refine"])
+  })
+
+  it("asks homogeneity and difficulty between 1 and 5 ha", () => {
+    expect(routeQuestionsFor({ surface_ha: 2.4 })).toEqual([
+      "surface",
+      "homogeneity",
+      "difficulty",
+      "refine",
+    ])
+  })
+
+  it("asks narrow only for a partial parcours of a homogeneous, easy stand", () => {
+    const base = { surface_ha: 2, homogeneity: "homogeneous" } as const
+    expect(routeQuestionsFor({ ...base, difficulty: false })).toEqual([
+      "surface",
+      "homogeneity",
+      "difficulty",
+      "narrow",
+      "refine",
+    ])
+    expect(routeQuestionsFor({ ...base, difficulty: true })).toEqual([
+      "surface",
+      "homogeneity",
+      "difficulty",
+      "refine",
+    ])
+    expect(routeQuestionsFor({ ...base })).toEqual([
+      "surface",
+      "homogeneity",
+      "difficulty",
+      "refine",
+    ])
+    // A heterogeneous easy stand is walked in full: narrow would change nothing.
+    expect(
+      routeQuestionsFor({ surface_ha: 2, homogeneity: "heterogeneous", difficulty: false }),
+    ).toEqual(["surface", "homogeneity", "difficulty", "refine"])
+  })
+
+  it("asks difficulty above 5 ha only for a homogeneous stand", () => {
+    expect(routeQuestionsFor({ surface_ha: 8 })).toEqual(["surface", "homogeneity", "refine"])
+    expect(routeQuestionsFor({ surface_ha: 8, homogeneity: "heterogeneous" })).toEqual([
+      "surface",
+      "homogeneity",
+      "refine",
+    ])
+    expect(routeQuestionsFor({ surface_ha: 8, homogeneity: "homogeneous" })).toEqual([
+      "surface",
+      "homogeneity",
+      "difficulty",
+      "refine",
+    ])
+  })
+
+  it("asks nothing after the options of a large stand until partial is chosen", () => {
+    const large = { surface_ha: 25, homogeneity: "homogeneous" } as const
+    expect(routeQuestionsFor(large)).toEqual(["surface", "homogeneity", "refine"])
+    expect(routeQuestionsFor(large, { largeStandOption: "subdivide" })).toEqual([
+      "surface",
+      "homogeneity",
+      "refine",
+    ])
+    expect(routeQuestionsFor(large, { largeStandOption: "partial" })).toEqual([
+      "surface",
+      "homogeneity",
+      "difficulty",
+      "refine",
+    ])
+    expect(
+      routeQuestionsFor(
+        { surface_ha: 12, homogeneity: "heterogeneous" },
+        { largeStandOption: "partial" },
+      ),
+    ).toEqual(["surface", "homogeneity", "refine"])
+  })
+
+  it("never asks about experience or hours, which are information only (O-04)", () => {
+    const withRefine = routeQuestionsFor({
+      surface_ha: 2,
+      homogeneity: "homogeneous",
+      difficulty: false,
+      narrow: true,
+      experience: "beginner",
+      hours_available: 0.5,
+    })
+    expect(withRefine).toEqual(
+      routeQuestionsFor({
+        surface_ha: 2,
+        homogeneity: "homogeneous",
+        difficulty: false,
+        narrow: true,
+      }),
+    )
+    expect(withRefine.filter((id) => id === "refine")).toHaveLength(1)
+    expect(withRefine[withRefine.length - 1]).toBe("refine")
+  })
+})
+
+describe("recommendRoute", () => {
+  function route(result: RouteRecommendation) {
+    if (result.status !== "route") throw new Error(`expected a route, got ${result.status}`)
+    return result
+  }
+
+  it("treats a value that is not a number as an invalid surface", () => {
+    expect(recommendRoute({ surface_ha: "8" as unknown as number })).toEqual({
+      status: "needs_surface",
+      error: "surface_invalid",
+    })
+    expect(recommendRoute({ surface_ha: null as unknown as number })).toEqual({
+      status: "needs_surface",
+      error: "surface_missing",
+    })
+  })
+
+  it("ignores an answer that is not one of the closed values", () => {
+    const result = recommendRoute({
+      surface_ha: 3,
+      homogeneity: "mixed" as unknown as "homogeneous",
+      difficulty: "yes" as unknown as boolean,
+    })
+    expect(result).toEqual({
+      status: "incomplete",
+      questions: ["surface", "homogeneity", "difficulty", "refine"],
+      missing: ["homogeneity", "difficulty"],
+    })
+  })
+
+  it("returns the options of a large stand with subdivide pre-selected (R-11b)", () => {
+    expect(recommendRoute({ surface_ha: 30, homogeneity: "homogeneous" })).toEqual({
+      status: "options",
+      options: ["subdivide", "partial"],
+      preselected_option: "subdivide",
+      reasons: ["large_stand"],
+    })
+    // The returned arrays are copies: changing them does not change the constants.
+    const options = recommendRoute({ surface_ha: 30, homogeneity: "homogeneous" })
+    if (options.status === "options") options.options.push("partial")
+    expect(LARGE_STAND_OPTIONS).toEqual(["subdivide", "partial"])
+  })
+
+  it("keeps the same proposal whatever the experience and the hours (R-21#no-effect)", () => {
+    const answers = { surface_ha: 15, homogeneity: "homogeneous", difficulty: false, narrow: false }
+    const reference = route(recommendRoute(answers))
+    for (const experience of [undefined, "regular", "beginner"] as const) {
+      for (const hours_available of [undefined, 0.1, 1, 24, 99]) {
+        const result = route(recommendRoute({ ...answers, experience, hours_available }))
+        expect(result.method).toBe(reference.method)
+        expect(result.counting).toBe(reference.counting)
+        expect(result.zone_surface_ha).toBe(reference.zone_surface_ha)
+        expect(result.reasons).toEqual(reference.reasons)
+        expect(result.complement).toEqual(reference.complement)
+        expect(result.warnings).toEqual(reference.warnings)
+      }
+    }
+  })
+
+  it("never proposes the uncapped counting (R-16, O-01)", () => {
+    const result = route(
+      recommendRoute({ surface_ha: 4, homogeneity: "heterogeneous", difficulty: false }),
+    )
+    expect(result.counting).toBe("capped")
+    expect(result.uncapped_factors).toEqual([])
+    expect(result.advice).not.toContain("uncapped_longer")
+  })
+
+  it("keeps at most four reasons and never returns an empty list", () => {
+    for (const rule of ROUTE_RULE_CASES) {
+      for (const example of rule.examples) {
+        if (example.kind !== "recommend") continue
+        const result = recommendRoute(example.answers, example.choice)
+        if (result.status === "route") {
+          expect(result.reasons.length).toBeGreaterThan(0)
+          expect(result.reasons.length).toBeLessThanOrEqual(4)
+        }
+      }
+    }
+  })
+
+  it("never returns a zone that rounds to zero for a tiny stand", () => {
+    const result = route(recommendRoute({ surface_ha: 0.004 }))
+    expect(result.zone_surface_ha).toBe(0.01)
+    expect(result.warnings).toEqual(["small_stand"])
+  })
+
+  it("lists the rules it applied, in order", () => {
+    expect(route(recommendRoute({ surface_ha: 0.4 })).applied_rules).toEqual([
+      "R-02",
+      "R-07",
+      "R-16",
+      "R-19",
+    ])
+    expect(
+      route(
+        recommendRoute(
+          {
+            surface_ha: 12,
+            homogeneity: "heterogeneous",
+            experience: "beginner",
+            hours_available: 0.1,
+          },
+          { largeStandOption: "partial" },
+        ),
+      ).applied_rules,
+    ).toEqual(["R-11b", "R-11", "R-12a", "R-13", "R-14", "R-16", "R-19", "R-20", "R-21"])
+    expect(
+      route(recommendRoute({ surface_ha: 3, homogeneity: "homogeneous", difficulty: true }))
+        .applied_rules,
+    ).toEqual(["R-08", "R-12a", "R-13", "R-14", "R-16", "R-19"])
+    expect(
+      route(
+        recommendRoute({
+          surface_ha: 2,
+          homogeneity: "homogeneous",
+          difficulty: false,
+          narrow: false,
+        }),
+      ).applied_rules,
+    ).toEqual(["R-09", "R-12b", "R-13", "R-14", "R-16", "R-19"])
+    expect(
+      route(recommendRoute({ surface_ha: 4.5, homogeneity: "heterogeneous", difficulty: false }))
+        .applied_rules,
+    ).toEqual(["R-10", "R-16", "R-19"])
+    expect(
+      route(recommendRoute({ surface_ha: 0.4 })).applied_rules.every((id) =>
+        (ROUTE_RULE_IDS as readonly string[]).includes(id),
+      ),
+    ).toBe(true)
+  })
+
+  it("keeps the zone of a proposal consistent with the zone checks", () => {
+    const result = route(recommendRoute({ surface_ha: 8, homogeneity: "heterogeneous" }))
+    expect(
+      routeZoneIssues({
+        method: result.method,
+        zoneHa: result.zone_surface_ha,
+        standHa: 8,
+        complement: result.complement,
+      }),
+    ).toEqual([])
+  })
+})
+
+describe("ROUTE_RULE_CASES (spec section 5, validated 2026-10-14)", () => {
+  it("holds one case per rule id and one per boundary id, each id once", () => {
+    const ids = ROUTE_RULE_CASES.map((c) => c.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids.filter((id) => !id.includes("#"))).toEqual([...ROUTE_RULE_IDS])
+    expect(ids.filter((id) => id.includes("#"))).toHaveLength(23)
+    expect(ids).toHaveLength(43)
+  })
+
+  it("ties every case to a rule, a page and at least one example", () => {
+    for (const c of ROUTE_RULE_CASES) {
+      expect(ROUTE_RULE_IDS).toContain(c.rule)
+      expect(c.id.startsWith(c.rule)).toBe(true)
+      expect(c.source).toMatch(/p\. /)
+      expect(c.examples.length).toBeGreaterThan(0)
+    }
+  })
+
+  function runRecommend(example: Extract<RouteRuleExample, { kind: "recommend" }>) {
+    const result = recommendRoute(example.answers, example.choice)
+    expect(result).toMatchObject(example.expect)
+    if (example.questions !== undefined) {
+      expect(routeQuestionsFor(example.answers, example.choice)).toEqual(example.questions)
+    }
+  }
+
+  function runZone(example: Extract<RouteRuleExample, { kind: "zone" }>) {
+    const zoneHa = example.plots !== undefined ? sumPlotSurfacesHa(example.plots) : example.zone_ha
+    if (example.expect_zone_ha !== undefined) expect(zoneHa).toBe(example.expect_zone_ha)
+    expect(
+      routeZoneIssues({
+        method: example.method,
+        zoneHa,
+        standHa: example.stand_ha,
+        complement: example.complement,
+      }),
+    ).toEqual(example.issues)
+  }
+
+  function run(example: RouteRuleExample) {
+    switch (example.kind) {
+      case "recommend":
+        return runRecommend(example)
+      case "zone":
+        return runZone(example)
+      case "advice":
+        expect(routeAdviceFor(example.input)).toEqual({
+          advice: example.advice,
+          estimated_minutes: example.estimated_minutes,
+        })
+        return
+      case "preset":
+        expect(uncappedFactorsForPreset(example.preset)).toEqual(example.factors)
+        expect(isUncappedSelectionValid(example.factors)).toBe(example.valid)
+    }
+  }
+
+  it.each(ROUTE_RULE_CASES.map((c): [string, RouteRuleCase] => [c.id, c]))("%s", (_id, c) => {
+    for (const example of c.examples) run(example)
   })
 })
