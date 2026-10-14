@@ -51,6 +51,12 @@ export const factorDetailFr = {
     strataTitle: "Couvert de chaque strate",
     strataHelper:
       "Une strate compte à partir de 20 % de couvert. Les strates se superposent : le total peut dépasser 100 %.",
+    strataCoverUnit: "%",
+    strataCoverPlaceholder: "0",
+    strataCounted: ({ count }: { count: number }) =>
+      count === 1 ? "1 strate comptée" : `${count} strates comptées`,
+    strataFieldA11y: ({ label }: { label: string }) =>
+      `Couvert de la strate ${label}, en pourcentage`,
     dmhTitle: "Arbres par groupe de dendromicrohabitats",
     dmhHelper: "Pour le score, l'app garde au plus 2 arbres par hectare et par groupe.",
     dmhSurfaceLabel: "Surface décrite pour ce comptage (ha)",

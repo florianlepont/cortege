@@ -27,6 +27,7 @@ import type { FactorField, FactorKey, FactorRetainedScore } from "../../app/type
 import { fr } from "../../i18n"
 import { FactorDetailScreen } from "../FactorDetailScreen"
 import { CountingModeChip } from "../factor-detail/CountingModeStrip"
+import type { UncappedEntryProps } from "../factor-detail/UncappedFieldBlock"
 import { FACTOR_ORDER } from "./components"
 import { computeFactorProgress } from "./FactorsList"
 import { FactorLetterStrip, STRIP_HEIGHT } from "./FactorLetterStrip"
@@ -89,6 +90,8 @@ type FactorPagerProps = {
   uncappedFactors?: readonly FactorKey[]
   /** The surface décrite of the recorded route (ha): C, D and E start from it. Null: none. */
   zoneSurfaceHa?: number | null
+  /** Phase 30 (plan 30-19): the detail inputs of B and F counted in full, with their setters. */
+  uncappedEntry?: UncappedEntryProps
 }
 
 /**
@@ -117,6 +120,7 @@ export const FactorPager = memo(function FactorPager({
   onCommitNote,
   uncappedFactors = NO_UNCAPPED_FACTORS,
   zoneSurfaceHa = null,
+  uncappedEntry,
 }: FactorPagerProps) {
   const theme = useBrandTheme()
   const tabBarClearance = useTabBarClearance()
@@ -239,6 +243,7 @@ export const FactorPager = memo(function FactorPager({
                 onCommitNote={onCommitNote}
                 uncappedFactors={uncappedFactors}
                 zoneSurfaceHa={zoneSurfaceHa}
+                uncappedEntry={uncappedEntry}
               />
             ) : null}
           </ScrollView>

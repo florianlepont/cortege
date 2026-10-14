@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef } from "react"
 import type { FactorKey } from "../../app/types"
 import { useSurveyRoute } from "../../hooks/useSurveyRoute"
 import { fr } from "../../i18n"
+import type { UncappedEntryProps } from "../../screens/factor-detail/UncappedFieldBlock"
 import { FactorPager, type PagerFinishAction } from "../../screens/survey-form/FactorPager"
 import { usePagerFinish } from "../../screens/survey-form/usePagerFinish"
 import { useSurveyFormState } from "../../state/survey-form-context"
@@ -35,6 +36,10 @@ const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
  * factors counted in full and the surface décrite go to the pager, which shows the "Relevé
  * déplafonné" signals and prefills the surface fields of C, D and E. A survey with no valid route
  * gives an empty list and no zone: nothing new is shown.
+ *
+ * Phase 30 (plan 30-19): the typed detail inputs of the relevé déplafonné (B cover per stratum, F
+ * counts per group and F's surface) and their three setters travel as one `uncappedEntry` object;
+ * the pager hands it to the factor page, which shows it only for B or F counted in full.
  */
 export const FactorDetailRoute = memo(function FactorDetailRoute({
   navigation,
@@ -58,6 +63,12 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
     [surveyRoute],
   )
   const zoneSurfaceHa = surveyRoute?.zone_surface_ha ?? null
+  const { uncapped } = state
+  const { setStratumCover, setDmhCount, setFSurface } = actions
+  const uncappedEntry = useMemo<UncappedEntryProps>(
+    () => ({ state: uncapped, setStratumCover, setDmhCount, setFSurface }),
+    [uncapped, setStratumCover, setDmhCount, setFSurface],
+  )
 
   const handleActiveFactorChange = useCallback(
     (active: FactorKey) => {
@@ -134,6 +145,7 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         onCommitNote={handleCommitNote}
         uncappedFactors={uncappedFactors}
         zoneSurfaceHa={zoneSurfaceHa}
+        uncappedEntry={uncappedEntry}
       />
     </ScreenFrame>
   )

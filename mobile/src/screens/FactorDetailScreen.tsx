@@ -23,6 +23,11 @@ import { FactorSegmentedOption, FactorSegmentedInput } from "../ui/FactorSegment
 import { FactorSliderInput } from "../ui/FactorSliderInput"
 import { CountingModeCaption, FromRouteCaption } from "./factor-detail/CountingModeStrip"
 import { DoubtNoteStrip } from "./factor-detail/DoubtNoteStrip"
+import {
+  hasUncappedBlock,
+  UncappedFieldBlock,
+  type UncappedEntryProps,
+} from "./factor-detail/UncappedFieldBlock"
 import { useRouteSurfacePrefill } from "./factor-detail/useRouteSurfacePrefill"
 import { fr } from "../i18n"
 import { AppPressable } from "../ui/AppPressable"
@@ -108,6 +113,12 @@ type FactorDetailScreenProps = {
   uncappedFactors?: readonly FactorKey[]
   /** The surface décrite of the recorded route (ha): C, D and E start from it. Null: none. */
   zoneSurfaceHa?: number | null
+  /**
+   * Phase 30 (D-07, plan 30-19): the typed detail inputs of the relevé déplafonné and their setters.
+   * B counted in full shows its cover per stratum, F its counts per group and its own surface.
+   * Absent: the capped entry everywhere.
+   */
+  uncappedEntry?: UncappedEntryProps
 }
 
 /**
@@ -117,6 +128,9 @@ type FactorDetailScreenProps = {
  * between the score line and the help link; it never changes the score line. Phase 30 (D-07): a
  * factor counted in full opens with its one-line caption, and the surface field of C, D and E starts
  * from the route's surface décrite (once, only when empty) with "D'après le parcours" under it.
+ * B counted in full swaps its strata chips for a cover per stratum, F adds a counter per ticked
+ * group and its own surface under its group chips (the detail values are kept, never deleted, when
+ * the factor goes back to the capped entry, U-O10).
  */
 export function FactorDetailScreen({
   factor,
@@ -131,6 +145,7 @@ export function FactorDetailScreen({
   onCommitNote,
   uncappedFactors = NO_FACTORS,
   zoneSurfaceHa = null,
+  uncappedEntry,
 }: FactorDetailScreenProps) {
   const theme = useBrandTheme()
   const detailStyles = useMemo(() => createDetailStyles(theme), [theme])
@@ -140,6 +155,7 @@ export function FactorDetailScreen({
   const genusListField = factor === "A" ? fields[0] : null
   const variants = useMemo(() => fieldVariantsFor(factor, methodVersion), [factor, methodVersion])
   const countedInFull = uncappedFactors.includes(factor)
+  const detailEntry = countedInFull && hasUncappedBlock(factor) ? uncappedEntry : undefined
   const surfaceField = SURFACE_FACTORS.includes(factor)
     ? fields.find((item) => item.label === SURFACE_FIELD_LABEL)
     : undefined
@@ -157,6 +173,18 @@ export function FactorDetailScreen({
         {genusListField ? <FactorAGenusRecognitionEntry genusField={genusListField} /> : null}
         <View style={detailStyles.fieldsList}>
           {fields.map((field, index) => {
+            const block = detailEntry ? (
+              <UncappedFieldBlock
+                key={`${factor}-${field.label}-uncapped`}
+                factor={factor}
+                field={field}
+                methodVersion={methodVersion}
+                entry={detailEntry}
+                zoneSurfaceHa={zoneSurfaceHa}
+              />
+            ) : null
+            // B: the cover per stratum replaces the strata chips.
+            if (block !== null && factor === "B") return block
             const input = renderFactorField(
               factor,
               variants[index],
@@ -164,6 +192,14 @@ export function FactorDetailScreen({
               methodVersion,
               detailStyles,
             )
+            if (block !== null) {
+              return (
+                <Fragment key={`${factor}-${field.label}-detail`}>
+                  {input}
+                  {block}
+                </Fragment>
+              )
+            }
             return fromRoute && field === surfaceField ? (
               <Fragment key={`${factor}-${field.label}-from-route`}>
                 {input}

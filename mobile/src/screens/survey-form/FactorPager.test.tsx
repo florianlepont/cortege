@@ -768,6 +768,18 @@ describe("FactorPager counting mode (Phase 30, D-07)", () => {
     expect(probe.props.zoneSurfaceHa).toBe(1.2)
   })
 
+  test("the page receives the detail inputs of B and F as one object (plan 30-19)", () => {
+    const uncappedEntry = {
+      state: { strataCoverText: {}, dmhCounts: {}, fSurfaceText: "" },
+      setStratumCover: jest.fn(),
+      setDmhCount: jest.fn(),
+      setFSurface: jest.fn(),
+    }
+    const { tree } = render("B", {}, null, {}, { uncappedFactors: ["B"], uncappedEntry })
+    const probe = tree.root.findAll((n) => (n.type as unknown) === "FactorDetailScreenProbe")[0]
+    expect(probe.props.uncappedEntry).toBe(uncappedEntry)
+  })
+
   test("the badge reads 'Relevé déplafonné'", () => {
     const { texts } = render("B", {}, null, {}, { uncappedFactors: ["B"] })
     expect(texts()).toContain("Relevé déplafonné")

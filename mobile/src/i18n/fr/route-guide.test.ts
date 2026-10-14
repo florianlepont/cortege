@@ -99,6 +99,10 @@ const SAMPLES: Record<string, () => string> = {
     `${fr.surveyExport.route.choiceGuide({ answers: "peuplement de 8 ha" })}|${fr.surveyExport.route.choiceGuide({ answers: null })}`,
   "factorDetailCountingMode.zoneLine": () =>
     fr.factorDetail.countingMode.zoneLine({ hectares: "1,2" }),
+  "factorDetailCountingMode.strataCounted": () =>
+    `${fr.factorDetail.countingMode.strataCounted({ count: 1 })}|${fr.factorDetail.countingMode.strataCounted({ count: 3 })}`,
+  "factorDetailCountingMode.strataFieldA11y": () =>
+    fr.factorDetail.countingMode.strataFieldA11y({ label: "Très basse" }),
 }
 
 const ALLOWED_METHOD_WORDS = [join("méthode officielle de l", "'IBP"), join("Méthode", " IBP")]

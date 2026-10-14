@@ -47,11 +47,19 @@ const mockForm = {
     factorRetainedScores: {},
     ibpMethodVersion: null,
     factorAnnotations: {} as FactorAnnotationDraft,
+    uncapped: {
+      strataCoverText: { very_low: "25" },
+      dmhCounts: { dmh_01: 2 },
+      fSurfaceText: "1,2",
+    },
   },
   actions: {
     flushDraft: jest.fn(async () => true),
     setFactorDoubt: jest.fn(),
     setFactorNote: jest.fn(),
+    setStratumCover: jest.fn(),
+    setDmhCount: jest.fn(),
+    setFSurface: jest.fn(),
   },
 }
 jest.mock("../../state/survey-form-context", () => ({ useSurveyFormState: () => mockForm }))
@@ -245,5 +253,28 @@ describe("FactorDetailRoute counting mode (Phase 30, D-07)", () => {
     mount()
     expect(props().uncappedFactors).toEqual([])
     expect(props().zoneSurfaceHa).toBe(0.8)
+  })
+})
+
+describe("FactorDetailRoute detail inputs of the relevé déplafonné (plan 30-19)", () => {
+  test("hands the pager the form's typed details and the three setters as one object", () => {
+    mount()
+    const entry = mockPagerProps.value.uncappedEntry as {
+      state: unknown
+      setStratumCover: unknown
+      setDmhCount: unknown
+      setFSurface: unknown
+    }
+    expect(entry.state).toBe(mockForm.state.uncapped)
+    expect(entry.setStratumCover).toBe(mockForm.actions.setStratumCover)
+    expect(entry.setDmhCount).toBe(mockForm.actions.setDmhCount)
+    expect(entry.setFSurface).toBe(mockForm.actions.setFSurface)
+  })
+
+  test("the object is stable while the form's details do not change", () => {
+    const { update } = mount()
+    const first = mockPagerProps.value.uncappedEntry
+    update()
+    expect(mockPagerProps.value.uncappedEntry).toBe(first)
   })
 })
