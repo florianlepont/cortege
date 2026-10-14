@@ -1,4 +1,4 @@
-import type { SurveyWeather } from "@cortege/ibp-domain"
+import { readSurveyRoute, type SurveyWeather } from "@cortege/ibp-domain"
 import * as Network from "expo-network"
 import { Platform } from "react-native"
 import { isOnlineNetworkState } from "../../hooks/survey-sync/utils"
@@ -68,6 +68,7 @@ export type AssembleDeps = {
     factors?: Record<string, unknown>
     survey_note?: string | null
     weather?: SurveyWeather | null
+    survey_route?: unknown
   } | null>
   listPhotos: (surveyId: string) => Promise<LocalAttachment[]>
   preparePhotos: (
@@ -125,14 +126,19 @@ async function orFallback<T>(piece: string, fallback: T, work: () => Promise<T>)
   }
 }
 
-type DraftParts = Pick<SurveyExportData, "rawFactors" | "conditions">
+type DraftParts = Pick<SurveyExportData, "rawFactors" | "conditions" | "route">
 
-const NO_DRAFT_PARTS: DraftParts = { rawFactors: {}, conditions: { note: null, weather: null } }
+const NO_DRAFT_PARTS: DraftParts = {
+  rawFactors: {},
+  conditions: { note: null, weather: null },
+  route: null,
+}
 
 /**
- * The factors and the conditions (survey note and weather, phase 27 D-17) of the local draft, read
- * in one go. A blank note is null; a weather that is not an object is null. The builders clamp the
- * note again before printing.
+ * The factors, the conditions (survey note and weather, phase 27 D-17) and the route (phase 30,
+ * D-09) of the local draft, read in one go. A blank note is null; a weather that is not an object
+ * is null; a route that is absent or that `readSurveyRoute` does not accept is null. The builders
+ * clamp the note again before printing. No network read: the route is the one stored on the phone.
  */
 async function loadDraftParts(surveyId: string, deps: AssembleDeps): Promise<DraftParts> {
   const draft = await deps.loadDraft(surveyId)
@@ -145,6 +151,7 @@ async function loadDraftParts(surveyId: string, deps: AssembleDeps): Promise<Dra
       note: note === "" ? null : note,
       weather: typeof weather === "object" && weather !== null ? weather : null,
     },
+    route: readSurveyRoute(draft.survey_route),
   }
 }
 
@@ -335,6 +342,7 @@ export async function assembleSurveyExportData(
     coordinates: mapPiece.coordinates,
     rawFactors: draftParts.rawFactors,
     conditions: draftParts.conditions,
+    route: draftParts.route,
     photos,
     map: mapPiece.map,
     history,
