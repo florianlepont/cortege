@@ -54,8 +54,9 @@ jest.mock("../hooks/useOfflineMapPrompt", () => ({
 jest.mock("./public-map/useAreaDownloadAction", () => ({ useAreaDownloadAction: () => jest.fn() }))
 
 let mockItems: unknown[] = []
+let mockSettled = true
 jest.mock("../hooks/useParcelStatuses", () => ({
-  useParcelStatuses: () => ({ items: mockItems, loading: false }),
+  useParcelStatuses: () => ({ items: mockItems, loading: !mockSettled, settled: mockSettled }),
 }))
 
 jest.mock("../map/maplibre/ParcelMap", () => {
@@ -125,6 +126,7 @@ describe("SurveyParcelSelectionScreen weather point", () => {
   beforeEach(() => {
     mockOnDone = null
     mockItems = []
+    mockSettled = true
   })
 
   test("saving passes the centre of the tapped parcels' geometry", async () => {
@@ -160,5 +162,53 @@ describe("SurveyParcelSelectionScreen weather point", () => {
     const onSave = await mountAndSave(["P1"])
 
     expect(onSave).toHaveBeenCalledWith(null, null)
+  })
+})
+
+describe("SurveyParcelSelectionScreen late geometry (RC-01)", () => {
+  beforeEach(() => {
+    mockOnDone = null
+    mockItems = []
+    mockSettled = false
+    jest.useFakeTimers()
+  })
+  afterEach(() => jest.useRealTimers())
+
+  test("Continuer waits for the pending read and then passes the surface", async () => {
+    const onSave = jest.fn(async () => undefined)
+    const element = () => (
+      <SurveyParcelSelectionScreen
+        apiUrl="http://api.test/v1"
+        accessToken="token"
+        gpsLocation={{ lat: "48.1", lng: "2.1", collected_at: "" }}
+        siteName="Bois"
+        selectedParcelIds={["P1"]}
+        onToggleParcelSelection={jest.fn()}
+        onCaptureGpsLocation={jest.fn(async () => null)}
+        onSave={onSave}
+      />
+    )
+    let tree!: renderer.ReactTestRenderer
+    await act(async () => {
+      tree = renderer.create(element())
+    })
+    await act(async () => {
+      mockOnDone?.()
+    })
+    await act(async () => {
+      jest.advanceTimersByTime(300)
+    })
+    expect(onSave).not.toHaveBeenCalled()
+
+    mockItems = [squareParcel("P1", 2.0, 46.0, 0.001)]
+    mockSettled = true
+    await act(async () => {
+      tree.update(element())
+    })
+    await act(async () => {
+      jest.advanceTimersByTime(200)
+    })
+    expect(onSave).toHaveBeenCalledTimes(1)
+    expect((onSave.mock.calls[0] as unknown[])[1]).toBeGreaterThan(0)
   })
 })
