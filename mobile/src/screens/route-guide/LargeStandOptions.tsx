@@ -24,7 +24,8 @@ export type LargeStandOptionsProps = {
   options: readonly LargeStandOption[]
   /** The option the package pre-selects and that carries the tag "Conseillé" (O-03). */
   preselected: LargeStandOption
-  selected: LargeStandOption
+  /** Undefined until the observer picks: the tag only marks the advised option. */
+  selected?: LargeStandOption
   onChoose: (option: LargeStandOption) => void
 }
 
@@ -32,7 +33,8 @@ export type LargeStandOptionsProps = {
  * Above the subdivision bound (R-11b, O-03) the forest card gives way to two choices, never three:
  * "Découper en sous-peuplements", pre-selected and tagged "Conseillé", then "Parcours partiel, sans
  * découper". Choosing to subdivide is not a parcours: the notice says to make one survey per piece
- * and the screen's button then asks for the surface of the first piece (30-20).
+ * and the screen's "Suivant" then asks for the surface of the first piece (30-20). Nothing is
+ * selected until the observer picks, and "Suivant" waits for it.
  */
 export function LargeStandOptions({
   options,

@@ -80,7 +80,6 @@ const ZONE_ISSUES = {
 export const routeGuideFr = {
   screen: {
     title: "Choix du parcours",
-    lead: "Ce choix est nécessaire pour créer le relevé. Quelques questions courtes vous guident.",
     know: "Je connais déjà mon parcours",
     use: "Utiliser ce parcours",
     saveError: "Le parcours n'a pas pu être enregistré.",
@@ -372,9 +371,6 @@ export const routeGuideFr = {
     optionLabel: ({ label, caption }: { label: string; caption: string }) => `${label}. ${caption}`,
     optionLabelTagged: ({ label, tag, caption }: { label: string; tag: string; caption: string }) =>
       `${label}, ${tag}. ${caption}`,
-    answerRow: ({ question, answer }: { question: string; answer: string }) =>
-      `${question}. ${answer}. Modifier`,
-    answerRowHint: "Rouvre la question",
     suggestionCard: ({
       eyebrow,
       route,

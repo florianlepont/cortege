@@ -26,18 +26,17 @@ jest.mock("react-native", () => {
         typeof children === "function" ? children({ pressed: false }) : children,
       ),
     StyleSheet: { create: <T,>(styles: T): T => styles, flatten: (style: unknown) => style },
-    AccessibilityInfo: { setAccessibilityFocus: (...args: unknown[]) => mockFocus(...args) },
-    findNodeHandle: () => 7,
+    AccessibilityInfo: { announceForAccessibility: (...args: unknown[]) => mockAnnounce(...args) },
   }
 })
 jest.mock("@expo/vector-icons", () => ({ Ionicons: "Ionicons" }))
 jest.mock("../../ui/AppText", () => ({ AppText: "Text" }))
 
-const mockFocus = jest.fn()
+const mockAnnounce = jest.fn()
 
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { fr } from "../../i18n"
-import { QuestionStack } from "./QuestionStack"
+import { QuestionStep } from "./QuestionStep"
 import { useRouteGuideState, type RouteGuideState } from "./useRouteGuideState"
 
 const originalConsoleError = console.error
@@ -56,7 +55,7 @@ afterAll(() => {
 
 afterEach(() => {
   setReducedMotion(false)
-  mockFocus.mockClear()
+  mockAnnounce.mockClear()
 })
 
 const guide = fr.routeGuide
@@ -66,7 +65,7 @@ function mount(prefill: number | null) {
   function Harness() {
     const state = useRouteGuideState({ surfaceHaPrefill: prefill })
     latest = state
-    return React.createElement(QuestionStack, { state })
+    return React.createElement(QuestionStep, { state })
   }
   let tree!: renderer.ReactTestRenderer
   act(() => {
@@ -80,19 +79,21 @@ function mount(prefill: number | null) {
     return found[0]
   }
   const press = (id: string) => act(() => one(id).props.onPress())
+  // The pinned "Suivant" belongs to the screen; here it is the model's action.
+  const next = () => act(() => latest.actions.next())
   const texts = () =>
     tree.root
       .findAll((node) => (node.type as unknown) === "Text")
       .flatMap((node) => React.Children.toArray(node.props.children).map(String))
-  return { tree, state: () => latest, byId, one, press, texts }
+  return { tree, state: () => latest, byId, one, press, next, texts }
 }
 
-describe("QuestionStack: the open card", () => {
-  it("opens on the surface card with only the question, the field and Suivant", () => {
+describe("QuestionStep: one question a screen", () => {
+  it("shows the surface question alone: its field, no answered row, no inline Suivant", () => {
     const { one, byId, texts } = mount(2.4)
     expect(byId("route-answer-surface")).toHaveLength(0)
-    const title = one("route-question-surface")
-    expect(title).toBeDefined()
+    expect(byId("route-next-surface")).toHaveLength(0)
+    one("route-question-surface")
     const field = one("route-surface-field")
     expect(field.props.value).toBe("2,4")
     expect(field.props.keyboardType).toBe("decimal-pad")
@@ -105,7 +106,7 @@ describe("QuestionStack: the open card", () => {
         guide.questions.surface.suffix,
       ]),
     )
-    // The helper sentences live in the information sheet, not on the card.
+    // The helper sentences live in the information sheet, not on the screen.
     for (const text of [
       guide.questions.surface.why,
       guide.questions.surface.estimated,
@@ -114,15 +115,6 @@ describe("QuestionStack: the open card", () => {
     ]) {
       expect(texts()).not.toContain(text)
     }
-    expect(one("route-next-surface").props.accessibilityState).toMatchObject({ disabled: false })
-    expect(one("route-next-surface").props.accessibilityRole).toBe("button")
-    const nextStyle = ([] as Record<string, unknown>[])
-      .concat(one("route-next-surface").props.style)
-      .flat(2)
-      .reduce((acc, style) => ({ ...acc, ...style }), {})
-    expect(Number(nextStyle.minHeight)).toBeGreaterThanOrEqual(44)
-    expect(nextStyle.alignSelf).toBe("stretch")
-    expect(byId("route-question-stack")).toHaveLength(1)
   })
 
   it("titles are headers; one information sheet holds the helper, the hectare and the hedge limit", () => {
@@ -153,37 +145,35 @@ describe("QuestionStack: the open card", () => {
     expect(texts()).not.toContain(guide.questions.surface.estimated)
   })
 
-  it("shows the field error and disables Suivant until the text changes", () => {
-    const { one, byId, texts } = mount(null)
+  it("shows the field error after blur and clears it when the text changes", () => {
+    const { one, texts, state } = mount(null)
     act(() => one("route-surface-field").props.onChangeText("abc"))
     act(() => one("route-surface-field").props.onBlur())
     expect(texts()).toContain(guide.surfaceErrors.invalid)
-    expect(one("route-next-surface").props.accessibilityState).toMatchObject({ disabled: true })
-    expect(one("route-next-surface").props.disabled).toBe(true)
+    expect(state().view.open).toMatchObject({ error: "surface_invalid" })
     act(() => one("route-surface-field").props.onChangeText("2"))
     expect(texts()).not.toContain(guide.surfaceErrors.invalid)
-    expect(one("route-next-surface").props.disabled).toBe(false)
-    expect(byId("route-answer-surface")).toHaveLength(0)
   })
 
   it("an empty surface asks for it when Suivant is pressed", () => {
-    const { press, texts } = mount(null)
-    press("route-next-surface")
+    const { next, texts, state } = mount(null)
+    next()
     expect(texts()).toContain(guide.surfaceErrors.missing)
+    expect(state().view.screen).toBe("surface")
+  })
+
+  it("the return key of the surface field is Suivant", () => {
+    const { one, state } = mount(2.4)
+    act(() => one("route-surface-field").props.onSubmitEditing())
+    expect(state().view.screen).toBe("homogeneity")
   })
 })
 
-describe("QuestionStack: answering and rows", () => {
-  it("Suivant collapses the surface to a row and opens the homogeneity question with its choices", () => {
-    const { press, one, byId, state, texts } = mount(2.4)
-    expect(mockFocus).not.toHaveBeenCalled()
-    press("route-next-surface")
-    const row = one("route-answer-surface")
-    expect(row.props.accessibilityRole).toBe("button")
-    expect(row.props.accessibilityLabel).toBe(
-      guide.a11y.answerRow({ question: "Surface", answer: "2,4 ha, estimée" }),
-    )
-    expect(row.props.accessibilityHint).toBe(guide.a11y.answerRowHint)
+describe("QuestionStep: answering and moving", () => {
+  it("Suivant replaces the surface by the homogeneity question, alone, with its choices", () => {
+    const { next, one, byId, state, texts } = mount(2.4)
+    next()
+    expect(byId("route-answer-surface")).toHaveLength(0)
     expect(byId("route-surface-field")).toHaveLength(0)
     expect(state().view.open?.id).toBe("homogeneity")
     expect(texts()).toEqual(
@@ -193,10 +183,9 @@ describe("QuestionStack: answering and rows", () => {
         guide.questions.homogeneity.options.heterogeneous.caption,
       ]),
     )
+    expect(texts()).not.toContain(guide.questions.surface.title)
     // The reason it is asked is in the question's information sheet only.
     expect(texts()).not.toContain(guide.questions.homogeneity.why)
-    press("route-question-info-homogeneity")
-    expect(texts()).toContain(guide.questions.homogeneity.why)
     const homogeneous = one("route-choice-homogeneity-homogeneous")
     expect(homogeneous.props.accessibilityRole).toBe("radio")
     expect(homogeneous.props.accessibilityLabel).toBe(
@@ -206,34 +195,41 @@ describe("QuestionStack: answering and rows", () => {
       }),
     )
     expect(homogeneous.props.accessibilityState.selected).toBe(false)
-    // The focus follows the card that opens after the page is shown.
-    expect(mockFocus).toHaveBeenCalledWith(7)
   })
 
-  it("a tap on a choice answers at once and the next question opens", () => {
-    const { press, one, byId, state } = mount(2.4)
-    press("route-next-surface")
+  it("announces the title of a new question, not of the first one", () => {
+    const { next } = mount(2.4)
+    expect(mockAnnounce).not.toHaveBeenCalled()
+    next()
+    expect(mockAnnounce).toHaveBeenCalledWith(guide.questions.homogeneity.title)
+  })
+
+  it("a tap on a choice only selects it: the question stays until Suivant", () => {
+    const { press, next, one, byId, state } = mount(2.4)
+    next()
     press("route-choice-homogeneity-heterogeneous")
-    expect(one("route-answer-homogeneity").props.accessibilityLabel).toBe(
-      guide.a11y.answerRow({ question: "Aspect", answer: "Varié" }),
+    expect(state().view.open?.id).toBe("homogeneity")
+    expect(one("route-choice-homogeneity-heterogeneous").props.accessibilityState.selected).toBe(
+      true,
     )
+    next()
     expect(state().view.open?.id).toBe("difficulty")
     expect(byId("route-choice-difficulty-hard")).toHaveLength(1)
     press("route-choice-difficulty-easy")
-    expect(one("route-answer-difficulty").props.accessibilityLabel).toBe(
-      guide.a11y.answerRow({ question: "Observation", answer: "Facile à observer" }),
-    )
+    next()
     expect(state().view.open).toBeNull()
     expect(byId("route-question-difficulty")).toHaveLength(0)
     expect(state().view.canUse).toBe(true)
   })
 
-  it("pressing an answered row reopens that question with its answer selected", () => {
-    const { press, one, byId } = mount(2.4)
-    press("route-next-surface")
+  it("back returns to the question with its answer selected", () => {
+    const { press, next, one, state } = mount(2.4)
+    next()
     press("route-choice-homogeneity-heterogeneous")
-    press("route-answer-homogeneity")
-    expect(byId("route-answer-homogeneity")).toHaveLength(0)
+    next()
+    act(() => {
+      state().actions.back()
+    })
     expect(one("route-choice-homogeneity-heterogeneous").props.accessibilityState.selected).toBe(
       true,
     )
@@ -243,42 +239,50 @@ describe("QuestionStack: answering and rows", () => {
   })
 
   it("draws the width question only when the package asks for it", () => {
-    const { press, byId } = mount(4)
-    press("route-next-surface")
+    const { press, next, byId, state } = mount(4)
+    next()
     press("route-choice-homogeneity-homogeneous")
+    next()
     press("route-choice-difficulty-easy")
+    next()
     expect(byId("route-choice-narrow-yes")).toHaveLength(1)
     press("route-choice-narrow-no")
-    expect(byId("route-answer-narrow")).toHaveLength(1)
-    // Hard to observe: the strip is imposed, the width question leaves the stack.
-    press("route-answer-difficulty")
+    // Hard to observe: the strip is imposed, the width question is no longer needed.
+    act(() => {
+      state().actions.back()
+    })
     press("route-choice-difficulty-hard")
-    expect(byId("route-answer-narrow")).toHaveLength(0)
+    next()
+    expect(state().view.open).toBeNull()
     expect(byId("route-question-narrow")).toHaveLength(0)
   })
 
   it("a narrow stand is a strip", () => {
-    const { press, state } = mount(4)
-    press("route-next-surface")
+    const { press, next, state } = mount(4)
+    next()
     press("route-choice-homogeneity-homogeneous")
+    next()
     press("route-choice-difficulty-easy")
+    next()
     press("route-choice-narrow-yes")
+    next()
     expect(state().view.selection).toMatchObject({ method: "partial_strip" })
   })
 
   it("a surface corrected to 0.8 hectare asks nothing more", () => {
-    const { one, press, byId, state } = mount(2.4)
+    const { one, next, state } = mount(2.4)
     act(() => one("route-surface-field").props.onChangeText("0,8"))
-    press("route-next-surface")
-    expect(byId("route-answer-surface")).toHaveLength(1)
+    next()
     expect(state().view.open).toBeNull()
     expect(state().view.canUse).toBe(true)
   })
 
-  it("above the bound offers the two options, subdivide pre-selected with its tag", () => {
-    const { press, one, state, texts } = mount(15)
-    press("route-next-surface")
+  it("above the bound the two options are a screen of their own, nothing selected yet", () => {
+    const { press, next, one, state, texts } = mount(15)
+    next()
     press("route-choice-homogeneity-heterogeneous")
+    next()
+    expect(state().view.screen).toBe("largeStand")
     expect(texts()).toEqual(
       expect.arrayContaining([
         guide.largeStand.title,
@@ -287,28 +291,27 @@ describe("QuestionStack: answering and rows", () => {
         guide.largeStand.recommended,
       ]),
     )
-    expect(texts()).not.toContain(guide.reasons.largeStand)
-    expect(one("route-choice-largeStand-subdivide").props.accessibilityState.selected).toBe(true)
-    expect(one("route-choice-largeStand-subdivide").props.accessibilityLabel).toContain(
+    expect(texts()).not.toContain(guide.questions.homogeneity.title)
+    expect(one("route-large-option-subdivide").props.accessibilityState.selected).toBe(false)
+    expect(state().view.canNext).toBe(false)
+    expect(one("route-large-option-subdivide").props.accessibilityLabel).toContain(
       guide.largeStand.recommended,
     )
-    press("route-choice-largeStand-partial")
-    expect(one("route-answer-largeStand").props.accessibilityLabel).toBe(
-      guide.a11y.answerRow({
-        question: guide.largeStand.short,
-        answer: guide.largeStand.partial.title,
-      }),
-    )
+    press("route-large-option-partial")
+    expect(state().view.canNext).toBe(true)
+    next()
     // A varied stand is walked in strips: the package asks nothing more.
     expect(state().view.open).toBeNull()
     expect(state().view.selection).toMatchObject({ method: "partial_strip" })
   })
 
-  it("subdivide reopens the surface card for one morceau without the estimate captions", () => {
-    const { press, one, texts } = mount(15)
-    press("route-next-surface")
+  it("subdivide reopens the surface question for one piece without the estimate captions", () => {
+    const { press, next, one, texts } = mount(15)
+    next()
     press("route-choice-homogeneity-heterogeneous")
-    press("route-choice-largeStand-subdivide")
+    next()
+    press("route-large-option-subdivide")
+    next()
     expect(texts()).toContain(guide.questions.surface.subStand)
     press("route-question-info-surface")
     expect(texts()).toContain(
@@ -322,12 +325,11 @@ describe("QuestionStack: answering and rows", () => {
   })
 })
 
-describe("QuestionStack: reduced motion", () => {
+describe("QuestionStep: reduced motion", () => {
   it("renders and answers the same with Reduce Motion on", () => {
     setReducedMotion(true)
-    const { press, byId } = mount(2.4)
-    press("route-next-surface")
-    expect(byId("route-answer-surface")).toHaveLength(1)
+    const { next, byId } = mount(2.4)
+    next()
     expect(byId("route-choice-homogeneity-homogeneous")).toHaveLength(1)
   })
 })

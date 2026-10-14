@@ -28,12 +28,15 @@ import { formatDecimalFr } from "../../app/route-text"
 import {
   answersOf,
   choiceOf,
+  canGoNext,
+  canStepBack,
+  currentOpen,
   hoursOf,
-  nextOpen,
   parseRounded,
   roundTwo,
   type GuideOpenId,
   type GuideQuestionId,
+  type GuideScreenId,
   type RouteGuideModel,
 } from "./route-guide-state"
 
@@ -67,7 +70,8 @@ export type OpenQuestion =
       id: "largeStand"
       options: LargeStandOption[]
       preselected: LargeStandOption
-      selected: LargeStandOption
+      /** Nothing is selected until the observer picks (the tag only marks the advised one). */
+      selected?: LargeStandOption
     }
 
 export type GuideSelection = {
@@ -89,6 +93,12 @@ export type GuideView = {
   /** The answered questions in order, the open one excluded. */
   rows: GuideRow[]
   open: OpenQuestion | null
+  /** The screen drawn: the open question, or the result once none is open. */
+  screen: GuideScreenId
+  /** "Suivant" can be pressed on the open question (it holds an answer). */
+  canNext: boolean
+  /** "Back" returns to a previous question; false on the first one, where it leaves the step. */
+  canStepBack: boolean
   recommendation: RouteRecommendation
   selection: GuideSelection | null
   /** Null while there is no selection. */
@@ -282,7 +292,7 @@ function openQuestion(model: RouteGuideModel, id: GuideOpenId | null): OpenQuest
         id,
         options: [...LARGE_STAND_OPTIONS],
         preselected: "subdivide",
-        selected: model.largeStandOption ?? "subdivide",
+        selected: model.largeStandDraft ?? model.largeStandOption,
       }
   }
 }
@@ -296,9 +306,7 @@ export function selectGuideView(model: RouteGuideModel): GuideView {
   // Above the bound the package offers the two options; without the observer's choice it says so.
   const large = recommendRoute(answers).status === "options"
 
-  const requested = model.openId
-  const asked = requested === "largeStand" ? large : requested !== null && shown.includes(requested)
-  const openId = asked ? requested : nextOpen(model)
+  const openId = currentOpen(model)
 
   const neededHomogeneity = shown.includes("homogeneity") ? model.homogeneity : undefined
   const found = proposalOf(model, recommendation, neededHomogeneity)
@@ -332,6 +340,9 @@ export function selectGuideView(model: RouteGuideModel): GuideView {
   return {
     rows: rowsOf(model, shown, large, openId),
     open: openQuestion(model, openId),
+    screen: openId ?? "result",
+    canNext: canGoNext(model, openId),
+    canStepBack: canStepBack(model),
     recommendation,
     selection,
     chosenBy:

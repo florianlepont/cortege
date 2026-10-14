@@ -2218,7 +2218,9 @@ describe("RouteGuideRoute (phase 30, O-19, P-1)", () => {
       actions.setSurfaceText("2,4")
       actions.commitSurface()
       actions.answerHomogeneity("heterogeneous")
+      actions.next()
       actions.answerDifficulty(false)
+      actions.next()
     })
   }
 
@@ -2261,9 +2263,55 @@ describe("RouteGuideRoute (phase 30, O-19, P-1)", () => {
     expect(write).not.toHaveBeenCalled()
     expect(fixture.form.actions.createDraft).not.toHaveBeenCalled()
     expect(navigation.reset).not.toHaveBeenCalled()
-    // No listener on removal: the header back, the swipe and the Android back all just pop.
-    expect(navigation.addListener).not.toHaveBeenCalled()
     expect(navigation.goBack).not.toHaveBeenCalled()
+  })
+
+  /** The listener the route registers on removal, called like the router does. */
+  function removal(navigation: ReturnType<typeof makeNavigation>) {
+    const call = navigation.addListener.mock.calls.find(([event]) => event === "beforeRemove")
+    expect(call).toBeDefined()
+    const handler = (call as unknown as [string, (event: unknown) => void])[1]
+    return async (type: string): Promise<jest.Mock> => {
+      const preventDefault = jest.fn()
+      await act(async () => {
+        handler({ data: { action: { type } }, preventDefault })
+      })
+      return preventDefault
+    }
+  }
+
+  test("back goes one question back, and is a plain return from the first question", async () => {
+    const { fixture, write } = creationFixture()
+    const { navigation } = await mountGuide(fixture)
+    const remove = removal(navigation)
+    // First question: the header back, the swipe and the Android back just pop.
+    expect(await remove("GO_BACK")).not.toHaveBeenCalled()
+    expect(await remove("POP")).not.toHaveBeenCalled()
+    await act(async () => {
+      guideState().actions.commitSurface()
+    })
+    expect(guideState().view).toMatchObject({ screen: "homogeneity", canStepBack: true })
+    // Second question: the pop is held back and the previous question opens, answer kept.
+    expect(await remove("GO_BACK")).toHaveBeenCalledTimes(1)
+    expect(guideState().view).toMatchObject({ screen: "surface", canStepBack: false })
+    expect(await remove("GO_BACK")).not.toHaveBeenCalled()
+    // The step's own exits are never held back.
+    await act(async () => {
+      guideState().actions.commitSurface()
+    })
+    expect(await remove("RESET")).not.toHaveBeenCalled()
+    expect(write).not.toHaveBeenCalled()
+    expect(fixture.form.actions.createDraft).not.toHaveBeenCalled()
+  })
+
+  test("back from the result goes to the last question", async () => {
+    const { fixture } = creationFixture()
+    const { navigation } = await mountGuide(fixture)
+    const remove = removal(navigation)
+    await reachRoute()
+    expect(guideState().view).toMatchObject({ screen: "result" })
+    expect(await remove("GO_BACK")).toHaveBeenCalledTimes(1)
+    expect(guideState().view).toMatchObject({ screen: "difficulty" })
   })
 
   test("Utiliser ce parcours writes the route, finalises the draft, keeps the weather point and resets (D-45)", async () => {

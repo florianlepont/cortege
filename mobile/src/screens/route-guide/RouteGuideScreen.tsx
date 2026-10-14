@@ -1,6 +1,5 @@
-import { useMemo } from "react"
-import { StyleSheet, View } from "react-native"
-import Animated from "react-native-reanimated"
+import { useEffect, useMemo, useRef } from "react"
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
@@ -13,14 +12,9 @@ import { PageTitle } from "../../ui/PageTitle"
 import { TitledScrollView } from "../../ui/TitledScrollView"
 import { useFrameInsetBehavior } from "../../ui/frame-large-title"
 import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
-import { usePagerChromeStyle, usePagerKeyboard } from "../survey-form/usePagerKeyboard"
-import { LargeStandOptions } from "./LargeStandOptions"
-import { QuestionStack } from "./QuestionStack"
-import { ReasonsCard } from "./ReasonsCard"
-import { RefineSection } from "./RefineSection"
-import { RouteDetailsCard, type RouteDetailsValue } from "./RouteDetailsCard"
-import { RouteAdvice, RouteNotices } from "./RouteNotices"
-import { SuggestionCard } from "./SuggestionCard"
+import { QuestionStep } from "./QuestionStep"
+import { ResultBody } from "./ResultBody"
+import { SuggestionEntrance } from "./SuggestionEntrance"
 import type { RouteGuideState } from "./useRouteGuideState"
 
 const screen = fr.routeGuide.screen
@@ -46,17 +40,18 @@ export type RouteGuideScreenProps = {
 
 /**
  * The route step, "Choix du parcours" (phase 30, O-19: mandatory from creation, so there is no skip
- * control and no optional tag; the only way forward is "Utiliser ce parcours"). One scrolling page
- * (simplified 2026-10-14 after the owner's review): the title, the step, the lead and the one open
- * question, then once a route exists the suggestion, its reasons, details, warnings and the folded
- * "Pour affiner", or the two options above the subdivision bound, the text link
- * "Je connais déjà mon parcours" (the chooser) and, only when a route is ready, the footer row. The page shows
- * what the model derives from the package (`RouteGuideState`) and decides nothing itself; it needs no
- * network, an unknown surface only opens the surface card empty (spec section 1).
+ * control and no optional tag; the only way forward is "Utiliser ce parcours"). One screen at a
+ * time, like the other creation steps (owner's review 2026-10-14): while questions are open the
+ * page shows the title, the step and the one open question with its pinned "Suivant"; when none is
+ * left it shows the result: the suggestion, its reasons, details, warnings, the folded "Pour
+ * affiner", the text link "Je connais déjà mon parcours" (the chooser, also under the first
+ * question) and the footer "Utiliser ce parcours" once a route is ready. Back is the route's: one
+ * question back through `actions.back`. The page shows what the model derives from the package
+ * (`RouteGuideState`) and decides nothing itself; it needs no network, an unknown surface only
+ * opens the surface card empty (spec section 1).
  */
 export function RouteGuideScreen({
   state,
-  surfaceUnknown,
   saveError,
   saving = false,
   stepLabel,
@@ -68,55 +63,50 @@ export function RouteGuideScreen({
   const styles = useMemo(() => createStyles(theme), [theme])
   const insetBehavior = useFrameInsetBehavior()
   const clearance = useTabBarClearance()
-  const keyboardUp = usePagerKeyboard()
-  const chromeStyle = usePagerChromeStyle(keyboardUp)
+  const scrollRef = useRef<ScrollView>(null)
   const { view, actions } = state
   const { selection, recommendation, open } = view
 
-  // The two options of a large stand are drawn below, in the result zone: the stack leaves that card.
-  const showLargeStand = open?.id === "largeStand" && selection?.source !== "pick"
-  const stackState = useMemo<RouteGuideState>(
-    () => (open?.id === "largeStand" ? { ...state, view: { ...state.view, open: null } } : state),
-    [state, open],
+  // A new screen starts at the top (the page itself stays mounted).
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false })
+  }, [view.screen])
+
+  // The footer is the one primary action of the screen: "Suivant" on a question, "Utiliser ce
+  // parcours" on the result once a route is ready (no disabled button there).
+  const cta =
+    open !== null
+      ? {
+          label: screen.next,
+          onPress: actions.next,
+          disabled: !view.canNext || (open.id === "surface" && open.error !== null),
+          testID: "route-next",
+        }
+      : view.canUse
+        ? { label: screen.use, onPress: onUse, disabled: false, testID: "route-use" }
+        : null
+
+  const know = (
+    <AppPressable
+      onPress={() => onOpenChooser("pick")}
+      accessibilityRole="button"
+      accessibilityLabel={screen.know}
+      style={styles.know}
+      testID="route-know-link"
+    >
+      <Text style={styles.knowText}>{screen.know}</Text>
+    </AppPressable>
   )
-  const choosingLargeStand = recommendation.status === "options" && selection === null
-
-  const standRow = view.rows.find((row) => row.id === "surface")
-  const standHa = standRow?.id === "surface" ? standRow.hectares : null
-
-  const details: RouteDetailsValue = {
-    zoneText: view.zoneFieldText,
-    complementDone: selection?.complement?.done ?? false,
-    totalText: view.totalFieldText,
-  }
-  const changeDetails = (next: RouteDetailsValue): void => {
-    if (next.zoneText !== details.zoneText) actions.setZoneText(next.zoneText)
-    if (next.complementDone !== details.complementDone)
-      actions.setComplementDone(next.complementDone)
-    if (next.totalText !== details.totalText) actions.setTotalText(next.totalText)
-  }
-
-  const suggested = selection?.source === "suggestion"
-  const warnings =
-    recommendation.status === "route" && suggested
-      ? // The details card raises this one live from the surface typed in its field.
-        recommendation.warnings.filter((code) => code !== "partial_over_half")
-      : []
-
-  // The footer exists only when something can be done with it: no disabled button while questions are open.
-  const cta = choosingLargeStand
-    ? {
-        label: fr.routeGuide.largeStand.subdivideCta,
-        onPress: () => actions.chooseLargeStandOption("subdivide"),
-      }
-    : view.canUse
-      ? { label: screen.use, onPress: onUse }
-      : null
 
   return (
-    <View style={styles.root} testID="route-guide-screen">
+    <KeyboardAvoidingView
+      style={styles.root}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      testID="route-guide-screen"
+    >
       <TitledScrollView
-        collapsingTitle={fr.routeGuide.screen.title}
+        ref={scrollRef}
+        collapsingTitle={screen.title}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior={insetBehavior}
@@ -127,73 +117,35 @@ export function RouteGuideScreen({
       >
         <PageTitle>{screen.title}</PageTitle>
         {stepLabel ? <Text style={styles.step}>{stepLabel}</Text> : null}
-        <Text style={styles.leadText}>{screen.lead}</Text>
-        <QuestionStack state={stackState} />
 
-        {showLargeStand && open?.id === "largeStand" ? (
-          <LargeStandOptions
-            options={open.options}
-            preselected={open.preselected}
-            selected={open.selected}
-            onChoose={actions.chooseLargeStandOption}
-          />
-        ) : null}
-
-        {selection === null ? null : (
+        {open !== null ? (
           <>
-            <SuggestionCard
-              method={selection.method}
-              counting={selection.counting}
-              uncappedFactors={selection.uncappedFactors}
-              zoneHa={selection.zoneHa}
-              chosenBy={view.chosenBy ?? "observer"}
-              onChange={() => onOpenChooser("pick")}
-              onRestore={recommendation.status === "route" ? actions.restoreSuggestion : undefined}
-            />
-            {recommendation.status === "route" && suggested ? (
-              <ReasonsCard reasons={recommendation.reasons} />
-            ) : null}
-            <RouteDetailsCard
-              method={selection.method}
-              counting={selection.counting}
-              uncappedFactors={selection.uncappedFactors}
-              standHa={standHa}
-              value={details}
-              onChange={changeDetails}
-              onEditCounting={() => onOpenChooser("pick", "counting")}
-            />
-            <RouteNotices warnings={warnings} />
-            <RefineSection
-              refine={view.refine}
-              actions={actions}
-              footer={view.advice === null ? null : <RouteAdvice advice={view.advice} />}
-            />
+            <QuestionStep state={state} />
+            {open.id === "surface" && !view.canStepBack ? know : null}
           </>
+        ) : (
+          <SuggestionEntrance trigger="result">
+            <View style={styles.result} testID="route-result">
+              {selection === null ? null : (
+                <ResultBody
+                  view={view}
+                  actions={actions}
+                  onOpenChooser={onOpenChooser}
+                  recommendation={recommendation}
+                />
+              )}
+              {know}
+            </View>
+          </SuggestionEntrance>
         )}
-
-        <AppPressable
-          onPress={() => onOpenChooser("pick")}
-          accessibilityRole="button"
-          accessibilityLabel={screen.know}
-          style={styles.know}
-          testID="route-know-link"
-        >
-          <Text style={styles.knowText}>{screen.know}</Text>
-        </AppPressable>
       </TitledScrollView>
 
       {cta !== null || saveError ? (
-        <Animated.View
-          pointerEvents={keyboardUp ? "none" : "box-none"}
-          style={[
-            styles.footer,
-            { paddingBottom: finishBarBottomPadding(clearance) },
-            keyboardUp ? styles.footerHidden : null,
-            chromeStyle,
-          ]}
+        <View
+          style={[styles.footer, { paddingBottom: finishBarBottomPadding(clearance) }]}
           testID="route-guide-footer"
         >
-          {saveError ? (
+          {saveError && open === null ? (
             <AppNotice
               tone="danger"
               icon="alert-circle-outline"
@@ -206,13 +158,14 @@ export function RouteGuideScreen({
               label={cta.label}
               size="lg"
               loading={saving}
+              disabled={cta.disabled}
               onPress={cta.onPress}
-              testID="route-use"
+              testID={cta.testID}
             />
           ) : null}
-        </Animated.View>
+        </View>
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -234,9 +187,8 @@ function createStyles(theme: BrandTheme) {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
     },
-    leadText: {
-      ...brandTypeScale.subhead,
-      color: theme.colors.textSecondary,
+    result: {
+      gap: brandSpacing4.md,
     },
     // A tertiary text link at the very end of the page: no outline, no icon, a 44 pt hit area.
     know: {
@@ -251,18 +203,12 @@ function createStyles(theme: BrandTheme) {
       textDecorationLine: "underline",
     },
     // The footer takes its own row under the scroll area (never over the content), so the last
-    // element and the open question's "Suivant" can never sit under it. While the keyboard is up it
-    // leaves the layout (absolute, faded) so the freed height goes to the focused field.
+    // element can never sit under it; with the keyboard up it stays above it (the page resizes on
+    // Android, the container pads on iOS) and the scroll area keeps the focused field in view.
     footer: {
       paddingHorizontal: brandSpacing4.lg,
       paddingTop: brandSpacing4.sm,
       gap: brandSpacing4.sm,
-    },
-    footerHidden: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      bottom: 0,
     },
   })
 }

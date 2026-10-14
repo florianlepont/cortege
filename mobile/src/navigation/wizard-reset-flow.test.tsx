@@ -309,7 +309,9 @@ async function acceptRoute() {
     }
     actions.commitSurface()
     actions.answerHomogeneity("heterogeneous")
+    actions.next()
     actions.answerDifficulty(false)
+    actions.next()
   })
   await act(async () => {
     await (mockScreenProps.routeGuide.onUse as () => Promise<void>)()
@@ -424,6 +426,78 @@ describe("the route step as the fifth step of the creation (phase 30, O-19, P-1)
     expect(observed.writes).toEqual([`route:${NEW_ID}`, `draft:${NEW_ID}`])
     expect(routeNames()).toEqual(["surveysHome", "surveyDetail"])
     expect(mockScreenProps.surveyDetail.selectedSurvey).toMatchObject({ id: NEW_ID })
+  })
+})
+
+describe("back inside the route step, one question at a time (real router)", () => {
+  const CREATION = [
+    { name: "surveysHome" },
+    { name: "surveyForm" },
+    { name: "surveyParcels", params: WIZARD_PARAMS },
+  ]
+  type GuideProps = {
+    state: {
+      view: { screen: string }
+      actions: Record<string, (...args: unknown[]) => unknown>
+    }
+  }
+  const guide = () => mockScreenProps.routeGuide as unknown as GuideProps
+  const screenName = () => guide().state.view.screen
+
+  test("back from a later question stays on the route step, back from the first returns to the parcel map", async () => {
+    const { ref, routeNames } = await mountStack(CREATION)
+    await leaveParcelMap()
+    await act(async () => {
+      guide().state.actions.commitSurface()
+    })
+    expect(screenName()).toBe("homogeneity")
+
+    await act(async () => {
+      ref.goBack()
+    })
+    expect(routeNames()).toEqual(["surveysHome", "surveyForm", "surveyParcels", "surveyRouteGuide"])
+    expect(screenName()).toBe("surface")
+
+    // From the first question: the plain pop of today, nothing written.
+    await act(async () => {
+      ref.goBack()
+    })
+    expect(routeNames()).toEqual(["surveysHome", "surveyForm", "surveyParcels"])
+    expect(observed.writes).toEqual([])
+  })
+
+  test("back from the result goes to the last question, then on; the route is still accepted once", async () => {
+    const { ref, routeNames } = await mountStack(CREATION)
+    await leaveParcelMap()
+    await act(async () => {
+      const { actions } = guide().state
+      actions.commitSurface()
+      actions.answerHomogeneity("heterogeneous")
+      actions.next()
+      actions.answerDifficulty(false)
+      actions.next()
+    })
+    expect(screenName()).toBe("result")
+    await act(async () => {
+      ref.goBack()
+    })
+    expect(screenName()).toBe("difficulty")
+    await act(async () => {
+      ref.goBack()
+    })
+    expect(screenName()).toBe("homogeneity")
+    expect(observed.writes).toEqual([])
+
+    await act(async () => {
+      guide().state.actions.next()
+      guide().state.actions.next()
+    })
+    expect(screenName()).toBe("result")
+    await act(async () => {
+      await (mockScreenProps.routeGuide.onUse as () => Promise<void>)()
+    })
+    expect(observed.writes).toEqual([`route:${NEW_ID}`, `draft:${NEW_ID}`])
+    expect(routeNames()).toEqual(["surveysHome", "surveyDetail"])
   })
 })
 

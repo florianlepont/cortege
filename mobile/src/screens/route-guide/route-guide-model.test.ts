@@ -19,21 +19,26 @@ import {
 
 const start = (prefill: number | null = null) => initialGuideModel({ surfaceHaPrefill: prefill })
 
-function run(actions: GuideAction[], from: RouteGuideModel = start()): RouteGuideModel {
-  return actions.reduce(guideReducer, from)
+// An answer only selects; "Suivant" goes on. The helpers below answer then press "Suivant", the way
+// an observer walks the screens, and `run` accepts them next to single actions.
+type Step = GuideAction | GuideAction[]
+
+function run(actions: Step[], from: RouteGuideModel = start()): RouteGuideModel {
+  return actions.flat().reduce(guideReducer, from)
 }
+
+const NEXT: GuideAction = { type: "next" }
 
 const surface = (text: string): GuideAction[] => [
   { type: "setSurfaceText", text },
   { type: "commitSurface" },
 ]
-const hom = (value: "homogeneous" | "heterogeneous"): GuideAction => ({
-  type: "answer",
-  id: "homogeneity",
-  value,
-})
-const hard = (value: boolean): GuideAction => ({ type: "answer", id: "difficulty", value })
-const narrow = (value: boolean): GuideAction => ({ type: "answer", id: "narrow", value })
+const hom = (value: "homogeneous" | "heterogeneous"): GuideAction[] => [
+  { type: "answer", id: "homogeneity", value },
+  NEXT,
+]
+const hard = (value: boolean): GuideAction[] => [{ type: "answer", id: "difficulty", value }, NEXT]
+const narrow = (value: boolean): GuideAction[] => [{ type: "answer", id: "narrow", value }, NEXT]
 
 describe("initialGuideModel", () => {
   it("opens on the surface card with the estimate prefilled and flagged as estimated", () => {
@@ -147,9 +152,9 @@ describe("visible questions equal routeQuestionsFor", () => {
     ]
   it.each(stands)("at %s ha", (ha, homogeneity, difficulty, narrowAnswer) => {
     const actions: GuideAction[] = [...surface(String(ha).replace(".", ","))]
-    if (homogeneity) actions.push(hom(homogeneity))
-    if (difficulty !== undefined) actions.push(hard(difficulty))
-    if (narrowAnswer !== undefined) actions.push(narrow(narrowAnswer))
+    if (homogeneity) actions.push(...hom(homogeneity))
+    if (difficulty !== undefined) actions.push(...hard(difficulty))
+    if (narrowAnswer !== undefined) actions.push(...narrow(narrowAnswer))
     const view = selectGuideView(run(actions))
     const answers = {
       surface_ha: ha,
@@ -186,9 +191,9 @@ describe("replay of the package's decision table", () => {
       } else {
         actions.push(...surface("x"))
       }
-      if (answers.homogeneity) actions.push(hom(answers.homogeneity))
-      if (answers.difficulty !== undefined) actions.push(hard(answers.difficulty))
-      if (answers.narrow !== undefined) actions.push(narrow(answers.narrow))
+      if (answers.homogeneity) actions.push(...hom(answers.homogeneity))
+      if (answers.difficulty !== undefined) actions.push(...hard(answers.difficulty))
+      if (answers.narrow !== undefined) actions.push(...narrow(answers.narrow))
       if (example.choice?.largeStandOption) {
         actions.push({ type: "chooseLargeStandOption", option: example.choice.largeStandOption })
       }
@@ -202,7 +207,8 @@ describe("replay of the package's decision table", () => {
           text: String(answers.hours_available).replace(".", ","),
         })
       }
-      const model = run(actions)
+      // Screens answered ahead of the walk are walked with "Suivant" until the result.
+      const model = run([...actions, NEXT, NEXT, NEXT, NEXT])
       if (example.choice?.largeStandOption === "subdivide") return
       const view = selectGuideView(model)
       expect(view.recommendation.status).toBe(example.expect.status)
@@ -225,7 +231,8 @@ describe("replay of the package's decision table", () => {
         })
       }
       if (view.recommendation.status === "options") {
-        expect(view.open).toMatchObject({ id: "largeStand", selected: "subdivide" })
+        expect(view.open).toMatchObject({ id: "largeStand", preselected: "subdivide" })
+        expect(view.open).toHaveProperty("selected", undefined)
         expect(view.canUse).toBe(false)
       }
     },
@@ -233,12 +240,12 @@ describe("replay of the package's decision table", () => {
 })
 
 describe("routine paths (taps counted)", () => {
-  it("2.4 ha, varied, easy: three answers reach canUse (four taps with the final button)", () => {
-    const steps: GuideAction[] = [{ type: "commitSurface" }, hom("heterogeneous"), hard(false)]
+  it('2.4 ha, varied, easy: three screens (each one answer and "Suivant") reach canUse', () => {
+    const steps: Step[] = [{ type: "commitSurface" }, hom("heterogeneous"), hard(false)]
     let model = start(2.4)
     const usable: boolean[] = []
     for (const step of steps) {
-      model = guideReducer(model, step)
+      model = run([step], model)
       usable.push(selectGuideView(model).canUse)
     }
     expect(usable).toEqual([false, false, true])
@@ -295,7 +302,7 @@ describe("changing an answer", () => {
     expect(buildRouteRecord(model)?.guide.answers).toMatchObject({ narrow: true })
 
     // Hard to observe: the strip is imposed, the width question is no longer needed.
-    model = guideReducer(model, hard(true))
+    model = run([hard(true)], model)
     let view = selectGuideView(model)
     expect(view.selection).toMatchObject({ method: "partial_strip" })
     expect(view.rows.map((row) => row.id)).toEqual(["surface", "homogeneity", "difficulty"])
@@ -306,7 +313,7 @@ describe("changing an answer", () => {
     })
 
     // Back to easy: the earlier width answer is still there, nothing is asked again.
-    model = guideReducer(model, hard(false))
+    model = run([hard(false)], model)
     view = selectGuideView(model)
     expect(view.open).toBeNull()
     expect(buildRouteRecord(model)?.guide.answers).toMatchObject({ narrow: true })
@@ -343,8 +350,9 @@ describe("above the subdivision bound (R-11b, O-03)", () => {
       id: "largeStand",
       options: ["subdivide", "partial"],
       preselected: "subdivide",
-      selected: "subdivide",
+      selected: undefined,
     })
+    expect(view.canNext).toBe(false)
     expect(view.selection).toBeNull()
     expect(view.canUse).toBe(false)
     expect(view.chosenBy).toBeNull()

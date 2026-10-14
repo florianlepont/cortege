@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer } from "react"
+import { useEffect, useMemo, useReducer, useRef } from "react"
 import type {
   LargeStandOption,
   RouteExperience,
@@ -7,10 +7,10 @@ import type {
 } from "@cortege/ibp-domain"
 import {
   buildRouteRecord,
+  canStepBack,
   guideReducer,
   initialGuideModel,
   selectGuideView,
-  type GuideOpenId,
   type GuideView,
   type RouteGuidePick,
 } from "./route-guide-model"
@@ -24,12 +24,17 @@ export type RouteGuideActions = {
   setSurfaceText: (text: string) => void
   /** On blur: shows the error of an unusable surface, never advances. */
   validateSurface: () => void
-  /** "Suivant" on the surface card. */
+  /** The surface field's return key: same as "Suivant" on the surface question. */
   commitSurface: () => void
+  /** "Suivant": to the next needed question, or to the result when none is left. */
+  next: () => void
+  /** One question back (the answer typed is kept); false when there is none, the caller leaves. */
+  back: () => boolean
   answerHomogeneity: (value: RouteHomogeneity) => void
   answerDifficulty: (value: boolean) => void
   answerNarrow: (value: boolean) => void
-  reopen: (id: GuideOpenId) => void
+  /** Picks an option on the large-stand screen; its "Suivant" applies it. */
+  pickLargeStand: (option: LargeStandOption) => void
   chooseLargeStandOption: (option: LargeStandOption) => void
   setExperience: (value: RouteExperience | undefined) => void
   setHoursText: (text: string) => void
@@ -67,15 +72,25 @@ export function useRouteGuideState(params: RouteGuideStateParams): RouteGuideSta
     dispatch({ type: "receivePrefill", surfaceHa: surfaceHaPrefill })
   }, [surfaceHaPrefill])
 
+  // `back` is stable: it reads whether a question is left to return to from the latest model.
+  const canStepBackRef = useRef(false)
+  canStepBackRef.current = canStepBack(model)
+
   const actions = useMemo<RouteGuideActions>(
     () => ({
       setSurfaceText: (text) => dispatch({ type: "setSurfaceText", text }),
       validateSurface: () => dispatch({ type: "validateSurface" }),
       commitSurface: () => dispatch({ type: "commitSurface" }),
+      next: () => dispatch({ type: "next" }),
+      back: () => {
+        if (!canStepBackRef.current) return false
+        dispatch({ type: "back" })
+        return true
+      },
       answerHomogeneity: (value) => dispatch({ type: "answer", id: "homogeneity", value }),
       answerDifficulty: (value) => dispatch({ type: "answer", id: "difficulty", value }),
       answerNarrow: (value) => dispatch({ type: "answer", id: "narrow", value }),
-      reopen: (id) => dispatch({ type: "reopen", id }),
+      pickLargeStand: (option) => dispatch({ type: "pickLargeStand", option }),
       chooseLargeStandOption: (option) => dispatch({ type: "chooseLargeStandOption", option }),
       setExperience: (value) => dispatch({ type: "setRefine", field: "experience", value }),
       setHoursText: (text) => dispatch({ type: "setRefine", field: "hours", text }),

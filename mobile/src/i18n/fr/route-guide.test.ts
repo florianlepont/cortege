@@ -64,8 +64,6 @@ const SAMPLES: Record<string, () => string> = {
       tag: "Conseillé",
       caption: "Une légende",
     }),
-  "routeGuide.a11y.answerRow": () =>
-    fr.routeGuide.a11y.answerRow({ question: "Surface", answer: "2,4 ha" }),
   "routeGuide.a11y.suggestionCard": () =>
     fr.routeGuide.a11y.suggestionCard({
       eyebrow: "Parcours conseillé",
@@ -249,7 +247,7 @@ describe("route catalogue text rules", () => {
   test("the three exits of the step are the mandatory ones (O-19)", () => {
     const { screen } = fr.routeGuide
     expect(screen.use).toBe("Utiliser ce parcours")
-    expect(screen.lead).toContain("nécessaire pour créer le relevé")
+    expect(screen.next).toBe("Suivant")
     expect(Object.keys(screen)).not.toContain("skip")
   })
 

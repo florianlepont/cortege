@@ -1,6 +1,5 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react"
-import { AccessibilityInfo, StyleSheet, View, findNodeHandle } from "react-native"
-import type { Text as NativeText } from "react-native"
+import { memo, useMemo, useState } from "react"
+import { StyleSheet, View } from "react-native"
 import {
   brandInteraction,
   brandSpacing4,
@@ -11,7 +10,6 @@ import { ROUTE_SURFACE_ERROR_TEXT } from "../../app/route-text"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppField } from "../../ui/AppField"
-import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
 import { AppPressable } from "../../ui/AppPressable"
 import { InfoSheet } from "../../ui/InfoSheet"
@@ -26,37 +24,22 @@ import type { RouteGuideActions } from "./useRouteGuideState"
 type QuestionCardProps = {
   question: OpenQuestion
   actions: RouteGuideActions
-  /** Moves the screen reader's focus to the title when the card opens (not on the first render). */
-  focusOnMount: boolean
 }
 
 /**
  * The one open question (UI-SPEC section 3): its title, the one-sentence reason it is asked, then
- * its choices as radio cards with an example each, or the surface field with its explanation and
- * "Suivant". A tap on a choice answers at once; the model decides what opens next.
+ * its choices as radio cards with an example each, or the surface field. A tap on a choice only
+ * selects it: the screen's pinned "Suivant" goes on, and the model decides what opens next.
  */
-export const QuestionCard = memo(function QuestionCard({
-  question,
-  actions,
-  focusOnMount,
-}: QuestionCardProps) {
+export const QuestionCard = memo(function QuestionCard({ question, actions }: QuestionCardProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
-  const titleRef = useRef<NativeText>(null)
-
-  useEffect(() => {
-    if (!focusOnMount) return
-    const node = findNodeHandle(titleRef.current)
-    if (node !== null) AccessibilityInfo.setAccessibilityFocus(node)
-    // The card is remounted for each question: the focus moves once, when it opens.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const title = questionTitle(question)
   return (
     <View style={styles.card} testID={`route-question-${question.id}`}>
       <View style={styles.titleRow}>
-        <Text ref={titleRef} style={styles.title} accessibilityRole="header">
+        <Text style={styles.title} accessibilityRole="header">
           {title}
         </Text>
         <QuestionInfo question={question} title={title} />
@@ -171,15 +154,6 @@ function SurfaceBody({
         testID="route-surface-field"
       />
       {caption !== null ? <Text style={styles.helper}>{caption}</Text> : null}
-      <AppButton
-        label={fr.routeGuide.screen.next}
-        variant="secondary"
-        onPress={actions.commitSurface}
-        disabled={question.error !== null}
-        accessibilityLabel={fr.routeGuide.screen.next}
-        style={styles.next}
-        testID="route-next-surface"
-      />
     </View>
   )
 }
@@ -206,10 +180,6 @@ function createStyles(theme: BrandTheme) {
     helper: {
       ...brandTypeScale.subhead,
       color: theme.colors.textSecondary,
-    },
-    next: {
-      alignSelf: "stretch",
-      minHeight: 44,
     },
   })
 }

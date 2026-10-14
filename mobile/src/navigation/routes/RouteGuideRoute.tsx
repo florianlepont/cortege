@@ -83,6 +83,21 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
     }
   }, [picked, pickNonce, actions])
 
+  // Back (header arrow, swipe, Android back) goes one question back while there is one; from the
+  // first question it is the plain return to the parcel map, and nothing is written. The step's
+  // own exits (the finished creation, the saved edit) are never intercepted.
+  const leaving = useRef(false)
+  const stepBack = useLatestCallback(() => actions.back())
+  useEffect(
+    () =>
+      navigation.addListener("beforeRemove", (event) => {
+        const type = event.data.action.type
+        if (leaving.current || (type !== "GO_BACK" && type !== "POP")) return
+        if (stepBack()) event.preventDefault()
+      }),
+    [navigation, stepBack],
+  )
+
   const failed = (): void => setSaveError(true)
 
   /** A route write that did not go through shows the error; a throw counts as a refusal. */
@@ -118,6 +133,7 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
 
   const acceptEdit = async (record: SurveyRoute): Promise<void> => {
     if (surveyId === null || !(await writeRoute(surveyId, record))) return failed()
+    leaving.current = true
     navigation.goBack()
   }
 

@@ -79,10 +79,42 @@ describe("useRouteGuideState", () => {
     expect(latest().view.chosenBy).toBe("observer")
     act(() => latest().actions.restoreSuggestion())
     expect(latest().view.chosenBy).toBe("guide")
-    act(() => latest().actions.reopen("surface"))
-    expect(latest().view.open).toMatchObject({ id: "surface" })
+    // The parcours picked in the chooser is the result: one question back, then the others.
+    expect(latest().view.screen).toBe("result")
+    let went = false
+    act(() => {
+      went = latest().actions.back()
+    })
+    expect(went).toBe(true)
+    expect(latest().view.open).toMatchObject({ id: "homogeneity" })
+    act(() => latest().actions.pickLargeStand("partial"))
     act(() => latest().actions.chooseLargeStandOption("partial"))
     expect(latest().view.recommendation.status).toBe("route")
+  })
+
+  it("walks one question at a time: next goes on, back returns and says when it cannot", () => {
+    const { latest } = mount(null)
+    const back = () => {
+      let went = false
+      act(() => {
+        went = latest().actions.back()
+      })
+      return went
+    }
+    expect(back()).toBe(false)
+    act(() => latest().actions.setSurfaceText("3"))
+    act(() => latest().actions.next())
+    expect(latest().view.screen).toBe("homogeneity")
+    expect(latest().view.canNext).toBe(false)
+    act(() => latest().actions.answerHomogeneity("homogeneous"))
+    expect(latest().view.screen).toBe("homogeneity")
+    act(() => latest().actions.next())
+    expect(latest().view.screen).toBe("difficulty")
+    expect(back()).toBe(true)
+    expect(latest().view.open).toMatchObject({ id: "homogeneity", selected: "homogeneous" })
+    expect(back()).toBe(true)
+    expect(latest().view.open).toMatchObject({ id: "surface", text: "3" })
+    expect(back()).toBe(false)
   })
 
   it("takes a prefill that arrives after the first render while the card is untouched", () => {

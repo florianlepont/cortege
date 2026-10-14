@@ -14,6 +14,8 @@ jest.mock("react-native", () => {
     Switch: mockComponent("Switch"),
     Modal: mockComponent("Modal"),
     ScrollView: mockComponent("ScrollView"),
+    KeyboardAvoidingView: mockComponent("KeyboardAvoidingView"),
+    Platform: { OS: "android" },
     Pressable: ({
       children,
       style,
@@ -49,12 +51,6 @@ jest.mock("../../ui/TitledScrollView", () => {
 })
 jest.mock("../../app/useAppBottomTabBarHeight", () => ({ useTabBarClearance: () => 80 }))
 
-let mockKeyboardUp = false
-jest.mock("../survey-form/usePagerKeyboard", () => ({
-  usePagerKeyboard: () => mockKeyboardUp,
-  usePagerChromeStyle: (hidden: boolean) => ({ opacity: hidden ? 0 : 1 }),
-}))
-
 import { setReducedMotion } from "../../../test/react-native-reanimated.mock"
 import { fr } from "../../i18n"
 import { FrameLargeTitleContext } from "../../ui/frame-large-title"
@@ -78,7 +74,6 @@ afterAll(() => {
 
 afterEach(() => {
   setReducedMotion(false)
-  mockKeyboardUp = false
 })
 
 const guide = fr.routeGuide
@@ -148,20 +143,26 @@ function reachRoute(m: Mounted): void {
   act(() => m.actions().setSurfaceText("2,4"))
   act(() => m.actions().commitSurface())
   act(() => m.actions().answerHomogeneity("heterogeneous"))
+  act(() => m.actions().next())
   act(() => m.actions().answerDifficulty(false))
+  act(() => m.actions().next())
 }
 
-describe("RouteGuideScreen: the mandatory step before an answer", () => {
-  it("shows only the title, the step, the lead and the open question above the fold", () => {
+/** The pinned button of a question screen. */
+const pressNext = (m: Mounted) => act(() => m.one("route-next").props.onPress())
+
+describe("RouteGuideScreen: the first question", () => {
+  it("shows only the title, the step and the open question, with Suivant pinned", () => {
     const m = mount({ prefill: 2.4, stepLabel: "Étape 5 sur 5" })
     m.one("route-guide-screen")
     expect(m.texts()).toEqual(
-      expect.arrayContaining([screen.lead, "Étape 5 sur 5", guide.questions.surface.title]),
+      expect.arrayContaining([screen.title, "Étape 5 sur 5", guide.questions.surface.title]),
     )
     m.one("route-question-surface")
     expect(m.byId("route-refine")).toHaveLength(0)
-    expect(m.byId("route-waiting")).toHaveLength(0)
     expect(m.byId("route-suggestion")).toHaveLength(0)
+    expect(m.byId("route-answer-surface")).toHaveLength(0)
+    expect(m.byId("route-result")).toHaveLength(0)
     for (const text of [
       guide.questions.surface.why,
       guide.questions.surface.aid,
@@ -169,9 +170,14 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
     ]) {
       expect(m.texts()).not.toContain(text)
     }
-    // The shortcut closes the page, after the question zone.
-    const order = ["route-question-stack", "route-know-link"]
+    const next = m.one("route-next")
+    expect(next.props.label).toBe(screen.next)
+    expect(next.props.size).toBe("lg")
+    expect(next.props.disabled).toBe(false)
+    expect(m.byId("route-use")).toHaveLength(0)
+    // The shortcut is a small text link under the question, the footer comes after.
     const flat = JSON.stringify(m.tree.toJSON())
+    const order = ["route-question-surface", "route-know-link", "route-guide-footer"]
     const positions = order.map((id) => flat.indexOf(`"testID":"${id}"`))
     expect(positions.every((position) => position >= 0)).toBe(true)
     expect([...positions].sort((a, b) => a - b)).toEqual(positions)
@@ -185,12 +191,6 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
     expect(m.byId("route-skip")).toHaveLength(0)
   })
 
-  it("draws no footer at all while a question is open", () => {
-    const m = mount({ prefill: 2.4 })
-    expect(m.byId("route-guide-footer")).toHaveLength(0)
-    expect(m.byId("route-use")).toHaveLength(0)
-  })
-
   it("opens the surface card empty with the unknown line when no surface could be computed", () => {
     const m = mount({ prefill: null })
     expect(m.one("route-surface-field").props.value).toBe("")
@@ -201,7 +201,7 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
   it("needs no network: the whole route is reachable from the typed surface alone", () => {
     const m = mount({ prefill: null })
     reachRoute(m)
-    expect(m.one("route-use").props.disabled).toBeUndefined()
+    expect(m.one("route-use").props.disabled).toBe(false)
   })
 
   it("shows the step label of the creation when given, and the page title on Android", () => {
@@ -215,10 +215,8 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
     expect(m.texts()).not.toContain(screen.title)
   })
 
-  it("shows the lead as one short sentence and the shortcut as a text link of 44 pt", () => {
+  it("shows the shortcut as a text link of 44 pt", () => {
     const m = mount({ prefill: 2.4 })
-    expect(screen.lead.length).toBeLessThanOrEqual(110)
-    expect(screen.lead).not.toMatch(/peuplement/i)
     const know = m.one("route-know-link")
     expect(know.props.accessibilityRole).toBe("button")
     const style = ([] as Record<string, unknown>[])
@@ -230,7 +228,6 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
 
   it("keeps the footer in its own row so nothing sits under it, and keyboard taps working", () => {
     const m = mount({ prefill: 2.4 })
-    reachRoute(m)
     const scroll = m.one("route-guide-scroll")
     expect(scroll.props.keyboardShouldPersistTaps).toBe("handled")
     expect(scroll.props.automaticallyAdjustKeyboardInsets).toBe(true)
@@ -245,6 +242,73 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
       .reduce((acc, style) => ({ ...acc, ...style }), {})
     expect(footerStyle.paddingBottom).toBe(finishBarBottomPadding(80))
     expect(footerStyle.position).toBeUndefined()
+    // The page pads above the keyboard on iOS and resizes on Android: never hidden by it.
+    expect(m.one("route-guide-screen").props.behavior).toBeUndefined()
+  })
+
+  it("Suivant is disabled while the surface shows an error", () => {
+    const m = mount({ prefill: null })
+    act(() => m.one("route-surface-field").props.onChangeText("abc"))
+    act(() => m.one("route-surface-field").props.onBlur())
+    expect(m.one("route-next").props.disabled).toBe(true)
+    act(() => m.one("route-surface-field").props.onChangeText("2"))
+    expect(m.one("route-next").props.disabled).toBe(false)
+  })
+})
+
+describe("RouteGuideScreen: one question a screen", () => {
+  it("Suivant moves to the next question and shows that one alone", () => {
+    const m = mount({ prefill: 2.4, stepLabel: "Étape 5 sur 5" })
+    pressNext(m)
+    m.one("route-question-homogeneity")
+    expect(m.byId("route-question-surface")).toHaveLength(0)
+    expect(m.byId("route-answer-surface")).toHaveLength(0)
+    expect(m.byId("route-know-link")).toHaveLength(0)
+    expect(m.texts()).toContain("Étape 5 sur 5")
+    // Nothing is answered yet: Suivant waits.
+    expect(m.one("route-next").props.disabled).toBe(true)
+    act(() => m.one("route-choice-homogeneity-heterogeneous").props.onPress())
+    expect(m.one("route-next").props.disabled).toBe(false)
+  })
+
+  it("after the last question the result shows, with the shortcut at its very end", () => {
+    const m = mount({ prefill: 2.4 })
+    pressNext(m)
+    act(() => m.one("route-choice-homogeneity-heterogeneous").props.onPress())
+    pressNext(m)
+    act(() => m.one("route-choice-difficulty-easy").props.onPress())
+    pressNext(m)
+    m.one("route-result")
+    m.one("route-suggestion")
+    expect(m.byId("route-next")).toHaveLength(0)
+    expect(m.byId("route-question-difficulty")).toHaveLength(0)
+    expect(m.one("route-use").props.label).toBe(screen.use)
+  })
+
+  it("starts a new screen at the top, and announces its title", () => {
+    const m = mount({ prefill: 2.4 })
+    const { AccessibilityInfo } = jest.requireMock("react-native") as {
+      AccessibilityInfo: { announceForAccessibility: jest.Mock }
+    }
+    pressNext(m)
+    expect(AccessibilityInfo.announceForAccessibility).toHaveBeenCalledWith(
+      guide.questions.homogeneity.title,
+    )
+  })
+
+  it("back returns one question at a time and tells the route when there is none", () => {
+    const m = mount({ prefill: 2.4 })
+    pressNext(m)
+    let went = false
+    act(() => {
+      went = m.actions().back()
+    })
+    expect(went).toBe(true)
+    m.one("route-question-surface")
+    act(() => {
+      went = m.actions().back()
+    })
+    expect(went).toBe(false)
   })
 })
 
@@ -258,18 +322,29 @@ describe("RouteGuideScreen: the suggestion", () => {
     expect(m.byId("route-glossary")).toHaveLength(0)
     expect(m.byId("route-large-stand")).toHaveLength(0)
     const use = m.one("route-use")
-    expect(use.props.disabled).toBeUndefined()
-    expect(use.props.accessibilityLabel).toBeUndefined()
+    expect(use.props.disabled).toBe(false)
     act(() => use.props.onPress())
     expect(m.onUse).toHaveBeenCalledTimes(1)
   })
 
-  it("keeps Pour affiner and the footer out while a question is open", () => {
+  it("keeps the suggestion and Pour affiner out of a question screen", () => {
     const m = mount({ prefill: 2.4 })
     act(() => m.actions().commitSurface())
     expect(m.byId("route-suggestion")).toHaveLength(0)
     expect(m.byId("route-refine")).toHaveLength(0)
-    expect(m.byId("route-guide-footer")).toHaveLength(0)
+    expect(m.byId("route-use")).toHaveLength(0)
+    m.one("route-next")
+  })
+
+  it("goes to the result when a parcours is picked in the chooser, back returns to the question", () => {
+    const m = mount({ prefill: 2.4 })
+    act(() => m.actions().applyPick({ method: "full", counting: "capped" }))
+    m.one("route-result")
+    m.one("route-suggestion")
+    act(() => {
+      m.actions().back()
+    })
+    m.one("route-question-surface")
   })
 
   it("orders the result zone: suggestion, reasons, details, Pour affiner, shortcut", () => {
@@ -310,9 +385,11 @@ describe("RouteGuideScreen: the suggestion", () => {
     act(() => m.one("route-know-link").props.onPress())
     expect(m.onOpenChooser).toHaveBeenLastCalledWith("pick")
     reachRoute(m)
+    // The shortcut also closes the result screen.
+    act(() => m.one("route-know-link").props.onPress())
     act(() => m.one("route-change").props.onPress())
     expect(m.onOpenChooser).toHaveBeenLastCalledWith("pick")
-    expect(m.onOpenChooser).toHaveBeenCalledTimes(2)
+    expect(m.onOpenChooser).toHaveBeenCalledTimes(3)
   })
 
   it("opens the chooser at the counting from the uncapped line", () => {
@@ -362,30 +439,37 @@ describe("RouteGuideScreen: above the subdivision bound", () => {
     act(() => m.actions().setSurfaceText("40"))
     act(() => m.actions().commitSurface())
     act(() => m.actions().answerHomogeneity("heterogeneous"))
+    act(() => m.actions().next())
     return m
   }
 
-  it("shows the two options once, not the forest card, and the footer asks for a piece", () => {
+  it("shows the two options as a screen of their own, with Suivant disabled until one is picked", () => {
     const m = reachLargeStand()
     m.one("route-large-stand")
-    expect(m.byId("route-question-largeStand")).toHaveLength(0)
+    expect(m.byId("route-question-homogeneity")).toHaveLength(0)
     expect(m.byId("route-suggestion")).toHaveLength(0)
-    const use = m.one("route-use")
-    expect(use.props.label).toBe(guide.largeStand.subdivideCta)
-    expect(use.props.disabled).toBeUndefined()
-    act(() => use.props.onPress())
+    expect(m.one("route-next").props.disabled).toBe(true)
+    act(() => m.one("route-large-option-partial").props.onPress())
+    expect(m.one("route-next").props.disabled).toBe(false)
+  })
+
+  it("subdividing asks for the surface of a piece, and nothing is used yet", () => {
+    const m = reachLargeStand()
+    act(() => m.one("route-large-option-subdivide").props.onPress())
+    pressNext(m)
     expect(m.onUse).not.toHaveBeenCalled()
     expect(m.state().view.open).toMatchObject({ id: "surface", subStand: true })
     expect(m.byId("route-use")).toHaveLength(0)
   })
 
-  it("goes on with a partial parcours when the observer chooses not to cut", () => {
+  it("goes on to the result with a partial parcours when the observer chooses not to cut", () => {
     const m = reachLargeStand()
     act(() => m.one("route-large-option-partial").props.onPress())
-    act(() => m.actions().answerDifficulty(false))
+    pressNext(m)
     expect(m.state().view.recommendation.status).toBe("route")
+    m.one("route-result")
     expect(m.one("route-use").props.label).toBe(screen.use)
-    expect(m.one("route-use").props.disabled).toBeUndefined()
+    expect(m.one("route-use").props.disabled).toBe(false)
   })
 })
 
@@ -405,21 +489,6 @@ describe("RouteGuideScreen: the footer", () => {
   it("shows no error notice by default", () => {
     const m = mount({ prefill: 2.4 })
     expect(m.texts()).not.toContain(screen.saveError)
-  })
-
-  it("fades with the keyboard, by opacity only", () => {
-    const flat = (m: Mounted) =>
-      ([] as Record<string, unknown>[])
-        .concat(m.one("route-guide-footer").props.style)
-        .reduce((acc, style) => ({ ...acc, ...style }), {})
-    const ready = () => {
-      const m = mount({ prefill: 2.4 })
-      reachRoute(m)
-      return m
-    }
-    expect(flat(ready()).opacity).toBe(1)
-    mockKeyboardUp = true
-    expect(flat(ready()).opacity).toBe(0)
   })
 
   it("shows the button busy while the route is being saved", () => {

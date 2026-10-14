@@ -1,7 +1,7 @@
 import type { LargeStandOption, RouteHomogeneity } from "@cortege/ibp-domain"
-import { LARGE_STAND_OPTION_TEXT, ROUTE_QUESTION_TEXT, formatHectares } from "../../app/route-text"
+import { LARGE_STAND_OPTION_TEXT, ROUTE_QUESTION_TEXT } from "../../app/route-text"
 import { fr } from "../../i18n"
-import type { GuideRow, OpenQuestion } from "./route-guide-model"
+import type { OpenQuestion } from "./route-guide-model"
 import type { RouteGuideActions } from "./useRouteGuideState"
 
 // Phase 30 (plan 30-17): the words of the question cards and of the answered rows, mapped from the
@@ -90,44 +90,5 @@ export function choicesFor(question: ChoiceQuestion, actions: RouteGuideActions)
         selected: question.selected === option,
         onSelect: () => actions.chooseLargeStandOption(option),
       }))
-  }
-}
-
-/** The short question and the answer an answered row reads out. */
-export function rowTexts(row: GuideRow): { question: string; answer: string } {
-  switch (row.id) {
-    case "surface": {
-      const hectares = formatHectares(row.hectares)
-      return {
-        question: guide.questions.surface.short,
-        answer: row.estimated
-          ? guide.questions.surface.valueEstimated(hectares)
-          : guide.questions.surface.value(hectares),
-      }
-    }
-    case "homogeneity":
-      return {
-        question: guide.questions.homogeneity.short,
-        answer: guide.questions.homogeneity.answers[row.value],
-      }
-    case "difficulty":
-      return {
-        question: guide.questions.difficulty.short,
-        answer: row.value
-          ? guide.questions.difficulty.answers.hard
-          : guide.questions.difficulty.answers.easy,
-      }
-    case "narrow":
-      return {
-        question: guide.questions.narrow.short,
-        answer: row.value
-          ? guide.questions.narrow.answers.narrow
-          : guide.questions.narrow.answers.wide,
-      }
-    case "largeStand":
-      return {
-        question: guide.largeStand.short,
-        answer: LARGE_STAND_OPTION_TEXT[row.value].title,
-      }
   }
 }

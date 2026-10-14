@@ -1,8 +1,6 @@
-import { ROUTE_HOURS_MAX, isPartialRoute, recommendRoute } from "@cortege/ibp-domain"
+import { isPartialRoute, recommendRoute } from "@cortege/ibp-domain"
 import type {
   LargeStandOption,
-  RouteAnswers,
-  RouteChoice,
   RouteExperience,
   RouteHomogeneity,
   RouteMethod,
@@ -12,7 +10,27 @@ import type {
   SurveyRoute,
   UncappableFactor,
 } from "@cortege/ibp-domain"
-import { formatDecimalFr, formatHectares, parseHectaresInput } from "../../app/route-text"
+import { formatDecimalFr, formatHectares } from "../../app/route-text"
+import {
+  answersOf,
+  choiceOf,
+  hoursOf,
+  nextOpen,
+  parseRounded,
+  roundTwo,
+} from "./route-guide-answers"
+import {
+  canGoNext,
+  canStepBack,
+  currentOpen,
+  isAnswered,
+  leave,
+  screensOf,
+  previousScreen,
+} from "./route-guide-steps"
+
+export { answersOf, choiceOf, hoursOf, nextOpen, parseRounded, roundTwo }
+export { canGoNext, canStepBack, currentOpen, screensOf }
 
 // Phase 30 (plan 30-17), D-05: what the observer typed and answered, and how each action changes
 // it. Pure; every rule decision is the package's (see route-guide-model.ts).
@@ -23,6 +41,8 @@ export type GuideQuestionId = Exclude<RouteQuestionId, "refine">
 export type GuideOpenId = GuideQuestionId | "largeStand"
 
 /** A parcours the observer chose in the chooser, over or instead of the suggestion. */
+export type GuideScreenId = GuideOpenId | "result"
+
 export type RouteGuidePick = {
   method: RouteMethod
   counting: CountingMode
@@ -54,14 +74,26 @@ export type RouteGuideModel = {
   zoneText: string | null
   complementDone: boolean | null
   totalText: string | null
-  /** The card the observer asked to open; the view falls back when it is not asked any more. */
+  /**
+   * The screen the observer is on: a question, or null for the result. The view falls back when it
+   * is not asked any more (`currentOpen`).
+   */
   openId: GuideOpenId | null
+  /** The questions left with "Suivant", oldest first: what "back" returns to (one screen a step). */
+  trail: GuideOpenId[]
+  /** The option picked on the large-stand screen, applied by its "Suivant". */
+  largeStandDraft?: LargeStandOption
 }
 
 export type GuideAction =
   | { type: "setSurfaceText"; text: string }
   | { type: "validateSurface" }
   | { type: "commitSurface" }
+  /** "Suivant": to the next needed question, or to the result when none is left. */
+  | { type: "next" }
+  /** Back, one question at a time. A no-op when there is none to go back to. */
+  | { type: "back" }
+  | { type: "pickLargeStand"; option: LargeStandOption }
   | { type: "receivePrefill"; surfaceHa: number | null }
   | { type: "answer"; id: "homogeneity"; value: RouteHomogeneity }
   | { type: "answer"; id: "difficulty" | "narrow"; value: boolean }
@@ -76,19 +108,6 @@ export type GuideAction =
   | { type: "setTotalText"; text: string | null }
   /** Edit mode (30-20): the recorded route's answers and choices come back into the step. */
   | { type: "loadRecord"; route: SurveyRoute }
-
-const DECIMALS_FACTOR = 100
-
-/** Rounds to the two decimals of the record (surfaces and hours). */
-export function roundTwo(value: number): number {
-  return Math.round(value * DECIMALS_FACTOR) / DECIMALS_FACTOR
-}
-
-/** The hectares of a typed text, rounded like the record, null when it is not a number. */
-export function parseRounded(text: string): number | null {
-  const parsed = parseHectaresInput(text)
-  return parsed === null ? null : roundTwo(parsed)
-}
 
 /** True when the package accepts this number as a stand surface (R-01). */
 function isUsableSurface(value: number): boolean {
@@ -117,51 +136,8 @@ export function initialGuideModel(
     complementDone: null,
     totalText: null,
     openId: "surface",
+    trail: [],
   }
-}
-
-/** The valid hours the observer gave, null when empty or unusable. */
-export function hoursOf(model: RouteGuideModel): number | null {
-  const hours = parseRounded(model.hoursText)
-  return hours !== null && hours > 0 && hours <= ROUTE_HOURS_MAX ? hours : null
-}
-
-/** The answers as the package reads them; a key is absent until it is given. */
-export function answersOf(model: RouteGuideModel): Partial<RouteAnswers> {
-  const answers: Partial<RouteAnswers> = {}
-  if (model.surfaceHa !== null) answers.surface_ha = model.surfaceHa
-  if (model.homogeneity !== undefined) answers.homogeneity = model.homogeneity
-  if (model.difficulty !== undefined) answers.difficulty = model.difficulty
-  if (model.narrow !== undefined) answers.narrow = model.narrow
-  if (model.experience !== undefined) answers.experience = model.experience
-  const hours = hoursOf(model)
-  if (hours !== null) answers.hours_available = hours
-  if (model.subdivided) answers.subdivided = true
-  return answers
-}
-
-export function choiceOf(model: RouteGuideModel): RouteChoice {
-  return model.largeStandOption === undefined ? {} : { largeStandOption: model.largeStandOption }
-}
-
-/** The card to open after a change: the first thing still missing, nothing when complete. */
-export function nextOpen(model: RouteGuideModel): GuideOpenId | null {
-  const recommendation = recommendRoute(answersOf(model), choiceOf(model))
-  switch (recommendation.status) {
-    case "needs_surface":
-      return "surface"
-    case "incomplete":
-      return recommendation.missing[0] as GuideQuestionId
-    case "options":
-      return "largeStand"
-    case "route":
-      return null
-  }
-}
-
-/** A change that moves the open card to the first missing question. */
-function advance(model: RouteGuideModel): RouteGuideModel {
-  return { ...model, openId: nextOpen(model) }
 }
 
 type SurfaceCheck = { ha: number } | { error: RouteSurfaceErrorCode }
@@ -213,10 +189,59 @@ function loadRecord(model: RouteGuideModel, route: SurveyRoute): RouteGuideModel
   }
   const needsChoice = !loaded.subdivided && recommendRoute(answersOf(loaded)).status === "options"
   if (needsChoice && isPartialRoute(route.method)) loaded.largeStandOption = "partial"
-  return { ...loaded, openId: nextOpen(loaded) }
+  return { ...loaded, openId: nextOpen(loaded), trail: [] }
 }
 
 const WITHOUT_OVERRIDES = { zoneText: null, complementDone: null, totalText: null } as const
+
+function commitSurface(model: RouteGuideModel): RouteGuideModel {
+  const check = checkSurfaceText(model.surfaceText)
+  if ("error" in check) return { ...model, surfaceError: check.error }
+  const changed = check.ha !== model.surfaceHa
+  return leave(
+    {
+      ...model,
+      ...(changed ? { ...WITHOUT_OVERRIDES, largeStandOption: undefined } : null),
+      largeStandDraft: changed ? undefined : model.largeStandDraft,
+      surfaceHa: check.ha,
+      surfaceEstimated: model.prefill !== null && model.surfaceText === model.prefill.text,
+      surfaceError: null,
+    },
+    "surface",
+  )
+}
+
+/** The large-stand screen's "Suivant" (or a direct choice): a partial parcours goes on, cutting restarts. */
+function chooseLargeStand(
+  model: RouteGuideModel,
+  option: LargeStandOption | undefined,
+): RouteGuideModel {
+  if (option === undefined) return model
+  if (option === "partial") {
+    return leave(
+      { ...model, largeStandOption: "partial", largeStandDraft: undefined, subdivided: false },
+      "largeStand",
+    )
+  }
+  // The piece is a new stand: its surface and its answers are asked again, from the first question.
+  return {
+    ...model,
+    ...WITHOUT_OVERRIDES,
+    largeStandOption: undefined,
+    largeStandDraft: undefined,
+    subdivided: true,
+    surfaceHa: null,
+    surfaceText: "",
+    surfaceEstimated: false,
+    surfaceError: null,
+    homogeneity: undefined,
+    difficulty: undefined,
+    narrow: undefined,
+    pick: null,
+    openId: "surface",
+    trail: [],
+  }
+}
 
 export function guideReducer(model: RouteGuideModel, action: GuideAction): RouteGuideModel {
   switch (action.type) {
@@ -226,18 +251,22 @@ export function guideReducer(model: RouteGuideModel, action: GuideAction): Route
       const check = checkSurfaceText(model.surfaceText)
       return "error" in check ? { ...model, surfaceError: check.error } : model
     }
-    case "commitSurface": {
-      const check = checkSurfaceText(model.surfaceText)
-      if ("error" in check) return { ...model, surfaceError: check.error }
-      const changed = check.ha !== model.surfaceHa
-      return advance({
-        ...model,
-        ...(changed ? { ...WITHOUT_OVERRIDES, largeStandOption: undefined } : null),
-        surfaceHa: check.ha,
-        surfaceEstimated: model.prefill !== null && model.surfaceText === model.prefill.text,
-        surfaceError: null,
-      })
+    case "commitSurface":
+      return commitSurface(model)
+    case "next": {
+      const current = currentOpen(model)
+      if (current === "surface") return commitSurface(model)
+      if (current === "largeStand") return chooseLargeStand(model, model.largeStandDraft)
+      return current === null || !isAnswered(model, current) ? model : leave(model, current)
     }
+    case "back": {
+      const previous = previousScreen(model)
+      return previous === null
+        ? model
+        : { ...model, openId: previous.id, trail: previous.trail, surfaceError: null }
+    }
+    case "pickLargeStand":
+      return { ...model, largeStandDraft: action.option }
     case "receivePrefill": {
       const prefill = prefillOf(action.surfaceHa)
       const untouched =
@@ -247,44 +276,36 @@ export function guideReducer(model: RouteGuideModel, action: GuideAction): Route
         : { ...model, prefill, surfaceText: prefill.text }
     }
     case "answer": {
+      // An answer never moves the screen: "Suivant" does.
       if (action.id === "homogeneity") {
         const changed = action.value !== model.homogeneity
-        return advance({
+        return {
           ...model,
           homogeneity: action.value,
-          ...(changed ? { largeStandOption: undefined } : null),
-        })
+          ...(changed ? { largeStandOption: undefined, largeStandDraft: undefined } : null),
+        }
       }
-      return advance({ ...model, [action.id]: action.value })
+      return { ...model, [action.id]: action.value }
     }
     case "reopen":
       return { ...model, openId: action.id }
     case "chooseLargeStandOption":
-      if (action.option === "partial") {
-        return advance({ ...model, largeStandOption: "partial", subdivided: false })
-      }
-      // The piece is a new stand: its surface and its answers are asked again.
-      return {
-        ...model,
-        ...WITHOUT_OVERRIDES,
-        largeStandOption: undefined,
-        subdivided: true,
-        surfaceHa: null,
-        surfaceText: "",
-        surfaceEstimated: false,
-        surfaceError: null,
-        homogeneity: undefined,
-        difficulty: undefined,
-        narrow: undefined,
-        pick: null,
-        openId: "surface",
-      }
+      return chooseLargeStand(model, action.option)
     case "setRefine":
       return action.field === "experience"
         ? { ...model, experience: action.value }
         : { ...model, hoursText: action.text }
-    case "applyPick":
-      return { ...model, ...WITHOUT_OVERRIDES, pick: action.pick }
+    case "applyPick": {
+      // A parcours chosen in the chooser is the result: the open question is left on the trail.
+      const current = currentOpen(model)
+      return {
+        ...model,
+        ...WITHOUT_OVERRIDES,
+        pick: action.pick,
+        openId: null,
+        trail: current === null ? model.trail : [...model.trail, current],
+      }
+    }
     case "restoreSuggestion":
       return { ...model, ...WITHOUT_OVERRIDES, pick: null }
     case "setZoneText":
