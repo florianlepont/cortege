@@ -244,11 +244,12 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
             options={{
               // Phase 30 (O-19): the mandatory fifth step of a new survey. Native back and swipe are
               // off: the route draws its own back button (one question back, else the plain return
-              // to the parcel map, nothing written, U-O14), and handles Android back itself. The native
-              // large title in the native iOS tree, else the page's own title (the tab bar rule is
-              // unchanged, OA-28).
+              // to the parcel map, nothing written, U-O14), and handles Android back itself. The page
+              // draws its own title everywhere: the native large title never followed this page's
+              // scroll on the iOS simulator (it stayed drawn over the cards), so the title is the
+              // page's (`PageTitle`) and the native one stays hidden.
               title: fr.routeGuide.screen.title,
-              ...pageTitleOptions(theme),
+              ...hiddenNativeTitle,
               headerBackVisible: false,
               gestureEnabled: false,
             }}

@@ -634,12 +634,14 @@ describe("stack options and listeners", () => {
     expectHaloHeader(wizard)
   })
 
-  test("the route step is a stack screen with its own back (native back and swipe off), and the native large title on iOS (phase 30, O-19)", async () => {
+  test("the route step is a stack screen with its own back (native back and swipe off), and its own title on iOS (phase 30, O-19)", async () => {
     mockPlatform.OS = "ios"
     await mount(<AppNavigation />)
     expect(mockScreens.surveyRouteGuide).toBeDefined()
     const options = effectiveOptions("surveyRouteGuide")
-    expect(options).toEqual(expect.objectContaining(nativeLargeTitle(defaultTheme)))
+    // The page draws its own title: the native large title never followed its scroll on iOS.
+    expect(options.headerLargeTitleEnabled).toBeUndefined()
+    expect(options.headerTitle).toBe("")
     expect(options.title).toBe(fr.routeGuide.screen.title)
     // Native back and swipe are off: the route draws its own back button (no native pop is held).
     expect(options.gestureEnabled).toBe(false)

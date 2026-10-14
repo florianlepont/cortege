@@ -11,7 +11,6 @@ import { useSurveyActions, useSurveys } from "../../state/surveys-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { useWeatherPrefillState } from "../../state/weather-context"
 import { ScreenFrame } from "../../ui/ScreenFrame"
-import { usesNativeLargeTitle } from "../large-title"
 import type { RoutePick, RouteGuideRouteProps } from "../types"
 import { finishSurveyCreation } from "./finish-creation"
 import { RouteBackButton } from "./RouteBackButton"
@@ -189,8 +188,8 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
   )
 
   return (
-    // The native large title in the native iOS tab tree (the stack sets the header, 12.2-17).
-    <ScreenFrame largeTitle={usesNativeLargeTitle()}>
+    // The page draws its own title (the stack hides the native one): see the stack options.
+    <ScreenFrame>
       <RouteGuideScreen
         state={guide}
         surfaceUnknown={surfaceHa === null}

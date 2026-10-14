@@ -3376,16 +3376,6 @@ describe("the native large title frame (12.2-17)", () => {
     ["account", () => <AccountRoute navigation={nav()} route={{} as never} />],
     ["settings", () => <SettingsRoute navigation={nav()} route={{} as never} />],
     ["offlineAreas", () => <OfflineAreasRoute navigation={nav()} route={{} as never} />],
-    // Phase 30: the route step, the fifth step of the creation.
-    [
-      "routeGuide",
-      () => (
-        <RouteGuideRoute
-          navigation={nav()}
-          route={{ params: { surveyId: null, mode: "create", surfaceHa: null } } as never}
-        />
-      ),
-    ],
   ]
 
   test.each(largeTitleRoutes)(
@@ -3404,6 +3394,25 @@ describe("the native large title frame (12.2-17)", () => {
       expect(props(name)).toBeDefined()
     },
   )
+
+  test("routeGuide draws its own title everywhere: the frame of D-19, even in the native iOS tab tree", async () => {
+    // The native large title never followed this page's scroll on the iOS simulator (it stayed
+    // drawn over the cards), so the page keeps its own title and the header padding frame.
+    mockNativeTabs.value = true
+    const tree = await mount(
+      <Providers fixture={withSelection(makeFixture())}>
+        <RouteGuideRoute
+          navigation={nav()}
+          route={{ params: { surveyId: null, mode: "create", surfaceHa: null } } as never}
+        />
+      </Providers>,
+    )
+    const frames = hostViews(tree, "screen-frame")
+    expect(frames).toHaveLength(1)
+    const style = Object.assign({}, ...[frames[0].props.style].flat()) as Record<string, unknown>
+    expect(style.paddingTop).toBe(44)
+    expect(hostViews(tree, "screen-frame-backdrop")).toHaveLength(1)
+  })
 
   test.each(largeTitleRoutes)(
     "%s elsewhere (Android, Expo Go): the frame of D-19, header padding and halo child",
