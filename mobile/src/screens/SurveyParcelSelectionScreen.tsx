@@ -19,6 +19,7 @@ import { useOfflineMapPrompt } from "../hooks/useOfflineMapPrompt"
 import { useParcelStatuses } from "../hooks/useParcelStatuses"
 import type { BasemapKey } from "../map/basemaps"
 import { cachedParcelCentre } from "../map/own-surveys"
+import { parcelAreaHa } from "../map/parcel-area"
 import { ParcelMap, type ParcelMapHandle } from "../map/maplibre/ParcelMap"
 import { MapTitlePill } from "./public-map/MapChips"
 import { MapBottomDock, MapTopControls } from "./public-map/MapControls"
@@ -61,9 +62,11 @@ type SurveyParcelSelectionScreenProps = {
   onCaptureGpsLocation: (options?: { silent?: boolean }) => Promise<GpsCaptureResult | null>
   /**
    * Phase 27, D-10: `weatherPoint` is the centre of the parcels the observer tapped (null when
-   * their geometry is not loaded), the place the weather is looked up for.
+   * their geometry is not loaded), the place the weather is looked up for. Phase 30: `surfaceHa`
+   * is the surface of the chosen parcels, prefilling the surface question of the route step (null
+   * when no geometry is cached).
    */
-  onSave: (weatherPoint: WeatherPoint | null) => Promise<void>
+  onSave: (weatherPoint: WeatherPoint | null, surfaceHa: number | null) => Promise<void>
   /** New-survey flow (step 4 of 4): the button reads "Continuer" and needs a parcel. */
   wizard?: boolean
 }
@@ -176,9 +179,10 @@ export function SurveyParcelSelectionScreen({
       return
     }
     setSaving(true)
-    void onSave(cachedParcelCentre(parcelStatuses, selectedParcelIds)).finally(() =>
-      setSaving(false),
-    )
+    void onSave(
+      cachedParcelCentre(parcelStatuses, selectedParcelIds),
+      parcelAreaHa(parcelStatuses, selectedParcelIds),
+    ).finally(() => setSaving(false))
   }
 
   const handleLocate = async (silent = false): Promise<void> => {

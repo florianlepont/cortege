@@ -80,6 +80,7 @@ jest.mock("./parcel-selection/ParcelSelectionCard", () => ({
   },
 }))
 
+import { parcelAreaHa } from "../map/parcel-area"
 import { SurveyParcelSelectionScreen } from "./SurveyParcelSelectionScreen"
 
 const squareParcel = (parcelId: string, west: number, south: number, size: number) => ({
@@ -137,11 +138,27 @@ describe("SurveyParcelSelectionScreen weather point", () => {
     expect(point.lng).toBeCloseTo(2.1, 5)
   })
 
+  test("saving passes the surface in hectares of the chosen parcels as the second argument", async () => {
+    mockItems = [
+      squareParcel("P1", 2.0, 46.0, 0.001),
+      squareParcel("P2", 3.0, 46.0, 0.002),
+      squareParcel("P3", 5.0, 45.0, 0.2),
+    ]
+
+    const onSave = await mountAndSave(["P1", "P2"])
+
+    const surfaceHa = (onSave.mock.calls[0] as unknown[])[1]
+    // About 0.86 ha plus 3.4 ha: the 0.2 degree parcel P3 is not counted.
+    expect(surfaceHa).toBe(parcelAreaHa(mockItems as never, ["P1", "P2"]))
+    expect(surfaceHa as number).toBeGreaterThan(4)
+    expect(surfaceHa as number).toBeLessThan(5)
+  })
+
   test("saving passes null when the geometry of the chosen parcels is not loaded", async () => {
     mockItems = [squareParcel("P2", 5.0, 45.0, 0.2)]
 
     const onSave = await mountAndSave(["P1"])
 
-    expect(onSave).toHaveBeenCalledWith(null)
+    expect(onSave).toHaveBeenCalledWith(null, null)
   })
 })
