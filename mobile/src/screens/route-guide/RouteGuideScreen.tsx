@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from "react"
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native"
+import { useMemo, useRef } from "react"
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native"
 import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
@@ -62,15 +62,11 @@ export function RouteGuideScreen({
   const theme = useBrandTheme()
   const styles = useMemo(() => createStyles(theme), [theme])
   const insetBehavior = useFrameInsetBehavior()
+  // Kept here: the scroll view (and the question in it) is remounted for each screen.
+  const announced = useRef<string | null>(null)
   const clearance = useTabBarClearance()
-  const scrollRef = useRef<ScrollView>(null)
   const { view, actions } = state
   const { selection, recommendation, open } = view
-
-  // A new screen starts at the top (the page itself stays mounted).
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ y: 0, animated: false })
-  }, [view.screen])
 
   // The footer is the one primary action of the screen: "Suivant" on a question, "Utiliser ce
   // parcours" on the result once a route is ready (no disabled button there).
@@ -105,7 +101,10 @@ export function RouteGuideScreen({
       testID="route-guide-screen"
     >
       <TitledScrollView
-        ref={scrollRef}
+        // A new screen starts at the top. A remount rather than `scrollTo({ y: 0 })`: under the native
+        // large title the real top is the negative inset, so offset 0 left the question hidden under
+        // the header with the large title drawn over it (found on the iOS simulator).
+        key={view.screen}
         collapsingTitle={screen.title}
         style={styles.scroll}
         contentContainerStyle={styles.content}
@@ -120,7 +119,7 @@ export function RouteGuideScreen({
 
         {open !== null ? (
           <>
-            <QuestionStep state={state} />
+            <QuestionStep state={state} announced={announced} />
             {open.id === "surface" && !view.canStepBack ? know : null}
           </>
         ) : (

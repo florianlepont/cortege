@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type MutableRefObject } from "react"
 import { AccessibilityInfo } from "react-native"
 import { LargeStandOptions } from "./LargeStandOptions"
 import { QuestionCard } from "./QuestionCard"
@@ -8,6 +8,11 @@ import type { RouteGuideState } from "./useRouteGuideState"
 
 type QuestionStepProps = {
   state: RouteGuideState
+  /**
+   * The title already announced, kept by the page when it remounts its scroll view for each screen
+   * (the step itself is then remounted too, and would announce the first question again).
+   */
+  announced?: MutableRefObject<string | null>
 }
 
 /**
@@ -17,20 +22,21 @@ type QuestionStepProps = {
  * under Reduce Motion) and its title is announced to the screen reader; the pinned "Suivant" is
  * the screen's, not the card's. Draws nothing once no question is open (the result is drawn).
  */
-export function QuestionStep({ state }: QuestionStepProps) {
+export function QuestionStep({ state, announced: keptAnnounced }: QuestionStepProps) {
   const { view, actions } = state
   const { open } = view
   const openId = open?.id ?? null
   const title = open === null ? null : questionTitle(open)
   // The first question is on screen when the page opens: only a later one is announced.
-  const announced = useRef<string | null>(null)
+  const ownAnnounced = useRef<string | null>(null)
+  const announced = keptAnnounced ?? ownAnnounced
   useEffect(() => {
     if (title === null) return
     if (announced.current !== null && announced.current !== title) {
       AccessibilityInfo.announceForAccessibility(title)
     }
     announced.current = title
-  }, [title])
+  }, [title, announced])
 
   if (open === null) return null
   if (open.id === "largeStand") {
