@@ -2,10 +2,29 @@ jest.mock("react-native", () => ({
   Platform: { select: (opts: Record<string, unknown>) => opts.default ?? Object.values(opts)[0] },
 }))
 
+const mockRoute = jest.fn()
+jest.mock("../../hooks/useSurveyRoute", () => ({
+  useSurveyRoute: (...args: unknown[]) => mockRoute(...args),
+}))
+
 import { act, cleanup, renderHook } from "@testing-library/react-native/pure"
 import type { SurveyFormDraftInput } from "../../hooks/useSurveyForm"
 import type { LocalSurvey } from "../../storage"
 import { isDraftComplete, usePagerFinish } from "./usePagerFinish"
+
+// Phase 30 (O-19): the pill needs the draft's route; a loaded valid route unless a test says otherwise.
+const ROUTE = {
+  version: 1,
+  method: "full",
+  counting: "capped",
+  zone_surface_ha: 2.5,
+  guide: { chosen_by: "observer" },
+}
+
+beforeEach(() => {
+  mockRoute.mockReset()
+  mockRoute.mockReturnValue({ route: ROUTE, loaded: true })
+})
 
 afterEach(async () => {
   await cleanup()
@@ -88,6 +107,27 @@ describe("usePagerFinish (D-26)", () => {
       expect(result.current.offered).toBe(expected)
       await cleanup()
     }
+  })
+
+  test("phase 30 (O-19): not offered for a draft without route, nor while the route is read", async () => {
+    mockRoute.mockReturnValue({ route: null, loaded: true })
+    const routeless = await renderFinish(params())
+    expect(routeless.result.current.offered).toBe(false)
+    await cleanup()
+
+    mockRoute.mockReturnValue({ route: null, loaded: false })
+    const loading = await renderFinish(params())
+    expect(loading.result.current.offered).toBe(false)
+    await cleanup()
+
+    mockRoute.mockReturnValue({ route: ROUTE, loaded: false })
+    const unread = await renderFinish(params())
+    expect(unread.result.current.offered).toBe(false)
+  })
+
+  test("phase 30: the route of the survey being edited is the one read", async () => {
+    await renderFinish(params())
+    expect(mockRoute).toHaveBeenCalledWith(expect.objectContaining({ id: "s-01" }))
   })
 
   test("a press opens the submission step once for this survey and submits nothing itself", async () => {

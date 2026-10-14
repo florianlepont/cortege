@@ -24,7 +24,10 @@ export type SurveyDetailData = {
   useLocalDraftView: boolean
   showFactorLoadingHint: boolean
   canEditSurvey: boolean
-  /** Complete, named, not blocked, not finished: "Terminer" is live, synced or not (D-25). */
+  /**
+   * Complete, named, with a route, not blocked, not finished: "Terminer" is live, synced or not
+   * (D-25; the route is phase 30, O-19).
+   */
   canFinishNow: boolean
   /** The ten factors and the information are filled in (null until the local draft is read). */
   isComplete: boolean | null
@@ -86,7 +89,7 @@ export function useSurveyDetailData(
     !displayedScores &&
     displayedFactorEntries.length === 0
 
-  const canFinishNow = canFinishSurvey(selectedSurvey, localDraft.submitReady)
+  const canFinishNow = canFinishSurvey(selectedSurvey, localDraft.submitReady, localDraft.hasRoute)
   const missingFactorCount = localDraft.missingFactorCount
   const filledFactorCount = missingFactorCount === null ? null : 10 - missingFactorCount
 

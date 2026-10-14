@@ -231,6 +231,20 @@ jest.mock("../../hooks/useOfflineLayersPolicy", () => ({
 jest.mock("../../hooks/useOfflinePendingParcelDrain", () => ({
   useOfflinePendingParcelDrain: jest.fn(),
 }))
+// Phase 30 (O-19): the pager's finish pill needs the draft's route; these route tests have a routed
+// draft (the route gate itself is proved in usePagerFinish.test.ts).
+jest.mock("../../hooks/useSurveyRoute", () => ({
+  useSurveyRoute: () => ({
+    route: {
+      version: 1,
+      method: "full",
+      counting: "capped",
+      zone_surface_ha: 2.5,
+      guide: { chosen_by: "observer" },
+    },
+    loaded: true,
+  }),
+}))
 jest.mock("../../storage/offline-map", () => ({
   listOfflineAreas: jest.fn(async () => []),
 }))
