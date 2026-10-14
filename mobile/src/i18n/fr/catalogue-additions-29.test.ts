@@ -68,20 +68,16 @@ describe("fr.surveyFinish", () => {
 describe("fr.surveyDetail visibility line", () => {
   const { line } = fr.surveyDetail.visibility
 
-  test("a finished survey says what it is, a draft says what the end choice will be", () => {
+  test("a finished survey says what it is, a draft has no line", () => {
     expect(line.finished.shared).toBe("Partagé avec l'association")
     expect(line.finished.private).toBe("Privé")
-    expect(line.draft.shared).toBe("Sera partagé avec l'association (choix à la fin)")
-    expect(line.draft.private).toBe("Restera privé (choix à la fin)")
+    expect(Object.keys(line)).toEqual(["finished"])
   })
 
-  test("the spoken label tells whether the choice can still change", () => {
+  test("the spoken label says the choice can no longer change", () => {
     const { visibilityLine } = fr.surveyDetail.a11y
-    expect(visibilityLine({ text: "partagé avec l'association", frozen: true })).toBe(
+    expect(visibilityLine({ text: "partagé avec l'association" })).toBe(
       "Visibilité : partagé avec l'association. Ne peut plus être modifiée.",
-    )
-    expect(visibilityLine({ text: "restera privé", frozen: false })).toBe(
-      "Visibilité : restera privé, choix à la fin.",
     )
   })
 })
@@ -93,10 +89,9 @@ describe("the word public stays out of the user-facing strings (D-02)", () => {
       ...collectStrings(fr.surveyDetail.visibility, []),
       fr.surveyFinish.confirmA11y({ name: "Forêt", choice: "Privé" }),
       fr.surveyFinish.confirmOfflineA11y({ choice: "Privé" }),
-      fr.surveyDetail.a11y.visibilityLine({ text: "privé", frozen: true }),
-      fr.surveyDetail.a11y.visibilityLine({ text: "restera privé", frozen: false }),
+      fr.surveyDetail.a11y.visibilityLine({ text: "privé" }),
     ]
-    expect(strings.length).toBeGreaterThan(20)
+    expect(strings.length).toBeGreaterThan(15)
     for (const text of strings) {
       expect(text).not.toMatch(/\bpublic\b/i)
       expect(text).not.toContain("—")
