@@ -33,6 +33,8 @@ export {
   withFactorAnnotations,
 } from "./conditions"
 
+export * from "./route"
+
 export {
   allowedFactorAGenusCodes,
   CNPF_FACTOR_A_GENUS_CODES,
