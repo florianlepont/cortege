@@ -18,7 +18,12 @@ export type RouteDisplayRowId =
 
 export type RouteDisplayRow = { id: RouteDisplayRowId; caption: string; value: string }
 
-export type RouteDisplayVariant = "detail" | "pdf"
+/**
+ * "detail": the Contexte card of the observer's own survey. "pdf": the export block. "community":
+ * another member's survey (O-15), read-only and without the rows that speak to the reader as the
+ * observer ("Choix", "Vos réponses").
+ */
+export type RouteDisplayVariant = "detail" | "pdf" | "community"
 
 const detail = fr.surveyDetail.route
 const parts = detail.answerParts
@@ -84,7 +89,8 @@ function choiceValue(route: SurveyRoute, variant: RouteDisplayVariant): string {
 /**
  * The rows of the "Parcours utilisé" display, in the order of spec section 9: Parcours, Mode de
  * relevé, Facteurs comptés en entier (relevé déplafonné only), Surface décrite, Reste du peuplement
- * (parcours partiel only), Choix, and for the Contexte card Vos réponses. The PDF says the answers
+ * (parcours partiel only), Choix, and for the Contexte card Vos réponses. The community variant
+ * stops before Choix (another member's survey, O-15). The PDF says the answers
  * inside the "Choix" sentence and has no row of their own.
  */
 export function routeDisplayRows(
@@ -109,6 +115,7 @@ export function routeDisplayRows(
   if (complement !== null) {
     rows.push({ id: "complement", caption: captions.complement, value: complement })
   }
+  if (variant === "community") return rows
   rows.push({ id: "choice", caption: captions.choice, value: choiceValue(route, variant) })
   if (variant === "detail" && route.guide.answers !== undefined) {
     rows.push({

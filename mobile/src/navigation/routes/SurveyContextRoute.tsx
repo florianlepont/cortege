@@ -1,4 +1,4 @@
-import { memo } from "react"
+import { memo, useCallback } from "react"
 import { SurveyContextScreen } from "../../screens/SurveyContextScreen"
 import { useIsOffline } from "../../hooks/useIsOffline"
 import { useSurveys } from "../../state/surveys-context"
@@ -10,7 +10,8 @@ import { SelectedSurveyGate } from "./SelectedSurveyGate"
 
 /**
  * "Contexte" (D-32): the method, the station context and the weather of the selected survey. The
- * `section` param opens the page scrolled to the weather.
+ * `section` param opens the page scrolled to the weather. The "Parcours utilisé" card opens the
+ * chooser in edit mode (a draft of the observer only).
  */
 export const SurveyContextRoute = memo(function SurveyContextRoute({
   navigation,
@@ -19,6 +20,12 @@ export const SurveyContextRoute = memo(function SurveyContextRoute({
   const { state, actions } = useSurveys()
   const { state: weather, actions: weatherActions } = useWeatherPrefillState()
   const offline = useIsOffline()
+  // The chooser reads the recorded answers itself, so only the survey travels (phase 30, D-09).
+  const editRoute = useCallback(
+    (surveyId: string) =>
+      navigation.navigate("surveyRouteChoose", { surveyId, mode: "edit", surfaceHa: null }),
+    [navigation],
+  )
 
   return (
     <SelectedSurveyGate navigation={navigation}>
@@ -42,6 +49,7 @@ export const SurveyContextRoute = memo(function SurveyContextRoute({
             onSwitchToV32={actions.switchToV32}
             onEditWeather={actions.updateSurveyWeather}
             onRetryWeather={weatherActions.retry}
+            onEditRoute={editRoute}
           />
         </ScreenFrame>
       )}

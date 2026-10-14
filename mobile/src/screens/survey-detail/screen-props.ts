@@ -84,6 +84,11 @@ export type SurveyContextScreenProps = Omit<SurveyDetailBaseProps, "apiUrl" | "a
   ) => Promise<boolean> | void
   /** "Réessayer" of the weather card (the weather prefill action). */
   onRetryWeather: (surveyId: string) => Promise<void> | void
+  /**
+   * Phase 30: "Modifier le parcours" / "Choisir le parcours" of the "Parcours utilisé" card (a
+   * draft of the observer only): opens the chooser in edit mode.
+   */
+  onEditRoute: (surveyId: string) => void
 }
 
 /** "Parcelles": the map, the list of parcels and the offline map of the survey (D-32). */

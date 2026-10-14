@@ -106,6 +106,38 @@ describe("routeDisplayRows detail", () => {
   })
 })
 
+describe("routeDisplayRows community (O-15)", () => {
+  test("the rows of the detail, without the ones that address the reader as the observer", () => {
+    expect(routeDisplayRows(PARTIAL_PLOT, "community")).toEqual([
+      { id: "method", caption: "Parcours", value: "Parcours partiel par placette" },
+      { id: "counting", caption: "Mode de relevé", value: "Relevé plafonné" },
+      { id: "zone", caption: "Surface décrite", value: "1,2 ha" },
+      {
+        id: "complement",
+        caption: "Reste du peuplement",
+        value: "Regardé rapidement, surface totale évaluée 8 ha",
+      },
+    ])
+  })
+
+  test("never carries the choice nor the answers, whatever the route holds", () => {
+    for (const route of [FULL, PARTIAL_PLOT, UNCAPPED_STRIP]) {
+      expect(ids(routeDisplayRows(route, "community"))).not.toContain("choice")
+      expect(ids(routeDisplayRows(route, "community"))).not.toContain("answers")
+    }
+  })
+
+  test("a relevé déplafonné still lists the factors counted in full", () => {
+    expect(ids(routeDisplayRows(UNCAPPED_STRIP, "community"))).toEqual([
+      "method",
+      "counting",
+      "factors",
+      "zone",
+      "complement",
+    ])
+  })
+})
+
 describe("routeDisplayRows pdf", () => {
   test("the captions are those of the PDF catalogue", () => {
     const rows = routeDisplayRows(PARTIAL_PLOT, "pdf")
