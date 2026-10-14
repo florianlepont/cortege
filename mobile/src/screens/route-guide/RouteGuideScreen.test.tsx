@@ -161,7 +161,7 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
     expect(positions.every((position) => position >= 0)).toBe(true)
     expect([...positions].sort((a, b) => a - b)).toEqual(positions)
     expect(m.texts()).toEqual(
-      expect.arrayContaining([screen.lead, screen.required, screen.know, screen.waitingSurface]),
+      expect.arrayContaining([screen.lead, screen.know, screen.waitingSurface]),
     )
     expect(m.one("route-question-surface")).toBeDefined()
   })
@@ -208,7 +208,20 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
     expect(m.texts()).not.toContain(screen.title)
   })
 
-  it("keeps the scroll content above the floating footer and keyboard taps working", () => {
+  it("shows the lead as one short sentence and the shortcut as a real button", () => {
+    const m = mount({ prefill: 2.4 })
+    expect(screen.lead.length).toBeLessThanOrEqual(110)
+    expect(screen.lead).not.toMatch(/peuplement/i)
+    const know = m.one("route-know-link")
+    expect(know.props.accessibilityRole).toBe("button")
+    const style = ([] as Record<string, unknown>[])
+      .concat(know.props.style)
+      .flat(2)
+      .reduce((acc, item) => ({ ...acc, ...item }), {})
+    expect(Number(style.minHeight)).toBeGreaterThanOrEqual(44)
+  })
+
+  it("keeps the footer in its own row so nothing sits under it, and keyboard taps working", () => {
     const m = mount({ prefill: 2.4 })
     const scroll = m.one("route-guide-scroll")
     expect(scroll.props.keyboardShouldPersistTaps).toBe("handled")
@@ -223,6 +236,7 @@ describe("RouteGuideScreen: the mandatory step before an answer", () => {
       .concat(footer.props.style)
       .reduce((acc, style) => ({ ...acc, ...style }), {})
     expect(footerStyle.paddingBottom).toBe(finishBarBottomPadding(80))
+    expect(footerStyle.position).toBeUndefined()
   })
 })
 

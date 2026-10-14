@@ -80,8 +80,7 @@ const ZONE_ISSUES = {
 export const routeGuideFr = {
   screen: {
     title: "Choix du parcours",
-    lead: "Quelques questions courtes pour choisir comment parcourir votre peuplement. Un peuplement est un morceau de forêt homogène : mêmes arbres, même âge, même aspect.",
-    required: "Ce choix est nécessaire pour créer le relevé : il dit comment vous allez le faire.",
+    lead: "Ce choix est nécessaire pour créer le relevé. Quelques questions courtes vous guident.",
     know: "Je connais déjà mon parcours",
     waiting: "Répondez aux questions pour voir le parcours conseillé.",
     waitingSurface: "Indiquez la surface pour voir le parcours conseillé.",

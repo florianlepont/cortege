@@ -6,7 +6,7 @@ import { ROUTE_SURFACE_ERROR_TEXT } from "../../app/route-text"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
 import { AppField } from "../../ui/AppField"
-import { AppPressable } from "../../ui/AppPressable"
+import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
 import { GlossaryInfo } from "../../ui/GlossaryInfo"
 import { RadioCard } from "../../ui/RadioCard"
@@ -127,19 +127,15 @@ function SurfaceBody({
       {caption !== null ? <Text style={styles.helper}>{caption}</Text> : null}
       <Text style={styles.helper}>{texts.aid}</Text>
       <Text style={styles.helperSmall}>{texts.linearHelp}</Text>
-      <AppPressable
-        style={styles.next}
+      <AppButton
+        label={fr.routeGuide.screen.next}
+        variant="secondary"
         onPress={actions.commitSurface}
         disabled={question.error !== null}
-        accessibilityRole="button"
         accessibilityLabel={fr.routeGuide.screen.next}
-        accessibilityState={{ disabled: question.error !== null }}
+        style={styles.next}
         testID="route-next-surface"
-      >
-        <Text style={[styles.nextLabel, question.error !== null ? styles.nextLabelOff : null]}>
-          {fr.routeGuide.screen.next}
-        </Text>
-      </AppPressable>
+      />
     </View>
   )
 }
@@ -176,18 +172,8 @@ function createStyles(theme: BrandTheme) {
       color: theme.colors.textSecondary,
     },
     next: {
-      alignSelf: "flex-start",
+      alignSelf: "stretch",
       minHeight: 44,
-      justifyContent: "center",
-      paddingHorizontal: brandSpacing4.xs,
-    },
-    nextLabel: {
-      ...brandTypeScale.headline,
-      fontFamily: brandTypography.navTitle.fontFamily,
-      color: theme.semanticColors.accent,
-    },
-    nextLabelOff: {
-      color: theme.colors.textSecondary,
     },
   })
 }

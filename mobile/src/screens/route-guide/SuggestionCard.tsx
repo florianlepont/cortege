@@ -7,7 +7,7 @@ import type {
   RouteMethod,
   UncappableFactor,
 } from "@cortege/ibp-domain"
-import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
 import { COUNTING_TEXT, ROUTE_METHOD_TEXT, formatHectares } from "../../app/route-text"
 import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { fr } from "../../i18n"
@@ -264,13 +264,18 @@ function createStyles(theme: BrandTheme) {
     links: {
       flexDirection: "row",
       flexWrap: "wrap",
-      columnGap: brandSpacing4.md,
+      columnGap: brandSpacing4.sm,
+      rowGap: brandSpacing4.xs,
     },
     link: {
       flexDirection: "row",
       alignItems: "center",
       gap: brandSpacing4.xs,
       minHeight: 44,
+      paddingHorizontal: brandSpacing4.md,
+      borderWidth: 1,
+      borderColor: forest.titleAccent,
+      borderRadius: brandRadius.pill,
     },
     linkLabel: {
       ...brandTypeScale.subhead,

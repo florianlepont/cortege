@@ -112,7 +112,14 @@ describe("QuestionStack: the open card", () => {
         guide.questions.surface.suffix,
       ]),
     )
-    expect(one("route-next-surface").props.accessibilityState).toEqual({ disabled: false })
+    expect(one("route-next-surface").props.accessibilityState).toMatchObject({ disabled: false })
+    expect(one("route-next-surface").props.accessibilityRole).toBe("button")
+    const nextStyle = ([] as Record<string, unknown>[])
+      .concat(one("route-next-surface").props.style)
+      .flat(2)
+      .reduce((acc, style) => ({ ...acc, ...style }), {})
+    expect(Number(nextStyle.minHeight)).toBeGreaterThanOrEqual(44)
+    expect(nextStyle.alignSelf).toBe("stretch")
     expect(byId("route-question-stack")).toHaveLength(1)
   })
 
@@ -137,7 +144,7 @@ describe("QuestionStack: the open card", () => {
     act(() => one("route-surface-field").props.onChangeText("abc"))
     act(() => one("route-surface-field").props.onBlur())
     expect(texts()).toContain(guide.surfaceErrors.invalid)
-    expect(one("route-next-surface").props.accessibilityState).toEqual({ disabled: true })
+    expect(one("route-next-surface").props.accessibilityState).toMatchObject({ disabled: true })
     expect(one("route-next-surface").props.disabled).toBe(true)
     act(() => one("route-surface-field").props.onChangeText("2"))
     expect(texts()).not.toContain(guide.surfaceErrors.invalid)

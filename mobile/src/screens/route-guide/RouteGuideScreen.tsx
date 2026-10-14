@@ -7,14 +7,13 @@ import { BrandTheme, useBrandTheme } from "../../app/theme"
 import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
 import { fr } from "../../i18n"
 import { AppNotice } from "../../ui/AppNotice"
-import { AppPressable } from "../../ui/AppPressable"
+import { AppButton } from "../../ui/AppButton"
 import { AppText as Text } from "../../ui/AppText"
 import { GlassButton } from "../../ui/GlassButton"
 import { PageTitle } from "../../ui/PageTitle"
 import { TitledScrollView } from "../../ui/TitledScrollView"
 import { useFrameInsetBehavior } from "../../ui/frame-large-title"
 import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
-import { useFinishBarHeight } from "../survey-detail/useFinishBarHeight"
 import { usePagerChromeStyle, usePagerKeyboard } from "../survey-form/usePagerKeyboard"
 import { termsOfSelection } from "./glossary-terms"
 import { GlossarySection } from "./GlossarySection"
@@ -70,7 +69,6 @@ export function RouteGuideScreen({
   const styles = useMemo(() => createStyles(theme), [theme])
   const insetBehavior = useFrameInsetBehavior()
   const clearance = useTabBarClearance()
-  const { barHeight, onBarLayout } = useFinishBarHeight(true)
   const keyboardUp = usePagerKeyboard()
   const chromeStyle = usePagerChromeStyle(keyboardUp)
   const { view, actions } = state
@@ -125,10 +123,7 @@ export function RouteGuideScreen({
       <TitledScrollView
         collapsingTitle={fr.routeGuide.screen.title}
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: (barHeight ?? 0) + brandSpacing4.md },
-        ]}
+        contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior={insetBehavior}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -137,19 +132,16 @@ export function RouteGuideScreen({
       >
         <PageTitle>{screen.title}</PageTitle>
         {stepLabel ? <Text style={styles.step}>{stepLabel}</Text> : null}
-        <View style={styles.lead}>
-          <Text style={styles.leadText}>{screen.lead}</Text>
-          <Text style={styles.leadText}>{screen.required}</Text>
-        </View>
-        <AppPressable
-          style={styles.link}
+        <Text style={styles.leadText}>{screen.lead}</Text>
+        <AppButton
+          label={screen.know}
+          variant="secondary"
+          leadingIcon="trail-sign-outline"
           onPress={() => onOpenChooser("pick")}
-          accessibilityRole="button"
           accessibilityLabel={screen.know}
+          style={styles.know}
           testID="route-know-link"
-        >
-          <Text style={styles.linkLabel}>{screen.know}</Text>
-        </AppPressable>
+        />
 
         <QuestionStack
           state={stackState}
@@ -214,9 +206,13 @@ export function RouteGuideScreen({
       </TitledScrollView>
 
       <Animated.View
-        pointerEvents="box-none"
-        onLayout={onBarLayout}
-        style={[styles.footer, { paddingBottom: finishBarBottomPadding(clearance) }, chromeStyle]}
+        pointerEvents={keyboardUp ? "none" : "box-none"}
+        style={[
+          styles.footer,
+          { paddingBottom: finishBarBottomPadding(clearance) },
+          keyboardUp ? styles.footerHidden : null,
+          chromeStyle,
+        ]}
         testID="route-guide-footer"
       >
         {saveError ? (
@@ -252,28 +248,20 @@ function createStyles(theme: BrandTheme) {
     content: {
       paddingHorizontal: brandSpacing4.lg,
       paddingTop: brandSpacing4.sm,
+      paddingBottom: brandSpacing4.lg,
       gap: brandSpacing4.md,
     },
     step: {
       ...brandTypography.meta,
       color: theme.colors.textSecondary,
     },
-    lead: {
-      gap: brandSpacing4.sm,
-    },
     leadText: {
       ...brandTypeScale.subhead,
       color: theme.colors.textSecondary,
     },
-    link: {
-      alignSelf: "flex-start",
+    know: {
+      alignSelf: "stretch",
       minHeight: 44,
-      justifyContent: "center",
-    },
-    linkLabel: {
-      ...brandTypeScale.headline,
-      fontFamily: brandTypography.navTitle.fontFamily,
-      color: theme.semanticColors.accent,
     },
     waiting: {
       flexDirection: "row",
@@ -288,14 +276,19 @@ function createStyles(theme: BrandTheme) {
     glossary: {
       marginTop: brandSpacing4.lg,
     },
+    // The footer takes its own row under the scroll area (never over the content), so the last
+    // element and the open question's "Suivant" can never sit under it. While the keyboard is up it
+    // leaves the layout (absolute, faded) so the freed height goes to the focused field.
     footer: {
+      paddingHorizontal: brandSpacing4.lg,
+      paddingTop: brandSpacing4.sm,
+      gap: brandSpacing4.sm,
+    },
+    footerHidden: {
       position: "absolute",
       left: 0,
       right: 0,
       bottom: 0,
-      paddingHorizontal: brandSpacing4.lg,
-      paddingTop: brandSpacing4.sm,
-      gap: brandSpacing4.sm,
     },
   })
 }
