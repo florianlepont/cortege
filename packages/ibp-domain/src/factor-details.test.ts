@@ -44,7 +44,13 @@ describe("strataCountFromCover", () => {
 
   it("counts the five strata when all reach the threshold (the sum may exceed 100)", () => {
     expect(
-      strataCountFromCover({ very_low: 100, low: 100, intermediate: 100, high: 100, herbaceous: 20 }),
+      strataCountFromCover({
+        very_low: 100,
+        low: 100,
+        intermediate: 100,
+        high: 100,
+        herbaceous: 20,
+      }),
     ).toBe(5)
   })
 })

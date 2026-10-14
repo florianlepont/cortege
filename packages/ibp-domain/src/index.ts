@@ -36,6 +36,25 @@ export {
 export * from "./route"
 
 export {
+  B_STRATUM_CODES,
+  DMH_GROUP_CODES,
+  DMH_GROUP_DENSITY_CAP_PER_HA,
+  STRATUM_MIN_COVER_PERCENT,
+  UNCAPPED_DETAIL_KEYS,
+  dmhDensityPerHa,
+  readDmhCounts,
+  readStrataCover,
+  strataCountFromCover,
+} from "./factor-details"
+export type {
+  BStratumCode,
+  DmhCounts,
+  DmhDensity,
+  DmhGroupCode,
+  StrataCover,
+} from "./factor-details"
+
+export {
   allowedFactorAGenusCodes,
   CNPF_FACTOR_A_GENUS_CODES,
   CNPF_FACTOR_A_MAIN_GENERA,
