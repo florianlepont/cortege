@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 30
 current_phase_name: Route Choice Assistant (INSERTED, V1)
 status: executing
-stopped_at: "Phase 30 planned (23 plans); next: execute 30-01 then owner gate 30-02"
+stopped_at: "Phase 30 replanned (25 plans); spec revised, waiting for the owner's written validation (gate 30-02)"
 last_updated: "2026-10-13T17:56:49.177Z"
 last_activity: 2026-10-13
 last_activity_desc: Phase 30 execution started
@@ -282,5 +282,5 @@ Decisions table. Decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-10-13T17:49:24.125Z
-Stopped at: Phase 30 planned (23 plans); next: execute 30-01 then owner gate 30-02
+Stopped at: Phase 30 replanned (25 plans); spec revised, waiting for the owner's written validation (gate 30-02)
 Resume file: .planning/phases/30-route-choice-assistant-inserted-v1/30-01-PLAN.md
