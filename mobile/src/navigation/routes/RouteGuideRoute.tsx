@@ -1,4 +1,5 @@
-import { memo, useEffect, useRef, useState } from "react"
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { BackHandler } from "react-native"
 import type { SurveyRoute } from "@cortege/ibp-domain"
 import { useSurveyRoute } from "../../hooks/useSurveyRoute"
 import { fr } from "../../i18n"
@@ -13,6 +14,7 @@ import { ScreenFrame } from "../../ui/ScreenFrame"
 import { usesNativeLargeTitle } from "../large-title"
 import type { RoutePick, RouteGuideRouteProps } from "../types"
 import { finishSurveyCreation } from "./finish-creation"
+import { RouteBackButton } from "./RouteBackButton"
 
 /** The route step is the fifth and last step of the creation (O-19): the wizard's three, the map. */
 const CREATION_STEPS = { route: 5, total: 5 } as const
@@ -25,7 +27,7 @@ const CREATION_STEPS = { route: 5, total: 5 } as const
  * session, but it is only finalised here, when the route is accepted ("Utiliser ce parcours"): the
  * route is written on it first, then the draft is finalised (`createDraft`), the weather point is
  * kept, and the creation flow is replaced by the survey page (`finishSurveyCreation`). Going back
- * (header, swipe, Android back) before that is a plain return to the parcel map with the editing
+ * (the step's own back button, Android back) before that is a plain return to the parcel map with the editing
  * session still open and nothing written, so no duplicate draft can appear (T-30-44).
  *
  * Edit: the recorded answers come back, the route is saved on the draft and the screen goes back.
@@ -83,20 +85,25 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
     }
   }, [picked, pickNonce, actions])
 
-  // Back (header arrow, swipe, Android back) goes one question back while there is one; from the
-  // first question it is the plain return to the parcel map, and nothing is written. The step's
-  // own exits (the finished creation, the saved edit) are never intercepted.
-  const leaving = useRef(false)
+  // Back is the step's own: the native back (arrow, swipe) is off in the stack options, so no pop
+  // is ever held back natively. One question back while there is one; from the first question the
+  // plain return to the parcel map (create) or to the previous page (edit), nothing written.
   const stepBack = useLatestCallback(() => actions.back())
-  useEffect(
-    () =>
-      navigation.addListener("beforeRemove", (event) => {
-        const type = event.data.action.type
-        if (leaving.current || (type !== "GO_BACK" && type !== "POP")) return
-        if (stepBack()) event.preventDefault()
-      }),
-    [navigation, stepBack],
-  )
+  const goBack = useLatestCallback((): void => {
+    if (!stepBack()) navigation.goBack()
+  })
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerLeft: () => <RouteBackButton onPress={goBack} /> })
+  }, [navigation, goBack])
+  // Android system back: one question back while there is one, else the default pop. Only while
+  // this screen is the focused one (the chooser sheet above it handles its own back).
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (!navigation.isFocused()) return false
+      return stepBack()
+    })
+    return () => subscription.remove()
+  }, [navigation, stepBack])
 
   const failed = (): void => setSaveError(true)
 
@@ -133,7 +140,6 @@ export const RouteGuideRoute = memo(function RouteGuideRoute({
 
   const acceptEdit = async (record: SurveyRoute): Promise<void> => {
     if (surveyId === null || !(await writeRoute(surveyId, record))) return failed()
-    leaving.current = true
     navigation.goBack()
   }
 

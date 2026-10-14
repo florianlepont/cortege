@@ -32,6 +32,12 @@ jest.mock("react-native", () => ({
   Text: "Text",
   Pressable: "Pressable",
   ActivityIndicator: "ActivityIndicator",
+  BackHandler: {
+    addEventListener: (_event: string, handler: () => boolean) => {
+      mockBackHandlers.add(handler)
+      return { remove: () => mockBackHandlers.delete(handler) }
+    },
+  },
 }))
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
@@ -77,6 +83,7 @@ jest.mock("@react-navigation/native-stack", () => {
   return { createNativeStackNavigator: core.createNavigatorFactory(StackView as never) }
 })
 
+const mockBackHandlers = new Set<() => boolean>()
 const mockScreenProps: Record<string, Record<string, unknown>> = {}
 function mockScreen(name: string) {
   return function ScreenProbe(props: Record<string, unknown>) {
@@ -290,6 +297,18 @@ async function mountStack(routes: Array<{ name: string; params?: object }>) {
   return { tree: tree as unknown as renderer.ReactTestRenderer, ref, routeNames }
 }
 
+/** The route step's own back button, as its header draws it (the stack's current `headerLeft`). */
+async function pressOwnBack(ref: ReturnType<typeof createNavigationContainerRef<ParamListBase>>) {
+  const options = ref.getCurrentOptions() as {
+    headerLeft?: () => { props: { onPress: () => void } }
+  }
+  expect(options.headerLeft).toBeDefined()
+  const element = options.headerLeft!()
+  await act(async () => {
+    element.props.onPress()
+  })
+}
+
 /** The parcel map's "Terminer": hands over to the route step, which is not the end of the creation. */
 async function leaveParcelMap() {
   const onSave = mockScreenProps.parcelSelection.onSave as (
@@ -412,9 +431,7 @@ describe("the route step as the fifth step of the creation (phase 30, O-19, P-1)
       ...CREATION.slice(1),
     ])
     await leaveParcelMap()
-    await act(async () => {
-      ref.goBack()
-    })
+    await pressOwnBack(ref)
     expect(routeNames()).toEqual(["surveysHome", "surveyDetail", "surveyForm", "surveyParcels"])
     expect(observed.writes).toEqual([])
     // The older summary is still there with its own survey: no duplicate, no new selection.
@@ -452,16 +469,12 @@ describe("back inside the route step, one question at a time (real router)", () 
     })
     expect(screenName()).toBe("homogeneity")
 
-    await act(async () => {
-      ref.goBack()
-    })
+    await pressOwnBack(ref)
     expect(routeNames()).toEqual(["surveysHome", "surveyForm", "surveyParcels", "surveyRouteGuide"])
     expect(screenName()).toBe("surface")
 
     // From the first question: the plain pop of today, nothing written.
-    await act(async () => {
-      ref.goBack()
-    })
+    await pressOwnBack(ref)
     expect(routeNames()).toEqual(["surveysHome", "surveyForm", "surveyParcels"])
     expect(observed.writes).toEqual([])
   })
@@ -478,13 +491,9 @@ describe("back inside the route step, one question at a time (real router)", () 
       actions.next()
     })
     expect(screenName()).toBe("result")
-    await act(async () => {
-      ref.goBack()
-    })
+    await pressOwnBack(ref)
     expect(screenName()).toBe("difficulty")
-    await act(async () => {
-      ref.goBack()
-    })
+    await pressOwnBack(ref)
     expect(screenName()).toBe("homogeneity")
     expect(observed.writes).toEqual([])
 
@@ -498,6 +507,21 @@ describe("back inside the route step, one question at a time (real router)", () 
     })
     expect(observed.writes).toEqual([`route:${NEW_ID}`, `draft:${NEW_ID}`])
     expect(routeNames()).toEqual(["surveysHome", "surveyDetail"])
+  })
+
+  test("no native back is held: a plain goBack pops the route step even from a later question", async () => {
+    const { ref, routeNames } = await mountStack(CREATION)
+    await leaveParcelMap()
+    await act(async () => {
+      guide().state.actions.commitSurface()
+    })
+    expect(screenName()).toBe("homogeneity")
+    // What the iOS header arrow and the swipe do: a pop, never prevented, never one question back.
+    await act(async () => {
+      ref.goBack()
+    })
+    expect(routeNames()).toEqual(["surveysHome", "surveyForm", "surveyParcels"])
+    expect(observed.writes).toEqual([])
   })
 })
 

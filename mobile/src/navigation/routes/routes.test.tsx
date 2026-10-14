@@ -83,6 +83,12 @@ jest.mock("react-native", () => {
     KeyboardAvoidingView: "KeyboardAvoidingView",
     // Phase 27: the factor pager listens to the keyboard to step its chrome aside.
     Keyboard: { addListener: () => ({ remove: () => undefined }), dismiss: () => undefined },
+    BackHandler: {
+      addEventListener: (_event: string, handler: () => boolean) => {
+        mockBackHandlers.add(handler)
+        return { remove: () => mockBackHandlers.delete(handler) }
+      },
+    },
     Pressable,
     Text: "Text",
     ActivityIndicator: "ActivityIndicator",
@@ -93,6 +99,7 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 20, bottom: 0, left: 0, right: 0 }),
 }))
 
+const mockBackHandlers = new Set<() => boolean>()
 const mockScreenProps: Record<string, Record<string, unknown>> = {}
 
 function mockScreen(name: string) {
@@ -527,6 +534,7 @@ function makeNavigation() {
     setOptions: jest.fn(),
     reset: jest.fn(),
     canGoBack: jest.fn(() => true),
+    isFocused: jest.fn(() => true),
     addListener: jest.fn((_event: string, _handler: () => void) => jest.fn()),
   }
 }
@@ -2266,52 +2274,93 @@ describe("RouteGuideRoute (phase 30, O-19, P-1)", () => {
     expect(navigation.goBack).not.toHaveBeenCalled()
   })
 
-  /** The listener the route registers on removal, called like the router does. */
-  function removal(navigation: ReturnType<typeof makeNavigation>) {
-    const call = navigation.addListener.mock.calls.find(([event]) => event === "beforeRemove")
-    expect(call).toBeDefined()
-    const handler = (call as unknown as [string, (event: unknown) => void])[1]
-    return async (type: string): Promise<jest.Mock> => {
-      const preventDefault = jest.fn()
+  /** The route's own back button, as the stack header draws it (the last `headerLeft` set). */
+  function backButton(navigation: ReturnType<typeof makeNavigation>) {
+    const calls = navigation.setOptions.mock.calls as unknown as [
+      { headerLeft?: () => { props: { onPress: () => void } } },
+    ][]
+    const withButton = calls.filter(([options]) => options.headerLeft !== undefined)
+    expect(withButton.length).toBeGreaterThan(0)
+    const element = withButton[withButton.length - 1][0].headerLeft!()
+    return async () => {
       await act(async () => {
-        handler({ data: { action: { type } }, preventDefault })
+        element.props.onPress()
       })
-      return preventDefault
     }
   }
 
-  test("back goes one question back, and is a plain return from the first question", async () => {
+  test("no native removal is ever held back: the route registers no beforeRemove listener", async () => {
+    const { fixture } = creationFixture()
+    const { navigation } = await mountGuide(fixture)
+    expect(
+      navigation.addListener.mock.calls.filter(([event]) => event === "beforeRemove"),
+    ).toHaveLength(0)
+  })
+
+  test("the own back button goes one question back, and is a plain pop from the first question", async () => {
     const { fixture, write } = creationFixture()
     const { navigation } = await mountGuide(fixture)
-    const remove = removal(navigation)
-    // First question: the header back, the swipe and the Android back just pop.
-    expect(await remove("GO_BACK")).not.toHaveBeenCalled()
-    expect(await remove("POP")).not.toHaveBeenCalled()
+    const back = backButton(navigation)
+    // First question: the plain pop to the parcel map.
+    await back()
+    expect(navigation.goBack).toHaveBeenCalledTimes(1)
     await act(async () => {
       guideState().actions.commitSurface()
     })
     expect(guideState().view).toMatchObject({ screen: "homogeneity", canStepBack: true })
-    // Second question: the pop is held back and the previous question opens, answer kept.
-    expect(await remove("GO_BACK")).toHaveBeenCalledTimes(1)
+    // Second question: the previous question opens, answer kept, the screen is not left.
+    await back()
     expect(guideState().view).toMatchObject({ screen: "surface", canStepBack: false })
-    expect(await remove("GO_BACK")).not.toHaveBeenCalled()
-    // The step's own exits are never held back.
+    expect(navigation.goBack).toHaveBeenCalledTimes(1)
+    expect(write).not.toHaveBeenCalled()
+    expect(fixture.form.actions.createDraft).not.toHaveBeenCalled()
+    expect(navigation.reset).not.toHaveBeenCalled()
+  })
+
+  test("the own back button from the result goes to the last question", async () => {
+    const { fixture } = creationFixture()
+    const { navigation } = await mountGuide(fixture)
+    const back = backButton(navigation)
+    await reachRoute()
+    expect(guideState().view).toMatchObject({ screen: "result" })
+    await back()
+    expect(guideState().view).toMatchObject({ screen: "difficulty" })
+    expect(navigation.goBack).not.toHaveBeenCalled()
+  })
+
+  test("the edit mode has the same own back button, a goBack from the first question", async () => {
+    const { fixture } = creationFixture()
+    const { navigation } = await mountGuide(
+      fixture,
+      makeNavigation(),
+      createRoute({ mode: "edit", weatherPoint: undefined }),
+    )
+    await backButton(navigation)()
+    expect(navigation.goBack).toHaveBeenCalledTimes(1)
+  })
+
+  test("Android back goes one question back and leaves the first question to the default pop", async () => {
+    const { fixture } = creationFixture()
+    const { navigation } = await mountGuide(fixture)
+    const hardware = () => [...mockBackHandlers].pop() as () => boolean
+    expect(hardware()()).toBe(false)
     await act(async () => {
       guideState().actions.commitSurface()
     })
-    expect(await remove("RESET")).not.toHaveBeenCalled()
-    expect(write).not.toHaveBeenCalled()
-    expect(fixture.form.actions.createDraft).not.toHaveBeenCalled()
-  })
-
-  test("back from the result goes to the last question", async () => {
-    const { fixture } = creationFixture()
-    const { navigation } = await mountGuide(fixture)
-    const remove = removal(navigation)
-    await reachRoute()
-    expect(guideState().view).toMatchObject({ screen: "result" })
-    expect(await remove("GO_BACK")).toHaveBeenCalledTimes(1)
-    expect(guideState().view).toMatchObject({ screen: "difficulty" })
+    let handled = false
+    await act(async () => {
+      handled = hardware()()
+    })
+    expect(handled).toBe(true)
+    expect(guideState().view).toMatchObject({ screen: "surface" })
+    // Not the focused screen (the chooser is open above it): never handled.
+    await act(async () => {
+      guideState().actions.commitSurface()
+    })
+    navigation.isFocused.mockReturnValue(false)
+    expect(hardware()()).toBe(false)
+    expect(guideState().view).toMatchObject({ screen: "homogeneity" })
+    expect(navigation.goBack).not.toHaveBeenCalled()
   })
 
   test("Utiliser ce parcours writes the route, finalises the draft, keeps the weather point and resets (D-45)", async () => {

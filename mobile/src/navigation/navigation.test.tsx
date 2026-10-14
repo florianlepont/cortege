@@ -634,27 +634,27 @@ describe("stack options and listeners", () => {
     expectHaloHeader(wizard)
   })
 
-  test("the route step is a stack screen with back and swipe on, and the native large title on iOS (phase 30, O-19)", async () => {
+  test("the route step is a stack screen with its own back (native back and swipe off), and the native large title on iOS (phase 30, O-19)", async () => {
     mockPlatform.OS = "ios"
     await mount(<AppNavigation />)
     expect(mockScreens.surveyRouteGuide).toBeDefined()
     const options = effectiveOptions("surveyRouteGuide")
     expect(options).toEqual(expect.objectContaining(nativeLargeTitle(defaultTheme)))
     expect(options.title).toBe(fr.routeGuide.screen.title)
-    // Going back returns to the parcel map and writes nothing: nothing hides the way back.
-    expect(options.gestureEnabled).not.toBe(false)
-    expect(options.headerBackVisible).not.toBe(false)
+    // Native back and swipe are off: the route draws its own back button (no native pop is held).
+    expect(options.gestureEnabled).toBe(false)
+    expect(options.headerBackVisible).toBe(false)
     expect(options.headerShown).not.toBe(false)
     expectHaloHeader(options)
   })
 
-  test("Android: the route step names itself with its own title and keeps the way back", async () => {
+  test("Android: the route step names itself with its own title and its own back", async () => {
     await mount(<AppNavigation />)
     const options = effectiveOptions("surveyRouteGuide")
     expect(options.title).toBe(fr.routeGuide.screen.title)
     expect(options.headerLargeTitleEnabled).toBeUndefined()
-    expect(options.gestureEnabled).not.toBe(false)
-    expect(options.headerBackVisible).not.toBe(false)
+    expect(options.gestureEnabled).toBe(false)
+    expect(options.headerBackVisible).toBe(false)
   })
 
   test("the route step does not change the tab bar rule (OA-28)", () => {

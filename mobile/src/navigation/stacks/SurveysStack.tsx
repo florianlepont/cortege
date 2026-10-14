@@ -242,12 +242,15 @@ export function SurveysTabNavigator({ useNativeNav = false }: SurveysTabNavigato
           <SurveysStack.Screen
             name="surveyRouteGuide"
             options={{
-              // Phase 30 (O-19): the mandatory fifth step of a new survey. Back and the swipe stay
-              // on: going back returns to the parcel map and writes nothing (U-O14). The native
+              // Phase 30 (O-19): the mandatory fifth step of a new survey. Native back and swipe are
+              // off: the route draws its own back button (one question back, else the plain return
+              // to the parcel map, nothing written, U-O14), and handles Android back itself. The native
               // large title in the native iOS tree, else the page's own title (the tab bar rule is
               // unchanged, OA-28).
               title: fr.routeGuide.screen.title,
               ...pageTitleOptions(theme),
+              headerBackVisible: false,
+              gestureEnabled: false,
             }}
             component={RouteGuideRoute}
           />
