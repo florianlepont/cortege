@@ -106,7 +106,7 @@ est donnée avec sa raison.
 
 Les durées de S p. 19 et M p. 17 sont données par le texte officiel comme des **indications**, et
 le texte officiel demande de standardiser l'effort de relevé pour limiter l'effet observateur
-(passage de M à citer avec sa page à la relecture). C'est pourquoi la durée de la règle R-19 est
+(S p. 19 : « l'effort de prospection doit être standardisé »). C'est pourquoi la durée de la règle R-19 est
 une plage affichée comme information.
 
 Autres faits repris tels quels : l'IBP se relève par peuplement ou par type de peuplement
