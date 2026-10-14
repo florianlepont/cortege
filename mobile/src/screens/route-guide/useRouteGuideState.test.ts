@@ -91,4 +91,18 @@ describe("useRouteGuideState", () => {
     rerender(5.5)
     expect(latest().view.open).toMatchObject({ unknown: false, text: "5,5", estimated: true })
   })
+
+  it("loads a recorded route into the step (edit mode)", () => {
+    const { latest } = mount(null)
+    act(() => latest().actions.setSurfaceText("2,4"))
+    act(() => latest().actions.commitSurface())
+    act(() => latest().actions.answerHomogeneity("heterogeneous"))
+    act(() => latest().actions.answerDifficulty(false))
+    const saved = latest().record
+    expect(saved).not.toBeNull()
+    const { latest: fresh } = mount(null)
+    act(() => fresh().actions.loadRecord(saved as NonNullable<typeof saved>))
+    expect(fresh().view.canUse).toBe(true)
+    expect(fresh().record).toEqual(saved)
+  })
 })

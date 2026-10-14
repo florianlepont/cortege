@@ -1,0 +1,301 @@
+import { useMemo } from "react"
+import { StyleSheet, View } from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import Animated from "react-native-reanimated"
+import { brandSpacing4, brandTypeScale, brandTypography } from "../../app/brand-tokens"
+import { BrandTheme, useBrandTheme } from "../../app/theme"
+import { useTabBarClearance } from "../../app/useAppBottomTabBarHeight"
+import { fr } from "../../i18n"
+import { AppNotice } from "../../ui/AppNotice"
+import { AppPressable } from "../../ui/AppPressable"
+import { AppText as Text } from "../../ui/AppText"
+import { GlassButton } from "../../ui/GlassButton"
+import { PageTitle } from "../../ui/PageTitle"
+import { TitledScrollView } from "../../ui/TitledScrollView"
+import { useFrameInsetBehavior } from "../../ui/frame-large-title"
+import { finishBarBottomPadding } from "../survey-detail/finish-bar-layout"
+import { useFinishBarHeight } from "../survey-detail/useFinishBarHeight"
+import { usePagerChromeStyle, usePagerKeyboard } from "../survey-form/usePagerKeyboard"
+import { termsOfSelection } from "./glossary-terms"
+import { GlossarySection } from "./GlossarySection"
+import { LargeStandOptions } from "./LargeStandOptions"
+import { QuestionStack } from "./QuestionStack"
+import { ReasonsCard } from "./ReasonsCard"
+import { RouteDetailsCard, type RouteDetailsValue } from "./RouteDetailsCard"
+import { RouteAdvice, RouteNotices } from "./RouteNotices"
+import { SuggestionCard } from "./SuggestionCard"
+import type { RouteGuideState } from "./useRouteGuideState"
+
+const screen = fr.routeGuide.screen
+
+/** Where the chooser opens: its parcours list, or its counting section (the "Modifier" link). */
+export type RouteChooserSection = "counting"
+
+export type RouteGuideScreenProps = {
+  state: RouteGuideState
+  /** No estimate of the stand surface could be made: the surface card opens empty (spec section 1). */
+  surfaceUnknown: boolean
+  /** The route could not be recorded: the danger notice with "Réessayer" shows above the button. */
+  saveError: boolean
+  /** The record is being written: the button is busy and ignores presses. */
+  saving?: boolean
+  /** "Étape 5 sur 5" while the survey is being created; absent when editing a recorded route. */
+  stepLabel?: string
+  /** "Utiliser ce parcours": the one way forward, enabled once the package has a usable route. */
+  onUse: () => void
+  onRetry: () => void
+  onOpenChooser: (mode: "pick" | "edit", section?: RouteChooserSection) => void
+}
+
+/**
+ * The route step, "Choix du parcours" (phase 30, O-19: mandatory from creation, so there is no skip
+ * control and no optional tag; the only way forward is "Utiliser ce parcours"). One scrolling page:
+ * the lead, the quick path "Je connais déjà mon parcours" (the chooser), the question stack with the
+ * advice folded in "Pour affiner", then the suggestion with its reasons, warnings and details, or the
+ * two options above the subdivision bound, the glossary, and the floating footer. The page shows
+ * what the model derives from the package (`RouteGuideState`) and decides nothing itself; it needs no
+ * network, an unknown surface only opens the surface card empty (spec section 1).
+ */
+export function RouteGuideScreen({
+  state,
+  surfaceUnknown,
+  saveError,
+  saving = false,
+  stepLabel,
+  onUse,
+  onRetry,
+  onOpenChooser,
+}: RouteGuideScreenProps) {
+  const theme = useBrandTheme()
+  const styles = useMemo(() => createStyles(theme), [theme])
+  const insetBehavior = useFrameInsetBehavior()
+  const clearance = useTabBarClearance()
+  const { barHeight, onBarLayout } = useFinishBarHeight(true)
+  const keyboardUp = usePagerKeyboard()
+  const chromeStyle = usePagerChromeStyle(keyboardUp)
+  const { view, actions } = state
+  const { selection, recommendation, open } = view
+
+  // The two options of a large stand are drawn below, in the result zone: the stack leaves that card.
+  const showLargeStand = open?.id === "largeStand" && selection?.source !== "pick"
+  const stackState = useMemo<RouteGuideState>(
+    () => (open?.id === "largeStand" ? { ...state, view: { ...state.view, open: null } } : state),
+    [state, open],
+  )
+  const choosingLargeStand = recommendation.status === "options" && selection === null
+
+  const standRow = view.rows.find((row) => row.id === "surface")
+  const standHa = standRow?.id === "surface" ? standRow.hectares : null
+
+  const details: RouteDetailsValue = {
+    zoneText: view.zoneFieldText,
+    complementDone: selection?.complement?.done ?? false,
+    totalText: view.totalFieldText,
+  }
+  const changeDetails = (next: RouteDetailsValue): void => {
+    if (next.zoneText !== details.zoneText) actions.setZoneText(next.zoneText)
+    if (next.complementDone !== details.complementDone)
+      actions.setComplementDone(next.complementDone)
+    if (next.totalText !== details.totalText) actions.setTotalText(next.totalText)
+  }
+
+  const waitingText =
+    open?.id === "surface"
+      ? surfaceUnknown
+        ? screen.missingSurface
+        : screen.waitingSurface
+      : screen.waiting
+  const suggested = selection?.source === "suggestion"
+  const warnings =
+    recommendation.status === "route" && suggested
+      ? // The details card raises this one live from the surface typed in its field.
+        recommendation.warnings.filter((code) => code !== "partial_over_half")
+      : []
+
+  const cta = choosingLargeStand
+    ? {
+        label: fr.routeGuide.largeStand.subdivideCta,
+        disabled: false,
+        onPress: () => actions.chooseLargeStandOption("subdivide"),
+      }
+    : { label: screen.use, disabled: !view.canUse, onPress: onUse }
+
+  return (
+    <View style={styles.root} testID="route-guide-screen">
+      <TitledScrollView
+        collapsingTitle={fr.routeGuide.screen.title}
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: (barHeight ?? 0) + brandSpacing4.md },
+        ]}
+        contentInsetAdjustmentBehavior={insetBehavior}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
+        testID="route-guide-scroll"
+      >
+        <PageTitle>{screen.title}</PageTitle>
+        {stepLabel ? <Text style={styles.step}>{stepLabel}</Text> : null}
+        <View style={styles.lead}>
+          <Text style={styles.leadText}>{screen.lead}</Text>
+          <Text style={styles.leadText}>{screen.required}</Text>
+        </View>
+        <AppPressable
+          style={styles.link}
+          onPress={() => onOpenChooser("pick")}
+          accessibilityRole="button"
+          accessibilityLabel={screen.know}
+          testID="route-know-link"
+        >
+          <Text style={styles.linkLabel}>{screen.know}</Text>
+        </AppPressable>
+
+        <QuestionStack
+          state={stackState}
+          refineFooter={view.advice === null ? null : <RouteAdvice advice={view.advice} />}
+        />
+
+        {showLargeStand && open?.id === "largeStand" ? (
+          <LargeStandOptions
+            options={open.options}
+            preselected={open.preselected}
+            selected={open.selected}
+            onChoose={actions.chooseLargeStandOption}
+          />
+        ) : null}
+
+        {selection === null ? (
+          showLargeStand ? null : (
+            <View style={styles.waiting} testID="route-waiting">
+              <Ionicons
+                name="trail-sign-outline"
+                size={18}
+                color={theme.colors.textSecondary}
+                accessible={false}
+              />
+              <Text style={styles.waitingText}>{waitingText}</Text>
+            </View>
+          )
+        ) : (
+          <>
+            <SuggestionCard
+              method={selection.method}
+              counting={selection.counting}
+              uncappedFactors={selection.uncappedFactors}
+              zoneHa={selection.zoneHa}
+              chosenBy={view.chosenBy ?? "observer"}
+              onChange={() => onOpenChooser("pick")}
+              onRestore={recommendation.status === "route" ? actions.restoreSuggestion : undefined}
+            />
+            {recommendation.status === "route" && suggested ? (
+              <ReasonsCard reasons={recommendation.reasons} />
+            ) : null}
+            <RouteNotices warnings={warnings} />
+            <RouteDetailsCard
+              method={selection.method}
+              counting={selection.counting}
+              uncappedFactors={selection.uncappedFactors}
+              standHa={standHa}
+              value={details}
+              onChange={changeDetails}
+              onEditCounting={() => onOpenChooser("pick", "counting")}
+            />
+          </>
+        )}
+
+        <View style={styles.glossary}>
+          <GlossarySection
+            highlight={
+              selection === null ? [] : termsOfSelection(selection.method, selection.counting)
+            }
+          />
+        </View>
+      </TitledScrollView>
+
+      <Animated.View
+        pointerEvents="box-none"
+        onLayout={onBarLayout}
+        style={[styles.footer, { paddingBottom: finishBarBottomPadding(clearance) }, chromeStyle]}
+        testID="route-guide-footer"
+      >
+        {saveError ? (
+          <AppNotice
+            tone="danger"
+            icon="alert-circle-outline"
+            message={screen.saveError}
+            action={{ label: screen.retry, onPress: onRetry }}
+          />
+        ) : null}
+        <GlassButton
+          label={cta.label}
+          size="lg"
+          disabled={cta.disabled}
+          loading={saving}
+          accessibilityLabel={cta.disabled ? screen.useDisabledA11y : undefined}
+          onPress={cta.onPress}
+          testID="route-use"
+        />
+      </Animated.View>
+    </View>
+  )
+}
+
+function createStyles(theme: BrandTheme) {
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: brandSpacing4.lg,
+      paddingTop: brandSpacing4.sm,
+      gap: brandSpacing4.md,
+    },
+    step: {
+      ...brandTypography.meta,
+      color: theme.colors.textSecondary,
+    },
+    lead: {
+      gap: brandSpacing4.sm,
+    },
+    leadText: {
+      ...brandTypeScale.subhead,
+      color: theme.colors.textSecondary,
+    },
+    link: {
+      alignSelf: "flex-start",
+      minHeight: 44,
+      justifyContent: "center",
+    },
+    linkLabel: {
+      ...brandTypeScale.headline,
+      fontFamily: brandTypography.navTitle.fontFamily,
+      color: theme.semanticColors.accent,
+    },
+    waiting: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+    },
+    waitingText: {
+      flex: 1,
+      ...brandTypeScale.subhead,
+      color: theme.colors.textSecondary,
+    },
+    glossary: {
+      marginTop: brandSpacing4.lg,
+    },
+    footer: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      paddingHorizontal: brandSpacing4.lg,
+      paddingTop: brandSpacing4.sm,
+      gap: brandSpacing4.sm,
+    },
+  })
+}

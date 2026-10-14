@@ -89,6 +89,8 @@ export const routeGuideFr = {
       "La surface n'a pas pu être calculée d'après les parcelles. Indiquez-la pour voir le parcours conseillé.",
     use: "Utiliser ce parcours",
     useDisabledHint: "Répondez d'abord aux questions",
+    // Read by a screen reader on the disabled button: its name, then why it cannot be pressed.
+    useDisabledA11y: "Utiliser ce parcours. Répondez d'abord aux questions.",
     saveError: "Le parcours n'a pas pu être enregistré.",
     retry: "Réessayer",
     next: "Suivant",

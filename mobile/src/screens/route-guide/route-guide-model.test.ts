@@ -719,3 +719,99 @@ describe("buildRouteRecord", () => {
     })
   })
 })
+
+describe("loadRecord (edit mode of the route step, 30-20)", () => {
+  const record = (model: RouteGuideModel) => {
+    const route = buildRouteRecord(model)
+    if (route === null) throw new Error("expected a route")
+    return route
+  }
+
+  it("brings back the answers of a guide record: the same route, the same record", () => {
+    const original = run([...surface("2,4"), hom("heterogeneous"), hard(false)])
+    const saved = record(original)
+    const loaded = run([{ type: "loadRecord", route: saved }], start(null))
+    const view = selectGuideView(loaded)
+    expect(view.rows.map((row) => row.id)).toEqual(["surface", "homogeneity", "difficulty"])
+    expect(view.open).toBeNull()
+    expect(view.chosenBy).toBe("guide")
+    expect(view.canUse).toBe(true)
+    expect(buildRouteRecord(loaded)).toEqual(saved)
+  })
+
+  it("keeps the experience and the hours and a typed zone and complement", () => {
+    const original = run([
+      ...surface("15"),
+      hom("homogeneous"),
+      hard(true),
+      { type: "setRefine", field: "experience", value: "beginner" },
+      { type: "setRefine", field: "hours", text: "3" },
+      { type: "setZoneText", text: "3" },
+      { type: "setComplementDone", done: true },
+      { type: "setTotalText", text: "12" },
+    ])
+    const saved = record(original)
+    const loaded = run([{ type: "loadRecord", route: saved }], start(null))
+    expect(buildRouteRecord(loaded)).toEqual(saved)
+    expect(selectGuideView(loaded).refine).toMatchObject({
+      experience: "beginner",
+      hoursText: "3",
+      filled: true,
+    })
+  })
+
+  it("brings back an observer's pick made on the quick path, with no answers", () => {
+    const picked = run([
+      { type: "applyPick", pick: { method: "full", counting: "capped" } },
+      { type: "setZoneText", text: "1,5" },
+    ])
+    const saved = record(picked)
+    expect(saved.guide.answers).toBeUndefined()
+    const loaded = run([{ type: "loadRecord", route: saved }], start(null))
+    const view = selectGuideView(loaded)
+    expect(view.chosenBy).toBe("observer")
+    expect(view.selection).toMatchObject({ method: "full", counting: "capped", zoneHa: 1.5 })
+    expect(buildRouteRecord(loaded)).toEqual(saved)
+  })
+
+  it("brings back an uncapped pick with its factors", () => {
+    const picked = run([
+      {
+        type: "applyPick",
+        pick: { method: "full", counting: "uncapped", uncappedFactors: ["A", "B"] },
+      },
+      { type: "setZoneText", text: "2" },
+    ])
+    const saved = record(picked)
+    const loaded = run([{ type: "loadRecord", route: saved }], start(null))
+    expect(buildRouteRecord(loaded)?.uncapped_factors).toEqual(["A", "B"])
+  })
+
+  it("keeps a partial route chosen above the subdivision bound", () => {
+    const original = run([
+      ...surface("40"),
+      hom("heterogeneous"),
+      { type: "chooseLargeStandOption", option: "partial" },
+      hard(false),
+    ])
+    const saved = record(original)
+    const loaded = run([{ type: "loadRecord", route: saved }], start(null))
+    expect(selectGuideView(loaded).recommendation.status).toBe("route")
+    expect(buildRouteRecord(loaded)).toEqual(saved)
+  })
+
+  it("brings back a piece of a cut stand", () => {
+    const original = run([
+      ...surface("40"),
+      hom("heterogeneous"),
+      { type: "chooseLargeStandOption", option: "subdivide" },
+      ...surface("6"),
+      hom("heterogeneous"),
+      hard(false),
+    ])
+    const saved = record(original)
+    expect(saved.guide.answers?.subdivided).toBe(true)
+    const loaded = run([{ type: "loadRecord", route: saved }], start(null))
+    expect(buildRouteRecord(loaded)).toEqual(saved)
+  })
+})

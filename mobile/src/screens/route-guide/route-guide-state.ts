@@ -1,4 +1,4 @@
-import { ROUTE_HOURS_MAX, recommendRoute } from "@cortege/ibp-domain"
+import { ROUTE_HOURS_MAX, isPartialRoute, recommendRoute } from "@cortege/ibp-domain"
 import type {
   LargeStandOption,
   RouteAnswers,
@@ -9,9 +9,10 @@ import type {
   RouteQuestionId,
   RouteSurfaceErrorCode,
   CountingMode,
+  SurveyRoute,
   UncappableFactor,
 } from "@cortege/ibp-domain"
-import { formatHectares, parseHectaresInput } from "../../app/route-text"
+import { formatDecimalFr, formatHectares, parseHectaresInput } from "../../app/route-text"
 
 // Phase 30 (plan 30-17), D-05: what the observer typed and answered, and how each action changes
 // it. Pure; every rule decision is the package's (see route-guide-model.ts).
@@ -73,6 +74,8 @@ export type GuideAction =
   | { type: "setZoneText"; text: string | null }
   | { type: "setComplementDone"; done: boolean }
   | { type: "setTotalText"; text: string | null }
+  /** Edit mode (30-20): the recorded route's answers and choices come back into the step. */
+  | { type: "loadRecord"; route: SurveyRoute }
 
 const DECIMALS_FACTOR = 100
 
@@ -170,6 +173,49 @@ function checkSurfaceText(text: string): SurfaceCheck {
   return result.status === "needs_surface" ? { error: result.error } : { ha: parsed }
 }
 
+/**
+ * The model of a route already recorded (edit mode, plan 30-20): its answers, the observer's pick
+ * when the guide's proposal was not taken as it was, and the zone and complement as recorded. A
+ * partial route recorded above the subdivision bound keeps the choice "partial", which the record
+ * does not carry. Pure; the package then reads the same answers and gives the same questions.
+ */
+function loadRecord(model: RouteGuideModel, route: SurveyRoute): RouteGuideModel {
+  const answers = route.guide.answers
+  const loaded: RouteGuideModel = {
+    ...model,
+    surfaceHa: answers?.surface_ha ?? null,
+    surfaceText:
+      answers?.surface_ha === undefined ? model.surfaceText : formatHectares(answers.surface_ha),
+    surfaceEstimated: false,
+    surfaceError: null,
+    subdivided: answers?.subdivided === true,
+    homogeneity: answers?.homogeneity,
+    difficulty: answers?.difficulty,
+    narrow: answers?.narrow,
+    largeStandOption: undefined,
+    experience: answers?.experience,
+    hoursText:
+      answers?.hours_available === undefined ? "" : formatDecimalFr(answers.hours_available, 2),
+    pick:
+      route.guide.chosen_by === "observer" || answers === undefined
+        ? {
+            method: route.method,
+            counting: route.counting,
+            uncappedFactors: route.uncapped_factors,
+          }
+        : null,
+    zoneText: formatHectares(route.zone_surface_ha),
+    complementDone: route.complement?.done ?? null,
+    totalText:
+      route.complement?.total_surface_ha === undefined
+        ? null
+        : formatHectares(route.complement.total_surface_ha),
+  }
+  const needsChoice = !loaded.subdivided && recommendRoute(answersOf(loaded)).status === "options"
+  if (needsChoice && isPartialRoute(route.method)) loaded.largeStandOption = "partial"
+  return { ...loaded, openId: nextOpen(loaded) }
+}
+
 const WITHOUT_OVERRIDES = { zoneText: null, complementDone: null, totalText: null } as const
 
 export function guideReducer(model: RouteGuideModel, action: GuideAction): RouteGuideModel {
@@ -247,5 +293,7 @@ export function guideReducer(model: RouteGuideModel, action: GuideAction): Route
       return { ...model, complementDone: action.done }
     case "setTotalText":
       return { ...model, totalText: action.text }
+    case "loadRecord":
+      return loadRecord(model, action.route)
   }
 }

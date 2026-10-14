@@ -38,6 +38,8 @@ export type RouteGuideActions = {
   setZoneText: (text: string | null) => void
   setComplementDone: (done: boolean) => void
   setTotalText: (text: string | null) => void
+  /** Edit mode: brings the recorded route's answers and choices back into the step. */
+  loadRecord: (route: SurveyRoute) => void
 }
 
 export type RouteGuideState = {
@@ -82,6 +84,7 @@ export function useRouteGuideState(params: RouteGuideStateParams): RouteGuideSta
       setZoneText: (text) => dispatch({ type: "setZoneText", text }),
       setComplementDone: (done) => dispatch({ type: "setComplementDone", done }),
       setTotalText: (text) => dispatch({ type: "setTotalText", text }),
+      loadRecord: (route) => dispatch({ type: "loadRecord", route }),
     }),
     [],
   )
