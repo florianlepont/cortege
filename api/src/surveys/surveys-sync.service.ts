@@ -42,6 +42,7 @@ export class SurveysSyncService {
   async syncBatch(
     user: AuthenticatedUser,
     body: SyncBatchDto,
+    requireRoute = false,
   ): Promise<{ results: SyncOperationResult[] }> {
     const operations = body.operations
 
@@ -70,7 +71,7 @@ export class SurveysSyncService {
 
         if (envelope.entity === "survey" && envelope.action === "upsert") {
           const payload = await validateSyncDto(SurveyUpsertDto, envelope.payload)
-          const data = await this.surveysService.upsertForUser(user, payload)
+          const data = await this.surveysService.upsertForUser(user, payload, requireRoute)
           results.push({
             client_ref: clientRef,
             entity: envelope.entity,

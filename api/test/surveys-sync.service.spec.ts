@@ -111,6 +111,34 @@ describe("SurveysSyncService.syncBatch", () => {
     expect(forwarded).not.toHaveProperty("not_on_the_dto")
   })
 
+  it("passes the route requirement of the batch to each upsert and reports route_required per operation (phase 30)", async () => {
+    const { service, surveysService } = buildService()
+    surveysService.upsertForUser.mockRejectedValueOnce(
+      new UnprocessableEntityException({
+        code: "route_required",
+        message: "survey_route is required",
+      }),
+    )
+
+    const result = await service.syncBatch(
+      AUTH_USER as never,
+      {
+        operations: [
+          { client_ref: "op-1", entity: "survey", action: "upsert", payload: validUpsertPayload() },
+          { client_ref: "op-2", entity: "survey", action: "upsert", payload: validUpsertPayload() },
+        ],
+      },
+      true,
+    )
+
+    expect(result.results[0]).toMatchObject({
+      status: "fatal_error",
+      error: { code: "route_required", http_status: 422 },
+    })
+    expect(result.results[1].status).toBe("synced")
+    expect(surveysService.upsertForUser.mock.calls.map((call) => call[2])).toEqual([true, true])
+  })
+
   it("rejects unknown method values as invalid_sync_operation naming the fields", async () => {
     const { service, surveysService } = buildService()
 

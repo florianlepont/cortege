@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, Post, Query, UseGuards } from "@nestjs/common"
+import { Body, Controller, Get, Headers, HttpCode, Post, Query, UseGuards } from "@nestjs/common"
+import { CLIENT_FEATURES_HEADER } from "@cortege/ibp-domain"
 import { Throttle } from "@nestjs/throttler"
 import { AuthGuard } from "../auth/auth.guard"
 import { CurrentUser } from "../auth/current-user.decorator"
@@ -6,6 +7,7 @@ import { AuthenticatedUser } from "../auth/auth.types"
 import { SYNC_THROTTLE } from "../common/rate-limit.config"
 import { SurveysSyncService } from "./surveys-sync.service"
 import { SyncBatchDto } from "./dtos/sync-batch.dto"
+import { clientRequiresRoute } from "./route-required"
 
 @Controller("sync")
 @UseGuards(AuthGuard)
@@ -15,8 +17,12 @@ export class SyncController {
   @Post()
   @HttpCode(200)
   @Throttle(SYNC_THROTTLE)
-  async syncBatch(@CurrentUser() user: AuthenticatedUser, @Body() body: SyncBatchDto) {
-    return this.syncService.syncBatch(user, body)
+  async syncBatch(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: SyncBatchDto,
+    @Headers(CLIENT_FEATURES_HEADER.toLowerCase()) clientFeatures?: string,
+  ) {
+    return this.syncService.syncBatch(user, body, clientRequiresRoute(clientFeatures))
   }
 
   @Get("changes")

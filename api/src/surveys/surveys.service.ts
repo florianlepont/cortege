@@ -10,6 +10,7 @@ import { DatabaseService, Queryable } from "../database/database.service"
 import { StorageService } from "../storage/storage.service"
 import { IbpRulesService, IbpValidationResult } from "./ibp-rules.service"
 import { ParcelsService } from "./parcels.service"
+import { assertRouteForCreate, assertRouteForSubmit } from "./route-required"
 import { SurveyEventsService } from "./survey-events.service"
 import {
   ListPage,
@@ -124,13 +125,20 @@ export class SurveysService {
    * at all. The fallback runs only when a statement affected 0 rows, never on an error (C-5):
    * an error has written nothing and propagates.
    */
-  async upsertForUser(user: AuthenticatedUser, body: SurveyUpsertBody): Promise<UpsertResult> {
+  async upsertForUser(
+    user: AuthenticatedUser,
+    body: SurveyUpsertBody,
+    requireRoute = false,
+  ): Promise<UpsertResult> {
     const prepared = this.prepareUpsert(body)
     const { surveyId, syncVersion, draftValidation, columns } = prepared
 
     const current = await this.repository.readForUpsert(this.db, surveyId, user.id)
 
     if (!current) {
+      // Phase 30 (O-07, O-19): a new survey from the new client carries its route. Updates never
+      // reach this check, so a draft stored before the phase keeps syncing without one.
+      assertRouteForCreate(body, requireRoute)
       const selectedParcelIds = this.selectParcelIds(body, null, [])
       const parcelId = selectedParcelIds[0] ?? null
       const version = this.versionDefaults(body, null, parcelId, prepared.now)
@@ -163,7 +171,7 @@ export class SurveysService {
         return this.syncedResult(prepared, created.id, created.updated_at)
       }
       // 0 rows: the id exists (a concurrent create, or another user's survey id).
-      return this.upsertLocked(user, body, prepared)
+      return this.upsertLocked(user, body, prepared, requireRoute)
     }
 
     const { cas_token: casToken, parcel_ids: existingParcelIds, ...existing } = current
@@ -179,7 +187,7 @@ export class SurveysService {
       const content = classifySameVersionContent(body, existing, existingParcelIds)
       if (content === "visibility_only" && !existing.deleted_at && body.visibility) {
         // The visibility write keeps its transaction (applyVisibilityChange + event).
-        return this.upsertLocked(user, body, prepared)
+        return this.upsertLocked(user, body, prepared, requireRoute)
       }
       // Identical, conflict, or visibility-only on a deleted row: nothing is written.
       return this.syncedResult(
@@ -191,7 +199,7 @@ export class SurveysService {
 
     if (existing.status === "submitted") {
       // The read-only rule and the restricted update keep the locked transaction.
-      return this.upsertLocked(user, body, prepared)
+      return this.upsertLocked(user, body, prepared, requireRoute)
     }
 
     const selectedParcelIds = this.selectParcelIds(body, existing, existingParcelIds)
@@ -234,7 +242,7 @@ export class SurveysService {
     }
     // 0 rows: the row changed since statement A (xmin), or was submitted, or another request
     // already stored this sync_version. The locked path decides on the fresh row.
-    return this.upsertLocked(user, body, prepared)
+    return this.upsertLocked(user, body, prepared, requireRoute)
   }
 
   // Request validation and scoring, before any statement (unchanged from the pre-D-09 upsert).
@@ -341,6 +349,7 @@ export class SurveysService {
     user: AuthenticatedUser,
     body: SurveyUpsertBody,
     prepared: PreparedUpsert,
+    requireRoute = false,
   ): Promise<UpsertResult> {
     const { surveyId, syncVersion, siteName, draftValidation, computedScores, now, columns } =
       prepared
@@ -353,6 +362,7 @@ export class SurveysService {
       })
 
       if (!existing) {
+        assertRouteForCreate(body, requireRoute)
         const selectedParcelIds = await this.resolveSelectedParcelIds(db, body, null, [])
         const parcelId = selectedParcelIds[0] ?? null
         const { observationYear, versionNumber, previousSurveyId } = await this.resolveVersionInfo(
@@ -1092,6 +1102,7 @@ export class SurveysService {
   async submitSurvey(
     user: AuthenticatedUser,
     surveyId: string,
+    requireRoute = false,
   ): Promise<{
     id: string
     status: "submitted"
@@ -1119,6 +1130,9 @@ export class SurveysService {
           forUpdate: true,
           columns: "full",
         })
+
+        // Phase 30 (O-07, O-19): one clear code, before the IBP and parcel validation.
+        assertRouteForSubmit(existing.survey_route, requireRoute)
 
         // The stored row's method fields: submit scores under the survey's own version.
         const validation = this.ibpRules.validateSubmit({

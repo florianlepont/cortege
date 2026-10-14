@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpCode,
   Param,
   Patch,
@@ -24,7 +25,9 @@ import { CurrentUser } from "../auth/current-user.decorator"
 import { AuthenticatedUser } from "../auth/auth.types"
 import { UPLOAD_THROTTLE } from "../common/rate-limit.config"
 import { SafeIdPipe } from "../common/safe-id.pipe"
+import { CLIENT_FEATURES_HEADER } from "@cortege/ibp-domain"
 import { SurveysService } from "./surveys.service"
+import { clientRequiresRoute } from "./route-required"
 import { decodeEventListCursor, SurveyEventsService } from "./survey-events.service"
 import { decodeListCursor, parseListLimit } from "./list-cursor"
 import { SurveysAttachmentsService } from "./surveys-attachments.service"
@@ -59,8 +62,12 @@ export class SurveysController {
   }
 
   @Post()
-  async upsert(@CurrentUser() user: AuthenticatedUser, @Body() body: SurveyUpsertDto) {
-    return this.surveysService.upsertForUser(user, body)
+  async upsert(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: SurveyUpsertDto,
+    @Headers(CLIENT_FEATURES_HEADER.toLowerCase()) clientFeatures?: string,
+  ) {
+    return this.surveysService.upsertForUser(user, body, clientRequiresRoute(clientFeatures))
   }
 
   @Get(":id")
@@ -87,8 +94,12 @@ export class SurveysController {
   }
 
   @Post(":id/submit")
-  async submit(@CurrentUser() user: AuthenticatedUser, @Param("id", SafeIdPipe) id: string) {
-    return this.surveysService.submitSurvey(user, id)
+  async submit(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id", SafeIdPipe) id: string,
+    @Headers(CLIENT_FEATURES_HEADER.toLowerCase()) clientFeatures?: string,
+  ) {
+    return this.surveysService.submitSurvey(user, id, clientRequiresRoute(clientFeatures))
   }
 
   @Delete(":id")
