@@ -155,6 +155,42 @@ describe("CommunitySurveysService.getDetail", () => {
     expect(String(db.query.mock.calls[1][0])).toContain("s.survey_note")
   })
 
+  // Phase 30 (O-15): the recorded route of a visible submitted survey is returned read-only, null
+  // when the survey has none (never a missing key).
+  it("returns the recorded route of the survey, null when it has none", async () => {
+    const route = {
+      version: 1,
+      method: "partial_plot",
+      counting: "capped",
+      zone_surface_ha: 40,
+      complement: { done: false },
+      guide: { chosen_by: "observer" },
+    }
+    const db = buildDb(
+      { rows: [detailRow({ survey_route: route })] },
+      { rows: [] },
+      { rows: [detailRow({ survey_route: null })] },
+      { rows: [] },
+      { rows: [detailRow()] },
+      { rows: [] },
+    )
+    const { service } = buildService(db)
+
+    expect((await service.getDetail("s-2")).survey_route).toEqual(route)
+    expect(String(db.query.mock.calls[0][0])).toContain("s.survey_route")
+    expect((await service.getDetail("s-2")).survey_route).toBeNull()
+    const legacy = await service.getDetail("s-2")
+    expect(legacy.survey_route).toBeNull()
+    expect(Object.keys(legacy)).toContain("survey_route")
+  })
+
+  it("keeps the route out of the history reads", async () => {
+    const db = buildDb({ rows: [detailRow()] }, { rows: [] })
+    const { service } = buildService(db)
+    await service.getDetail("s-2")
+    expect(String(db.query.mock.calls[1][0])).not.toContain("survey_route")
+  })
+
   it("returns null note, weather and annotations when the survey has none", async () => {
     const db = buildDb(
       { rows: [detailRow({ survey_note: null, weather: null, factor_annotations: null })] },

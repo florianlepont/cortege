@@ -464,7 +464,9 @@ describe("SurveysSyncService.getSyncChanges", () => {
     expect(Object.keys(result.events[0]).sort()).toEqual(
       ["actor_id", "created_at", "event_type", "id", "payload", "survey_id"].sort(),
     )
-    expect(result.surveys).toEqual([{ id: "survey-1", survey_note: null, weather: null }])
+    expect(result.surveys).toEqual([
+      { id: "survey-1", survey_note: null, weather: null, survey_route: null },
+    ])
   })
 
   it("selects the method version, cas and cas-3 flag for every changed survey", async () => {
@@ -501,7 +503,33 @@ describe("SurveysSyncService.getSyncChanges", () => {
     expect(sql).toContain("s.survey_note")
     expect(sql).toContain("s.weather")
     expect(sql).toContain("WHERE s.user_id = $1")
-    expect(result.surveys).toEqual([surveyRow])
+    expect(result.surveys).toEqual([{ ...surveyRow, survey_route: null }])
+  })
+
+  // Phase 30 (D-08): the recorded route travels in the feed, null when none, never a missing key.
+  it("selects the recorded route of every changed survey and reads a missing one as null", async () => {
+    const { service, db } = buildService()
+    const route = {
+      version: 1,
+      method: "full",
+      counting: "capped",
+      zone_surface_ha: 2.5,
+      guide: { chosen_by: "observer" },
+    }
+    db.query.mockResolvedValueOnce({ rows: [eventRow("e1", "900", "3")] }).mockResolvedValueOnce({
+      rows: [
+        { id: "survey-1", survey_route: route },
+        { id: "survey-2", survey_route: null },
+        { id: "survey-3" },
+      ],
+    })
+
+    const result = await service.getSyncChanges(AUTH_USER as never, undefined, 10)
+
+    const surveysCall = db.query.mock.calls.find((c) => String(c[0]).includes("FROM surveys s"))
+    expect(String(surveysCall?.[0])).toContain("s.survey_route")
+    expect(result.surveys.map((survey) => survey.survey_route)).toEqual([route, null, null])
+    expect(Object.keys(result.surveys[2])).toContain("survey_route")
   })
 
   it("reports has_more and builds the cursor from the limit-th row when limit + 1 rows come back", async () => {

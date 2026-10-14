@@ -80,6 +80,13 @@ function weatherParameter(weather: SurveyRow["weather"]): string | null {
   return weather ? JSON.stringify(weather) : null
 }
 
+// Phase 30 (D-08): the jsonb parameter of a recorded route, a bound JSON string, or null when there
+// is none. Spec section 8: a route is never deleted, so a body without the key or with null keeps
+// the stored route (the caller passes the stored one), and only a value replaces it.
+function routeParameter(route: SurveyRow["survey_route"]): string | null {
+  return route ? JSON.stringify(route) : null
+}
+
 @Injectable()
 export class SurveysService {
   constructor(
@@ -144,6 +151,7 @@ export class SurveysService {
         ibpCas3Scale: columns.ibp_cas3_scale,
         surveyNote: body.survey_note ?? null,
         weather: body.weather ?? null,
+        surveyRoute: body.survey_route ?? null,
         factors: body.factors ?? {},
         factorResults: draftValidation.factor_results ?? {},
         scores: prepared.computedScores,
@@ -210,6 +218,8 @@ export class SurveysService {
         surveyNote:
           body.survey_note === undefined ? (existing.survey_note ?? null) : body.survey_note,
         weather: body.weather === undefined ? (existing.weather ?? null) : body.weather,
+        // Phase 30 (D-08): absent or null keeps the stored route (never deleted), a value replaces.
+        surveyRoute: body.survey_route ?? existing.survey_route ?? null,
         factors: body.factors ?? existing.factors ?? {},
         factorResults: rowPrepared.draftValidation.factor_results ?? existing.factor_results ?? {},
         scores: rowPrepared.computedScores,
@@ -358,11 +368,11 @@ export class SurveysService {
           `INSERT INTO surveys (
             id, user_id, site_name, status, visibility, parcel_id, observation_year, version_number, previous_survey_id, region_version, vegetation_stage,
             factors, factor_results, scores, location, created_at, updated_at, submitted_at, sync_version,
-            ibp_method_version, ibp_cas, ibp_cas3_scale, survey_note, weather
+            ibp_method_version, ibp_cas, ibp_cas3_scale, survey_note, weather, survey_route
           ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
             $12::jsonb, $13::jsonb, $14::jsonb, $15::jsonb, $16, $17, $18, $19,
-            $20, $21, $22, $23::text, $24::jsonb
+            $20, $21, $22, $23::text, $24::jsonb, $25::jsonb
           )
           ON CONFLICT (id) DO NOTHING
           RETURNING id, updated_at::text`,
@@ -393,6 +403,7 @@ export class SurveysService {
             columns.ibp_cas3_scale,
             body.survey_note ?? null,
             weatherParameter(body.weather),
+            routeParameter(body.survey_route),
           ],
         )
 
@@ -460,6 +471,8 @@ export class SurveysService {
           })
         }
 
+        // Phase 30 (D-09): the recorded route is read-only after submit, so this UPDATE never
+        // lists survey_route (research Pitfall 6); a different value was refused above.
         const restrictedUpdateResult = await db.query<{ id: string; updated_at: string }>(
           `UPDATE surveys
            SET visibility = $3,
@@ -524,7 +537,8 @@ export class SurveysService {
              ibp_cas = $18,
              ibp_cas3_scale = $19,
              survey_note = $20::text,
-             weather = $21::jsonb
+             weather = $21::jsonb,
+             survey_route = $22::jsonb
          WHERE id = $1 AND user_id = $2 AND sync_version < $15
          RETURNING id, updated_at::text`,
         [
@@ -552,6 +566,8 @@ export class SurveysService {
           // D-04: an absent key keeps the stored value, an explicit null clears it.
           body.survey_note === undefined ? (existing.survey_note ?? null) : body.survey_note,
           weatherParameter(body.weather === undefined ? existing.weather : body.weather),
+          // Phase 30 (D-08): absent or null keeps the stored route, a value replaces it.
+          routeParameter(body.survey_route ?? existing.survey_route),
         ],
       )
 
@@ -1026,6 +1042,7 @@ export class SurveysService {
       | "ibp_cas3_scale"
       | "survey_note"
       | "weather"
+      | "survey_route"
       | "factors"
       | "factor_results"
       | "scores"
@@ -1059,6 +1076,8 @@ export class SurveysService {
       ibp_cas3_scale: survey.ibp_cas3_scale,
       survey_note: survey.survey_note ?? null,
       weather: survey.weather ?? null,
+      // Phase 30 (D-08): null when none, never a missing key.
+      survey_route: survey.survey_route ?? null,
       factors: survey.factors,
       factor_results: survey.factor_results,
       scores: survey.scores,

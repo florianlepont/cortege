@@ -351,6 +351,7 @@ export class SurveysSyncService {
          s.scores,
          s.survey_note,
          s.weather,
+         s.survey_route,
          s.created_at::text,
          s.updated_at::text,
          s.submitted_at::text,
@@ -368,6 +369,8 @@ export class SurveysSyncService {
       ...row,
       survey_note: row.survey_note ?? null,
       weather: row.weather ?? null,
+      // Phase 30, D-08: a survey without a recorded route reads null, never a missing key.
+      survey_route: row.survey_route ?? null,
     }))
   }
 
