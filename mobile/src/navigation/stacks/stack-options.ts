@@ -124,7 +124,7 @@ export function wizardHeaderOptions(theme: BrandTheme): NativeStackNavigationOpt
   return {
     headerShown: true,
     headerLargeTitleEnabled: false,
-    // The wizard puts "Étape 1 sur 4" here once mounted; nothing is shown before that.
+    // The wizard puts "Étape 1 sur 5" here once mounted; nothing is shown before that.
     title: "",
     headerTitleStyle: {
       ...brandTypography.navTitle,

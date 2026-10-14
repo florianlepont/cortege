@@ -1990,8 +1990,9 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
     expect(navigation.goBack).toHaveBeenCalledTimes(1)
   })
 
-  test("the wizard parcel step creates the draft and replaces the flow with the survey page", async () => {
-    const fixture = makeFixture()
+  test("the wizard parcel step hands over to the route step and finalises nothing (phase 30, O-19, P-1)", async () => {
+    const point = { lat: 48.1, lng: 2.1 }
+    const fixture = makeFixture({ editingSurveyId: "s-wiz" })
     const navigation = makeNavigation()
     await mount(
       <Providers fixture={fixture}>
@@ -2004,56 +2005,46 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
     expect(props("parcelSelection").wizard).toBe(true)
     expect(props("parcelSelection").selectedParcelIds).toEqual(["p-1"])
     await act(async () => {
-      await callback("parcelSelection", "onSave")()
+      await callback("parcelSelection", "onSave")(point, 2.4)
     })
-    expect(fixture.form.actions.createDraft).toHaveBeenCalled()
-    expect(navigation.reset).toHaveBeenCalledWith({
-      index: 1,
-      routes: [{ name: "surveysHome" }, { name: "surveyDetail" }],
+    expect(navigation.navigate).toHaveBeenCalledWith("surveyRouteGuide", {
+      surveyId: "s-wiz",
+      mode: "create",
+      surfaceHa: 2.4,
+      weatherPoint: point,
     })
-    // D-45: the new survey is selected after the reset, so the removal of an older summary screen
-    // cannot clear it.
-    expect(fixture.surveys.actions.openSurvey).toHaveBeenCalledWith("s-new")
-    const resetOrder = navigation.reset.mock.invocationCallOrder[0]
-    const openOrder = (fixture.surveys.actions.openSurvey as jest.Mock).mock.invocationCallOrder[0]
-    expect(openOrder).toBeGreaterThan(resetOrder)
-
-    const failing = makeFixture({ saved: false })
-    const stay = makeNavigation()
-    await mount(
-      <Providers fixture={failing}>
-        <ParcelSelectionRoute
-          navigation={stay as never}
-          route={{ params: { surveyId: "draft", mode: "wizard" } } as never}
-        />
-      </Providers>,
-    )
-    await act(async () => {
-      await callback("parcelSelection", "onSave")()
-    })
-    expect(stay.reset).not.toHaveBeenCalled()
-    expect(failing.surveys.actions.openSurvey).not.toHaveBeenCalled()
+    // The draft stays open (editing session intact): the route step finalises it on acceptance.
+    expect(fixture.form.actions.createDraft).not.toHaveBeenCalled()
+    expect(fixture.form.actions.saveSurveyEdits).not.toHaveBeenCalled()
+    expect(navigation.reset).not.toHaveBeenCalled()
+    expect(fixture.surveys.actions.openSurvey).not.toHaveBeenCalled()
+    expect(fixture.weather.actions.rememberPoint).not.toHaveBeenCalled()
   })
 
-  test("a saved parcel choice hands the centre of the parcels to the weather hook (phase 27, D-10)", async () => {
-    const point = { lat: 48.1, lng: 2.1 }
-
-    // Wizard: the draft was created when the wizard opened, so the editing id is set.
-    const wizard = makeFixture({ editingSurveyId: "s-new" })
+  test("the wizard parcel step passes no surface when none could be computed, and no draft id when it has none", async () => {
+    const fixture = makeFixture({ editingSurveyId: null })
+    const navigation = makeNavigation()
     await mount(
-      <Providers fixture={wizard}>
+      <Providers fixture={fixture}>
         <ParcelSelectionRoute
-          navigation={makeNavigation() as never}
+          navigation={navigation as never}
           route={{ params: { surveyId: "draft", mode: "wizard" } } as never}
         />
       </Providers>,
     )
     await act(async () => {
-      await callback("parcelSelection", "onSave")(point)
+      await callback("parcelSelection", "onSave")(null, null)
     })
-    expect(wizard.weather.actions.rememberPoint).toHaveBeenCalledWith("s-new", point)
+    expect(navigation.navigate).toHaveBeenCalledWith("surveyRouteGuide", {
+      surveyId: null,
+      mode: "create",
+      surfaceHa: null,
+      weatherPoint: null,
+    })
+  })
 
-    // Edit: the same, after saveSurveyEdits.
+  test("a saved parcel choice of an existing survey hands the centre of the parcels to the weather hook (phase 27, D-10)", async () => {
+    const point = { lat: 48.1, lng: 2.1 }
     const edit = makeFixture({ editingSurveyId: "s-01" })
     await mount(
       <Providers fixture={edit}>
@@ -2064,7 +2055,7 @@ describe("FactorDetailRoute and ParcelSelectionRoute", () => {
       </Providers>,
     )
     await act(async () => {
-      await callback("parcelSelection", "onSave")(point)
+      await callback("parcelSelection", "onSave")(point, 1.2)
     })
     expect(edit.weather.actions.rememberPoint).toHaveBeenCalledWith("s-01", point)
   })

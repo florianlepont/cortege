@@ -23,7 +23,7 @@ export const navigationFr = {
     editSurvey: "Modifier le relevé",
     factor: (factor: string) => `Facteur ${factor}`,
     parcels: "Parcelles",
-    parcelsWizard: "Étape 4 sur 4",
+    parcelsWizard: "Étape 4 sur 5",
     offlineAreas: "Cartes hors ligne",
     account: "Compte",
     settings: "Paramètres",

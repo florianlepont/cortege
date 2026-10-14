@@ -1,15 +1,19 @@
 /**
  * The blank page after the new-survey wizard (D-45), on a REAL React Navigation core: the real
  * stack router and the real `beforeRemove` events, with the real `SurveysTabNavigator`, the real
- * summary and parcel routes and the real selection gate. Only the native screen layer is replaced
- * (a navigator that renders every route of the stack, like the native one) and the heavy screens
- * are probes.
+ * summary, parcel and route-step routes and the real selection gate. Only the native screen layer is
+ * replaced (a navigator that renders every route of the stack, like the native one) and the heavy
+ * screens are probes.
  *
  * The bug: the wizard launched from Accueil, a search or Explorer keeps the survey stack, so an
  * older summary screen can still sit in it. The wizard's last step selects the new draft and resets
  * the stack to [surveysHome, surveyDetail]; removing the OLD summary fired its `beforeRemove`
  * listener, which cleared the selection the new summary was about to show, and the new summary
  * rendered nothing.
+ *
+ * Phase 30 (O-19, P-1): the last step is now the route step. The parcel map navigates to it without
+ * finalising anything; accepting the route writes it, finalises the draft and runs the reset;
+ * going back from the route step returns to the parcel map and writes nothing.
  */
 
 import React, { useMemo, useState } from "react"
@@ -86,6 +90,9 @@ jest.mock("../screens/SurveyDetailScreen", () => ({
 jest.mock("../screens/SurveyParcelSelectionScreen", () => ({
   SurveyParcelSelectionScreen: mockScreen("parcelSelection"),
 }))
+jest.mock("../screens/route-guide/RouteGuideScreen", () => ({
+  RouteGuideScreen: mockScreen("routeGuide"),
+}))
 // Routes that play no part in the flow: not rendered, and not loaded (camera, maps, native modules).
 jest.mock("./routes/SurveyListRoute", () => ({ SurveyListRoute: () => null }))
 jest.mock("./routes/SurveyFormRoute", () => ({ SurveyFormRoute: () => null }))
@@ -141,11 +148,14 @@ type Observed = {
   selectedSurveyId: string | null
   selectedSurvey: FakeSurvey | null
   refreshLocalSurveys: jest.Mock
+  /** What reached the phone: the drafts finalised and the routes written, in order. */
+  writes: string[]
 }
 const observed: Observed = {
   selectedSurveyId: null,
   selectedSurvey: null,
   refreshLocalSurveys: jest.fn(async () => undefined),
+  writes: [],
 }
 
 /**
@@ -168,6 +178,10 @@ function Harness({ children }: { children: React.ReactNode }) {
       ({
         openSurvey: (id: string) => setSelectedId(id),
         closeSurveyDetailSelection: () => setSelectedId(null),
+        updateSurveyRoute: async (id: string) => {
+          observed.writes.push(`route:${id}`)
+          return true
+        },
       }) as unknown as SurveyActions,
     [],
   )
@@ -195,6 +209,7 @@ function Harness({ children }: { children: React.ReactNode }) {
         },
         actions: {
           createDraft: async () => {
+            observed.writes.push(`draft:${NEW_ID}`)
             setSurveys((current) => [...current, survey(NEW_ID)])
             setSelectedId(NEW_ID)
             return NEW_ID
@@ -267,17 +282,43 @@ async function mountStack(routes: Array<{ name: string; params?: object }>) {
   return { tree: tree as unknown as renderer.ReactTestRenderer, ref, routeNames }
 }
 
-async function finishWizard() {
-  const onSave = mockScreenProps.parcelSelection.onSave as (point: null) => Promise<void>
+/** The parcel map's "Terminer": hands over to the route step, which is not the end of the creation. */
+async function leaveParcelMap() {
+  const onSave = mockScreenProps.parcelSelection.onSave as (
+    point: null,
+    surfaceHa: number,
+  ) => Promise<void>
   await act(async () => {
-    await onSave(null)
+    await onSave(null, 2.4)
   })
+}
+
+/** The route step: answers that give a route, then "Utiliser ce parcours". */
+async function acceptRoute() {
+  await act(async () => {
+    const { actions } = mockScreenProps.routeGuide.state as {
+      actions: Record<string, (...args: unknown[]) => void>
+    }
+    actions.commitSurface()
+    actions.answerHomogeneity("heterogeneous")
+    actions.answerDifficulty(false)
+  })
+  await act(async () => {
+    await (mockScreenProps.routeGuide.onUse as () => Promise<void>)()
+  })
+}
+
+/** The whole end of the creation: the parcel map, then the route step accepted. */
+async function finishWizard() {
+  await leaveParcelMap()
+  await acceptRoute()
 }
 
 beforeEach(() => {
   jest.spyOn(console, "error").mockImplementation(() => undefined)
   for (const key of Object.keys(mockScreenProps)) delete mockScreenProps[key]
   observed.refreshLocalSurveys.mockClear()
+  observed.writes = []
 })
 afterEach(() => {
   jest.restoreAllMocks()
@@ -323,6 +364,56 @@ describe("finishing the new-survey wizard with an older summary still in the sta
       { name: "surveyParcels", params: WIZARD_PARAMS },
     ])
     await finishWizard()
+    expect(routeNames()).toEqual(["surveysHome", "surveyDetail"])
+    expect(mockScreenProps.surveyDetail.selectedSurvey).toMatchObject({ id: NEW_ID })
+  })
+})
+
+describe("the route step as the fifth step of the creation (phase 30, O-19, P-1)", () => {
+  const CREATION = [
+    { name: "surveysHome" },
+    { name: "surveyForm" },
+    { name: "surveyParcels", params: WIZARD_PARAMS },
+  ]
+
+  test("the parcel map opens the route step and finalises nothing", async () => {
+    const { routeNames } = await mountStack(CREATION)
+    await leaveParcelMap()
+    expect(routeNames()).toEqual(["surveysHome", "surveyForm", "surveyParcels", "surveyRouteGuide"])
+    expect(observed.writes).toEqual([])
+    // The surface computed on the parcel map reaches the step.
+    expect(mockScreenProps.routeGuide.surfaceUnknown).toBe(false)
+    expect(mockScreenProps.routeGuide.stepLabel).toBe("Étape 5 sur 5")
+  })
+
+  test("accepting writes the route, then finalises the draft, then opens the summary on it", async () => {
+    const { routeNames } = await mountStack(CREATION)
+    await finishWizard()
+    expect(observed.writes).toEqual([`route:${NEW_ID}`, `draft:${NEW_ID}`])
+    expect(routeNames()).toEqual(["surveysHome", "surveyDetail"])
+    expect(observed.selectedSurveyId).toBe(NEW_ID)
+    expect(mockScreenProps.surveyDetail.selectedSurvey).toMatchObject({ id: NEW_ID })
+  })
+
+  test("back from the route step lands on the parcel map, the selection kept and nothing written", async () => {
+    const { ref, routeNames } = await mountStack([
+      { name: "surveysHome" },
+      { name: "surveyDetail" },
+      ...CREATION.slice(1),
+    ])
+    await leaveParcelMap()
+    await act(async () => {
+      ref.goBack()
+    })
+    expect(routeNames()).toEqual(["surveysHome", "surveyDetail", "surveyForm", "surveyParcels"])
+    expect(observed.writes).toEqual([])
+    // The older summary is still there with its own survey: no duplicate, no new selection.
+    expect(observed.selectedSurveyId).toBe(OLD_ID)
+    expect(mockScreenProps.surveyDetail.selectedSurvey).toMatchObject({ id: OLD_ID })
+
+    // Choosing the parcels again and accepting finalises exactly once.
+    await finishWizard()
+    expect(observed.writes).toEqual([`route:${NEW_ID}`, `draft:${NEW_ID}`])
     expect(routeNames()).toEqual(["surveysHome", "surveyDetail"])
     expect(mockScreenProps.surveyDetail.selectedSurvey).toMatchObject({ id: NEW_ID })
   })
