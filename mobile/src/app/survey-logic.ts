@@ -41,6 +41,13 @@ export const buildAttachmentsBySurvey = (
   return grouped
 }
 
+/**
+ * Phase 30 (O-19, P-1): a pending draft that has no route yet. The sync holds it on the phone, so
+ * it is not waiting for the network and must not count as "à envoyer". It is still a draft to finish.
+ */
+export const isRouteMissing = (survey: LocalSurvey): boolean =>
+  survey.status === "draft" && survey.sync_state === "pending" && survey.route_missing === 1
+
 export const computeSurveyStats = (surveys: LocalSurvey[]): SurveyStats => {
   let draft = 0
   let submitted = 0
@@ -52,7 +59,7 @@ export const computeSurveyStats = (surveys: LocalSurvey[]): SurveyStats => {
   for (const survey of surveys) {
     if (survey.status === "submitted") submitted += 1
     if (survey.status === "draft") draft += 1
-    if (survey.sync_state === "pending") pending += 1
+    if (survey.sync_state === "pending" && !isRouteMissing(survey)) pending += 1
     if (survey.sync_state === "synced") synced += 1
     if (survey.sync_state === "failed") failed += 1
     if (survey.sync_blocked === 1) blocked += 1
@@ -82,7 +89,13 @@ export const resolveEffectiveSurveyStatus = (survey: LocalSurvey): LocalSurvey["
   return survey.status
 }
 
-export type SurveyUiStatus = "draft" | "sync_pending" | "sync_error" | "sync_blocked" | "submitted"
+export type SurveyUiStatus =
+  | "draft"
+  | "route_pending"
+  | "sync_pending"
+  | "sync_error"
+  | "sync_blocked"
+  | "submitted"
 
 // BUG-03 (UX audit, Phase 2): a sync failure is checked before "submitted", so a survey the app
 // already marked submitted but then failed to sync never reads "Soumis" in green — the workflow
@@ -92,24 +105,27 @@ export const resolveSurveyUiStatus = (survey: LocalSurvey): SurveyUiStatus => {
     return survey.sync_blocked === 1 ? "sync_blocked" : "sync_error"
   }
   if (survey.status === "submitted") return "submitted"
+  if (isRouteMissing(survey)) return "route_pending"
   if (survey.sync_state === "pending") return "sync_pending"
   return "draft"
 }
 
 export const formatSurveyUiStatusLabel = (uiStatus: SurveyUiStatus): string => {
   if (uiStatus === "submitted") return statusLabels.submitted
+  if (uiStatus === "route_pending") return statusLabels.routePending
   if (uiStatus === "sync_pending") return statusLabels.syncPending
   if (uiStatus === "sync_error") return statusLabels.syncError
   if (uiStatus === "sync_blocked") return statusLabels.syncBlocked
   return statusLabels.draft
 }
 
-export type SurveySyncDisplay = "local" | "sync" | "sync_error" | "sync_blocked"
+export type SurveySyncDisplay = "local" | "route_pending" | "sync" | "sync_error" | "sync_blocked"
 
 export const resolveSurveySyncDisplay = (survey: LocalSurvey): SurveySyncDisplay => {
   if (survey.sync_state === "failed") {
     return survey.sync_blocked === 1 ? "sync_blocked" : "sync_error"
   }
+  if (isRouteMissing(survey)) return "route_pending"
   // OA-38: a draft reaches the server too, so a synced draft is "synced", not "local". "Local"
   // now only means work still waiting to go out.
   if (survey.sync_state === "synced") {
@@ -122,6 +138,7 @@ export const formatSurveySyncDisplayLabel = (syncDisplay: SurveySyncDisplay): st
   if (syncDisplay === "sync") return statusLabels.synced
   if (syncDisplay === "sync_error") return statusLabels.syncError
   if (syncDisplay === "sync_blocked") return statusLabels.syncBlocked
+  if (syncDisplay === "route_pending") return statusLabels.routePending
   return statusLabels.local
 }
 

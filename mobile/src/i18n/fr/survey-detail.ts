@@ -35,6 +35,8 @@ export const surveyDetailFr = {
     sync: {
       synced: "synchronisé",
       pending: "pas encore synchronisé",
+      // Phase 30: the draft has no parcours yet, so it is held on the phone.
+      routePending: "parcours à choisir",
       // D-25: a finished survey whose last changes are still being sent, said discreetly.
       sending: "synchronisation en cours",
       error: "échec de la synchronisation",

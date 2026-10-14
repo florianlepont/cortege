@@ -31,6 +31,13 @@ export type LocalSurvey = {
    */
   factors_filled: number
   /**
+   * 1 for a pending draft whose payload holds no route (phase 30, O-19, P-1): `drainQueue` holds it
+   * on the phone, so it is not "waiting for network" but waiting for its route. Computed by
+   * `listLocalSurveys` in SQL from the payload (no column, no schema change); absent on a survey
+   * returned by a write, which reads as 0.
+   */
+  route_missing?: number
+  /**
    * The IBP total (/50) the server last reported for a submitted survey, read from the local payload
    * by `listLocalSurveys` (12.2-14). Null when there is none; absent on a survey returned by a write.
    */

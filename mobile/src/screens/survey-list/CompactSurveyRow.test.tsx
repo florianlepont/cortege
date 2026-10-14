@@ -113,6 +113,16 @@ describe("CompactSurveyRow (25-04)", () => {
     expect(texts).toContain(fr.surveyList.row.updatedMeta(formatShortDateTime(survey.updated_at)))
   })
 
+  test("a pending draft without route reads Parcours à choisir, not Sync en attente (phase 30)", () => {
+    mount(makeSurvey({ sync_state: "pending", route_missing: 1 }))
+    const texts = textsOf(row())
+    expect(texts).toContain("Parcours à choisir")
+    expect(texts).not.toContain(fr.common.surveyStatus.syncPending)
+    act(() => tree.unmount())
+    mount(makeSurvey({ sync_state: "pending", route_missing: 0 }))
+    expect(textsOf(row())).toContain(fr.common.surveyStatus.syncPending)
+  })
+
   test("an unnamed survey reads the untitled name", () => {
     mount(makeSurvey({ site_name: "  " }))
     expect(textsOf(row())).toContain(fr.common.untitledSurvey)

@@ -716,10 +716,17 @@ export async function listLocalSurveys(): Promise<LocalSurvey[]> {
   // payload (`scores.ibp_total`) with SQLite's json_extract: inside the engine, only for submitted
   // rows (the CASE skips the others), only when the payload is valid JSON and the value is a
   // number. Nothing is parsed per row in JS and the raw payload is never selected.
+  // Phase 30: route_missing is the same kind of in-engine read (json_type, no JS parse): a pending
+  // draft without a route object is the one `drainQueue` holds, so the list says "Parcours à
+  // choisir" instead of "Sync en attente". It follows the payload: once `patchLocalSurveyRoute`
+  // wrote the route it is 0 again and the draft shows its normal sync state.
   return db.getAllAsync<LocalSurvey>(
     `SELECT id, site_name, status, visibility, sync_version, sync_state, last_sync_error, last_sync_error_code, last_sync_error_at, sync_blocked, created_at, updated_at,
        CASE WHEN status = 'submitted' THEN 100 ELSE payload_completion END AS completion_rate,
        payload_factors_filled AS factors_filled,
+       CASE WHEN status = 'draft' AND sync_state = 'pending'
+         AND (NOT json_valid(payload_json) OR COALESCE(json_type(payload_json, '$.survey_route'), 'null') <> 'object')
+         THEN 1 ELSE 0 END AS route_missing,
        CASE WHEN status = 'submitted' AND json_valid(payload_json)
          THEN CASE WHEN json_type(payload_json, '$.scores.ibp_total') IN ('integer', 'real')
            THEN json_extract(payload_json, '$.scores.ibp_total') END

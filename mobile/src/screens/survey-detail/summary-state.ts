@@ -33,6 +33,8 @@ export const resolveStatusLine = (survey: LocalSurvey, isComplete: boolean | nul
   if (syncDisplay === "sync") return { status, sync: h.sync.synced, syncTone: "ok" }
   if (syncDisplay === "sync_error") return { status, sync: h.sync.error, syncTone: "danger" }
   if (syncDisplay === "sync_blocked") return { status, sync: h.sync.blocked, syncTone: "danger" }
+  if (syncDisplay === "route_pending")
+    return { status, sync: h.sync.routePending, syncTone: "pending" }
   return { status, sync: h.sync.pending, syncTone: "pending" }
 }
 
