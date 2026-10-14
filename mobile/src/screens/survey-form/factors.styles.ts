@@ -111,6 +111,12 @@ export function createFactorStyles(theme: BrandTheme) {
       lineHeight: 16,
       color: theme.colors.textSecondary,
     },
+    // Phase 30 (D-07): the "Relevé déplafonné" tag of a factor counted in full, one line.
+    factorTileMode: {
+      ...brandTypography.meta,
+      lineHeight: 16,
+      color: theme.colors.textSecondary,
+    },
     factorTileState: {
       ...brandTypography.meta,
       // OA-35: a 12 pt line clipped accents on capitals ("Étape", "État").

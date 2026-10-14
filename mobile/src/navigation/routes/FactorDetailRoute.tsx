@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react"
 import type { FactorKey } from "../../app/types"
+import { useSurveyRoute } from "../../hooks/useSurveyRoute"
 import { fr } from "../../i18n"
 import { FactorPager, type PagerFinishAction } from "../../screens/survey-form/FactorPager"
 import { usePagerFinish } from "../../screens/survey-form/usePagerFinish"
@@ -8,6 +9,9 @@ import { useSurveys } from "../../state/surveys-context"
 import { useLatestCallback } from "../../state/useLatestCallback"
 import { ScreenFrame } from "../../ui/ScreenFrame"
 import type { FactorDetailRouteProps } from "../types"
+
+// A stable empty list, so a capped survey does not hand the pager a new array on every render.
+const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
 
 /**
  * Factor detail route (phase 01.9-18, D-01; FLOW-04 pager since phase 3): the form context, and
@@ -26,6 +30,11 @@ import type { FactorDetailRouteProps } from "../types"
  * doubt toggle is written at once: the form value is set first, and once the context carries it the
  * draft is flushed one time (the flush reads the form value of the render that carries the change).
  * A note is written by the strip (typing pause, blur, page change) through `flushDraft`.
+ *
+ * Phase 30 (D-07, plan 30-15): the recorded route is read once here with `useSurveyRoute`; the
+ * factors counted in full and the surface décrite go to the pager, which shows the "Relevé
+ * déplafonné" signals and prefills the surface fields of C, D and E. A survey with no valid route
+ * gives an empty list and no zone: nothing new is shown.
  */
 export const FactorDetailRoute = memo(function FactorDetailRoute({
   navigation,
@@ -39,6 +48,16 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
     () => surveysState.surveys.find((item) => item.id === editingSurveyId) ?? null,
     [surveysState.surveys, editingSurveyId],
   )
+
+  const { route: surveyRoute } = useSurveyRoute(survey)
+  const uncappedFactors = useMemo<readonly FactorKey[]>(
+    () =>
+      surveyRoute?.counting === "uncapped"
+        ? (surveyRoute.uncapped_factors ?? NO_UNCAPPED_FACTORS)
+        : NO_UNCAPPED_FACTORS,
+    [surveyRoute],
+  )
+  const zoneSurfaceHa = surveyRoute?.zone_surface_ha ?? null
 
   const handleActiveFactorChange = useCallback(
     (active: FactorKey) => {
@@ -113,6 +132,8 @@ export const FactorDetailRoute = memo(function FactorDetailRoute({
         onChangeDoubt={handleChangeDoubt}
         onChangeNote={setFactorNote}
         onCommitNote={handleCommitNote}
+        uncappedFactors={uncappedFactors}
+        zoneSurfaceHa={zoneSurfaceHa}
       />
     </ScreenFrame>
   )

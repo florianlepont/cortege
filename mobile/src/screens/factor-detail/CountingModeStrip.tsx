@@ -56,6 +56,19 @@ export function CountingModeCaption({ factor }: { factor: FactorKey }) {
   )
 }
 
+/**
+ * "D'après le parcours": the line under a surface field that still holds the surface décrite of the
+ * recorded route (spec section 7). It goes away as soon as the observer changes the value.
+ */
+export function FromRouteCaption() {
+  const styles = useStyles()
+  return (
+    <Text style={styles.fromRoute} testID="surface-from-route">
+      {t.fromRoute}
+    </Text>
+  )
+}
+
 function useStyles() {
   const theme = useBrandTheme()
   return useMemo(() => createStyles(theme), [theme])
@@ -70,6 +83,12 @@ function createStyles(theme: BrandTheme) {
       flexDirection: "row",
       alignItems: "flex-start",
       gap: brandSpacing4.sm,
+    },
+    fromRoute: {
+      fontFamily: brandDefaultFontFamily,
+      fontSize: brandTypeScale.footnote.fontSize,
+      lineHeight: brandTypeScale.footnote.lineHeight,
+      color: theme.colors.textSecondary,
     },
     // 15 Regular, secondary ink; the glyph is muted to match.
     captionText: {

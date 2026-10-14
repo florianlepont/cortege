@@ -26,6 +26,7 @@ import { FACTOR_TITLES } from "../../app/constants"
 import type { FactorField, FactorKey, FactorRetainedScore } from "../../app/types"
 import { fr } from "../../i18n"
 import { FactorDetailScreen } from "../FactorDetailScreen"
+import { CountingModeChip } from "../factor-detail/CountingModeStrip"
 import { FACTOR_ORDER } from "./components"
 import { computeFactorProgress } from "./FactorsList"
 import { FactorLetterStrip, STRIP_HEIGHT } from "./FactorLetterStrip"
@@ -36,6 +37,8 @@ import { AppPressable } from "../../ui/AppPressable"
 import { usePagerChromeStyle, usePagerKeyboard } from "./usePagerKeyboard"
 
 const t = fr.factorPager
+
+const NO_UNCAPPED_FACTORS: readonly FactorKey[] = []
 
 // The bottom bar: the A to J strip (FactorLetterStrip) and a round "next" button beside it. Field
 // sizes (D-05): the bar and the round button stay 46 pt, the total pill 36 pt.
@@ -78,6 +81,14 @@ type FactorPagerProps = {
   onChangeNote: (factor: FactorKey, text: string) => void
   /** The note is written to the draft (typing pause, blur, page change). */
   onCommitNote: () => void
+  /**
+   * Phase 30 (D-07): the factors the recorded route counts in full. The active one shows the
+   * "Relevé déplafonné" badge under the title row and its caption on the page. Empty (the default):
+   * nothing new is shown.
+   */
+  uncappedFactors?: readonly FactorKey[]
+  /** The surface décrite of the recorded route (ha): C, D and E start from it. Null: none. */
+  zoneSurfaceHa?: number | null
 }
 
 /**
@@ -104,6 +115,8 @@ export const FactorPager = memo(function FactorPager({
   onChangeDoubt,
   onChangeNote,
   onCommitNote,
+  uncappedFactors = NO_UNCAPPED_FACTORS,
+  zoneSurfaceHa = null,
 }: FactorPagerProps) {
   const theme = useBrandTheme()
   const tabBarClearance = useTabBarClearance()
@@ -185,6 +198,7 @@ export const FactorPager = memo(function FactorPager({
             <Text style={styles.totalChipText}>{t.total(total)}</Text>
           </View>
         </View>
+        {uncappedFactors.includes(activeFactor) ? <CountingModeChip /> : null}
       </View>
 
       <ScrollView
@@ -223,6 +237,8 @@ export const FactorPager = memo(function FactorPager({
                 onChangeDoubt={(next) => onChangeDoubt(factor, next)}
                 onChangeNote={(text) => onChangeNote(factor, text)}
                 onCommitNote={onCommitNote}
+                uncappedFactors={uncappedFactors}
+                zoneSurfaceHa={zoneSurfaceHa}
               />
             ) : null}
           </ScrollView>

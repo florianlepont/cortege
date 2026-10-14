@@ -33,6 +33,11 @@ jest.mock("../../ui/ScreenFrame", () => ({
 jest.mock("../../state/surveys-context", () => ({
   useSurveys: () => ({ state: { surveys: [] }, actions: {} }),
 }))
+// Phase 30 (plan 30-15): the recorded route is read through useSurveyRoute; here a settable value.
+const mockRoute: { value: Record<string, unknown> | null } = { value: null }
+jest.mock("../../hooks/useSurveyRoute", () => ({
+  useSurveyRoute: () => ({ route: mockRoute.value, loaded: true }),
+}))
 
 const mockForm = {
   state: {
@@ -66,6 +71,7 @@ afterAll(() => {
 })
 
 beforeEach(() => {
+  mockRoute.value = null
   mockForm.state.factorAnnotations = {}
   mockForm.actions.flushDraft.mockClear()
   mockForm.actions.setFactorDoubt.mockClear()
@@ -203,5 +209,41 @@ describe("FactorDetailRoute finish pill (Phase 29, D-04)", () => {
     mockPagerFinish.offered = false
     mount()
     expect(mockPagerProps.value.finishAction).toBeNull()
+  })
+})
+
+describe("FactorDetailRoute counting mode (Phase 30, D-07)", () => {
+  const props = () =>
+    mockPagerProps.value as { uncappedFactors: string[]; zoneSurfaceHa: number | null }
+
+  test("a survey without a route hands the pager nothing new", () => {
+    mount()
+    expect(props().uncappedFactors).toEqual([])
+    expect(props().zoneSurfaceHa).toBeNull()
+  })
+
+  test("a route counting B and F in full gives their letters and the zone", () => {
+    mockRoute.value = {
+      version: 1,
+      method: "full",
+      counting: "uncapped",
+      uncapped_factors: ["B", "F"],
+      zone_surface_ha: 1.2,
+    }
+    mount()
+    expect(props().uncappedFactors).toEqual(["B", "F"])
+    expect(props().zoneSurfaceHa).toBe(1.2)
+  })
+
+  test("a capped route gives no factor but still the zone", () => {
+    mockRoute.value = {
+      version: 1,
+      method: "partial_strip",
+      counting: "capped",
+      zone_surface_ha: 0.8,
+    }
+    mount()
+    expect(props().uncappedFactors).toEqual([])
+    expect(props().zoneSurfaceHa).toBe(0.8)
   })
 })
