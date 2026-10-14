@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef } from "react"
 import { LayoutChangeEvent, ScrollView, View } from "react-native"
 import { useReducedMotion } from "react-native-reanimated"
-import { useSurveyRoute } from "../hooks/useSurveyRoute"
 import { useBrandTheme } from "../app/theme"
 import { weatherViewState, weatherVisitTooOld } from "../app/weather"
 import { fr } from "../i18n"
@@ -9,7 +8,6 @@ import { useFrameInsetBehavior } from "../ui/frame-large-title"
 import { PageTitle } from "../ui/PageTitle"
 import { ConditionsSection } from "./survey-detail/conditions/ConditionsSection"
 import { useSurveyConditions } from "./survey-detail/conditions/useSurveyConditions"
-import { RouteSection } from "./survey-detail/route/RouteSection"
 import { ScoringContextEditor } from "./survey-detail/ScoringContextEditor"
 import { type SurveyContextScreenProps } from "./survey-detail/screen-props"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
@@ -22,9 +20,9 @@ const SECTION_AT_TOP_MAX_Y = 120
 
 /**
  * "Contexte" (OA-46, D-32, D-41): the weather first, in one card (read-out, status line, sky chips
- * and the full dated source sentence, phase 27 D-15), then the method and the station context, then
- * the "Parcours utilisé" card (phase 30, D-09: the recorded route as text, with the link to change
- * it or to choose it on the observer's own draft). The parcels and their map are the "Parcelles" page; the survey note is a card of the summary (D-33).
+ * and the full dated source sentence, phase 27 D-15), then the method and the station context. The
+ * parcels, their map and the "Parcours utilisé" card (phase 30, D-09, moved there on 2026-10-14)
+ * are the "Parcelles et parcours" page; the survey note is a card of the summary (D-33).
  * With the `conditions` section param the page scrolls once to the weather after its first layout,
  * unless the weather already sits at the top, where there is nothing to scroll to; no field takes
  * focus by itself.
@@ -42,7 +40,6 @@ export function SurveyContextScreen({
   onSwitchToV32,
   onEditWeather,
   onRetryWeather,
-  onEditRoute,
 }: SurveyContextScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
@@ -53,7 +50,6 @@ export function SurveyContextScreen({
   const { canEditSurvey, parcelIds } = data
   const surveyId = selectedSurvey.id
   const conditions = useSurveyConditions(selectedSurvey)
-  const surveyRoute = useSurveyRoute(selectedSurvey)
   const conditionsViewState = weatherViewState({
     hasParcel: parcelIds.length > 0,
     online: weatherRequest.online,
@@ -100,7 +96,6 @@ export function SurveyContextScreen({
     [onEditWeather, surveyId],
   )
   const retryWeather = useCallback(() => void onRetryWeather(surveyId), [onRetryWeather, surveyId])
-  const editRoute = useCallback(() => onEditRoute(surveyId), [onEditRoute, surveyId])
 
   return (
     <TitledScrollView
@@ -135,15 +130,6 @@ export function SurveyContextScreen({
         onUpdateIbpCas={onUpdateIbpCas}
         onUpdateCas3Scale={onUpdateCas3Scale}
         onSwitchToV32={onSwitchToV32}
-      />
-
-      <RouteSection
-        route={surveyRoute.route}
-        loaded={surveyRoute.loaded}
-        status={canEditSurvey ? "draft" : "readonly"}
-        editable={canEditSurvey}
-        variant="detail"
-        onEdit={editRoute}
       />
     </TitledScrollView>
   )

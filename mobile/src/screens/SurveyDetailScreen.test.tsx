@@ -415,7 +415,7 @@ describe("SurveyDetailScreen summary", () => {
     expect(contextRow.onPress).toBe(props.onOpenContext)
   })
 
-  test("the Contexte row carries the short route label after the method (U-O9)", () => {
+  test("the Parcelles et parcours row carries the short route label after the parcel count (U-O9)", () => {
     mockRoute = {
       version: 1,
       method: "full",
@@ -425,13 +425,15 @@ describe("SurveyDetailScreen summary", () => {
     }
     const tree = mount("draft")
     const rows = byType(tree, "AppGroupedList")[0].props.sections[0].rows
-    expect(rows[0].value).toBe("v3.0 · Parcours en plein")
+    expect(rows[0].value).toBe("v3.0")
+    expect(rows[1].label).toBe("Parcelles et parcours")
+    expect(rows[1].value).toMatch(/ · Parcours en plein$/)
   })
 
-  test("the Contexte row is what it was without a recorded route", () => {
+  test("a draft with no route says Parcours à choisir on the parcels row", () => {
     mockRoute = null
-    const tree = mount("draft")
-    expect(byType(tree, "AppGroupedList")[0].props.sections[0].rows[0].value).toBe("v3.0")
+    const draftRows = byType(mount("draft"), "AppGroupedList")[0].props.sections[0].rows
+    expect(draftRows[1].value).toMatch(/ · Parcours à choisir$/)
   })
 
   test("the source of the summary no longer imports the chart", () => {
@@ -447,7 +449,7 @@ describe("SurveyDetailScreen summary", () => {
     expect(rows).toHaveLength(4)
     expect(rows.map((row: { label: string }) => row.label)).toEqual([
       "Contexte",
-      "Parcelles",
+      "Parcelles et parcours",
       "Facteurs IBP",
       fr.surveyDetail.rows.history,
     ])
@@ -464,7 +466,7 @@ describe("SurveyDetailScreen summary", () => {
     const rows = byType(tree!, "AppGroupedList")[0].props.sections[0].rows
     expect(rows[1].key).toBe("parcels")
     expect(rows[1].onPress).toBe(props.onOpenParcelsPage)
-    expect(rows[1].value).toBe("Aucune")
+    expect(rows[1].value).toBe("Aucune · Parcours à choisir")
     expect(rows[2].onPress).toBe(props.onOpenScore)
   })
 

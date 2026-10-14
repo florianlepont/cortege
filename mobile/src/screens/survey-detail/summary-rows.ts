@@ -14,13 +14,15 @@ type SummaryRowHandlers = {
 }
 
 /**
- * The four rows of the summary that open its sub-pages: Contexte, Parcelles, factors, history (D-32).
- * With a `routeLabel` (the short name of the recorded parcours, phase 30, U-O9) the Contexte value
- * carries it after the cas; without one the value is what it was before the phase.
+ * The four rows of the summary that open its sub-pages: Contexte, Parcelles et parcours, factors,
+ * history (D-32). The parcels row value is the parcel count, then, on the same line, the short name
+ * of the recorded parcours (`routeLabel`, phase 30, U-O9, moved from Contexte on 2026-10-14) or
+ * "Parcours à choisir" for a draft with no route (`routePending`); without either it is the count.
  */
 export function buildSummaryRowSections(
   data: Pick<SurveyDetailData, "scoringContext" | "parcelIds" | "filledFactorCount"> & {
     routeLabel?: string | null
+    routePending?: boolean
   },
   historyRow: HistoryRowDisplay,
   handlers: SummaryRowHandlers,
@@ -30,9 +32,13 @@ export function buildSummaryRowSections(
       ? "v3.2"
       : "v3.0"
   const cas = data.scoringContext.ibp_cas !== null ? String(data.scoringContext.ibp_cas) : null
-  const contextValue = data.routeLabel
-    ? rowsText.contextValueWithRoute({ method: methodLabel, cas, route: data.routeLabel })
-    : rowsText.contextValue({ method: methodLabel, cas })
+  const contextValue = rowsText.contextValue({ method: methodLabel, cas })
+  const parcelsCount =
+    data.parcelIds.length > 0 ? rowsText.parcelsValue(data.parcelIds.length) : rowsText.parcelsNone
+  const routeText = data.routeLabel ?? (data.routePending ? fr.surveyDetail.route.none : null)
+  const parcelsValue = routeText
+    ? rowsText.parcelsValueWithRoute({ parcels: parcelsCount, route: routeText })
+    : parcelsCount
   return [
     {
       key: "pages",
@@ -46,10 +52,8 @@ export function buildSummaryRowSections(
         {
           key: "parcels",
           label: rowsText.parcels,
-          value:
-            data.parcelIds.length > 0
-              ? rowsText.parcelsValue(data.parcelIds.length)
-              : rowsText.parcelsNone,
+          value: parcelsValue,
+          multiline: true,
           onPress: handlers.onOpenParcelsPage,
         },
         {

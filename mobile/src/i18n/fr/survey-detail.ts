@@ -96,29 +96,24 @@ export const surveyDetailFr = {
     seeOnMap: "Voir sur la carte",
   },
   rows: {
-    // D-32: "Contexte et parcelles" is split into "Contexte" (method, cas, weather) and "Parcelles"
-    // (map, list, offline map).
+    // D-32: "Contexte et parcelles" is split into "Contexte" (method, cas, weather) and "Parcelles".
+    // 2026-10-14 (owner decision): the parcels page also holds the "Parcours utilisé" card, so it is
+    // "Parcelles et parcours" (map, list, route, offline map).
     context: "Contexte",
-    parcels: "Parcelles",
+    parcels: "Parcelles et parcours",
     // D-34: the row and its page are named for what they hold, the ten factors. The score card
     // above keeps "Score IBP".
     score: "Facteurs IBP",
     history: "Historique de la parcelle",
     contextValue: ({ method, cas }: { method: string; cas: string | null }) =>
       cas ? `${method} · cas ${cas}` : method,
-    // Phase 30 (U-O9): the short name of the parcours follows the cas, on the same line.
-    contextValueWithRoute: ({
-      method,
-      cas,
-      route,
-    }: {
-      method: string
-      cas: string | null
-      route: string
-    }) => (cas ? `${method} · cas ${cas} · ${route}` : `${method} · ${route}`),
     scoreValue: (filled: number) => `${filled} sur 10`,
     parcelsValue: (count: number) => (count === 1 ? "1 parcelle" : `${count} parcelles`),
     parcelsNone: "Aucune",
+    // Phase 30 (U-O9, moved from Contexte on 2026-10-14): the short name of the parcours follows
+    // the parcel count, on the same line ("2 parcelles · Parcours en plein").
+    parcelsValueWithRoute: ({ parcels, route }: { parcels: string; route: string }) =>
+      `${parcels} · ${route}`,
     // Value of the parcel history row (D-01). The arrow is U+2192; the owner phone check
     // (plan 24-12) verifies the glyph, fallback: " à ".
     historyValue: ({ first, latest }: { first: number; latest: number }) =>
@@ -128,8 +123,8 @@ export const surveyDetailFr = {
     historyUnavailable: "Indisponible",
     historyNoParcel: "Aucune parcelle",
   },
-  // The sub-pages of the summary (OA-46, D-32): "Parcelles" holds the map, the list and the editing
-  // button.
+  // The sub-pages of the summary (OA-46, D-32): "Parcelles et parcours" holds the map, the list, the
+  // editing button, the "Parcours utilisé" card and the offline map.
   parcelsScreen: {
     parcelsHeading: (count: number) => `Parcelles · ${count}`,
     noParcel: "Aucune parcelle choisie pour ce relevé.",

@@ -1,5 +1,6 @@
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { View } from "react-native"
+import { useSurveyRoute } from "../hooks/useSurveyRoute"
 import { useBrandTheme } from "../app/theme"
 import { fr } from "../i18n"
 import { AppGroupedList } from "../ui/AppGroupedList"
@@ -10,6 +11,7 @@ import { TitledScrollView } from "../ui/TitledScrollView"
 import { GlassIconButton } from "./public-map/GlassIconButton"
 import { ParcelMapCard } from "./survey-detail/ParcelMapCard"
 import { type SurveyParcelsScreenProps } from "./survey-detail/screen-props"
+import { RouteSection } from "./survey-detail/route/RouteSection"
 import { createSummaryScreenStyles } from "./survey-detail/summary-screen.styles"
 import { SurveyOfflineMapRow } from "./survey-detail/SurveyOfflineMapRow"
 import { useLocalParcelGeometry } from "./survey-detail/useLocalParcelGeometry"
@@ -20,10 +22,12 @@ const t = fr.surveyDetail.parcelsScreen
 const a11y = fr.surveyDetail.a11y
 
 /**
- * "Parcelles" (OA-46, D-32): the survey's parcels on a large map with the editing button on the
- * map itself (OA-44), the list of parcels, then the offline map row (is the map around the survey
- * on the phone, and a way to fetch it). The method, the station context and the weather are the
- * "Contexte" page.
+ * "Parcelles et parcours" (OA-46, D-32): the survey's parcels on a large map with the editing
+ * button on the map itself (OA-44), the list of parcels, the "Parcours utilisé" card (phase 30,
+ * D-09: the recorded route as text, with the link to change it or to choose it on the observer's
+ * own draft; moved here from "Contexte" on 2026-10-14), then the offline map row (is the map
+ * around the survey on the phone, and a way to fetch it). The method, the station context and the
+ * weather are the "Contexte" page.
  */
 export function SurveyParcelsScreen({
   apiUrl,
@@ -32,6 +36,7 @@ export function SurveyParcelsScreen({
   surveyDetails,
   detailsLoadingSurveyId,
   onOpenParcels,
+  onEditRoute,
 }: SurveyParcelsScreenProps) {
   const theme = useBrandTheme()
   const styles = useMemo(() => createSummaryScreenStyles(theme), [theme])
@@ -40,6 +45,9 @@ export function SurveyParcelsScreen({
   const insetBehavior = useFrameInsetBehavior()
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName, parcelIds } = data
+  const surveyId = selectedSurvey.id
+  const surveyRoute = useSurveyRoute(selectedSurvey)
+  const editRoute = useCallback(() => onEditRoute(surveyId), [onEditRoute, surveyId])
   // A draft that never synced has no server position (D-36): the offline map row follows the
   // parcels' own position, like the map above it.
   const local = useLocalParcelGeometry(selectedSurvey.id, parcelIds, selectedSurvey.updated_at)
@@ -101,13 +109,6 @@ export function SurveyParcelsScreen({
         ) : null}
       </ParcelMapCard>
 
-      <SurveyOfflineMapRow
-        apiUrl={apiUrl}
-        accessToken={accessToken}
-        siteName={activeSiteName}
-        displayLocation={offlineLocation}
-      />
-
       {parcelSections.length > 0 ? (
         <AppGroupedList sections={parcelSections} />
       ) : (
@@ -115,6 +116,22 @@ export function SurveyParcelsScreen({
           <Text style={styles.photoEmpty}>{t.noParcel}</Text>
         </View>
       )}
+
+      <RouteSection
+        route={surveyRoute.route}
+        loaded={surveyRoute.loaded}
+        status={canEditSurvey ? "draft" : "readonly"}
+        editable={canEditSurvey}
+        variant="detail"
+        onEdit={editRoute}
+      />
+
+      <SurveyOfflineMapRow
+        apiUrl={apiUrl}
+        accessToken={accessToken}
+        siteName={activeSiteName}
+        displayLocation={offlineLocation}
+      />
     </TitledScrollView>
   )
 }

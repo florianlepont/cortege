@@ -1,6 +1,5 @@
 import React from "react"
 import renderer, { act, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer"
-import type { SurveyRouteState } from "../hooks/useSurveyRoute"
 import type { LocalSurvey } from "../storage/types"
 import { setReducedMotion } from "../../test/react-native-reanimated.mock"
 import { FrameLargeTitleContext } from "../ui/frame-large-title"
@@ -57,12 +56,6 @@ jest.mock("./survey-detail/ScoringContextEditor", () => ({
 jest.mock("./survey-detail/conditions/ConditionsSection", () => ({
   ConditionsSection: "ConditionsSection",
 }))
-jest.mock("./survey-detail/route/RouteSection", () => ({ RouteSection: "RouteSection" }))
-let mockRouteState: SurveyRouteState = { route: null, loaded: true }
-const mockUseSurveyRoute = jest.fn((_survey: unknown) => mockRouteState)
-jest.mock("../hooks/useSurveyRoute", () => ({
-  useSurveyRoute: (survey: unknown) => mockUseSurveyRoute(survey),
-}))
 const EMPTY_CONDITIONS: SurveyConditions = {
   note: null,
   weather: null,
@@ -104,7 +97,6 @@ function makeProps(over: Over = {}): SurveyContextScreenProps {
     onEditWeather: jest.fn(),
     onRetryWeather: jest.fn(),
     onRefillWeather: jest.fn(),
-    onEditRoute: jest.fn(),
     ...over,
   } as SurveyContextScreenProps
 }
@@ -129,26 +121,21 @@ afterEach(() => {
   mockCanEdit = true
   mockParcelIds = ["75056000AB0001"]
   mockConditions = EMPTY_CONDITIONS
-  mockRouteState = { route: null, loaded: true }
-  mockUseSurveyRoute.mockClear()
   setReducedMotion(false)
 })
 
 describe("SurveyContextScreen (variant I)", () => {
-  test("shows the weather first, then the method editor, then the route: no map, no parcel list (D-32, D-41)", () => {
+  test("shows the weather first, then the method editor: no map, no parcel list, no route card (D-32, D-41, 2026-10-14)", () => {
     const tree = render()
     const scroll = tree.root.findByType("ScrollView" as never)
     const order = scroll.children.map((child) => (child as { type: unknown }).type)
     // The weather opens the page, inside the view that measures it, above the method and cas.
-    expect(order).toHaveLength(4)
-    expect([order[0], order[2], order[3]]).toEqual([
-      "PageTitle",
-      "ScoringContextEditor",
-      "RouteSection",
-    ])
+    expect(order).toHaveLength(3)
+    expect([order[0], order[2]]).toEqual(["PageTitle", "ScoringContextEditor"])
     const first = scroll.children[1] as ReactTestInstance
     expect(first.findAllByType("ConditionsSection" as never)).toHaveLength(1)
     expect(tree.root.findAllByType("ParcelMapCard" as never)).toHaveLength(0)
+    expect(tree.root.findAllByType("RouteSection" as never)).toHaveLength(0)
     expect(tree.root.findAllByType("AppGroupedList" as never)).toHaveLength(0)
     expect(tree.root.findAllByType("GlassIconButton" as never)).toHaveLength(0)
   })
@@ -186,49 +173,6 @@ describe("under the native large title (12.2-17)", () => {
   test("elsewhere the page keeps its own insets", () => {
     const scroll = render().root.findByType("ScrollView" as never)
     expect(scroll.props.contentInsetAdjustmentBehavior).toBe("never")
-  })
-})
-
-describe("Parcours utilisé card (phase 30, D-09)", () => {
-  const card = (tree: ReactTestRenderer) => tree.root.findByType("RouteSection" as never).props
-  const ROUTE = {
-    version: 1,
-    method: "full",
-    counting: "capped",
-    zone_surface_ha: 2,
-    guide: { chosen_by: "observer" },
-  } as const
-
-  test("reads the route of the selected survey and hands it to the card", () => {
-    mockRouteState = { route: ROUTE, loaded: true }
-    const survey = { id: "survey-9" } as unknown as LocalSurvey
-    const props = card(render(false, { selectedSurvey: survey }))
-    expect(mockUseSurveyRoute).toHaveBeenCalledWith(survey)
-    expect(props.route).toBe(ROUTE)
-    expect(props.loaded).toBe(true)
-    expect(props.variant).toBe("detail")
-  })
-
-  test("is a draft and editable while the survey can be edited", () => {
-    const props = card(render())
-    expect([props.status, props.editable]).toEqual(["draft", true])
-  })
-
-  test("is read-only once the survey is submitted", () => {
-    mockCanEdit = false
-    const props = card(render())
-    expect([props.status, props.editable]).toEqual(["readonly", false])
-  })
-
-  test("its link opens the chooser for this survey", () => {
-    const onEditRoute = jest.fn()
-    card(render(false, { onEditRoute })).onEdit()
-    expect(onEditRoute).toHaveBeenCalledWith("survey-1")
-  })
-
-  test("is told the route is not read yet", () => {
-    mockRouteState = { route: null, loaded: false }
-    expect(card(render()).loaded).toBe(false)
   })
 })
 

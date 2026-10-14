@@ -1353,24 +1353,6 @@ describe("SurveyContextRoute", () => {
     })
   })
 
-  test("the route card opens the chooser in edit mode for the selected survey (phase 30, D-09)", async () => {
-    const navigation = makeNavigation()
-    await mount(
-      <Providers fixture={withSelection(makeFixture())}>
-        <SurveyContextRoute navigation={navigation as never} route={{} as never} />
-      </Providers>,
-    )
-    await act(async () => {
-      callback("surveyContext", "onEditRoute")("s-01")
-    })
-    // The chooser reads the recorded answers itself: no surface and no preselection travel.
-    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyRouteChoose", {
-      surveyId: "s-01",
-      mode: "edit",
-      surfaceHa: null,
-    })
-  })
-
   test("opens at the top, or scrolled to the Conditions with the section param", async () => {
     await mount(
       <Providers fixture={withSelection(makeFixture())}>
@@ -1419,6 +1401,24 @@ describe("SurveyParcelsPageRoute", () => {
     expect(navigation.navigate).toHaveBeenLastCalledWith("surveyParcels", {
       surveyId: "s-01",
       mode: "edit",
+    })
+  })
+
+  test("the route card opens the chooser in edit mode for the selected survey (phase 30, D-09, moved from Contexte on 2026-10-14)", async () => {
+    const navigation = makeNavigation()
+    await mount(
+      <Providers fixture={withSelection(makeFixture())}>
+        <SurveyParcelsPageRoute navigation={navigation as never} route={{} as never} />
+      </Providers>,
+    )
+    await act(async () => {
+      callback("surveyParcelsPage", "onEditRoute")("s-01")
+    })
+    // The chooser reads the recorded answers itself: no surface and no preselection travel.
+    expect(navigation.navigate).toHaveBeenLastCalledWith("surveyRouteChoose", {
+      surveyId: "s-01",
+      mode: "edit",
+      surfaceHa: null,
     })
   })
 

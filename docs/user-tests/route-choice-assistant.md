@@ -156,7 +156,7 @@ Un mot défini correctement par le testeur : ✅ à la place de 🔲 et le teste
 Pour chaque scénario, le facilitateur renseigne :
 
 1. **Terminé sans aide** : le testeur arrive à un parcours enregistré sans poser de question au facilitateur sur l'étape (une hésitation de plus de 10 secondes ne fait pas échouer, elle est notée).
-2. **Parcours conforme** : le parcours et le mode de relevé obtenus sont ceux de l'attendu, **ou** une alternative justifiée : un parcours autre que celui conseillé, que le sélecteur permettait, avec une raison donnée par le testeur qui s'appuie sur un fait de la fiche (surface, homogénéité, visibilité, largeur). « Au hasard » ou « je ne sais pas » ne sont pas une justification. L'enregistrement est lu sur la page Contexte du relevé (« Parcours utilisé »).
+2. **Parcours conforme** : le parcours et le mode de relevé obtenus sont ceux de l'attendu, **ou** une alternative justifiée : un parcours autre que celui conseillé, que le sélecteur permettait, avec une raison donnée par le testeur qui s'appuie sur un fait de la fiche (surface, homogénéité, visibilité, largeur). « Au hasard » ou « je ne sais pas » ne sont pas une justification. L'enregistrement est lu sur la page « Parcelles et parcours » du relevé (« Parcours utilisé »).
 3. **Redit pourquoi** : à la fin du scénario, le facilitateur demande : « Pourquoi l'application vous propose cela ? ». Réussi si le testeur redonne, avec ses mots, une raison exacte (surface, homogène ou varié, difficile à observer, largeur).
 4. **Durée** : du moment où l'écran « Choix du parcours » s'ouvre jusqu'à l'enregistrement du parcours. Repère : environ 3 minutes. Le dépassement n'est pas un échec, il est noté.
 

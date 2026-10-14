@@ -297,7 +297,7 @@ Acceptance criteria
 
 - The route (`survey_route`: parcours, mode de relevé, factors counted in full, surface described, rest of the stand, how it was chosen) is saved with the survey, syncs (upsert, `/sync`, `/sync/changes`) and returns on a reinstall or a second device.
 
-- It is shown as text in a "Parcours utilisé" card on the Contexte page of the survey, as a short label on the summary row, on another member's survey (read-only) and as a block of the PDF after "Conditions du relevé".
+- It is shown as text in a "Parcours utilisé" card on the "Parcelles et parcours" page of the survey (moved from Contexte on 2026-10-14, at the owner's request), as a short label on the summary's parcels row, on another member's survey (read-only) and as a block of the PDF after "Conditions du relevé".
 
 - A draft can change its route (link "Modifier le parcours") but never remove it; the route is read-only once the survey is submitted.
 

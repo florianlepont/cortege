@@ -107,7 +107,7 @@ export function SurveyDetailScreen({
   const data = useSurveyDetailData(selectedSurvey, surveyDetails, detailsLoadingSurveyId)
   const { detail, canEditSurvey, activeSiteName } = data
   const conditions = useSurveyConditions(selectedSurvey)
-  const { route } = useSurveyRoute(selectedSurvey)
+  const { route, loaded: routeLoaded } = useSurveyRoute(selectedSurvey)
   const [menuVisible, setMenuVisible] = useState(false)
   const pulseTrigger = useSubmitSuccessPulse(selectedSurvey.status)
   // D-26: a finish from the factor pager plays the halo and pop once the summary is seen again.
@@ -210,9 +210,11 @@ export function SurveyDetailScreen({
   // bar (a finished survey) the page runs under the floating tab bar: the last row needs that room.
   const { barHeight, onBarLayout } = useFinishBarHeight(cta.kind !== "hidden")
   const contentStyle = useSubPageContentStyle(styles.content, barHeight, noteKeyboard.keyboardInset)
-  // Phase 30 (U-O9): the Contexte row carries the short route label after the cas.
+  // Phase 30 (U-O9, moved on 2026-10-14): the "Parcelles et parcours" row carries the short route
+  // label after the parcel count, or says the parcours is still to choose on a draft without one.
   const routeLabel = route !== null ? routeShortLabel(route) : null
-  const rowSections = buildSummaryRowSections({ ...data, routeLabel }, historyRow, {
+  const routePending = routeLoaded && route === null && canEditSurvey
+  const rowSections = buildSummaryRowSections({ ...data, routeLabel, routePending }, historyRow, {
     onOpenContext,
     onOpenParcelsPage,
     onOpenScore,
