@@ -139,6 +139,9 @@ Other colour rules:
 
 ### 2. Guide screen anatomy (top to bottom)
 
+> 2026-10-14 simplification after owner review: the first view holds only the title, "Étape 5 sur 5", the one-sentence lead and the open question (its field or choices and its "Suivant"). Every secondary help (reason it is asked, hectare comparison, hedge and tree-line limit, estimate explanation) sits in one information sheet opened by the (i) beside the question title. "Pour affiner" shows only once a suggestion exists. "Je connais déjà mon parcours" is a small text link at the end of the scroll content. The "Utiliser ce parcours" footer row is not rendered while questions are open (no disabled button). Result order: suggestion, "Changer de parcours", reasons, details, notices, "Pour affiner", glossary, link. Where the text below says otherwise, this note wins.
+
+
 `ScreenFrame` + `TitledScrollView`, horizontal padding 24, gap 16, `keyboardShouldPersistTaps="handled"`, `automaticallyAdjustKeyboardInsets`, content bottom padding = footer height + 16 (`useFinishBarHeight`).
 
 1. **Lead** (15 Regular, secondary): "Quelques questions courtes pour choisir comment parcourir votre peuplement. Un peuplement est un morceau de forêt homogène : mêmes arbres, même âge, même aspect." Defines the word before use (7.3). Tag `Facultatif` (12 SemiBold) before the lead on its own line.
@@ -150,6 +153,9 @@ Other colour rules:
 7. **Floating footer:** `GlassButton` "Utiliser ce parcours" (disabled until a parcours is selected or suggested, accessibility hint "Répondez d'abord aux questions" while disabled), 8 below it the link "Passer cette étape". The footer fades while the keyboard is up (`usePagerKeyboard` / `usePagerChromeStyle`: opacity only, 160 ms).
 
 ### 3. The question stack (progressive disclosure)
+
+> 2026-10-14 simplification after owner review: the first view holds only the title, "Étape 5 sur 5", the one-sentence lead and the open question (its field or choices and its "Suivant"). Every secondary help (reason it is asked, hectare comparison, hedge and tree-line limit, estimate explanation) sits in one information sheet opened by the (i) beside the question title. "Pour affiner" shows only once a suggestion exists. "Je connais déjà mon parcours" is a small text link at the end of the scroll content. The "Utiliser ce parcours" footer row is not rendered while questions are open (no disabled button). Result order: suggestion, "Changer de parcours", reasons, details, notices, "Pour affiner", glossary, link. Where the text below says otherwise, this note wins.
+
 
 **Rule:** the observer sees exactly **one open question card** at a time. A question already answered collapses to an **answered row** (caption = short question, value = the answer, trailing "Modifier"); a question not needed (or not reached) is not drawn. Tapping an answered row reopens it and collapses the open one. Changing an answer recomputes the next needed questions and the suggestion; answers to questions that are no longer needed are kept in state (so changing back loses nothing) but are not recorded unless still needed.
 
