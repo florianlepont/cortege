@@ -6,6 +6,7 @@ import type {
   SyncOperation,
   SyncOperationResult,
   SyncResultError,
+  SurveyRoute,
   SurveyWeather,
 } from "@cortege/ibp-domain"
 
@@ -127,6 +128,9 @@ export type SurveyQueuePayload = IbpMethodFields & {
   // after submit; the factor annotations travel inside `factors`.
   survey_note?: string | null
   weather?: SurveyWeather | null
+  // Phase 30 (D-08): the recorded route, payload only, no SQLite column (SCHEMA_VERSION stays 5).
+  // Written to a draft by `patchLocalSurveyRoute`, never cleared, read-only after submit (D-09).
+  survey_route?: SurveyRoute | null
 }
 
 /**
@@ -139,6 +143,16 @@ export type ConditionsPatch = {
   survey_id: string
   survey_note?: string | null
   weather?: SurveyWeather | null | ((current: SurveyWeather | null) => SurveyWeather | null)
+}
+
+/**
+ * One write of the recorded route (phase 30, D-08). A separate type from `ConditionsPatch`: another
+ * meaning, same write helper. The route is non-null because it is changed on a draft, never deleted
+ * (spec section 8, D-09).
+ */
+export type RoutePatch = {
+  survey_id: string
+  survey_route: SurveyRoute
 }
 
 export type SurveyDeleteQueuePayload = {

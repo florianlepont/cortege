@@ -463,6 +463,9 @@ function buildSurveyPayloadFromRemote(survey: RemoteSurvey): SurveyQueuePayload 
     // local edit would lose them. A null or missing value stays absent.
     survey_note: survey.survey_note ?? undefined,
     weather: survey.weather ?? undefined,
+    // Phase 30 (D-08): copied so a pulled survey keeps its recorded route; a later local edit would
+    // otherwise lose it. A null or missing value stays absent (a legacy survey has no route).
+    survey_route: survey.survey_route ?? undefined,
   }
 }
 

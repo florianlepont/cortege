@@ -1,4 +1,5 @@
 import { randomUUID } from "expo-crypto"
+import { canonicalSurveyRoute, validateSurveyRoute } from "@cortege/ibp-domain"
 import { getDb } from "./db"
 import { runInTransaction } from "./transaction"
 import { deleteAttachmentFile, deleteAllAttachmentFiles } from "./attachment-files"
@@ -13,6 +14,7 @@ import {
   LocalSurveyMapSource,
   LocalAttachment,
   LocalAttachmentInput,
+  RoutePatch,
   DraftInput,
   UpdateDraftInput,
   SurveyQueuePayload,
@@ -585,6 +587,95 @@ export async function patchLocalSurveyConditions(
         typeof input.weather === "function"
           ? input.weather(basePayload.weather ?? null)
           : input.weather
+    }
+
+    await writeDraftPayload(tx, input.survey_id, nextPayload, now)
+
+    return { nextPayload, nextSyncVersion, existing }
+  })
+
+  if (!written) {
+    return null
+  }
+
+  const { nextPayload, nextSyncVersion, existing } = written
+  return {
+    id: input.survey_id,
+    site_name: nextPayload.site_name ?? existing.site_name,
+    status: "draft",
+    visibility: nextPayload.visibility === "public" ? "public" : "private",
+    sync_version: nextSyncVersion,
+    sync_state: "pending",
+    last_sync_error: null,
+    last_sync_error_code: null,
+    last_sync_error_at: null,
+    sync_blocked: 0,
+    created_at: existing.created_at ?? now,
+    updated_at: now,
+    completion_rate: computeCompletionRate("draft", nextPayload),
+    factors_filled: computePayloadFactorsFilled(nextPayload),
+  }
+}
+
+/**
+ * The only write path for the recorded route (phase 30, D-08, D-09). Works on a draft only: it
+ * re-reads the row inside the transaction and returns null for a missing or non-draft survey,
+ * changing nothing, so a route can never be written to a submitted survey on the phone (T-30-19).
+ * A record the package validator refuses also returns null and writes nothing; the stored form is
+ * `canonicalSurveyRoute` so an identical replay compares equal on the server. There is no way to
+ * clear a route: it is changed on a draft, never deleted (spec section 8). Bumps sync_version and
+ * re-queues the upsert exactly like the Conditions write; payload_completion and
+ * payload_factors_filled do not move (a route is not a factor).
+ */
+export async function patchLocalSurveyRoute(input: RoutePatch): Promise<LocalSurvey | null> {
+  if (validateSurveyRoute(input.survey_route).length > 0) {
+    return null
+  }
+  const canonical = canonicalSurveyRoute(input.survey_route)
+  const now = new Date().toISOString()
+
+  const written = await runInTransaction(async (tx) => {
+    const existing = await tx.getFirstAsync<{
+      id: string
+      site_name: string
+      status: string
+      visibility: string | null
+      sync_version: number
+      created_at: string | null
+      payload_json: string | null
+    }>(
+      `SELECT id, site_name, status, visibility, sync_version, created_at, payload_json
+       FROM local_surveys
+       WHERE id = ?`,
+      [input.survey_id],
+    )
+
+    if (!existing?.id || existing.status !== "draft") {
+      return null
+    }
+
+    const parsedPayload = existing.payload_json ? safeParseJson(existing.payload_json) : null
+    const basePayload: SurveyQueuePayload = isSurveyQueuePayload(parsedPayload)
+      ? parsedPayload
+      : {
+          id: existing.id,
+          sync_version: existing.sync_version,
+          site_name: existing.site_name,
+          status: "draft",
+          visibility: existing.visibility === "public" ? "public" : "private",
+          parcel_ids: [],
+          factors: {},
+        }
+
+    const nextSyncVersion = Math.max(
+      1,
+      Number(basePayload.sync_version ?? existing.sync_version ?? 0) + 1,
+    )
+    const nextPayload: SurveyQueuePayload = {
+      ...basePayload,
+      sync_version: nextSyncVersion,
+      status: "draft",
+      survey_route: canonical,
     }
 
     await writeDraftPayload(tx, input.survey_id, nextPayload, now)

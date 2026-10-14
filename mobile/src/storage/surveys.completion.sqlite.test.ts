@@ -13,6 +13,7 @@ import {
   createLocalDraft,
   getLocalSurveyDraft,
   listLocalSurveys,
+  patchLocalSurveyRoute,
   updateLocalDraft,
 } from "./surveys"
 import { pullRemoteChanges } from "./sync"
@@ -530,5 +531,56 @@ describe("factors filled, one definition for the list and the detail (12.2-14)",
 
   test("computePayloadFactorsFilled of no payload is 0", () => {
     expect(computePayloadFactorsFilled(null)).toBe(0)
+  })
+})
+
+describe("a route is not a factor (phase 30)", () => {
+  const SIX_FACTORS = {
+    A: { native_genus_count: 5 },
+    B: { strata_count: 3, covered_autochthonous_percent: 60 },
+    C: { bmg_count: 2, bmm_count: 2, surface_ha: 1 },
+    D: { bmg_count: 0, bmm_count: 2, surface_ha: 1 },
+    E: { tgb_count: 6, gb_count: 0, surface_ha: 1 },
+    F: { trees_per_ha: 9 },
+  }
+  const MISMATCH_INPUT = {
+    site_name: "Lisière de la Marne",
+    region_version: "ACA" as const,
+    vegetation_stage: "collineen",
+    parcel_ids: ["ab1"],
+    factors: SIX_FACTORS,
+  }
+  const ROUTE = {
+    version: 1 as const,
+    method: "full" as const,
+    counting: "capped" as const,
+    zone_surface_ha: 2.5,
+    guide: { chosen_by: "observer" as const },
+  }
+
+  test("the counters ignore survey_route and a route write leaves the stored ones unchanged", async () => {
+    const plain: SurveyQueuePayload = {
+      id: "p",
+      sync_version: 1,
+      site_name: "Parcelle",
+      region_version: "ACA",
+      vegetation_stage: "mature",
+      parcel_ids: ["P1"],
+      factors: SIX_FACTORS,
+    }
+    expect(computePayloadCompletion({ ...plain, survey_route: ROUTE })).toBe(
+      computePayloadCompletion(plain),
+    )
+    expect(computePayloadFactorsFilled({ ...plain, survey_route: ROUTE })).toBe(
+      computePayloadFactorsFilled(plain),
+    )
+
+    const survey = await createLocalDraft(MISMATCH_INPUT)
+    const before = { completion: await storedCompletion(survey.id), filled: survey.factors_filled }
+    const patched = await patchLocalSurveyRoute({ survey_id: survey.id, survey_route: ROUTE })
+
+    expect(await storedCompletion(survey.id)).toBe(before.completion)
+    expect(patched?.factors_filled).toBe(before.filled)
+    expect(patched?.completion_rate).toBe(survey.completion_rate)
   })
 })
