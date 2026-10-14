@@ -63,6 +63,8 @@ export const surveyDetailFr = {
     contextMissing: "Complétez le contexte pour terminer",
     remainingUnknown: "Remplissez les 10 facteurs pour terminer",
     nameRequired: "Nommez le relevé pour le terminer",
+    // Phase 30 (O-19): a draft with no route cannot be finished until its parcours is chosen.
+    routeRequired: "Choisissez le parcours pour terminer",
     blocked: "Synchronisation bloquée",
   },
   scoreCard: {
@@ -141,6 +143,52 @@ export const surveyDetailFr = {
     // Filled by plan 01.8-14: the method version on the detail (D-02, D-08).
     unknownMethod: "Méthode IBP non reconnue",
     casMissing: "Choisissez le cas IBP de la station : il est requis pour soumettre le relevé.",
+  },
+  // Phase 30 (spec section 9, O-12): the "Parcours utilisé" card of the Contexte page, after "Méthode
+  // et station". The words are those of the official method; the values of the parcours and of the
+  // mode de relevé come from `fr.routeGuide` through `app/route-text.ts`. Read-only text after the
+  // submit, with the "Modifier le parcours" link on a draft only.
+  route: {
+    title: "Parcours utilisé",
+    parcours: "Parcours",
+    counting: "Mode de relevé",
+    countedFactors: "Facteurs comptés en entier",
+    // "A Essences autochtones": the letter, then the title of the factor.
+    factorItem: ({ letter, title }: { letter: string; title: string }) => `${letter} ${title}`,
+    zone: "Surface décrite",
+    zoneValue: (hectares: string) => `${hectares} ha`,
+    complement: "Reste du peuplement",
+    complementDone: (total: string) => `Regardé rapidement, surface totale évaluée ${total} ha`,
+    complementNo: "Non regardé",
+    choice: "Choix",
+    choiceGuide: "Conseillé par l'app d'après vos réponses",
+    choiceObserver: "Choisi par vous",
+    answers: "Vos réponses",
+    // The pieces of the "Vos réponses" sentence: "Peuplement de 8 ha, homogène, facile à observer".
+    answerParts: {
+      standSurface: (hectares: string) => `Peuplement de ${hectares} ha`,
+      pieceSurface: (hectares: string) => `Morceau de ${hectares} ha`,
+      subdivided: "peuplement découpé en sous-peuplements",
+      homogeneous: "homogène",
+      heterogeneous: "varié",
+      easy: "facile à observer",
+      hard: "difficile à observer",
+      narrow: "étroit",
+      wide: "large",
+      beginner: "IBP nouveau pour vous",
+      hoursAvailable: ({ hours, text }: { hours: number; text: string }) =>
+        hours < 2 ? `${text} heure disponible` : `${text} heures disponibles`,
+    },
+    edit: "Modifier le parcours",
+    editA11y: "Modifier le parcours de ce relevé",
+    // A draft that has no route yet (an older draft): the parcours must be chosen to finish it.
+    none: "Parcours à choisir",
+    noneBody: "Choisissez le parcours pour pouvoir terminer ce relevé.",
+    choose: "Choisir le parcours",
+    chooseA11y: "Choisir le parcours de ce relevé",
+    // A survey finished before this phase has no route: nothing is invented (P-3).
+    legacyRow: "Parcours : non renseigné",
+    legacyBody: "Ce relevé a été fait avant l'assistant de choix du parcours.",
   },
   factors: {
     title: "Facteurs IBP",

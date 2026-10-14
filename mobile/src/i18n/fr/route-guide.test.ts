@@ -24,6 +24,13 @@ const join = (...pieces: string[]) => pieces.join("")
 // Every sentence the phase writes in the catalogue, by section (plan 30-11 tasks 1 and 2).
 const SECTIONS: Record<string, unknown> = {
   routeGuide: fr.routeGuide,
+  surveyDetailRoute: fr.surveyDetail.route,
+  surveyDetailRouteRequired: fr.surveyDetail.cta.routeRequired,
+  surveyExportRoute: fr.surveyExport.route,
+  factorDetailCountingMode: fr.factorDetail.countingMode,
+  validationRoute: fr.validation.route,
+  syncErrorRouteRequired: fr.syncErrors.byCode.route_required,
+  factorInputHintF: fr.labels.factorInputHints.F,
 }
 
 function walk(): { texts: Leaf[]; functions: FunctionLeaf[] } {
@@ -61,6 +68,20 @@ const SAMPLES: Record<string, () => string> = {
       counting: "Relevé plafonné",
     }),
   "routeGuide.a11y.glossaryInfo": () => fr.routeGuide.a11y.glossaryInfo("Peuplement"),
+  "surveyDetailRoute.factorItem": () =>
+    fr.surveyDetail.route.factorItem({ letter: "B", title: "Structure verticale" }),
+  "surveyDetailRoute.zoneValue": () => fr.surveyDetail.route.zoneValue("1,2"),
+  "surveyDetailRoute.complementDone": () => fr.surveyDetail.route.complementDone("8"),
+  "surveyDetailRoute.answerParts.standSurface": () =>
+    fr.surveyDetail.route.answerParts.standSurface("8"),
+  "surveyDetailRoute.answerParts.pieceSurface": () =>
+    fr.surveyDetail.route.answerParts.pieceSurface("8"),
+  "surveyDetailRoute.answerParts.hoursAvailable": () =>
+    `${fr.surveyDetail.route.answerParts.hoursAvailable({ hours: 1, text: "1" })}|${fr.surveyDetail.route.answerParts.hoursAvailable({ hours: 3, text: "3" })}`,
+  "surveyExportRoute.choiceGuide": () =>
+    `${fr.surveyExport.route.choiceGuide({ answers: "peuplement de 8 ha" })}|${fr.surveyExport.route.choiceGuide({ answers: null })}`,
+  "factorDetailCountingMode.zoneLine": () =>
+    fr.factorDetail.countingMode.zoneLine({ hectares: "1,2" }),
 }
 
 const ALLOWED_METHOD_WORDS = [join("méthode officielle de l", "'IBP"), join("Méthode", " IBP")]
@@ -208,5 +229,72 @@ describe("route catalogue text rules", () => {
     expect(screen.use).toBe("Utiliser ce parcours")
     expect(screen.required).toContain("nécessaire pour créer le relevé")
     expect(Object.keys(screen)).not.toContain("skip")
+  })
+
+  test("the Contexte card and the PDF block use the words of the spec section 9", () => {
+    const detail = fr.surveyDetail.route
+    expect(detail.title).toBe("Parcours utilisé")
+    expect([detail.parcours, detail.counting, detail.countedFactors, detail.zone]).toEqual([
+      "Parcours",
+      "Mode de relevé",
+      "Facteurs comptés en entier",
+      "Surface décrite",
+    ])
+    expect([detail.complement, detail.choice, detail.answers]).toEqual([
+      "Reste du peuplement",
+      "Choix",
+      "Vos réponses",
+    ])
+    expect(detail.none).toBe("Parcours à choisir")
+    expect(detail.choose).toBe("Choisir le parcours")
+    expect(detail.edit).toBe("Modifier le parcours")
+    expect(detail.legacyRow).toBe("Parcours : non renseigné")
+    expect(detail.legacyBody).toBe("Ce relevé a été fait avant l'assistant de choix du parcours.")
+    const pdf = fr.surveyExport.route
+    expect(pdf.heading).toBe("Parcours utilisé")
+    expect(pdf.counting).toBe("Mode de relevé")
+    expect(pdf.choiceGuide({ answers: "peuplement de 8 ha, homogène, facile à observer" })).toBe(
+      "Conseillé par l'application d'après vos réponses : peuplement de 8 ha, homogène, facile à observer.",
+    )
+    expect(pdf.choiceGuide({ answers: null })).toBe("Conseillé par l'application.")
+    expect(pdf.choiceObserver).toBe("Choisi directement par l'observateur.")
+  })
+
+  test("a survey that existed before the phase still prints its old identity row", () => {
+    expect(fr.surveyExport.identity.surveyMode).toBe("Mode de relevé")
+    expect(fr.surveyExport.identity.cappedMode).toBe("Relevé plafonné, aucun facteur déplafonné")
+  })
+
+  test("the route-missing texts exist (O-19)", () => {
+    expect(fr.surveyDetail.cta.routeRequired).toBe("Choisissez le parcours pour terminer")
+    expect(fr.syncErrors.byCode.route_required).toBe(
+      "Parcours non choisi : ouvrez le relevé pour le choisir",
+    )
+  })
+
+  test("the factor captions of the relevé déplafonné cover A to G, I and J but not H", () => {
+    const mode = fr.factorDetail.countingMode
+    expect(mode.chip).toBe("Relevé déplafonné")
+    for (const letter of ["A", "B", "C", "D", "E", "F", "G", "I", "J"] as const) {
+      expect([letter, mode[letter].startsWith("Relevé déplafonné :")]).toEqual([letter, true])
+    }
+    expect(Object.keys(mode)).not.toContain("H")
+  })
+
+  test("the F hint no longer speaks of a detailed protocol", () => {
+    const hint = fr.labels.factorInputHints.F.join(" ")
+    expect(hint).not.toContain(join("protocole", " détaillé"))
+    expect(hint).toContain("Pour le score, l'app garde au plus 2 arbres par hectare")
+  })
+
+  test("the route errors are the sentences of the zone checks", () => {
+    expect(fr.validation.route.surfaceTooLarge).toBe(
+      "Cette surface semble trop grande. Vérifiez-la.",
+    )
+    expect(fr.validation.route.surfaceNotPositive).toBe("Indiquez une surface supérieure à 0.")
+    expect(fr.validation.route.zoneAboveStand).toBe(
+      "La surface décrite ne peut pas dépasser celle du peuplement.",
+    )
+    expect(fr.validation.route.atLeastOneFactor).toBe("Choisissez au moins un facteur.")
   })
 })

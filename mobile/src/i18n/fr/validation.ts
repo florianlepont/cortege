@@ -11,6 +11,8 @@
 // surfaced through these per-field messages. Keep these field names in sync
 // with the package if a factor's raw shape ever changes.
 
+import { routeGuideFr } from "./route-guide"
+
 const formatNumber = (value: number): string => String(value).replace(".", ",")
 
 export const validationFr = {
@@ -40,5 +42,14 @@ export const validationFr = {
     max: (label: string, max: number) =>
       `${label} : la valeur doit être au plus ${formatNumber(max)}`,
     oneOf: (label: string, allowed: string) => `${label} : valeurs possibles ${allowed}`,
+  },
+  // Phase 30: the errors of the route step that stop the recording. The sentences are those of the
+  // zone checks in `fr.routeGuide` (defined once); the surface of the stand has its own two in
+  // `routeGuide.surfaceErrors`.
+  route: {
+    surfaceNotPositive: routeGuideFr.details.issues.zoneNotPositive,
+    surfaceTooLarge: routeGuideFr.details.issues.zoneTooLarge,
+    zoneAboveStand: routeGuideFr.details.issues.zoneAboveStand,
+    atLeastOneFactor: routeGuideFr.counting.atLeastOne,
   },
 } as const
