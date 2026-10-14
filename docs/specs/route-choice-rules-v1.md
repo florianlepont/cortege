@@ -1,10 +1,10 @@
 # Règles de choix du parcours et du relevé (v1)
 
-Statut : brouillon révisé le 2026-10-14 selon les décisions du propriétaire, à relire et valider
+Statut : validée par le propriétaire le 2026-10-14
 
 Date de rédaction : 2026-10-13 (première rédaction), révisée le 2026-10-14
 
-Validation du propriétaire : à confirmer par écrit avec la date à la section 13, après relecture de
+Validation du propriétaire : écrite et datée du 2026-10-14 à la section 13, après relecture de
 cette version révisée
 
 Phase : 30, assistant de choix du parcours (V1). Cette spécification est la source de vérité de la
@@ -166,8 +166,9 @@ qui ne se saute pas : le relevé ne se crée qu'avec un parcours accepté. Un ch
 connais déjà mon parcours », ouvre directement le sélecteur de parcours (« Choisir le parcours ») :
 l'observateur y choisit le parcours, le mode de relevé et la surface décrite sans répondre aux
 questions. La surface se saisit à la main quand le calcul d'après les parcelles est impossible,
-donc rien ne bloque hors connexion. Le moment exact de la création du brouillon (à l'acceptation du
-parcours, proposé) est à confirmer à la relecture.
+donc rien ne bloque hors connexion. Le brouillon de l'assistant reste sur le téléphone, jamais envoyé au serveur, tant qu'il n'a pas
+de parcours ; le relevé n'est finalisé et envoyé qu'à l'acceptation du parcours, et revenir en
+arrière ramène à la carte des parcelles sans rien écrire (point P-1, confirmé par le propriétaire le 2026-10-14).
 
 **Deux choix qui ne sont pas des questions.**
 
@@ -477,13 +478,16 @@ Contenu de `guide` :
     pour un nouveau relevé, et contrôle les valeurs, les bornes, la forme canonique et la taille
     d'un enregistrement présent.
   - **API** : le serveur refuse de créer un relevé sans `survey_route` et de soumettre un relevé qui
-    n'en porte pas (code `route_required`) quand la requête vient du nouveau client. Le mécanisme
-    qui distingue le nouveau client d'un ancien (marqueur de version du client ou création
-    seulement) est à fixer à la conception de l'API ; il est listé parmi les points à relire.
+    n'en porte pas (code `route_required`) quand la requête vient du nouveau client. Le nouveau
+    client envoie l'en-tête fixe `X-Cortege-Features: survey_route` sur chaque requête ; le serveur
+    n'exige le parcours que lorsque cet en-tête est présent, donc les anciennes versions de
+    l'application continuent de fonctionner (point P-2, confirmé par le propriétaire le 2026-10-14).
   - **Brouillons déjà existants sans parcours** : ils restent des brouillons valides, mais doivent
     recevoir un parcours **avant la soumission** (la soumission est refusée sinon).
   - **Relevés déjà soumis sans parcours** : ils restent tels quels et s'affichent « Parcours : non
-    renseigné » (à confirmer à la relecture finale). Rien n'est inventé.
+    renseigné », avec la phrase « Ce relevé a été fait avant l'assistant de choix du parcours » ; leur
+    PDF reste exactement comme aujourd'hui (point P-3, confirmé par le propriétaire le 2026-10-14). Rien
+    n'est inventé.
 - Aucun texte libre dans l'enregistrement : rien à effacer pour la suppression de compte au-delà de
   ce que la décision D-24 prévoit déjà pour les notes.
 - **Forme canonique, établie sur le téléphone** : nombres arrondis comme indiqué, liste des
@@ -601,7 +605,7 @@ pour une replanification.
 | O-04 | L'expérience et le temps disponible changent-ils la proposition ? (lié à U-O4) | non : information seule (R-19 à R-21), jamais une règle | 2026-10-13, réponse en discussion : « Oui, ils déplacent la proposition » (temps et expérience, débutant x 2) ; puis 2026-10-14, réponse en discussion : « Retire ces critères de temps s'ils ne sont pas dans la méthode, ça devient une information ». Retenue : information seule, aucun coefficient | R-20 et R-21 deviendraient des règles de parcours (écarté) |
 | O-05 | Limite du parcours en plein | 5 ha (M p. 4 et p. 6) plutôt que « dizaine d'ha » (M p. 5) | 2026-10-13, réponse en discussion : « Oui, 5 ha et avertissement sous 0,5 ha » | constante `ROUTE_FULL_MAX_HA` et cas limites |
 | O-06 | Que dit l'application sur les groupes de placettes tant que le calcul regroupé n'existe pas ? (lié à U-O6) | sans objet après la révision | Sans objet : parcours typologique et systématique retirés | sans objet |
-| O-07 | Relevés sans parcours enregistré (lié à U-O7) | brouillon sans parcours : à compléter avant la soumission ; relevé déjà soumis : « Parcours : non renseigné » ; PDF des relevés déjà soumis inchangé | 2026-10-13, réponse en discussion : le propriétaire a demandé que le choix du parcours soit obligatoire (« mais le choix du parcours devrait être obligatoire ? sinon je vois pas comment l'IBP peut se calculer »), puis choisi « Obligatoire dès la création ». Les relevés déjà soumis restent « Parcours : non renseigné » : à confirmer à la relecture finale | si les relevés déjà soumis devaient recevoir un parcours : un écran de rattrapage (hors phase 30) |
+| O-07 | Relevés sans parcours enregistré (lié à U-O7) | brouillon sans parcours : à compléter avant la soumission ; relevé déjà soumis : « Parcours : non renseigné » ; PDF des relevés déjà soumis inchangé | 2026-10-13, réponse en discussion : le propriétaire a demandé que le choix du parcours soit obligatoire (« mais le choix du parcours devrait être obligatoire ? sinon je vois pas comment l'IBP peut se calculer »), puis choisi « Obligatoire dès la création ». Les relevés déjà soumis restent « Parcours : non renseigné » (point P-3, confirmé le 2026-10-14) | si les relevés déjà soumis devaient recevoir un parcours : un écran de rattrapage (hors phase 30) |
 | O-08 | Nom de groupe : texte libre accepté ? Modifiable après soumission ? | sans objet après la révision | Sans objet : parcours typologique et systématique retirés | sans objet |
 | O-09 | L'assistant s'applique-t-il aux relevés v3.0 ? | oui, pour la v3.0 et la v3.2 (les règles de parcours ne dépendent pas de la version) | 2026-10-13, réponse en discussion : « Oui, v3.0 et v3.2 » | condition d'entrée de l'assistant |
 | O-10 | Peuplements linéaires de moins de 15 m de large | hors champ : aucune question, aucun code ; une phrase fixe d'aide sous la question de surface | 2026-10-13, réponse en discussion : d'abord « Les prendre en charge », puis, après l'explication des conséquences : « Hors champ, finalement » | seuils par kilomètre à ajouter au paquet (hors phase 30), question de largeur |
@@ -621,13 +625,13 @@ pour une replanification.
 | U-O4 | Expérience et temps : conseils seulement (O-04) | information seule, section repliée | voir O-04 : 2026-10-14, « Retire ces critères de temps s'ils ne sont pas dans la méthode, ça devient une information » | idem O-04 |
 | U-O5 | Au-dessus de la limite de découpage : option préselectionnée et rôle de « Découper en sous-peuplements » (O-03) | préselectionnée et étiquetée « Conseillé » ; ce n'est pas un parcours : elle rouvre la question de surface pour un morceau | voir O-03 : 2026-10-13, « Découper en sous-peuplements » | idem O-03 |
 | U-O6 | Ce que dit l'application sur les groupes | sans objet après la révision | Sans objet : parcours typologique et systématique retirés | sans objet |
-| U-O7 | Relevés sans parcours (O-07) | voir O-07 | voir O-07 : « Obligatoire dès la création » (2026-10-13) ; relevés déjà soumis « Parcours : non renseigné », à confirmer | idem O-07 |
+| U-O7 | Relevés sans parcours (O-07) | voir O-07 | voir O-07 : « Obligatoire dès la création » (2026-10-13) ; relevés déjà soumis « Parcours : non renseigné » (point P-3, confirmé le 2026-10-14) | idem O-07 |
 | U-O8 | Nom de groupe | sans objet après la révision | Sans objet : parcours typologique et systématique retirés | sans objet |
 | U-O9 | La ligne « Contexte » du résumé du relevé porte-t-elle l'étiquette courte du parcours ? | oui, tronquée sur une ligne (retrait peu coûteux) | 2026-10-13, réponse en discussion : « Oui, garder ces quatre défauts » (U-O9, U-O10, U-O11, U-O14) | résumé du relevé |
 | U-O10 | Détails de B et de F quand un facteur sort de la liste des facteurs comptés en entier : conservés et masqués, jamais lus par un calculateur ; la clé notée garde sa dernière valeur (section 7) | règle de la section 7 | 2026-10-13, réponse en discussion : « Oui, garder ces quatre défauts » | si les détails comptent tant qu'ils sont présents : calculateurs et cas de parité `MAT-B-*` et `MAT-F-*` changés ; changement structurel |
 | U-O11 | Surface maximale acceptée et phrase d'erreur | 5000 ha ; « Cette surface semble trop grande. Vérifiez-la. » | 2026-10-13, réponse en discussion : « Oui, garder ces quatre défauts » | constante `ROUTE_SURFACE_MAX_HA` |
 | U-O12 | Offrir les cinq préréglages et les puces par facteur (O-01) | oui | voir O-01 : « Par facteur, avec préréglages » (2026-10-13) | idem O-01 |
-| U-O13 | Relecture de chaque phrase française (questions, légendes, raisons, avertissements, conseils, glossaire, phrases des facteurs) | relecture avant la clôture ; la structure et le ton sont fixés | Non posée au propriétaire : défaut conservé (à confirmer à la relecture finale) | calendrier de la relecture |
+| U-O13 | Relecture de chaque phrase française (questions, légendes, raisons, avertissements, conseils, glossaire, phrases des facteurs) | relecture avant la clôture ; la structure et le ton sont fixés | Défaut confirmé par le propriétaire le 2026-10-14 (point P-4) : relecture en fin de phase, avant le test avec des testeurs | calendrier de la relecture |
 | U-O14 | Les réponses partielles d'un assistant abandonné ne sont pas conservées | non conservées : l'enregistrement se fait une seule fois, à l'acceptation | 2026-10-13, réponse en discussion : « Oui, garder ces quatre défauts » | questionnaire et écran |
 | U-O15 | Parcours en lecture seule sur le relevé d'un autre membre (O-15) | oui ; réutiliser les lignes de Contexte dans la page communautaire | voir O-15 : « Oui » (2026-10-13) | idem O-15 |
 
@@ -660,15 +664,25 @@ cette spécification.
 
 ## 13. Validation
 
-Validé par le propriétaire le :
+Validé par le propriétaire le 2026-10-14
 
-Réponse du propriétaire :
+Réponse du propriétaire (en discussion, 2026-10-14) :
 
-Ces deux lignes sont remplies après la relecture de cette version révisée, avec la date et la
-réponse écrite du propriétaire. **Aucun plan de code n'encode une règle et aucun plan ne construit
-un écran tant qu'elles ne sont pas remplies.**
+> Je valide, tel quel (la spec des règles de choix du parcours, avec les points P-1 à P-4 aux défauts).
+>
+> P-1 : « Finalisé à l'acceptation du parcours ». P-2 : « Un marqueur envoyé par la nouvelle app ».
+> P-3 : « Parcours : non renseigné » et une phrase. P-4 : « En fin de phase, avant le test ».
+
+Ces deux lignes sont remplies : les plans de code et d'écran peuvent démarrer. Toute modification
+ultérieure d'une règle passe par une révision de cette spécification, datée dans le journal.
 
 ## Journal des révisions
+
+### 2026-10-14 : validation par le propriétaire
+
+Le propriétaire a validé la spécification telle quelle et tranché les points ouverts P-1 à P-4 aux
+défauts (section 13). Les phrases qui les laissaient à une relecture ultérieure sont remplacées
+par leur formulation décidée. Aucune règle n'est modifiée.
 
 ### 2026-10-14 : révision selon les décisions du propriétaire
 
