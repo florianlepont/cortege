@@ -5,7 +5,7 @@ milestone_name: milestone
 current_phase: 30
 current_phase_name: Route Choice Assistant (INSERTED, V1)
 status: executing
-stopped_at: "Phase 30: waves 1 to 10 done (22/25 plans); next: wave 11 (30-23), then owner checks 30-24 and 30-25"
+stopped_at: "Phase 30: waves 1 to 11 done (23/25 plans); remaining: 30-24 (device checks and owner wording review), 30-25 (recorded tester session)"
 last_updated: "2026-10-14T08:00:00.000Z"
 last_activity: 2026-10-14
 last_activity_desc: Phase 30 spec validated by the owner (gate 30-02 passed); phase 29 merged into the branch
