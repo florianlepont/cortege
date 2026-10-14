@@ -302,6 +302,13 @@ export const routeGuideFr = {
   advice: {
     duration: ({ range }: { range: string }) =>
       `Pour cette surface, comptez ${range} pour une personne habituée à l'IBP.`,
+    // Wording of the duration range (S p. 19; M p. 17): minutes below two hours, then hours rounded
+    // to the half hour. `app/route-text.ts` computes the numbers, the words stay here.
+    durationUnderMinute: "moins d'une minute",
+    durationMinutes: ({ min, max }: { min: number; max: number }) =>
+      min === max ? `${min} ${min === 1 ? "minute" : "minutes"}` : `${min} à ${max} minutes`,
+    durationHours: ({ min, max }: { min: string; max: string }) =>
+      min === max ? `environ ${min} heures` : `environ ${min} à ${max} heures`,
     durationNote:
       "Ces durées sont des repères de la méthode officielle de l'IBP, pas une règle : elles ne changent pas le parcours conseillé.",
     uncappedLonger: "Le relevé déplafonné demande plus de temps.",
