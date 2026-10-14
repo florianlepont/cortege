@@ -73,7 +73,13 @@ describe("route guide constants (spec section 5, validated 2026-10-14)", () => {
       "partial_below_minimum",
       "complement_below_zone",
     ])
-    expect(UNCAPPED_PRESET_IDS).toEqual(["all_factors", "mature", "always_max", "minimum", "custom"])
+    expect(UNCAPPED_PRESET_IDS).toEqual([
+      "all_factors",
+      "mature",
+      "always_max",
+      "minimum",
+      "custom",
+    ])
   })
 
   it("creates no code for a linear stand (O-10) and none for a purpose or a systematic group", () => {
