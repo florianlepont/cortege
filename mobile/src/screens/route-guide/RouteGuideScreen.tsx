@@ -107,6 +107,7 @@ export function RouteGuideScreen({
       <TitledScrollView
         ref={scrollRef}
         collapsingTitle={screen.title}
+        resetKey={view.screen}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior={insetBehavior}

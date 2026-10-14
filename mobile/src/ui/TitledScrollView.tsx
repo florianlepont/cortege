@@ -1,4 +1,4 @@
-import { createContext, forwardRef, useCallback, useContext, useRef } from "react"
+import { createContext, forwardRef, useCallback, useContext, useEffect, useRef } from "react"
 import { NativeScrollEvent, NativeSyntheticEvent, ScrollView, ScrollViewProps } from "react-native"
 import { useBrandTheme } from "../app/theme"
 import { androidHeaderTitleStyle } from "../app/header-title-style"
@@ -35,6 +35,13 @@ function getNavigationContext(): React.Context<HeaderNavigation | undefined> {
 type TitledScrollViewProps = ScrollViewProps & {
   /** The page's title: shown small in the bar once the large one has scrolled away. */
   collapsingTitle: string
+  /**
+   * A page that swaps its content in place (the route step's questions) passes the id of what it
+   * shows: when it changes the page is back at the top, so a bar title taken while scrolled is given
+   * back. A keyboard that scrolled the field out of view and back fires no scroll event, which left
+   * the small title beside the large one.
+   */
+  resetKey?: string
 }
 
 /**
@@ -45,7 +52,7 @@ type TitledScrollViewProps = ScrollViewProps & {
  * `ScrollView` there.
  */
 export const TitledScrollView = forwardRef<ScrollView, TitledScrollViewProps>(
-  function TitledScrollView({ collapsingTitle, onScroll, ...rest }, ref) {
+  function TitledScrollView({ collapsingTitle, resetKey, onScroll, ...rest }, ref) {
     const nativeTitle = useFrameLargeTitle()
     const theme = useBrandTheme()
     const navigation = useContext(getNavigationContext())
@@ -65,6 +72,17 @@ export const TitledScrollView = forwardRef<ScrollView, TitledScrollViewProps>(
       },
       [collapsingTitle, navigation, nativeTitle, onScroll, theme],
     )
+
+    useEffect(() => {
+      if (nativeTitle || !navigation || !collapsed.current) return
+      collapsed.current = false
+      navigation.setOptions({
+        headerTitle: "",
+        headerTitleStyle: androidHeaderTitleStyle(theme),
+      })
+      // Only when the page's content changes, not when the theme does.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [resetKey])
 
     return <ScrollView ref={ref} scrollEventThrottle={16} {...rest} onScroll={handleScroll} />
   },

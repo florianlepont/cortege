@@ -35,12 +35,12 @@ afterAll(() => {
   jest.restoreAllMocks()
 })
 
-function mount({ nativeTitle = false, withNavigation = true } = {}) {
+function mount({ nativeTitle = false, withNavigation = true, resetKey = "a" } = {}) {
   const setOptions = jest.fn()
   const onScroll = jest.fn()
   let tree!: renderer.ReactTestRenderer
   const scroll = (
-    <TitledScrollView collapsingTitle="Check_Barre" onScroll={onScroll}>
+    <TitledScrollView collapsingTitle="Check_Barre" resetKey={resetKey} onScroll={onScroll}>
       {null}
     </TitledScrollView>
   )
@@ -63,7 +63,20 @@ function mount({ nativeTitle = false, withNavigation = true } = {}) {
       })
     })
   }
-  return { setOptions, onScroll, scrollTo }
+  const rerender = (key: string): void => {
+    act(() => {
+      tree.update(
+        <NavigationContext.Provider value={{ setOptions }}>
+          <FrameLargeTitleContext.Provider value={nativeTitle}>
+            <TitledScrollView collapsingTitle="Check_Barre" resetKey={key} onScroll={onScroll}>
+              {null}
+            </TitledScrollView>
+          </FrameLargeTitleContext.Provider>
+        </NavigationContext.Provider>,
+      )
+    })
+  }
+  return { setOptions, onScroll, scrollTo, rerender }
 }
 
 describe("TitledScrollView", () => {
@@ -102,6 +115,23 @@ describe("TitledScrollView", () => {
     const { setOptions, scrollTo } = mount({ nativeTitle: true })
     scrollTo(500)
     expect(setOptions).not.toHaveBeenCalled()
+  })
+
+  test("gives the bar title back when the page swaps its content while collapsed (keyboard scroll)", () => {
+    const { setOptions, scrollTo, rerender } = mount()
+    rerender("a")
+    expect(setOptions).not.toHaveBeenCalled()
+    scrollTo(TITLE_COLLAPSE_OFFSET + 10)
+    expect(setOptions).toHaveBeenCalledTimes(1)
+    rerender("b")
+    expect(setOptions).toHaveBeenLastCalledWith({
+      headerTitle: "",
+      headerTitleStyle: androidHeaderTitleStyle(defaultTheme),
+    })
+    expect(setOptions).toHaveBeenCalledTimes(2)
+    // Back at the top, it collapses again on the next crossing.
+    scrollTo(TITLE_COLLAPSE_OFFSET + 10)
+    expect(setOptions).toHaveBeenCalledTimes(3)
   })
 
   test("is a plain scroll view outside a navigator", () => {
