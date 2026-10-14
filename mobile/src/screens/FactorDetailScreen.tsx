@@ -61,7 +61,6 @@ const ignoreSelectionChange = (): void => undefined
 
 // Phase 30 (spec section 7): the three factors whose surface field starts from the route's zone.
 const SURFACE_FACTORS: readonly FactorKey[] = ["C", "D", "E"]
-const SURFACE_FIELD_LABEL = "surface_ha"
 const NO_FACTORS: readonly FactorKey[] = []
 
 function fieldVariantsFor(
@@ -156,9 +155,12 @@ export function FactorDetailScreen({
   const variants = useMemo(() => fieldVariantsFor(factor, methodVersion), [factor, methodVersion])
   const countedInFull = uncappedFactors.includes(factor)
   const detailEntry = countedInFull && hasUncappedBlock(factor) ? uncappedEntry : undefined
-  const surfaceField = SURFACE_FACTORS.includes(factor)
-    ? fields.find((item) => item.label === SURFACE_FIELD_LABEL)
-    : undefined
+  // Found by its place (the numeric variant), not by its label: the form hands the French label
+  // ("Surface (ha)"), not the field key, so a label match never found it (iOS simulator, 2026-10-14).
+  const surfaceIndex = SURFACE_FACTORS.includes(factor)
+    ? variants.findIndex((variant) => variant.kind === "numeric")
+    : -1
+  const surfaceField = surfaceIndex >= 0 ? fields[surfaceIndex] : undefined
   const { fromRoute } = useRouteSurfacePrefill({
     zoneSurfaceHa,
     surfaceText: surfaceField?.value ?? "",

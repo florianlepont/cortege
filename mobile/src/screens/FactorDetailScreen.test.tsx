@@ -662,6 +662,17 @@ describe("FactorDetailScreen counting mode and route surface (Phase 30, D-07)", 
     expect(textsIn(fromRoute()[0])).toBe("D'après le parcours")
   })
 
+  test("the surface field is found by its place, whatever its label (the form hands French labels)", () => {
+    const onChange = jest.fn()
+    const labels = fr.validation.fields
+    mount(
+      "C",
+      [field(labels.bmg_count), field(labels.bmm_count), field(labels.surface_ha, { onChange })],
+      { zoneSurfaceHa: 1 },
+    )
+    expect(onChange).toHaveBeenCalledWith("1")
+  })
+
   test("the note goes away once the observer types another value, and the value is kept", () => {
     const onChange = jest.fn()
     const { update, fromRoute } = mount("D", cFields({ onChange }), { zoneSurfaceHa: 1.2 })
