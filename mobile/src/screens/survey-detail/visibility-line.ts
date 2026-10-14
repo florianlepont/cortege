@@ -9,27 +9,22 @@ export type VisibilityLine = {
   accessibilityLabel: string
 }
 
-// The state phrase without its closing parenthesis: "Restera privé (choix à la fin)" is spoken
-// "restera privé", the "choix à la fin" part being said by the label template.
-const TRAILING_PARENTHESIS = /\s*\([^)]*\)\s*$/
-
 /**
- * D-15: the read-only line under the status line of the owner's survey. A finished survey says
- * what it is (frozen, it can no longer change); a draft says what the choice made at the end will
- * be. The line carries no handler: the choice is made in the finish sheet.
+ * D-15: the read-only line under the status line of the owner's survey. Only a finished survey has
+ * one: it says what the survey is, frozen, since it can no longer change. A draft has no line: the
+ * choice is made in the finish sheet, which already shows it, so a line before that would only
+ * repeat the sheet (owner decision 2026-10-14). The line carries no handler.
  */
 export function resolveVisibilityLine(
   survey: Pick<LocalSurvey, "status" | "visibility">,
-): VisibilityLine {
-  const finished = survey.status === "submitted"
+): VisibilityLine | null {
+  if (survey.status !== "submitted") return null
   const key = visibilityKey(survey.visibility)
-  const { line } = fr.surveyDetail.visibility
-  const text = finished ? line.finished[key] : line.draft[key]
-  const spoken = text.replace(TRAILING_PARENTHESIS, "")
-  const lowered = spoken.charAt(0).toLocaleLowerCase("fr-FR") + spoken.slice(1)
+  const text = fr.surveyDetail.visibility.line.finished[key]
+  const lowered = text.charAt(0).toLocaleLowerCase("fr-FR") + text.slice(1)
   return {
     icon: visibilityIcon(survey.visibility),
     text,
-    accessibilityLabel: fr.surveyDetail.a11y.visibilityLine({ text: lowered, frozen: finished }),
+    accessibilityLabel: fr.surveyDetail.a11y.visibilityLine({ text: lowered }),
   }
 }

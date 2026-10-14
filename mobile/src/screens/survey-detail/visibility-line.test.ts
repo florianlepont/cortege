@@ -17,25 +17,12 @@ describe("resolveVisibilityLine (D-15)", () => {
     })
   })
 
-  test("a draft that will be shared", () => {
-    expect(resolveVisibilityLine({ status: "draft", visibility: "public" })).toEqual({
-      icon: "people-outline",
-      text: "Sera partagé avec l'association (choix à la fin)",
-      accessibilityLabel: "Visibilité : sera partagé avec l'association, choix à la fin.",
-    })
+  test("a draft has no line, the finish sheet shows the choice", () => {
+    expect(resolveVisibilityLine({ status: "draft", visibility: "public" })).toBeNull()
+    expect(resolveVisibilityLine({ status: "draft", visibility: "private" })).toBeNull()
   })
 
-  test("a draft that will stay private", () => {
-    expect(resolveVisibilityLine({ status: "draft", visibility: "private" })).toEqual({
-      icon: "lock-closed-outline",
-      text: "Restera privé (choix à la fin)",
-      accessibilityLabel: "Visibilité : restera privé, choix à la fin.",
-    })
-  })
-
-  test("any status other than submitted is read as a draft", () => {
-    expect(resolveVisibilityLine({ status: "pending", visibility: "private" }).text).toBe(
-      "Restera privé (choix à la fin)",
-    )
+  test("any status other than submitted has no line either", () => {
+    expect(resolveVisibilityLine({ status: "pending", visibility: "private" })).toBeNull()
   })
 })

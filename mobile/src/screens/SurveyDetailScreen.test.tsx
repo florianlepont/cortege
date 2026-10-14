@@ -606,10 +606,9 @@ describe("SurveyDetailScreen visibility line (D-15)", () => {
     )
   })
 
-  test("a private draft says it will stay private, the choice being made at the end", () => {
-    expect(lineOf({ status: "draft", visibility: "private" })?.text).toBe(
-      "Restera privé (choix à la fin)",
-    )
+  test("a draft has no visibility line, the choice being made in the finish sheet", () => {
+    expect(lineOf({ status: "draft", visibility: "private" })).toBeNull()
+    expect(lineOf({ status: "draft", visibility: "public" })).toBeNull()
   })
 })
 
