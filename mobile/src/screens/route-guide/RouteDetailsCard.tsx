@@ -165,9 +165,8 @@ export function RouteDetailsCard({
             <View style={styles.switchRow}>
               <View style={styles.switchCopy}>
                 <Text style={styles.switchLabel}>{details.complementLabel}</Text>
-                <Text style={styles.helper}>{details.complementHint}</Text>
+                <GlossaryInfo term="resteDuPeuplement" />
               </View>
-              <GlossaryInfo term="resteDuPeuplement" />
               <Switch
                 value={value.complementDone}
                 onValueChange={(complementDone) => onChange({ ...value, complementDone })}
@@ -179,6 +178,8 @@ export function RouteDetailsCard({
                 testID="route-complement-switch"
               />
             </View>
+            {/* Under the row, so it runs the full width of the card instead of beside the switch. */}
+            <Text style={styles.helper}>{details.complementHint}</Text>
             {value.complementDone ? (
               <AppField
                 label={details.totalLabel}
@@ -247,13 +248,16 @@ function createStyles(theme: BrandTheme) {
       flexDirection: "row",
       alignItems: "center",
       gap: brandSpacing4.smd,
-      minHeight: 56,
+      minHeight: 44,
     },
     switchCopy: {
       flex: 1,
-      gap: brandSpacing4.xxs,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
     },
     switchLabel: {
+      flexShrink: 1,
       ...brandTypeScale.subhead,
       fontFamily: brandTypography.navTitle.fontFamily,
       color: theme.colors.textPrimary,
