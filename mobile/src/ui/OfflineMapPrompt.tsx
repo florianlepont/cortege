@@ -1,11 +1,12 @@
 import { memo, useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { brandRadius, brandSpacing, brandSpacing4, brandTypography } from "../app/brand-tokens"
+import { brandRadius, brandSpacing4, brandTypography } from "../app/brand-tokens"
 import { BrandTheme, useBrandTheme } from "../app/theme"
 import type { OfflineMapPrompt as OfflineMapPromptModel } from "../hooks/useOfflineMapPrompt"
 import { fr } from "../i18n"
 import { AppButton } from "./AppButton"
+import { AppPressable } from "./AppPressable"
 import { AppText as Text } from "./AppText"
 import { GlassSurface } from "./GlassSurface"
 import { ProgressBar } from "./ProgressBar"
@@ -15,9 +16,9 @@ const t = fr.offlineMap.prompt
 type OfflineMapPromptProps = {
   prompt: OfflineMapPromptModel
   siteName: string
-  /** "banner": card with a "later" button (new-survey flow). "row": one compact line (survey page). */
+  /** "banner": one slim line with a close button (new-survey flow). "row": one compact line (survey page). */
   variant: "banner" | "row"
-  /** Banner only: hides the card for this visit. */
+  /** Banner only: closes the slim line for this visit. */
   onDismiss?: () => void
 }
 
@@ -73,80 +74,88 @@ export const OfflineMapPrompt = memo(function OfflineMapPrompt({
 
   // banner: nothing to show once the area is on the phone
   if (prompt.state === "covered") return null
+  const downloading = prompt.state === "downloading"
   return (
-    <GlassSurface tone="auto" surface={theme.visual.mapPanel} style={styles.banner}>
-      <View style={styles.bannerHead}>
-        <View style={styles.bannerIcon}>
-          <Ionicons name="cloud-download-outline" size={20} color={theme.visual.accentText} />
-        </View>
-        <View style={styles.bannerBody}>
-          <Text style={styles.bannerTitle}>{t.title}</Text>
-          {prompt.state === "downloading" ? (
-            <>
-              <Text style={styles.bannerText}>{t.downloading(prompt.percent)}</Text>
-              <ProgressBar
-                variant="plain"
-                percent={prompt.percent}
-                height={6}
-                radius={3}
-                trackColor={theme.colors.divider}
-                fillColor={theme.visual.accentText}
-                style={styles.track}
-              />
-              <Text style={styles.bannerText}>{t.keepGoing}</Text>
-            </>
-          ) : (
-            <Text style={styles.bannerText}>{t.message(prompt.megabytes)}</Text>
-          )}
-        </View>
+    <GlassSurface tone="auto" surface={theme.visual.mapPanel} style={styles.slim}>
+      <View style={styles.slimLine}>
+        {downloading ? (
+          <Ionicons name="cloud-download-outline" size={18} color={theme.visual.accentText} />
+        ) : null}
+        <Text
+          style={styles.slimText}
+          numberOfLines={2}
+          accessibilityHint={downloading ? undefined : t.slim.hint(prompt.megabytes)}
+        >
+          {downloading ? t.downloading(prompt.percent) : t.slim.missing}
+        </Text>
+        {downloading ? null : (
+          <>
+            <AppPressable
+              accessibilityRole="button"
+              accessibilityLabel={t.a11y.download}
+              hitSlop={SLIM_HIT_SLOP}
+              onPress={handleDownload}
+              style={styles.slimAction}
+            >
+              <Text style={styles.slimActionLabel}>{t.download}</Text>
+            </AppPressable>
+            <AppPressable
+              accessibilityRole="button"
+              accessibilityLabel={t.slim.close}
+              hitSlop={SLIM_HIT_SLOP}
+              onPress={onDismiss ?? noop}
+              style={styles.slimClose}
+            >
+              <Ionicons name="close-outline" size={20} color={theme.colors.textSecondary} />
+            </AppPressable>
+          </>
+        )}
       </View>
-      {prompt.state === "missing" ? (
-        <View style={styles.bannerActions}>
-          <AppButton
-            label={t.download}
-            size="sm"
-            style={styles.primary}
-            accessibilityLabel={t.a11y.download}
-            onPress={handleDownload}
-          />
-          <AppButton
-            label={t.later}
-            size="sm"
-            variant="secondary"
-            accessibilityLabel={t.a11y.later}
-            onPress={onDismiss ?? noop}
-          />
-        </View>
+      {downloading ? (
+        <ProgressBar
+          variant="plain"
+          percent={prompt.percent}
+          height={4}
+          radius={2}
+          trackColor={theme.colors.divider}
+          fillColor={theme.visual.accentText}
+          style={styles.track}
+        />
       ) : null}
     </GlassSurface>
   )
 })
 
+/** The visible controls are 32 pt; the touch area reaches the 44 pt minimum. */
+const SLIM_HIT_SLOP = { top: 6, bottom: 6, left: 6, right: 6 }
+
 const noop = (): void => undefined
 
 function createStyles(theme: BrandTheme) {
   return StyleSheet.create({
-    banner: {
-      borderRadius: brandRadius.card,
+    slim: {
+      borderRadius: brandRadius.pill,
       borderWidth: 1,
       borderColor: theme.colors.divider,
-      padding: 14,
-      gap: brandSpacing4.smd,
+      paddingVertical: brandSpacing4.xs,
+      paddingLeft: brandSpacing4.smd,
+      paddingRight: brandSpacing4.xs,
     },
-    bannerHead: { flexDirection: "row", gap: brandSpacing4.smd },
-    bannerIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+    slimLine: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: brandSpacing4.sm,
+      minHeight: 32,
+    },
+    slimText: { ...brandTypography.meta, color: theme.semanticColors.textStrong, flex: 1 },
+    slimAction: { justifyContent: "center", minHeight: 32, paddingHorizontal: brandSpacing4.xs },
+    slimActionLabel: { ...brandTypography.label, color: theme.visual.accentText },
+    slimClose: {
+      width: 32,
+      height: 32,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: theme.colors.panelMuted,
     },
-    bannerBody: { flex: 1, gap: brandSpacing4.xs },
-    bannerTitle: { ...brandTypography.label, color: theme.semanticColors.textStrong },
-    bannerText: { ...brandTypography.meta, color: theme.colors.textSecondary },
-    bannerActions: { flexDirection: "row", gap: brandSpacing.sm },
-    primary: { flex: 1 },
     track: { marginVertical: brandSpacing4.xs },
     row: {
       flexDirection: "row",

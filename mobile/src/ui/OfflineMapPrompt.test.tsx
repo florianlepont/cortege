@@ -24,6 +24,7 @@ jest.mock("./GlassSurface", () => {
   }
 })
 jest.mock("./AppButton", () => ({ AppButton: "AppButton" }))
+jest.mock("./AppPressable", () => ({ AppPressable: "AppPressable" }))
 // The theme the prompt reads, switchable per test (light by default).
 const mockScheme: { current: "light" | "dark" } = { current: "light" }
 jest.mock("../app/theme", () => {
@@ -62,31 +63,41 @@ const texts = (tree: ReactTestRenderer): string[] =>
 const button = (tree: ReactTestRenderer, label: string) =>
   tree.root.find((node) => (node.type as unknown) === "AppButton" && node.props.label === label)
 
+const pressable = (tree: ReactTestRenderer, label: string) =>
+  tree.root.find(
+    (node) => (node.type as unknown) === "AppPressable" && node.props.accessibilityLabel === label,
+  )
+
 afterEach(() => {
   mockScheme.current = "light"
 })
 
 describe("OfflineMapPrompt", () => {
-  test("banner, missing: message with the size, download and later", () => {
+  test("banner, missing: one slim line, download and close", () => {
     const prompt = model()
     const onDismiss = jest.fn()
     const tree = render(prompt, "banner", onDismiss)
-    expect(texts(tree)).toContain(t.message("24.0"))
-    act(() => button(tree, t.download).props.onPress())
+    expect(texts(tree)).toEqual(expect.arrayContaining([t.slim.missing, t.download]))
+    // The size rides on the accessibility hint, not on a paragraph.
+    const line = tree.root.find(
+      (node) => (node.type as unknown) === "Text" && node.props.children === t.slim.missing,
+    )
+    expect(line.props.accessibilityHint).toBe(t.slim.hint("24.0"))
+    act(() => pressable(tree, t.a11y.download).props.onPress())
     expect(prompt.download).toHaveBeenCalledWith(t.areaName("Bois"))
-    act(() => button(tree, t.later).props.onPress())
+    act(() => pressable(tree, t.slim.close).props.onPress())
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
-  test("banner without a dismiss handler: later is a harmless no-op", () => {
+  test("banner without a dismiss handler: close is a harmless no-op", () => {
     const tree = render(model(), "banner")
-    expect(() => act(() => button(tree, t.later).props.onPress())).not.toThrow()
+    expect(() => act(() => pressable(tree, t.slim.close).props.onPress())).not.toThrow()
   })
 
-  test("banner, downloading: progress and the reassurance, no buttons", () => {
+  test("banner, downloading: the percentage and a bar, nothing to press", () => {
     const tree = render(model({ state: "downloading", percent: 62 }), "banner")
-    expect(texts(tree)).toEqual(expect.arrayContaining([t.downloading(62), t.keepGoing]))
-    expect(tree.root.findAll((node) => (node.type as unknown) === "AppButton")).toHaveLength(0)
+    expect(texts(tree)).toEqual(expect.arrayContaining([t.downloading(62)]))
+    expect(tree.root.findAll((node) => (node.type as unknown) === "AppPressable")).toHaveLength(0)
   })
 
   test("banner, covered or hidden: nothing", () => {
@@ -106,7 +117,7 @@ describe("OfflineMapPrompt", () => {
     expect(render(model({ state: "hidden" }), "row").toJSON()).toBeNull()
   })
 
-  test("over the parcel map the banner takes the map panel glass (12.2-21 dark pass)", () => {
+  test("over the parcel map the slim line takes the map panel glass (12.2-21 dark pass)", () => {
     mockScheme.current = "dark"
     const dark = buildTheme("dark")
     const glass = render(model(), "banner").root.findByType("GlassSurface" as never)
@@ -127,8 +138,9 @@ describe("OfflineMapPrompt", () => {
         render(model({ state: "covered" }), "row"),
       ]
       const icons = trees.flatMap((tree) => tree.root.findAllByType("Ionicons" as never))
-      const brandIcons = icons.filter((icon) => icon.props.name !== "cloud-offline-outline")
-      expect(brandIcons.length).toBe(4)
+      // The close glyph is secondary ink on purpose, like the row's "missing" cloud.
+      const brandIcons = icons.filter((icon) => icon.props.name !== "close-outline")
+      expect(brandIcons.length).toBe(3)
       for (const icon of brandIcons) expect(icon.props.color).toBe(theme.visual.accentText)
       const flat = (style: unknown): Record<string, unknown> =>
         Object.assign({}, ...[style].flat(3).filter(Boolean))

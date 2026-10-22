@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useHeaderHeight } from "@react-navigation/elements"
-import { Platform, StyleSheet, View, useWindowDimensions } from "react-native"
+import { Platform, StyleSheet, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAppBottomTabBarHeight } from "../app/useAppBottomTabBarHeight"
 import { brandMapTokens, brandMediaBackdrop, brandSpacing4 } from "../app/brand-tokens"
@@ -29,7 +29,6 @@ import { OfflineAreasSheet } from "./public-map/OfflineAreasSheet"
 import { useAreaDownloadAction } from "./public-map/useAreaDownloadAction"
 import { MapLegend, type MapLegendRow } from "./public-map/ScoreLegend"
 import { ParcelSelectionCard } from "./parcel-selection/ParcelSelectionCard"
-import { isCompactParcelCard } from "./parcel-selection/layout-budget"
 import { OfflineMapPrompt } from "../ui/OfflineMapPrompt"
 import { fr } from "../i18n"
 import type { WeatherPoint } from "../storage/weather"
@@ -91,11 +90,8 @@ export function SurveyParcelSelectionScreen({
   const headerHeight = useHeaderHeight()
   const tabBarHeight = useAppBottomTabBarHeight()
   const [saving, setSaving] = useState(false)
-  // The compact card reads the window, never the measured card height (no feedback loop, D-08).
-  const { height, fontScale } = useWindowDimensions()
-  const compact = isCompactParcelCard(height, fontScale)
   // The bottom card's height: the map controls sit just above it, bottom right and left like the
-  // Explorer's, whatever the card holds (a notice appears when no parcel is chosen).
+  // Explorer's, whatever the card holds (a line of help appears when no parcel is chosen).
   const [cardHeight, setCardHeight] = useState(0)
   const [offlineDismissed, setOfflineDismissed] = useState(false)
   // The same download button and panel as the Explorer's: the capsule is one component everywhere.
@@ -168,12 +164,6 @@ export function SurveyParcelSelectionScreen({
   const offlinePrompt = useOfflineMapPrompt({ apiUrl, accessToken, point: offlinePoint })
   const offlineBannerVisible = offlinePrompt.state !== "hidden" && !offlineDismissed
   const parcelSelectionLabel = t.selectedCount({ count: selectedParcelIds.length })
-  const parcelHelperText =
-    mapZoom >= 15
-      ? parcelsLoading
-        ? t.loadingOverlay
-        : t.visibleCount({ count: listedParcels.length })
-      : t.zoomToSelect
 
   // The iOS header is transparent over the map (the native back button is the glass one), so the
   // controls start under the status bar; on Android the opaque header already sits above the map.
@@ -320,10 +310,8 @@ export function SurveyParcelSelectionScreen({
           onLayout={(event) => setCardHeight(event.nativeEvent.layout.height)}
         >
           <ParcelSelectionCard
-            compact={compact}
             hasSelection={hasParcelSelection}
             selectionLabel={parcelSelectionLabel}
-            helperText={parcelHelperText}
             saving={saving}
             wizard={wizard}
             onDone={handleDone}
