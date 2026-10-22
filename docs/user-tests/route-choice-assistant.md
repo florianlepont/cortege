@@ -12,7 +12,7 @@ Ce document est le **protocole**, écrit avant toute séance. Les attentes (parc
 
 Prouver que **quelqu'un qui ne connaît pas la méthode choisit son parcours sans aide** avec l'application (critère 4 de la feuille de route de la phase 30, décision D-10, exigence `REQ-FT-route-test`).
 
-Ce que l'on mesure : l'étape obligatoire « Choix du parcours » (questions, proposition, raisons, explications des mots de la méthode, sélecteur « Choisir le parcours ») se comprend seule. On ne mesure pas la rapidité de la prise en main de l'application en général.
+Ce que l'on mesure : l'étape obligatoire « Choix du parcours » (une question par écran, proposition avec ses raisons, explications des mots de la méthode dans les icônes i, sélecteur « Choisir le parcours ») se comprend seule. On ne mesure pas la rapidité de la prise en main de l'application en général.
 
 Hors périmètre depuis les décisions O-14 et O-18 : l'inventaire prévu, l'étude, le diagnostic rapide et tout échantillonnage de plusieurs placettes. Il n'y a aucune carte de parcours (elle viendra avec la phase 31).
 
@@ -58,6 +58,8 @@ Consigne générale lue au testeur :
 > « Je vais vous demander de faire trois relevés dans l'application, sur des morceaux de forêt que je vais vous décrire sur une fiche. Je ne teste pas vous, je teste l'application. Je ne pourrai pas vous aider : dites à voix haute ce que vous lisez et ce que vous pensez. Si vous ne comprenez pas un mot, dites-le, c'est exactement ce que je cherche. »
 
 ## 5. Scénarios
+
+Mise à jour 2026-10-22 : l'étape pose une question par écran, avec le bouton « Continuer » (même en-tête et même barre de progression que les étapes 1 à 3), puis affiche le résultat ; le glossaire de l'écran a été retiré, les mots sont expliqués dans les icônes i. Les attentes des scénarios ne changent pas, elles viennent de la table de décision.
 
 Chaque scénario part d'un **nouveau relevé** (« Créer un relevé » depuis l'accueil ou depuis Mes Relevés). L'étape « Choix du parcours » arrive donc après la carte des parcelles. Le scénario est terminé quand le relevé est créé avec un parcours choisi (le testeur appuie sur « Utiliser ce parcours » ou, dans le sélecteur, sur le bouton qui enregistre).
 
@@ -167,7 +169,7 @@ Pour chaque scénario, le facilitateur renseigne :
 | Q-1 | « Quelle différence faites-vous entre "Méthode IBP v3.2" et "Parcours" ? »           | le testeur distingue la version de la méthode de la façon de parcourir le peuplement                                                              |
 | Q-2 | « Que veut dire "relevé plafonné" ? »                                                | « on arrête de compter dès que le score est sûr » ou équivalent                                                                                   |
 | Q-3 | « "Plafonné" a-t-il un rapport avec le score du facteur A ? » (si le testeur l'a vu) | le testeur ne confond pas : le plafond de comptage n'est pas un score limité à 2                                                                  |
-| Q-4 | « Que feriez-vous si vous connaissiez déjà votre parcours ? »                        | le testeur repère « Je connais déjà mon parcours » (lien discret sous la première question et en bas du résultat, depuis le 2026-10-14) ou le sélecteur « Choisir le parcours » |
+| Q-4 | « Que feriez-vous si vous connaissiez déjà votre parcours ? »                        | le testeur repère « Je connais déjà mon parcours » (lien discret sous les questions, depuis le 2026-10-14) ou le sélecteur « Choisir le parcours » |
 | Q-5 | « Y a-t-il un mot que vous n'avez pas compris ? »                                    | réponse notée telle quelle, sans note de réussite                                                                                                 |
 
 Une confusion entre « plafonné » et le plafond du score du facteur A (Q-2, Q-3) est un point critique : voir la règle de passage.
